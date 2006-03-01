@@ -1,0 +1,646 @@
+# DO NOT DELETE
+
+disposition.o: disposition.h
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+disposition.o: /home/tom/p/sourceforge/lax/anobject.h
+disposition.o: /home/tom/p/sourceforge/lax/misc.h
+disposition.o: /home/tom/p/sourceforge/lax/doublebbox.h
+disposition.o: /home/tom/p/sourceforge/lax/vectors.h
+disposition.o: /home/tom/p/sourceforge/lax/lists.h
+disposition.o: /home/tom/p/sourceforge/lax/attributes.h
+disposition.o: /home/tom/p/sourceforge/lax/dump.h page.h
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+disposition.o: /home/tom/p/sourceforge/lax/displayer.h
+disposition.o: /home/tom/p/sourceforge/lax/anxapp.h
+disposition.o: /home/tom/p/sourceforge/lax/laxdefs.h
+disposition.o: /home/tom/p/sourceforge/lax/fontmanager.h
+disposition.o: /home/tom/p/sourceforge/lax/strmanip.h
+disposition.o: /home/tom/p/sourceforge/lax/pancontroller.h
+disposition.o: /home/tom/p/sourceforge/lax/panuser.h
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+disposition.o: /home/tom/p/sourceforge/lax/rulerwin.h
+disposition.o: /home/tom/p/sourceforge/lax/scroller.h group.h
+disposition.o: objectcontainer.h styles.h papersizes.h document.h
+disposition.o: /home/tom/p/sourceforge/lax/lists.cc
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+disposition.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+disposition.o: /home/tom/p/sourceforge/lax/refcounter.h
+dispositioninst.o: dispositioninst.h disposition.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/anobject.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/misc.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/doublebbox.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/vectors.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/lists.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/attributes.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/dump.h page.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/displayer.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/anxapp.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/laxdefs.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/fontmanager.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/strmanip.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/pancontroller.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/panuser.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/rulerwin.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/scroller.h group.h
+dispositioninst.o: objectcontainer.h styles.h papersizes.h document.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+dispositioninst.o: /home/tom/p/sourceforge/lax/refcounter.h
+dispositions.o: laidout.h /home/tom/p/sourceforge/lax/anxapp.h
+dispositions.o: /home/tom/p/sourceforge/lax/anobject.h
+dispositions.o: /home/tom/p/sourceforge/lax/misc.h
+dispositions.o: /home/tom/p/sourceforge/lax/lists.h
+dispositions.o: /home/tom/p/sourceforge/lax/laxdefs.h
+dispositions.o: /home/tom/p/sourceforge/lax/fontmanager.h
+dispositions.o: /home/tom/p/sourceforge/lax/strmanip.h disposition.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+dispositions.o: /home/tom/p/sourceforge/lax/doublebbox.h
+dispositions.o: /home/tom/p/sourceforge/lax/vectors.h
+dispositions.o: /home/tom/p/sourceforge/lax/attributes.h
+dispositions.o: /home/tom/p/sourceforge/lax/dump.h page.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+dispositions.o: /home/tom/p/sourceforge/lax/displayer.h
+dispositions.o: /home/tom/p/sourceforge/lax/pancontroller.h
+dispositions.o: /home/tom/p/sourceforge/lax/panuser.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+dispositions.o: /home/tom/p/sourceforge/lax/rulerwin.h
+dispositions.o: /home/tom/p/sourceforge/lax/scroller.h group.h
+dispositions.o: objectcontainer.h styles.h papersizes.h document.h newdoc.h
+dispositions.o: /home/tom/p/sourceforge/lax/rowframe.h
+dispositions.o: /home/tom/p/sourceforge/lax/boxarrange.h
+dispositions.o: /home/tom/p/sourceforge/lax/lineedit.h
+dispositions.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+dispositions.o: /home/tom/p/sourceforge/lax/texteditbase.h
+dispositions.o: /home/tom/p/sourceforge/lax/lineinput.h
+dispositions.o: /home/tom/p/sourceforge/lax/checkbox.h
+dispositions.o: /home/tom/p/sourceforge/lax/textbutton.h
+dispositions.o: /home/tom/p/sourceforge/lax/button.h
+dispositions.o: /home/tom/p/sourceforge/lax/menuselector.h
+dispositions.o: /home/tom/p/sourceforge/lax/menuinfo.h
+dispositions.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+dispositions.o: /home/tom/p/sourceforge/lax/pan.h
+dispositions.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+dispositions.o: /home/tom/p/sourceforge/lax/itemslider.h
+dispositions.o: /home/tom/p/sourceforge/lax/mesbar.h
+dispositions.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+dispositions.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+dispositions.o: dispositioninst.h
+document.o: /home/tom/p/sourceforge/lax/strmanip.h
+document.o: /home/tom/p/sourceforge/lax/lists.cc document.h styles.h
+document.o: /home/tom/p/sourceforge/lax/anobject.h
+document.o: /home/tom/p/sourceforge/lax/misc.h
+document.o: /home/tom/p/sourceforge/lax/lists.h
+document.o: /home/tom/p/sourceforge/lax/dump.h
+document.o: /home/tom/p/sourceforge/lax/attributes.h disposition.h
+document.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+document.o: /home/tom/p/sourceforge/lax/doublebbox.h
+document.o: /home/tom/p/sourceforge/lax/vectors.h page.h
+document.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+document.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+document.o: /home/tom/p/sourceforge/lax/displayer.h
+document.o: /home/tom/p/sourceforge/lax/anxapp.h
+document.o: /home/tom/p/sourceforge/lax/laxdefs.h
+document.o: /home/tom/p/sourceforge/lax/fontmanager.h
+document.o: /home/tom/p/sourceforge/lax/pancontroller.h
+document.o: /home/tom/p/sourceforge/lax/panuser.h
+document.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+document.o: /home/tom/p/sourceforge/lax/rulerwin.h
+document.o: /home/tom/p/sourceforge/lax/scroller.h group.h objectcontainer.h
+document.o: papersizes.h saveppt.h printing/psout.h document.h
+document.o: /home/tom/p/sourceforge/lax/laxdebug.h
+dodecahedron.o: dispositioninst.h disposition.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/anobject.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/misc.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/doublebbox.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/vectors.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/lists.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/attributes.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/dump.h page.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/displayer.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/anxapp.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/laxdefs.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/fontmanager.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/strmanip.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/pancontroller.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/panuser.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/rulerwin.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/scroller.h group.h
+dodecahedron.o: objectcontainer.h styles.h papersizes.h document.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/gradientinterface.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+drawdata.o: /home/tom/p/sourceforge/lax/displayer.h
+drawdata.o: /home/tom/p/sourceforge/lax/anxapp.h
+drawdata.o: /home/tom/p/sourceforge/lax/anobject.h
+drawdata.o: /home/tom/p/sourceforge/lax/misc.h
+drawdata.o: /home/tom/p/sourceforge/lax/lists.h
+drawdata.o: /home/tom/p/sourceforge/lax/laxdefs.h
+drawdata.o: /home/tom/p/sourceforge/lax/fontmanager.h
+drawdata.o: /home/tom/p/sourceforge/lax/strmanip.h
+drawdata.o: /home/tom/p/sourceforge/lax/vectors.h
+drawdata.o: /home/tom/p/sourceforge/lax/pancontroller.h
+drawdata.o: /home/tom/p/sourceforge/lax/panuser.h
+drawdata.o: /home/tom/p/sourceforge/lax/doublebbox.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+drawdata.o: /home/tom/p/sourceforge/lax/attributes.h
+drawdata.o: /home/tom/p/sourceforge/lax/dump.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+drawdata.o: /home/tom/p/sourceforge/lax/rulerwin.h
+drawdata.o: /home/tom/p/sourceforge/lax/scroller.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/colorpatchinterface.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/patchinterface.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/somedataref.h drawdata.h
+drawdata.o: laidout.h disposition.h page.h
+drawdata.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h group.h
+drawdata.o: objectcontainer.h styles.h papersizes.h document.h newdoc.h
+drawdata.o: /home/tom/p/sourceforge/lax/rowframe.h
+drawdata.o: /home/tom/p/sourceforge/lax/boxarrange.h
+drawdata.o: /home/tom/p/sourceforge/lax/lineedit.h
+drawdata.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+drawdata.o: /home/tom/p/sourceforge/lax/texteditbase.h
+drawdata.o: /home/tom/p/sourceforge/lax/lineinput.h
+drawdata.o: /home/tom/p/sourceforge/lax/checkbox.h
+drawdata.o: /home/tom/p/sourceforge/lax/textbutton.h
+drawdata.o: /home/tom/p/sourceforge/lax/button.h
+drawdata.o: /home/tom/p/sourceforge/lax/menuselector.h
+drawdata.o: /home/tom/p/sourceforge/lax/menuinfo.h
+drawdata.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+drawdata.o: /home/tom/p/sourceforge/lax/pan.h
+drawdata.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+drawdata.o: /home/tom/p/sourceforge/lax/itemslider.h
+drawdata.o: /home/tom/p/sourceforge/lax/mesbar.h
+drawdata.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+extras.o: extras.h laidout.h /home/tom/p/sourceforge/lax/anxapp.h
+extras.o: /home/tom/p/sourceforge/lax/anobject.h
+extras.o: /home/tom/p/sourceforge/lax/misc.h
+extras.o: /home/tom/p/sourceforge/lax/lists.h
+extras.o: /home/tom/p/sourceforge/lax/laxdefs.h
+extras.o: /home/tom/p/sourceforge/lax/fontmanager.h
+extras.o: /home/tom/p/sourceforge/lax/strmanip.h disposition.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+extras.o: /home/tom/p/sourceforge/lax/doublebbox.h
+extras.o: /home/tom/p/sourceforge/lax/vectors.h
+extras.o: /home/tom/p/sourceforge/lax/attributes.h
+extras.o: /home/tom/p/sourceforge/lax/dump.h page.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+extras.o: /home/tom/p/sourceforge/lax/displayer.h
+extras.o: /home/tom/p/sourceforge/lax/pancontroller.h
+extras.o: /home/tom/p/sourceforge/lax/panuser.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+extras.o: /home/tom/p/sourceforge/lax/rulerwin.h
+extras.o: /home/tom/p/sourceforge/lax/scroller.h group.h objectcontainer.h
+extras.o: styles.h papersizes.h document.h newdoc.h
+extras.o: /home/tom/p/sourceforge/lax/rowframe.h
+extras.o: /home/tom/p/sourceforge/lax/boxarrange.h
+extras.o: /home/tom/p/sourceforge/lax/lineedit.h
+extras.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+extras.o: /home/tom/p/sourceforge/lax/texteditbase.h
+extras.o: /home/tom/p/sourceforge/lax/lineinput.h
+extras.o: /home/tom/p/sourceforge/lax/checkbox.h
+extras.o: /home/tom/p/sourceforge/lax/textbutton.h
+extras.o: /home/tom/p/sourceforge/lax/button.h
+extras.o: /home/tom/p/sourceforge/lax/menuselector.h
+extras.o: /home/tom/p/sourceforge/lax/menuinfo.h
+extras.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+extras.o: /home/tom/p/sourceforge/lax/pan.h
+extras.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+extras.o: /home/tom/p/sourceforge/lax/itemslider.h
+extras.o: /home/tom/p/sourceforge/lax/mesbar.h
+extras.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+extras.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+extras.o: /home/tom/p/sourceforge/lax/refcounter.h
+genericstyle.o: genericstyle.h styles.h
+genericstyle.o: /home/tom/p/sourceforge/lax/anobject.h
+genericstyle.o: /home/tom/p/sourceforge/lax/misc.h
+genericstyle.o: /home/tom/p/sourceforge/lax/lists.h
+genericstyle.o: /home/tom/p/sourceforge/lax/strmanip.h
+genericstyle.o: /home/tom/p/sourceforge/lax/dump.h
+genericstyle.o: /home/tom/p/sourceforge/lax/attributes.h
+group.o: group.h /home/tom/p/sourceforge/lax/interfaces/somedata.h
+group.o: /home/tom/p/sourceforge/lax/anobject.h
+group.o: /home/tom/p/sourceforge/lax/misc.h
+group.o: /home/tom/p/sourceforge/lax/doublebbox.h
+group.o: /home/tom/p/sourceforge/lax/vectors.h
+group.o: /home/tom/p/sourceforge/lax/lists.h
+group.o: /home/tom/p/sourceforge/lax/attributes.h
+group.o: /home/tom/p/sourceforge/lax/dump.h objectcontainer.h styles.h
+group.o: /home/tom/p/sourceforge/lax/strmanip.h drawdata.h
+group.o: /home/tom/p/sourceforge/lax/displayer.h
+group.o: /home/tom/p/sourceforge/lax/anxapp.h
+group.o: /home/tom/p/sourceforge/lax/laxdefs.h
+group.o: /home/tom/p/sourceforge/lax/fontmanager.h
+group.o: /home/tom/p/sourceforge/lax/pancontroller.h
+group.o: /home/tom/p/sourceforge/lax/panuser.h
+group.o: /home/tom/p/sourceforge/lax/refcounter.h
+interfaces.o: interfaces.h /home/tom/p/sourceforge/lax/lists.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+interfaces.o: /home/tom/p/sourceforge/lax/displayer.h
+interfaces.o: /home/tom/p/sourceforge/lax/anxapp.h
+interfaces.o: /home/tom/p/sourceforge/lax/anobject.h
+interfaces.o: /home/tom/p/sourceforge/lax/misc.h
+interfaces.o: /home/tom/p/sourceforge/lax/laxdefs.h
+interfaces.o: /home/tom/p/sourceforge/lax/fontmanager.h
+interfaces.o: /home/tom/p/sourceforge/lax/strmanip.h
+interfaces.o: /home/tom/p/sourceforge/lax/vectors.h
+interfaces.o: /home/tom/p/sourceforge/lax/pancontroller.h
+interfaces.o: /home/tom/p/sourceforge/lax/panuser.h
+interfaces.o: /home/tom/p/sourceforge/lax/doublebbox.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+interfaces.o: /home/tom/p/sourceforge/lax/attributes.h
+interfaces.o: /home/tom/p/sourceforge/lax/dump.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+interfaces.o: /home/tom/p/sourceforge/lax/rulerwin.h
+interfaces.o: /home/tom/p/sourceforge/lax/scroller.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h laidout.h
+interfaces.o: disposition.h page.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h group.h
+interfaces.o: objectcontainer.h styles.h papersizes.h document.h newdoc.h
+interfaces.o: /home/tom/p/sourceforge/lax/rowframe.h
+interfaces.o: /home/tom/p/sourceforge/lax/boxarrange.h
+interfaces.o: /home/tom/p/sourceforge/lax/lineedit.h
+interfaces.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+interfaces.o: /home/tom/p/sourceforge/lax/texteditbase.h
+interfaces.o: /home/tom/p/sourceforge/lax/lineinput.h
+interfaces.o: /home/tom/p/sourceforge/lax/checkbox.h
+interfaces.o: /home/tom/p/sourceforge/lax/textbutton.h
+interfaces.o: /home/tom/p/sourceforge/lax/button.h
+interfaces.o: /home/tom/p/sourceforge/lax/menuselector.h
+interfaces.o: /home/tom/p/sourceforge/lax/menuinfo.h
+interfaces.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+interfaces.o: /home/tom/p/sourceforge/lax/pan.h
+interfaces.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+interfaces.o: /home/tom/p/sourceforge/lax/itemslider.h
+interfaces.o: /home/tom/p/sourceforge/lax/mesbar.h
+interfaces.o: /home/tom/p/sourceforge/lax/colorbox.h
+interfaces.o: /home/tom/p/sourceforge/lax/lists.cc
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/gradientinterface.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/colorpatchinterface.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/patchinterface.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/bezpathoperator.h
+interfaces.o: /home/tom/p/sourceforge/lax/interfaces/rectinterface.h
+laidout.o: /home/tom/p/sourceforge/lax/anxapp.h
+laidout.o: /home/tom/p/sourceforge/lax/anobject.h
+laidout.o: /home/tom/p/sourceforge/lax/misc.h
+laidout.o: /home/tom/p/sourceforge/lax/lists.h
+laidout.o: /home/tom/p/sourceforge/lax/laxdefs.h
+laidout.o: /home/tom/p/sourceforge/lax/fontmanager.h
+laidout.o: /home/tom/p/sourceforge/lax/strmanip.h
+laidout.o: /home/tom/p/sourceforge/lax/laxdebug.h laidout.h disposition.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+laidout.o: /home/tom/p/sourceforge/lax/doublebbox.h
+laidout.o: /home/tom/p/sourceforge/lax/vectors.h
+laidout.o: /home/tom/p/sourceforge/lax/attributes.h
+laidout.o: /home/tom/p/sourceforge/lax/dump.h page.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+laidout.o: /home/tom/p/sourceforge/lax/displayer.h
+laidout.o: /home/tom/p/sourceforge/lax/pancontroller.h
+laidout.o: /home/tom/p/sourceforge/lax/panuser.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+laidout.o: /home/tom/p/sourceforge/lax/rulerwin.h
+laidout.o: /home/tom/p/sourceforge/lax/scroller.h group.h objectcontainer.h
+laidout.o: styles.h papersizes.h document.h newdoc.h
+laidout.o: /home/tom/p/sourceforge/lax/rowframe.h
+laidout.o: /home/tom/p/sourceforge/lax/boxarrange.h
+laidout.o: /home/tom/p/sourceforge/lax/lineedit.h
+laidout.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+laidout.o: /home/tom/p/sourceforge/lax/texteditbase.h
+laidout.o: /home/tom/p/sourceforge/lax/lineinput.h
+laidout.o: /home/tom/p/sourceforge/lax/checkbox.h
+laidout.o: /home/tom/p/sourceforge/lax/textbutton.h
+laidout.o: /home/tom/p/sourceforge/lax/button.h
+laidout.o: /home/tom/p/sourceforge/lax/menuselector.h
+laidout.o: /home/tom/p/sourceforge/lax/menuinfo.h
+laidout.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+laidout.o: /home/tom/p/sourceforge/lax/pan.h
+laidout.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+laidout.o: /home/tom/p/sourceforge/lax/itemslider.h
+laidout.o: /home/tom/p/sourceforge/lax/mesbar.h
+laidout.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h viewwindow.h
+laidout.o: /home/tom/p/sourceforge/lax/interfaces/viewerwindow.h
+laidout.o: /home/tom/p/sourceforge/lax/numinputslider.h
+laidout.o: /home/tom/p/sourceforge/lax/numslider.h dispositioninst.h
+laidout.o: /home/tom/p/sourceforge/lax/lists.cc
+laidout.o: /home/tom/p/sourceforge/lax/refcounter.cc
+laidout.o: /home/tom/p/sourceforge/lax/refcounter.h
+laidout-more.o: laidout.h /home/tom/p/sourceforge/lax/anxapp.h
+laidout-more.o: /home/tom/p/sourceforge/lax/anobject.h
+laidout-more.o: /home/tom/p/sourceforge/lax/misc.h
+laidout-more.o: /home/tom/p/sourceforge/lax/lists.h
+laidout-more.o: /home/tom/p/sourceforge/lax/laxdefs.h
+laidout-more.o: /home/tom/p/sourceforge/lax/fontmanager.h
+laidout-more.o: /home/tom/p/sourceforge/lax/strmanip.h disposition.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+laidout-more.o: /home/tom/p/sourceforge/lax/doublebbox.h
+laidout-more.o: /home/tom/p/sourceforge/lax/vectors.h
+laidout-more.o: /home/tom/p/sourceforge/lax/attributes.h
+laidout-more.o: /home/tom/p/sourceforge/lax/dump.h page.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+laidout-more.o: /home/tom/p/sourceforge/lax/displayer.h
+laidout-more.o: /home/tom/p/sourceforge/lax/pancontroller.h
+laidout-more.o: /home/tom/p/sourceforge/lax/panuser.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+laidout-more.o: /home/tom/p/sourceforge/lax/rulerwin.h
+laidout-more.o: /home/tom/p/sourceforge/lax/scroller.h group.h
+laidout-more.o: objectcontainer.h styles.h papersizes.h document.h newdoc.h
+laidout-more.o: /home/tom/p/sourceforge/lax/rowframe.h
+laidout-more.o: /home/tom/p/sourceforge/lax/boxarrange.h
+laidout-more.o: /home/tom/p/sourceforge/lax/lineedit.h
+laidout-more.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+laidout-more.o: /home/tom/p/sourceforge/lax/texteditbase.h
+laidout-more.o: /home/tom/p/sourceforge/lax/lineinput.h
+laidout-more.o: /home/tom/p/sourceforge/lax/checkbox.h
+laidout-more.o: /home/tom/p/sourceforge/lax/textbutton.h
+laidout-more.o: /home/tom/p/sourceforge/lax/button.h
+laidout-more.o: /home/tom/p/sourceforge/lax/menuselector.h
+laidout-more.o: /home/tom/p/sourceforge/lax/menuinfo.h
+laidout-more.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+laidout-more.o: /home/tom/p/sourceforge/lax/pan.h
+laidout-more.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+laidout-more.o: /home/tom/p/sourceforge/lax/itemslider.h
+laidout-more.o: /home/tom/p/sourceforge/lax/mesbar.h
+laidout-more.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+laidout-more.o: viewwindow.h
+laidout-more.o: /home/tom/p/sourceforge/lax/interfaces/viewerwindow.h
+laidout-more.o: /home/tom/p/sourceforge/lax/numinputslider.h
+laidout-more.o: /home/tom/p/sourceforge/lax/numslider.h spreadeditor.h
+laidout-more.o: drawdata.h
+laidouttempinst.o: /home/tom/p/sourceforge/lax/lists.h
+newdoc.o: newdoc.h /home/tom/p/sourceforge/lax/rowframe.h
+newdoc.o: /home/tom/p/sourceforge/lax/anxapp.h
+newdoc.o: /home/tom/p/sourceforge/lax/anobject.h
+newdoc.o: /home/tom/p/sourceforge/lax/misc.h
+newdoc.o: /home/tom/p/sourceforge/lax/lists.h
+newdoc.o: /home/tom/p/sourceforge/lax/laxdefs.h
+newdoc.o: /home/tom/p/sourceforge/lax/fontmanager.h
+newdoc.o: /home/tom/p/sourceforge/lax/strmanip.h
+newdoc.o: /home/tom/p/sourceforge/lax/boxarrange.h
+newdoc.o: /home/tom/p/sourceforge/lax/lineedit.h
+newdoc.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+newdoc.o: /home/tom/p/sourceforge/lax/texteditbase.h
+newdoc.o: /home/tom/p/sourceforge/lax/lineinput.h
+newdoc.o: /home/tom/p/sourceforge/lax/checkbox.h
+newdoc.o: /home/tom/p/sourceforge/lax/textbutton.h
+newdoc.o: /home/tom/p/sourceforge/lax/button.h
+newdoc.o: /home/tom/p/sourceforge/lax/menuselector.h
+newdoc.o: /home/tom/p/sourceforge/lax/menuinfo.h
+newdoc.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+newdoc.o: /home/tom/p/sourceforge/lax/scroller.h
+newdoc.o: /home/tom/p/sourceforge/lax/pancontroller.h
+newdoc.o: /home/tom/p/sourceforge/lax/panuser.h
+newdoc.o: /home/tom/p/sourceforge/lax/pan.h
+newdoc.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+newdoc.o: /home/tom/p/sourceforge/lax/itemslider.h
+newdoc.o: /home/tom/p/sourceforge/lax/mesbar.h
+newdoc.o: /home/tom/p/sourceforge/lax/colorbox.h laidout.h disposition.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+newdoc.o: /home/tom/p/sourceforge/lax/doublebbox.h
+newdoc.o: /home/tom/p/sourceforge/lax/vectors.h
+newdoc.o: /home/tom/p/sourceforge/lax/attributes.h
+newdoc.o: /home/tom/p/sourceforge/lax/dump.h page.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+newdoc.o: /home/tom/p/sourceforge/lax/displayer.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+newdoc.o: /home/tom/p/sourceforge/lax/rulerwin.h group.h objectcontainer.h
+newdoc.o: styles.h papersizes.h document.h interfaces.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+newdoc.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+newdoc.o: dispositioninst.h /home/tom/p/sourceforge/lax/filedialog.h
+newdoc.o: /home/tom/p/sourceforge/lax/filepreviewer.h
+objectcontainer.o: objectcontainer.h /home/tom/p/sourceforge/lax/anobject.h
+objectcontainer.o: /home/tom/p/sourceforge/lax/misc.h styles.h
+objectcontainer.o: /home/tom/p/sourceforge/lax/lists.h
+objectcontainer.o: /home/tom/p/sourceforge/lax/strmanip.h
+objectcontainer.o: /home/tom/p/sourceforge/lax/dump.h
+objectcontainer.o: /home/tom/p/sourceforge/lax/attributes.h
+page.o: /home/tom/p/sourceforge/lax/lists.cc
+page.o: /home/tom/p/sourceforge/lax/refcounter.h
+page.o: /home/tom/p/sourceforge/lax/lists.h page.h
+page.o: /home/tom/p/sourceforge/lax/anobject.h
+page.o: /home/tom/p/sourceforge/lax/misc.h
+page.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+page.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+page.o: /home/tom/p/sourceforge/lax/displayer.h
+page.o: /home/tom/p/sourceforge/lax/anxapp.h
+page.o: /home/tom/p/sourceforge/lax/laxdefs.h
+page.o: /home/tom/p/sourceforge/lax/fontmanager.h
+page.o: /home/tom/p/sourceforge/lax/strmanip.h
+page.o: /home/tom/p/sourceforge/lax/vectors.h
+page.o: /home/tom/p/sourceforge/lax/pancontroller.h
+page.o: /home/tom/p/sourceforge/lax/panuser.h
+page.o: /home/tom/p/sourceforge/lax/doublebbox.h
+page.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+page.o: /home/tom/p/sourceforge/lax/attributes.h
+page.o: /home/tom/p/sourceforge/lax/dump.h
+page.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+page.o: /home/tom/p/sourceforge/lax/rulerwin.h
+page.o: /home/tom/p/sourceforge/lax/scroller.h group.h objectcontainer.h
+page.o: styles.h drawdata.h
+papersizes.o: papersizes.h /home/tom/p/sourceforge/lax/lists.h styles.h
+papersizes.o: /home/tom/p/sourceforge/lax/anobject.h
+papersizes.o: /home/tom/p/sourceforge/lax/misc.h
+papersizes.o: /home/tom/p/sourceforge/lax/strmanip.h
+papersizes.o: /home/tom/p/sourceforge/lax/dump.h
+papersizes.o: /home/tom/p/sourceforge/lax/attributes.h
+saveppt.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+saveppt.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+saveppt.o: /home/tom/p/sourceforge/lax/displayer.h
+saveppt.o: /home/tom/p/sourceforge/lax/anxapp.h
+saveppt.o: /home/tom/p/sourceforge/lax/anobject.h
+saveppt.o: /home/tom/p/sourceforge/lax/misc.h
+saveppt.o: /home/tom/p/sourceforge/lax/lists.h
+saveppt.o: /home/tom/p/sourceforge/lax/laxdefs.h
+saveppt.o: /home/tom/p/sourceforge/lax/fontmanager.h
+saveppt.o: /home/tom/p/sourceforge/lax/strmanip.h
+saveppt.o: /home/tom/p/sourceforge/lax/vectors.h
+saveppt.o: /home/tom/p/sourceforge/lax/pancontroller.h
+saveppt.o: /home/tom/p/sourceforge/lax/panuser.h
+saveppt.o: /home/tom/p/sourceforge/lax/doublebbox.h
+saveppt.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+saveppt.o: /home/tom/p/sourceforge/lax/attributes.h
+saveppt.o: /home/tom/p/sourceforge/lax/dump.h
+saveppt.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+saveppt.o: /home/tom/p/sourceforge/lax/rulerwin.h
+saveppt.o: /home/tom/p/sourceforge/lax/scroller.h
+saveppt.o: /home/tom/p/sourceforge/lax/transformmath.h saveppt.h document.h
+saveppt.o: styles.h disposition.h page.h group.h objectcontainer.h
+saveppt.o: papersizes.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/transformmath.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/vectors.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/strmanip.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/laxutils.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/anxapp.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/anobject.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/misc.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/lists.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/laxdefs.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/fontmanager.h spreadeditor.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/viewerwindow.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/rowframe.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/boxarrange.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/rulerwin.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/scroller.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/pancontroller.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/panuser.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/mesbar.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/pan.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/displayer.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/doublebbox.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/attributes.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/dump.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h document.h
+spreadeditor.o: styles.h disposition.h page.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+spreadeditor.o: group.h objectcontainer.h papersizes.h drawdata.h laidout.h
+spreadeditor.o: newdoc.h /home/tom/p/sourceforge/lax/lineedit.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/texteditbase.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/lineinput.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/checkbox.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/textbutton.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/button.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/menuselector.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/menuinfo.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/itemslider.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+spreadeditor.o: /home/tom/p/sourceforge/lax/lists.cc
+styles.o: /home/tom/p/sourceforge/lax/strmanip.h styles.h
+styles.o: /home/tom/p/sourceforge/lax/anobject.h
+styles.o: /home/tom/p/sourceforge/lax/misc.h
+styles.o: /home/tom/p/sourceforge/lax/lists.h
+styles.o: /home/tom/p/sourceforge/lax/dump.h
+styles.o: /home/tom/p/sourceforge/lax/attributes.h
+styles.o: /home/tom/p/sourceforge/lax/lists.cc
+styles.o: /home/tom/p/sourceforge/lax/laxdebug.h
+stylewindow.o: /home/tom/p/sourceforge/lax/mesbar.h
+stylewindow.o: /home/tom/p/sourceforge/lax/anxapp.h
+stylewindow.o: /home/tom/p/sourceforge/lax/anobject.h
+stylewindow.o: /home/tom/p/sourceforge/lax/misc.h
+stylewindow.o: /home/tom/p/sourceforge/lax/lists.h
+stylewindow.o: /home/tom/p/sourceforge/lax/laxdefs.h
+stylewindow.o: /home/tom/p/sourceforge/lax/fontmanager.h
+stylewindow.o: /home/tom/p/sourceforge/lax/strmanip.h stylewindow.h laidout.h
+stylewindow.o: disposition.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+stylewindow.o: /home/tom/p/sourceforge/lax/doublebbox.h
+stylewindow.o: /home/tom/p/sourceforge/lax/vectors.h
+stylewindow.o: /home/tom/p/sourceforge/lax/attributes.h
+stylewindow.o: /home/tom/p/sourceforge/lax/dump.h page.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+stylewindow.o: /home/tom/p/sourceforge/lax/displayer.h
+stylewindow.o: /home/tom/p/sourceforge/lax/pancontroller.h
+stylewindow.o: /home/tom/p/sourceforge/lax/panuser.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+stylewindow.o: /home/tom/p/sourceforge/lax/rulerwin.h
+stylewindow.o: /home/tom/p/sourceforge/lax/scroller.h group.h
+stylewindow.o: objectcontainer.h styles.h papersizes.h document.h newdoc.h
+stylewindow.o: /home/tom/p/sourceforge/lax/rowframe.h
+stylewindow.o: /home/tom/p/sourceforge/lax/boxarrange.h
+stylewindow.o: /home/tom/p/sourceforge/lax/lineedit.h
+stylewindow.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+stylewindow.o: /home/tom/p/sourceforge/lax/texteditbase.h
+stylewindow.o: /home/tom/p/sourceforge/lax/lineinput.h
+stylewindow.o: /home/tom/p/sourceforge/lax/checkbox.h
+stylewindow.o: /home/tom/p/sourceforge/lax/textbutton.h
+stylewindow.o: /home/tom/p/sourceforge/lax/button.h
+stylewindow.o: /home/tom/p/sourceforge/lax/menuselector.h
+stylewindow.o: /home/tom/p/sourceforge/lax/menuinfo.h
+stylewindow.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+stylewindow.o: /home/tom/p/sourceforge/lax/pan.h
+stylewindow.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+stylewindow.o: /home/tom/p/sourceforge/lax/itemslider.h
+stylewindow.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+stylewindow.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+viewwindow.o: /home/tom/p/sourceforge/lax/numslider.h
+viewwindow.o: /home/tom/p/sourceforge/lax/itemslider.h
+viewwindow.o: /home/tom/p/sourceforge/lax/anxapp.h
+viewwindow.o: /home/tom/p/sourceforge/lax/anobject.h
+viewwindow.o: /home/tom/p/sourceforge/lax/misc.h
+viewwindow.o: /home/tom/p/sourceforge/lax/lists.h
+viewwindow.o: /home/tom/p/sourceforge/lax/laxdefs.h
+viewwindow.o: /home/tom/p/sourceforge/lax/fontmanager.h
+viewwindow.o: /home/tom/p/sourceforge/lax/strmanip.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+viewwindow.o: /home/tom/p/sourceforge/lax/dump.h
+viewwindow.o: /home/tom/p/sourceforge/lax/attributes.h
+viewwindow.o: /home/tom/p/sourceforge/lax/transformmath.h
+viewwindow.o: /home/tom/p/sourceforge/lax/vectors.h
+viewwindow.o: /home/tom/p/sourceforge/lax/strsliderpopup.h
+viewwindow.o: /home/tom/p/sourceforge/lax/menuselector.h
+viewwindow.o: /home/tom/p/sourceforge/lax/menuinfo.h
+viewwindow.o: /home/tom/p/sourceforge/lax/scrolledwindow.h
+viewwindow.o: /home/tom/p/sourceforge/lax/scroller.h
+viewwindow.o: /home/tom/p/sourceforge/lax/pancontroller.h
+viewwindow.o: /home/tom/p/sourceforge/lax/panuser.h
+viewwindow.o: /home/tom/p/sourceforge/lax/pan.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+viewwindow.o: /home/tom/p/sourceforge/lax/displayer.h
+viewwindow.o: /home/tom/p/sourceforge/lax/doublebbox.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+viewwindow.o: /home/tom/p/sourceforge/lax/rulerwin.h
+viewwindow.o: /home/tom/p/sourceforge/lax/filedialog.h
+viewwindow.o: /home/tom/p/sourceforge/lax/rowframe.h
+viewwindow.o: /home/tom/p/sourceforge/lax/boxarrange.h
+viewwindow.o: /home/tom/p/sourceforge/lax/lineinput.h
+viewwindow.o: /home/tom/p/sourceforge/lax/lineedit.h
+viewwindow.o: /home/tom/p/sourceforge/lax/textxeditbase.h
+viewwindow.o: /home/tom/p/sourceforge/lax/texteditbase.h
+viewwindow.o: /home/tom/p/sourceforge/lax/filepreviewer.h
+viewwindow.o: /home/tom/p/sourceforge/lax/mesbar.h
+viewwindow.o: /home/tom/p/sourceforge/lax/refcounter.h spreadeditor.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/viewerwindow.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h document.h
+viewwindow.o: styles.h disposition.h page.h group.h objectcontainer.h
+viewwindow.o: papersizes.h drawdata.h viewwindow.h
+viewwindow.o: /home/tom/p/sourceforge/lax/numinputslider.h laidout.h newdoc.h
+viewwindow.o: /home/tom/p/sourceforge/lax/checkbox.h
+viewwindow.o: /home/tom/p/sourceforge/lax/textbutton.h
+viewwindow.o: /home/tom/p/sourceforge/lax/button.h
+viewwindow.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h extras.h
+viewwindow.o: showrusage.cc
