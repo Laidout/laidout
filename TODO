@@ -1,0 +1,24 @@
+LAIDOUT TODO
+
+See src/TODO and the doxygen produced todo list in docs/html/todo.html
+
+
+TODO BEFORE A LAIDOUT 0.1 RELEASE:
+
+- NetDisposition must be in place, it is almost there...
+- Paths should function correctly (a laxkit problem), and should be able to print out
+- Linear and radial gradients should function correctly, and should be able to print out
+- The Laxkit must be brought up to speed: printdialog and menuselector in particular..
+
+(these thing are almost ready!!)
+
+
+
+
+
+
+//-----------------------------------------------
+When Compiling and packaging, REMEMBER:
+install in different dirs for different versions
+
+

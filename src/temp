@@ -1,0 +1,718 @@
+red:ff0000-0 7f8000 3fc000 1fe000 ff000 7f800 3fc00 1fe00 ff00 7f80 3fc0 1fe0 ff0 7f8 3fc 1fe ff 7f 3f 1f f 7 3 1 0 
+green: 7f80 3fc0 1fe0 ff0 7f8 3fc 1fe ff 7f 3f 1f f 7 3 1 0 
+blue:7f 3f 1f f 7 3 1 0 
+rgb:ff0000,ff00,ff
+red_size:256 shift:16
+green_size:256 shift:8
+blue_size:256 shift:0
+No /etc/laxrc.
+No ~/.laxrc
+No ./.laxrc
+Reading in default colors.
+color_fg  32,32,32
+color_bg  192,192,192
+color_text  64,64,64
+color_textbg  255,255,255
+color_htext  0,0,0
+color_htextbg  127,127,127
+color_border  128,128,128
+color_aborder  0,0,0
+color_menutext  0,0,0
+color_menuhtext  255,0,0
+color_menuhbg  127,127,127
+color_menuofftext  127,0,0
+color_button  192,192,192
+color_buttontext  0,0,0
+color_buttonmo  164,164,164
+color_pad  128,128,128
+color_tooltipbg  128,128,255
+color_tooltiptext  0,0,0
+color_tooltiptext  0,0,0
+
+_SC_CLK_TCK=100  dblclk:200 firstclk:14 idleclk:6
+---------start options
+First non-option argv[optind]=test-color.doc
+*** read in these files:
+----Read in:  test-color.doc
+***need to implement get defualt document in Document constructor..
+***need to implement document constructor..
+----Document::Load read file test-color.doc into a new Document
+Found att(1):"saveas" = "test-color.doc"
+Found att(2):"docstyle" = "(no name)"
+  Found att(1):"disposition" = "Singles"
+    Found att(1):"insetl" = "0"
+    Found att(2):"insetr" = "0"
+    Found att(3):"insett" = "0"
+    Found att(4):"insetb" = "0"
+    Found att(5):"tilex" = "1"
+    Found att(6):"tiley" = "1"
+    Found att(7):"numpages" = "1"
+    Found att(8):"defaultpagestyle" = "(no name)"
+      Found att(1):"width" = "8.5"
+      Found att(2):"height" = "11"
+    Found att(9):"defaultpaperstyle" = "(no name)"
+      Found att(1):"name" = "Letter"
+      Found att(2):"width" = "8.5"
+      Found att(3):"height" = "11"
+      Found att(4):"dpi" = "360"
+      Found att(5):"portrait" = "(no name)"
+Found att(3):"page" = "0"
+  Found att(1):"pagestyle" = "PageStyle"
+    Found att(1):"width" = "8.5"
+    Found att(2):"height" = "11"
+  Found att(2):"layer" = "0"
+    Found att(1):"visible" = "(no name)"
+    Found att(2):"prints" = "(no name)"
+    Found att(3):"object" = "0 ColorPatchData"
+      Found att(1):"matrix" = "1 0 0 1 0 0"
+      Found att(2):"griddivisions" = "10"
+      Found att(3):"xsize" = "4"
+      Found att(4):"ysize" = "4"
+      Found att(5):"points" = "0.8401745304 4.11882665 0 0 0 255
+3.772915572 3.36211697 
+4.481225448 3.337382244 
+4.411008739 1.103549016 0 255 0 255
+3.089340421 4.095161572 
+3.414609053 3.700617284 
+4.829218107 3.700617284 
+5.14838076 4.023258299 
+3.113308179 4.781508351 
+3.414609053 5.115226337 
+4.829218107 5.115226337 
+5.172348517 4.709605078 
+3.832818421 7.727753757 0 0 0 255
+3.823622716 5.443887373 
+4.509969496 5.419919616 
+7.426286375 4.697016971 0 0 255 255
+"
+-==RefCounter.push n(after)=1 pushed id=68  new, count=1
+p=6  d=0.840175 4.11883 0 0 0 255 
+colors 0: 0 0 0 255
+p=2  d=3.77292 3.36212 
+p=2  d=4.48123 3.33738 
+p=6  d=4.41101 1.10355 0 255 0 255 
+colors 1: 0 255 0 255
+p=2  d=3.08934 4.09516 
+p=2  d=3.41461 3.70062 
+p=2  d=4.82922 3.70062 
+p=2  d=5.14838 4.02326 
+p=2  d=3.11331 4.78151 
+p=2  d=3.41461 5.11523 
+p=2  d=4.82922 5.11523 
+p=2  d=5.17235 4.70961 
+p=6  d=3.83282 7.72775 0 0 0 255 
+colors 2: 0 0 0 255
+p=2  d=3.82362 5.44389 
+p=2  d=4.50997 5.41992 
+p=6  d=7.42629 4.69702 0 0 255 255 
+colors 3: 0 0 255 255
+-==RefCounter.push n(after)=1 pushed id=70  new, count=1
+ refcounter.checkin id=68 count=0, items remaining:1
+  --removing refcount node 0, remaining: 0
+-==RefCounter.push n(after)=1 pushed id=73  new, count=1
+------ Done reading test-color.doc
+
+--displayer space: [-500,500] [-500,500]
+--displayer win:   [0,0] [0,0]
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-500,500  y:-500,500
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-500,500  y:-500,500
+----- In sendMessages to 1 windows..
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-500,500  y:-500,500
+----- In sendMessages to 1 windows..
+---- setviewmode:1
++++ New coordinate vertex: 0,0
++++ New coordinate: 8.5,0
++++ New coordinate: 8.5,11
++++ New coordinate: 0,11
+-==RefCounter.push n(after)=2 pushed id=80  new, count=1
+-==RefCounter.push n(after)=3 pushed id=80  already there, count=2
+pagesfromSpread list: 0 
+pagesfromSpread list2: 0 -1 -2 
+--displayer space: [-8.5,17] [-11,22]
+--displayer win:   [0,0] [0,0]
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-8,17  y:-22,11
+----- In sendMessages to 1 windows..
+-----AddTool: ImageInterface with id=2
+-----AddTool: PathInterface with id=1
+-----AddTool: GradientInterface with id=3
+-----AddTool: ColorPatchInterface with id=4
+-----AddTool: RectInterface with id=5
+.....pushing ImageInterface
+imageinterfaceOn()
+addwindow::create:test-color.doc  x,y:780,0  w,h:500,600
+addwindow  window XCreated: "test-color.doc" = 62914561
+---Adding kid number 0 of test-color.doc
+addwindow::create:laidoutviewport  x,y:0,0  w,h:0,0
+addwindow  window XCreated: "laidoutviewport" = 62914562
+---No kids of laidoutviewport to add.
+Done app->addwindowing laidoutviewport
+win_style:5308416  nwstyle:5308416
+win_style:5373952  nwstyle:5373952
+Ruler:X
+ const-subdiv=2  Ruler:Y
+ const-subdiv=2  New Mesbartext:ImageInterface
+0
+before sync0: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+0
+before sync0: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+-=-=-=-==< WFresize NULL: 0,0  25x27 pref:(25,0,0 x 25,0,0)
+-=-=-=-==< WFresize NULL: 0,0  25x27 pref:(25,0,0 x 25,0,0)
+after  sync0: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+26
+before sync1: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+-=-=-=-==< WFresize<sync vw X Ruler: 26,1  473x25 pref:(10000,9990,0 x 25,0,0)
+-=-=-=-==< WFresize>sync vw X Ruler: 26,1  473x25 pref:(10000,9990,0 x 25,0,0)
+TypMoveResize-0:vw X Ruler  x,y:25,0  w,h:473,25
+    done MoveResize
+after  sync1: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+after  sync0: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+27
+before sync1: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+1
+before sync0: 0,27  500x531 pref:(52,0,10000 x 22,0,10000)
+-=-=-=-==< WFresize<sync vw Y Ruler: 1,28  25x529 pref:(25,0,0 x 20,0,10000)
+-=-=-=-==< WFresize>sync vw Y Ruler: 1,28  25x529 pref:(25,0,0 x 20,0,10000)
+TypMoveResize-0:vw Y Ruler  x,y:0,27  w,h:25,529
+    done MoveResize
+after  sync0: 0,27  500x531 pref:(52,0,10000 x 22,0,10000)
+27
+before sync1: 0,27  500x531 pref:(52,0,10000 x 22,0,10000)
+-=-=-=-==< WFresize<sync laidoutviewport: 27,27  458x531 pref:(10,0,10000 x 20,0,10000)
+-=-=-=-==< WFresize>sync laidoutviewport: 27,27  458x531 pref:(10,0,10000 x 20,0,10000)
+TypMoveResize-62914562:laidoutviewport  x,y:27,27  w,h:458,531
+---TypMoveResizing window: 62914562
+    done MoveResize
+----- In sendMessages to 4 windows..
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-8,17  y:-22,11
+----- In sendMessages to 4 windows..
+-----displayer WrapWindow:MinMaxx,:[0,458] MinMaxy:[0,531] x0,y0:0,0
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:220,246  y:243,276
+----- In sendMessages to 4 windows..
+--displayer Centerrreal:x,y,rx,ry:[0,458] [0,531] 229,265
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:220,246  y:243,276
+----- In sendMessages to 4 windows..
+after  sync1: 0,27  500x531 pref:(52,0,10000 x 22,0,10000)
+485
+before sync2: 0,27  500x531 pref:(52,0,10000 x 22,0,10000)
+-=-=-=-==< WFresize<sync vw Y Scroller: 485,27  15x531 pref:(15,0,0 x 20,0,10000)
+-=-=-=-==< WFresize>sync vw Y Scroller: 485,27  15x531 pref:(15,0,0 x 20,0,10000)
+TypMoveResize-0:vw Y Scroller  x,y:485,27  w,h:15,531
+    done MoveResize
+New movesize for vw Y Scroller x:485 y:27 w:15 h:531
+after  sync2: 0,27  500x531 pref:(52,0,10000 x 22,0,10000)
+after  sync1: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+558
+before sync2: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+0
+before sync0: 0,558  500x15 pref:(115,50,10000 x 15,0,0)
+-=-=-=-==< WFresize<sync vw X Scroller: 0,558  485x15 pref:(100,50,10000 x 15,0,0)
+-=-=-=-==< WFresize>sync vw X Scroller: 0,558  485x15 pref:(100,50,10000 x 15,0,0)
+TypMoveResize-0:vw X Scroller  x,y:0,558  w,h:485,15
+    done MoveResize
+New movesize for vw X Scroller x:0 y:558 w:485 h:15
+after  sync0: 0,558  500x15 pref:(115,50,10000 x 15,0,0)
+485
+before sync1: 0,558  500x15 pref:(115,50,10000 x 15,0,0)
+-=-=-=-==< WFresize<sync sw-panpopup: 485,558  15x15 pref:(15,0,0 x 15,0,0)
+-=-=-=-==< WFresize>sync sw-panpopup: 485,558  15x15 pref:(15,0,0 x 15,0,0)
+TypMoveResize-0:sw-panpopup  x,y:485,558  w,h:15,15
+    done MoveResize
+after  sync1: 0,558  500x15 pref:(115,50,10000 x 15,0,0)
+after  sync2: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+573
+before sync3: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+1
+before sync0: 0,573  500x27 pref:(10002,9990,0 x 27,0,0)
+-=-=-=-==< WFresize<sync vw mesbar: 1,574  498x25 pref:(10000,9990,0 x 25,0,0)
+-=-=-=-==< WFresize>sync vw mesbar: 1,574  498x25 pref:(10000,9990,0 x 25,0,0)
+TypMoveResize-0:vw mesbar  x,y:0,573  w,h:498,25
+    done MoveResize
+after  sync0: 0,573  500x27 pref:(10002,9990,0 x 27,0,0)
+after  sync3: 0,0  500x600 pref:(10027,9962,88 x 91,0,10000)
+addwindow::create:vw X Ruler  x,y:25,0  w,h:473,25
+addwindow  window XCreated: "vw X Ruler" = 62914563
+---No kids of vw X Ruler to add.
+Done app->addwindowing vw X Ruler
+addwindow::create:vw Y Ruler  x,y:0,27  w,h:25,529
+addwindow  window XCreated: "vw Y Ruler" = 62914565
+---No kids of vw Y Ruler to add.
+Done app->addwindowing vw Y Ruler
+addwindow::create:vw Y Scroller  x,y:485,27  w,h:15,531
+addwindow  window XCreated: "vw Y Scroller" = 62914567
+---No kids of vw Y Scroller to add.
+Done app->addwindowing vw Y Scroller
+addwindow::create:vw X Scroller  x,y:0,558  w,h:485,15
+addwindow  window XCreated: "vw X Scroller" = 62914568
+---No kids of vw X Scroller to add.
+Done app->addwindowing vw X Scroller
+addwindow::create:sw-panpopup  x,y:485,558  w,h:15,15
+addwindow  window XCreated: "sw-panpopup" = 62914569
+---No kids of sw-panpopup to add.
+Done app->addwindowing sw-panpopup
+addwindow::create:vw mesbar  x,y:0,573  w,h:498,25
+addwindow  window XCreated: "vw mesbar" = 62914570
+---No kids of vw mesbar to add.
+Done app->addwindowing vw mesbar
+---SetOwner:vw X Ruler xruler
+---SetOwner:vw Y Ruler yruler
+---SetOwner:vw X Scroller xscroller
+---SetOwner:vw Y Scroller yscroller
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:220,246  y:243,276
+----- In sendMessages to 4 windows..
+doingwin_sizehintsfortest-color.doc
+page less: <,  x,y:0,0  w,h:10,17
+page more: >,  x,y:0,0  w,h:10,17
+import image: Import Image,  x,y:0,0  w,h:76,17
+import image: Dump Images,  x,y:0,0  w,h:70,17
+ppt out: ppt out,  x,y:0,0  w,h:46,17
+print: Print,  x,y:0,0  w,h:34,17
+
+TextEditBase:: NewText
+/home/tom/p/c/laidout/src
+
+TextEditBase:: NewText
+/home/tom/p/c/laidout/src
+0
+before sync0: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+0
+before sync0: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+-=-=-=-==< WFresize NULL: 0,0  25x27 pref:(25,0,0 x 25,0,0)
+-=-=-=-==< WFresize NULL: 0,0  25x27 pref:(25,0,0 x 25,0,0)
+after  sync0: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+26
+before sync1: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+-=-=-=-==< WFresize<sync vw X Ruler: 26,1  473x25 pref:(10000,9990,0 x 25,0,0)
+-=-=-=-==< WFresize>sync vw X Ruler: 26,1  473x25 pref:(10000,9990,0 x 25,0,0)
+TypMoveResize-62914563:vw X Ruler  x,y:25,0  w,h:473,25
+---TypMoveResizing window: 62914563
+    done MoveResize
+after  sync1: 0,0  500x27 pref:(10027,9990,0 x 27,0,0)
+after  sync0: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+27
+before sync1: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+1
+before sync0: 0,27  500x486 pref:(52,0,10000 x 22,0,10000)
+-=-=-=-==< WFresize<sync vw Y Ruler: 1,28  25x484 pref:(25,0,0 x 20,0,10000)
+-=-=-=-==< WFresize>sync vw Y Ruler: 1,28  25x484 pref:(25,0,0 x 20,0,10000)
+TypMoveResize-62914565:vw Y Ruler  x,y:0,27  w,h:25,484
+---TypMoveResizing window: 62914565
+    done MoveResize
+after  sync0: 0,27  500x486 pref:(52,0,10000 x 22,0,10000)
+27
+before sync1: 0,27  500x486 pref:(52,0,10000 x 22,0,10000)
+-=-=-=-==< WFresize<sync laidoutviewport: 27,27  458x486 pref:(10,0,10000 x 20,0,10000)
+-=-=-=-==< WFresize>sync laidoutviewport: 27,27  458x486 pref:(10,0,10000 x 20,0,10000)
+TypMoveResize-62914562:laidoutviewport  x,y:27,27  w,h:458,486
+---TypMoveResizing window: 62914562
+    done MoveResize
+----- In sendMessages to 4 windows..
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:220,246  y:243,276
+----- In sendMessages to 4 windows..
+-----displayer WrapWindow:MinMaxx,:[0,458] MinMaxy:[0,486] x0,y0:229,265
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:220,246  y:243,276
+----- In sendMessages to 4 windows..
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:220,246  y:243,276
+----- In sendMessages to 4 windows..
+after  sync1: 0,27  500x486 pref:(52,0,10000 x 22,0,10000)
+485
+before sync2: 0,27  500x486 pref:(52,0,10000 x 22,0,10000)
+-=-=-=-==< WFresize<sync vw Y Scroller: 485,27  15x486 pref:(15,0,0 x 20,0,10000)
+-=-=-=-==< WFresize>sync vw Y Scroller: 485,27  15x486 pref:(15,0,0 x 20,0,10000)
+TypMoveResize-62914567:vw Y Scroller  x,y:485,27  w,h:15,486
+---TypMoveResizing window: 62914567
+    done MoveResize
+New movesize for vw Y Scroller x:485 y:27 w:15 h:486
+after  sync2: 0,27  500x486 pref:(52,0,10000 x 22,0,10000)
+after  sync1: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+513
+before sync2: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+0
+before sync0: 0,513  500x15 pref:(115,50,10000 x 15,0,0)
+-=-=-=-==< WFresize<sync vw X Scroller: 0,513  485x15 pref:(100,50,10000 x 15,0,0)
+-=-=-=-==< WFresize>sync vw X Scroller: 0,513  485x15 pref:(100,50,10000 x 15,0,0)
+TypMoveResize-62914568:vw X Scroller  x,y:0,513  w,h:485,15
+---TypMoveResizing window: 62914568
+    done MoveResize
+New movesize for vw X Scroller x:0 y:513 w:485 h:15
+after  sync0: 0,513  500x15 pref:(115,50,10000 x 15,0,0)
+485
+before sync1: 0,513  500x15 pref:(115,50,10000 x 15,0,0)
+-=-=-=-==< WFresize<sync sw-panpopup: 485,513  15x15 pref:(15,0,0 x 15,0,0)
+-=-=-=-==< WFresize>sync sw-panpopup: 485,513  15x15 pref:(15,0,0 x 15,0,0)
+TypMoveResize-62914569:sw-panpopup  x,y:485,513  w,h:15,15
+---TypMoveResizing window: 62914569
+    done MoveResize
+after  sync1: 0,513  500x15 pref:(115,50,10000 x 15,0,0)
+after  sync2: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+528
+before sync3: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+1
+before sync0: 0,528  500x27 pref:(10002,9990,0 x 27,0,0)
+-=-=-=-==< WFresize<sync vw mesbar: 1,529  498x25 pref:(10000,9990,0 x 25,0,0)
+-=-=-=-==< WFresize>sync vw mesbar: 1,529  498x25 pref:(10000,9990,0 x 25,0,0)
+TypMoveResize-62914570:vw mesbar  x,y:0,528  w,h:498,25
+---TypMoveResizing window: 62914570
+    done MoveResize
+after  sync0: 0,528  500x27 pref:(10002,9990,0 x 27,0,0)
+after  sync3: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+555
+before sync4: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+1
+before sync0: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync page number: 1,556  95x21 pref:(90,0,50 x 13,0,50)
+-=-=-=-==< WFresize>sync page number: 1,556  95x21 pref:(90,0,50 x 13,0,50)
+TypMoveResize-0:page number  x,y:0,555  w,h:95,21
+    done MoveResize
+after  sync0: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+98
+before sync1: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync page less: 98,556  15x21 pref:(10,0,50 x 17,0,50)
+-=-=-=-==< WFresize>sync page less: 98,556  15x21 pref:(10,0,50 x 17,0,50)
+TypMoveResize-0:page less  x,y:97,555  w,h:15,21
+    done MoveResize
+after  sync1: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+115
+before sync2: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync page more: 115,556  15x21 pref:(10,0,50 x 17,0,50)
+-=-=-=-==< WFresize>sync page more: 115,556  15x21 pref:(10,0,50 x 17,0,50)
+TypMoveResize-0:page more  x,y:114,555  w,h:15,21
+    done MoveResize
+after  sync2: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+132
+before sync3: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync layer number: 132,556  53x21 pref:(48,0,50 x 13,0,50)
+-=-=-=-==< WFresize>sync layer number: 132,556  53x21 pref:(48,0,50 x 13,0,50)
+TypMoveResize-0:layer number  x,y:131,555  w,h:53,21
+    done MoveResize
+after  sync3: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+187
+before sync4: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync view type: 187,556  96x21 pref:(91,0,50 x 19,0,50)
+-=-=-=-==< WFresize>sync view type: 187,556  96x21 pref:(91,0,50 x 19,0,50)
+TypMoveResize-0:view type  x,y:186,555  w,h:96,21
+    done MoveResize
+after  sync4: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+285
+before sync5: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync colorbox: 285,556  55x21 pref:(50,0,50 x 19,0,50)
+-=-=-=-==< WFresize>sync colorbox: 285,556  55x21 pref:(50,0,50 x 19,0,50)
+TypMoveResize-0:colorbox  x,y:284,555  w,h:55,21
+    done MoveResize
+after  sync5: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+342
+before sync6: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync import image: 342,556  81x21 pref:(76,0,50 x 17,0,50)
+-=-=-=-==< WFresize>sync import image: 342,556  81x21 pref:(76,0,50 x 17,0,50)
+TypMoveResize-0:import image  x,y:341,555  w,h:81,21
+    done MoveResize
+after  sync6: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+425
+before sync7: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+-=-=-=-==< WFresize<sync import image: 425,556  75x21 pref:(70,0,50 x 17,0,50)
+-=-=-=-==< WFresize>sync import image: 425,556  75x21 pref:(70,0,50 x 17,0,50)
+TypMoveResize-0:import image  x,y:424,555  w,h:75,21
+    done MoveResize
+after  sync7: 0,555  500x23 pref:(461,0,400 x 21,0,50)
+after  sync4: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+578
+before sync5: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+1
+before sync0: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+-=-=-=-==< WFresize<sync ppt out: 1,579  71x19 pref:(46,0,50 x 17,0,50)
+-=-=-=-==< WFresize>sync ppt out: 1,579  71x19 pref:(46,0,50 x 17,0,50)
+TypMoveResize-0:ppt out  x,y:0,578  w,h:71,19
+    done MoveResize
+after  sync0: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+74
+before sync1: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+-=-=-=-==< WFresize<sync print: 74,579  59x19 pref:(34,0,50 x 17,0,50)
+-=-=-=-==< WFresize>sync print: 74,579  59x19 pref:(34,0,50 x 17,0,50)
+TypMoveResize-0:print  x,y:73,578  w,h:59,19
+    done MoveResize
+after  sync1: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+135
+before sync2: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+-=-=-=-==< WFresize<sync load directory: 135,579  175x19 pref:(150,0,50 x 0,0,50)
+-=-=-=-==< WFresize>sync load directory: 135,579  175x19 pref:(150,0,50 x 0,0,50)
+TypMoveResize-0:load directory  x,y:134,578  w,h:175,19
+    done MoveResize
+after  sync2: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+312
+before sync3: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+-=-=-=-==< WFresize<sync var1: 312,579  61x19 pref:(36,0,50 x 13,0,50)
+-=-=-=-==< WFresize>sync var1: 312,579  61x19 pref:(36,0,50 x 13,0,50)
+TypMoveResize-0:var1  x,y:311,578  w,h:61,19
+    done MoveResize
+after  sync3: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+375
+before sync4: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+-=-=-=-==< WFresize<sync var2: 375,579  61x19 pref:(36,0,50 x 13,0,50)
+-=-=-=-==< WFresize>sync var2: 375,579  61x19 pref:(36,0,50 x 13,0,50)
+TypMoveResize-0:var2  x,y:374,578  w,h:61,19
+    done MoveResize
+after  sync4: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+438
+before sync5: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+-=-=-=-==< WFresize<sync var3: 438,579  61x19 pref:(36,0,50 x 13,0,50)
+-=-=-=-==< WFresize>sync var3: 438,579  61x19 pref:(36,0,50 x 13,0,50)
+TypMoveResize-0:var3  x,y:437,578  w,h:61,19
+    done MoveResize
+after  sync5: 0,578  500x21 pref:(350,0,300 x 19,0,50)
+after  sync5: 0,0  500x600 pref:(10027,9566,88 x 131,0,10100)
+addwindow::create:page number  x,y:0,555  w,h:95,21
+addwindow  window XCreated: "page number" = 62914571
+---No kids of page number to add.
+Done app->addwindowing page number
+addwindow::create:page less  x,y:97,555  w,h:15,21
+addwindow  window XCreated: "page less" = 62914572
+---No kids of page less to add.
+Done app->addwindowing page less
+addwindow::create:page more  x,y:114,555  w,h:15,21
+addwindow  window XCreated: "page more" = 62914573
+---No kids of page more to add.
+Done app->addwindowing page more
+addwindow::create:layer number  x,y:131,555  w,h:53,21
+addwindow  window XCreated: "layer number" = 62914574
+---No kids of layer number to add.
+Done app->addwindowing layer number
+addwindow::create:view type  x,y:186,555  w,h:96,21
+addwindow  window XCreated: "view type" = 62914575
+---No kids of view type to add.
+Done app->addwindowing view type
+addwindow::create:colorbox  x,y:284,555  w,h:55,21
+addwindow  window XCreated: "colorbox" = 62914576
+---No kids of colorbox to add.
+ init new color:255,0,0
+Done app->addwindowing colorbox
+addwindow::create:import image  x,y:341,555  w,h:81,21
+addwindow  window XCreated: "import image" = 62914577
+---No kids of import image to add.
+Done app->addwindowing import image
+addwindow::create:import image  x,y:424,555  w,h:75,21
+addwindow  window XCreated: "import image" = 62914578
+---No kids of import image to add.
+Done app->addwindowing import image
+addwindow::create:ppt out  x,y:0,578  w,h:71,19
+addwindow  window XCreated: "ppt out" = 62914579
+---No kids of ppt out to add.
+Done app->addwindowing ppt out
+addwindow::create:print  x,y:73,578  w,h:59,19
+addwindow  window XCreated: "print" = 62914580
+---No kids of print to add.
+Done app->addwindowing print
+addwindow::create:load directory  x,y:134,578  w,h:175,19
+addwindow  window XCreated: "load directory" = 62914581
+---No kids of load directory to add.
+Done app->addwindowing load directory
+addwindow::create:var1  x,y:311,578  w,h:61,19
+addwindow  window XCreated: "var1" = 62914582
+---No kids of var1 to add.
+Done app->addwindowing var1
+addwindow::create:var2  x,y:374,578  w,h:61,19
+addwindow  window XCreated: "var2" = 62914583
+---No kids of var2 to add.
+Done app->addwindowing var2
+addwindow::create:var3  x,y:437,578  w,h:61,19
+addwindow  window XCreated: "var3" = 62914584
+---No kids of var3 to add.
+Done app->addwindowing var3
+Done app->addwindowing test-color.doc
+---------end options
+..typ(laidoutviewport):MapNotify on
+..typ(laidoutviewport):ConfigureNotify.. or=0 new x,y,w,h:27,27,458,*531../config
+ 
+..typ(vw X Ruler):MapNotify on
+..typ(vw Y Ruler):MapNotify on
+..typ(vw Y Scroller):MapNotify on
+..typ(vw X Scroller):MapNotify on
+..typ(sw-panpopup):MapNotify on
+..typ(vw mesbar):MapNotify on
+..typ(vw Y Ruler):ConfigureNotify.. or=0 new x,y,w,h:0,27,25,484../config
+ 
+..typ(laidoutviewport):ConfigureNotify.. or=0 new x,y,w,h:27,27,458,486../config
+ 
+..typ(vw Y Scroller):ConfigureNotify.. or=0 new x,y,w,h:485,27,15,486../config
+ 
+..typ(vw X Scroller):ConfigureNotify.. or=0 new x,y,w,h:0,513,485,15../config
+ 
+..typ(sw-panpopup):ConfigureNotify.. or=0 new x,y,w,h:485,513,15,15../config
+ 
+..typ(vw mesbar):ConfigureNotify.. or=0 new x,y,w,h:0,528,498,25../config
+ 
+..typ(page number):MapNotify on
+..typ(page less):MapNotify on
+..typ(page more):MapNotify on
+..typ(layer number):MapNotify on
+..typ(view type):MapNotify on
+..typ(colorbox):MapNotify on
+..typ(import image):MapNotify on
+..typ(import image):MapNotify on
+..typ(ppt out):MapNotify on
+..typ(print):MapNotify on
+..typ(load directory):MapNotify on
+..typ(var1):MapNotify on
+..typ(var2):MapNotify on
+..typ(var3):MapNotify on
+..typ(test-color.doc):ConfigureNotify.. or=0 new x,y,w,h:*781,*20,500,600../config
+ 
+..typ(test-color.doc):ConfigureNotify.. or=0 new x,y,w,h:*779,20,500,600../config
+ 
+..typ(test-color.doc):MapNotify on
+test-color.doc EnterNotify:  NotifyNormal, NotifyNonlinearVirtual, focus==false, apps windows but not this
+laidoutviewport EnterNotify:  NotifyNormal, NotifyNonlinear, focus==false, some other window
+anXApp::managefocus: hoverfocus for "laidoutviewport"
+anXApp::managefocus: real FocusIn event "test-color.doc"
+test-color.doc: focus in
+test-color.doc: real focus on
+(typ)Focus on test-color.doc
+anXApp::managefocus: virtual/pointer FocusIn event "laidoutviewport"
+laidoutviewport: focus in
+laidoutviewport: virtual/pointer/other focus on
+(typ)Focus on laidoutviewport
+anXApp::managefocus: virtual/pointer FocusOut event "laidoutviewport"
+laidoutviewport: focus out
+laidoutviewport: virtual/pointer/other focus off
+(typ)Focus off laidoutviewport
+test-color.doc: focus out
+test-color.doc: virtual/pointer/other focus off
+(typ)Focus off test-color.doc
+anXApp::managefocus: real FocusOut event "test-color.doc"
+anXApp::managefocus: virtual/pointer FocusOut event "test-color.doc"
+test-color.doc: focus out
+test-color.doc: real focus off
+(typ)Focus off test-color.doc
+anXApp::managefocus: real FocusIn event "laidoutviewport"
+laidoutviewport: focus in
+laidoutviewport: real focus on
+(typ)Focus on laidoutviewport
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-146,980  y:-707,751
+----- In sendMessages to 4 windows..
+---====Displayer syncPanner
+=======Panner::SetWholebox: x:-333,793  y:-485,972
+----- In sendMessages to 4 windows..
+======= Refreshing LaidoutViewport..----Displayer Start Drawing
+drawing limbo objects..
+ Layer 0, objs.n=1
+Draw Color Patch: roff:0  coff:0   mode:1
+col1,2,3,4:0,65280,0,255
+ImageInterface needtodraw=0
+======= done refreshing LaidoutViewport..
+---setpixwide clo:0  cx=0 mostpixwide=10
+ -----pixwide clo:0  cx=0 mostpixwide=150
+======= Refreshing LaidoutViewport..----Displayer Start Drawing
+drawing limbo objects..
+ Layer 0, objs.n=1
+Draw Color Patch: roff:0  coff:0   mode:1
+col1,2,3,4:0,65280,0,255
+ImageInterface needtodraw=0
+======= done refreshing LaidoutViewport..
+laidoutviewport: keypress 'q',113  keysym:71
+ viewportwindow char:q
+ not interface
+Quit!
+---------Laidout Close--------------
+----in ImageInterface destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+...interfdp(PathInterface)::deletedata: datastackutils checked in data:0
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+-------ColorPatchInterface, destructor
+-----PatchInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+ in anxwindow(test-color.doc) destructor.
+ refcounter.checkin id=80 count=1, items remaining:2
+ refcounter.checkin id=80 count=0, items remaining:2
+  --removing refcount node 1, remaining: 1
+-=-=--=-=-=Coordinate destructor
+-=-=--=-=-=Coordinate destructor
+-=-=--=-=-=Coordinate destructor
+-=-=--=-=-=Coordinate destructor
+ --in ViewportWindow  destructor
+ in anxwindow(laidoutviewport) destructor.
+ in anxwindow(vw X Ruler) destructor.
+ in anxwindow(vw Y Ruler) destructor.
+ in anxwindow(vw Y Scroller) destructor.
+ in anxwindow(vw X Scroller) destructor.
+ in anxwindow(sw-panpopup) destructor.
+ in anxwindow(vw mesbar) destructor.
+ in anxwindow(page number) destructor.
+ in anxwindow(page less) destructor.
+ in anxwindow(page more) destructor.
+ in anxwindow(layer number) destructor.
+ in anxwindow(view type) destructor.
+ in anxwindow(colorbox) destructor.
+ in anxwindow(import image) destructor.
+ in anxwindow(import image) destructor.
+ in anxwindow(ppt out) destructor.
+ in anxwindow(print) destructor.
+---textxedit dest
+ ---- in texteditbase dest
+ ----   dest done.
+ in anxwindow(load directory) destructor.
+ in anxwindow(var1) destructor.
+ in anxwindow(var2) destructor.
+ in anxwindow(var3) destructor.
+Laidout destructor..
+ Document destructor..
+  Page destructor
+ refcounter.checkin id=73 count=0, items remaining:1
+  --removing refcount node 0, remaining: 0
+ refcounter.checkin id=70 count=0, items remaining:1
+  --removing refcount node 0, remaining: 0
+  Page destructor
+----in ImageInterface destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+...interfdp(PathInterface)::deletedata: datastackutils checked in data:0
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+-------ColorPatchInterface, destructor
+-----PatchInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
+---------------objectstack-----------------
+  objectstack.n=0
+---------------datastack-----------------
+  datastack.n=0
+---------------Bye!-----------------
+interfwithdp destructor..
+...interfdp(InterfaceWithDp)::deletedata: datastackutils checked in data:0
+---anInterface, destructor
