@@ -22,26 +22,13 @@ void Imlib_ImageToPS(FILE *psout,Imlib_Image image)
 	if (!psout || !image) return;
 	imlib_context_set_image(image);
 	DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
+	DATA32 bt;
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
 	int len=3*width*height;
-	unsigned char rgbbuf[len]; //***this could be redone to not need new huge array like this
+	unsigned char rgbbuf[15];
 	unsigned char r,g,b;
-	DATA32 bt;
-	for (int x=0; x<width; x++) {
-		for (int y=0; y<height; y++) {
-			bt=buf[y*width+x];
-			r=(buf[y*width+x]&((unsigned long)255<<16))>>16;
-			g=(buf[y*width+x]&((unsigned long)255<<8))>>8;
-			b=(buf[y*width+x]&(unsigned long)255);
-			rgbbuf[y*width*3+x*3  ]=r;
-			rgbbuf[y*width*3+x*3+1]=g;
-			rgbbuf[y*width*3+x*3+2]=b;
-			//printf("%x=%x,%x,%x ",bt,r,g,b);
-		}
-	}
-
 	cout <<endl;
 	fprintf(psout,
 			"/DeviceRGB setcolorspace\n"
@@ -55,7 +42,48 @@ void Imlib_ImageToPS(FILE *psout,Imlib_Image image)
 			">> image\n", width, height, width, height, height);
 
 	 // do the Ascii85Encode filter
-	Ascii85_out(psout,rgbbuf,len,1,75);
+	int index=0,i2,linelen=0;
+	while (index<len) {
+		i2=0;
+		bt=buf[index++];
+		rgbbuf[0]=(bt&0xff0000)>>16;
+		rgbbuf[1]=(bt&0xff00)>>8;
+		rgbbuf[2]=(bt&0xff);
+		i2=3;
+
+		if (index<len) {
+			bt=buf[index++];
+			rgbbuf[3]=(bt&0xff0000)>>16;
+			rgbbuf[4]=(bt&0xff00)>>8;
+			rgbbuf[5]=(bt&0xff);
+			i2=6;
+		}
+		if (index<len) {
+			bt=buf[index++];
+			rgbbuf[6]=(bt&0xff0000)>>16;
+			rgbbuf[7]=(bt&0xff00)>>8;
+			rgbbuf[8]=(bt&0xff);
+			i2=9;
+		} 
+		if (index<len) {
+			bt=buf[index++];
+			rgbbuf[9]=(bt&0xff0000)>>16;
+			rgbbuf[10]=(bt&0xff00)>>8;
+			rgbbuf[11]=(bt&0xff);
+			i2=12;
+		} 
+		if (index<len) {
+			bt=buf[index++];
+			rgbbuf[12]=(bt&0xff0000)>>16;
+			rgbbuf[13]=(bt&0xff00)>>8;
+			rgbbuf[14]=(bt&0xff);
+			i2=15;
+		} 
+		 
+		
+		Ascii85_out(psout,rgbbuf,i2,0,75,&linelen);
+	}
+	fprintf(psout,"~>\n");
 
 }
 

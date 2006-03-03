@@ -29,7 +29,7 @@ void pptdumpobj(FILE *f,double *mm,SomeData *obj)
 }
 
 
-//! Save the document as a Passepartout file.
+//! Save the document as a Passepartout file to doc->saveas".ppt"
 /*! This only saves unnested images, and the page size and orientation.
  *
  * \todo *** just dumps out paper name, does not check to ensure it

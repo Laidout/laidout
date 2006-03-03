@@ -4,9 +4,11 @@
 ##############                      ###############
 ###################################################
 
+# You'll want to change the following to where the Laxkit headers are located
 LAXDIR=/home/tom/p/sourceforge/lax
-LAXIDIR=/home/tom/p/sourceforge/lax/interfaces
-LAXOBJDIR= ../../lax
+LAXIDIR=$(LAXDIR)/interfaces
+
+
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 CPPFLAGS= -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
@@ -54,9 +56,13 @@ include makedepend
 printing: 
 	cd printing && $(MAKE)
 
+dispositions:
+	cd dispositions && $(MAKE)
 
 
 .PHONY: clean lax docs printing
 clean:
-	rm laidout *.o
+	rm -f laidout *.o
+	cd printing && $(MAKE) clean
+	cd dispositions && $(MAKE) clean
 	

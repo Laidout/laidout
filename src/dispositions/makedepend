@@ -1,0 +1,71 @@
+# DO NOT DELETE
+
+dodecahedron.o: ../dispositioninst.h ../disposition.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/anobject.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/misc.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/doublebbox.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/vectors.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/lists.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/attributes.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/dump.h ../page.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/displayer.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/anxapp.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/laxdefs.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/fontmanager.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/strmanip.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/pancontroller.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/panuser.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/rulerwin.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/scroller.h ../group.h
+dodecahedron.o: ../objectcontainer.h ../styles.h ../papersizes.h
+dodecahedron.o: ../document.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+netdisposition.o: ../disposition.h
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
+netdisposition.o: /home/tom/p/sourceforge/lax/anobject.h
+netdisposition.o: /home/tom/p/sourceforge/lax/misc.h
+netdisposition.o: /home/tom/p/sourceforge/lax/doublebbox.h
+netdisposition.o: /home/tom/p/sourceforge/lax/vectors.h
+netdisposition.o: /home/tom/p/sourceforge/lax/lists.h
+netdisposition.o: /home/tom/p/sourceforge/lax/attributes.h
+netdisposition.o: /home/tom/p/sourceforge/lax/dump.h ../page.h
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
+netdisposition.o: /home/tom/p/sourceforge/lax/displayer.h
+netdisposition.o: /home/tom/p/sourceforge/lax/anxapp.h
+netdisposition.o: /home/tom/p/sourceforge/lax/laxdefs.h
+netdisposition.o: /home/tom/p/sourceforge/lax/fontmanager.h
+netdisposition.o: /home/tom/p/sourceforge/lax/strmanip.h
+netdisposition.o: /home/tom/p/sourceforge/lax/pancontroller.h
+netdisposition.o: /home/tom/p/sourceforge/lax/panuser.h
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
+netdisposition.o: /home/tom/p/sourceforge/lax/rulerwin.h
+netdisposition.o: /home/tom/p/sourceforge/lax/scroller.h ../group.h
+netdisposition.o: ../objectcontainer.h ../styles.h ../papersizes.h
+netdisposition.o: ../document.h /home/tom/p/sourceforge/lax/lists.cc
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+netdisposition.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
+netdisposition.o: /home/tom/p/sourceforge/lax/refcounter.h
+nets.o: nets.h /home/tom/p/sourceforge/lax/interfaces/somedata.h
+nets.o: /home/tom/p/sourceforge/lax/anobject.h
+nets.o: /home/tom/p/sourceforge/lax/misc.h
+nets.o: /home/tom/p/sourceforge/lax/doublebbox.h
+nets.o: /home/tom/p/sourceforge/lax/vectors.h
+nets.o: /home/tom/p/sourceforge/lax/lists.h
+nets.o: /home/tom/p/sourceforge/lax/attributes.h
+nets.o: /home/tom/p/sourceforge/lax/dump.h
+nets.o: /home/tom/p/sourceforge/lax/displayer.h
+nets.o: /home/tom/p/sourceforge/lax/anxapp.h
+nets.o: /home/tom/p/sourceforge/lax/laxdefs.h
+nets.o: /home/tom/p/sourceforge/lax/fontmanager.h
+nets.o: /home/tom/p/sourceforge/lax/strmanip.h
+nets.o: /home/tom/p/sourceforge/lax/pancontroller.h
+nets.o: /home/tom/p/sourceforge/lax/panuser.h
+nets.o: /home/tom/p/sourceforge/lax/transformmath.h

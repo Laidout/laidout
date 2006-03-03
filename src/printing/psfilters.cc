@@ -37,14 +37,15 @@
  *
  * linewidth is rounded to the nearest multiple of 5 above or equal to it.
  */
-int Ascii85_out(FILE *f,unsigned char *in,int len,int puteod,int linewidth)
+int Ascii85_out(FILE *f,unsigned char *in,int len,int puteod,int linewidth,int *curwidth)
 {
 	if (!f) return -1;
 	linewidth=((linewidth-1)/5+1)*5;
 
 	unsigned int i;
 	unsigned char b1,b2,b3,b4,b5;
-	int c=0,w=0,n=0;
+	int c=0,w,n=0;
+	if (curwidth) w=*curwidth; else w=0;
 	while (c<len) {
 		 // find the 4-byte chunk
 		i=(unsigned char)(in[c++])*256; //first byte
@@ -91,8 +92,10 @@ int Ascii85_out(FILE *f,unsigned char *in,int len,int puteod,int linewidth)
 			if (2+w>linewidth) fprintf(f,"\n");
 			fprintf(f,"~>\n");
 			n+=3;
+			w=0;
 		} 
 	}
+	if (curwidth) *curwidth=w;
 	return n;
 }
 

@@ -36,14 +36,18 @@ extern RefCounter<SomeData> datastack;
  * \brief The height of the bounding box of the page.
  */
 /*! \var unsigned int PageStyle::flags
- * \brief Can be or'd combination of MARGINS_CLIP and FACING_PAGES_BLEED.
+ *  Can be or'd combination of:
  * 
- * MARGINS_CLIP==(1<<0) and FACING_PAGES_BLEED==(1<<1).
+ * <pre>
+ *  MARGINS_CLIP       (1<<0)
+ *  PAGE_CLIPS         (1<<1)
+ *  FACING_PAGES_BLEED (1<<2)
+ * </pre>
  */
 //class PageStyle : public Style
 //{
 // public:
-//	unsigned int flags; // marginsclip,facingpagesbleed;
+//	unsigned int flags; // marginsclip,pageclips,facingpagesbleed;
 //	double width,height; // these are to be considered the bounding box for non-rectangular pages
 //	PageStyle() { flags=0; }
 //	virtual const char *whattype() { return "PageStyle"; }
@@ -69,6 +73,8 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"marginsclip")) {
 			if (BooleanAttribute(value)) flags|=MARGINS_CLIP;
+		} else if (!strcmp(name,"pageclips")) {
+			if (BooleanAttribute(value)) flags|=PAGE_CLIPS;
 		} else if (!strcmp(name,"facingpagesbleed")) {
 			if (BooleanAttribute(value)) flags|=FACING_PAGES_BLEED;
 		} else if (!strcmp(name,"width")) {
@@ -87,6 +93,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
  *  width 8.5
  *  height 11
  *  marginsclip
+ *  pageclips
  *  facingpagesbleed
  * </pre>
  */
@@ -96,6 +103,7 @@ void PageStyle::dump_out(FILE *f,int indent)
 	fprintf(f,"%swidth %.10g\n",spc,w());
 	fprintf(f,"%sheight %.10g\n",spc,h());
 	if (flags&MARGINS_CLIP) fprintf(f,"%smarginsclip\n",spc);
+	if (flags&PAGE_CLIPS) fprintf(f,"%spageclips\n",spc);
 	if (flags&FACING_PAGES_BLEED) fprintf(f,"%sfacingpagesbleed\n",spc);
 }
 
@@ -124,6 +132,11 @@ StyleDef *PageStyle::makeStyleDef()
 			"Margins Clip",
 			"Whether a page's margins clip the contents",
 			"Check this if you want the page's contents to be visible only if they are within the margins.",
+			STYLEDEF_BIT,0);
+	sd->push("pageclips",
+			"Page Clips",
+			"Whether a page's outline clips the contents",
+			"Check this if you want the page's contents to be visible only if they are within the page outline.",
 			STYLEDEF_BIT,0);
 	sd->push("facingpagesbleed",
 			"Facing Pages Bleed",
@@ -206,9 +219,9 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att)
 			DoubleAttribute(value,&mt);
 		} else if (!strcmp(name,"marginb")) {
 			DoubleAttribute(value,&mb);
-		} else if (!strcmp(name,"leftpage")) {
+		} else if (!strcmp(name,"leftpage") || !strcmp(name,"toppage")) {
 			recttype=(recttype&~(RECTPAGE_LEFTPAGE|RECTPAGE_RIGHTPAGE))|RECTPAGE_LEFTPAGE;
-		} else if (!strcmp(name,"rightpage")) {
+		} else if (!strcmp(name,"rightpage") || !strcmp(name,"bottompage")) {
 			recttype=(recttype&~(RECTPAGE_LEFTPAGE|RECTPAGE_RIGHTPAGE))|RECTPAGE_RIGHTPAGE;
 		} else if (!strcmp(name,"lrtb")) {
 			recttype=(recttype&~(RECTPAGE_LRTB|RECTPAGE_IOTB|RECTPAGE_LRIO))|RECTPAGE_LRTB;
@@ -232,8 +245,12 @@ void RectPageStyle::dump_out(FILE *f,int indent)
 	fprintf(f,"%smarginr %.10g\n",spc,mr);
 	fprintf(f,"%smargint %.10g\n",spc,mt);
 	fprintf(f,"%smarginb %.10g\n",spc,mb);
-	if (recttype&RECTPAGE_LEFTPAGE)  fprintf(f,"%sleftpage\n", spc);
-	if (recttype&RECTPAGE_RIGHTPAGE) fprintf(f,"%srightpage\n",spc);
+	if (recttype&RECTPAGE_LEFTPAGE)
+		if (recttype&RECTPAGE_LRIO) fprintf(f,"%stoppage\n", spc);
+		else fprintf(f,"%sleftpage\n", spc);
+	if (recttype&RECTPAGE_RIGHTPAGE) 
+		if (recttype&RECTPAGE_LRIO) fprintf(f,"%sbottompage\n", spc);
+		else fprintf(f,"%srightpage\n",spc);
 	if (recttype&RECTPAGE_LRTB) fprintf(f,"%slrtb\n",spc);
 	if (recttype&RECTPAGE_IOTB) fprintf(f,"%siotb\n",spc);
 	if (recttype&RECTPAGE_LRIO) fprintf(f,"%slrio\n",spc);
