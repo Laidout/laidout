@@ -38,7 +38,7 @@ class Singles : public Disposition
 class DoubleSidedSingles : public Singles
 {
  public:
-	int isvertical;
+	int isvertical,isleft;
 	DoubleSidedSingles();
 //	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 	virtual StyleDef *makeStyleDef();

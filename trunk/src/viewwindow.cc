@@ -1139,11 +1139,14 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	transformlevel=place.n()-1;
 	if (curobj.spread()==0) curpage=NULL;
 	else {
-		curpage=spread->pagestack.e[curobj.spreadpage()]->page;
-		if (!curpage) {
-			cout <<"** warning! in setCurobj, curpage was not defined for curobj context"<<endl;
-			curpage=doc->pages.e[spread->pagestack.e[curobj.spreadpage()]->index];
+		if (curobj.spreadpage()>=0) {
+			curpage=spread->pagestack.e[curobj.spreadpage()]->page;
+			if (!curpage) {
+				cout <<"** warning! in setCurobj, curpage was not defined for curobj context"<<endl;
+				curpage=doc->pages.e[spread->pagestack.e[curobj.spreadpage()]->index];
+			}
 		}
+		else curpage=NULL;
 	}
 	
 	if (curobj.obj) cout <<"setCurobj: "<<curobj.obj->object_id<<' ';
@@ -1475,6 +1478,7 @@ cout <<"======= Refreshing LaidoutViewport..";
 		flatpoint p;
 		SomeData *sd=NULL;
 		for (c=0; c<spread->pagestack.n; c++) {
+			cout <<" drawing from pagestack.e["<<c<<"]"<<endl;
 			page=spread->pagestack.e[c]->page;
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) 
@@ -1500,7 +1504,7 @@ cout <<"======= Refreshing LaidoutViewport..";
 
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n; c2++) {
-				cout <<" Layer "<<c<<", objs.n="<<page->layers.e[c2]->n()<<endl;
+				cout <<"  Layer "<<c2<<", objs.n="<<page->layers.e[c2]->n()<<endl;
 				DrawData(&dp,page->layers.e[c2]);
 			}
 			dp.PopAxes(); // remove page transform
@@ -1584,7 +1588,21 @@ cout <<"======= done refreshing LaidoutViewport.."<<endl;
  */
 int LaidoutViewport::CharInput(char ch,unsigned int state)
 {
+	 // check these first, before asking interfaces
+	if (ch==' ') {
+		if ((state&LAX_STATE_MASK)==0) {
+			Center();
+			return 0;
+		} 
+		if ((state&LAX_STATE_MASK)==ShiftMask) {
+			Center(1);
+			return 0;
+		} 
+	}
+	 // ask interfaces, and default viewport stuff
 	if (ViewportWindow::CharInput(ch,state)==0) return 0;
+
+	 // deal with all other LaidoutViewport specific stuff
 	if (ch=='s' && (state&LAX_STATE_MASK)==0) {
 		if (showstate==0) showstate=1;
 		else showstate=0;
@@ -1600,15 +1618,6 @@ int LaidoutViewport::CharInput(char ch,unsigned int state)
 			//if (CirculateObject(9,i,0)) needtodraw=1;
 			return 0;
 		}
-	} else if (ch==' ') {
-		if ((state&LAX_STATE_MASK)==0) {
-			Center();
-			return 0;
-		} 
-		if ((state&LAX_STATE_MASK)==ShiftMask) {
-			Center(1);
-			return 0;
-		} 
 	} else if (ch==LAX_Pgup) { //pgup
 		if (!curobj.obj) return ViewportWindow::CharInput(ch,state);
 		if ((state&LAX_STATE_MASK)==0) { //raise selection within layer
@@ -1930,10 +1939,16 @@ int ViewWindow::init()
 	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",255,0,0);
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
+	last=tbut=new TextButton(this,"add page",0, 0,0,0,0,1, NULL,window,"addPage","Add Page");
+	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+
+	last=tbut=new TextButton(this,"delete page",1, 0,0,0,0,1, NULL,window,"deletePage","Delete Page");
+	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+
 	tbut=new TextButton(this,"import image",0, 0,0,0,0,1, NULL,window,"importImage","Import Image");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"import image",0, 0,0,0,0,1, NULL,window,"dumpImages","Dump Images");
+	tbut=new TextButton(this,"import image",0, 0,0,0,0,1, NULL,window,"dumpImages","Dump in Images");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"ppt out",0, 0,0,0,0,1, NULL,window,"pptout","ppt out");
@@ -2026,6 +2041,8 @@ void ViewWindow::updatePagenumber()
  *    newViewType, 
  *    importImage,
  *    dumpImages
+ *    deletePage
+ *    addPage
  *
  * \todo ***imp contextChange, sent from LaidoutViewport
  */
@@ -2049,6 +2066,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//***
 		updatePagenumber();
 		return 0;
+	} else if (!strcmp(mes,"addPage")) { // 
+		cout <<"ViewWindow got addPage *** imp me!! IMPORTANT!!!"<<endl;
+	} else if (!strcmp(mes,"deletePage")) { // 
+		cout <<"ViewWindow got deletePage *** imp me!! IMPORTANT!!!"<<endl;
 	} else if (!strcmp(mes,"newPageNumber")) { // 
 		if (e->data.l[0]>doc->pages.n) {
 			e->data.l[0]=1;
@@ -2098,7 +2119,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (loaddir->GetCText()) makestr(app->load_dir,loaddir->GetCText());
 		return 0;
 	} else if (!strcmp(mes,"pptout")) { // dump to passepartout file
-		if (!doc->Save(Save_PPT)) mesbar->SetText("Saved as passepartout file.");
+		if (!doc->Save(Save_PPT)) {
+			char blah[strlen(doc->saveas+10)];
+			sprintf(blah,"Saved as a Passepartout file to %s.ppt",doc->saveas);
+			mesbar->SetText(blah);
+		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
 		if (!doc->Save(Save_PS)) mesbar->SetText("Printed to output.ps.");
@@ -2109,7 +2134,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-// *****
+// *****for debugging... shows that i don't really know what showrusage is checking
+// ***** use /proc/PID/mem instead? trying to find easy way to find 
+// ***** how much resources are being used
 #include "showrusage.cc"
 
 /*! <pre>

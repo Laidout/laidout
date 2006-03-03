@@ -4,13 +4,15 @@
 -- Version 0.01 --\n
 Currently in the "A bit of a hack, but mostly works on my machine" stage of development.
 
-If you want to hack away at Laidout, you've come to the right place.
+If you want to hack away at Laidout, you've come to the right place. Please be
+advised that any part of Laidout code may completely change without notice.
 
-This is my sprawling desktop publishing software that I've been making for the last
+This is my sprawling desktop publishing software that I've been making on and off for the last
 3 or 4 years, which is about 2 or 3 years longer than I have really wanted to be doing.
 Most of that wasted excess time has been spent developing the 
 <a href="http://laxkit.sourceforge.net">Laxkit</a>, my brand new 
-X window toolkit. 
+X window toolkit. Only late last November (2005), 3.5 years in, was I able to get something
+onto the screen!
 
 Something found in this program, and not in any other desktop publishing software in the world
 that I am aware of, open source or not, is the ability to create and manipulate lines
@@ -111,14 +113,16 @@ etc to the developers (just 1 right now!) found on http://www.laidout.org .
 
 \section wishing Feature Wishlist
 
-Not a roadmap so much as things that any reasonable desktop publishing software should have:
+Not a roadmap so much as things that any reasonable desktop publishing software should have.
+You will note that hardly any of this is currently implemented in Laidout:
 
 <pre>
 Tabstops and guides that lie on arbitrary paths, not just vertical and horizontal
     lines. Gone are the days of rigidly defined and poorly accessed tabstops!
 Text on a line
-Bezier Patch transforms, and color patch gradients
-Linear, radial, and circle color gradients
+Bezier Patch transforms,
+and bez color patch gradients (done)
+Linear, radial, and circle color gradients (done, but badly)
 Arbitrary f(s,t) transforms, and f(s) or f(t) transforms for paths
 Aligning points, text, and/or objects to paths
 Repeater tool along path
@@ -142,14 +146,14 @@ Collect for out
 Spiffy Hyphenation and justification
 Plugin Modules
 Autotrace images
-%Spread editor
+%Spread editor (partial)
 Editable clip and textwrap mask
-arbitrary imposition
+arbitrary imposition (almost)
 overprinting/trapping on per object basis
 UCR, BG
 Tables
-Rotate whole page view on screen by arbitrary degrees, not just portrait/landscape
-Import/export: TeX, scribus, (quark, in design, ...)
+Rotate whole page view on screen by arbitrary degrees, not just portrait/landscape (done)
+Import/export: TeX, scribus, passepartout, inkscape, (quark, indesign, ...?)
 
 other kind of neat ideas from other programs, namely Scribus 1.3 roadmap and New build of 1.3:
 Auto sync keyboard shortcuts with inkscape/gimp/whatever!
@@ -158,6 +162,7 @@ support for TeX, LaTeX, MathML
 Openclipart integration
 cntl-+/- zooms around object, neat!
 %Color selector previews different shades of color with black and white text on it!!! Fab!
+The scribus color wheel is very clever.
 Insert sample gibberish text!! Yeah!
 Preflight verifier!
 </pre>

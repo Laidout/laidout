@@ -13,7 +13,8 @@
 //---------------------------- PageStyle ---------------------------------
 
 #define MARGINS_CLIP       (1<<0)
-#define FACING_PAGES_BLEED (1<<1)
+#define PAGE_CLIPS         (1<<1)
+#define FACING_PAGES_BLEED (1<<2)
 
 class PageStyle : public Style
 {
@@ -32,13 +33,16 @@ class PageStyle : public Style
 
 //---------------------------- RectPageStyle ---------------------------------
  // left-right-top-bottom margins "rectpagestyle"
-#define RECTPAGE_LRTB  1
+#define RECTPAGE_LRTB       (1<<0)
  // inside-outside-top-bottom (for booklet sort of style) "facingrectstyle"
-#define RECTPAGE_IOTB  2
+#define RECTPAGE_IOTB       (1<<1)
  // left-right-inside-outside (for calendar sort of style) "topfacingrectstyle"
-#define RECTPAGE_LRIO  4
-#define RECTPAGE_LEFTPAGE  8
-#define RECTPAGE_RIGHTPAGE 16
+#define RECTPAGE_LRIO       (1<<2)
+
+#define RECTPAGE_LEFTPAGE   (1<<3)
+#define RECTPAGE_TOPPAGE    (1<<3)
+#define RECTPAGE_RIGHTPAGE  (1<<4)
+#define RECTPAGE_BOTTOMPAGE (1<<4)
 
 class RectPageStyle : public PageStyle
 {

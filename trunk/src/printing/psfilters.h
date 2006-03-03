@@ -3,7 +3,7 @@
 
 #include <cstdio>
 
-int Ascii85_out(std::FILE *f,unsigned char *in,int len,int puteod,int linewidth);
+int Ascii85_out(std::FILE *f,unsigned char *in,int len,int puteod,int linewidth,int *curwidth=NULL);
 
 #endif
 

@@ -75,9 +75,11 @@ void psdumpobj(FILE *f,Laxkit::SomeData *obj)
 		width=imlib_image_get_width();
 		height=imlib_image_get_height();
 		int len=3*width*height;
-		unsigned char rgbbuf[len]; //***this could be redone to not need new huge array like this
+		 //*** for some reason if I just do uchar rgbbuf[len], it will crash for large images
+		unsigned char *rgbbuf=new unsigned char[len]; //***this could be redone to not need new huge array like this
 		unsigned char r,g,b;
 		DATA32 bt;
+		cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
 		for (int x=0; x<width; x++) {
 			for (int y=0; y<height; y++) {
 				bt=buf[y*width+x];
@@ -108,6 +110,8 @@ void psdumpobj(FILE *f,Laxkit::SomeData *obj)
 
 		 // do the Ascii85Encode filter
 		Ascii85_out(f,rgbbuf,len,1,75);
+
+		delete[] rgbbuf;
 
 		fprintf(f,"grestore\n");
 	} else if (dynamic_cast<GradientData *>(obj)) {

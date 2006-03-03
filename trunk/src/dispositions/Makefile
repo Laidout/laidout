@@ -14,13 +14,12 @@ DEBUGFLAGS= -g
 
 
 objs= \
-	psfilters.o \
-	pscolorpatch.o \
-	psout.o
+	nets.o \
+	netdisposition.o 
 
 
 
-printing: $(objs)
+dispositions: $(objs)
 
 depends:
 	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc

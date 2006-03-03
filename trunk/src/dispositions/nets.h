@@ -4,8 +4,7 @@
 #include <lax/interfaces/somedata.h>
 #include <lax/displayer.h>
 
-#define pi 3.14159265358979323846
-
+//----------------------------------- NetLine -----------------------------------
 class NetLine
 {
  public:
@@ -17,8 +16,12 @@ class NetLine
 	NetLine() { linestyle=NULL; lsislocal=0; isclosed=0; np=0; points=NULL; }
 	virtual ~NetLine() { if (lsislocal) delete linestyle; else linestyle->dec_count(); ???? }
 	const NetLine &operator=(const NetLine &line);
+	
+	virtual void dump_out(FILE *f,int indent, int pfirst=0);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
+//----------------------------------- NetFace -----------------------------------
 class NetFace
 {
  public:
@@ -29,14 +32,18 @@ class NetFace
 	int faceclass;
 	NetFace() { m=NULL; aligno=alignx=-1; faceclass=-1; np=0; points=NULL; }
 	virtual ~NetFace() { if (m) delete[] m; }
-	const NetLine &operator=(const NetLine &line);
+	const NetFace &operator=(const NetFace &face);
+	
+	virtual void dump_out(FILE *f,int indent, int pfirst=0);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
+//----------------------------------- Net -----------------------------------
 class Net : public Laxkit::SomeData
 {
  public:
 	char *thenettype;
-	int np; 
+	int np,tabs; 
 	flatpoint *points;
 	int *pointmap; // which thing (possibly 3-d points) corresponding point maps to
 	int nl;
@@ -46,23 +53,25 @@ class Net : public Laxkit::SomeData
 	Net();
 	virtual ~Net();
 	virtual void clear();
+	virtual Net *duplicate();
 	virtual const char *whatshape() { return thenettype; }
 	virtual int Draw(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year);
 	virtual void DrawMonth(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year,Laxkit::SomeData *monthbox);
-	virtual void PrintPS(std::ofstream &ps,Laxkit::SomeData *paper);
-	virtual void PrintSVG(std::ostream &svg,Laxkit::SomeData *paper,int month=1,int year=2006);
 	virtual void FindBBox();
 	virtual void FitToData(Laxkit::SomeData *data,double margin);
 	virtual void Center();
-	virtual SomeData *GetMonthBox(int which);
-	virtual void SVGMonth(ostream &svg,int month,int year,SomeData *monthbox);
 	virtual const char *whattype() { return thenettype; }
 	virtual void dump_out(FILE *f,int indent);
-	virtual void  dump_in(FILE *f,int indent);
-	virtual void pushface(int *f,int n);
-	virtual void pushpoint(flatpoint pp);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual int pointinface(flatpoint pp);
-	virtual void rotateface(int f,int endonly=0);
+	virtual int rotateface(int f,int alignxonly=0);
+	virtual void pushline(NetLine &l,int where=-1);
+	virtual void pushface(NetFace &f);
+	virtual void pushpoint(flatpoint pp,int pmap=-1);
+
+	//--perhaps for future:
+	//virtual void PrintSVG(std::ostream &svg,Laxkit::SomeData *paper,int month=1,int year=2006);
+	//virtual void PrintPS(std::ofstream &ps,Laxkit::SomeData *paper);
 };
 
 

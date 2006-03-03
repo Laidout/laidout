@@ -221,7 +221,7 @@ StyleDef *Singles::makeStyleDef()
 //! Create necessary pages based on default pagestyle
 /*! Currently returns NULL terminated list of pages.
  *
- * *** is thispagestyle really necessary???
+ * \todo *** is thispagestyle here really necessary??? perhaps remove from Disposition
  */
 Page **Singles::CreatePages(PageStyle *thispagestyle)//thispagestyle=NULL
 {
@@ -272,8 +272,6 @@ Spread *Singles::PageLayout(int whichpage)
 
 //! Return a paper spread with 1 page on it, using the inset values.
 /*! The path created here is one path for the paper, and another for the possibly inset page.
- *
- * \todo *** tiling and cut marks are not functional yet
  */
 Spread *Singles::PaperLayout(int whichpaper)
 {
@@ -289,19 +287,41 @@ Spread *Singles::PaperLayout(int whichpaper)
 	PathsData *newpath=new PathsData();
 	spread->path=(SomeData *)newpath;
 	spread->pathislocal=1;
+	
 	 // make the paper outline
 	newpath->appendRect(0,0,paperstyle->w(),paperstyle->h());
-	 // make the page outline
-	newpath->pushEmpty(); //*** later be a certain linestyle
+	
+	 // make the outline around the inset, then lines to demarcate the tiles
+	 // there are tilex*tiley pages, all pointing to the same page data
+	newpath->pushEmpty(); // later could have a certain linestyle
 	newpath->appendRect(insetl,insetb, paperstyle->w()-insetl-insetr,paperstyle->h()-insett-insetb);
+	int x,y;
+	for (x=1; x<tilex; x++) {
+		newpath->pushEmpty();
+		newpath->append(insetl+x*(paperstyle->w()-insetr-insetl)/tilex, insett);
+		newpath->append(insetl+x*(paperstyle->w()-insetr-insetl)/tilex, insetb);
+	}
+	for (y=1; y<tiley; y++) {
+		newpath->pushEmpty();
+		newpath->append(insetl, insetb+y*(paperstyle->h()-insetb-insett)/tiley);
+		newpath->append(insetr, insetb+y*(paperstyle->h()-insetb-insett)/tiley);
+	}
 	
 	 // setup spread->pagestack
 	 // page width/height must map to proper area on page.
-	PathsData *ntrans=new PathsData();
-	ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
-	ntrans->FindBBox();
-	ntrans->origin(flatpoint(insetl,insetb));
-	spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans,1,NULL));
+	 // makes rects with local origin in ll corner
+	PathsData *ntrans;
+	for (x=0; x<tilex; x++) {
+		for (y=0; y<tiley; y++) {
+			ntrans=new PathsData();
+			ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
+			ntrans->FindBBox();
+			ntrans->origin(flatpoint(insetl+x*(paperstyle->w()-insetr-insetl)/tilex,
+									 insetb+y*(paperstyle->h()-insett-insetb)/tiley));
+			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans,1,NULL));
+		}
+	}
+	
 		
 	 // make printer marks if necessary
 	 //*** make this more responsible lengths:
@@ -396,7 +416,10 @@ int Singles::GetPapersNeeded(int npages)
  * The insets refer to portions of the paper that would later be chopped off, and are the 
  * same for each page, whether the page is on the left or the right.
  *
- * ***TODO: isvertical is not implemented
+ * \todo *** isvertical is not ignored
+ *
+ * \todo *** it is imperative to be able to modify whether the first page is a left page
+ * or a right page: (isleft is tag for that, currently ignored.. finish me!)
  */
 /*! \var int DoubleSidedSingles::isvertical
  * \brief Nonzero if pages are top and bottom, rather than left and right.
@@ -404,7 +427,7 @@ int Singles::GetPapersNeeded(int npages)
 //class DoubleSidedSingles : public Singles
 //{
 // public:
-//	int isvertical;
+//	int isvertical,isleft;
 //	DoubleSidedSingles();
 ////	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 //	virtual StyleDef *makeStyleDef();
@@ -433,6 +456,7 @@ int Singles::GetPapersNeeded(int npages)
 DoubleSidedSingles::DoubleSidedSingles()
 {
 	isvertical=0;
+	isleft=0;
 	setPage();
 	
 	 // make style instance name "Double Sided Singles"  perhaps remove the spaces??
@@ -460,6 +484,9 @@ void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att)
 		if (!strcmp(name,"isvertical")) {
 			isvertical=BooleanAttribute(value);
 		}
+		if (!strcmp(name,"isleft") || !strcmp(name,"istop")) {
+			isleft=BooleanAttribute(value);
+		}
 	}
 	Singles::dump_in_atts(att);
 }
@@ -470,6 +497,9 @@ void DoubleSidedSingles::dump_out(FILE *f,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (isvertical) fprintf(f,"%sisvertical\n",spc);
+	if (isleft)
+		if (isvertical) fprintf(f,"%sistop\n",spc);
+		else fprintf(f,"%sisleft\n",spc);
 	Singles::dump_out(f,indent);
 }
 
@@ -481,6 +511,7 @@ Style *DoubleSidedSingles::duplicate(Style *s)//s=NULL
 	DoubleSidedSingles *ds=dynamic_cast<DoubleSidedSingles *>(s);
 	if (!ds) return NULL;
 	ds->isvertical=isvertical;
+	ds->isleft=isleft;
 	return Singles::duplicate(s);  
 }
 
@@ -519,9 +550,6 @@ Laxkit::DoubleBBox *DoubleSidedSingles::GoodWorkspaceSize(int page,Laxkit::Doubl
  *
  * *** is thispagestyle really necessary??? It is ignored here,
  * and left/right RectPageStyles are used.
- *
- * *** each page is created with its own RectPageStyle, there is mondo duplication
- * here, must implement the style manager, and have the page have only references to it.
  *
  * *** a bit here is totally unsatisfactory: Every page in a spread will possibly have
  * a different configuration of margins. A simple pagestyle like RectPageStyle will
@@ -680,12 +708,12 @@ Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
 //	virtual void dump_out(FILE *f,int indent);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
-//doesn't reimp from Singles/DoubleSidedSingles:
-//	virtual SomeData *GetPage(int pagenum,int local); // return outline of page in paper coords
-//doesn't reimp from DoubleSidedSingles:
-//	virtual Page **CreatePages(PageStyle *pagestyle=NULL); // create necessary pages based on default pagestyle
-//	virtual Spread *GetLittleSpread(int whichpage); 
-//	virtual Spread *PageLayout(int whichpage); 
+////doesn't reimp from Singles/DoubleSidedSingles:
+////	virtual SomeData *GetPage(int pagenum,int local); // return outline of page in paper coords
+////doesn't reimp from DoubleSidedSingles:
+////	virtual Page **CreatePages(PageStyle *pagestyle=NULL); // create necessary pages based on default pagestyle
+////	virtual Spread *GetLittleSpread(int whichpage); 
+////	virtual Spread *PageLayout(int whichpage); 
 
 //! Constructor, init new variables, make style name="Booklet"
 BookletDisposition::BookletDisposition()
@@ -769,37 +797,57 @@ StyleDef *BookletDisposition::makeStyleDef()
 //{ ***
 //}
 
-/*! 
- * \todo ***Finish implementing me!! For inset, provide print cut marks about 1/8 inch from actual page outline.
+/*! Layout booklet with tiling.
+ *
+ * \todo *** currently ignores isleft, which for booklets might be ok, but this
+ * is different behavior for what DoubleSidedSingles does, esp. for PageLayout
  */
 Spread *BookletDisposition::PaperLayout(int whichpaper)
 {
 	if (!numpapers) return NULL;
 	if (whichpaper<0 || whichpaper>=numpapers) whichpaper=0;
-	int nnp=numpages;
-	numpages=100000000;
-	Spread *spread=PageLayout(2); // force getting a double page
-	numpages=nnp;
-	
-	int npgs=GetPagesNeeded(numpapers);
-	 // Grab PageLayout spread and modify to paper by doing tiling(?!?!?!?!) and printer marks
-	if (whichpaper%2==1) { // odd numbered pages are always on left...
-		 // make right and left side be correct page number
-		spread->pagestack.e[0]->index=whichpaper; 
-		spread->pagestack.e[1]->index=npgs-whichpaper-1; 
-	} else {
-		 // make right and left side be correct page number
-		spread->pagestack.e[0]->index=npgs-whichpaper-1;
-		spread->pagestack.e[1]->index=whichpaper;
+
+	 // grab singles, which draws a tiled page using the inset values,
+	 // including printer marks, and max and min points.
+	 // but the pagestack is incorrect. All but pagestack is ok
+	Spread *spread=Singles::PaperLayout(whichpaper);
+
+	 // fill pagestack, includes tiling
+	spread->pagestack.flush();
+	int x,y,lpg,rpg,npgs=GetPagesNeeded(numpapers);
+	PathsData *ntrans;
+	for (x=0; x<tilex; x++) {
+		for (y=0; y<tiley; y++) {
+			 //install 2 page cells for each tile, according to isvertical and isleft
+			 //the left or top:
+			if (whichpaper%2==1) { // odd numbered pages are always on left...
+				 // make right and left side be correct page number
+				lpg=whichpaper; 
+				rpg=npgs-whichpaper-1; 
+			} else {
+				 // make right and left side be correct page number
+				lpg=npgs-whichpaper-1;
+				rpg=whichpaper;
+			}
+			
+			if (lpg>=0 && lpg<numpages) {
+				ntrans=new PathsData();
+				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
+				ntrans->origin(flatpoint(insetl+x*(paperstyle->w()-insetr-insetl)/tilex,
+										 insetb+y*(paperstyle->h()-insett-insetb)/tiley));
+				spread->pagestack.push(new PageLocation(lpg,NULL,ntrans,1,NULL));
+			}
+			 //the right or bottom:
+			if (rpg>=0 && rpg<numpages) {
+				ntrans=new PathsData();
+				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
+				ntrans->origin(flatpoint(isvertical?0:pagestyle->w(), isvertical?pagestyle->h():0)
+							   + flatpoint(insetl+x*(paperstyle->w()-insetr-insetl)/tilex,
+										   insetb+y*(paperstyle->h()-insett-insetb)/tiley));
+				spread->pagestack.push(new PageLocation(rpg,NULL,ntrans,1,NULL));
+			}
+		}
 	}
-	if (spread->pagestack.e[0]->index>=numpages) spread->pagestack.remove(0);
-	if (spread->pagestack.e[spread->pagestack.n-1]->index>=numpages) spread->pagestack.remove();
-	//*** add printer marks.....
-	//*** add tiling!!!!
-	
-	 // define max/min points
-	spread->minimum=flatpoint(paperstyle->w()/5,paperstyle->h()/2);
-	spread->maximum=flatpoint(paperstyle->w()*4/5,paperstyle->h()/2);
 
 	return spread;
 }
