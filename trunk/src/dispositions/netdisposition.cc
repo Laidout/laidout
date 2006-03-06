@@ -1,11 +1,13 @@
 /**************** dispositions/netdisposition.cc *********************/
 
-#include "disposition.h"
-#include <lax/lists.cc>
+#include "netdisposition.h"
+#include "dodecahedron.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/refcounter.h>
+#include <lax/transformmath.h>
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
 extern RefCounter<SomeData> datastack;
 extern RefCounter<anObject> objectstack;
@@ -19,13 +21,18 @@ extern RefCounter<anObject> objectstack;
  * addition of the extra matrix. This matrix can be adjusted by the user
  * to potentially make the net blow up way beyond the paper size, so as
  * to make tiles of it.
+ *
+ * The net's faces should be defined such that the inside is to the left 
+ * as you traverse the points, and when you draw on the normal math plane
+ * which has positive x to the right, and positive y is up.
  */
 //class NetDisposition : public Disposition
 //{
 // public:
 //	Net *net;
+//	int netisbuiltin;
 //
-//	NetDisposition(const char *nsname, Net *newnet=NULL);
+//	NetDisposition(Net *newnet=NULL);
 //	virtual ~NetDisposition();
 //	virtual Style *duplicate(Style *s=NULL);
 //	
@@ -34,7 +41,7 @@ extern RefCounter<anObject> objectstack;
 ////	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 //	
 //	virtual Laxkit::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
-//	virtual Page **CreatePages(PageStyle *pagestyle=NULL); // create necessary pages based on default pagestyle
+//	virtual Page **CreatePages(PageStyle *thispagestyle=NULL); // create necessary pages based on default pagestyle
 ////	virtual int SyncPages(Document *doc,int start,int n);
 //
 //	virtual Laxkit::SomeData *GetPage(int pagenum,int local); // return outline of page in page coords
@@ -46,25 +53,38 @@ extern RefCounter<anObject> objectstack;
 //	virtual DoubleBBox *GetDefaultPageSize(DoubleBBox *bbox=NULL);
 //	virtual int *PrintingPapers(int frompage,int topage);
 //
-//	virtual int NumPapers(int npapers);
-//	virtual int NumPages(int npages);
+////	virtual int NumPapers(int npapers);
+////	virtual int NumPages(int npages);
 //	virtual int PaperFromPage(int pagenumber); // the paper number containing page pagenumber
 //	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
 //	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
+//
+//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	
+//	virtual int SetNet(const char *nettype);
+//	virtual int SetNet(Net *newnet);
+//	virtual void setPage();
 //};
 
-//! Constructor.
-/*! Default Style constructor sets styledef, basedon to NULL. Any dispositions that are 
- *  explicitly based on another disposition must set up the proper styledef and basedon
- *  themselves. The standard built in dispositions all act autonomously, meaning they each
- *  completely define their own StyleDef, and are not based on another NetDisposition.
+//! Constructor. Transfers newnet pointer, does not duplicate.
+/*!  Default is to have a dodecahedron.
  */
-NetDisposition::NetDisposition(const char *nsname, Net *newnet)
-	: Disposition(nsname)
+NetDisposition::NetDisposition(Net *newnet)
+	: Disposition("Net")
 { 
-	net=newnet;
-	*** setup default paperstyle and pagestyle
+	 // setup default paperstyle and pagestyle
+	paperstyle=new PaperType("letter",8.5,11.0,0,300);//***should be global default
+	
+	net=NULL;
+	if (!newnet) {
+		SetNet(makeDodecahedronNet(paperstyle->w(),paperstyle->h()));
+		netisbuiltin=1; //this line must be after SetNet
+	} else {
+		SetNet(newnet);
+		netisbuiltin=0;
+	}
 }
  
 //! Deletes net.
@@ -73,32 +93,133 @@ NetDisposition::~NetDisposition()
 	if (net) delete net;
 }
 
-//! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
-int Singles::SetPaperSize(PaperType *npaper)
+//! Sets net to a builtin net.
+/*! Can be:
+ * <pre>
+ *  dodecahedron
+ * </pre>
+ */
+int NetDisposition::SetNet(const char *nettype)
 {
-	if (!npaper) return 1;
-	if (paperstyle) delete paperstyle;
-	paperstyle=(PaperType *)npaper->duplicate();
+	if (!strcmp(nettype,"dodecahedron")) {
+		SetNet(makeDodecahedronNet(paperstyle->w(),paperstyle->h()));
+		netisbuiltin=1;
+		return 0;	
+	}
+	return 1;
+}
+
+
+/*! Warning: transfers pointer, does not make duplicate.
+ * Deletes old net.
+ *
+ * Return 0 if changed, 1 if not.
+ */
+int NetDisposition::SetNet(Net *newnet)
+{
+	if (!newnet) return 1;
+	if (net && net!=newnet) delete net;
+	net=newnet;
+	netisbuiltin=0;
 	
+	 // fit to page
+	SomeData page;
+	page.maxx=paperstyle->w();
+	page.maxy=paperstyle->h();
+	net->FitToData(&page,page.maxx*.05);
 	setPage();
+
 	return 0;
 }
 
 //! Using the paperstyle, create a new default pagestyle.
-void Singles::setPage()
+void NetDisposition::setPage()
 {
 	if (!paperstyle) return;
 	if (pagestyle) delete pagestyle;
-	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-	pagestyle->width=(paperstyle->w()-insetl-insetr)/tilex;
-	pagestyle->height=(paperstyle->h()-insett-insetb)/tiley;
+	pagestyle=new PageStyle();
+	if (!net || !net->nf) return;
+
+	 //find generic bounds of a face
+	 //  find transform from net point to paper face coords
+	DoubleBBox b;
+	double m[6],mm[6];
+
+	net->basisOfFace(0,m,0); // so m: (face) -> (net)
+	transform_invert(mm,m);  //   mm: (net) -> (face)
+
+	NetFace *f=&net->faces[0];
+	for (int c=0; c<f->np; c++) {
+		b.addtobounds(transform_point(mm,net->points[f->points[c]]));
+	}
+	pagestyle->width= b.maxx-b.minx;
+	pagestyle->height=b.maxy-b.miny;
+}
+
+/*! Output:
+ * <pre>
+ *  numpages 4
+ *  defaultpaperstyle
+ *    ...
+ *  net Dodecahedron # <-- this is type, not instance name of net
+ *    name "A dodecahedron"
+ * </pre>
+ * See also Net::dump_out().
+ */
+void NetDisposition::dump_out(FILE *f,int indent)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
+	if (paperstyle) {
+		fprintf(f,"%sdefaultpaperstyle\n",spc);
+		paperstyle->dump_out(f,indent+2);
+	}
+	if (net) {
+		fprintf(f,"%snet",spc);
+		if (netisbuiltin) fprintf(f," %s\n",net->whatshape());
+		else {
+			fprintf(f,"\n");
+			net->dump_out(f,indent+2); // dump out a custom net
+		}
+	}
+}
+
+void NetDisposition::dump_in_atts(LaxFiles::Attribute *att)
+{
+	if (!att) return;
+	char *name,*value;
+	Net *tempnet=NULL;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"numpages")) {
+			IntAttribute(value,&numpages);
+			if (numpages<0) numpages=0;
+		} else if (!strcmp(name,"defaultpaperstyle")) {
+			if (paperstyle) delete paperstyle;
+			paperstyle=new PaperType("Letter",8.5,11,0,300);//***
+			paperstyle->dump_in_atts(att->attributes.e[c]);
+		} else if (!strcmp(name,"net")) {
+			if (value && strcmp(value,"")) { // is a built in
+				SetNet(value);
+			} else {
+				tempnet=new Net();
+				tempnet->dump_in_atts(att->attributes.e[c]);
+				SetNet(tempnet);
+				cout <<"-----------after dump_in net and set----------"<<endl;
+				net->dump_out(stdout,2);
+				cout <<"-----------end netdisp..----------"<<endl;
+			}
+		}
+	}
+	setPage();
 }
 
 //! Just makes sure that s can be cast to NetDisposition. If yes, return s, if no, return NULL.
 Style *NetDisposition::duplicate(Style *s)//s=NULL
 {
 	NetDisposition *d;
-	if (s==NULL) d=new NetDisposition();
+	if (s==NULL) s=d=new NetDisposition();
 	else d=dynamic_cast<NetDisposition *>(s);
 	if (!d) return NULL;
 	
@@ -123,28 +244,24 @@ Laxkit::DoubleBBox *NetDisposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBo
 	return bbox;
 }
 
-//! Store a duplicate of the given PaperStyle.
-/*! This deletes any old paperstyle. 
- */
+//! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
 int NetDisposition::SetPaperSize(PaperType *npaper)
 {
-	Disposition::SetPaperSize(npaper);
+	if (!npaper) return 1;
+	if (paperstyle) delete paperstyle;
+	paperstyle=(PaperType *)npaper->duplicate();
 	
-	 // revamp default pagestyle, just adjusts the size to be same as paper
-	pagestyle->width=paperstyle->w();
-	pagestyle->width=paperstyle->h();
-		
+	setPage();
 	return 0;
 }
 
-
-/*! \fn Page **NetDisposition::CreatePages(PageStyle *pagestyle=NULL)
+/*! \fn Page **NetDisposition::CreatePages(PageStyle *thispagestyle=NULL)
  * \brief Create the required pages.
  *
- * If pagestyle is not NULL, then this style is to be preferred over
+ * If thispagestyle is not NULL, then this style is to be preferred over
  * the internal page style(?!!?!***)
  */
-Page **NetDisposition::CreatePages(PageStyle *pagestyle=NULL)
+Page **NetDisposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
 {
 	if (numpages==0) return NULL;
 	Page **pages=new Page*[numpages+1];
@@ -166,19 +283,37 @@ Page **NetDisposition::CreatePages(PageStyle *pagestyle=NULL)
  * This is a no frills outline, used primarily to check where the mouse
  * is clicked down on.
  * If local==1 then return a new local SomeData. Otherwise return a
- * datastack object. In this case, the item should be guaranteed to be pushed
- * already, but not checked out.
+ * datastack object. In this case, the item should be guaranteed to have
+ * a reference count of one already.
  */
 Laxkit::SomeData *NetDisposition::GetPage(int pagenum,int local)
 {
+	if (pagenum<0 || pagenum>=numpages) return NULL;
+	int pg=pagenum%net->nf;
 	PathsData *newpath=new PathsData();
-	flatpoint p[net->faces[c]->pn];
-	for (int c=0; c<net->faces[c]->pn; c++) {
-		p[c]=net->p[net->faces[c]->p[c]];
-		***transform point to proper page coords
+	
+	 // find transform from paper coords to page coords 
+	 //  (this here is specifically (paper face coords)->(paper),
+	 //   which is slightly different from real page coords. Assumption here
+	 //   is that page lengths are the same as paper lengths)
+	double m[6],mm[6];
+	net->basisOfFace(pg,m,1);
+
+	transform_copy(newpath->m(),m); // newpath->m: (face) -> (paper)
+	
+	transform_invert(m,newpath->m()); // m: (paper) -> (face)
+	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
+	
+	flatpoint p[net->faces[pg].np];
+	cout <<"NetDisposition::GetPage:\n";
+	for (int c=0; c<net->faces[pg].np; c++) {
+		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
+		cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
 	}
-	for (int c=0; c<net->faces[c]->pn; c++) newpath->append(p[c].x,p[c].y);
-	//newpath->FindBBox();
+	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
+	newpath->close();
+	newpath->FindBBox();
+
 	if (local==0) datastack.push(newpath,1,newpath->object_id,1);
 	return newpath;
 }
@@ -199,54 +334,56 @@ Spread *NetDisposition::GetLittleSpread(int whichpage)
 Spread *NetDisposition::PageLayout(int whichpage)
 {
 	if (!net) return NULL;
-	int c;
 	
 	Spread *spread=new Spread();
 	spread->style=SPREAD_PAGE;
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 	int firstpage=(whichpage/net->nf)*net->nf;
-	PathsData *newpath;
+
+	 // fill pagestack
+	SomeData *newpath;
+	int c;
 	for (int c=0; c<net->nf; c++) {
-		newpath=new PathsData();
-		***
-		spread->pagestack.push(new PageLocation(firstpage+c,NULL,ntrans,1,NULL));
+		newpath=GetPage(c,1); // transformed page, local copy
+		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,1,NULL));
 	}
 
-	--------------
 	 // define max/min points
-	spread->minimum=flatpoint(paperstyle->w()/5,paperstyle->h()/2);
-	spread->maximum=flatpoint(paperstyle->w()*4/5,paperstyle->h()/2);
+	newpath=spread->pagestack.e[0]->outline;
+	spread->minimum=transform_point(newpath->m(),flatpoint(newpath->maxx-newpath->minx));
+	spread->maximum=transform_point(newpath->m(),flatpoint(newpath->maxy-newpath->miny));
 
-	 // fill spread with paper and page outline
-	spread->path=(SomeData *)newpath;
+	 // fill spread with page outline
+	PathsData *npath=new PathsData();
+	int c2;
+	for (c=0; c<net->nl; c++) {
+		npath->pushEmpty();
+		for (c2=0; c2<net->lines[c].np; c2++) {
+			npath->append(transform_point(net->m(),net->points[net->lines[c].points[c2]]));
+			if (net->lines[c].isclosed) npath->close();
+		}
+	}
+	npath->FindBBox();
+
+	spread->path=npath;
 	spread->pathislocal=1;
-	 // make the page outline
-	newpath->pushEmpty(); //*** later be a certain linestyle
-	newpath->appendRect(insetl,insetb, paperstyle->w()-insetl-insetr,paperstyle->h()-insett-insetb);
 	
-	 // setup spread->pagestack
-	 // page width/height must map to proper area on page.
-	PathsData *ntrans=new PathsData();
-	newpath->appendRect(0,0, pagestyle->w(),pagestyle->h());
-	newpath->FindBBox();
-	ntrans->origin(flatpoint(insetl,insetb));
-	spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans,1,NULL));
-		
+	return spread;
 }
 
-/*! \fn Spread *NetDisposition::PaperLayout(int whichpaper)
- * \brief Returns same as PageLayout, but with the paper outline included(??).
- */
+//! Returns same as PageLayout, but with the paper outline included.
 Spread *NetDisposition::PaperLayout(int whichpaper)
 {
 	if (!net) return NULL;
-	int c;
-	Spread *spread=new PageLayout(whichpaper*net->nf);
+	Spread *spread=PageLayout(whichpaper*net->nf);
 	spread->style=SPREAD_PAPER;
 
 	 // make the paper outline
-	((PathsData *)(spread->outline))->appendRect(0,0,paperstyle->w(),paperstyle->h());
+	PathsData *path=static_cast<PathsData *>(spread->path);
+	path->pushEmpty(0);
+	path->appendRect(0,0,paperstyle->w(),paperstyle->h(),0);
+	path->FindBBox();
 
 	return spread;
 }
@@ -264,7 +401,7 @@ Spread *NetDisposition::PaperLayout(int whichpaper)
  * \todo *** is this function actaully used anywhere? anyway it's broken here,
  * just returns bounds of paper.
  */
-DoubleBBox *NetDisposition::GetDefaultPageSize(DoubleBBox *bbox=NULL)
+DoubleBBox *NetDisposition::GetDefaultPageSize(DoubleBBox *bbox)//box=NULL
 {
 	if (!paperstyle) return NULL;
 	if (!bbox) bbox=new DoubleBBox;

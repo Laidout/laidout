@@ -16,6 +16,7 @@
 #include "laidout.h"
 #include "disposition.h"
 #include "dispositioninst.h"
+#include "dispositions/netdisposition.h"
 
 using namespace Laxkit;
 
@@ -54,6 +55,7 @@ PtrStack<Disposition> *GetBuiltinDispositionPool(PtrStack<Disposition> *existing
 	existingpool->push(new Singles(),1);
 	existingpool->push(new DoubleSidedSingles(),1);
 	existingpool->push(new BookletDisposition(),1);
+	existingpool->push(new NetDisposition(),1);
 	//existingpool->push(new CompositeDisposition(),1);
 	//existingpool->push(new BasicBook(),1);
 	//existingpool->push(new AnyOtherSpecificDispositionsYouWantBuiltIn,1);

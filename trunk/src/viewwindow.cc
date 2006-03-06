@@ -284,6 +284,8 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	virtual void Refresh();
 //	virtual int init();
 //	virtual int CharInput(char ch,unsigned int state);
+//	virtual int MouseMove(int x,int y,unsigned int state);
+//	
 //	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
 //	
 //	virtual flatpoint realtoscreen(flatpoint r);
@@ -332,6 +334,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	searchmode=0;
 	viewmode=-1;
 	SetViewMode(PAGELAYOUT);
+//	SetViewMode(SINGLELAYOUT);//*** note that viewwindow has a button for this, which defs to PAGELAYOUT
 	//setupthings();
 	
 	 // Set workspace bounds.
@@ -1166,6 +1169,23 @@ void LaidoutViewport::clearCurobj()
 	setCurobj(NULL);
 }
 
+//! *** for debugging, show which page mouse is over..
+int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
+{
+	if (!buttondown) {
+		int c=-1;
+		flatpoint p=dp.screentoreal(x,y);
+		if (spread) {
+			for (c=0; c<spread->pagestack.n; c++) {
+				if (spread->pagestack.e[c]->outline->pointin(p)) break;
+			}
+			if (c==spread->pagestack.n) c=-1;
+		}
+		cout <<"mouse over: "<<c<<endl;
+	}
+	return ViewportWindow::MouseMove(x,y,state);
+}
+
 //! Call this to update the context for screen coordinate (x,y).
 /*! This sets curobj to be at layer level of curobj if possible, otherwise
  * to the top level of whatever page is under screen coordinate (x,y).
@@ -1913,13 +1933,16 @@ int ViewWindow::init()
 	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newPageNumber",
 								"Page: ",1,1000000,1);
+	pagenumber->tooltip("The pages in the spread\nand the current page");
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	TextButton *tbut;
 	tbut=new TextButton(this,"page less",0, 0,0,0,0,1, NULL,window,"pageLess","<");
+	tbut->tooltip("Previous spread");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"page more",0, 0,0,0,0,1, NULL,window,"pageMore",">");
+	tbut->tooltip("Next spread");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
@@ -1937,6 +1960,7 @@ int ViewWindow::init()
 
 	ColorBox *colorbox;
 	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",255,0,0);
+	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
 	last=tbut=new TextButton(this,"add page",0, 0,0,0,0,1, NULL,window,"addPage","Add Page");
@@ -1946,36 +1970,44 @@ int ViewWindow::init()
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"import image",0, 0,0,0,0,1, NULL,window,"importImage","Import Image");
+	tbut->tooltip("Import a single image");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"import image",0, 0,0,0,0,1, NULL,window,"dumpImages","Dump in Images");
+	tbut=new TextButton(this,"import images",0, 0,0,0,0,1, NULL,window,"dumpImages","Dump in Images");
+	tbut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"ppt out",0, 0,0,0,0,1, NULL,window,"pptout","ppt out");
+	tbut->tooltip("Save to a Passepartout file.\nOnly saves images");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"print",0, 0,0,0,0,1, NULL,window,"print","Print");
+	tbut->tooltip("Print to output.ps, a postscript file");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	loaddir=new LineEdit(this,"load directory",0, 0,0,0,0,1, 
 								NULL,window,"loaddir",
 								app->load_dir,0);
+	loaddir->tooltip("'Dump in images' dumps in\nall images from this directory");
 	AddWin(loaddir,150,0,50,250, loaddir->win_h,0,50,50);
 	
 
 	var1=new NumInputSlider(this,"var1",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"var1",
 								NULL,-10000,100000,1);
+	var1->tooltip("Number of images per page to dump in,\n-1=as many as possible,\nShift-click to type a number");
 	AddWin(var1,var1->win_w,0,50,50, var1->win_h,0,50,50);
 	
 	var2=new NumInputSlider(this,"var2",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"var2",
 								NULL,-10000,100000,1);
+	var2->tooltip("Default dpi of images dumped in.\nShift-click to type a number");
 	AddWin(var2,var2->win_w,0,50,50, var2->win_h,0,50,50);
 	
 	var3=new NumInputSlider(this,"var3",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"var3",
 								NULL,-10000,100000,1);
+	var3->tooltip("(undefined)");
 	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
 	//**** add screen x,y
@@ -1987,7 +2019,11 @@ int ViewWindow::init()
 	return 0;
 }
 
-/*! Currently accepts "new image","saveAsPopup"
+/*! Currently accepts:\n
+ * <pre>
+ *  "new image"
+ *  "saveAsPopup"
+ * </pre>
  */
 int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 {
@@ -2018,8 +2054,11 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 				XStoreName(app->dpy,window,doc->Name());
 			}
 		}
-		//doc->Save();
+		doc->Save();
 		delete data;
+		char blah[strlen(doc->Name())+15];
+		sprintf(blah,"Saved to %s.",doc->Name());
+		GetMesbar()->SetText(blah);
 		return 0;
 	}
 	return 1;
@@ -2145,7 +2184,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
  * '<'     previous page 
  * '>'     next page
  * ^'s'    save file
- * ^+'s'   save as -- just change the file name??
+ * ^+'s'   save as -- just change the file name?? (not imp)
  * F1      popup new spread editor window
  * </pre>
  */
@@ -2155,15 +2194,18 @@ int ViewWindow::CharInput(char ch,unsigned int state)
 			ch=='s' && (state&LAX_STATE_MASK)==ControlMask) { // save file
 		if (!doc) return 1;
 		cout <<"....viewwindow says save.."<<endl;
-		if (!strcmp(doc->Name(),"untitled") || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
+		if (strstr(doc->Name(),"untitled")==doc->Name() || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
 			 // launch saveas!!
 			app->rundialog(new LineInput(NULL,"Save As...",
 						ANXWIN_DELETEABLE|LINP_ONTOP|LINP_CENTER|LINP_POPUP, 100,100,200,100,0, 
 						NULL,window,"saveAsPopup",
 						"Enter new filename:",doc->Name()));
 		} else {
-			if (!doc->Save()) GetMesbar()->SetText("Saved.");
-			else GetMesbar()->SetText("Problem saving. Not saved.");
+			if (doc->Save()==0) {
+				char blah[strlen(doc->Name())+15];
+				sprintf(blah,"Saved to %s.",doc->Name());
+				GetMesbar()->SetText(blah);
+			} else GetMesbar()->SetText("Problem saving. Not saved.");
 		}
 		return 0;
 	} else if (ch==28) {  // left, prev tool

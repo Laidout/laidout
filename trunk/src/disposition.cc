@@ -4,38 +4,13 @@
 #include <lax/lists.cc>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/refcounter.h>
+#include <lax/transformmath.h>
 
 using namespace Laxkit;
 
 extern RefCounter<SomeData> datastack;
 extern RefCounter<anObject> objectstack;
 
-// TODO
-//
-// Perhaps divide Disposition to:
-// Disposition
-// 	DispositionPart: pages 1..50,52..60,62..100
-// 	DispositionPart: pages 51,52,61,62
-// This allows different page sizes for the same document.. useful for cover/book body, or non-reg polyhedra
-// 
-//***need a special mechanism for multiple pages on viewport, so PaperLayout/PageLayout can return just what's in viewport???
-//  	(like the infinite scroll in acrobat for instance)
-// *** need to think how to have master pages
-//
-//
-// *****
-// Necessary disposition styles to build in:
-// Singles
-// 		just one sheet at a time, 1 page==1 sheet
-// Facing Singles
-// 		Like singles, but is assumed double sided, displays facing pages, can adjust inner/outer margins
-// One Fold --- for books: 
-// 		multiple sections of signatures that have one fold down the middle, and any number tiling across page
-// 		so after cutting, each sheet has 4 pages on it. A signature in this case means a stack of
-// 		sheets, not just once huge sheet folded multiple times. So for instance, 1 signature making
-// 		n pages (n%4==0) has the top sheet with pages 1,2,n-1,n, and the bottom sheet has 
-// 		pages n/2-1,n/2,n/2+1,n/2+2. Either horizontal (like a book) or vertical (like a calendar).
-//
 
 //------------------------- PageLocation --------------------------------------
 
@@ -257,7 +232,7 @@ cout <<endl;
  * body papers would not be all done in a single Disposition. That would be a ProjectStyle
  * with 2 Disposition classes used.
  * 
- * Currently the built in Disposition styles are single pages,
+ * ***not all imp:Currently the built in Disposition styles are single pages,
  * singles meant as double sided, such as would be stapled in the
  * corner or along the edge, the slightly more versatile booklet
  * format where the papers are folded at the spine, and the super-duper
@@ -286,6 +261,9 @@ cout <<endl;
   */
  /*! \var PageStyle *Disposition::pagestyle
   * \brief A local instance of the default page style.
+  * 
+  * The subclass is resposible for creating and destroying whatever gets
+  * put in here.
   */
  /*! \fn Laxkit::SomeData *Disposition::GetPrinterMarks(int papernum=-1)
   * \brief Return the printer marks for paper papernum in paper coordinates.
@@ -598,6 +576,7 @@ Spread *Disposition::SingleLayout(int whichpage)
 
 	 // Get the page outline. It will be a datastack object with 1 count for path pointer.
 	spread->path=GetPage(whichpage,0);
+	transform_identity(spread->path->m()); // clear any transform
 	spread->pathislocal=0;
 	
 	 // define maximum/minimum points 

@@ -30,13 +30,58 @@ extern void monthday(const char *str,int *month,int *day);
 //	int *points;
 //	char lsislocal;
 //	LineStyle *linestyle;
-//	NetLine() { linestyle=NULL; lsislocal=0; isclosed=0; np=0; points=NULL; }
-//	virtual ~NetLine() { if (lsislocal) delete linestyle; else linestyle->dec_count(); ???? }
+//	NetLine(const char *list=NULL);
+//	virtual ~NetLine();
 //	const NetLine &operator=(const NetLine &line);
+//	virtual int Set(const char *list);
+//	virtual int Set(int n, int closed);
 //	
 //	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
 //};
+
+NetLine::NetLine(const char *list)
+{
+	linestyle=NULL;
+	lsislocal=0;
+	isclosed=0;
+	np=0;
+	points=NULL;
+	if (list) Set(list);
+}
+
+NetLine::~NetLine()
+{
+	delete[] points;
+	//if (lsislocal) delete linestyle; else linestyle->dec_count(); ???? 
+}
+
+//! Set up points like "1 2 3 ... n", and make closed if closed!=0.
+/*! Returns the number of points.
+ */
+int NetLine::Set(int n, int closed)
+{
+	if (points) delete[] points;
+	points=new int[n];
+	np=n;
+	for (int c=0; c<n; c++) points[c]=c;
+	isclosed=closed;
+	return n;
+}
+
+//! Create points from list like: "1 2 3", or "1 2 3 1" for a closed path.
+/*! Returns the number of points.
+ */
+int NetLine::Set(const char *list)
+{
+	if (points) delete[] points;
+	IntListAttribute(list,&points,&np);
+	if (np && points[np-1]==points[0]) {
+		np--;
+		isclosed=1;
+	}
+	return np;
+}
 
 /*! Copies over all. Warning: does a linestyle=line.linestyle,
  * and does not change lsislocal.
@@ -52,12 +97,14 @@ const NetLine &NetLine::operator=(const NetLine &line)
 	if (points) delete[] points;
 	points=new int[np];
 	for (int c=0; c<np; c++) points[c]=line.points[c];
+
+	return *this;
 }
 
 /*! If pfirst!=0, then immediately output the list of points.
  * Otherwise, do points 3 5 6 6...
  */
-void NetLine::dump_out(FILE *f,int indent, int pfirst=0)
+void NetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (!pfirst) fprintf(f,"%spoints ",spc);
@@ -73,17 +120,20 @@ void NetLine::dump_out(FILE *f,int indent, int pfirst=0)
 
 /*! If val!=NULL, then the att was something like:
  * <pre>
- *   face 1 2 3
+ *   line 1 2 3
  *     (other stuff)..
  * </pre>
  * In that case, Net would have parsed the "1 2 3", and it would pass
  * that here in val. Otherwise, this function will expect a 
  * "points 1 2 3" sub attribute somewhere in att.
+ *
+ * If there's a list "1 2 3 1" it will make a point list 1,2,3, and
+ * set isclosed=1.
  */
-void NetLine::dump_in_atts(LaxFiles::Attribute *att)
+void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val)
 {
 	if (!att) return;
-	int c,n=0;
+	int c;
 	if (val) {
 		if (points) delete[] points;
 		points=NULL;
@@ -97,10 +147,11 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att)
 			if (points) delete[] points;
 			points=NULL;
 			IntListAttribute(val,&points,&np);
+			if (np && points[np-1]==points[0]) { np--; isclosed=1; }
 		} else if (!strcmp(name,"linestyle")) {
 			if (!linestyle) {
-				Linestyle=new LineStyle();
-				lislocal=1;
+				linestyle=new LineStyle();
+				lsislocal=1;
 			}
 			linestyle->dump_in_atts(att->attributes.e[c]);
 		} else if (!strcmp(name,"closed")) {
@@ -124,6 +175,7 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att)
  * \brief List of indices into Net::faces for which edges connect to which faces.
  */
 /*! \var int NetFace::aligno
+ * An index into the face's point list.
  * The default is for the face's basis to have the origin at the first listed point,
  * and the x axis lies along the vector going from the first point to the second point.
  * If aligno>=0, then use that point as the origin, and if alignx>=0, use point alignx
@@ -147,12 +199,13 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att)
 //	double *m;
 //	int aligno, alignx;
 //	int faceclass;
-//	NetFace() { m=NULL; aligno=alignx=-1; faceclass=-1; np=0; points=NULL; }
-//	virtual ~NetFace() { if (m) delete[] m; }
+//	NetFace();
+//	virtual ~NetFace();
 //	const NetFace &operator=(const NetFace &face);
+//	virtual int Set(const char *list, const char *link=NULL);
 //	
 //	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
 //};
 
 NetFace::NetFace()
@@ -192,6 +245,29 @@ const NetFace &NetFace::operator=(const NetFace &face)
 		points[c]=face.points[c];
 		if (face.facelink) facelink[c]=face.facelink[c]; else facelink[c]=-1;
 	}
+	return *this;
+}
+
+//! Create points and facelink from list like: "1 2 3".
+/*! Returns the number of points.
+ *
+ * If list and link have differing numbers of elements, link is
+ * removed and replaced with a list of -1.
+ */
+int NetFace::Set(const char *list, const char *link)
+{
+	if (list && points) { delete[] points; points=NULL; }
+	if (link && facelink) { delete[] facelink; facelink=NULL; }
+	int n;
+	if (link) IntListAttribute(link,&facelink,&n);
+	else n=np;
+	if (list) IntListAttribute(list,&points,&np);
+	if (n!=np) {
+		if (facelink) { delete[] facelink; facelink=NULL; }
+		facelink=new int[np];
+		for (n=0; n<np; n++) facelink[n]=-1;
+	}
+	return np;
 }
 
 /*! If pfirst!=0, then immediately output the list of points.
@@ -199,7 +275,7 @@ const NetFace &NetFace::operator=(const NetFace &face)
  *
  * See Net::dump_out() for what gets put out.
  */
-void NetFace::dump_out(FILE *f,int indent, int pfirst=0)
+void NetFace::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (!pfirst) fprintf(f,"%spoints ",spc);
@@ -207,14 +283,17 @@ void NetFace::dump_out(FILE *f,int indent, int pfirst=0)
 	for (c=0; c<np; c++) fprintf(f,"%d ",points[c]);
 	fprintf(f,"\n");
 	if (facelink) {
-		fprintf(f,"%sfacelink");
-		for (c=0; c<np; c++) fprintf(f," %d",facelink[c]);
-		fprintf("\n");
+		for (c=0; c<np; c++) if (facelink[c]!=-1) break;
+		if (c!=np) {
+			fprintf(f,"%sfacelink",spc);
+			for (c=0; c<np; c++) fprintf(f," %d",facelink[c]);
+			fprintf(f,"\n");
+		}
 	}
 	if (faceclass>=0) fprintf(f,"%sfaceclass %d\n",spc,faceclass);
 	if (aligno>=0) {
 		fprintf(f,"%salign %d",spc,aligno);
-		if (alignx>=0) fprintf(f," %d",spc,alignx);
+		if (alignx>=0) fprintf(f," %d",alignx);
 		fprintf(f,"\n");
 	}
 	if (m) fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
@@ -254,9 +333,9 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 		} else if (!strcmp(name,"faceclass")) {
 			IntAttribute(value,&faceclass);
 		} else if (!strcmp(name,"aligno")) {
-			DoubleAttribute(value,&aligno);
+			IntAttribute(value,&aligno);
 		} else if (!strcmp(name,"alignx")) {
-			DoubleAttribute(value,&alignx);
+			IntAttribute(value,&alignx);
 		} else if (!strcmp(name,"points")) {
 			if (points) delete[] points;
 			points=NULL;
@@ -269,10 +348,15 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 /*! \class Net
  * \brief A type of SomeData that stores polyhedron cut and fold patterns.
  *
- * This is used by NetDisposition.
+ * This is used by NetDisposition. 
  * 
  * Lines will be drawn, using only those coordinates from points.
  * Tabs are drawn on alternating outline point, or as specified.
+ * 
+ * net->m() transforms a net->point to the space that contains the net.
+ * net->basisOfFace() would transform a point within that face to the net
+ * coordinate system. basisOfFace()*m() would transform a face point to
+ * the space that contains net.
  * 
  * \todo *** implement tabs
  */ 
@@ -294,7 +378,7 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
  *  3  tabs on all edges (all or yes)
  * </pre>
  */
-//class Net : public SomeData
+//class Net : public Laxkit::SomeData
 //{
 // public:
 //	char *thenettype;
@@ -313,6 +397,7 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 //	virtual void DrawMonth(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year,Laxkit::SomeData *monthbox);
 //	virtual void FindBBox();
 //	virtual void FitToData(Laxkit::SomeData *data,double margin);
+//	virtual void ApplyTransform(double *mm=NULL);
 //	virtual void Center();
 //	virtual const char *whattype() { return thenettype; }
 //	virtual void dump_out(FILE *f,int indent);
@@ -322,20 +407,20 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 //	virtual void pushline(NetLine &l,int where=-1);
 //	virtual void pushface(NetFace &f);
 //	virtual void pushpoint(flatpoint pp,int pmap=-1);
+//	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 //
 //	//--perhaps for future:
 //	//virtual void PrintSVG(std::ostream &svg,Laxkit::SomeData *paper,int month=1,int year=2006);
 //	//virtual void PrintPS(std::ofstream &ps,Laxkit::SomeData *paper);
 //};
 
-//! Init np,nl,nm,points,lines,mo.
+//! Init.
 Net::Net()
 {
-	np=nl=0;
+	np=nl=nf=0;
 	points=NULL;
 	pointmap=NULL;
-	lines=mo=NULL;
-	nf=0;
+	lines=NULL;
 	faces=NULL;
 	tabs=0;
 	thenettype=newstr("Net");
@@ -357,32 +442,16 @@ void Net::clear()
 		np=0;
 	}
 	if (lines) {
-		for (int c=0; c<nl; c++) delete[] lines[c];
 		delete[] lines;
 		lines=NULL;
 		nl=0;
 	}
 	if (faces) {
-		for (int c=0; c<nf; c++) delete[] faces[c];
 		delete[] faces;
 		faces=NULL;
 		nf=0;
 	}
 }
-
-//------ no longer used:
-////! Copy the -1 terminated list to a new'd array that gets put in dest.
-//void copylist(int *&dest,int *src)
-//{
-//	int c=0;
-//	while (src[c]!=-1) c++;
-//	dest=new int[c+1];
-//	c=0;
-//	while (src[c]!=-1) {
-//		dest[c]=src[c];
-//		c++;
-//	}
-//}
 
 //! Return a new copy of this.
 Net *Net::duplicate()
@@ -395,7 +464,8 @@ Net *Net::duplicate()
 		net->pointmap=new int[np];
 		net->points=new flatpoint[np];
 		for (int c=0; c<np; c++) {
-			net->pointmap[c]=pointmap[c];
+			if (pointmap) net->pointmap[c]=pointmap[c];
+			else net->pointmap[c]=-1;
 			net->points[c]=points[c];
 		}
 	}
@@ -413,6 +483,9 @@ Net *Net::duplicate()
 			net->lines[c]=lines[c];
 		}
 	}
+	transform_copy(net->m(),m());
+	net->FindBBox();
+	return net;
 }
 
 /*! perhaps:
@@ -461,7 +534,7 @@ Net *Net::duplicate()
 void Net::dump_out(FILE *f,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	int c,c2;
+	int c;
 
 	fprintf(f,"%sname %s\n",spc,whatshape());
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
@@ -477,7 +550,7 @@ void Net::dump_out(FILE *f,int indent)
 		fprintf(f,"%spoints \\\n",spc);
 		for (c=0; c<np; c++) {
 			fprintf(f,"%s  %.10g %.10g ",spc,points[c].x,points[c].y);
-			if (pointmap[c]>=0) fprintf(f,"to %d ",pointmap[c]);
+			if (pointmap && pointmap[c]>=0) fprintf(f,"to %d ",pointmap[c]);
 			fprintf(f,"# %d\n",c);
 		}
 		fprintf(f,"\n");
@@ -488,9 +561,7 @@ void Net::dump_out(FILE *f,int indent)
 		for (c=0; c<nl; c++) {
 			if (c==0) fprintf(f,"%soutline ",spc);
 			else fprintf(f,"%sline ",spc);
-			for (c2=0; c2<lines[c].np; c2++) {
-				lines[c].dump_out(f,indent+2,1);
-			}
+			lines[c].dump_out(f,indent+2,1);
 		}
 	}
 	
@@ -504,17 +575,21 @@ void Net::dump_out(FILE *f,int indent)
 }
 
 //! Set up net from a Laxkit::Attribute.
-/*! \todo *** MUST implement the sanity check..
+/*! If there is no 'outline' attribute, then it is assumed that
+ * the list of points in order is the outline.
+ * 
+ * \todo *** MUST implement the sanity check..
  */
 void  Net::dump_in_atts(Attribute *att)
 {
 	if (!att) return;
 	char *name,*value,*t,*e,*newname=NULL;
 	double x,y;
-	int pm;
-	for (int c=0; c<att.attributes.n; c++) {
-		name=att.attributes.e[c]->name;
-		value=att.attributes.e[c]->value;
+	int pm,hadoutline=0;
+	int c;
+	for (c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"name")) {
 			makestr(newname,value);
 		} else if (!strcmp(name,"matrix")) {
@@ -522,7 +597,7 @@ void  Net::dump_in_atts(Attribute *att)
 		} else if (!strcmp(name,"tabs")) {
 			if (!value) tabs=1;
 			else {
-				if (!strcmp(value,"no") || !strcmp(value,"default")) tabs==0;
+				if (!strcmp(value,"no") || !strcmp(value,"default")) tabs=0;
 				else if (!strcmp(value,"even")) tabs=1;
 				else if (!strcmp(value,"odd")) tabs=2;
 				else if (!strcmp(value,"yes") || !strcmp(value,"all")) tabs=3;
@@ -552,25 +627,88 @@ void  Net::dump_in_atts(Attribute *att)
 				pushpoint(flatpoint(x,y),pm);
 			}
 		} else if (!strcmp(name,"outline")) {
+			hadoutline=1;
 			NetLine netline;
-			netline->dump_in_atts(att->attributes.e[c]);
+			netline.dump_in_atts(att->attributes.e[c],value);
 			pushline(netline,0); // pushes onto position 0
 		} else if (!strcmp(name,"line")) {
-			NetLine *netline=new NetLine();
-			netline->dump_in_atts(att->attributes.e[c]);
+			NetLine netline;
+			netline.dump_in_atts(att->attributes.e[c],value);
 			pushline(netline,-1); // pushes onto top
 		} else if (!strcmp(name,"face")) {
 			NetFace netface;
-			netface.dump_in_atts(att->attributes.e[c]);
+			netface.dump_in_atts(att->attributes.e[c],value);
 			pushface(netface);
 		}
 	}
+
+	 // if no outline, then assume list of points is the outline.
+	if (!hadoutline) {
+		NetLine line;
+		line.isclosed=1;
+		line.points=new int[np];
+		line.np=np;
+		for (c=0; c<np; c++) line.points[c]=c;	
+		pushline(line,0);
+	}
 	
 	//***sanity check on all point references..
+	FindBBox();
 
 	cout <<"----------------this was set in Net:-------------"<<endl;
 	dump_out(stdout,0);
-	cout <<"----------------enddump:-------------"<<endl;
+	cout <<"----------------end Net dump:-------------"<<endl;
+}
+
+//! Return a transformation basis to face which. Includes this->m() if total!=0.
+/*! If m==NULL, then return a new double[6]. 
+ * If that face is not available, then return NULL.
+ *
+ * Will construct a basis such that the xaxis goes from NetFace::aligno
+ * toward NetFace::alignx, but whose length is 1 in net coordinates. The
+ * yaxis is just the transpose of the x axis.
+ *
+ * \todo *** this currently ignore NetFace::matrix!!
+ */
+double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
+{
+	if (!nf || which<0 || which>=nf) return NULL;
+	if (!mm) mm=new double[6];
+	transform_identity(mm);
+
+	//*** for debugging	
+	cout <<"basisOfFace "<<which<<":\n";
+	flatpoint p;
+	for (int c=0; c<faces[which].np; c++) {
+		p=points[faces[which].points[c]];
+		cout <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
+	}
+	
+	int o=faces[which].aligno,x=faces[which].alignx;
+	if (o<0) o=0;
+	if (x<0) x=(o+1)%faces[which].np;
+	flatpoint origin=points[faces[which].points[o]],
+			  xtip=points[faces[which].points[x]];
+	SomeData s;
+	s.origin(origin);
+	p=xtip-origin;
+	p=p/sqrt(p*p); //normalize p
+	s.xaxis(p);
+	s.yaxis(transpose(p)); // s.m() is (face coords) -> (paper)
+	if (total) transform_mult(mm,s.m(),m());
+		else transform_copy(mm,s.m());
+
+	//*** for debugging	
+	cout <<"--transformed face "<<which<<":"<<endl;
+	transform_invert(s.m(),mm);
+	double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
+	p=transform_point(mm,flatpoint(0,0));
+	cout <<"  origin:"<<p.x<<" "<<p.y<<endl;
+	p=transform_point(mm,flatpoint(slen,0));
+	cout <<"  point 1:"<<p.x<<" "<<p.y<<endl;
+
+	
+	return mm;
 }
 
 //! Rotate face f by moving alignx and/or o by one.
@@ -579,7 +717,7 @@ void  Net::dump_in_atts(Attribute *att)
 int Net::rotateface(int f,int alignxonly)//alignxonly=0
 {
 	if (f<0 || f>=nf) return 0;
-	int ao=faces[f].aligno;
+	int ao=faces[f].aligno,
 	    ax=faces[f].alignx;
 	if (ao<0) ao=0;
 	if (ax<0) ax=(ao+1)%faces[f].np;
@@ -631,6 +769,21 @@ void Net::Center()
 	maxy-=dy;
 }
 
+//! Apply a transform to the points, changing them.
+/*! If m==NULL, then use this->m().
+ */
+void Net::ApplyTransform(double *mm)//mm=NULL
+{
+	if (mm==NULL) mm=m();
+	maxx=maxy=-1;
+	minx=miny=0;
+	for (int c=0; c<np; c++) {
+		points[c]=transform_point(mm,points[c]);
+		addtobounds(points[c]);
+	}
+	transform_identity(m());
+}
+
 //! Make *this fit inside bounding box of data (inset by margin).
 /*! \todo ***  this clears any rotation that was in the net->m() and it shouldn't
  */
@@ -643,9 +796,13 @@ void Net::FitToData(SomeData *data,double margin)
 
 	flatpoint mid=flatpoint((maxx+minx)/2,(maxy+miny)/2),
 			midp=flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)/2);
-	xaxis(wW*data->xaxis());
-	yaxis(wW*data->yaxis());
-	origin(data->origin()+midp.x*data->xaxis()+midp.y*data->yaxis()-mid.x*xaxis()-mid.y*yaxis());
+	xaxis(flatpoint(wW,0));
+	yaxis(flatpoint(0,wW));
+	mid=transform_point(m(),mid);
+	origin(origin()+midp-mid);
+//	xaxis(wW*data->xaxis());
+//	yaxis(wW*data->yaxis());
+//	origin(data->origin()+midp.x*data->xaxis()+midp.y*data->yaxis()-mid.x*xaxis()-mid.y*yaxis());
 }
 
 //! Add point pp to top of the list of points.
@@ -688,7 +845,7 @@ void Net::pushline(NetLine &l,int where)//where=-1
 	for (int c=where; c<nl; c++) nlines[c+1]=lines[c]; //cannot do memcpy
 	delete[] lines;
 	lines=nlines;
-	nf++;
+	nl++;
 }
 
 

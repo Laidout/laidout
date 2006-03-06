@@ -154,6 +154,10 @@ int psout(Document *doc,const char *file)//file=NULL
  * onto other pages correctly, nor does it otherwise clip the pages properly 
  *
  * \todo *** ps doc tag CreationDate: ?????, For: ????
+ *
+ * \todo *** for tiled pages, or multiples of same object each instance is
+ * rendered independently right now. should make a function to display such
+ * things, thus reduce ps file size substantially..
  */
 int psout(FILE *f,Document *doc)
 {

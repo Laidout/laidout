@@ -14,6 +14,7 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	dodecahedron.o \
 	nets.o \
 	netdisposition.o 
 

@@ -25,6 +25,7 @@ using namespace std;
 #include "laidout.h"
 #include "viewwindow.h"
 #include "dispositioninst.h"
+#include "version.h"
 #include <lax/lists.cc>
 
 #include <lax/refcounter.cc>
@@ -34,8 +35,17 @@ using namespace Laxkit;
 
 //----------------------------------- pre-run misc -----------------------------------
 
-//! "Laidout Version 0.01 by Tom Lechner, sometime in 2006"
-const char *LaidoutVersion() { return "Laidout Version 0.01 by Tom Lechner, sometime in 2006"; }
+//! "Laidout Version LAIDOUT_VERSION by Tom Lechner, sometime in 2006"
+const char *LaidoutVersion() 
+{ 
+	static char *version_str=NULL;
+	if (version_str==NULL) {
+		makestr(version_str,"Laidout Version ");
+		appendstr(version_str,LAIDOUT_VERSION);
+		appendstr(version_str," by Tom Lechner, sometime in 2006");
+	}
+	return version_str; 
+}
 
 /*! \ingroup lmisc
  * Print usage and exit.
@@ -148,7 +158,7 @@ LaidoutApp::LaidoutApp() : anXApp()
 {	
 	project=NULL;
 	curdoc=NULL;
-	tooltips=800;
+	tooltips=1000;
 }
 
 //! Destructor, only have to delete project!
@@ -238,7 +248,7 @@ void LaidoutApp::setupdefaultcolors()
 	color_buttontext=  rgbcolor(0,0,0);
 	color_buttonmo=    rgbcolor(164,164,164);
 	color_pad=         rgbcolor(128,128,128);
-	color_tooltipbg=   rgbcolor(128,128,255);
+	color_tooltipbg=   rgbcolor(255,255,128);
 	color_tooltiptext= rgbcolor(0,0,0);
 	color_bw=          1;
 }
