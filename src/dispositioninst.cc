@@ -22,8 +22,11 @@ extern RefCounter<SomeData> datastack;
  *   CompositeDisposition ***todo
  *
  *  Some other useful ones defined elsewhere are:
- *   Dodecahedron         ***todo (in dodecahedron.cc) 
  *   NetDisposition       ***todo (dispositions/netdisposition.cc)
+ *   WhatupDisposition    ***todo, holds another disposition, but
+ *   						prints multiple papers on a single paper,
+ *   						or allows different papers to map to the
+ *   						same paper, like posterizing
  * 
  * </pre>
  *
@@ -628,6 +631,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichpage)
 	 //*** maybe keep around a copy of the outline, then checkin in destructor rather
 	 //than GetPage here?
 	SomeData *noutline=GetPage(0,0); //this checks out the outline
+	//transform_identity(noutline->m()); // <-- transform was identity already
 	Group *g=new Group;
 	g->push(noutline,0); // this checks it out again..
 	g->FindBBox();

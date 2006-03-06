@@ -9,7 +9,6 @@
 #include "newdoc.h"
 #include "interfaces.h"
 
-#define LAIDOUT_VERSION "0.01"
 const char *LaidoutVersion();
 
 class LaidoutApp : public Laxkit::anXApp

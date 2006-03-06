@@ -14,5 +14,5 @@ color_button		192 192 192
 color_buttontext    0 0 0
 color_buttonmo      164 164 164
 color_pad			128 128 128
-color_tooltipbg     128 128 255
+color_tooltipbg     255 255 128
 color_tooltiptext   0 0 0

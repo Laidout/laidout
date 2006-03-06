@@ -65,6 +65,8 @@ class LaidoutViewport : public Laxkit::ViewportWindow, virtual public ObjectCont
 	virtual void Refresh();
 	virtual int init();
 	virtual int CharInput(char ch,unsigned int state);
+	virtual int MouseMove(int x,int y,unsigned int state);
+	
 	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
 	
 	virtual flatpoint realtoscreen(flatpoint r);

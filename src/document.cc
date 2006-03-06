@@ -5,6 +5,7 @@
 #include "document.h"
 #include "saveppt.h"
 #include "printing/psout.h"
+#include "version.h"
 #include <lax/attributes.h>
 using namespace LaxFiles;
 
@@ -286,7 +287,7 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 	cout <<"....Saving document to "<<saveas<<" in "<<dir<<endl;
 	if (dir) free(dir);
 //	f=stdout;//***
-	fprintf(f,"#Laidout 0.1 Document\n");
+	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	dump_out(f,0);
 	fclose(f);
 	return 0;

@@ -35,9 +35,10 @@ objs= \
 	laidout-more.o \
 	laidout.o 
 
+all: laidout
 
-laidout: lax laxinterface $(objs) printing
-	$(LD) $(LDFLAGS) $(objs) printing/*.o -llaxinterfaces -llaxkit -o $@
+laidout: lax laxinterface $(objs) printing dispositions
+	$(LD) $(LDFLAGS) $(objs) printing/*.o dispositions/*.o -llaxinterfaces -llaxkit -o $@
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
@@ -60,7 +61,7 @@ dispositions:
 	cd dispositions && $(MAKE)
 
 
-.PHONY: clean lax docs printing
+.PHONY: clean lax docs printing dispositions
 clean:
 	rm -f laidout *.o
 	cd printing && $(MAKE) clean

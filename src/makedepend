@@ -27,6 +27,7 @@ disposition.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
 disposition.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
 disposition.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
 disposition.o: /home/tom/p/sourceforge/lax/refcounter.h
+disposition.o: /home/tom/p/sourceforge/lax/transformmath.h
 dispositioninst.o: dispositioninst.h disposition.h
 dispositioninst.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
 dispositioninst.o: /home/tom/p/sourceforge/lax/anobject.h
@@ -94,7 +95,8 @@ dispositions.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h
 dispositions.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
 dispositions.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
 dispositions.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
-dispositions.o: dispositioninst.h
+dispositions.o: dispositioninst.h dispositions/netdisposition.h disposition.h
+dispositions.o: dispositions/nets.h
 document.o: /home/tom/p/sourceforge/lax/strmanip.h
 document.o: /home/tom/p/sourceforge/lax/lists.cc document.h styles.h
 document.o: /home/tom/p/sourceforge/lax/anobject.h
@@ -116,33 +118,8 @@ document.o: /home/tom/p/sourceforge/lax/panuser.h
 document.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
 document.o: /home/tom/p/sourceforge/lax/rulerwin.h
 document.o: /home/tom/p/sourceforge/lax/scroller.h group.h objectcontainer.h
-document.o: papersizes.h saveppt.h printing/psout.h document.h
+document.o: papersizes.h saveppt.h printing/psout.h document.h version.h
 document.o: /home/tom/p/sourceforge/lax/laxdebug.h
-dodecahedron.o: dispositioninst.h disposition.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/anobject.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/misc.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/doublebbox.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/vectors.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/lists.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/attributes.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/dump.h page.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/displayer.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/anxapp.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/laxdefs.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/fontmanager.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/strmanip.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/pancontroller.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/panuser.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/rulerwin.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/scroller.h group.h
-dodecahedron.o: objectcontainer.h styles.h papersizes.h document.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
-dodecahedron.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
 drawdata.o: /home/tom/p/sourceforge/lax/interfaces/gradientinterface.h
 drawdata.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
 drawdata.o: /home/tom/p/sourceforge/lax/displayer.h
@@ -347,7 +324,7 @@ laidout.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h viewwindow.h
 laidout.o: /home/tom/p/sourceforge/lax/interfaces/viewerwindow.h
 laidout.o: /home/tom/p/sourceforge/lax/numinputslider.h
 laidout.o: /home/tom/p/sourceforge/lax/numslider.h dispositioninst.h
-laidout.o: /home/tom/p/sourceforge/lax/lists.cc
+laidout.o: version.h /home/tom/p/sourceforge/lax/lists.cc
 laidout.o: /home/tom/p/sourceforge/lax/refcounter.cc
 laidout.o: /home/tom/p/sourceforge/lax/refcounter.h
 laidout-more.o: laidout.h /home/tom/p/sourceforge/lax/anxapp.h
@@ -632,7 +609,8 @@ viewwindow.o: /home/tom/p/sourceforge/lax/textxeditbase.h
 viewwindow.o: /home/tom/p/sourceforge/lax/texteditbase.h
 viewwindow.o: /home/tom/p/sourceforge/lax/filepreviewer.h
 viewwindow.o: /home/tom/p/sourceforge/lax/mesbar.h
-viewwindow.o: /home/tom/p/sourceforge/lax/refcounter.h spreadeditor.h
+viewwindow.o: /home/tom/p/sourceforge/lax/refcounter.h
+viewwindow.o: /home/tom/p/sourceforge/lax/colorbox.h spreadeditor.h
 viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/viewerwindow.h
 viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
 viewwindow.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h document.h
@@ -641,6 +619,5 @@ viewwindow.o: papersizes.h drawdata.h viewwindow.h
 viewwindow.o: /home/tom/p/sourceforge/lax/numinputslider.h laidout.h newdoc.h
 viewwindow.o: /home/tom/p/sourceforge/lax/checkbox.h
 viewwindow.o: /home/tom/p/sourceforge/lax/textbutton.h
-viewwindow.o: /home/tom/p/sourceforge/lax/button.h
-viewwindow.o: /home/tom/p/sourceforge/lax/colorbox.h interfaces.h extras.h
+viewwindow.o: /home/tom/p/sourceforge/lax/button.h interfaces.h extras.h
 viewwindow.o: showrusage.cc

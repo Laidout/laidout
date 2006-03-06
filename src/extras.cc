@@ -111,6 +111,12 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
  * // *** perhaps dpi should be a per page feature? though gs only has it for whole doc, would be
  * reasonable to have page control it here. The disposition dpi is what gets sent to gs
  * 
+ * \todo *** please note that i have big plans for this extra, involving being able to dump
+ * stuff into 'arrangements' which will be kind of like template pages. Each spot of an
+ * arrangement will be able to hold the item(s) centered, scaled to fit, scaled and rotated to fit,
+ * or flowed into the spot. ultimately, this should also
+ * be able to reasonably handle page shapes that are not rectangles..
+ * 
  * Returns the page index of the final page.
  */
 int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, int imagesperpage, int ddpi)
@@ -129,6 +135,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 	double x,y,w,h,ww,hh,s,rw,rh,rrh;
 	int c,c2,c3,n,nn,nr=1;
 	n=0; // total number of images placed, nn is placed for page
+	SomeData *outline=NULL;
 	for (c=0; c<nimages; c++) {
 		cout <<"  starting page "<<endpage+1<<" with index "<<c<<endl;
 		if (!images[c]) continue;
@@ -140,8 +147,10 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		
 		 // figure out page characteristics: dpi, w, h, and scaling
 		s=1./dpi; 
-		ww=doc->pages.e[endpage]->pagestyle->w();
-		hh=doc->pages.e[endpage]->pagestyle->h();
+		if (outline) delete outline;
+		outline=doc->docstyle->disposition->GetPage(endpage,1);
+		ww=outline->maxx-outline->minx;
+		hh=outline->maxy-outline->miny;;
 		//cout <<"  image("<<images[c]->object_id<<") "<<images[c]->filename<<": ww,hh:"<<
 		//	ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
 		
@@ -162,8 +171,8 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 				if (h>rh) rh=h;
 			}
 			if (nn && rrh+rh>hh) break; // row would be off page, so go on to next page
-			x=(ww-rw)/2;
-			y=hh-rrh-rh/2;
+			x=(ww-rw)/2+outline->minx;
+			y=hh-rrh-rh/2+outline->miny;
 			for (c3=0; c3<c2; c3++) {
 				w=(images[nn+c+c3]->maxx-images[nn+c+c3]->minx)*s;
 				h=(images[nn+c+c3]->maxy-images[nn+c+c3]->miny)*s;

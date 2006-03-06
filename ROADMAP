@@ -8,13 +8,15 @@ VERSION 0.01
 ------------
 Clean up web page a bit.
 
-TILING MUST WORK!!!!!!! for booklets also (done)
-dump in images dialog?
-finish up NetDisposition?
-and set said tooltips for the mystery numbers in ViewWindow
-Images should work well (done)
-Color patches should work well
-in the laxkit: menuselector, tooltips IMPORTANT!!,
+(done) TILING MUST WORK!!!!!!! for booklets also 
+(done) Get NetDisposition sort of going
+       Implement page clipping for display AND for printing..
+(done) Images should work well
+       Color patches should work well
+(done) in the laxkit: menuselector,
+(done) tooltips IMPORTANT!!,
+(done) and set said tooltips for the mystery numbers in ViewWindow 
+       Add copyright notice to source files
 
 
 VERSION 0.1
@@ -45,7 +47,7 @@ VERSION 0.2
 Freehand drawing with tablet support
 Full color management implemented
 fancy arranging to align along any path, and use any path as a kind of tab stop
-Text for heaven's sake!! This means at least a basic line breaker,
+Text for god's sake!! This means at least a basic line breaker,
  layout inside any path and runaround facility.
  Also most likely means finally deciding on a rendering backend
 ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles

@@ -33,9 +33,11 @@ available. Laidout expects Imlib2 support to have been compiled
 into the Laxkit. Then type:
 
 make
+make install
 
-Since this program is so utterly unstable,
-this is no 'configure' or 'make install' at the moment.
+There is no 'configure' at the moment. 'make install' will put
+laidout-(whatever version) in (usually) /usr/local/bin, and make a
+symbolic link /usr/local/bin/laidout point to it.
 The Makefile is for the development source, and also tries
 to do 'make' of the Laxkit, since Laxkit and Laidout are 
 so intertwined, so make sure that LAXDIR in the Makefile is
