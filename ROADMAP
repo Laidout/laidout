@@ -6,17 +6,16 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.01
 ------------
-Clean up web page a bit.
-
+       Clean up web page a bit.
 (done) TILING MUST WORK!!!!!!! for booklets also 
 (done) Get NetDisposition sort of going
        Implement page clipping for display AND for printing..
 (done) Images should work well
-       Color patches should work well
+       Color patches should work enough to be getting on with
 (done) in the laxkit: menuselector,
 (done) tooltips IMPORTANT!!,
 (done) and set said tooltips for the mystery numbers in ViewWindow 
-       Add copyright notice to source files
+(done) Add copyright notice to source files
 
 
 VERSION 0.1
@@ -36,7 +35,7 @@ Generic style edit window which allows:
 Overall windowing setup using Laxkit::SplitWindows, docking, etc.
 from laxkit: replacement of 'datastack' should be complete, do same here
 CompositeDisposition should be ready
-DumpImages within Arrangements 
+DumpImages within Arrangements, which are sort of a template of positions
 Plugin infrastructure should be in place
 Low level tree editor, akin to the xml editor in inkscape
 PDF out
