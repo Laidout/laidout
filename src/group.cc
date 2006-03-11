@@ -49,9 +49,14 @@ using namespace std;
 /*! \fn int Group::findindex(Laxkit::SomeData *d)
  * \brief Just does: return objs.findindex(d);
  */
+/*! \fn void Group::swap(int i1,int i2)
+ * \brief Swap items i1 and i2
+ */
+/*! \fn const char *Group::whattype()
+ * \brief Returns 'Group'.
+ */
 //class Group : public ObjectContainer,
 //			  virtual public Laxkit::SomeData 
-//			  
 //{
 // protected:
 //	Laxkit::PtrStack<Laxkit::SomeData> objs;

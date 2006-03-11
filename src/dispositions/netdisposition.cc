@@ -200,6 +200,8 @@ void NetDisposition::dump_out(FILE *f,int indent)
 		fprintf(f,"%sdefaultpaperstyle\n",spc);
 		paperstyle->dump_out(f,indent+2);
 	}
+	if (printnet) fprintf(f,"%sprintnet",spc);
+		else fprintf(f,"%sprintnet false",spc);
 	if (net) {
 		fprintf(f,"%snet",spc);
 		if (netisbuiltin) fprintf(f," %s\n",net->whatshape());
@@ -236,6 +238,8 @@ void NetDisposition::dump_in_atts(LaxFiles::Attribute *att)
 				net->dump_out(stdout,2);
 				cout <<"-----------end netdisp..----------"<<endl;
 			}
+		} else if (!strcmp(name,"printnet")) {
+			printnet=BooleanAttribute(value);
 		}
 	}
 	setPage();
@@ -410,10 +414,23 @@ Spread *NetDisposition::PaperLayout(int whichpaper)
 	spread->style=SPREAD_PAPER;
 
 	 // make the paper outline
-	PathsData *path=static_cast<PathsData *>(spread->path);
+	PathsData *path=static_cast<PathsData *>(spread->path);//this was a local PathsData obj
+
+	 // put a reference to the outline in marks if printnet
+	if (printnet) {
+		spread->mask|=SPREAD_PRINTERMARKS;
+		spread->marks=path;
+		spread->marksarelocal=0;
+		datastack.push(path,1,path->object_id,1);
+	}
+	
+	Group *g=new Group;
+	spread->path=static_cast<SomeData *>(g);
+	g->push(path,0);
+	path=new PathsData();
 	path->pushEmpty(0);
 	path->appendRect(0,0,paperstyle->w(),paperstyle->h(),0);
-	path->FindBBox();
+	g->FindBBox();
 
 	return spread;
 }

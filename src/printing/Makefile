@@ -16,6 +16,7 @@ DEBUGFLAGS= -g
 objs= \
 	psfilters.o \
 	pscolorpatch.o \
+	pspathsdata.o \
 	psout.o
 
 
