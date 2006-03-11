@@ -225,7 +225,9 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val)
 //	NetFace();
 //	virtual ~NetFace();
 //	const NetFace &operator=(const NetFace &face);
+//	virtual void clear();
 //	virtual int Set(const char *list, const char *link=NULL);
+//	virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
 //	
 //	virtual void dump_out(FILE *f,int indent, int pfirst=0);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
@@ -245,6 +247,16 @@ NetFace::~NetFace()
 	if (points) delete[] points;
 	if (facelink) delete[] facelink;
 	if (m) delete[] m; 
+}
+
+//! Delete m, points, and facelink, set align stuff to -1.
+void NetFace::clear()
+{
+	if (points) delete[] points; points=NULL;
+	if (facelink) delete[] facelink; facelink=NULL;
+	if (m) delete[] m; m=NULL;
+	np=0;
+	aligno=alignx=faceclass=-1;
 }
 
 //! Assignment operator, straightforward copy all.
@@ -290,6 +302,34 @@ int NetFace::Set(const char *list, const char *link)
 		facelink=new int[np];
 		for (n=0; n<np; n++) facelink[n]=-1;
 	}
+	return np;
+}
+
+//! Set points and facelink from an integer list of length nn.
+/*! If dellists!=0, then take possession of the list and link arrays.
+ * Otherwise, copy list and link.
+ *
+ * Returns the number of points.
+ */
+int NetFace::Set(int n,int *list,int *link,int dellists)//dellists=0
+{
+	if (list && points) { delete[] points; points=NULL; }
+	if (link && facelink) { delete[] facelink; facelink=NULL; }
+	
+	 // establish new points
+	if (dellists) points=list;
+	else {
+		points=new int[n];
+		memcpy(points,list,n*sizeof(int));
+	}
+	 // establish new links
+	if (dellists) facelink=link;
+	else {
+		facelink=new int[n];
+		memcpy(facelink,link,n*sizeof(int));
+	}
+	np=n;
+
 	return np;
 }
 

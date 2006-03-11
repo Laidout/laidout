@@ -72,10 +72,11 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual ~Document();
 	virtual const char *Name();
 	virtual int Name(const char *nname);
-	virtual Page *Curpage();
-
 	virtual void clear();
+
+	virtual Page *Curpage();
 	virtual int NewPages(int starting,int n);
+	virtual int RemovePages(int start,int n);
 	
 	virtual void dump_out(FILE *f,int indent);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);

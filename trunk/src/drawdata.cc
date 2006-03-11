@@ -37,6 +37,7 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 //#include <lax/interfaces/gradientinterface.h>
+#include <lax/transformmath.h>
 
 #include <lax/interfaces/somedataref.h>
 #include "drawdata.h"
@@ -48,10 +49,10 @@ using namespace Laxkit;
  * *** uh, this is unnecessary? the other one does this already....
  * should it not??
  */
-void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2)
+void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
 	dp->PushAndNewTransform(m);
-	DrawData(dp,data,a1,a2);
+	DrawData(dp,data,a1,a2,flags);
 	dp->PopAxes();
 }
 
@@ -63,13 +64,13 @@ void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2)
  *
  * Note that for groups, a1 and a2 are passed along to all the group members..
  */
-void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2)
+void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
 	dp->PushAndNewTransform(data->m()); // insert transform first
 	if (dynamic_cast<Group *>(data)) { // Is a layer or a group
 		 //*** perhaps this should rather check whattype==Group?
 		Group *g=dynamic_cast<Group *>(data);
-		dp->drawaxes();
+		if (flags&DRAW_AXES) dp->drawaxes();
 		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2);
 		dp->PopAxes();
 		return;
@@ -78,7 +79,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2)
 	} 
 	 // find interface in interfacepool
 	int c;
-	dp->drawaxes();
+	if (flags&DRAW_AXES) dp->drawaxes();
 	for (c=0; c<laidout->interfacepool.n; c++) {
 		if (laidout->interfacepool.e[c]->draws(data->whattype())) break;
 	}
@@ -176,3 +177,225 @@ int pointisin(flatpoint *points, int n,flatpoint p)
 	return w;
 }
 
+
+//! Return a list of points corresponding to the area.
+/*! \ingroup objects
+ * Converts a a group of PathsData, a SomeDataRef to a PathsData, 
+ * or a single PathsData to a poly-line list of flatpoints. The union
+ * of the returned lists is the area corresponding to outline.
+ * If extra_m is not NULL, then apply this transform to the points.
+ *
+ * Non-PathsData elements in a group does not break the finding.
+ * Those extra objects are just ignored.
+ *
+ * Returns the number of single paths interpreted, or negative number for error.
+ *
+ * If iscontinuing!=0, then ***.
+ *
+ * \todo *** currently, uses all points (vertex and control points)
+ * in the paths as a polyline, not as the full curvy business 
+ * that PathsData are capable of. when ps output of paths is 
+ * actually more implemented, this will change..
+ */
+Region GetRegionFromPaths(Laxkit::SomeData *outline, double *extra_m)
+{
+	PathsData *path=dynamic_cast<PathsData *>(outline);
+
+	 //If is not a path, but is a reference to a path
+	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
+		SomeDataRef *ref;
+		 // skip all nested SomeDataRefs
+		do {
+			ref=dynamic_cast<SomeDataRef *>(outline);
+			if (ref) outline=ref->thedata;
+		} while (ref);
+		if (outline) path=dynamic_cast<PathsData *>(outline);
+	}
+
+	int n=0; //the number of objects interpreted and that have non-empty paths
+	Region region=0,region2=0,region3=0; //in Xlib currently, Regions are pointers...
+	
+	 // If is not a path, and is not a ref to a path, but is a group,
+	 // then check its elements 
+	if (!path && dynamic_cast<Group *>(outline)) {
+		Group *g=dynamic_cast<Group *>(outline);
+		SomeData *d;
+		double m[6];
+		for (int c=0; c<g->n(); c++) {
+			d=g->e(c);
+			 //add transform of group element
+			if (extra_m) transform_mult(m,d->m(),extra_m);
+			else transform_copy(m,d->m());
+			region2=GetRegionFromPaths(d,m);
+			if (!XEmptyRegion(region2)) {
+				if (!region3) region3=XCreateRegion();
+				if (!region)   region=XCreateRegion();
+				XUnionRegion(region2,region,region3);
+				if (region) { XDestroyRegion(region); region=0; }
+				XDestroyRegion(region2); region2=0;
+				region=region3;
+				region3=NULL;
+			}
+		}
+	}
+	
+	if (!path) {
+		if (!region) region=XCreateRegion();
+		return region;
+	}
+	
+	 // finally append to clip path
+	Coordinate *start,*p;
+	int np,maxp=0;
+	XPoint *points=NULL;
+	flatpoint pp;
+	int c,c2;
+	for (c=0; c<path->paths.n; c++) {
+		np=0;
+		start=p=path->paths.e[c]->path;
+		if (!p) continue;
+		do { p=p->next; np++; } while (p && p!=start);
+		if (p==start) { // only include closed paths
+			if (np>maxp) {
+				if (points) delete[] points; 
+				maxp=np;
+				points=new XPoint[maxp];
+			}
+			n++;
+			c2=0;
+			do {
+				if (extra_m) pp=transform_point(extra_m,p->p());
+					else pp=p->p();
+				points[c2].x=(int)pp.x;
+				points[c2].y=(int)pp.y;
+					
+				p=p->next;	
+				c2++;
+			} while (p && p!=start);
+			if (!region)   region=XCreateRegion();
+			region2=XPolygonRegion(points,np,WindingRule);
+			if (!region3) region3=XCreateRegion();
+			XUnionRegion(region,region2,region3);
+			XDestroyRegion(region);
+			XDestroyRegion(region2); region2=0;
+			region=region3;
+			region3=NULL;
+		}
+	}
+	if (points) delete[] points;
+	
+	if (!region) region=XCreateRegion();
+	return region;
+}
+
+////! Create an X region from one or more closed paths.
+///*! This region can then become a window's clipping area
+// * with a call to XSetRegion().
+// */
+//int GetRegionFromPaths(SomeData *outline,double *extra_m,Region *region)
+//{
+//	PtrStack<flatpoint> list(2);
+//	GetAreaPath(outline,extra_m,&list,NULL);
+//	if (!list.n) return 0;
+//	Region r2=XCreateRegion(),r3;
+//	int maxp=list.e[0]->***;
+//	XPoint *points=new XPoint[maxp];
+//	int c,c2;
+//	for (c=0; c<list.n; c++) {
+//		if (list.e[c]->*** >maxp) {
+//			delete[] points;
+//			points=new XPoint[maxp];
+//		}
+//		for (c2=0; c2<***; c2++) {
+//			points[c2].x=(int)list.e[c][c2].x;
+//			points[c2].y=(int)list.e[c][c2].y;
+//		}
+//		r3=XPolygonRegion(points,***,WindingRule);
+//		XUnionRegion(r2,r3,r1);
+//		XDestroyRegion(r2);
+//		XDestroyRegion(r3);
+//		r2=r1;
+//	}
+//	*region=r1;
+//	return 0;
+//}
+//
+////! Return a list of points corresponding to the area.
+///*! \ingroup objects
+// * Converts a a group of PathsData, a SomeDataRef to a PathsData, 
+// * or a single PathsData to a poly-line list of flatpoints. The union
+// * of the returned lists is the area corresponding to outline.
+// * If extra_m is not NULL, then apply this transform to the points.
+// *
+// * Non-PathsData elements in a group does not break the finding.
+// * Those extra objects are just ignored.
+// *
+// * Returns the number of single paths interpreted, or negative number for error.
+// *
+// * If iscontinuing!=0, then ***.
+// *
+// * \todo *** currently, uses all points (vertex and control points)
+// * in the paths as a polyline, not as the full curvy business 
+// * that PathsData are capable of. when ps output of paths is 
+// * actually more implemented, this will change..
+// */
+//int GetAreaPath(Laxkit::SomeData *outline, 
+//		double *extra_m,
+//		PtrStack<flatpoint> **list,
+//		int *n_ret)//iscontinuing=0
+//{***
+//	if (!list) return -1;
+//	if (!*list) *list=new PtrStack<flatpoint>(2);
+//
+//	PathsData *path=dynamic_cast<PathsData *>(outline);
+//
+//	 //If is not a path, but is a reference to a path
+//	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
+//		SomeDataRef *ref;
+//		 // skip all nested SomeDataRefs
+//		do {
+//			ref=dynamic_cast<SomeDataRef *>(outline);
+//			if (ref) outline=ref->thedata;
+//		} while (ref);
+//		if (outline) path=dynamic_cast<PathsData *>(outline);
+//	}
+//
+//	int n=0; //the number of objects interpreted and that have non-empty paths
+//	
+//	 // If is not a path, and is not a ref to a path, but is a group,
+//	 // then check its elements 
+//	if (!path && dynamic_cast<Group *>(outline)) {
+//		***
+//		Group *g=dynamic_cast<Group *>(outline);
+//		SomeData *d;
+//		double m[6];
+//		for (int c=0; c<g->n(); c++) {
+//			d=g->e(c);
+//			 //add transform of group element
+//			GetAreaPath(d,d->m(),list,*** n_ret);
+//		}
+//	}
+//	
+//	if (!path) return n;
+//	
+//	 // finally append to clip path
+//	Coordinate *start,*p;
+//	for (int c=0; c<path->paths.n; c++) {
+//		start=p=path->paths.e[c]->path;
+//		if (!p) continue;
+//		do { p=p->next; } while (p && p!=start);
+//		if (p==start) { // only include closed paths
+//			n++;
+//			do {
+//				if (extra_m) pp=transform_point(extra_m,p->p());
+//					else pp=p->p();
+//				**** add pp to list
+//				p=p->next;	
+//			} while (p && p!=start);
+//			list.push(plist.extractArray
+//		}
+//	}
+//	
+//	if (n && !iscontinuing) fprintf(f,"clip\n");
+//	return n;
+//}

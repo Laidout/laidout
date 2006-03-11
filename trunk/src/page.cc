@@ -97,6 +97,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
 		if (!strcmp(name,"marginsclip")) {
 			if (BooleanAttribute(value)) flags|=MARGINS_CLIP;
 		} else if (!strcmp(name,"pageclips")) {
+			//cout <<"*****adding page clips"<<endl;
 			if (BooleanAttribute(value)) flags|=PAGE_CLIPS;
 		} else if (!strcmp(name,"facingpagesbleed")) {
 			if (BooleanAttribute(value)) flags|=FACING_PAGES_BLEED;
@@ -437,6 +438,7 @@ Page::~Page()
 int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
 {
 	if (!pstyle) return 1;
+	//unsigned int oldflags=0;
 	if (pagestyle) {
 		if (psislocal==1) delete pagestyle;
 		else if (psislocal==0) objectstack.checkin(pagestyle);
@@ -466,6 +468,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 			PageStyle *ps;
 			if (!strcmp(value,"RectPageStyle")) ps=new RectPageStyle();//***
 			else ps=new PageStyle();
+			if (pagestyle) ps->flags=pagestyle->flags;
 			ps->dump_in_atts(att->attributes.e[c]);
 			InstallPageStyle(ps,0);
 		} else if (!strcmp(name,"layer")) {

@@ -30,6 +30,7 @@
 void psdumpobj(FILE *f,Laxkit::SomeData *obj);
 int psout(FILE *f,Document *doc);
 int psout(Document *doc,const char *file=NULL);
+int psSetClipToPath(FILE *f,Laxkit::SomeData *outline,int iscontinuing=0);
 
 #endif
 

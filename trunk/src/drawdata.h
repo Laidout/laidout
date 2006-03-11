@@ -27,11 +27,16 @@
 #include <lax/displayer.h>
 #include <lax/interfaces/somedata.h>
 
-void DrawData(Laxkit::Displayer *dp,double *m,Laxkit::SomeData *data,Laxkit::anObject *a1,Laxkit::anObject *a2);
-void DrawData(Laxkit::Displayer *dp,Laxkit::SomeData *data,Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL);
+#define DRAW_AXES (1<<0)
+
+void DrawData(Laxkit::Displayer *dp,double *m,Laxkit::SomeData *data,
+				Laxkit::anObject *a1,Laxkit::anObject *a2,unsigned int flags=0);
+void DrawData(Laxkit::Displayer *dp,Laxkit::SomeData *data,
+				Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,unsigned int flags=0);
 Laxkit::SomeData *newObject(const char *thetype);
 int pointisin(flatpoint *points, int n,flatpoint p);
 int boxisin(flatpoint *points, int n,Laxkit::DoubleBBox *bbox);
+Region GetRegionFromPaths(Laxkit::SomeData *outline, double *extra_m);
 
 #endif
 

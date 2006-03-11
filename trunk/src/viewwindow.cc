@@ -287,19 +287,27 @@ int VObjContext::isequal(const ObjectContext *oc)
 //{
 //	char lfirsttime;
 // protected:
-//	int viewmode;
+//	unsigned int drawflags;
+//	int viewmode,searchmode;
+//	int showstate;
 //	int transformlevel;
 //	double ectm[6];
 //	XdbeBackBuffer backbuffer;
 //	Group limbo;
 //	virtual void setupthings(int topage=-1);
+//	virtual void LaidoutViewport::setCurobj(VObjContext *voc);
+//	virtual void LaidoutViewport::findAny();
+//	virtual int nextObject(VObjContext *oc);
+//	virtual void transformToContext(double *m,FieldPlace &place,int invert=1);
 // public:
 //	 //*** maybe these should be protected?
 //	char *pageviewlabel;
+//	
+//	 // these all have to refer to proper values in each other!
 //	Document *doc;
 //	Spread *spread;
 //	Page *curpage;
-//	 // these shadow viewport window variables of the same name
+//	 // these shadow viewport window variables of the same name but diff. type
 //	VObjContext curobj,firstobj,foundobj,foundtypeobj;
 //	
 //	LaidoutViewport(Document *newdoc);
@@ -323,8 +331,10 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	virtual int NextSpread();
 //	virtual int PreviousSpread();
 //	
-//	virtual int ChangeObject(Laxkit::SomeData *d,int w=0,int x=0,int y=0,const char *dtype=NULL);
-//	virtual Laxkit::SomeData *FindObject(int x,int y, const char *dtype, Laxkit::SomeData *exclude, int start);
+//	virtual int ChangeObject(Laxkit::SomeData *d,Laxkit::ObjectContext *oc);
+//	virtual int LaidoutViewport::SelectObject(int i);
+//	virtual int FindObject(int x,int y, const char *dtype, 
+//					Laxkit::SomeData *exclude, int start,Laxkit::ObjectContext **oc);
 //	virtual void ClearSearch();
 //	virtual int ChangeContext(int x,int y,Laxkit::ObjectContext **oc);
 //	
@@ -333,10 +343,13 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	virtual void postmessage(const char *mes);
 //	virtual int DeleteObject();
 //	virtual int ObjectMove(Laxkit::SomeData *d);
-//	virtual int validateCurobj();
+//	virtual int CirculateObject(int dir, int i,int objOrSelection);
+//	virtual int validContext(VObjContext *oc);
 //	virtual void clearCurobj();
+//	virtual int locateObject(Laxkit::SomeData *d,FieldPlace &place);
 //	virtual int n() { if (spread) return 2; return 1; }
 //	virtual Laxkit::anObject *object_e(int i);
+//	virtual int curobjPage();
 //};
 
 //! Constructor, set up initial dp.ctm, init various things, call setupthings(), and set workspace bounds.
@@ -346,6 +359,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	showstate=1;
 	backbuffer=0;
 	lfirsttime=1;
+	drawflags=DRAW_AXES;
 	doc=newdoc;
 	dp.NewTransform(1.,0.,0.,-1.,0.,0.); //***this should be adjusted for physical dimensions of monitor screen
 	
@@ -1091,9 +1105,10 @@ void LaidoutViewport::findAny()
 	Page *page;
 	if (spread) {
 		for (c=0; c<spread->pagestack.n; c++) {
-			page=dynamic_cast<Page *>(spread->object_e(0));
+			page=dynamic_cast<Page *>(spread->object_e(c));
 			if (!page) continue;
 			for (c2=0; c2<page->layers.n; c2++) {
+				cout <<" findAny: pg="<<c<<":"<<spread->pagestack.e[c]->index<<"  has "<<page->layers.e[c2]->n()<<" objs"<<endl;
 				if (!page->layers.e[c2]->n()) continue;
 				firstobj.set(page->layers.e[c2]->e(0),4, 1,c,c2,0);
 				return;
@@ -1456,6 +1471,11 @@ int LaidoutViewport::init()
  *
  * \todo *** this is rather horrible, needs near complete revamp, have to decide
  * on graphics backend. cairo? antigrain?
+ *
+ * \todo *** implement the 'whatever' page, which is basically just a big whiteboard
+ *
+ * \todo *** this should be modified so order things are drawn is adjustible,
+ * so limbo then pages, or pages then limbo, or just limbo, etc..
  */
 void LaidoutViewport::Refresh()
 {
@@ -1482,7 +1502,7 @@ cout <<"======= Refreshing LaidoutViewport..";
 	}
 	
 	dp.StartDrawing(this,backbuffer);
-	dp.drawaxes();
+	if (drawflags&DRAW_AXES) dp.drawaxes();
 	int c,c2;
 
 	 // draw page outline..
@@ -1490,13 +1510,13 @@ cout <<"======= Refreshing LaidoutViewport..";
 	 //		pagelayout <-- only does this now
 	 //		paperlayout <-- this has other printer marks...
 	 //		single page
-	 //		whatever <-- doesn't draw page outline..
+	 //		whatever <-- doesn't draw page outline.. is just big whiteboard
 	dp.Updates(0);
 
 	 // draw limbo objects
 	cout <<"drawing limbo objects.."<<endl;
 	for (c=0; c<limbo.n(); c++) {
-		DrawData(&dp,limbo.e(c));
+		DrawData(&dp,limbo.e(c),NULL,NULL,drawflags);
 	}
 	
 	if (spread && showstate==1) {
@@ -1507,13 +1527,13 @@ cout <<"======= Refreshing LaidoutViewport..";
 		dp.ShiftScreen(5,5);
 		if (spread->path) {
 			FillStyle fs(0,0,0, WindingRule,FillSolid,GXcopy);
-			//DrawData(&dp,spread->path->m(),spread->path,NULL,&fs); //***,linestyle,fillstyle)
-			DrawData(&dp,spread->path,NULL,&fs); //***,linestyle,fillstyle)
+			//DrawData(&dp,spread->path->m(),spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
+			DrawData(&dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
 			 // draw outline *** must draw filled with paper color
 			fs.color=~0;
 			dp.PopAxes();
-			//DrawData(&dp,spread->path->m(),spread->path,NULL,&fs);
-			DrawData(&dp,spread->path,NULL,&fs);
+			//DrawData(&dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
+			DrawData(&dp,spread->path,NULL,&fs,drawflags);
 		}
 		 
 		 // draw the pages
@@ -1530,7 +1550,28 @@ cout <<"======= Refreshing LaidoutViewport..";
 			if (!page) continue;
 			sd=spread->pagestack.e[c]->outline;
 			dp.PushAndNewTransform(sd->m()); // transform to page coords
-			dp.drawaxes();
+			if (drawflags&DRAW_AXES) dp.drawaxes();
+			
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+//				//-------debugging:---vvv
+//				XPoint clip[]={{0,win_h/2},{win_w/2,0},{win_w,win_h/2},{win_w/2,win_h},{0,win_h/2}};
+//				XDrawLines(dp.GetDpy(),dp.GetWindow(),dp.GetGC(),clip,5,CoordModeOrigin);
+//				Region region=XPolygonRegion(clip,5,WindingRule);
+//				XSetRegion(dp.GetDpy(),dp.GetGC(),region);
+//				XDestroyRegion(region);
+//				//-------------^^^
+				 // setup clipping region to be the page
+				Region region;
+				region=GetRegionFromPaths(sd,dp.m());
+				if (!XEmptyRegion(region)) {
+					dp.clip(region,3);
+					//XSetRegion(dp.GetDpy(),dp.GetGC(),region);
+					cout <<"***** set clip path!"<<endl;
+				} else {
+					cout <<"***** no clip path to set."<<endl;
+				}
+				//XDestroyRegion(region);
+			}
 			
 			 //*** debuggging: draw X over whole page...
 	//		dp.NewFG(255,0,0);
@@ -1541,6 +1582,9 @@ cout <<"======= Refreshing LaidoutViewport..";
 	//		dp.drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->maxy));
 	//		dp.drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->minx,sd->maxy));
 	
+			 // write page number near the page..
+			 // mostly for debugging at the moment, might be useful to have
+			 // this be a togglable feature.
 			p=dp.realtoscreen(flatpoint(0,0));
 			if (page==curpage) dp.NewFG(0,0,0);
 			dp.drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
@@ -1548,13 +1592,20 @@ cout <<"======= Refreshing LaidoutViewport..";
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n; c2++) {
 				cout <<"  Layer "<<c2<<", objs.n="<<page->layers.e[c2]->n()<<endl;
-				DrawData(&dp,page->layers.e[c2]);
+				DrawData(&dp,page->layers.e[c2],NULL,NULL,drawflags);
 			}
+			
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+				 //remove clipping region
+				dp.clearclip();
+				XSetClipMask(dp.GetDpy(),dp.GetGC(),None);
+			}
+
 			dp.PopAxes(); // remove page transform
 		}
 	}
 	
-	 // Call Refresh for each interface that needs it
+	 // Call Refresh for each interface that needs it, ignoring clipping region
 	//if (curobj.obj) { 
 		 //*** this needs a bit more thought, might have several interfaces, that
 		 //don't all want curobj transform!!
@@ -1605,6 +1656,7 @@ cout <<"======= done refreshing LaidoutViewport.."<<endl;
  * <pre>
  * arrow keys reserved for interface use...
  * 
+ * 'x'       toggle drawing of axes for each object
  * 's'       toggle showing of the spread (shows only limbo)
  * 'm'       move current selection to another page, popus up a dialog ***imp me!
  * ' '       Center(), *** need center obj, page, spread, center+fit obj,page,spread,objcomponent
@@ -1695,6 +1747,11 @@ int LaidoutViewport::CharInput(char ch,unsigned int state)
 			if (CirculateObject(3,0,0)) needtodraw=1;
 			return 0;
 		}
+	} else if (ch=='x' && (state&LAX_STATE_MASK)==0) {
+		if (drawflags&DRAW_AXES) drawflags^=DRAW_AXES;
+		else drawflags|=DRAW_AXES;
+		needtodraw=1;
+		return 0;
 	}
 	return 1;
 }
@@ -1971,6 +2028,7 @@ int ViewWindow::init()
 	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newLayerNumber",
 								"Layer: ",1,1,1); //*** get cur page, use those layers....
+	num->tooltip("Sorry, layer control not well\nimplemented yet");
 	AddWin(num,num->win_w,0,50,50, num->win_h,0,50,50);
 	
 	StrSliderPopup *p=new StrSliderPopup(this,"view type",0, 0,0,0,0,1, NULL,window,"newViewType");
@@ -2129,9 +2187,17 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		updatePagenumber();
 		return 0;
 	} else if (!strcmp(mes,"addPage")) { // 
-		cout <<"ViewWindow got addPage *** imp me!! IMPORTANT!!!"<<endl;
+		int curpage=((LaidoutViewport *)viewport)->curobjPage();
+		int c=doc->NewPages(curpage+1,1); //add after curpage
+		if (c==0) GetMesbar()->SetText("Page added.");
+			else GetMesbar()->SetText("Error adding page.");
+		return 0;
 	} else if (!strcmp(mes,"deletePage")) { // 
-		cout <<"ViewWindow got deletePage *** imp me!! IMPORTANT!!!"<<endl;
+		int curpage=((LaidoutViewport *)viewport)->curobjPage();
+		int c=doc->RemovePages(curpage,1); //remove curpage
+		if (c==0) GetMesbar()->SetText("Page deleted.");
+			else GetMesbar()->SetText("Error deleting page.");
+		return 0;
 	} else if (!strcmp(mes,"newPageNumber")) { // 
 		if (e->data.l[0]>doc->pages.n) {
 			e->data.l[0]=1;

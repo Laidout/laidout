@@ -30,6 +30,9 @@
 #include "printing/psout.h"
 #include "version.h"
 #include <lax/attributes.h>
+#include "laidout.h"
+
+
 using namespace LaxFiles;
 
 #define LAX_DEBUG
@@ -151,10 +154,11 @@ DocumentStyle::~DocumentStyle()
 //	virtual ~Document();
 //	virtual const char *Name();
 //	virtual int Name(const char *nname);
-//	virtual Page *Curpage();
-//
 //	virtual void clear();
+//
+//	virtual Page *Curpage();
 //	virtual int NewPages(int starting,int n);
+//	virtual int RemovePages(int start,int n);
 //	
 //	virtual void dump_out(FILE *f,int indent);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
@@ -255,7 +259,7 @@ void Document::clear()
  * out of sync with the correct pagestyles, since w(), h(), and margins are incorrect... must
  * update dispositioninst.cc
  *
- * Returns number of pages added.
+ * Returns number of pages added, or negative for error.
  */
 int Document::NewPages(int starting,int np)
 {
@@ -268,7 +272,25 @@ int Document::NewPages(int starting,int np)
 	}
 	docstyle->disposition->NumPages(pages.n);
 	docstyle->disposition->SyncPages(this,starting,-1);
+	laidout->notifyDocTreeChanged();
 	return np;
+}
+
+//! Remove pages [start,start+n-1].
+/*! Return the number of pages removed, or negative for error.
+ *
+ * \todo *** this is slightly broken.. does not reorient pagestyles
+ * properly.
+ */
+int Document::RemovePages(int start,int n)
+{
+	if (start>=pages.n) return -1;
+	if (start+n>pages.n) n=pages.n-start;
+	for (int c=0; c<n; c++) {
+		pages.remove(start);
+	}
+	laidout->notifyDocTreeChanged();
+	return n;
 }
 
 	

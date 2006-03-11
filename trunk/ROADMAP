@@ -6,7 +6,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.01
 ------------
-       Clean up web page a bit.
+(done) Clean up web page a bit.
 (done) TILING MUST WORK!!!!!!! for booklets also 
 (done) Get NetDisposition sort of going
        Implement page clipping for display AND for printing..
@@ -16,6 +16,8 @@ VERSION 0.01
 (done) tooltips IMPORTANT!!,
 (done) and set said tooltips for the mystery numbers in ViewWindow 
 (done) Add copyright notice to source files
+(done) Add and Delete Page buttons
+(done) Throw together a quick key-stroke cheat sheet
 
 
 VERSION 0.1

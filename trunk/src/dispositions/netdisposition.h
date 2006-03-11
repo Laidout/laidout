@@ -32,6 +32,7 @@ class NetDisposition : public Disposition
  public:
 	Net *net;
 	int netisbuiltin;
+	int printnet;
 
 	NetDisposition(Net *newnet=NULL);
 	virtual ~NetDisposition();

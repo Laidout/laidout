@@ -54,6 +54,7 @@ extern RefCounter<anObject> objectstack;
 // public:
 //	Net *net;
 //	int netisbuiltin;
+//	int printnet;
 //
 //	NetDisposition(Net *newnet=NULL);
 //	virtual ~NetDisposition();
@@ -108,6 +109,8 @@ NetDisposition::NetDisposition(Net *newnet)
 		SetNet(newnet);
 		netisbuiltin=0;
 	}
+
+	printnet=1;
 }
  
 //! Deletes net.
@@ -368,14 +371,10 @@ Spread *NetDisposition::PageLayout(int whichpage)
 	SomeData *newpath;
 	int c;
 	for (int c=0; c<net->nf; c++) {
+		if (firstpage+c>=numpages) break;
 		newpath=GetPage(c,1); // transformed page, local copy
 		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,1,NULL));
 	}
-
-	 // define max/min points
-	newpath=spread->pagestack.e[0]->outline;
-	spread->minimum=transform_point(newpath->m(),flatpoint(newpath->maxx-newpath->minx));
-	spread->maximum=transform_point(newpath->m(),flatpoint(newpath->maxy-newpath->miny));
 
 	 // fill spread with page outline
 	PathsData *npath=new PathsData();
@@ -388,14 +387,22 @@ Spread *NetDisposition::PageLayout(int whichpage)
 		}
 	}
 	npath->FindBBox();
-
 	spread->path=npath;
 	spread->pathislocal=1;
 	
+	 // define max/min points
+	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
+		else newpath=npath;
+	spread->minimum=transform_point(newpath->m(),flatpoint(newpath->maxx-newpath->minx));
+	spread->maximum=transform_point(newpath->m(),flatpoint(newpath->maxy-newpath->miny));
+
 	return spread;
 }
 
 //! Returns same as PageLayout, but with the paper outline included.
+/*! \todo *** spread->marks (the printer marks) should optionally hold
+ * the outline of the net, according to value of printnet.
+ */
 Spread *NetDisposition::PaperLayout(int whichpaper)
 {
 	if (!net) return NULL;
