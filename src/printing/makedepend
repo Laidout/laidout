@@ -2,55 +2,56 @@
 
 printimage.o: psfilters.h
 pscolorpatch.o: pscolorpatch.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/interfaces/colorpatchinterface.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/interfaces/patchinterface.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/displayer.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/anxapp.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/anobject.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/misc.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/lists.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/laxdefs.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/fontmanager.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/strmanip.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/vectors.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/pancontroller.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/panuser.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/doublebbox.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/attributes.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/dump.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/rulerwin.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/scroller.h
-pscolorpatch.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/colorpatchinterface.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/patchinterface.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/dump.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h
+pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 psfilters.o: psfilters.h
 psout.o: psout.h ../document.h ../styles.h
-psout.o: /home/tom/p/sourceforge/lax/anobject.h
-psout.o: /home/tom/p/sourceforge/lax/misc.h
-psout.o: /home/tom/p/sourceforge/lax/lists.h
-psout.o: /home/tom/p/sourceforge/lax/strmanip.h
-psout.o: /home/tom/p/sourceforge/lax/dump.h
-psout.o: /home/tom/p/sourceforge/lax/attributes.h ../disposition.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/somedata.h
-psout.o: /home/tom/p/sourceforge/lax/doublebbox.h
-psout.o: /home/tom/p/sourceforge/lax/vectors.h ../page.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/imageinterface.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/aninterface.h
-psout.o: /home/tom/p/sourceforge/lax/displayer.h
-psout.o: /home/tom/p/sourceforge/lax/anxapp.h
-psout.o: /home/tom/p/sourceforge/lax/laxdefs.h
-psout.o: /home/tom/p/sourceforge/lax/fontmanager.h
-psout.o: /home/tom/p/sourceforge/lax/pancontroller.h
-psout.o: /home/tom/p/sourceforge/lax/panuser.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/viewportwindow.h
-psout.o: /home/tom/p/sourceforge/lax/rulerwin.h
-psout.o: /home/tom/p/sourceforge/lax/scroller.h ../group.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/dump.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h ../disposition.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h ../page.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/imageinterface.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h ../group.h
 psout.o: ../objectcontainer.h ../papersizes.h ../document.h psfilters.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/gradientinterface.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/linestyle.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/colorpatchinterface.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/patchinterface.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/pathinterface.h
-psout.o: /home/tom/p/sourceforge/lax/interfaces/fillstyle.h
-psout.o: /home/tom/p/sourceforge/lax/transformmath.h pscolorpatch.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/gradientinterface.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/colorpatchinterface.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/patchinterface.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedataref.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/transformmath.h pscolorpatch.h

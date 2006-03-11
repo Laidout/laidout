@@ -352,6 +352,7 @@ Spread *Singles::PaperLayout(int whichpaper)
 	 // make printer marks if necessary
 	 //*** make this more responsible lengths:
 	if (insetr>0 || insetl>0 || insett>0 || insetb>0) {
+		spread->mask|=SPREAD_PRINTERMARKS;
 		PathsData *marks=new PathsData();
 		if (insetl>0) {
 			marks->pushEmpty();

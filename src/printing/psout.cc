@@ -31,6 +31,7 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
+#include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
 
 #include "pscolorpatch.h"
@@ -167,6 +168,87 @@ int psout(Document *doc,const char *file)//file=NULL
 	return 0;
 }
 
+//! Output a postscript clipping path from outline.
+/*! \ingroup postscript
+ * outline can be a group of PathsData, a SomeDataRef to a PathsData, 
+ * or a single PathsData.
+ *
+ * Non-PathsData elements in a group does not break the printing.
+ * Those extra objects are just ignored.
+ *
+ * Returns the number of single paths interpreted.
+ *
+ * If iscontinuing!=0, then doesn't write 'clip' at the end.
+ *
+ * \todo *** currently, uses all points (vertex and control points)
+ * in the paths as a polyline, not as the full curvy business 
+ * that PathsData are capable of. when ps output of paths is 
+ * actually more implemented, this will change..
+ */
+int psSetClipToPath(FILE *f,Laxkit::SomeData *outline,int iscontinuing)//iscontinuing=0
+{
+	PathsData *path=dynamic_cast<PathsData *>(outline);
+
+	 //If is not a path, but is a reference to a path
+	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
+		SomeDataRef *ref;
+		 // skip all nested SomeDataRefs
+		do {
+			ref=dynamic_cast<SomeDataRef *>(outline);
+			if (ref) outline=ref->thedata;
+		} while (ref);
+		if (outline) path=dynamic_cast<PathsData *>(outline);
+	}
+
+	int n=0; //the number of objects interpreted
+	
+	 // If is not a path, and is not a ref to a path, but is a group,
+	 // then check that its elements 
+	if (!path && dynamic_cast<Group *>(outline)) {
+		Group *g=dynamic_cast<Group *>(outline);
+		SomeData *d;
+		double m[6];
+		for (int c=0; c<g->n(); c++) {
+			d=g->e(c);
+			 //add transform of group element
+			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
+			n+=psSetClipToPath(f,g->e(c),1);
+			transform_invert(m,d->m());
+			 //reverse the transform
+			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+					m[0], m[1], m[2], m[3], m[4], m[5]); 
+		}
+	}
+	
+	if (!path) return n;
+	
+	 // finally append to clip path
+	Coordinate *start,*p;
+	for (int c=0; c<path->paths.n; c++) {
+		start=p=path->paths.e[c]->path;
+		if (!p) continue;
+		do { p=p->next; } while (p && p!=start);
+		if (p==start) { // only include closed paths
+			n++;
+			p=start;
+			do {
+				fprintf(f,"%.10g %.10g ",p->x(),p->y());
+				if (p==start) fprintf(f,"moveto\n");
+				else fprintf(f,"lineto\n");
+				p=p->next;	
+			} while (p && p!=start);
+			fprintf(f,"closepath\n");
+		}
+	}
+	
+	if (n && !iscontinuing) {
+		fprintf(f,".1 setlinewidth stroke\n");
+		//fprintf(f,"clip\n");
+	}
+	return n;
+}
+
 //! Print a postscript file of doc to f.
 /*! \ingroup postscript
  * Does not open or close f.
@@ -217,6 +299,7 @@ int psout(FILE *f,Document *doc)
 	double m[6];
 	int c,c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
+	Page *page;
 	for (c=0; c<doc->docstyle->disposition->numpapers; c++) {
 	     //print paper header
 		fprintf(f, "%%%%Page: %d %d\n", c+1,c+1);
@@ -226,21 +309,38 @@ int psout(FILE *f,Document *doc)
 			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->disposition->paperstyle->width);
 		}
 		
-		 // for each page in paper layout..
 		spread=doc->docstyle->disposition->PaperLayout(c);
+		
+		 // print out printer marks
+		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+			psdumpobj(f,spread->marks);
+		}
+		
+		 // for each paper in paper layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
+			page=doc->pages.e[pg];
 			
 			 // transform to page
 			fprintf(f,"gsave\n");
 			transform_copy(m,spread->pagestack.e[c2]->outline->m());
 			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
+
+			//*** set clipping region
+
+			cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+				cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
+			} else {
+				cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+			}
 				
 			 // for each layer on the page..
-			for (l=0; l<doc->pages[pg]->layers.n; l++) {
-				psdumpobj(f,doc->pages[pg]->layers.e[l]);
+			for (l=0; l<page->layers.n; l++) {
+				psdumpobj(f,page->layers.e[l]);
 			}
 			fprintf(f,"grestore\n");
 		}

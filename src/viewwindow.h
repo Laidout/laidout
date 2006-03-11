@@ -61,6 +61,7 @@ class LaidoutViewport : public Laxkit::ViewportWindow, virtual public ObjectCont
 {
 	char lfirsttime;
  protected:
+	unsigned int drawflags;
 	int viewmode,searchmode;
 	int showstate;
 	int transformlevel;

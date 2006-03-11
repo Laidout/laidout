@@ -4,7 +4,7 @@
 ##############                               ###############
 ############################################################
 
-LAXDIR=/home/tom/p/sourceforge/lax
+include ../../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
 LAXOBJDIR=$(LAXDIR)
 LD=g++

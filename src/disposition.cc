@@ -465,8 +465,13 @@ Style *Disposition::duplicate(Style *s)//s=NULL
  * is checked out from objectstack.
  *
  * Default here is to remove the old pagestyle referenced by the page, and replace
- * it with the default. This might be bad later on, when the pagestyle can be
- * made a custom appearance.
+ * it with the default. 
+ *
+ * \todo *** this is of course horrible when the pagestyle can be
+ * made a custom appearance. Currently, just copies over the base level
+ * PageStyle flags, whether page clips and facing pages bleed.
+ *
+ * \todo *** perhaps break this down so there's a SyncPage()?
  */
 int Disposition::SyncPages(Document *doc,int start,int n)
 {
@@ -475,10 +480,16 @@ int Disposition::SyncPages(Document *doc,int start,int n)
 	}
 	if (n==0) return 0;
 	if (n<0) n=doc->pages.n;
+	unsigned int oldflags=0;
 	PageStyle *temppagestyle;
 	for (int c=start; c<doc->pages.n && c<start+n; c++) {
 		temppagestyle=GetPageStyle(c);
 		if (temppagestyle) {
+			if (doc->pages.e[c]->pagestyle) {
+				 //*** this is horrible: possibly modifying the default ps...
+				oldflags=doc->pages.e[c]->pagestyle->flags;
+				temppagestyle->flags=oldflags;
+			}
 			doc->pages.e[c]->InstallPageStyle(temppagestyle,0);
 		} else {
 			cout <<"*** this is error, should not be here, null pagestyle from GetPageStyle!!"<<endl;
@@ -525,7 +536,7 @@ int Disposition::SetPageLikeThis(PageStyle *npage)
 	return 0;
 }
 
-//! Return the default page style for that page.
+//! Returns a local copy of the default page style for that page.
 /*! Default is to return pagestyle->duplicate().
  */
 PageStyle *Disposition::GetPageStyle(int pagenum)

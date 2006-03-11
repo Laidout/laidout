@@ -59,7 +59,9 @@ class NetFace
 	NetFace();
 	virtual ~NetFace();
 	const NetFace &operator=(const NetFace &face);
+	virtual void clear();
 	virtual int Set(const char *list, const char *link=NULL);
+	virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
 	
 	virtual void dump_out(FILE *f,int indent, int pfirst=0);
 	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL

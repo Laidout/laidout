@@ -65,7 +65,8 @@ const char *LaidoutVersion()
 	if (version_str==NULL) {
 		makestr(version_str,"Laidout Version ");
 		appendstr(version_str,LAIDOUT_VERSION);
-		appendstr(version_str," by Tom Lechner, sometime in 2006");
+		appendstr(version_str," by Tom Lechner, sometime in 2006\n");
+		appendstr(version_str,"Released under the GNU Public License, Version 2.");
 	}
 	return version_str; 
 }

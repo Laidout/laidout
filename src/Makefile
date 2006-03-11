@@ -4,8 +4,8 @@
 ##############                      ###############
 ###################################################
 
-# You'll want to change the following to where the Laxkit headers are located
-LAXDIR=/home/tom/p/sourceforge/lax
+#LAXDIR=/home/tom/p/sourceforge/laxkit/lax
+include ../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
 
 
@@ -51,6 +51,8 @@ docs:
 
 depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
+	cd printing && $(MAKE) depends
+	cd dispositions && $(MAKE) depends
 
 include makedepend
 
