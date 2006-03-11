@@ -35,6 +35,7 @@
 #include <lax/transformmath.h>
 
 #include "pscolorpatch.h"
+#include "pspathsdata.h"
 
 using namespace Laxkit;
 
@@ -52,6 +53,7 @@ using namespace Laxkit;
  * out what shall be the default working units...
  *
  * \todo *** this should probably be broken down into object specific ps out functions
+ *  (done for ColorPatchData and PathsData...)
  *
  * \todo *** the output must be tailored to the specified dpi, otherwise the output
  * file will sometimes be quite enormous
@@ -142,10 +144,8 @@ void psdumpobj(FILE *f,Laxkit::SomeData *obj)
 		cout <<" *** GradientData ps out not implemented! "<<endl;
 	} else if (dynamic_cast<ColorPatchData *>(obj)) {
 		psColorPatch(f,dynamic_cast<ColorPatchData *>(obj));
-		//cout <<" ColorPatchData ps out not implemented! "<<endl;
 	} else if (dynamic_cast<PathsData *>(obj)) {
-		cout <<" *** PathsData ps out not implemented! "<<endl;
-		//psColorPatch(f,dynamic_cast<PathsData *>(obj));
+		psPathsData(f,dynamic_cast<PathsData *>(obj));
 	}
 }
 
@@ -243,8 +243,8 @@ int psSetClipToPath(FILE *f,Laxkit::SomeData *outline,int iscontinuing)//isconti
 	}
 	
 	if (n && !iscontinuing) {
-		fprintf(f,".1 setlinewidth stroke\n");
-		//fprintf(f,"clip\n");
+		//fprintf(f,".1 setlinewidth stroke\n");
+		fprintf(f,"clip\n");
 	}
 	return n;
 }
@@ -313,6 +313,9 @@ int psout(FILE *f,Document *doc)
 		
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+			fprintf(f," .01 setlinewidth\n");
+			cout <<"marks data:\n";
+			spread->marks->dump_out(stdout,2);
 			psdumpobj(f,spread->marks);
 		}
 		
