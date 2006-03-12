@@ -143,7 +143,11 @@ void psdumpobj(FILE *f,Laxkit::SomeData *obj)
 	} else if (dynamic_cast<GradientData *>(obj)) {
 		cout <<" *** GradientData ps out not implemented! "<<endl;
 	} else if (dynamic_cast<ColorPatchData *>(obj)) {
+		fprintf(f,"gsave\n"
+				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 		psColorPatch(f,dynamic_cast<ColorPatchData *>(obj));
+		fprintf(f,"grestore\n");
 	} else if (dynamic_cast<PathsData *>(obj)) {
 		psPathsData(f,dynamic_cast<PathsData *>(obj));
 	}

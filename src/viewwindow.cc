@@ -1252,13 +1252,19 @@ int LaidoutViewport::ChangeContext(int x,int y,Laxkit::ObjectContext **oc)
 			curobj.context.push(1);
 			curobj.context.push(c);
 			curobj.context.push(spread->pagestack.e[c]->page->layers.n-1);
+			 // apply page transform
+			transform_copy(ectm,spread->pagestack.e[c]->outline->m());
 		}
 	}
-	if (curobj.context.n()==0) curobj.context.push(0);
+	if (curobj.context.n()==0) { // is limbo
+		curobj.context.push(0);
+		transform_identity(ectm);
+	}
 	if (curobjPage()>=0) curpage=doc->pages.e[curobjPage()];
 		else curpage=NULL;
 	if (oc) *oc=&curobj;
 	curobj.context.out("context change");
+	 
 	return 1;
 }
 

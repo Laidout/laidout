@@ -79,7 +79,7 @@ NetLine::~NetLine()
 	//if (lsislocal) delete linestyle; else linestyle->dec_count(); ???? 
 }
 
-//! Set up points like "1 2 3 ... n", and make closed if closed!=0.
+//! Set up points like "0 1 2 3 ... n", and make closed if closed!=0.
 /*! Returns the number of points.
  */
 int NetLine::Set(int n, int closed)

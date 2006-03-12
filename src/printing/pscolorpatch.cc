@@ -51,6 +51,9 @@ using namespace Laxkit;
  *  11  12  13  4   <-- edge flag==1
  *  10  15  14  5  
  *  9   8   7   6
+ *
+ *  Colors for the central patch are listed 
+ *  (color at 0) - (at 3) - (at 6) - (at 9)
  * </pre>
  * The DataSource is by patch in order of coordinate, then color, then coord,
  * and so on: fxyxyxyxyxy...cccc...fxyxy...ccfxyxy....
@@ -90,9 +93,9 @@ void psColorPatch(FILE *f,ColorPatchData *g)
 				g->points[6].x,  g->points[6].y,
 				 //colors
 				g->colors[0].red/256.0, g->colors[0].green/256.0, g->colors[0].blue/256.0,
-				g->colors[1].red/256.0, g->colors[1].green/256.0, g->colors[1].blue/256.0,
 				g->colors[2].red/256.0, g->colors[2].green/256.0, g->colors[2].blue/256.0,
-				g->colors[3].red/256.0, g->colors[3].green/256.0, g->colors[3].blue/256.0
+				g->colors[3].red/256.0, g->colors[3].green/256.0, g->colors[3].blue/256.0,
+				g->colors[1].red/256.0, g->colors[1].green/256.0, g->colors[1].blue/256.0
 			);
 //		printf(f,
 //			"<<"
