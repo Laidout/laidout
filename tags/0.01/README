@@ -1,0 +1,67 @@
+LAIDOUT Version 0.01
+--------------------
+http://laidout.org
+
+Please direct any complaints and other correspondence to:
+Tom Lechner (http://www.tomlechner.com)
+
+
+WHAT IT CAN DO RIGHT NOW
+------------------------
+Laidout is currently in the 'Kind of a hack, but mostly works
+on my machine' stage of development.
+
+You can rearrange stuff on pages.. The fancy page spread editor
+is sort of working, you can shift pages around pretty easily.
+Many of the features are only partially implemented, and the
+real meat of the program is only half in place right now.
+
+You can export as Passepartout files, but only the images will
+export. You can 'print' to a postscript file, but only images
+and the upper corner of a bezier color patch gradient will print 
+out, not the other gradients or paths.
+
+Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
+some of the burden of the 'meat', but anyway...
+
+
+COMPILING
+---------
+
+Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
+available. Laidout expects Imlib2 support to have been compiled
+into the Laxkit. Make sure that Laxkit headers are in the place
+specified in Makefile-toinclude by LAXDIR, then type:
+
+make
+make install
+
+There is no 'configure' at the moment. 'make install' will put
+laidout-(whatever version) in (usually) /usr/local/bin, and make a
+symbolic link /usr/local/bin/laidout point to it.
+The Makefile is for the development source, and also tries
+to do 'make' of the Laxkit, since Laxkit and Laidout are 
+so intertwined, so make sure that LAXDIR in the Makefile is
+defined correctly. Just remove those parts of the Makefile
+if you want to compile only Laidout.
+
+After successfully making, the program 'laidout' in the src
+directory is the thing you want. It can be run right where it's
+at. 
+
+Running the program will spit out copious amounts of debugging
+info that there isn't a really good way to turn off at the 
+moment, except to run like this:
+./laidout > /dev/null
+
+
+SOURCE DOCUMENTATION
+--------------------
+
+There is a lot of source documentation available via doxygen, just type:
+
+make docs
+
+and it dumps it all out to docs/html. In particular, you will have a 
+rapidly expanding todo list.
+

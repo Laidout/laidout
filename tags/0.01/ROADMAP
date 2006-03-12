@@ -1,0 +1,67 @@
+LAIDOUT ROADMAP
+---------------
+Things to do before the next release.
+This is a very rough draft of a roadmap, and is by no means the final word.
+
+General
+-------
+Make an RSS feed.
+
+
+VERSION 0.01
+------------
+(done) Clean up web page a bit.
+(done) TILING MUST WORK!!!!!!! for booklets also 
+(done) Get NetDisposition sort of going
+(done) Implement page clipping for display AND for printing..
+(done) Images should work well
+(done) Color patches should work enough to be getting on with
+(done) in the laxkit: menuselector,
+(done) tooltips IMPORTANT!!,
+(done) and set said tooltips for the mystery numbers in ViewWindow 
+(done) Add copyright notice to source files
+(done) Add and Delete Page buttons
+(done) Throw together a quick key-stroke cheat sheet
+
+
+VERSION 0.1
+-----------
+PathInterface should finally work right
+Linear Gradients
+Circle Gradients
+Basic infrastructure for most things should be in place.
+This means some sort of basic scripting infrastructure,
+parent/child nesting and masking,
+interface for that nesting, and grouping
+ObjectInterface for selecting multiple stuff
+PrintDialog
+Generic style edit window which allows:
+  non-hacky new document box
+  also means all things must define their styledefs
+Overall windowing setup using Laxkit::SplitWindows, docking, etc.
+from laxkit: replacement of 'datastack' should be complete, do same here
+CompositeDisposition should be ready
+DumpImages within Arrangements, which are sort of a template of positions
+Plugin infrastructure should be in place
+Low level tree editor, akin to the xml editor in inkscape
+PDF out
+
+
+VERSION 0.2
+-----------
+Freehand drawing with tablet support
+Full color management implemented
+fancy arranging to align along any path, and use any path as a kind of tab stop
+Text for god's sake!! This means at least a basic line breaker,
+ layout inside any path and runaround facility.
+ Also most likely means finally deciding on a rendering backend
+ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles
+
+
+VERSION 0.3
+-----------
+End world hunger
+Stabilize the biosphere
+Impeach Bush
+Neutralize all nuclear waste
+While i'm at it, I'd like a pony.

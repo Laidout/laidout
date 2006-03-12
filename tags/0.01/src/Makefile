@@ -1,0 +1,71 @@
+###################################################
+##############                      ###############
+#############  Laidout Src Makefile  ##############
+##############                      ###############
+###################################################
+
+#LAXDIR=/home/tom/p/sourceforge/laxkit/lax
+include ../Makefile-toinclude
+LAXIDIR=$(LAXDIR)/interfaces
+
+
+LD=g++
+LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
+CPPFLAGS= -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
+DEBUGFLAGS= -g -DDEBUG
+
+
+objs= \
+	styles.o \
+	papersizes.o \
+	page.o \
+	group.o \
+	document.o \
+	disposition.o \
+	dispositioninst.o \
+	dispositions.o \
+	interfaces.o \
+	newdoc.o \
+	objectcontainer.o \
+	saveppt.o \
+	viewwindow.o \
+	extras.o \
+	drawdata.o \
+	spreadeditor.o \
+	laidout-more.o \
+	laidout.o 
+
+all: laidout
+
+laidout: lax laxinterface $(objs) printing dispositions
+	$(LD) $(LDFLAGS) $(objs) printing/*.o dispositions/*.o -llaxinterfaces -llaxkit -o $@
+
+lax:
+	cd $(LAXDIR) && $(MAKE)
+
+laxinterface:
+	cd $(LAXIDIR) && $(MAKE)
+
+docs:
+	cd ../docs && doxygen 
+
+depends:
+	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
+	cd printing && $(MAKE) depends
+	cd dispositions && $(MAKE) depends
+
+include makedepend
+
+printing: 
+	cd printing && $(MAKE)
+
+dispositions:
+	cd dispositions && $(MAKE)
+
+
+.PHONY: clean lax docs printing dispositions
+clean:
+	rm -f laidout *.o
+	cd printing && $(MAKE) clean
+	cd dispositions && $(MAKE) clean
+	
