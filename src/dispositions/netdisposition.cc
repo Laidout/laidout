@@ -426,8 +426,9 @@ Spread *NetDisposition::PaperLayout(int whichpaper)
 	
 	Group *g=new Group;
 	spread->path=static_cast<SomeData *>(g);
+	PathsData *path2=new PathsData();
+	g->push(path2,0);
 	g->push(path,0);
-	path=new PathsData();
 	path->pushEmpty(0);
 	path->appendRect(0,0,paperstyle->w(),paperstyle->h(),0);
 	g->FindBBox();
