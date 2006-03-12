@@ -2000,20 +2000,20 @@ int ViewWindow::init()
 	ViewerWindow::init();
 	
 	if (!win_sizehints) win_sizehints=XAllocSizeHints();
-	if (win_sizehints && !win_parent) {
-		cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
-		//*** The initial x and y become the upper left corner of the window
-		//manager decorations. ***how to figure out how much room those decorations take,
-		//so as to place things on the screen accurately? like full screen view?
-		win_sizehints->x=win_x;
-		win_sizehints->y=win_y;
-		win_sizehints->width=win_w;
-		win_sizehints->height=win_h;
-	//	win_sizehints->width_inc=1;
-	//	win_sizehints->height_inc=1;
-	//	win_sizehints->flags=PMinSize|PResizeInc|USPosition|USSize
-		win_sizehints->flags=USPosition|USSize;
-	}
+//	if (win_sizehints && !win_parent) {
+//		cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
+//		//*** The initial x and y become the upper left corner of the window
+//		//manager decorations. ***how to figure out how much room those decorations take,
+//		//so as to place things on the screen accurately? like full screen view?
+//		win_sizehints->x=win_x;
+//		win_sizehints->y=win_y;
+//		win_sizehints->width=win_w;
+//		win_sizehints->height=win_h;
+//	//	win_sizehints->width_inc=1;
+//	//	win_sizehints->height_inc=1;
+//	//	win_sizehints->flags=PMinSize|PResizeInc|USPosition|USSize
+//		win_sizehints->flags=USPosition|USSize;
+//	}
 	
 	anXWindow *last=NULL;
 	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
