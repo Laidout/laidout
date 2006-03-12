@@ -32,7 +32,7 @@ available. It is tested on my machine to work with Laxkit version 0.0.1.
 Laidout expects Imlib2 support to have been compiled
 into the Laxkit. Make sure that Laxkit headers are in the place
 specified in Makefile-toinclude by LAXDIR (defualt is
-/usr/local/include/laxkit-0.0.1/lax), then type:
+/usr/local/include/lax-0.0.1/lax), then type:
 
 make
 make install
