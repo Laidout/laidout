@@ -7,8 +7,8 @@
 
  # Where to install stuff, currently:
  #   prefix/bin
-#PREFIX=/usr/local
-PREFIX=testinstall
+PREFIX=/usr/local
+#PREFIX=testinstall
 
 
  # where the main executable goes
@@ -18,7 +18,7 @@ BINDIR=$(PREFIX)/bin
  ### If you want to be sure that an install does not clobber anything that exists
  ### already, then uncomment the line with the '--backup=t' and comment out the other.
 #INSTALL=install -D --backup=t 
-INSTALL=install -D
+INSTALL=install -D -v
 
 
 ##----------- you shouldn't have to modify anything below here --------------
@@ -43,8 +43,8 @@ install: laidout
 
 uninstall: 
 	echo 'Uninstalling laidout.'
-	rm -f $(BINDIR)/laidout
-	rm -f $(BINDIR)/$(LAIDOUTNAME)
+	rm -vf $(BINDIR)/laidout
+	rm -vf $(BINDIR)/$(LAIDOUTNAME)
 
 
 

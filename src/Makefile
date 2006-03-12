@@ -37,7 +37,7 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) printing dispositions
+laidout: $(objs) printing dispositions
 	$(LD) $(LDFLAGS) $(objs) printing/*.o dispositions/*.o -llaxinterfaces -llaxkit -o $@
 
 lax:
