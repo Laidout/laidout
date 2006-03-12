@@ -3,15 +3,19 @@ LAIDOUT ROADMAP
 Things to do before the next release.
 This is a very rough draft of a roadmap, and is by no means the final word.
 
+General
+-------
+Make an RSS feed.
+
 
 VERSION 0.01
 ------------
 (done) Clean up web page a bit.
 (done) TILING MUST WORK!!!!!!! for booklets also 
 (done) Get NetDisposition sort of going
-       Implement page clipping for display AND for printing..
+(done) Implement page clipping for display AND for printing..
 (done) Images should work well
-       Color patches should work enough to be getting on with
+(done) Color patches should work enough to be getting on with
 (done) in the laxkit: menuselector,
 (done) tooltips IMPORTANT!!,
 (done) and set said tooltips for the mystery numbers in ViewWindow 

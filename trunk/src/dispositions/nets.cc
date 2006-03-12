@@ -274,11 +274,16 @@ const NetFace &NetFace::operator=(const NetFace &face)
 		m=new double[6];
 		transform_copy(m,face.m);
 	}
-	points=new int[np];
-	facelink=new int[np];
-	for (int c=0; c<np; c++) {
-		points[c]=face.points[c];
-		if (face.facelink) facelink[c]=face.facelink[c]; else facelink[c]=-1;
+	if (np) {
+		points=new int[np];
+		facelink=new int[np];
+		for (int c=0; c<np; c++) {
+			points[c]=face.points[c];
+			if (face.facelink) facelink[c]=face.facelink[c]; else facelink[c]=-1;
+		}
+	} else {
+		points=NULL;
+		facelink=NULL;
 	}
 	return *this;
 }
