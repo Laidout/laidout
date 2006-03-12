@@ -3,7 +3,8 @@ LAIDOUT Version 0.01
 http://laidout.org
 
 Please direct any complaints and other correspondence to:
-Tom Lechner (http://www.tomlechner.com)
+Tom Lechner <tomlechner@users.sourceforge.net>
+http://www.tomlechner.com
 
 
 WHAT IT CAN DO RIGHT NOW
@@ -21,17 +22,17 @@ export. You can 'print' to a postscript file, but only images
 and the upper corner of a bezier color patch gradient will print 
 out, not the other gradients or paths.
 
-Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
-some of the burden of the 'meat', but anyway...
 
 
 COMPILING
 ---------
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
-available. Laidout expects Imlib2 support to have been compiled
+available. It is tested on my machine to work with Laxkit version 0.0.1.
+Laidout expects Imlib2 support to have been compiled
 into the Laxkit. Make sure that Laxkit headers are in the place
-specified in Makefile-toinclude by LAXDIR, then type:
+specified in Makefile-toinclude by LAXDIR (defualt is
+/usr/local/include/laxkit-0.0.1/lax), then type:
 
 make
 make install
@@ -39,20 +40,17 @@ make install
 There is no 'configure' at the moment. 'make install' will put
 laidout-(whatever version) in (usually) /usr/local/bin, and make a
 symbolic link /usr/local/bin/laidout point to it.
-The Makefile is for the development source, and also tries
-to do 'make' of the Laxkit, since Laxkit and Laidout are 
-so intertwined, so make sure that LAXDIR in the Makefile is
-defined correctly. Just remove those parts of the Makefile
-if you want to compile only Laidout.
 
 After successfully making, the program 'laidout' in the src
 directory is the thing you want. It can be run right where it's
-at. 
+at. You do not have to do 'make install' for it to work.
 
 Running the program will spit out copious amounts of debugging
 info that there isn't a really good way to turn off at the 
 moment, except to run like this:
 ./laidout > /dev/null
+
+I mean, what do you want from a 0.01 version?
 
 
 SOURCE DOCUMENTATION
