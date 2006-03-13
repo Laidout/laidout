@@ -21,9 +21,9 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/**************** disposition.cc *********************/
+/**************** imposition.cc *********************/
 
-#include "disposition.h"
+#include "imposition.h"
 #include <lax/lists.cc>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/refcounter.h>
@@ -38,7 +38,7 @@ extern RefCounter<anObject> objectstack;
 //------------------------- PageLocation --------------------------------------
 
 /*! \class PageLocation
- * \brief Disposition classes would derive PageLocation classes from this.
+ * \brief Imposition classes would derive PageLocation classes from this.
  *
  *  This is a shell around a page, providing a convenience for placement on
  *  the screen and also on a paper. Provides an initial transformation from
@@ -60,7 +60,7 @@ extern RefCounter<anObject> objectstack;
 /*! \var SomeData *PageLocation::outline
  * \brief Holds the transform to get to the page, and also the outline of the page.
  *
- * It is typically a PathsData, but the actual form of it is up to the Disposition.
+ * It is typically a PathsData, but the actual form of it is up to the Imposition.
  */
 //class PageLocation : public Laxkit::anObject
 //{	
@@ -103,7 +103,7 @@ typedef PtrStack<PageLocation> PageLocStack;
 
 //----------------------- Spread -------------------------------
 /*! \class Spread
- * \brief A generic container for the various things that Disposition returns.
+ * \brief A generic container for the various things that Imposition returns.
  *
  * This class gets used by other classes, and those other classes are 
  * responsible for maintaining Spread's components.
@@ -155,8 +155,8 @@ typedef PtrStack<PageLocation> PageLocStack;
  */
 /*! \var Laxkit::SomeData *Spread::path
  * This is the outline of whatever is relevant. The Spread class is used as a return type
- * for many functions in Disposition, so the actual meaning of path depends 
- * on which Disposition function was called. Could be a single page, page spread,
+ * for many functions in Imposition, so the actual meaning of path depends 
+ * on which Imposition function was called. Could be a single page, page spread,
  * or paper spread, etc.
  */
 /*! \var int Spread::pathislocal
@@ -169,7 +169,7 @@ typedef PtrStack<PageLocation> PageLocStack;
 //{
 // public:
 //	unsigned int mask; // which of path,min,max,pages is defined
-//	unsigned int style; // says what is the type of thing this spread refers to. See Disposition.
+//	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
 //	Laxkit::SomeData *path;
 //	int pathislocal;
 //	Laxkit::SomeData *marks;
@@ -243,65 +243,65 @@ cout <<endl;
 	return list2.extractArray();
 }
 
-//----------------------------- Disposition --------------------------
+//----------------------------- Imposition --------------------------
 
-/*! \class Disposition
- * \brief The abstract base class for disposition styles.
+/*! \class Imposition
+ * \brief The abstract base class for imposition styles.
  *
- * The Disposition class is meant to describe a single style of chopping
+ * The Imposition class is meant to describe a single style of chopping
  * and folding of same sized pieces of paper. The individual papers can
  * be of different colors, but must be the same size. Something like a book where
  * the cover would be printed on a piece of paper with a different size then the
- * body papers would not be all done in a single Disposition. That would be a ProjectStyle
- * with 2 Disposition classes used.
+ * body papers would not be all done in a single Imposition. That would be a ProjectStyle
+ * with 2 Imposition classes used.
  * 
- * ***not all imp:Currently the built in Disposition styles are single pages,
+ * ***not all imp:Currently the built in Imposition styles are single pages,
  * singles meant as double sided, such as would be stapled in the
  * corner or along the edge, the slightly more versatile booklet
  * format where the papers are folded at the spine, and the super-duper
- * BasicBookDisposition, comprised of multiple sections, each of which have 
+ * BasicBookImposition, comprised of multiple sections, each of which have 
  * one fold down the middle. Section there means basically the same
- * as "signature". Also, the basic book disposition works together with a
- * BookCover disposition, which is basically 4 pages, and the spine.
+ * as "signature". Also, the basic book imposition works together with a
+ * BookCover imposition, which is basically 4 pages, and the spine.
  *
- * The disposition's name is stored in stylename inherited from Style.
+ * The imposition's name is stored in stylename inherited from Style.
  *
  * ****** NOTE that numpages SHOULD be the actual number of pages in a document, but the
  * document can add or remove pages whenever it wants, so care must be taken so that numpages
- * is the same as document->pages.n.... This is ugly!! maybe have disposition point to a doc??
+ * is the same as document->pages.n.... This is ugly!! maybe have imposition point to a doc??
  *
  * \todo *** the handling of pagestyle needs to be cleaned up still.. loading often 
  * installs an improper pagestyle.
  */
- /*! \var int Disposition::numpapers
+ /*! \var int Imposition::numpapers
   * \brief The number of papers to set for the document.
   */
- /*! \var int Disposition::numpages
+ /*! \var int Imposition::numpages
   * \brief The number of pages to set for the document.
   */
- /*! \var PaperType *Disposition::paperstyle
+ /*! \var PaperType *Imposition::paperstyle
   * \brief A local instance of the type of paper to print on.
   */
- /*! \var PageStyle *Disposition::pagestyle
+ /*! \var PageStyle *Imposition::pagestyle
   * \brief A local instance of the default page style.
   * 
   * The subclass is resposible for creating and destroying whatever gets
   * put in here.
   */
- /*! \fn Laxkit::SomeData *Disposition::GetPrinterMarks(int papernum=-1)
+ /*! \fn Laxkit::SomeData *Imposition::GetPrinterMarks(int papernum=-1)
   * \brief Return the printer marks for paper papernum in paper coordinates.
   *
   * Default is to return NULL.
   * This is usually a group of SomeData.
   */
- /*! \fn Page **Disposition::CreatePages(PageStyle *pagestyle=NULL)
+ /*! \fn Page **Imposition::CreatePages(PageStyle *pagestyle=NULL)
   * \brief Create the required pages.
   *
   * Derived class must define this function.
   * If pagestyle is not NULL, then this style is to be preferred over
   * the internal page style(?!!?!***remove this? just assume default pagestyle?)
   */
- /*! \fn SomeData *Disposition::GetPage(int pagenum,int local)
+ /*! \fn SomeData *Imposition::GetPage(int pagenum,int local)
   * \brief Return outline of page in page coords. Origin is page origin.
   *
   * This returns a no frills outline, used primarily to check where the mouse
@@ -312,7 +312,7 @@ cout <<endl;
   * 
   * Derived class must define this function.
   */
- /*! \fn Spread *Disposition::GetLittleSpread(int whichpage)
+ /*! \fn Spread *Imposition::GetLittleSpread(int whichpage)
   * \brief Returns outlines of pages in page view, in viewer coords,
   * 
   * Mainly for use in the spread editor, so it would have little folded corners
@@ -331,7 +331,7 @@ cout <<endl;
   * for the SpreadEditor. Those are used as temp page holders when pages are pushed
   * into limbo in the editor.
   */
- /*! \fn Spread *Disposition::PageLayout(int whichpage)
+ /*! \fn Spread *Imposition::PageLayout(int whichpage)
   * \brief Returns a page view spread that contains whichpage, in viewer coords.
   *
   * whichpage starts at 0.
@@ -341,26 +341,26 @@ cout <<endl;
   *
   * Derived class must define this function.
   */
- /*! \fn Spread *Disposition::PaperLayout(int whichpaper)
+ /*! \fn Spread *Imposition::PaperLayout(int whichpaper)
   * \brief Returns a paper view spread that contains whichpaper, in paper coords.
   *
   * whichpaper starts at 0.
   * Derived class must define this function.
   */
- /*! \fn Laxkit::DoubleBBox *Disposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox=NULL)
+ /*! \fn Laxkit::DoubleBBox *Imposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox=NULL)
   * \brief Returns the bounding box in paper units for the default page size.
   * 
   * If bbox is not NULL, then put the info in the supplied bbox. Otherwise
   * return a new DoubleBBox.
   *
-  * The orientation of the box is determined internally to the Disposition,
+  * The orientation of the box is determined internally to the Imposition,
   * and accessed through the other functions here. 
   * minx==miny==0 which is the lower left corner of the page. This function
   * is useful mainly for speedy layout functions.
   * 
   * Derived class must define this function.
   */
- /*! \fn int *Disposition::PrintingPapers(int frompage,int topage)
+ /*! \fn int *Imposition::PrintingPapers(int frompage,int topage)
   * \brief Return a specially formatted list of papers needed to print the range of pages.
   *
   * It is a -2 terminated int[] of papers needed to print [frompage,topage].
@@ -368,16 +368,16 @@ cout <<endl;
   * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
   * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
   */
- /*! \fn int Disposition::GetPagesNeeded(int npapers)
+ /*! \fn int Imposition::GetPagesNeeded(int npapers)
   * \brief Return the number of pages required to fill npapers number of papers.
   */
- /*! \fn int Disposition::GetPapersNeeded(int npages)
+ /*! \fn int Imposition::GetPapersNeeded(int npages)
   * \brief Return the number of pages required to fill npapers of papers.
   */
- /*! \fn int Disposition::PaperFromPage(int pagenumber)
+ /*! \fn int Imposition::PaperFromPage(int pagenumber)
   * \brief Return the (first) paper index number that contains page index pagenumber
   */
-//class Disposition : public Style
+//class Imposition : public Style
 //{
 //  public:
 //	int numpapers; // ".0"
@@ -385,8 +385,8 @@ cout <<endl;
 //	PaperType *paperstyle; // ".2" is the default paper style, assumed to be local
 //	PageStyle *pagestyle; // ".3" is the default page style, assumed to be local
 //
-//	Disposition(const char *nsname);
-//	virtual ~Disposition() {}
+//	Imposition(const char *nsname);
+//	virtual ~Imposition() {}
 //	virtual Style *duplicate(Style *s=NULL);
 //	
 //	virtual int SetPageLikeThis(PageStyle *npage); // copies pagestyle, doesnt transfer pointer
@@ -417,12 +417,12 @@ cout <<endl;
 //};
 
 //! Constructor.
-/*! Default Style constructor sets styledef, basedon to NULL. Any dispositions that are 
- *  explicitly based on another disposition must set up the proper styledef and basedon
- *  themselves. The standard built in dispositions all act autonomously, meaning they each
- *  completely define their own StyleDef, and are not based on another Disposition.
+/*! Default Style constructor sets styledef, basedon to NULL. Any impositions that are 
+ *  explicitly based on another imposition must set up the proper styledef and basedon
+ *  themselves. The standard built in impositions all act autonomously, meaning they each
+ *  completely define their own StyleDef, and are not based on another Imposition.
  */
-Disposition::Disposition(const char *nsname)
+Imposition::Imposition(const char *nsname)
 	: Style (NULL,NULL,nsname)
 { 
 	pagestyle=NULL; 
@@ -438,7 +438,7 @@ Disposition::Disposition(const char *nsname)
  *
  * *** should probably include single page as well as pagelayout....
  */
-Laxkit::DoubleBBox *Disposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox *bbox)//page=1
+Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox *bbox)//page=1
 {
 	if (page==1 && pagestyle) {
 		if (!bbox) bbox=new DoubleBBox();
@@ -450,11 +450,11 @@ Laxkit::DoubleBBox *Disposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox *
 	return bbox;
 }
 
-//! Just makes sure that s can be cast to Disposition. If yes, return s, if no, return NULL.
-Style *Disposition::duplicate(Style *s)//s=NULL
+//! Just makes sure that s can be cast to Imposition. If yes, return s, if no, return NULL.
+Style *Imposition::duplicate(Style *s)//s=NULL
 {
-	if (s==NULL) return NULL; // Disposition is abstract
-	Disposition *d=dynamic_cast<Disposition *>(s);
+	if (s==NULL) return NULL; // Imposition is abstract
+	Imposition *d=dynamic_cast<Imposition *>(s);
 	if (!d) return NULL;
 	return s;
 }
@@ -473,7 +473,7 @@ Style *Disposition::duplicate(Style *s)//s=NULL
  *
  * \todo *** perhaps break this down so there's a SyncPage()?
  */
-int Disposition::SyncPages(Document *doc,int start,int n)
+int Imposition::SyncPages(Document *doc,int start,int n)
 {
 	if (numpages==0 || numpapers==0) {
 		NumPages(doc->pages.n);
@@ -503,13 +503,13 @@ int Disposition::SyncPages(Document *doc,int start,int n)
  * a new paper style by changing the pagestyle, for instance. This function basically
  * bypasses the Style methods of returning a FieldMask of other values that change.
  * So, this function should only be called when it is known the FieldMask feedback
- * is not needed. Otherwise one should call disposition.set("paperstyle",PaperStyle)
- * or whatever is appropriate for that disposition
+ * is not needed. Otherwise one should call imposition.set("paperstyle",PaperStyle)
+ * or whatever is appropriate for that imposition
  *
  * Derived classes are responsible for setting the PageStyle to an appropriate
  * value in response to the new papersize.
  */
-int Disposition::SetPaperSize(PaperType *npaper)
+int Imposition::SetPaperSize(PaperType *npaper)
 {
 	if (!npaper) return 1;
 	PaperType *pp;
@@ -524,7 +524,7 @@ int Disposition::SetPaperSize(PaperType *npaper)
 //! Store a duplicate of the given PageStyle.
 /*! Default here is just to make a local copy of npage.
  */
-int Disposition::SetPageLikeThis(PageStyle *npage)
+int Imposition::SetPageLikeThis(PageStyle *npage)
 {
 	if (!npage) return 1;
 	PageStyle *pg;
@@ -539,7 +539,7 @@ int Disposition::SetPageLikeThis(PageStyle *npage)
 //! Returns a local copy of the default page style for that page.
 /*! Default is to return pagestyle->duplicate().
  */
-PageStyle *Disposition::GetPageStyle(int pagenum)
+PageStyle *Imposition::GetPageStyle(int pagenum)
 {
 	if (pagestyle) return (PageStyle *)pagestyle->duplicate();
 	return NULL;
@@ -551,7 +551,7 @@ PageStyle *Disposition::GetPageStyle(int pagenum)
  *
  * Returns the new value of numpapers.
  */
-int Disposition::NumPapers(int npapers)
+int Imposition::NumPapers(int npapers)
 {
 	numpapers=npapers;
 	numpages=GetPagesNeeded(numpapers);
@@ -564,7 +564,7 @@ int Disposition::NumPapers(int npapers)
  *
  * Returns the new value of numpages.
  */
-int Disposition::NumPages(int npages)
+int Imposition::NumPages(int npages)
 {
 	numpages=npages;
 	numpapers=GetPapersNeeded(numpages);
@@ -583,7 +583,7 @@ int Disposition::NumPages(int npages)
  * already with an extra count. So if it is created here, then immediately
  * checked in, then it is removed from datastack.
  */
-SomeData *Disposition::GetPaper(int papernum,int local)
+SomeData *Imposition::GetPaper(int papernum,int local)
 {
 	PathsData *newpath=new PathsData();
 	newpath->appendRect(0,0,paperstyle->w(),paperstyle->h());
@@ -596,13 +596,13 @@ SomeData *Disposition::GetPaper(int papernum,int local)
 //! Return a spread corresponding to the single whichpage.
 /*! The path created here is one path for the page, which is found with 
  * a call to GetPage(whichpage,0).
- * The bounds of the page are put in spread->path. Usually, exotic dispositions 
+ * The bounds of the page are put in spread->path. Usually, exotic impositions 
  * with strange page shapes need to only redefine GetPage() for this 
  * function to work right.
  *
  * The spread->pagestack elements holds the outline, and the page index.
  */
-Spread *Disposition::SingleLayout(int whichpage)
+Spread *Imposition::SingleLayout(int whichpage)
 {
 	Spread *spread=new Spread();
 	spread->style=SPREAD_PAGE;

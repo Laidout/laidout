@@ -60,7 +60,7 @@ void pptdumpobj(FILE *f,double *mm,SomeData *obj)
  */
 int pptout(Document *doc)
 {
-	if (!doc->docstyle || !doc->docstyle->disposition || !doc->docstyle->disposition->paperstyle) return 1;
+	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
 	
 	FILE *f=NULL;
 	if (!doc->saveas || !strcmp(doc->saveas,"")) {
@@ -79,17 +79,17 @@ int pptout(Document *doc)
 	 // write out header
 	fprintf(f,"<?xml version=\"1.0\"?>\n");
 	fprintf(f,"<document paper_name=\"%s\" doublesided=\"false\" landscape=\"%s\" first_page_num=\"1\">\n",
-				doc->docstyle->disposition->paperstyle->name, 
-				((doc->docstyle->disposition->paperstyle->flags&1)?"true":"false"));
+				doc->docstyle->imposition->paperstyle->name, 
+				((doc->docstyle->imposition->paperstyle->flags&1)?"true":"false"));
 	
 	 // Write out paper spreads....
 	Spread *spread;
 	double m[6];
 	int c,c2,l,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
-	for (c=0; c<doc->docstyle->disposition->numpapers; c++) {
+	for (c=0; c<doc->docstyle->imposition->numpapers; c++) {
 		fprintf(f,"  <page>\n");
-		spread=doc->docstyle->disposition->PaperLayout(c);
+		spread=doc->docstyle->imposition->PaperLayout(c);
 		 // for each page in paper layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
 			pg=spread->pagestack.e[c2]->index;

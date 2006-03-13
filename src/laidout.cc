@@ -47,7 +47,7 @@ using namespace std;
 #define LAIDOUT_CC
 #include "laidout.h"
 #include "viewwindow.h"
-#include "dispositioninst.h"
+#include "impositions/impositioninst.h"
 #include "version.h"
 #include <lax/lists.cc>
 
@@ -124,7 +124,7 @@ ViewWindow *newViewWindow(Document *newdoc)
  * This is the central control for the whole shebang.
  *
  * It keeps various pools of things, like
- * the interfaces for ViewWindow classes, dispositions, papersizes, etc. This is to have
+ * the interfaces for ViewWindow classes, impositions, papersizes, etc. This is to have
  * specific instances of available types, styles, or whatever. Other objects that use these
  * things will make copies of them to use, rather than use these things directly. These base
  * objects are kept in pools to have reference items initialized to any default settings (which might change
@@ -139,9 +139,9 @@ ViewWindow *newViewWindow(Document *newdoc)
  * \ingroup pools
  * \brief Stack of available interfaces for ViewWindow objects.
  */
-/*!	\var Laxkit::PtrStack<Disposition> LaidoutApp::dispositionpool
+/*!	\var Laxkit::PtrStack<Imposition> LaidoutApp::impositionpool
  * \ingroup pools
- * \brief Stack of available dispositions.
+ * \brief Stack of available impositions.
  */
 /*!	\var Laxkit::PtrStack<PaperType> LaidoutApp::papersizes;
  * \ingroup pools
@@ -158,7 +158,7 @@ ViewWindow *newViewWindow(Document *newdoc)
 ////	PtrStack<Project> projectstack;
 ////	ScreenStyle *screen;
 //	Laxkit::PtrStack<Laxkit::anInterface> interfacepool;
-//	PtrStack<Disposition> dispositionpool;
+//	PtrStack<Imposition> impositionpool;
 //	PtrStack<PaperType> papersizes;
 //	LaidoutApp();
 //	virtual ~LaidoutApp();
@@ -191,7 +191,7 @@ LaidoutApp::~LaidoutApp()
 	cout <<"Laidout destructor.."<<endl;
 	 //these flush automatically, but are listed here for occasional debugging purposes...
 //	papersizes.flush(); 
-//	dispositionpool.flush();
+//	impositionpool.flush();
 //	interfacepool.flush();
 //	PathInterface::basepathops.flush();
 	if (project) delete project;
@@ -207,7 +207,7 @@ LaidoutApp::~LaidoutApp()
  *  	***if multiple files, use screenstyle from most recently loaded file
  *  </pre>
  * Currently existing pools are:\n
- *   dispositionpool\n
+ *   impositionpool\n
  *   papersizes\n
  *   path operators\n
  *   viewer interfaces\n
@@ -226,7 +226,7 @@ int LaidoutApp::init(int argc,char **argv)
 {
 	setupdefaultcolors(); // ***pre-empt anything anXApp read in.....need cleaner way here!
 	
-	GetBuiltinDispositionPool(&dispositionpool);
+	GetBuiltinImpositionPool(&impositionpool);
 	GetBuiltinPaperSizes(&papersizes);
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
@@ -376,12 +376,12 @@ Document *LaidoutApp::LoadDocument(const char *filename)
  * like (case doesn't matter):\n
  * <tt> laidout -n "saveas blah.doc, letter, 3 pages, booklet"</tt>
  * 
- * For now, only paper size, number of pages, and very basic disposition type
+ * For now, only paper size, number of pages, and very basic imposition type
  * are implemented. Does a comparison only of the characters in the field, so
  * for instance 'let' would match 'letter', and 'sing' would match 'singles'.
  * 
  * The option parser then calls this function with spec="letter, 3 pages, booklet".
- * At a minimum, you must specify the paper size and disposition.
+ * At a minimum, you must specify the paper size and imposition.
  * "default" maps to "letter, portrait, 1 page, Singles". *** default should be
  * a setting in the laidoutrc.
  *
@@ -397,7 +397,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	cout <<"------create new doc from \""<<spec<<"\""<<endl;
 	
 	char *saveas=NULL;
-	Disposition *disp=NULL;
+	Imposition *imp=NULL;
 	PaperType *paper=NULL;
 	int numpages=1;
 	
@@ -444,33 +444,33 @@ int LaidoutApp::NewDocument(const char *spec)
 			continue;
 		}
 
-		 // check disposition types
-		for (c2=0; c2<dispositionpool.n; c2++) {
-			if (!strncasecmp(field,dispositionpool.e[c2]->Stylename(),n)) {
-				disp=dispositionpool.e[c2];
+		 // check imposition types
+		for (c2=0; c2<impositionpool.n; c2++) {
+			if (!strncasecmp(field,impositionpool.e[c2]->Stylename(),n)) {
+				imp=impositionpool.e[c2];
 				break;
 			}
 		}
-		if (c2!=dispositionpool.n) continue;
+		if (c2!=impositionpool.n) continue;
 	}
 	
-	if (disp) disp=(Disposition *)disp->duplicate();
-	else disp=new Singles();
+	if (imp) imp=(Imposition *)imp->duplicate();
+	else imp=new Singles();
 	 
 	if (!paper) paper=papersizes.e[0];
 	unsigned int flags=paper->flags;
 	paper->flags=(paper->flags&~1)|landscape;
-	if (paper) disp->SetPaperSize(paper); // makes a duplicate of paper
-	else disp->SetPaperSize(papersizes.e[0]);
+	if (paper) imp->SetPaperSize(paper); // makes a duplicate of paper
+	else imp->SetPaperSize(papersizes.e[0]);
 	if (numpages==0) numpages=1;
-	disp->NumPages(numpages);
+	imp->NumPages(numpages);
 	paper->flags=flags;
 	
 	if (!saveas) { // make a unique temporary name...
 		makestr(saveas,"untitled");
 	}
 	
-	DocumentStyle *docinfo=new DocumentStyle(disp); // copies over disp, not duplicate
+	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate
 	Document *newdoc=new Document(docinfo,saveas);
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
@@ -493,7 +493,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	Document *newdoc=new Document(docinfo,filename);
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
-COUT("***** just pushed newdoc using docinfo->"<<docinfo->disposition->Stylename()<<", must make viewwindow *****"<<endl);
+COUT("***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl);
 	ViewWindow *blah=newViewWindow(newdoc); 
 	addwindow(blah);
 	return 0;

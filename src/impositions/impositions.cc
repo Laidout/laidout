@@ -21,67 +21,67 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/********* dispositions.cc: ****************/
+/********* impositions.cc: ****************/
 
-//----------------<< Builtin Disposition Instances >>--------------------
+//----------------<< Builtin Imposition Instances >>--------------------
 //
-//This file's main purpose is to define GetBuiltinDispositionPool.
+//This file's main purpose is to define GetBuiltinImpositionPool.
 //
-//To compile in your own disposition types, you must:
+//To compile in your own imposition types, you must:
 // 1. Write code, compile and put its object file in ???
 // 2. Include its header here,
-// 3. push an initial instance onto existingpool in function GetBuiltinDispositionPool
+// 3. push an initial instance onto existingpool in function GetBuiltinImpositionPool
 // 
 //--- 
 
 
 
-#include "laidout.h"
-#include "disposition.h"
-#include "dispositioninst.h"
-#include "dispositions/netdisposition.h"
+#include "../laidout.h"
+#include "imposition.h"
+#include "impositioninst.h"
+#include "netimposition.h"
 
 using namespace Laxkit;
 
-//! Return a new Disposition instance that is type disp.
+//! Return a new Imposition instance that is type impos.
 /*! \ingroup objects
- * Searches laidout->dispositionpool, and returns a duplicate of
- * the disposition or NULL.
+ * Searches laidout->impositionpool, and returns a duplicate of
+ * the imposition or NULL.
  */
-Disposition *newDisposition(const char *disp)
+Imposition *newImposition(const char *impos)
 {
-	if (!disp) return NULL;
+	if (!impos) return NULL;
 	int c;
-	for (c=0; c<laidout->dispositionpool.n; c++) {
-		if (!strcmp(disp,laidout->dispositionpool.e[c]->Stylename())) {
-			return (Disposition *)laidout->dispositionpool.e[c]->duplicate();
+	for (c=0; c<laidout->impositionpool.n; c++) {
+		if (!strcmp(impos,laidout->impositionpool.e[c]->Stylename())) {
+			return (Imposition *)laidout->impositionpool.e[c]->duplicate();
 		}
 	}
 	return NULL;
 }
 
-//**** new Dispositions might want to install various novel Style/Styledefs,
+//**** new Impositions might want to install various novel Style/Styledefs,
 //	***** or other initializations might have to occur... more thought required here!!
-/*! \fn Laxkit::PtrStack<Disposition> *GetBuiltinDispositionPool(Laxkit::PtrStack<Disposition> *existingpool)
+/*! \fn Laxkit::PtrStack<Imposition> *GetBuiltinImpositionPool(Laxkit::PtrStack<Imposition> *existingpool)
  * \ingroup pools
  */
-//! Return a stack of defined dispositions.
+//! Return a stack of defined impositions.
 /*! blah
  *
  */
-PtrStack<Disposition> *GetBuiltinDispositionPool(PtrStack<Disposition> *existingpool) //existingpool=NULL
+PtrStack<Imposition> *GetBuiltinImpositionPool(PtrStack<Imposition> *existingpool) //existingpool=NULL
 {
 	if (!existingpool) { // create new pool if you are not appending to an existing one.
-		existingpool=new PtrStack<Disposition>;
+		existingpool=new PtrStack<Imposition>;
 	}
 
 	existingpool->push(new Singles(),1);
 	existingpool->push(new DoubleSidedSingles(),1);
-	existingpool->push(new BookletDisposition(),1);
-	existingpool->push(new NetDisposition(),1);
-	//existingpool->push(new CompositeDisposition(),1);
+	existingpool->push(new BookletImposition(),1);
+	existingpool->push(new NetImposition(),1);
+	//existingpool->push(new CompositeImposition(),1);
 	//existingpool->push(new BasicBook(),1);
-	//existingpool->push(new AnyOtherSpecificDispositionsYouWantBuiltIn,1);
+	//existingpool->push(new AnyOtherSpecificImpositionsYouWantBuiltIn,1);
 	//...
 
 	return existingpool;

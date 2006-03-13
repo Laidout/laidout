@@ -46,30 +46,30 @@ using namespace std;
 /*! \class DocumentStyle
  * \brief Style for Document objects, suprisingly enough.
  *
- * Keeps a local disposition object.
+ * Keeps a local imposition object.
  */
 //class DocumentStyle : public Style
 //{
 // public:
-//	Disposition *disposition;
-//	DocumentStyle(Disposition *disp);
+//	Imposition *imposition;
+//	DocumentStyle(Imposition *imp);
 //	virtual ~DocumentStyle();
 //	virtual Style *duplicate(Style *s=NULL);
 //	virtual void dump_out(FILE *f,int indent);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
-//! Constructor, copies Disposition pointer, does not duplicate disp.
-/*! ***should sanity check the save? *** who should be deleting the disp?
+//! Constructor, copies Imposition pointer, does not duplicate imp.
+/*! ***should sanity check the save? *** who should be deleting the imp?
  * currently it is deleted in destructor.
  */
-DocumentStyle::DocumentStyle(Disposition *disp)
+DocumentStyle::DocumentStyle(Imposition *imp)
 	: Style(NULL,NULL, ("somedocstyle"))//***
 {
-	disposition=disp;
+	imposition=imp;
 }
 
-/*! Recognizes 'disposition'. Discards all else.
+/*! Recognizes 'imposition'. Discards all else.
  */
 void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 {
@@ -78,30 +78,30 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"disposition")) {
-			if (disposition) delete disposition;
-			 // figure out which kind of disposition it is..
-			disposition=newDisposition(value);
-			if (disposition) disposition->dump_in_atts(att->attributes.e[c]);
+		if (!strcmp(name,"imposition")) {
+			if (imposition) delete imposition;
+			 // figure out which kind of imposition it is..
+			imposition=newImposition(value);
+			if (imposition) imposition->dump_in_atts(att->attributes.e[c]);
 		} else { 
 			cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
 
-//! Write out saveas, then call disposition->dump(f,indent+2).
+//! Write out saveas, then call imposition->dump(f,indent+2).
 void DocumentStyle::dump_out(FILE *f,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (disposition) {
-		fprintf(f,"%sdisposition %s\n",spc,disposition->Stylename());
-		disposition->dump_out(f,indent+2);
+	if (imposition) {
+		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
+		imposition->dump_out(f,indent+2);
 	}
 }
 
 //! *** returns a new DocumentStyle(NULL,NULL)
-/*! Should make "$save.2"?? and duplicate the disposition. Each doc must
- * have own instance of Disposition since there are doc specific settings in disp?
+/*! Should make "$save.2"?? and duplicate the imposition. Each doc must
+ * have own instance of Imposition since there are doc specific settings in imp?
  */
 Style *DocumentStyle::duplicate(Style *s)//s=NULL
 {
@@ -109,15 +109,15 @@ Style *DocumentStyle::duplicate(Style *s)//s=NULL
 	if (!dynamic_cast<DocumentStyle *>(s)) return NULL;
 	DocumentStyle *ds=dynamic_cast<DocumentStyle *>(s);
 	if (!ds) return NULL;
-	ds->disposition=(Disposition *)disposition->duplicate();
+	ds->imposition=(Imposition *)imposition->duplicate();
 	//ds->saveas?? untitled2 untitled.3  ds->saveas=getUniqueUntitled() ds->saveas=GetUniqueFileName(based on saveas)
 	return s;
 }
 
-//! Deletes saveas and disposition. *** must work out who should be holding what!!!
+//! Deletes saveas and imposition. *** must work out who should be holding what!!!
 DocumentStyle::~DocumentStyle()
 {
-	if (disposition) delete disposition;
+	if (imposition) delete imposition;
 }
 
 //---------------------------- Document ---------------------------------------
@@ -193,7 +193,7 @@ Document::Document(const char *filename)
 /*! Document takes the style. The calling code should not delete it.
  *
  * Here, the documents pages are created from the info in stuff (or the default
- * document style). Disposition::CreatePages() creates the pages, and they are
+ * document style). Imposition::CreatePages() creates the pages, and they are
  * put in the pages stack.
  *
  * The filename is put in saveas, but the file is not loaded. Settings are
@@ -218,8 +218,8 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 		COUT("***need to implement document constructor.."<<endl);
 	} else {
 		 // create the pages
-		if (docstyle->disposition) pages.e=docstyle->disposition->CreatePages();
-		else { COUT("**** in new Document, docstyle has no disposition"<<endl);}
+		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
+		else { COUT("**** in new Document, docstyle has no imposition"<<endl);}
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;
@@ -254,10 +254,10 @@ void Document::clear()
 
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
 /*! \todo **** this is rather broken, should migrate maintenance of margins and page width
- * and height to Disposition? The correct PageStyle is not being added here. And when pages
+ * and height to Imposition? The correct PageStyle is not being added here. And when pages
  * are inserted, the pagestyles of the following pages (that already existed) are possibly
  * out of sync with the correct pagestyles, since w(), h(), and margins are incorrect... must
- * update dispositioninst.cc
+ * update impositioninst.cc
  *
  * Returns number of pages added, or negative for error.
  */
@@ -270,8 +270,8 @@ int Document::NewPages(int starting,int np)
 		p=new Page(NULL);
 		pages.push(p,1,starting);
 	}
-	docstyle->disposition->NumPages(pages.n);
-	docstyle->disposition->SyncPages(this,starting,-1);
+	docstyle->imposition->NumPages(pages.n);
+	docstyle->imposition->SyncPages(this,starting,-1);
 	laidout->notifyDocTreeChanged();
 	return np;
 }
@@ -367,9 +367,9 @@ int Document::Load(const char *file)
 	
 	makestr(saveas,file);
 	if (!docstyle) docstyle=new DocumentStyle(NULL);
-	if (!docstyle->disposition) docstyle->disposition=newDisposition("Singles");
+	if (!docstyle->imposition) docstyle->imposition=newImposition("Singles");
 	if (pages.n==0) {
-		pages.e=docstyle->disposition->CreatePages();
+		pages.e=docstyle->imposition->CreatePages();
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;
@@ -381,8 +381,8 @@ int Document::Load(const char *file)
 			}
 		}
 	}
-	docstyle->disposition->NumPages(pages.n);
-	docstyle->disposition->SyncPages(this,0,-1);
+	docstyle->imposition->NumPages(pages.n);
+	docstyle->imposition->SyncPages(this,0,-1);
 	cout <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
@@ -411,7 +411,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 			docstyle->dump_in_atts(att->attributes.e[c]);
 		} else if (!strcmp(name,"page")) {
 			PageStyle *ps=NULL;
-			if (docstyle && docstyle->disposition) ps=docstyle->disposition->GetPageStyle(pages.n);
+			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n);
 			page=new Page();
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c]);

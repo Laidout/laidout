@@ -21,19 +21,19 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-#ifndef DISPOSITION_H
-#define DISPOSITION_H
+#ifndef IMPOSITION_H
+#define IMPOSITION_H
 
 #include <lax/interfaces/somedata.h>
 #include <lax/lists.h>
 
-#include "page.h"
-#include "styles.h"
-#include "papersizes.h"
-#include "objectcontainer.h"
+#include "../page.h"
+#include "../styles.h"
+#include "../papersizes.h"
+#include "../objectcontainer.h"
 
-class Disposition;
-#include "document.h"
+class Imposition;
+#include "../document.h"
 
 //------------------------- PageLocation --------------------------------------
 
@@ -70,7 +70,7 @@ class Spread : public ObjectContainer
 {
  public:
 	unsigned int mask; // which of path,min,max,pages is defined
-	unsigned int style; // says what is the type of thing this spread refers to. See Disposition.
+	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
 	Laxkit::SomeData *path;
 	int pathislocal;
 	Laxkit::SomeData *marks;
@@ -87,9 +87,9 @@ class Spread : public ObjectContainer
 };
 
 
-//----------------------------- Disposition --------------------------
+//----------------------------- Imposition --------------------------
 
-class Disposition : public Style
+class Imposition : public Style
 {
   public:
 	int numpapers; // index="0" 
@@ -97,8 +97,8 @@ class Disposition : public Style
 	PaperType *paperstyle; // ".2" is the default paper style, assumed to be local
 	PageStyle *pagestyle; // ".3" is the default page style, assumed to be local
 	
-	Disposition(const char *nsname);
-	virtual ~Disposition() {}
+	Imposition(const char *nsname);
+	virtual ~Imposition() {}
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPageLikeThis(PageStyle *npage); // npage->duplicate(), doesnt transfer pointer
 	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
@@ -129,11 +129,11 @@ class Disposition : public Style
 
 
 
-//--------------------- GetBuiltinDispositionPool ------------------------------
+//--------------------- GetBuiltinImpositionPool ------------------------------
 
- // These functions are defined in dispositions.cc
-Laxkit::PtrStack<Disposition> *GetBuiltinDispositionPool(Laxkit::PtrStack<Disposition> *existingpool=NULL);
-Disposition *newDisposition(const char *disp);
+ // These functions are defined in impositions.cc
+Laxkit::PtrStack<Imposition> *GetBuiltinImpositionPool(Laxkit::PtrStack<Imposition> *existingpool=NULL);
+Imposition *newImposition(const char *impos);
 
 #endif
 

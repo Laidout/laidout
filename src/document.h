@@ -26,15 +26,15 @@
 
 class Document;
 #include "styles.h"
-#include "disposition.h"
+#include "imposition.h"
 
 //------------------------- DocumentStyle ------------------------------------
 
 class DocumentStyle : public Style
 {
  public:
-	Disposition *disposition;
-	DocumentStyle(Disposition *disp);
+	Imposition *imposition;
+	DocumentStyle(Imposition *imp);
 	virtual ~DocumentStyle();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual void dump_out(FILE *f,int indent);

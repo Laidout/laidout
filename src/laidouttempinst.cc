@@ -42,7 +42,7 @@ PtrStack<StyleDef>;
 PtrStack<FieldNode>;
 
  // used by LaidoutApp
-PtrStack<Disposition>;
+PtrStack<Imposition>;
 
  // used by ???
 PtrStack<PaperType>;

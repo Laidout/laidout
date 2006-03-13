@@ -225,8 +225,8 @@ int VObjContext::isequal(const ObjectContext *oc)
  * possibilities: limbo, main spread, printer marks, other spreads...
  *
  * \todo *** in paper spread view, perhaps that is where a spread()==printer marks is useful..
- * also, depending on the disposition, there might be other operations permitted in paper spread..
- * like in a postering disposition, the page data stays stationary, but multiple paper outlines can latch
+ * also, depending on the imposition, there might be other operations permitted in paper spread..
+ * like in a postering imposition, the page data stays stationary, but multiple paper outlines can latch
  * on to different parts of it...(or perhaps the page moves around, not paper)
  */
 /*! \var Page *LaidoutViewport::curpage
@@ -375,9 +375,9 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	//setupthings();
 	
 	 // Set workspace bounds.
-	if (newdoc && newdoc->docstyle && newdoc->docstyle->disposition) {
+	if (newdoc && newdoc->docstyle && newdoc->docstyle->imposition) {
 		DoubleBBox bb;
-		newdoc->docstyle->disposition->GoodWorkspaceSize(1,&bb);
+		newdoc->docstyle->imposition->GoodWorkspaceSize(1,&bb);
 		dp.SetSpace(bb.minx,bb.maxx,bb.miny,bb.maxy);
 		//Center(); //this doesn't do anything because dp.Minx,Maxx... are 0
 	}
@@ -582,12 +582,12 @@ void LaidoutViewport::setupthings(int topage)//topage=-1
 	if (spread) { delete spread; spread=NULL; } 
 
 	 // retrieve the proper spread according to viewmode
-	if (!spread && doc->docstyle && doc->docstyle->disposition) {
-		if (viewmode==PAGELAYOUT) spread=doc->docstyle->disposition->PageLayout(topage);
+	if (!spread && doc->docstyle && doc->docstyle->imposition) {
+		if (viewmode==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(topage);
 		else if (viewmode==PAPERLAYOUT) {
-			int p=doc->docstyle->disposition->PaperFromPage(topage);
-			spread=doc->docstyle->disposition->PaperLayout(p);
-		} else spread=doc->docstyle->disposition->SingleLayout(topage); // default to singlelayout
+			int p=doc->docstyle->imposition->PaperFromPage(topage);
+			spread=doc->docstyle->imposition->PaperLayout(p);
+		} else spread=doc->docstyle->imposition->SingleLayout(topage); // default to singlelayout
 	}
 
 	 // setup ectm (see realtoscreen/screentoreal/Getmag), and find spageindex
@@ -1468,7 +1468,7 @@ int LaidoutViewport::init()
  *   thumbnail
  *   etc..
  *  docstyle
- *   disposition
+ *   imposition
  *
  * </pre>
  *

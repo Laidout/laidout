@@ -132,7 +132,7 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
  * 4 in quarters... or "contact sheet"=-1 or "as many as will fit at pages dpi"=-2
  *
  * // *** perhaps dpi should be a per page feature? though gs only has it for whole doc, would be
- * reasonable to have page control it here. The disposition dpi is what gets sent to gs
+ * reasonable to have page control it here. The imposition dpi is what gets sent to gs
  * 
  * \todo *** please note that i have big plans for this extra, involving being able to dump
  * stuff into 'arrangements' which will be kind of like template pages. Each spot of an
@@ -151,7 +151,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 	Group *g;
 	int endpage;
 	int dpi;
-	if (ddpi>50) dpi=ddpi; else dpi=doc->docstyle->disposition->paperstyle->dpi;
+	if (ddpi>50) dpi=ddpi; else dpi=doc->docstyle->imposition->paperstyle->dpi;
 	endpage=startpage-1;
 	int maxperpage=imagesperpage;
 	if (maxperpage<0) maxperpage=1000000;
@@ -171,7 +171,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		 // figure out page characteristics: dpi, w, h, and scaling
 		s=1./dpi; 
 		if (outline) delete outline;
-		outline=doc->docstyle->disposition->GetPage(endpage,1);
+		outline=doc->docstyle->imposition->GetPage(endpage,1);
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//cout <<"  image("<<images[c]->object_id<<") "<<images[c]->filename<<": ww,hh:"<<

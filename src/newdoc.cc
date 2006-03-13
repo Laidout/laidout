@@ -82,7 +82,7 @@
 
 
 #include "newdoc.h"
-#include "dispositioninst.h"
+#include "impositions/impositioninst.h"
 #include <lax/filedialog.h>
 	
 using namespace Laxkit;
@@ -91,7 +91,7 @@ using namespace Laxkit;
 /*! \class NewDocWindow
  *
  * This is currently a god awful hack to get things off the ground.
- * Must be restructured to handle any kind of disposition... 
+ * Must be restructured to handle any kind of imposition... 
  * gotta finish the GenericStyleWindow thing, so don't go adding all kinds
  * of hard-coded windows and such here...
  *
@@ -125,10 +125,10 @@ using namespace Laxkit;
 //	int curorientation;
 //	// the names of each, so to change Left->Inside, Top->Inside (like calender), etc
 //	const char *marginl,*marginr,*margint,*marginb; 
-//	Disposition *disp;
+//	Imposition *imp;
 //	PaperType *papertype;
 //	
-//	Laxkit::StrSliderPopup *dispsel;
+//	Laxkit::StrSliderPopup *impsel;
 //	Laxkit::LineEdit *lineedit;
 //	Laxkit::LineInput *saveas,*paperx,*papery,*numpages;
 //	Laxkit::MessageBar *mesbar;
@@ -155,7 +155,7 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 	papersizes=NULL;
 	numpages=NULL;
 
-	disp=NULL;
+	imp=NULL;
 	papertype=NULL;
 }
 
@@ -244,14 +244,14 @@ int NewDocWindow::init()
 	AddWin(numpages, numpages->win_w,0,50,50, linpheight,0,0,50);
 	
 	
-	 // ------------- Disposition ------------------
-	mesbar=new MessageBar(this,"mesbar 1.1",MB_MOVE, 0,0, 0,0, 0, "Disposition:");
+	 // ------------- Imposition ------------------
+	mesbar=new MessageBar(this,"mesbar 1.1",MB_MOVE, 0,0, 0,0, 0, "Imposition:");
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
-	dispsel=new StrSliderPopup(this,"Disposition",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-						numpages,window,"disposition");
-	for (c=0; c<laidout->dispositionpool.n; c++)
-		dispsel->AddItem(laidout->dispositionpool.e[c]->Stylename(),c);
-	AddWin(dispsel, 250,100,50,50, linpheight,0,0,50);
+	impsel=new StrSliderPopup(this,"Imposition",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+						numpages,window,"imposition");
+	for (c=0; c<laidout->impositionpool.n; c++)
+		impsel->AddItem(laidout->impositionpool.e[c]->Stylename(),c);
+	AddWin(impsel, 250,100,50,50, linpheight,0,0,50);
 	AddNull();
 	
 
@@ -261,7 +261,7 @@ int NewDocWindow::init()
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
 
 	defaultpage=new CheckBox(this,"default",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						dispsel,window,"check default", "default",5,5);
+						impsel,window,"check default", "default",5,5);
 	defaultpage->SetState(LAX_ON);
 	AddWin(defaultpage, defaultpage->win_w,0,0,50, linpheight,0,0,50);
 	
@@ -409,7 +409,7 @@ int NewDocWindow::init()
 
 NewDocWindow::~NewDocWindow()
 {
-	if (disp) delete disp;
+	if (imp) delete imp;
 	delete papertype;
 }
 
@@ -445,11 +445,11 @@ cout <<"New orientation:"<<l<<endl;
 			curorientation=l;
 			papertype->flags=curorientation;
 		}
-	} else if (!strcmp(mes,"disposition")) {
+	} else if (!strcmp(mes,"imposition")) {
 		//***
-		if (e->data.l[0]<0 || e->data.l[0]>=laidout->dispositionpool.n) return 0;
-		if (disp) delete disp;
-		disp=(Disposition *)laidout->dispositionpool.e[e->data.l[0]]->duplicate();
+		if (e->data.l[0]<0 || e->data.l[0]>=laidout->impositionpool.n) return 0;
+		if (imp) delete imp;
+		imp=(Imposition *)laidout->impositionpool.e[e->data.l[0]]->duplicate();
 		return 0;
 		
 	} else if (!strcmp(mes,"papersizex")) {
@@ -485,24 +485,24 @@ cout <<"New orientation:"<<l<<endl;
 //! Create and fill a DocumentStyle, and tell laidout to make a new document
 void NewDocWindow::sendNewDoc()
 {
-	 // find and get dup of disposition
-	Disposition *disposition=NULL;
+	 // find and get dup of imposition
+	Imposition *imposition=NULL;
 	int c;
-	for (c=0; c<laidout->dispositionpool.n; c++) {
-		if (!strcmp(laidout->dispositionpool.e[c]->Stylename(),dispsel->GetCurrentItem())) break;
+	for (c=0; c<laidout->impositionpool.n; c++) {
+		if (!strcmp(laidout->impositionpool.e[c]->Stylename(),impsel->GetCurrentItem())) break;
 	}
-	if (c==laidout->dispositionpool.n) disposition=new Singles();
+	if (c==laidout->impositionpool.n) imposition=new Singles();
 	else {
-		cout <<"****attempting to clone "<<(laidout->dispositionpool.e[c]->Stylename())<<endl;
-		disposition=(Disposition *)(laidout->dispositionpool.e[c]->duplicate());
+		cout <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
+		imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
 	}
-	if (!disposition) { cout <<"**** no disposition in newdoc!!"<<endl; return; }
+	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
 	
 	int npgs=atoi(numpages->GetCText());
 	if (npgs<=0) npgs=1;
-	disposition->NumPages(npgs);
-	DocumentStyle *newdoc=new DocumentStyle(disposition);
-	newdoc->disposition->SetPaperSize(papertype);
+	imposition->NumPages(npgs);
+	DocumentStyle *newdoc=new DocumentStyle(imposition);
+	newdoc->imposition->SetPaperSize(papertype);
 	laidout->NewDocument(newdoc,saveas->GetCText());
 }
 

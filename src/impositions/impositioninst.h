@@ -21,14 +21,14 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-#ifndef DISPOSITIONINST_H
-#define DISPOSITIONINST_H
+#ifndef IMPOSITIONINST_H
+#define IMPOSITIONINST_H
 
-#include <disposition.h>
+#include "imposition.h"
 
 //------------------------ Singles ---------------------------
 
-class Singles : public Disposition
+class Singles : public Imposition
 {
   public:
 	double insetl,insetr,insett,insetb;
@@ -78,13 +78,13 @@ class DoubleSidedSingles : public Singles
 
 ////------------------------ Booklet ---------------------------
 //
-class BookletDisposition : public DoubleSidedSingles
+class BookletImposition : public DoubleSidedSingles
 {
  public:
 	double creep;  // booklet.5
 	unsigned long covercolor; // booklet.13
 	unsigned long bodycolor; // booklet.14
-	BookletDisposition();
+	BookletImposition();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	
@@ -104,7 +104,7 @@ class BookletDisposition : public DoubleSidedSingles
 
 ////------------------------ Basic Book ---------------------------
 //
-//class BasicBook : public Disposition
+//class BasicBook : public Imposition
 //{
 // public:
 //	int numsections;
@@ -128,7 +128,7 @@ class BookletDisposition : public DoubleSidedSingles
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
-////---------------------------------- CompositeDisposition ----------------------------
+////---------------------------------- CompositeImposition ----------------------------
 //****
 //
 //
