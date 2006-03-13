@@ -26,6 +26,7 @@ VERSION 0.01
 
 VERSION 0.1
 -----------
+Rename Disposition to Imposition. Why oh why did I call it Disposition??
 PathInterface should finally work right
 Linear Gradients
 Circle Gradients
@@ -40,7 +41,7 @@ Generic style edit window which allows:
   also means all things must define their styledefs
 Overall windowing setup using Laxkit::SplitWindows, docking, etc.
 from laxkit: replacement of 'datastack' should be complete, do same here
-CompositeDisposition should be ready
+CompositeImposition should be ready
 DumpImages within Arrangements, which are sort of a template of positions
 Plugin infrastructure should be in place
 Low level tree editor, akin to the xml editor in inkscape
