@@ -276,19 +276,19 @@ int psout(FILE *f,Document *doc)
 	fprintf (f,
 			"%%!PS-Adobe-3.0\n"
 			"%%%%Orientation: ");
-	fprintf (f,"%s\n",(doc->docstyle->disposition->paperstyle->flags&1)?"Landscape":"Portrait");
-	fprintf(f,"%%%%Pages: %d\n",doc->docstyle->disposition->numpapers);
+	fprintf (f,"%s\n",(doc->docstyle->imposition->paperstyle->flags&1)?"Landscape":"Portrait");
+	fprintf(f,"%%%%Pages: %d\n",doc->docstyle->imposition->numpapers);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
 			  "%%%%CreationDate: Sat Feb 11 21:12:07 2006\n"
 			  "%%%%Creator: Laidout 0.1\n"
 			  "%%%%For: whoever (i686, Linux 2.6.15-1-k7)\n");
 	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
-				doc->docstyle->disposition->paperstyle->name, 
-				72*doc->docstyle->disposition->paperstyle->width,  //width and height ignoring landscape/portrait
-				72*doc->docstyle->disposition->paperstyle->height);
+				doc->docstyle->imposition->paperstyle->name, 
+				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
+				72*doc->docstyle->imposition->paperstyle->height);
 	fprintf(f,"%%%%EndComments\n"
 			  "%%%%BeginDefaults\n"
-			  "%%%%PageMedia: %s\n",doc->docstyle->disposition->paperstyle->name);
+			  "%%%%PageMedia: %s\n",doc->docstyle->imposition->paperstyle->name);
 	fprintf(f,"%%%%EndDefaults\n"
 			  "\n"
 			  "%%%%BeginProlog\n"
@@ -304,16 +304,16 @@ int psout(FILE *f,Document *doc)
 	int c,c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page;
-	for (c=0; c<doc->docstyle->disposition->numpapers; c++) {
+	for (c=0; c<doc->docstyle->imposition->numpapers; c++) {
 	     //print paper header
 		fprintf(f, "%%%%Page: %d %d\n", c+1,c+1);
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
-		if (doc->docstyle->disposition->paperstyle->flags&1) {
-			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->disposition->paperstyle->width);
+		if (doc->docstyle->imposition->paperstyle->flags&1) {
+			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
 		}
 		
-		spread=doc->docstyle->disposition->PaperLayout(c);
+		spread=doc->docstyle->imposition->PaperLayout(c);
 		
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {

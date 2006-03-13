@@ -21,9 +21,9 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/**************** dispositions/netdisposition.cc *********************/
+/**************** impositions/netimposition.cc *********************/
 
-#include "netdisposition.h"
+#include "netimposition.h"
 #include "dodecahedron.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/refcounter.h>
@@ -35,9 +35,9 @@ using namespace LaxFiles;
 extern RefCounter<SomeData> datastack;
 extern RefCounter<anObject> objectstack;
 
-//----------------------------- NetDisposition --------------------------
+//----------------------------- NetImposition --------------------------
 
-/*! \class NetDisposition
+/*! \class NetImposition
  * \brief Uses a Net object to define the pages and spread.
  *
  * The PaperLayout() returns the same as the PageLayout, with the important
@@ -49,15 +49,15 @@ extern RefCounter<anObject> objectstack;
  * as you traverse the points, and when you draw on the normal math plane
  * which has positive x to the right, and positive y is up.
  */
-//class NetDisposition : public Disposition
+//class NetImposition : public Imposition
 //{
 // public:
 //	Net *net;
 //	int netisbuiltin;
 //	int printnet;
 //
-//	NetDisposition(Net *newnet=NULL);
-//	virtual ~NetDisposition();
+//	NetImposition(Net *newnet=NULL);
+//	virtual ~NetImposition();
 //	virtual Style *duplicate(Style *s=NULL);
 //	
 ////	virtual int SetPageLikeThis(PageStyle *npage); // copies pagestyle, doesnt transfer pointer
@@ -95,8 +95,8 @@ extern RefCounter<anObject> objectstack;
 //! Constructor. Transfers newnet pointer, does not duplicate.
 /*!  Default is to have a dodecahedron.
  */
-NetDisposition::NetDisposition(Net *newnet)
-	: Disposition("Net")
+NetImposition::NetImposition(Net *newnet)
+	: Imposition("Net")
 { 
 	 // setup default paperstyle and pagestyle
 	paperstyle=new PaperType("letter",8.5,11.0,0,300);//***should be global default
@@ -114,7 +114,7 @@ NetDisposition::NetDisposition(Net *newnet)
 }
  
 //! Deletes net.
-NetDisposition::~NetDisposition()
+NetImposition::~NetImposition()
 {
 	if (net) delete net;
 }
@@ -125,7 +125,7 @@ NetDisposition::~NetDisposition()
  *  dodecahedron
  * </pre>
  */
-int NetDisposition::SetNet(const char *nettype)
+int NetImposition::SetNet(const char *nettype)
 {
 	if (!strcmp(nettype,"dodecahedron")) {
 		SetNet(makeDodecahedronNet(paperstyle->w(),paperstyle->h()));
@@ -141,7 +141,7 @@ int NetDisposition::SetNet(const char *nettype)
  *
  * Return 0 if changed, 1 if not.
  */
-int NetDisposition::SetNet(Net *newnet)
+int NetImposition::SetNet(Net *newnet)
 {
 	if (!newnet) return 1;
 	if (net && net!=newnet) delete net;
@@ -159,7 +159,7 @@ int NetDisposition::SetNet(Net *newnet)
 }
 
 //! Using the paperstyle, create a new default pagestyle.
-void NetDisposition::setPage()
+void NetImposition::setPage()
 {
 	if (!paperstyle) return;
 	if (pagestyle) delete pagestyle;
@@ -192,7 +192,7 @@ void NetDisposition::setPage()
  * </pre>
  * See also Net::dump_out().
  */
-void NetDisposition::dump_out(FILE *f,int indent)
+void NetImposition::dump_out(FILE *f,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
@@ -212,7 +212,7 @@ void NetDisposition::dump_out(FILE *f,int indent)
 	}
 }
 
-void NetDisposition::dump_in_atts(LaxFiles::Attribute *att)
+void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
 {
 	if (!att) return;
 	char *name,*value;
@@ -236,7 +236,7 @@ void NetDisposition::dump_in_atts(LaxFiles::Attribute *att)
 				SetNet(tempnet);
 				cout <<"-----------after dump_in net and set----------"<<endl;
 				net->dump_out(stdout,2);
-				cout <<"-----------end netdisp..----------"<<endl;
+				cout <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);
@@ -245,12 +245,12 @@ void NetDisposition::dump_in_atts(LaxFiles::Attribute *att)
 	setPage();
 }
 
-//! Just makes sure that s can be cast to NetDisposition. If yes, return s, if no, return NULL.
-Style *NetDisposition::duplicate(Style *s)//s=NULL
+//! Just makes sure that s can be cast to NetImposition. If yes, return s, if no, return NULL.
+Style *NetImposition::duplicate(Style *s)//s=NULL
 {
-	NetDisposition *d;
-	if (s==NULL) s=d=new NetDisposition();
-	else d=dynamic_cast<NetDisposition *>(s);
+	NetImposition *d;
+	if (s==NULL) s=d=new NetImposition();
+	else d=dynamic_cast<NetImposition *>(s);
 	if (!d) return NULL;
 	
 	 // copy net
@@ -265,7 +265,7 @@ Style *NetDisposition::duplicate(Style *s)//s=NULL
  *
  * Place results in bbox if bbox!=NULL. If bbox==NULL, then create a new DoubleBBox and return that.
  */
-Laxkit::DoubleBBox *NetDisposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox *bbox)//page=1
+Laxkit::DoubleBBox *NetImposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox *bbox)//page=1
 {
 	if (page==0 || page==1) {
 		if (!bbox) bbox=new DoubleBBox();
@@ -275,7 +275,7 @@ Laxkit::DoubleBBox *NetDisposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBo
 }
 
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
-int NetDisposition::SetPaperSize(PaperType *npaper)
+int NetImposition::SetPaperSize(PaperType *npaper)
 {
 	if (!npaper) return 1;
 	if (paperstyle) delete paperstyle;
@@ -285,13 +285,13 @@ int NetDisposition::SetPaperSize(PaperType *npaper)
 	return 0;
 }
 
-/*! \fn Page **NetDisposition::CreatePages(PageStyle *thispagestyle=NULL)
+/*! \fn Page **NetImposition::CreatePages(PageStyle *thispagestyle=NULL)
  * \brief Create the required pages.
  *
  * If thispagestyle is not NULL, then this style is to be preferred over
  * the internal page style(?!!?!***)
  */
-Page **NetDisposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
+Page **NetImposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
 {
 	if (numpages==0) return NULL;
 	Page **pages=new Page*[numpages+1];
@@ -307,7 +307,7 @@ Page **NetDisposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
 }
 
 
-/*! \fn SomeData *NetDisposition::GetPage(int pagenum,int local)
+/*! \fn SomeData *NetImposition::GetPage(int pagenum,int local)
  * \brief Return outline of page in paper coords. Origin is page origin.
  *
  * This is a no frills outline, used primarily to check where the mouse
@@ -316,7 +316,7 @@ Page **NetDisposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
  * datastack object. In this case, the item should be guaranteed to have
  * a reference count of one already.
  */
-Laxkit::SomeData *NetDisposition::GetPage(int pagenum,int local)
+Laxkit::SomeData *NetImposition::GetPage(int pagenum,int local)
 {
 	if (pagenum<0 || pagenum>=numpages) return NULL;
 	int pg=pagenum%net->nf;
@@ -335,7 +335,7 @@ Laxkit::SomeData *NetDisposition::GetPage(int pagenum,int local)
 	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
 	
 	flatpoint p[net->faces[pg].np];
-	cout <<"NetDisposition::GetPage:\n";
+	cout <<"NetImposition::GetPage:\n";
 	for (int c=0; c<net->faces[pg].np; c++) {
 		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
 		cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
@@ -349,11 +349,11 @@ Laxkit::SomeData *NetDisposition::GetPage(int pagenum,int local)
 }
 
 //! Just returns PageLayout(whichpage).
-Spread *NetDisposition::GetLittleSpread(int whichpage)
+Spread *NetImposition::GetLittleSpread(int whichpage)
 { return PageLayout(whichpage); }
 
 
-/*! \fn Spread *NetDisposition::PageLayout(int whichpage)
+/*! \fn Spread *NetImposition::PageLayout(int whichpage)
  * \brief Returns a page view spread that contains whichpage, in viewer coords.
  *
  * whichpage starts at 0.
@@ -361,7 +361,7 @@ Spread *NetDisposition::GetLittleSpread(int whichpage)
  * The path holds the outline of the spread, and the PageLocation stack holds
  * transforms to get from the overall coords to each page's coords.
  */
-Spread *NetDisposition::PageLayout(int whichpage)
+Spread *NetImposition::PageLayout(int whichpage)
 {
 	if (!net) return NULL;
 	
@@ -407,7 +407,7 @@ Spread *NetDisposition::PageLayout(int whichpage)
 /*! \todo *** spread->marks (the printer marks) should optionally hold
  * the outline of the net, according to value of printnet.
  */
-Spread *NetDisposition::PaperLayout(int whichpaper)
+Spread *NetImposition::PaperLayout(int whichpaper)
 {
 	if (!net) return NULL;
 	Spread *spread=PageLayout(whichpaper*net->nf);
@@ -441,7 +441,7 @@ Spread *NetDisposition::PaperLayout(int whichpaper)
  * If bbox is not NULL, then put the info in the supplied bbox. Otherwise
  * return a new DoubleBBox.
  *
- * The orientation of the box is determined internally to the NetDisposition,
+ * The orientation of the box is determined internally to the NetImposition,
  * and accessed through the other functions here. 
  * minx==miny==0 which is the lower left corner of the page. This function
  * is useful mainly for speedy layout functions.
@@ -449,7 +449,7 @@ Spread *NetDisposition::PaperLayout(int whichpaper)
  * \todo *** is this function actaully used anywhere? anyway it's broken here,
  * just returns bounds of paper.
  */
-DoubleBBox *NetDisposition::GetDefaultPageSize(DoubleBBox *bbox)//box=NULL
+DoubleBBox *NetImposition::GetDefaultPageSize(DoubleBBox *bbox)//box=NULL
 {
 	if (!paperstyle) return NULL;
 	if (!bbox) bbox=new DoubleBBox;
@@ -467,7 +467,7 @@ DoubleBBox *NetDisposition::GetDefaultPageSize(DoubleBBox *bbox)//box=NULL
  * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
  * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
  */
-int *NetDisposition::PrintingPapers(int frompage,int topage)
+int *NetImposition::PrintingPapers(int frompage,int topage)
 {
 	int fp,tp;
 	if (topage<frompage) { tp=topage; topage=frompage; frompage=tp; }
@@ -489,21 +489,21 @@ int *NetDisposition::PrintingPapers(int frompage,int topage)
 
 
 //! Returns pagenumber/net->nf.
-int NetDisposition::PaperFromPage(int pagenumber)
+int NetImposition::PaperFromPage(int pagenumber)
 {
 	if (!net) return 0;
 	return pagenumber/net->nf;
 }
 
 //! Returns npapers*net->nf.
-int NetDisposition::GetPagesNeeded(int npapers)
+int NetImposition::GetPagesNeeded(int npapers)
 {
 	if (!net) return 0;
 	return npapers*net->nf;
 }
 
 //! Returns (npages-1)/net->nf+1.
-int NetDisposition::GetPapersNeeded(int npages)
+int NetImposition::GetPapersNeeded(int npages)
 {
 	if (!net) return 0;
 	return (npages-1)/net->nf+1;

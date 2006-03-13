@@ -21,21 +21,21 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-#ifndef NETDISPOSITION_H
-#define NETDISPOSITION_H
+#ifndef NETIMPOSITION_H
+#define NETIMPOSITION_H
 
-#include "../disposition.h"
+#include "../imposition.h"
 #include "nets.h"
 
-class NetDisposition : public Disposition
+class NetImposition : public Imposition
 {
  public:
 	Net *net;
 	int netisbuiltin;
 	int printnet;
 
-	NetDisposition(Net *newnet=NULL);
-	virtual ~NetDisposition();
+	NetImposition(Net *newnet=NULL);
+	virtual ~NetImposition();
 	virtual Style *duplicate(Style *s=NULL);
 	
 	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size

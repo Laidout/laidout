@@ -37,8 +37,8 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) printing dispositions
-	$(LD) $(LDFLAGS) $(objs) printing/*.o dispositions/*.o -llaxinterfaces -llaxkit -o $@
+laidout: lax laxinterface $(objs) printing impositions
+	$(LD) $(LDFLAGS) $(objs) printing/*.o impositions/*.o -llaxinterfaces -llaxkit -o $@
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
@@ -52,20 +52,20 @@ docs:
 depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
 	cd printing && $(MAKE) depends
-	cd dispositions && $(MAKE) depends
+	cd impositions && $(MAKE) depends
 
 include makedepend
 
 printing: 
 	cd printing && $(MAKE)
 
-dispositions:
-	cd dispositions && $(MAKE)
+impositions:
+	cd impositions && $(MAKE)
 
 
-.PHONY: clean lax docs printing dispositions
+.PHONY: clean lax docs printing impositions
 clean:
 	rm -f laidout *.o
 	cd printing && $(MAKE) clean
-	cd dispositions && $(MAKE) clean
+	cd impositions && $(MAKE) clean
 	

@@ -21,7 +21,7 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/************ dispositions/nets.cc *************/
+/************ impositions/nets.cc *************/
 
 #include "nets.h"
 
@@ -416,7 +416,7 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 /*! \class Net
  * \brief A type of SomeData that stores polyhedron cut and fold patterns.
  *
- * This is used by NetDisposition. 
+ * This is used by NetImposition. 
  * 
  * Lines will be drawn, using only those coordinates from points.
  * Tabs are drawn on alternating outline point, or as specified.

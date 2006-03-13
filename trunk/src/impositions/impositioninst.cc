@@ -21,9 +21,9 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/*************** dispositioninst.cc ********************/
+/*************** impositioninst.cc ********************/
 
-#include "dispositioninst.h"
+#include "impositioninst.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/strmanip.h>
 #include <lax/attributes.h>
@@ -37,27 +37,27 @@ extern RefCounter<SomeData> datastack;
 
 /*! \file 
  * <pre>
- *  This file defines the standard dispositions:
+ *  This file defines the standard impositions:
  *   Singles
  *   DoubleSidedSingles
- *   BookletDisposition 
- *   BasicBookDisposition ***todo
- *   CompositeDisposition ***todo
+ *   BookletImposition 
+ *   BasicBookImposition ***todo
+ *   CompositeImposition ***todo
  *
  *  Some other useful ones defined elsewhere are:
- *   NetDisposition       ***todo (dispositions/netdisposition.cc)
- *   WhatupDisposition    ***todo, holds another disposition, but
+ *   NetImposition       ***todo (impositions/netimposition.cc)
+ *   WhatupImposition    ***todo, holds another imposition, but
  *   						prints multiple papers on a single paper,
  *   						or allows different papers to map to the
  *   						same paper, like posterizing
  * 
  * </pre>
  *
- * \todo *** implement the CompositeDisposition, and figure out good way
+ * \todo *** implement the CompositeImposition, and figure out good way
  * to integrate into whole system.. that involves clearing up relationship
- * between Disposition, DocStyle, and Document classes.
+ * between Imposition, DocStyle, and Document classes.
  * 
- * \todo *** implement BasicBookDisposition
+ * \todo *** implement BasicBookImposition
  *
  */
 
@@ -70,7 +70,7 @@ extern RefCounter<SomeData> datastack;
  *
  * The pages can be inset a certain amount from each edge, specified by inset[lrtb].
  */
-//class Singles : public Disposition
+//class Singles : public Imposition
 //{
 //  public:
 //	double insetl,insetr,insett,insetb;
@@ -100,7 +100,7 @@ extern RefCounter<SomeData> datastack;
 //};
 
 //Style(StyleDef *sdef,Style *bsdon,const char *nstn)
-Singles::Singles() : Disposition("Singles")
+Singles::Singles() : Imposition("Singles")
 { 
 	insetl=insetr=insett=insetb=0;
 	tilex=tiley=1;
@@ -230,12 +230,12 @@ Style *Singles::duplicate(Style *s)//s=NULL
 	sn->insetb=insetb;
 	sn->tilex=tilex;
 	sn->tiley=tiley;
-	return Disposition::duplicate(s);  
+	return Imposition::duplicate(s);  
 }
 
-//! ***imp me! Make an instance of the Singles disposition styledef
+//! ***imp me! Make an instance of the Singles imposition styledef
 /*  Required by Style, this defines the various names for fields relevant to Singles,
- *  basically just the inset[lrtb], plus the standard Disposition npages and npapers.
+ *  basically just the inset[lrtb], plus the standard Imposition npages and npapers.
  *  Two of the fields would be the pagestyle and paperstyle. They have their own
  *  styledefs stored in the style def manager *** whatever and wherever that is!!!
  */
@@ -247,7 +247,7 @@ StyleDef *Singles::makeStyleDef()
 //! Create necessary pages based on default pagestyle
 /*! Currently returns NULL terminated list of pages.
  *
- * \todo *** is thispagestyle here really necessary??? perhaps remove from Disposition
+ * \todo *** is thispagestyle here really necessary??? perhaps remove from Imposition
  */
 Page **Singles::CreatePages(PageStyle *thispagestyle)//thispagestyle=NULL
 {
@@ -542,9 +542,9 @@ Style *DoubleSidedSingles::duplicate(Style *s)//s=NULL
 	return Singles::duplicate(s);  
 }
 
-//! ***imp me! Make an instance of the DoubleSidedSingles disposition styledef
+//! ***imp me! Make an instance of the DoubleSidedSingles imposition styledef
 /*  Required by Style, this defines the various names for fields relevant to DoubleSidedSingles.
- *  Basically just the inset[lrtb], plus the standard Disposition npages and npapers,
+ *  Basically just the inset[lrtb], plus the standard Imposition npages and npapers,
  *  and isvertical (which is a flag to say whether this is a booklet or a calendar).
  *
  *  Two of the fields would be the pagestyle and paperstyle. They have their own
@@ -700,10 +700,10 @@ Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
 	return Singles::PaperLayout(whichpaper);
 }
 
-//---------------------------------- BookletDisposition -----------------------------------------
+//---------------------------------- BookletImposition -----------------------------------------
 
-/*! \class BookletDisposition
- * \brief A disposition made of one bunch of papers folded down the middle.
+/*! \class BookletImposition
+ * \brief A imposition made of one bunch of papers folded down the middle.
  *
  * The papers can be folded vertically in the middle like a book or folded horizontally like
  * a calendar. Also, the whole shebang can be tiled across the paper so that when
@@ -714,13 +714,13 @@ Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
  *
  * \todo *** tiling and cut marks are not functional yet
  */
-//class BookletDisposition : public DoubleSidedSingles
+//class BookletImposition : public DoubleSidedSingles
 //{
 // public:
 //	double creep;  // booklet.5
 //	unsigned long covercolor; // booklet.13
 //	unsigned long bodycolor; // booklet.14
-//	BookletDisposition();
+//	BookletImposition();
 //	virtual StyleDef *makeStyleDef();
 //	virtual Style *duplicate(Style *s=NULL);
 //	
@@ -744,7 +744,7 @@ Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
 ////	virtual Spread *PageLayout(int whichpage); 
 
 //! Constructor, init new variables, make style name="Booklet"
-BookletDisposition::BookletDisposition()
+BookletImposition::BookletImposition()
 {
 	creep=0;
 	covercolor=bodycolor=~0;
@@ -753,7 +753,7 @@ BookletDisposition::BookletDisposition()
 }
 
 //! Using the paperstyle and isvertical, create a new default pagestyle.
-void BookletDisposition::setPage()
+void BookletImposition::setPage()
 {
 	if (pagestyle) delete pagestyle;
 	pagestyle=new RectPageStyle((isvertical?RECTPAGE_LRIO:RECTPAGE_IOTB));
@@ -764,7 +764,7 @@ void BookletDisposition::setPage()
 }
 
 //! Read creep, body and covercolor, then DoubleSidedSigles::dump_in_atts().
-void BookletDisposition::dump_in_atts(LaxFiles::Attribute *att)
+void BookletImposition::dump_in_atts(LaxFiles::Attribute *att)
 {
 	if (!att) return;
 	char *name,*value;
@@ -790,7 +790,7 @@ void BookletDisposition::dump_in_atts(LaxFiles::Attribute *att)
  *    ...DoubleSidedSingles stuff..
  *  </pre>
  */
-void BookletDisposition::dump_out(FILE *f,int indent)
+void BookletImposition::dump_out(FILE *f,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	fprintf(f,"%screep %.10g\n",spc,creep);
@@ -800,11 +800,11 @@ void BookletDisposition::dump_out(FILE *f,int indent)
 }
 
 //! Duplicate. Copies over creep, tilex, tily, bodycolor, covercolor.
-Style *BookletDisposition::duplicate(Style *s)//s=NULL
+Style *BookletImposition::duplicate(Style *s)//s=NULL
 {
-	if (s==NULL) s=new BookletDisposition();
-	else if (!dynamic_cast<BookletDisposition *>(s)) return NULL;
-	BookletDisposition *b=dynamic_cast<BookletDisposition *>(s);
+	if (s==NULL) s=new BookletImposition();
+	else if (!dynamic_cast<BookletImposition *>(s)) return NULL;
+	BookletImposition *b=dynamic_cast<BookletImposition *>(s);
 	if (!b) return NULL;
 	b->creep=creep;
 	b->tilex=tilex;
@@ -815,13 +815,13 @@ Style *BookletDisposition::duplicate(Style *s)//s=NULL
 }
 
 //! ***imp me!
-StyleDef *BookletDisposition::makeStyleDef()
+StyleDef *BookletImposition::makeStyleDef()
 {//***
 	return NULL;
 }
 
 //--- can use DoubleSidedSingles::CreatePages
-//Page **BookletDisposition::CreatePages(PageStyle *pagestyle=NULL)
+//Page **BookletImposition::CreatePages(PageStyle *pagestyle=NULL)
 //{ ***
 //}
 
@@ -830,7 +830,7 @@ StyleDef *BookletDisposition::makeStyleDef()
  * \todo *** currently ignores isleft, which for booklets might be ok, but this
  * is different behavior for what DoubleSidedSingles does, esp. for PageLayout
  */
-Spread *BookletDisposition::PaperLayout(int whichpaper)
+Spread *BookletImposition::PaperLayout(int whichpaper)
 {
 	if (!numpapers) return NULL;
 	if (whichpaper<0 || whichpaper>=numpapers) whichpaper=0;
@@ -885,7 +885,7 @@ Spread *BookletDisposition::PaperLayout(int whichpaper)
  * fold like a book, then the page width is further divided by 2. If there is a horizontal
  * fold, then the height is divided by 2.
  */
-Laxkit::DoubleBBox *BookletDisposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox)//bbox=NULL
+Laxkit::DoubleBBox *BookletImposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox)//bbox=NULL
 { 
 	if (!paperstyle) return NULL;
 	if (!bbox) bbox=new DoubleBBox;
@@ -906,7 +906,7 @@ Laxkit::DoubleBBox *BookletDisposition::GetDefaultPageSize(Laxkit::DoubleBBox *b
 }
 
 //! Returns { frompage,topage, singlepage,-1,anothersinglepage,-1,-2 }
-int *BookletDisposition::PrintingPapers(int frompage,int topage)
+int *BookletImposition::PrintingPapers(int frompage,int topage)
 {
 	int lcenterpage=numpages/2; // The left or upper page of the centerfold
 	int *i=new int[3];
@@ -930,7 +930,7 @@ int *BookletDisposition::PrintingPapers(int frompage,int topage)
 }
 
 //! If pagenumber<=numpapers return pagenumber, else return numpapers-(pagenumber-numpapers)-1.
-int BookletDisposition::PaperFromPage(int pagenumber)
+int BookletImposition::PaperFromPage(int pagenumber)
 {
 	if (pagenumber+1<=numpapers) return pagenumber;
 	return numpapers-(pagenumber-numpapers)-1;
@@ -939,23 +939,23 @@ int BookletDisposition::PaperFromPage(int pagenumber)
 //! Is (int((npapers-1)/2)+1)*4. This assumes actually printing double sided later on..
 /*! The actual number of physical papers when printed double sided is half numpapers.
  */
-int BookletDisposition::GetPagesNeeded(int npapers)
+int BookletImposition::GetPagesNeeded(int npapers)
 { return ((npapers-1)/2+1)*4; }
 
 //! Get the number of papers needed to hold this many pages.  Is just (floor((npages-1)/4)+1)*2.
 /*! The value for number of physical papers after printing out double sided is half the returned number.
  */
-int BookletDisposition::GetPapersNeeded(int npages)
+int BookletImposition::GetPapersNeeded(int npages)
 { return ((npages-1)/4+1)*2; }
 
 
-////---------------------------------- CompositeDisposition ----------------------------
+////---------------------------------- CompositeImposition ----------------------------
 //
-// // class to enable certain page ranges to be administred by different dispositions...
-//class CompositeDisposition : public Disposition
+// // class to enable certain page ranges to be administred by different impositions...
+//class CompositeImposition : public Imposition
 //{
 // protected:
-//	Disposition *disps;
+//	Imposition *impos;
 //	Ranges ranges; 
 //	virtual void dump_out(FILE *f,int indent);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
@@ -965,7 +965,7 @@ int BookletDisposition::GetPapersNeeded(int npages)
 
 ////----------------------------------- BasicBook -------------------------------------------
 ///*! \class BasicBook
-// * \brief A more general disposition geared more for books with several sections.
+// * \brief A more general imposition geared more for books with several sections.
 // *
 // * A book in this case has muliple numbers of sections, and each section has a certain
 // * number of pages. Each of these sections would then be folded and assembled back
@@ -979,14 +979,14 @@ int BookletDisposition::GetPapersNeeded(int npages)
 // * make the body pages legal size paper chopped in half, and print the covers on thick
 // * tabloid size paper, then trim it all down after the cover is attached to the body.
 // *
-// * This disposition will automatically set up the cover paper to have the proper cut marks
+// * This imposition will automatically set up the cover paper to have the proper cut marks
 // * to fit around the sections with the specified spine thickness. Specifically, this means
 // * the vertical dimension of the coverpage will be the same as a body page, but the width
 // * will be 2 pages plus the spine width.
 // */
-////************* should this be broken down into a Project, rather than complete Disposition????
-////************* because it implies 2 different breakdowns of pages. Disposition should be one kind of breakdown
-////class BasicBook : public Disposition
+////************* should this be broken down into a Project, rather than complete Imposition????
+////************* because it implies 2 different breakdowns of pages. Imposition should be one kind of breakdown
+////class BasicBook : public Imposition
 ////{
 //// public:
 ////	int numsections;

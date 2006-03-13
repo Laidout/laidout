@@ -45,11 +45,11 @@ class NewDocWindow : public Laxkit::RowFrame
 	int curorientation;
 	 // the names of each, so to change Left->Inside, Top->Inside (like calender), etc
 	const char *marginl,*marginr,*margint,*marginb; 
-	Disposition *disp;
+	Imposition *imp;
 	PaperType *papertype;
 	
 	Laxkit::PtrStack<PaperType> *papersizes;
-	Laxkit::StrSliderPopup *dispsel;
+	Laxkit::StrSliderPopup *impsel;
 	Laxkit::LineEdit *lineedit;
 	Laxkit::LineInput *saveas,*paperx,*papery,*numpages;
 	Laxkit::MessageBar *mesbar;

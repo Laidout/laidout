@@ -26,7 +26,7 @@
 
 #include <lax/anxapp.h>
 
-#include "disposition.h"
+#include "impositions/imposition.h"
 #include "papersizes.h"
 #include "document.h"
 #include "newdoc.h"
@@ -46,7 +46,7 @@ class LaidoutApp : public Laxkit::anXApp
 //	Laxkit::PtrStack<Project> projectstack;
 //	ScreenStyle *screen;
 	Laxkit::PtrStack<Laxkit::anInterface> interfacepool;
-	Laxkit::PtrStack<Disposition> dispositionpool;
+	Laxkit::PtrStack<Imposition> impositionpool;
 	Laxkit::PtrStack<PaperType> papersizes;
 	LaidoutApp();
 	virtual ~LaidoutApp();

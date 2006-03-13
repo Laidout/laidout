@@ -359,7 +359,7 @@ SpreadInterface::~SpreadInterface()
  * PaperLayouts are non-continuous, but PageLayouts should be continuous.
  *
  * \todo currently, this just plops down spreads returned from
- * Disposition::GetLittleSpread(). From the first one, gets the highest page in
+ * Imposition::GetLittleSpread(). From the first one, gets the highest page in
  * the spread, then gets the next spread based on that one, until highestpage
  * is equal to doc->pages.n. would be better to search within already created
  * spreads to be sure not skipping pages..
@@ -371,7 +371,7 @@ void SpreadInterface::GetSpreads()
 	curspread=NULL;
 	curpage=-1;
 
-	if (!doc || !doc->docstyle || !doc->docstyle->disposition || !doc->pages.n) return;
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->pages.n) return;
 	
 	 // define the default page labels
 	int c;
@@ -386,7 +386,7 @@ void SpreadInterface::GetSpreads()
 	Spread *s;
 	LittleSpread *ls;
 	do {
-		s=doc->docstyle->disposition->GetLittleSpread(highestpage);
+		s=doc->docstyle->imposition->GetLittleSpread(highestpage);
 		ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
 		ls->FindBBox();
 		spreads.push(ls);
