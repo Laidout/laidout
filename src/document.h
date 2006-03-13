@@ -26,7 +26,7 @@
 
 class Document;
 #include "styles.h"
-#include "imposition.h"
+#include "impositions/imposition.h"
 
 //------------------------- DocumentStyle ------------------------------------
 

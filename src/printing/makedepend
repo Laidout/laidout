@@ -31,21 +31,24 @@ psout.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/dump.h
-psout.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h psfilters.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h
+psout.o: ../impositions/imposition.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h ../page.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/imageinterface.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
-psout.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
-psout.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
-psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
-psout.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h ../group.h
+psout.o: ../objectcontainer.h ../styles.h ../papersizes.h
+psout.o: ../objectcontainer.h psfilters.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/gradientinterface.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/colorpatchinterface.h

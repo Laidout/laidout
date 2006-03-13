@@ -24,7 +24,7 @@
 #ifndef NETIMPOSITION_H
 #define NETIMPOSITION_H
 
-#include "../imposition.h"
+#include "imposition.h"
 #include "nets.h"
 
 class NetImposition : public Imposition

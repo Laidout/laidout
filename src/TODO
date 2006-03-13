@@ -23,6 +23,9 @@ Next: MUst have color management..., have to imp the color system....
 
 Define protocols for inter-window communication, and scripting integration...
 
+impositions should have final printing shift matrix? to temporarily remap any imposition
+to any paper size, possibly with stuff off paper.. the WhackedImposition
+
 splitwindow, main control panel... there are a few basic windows right now, but 
 they must fit into a whole window framework which still needs to be implemented with
 Laxkit::SplitWindow and Laxkit::TabbedMenuSelector or whatever it'll be called!!!

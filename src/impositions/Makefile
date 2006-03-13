@@ -14,9 +14,12 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	imposition.o \
+	impositioninst.o \
+	impositions.o \
 	dodecahedron.o \
 	nets.o \
-	netdisposition.o 
+	netimposition.o 
 
 
 
