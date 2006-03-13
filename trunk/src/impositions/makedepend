@@ -39,7 +39,7 @@ imposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
 imposition.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
 imposition.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h ../group.h
 imposition.o: ../objectcontainer.h ../styles.h ../styles.h ../papersizes.h
-imposition.o: ../objectcontainer.h ../document.h
+imposition.o: ../objectcontainer.h ../document.h ../impositions/imposition.h
 imposition.o: /home/tom/p/sourceforge/laxkit/lax/lists.cc
 imposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
 imposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
@@ -69,6 +69,7 @@ impositioninst.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
 impositioninst.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h ../group.h
 impositioninst.o: ../objectcontainer.h ../styles.h ../styles.h
 impositioninst.o: ../papersizes.h ../objectcontainer.h ../document.h
+impositioninst.o: ../impositions/imposition.h
 impositioninst.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
 impositioninst.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 impositioninst.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
@@ -80,24 +81,10 @@ impositions.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
-impositions.o: ../impositions/imposition.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/dump.h ../page.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/imageinterface.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h ../group.h
-impositions.o: ../objectcontainer.h ../styles.h ../styles.h ../papersizes.h
-impositions.o: ../objectcontainer.h ../document.h imposition.h
-impositions.o: ../papersizes.h ../document.h ../newdoc.h
-impositions.o: /home/tom/p/sourceforge/laxkit/lax/rowframe.h
+impositions.o: ../impositions/imposition.h ../papersizes.h ../styles.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/dump.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h ../document.h
+impositions.o: ../newdoc.h /home/tom/p/sourceforge/laxkit/lax/rowframe.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/boxarrange.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/lineedit.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/textxeditbase.h
@@ -109,41 +96,60 @@ impositions.o: /home/tom/p/sourceforge/laxkit/lax/button.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/menuselector.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/menuinfo.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/scrolledwindow.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/pan.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/strsliderpopup.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/itemslider.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/mesbar.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/colorbox.h ../laidout.h
 impositions.o: ../interfaces.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
-impositions.o: impositioninst.h
-netdisposition.o: dodecahedron.h nets.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/dump.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/refcounter.h
-netdisposition.o: /home/tom/p/sourceforge/laxkit/lax/transformmath.h
+impositions.o: imposition.h ../page.h
+impositions.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/imageinterface.h
+impositions.o: ../group.h ../objectcontainer.h ../styles.h ../papersizes.h
+impositions.o: ../objectcontainer.h ../document.h impositioninst.h
+impositions.o: netimposition.h nets.h
+netimposition.o: netimposition.h imposition.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/dump.h ../page.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/imageinterface.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h ../group.h
+netimposition.o: ../objectcontainer.h ../styles.h ../styles.h ../papersizes.h
+netimposition.o: ../objectcontainer.h ../document.h
+netimposition.o: ../impositions/imposition.h nets.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
+netimposition.o: dodecahedron.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/refcounter.h
+netimposition.o: /home/tom/p/sourceforge/laxkit/lax/transformmath.h
 nets.o: nets.h /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
 nets.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
 nets.o: /home/tom/p/sourceforge/laxkit/lax/misc.h

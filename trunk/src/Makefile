@@ -21,9 +21,6 @@ objs= \
 	page.o \
 	group.o \
 	document.o \
-	disposition.o \
-	dispositioninst.o \
-	dispositions.o \
 	interfaces.o \
 	newdoc.o \
 	objectcontainer.o \
