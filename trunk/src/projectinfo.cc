@@ -104,7 +104,7 @@ ProjectInfo::~ProjectInfo()
 //	~ProjectInfoWindow();
 //	int init();
 ////	int Refresh();
-////	virtual int CharInput(char ch,unsigned int state);
+////	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //};
 

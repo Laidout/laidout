@@ -59,7 +59,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	virtual ~NewDocWindow();
 	virtual int init();
 //	virtual int Refresh();
-//	virtual int CharInput(char ch,unsigned int state);
+//	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 };
 

@@ -314,7 +314,7 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	virtual ~LaidoutViewport();
 //	virtual void Refresh();
 //	virtual int init();
-//	virtual int CharInput(char ch,unsigned int state);
+//	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int MouseMove(int x,int y,unsigned int state);
 //	
 //	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
@@ -1687,7 +1687,7 @@ cout <<"======= done refreshing LaidoutViewport.."<<endl;
  * '>'       next page       <-- done in ViewWindow
  * </pre>
  */
-int LaidoutViewport::CharInput(char ch,unsigned int state)
+int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 {
 	 // check these first, before asking interfaces
 	if (ch==' ') {
@@ -1940,7 +1940,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 //						int xx,int yy,int ww,int hh,int brder,
 //						Document *newdoc);
-//	virtual int CharInput(char ch,unsigned int state);
+//	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int DataEvent(Laxkit::SendData *data,const char *mes);
 //	virtual int init();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
@@ -2283,7 +2283,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
  * F1      popup new spread editor window
  * </pre>
  */
-int ViewWindow::CharInput(char ch,unsigned int state)
+int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 {
 	if (ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask) || 
 			ch=='s' && (state&LAX_STATE_MASK)==ControlMask) { // save file
