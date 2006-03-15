@@ -88,7 +88,7 @@ class LaidoutViewport : public Laxkit::ViewportWindow, virtual public ObjectCont
 	virtual ~LaidoutViewport();
 	virtual void Refresh();
 	virtual int init();
-	virtual int CharInput(char ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
 	
 	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
@@ -142,7 +142,7 @@ class ViewWindow : public Laxkit::ViewerWindow
 	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 						int xx,int yy,int ww,int hh,int brder,
 						Document *newdoc);
-	virtual int CharInput(char ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int DataEvent(Laxkit::SendData *data,const char *mes);
 	virtual int init();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);

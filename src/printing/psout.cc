@@ -25,6 +25,7 @@
 
 
 #include "psout.h"
+#include "../version.h"
 
 #include "psfilters.h"
 #include <lax/interfaces/imageinterface.h>
@@ -280,8 +281,8 @@ int psout(FILE *f,Document *doc)
 	fprintf(f,"%%%%Pages: %d\n",doc->docstyle->imposition->numpapers);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
 			  "%%%%CreationDate: Sat Feb 11 21:12:07 2006\n"
-			  "%%%%Creator: Laidout 0.1\n"
-			  "%%%%For: whoever (i686, Linux 2.6.15-1-k7)\n");
+			  "%%%%Creator: Laidout %s\n"
+			  "%%%%For: whoever (i686, Linux 2.6.15-1-k7)\n",LAIDOUT_VERSION);
 	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
 				doc->docstyle->imposition->paperstyle->name, 
 				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait

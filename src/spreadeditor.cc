@@ -300,10 +300,8 @@ PageLabel::~PageLabel()
 ////	//virtual int RBDown(int x,int y,unsigned int state,int count);
 ////	//virtual int RBUp(int x,int y,unsigned int state);
 //	virtual int MouseMove(int x,int y,unsigned int state);
-////	//virtual int KeysymInput(KeySym ch,unsigned int state);
-////	//virtual int KeysymRelease(KeySym ch,unsigned int state);
-//	virtual int CharInput(char ch,unsigned int state);
-////	//virtual int CharRelease(char ch,unsigned int state);
+//	virtual int CharInput(unsigned int ch,unsigned int state);
+////	//virtual int CharRelease(unsigned int ch,unsigned int state);
 //	virtual int Refresh();
 ////	//virtual int DrawData(anObject *ndata,int info=0);
 ////	//virtual int UseThis(anObject *newdata,unsigned int); // assumes not use local
@@ -875,7 +873,7 @@ void SpreadInterface::Center(int w)
  *   't'    toggle drawing of thumbnails
  *   'p'    *** for debugging thumbs
  */
-int SpreadInterface::CharInput(char ch,unsigned int state)
+int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 {
 	if (ch==' ' && (state&LAX_STATE_MASK)==0) {
 		Center(1);
@@ -931,7 +929,7 @@ int SpreadInterface::CharInput(char ch,unsigned int state)
 //						int xx, int yy, int ww, int hh, int brder,
 //						Project *project, Document *ndoc);
 //	virtual int init();
-//	virtual int CharInput(char ch,unsigned int state);
+//	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //};
 
@@ -1007,7 +1005,7 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-int SpreadEditor::CharInput(char ch,unsigned int state)
+int SpreadEditor::CharInput(unsigned int ch,unsigned int state)
 {
 	if (ch==LAX_Esc) {
 		app->destroywindow(this);

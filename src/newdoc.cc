@@ -138,7 +138,7 @@ using namespace Laxkit;
 //	virtual ~NewDocWindow();
 //	virtual int init();
 ////	int Refresh();
-////	virtual int CharInput(char ch,unsigned int state);
+////	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //};
 
@@ -239,7 +239,7 @@ int NewDocWindow::init()
 	 // -----Number of pages
 	numpages=new LineInput(this,"numpages",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
 						popup,window,"numpages",
-			            "Number of pages:","10",0, // *** must do auto set papersize
+			            "Number of pages:","1",0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
 	AddWin(numpages, numpages->win_w,0,50,50, linpheight,0,0,50);
 	
