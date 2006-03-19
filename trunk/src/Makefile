@@ -11,7 +11,7 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
-CPPFLAGS= -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
+CPPFLAGS= $(CPPFLAGS) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
 DEBUGFLAGS= -g -DDEBUG
 
 

@@ -36,8 +36,15 @@
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
-//*** so how do the lists.cc PtrStack stuff stack up? am I redefining all the 
-//guts from all the includes when including lists.cc??
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
+
 
 ////----------------------- SpreadView --------------------------------------
 // *** class to hold a view that can be saved and loaded

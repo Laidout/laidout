@@ -49,3 +49,12 @@ void showrusage()
 	cout <<"--rusagechildren.ru_ixrss: "<<rchildren.ru_ixrss<<endl;
 	cout <<"--rusagechildren.ru_ixrss: "<<rchildren.ru_ixrss<<endl;
 }
+
+void showmemusage()
+{
+	pid=getpid();
+	char blah[100];
+	sprintf(blah,"more /proc/%d/status",pid);
+	system(blah);
+}
+
