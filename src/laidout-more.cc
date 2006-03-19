@@ -29,6 +29,14 @@
 #include "viewwindow.h"
 #include "spreadeditor.h"
 
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
 using namespace Laxkit;
 
 //! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
@@ -55,7 +63,7 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom)//callfrom=NUL
 		if (yes){
 			e.xclient.window=topwindows.e[c]->window;
 			XSendEvent(dpy,topwindows.e[c]->window,False,0,&e);
-			cout <<"---sending docTreeChange to "<<topwindows.e[c]->win_title<<endl;
+			DBG cout <<"---sending docTreeChange to "<<topwindows.e[c]->win_title<<endl;
 			yes=0;
 		}
 	}

@@ -32,8 +32,14 @@ using namespace LaxFiles;
 
 using namespace Laxkit;
 
+#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
 //--------------------- Group ------------------------------
 
 /*! \class Group
@@ -399,10 +405,10 @@ void Group::dump_in_atts(LaxFiles::Attribute *att)
 				}
 				deletestrs(strs,n);
 			} else {
-				cout <<"*** readin blank object for Group..."<<endl;
+				DBG cout <<"*** readin blank object for Group..."<<endl;
 			}
 		} else { 
-			cout <<"Group dump_in:*** unknown attribute!!"<<endl;
+			DBG cout <<"Group dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }

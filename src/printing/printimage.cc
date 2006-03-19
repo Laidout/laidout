@@ -27,13 +27,20 @@
 // the stuff here is not actually used in Laidout.. bits of it have been
 // transported elsewhere
 
-#include <iostream>
 #include <X11/Xlib.h>
 #include <Imlib2.h>
 
 #include "psfilters.h"
 
+
+#ifndef HIDEGARBAGE
+#include <iostream>
 using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
 
 //-------------------------------- Imlib_Image to ps ------------------------------------
 
@@ -52,7 +59,7 @@ void Imlib_ImageToPS(FILE *psout,Imlib_Image image)
 	int len=3*width*height;
 	unsigned char rgbbuf[15];
 	unsigned char r,g,b;
-	cout <<endl;
+	DBG cout <<endl;
 	fprintf(psout,
 			"/DeviceRGB setcolorspace\n"
 			"<<\n"
@@ -120,7 +127,7 @@ void ps_Imlib_Image_out(Imlib_Image image)
 {
 	FILE *f=fopen("temp.ps","w");
 	if (!f) {
-		cout <<"Failed to open temp.ps."<<endl;
+		DBG cout <<"Failed to open temp.ps."<<endl;
 		return;
 	}
 

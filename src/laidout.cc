@@ -38,12 +38,6 @@
 #include <Imlib2.h>
 #include <getopt.h>
 
-#define LAX_DEBUG
-#include <lax/laxdebug.h>
-#include <iostream>
-using namespace std;
-
-
 #define LAIDOUT_CC
 #include "laidout.h"
 #include "viewwindow.h"
@@ -54,6 +48,16 @@ using namespace std;
 #include <lax/refcounter.cc>
 Laxkit::RefCounter<Laxkit::anObject> objectstack;
 using namespace Laxkit;
+
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
+
 
 //----------------------------------- pre-run misc -----------------------------------
 
@@ -187,7 +191,7 @@ LaidoutApp::LaidoutApp() : anXApp()
 //! Destructor, only have to delete project!
 LaidoutApp::~LaidoutApp() 
 {
-	cout <<"Laidout destructor.."<<endl;
+	DBG cout <<"Laidout destructor.."<<endl;
 	 //these flush automatically, but are listed here for occasional debugging purposes...
 //	papersizes.flush(); 
 //	impositionpool.flush();
@@ -296,7 +300,7 @@ void LaidoutApp::setupdefaultcolors()
  */
 void LaidoutApp::parseargs(int argc,char **argv)
 {
-cout <<"---------start options"<<endl;
+	DBG cout <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
 			{ "rescan-fonts",  0, 0, 'f' },
@@ -340,17 +344,17 @@ cout <<"---------start options"<<endl;
 	}
 	int readin=0;
 	if (optind<argc && argv[optind][0]=='-') { 
-		cout << "**** read in doc from stdin\n";
+		DBG cout << "**** read in doc from stdin\n";
 		readin=1;
 	}
 
 
 	// load in any docs after the args
 	if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
-	cout <<"*** read in these files:"<<endl;
+	DBG cout <<"*** read in these files:"<<endl;
 	Document *doc;
 	for (c=optind; c<argc; c++) {
-		cout <<"----Read in:  "<<argv[c]<<endl;
+		DBG cout <<"----Read in:  "<<argv[c]<<endl;
 		doc=LoadDocument(argv[c]);
 		if (doc) {
 			if (!project) project=new Project;
@@ -359,7 +363,7 @@ cout <<"---------start options"<<endl;
 		}
 	}
 	
-cout <<"---------end options"<<endl;
+	DBG cout <<"---------end options"<<endl;
 }
 
 //! Load and return a document from filename.
@@ -394,7 +398,7 @@ int LaidoutApp::NewDocument(const char *spec)
 {
 	if (!spec) return 1;
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
-	cout <<"------create new doc from \""<<spec<<"\""<<endl;
+	DBG cout <<"------create new doc from \""<<spec<<"\""<<endl;
 	
 	char *saveas=NULL;
 	Imposition *imp=NULL;
@@ -493,7 +497,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	Document *newdoc=new Document(docinfo,filename);
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
-COUT("***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl);
+	DBG cout <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	ViewWindow *blah=newViewWindow(newdoc); 
 	addwindow(blah);
 	return 0;
@@ -521,12 +525,14 @@ int main(int argc,char **argv)
 
 	laidout->run();
 
-	cout <<"---------Laidout Close--------------"<<endl;
+	DBG cout <<"---------Laidout Close--------------"<<endl;
 	laidout->close();
 	delete laidout;
-	cout <<"---------------objectstack-----------------"<<endl;
-	cout <<"  objectstack.n="<<(objectstack.n())<<endl;
+	
+	DBG cout <<"---------------objectstack-----------------"<<endl;
+	DBG cout <<"  objectstack.n="<<(objectstack.n())<<endl;
 	objectstack.flush();
+
 	cout <<"---------------Bye!-----------------"<<endl;
 
 	return 0;

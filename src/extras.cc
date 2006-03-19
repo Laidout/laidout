@@ -51,6 +51,16 @@
 #include <Imlib2.h>
 #include <lax/refcounter.h>
 
+
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
 //--------------------------------- Dump Images --------------------------------------------
@@ -104,13 +114,13 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
 		image=imlib_load_image(imagefiles[c]);
 		if (image) {
-			cout << "dump image files: "<<imagefiles[c]<<endl;
+			DBG cout << "dump image files: "<<imagefiles[c]<<endl;
 			images[i]=new ImageData;//creates with one count
 			images[i]->SetImage(image);
 			makestr(images[i]->filename,imagefiles[c]);
 			i++;
 		} else {
-			cout <<"** warning: bad image file "<<imagefiles[c]<<endl;
+			DBG cout <<"** warning: bad image file "<<imagefiles[c]<<endl;
 		}
 	}
 	c=-1;
@@ -146,7 +156,7 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
  */
 int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, int imagesperpage, int ddpi)
 {
-	cout<<"---dump "<<nimages<<" ImageData..."<<endl;
+	DBG cout<<"---dump "<<nimages<<" ImageData..."<<endl;
 	if (nimages<=0) return -1;
 	if (startpage<0) startpage=0;
 
@@ -162,11 +172,11 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 	n=0; // total number of images placed, nn is placed for page
 	SomeData *outline=NULL;
 	for (c=0; c<nimages; c++) {
-		cout <<"  starting page "<<endpage+1<<" with index "<<c<<endl;
+		DBG cout <<"  starting page "<<endpage+1<<" with index "<<c<<endl;
 		if (!images[c]) continue;
 		endpage++;
 		if (endpage>=doc->pages.n) { 
-			cout <<" adding new page..."<<endl;
+			DBG cout <<" adding new page..."<<endl;
 			doc->NewPages(-1,1); // add 1 extra page at end
 		}
 		
@@ -185,7 +195,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		nr=0;
 		do { //rows
 			rw=rh=0;
-			cout <<"  row number "<<++nr<<endl;
+			DBG cout <<"  row number "<<++nr<<endl;
 			for (c2=0; c2<maxperpage-nn && c2<nimages-n-nn; c2++) {
 				images[nn+c+c2]->xaxis(flatpoint(s,0));
 				images[nn+c+c2]->yaxis(flatpoint(0,s));
@@ -209,9 +219,9 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		} while (nn<maxperpage && n+nn<nimages); // continue doing row
 
 		 // push images onto the page
-		cout <<"  add "<<nn<<" images to page "<<endpage<<endl;
+		DBG cout <<"  add "<<nn<<" images to page "<<endpage<<endl;
 		for (c2=0; c2<nn; c2++) {
-			cout <<"   adding image index "<<c+c2<<endl;
+			DBG cout <<"   adding image index "<<c+c2<<endl;
 			images[c+c2]->origin(images[c+c2]->origin()+flatpoint(0,(rrh-hh)/2));
 			g=doc->pages.e[endpage]->layers.e[doc->pages.e[endpage]->layers.n-1];
 			g->push(images[c+c2],0); //incs the obj's count

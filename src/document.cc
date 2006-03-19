@@ -35,10 +35,13 @@
 
 using namespace LaxFiles;
 
-#define LAX_DEBUG
+#ifndef HIDEGARBAGE
 #include <iostream>
-#include <lax/laxdebug.h>
 using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
 
 
 //---------------------------- DocumentStyle ---------------------------------------
@@ -84,7 +87,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 			imposition=newImposition(value);
 			if (imposition) imposition->dump_in_atts(att->attributes.e[c]);
 		} else { 
-			cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
+			DBG cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -235,7 +238,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 
 Document::~Document()
 {
-	cout <<" Document destructor.."<<endl;
+	DBG cout <<" Document destructor.."<<endl;
 	pages.flush();
 	delete docstyle;
 	if (saveas) delete[] saveas;
@@ -313,23 +316,23 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 	if (format==Save_PS) return psout(this);
 	if (format!=Save_Normal) {
 		//anXApp::app->postmessage("That save format is not implemented.");
-		cout << "Format "<<format<<" is not implemented."<<endl;
+		DBG cout << "Format "<<format<<" is not implemented."<<endl;
 		return 1;
 	}
 	
 	FILE *f=NULL;
 	if (!saveas || !strcmp(saveas,"")) {
-		cout <<"**** cannot save, saveas is null."<<endl;
+		DBG cout <<"**** cannot save, saveas is null."<<endl;
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
-		cout <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
+		DBG cout <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
 		return 3;
 	}
 
 	char *dir=get_current_dir_name();
-	cout <<"....Saving document to "<<saveas<<" in "<<dir<<endl;
+	DBG cout <<"....Saving document to "<<saveas<<" in "<<dir<<endl;
 	if (dir) free(dir);
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
@@ -358,7 +361,7 @@ int Document::Load(const char *file)
 	FILE *f=fopen(file,"r");
 	//*** make sure it is a laidout document!!
 	if (!f) {
-		cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
+		DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
 		return 0;
 	}
 	clear();
@@ -383,7 +386,7 @@ int Document::Load(const char *file)
 	}
 	docstyle->imposition->NumPages(pages.n);
 	docstyle->imposition->SyncPages(this,0,-1);
-	cout <<"------ Done reading "<<file<<endl<<endl;
+	DBG cout <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
 

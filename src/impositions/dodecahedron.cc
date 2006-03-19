@@ -33,6 +33,15 @@ using namespace LaxInterfaces;
 using namespace std;
 
 
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
+
 //-------------------------- Dodecahedron ---------------------------------------------
 
 
@@ -136,15 +145,15 @@ Net *makeDodecahedronNet(double ww,double hh)
 	d.maxx=ww;
 	d.maxy=hh;
 
-	cout <<"******* dodechaedron plain: **********"<<endl;
-	net->dump_out(stdout,0);
+	//DBG cout <<"******* dodechaedron plain: **********"<<endl;
+	//DBG net->dump_out(stdout,0);
 
 	
 	net->FitToData(&d,ww*.05);
 	net->ApplyTransform();
 
-	cout <<"******* dodechaedron after: **********"<<endl;
-	net->dump_out(stdout,0);
+	DBG cout <<"******* dodechaedron after: **********"<<endl;
+	DBG net->dump_out(stdout,0);
 
 		
 	return net;
