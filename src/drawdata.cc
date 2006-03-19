@@ -46,13 +46,9 @@
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 //! Push axes and transform by m, draw data, pop axes.
 /*! \ingroup objects

@@ -39,14 +39,11 @@
 #include "extras.h"
 #include "drawdata.h"
 
-#ifndef HIDEGARBAGE
 #include <iostream>
-#define DBG 
-#else
-#define DBG //
-#endif
-
 using namespace std;
+
+#define DBG 
+
 
 #define SINGLELAYOUT 0
 #define PAGELAYOUT   1

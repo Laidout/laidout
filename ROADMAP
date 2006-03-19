@@ -27,7 +27,7 @@ VERSION 0.01
 VERSION 0.1
 -----------
 (done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
-       Insert compile flag to turn off debug info dumped to cout
+(done) Insert compile flag to turn off debug info dumped to cout
        A help button to popup a list of all the otherwise unmentioned key shortcuts
        PathInterface should finally work right
        Linear Gradients

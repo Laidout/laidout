@@ -33,13 +33,9 @@ using namespace LaxInterfaces;
 using namespace std;
 
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 
 //-------------------------- Dodecahedron ---------------------------------------------

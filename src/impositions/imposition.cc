@@ -32,13 +32,9 @@
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 extern RefCounter<anObject> objectstack;
 

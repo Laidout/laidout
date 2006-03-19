@@ -49,13 +49,9 @@
 Laxkit::RefCounter<Laxkit::anObject> objectstack;
 using namespace Laxkit;
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 
 

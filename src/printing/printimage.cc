@@ -33,13 +33,9 @@
 #include "psfilters.h"
 
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 
 //-------------------------------- Imlib_Image to ps ------------------------------------

@@ -1,6 +1,14 @@
 
 ### Anything in here is included by all the Makefiles
- 
+
+##
+## This is where the Laxkit header files are
+##
 #LAXDIR=/home/tom/p/sourceforge/laxkit-0.0.1-do-not-edit
 LAXDIR=/home/tom/p/sourceforge/laxkit/lax
 
+
+##
+##Uncomment this to hide debugging info sent to the terminal
+##
+HIDEGARBAGE= -DHIDEGARBAGE
