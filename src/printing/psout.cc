@@ -38,7 +38,18 @@
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
 
+
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
+
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 //! Internal function to dump out the obj in postscript. Called by psout().
 /*! \ingroup postscript
@@ -59,7 +70,7 @@ using namespace Laxkit;
  * \todo *** the output must be tailored to the specified dpi, otherwise the output
  * file will sometimes be quite enormous
  */
-void psdumpobj(FILE *f,Laxkit::SomeData *obj)
+void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 {
 	if (dynamic_cast<Group *>(obj)) {
 		Group *g=dynamic_cast<Group *>(obj);
@@ -190,7 +201,7 @@ int psout(Document *doc,const char *file)//file=NULL
  * that PathsData are capable of. when ps output of paths is 
  * actually more implemented, this will change..
  */
-int psSetClipToPath(FILE *f,Laxkit::SomeData *outline,int iscontinuing)//iscontinuing=0
+int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//iscontinuing=0
 {
 	PathsData *path=dynamic_cast<PathsData *>(outline);
 

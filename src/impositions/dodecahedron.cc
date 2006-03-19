@@ -27,6 +27,7 @@
 #include "dodecahedron.h"
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 #include <iostream>
 using namespace std;

@@ -36,6 +36,7 @@
 
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 //! Push any necessary PathOperator instances onto PathInterface::basepathops
 void PushBuiltinPathops()

@@ -27,7 +27,7 @@
 
 #include <lax/interfaces/colorpatchinterface.h>
 
-void psColorPatch(FILE *f,Laxkit::ColorPatchData *g);
+void psColorPatch(FILE *f,LaxInterfaces::ColorPatchData *g);
 
 
 #endif

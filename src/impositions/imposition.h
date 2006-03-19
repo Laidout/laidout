@@ -40,11 +40,11 @@ class Imposition;
 class PageLocation
 {	
  public:
-	PageLocation(int ni,Page *npage,Laxkit::SomeData *trans,int outlineislocal,void **natts);
+	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans,int outlineislocal,void **natts);
 	~PageLocation();
 	int index;
 	Page *page;
-	Laxkit::SomeData *outline;
+	LaxInterfaces::SomeData *outline;
 	int outlineislocal;
 	void **attributes;
 };
@@ -71,9 +71,9 @@ class Spread : public ObjectContainer
  public:
 	unsigned int mask; // which of path,min,max,pages is defined
 	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
-	Laxkit::SomeData *path;
+	LaxInterfaces::SomeData *path;
 	int pathislocal;
-	Laxkit::SomeData *marks;
+	LaxInterfaces::SomeData *marks;
 	int marksarelocal;
 	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
 	
@@ -105,12 +105,12 @@ class Imposition : public Style
 	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 	
 //	virtual void AdjustPages(Page **pages) {} // when changing page size and atts, return bases for the new pages
-	virtual Laxkit::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
+	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
 	virtual Page **CreatePages(PageStyle *pagestyle=NULL) = 0; // create necessary pages based on default pagestyle
 	virtual int SyncPages(Document *doc,int start,int n);
 	
-	virtual Laxkit::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
-	virtual Laxkit::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
+	virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
+	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
 	
 	virtual Spread *GetLittleSpread(int whichpage) = 0; 
 	virtual Spread *SingleLayout(int whichpage); 

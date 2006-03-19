@@ -33,9 +33,17 @@
 using namespace LaxFiles;
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
+
+#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
 
 int pointisin(flatpoint *points, int n,flatpoint points);
 extern void monthday(const char *str,int *month,int *day);
@@ -446,7 +454,7 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
  *  3  tabs on all edges (all or yes)
  * </pre>
  */
-//class Net : public Laxkit::SomeData
+//class Net : public LaxInterfaces::SomeData
 //{
 // public:
 //	char *thenettype;
@@ -462,9 +470,9 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 //	virtual void clear();
 //	virtual const char *whatshape() { return thenettype; }
 //	virtual int Draw(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year);
-//	virtual void DrawMonth(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year,Laxkit::SomeData *monthbox);
+//	virtual void DrawMonth(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year,LaxInterfaces::SomeData *monthbox);
 //	virtual void FindBBox();
-//	virtual void FitToData(Laxkit::SomeData *data,double margin);
+//	virtual void FitToData(LaxInterfaces::SomeData *data,double margin);
 //	virtual void ApplyTransform(double *mm=NULL);
 //	virtual void Center();
 //	virtual const char *whattype() { return thenettype; }
@@ -478,8 +486,8 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 //	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 //
 //	//--perhaps for future:
-//	//virtual void PrintSVG(std::ostream &svg,Laxkit::SomeData *paper,int month=1,int year=2006);
-//	//virtual void PrintPS(std::ofstream &ps,Laxkit::SomeData *paper);
+//	//virtual void PrintSVG(std::ostream &svg,LaxInterfaces::SomeData *paper,int month=1,int year=2006);
+//	//virtual void PrintPS(std::ofstream &ps,LaxInterfaces::SomeData *paper);
 //};
 
 //! Init.
@@ -723,9 +731,9 @@ void  Net::dump_in_atts(Attribute *att)
 	//***sanity check on all point references..
 	FindBBox();
 
-	cout <<"----------------this was set in Net:-------------"<<endl;
-	dump_out(stdout,0);
-	cout <<"----------------end Net dump:-------------"<<endl;
+	DBG cout <<"----------------this was set in Net:-------------"<<endl;
+	DBG dump_out(stdout,0);
+	DBG cout <<"----------------end Net dump:-------------"<<endl;
 }
 
 //! Return a transformation basis to face which. Includes this->m() if total!=0.
@@ -744,13 +752,13 @@ double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 	if (!mm) mm=new double[6];
 	transform_identity(mm);
 
-	//*** for debugging	
-	cout <<"basisOfFace "<<which<<":\n";
-	flatpoint p;
-	for (int c=0; c<faces[which].np; c++) {
-		p=points[faces[which].points[c]];
-		cout <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
-	}
+	DBG //*** for debugging	
+	DBG  cout <<"basisOfFace "<<which<<":\n";
+	DBG flatpoint p;
+	DBG for (int c=0; c<faces[which].np; c++) {
+	DBG 	p=points[faces[which].points[c]];
+	DBG 	cout <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
+	DBG }
 	
 	int o=faces[which].aligno,x=faces[which].alignx;
 	if (o<0) o=0;
@@ -766,14 +774,14 @@ double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 	if (total) transform_mult(mm,s.m(),m());
 		else transform_copy(mm,s.m());
 
-	//*** for debugging	
-	cout <<"--transformed face "<<which<<":"<<endl;
-	transform_invert(s.m(),mm);
-	double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
-	p=transform_point(mm,flatpoint(0,0));
-	cout <<"  origin:"<<p.x<<" "<<p.y<<endl;
-	p=transform_point(mm,flatpoint(slen,0));
-	cout <<"  point 1:"<<p.x<<" "<<p.y<<endl;
+	DBG //*** for debugging	
+	DBG cout <<"--transformed face "<<which<<":"<<endl;
+	DBG transform_invert(s.m(),mm);
+	DBG double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
+	DBG p=transform_point(mm,flatpoint(0,0));
+	DBG cout <<"  origin:"<<p.x<<" "<<p.y<<endl;
+	DBG p=transform_point(mm,flatpoint(slen,0));
+	DBG cout <<"  point 1:"<<p.x<<" "<<p.y<<endl;
 
 	
 	return mm;

@@ -40,10 +40,10 @@ class NetImposition : public Imposition
 	
 	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
 	
-	//virtual Laxkit::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
+	//virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
 	virtual Page **CreatePages(PageStyle *pagestyle=NULL); // create necessary pages based on default pagestyle
 
-	virtual Laxkit::SomeData *GetPage(int pagenum,int local); // return outline of page in page coords
+	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local); // return outline of page in page coords
 
 	virtual Spread *GetLittleSpread(int whichpage); 
 	virtual Spread *PageLayout(int whichpage); 

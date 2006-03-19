@@ -1,5 +1,6 @@
 
 ### Anything in here is included by all the Makefiles
  
+#LAXDIR=/home/tom/p/sourceforge/laxkit-0.0.1-do-not-edit
 LAXDIR=/home/tom/p/sourceforge/laxkit/lax
 

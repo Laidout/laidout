@@ -27,7 +27,7 @@
 
 #include <lax/interfaces/pathinterface.h>
 
-void psPathsData(FILE *f,Laxkit::PathsData *path);
+void psPathsData(FILE *f,LaxInterfaces::PathsData *path);
 
 
 #endif

@@ -29,6 +29,7 @@
 #include <iostream>
 using namespace std;
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
 //! Internal function to dump out the obj if it is an ImageData.

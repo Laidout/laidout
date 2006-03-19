@@ -34,7 +34,7 @@
 
 
 //------------------------------- VObjContext ---------------------------
-class VObjContext : public Laxkit::ObjectContext
+class VObjContext : public LaxInterfaces::ObjectContext
 {
  public:
 	FieldPlace context;
@@ -43,7 +43,7 @@ class VObjContext : public Laxkit::ObjectContext
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc); }
 	virtual VObjContext &operator=(const VObjContext &oc);
-	virtual int set(Laxkit::SomeData *nobj, int n, ...);
+	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear() { obj=NULL; context.flush(); }
 	virtual void push(int i,int where=-1);
 	virtual int pop(int where=-1);
@@ -57,7 +57,7 @@ class VObjContext : public Laxkit::ObjectContext
 };
 
 //------------------------------- LaidoutViewport ---------------------------
-class LaidoutViewport : public Laxkit::ViewportWindow, virtual public ObjectContainer
+class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public ObjectContainer
 {
 	char lfirsttime;
  protected:
@@ -100,34 +100,35 @@ class LaidoutViewport : public Laxkit::ViewportWindow, virtual public ObjectCont
 
 	virtual const char *Pageviewlabel();
 	virtual void Center(int w=0);
-	virtual int NewData(Laxkit::SomeData *d,Laxkit::ObjectContext **oc=NULL);
+	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc=NULL);
 	virtual int SelectPage(int i);
 	virtual int NextSpread();
 	virtual int PreviousSpread();
 	
-	virtual int ChangeObject(Laxkit::SomeData *d,Laxkit::ObjectContext *oc);
+	virtual int ChangeObject(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext *oc);
 	virtual int LaidoutViewport::SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
-					Laxkit::SomeData *exclude, int start,Laxkit::ObjectContext **oc);
+					LaxInterfaces::SomeData *exclude, int start,
+					LaxInterfaces::ObjectContext **oc);
 	virtual void ClearSearch();
-	virtual int ChangeContext(int x,int y,Laxkit::ObjectContext **oc);
+	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 	
 	virtual const char *SetViewMode(int m);
-	virtual int PlopData(Laxkit::SomeData *ndata);
+	virtual int PlopData(LaxInterfaces::SomeData *ndata);
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
-	virtual int ObjectMove(Laxkit::SomeData *d);
+	virtual int ObjectMove(LaxInterfaces::SomeData *d);
 	virtual int CirculateObject(int dir, int i,int objOrSelection);
 	virtual int validContext(VObjContext *oc);
 	virtual void clearCurobj();
-	virtual int locateObject(Laxkit::SomeData *d,FieldPlace &place);
+	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
 	virtual int n() { if (spread) return 2; return 1; }
 	virtual Laxkit::anObject *object_e(int i);
 	virtual int curobjPage();
 };
 
 //------------------------------- ViewWindow ---------------------------
-class ViewWindow : public Laxkit::ViewerWindow
+class ViewWindow : public LaxInterfaces::ViewerWindow
 {
  protected:
 	void setup();

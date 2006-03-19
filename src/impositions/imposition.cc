@@ -30,8 +30,16 @@
 #include <lax/transformmath.h>
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
-extern RefCounter<SomeData> datastack;
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
 extern RefCounter<anObject> objectstack;
 
 
@@ -65,28 +73,28 @@ extern RefCounter<anObject> objectstack;
 //class PageLocation : public Laxkit::anObject
 //{	
 // public:
-//	PageLocation(int ni,Page *npage,Laxkit::SomeData *trans,int outlineislocal,void **natts);
+//	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans,int outlineislocal,void **natts);
 //	~PageLocation();
 //	int index;
 //	Page *page;
-//	Laxkit::SomeData *outline;
+//	LaxInterfaces::SomeData *outline;
 //	int outlineislocal;
 //	void **attributes;
 //};
 
 //! Constructor, just copies over pointers.
 /*! The page and attributes are assumed to not be owned locally. If local==0, then
- * outline is assumed to be a datastack object, and will be checked out here, and checked in
- * on destruction. If local==1, then outline is local, and will be delete'd in the destructor.
+ * outline is assumed to be managed with its count, which will be incremented here, and decremented in
+ * the destructor. If local==1, then outline is local, and will be delete'd in the destructor.
  * If local is any other value, no action is taken on outline in the destructor.
  */
-PageLocation::PageLocation(int ni,Page *npage,Laxkit::SomeData *poutline,int local,void **natts)
+PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline,int local,void **natts)
 {
 	index=ni;
 	page=npage;
 	outline=poutline;
 	outlineislocal=local;
-	if (local==0) datastack.push(poutline,1,poutline->object_id,1);
+	if (local==0) poutline->inc_count();
 	attributes=natts;
 }
 
@@ -95,7 +103,7 @@ PageLocation::PageLocation(int ni,Page *npage,Laxkit::SomeData *poutline,int loc
  */
 PageLocation::~PageLocation()
 {
-	if (outlineislocal==0) datastack.checkin(outline);
+	if (outlineislocal==0) outline->dec_count();
 	else if (outlineislocal==1) delete outline;
 }
 
@@ -107,8 +115,6 @@ typedef PtrStack<PageLocation> PageLocStack;
  *
  * This class gets used by other classes, and those other classes are 
  * responsible for maintaining Spread's components.
- *
- * *** should put the page outline in the pagelocation stack?? maybe?
  *
  * The type of thing the spread represents is held in mask, which are or'd
  * values from the following defines.
@@ -153,26 +159,26 @@ typedef PtrStack<PageLocation> PageLocStack;
  * each spread points to the next spread, and
  * this is the point from which the arrow to the next spread starts.
  */
-/*! \var Laxkit::SomeData *Spread::path
+/*! \var LaxInterfaces::SomeData *Spread::path
  * This is the outline of whatever is relevant. The Spread class is used as a return type
  * for many functions in Imposition, so the actual meaning of path depends 
  * on which Imposition function was called. Could be a single page, page spread,
  * or paper spread, etc.
  */
 /*! \var int Spread::pathislocal
- * \brief Delete path if pathislocal==1, otherwise datastack.checkin(path).
+ * \brief Delete path if pathislocal==1, otherwise path->dec_count().
  */
 /*! \var int Spread::marksarelocal
- * \brief Delete marks if marksarelocal==1, otherwise datastack.checkin(marks).
+ * \brief Delete marks if marksarelocal==1, otherwise marks->dec_count().
  */
 //class Spread : public Laxkit::anObject
 //{
 // public:
 //	unsigned int mask; // which of path,min,max,pages is defined
 //	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
-//	Laxkit::SomeData *path;
+//	LaxInterfaces::SomeData *path;
 //	int pathislocal;
-//	Laxkit::SomeData *marks;
+//	LaxInterfaces::SomeData *marks;
 //	int marksarelocal;
 //	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
 //	
@@ -191,14 +197,14 @@ Spread::Spread()
 	pathislocal=marksarelocal=0;
 }
 
-//! Deletes path and marks if local==1, otherwise call datastack.checkin(path and marks).
+//! Deletes path and marks if local==1, otherwise call dec_count() for them.
 Spread::~Spread()
 {
 	if (path) {
-		if (pathislocal) delete path; else datastack.checkin(path);
+		if (pathislocal) delete path; else path->dec_count();
 	}
 	if (marks) {
-		if (marksarelocal) delete marks; else datastack.checkin(marks);
+		if (marksarelocal) delete marks; else marks->dec_count();
 	}
 	pagestack.flush();
 }
@@ -223,9 +229,10 @@ int *Spread::pagesFromSpread()
 			if (c2==list.n) { list.push(i,c2); break; }
 		}
 	}
-cout <<"pagesfromSpread list: ";
-for (c=0; c<list.n; c++) cout <<list.e[c]<<' '; 
-cout <<endl;
+	DBG cout <<"pagesfromSpread list: ";
+	DBG for (c=0; c<list.n; c++) cout <<list.e[c]<<' '; 
+	DBG cout <<endl;
+	
 	 //now list holds a monotonically increasing list of pages. 
 	 //now crunch down ranges..
 	for (c=0; c<list.n; c++) {
@@ -237,9 +244,11 @@ cout <<endl;
 		c=c2-1;
 	}
 	list2.push(-2);
-cout <<"pagesfromSpread list2: ";
-for (c=0; c<list2.n; c++) cout <<list2.e[c]<<' ';
-cout <<endl;
+
+	DBG cout <<"pagesfromSpread list2: ";
+	DBG for (c=0; c<list2.n; c++) cout <<list2.e[c]<<' ';
+	DBG cout <<endl;
+
 	return list2.extractArray();
 }
 
@@ -273,110 +282,109 @@ cout <<endl;
  * \todo *** the handling of pagestyle needs to be cleaned up still.. loading often 
  * installs an improper pagestyle.
  */
- /*! \var int Imposition::numpapers
-  * \brief The number of papers to set for the document.
-  */
- /*! \var int Imposition::numpages
-  * \brief The number of pages to set for the document.
-  */
- /*! \var PaperType *Imposition::paperstyle
-  * \brief A local instance of the type of paper to print on.
-  */
- /*! \var PageStyle *Imposition::pagestyle
-  * \brief A local instance of the default page style.
-  * 
-  * The subclass is resposible for creating and destroying whatever gets
-  * put in here.
-  */
- /*! \fn Laxkit::SomeData *Imposition::GetPrinterMarks(int papernum=-1)
-  * \brief Return the printer marks for paper papernum in paper coordinates.
-  *
-  * Default is to return NULL.
-  * This is usually a group of SomeData.
-  */
- /*! \fn Page **Imposition::CreatePages(PageStyle *pagestyle=NULL)
-  * \brief Create the required pages.
-  *
-  * Derived class must define this function.
-  * If pagestyle is not NULL, then this style is to be preferred over
-  * the internal page style(?!!?!***remove this? just assume default pagestyle?)
-  */
- /*! \fn SomeData *Imposition::GetPage(int pagenum,int local)
-  * \brief Return outline of page in page coords. Origin is page origin.
-  *
-  * This returns a no frills outline, used primarily to check where the mouse
-  * is clicked down on.
-  * If local==1 then return a new local SomeData. Otherwise return a
-  * datastack object. In this case, the item should be guaranteed to be pushed
-  * already, but not checked out.
-  * 
-  * Derived class must define this function.
-  */
- /*! \fn Spread *Imposition::GetLittleSpread(int whichpage)
-  * \brief Returns outlines of pages in page view, in viewer coords,
-  * 
-  * Mainly for use in the spread editor, so it would have little folded corners
-  * and such, perhaps a thumbnail also. This spread is the one that
-  * includes whichpage. 
-  *
-  * This spread should correspond to the PageLayout for the same page. It might be
-  * augmented to contiain little dogeared conrners, for instance. Also, it really
-  * should contain a continuous range of pages. Might trip up the spread editor
-  * otherwise.
-  *
-  * Derived class must define this function.
-  *
-  * \todo *** this needs to modified so that -1 returns NULL, -2 returns a generic
-  * page to be used in the SpreadEditor, and -3 returns a generic page layout spread
-  * for the SpreadEditor. Those are used as temp page holders when pages are pushed
-  * into limbo in the editor.
-  */
- /*! \fn Spread *Imposition::PageLayout(int whichpage)
-  * \brief Returns a page view spread that contains whichpage, in viewer coords.
-  *
-  * whichpage starts at 0.
-  * Derived classes must fill the spread with a path, and the PageLocation stack.
-  * The path holds the outline of the spread, and the PageLocation stack holds
-  * transforms to get from the overall coords to each page's coords.
-  *
-  * Derived class must define this function.
-  */
- /*! \fn Spread *Imposition::PaperLayout(int whichpaper)
-  * \brief Returns a paper view spread that contains whichpaper, in paper coords.
-  *
-  * whichpaper starts at 0.
-  * Derived class must define this function.
-  */
- /*! \fn Laxkit::DoubleBBox *Imposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox=NULL)
-  * \brief Returns the bounding box in paper units for the default page size.
-  * 
-  * If bbox is not NULL, then put the info in the supplied bbox. Otherwise
-  * return a new DoubleBBox.
-  *
-  * The orientation of the box is determined internally to the Imposition,
-  * and accessed through the other functions here. 
-  * minx==miny==0 which is the lower left corner of the page. This function
-  * is useful mainly for speedy layout functions.
-  * 
-  * Derived class must define this function.
-  */
- /*! \fn int *Imposition::PrintingPapers(int frompage,int topage)
-  * \brief Return a specially formatted list of papers needed to print the range of pages.
-  *
-  * It is a -2 terminated int[] of papers needed to print [frompage,topage].
-  * A range of papers is specified using 2 consecutive numbers. Single papers are
-  * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
-  * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
-  */
- /*! \fn int Imposition::GetPagesNeeded(int npapers)
-  * \brief Return the number of pages required to fill npapers number of papers.
-  */
- /*! \fn int Imposition::GetPapersNeeded(int npages)
-  * \brief Return the number of pages required to fill npapers of papers.
-  */
- /*! \fn int Imposition::PaperFromPage(int pagenumber)
-  * \brief Return the (first) paper index number that contains page index pagenumber
-  */
+/*! \var int Imposition::numpapers
+ * \brief The number of papers to set for the document.
+ */
+/*! \var int Imposition::numpages
+ * \brief The number of pages to set for the document.
+ */
+/*! \var PaperType *Imposition::paperstyle
+ * \brief A local instance of the type of paper to print on.
+ */
+/*! \var PageStyle *Imposition::pagestyle
+ * \brief A local instance of the default page style.
+ * 
+ * The subclass is resposible for creating and destroying whatever gets
+ * put in here.
+ */
+/*! \fn LaxInterfaces::SomeData *Imposition::GetPrinterMarks(int papernum=-1)
+ * \brief Return the printer marks for paper papernum in paper coordinates.
+ *
+ * Default is to return NULL.
+ * This is usually a group of SomeData.
+ */
+/*! \fn Page **Imposition::CreatePages(PageStyle *pagestyle=NULL)
+ * \brief Create the required pages.
+ *
+ * Derived class must define this function.
+ * If pagestyle is not NULL, then this style is to be preferred over
+ * the internal page style(?!!?!***remove this? just assume default pagestyle?)
+ */
+/*! \fn SomeData *Imposition::GetPage(int pagenum,int local)
+ * \brief Return outline of page in page coords. Origin is page origin.
+ *
+ * This returns a no frills outline, used primarily to check where the mouse
+ * is clicked down on. If local==1 then return a new local SomeData. Otherwise 
+ * a counted object. In this case, the item's count will have 1 added that refers to
+ * the returned pointer.
+ * 
+ * Derived class must define this function.
+ */
+/*! \fn Spread *Imposition::GetLittleSpread(int whichpage)
+ * \brief Returns outlines of pages in page view, in viewer coords,
+ * 
+ * Mainly for use in the spread editor, so it would have little folded corners
+ * and such, perhaps a thumbnail also. This spread is the one that
+ * includes whichpage. 
+ *
+ * This spread should correspond to the PageLayout for the same page. It might be
+ * augmented to contiain little dogeared conrners, for instance. Also, it really
+ * should contain a continuous range of pages. Might trip up the spread editor
+ * otherwise.
+ *
+ * Derived class must define this function.
+ *
+ * \todo *** this needs to modified so that -1 returns NULL, -2 returns a generic
+ * page to be used in the SpreadEditor, and -3 returns a generic page layout spread
+ * for the SpreadEditor. Those are used as temp page holders when pages are pushed
+ * into limbo in the editor.
+ */
+/*! \fn Spread *Imposition::PageLayout(int whichpage)
+ * \brief Returns a page view spread that contains whichpage, in viewer coords.
+ *
+ * whichpage starts at 0.
+ * Derived classes must fill the spread with a path, and the PageLocation stack.
+ * The path holds the outline of the spread, and the PageLocation stack holds
+ * transforms to get from the overall coords to each page's coords.
+ *
+ * Derived class must define this function.
+ */
+/*! \fn Spread *Imposition::PaperLayout(int whichpaper)
+ * \brief Returns a paper view spread that contains whichpaper, in paper coords.
+ *
+ * whichpaper starts at 0.
+ * Derived class must define this function.
+ */
+/*! \fn Laxkit::DoubleBBox *Imposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox=NULL)
+ * \brief Returns the bounding box in paper units for the default page size.
+ * 
+ * If bbox is not NULL, then put the info in the supplied bbox. Otherwise
+ * return a new DoubleBBox.
+ *
+ * The orientation of the box is determined internally to the Imposition,
+ * and accessed through the other functions here. 
+ * minx==miny==0 which is the lower left corner of the page. This function
+ * is useful mainly for speedy layout functions.
+ * 
+ * Derived class must define this function.
+ */
+/*! \fn int *Imposition::PrintingPapers(int frompage,int topage)
+ * \brief Return a specially formatted list of papers needed to print the range of pages.
+ *
+ * It is a -2 terminated int[] of papers needed to print [frompage,topage].
+ * A range of papers is specified using 2 consecutive numbers. Single papers are
+ * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
+ * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
+ */
+/*! \fn int Imposition::GetPagesNeeded(int npapers)
+ * \brief Return the number of pages required to fill npapers number of papers.
+ */
+/*! \fn int Imposition::GetPapersNeeded(int npages)
+ * \brief Return the number of pages required to fill npapers of papers.
+ */
+/*! \fn int Imposition::PaperFromPage(int pagenumber)
+ * \brief Return the (first) paper index number that contains page index pagenumber
+ */
 //class Imposition : public Style
 //{
 //  public:
@@ -394,12 +402,12 @@ cout <<endl;
 //	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 //	
 ////	virtual void AdjustPages(Page **pages) {} // when changing page size and atts, return bases for the new pages
-//	virtual Laxkit::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
+//	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
 //	virtual Page **CreatePages(PageStyle *pagestyle=NULL) = 0; // create necessary pages based on default pagestyle
 //	virtual int SyncPages(Document *doc,int start,int n);
 //
-//	virtual Laxkit::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
-//	virtual Laxkit::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
+//	virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
+//	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
 //
 //	virtual Spread *GetLittleSpread(int whichpage) = 0; 
 //	virtual Spread *SingleLayout(int whichpage); 
@@ -492,7 +500,7 @@ int Imposition::SyncPages(Document *doc,int start,int n)
 			}
 			doc->pages.e[c]->InstallPageStyle(temppagestyle,0);
 		} else {
-			cout <<"*** this is error, should not be here, null pagestyle from GetPageStyle!!"<<endl;
+			DBG cout <<"*** this is error, should not be here, null pagestyle from GetPageStyle!!"<<endl;
 		}
 	}
 	return 0;
@@ -579,17 +587,17 @@ int Imposition::NumPages(int npages)
  * This is a no frills outline, used primarily to check where the mouse
  * is clicked down on.
  * If local==1 then return a new local SomeData. Otherwise return a
- * datastack object. In this case, the item should be guaranteed to be pushed
- * already with an extra count. So if it is created here, then immediately
- * checked in, then it is removed from datastack.
+ * counted object. In this case, the item will have a count referring to
+ * returend pointer. So if it is created here, then immediately
+ * checked in, then it is removed from existence.
  */
 SomeData *Imposition::GetPaper(int papernum,int local)
 {
-	PathsData *newpath=new PathsData();
+	PathsData *newpath=new PathsData();//count==1
 	newpath->appendRect(0,0,paperstyle->w(),paperstyle->h());
 	newpath->maxx=paperstyle->w();
 	newpath->maxy=paperstyle->h();
-	if (local==0) datastack.push(newpath,1,newpath->object_id,1);
+	//nothing special is done when local==0
 	return newpath;
 }
 
@@ -608,7 +616,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 	spread->style=SPREAD_PAGE;
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
-	 // Get the page outline. It will be a datastack object with 1 count for path pointer.
+	 // Get the page outline. It will be a counted object with 1 count for path pointer.
 	spread->path=GetPage(whichpage,0);
 	transform_identity(spread->path->m()); // clear any transform
 	spread->pathislocal=0;
@@ -625,7 +633,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 	 // setup spread->pagestack with the single page.
 	 // page width/height must map to proper area on page.
 	spread->pagestack.push(new PageLocation(whichpage,NULL,spread->path,0,NULL)); //(index,page,somedata,local,atts)
-	//at this point spread->path has a count of 2 in datastack, 1 for pagestack.e[0]->outline
+	//at this point spread->path has additional count of 2, 1 for pagestack.e[0]->outline
 	//and 1 for spread->path
 
 	return spread;

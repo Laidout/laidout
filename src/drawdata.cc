@@ -42,7 +42,17 @@
 #include <lax/interfaces/somedataref.h>
 #include "drawdata.h"
 #include "laidout.h"
+
 using namespace Laxkit;
+using namespace LaxInterfaces;
+
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
 
 //! Push axes and transform by m, draw data, pop axes.
 /*! \ingroup objects
@@ -67,19 +77,29 @@ void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,u
 void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
 	dp->PushAndNewTransform(data->m()); // insert transform first
+	if (flags&DRAW_AXES) dp->drawaxes();
+	if (flags&DRAW_BOX && data->validbounds()) {
+		dp->NewFG(128,128,128);
+		DBG cout<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
+		dp->drawrline(flatpoint(data->minx,data->miny),flatpoint(data->maxx,data->miny));
+		dp->drawrline(flatpoint(data->maxx,data->miny),flatpoint(data->maxx,data->maxy));
+		dp->drawrline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));
+		dp->drawrline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
+	}
 	if (dynamic_cast<Group *>(data)) { // Is a layer or a group
 		 //*** perhaps this should rather check whattype==Group?
 		Group *g=dynamic_cast<Group *>(data);
-		if (flags&DRAW_AXES) dp->drawaxes();
-		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2);
+		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
 		dp->PopAxes();
 		return;
 	} else if (!strcmp(data->whattype(),"SomeDataRef")) {
 		data=((SomeDataRef *)data)->thedata;
+		if (data) DrawData(dp,data,a1,a2,flags);
+		dp->PopAxes();
+		return;
 	} 
 	 // find interface in interfacepool
 	int c;
-	if (flags&DRAW_AXES) dp->drawaxes();
 	for (c=0; c<laidout->interfacepool.n; c++) {
 		if (laidout->interfacepool.e[c]->draws(data->whattype())) break;
 	}
@@ -92,7 +112,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 	dp->PopAxes();
 }
 
-//! Return a local instance of the give type of data.
+//! Return a local instance of the give type of data (has count of one).
 /*! \ingroup objects
  * This text should be the same as is returned by the object's whattype() function.
  *
@@ -197,7 +217,7 @@ int pointisin(flatpoint *points, int n,flatpoint p)
  * that PathsData are capable of. when ps output of paths is 
  * actually more implemented, this will change..
  */
-Region GetRegionFromPaths(Laxkit::SomeData *outline, double *extra_m)
+Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m)
 {
 	PathsData *path=dynamic_cast<PathsData *>(outline);
 
@@ -339,7 +359,7 @@ Region GetRegionFromPaths(Laxkit::SomeData *outline, double *extra_m)
 // * that PathsData are capable of. when ps output of paths is 
 // * actually more implemented, this will change..
 // */
-//int GetAreaPath(Laxkit::SomeData *outline, 
+//int GetAreaPath(LaxInterfaces::SomeData *outline, 
 //		double *extra_m,
 //		PtrStack<flatpoint> **list,
 //		int *n_ret)//iscontinuing=0

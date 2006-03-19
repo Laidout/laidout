@@ -34,6 +34,7 @@
 #include <X11/cursorfont.h>
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 //*** so how do the lists.cc PtrStack stuff stack up? am I redefining all the 
 //guts from all the includes when including lists.cc??
@@ -57,7 +58,7 @@ using namespace Laxkit;
  * 1 == thread of pages\n
  * 2 == thread of spreads
  */
-//class LittleSpread : public Laxkit::SomeData
+//class LittleSpread : public LaxInterfaces::SomeData
 //{
 // public:
 //	int what;
@@ -957,10 +958,10 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 	} 
 	viewport->win_xatts.background_pixel=~0;
 	viewport->win_xattsmask|=CWBackPixel;
-	viewport->dp.NewBG(255,255,255);
+	viewport->dp->NewBG(255,255,255);
 
 	needtodraw=1;
-	AddTool(new SpreadInterface(&viewport->dp,project,doc),1,1); // local, and select it
+	AddTool(new SpreadInterface(viewport->dp,project,doc),1,1); // local, and select it
 }
 
 int SpreadEditor::init()

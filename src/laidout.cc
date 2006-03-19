@@ -52,7 +52,6 @@ using namespace std;
 #include <lax/lists.cc>
 
 #include <lax/refcounter.cc>
-Laxkit::RefCounter<Laxkit::SomeData> datastack;
 Laxkit::RefCounter<Laxkit::anObject> objectstack;
 using namespace Laxkit;
 
@@ -224,6 +223,7 @@ LaidoutApp::~LaidoutApp()
  */
 int LaidoutApp::init(int argc,char **argv)
 {
+	anXApp::init(argc,argv);
 	setupdefaultcolors(); // ***pre-empt anything anXApp read in.....need cleaner way here!
 	
 	GetBuiltinImpositionPool(&impositionpool);
@@ -527,9 +527,6 @@ int main(int argc,char **argv)
 	cout <<"---------------objectstack-----------------"<<endl;
 	cout <<"  objectstack.n="<<(objectstack.n())<<endl;
 	objectstack.flush();
-	cout <<"---------------datastack-----------------"<<endl;
-	cout <<"  datastack.n="<<(datastack.n())<<endl;
-	datastack.flush();
 	cout <<"---------------Bye!-----------------"<<endl;
 
 	return 0;

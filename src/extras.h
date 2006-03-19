@@ -29,7 +29,7 @@
 
 int dumpImages(Document *doc, int startpage, const char *pathtoimagedir, int imagesperpage=1, int ddpi=150);
 int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimages, int imagesperpage=1, int ddpi=150);
-int dumpImages(Document *doc, int startpage, Laxkit::ImageData **images, int nimages, int imagesperpage=1, int ddpi=150);
+int dumpImages(Document *doc, int startpage, LaxInterfaces::ImageData **images, int nimages, int imagesperpage=1, int ddpi=150);
 
 #endif
 

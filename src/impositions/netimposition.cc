@@ -30,9 +30,17 @@
 #include <lax/transformmath.h>
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 using namespace LaxFiles;
+ 
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
 
-extern RefCounter<SomeData> datastack;
 extern RefCounter<anObject> objectstack;
 
 //----------------------------- NetImposition --------------------------
@@ -64,11 +72,11 @@ extern RefCounter<anObject> objectstack;
 //	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
 ////	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 //	
-//	virtual Laxkit::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
+//	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
 //	virtual Page **CreatePages(PageStyle *thispagestyle=NULL); // create necessary pages based on default pagestyle
 ////	virtual int SyncPages(Document *doc,int start,int n);
 //
-//	virtual Laxkit::SomeData *GetPage(int pagenum,int local); // return outline of page in page coords
+//	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local); // return outline of page in page coords
 //
 //	virtual Spread *GetLittleSpread(int whichpage); 
 ////	virtual Spread *SingleLayout(int whichpage); 
@@ -234,9 +242,9 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
 				tempnet=new Net();
 				tempnet->dump_in_atts(att->attributes.e[c]);
 				SetNet(tempnet);
-				cout <<"-----------after dump_in net and set----------"<<endl;
-				net->dump_out(stdout,2);
-				cout <<"-----------end netimpos..----------"<<endl;
+				DBG cout <<"-----------after dump_in net and set----------"<<endl;
+				DBG net->dump_out(stdout,2);
+				DBG cout <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);
@@ -313,14 +321,14 @@ Page **NetImposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
  * This is a no frills outline, used primarily to check where the mouse
  * is clicked down on.
  * If local==1 then return a new local SomeData. Otherwise return a
- * datastack object. In this case, the item should be guaranteed to have
- * a reference count of one already.
+ * counted object. In this case, the item should be guaranteed to have
+ * a reference count of one that refers to the returned pointer.
  */
-Laxkit::SomeData *NetImposition::GetPage(int pagenum,int local)
+LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 {
 	if (pagenum<0 || pagenum>=numpages) return NULL;
 	int pg=pagenum%net->nf;
-	PathsData *newpath=new PathsData();
+	PathsData *newpath=new PathsData(); //count==1
 	
 	 // find transform from paper coords to page coords 
 	 //  (this here is specifically (paper face coords)->(paper),
@@ -335,16 +343,15 @@ Laxkit::SomeData *NetImposition::GetPage(int pagenum,int local)
 	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
 	
 	flatpoint p[net->faces[pg].np];
-	cout <<"NetImposition::GetPage:\n";
+	DBG cout <<"NetImposition::GetPage:\n";
 	for (int c=0; c<net->faces[pg].np; c++) {
 		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
-		cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
+		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
 	}
 	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
 	newpath->close();
 	newpath->FindBBox();
 
-	if (local==0) datastack.push(newpath,1,newpath->object_id,1);
 	return newpath;
 }
 
@@ -421,7 +428,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 		spread->mask|=SPREAD_PRINTERMARKS;
 		spread->marks=path;
 		spread->marksarelocal=0;
-		datastack.push(path,1,path->object_id,1);
+		//path->inc_count(); <-- shouldn't have to do this
 	}
 	
 	Group *g=new Group;

@@ -26,6 +26,7 @@
 #include "pspathsdata.h"
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 
 //! Output postscript for a PathsData. *** fix me!
 /*! 
