@@ -343,9 +343,9 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 SpreadInterface::~SpreadInterface()
 {
 	 //for debugging:
-	cout<<"SpreadInterface destructor\n spreads flush"<<endl;
+	DBG cout<<"SpreadInterface destructor\n spreads flush"<<endl;
 	spreads.flush();
-	cout <<" pagelabels flush:"<<endl;
+	DBG cout <<" pagelabels flush:"<<endl;
 	pagelabels.flush();
 }
 
@@ -500,7 +500,7 @@ int SpreadInterface::Refresh()
 					if (pg>=0 && pg<doc->pages.n) thumb=doc->pages.e[pg]->Thumbnail();
 				}
 				if (thumb) {
-					cout <<"drawing thumbnail for "<<pg<<endl;
+					DBG cout <<"drawing thumbnail for "<<pg<<endl;
 					dp->PushAndNewTransform(spreads.e[c]->spread->pagestack.e[c2]->outline->m());
 					::DrawData(dp,thumb,NULL,NULL);
 					dp->PopAxes();
@@ -623,7 +623,7 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 	buttondown|=LEFTBUTTON;
 
 	int pg,spr=findSpread(x,y,&pg);
-	cout <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
+	DBG cout <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
 	if (pg<0) {
 		//*** start a selection rectangle
 		dragpage=-1;
@@ -650,7 +650,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	if (dragpage<0) return 0;
 	
 	int pg,spr=findSpread(x,y,&pg);
-	cout <<"SpreadInterface lbup found page "<<pg<<" in spread "<<spr<<endl;
+	DBG cout <<"SpreadInterface lbup found page "<<pg<<" in spread "<<spr<<endl;
 	if (pg<0) {
 		 // do not drop page anywhere
 		 //*** in the future this will be something like pop page into limbo?
@@ -658,7 +658,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	}
 	
 	 // swap dragpage and pg
-	cout <<"*** swap "<<dragpage<<" to position "<<pg<<endl;
+	DBG cout <<"*** swap "<<dragpage<<" to position "<<pg<<endl;
 	if ((state&LAX_STATE_MASK)==0) SlidePages(dragpage,pg);
 	else if ((state&LAX_STATE_MASK)==ShiftMask) SwapPages(dragpage,pg);
 	
@@ -742,9 +742,9 @@ void SpreadInterface::SwapPages(int previouspos, int newpos)
  */
 void SpreadInterface::ApplyChanges()
 {
-	cout<<"ApplyChanges:"<<endl;
+	DBG cout<<"ApplyChanges:"<<endl;
 	if (doc->pages.n!=pagelabels.n) {
-		cout <<"doc pages != pagelabels.n"<<endl;
+		cout <<"doc pages != pagelabels.n, fix this code!"<<endl;
 		exit(0);
 	}
 
@@ -892,20 +892,20 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 		needtodraw=1;
 		return 0;
 	} else if (ch=='p') { //*** for debugging thumbnails....
-		if (curpage<0) return 0;
-		ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
-		cout <<"'P' image dump:"<<endl;
-		thumb->dump_out(stdout,2);
-		if (thumb) {
-			dp->StartDrawing(curwindow);
-			//double i[6];
-			//transform_invert(i,thumb->m());
-			//dp->PushAndNewTransform(i);
-			::DrawData(dp,thumb,NULL,NULL);
-			//dp->PopAxes();
-			dp->EndDrawing();
-		}
-		return 0;
+		DBG if (curpage<0) return 0;
+		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
+		DBG cout <<"'P' image dump:"<<endl;
+		DBG thumb->dump_out(stdout,2);
+		DBG if (thumb) {
+		DBG 	dp->StartDrawing(curwindow);
+		DBG 	//double i[6];
+		DBG 	//transform_invert(i,thumb->m());
+		DBG 	//dp->PushAndNewTransform(i);
+		DBG 	::DrawData(dp,thumb,NULL,NULL);
+		DBG 	//dp->PopAxes();
+		DBG 	dp->EndDrawing();
+		DBG }
+		DBG return 0;
 	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
 		drawthumbnails=!drawthumbnails;
 		needtodraw=1;

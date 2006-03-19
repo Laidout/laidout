@@ -31,8 +31,13 @@
 #include <lax/lists.cc>
 #include <cstdarg>
 
-#define LAX_DEBUG
-#include <lax/laxdebug.h>
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -87,6 +92,7 @@ using namespace LaxFiles;
 //	virtual void out(const char *str);
 //};
 
+//! For debugging, dumps to stdout.
 void FieldPlace::out(const char *str)
 {
 	if (str) cout <<str<<": "; else cout <<"FieldPlace: ";
@@ -850,7 +856,7 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
 //}
 
 
-//! print out the style def to stdout
+//! For debugging, print out the style def to stdout
 void dumpstyledef(StyleDef *sd, int i)
 {
 	char ii[i+1];

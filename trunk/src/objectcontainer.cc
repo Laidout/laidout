@@ -26,8 +26,13 @@
 
 #include "objectcontainer.h"
 
+#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
 
 //------------------------------ ObjectContainer ----------------------------------
 
@@ -91,19 +96,19 @@ int ObjectContainer::nextObject(FieldPlace &place,
 								Laxkit::anObject **d)//d=NULL
 {
 	//debugging:
-	cout <<"oc.nextObject, curlevel="<<curlevel<<", n="<<n()<<endl;
-	place.out("  place");
-	first.out("  first");
+	DBG cout <<"oc.nextObject, curlevel="<<curlevel<<", n="<<n()<<endl;
+	DBG place.out("  place");
+	DBG first.out("  first");
 	
 	
 	if (!n() || curlevel<0) {
 		if (d) *d=NULL;
-		cout <<"end("<<curlevel<<")  oc.nextObject=0"<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject=0"<<endl;
 		return 0;
 	}
 	if (place.n()-1<curlevel) {
 		if (d) *d=NULL;
-		cout <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
 		return -1; //error! bad place
 	}
 	
@@ -126,7 +131,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		i=place.e(curlevel);
 		if (i<0) {
 			if (d) *d=NULL;
-			cout <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
+			DBG cout <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
 			return -1; // invalid place.e(curlevel)
 		}
 		//***if (dec) {...} else {inc...}
@@ -145,7 +150,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			 // all done with this bunch, but not at first.. 
 			place.pop();
 			if (d) *d=NULL;
-			cout <<"end("<<curlevel<<")  oc.nextObject=-2"<<endl;
+			DBG cout <<"end("<<curlevel<<")  oc.nextObject=-2"<<endl;
 			return -2;
 		}
 		if (i<0) i=n()-1; // we are at the level of first, so continue searching from top
@@ -154,7 +159,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			 // is at first, so assume subobjects have already been stepped through
 			place.pop();
 			if (d) *d=NULL;
-			cout <<"end("<<curlevel<<")  oc.nextObject=0"<<endl;
+			DBG cout <<"end("<<curlevel<<")  oc.nextObject=0"<<endl;
 			return 0;
 		} // else is ok to be at this object, so continue.
 		
@@ -171,7 +176,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		}
 		if (d) *d=gg;
 		place.out("  next is");
-		cout <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
 		return 1; //success!
 	}
 
@@ -182,42 +187,42 @@ int ObjectContainer::nextObject(FieldPlace &place,
 	if (i<0 || i>=n()) { // error! place invalid index
 		while (curlevel!=place.n()-1) place.pop();
 		if (d) *d=NULL;
-		cout <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
 		return -1;
 	}
 	ObjectContainer *g=dynamic_cast<ObjectContainer *>(object_e(i));
 	if (!g) { //was invalid spec, expected a group
 		while (curlevel!=place.n()-1) place.pop();
 		if (d) *d=NULL;
-		cout <<"end("<<curlevel<<")  oc.nextObject-1"<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject-1"<<endl;
 		return -1;
 	}
 	
 	i=g->nextObject(place, first, curlevel+1, d);
-	cout <<" curlevel="<<curlevel<<"  "; place.out("  stepped to");//debugging
+	DBG cout <<" curlevel="<<curlevel<<"  "; place.out("  stepped to");//debugging
 	if (*d) cout <<"  curplaceobj:"<<(*d)->object_id<<endl; else cout <<"  curplaceobj=NULL"<<endl;
 	if (i==-2) { 
 		 // was all done with sublevels, so must inc at this level
 		 // group function calling itself is perhaps a silly way to do it,
 		 // should rework this function so the 'if (curlevel==place.n()-1)' block
 		 // comes second?
-		cout <<"  i==-2"<<endl;
+		DBG cout <<"  i==-2"<<endl;
 		i=nextObject(place,first,curlevel,d);
-		cout <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
 		return i;
 	}
 	if (i==0) { // first reached in sublevel, so start iterating at curlevel..
-		cout <<"  i==0"<<endl;
+		DBG cout <<"  i==0"<<endl;
 		i=nextObject(place,first,curlevel,d);
-		cout <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
 		return i;
 	}
 	if (i==1){
-		cout <<"  i==1"<<endl;
-		cout <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
+		DBG cout <<"  i==1"<<endl;
+		DBG cout <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
 		return 1; //successful incrementing
 	}
-	cout <<"end("<<curlevel<<")  oc.nextObject=-1(final)"<<endl;
+	DBG cout <<"end("<<curlevel<<")  oc.nextObject=-1(final)"<<endl;
 	return -1; //must be error to be here, so return, do nothing more
 }
 

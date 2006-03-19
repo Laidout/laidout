@@ -62,6 +62,15 @@
 #include "projectinfo.h"
 	
 
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
+
 class ProjectInfo
 {	
 	char *projectname;
@@ -245,7 +254,7 @@ ProjectInfoWindow::~ProjectInfoWindow()
 	char **files;
 int ProjectInfoWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
-cout <<"NewDocMessage: "<<mes<<endl;
+	DBG cout <<"NewDocMessage: "<<mes<<endl;
 	if (!strcmp(mes,"project name")) {
 	} else if (!strcmp(mes,"projectname")) { 
 	} else if (!strcmp(mes,"project dir")) {

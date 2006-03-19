@@ -117,7 +117,7 @@ void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 		unsigned char *rgbbuf=new unsigned char[len]; //***this could be redone to not need new huge array like this
 		unsigned char r,g,b;
 		DATA32 bt;
-		cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
+		DBG cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
 		for (int x=0; x<width; x++) {
 			for (int y=0; y<height; y++) {
 				bt=buf[y*width+x];
@@ -330,8 +330,8 @@ int psout(FILE *f,Document *doc)
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			cout <<"marks data:\n";
-			spread->marks->dump_out(stdout,2);
+			//DBG cout <<"marks data:\n";
+			//DBG spread->marks->dump_out(stdout,2);
 			psdumpobj(f,spread->marks);
 		}
 		
@@ -349,12 +349,12 @@ int psout(FILE *f,Document *doc)
 
 			//*** set clipping region
 
-			cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..

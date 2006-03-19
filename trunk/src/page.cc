@@ -35,10 +35,14 @@ using namespace LaxInterfaces;
 using namespace Laxkit;
 
 
+#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
 
-using namespace Laxkit;
 extern RefCounter<anObject> objectstack;
 
 //----------------------- PageStyles ----------------------------
@@ -106,7 +110,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"height")) {
 			DoubleAttribute(value,&height);
 		} else { 
-			cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
+			DBG cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -254,7 +258,7 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"lrio")) {
 			recttype=(recttype&~(RECTPAGE_LRTB|RECTPAGE_IOTB|RECTPAGE_LRIO))|RECTPAGE_LRIO;
 		} else { 
-			cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
+			DBG cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -425,7 +429,7 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
  */
 Page::~Page()
 {
-	cout <<"  Page destructor"<<endl;
+	DBG cout <<"  Page destructor"<<endl;
 	if (thumbnail) delete thumbnail;
 	if (psislocal==1) delete pagestyle;
 	else if (psislocal==0) objectstack.checkin(pagestyle);
@@ -476,7 +480,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 			g->dump_in_atts(att->attributes.e[c]);
 			layers.push(g,1);
 		} else { 
-			cout <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
+			DBG cout <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
 		}
 	}
 }
@@ -514,7 +518,7 @@ ImageData *Page::Thumbnail()
 		   h=pagestyle->h();
 	h=h*100./w;
 	w=100.;
-	cout <<"..----making thumbnail "<<w<<" x "<<h<<endl;
+	DBG cout <<"..----making thumbnail "<<w<<" x "<<h<<endl;
 	if (!thumbnail) thumbnail=new ImageData(); 
 	thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
 	thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
@@ -565,14 +569,15 @@ ImageData *Page::Thumbnail()
 	//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
 	XFreePixmap(anXApp::app->dpy,pix);
 	
-	cout <<"==--- Done updating thumbnail.."<<endl;
+	DBG cout <<"==--- Done updating thumbnail.."<<endl;
 	imlib_context_set_drawable(d);
-	cout <<"Thumbnail dump_out:"<<endl;
-	thumbnail->dump_out(stdout,2);
-	cout <<"  minx "<<thumbnail->minx<<endl;
-	cout <<"  maxx "<<thumbnail->maxx<<endl;
-	cout <<"  miny "<<thumbnail->miny<<endl;
-	cout <<"  maxy "<<thumbnail->maxy<<endl;
+	DBG cout <<"Thumbnail dump_out:"<<endl;
+	DBG thumbnail->dump_out(stdout,2);
+	DBG cout <<"  minx "<<thumbnail->minx<<endl;
+	DBG cout <<"  maxx "<<thumbnail->maxx<<endl;
+	DBG cout <<"  miny "<<thumbnail->miny<<endl;
+	DBG cout <<"  maxy "<<thumbnail->maxy<<endl;
+
 	thumbmodtime=times(NULL);
 	return thumbnail;
 }
