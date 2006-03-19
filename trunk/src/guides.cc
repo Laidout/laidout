@@ -46,7 +46,7 @@
  *  (1<<6) attract objects perpendicularly
  * </pre>
  */
-class Guide : public Laxkit::SomeData
+class Guide : public LaxInterfaces::SomeData
 {
  public:
 	unsigned int guidetype;

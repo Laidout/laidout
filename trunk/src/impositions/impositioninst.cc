@@ -30,10 +30,18 @@
 #include <lax/refcounter.h>
 
 using namespace Laxkit;
+using namespace LaxInterfaces;
 using namespace LaxFiles;
 
+#ifndef HIDEGARBAGE
+#include <iostream>
+using namespace std;
+#define DBG 
+#else
+#define DBG //
+#endif
+
 extern RefCounter<anObject> objectstack;
-extern RefCounter<SomeData> datastack;
 
 /*! \file 
  * <pre>
@@ -267,11 +275,11 @@ Page **Singles::CreatePages(PageStyle *thispagestyle)//thispagestyle=NULL
 //! Return outline of page in page coords. 
 SomeData *Singles::GetPage(int pagenum,int local)
 {
-	PathsData *newpath=new PathsData();
+	PathsData *newpath=new PathsData();//count==1
 	newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
 	newpath->maxx=pagestyle->w();
 	newpath->maxy=pagestyle->h();
-	if (local==0) datastack.push(newpath,1,newpath->object_id,1);
+	//nothing special is done when local==0
 	return newpath;
 }
 
@@ -659,7 +667,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichpage)
 	Group *g=new Group;
 	g->push(noutline,0); // this checks it out again..
 	g->FindBBox();
-	datastack.checkin(noutline); // This removes the extra unnecessary tick
+	noutline->dec_count(); // This removes the extra unnecessary tick
 
 	 // left page
 	if (left>=0) {

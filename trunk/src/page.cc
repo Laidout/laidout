@@ -31,6 +31,7 @@
 #include "page.h"
 #include "drawdata.h"
 using namespace LaxFiles;
+using namespace LaxInterfaces;
 using namespace Laxkit;
 
 
@@ -39,7 +40,6 @@ using namespace std;
 
 using namespace Laxkit;
 extern RefCounter<anObject> objectstack;
-extern RefCounter<SomeData> datastack;
 
 //----------------------- PageStyles ----------------------------
 

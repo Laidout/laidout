@@ -30,8 +30,8 @@
 
 void PushBuiltinPathops();
 
-Laxkit::PtrStack<Laxkit::anInterface> *
-GetBuiltinInterfaces(Laxkit::PtrStack<Laxkit::anInterface> *existingpool); //existingpool=NULL
+Laxkit::PtrStack<LaxInterfaces::anInterface> *
+GetBuiltinInterfaces(Laxkit::PtrStack<LaxInterfaces::anInterface> *existingpool); //existingpool=NULL
 
 #endif
 	

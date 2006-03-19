@@ -39,7 +39,7 @@ class Singles : public Imposition
 	
 //	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 	virtual Page **CreatePages(PageStyle *pagestyle=NULL); // create necessary pages based on default pagestyle
-	virtual Laxkit::SomeData *GetPage(int pagenum,int local); // return outline of page in paper coords
+	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local); // return outline of page in paper coords
 	virtual Spread *GetLittleSpread(int whichpage); 
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);

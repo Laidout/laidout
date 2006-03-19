@@ -31,7 +31,6 @@
 using namespace LaxFiles;
 
 using namespace Laxkit;
-extern RefCounter<SomeData> datastack;
 
 #include <iostream>
 using namespace std;
@@ -42,11 +41,12 @@ using namespace std;
  * 
  * You must not access objs straight. Always go through the n(), e(), etc.
  * This is so the local in the stack can be utilized to either delete or
- * checkin and out of datastack.
+ * increment and decrement objects.
  * 
- * ***perhaps migrate Group to GroupData class of Laxkit?
+ * ***perhaps migrate Group to some kind of GroupData class of Laxkit?
+ * groups are perhaps too specialized..
  */
-/*! \fn int Group::findindex(Laxkit::SomeData *d)
+/*! \fn int Group::findindex(LaxInterfaces::SomeData *d)
  * \brief Just does: return objs.findindex(d);
  */
 /*! \fn void Group::swap(int i1,int i2)
@@ -56,21 +56,21 @@ using namespace std;
  * \brief Returns 'Group'.
  */
 //class Group : public ObjectContainer,
-//			  virtual public Laxkit::SomeData 
+//			  virtual public LaxInterfaces::SomeData 
 //{
 // protected:
-//	Laxkit::PtrStack<Laxkit::SomeData> objs;
+//	Laxkit::PtrStack<LaxInterfaces::SomeData> objs;
 // public:
 //	int locked, visible, prints;
 //	Group() { locked=0; visible=prints=1; }
 //	virtual ~Group();
 //	virtual const char *whattype() { return "Group"; }
-//	virtual Laxkit::SomeData *findobj(Laxkit::SomeData *d,int *n=NULL);
-//	virtual int findindex(Laxkit::SomeData *d) { return objs.findindex(d); }
-//	virtual int push(Laxkit::SomeData *obj,int local);
-//	virtual int pushnodup(Laxkit::SomeData *obj,int local);
+//	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
+//	virtual int findindex(LaxInterfaces::SomeData *d) { return objs.findindex(d); }
+//	virtual int push(LaxInterfaces::SomeData *obj,int local);
+//	virtual int pushnodup(LaxInterfaces::SomeData *obj,int local);
 //	virtual int remove(int i);
-//	virtual int popp(Laxkit::SomeData *d,int *local=NULL);
+//	virtual int popp(LaxInterfaces::SomeData *d,int *local=NULL);
 //	virtual void flush();
 //	virtual void swap(int i1,int i2) { objs.swap(i1,i2); }
 //	virtual void slide(int i1,int i2);
@@ -79,14 +79,14 @@ using namespace std;
 //	virtual int pointin(flatpoint pp,int pin=1);
 //	virtual void FindBBox();
 //	//virtual int contains(SomeData *d,FieldPlace &place);
-//	//virtual Laxkit::SomeData *getObject(FieldPlace &place,int offset=0);
-//	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, Laxkit::SomeData **d=NULL);
-//	virtual Laxkit::SomeData *e(int i);
+//	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
+//	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);
+//	virtual LaxInterfaces::SomeData *e(int i);
 //	virtual int n() { return objs.n; }
 //	virtual Laxkit::anObject *object_e(int i) { return e(i); }
 //};
 
-//! Destructor, calls flush() to checkin any datastack objects.
+//! Destructor, calls flush() to checkin any objects.
 Group::~Group() 
 {
 	flush();
@@ -125,7 +125,7 @@ void Group::FindBBox()
 // * in the chain is this->e(10).
 // *
 // */
-//int Group::nextObject(FieldPlace &place, FieldPlace &first, int curlevel, Laxkit::SomeData **d)//d=NULL
+//int Group::nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d)//d=NULL
 //{
 //	if (!objs.n || curlevel<0) return 0;
 //	if (place.n()-1<curlevel) {
@@ -223,7 +223,7 @@ void Group::FindBBox()
 // *
 // * If there is no object at that position, then return NULL;
 // */
-//Laxkit::SomeData *Group::getObject(FieldPlace &place, int offset)
+//LaxInterfaces::SomeData *Group::getObject(FieldPlace &place, int offset)
 //{
 //	if (place.n()>=offset) return NULL;
 //	if (place.e(offset)>=objs.n() || place.e(offset)<0) return NULL;
@@ -265,6 +265,8 @@ void Group::FindBBox()
 //---^^^ in ObjectContainer, remove if tests ok...
 
 //! Check the point against all objs.
+/*! \todo *** this is broken! ignores the obj transform
+ */
 int Group::pointin(flatpoint pp,int pin)
 { 
 	if (!objs.n) return 0;
@@ -278,51 +280,56 @@ int Group::pointin(flatpoint pp,int pin)
 
 //! Push obj onto the stack. (new objects only!)
 /*! If local==1 then obj is delete'd when remove'd from objs.
- * Otherwise the obj is to be a datastack object, and is pushed, adding 1 count.
- * The object should not already exist on the datastack. No previous existence
- * check is done here. For that, use pushnodup(). (***though note that
- * datastack.push(...) is actaully a pushnodup)
+ * Any other local value means the obj is managed with its inc_count() and dec_count() functions,
+ * and its count is incremented here.
  *
- * \todo *** redo datastack! make count in the object itself, this would
- * remove the problem of pushing the same object..
+ * No previous existence
+ * check is done here. For that, use pushnodup().
  */
-int Group::push(Laxkit::SomeData *obj,int local)
+int Group::push(LaxInterfaces::SomeData *obj,int local)
 {
 	if (!obj) return -1;
-	if (local==0) datastack.push(obj,1,obj->object_id,1); //this is pushondup'ing
+	if (local==0) obj->inc_count();
 	return objs.push(obj,(local==1?1:0));
 }
 
 //! Push obj onto the stack only if it is not already there.
-/*! If the item is already on the stack, then its count in datastack
- * is incremented, otherwise the datastack count is not incremented.
+/*! If the item is already on the stack, then its count is not
+ * incremented, and local is ignored.
+ *
  * If local==1 then obj is delete'd when remove'd from this->objs.
+ * Any other local value means the obj is managed with its inc_count() and dec_count() functions,
+ * and its count is incremented here.
  */
-int Group::pushnodup(Laxkit::SomeData *obj,int local)
+int Group::pushnodup(LaxInterfaces::SomeData *obj,int local)
 {
 	if (!obj) return -1;
 	int c=objs.pushnodup(obj,(local==1?1:0));
 	//if was there, then do not increase count, otherwise:
-	if (c<0 && local==0) datastack.push(obj,1,obj->object_id,1);
+	if (c<0 && local==0) obj->inc_count();
 	return c;
 }
 
-//! Pop d, but do not checkin to datastack.
+//! Pop d, but do not decrement its count.
 /*! Returns 1 for item popped, 0 for not.
+ *
+ * Puts the object's local value in local.
  */
-int Group::popp(Laxkit::SomeData *d,int *local)
+int Group::popp(LaxInterfaces::SomeData *d,int *local)
 {
 	return objs.popp(d,local);
 }
 
 //! Remove item with index i. Return 1 for item removed, 0 for not.
+/*! This will decrement the object's count by 1 if its local value is 0.
+ */
 int Group::remove(int i)
 {
 	int local;
 	SomeData *obj;
 	objs.pop(obj,i,&local);
 	if (obj) {
-		if (local==0) datastack.checkin(obj);
+		if (local==0) obj->dec_count();
 		else if (local==1) delete obj;
 		else if (local==2) delete[] obj;
 		return 1;
@@ -332,6 +339,8 @@ int Group::remove(int i)
 
 //! Pops item i1, then pushes it so that it is in position i2. 
 /*! Return 1 for slide happened, else 0.
+ *
+ * Does not tinker with the object's count.
  */
 int Group::slide(int i1,int i2)
 {
@@ -343,17 +352,17 @@ int Group::slide(int i1,int i2)
 	return 1;
 }
 
-//! Checkin any datastack objects, then call objs.flush().
+//! Decrement any objects that have local==0, then call objs.flush().
 void Group::flush()
 {
 	for (int c=0; c<objs.n; c++) {
-		if (objs.islocal[c]==0) datastack.checkin(objs.e[c]);
+		if (objs.islocal[c]==0) objs.e[c]->dec_count();
 	}
 	objs.flush();
 }
 
 //! Return object with index i in stack.
-Laxkit::SomeData *Group::e(int i)
+LaxInterfaces::SomeData *Group::e(int i)
 {
 	if (i<0 || i>=objs.n) return NULL;
 	return objs.e[i];
@@ -383,7 +392,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att)
 				// could use the number as some sort of object id?
 				// currently out put was like: "object 2 ImageData"
 				//***strs[0]==that id
-				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));
+				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
 				if (data) {
 					data->dump_in_atts(att->attributes[c]);
 					push(data,0);
@@ -417,7 +426,7 @@ void Group::dump_out(FILE *f,int indent)
  *
  * Return the object if it is found, otherwise NULL.
  */
-Laxkit::SomeData *Group::findobj(Laxkit::SomeData *d,int *n)
+LaxInterfaces::SomeData *Group::findobj(LaxInterfaces::SomeData *d,int *n)
 {
 	if (d==this) return d;
 	int c;

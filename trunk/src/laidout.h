@@ -45,7 +45,7 @@ class LaidoutApp : public Laxkit::anXApp
 //	Laxkit::PtrStack<FontThing> fontstack;
 //	Laxkit::PtrStack<Project> projectstack;
 //	ScreenStyle *screen;
-	Laxkit::PtrStack<Laxkit::anInterface> interfacepool;
+	Laxkit::PtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<Imposition> impositionpool;
 	Laxkit::PtrStack<PaperType> papersizes;
 	LaidoutApp();

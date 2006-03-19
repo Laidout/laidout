@@ -31,12 +31,12 @@
 
 //----------------------- LittleSpread --------------------------------------
 
-class LittleSpread : public Laxkit::SomeData
+class LittleSpread : public LaxInterfaces::SomeData
 {
  public:
 	int what;
 	Spread *spread; // holds the outline, etc..
-	Laxkit::PathsData *connection;
+	LaxInterfaces::PathsData *connection;
 	int lowestpage,highestpage;
 	LittleSpread *prev,*next;
 	LittleSpread(Spread *sprd, LittleSpread *prv);
@@ -64,7 +64,7 @@ class PageLabel
 
 //----------------------- SpreadInterface --------------------------------------
 
-class SpreadInterface : public Laxkit::InterfaceWithDp
+class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
 	int mx,my,firsttime;
@@ -99,8 +99,8 @@ class SpreadInterface : public Laxkit::InterfaceWithDp
 	virtual int CharInput(unsigned int ch,unsigned int state);
 //	//virtual int CharRelease(unsigned int ch,unsigned int state);
 	virtual int Refresh();
-//	//virtual int DrawData(anObject *ndata,int info=0);
-//	//virtual int UseThis(anObject *newdata,unsigned int); // assumes not use local
+//	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
+//	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
 //	//virtual void Clear();
 //	//virtual void deletedata();
 //	//virtual int InterfaceOn();
@@ -122,7 +122,7 @@ class SpreadInterface : public Laxkit::InterfaceWithDp
 
 //----------------------- SpreadEditor --------------------------------------
 
-class SpreadEditor : public Laxkit::ViewerWindow
+class SpreadEditor : public LaxInterfaces::ViewerWindow
 {
  protected:
 	Document *doc;

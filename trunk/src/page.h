@@ -87,7 +87,7 @@ class Page : public ObjectContainer
 {
  public:
 	int pagenumber;
-	Laxkit::ImageData *thumbnail;
+	LaxInterfaces::ImageData *thumbnail;
 	clock_t thumbmodtime,modtime;
 	Laxkit::PtrStack<Group> layers;
 	PageStyle *pagestyle;
@@ -97,7 +97,7 @@ class Page : public ObjectContainer
 	virtual const char *whattype() { return "Page"; }
 	virtual void dump_out(FILE *f,int indent);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
-	virtual Laxkit::ImageData *Thumbnail();
+	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual int InstallPageStyle(PageStyle *pstyle,int islocal=1);
 	virtual int n() { return layers.n; }
 	virtual Laxkit::anObject *object_e(int i) 

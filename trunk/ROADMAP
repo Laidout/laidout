@@ -5,7 +5,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 General
 -------
-Make an RSS feed.
+Make an RSS feed.. can use sourceforge news thing?
 
 
 VERSION 0.01
@@ -26,37 +26,46 @@ VERSION 0.01
 
 VERSION 0.1
 -----------
-Rename Disposition to Imposition. Why oh why did I call it Disposition??
-PathInterface should finally work right
-Linear Gradients
-Circle Gradients
-Basic infrastructure for most things should be in place.
-This means some sort of basic scripting infrastructure,
-parent/child nesting and masking,
-interface for that nesting, and grouping
-ObjectInterface for selecting multiple stuff
-PrintDialog
-Generic style edit window which allows:
-  non-hacky new document box
-  also means all things must define their styledefs
-Overall windowing setup using Laxkit::SplitWindows, docking, etc.
-from laxkit: replacement of 'datastack' should be complete, do same here
-CompositeImposition should be ready
-DumpImages within Arrangements, which are sort of a template of positions
-Plugin infrastructure should be in place
-Low level tree editor, akin to the xml editor in inkscape
-PDF out
+(done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
+       Insert compile flag to turn off debug info dumped to cout
+       A help button to popup a list of all the otherwise unmentioned key shortcuts
+       PathInterface should finally work right
+       Linear Gradients
+       Circle Gradients
+       Color patches should work better than in 0.01
+       Basic infrastructure for most things should be in place.
+       This means some sort of basic scripting infrastructure,
+       parent/child nesting and masking,
+       interface for that: nesting, and grouping
+	   runaround area determination
+       Full color management implemented
+       ObjectInterface for selecting and resizing multiple stuff
+       PrintDialog
+       Generic style edit window which allows:
+         non-hacky new document box
+         also means all things must define their styledefs
+       Overall windowing setup using Laxkit::SplitWindows, docking, etc.
+(done) from laxkit: replacement of 'datastack' should be complete, do same here
+       CompositeImposition should be ready
+       DumpImages within Arrangements, which are sort of a template of positions
+       Plugin infrastructure should be in place
+       Low level tree editor, akin to the xml editor in inkscape
+	   libintl support
+       PDF out
+	   start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
+	      of multipage-ness with SVG 1.2, or possibly to scribus also
 
 
 VERSION 0.2
 -----------
 Freehand drawing with tablet support
-Full color management implemented
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
  layout inside any path and runaround facility.
- Also most likely means finally deciding on a rendering backend
+ Also most likely means finally deciding on a rendering backend: cairo? antigrain? pango?
 ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles
+Would be nice to have tex/latex text and equation reader
+Would be nice to have metapost sort of things
 
 
 VERSION 0.3

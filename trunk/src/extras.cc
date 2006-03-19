@@ -52,7 +52,7 @@
 #include <lax/refcounter.h>
 
 using namespace Laxkit;
-extern RefCounter<SomeData> datastack;
+using namespace LaxInterfaces;
 //--------------------------------- Dump Images --------------------------------------------
 
 //! Plop all images in directory pathtoimagedir into the document.
@@ -105,7 +105,7 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
 		image=imlib_load_image(imagefiles[c]);
 		if (image) {
 			cout << "dump image files: "<<imagefiles[c]<<endl;
-			images[i]=new ImageData;
+			images[i]=new ImageData;//creates with one count
 			images[i]->SetImage(image);
 			makestr(images[i]->filename,imagefiles[c]);
 			i++;
@@ -115,6 +115,8 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
 	}
 	c=-1;
 	if (i) c=dumpImages(doc,startpage,images,i,imagesperpage,ddpi);
+	for (c=0; c<nimages; c++) // remove extraneous count
+		if (images[c]) images[c]->dec_count();
 	delete[] images;
 	return c;
 }
@@ -124,8 +126,8 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
  * If there are more images than pages, then add pages. Centers images on each page
  * with the page's default dpi. (assumes that the layer is not transformed in any way)
  *
- * This checks in each image onto datastack. It assumes that each image is to be delete'd by
- * the datastack in the future. Adds a count of 1 to the item's count in the stack. Does not
+ * Assumes that each image is to be managed with its inc_count() and dec_count() functions
+ * in the future. Adds a count of 1 to the item's count. Does not
  * delete the images array, the calling code should do that.
  *
  * \todo ignores imagesperpage.. should not ignore it!! 1 center, 2 top and bottom, 3 in thirds,
@@ -212,7 +214,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 			cout <<"   adding image index "<<c+c2<<endl;
 			images[c+c2]->origin(images[c+c2]->origin()+flatpoint(0,(rrh-hh)/2));
 			g=doc->pages.e[endpage]->layers.e[doc->pages.e[endpage]->layers.n-1];
-			g->push(images[c+c2],0);
+			g->push(images[c+c2],0); //incs the obj's count
 		}
 		n+=nn;
 		c+=nn-1; //the for loop adds on 1 more

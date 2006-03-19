@@ -36,7 +36,7 @@ class NetLine
 	int np;
 	int *points;
 	char lsislocal;
-	Laxkit::LineStyle *linestyle;
+	LaxInterfaces::LineStyle *linestyle;
 	NetLine(const char *list=NULL);
 	virtual ~NetLine();
 	const NetLine &operator=(const NetLine &line);
@@ -68,7 +68,7 @@ class NetFace
 };
 
 //----------------------------------- Net -----------------------------------
-class Net : public Laxkit::SomeData
+class Net : public LaxInterfaces::SomeData
 {
  public:
 	char *thenettype;
@@ -85,7 +85,7 @@ class Net : public Laxkit::SomeData
 	virtual Net *duplicate();
 	virtual const char *whatshape() { return thenettype; }
 	virtual void FindBBox();
-	virtual void FitToData(Laxkit::SomeData *data,double margin);
+	virtual void FitToData(LaxInterfaces::SomeData *data,double margin);
 	virtual void ApplyTransform(double *mm=NULL);
 	virtual void Center();
 	virtual const char *whattype() { return thenettype; }
@@ -99,8 +99,8 @@ class Net : public Laxkit::SomeData
 	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 
 	//--perhaps for future:
-	//virtual void PrintSVG(std::ostream &svg,Laxkit::SomeData *paper,int month=1,int year=2006);
-	//virtual void PrintPS(std::ofstream &ps,Laxkit::SomeData *paper);
+	//virtual void PrintSVG(std::ostream &svg,LaxInterfaces::SomeData *paper,int month=1,int year=2006);
+	//virtual void PrintPS(std::ofstream &ps,LaxInterfaces::SomeData *paper);
 };
 
 
