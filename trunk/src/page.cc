@@ -34,14 +34,9 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 using namespace Laxkit;
 
-
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 extern RefCounter<anObject> objectstack;
 

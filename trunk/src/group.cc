@@ -32,13 +32,9 @@ using namespace LaxFiles;
 
 using namespace Laxkit;
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 //--------------------- Group ------------------------------
 

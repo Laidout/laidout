@@ -31,13 +31,9 @@
 #include <lax/lists.cc>
 #include <cstdarg>
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 using namespace Laxkit;
 using namespace LaxFiles;

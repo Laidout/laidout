@@ -11,7 +11,7 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
-CPPFLAGS= $(CPPFLAGS) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
+CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
 DEBUGFLAGS= -g -DDEBUG
 
 
@@ -37,6 +37,24 @@ all: laidout
 laidout: lax laxinterface $(objs) printing impositions
 	$(LD) $(LDFLAGS) $(objs) printing/*.o impositions/*.o -llaxinterfaces -llaxkit -o $@
 
+# This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
+# '(whitespace)//DBG' to '(same ws)////DBG'
+# which is useful when assembling for a release, because it disables all the spewing
+# of info to the terminal.. I couldn't figure out how to do it with a simple compile flag
+# like #defining DBG to be: //
+hidegarbage:
+	for NAME in `ls *.cc`; do \
+		sed -e 's/^\(\s*\)\/\/DBG/\1\/\/\/\/DBG/ ; \
+		s/^\(\s*\)DBG/\1\/\/DBG/' $NAME > $NAME-hidden; \
+	done
+
+# This changes in *.cc all occurrences of 
+# '(whitespace)//DBG' to '(same ws)DBG'.
+unhidegarbage:
+	for NAME in `ls *.cc`; do \
+		sed -e 's/^\(\s*\)\(\/*\)\/\/DBG/\1\2DBG/ ; \
+	done
+
 lax:
 	cd $(LAXDIR) && $(MAKE)
 
@@ -59,8 +77,7 @@ printing:
 impositions:
 	cd impositions && $(MAKE)
 
-
-.PHONY: clean lax docs printing impositions
+.PHONY: clean lax docs printing impositions hidegarbage unhidegarbage
 clean:
 	rm -f laidout *.o
 	cd printing && $(MAKE) clean

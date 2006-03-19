@@ -26,13 +26,9 @@
 
 #include "objectcontainer.h"
 
-#ifndef HIDEGARBAGE
 #include <iostream>
 using namespace std;
 #define DBG 
-#else
-#define DBG //
-#endif
 
 //------------------------------ ObjectContainer ----------------------------------
 
@@ -200,7 +196,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 	
 	i=g->nextObject(place, first, curlevel+1, d);
 	DBG cout <<" curlevel="<<curlevel<<"  "; place.out("  stepped to");//debugging
-	if (*d) cout <<"  curplaceobj:"<<(*d)->object_id<<endl; else cout <<"  curplaceobj=NULL"<<endl;
+	DBG if (*d) cout <<"  curplaceobj:"<<(*d)->object_id<<endl; else cout <<"  curplaceobj=NULL"<<endl;
 	if (i==-2) { 
 		 // was all done with sublevels, so must inc at this level
 		 // group function calling itself is perhaps a silly way to do it,
