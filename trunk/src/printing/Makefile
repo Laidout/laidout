@@ -28,9 +28,14 @@ depends:
 
 include makedepend
 
+hidegarbage:
+	../hidegarbage
+
+unhidegarbage:
+	../hidegarbage 0
 
 
-.PHONY: clean printing
+.PHONY: clean printing hidegarbage unhidegarbage
 clean:
 	rm -f *.o
 	

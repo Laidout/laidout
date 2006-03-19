@@ -43,17 +43,12 @@ laidout: lax laxinterface $(objs) printing impositions
 # of info to the terminal.. I couldn't figure out how to do it with a simple compile flag
 # like #defining DBG to be: //
 hidegarbage:
-	for NAME in `ls *.cc`; do \
-		sed -e 's/^\(\s*\)\/\/DBG/\1\/\/\/\/DBG/ ; \
-		s/^\(\s*\)DBG/\1\/\/DBG/' $NAME > $NAME-hidden; \
-	done
+	./hidegarbage
 
 # This changes in *.cc all occurrences of 
 # '(whitespace)//DBG' to '(same ws)DBG'.
 unhidegarbage:
-	for NAME in `ls *.cc`; do \
-		sed -e 's/^\(\s*\)\(\/*\)\/\/DBG/\1\2DBG/ ; \
-	done
+	./hidegarbage 0
 
 lax:
 	cd $(LAXDIR) && $(MAKE)

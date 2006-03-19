@@ -1,8 +1,8 @@
-############################################################
-##############                               ###############
-#############  Laidout src/printing Makefile  ##############
-##############                               ###############
-############################################################
+###############################################################
+##############                                  ###############
+#############  Laidout src/impositions Makefile  ##############
+##############                                  ###############
+###############################################################
 
 include ../../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
@@ -23,16 +23,22 @@ objs= \
 
 
 
-dispositions: $(objs)
+impositions: $(objs)
 
 depends:
 	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
 
 include makedepend
 
+hidegarbage:
+	../hidegarbage
+
+unhidegarbage:
+	../hidegarbage 0
 
 
-.PHONY: clean printing
+
+.PHONY: clean impositions hidegarbage unhidegarbage
 clean:
 	rm -f *.o
 	
