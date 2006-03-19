@@ -215,14 +215,16 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	if (docstyle==NULL) {
 		//*** need to create a new DocumentStyle
 		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		COUT("***need to implement get defualt document in Document constructor.."<<endl);
+		DBG cout <<"***need to implement get defualt document in Document constructor.."<<endl;
 	}
 	if (docstyle==NULL) {
-		COUT("***need to implement document constructor.."<<endl);
+		DBG cout <<"***need to implement document constructor.."<<endl;
 	} else {
 		 // create the pages
 		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
-		else { COUT("**** in new Document, docstyle has no imposition"<<endl);}
+		else { 
+			DBG cout << "**** in new Document, docstyle has no imposition"<<endl;
+		}
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;
@@ -357,7 +359,7 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 int Document::Load(const char *file)
 {
 	//*** need to create a new DocumentStyle from what's in the file..
-	COUT("----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl);
+	DBG cout <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	FILE *f=fopen(file,"r");
 	//*** make sure it is a laidout document!!
 	if (!f) {

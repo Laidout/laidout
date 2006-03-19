@@ -2300,10 +2300,6 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-// *****for debugging... shows that i don't really know what showrusage is checking
-// ***** use /proc/PID/mem instead? trying to find easy way to find 
-// ***** how much resources are being used
-#include "showrusage.cc"
 
 /*! <pre>
  * left    prev tool, 
@@ -2313,6 +2309,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
  * ^'s'    save file
  * ^+'s'   save as -- just change the file name?? (not imp)
  * F1      popup new spread editor window
+ *
+ * 'r'     ---for debugging, does system call: "more /proc/(pid)/status"
  * </pre>
  */
 int ViewWindow::CharInput(unsigned int ch,unsigned int state)
@@ -2361,7 +2359,11 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		updatePagenumber();
 		return 0;
 	} else if (ch=='r') {
-		showrusage();
+		//**** for debugging:
+		pid_t pid=getpid();
+		char blah[100];
+		sprintf(blah,"more /proc/%d/status",pid);
+		system(blah);
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
 		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,500,600, 0));

@@ -174,7 +174,7 @@ FieldMask::FieldMask(const char *ext)
 		fp=new FieldPlace;
 		fe=chartoint(start,&end);
 		if (*end!=',' && *end!='\0') {
-			COUT("ext had invalid characters!");
+			cout << "ext had invalid characters!"<<endl;
 			if (fe) delete[] fe;
 			if (fp) delete fp;
 			return;
