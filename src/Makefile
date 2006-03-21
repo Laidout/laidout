@@ -22,6 +22,7 @@ objs= \
 	group.o \
 	document.o \
 	interfaces.o \
+	headwindow.o \
 	newdoc.o \
 	objectcontainer.o \
 	saveppt.o \
@@ -44,11 +45,15 @@ laidout: lax laxinterface $(objs) printing impositions
 # like #defining DBG to be: //
 hidegarbage:
 	./hidegarbage
+	cd printing && $(MAKE) hidegarbage
+	cd impositions && $(MAKE) hidegarbage
 
 # This changes in *.cc all occurrences of 
 # '(whitespace)//DBG' to '(same ws)DBG'.
 unhidegarbage:
 	./hidegarbage 0
+	cd printing && $(MAKE) hidegarbage
+	cd impositions && $(MAKE) hidegarbage
 
 lax:
 	cd $(LAXDIR) && $(MAKE)

@@ -204,8 +204,8 @@ void NetImposition::dump_out(FILE *f,int indent)
 		fprintf(f,"%sdefaultpaperstyle\n",spc);
 		paperstyle->dump_out(f,indent+2);
 	}
-	if (printnet) fprintf(f,"%sprintnet",spc);
-		else fprintf(f,"%sprintnet false",spc);
+	if (printnet) fprintf(f,"%sprintnet\n",spc);
+		else fprintf(f,"%sprintnet false\n",spc);
 	if (net) {
 		fprintf(f,"%snet",spc);
 		if (netisbuiltin) fprintf(f," %s\n",net->whatshape());
