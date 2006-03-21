@@ -42,6 +42,7 @@
 #include "laidout.h"
 #include "viewwindow.h"
 #include "impositions/impositioninst.h"
+#include "headwindow.h"
 #include "version.h"
 #include <lax/lists.cc>
 
@@ -104,9 +105,36 @@ ViewWindow *newViewWindow(Document *newdoc)
 	return new ViewWindow(newdoc); 
 }
 
+/*! \ingroup lmisc
+ * \brief Window generator for use in HeadWindow.
+ */
+anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	return new ViewWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
+}
+
+/*! \ingroup lmisc
+ * \brief Create a new head split window, and fill it with a ViewWindow.
+ */
+anXWindow *newHeadWindow(Document *doc=NULL)
+{
+	if (doc==NULL) {
+		doc=laidout->curdoc;
+		if (!doc) {
+			if (!laidout->project) return NULL;
+			if (!laidout->project->docs.n) return NULL;
+			doc=laidout->project->docs.e[0];
+		}
+	}
+	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+	head->Add(newViewWindow(doc));
+	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
+	return head;
+}
+
 //----------------------- Main Control Panel: an unmapped window until further notice? -------------------------------
 
-//class ControlPanel : public anXWindow
+//class ControlPanel : public Laxkit::anXWindow
 //{
 // public:
 //	virtual int DataEvent(SendData *data,const char *mes); 
@@ -247,6 +275,9 @@ int LaidoutApp::init(int argc,char **argv)
 	if (topwindows.n==0) // if no other windows have been launched yet, then launch newdoc window
 		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
+	//****this is a test:
+	addwindow(newHeadWindow());
+	
 	return 0;
 };
 
@@ -331,7 +362,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 			case 'n': { // --new "letter singes 3 pages blah blah blah"
 					//cout << " make new doc from: \""<< optarg << "\""<< endl;
-					NewDocument(optarg);
+					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1];
 				} break;
 			case 'l': { // load dir
 					makestr(load_dir,optarg);
@@ -355,6 +386,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		if (doc) {
 			if (!project) project=new Project;
 			project->docs.push(doc);
+			curdoc=doc;
 			addwindow(newViewWindow(doc));
 		}
 	}
@@ -494,7 +526,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
 	DBG cout <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
-	ViewWindow *blah=newViewWindow(newdoc); 
+	anXWindow *blah=newViewWindow(newdoc); 
 	addwindow(blah);
 	return 0;
 }

@@ -316,11 +316,13 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	VObjContext curobj,firstobj,foundobj,foundtypeobj;
 //	
 //	LaidoutViewport(Document *newdoc);
+//	virtual const char *whattype() { return "LaidoutViewport"; }
 //	virtual ~LaidoutViewport();
 //	virtual void Refresh();
 //	virtual int init();
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int MouseMove(int x,int y,unsigned int state);
+//	virtual int UseThisDoc(Document *ndoc);
 //	
 //	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
 //	
@@ -398,6 +400,22 @@ LaidoutViewport::~LaidoutViewport()
 
 	 //checkin limbo objects vie limbo's Group::flush()
 	limbo.flush();
+}
+
+//! Replace existing doc with this doc.
+/*! Return 0 for success, nonzero error.
+ */
+int LaidoutViewport::UseThisDoc(Document *ndoc)
+{
+	if (!ndoc) return 1;
+	ClearSearch();
+	clearCurobj();
+	curpage=NULL;
+
+	doc=ndoc;
+	setupthings();
+	needtodraw=1;
+	return 0;
 }
 
 Laxkit::anObject *LaidoutViewport::object_e(int i)
@@ -562,7 +580,7 @@ void LaidoutViewport::postmessage(const char *mes)
  * Then refetchs the spread for that page. Curobj is set to the context that items should
  * be plopped down into. This is usually a page and a layer. curobj.obj is set to NULL.
  *
- * ***potentially sometimes different paper spreads have references to the same page
+ * \todo ***potentially sometimes different paper spreads have references to the same page
  * which might screw up the setviewmode/setupthings system...
  */
 void LaidoutViewport::setupthings(int topage)//topage=-1
@@ -1968,6 +1986,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 //						int xx,int yy,int ww,int hh,int brder,
 //						Document *newdoc);
+//	virtual const char *whattype() { return "ViewWindow"; }
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int DataEvent(Laxkit::SendData *data,const char *mes);
 //	virtual int init();
@@ -2026,6 +2045,14 @@ void ViewWindow::setup()
 int ViewWindow::init()
 {
 	ViewerWindow::init();
+	mesbar->tooltip("Status bar");
+	
+	if (!doc) {
+		if (laidout->project && laidout->project->docs.n) {
+			doc=laidout->project->docs.e[0];
+			((LaidoutViewport *)viewport)->UseThisDoc(doc);
+		}
+	}
 	
 	if (!win_sizehints) win_sizehints=XAllocSizeHints();
 	if (win_sizehints && !win_parent) {
@@ -2217,6 +2244,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
 		cout <<"ViewWindow got docTreeChange *** imp me!! IMPORTANT!!!"<<endl;
+		viewport->ClientEvent(e,mes);
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
 		//***
 		updatePagenumber();
@@ -2289,6 +2317,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
+		mesbar->SetText("Printing, please wait....");
 		if (!doc->Save(Save_PS)) mesbar->SetText("Printed to output.ps.");
 		else mesbar->SetText("Failed to print to output.ps");
 		return 0;
