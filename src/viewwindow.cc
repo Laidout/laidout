@@ -50,6 +50,7 @@ using namespace std;
 #define PAPERLAYOUT  2
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -715,6 +716,7 @@ int LaidoutViewport::DeleteObject()
 		else interfaces.e[c]->Clear();
 	}
 	clearCurobj(); //this calls dec_count() on the object
+	laidout->notifyDocTreeChanged(this);
 	//ClearSearch();
 	needtodraw=1;
 	return 1;
@@ -800,6 +802,7 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 	}
 	
 	//*** should clear curselection
+	laidout->notifyDocTreeChanged(this);
 	setCurobj(context);
 	if (curobj.obj) curobj.obj->inc_count();//this is the normal NewData count
 	if (oc) *oc=&curobj;
@@ -1992,6 +1995,9 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	virtual int init();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual void updatePagenumber();
+//
+//	virtual void dump_out(FILE *f,int indent) =0;
+//	virtual void dump_in_atts(Attribute *att) =0;
 //};
 
 //	ViewerWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -2000,7 +2006,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //! Passes in a new LaidoutViewport.
 ViewWindow::ViewWindow(Document *newdoc)
 	: ViewerWindow(NULL,((newdoc && newdoc->Name())?newdoc->Name() :"untitled"),ANXWIN_DELETEABLE,
-					0,0,500,600,0,new LaidoutViewport(newdoc))
+					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
 	var1=var2=var3=NULL;
 	project=NULL;
@@ -2025,6 +2031,65 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 	doc=newdoc;
 	setup();
 }
+
+/*! Write out something like:
+ * <pre>
+ *   document ***docid  # which document
+ *   pagelayout         # or 'paperlayout' or 'singlelayout'
+ *   page 3             # the page number currently on
+ *   matrix 1 0 0 1 0 0 # viewport matrix
+ * </pre>
+ *
+ * \todo *** still need some standardizing for the little helper controls..
+ */
+void ViewWindow::dump_out(FILE *f,int indent)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	fprintf(f,"%sdocument %s\n",spc,doc->Name());
+
+	LaidoutViewport *vp=((LaidoutViewport *)viewport);
+	int vm=vp->viewmode;
+	if (vm==SINGLELAYOUT) fprintf(f,"%ssinglelayout\n",spc);
+	else if (vm==PAGELAYOUT) fprintf(f,"%spagelayout\n",spc);
+	else fprintf(f,"%spaperlayout\n",spc);
+	
+	if (vp->spread && vp->spread->pagestack.n)
+		fprintf(f,"%spage %d\n",spc,vp->spread->pagestack.e[0]->index);
+	
+	const double *m=vp->dp->Getctm();
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
+}
+
+//! Reverse of dump_out().
+void ViewWindow::dump_in_atts(Attribute *att)
+{
+	if (!att) return;
+	char *name,*value;
+	int vm=PAGELAYOUT, pn=0;
+	double m[6];
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"matrix")) {
+			DoubleListAttribute(value,m,6);
+		} else if (!strcmp(name,"pagelayout")) {
+			vm=PAGELAYOUT;
+		} else if (!strcmp(name,"paperlayout")) {
+			vm=PAPERLAYOUT;
+		} else if (!strcmp(name,"singlelayout")) {
+			vm=SINGLELAYOUT;
+		} else if (!strcmp(name,"page")) {
+			IntAttribute(value,&pn);
+		}
+	}
+//	*** set doc
+//	if (m) ***
+//	***set vm
+//	*** set pn
+}
+
 
 //! Called from constructors, configure the viewport and ***add the extra pager, layer indicator, etc...
 /*! Adds local copies of all the interfaces in interfacespool.
@@ -2195,6 +2260,9 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		if (s->str && s->str[0]) {
 			if (doc && doc->Name(s->str)) {
 				XStoreName(app->dpy,window,doc->Name());
+				anXWindow *win=win_parent;
+				while (win && win->win_parent) win=win->win_parent;
+				if (win) XStoreName(app->dpy,win->window,doc->Name());
 			}
 		}
 		doc->Save();
@@ -2244,7 +2312,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
 		cout <<"ViewWindow got docTreeChange *** imp me!! IMPORTANT!!!"<<endl;
-		viewport->ClientEvent(e,mes);
+		((anXWindow *)viewport)->Needtodraw(1);
+		//viewport->ClientEvent(e,mes);
+		return 0;
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
 		//***
 		updatePagenumber();

@@ -127,10 +127,12 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int n() { if (spread) return 2; return 1; }
 	virtual Laxkit::anObject *object_e(int i);
 	virtual int curobjPage();
+
+	friend class ViewWindow;
 };
 
 //------------------------------- ViewWindow ---------------------------
-class ViewWindow : public LaxInterfaces::ViewerWindow
+class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtility
 {
  protected:
 	void setup();
@@ -151,6 +153,9 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual int init();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual void updatePagenumber();
+
+	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
 #endif
