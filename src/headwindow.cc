@@ -24,6 +24,8 @@
 
 #include "headwindow.h"
 #include "laidout.h"
+#include "viewwindow.h"
+#include "spreadeditor.h"
 	
 #include <iostream>
 using namespace std;
@@ -43,6 +45,9 @@ using namespace Laxkit;
 // 	virtual const char *whattype() { return "HeadWindow"; }
 //	virtual ~HeadWindow();
 //	virtual int init();
+//	virtual MenuInfo *GetMenu();
+//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+//	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 //};
 
 HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -57,6 +62,9 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	//  ArrangementEditor
 	//  StyleManager
 	//  ObjectTreeEditor
+	
+	win_xatts.background_pixel=app->coloravg(app->color_bg,0,.33);
+	space=4;
 }
 
 HeadWindow::~HeadWindow()
@@ -75,13 +83,72 @@ int HeadWindow::init()
 //	return 0;
 }
 
-//int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
-//{//***
-//	DBG cout <<"HeadWindow got message: "<<mes<<endl;
-//	if (!strcmp(mes,"paper size")) {
-//	} else if (!strcmp(mes,"paper name")) { 
-//	}
-//	return 1;
-//}
+MenuInfo *HeadWindow::GetMenu()
+{
+	//*** must make something like:
+	// Split
+	// Join
+	// Split...
+	// Change to >
+	// Float
+	// Stack on >
+	// ------
+	// (other things defined by curbox?...
+	// 
+	return SplitWindow::GetMenu();
+}
 
+/*! \todo *** handling of docTreeChange message is rather silly. there must be
+ * a more responsible way to make sure that all windows are synchronized properly
+ * to the project/document/data.
+ */
+int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+{//***
+	DBG cout <<"HeadWindow got message: "<<mes<<endl;
+	if (!strcmp(mes,"docTreeChange")) {
+		ViewWindow *view;
+		SpreadEditor *s;
+		XEvent e;
+		e.xclient.type=ClientMessage;
+		e.xclient.display=app->dpy;
+		e.xclient.message_type=XInternAtom(app->dpy,"docTreeChange",False);
+		e.xclient.format=32;
+	  
+		int yes=0;
+		for (int c=0; c<windows.n; c++) {
+			//if (callfrom==windows.e[c]->win) continue; //*** this hardly has effect as most are children of top
+			view=dynamic_cast<ViewWindow *>(windows.e[c]->win);
+			if (view) yes=1;
+			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win), s) yes=1;
+
+			if (yes){
+				e.xclient.window=windows.e[c]->win->window;
+				XSendEvent(app->dpy,windows.e[c]->win->window,False,0,&e);
+				DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
+				yes=0;
+			}
+		}
+	} //else if (!strcmp(mes,"paper name")) { 
+	//}
+	return SplitWindow::ClientEvent(e,mes);
+}
+
+//! Create split panes with names like SplitPane12, where the number is getUniqueNumber().
+anXWindow *HeadWindow::NewWindow(const char *wtype)
+{
+        if (!wtype) 
+                if (defaultwinfunc<0) return NULL;
+                else wtype=winfuncs.e[defaultwinfunc]->name;
+                
+        anXWindow *win=NULL;
+		char blah[100];
+		sprintf(blah,"SplitPane%lu",getUniqueNumber());
+        for (int c=0; c<winfuncs.n; c++) {
+                if (!strcmp(winfuncs.e[c]->name,wtype)) {
+                        win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style);
+                        return win;
+                }
+        }
+        return NULL;
+}
 

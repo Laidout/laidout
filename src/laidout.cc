@@ -43,6 +43,7 @@
 #include "viewwindow.h"
 #include "impositions/impositioninst.h"
 #include "headwindow.h"
+#include "spreadeditor.h"
 #include "version.h"
 #include <lax/lists.cc>
 
@@ -106,7 +107,7 @@ ViewWindow *newViewWindow(Document *newdoc)
 }
 
 /*! \ingroup lmisc
- * \brief Window generator for use in HeadWindow.
+ * \brief ViewWindow window generator for use in HeadWindow.
  */
 anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
@@ -114,7 +115,31 @@ anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
 }
 
 /*! \ingroup lmisc
- * \brief Create a new head split window, and fill it with a ViewWindow.
+ * \brief SpreadEditro window generator for use in HeadWindow.
+ */
+anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
+}
+
+/*! \ingroup lmisc
+ * \brief Create a new head split window, and fill it with available main windows.
+ *
+ * Current main windows are:
+ * <pre>
+ *  ViewWindow
+ *  SpreadEditor
+ *
+ *   TODO:
+ *  Icons/Menus with optional dialogs ***
+ *  FileOpener? ImageFileOpener->to drag n drop images? ***not imp
+ *  PlainTextEditor ***not imp
+ *  StoryEditor *** not imp
+ *  InterpreterConsole *** not imp, future:python, other?
+ *  StyleManager ***not imp
+ *  ObjectTreeEditor ***not imp
+ *  HelpWindow ***not imp, should it be? [About..] [About plugins..]
+ * </pre>
  */
 anXWindow *newHeadWindow(Document *doc=NULL)
 {
@@ -129,6 +154,7 @@ anXWindow *newHeadWindow(Document *doc=NULL)
 	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
 	head->Add(newViewWindow(doc));
 	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
+	head->AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
 	return head;
 }
 
@@ -275,8 +301,6 @@ int LaidoutApp::init(int argc,char **argv)
 	if (topwindows.n==0) // if no other windows have been launched yet, then launch newdoc window
 		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
-	//****this is a test:
-	addwindow(newHeadWindow());
 	
 	return 0;
 };
@@ -387,7 +411,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			if (!project) project=new Project;
 			project->docs.push(doc);
 			curdoc=doc;
-			addwindow(newViewWindow(doc));
+			addwindow(newHeadWindow(doc));
 		}
 	}
 	
@@ -508,7 +532,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	project->docs.push(newdoc);
 	delete[] saveas;
 
-	addwindow(newViewWindow(newdoc));
+	addwindow(newHeadWindow(newdoc));
 	return 0;
 }
 
@@ -526,7 +550,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
 	DBG cout <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
-	anXWindow *blah=newViewWindow(newdoc); 
+	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);
 	return 0;
 }

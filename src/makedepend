@@ -167,7 +167,8 @@ headwindow.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
-headwindow.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h laidout.h
+headwindow.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
+headwindow.o: /home/tom/p/sourceforge/laxkit/lax/menuinfo.h laidout.h
 headwindow.o: impositions/imposition.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
@@ -194,7 +195,6 @@ headwindow.o: /home/tom/p/sourceforge/laxkit/lax/checkbox.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/textbutton.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/button.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/menuselector.h
-headwindow.o: /home/tom/p/sourceforge/laxkit/lax/menuinfo.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/scrolledwindow.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/pan.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/strsliderpopup.h
@@ -301,8 +301,8 @@ laidout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewerwindow.h
 laidout.o: /home/tom/p/sourceforge/laxkit/lax/numinputslider.h
 laidout.o: /home/tom/p/sourceforge/laxkit/lax/numslider.h
 laidout.o: impositions/impositioninst.h impositions/imposition.h headwindow.h
-laidout.o: /home/tom/p/sourceforge/laxkit/lax/splitwindow.h version.h
-laidout.o: /home/tom/p/sourceforge/laxkit/lax/lists.cc
+laidout.o: /home/tom/p/sourceforge/laxkit/lax/splitwindow.h spreadeditor.h
+laidout.o: drawdata.h version.h /home/tom/p/sourceforge/laxkit/lax/lists.cc
 laidout.o: /home/tom/p/sourceforge/laxkit/lax/refcounter.cc
 laidout.o: /home/tom/p/sourceforge/laxkit/lax/refcounter.h
 laidout-more.o: laidout.h /home/tom/p/sourceforge/laxkit/lax/anxapp.h
