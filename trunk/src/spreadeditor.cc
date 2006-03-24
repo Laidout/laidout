@@ -305,7 +305,7 @@ PageLabel::~PageLabel()
 ////	//virtual int RBUp(int x,int y,unsigned int state);
 //	virtual int MouseMove(int x,int y,unsigned int state);
 //	virtual int CharInput(unsigned int ch,unsigned int state);
-////	//virtual int CharRelease(unsigned int ch,unsigned int state);
+//	virtual int CharRelease(unsigned int ch,unsigned int state);
 //	virtual int Refresh();
 ////	//virtual int DrawData(anObject *ndata,int info=0);
 ////	//virtual int UseThis(anObject *newdata,unsigned int); // assumes not use local
@@ -619,6 +619,8 @@ int SpreadInterface::MBUp(int x,int y,unsigned int state)
  * Otherwise figure
  * out which page button is down on. If shift, add to selection, if control, toggle selected
  * state of it.
+ * 
+ * \todo *** need updating of cursor as shift is pressed and released..
  */
 int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 {
@@ -635,7 +637,11 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 	}
 	
 	dragpage=pg;
-	Cursor cursor=XCreateFontCursor(app->dpy, XC_top_left_corner);
+	Cursor cursor;
+	//cursor=XCreateFontCursor(app->dpy, XC_top_left_corner);
+	
+	if ((state&LAX_STATE_MASK)==0) cursor=XCreateFontCursor(app->dpy, XC_right_side);
+	else cursor=XCreateFontCursor(app->dpy, XC_exchange);
 	XDefineCursor(app->dpy, curwindow->window, cursor);
 	XFreeCursor(app->dpy, cursor);
 
@@ -659,6 +665,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	if (pg<0) {
 		 // do not drop page anywhere
 		 //*** in the future this will be something like pop page into limbo?
+		dragpage=-1;
 		return 0;
 	}
 	
@@ -666,6 +673,8 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	DBG cout <<"*** swap "<<dragpage<<" to position "<<pg<<endl;
 	if ((state&LAX_STATE_MASK)==0) SlidePages(dragpage,pg);
 	else if ((state&LAX_STATE_MASK)==ShiftMask) SwapPages(dragpage,pg);
+
+	dragpage=-1;
 	
 	return 0;
 }
@@ -872,6 +881,18 @@ void SpreadInterface::Center(int w)
 	dp->Center(bb.minx,bb.maxx,bb.miny,bb.maxy);
 }
 
+/*! Switch to slide cursor when shift up.
+ */
+int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
+{
+	if (ch==LAX_Shift && dragpage>=0) {
+		Cursor cursor=XCreateFontCursor(app->dpy, XC_right_side);
+		XDefineCursor(app->dpy, curwindow->window, cursor);
+		XFreeCursor(app->dpy, cursor);
+	}
+	return 1;
+}
+
 //! Key presses.
 /*!  ' '    Center with all little spreads in view
  *   'm'    toggle mark of current page
@@ -881,7 +902,11 @@ void SpreadInterface::Center(int w)
  */
 int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 {
-	if (ch==' ' && (state&LAX_STATE_MASK)==0) {
+	if (ch==LAX_Shift && dragpage>=0) {
+		Cursor cursor=XCreateFontCursor(app->dpy, XC_exchange);
+		XDefineCursor(app->dpy, curwindow->window, cursor);
+		XFreeCursor(app->dpy, cursor);
+	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
 		Center(1);
 		needtodraw=1;
 		return 0;
