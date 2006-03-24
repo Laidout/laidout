@@ -97,7 +97,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 //	//virtual int RBUp(int x,int y,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
 	virtual int CharInput(unsigned int ch,unsigned int state);
-//	//virtual int CharRelease(unsigned int ch,unsigned int state);
+	virtual int CharRelease(unsigned int ch,unsigned int state);
 	virtual int Refresh();
 //	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
 //	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
