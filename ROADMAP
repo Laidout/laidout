@@ -27,37 +27,43 @@ VERSION 0.01
 VERSION 0.1
 -----------
 (done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
-(done) Insert compile flag to turn off debug info dumped to cout
+(done) Insert some way to turn off debug info dumped to cout (done in a convoluted way, perhaps)
        A help button to popup a list of all the otherwise unmentioned key shortcuts
+	   an About button
        PathInterface should finally work right
        Linear Gradients
        Circle Gradients
        Color patches should work better than in 0.01
        Basic infrastructure for most things should be in place.
        This means some sort of basic scripting infrastructure,
+	   undo
        parent/child nesting and masking,
        interface for that: nesting, and grouping
-	   runaround area determination
+       runaround area determination
        Full color management implemented
        ObjectInterface for selecting and resizing multiple stuff
        PrintDialog
        Generic style edit window which allows:
          non-hacky new document box
          also means all things must define their styledefs
-       Overall windowing setup using Laxkit::SplitWindows, docking, etc.
+(done) Overall windowing setup using Laxkit::SplitWindows, 
+       Allowing for docking, floating, etc.
+	   plus configurable icon panel/menu system
 (done) from laxkit: replacement of 'datastack' should be complete, do same here
        CompositeImposition should be ready
        DumpImages within Arrangements, which are sort of a template of positions
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
-	   libintl support
+       libintl support
        PDF out
-	   start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
-	      of multipage-ness with SVG 1.2, or possibly to scribus also
+       start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
+          of multipage-ness with SVG 1.2, or possibly to scribus also
+       Of course, need copious testing by people who are not me
 
 
 VERSION 0.2
 -----------
+as full as possible: passepartout?,scribus?,svg out/in
 Freehand drawing with tablet support
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
