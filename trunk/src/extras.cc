@@ -101,12 +101,12 @@ int dumpImages(Document *doc, int startpage, const char *pathtoimagedir, int ima
  *
  * Returns the page index of the final page.
  */
-int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimages, int imagesperpage, int ddpi)
+int dumpImages(Document *doc, int startpage, const char **imagefiles, int nfiles, int imagesperpage, int ddpi)
 {
-	ImageData **images=new ImageData*[nimages];
+	ImageData **images=new ImageData*[nfiles];
 	int i=0,c;
 	Imlib_Image image;
-	for (c=0; c<nimages; c++) {
+	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
 		image=imlib_load_image(imagefiles[c]);
 		if (image) {
@@ -121,7 +121,7 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nimage
 	}
 	c=-1;
 	if (i) c=dumpImages(doc,startpage,images,i,imagesperpage,ddpi);
-	for (c=0; c<nimages; c++) // remove extraneous count
+	for (c=0; c<i; c++) // remove extraneous count
 		if (images[c]) images[c]->dec_count();
 	delete[] images;
 	return c;
@@ -178,8 +178,8 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		
 		 // figure out page characteristics: dpi, w, h, and scaling
 		s=1./dpi; 
-		if (outline) delete outline;
-		outline=doc->docstyle->imposition->GetPage(endpage,1);
+		if (outline) { outline->dec_count(); outline=NULL; }
+		outline=doc->docstyle->imposition->GetPage(endpage,0); //adds 1 count already
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//cout <<"  image("<<images[c]->object_id<<") "<<images[c]->filename<<": ww,hh:"<<
@@ -225,6 +225,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		n+=nn;
 		c+=nn-1; //the for loop adds on 1 more
 	} // end loop block for page
+	DBG cout <<"-----------------end dump images[]----------------"<<endl;
 	return endpage;
 }
 

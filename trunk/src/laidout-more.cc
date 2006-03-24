@@ -28,6 +28,7 @@
 #include "laidout.h"
 #include "viewwindow.h"
 #include "spreadeditor.h"
+#include "headwindow.h"
 
 #include <iostream>
 using namespace std;
@@ -36,8 +37,10 @@ using namespace std;
 using namespace Laxkit;
 
 //! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
-/*! \todo *** when finally i put all this in splitwindows, then this will have
- * to be changed accordingly
+/*! 
+ * \todo *** this function is ill-conceived!! could extend it to somehow say what has changed?
+ * like if object is added or removed, or simply moved to diff position... or pages added...
+ * or....
  */
 void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom)//callfrom=NULL
 {
@@ -55,6 +58,7 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom)//callfrom=NUL
 		view=dynamic_cast<ViewWindow *>(topwindows.e[c]);
 		if (view) yes=1;
 		else if (s=dynamic_cast<SpreadEditor *>(topwindows.e[c]), s) yes=1;
+		else if (dynamic_cast<HeadWindow *>(topwindows.e[c])) yes=1;
 
 		if (yes){
 			e.xclient.window=topwindows.e[c]->window;

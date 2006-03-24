@@ -40,14 +40,23 @@ using namespace LaxFiles;
 
 
 
+/*! \defgroup stylesandstyledefs Styles and StyleDefs
+ * 
+ * -------- Styles and StyleDefs -----------
+ * 
+ *  there are Style's and StyleDef's. StyleDef has a map of the names
+ *  of the style and of its fields. Style has actual instances of the 
+ *  various fields. Also, each Style can be based on some other Style. 
+ *  
+ *  For example you might have a character style \n
+ *    c1 = italic/bookman/10pt/red/etc., basedon=NULL\n
+ *  The StyleDef has field names (say) ItalicFlag/FaceName/Size/Color/etc.
+ *  Then say you want a style c2 exactly like c1, but bold too, then the only 
+ *  data actually stored in c2 is the BoldFlag, a pointer to c1, and a pointer
+ *  to the StyleDef.
+ *
+ */
 
-
-//TODO
-// 
-// settle the interface, prog, debug
-// 
-// Style is separate from number/Value system, so that laidout is not locked to
-// any one interpreter. ??? is this really necessary? just bite the bullet?
 
 
 //NOTES:
@@ -65,7 +74,7 @@ using namespace LaxFiles;
 
 //----------------------------- FieldPlace -----------------------------
 /*! \class FieldPlace
- * \brief Stack of field places. So "3.2.7" would translate into a stack with elements 3,2, and 7.
+ * \brief Stack of field places. So "3.2.7" would translate into a stack with elements 3, 2, and 7.
  *
  * Any invalid place is signified by -1, so if you try to get the value of a place that does
  * not exist, -1 is returned.
@@ -104,6 +113,7 @@ int FieldPlace::operator==(const FieldPlace &place) const
 	return 1;
 }
 
+//! Assignment operator. Flushes, and copies over place's stuff.
 FieldPlace &FieldPlace::operator=(const FieldPlace &place)
 {
 	flush();
@@ -130,8 +140,8 @@ FieldPlace &FieldPlace::operator=(const FieldPlace &place)
  * track of what fields and subfields change when a particular field is modified. 
  * Certain dialogs of Styles need that kind of feedback.
  *
- * Please note that the default PtrStack::push function is not redefined here. When
- * pushing an FieldPlace, the pointer is transfered (as opposed to copying the contents).
+ * Please note that the default Laxkit::PtrStack::push function is not redefined here. When
+ * pushing a FieldPlace, the pointer is transfered (as opposed to copying the contents).
  */
 //class FieldMask : public PtrStack<FieldPlace>
 //{
@@ -458,23 +468,6 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 
 //-----------------------------------------------------
 
-/*! \defgroup stylesandstyledefs Styles and StyleDefs
- * 
- * -------- Styles and StyleDefs -----------
- * 
- *  there are Style's and StyleDef's. StyleDef has a map of the names
- *  of the style and of its fields. Style has actual instances of the 
- *  various fields. Also, each Style can be based on some other Style. 
- *  
- *  For example you might have a character style \n
- *    c1 = italic/bookman/10pt/red/etc., basedon=NULL\n
- *  The StyleDef has field names (say) ItalicFlag/FaceName/Size/Color/etc.
- *  Then say you want a style c2 exactly like c1, but bold too, then the only 
- *  data actually stored in c2 is the BoldFlag, a pointer to c1, and a pointer
- *  to the StyleDef.
- *
- */
-
 //-------------------------- StyleDefinition/StyleManager -------------------------------
 //! A manager class to simplify addition of Styles and creation/deletion/duplication of Style instances.
 class StyleDefinition
@@ -509,6 +502,10 @@ class StyleDefinition
  * \ingroup stylesandstyledefs
  * \brief The definition of the elements of a Style.
  *
+ * \todo *** haven't worked on this code in quite a while, perhaps it could be somehow
+ * combined with the Laxkit::Attribute type of thing? but for that, still need to reason
+ * out a consistent Attribute definition standard...
+ * 
  * These things are used to autmatically create edit dialogs for any data. It also aids in
  * defining names and what they are for an interpreter. ***eventually include accepted functions, not
  * just variables??
@@ -989,11 +986,6 @@ void deleteFieldNode(FieldNode *fn)
 
 //------------------------------------- Style -------------------------------------------
 
-//****IMPORTANT there must be an easy setup that allows a redefined Style to 
-//**** easily change
-//****values when other values are changed, such as for constrained aspect ratios..
-//**** some default way to set/access fields that uses all the FieldNode/StyleDef mechanism. This would 
-//		be beneficial for scripting interface
 
 /*! \class Style
  * \ingroup stylesandstyledefs
@@ -1023,11 +1015,20 @@ void deleteFieldNode(FieldNode *fn)
  *
  *  Finally, derived classes should remember to define their own dump_out(FILE*,int) and
  *  dump_out_atts(Attribute*), required by class LaxFiles::DumpUtility.
+ *
+ *
+ * <pre>
+ *  ****IMPORTANT there must be an easy setup that allows a redefined Style to 
+ *  **** easily change
+ *  ****values when other values are changed, such as for constrained aspect ratios..
+ *  **** some default way to set/access fields that uses all the FieldNode/StyleDef mechanism. This would 
+ *  		be beneficial for scripting interface
+ * </pre>
  */
 /*! \var char *Style::stylename
  * \brief The name of the style.
  * 
- * Note this is not necessarily a variable name as seen by the interpreter, 
+ * Note this is not necessarily a variable name as seen by an interpreter, 
  * but it is an instance name.
  * It would be included in a list of available styles, like "Bold Body", and the
  * StyleDef name/Name might be "charstyle"/"Character Style"
@@ -1066,13 +1067,10 @@ void deleteFieldNode(FieldNode *fn)
 //class Style : public Laxkit::anObject
 //{
 // protected:
-//	char *stylename; // note this is not a variable name, but it is an instance, 
-//					 // it would be in a list of styles, like "Bold Body", and the
-//					 // StyleDef name/Name might be charstyle/"Character Style"
+//	char *stylename;
 //	StyleDef *styledef;
 //	Style *basedon;
-//	FieldMask fieldmask; // is mask of which values are defined in this Style, and would
-//						 // preempt fields from basedon
+//	FieldMask fieldmask; 
 // public:
 //	Style();
 //	Style(StyleDef *sdef,Style *bsdon,const char *nstn);
@@ -1111,6 +1109,7 @@ void deleteFieldNode(FieldNode *fn)
 ////	virtual char *getstring(const char *ext) { return NULL; }
 //};
 
+//! Start up with blank slate. All null variables.
 Style::Style()
 { 
 	basedon=NULL; 
@@ -1118,6 +1117,7 @@ Style::Style()
 	stylename=NULL; 
 }
 
+//! Set up with the given styledef, basedon and stylename.
 Style::Style(StyleDef *sdef,Style *bsdon,const char *nstn)
 { 
 	styledef=sdef; 
@@ -1126,6 +1126,9 @@ Style::Style(StyleDef *sdef,Style *bsdon,const char *nstn)
 	makestr(stylename,nstn); 
 }
 
+//! Destructor, currently just deletes stylename. styledef and based on assumed non-local.
+/*! \todo *** should implement some reference counting thing for Style and StyleDef..
+ */
 Style::~Style()
 {
 	if (stylename) delete[] stylename;
@@ -1137,6 +1140,10 @@ Style::~Style()
  * This is really in lieu of copy constructor, since one never always
  * knows what is down in the style.. duplicate() must create a whole copy,
  * not just the elements that subclasses know how to copy over.
+ *
+ * Usually, s could  be a subclass. In that case, the subclass would have called
+ * the based class duplicate() to fill in what the subclass didn't copy over.
+ * Otherwise, passing s==NULL means the style should create a new copy of itself.
  */
 //Style *Style::duplicate(Style *s)//s=NULL
 //{
@@ -1148,7 +1155,8 @@ Style::~Style()
 /*! If maketohere is not NULL, then the Style should create a suitable StyleDef instance
  *  and make *maketohere point to it, and also make styledef point to it, but only if 
  *  styledef is not already pointing to something. Usually this shouldn't happen, because
- *  calling GetStyleDef with maketohere not NULL should only be called to initialize the 
+ *  calling GetStyleDef with maketohere not NULL should only be called at program
+ *  or plugin startup to initialize the 
  *  Style instances of a pool which have their own idiosyncratic StyleDefs.
  *
  *  Derived classes need only redefine makeStyleDef() to make this function work properly.

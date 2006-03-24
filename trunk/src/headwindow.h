@@ -34,6 +34,9 @@ class HeadWindow : public Laxkit::SplitWindow
  	virtual const char *whattype() { return "HeadWindow"; }
 	virtual ~HeadWindow();
 	virtual int init();
+	virtual Laxkit::MenuInfo *GetMenu();
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 };
 
 #endif
