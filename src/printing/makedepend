@@ -25,6 +25,28 @@ pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
 pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h
 pscolorpatch.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 psfilters.o: psfilters.h
+psgradient.o: psgradient.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/gradientinterface.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/vectors.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/pancontroller.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/panuser.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/doublebbox.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedata.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/attributes.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/dump.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/rulerwin.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/scroller.h
+psgradient.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 psout.o: psout.h ../document.h ../styles.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
@@ -56,8 +78,8 @@ psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/patchinterface.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
 psout.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/somedataref.h
-psout.o: /home/tom/p/sourceforge/laxkit/lax/transformmath.h pscolorpatch.h
-psout.o: pspathsdata.h
+psout.o: /home/tom/p/sourceforge/laxkit/lax/transformmath.h psgradient.h
+psout.o: pscolorpatch.h pspathsdata.h
 pspathsdata.o: pspathsdata.h
 pspathsdata.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
 pspathsdata.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewportwindow.h

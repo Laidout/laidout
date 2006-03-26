@@ -1706,7 +1706,7 @@ void LaidoutViewport::Refresh()
  * <pre>
  * arrow keys reserved for interface use...
  * 
- * 'x'       toggle drawing of axes for each object
+ * 'D'       toggle drawing of axes for each object
  * 's'       toggle showing of the spread (shows only limbo)
  * 'm'       move current selection to another page, popus up a dialog ***imp me!
  * ' '       Center(), *** need center obj, page, spread, center+fit obj,page,spread,objcomponent
@@ -1748,7 +1748,10 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 	if (ViewportWindow::CharInput(ch,state)==0) return 0;
 
 	 // deal with all other LaidoutViewport specific stuff
-	if (ch=='s' && (state&LAX_STATE_MASK)==0) {
+	if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
+		if (!DeleteObject()) return 1;
+		return 0;
+	} else if (ch=='s' && (state&LAX_STATE_MASK)==0) {
 		if (showstate==0) showstate=1;
 		else showstate=0;
 		needtodraw=1;
@@ -1797,7 +1800,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 			if (CirculateObject(3,0,0)) needtodraw=1;
 			return 0;
 		}
-	} else if (ch=='x' && (state&LAX_STATE_MASK)==0) {
+	} else if (ch=='D' && (state&LAX_STATE_MASK)==ShiftMask) {
 		DBG cout << "----drawflags: "<<drawflags;
 		if (drawflags==DRAW_AXES) drawflags=DRAW_BOX;
 		else if (drawflags==DRAW_BOX) drawflags=DRAW_BOX|DRAW_AXES;

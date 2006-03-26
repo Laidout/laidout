@@ -27,15 +27,15 @@
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
-//#include <iostream>
-//using namespace std;
-//#define DBG 
+#include <iostream>
+using namespace std;
+#define DBG 
 
 
 //! Output postscript for a GradientData. ***imp me!!
 /*! 
  */
-void psGradient(FILE *f,ColorPatchData *g)
+void psGradient(FILE *f,GradientData *g)
 {
 	cout <<" *** GradientData ps out not implemented! "<<endl;
 	//fprintf(f,
