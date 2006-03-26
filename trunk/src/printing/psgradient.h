@@ -27,7 +27,7 @@
 
 #include <lax/interfaces/gradientinterface.h>
 
-void psColorPatch(FILE *f,LaxInterfaces::GradientData *g);
+void psGradient(FILE *f,LaxInterfaces::GradientData *g);
 
 
 #endif

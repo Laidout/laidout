@@ -400,8 +400,10 @@ Spread *NetImposition::PageLayout(int whichpage)
 	 // define max/min points
 	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
 		else newpath=npath;
-	spread->minimum=transform_point(newpath->m(),flatpoint(newpath->maxx-newpath->minx));
-	spread->maximum=transform_point(newpath->m(),flatpoint(newpath->maxy-newpath->miny));
+	spread->minimum=transform_point(newpath->m(),
+			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+	spread->maximum=transform_point(newpath->m(),
+			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
 
 	return spread;
 }

@@ -204,6 +204,11 @@ headwindow.o: /home/tom/p/sourceforge/laxkit/lax/colorbox.h interfaces.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/pathinterface.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/linestyle.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/fillstyle.h
+headwindow.o: viewwindow.h
+headwindow.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewerwindow.h
+headwindow.o: /home/tom/p/sourceforge/laxkit/lax/numinputslider.h
+headwindow.o: /home/tom/p/sourceforge/laxkit/lax/numslider.h spreadeditor.h
+headwindow.o: drawdata.h
 interfaces.o: interfaces.h /home/tom/p/sourceforge/laxkit/lax/lists.h
 interfaces.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
 interfaces.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
@@ -352,7 +357,8 @@ laidout-more.o: viewwindow.h
 laidout-more.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewerwindow.h
 laidout-more.o: /home/tom/p/sourceforge/laxkit/lax/numinputslider.h
 laidout-more.o: /home/tom/p/sourceforge/laxkit/lax/numslider.h spreadeditor.h
-laidout-more.o: drawdata.h
+laidout-more.o: drawdata.h headwindow.h
+laidout-more.o: /home/tom/p/sourceforge/laxkit/lax/splitwindow.h
 laidouttempinst.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
 newdoc.o: newdoc.h /home/tom/p/sourceforge/laxkit/lax/rowframe.h
 newdoc.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h

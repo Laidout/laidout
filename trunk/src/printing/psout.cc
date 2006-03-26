@@ -35,6 +35,7 @@
 #include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
 
+#include "psgradient.h"
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
 
@@ -149,7 +150,11 @@ void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 
 		fprintf(f,"grestore\n");
 	} else if (dynamic_cast<GradientData *>(obj)) {
-		cout <<" *** GradientData ps out not implemented! "<<endl;
+		fprintf(f,"gsave\n"
+				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		psGradient(f,dynamic_cast<GradientData *>(obj));
+		fprintf(f,"grestore\n");
 	} else if (dynamic_cast<ColorPatchData *>(obj)) {
 		fprintf(f,"gsave\n"
 				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
