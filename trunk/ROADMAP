@@ -31,7 +31,7 @@ VERSION 0.1
        A help button to popup a list of all the otherwise unmentioned key shortcuts
 	   an About button
        PathInterface should finally work right
-       Linear Gradients
+(done) Linear Gradients
        Circle Gradients
        Color patches should work better than in 0.01
        Basic infrastructure for most things should be in place.
@@ -59,16 +59,18 @@ VERSION 0.1
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also
        Of course, need copious testing by people who are not me
+	   When loading files from the command line, should understand: 'file:///path/to/it'
 
 
 VERSION 0.2
 -----------
-as full as possible: passepartout?,scribus?,svg out/in
+The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
+import/export as possible: passepartout (out is partially done)?,scribus?,svg
 Freehand drawing with tablet support
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
- layout inside any path and runaround facility.
- Also most likely means finally deciding on a rendering backend: cairo? antigrain? pango?
+  layout inside any path and runaround facility.
+Also most likely means finally deciding on a rendering backend: cairo? antigrain? pango?
 ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to have metapost sort of things
