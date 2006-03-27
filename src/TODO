@@ -23,8 +23,12 @@ Next: MUst have color management..., have to imp the color system....
 
 Define protocols for inter-window communication, and scripting integration...
 
+a help window?
+
 impositions should have final printing shift matrix? to temporarily remap any imposition
-to any paper size, possibly with stuff off paper.. the WhackedImposition
+to any paper size, possibly with stuff off paper.. 
+the WhackedImposition: have a single page data map to many papers (using different transforms),
+sometimes known as posterizing..
 
 splitwindow, main control panel... there are a few basic windows right now, but 
 they must fit into a whole window framework which still needs to be implemented with
