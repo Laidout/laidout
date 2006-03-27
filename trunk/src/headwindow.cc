@@ -65,6 +65,12 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	
 	win_xatts.background_pixel=app->coloravg(app->color_bg,0,.33);
 	space=4;
+
+	tooltip("With mouse in the gutter:\n"
+			"  control-left click Splits\n"
+			"  shift-left click Joins\n"
+			"  right click brings up menu"
+		);
 }
 
 HeadWindow::~HeadWindow()

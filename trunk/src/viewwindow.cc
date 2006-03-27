@@ -997,6 +997,10 @@ int LaidoutViewport::FindObject(int x,int y,
 	 
 	 // no object found, search over
 	firstobj.clear(); //this is a signal for future searches that end was reached
+	if (foundobj.obj) {
+		if (oc) *oc=&foundobj;
+		return -1;
+	} 
 	if (oc) *oc=NULL;
 	return 0; // search ended, found nothing
 }
@@ -1998,6 +2002,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	virtual int init();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual void updatePagenumber();
+//	virtual void SetParentTitle(const char *str);
 //
 //	virtual void dump_out(FILE *f,int indent) =0;
 //	virtual void dump_in_atts(Attribute *att) =0;
@@ -2262,10 +2267,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		if (!s) return 1;
 		if (s->str && s->str[0]) {
 			if (doc && doc->Name(s->str)) {
-				XStoreName(app->dpy,window,doc->Name());
-				anXWindow *win=win_parent;
-				while (win && win->win_parent) win=win->win_parent;
-				if (win) XStoreName(app->dpy,win->window,doc->Name());
+				SetParentTitle(doc->Name());
 			}
 		}
 		doc->Save();
@@ -2276,6 +2278,16 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		return 0;
 	}
 	return 1;
+}
+
+//! Set the title of the top level window containing this window.
+void ViewWindow::SetParentTitle(const char *str)
+{
+	if (!str) return;
+	XStoreName(app->dpy,window,str);
+	anXWindow *win=win_parent;
+	while (win && win->win_parent) win=win->win_parent;
+	if (win) XStoreName(app->dpy,win->window,str);
 }
 
 //! Make the pagenumber label be correct.

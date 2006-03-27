@@ -153,6 +153,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	virtual int init();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual void updatePagenumber();
+	virtual void SetParentTitle(const char *str);
 
 	virtual void dump_out(FILE *f,int indent);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
