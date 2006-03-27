@@ -37,15 +37,52 @@ using namespace std;
  */
 void psGradient(FILE *f,GradientData *g)
 {
-	cout <<" *** GradientData ps out not implemented! "<<endl;
-	//fprintf(f,
-			//"<<"
-			//"    /ShadingType  7\n"
-			//"    /ColorSpace  /DeviceRGB\n"
-			//"    /DataSource  [\n"
-			//"      0               %%  edge flag, 0==start a new patch\n"
-			//"    ]\n"
-			//">> shfill\n",
-			//);
-
+	if (g->style&GRADIENT_RADIAL) {
+		cout <<" *** GradientData radial ps out not implemented! "<<endl;
+	} else {
+		int c;
+		double clen=g->colors[g->colors.n-1]->t-g->colors[0]->t;
+		fprintf(f,"\n\n");
+		for (c=1; c<g->colors.n; c++) {
+			fprintf(f,"/gradientf%d <<\n"
+					  "  /FunctionType 2\n"
+					  "  /Domain [0 1]\n"
+					  "  /C0 [%.10g %.10g %.10g]\n"
+					  "  /C1 [%.10g %.10g %.10g]\n"
+					  "  /N 1\n"
+					  ">> def\n\n",
+					    c, 
+						g->colors.e[c-1]->red/255.0, g->colors.e[c-1]->green/255.0, g->colors.e[c-1]->blue/255.0, 
+						g->colors.e[c  ]->red/255.0, g->colors.e[c  ]->green/255.0, g->colors.e[c  ]->blue/255.0
+					);
+		}
+		fprintf(f,
+				"<<\n"
+				"    /ShadingType  2\n"
+				"    /ColorSpace  /DeviceRGB\n"
+				"    /Coords [ %.10g 0 %.10g 0]\n",
+				  g->colors.e[0]->t, g->colors.e[g->colors.n-1]->t);
+		fprintf(f,
+				"    /BBox   [ %.10g %.10g %.10g %.10g ]\n",//[l b r t]
+				  g->colors.e[0]->t, -fabs(g->v), g->colors.e[g->colors.n-1]->t, fabs(g->v));
+		fprintf(f,
+				"    /Function <<\n"
+				"      /FunctionType 3\n"
+				"      /Functions [");
+		for (c=1; c<g->colors.n; c++) fprintf(f,"gradientf%d ",c);
+		fprintf(f,
+				"]\n"
+				"      /Domain [0 1]\n"
+				"      /Bounds [");
+		for (c=1; c<g->colors.n-1; c++) fprintf(f,"%.10g ", (g->colors.e[c]->t-g->colors.e[0]->t)/clen);
+		fprintf(f,
+				"]\n"
+				"      /Encode [");
+		for (c=1; c<g->colors.n; c++) fprintf(f,"0 1 ");
+		fprintf(f,
+				"]\n"
+				"    >>\n"
+				">> shfill\n"
+			);
+	}
 }
