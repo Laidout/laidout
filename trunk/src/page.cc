@@ -144,7 +144,7 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 }
 
 
- //! Return a pointer to a new StyleDef class with the PageStyle description.
+ //! Return a pointer to a new local StyleDef class with the PageStyle description.
 StyleDef *PageStyle::makeStyleDef()
 {
 	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);

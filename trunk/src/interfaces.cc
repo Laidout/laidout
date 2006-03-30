@@ -56,7 +56,8 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(new ImageInterface(2,NULL),1);
 	existingpool->push(new PathInterface(1,NULL,NULL),1); //2nd null is pathop pool
 	GradientInterface *gi=new GradientInterface(3,NULL);
-	gi->createv=1;
+	gi->createv=flatpoint(1,0);
+	gi->creater1=gi->creater2=1;
 	existingpool->push(gi,1);
 	existingpool->push(new ColorPatchInterface(4,NULL),1);
 	existingpool->push(new RectInterface(5,NULL),1);
