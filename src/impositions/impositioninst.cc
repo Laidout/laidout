@@ -246,6 +246,43 @@ Style *Singles::duplicate(Style *s)//s=NULL
 StyleDef *Singles::makeStyleDef()
 {
 	return NULL;
+
+//	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
+//	StyleDef *sd=new StyleDef(NULL,"singlesstyle","Singles",
+//			"Imposition of single pages","Imposition of single pages",STYLEDEF_FIELDS);
+//
+//	//int StyleDef::push(const char *nfield,const char *ttip,const char *ndesc,StyleDef *nfields,unsigned int fflags);
+//	sd->push("insetl",
+//			"Left Inset",
+//			"How much a page is inset in a paper on the left",
+//			NULL,
+//			STYLEDEF_REAL,0);
+//	sd->push("insetr",
+//			"Right Inset",
+//			"How much a page is inset in a paper on the right",
+//			NULL,
+//			STYLEDEF_REAL,0);
+//	sd->push("insett",
+//			"Top Inset",
+//			"How much a page is inset in a paper from the top",
+//			NULL,
+//			STYLEDEF_REAL,0);
+//	sd->push("insetb",
+//			"Bottom Inset",
+//			"How much a page is inset in a paper from the bottom",
+//			NULL,
+//			STYLEDEF_REAL,0);
+//	sd->push("tilex",
+//			"Tile X",
+//			"How many to tile horizontally",
+//			NULL,
+//			STYLEDEF_INT,0);
+//	sd->push("tiley",
+//			"Tile Y",
+//			"How many to tile vertically",
+//			NULL,
+//			STYLEDEF_INT,0);
+//	return sd;
 }
 
 //! Create necessary pages based on default pagestyle

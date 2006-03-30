@@ -2144,6 +2144,8 @@ int ViewWindow::init()
 		win_sizehints->flags=USPosition|USSize;
 	}
 	
+	AddNull();//makes the status bar take up whole line.
+	
 	anXWindow *last=NULL;
 	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newPageNumber",

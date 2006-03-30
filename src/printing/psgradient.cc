@@ -64,10 +64,10 @@ void psGradient(FILE *f,GradientData *g)
 			"    /ColorSpace  /DeviceRGB\n",
 			  (g->style&GRADIENT_RADIAL)?3:2);
 	if (g->style&GRADIENT_RADIAL) fprintf(f,"    /Coords [ %.10g 0 %.10g %.10g 0 %.10g ]\n",
-			  g->p, fabs(g->p-g->colors[0]->t), //x0, r0
-			  g->p+g->v, fabs(g->p+g->v-g->colors[g->colors.n-1]->t)); //x1, r1
+			  g->p1, fabs(g->r1), //x0, r0
+			  g->p2, fabs(g->r2)); //x1, r1
 	else fprintf(f,"    /Coords [ %.10g 0 %.10g 0]\n",
-			  g->colors.e[0]->t, g->colors.e[g->colors.n-1]->t);
+			  g->p1, g->p2);
 
 	fprintf(f,
 			"    /BBox   [ %.10g %.10g %.10g %.10g ]\n",//[l b r t]
