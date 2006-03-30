@@ -51,5 +51,5 @@ uninstall:
 
 .PHONY: all laidout clean docs install uninstall
 clean:
-	rm laidout *.o
+	cd src && $(MAKE) clean
 	
