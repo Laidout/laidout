@@ -4,7 +4,7 @@
 ##
 ## This is where the Laxkit header files are
 ##
-#LAXDIR=/usr/local/include/laxkit-0.0.2/lax
-LAXDIR=/home/tom/p/sourceforge/laxkit/lax
+LAXDIR=/usr/local/include/laxkit-0.0.2/lax
 
 
+LAXIDIR=$(LAXDIR)/interfaces
