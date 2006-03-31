@@ -3,12 +3,8 @@ LAIDOUT ROADMAP
 Things to do before the next release.
 This is a very rough draft of a roadmap, and is by no means the final word.
 
-General
--------
-Make an RSS feed.. can use sourceforge news thing?
 
-
-VERSION 0.01
+VERSION 0.01 -- released 12 March 2006!
 ------------
 (done) Clean up web page a bit.
 (done) TILING MUST WORK!!!!!!! for booklets also 
@@ -23,57 +19,71 @@ VERSION 0.01
 (done) Add and Delete Page buttons
 (done) Throw together a quick key-stroke cheat sheet
 
+VERSION 0.02
+------------
+(done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
+(done) Insert some way to turn off debug info dumped to cout (done in a convoluted way, perhaps)
+(done) Linear Gradients edit, save, and printout
+(done) Circle Gradients edit, save, and printout
+(done) Color patches should work better than in 0.01
+(done) Overall windowing setup using Laxkit::SplitWindows, 
+(done) from laxkit: replacement of 'datastack' should be complete, do same here
+       ObjectInterface for selecting and resizing multiple stuff
+       Save/Save as dialog box
+	   Make deb package
+	   extremely basic print dialog: print to file (ask on overwrite) or send via shell command
+	   make the directory spot in viewer keep updated current directory
+	   path printing should be use the linestyle, filling will have to wait for 0.1
 
 VERSION 0.1
 -----------
-(done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
-(done) Insert some way to turn off debug info dumped to cout (done in a convoluted way, perhaps)
+       Of course, need copious testing by people who are not me.
        A help button to popup a list of all the otherwise unmentioned key shortcuts
-	   an About button
+       an About button
        PathInterface should finally work right
-(done) Linear Gradients
-       Circle Gradients
-       Color patches should work better than in 0.01
        Basic infrastructure for most things should be in place.
        This means some sort of basic scripting infrastructure,
-	   undo
+	   command prompt window
+       undo
        parent/child nesting and masking,
        interface for that: nesting, and grouping
        runaround area determination
        Full color management implemented
-       ObjectInterface for selecting and resizing multiple stuff
        PrintDialog
-       Generic style edit window which allows:
-         non-hacky new document box
-         also means all things must define their styledefs
-(done) Overall windowing setup using Laxkit::SplitWindows, 
+       Generic style edit window
+       non-hacky new document box
+       also means all things must define their styledefs
        Allowing for docking, floating, etc.
-	   plus configurable icon panel/menu system
-(done) from laxkit: replacement of 'datastack' should be complete, do same here
+       plus configurable icon panel/menu system
        CompositeImposition should be ready
        DumpImages within Arrangements, which are sort of a template of positions
+          perhaps have image open window? drag and drop in images? that would be AWESOME
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
        PDF out
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also
-       Of course, need copious testing by people who are not me
-	   When loading files from the command line, should understand: 'file:///path/to/it'
+       When loading files from the command line, should understand: 'file:///path/to/it'
+	   NetImposition needs beefing up: import/export net, build net, interactive unwrapper
 
 
 VERSION 0.2
 -----------
+Bezier color patch freeform, rather than just grid.
+Bezier grid patch with image, rather than color
 The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
+Possibly allow function gradients, and redefining the functions for the ps gradients..
 import/export as possible: passepartout (out is partially done)?,scribus?,svg
 Freehand drawing with tablet support
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
   layout inside any path and runaround facility.
-Also most likely means finally deciding on a rendering backend: cairo? antigrain? pango?
+Also most likely means finally deciding on a rendering backend: cairo? antigrain? freetype/pango?
 ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to have metapost sort of things
+Allow applying user functions to the gradients?
 
 
 VERSION 0.3

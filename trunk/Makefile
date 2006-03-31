@@ -23,7 +23,7 @@ INSTALL=install -D
 
 ##----------- you shouldn't have to modify anything below here --------------
 
-LAIDOUTVERSION=0.01
+LAIDOUTVERSION=pre-0.02
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: 
@@ -46,10 +46,14 @@ uninstall:
 	rm -f $(BINDIR)/laidout
 	rm -f $(BINDIR)/$(LAIDOUTNAME)
 
+hidegarbage:
+	cd src && $(MAKE) hidegarbage
+
+unhidegarbage:
+	cd src && $(MAKE) unhidegarbage
 
 
-
-.PHONY: all laidout clean docs install uninstall
+.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage
 clean:
 	cd src && $(MAKE) clean
 	

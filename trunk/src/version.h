@@ -23,5 +23,5 @@
 //
 
 
-#define LAIDOUT_VERSION "0.01"
+#define LAIDOUT_VERSION "pre-0.02"
 
