@@ -8,6 +8,8 @@
  # Where to install stuff, currently:
  #   prefix/bin
 #PREFIX=/usr/local
+ # use this one for dpkg-buildpackage:
+#PREFIX=$(DESTDIR)/usr
 PREFIX=testinstall
 
 
