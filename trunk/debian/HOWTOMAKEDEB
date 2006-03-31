@@ -1,0 +1,33 @@
+note to self: 
+MAKING LAIDOUT DEB PACKAGE
+----------------------
+(if anyone has a better way of doing this, let me know, I'm new at this)
+
+1. ----Get source------
+ svn export http://svn.sourceforge.net/svnroot/laidout/(whichever) laidout-(version)
+ tar cjv (the dir) > laidout-version.tar.bz2 so dpkg-buildpackage makes a proper diff compared to svn source
+
+ For dev snapshots, the version should be number-date, so like 0.02-20060331
+
+2. ----modify source---
+ make sure version number is correct in any source files that refer to it, currently:
+  debian/changelog
+  debian/laidout.1              :Version ****, for laying out books
+  docs/doxygen/laidoutintro.txt :-- Version ***** --\n
+  docs/Doxyfile                 :PROJECT_NUMBER         = *****
+  Makefile                      :LAIDOUTVERSION=****
+  README                        :LAIDOUT Version *****
+  src/version.h                 :#define LAIDOUT_VERSION "****"
+ 
+ make sure Makefile-toinclude points to correct laxkit headers directory
+ make sure Makefile has prefix=$(DESTDIR)/usr
+
+3. ---hide the debugging garbage---
+ make hidegarbage 
+ (make sure same is done for laxkit, as Laidout currently statically
+  links against laxkit)
+ 
+
+4. ---build the package---
+dpkg-buildpackage -rfakeroot
+
