@@ -38,6 +38,7 @@
 #include "laidout.h"
 #include "extras.h"
 #include "drawdata.h"
+#include "helpwindow.h"
 
 #include <iostream>
 using namespace std;
@@ -2421,7 +2422,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
  * '>'     next page
  * ^'s'    save file
  * ^+'s'   save as -- just change the file name?? (not imp)
- * F1      popup new spread editor window
+ * F5      popup new spread editor window
  *
  * 'r'     ---for debugging, does system call: "more /proc/(pid)/status"
  * </pre>
@@ -2484,6 +2485,9 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask|ShiftMask) { //reset document
 		//***
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
+		app->addwindow(new HelpWindow());
+		return 0;
+	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {
 		//*** popup a SpreadEditor
 		char blah[30+strlen(doc->Name())+1];
 		sprintf(blah,"Spread Editor for %s",doc->Name());
