@@ -23,6 +23,7 @@ objs= \
 	document.o \
 	interfaces.o \
 	headwindow.o \
+	helpwindow.o \
 	newdoc.o \
 	objectcontainer.o \
 	saveppt.o \

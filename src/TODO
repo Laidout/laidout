@@ -18,6 +18,9 @@
  
  
 
+printing out transparent images suffers same way as inkscape, in that some mystery
+background color is put where it should show through.. need to either use ghostscript
+transparent image abilities, or figure out some sort of masking..
 
 Next: MUst have color management..., have to imp the color system....
 
@@ -30,7 +33,7 @@ to any paper size, possibly with stuff off paper..
 the WhackedImposition: have a single page data map to many papers (using different transforms),
 sometimes known as posterizing..
 
-splitwindow, main control panel... there are a few basic windows right now, but 
+main control panel... there are a few basic windows right now, but 
 they must fit into a whole window framework which still needs to be implemented with
 Laxkit::SplitWindow and Laxkit::TabbedMenuSelector or whatever it'll be called!!!
 

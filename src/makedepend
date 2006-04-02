@@ -209,6 +209,19 @@ headwindow.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/viewerwindow.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/numinputslider.h
 headwindow.o: /home/tom/p/sourceforge/laxkit/lax/numslider.h spreadeditor.h
 headwindow.o: drawdata.h
+helpwindow.o: helpwindow.h /home/tom/p/sourceforge/laxkit/lax/messagebox.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/rowframe.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/anxapp.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/anobject.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/misc.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/lists.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/laxdefs.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/fontmanager.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/strmanip.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/boxarrange.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/mesbar.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/textbutton.h
+helpwindow.o: /home/tom/p/sourceforge/laxkit/lax/button.h
 interfaces.o: interfaces.h /home/tom/p/sourceforge/laxkit/lax/lists.h
 interfaces.o: /home/tom/p/sourceforge/laxkit/lax/interfaces/aninterface.h
 interfaces.o: /home/tom/p/sourceforge/laxkit/lax/displayer.h
@@ -611,4 +624,5 @@ viewwindow.o: papersizes.h newdoc.h
 viewwindow.o: /home/tom/p/sourceforge/laxkit/lax/checkbox.h
 viewwindow.o: /home/tom/p/sourceforge/laxkit/lax/textbutton.h
 viewwindow.o: /home/tom/p/sourceforge/laxkit/lax/button.h interfaces.h
-viewwindow.o: extras.h
+viewwindow.o: extras.h helpwindow.h
+viewwindow.o: /home/tom/p/sourceforge/laxkit/lax/messagebox.h
