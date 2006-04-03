@@ -28,22 +28,25 @@ VERSION 0.02
 (done) Color patches should work better than in 0.01
 (done) Overall windowing setup using Laxkit::SplitWindows, 
 (done) from laxkit: replacement of 'datastack' should be complete, do same here
-       ObjectInterface for selecting and resizing multiple stuff
-       Save/Save as dialog box
-	   Make deb package
-	   extremely basic print dialog: print to file (ask on overwrite) or send via shell command
-	   make the directory spot in viewer keep updated current directory
-	   path printing should be use the linestyle, filling will have to wait for 0.1
+(done) Popup tool selector
+(done) ObjectInterface for resizing and shearing
+       Make Save/Save As dialog box suck less: 'test/1.doc' should mean cd test, save '1.doc'
+(done) Make it easy to make deb packages from source
+       extremely basic print dialog: print to file (ask on overwrite) or send via shell command
+(done) make the directory spot in viewer keep updated current directory
+       path printing should be using the linestyle, filling will have to wait for a future version
+       debug SpreadEditor thumbnail updating
+(done) A help button to popup a list of all the otherwise unmentioned key shortcuts
 
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
-       A help button to popup a list of all the otherwise unmentioned key shortcuts
        an About button
+       ObjectInterface for selecting and resizing multiple stuff
        PathInterface should finally work right
        Basic infrastructure for most things should be in place.
        This means some sort of basic scripting infrastructure,
-	   command prompt window
+       command prompt window
        undo
        parent/child nesting and masking,
        interface for that: nesting, and grouping
@@ -61,11 +64,11 @@ VERSION 0.1
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
-       PDF out
+       PDF out, and/or use ghostscripts ability to do transparent images in postscript files
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also
        When loading files from the command line, should understand: 'file:///path/to/it'
-	   NetImposition needs beefing up: import/export net, build net, interactive unwrapper
+       NetImposition needs beefing up: import/export net, build net, interactive unwrapper
 
 
 VERSION 0.2

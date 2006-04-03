@@ -33,6 +33,7 @@
 #include <lax/colorbox.h>
 #include <cstdarg>
 
+#include "helpwindow.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
 #include "laidout.h"
@@ -63,24 +64,6 @@ void bboxout(DoubleBBox *bbox,const char *mes=NULL)
 }
 
 
-
-//typedef NumStack<int> ObjectContext;
-
-//----perhaps:
-//class ObjectContainer
-//{
-//	virtual int FindObject(anObject *obj, FieldPlace &where);
-//	virtual int DeleteObject(anObject *obj, FieldPlace &where);
-//	virtual int InsertObject(anObject *obj, int where);
-//	virtual int InsertObject(anObject *obj, FieldPlace &where);
-//	virtual int ValidateObject(LaidoutContext *loc);
-//	virtual int Set(anObject *obj,FieldPlace &where);
-//	virtual int Get(anObject *obj,FieldPlace &where);
-//};
-//Document : public ObjectContainer
-//Group : public ObjectContainer
-//Spread : public ObjectContainer
-//Page : public ObjectContainer
 
 //------------------------------- VObjContext ---------------------------
 /*! \class VObjContext
@@ -1738,6 +1721,7 @@ void LaidoutViewport::Refresh()
  */
 int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 {
+	
 	 // check these first, before asking interfaces
 	if (ch==' ') {
 		if ((state&LAX_STATE_MASK)==0) {
@@ -2108,9 +2092,11 @@ void ViewWindow::setup()
 	win_xatts.event_mask|=KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask;
 	win_xattsmask|=CWEventMask;
 	if (viewport) viewport->dp->NewBG(app->rgbcolor(255,255,255));
+
 	//***this should be making dups of interfaces stack? or set current tool, etc...
-	for (int c=0; c<laidout->interfacepool.n; c++) 
+	for (int c=0; c<laidout->interfacepool.n; c++) {
 		AddTool(laidout->interfacepool.e[c]->duplicate(),1,0);
+	}
 	SelectTool(0);
 	//AddWin(new LayerChooser);...
 }
@@ -2146,6 +2132,15 @@ int ViewWindow::init()
 	}
 	
 	AddNull();//makes the status bar take up whole line.
+	
+	StrSliderPopup *toolselector;
+	toolselector=new StrSliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, NULL,window,"viewtoolselector");
+	for (int c=0; c<tools.n; c++) {
+		toolselector->AddItem(tools.e[c]->whattype(),tools.e[c]->id);
+		DBG cout <<"make tool selector, "<<tools.e[c]->whattype()<<" "<<c<<": id="<<tools.e[c]->id<<endl;
+	}
+	toolselector->WrapWidth();
+	AddWin(toolselector);
 	
 	anXWindow *last=NULL;
 	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
@@ -2229,6 +2224,10 @@ int ViewWindow::init()
 	var3->tooltip("(undefined)");
 	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
+	tbut=new TextButton(this,"help",0, 0,0,0,0,1, NULL,window,"help","Help!");
+	tbut->tooltip("Popup a list of shortcuts");
+	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+
 	//**** add screen x,y
 	//		   real x,y
 	//         page x,y
@@ -2273,6 +2272,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 				SetParentTitle(doc->Name());
 			}
 		}
+		//**** ask to overwrite
 		doc->Save();
 		delete data;
 		char blah[strlen(doc->Name())+15];
@@ -2308,9 +2308,10 @@ void ViewWindow::updatePagenumber()
  *    newLayerNumber,
  *    newViewType, 
  *    importImage,
- *    dumpImages
- *    deletePage
- *    addPage
+ *    dumpImages,
+ *    deletePage,
+ *    addPage,
+ *    help (pops up a HelpWindow)
  *
  * \todo ***imp contextChange, sent from LaidoutViewport
  */
@@ -2332,6 +2333,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		cout <<"ViewWindow got docTreeChange *** imp me!! IMPORTANT!!!"<<endl;
 		((anXWindow *)viewport)->Needtodraw(1);
 		//viewport->ClientEvent(e,mes);
+		return 0;
+	} else if (!strcmp(mes,"help")) {
+		app->addwindow(new HelpWindow());
 		return 0;
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
 		//***
@@ -2371,6 +2375,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"newLayerNumber")) { // 
 		//((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]);
 		cout <<"***** new layer number.... *** imp me!"<<endl;
+		return 0;
+	} else if (!strcmp(mes,"viewtoolselector")) {
+		DBG cout <<"***** viewtoolselector change to id:"<<e->data.l[0]<<endl;
+		SelectTool(e->data.l[0]);
 		return 0;
 	} else if (!strcmp(mes,"newViewType")) {
 		 // must update labels have Spread [2-3]: 2
@@ -2414,6 +2422,13 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
+//! *** this is a dirty hack to keep loaddir updated, and should be removed
+int ViewWindow::event(XEvent *e)
+{
+	//*** here is a quick cheap, VERY dirty hack to keep loaddir updated:
+	if (strcmp(app->load_dir,loaddir->GetCText())) loaddir->SetText(app->load_dir);
+	return ViewerWindow::event(e);
+}
 
 /*! <pre>
  * left    prev tool, 
@@ -2435,10 +2450,17 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		DBG cout <<"....viewwindow says save.."<<endl;
 		if (strstr(doc->Name(),"untitled")==doc->Name() || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
 			 // launch saveas!!
+			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
+						//int xx,int yy,int ww,int hh,int brder,
+						//anXWindow *prev,Window nowner,const char *nsend,
+						//const char *newlabel,const char *newtext,unsigned int ntstyle,
+						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 			app->rundialog(new LineInput(NULL,"Save As...",
-						ANXWIN_DELETEABLE|LINP_ONTOP|LINP_CENTER|LINP_POPUP, 100,100,200,100,0, 
+						ANXWIN_CENTER|ANXWIN_DELETEABLE|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
+						100,100,200,100,0, 
 						NULL,window,"saveAsPopup",
-						"Enter new filename:",doc->Name()));
+						"Enter new filename:",doc->Name(),0,
+						0,0,5,5,3,3));
 		} else {
 			if (doc->Save()==0) {
 				char blah[strlen(doc->Name())+15];
@@ -2447,10 +2469,23 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 			} else GetMesbar()->SetText("Problem saving. Not saved.");
 		}
 		return 0;
-	} else if (ch==28) {  // left, prev tool
+	} else if (ch=='t' || ch=='T') {
+		//*** this is rather a hack..
+		ViewerWindow::CharInput(ch,state);
+		int c;
+		WinFrameBox *wb;
+		for (c=0; c<wholelist.n; c++) {
+			wb=dynamic_cast<WinFrameBox *>(wholelist.e[c]);
+			if (wb && wb->win && !strcmp(wb->win->win_title,"viewtoolselector"))  {
+				static_cast<StrSliderPopup *>(wb->win)->Select(curtool->id);
+				break;
+			}
+		}
+		return 0;
+	} else if (ch==LAX_Left) {  // left, prev tool
 		SelectTool(-2);
 		return 0;
-	} else if (ch==31) { //right, next tool
+	} else if (ch==LAX_Right) { //right, next tool
 		SelectTool(-1);
 		return 0;
 	} else if (ch=='<') { //prev page

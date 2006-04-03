@@ -58,6 +58,34 @@ HelpWindow::HelpWindow()
 {
 }
 
+/*! The default MessageBox::init() sets m[1]=m[7]=10000, which is supposed 
+ * to trigger a wrap to extent. However, if a window has a stretch of 2000, say
+ * like the main messagebar, then that window is stretched
+ * to that amount, which is silly. So, intercept this to be a more reasonable width.
+ */
+int HelpWindow::preinit()
+{
+	Screen *screen=DefaultScreenOfDisplay(app->dpy);
+	
+	m[1]=screen->width/2;
+	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+	//WrapToExtent: 
+	arrangeBoxes(1);
+	win_w=m[1];
+	win_h=m[7];
+
+	int redo=0;
+	if (win_h+2*(int)win_border>(int)screen->height) { 
+		win_h=screen->height-2*win_border;
+		redo=1;
+	}
+	if (win_w+2*(int)win_border>(int)screen->width) { 
+		win_w=screen->width-2*win_border;
+		redo=1;
+	}
+	return 0;
+}
+
 /*! Pops up a box with the QUICKREF and an ok button.
  */
 int HelpWindow::init()
@@ -66,6 +94,7 @@ int HelpWindow::init()
 	MessageBar *mesbar=new MessageBar(this,"helpmesbar",MB_LEFT|MB_TOP|MB_MOVE, 0,0,0,0,0,
 			"---- Laidout Quick key reference ----\n"
 			"\n"
+			"Press escape to get rid of this window.\n"
 			"The keys with a '***' next to them are not implemented yet.\n"
 			"\n"
 			"\n"
