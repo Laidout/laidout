@@ -32,6 +32,7 @@ class HelpWindow : public Laxkit::MessageBox
  	HelpWindow();
 	virtual ~HelpWindow() {}
  	virtual const char *whattype() { return "HelpWindow"; }
+	virtual int preinit();
 	virtual int init();
 	virtual int CharInput(unsigned int ch,unsigned int state);
 };
