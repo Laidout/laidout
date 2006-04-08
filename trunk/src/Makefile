@@ -10,7 +10,7 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
+LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng -lcups `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
 CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
 DEBUGFLAGS= -g -DDEBUG
 
@@ -31,6 +31,7 @@ objs= \
 	extras.o \
 	drawdata.o \
 	spreadeditor.o \
+	somedialogs.o \
 	laidout-more.o \
 	laidout.o 
 

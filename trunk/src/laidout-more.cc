@@ -37,7 +37,8 @@ using namespace std;
 using namespace Laxkit;
 
 //! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
-/*! 
+/*! Puts the callfrom->window in data.l[0]. 
+ * 
  * \todo *** this function is ill-conceived!! could extend it to somehow say what has changed?
  * like if object is added or removed, or simply moved to diff position... or pages added...
  * or....
@@ -51,6 +52,7 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom)//callfrom=NUL
 	e.xclient.display=app->dpy;
 	e.xclient.message_type=XInternAtom(dpy,"docTreeChange",False);
 	e.xclient.format=32;
+	e.xclient.data.l[0]=(callfrom?callfrom->window:0);
   
 	int yes=0;
 	for (int c=0; c<topwindows.n; c++) {

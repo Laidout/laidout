@@ -222,7 +222,7 @@ int *Spread::pagesFromSpread()
 				if (i<list.e[c2]) { list.push(i,c2); break; }
 				if (i==list.e[c2]) break;
 			}
-			if (c2==list.n) { list.push(i,c2); break; }
+			if (c2==list.n) { list.push(i,c2); }
 		}
 	}
 	DBG cout <<"pagesfromSpread list: ";

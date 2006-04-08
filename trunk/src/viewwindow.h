@@ -28,6 +28,7 @@
 #include <lax/interfaces/viewerwindow.h>
 #include <lax/numinputslider.h>
 #include <lax/lineedit.h>
+#include <lax/textbutton.h>
 #include <X11/extensions/Xdbe.h>
 #include "document.h"
 
@@ -91,6 +92,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int init();
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+
 	virtual int UseThisDoc(Document *ndoc);
 	
 	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
@@ -139,6 +142,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	Laxkit::NumInputSlider *pagenumber;
 	Laxkit::NumInputSlider *var1, *var2, *var3;
 	Laxkit::LineEdit *loaddir;
+	Laxkit::TextButton *pageclips;
  public:
 	Project *project;
 	Document *doc;

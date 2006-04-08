@@ -30,6 +30,7 @@
 #include "printing/psout.h"
 #include "version.h"
 #include <lax/attributes.h>
+#include <lax/fileutils.h>
 #include "laidout.h"
 
 
@@ -88,7 +89,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 	}
 }
 
-//! Write out saveas, then call imposition->dump(f,indent+2).
+//! Call imposition->dump(f,indent+2).
 void DocumentStyle::dump_out(FILE *f,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -135,6 +136,9 @@ DocumentStyle::~DocumentStyle()
  */
 /*! \var int Document::curpage
  * \brief The index into pages of the current page.
+ */
+/*! \var char Document::saveas
+ * \brief The full absolute path to the document.
  */
 //class Document : public ObjectContainer, public LaxFiles::DumpUtility
 //{
@@ -204,8 +208,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	numn=0;
 	notesorscripts=NULL;
 	curpage=-1;
-	saveas=NULL;
-	makestr(saveas,filename);
+	saveas=newstr(filename);
 	
 	docstyle=stuff;
 	if (docstyle==NULL) {
@@ -288,7 +291,9 @@ int Document::RemovePages(int start,int n)
 	if (start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
+		DBG cout << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
+		DBG cout << "---  Done removing page "<<start+c<<endl;
 	}
 	laidout->notifyDocTreeChanged();
 	return n;
@@ -329,9 +334,7 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 		return 3;
 	}
 
-	char *dir=get_current_dir_name();
-	DBG cout <<"....Saving document to "<<saveas<<" in "<<dir<<endl;
-	if (dir) free(dir);
+	DBG cout <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	dump_out(f,0);
@@ -367,6 +370,8 @@ int Document::Load(const char *file)
 	fclose(f);
 	
 	makestr(saveas,file);
+	if (saveas[0]!='/') full_path_for_file(saveas); 
+
 	if (!docstyle) docstyle=new DocumentStyle(NULL);
 	if (!docstyle->imposition) docstyle->imposition=newImposition("Singles");
 	if (pages.n==0) {
@@ -405,7 +410,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"saveas")) {
-			makestr(saveas,value);
+			makestr(saveas,value);//*** make sure saveas is abs path
 		} else if (!strcmp(name,"docstyle")) {
 			if (docstyle) delete docstyle;
 			docstyle=new DocumentStyle(NULL);
@@ -447,15 +452,22 @@ int Document::Name(const char *nname)
 {
 	if (!nname || !nname[0]) return 0;
 	makestr(saveas,nname);
+	if (saveas[0]!='/') full_path_for_file(saveas); 
 	return 1;
 }
 
-//! Returns saveas if it exists, else "untitled"
+//! Returns basename part of saveas if it exists, else "untitled"
+/*! Returns a pointer to a part of saveas, so calling code should immediately
+ * copy the returned string, lest saveas be reallocated, and the pointer point
+ * to trouble.
+ */
 const char *Document::Name()
 {
 	const char *nm=saveas;
-	if (!nm || nm && nm[0]=='\0') nm="untitled";
-	return nm;
+	if (!nm || nm && nm[0]=='\0') return "untitled";
+	char *bn=strrchr(saveas,'/');
+	if (bn) return bn+1;
+	return saveas;
 }
 
 //! Return the internal Page object corresponding to curpage.

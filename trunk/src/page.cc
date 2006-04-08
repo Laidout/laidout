@@ -79,9 +79,36 @@ extern RefCounter<anObject> objectstack;
 //	virtual double h() { return height; }
 //	virtual void dump_out(FILE *f,int indent);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	virtual int set(const char *flag, int newstate);
 //};
 
-/*! Recognizes 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
+//! Toggle a flag (-1) or set on (1) or off (0).
+/*! \todo ***this must check for if the style is local...
+ *
+ * Return the flag if it is set afterwards.*** beware int vs. uint
+ */
+int PageStyle::set(const char *flag, int newstate)
+{
+	if (!strcmp(flag,"marginsclip")) {
+		if (newstate==-1) flags^=MARGINS_CLIP;
+		else if (newstate==0) flags&=~MARGINS_CLIP;
+		else if (newstate==1) flags|=MARGINS_CLIP;
+		return flags&MARGINS_CLIP;
+	} else if (!strcmp(flag,"pageclips")) {
+		if (newstate==-1) flags^=PAGE_CLIPS;
+		else if (newstate==0) flags&=~PAGE_CLIPS;
+		else if (newstate==1) flags|=PAGE_CLIPS;
+		return flags&PAGE_CLIPS;
+	} else if (!strcmp(flag,"facingpagesbleed")) {
+		if (newstate==-1) flags^=FACING_PAGES_BLEED;
+		else if (newstate==0) flags&=~FACING_PAGES_BLEED;
+		else if (newstate==1) flags|=FACING_PAGES_BLEED;
+		return flags&FACING_PAGES_BLEED;
+	}
+	return -1;
+}
+
+/*! Recognizes 'pageclips', 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
 void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
@@ -502,21 +529,29 @@ void Page::dump_out(FILE *f,int indent)
  * 
  * These are used notably in the spreadeditor.
  *
- * *** later on should change this so that page width and height
- * are defined by some min/max, rather than origin to pagestyle->w(),h()
  */
 ImageData *Page::Thumbnail()
 {
 	if (!pagestyle) return NULL;
 	if (thumbmodtime>modtime) return thumbnail;
-	double w=pagestyle->w(),
-		   h=pagestyle->h();
+
+	DoubleBBox bbox;
+	int c;
+	for (c=0; c<layers.n; c++) {
+		layers.e[c]->FindBBox();
+		bbox.addtobounds(layers.e[c]->m(),layers.e[c]);
+	}
+	
+	double w=bbox.maxx-bbox.minx,
+		   h=bbox.maxy-bbox.miny;
 	h=h*100./w;
 	w=100.;
-	DBG cout <<"..----making thumbnail "<<w<<" x "<<h<<endl;
+	DBG cout <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
+	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
 	if (!thumbnail) thumbnail=new ImageData(); 
-	thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
-	thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
+	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
+	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
+	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
 	
 	Pixmap pix=XCreatePixmap(anXApp::app->dpy,DefaultRootWindow(anXApp::app->dpy),
 								(int)w,(int)h,XDefaultDepth(anXApp::app->dpy,0));
@@ -526,26 +561,27 @@ ImageData *Page::Thumbnail()
 	
 	 // setup dp to have proper scaling...
 	dp.NewTransform(1.,0.,0.,-1.,0.,0.);
-	dp.SetSpace(0,0,pagestyle->w(),pagestyle->h());
-	dp.SetView(0,0,pagestyle->w(),pagestyle->h());
 	dp.StartDrawing(pix);
+	dp.SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+	dp.Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
 		
 	dp.NewBG(255,255,255); //*** this should be the paper color for paper the page is on...
 	dp.NewFG(0,0,0);
-	dp.m()[4]=0;
-	dp.m()[5]=h;
-	dp.Newmag(w/pagestyle->w());
+	//dp.m()[4]=0;
+	//dp.m()[5]=2*h;
+	//dp.Newmag(w/(bbox.maxx-bbox.minx));
 	dp.ClearWindow();
 
-	flatpoint p;
-//	p=dp.realtoscreen(1,1);
-//	dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
-//	p=dp.realtoscreen(1,-1);
-//	dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
-//	p=dp.realtoscreen(-1,1);
-//	dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
-//	p=dp.realtoscreen(-1,-1);
-//	dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
+	//DBG flatpoint p;
+	//DBG p=dp.realtoscreen(1,1);
+	//DBG dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
+	//DBG p=dp.realtoscreen(1,-1);
+	//DBG dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
+	//DBG p=dp.realtoscreen(-1,1);
+	//DBG dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
+	//DBG p=dp.realtoscreen(-1,-1);
+	//DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
+	//DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
 
 	for (int c=0; c<layers.n; c++) {
 		//dp.PushAndNewTransform(layers.e[c]->m());
@@ -564,7 +600,6 @@ ImageData *Page::Thumbnail()
 	//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
 	XFreePixmap(anXApp::app->dpy,pix);
 	
-	DBG cout <<"==--- Done updating thumbnail.."<<endl;
 	imlib_context_set_drawable(d);
 	DBG cout <<"Thumbnail dump_out:"<<endl;
 	DBG thumbnail->dump_out(stdout,2);
@@ -573,6 +608,7 @@ ImageData *Page::Thumbnail()
 	DBG cout <<"  miny "<<thumbnail->miny<<endl;
 	DBG cout <<"  maxy "<<thumbnail->maxy<<endl;
 
+	DBG cout <<"==--- Done Page::updating thumbnail.."<<endl;
 	thumbmodtime=times(NULL);
 	return thumbnail;
 }

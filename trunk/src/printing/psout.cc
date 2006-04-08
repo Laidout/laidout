@@ -266,7 +266,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
 	return n;
 }
 
-//! Print a postscript file of doc to f.
+//! Print a postscript file of doc to already open f.
 /*! \ingroup postscript
  * Does not open or close f.
  *

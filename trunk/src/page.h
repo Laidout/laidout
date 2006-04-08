@@ -52,6 +52,7 @@ class PageStyle : public Style
 	virtual double h() { return height; }
 	virtual void dump_out(FILE *f,int indent);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual int set(const char *flag, int newstate);
 };
 
 //---------------------------- RectPageStyle ---------------------------------
