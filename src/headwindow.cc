@@ -48,11 +48,13 @@ using namespace Laxkit;
 //	virtual MenuInfo *GetMenu();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
+//	virtual void WindowGone(Laxkit::anXWindow *win);
 //};
 
+//! Constructor.
 HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
-		: SplitWindow(parnt,ntitle,nstyle|SPLIT_WITH_SAME,xx,yy,ww,hh,brder)
+		: SplitWindow(parnt,ntitle,nstyle|SPLIT_WITH_SAME|SPLIT_BEVEL,xx,yy,ww,hh,brder)
 {
 	//*** should fill with funcs for all known default main windows:
 	//  ViewWindow
@@ -75,6 +77,16 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 
 HeadWindow::~HeadWindow()
 {
+}
+
+//! Remove references to win.
+void HeadWindow::WindowGone(Laxkit::anXWindow *win)
+{
+	if (!win) return;
+	for (int c=0; c<windows.n; c++) {
+		if (windows.e[c]->win==win) windows.e[c]->win=NULL;
+	}
+	needtodraw=1;
 }
 
 //! Returns SplitWindow::init().
@@ -114,11 +126,16 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	if (!strcmp(mes,"docTreeChange")) {
 		ViewWindow *view;
 		SpreadEditor *s;
-		XEvent e;
-		e.xclient.type=ClientMessage;
-		e.xclient.display=app->dpy;
-		e.xclient.message_type=XInternAtom(app->dpy,"docTreeChange",False);
-		e.xclient.format=32;
+		XEvent ee;
+		ee.xclient.type=ClientMessage;
+		ee.xclient.display=app->dpy;
+		ee.xclient.message_type=XInternAtom(app->dpy,"docTreeChange",False);
+		ee.xclient.format=32;
+		ee.xclient.data.l[0]=e->data.l[0];
+		ee.xclient.data.l[1]=e->data.l[1];
+		ee.xclient.data.l[2]=e->data.l[2];
+		ee.xclient.data.l[3]=e->data.l[3];
+		ee.xclient.data.l[4]=e->data.l[4];
 	  
 		int yes=0;
 		for (int c=0; c<windows.n; c++) {
@@ -128,8 +145,8 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win), s) yes=1;
 
 			if (yes){
-				e.xclient.window=windows.e[c]->win->window;
-				XSendEvent(app->dpy,windows.e[c]->win->window,False,0,&e);
+				ee.xclient.window=windows.e[c]->win->window;
+				XSendEvent(app->dpy,windows.e[c]->win->window,False,0,&ee);
 				DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
 				yes=0;
 			}

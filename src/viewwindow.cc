@@ -31,8 +31,12 @@
 #include <lax/filedialog.h>
 #include <lax/refcounter.h>
 #include <lax/colorbox.h>
+#include <lax/fileutils.h>
+#include <lax/simpleprint.h>
 #include <cstdarg>
+#include <cups/cups.h>
 
+#include "printing/psout.h"
 #include "helpwindow.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
@@ -40,8 +44,10 @@
 #include "extras.h"
 #include "drawdata.h"
 #include "helpwindow.h"
+#include "somedialogs.h"
 
 #include <iostream>
+#include <sys/stat.h>
 using namespace std;
 
 #define DBG 
@@ -307,6 +313,8 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	virtual int init();
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int MouseMove(int x,int y,unsigned int state);
+//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+//
 //	virtual int UseThisDoc(Document *ndoc);
 //	
 //	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
@@ -352,7 +360,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	showstate=1;
 	backbuffer=0;
 	lfirsttime=1;
-	drawflags=DRAW_AXES;
+	//drawflags=DRAW_AXES;
+	drawflags=0;
 	doc=newdoc;
 	dp->NewTransform(1.,0.,0.,-1.,0.,0.); //***this should be adjusted for physical dimensions of monitor screen
 	
@@ -385,6 +394,19 @@ LaidoutViewport::~LaidoutViewport()
 
 	 //checkin limbo objects vie limbo's Group::flush()
 	limbo.flush();
+}
+
+/* \todo docTreeChange is a bit drastic.. del's spread every time
+ */
+int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
+{
+	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
+		if ((unsigned long)e->data.l[0]==window) return 0;
+		if (spread) { delete spread; spread=NULL; }
+		setupthings(curobjPage());
+		return 0;
+	}
+	return ViewportWindow::ClientEvent(e,mes);
 }
 
 //! Replace existing doc with this doc.
@@ -1212,7 +1234,7 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	
 	transformToContext(ectm,place,0);
 	transformlevel=place.n()-1;
-	if (curobj.spread()==0) curpage=NULL;
+	if (curobj.spread()==0 || !spread) curpage=NULL;
 	else {
 		if (curobj.spreadpage()>=0) {
 			curpage=spread->pagestack.e[curobj.spreadpage()]->page;
@@ -1446,7 +1468,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 
 //! Zoom and center various things on the screen
 /*! Default is center the current page (w==0).\n
- * w==0 Center page***fixme\n
+ * w==0 Center page\n
  * w==1 Center spread\n 
  * w==2 Center current selection group***imp me\n
  * w==3 Center current object ***imp me\n
@@ -1459,12 +1481,20 @@ void LaidoutViewport::Center(int w)
 	if (w==0) { // center page
 		 //find the bounding box in dp real units of the page in question...
 		int c=curobj.spreadpage();
-		dp->Center(spread->pagestack.e[c]->outline->m(),spread->pagestack.e[c]->outline);
-//		dp->Center(-.05*curpage->pagestyle->w(),1.05*curpage->pagestyle->w(), 
-//					-.05*curpage->pagestyle->h(),1.05*curpage->pagestyle->h());
+		DoubleBBox bbox;
+		bbox.setbounds(spread->pagestack.e[c]->outline);
+		double dw,dh;
+		dw=(bbox.maxx-bbox.minx)*.05;
+		dh=(bbox.maxy-bbox.miny)*.05;
+		bbox.minx-=dw;
+		bbox.maxx+=dw;
+		bbox.miny-=dh;
+		bbox.maxy+=dh;
+		dp->Center(spread->pagestack.e[c]->outline->m(),&bbox);
+		//dp->Center(m,spread->pagestack.e[c]->outline);
 		syncrulers();
 		needtodraw=1;
-	} else if (w==1) { // center spread *** this is broken..
+	} else if (w==1) { // center spread
 		double w=spread->path->maxx-spread->path->minx,
 		       h=spread->path->maxy-spread->path->miny;
 		dp->Center(spread->path->minx-.05*w,spread->path->maxx+.05*w, 
@@ -1527,7 +1557,7 @@ void LaidoutViewport::Refresh()
 		 //setup doublebuffer
 		if (!backbuffer) backbuffer=XdbeAllocateBackBufferName(app->dpy,window,XdbeBackground);
 		lfirsttime=0; 
-		Center(); 
+		Center(1); 
 	}
 	DBG cout <<"======= Refreshing LaidoutViewport..";
 	
@@ -1636,7 +1666,7 @@ void LaidoutViewport::Refresh()
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				 //remove clipping region
 				dp->clearclip();
-				XSetClipMask(dp->GetDpy(),dp->GetGC(),None);
+				//XSetClipMask(dp->GetDpy(),dp->GetGC(),None);
 			}
 
 			dp->PopAxes(); // remove page transform
@@ -2158,6 +2188,11 @@ int ViewWindow::init()
 	tbut->tooltip("Next spread");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
+	pageclips=new TextButton(this,"pageclips",BUTTON_TOGGLE, 0,0,0,0,1, NULL,window,"pageclips","Page Clips");
+	pageclips->tooltip("Whether pages clips its contents");
+	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
+	updatePagenumber();
+
 	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newLayerNumber",
 								"Layer: ",1,1,1); //*** get cur page, use those layers....
@@ -2242,6 +2277,8 @@ int ViewWindow::init()
  *  "new image"
  *  "saveAsPopup"
  * </pre>
+ *
+ * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
 int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 {
@@ -2264,20 +2301,169 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		}
 		delete data;
 		return 0;
+	} else if (!strcmp(mes,"reallysave")) {
+		 // save without overwrite check
+		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		if (!s) return 1;
+		
+		if (doc && doc->Name(s->str)) SetParentTitle(doc->Name());
+		doc->Save();
+		char blah[strlen(doc->Name())+15];
+		sprintf(blah,"Saved to %s.",doc->Name());
+		GetMesbar()->SetText(blah);
+		delete data;
+		return 0;
 	} else if (!strcmp(mes,"saveAsPopup")) {
 		StrSendData *s=dynamic_cast<StrSendData *>(data);
 		if (!s) return 1;
 		if (s->str && s->str[0]) {
-			if (doc && doc->Name(s->str)) {
-				SetParentTitle(doc->Name());
+			char *dir,*bname;
+			dir=s->str;
+			s->str=NULL;
+			bname=strrchr(dir,'/');
+			 // if there is a directory component, then cd to there first..
+			if (!bname) {
+				full_path_for_file(dir);
+				bname=strrchr(dir,'/');
 			}
+			if (bname) {
+				*bname='\0';
+				bname=newstr(bname+1);
+				if (chdir(dir)!=0) {
+					 // could not chdir;
+					char mes[50+strlen(dir)];
+					sprintf(mes,"File not saved: Could not change directory to \"%s\"",dir);
+					((LaidoutViewport *)viewport)->postmessage(mes);
+					delete data;
+					delete[] bname;
+					delete[] dir;
+					return 0;
+				}
+			} 
+			
+			 // now orig file is in dir/bname, make file be full path to file
+			char *file=newstr(dir);
+			if (file[strlen(file)-1]!='/') appendstr(file,"/");
+			appendstr(file,bname);
+			full_path_for_file(file);
+			
+			int c,err;
+			c=file_exists(file,1,&err);
+			if (c && c!=S_IFREG) {
+				 // has to be a regular file to overwrite
+				char mes[50];
+				sprintf(mes,"Cannot overwrite that type of file.");
+				((LaidoutViewport *)viewport)->postmessage(mes);
+				delete data;
+				delete[] bname;
+				delete[] dir;
+				delete[] file;
+				return 0;
+			}
+			 // file existed, so ask to overwrite ***
+			if (c) {
+				anXWindow *ob=new Overwrite(window,"reallysave", file);
+				app->rundialog(ob);
+			} else {
+				if (!is_good_filename(file)) {//***how does it know?
+					GetMesbar()->SetText("Illegal characters in file name. Not saved.");
+				} else {
+					 //set name in doc and headwindow
+					DBG cout <<"*** file by this point should be absolute path name:"<<file<<endl;
+					if (doc && doc->Name(file)) SetParentTitle(doc->Name());
+					doc->Save();
+					char blah[strlen(doc->Name())+15];
+					sprintf(blah,"Saved to %s.",doc->Name());
+					GetMesbar()->SetText(blah);
+				}
+			}
+
+			delete data;
+			if (bname) delete[] bname;
+			if (dir)   delete[] dir;
+			if (file)  delete[] file;
 		}
-		//**** ask to overwrite
-		doc->Save();
+		return 0;
+	} else if (!strcmp(mes,"reallyprintfile")) {
+		 // print to file without overwrite check 
+		 // *** hopping around with messages is not a
+		 // good overwrite protection
+		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		if (!s) return 1;
+		
+		if (!is_good_filename(s->str)) {
+			GetMesbar()->SetText("Illegal characters in file name. Not printed.");
+			delete data;
+			return 0;
+		} 
+		
+		FILE *f=fopen(s->str,"w");
+		if (f) {
+			mesbar->SetText("Printing to file, please wait....");
+			mesbar->Refresh();
+			XSync(app->dpy,False);
+			
+			psout(f,doc);
+			fclose(f);
+			
+			char tmp[21+strlen(s->str)];
+			sprintf(tmp,"Printed to %s.",s->str);
+			mesbar->SetText(tmp);
+		} else {
+			char tmp[21+strlen(s->str)];
+			sprintf(tmp,"Error printing to %s.",s->str);
+			mesbar->SetText(tmp);
+		}
+		cout << "----- ViewWindow Print to file: "<<s->str<<endl;
 		delete data;
-		char blah[strlen(doc->Name())+15];
-		sprintf(blah,"Saved to %s.",doc->Name());
-		GetMesbar()->SetText(blah);
+		return 0;
+	} else if (!strcmp(mes,"printfile")) {
+		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		if (!s) return 1;
+		if (s->info==1) {
+			 // overwrite protection
+			int c,err;
+			c=file_exists(s->str,1,&err);
+			if (c && c!=S_IFREG) {
+				 // has to be a regular file to overwrite
+				mesbar->SetText("Cannot overwrite that type of file.");
+				delete data;
+				return 0;
+			}
+			 // file existed, so ask to overwrite
+			if (c) {
+				anXWindow *ob=new Overwrite(window,"reallyprintfile", s->str);
+				app->rundialog(ob);
+				s->str=NULL;
+				delete data;
+				return 0;
+			}
+			 // else really print
+			DataEvent(s,"reallyprintfile");
+			return 0;
+		} else {
+			char *cm=newstr(s->str);
+			appendstr(cm," ");
+			//***investigate tmpfile() tmpnam tempnam mktemp
+			char tmp[256];
+			cupsTempFile(tmp,sizeof(tmp));
+			FILE *f=fopen(tmp,"w");
+			if (f) {
+				mesbar->SetText("Printing, please wait....");
+				mesbar->Refresh();
+				XSync(app->dpy,False);
+				psout(f,doc);
+				fclose(f);
+				appendstr(cm,tmp);
+				system(cm);
+				
+				mesbar->SetText("Doc sent to print.");
+			} else mesbar->SetText("Error printing.");
+			cout << "*** ViewWindow Printed to command: "<<cm<<endl;
+		}
+
+
+		delete data;
 		return 0;
 	}
 	return 1;
@@ -2294,16 +2480,21 @@ void ViewWindow::SetParentTitle(const char *str)
 }
 
 //! Make the pagenumber label be correct.
+/*! Also set the pageclips thing.
+ */
 void ViewWindow::updatePagenumber()
 {
+	int page=((LaidoutViewport *)viewport)->curobjPage();
 	pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
-	pagenumber->Select(((LaidoutViewport *)viewport)->curobjPage()+1);
+	pagenumber->Select(page+1);
+
+	pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
 }
 
 //! Deal with various indicator/control events
 /*! Accepts
  *    curcolor,
- *    docTreeChange *** imp me!,
+ *    docTreeChange,
  *    newPageNumber,
  *    newLayerNumber,
  *    newViewType, 
@@ -2311,9 +2502,9 @@ void ViewWindow::updatePagenumber()
  *    dumpImages,
  *    deletePage,
  *    addPage,
- *    help (pops up a HelpWindow)
+ *    help (pops up a HelpWindow),
+ *    pageclips
  *
- * \todo ***imp contextChange, sent from LaidoutViewport
  */
 int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
@@ -2330,9 +2521,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		
 		return 0;
 	} else if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
-		cout <<"ViewWindow got docTreeChange *** imp me!! IMPORTANT!!!"<<endl;
-		((anXWindow *)viewport)->Needtodraw(1);
-		//viewport->ClientEvent(e,mes);
+		cout <<"ViewWindow got docTreeChange *** imp updating helpers!!"<<endl;
+		viewport->ClientEvent(e,mes);
+		//*** must update little windows
 		return 0;
 	} else if (!strcmp(mes,"help")) {
 		app->addwindow(new HelpWindow());
@@ -2341,17 +2532,33 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//***
 		updatePagenumber();
 		return 0;
+	} else if (!strcmp(mes,"pageclips")) { // 
+		 //toggle pageclips
+		 //*** this sucks need to dup the style if necessary and
+		 //*** make it based on the old style
+		int c=((LaidoutViewport *)viewport)->curobjPage();
+		if (c>=0) {
+			doc->pages.e[c]->pagestyle->set("pageclips",-1);
+			pageclips->State(doc->pages.e[c]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
+		}
+		((anXWindow *)viewport)->Needtodraw(1);
+		return 0;
 	} else if (!strcmp(mes,"addPage")) { // 
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
 		int c=doc->NewPages(curpage+1,1); //add after curpage
-		if (c==0) GetMesbar()->SetText("Page added.");
+		if (c>=0) GetMesbar()->SetText("Page added.");
 			else GetMesbar()->SetText("Error adding page.");
 		return 0;
 	} else if (!strcmp(mes,"deletePage")) { // 
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
+		delete ((LaidoutViewport *)viewport)->spread;
+		((LaidoutViewport *)viewport)->spread=NULL;
 		int c=doc->RemovePages(curpage,1); //remove curpage
-		if (c==0) GetMesbar()->SetText("Page deleted.");
+		if (c==1) GetMesbar()->SetText("Page deleted.");
 			else GetMesbar()->SetText("Error deleting page.");
+		e->message_type=XInternAtom(app->dpy,"docTreeChange",False);
+		e->data.l[0]=0;
+		viewport->ClientEvent(e,"docTreeChange");
 		return 0;
 	} else if (!strcmp(mes,"newPageNumber")) { // 
 		if (e->data.l[0]>doc->pages.n) {
@@ -2393,7 +2600,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
 		app->rundialog(new FileDialog(NULL,"Import Image",
-					FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
 					0,0,500,500,0, window,"new image"));
 		return 0;
 	} else if (!strcmp(mes,"dumpImages")) {
@@ -2413,9 +2620,13 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
-		mesbar->SetText("Printing, please wait....");
-		if (!doc->Save(Save_PS)) mesbar->SetText("Printed to output.ps.");
-		else mesbar->SetText("Failed to print to output.ps");
+		app->rundialog(new SimplePrint(ANXWIN_CENTER|ANXWIN_DELETEABLE,window,"printfile"));
+
+		//mesbar->SetText("Printing, please wait....");
+		//mesbar->Refresh();
+		//XSync(app->dpy,False);
+		//if (!doc->Save(Save_PS)) mesbar->SetText("Printed to output.ps.");
+		//else mesbar->SetText("Failed to print to output.ps");
 		return 0;
 	}
 	

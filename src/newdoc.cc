@@ -171,7 +171,7 @@ int NewDocWindow::init()
 	int textheight=app->defaultfont->max_bounds.ascent+app->defaultfont->max_bounds.descent;
 	int linpheight=textheight+12;
 	TextButton *tbut;
-	MenuSelector *msel;
+	anXWindow *last;
 
 
 //	//AddWin(lineedit, w,ws,wg,h,valign); for horizontal rows
@@ -187,7 +187,6 @@ int NewDocWindow::init()
 	 // ------ General Directory Setup ---------------
 	 
 	int c,c2,o;
-	LineInput *linp;
 	saveas=new LineInput(this,"save as",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
 						NULL,window,"save as",
 			            "Save As:",NULL,0,
@@ -221,7 +220,8 @@ int NewDocWindow::init()
 			            "y:",(o&1?blah:blah2),0,
 			           100,0,1,1,3,3);
 	AddWin(papery, papery->win_w,0,50,50, linpheight,0,0,50);
-	
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+
 	 // -----Paper Name
     StrSliderPopup *popup;
 	popup=new StrSliderPopup(this,"paperName",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, papery,window,"paper name",5);
@@ -235,7 +235,7 @@ int NewDocWindow::init()
 	 // -----Paper Orientation
 	popup=new StrSliderPopup(this,"paperOrientation",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, popup,window,"orientation");
 	popup->AddItem("Portrait",0);
-	popup->AddItem("Landscape",0);
+	popup->AddItem("Landscape",1);
 	popup->Select(o&1?1:0);
 	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
@@ -251,7 +251,7 @@ int NewDocWindow::init()
 	 // ------------- Imposition ------------------
 	mesbar=new MessageBar(this,"mesbar 1.1",MB_MOVE, 0,0, 0,0, 0, "Imposition:");
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
-	impsel=new StrSliderPopup(this,"Imposition",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+	last=impsel=new StrSliderPopup(this,"Imposition",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 						numpages,window,"imposition");
 	for (c=0; c<laidout->impositionpool.n; c++)
 		impsel->AddItem(laidout->impositionpool.e[c]->Stylename(),c);
@@ -261,12 +261,17 @@ int NewDocWindow::init()
 
 	 // -------------- page size --------------------
 	
-	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, "pagesize:");
+	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
+			"\n\n(Unimplemented stuff follows,\nLook for it in future releases!)");
+	AddWin(mesbar, 2000,1950,0,50, mesbar->win_h,0,0,50);
+	
+	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
+			"pagesize:");
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
 
 	defaultpage=new CheckBox(this,"default",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						impsel,window,"check default", "default",5,5);
-	defaultpage->SetState(LAX_ON);
+						last,window,"check default", "default",5,5);
+	defaultpage->State(LAX_ON);
 	AddWin(defaultpage, defaultpage->win_w,0,0,50, linpheight,0,0,50);
 	
 	custompage=new CheckBox(this,"custom",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
@@ -274,13 +279,14 @@ int NewDocWindow::init()
 	AddWin(custompage, custompage->win_w,0,0,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 
+	LineInput *linp;
 	linp=new LineInput(this,"page x",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						custompage,window,"page x",
 			            "x:",NULL,0,
 			            100,0,1,1,3,3);
 	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
 	
-	linp=new LineInput(this,"page y",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+	last=linp=new LineInput(this,"page y",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						linp,window,"page y",
 			            "y:",NULL,0,
 			            100,0,1,1,3,3);
@@ -289,6 +295,7 @@ int NewDocWindow::init()
 	
 	 // ------------------- view mode ---------------------------
 	AddWin(new MessageBar(this,"view style",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "view:"));
+	MenuSelector *msel;
 	msel=new MenuSelector(this,"view style",ANXWIN_CLICK_FOCUS,
 						0,0,0,0,0,
 						linp,window,"view style",
@@ -392,15 +399,17 @@ int NewDocWindow::init()
 	
 	//------------------------------ final ok -------------------------------------------------------
 
+	AddWin(NULL, 2000,1990,0,50, 20,0,0,50);
+	
 	 // [ ok ]   [ cancel ]
 	//  TextButton(anxapp *napp,anxwindow *parnt,const char *ntitle,unsigned long nstyle,
 	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
 	//                        const char *nname=NULL,int npadx=0,int npady=0);
 	//  
-	tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, linp,window,"Ok");
+	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, last,window,"Ok");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
-	tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, tbut,window,"Cancel");
+	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 
 
@@ -461,11 +470,11 @@ DBG cout <<"New orientation:"<<l<<endl;
 	} else if (!strcmp(mes,"pagesizex")) {
 	} else if (!strcmp(mes,"pagesizey")) {
 	} else if (!strcmp(mes,"check custom")) {
-		if (custompage->GetState()==LAX_OFF) custompage->SetState(LAX_ON);
-		defaultpage->SetState(LAX_OFF);
+		if (custompage->State()==LAX_OFF) custompage->State(LAX_ON);
+		defaultpage->State(LAX_OFF);
 	} else if (!strcmp(mes,"check default")) {
-		if (defaultpage->GetState()==LAX_OFF) defaultpage->SetState(LAX_ON);
-		custompage->SetState(LAX_OFF);
+		if (defaultpage->State()==LAX_OFF) defaultpage->State(LAX_ON);
+		custompage->State(LAX_OFF);
 		//***gray out the x/y inputs for page size? or auto convert to custom when typing there?
 	} else if (!strcmp(mes,"target dpi")) {
 	} else if (!strcmp(mes,"target printer")) {
@@ -474,7 +483,8 @@ DBG cout <<"New orientation:"<<l<<endl;
 	} else if (!strcmp(mes,"save as")) {
 	} else if (!strcmp(mes,"saveas")) { // from control button
 		//***get defaults
-		app->rundialog(new FileDialog(NULL,"Save As",FILES_SAVE_AS, 0,0, 400,400,0,
+		app->rundialog(new FileDialog(NULL,"Save As",
+					ANXWIN_DELETEABLE|ANXWIN_CENTER|FILES_SAVE_AS, 0,0, 400,400,0,
 					saveas->window, "save as","untitled"));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {

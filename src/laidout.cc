@@ -102,6 +102,7 @@ void print_usage()
  * Random stuff that needs a home in the source tree that
  * is perhaps a little more meaningful or something...
  */
+//-----------newViewWindow
 /*! \ingroup lmisc
  * **** */
 ViewWindow *newViewWindow(Document *newdoc)
@@ -117,6 +118,7 @@ anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
 	return new ViewWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
 }
 
+//-----------newSpreadEditorFunc
 /*! \ingroup lmisc
  * \brief SpreadEditro window generator for use in HeadWindow.
  */
@@ -125,6 +127,15 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
 	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
 }
 
+////-----------newHelpWindowFunc
+///*! \ingroup lmisc
+// * \brief SpreadEditro window generator for use in HeadWindow.
+// */
+//anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+//{
+//	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
+//}
+
 /*! \ingroup lmisc
  * \brief Create a new head split window, and fill it with available main windows.
  *
@@ -132,6 +143,7 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
  * <pre>
  *  ViewWindow
  *  SpreadEditor
+ *  HelpWindow (almost a main window)
  *
  *   TODO:
  *  Icons/Menus with optional dialogs ***
@@ -141,7 +153,6 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
  *  InterpreterConsole *** not imp, future:python, other?
  *  StyleManager ***not imp
  *  ObjectTreeEditor ***not imp
- *  HelpWindow ***not imp, should it be? [About..] [About plugins..]
  * </pre>
  */
 anXWindow *newHeadWindow(Document *doc=NULL)
@@ -569,8 +580,8 @@ int main(int argc,char **argv)
 			print_usage(); // Show usage summary, then exit
 		if (!strcmp(argv[1],"-v") || !strcmp(argv[1],"--version")) {
 			 // Show version info, then exit
-				cout <<LaidoutVersion()<<endl;
-				exit(0);
+			cout <<LaidoutVersion()<<endl;
+			exit(0);
 		}
 	}
 				
