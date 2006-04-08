@@ -313,7 +313,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 //*** set up main control window
 	//maincontrolpanel=new ControlPanel(***);
 	if (topwindows.n==0) // if no other windows have been launched yet, then launch newdoc window
-		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
+		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,300, 0));
 	
 	
 	return 0;

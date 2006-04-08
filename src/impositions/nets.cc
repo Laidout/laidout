@@ -750,7 +750,7 @@ double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 
 	//DBG //*** for debugging	
 	//DBG  cout <<"basisOfFace "<<which<<":\n";
-	//DBG flatpoint p;
+	flatpoint p;
 	//DBG for (int c=0; c<faces[which].np; c++) {
 	//DBG 	p=points[faces[which].points[c]];
 	//DBG 	cout <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
