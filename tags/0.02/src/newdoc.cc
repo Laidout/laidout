@@ -259,145 +259,145 @@ int NewDocWindow::init()
 	AddNull();
 	
 
-	 // -------------- page size --------------------
-	
-	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
-			"\n\n(Unimplemented stuff follows,\nLook for it in future releases!)");
-	AddWin(mesbar, 2000,1950,0,50, mesbar->win_h,0,0,50);
-	
-	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
-			"pagesize:");
-	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
-
-	defaultpage=new CheckBox(this,"default",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"check default", "default",5,5);
-	defaultpage->State(LAX_ON);
-	AddWin(defaultpage, defaultpage->win_w,0,0,50, linpheight,0,0,50);
-	
-	custompage=new CheckBox(this,"custom",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						defaultpage,window,"check custom", "custom",5,5);
-	AddWin(custompage, custompage->win_w,0,0,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-
-	LineInput *linp;
-	linp=new LineInput(this,"page x",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						custompage,window,"page x",
-			            "x:",NULL,0,
-			            100,0,1,1,3,3);
-	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
-	
-	last=linp=new LineInput(this,"page y",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						linp,window,"page y",
-			            "y:",NULL,0,
-			            100,0,1,1,3,3);
-	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // ------------------- view mode ---------------------------
-	AddWin(new MessageBar(this,"view style",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "view:"));
-	MenuSelector *msel;
-	msel=new MenuSelector(this,"view style",ANXWIN_CLICK_FOCUS,
-						0,0,0,0,0,
-						linp,window,"view style",
-						MENUSEL_CHECKBOXES|MENUSEL_LEFT|MENUSEL_CURSSELECTS|MENUSEL_ONE_ONLY);
-	msel->AddItem("single",1,0);
-	msel->AddItem("page layout",2,0);
-	msel->AddItem("paper layout",3,0);
-	AddWin(msel, 100,0,50,50, (textheight+5)*3,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
-		
-	 // ------------------- printing misc ---------------------------
-	 // target dpi:		__300____
-	linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						msel,window,"dpi",
-			            "target dpi:","360",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // default unit: __inch___
-	linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						linp,window,"unit",
-			            "default unit:","inch",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // color mode:		black and white, grayscale, rgb, cmyk, other
-	linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						linp,window,"colormode",
-			            "color mode:","rgb",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-
-	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "paper color:"));
-	ColorBox *cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, linp,window,"paper color", 255,255,255);
-	cbox->tooltip("left button: red\nmiddle button: green\nright button: blue");
-	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
-
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
-	linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						cbox,window,"printer",
-			            "target printer:","default (cups)",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-
-	 //   [ set options from ppd... ]
-	tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, linp,window,"setfromppd",
-			"set options from ppd...",3,3);
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-
-
-
-	 // --------------------- page specific setup ------------------------------------------
-	
-	//***first page is page number: 	___1_
-
-	 // ------------------ margins ------------------
-	linp=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						tbut,window,"margin t",
-			            margint,NULL,0,
-			            0,0,3,0,3,3);
-	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	linp=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						linp,window,"margin b",
-			            marginb,NULL,0,
-			            0,0,3,0,3,3);
-	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	linp=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						linp,window,"margin l",
-			            marginl,NULL,0,
-			            0,0,3,0,3,3);
-	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
-	
-	linp=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						linp,window,"margin r",
-			            marginr,NULL,0,
-			            0,0,3,0,3,3);
-	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
-	
-
-
-	//***	[ ] margins clip
-	//***	[ ] facing pages carry over
-	//***	_1_inch__  of paper  =  __1_inch_  of displayed page
-
-
-	
-	//------------------------------ final ok -------------------------------------------------------
+//	 // -------------- page size --------------------
+//	
+//	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
+//			"\n\n(Unimplemented stuff follows,\nLook for it in future releases!)");
+//	AddWin(mesbar, 2000,1950,0,50, mesbar->win_h,0,0,50);
+//	
+//	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
+//			"pagesize:");
+//	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
+//
+//	defaultpage=new CheckBox(this,"default",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						last,window,"check default", "default",5,5);
+//	defaultpage->State(LAX_ON);
+//	AddWin(defaultpage, defaultpage->win_w,0,0,50, linpheight,0,0,50);
+//	
+//	custompage=new CheckBox(this,"custom",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						defaultpage,window,"check custom", "custom",5,5);
+//	AddWin(custompage, custompage->win_w,0,0,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//
+//	LineInput *linp;
+//	linp=new LineInput(this,"page x",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						custompage,window,"page x",
+//			            "x:",NULL,0,
+//			            100,0,1,1,3,3);
+//	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
+//	
+//	last=linp=new LineInput(this,"page y",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						linp,window,"page y",
+//			            "y:",NULL,0,
+//			            100,0,1,1,3,3);
+//	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	 // ------------------- view mode ---------------------------
+//	AddWin(new MessageBar(this,"view style",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "view:"));
+//	MenuSelector *msel;
+//	msel=new MenuSelector(this,"view style",ANXWIN_CLICK_FOCUS,
+//						0,0,0,0,0,
+//						linp,window,"view style",
+//						MENUSEL_CHECKBOXES|MENUSEL_LEFT|MENUSEL_CURSSELECTS|MENUSEL_ONE_ONLY);
+//	msel->AddItem("single",1,0);
+//	msel->AddItem("page layout",2,0);
+//	msel->AddItem("paper layout",3,0);
+//	AddWin(msel, 100,0,50,50, (textheight+5)*3,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
+//		
+//	 // ------------------- printing misc ---------------------------
+//	 // target dpi:		__300____
+//	linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						msel,window,"dpi",
+//			            "target dpi:","360",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	 // default unit: __inch___
+//	linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						linp,window,"unit",
+//			            "default unit:","inch",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	 // color mode:		black and white, grayscale, rgb, cmyk, other
+//	linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						linp,window,"colormode",
+//			            "color mode:","rgb",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+//
+//	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "paper color:"));
+//	ColorBox *cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, linp,window,"paper color", 255,255,255);
+//	cbox->tooltip("left button: red\nmiddle button: green\nright button: blue");
+//	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
+//
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
+//	linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						cbox,window,"printer",
+//			            "target printer:","default (cups)",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+//
+//	 //   [ set options from ppd... ]
+//	tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, linp,window,"setfromppd",
+//			"set options from ppd...",3,3);
+//	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//
+//
+//
+//	 // --------------------- page specific setup ------------------------------------------
+//	
+//	//***first page is page number: 	___1_
+//
+//	 // ------------------ margins ------------------
+//	linp=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						tbut,window,"margin t",
+//			            margint,NULL,0,
+//			            0,0,3,0,3,3);
+//	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	linp=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						linp,window,"margin b",
+//			            marginb,NULL,0,
+//			            0,0,3,0,3,3);
+//	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	linp=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						linp,window,"margin l",
+//			            marginl,NULL,0,
+//			            0,0,3,0,3,3);
+//	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
+//	
+//	linp=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						linp,window,"margin r",
+//			            marginr,NULL,0,
+//			            0,0,3,0,3,3);
+//	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
+//	
+//
+//
+//	//***	[ ] margins clip
+//	//***	[ ] facing pages carry over
+//	//***	_1_inch__  of paper  =  __1_inch_  of displayed page
+//
+//
+//	
+//	//------------------------------ final ok -------------------------------------------------------
 
 	AddWin(NULL, 2000,1990,0,50, 20,0,0,50);
 	

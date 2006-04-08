@@ -965,7 +965,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	//DBG cout <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
-	firstobj.context.out("firstobj");
+	//DBG firstobj.context.out("firstobj");
 	
 	//while (start || (!start && !(nextindex==firstobj))) {
 	int nob=1;
@@ -994,7 +994,7 @@ int LaidoutViewport::FindObject(int x,int y,
 			 // matching object found!
 			foundtypeobj=nextindex;
 			if (oc) *oc=&foundtypeobj;
-			foundtypeobj.context.out("  foundtype");//for debugging
+			//DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
 		//DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
@@ -1099,7 +1099,7 @@ int LaidoutViewport::nextObject(VObjContext *oc)
 		 //if is NOT (limbo or page or page->layer or spread) then break, else continue.
 		if (!(oc->spread()==0 && oc->context.n()<=1 ||   
 			oc->spread()==1 && oc->context.n()<=3)) {
-			oc->context.out("  lov-next");
+			//DBG oc->context.out("  lov-next");
 			return 1;
 		}
 	} while (1);
@@ -1295,7 +1295,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	clearCurobj();
 	flatpoint p=dp->screentoreal(x,y);
 	if (curobj.spread()==1 && spread->pagestack.e[curobj.spreadpage()]->outline->pointin(p)) {
-		curobj.context.out("context change");
+		//DBG curobj.context.out("context change");
 		return 1; // context was cur page
 	}
 	 // else must search for it
@@ -1320,7 +1320,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	if (curobjPage()>=0) curpage=doc->pages.e[curobjPage()];
 		else curpage=NULL;
 	if (oc) *oc=&curobj;
-	curobj.context.out("context change");
+	//DBG curobj.context.out("context change");
 	 
 	return 1;
 }
@@ -2144,22 +2144,22 @@ int ViewWindow::init()
 		}
 	}
 	
-	if (!win_sizehints) win_sizehints=XAllocSizeHints();
-	if (win_sizehints && !win_parent) {
-		//DBG cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
-
-		//*** The initial x and y become the upper left corner of the window
-		//manager decorations. ***how to figure out how much room those decorations take,
-		//so as to place things on the screen accurately? like full screen view?
-		win_sizehints->x=win_x;
-		win_sizehints->y=win_y;
-		win_sizehints->width=win_w;
-		win_sizehints->height=win_h;
-	//	win_sizehints->width_inc=1;
-	//	win_sizehints->height_inc=1;
-	//	win_sizehints->flags=PMinSize|PResizeInc|USPosition|USSize
-		win_sizehints->flags=USPosition|USSize;
-	}
+//	if (!win_sizehints) win_sizehints=XAllocSizeHints();
+//	if (win_sizehints && !win_parent) {
+//		//DBG cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
+//
+//		//*** The initial x and y become the upper left corner of the window
+//		//manager decorations. ***how to figure out how much room those decorations take,
+//		//so as to place things on the screen accurately? like full screen view?
+//		win_sizehints->x=win_x;
+//		win_sizehints->y=win_y;
+//		win_sizehints->width=win_w;
+//		win_sizehints->height=win_h;
+//	//	win_sizehints->width_inc=1;
+//	//	win_sizehints->height_inc=1;
+//	//	win_sizehints->flags=PMinSize|PResizeInc|USPosition|USSize
+//		win_sizehints->flags=USPosition|USSize;
+//	}
 	
 	AddNull();//makes the status bar take up whole line.
 	
@@ -2726,7 +2726,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		system(blah);
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
-		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,500,600, 0));
+		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,500,300, 0));
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask|ShiftMask) { //reset document
 		//***
