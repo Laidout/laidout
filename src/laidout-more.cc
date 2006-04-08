@@ -65,7 +65,7 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom)//callfrom=NUL
 		if (yes){
 			e.xclient.window=topwindows.e[c]->window;
 			XSendEvent(dpy,topwindows.e[c]->window,False,0,&e);
-			DBG cout <<"---sending docTreeChange to "<<topwindows.e[c]->win_title<<endl;
+			//DBG cout <<"---sending docTreeChange to "<<topwindows.e[c]->win_title<<endl;
 			yes=0;
 		}
 	}

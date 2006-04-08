@@ -141,15 +141,15 @@ Net *makeDodecahedronNet(double ww,double hh)
 	d.maxx=ww;
 	d.maxy=hh;
 
-	//DBG cout <<"******* dodechaedron plain: **********"<<endl;
-	//DBG net->dump_out(stdout,0);
+	////DBG cout <<"******* dodechaedron plain: **********"<<endl;
+	////DBG net->dump_out(stdout,0);
 
 	
 	net->FitToData(&d,ww*.05);
 	net->ApplyTransform();
 
-	DBG cout <<"******* dodechaedron after: **********"<<endl;
-	DBG net->dump_out(stdout,0);
+	//DBG cout <<"******* dodechaedron after: **********"<<endl;
+	//DBG net->dump_out(stdout,0);
 
 		
 	return net;
