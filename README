@@ -29,11 +29,11 @@ some of the burden of the 'meat', but anyway...
 COMPILING
 ---------
 
-Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
-available. Laidout expects Imlib2 support to have been compiled
-into the Laxkit. Make sure that Laxkit headers are in the place
-specified in Makefile-toinclude by LAXDIR. After extracting,
-then type:
+Ensure that you have the Laxkit version 0.0.2
+(http://laxkit.sourceforge.net) available. Laidout expects Imlib2 
+support to have been compiled into the Laxkit. Make sure that Laxkit 
+headers are in the place specified in Makefile-toinclude by LAXDIR.
+After extracting, then type:
 
 make
 make install
