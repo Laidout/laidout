@@ -401,10 +401,10 @@ void Group::dump_in_atts(LaxFiles::Attribute *att)
 				}
 				deletestrs(strs,n);
 			} else {
-				DBG cout <<"*** readin blank object for Group..."<<endl;
+				//DBG cout <<"*** readin blank object for Group..."<<endl;
 			}
 		} else { 
-			DBG cout <<"Group dump_in:*** unknown attribute!!"<<endl;
+			//DBG cout <<"Group dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }

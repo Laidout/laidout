@@ -122,7 +122,7 @@ MenuInfo *HeadWindow::GetMenu()
  */
 int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
-	DBG cout <<"HeadWindow got message: "<<mes<<endl;
+	//DBG cout <<"HeadWindow got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		ViewWindow *view;
 		SpreadEditor *s;
@@ -147,7 +147,7 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (yes){
 				ee.xclient.window=windows.e[c]->win->window;
 				XSendEvent(app->dpy,windows.e[c]->win->window,False,0,&ee);
-				DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
+				//DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
 				yes=0;
 			}
 		}

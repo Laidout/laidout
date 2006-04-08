@@ -225,9 +225,9 @@ int *Spread::pagesFromSpread()
 			if (c2==list.n) { list.push(i,c2); }
 		}
 	}
-	DBG cout <<"pagesfromSpread list: ";
-	DBG for (c=0; c<list.n; c++) cout <<list.e[c]<<' '; 
-	DBG cout <<endl;
+	//DBG cout <<"pagesfromSpread list: ";
+	//DBG for (c=0; c<list.n; c++) cout <<list.e[c]<<' '; 
+	//DBG cout <<endl;
 	
 	 //now list holds a monotonically increasing list of pages. 
 	 //now crunch down ranges..
@@ -241,9 +241,9 @@ int *Spread::pagesFromSpread()
 	}
 	list2.push(-2);
 
-	DBG cout <<"pagesfromSpread list2: ";
-	DBG for (c=0; c<list2.n; c++) cout <<list2.e[c]<<' ';
-	DBG cout <<endl;
+	//DBG cout <<"pagesfromSpread list2: ";
+	//DBG for (c=0; c<list2.n; c++) cout <<list2.e[c]<<' ';
+	//DBG cout <<endl;
 
 	return list2.extractArray();
 }
@@ -496,7 +496,7 @@ int Imposition::SyncPages(Document *doc,int start,int n)
 			}
 			doc->pages.e[c]->InstallPageStyle(temppagestyle,0);
 		} else {
-			DBG cout <<"*** this is error, should not be here, null pagestyle from GetPageStyle!!"<<endl;
+			//DBG cout <<"*** this is error, should not be here, null pagestyle from GetPageStyle!!"<<endl;
 		}
 	}
 	return 0;

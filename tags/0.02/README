@@ -1,4 +1,4 @@
-LAIDOUT Version pre-0.02
+LAIDOUT Version 0.02
 --------------------
 http://laidout.org
 
@@ -32,7 +32,8 @@ COMPILING
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
 available. Laidout expects Imlib2 support to have been compiled
 into the Laxkit. Make sure that Laxkit headers are in the place
-specified in Makefile-toinclude by LAXDIR, then type:
+specified in Makefile-toinclude by LAXDIR. After extracting,
+then type:
 
 make
 make install

@@ -66,7 +66,7 @@ Overwrite::Overwrite(Window nowner,const char *mes, const char *nfile)
 //! Sends a StrSendData to owner with file in it.
 int Overwrite::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
-	//DBG cout <<win_title<<" -- ClientMessage"<<endl;
+	////DBG cout <<win_title<<" -- ClientMessage"<<endl;
 	if (strcmp(mes,"mbox-mes")) return 1; //***
 
 	if (e->data.l[1]==TBUT_OVERWRITE) {

@@ -132,7 +132,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"height")) {
 			DoubleAttribute(value,&height);
 		} else { 
-			DBG cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
+			//DBG cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -280,7 +280,7 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"lrio")) {
 			recttype=(recttype&~(RECTPAGE_LRTB|RECTPAGE_IOTB|RECTPAGE_LRIO))|RECTPAGE_LRIO;
 		} else { 
-			DBG cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
+			//DBG cout <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -451,7 +451,7 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
  */
 Page::~Page()
 {
-	DBG cout <<"  Page destructor"<<endl;
+	//DBG cout <<"  Page destructor"<<endl;
 	if (thumbnail) delete thumbnail;
 	if (psislocal==1) delete pagestyle;
 	else if (psislocal==0) objectstack.checkin(pagestyle);
@@ -502,7 +502,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 			g->dump_in_atts(att->attributes.e[c]);
 			layers.push(g,1);
 		} else { 
-			DBG cout <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
+			//DBG cout <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
 		}
 	}
 }
@@ -546,8 +546,8 @@ ImageData *Page::Thumbnail()
 		   h=bbox.maxy-bbox.miny;
 	h=h*100./w;
 	w=100.;
-	DBG cout <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
-	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
+	//DBG cout <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
+	//DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
 	if (!thumbnail) thumbnail=new ImageData(); 
 	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
 	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
@@ -572,16 +572,16 @@ ImageData *Page::Thumbnail()
 	//dp.Newmag(w/(bbox.maxx-bbox.minx));
 	dp.ClearWindow();
 
-	//DBG flatpoint p;
-	//DBG p=dp.realtoscreen(1,1);
-	//DBG dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(1,-1);
-	//DBG dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(-1,1);
-	//DBG dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(-1,-1);
-	//DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
-	//DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
+	////DBG flatpoint p;
+	////DBG p=dp.realtoscreen(1,1);
+	////DBG dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
+	////DBG p=dp.realtoscreen(1,-1);
+	////DBG dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
+	////DBG p=dp.realtoscreen(-1,1);
+	////DBG dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
+	////DBG p=dp.realtoscreen(-1,-1);
+	////DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
+	////DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
 
 	for (int c=0; c<layers.n; c++) {
 		//dp.PushAndNewTransform(layers.e[c]->m());
@@ -601,14 +601,14 @@ ImageData *Page::Thumbnail()
 	XFreePixmap(anXApp::app->dpy,pix);
 	
 	imlib_context_set_drawable(d);
-	DBG cout <<"Thumbnail dump_out:"<<endl;
-	DBG thumbnail->dump_out(stdout,2);
-	DBG cout <<"  minx "<<thumbnail->minx<<endl;
-	DBG cout <<"  maxx "<<thumbnail->maxx<<endl;
-	DBG cout <<"  miny "<<thumbnail->miny<<endl;
-	DBG cout <<"  maxy "<<thumbnail->maxy<<endl;
+	//DBG cout <<"Thumbnail dump_out:"<<endl;
+	//DBG thumbnail->dump_out(stdout,2);
+	//DBG cout <<"  minx "<<thumbnail->minx<<endl;
+	//DBG cout <<"  maxx "<<thumbnail->maxx<<endl;
+	//DBG cout <<"  miny "<<thumbnail->miny<<endl;
+	//DBG cout <<"  maxy "<<thumbnail->maxy<<endl;
 
-	DBG cout <<"==--- Done Page::updating thumbnail.."<<endl;
+	//DBG cout <<"==--- Done Page::updating thumbnail.."<<endl;
 	thumbmodtime=times(NULL);
 	return thumbnail;
 }

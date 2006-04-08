@@ -1,7 +1,7 @@
 /*! \mainpage
 
 \section     Laidout  
--- Version pre-0.02 --\n
+-- Version 0.02 --\n
 Currently in the "A bit of a hack, but mostly works on my machine" stage of development.
 
 If you want to hack away at Laidout, you've come to the right place. Please be
