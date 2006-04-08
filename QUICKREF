@@ -1,13 +1,37 @@
 ---- Laidout Quick key reference ----
 
 The keys with a '***' next to them are not implemented yet.
+A + means shift, and a ^ means control.
+
+Window gutter:
+   ^left-click   Split window mouse was in last
+   +left-click   Join to adjacent window
+   right-click   Get a menu to split, join, or change
 
 
 In a viewer:
-   'x'       toggle drawing of axes for each object
+   'D'       toggle drawing of axes for each object
    's'       toggle showing of the spread (shows only limbo)
-   'm'       move current selection to another page, popus up a dialog ***imp me!
-   ' '       Center(), *** need center obj, page, spread, center+fit obj,page,spread,objcomponent
+   'm'       move current selection to another page, pops up a dialog ***imp me!
+   ' '       center the page
+   +' '      center the spread
+
+   left      previous tool
+   right     next tool
+   ','       previous object a
+   '.'       next object  
+   '<'       previous page  
+   '>'       next page   
+ 
+   'T' or left   prev tool 
+   't' or right  next tool
+   '<'           previous page 
+   '>'           next page
+   ^'s'          save file
+   ^+'s'         save as -- just change the file name?? (not imp)
+   F5            popup new spread editor window
+   F1            popup this quick reference
+
     // these are like inkscape
    pgup      raise selection by 1 within layer
    pgdown    lower selection by 1 within layer
@@ -20,31 +44,21 @@ In a viewer:
    +^home    ***layer to top
    +^end     ***layer to bottom
   
-    // These are implemented in the other classes indicated
-   left      previous tool <-- done in viewwindow
-   right     next tool     <-- done in viewwindow
-   ','       previous object <-- done in ViewportWindow, which calls SelectObject
-   '.'       next object     <-- done in ViewportWindow, which calls SelectObject
-   '<'       previous page   <-- done in ViewWindow
-   '>'       next page       <-- done in ViewWindow
- 
-    // these are caught in ViewWindow
-   'T' or left   prev tool 
-   't' or right  next tool
-   '<'           previous page 
-   '>'           next page
-   ^'s'          save file
-   ^+'s'         save as -- just change the file name?? (not imp)
-   F1            popup new spread editor window
-
 
 SpreadEditor:
    ' '    Center with all little spreads in view
+   'c'    toggle where the page labels go
    'm'    toggle mark of current page
    'M'    reverse toggle mark of current page
    't'    toggle drawing of thumbnails
    'p'    *** for debugging thumbs
 
+
+RectInterface:
+  'c'     toggle if drag resizes from center or opposite edge
+  'd'     toggle showdecs
+  'n'     normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  
 
 ImageInterface:
   'c'      Move image to real origin
@@ -53,6 +67,7 @@ ImageInterface:
 
 
 ColorPatchInterface:
+  'w'    warp the patch to an arc, rows are at radius, cols go from center
   'm'    toggle between drawing just the grid, or draw full colors.
   'a'    select all points, or deselect all if any are selected
   'y'    constrain to y changes, or release the constraint
@@ -61,6 +76,7 @@ ColorPatchInterface:
   'c'    subdivide columns
   's'    subdivide rows and columns
   'z'    reset to rectangular
+  'w'    warp the patch to an arc, rows are at radius, cols go from center
   'd'    toggle decorations
   'h'    select all points adjacent horizontally to current points
   'v'    select all points adjacent vertically to current points
@@ -73,7 +89,6 @@ ColorPatchInterface:
 
 
 
- --- these things can not be printed out yet ---
 GradientInterface:
   'r'   Radial gradient
   'l'   Linear Gradient
@@ -85,15 +100,15 @@ GradientInterface:
 
 
 PathInterface:
-  'o'    Select the next pathop.\n
-  left   Roll the curpoints one step previous.\n
-  right  Roll the curpoints one step next.\n
-  'A'    Toggle whether to add points after or before\n
-  'a'    Select all if none selected, else deselect all\n
-  'c'    Toggle closed path\n
-  'b'    Start a new PathsData\n
-  delete or bksp: Delete currently selected points.\n
-  'd'    Toggle displaying of decorations\n
-  '?'    Show some kind of help somewhere....?\n
+  'o'    Select the next pathop.
+  left   Roll the curpoints one step previous.
+  right  Roll the curpoints one step next.
+  'A'    Toggle whether to add points after or before
+  'a'    Select all if none selected, else deselect all
+  'c'    Toggle closed path
+  'b'    Start a new PathsData
+  delete or bksp: Delete currently selected points.
+  'd'    Toggle displaying of decorations
+  '?'    Show some kind of help somewhere....?
   'p'    Like a, but only in current part of a compound path
 

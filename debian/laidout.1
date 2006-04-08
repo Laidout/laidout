@@ -35,6 +35,7 @@ Please be advised that this is a very early version of Laidout. There is a maili
 list and a page describing various bugs and deficiencies at the Laidout website:
 http://www.laidout.org. Only you can help stop bugs.
 
+Donations are encouraged! Money, that is, not bugs.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
@@ -63,40 +64,55 @@ legal sized paper oriented as landscape would be specified with:
 
 A + means shift, and a ^ means control.
 
+Window gutter:
+   ^left-click   Split window mouse was in last
+   +left-click   Join to adjacent window
+   right-click   Get a menu to split, join, or change
+
+
 In a viewer:
-    // these are caught in ViewWindow
+   'D'       toggle drawing of axes for each object
+   's'       toggle showing of the spread (shows only limbo)
+   'm'       move current selection to another page, pops up a dialog ***imp me!
+   ' '       center the page
+   +' '      center the spread
+
+   left      previous tool
+   right     next tool
+   ','       previous object a
+   '.'       next object  
+   '<'       previous page  
+   '>'       next page   
+ 
    'T' or left   prev tool 
    't' or right  next tool
    '<'           previous page 
    '>'           next page
    ^'s'          save file
-   F1            popup new spread editor window
-   
-   'x'           toggle drawing of axes for each object
-   's'           toggle showing of the spread (shows only limbo)
-   'm'           move current selection to another page, popus up a dialog ***imp me!
-   ' '           Center the current page
-   +' '          Center the spread
-   
-   left          previous tool <-- done in viewwindow
-   right         next tool     <-- done in viewwindow
-   ','           previous object <-- done in ViewportWindow, which calls SelectObject
-   '.'           next object     <-- done in ViewportWindow, which calls SelectObject
-   '<'           previous page   <-- done in ViewWindow
-   '>'           next page       <-- done in ViewWindow
+   ^+'s'         save as -- just change the file name?? (not imp)
+   F5            popup new spread editor window
+   F1            popup this quick reference
 
-   pgup          raise selection by 1 within layer
-   pgdown        lower selection by 1 within layer
-   home          bring selection to top within layer
-   end           drop selection to bottom within layer
-                                                                                                      
- 
+    // these are like inkscape
+   pgup      raise selection by 1 within layer
+   pgdown    lower selection by 1 within layer
+   home      bring selection to top within layer
+   end       drop selection to bottom within layer
+  
+
+RectInterface:
+  'c'     toggle if drag resizes from center or opposite edge
+  'd'     toggle showdecs
+  'n'     normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  
 
 SpreadEditor:
    ' '    Center with all little spreads in view
+   'c'    toggle where the page labels go
    'm'    toggle mark of current page
    'M'    reverse toggle mark of current page
    't'    toggle drawing of thumbnails
+   'p'    *** for debugging thumbs
 
 
 ImageInterface:
@@ -106,6 +122,7 @@ ImageInterface:
 
 
 ColorPatchInterface:
+  'w'    warp the patch to an arc, rows are at radius, cols go from center
   'm'    toggle between drawing just the grid, or draw full colors.
   'a'    select all points, or deselect all if any are selected
   'y'    constrain to y changes, or release the constraint
@@ -114,6 +131,7 @@ ColorPatchInterface:
   'c'    subdivide columns
   's'    subdivide rows and columns
   'z'    reset to rectangular
+  'w'    warp the patch to an arc, rows are at radius, cols go from center
   'd'    toggle decorations
   'h'    select all points adjacent horizontally to current points
   'v'    select all points adjacent vertically to current points
@@ -137,16 +155,16 @@ GradientInterface:
 
 
 PathInterface:
-  'o'    Select the next pathop.\n
-  left   Roll the curpoints one step previous.\n
-  right  Roll the curpoints one step next.\n
-  'A'    Toggle whether to add points after or before\n
-  'a'    Select all if none selected, else deselect all\n
-  'c'    Toggle closed path\n
-  'b'    Start a new PathsData\n
-  delete or bksp: Delete currently selected points.\n
-  'd'    Toggle displaying of decorations\n
-  '?'    Show some kind of help somewhere....?\n
+  'o'    Select the next pathop.
+  left   Roll the curpoints one step previous.
+  right  Roll the curpoints one step next.
+  'A'    Toggle whether to add points after or before
+  'a'    Select all if none selected, else deselect all
+  'c'    Toggle closed path
+  'b'    Start a new PathsData
+  delete or bksp: Delete currently selected points.
+  'd'    Toggle displaying of decorations
+  '?'    Show some kind of help somewhere....?
   'p'    Like a, but only in current part of a compound path
 
 
