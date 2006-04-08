@@ -54,7 +54,7 @@ using namespace Laxkit;
 //};
 
 HelpWindow::HelpWindow()
-	: MessageBox(NULL,"Help!",ANXWIN_DELETEABLE, 0,0,500,600,0, NULL)
+	: MessageBox(NULL,"Help!",ANXWIN_DELETEABLE, 0,0,500,600,0, NULL,None,NULL, NULL)
 {
 }
 
@@ -75,12 +75,12 @@ int HelpWindow::preinit()
 	win_h=m[7];
 
 	int redo=0;
-	if (win_h+2*(int)win_border>(int)screen->height) { 
-		win_h=screen->height-2*win_border;
+	if (win_h>(int)(.9*screen->height)) { 
+		win_h=(int)(.9*screen->height);
 		redo=1;
 	}
-	if (win_w+2*(int)win_border>(int)screen->width) { 
-		win_w=screen->width-2*win_border;
+	if (win_w>(int)(.9*screen->width)) { 
+		win_w=(int)(.9*screen->width);
 		redo=1;
 	}
 	return 0;
@@ -95,16 +95,42 @@ int HelpWindow::init()
 			"---- Laidout Quick key reference ----\n"
 			"\n"
 			"Press escape to get rid of this window.\n"
+			"Right click drag scrolls this help.\n"
+			"Right click drag with shift or control scrolls faster.\n"
 			"The keys with a '***' next to them are not implemented yet.\n"
+			"\n"
+			" + means Shift and ^ means control\n"
+			"\n"
+			"Window gutter:\n"
+			"   ^left-click   Split window mouse was in last\n"
+			"   +left-click   Join to adjacent window\n"
+			"   right-click   Get a menu to split, join, or change\n"
 			"\n"
 			"\n"
 			"In a viewer:\n"
-			"   'x'       toggle drawing of axes for each object\n"
+			"   ^'s'          save file\n"
+			"   ^+'s'         save as -- just change the file name?? (not imp)\n"
+			"   'T' or left   prev tool \n"
+			"   't' or right  next tool\n"
+			"   '<'           previous page \n"
+			"   '>'           next page\n"
+			"   F5            popup new spread editor window\n"
+            "   F1            popup this quick reference\n"
+			"\n"
+			"   left      previous tool <-- done in viewwindow\n"
+			"   right     next tool     <-- done in viewwindow\n"
+			"   ','       previous object <-- done in ViewportWindow, which calls SelectObject\n"
+			"   '.'       next object     <-- done in ViewportWindow, which calls SelectObject\n"
+			"   '<'       previous page   <-- done in ViewWindow\n"
+			"   '>'       next page       <-- done in ViewWindow\n"
+			" \n"
+			"   'D'       toggle drawing of axes for each object\n"
 			"   's'       toggle showing of the spread (shows only limbo)\n"
 			"   'm'       move current selection to another page, pops up a dialog ***imp me!\n"
 			"   ' '       center the page\n"
 			"   +' '      center the spread\n"
-			"    // these are like inkscape\n"
+			"\n"
+			"    // these are like inkscape:\n"
 			"   pgup      raise selection by 1 within layer\n"
 			"   pgdown    lower selection by 1 within layer\n"
 			"   home      bring selection to top within layer\n"
@@ -115,28 +141,17 @@ int HelpWindow::init()
 			"   +^pgdown  ***lower layer 1\n"
 			"   +^home    ***layer to top\n"
 			"   +^end     ***layer to bottom\n"
-			"  \n"
-			"    // These are implemented in the other classes indicated\n"
-			"   left      previous tool <-- done in viewwindow\n"
-			"   right     next tool     <-- done in viewwindow\n"
-			"   ','       previous object <-- done in ViewportWindow, which calls SelectObject\n"
-			"   '.'       next object     <-- done in ViewportWindow, which calls SelectObject\n"
-			"   '<'       previous page   <-- done in ViewWindow\n"
-			"   '>'       next page       <-- done in ViewWindow\n"
-			" \n"
-			"    // these are caught in ViewWindow\n"
-			"   'T' or left   prev tool \n"
-			"   't' or right  next tool\n"
-			"   '<'           previous page \n"
-			"   '>'           next page\n"
-			"   ^'s'          save file\n"
-			"   ^+'s'         save as -- just change the file name?? (not imp)\n"
-			"   F5            popup new spread editor window\n"
-            "   F1            popup this quick reference\n"
+			"\n"
+			"\n"
+			"RectInterface:\n"
+			"   'c'     toggle if drag resizes from center or opposite edge\n"
+			"   'd'     toggle showdecs\n"
+			"   'n'     normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)\n"
 			"\n"
 			"\n"
 			"SpreadEditor:\n"
 			"   ' '    Center with all little spreads in view\n"
+			"   'c'    toggle where the page labels go\n"
 			"   'm'    toggle mark of current page\n"
 			"   'M'    reverse toggle mark of current page\n"
 			"   't'    toggle drawing of thumbnails\n"
@@ -150,6 +165,7 @@ int HelpWindow::init()
 			"\n"
 			"\n"
 			"ColorPatchInterface:\n"
+			"  'w'    warp the patch to an arc, rows are at radius, cols go from center\n"
 			"  'm'    toggle between drawing just the grid, or draw full colors.\n"
 			"  'a'    select all points, or deselect all if any are selected\n"
 			"  'y'    constrain to y changes, or release the constraint\n"
@@ -158,7 +174,6 @@ int HelpWindow::init()
 			"  'c'    subdivide columns\n"
 			"  's'    subdivide rows and columns\n"
 			"  'z'    reset to rectangular\n"
-			"  'w'    warp the patch to an arc, rows are at radius, cols go from center\n"
 			"  'd'    toggle decorations\n"
 			"  'h'    select all points adjacent horizontally to current points\n"
 			"  'v'    select all points adjacent vertically to current points\n"
@@ -170,7 +185,6 @@ int HelpWindow::init()
 			"  '8'    select a 3x3 group of points around each current point\n"
 			"\n"
 			"\n"
-			"\n"
 			"GradientInterface:\n"
 			"  'r'   Radial gradient\n"
 			"  'l'   Linear Gradient\n"
@@ -178,7 +192,6 @@ int HelpWindow::init()
 			"  'd'   Toggle showing of decorations\n"
 			"  \n"
 			"  shift-left-click: add a new color spot\n"
-			"\n"
 			"\n"
 			"\n"
 			"PathInterface:\n"
@@ -193,6 +206,7 @@ int HelpWindow::init()
 			"  'd'    Toggle displaying of decorations\n"
 			"  '?'    Show some kind of help somewhere....?\n"
 			"  'p'    Like a, but only in current part of a compound path\n");
+	mesbar->tooltip("Right click drag scrolls this help.");
 	AddWin(mesbar,	mesbar->win_w,mesbar->win_w*9/10,2000,50,
 					mesbar->win_h,(mesbar->win_h>10?(mesbar->win_h-10):0),2000,50);
 	AddNull();
