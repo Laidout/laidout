@@ -1,0 +1,83 @@
+/*! \page todo
+\section basics Next on the list..
+
+\section Overall Overall...
+<pre>
+ enhance SpreadEditor
+ implement object nesting: 1 parent, many children, this is different
+   than having a Group
+ text tool, text blocks (big job !!!)
+ reasonable image loading and using
+ cairo? antigrain? opengl?  hot-swappable rendering backend?
+ freehand tool
+ tablet support
+ low level object tree editor would be very convenient, like
+   the xml editor of inkscape.. to do similar right now, have to save,
+   then edit the file, then load
+ pdf out
+ 
+ 
+
+printing out transparent images suffers same way as inkscape, in that some mystery
+background color is put where it should show through.. need to either use ghostscript
+transparent image abilities, or figure out some sort of masking..
+
+Next: MUst have color management..., have to imp the color system....
+
+Define protocols for inter-window communication, and scripting integration...
+
+a help window?
+
+impositions should have final printing shift matrix? to temporarily remap any imposition
+to any paper size, possibly with stuff off paper.. 
+the WhackedImposition: have a single page data map to many papers (using different transforms),
+sometimes known as posterizing..
+
+main control panel... there are a few basic windows right now, but 
+they must fit into a whole window framework which still needs to be implemented with
+Laxkit::SplitWindow and Laxkit::TabbedMenuSelector or whatever it'll be called!!!
+
+work on page and spread flipper:   < page 2 >,       < > page ixv,    
+tool flipper:  [< Path Tool >]
+
+*** figure out consistent way to have Attribute things attached to various kinds of objects.
+
+Color picker should be like scribus's which has previews of 
+	black/white text of various shades of the picked color
+
+viewport options:
+	one tool per viewport --OR-- optionally keep same tool across viewports.
+
+(ruler==obj || paper/page) [ ruler -> ]
+		[ruler|]
+		[     v]
+
+interfaces: have it configurable: mapping buttons?? or just sock it to em?
+
+Dynamic content object, for instance a box that lets you swirl 3-dimensional things
+around until you get a view that you like, and that view is what prints. (openoffice has
+something of the kind)
+
+
+pages need to be able to preempt the page boundaries given by disposition,
+OR the disposition needs to act on a selection of pages, not all of them..
+This would make cover/book body more reasonable.
+what about centerfolds?? have those
+pages map to same page? fill out whole spreads like that? auto adjust margins...
+CompositeDisposition
+	range 1-20 Booklet disp
+	range 21-25 Cover disp
+
+
+
+have option to save preview images for images over a certain size. 
+This saves mondo time when restarting when
+working on documents with lots of huge images: preview images don't have to be
+generated each time, just load the already figured ones, but check for image being
+newer than the preview!!
+like huge.tiff -> .huge.preview.png
+
+</pre>
+
+<hr>
+*/

@@ -1,0 +1,70 @@
+LAIDOUT Version pre-0.02
+--------------------
+http://laidout.org
+
+Please direct any complaints and other correspondence to:
+Tom Lechner <tomlechner@users.sourceforge.net>
+http://www.tomlechner.com
+
+
+WHAT IT CAN DO RIGHT NOW
+------------------------
+Laidout is currently in the 'Kind of a hack, but mostly works
+on my machine' stage of development.
+
+You can rearrange stuff on pages.. The fancy page spread editor
+is sort of working, you can shift pages around pretty easily.
+Many of the features are only partially implemented, and the
+real meat of the program is only half in place right now.
+
+You can export as Passepartout files, but only the images will
+export. You can 'print' to a postscript file. Printable things
+are images, linear, radial, and bezier patch color gradients.
+Path printing is badly implemented currently.
+
+Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
+some of the burden of the 'meat', but anyway...
+
+
+COMPILING
+---------
+
+Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
+available. Laidout expects Imlib2 support to have been compiled
+into the Laxkit. Make sure that Laxkit headers are in the place
+specified in Makefile-toinclude by LAXDIR, then type:
+
+make
+make install
+
+There is no 'configure' at the moment. 'make install' will put
+laidout-(whatever version) in (usually) /usr/local/bin, and make a
+symbolic link /usr/local/bin/laidout point to it.
+
+Warning: the Makefiles here are for the development source, which
+also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
+so intertwined. Just remove those parts of the Makefiles
+if you want to compile only Laidout.
+
+After successfully making, the program 'laidout' in the src
+directory is the thing you want. It does not depend on any other
+files currently, thus it can be run from any location.
+
+Running the program will spit out copious amounts of debugging
+info. To turn this off, you just do 'make hidegarbage' before doing
+'make' (the same goes for the Laxkit). 
+Or, you can just run the program like this:
+./laidout > /dev/null
+
+
+SOURCE DOCUMENTATION and CONTRIBUTING
+-------------------------------------
+
+There is a lot of source documentation available via doxygen, just type:
+
+make docs
+
+and it dumps it all out to docs/html. In particular, you will have a 
+rapidly expanding todo list. If you want to contribute, that is a good
+place to start. That and the Laxkit todo list.
+
