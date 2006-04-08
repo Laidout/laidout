@@ -54,8 +54,14 @@ hidegarbage:
 unhidegarbage:
 	cd src && $(MAKE) unhidegarbage
 
+depends:
+	touch src/makedepend
+	touch src/impositions/makedepend
+	touch src/printing/makedepend
+	cd src && $(MAKE) depends
 
-.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage
+
+.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends
 clean:
 	cd src && $(MAKE) clean
 	
