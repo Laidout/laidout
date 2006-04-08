@@ -63,10 +63,12 @@ class PageLabel
 };
 
 //----------------------- SpreadInterface --------------------------------------
+class SpreadEditor;
 
 class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
+	int centerlabels;
 	int mx,my,firsttime;
 	int reversebuttons;
 	int curpage, dragpage;
@@ -103,7 +105,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 //	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
 //	//virtual void Clear();
 //	//virtual void deletedata();
-//	//virtual int InterfaceOn();
+	virtual int InterfaceOn();
 //	//virtual int InterfaceOff();
 	virtual const char *whattype() { return "SpreadInterface"; }
 	virtual const char *whatdatatype() { return "LittleSpread"; }
@@ -115,9 +117,12 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 	virtual void Center(int w=1);
 	virtual void drawLabel(int x,int y,PageLabel *plabel);
 
+	virtual void Reset();
 	virtual void ApplyChanges();
 	virtual void SwapPages(int previouspos, int newpos);
 	virtual void SlidePages(int previouspos, int newpos);
+
+	friend class SpreadEditor;
 };
 
 //----------------------- SpreadEditor --------------------------------------
