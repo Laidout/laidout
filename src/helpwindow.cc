@@ -190,6 +190,8 @@ int HelpWindow::init()
 			"  'l'   Linear Gradient\n"
 			"  'f'   flip the order of the colors\n"
 			"  'd'   Toggle showing of decorations\n"
+			"  left  Select next point\n"
+			"  right Select previous point\n"
 			"  \n"
 			"  shift-left-click: add a new color spot\n"
 			"\n"
