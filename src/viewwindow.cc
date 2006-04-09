@@ -1570,6 +1570,7 @@ void LaidoutViewport::Refresh()
 	}
 	
 	dp->StartDrawing(this,backbuffer);
+	dp->ClearWindow();
 	if (drawflags&DRAW_AXES) dp->drawaxes();
 	int c,c2;
 
