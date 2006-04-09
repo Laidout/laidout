@@ -67,7 +67,7 @@ docs:
 	cd ../docs && doxygen 
 
 depends:
-	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
+	makedepend -fmakedepend  -Y *.cc
 	cd printing && $(MAKE) depends
 	cd impositions && $(MAKE) depends
 

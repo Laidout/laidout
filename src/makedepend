@@ -1,0 +1,58 @@
+# DO NOT DELETE
+
+document.o: document.h styles.h impositions/imposition.h page.h group.h
+document.o: objectcontainer.h styles.h papersizes.h objectcontainer.h
+document.o: document.h saveppt.h printing/psout.h version.h laidout.h
+document.o: papersizes.h newdoc.h interfaces.h
+drawdata.o: drawdata.h laidout.h impositions/imposition.h page.h group.h
+drawdata.o: objectcontainer.h styles.h styles.h papersizes.h
+drawdata.o: objectcontainer.h document.h papersizes.h document.h newdoc.h
+drawdata.o: interfaces.h
+extras.o: extras.h laidout.h impositions/imposition.h page.h group.h
+extras.o: objectcontainer.h styles.h styles.h papersizes.h objectcontainer.h
+extras.o: document.h papersizes.h document.h newdoc.h interfaces.h
+genericstyle.o: genericstyle.h styles.h
+group.o: group.h objectcontainer.h styles.h drawdata.h
+headwindow.o: headwindow.h laidout.h impositions/imposition.h page.h group.h
+headwindow.o: objectcontainer.h styles.h styles.h papersizes.h
+headwindow.o: objectcontainer.h document.h papersizes.h document.h newdoc.h
+headwindow.o: interfaces.h viewwindow.h spreadeditor.h drawdata.h
+helpwindow.o: helpwindow.h
+interfaces.o: interfaces.h laidout.h impositions/imposition.h page.h group.h
+interfaces.o: objectcontainer.h styles.h styles.h papersizes.h
+interfaces.o: objectcontainer.h document.h papersizes.h document.h newdoc.h
+laidout.o: laidout.h impositions/imposition.h page.h group.h
+laidout.o: objectcontainer.h styles.h styles.h papersizes.h objectcontainer.h
+laidout.o: document.h papersizes.h document.h newdoc.h interfaces.h
+laidout.o: viewwindow.h impositions/impositioninst.h impositions/imposition.h
+laidout.o: headwindow.h spreadeditor.h drawdata.h version.h
+laidout-more.o: laidout.h impositions/imposition.h page.h group.h
+laidout-more.o: objectcontainer.h styles.h styles.h papersizes.h
+laidout-more.o: objectcontainer.h document.h papersizes.h document.h newdoc.h
+laidout-more.o: interfaces.h viewwindow.h spreadeditor.h drawdata.h
+laidout-more.o: headwindow.h
+newdoc.o: newdoc.h laidout.h impositions/imposition.h page.h group.h
+newdoc.o: objectcontainer.h styles.h styles.h papersizes.h objectcontainer.h
+newdoc.o: document.h papersizes.h document.h interfaces.h
+newdoc.o: impositions/impositioninst.h impositions/imposition.h
+objectcontainer.o: objectcontainer.h styles.h
+page.o: page.h group.h objectcontainer.h styles.h drawdata.h
+papersizes.o: papersizes.h
+saveppt.o: saveppt.h document.h styles.h impositions/imposition.h page.h
+saveppt.o: group.h objectcontainer.h styles.h papersizes.h objectcontainer.h
+saveppt.o: document.h
+somedialogs.o: somedialogs.h
+spreadeditor.o: spreadeditor.h document.h styles.h impositions/imposition.h
+spreadeditor.o: page.h group.h objectcontainer.h styles.h papersizes.h
+spreadeditor.o: objectcontainer.h document.h drawdata.h laidout.h
+spreadeditor.o: papersizes.h newdoc.h interfaces.h headwindow.h
+styles.o: styles.h
+stylewindow.o: stylewindow.h laidout.h impositions/imposition.h page.h
+stylewindow.o: group.h objectcontainer.h styles.h styles.h papersizes.h
+stylewindow.o: objectcontainer.h document.h papersizes.h document.h newdoc.h
+stylewindow.o: interfaces.h
+viewwindow.o: printing/psout.h document.h helpwindow.h spreadeditor.h
+viewwindow.o: document.h styles.h impositions/imposition.h page.h group.h
+viewwindow.o: objectcontainer.h styles.h papersizes.h objectcontainer.h
+viewwindow.o: drawdata.h viewwindow.h laidout.h papersizes.h newdoc.h
+viewwindow.o: interfaces.h extras.h somedialogs.h
