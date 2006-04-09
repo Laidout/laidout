@@ -1,0 +1,11 @@
+# DO NOT DELETE
+
+printimage.o: psfilters.h
+pscolorpatch.o: pscolorpatch.h
+psfilters.o: psfilters.h
+psgradient.o: psgradient.h
+psout.o: psout.h ../document.h ../styles.h ../impositions/imposition.h
+psout.o: ../page.h ../group.h ../objectcontainer.h ../styles.h
+psout.o: ../papersizes.h ../objectcontainer.h ../version.h psfilters.h
+psout.o: psgradient.h pscolorpatch.h pspathsdata.h
+pspathsdata.o: pspathsdata.h
