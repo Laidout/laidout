@@ -37,7 +37,7 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) printing impositions
+laidout: $(objs) printing impositions
 	$(LD) $(LDFLAGS) $(objs) printing/*.o impositions/*.o -llaxinterfaces -llaxkit -o $@
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
