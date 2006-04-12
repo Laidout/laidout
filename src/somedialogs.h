@@ -21,17 +21,12 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
+#ifndef SOMEDIALOGS_H
+#define SOMEDIALOGS_H
 
 
 #include <lax/messagebox.h>
 
 
-//-------------------------- Overwrite ------------------------------------
-class Overwrite : public Laxkit::MessageBox
-{
- public:
-	char *file;
-	Overwrite(Window nowner,const char *mes, const char *nfile);
-	virtual ~Overwrite() { delete file; }
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-};
+#endif
+

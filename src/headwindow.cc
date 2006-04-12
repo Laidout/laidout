@@ -26,6 +26,7 @@
 #include "laidout.h"
 #include "viewwindow.h"
 #include "spreadeditor.h"
+#include "helpwindow.h"
 	
 #include <iostream>
 using namespace std;
@@ -33,7 +34,88 @@ using namespace std;
 
 using namespace Laxkit;
 
+//---------------------------- HeadWindow Pane Generators -----------------------
 
+/*! \defgroup mainwindows Main Pane Windows For HeadWindows
+ *
+ * These become the panes of a HeadWindow.
+ */
+
+////---------------------- newViewWindowFunc
+/*! \ingroup mainwindows
+ * \brief ViewWindow window generator for use in HeadWindow.
+ */
+anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	return new ViewWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
+}
+
+//------------------------ newSpreadEditorFunc
+/*! \ingroup mainwindows
+ * \brief SpreadEditro window generator for use in HeadWindow.
+ */
+anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
+}
+
+//------------------------ newHelpWindowFunc
+/*! \ingroup mainwindows
+ * \brief SpreadEditor window generator for use in HeadWindow.
+ */
+anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	return new HelpWindow();
+	//return new HelpWindow(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
+}
+
+//---------------------------- newHeadWindow() -----------------------
+/*! \ingroup mainwindows
+ * \brief Create a new head split window, and fill it with available main windows.
+ *
+ * Current main windows are:
+ * <pre>
+ *  ViewWindow
+ *  SpreadEditor
+ *  HelpWindow
+ *
+ *   TODO:
+ *  Icons/Menus with optional dialogs ***
+ *  Directory Window? FileOpener? ImageFileOpener->to drag n drop images? ***not imp
+ *  PlainTextEditor ***not imp
+ *  StoryEditor *** not imp
+ *  InterpreterConsole *** not imp, future:python, other?
+ *  StyleManager ***not imp
+ *  ObjectTreeEditor ***not imp
+ * </pre>
+ *
+ * \todo *** might want to remove doc, or have some more general way to start what is in which
+ */
+anXWindow *newHeadWindow(Document *doc,const char *which)
+{
+	if (doc==NULL) {
+		doc=laidout->curdoc;
+		if (!doc) {
+			if (!laidout->project) return NULL;
+			if (!laidout->project->docs.n) return NULL;
+			doc=laidout->project->docs.e[0];
+		}
+	}
+	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+	
+	 // add the window generator funcs
+	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
+	head->AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
+	head->AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
+
+	 // put a new which in it. default to view
+	if (which) head->Add(which);
+	else head->Add(new ViewWindow(doc));//***
+
+	return head;
+}
+
+//------------------------------- HeadWindow ---------------------------------------
 /*! \class HeadWindow
  * \brief Top level windows to hold other stuff such as a ViewWindow.
  */  

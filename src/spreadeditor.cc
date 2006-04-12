@@ -661,7 +661,8 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 	buttondown|=LEFTBUTTON;
 
 	int pg;
-	DBG int spr=findSpread(x,y,&pg);
+	DBG int spr=
+	findSpread(x,y,&pg);
 	DBG cout <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
 	if (pg<0) {
 		//*** start a selection rectangle
@@ -693,7 +694,8 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	if (dragpage<0) return 0;
 	
 	int pg;
-	DBG int spr=findSpread(x,y,&pg);
+	DBG int spr=
+	findSpread(x,y,&pg);
 	DBG cout <<"SpreadInterface lbup found page "<<pg<<" in spread "<<spr<<endl;
 	if (pg<0) {
 		 // do not drop page anywhere

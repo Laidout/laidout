@@ -25,7 +25,7 @@ INSTALL=install -D
 
 ##----------- you shouldn't have to modify anything below here --------------
 
-LAIDOUTVERSION=pre-0.02
+LAIDOUTVERSION=0.02.1
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: 
