@@ -33,6 +33,7 @@
 #include <lax/colorbox.h>
 #include <lax/fileutils.h>
 #include <lax/simpleprint.h>
+#include <lax/overwrite.h>
 #include <cstdarg>
 #include <cups/cups.h>
 
@@ -44,7 +45,6 @@
 #include "extras.h"
 #include "drawdata.h"
 #include "helpwindow.h"
-#include "somedialogs.h"
 
 #include <iostream>
 #include <sys/stat.h>
@@ -1295,7 +1295,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	clearCurobj();
 	flatpoint p=dp->screentoreal(x,y);
 	if (curobj.spread()==1 && spread->pagestack.e[curobj.spreadpage()]->outline->pointin(p)) {
-		curobj.context.out("context change");
+		DBG curobj.context.out("context change");
 		return 1; // context was cur page
 	}
 	 // else must search for it
@@ -1987,6 +1987,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 {
 	return 0;
 }
+
 
 
 //------------------------------- ViewWindow ---------------------------

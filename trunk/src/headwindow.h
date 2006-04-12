@@ -25,6 +25,7 @@
 #define HEADWINDOW_H
 
 #include <lax/splitwindow.h>
+#include "document.h"
 
 class HeadWindow : public Laxkit::SplitWindow
 {
@@ -39,6 +40,8 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 	virtual void WindowGone(Laxkit::anXWindow *win);
 };
+
+Laxkit::anXWindow *newHeadWindow(Document *doc=NULL,const char *which=NULL);
 
 #endif
 

@@ -22,7 +22,6 @@
 // correspondence about this software.
 //
 /***  Laidout   ****/
-/*** version .1 ****/
 /*** Tom Lechner ***/
 /***   2006+-3   ***/
 
@@ -43,7 +42,6 @@
 #include "viewwindow.h"
 #include "impositions/impositioninst.h"
 #include "headwindow.h"
-#include "spreadeditor.h"
 #include "version.h"
 #include <lax/lists.cc>
 
@@ -102,75 +100,8 @@ void print_usage()
  * Random stuff that needs a home in the source tree that
  * is perhaps a little more meaningful or something...
  */
-//-----------newViewWindow
-/*! \ingroup lmisc
- * **** */
-ViewWindow *newViewWindow(Document *newdoc)
-{
-	return new ViewWindow(newdoc); 
-}
 
-/*! \ingroup lmisc
- * \brief ViewWindow window generator for use in HeadWindow.
- */
-anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
-{
-	return new ViewWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
-}
 
-//-----------newSpreadEditorFunc
-/*! \ingroup lmisc
- * \brief SpreadEditro window generator for use in HeadWindow.
- */
-anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
-{
-	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
-}
-
-////-----------newHelpWindowFunc
-///*! \ingroup lmisc
-// * \brief SpreadEditro window generator for use in HeadWindow.
-// */
-//anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
-//{
-//	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
-//}
-
-/*! \ingroup lmisc
- * \brief Create a new head split window, and fill it with available main windows.
- *
- * Current main windows are:
- * <pre>
- *  ViewWindow
- *  SpreadEditor
- *  HelpWindow (almost a main window)
- *
- *   TODO:
- *  Icons/Menus with optional dialogs ***
- *  FileOpener? ImageFileOpener->to drag n drop images? ***not imp
- *  PlainTextEditor ***not imp
- *  StoryEditor *** not imp
- *  InterpreterConsole *** not imp, future:python, other?
- *  StyleManager ***not imp
- *  ObjectTreeEditor ***not imp
- * </pre>
- */
-anXWindow *newHeadWindow(Document *doc=NULL)
-{
-	if (doc==NULL) {
-		doc=laidout->curdoc;
-		if (!doc) {
-			if (!laidout->project) return NULL;
-			if (!laidout->project->docs.n) return NULL;
-			doc=laidout->project->docs.e[0];
-		}
-	}
-	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
-	head->Add(newViewWindow(doc));
-	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
-	head->AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
-	return head;
-}
 
 //----------------------- Main Control Panel: an unmapped window until further notice? -------------------------------
 

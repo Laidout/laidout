@@ -43,9 +43,8 @@ using namespace LaxInterfaces;
 
 void psContinueColorPatch(FILE *f,ColorPatchData *g, int flag,int o, int r,int c);
 
-//! Output postscript for a ColorPatchData. *** fix me!
+//! Output postscript for a ColorPatchData. 
 /*! \ingroup postscript
- * \todo *** right now, only handles non-subdivided patches...
  *
  * Currently, the ColorPatchData objects exist only in grids, so this function
  * figures out the proper listing for the DataSource tag of the tensor product 
