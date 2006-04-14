@@ -36,7 +36,7 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
-//#include <lax/interfaces/gradientinterface.h>
+#include <lax/interfaces/imagepatchinterface.h>
 #include <lax/transformmath.h>
 
 #include <lax/interfaces/somedataref.h>
@@ -130,6 +130,7 @@ SomeData *newObject(const char *thetype)
 	if (!strcmp(thetype,"SomeData")) return new SomeData();
 	if (!strcmp(thetype,"Group")) return new SomeData();
 	if (!strcmp(thetype,"ImageData")) return new ImageData();
+	if (!strcmp(thetype,"ImagePatchData")) return new ImagePatchData();
 	if (!strcmp(thetype,"PathsData")) return new PathsData();
 	if (!strcmp(thetype,"GradientData")) return new GradientData();
 	if (!strcmp(thetype,"ColorPatchData")) return new ColorPatchData();
