@@ -28,6 +28,7 @@
 #include <lax/transformmath.h>
 #include <lax/strsliderpopup.h>
 #include <lax/interfaces/imageinterface.h>
+#include <lax/interfaces/imagepatchinterface.h>
 #include <lax/filedialog.h>
 #include <lax/refcounter.h>
 #include <lax/colorbox.h>
@@ -2287,14 +2288,31 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		StrSendData *s=dynamic_cast<StrSendData *>(data);
 		if (!s) return 1;
 		Imlib_Image image=imlib_load_image(s->str);
+
 		if (image) {
-			ImageData *newdata=new ImageData();
-			newdata->SetImage(image);
-			makestr(newdata->filename,s->str);
-			//*** must scale image to fit the page at default dpi!!
-			newdata->xaxis(newdata->xaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
-			newdata->yaxis(newdata->yaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
-			if (!((LaidoutViewport *)viewport)->PlopData(newdata)) delete newdata;
+			SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
+			if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
+				 //set in image
+				ImageData *img=dynamic_cast<ImageData *>(curobj);
+				img->SetImage(image);
+				makestr(img->filename,s->str);
+				((anXWindow *)viewport)->Needtodraw(1);
+			} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
+				 //set in imagepatch
+				dynamic_cast<ImagePatchData *>(curobj)->SetImage(s->str);
+				imlib_context_set_image(image);
+				imlib_free_image();
+				((anXWindow *)viewport)->Needtodraw(1);
+			} else curobj=NULL;
+			if (!curobj) {
+				ImageData *newdata=new ImageData();
+				newdata->SetImage(image);
+				makestr(newdata->filename,s->str);
+				//*** must scale image to fit the page at default dpi!!
+				newdata->xaxis(newdata->xaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
+				newdata->yaxis(newdata->yaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
+				if (!((LaidoutViewport *)viewport)->PlopData(newdata)) delete newdata;
+			}
 		} else { 
 			char mes[30+strlen(s->str)+1];
 			sprintf(mes,"Couldn't load image from \"%s\".",s->str);
