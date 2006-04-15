@@ -4,19 +4,11 @@
 // Laidout, for laying out
 // Copyright (C) 2004-2006 by Tom Lechner
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// For more details, consult the COPYING file in the top directory.
 //
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -28,6 +20,8 @@
 #include "spreadeditor.h"
 #include "helpwindow.h"
 	
+#include <lax/promptedit.h>
+
 #include <iostream>
 using namespace std;
 #define DBG 
@@ -40,6 +34,18 @@ using namespace Laxkit;
  *
  * These become the panes of a HeadWindow.
  */
+
+////---------------------- newPromptWindowFunc
+/*! \ingroup mainwindows
+ * \brief PromptWindow window generator for use in HeadWindow.
+ * \todo *** this is just a placeholder until an actual interpreter is implemented.
+ */
+anXWindow *newPromptWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	PromptEdit *pe=new PromptEdit(parnt,ntitle,style, 0,0,0,0,1, NULL);
+	pe->padx=pe->pady=6;
+	return pe;
+}
 
 ////---------------------- newViewWindowFunc
 /*! \ingroup mainwindows
@@ -107,6 +113,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
 	head->AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
 	head->AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
+	head->AddWindowType("PromptEdit","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newPromptWindowFunc,0);//***
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
@@ -241,19 +248,19 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 //! Create split panes with names like SplitPane12, where the number is getUniqueNumber().
 anXWindow *HeadWindow::NewWindow(const char *wtype)
 {
-        if (!wtype) 
-                if (defaultwinfunc<0) return NULL;
-                else wtype=winfuncs.e[defaultwinfunc]->name;
-                
-        anXWindow *win=NULL;
-		char blah[100];
-		sprintf(blah,"SplitPane%lu",getUniqueNumber());
-        for (int c=0; c<winfuncs.n; c++) {
-                if (!strcmp(winfuncs.e[c]->name,wtype)) {
-                        win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style);
-                        return win;
-                }
-        }
-        return NULL;
+	if (!wtype) 
+		if (defaultwinfunc<0) return NULL;
+		else wtype=winfuncs.e[defaultwinfunc]->name;
+		
+	anXWindow *win=NULL;
+	char blah[100];
+	sprintf(blah,"SplitPane%lu",getUniqueNumber());
+	for (int c=0; c<winfuncs.n; c++) {
+		if (!strcmp(winfuncs.e[c]->name,wtype)) {
+			win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style);
+			return win;
+		}
+	}
+	return NULL;
 }
 

@@ -4,19 +4,11 @@
 // Laidout, for laying out
 // Copyright (C) 2004-2006 by Tom Lechner
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// For more details, consult the COPYING file in the top directory.
 //
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -164,14 +156,20 @@ int HelpWindow::init()
 			"  'd'      Toggle drawing decorations\n"
 			"\n"
 			"\n"
-			"ColorPatchInterface:\n"
+			"ColorPatchInterface and ImagePatchInterface:\n"
 			"  'w'    warp the patch to an arc, rows are at radius, cols go from center\n"
 			"  'm'    toggle between drawing just the grid, or draw full colors.\n"
 			"  'a'    select all points, or deselect all if any are selected\n"
 			"  'y'    constrain to y changes, or release the constraint\n"
 			"  'x'    constrain to x changes, or release the constraint\n"
+			"  'o'    decrease how much to recurse for rendering screen preview\n"
+			"  'O'    increase how much to recurse for rendering screen preview\n"
+			"  'R'    increase how many rows to divide each row into\n"
+			" ^'R'    decrease how many rows to divide each row into\n"
 			"  'r'    subdivide rows\n"
 			"  'c'    subdivide columns\n"
+			"  'C'    increase how many columns to divide each column into\n"
+			" ^'C'    decrease how many columns to divide each column into\n"
 			"  's'    subdivide rows and columns\n"
 			"  'z'    reset to rectangular\n"
 			"  'd'    toggle decorations\n"
