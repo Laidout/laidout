@@ -4,19 +4,11 @@
 // Laidout, for laying out
 // Copyright (C) 2004-2006 by Tom Lechner
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// For more details, consult the COPYING file in the top directory.
 //
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -367,6 +359,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 Document *LaidoutApp::LoadDocument(const char *filename)
 {
 	Document *doc=new Document;
+	if (!strncmp(filename,"file://",7)) filename+=7;
 	if (doc->Load(filename)>0) return doc;
 	delete doc;
 	return NULL;

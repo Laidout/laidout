@@ -4,19 +4,11 @@
 // Laidout, for laying out
 // Copyright (C) 2004-2006 by Tom Lechner
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// For more details, consult the COPYING file in the top directory.
 //
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -69,6 +61,8 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
 	int centerlabels;
+	char drawthumbnails;
+	int arrangetype;
 	int mx,my,firsttime;
 	int reversebuttons;
 	int curpage, dragpage;
@@ -79,7 +73,6 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 	Laxkit::PtrStack<PageLabel> pagelabels;
 	int *temppagemap;
 	//Laxkit::PtrStack<TextBlock> notes;
-	char drawthumbnails;
  public:
 	Document *doc;
 	Project *project;
@@ -111,7 +104,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 	virtual const char *whatdatatype() { return "LittleSpread"; }
 
 	virtual void GetSpreads();
-	virtual void ArrangeSpreads(int how=0);
+	virtual void ArrangeSpreads(int how=-1);
 	virtual int findPage(int x,int y);
 	virtual int findSpread(int x,int y,int *page=NULL);
 	virtual void Center(int w=1);
@@ -139,6 +132,8 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int init();
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int MoveResize(int nx,int ny,int nw,int nh);
+	virtual int Resize(int nw,int nh);
 };
 
 #endif

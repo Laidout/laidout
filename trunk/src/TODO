@@ -3,12 +3,12 @@
 
 \section Overall Overall...
 <pre>
- enhance SpreadEditor
+ enhance SpreadEditor:
+   eject in addition to swap and slide,
+   chains in limbo
  implement object nesting: 1 parent, many children, this is different
    than having a Group
  text tool, text blocks (big job !!!)
- reasonable image loading and using
- cairo? antigrain? opengl?  hot-swappable rendering backend?
  freehand tool
  tablet support
  low level object tree editor would be very convenient, like
@@ -16,6 +16,8 @@
    then edit the file, then load
  pdf out
  
+NEED major overhaul of the rendering, which should allow among other things
+output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
  
 
 printing out transparent images suffers same way as inkscape, in that some mystery
@@ -25,8 +27,6 @@ transparent image abilities, or figure out some sort of masking..
 Next: MUst have color management..., have to imp the color system....
 
 Define protocols for inter-window communication, and scripting integration...
-
-a help window?
 
 impositions should have final printing shift matrix? to temporarily remap any imposition
 to any paper size, possibly with stuff off paper.. 
@@ -60,7 +60,7 @@ something of the kind)
 
 
 pages need to be able to preempt the page boundaries given by disposition,
-OR the disposition needs to act on a selection of pages, not all of them..
+OR the imposition needs to act on a selection of pages, not all of them..
 This would make cover/book body more reasonable.
 what about centerfolds?? have those
 pages map to same page? fill out whole spreads like that? auto adjust margins...

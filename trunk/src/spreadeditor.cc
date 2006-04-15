@@ -4,19 +4,11 @@
 // Laidout, for laying out
 // Copyright (C) 2004-2006 by Tom Lechner
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+// For more details, consult the COPYING file in the top directory.
 //
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
@@ -277,6 +269,8 @@ PageLabel::~PageLabel()
 //{
 // protected:
 //	int centerlabels;
+//	char drawthumbnails;
+//	int arrangetype;
 //	int mx,my,firsttime;
 //	int reversebuttons;
 //	int curpage, dragpage;
@@ -287,7 +281,6 @@ PageLabel::~PageLabel()
 //	Laxkit::PtrStack<PageLabel> pagelabels;
 //	int *temppagemap;
 //	//Laxkit::PtrStack<TextBlock> notes;
-//	char drawthumbnails;
 // public:
 //	Document *doc;
 //	Project *project;
@@ -319,7 +312,7 @@ PageLabel::~PageLabel()
 //	virtual const char *whatdatatype() { return "LittleSpread"; }
 //
 //	virtual void GetSpreads();
-//	virtual void ArrangeSpreads(int how=0);
+//	virtual void ArrangeSpreads(int how=-1);
 //	virtual int findPage(int x,int y);
 //	virtual int findSpread(int x,int y,int *page=NULL);
 //	virtual void Center(int w=1);
@@ -347,6 +340,7 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	dragpage=-1;
 	drawthumbnails=1;
 	centerlabels=0;
+	arrangetype=-1;
 
 	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
 	buttonmask=Button1Mask|Button2Mask;
@@ -418,13 +412,29 @@ void SpreadInterface::GetSpreads()
 	} while (highestpage<doc->pages.n);
 }
 
+#define ArrangeTempRow     1
+#define ArrangeTempColumn  2
+#define ArrangeAuto        3
+#define Arrange1Row        4
+#define Arrange1Column     5
+#define ArrangeGrid        6
+
 //! Arrange the spreads in some sort of order.
 /*! Default is have 1 page take up about an inch of screen space.
  * The units stay in spread units, but the viewport is scaled so that a respectable
  * number of spreads fit on screen.
+ *
+ * how==-1 means use default arrangetype. 
+ * Otherwise, 0==auto, 1==1 row, 2==1 column, 3=grid by proportion of curwindow
  */
-void SpreadInterface::ArrangeSpreads(int how)
+void SpreadInterface::ArrangeSpreads(int how)//how==-1
 { 
+	if (how>0 && how<4) {
+		if (arrangetype>0 && arrangetype==how) return;
+	}
+	//if (arrangetype!=0) arrangetype=how;
+	arrangetype=how;
+	
 	double x,y,w,h,X,Y,W,H;
 	x=y=w=h=X=Y=W=H=0;
 
@@ -435,7 +445,18 @@ void SpreadInterface::ArrangeSpreads(int how)
 	 // Position the LittleSpreads...
 	DoubleBBox bb;
 	double rh=0,rw=0;
-	int perrow=int(sqrt((double)spreads.n)+1);
+	int perrow;
+	
+	if (arrangetype==3) perrow=int(sqrt((double)spreads.n)+1);
+	else if (arrangetype==2) perrow=1;
+	else if (arrangetype==1) perrow=1000000;
+	else { //auto
+		if (curwindow) 
+			if (curwindow->win_w>curwindow->win_h) perrow=100000;
+			else perrow=1;
+		else perrow=10000000;
+	}
+
 	for (int c=0; c<spreads.n; c++) {
 		w=spreads.e[c]->maxx-spreads.e[c]->minx;
 		h=spreads.e[c]->maxy-spreads.e[c]->miny;
@@ -479,7 +500,7 @@ int SpreadInterface::Refresh()
 	if (!needtodraw) return 1;
 	
 	if (firsttime) {
-		ArrangeSpreads();
+		ArrangeSpreads(arrangetype>=0?-1:0);
 		Center(1);
 		//((ViewportWindow *)curwindow)->syncrulers();
 		firsttime=0;
@@ -1017,6 +1038,8 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 //	virtual int init();
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+//	virtual int MoveResize(int nx,int ny,int nw,int nh);
+//	virtual int Resize(int nw,int nh);
 //};
 
 //! Make the window using project.
@@ -1041,7 +1064,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 			if (project->docs.n) doc=project->docs.e[0];
 		}
 	} 
-	viewport->win_xatts.background_pixel=~0;
+	viewport->win_xatts.background_pixel=app->rgbcolor(200,200,200);
 	viewport->win_xattsmask|=CWBackPixel;
 	viewport->dp->NewBG(255,255,255);
 
@@ -1053,13 +1076,19 @@ int SpreadEditor::init()
 {
 	//AddWin(***)...
 	ViewerWindow::init();
+	 //***remove the rulers
+	wholelist.remove(0); //first null
+	wholelist.remove(0); //x
+	wholelist.remove(0); //y
+	
 	//XSetWindowBackground(app->dpy,viewport->window,~0);
 //	viewport->syncrulers();
 
 	anXWindow *last=NULL;
 	TextButton *tbut;
 
-	AddNull();
+	wholelist.e[wholelist.n-1]->pw(100);
+	//AddNull(); // makes the status bar fill whole line
 
 	last=tbut=new TextButton(this,"applybutton",0, 0,0,0,0,1, NULL,window,"applybutton","Apply");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
@@ -1116,5 +1145,23 @@ int SpreadEditor::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	}
 	return 1;
+}
+
+//! Trigger an ArrangeSpreads if arrangetype is 0.
+int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
+{
+	int c=ViewerWindow::MoveResize(nx,ny,nw,nh);
+	if (((SpreadInterface *)curtool)->arrangetype==0) 
+		((SpreadInterface *)curtool)->ArrangeSpreads();
+	return c;
+}
+
+//! Trigger an ArrangeSpreads if arrangetype is 0.
+int SpreadEditor::Resize(int nw,int nh)
+{
+	int c=ViewerWindow::Resize(nw,nh);
+	if (((SpreadInterface *)curtool)->arrangetype==0) 
+		((SpreadInterface *)curtool)->ArrangeSpreads();
+	return c;
 }
 
