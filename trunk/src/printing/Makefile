@@ -17,6 +17,8 @@ objs= \
 	psfilters.o \
 	pscolorpatch.o \
 	psgradient.o \
+	psimage.o \
+	psimagepatch.o \
 	pspathsdata.o \
 	psout.o
 

@@ -114,3 +114,35 @@ int Ascii85_out(FILE *f,unsigned char *in,int len,int puteod,int linewidth,int *
 	return n;
 }
 
+
+//! Take in[4] and make out[5]. Returns the number of chars to use, 1 for 'z' or 5 other ascii chars.
+/*! \ingroup postscript
+ * \todo *** this is untested
+ */
+int Ascii85_chars(unsigned char *in,unsigned char *out)
+{
+	unsigned long i;
+	i=(((((in[0]<<8) | in[1])<<8) | in[2])<<8) | in[3];
+	
+	if (i==0) {
+		out[0]='z';
+		out[1]=out[2]=out[3]=out[4]=0;
+		return 1;
+	}
+
+	 // find the 5-number translation
+	out[0]=33+ i/52200625; // 85^4
+	i%= 52200625;
+	
+	out[1]=33+ i/614125;  // 85^3
+	i %= 614125;
+	
+	out[2]=33+ i / 7225; // 85^2
+	i %= 7225;
+	
+	out[3]=33+ i / 85;  // 85^1
+	
+	out[4]=33+ i % 85; // 85^0     
+	
+	return 5;
+}

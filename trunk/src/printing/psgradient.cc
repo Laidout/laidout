@@ -24,8 +24,8 @@ using namespace std;
 #define DBG 
 
 
-//! Output postscript for a GradientData. ***imp me!!
-/*! 
+//! Output postscript for a GradientData. 
+/*! \ingroup postscript
  */
 void psGradient(FILE *f,GradientData *g)
 {

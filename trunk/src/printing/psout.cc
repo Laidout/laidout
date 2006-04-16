@@ -20,14 +20,14 @@
 #include "../version.h"
 
 #include "psfilters.h"
-#include <lax/interfaces/imageinterface.h>
-#include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
 
 #include "psgradient.h"
+#include "psimage.h"
+#include "psimagepatch.h"
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
 
@@ -74,72 +74,17 @@ void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 		
 		 // pop axes
 		fprintf(f,"grestore\n\n");
-	} else if (dynamic_cast<ImageData *>(obj)) {
-		ImageData *img=dynamic_cast<ImageData *>(obj);
-
-		 // the image gets put in a postscript box with sides 1x1, and the matrix
-		 // in the image is ??? so must set
-		 // up proper transforms
-		
-		double m[6];
-		transform_copy(m,img->m());
-		if (!img || !img->imlibimage) return;
-		
-		char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
-											 // not modify the string.
-		if (bname) fprintf(f," %% image %s\n",bname);
-				
+	} else if (dynamic_cast<ImagePatchData *>(obj)) {
 		fprintf(f,"gsave\n"
 				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				   m[0], m[1], m[2], m[3], m[4], m[5]); 
-		fprintf(f,"[%.10g 0 0 %.10g 0 0] concat\n",
-				 img->maxx,img->maxy);
-		
-		 // image out
-		imlib_context_set_image(img->imlibimage);
-		DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
-		int width,height;
-		width=imlib_image_get_width();
-		height=imlib_image_get_height();
-		int len=3*width*height;
-		 //*** for some reason if I just do uchar rgbbuf[len], it will crash for large images
-		unsigned char *rgbbuf=new unsigned char[len]; //***this could be redone to not need new huge array like this
-		unsigned char r,g,b;
-		DATA32 bt;
-		DBG cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
-		for (int x=0; x<width; x++) {
-			for (int y=0; y<height; y++) {
-				bt=buf[y*width+x];
-				r=(buf[y*width+x]&((unsigned long)255<<16))>>16;
-				g=(buf[y*width+x]&((unsigned long)255<<8))>>8;
-				b=(buf[y*width+x]&(unsigned long)255);
-				rgbbuf[y*width*3+x*3  ]=r;
-				rgbbuf[y*width*3+x*3+1]=g;
-				rgbbuf[y*width*3+x*3+2]=b;
-				//printf("%x=%x,%x,%x ",bt,r,g,b);
-			}
-		}
-		//int width=(int)img->maxx,
-		//    height=(int)img->maxy;
-		//double w,h;
-		//w=200;
-		//h=height*200./width;
-		fprintf(f,
-				"/DeviceRGB setcolorspace\n"
-				"<<\n"
-				"  /ImageType 1  /Width %d  /Height %d\n"
-				"  /BitsPerComponent 8\n"
-				"  /Decode [0 1 0 1 0 1]\n"
-				"  /ImageMatrix [%d 0 0 -%d 0 %d]\n"
-				"  /DataSource currentfile\n"
-				"  /ASCII85Decode filter \n"
-				">> image\n", width, height, width, height, height);
-
-		 // do the Ascii85Encode filter
-		Ascii85_out(f,rgbbuf,len,1,75);
-
-		delete[] rgbbuf;
-
+				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		psImagePatch(f,dynamic_cast<ImagePatchData *>(obj));
+		fprintf(f,"grestore\n");
+	} else if (dynamic_cast<ImageData *>(obj)) {
+		fprintf(f,"gsave\n"
+				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		psImage(f,dynamic_cast<ImageData *>(obj));
 		fprintf(f,"grestore\n");
 	} else if (dynamic_cast<GradientData *>(obj)) {
 		fprintf(f,"gsave\n"

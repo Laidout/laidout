@@ -13,13 +13,14 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-#ifndef PSFILTERS_H
-#define PSFILTERS_H
+#ifndef PSIMAGE_H
+#define PSIMAGE_H
 
+#include <lax/interfaces/imageinterface.h>
 #include <cstdio>
 
-int Ascii85_out(std::FILE *f,unsigned char *in,int len,int puteod,int linewidth,int *curwidth=NULL);
-int Ascii85_chars(unsigned char *in,unsigned char *out);
+void psImage(FILE *f,LaxInterfaces::ImageData *i);
+void psImage_masked(FILE *f,LaxInterfaces::ImageData *img);
+void psImage_103(FILE *f,LaxInterfaces::ImageData *img);
 
 #endif
-
