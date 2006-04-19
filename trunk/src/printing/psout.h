@@ -19,6 +19,16 @@
 #include "../document.h"
 #include <cstdio>
 
+double psDpi();
+double psDpi(double n);
+
+void psConcat(double *m);
+void psConcat(double a,double b,double c,double d,double e,double f);
+double *psCTM();
+void psPushCtm();
+void psPopCtm();
+void psFlushCtms();
+
 void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj);
 int psout(FILE *f,Document *doc);
 int psout(Document *doc,const char *file=NULL);

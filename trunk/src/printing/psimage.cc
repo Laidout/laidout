@@ -25,9 +25,15 @@ void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img);
 	
 //! Output postscript for a Laxkit::ImageData. 
 /*! \ingroup postscript
- * \todo *** do simple 50 percent image mask for trasparent images, or use
- *    gs 'soft mask' trasparency stuff
- * \todo could chop this down to use Postscript LL3 -or- LL2. Does LL3 only.
+ * 
+ * In the distant future, could chop this down to use Postscript LL3 -or- LL2?
+ * Does LL3 only. this is a distant todo only if there is interest. Otherwise,
+ * people can use ps2ps -dLanguageLevel=2? (did one test with transparent image,
+ * and gv slows way the hell down)
+ * 
+ * \todo *** the output should be tailored to the specified psDpi(), otherwise the output
+ *   file will sometimes be quite enormous. Also, repeat images are outputted for each
+ *   instance, which also potentially increases size a lot
  */
 void psImage(FILE *f,LaxInterfaces::ImageData *img)
 {
@@ -36,20 +42,22 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	 // up proper transforms
 	
 	if (!img || !img->imlibimage) return;
+	imlib_context_set_image(img->imlibimage);
 	
-	//if (!imlib_image_has_alpha()) { psImage_masked(f,img); return; }
-	if (!imlib_image_has_alpha()) { psImage_masked2(f,img); return; }
-	//if (!imlib_image_has_alpha()) { psImage_103(f,img); return; }
+	//if (imlib_image_has_alpha()) { psImage_masked_interleave1(f,img); return; }
+	if (imlib_image_has_alpha()) { psImage_masked_interleave1(f,img); return; }
+	//if (imlib_image_has_alpha()) { psImage_103(f,img); return; }
 	
-	char *bname=strrchr(img->filename,'/'); 
+	char *bname=NULL;
+	if (img->filename) bname=strrchr(img->filename,'/'); 
 	if (!bname) bname=img->filename;
 	if (bname) fprintf(f," %% image %s\n",bname);
+	//DBG cout <<"*** image "<<(bname?bname:"(unknown)")<<" has no alpha"<<endl;
 			
 	fprintf(f,"[%.10g 0 0 %.10g 0 0] concat\n",
 			 img->maxx,img->maxy);
 	
 	 // image out
-	imlib_context_set_image(img->imlibimage);
 	DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
 	int width,height;
 	width=imlib_image_get_width();
@@ -59,7 +67,7 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	unsigned char *rgbbuf=new unsigned char[len]; //***this could be redone to not need new huge array like this
 	unsigned char r,g,b;
 	DATA32 bt;
-	DBG cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
+	//DBG cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
 	for (int x=0; x<width; x++) {
 		for (int y=0; y<height; y++) {
 			bt=buf[y*width+x];
@@ -101,8 +109,10 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 //! Output postscript for a Laxkit::ImageData, making a mask from its transparency.
 /*! \ingroup postscript
  * Does simple 50 percent threshhold image mask for trasparent images.
+ *
+ * \todo *** fixme!!! Trying to do InterleaveType 2
  */
-void psImage_masked(FILE *f,LaxInterfaces::ImageData *img)
+void psImage_masked_interleave2(FILE *f,LaxInterfaces::ImageData *img)
 {
 	 // the image gets put in a postscript box with sides 1x1, and the matrix
 	 // in the image is ??? so must set
@@ -115,9 +125,6 @@ void psImage_masked(FILE *f,LaxInterfaces::ImageData *img)
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
 	
-	char *bname=strrchr(img->filename,'/'); 
-	if (!bname) bname=img->filename;
-	if (bname) fprintf(f," %% image %s\n",bname);
 			
 	fprintf(f,"[%.10g 0 0 %.10g 0 0] concat\n",
 			 img->maxx,img->maxy);
@@ -137,9 +144,22 @@ void psImage_masked(FILE *f,LaxInterfaces::ImageData *img)
 			"    /ImageMatrix [%d 0 0 -%d 0 %d]\n"
 			"    /DataSource currentfile\n"
 			"    /ASCII85Decode filter \n"
-			"  >> image\n", width, height, width, height, height);
+			"  >>\n", width, height, width, height, height);
 
-	 //----------- write out DataDict
+	 //---------------write out MaskDict
+	fprintf(f,
+			"  /MaskDict <<\n"
+			"    /ImageType 1\n"
+			"    /Width %d\n"
+			"    /Height %d\n"
+			"    /BitsPerComponent 1\n"
+			"    /Decode [0 1]\n"
+			"    /ImageMatrix [%d 0 0 -%d 0 %d]\n"
+			"  >>\n", width, height, width, height, height);
+	
+	fprintf(f,">> image\n\n");
+	
+	 //----------- write out DataSource
 	DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
 	DATA32 color;
 
@@ -182,24 +202,12 @@ void psImage_masked(FILE *f,LaxInterfaces::ImageData *img)
 	}
 	fprintf(f,"~>\n");
 	
-	 //---------------write out MaskDict
-	fprintf(f,
-			"  /MaskDict <<\n"
-			"    /ImageType 1\n"
-			"    /Width %d\n"
-			"    /Height %d\n"
-			"    /BitsPerComponent 1\n"
-			"    /Decode [0 1]\n"
-			"    /ImageMatrix [%d 0 0 -%d 0 %d]\n"
-			"  >> image\n", width, height, width, height, height);
-	
-	fprintf(f,">> image\n\n");
 }
 //! Output postscript for a Laxkit::ImageData, making a mask from its transparency.
 /*! \ingroup postscript
  * Does simple 50 percent threshhold image mask for trasparent images.
  */
-void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img)
+void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img)
 {
 	 // the image gets put in a postscript box with sides 1x1, and the matrix
 	 // in the image is ??? so must set
@@ -212,9 +220,6 @@ void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img)
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
 	
-	char *bname=strrchr(img->filename,'/'); 
-	if (!bname) bname=img->filename;
-	if (bname) fprintf(f," %% image %s\n",bname);
 			
 	fprintf(f,"[%.10g 0 0 %.10g 0 0] concat\n",
 			 img->maxx,img->maxy);
@@ -259,7 +264,7 @@ void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img)
 	unsigned char a,r,g,b;
 
 	int w=0,pos=0;
-	DBG int numout=0;
+	//DBG int numout=0;
 	for (int y=0; y<height; y++) {
 		for (int x=0; x<width; x++) {
 			color=buf[y*width+x];
@@ -276,13 +281,13 @@ void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img)
 			
 			//DBG printf("%x=%a,%x,%x,%x ",bt,a,r,g,b);
 		}
-		DBG numout+=pos/4+4;
+		//DBG numout+=pos/4+4;
 		Ascii85_out(f, row, pos/4*4, 0, 75, &w);
 		if (pos%4) memmove(row,row+pos/4*4,pos%4);
 		pos%=4;
 	}
 	fprintf(f,"~>\n");
-	DBG cout <<"*****done writing DataDict:"<<numout<<"  w,h:"<<width<<','<<height<<"  *4="<<width*height*4<<endl;
+	//DBG cout <<"*****done writing DataDict:"<<numout<<"  w,h:"<<width<<','<<height<<"  *4="<<width*height*4<<endl;
 	
 }
 
@@ -305,9 +310,6 @@ void psImage_103(FILE *f,LaxInterfaces::ImageData *img)
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
 	
-	char *bname=strrchr(img->filename,'/'); 
-	if (!bname) bname=img->filename;
-	if (bname) fprintf(f," %% image %s\n",bname);
 			
 	fprintf(f,"[%.10g 0 0 %.10g 0 0] concat\n",
 			 img->maxx,img->maxy);

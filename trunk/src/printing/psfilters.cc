@@ -33,11 +33,6 @@
 
 //--------------------------- Ascii85 encoding --------------------------------
 
-/*! \defgroup postscript Postscript
- *
- * Various things to help output Postscript language level 3 files.
- */
-
 /*! \ingroup postscript
  * Translate in to the Ascii85 encoding, which translates groups
  * of 4 8-bit bytes into 5 ascii characters, from '!'==33 to 'u'==117.

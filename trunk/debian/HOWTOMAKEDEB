@@ -7,7 +7,7 @@ MAKING LAIDOUT DEB PACKAGE
  svn export http://svn.sourceforge.net/svnroot/laidout/(whichever) laidout-(version)
  tar cjv (the dir) > laidout-version.tar.bz2 so dpkg-buildpackage makes a proper diff compared to svn source
 
- For dev snapshots, the version should be number-date, so like 0.02-20060331
+ For dev snapshots, the version should be number-rev[SUBVERSION REVISION], so like 0.02-rev234
 
 2. ----modify source---
  make sure version number is correct in any source files that refer to it, currently:
