@@ -40,6 +40,91 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
+
+
+
+/*! \defgroup postscript Postscript
+ *
+ * Various things to help output Postscript language level 3 files.
+ *
+ * While outputting ps, functions can access the current transformation matrix
+ * as seen by the postscript interpreter using psCTM(). This is useful, for intstance,
+ * for effects where something must be generated at the paper's dpi like an
+ * ImagePatch. Also can be used to aid setup for the kind of linewidth that is supposed 
+ * to be relative to the paper, rather than the ctm.
+ */
+
+
+//--------------------  ps CTM helpers --------------------------
+
+static double psdpi=1;
+
+//! This should be what is the current paper's preferred dpi.
+/*! \ingroup postscript */
+double psDpi()
+{ return psdpi; }
+
+//! Set what should be what is the current paper's preferred dpi.
+/*! \ingroup postscript */
+double psDpi(double n)
+{ return psdpi=n; }
+
+static double *psctm=NULL;
+PtrStack<double> psctms(2);
+
+//! New ps ctm=m*oldctm.
+/*! \ingroup postscript */
+void psConcat(double *m)
+{
+	double *mm=transform_mult(NULL,m,psctm);
+	delete[] psctm;
+	psctm=mm;
+	DBG cout << "ctm: "; dumpctm(psctm);
+}
+
+//! New ps ctm=m*oldctm.
+/*! \ingroup postscript */
+void psConcat(double a,double b,double c,double d,double e,double f)
+{
+	double m[6];
+	transform_set(m,a,b,c,d,e,f);
+	double *mm=transform_mult(NULL,m,psctm);
+	delete[] psctm;
+	psctm=mm;
+}
+
+//! Return the current ps ctm.
+/*! \ingroup postscript */
+double *psCTM() 
+{ return psctm; }
+
+//! Push ctm on the ps ctm stack.
+/*! \ingroup postscript */
+void psPushCtm()
+{
+	psctms.push(psctm);
+	psctm=transform_identity(NULL);
+	transform_copy(psctm,psctms.e[psctms.n-1]);
+}
+
+//! Pop 1 off the ps ctm stack.
+/*! \ingroup postscript */
+void psPopCtm()
+{
+	delete[] psctm;
+	psctm=psctms.pop();
+	if (!psctm) psctm=transform_identity(NULL); //*** this is an error to be here!
+}
+
+//! Flush the running stack of ps ctms.
+/*! \ingroup postscript */
+void psFlushCtms()
+{ psctms.flush(); }
+
+
+
+//----------------------------- ps out ---------------------------------------
+
 //! Internal function to dump out the obj in postscript. Called by psout().
 /*! \ingroup postscript
  * It is assumed that the transform of the object is applied here, rather than
@@ -49,58 +134,44 @@ using namespace LaxInterfaces;
  * without significant problems, EXCEPT for the lack of decent transparency handling.
  *
  * \todo *** must be able to do color management
- *
  * \todo *** need integration of global units, assumes inches now. generally must work
- * out what shall be the default working units...
- *
- * \todo *** this should probably be broken down into object specific ps out functions
- *  (done for ColorPatchData and PathsData...)
- *
- * \todo *** the output must be tailored to the specified dpi, otherwise the output
- * file will sometimes be quite enormous
+ *    out what shall be the default working units...
  */
 void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 {
-	if (dynamic_cast<Group *>(obj)) {
+	if (!obj) return;
+	
+	 // push axes
+	psPushCtm();
+	psConcat(obj->m());
+	fprintf(f,"gsave\n"
+			  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+				obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+	
+	if (!strcmp(obj->whattype(),"Group")) {
 		Group *g=dynamic_cast<Group *>(obj);
-		 // push axes
-		double m[6];
-		transform_copy(m,obj->m());
-		fprintf(f,"gsave\n [%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				m[0], m[1], m[2], m[3], m[4], m[5]); 
-		
-		 //draw
 		for (int c=0; c<g->n(); c++) psdumpobj(f,g->e(c)); 
 		
-		 // pop axes
-		fprintf(f,"grestore\n\n");
-	} else if (dynamic_cast<ImagePatchData *>(obj)) {
-		fprintf(f,"gsave\n"
-				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
 		psImagePatch(f,dynamic_cast<ImagePatchData *>(obj));
-		fprintf(f,"grestore\n");
-	} else if (dynamic_cast<ImageData *>(obj)) {
-		fprintf(f,"gsave\n"
-				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		
+	} else if (!strcmp(obj->whattype(),"ImageData")) {
 		psImage(f,dynamic_cast<ImageData *>(obj));
-		fprintf(f,"grestore\n");
-	} else if (dynamic_cast<GradientData *>(obj)) {
-		fprintf(f,"gsave\n"
-				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		
+	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		psGradient(f,dynamic_cast<GradientData *>(obj));
-		fprintf(f,"grestore\n");
-	} else if (dynamic_cast<ColorPatchData *>(obj)) {
-		fprintf(f,"gsave\n"
-				  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				   obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		
+	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		psColorPatch(f,dynamic_cast<ColorPatchData *>(obj));
-		fprintf(f,"grestore\n");
+		
 	} else if (dynamic_cast<PathsData *>(obj)) {
 		psPathsData(f,dynamic_cast<PathsData *>(obj));
+
 	}
+	
+	 // pop axes
+	fprintf(f,"grestore\n\n");
+	psPopCtm();
 }
 
 //! Open file, or 'output.ps' if file==NULL, and output postscript for doc via psout(FILE*,Document*).
@@ -205,23 +276,27 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
 
 //! Print a postscript file of doc to already open f.
 /*! \ingroup postscript
- * Does not open or close f.
+ * Does not open or close f. This sets up the ctm as accessible through psCTM(),
+ * and flushes the ctm stack.
  *
  * Return 0 for no errors, nonzero for errors.
  * 
  * \todo *** this does not currently handle pages that bleed their contents
- * onto other pages correctly, nor does it otherwise clip the pages properly 
- *
+ *   onto other pages correctly. it bleeds here by paper spread, rather than page spread
  * \todo *** ps doc tag CreationDate: ?????, For: ????
- *
  * \todo *** for tiled pages, or multiples of same object each instance is
- * rendered independently right now. should make a function to display such
- * things, thus reduce ps file size substantially..
+ *   rendered independently right now. should make a function to display such
+ *   things, thus reduce ps file size substantially..
  */
 int psout(FILE *f,Document *doc)
 {
 	if (!f || !doc) return 1;
 
+	 // initialize outside accessible ctm
+	psctms.flush();
+	psctm=transform_identity(psctm);
+	DBG cout <<"=================== start printing ====================\n";
+	
 	 // print out header
 	fprintf (f,
 			"%%!PS-Adobe-3.0\n"
@@ -259,8 +334,10 @@ int psout(FILE *f,Document *doc)
 		fprintf(f, "%%%%Page: %d %d\n", c+1,c+1);
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
+		psConcat(72.,0.,0.,72.,0.,0.);
 		if (doc->docstyle->imposition->paperstyle->flags&1) {
 			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
+			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
 		}
 		
 		spread=doc->docstyle->imposition->PaperLayout(c);
@@ -275,15 +352,19 @@ int psout(FILE *f,Document *doc)
 		
 		 // for each paper in paper layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
+			psDpi(doc->docstyle->imposition->paperstyle->dpi);
+			
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
 			page=doc->pages.e[pg];
 			
 			 // transform to page
 			fprintf(f,"gsave\n");
+			psPushCtm();
 			transform_copy(m,spread->pagestack.e[c2]->outline->m());
 			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
+			psConcat(m);
 
 			//*** set clipping region
 
@@ -300,6 +381,7 @@ int psout(FILE *f,Document *doc)
 				psdumpobj(f,page->layers.e[l]);
 			}
 			fprintf(f,"grestore\n");
+			psPopCtm();
 		}
 
 		delete spread;
@@ -315,6 +397,7 @@ int psout(FILE *f,Document *doc)
 	 //print out footer
 	fprintf(f, "\n%%%%EOF\n");
 
+	DBG cout <<"=================== end printing ========================\n";
 
 	return 0;
 }
