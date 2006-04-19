@@ -19,8 +19,7 @@
 #include "viewwindow.h"
 #include "spreadeditor.h"
 #include "helpwindow.h"
-	
-#include <lax/promptedit.h>
+#include "commandwindow.h"
 
 #include <iostream>
 using namespace std;
@@ -35,16 +34,14 @@ using namespace Laxkit;
  * These become the panes of a HeadWindow.
  */
 
-////---------------------- newPromptWindowFunc
+////---------------------- newCommandWindowFunc
 /*! \ingroup mainwindows
- * \brief PromptWindow window generator for use in HeadWindow.
- * \todo *** this is just a placeholder until an actual interpreter is implemented.
+ * \brief CommandWindow window generator for use in HeadWindow.
  */
-anXWindow *newPromptWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newCommandWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	PromptEdit *pe=new PromptEdit(parnt,ntitle,style, 0,0,0,0,1, NULL);
-	pe->padx=pe->pady=6;
-	return pe;
+	CommandWindow *command=new CommandWindow(parnt,ntitle,style, 0,0,0,0,1);
+	return command;
 }
 
 ////---------------------- newViewWindowFunc
@@ -113,7 +110,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
 	head->AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
 	head->AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
-	head->AddWindowType("PromptEdit","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newPromptWindowFunc,0);//***
+	head->AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newCommandWindowFunc,0);
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
