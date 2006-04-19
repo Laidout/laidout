@@ -22,6 +22,7 @@ objs= \
 	group.o \
 	document.o \
 	interfaces.o \
+	commandwindow.o \
 	headwindow.o \
 	helpwindow.o \
 	newdoc.o \

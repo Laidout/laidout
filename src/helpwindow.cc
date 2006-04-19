@@ -14,6 +14,7 @@
 // correspondence about this software.
 //
 
+#include "headwindow.h"
 #include "helpwindow.h"
 #include <lax/mesbar.h>
 #include <lax/textbutton.h>
@@ -222,6 +223,7 @@ int HelpWindow::init()
 int HelpWindow::CharInput(unsigned int ch,unsigned int state)
 {
 	if (ch==LAX_Esc) {
+		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
 		app->destroywindow(this);
 		return 0;
 	}
