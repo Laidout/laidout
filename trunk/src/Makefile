@@ -47,14 +47,14 @@ laidout: lax laxinterface $(objs) printing impositions
 # of info to the terminal.. I couldn't figure out how to do it with a simple compile flag
 # like #defining DBG to be: //
 hidegarbage:
-	./hidegarbage
+	./hidegarbage *.cc
 	cd printing && $(MAKE) hidegarbage
 	cd impositions && $(MAKE) hidegarbage
 
 # This changes in *.cc all occurrences of 
 # '(whitespace)//DBG' to '(same ws)DBG'.
 unhidegarbage:
-	./hidegarbage 0
+	./hidegarbage -0 *.cc
 	cd printing && $(MAKE) hidegarbage
 	cd impositions && $(MAKE) hidegarbage
 

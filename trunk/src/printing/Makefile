@@ -32,10 +32,10 @@ depends:
 include makedepend
 
 hidegarbage:
-	../hidegarbage
+	../hidegarbage *.cc
 
 unhidegarbage:
-	../hidegarbage 0
+	../hidegarbage -0 *.cc
 
 
 .PHONY: clean printing hidegarbage unhidegarbage
