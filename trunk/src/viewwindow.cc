@@ -2013,8 +2013,8 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	virtual void updatePagenumber();
 //	virtual void SetParentTitle(const char *str);
 //
-//	virtual void dump_out(FILE *f,int indent) =0;
-//	virtual void dump_in_atts(Attribute *att) =0;
+//	virtual void dump_out(FILE *f,int indent,int what);
+//	virtual void dump_in_atts(Attribute *att);
 //};
 
 //	ViewerWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -2059,7 +2059,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  *
  * \todo *** still need some standardizing for the little helper controls..
  */
-void ViewWindow::dump_out(FILE *f,int indent)
+void ViewWindow::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -2216,6 +2216,10 @@ int ViewWindow::init()
 	tbut->tooltip("Import a single image");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
+	tbut=new TextButton(this,"insert image",0, 0,0,0,0,1, NULL,window,"insertImage","Insert Image");
+	tbut->tooltip("Import a single image");
+	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+
 	tbut=new TextButton(this,"import images",0, 0,0,0,0,1, NULL,window,"dumpImages","Dump in Images");
 	tbut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
@@ -2276,25 +2280,27 @@ int ViewWindow::init()
  */
 int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 {
-	if (!strcmp(mes,"new image")) {
+	if (!strcmp(mes,"import new image") || !strcmp(mes,"insert new image")) {
 		StrSendData *s=dynamic_cast<StrSendData *>(data);
 		if (!s) return 1;
 		Imlib_Image image=imlib_load_image(s->str);
 
 		if (image) {
 			SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
-			if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
-				 //set in image
-				ImageData *img=dynamic_cast<ImageData *>(curobj);
-				img->SetImage(image);
-				makestr(img->filename,s->str);
-				((anXWindow *)viewport)->Needtodraw(1);
-			} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
-				 //set in imagepatch
-				dynamic_cast<ImagePatchData *>(curobj)->SetImage(s->str);
-				imlib_context_set_image(image);
-				imlib_free_image();
-				((anXWindow *)viewport)->Needtodraw(1);
+			if (!strcmp(mes,"insert new image")) {
+				if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
+					 //set in image
+					ImageData *img=dynamic_cast<ImageData *>(curobj);
+					img->SetImage(image);
+					makestr(img->filename,s->str);
+					((anXWindow *)viewport)->Needtodraw(1);
+				} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
+					 //set in imagepatch
+					dynamic_cast<ImagePatchData *>(curobj)->SetImage(s->str);
+					imlib_context_set_image(image);
+					imlib_free_image();
+					((anXWindow *)viewport)->Needtodraw(1);
+				} else curobj=NULL;
 			} else curobj=NULL;
 			if (!curobj) {
 				ImageData *newdata=new ImageData();
@@ -2413,7 +2419,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 			mesbar->SetText("Printing to file, please wait....");
 			mesbar->Refresh();
 			XSync(app->dpy,False);
-			
+	
 			psout(f,doc);
 			fclose(f);
 			
@@ -2425,6 +2431,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 			sprintf(tmp,"Error printing to %s.",s->str);
 			mesbar->SetText(tmp);
 		}
+
 		cout << "----- ViewWindow Print to file: "<<s->str<<endl;
 		delete data;
 		return 0;
@@ -2499,7 +2506,8 @@ void ViewWindow::updatePagenumber()
 	pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
 	pagenumber->Select(page+1);
 
-	pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
+	if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
+	else pageclips->State(LAX_OFF);
 }
 
 //! Deal with various indicator/control events
@@ -2510,6 +2518,7 @@ void ViewWindow::updatePagenumber()
  *    newLayerNumber,
  *    newViewType, 
  *    importImage,
+ *    insertImage,
  *    dumpImages,
  *    deletePage,
  *    addPage,
@@ -2612,7 +2621,12 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"importImage")) {
 		app->rundialog(new FileDialog(NULL,"Import Image",
 					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-					0,0,500,500,0, window,"new image"));
+					0,0,500,500,0, window,"import new image"));
+		return 0;
+	} else if (!strcmp(mes,"insertImage")) {
+		app->rundialog(new FileDialog(NULL,"Insert Image",
+					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+					0,0,500,500,0, window,"insert new image"));
 		return 0;
 	} else if (!strcmp(mes,"dumpImages")) {
 		//DBG cout <<" --- dumpImages...."<<endl;

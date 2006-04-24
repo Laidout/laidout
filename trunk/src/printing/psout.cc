@@ -283,14 +283,17 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * 
  * \todo *** this does not currently handle pages that bleed their contents
  *   onto other pages correctly. it bleeds here by paper spread, rather than page spread
- * \todo *** ps doc tag CreationDate: ?????, For: ????
+ * \todo *** ps doc tag For: ????
  * \todo *** for tiled pages, or multiples of same object each instance is
  *   rendered independently right now. should make a function to display such
  *   things, thus reduce ps file size substantially..
  */
-int psout(FILE *f,Document *doc)
+int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 {
 	if (!f || !doc) return 1;
+	if (start<0) start=0;
+	if (end<0 || end>=doc->docstyle->imposition->numpapers) 
+		end=doc->docstyle->imposition->numpapers-1;
 
 	 // initialize outside accessible ctm
 	psctms.flush();
@@ -303,10 +306,12 @@ int psout(FILE *f,Document *doc)
 			"%%%%Orientation: ");
 	fprintf (f,"%s\n",(doc->docstyle->imposition->paperstyle->flags&1)?"Landscape":"Portrait");
 	fprintf(f,"%%%%Pages: %d\n",doc->docstyle->imposition->numpapers);
+	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
-			  "%%%%CreationDate: Sat Feb 11 21:12:07 2006\n"
+			  "%%%%CreationDate: %s\n"
 			  "%%%%Creator: Laidout %s\n"
-			  "%%%%For: whoever (i686, Linux 2.6.15-1-k7)\n",LAIDOUT_VERSION);
+			  "%%%%For: whoever (i686, Linux 2.6.15-1-k7)\n",
+			  		ctime(&t),LAIDOUT_VERSION);
 	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
 				doc->docstyle->imposition->paperstyle->name, 
 				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
@@ -329,7 +334,7 @@ int psout(FILE *f,Document *doc)
 	int c,c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page;
-	for (c=0; c<doc->docstyle->imposition->numpapers; c++) {
+	for (c=start; c<=end; c++) {
 	     //print paper header
 		fprintf(f, "%%%%Page: %d %d\n", c+1,c+1);
 		fprintf(f, "save\n");
@@ -346,7 +351,7 @@ int psout(FILE *f,Document *doc)
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
 			//DBG cout <<"marks data:\n";
-			//DBG spread->marks->dump_out(stdout,2);
+			//DBG spread->marks->dump_out(stdout,2,0);
 			psdumpobj(f,spread->marks);
 		}
 		

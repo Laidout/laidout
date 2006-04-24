@@ -32,6 +32,7 @@
 //	virtual ~CommandWindow();
 //};
 
+//! Set pads to 6.
 CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder)
 	: PromptEdit(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
@@ -39,22 +40,28 @@ CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigne
 	padx=pady=6;
 }
 
+//! Empty destructor.
 CommandWindow::~CommandWindow()
 {
 }
 
 /*! Currently can do the new document by spec: 'newdoc letter,40 pages,booklet'.
+ *
+ * Must return a new'd char[].
  */
 char *CommandWindow::process(const char *in)
 {
+	if (!in) return NULL;
 	while (isspace(*in)) in++;
 	if (!strncmp(in,"newdoc",6)) {
-		if (isspace(in[6])) {
+		if (!isalnum(in[6])) {
 			in+=6;
 			while (isspace(*in)) in++;
 			if (laidout->NewDocument(in)==0) return newstr("Document added.");
 			else return newstr("Error adding document. Not added");
 		}
+	} else if (!strncmp(in,"?",1) || !strncmp(in,"help",4)) {
+		return newstr("The only recognized commands are:\n newdoc [spec]\n help\n ?");
 	}
 
 	return newstr("You are surrounded by twisty passages, all alike.");

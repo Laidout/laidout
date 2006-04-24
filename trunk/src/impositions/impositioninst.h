@@ -44,7 +44,7 @@ class Singles : public Imposition
 	virtual int SetPaperSize(PaperType *npaper);
 	virtual void setPage();
 
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
@@ -64,7 +64,7 @@ class DoubleSidedSingles : public Singles
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
 	virtual void setPage();
 
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
@@ -89,7 +89,7 @@ class BookletImposition : public DoubleSidedSingles
 	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 	virtual void setPage();
 
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
@@ -116,7 +116,7 @@ class BookletImposition : public DoubleSidedSingles
 //	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
 //	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 

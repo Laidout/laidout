@@ -69,7 +69,7 @@ extern RefCounter<anObject> objectstack;
 //	virtual Style *duplicate(Style *s=NULL);
 //	virtual double w() { return width; }
 //	virtual double h() { return height; }
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	virtual int set(const char *flag, int newstate);
 //};
@@ -139,7 +139,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
  *  facingpagesbleed
  * </pre>
  */
-void PageStyle::dump_out(FILE *f,int indent)
+void PageStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	fprintf(f,"%swidth %.10g\n",spc,w());
@@ -221,7 +221,7 @@ StyleDef *PageStyle::makeStyleDef()
 //	virtual const char *whattype() { return "RectPageStyle"; }
 //	virtual StyleDef *makeStyleDef();
 //	virtual Style *duplicate(Style *s=NULL);
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
@@ -280,7 +280,7 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att)
 /*! Write out marginsl/r/t/b, leftpage or rightpage, lrtb, iotb, lrio,
  * and call PageStyle::dump_out for flags, width, height.
  */
-void RectPageStyle::dump_out(FILE *f,int indent)
+void RectPageStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	fprintf(f,"%smarginl %.10g\n",spc,ml);
@@ -296,7 +296,7 @@ void RectPageStyle::dump_out(FILE *f,int indent)
 	if (recttype&RECTPAGE_LRTB) fprintf(f,"%slrtb\n",spc);
 	if (recttype&RECTPAGE_IOTB) fprintf(f,"%siotb\n",spc);
 	if (recttype&RECTPAGE_LRIO) fprintf(f,"%slrio\n",spc);
-	PageStyle::dump_out(f,indent);
+	PageStyle::dump_out(f,indent,0);
 }
 
 //! Copy over ml,mr,mt,mb,recttype.
@@ -409,7 +409,7 @@ StyleDef *RectPageStyle::makeStyleDef()
 //	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
 //	virtual ~Page(); 
 //	virtual const char *whattype() { return "Page"; }
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	virtual Laxkit::ImageData *Thumbnail();
 //	virtual int InstallPageStyle(PageStyle *pstyle,int islocal=1);
@@ -503,16 +503,16 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 /*! ***Each page writes out its own pagestyle.. this should probably be a reference
  * to somewhere in the file... too much duplication...
  */
-void Page::dump_out(FILE *f,int indent)
+void Page::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (pagestyle) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
-		pagestyle->dump_out(f,indent+2);
+		pagestyle->dump_out(f,indent+2,0);
 	}
 	for (int c=0; c<layers.n; c++) {
 		fprintf(f,"%slayer %d\n",spc,c);
-		layers.e[c]->dump_out(f,indent+2);
+		layers.e[c]->dump_out(f,indent+2,0);
 	}
 }
 
@@ -594,7 +594,7 @@ ImageData *Page::Thumbnail()
 	
 	imlib_context_set_drawable(d);
 	DBG cout <<"Thumbnail dump_out:"<<endl;
-	DBG thumbnail->dump_out(stdout,2);
+	DBG thumbnail->dump_out(stdout,2,0);
 	DBG cout <<"  minx "<<thumbnail->minx<<endl;
 	DBG cout <<"  maxx "<<thumbnail->maxx<<endl;
 	DBG cout <<"  miny "<<thumbnail->miny<<endl;

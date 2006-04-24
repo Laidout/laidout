@@ -148,6 +148,8 @@ int HelpWindow::init()
 			"   'm'    toggle mark of current page\n"
 			"   'M'    reverse toggle mark of current page\n"
 			"   't'    toggle drawing of thumbnails\n"
+			"   'A'    toggle how to arrange the spreads\n"
+			"  +'A'    force arranging the spreads using current arrange style\n"
 			"   'p'    *** for debugging thumbs\n"
 			"\n"
 			"\n"

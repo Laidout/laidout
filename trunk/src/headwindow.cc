@@ -92,7 +92,9 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  *  ObjectTreeEditor ***not imp
  * </pre>
  *
- * \todo *** might want to remove doc, or have some more general way to start what is in which
+ * \todo *** might want to remove doc, or have some more general way to start what is in which.
+ *    perhaps have app keep track of most recently accessed doc? or have option to keep a new
+ *    head empty
  */
 anXWindow *newHeadWindow(Document *doc,const char *which)
 {
@@ -122,10 +124,20 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 //------------------------------- HeadWindow ---------------------------------------
 /*! \class HeadWindow
  * \brief Top level windows to hold other stuff such as a ViewWindow.
+ *
+ * <pre>
+ * *** menu: (todo for splitwindow probably)
+ *  hide tabs for stacked panes
+ *  show tabs for stacked panes
+ *  mark for swap
+ *  swap with marked
+ *  float
+ * </pre>
  */  
 //class HeadWindow : public Laxkit::SplitWindow
 //{
 // public:
+//	Laxkit::anXWindow *lastview, *lastedit;
 // 	HeadWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 // 		int xx,int yy,int ww,int hh,int brder);
 // 	virtual const char *whattype() { return "HeadWindow"; }
@@ -135,6 +147,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 //	virtual void WindowGone(Laxkit::anXWindow *win);
+//	virtual int Curbox(int c);
 //};
 
 //! Constructor.
@@ -159,8 +172,11 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 			"  shift-left click Joins\n"
 			"  right click brings up menu"
 		);
+
+	lastview=lastedit=NULL;
 }
 
+//! Empty destructor.
 HeadWindow::~HeadWindow()
 {
 }
@@ -187,6 +203,8 @@ int HeadWindow::init()
 //	return 0;
 }
 
+/*! \todo *** work on this..
+ */
 MenuInfo *HeadWindow::GetMenu()
 {
 	//*** must make something like:
@@ -243,6 +261,8 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 }
 
 //! Create split panes with names like SplitPane12, where the number is getUniqueNumber().
+/*! New spread editors will be created with the same document of the most recent view.
+ */
 anXWindow *HeadWindow::NewWindow(const char *wtype)
 {
 	if (!wtype) 
@@ -260,4 +280,17 @@ anXWindow *HeadWindow::NewWindow(const char *wtype)
 	}
 	return NULL;
 }
+
+//! Intercept when curbox changes to keep track what was the most recently focused viewer.
+int HeadWindow::Curbox(int c)
+{
+	int cc=SplitWindow::Curbox(c);
+	if (!curbox || !curbox->win) return cc;
+	
+	anXWindow *win=curbox->win;
+	if (!strcmp(win->whattype(),"ViewWindow")) lastview=curbox->win;
+
+	return cc;
+}
+
 

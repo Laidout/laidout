@@ -1005,8 +1005,8 @@ void deleteFieldNode(FieldNode *fn)
  *  See GenericStyle for a kind of all-purpose flat Style, that is, it does not
  *  have any fancy hardcoded shortcuts.
  *
- *  Finally, derived classes should remember to define their own dump_out(FILE*,int) and
- *  dump_out_atts(Attribute*), required by class LaxFiles::DumpUtility.
+ *  Finally, derived classes should remember to define their own dump_out(FILE*,int,what) and
+ *  dump_in_atts(Attribute*), required by class LaxFiles::DumpUtility.
  *
  *
  * <pre>

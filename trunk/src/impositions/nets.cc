@@ -133,7 +133,7 @@ void NetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
 	if (isclosed) fprintf(f,"%sclosed\n",spc);
 	if (linestyle) {
 		fprintf(f,"%slinestyle\n",spc);
-		linestyle->dump_out(f,indent+2);
+		linestyle->dump_out(f,indent+2,0);
 	}
 }
 
@@ -464,7 +464,7 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
 //	virtual void ApplyTransform(double *mm=NULL);
 //	virtual void Center();
 //	virtual const char *whattype() { return thenettype; }
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	virtual int pointinface(flatpoint pp);
 //	virtual int rotateface(int f,int alignxonly=0);
@@ -595,7 +595,7 @@ Net *Net::duplicate()
  *    matrix 1 0 0 1 .2 .3
  * </pre>
  */
-void Net::dump_out(FILE *f,int indent)
+void Net::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	int c;
@@ -720,7 +720,7 @@ void  Net::dump_in_atts(Attribute *att)
 	FindBBox();
 
 	DBG cout <<"----------------this was set in Net:-------------"<<endl;
-	DBG dump_out(stdout,0);
+	DBG dump_out(stdout,0,0);
 	DBG cout <<"----------------end Net dump:-------------"<<endl;
 }
 

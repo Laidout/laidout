@@ -50,7 +50,7 @@ class NetImposition : public Imposition
 	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
 
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	
 	virtual int SetNet(const char *nettype);

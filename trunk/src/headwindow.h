@@ -22,6 +22,7 @@
 class HeadWindow : public Laxkit::SplitWindow
 {
  public:
+	Laxkit::anXWindow *lastview, *lastedit;
  	HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
  	virtual const char *whattype() { return "HeadWindow"; }
@@ -31,6 +32,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 	virtual void WindowGone(Laxkit::anXWindow *win);
+	virtual int Curbox(int c);
 };
 
 Laxkit::anXWindow *newHeadWindow(Document *doc=NULL,const char *which=NULL);

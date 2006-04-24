@@ -30,7 +30,7 @@ void psPopCtm();
 void psFlushCtms();
 
 void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj);
-int psout(FILE *f,Document *doc);
+int psout(FILE *f,Document *doc,int start=-1,int end=-1,unsigned int flags=0);
 int psout(Document *doc,const char *file=NULL);
 int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing=0);
 

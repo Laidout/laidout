@@ -68,7 +68,7 @@ using namespace std;
 //	virtual void flush();
 //	virtual void swap(int i1,int i2) { objs.swap(i1,i2); }
 //	virtual void slide(int i1,int i2);
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	virtual int pointin(flatpoint pp,int pin=1);
 //	virtual void FindBBox();
@@ -402,7 +402,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att)
 }
 
 //! Write out the objects.
-void Group::dump_out(FILE *f,int indent)
+void Group::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (locked) fprintf(f,"%slocked\n",spc);
@@ -410,7 +410,7 @@ void Group::dump_out(FILE *f,int indent)
 	if (prints) fprintf(f,"%sprints\n",spc);
 	for (int c=0; c<objs.n; c++) {
 		fprintf(f,"%sobject %d %s\n",spc,c,objs.e[c]->whattype());
-		objs.e[c]->dump_out(f,indent+2);
+		objs.e[c]->dump_out(f,indent+2,0);
 	}
 }
 //! Find d somewhere within this (it can be this also). Searches in subobjects too.

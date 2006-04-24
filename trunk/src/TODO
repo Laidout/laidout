@@ -20,10 +20,6 @@ NEED major overhaul of the rendering, which should allow among other things
 output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
  
 
-printing out transparent images suffers same way as inkscape, in that some mystery
-background color is put where it should show through.. need to either use ghostscript
-transparent image abilities, or figure out some sort of masking..
-
 Next: MUst have color management..., have to imp the color system....
 
 Define protocols for inter-window communication, and scripting integration...
@@ -33,16 +29,15 @@ to any paper size, possibly with stuff off paper..
 the WhackedImposition: have a single page data map to many papers (using different transforms),
 sometimes known as posterizing..
 
-main control panel... there are a few basic windows right now, but 
-they must fit into a whole window framework which still needs to be implemented with
-Laxkit::SplitWindow and Laxkit::TabbedMenuSelector or whatever it'll be called!!!
+main control panel still needs to be implemented with
+ Laxkit::TabbedMenuSelector or whatever it'll be called!!!
 
 work on page and spread flipper:   < page 2 >,       < > page ixv,    
 tool flipper:  [< Path Tool >]
 
 *** figure out consistent way to have Attribute things attached to various kinds of objects.
 
-Color picker should be like scribus's which has previews of 
+%Color picker should be like scribus's which has previews of 
 	black/white text of various shades of the picked color
 
 viewport options:
