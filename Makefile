@@ -37,7 +37,8 @@ docs:
 	cd docs && doxygen
 	
 
-install: laidout
+#install: laidout <-- don't want to link twice, so assume 'make install' called separate
+install: 
 	echo 'Installing to $(BINDIR)/laidout which points to $(BINDIR)/$(LAIDOUTNAME)'
 	$(INSTALL) -m755 src/laidout $(BINDIR)/$(LAIDOUTNAME)
 	rm -f $(BINDIR)/laidout

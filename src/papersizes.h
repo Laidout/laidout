@@ -35,7 +35,7 @@ class PaperType : public Style
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual Style *duplicate(Style *s=NULL);
 
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 

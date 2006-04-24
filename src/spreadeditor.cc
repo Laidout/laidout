@@ -36,7 +36,8 @@ using namespace std;
 
 
 ////----------------------- SpreadView --------------------------------------
-// *** class to hold a view that can be saved and loaded
+// *** class to hold a view that can be saved and loaded independent of a
+// SpreadEditor or SpreadInterface
 ////class SpreadView
 ////{
 //// public:
@@ -265,12 +266,17 @@ PageLabel::~PageLabel()
 /*! \var int SpreadInterface::curpage
  * \brief Index that can be used to pagelabel stack..
  */
+/*! \var int SpreadInterface::arrangetype
+ * \brief How arranging should be done.
+ *
+ * -1 means auto row or column depending on whether the window is wider or taller.
+ */
 //class SpreadInterface : public Laxkit::InterfaceWithDp
 //{
 // protected:
 //	int centerlabels;
 //	char drawthumbnails;
-//	int arrangetype;
+//	int arrangetype,arrangestate;
 //	int mx,my,firsttime;
 //	int reversebuttons;
 //	int curpage, dragpage;
@@ -326,6 +332,34 @@ PageLabel::~PageLabel()
 //	friend class SpreadEditor;
 //};
 
+
+ // values for arrangestate
+ // arrangetype has to be within the min to max.
+#define ArrangeNeedsArranging -1
+#define ArrangeTempRow         1
+#define ArrangeTempColumn      2
+
+#define  ArrangetypeMin        3
+#define ArrangeAutoAlways      3
+#define ArrangeAutoTillMod     4
+#define Arrange1Row            5
+#define Arrange1Column         6
+#define ArrangeGrid            7
+#define ArrangeCustom          8
+#define  ArrangetypeMax        8
+
+static const char *arrangetypestring(int a)
+{
+	if (a==ArrangeAutoAlways) return "Auto arrange on each window size change";
+	else if (a==ArrangeAutoTillMod) return "Auto arrange until you move a spread";
+	else if (a==Arrange1Row) return "Arrange in one row";
+	else if (a==Arrange1Column) return "Arrange in one column";
+	else if (a==ArrangeGrid) return "Arrange in a grid based on screen proportions";
+	else if (a==ArrangeCustom) return "You will do all arranging";
+	return "? error: bad arrange value";
+}
+
+//! Initialize everything and call GetSpreads().
 SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum)
 	: InterfaceWithDp(0,ndp)
 {
@@ -340,7 +374,8 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	dragpage=-1;
 	drawthumbnails=1;
 	centerlabels=0;
-	arrangetype=-1;
+	arrangetype=ArrangeAutoTillMod;
+	arrangestate=ArrangeNeedsArranging;
 
 	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
 	buttonmask=Button1Mask|Button2Mask;
@@ -371,12 +406,13 @@ int SpreadInterface::InterfaceOn()
  * but just in case, this covers for it.
  *
  * PaperLayouts are non-continuous, but PageLayouts should be continuous.
+ * The spread editor currently only does PageLayouts.
  *
  * \todo currently, this just plops down spreads returned from
- * Imposition::GetLittleSpread(). From the first one, gets the highest page in
- * the spread, then gets the next spread based on that one, until highestpage
- * is equal to doc->pages.n. would be better to search within already created
- * spreads to be sure not skipping pages..
+ *   Imposition::GetLittleSpread(). From the first one, gets the highest page in
+ *   the spread, then gets the next spread based on that one, until highestpage
+ *   is equal to doc->pages.n. would be better to search within already created
+ *   spreads to be sure not skipping pages..
  */
 void SpreadInterface::GetSpreads()
 {
@@ -412,12 +448,16 @@ void SpreadInterface::GetSpreads()
 	} while (highestpage<doc->pages.n);
 }
 
-#define ArrangeTempRow     1
-#define ArrangeTempColumn  2
-#define ArrangeAuto        3
-#define Arrange1Row        4
-#define Arrange1Column     5
-#define ArrangeGrid        6
+// // values for arrangestate
+//#define ArrangeNeedsArranging -1
+//#define ArrangeTempRow         1
+//#define ArrangeTempColumn      2
+//#define ArrangeAutoAlways      3
+//#define ArrangeAutoTillMod     4
+//#define Arrange1Row            5
+//#define Arrange1Column         6
+//#define ArrangeGrid            7
+//#define ArrangeCustom          8
 
 //! Arrange the spreads in some sort of order.
 /*! Default is have 1 page take up about an inch of screen space.
@@ -426,41 +466,79 @@ void SpreadInterface::GetSpreads()
  *
  * how==-1 means use default arrangetype. 
  * Otherwise, 0==auto, 1==1 row, 2==1 column, 3=grid by proportion of curwindow
+ *
+ * This is called on 'A', a firsttime refresh, and curwindow resize.
+ * 
+ * \todo the auto grid arranging could be brighter
  */
 void SpreadInterface::ArrangeSpreads(int how)//how==-1
 { 
-	if (how>0 && how<4) {
-		if (arrangetype>0 && arrangetype==how) return;
+	if (arrangetype==arrangestate) return;
+	if (arrangetype==ArrangeCustom) {
+		if (arrangestate!=ArrangeNeedsArranging) { arrangestate=ArrangeCustom; return; }
 	}
-	//if (arrangetype!=0) arrangetype=how;
-	arrangetype=how;
+
+	 // figure out how we should be laying out spreads
+	 // return if already arranged according to arrangetype
+	int towhat=arrangetype;
+	double winw,winh;
+	winw=dp->Maxx-dp->Minx;
+	winh=dp->Maxy-dp->Miny;
+	if (towhat==ArrangeAutoAlways || towhat==ArrangeAutoTillMod) {
+		 // could be row or column
+		if (winw>winh) {
+			if (arrangestate==ArrangeTempRow || arrangestate==Arrange1Row) {
+				arrangestate=ArrangeTempRow;
+				return;
+			}
+			towhat=Arrange1Row;
+			arrangestate=ArrangeTempRow;
+		} else {
+			if (arrangestate==ArrangeTempColumn || arrangestate==Arrange1Column) {
+				arrangestate=ArrangeTempColumn;
+				return;
+			}
+			towhat=Arrange1Column;
+			arrangestate=ArrangeTempColumn;
+		}
+	} else if (towhat==ArrangeCustom) {
+		towhat=ArrangeGrid;
+		arrangestate=ArrangeCustom;
+	} else arrangestate=arrangetype;
+	
+	 // find the bounding box for all spreads
+	DoubleBBox bbox;
+	double gap;
+	int perrow;
+	for (int c=0; c<spreads.n; c++) {
+		bbox.addtobounds(spreads.e[c]);
+	}
+	gap=(bbox.maxx-bbox.minx)*.2;
+	
+	 // figure out how many spreads per row
+	if (towhat==ArrangeGrid) {
+		double r=sqrt(spreads.n*winh/winw*(bbox.maxx-bbox.minx+gap)/(bbox.maxy-bbox.miny+gap));
+		perrow=(int)(spreads.n/r);
+		if (perrow==0) perrow=1;
+		//perrow=int(sqrt((double)spreads.n)+1); //put within a square
+	} else if (towhat==Arrange1Column) perrow=1;
+	else   if (towhat==Arrange1Row) perrow=1000000;
+	
 	
 	double x,y,w,h,X,Y,W,H;
 	x=y=w=h=X=Y=W=H=0;
 
 	 // Find how many pixels make 1 inch, basescaling=inches/pixel
 	double scaling,basescaling=double(XDisplayWidthMM(app->dpy,0))/25.4/XDisplayWidth(app->dpy,0);
-	double gap;
 	
 	 // Position the LittleSpreads...
 	DoubleBBox bb;
 	double rh=0,rw=0;
-	int perrow;
-	
-	if (arrangetype==3) perrow=int(sqrt((double)spreads.n)+1);
-	else if (arrangetype==2) perrow=1;
-	else if (arrangetype==1) perrow=1000000;
-	else { //auto
-		if (curwindow) 
-			if (curwindow->win_w>curwindow->win_h) perrow=100000;
-			else perrow=1;
-		else perrow=10000000;
-	}
 
 	for (int c=0; c<spreads.n; c++) {
 		w=spreads.e[c]->maxx-spreads.e[c]->minx;
 		h=spreads.e[c]->maxy-spreads.e[c]->miny;
-		if (c==0) { scaling=1./(basescaling*w); gap=w*.2; }
+		if (c==0) { scaling=1./(basescaling*w); }
 		spreads.e[c]->origin(flatpoint(x-spreads.e[c]->minx,y-spreads.e[c]->miny));
 		x+=w+gap;
 		rw+=w+gap;
@@ -500,7 +578,7 @@ int SpreadInterface::Refresh()
 	if (!needtodraw) return 1;
 	
 	if (firsttime) {
-		ArrangeSpreads(arrangetype>=0?-1:0);
+		ArrangeSpreads();
 		Center(1);
 		//((ViewportWindow *)curwindow)->syncrulers();
 		firsttime=0;
@@ -885,7 +963,8 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state)
 	if (buttondown==MIDDLEBUTTON) {
 		curspread->origin(curspread->origin()+screentoreal(x,y)-screentoreal(mx,my));
 		curspread->mapConnection();
-		if (curspread->next) curspread->next->mapConnection();\
+		if (curspread->next) curspread->next->mapConnection();
+		arrangetype=arrangestate=ArrangeCustom;
 		mx=x; my=y;
 		needtodraw=1;
 	} else if (buttondown==LEFTBUTTON) {
@@ -967,6 +1046,8 @@ int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
  *   'm'    toggle mark of current page
  *   'M'    reverse toggle mark of current page
  *   't'    toggle drawing of thumbnails
+ *   'A'    toggle how to arrange the spreads
+ *  +'A'    force arranging the spreads using current arrange style
  *   'p'    *** for debugging thumbs
  * </pre>
  */
@@ -995,7 +1076,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 		DBG if (curpage<0) return 0;
 		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
 		DBG cout <<"'P' image dump:"<<endl;
-		DBG thumb->dump_out(stdout,2);
+		DBG thumb->dump_out(stdout,2,0);
 		DBG if (thumb) {
 		DBG 	dp->StartDrawing(curwindow);
 		DBG 	//double i[6];
@@ -1015,6 +1096,21 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 		if (centerlabels>4) centerlabels=0;
 		needtodraw=1;
 		return 0;
+	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
+		arrangestate=ArrangeNeedsArranging;
+		ArrangeSpreads();
+		needtodraw=1;
+		return 0;
+	} else if (ch=='A' && (state&LAX_STATE_MASK)==ShiftMask) {
+		arrangetype++;
+		if (arrangetype==ArrangetypeMax+1) arrangetype=ArrangetypeMin;
+
+		if (viewport) viewport->postmessage(arrangetypestring(arrangetype));
+		else app->postmessage(arrangetypestring(arrangetype));
+
+		ArrangeSpreads();
+		needtodraw=1;
+		return 0;
 	}
 	return 1;
 }
@@ -1025,6 +1121,9 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
  * \brief A ViewerWindow that gets filled with stuff appropriate for spread editing.
  *
  * This creates the window with a SpreadInterface.
+ * The SpreadInterface is an interface rather than a viewport because someday it might
+ * be optionally integrated into the ViewWindow to provide the infinite scroll features
+ * found in various other programs.
  */
 //class SpreadEditor : public Laxkit::ViewerWindow
 //{
@@ -1151,7 +1250,8 @@ int SpreadEditor::CharInput(unsigned int ch,unsigned int state)
 int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 {
 	int c=ViewerWindow::MoveResize(nx,ny,nw,nh);
-	if (((SpreadInterface *)curtool)->arrangetype==0) 
+	if (((SpreadInterface *)curtool)->arrangetype==ArrangeAutoTillMod ||
+			((SpreadInterface *)curtool)->arrangetype==ArrangeAutoAlways) 
 		((SpreadInterface *)curtool)->ArrangeSpreads();
 	return c;
 }
@@ -1160,7 +1260,8 @@ int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 int SpreadEditor::Resize(int nw,int nh)
 {
 	int c=ViewerWindow::Resize(nw,nh);
-	if (((SpreadInterface *)curtool)->arrangetype==0) 
+	if (((SpreadInterface *)curtool)->arrangetype==ArrangeAutoTillMod ||
+			((SpreadInterface *)curtool)->arrangetype==ArrangeAutoAlways) 
 		((SpreadInterface *)curtool)->ArrangeSpreads();
 	return c;
 }

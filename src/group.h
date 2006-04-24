@@ -41,7 +41,7 @@ class Group : public ObjectContainer,
 	virtual void flush();
 	virtual void swap(int i1,int i2) { objs.swap(i1,i2); }
 	virtual int slide(int i1,int i2);
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();

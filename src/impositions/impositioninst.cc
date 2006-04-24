@@ -91,7 +91,7 @@ extern RefCounter<anObject> objectstack;
 //	virtual int SetPaperSize(PaperType *npaper);
 //	virtual void setPage();
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
@@ -193,7 +193,7 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att)
  *    ...
  * </pre>
  */
-void Singles::dump_out(FILE *f,int indent)
+void Singles::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	fprintf(f,"%sinsetl %.10g\n",spc,insetl);
@@ -205,11 +205,11 @@ void Singles::dump_out(FILE *f,int indent)
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 	if (pagestyle) {
 		fprintf(f,"%sdefaultpagestyle\n",spc);
-		pagestyle->dump_out(f,indent+2);
+		pagestyle->dump_out(f,indent+2,0);
 	}
 	if (paperstyle) {
 		fprintf(f,"%sdefaultpaperstyle\n",spc);
-		paperstyle->dump_out(f,indent+2);
+		paperstyle->dump_out(f,indent+2,0);
 	}
 }
 
@@ -498,7 +498,7 @@ int Singles::GetPapersNeeded(int npages)
 //	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
 //	virtual void setPage();
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 //
@@ -553,14 +553,14 @@ void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att)
 
 /*! Write out isvertical, then Singles::dump_out.
  */
-void DoubleSidedSingles::dump_out(FILE *f,int indent)
+void DoubleSidedSingles::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (isvertical) fprintf(f,"%sisvertical\n",spc);
 	if (isleft)
 		if (isvertical) fprintf(f,"%sistop\n",spc);
 		else fprintf(f,"%sisleft\n",spc);
-	Singles::dump_out(f,indent);
+	Singles::dump_out(f,indent,0);
 }
 
 //! Copies over isvertical.
@@ -766,7 +766,7 @@ Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
 //	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //	virtual void setPage();
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 ////doesn't reimp from Singles/DoubleSidedSingles:
@@ -823,13 +823,13 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att)
  *    ...DoubleSidedSingles stuff..
  *  </pre>
  */
-void BookletImposition::dump_out(FILE *f,int indent)
+void BookletImposition::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	fprintf(f,"%screep %.10g\n",spc,creep);
 	fprintf(f,"%sbodycolor 0x%.6lx\n",spc,bodycolor);
 	fprintf(f,"%scovercolor 0x%.6lx\n",spc,covercolor);
-	DoubleSidedSingles::dump_out(f,indent);
+	DoubleSidedSingles::dump_out(f,indent,0);
 }
 
 //! Duplicate. Copies over creep, tilex, tily, bodycolor, covercolor.
@@ -990,7 +990,7 @@ int BookletImposition::GetPapersNeeded(int npages)
 // protected:
 //	Imposition *impos;
 //	Ranges ranges; 
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //}
 
@@ -1038,7 +1038,7 @@ int BookletImposition::GetPapersNeeded(int npages)
 ////	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
 ////	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 ////};
 //
@@ -1065,7 +1065,7 @@ int BookletImposition::GetPapersNeeded(int npages)
 //}
 //
 ////! Write out flags, width, height
-//void BasicBook::dump_out(FILE *f,int indent)
+//void BasicBook::dump_out(FILE *f,int indent,int what)
 //{
 //	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 //	fprintf(f,"%swidth %s\n",spc,w());

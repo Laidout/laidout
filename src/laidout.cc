@@ -26,6 +26,7 @@
 //---------------------<< start program! >>-------------------------
 
 #include <lax/anxapp.h>
+#include <lax/version.h>
 #include <Imlib2.h>
 #include <getopt.h>
 
@@ -59,8 +60,11 @@ const char *LaidoutVersion()
 	if (version_str==NULL) {
 		makestr(version_str,"Laidout Version ");
 		appendstr(version_str,LAIDOUT_VERSION);
-		appendstr(version_str," by Tom Lechner, sometime in 2006\n");
-		appendstr(version_str,"Released under the GNU Public License, Version 2.");
+		appendstr(version_str,"\nby Tom Lechner, sometime in 2006\n");
+		appendstr(version_str,"Released under the GNU Public License, Version 2.\n");
+		appendstr(version_str," (using Laxkit Version ");
+		appendstr(version_str,LAXKIT_VERSION);
+		appendstr(version_str,")\n");
 	}
 	return version_str; 
 }

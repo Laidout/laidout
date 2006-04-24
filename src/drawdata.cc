@@ -61,6 +61,9 @@ void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,u
  * up an appropriate interface from laidout->interfacepool to draw the data.
  *
  * Note that for groups, a1 and a2 are passed along to all the group members..
+ *
+ * \todo currently this looks up which interface to dcaw an object wich in laidout,
+ *   but it should first check for suitable one in the relevant viewport.
  */
 void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
@@ -88,12 +91,18 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 	} 
 	 // find interface in interfacepool
 	int c;
+	anInterface *interf=NULL;
+	//if (dp->GetXw()) ...
+	// else:
 	for (c=0; c<laidout->interfacepool.n; c++) {
-		if (laidout->interfacepool.e[c]->draws(data->whattype())) break;
+		if (laidout->interfacepool.e[c]->draws(data->whattype())) {
+			interf=laidout->interfacepool.e[c];
+			break;
+		}
 	}
-	if (c<laidout->interfacepool.n) {
+	if (interf) {
 		 // draw it, *** this is a little clunky, perhaps have only InterfaceWithDps?
-		InterfaceWithDp *idp=dynamic_cast<InterfaceWithDp *>(laidout->interfacepool.e[c]);
+		InterfaceWithDp *idp=dynamic_cast<InterfaceWithDp *>(interf);
 		if (idp) idp->DrawDataDp(dp,data,a1,a2);
 		else laidout->interfacepool.e[c]->DrawData(data,a1,a2);
 	}

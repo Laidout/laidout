@@ -47,7 +47,7 @@ using namespace std;
 //	DocumentStyle(Imposition *imp);
 //	virtual ~DocumentStyle();
 //	virtual Style *duplicate(Style *s=NULL);
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
@@ -81,13 +81,13 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 	}
 }
 
-//! Call imposition->dump(f,indent+2).
-void DocumentStyle::dump_out(FILE *f,int indent)
+//! Call imposition->dump(f,indent+2,0).
+void DocumentStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (imposition) {
 		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
-		imposition->dump_out(f,indent+2);
+		imposition->dump_out(f,indent+2,0);
 	}
 }
 
@@ -155,7 +155,7 @@ DocumentStyle::~DocumentStyle()
 //	virtual int NewPages(int starting,int n);
 //	virtual int RemovePages(int start,int n);
 //	
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	virtual int Load(const char *file);
 //	virtual int Save(LaidoutSaveFormat format=Save_Normal);
@@ -329,7 +329,7 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 	DBG cout <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
-	dump_out(f,0);
+	dump_out(f,0,0);
 	fclose(f);
 	return 0;
 }
@@ -419,7 +419,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 }
 
 //! Dumps docstyle, pages, and notes(well not notes yet..).
-void Document::dump_out(FILE *f,int indent)
+void Document::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -428,12 +428,12 @@ void Document::dump_out(FILE *f,int indent)
 	 // dump docstyle
 	if (docstyle) {
 		fprintf(f,"%sdocstyle\n",spc);
-		docstyle->dump_out(f,indent+2);
+		docstyle->dump_out(f,indent+2,0);
 	}
 	 // dump objects
 	for (int c=0; c<pages.n; c++) {
 		fprintf(f,"%spage %d\n",spc,c);
-		pages.e[c]->dump_out(f,indent+2);
+		pages.e[c]->dump_out(f,indent+2,0);
 	}
 	 // dump notes/meta data
 	//***

@@ -111,7 +111,7 @@ const char *BuiltinPaperSizes[33*3]=
 //	virtual double h() { if (flags&1) return width; else return height; }
 //	virtual Style *duplicate(Style *s=NULL);
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
@@ -126,7 +126,7 @@ const char *BuiltinPaperSizes[33*3]=
  *   landscape
  * </pre>
  */
-void PaperType::dump_out(FILE *f,int indent)
+void PaperType::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (name) fprintf(f,"%sname %s\n",spc,name);

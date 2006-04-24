@@ -29,7 +29,7 @@ class DocumentStyle : public Style
 	DocumentStyle(Imposition *imp);
 	virtual ~DocumentStyle();
 	virtual Style *duplicate(Style *s=NULL);
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
@@ -70,7 +70,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual int NewPages(int starting,int n);
 	virtual int RemovePages(int start,int n);
 	
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual int Load(const char *file);
 	virtual int Save(LaidoutSaveFormat format=Save_Normal);

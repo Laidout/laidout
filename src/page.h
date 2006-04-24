@@ -42,7 +42,7 @@ class PageStyle : public Style
 	virtual Style *duplicate(Style *s=NULL);
 	virtual double w() { return width; }
 	virtual double h() { return height; }
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual int set(const char *flag, int newstate);
 };
@@ -69,7 +69,7 @@ class RectPageStyle : public PageStyle
 	virtual const char *whattype() { return "RectPageStyle"; }
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
@@ -88,7 +88,7 @@ class Page : public ObjectContainer
 	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }
-	virtual void dump_out(FILE *f,int indent);
+	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual int InstallPageStyle(PageStyle *pstyle,int islocal=1);

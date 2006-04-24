@@ -80,7 +80,7 @@ extern RefCounter<anObject> objectstack;
 //	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
 //
-//	virtual void dump_out(FILE *f,int indent);
+//	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	
 //	virtual int SetNet(const char *nettype);
@@ -188,13 +188,13 @@ void NetImposition::setPage()
  * </pre>
  * See also Net::dump_out().
  */
-void NetImposition::dump_out(FILE *f,int indent)
+void NetImposition::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 	if (paperstyle) {
 		fprintf(f,"%sdefaultpaperstyle\n",spc);
-		paperstyle->dump_out(f,indent+2);
+		paperstyle->dump_out(f,indent+2,0);
 	}
 	if (printnet) fprintf(f,"%sprintnet\n",spc);
 		else fprintf(f,"%sprintnet false\n",spc);
@@ -203,7 +203,7 @@ void NetImposition::dump_out(FILE *f,int indent)
 		if (netisbuiltin) fprintf(f," %s\n",net->whatshape());
 		else {
 			fprintf(f,"\n");
-			net->dump_out(f,indent+2); // dump out a custom net
+			net->dump_out(f,indent+2,0); // dump out a custom net
 		}
 	}
 }
@@ -231,7 +231,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
 				tempnet->dump_in_atts(att->attributes.e[c]);
 				SetNet(tempnet);
 				DBG cout <<"-----------after dump_in net and set----------"<<endl;
-				DBG net->dump_out(stdout,2);
+				DBG net->dump_out(stdout,2,0);
 				DBG cout <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {

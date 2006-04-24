@@ -4,14 +4,36 @@ Things to do before the next release.
 This is a very rough draft of a roadmap, and is by no means the final word.
 
 
+VERSION 0.03
+-----------
+(done,but needs serious optimizing) Bezier patch with image for the color (this would be HOT for the gimp! a side project..)
+(done) if an image is selected, should be able to import an image to it
+(done) printing: produce masked images based on 50% threshhold of alpha channel of images
+(done) When loading files from the command line, should understand: 'file:///path/to/it'
+(done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
+       Load and save window configurations
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+       EPS out to file###.eps by page, spread, or paper
+       Print all/current paper/paper range
+       an About window
+(done) command prompt window
+       from laxkit: clear up focus handling which currently REALLY SUCKS
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
+       Allow for window docking, floating, etc.
+       Get rid of white stripe toward bottom of the laidout webpage
+       SpreadEditor: double click or drag to viewer to work on that page or spread
+       SpreadEditor: fix auto arranging
+       Make doc tree changes sanely update the various windows
+	   Be able to DEselect all objects!!
+
+
+
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
-       Load and save window configurations
-(done,but needs serious optimizing) Bezier patch with image for the color (this would be HOT for the gimp! a side project..)
-       Basic EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       EPS out to file###.eps by page, spread, or paper
-       an About window
+       Seriously optimize the whole ImagePatchData stuff
+       Have imagepatch be a transform you can apply to any image
+       Have images have any number of various kinds of transforms applied to it
        ObjectInterface for selecting and resizing multiple stuff
        PathInterface should finally work right
        Basic infrastructure for most things (except text) should be in place.
@@ -24,33 +46,27 @@ VERSION 0.1
        Full color management implemented
        a real PrintDialog
        Generic style edit window
-       command prompt window
+       Make commands actually available in the command prompt window
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        A style manager, which is Not dependent on laxkit::refcounter
        non-hacky new document box
        also means all things must define their styledefs
-       Allow for window docking, floating, etc.
        plus configurable icon panel/menu system
        Page Ranges controlling page number label and which imposition should lay it out
        DumpImages within Arrangements, which are sort of a template of positions
        perhaps have image open window? drag and drop in images? that would be AWESOME
-(done) if an image is selected, should be able to import an image to it
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
        PDF out, and/or use ghostscripts alleged ability to do transparent images in postscript files
-(done) printing: produce masked images based on 50% threshhold of alpha channel of images
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
-(done) When loading files from the command line, should understand: 'file:///path/to/it'
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        SpreadEditor: should be able to drag a page to a view window to change to it, or dblclick
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
        from laxkit: clean up and beef up SplitWindow
-       from laxkit: clear up focus handling which currently REALLY SUCKS
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-(done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
+       Provide some kind of visual feedback while doing lengthy operations
 
 
 VERSION 0.2
@@ -65,13 +81,13 @@ Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Also most likely means finally deciding on a rendering backend: cairo? antigrain? freetype/pango?
   which also means start to do serious optimizing for docs with a billion big images in them
-Seriously optimize the whole ImagePatchData stuff
 ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost sort of things
 Would be nice to be able to handle lilypond sort of things
 Load/save various gimp things like gradients, palettes, and paths, perhaps extract from xcf
 Story editor
+Internal generic impositioner for arbitrary .ps files
 
 
 VERSION 0.3

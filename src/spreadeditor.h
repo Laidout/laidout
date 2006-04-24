@@ -62,7 +62,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
  protected:
 	int centerlabels;
 	char drawthumbnails;
-	int arrangetype;
+	int arrangetype,arrangestate;
 	int mx,my,firsttime;
 	int reversebuttons;
 	int curpage, dragpage;

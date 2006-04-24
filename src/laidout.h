@@ -17,6 +17,7 @@
 #define LAIDOUT_H
 
 #include <lax/anxapp.h>
+#include <lax/version.h>
 
 #include "impositions/imposition.h"
 #include "papersizes.h"
