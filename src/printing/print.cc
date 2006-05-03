@@ -14,21 +14,32 @@
 // correspondence about this software.
 //
 //
-----------
-[*] Print by Pages
 
-[ ] All
-[ ] Current
-[*] From	_1___
-	To		_30__
+#include <lax/simpleprint.h>
 
+//----------
+//[*] Print by Pages
+//
+//[ ] All
+//[ ] Current
+//[*] From	_1___
+//	To		_30__
+//
+//
+//
+//------
+//[ ] Print by Paper Layout
+//
+//[ ] All
+//[ ] Current
+//[*] From	_1___
+//	To		_30__
 
+/*! \class Print
+ * \brief Laidout's printing dialog
+ */
+class Print : public Laxkit::SimplePrint
+{
+};
 
-------
-[ ] Print by Paper Layout
-
-[ ] All
-[ ] Current
-[*] From	_1___
-	To		_30__
 
