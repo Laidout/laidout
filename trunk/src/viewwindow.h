@@ -146,7 +146,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	virtual int ViewWindow::event(XEvent *e);//***this shouldn't be here, see the .cc
 	virtual const char *whattype() { return "ViewWindow"; }
 	virtual int CharInput(unsigned int ch,unsigned int state);
-	virtual int DataEvent(Laxkit::SendData *data,const char *mes);
+	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int init();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual void updatePagenumber();
