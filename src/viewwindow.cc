@@ -32,6 +32,7 @@
 
 #include "printing/psout.h"
 #include "helpwindow.h"
+#include "about.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
 #include "laidout.h"
@@ -2007,7 +2008,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //						Document *newdoc);
 //	virtual const char *whattype() { return "ViewWindow"; }
 //	virtual int CharInput(unsigned int ch,unsigned int state);
-//	virtual int DataEvent(Laxkit::SendData *data,const char *mes);
+//	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 //	virtual int init();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual void updatePagenumber();
@@ -2278,10 +2279,10 @@ int ViewWindow::init()
  *
  * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
-int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
+int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 {
 	if (!strcmp(mes,"import new image") || !strcmp(mes,"insert new image")) {
-		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		Imlib_Image image=imlib_load_image(s->str);
 
@@ -2320,7 +2321,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"reallysave")) {
 		 // save without overwrite check
-		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		
 		if (doc && doc->Name(s->str)) SetParentTitle(doc->Name());
@@ -2331,7 +2332,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		delete data;
 		return 0;
 	} else if (!strcmp(mes,"saveAsPopup")) {
-		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		if (s->str && s->str[0]) {
 			char *dir,*bname;
@@ -2379,7 +2380,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 			}
 			 // file existed, so ask to overwrite ***
 			if (c) {
-				anXWindow *ob=new Overwrite(window,"reallysave", file);
+				anXWindow *ob=new Overwrite(window,"reallysave", file, s->info, s->info2, s->info3);
 				app->rundialog(ob);
 			} else {
 				if (!is_good_filename(file)) {//***how does it know?
@@ -2405,7 +2406,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		 // print to file without overwrite check 
 		 // *** hopping around with messages is not a
 		 // good overwrite protection
-		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		
 		if (!is_good_filename(s->str)) {
@@ -2420,7 +2421,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 			mesbar->Refresh();
 			XSync(app->dpy,False);
 	
-			psout(f,doc);
+			psout(f,doc,s->info2-1,s->info3-1);
 			fclose(f);
 			
 			char tmp[21+strlen(s->str)];
@@ -2436,9 +2437,9 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 		delete data;
 		return 0;
 	} else if (!strcmp(mes,"printfile")) {
-		StrSendData *s=dynamic_cast<StrSendData *>(data);
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
-		if (s->info==1) {
+		if (s->info==1) { // print to file
 			 // overwrite protection
 			int c,err;
 			c=file_exists(s->str,1,&err);
@@ -2450,7 +2451,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 			}
 			 // file existed, so ask to overwrite
 			if (c) {
-				anXWindow *ob=new Overwrite(window,"reallyprintfile", s->str);
+				anXWindow *ob=new Overwrite(window,"reallyprintfile", s->str, s->info, s->info2, s->info3);
 				app->rundialog(ob);
 				s->str=NULL;
 				delete data;
@@ -2459,7 +2460,7 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 			 // else really print
 			DataEvent(s,"reallyprintfile");
 			return 0;
-		} else {
+		} else { // print by command
 			char *cm=newstr(s->str);
 			appendstr(cm," ");
 			//***investigate tmpfile() tmpnam tempnam mktemp
@@ -2470,10 +2471,11 @@ int ViewWindow::DataEvent(Laxkit::SendData *data,const char *mes)
 				mesbar->SetText("Printing, please wait....");
 				mesbar->Refresh();
 				XSync(app->dpy,False);
-				psout(f,doc);
+				psout(f,doc,s->info2-1,s->info3-1);
 				fclose(f);
 				appendstr(cm,tmp);
 				system(cm);
+				//*** have to delete (unlink) tmp!
 				
 				mesbar->SetText("Doc sent to print.");
 			} else mesbar->SetText("Error printing.");
@@ -2645,13 +2647,12 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
-		app->rundialog(new SimplePrint(ANXWIN_CENTER|ANXWIN_DELETEABLE,window,"printfile"));
-
-		//mesbar->SetText("Printing, please wait....");
-		//mesbar->Refresh();
-		//XSync(app->dpy,False);
-		//if (!doc->Save(Save_PS)) mesbar->SetText("Printed to output.ps.");
-		//else mesbar->SetText("Failed to print to output.ps");
+		int curpage=((LaidoutViewport *)viewport)->curobjPage();
+		if (curpage<0) curpage=-1;//*** should be what is first page in spread->pagestack?
+		SimplePrint *p=new SimplePrint(ANXWIN_CENTER|ANXWIN_DELETEABLE|SIMPP_PRINTRANGE,window,"printfile",
+										"output.ps","lp",NULL,
+										1, 1,doc->pages.n,curpage+1);
+		app->rundialog(p);
 		return 0;
 	}
 	
@@ -2757,6 +2758,9 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		//***
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
 		app->addwindow(new HelpWindow());
+		return 0;
+	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
+		app->rundialog(new AboutWindow());
 		return 0;
 	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {
 		//*** popup a SpreadEditor
