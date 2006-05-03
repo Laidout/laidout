@@ -104,7 +104,7 @@ void print_usage()
 //class ControlPanel : public Laxkit::anXWindow
 //{
 // public:
-//	virtual int DataEvent(SendData *data,const char *mes); 
+//	virtual int DataEvent(EventData *data,const char *mes); 
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //};
 

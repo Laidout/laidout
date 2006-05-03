@@ -257,7 +257,7 @@ int ProjectInfoWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"files")) {
 	} else if (!strcmp(mes,"Ok")) {
 //		***create new doc based on all the settings here
-//		app->SendData(whereto***,newdocstruct);
+//		app->EventData(whereto***,newdocstruct);
 		app->destroywindow(this);
 	} else if (!strcmp(mes,"Cancel")) {
 		app->destroywindow(this);
