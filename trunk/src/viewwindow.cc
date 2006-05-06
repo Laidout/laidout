@@ -25,11 +25,11 @@
 #include <lax/refcounter.h>
 #include <lax/colorbox.h>
 #include <lax/fileutils.h>
-#include <lax/simpleprint.h>
 #include <lax/overwrite.h>
 #include <cstdarg>
 #include <cups/cups.h>
 
+#include "printing/print.h"
 #include "printing/psout.h"
 #include "helpwindow.h"
 #include "about.h"
@@ -333,7 +333,7 @@ int VObjContext::isequal(const ObjectContext *oc)
 //	virtual void ClearSearch();
 //	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 //	
-//	virtual const char *SetViewMode(int m);
+//	virtual const char *SetViewMode(int m, int page);
 //	virtual int PlopData(LaxInterfaces::SomeData *ndata);
 //	virtual void postmessage(const char *mes);
 //	virtual int DeleteObject();
@@ -366,8 +366,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	pageviewlabel=NULL;
 	searchmode=0;
 	viewmode=-1;
-	SetViewMode(PAGELAYOUT);
-//	SetViewMode(SINGLELAYOUT);//*** note that viewwindow has a button for this, which defs to PAGELAYOUT
+	SetViewMode(PAGELAYOUT,-1);
+//	SetViewMode(SINGLELAYOUT,-1);//*** note that viewwindow has a button for this, which defs to PAGELAYOUT
 	//setupthings();
 	
 	 // Set workspace bounds.
@@ -520,12 +520,12 @@ int LaidoutViewport::PreviousSpread()
 /*! Updates and returns pageviewlabel. This is a string like "Page: " or
  * "Spread[2-4]: " that is suitable for the label of a NumSlider.
  */
-const char *LaidoutViewport::SetViewMode(int m)
+const char *LaidoutViewport::SetViewMode(int m,int page)
 {
 	DBG cout <<"---- setviewmode:"<<m<<endl;
 	if (m!=viewmode) {
 		viewmode=m;
-		setupthings(curobjPage());
+		setupthings(page>=0?page:curobjPage());
 	}
 	needtodraw=1;
 	return Pageviewlabel();
@@ -1279,7 +1279,7 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 /*! This sets curobj to be at layer level of curobj if possible, otherwise
  * to the top level of whatever page is under screen coordinate (x,y).
  *
- * Sets oc to point to the new curobj.
+ * Clears old curobj (via clearCurobj()) and sets oc to point to the new curobj.
  *
  * Return 0 for context changed, nonzero for not.
  */
@@ -1718,6 +1718,7 @@ void LaidoutViewport::Refresh()
  * <pre>
  * arrow keys reserved for interface use...
  * 
+ * ^+'a'     deselect currently selected objects
  * 'D'       toggle drawing of axes for each object
  * 's'       toggle showing of the spread (shows only limbo)
  * 'm'       move current selection to another page, popus up a dialog ***imp me!
@@ -1820,6 +1821,19 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 		else if (drawflags==(DRAW_AXES|DRAW_BOX)) drawflags=0;
 		else drawflags=DRAW_AXES;
 		DBG cout << " --> "<<drawflags<<endl;
+		needtodraw=1;
+		return 0;
+	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
+		if (!curobj.obj) return 0;
+		
+		 // clear curobj from interfaces and check in 
+		SomeData *d=curobj.obj;
+		InterfaceWithDp *i;
+		for (int c=0; c<interfaces.n; c++) {
+			if (i=dynamic_cast<InterfaceWithDp *>(interfaces.e[c]), i) i->Clear(d);
+			else interfaces.e[c]->Clear();
+		}
+		clearCurobj(); //this calls dec_count() on the object
 		needtodraw=1;
 		return 0;
 	}
@@ -1992,7 +2006,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
  * hack at the moment.. must work out that useful way of creating windows that I
  * haven't gotten around to coding..
  */
-//class ViewWindow : public Laxkit::ViewerWindow
+//class ViewWindow : public Laxkit::ViewerWindow, public LaxFiles::DumpUtility
 //{
 // protected:
 //	void setup();
@@ -2013,9 +2027,6 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual void updatePagenumber();
 //	virtual void SetParentTitle(const char *str);
-//
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(Attribute *att);
 //};
 
 //	ViewerWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -2032,8 +2043,6 @@ ViewWindow::ViewWindow(Document *newdoc)
 	loaddir=NULL;
 	doc=newdoc;
 	setup();
-
-	win_x=1280-win_w;
 }
 
 //! More general constructor. Passes in a new LaidoutViewport.
@@ -2052,10 +2061,10 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 
 /*! Write out something like:
  * <pre>
- *   document ***docid  # which document
- *   pagelayout         # or 'paperlayout' or 'singlelayout'
- *   page 3             # the page number currently on
- *   matrix 1 0 0 1 0 0 # viewport matrix
+ *   document /path/to/doc  # which document
+ *   pagelayout            # or 'paperlayout' or 'singlelayout'
+ *   page 3               # the page number currently on
+ *   matrix 1 0 0 1 0 0  # viewport matrix
  * </pre>
  *
  * \todo *** still need some standardizing for the little helper controls..
@@ -2064,7 +2073,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
-	fprintf(f,"%sdocument %s\n",spc,doc->Name());
+	fprintf(f,"%sdocument %s\n",spc,doc->saveas);
 
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	int vm=vp->viewmode;
@@ -2087,11 +2096,13 @@ void ViewWindow::dump_in_atts(Attribute *att)
 	char *name,*value;
 	int vm=PAGELAYOUT, pn=0;
 	double m[6];
+	int n;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"matrix")) {
-			DoubleListAttribute(value,m,6);
+			n=DoubleListAttribute(value,m,6);
+			if (n==6) viewport->dp->NewTransform(m);
 		} else if (!strcmp(name,"pagelayout")) {
 			vm=PAGELAYOUT;
 		} else if (!strcmp(name,"paperlayout")) {
@@ -2102,10 +2113,8 @@ void ViewWindow::dump_in_atts(Attribute *att)
 			IntAttribute(value,&pn);
 		}
 	}
-//	*** set doc
-//	if (m) ***
-//	***set vm
-//	*** set pn
+	((LaidoutViewport *)viewport)->UseThisDoc(doc);
+	((LaidoutViewport *)viewport)->SetViewMode(vm,pn);
 }
 
 
@@ -2325,10 +2334,14 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (!s) return 1;
 		
 		if (doc && doc->Name(s->str)) SetParentTitle(doc->Name());
+		
 		doc->Save();
-		char blah[strlen(doc->Name())+15];
-		sprintf(blah,"Saved to %s.",doc->Name());
-		GetMesbar()->SetText(blah);
+		if (doc->Save()==0) {
+			char blah[strlen(doc->Name())+15];
+			sprintf(blah,"Saved to %s.",doc->Name());
+			GetMesbar()->SetText(blah);
+		} else GetMesbar()->SetText("Problem saving. Not saved.");
+
 		delete data;
 		return 0;
 	} else if (!strcmp(mes,"saveAsPopup")) {
@@ -2338,10 +2351,11 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			char *dir,*bname;
 			dir=s->str;
 			s->str=NULL;
+			full_path_for_file(dir);
 			bname=strrchr(dir,'/');
+			
 			 // if there is a directory component, then cd to there first..
 			if (!bname) {
-				full_path_for_file(dir);
 				bname=strrchr(dir,'/');
 			}
 			if (bname) {
@@ -2360,10 +2374,10 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			} 
 			
 			 // now orig file is in dir/bname, make file be full path to file
+			 // current dir is now where file goes
 			char *file=newstr(dir);
 			if (file[strlen(file)-1]!='/') appendstr(file,"/");
 			appendstr(file,bname);
-			full_path_for_file(file);
 			
 			int c,err;
 			c=file_exists(file,1,&err);
@@ -2389,10 +2403,12 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					 //set name in doc and headwindow
 					DBG cout <<"*** file by this point should be absolute path name:"<<file<<endl;
 					if (doc && doc->Name(file)) SetParentTitle(doc->Name());
-					doc->Save();
-					char blah[strlen(doc->Name())+15];
-					sprintf(blah,"Saved to %s.",doc->Name());
-					GetMesbar()->SetText(blah);
+					
+					if (doc->Save()==0) {
+						char blah[strlen(doc->Name())+15];
+						sprintf(blah,"Saved to %s.",doc->Name());
+						GetMesbar()->SetText(blah);
+					} else GetMesbar()->SetText("Problem saving. Not saved.");
 				}
 			}
 
@@ -2439,7 +2455,25 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 	} else if (!strcmp(mes,"printfile")) {
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
-		if (s->info==1) { // print to file
+		if (s->info==2) { // print to files
+			DBG cout <<"***** print to epss: "<<s->str<<endl;
+			
+			mesbar->SetText("Printing to files, please wait....");
+			mesbar->Refresh();
+			XSync(app->dpy,False);
+	
+			char blah[100];
+			int c=epsout(s->str,doc,s->info2-1,s->info3-1,SINGLELAYOUT,0);
+			if (c) {
+				sprintf(blah,"Error printing to %s at file %d.",s->str,c);
+			} else {
+				sprintf(blah,"Printed to %s.",s->str);
+			}
+			mesbar->SetText(blah);
+
+			delete data;
+			return 0;
+		} else if (s->info==1) { // print to file
 			 // overwrite protection
 			int c,err;
 			c=file_exists(s->str,1,&err);
@@ -2613,11 +2647,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 // must update labels have Spread [2-3]: 2
 		int v=e->data.l[0];
 		if (v==SINGLELAYOUT) {
-			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(SINGLELAYOUT));
+			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(SINGLELAYOUT,-1));
 		} else if (v==PAGELAYOUT) {
-			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(PAGELAYOUT));
+			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(PAGELAYOUT,-1));
 		} else if (v==PAPERLAYOUT) {
-			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(PAPERLAYOUT));
+			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(PAPERLAYOUT,-1));
 		}
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
@@ -2649,7 +2683,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"print")) { // print to output.ps
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
 		if (curpage<0) curpage=-1;//*** should be what is first page in spread->pagestack?
-		SimplePrint *p=new SimplePrint(ANXWIN_CENTER|ANXWIN_DELETEABLE|SIMPP_PRINTRANGE,window,"printfile",
+		PrintingDialog *p=new PrintingDialog(doc,window,"printfile",
 										"output.ps","lp",NULL,
 										1, 1,doc->pages.n,curpage+1);
 		app->rundialog(p);
@@ -2759,7 +2793,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
 		app->addwindow(new HelpWindow());
 		return 0;
-	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
+	} else if (ch==LAX_F2 && (state&LAX_STATE_MASK)==0) {
 		app->rundialog(new AboutWindow());
 		return 0;
 	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {

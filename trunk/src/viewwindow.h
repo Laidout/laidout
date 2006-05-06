@@ -110,7 +110,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual void ClearSearch();
 	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 	
-	virtual const char *SetViewMode(int m);
+	virtual const char *SetViewMode(int m,int page);
 	virtual int PlopData(LaxInterfaces::SomeData *ndata);
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
