@@ -22,6 +22,7 @@
 #include "impositions/imposition.h"
 #include "papersizes.h"
 #include "document.h"
+#include "project.h"
 #include "newdoc.h"
 #include "interfaces.h"
 
@@ -47,6 +48,7 @@ class LaidoutApp : public Laxkit::anXApp
 	virtual void setupdefaultcolors();
 	void parseargs(int argc,char **argv);
 
+	Document *findDocument(const char *saveas);
 	Document *LoadDocument(const char *filename);
 	int NewDocument(DocumentStyle *docinfo, const char *filename);
 	int NewDocument(const char *spec);

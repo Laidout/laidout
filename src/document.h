@@ -84,19 +84,5 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 };
 
 
-//------------------------- Project ------------------------------------
-
-class Project
-{
- public:
-//	StyleManager styles;
-	Laxkit::PtrStack<Document> docs;
-	Page scratchboard;
-	Laxkit::PtrStack<char> project_notes;
-
-	Project();
-	virtual ~Project();
-};
-
 #endif
 

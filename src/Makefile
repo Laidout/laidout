@@ -21,7 +21,9 @@ objs= \
 	page.o \
 	group.o \
 	document.o \
+	project.o \
 	interfaces.o \
+	about.o \
 	commandwindow.o \
 	headwindow.o \
 	helpwindow.o \

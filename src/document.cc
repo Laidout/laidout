@@ -472,33 +472,3 @@ Page *Document::Curpage()
 	return pages.e[curpage];
 }
 
-//---------------------------- Project ---------------------------------------
-/*! \class Project
- * \brief Class holding several documents, as well as various other settings.
- *
- * When laidout is opened and a new document is started, everything goes into
- * the default Project. The project maintains the scratchboard, any project notes,
- * the documents of the project, default directories, and other little tidbits
- * the user might care to associate with the project.
- *
- * Also, the Project maintains its own StyleManager***??????
- */
-//class Project
-//{
-// public:
-////	StyleManager styles;
-//	Laxkit::PtrStack<Document> docs;
-//	Page scratchboard;
-//	Laxkit::PtrStack<char> project_notes;
-//
-//	Project();
-//	virtual ~Project();
-//};
-
-Project::Project() : project_notes(1)
-{}
-
-Project::~Project()
-{
-	docs.flush();
-}
