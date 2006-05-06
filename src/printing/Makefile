@@ -14,6 +14,7 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	print.o \
 	psfilters.o \
 	pscolorpatch.o \
 	psgradient.o \
