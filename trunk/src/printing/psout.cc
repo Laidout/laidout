@@ -24,12 +24,14 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
+#include <lax/fileutils.h>
 
 #include "psgradient.h"
 #include "psimage.h"
 #include "psimagepatch.h"
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
+#include "../laidoutdefs.h"
 
 
 #include <iostream>
@@ -52,6 +54,9 @@ using namespace LaxInterfaces;
  * for effects where something must be generated at the paper's dpi like an
  * ImagePatch. Also can be used to aid setup for the kind of linewidth that is supposed 
  * to be relative to the paper, rather than the ctm.
+ *
+ * \todo *** could have a psSpreadOut function to do a 1-off of any old spread, optionally
+ *   fit to a supplied box
  */
 
 
@@ -298,14 +303,14 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
-	DBG cout <<"=================== start printing ====================\n";
+	DBG cout <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
 	
 	 // print out header
 	fprintf (f,
 			"%%!PS-Adobe-3.0\n"
 			"%%%%Orientation: ");
 	fprintf (f,"%s\n",(doc->docstyle->imposition->paperstyle->flags&1)?"Landscape":"Portrait");
-	fprintf(f,"%%%%Pages: %d\n",doc->docstyle->imposition->numpapers);
+	fprintf(f,"%%%%Pages: %d\n",end-start+1);
 	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
 			  "%%%%CreationDate: %s\n"
@@ -336,7 +341,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	Page *page;
 	for (c=start; c<=end; c++) {
 	     //print paper header
-		fprintf(f, "%%%%Page: %d %d\n", c+1,c+1);
+		fprintf(f, "%%%%Page: %d %d\n", c+1,c-start+1);//Page label (ordinal starting at 1)
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
@@ -371,8 +376,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			psConcat(m);
 
-			//*** set clipping region
-
+			 // set clipping region
 			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
@@ -403,6 +407,163 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	fprintf(f, "\n%%%%EOF\n");
 
 	DBG cout <<"=================== end printing ========================\n";
+
+	return 0;
+}
+
+//! Print out eps files with filenames based on fname for papers or pages in doc.
+/*! \ingroup postscript
+ * This sets up the ctm as accessible through psCTM(),
+ * and flushes the ctm stack.
+ *
+ * Return 0 for no errors, nonzero for error. If return >0 then the number is which
+ * page failed to be output (start+1 means first page attempted).
+ * 
+ * The directory part of fname (if any) should already be a valid directory.
+ * The function returns immediately when it cannot open the file to write. It does
+ * not try to figure out why.
+ * 
+ * \todo *** this does not currently handle pages that bleed their contents
+ *   onto other pages correctly. it bleeds here by paper spread, rather than page spread
+ * \todo *** for tiled pages, or multiples of same object each instance is
+ *   rendered independently right now. should make a function to display such
+ *   things, thus reduce ps file size substantially..
+ * \todo *** bounding box should more accurately reflect the drawn extent.. just does paper bounds here
+ * \todo *** doing page layouts is potentially broken for impositions that do not provide page layouts 
+ *   with pages that increase one by one: [1,2]->[3,4]->etc. No good: [1,3]->[2,4]
+ */
+int epsout(const char *fname,Document *doc,int start,int end,
+		int layouttype,unsigned int flags)
+{
+	if (!doc) return 1;
+	if (start<0) start=0;
+	if (layouttype==PAPERLAYOUT) {
+		if (end<0 || end>=doc->docstyle->imposition->numpapers) 
+			end=doc->docstyle->imposition->numpapers-1;
+	} else if (layouttype==PAGELAYOUT) {
+		if (end<0 || end>=doc->pages.n) 
+			end=doc->pages.n-1;
+	} else { // singles
+		if (end<0 || end>=doc->pages.n) 
+			end=doc->pages.n-1;
+	}
+
+	 //figure out base filename
+	char *filebase=LaxFiles::make_filename_base(fname);
+	char filename[strlen(filebase)+10];
+
+	DBG cout <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
+		
+	 // Write out paper spreads....
+	Spread *spread;
+	DoubleBBox bbox;
+	double m[6];
+	int c,c2,l,pg;
+	transform_set(m,1,0,0,1,0,0);
+	Page *page;
+	FILE *f;
+	for (c=start; c<=end; c++) {
+		sprintf(filename,filebase,c+1);
+		f=fopen(filename,"w");
+		if (!f) {
+			delete[] filebase;
+			return c+1;
+		}
+		
+		 // initialize outside accessible ctm
+		psctms.flush();
+		psctm=transform_identity(psctm);
+
+		 // Find bbox
+		if (layouttype==SINGLELAYOUT) spread=doc->docstyle->imposition->SingleLayout(c);
+		else if (layouttype==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(c);
+		else if (layouttype==PAPERLAYOUT) spread=doc->docstyle->imposition->PaperLayout(c);
+		bbox.clear();
+		bbox.addtobounds(spread->path);
+		
+		 // print out header
+		fprintf (f,
+				"%%!PS-Adobe-3.0 EPSF-3.0\n"
+				"%%%%BoundingBox: %d %d %d %d\n",
+				  (int)(spread->path->minx*72), (int)(spread->path->miny*72),
+				  (int)(spread->path->maxx*72), (int)(spread->path->maxy*72));
+		fprintf(f,"%%%%Pages: 1\n");
+		time_t t=time(NULL);
+		fprintf(f,"%%%%CreationDate: %s\n"
+				  "%%%%Creator: Laidout %s\n",
+						ctime(&t),LAIDOUT_VERSION);
+	
+	     //print paper header
+		fprintf(f, "%%%%Page: %d 1\n", c+1);//Page label (ordinal starting at 1)
+		fprintf(f, "save\n");
+		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
+		psConcat(72.,0.,0.,72.,0.,0.);
+		if (doc->docstyle->imposition->paperstyle->flags&1) {
+			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
+			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
+		}
+		
+		 // print out printer marks
+		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+			fprintf(f," .01 setlinewidth\n");
+			//DBG cout <<"marks data:\n";
+			//DBG spread->marks->dump_out(stdout,2,0);
+			psdumpobj(f,spread->marks);
+		}
+		
+		 // for each paper in paper layout..
+		for (c2=0; c2<spread->pagestack.n; c2++) {
+			psDpi(doc->docstyle->imposition->paperstyle->dpi);
+			
+			pg=spread->pagestack.e[c2]->index;
+			if (pg<0 || pg>=doc->pages.n) continue;
+			page=doc->pages.e[pg];
+			
+			 // transform to page
+			fprintf(f,"gsave\n");
+			psPushCtm();
+			transform_copy(m,spread->pagestack.e[c2]->outline->m());
+			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+					m[0], m[1], m[2], m[3], m[4], m[5]); 
+			psConcat(m);
+
+			 // set clipping region
+			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
+			} else {
+				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+			}
+				
+			 // for each layer on the page..
+			for (l=0; l<page->layers.n; l++) {
+				psdumpobj(f,page->layers.e[l]);
+			}
+			fprintf(f,"grestore\n");
+			psPopCtm();
+		}
+
+		//**** ugly workaround for page spreads, need perhaps a numpagespreads var in imposition
+		if (layouttype==PAGELAYOUT) 
+			for (c2=0; c2<spread->pagestack.n; c2++)
+				if (spread->pagestack.e[c2]->index>c) c=spread->pagestack.e[c2]->index;
+			
+		delete spread;
+		
+		 // print out paper footer
+		fprintf(f,"\n"
+				  "restore\n"
+				  "\n");		
+		
+		 //print out footer
+		fprintf(f, "\n%%%%EOF\n");
+
+		fclose(f);
+
+	}
+
+	DBG cout <<"=================== end printing eps ========================\n";
 
 	return 0;
 }
