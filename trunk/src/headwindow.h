@@ -17,9 +17,10 @@
 #define HEADWINDOW_H
 
 #include <lax/splitwindow.h>
+#include <lax/attributes.h>
 #include "document.h"
 
-class HeadWindow : public Laxkit::SplitWindow
+class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 {
  public:
 	Laxkit::anXWindow *lastview, *lastedit;
@@ -33,6 +34,8 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 	virtual void WindowGone(Laxkit::anXWindow *win);
 	virtual int Curbox(int c);
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
 Laxkit::anXWindow *newHeadWindow(Document *doc=NULL,const char *which=NULL);

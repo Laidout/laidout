@@ -19,10 +19,22 @@
 NEED major overhaul of the rendering, which should allow among other things
 output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
  
+should be able to stretch any image.. makes new image preview, 
+ attach transforms of various sorts to an image:
+   image
+     transform bezpatch
+	 	....bezpatch info
+	 transform contrast
+	 	...
+	 ...
+
 
 Next: MUst have color management..., have to imp the color system....
 
 Define protocols for inter-window communication, and scripting integration...
+
+Have a "security" mode that disables or severely limits system calls from whatever
+scripting gets implemented
 
 impositions should have final printing shift matrix? to temporarily remap any imposition
 to any paper size, possibly with stuff off paper.. 

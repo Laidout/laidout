@@ -26,6 +26,7 @@ using namespace std;
 #define DBG 
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
 //---------------------------- HeadWindow Pane Generators -----------------------
 
@@ -87,7 +88,6 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  *  Directory Window? FileOpener? ImageFileOpener->to drag n drop images? ***not imp
  *  PlainTextEditor ***not imp
  *  StoryEditor *** not imp
- *  InterpreterConsole *** not imp, future:python, other?
  *  StyleManager ***not imp
  *  ObjectTreeEditor ***not imp
  * </pre>
@@ -107,12 +107,6 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 		}
 	}
 	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
-	
-	 // add the window generator funcs
-	head->AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
-	head->AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
-	head->AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
-	head->AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newCommandWindowFunc,0);
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
@@ -134,7 +128,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
  *  float
  * </pre>
  */  
-//class HeadWindow : public Laxkit::SplitWindow
+//class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 //{
 // public:
 //	Laxkit::anXWindow *lastview, *lastedit;
@@ -148,6 +142,8 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 //	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 //	virtual void WindowGone(Laxkit::anXWindow *win);
 //	virtual int Curbox(int c);
+//	virtual void dump_out(FILE *f,int indent,int what);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
 //! Constructor.
@@ -174,12 +170,93 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 		);
 
 	lastview=lastedit=NULL;
+	
+	 // add the window generator funcs
+	AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
+	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
+	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
+	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newCommandWindowFunc,0);
 }
 
 //! Empty destructor.
 HeadWindow::~HeadWindow()
 {
 }
+
+//! Dump out what's in the window, and the borders.
+/*! \todo *** stacked panes
+ */
+void HeadWindow::dump_out(FILE *f,int indent,int what)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	//anXWindow *win;
+	LaxFiles::DumpUtility *wind;
+	fprintf(f,"%sxywh %d %d %d %d\n",
+				spc,win_x,win_y,win_w,win_h);
+	for (int c=0; c<windows.n; c++) {
+		fprintf(f,"%spane\n",spc);
+		fprintf(f,"%s  xywh %d %d %d %d\n",
+					spc,windows.e[c]->x,windows.e[c]->y,windows.e[c]->w,windows.e[c]->h);
+		if (windows.e[c]->win) {
+			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win->whattype());
+			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win);
+			if (wind) wind->dump_out(f,indent+2,what);
+		}
+	}
+}
+
+//! Set up the window according to windows listed in att.
+/*! \todo *** as time goes on, must ensure that header can deal with new
+ * types of windows...
+ */
+void HeadWindow::dump_in_atts(Attribute *att)
+{
+	if (!att) return;
+	char *name,*value;
+	int c,c2,c3;
+	PlainWinBox *box;
+	anXWindow *win;
+	LaxFiles::DumpUtility *wind;
+	int i[4];
+	windows.flush();
+	for (c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"xywh")) {
+			c2=IntListAttribute(value,i,4);
+			if (c2>0) win_x=i[0];
+			if (c2>1) win_y=i[1];
+			if (c2>2) win_w=i[2];
+			if (c2>3) win_h=i[3];
+		} else if (!strcmp(name,"pane")) {
+			box=new PlainWinBox(NULL,0,0,0,0);
+			for (c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+				name= att->attributes.e[c]->attributes.e[c2]->name;
+				value=att->attributes.e[c]->attributes.e[c2]->value;
+				if (!strcmp(name,"xywh")) {
+					c3=IntListAttribute(value,i,4);
+					if (c3>0) win_x=i[0];
+					if (c3>1) win_y=i[1];
+					if (c3>2) win_w=i[2];
+					if (c3>3) win_h=i[3];
+				} else if (!strcmp(name,"window")) {
+					win=NewWindow(value);
+					if (win) {
+						wind=dynamic_cast<DumpUtility *>(win);
+						if (wind) wind->dump_in_atts(att->attributes.e[c]);
+						box->win=win;
+					} else {
+						DBG cout <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
+					}
+				}
+			}
+			windows.push(box);
+		}
+	}
+	//***must check that window is actually reasonably onscreen 
+}
+
 
 //! Remove references to win.
 void HeadWindow::WindowGone(Laxkit::anXWindow *win)

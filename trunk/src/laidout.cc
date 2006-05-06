@@ -160,6 +160,7 @@ void print_usage()
 //	virtual void setupdefaultcolors();
 //	void parseargs(int argc,char **argv);
 //
+//	Document *findDocument(const char *saveas);
 //	int LoadDocument(const char *filename);
 //	int NewDocument(DocumentStyle *docinfo);
 //	int NewDocument(const char *spec);
@@ -357,6 +358,15 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 	
 	DBG cout <<"---------end options"<<endl;
+}
+
+//! Find the doc with saveas.
+Document *LaidoutApp::findDocument(const char *saveas)
+{
+	for (int c=0; c<project->docs.n; c++) {
+		if (!strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
+	}
+	return NULL;
 }
 
 //! Load and return a document from filename.

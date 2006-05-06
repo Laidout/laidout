@@ -27,6 +27,7 @@
 #include "headwindow.h"
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 #include <iostream>
@@ -329,6 +330,9 @@ PageLabel::~PageLabel()
 //	virtual void SwapPages(int previouspos, int newpos);
 //	virtual void SlidePages(int previouspos, int newpos);
 //
+//	virtual void dump_out(FILE *f,int indent,int what);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//
 //	friend class SpreadEditor;
 //};
 
@@ -389,6 +393,91 @@ SpreadInterface::~SpreadInterface()
 	spreads.flush();
 	DBG cout <<" pagelabels flush:"<<endl;
 	pagelabels.flush();
+}
+
+
+/*! Something like:
+ * <pre>
+ *  matrix 1 0 0 1 0 0
+ *  spread
+ *    index 1
+ *    matrix 1 0 0 1 0 0
+ *  spread
+ *    index 3
+ *    matrix 1 0 0 1 0 0
+ * </pre>
+ *
+ * \todo **** when modified but not applied, will save index values
+ *   from modified.. needs to be a check somewhere to ask whether to
+ *   apply changes before saving..
+ *   if (checkPendingChanges(thing)) thing->applyChanges();
+ */
+void SpreadInterface::dump_out(FILE *f,int indent,int what)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	fprintf(f,"%sdocument %s\n",spc,doc->saveas);
+
+	fprintf(f,"%scenterlabels %d\n",spc,centerlabels);
+	fprintf(f,"%sdrawthumbnails %d\n",spc,drawthumbnails);
+	fprintf(f,"%sarrangetype %d\n",spc,arrangetype);
+	
+	const double *m=dp->Getctm();
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
+	for (int c=0; c<spreads.n; c++) {
+		fprintf(f,"%sspread\n",spc);
+		fprintf(f,"%s  index %d\n",spc,spreads.e[c]->spread->pagestack.e[0]->index);
+		m=spreads.e[c]->m();
+		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
+	}
+}
+
+/*! Note that 'index' is currently ignored.
+ */
+void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att)
+{
+	if (!att) return;
+	char *name,*value;
+	double m[6];
+	int n;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"matrix")) {
+			n=DoubleListAttribute(value,m,6);
+			if (n==6) viewport->dp->NewTransform(m);
+		} else if (!strcmp(name,"document")) {
+			doc=laidout->findDocument(value);
+		} else if (!strcmp(name,"centerlabels")) {
+			IntAttribute(value,&centerlabels);
+		} else if (!strcmp(name,"drawthumbnails")) {
+			drawthumbnails=BooleanAttribute(value);
+		} else if (!strcmp(name,"arrangetype")) {
+			IntAttribute(value,&arrangetype);
+		}
+	}
+	
+	GetSpreads();
+	int s=0,c,c2;
+	
+	for (c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"spread")) {
+			for (c2=0; c2<att->attributes.e[c]->attributes.n; c++) {
+				name= att->attributes.e[c]->attributes.e[c2]->name;
+				value=att->attributes.e[c]->attributes.e[c2]->value;
+				if (!strcmp(name,"matrix")) {
+					n=DoubleListAttribute(value,m,6);
+					if (n==6) transform_copy(spreads.e[s]->m(),m);
+				}
+				s++;
+				if (s==spreads.n) break;
+			}
+		}
+	}
 }
 
 /*! *** this is a bit of a hack to force refiguring of page thumbnails
@@ -784,6 +873,12 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 //! Drops pages.
 /*! *** needs clearer, configurable implementation, but right now,
  * plain-up slides pages over, shift-up swaps pages
+ *
+ * Mouse up outside window into a ViewWindow shifts view to that page.
+ * 
+ * \todo Idea for use: have a SpreadEditor be behind a ViewWindow pane.
+ * bring the spreadeditor forward, double click on a page which causes
+ * the view to come forward with that page selected..
  */
 int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 {
@@ -799,6 +894,15 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	if (pg<0) {
 		 // do not drop page anywhere
 		 //*** in the future this will be something like pop page into limbo?
+		if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
+			 // mouse up outside window so search for a ViewWindow to shift view for
+			anXWindow *win=NULL;
+			int mx,my;
+			mouseposition(&mx,&my,NULL,&win);
+			if (win) {
+				DBG cout <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
+			}
+		}
 		dragpage=-1;
 		return 0;
 	}
@@ -1125,7 +1229,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
  * be optionally integrated into the ViewWindow to provide the infinite scroll features
  * found in various other programs.
  */
-//class SpreadEditor : public Laxkit::ViewerWindow
+//class SpreadEditor : public Laxkit::ViewerWindow, public LaxFiles::DumpUtility
 //{
 // protected:
 //	Document *doc;
@@ -1139,6 +1243,9 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual int MoveResize(int nx,int ny,int nw,int nh);
 //	virtual int Resize(int nw,int nh);
+//
+//	virtual void dump_out(FILE *f,int indent,int what);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
 //! Make the window using project.
@@ -1171,6 +1278,20 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 	AddTool(new SpreadInterface(viewport->dp,project,doc),1,1); // local, and select it
 }
 
+//! Passes off to SpreadInterface::dump_out().
+void SpreadEditor::dump_out(FILE *f,int indent,int what)
+{
+	((SpreadInterface *)curtool)->dump_out(f,indent,0);
+}
+
+//! Passes off to SpreadInterface::dump_in_atts().
+void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att)
+{
+	((SpreadInterface *)curtool)->dump_in_atts(att);
+}
+
+/*! Removes rulers and adds Apply, Reset, and Update Thumbs.
+ */
 int SpreadEditor::init()
 {
 	//AddWin(***)...

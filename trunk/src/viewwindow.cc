@@ -2111,6 +2111,8 @@ void ViewWindow::dump_in_atts(Attribute *att)
 			vm=SINGLELAYOUT;
 		} else if (!strcmp(name,"page")) {
 			IntAttribute(value,&pn);
+		} else if (!strcmp(name,"document")) {
+			doc=laidout->findDocument(value);
 		}
 	}
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);

@@ -19,6 +19,7 @@
 #include <lax/interfaces/viewerwindow.h>
 #include <lax/interfaces/pathinterface.h>
 #include "document.h"
+#include "project.h"
 #include "drawdata.h"
 
 //----------------------- LittleSpread --------------------------------------
@@ -57,7 +58,7 @@ class PageLabel
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
 
-class SpreadInterface : public LaxInterfaces::InterfaceWithDp
+class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::DumpUtility
 {
  protected:
 	int centerlabels;
@@ -115,12 +116,15 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp
 	virtual void SwapPages(int previouspos, int newpos);
 	virtual void SlidePages(int previouspos, int newpos);
 
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
+
 	friend class SpreadEditor;
 };
 
 //----------------------- SpreadEditor --------------------------------------
 
-class SpreadEditor : public LaxInterfaces::ViewerWindow
+class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtility
 {
  protected:
 	Document *doc;
@@ -134,6 +138,9 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);
 	virtual int Resize(int nw,int nh);
+
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
 #endif
