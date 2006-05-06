@@ -1,0 +1,123 @@
+//
+// $Id$
+//	
+// Laidout, for laying out
+// Copyright (C) 2004-2006 by Tom Lechner
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
+// License as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later version.
+// For more details, consult the COPYING file in the top directory.
+//
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
+//
+
+#include "about.h"
+#include <lax/mesbar.h>
+#include <lax/textbutton.h>
+
+#include <lax/version.h>
+#include "headwindow.h"
+#include "version.h"
+
+#include <iostream>
+using namespace std;
+#define DBG 
+
+using namespace Laxkit;
+
+
+//------------------------ AboutWindow -------------------------
+//
+/*! \class AboutWindow
+ * \brief Show a little box with the logo, author(s), version, and Laxkit version.
+ */  
+//class AboutWindow : public Laxkit::MessageBox
+//{
+// public:
+// 	AboutWindow();
+//	virtual ~AboutWindow() {}
+// 	virtual const char *whattype() { return "AboutWindow"; }
+//	virtual int preinit();
+//	virtual int init();
+//	virtual int CharInput(unsigned int ch,unsigned int state);
+//};
+
+AboutWindow::AboutWindow()
+	: MessageBox(NULL,"About",ANXWIN_CENTER|ANXWIN_DELETEABLE, 0,0,500,600,0, NULL,None,NULL, NULL)
+{
+}
+
+/*! The default MessageBox::init() sets m[1]=m[7]=10000, which is supposed 
+ * to trigger a wrap to extent. However, if a window has a stretch of 2000, say
+ * like the main messagebar, then that window is stretched
+ * to that amount, which is silly. So, intercept this to be a more reasonable width.
+ */
+int AboutWindow::preinit()
+{
+//	Screen *screen=DefaultScreenOfDisplay(app->dpy);
+//	
+//	m[1]=screen->width/2;
+//	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+//	//WrapToExtent: 
+//	arrangeBoxes(1);
+//	win_w=m[1];
+//	win_h=m[7];
+//
+//	int redo=0;
+//	if (win_h>(int)(.9*screen->height)) { 
+//		win_h=(int)(.9*screen->height);
+//		redo=1;
+//	}
+//	if (win_w>(int)(.9*screen->width)) { 
+//		win_w=(int)(.9*screen->width);
+//		redo=1;
+//	}
+	return 0;
+}
+
+/*! Pops up a box with the  logo, author(s), version, and Laxkit version.
+ */
+int AboutWindow::init()
+{
+	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,
+			"[insert splash logo here!]\n"
+			"\n"
+			"Laidout Version " LAIDOUT_VERSION "\n"
+			"by Tom Lechner,\n"
+			"2004-2006\n"
+			"\n"
+			"using Laxkit\n version " LAXKIT_VERSION "\n");
+			
+	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,
+					mesbar->win_h,mesbar->win_h,0,50);
+	AddNull();
+	AddButton(TBUT_OK);
+	
+	m[1]=10000;
+	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+	//WrapToExtent: 
+	arrangeBoxes(1);
+	win_w=m[1];
+	win_h=m[7];
+	Resize(win_w,win_h);
+	
+	MessageBox::init();
+
+	return 1;
+}
+
+/*! Esc  dismiss the window.
+ */
+int AboutWindow::CharInput(unsigned int ch,unsigned int state)
+{
+	if (ch==LAX_Esc) {
+		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+		app->destroywindow(this);
+		return 0;
+	}
+	return 1;
+}
+
