@@ -13,18 +13,17 @@ VERSION 0.03
 (done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
        Load and save window configurations
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       EPS out to file###.eps by page, spread, or paper
-       Print all/current paper/paper range
-       an About window
+(done) EPS out to file###.eps by page not paper
+(done) Be able to print a paper range
+(done) an About window
 (done) command prompt window
        from laxkit: clear up focus handling which currently REALLY SUCKS
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-       Allow for window docking, floating, etc.
-       Get rid of white stripe toward bottom of the laidout webpage
+(done) Get rid of vertical white stripe toward bottom of the laidout webpage
        SpreadEditor: double click or drag to viewer to work on that page or spread
-       SpreadEditor: fix auto arranging
+(done) SpreadEditor: fix auto arranging
        Make doc tree changes sanely update the various windows
-	   Be able to DEselect all objects!!
+(done) Be able to DEselect all objects!!
 
 
 
@@ -32,6 +31,8 @@ VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
        Seriously optimize the whole ImagePatchData stuff
+       Fix non-centerfold page bleeding in booklets when printing
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
        Have imagepatch be a transform you can apply to any image
        Have images have any number of various kinds of transforms applied to it
        ObjectInterface for selecting and resizing multiple stuff
@@ -40,6 +41,7 @@ VERSION 0.1
        This means some sort of basic scripting infrastructure,
        undo
        configurable buttons with icons
+       Allow for window docking, floating, etc.
        parent/child nesting and masking,
        interface for that: nesting, and grouping
        allow for easy method for runaround area determination
@@ -67,6 +69,9 @@ VERSION 0.1
        SpreadEditor: optionally work with whole spreads, rather than just single pages
        from laxkit: clean up and beef up SplitWindow
        Provide some kind of visual feedback while doing lengthy operations
+       Finish implementing booklet/double sided vertical, and BasicBookImposition
+       Improve and/or make new logo for about
+       Vx (aka uberconvertor) support?
 
 
 VERSION 0.2
@@ -74,18 +79,20 @@ VERSION 0.2
 Bezier color patch freeform, rather than just grid.
 The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
+Possibly combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
 import/export as possible: passepartout (out is partially done)?,scribus?,svg
 Freehand drawing with tablet support
+Somehow be able to do foldouts from within any any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Also most likely means finally deciding on a rendering backend: cairo? antigrain? freetype/pango?
   which also means start to do serious optimizing for docs with a billion big images in them
-ImageMagick plugin: benefits: a gazillion file formats, including EPS, and color profiles
+ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost sort of things
 Would be nice to be able to handle lilypond sort of things
-Load/save various gimp things like gradients, palettes, and paths, perhaps extract from xcf
+Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from xcf
 Story editor
 Internal generic impositioner for arbitrary .ps files
 

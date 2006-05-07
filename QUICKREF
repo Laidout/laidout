@@ -20,6 +20,7 @@ In a viewer:
    right     next tool
    ','       previous object a
    '.'       next object  
+ +^'a'       deselect all currently selected objects\n"
    '<'       previous page  
    '>'       next page   
  
@@ -29,8 +30,9 @@ In a viewer:
    '>'           next page
    ^'s'          save file
    ^+'s'         save as -- just change the file name?? (not imp)
-   F5            popup new spread editor window
    F1            popup this quick reference
+   F2            popup an About window
+   F5            popup new spread editor window
 
     // these are like inkscape
    pgup      raise selection by 1 within layer
