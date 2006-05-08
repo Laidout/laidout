@@ -822,6 +822,7 @@ int LaidoutViewport::SelectObject(int i)
 	if (!curobj.obj) {
 		findAny();
 		if (firstobj.obj) setCurobj(&firstobj);
+		else return 0;
 	} else if (i==-2) { //prev
 		VObjContext prev;
 		prev=curobj;

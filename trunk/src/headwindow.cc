@@ -143,6 +143,8 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
  */  
 //class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 //{
+// protected:
+//	virtual int splitthewindow(anXWindow *fillwindow=NULL);
 // public:
 //	Laxkit::anXWindow *lastview, *lastedit;
 // 	HeadWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -155,14 +157,21 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 //	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 //	virtual void WindowGone(Laxkit::anXWindow *win);
 //	virtual int Curbox(int c);
+//	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
+//	virtual Document *HeadWindow::findAnyDoc();
+//	virtual int HasOnlyThis(Document *doc);
 //	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
-//! Constructor.
+//! Pass SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED to SplitWindow.
+/*! Adds the main window type generating functions.
+ */
 HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
-		: SplitWindow(parnt,ntitle,nstyle|SPLIT_WITH_SAME|SPLIT_BEVEL,xx,yy,ww,hh,brder)
+		: SplitWindow(parnt,ntitle,
+				nstyle|SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED,
+				xx,yy,ww,hh,brder)
 {
 	//*** should fill with funcs for all known default main windows:
 	//  ViewWindow
@@ -191,10 +200,89 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newCommandWindowFunc,0);
 }
 
-//! Empty destructor.
+//! Empty virtual destructor.
 HeadWindow::~HeadWindow()
+{}
+
+/*! Return 0 if window taken, else nonzero error.
+ *
+ * Note that which is ignored. Works only on curbox.
+ */
+int HeadWindow::Change(anXWindow *towhat,anXWindow *which)
 {
+	if (!curbox) return 0;
+
+	 //Get doc from curbox. If win has no doc, then get first
+	 //doc found in head. If none in head, then first in project (***should be last accessed?)
+	Document *doc=findAnyDoc();
+
+	 //change the window
+	if (SplitWindow::Change(towhat,which)!=0) return 1;
+	if (!doc) return 0;
+
+	 // make sure same doc from old curbox is used for view and spread
+	ViewWindow *v=dynamic_cast<ViewWindow *>(curbox->win);
+	if (v) {
+		((LaidoutViewport *)(v->viewport))->UseThisDoc(doc);
+		v->doc=doc;
+	} else {
+		SpreadEditor *s=dynamic_cast<SpreadEditor *>(curbox->win);
+		if (s) s->UseThisDoc(doc);
+	}
+
+	return 0;
 }
+
+//! Return doc associated with curbox, or with any pane in this, or first doc of laidout->project.
+Document *HeadWindow::findAnyDoc()
+{
+	ViewWindow *v;
+	SpreadEditor *s;
+	if (curbox) {
+		v=dynamic_cast<ViewWindow *>(curbox->win);
+		if (v && v->doc) return v->doc;
+		s=dynamic_cast<SpreadEditor *>(curbox->win);
+		if (s && s->doc) return s->doc;
+	}
+	for (int c=0; c<windows.n; c++) {
+		if (!windows.e[c]->win) continue;
+		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
+		if (v)
+			if (v->doc) return v->doc;
+			else continue;
+		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
+		if (s)
+			if (s->doc) return s->doc;
+			else continue;
+	}
+	if (laidout->project && laidout->project->docs.n) return laidout->project->docs.e[0];
+	return NULL;
+}
+	
+/*! \todo ***** should be able to duplicate views/spreadeditor/etc..
+ */
+int HeadWindow::splitthewindow(anXWindow *fillwindow)
+{
+	 //Get doc from curbox. If win has no doc, then get first
+	 //doc found in head. If none in head, then first in project (***should be last accessed?)
+	Document *doc=findAnyDoc();
+	
+	if (SplitWindow::splitthewindow(fillwindow)!=0) return 1;
+	anXWindow *win=windows.e[windows.n-1]->win;
+	if (!win) return 0;
+
+	 // make sure same doc from old box is used for view and spread
+	ViewWindow *v=dynamic_cast<ViewWindow *>(win);
+	if (v) {
+		((LaidoutViewport *)(v->viewport))->UseThisDoc(doc);
+		v->doc=doc;
+	} else {
+		SpreadEditor *s=dynamic_cast<SpreadEditor *>(win);
+		if (s) s->UseThisDoc(doc);
+	}
+	return 0;
+}
+
 
 //! Dump out what's in the window, and the borders.
 /*! \todo *** stacked panes
@@ -382,6 +470,25 @@ int HeadWindow::Curbox(int c)
 	if (!strcmp(win->whattype(),"ViewWindow")) lastview=curbox->win;
 
 	return cc;
+}
+
+//! Return 1 for this's ViewWindows and SpreadEditors use only doc.
+int HeadWindow::HasOnlyThis(Document *doc)
+{
+	ViewWindow *v;
+	SpreadEditor *s;
+	for (int c=0; c<windows.n; c++) {
+		if (!windows.e[c]->win) continue;
+		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
+		if (v)
+			if (v->doc!=doc) return 0;
+			else continue;
+		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
+		if (s)
+			if (s->doc!=doc) return 0;
+			else continue;
+	}
+	return 1;
 }
 
 

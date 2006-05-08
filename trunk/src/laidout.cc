@@ -543,7 +543,7 @@ int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 	HeadWindow *head;
 	for (c=0; c<topwindows.n; c++) {
 		head=dynamic_cast<HeadWindow *>(topwindows.e[c]);
-		if (!head) continue;
+		if (!head || !head->HasOnlyThis(doc)) continue;
 		fprintf(f,"%swindow\n",spc);
 		head->dump_out(f,indent+2,0);
 		n++;
