@@ -11,7 +11,7 @@ VERSION 0.03
 (done) printing: produce masked images based on 50% threshhold of alpha channel of images
 (done) When loading files from the command line, should understand: 'file:///path/to/it'
 (done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
-       Load and save window configurations
+(done) Load and save window configurations
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
 (done) EPS out to file###.eps by page not paper
 (done) Be able to print a paper range
@@ -40,6 +40,7 @@ VERSION 0.1
        Basic infrastructure for most things (except text) should be in place.
        This means some sort of basic scripting infrastructure,
        undo
+	   Finish implementing project based setup, especially when loading and saving
        configurable buttons with icons
        Allow for window docking, floating, etc.
        parent/child nesting and masking,
@@ -64,7 +65,6 @@ VERSION 0.1
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
-       SpreadEditor: should be able to drag a page to a view window to change to it, or dblclick
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
        from laxkit: clean up and beef up SplitWindow
@@ -82,7 +82,7 @@ Possibly allow pure function gradients, and redefining the functions for the oth
 Possibly combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
 import/export as possible: passepartout (out is partially done)?,scribus?,svg
 Freehand drawing with tablet support
-Somehow be able to do foldouts from within any any page of an imposition
+Somehow be able to do foldouts from within any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
