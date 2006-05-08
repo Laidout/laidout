@@ -69,19 +69,22 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
  */
 anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	return new HelpWindow();
-	//return new HelpWindow(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
+	HelpWindow *help=new HelpWindow(1);
+	XFree(help->win_sizehints);
+	help->win_parent=parnt;
+	return help;
 }
 
 //---------------------------- newHeadWindow() -----------------------
 /*! \ingroup mainwindows
- * \brief Create a new head split window, and fill it with available main windows.
+ * \brief Create a new head split window, and fill it with a which window.
  *
  * Current main windows are:
  * <pre>
  *  ViewWindow
  *  SpreadEditor
  *  HelpWindow
+ *  CommandWindow
  *
  *   TODO:
  *  Icons/Menus with optional dialogs ***
@@ -112,6 +115,16 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 	if (which) head->Add(which);
 	else head->Add(new ViewWindow(doc));//***
 
+	return head;
+}
+
+//! Create a new head window based on att.
+/*! \todo *** should return NULL if the att was invalid
+ */
+anXWindow *newHeadWindow(LaxFiles::Attribute *att)
+{
+	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+	head->dump_in_atts(att);
 	return head;
 }
 
@@ -201,7 +214,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 		if (windows.e[c]->win) {
 			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win->whattype());
 			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win);
-			if (wind) wind->dump_out(f,indent+2,what);
+			if (wind) wind->dump_out(f,indent+4,what);
 		}
 	}
 }
@@ -236,10 +249,10 @@ void HeadWindow::dump_in_atts(Attribute *att)
 				value=att->attributes.e[c]->attributes.e[c2]->value;
 				if (!strcmp(name,"xywh")) {
 					c3=IntListAttribute(value,i,4);
-					if (c3>0) win_x=i[0];
-					if (c3>1) win_y=i[1];
-					if (c3>2) win_w=i[2];
-					if (c3>3) win_h=i[3];
+					if (c3>0) box->x=i[0];
+					if (c3>1) box->y=i[1];
+					if (c3>2) box->w=i[2];
+					if (c3>3) box->h=i[3];
 				} else if (!strcmp(name,"window")) {
 					win=NewWindow(value);
 					if (win) {
@@ -251,6 +264,7 @@ void HeadWindow::dump_in_atts(Attribute *att)
 					}
 				}
 			}
+			box->sync(1);
 			windows.push(box);
 		}
 	}

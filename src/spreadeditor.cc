@@ -25,6 +25,7 @@
 #include <lax/lists.cc>
 #include <X11/cursorfont.h>
 #include "headwindow.h"
+#include "helpwindow.h"
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -518,7 +519,8 @@ void SpreadInterface::GetSpreads()
 	temppagemap=new int[doc->pages.n];
 	for (c=0; c<doc->pages.n; c++) {
 		temppagemap[c]=c;
-		pagelabels.push(new PageLabel(c,"#",c%8));
+		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
+		pagelabels.push(new PageLabel(c,"#",doc->pages.e[c]->labeltype));
 	}
 	
 	int highestpage=0;
@@ -1239,6 +1241,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 //						int xx, int yy, int ww, int hh, int brder,
 //						Project *project, Document *ndoc);
 //	virtual int init();
+//	virtual const char *whattype() { return "SpreadEditor"; }
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual int MoveResize(int nx,int ny,int nw,int nh);
@@ -1362,6 +1365,9 @@ int SpreadEditor::CharInput(unsigned int ch,unsigned int state)
 	if (ch==LAX_Esc) {
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
 		app->destroywindow(this);
+		return 0;
+	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
+		app->addwindow(new HelpWindow());
 		return 0;
 	}
 	return 1;

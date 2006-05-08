@@ -134,6 +134,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUt
 						int xx, int yy, int ww, int hh, int brder,
 						Project *project, Document *ndoc);
 	virtual int init();
+	virtual const char *whattype() { return "SpreadEditor"; }
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);

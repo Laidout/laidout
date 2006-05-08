@@ -27,6 +27,7 @@
 
 #include <lax/anxapp.h>
 #include <lax/version.h>
+#include <lax/fileutils.h>
 #include <Imlib2.h>
 #include <getopt.h>
 
@@ -44,6 +45,7 @@
 #include <lax/refcounter.cc>
 Laxkit::RefCounter<Laxkit::anObject> objectstack;
 using namespace Laxkit;
+using namespace LaxFiles;
 
 #include <iostream>
 using namespace std;
@@ -164,6 +166,7 @@ void print_usage()
 //	int LoadDocument(const char *filename);
 //	int NewDocument(DocumentStyle *docinfo);
 //	int NewDocument(const char *spec);
+//	int DumpWindows(FILE *f,int indent,Document *doc);
 //
 //	void notifyDocTreeChanged(anXWindow *callfrom=NULL);
 //};
@@ -346,15 +349,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
 	DBG cout <<"*** read in these files:"<<endl;
 	Document *doc;
+	index=topwindows.n;
+	if (!project) project=new Project;
 	for (c=optind; c<argc; c++) {
 		DBG cout <<"----Read in:  "<<argv[c]<<endl;
 		doc=LoadDocument(argv[c]);
-		if (doc) {
-			if (!project) project=new Project;
-			project->docs.push(doc);
-			curdoc=doc;
-			addwindow(newHeadWindow(doc));
-		}
+		if (doc && topwindows.n==index) addwindow(newHeadWindow(doc));
 	}
 	
 	DBG cout <<"---------end options"<<endl;
@@ -369,14 +369,31 @@ Document *LaidoutApp::findDocument(const char *saveas)
 	return NULL;
 }
 
-//! Load and return a document from filename.
+//! Load a document from filename, putting in project, make it curdoc and return on successful load.
+/*! If a doc with the same filename is already loaded, then make that curdoc, and return it.
+ */
 Document *LaidoutApp::LoadDocument(const char *filename)
 {
-	Document *doc=new Document;
 	if (!strncmp(filename,"file://",7)) filename+=7;
-	if (doc->Load(filename)>0) return doc;
-	delete doc;
-	return NULL;
+	char *fullname=newstr(filename);
+	full_path_for_file(fullname);
+	Document *doc=findDocument(fullname);
+	if (doc) {
+		delete[] fullname;
+		return curdoc=doc;
+	}
+		
+	doc=new Document(NULL,fullname);
+	project->docs.push(doc);
+	
+	if (doc->Load(fullname)==0) {
+		project->docs.pop();
+		delete doc;
+		return NULL;
+	}
+	delete[] fullname;
+	curdoc=doc;
+	return doc;
 }
 
 //! Create a new document from spec and call up a new ViewWindow.
@@ -505,6 +522,33 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);
 	return 0;
+}
+
+//! Call dump_out() on all HeadWindow objects in topwindows.
+/*! This writes out:
+ * <pre>
+ *  window
+ *    ....whatever HeadWindow puts out
+ * </pre>
+ *
+ * If doc!=0 then only output headwindows that only have doc in them. 
+ * (this is unimplemented, might be better to have some special check when
+ * loading so that if doc is being loaded from a project load, then all windows
+ * in the doc are ignored?, or if doc is only doc open?)
+ */
+int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	int c,n=0;
+	HeadWindow *head;
+	for (c=0; c<topwindows.n; c++) {
+		head=dynamic_cast<HeadWindow *>(topwindows.e[c]);
+		if (!head) continue;
+		fprintf(f,"%swindow\n",spc);
+		head->dump_out(f,indent+2,0);
+		n++;
+	}
+	return n;
 }
 
 //---------------------------------------- main() ----------------------- This is where it all begins!

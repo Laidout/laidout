@@ -39,6 +39,7 @@ class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 };
 
 Laxkit::anXWindow *newHeadWindow(Document *doc=NULL,const char *which=NULL);
+Laxkit::anXWindow *newHeadWindow(LaxFiles::Attribute *att);
 
 #endif
 

@@ -33,11 +33,14 @@ using namespace std;
  * the user might care to associate with the project.
  *
  * Also, the Project maintains its own StyleManager***??????
+ *
+ * \todo *** implement filelist
  */
 //class Project : public LaxFiles::DumpUtility
 //{
 // public:
 //	char *name,*filename;
+//	Laxkit::PtrStack<char> filelist;
 //	Laxkit::PtrStack<Document> docs;
 //	
 //	//StyleManager styles;
