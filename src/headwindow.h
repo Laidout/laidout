@@ -22,6 +22,8 @@
 
 class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 {
+ protected:
+	virtual int splitthewindow(anXWindow *fillwindow=NULL);
  public:
 	Laxkit::anXWindow *lastview, *lastedit;
  	HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -34,6 +36,9 @@ class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 	virtual void WindowGone(Laxkit::anXWindow *win);
 	virtual int Curbox(int c);
+	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
+	virtual int HasOnlyThis(Document *doc);
+	virtual Document *HeadWindow::findAnyDoc();
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };

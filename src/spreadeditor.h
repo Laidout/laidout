@@ -127,9 +127,9 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtility
 {
  protected:
+ public:
 	Document *doc;
 	Project *project;
- public:
 	SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 						int xx, int yy, int ww, int hh, int brder,
 						Project *project, Document *ndoc);
@@ -139,6 +139,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUt
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);
 	virtual int Resize(int nw,int nh);
+	virtual int UseThisDoc(Document *ndoc);
 
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);

@@ -1246,6 +1246,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual int MoveResize(int nx,int ny,int nw,int nh);
 //	virtual int Resize(int nw,int nh);
+//	virtual int UseThisDoc(Document *ndoc);
 //
 //	virtual void dump_out(FILE *f,int indent,int what);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
@@ -1291,6 +1292,19 @@ void SpreadEditor::dump_out(FILE *f,int indent,int what)
 void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att)
 {
 	((SpreadInterface *)curtool)->dump_in_atts(att);
+}
+
+/*! Return 0 for success, nonzero error.
+ */
+int SpreadEditor::UseThisDoc(Document *ndoc)
+{
+	if (!doc) return 1;
+	doc=ndoc;
+	SpreadInterface *s=((SpreadInterface *)curtool);
+	s->doc=doc;
+	s->GetSpreads();
+	s->ArrangeSpreads(-1);
+	return 0;
 }
 
 /*! Removes rulers and adds Apply, Reset, and Update Thumbs.

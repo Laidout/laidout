@@ -57,15 +57,31 @@ AboutWindow::AboutWindow()
  */
 int AboutWindow::preinit()
 {
-//	Screen *screen=DefaultScreenOfDisplay(app->dpy);
-//	
-//	m[1]=screen->width/2;
-//	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
-//	//WrapToExtent: 
-//	arrangeBoxes(1);
-//	win_w=m[1];
-//	win_h=m[7];
-//
+	//Screen *screen=DefaultScreenOfDisplay(app->dpy);
+	
+	//m[1]=screen->width/2;
+	m[1]=10000;
+	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+
+	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,
+			"[insert splash logo here!]\n"
+			"\n"
+			"Laidout Version " LAIDOUT_VERSION "\n"
+			"by Tom Lechner,\n"
+			"2004-2006\n"
+			"\n"
+			"using Laxkit\n version " LAXKIT_VERSION "\n");
+			
+	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,
+					mesbar->win_h,mesbar->win_h,0,50);
+	AddNull();
+	AddButton(TBUT_OK);
+	
+	//WrapToExtent: 
+	arrangeBoxes(1);
+	win_w=m[1];
+	win_h=m[7];
+
 //	int redo=0;
 //	if (win_h>(int)(.9*screen->height)) { 
 //		win_h=(int)(.9*screen->height);
@@ -82,31 +98,28 @@ int AboutWindow::preinit()
  */
 int AboutWindow::init()
 {
-	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,
-			"[insert splash logo here!]\n"
-			"\n"
-			"Laidout Version " LAIDOUT_VERSION "\n"
-			"by Tom Lechner,\n"
-			"2004-2006\n"
-			"\n"
-			"using Laxkit\n version " LAXKIT_VERSION "\n");
-			
-	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,
-					mesbar->win_h,mesbar->win_h,0,50);
-	AddNull();
-	AddButton(TBUT_OK);
 	
-	m[1]=10000;
-	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
-	//WrapToExtent: 
-	arrangeBoxes(1);
-	win_w=m[1];
-	win_h=m[7];
-	Resize(win_w,win_h);
+//	m[1]=10000;
+//	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+//	//WrapToExtent: 
+//	arrangeBoxes(1);
+//	win_w=m[1];
+//	win_h=m[7];
+
+	if (!win_sizehints) {
+		win_sizehints=XAllocSizeHints();
+	}
+	win_sizehints->x=win_x;
+	win_sizehints->y=win_y;
+	win_sizehints->width=win_w;
+	win_sizehints->height=win_h;
+	win_sizehints->flags=USPosition|USSize;
+	      
+	MoveResize(win_x,win_y,win_w,win_h);
 	
 	MessageBox::init();
 
-	return 1;
+	return 0;
 }
 
 /*! Esc  dismiss the window.
