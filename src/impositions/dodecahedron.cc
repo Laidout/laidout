@@ -140,8 +140,8 @@ Net *makeDodecahedronNet(double ww,double hh)
 	net->FitToData(&d,ww*.05);
 	net->ApplyTransform();
 
-	DBG cout <<"******* dodechaedron after: **********"<<endl;
-	DBG net->dump_out(stdout,0,0);
+	//DBG cout <<"******* dodechaedron after: **********"<<endl;
+	//DBG net->dump_out(stdout,0,0);
 
 		
 	return net;
