@@ -397,9 +397,26 @@ StyleDef *RectPageStyle::makeStyleDef()
  *
  * The ObjectContainer part returns the individual layers of the page.
  */
+/*! \var int PageLabel::labeltype
+ * \brief How to show the label in a SpreadEditor
+ *
+ * <pre>
+ * 0 white circle\n
+ * 1 gray circle\n
+ * 2 dark gray circle\n
+ * 3 black circle\n
+ * 4 square\n
+ * 5 gray square\n
+ * 6 dark gray square\n
+ * 7 black square\n
+ * </pre>
+ *  \todo *** this will eventually be more versatile, combined with the ability
+ *    for ranges of pages to have different labels, like '3' vs 'iii'
+ */
 //class Page : public ObjectContainer
 //{
 // public:
+//	int labeltype; //plain label, circled, highlighted circle, etc..
 //	int pagenumber;
 //	Laxkit::ImageData *thumbnail;
 //	clock_t thumbmodtime,modtime;
@@ -435,6 +452,7 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
 	thumbnail=0;
 	pagenumber=num;
 	layers.push(new Group,1);
+	labeltype=-1;
 }
 
 //! Destructor, destroys the thumbnail, and pagestyle according to psislocal.

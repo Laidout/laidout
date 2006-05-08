@@ -20,9 +20,11 @@
 
 class HelpWindow : public Laxkit::MessageBox
 {
+	int s;
  public:
- 	HelpWindow();
+ 	HelpWindow(int style=0);
 	virtual ~HelpWindow() {}
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
  	virtual const char *whattype() { return "HelpWindow"; }
 	virtual int preinit();
 	virtual int init();

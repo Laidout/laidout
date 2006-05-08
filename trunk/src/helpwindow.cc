@@ -37,18 +37,24 @@ using namespace Laxkit;
  */  
 //class HelpWindow : public Laxkit::MessageBox
 //{
+//	int s;
 // public:
-// 	HelpWindow();
+// 	HelpWindow(int style);
 //	virtual ~HelpWindow() {}
 // 	virtual const char *whattype() { return "HelpWindow"; }
+//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 //	virtual int preinit();
 //	virtual int init();
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //};
 
-HelpWindow::HelpWindow()
+//! If style!=0, then do no special sizing in preinit...
+/*! \todo anyhow need to work out sizing in Laxkit::MessageBox!!
+ */
+HelpWindow::HelpWindow(int style)
 	: MessageBox(NULL,"Help!",ANXWIN_DELETEABLE, 0,0,500,600,0, NULL,None,NULL, NULL)
 {
+	s=style;
 }
 
 /*! The default MessageBox::init() sets m[1]=m[7]=10000, which is supposed 
@@ -58,6 +64,7 @@ HelpWindow::HelpWindow()
  */
 int HelpWindow::preinit()
 {
+	if (s) return 0;
 	Screen *screen=DefaultScreenOfDisplay(app->dpy);
 	
 	m[1]=screen->width/2;
@@ -151,7 +158,7 @@ int HelpWindow::init()
 			"   'M'    reverse toggle mark of current page\n"
 			"   't'    toggle drawing of thumbnails\n"
 			"   'A'    toggle how to arrange the spreads\n"
-			"  +'A'    force arranging the spreads using current arrange style\n"
+			"  ^'A'    force arranging the spreads using current arrange style\n"
 			"   'p'    *** for debugging thumbs\n"
 			"\n"
 			"\n"
@@ -222,6 +229,13 @@ int HelpWindow::init()
 	return 0;
 }
 
+int HelpWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+{
+	if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+	return MessageBox::ClientEvent(e,mes);
+}
+
+	
 /*! Esc  dismiss the window.
  */
 int HelpWindow::CharInput(unsigned int ch,unsigned int state)

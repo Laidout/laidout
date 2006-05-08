@@ -52,6 +52,7 @@ class LaidoutApp : public Laxkit::anXApp
 	Document *LoadDocument(const char *filename);
 	int NewDocument(DocumentStyle *docinfo, const char *filename);
 	int NewDocument(const char *spec);
+	int DumpWindows(FILE *f,int indent,Document *doc);
 
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom=NULL);
 };

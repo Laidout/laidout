@@ -79,6 +79,7 @@ class RectPageStyle : public PageStyle
 class Page : public ObjectContainer
 {
  public:
+	int labeltype;
 	int pagenumber;
 	LaxInterfaces::ImageData *thumbnail;
 	clock_t thumbmodtime,modtime;

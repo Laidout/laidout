@@ -24,6 +24,7 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include "laidout.h"
+#include "headwindow.h"
 
 
 using namespace LaxFiles;
@@ -206,7 +207,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	if (docstyle==NULL) {
 		//*** need to create a new DocumentStyle
 		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		DBG cout <<"***need to implement get defualt document in Document constructor.."<<endl;
+		DBG cout <<"***need to implement get default document in Document constructor.."<<endl;
 	}
 	if (docstyle==NULL) {
 		DBG cout <<"***need to implement document constructor.."<<endl;
@@ -303,7 +304,7 @@ int Document::RemovePages(int start,int n)
  * 
  * *** only checks for saveas existence, does no sanity checking on it...
  *
- * \todo 
+ * \todo  need to work out saving Specific project/no proj but many docs/single doc
  */
 int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 {
@@ -329,7 +330,10 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 	DBG cout <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
+	
 	dump_out(f,0,0);
+	laidout->DumpWindows(f,0,this);
+	
 	fclose(f);
 	return 0;
 }
@@ -414,6 +418,16 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c]);
 			pages.push(page,1);
+		}
+	}
+	 // search for windows to create after reading in all pages
+	HeadWindow *head;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"window")) {
+			head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
+			if (head) laidout->addwindow(head);
 		}
 	}
 }
