@@ -84,10 +84,11 @@ class Spread : public ObjectContainer
 class Imposition : public Style
 {
   public:
-	int numpapers; // index="0" 
-	int numpages; // index="1"
-	PaperType *paperstyle; // ".2" is the default paper style, assumed to be local
-	PageStyle *pagestyle; // ".3" is the default page style, assumed to be local
+	int numpapers; 
+	int numspreads;
+	int numpages;
+	PaperType *paperstyle; // assumed to be local
+	PageStyle *pagestyle; //assumed to be local
 	
 	Imposition(const char *nsname);
 	virtual ~Imposition() {}
@@ -112,6 +113,7 @@ class Imposition : public Style
 	virtual int *PrintingPapers(int frompage,int topage) = 0;
 
 	virtual int NumPapers(int npapers);
+	//virtual int NumSpreads(int nspreads);
 	virtual int NumPages(int npages);
 	virtual int PaperFromPage(int pagenumber) = 0; // the paper number containing page pagenumber
 	virtual int GetPagesNeeded(int npapers) = 0; // how many pages needed when you have n papers

@@ -269,7 +269,7 @@ int Document::NewPages(int starting,int np)
 	}
 	docstyle->imposition->NumPages(pages.n);
 	docstyle->imposition->SyncPages(this,starting,-1);
-	laidout->notifyDocTreeChanged();
+	laidout->notifyDocTreeChanged(NULL,TreePagesAdded, starting,-1);
 	return np;
 }
 
@@ -288,7 +288,7 @@ int Document::RemovePages(int start,int n)
 		pages.remove(start);
 		DBG cout << "---  Done removing page "<<start+c<<endl;
 	}
-	laidout->notifyDocTreeChanged();
+	laidout->notifyDocTreeChanged(NULL,TreePagesDeleted, start,-1);
 	return n;
 }
 

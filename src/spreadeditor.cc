@@ -26,6 +26,7 @@
 #include <X11/cursorfont.h>
 #include "headwindow.h"
 #include "helpwindow.h"
+#include "viewwindow.h"
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -273,6 +274,12 @@ PageLabel::~PageLabel()
  *
  * -1 means auto row or column depending on whether the window is wider or taller.
  */
+/*! \var int *SpreadInterface::temppagemap
+ * \brief How the document's pages have been rearranged.
+ *
+ * temppagemap elements say what doc->page index is temporarily in littlespread index. For instance,
+ * if temppagemap=={0,1,2,3,4}, after swapping 4 and 1, temppagemap=={0,4,2,3,1}.
+ */
 //class SpreadInterface : public Laxkit::InterfaceWithDp
 //{
 // protected:
@@ -289,6 +296,7 @@ PageLabel::~PageLabel()
 //	Laxkit::PtrStack<PageLabel> pagelabels;
 //	int *temppagemap;
 //	//Laxkit::PtrStack<TextBlock> notes;
+//	int SpreadInterface::reversemap(int i);
 // public:
 //	Document *doc;
 //	Project *project;
@@ -319,6 +327,7 @@ PageLabel::~PageLabel()
 //	virtual const char *whattype() { return "SpreadInterface"; }
 //	virtual const char *whatdatatype() { return "LittleSpread"; }
 //
+//	virtual void CheckSpreads(int startpage,int endpage);
 //	virtual void GetSpreads();
 //	virtual void ArrangeSpreads(int how=-1);
 //	virtual int findPage(int x,int y);
@@ -373,6 +382,7 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	doc=docum;
 	reversebuttons=0;
 	temppagemap=NULL;
+	temppagen=0;
 	GetSpreads();
 	curspread=NULL;
 	curpage=-1;
@@ -481,7 +491,8 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att)
 	}
 }
 
-/*! *** this is a bit of a hack to force refiguring of page thumbnails
+/*! \todo *** this is a bit of a hack to force refiguring of page thumbnails
+ *    need more thorough mechanism to keep track of last mod times..
  */
 int SpreadInterface::InterfaceOn()
 {
@@ -489,11 +500,123 @@ int SpreadInterface::InterfaceOn()
 	return 0;
 }
 
+//! Return the reverse map from temppagemap[].
+/*!
+ * temppagemap elements say what doc->page index is temporarily in
+ * littlespread->spread->pagestack->index. For instance,
+ * if temppagemap=={0,1,2,3,4}, after swapping 4 and 1, temppagemap=={0,4,2,3,1}.
+ * 
+ * So reversemap(4) would return 1, reversemap(1) returns 4, etc.
+ *
+ * Return -1 on not found.
+ */
+int SpreadInterface::reversemap(int i)
+{
+	for (int c=0; c<temppagen; c++) 
+		if (temppagemap[c]==i) return c;
+	return -1;
+}
+
+//! Check to make sure spreads containing pages in range [startpage,endpage] are correct.
+/*! This currently recomputes all spreads.
+ * 
+ * If endpage==-1, then doc->pages.n-1 is assumed.
+ *
+ * ***this is very messy...
+ */
+void SpreadInterface::CheckSpreads(int startpage,int endpage)
+{
+	if (!doc) return;
+	if (endpage<0) endpage=doc->pages.n-1;
+
+	LittleSpread *newspread;
+	double x=0,y=0;
+	int nextpage=0;
+	NumStack<int> pgs;
+	Spread *s;
+	int c=0,c2,i;
+	
+	 // correct temppagemap
+	if (doc->pages.n<=temppagen) {
+		temppagen=doc->pages.n;
+		while (pagelabels.n!=doc->pages.n) pagelabels.remove(pagelabels.n-1);
+	} else {
+		int *tmp=new int[doc->pages.n];
+		memcpy(tmp,temppagemap,sizeof(int)*temppagen);
+		for (c=temppagen; c<doc->pages.n; c++) {
+			tmp[c]=c;
+			if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
+			pagelabels.push(new PageLabel(c,"#",doc->pages.e[c]->labeltype));
+		}
+		delete[] temppagemap;
+		temppagemap=tmp;
+		temppagen=doc->pages.n;
+	}
+			
+	 // for simplicity, map the spreads to normal
+	for (c=0; c<spreads.n; c++) {
+		s=spreads.e[c]->spread;
+		for (c2=0; c2<s->pagestack.n; c2++) {
+			s->pagestack.e[c2]->index=reversemap(s->pagestack.e[c2]->index);
+		}
+	}
+	 // initialize nextpage
+	c=0;
+	nextpage=spreads.e[c]->spread->pagestack.e[0]->index;
+
+	 // redo the spreads
+	do {
+		s=doc->docstyle->imposition->GetLittleSpread(nextpage);
+		
+		 // try to preserve previous spread placement
+		if (c<spreads.n) {
+			x=spreads.e[c]->m(4);
+			y=spreads.e[c]->m(5);		
+		} else if (c>=0) {
+			x+=(spreads.e[c-1]->maxx-spreads.e[c-1]->minx)*1.2;
+		}
+
+		 // set up and install replacement spread
+		newspread=new LittleSpread(s,c>0?spreads.e[c-1]:NULL); //takes pointer, not dups or checkout
+		newspread->m(4,x);
+		newspread->m(5,y);
+		newspread->FindBBox();
+		if (c<spreads.n) {
+			delete spreads.e[c];
+			spreads.e[c]=newspread;
+		} else {
+			spreads.push(newspread);
+		}
+		if (c>0) spreads.e[c]->mapConnection();
+
+		 // find next page
+		nextpage=spreads.e[c]->spread->pagestack.e[0]->index+1;
+		for (c2=0; c2<s->pagestack.n; c2++) {
+			i=s->pagestack.e[c2]->index;
+			if (i>nextpage) nextpage=i+1;
+		}
+		c++;
+	} while (nextpage<doc->pages.n);
+	while (c!=spreads.n) spreads.remove(c);
+
+	 // map the pages back
+	for (c=0; c<spreads.n; c++) {
+		s=spreads.e[c]->spread;
+		for (c2=0; c2<s->pagestack.n; c2++) {
+			s->pagestack.e[c2]->index=temppagemap[c];
+			s->pagestack.e[c2]->page=doc->pages.e[temppagemap[c]];
+		}
+	}
+	needtodraw=1;
+}
+
 //! Create all the LittleSpread objects and default page labels.
-/*! ***you know what? screw the following for now, imp later: This can handle spreads with 
+/*! This is typically geared only for page spreads, not paper spreads.
+ *
+ * This can handle spreads with 
  * non continuous ranges of pages.
  * Normally it is a very poor design to have such non-continuous ranges,
- * but just in case, this covers for it.
+ * but just in case, this covers for it.(see the todo about numspreads)
  *
  * PaperLayouts are non-continuous, but PageLayouts should be continuous.
  * The spread editor currently only does PageLayouts.
@@ -503,6 +626,8 @@ int SpreadInterface::InterfaceOn()
  *   the spread, then gets the next spread based on that one, until highestpage
  *   is equal to doc->pages.n. would be better to search within already created
  *   spreads to be sure not skipping pages..
+ * \todo should probably have numspreads in addition to numpages and numpapers in
+ *   Imposition, then can do GetLittleSpread(spreadnumber)..
  */
 void SpreadInterface::GetSpreads()
 {
@@ -517,6 +642,7 @@ void SpreadInterface::GetSpreads()
 	int c;
 	if (temppagemap) delete[] temppagemap;
 	temppagemap=new int[doc->pages.n];
+	temppagen=doc->pages.n;
 	for (c=0; c<doc->pages.n; c++) {
 		temppagemap[c]=c;
 		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
@@ -537,6 +663,26 @@ void SpreadInterface::GetSpreads()
 		}
 		highestpage++;
 	} while (highestpage<doc->pages.n);
+//	----------------newfangled: will be obsoleted by numspreads
+//	NumStack<int> pgs;
+//	int nextpage=0;
+//	Spread *s;
+//	LittleSpread *ls;
+//	int c2,i;
+//	do {
+//		s=doc->docstyle->imposition->GetLittleSpread(nextpage);
+//		ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
+//		ls->FindBBox();
+//		spreads.push(ls);
+//
+//		 // find nextpage 
+//		for (c=0; c<s->pagestack.n; c++) {
+//			i=s->pagestack.e[c]->index;
+//			for (c2=0; c2<pgs.n && i>pgs.e[c2]; c2++) ;
+//			if (c2<pgs.n && i!=pgs.e[c2]) pgs.push(i);
+//		}
+//		for (c=0; c<pgs.n; c++, nextpage++) if (pgs.e[c]!=nextpage+1) break;
+//	} while (nextpage<doc->pages.n);
 }
 
 // // values for arrangestate
@@ -901,7 +1047,11 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 			anXWindow *win=NULL;
 			int mx,my;
 			mouseposition(&mx,&my,NULL,&win);
-			if (win) {
+			if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
+				LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
+				vp->UseThisDoc(doc);
+				vp->SelectPage(dragpage);
+				
 				DBG cout <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
 			}
 		}
@@ -1017,7 +1167,7 @@ void SpreadInterface::ApplyChanges()
 	delete[] oldpages;
 	needtodraw=1;
 
-	laidout->notifyDocTreeChanged();
+	laidout->notifyDocTreeChanged(curwindow->win_parent,TreePagesMoved,0,-1);
 }
 
 //! Reset whatever tentative changes to page order have been made since last apply.
@@ -1224,7 +1374,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 //----------------------- SpreadEditor --------------------------------------
 
 /*! \class SpreadEditor
- * \brief A ViewerWindow that gets filled with stuff appropriate for spread editing.
+ * \brief A Laxkit::ViewerWindow that gets filled with stuff appropriate for spread editing.
  *
  * This creates the window with a SpreadInterface.
  * The SpreadInterface is an interface rather than a viewport because someday it might
@@ -1244,6 +1394,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 //	virtual const char *whattype() { return "SpreadEditor"; }
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+//	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 //	virtual int MoveResize(int nx,int ny,int nw,int nh);
 //	virtual int Resize(int nw,int nh);
 //	virtual int UseThisDoc(Document *ndoc);
@@ -1340,12 +1491,40 @@ int SpreadEditor::init()
 	return 0;
 }
 
+/*! Catches "docTreeChange".
+ */
+int SpreadEditor::DataEvent(Laxkit::EventData *data,const char *mes)
+{
+	DBG cout <<"SpreadEditor got message: "<<mes<<endl;
+	if (!strcmp(mes,"docTreeChange")) {
+		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
+		if (!te || te->changer==this) return 1;
+
+		if (te->changetype==TreeObjectRepositioned ||
+				te->changetype==TreeObjectReorder ||
+				te->changetype==TreeObjectDiffPage ||
+				te->changetype==TreeObjectDeleted ||
+				te->changetype==TreeObjectAdded) {
+			DBG cout <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
+		} else if (te->changetype==TreePagesAdded ||
+				te->changetype==TreePagesDeleted ||
+				te->changetype==TreePagesMoved) {
+			((SpreadInterface *)curtool)->CheckSpreads(te->start,te->end);
+		} else if (te->changetype==TreeDocGone) {
+			cout <<" ***need to imp SpreadEditor::DataEvent -> TreeDocGone"<<endl;
+		}
+		
+		delete te;
+		return 0;
+	}
+	return 1;
+}
+
 /*! Responds to:
  *
- * "resetbutton" *** imp me!
- * "applybutton"
+ * "resetbutton",
+ * "applybutton",
  * "updatethumbs"
- * "docTreeChange"
  */
 int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
@@ -1363,12 +1542,6 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 // *** kind of a hack
 		for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
 		((anXWindow *)viewport)->Needtodraw(1);
-		return 0;
-	} else if (!strcmp("docTreeChange",mes)) {
-		cout <<"SpreadEditor got docTreeChange message *** imp me!"<<endl;
-		((SpreadInterface *)curtool)->GetSpreads();
-		((SpreadInterface *)curtool)->firsttime=1; //*** bad hack
-		((SpreadInterface *)curtool)->needtodraw=1;
 		return 0;
 	}
 	return 1;

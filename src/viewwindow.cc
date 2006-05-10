@@ -208,16 +208,15 @@ int VObjContext::isequal(const ObjectContext *oc)
  * // field for the document?? mutex lock on the object tree?
  * 
  * \todo *** need to be able to work only on current zone or only on current layer...
- * a zone would be: limbo, imposition specific zones (like printer marks), page outline,
- * the spread itself, the current page only.. the zone could be the objcontext->spread()?
- * 
+ *   a zone would be: limbo, imposition specific zones (like printer marks), page outline,
+ *   the spread itself, the current page only.. the zone could be the objcontext->spread()?
  * \todo *** might be useful to have more things potentially represented in curobj.spread()..
- * possibilities: limbo, main spread, printer marks, other spreads...
- *
+ *   possibilities: limbo, main spread, printer marks, other spreads...
  * \todo *** in paper spread view, perhaps that is where a spread()==printer marks is useful..
- * also, depending on the imposition, there might be other operations permitted in paper spread..
- * like in a postering imposition, the page data stays stationary, but multiple paper outlines can latch
- * on to different parts of it...(or perhaps the page moves around, not paper)
+ *   also, depending on the imposition, there might be other operations permitted in paper spread..
+ *   like in a postering imposition, the page data stays stationary, but multiple paper outlines can latch
+ *   on to different parts of it...(or perhaps the page moves around, not paper)
+ * \todo please note that LaidoutViewport has 2 anObject base classes.. really it shouldn't..
  */
 /*! \var Page *LaidoutViewport::curpage
  * \brief Pointer to the current page.
@@ -390,31 +389,22 @@ LaidoutViewport::~LaidoutViewport()
 	limbo.flush();
 }
 
-/* \todo docTreeChange is a bit drastic.. del's spread every time
- */
-int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
-{
-	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
-		if ((unsigned long)e->data.l[0]==window) return 0;
-		if (spread) { delete spread; spread=NULL; }
-		setupthings(curobjPage());
-		return 0;
-	}
-	return ViewportWindow::ClientEvent(e,mes);
-}
-
 //! Replace existing doc with this doc.
 /*! Return 0 for success, nonzero error.
+ *
+ * If new==old, then do nothing and return 0.
  */
 int LaidoutViewport::UseThisDoc(Document *ndoc)
 {
 	if (!ndoc) return 1;
+	if (doc==ndoc) return 0;
 	ClearSearch();
 	clearCurobj();
 	curpage=NULL;
 
 	doc=ndoc;
 	setupthings();
+	Center(1);
 	needtodraw=1;
 	return 0;
 }
@@ -475,6 +465,56 @@ double LaidoutViewport::GetVMag(int x,int y)
 	return dp->GetVMag(x,y);
 }
 
+/*! Catches "docTreeChange".
+ */
+int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
+{
+	DBG cout <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
+	if (!strcmp(mes,"docTreeChange")) {
+		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
+		if (!te || te->changer && te->changer==static_cast<anXWindow *>(this)) return 1;
+
+		if (te->changetype==TreeObjectRepositioned) {
+			needtodraw=1;
+		} else if (te->changetype==TreeObjectReorder ||
+				te->changetype==TreeObjectDiffPage ||
+				te->changetype==TreeObjectDeleted ||
+				te->changetype==TreeObjectAdded || 
+				te->changetype==TreePagesAdded ||
+				te->changetype==TreePagesDeleted ||
+				te->changetype==TreePagesMoved) {
+			 //***
+			int pg=curobjPage();
+			curobj.set(NULL, 1, 0);
+			clearCurobj();
+			delete spread;
+			spread=NULL;
+			setupthings(pg);
+			needtodraw=1;
+		} else if (te->changetype==TreeDocGone) {
+			cout <<" ***need to imp LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
+		}
+		
+		delete te;
+		return 0;
+	}
+	return 1;
+//---------------------
+//		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+//		int curpage=vp->curobjPage();
+//		delete vp->spread;
+//		vp->spread=NULL;
+//		vp->curpage=NULL;
+//		int c=doc->RemovePages(curpage,1); //remove curpage
+//		if (c==1) GetMesbar()->SetText("Page deleted.");
+//			else GetMesbar()->SetText("Error deleting page.");
+//	--- from old clientmessage
+//		if ((unsigned long)e->data.l[0]==window) return 0;
+//		if (spread) { delete spread; spread=NULL; }
+//		setupthings(curobjPage());
+//		Center(1);
+}
+
 //! Select the spread with page number greater than current page not in current spread.
 /*! Returns the current page index on success, else a negative number.
  *
@@ -526,6 +566,7 @@ const char *LaidoutViewport::SetViewMode(int m,int page)
 	if (m!=viewmode) {
 		viewmode=m;
 		setupthings(page>=0?page:curobjPage());
+		Center(1);
 	}
 	needtodraw=1;
 	return Pageviewlabel();
@@ -582,7 +623,7 @@ void LaidoutViewport::postmessage(const char *mes)
  * be plopped down into. This is usually a page and a layer. curobj.obj is set to NULL.
  *
  * \todo ***potentially sometimes different paper spreads have references to the same page
- * which might screw up the setviewmode/setupthings system...
+ * which might screw up the SetViewMode/setupthings system...
  */
 void LaidoutViewport::setupthings(int topage)//topage=-1
 {
@@ -652,7 +693,6 @@ void LaidoutViewport::setupthings(int topage)//topage=-1
 	 // apply further groups...
 	//...like any saved cur group for that page or layer?...
 	
-	Center(1);
 }
 
 //! Insert ndata into the curobj context.
@@ -716,7 +756,7 @@ int LaidoutViewport::DeleteObject()
 		else interfaces.e[c]->Clear();
 	}
 	clearCurobj(); //this calls dec_count() on the object
-	laidout->notifyDocTreeChanged(this);
+	laidout->notifyDocTreeChanged(this,TreeObjectDeleted, curobjPage(), -1);
 	//ClearSearch();
 	needtodraw=1;
 	return 1;
@@ -801,9 +841,8 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 					i>=0 ? i : curpage->layers.e[curobj.layer()]->n()-1);
 	}
 	
-	//*** should clear curselection
-	laidout->notifyDocTreeChanged(this);
 	setCurobj(context);
+	laidout->notifyDocTreeChanged(this,TreeObjectAdded,curobjPage(),-1);
 	if (curobj.obj) curobj.obj->inc_count();//this is the normal NewData count
 	if (oc) *oc=&curobj;
 	return 0;
@@ -1984,6 +2023,7 @@ int LaidoutViewport::SelectPage(int i)
 	
 	 //setupthings(): clears search, clears any interfacedata... curinterface->Clear()
 	setupthings(i); //***this always deletes and new's spread
+	Center(1);
 	DBG cout <<" SelectPage made page=="<<curobjPage()<<endl;
 
 	needtodraw=1;
@@ -2026,7 +2066,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 //	virtual int init();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//	virtual void updatePagenumber();
+//	virtual void updateContext();
 //	virtual void SetParentTitle(const char *str);
 //};
 
@@ -2069,6 +2109,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  * </pre>
  *
  * \todo *** still need some standardizing for the little helper controls..
+ * \todo *** need to dump_out the space, not just the matrix!!
  */
 void ViewWindow::dump_out(FILE *f,int indent,int what)
 {
@@ -2091,6 +2132,8 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 }
 
 //! Reverse of dump_out().
+/*! \todo *** need to dump_out the space, not just the matrix!!
+ */
 void ViewWindow::dump_in_atts(Attribute *att)
 {
 	if (!att) return;
@@ -2198,7 +2241,7 @@ int ViewWindow::init()
 	pageclips=new TextButton(this,"pageclips",BUTTON_TOGGLE, 0,0,0,0,1, NULL,window,"pageclips","Page Clips");
 	pageclips->tooltip("Whether pages clips its contents");
 	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
-	updatePagenumber();
+	updateContext();
 
 	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newLayerNumber",
@@ -2287,13 +2330,18 @@ int ViewWindow::init()
  * <pre>
  *  "new image"
  *  "saveAsPopup"
+ *  "docTreeChange" <-- updateContext() and pass event to viewport
  * </pre>
  *
  * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
 int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 {
-	if (!strcmp(mes,"import new image") || !strcmp(mes,"insert new image")) {
+	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
+		int c=viewport->DataEvent(data,mes);
+		updateContext();
+		return c;
+	} else if (!strcmp(mes,"import new image") || !strcmp(mes,"insert new image")) {
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		Imlib_Image image=imlib_load_image(s->str);
@@ -2538,8 +2586,10 @@ void ViewWindow::SetParentTitle(const char *str)
 
 //! Make the pagenumber label be correct.
 /*! Also set the pageclips thing.
+ *
+ * \todo *** need to implement the updating all of helper windows to cur context
  */
-void ViewWindow::updatePagenumber()
+void ViewWindow::updateContext()
 {
 	int page=((LaidoutViewport *)viewport)->curobjPage();
 	pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
@@ -2552,7 +2602,6 @@ void ViewWindow::updatePagenumber()
 //! Deal with various indicator/control events
 /*! Accepts
  *    curcolor,
- *    docTreeChange,
  *    newPageNumber,
  *    newLayerNumber,
  *    newViewType, 
@@ -2579,17 +2628,12 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
 		
 		return 0;
-	} else if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
-		cout <<"ViewWindow got docTreeChange *** imp updating helpers!!"<<endl;
-		viewport->ClientEvent(e,mes);
-		//*** must update little windows
-		return 0;
 	} else if (!strcmp(mes,"help")) {
 		app->addwindow(new HelpWindow());
 		return 0;
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
 		//***
-		updatePagenumber();
+		updateContext();
 		return 0;
 	} else if (!strcmp(mes,"pageclips")) { // 
 		 //toggle pageclips
@@ -2609,15 +2653,22 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			else GetMesbar()->SetText("Error adding page.");
 		return 0;
 	} else if (!strcmp(mes,"deletePage")) { // 
-		int curpage=((LaidoutViewport *)viewport)->curobjPage();
-		delete ((LaidoutViewport *)viewport)->spread;
-		((LaidoutViewport *)viewport)->spread=NULL;
+		 // this in response to delete button command
+		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+		int curpage=vp->curobjPage();
+
+		//vp->curobj.set(NULL, 1, 0);
+		//vp->clearCurobj();
+		//delete vp->spread;
+		//vp->spread=NULL;
+		//vp->curpage=NULL;
+
 		int c=doc->RemovePages(curpage,1); //remove curpage
 		if (c==1) GetMesbar()->SetText("Page deleted.");
 			else GetMesbar()->SetText("Error deleting page.");
-		e->message_type=XInternAtom(app->dpy,"docTreeChange",False);
-		e->data.l[0]=0;
-		viewport->ClientEvent(e,"docTreeChange");
+
+		// Document sends the notifyDocTreeChanged..
+
 		return 0;
 	} else if (!strcmp(mes,"newPageNumber")) { // 
 		if (e->data.l[0]>doc->pages.n) {
@@ -2628,15 +2679,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			pagenumber->Select(e->data.l[0]);
 		}
 		((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]-1);
-		updatePagenumber();
+		updateContext();
 		return 0;
 	} else if (!strcmp(mes,"pageLess")) {
 		((LaidoutViewport *)viewport)->PreviousSpread();
-		updatePagenumber();
+		updateContext();
 		return 0;
 	} else if (!strcmp(mes,"pageMore")) {
 		((LaidoutViewport *)viewport)->NextSpread();
-		updatePagenumber();
+		updateContext();
 		return 0;
 	} else if (!strcmp(mes,"newLayerNumber")) { // 
 		//((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]);
@@ -2770,7 +2821,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 			((NumSlider *)kids.e[c])->Select(pg+1);
 			break;
 		}
-		updatePagenumber();
+		updateContext();
 		return 0;
 	} else if (ch=='>') { //next page
 		DBG cout <<"'>' should be prev page"<<endl;
@@ -2779,7 +2830,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 			((NumSlider *)kids.e[c])->Select(pg+1);
 			break;
 		}
-		updatePagenumber();
+		updateContext();
 		return 0;
 	} else if (ch=='r') {
 		//**** for debugging:

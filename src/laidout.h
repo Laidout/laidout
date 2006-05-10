@@ -28,6 +28,31 @@
 
 const char *LaidoutVersion();
 
+enum TreeChangeType {
+		TreeDocGone,
+		TreePagesAdded,
+		TreePagesDeleted,
+		TreePagesMoved,
+		TreeObjectRepositioned,
+		TreeObjectReorder,
+		TreeObjectDiffPage,
+		TreeObjectDeleted,
+		TreeObjectAdded
+	};
+
+class TreeChangeEvent : public Laxkit::EventData
+{
+ public:
+	Laxkit::anObject *changer;
+	TreeChangeType changetype;
+	union {
+		Document *doc;
+		Page *page;
+		Laxkit::anObject *obj;
+	} obj;
+	int start,end;
+};
+
 class LaidoutApp : public Laxkit::anXApp
 {
  public:
@@ -54,7 +79,7 @@ class LaidoutApp : public Laxkit::anXApp
 	int NewDocument(const char *spec);
 	int DumpWindows(FILE *f,int indent,Document *doc);
 
-	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom=NULL);
+	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
 };
 
 // if included in laidout.cc, then don't include "extern" when defining *laidout

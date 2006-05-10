@@ -72,8 +72,9 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	//char dataislocal; 
 	Laxkit::PtrStack<LittleSpread> spreads;
 	Laxkit::PtrStack<PageLabel> pagelabels;
-	int *temppagemap;
+	int temppagen,*temppagemap;
 	//Laxkit::PtrStack<TextBlock> notes;
+	int SpreadInterface::reversemap(int i);
  public:
 	Document *doc;
 	Project *project;
@@ -104,6 +105,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual const char *whattype() { return "SpreadInterface"; }
 	virtual const char *whatdatatype() { return "LittleSpread"; }
 
+	virtual void CheckSpreads(int startpage,int endpage);
 	virtual void GetSpreads();
 	virtual void ArrangeSpreads(int how=-1);
 	virtual int findPage(int x,int y);
@@ -137,6 +139,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUt
 	virtual const char *whattype() { return "SpreadEditor"; }
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);
 	virtual int Resize(int nw,int nh);
 	virtual int UseThisDoc(Document *ndoc);

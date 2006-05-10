@@ -252,6 +252,9 @@ int *Spread::pagesFromSpread()
  * body papers would not be all done in a single Imposition. That would be a ProjectStyle
  * with 2 Imposition classes used.
  * 
+ * It is the responsibility of the Imposition subclass to make sure numpapers, numspreads,
+ * and numpages are all consistent with each other.
+ * 
  * ***not all imp:Currently the built in Imposition styles are single pages,
  * singles meant as double sided, such as would be stapled in the
  * corner or along the edge, the slightly more versatile booklet
@@ -267,14 +270,18 @@ int *Spread::pagesFromSpread()
  * document can add or remove pages whenever it wants, so care must be taken so that numpages
  * is the same as document->pages.n.... This is ugly!! maybe have imposition point to a doc??
  *
+ * \todo *** implement numspreads
  * \todo *** the handling of pagestyle needs to be cleaned up still.. loading often 
- * installs an improper pagestyle.
+ *    installs an improper pagestyle.
  */
 /*! \var int Imposition::numpapers
- * \brief The number of papers to set for the document.
+ * \brief The number of papers available.
+ */
+/*! \var int Imposition::numspreads
+ * \brief The number of page spreads available.
  */
 /*! \var int Imposition::numpages
- * \brief The number of pages to set for the document.
+ * \brief The number of pages available.
  */
 /*! \var PaperType *Imposition::paperstyle
  * \brief A local instance of the type of paper to print on.
