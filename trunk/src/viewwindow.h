@@ -84,7 +84,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int init();
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 
 	virtual int UseThisDoc(Document *ndoc);
 	
@@ -146,10 +146,10 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	virtual int ViewWindow::event(XEvent *e);//***this shouldn't be here, see the .cc
 	virtual const char *whattype() { return "ViewWindow"; }
 	virtual int CharInput(unsigned int ch,unsigned int state);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int init();
+	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual void updatePagenumber();
+	virtual void updateContext();
 	virtual void SetParentTitle(const char *str);
 
 	virtual void dump_out(FILE *f,int indent,int what);

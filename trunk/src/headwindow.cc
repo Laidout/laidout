@@ -152,8 +152,11 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 // 	virtual const char *whattype() { return "HeadWindow"; }
 //	virtual ~HeadWindow();
 //	virtual int init();
+//	virtual int numwindows() { return windows.n; }
+//	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>0 && i<windows.n) return windows.e[i]; return NULL; }
 //	virtual MenuInfo *GetMenu();
 //	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+//	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 //	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
 //	virtual void WindowGone(Laxkit::anXWindow *win);
 //	virtual int Curbox(int c);
@@ -311,7 +314,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 /*! \todo *** as time goes on, must ensure that header can deal with new
  * types of windows...
  */
-void HeadWindow::dump_in_atts(Attribute *att)
+void HeadWindow::dump_in_atts(LaxFiles::Attribute *att)
 {
 	if (!att) return;
 	char *name,*value;
@@ -399,27 +402,17 @@ MenuInfo *HeadWindow::GetMenu()
 	return SplitWindow::GetMenu();
 }
 
-/*! \todo *** handling of docTreeChange message is rather silly. there must be
- * a more responsible way to make sure that all windows are synchronized properly
- * to the project/document/data.
+/*! Propagate TreeChangeEvent events
  */
-int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
-{//***
+int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
+{
 	DBG cout <<"HeadWindow got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
+		TreeChangeEvent *edata,*te=dynamic_cast<TreeChangeEvent *>(data);
+		if (!te) return 1;
 		ViewWindow *view;
 		SpreadEditor *s;
-		XEvent ee;
-		ee.xclient.type=ClientMessage;
-		ee.xclient.display=app->dpy;
-		ee.xclient.message_type=XInternAtom(app->dpy,"docTreeChange",False);
-		ee.xclient.format=32;
-		ee.xclient.data.l[0]=e->data.l[0];
-		ee.xclient.data.l[1]=e->data.l[1];
-		ee.xclient.data.l[2]=e->data.l[2];
-		ee.xclient.data.l[3]=e->data.l[3];
-		ee.xclient.data.l[4]=e->data.l[4];
-	  
+		 
 		int yes=0;
 		for (int c=0; c<windows.n; c++) {
 			//if (callfrom==windows.e[c]->win) continue; //*** this hardly has effect as most are children of top
@@ -427,17 +420,26 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (view) yes=1;
 			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win), s) yes=1;
 
+		 	 //construct events for the panes
 			if (yes){
-				ee.xclient.window=windows.e[c]->win->window;
-				XSendEvent(app->dpy,windows.e[c]->win->window,False,0,&ee);
+				edata=new TreeChangeEvent();
+				edata=te;
+				edata->send_towindow=windows.e[c]->win->window;
+				app->SendMessage(edata);
 				DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
 				yes=0;
 			}
 		}
-	} //else if (!strcmp(mes,"paper name")) { 
-	//}
-	return SplitWindow::ClientEvent(e,mes);
+		delete te;
+		return 0;
+	}
+	return 1;
 }
+
+//int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+//{
+//	return SplitWindow::ClientEvent(e,mes);
+//}
 
 //! Create split panes with names like SplitPane12, where the number is getUniqueNumber().
 /*! New spread editors will be created with the same document of the most recent view.

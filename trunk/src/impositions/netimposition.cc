@@ -446,7 +446,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
  * \todo *** is this function actaully used anywhere? anyway it's broken here,
  * just returns bounds of paper.
  */
-DoubleBBox *NetImposition::GetDefaultPageSize(DoubleBBox *bbox)//box=NULL
+DoubleBBox *NetImposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox)//box=NULL
 {
 	if (!paperstyle) return NULL;
 	if (!bbox) bbox=new DoubleBBox;

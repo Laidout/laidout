@@ -28,38 +28,81 @@ using namespace std;
 
 using namespace Laxkit;
 
-//! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
-/*! Puts the callfrom->window in data.l[0]. 
- * 
- * \todo *** this function is ill-conceived!! could extend it to somehow say what has changed?
- * like if object is added or removed, or simply moved to diff position... or pages added...
- * or....
+/*! \enum TreeChangeType
+ * \ingroup misc
+ * \brief Type for what in the doc tree has changed. See TreeChangeEvent.
  */
-void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom)//callfrom=NULL
-{
-	ViewWindow *view;
-	SpreadEditor *s;
-	XEvent e;
-	e.xclient.type=ClientMessage;
-	e.xclient.display=app->dpy;
-	e.xclient.message_type=XInternAtom(dpy,"docTreeChange",False);
-	e.xclient.format=32;
-	e.xclient.data.l[0]=(callfrom?callfrom->window:0);
-  
-	int yes=0;
-	for (int c=0; c<topwindows.n; c++) {
-		if (callfrom==topwindows.e[c]) continue; //*** this hardly has effect as most are children of top
-		view=dynamic_cast<ViewWindow *>(topwindows.e[c]);
-		if (view) yes=1;
-		else if (s=dynamic_cast<SpreadEditor *>(topwindows.e[c]), s) yes=1;
-		else if (dynamic_cast<HeadWindow *>(topwindows.e[c])) yes=1;
 
-		if (yes){
-			e.xclient.window=topwindows.e[c]->window;
-			XSendEvent(dpy,topwindows.e[c]->window,False,0,&e);
-			DBG cout <<"---sending docTreeChange to "<<topwindows.e[c]->win_title<<endl;
-			yes=0;
+/*! \class TreeChangeEvent
+ * \brief Event class to tell various windows what has been altered.
+ *
+ * Windows will receive this event after the changes occur, but potentially also after
+ * the window wants to access a possibly altered tree. This should not 
+ * crash the program because of reference counting, but the windows must verify all the
+ * relevant references when they receive such an event.
+ *
+ * \todo why is enum TreeChangeType not turning into a doxygen doc??
+ * TreeChangeType:
+ * <pre>
+ *	TreeDocGone,
+ *	TreePagesAdded,
+ *	TreePagesDeleted,
+ *	TreePagesMoved,
+ *	TreeObjectRepositioned,
+ *	TreeObjectReorder,
+ *	TreeObjectDiffPage,
+ *	TreeObjectDeleted,
+ *	TreeObjectAdded
+ * </pre>
+ */
+
+
+//! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
+/*! Sends a TreeChangeEvent to all SpreadEditor and ViewWindow panes in each top level HeadWindow.
+ */
+void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e)
+{
+	DBG cout<<"notifyDocTreeChanged sending.."<<endl;
+	HeadWindow *h;
+	PlainWinBox *pwb;
+	ViewWindow *view;
+	SpreadEditor *se;
+	anXWindow *w;
+	TreeChangeEvent *edata,*te=new TreeChangeEvent;
+	te->send_message=XInternAtom(laidout->dpy,"docTreeChange",False);
+	te->changer=callfrom;
+	te->changetype=change;
+	te->start=s;
+	te->end=e;
+	 
+	int c2,yes=0;
+	for (int c=0; c<topwindows.n; c++) {
+		if (callfrom==topwindows.e[c]) continue; // this hardly has effect as most are children of top
+		h=dynamic_cast<HeadWindow *>(topwindows.e[c]);
+		if (!h) continue;
+		
+		for (c2=0; c2<h->numwindows(); c2++) {
+			pwb=h->windowe(c2);
+			w=pwb->win;
+			if (!w || callfrom==w) continue;
+			view=dynamic_cast<ViewWindow *>(w);
+			if (view) yes=1;
+			else if (se=dynamic_cast<SpreadEditor *>(w), se) yes=1;
+
+			 //construct events for the panes
+			if (yes){
+				edata=new TreeChangeEvent();
+				*edata=*te;
+				edata->send_towindow=w->window;
+				app->SendMessage(edata);
+				DBG cout <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
+				DBG 	w->win_title<< "("<<w->whattype()<<")"<<endl;
+				yes=0;
+			}
 		}
 	}
+	delete te;
+	DBG cout <<"eo notifyDocTreeChanged"<<endl;
+	return;
 }
 

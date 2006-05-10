@@ -278,7 +278,8 @@ void LaidoutApp::setupdefaultcolors()
 }
 
 //! Parse command line options, and load up initial documents or projects.
-/*! <pre>
+/*! 
+ * <pre>
  *  Command line options
  *  
  *  laidout file1 file2 ...

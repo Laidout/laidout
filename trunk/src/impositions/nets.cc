@@ -644,7 +644,7 @@ void Net::dump_out(FILE *f,int indent,int what)
  * 
  * \todo *** MUST implement the sanity check..
  */
-void  Net::dump_in_atts(Attribute *att)
+void  Net::dump_in_atts(LaxFiles::Attribute *att)
 {
 	if (!att) return;
 	char *name,*value,*t,*e,*newname=NULL;
@@ -851,7 +851,7 @@ void Net::ApplyTransform(double *mm)//mm=NULL
 //! Make *this fit inside bounding box of data (inset by margin).
 /*! \todo ***  this clears any rotation that was in the net->m() and it shouldn't
  */
-void Net::FitToData(SomeData *data,double margin)
+void Net::FitToData(LaxInterfaces::SomeData *data,double margin)
 {
 	if (!data || !np) return;
 	double wW=(data->maxx-data->minx-2*margin)/(maxx-minx);
