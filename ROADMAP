@@ -12,13 +12,10 @@ VERSION 0.03
 (done) When loading files from the command line, should understand: 'file:///path/to/it'
 (done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
 (done) Load and save window configurations
-       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
 (done) EPS out to file###.eps by page not paper
 (done) Be able to print a paper range
 (done) an About window
 (done) command prompt window
-       from laxkit: clear up focus handling which currently REALLY SUCKS
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 (done) Get rid of vertical white stripe toward bottom of the laidout webpage
 (done) SpreadEditor: drag to viewer to work on that page or spread
 (done) SpreadEditor: fix auto arranging
@@ -32,6 +29,7 @@ VERSION 0.1
        Of course, need copious testing by people who are not me.
        Seriously optimize the whole ImagePatchData stuff
        Fix non-centerfold page bleeding in booklets when printing
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
        Have imagepatch be a transform you can apply to any image
        Have images have any number of various kinds of transforms applied to it
@@ -39,7 +37,7 @@ VERSION 0.1
        PathInterface should finally work right
        Basic infrastructure for most things (except text) should be in place.
        This means some sort of basic scripting infrastructure,
-       undo
+       undo: here's an idea: undo per object (as possible)! rather than just a monolithic undo.. maybe not useful..
        Finish implementing project based setup, especially when loading and saving
        configurable buttons with icons
        Allow for window docking, floating, etc.
@@ -67,7 +65,9 @@ VERSION 0.1
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
-       from laxkit: clean up and beef up SplitWindow
+       from laxkit: clean up and beef up SplitWindow: swap window positions, tabbed panes
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo for about
