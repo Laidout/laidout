@@ -52,7 +52,7 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	if (img->filename) bname=strrchr(img->filename,'/'); 
 	if (!bname) bname=img->filename;
 	if (bname) fprintf(f," %% image %s\n",bname);
-	//DBG cout <<"*** image "<<(bname?bname:"(unknown)")<<" has no alpha"<<endl;
+	////DBG cout <<"*** image "<<(bname?bname:"(unknown)")<<" has no alpha"<<endl;
 			
 	fprintf(f,"[%.10g 0 0 %.10g 0 0] concat\n",
 			 img->maxx,img->maxy);
@@ -67,7 +67,7 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	unsigned char *rgbbuf=new unsigned char[len]; //***this could be redone to not need new huge array like this
 	unsigned char r,g,b;
 	DATA32 bt;
-	//DBG cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
+	////DBG cout <<"rgbbug"<<rgbbuf[0]<<endl;//***
 	for (int x=0; x<width; x++) {
 		for (int y=0; y<height; y++) {
 			bt=buf[y*width+x];
@@ -192,7 +192,7 @@ void psImage_masked_interleave2(FILE *f,LaxInterfaces::ImageData *img)
 			if (a>127) alpha[apos]|=1<<abit;
 			abit--;
 			if (abit<0) abit=7;
-			//DBG printf("%x=%x,%x,%x ",bt,r,g,b);
+			////DBG printf("%x=%x,%x,%x ",bt,r,g,b);
 		}
 		memcpy(row+pos,alpha,apos+1);
 		pos+=apos+1; //pos is now how many bytes to consider
@@ -264,7 +264,7 @@ void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img)
 	unsigned char a,r,g,b;
 
 	int w=0,pos=0;
-	//DBG int numout=0;
+	////DBG int numout=0;
 	for (int y=0; y<height; y++) {
 		for (int x=0; x<width; x++) {
 			color=buf[y*width+x];
@@ -279,15 +279,15 @@ void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img)
 			row[pos++]=g;
 			row[pos++]=b;
 			
-			//DBG printf("%x=%a,%x,%x,%x ",bt,a,r,g,b);
+			////DBG printf("%x=%a,%x,%x,%x ",bt,a,r,g,b);
 		}
-		//DBG numout+=pos/4+4;
+		////DBG numout+=pos/4+4;
 		Ascii85_out(f, row, pos/4*4, 0, 75, &w);
 		if (pos%4) memmove(row,row+pos/4*4,pos%4);
 		pos%=4;
 	}
 	fprintf(f,"~>\n");
-	//DBG cout <<"*****done writing DataDict:"<<numout<<"  w,h:"<<width<<','<<height<<"  *4="<<width*height*4<<endl;
+	////DBG cout <<"*****done writing DataDict:"<<numout<<"  w,h:"<<width<<','<<height<<"  *4="<<width*height*4<<endl;
 	
 }
 
@@ -379,7 +379,7 @@ void psImage_103(FILE *f,LaxInterfaces::ImageData *img)
 			row[pos++]=g;
 			row[pos++]=b;
 			
-			//DBG printf("%x=%a,%x,%x,%x ",bt,a,r,g,b);
+			////DBG printf("%x=%a,%x,%x,%x ",bt,a,r,g,b);
 		}
 		Ascii85_out(f, row, pos/4*4, 0, 75, &w);
 		if (pos%4) memmove(row,row+pos/4*4,pos%4);

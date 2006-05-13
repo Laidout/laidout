@@ -77,7 +77,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 			imposition=newImposition(value);
 			if (imposition) imposition->dump_in_atts(att->attributes.e[c]);
 		} else { 
-			DBG cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
+			//DBG cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -207,15 +207,15 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	if (docstyle==NULL) {
 		//*** need to create a new DocumentStyle
 		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		DBG cout <<"***need to implement get default document in Document constructor.."<<endl;
+		//DBG cout <<"***need to implement get default document in Document constructor.."<<endl;
 	}
 	if (docstyle==NULL) {
-		DBG cout <<"***need to implement document constructor.."<<endl;
+		//DBG cout <<"***need to implement document constructor.."<<endl;
 	} else {
 		 // create the pages
 		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
 		else { 
-			DBG cout << "**** in new Document, docstyle has no imposition"<<endl;
+			//DBG cout << "**** in new Document, docstyle has no imposition"<<endl;
 		}
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
@@ -232,7 +232,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 
 Document::~Document()
 {
-	DBG cout <<" Document destructor.."<<endl;
+	//DBG cout <<" Document destructor.."<<endl;
 	pages.flush();
 	delete docstyle;
 	if (saveas) delete[] saveas;
@@ -284,9 +284,9 @@ int Document::RemovePages(int start,int n)
 	if (start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
-		DBG cout << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
+		//DBG cout << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
-		DBG cout << "---  Done removing page "<<start+c<<endl;
+		//DBG cout << "---  Done removing page "<<start+c<<endl;
 	}
 	laidout->notifyDocTreeChanged(NULL,TreePagesDeleted, start,-1);
 	return n;
@@ -312,22 +312,22 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 	if (format==Save_PS) return psout(this);
 	if (format!=Save_Normal) {
 		//anXApp::app->postmessage("That save format is not implemented.");
-		DBG cout << "Format "<<format<<" is not implemented."<<endl;
+		//DBG cout << "Format "<<format<<" is not implemented."<<endl;
 		return 1;
 	}
 	
 	FILE *f=NULL;
 	if (!saveas || !strcmp(saveas,"")) {
-		DBG cout <<"**** cannot save, saveas is null."<<endl;
+		//DBG cout <<"**** cannot save, saveas is null."<<endl;
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
-		DBG cout <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
+		//DBG cout <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
 		return 3;
 	}
 
-	DBG cout <<"....Saving document to "<<saveas<<endl;
+	//DBG cout <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
@@ -354,11 +354,11 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 int Document::Load(const char *file)
 {
 	//*** need to create a new DocumentStyle from what's in the file..
-	DBG cout <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
+	//DBG cout <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	FILE *f=fopen(file,"r");
 	//*** make sure it is a laidout document!!
 	if (!f) {
-		DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
+		//DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
 		return 0;
 	}
 	clear();
@@ -385,7 +385,7 @@ int Document::Load(const char *file)
 	}
 	docstyle->imposition->NumPages(pages.n);
 	docstyle->imposition->SyncPages(this,0,-1);
-	DBG cout <<"------ Done reading "<<file<<endl<<endl;
+	//DBG cout <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
 

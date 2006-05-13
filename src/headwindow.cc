@@ -358,7 +358,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att)
 						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2]);
 						box->win=win;
 					} else {
-						DBG cout <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
+						//DBG cout <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
 					}
 				}
 			}
@@ -413,7 +413,7 @@ MenuInfo *HeadWindow::GetMenu()
  */
 int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 {
-	DBG cout <<"HeadWindow got message: "<<mes<<endl;
+	//DBG cout <<"HeadWindow got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		TreeChangeEvent *edata,*te=dynamic_cast<TreeChangeEvent *>(data);
 		if (!te) return 1;
@@ -433,7 +433,7 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				edata=te;
 				edata->send_towindow=windows.e[c]->win->window;
 				app->SendMessage(edata);
-				DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
+				//DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
 				yes=0;
 			}
 		}

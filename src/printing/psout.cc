@@ -84,7 +84,7 @@ void psConcat(double *m)
 	double *mm=transform_mult(NULL,m,psctm);
 	delete[] psctm;
 	psctm=mm;
-	DBG cout << "ctm: "; dumpctm(psctm);
+	//DBG cout << "ctm: "; dumpctm(psctm);
 }
 
 //! New ps ctm=m*oldctm.
@@ -303,7 +303,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
-	DBG cout <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
+	//DBG cout <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
 	
 	 // print out header
 	fprintf (f,
@@ -355,8 +355,8 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			//DBG cout <<"marks data:\n";
-			//DBG spread->marks->dump_out(stdout,2,0);
+			////DBG cout <<"marks data:\n";
+			////DBG spread->marks->dump_out(stdout,2,0);
 			psdumpobj(f,spread->marks);
 		}
 		
@@ -377,12 +377,12 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 			psConcat(m);
 
 			 // set clipping region
-			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			//DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				//DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				//DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..
@@ -406,7 +406,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	 //print out footer
 	fprintf(f, "\n%%%%EOF\n");
 
-	DBG cout <<"=================== end printing ========================\n";
+	//DBG cout <<"=================== end printing ========================\n";
 
 	return 0;
 }
@@ -452,7 +452,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 	char *filebase=LaxFiles::make_filename_base(fname);
 	char filename[strlen(filebase)+10];
 
-	DBG cout <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
+	//DBG cout <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
 		
 	 // Write out paper spreads....
 	Spread *spread;
@@ -506,8 +506,8 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			//DBG cout <<"marks data:\n";
-			//DBG spread->marks->dump_out(stdout,2,0);
+			////DBG cout <<"marks data:\n";
+			////DBG spread->marks->dump_out(stdout,2,0);
 			psdumpobj(f,spread->marks);
 		}
 		
@@ -528,12 +528,12 @@ int epsout(const char *fname,Document *doc,int start,int end,
 			psConcat(m);
 
 			 // set clipping region
-			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			//DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				//DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				//DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..
@@ -563,7 +563,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 
 	}
 
-	DBG cout <<"=================== end printing eps ========================\n";
+	//DBG cout <<"=================== end printing eps ========================\n";
 
 	return 0;
 }
