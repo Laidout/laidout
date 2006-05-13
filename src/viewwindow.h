@@ -103,7 +103,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int PreviousSpread();
 	
 	virtual int ChangeObject(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext *oc);
-	virtual int LaidoutViewport::SelectObject(int i);
+	virtual int SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
 					LaxInterfaces::ObjectContext **oc);
@@ -111,6 +111,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 	
 	virtual const char *SetViewMode(int m,int page);
+	virtual int ViewMode(int *page);
 	virtual int PlopData(LaxInterfaces::SomeData *ndata);
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
