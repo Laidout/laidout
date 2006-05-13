@@ -1,0 +1,20 @@
+# DO NOT DELETE
+
+print.o: print.h ../document.h ../styles.h ../impositions/imposition.h
+print.o: ../page.h ../group.h ../objectcontainer.h ../styles.h
+print.o: ../papersizes.h ../objectcontainer.h
+pscolorpatch.o: pscolorpatch.h
+psfilters.o: psfilters.h
+psgradient.o: psgradient.h
+psimage.o: psimage.h psfilters.h
+psimagepatch.o: psout.h ../document.h ../styles.h ../impositions/imposition.h
+psimagepatch.o: ../page.h ../group.h ../objectcontainer.h ../styles.h
+psimagepatch.o: ../papersizes.h ../objectcontainer.h psimagepatch.h psimage.h
+psimagepatch.o: psfilters.h
+psout.o: psout.h ../document.h ../styles.h ../impositions/imposition.h
+psout.o: ../page.h ../group.h ../objectcontainer.h ../styles.h
+psout.o: ../papersizes.h ../objectcontainer.h ../version.h psfilters.h
+psout.o: psgradient.h psimage.h psimagepatch.h pscolorpatch.h pspathsdata.h
+psout.o: ../laidoutdefs.h
+pspathsdata.o: pspathsdata.h
+testprintimage.o: psfilters.h

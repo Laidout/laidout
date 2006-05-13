@@ -1,0 +1,21 @@
+# DO NOT DELETE
+
+dodecahedron.o: dodecahedron.h nets.h
+imposition.o: imposition.h ../page.h ../group.h ../objectcontainer.h
+imposition.o: ../styles.h ../styles.h ../papersizes.h ../objectcontainer.h
+imposition.o: ../document.h ../impositions/imposition.h
+impositioninst.o: impositioninst.h imposition.h ../page.h ../group.h
+impositioninst.o: ../objectcontainer.h ../styles.h ../styles.h
+impositioninst.o: ../papersizes.h ../objectcontainer.h ../document.h
+impositioninst.o: ../impositions/imposition.h
+impositions.o: ../laidout.h ../impositions/imposition.h ../papersizes.h
+impositions.o: ../styles.h ../document.h ../project.h ../newdoc.h
+impositions.o: ../laidout.h ../interfaces.h imposition.h ../page.h ../group.h
+impositions.o: ../objectcontainer.h ../styles.h ../papersizes.h
+impositions.o: ../objectcontainer.h ../document.h impositioninst.h
+impositions.o: netimposition.h nets.h
+netimposition.o: netimposition.h imposition.h ../page.h ../group.h
+netimposition.o: ../objectcontainer.h ../styles.h ../styles.h ../papersizes.h
+netimposition.o: ../objectcontainer.h ../document.h
+netimposition.o: ../impositions/imposition.h nets.h dodecahedron.h
+nets.o: nets.h
