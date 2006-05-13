@@ -1,0 +1,11 @@
+laidout (0.02.1) unstable; urgency=low
+
+  * Second release 
+  * First debian package of it too
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sat, 8 Apr 2006 15:29:50 -0800
+ 
+  * Initial release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sat, 18 Mar 2006 21:29:50 -0800
+
