@@ -163,7 +163,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			g=dynamic_cast<ObjectContainer *>(gg);
 		}
 		if (d) *d=gg;
-		place.out("  next is");
+		//DBG place.out("  next is");
 		//DBG cout <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
 		return 1; //success!
 	}
