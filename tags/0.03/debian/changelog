@@ -1,4 +1,9 @@
-laidout (0.02.1) unstable; urgency=low
+laidout (0.03) unstable; urgency=low
+
+  * Third release 
+  * Has ImagePatches and generally smoothed out code
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sat, 13 May 2006 16:29:00 -0800
 
   * Second release 
   * First debian package of it too

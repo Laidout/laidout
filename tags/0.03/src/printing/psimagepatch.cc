@@ -46,10 +46,10 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
 			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
 			  lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
-	DBG cout <<"  ul: "<<ul.x<<','<<ul.y<<endl;
-	DBG cout <<"  ur: "<<ur.x<<','<<ur.y<<endl;
-	DBG cout <<"  ll: "<<ll.x<<','<<ll.y<<endl;
-	DBG cout <<"  lr: "<<lr.x<<','<<lr.y<<endl;
+	//DBG cout <<"  ul: "<<ul.x<<','<<ul.y<<endl;
+	//DBG cout <<"  ur: "<<ur.x<<','<<ur.y<<endl;
+	//DBG cout <<"  ll: "<<ll.x<<','<<ll.y<<endl;
+	//DBG cout <<"  lr: "<<lr.x<<','<<lr.y<<endl;
 	
 
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());

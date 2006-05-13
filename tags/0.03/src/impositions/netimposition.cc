@@ -230,9 +230,9 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
 				tempnet=new Net();
 				tempnet->dump_in_atts(att->attributes.e[c]);
 				SetNet(tempnet);
-				DBG cout <<"-----------after dump_in net and set----------"<<endl;
-				DBG net->dump_out(stdout,2,0);
-				DBG cout <<"-----------end netimpos..----------"<<endl;
+				//DBG cout <<"-----------after dump_in net and set----------"<<endl;
+				//DBG net->dump_out(stdout,2,0);
+				//DBG cout <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);
@@ -331,10 +331,10 @@ LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
 	
 	flatpoint p[net->faces[pg].np];
-	DBG cout <<"NetImposition::GetPage:\n";
+	//DBG cout <<"NetImposition::GetPage:\n";
 	for (int c=0; c<net->faces[pg].np; c++) {
 		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
-		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
+		//DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
 	}
 	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
 	newpath->close();

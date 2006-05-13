@@ -15,5 +15,5 @@
 //
 
 
-#define LAIDOUT_VERSION "0.02.1"
+#define LAIDOUT_VERSION "0.03"
 

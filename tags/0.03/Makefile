@@ -7,10 +7,10 @@
 
  # Where to install stuff, currently:
  #   prefix/bin
-#PREFIX=/usr/local
+PREFIX=/usr/local
  # use this one for dpkg-buildpackage:
 #PREFIX=$(DESTDIR)/usr
-PREFIX=testinstall
+#PREFIX=testinstall
 
 
  # where the main executable goes
@@ -28,7 +28,7 @@ INSTALLDIR=install -d
 
 ##----------- you shouldn't have to modify anything below here --------------
 
-LAIDOUTVERSION=0.02.1
+LAIDOUTVERSION=0.03
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: 
@@ -56,9 +56,15 @@ uninstall:
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 
 hidegarbage:
+	touch src/makedepend
+	touch src/impositions/makedepend
+	touch src/printing/makedepend
 	cd src && $(MAKE) hidegarbage
 
 unhidegarbage:
+	touch src/makedepend
+	touch src/impositions/makedepend
+	touch src/printing/makedepend
 	cd src && $(MAKE) unhidegarbage
 
 depends:
