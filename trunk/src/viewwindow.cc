@@ -556,6 +556,17 @@ int LaidoutViewport::PreviousSpread()
 }
 
 
+//! Return the viewmode, and page number if page!=null.
+int LaidoutViewport::ViewMode(int *page)
+{
+	if (page) {
+		*page=curobjPage();
+		if (*page<0 && spread && spread->pagestack.n)
+			*page=spread->pagestack.e[0]->index;
+	}
+	return viewmode;
+}
+
 //! Set the view style to single, pagelayout, or paperlayout.
 /*! Updates and returns pageviewlabel. This is a string like "Page: " or
  * "Spread[2-4]: " that is suitable for the label of a NumSlider.
@@ -563,7 +574,14 @@ int LaidoutViewport::PreviousSpread()
 const char *LaidoutViewport::SetViewMode(int m,int page)
 {
 	DBG cout <<"---- setviewmode:"<<m<<endl;
-	if (m!=viewmode) {
+	char yes=0;
+	if (page>=0 && spread) {
+		int c;
+		for (c=0; c<spread->pagestack.n; c++) 
+			if (page==spread->pagestack.e[c]->index) break;
+		if (c==spread->pagestack.n) yes=1;
+	}
+	if (yes || m!=viewmode) {
 		viewmode=m;
 		setupthings(page>=0?page:curobjPage());
 		Center(1);
@@ -2710,7 +2728,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
 		app->rundialog(new FileDialog(NULL,"Import Image",
-					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
 					0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
@@ -2720,7 +2738,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"dumpImages")) {
 		//DBG cout <<" --- dumpImages...."<<endl;
-		dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(),app->load_dir,var1->Value(),var2->Value());
+		dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
 		pagenumber->NewMinMax(1,doc->pages.n);
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
@@ -2751,7 +2769,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 int ViewWindow::event(XEvent *e)
 {
 	//*** here is a quick cheap, VERY dirty hack to keep loaddir updated:
-	if (strcmp(app->load_dir,loaddir->GetCText())) loaddir->SetText(app->load_dir);
+//	if (e->xany.window!=loaddir->window && strcmp(app->load_dir,loaddir->GetCText())) {
+//		loaddir->SetText(app->load_dir);
+//	}
 	return ViewerWindow::event(e);
 }
 
@@ -2780,12 +2800,16 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 						//anXWindow *prev,Window nowner,const char *nsend,
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-			app->rundialog(new LineInput(NULL,"Save As...",
-						ANXWIN_CENTER|ANXWIN_DELETEABLE|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
-						100,100,200,100,0, 
-						NULL,window,"saveAsPopup",
-						"Enter new filename:",doc->Name(),0,
-						0,0,5,5,3,3));
+			app->rundialog(new FileDialog(NULL,"Save As...",
+						ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_SAVE_AS,
+						0,0,500,500,0, window,"saveAsPopup",
+						doc->Name()));
+//			app->rundialog(new LineInput(NULL,"Save As...",
+//						ANXWIN_CENTER|ANXWIN_DELETEABLE|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
+//						100,100,200,100,0, 
+//						NULL,window,"saveAsPopup",
+//						"Enter new filename:",doc->Name(),0,
+//						0,0,5,5,3,3));
 		} else {
 			if (doc->Save()==0) {
 				char blah[strlen(doc->Name())+15];
