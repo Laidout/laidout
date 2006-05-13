@@ -270,6 +270,7 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 	 //doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
 	
+	anXWindow *winold=curbox->win;
 	if (SplitWindow::splitthewindow(fillwindow)!=0) return 1;
 	anXWindow *win=windows.e[windows.n-1]->win;
 	if (!win) return 0;
@@ -279,6 +280,12 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 	if (v) {
 		((LaidoutViewport *)(v->viewport))->UseThisDoc(doc);
 		v->doc=doc;
+		ViewWindow *vold=dynamic_cast<ViewWindow *>(winold);
+		 // duplicate view and page of old
+		if (vold) {
+			int pg, m=((LaidoutViewport *)(vold->viewport))->ViewMode(&pg);
+			((LaidoutViewport *)(v->viewport))->SetViewMode(m,pg);
+		}
 	} else {
 		SpreadEditor *s=dynamic_cast<SpreadEditor *>(win);
 		if (s) s->UseThisDoc(doc);
@@ -348,7 +355,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att)
 					win=NewWindow(value);
 					if (win) {
 						wind=dynamic_cast<DumpUtility *>(win);
-						if (wind) wind->dump_in_atts(att->attributes.e[c]);
+						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2]);
 						box->win=win;
 					} else {
 						DBG cout <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
