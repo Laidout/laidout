@@ -1017,7 +1017,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	//DBG cout <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
-	firstobj.context.out("firstobj");
+	//DBG firstobj.context.out("firstobj");
 	
 	//while (start || (!start && !(nextindex==firstobj))) {
 	int nob=1;
@@ -1046,7 +1046,7 @@ int LaidoutViewport::FindObject(int x,int y,
 			 // matching object found!
 			foundtypeobj=nextindex;
 			if (oc) *oc=&foundtypeobj;
-			foundtypeobj.context.out("  foundtype");//for debugging
+			//DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
 		//DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
@@ -1151,7 +1151,7 @@ int LaidoutViewport::nextObject(VObjContext *oc)
 		 //if is NOT (limbo or page or page->layer or spread) then break, else continue.
 		if (!(oc->spread()==0 && oc->context.n()<=1 ||   
 			oc->spread()==1 && oc->context.n()<=3)) {
-			oc->context.out("  lov-next");
+			//DBG oc->context.out("  lov-next");
 			return 1;
 		}
 	} while (1);
@@ -1372,7 +1372,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	if (curobjPage()>=0) curpage=doc->pages.e[curobjPage()];
 		else curpage=NULL;
 	if (oc) *oc=&curobj;
-	curobj.context.out("context change");
+	//DBG curobj.context.out("context change");
 	 
 	return 1;
 }
