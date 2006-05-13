@@ -120,9 +120,9 @@ You will note that hardly any of this is currently implemented in Laidout:
 Tabstops and guides that lie on arbitrary paths, not just vertical and horizontal
     lines. Gone are the days of rigidly defined and poorly accessed tabstops!
 Text on a line
-Bezier Patch transforms,
+Bezier Patch transforms, (done)
 and bez color patch gradients (done)
-Linear, radial, and circle color gradients (done, but badly)
+Linear, radial, and circle color gradients (done)
 Arbitrary f(s,t) transforms, and f(s) or f(t) transforms for paths
 Aligning points, text, and/or objects to paths
 Repeater tool along path
@@ -159,9 +159,9 @@ Import/export: TeX, scribus, passepartout, inkscape, (quark, indesign, ...?)
 
 other kind of neat ideas from other programs, namely Scribus 1.3 roadmap and map suggestions:
 Auto sync keyboard shortcuts with inkscape/gimp/whatever!
-Record macros, like pagestream!
+Record macros, like pagestream or vim!
 support for TeX, LaTeX, MathML
-Openclipart integration
+Openclipart integration/scrapbook
 cntl-+/- zooms around object, neat!
 %Color selector previews different shades of color with black and white text on it!!! Fab!
 The scribus color wheel is very clever.
