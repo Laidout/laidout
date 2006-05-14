@@ -26,7 +26,7 @@ objs= \
 impositions: $(objs)
 
 depends:
-	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
+	makedepend -fmakedepend  -Y *.cc
 
 include makedepend
 
