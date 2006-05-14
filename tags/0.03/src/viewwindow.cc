@@ -1614,7 +1614,7 @@ void LaidoutViewport::Refresh()
 	//DBG cout <<"======= Refreshing LaidoutViewport..";
 	
 	 // draw the scratchboard, just blank out screen..
-	//XClearWindow(app->dpy,backbuffer?backbuffer:window);// *** clearwindow(backbuffer) does screwy things!!
+	if (!backbuffer) XClearWindow(app->dpy,window);// *** clearwindow(backbuffer) does screwy things!!
 
 	if (!doc || !doc->docstyle) {
 		//DBG cout <<"=====done refreshing, no doc or doc->docstyle"<<endl;
