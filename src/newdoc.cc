@@ -122,7 +122,7 @@ using namespace Laxkit;
 //	// the names of each, so to change Left->Inside, Top->Inside (like calender), etc
 //	const char *marginl,*marginr,*margint,*marginb; 
 //	Imposition *imp;
-//	PaperType *papertype;
+//	PaperStyle *papertype;
 //	
 //	Laxkit::StrSliderPopup *impsel;
 //	Laxkit::LineEdit *lineedit;
@@ -194,7 +194,7 @@ int NewDocWindow::init()
 	 // -------------- Paper Size --------------------
 	
 	papersizes=&laidout->papersizes;
-	papertype=(PaperType *)papersizes->e[0]->duplicate();
+	papertype=(PaperStyle *)papersizes->e[0]->duplicate();
 	char blah[100],blah2[100];
 	o=papertype->flags;
 	 // -----Paper Size X
@@ -428,7 +428,7 @@ DBG cout <<"newdocmessage: "<<mes<<endl;
 DBG cout <<"new paper size:"<<i<<endl;
 		if (i<0 || i>=papersizes->n) return 0;
 		delete papertype;
-		papertype=(PaperType *)papersizes->e[i]->duplicate();
+		papertype=(PaperStyle *)papersizes->e[i]->duplicate();
 		if (!strcmp(papertype->name,"custom")) return 0;
 		papertype->flags=curorientation;
 		char num[30];

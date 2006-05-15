@@ -498,12 +498,15 @@ class StyleDefinition
  * combined with the Laxkit::Attribute type of thing? but for that, still need to reason
  * out a consistent Attribute definition standard...
  * 
- * These things are used to autmatically create edit dialogs for any data. It also aids in
- * defining names and what they are for an interpreter. ***eventually include accepted functions, not
- * just variables??
+ * These things are used to automatically create edit dialogs for any data. It also aids in
+ * defining names and what they are for an interpreter. Ideally there should be only one instance
+ * of a StyleDef per type of style held in a style manager. The actual styles will have pointer
+ * references to it. **** still need to work out good framework for this.
  *
- * Currently, this stuff is an internationalization nightmare (english only right now).. would have to integrate with
- * gettext somehow (gotta read up on that!!!)
+ * \todo ***eventually include accepted functions, not just variables??
+ *
+ * \todo Currently, this stuff is an internationalization nightmare (english only right now).. would have to integrate with
+ *   gettext somehow (gotta read up on that!!!)
  * 
  *  example: 
  *  <pre>
@@ -556,7 +559,7 @@ class StyleDefinition
  *  If there is an extends, the index of all the fields starts with 0, which
  *	is the very first field in the very first base styledef.
  */
-//class StyleDef : public Laxkit::anObject
+//class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 //{
 // public:
 //	char *extends;

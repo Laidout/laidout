@@ -30,7 +30,7 @@ class NetImposition : public Imposition
 	virtual ~NetImposition();
 	virtual Style *duplicate(Style *s=NULL);
 	
-	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
+	virtual int SetPaperSize(PaperStyle *npaper); // set paperstyle, and compute page size
 	
 	//virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
 	virtual Page **CreatePages(PageStyle *pagestyle=NULL); // create necessary pages based on default pagestyle

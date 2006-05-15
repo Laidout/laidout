@@ -88,7 +88,7 @@ extern RefCounter<anObject> objectstack;
 //	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
 //	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //	virtual Style *duplicate(Style *s=NULL);
-//	virtual int SetPaperSize(PaperType *npaper);
+//	virtual int SetPaperSize(PaperStyle *npaper);
 //	virtual void setPage();
 //
 //	virtual void dump_out(FILE *f,int indent,int what);
@@ -101,7 +101,7 @@ Singles::Singles() : Imposition("Singles")
 	insetl=insetr=insett=insetb=0;
 	tilex=tiley=1;
 	//paperstyle=*** global default paper style;
-	paperstyle=new PaperType("letter",8.5,11.0,0,300);//***
+	paperstyle=new PaperStyle("letter",8.5,11.0,0,300);//***
 	setPage();
 }
 
@@ -115,11 +115,11 @@ Singles::Singles() : Imposition("Singles")
 //}
 
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
-int Singles::SetPaperSize(PaperType *npaper)
+int Singles::SetPaperSize(PaperStyle *npaper)
 {
 	if (!npaper) return 1;
 	if (paperstyle) delete paperstyle;
-	paperstyle=(PaperType *)npaper->duplicate();
+	paperstyle=(PaperStyle *)npaper->duplicate();
 	
 	setPage();
 	return 0;
@@ -172,7 +172,7 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att)
 			pagestyle->dump_in_atts(att->attributes.e[c]);
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			if (paperstyle) delete paperstyle;
-			paperstyle=new PaperType("Letter",8.5,11,0,300);//***
+			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
 			paperstyle->dump_in_atts(att->attributes.e[c]);
 		}
 	}
