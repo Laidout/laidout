@@ -283,7 +283,7 @@ int *Spread::pagesFromSpread()
 /*! \var int Imposition::numpages
  * \brief The number of pages available.
  */
-/*! \var PaperType *Imposition::paperstyle
+/*! \var PaperStyle *Imposition::paperstyle
  * \brief A local instance of the type of paper to print on.
  */
 /*! \var PageStyle *Imposition::pagestyle
@@ -385,7 +385,7 @@ int *Spread::pagesFromSpread()
 //  public:
 //	int numpapers; // ".0"
 //	int numpages; // ".1"
-//	PaperType *paperstyle; // ".2" is the default paper style, assumed to be local
+//	PaperStyle *paperstyle; // ".2" is the default paper style, assumed to be local
 //	PageStyle *pagestyle; // ".3" is the default page style, assumed to be local
 //
 //	Imposition(const char *nsname);
@@ -393,7 +393,7 @@ int *Spread::pagesFromSpread()
 //	virtual Style *duplicate(Style *s=NULL);
 //	
 //	virtual int SetPageLikeThis(PageStyle *npage); // copies pagestyle, doesnt transfer pointer
-//	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
+//	virtual int SetPaperSize(PaperStyle *npaper); // set paperstyle, and compute page size
 //	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 //	
 ////	virtual void AdjustPages(Page **pages) {} // when changing page size and atts, return bases for the new pages
@@ -512,11 +512,11 @@ int Imposition::SyncPages(Document *doc,int start,int n)
  * Derived classes are responsible for setting the PageStyle to an appropriate
  * value in response to the new papersize.
  */
-int Imposition::SetPaperSize(PaperType *npaper)
+int Imposition::SetPaperSize(PaperStyle *npaper)
 {
 	if (!npaper) return 1;
-	PaperType *pp;
-	pp=(PaperType *)npaper->duplicate();
+	PaperStyle *pp;
+	pp=(PaperStyle *)npaper->duplicate();
 	if (pp) {
 		if (paperstyle) delete paperstyle;
 		paperstyle=pp;

@@ -57,7 +57,7 @@ extern RefCounter<anObject> objectstack;
 //	virtual Style *duplicate(Style *s=NULL);
 //	
 ////	virtual int SetPageLikeThis(PageStyle *npage); // copies pagestyle, doesnt transfer pointer
-//	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
+//	virtual int SetPaperSize(PaperStyle *npaper); // set paperstyle, and compute page size
 ////	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 //	
 //	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
@@ -95,7 +95,7 @@ NetImposition::NetImposition(Net *newnet)
 	: Imposition("Net")
 { 
 	 // setup default paperstyle and pagestyle
-	paperstyle=new PaperType("letter",8.5,11.0,0,300);//***should be global default
+	paperstyle=new PaperStyle("letter",8.5,11.0,0,300);//***should be global default
 	
 	net=NULL;
 	if (!newnet) {
@@ -221,7 +221,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
 			if (numpages<0) numpages=0;
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			if (paperstyle) delete paperstyle;
-			paperstyle=new PaperType("Letter",8.5,11,0,300);//***
+			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
 			paperstyle->dump_in_atts(att->attributes.e[c]);
 		} else if (!strcmp(name,"net")) {
 			if (value && strcmp(value,"")) { // is a built in
@@ -271,11 +271,11 @@ Laxkit::DoubleBBox *NetImposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox
 }
 
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
-int NetImposition::SetPaperSize(PaperType *npaper)
+int NetImposition::SetPaperSize(PaperStyle *npaper)
 {
 	if (!npaper) return 1;
 	if (paperstyle) delete paperstyle;
-	paperstyle=(PaperType *)npaper->duplicate();
+	paperstyle=(PaperStyle *)npaper->duplicate();
 	
 	setPage();
 	return 0;

@@ -18,6 +18,26 @@
 
 #include <lax/interfaces/imageinterface.h>
 
+//-------------------------------- EpsData ----------------------------------
+class EpsData : public LaxInterfaces::ImageData
+{
+ public:
+	char *title, *creationdate;
+	EpsData();
+	virtual ~EpsData();
+	virtual int SetFile(const char *file);
+};
+
+//-------------------------------- EpsInterface ----------------------------------
+class EpsInterface : public LaxInterfaces::ImageInterface
+{
+ public:
+	EpsInterface(int nid,Laxkit::Displayer *ndp);
+	const char *whattype() { return "EpsInterface"; }
+	const char *whatdatatype() { return "EpsData"; }
+	ImageData *newData();
+	int Refresh();
+};
 
 #endif
 

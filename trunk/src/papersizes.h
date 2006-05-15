@@ -23,14 +23,14 @@
 
 #include "styles.h"
 
-class PaperType : public Style
+class PaperStyle : public Style
 {
  public:
 	char *name;
 	double width,height;
 	int dpi;
 	unsigned int flags; //1=landscape !(&1)=portrait
-	PaperType(const char *nname,double ww,double hh,unsigned int f,int ndpi);
+	PaperStyle(const char *nname,double ww,double hh,unsigned int f,int ndpi);
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual Style *duplicate(Style *s=NULL);
@@ -39,7 +39,7 @@ class PaperType : public Style
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
-Laxkit::PtrStack<PaperType> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperType> *papers);
+Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
 
 
 #endif

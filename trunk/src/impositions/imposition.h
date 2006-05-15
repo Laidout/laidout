@@ -87,14 +87,14 @@ class Imposition : public Style
 	int numpapers; 
 	int numspreads;
 	int numpages;
-	PaperType *paperstyle; // assumed to be local
+	PaperStyle *paperstyle; // assumed to be local
 	PageStyle *pagestyle; //assumed to be local
 	
 	Imposition(const char *nsname);
 	virtual ~Imposition() {}
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPageLikeThis(PageStyle *npage); // npage->duplicate(), doesnt transfer pointer
-	virtual int SetPaperSize(PaperType *npaper); // set paperstyle, and compute page size
+	virtual int SetPaperSize(PaperStyle *npaper); // set paperstyle, and compute page size
 	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
 	
 //	virtual void AdjustPages(Page **pages) {} // when changing page size and atts, return bases for the new pages

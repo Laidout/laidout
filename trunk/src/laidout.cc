@@ -139,7 +139,7 @@ void print_usage()
  * \ingroup pools
  * \brief Stack of available impositions.
  */
-/*!	\var Laxkit::PtrStack<PaperType> LaidoutApp::papersizes;
+/*!	\var Laxkit::PtrStack<PaperStyle> LaidoutApp::papersizes;
  * \ingroup pools
  * \brief Stack of available paper sizes.
  */
@@ -155,7 +155,7 @@ void print_usage()
 ////	ScreenStyle *screen;
 //	Laxkit::PtrStack<Laxkit::anInterface> interfacepool;
 //	PtrStack<Imposition> impositionpool;
-//	PtrStack<PaperType> papersizes;
+//	PtrStack<PaperStyle> papersizes;
 //	LaidoutApp();
 //	virtual ~LaidoutApp();
 //	virtual int init(int argc,char **argv);
@@ -347,7 +347,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 
 	// load in any docs after the args
-	if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
+	DBG if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
 	DBG cout <<"*** read in these files:"<<endl;
 	Document *doc;
 	index=topwindows.n;
@@ -424,7 +424,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	
 	char *saveas=NULL;
 	Imposition *imp=NULL;
-	PaperType *paper=NULL;
+	PaperStyle *paper=NULL;
 	int numpages=1;
 	
 	 // break down the spec

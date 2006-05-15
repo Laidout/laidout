@@ -66,7 +66,7 @@ class LaidoutApp : public Laxkit::anXApp
 //	ScreenStyle *screen;
 	Laxkit::PtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<Imposition> impositionpool;
-	Laxkit::PtrStack<PaperType> papersizes;
+	Laxkit::PtrStack<PaperStyle> papersizes;
 	LaidoutApp();
 	virtual ~LaidoutApp();
 	virtual int init(int argc,char **argv);

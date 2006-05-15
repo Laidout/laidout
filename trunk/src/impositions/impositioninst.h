@@ -41,7 +41,7 @@ class Singles : public Imposition
 	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
 	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 	virtual Style *duplicate(Style *s=NULL);
-	virtual int SetPaperSize(PaperType *npaper);
+	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual void setPage();
 
 	virtual void dump_out(FILE *f,int indent,int what);

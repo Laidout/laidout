@@ -1017,7 +1017,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	DBG cout <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
-	firstobj.context.out("firstobj");
+	DBG firstobj.context.out("firstobj");
 	
 	//while (start || (!start && !(nextindex==firstobj))) {
 	int nob=1;
@@ -1046,7 +1046,7 @@ int LaidoutViewport::FindObject(int x,int y,
 			 // matching object found!
 			foundtypeobj=nextindex;
 			if (oc) *oc=&foundtypeobj;
-			foundtypeobj.context.out("  foundtype");//for debugging
+			DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
 		DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
@@ -1151,7 +1151,7 @@ int LaidoutViewport::nextObject(VObjContext *oc)
 		 //if is NOT (limbo or page or page->layer or spread) then break, else continue.
 		if (!(oc->spread()==0 && oc->context.n()<=1 ||   
 			oc->spread()==1 && oc->context.n()<=3)) {
-			oc->context.out("  lov-next");
+			DBG oc->context.out("  lov-next");
 			return 1;
 		}
 	} while (1);
@@ -1372,7 +1372,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	if (curobjPage()>=0) curpage=doc->pages.e[curobjPage()];
 		else curpage=NULL;
 	if (oc) *oc=&curobj;
-	curobj.context.out("context change");
+	DBG curobj.context.out("context change");
 	 
 	return 1;
 }
@@ -1942,12 +1942,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==g->n()-1) { 
 			curobj.push(curpos);
-			//curobj.context.out("raise by 1 fail");
+			//DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->swap(curpos,curpos+1);
 		curobj.push(curpos+1);
-		//curobj.context.out("raise by 1");
+		//DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==1) { // lower in layer
@@ -1955,12 +1955,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==0) { 
 			curobj.push(curpos);
-			//curobj.context.out("raise by 1 fail");
+			//DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->swap(curpos,curpos-1);
 		curobj.push(curpos-1);
-		//curobj.context.out("lower by 1");
+		//DBG curobj.context.out("lower by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==2) { // raise to top
@@ -1968,12 +1968,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==g->n()-1) { 
 			curobj.push(curpos);
-			//curobj.context.out("raise by 1 fail");
+			//DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->slide(curpos,g->n()-1);
 		curobj.push(g->n()-1);
-		//curobj.context.out("raise by 1");
+		//DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==3) { // lower to bottom
@@ -1981,12 +1981,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==0) { 
 			curobj.push(curpos);
-			//curobj.context.out("raise by 1 fail");
+			//DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->slide(curpos,0);
 		curobj.push(0);
-		//curobj.context.out("raise by 1");
+		//DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==4) { // move to place i in current context
