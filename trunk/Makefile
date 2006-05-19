@@ -28,7 +28,7 @@ INSTALLDIR=install -d
 
 ##----------- you shouldn't have to modify anything below here --------------
 
-LAIDOUTVERSION=0.02.1
+LAIDOUTVERSION=0.03.1
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: 
@@ -55,20 +55,21 @@ uninstall:
 	rm -fr $(SHAREDIR)/laidout
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 
-hidegarbage:
+hidegarbage: touchdepends
 	cd src && $(MAKE) hidegarbage
 
-unhidegarbage:
+unhidegarbage: touchdepends
 	cd src && $(MAKE) unhidegarbage
 
-depends:
+depends: touchdepends
+	cd src && $(MAKE) depends
+
+touchdepends:
 	touch src/makedepend
 	touch src/impositions/makedepend
 	touch src/printing/makedepend
-	cd src && $(MAKE) depends
 
-
-.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends
+.PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:
 	cd src && $(MAKE) clean
 	
