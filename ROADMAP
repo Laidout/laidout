@@ -4,58 +4,44 @@ Things to do before the next release.
 This is a very rough draft of a roadmap, and is by no means the final word.
 
 
-VERSION 0.03
------------
-(done,but needs serious optimizing) Bezier patch with image for the color (this would be HOT for the gimp! a side project..)
-(done) if an image is selected, should be able to import an image to it
-(done) printing: produce masked images based on 50% threshhold of alpha channel of images
-(done) When loading files from the command line, should understand: 'file:///path/to/it'
-(done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
-(done) Load and save window configurations
-(done) EPS out to file###.eps by page not paper
-(done) Be able to print a paper range
-(done) an About window
-(done) command prompt window
-(done) Get rid of vertical white stripe toward bottom of the laidout webpage
-(done) SpreadEditor: drag to viewer to work on that page or spread
-(done) SpreadEditor: fix auto arranging
-(done) Make doc tree changes sanely update the various windows
-(done) Be able to DEselect all objects!!
 
+VERSION 0.04
+-----------
+       Fix non-centerfold page bleeding in booklets when printing
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
+       Have imagepatch be a transform you can apply to any image
+       A style manager, which is Not dependent on laxkit::refcounter
+       ObjectInterface for selecting and resizing multiple stuff
+       Finish implementing project based setup, especially when loading and saving
+       Allow for window docking, floating, swapping panes, etc.
+       from laxkit: clean up and beef up SplitWindow: swap window positions, tabbed panes
+       parent/child nesting and masking,
+       interface for that: nesting, and grouping
+       plus configurable icon panel/menu system
+       Page Ranges controlling page number label and which imposition should lay it out
+       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
+       perhaps have image open window? drag and drop in images? that would be AWESOME
 
 
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
        Seriously optimize the whole ImagePatchData stuff
-       Fix non-centerfold page bleeding in booklets when printing
-       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
-       Have imagepatch be a transform you can apply to any image
        Have images have any number of various kinds of transforms applied to it
-       ObjectInterface for selecting and resizing multiple stuff
-       PathInterface should finally work right
+       PathInterface should finally work right, and bez part should have segment move like inkscape
        Basic infrastructure for most things (except text) should be in place.
+       Fully configurable shortcuts
        This means some sort of basic scripting infrastructure,
        undo: here's an idea: undo per object (as possible)! rather than just a monolithic undo.. maybe not useful..
-       Finish implementing project based setup, especially when loading and saving
-       configurable buttons with icons
-       Allow for window docking, floating, etc.
-       parent/child nesting and masking,
-       interface for that: nesting, and grouping
        allow for easy method for runaround area determination
        Full color management implemented
        a real PrintDialog
        Generic style edit window
-       Make commands actually available in the command prompt window
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
-       A style manager, which is Not dependent on laxkit::refcounter
+       Make commands actually available in the command prompt window
        non-hacky new document box
        also means all things must define their styledefs
-       plus configurable icon panel/menu system
-       Page Ranges controlling page number label and which imposition should lay it out
-       DumpImages within Arrangements, which are sort of a template of positions
-       perhaps have image open window? drag and drop in images? that would be AWESOME
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
@@ -65,7 +51,6 @@ VERSION 0.1
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
-       from laxkit: clean up and beef up SplitWindow: swap window positions, tabbed panes
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
        Provide some kind of visual feedback while doing lengthy operations
@@ -111,6 +96,25 @@ While i'm at it, I'd like a pony.
             .--------------. 
 ------------- OLD RELEASES -----------------
             `--------------' 
+
+VERSION 0.03  -- released 13 May 2006!
+-----------
+(done,but needs serious optimizing) Bezier patch with image for the color (this would be HOT for the gimp! a side project..)
+(done) if an image is selected, should be able to import an image to it
+(done) printing: produce masked images based on 50% threshhold of alpha channel of images
+(done) When loading files from the command line, should understand: 'file:///path/to/it'
+(done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
+(done) Load and save window configurations
+(done) EPS out to file###.eps by page not paper
+(done) Be able to print a paper range
+(done) an About window
+(done) command prompt window
+(done) Get rid of vertical white stripe toward bottom of the laidout webpage
+(done) SpreadEditor: drag to viewer to work on that page or spread
+(done) SpreadEditor: fix auto arranging
+(done) Make doc tree changes sanely update the various windows
+(done) Be able to DEselect all objects!!
+
 
 VERSION 0.02 - released 8 April 2006!
 ------------

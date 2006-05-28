@@ -21,9 +21,7 @@
 
 //------------------------------ Group ----------------------------
 
-class Group : public ObjectContainer,
-			  virtual public LaxInterfaces::SomeData 
-			  
+class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData 
 {
  protected:
 	Laxkit::PtrStack<LaxInterfaces::SomeData> objs;

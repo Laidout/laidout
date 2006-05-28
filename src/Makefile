@@ -17,6 +17,7 @@ DEBUGFLAGS= -g -DDEBUG
 
 objs= \
 	styles.o \
+	stylemanager.o \
 	papersizes.o \
 	page.o \
 	group.o \
@@ -24,6 +25,7 @@ objs= \
 	project.o \
 	interfaces.o \
 	about.o \
+	buttonbox.o \
 	commandwindow.o \
 	headwindow.o \
 	helpwindow.o \

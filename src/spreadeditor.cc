@@ -531,10 +531,9 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 
 	LittleSpread *newspread;
 	double x=0,y=0;
-	int nextpage=0;
 	NumStack<int> pgs;
 	Spread *s;
-	int c=0,c2,i;
+	int c=0,c2;
 	
 	 // correct temppagemap
 	if (doc->pages.n<=temppagen) {
@@ -560,13 +559,9 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 			s->pagestack.e[c2]->index=reversemap(s->pagestack.e[c2]->index);
 		}
 	}
-	 // initialize nextpage
-	c=0;
-	nextpage=spreads.e[c]->spread->pagestack.e[0]->index;
-
 	 // redo the spreads
-	do {
-		s=doc->docstyle->imposition->GetLittleSpread(nextpage);
+	for (c=0; c<doc->docstyle->imposition->NumSpreads(); c++) {
+		s=doc->docstyle->imposition->GetLittleSpread(c);
 		
 		 // try to preserve previous spread placement
 		if (c<spreads.n) {
@@ -590,13 +585,7 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 		if (c>0) spreads.e[c]->mapConnection();
 
 		 // find next page
-		nextpage=spreads.e[c]->spread->pagestack.e[0]->index+1;
-		for (c2=0; c2<s->pagestack.n; c2++) {
-			i=s->pagestack.e[c2]->index;
-			if (i>nextpage) nextpage=i+1;
-		}
-		c++;
-	} while (nextpage<doc->pages.n);
+	}
 	while (c!=spreads.n) spreads.remove(c);
 
 	 // map the pages back
@@ -649,40 +638,14 @@ void SpreadInterface::GetSpreads()
 		pagelabels.push(new PageLabel(c,"#",doc->pages.e[c]->labeltype));
 	}
 	
-	int highestpage=0;
 	Spread *s;
 	LittleSpread *ls;
-	do {
-		s=doc->docstyle->imposition->GetLittleSpread(highestpage);
+	for (int c=0; c<doc->docstyle->imposition->NumSpreads(); c++) {
+		s=doc->docstyle->imposition->GetLittleSpread(c);
 		ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
 		ls->FindBBox();
 		spreads.push(ls);
-		
-		for (c=0; c<s->pagestack.n; c++) {
-			if (s->pagestack.e[c]->index>highestpage) highestpage=s->pagestack.e[c]->index;
-		}
-		highestpage++;
-	} while (highestpage<doc->pages.n);
-//	----------------newfangled: will be obsoleted by numspreads
-//	NumStack<int> pgs;
-//	int nextpage=0;
-//	Spread *s;
-//	LittleSpread *ls;
-//	int c2,i;
-//	do {
-//		s=doc->docstyle->imposition->GetLittleSpread(nextpage);
-//		ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
-//		ls->FindBBox();
-//		spreads.push(ls);
-//
-//		 // find nextpage 
-//		for (c=0; c<s->pagestack.n; c++) {
-//			i=s->pagestack.e[c]->index;
-//			for (c2=0; c2<pgs.n && i>pgs.e[c2]; c2++) ;
-//			if (c2<pgs.n && i!=pgs.e[c2]) pgs.push(i);
-//		}
-//		for (c=0; c<pgs.n; c++, nextpage++) if (pgs.e[c]!=nextpage+1) break;
-//	} while (nextpage<doc->pages.n);
+	}
 }
 
 // // values for arrangestate

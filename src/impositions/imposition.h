@@ -25,6 +25,7 @@
 #include "../objectcontainer.h"
 
 class Imposition;
+class Spread;
 #include "../document.h"
 
 //------------------------- PageLocation --------------------------------------
@@ -32,13 +33,12 @@ class Imposition;
 class PageLocation
 {	
  public:
-	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans,int outlineislocal,void **natts);
+	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans,int outlineislocal);
 	~PageLocation();
 	int index;
 	Page *page;
 	LaxInterfaces::SomeData *outline;
 	int outlineislocal;
-	void **attributes;
 };
 
 //----------------------- Spread -------------------------------
@@ -63,6 +63,7 @@ class Spread : public ObjectContainer
  public:
 	unsigned int mask; // which of path,min,max,pages is defined
 	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
+	int spreadtype;
 	LaxInterfaces::SomeData *path;
 	int pathislocal;
 	LaxInterfaces::SomeData *marks;
@@ -87,38 +88,43 @@ class Imposition : public Style
 	int numpapers; 
 	int numspreads;
 	int numpages;
-	PaperStyle *paperstyle; // assumed to be local
-	PageStyle *pagestyle; //assumed to be local
+	Document *doc;
+	PaperStyle *paperstyle;
 	
 	Imposition(const char *nsname);
 	virtual ~Imposition() {}
 	virtual Style *duplicate(Style *s=NULL);
-	virtual int SetPageLikeThis(PageStyle *npage); // npage->duplicate(), doesnt transfer pointer
-	virtual int SetPaperSize(PaperStyle *npaper); // set paperstyle, and compute page size
-	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
+	virtual int SetPaperSize(PaperStyle *npaper);
+	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	
 //	virtual void AdjustPages(Page **pages) {} // when changing page size and atts, return bases for the new pages
-	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
-	virtual Page **CreatePages(PageStyle *pagestyle=NULL) = 0; // create necessary pages based on default pagestyle
+	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
+	virtual Page **CreatePages() = 0;
 	virtual int SyncPages(Document *doc,int start,int n);
 	
 	virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
 	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
 	
-	virtual Spread *GetLittleSpread(int whichpage) = 0; 
 	virtual Spread *SingleLayout(int whichpage); 
-	virtual Spread *PageLayout(int whichpage) = 0; 
+	virtual Spread *PageLayout(int whichspread) = 0; 
 	virtual Spread *PaperLayout(int whichpaper) = 0;
-	virtual Laxkit::DoubleBBox *GetDefaultPageSize(Laxkit::DoubleBBox *bbox=NULL) = 0;
+	virtual Spread *GetLittleSpread(int whichspread) { return PageLayout(whichspread); } 
 	virtual int *PrintingPapers(int frompage,int topage) = 0;
 
+	virtual int NumPapers() { return numpapers; } 
 	virtual int NumPapers(int npapers);
-	//virtual int NumSpreads(int nspreads);
+	virtual int NumSpreads() { return numspreads; }
+	virtual int NumPages() { return numpages; }
 	virtual int NumPages(int npages);
-	virtual int PaperFromPage(int pagenumber) = 0; // the paper number containing page pagenumber
-	virtual int GetPagesNeeded(int npapers) = 0; // how many pages needed when you have n papers
-	virtual int GetPapersNeeded(int npages) = 0; // how many papers needed to contain n pages
-	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
+
+	virtual int PageType(int page)=0;
+	virtual int SpreadType(int spread)=0;
+	
+	virtual int PaperFromPage(int pagenumber) = 0;
+	virtual int GetPagesNeeded(int npapers) = 0;
+	virtual int GetPapersNeeded(int npages) = 0;
+	virtual int GetSpreadsNeeded(int npages) = 0;
+	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
 };
 
 

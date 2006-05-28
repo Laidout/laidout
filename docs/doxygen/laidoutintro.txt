@@ -30,7 +30,12 @@ minimal. (*****in truth, its not quite to that point yet)
 
 Boasting aside, why, really, should any one use Laidout rather than Inkscape, Scribus, or even InDesign?
 Well, you shouldn't!! Right now, Laidout is still very experimental, and no printing house anywhere
-supports its files, or has even heard of it. This program (almost) suits most of my purposes fairly well,
+supports its files, or has even heard of it. If you need something with a proven history, then go for
+Scribus. It apparently produces very clean files that printing houses will probably not hate you for.
+The major deficiency of Scribus (as of May 2006) is the lack of impositioning features, however, that 
+is being worked on
+
+Laidout currently almost suits most of my purposes fairly well,
 which is mainly home made books of cartoons ultimately copied at the copy store, folded over and stapled, or
 perfect bound for the fancy editions.
 

@@ -17,7 +17,6 @@
 
 #include "group.h"
 #include "drawdata.h"
-#include <lax/refcounter.h>
 #include <lax/strmanip.h>
 
 using namespace LaxFiles;

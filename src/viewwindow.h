@@ -21,6 +21,7 @@
 #include <lax/numinputslider.h>
 #include <lax/lineedit.h>
 #include <lax/textbutton.h>
+#include <lax/iconbutton.h>
 #include <X11/extensions/Xdbe.h>
 #include "document.h"
 
@@ -61,7 +62,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	double ectm[6];
 	XdbeBackBuffer backbuffer;
 	Group limbo;
-	virtual void setupthings(int topage=-1);
+	virtual void setupthings(int tospread=-1);
 	virtual void LaidoutViewport::setCurobj(VObjContext *voc);
 	virtual void LaidoutViewport::findAny();
 	virtual int nextObject(VObjContext *oc);
@@ -73,6 +74,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	 // these all have to refer to proper values in each other!
 	Document *doc;
 	Spread *spread;
+	int spreadi;
 	Page *curpage;
 	 // these shadow viewport window variables of the same name but diff. type
 	VObjContext curobj,firstobj,foundobj,foundtypeobj;
@@ -112,7 +114,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	
 	virtual const char *SetViewMode(int m,int page);
 	virtual int ViewMode(int *page);
-	virtual int PlopData(LaxInterfaces::SomeData *ndata);
+	virtual int PlopData(LaxInterfaces::SomeData *ndata,char nearmouse=0);
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
 	virtual int ObjectMove(LaxInterfaces::SomeData *d);
@@ -135,7 +137,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	Laxkit::NumInputSlider *pagenumber;
 	Laxkit::NumInputSlider *var1, *var2, *var3;
 	Laxkit::LineEdit *loaddir;
-	Laxkit::TextButton *pageclips;
+	Laxkit::IconButton *pageclips;
  public:
 	Project *project;
 	Document *doc;

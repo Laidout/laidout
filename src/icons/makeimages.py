@@ -11,6 +11,7 @@ from xml.sax import saxexts
 
 if (len(sys.argv)>1) : bitmapw=int(sys.argv[1])
 else : bitmapw=24
+print "Width: "+str(bitmapw)
 
 dpi=int(90.0*bitmapw/45)
 
@@ -65,7 +66,7 @@ for name in names :
     x2=x1+45
     y2=y1+45
 
-    command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -d "+str(dpi)+" -e "+name+".png icons.svg"
-    print command
-    print commands.getoutput(command)
+    command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
+        str(bitmapw)+" -h "+str(bitmapw)+" -e "+name+".png icons.svg"
+    print commands #.getoutput(command)
     

@@ -41,7 +41,6 @@
 #include "extras.h"
 #include <dirent.h>
 #include <Imlib2.h>
-#include <lax/refcounter.h>
 
 
 #include <iostream>
@@ -211,7 +210,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 		for (c2=0; c2<nn; c2++) {
 			DBG cout <<"   adding image index "<<c+c2<<endl;
 			images[c+c2]->origin(images[c+c2]->origin()+flatpoint(0,(rrh-hh)/2));
-			g=doc->pages.e[endpage]->layers.e[doc->pages.e[endpage]->layers.n-1];
+			g=doc->pages.e[endpage]->e(doc->pages.e[endpage]->layers.n()-1);
 			g->push(images[c+c2],0); //incs the obj's count
 		}
 		n+=nn;

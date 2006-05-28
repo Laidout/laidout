@@ -21,6 +21,7 @@
 #include <lax/strmanip.h>
 #include <cstdio>
 #include <lax/dump.h>
+#include <lax/refcounted.h>
 
 //------------------------------ FieldMask -------------------------------------------
 
@@ -69,27 +70,37 @@ class FieldMask : public Laxkit::PtrStack<FieldPlace>
 #define STYLEDEF_CAPPED 1
 
  // for StyleDef::format
-#define  STYLEDEF_INT      1
-#define  STYLEDEF_REAL     2
-#define  STYLEDEF_STRING   3
-#define  STYLEDEF_FIELDS   4 
-#define  STYLEDEF_BIT      5
-#define  STYLEDEF_3BIT     6
-#define  STYLEDEF_ENUM     7
-#define  STYLEDEF_ENUM_VAL 8
+enum ElementType {
+	Element_Int,
+	Element_Real,
+	Element_String,
+	Element_Fields, 
+	Element_Bit,
+	Element_3bit,
+	Element_Enum,
+	Element_EnumVal,
+	Element_Function,
+	Element_MaxFormatVal 
+};
 
 #define STYLEDEF_DUPLICATE 1
 #define STYLEDEF_ORPHAN    2
 
-class StyleDef : public Laxkit::anObject
+class StyleDef;
+class Style;
+typedef Style *(*NewStyleFunc)(StyleDef *def);
+ 
+class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
 {
  public:
 	char *extends;
 	StyleDef *extendsdef;
+	NewStyleFunc newfunc;
 	char *name; //name for interpreter
 	char *Name; // Name for dialog label
 	char *tooltip; // short description
 	char *description; // long description, this would be displayed on a help page, for instance.
+	char *range,*defaultvalue;
 	
 	 // STYLEDEF_ORIGINAL
 	 // STYLEDEF_DUPLICATE
@@ -98,12 +109,13 @@ class StyleDef : public Laxkit::anObject
 	 // STYLEDEF_READONLY = cannot modify parts of the styledef
 	unsigned int flags;
 
-	int format; // int,real,string,fields,...
+	ElementType format; // int,real,string,fields,...
 	Laxkit::PtrStack<StyleDef> *fields; //might be NULL, any fields are assumed to not be local to the stack.
 	
 	StyleDef();
 	StyleDef(const char *nextends,const char *nname,const char *nName,const char *ttip,
-			const char *ndesc,int fmt,Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED);
+			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
+			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED);
 	virtual ~StyleDef();
 
 	 // helpers to locate fields by name, "blah.3.x"
@@ -116,14 +128,20 @@ class StyleDef : public Laxkit::anObject
 	 //-------- StyleDef creation helper functions ------
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
-	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,int fformat,unsigned int fflags);
 	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
-						int fformat,Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags);
+			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags);
+	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+						ElementType fformat,const char *nrange, const char *newdefval,
+						Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags);
 	virtual int push(StyleDef *newfield);
 	virtual int pop(int fieldindex);
+
 	 // cap prevents accidental further adding/removing fields to a styledef
 	 // that is being constructed
 	virtual void cap(int y=1) { if (y) flags|=STYLEDEF_CAPPED; else flags&=~STYLEDEF_CAPPED; }
+	
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
 void dumpstyledef(StyleDef *sd,int i);
@@ -155,22 +173,26 @@ void deleteFieldNode(FieldNode *fn);
 	
 //------------------------------------- Style -------------------------------------------
 
-class Style : public Laxkit::anObject, public LaxFiles::DumpUtility
+#define STYLE_READONLY
+#define STYLE_NO_EDIT
+
+class Style : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
 {
  protected:
+	unsigned long style;
 	char *stylename; // note this is not a variable name, but it is an instance, 
 					 // it would be in a list of styles, like "Bold Body", and the
 					 // StyleDef name/Name might be charstyle/"Character Style"
+ public:
 	StyleDef *styledef;
 	Style *basedon;
 	FieldMask fieldmask; // is mask of which values are defined in this Style, and would
 						 // preempt fields from basedon
- public:
 	Style();
 	Style(StyleDef *sdef,Style *bsdon,const char *nstn);
 	virtual ~Style();
 	virtual StyleDef *makeStyleDef() { return NULL; }
-	virtual StyleDef *GetStyleDef(StyleDef **maketohere);
+	virtual StyleDef *GetStyleDef() { return styledef; }
 	virtual const char *Stylename() { return stylename; }
 	virtual int Stylename(const char *nname) { makestr(stylename,nname); return 1; }
 	virtual int getNumFields();

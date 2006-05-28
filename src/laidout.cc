@@ -21,6 +21,9 @@
 /*! \defgroup pools Builtin Pools
  * Here are the various pools of stuff and their generating functions.
  * The pools are available through the main LaidoutApp.
+ * 
+ * *** The interface pool is necessary to be able to draw anything any old time.
+ * The others could probably be absorbed bythe stylemanager.
  */
 
 //---------------------<< start program! >>-------------------------
@@ -37,13 +40,13 @@
 #include "impositions/impositioninst.h"
 #include "headwindow.h"
 #include "version.h"
+#include "stylemanager.h"
 #include <lax/lists.cc>
 
 
+StyleManager stylemanager;
 
 
-#include <lax/refcounter.cc>
-Laxkit::RefCounter<Laxkit::anObject> objectstack;
 using namespace Laxkit;
 using namespace LaxFiles;
 
@@ -229,7 +232,7 @@ int LaidoutApp::init(int argc,char **argv)
 	GetBuiltinPaperSizes(&papersizes);
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
-	
+
 	// **** Init Imlib
 	imlib_context_set_display(dpy);
 	imlib_context_set_visual(vis);
@@ -243,9 +246,10 @@ int LaidoutApp::init(int argc,char **argv)
 	if (!project) project=new Project();
 	 //*** set up main control window
 	//maincontrolpanel=new ControlPanel(***);
-	if (topwindows.n==0) // if no other windows have been launched yet, then launch newdoc window
-		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
+	 // if no other windows have been launched yet, then launch newdoc window
+	if (topwindows.n==0)
+		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
 	return 0;
 };
@@ -578,9 +582,10 @@ int main(int argc,char **argv)
 	laidout->close();
 	delete laidout;
 	
-	DBG cout <<"---------------objectstack-----------------"<<endl;
-	DBG cout <<"  objectstack.n="<<(objectstack.n())<<endl;
-	objectstack.flush();
+	DBG cout <<"---------------stylemanager-----------------"<<endl;
+	DBG cout <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
+	DBG cout <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
+	stylemanager.flush();
 
 	cout <<"---------------Bye!-----------------"<<endl;
 

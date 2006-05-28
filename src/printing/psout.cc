@@ -386,8 +386,8 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 			}
 				
 			 // for each layer on the page..
-			for (l=0; l<page->layers.n; l++) {
-				psdumpobj(f,page->layers.e[l]);
+			for (l=0; l<page->layers.n(); l++) {
+				psdumpobj(f,page->layers.e(l));
 			}
 			fprintf(f,"grestore\n");
 			psPopCtm();
@@ -537,8 +537,8 @@ int epsout(const char *fname,Document *doc,int start,int end,
 			}
 				
 			 // for each layer on the page..
-			for (l=0; l<page->layers.n; l++) {
-				psdumpobj(f,page->layers.e[l]);
+			for (l=0; l<page->layers.n(); l++) {
+				psdumpobj(f,page->layers.e(l));
 			}
 			fprintf(f,"grestore\n");
 			psPopCtm();
