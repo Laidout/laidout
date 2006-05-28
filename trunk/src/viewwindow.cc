@@ -22,7 +22,6 @@
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/imagepatchinterface.h>
 #include <lax/filedialog.h>
-#include <lax/refcounter.h>
 #include <lax/colorbox.h>
 #include <lax/fileutils.h>
 #include <lax/overwrite.h>
@@ -47,9 +46,10 @@ using namespace std;
 #define DBG 
 
 
-#define SINGLELAYOUT 0
-#define PAGELAYOUT   1
-#define PAPERLAYOUT  2
+#define SINGLELAYOUT       0
+#define PAGELAYOUT         1
+#define PAPERLAYOUT        2
+#define LITTLESPREADLAYOUT 3
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -118,27 +118,6 @@ void bboxout(DoubleBBox *bbox,const char *mes=NULL)
 /*! \fn int VObjContext::operator==(const ObjectContext &oc)
  * \brief Return isequal(oc).
  */
-//class VObjContext : public LaxInterfaces::ObjectContext
-//{
-// public:
-//	FieldPlace context;
-//	VObjContext() { obj=NULL; context.push(0); }
-//	virtual ~VObjContext() {}
-//	virtual int isequal(const ObjectContext *oc);
-//	virtual int operator==(const ObjectContext &oc) { return isequal(&oc); }
-//	virtual VObjContext &operator=(const VObjContext &oc);
-//	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
-//	virtual void clear() { obj=NULL; context.flush(); context.push(0); }
-//	virtual void push(int i,int where=-1);
-//	virtual int pop(int where=-1);
-//	
-//	virtual int spread() { return context.e(0); }
-//	virtual int spreadpage() { if (context.n()>1 && context.e(0)!=0) return context.e(1); else return -1; }
-//	virtual int layer() { if (context.n()>2 && context.e(0)!=0) return context.e(2); else return -1; }
-//	virtual int layeri() { if (context.n()>3 && context.e(0)!=0) return context.e(3); else return -1; }
-//	virtual int limboi() { if (context.n()>1 && context.e(0)==0) return context.e(1); else return -1; }
-//	virtual int level() { if (obj) return context.n()-2; else return context.n()-1; }
-//};
 
 //! Assignment operator.
 VObjContext &VObjContext::operator=(const VObjContext &oc)
@@ -198,20 +177,13 @@ int VObjContext::isequal(const ObjectContext *oc)
  * firstobj, and foundobj are all VObjContext instances which shadow the ViewportWindow
  * variables of the same names.
  * 
- * *** need to check through that all the searching stuff, and cur obj/page/layer stuff
- * are reset where appropriate.. And what about when the doc structure is modified outside
- * of this viewportwindow? there should be a mechanism to ensure that viewportwindow does
- * not attempt to access anything that might not be there anymore.... 
- *
- * // *** there should probably be some checking mechanism to ensure that 
- * // data that no longer exists doesn't get accessed.. maybe a "last modified time"
- * // field for the document?? mutex lock on the object tree?
- * 
+ * \todo *** need to check through that all the searching stuff, and cur obj/page/layer stuff
+ *   are reset where appropriate.. 
  * \todo *** need to be able to work only on current zone or only on current layer...
  *   a zone would be: limbo, imposition specific zones (like printer marks), page outline,
- *   the spread itself, the current page only.. the zone could be the objcontext->spread()?
- * \todo *** might be useful to have more things potentially represented in curobj.spread()..
- *   possibilities: limbo, main spread, printer marks, other spreads...
+ *   the spread itself, the current page only.. the zone could be the objcontext->spread()?,
+ *   *** might be useful to have more things potentially represented in curobj.spread()..
+ *   possibilities: limbo, main spread, printer marks, --Other Spreads--...
  * \todo *** in paper spread view, perhaps that is where a spread()==printer marks is useful..
  *   also, depending on the imposition, there might be other operations permitted in paper spread..
  *   like in a postering imposition, the page data stays stationary, but multiple paper outlines can latch
@@ -272,79 +244,7 @@ int VObjContext::isequal(const ObjectContext *oc)
  * \brief 0==none, 1==FindObject, 2==SelectObject(prev/next)
  */
 //--------------------------------
-//class LaidoutViewport : public LaxInterfaces::ViewportWindow
-//{
-//	char lfirsttime;
-// protected:
-//	unsigned int drawflags;
-//	int viewmode,searchmode;
-//	int showstate;
-//	int transformlevel;
-//	double ectm[6];
-//	XdbeBackBuffer backbuffer;
-//	Group limbo;
-//	virtual void setupthings(int topage=-1);
-//	virtual void LaidoutViewport::setCurobj(VObjContext *voc);
-//	virtual void LaidoutViewport::findAny();
-//	virtual int nextObject(VObjContext *oc);
-//	virtual void transformToContext(double *m,FieldPlace &place,int invert=1);
-// public:
-//	 //*** maybe these should be protected?
-//	char *pageviewlabel;
-//	
-//	 // these all have to refer to proper values in each other!
-//	Document *doc;
-//	Spread *spread;
-//	Page *curpage;
-//	 // these shadow viewport window variables of the same name but diff. type
-//	VObjContext curobj,firstobj,foundobj,foundtypeobj;
-//	
-//	LaidoutViewport(Document *newdoc);
-//	virtual const char *whattype() { return "LaidoutViewport"; }
-//	virtual ~LaidoutViewport();
-//	virtual void Refresh();
-//	virtual int init();
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-//	virtual int MouseMove(int x,int y,unsigned int state);
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//
-//	virtual int UseThisDoc(Document *ndoc);
-//	
-//	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
-//	
-//	virtual flatpoint realtoscreen(flatpoint r);
-//	virtual flatpoint screentoreal(int x,int y);
-//	virtual double Getmag(int c=0);
-//	virtual double GetVMag(int x,int y);
-//
-//	virtual const char *Pageviewlabel();
-//	virtual void Center(int w=0);
-//	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc=NULL);
-//	virtual int SelectPage(int i);
-//	virtual int NextSpread();
-//	virtual int PreviousSpread();
-//	
-//	virtual int ChangeObject(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext *oc);
-//	virtual int LaidoutViewport::SelectObject(int i);
-//	virtual int FindObject(int x,int y, const char *dtype, 
-//					LaxInterfaces::SomeData *exclude, int start,
-//					LaxInterfaces::ObjectContext **oc);
-//	virtual void ClearSearch();
-//	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
-//	
-//	virtual const char *SetViewMode(int m, int page);
-//	virtual int PlopData(LaxInterfaces::SomeData *ndata);
-//	virtual void postmessage(const char *mes);
-//	virtual int DeleteObject();
-//	virtual int ObjectMove(LaxInterfaces::SomeData *d);
-//	virtual int CirculateObject(int dir, int i,int objOrSelection);
-//	virtual int validContext(VObjContext *oc);
-//	virtual void clearCurobj();
-//	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
-//	virtual int n() { if (spread) return 2; return 1; }
-//	virtual Laxkit::anObject *object_e(int i);
-//	virtual int curobjPage();
-//};
+
 
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
 LaidoutViewport::LaidoutViewport(Document *newdoc)
@@ -361,6 +261,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	transformlevel=0;
 	transform_set(ectm,1,0,0,1,0,0);
 	spread=NULL;
+	spreadi=-1;
 	curpage=NULL;
 	pageviewlabel=NULL;
 	searchmode=0;
@@ -372,7 +273,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	 // Set workspace bounds.
 	if (newdoc && newdoc->docstyle && newdoc->docstyle->imposition) {
 		DoubleBBox bb;
-		newdoc->docstyle->imposition->GoodWorkspaceSize(1,&bb);
+		newdoc->docstyle->imposition->GoodWorkspaceSize(&bb);
 		dp->SetSpace(bb.minx,bb.maxx,bb.miny,bb.maxy);
 		//Center(); //this doesn't do anything because dp->Minx,Maxx... are 0
 	}
@@ -489,6 +390,7 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 			clearCurobj();
 			delete spread;
 			spread=NULL;
+			spreadi=-1;
 			setupthings(pg);
 			needtodraw=1;
 		} else if (te->changetype==TreeDocGone) {
@@ -499,64 +401,56 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		return 0;
 	}
 	return 1;
-//---------------------
-//		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-//		int curpage=vp->curobjPage();
-//		delete vp->spread;
-//		vp->spread=NULL;
-//		vp->curpage=NULL;
-//		int c=doc->RemovePages(curpage,1); //remove curpage
-//		if (c==1) GetMesbar()->SetText("Page deleted.");
-//			else GetMesbar()->SetText("Error deleting page.");
-//	--- from old clientmessage
-//		if ((unsigned long)e->data.l[0]==window) return 0;
-//		if (spread) { delete spread; spread=NULL; }
-//		setupthings(curobjPage());
-//		Center(1);
 }
 
 //! Select the spread with page number greater than current page not in current spread.
 /*! Returns the current page index on success, else a negative number.
  *
- * ***this is wrong for paper layout!! maybe setupthings(page, or paper)
+ * Return -1 for error or the index of the spread.
  */
 int LaidoutViewport::NextSpread()
 {
-	if (!spread) return -1;
-	int c,i=curobjPage()+1;
+	if (!spread || !(doc && doc->docstyle && doc->docstyle->imposition)) return -1;
 	
-	while (1) {
-		for (c=0; c<spread->pagestack.n; c++) {
-			if (i==spread->pagestack.e[c]->index) { i++; c=-1; }
-		}
-		if (c==spread->pagestack.n) return SelectPage(i);
-	}
-	return -1;
+	int max=-1;
+	if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
+	else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
+	else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+
+	if (max>=0) {
+		spreadi--;
+		if (spreadi<0) spreadi=max-1;
+	} else spreadi=-1;
+	setupthings(spreadi);
+	return spreadi;
 }
 
 //! Select the spread with page number less than current page not in current spread.
 /*! Returns the current page index on success, else a negative number.
  *
  * ***this is wrong for paper layout!! maybe setupthings(page, or paper)
+ *
+ * Return -1 for error or the index of the spread.
  */
 int LaidoutViewport::PreviousSpread()
 {
-	if (!spread) return -1;
-	int c,i=curobjPage()-1;
-	while (1) {
-		for (c=0; c<spread->pagestack.n; c++) {
-			if (i==spread->pagestack.e[c]->index) { i--; c=-1; }
-		}
-		if (c==spread->pagestack.n) {
-			if (i>=0) return SelectPage(i);
-			return -1;
-		}
-	}
-	return -1;
+	if (!spread || !(doc && doc->docstyle && doc->docstyle->imposition)) return -1;
+	
+	int max=-1;
+	if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
+	else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
+	else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+
+	if (max>=0) {
+		spreadi++;
+		if (spreadi>=max) spreadi=0;
+	} else spreadi=-1;
+	setupthings(spreadi);
+	return spreadi;
 }
 
 
-//! Return the viewmode, and page number if page!=null.
+//! Return the viewmode, and current page index in doc->pages if page!=null.
 int LaidoutViewport::ViewMode(int *page)
 {
 	if (page) {
@@ -567,23 +461,16 @@ int LaidoutViewport::ViewMode(int *page)
 	return viewmode;
 }
 
-//! Set the view style to single, pagelayout, or paperlayout.
+//! Set the view style to single, pagelayout, or paperlayout looking at spread number sprd.
 /*! Updates and returns pageviewlabel. This is a string like "Page: " or
  * "Spread[2-4]: " that is suitable for the label of a NumSlider.
  */
-const char *LaidoutViewport::SetViewMode(int m,int page)
+const char *LaidoutViewport::SetViewMode(int m,int sprd)
 {
 	DBG cout <<"---- setviewmode:"<<m<<endl;
-	char yes=0;
-	if (page>=0 && spread) {
-		int c;
-		for (c=0; c<spread->pagestack.n; c++) 
-			if (page==spread->pagestack.e[c]->index) break;
-		if (c==spread->pagestack.n) yes=1;
-	}
-	if (yes || m!=viewmode) {
+	if (sprd!=spreadi || m!=viewmode) {
 		viewmode=m;
-		setupthings(page>=0?page:curobjPage());
+		setupthings(sprd);
 		Center(1);
 	}
 	needtodraw=1;
@@ -640,38 +527,49 @@ void LaidoutViewport::postmessage(const char *mes)
  * Then refetchs the spread for that page. Curobj is set to the context that items should
  * be plopped down into. This is usually a page and a layer. curobj.obj is set to NULL.
  *
- * \todo ***potentially sometimes different paper spreads have references to the same page
- * which might screw up the SetViewMode/setupthings system...
+ * If doc==NULL or it returns a NULL spread, that is ok. It is assumed that means it
+ * is a "Whatever" mode, which is basically just the limbo scratchboard and no spread.
  */
-void LaidoutViewport::setupthings(int topage)//topage=-1
+void LaidoutViewport::setupthings(int tospread)//tospread=-1
 {
-	if (!doc) return;
 	
 	 // set curobj to proper value
 	 // Also call Clear() on all interfaces
-	if (topage==-1) {
+	if (tospread==-1) {
 		 // initialize from nothing
-		topage=doc->curpage;
+		if (doc) tospread=doc->curpage;
 	} 
-	if (topage>=doc->pages.n) topage=doc->pages.n;
-	else if (topage<0) topage=0;
+	if (doc) {
+		int max=-1;
+		if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
+		else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
+		else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+
+		if (max>=0) {
+			if (tospread>=max) spreadi=max;
+			else if (tospread<0) tospread=0;
+		} else tospread=-1;
+	} else tospread=-1;
 
 	for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
 	ClearSearch();
-	clearCurobj(); //*** clear temp selection group??
+	clearCurobj(); //*** clear temp selection group?? -- this clears to limbo or page...
 	curpage=NULL;
 
 	 // should always delete and re-new the spread, even if page is in current spread.
 	 // since page might be in spread, but in old viewmode...
-	if (spread) { delete spread; spread=NULL; } 
+	if (spread) { 
+		delete spread;
+		spread=NULL; 
+		spreadi=-1;
+	} 
 
 	 // retrieve the proper spread according to viewmode
-	if (!spread && doc->docstyle && doc->docstyle->imposition) {
-		if (viewmode==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(topage);
-		else if (viewmode==PAPERLAYOUT) {
-			int p=doc->docstyle->imposition->PaperFromPage(topage);
-			spread=doc->docstyle->imposition->PaperLayout(p);
-		} else spread=doc->docstyle->imposition->SingleLayout(topage); // default to singlelayout
+	if (!spread && doc && doc->docstyle && doc->docstyle->imposition) {
+		if (viewmode==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(tospread);
+		else if (viewmode==PAPERLAYOUT) spread=doc->docstyle->imposition->PaperLayout(tospread);
+		else spread=doc->docstyle->imposition->SingleLayout(tospread); // default to singlelayout
+		spreadi=tospread;
 	}
 
 	 // setup ectm (see realtoscreen/screentoreal/Getmag), and find spageindex
@@ -679,38 +577,40 @@ void LaidoutViewport::setupthings(int topage)//topage=-1
 	transformlevel=0;
 	transform_set(ectm,1,0,0,1,0,0);
 	
-	if (!spread) return;
-	curpage=doc->pages.e[topage];
+	if (!spread) {
+		curobj.set(NULL,1, 0);
+		return;
+	}
+	 //find a good curpage
+	int curpagei=-1;
+	if (viewmode==SINGLELAYOUT) {
+		curpage=doc->pages.e[tospread];
+		curpagei=tospread;
+	} else {
+		int c;
+		for (c=0; c<spread->pagestack.n; c++) {
+			if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
+				curpagei=spread->pagestack.e[0]->index;
+				curpage=doc->pages.e[curpagei];
+				break;
+			}
+		}
+	}
 	
 	int spageindex;
 	for (spageindex=0; spageindex<spread->pagestack.n; spageindex++) 
-		if (spread->pagestack.e[spageindex]->index==topage) break;
+		if (spread->pagestack.e[spageindex]->index==curpagei) break;
 	if (spageindex==spread->pagestack.n) {
-		DBG cout <<"****** topage "<<topage<<" not found in spread!!!"<<endl;
+		DBG cout <<"****** tospread "<<tospread<<" not found in spread!!!"<<endl;
 		spageindex=-1;
 	}
 	
-	//****redo this to use setCurobj...
-	 // set plop to spread-pagelocindex.
-	curobj.set(NULL,2, 1,spageindex);
-	
-	 // get ectm to be transform from viewer coordinates to the current page's coordinates
-	double tt[6];
-	transform_set(tt,1,0,0,1,0,0);
-	//transform_mult(tt,***spreadtrans,ectm); // apply spread transform (assume identity for now..)
-	if (spageindex>=0 && spageindex<spread->pagestack.n) {
-		transform_mult(ectm,spread->pagestack.e[spageindex]->outline->m(),tt); // apply page transform
-		 //layer transform is assumed to be identity
-		curobj.push(0); // apply layer 0 in topage
-		
-		transformlevel=3;
-	} else {
-		transformlevel=1; //ectm transforms to spread only
-	}
-	
-	 // apply further groups...
+	 //set up curobj
+	 // in the future, this could involve apply further groups...
 	//...like any saved cur group for that page or layer?...
-	
+	VObjContext voc;
+	voc.set(NULL,2, 1,spageindex);
+	setCurobj(&voc);
 }
 
 //! Insert ndata into the curobj context.
@@ -722,11 +622,16 @@ void LaidoutViewport::setupthings(int topage)//topage=-1
  * \todo *** need a mechanism to rescale the object from one context to
  * the curobj context.
  *
- * \todo *** need option to plop near mouse if mouse on screen
+ * \todo *** imp option to plop near mouse if mouse on screen
  */
-int LaidoutViewport::PlopData(LaxInterfaces::SomeData *ndata)
+int LaidoutViewport::PlopData(LaxInterfaces::SomeData *ndata,char nearmouse)
 {
 	if (!ndata) return 0;
+	
+	//if (nearmouse) {
+	//	***
+	//}
+	
 	NewData(ndata,NULL);
 	if (curobj.obj) {
 		 // activate right tool for object
@@ -760,7 +665,7 @@ int LaidoutViewport::DeleteObject()
 	if (curobj.spread()==0) { //in limbo
 		limbo.remove(curobj.limboi());
 	} else { // is somewhere in document
-		Group *g=curpage->layers.e[curobj.layer()];
+		Group *g=curpage->e(curobj.layer());
 		g->remove(g->findindex(d));
 		//***g->findandremove(d,curobj.context,4); //removes at offset 4 in context
 		//*** when deleting a group, deleting one might make the other objs out
@@ -844,19 +749,19 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 	
 	 // obj not in spread, must insert the presumed new data d
 	int i=-1;
-	if (!spread || !curpage || curobj.layer()<0 || curobj.layer()>=curpage->layers.n) {
+	if (!spread || !curpage || curobj.layer()<0 || curobj.layer()>=curpage->layers.n()) {
 		 // add object to limbo, this likely does not install proper transform
 		i=limbo.pushnodup(d,0);
 		context->set(d,2,0,i>=0?i:limbo.n()-1);
 	} else {
 		 // push onto cur spread/page/layer
 		 //*** this should push on curobj level, not simply page->layer
-		i=curpage->layers.e[curobj.layer()]->pushnodup(d,0);//this is Group::pushnodup()
+		i=curpage->e(curobj.layer())->pushnodup(d,0);//this is Group::pushnodup()
 		context->set(d,4, 
 					1,
 					curobj.spreadpage(),
 					curobj.layer(),
-					i>=0 ? i : curpage->layers.e[curobj.layer()]->n()-1);
+					i>=0 ? i : curpage->e(curobj.layer())->n()-1);
 	}
 	
 	setCurobj(context);
@@ -875,7 +780,7 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
  * mode is step through all on screen objects, another step through all in spread.
  */
 int LaidoutViewport::SelectObject(int i)
-{//***
+{
 	if (!curobj.obj) {
 		findAny();
 		if (firstobj.obj) setCurobj(&firstobj);
@@ -1160,7 +1065,7 @@ int LaidoutViewport::nextObject(VObjContext *oc)
 }
 
 //! Return place.n if d is found in the displayed pages or in limbo somewhere, and put location in place.
-/*! Flushes place, it does not append to an existing spot.
+/*! Flushes place whether or not the object is found, it does not append to an existing spot.
  *
  * If object is not found, then return 0, despite whatever place.n is.
  */
@@ -1203,10 +1108,10 @@ void LaidoutViewport::findAny()
 		for (c=0; c<spread->pagestack.n; c++) {
 			page=dynamic_cast<Page *>(spread->object_e(c));
 			if (!page) continue;
-			for (c2=0; c2<page->layers.n; c2++) {
-				DBG cout <<" findAny: pg="<<c<<":"<<spread->pagestack.e[c]->index<<"  has "<<page->layers.e[c2]->n()<<" objs"<<endl;
-				if (!page->layers.e[c2]->n()) continue;
-				firstobj.set(page->layers.e[c2]->e(0),4, 1,c,c2,0);
+			for (c2=0; c2<page->layers.n(); c2++) {
+				DBG cout <<" findAny: pg="<<c<<":"<<spread->pagestack.e[c]->index<<"  has "<<page->e(c2)->n()<<" objs"<<endl;
+				if (!page->e(c2)->n()) continue;
+				firstobj.set(page->e(c2)->e(0),4, 1,c,c2,0);
 				return;
 			}
 		}
@@ -1246,9 +1151,9 @@ int LaidoutViewport::validContext(VObjContext *oc)
 	if (p<0 || p>=doc->pages.n) return 0;
 
 	int l=oc->layer();
-	if (l<0 || l>=doc->pages.e[p]->layers.n) return 0;
+	if (l<0 || l>=doc->pages.e[p]->layers.n()) return 0;
 
-	if (d==doc->pages.e[p]->layers.e[l]->getanObject(oc->context,3)) return 1;
+	if (d==doc->pages.e[p]->e(l)->getanObject(oc->context,3)) return 1;
 	
 	return 0;
 }
@@ -1264,10 +1169,9 @@ void LaidoutViewport::ClearSearch()
 	searchmode=0;
 }
 
-//! Set curobj (if voc!=NULL). Also update ectm.
+//! Update ectm. Set curobj if voc!=NULL.
 /*! Incs count of curobj if new obj is different than old curobj.obj
  * and decrements the old curobj.
- * 
  */
 void LaidoutViewport::setCurobj(VObjContext *voc)
 {
@@ -1286,6 +1190,8 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	
 	transformToContext(ectm,place,0);
 	transformlevel=place.n()-1;
+	 
+	 //find curpage
 	if (curobj.spread()==0 || !spread) curpage=NULL;
 	else {
 		if (curobj.spreadpage()>=0) {
@@ -1319,17 +1225,17 @@ void LaidoutViewport::clearCurobj()
 //! *** for debugging, show which page mouse is over..
 int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 {
-	if (!buttondown) {
-		int c=-1;
-		flatpoint p=dp->screentoreal(x,y);
-		if (spread) {
-			for (c=0; c<spread->pagestack.n; c++) {
-				if (spread->pagestack.e[c]->outline->pointin(p)) break;
-			}
-			if (c==spread->pagestack.n) c=-1;
-		}
-		DBG cout <<"mouse over: "<<c<<endl;
-	}
+	DBG if (!buttondown) {
+	DBG 	int c=-1;
+	DBG 	flatpoint p=dp->screentoreal(x,y);
+	DBG 	if (spread) {
+	DBG 		for (c=0; c<spread->pagestack.n; c++) {
+	DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
+	DBG 		}
+	DBG 		if (c==spread->pagestack.n) c=-1;
+	DBG 	}
+	DBG 	cout <<"mouse over: "<<c<<endl;
+	DBG }
 	return ViewportWindow::MouseMove(x,y,state);
 }
 
@@ -1360,7 +1266,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 		if (c<spread->pagestack.n) {
 			curobj.context.push(1);
 			curobj.context.push(c);
-			curobj.context.push(spread->pagestack.e[c]->page->layers.n-1);
+			curobj.context.push(spread->pagestack.e[c]->page->layers.n()-1);
 			 // apply page transform
 			transform_copy(ectm,spread->pagestack.e[c]->outline->m());
 		}
@@ -1383,7 +1289,8 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
  * If d!=curobj.obj, then nothing special is done. If the containing object
  * of d is neither limbo, nor a layer of a page, then nothing special is done.
  *
- * The object changes parents when it is no longer contained in its old parent.
+ * The object changes parents when it is no longer contained in its old parent, as
+ * long as the parent is limbo or a page.
  * If the parent is limbo, then any partial containment transfers the object to 
  * a page. Conversely, if the parent is a layer on a page, the object has to become
  * totally uncontained by the layer for it to enter limbo or another page.
@@ -1483,11 +1390,11 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 				dynamic_cast<Page *>(doc->object_e(spread->pagestack.e[curobj.spreadpage()]->index));
 		}
 		i=curobj.layer();
-		if (i<0 || i>=frompage->layers.n) {
+		if (i<0 || i>=frompage->layers.n()) {
 			DBG cout <<"*** warning! bad context in LaidoutViewport::ObjectMove!"<<endl;
 			return 0;
 		}
-		c=frompage->layers.e[i]->popp(curobj.obj,&islocal); // does not modify obj count
+		c=frompage->e(i)->popp(curobj.obj,&islocal); // does not modify obj count
 	}
 	if (c!=1) {
 		DBG cout <<"*** warning ObjectMove asked to move an invalid object!"<<endl;
@@ -1496,9 +1403,9 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	
 	 // push on new place and transform obj->m() to new context
 	if (topage) {
-		i=topage->layers.e[topage->layers.n-1]->push(d,islocal); //adds 1 count
+		i=topage->e(topage->layers.n()-1)->push(d,islocal); //adds 1 count
 		d->dec_count();
-		curobj.set(curobj.obj,4, 1,tosp,topage->layers.n-1,topage->layers.e[topage->layers.n-1]->n()-1);
+		curobj.set(curobj.obj,4, 1,tosp,topage->layers.n()-1,topage->e(topage->layers.n()-1)->n()-1);
 		double mmm[6];
 		transform_mult(mm,curobj.obj->m(),m);//old m??
 		transformToContext(mmm,curobj.context,1); //trans from view to new curobj place
@@ -1523,7 +1430,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
  * w==0 Center page\n
  * w==1 Center spread\n 
  * w==2 Center current selection group***imp me\n
- * w==3 Center current object ***imp me\n
+ * w==3 Center current object ***test and fix me\n
  *
  * \todo *** need a center that centers ALL objects in spread and in limbo
  */
@@ -1553,6 +1460,11 @@ void LaidoutViewport::Center(int w)
 				spread->path->miny-.05*h,spread->path->maxy+.05*h);
 		syncrulers();
 		needtodraw=1;
+	} else if (w==3) { // center curobj
+		if (!curobj.obj) return;
+		double m[6];
+		transformToContext(m,curobj.context,0);
+		dp->Center(m,curobj.obj);
 	}
 }
 
@@ -1710,9 +1622,9 @@ void LaidoutViewport::Refresh()
 			dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
 
 			 // Draw all the page's objects.
-			for (c2=0; c2<page->layers.n; c2++) {
-				DBG cout <<"  Layer "<<c2<<", objs.n="<<page->layers.e[c2]->n()<<endl;
-				DrawData(dp,page->layers.e[c2],NULL,NULL,drawflags);
+			for (c2=0; c2<page->layers.n(); c2++) {
+				DBG cout <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
+				DrawData(dp,page->e(c2),NULL,NULL,drawflags);
 			}
 			
 			if (page->pagestyle->flags&PAGE_CLIPS) {
@@ -1914,21 +1826,21 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
  *  1   Lower in layer
  *  2   Raise to top
  *  3   Lower to bottom
- *  4   To index in layer
- *  5   To next layer up
- *  6   To next layer down
- *  7   to previous page
- *  8   to next page
- *  9   to page i (-1==limbo)
- *  10  de-parent obj, put in ancestor layer
+ *  4   To index in layer *** imp me!
+ *  5   To next layer up *** imp me!
+ *  6   To next layer down *** imp me!
+ *  7   to previous page *** imp me!
+ *  8   to next page *** imp me!
+ *  9   to page i (-1==limbo) *** imp me!
+ *  10  de-parent obj, put in ancestor layer *** imp me!
  *  
- *  20  Raise layer by 1
- *  21  Lower layer by 1
- *  22  Raise layer to top
- *  23  Lower Layer to bottom
+ *  20  Raise layer by 1 *** imp me!
+ *  21  Lower layer by 1 *** imp me!
+ *  22  Raise layer to top *** imp me!
+ *  23  Lower Layer to bottom *** imp me!
  *
- *  30  Throw obj to limbo?
- *  31  Throw layer to limbo?
+ *  30  Throw obj to limbo? *** imp me!
+ *  31  Throw layer to limbo? *** imp me!
  * </pre>
  *
  * Returns 1 if object moved, else 0.
@@ -2128,6 +2040,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  *
  * \todo *** still need some standardizing for the little helper controls..
  * \todo *** need to dump_out the space, not just the matrix!!
+ * \todo *** dump out limbo...
  */
 void ViewWindow::dump_out(FILE *f,int indent,int what)
 {
@@ -2230,6 +2143,7 @@ int ViewWindow::init()
 	}
 	
 	AddNull();//makes the status bar take up whole line.
+	anXWindow *last=NULL;
 	
 	StrSliderPopup *toolselector;
 	toolselector=new StrSliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, NULL,window,"viewtoolselector");
@@ -2240,7 +2154,6 @@ int ViewWindow::init()
 	toolselector->WrapWidth();
 	AddWin(toolselector);
 	
-	anXWindow *last=NULL;
 	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newPageNumber",
 								"Page: ",1,1000000,1);
@@ -2248,15 +2161,19 @@ int ViewWindow::init()
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	TextButton *tbut;
-	tbut=new TextButton(this,"page less",0, 0,0,0,0,1, NULL,window,"pageLess","<");
-	tbut->tooltip("Previous spread");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	IconButton *ibut;
+	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/PreviousSpread.png","<");
+	ibut->tooltip("Previous spread");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"page more",0, 0,0,0,0,1, NULL,window,"pageMore",">");
-	tbut->tooltip("Next spread");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"next spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"nextSpread",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/NextSpread.png",">");
+	ibut->tooltip("Next spread");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	pageclips=new TextButton(this,"pageclips",BUTTON_TOGGLE, 0,0,0,0,1, NULL,window,"pageclips","Page Clips");
+	last=pageclips=new IconButton(this,"pageclips",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pageclips",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/PageClips.png","Page Clips");
 	pageclips->tooltip("Whether pages clips its contents");
 	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
 	updateContext();
@@ -2280,31 +2197,40 @@ int ViewWindow::init()
 	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
-	last=tbut=new TextButton(this,"add page",0, 0,0,0,0,1, NULL,window,"addPage","Add Page");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"add page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"addPage",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/AddPage.png","Add Page");
+	ibut->tooltip("Add 1 page after this one");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	last=tbut=new TextButton(this,"delete page",1, 0,0,0,0,1, NULL,window,"deletePage","Delete Page");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"delete page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"deletePage",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/DeletePage.png","Delete Page");
+	ibut->tooltip("Delete the current page");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"import image",0, 0,0,0,0,1, NULL,window,"importImage","Import Image");
-	tbut->tooltip("Import a single image");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/ImportImage.png","Import Image");
+	ibut->tooltip("Import a single image");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"insert image",0, 0,0,0,0,1, NULL,window,"insertImage","Insert Image");
-	tbut->tooltip("Import a single image");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/InsertImage.png","Insert Image");
+	ibut->tooltip("Insert an image into the current image or image patch");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"import images",0, 0,0,0,0,1, NULL,window,"dumpImages","Dump in Images");
-	tbut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpImages",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/DumpInImages.png","Dump in Images");
+	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"ppt out",0, 0,0,0,0,1, NULL,window,"pptout","ppt out");
+	tbut=new TextButton(this,"ppt out",0, 0,0,0,0,1, NULL,window,"pptout","ppt");
 	tbut->tooltip("Save to a Passepartout file.\nOnly saves images");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"print",0, 0,0,0,0,1, NULL,window,"print","Print");
-	tbut->tooltip("Print to output.ps, a postscript file");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"print",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/Print.png","Print");
+	ibut->tooltip("Print to output.ps, a postscript file");
+	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	loaddir=new LineEdit(this,"load directory",0, 0,0,0,0,1, 
 								NULL,window,"loaddir",
@@ -2332,8 +2258,10 @@ int ViewWindow::init()
 	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
 	tbut=new TextButton(this,"help",0, 0,0,0,0,1, NULL,window,"help","Help!");
-	tbut->tooltip("Popup a list of shortcuts");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/Help.png","Help!");
+	ibut->tooltip("Popup a list of shortcuts");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	//**** add screen x,y
 	//		   real x,y
@@ -2699,11 +2627,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]-1);
 		updateContext();
 		return 0;
-	} else if (!strcmp(mes,"pageLess")) {
+	} else if (!strcmp(mes,"prevSpread")) {
 		((LaidoutViewport *)viewport)->PreviousSpread();
 		updateContext();
 		return 0;
-	} else if (!strcmp(mes,"pageMore")) {
+	} else if (!strcmp(mes,"nextSpread")) {
 		((LaidoutViewport *)viewport)->NextSpread();
 		updateContext();
 		return 0;

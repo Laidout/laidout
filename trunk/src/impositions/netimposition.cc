@@ -18,7 +18,6 @@
 #include "netimposition.h"
 #include "dodecahedron.h"
 #include <lax/interfaces/pathinterface.h>
-#include <lax/refcounter.h>
 #include <lax/transformmath.h>
 
 using namespace Laxkit;
@@ -29,7 +28,6 @@ using namespace LaxFiles;
 using namespace std;
 #define DBG 
 
-extern RefCounter<anObject> objectstack;
 
 //----------------------------- NetImposition --------------------------
 
@@ -45,48 +43,7 @@ extern RefCounter<anObject> objectstack;
  * as you traverse the points, and when you draw on the normal math plane
  * which has positive x to the right, and positive y is up.
  */
-//class NetImposition : public Imposition
-//{
-// public:
-//	Net *net;
-//	int netisbuiltin;
-//	int printnet;
-//
-//	NetImposition(Net *newnet=NULL);
-//	virtual ~NetImposition();
-//	virtual Style *duplicate(Style *s=NULL);
-//	
-////	virtual int SetPageLikeThis(PageStyle *npage); // copies pagestyle, doesnt transfer pointer
-//	virtual int SetPaperSize(PaperStyle *npaper); // set paperstyle, and compute page size
-////	virtual PageStyle *GetPageStyle(int pagenum); // return the default page style for that page
-//	
-//	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; } // return marks in paper coords
-//	virtual Page **CreatePages(PageStyle *thispagestyle=NULL); // create necessary pages based on default pagestyle
-////	virtual int SyncPages(Document *doc,int start,int n);
-//
-//	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local); // return outline of page in page coords
-//
-//	virtual Spread *GetLittleSpread(int whichpage); 
-////	virtual Spread *SingleLayout(int whichpage); 
-//	virtual Spread *PageLayout(int whichpage); 
-//	virtual Spread *PaperLayout(int whichpaper);
-//	virtual DoubleBBox *GetDefaultPageSize(DoubleBBox *bbox=NULL);
-//	virtual int *PrintingPapers(int frompage,int topage);
-//
-////	virtual int NumPapers(int npapers);
-////	virtual int NumPages(int npages);
-//	virtual int PaperFromPage(int pagenumber); // the paper number containing page pagenumber
-//	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
-//	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
-//	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
-//
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	
-//	virtual int SetNet(const char *nettype);
-//	virtual int SetNet(Net *newnet);
-//	virtual void setPage();
-//};
+
 
 //! Constructor. Transfers newnet pointer, does not duplicate.
 /*!  Default is to have a dodecahedron.
@@ -281,21 +238,34 @@ int NetImposition::SetPaperSize(PaperStyle *npaper)
 	return 0;
 }
 
-/*! \fn Page **NetImposition::CreatePages(PageStyle *thispagestyle=NULL)
+/*! \todo *** fixme!! just returns whatever is in pagestyle, should be a special pagestyle for
+ *    the face type...
+ */
+PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
+{
+	cout <<" *** fixme: NetImposition::GetPageStyle!!"<<endl;
+	if (!pagestyle) return NULL;
+	if (local) return (PageStyle *)pagestyle->duplicate();
+	pagestyle->inc_count();
+	return pagestyle;
+}
+
+
+/*! \fn Page **NetImposition::CreatePages()
  * \brief Create the required pages.
  *
  * If thispagestyle is not NULL, then this style is to be preferred over
  * the internal page style(?!!?!***)
  */
-Page **NetImposition::CreatePages(PageStyle *thispagestyle)//pagestyle=NULL
+Page **NetImposition::CreatePages()
 {
 	if (numpages==0) return NULL;
 	Page **pages=new Page*[numpages+1];
 	int c;
-	PageStyle *ps=(PageStyle *)(thispagestyle?thispagestyle:pagestyle)->duplicate();
+	PageStyle *ps;
+	ps=GetPageStyle(c,0);
 	for (c=0; c<numpages; c++) {
-		 // pagestyle is passed to Page, not duplicated.
-		 // There it is checkout'ed from objectstack.
+		 // pagestyle is passed to Page where its count is inc'd..
 		pages[c]=new Page(ps,0,c); 
 	}
 	pages[c]=NULL;
@@ -372,7 +342,7 @@ Spread *NetImposition::PageLayout(int whichpage)
 	for (int c=0; c<net->nf; c++) {
 		if (firstpage+c>=numpages) break;
 		newpath=GetPage(c,1); // transformed page, local copy
-		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,1,NULL));
+		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,1));
 	}
 
 	 // fill spread with page outline
@@ -433,30 +403,6 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	return spread;
 }
 
-//! Returns the bounding box in paper units for the default page size.
-/*! 
- * If bbox is not NULL, then put the info in the supplied bbox. Otherwise
- * return a new DoubleBBox.
- *
- * The orientation of the box is determined internally to the NetImposition,
- * and accessed through the other functions here. 
- * minx==miny==0 which is the lower left corner of the page. This function
- * is useful mainly for speedy layout functions.
- *
- * \todo *** is this function actaully used anywhere? anyway it's broken here,
- * just returns bounds of paper.
- */
-DoubleBBox *NetImposition::GetDefaultPageSize(Laxkit::DoubleBBox *bbox)//box=NULL
-{
-	if (!paperstyle) return NULL;
-	if (!bbox) bbox=new DoubleBBox;
-	bbox->minx=0;
-	bbox->miny=0;
-	bbox->maxx=(paperstyle->w());
-	bbox->maxy=(paperstyle->h());
-	return bbox;
-}
-
 /*!\brief Return a specially formatted list of papers needed to print the range of pages.
  *
  * It is a -2 terminated int[] of papers needed to print [frompage,topage].
@@ -504,5 +450,25 @@ int NetImposition::GetPapersNeeded(int npages)
 {
 	if (!net) return 0;
 	return (npages-1)/net->nf+1;
+}
+
+//! Same as GetPapersNeeded().
+int NetImposition::GetSpreadsNeeded(int npages)
+{
+	return GetPapersNeeded(npages);
+}
+
+//! Bit of a cop-out currently, just returns page/net->nf.
+/*! \todo *** need more redundancy checking among the faces somehow...
+ */
+int NetImposition::PageType(int page)
+{
+	return page/net->nf;
+}
+
+//! For now assuming only 1 spread type, which is same as paper spread. Returns 0.
+int NetImposition::SpreadType(int spread)
+{
+	return 0;
 }
 

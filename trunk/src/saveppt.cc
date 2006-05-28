@@ -77,6 +77,7 @@ int pptout(Document *doc)
 	
 	 // Write out paper spreads....
 	Spread *spread;
+	Group *g;
 	double m[6];
 	int c,c2,l,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
@@ -88,11 +89,12 @@ int pptout(Document *doc)
 			pg=spread->pagestack.e[c2]->index;
 			if (pg>=doc->pages.n) continue;
 			 // for each layer on the page..
-			for (l=0; l<doc->pages[pg]->layers.n; l++) {
+			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 				 // for each object in layer
-				for (c3=0; c3<doc->pages[pg]->layers.e[l]->n(); c3++) {
+				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				for (c3=0; c3<g->n(); c3++) {
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					pptdumpobj(f,m,doc->pages[pg]->layers.e[l]->e(c3));
+					pptdumpobj(f,m,g->e(c3));
 				}
 			}
 		}

@@ -20,6 +20,7 @@
 #include <lax/strmanip.h>
 //#include <value.h>
 #include "styles.h"
+#include "stylemanager.h"
 #include <lax/lists.cc>
 #include <cstdarg>
 
@@ -36,7 +37,7 @@ using namespace LaxFiles;
  * 
  * -------- Styles and StyleDefs -----------
  * 
- *  there are Style's and StyleDef's. StyleDef has a map of the names
+ *  there are Styles and StyleDefs. StyleDef has a map of the names
  *  of the style and of its fields. Style has actual instances of the 
  *  various fields. Also, each Style can be based on some other Style. 
  *  
@@ -48,8 +49,6 @@ using namespace LaxFiles;
  *  to the StyleDef.
  *
  */
-
-
 
 //NOTES:
 // definetype polyhedron { v=set of vector, f=set of set of int, e=set of array[2]int }
@@ -64,6 +63,14 @@ using namespace LaxFiles;
 // 	right indent
 //  
 
+
+//----------------------------- typedef docs -----------------------------
+
+/*! \typedef Style *(*NewStyleFunc)(StyleDef *def)
+ * \ingroup stylesandstyledefs
+ * \brief These are in StyleDef to aid in creation of new Style instances by StyleManager.
+ */
+
 //----------------------------- FieldPlace -----------------------------
 /*! \class FieldPlace
  * \brief Stack of field places. So "3.2.7" would translate into a stack with elements 3, 2, and 7.
@@ -75,19 +82,6 @@ using namespace LaxFiles;
  */
 //class FieldPlace : protected Laxkit::NumStack<int>
 //{
-// public:
-//	virtual int n() const { return Laxkit::NumStack<int>::n; }
-//	virtual int e(int i) const { if (i>=0 && i<Laxkit::NumStack<int>::n) 
-//		return Laxkit::NumStack<int>::e[i];  return -1; }
-//	virtual int e(int i,int val) { if (i>=0 && i<Laxkit::NumStack<int>::n) 
-//		{ return Laxkit::NumStack<int>::e[i]=val; }  return -1; }
-//	virtual int operator==(const FieldPlace &place) const;
-//	virtual FieldPlace &operator=(const FieldPlace &place);
-//	virtual ~FieldPlace() {}
-//	virtual int push(int nd,int where=-3) { return Laxkit::NumStack<int>::push(nd,where); }
-//	virtual int pop(int which=-3) { return Laxkit::NumStack<int>::pop(which); }
-//	virtual void out(const char *str);
-//};
 
 //! For debugging, dumps to stdout.
 void FieldPlace::out(const char *str)
@@ -135,26 +129,6 @@ FieldPlace &FieldPlace::operator=(const FieldPlace &place)
  * Please note that the default Laxkit::PtrStack::push function is not redefined here. When
  * pushing a FieldPlace, the pointer is transfered (as opposed to copying the contents).
  */
-//class FieldMask : public PtrStack<FieldPlace>
-//{
-// protected:
-//	int *chartoint(const char *ext,const char **next_ret);
-// public:
-//	FieldMask();
-//	FieldMask(const char *ext);
-//	FieldMask(const FieldMask &mask);
-//	FieldMask &operator=(FieldMask &mask);
-//	FieldMask &operator=(FieldPlace &place);
-//	virtual int operator==(int what);
-//	virtual int operator==(const FieldMask &mask);
-//	virtual FieldMask &operator=(int f); // shorthand for single level fields
-//	//virtual int push(FieldMask &f);
-//	virtual int push(int where,int n, ...);
-//	virtual int push(int n,int *list,int where=-1);
-//	virtual int has(const char *ext,int *index=NULL); // does ext correspond to any in mask?
-//	virtual int value(int f,int where);
-//	virtual int value(int f,int where,int newval);
-//};
 
 //! Constructor with all numbers, comma separated field specs, ext is like: "34.234.6.7,3.4"
 /*! No whitespace allowed. Adds fields until no more in ext, or until the current field spec
@@ -458,35 +432,6 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 }
 
 
-//-----------------------------------------------------
-
-//-------------------------- StyleDefinition/StyleManager -------------------------------
-//! A manager class to simplify addition of Styles and creation/deletion/duplication of Style instances.
-class StyleDefinition
-{
- public:
-	char *name;
-	Style *newStyleFunc();
-	StyleDef *getStyleDef(int idtobe); // called usually just the first time
-	int deleteStyle(Style *style);
-};
-
-
-// Generally StyleDefs and Styles would be stored in some StyleManager, as
-// care must be taken when deleting or reassigning Styles or StyleDefs.
-//
-//class StyleManager
-//{
-// protected:
-//	
-// public:
-//	int RegisterStyle(StyleDef *def,StyleCreateFunc func);
-//	void deleteStyle(Style *style);
-//	Style *newStyle(const char *stylename);
-//	StyleDef *findStyleDef(const char *stylename);
-//};
-//
-
 
 //------------------------------ StyleDef --------------------------------------------
 
@@ -525,7 +470,7 @@ class StyleDefinition
  *   The description would be used in some sort of help system
  *  </pre>
  */
-/*! \var int StyleDef::format
+/*! \var ElementType StyleDef::format
  * \brief What is the nature of *this.
  * 
  *   The format of the value of this Styledef. It can be any id that is defined in the value Manager***.
@@ -559,69 +504,36 @@ class StyleDefinition
  *  If there is an extends, the index of all the fields starts with 0, which
  *	is the very first field in the very first base styledef.
  */
-//class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility
-//{
-// public:
-//	char *extends;
-//	StyleDef *extendsdef;
-//	char *name; //name for interpreter
-//	char *Name; // Name for dialog label
-//	char *tooltip; // short description
-//	char *description; // long description, this would be displayed on a help page, for instance.
-//	
-//	 // STYLEDEF_ORIGINAL
-//	 // STYLEDEF_DUPLICATE
-//	 // STYLEDEF_ORPHAN  =  is a representation of a composite style, not stored in any manager, and only 1 reference to it exists
-//	 // STYLEDEF_CAPPED = cannot push/pop fields
-//	 // STYLEDEF_READONLY = cannot modify parts of the styledef
-//	unsigned int flags;
-//
-//	int format; // int,real,string,fields,...
-//	PtrStack<StyleDef> *fields; //might be NULL, any fields are assumed to not be local to the stack.
-//	
-//	StyleDef();
-//	StyleDef(const char *nextends,const char *nname,const char *nName,const char *ttip,
-//			const char *ndesc,int fmt, Laxkit::PtrStack<StyleDef> *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED);
-//	virtual ~StyleDef();
-//	
-//	 // helpers to locate fields by name, "blah.3.x"
-//	virtual int getNumFields();
-//	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
-//	virtual int findDef(int index,StyleDef **def);
-//	virtual int getInfo(int index,const char **nm=NULL,const char **Nm=NULL,const char **tt=NULL,const char **desc=NULL);
-// 	//int *getfields(const char *extstr); // returns 0 terminated list of indices: "1.4.23+ -> { 1,4,23,0 }
-//
-//	 //-------- StyleDef creation helper functions ------
-//	 // The following (push/pop/cap) are convenience functions 
-//	 // to initially construct a styledef on the fly
-//	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,int fformat,unsigned int fflags);
-//	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
-//						int fformat,Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags);
-//	virtual int push(StyleDef *newfield);
-//	virtual int pop(int fieldindex);
-//	 // cap prevents accidental further adding/removing fields to a styledef
-//	 // that is being constructed
-//	virtual void cap(int y=1) { if (y) flags|=STYLEDEF_CAPPED; else flags&=~STYLEDEF_CAPPED; }
-//};
 
 
 //! Constructor.
 StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one extend
 			const char *nname, //!< The name that would be used in the interpreter
 			const char *nName, //!< A basic title, most likely an input label
-			const char *ttip, //!< Tooltip text
+			const char *ttip,  //!< Tooltip text
 			const char *ndesc, //!< Long description, newlines ok.
-			int fmt, //!< Format of this StyleDef
+			ElementType fmt,           //!< Format of this StyleDef
+			const char *nrange, //!< String showing range of allowed values
+			const char *newdefval, //!< Default value for the style
 			Laxkit::PtrStack<StyleDef> *nfields, //!< StyleDef for the subfields or enum values.
-			unsigned int fflags) // <- these 2 default=0
+			unsigned int fflags) //!< New flags
 {
-	extendsdef=NULL; //***** must look up extends to set extendsdef
-	extends=name=Name=tooltip=description=NULL;
+	newfunc=NULL;
+	range=defaultvalue=extends=name=Name=tooltip=description=NULL;
+
 	makestr(extends,nextends);
+	if (extends) {
+		extendsdef=stylemanager.FindDef(extends); // must look up extends and inc_count()
+		if (extendsdef) extendsdef->inc_count();
+	}
+	
 	makestr(name,nname);
 	makestr(Name,nName);
 	makestr(tooltip,ttip);
 	makestr(description,ndesc);
+	makestr(range,nrange);
+	makestr(defaultvalue,newdefval);
+	
 	fields=nfields;
 	format=fmt;
 	flags=fflags;
@@ -629,26 +541,40 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 
 StyleDef::~StyleDef()
 {
-	if (extends) delete[] extends;
-	if (name) delete[] name;
-	if (Name) delete[] Name;
-	if (tooltip) delete[] tooltip;
-	if (description) delete[] description;
+	if (extends)      delete[] extends;
+	if (name)         delete[] name;
+	if (Name)         delete[] Name;
+	if (tooltip)      delete[] tooltip;
+	if (description)  delete[] description;
+	if (range)        delete[] range;
+	if (defaultvalue) delete[] defaultvalue;
+}
+
+void StyleDef::dump_out(FILE *f,int indent,int what)
+{
+	//***
+}
+
+void StyleDef::dump_in_atts(Attribute *att)
+{
+	//***
 }
 
 //! Push def without fields. If pushing this new field onto fields fails, return 1, else 0
-int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,int fformat,unsigned int fflags)
+int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags)
 {
-	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,NULL,fflags);
+	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nrange,newdefval,NULL,fflags);
 	if (push(newdef)) { delete newdef; return 1; }
 	return 0;
 }
 
 //! Push def with fields. If pushing this new field onto fields fails, return 1, else 0
-int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,int fformat,
+int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+		ElementType fformat,const char *nrange, const char *newdefval,
 		Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags)
 {
-	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nfields,fflags);
+	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nrange,newdefval,nfields,fflags);
 	if (push(newdef)) { delete newdef; return 1; }
 	return 0;
 }
@@ -681,7 +607,7 @@ int StyleDef::pop(int fieldindex)
   * exists, or 0 if fields does not exists and extendsdef exists, or 1 if neither fields 
   * nor extendsdef exist. 
   *
-  * A special exception is when format==STYLEDEF_ENUM. In that case, fields would
+  * A special exception is when format==Element_Enum. In that case, fields would
   * contain the possible enum values, but the enum as a whole acts like a single
   * number, so 1 is added, rather than fields->n. If the enum is an extension of
   * some other enum, then this styledef adds 0 to the count.
@@ -696,7 +622,7 @@ int StyleDef::getNumFields()
 {
 	int n=0;
 
-	if (format==STYLEDEF_ENUM) {
+	if (format==Element_Enum) {
 		if (!extendsdef) n++;
 	} else {
 		if (fields && fields->n) n+=fields->n; 
@@ -744,7 +670,7 @@ int StyleDef::findDef(int index,StyleDef **def)
 {
 	if (index<0) { *def=NULL; return -1; }
 	 // if enum, or this is singe unit (not extending anything): index must be 0
-	if (index==0 && (format==STYLEDEF_ENUM || (!extendsdef && (!fields || !fields->n)))) {
+	if (index==0 && (format==Element_Enum || (!extendsdef && (!fields || !fields->n)))) {
 		*def=this;
 		return -1;
 	}
@@ -965,7 +891,7 @@ void deleteFieldNode(FieldNode *fn)
 {
 	if (!fn) return;
 	if (fn->flags&STYLEDEF_ORPHAN) { //***
-		if (fn->format==STYLEDEF_FIELDS) {
+		if (fn->format==Element_Fields) {
 			delete[] fn->value.fields;
 //			--------------assumes FieldNode **fields, and fields is NULL terminated:
 //			int c=0;
@@ -1145,27 +1071,6 @@ Style::~Style()
 //	//***
 //	return NULL;
 //}
-
-//! Return the StyleDef, or create one.
-/*! If maketohere is not NULL, then the Style should create a suitable StyleDef instance
- *  and make *maketohere point to it, and also make styledef point to it, but only if 
- *  styledef is not already pointing to something. Usually this shouldn't happen, because
- *  calling GetStyleDef with maketohere not NULL should only be called at program
- *  or plugin startup to initialize the 
- *  Style instances of a pool which have their own idiosyncratic StyleDefs.
- *
- *  Derived classes need only redefine makeStyleDef() to make this function work properly.
- *
- *  In either case, the value of styledef (not necessarily what is now in maketohere!) is returned.
- */
-StyleDef *Style::GetStyleDef(StyleDef **maketohere)
-{ 
-	if (maketohere) {
-		*maketohere=makeStyleDef();
-		if (!styledef) styledef=*maketohere;
-	}
-	return styledef; 
-}
 
 //! Return the number of top fields in this Style.
 /*! This would be redefined for Styles that are variable length sets

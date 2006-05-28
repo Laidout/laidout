@@ -20,6 +20,36 @@ class Document;
 #include "styles.h"
 #include "impositions/imposition.h"
 
+
+
+enum PageLabelType {
+	Numbers_Default,
+	Numbers_Arabic,
+	Numbers_Arabic_dec,
+	Numbers_Roman,
+	Numbers_Roman_dec,
+	Numbers_Roman_cap,
+	Numbers_Roman_cap_dec,
+	Numbers_abc,
+	Numbers_ABC,
+};
+
+enum  LaidoutSaveFormat {
+	Save_Normal,
+	Save_PPT,
+	Save_PS,
+	Save_EPS,
+	Save_PDF,
+	Save_HTML,
+	Save_SVG,
+	Save_Scribus,
+};
+
+#define SINGLELAYOUT       0
+#define PAGELAYOUT         1
+#define PAPERLAYOUT        2
+#define LITTLESPREADLAYOUT 3
+
 //------------------------- DocumentStyle ------------------------------------
 
 class DocumentStyle : public Style
@@ -33,19 +63,21 @@ class DocumentStyle : public Style
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
+//---------------------------- PageRange ---------------------------------------
+
+class PageRange
+{
+ public:
+	int impositiongroup;
+	int start,end,offset;
+	char *labelbase;
+	int labeltype;
+	PageRange(const char *newbase="#",int ltype=Numbers_Default);
+	~PageRange() { if (labelbase) delete[] labelbase; }
+	char *PageRange::GetLabel(int i);
+};
 
 //------------------------- Document ------------------------------------
-
-enum  LaidoutSaveFormat {
-	Save_Normal,
-	Save_PPT,
-	Save_PS,
-	Save_EPS,
-	Save_PDF,
-	Save_HTML,
-	Save_SVG,
-	Save_Scribus,
-};
 
 class Document : public ObjectContainer, public LaxFiles::DumpUtility
 {
@@ -54,9 +86,8 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	char *saveas;
 	
 	Laxkit::PtrStack<Page> pages;
+	Laxkit::PtrStack<PageRange> pageranges;
 	int curpage;
-	int numn;
-	char **notesorscripts;
 	clock_t modtime;
 
 	Document(const char *filename);
@@ -74,6 +105,8 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual int Load(const char *file);
 	virtual int Save(LaidoutSaveFormat format=Save_Normal);
+	
+	virtual Spread *GetLayout(int type, int index);
 	
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 

@@ -19,12 +19,12 @@
 #include <lax/anxapp.h>
 #include <lax/version.h>
 
-#include "impositions/imposition.h"
 #include "papersizes.h"
 #include "document.h"
 #include "project.h"
 #include "newdoc.h"
 #include "interfaces.h"
+#include "impositions/imposition.h"
 
 const char *LaidoutVersion();
 

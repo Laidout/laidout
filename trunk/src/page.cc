@@ -19,9 +19,10 @@
 
 #include <X11/Xutil.h>
 #include <lax/lists.cc>
-#include <lax/refcounter.h>
 #include "page.h"
 #include "drawdata.h"
+#include "stylemanager.h"
+
 using namespace LaxFiles;
 using namespace LaxInterfaces;
 using namespace Laxkit;
@@ -30,9 +31,7 @@ using namespace Laxkit;
 using namespace std;
 #define DBG 
 
-extern RefCounter<anObject> objectstack;
-
-//----------------------- PageStyles ----------------------------
+//----------------------------------- PageStyles ----------------------------------------
 
 /*! \class PageStyle
  * \brief Basic Page style.
@@ -41,7 +40,8 @@ extern RefCounter<anObject> objectstack;
  *
  * width and height indicate the bounding box for the page in page coordinates. For rectangular pages,
  * this is just the page outline, and otherwise is just the bbox, not the outline.
- *
+ * 
+ * \todo *** integrate pagetype
  */
 /*! \var double PageStyle::width
  * \brief The width of the bounding box of the page.
@@ -53,26 +53,13 @@ extern RefCounter<anObject> objectstack;
  *  Can be or'd combination of:
  * 
  * <pre>
- *  MARGINS_CLIP       (1<<0)
- *  PAGE_CLIPS         (1<<1)
- *  FACING_PAGES_BLEED (1<<2)
+ *  MARGINS_CLIP         (1<<0)
+ *  PAGE_CLIPS           (1<<1)
+ *  FACING_PAGES_BLEED   (1<<2)
+ *  PAGESTYLE_AUTONOMOUS (1<<3) <-- set if the style instance is NOT an
+ *                                  imposition default, ie it is a custom style
  * </pre>
  */
-//class PageStyle : public Style
-//{
-// public:
-//	unsigned int flags; // marginsclip,pageclips,facingpagesbleed;
-//	double width,height; // these are to be considered the bounding box for non-rectangular pages
-//	PageStyle() { flags=0; }
-//	virtual const char *whattype() { return "PageStyle"; }
-//	virtual StyleDef *makeStyleDef();
-//	virtual Style *duplicate(Style *s=NULL);
-//	virtual double w() { return width; }
-//	virtual double h() { return height; }
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	virtual int set(const char *flag, int newstate);
-//};
 
 //! Toggle a flag (-1) or set on (1) or off (0).
 /*! \todo ***this must check for if the style is local...
@@ -149,7 +136,7 @@ void PageStyle::dump_out(FILE *f,int indent,int what)
 	if (flags&FACING_PAGES_BLEED) fprintf(f,"%sfacingpagesbleed\n",spc);
 }
 
-//! Copy over width, height, and flags.
+//! Creates brand new object if s==NULL. Copies over width, height, and flags.
 Style *PageStyle::duplicate(Style *s)//s=NULL
 {
 	if (s==NULL) s=new PageStyle();
@@ -162,24 +149,32 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 	return s;
 }
 
+Style *NewPageStyle(StyleDef *def)
+{
+	return new PageStyle;
+}
 
  //! Return a pointer to a new local StyleDef class with the PageStyle description.
 StyleDef *PageStyle::makeStyleDef()
 {
 	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-	StyleDef *sd=new StyleDef(NULL,"pagestyle","Page","A page","A Page",STYLEDEF_FIELDS);
+	StyleDef *sd=new StyleDef(NULL,"pagestyle","Page","A page","A Page",
+			Element_Fields, NULL,NULL);
 
 	//int StyleDef::push(const char *nfield,const char *ttip,const char *ndesc,StyleDef *nfields,unsigned int fflags);
+	sd->newfunc=NewPageStyle;
 	sd->push("marginsclip",
 			"Margins Clip",
 			"Whether a page's margins clip the contents",
 			"Check this if you want the page's contents to be visible only if they are within the margins.",
-			STYLEDEF_BIT,0);
+			Element_Bit, NULL,"0",
+			0);
 	sd->push("pageclips",
 			"Page Clips",
 			"Whether a page's outline clips the contents",
 			"Check this if you want the page's contents to be visible only if they are within the page outline.",
-			STYLEDEF_BIT,0);
+			Element_Bit, NULL,"0",
+			0);
 	sd->push("facingpagesbleed",
 			"Facing Pages Bleed",
 			"Whether contents on a facing page are allowed on to the page",
@@ -187,11 +182,12 @@ StyleDef *PageStyle::makeStyleDef()
 			"What exactly bleeds over is determined from a page spread view. Any contents "
 			"that leach out from a page's boundaries and cross onto other pages is shown. "
 			"This is most useful for instance in a center fold of a booklet.",
-			STYLEDEF_BIT,0);
+			Element_Bit, NULL,"0",
+			0);
 	return sd;
 }
 
-//----------------------- RectPageStyle ----------------------------
+//--------------------------------- RectPageStyle ---------------------------------------
 
 
 /*! \class RectPageStyle
@@ -200,7 +196,8 @@ StyleDef *PageStyle::makeStyleDef()
  * Holds additional left, right, top, bottom margin insets, and
  * also whether the page is next to another, and so would have inside/outside
  * margins rather than left/right or top/bottom
- *
+ */
+/*! \var unsigned int RectPageStyle::recttype
  * \code
  *   // left-right-top-bottom margins "rectpagestyle"
  *  #define RECTPAGE_LRTB      1
@@ -318,12 +315,12 @@ StyleDef *RectPageStyle::makeStyleDef()
 	StyleDef *sd;
 	if (recttype&RECTPAGE_IOTB) 
 		sd=new StyleDef("pagestyle","facingrectstyle","Rectangular Facing Page","Rectangular Facing Page",
-						"Rectangular Facing Page",STYLEDEF_FIELDS);
+						"Rectangular Facing Page",Element_Fields,NULL,NULL);
 	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
 						"Rectangular Top Facing Page","Rectangular Top Facing Page",
-						"Rectangular Top Facing Page",STYLEDEF_FIELDS);
+						"Rectangular Top Facing Page",Element_Fields,NULL,NULL);
 	else sd=new StyleDef("pagestyle","rectpagestyle","Rectangular Page","Rectangular Page",
-					"Rectangular Page",STYLEDEF_FIELDS);
+					"Rectangular Page",Element_Fields,NULL,NULL);
 	
 	 // the left or inside
 	if (recttype&RECTPAGE_LRIO) 
@@ -331,13 +328,15 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"Inside Margin",
 			"The inside margin",
 			"How much space to put on the inside of facing pages.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 	else sd->push("leftmargin",
 			"Left Margin",
 			"The left margin",
 			"How much space to put in the left margin.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 	
 	 // right right or outside
@@ -346,13 +345,15 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"Outside Margin",
 			"The outside margin",
 			"How much space to put on the outside of facing pages.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 	else sd->push("rightmargin",
 			"Right Margin",
 			"The right margin",
 			"How much space to put in the right margin.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 
 	 // the top or inside
@@ -361,13 +362,15 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"Inside Margin",
 			"The inside margin",
 			"How much space to put on the inside of facing pages.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 	else sd->push("topmargin",
 			"Top Margin",
 			"The top margin",
 			"How much space to put in the top margin.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 
 	 // the bottom or outside
@@ -376,18 +379,20 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"Outside Margin",
 			"The outside margin",
 			"How much space to put on the outside of facing pages.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 	else sd->push("bottommargin",
 			"Bottom Margin",
 			"The bottom margin",
 			"How much space to put in the bottom margin.",
-			STYLEDEF_REAL,
+			Element_Real,
+			NULL,NULL,
 			0);
 	return sd;
 }
  
-//----------------------- Page ----------------------------
+//---------------------------------- Page ----------------------------------------
 
 /*! \class Page
  * \brief Holds page number, thumbnail, a pagestyle, and the page's layers
@@ -413,41 +418,24 @@ StyleDef *RectPageStyle::makeStyleDef()
  *  \todo *** this will eventually be more versatile, combined with the ability
  *    for ranges of pages to have different labels, like '3' vs 'iii'
  */
-//class Page : public ObjectContainer
-//{
-// public:
-//	int labeltype; //plain label, circled, highlighted circle, etc..
-//	int pagenumber;
-//	Laxkit::ImageData *thumbnail;
-//	clock_t thumbmodtime,modtime;
-//	Laxkit::PtrStack<Group> layers;
-//	PageStyle *pagestyle;
-//	int psislocal;
-//	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
-//	virtual ~Page(); 
-//	virtual const char *whattype() { return "Page"; }
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	virtual Laxkit::ImageData *Thumbnail();
-//	virtual int InstallPageStyle(PageStyle *pstyle,int islocal=1);
-//	virtual int n() { return layers.n(); }
-//	virtual Laxkit::anObject *object_e(int i) 
-//		{ if (i>=0 && i<layers.n) return layers.e[i]; return NULL; }
-//};
+/*! \fn Group *Page::e(int i) 
+ * \brief Return dynamic_cast<Group *>(layers.e(i)).
+ */
 
 //! Constructor, takes pointer, does not make copy of npagestyle, It deletes the pagestyle in destructor.
-/*! If pslocal==0, then checkout npagestyle from the objectstack. If it is not there then push it on.
+/*! If pslocal==0, then npagestyle->inc_count().
  *
  * Pushes 1 new Group onto layers stack.
  */
 Page::Page(PageStyle *npagestyle,int pslocal,int num)
 {
+	label=NULL;
 	thumbmodtime=0;
 	modtime=times(NULL);
 	pagestyle=npagestyle;
 	psislocal=pslocal;
 	if (psislocal==0 && pagestyle) {
-		if (!objectstack.checkout(pagestyle)) objectstack.push(pagestyle,1,getUniqueNumber(),1);
+		pagestyle->inc_count();
 	}
 	thumbnail=0;
 	pagenumber=num;
@@ -456,20 +444,24 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
 }
 
 //! Destructor, destroys the thumbnail, and pagestyle according to psislocal.
-/*! If psislocal==1 then delete pagestyle. If psislocal=0, then objectstack.checkin(pagestyle). Otherwise,
- * don't touch pagestyle.
+/*! If psislocal==1 then delete pagestyle. If psislocal=0, then pagestyle->dec_count().
+ * Otherwise, don't touch pagestyle.
  */
 Page::~Page()
 {
 	DBG cout <<"  Page destructor"<<endl;
+	if (label) delete[] label;
 	if (thumbnail) delete thumbnail;
 	if (psislocal==1) delete pagestyle;
-	else if (psislocal==0) objectstack.checkin(pagestyle);
+	else if (psislocal==0) pagestyle->dec_count();
 	layers.flush();
 }
 
 //! Delete (or checkin) old, checkout new.
-/*! Return 0 for success, nonzero for error.
+/*! If pstyle==NULL then still remove the old and make the pagestyle NULL.
+ * This should later be corrected by imposition->SyncPages().
+ *
+ * Return 0 for success, nonzero for error.
  */
 int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
 {
@@ -477,13 +469,11 @@ int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
 	//unsigned int oldflags=0;
 	if (pagestyle) {
 		if (psislocal==1) delete pagestyle;
-		else if (psislocal==0) objectstack.checkin(pagestyle);
+		else if (psislocal==0) pagestyle->dec_count();
 	}
 	psislocal=islocal;
 	pagestyle=pstyle;
-	if (psislocal==0 && pagestyle) {
-		if (!objectstack.checkout(pagestyle)) objectstack.push(pagestyle,1,getUniqueNumber(),1);
-	}
+	if (psislocal==0 && pagestyle) pagestyle->inc_count();
 	return 0;
 }
 
@@ -491,8 +481,6 @@ int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
 /*! Layers should have been flushed before coming here, and
  * pagestyle should have been set to the default page style for this page.
  *
- * \todo *** IMPORTANT: right now this is in hack stage, assumes RectPageStyle
- * is always the page style... need to have some sort of style object factory
  */
 void Page::dump_in_atts(LaxFiles::Attribute *att)
 {
@@ -501,11 +489,11 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"pagestyle")) {
-			PageStyle *ps;
-			if (!strcmp(value,"RectPageStyle")) ps=new RectPageStyle();//***
-			else ps=new PageStyle();
-			if (pagestyle) ps->flags=pagestyle->flags;
-			ps->dump_in_atts(att->attributes.e[c]);
+			PageStyle *ps=NULL;
+			if (strcmp(value,"default")) {
+				ps=(PageStyle *)stylemanager.newStyle(value);
+				if (ps) ps->dump_in_atts(att->attributes.e[c]);
+			}
 			InstallPageStyle(ps,0);
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
@@ -524,13 +512,13 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 void Page::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (pagestyle) {
+	if (pagestyle && pagestyle->flags&PAGESTYLE_AUTONOMOUS) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
 		pagestyle->dump_out(f,indent+2,0);
 	}
-	for (int c=0; c<layers.n; c++) {
+	for (int c=0; c<layers.n(); c++) {
 		fprintf(f,"%slayer %d\n",spc,c);
-		layers.e[c]->dump_out(f,indent+2,0);
+		layers.e(c)->dump_out(f,indent+2,0);
 	}
 }
 
@@ -547,9 +535,9 @@ ImageData *Page::Thumbnail()
 
 	DoubleBBox bbox;
 	int c;
-	for (c=0; c<layers.n; c++) {
-		layers.e[c]->FindBBox();
-		bbox.addtobounds(layers.e[c]->m(),layers.e[c]);
+	for (c=0; c<layers.n(); c++) {
+		layers.e(c)->FindBBox();
+		bbox.addtobounds(layers.e(c)->m(),layers.e(c));
 	}
 	
 	double w=bbox.maxx-bbox.minx,
@@ -593,9 +581,9 @@ ImageData *Page::Thumbnail()
 	//DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
 	//DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
 
-	for (int c=0; c<layers.n; c++) {
+	for (int c=0; c<layers.n(); c++) {
 		//dp.PushAndNewTransform(layers.e[c]->m());
-		DrawData(&dp,layers.e[c]);
+		DrawData(&dp,layers.e(c));
 		//dp.PopAxes();
 	}
 	dp.EndDrawing();

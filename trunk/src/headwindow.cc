@@ -20,6 +20,7 @@
 #include "spreadeditor.h"
 #include "helpwindow.h"
 #include "commandwindow.h"
+#include "buttonbox.h"
 
 #include <iostream>
 using namespace std;
@@ -34,6 +35,16 @@ using namespace LaxFiles;
  *
  * These become the panes of a HeadWindow.
  */
+
+////---------------------- newCommandWindowFunc
+/*! \ingroup mainwindows
+ * \brief ButtonBox window generator for use in HeadWindow.
+ */
+anXWindow *newButtonBoxFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	ButtonBox *buttons=new ButtonBox(parnt,ntitle,style, 0,0,0,0,1);
+	return buttons;
+}
 
 ////---------------------- newCommandWindowFunc
 /*! \ingroup mainwindows
@@ -201,6 +212,9 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
 	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
 	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newCommandWindowFunc,0);
+	AddWindowType("ButtonBox","Buttons",
+			ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
+			newButtonBoxFunc,0);
 }
 
 //! Empty virtual destructor.

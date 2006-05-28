@@ -39,6 +39,8 @@ using namespace std;
 /*! \class DocumentStyle
  * \brief Style for Document objects, suprisingly enough.
  *
+ * Should have enough info to create a specific kind of Document...
+ * ----------
  * Keeps a local imposition object.
  */
 //class DocumentStyle : public Style
@@ -52,7 +54,7 @@ using namespace std;
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //};
 
-//! Constructor, copies Imposition pointer, does not duplicate imp.
+//! Constructor, copies Imposition pointer, does not duplicate imposition.
 /*! ***should sanity check the save? *** who should be deleting the imp?
  * currently it is deleted in destructor.
  */
@@ -113,6 +115,198 @@ DocumentStyle::~DocumentStyle()
 	if (imposition) delete imposition;
 }
 
+
+//---------------------------- PageRange ---------------------------------------
+/*! \class PageRange
+ * \brief Holds info about page labels.
+ *
+ * In the future, might implement which imposition should lay it out, allowing more than
+ * one imposition to work on same doc, might still make a CompositeImposition...
+ */
+/*! \var char *PageRange::labelbase
+ * \brief The template for creation of page labels.
+ *
+ * Any instance of '#' is replaced by the number. Multiple '#' like "##" makes
+ * a zero padded number, padded on right, but only for Numbers_Arabic and Numbers_Arabic_dec only.
+ * 
+ * "#" translates to "1", "12", etc.\n
+ * "###" is "001", "012","123","1234", etc. \n
+ * "A-#" is "A-1", "A-23", etc.
+ */
+/*! \var int PageRange::offset
+ * \brief Page label indices start with this number an go to offset+(end-start).
+ */
+/*! \var int PageRange::impositiongroup
+ * \brief ***sticking to 1 imposition per doc for the time being..this var is ignored
+ *
+ * The object_id of the imposition that handles this range of pages.
+ *
+ * Multiple non-continuous page ranges can be processed by the same imposition. The idea
+ * is to allow easy [sic] insertion of foldouts and such, which would be processed by
+ * a seperate imposition on a different paper size, then later inserted into the other
+ * printed material.
+ */
+/*! \var int PageRange::start
+ * \brief The index in doc->pages that this page range starts at.
+ */
+/*! \var int PageRange::end
+ * \brief The index in doc->pages that this page range ends at.
+ */
+/*! \var int PageRange::labeltype
+ * \brief The style of letter, like 1,2,3 or i,ii,iii...
+ *
+ * Currently uses the enum PageLabelType:
+ * <pre>
+ *  Numbers_Default	
+ *  Numbers_Arabic        1,2,3...
+ *  Numbers_Arabic_dec    9,8,7...
+ *  Numbers_Roman         i,ii,iii,iv,v,...
+ *  Numbers_Roman_dec     v,iv,iii,...
+ *  Numbers_Roman_cap     I,II,III,IV,V,...
+ *  Numbers_Roman_cap_dec V,IV,III,...
+ *  Numbers_abc           a,b,c,...
+ *  Numbers_ABC           A,B,C,...
+ * </pre>
+ */
+//class PageRange
+//{
+// public:
+//	int impositiongroup;
+//	int start,end,offset;
+//	char *labelbase;
+//	int labeltype;
+//	PageRange(const char *newbase="#",int ltype=Numbers_Default);
+//	~PageRange() { if (labelbase) delete[] labelbase; }
+//	char *PageRange::GetLabel(int i);
+//};
+
+PageRange::PageRange(const char *newbase,int ltype)
+{
+	impositiongroup=0;
+	start=offset=0;
+	end=-1;
+	labelbase=newstr(newbase);
+	labeltype=ltype;
+}
+
+//! Convert things like "A-###" to "A-%s" and puts the number of '#' chars in len.
+/*! \ingroup misc
+ * Assumes there is only one block of '#' chars.
+ * 
+ * NULL -> NULL, len==0\n
+ * "" -> "", len==0\n
+ * "blah" -> "blah", len==0\n
+ * "#" -> "%s", len==1\n
+ * "###" -> "%s", len==3\n
+ *
+ * Returns a new char[].
+ */
+char *make_labelbase_for_printf(const char *f,int *len)
+{
+	if (!f) {
+		if (len) *len=0;
+		return NULL;
+	}
+	char *newf;
+	const char *p;
+	int n=0;
+	p=strchr(f,'#');
+	if (!p) {
+		if (len) *len=0;
+		return newstr(f);
+	}
+	
+	while (*p=='#') { p++; n++; }
+	newf=new char[strlen(f)-n+6];
+	if (n>20) n=20;
+	if (p-f-n) strncpy(newf,f,p-f-n);
+	if (n) sprintf(newf+(p-f)-n,"%%s");
+
+	if (*p) strcat(newf,p);
+	if (len) *len=n;
+
+	return newf;
+}
+
+//! Turn 26 into "z" or 27 into "za", etc. Optionally capitalize.
+/*! \ingroup misc
+ *  Returns a new'd char[].
+ */
+char *letter_numeral(int i,char cap)
+{
+	char *n=NULL;
+
+	char d[2];
+	d[1]='\0';
+	while (i>0) { 
+		d[0]=i%26+'a'; 
+		appendstr(n,d,1); //prepends
+		i/=26; 
+	}
+
+	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
+	return n;
+}
+
+//! Make a roman numeral from i, optionally capitalized.
+/*! \ingroup misc
+ *
+ * This makes numbers using ascii i,v,x,l,c,d,m, or I,V,X,L,C,D,M, not the unicode roman numerals U+2150-U+218F.
+ * Also, M is the largest chunk of number dealt with, so 5000 translates to "mmmmm" for instance.
+ */
+char *roman_numeral(int i,char cap)
+{
+	char *n=NULL;
+
+	while (i>=1000) { appendstr(n,"m"); i-=1000; }
+	if (i>=900) { appendstr(n,"cm"); i-=900; }
+	if (i>=500) { appendstr(n,"d"); i-=500; }
+	if (i>=400) { appendstr(n,"cd"); i-=400; }
+	while (i>=100) { appendstr(n,"c"); i-=100; }
+	if (i>=90) { appendstr(n,"xc"); i-=90; }
+	if (i>=50) { appendstr(n,"l"); i-=50; }
+	if (i>=40) { appendstr(n,"xl"); i-=40; }
+	while (i>=10) { appendstr(n,"x"); i-=10; }
+	if (i>=9) { appendstr(n,"ix"); i-=9; }
+	if (i>=5) { appendstr(n,"v"); i-=5; }
+	if (i>=4) { appendstr(n,"iv"); i-=4; }
+	while (i>=1) { appendstr(n,"i"); i--; }
+
+	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
+	return n;
+}
+
+//! Make label correctly correspond to labelbase and pagenumber.
+/*! i is index in doc->pages, so number used is (i-start+offset).
+ * If index is not in the range, then NULL is returned, else a new'd char[].
+ */
+char *PageRange::GetLabel(int i)
+{
+	if (i<start || i>end) return NULL;
+	if (!labelbase || *labelbase=='\0') return newstr("");
+
+	char *label=NULL,*lb,*n;
+	
+	if (labeltype==Numbers_Arabic_dec || labeltype==Numbers_Roman_dec || labeltype==Numbers_Roman_cap_dec)
+		i=end-(start-i)+offset;
+	else i=start-i+offset;
+	
+	int len;
+	lb=make_labelbase_for_printf(labelbase,&len);
+	if (labeltype==Numbers_Roman_dec || labeltype==Numbers_Roman) n=roman_numeral(i,0);
+	else if (labeltype==Numbers_Roman_cap_dec || labeltype==Numbers_Roman_cap) n=roman_numeral(i,1);
+	else if (labeltype==Numbers_abc) letter_numeral(i,0);
+	else if (labeltype==Numbers_ABC) letter_numeral(i,1);
+	else n=numtostr(i+1);
+		
+	label=new char[strlen(lb)+strlen(n)+1];
+	sprintf(label,lb,n);
+	delete[] n;
+	delete[] lb;
+	return label;
+}
+
+
 //---------------------------- Document ---------------------------------------
 
 /*! \class Document
@@ -123,8 +317,6 @@ DocumentStyle::~DocumentStyle()
  * two documents: the body pages, and the cover page, which together might
  * constitute a Project.
  *
- * \todo figure out whats up with notesandscripts
- * 
  * \todo Do a scribus out/in, and a passepartout in.
  */
 /*! \var int Document::curpage
@@ -141,8 +333,6 @@ DocumentStyle::~DocumentStyle()
 //	
 //	Laxkit::PtrStack<Page> pages;
 //	int curpage;
-//	int numn;
-//	char **notesorscripts;
 //	clock_t modtime;
 //
 //	Document(const char *filename);
@@ -160,6 +350,8 @@ DocumentStyle::~DocumentStyle()
 //	virtual void dump_in_atts(LaxFiles::Attribute *att);
 //	virtual int Load(const char *file);
 //	virtual int Save(LaidoutSaveFormat format=Save_Normal);
+//
+//	virtual Spread *GetLayout(int type, int index);
 //	
 //	virtual int n() { return pages.n; }
 //	virtual Laxkit::anObject *object_e(int i) 
@@ -178,8 +370,6 @@ Document::Document(const char *filename)
 	makestr(saveas,filename);
 	modtime=times(NULL);
 	docstyle=NULL;
-	numn=0;
-	notesorscripts=NULL;
 	curpage=-1;
 	
 	Load(filename);
@@ -198,8 +388,6 @@ Document::Document(const char *filename)
 Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 { 
 	modtime=times(NULL);
-	numn=0;
-	notesorscripts=NULL;
 	curpage=-1;
 	saveas=newstr(filename);
 	
@@ -236,7 +424,6 @@ Document::~Document()
 	pages.flush();
 	delete docstyle;
 	if (saveas) delete[] saveas;
-	//***delete notes
 }
 
 //! Remove everything from the document.
@@ -245,10 +432,22 @@ void Document::clear()
 	pages.flush();
 	if (docstyle) { delete docstyle; docstyle=NULL; }
 	curpage=-1;
-
-	//***delete notesandscripts
 }
 
+//! Return a spread for type and index of that type.
+/*! In the future, different impositions might be used for different page ranges.
+ * For now, still the much simpler docstyle->imposition is used.
+ */
+Spread *Document::GetLayout(int type, int index)
+{
+	if (!docstyle) return NULL;
+	if (type==SINGLELAYOUT)       return docstyle->imposition->SingleLayout(index);
+	if (type==PAGELAYOUT)         return docstyle->imposition->PageLayout(index);
+	if (type==PAPERLAYOUT)        return docstyle->imposition->PaperLayout(index);
+	if (type==LITTLESPREADLAYOUT) return docstyle->imposition->GetLittleSpread(index);
+	return NULL;
+}
+	
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
 /*! \todo **** this is rather broken, should migrate maintenance of margins and page width
  * and height to Imposition? The correct PageStyle is not being added here. And when pages
@@ -394,8 +593,8 @@ int Document::Load(const char *file)
  * If docstyle required special treatment, it should have been dealt with
  * previous to coming here.
  *
- * Recognizes 'docstyle' and 'page'. Discards all else. ***perhaps the notesandscripts
- * should be all the excess attributes?
+ * Recognizes 'docstyle' and 'page'. Discards all else. 
+ *
  */
 void Document::dump_in_atts(LaxFiles::Attribute *att)
 {
@@ -413,8 +612,8 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 			docstyle->dump_in_atts(att->attributes.e[c]);
 		} else if (!strcmp(name,"page")) {
 			PageStyle *ps=NULL;
-			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n);
-			page=new Page();
+			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
+			page=new Page(ps,0);
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c]);
 			pages.push(page,1);
@@ -432,7 +631,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 	}
 }
 
-//! Dumps docstyle, pages, and notes(well not notes yet..).
+//! Dumps docstyle, pages.
 void Document::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';

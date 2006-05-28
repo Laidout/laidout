@@ -27,14 +27,16 @@
 
 //---------------------------- PageStyle ---------------------------------
 
-#define MARGINS_CLIP       (1<<0)
-#define PAGE_CLIPS         (1<<1)
-#define FACING_PAGES_BLEED (1<<2)
+#define MARGINS_CLIP         (1<<0)
+#define PAGE_CLIPS           (1<<1)
+#define FACING_PAGES_BLEED   (1<<2)
+#define PAGESTYLE_AUTONOMOUS (1<<3)
 
 class PageStyle : public Style
 {
  public:
 	unsigned int flags; // marginsclip,facingpagesbleed;
+	int pagetype;
 	double width,height; // these are to be considered the bounding box for non-rectangular pages
 	PageStyle() { flags=0; }
 	virtual StyleDef *makeStyleDef();
@@ -80,10 +82,11 @@ class Page : public ObjectContainer
 {
  public:
 	int labeltype;
+	char *label;
 	int pagenumber;
 	LaxInterfaces::ImageData *thumbnail;
 	clock_t thumbmodtime,modtime;
-	Laxkit::PtrStack<Group> layers;
+	Group layers;
 	PageStyle *pagestyle;
 	int psislocal;
 	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
@@ -93,9 +96,10 @@ class Page : public ObjectContainer
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual int InstallPageStyle(PageStyle *pstyle,int islocal=1);
-	virtual int n() { return layers.n; }
-	virtual Laxkit::anObject *object_e(int i) 
-		{ if (i>=0 && i<layers.n) return (anObject *)(layers.e[i]); return NULL; }
+
+	virtual int n() { return layers.n(); }
+	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }
+	virtual Laxkit::anObject *object_e(int i) { return layers.object_e(i); }
 };
 
 
