@@ -36,25 +36,7 @@ using namespace std;
  *
  * \todo *** implement filelist
  */
-//class Project : public LaxFiles::DumpUtility
-//{
-// public:
-//	char *name,*filename;
-//	Laxkit::PtrStack<char> filelist;
-//	Laxkit::PtrStack<Document> docs;
-//	
-//	//StyleManager styles;
-//	//Page scratchboard;
-//	//Laxkit::PtrStack<char> project_notes;
-//
-//	Project();
-//	virtual ~Project();
-//
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	virtual int Load(const char *file);
-//	virtual int Save();
-//};
+
 
 //! Constructor, just set name=filename=NULL.
 Project::Project()
@@ -91,7 +73,7 @@ void Project::dump_out(FILE *f,int indent,int what)
 	//*** dump_out the window configs..
 }
 
-void Project::dump_in_atts(LaxFiles::Attribute *att)
+void Project::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 }
 

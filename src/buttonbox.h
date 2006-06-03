@@ -13,31 +13,25 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-#ifndef PROJECT_H
-#define PROJECT_H
+#ifndef BUTTONBOX_H
+#define BUTTONBOX_H
 
-#include "document.h"
 
-//------------------------- Project ------------------------------------
+#include <lax/tabframe.h>
 
-class Project : public LaxFiles::DumpUtility
+
+class ButtonBox : public Laxkit::TabFrame
 {
  public:
-	char *name,*filename;
-	Laxkit::PtrStack<Document> docs;
-	
-	//StyleManager styles;
-	//Page scratchboard;
-	//Laxkit::PtrStack<char> project_notes;
-
-	Project();
-	virtual ~Project();
-
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
-	virtual int Load(const char *file);
-	virtual int Save();
+	//ButtonBox();
+ 	ButtonBox(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ 		int xx,int yy,int ww,int hh,int brder);
+	virtual ~ButtonBox();
+	virtual const char *whattype() { return "ButtonBox"; }
+	virtual int RBDown(int x,int y,unsigned int state,int count);
+	virtual int RBUp(int x,int y,unsigned int state);
 };
+
 
 #endif
 

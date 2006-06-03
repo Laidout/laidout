@@ -36,7 +36,7 @@ class NetLine
 	virtual int Set(int n, int closed);
 	
 	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
+	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag);//val=NULL
 };
 
 //----------------------------------- NetFace -----------------------------------
@@ -56,7 +56,7 @@ class NetFace
 	virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
 	
 	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
+	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag);//val=NULL
 };
 
 //----------------------------------- Net -----------------------------------
@@ -82,7 +82,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual void Center();
 	virtual const char *whattype() { return thenettype; }
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 	virtual int pointinface(flatpoint pp);
 	virtual int rotateface(int f,int alignxonly=0);
 	virtual void pushline(NetLine &l,int where=-1);

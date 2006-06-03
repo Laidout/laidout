@@ -48,36 +48,7 @@ using namespace std;
 /*! \fn const char *Group::whattype()
  * \brief Returns 'Group'.
  */
-//class Group : public ObjectContainer,
-//			  virtual public LaxInterfaces::SomeData 
-//{
-// protected:
-//	Laxkit::PtrStack<LaxInterfaces::SomeData> objs;
-// public:
-//	int locked, visible, prints;
-//	Group() { locked=0; visible=prints=1; }
-//	virtual ~Group();
-//	virtual const char *whattype() { return "Group"; }
-//	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
-//	virtual int findindex(LaxInterfaces::SomeData *d) { return objs.findindex(d); }
-//	virtual int push(LaxInterfaces::SomeData *obj,int local);
-//	virtual int pushnodup(LaxInterfaces::SomeData *obj,int local);
-//	virtual int remove(int i);
-//	virtual int popp(LaxInterfaces::SomeData *d,int *local=NULL);
-//	virtual void flush();
-//	virtual void swap(int i1,int i2) { objs.swap(i1,i2); }
-//	virtual void slide(int i1,int i2);
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	virtual int pointin(flatpoint pp,int pin=1);
-//	virtual void FindBBox();
-//	//virtual int contains(SomeData *d,FieldPlace &place);
-//	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
-//	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);
-//	virtual LaxInterfaces::SomeData *e(int i);
-//	virtual int n() { return objs.n; }
-//	virtual Laxkit::anObject *object_e(int i) { return e(i); }
-//};
+
 
 //! Destructor, calls flush() to checkin any objects.
 Group::~Group() 
@@ -365,7 +336,7 @@ LaxInterfaces::SomeData *Group::e(int i)
  * Discards all else.
  * The objs should have been flushed before coming here.
  */
-void Group::dump_in_atts(LaxFiles::Attribute *att)
+void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	locked=visible=prints=0;
 	char *name,*value;
@@ -387,7 +358,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att)
 				//***strs[0]==that id
 				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
 				if (data) {
-					data->dump_in_atts(att->attributes[c]);
+					data->dump_in_atts(att->attributes[c],flag);
 					push(data,0);
 				}
 				deletestrs(strs,n);

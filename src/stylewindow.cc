@@ -23,6 +23,11 @@
 #include "stylewindow.h"
 
 
+#include <iostream>
+using namespace std;
+#define DBG 
+
+
 //*** --stylename---     <-- instance name
 // 	  -- styledef Name-- <-- type name
 // 	   field 1
@@ -51,10 +56,12 @@
  *     the Style, and telling the corresponding window control to
  *     use this new state.
  */
-//class GenericStyleDialog : public RowFrame???
+//class GenericStyleDialog : public RowFrame
 //{
 // protected:
 //	Style *style;
+//	StyleDef *def;
+//	anXWindow *last;
 // public:
 //	GenericStyleDialog(Style *nstyle,anXWindow *owner);
 //	GenericStyleDialog(StyleDef *nsd,anXWindow *owner);
@@ -69,6 +76,7 @@ GenericStyleDialog::GenericStyleDialog(Style *nstyle,anXWindow *owner)
 			NULL,owner?owner->window:None,NULL,0)
 {
 	style=nstyle;
+	last=NULL;
 }
 
 //! Constructor from 
@@ -86,7 +94,7 @@ int GenericStyleDialog::init()
 	StyleDef *sd=style->GetStyleDef();
 	if (!sd) { // the style doesn't cough up an appropriate StyleDef
 		char *blah=NULL;
-		if (style->stylename) makestr(blah,"Unknown style has unspecified fields.");
+		if (!style->stylename) makestr(blah,"Unknown style has unspecified fields.");
 		else {
 			makestr(blah,"Style "); 
 			appendstr(style->stylename);
@@ -98,14 +106,13 @@ int GenericStyleDialog::init()
 		Sync(1);
 		return 0;
 	}
-	anXWindow *control=MakeControl(".1",sd);
-	if (control) AddWin(control); //**** default squishy?
+	MakeControls(".1",sd);
 	Sync(1);
 	return 0;
 }
 
 //! Return an anXWindow corresponding to sd.***Might even want to make this a stand alone function...
-anXWindow *GenericStyleDialog::MakeControl(const char *startext,StyleDef *sd)
+void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 {
 	*** use Name, tooltip
 	switch (sd->format) {
@@ -121,31 +128,52 @@ anXWindow *GenericStyleDialog::MakeControl(const char *startext,StyleDef *sd)
 			} break;
 							  
 		 // checkbox:
-		case STYLEDEF_BIT: {} break;
+		case STYLEDEF_BIT: {
+				CheckBox *box;
+				last=box=new CheckBox(this,startext,CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"control",sd->Name);
+				box->tooltip(sd->tooltip);
+				AddWin(box,box->win_w,0,0,50, box->win_h,0,0,50);
+			} break;
 
 		 // ??? 3 field checkbox menuselector?
-		case STYLEDEF_3BIT: {} break;
+		case STYLEDEF_3BIT: {
+				***
+			} break;
 							
 		 // one only checkbox menuselector
-		case STYLEDEF_ENUM: {} break;
-		case STYLEDEF_ENUM_VAL: { COUT("***shouldn't have ENUM_VAL here!"<<endl); } break;
+		case STYLEDEF_ENUM: {
+				***
+			} break;
+		case STYLEDEF_ENUM_VAL: { 
+				cout << "***shouldn't have ENUM_VAL here!"<<endl); 
+			} break;
 								
 		 // ???
-		case STYLEDEF_VALUE: {} break;
+		case STYLEDEF_VALUE: {
+				***
+			} break;
 
-		case STYLEDEF_FIELDS: { if (sd->fields) {
-				*** --Name----
-					 [sub 1]
-					 [sub 2]
-				char *ext=NULL;
-				for (int c=0; c<sd->fields->n; c++) {
-					ext=new char[strlen(startext)+6];
-					sprintf(ext,"%s.%d",startext,c);
-					***add to what? AddWin(MakeControl(ext,sd->fields->e[c]);
-					***add to what??? AddNull();
-					delete[] ext; ext=NULL;
+		case STYLEDEF_FIELDS: {
+				if (sd->fields) {
+					*** --Name----
+						 [sub 1]
+						 [sub 2]
+					char *ext=NULL;
+					for (int c=0; c<sd->fields->n; c++) {
+						ext=new char[strlen(startext)+6];
+						sprintf(ext,"%s.%d",startext,c);
+						***add to what? AddWin(MakeControl(ext,sd->fields->e[c]);
+						***add to what??? AddNull();
+						delete[] ext; ext=NULL;
+					}
+				} else {
+					cout << "***GenericStyleDialog::MakeControls should be fields here!!"<<endl;
 				}
-			} else COUT("***should be fields here!!"<<endl); } break;
+			} break;
+		case STYLEDEF_FUNCTION: {
+				//nothing doing here.. could have option for this to be listed...
+			} break;
 	}
 }
 
@@ -174,6 +202,7 @@ int GenericStyleDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
  */
 anXWindow *MakeStyleEditWindow(Style *style,anXWindow *owner)
 {***
+	if (!style || !style->GetStyleDef()) return NULL;
 	return new GenericStyleDialog(style,owner);
 }
 

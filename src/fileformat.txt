@@ -4,8 +4,10 @@ This is the file format for Laidout stuff. Everything is hierarchically arranged
 and grouped according to indentation similar to python and Yaml, rather than, for instance, XML tags.
 
 \todo should make a conversion program to do passepartout---laidout---scribus---svg.
+  see VectorSection (formerly uberconvertor)!!
 
-**** Please note that this is not correct:
+**** Please note that the following is not correct. work is in progress to have Laidout
+automatically dump out the Attribute version of a dtd for the file format..
 
 \verbatim
 #Laidout 0.1, 0.1

@@ -280,71 +280,7 @@ PageLabel::~PageLabel()
  * temppagemap elements say what doc->page index is temporarily in littlespread index. For instance,
  * if temppagemap=={0,1,2,3,4}, after swapping 4 and 1, temppagemap=={0,4,2,3,1}.
  */
-//class SpreadInterface : public Laxkit::InterfaceWithDp
-//{
-// protected:
-//	int centerlabels;
-//	char drawthumbnails;
-//	int arrangetype,arrangestate;
-//	int mx,my,firsttime;
-//	int reversebuttons;
-//	int curpage, dragpage;
-//	LittleSpread *curspread;
-//	//SpreadView *view;
-//	//char dataislocal; 
-//	Laxkit::PtrStack<LittleSpread> spreads;
-//	Laxkit::PtrStack<PageLabel> pagelabels;
-//	int *temppagemap;
-//	//Laxkit::PtrStack<TextBlock> notes;
-//	int SpreadInterface::reversemap(int i);
-// public:
-//	Document *doc;
-//	Project *project;
-//	unsigned int style;
-//	unsigned long controlcolor;
-//	SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum);
-//	virtual ~SpreadInterface();
-//	virtual int rLBDown(int x,int y,unsigned int state,int count);
-//	virtual int rLBUp(int x,int y,unsigned int state);
-//	virtual int rMBDown(int x,int y,unsigned int state,int count);
-//	virtual int rMBUp(int x,int y,unsigned int state);
-//	virtual int LBDown(int x,int y,unsigned int state,int count);
-//	virtual int LBUp(int x,int y,unsigned int state);
-//	virtual int MBDown(int x,int y,unsigned int state,int count);
-//	virtual int MBUp(int x,int y,unsigned int state);
-////	//virtual int RBDown(int x,int y,unsigned int state,int count);
-////	//virtual int RBUp(int x,int y,unsigned int state);
-//	virtual int MouseMove(int x,int y,unsigned int state);
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-//	virtual int CharRelease(unsigned int ch,unsigned int state);
-//	virtual int Refresh();
-////	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
-////	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
-////	//virtual void Clear();
-////	//virtual void deletedata();
-//	virtual int InterfaceOn();
-////	//virtual int InterfaceOff();
-//	virtual const char *whattype() { return "SpreadInterface"; }
-//	virtual const char *whatdatatype() { return "LittleSpread"; }
-//
-//	virtual void CheckSpreads(int startpage,int endpage);
-//	virtual void GetSpreads();
-//	virtual void ArrangeSpreads(int how=-1);
-//	virtual int findPage(int x,int y);
-//	virtual int findSpread(int x,int y,int *page=NULL);
-//	virtual void Center(int w=1);
-//	virtual void drawLabel(int x,int y,PageLabel *plabel);
-//
-//	virtual void Reset();
-//	virtual void ApplyChanges();
-//	virtual void SwapPages(int previouspos, int newpos);
-//	virtual void SlidePages(int previouspos, int newpos);
-//
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//
-//	friend class SpreadEditor;
-//};
+
 
 
  // values for arrangestate
@@ -447,7 +383,7 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what)
 
 /*! Note that 'index' is currently ignored.
  */
-void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att)
+void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -477,16 +413,16 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att)
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"spread")) {
-			for (c2=0; c2<att->attributes.e[c]->attributes.n; c++) {
+			for (c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name= att->attributes.e[c]->attributes.e[c2]->name;
 				value=att->attributes.e[c]->attributes.e[c2]->value;
 				if (!strcmp(name,"matrix")) {
 					n=DoubleListAttribute(value,m,6);
 					if (n==6) transform_copy(spreads.e[s]->m(),m);
 				}
-				s++;
-				if (s==spreads.n) break;
 			}
+			s++;
+			if (s==spreads.n) break;
 		}
 	}
 }
@@ -1269,6 +1205,8 @@ int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
  *  +'A'    force arranging the spreads using current arrange style
  *   'p'    *** for debugging thumbs
  * </pre>
+ *
+ * \todo *** space should arrange if auto arrange
  */
 int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 {
@@ -1344,27 +1282,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
  * be optionally integrated into the ViewWindow to provide the infinite scroll features
  * found in various other programs.
  */
-//class SpreadEditor : public Laxkit::ViewerWindow, public LaxFiles::DumpUtility
-//{
-// protected:
-//	Document *doc;
-//	Project *project;
-// public:
-//	SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-//						int xx, int yy, int ww, int hh, int brder,
-//						Project *project, Document *ndoc);
-//	virtual int init();
-//	virtual const char *whattype() { return "SpreadEditor"; }
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
-//	virtual int MoveResize(int nx,int ny,int nw,int nh);
-//	virtual int Resize(int nw,int nh);
-//	virtual int UseThisDoc(Document *ndoc);
-//
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//};
+
 
 //! Make the window using project.
 SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -1403,9 +1321,9 @@ void SpreadEditor::dump_out(FILE *f,int indent,int what)
 }
 
 //! Passes off to SpreadInterface::dump_in_atts().
-void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att)
+void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
-	((SpreadInterface *)curtool)->dump_in_atts(att);
+	((SpreadInterface *)curtool)->dump_in_atts(att,flag);
 }
 
 /*! Return 0 for success, nonzero error.

@@ -165,7 +165,7 @@ void NetImposition::dump_out(FILE *f,int indent,int what)
 	}
 }
 
-void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
+void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -179,13 +179,13 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			if (paperstyle) delete paperstyle;
 			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
-			paperstyle->dump_in_atts(att->attributes.e[c]);
+			paperstyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"net")) {
 			if (value && strcmp(value,"")) { // is a built in
 				SetNet(value);
 			} else {
 				tempnet=new Net();
-				tempnet->dump_in_atts(att->attributes.e[c]);
+				tempnet->dump_in_atts(att->attributes.e[c],flag);
 				SetNet(tempnet);
 				DBG cout <<"-----------after dump_in net and set----------"<<endl;
 				DBG net->dump_out(stdout,2,0);

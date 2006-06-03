@@ -119,7 +119,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual void SlidePages(int previouspos, int newpos);
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 
 	friend class SpreadEditor;
 };
@@ -145,7 +145,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUt
 	virtual int UseThisDoc(Document *ndoc);
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 #endif

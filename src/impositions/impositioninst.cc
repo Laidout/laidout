@@ -139,7 +139,7 @@ void Singles::setPage()
  * to letter if defaultpaperstyle attribute found, then dumps in that
  * paper style. see todos in Page also.....
  */
-void Singles::dump_in_atts(LaxFiles::Attribute *att)
+void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	int pages=-1;
@@ -166,11 +166,11 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att)
 			pages=c;
 			if (pagestyle) pagestyle->dec_count();
 			pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-			pagestyle->dump_in_atts(att->attributes.e[c]);
+			pagestyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			if (paperstyle) delete paperstyle;
 			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***should be global def
-			paperstyle->dump_in_atts(att->attributes.e[c]);
+			paperstyle->dump_in_atts(att->attributes.e[c],flag);
 		}
 	}
 	if (pages<0) setPage();
@@ -534,7 +534,7 @@ PageStyle *DoubleSidedSingles::GetPageStyle(int pagenum,int local)
 
 /*! \todo *** must figure out best way to sync up pagestyles...
  */
-void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att)
+void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -550,10 +550,10 @@ void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att)
 			//pages=c;
 			if (pagestyler) pagestyler->dec_count();
 			pagestyler=new RectPageStyle();
-			pagestyler->dump_in_atts(att->attributes.e[c]);
+			pagestyler->dump_in_atts(att->attributes.e[c],flag);
 		}
 	}
-	Singles::dump_in_atts(att);
+	Singles::dump_in_atts(att,flag);
 }
 
 /*! Write out isvertical, then Singles::dump_out.
@@ -814,7 +814,7 @@ void BookletImposition::setPage()
 }
 
 //! Read creep, body and covercolor, then DoubleSidedSigles::dump_in_atts().
-void BookletImposition::dump_in_atts(LaxFiles::Attribute *att)
+void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -829,7 +829,7 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att)
 			if (value) covercolor=strtol(value,NULL,0);
 		}
 	}
-	DoubleSidedSingles::dump_in_atts(att);
+	DoubleSidedSingles::dump_in_atts(att,flag);
 	isleft=0;
 }
 
@@ -987,7 +987,7 @@ int BookletImposition::GetSpreadsNeeded(int npages)
 //	Imposition *impos;
 //	Ranges ranges; 
 //	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 //}
 
 
@@ -1035,14 +1035,14 @@ int BookletImposition::GetSpreadsNeeded(int npages)
 ////	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //
 //	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 ////};
 //
 //BasicBook::BasicBook() : Style(NULL,NULL,"Basic Book")
 //{ }
 //
 ////! *** imp me!
-//void BasicBook::dump_in_atts(Attribute *att)
+//void BasicBook::dump_in_atts(Attribute *att,int flag)
 //{***
 //	if (!att) return;
 //	char *name,*value;
@@ -1057,7 +1057,7 @@ int BookletImposition::GetSpreadsNeeded(int npages)
 //			if (value) covercolor=strtol(value,NULL,0);
 //		}
 //	}
-//	DoubleSidedSingles::dump_in_atts(att);
+//	DoubleSidedSingles::dump_in_atts(att,flag);
 //}
 //
 ////! Write out flags, width, height

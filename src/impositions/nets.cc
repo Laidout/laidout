@@ -41,23 +41,7 @@ extern void monthday(const char *str,int *month,int *day);
 /*! \class NetLine
  * \brief Class to hold extra lines for use in Net.
  */
-//class NetLine
-//{
-// public:
-//	char isclosed;
-//	int np;
-//	int *points;
-//	char lsislocal;
-//	LineStyle *linestyle;
-//	NetLine(const char *list=NULL);
-//	virtual ~NetLine();
-//	const NetLine &operator=(const NetLine &line);
-//	virtual int Set(const char *list);
-//	virtual int Set(int n, int closed);
-//	
-//	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
-//};
+
 
 NetLine::NetLine(const char *list)
 {
@@ -149,7 +133,7 @@ void NetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
  * If there's a list "1 2 3 1" it will make a point list 1,2,3, and
  * set isclosed=1.
  */
-void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val)
+void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)
 {
 	if (!att) return;
 	int c;
@@ -172,7 +156,7 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val)
 				linestyle=new LineStyle();
 				lsislocal=1;
 			}
-			linestyle->dump_in_atts(att->attributes.e[c]);
+			linestyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"closed")) {
 			isclosed=BooleanAttribute(value);
 		}
@@ -210,24 +194,7 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val)
 /*! \var int NetFace::faceclass
  * \brief If >=0, then this face should look the same as others in the same class.
  */
-//class NetFace
-//{
-// public:
-//	int np;
-//	int *points, *facelink;
-//	double *m;
-//	int aligno, alignx;
-//	int faceclass;
-//	NetFace();
-//	virtual ~NetFace();
-//	const NetFace &operator=(const NetFace &face);
-//	virtual void clear();
-//	virtual int Set(const char *list, const char *link=NULL);
-//	virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
-//	
-//	virtual void dump_out(FILE *f,int indent, int pfirst=0);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att, const char *val);//val=NULL
-//};
+
 
 NetFace::NetFace()
 {
@@ -373,7 +340,7 @@ void NetFace::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
  * that here in val. Otherwise, this function will expect a 
  * "points 1 2 3" sub attribute somewhere in att.
  */
-void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
+void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)//val=NULL
 {
 	if (!att) return;
 	int c,n=0;
@@ -442,41 +409,7 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val)//val=NULL
  *  3  tabs on all edges (all or yes)
  * </pre>
  */
-//class Net : public LaxInterfaces::SomeData
-//{
-// public:
-//	char *thenettype;
-//	int np,tabs;
-//	flatpoint *points;
-//	int *pointmap; // which thing (possibly 3-d points) corresponding point maps to
-//	int nl;
-//	NetLine *lines;
-//	int nf;
-//	NetFace *faces;
-//	Net();
-//	virtual ~Net();
-//	virtual void clear();
-//	virtual const char *whatshape() { return thenettype; }
-//	virtual int Draw(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year);
-//	virtual void DrawMonth(cairo_t *cairo,Laxkit::Displayer *dp,int month,int year,LaxInterfaces::SomeData *monthbox);
-//	virtual void FindBBox();
-//	virtual void FitToData(LaxInterfaces::SomeData *data,double margin);
-//	virtual void ApplyTransform(double *mm=NULL);
-//	virtual void Center();
-//	virtual const char *whattype() { return thenettype; }
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	virtual int pointinface(flatpoint pp);
-//	virtual int rotateface(int f,int alignxonly=0);
-//	virtual void pushline(NetLine &l,int where=-1);
-//	virtual void pushface(NetFace &f);
-//	virtual void pushpoint(flatpoint pp,int pmap=-1);
-//	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
-//
-//	//--perhaps for future:
-//	//virtual void PrintSVG(std::ostream &svg,LaxInterfaces::SomeData *paper,int month=1,int year=2006);
-//	//virtual void PrintPS(std::ofstream &ps,LaxInterfaces::SomeData *paper);
-//};
+
 
 //! Init.
 Net::Net()
@@ -644,7 +577,7 @@ void Net::dump_out(FILE *f,int indent,int what)
  * 
  * \todo *** MUST implement the sanity check..
  */
-void  Net::dump_in_atts(LaxFiles::Attribute *att)
+void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value,*t,*e,*newname=NULL;
@@ -693,15 +626,15 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"outline")) {
 			hadoutline=1;
 			NetLine netline;
-			netline.dump_in_atts(att->attributes.e[c],value);
+			netline.dump_in_atts(att->attributes.e[c],value,flag);
 			pushline(netline,0); // pushes onto position 0
 		} else if (!strcmp(name,"line")) {
 			NetLine netline;
-			netline.dump_in_atts(att->attributes.e[c],value);
+			netline.dump_in_atts(att->attributes.e[c],value,flag);
 			pushline(netline,-1); // pushes onto top
 		} else if (!strcmp(name,"face")) {
 			NetFace netface;
-			netface.dump_in_atts(att->attributes.e[c],value);
+			netface.dump_in_atts(att->attributes.e[c],value,flag);
 			pushface(netface);
 		}
 	}
