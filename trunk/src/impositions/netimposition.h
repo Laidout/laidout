@@ -55,7 +55,7 @@ class NetImposition : public Imposition
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(int page=1,Laxkit::DoubleBBox *bbox=NULL);
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 	
 	virtual int SetNet(const char *nettype);
 	virtual int SetNet(Net *newnet);

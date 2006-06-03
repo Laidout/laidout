@@ -418,10 +418,11 @@ int LaidoutViewport::NextSpread()
 	else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
 
 	if (max>=0) {
-		spreadi--;
-		if (spreadi<0) spreadi=max-1;
+		spreadi++;
+		if (spreadi>=max) spreadi=0;
 	} else spreadi=-1;
 	setupthings(spreadi);
+	needtodraw=1;
 	return spreadi;
 }
 
@@ -442,10 +443,11 @@ int LaidoutViewport::PreviousSpread()
 	else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
 
 	if (max>=0) {
-		spreadi++;
-		if (spreadi>=max) spreadi=0;
+		spreadi--;
+		if (spreadi<0) spreadi=max-1;
 	} else spreadi=-1;
 	setupthings(spreadi);
+	needtodraw=1;
 	return spreadi;
 }
 
@@ -2065,7 +2067,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 //! Reverse of dump_out().
 /*! \todo *** need to dump_out the space, not just the matrix!!
  */
-void ViewWindow::dump_in_atts(Attribute *att)
+void ViewWindow::dump_in_atts(Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -2144,15 +2146,37 @@ int ViewWindow::init()
 	
 	AddNull();//makes the status bar take up whole line.
 	anXWindow *last=NULL;
+	IconButton *ibut;
 	
-	StrSliderPopup *toolselector;
-	toolselector=new StrSliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, NULL,window,"viewtoolselector");
+	 // tool section
+	const char *str;
+	char *nstr,*tstr;
 	for (int c=0; c<tools.n; c++) {
-		toolselector->AddItem(tools.e[c]->whattype(),tools.e[c]->id);
-		DBG cout <<"make tool selector, "<<tools.e[c]->whattype()<<" "<<c<<": id="<<tools.e[c]->id<<endl;
+		str=tools.e[c]->whattype();
+		nstr=newstr(str);
+		tstr=strstr(nstr,"Interface");
+		if (tstr) *tstr='\0';
+		tstr=nstr;
+		nstr=newstr("/home/tom/p/sourceforge/laidout/src/icons/");
+		appendstr(nstr,tstr);
+		appendstr(nstr,".png");
+		last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
+				tools.e[c]->id,nstr,tstr);
+		appendstr(tstr," Tool");
+		ibut->tooltip(tstr);
+		AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);	
+		delete[] tstr;
+		delete[] nstr;
 	}
-	toolselector->WrapWidth();
-	AddWin(toolselector);
+//	-----
+//	StrSliderPopup *toolselector;
+//	toolselector=new StrSliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, NULL,window,"viewtoolselector");
+//	for (int c=0; c<tools.n; c++) {
+//		toolselector->AddItem(tools.e[c]->whattype(),tools.e[c]->id);
+//		DBG cout <<"make tool selector, "<<tools.e[c]->whattype()<<" "<<c<<": id="<<tools.e[c]->id<<endl;
+//	}
+//	toolselector->WrapWidth();
+//	AddWin(toolselector);
 	
 	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"newPageNumber",
@@ -2161,7 +2185,6 @@ int ViewWindow::init()
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	TextButton *tbut;
-	IconButton *ibut;
 	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
 			"/home/tom/p/sourceforge/laidout/src/icons/PreviousSpread.png","<");
 	ibut->tooltip("Previous spread");
@@ -2220,6 +2243,11 @@ int ViewWindow::init()
 	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpImages",-1,
 			"/home/tom/p/sourceforge/laidout/src/icons/DumpInImages.png","Dump in Images");
 	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+
+	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
+			"/home/tom/p/sourceforge/laidout/src/icons/Save.png","Save");
+	ibut->tooltip("Save the current document");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"ppt out",0, 0,0,0,0,1, NULL,window,"pptout","ppt");
@@ -2641,7 +2669,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"viewtoolselector")) {
 		DBG cout <<"***** viewtoolselector change to id:"<<e->data.l[0]<<endl;
-		SelectTool(e->data.l[0]);
+		SelectTool(e->data.l[1]);
 		return 0;
 	} else if (!strcmp(mes,"newViewType")) {
 		 // must update labels have Spread [2-3]: 2
@@ -2678,6 +2706,26 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			char blah[strlen(doc->saveas+10)];
 			sprintf(blah,"Saved as a Passepartout file to %s.ppt",doc->saveas);
 			mesbar->SetText(blah);
+		}
+		return 0;
+	} else if (!strcmp(mes,"saveDoc")) { 
+		if (strstr(doc->Name(),"untitled")==doc->Name()) { //***or shift-click for saveas??
+			 // launch saveas!!
+			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
+						//int xx,int yy,int ww,int hh,int brder,
+						//anXWindow *prev,Window nowner,const char *nsend,
+						//const char *newlabel,const char *newtext,unsigned int ntstyle,
+						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
+			app->rundialog(new FileDialog(NULL,"Save As...",
+						ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_SAVE_AS,
+						0,0,500,500,0, window,"saveAsPopup",
+						doc->Name()));
+		} else {
+			if (doc->Save()==0) {
+				char blah[strlen(doc->Name())+15];
+				sprintf(blah,"Saved to %s.",doc->Name());
+				GetMesbar()->SetText(blah);
+			} else GetMesbar()->SetText("Problem saving. Not saved.");
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
@@ -2746,23 +2794,10 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 			} else GetMesbar()->SetText("Problem saving. Not saved.");
 		}
 		return 0;
-	} else if (ch=='t' || ch=='T') {
-		//*** this is rather a hack..
-		ViewerWindow::CharInput(ch,state);
-		int c;
-		WinFrameBox *wb;
-		for (c=0; c<wholelist.n; c++) {
-			wb=dynamic_cast<WinFrameBox *>(wholelist.e[c]);
-			if (wb && wb->win && !strcmp(wb->win->win_title,"viewtoolselector"))  {
-				static_cast<StrSliderPopup *>(wb->win)->Select(curtool->id);
-				break;
-			}
-		}
-		return 0;
-	} else if (ch==LAX_Left) {  // left, prev tool
+	} else if (ch==LAX_Left || ch=='T') {  // left, prev tool
 		SelectTool(-2);
 		return 0;
-	} else if (ch==LAX_Right) { //right, next tool
+	} else if (ch==LAX_Right || ch=='t') { //right, next tool
 		SelectTool(-1);
 		return 0;
 	} else if (ch=='<') { //prev page

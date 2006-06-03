@@ -74,7 +74,7 @@ class ColorPrimary
 	
 	int natts;   //*** this could be a ColorAttribute class, to allow ridiculously adaptable color systems
 	char **atts; //    like being able to define a sparkle or metal speck fill pattern 
-	             // for each i'th attribute, atts[2*i]==attribute name, atts[2*i8+1]==attribute value
+	             // for each i'th attribute, atts[2*i]==attribute name, atts[2*i+1]==attribute value
 };
 
 
@@ -98,11 +98,15 @@ class ColorSystem
 {
  public:
 	char *name;
-	HProfile iccprofile; //***
 	unsigned int systemid;
 	unsigned long style;
+	
+	HProfile iccprofile; //***
+
 	int nprimaries;
 	ColorPrimary *primaries;
+
+	Color *newColor(int n,...);
 };
 
 

@@ -99,21 +99,7 @@ const char *BuiltinPaperSizes[33*3]=
 /*! \fn double PaperStyle::h()
  * \brief If landscape (flags&&1), then return width, else return height.
  */
-//class PaperStyle : public Style
-//{
-// public:
-//	char *name;
-//	double width,height;
-//	int dpi;
-//	unsigned int flags; //1=landscape !(&1)=portrait
-//	PaperStyle(const char *nname,double ww,double hh,unsigned int f,int ndpi);
-//	virtual double w() { if (flags&1) return height; else return width; }
-//	virtual double h() { if (flags&1) return width; else return height; }
-//	virtual Style *duplicate(Style *s=NULL);
-//
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//};
+
 
 /*! Dump out like the following. Note that the width and height are for the portrait
  * style. For the adjusted heights based on whether it is landscape, w() and h() return
@@ -137,7 +123,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what)
 }
 
 //! Basically reverse of dump_out.
-void PaperStyle::dump_in_atts(LaxFiles::Attribute *att)
+void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *aname,*value;

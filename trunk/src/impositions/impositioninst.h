@@ -48,7 +48,7 @@ class Singles : public Imposition
 	virtual void setPage();
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 //------------------------ Double Sided Singles ---------------------------
@@ -73,7 +73,7 @@ class DoubleSidedSingles : public Singles
 	virtual int SpreadType(int spread);
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 ////------------------------ Booklet ---------------------------
@@ -98,7 +98,7 @@ class BookletImposition : public DoubleSidedSingles
 	virtual void setPage();
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 
@@ -126,7 +126,7 @@ class BookletImposition : public DoubleSidedSingles
 //	virtual int GetSpreadsNeeded(int npages);
 //
 //	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 //};
 
 ////---------------------------------- CompositeImposition ----------------------------

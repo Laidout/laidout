@@ -21,6 +21,7 @@
 #include "helpwindow.h"
 #include "commandwindow.h"
 #include "buttonbox.h"
+#include <lax/palette.h>
 
 #include <iostream>
 using namespace std;
@@ -35,6 +36,16 @@ using namespace LaxFiles;
  *
  * These become the panes of a HeadWindow.
  */
+
+////---------------------- newPaletteWindowFunc
+/*! \ingroup mainwindows
+ * \brief ButtonBox window generator for use in HeadWindow.
+ */
+anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	PaletteWindow *palette=new PaletteWindow(parnt,ntitle,style, 0,0,0,0,1, NULL,None,NULL);
+	return palette;
+}
 
 ////---------------------- newCommandWindowFunc
 /*! \ingroup mainwindows
@@ -96,6 +107,7 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  *  SpreadEditor
  *  HelpWindow
  *  CommandWindow
+ *  PaletteWindow (will be modified later)
  *
  *   TODO:
  *  Icons/Menus with optional dialogs ***
@@ -109,6 +121,7 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  * \todo *** might want to remove doc, or have some more general way to start what is in which.
  *    perhaps have app keep track of most recently accessed doc? or have option to keep a new
  *    head empty
+ * \todo *** this will have to be modified later to more easily add windows through plugins...
  */
 anXWindow *newHeadWindow(Document *doc,const char *which)
 {
@@ -135,7 +148,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 {
 	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
-	head->dump_in_atts(att);
+	head->dump_in_atts(att,0);
 	return head;
 }
 
@@ -152,31 +165,7 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
  *  float
  * </pre>
  */  
-//class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
-//{
-// protected:
-//	virtual int splitthewindow(anXWindow *fillwindow=NULL);
-// public:
-//	Laxkit::anXWindow *lastview, *lastedit;
-// 	HeadWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-// 		int xx,int yy,int ww,int hh,int brder);
-// 	virtual const char *whattype() { return "HeadWindow"; }
-//	virtual ~HeadWindow();
-//	virtual int init();
-//	virtual int numwindows() { return windows.n; }
-//	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>0 && i<windows.n) return windows.e[i]; return NULL; }
-//	virtual MenuInfo *GetMenu();
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
-//	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
-//	virtual void WindowGone(Laxkit::anXWindow *win);
-//	virtual int Curbox(int c);
-//	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
-//	virtual Document *HeadWindow::findAnyDoc();
-//	virtual int HasOnlyThis(Document *doc);
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//};
+
 
 //! Pass SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED to SplitWindow.
 /*! Adds the main window type generating functions.
@@ -215,6 +204,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	AddWindowType("ButtonBox","Buttons",
 			ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
 			newButtonBoxFunc,0);
+	AddWindowType("PaletteWindow","Palette",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newPaletteWindowFunc,0);
 }
 
 //! Empty virtual destructor.
@@ -335,7 +325,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 /*! \todo *** as time goes on, must ensure that header can deal with new
  * types of windows...
  */
-void HeadWindow::dump_in_atts(LaxFiles::Attribute *att)
+void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -369,7 +359,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att)
 					win=NewWindow(value);
 					if (win) {
 						wind=dynamic_cast<DumpUtility *>(win);
-						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2]);
+						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2],flag);
 						box->win=win;
 					} else {
 						DBG cout <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;

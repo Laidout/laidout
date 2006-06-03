@@ -43,16 +43,7 @@ using namespace std;
  * ----------
  * Keeps a local imposition object.
  */
-//class DocumentStyle : public Style
-//{
-// public:
-//	Imposition *imposition;
-//	DocumentStyle(Imposition *imp);
-//	virtual ~DocumentStyle();
-//	virtual Style *duplicate(Style *s=NULL);
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//};
+
 
 //! Constructor, copies Imposition pointer, does not duplicate imposition.
 /*! ***should sanity check the save? *** who should be deleting the imp?
@@ -66,7 +57,7 @@ DocumentStyle::DocumentStyle(Imposition *imp)
 
 /*! Recognizes 'imposition'. Discards all else.
  */
-void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
+void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
@@ -77,7 +68,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att)
 			if (imposition) delete imposition;
 			 // figure out which kind of imposition it is..
 			imposition=newImposition(value);
-			if (imposition) imposition->dump_in_atts(att->attributes.e[c]);
+			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag);
 		} else { 
 			DBG cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
@@ -325,41 +316,7 @@ char *PageRange::GetLabel(int i)
 /*! \var char Document::saveas
  * \brief The full absolute path to the document.
  */
-//class Document : public ObjectContainer, public LaxFiles::DumpUtility
-//{
-// public:
-//	DocumentStyle *docstyle;
-//	char *saveas;
-//	
-//	Laxkit::PtrStack<Page> pages;
-//	int curpage;
-//	clock_t modtime;
-//
-//	Document(const char *filename);
-//	Document(DocumentStyle *stuff=NULL,const char *filename=NULL);
-//	virtual ~Document();
-//	virtual const char *Name();
-//	virtual int Name(const char *nname);
-//	virtual void clear();
-//
-//	virtual Page *Curpage();
-//	virtual int NewPages(int starting,int n);
-//	virtual int RemovePages(int start,int n);
-//	
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//	virtual int Load(const char *file);
-//	virtual int Save(LaidoutSaveFormat format=Save_Normal);
-//
-//	virtual Spread *GetLayout(int type, int index);
-//	
-//	virtual int n() { return pages.n; }
-//	virtual Laxkit::anObject *object_e(int i) 
-//		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return NULL; }
-////	int SaveAs(char *newfile,int format=1); // format: binary, xml, pdata
-////	int New();
-////	int Print();
-//};
+
 
 //! Constructor from a file.
 /*! Loads the file.
@@ -561,7 +518,7 @@ int Document::Load(const char *file)
 		return 0;
 	}
 	clear();
-	dump_in(f,0,NULL);
+	dump_in(f,0,0,NULL);
 	fclose(f);
 	
 	makestr(saveas,file);
@@ -596,7 +553,7 @@ int Document::Load(const char *file)
  * Recognizes 'docstyle' and 'page'. Discards all else. 
  *
  */
-void Document::dump_in_atts(LaxFiles::Attribute *att)
+void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	Page *page;
@@ -609,16 +566,28 @@ void Document::dump_in_atts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"docstyle")) {
 			if (docstyle) delete docstyle;
 			docstyle=new DocumentStyle(NULL);
-			docstyle->dump_in_atts(att->attributes.e[c]);
+			docstyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"page")) {
 			PageStyle *ps=NULL;
 			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
 			page=new Page(ps,0);
 			page->layers.flush();
-			page->dump_in_atts(att->attributes.e[c]);
+			page->dump_in_atts(att->attributes.e[c],flag);
 			pages.push(page,1);
 		}
 	}
+	
+	//****** finish this:
+	if (docstyle) {
+		if (docstyle->imposition) docstyle->imposition->NumPages(pages.n);
+		else {
+			cout <<"**** no docstyle->imposition in Document::dump_in_atts\n";
+		}
+	} else {
+		cout <<"**** no docstyle in Document::dump_in_atts\n";
+	}
+	
+	
 	 // search for windows to create after reading in all pages
 	HeadWindow *head;
 	for (int c=0; c<att->attributes.n; c++) {

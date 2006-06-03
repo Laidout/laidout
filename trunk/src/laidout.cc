@@ -184,6 +184,34 @@ LaidoutApp::LaidoutApp() : anXApp()
 	project=NULL;
 	curdoc=NULL;
 	tooltips=1000;
+
+//	MenuInfo *menu=new MenuInfo("Main Menu");
+//	 menu->AddItem("File",1);
+//	 menu->SubMenu("File");
+//	  menu->AddItem("Open");
+//	  menu->AddItem("Open Project");
+//	  menu->AddItem("Save");
+//	  menu->AddItem("Save As...");
+//	  menu->AddItem("Save All");
+//	  menu->AddItem("Quit");
+//	  menu->AddSep();
+//	  menu->AddItem("Print...");
+//	 menu->EndSubMenu();
+//	 menu->AddItem("Viewer");
+//	 menu->SubMenu("Viewer");
+//	  menu->AddItem("Object Tool");
+//	  menu->AddItem("Path Tool");
+//	  menu->AddItem("Image Tool");
+//	  menu->AddItem("Image Patch Tool");
+//	  menu->AddItem("Gradient Tool");
+//	  menu->AddItem("Text Tool");
+//	  menu->AddItem("Magnify Tool");
+//	  menu->AddSep();
+//	 menu->EndSubMenu();
+//	 menu->AddSep();
+//	 menu->AddItem("About");
+//	 menu->AddItem("Help");
+//	dumpmenu(menu);
 }
 
 //! Destructor, only have to delete project!

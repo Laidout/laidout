@@ -60,7 +60,7 @@ class DocumentStyle : public Style
 	virtual ~DocumentStyle();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 //---------------------------- PageRange ---------------------------------------
@@ -102,7 +102,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual int RemovePages(int start,int n);
 	
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 	virtual int Load(const char *file);
 	virtual int Save(LaidoutSaveFormat format=Save_Normal);
 	

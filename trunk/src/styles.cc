@@ -435,6 +435,11 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 
 //------------------------------ StyleDef --------------------------------------------
 
+/*! \enum ElementType 
+ * \ingroup stylesandstyledefs
+ * \brief Says what a StyleDef element is.
+ */
+	
 /*! \class StyleDef
  * \ingroup stylesandstyledefs
  * \brief The definition of the elements of a Style.
@@ -550,12 +555,16 @@ StyleDef::~StyleDef()
 	if (defaultvalue) delete[] defaultvalue;
 }
 
+/*! \todo *** imp me!!
+ */
 void StyleDef::dump_out(FILE *f,int indent,int what)
 {
 	//***
 }
 
-void StyleDef::dump_in_atts(Attribute *att)
+/*! \todo *** imp me!!
+ */
+void StyleDef::dump_in_atts(Attribute *att,int flag)
 {
 	//***
 }
@@ -935,7 +944,7 @@ void deleteFieldNode(FieldNode *fn)
  *  have any fancy hardcoded shortcuts.
  *
  *  Finally, derived classes should remember to define their own dump_out(FILE*,int,what) and
- *  dump_in_atts(Attribute*), required by class LaxFiles::DumpUtility.
+ *  dump_in_atts(Attribute*,int), required by class LaxFiles::DumpUtility.
  *
  *
  * <pre>

@@ -156,7 +156,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	virtual void SetParentTitle(const char *str);
 
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 #endif

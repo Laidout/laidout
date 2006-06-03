@@ -3,6 +3,9 @@
 
 \section Overall Overall...
 <pre>
+ for sarge, there's a problem with ImagePatch, for some reason, there are artifacts
+   to window pos 0,0 along one edge.. these do not show on unstable..
+
  enhance SpreadEditor:
    eject in addition to swap and slide,
    chains in limbo

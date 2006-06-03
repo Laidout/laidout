@@ -96,6 +96,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	char *extends;
 	StyleDef *extendsdef;
 	NewStyleFunc newfunc;
+	Style *newStyle(StyleDef *def) { if (newfunc) return newfunc(this); return NULL; }
 	char *name; //name for interpreter
 	char *Name; // Name for dialog label
 	char *tooltip; // short description
@@ -141,7 +142,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	virtual void cap(int y=1) { if (y) flags|=STYLEDEF_CAPPED; else flags&=~STYLEDEF_CAPPED; }
 	
 	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 void dumpstyledef(StyleDef *sd,int i);

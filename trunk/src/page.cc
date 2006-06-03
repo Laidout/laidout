@@ -90,7 +90,7 @@ int PageStyle::set(const char *flag, int newstate)
 /*! Recognizes 'pageclips', 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
-void PageStyle::dump_in_atts(LaxFiles::Attribute *att)
+void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	flags=0;
@@ -209,18 +209,7 @@ StyleDef *PageStyle::makeStyleDef()
  *  #define RECTPAGE_RIGHTPAGE 16
  * \endcode
  */
-//class RectPageStyle : public PageStyle
-//{
-// public:
-//	unsigned int recttype; //LRTB, IOTB, LRIO
-//	double ml,mr,mt,mb; // margins 
-//	RectPageStyle(unsigned int ntype=RECTPAGE_LRTB,double l=0,double r=0,double t=0,double b=0);
-//	virtual const char *whattype() { return "RectPageStyle"; }
-//	virtual StyleDef *makeStyleDef();
-//	virtual Style *duplicate(Style *s=NULL);
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att);
-//};
+
 
 
 //! Constructor, create new rectangular page style.
@@ -241,12 +230,12 @@ RectPageStyle::RectPageStyle(unsigned int ntype,double l,double r,double t,doubl
  * 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
-void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att)
+void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	ml=mr=mt=mb=0;
 	recttype=0;
 	char *name,*value;
-	PageStyle::dump_in_atts(att);
+	PageStyle::dump_in_atts(att,flag);
 	for (int c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -482,7 +471,7 @@ int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
  * pagestyle should have been set to the default page style for this page.
  *
  */
-void Page::dump_in_atts(LaxFiles::Attribute *att)
+void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++)  {
@@ -492,12 +481,12 @@ void Page::dump_in_atts(LaxFiles::Attribute *att)
 			PageStyle *ps=NULL;
 			if (strcmp(value,"default")) {
 				ps=(PageStyle *)stylemanager.newStyle(value);
-				if (ps) ps->dump_in_atts(att->attributes.e[c]);
+				if (ps) ps->dump_in_atts(att->attributes.e[c],flag);
 			}
 			InstallPageStyle(ps,0);
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
-			g->dump_in_atts(att->attributes.e[c]);
+			g->dump_in_atts(att->attributes.e[c],flag);
 			layers.push(g,1);
 		} else { 
 			DBG cout <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
