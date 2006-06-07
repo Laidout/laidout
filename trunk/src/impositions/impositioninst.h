@@ -26,54 +26,56 @@ class Singles : public Imposition
 	double insetl,insetr,insett,insetb;
 	int tilex,tiley; 
 	RectPageStyle *pagestyle;
+
 	Singles();
 	virtual ~Singles();
 	virtual StyleDef *makeStyleDef();
-	
+	virtual Style *duplicate(Style *s=NULL);
+	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
 	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
-	virtual int *PrintingPapers(int frompage,int topage);
 	virtual int PaperFromPage(int pagenumber);
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
+	virtual int *PrintingPapers(int frompage,int topage);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
-	
-	virtual Style *duplicate(Style *s=NULL);
-	virtual int SetPaperSize(PaperStyle *npaper);
-	virtual void setPage();
 
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+
+	 //-- extra functions for this class:
+	virtual void setPage();
 };
 
 //------------------------ Double Sided Singles ---------------------------
 
-	//***??virtual int SyncPages(Document *doc,int start,int n);
 class DoubleSidedSingles : public Singles
 {
  public:
 	int isvertical,isleft;
 	RectPageStyle *pagestyler;
+
 	DoubleSidedSingles();
+	virtual ~DoubleSidedSingles();
 	virtual StyleDef *makeStyleDef();
+	virtual Style *duplicate(Style *s=NULL);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
-	virtual Page **CreatePages(); // create necessary pages based on default pagestyle
+	virtual Page **CreatePages();
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
-	virtual Style *duplicate(Style *s=NULL);
-	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
-	virtual void setPage();
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
 
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+
+	virtual void setPage();
 };
 
 ////------------------------ Booklet ---------------------------
@@ -84,21 +86,24 @@ class BookletImposition : public DoubleSidedSingles
 	double creep;
 	unsigned long covercolor;
 	unsigned long bodycolor;
+
 	BookletImposition();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	
-//	virtual SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
+	//virtual SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
 	virtual Spread *PaperLayout(int whichpaper);
-	virtual int *PrintingPapers(int frompage,int topage);
+
 	virtual int PaperFromPage(int pagenumber);
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
-	virtual void setPage();
+	virtual int *PrintingPapers(int frompage,int topage);
 
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+
+	virtual void setPage();
 };
 
 

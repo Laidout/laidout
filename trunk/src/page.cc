@@ -43,6 +43,11 @@ using namespace std;
  * 
  * \todo *** integrate pagetype
  */
+/*! \var int PageStyle::pagetype
+ * \brief A number given by an imposition saying what type of pagestyle this is.
+ *
+ * ***this variable has potential, but is barely used currently.
+ */
 /*! \var double PageStyle::width
  * \brief The width of the bounding box of the page.
  */
@@ -149,32 +154,33 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 	return s;
 }
 
+//! The newfunc for PageStyle instances.
 Style *NewPageStyle(StyleDef *def)
-{
-	return new PageStyle;
-}
+{ return new PageStyle; }
 
  //! Return a pointer to a new local StyleDef class with the PageStyle description.
 StyleDef *PageStyle::makeStyleDef()
 {
 	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-	StyleDef *sd=new StyleDef(NULL,"pagestyle","Page","A page","A Page",
+	StyleDef *sd=new StyleDef(NULL,"PageStyle","Generic Page","A page","A Page",
 			Element_Fields, NULL,NULL);
 
-	//int StyleDef::push(const char *nfield,const char *ttip,const char *ndesc,StyleDef *nfields,unsigned int fflags);
+	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NewPageStyle;
 	sd->push("marginsclip",
 			"Margins Clip",
 			"Whether a page's margins clip the contents",
 			"Check this if you want the page's contents to be visible only if they are within the margins.",
-			Element_Bit, NULL,"0",
-			0);
+			Element_Boolean, NULL,"0",
+			0,
+			NULL);
 	sd->push("pageclips",
 			"Page Clips",
 			"Whether a page's outline clips the contents",
 			"Check this if you want the page's contents to be visible only if they are within the page outline.",
-			Element_Bit, NULL,"0",
-			0);
+			Element_Boolean, NULL,"0",
+			0,
+			NULL);
 	sd->push("facingpagesbleed",
 			"Facing Pages Bleed",
 			"Whether contents on a facing page are allowed on to the page",
@@ -182,8 +188,9 @@ StyleDef *PageStyle::makeStyleDef()
 			"What exactly bleeds over is determined from a page spread view. Any contents "
 			"that leach out from a page's boundaries and cross onto other pages is shown. "
 			"This is most useful for instance in a center fold of a booklet.",
-			Element_Bit, NULL,"0",
-			0);
+			Element_Boolean, NULL,"0",
+			0,
+			NULL);
 	return sd;
 }
 
@@ -308,7 +315,7 @@ StyleDef *RectPageStyle::makeStyleDef()
 	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
 						"Rectangular Top Facing Page","Rectangular Top Facing Page",
 						"Rectangular Top Facing Page",Element_Fields,NULL,NULL);
-	else sd=new StyleDef("pagestyle","rectpagestyle","Rectangular Page","Rectangular Page",
+	else sd=new StyleDef("pagestyle","RectPageStyle","Rectangular Page","Rectangular Page",
 					"Rectangular Page",Element_Fields,NULL,NULL);
 	
 	 // the left or inside
@@ -319,14 +326,16 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"How much space to put on the inside of facing pages.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 	else sd->push("leftmargin",
 			"Left Margin",
 			"The left margin",
 			"How much space to put in the left margin.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 	
 	 // right right or outside
 	if (recttype&RECTPAGE_LRIO) 
@@ -336,14 +345,16 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"How much space to put on the outside of facing pages.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 	else sd->push("rightmargin",
 			"Right Margin",
 			"The right margin",
 			"How much space to put in the right margin.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 
 	 // the top or inside
 	if (recttype&RECTPAGE_IOTB) 
@@ -353,14 +364,16 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"How much space to put on the inside of facing pages.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 	else sd->push("topmargin",
 			"Top Margin",
 			"The top margin",
 			"How much space to put in the top margin.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 
 	 // the bottom or outside
 	if (recttype&RECTPAGE_IOTB) 
@@ -370,14 +383,16 @@ StyleDef *RectPageStyle::makeStyleDef()
 			"How much space to put on the outside of facing pages.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 	else sd->push("bottommargin",
 			"Bottom Margin",
 			"The bottom margin",
 			"How much space to put in the bottom margin.",
 			Element_Real,
 			NULL,NULL,
-			0);
+			0,
+			NULL);
 	return sd;
 }
  

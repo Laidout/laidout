@@ -17,6 +17,7 @@
 
 #include "netimposition.h"
 #include "dodecahedron.h"
+#include "stylemanager.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
 
@@ -42,19 +43,28 @@ using namespace std;
  * The net's faces should be defined such that the inside is to the left 
  * as you traverse the points, and when you draw on the normal math plane
  * which has positive x to the right, and positive y is up.
+ *
+ * \todo needs a little more work to keep track of kinds of pages, especially
+ *   when creating getting pagestyles for them.. if pagestyle starts having
+ *   outlines, this will become important
  */
 
 
 //! Constructor. Transfers newnet pointer, does not duplicate.
 /*!  Default is to have a dodecahedron.
+ *
+ * If newnet is not NULL, then its count is incremented (in SetNet()).
  */
 NetImposition::NetImposition(Net *newnet)
 	: Imposition("Net")
 { 
 	 // setup default paperstyle and pagestyle
-	paperstyle=new PaperStyle("letter",8.5,11.0,0,300);//***should be global default
+	paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
+	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
+	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
 	
 	net=NULL;
+	pagestyle=NULL;
 	if (!newnet) {
 		SetNet(makeDodecahedronNet(paperstyle->w(),paperstyle->h()));
 		netisbuiltin=1; //this line must be after SetNet
@@ -64,12 +74,20 @@ NetImposition::NetImposition(Net *newnet)
 	}
 
 	printnet=1;
+	
+	styledef=stylemanager.FindDef("NetImposition");
+	if (styledef) styledef->inc_count(); 
+	else {
+		styledef=makeStyleDef();
+		if (styledef) stylemanager.AddStyleDef(styledef);
+	}
 }
  
-//! Deletes net.
+//! Dec_count() of the net, and pagestyle.
 NetImposition::~NetImposition()
 {
-	if (net) delete net;
+	if (net) net->dec_count();
+	pagestyle->dec_count();
 }
 
 //! Sets net to a builtin net.
@@ -81,23 +99,28 @@ NetImposition::~NetImposition()
 int NetImposition::SetNet(const char *nettype)
 {
 	if (!strcmp(nettype,"dodecahedron")) {
-		SetNet(makeDodecahedronNet(paperstyle->w(),paperstyle->h()));
+		Net *newnet=makeDodecahedronNet(paperstyle->w(),paperstyle->h()); //1 count
+		SetNet(newnet); //adds a count
+		newnet->dec_count(); //remove extra count
 		netisbuiltin=1;
 		return 0;	
 	}
 	return 1;
 }
 
-
 /*! Warning: transfers pointer, does not make duplicate.
- * Deletes old net.
+ * Dec_count() on the old net, and inc_count() on the new net.
+ *
+ * NOTE that if newnet happens to be the same as the current net, its
+ * count is NOT incremented.
  *
  * Return 0 if changed, 1 if not.
  */
 int NetImposition::SetNet(Net *newnet)
 {
 	if (!newnet) return 1;
-	if (net && net!=newnet) delete net;
+	if (net && net!=newnet) net->dec_count();
+	if (net!=newnet) newnet->inc_count();
 	net=newnet;
 	netisbuiltin=0;
 	
@@ -115,8 +138,9 @@ int NetImposition::SetNet(Net *newnet)
 void NetImposition::setPage()
 {
 	if (!paperstyle) return;
-	if (pagestyle) delete pagestyle;
+	if (pagestyle) pagestyle->dec_count();
 	pagestyle=new PageStyle();
+	pagestyle->pagetype=0;
 	if (!net || !net->nf) return;
 
 	 //find generic bounds of a face
@@ -133,6 +157,324 @@ void NetImposition::setPage()
 	}
 	pagestyle->width= b.maxx-b.minx;
 	pagestyle->height=b.maxy-b.miny;
+}
+
+//! The newfunc for Singles instances.
+Style *NewNetImposition(StyleDef *def)
+{ 
+	NetImposition *n=new NetImposition;
+	n->styledef=def;
+	return n;
+}
+
+//! Return a new EnumStyle instance that has Dodecahedron listed.
+Style *CreateNetListEnum(StyleDef *sd)
+{
+	EnumStyle *e=new EnumStyle;
+	e->add("Dodecahedron",0);
+	//e->add("Cube",1);
+	return e;
+}
+
+//! Make an instance of the NetImposition imposition styledef.
+/* ...
+ */
+StyleDef *NetImposition::makeStyleDef()
+{
+	StyleDef *sd=new StyleDef(NULL,"NetImposition","Net",
+			"Imposition of a fairly arbitrary net",
+			NULL,
+			Element_Fields,
+			NULL,NULL,
+			NULL,
+			0, //new flags
+			NewNetImposition);
+
+	sd->push("printnet",
+			"Print Net",
+			"Whether to show the net outline when printing out a document.",
+			NULL,
+			Element_Boolean,
+			NULL, "1",
+			0,0);
+	sd->push("net",
+			"Net",
+			"What kind of net is the imposition using",
+			NULL,
+			Element_DynamicEnum,
+			NULL, "0",
+			0,0,CreateNetListEnum);
+	return sd;
+}
+
+//! Copy over net and whether it is builtin..
+Style *NetImposition::duplicate(Style *s)//s=NULL
+{
+	NetImposition *d;
+	if (s==NULL) s=d=new NetImposition();
+	else d=dynamic_cast<NetImposition *>(s);
+	if (!d) return NULL;
+	
+	 // copy net
+	d->net=net->duplicate();
+	d->netisbuiltin=netisbuiltin;
+	d->setPage();
+		
+	return s;
+}
+
+//! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
+int NetImposition::SetPaperSize(PaperStyle *npaper)
+{
+	if (Imposition::SetPaperSize(npaper)) return 1;
+	setPage();
+	return 0;
+}
+
+/*! \todo *** fixme!! just returns whatever is in pagestyle, should be a special pagestyle for
+ *    the face type...
+ *
+ * Local styles have count of 1, nonlocal increases the default's count by 1.
+ */
+PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
+{
+	if (!pagestyle) return NULL;
+	PageStyle *ps=NULL;
+	if (local || PageType(pagenum)!=pagestyle->pagetype) {
+		ps=(PageStyle *)pagestyle->duplicate();
+		ps->pagetype=PageType(pagenum);
+		ps->flags|=PAGESTYLE_AUTONOMOUS;
+	} else {
+		pagestyle->inc_count();
+		ps=pagestyle;
+	}
+	return ps;
+}
+
+
+/*! \fn Page **NetImposition::CreatePages()
+ * \brief Create the required pages.
+ *
+ * If thispagestyle is not NULL, then this style is to be preferred over
+ * the internal page style(?!!?!***)
+ *
+ * \todo when pagestyle handling is ironed out more, this will have to be modified to
+ *   not create local pagestyles.
+ */
+Page **NetImposition::CreatePages()
+{
+	if (numpages==0) return NULL;
+	Page **pages=new Page*[numpages+1];
+	int c;
+	PageStyle *ps;
+	for (c=0; c<numpages; c++) {
+		 // pagestyle is passed to Page where its count is inc'd..
+		ps=GetPageStyle(c,0); //count of 1
+		pages[c]=new Page(ps,0,c);
+		ps->dec_count(); //remove extra count
+	}
+	pages[c]=NULL;
+	return pages;
+}
+
+
+/*! \fn SomeData *NetImposition::GetPage(int pagenum,int local)
+ * \brief Return outline of page in paper coords. Origin is page origin.
+ *
+ * This is a no frills outline, used primarily to check where the mouse
+ * is clicked down on.
+ * If local==1 then return a new local SomeData. Otherwise return a
+ * counted object. In this case, the item should be guaranteed to have
+ * a reference count tick that refers to the returned pointer.
+ *
+ * This currently always creates a new PathsData. In the future when
+ * pagetype is implemented more effectively, there will likely be a few outlines
+ * laying around, and a link to them would be returned.
+ */
+LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
+{
+	if (pagenum<0 || pagenum>=numpages) return NULL;
+	int pg=pagenum%net->nf;
+	PathsData *newpath=new PathsData(); //count==1
+	
+	 // find transform from paper coords to page coords 
+	 //  (this here is specifically (paper face coords)->(paper),
+	 //   which is slightly different from real page coords. Assumption here
+	 //   is that page lengths are the same as paper lengths)
+	double m[6],mm[6];
+	net->basisOfFace(pg,m,1);
+
+	transform_copy(newpath->m(),m); // newpath->m: (face) -> (paper)
+	
+	transform_invert(m,newpath->m()); // m: (paper) -> (face)
+	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
+	
+	flatpoint p[net->faces[pg].np];
+	DBG cout <<"NetImposition::GetPage:\n";
+	for (int c=0; c<net->faces[pg].np; c++) {
+		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
+		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
+	}
+	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
+	newpath->close();
+	newpath->FindBBox();
+
+	return newpath;
+}
+
+
+/*! \fn Spread *NetImposition::PageLayout(int whichspread)
+ * \brief Returns a page view spread that contains whichspread, in viewer coords.
+ *
+ * whichpage starts at 0.
+ * Derived classes must fill the spread with a path, and the PageLocation stack.
+ * The path holds the outline of the spread, and the PageLocation stack holds
+ * transforms to get from the overall coords to each page's coords.
+ */
+Spread *NetImposition::PageLayout(int whichspread)
+{
+	if (!net) return NULL;
+	
+	Spread *spread=new Spread();
+	spread->style=SPREAD_PAGE;
+	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+
+	int firstpage=whichspread*net->nf;
+
+	 // fill pagestack
+	SomeData *newpath;
+	int c;
+	for (int c=0; c<net->nf; c++) {
+		if (firstpage+c>=numpages) break;
+		newpath=GetPage(c,0); // transformed page, count at least 1 more
+		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,0)); //incs newpath count
+		newpath->dec_count();//remove extra count
+	}
+
+	 // fill spread with net outline
+	PathsData *npath=new PathsData();
+	int c2;
+	for (c=0; c<net->nl; c++) {
+		npath->pushEmpty();
+		for (c2=0; c2<net->lines[c].np; c2++) {
+			npath->append(transform_point(net->m(),net->points[net->lines[c].points[c2]]));
+			if (net->lines[c].isclosed) npath->close();
+		}
+	}
+	npath->FindBBox();
+	spread->path=npath;
+	spread->pathislocal=0; //current npach count is 1, so this is ok
+	
+	 // define max/min points
+	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
+		else newpath=npath;
+	spread->minimum=transform_point(newpath->m(),
+			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+	spread->maximum=transform_point(newpath->m(),
+			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+
+	return spread;
+}
+
+//! Returns same as PageLayout, but with the paper outline included.
+Spread *NetImposition::PaperLayout(int whichpaper)
+{
+	if (!net) return NULL;
+	Spread *spread=PageLayout(whichpaper*net->nf);
+	spread->style=SPREAD_PAPER;
+
+	 // make the paper outline
+	PathsData *path=static_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
+
+	 // put a reference to the outline in marks if printnet
+	if (printnet) {
+		spread->mask|=SPREAD_PRINTERMARKS;
+		spread->marks=path;
+		spread->marksarelocal=0;
+		path->inc_count();
+	}
+	
+	Group *g=new Group;
+	spread->path=static_cast<SomeData *>(g);
+	g->push(path,0);    //incs count: the net outline
+	
+	PathsData *path2=new PathsData();//the paper outline
+	g->push(path2,0);   //incs count
+	path2->dec_count(); //remove extra count
+	path2->appendRect(0,0,paperstyle->w(),paperstyle->h(),0);
+
+	g->FindBBox();
+
+	return spread;
+}
+
+
+//! Returns pagenumber/net->nf.
+int NetImposition::PaperFromPage(int pagenumber)
+{
+	if (!net) return 0;
+	return pagenumber/net->nf;
+}
+
+//! Returns npapers*net->nf.
+int NetImposition::GetPagesNeeded(int npapers)
+{
+	if (!net) return 0;
+	return npapers*net->nf;
+}
+
+//! Returns (npages-1)/net->nf+1.
+int NetImposition::GetPapersNeeded(int npages)
+{
+	if (!net) return 0;
+	return (npages-1)/net->nf+1;
+}
+
+//! Same as GetPapersNeeded().
+int NetImposition::GetSpreadsNeeded(int npages)
+{
+	return GetPapersNeeded(npages);
+}
+
+/*!\brief Return a specially formatted list of papers needed to print the range of pages.
+ *
+ * It is a -2 terminated int[] of papers needed to print [frompage,topage].
+ * A range of papers is specified using 2 consecutive numbers. Single papers are
+ * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
+ * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
+ */
+int *NetImposition::PrintingPapers(int frompage,int topage)
+{
+	int fp,tp;
+	if (topage<frompage) { tp=topage; topage=frompage; frompage=tp; }
+	fp=frompage/net->nf;
+	tp=topage/net->nf;
+	if (fp==tp) {
+		int *i=new int[3];
+		i[0]=fp;
+		i[1]=-1;
+		i[2]=-2;
+		return i;
+	}
+	int *i=new int[3];
+	i[0]=fp;
+	i[1]=tp;
+	i[2]=-2;
+	return i;
+}
+
+//! Bit of a cop-out currently, just returns page/net->nf.
+/*! \todo *** need more redundancy checking among the faces somehow...
+ */
+int NetImposition::PageType(int page)
+{
+	return page/net->nf;
+}
+
+//! For now assuming only 1 spread type, which is same as paper spread. Returns 0.
+int NetImposition::SpreadType(int spread)
+{
+	return 0;
 }
 
 /*! Output:
@@ -196,279 +538,5 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 		}
 	}
 	setPage();
-}
-
-//! Just makes sure that s can be cast to NetImposition. If yes, return s, if no, return NULL.
-Style *NetImposition::duplicate(Style *s)//s=NULL
-{
-	NetImposition *d;
-	if (s==NULL) s=d=new NetImposition();
-	else d=dynamic_cast<NetImposition *>(s);
-	if (!d) return NULL;
-	
-	 // copy net
-	d->net=net->duplicate();
-		
-	return s;
-}
-
-
-//! Return a box describing a good scratchboard size for pagelayout (page==1) or paper layout (page==0).
-/*! Default is to return bounds 3 times the paper or page size, with the paper/page centered.
- *
- * Place results in bbox if bbox!=NULL. If bbox==NULL, then create a new DoubleBBox and return that.
- */
-Laxkit::DoubleBBox *NetImposition::GoodWorkspaceSize(int page,Laxkit::DoubleBBox *bbox)//page=1
-{
-	if (page==0 || page==1) {
-		if (!bbox) bbox=new DoubleBBox();
-		bbox->setbounds(-paperstyle->width,2*paperstyle->width,-paperstyle->height,2*paperstyle->height);
-	} else return NULL;
-	return bbox;
-}
-
-//! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
-int NetImposition::SetPaperSize(PaperStyle *npaper)
-{
-	if (!npaper) return 1;
-	if (paperstyle) delete paperstyle;
-	paperstyle=(PaperStyle *)npaper->duplicate();
-	
-	setPage();
-	return 0;
-}
-
-/*! \todo *** fixme!! just returns whatever is in pagestyle, should be a special pagestyle for
- *    the face type...
- */
-PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
-{
-	cout <<" *** fixme: NetImposition::GetPageStyle!!"<<endl;
-	if (!pagestyle) return NULL;
-	if (local) return (PageStyle *)pagestyle->duplicate();
-	pagestyle->inc_count();
-	return pagestyle;
-}
-
-
-/*! \fn Page **NetImposition::CreatePages()
- * \brief Create the required pages.
- *
- * If thispagestyle is not NULL, then this style is to be preferred over
- * the internal page style(?!!?!***)
- */
-Page **NetImposition::CreatePages()
-{
-	if (numpages==0) return NULL;
-	Page **pages=new Page*[numpages+1];
-	int c;
-	PageStyle *ps;
-	ps=GetPageStyle(c,0);
-	for (c=0; c<numpages; c++) {
-		 // pagestyle is passed to Page where its count is inc'd..
-		pages[c]=new Page(ps,0,c); 
-	}
-	pages[c]=NULL;
-	return pages;
-}
-
-
-/*! \fn SomeData *NetImposition::GetPage(int pagenum,int local)
- * \brief Return outline of page in paper coords. Origin is page origin.
- *
- * This is a no frills outline, used primarily to check where the mouse
- * is clicked down on.
- * If local==1 then return a new local SomeData. Otherwise return a
- * counted object. In this case, the item should be guaranteed to have
- * a reference count of one that refers to the returned pointer.
- */
-LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
-{
-	if (pagenum<0 || pagenum>=numpages) return NULL;
-	int pg=pagenum%net->nf;
-	PathsData *newpath=new PathsData(); //count==1
-	
-	 // find transform from paper coords to page coords 
-	 //  (this here is specifically (paper face coords)->(paper),
-	 //   which is slightly different from real page coords. Assumption here
-	 //   is that page lengths are the same as paper lengths)
-	double m[6],mm[6];
-	net->basisOfFace(pg,m,1);
-
-	transform_copy(newpath->m(),m); // newpath->m: (face) -> (paper)
-	
-	transform_invert(m,newpath->m()); // m: (paper) -> (face)
-	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
-	
-	flatpoint p[net->faces[pg].np];
-	DBG cout <<"NetImposition::GetPage:\n";
-	for (int c=0; c<net->faces[pg].np; c++) {
-		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
-		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
-	}
-	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
-	newpath->close();
-	newpath->FindBBox();
-
-	return newpath;
-}
-
-//! Just returns PageLayout(whichpage).
-Spread *NetImposition::GetLittleSpread(int whichpage)
-{ return PageLayout(whichpage); }
-
-
-/*! \fn Spread *NetImposition::PageLayout(int whichpage)
- * \brief Returns a page view spread that contains whichpage, in viewer coords.
- *
- * whichpage starts at 0.
- * Derived classes must fill the spread with a path, and the PageLocation stack.
- * The path holds the outline of the spread, and the PageLocation stack holds
- * transforms to get from the overall coords to each page's coords.
- */
-Spread *NetImposition::PageLayout(int whichpage)
-{
-	if (!net) return NULL;
-	
-	Spread *spread=new Spread();
-	spread->style=SPREAD_PAGE;
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
-
-	int firstpage=(whichpage/net->nf)*net->nf;
-
-	 // fill pagestack
-	SomeData *newpath;
-	int c;
-	for (int c=0; c<net->nf; c++) {
-		if (firstpage+c>=numpages) break;
-		newpath=GetPage(c,1); // transformed page, local copy
-		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,1));
-	}
-
-	 // fill spread with page outline
-	PathsData *npath=new PathsData();
-	int c2;
-	for (c=0; c<net->nl; c++) {
-		npath->pushEmpty();
-		for (c2=0; c2<net->lines[c].np; c2++) {
-			npath->append(transform_point(net->m(),net->points[net->lines[c].points[c2]]));
-			if (net->lines[c].isclosed) npath->close();
-		}
-	}
-	npath->FindBBox();
-	spread->path=npath;
-	spread->pathislocal=1;
-	
-	 // define max/min points
-	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
-		else newpath=npath;
-	spread->minimum=transform_point(newpath->m(),
-			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-	spread->maximum=transform_point(newpath->m(),
-			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-
-	return spread;
-}
-
-//! Returns same as PageLayout, but with the paper outline included.
-/*! \todo *** spread->marks (the printer marks) should optionally hold
- * the outline of the net, according to value of printnet.
- */
-Spread *NetImposition::PaperLayout(int whichpaper)
-{
-	if (!net) return NULL;
-	Spread *spread=PageLayout(whichpaper*net->nf);
-	spread->style=SPREAD_PAPER;
-
-	 // make the paper outline
-	PathsData *path=static_cast<PathsData *>(spread->path);//this was a local PathsData obj
-
-	 // put a reference to the outline in marks if printnet
-	if (printnet) {
-		spread->mask|=SPREAD_PRINTERMARKS;
-		spread->marks=path;
-		spread->marksarelocal=0;
-		//path->inc_count(); <-- shouldn't have to do this
-	}
-	
-	Group *g=new Group;
-	spread->path=static_cast<SomeData *>(g);
-	PathsData *path2=new PathsData();
-	g->push(path2,0);
-	g->push(path,0);
-	path->pushEmpty(0);
-	path->appendRect(0,0,paperstyle->w(),paperstyle->h(),0);
-	g->FindBBox();
-
-	return spread;
-}
-
-/*!\brief Return a specially formatted list of papers needed to print the range of pages.
- *
- * It is a -2 terminated int[] of papers needed to print [frompage,topage].
- * A range of papers is specified using 2 consecutive numbers. Single papers are
- * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
- * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
- */
-int *NetImposition::PrintingPapers(int frompage,int topage)
-{
-	int fp,tp;
-	if (topage<frompage) { tp=topage; topage=frompage; frompage=tp; }
-	fp=frompage/net->nf;
-	tp=topage/net->nf;
-	if (fp==tp) {
-		int *i=new int[3];
-		i[0]=fp;
-		i[1]=-1;
-		i[2]=-2;
-		return i;
-	}
-	int *i=new int[3];
-	i[0]=fp;
-	i[1]=tp;
-	i[2]=-2;
-	return i;
-}
-
-
-//! Returns pagenumber/net->nf.
-int NetImposition::PaperFromPage(int pagenumber)
-{
-	if (!net) return 0;
-	return pagenumber/net->nf;
-}
-
-//! Returns npapers*net->nf.
-int NetImposition::GetPagesNeeded(int npapers)
-{
-	if (!net) return 0;
-	return npapers*net->nf;
-}
-
-//! Returns (npages-1)/net->nf+1.
-int NetImposition::GetPapersNeeded(int npages)
-{
-	if (!net) return 0;
-	return (npages-1)/net->nf+1;
-}
-
-//! Same as GetPapersNeeded().
-int NetImposition::GetSpreadsNeeded(int npages)
-{
-	return GetPapersNeeded(npages);
-}
-
-//! Bit of a cop-out currently, just returns page/net->nf.
-/*! \todo *** need more redundancy checking among the faces somehow...
- */
-int NetImposition::PageType(int page)
-{
-	return page/net->nf;
-}
-
-//! For now assuming only 1 spread type, which is same as paper spread. Returns 0.
-int NetImposition::SpreadType(int spread)
-{
-	return 0;
 }
 

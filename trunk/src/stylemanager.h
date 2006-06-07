@@ -22,16 +22,19 @@
 class StyleManager
 {
  protected:
-	
+	int firstuserdef;
  public:
 	Laxkit::PtrStack<StyleDef> styledefs;
 	Laxkit::PtrStack<Style> styles;
-	int AddStyleDef(StyleDef *def);
+	int AddStyleDef(StyleDef *def,int absorb=0);
 	//void deleteStyle(Style *style);
 	Style *newStyle(const char *styledef);
 	Style *newStyle(Style *baseonthis);// <--create a generic?
 	StyleDef *FindDef(const char *styledef);
+	Style *FindStyle(const char *style);
 	void flush();
+
+	void dump(FILE *f,int w=1);
 };
 
 #ifndef LAIDOUT_CC

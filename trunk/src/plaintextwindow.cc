@@ -30,7 +30,7 @@ using namespace Laxkit;
  * Ultimately, they might contain something like Latex code that an EPS
  * grabber might run to get formulas.... Big todo!!
  */
-class PlainText : public Laxkit::anObject
+class PlainText : public Laxkit::anObject, public Laxkit::RefCounted
 {
  public:
 	int ownertype;
@@ -38,7 +38,7 @@ class PlainText : public Laxkit::anObject
 		Laxkit::anObject *owner;
 		char *filename;
 	} owner;
-	lastmodtime;
+	clock_t lastmodtime;
 	char *thetext;
 };
 
@@ -58,6 +58,7 @@ class PlainText : public Laxkit::anObject
 // 	virtual const char *whattype() { return "PlainTextWindow"; }
 // 	virtual int init();
 //	virtual ~PlainTextWindow();
+//	virtual int UseThis(PlainText *txt);
 //};
 
 PlainTextWindow::PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
