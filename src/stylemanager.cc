@@ -32,7 +32,11 @@ using namespace Laxkit;
 //{
 //	return stylemanager.styledefs.remove(stylemanager.styledefs.findindex(obj));
 //}
-
+//------------------------------
+//StyleManagerNode {
+//	StyleDef *def;
+//	PtrStack<Style> styles;
+//}
 //-------------------------- StyleDefinition/StyleManager -------------------------------
 
 typedef Style *(*StyleCreateFunc)(StyleDef *def);
@@ -40,21 +44,27 @@ typedef Style *(*StyleCreateFunc)(StyleDef *def);
 /*! \class StyleManager
  * \brief Holds style definitions and style instances.
  */
-//class StyleManager
-//{
-// protected:
-//	
-// public:
-//	PtrStack<StyleDef> styledefs;
-//	PtrStack<Style> styles;
-//	int AddStyleDef(StyleDef *def);
-////	void deleteStyle(Style *style);
-//	Style *newStyle(const char *styledef);
-//	Style *newStyle(Style *baseonthis); <--create a generic?
-//	StyleDef *FindDef(const char *styledef);
-//	void flush();
-//};
-//
+
+
+//! Mainly For debugging at the moment... w&1 defs, w&2 styles...
+/*! In the future, this could be used to automatically dump out a 
+ * file format description, analogous to dtds.
+ */
+void StyleManager::dump(FILE *f,int w)
+{
+	if (w&1) {
+		for (int c=0; c<styledefs.n; c++) {
+			fprintf(f,"styledef %d\n",c);
+			styledefs.e[c]->dump_out(f,2,0);
+		}
+	}
+	if (w&2) {
+		for (int c=0; c<styles.n; c++) {
+			fprintf(f,"style %d\n",c);
+			styles.e[c]->dump_out(f,2,0);
+		}
+	}
+}
 
 //! Flush styles and styledefs.
 void StyleManager::flush()
@@ -63,24 +73,57 @@ void StyleManager::flush()
 	styles.flush();
 }
 
-//! Currently, just does return styledefs.pushnodup(def).
+//! Currently, just does return styledefs.pushnodup(def,0).
 /*! Return 1 for style exists already. 0 for success.
+ *
+ * If it does not exist already, then def->inc_count() is called.
+ *
+ * If absorb, then the def was just created, and one of its count
+ * refers to def. The calling code does not want to worry about that
+ * count whether or not the style was taken already. So if the style was
+ * taken already, then def->dec_count() is called, which will typically
+ * destroy def. If the style is new, then its count will increase by one
+ * here, which refers to the stylemanager reference.
+ *
+ * If absorb==0, the initial tick for the def pointer remains whether or
+ * not the style existed already.
+ * 
+ * \todo decide whether StyleManager gets its own count on the def,
+ *   or if it puts a special deleteMe in the def to tell manager to
+ *   remove all reference to it..
  */
-int StyleManager::AddStyleDef(StyleDef *def)
+int StyleManager::AddStyleDef(StyleDef *def, int absorb)
 {
 	int c;
 	for (c=0; c<styledefs.n; c++) {
-		if (!strcmp(def->name,styledefs.e[c]->name)) return 1;
+		if (!strcmp(def->name,styledefs.e[c]->name)) {
+			if (absorb) def->dec_count();
+			return 1;
+		}
 	}
 	//def->deleteMe=RemoveStyleDefFromManager;
-	return styledefs.pushnodup(def,0);
+	styledefs.push(def,0);
+	if (!absorb) def->inc_count();
+	return 0;
 }
 
 //! Find the styledef with StyleDef::name same as styledef.
+/*! This returns the pointer, but does NOT increase the count on it.
+ */
 StyleDef *StyleManager::FindDef(const char *styledef)
 {
 	for (int c=0; c<styledefs.n; c++)
 		if (!strcmp(styledef,styledefs.e[c]->name)) return styledefs.e[c];
+	return NULL;
+}
+
+//! Find the style with Style::stylename same as style.
+/*! This returns the pointer, but does NOT increase the count on it.
+ */
+Style *StyleManager::FindStyle(const char *style)
+{
+	for (int c=0; c<styles.n; c++)
+		if (!strcmp(style,styles.e[c]->Stylename())) return styles.e[c];
 	return NULL;
 }
 

@@ -75,13 +75,17 @@ enum ElementType {
 	Element_Real,
 	Element_String,
 	Element_Fields, 
-	Element_Bit,
+	Element_Boolean,
 	Element_3bit,
 	Element_Enum,
+	Element_DynamicEnum,
 	Element_EnumVal,
 	Element_Function,
+	Element_Color,
 	Element_MaxFormatVal 
 };
+extern const char *element_TypeNames[11];
+		
 
 #define STYLEDEF_DUPLICATE 1
 #define STYLEDEF_ORPHAN    2
@@ -116,7 +120,8 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	StyleDef();
 	StyleDef(const char *nextends,const char *nname,const char *nName,const char *ttip,
 			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
-			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED);
+			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
+			NewStyleFunc nnewfunc=0);
 	virtual ~StyleDef();
 
 	 // helpers to locate fields by name, "blah.3.x"
@@ -130,10 +135,13 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
 	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
-			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags);
+					 ElementType fformat,const char *nrange, const char *newdefval,
+					 unsigned int fflags,
+					 NewStyleFunc nnewfunc);
 	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
-						ElementType fformat,const char *nrange, const char *newdefval,
-						Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags);
+					 ElementType fformat,const char *nrange, const char *newdefval,
+					 Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
+					 NewStyleFunc nnewfunc);
 	virtual int push(StyleDef *newfield);
 	virtual int pop(int fieldindex);
 
@@ -144,8 +152,6 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
-
-void dumpstyledef(StyleDef *sd,int i);
 
 //------------------------------------- FieldNode -------------------------------------------
 class Style;
@@ -224,6 +230,22 @@ class Style : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxk
 //	virtual double getdouble(const char *ext);
 //	virtual char *getstring(FieldMask *field);
 //	virtual char *getstring(const char *ext);
+};
+
+class EnumStyle : public Style
+{
+ public:
+	Laxkit::NumStack<int> ids;
+	Laxkit::PtrStack<char> names;
+
+	EnumStyle();
+	virtual Style *duplicate(Style *s=NULL);
+	virtual int add(const char *nname,int nid=-1);
+	virtual const char *name(int Id);
+	virtual int id(const char *Name);
+	virtual int num() { return names.n; }
+	virtual void dump_out(FILE *f,int indent,int what) {}
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag) {}
 };
 
 #endif

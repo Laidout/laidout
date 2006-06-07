@@ -230,26 +230,22 @@ int *Spread::pagesFromSpread()
  *
  * The Imposition class is meant to describe a single style of chopping
  * and folding of same sized pieces of paper. The individual papers can
- * be of different colors, but must be the same size. Something like a book where
+ * be of different colors (***see todos), but must be the same size. Something like a book where
  * the cover would be printed on a piece of paper with a different size then the
- * body papers would not be all done in a single Imposition. That would be a ProjectStyle
+ * body papers would not be all done in a single Imposition. That would be a ***??
  * with 2 Imposition classes used (???).
  * 
- * It is the responsibility of the Imposition subclass to make sure numpapers, numspreads,
- * and numpages are all consistent with each other.
- * 
- * \todo needs to be a standard to be duplex aware..
- * \todo ***finishing imping built in impositions
- * 
- * Currently the built in Imposition styles are
- *  single pages,
- *  singles meant as double sided, such as would be stapled in the
- *    corner or along the edge,
- *  the slightly more versatile booklet format where the papers are folded at the spine,
- *  and the super-duper BasicBookImposition, comprised of multiple sections, each of which have 
+ * Currently the built in Imposition styles are single pages, singles meant as double sided,
+ * such as would be stapled in the corner or along the edge, the slightly more versatile booklet
+ * format where the papers are folded at the spine,
+ *  \todo the super-duper BasicBookImposition, comprised of multiple sections, each of which have 
  *    one fold down the middle. Section there means basically the same
  *    as "signature". Also, the basic book imposition works together with a
  *    BookCover imposition, which is basically 4 pages, and the spine.
+ *  \todo and the WhatupImposition, than allows n-up printing of any other Imposition.
+ *
+ * \todo needs to be a standard to be duplex aware..
+ * \todo ***finishing imping built in impositions
  *
  * The imposition's name is stored in stylename inherited from Style.
  *
@@ -257,6 +253,11 @@ int *Spread::pagesFromSpread()
  * of pages in a document, but the document can add or remove pages whenever it wants, so
  * care must be taken, especially in Document, to maintain sanity
  * This is ugly!! maybe have imposition point to a doc??
+ *
+ * \todo *** need to think about printer marks and paper colors. they are very haphazard, and 
+ *   built in to the PaperLayout() functions currently. need some standard to allow for
+ *   different papers previewing differently to each other, and also to have different printer
+ *   marks, but still be meaningful after a paper/pagesize changes.
  */
 /*! \var int Imposition::numpapers
  * \brief The number of papers available.
@@ -390,6 +391,11 @@ int *Spread::pagesFromSpread()
  *  explicitly based on another imposition must set up the proper styledef and basedon
  *  themselves. The standard built in impositions all act autonomously, meaning they each
  *  completely define their own StyleDef, and are not based on another Imposition.
+ *
+ *  Otherwise, Imposition subclasses must establish paperstyle, and usually also their
+ *  own pagestyles based on the paperstyle. It is assumed that the numpages, numpapers,
+ *  and numspreads are set soon after creation by the code that creates the instance
+ *  in the first place.
  */
 Imposition::Imposition(const char *nsname)
 	: Style (NULL,NULL,nsname)
@@ -397,6 +403,14 @@ Imposition::Imposition(const char *nsname)
 	doc=NULL;
 	paperstyle=NULL; 
 	numpages=numspreads=numpapers=0; 
+}
+
+/*! Does paperstyle->dec_count().
+ * \todo figure out how doc should be handled, and whether it belongs in this class.
+ */
+Imposition::~Imposition()
+{
+	if (paperstyle) paperstyle->dec_count();
 }
 
 
@@ -415,6 +429,10 @@ Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)//pag
 }
 
 //! Just makes sure that s can be cast to Imposition. If yes, return s, if no, return NULL.
+/*! Note that this does not duplicate the paperstyle. The builtin
+ * impositions create their own copy of the default papersize in their
+ * constructors.
+ */
 Style *Imposition::duplicate(Style *s)//s=NULL
 {
 	if (s==NULL) return NULL; // Imposition is abstract
@@ -424,13 +442,18 @@ Style *Imposition::duplicate(Style *s)//s=NULL
 }
 
 //! Ensure that each page has a proper pagestyle.
-/*! This is called when pages are added or removed.
+/*! This is called when pages are added or removed. It replaces the pagestyle for
+ *  the whichever page with the pagestyle returned by GetPageStyle(c,0).
  *
  *  When the pagestyle is a custom style, then the PageStyle::flags are preserved,
  *  and applied to a new duplicate of the actual default pagestyle.
  *  This preserves whether page clips and facing pages bleed.
  *
  * \todo *** perhaps break this down so there's a SyncPage()?
+ * \todo *** for more complicated pagestyles, this will forget any
+ *   custom changes it may have had, which may or may not be good. ultimately
+ *   for arbitrary foldouts, this might be important. There is the PageStyle::pagetype
+ *   element that can be used to preserve the basic kind of thing....
  */
 int Imposition::SyncPages(Document *doc,int start,int n)
 {
@@ -473,6 +496,8 @@ int Imposition::SyncPages(Document *doc,int start,int n)
  * value in response to the new papersize.
  *
  * Return 0 success, nonzero error.
+ *
+ * \todo *** perhaps this should also be dec_count(), not delete?
  */
 int Imposition::SetPaperSize(PaperStyle *npaper)
 {
@@ -487,9 +512,12 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 }
 
 //! Set the number of papers to npapers, and set numpages,numspreads as appropriate.
-/*! Default is to set numpapers=npapers, and numpages=GetPagesNeeded(numpapers).
- * Does not check to make sure npapers is a valid number.
- *
+/*! Default is to set numpapers=npapers, 
+ *  numpages=GetPagesNeeded(numpapers), and 
+ *  numspreads=GetSpreadsNeeded(numpages).
+ *  
+ * Does not check to make sure npapers is a valid number for any document in question.
+ * 
  * Returns the new value of numpapers.
  */
 int Imposition::NumPapers(int npapers)
@@ -501,7 +529,10 @@ int Imposition::NumPapers(int npapers)
 }
 
 //! Set the number of pages to npage, and set numpapers,numspreads as appropriate.
-/*! Default is to set numpagess=npages, and numpapers=GetPapersNeeded(numpapers).
+/*! Default is to set numpagess=npages, 
+ * numpapers=GetPapersNeeded(numpapers), and 
+ * numspreads=GetSpreadsNeeded(numpages).
+ * 
  * Does not check to make sure npages is a valid number.
  *
  * Returns the new value of numpages.

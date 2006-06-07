@@ -59,6 +59,8 @@ using namespace std;
 //----------------------------------- pre-run misc -----------------------------------
 
 //! "Laidout Version LAIDOUT_VERSION by Tom Lechner, sometime in 2006"
+/*! \ingroup lmisc
+ */
 const char *LaidoutVersion() 
 { 
 	static char *version_str=NULL;
@@ -250,17 +252,40 @@ LaidoutApp::~LaidoutApp()
  * control window, but no open docs.
  *
  * Create a new project, document, and viewwindow as necessary.
+ *
+ * \todo  manually adding a couple of pagestyles here there should be a better way to handle initializations.
+ *   this should be cleared when plugin architecture is functional
  */
 int LaidoutApp::init(int argc,char **argv)
 {
-	anXApp::init(argc,argv);
-	setupdefaultcolors(); // ***pre-empt anything anXApp read in.....need cleaner way here!
-	
+	anXApp::init(argc,argv); //setupdefaultcolors() is called here
+
+	 //------setup initial pools
+	DBG cout <<"---imposition pool init"<<endl;
 	GetBuiltinImpositionPool(&impositionpool);
+	
+	DBG cout <<"---papersizes pool init"<<endl;
 	GetBuiltinPaperSizes(&papersizes);
+	
+	DBG cout <<"---interfaces pool init"<<endl;
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
+	 // manually adding a couple of pagestyles
+	PageStyle *ps=new PageStyle;
+	StyleDef *sd=ps->makeStyleDef();
+	stylemanager.AddStyleDef(sd,1);
+	delete ps;
+	ps=new RectPageStyle(RECTPAGE_LRTB);
+	sd=ps->makeStyleDef();
+	stylemanager.AddStyleDef(sd,1);
+	delete ps;
+
+	 //read in laidoutrc
+	if (!readinlaidoutrc()) {
+		cout<<"***imp me! install ~/.laidout/laidoutrc"<<endl;
+	}
+	
 	// **** Init Imlib
 	imlib_context_set_display(dpy);
 	imlib_context_set_visual(vis);
@@ -272,6 +297,7 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 // Define default project if necessayr, and Pop something up if there hasn't been anything yet
 	if (!project) project=new Project();
+
 	 //*** set up main control window
 	//maincontrolpanel=new ControlPanel(***);
 	
@@ -282,7 +308,34 @@ int LaidoutApp::init(int argc,char **argv)
 	return 0;
 };
 
-//! Set the builtin Laxkit colors.
+//! Read in the laidoutrc. Return 0 if it doesn't exist, 1 if ok.
+int LaidoutApp::readinlaidoutrc()
+{
+	FILE *f=NULL;
+	if (!readable_file("~/.laidout/laidoutrc",&f)) return 0;
+
+	 //now f is open, must read in...
+	Attribute att;
+	att.dump_in(f,0);
+	char *name,*value;
+	for (int c=0; c<att.attributes.n; c++) {
+		name =att.attributes.e[c]->name;
+		value=att.attributes.e[c]->value;
+		if (!name) continue;
+		if (!strcmp(name,"appcolors")) {
+			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
+		} else if (!strcmp(name,"defaultdoc")) {
+			cout <<"***imp me! readinlaidoutrc: defaultdoc"<<endl;
+		} else if (!strcmp(name,"defaultpapersize")) {
+			cout <<"***imp me! readinlaidoutrc: defaultpapersize"<<endl;
+		}
+	}
+	
+	fclose(f);
+	return 1;
+}
+
+//! Set the builtin Laxkit colors. This is called from anXApp::init().
 /*! ***should switch to color(COLOR_BG), etc.. or color("bg")?? or some other
  * resource system to keep track of first click, directories, bookmarks, etc.
  */
@@ -604,6 +657,10 @@ int main(int argc,char **argv)
 	
 	laidout->init(argc,argv);
 
+	DBG cout <<"------------ stylemanager->dump --------------------"<<endl;
+	DBG stylemanager.dump(stdout,3);
+	DBG cout <<"---------- stylemanager->dump end ---------------------"<<endl;
+
 	laidout->run();
 
 	DBG cout <<"---------Laidout Close--------------"<<endl;
@@ -615,7 +672,8 @@ int main(int argc,char **argv)
 	DBG cout <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.flush();
 
-	cout <<"---------------Bye!-----------------"<<endl;
+	cout <<"-----------------------------Bye!--------------------------"<<endl;
+	DBG cout <<"------------end of code, default destructors follow--------"<<endl;
 
 	return 0;
 }

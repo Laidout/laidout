@@ -72,6 +72,7 @@ class LaidoutApp : public Laxkit::anXApp
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
 	void parseargs(int argc,char **argv);
+	int readinlaidoutrc();
 
 	Document *findDocument(const char *saveas);
 	Document *LoadDocument(const char *filename);

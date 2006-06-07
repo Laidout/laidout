@@ -71,6 +71,22 @@ using namespace LaxFiles;
  * \brief These are in StyleDef to aid in creation of new Style instances by StyleManager.
  */
 
+/*! \ingroup stylesandstyledefs
+ * Names for the ElementType enum.
+ */
+const char *element_TypeNames[11]={
+		"int",
+		"real",
+		"string",
+		"fields",
+		"boolean",
+		"3bit",
+		"enum",
+		"dynamicenum",
+		"enumval",
+		"function",
+		"color"
+	};
 //----------------------------- FieldPlace -----------------------------
 /*! \class FieldPlace
  * \brief Stack of field places. So "3.2.7" would translate into a stack with elements 3, 2, and 7.
@@ -516,14 +532,15 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 			const char *nname, //!< The name that would be used in the interpreter
 			const char *nName, //!< A basic title, most likely an input label
 			const char *ttip,  //!< Tooltip text
-			const char *ndesc, //!< Long description, newlines ok.
-			ElementType fmt,           //!< Format of this StyleDef
-			const char *nrange, //!< String showing range of allowed values
-			const char *newdefval, //!< Default value for the style
+			const char *ndesc,  //!< Long description, newlines ok.
+			ElementType fmt,     //!< Format of this StyleDef
+			const char *nrange,    //!< String showing range of allowed values
+			const char *newdefval,   //!< Default value for the style
 			Laxkit::PtrStack<StyleDef> *nfields, //!< StyleDef for the subfields or enum values.
-			unsigned int fflags) //!< New flags
+			unsigned int fflags,       //!< New flags
+			NewStyleFunc nnewfunc)    //!< New creation function
 {
-	newfunc=NULL;
+	newfunc=nnewfunc;
 	range=defaultvalue=extends=name=Name=tooltip=description=NULL;
 
 	makestr(extends,nextends);
@@ -544,6 +561,7 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 	flags=fflags;
 }
 
+//! Delete the various strings, and styledef->dec_count().
 StyleDef::~StyleDef()
 {
 	if (extends)      delete[] extends;
@@ -553,39 +571,65 @@ StyleDef::~StyleDef()
 	if (description)  delete[] description;
 	if (range)        delete[] range;
 	if (defaultvalue) delete[] defaultvalue;
+	
+	if (extendsdef) extendsdef->dec_count();
 }
 
-/*! \todo *** imp me!!
+//! Write out the stuff inside. 
+/*! If this styledef extends another, this does not write out the whole
+ * def of that, only the name element of it.
  */
 void StyleDef::dump_out(FILE *f,int indent,int what)
 {
-	//***
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	if (name) fprintf(f,"%sname %s\n",spc,name);
+	if (Name) fprintf(f,"%sName %s\n",spc,Name);
+	if (tooltip) fprintf(f,"%stooltip %s\n",spc,tooltip);
+	if (description) fprintf(f,"%sdescription %s\n",spc,description);
+	if (extends) fprintf(f,"%sextends %s\n",spc,extends);
+	fprintf(f,"%sflags %u\n",spc,flags);
+	fprintf(f,"%sformat %s\n",spc,element_TypeNames[format]);//*** does this actually work right??
+
+	if (fields) {
+		for (int c=0; c<fields->n; c++) {
+			fprintf(f,"%sfield\n",spc);
+			fields->e[c]->dump_out(f,indent+2,0);
+		}
+	}
 }
 
 /*! \todo *** imp me!!
  */
 void StyleDef::dump_in_atts(Attribute *att,int flag)
 {
-	//***
+	cout<<" *** imp me! StyleDef::dump_in_atts(Attribute *att,int flag)"<<endl;
+	
 }
 
-//! Push def without fields. If pushing this new field onto fields fails, return 1, else 0
+//! Push def without fields. If pushing this new field onto fields fails, return -1, else the new field's index.
 int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
-			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags)
+			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags,
+			NewStyleFunc nnewfunc)
 {
-	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nrange,newdefval,NULL,fflags);
-	if (push(newdef)) { delete newdef; return 1; }
-	return 0;
+	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,
+								  ndesc,fformat,nrange,newdefval,
+								  NULL,fflags,nnewfunc);
+	int c=push(newdef);
+	if (c<0) delete newdef;
+	return c;
 }
 
 //! Push def with fields. If pushing this new field onto fields fails, return 1, else 0
 int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
 		ElementType fformat,const char *nrange, const char *newdefval,
-		Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags)
+		Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
+		NewStyleFunc nnewfunc)
 {
-	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nrange,newdefval,nfields,fflags);
-	if (push(newdef)) { delete newdef; return 1; }
-	return 0;
+	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nrange,newdefval,nfields,fflags,nnewfunc);
+	int c=push(newdef);
+	if (c<0) delete newdef;
+	return c;
 }
 
 //! Push newfield onto fields.
@@ -779,27 +823,6 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
 //}
 
 
-//! For debugging, print out the style def to stdout
-void dumpstyledef(StyleDef *sd, int i)
-{
-	char ii[i+1];
-	memset(ii,' ',i);
-	ii[i]='\0';
-	cout <<ii<<"StyleDef: "<<(sd->name?sd->name:"no interpreter name")<<", "<<(sd->Name?sd->Name:"no Name")<<endl;
-	cout <<ii<<(sd->tooltip?sd->tooltip:"no tooltip")<<endl;
-	cout <<ii<<(sd->description?sd->description:"No description")<<endl;
-	cout <<ii<<(sd->extends?sd->extends:"no extends str");
-	if (sd->extendsdef) dumpstyledef(sd->extendsdef,i+2);
-	else cout <<ii<<"No extendsdef"<<endl;
-	cout <<ii<<"flags:"<<sd->flags<<"  format:"<<sd->format<<endl;
-	if (!sd->fields) cout <<ii<<"No fields"<<endl;
-	else {
-		cout <<ii<<"Fields:"<<endl;
-		for (int c=0; c<sd->fields->n; c++) dumpstyledef(sd->fields->e[c],i+2);
-	}
-	cout <<ii<<"---done dumpstyledef"<<endl;
-}
-
 
 //--------------------------------------------------------------------------------
 
@@ -920,6 +943,8 @@ void deleteFieldNode(FieldNode *fn)
 /*! \class Style
  * \ingroup stylesandstyledefs
  * \brief Abstract base class for styles.
+ * 
+ *  class Style : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted 
  * 
  *  Styles hold the actual values of a style definition found in a StyleDef.
  *  Many styles are specialized enough to have their own derived Style classes,
@@ -1062,6 +1087,7 @@ Style::Style(StyleDef *sdef,Style *bsdon,const char *nstn)
 Style::~Style()
 {
 	if (stylename) delete[] stylename;
+	if (styledef) styledef->dec_count();
 }
 
 /*! \fn Style *Style::duplicate(Style *s)
@@ -1087,7 +1113,8 @@ Style::~Style()
  *  and even what kind of fields they are in that case.
  *
  *  Returns styledef->getNumFields(). If styledef==NULL, then return -1;
- *  *** so what? how is this used in conjunction with StyleDef::getNumFields?
+ *  
+ *  \todo *** so what? how is this used in conjunction with StyleDef::getNumFields?
  */
 int Style::getNumFields()
 { 
@@ -1096,7 +1123,57 @@ int Style::getNumFields()
 }
 	
 
-//---------------------------------------------------------------------
+//-------------------------------- EnumStyle -------------------------------------
 
+
+/*! \class EnumStyle
+ * \brief Convenience class to simplify creation of dynamically created lists in dialogs.
+ */
+
+EnumStyle::EnumStyle()
+	: names(2)
+{}
+
+/*! \todo ***imp me!
+ */
+Style *EnumStyle::duplicate(Style *s)
+{
+	cout <<" *** imp me! EnumStyle::duplicate"<<endl;
+	return NULL;
+}
+
+//! Return the id of the new item.
+/*! If nid==-1, then make the id 1 more than the maximum of any previous id.
+ */
+int EnumStyle::add(const char *nname,int nid)
+{
+	names.push(newstr(nname));
+	if (nid<0) {
+		for (int c=0; c<ids.n; c++) {
+			if (ids.e[c]>nid) nid=ids.e[c]+1;
+		}
+		if (nid<1) nid=1;
+	}
+	ids.push(nid);
+	return nid;
+}
+
+//! Return name for id. NULL if not found.
+const char *EnumStyle::name(int Id)
+{
+	for (int c=0; c<ids.n; c++) {
+		if (ids.e[c]==Id) return names.e[c];
+	}
+	return NULL;
+}
+
+//! Return id for name. -1 if not found.
+int EnumStyle::id(const char *Name)
+{
+	for (int c=0; c<names.n; c++) {
+		if (!strcmp(Name,names.e[c])) return ids.e[c];
+	}
+	return -1;
+}
 
 

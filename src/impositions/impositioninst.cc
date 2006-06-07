@@ -68,24 +68,25 @@ using namespace std;
 
 
 
-//Style(StyleDef *sdef,Style *bsdon,const char *nstn)
-/*! \todo *** need a global default paper style..
+/*! \todo *** rethink styledef assignment..
  */
 Singles::Singles() : Imposition("Singles")
 { 
 	insetl=insetr=insett=insetb=0;
 	tilex=tiley=1;
-	//paperstyle=*** global default paper style;
-	paperstyle=new PaperStyle("letter",8.5,11.0,0,300);//***
 
+	paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
+	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
+	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
 			
 	pagestyle=NULL;
 	setPage();
 
-	//***
-	if (!stylemanager.FindDef("PageStyle")) {
-		StyleDef *sdef=pagestyle->makeStyleDef();
-		stylemanager.AddStyleDef(sdef);
+	styledef=stylemanager.FindDef("Singles");
+	if (styledef) styledef->inc_count(); 
+	else {
+		styledef=makeStyleDef();
+		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
 }
 
@@ -93,28 +94,6 @@ Singles::Singles() : Imposition("Singles")
 Singles::~Singles()
 {
 	pagestyle->dec_count();
-}
-
-//! Return the default page style for that page.
-/*! Default is to pagestyle->inc_count() then return pagestyle.
- */
-PageStyle *Singles::GetPageStyle(int pagenum,int local)
-{
-	if (!pagestyle) setPage();
-	if (!pagestyle) return NULL;
-	if (local) return (PageStyle *)pagestyle->duplicate();
-	pagestyle->inc_count();
-	return pagestyle;
-}
-
-//! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
-/*! Return 0 success, nonzero error.
- */
-int Singles::SetPaperSize(PaperStyle *npaper)
-{
-	if (Imposition::SetPaperSize(npaper)) return 1;
-	setPage();
-	return 0;
 }
 
 //! Using the paperstyle, create a new default pagestyle.
@@ -128,6 +107,35 @@ void Singles::setPage()
 	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
 	pagestyle->width=(paperstyle->w()-insetl-insetr)/tilex;
 	pagestyle->height=(paperstyle->h()-insett-insetb)/tiley;
+	pagestyle->pagetype=0;
+}
+
+//! Return the default page style for that page.
+/*! Default is to pagestyle->inc_count() then return pagestyle.
+ */
+PageStyle *Singles::GetPageStyle(int pagenum,int local)
+{
+	if (!pagestyle) setPage();
+	if (!pagestyle) return NULL;
+	if (local) {
+		PageStyle *ps=(PageStyle *)pagestyle->duplicate();
+		ps->flags|=PAGESTYLE_AUTONOMOUS;
+		return ps;
+	}
+	pagestyle->inc_count();
+	return pagestyle;
+}
+
+//! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer tranfser.
+/*! Calls Imposition::SetPaperSize(npaper), then setPage().
+ *
+ * Return 0 success, nonzero error.
+ */
+int Singles::SetPaperSize(PaperStyle *npaper)
+{
+	if (Imposition::SetPaperSize(npaper)) return 1;
+	setPage();
+	return 0;
 }
 
 /*! Define from Attribute.
@@ -218,14 +226,18 @@ Style *Singles::duplicate(Style *s)//s=NULL
 	if (s==NULL) {
 		//***stylemanager.newStyle("Singles");
 		s=sn=new Singles();
-		if (styledef) styledef->inc_count();
-		sn->styledef=styledef;
-		if (pagestyle) {
-			sn->pagestyle->dec_count();
-			sn->pagestyle=(RectPageStyle*)pagestyle->duplicate();
-		}
 	} else sn=dynamic_cast<Singles *>(s);
 	if (!sn) return NULL;
+	if (styledef) {
+		styledef->inc_count();
+		if (sn->styledef) sn->styledef->dec_count();
+		sn->styledef=styledef;
+	}
+	if (pagestyle) {
+		if (sn->pagestyle) sn->pagestyle->dec_count();
+		pagestyle->inc_count();
+		sn->pagestyle=pagestyle;
+	}
 	sn->insetl=insetl;
 	sn->insetr=insetr;
 	sn->insett=insett;
@@ -235,7 +247,15 @@ Style *Singles::duplicate(Style *s)//s=NULL
 	return Imposition::duplicate(s);  
 }
 
-//! ***imp me! Make an instance of the Singles imposition styledef
+//! The newfunc for Singles instances.
+Style *NewSingles(StyleDef *def)
+{ 
+	Singles *s=new Singles;
+	s->styledef=def;
+	return s;
+}
+
+//! Make an instance of the Singles imposition styledef.
 /*  Required by Style, this defines the various names for fields relevant to Singles,
  *  basically just the inset[lrtb], plus the standard Imposition npages and npapers.
  *  Two of the fields would be the pagestyle and paperstyle. They have their own
@@ -243,45 +263,65 @@ Style *Singles::duplicate(Style *s)//s=NULL
  */
 StyleDef *Singles::makeStyleDef()
 {
-	return NULL;
+	StyleDef *sd=new StyleDef(NULL,"Singles","Singles",
+			"Imposition of single pages",
+			"Imposition of single pages",
+			Element_Fields,
+			NULL,NULL,
+			NULL,
+			0, //new flags
+			NewSingles);
 
-//	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-//	StyleDef *sd=new StyleDef(NULL,"singlesstyle","Singles",
-//			"Imposition of single pages","Imposition of single pages",STYLEDEF_FIELDS);
-//
-//	//int StyleDef::push(const char *nfield,const char *ttip,const char *ndesc,StyleDef *nfields,unsigned int fflags);
-//	**** creationfunc...
-//	sd->push("insetl",
-//			"Left Inset",
-//			"How much a page is inset in a paper on the left",
-//			NULL,
-//			STYLEDEF_REAL,0);
-//	sd->push("insetr",
-//			"Right Inset",
-//			"How much a page is inset in a paper on the right",
-//			NULL,
-//			STYLEDEF_REAL,0);
-//	sd->push("insett",
-//			"Top Inset",
-//			"How much a page is inset in a paper from the top",
-//			NULL,
-//			STYLEDEF_REAL,0);
-//	sd->push("insetb",
-//			"Bottom Inset",
-//			"How much a page is inset in a paper from the bottom",
-//			NULL,
-//			STYLEDEF_REAL,0);
-//	sd->push("tilex",
-//			"Tile X",
-//			"How many to tile horizontally",
-//			NULL,
-//			STYLEDEF_INT,0);
-//	sd->push("tiley",
-//			"Tile Y",
-//			"How many to tile vertically",
-//			NULL,
-//			STYLEDEF_INT,0);
-//	return sd;
+	sd->push("insetl",
+			"Left Inset",
+			"How much a page is inset in a paper on the left",
+			NULL,
+			Element_Real,
+			NULL, //range
+			"0",  //defvalue
+			0,    //flags
+			NULL);//newfunc
+	sd->push("insetr",
+			"Right Inset",
+			"How much a page is inset in a paper on the right",
+			NULL,
+			Element_Real,
+			NULL,
+			"0",
+			0,NULL);
+	sd->push("insett",
+			"Top Inset",
+			"How much a page is inset in a paper from the top",
+			NULL,
+			Element_Real,
+			NULL,
+			"0",
+			0,0);
+	sd->push("insetb",
+			"Bottom Inset",
+			"How much a page is inset in a paper from the bottom",
+			NULL,
+			Element_Real,
+			NULL,
+			"0",
+			0,0);
+	sd->push("tilex",
+			"Tile X",
+			"How many to tile horizontally",
+			NULL,
+			Element_Int,
+			NULL,
+			"1",
+			0,0);
+	sd->push("tiley",
+			"Tile Y",
+			"How many to tile vertically",
+			NULL,
+			Element_Int,
+			NULL,
+			"1",
+			0,0);
+	return sd;
 }
 
 //! Create necessary pages based on default pagestyle.
@@ -421,7 +461,6 @@ Spread *Singles::PaperLayout(int whichpaper)
 		spread->marksarelocal=1;
 	}
 
-	 
 	return spread;
 }
 
@@ -456,9 +495,11 @@ int Singles::GetPapersNeeded(int npages)
 int Singles::GetSpreadsNeeded(int npages)
 { return npages; } 
 
+//! There is only one type of page, so return 0.
 int Singles::PageType(int page)
 { return 0; }
 
+//! There is only one type of spread, so return 0.
 int Singles::SpreadType(int spread)
 { return 0; }
 
@@ -472,8 +513,9 @@ int Singles::SpreadType(int spread)
  * The insets refer to portions of the paper that would later be chopped off, and are the 
  * same for each page, whether the page is on the left or the right.
  *
- * \todo *** it is imperative to be able to modify whether the first page is a left page
- * or a right page: (isleft is tag for that, currently ignored.. finish me!)
+ * ***Please note that Singles::GetPage() is not redefined. This is fine for now, since assumption
+ * is that pagestyle and pagestyler have same width and height, but if the PageStyle classes take
+ * on more things, like outlines relative to paper, this will cause problems.
  */
 /*! \var int DoubleSidedSingles::isvertical
  * \brief Nonzero if pages are top and bottom, rather than left and right.
@@ -490,35 +532,112 @@ int Singles::SpreadType(int spread)
 
 
 //! Set isvertical=0, call setpage().
+/*! \todo *** rethink styledef assignment..
+ */
 DoubleSidedSingles::DoubleSidedSingles()
 {
 	isvertical=0;
 	isleft=0;
+	pagestyler=NULL;
 	setPage();
 	
 	 // make style instance name "Double Sided Singles"  perhaps remove the spaces??
 	makestr(stylename,"Double Sided Singles");
 
-	styledef=stylemanager.FindDef("Double Sided Singles");
+	//**** this gets a little expensive, perhaps pass in a StyleDef in constructor?
+	if (styledef) styledef->dec_count();//remove the one from Singles..
+	styledef=stylemanager.FindDef("DoubleSidedSingles");
+	if (styledef) styledef->inc_count(); 
+	else {
+		styledef=makeStyleDef();
+		if (styledef) stylemanager.AddStyleDef(styledef);
+	}
 } 
+
+//! Calls pagestyler->dec_count().
+DoubleSidedSingles::~DoubleSidedSingles()
+{
+	pagestyler->dec_count();
+}
 
 //! Using the paperstyle and isvertical, create new default pagestyles.
 void DoubleSidedSingles::setPage()
 {
 	if (pagestyle) pagestyle->dec_count();
 	pagestyle=new RectPageStyle((isvertical?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
-	pagestyle->pagetype=getUniqueNumber();			
+	pagestyle->pagetype=(isvertical?2:1);
 
 	if (pagestyler) pagestyler->dec_count();
 	pagestyler=new RectPageStyle((isvertical?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
-	pagestyler->pagetype=getUniqueNumber();			
+	pagestyler->pagetype=(isvertical?3:0);
 				
 	pagestyler->width= pagestyle->width =(paperstyle->w()-insetl-insetr)/tilex;
 	pagestyler->height=pagestyle->height=(paperstyle->h()-insett-insetb)/tiley;
 }
 
+//! The newfunc for DoubleSidedSingles instances.
+Style *NewDoubleSidedSingles(StyleDef *def)
+{ 
+	DoubleSidedSingles *s=new DoubleSidedSingles;
+	s->styledef=def;
+	return s;
+}
+
+//! Make an instance of the DoubleSidedSingles imposition styledef
+/*  Required by Style, this defines the various names for fields relevant to DoubleSidedSingles.
+ *  Basically just the inset[lrtb], plus the standard Imposition npages and npapers,
+ *  and isvertical (which is a flag to say whether this is a booklet or a calendar).
+ *
+ *  Two of the fields would be the pagestyle and paperstyle. They have their own
+ *  styledefs stored in the style def manager *** whatever and wherever that is!!!
+ */
+StyleDef *DoubleSidedSingles::makeStyleDef()
+{
+	StyleDef *sd=new StyleDef("Singles","DoubleSidedSingles","Double Sided Singles",
+			"Imposition of single pages meant to be next to each other",
+			"Imposition of single pages meant to be next to each other",
+			Element_Fields,NULL,NULL,
+			NULL,0,NewDoubleSidedSingles);
+
+	sd->push("isvertical",
+			"Is Vertical",
+			"Whether pages are arranged left and right, or top and bottom",
+			"Whether pages are arranged left and right, or top and bottom",
+			Element_Boolean,
+			NULL,"0",
+			0,0);
+	sd->push("isleft",
+			"First is on left",
+			"Whether the first page is on the left/top, or right/bottom",
+			NULL,
+			Element_Boolean,
+			NULL,"0",
+			0,0);
+	return sd;
+}
+
+//! Copies over isvertical and isleft.
+Style *DoubleSidedSingles::duplicate(Style *s)//s=NULL
+{
+	DoubleSidedSingles *ds;
+	if (s==NULL) s=ds=new DoubleSidedSingles();
+	else {
+		ds=dynamic_cast<DoubleSidedSingles *>(s);
+	}
+	if (!ds) return NULL;
+	ds->isvertical=isvertical;
+	ds->isleft=isleft;
+	if (pagestyler) {
+		if (ds->pagestyler) ds->pagestyler->dec_count();
+		pagestyler->inc_count();
+		ds->pagestyler=pagestyler;
+	}
+	return Singles::duplicate(s);  
+}
+
 //! Return the default page style for that page.
-/*! Default is to pagestyle->inc_count() then return pagestyle.
+/*! Default is to pagestyle->inc_count() then return pagestyle (or pagestyler).
+ * pagestyle or pagestyler is decided via a call to PageType(pagenum).
  */
 PageStyle *DoubleSidedSingles::GetPageStyle(int pagenum,int local)
 {
@@ -527,7 +646,11 @@ PageStyle *DoubleSidedSingles::GetPageStyle(int pagenum,int local)
 	PageStyle *p;
 	int c=PageType(pagenum);
 	if (c==1 || c==2) p=pagestyle; else p=pagestyler;
-	if (local) return (PageStyle *)p->duplicate();
+	if (local) {
+		PageStyle *ps=(PageStyle *)p->duplicate();
+		ps->flags|=PAGESTYLE_AUTONOMOUS;
+		return ps;
+	}
 	p->inc_count();
 	return p;
 }
@@ -572,56 +695,6 @@ void DoubleSidedSingles::dump_out(FILE *f,int indent,int what)
 	Singles::dump_out(f,indent,0);
 }
 
-//! Copies over isvertical.
-Style *DoubleSidedSingles::duplicate(Style *s)//s=NULL
-{
-	DoubleSidedSingles *ds;
-	if (s==NULL) s=ds=new DoubleSidedSingles();
-	else {
-		ds=dynamic_cast<DoubleSidedSingles *>(s);
-		if (!ds) return NULL;
-	}
-	if (!ds) return NULL;
-	ds->isvertical=isvertical;
-	ds->isleft=isleft;
-	return Singles::duplicate(s);  
-}
-
-//! ***imp me! Make an instance of the DoubleSidedSingles imposition styledef
-/*  Required by Style, this defines the various names for fields relevant to DoubleSidedSingles.
- *  Basically just the inset[lrtb], plus the standard Imposition npages and npapers,
- *  and isvertical (which is a flag to say whether this is a booklet or a calendar).
- *
- *  Two of the fields would be the pagestyle and paperstyle. They have their own
- *  styledefs stored in the style def manager *** whatever and wherever that is!!!
- */
-StyleDef *DoubleSidedSingles::makeStyleDef()
-{
-	return NULL;
-//	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-//	StyleDef *sd=new StyleDef(stylemanager.FindDef("Singles"),"doublesidetsingles","Double Sided Singles",
-//			"Imposition of single pages meant to be next to each other",
-//			"Imposition of single pages meant to be next to each other",
-//			STYLEDEF_FIELDS);
-//	***
-
-}
-
-//! Return a box describing a good scratchboard size for paper layout.
-/*! Default is to return bounds 4 times the page size or 3 times the paper size.
- *
- * Place results in bbox if bbox!=NULL. If bbox==NULL, then create a new DoubleBBox and return that.
- */
-Laxkit::DoubleBBox *DoubleSidedSingles::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)//page=1
-{
-	if (paperstyle) {
-		if (!bbox) bbox=new DoubleBBox();
-		if (isvertical) bbox->setbounds(-paperstyle->w(),2*paperstyle->w(),-paperstyle->h(),3*paperstyle->h());
-		else bbox->setbounds(-paperstyle->w(),3*paperstyle->w(),-paperstyle->h(),2*paperstyle->h());
-	} else return NULL;
-	return bbox;
-}
-
 //! Create necessary pages based on default pagestyle
 /*! Currently returns NULL terminated list of pages.
  */
@@ -641,14 +714,11 @@ Page **DoubleSidedSingles::CreatePages()
 
 
 //! Return a page spread based on page index (starting from 0) whichpage.
-/*! The path created here is one path for the page(s), and another for between pages.
- * The bounds of the spread are put in spread->path.
+/*! The path created here is one path for the page(s), and another for the line
+ * between the pages. The bounds and outline of the spread are put in spread->path.
  * The first page has only itself (if !isleft).
- * If the last page (numbered from 0) is odd, it also has only itself.
+ * The last page (numbered from 0) it also has only itself (if num is odd and isleft is set).
  * All other spreads have 2 pages.
- *
- * The spread->pagestack elements hold only the transform.
- * They do not also have the outlines.
  */
 Spread *DoubleSidedSingles::PageLayout(int whichspread)
 {
@@ -661,21 +731,28 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 
 	 // fill spread path with 2 page box
 	PathsData *newpath=new PathsData();
+	 // this however assumes pagestyle and pagestyler are same dims!
 	newpath->maxx=(isvertical?1:2)*pagestyle->w();
 	newpath->maxy=(isvertical?2:1)*pagestyle->h();
+	
 	spread->path=(SomeData *)newpath;
 	spread->pathislocal=1;
 
-	if (whichpage==0 || whichpage==numpages-1 && whichpage%2==1) {
+	if (left<0 || right>=numpages) {
 		 // first and possibly last are just single pages, so just have single box
-		if (whichpage==0) newpath->appendRect(pagestyle->width,0,pagestyle->width,pagestyle->height);
-		else newpath->appendRect(0,0,pagestyle->width,pagestyle->height);
+		if (left<0) newpath->appendRect(pagestyler->w(),0,pagestyler->w(),pagestyler->h());
+		else newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
 	} else {
 		 // 2 lines, 1 for 2 pages, and line down the middle
-		newpath->appendRect(0,0,2*pagestyle->width,pagestyle->height);
+		newpath->appendRect(0,0,(isvertical?1:2)*pagestyle->w(),(isvertical?2:1)*pagestyle->h());
 		newpath->pushEmpty();
-		newpath->append(pagestyle->width,0);
-		newpath->append(pagestyle->width,pagestyle->height);
+		if (isvertical) {
+			newpath->append(0,pagestyle->h());
+			newpath->append(pagestyle->w(),pagestyle->h());
+		} else {
+			newpath->append(pagestyle->w(),0);
+			newpath->append(pagestyle->w(),pagestyle->h());
+		}
 		newpath->FindBBox();
 	}
 
@@ -683,48 +760,54 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 	 // page width/height must map to proper area on page.
 	 //*** maybe keep around a copy of the outline, then checkin in destructor rather
 	 //than GetPage here?
-	SomeData *noutline=GetPage(0,0); //this checks out the outline
-	Group *g=new Group;
-	g->push(noutline,0); // this checks it out again..
-	g->FindBBox();
-	noutline->dec_count(); // This removes the extra unnecessary tick
+	SomeData *noutline=GetPage(0,0); //this has 1 count for noutline ptr
+	Group *g=NULL;
 
 	 // left page
 	if (left>=0) {
-		spread->pagestack.push(new PageLocation(left,NULL,g,1));
+		g=new Group;  // 1 count
+		g->push(noutline,0); // this checks it out again.. noutline->count 2
+		g->FindBBox();
+		spread->pagestack.push(new PageLocation(left,NULL,g,0)); // incs count of g (to 2)
+		g->dec_count(); // remove extra tick
 		g=NULL;
-		spread->minimum=flatpoint(pagestyle->w()/5,pagestyle->h()/2);
+		if (isvertical) {
+			g->origin(flatpoint(0,pagestyle->h()));
+			spread->minimum=flatpoint(pagestyle->w()/2,pagestyle->h()*9/5);
+		} else spread->minimum=flatpoint(pagestyle->w()/5,pagestyle->h()/2);
 	} else {
-		spread->minimum=flatpoint(pagestyle->w()*6/5,pagestyle->h()/2);
+		if (isvertical) spread->minimum=flatpoint(pagestyle->w()/2,pagestyle->h()*4/5);
+			else spread->minimum=flatpoint(pagestyle->w()*6/5,pagestyle->h()/2);
 	}
 
 	 // right page
-	 //**** NOTE the index might be > pages.n... but numpages should be the correct value.... 
-	 //**** bit of an ugly disparity, storing what should be the same data in two places.....
 	if (right<numpages) {
-		if (!g) {
-			g=new Group();
-			g->push(noutline,0); // this checks out outline..
-		}
-		g->m()[4]+=pagestyle->width;
+		g=new Group();
+		g->push(noutline,0); // this incs count on outline..
+		if (!isvertical) g->m()[4]+=pagestyle->w();
 		g->FindBBox();
-		spread->pagestack.push(new PageLocation(right,NULL,g,1));
-		spread->maximum=flatpoint(pagestyle->w()*9/5,pagestyle->h()/2);
+		spread->pagestack.push(new PageLocation(right,NULL,g,0)); //incs count of g
+		g->dec_count(); //remove extra tick
+		if (isvertical) spread->maximum=flatpoint(pagestyle->w()/2,pagestyle->h()/5);
+		else spread->maximum=flatpoint(pagestyle->w()*9/5,pagestyle->h()/2);
 	} else {
-		spread->maximum=flatpoint(pagestyle->w()*4/5,pagestyle->h()/2);
+		if (isvertical) spread->maximum=flatpoint(pagestyle->w()/2,pagestyle->h()*6/5);
+		else spread->maximum=flatpoint(pagestyle->w()*4/5,pagestyle->h()/2);
 	}
+	
+	noutline->dec_count(); // This removes the extra unnecessary tick, has count==1 or 2 now
 
 	return spread;
 }
 
 //! Return a paper spread with 1 page on it
 /*! The path created here is one path for the paper, and another for the possibly inset page.
- * 
- * \todo *** must modify the singles layout to swap the l/r (or t/b) insets for facing pages
+ *
+ * Returns Singles::PaperLayout(whichpaper). Remeber that the insets are not the same thing as
+ * margins.
  */
 Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
 {
-	//*** must modify the singles layout to swap the l/r (or t/b) insets for facing pages
 	return Singles::PaperLayout(whichpaper);
 }
 
@@ -733,10 +816,13 @@ int DoubleSidedSingles::GetSpreadsNeeded(int npages)
 { return (npages-isleft)/2+1; } 
 
 
-/*! 0=right
+/*! 
+ * <pre>
+ *  0=right
  *  1=left
  *  2=top
  *  3=bottom
+ * </pre>
  */
 int DoubleSidedSingles::PageType(int page)
 { 
@@ -745,15 +831,17 @@ int DoubleSidedSingles::PageType(int page)
 	if (left==page) return 1;
 	if (isvertical) return 3;
 	return 0; 
-	
 }
 
-/*! 0=right only
+/*! 
+ * <pre>
+ *  0=right only
  *  1=left only
  *  2=top only
  *  3=bottom only
  *  4=l + r
  *  5=t + b
+ * </pre>
  */
 int DoubleSidedSingles::SpreadType(int spread)
 {
@@ -787,101 +875,124 @@ int DoubleSidedSingles::SpreadType(int spread)
  * The first paper (which holds the first 2 and last 2 pages) can optionally
  * have a different color than the body.
  *
- * DoubleSidedSingles::isleft is not used.
+ * DoubleSidedSingles::isleft is not used. That is to say, no code should cause isleft in
+ * a Booklet instance to be anything but 0.
+ *
+ * Also, see note in DoubleSidedSingles about Singles::GetPage().
  *
  * \todo *** tiling and cut marks are not functional yet
+ * \todo *** creep is not implemented
  */
 
 
 //! Constructor, init new variables, make style name="Booklet"
+/*! \todo *** rethink styledef assignment..
+ */
 BookletImposition::BookletImposition()
 {
 	creep=0;
 	covercolor=bodycolor=~0;
+
 	makestr(stylename,"Booklet");
+	isleft=0;//isleft must always be 0.
+
 	setPage();
+	
+	 // set up the styledef
+	//**** this gets a little expensive, perhaps pass in a StyleDef in constructor?
+	if (styledef) styledef->dec_count();//remove the one from Singles..
+	styledef=stylemanager.FindDef("Booklet");
+	if (styledef) styledef->inc_count(); 
+	else {
+		styledef=makeStyleDef();
+		if (styledef) stylemanager.AddStyleDef(styledef);
+	}
 }
 
 //! Using the paperstyle and isvertical, create a new default pagestyle.
 void BookletImposition::setPage()
 {
-	if (pagestyle) delete pagestyle;
-	pagestyle=new RectPageStyle((isvertical?RECTPAGE_LRIO:RECTPAGE_IOTB));
-	pagestyle->width=(paperstyle->w()-insetl-insetr)/tilex;
-	pagestyle->height=(paperstyle->h()-insett-insetb)/tiley;
-	if (isvertical) pagestyle->height/=2;
-	else pagestyle->width/=2;
-}
-
-//! Read creep, body and covercolor, then DoubleSidedSigles::dump_in_atts().
-void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
-{
-	if (!att) return;
-	char *name,*value;
-	for (int c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"creep")) {
-			DoubleAttribute(value,&creep);
-		} else if (!strcmp(name,"bodycolor")) {
-			if (value) bodycolor=strtol(value,NULL,0);
-		} else if (!strcmp(name,"covercolor")) {
-			if (value) covercolor=strtol(value,NULL,0);
-		}
+	DoubleSidedSingles::setPage();
+	if (isvertical) {
+		pagestyle ->height/=2;
+		pagestyler->height/=2;
+	} else {
+		pagestyle ->width/=2;
+		pagestyler->width/=2;
 	}
-	DoubleSidedSingles::dump_in_atts(att,flag);
-	isleft=0;
+	
 }
 
-/*! Something like:
- *  <pre>
- *    creep .05
- *    bodycolor 0xffffffff
- *    colorcolor 0xffffffff
- *    ...DoubleSidedSingles stuff..
- *  </pre>
- */
-void BookletImposition::dump_out(FILE *f,int indent,int what)
+//! The newfunc for Booklet instances.
+Style *NewBookletFunc(StyleDef *def)
+{ 
+	BookletImposition *s=new BookletImposition;
+	s->styledef=def;
+	return s;
+}
+
+//! Extend Singles to include isvertical, creep, covercolor, and bodycolor.
+StyleDef *BookletImposition::makeStyleDef()
 {
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	fprintf(f,"%screep %.10g\n",spc,creep);
-	fprintf(f,"%sbodycolor 0x%.6lx\n",spc,bodycolor);
-	fprintf(f,"%scovercolor 0x%.6lx\n",spc,covercolor);
-	DoubleSidedSingles::dump_out(f,indent,0);
+	StyleDef *sd=new StyleDef("Singles","Booklet","Booklet",
+			"Imposition for a stack of sheets, folded down the middle",
+			NULL,
+			Element_Fields,NULL,NULL,
+			NULL,0,NewBookletFunc);
+
+	sd->push("isvertical",
+			"Is Vertical",
+			"Whether pages are arranged left and right, or top and bottom",
+			NULL,
+			Element_Boolean,
+			NULL,"0",
+			0,NULL);
+	sd->push("creep",
+			"Creep",
+			"The difference in distance from the middle page edge to the outer "
+			   "page edge when the booklet is all folded up. (currently ignored!)",
+			NULL,
+			Element_Real,
+			NULL,"0",
+			0,NULL);
+	sd->push("covercolor",
+			"Cover Color",
+			"The color of paper you are using for the cover. This translates to paper number 0 and 1.",
+			NULL,
+			Element_Color,
+			NULL,"#ffffffff",
+			0,NULL);
+	sd->push("bodycolor",
+			"Body Color",
+			"The color of paper you are using for the body pages.",
+			NULL,
+			Element_Color,
+			NULL,"#ffffffff",
+			0,NULL);
+	return sd;
 }
 
-//! Duplicate. Copies over creep, tilex, tily, bodycolor, covercolor.
+//! Duplicate. Copies over creep, bodycolor, covercolor.
 Style *BookletImposition::duplicate(Style *s)//s=NULL
 {
-	if (s==NULL) s=new BookletImposition();
-	else if (!dynamic_cast<BookletImposition *>(s)) return NULL;
-	BookletImposition *b=dynamic_cast<BookletImposition *>(s);
+	BookletImposition *b;
+	if (s==NULL) s=b=new BookletImposition();
+	else {
+		b=dynamic_cast<BookletImposition *>(s);
+	}
 	if (!b) return NULL;
 	b->creep=creep;
-	b->tilex=tilex;
-	b->tiley=tiley;
 	b->bodycolor=bodycolor;
 	b->covercolor=covercolor;
 	return DoubleSidedSingles::duplicate(s);  
 }
 
-//! ***imp me!
-StyleDef *BookletImposition::makeStyleDef()
-{//***
-	return NULL;
-}
-
-//--- can use DoubleSidedSingles::CreatePages
-//Page **BookletImposition::CreatePages(PageStyle *pagestyle=NULL)
-//{ ***
-//}
-
 /*! Layout booklet with tiling.
  *
- * \todo *** use isvertical
+ * \todo *** use isvertical and creep
  */
 Spread *BookletImposition::PaperLayout(int whichpaper)
-{//***
+{
 	if (!numpapers) return NULL;
 	if (whichpaper<0 || whichpaper>=numpapers) whichpaper=0;
 
@@ -892,43 +1003,67 @@ Spread *BookletImposition::PaperLayout(int whichpaper)
 
 	 // fill pagestack, includes tiling
 	spread->pagestack.flush();
-	int x,y,lpg,rpg,npgs=GetPagesNeeded(numpapers);
+	int x,y,left,right,npgs=GetPagesNeeded(numpapers);
+	double dx,dy;
 	PathsData *ntrans;
 	for (x=0; x<tilex; x++) {
 		for (y=0; y<tiley; y++) {
+			dx=insetl+x*(paperstyle->w()-insetr-insetl)/tilex;
+			dy=insetb+y*(paperstyle->h()-insett-insetb)/tiley;
+			
 			 //install 2 page cells for each tile, according to isvertical
 			 //the left or top:
-			if (whichpaper%2==1) { // odd numbered pages are always on left...
+			if (whichpaper%2==1) { // odd numbered pages are always on left/top...
 				 // make right and left side be correct page number
-				lpg=whichpaper; 
-				rpg=npgs-whichpaper-1; 
+				left=whichpaper; 
+				right=npgs-whichpaper-1; 
 			} else {
 				 // make right and left side be correct page number
-				lpg=npgs-whichpaper-1;
-				rpg=whichpaper;
+				left=npgs-whichpaper-1;
+				right=whichpaper;
 			}
 			
-			if (lpg>=0 && lpg<numpages) {
+			if (left>=0 && left<numpages) {
 				ntrans=new PathsData();
 				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
-				ntrans->origin(flatpoint(insetl+x*(paperstyle->w()-insetr-insetl)/tilex,
-										 insetb+y*(paperstyle->h()-insett-insetb)/tiley));
-				spread->pagestack.push(new PageLocation(lpg,NULL,ntrans,1));
+				ntrans->origin(flatpoint(dx,dy+(isvertical?pagestyle->h():0)));
+				spread->pagestack.push(new PageLocation(left,NULL,ntrans,1));
 			}
 			 //the right or bottom:
-			if (rpg>=0 && rpg<numpages) {
+			if (right>=0 && right<numpages) {
 				ntrans=new PathsData();
 				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
-				ntrans->origin(flatpoint(isvertical?0:pagestyle->w(), isvertical?pagestyle->h():0)
-							   + flatpoint(insetl+x*(paperstyle->w()-insetr-insetl)/tilex,
-										   insetb+y*(paperstyle->h()-insett-insetb)/tiley));
-				spread->pagestack.push(new PageLocation(rpg,NULL,ntrans,1));
+				ntrans->origin(flatpoint(isvertical?0:pagestyle->w()+dx, dy));
+				spread->pagestack.push(new PageLocation(right,NULL,ntrans,1));
 			}
 		}
 	}
 
 	return spread;
 }
+
+//! If pagenumber<=numpapers return pagenumber, else return numpapers-(pagenumber-numpapers)-1.
+int BookletImposition::PaperFromPage(int pagenumber)
+{
+	if (pagenumber+1<=numpapers) return pagenumber;
+	return numpapers-(pagenumber-numpapers)-1;
+}
+
+//! Is (int((npapers-1)/2)+1)*4. This assumes actually printing double sided later on..
+/*! The actual number of physical papers when printed double sided is half numpapers.
+ */
+int BookletImposition::GetPagesNeeded(int npapers)
+{ return ((npapers-1)/2+1)*4; }
+
+//! Get the number of papers needed to hold this many pages.  Is just (floor((npages-1)/4)+1)*2.
+/*! The value for number of physical papers after printing out double sided is half the returned number.
+ */
+int BookletImposition::GetPapersNeeded(int npages)
+{ return ((npages-1)/4+1)*2; }
+
+//! Return (npages)/2+1.
+int BookletImposition::GetSpreadsNeeded(int npages)
+{ return (npages)/2+1; } 
 
 //! Returns { frompage,topage, singlepage,-1,anothersinglepage,-1,-2 }
 int *BookletImposition::PrintingPapers(int frompage,int topage)
@@ -954,28 +1089,52 @@ int *BookletImposition::PrintingPapers(int frompage,int topage)
 	return i;
 }
 
-//! If pagenumber<=numpapers return pagenumber, else return numpapers-(pagenumber-numpapers)-1.
-int BookletImposition::PaperFromPage(int pagenumber)
+/*! Something like:
+ *  <pre>
+ *    creep .05
+ *    bodycolor 0xffffffff
+ *    colorcolor 0xffffffff
+ *    isvertical
+ *    defaultpagestyler
+ *    ...Singles stuff..
+ *  </pre>
+ *
+ *  Note that DoubleSidedSingles::dump_out() is not called, so as to avoid outputting isleft.
+ *  But Singles::dump_out() is called.
+ */
+void BookletImposition::dump_out(FILE *f,int indent,int what)
 {
-	if (pagenumber+1<=numpapers) return pagenumber;
-	return numpapers-(pagenumber-numpapers)-1;
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	fprintf(f,"%screep %.10g\n",spc,creep);
+	fprintf(f,"%sbodycolor 0x%.6lx\n",spc,bodycolor);
+	fprintf(f,"%scovercolor 0x%.6lx\n",spc,covercolor);
+	if (isvertical) fprintf(f,"%sisvertical\n",spc);
+	if (pagestyler) {
+		fprintf(f,"%sdefaultpagestyler\n",spc);
+		pagestyler->dump_out(f,indent+2,0);
+	}
+	Singles::dump_out(f,indent,0);
 }
 
-//! Is (int((npapers-1)/2)+1)*4. This assumes actually printing double sided later on..
-/*! The actual number of physical papers when printed double sided is half numpapers.
- */
-int BookletImposition::GetPagesNeeded(int npapers)
-{ return ((npapers-1)/2+1)*4; }
-
-//! Get the number of papers needed to hold this many pages.  Is just (floor((npages-1)/4)+1)*2.
-/*! The value for number of physical papers after printing out double sided is half the returned number.
- */
-int BookletImposition::GetPapersNeeded(int npages)
-{ return ((npages-1)/4+1)*2; }
-
-//! Return (npages)/2+1.
-int BookletImposition::GetSpreadsNeeded(int npages)
-{ return (npages)/2+1; } 
+//! Read creep, body and covercolor, then DoubleSidedSigles::dump_in_atts().
+void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
+{
+	if (!att) return;
+	char *name,*value;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"creep")) {
+			DoubleAttribute(value,&creep);
+		} else if (!strcmp(name,"bodycolor")) {
+			if (value) bodycolor=strtol(value,NULL,0);
+		} else if (!strcmp(name,"covercolor")) {
+			if (value) covercolor=strtol(value,NULL,0);
+		}
+	}
+	DoubleSidedSingles::dump_in_atts(att,flag);
+	isleft=0;
+}
 
 
 ////---------------------------------- CompositeImposition ----------------------------

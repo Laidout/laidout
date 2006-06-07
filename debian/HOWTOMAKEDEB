@@ -17,6 +17,7 @@ MAKING LAIDOUT DEB PACKAGE
    Makefile                      :LAIDOUTVERSION=****
    README                        :LAIDOUT Version *****
    src/version.h                 :#define LAIDOUT_VERSION "****"
+   all the example docs
  make sure the Quick Key References are accurate. There are separate versions
    of it in ./QUICKREF, debian/laidout.1, and src/helpwindow.cc
  make depends  in the src directory

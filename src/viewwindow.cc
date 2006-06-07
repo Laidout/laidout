@@ -470,6 +470,7 @@ int LaidoutViewport::ViewMode(int *page)
 const char *LaidoutViewport::SetViewMode(int m,int sprd)
 {
 	DBG cout <<"---- setviewmode:"<<m<<endl;
+	if (sprd<0) sprd=spreadi;
 	if (sprd!=spreadi || m!=viewmode) {
 		viewmode=m;
 		setupthings(sprd);
@@ -1442,6 +1443,7 @@ void LaidoutViewport::Center(int w)
 	if (w==0) { // center page
 		 //find the bounding box in dp real units of the page in question...
 		int c=curobj.spreadpage();
+		if (c<0) return;
 		DoubleBBox bbox;
 		bbox.setbounds(spread->pagestack.e[c]->outline);
 		double dw,dh;
@@ -1722,11 +1724,11 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 	 // check these first, before asking interfaces
 	if (ch==' ') {
 		if ((state&LAX_STATE_MASK)==0) {
-			Center();
+			Center(1);
 			return 0;
 		} 
 		if ((state&LAX_STATE_MASK)==ShiftMask) {
-			Center(1);
+			Center(0);
 			return 0;
 		} 
 	}
@@ -2615,6 +2617,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //*** make it based on the old style
 		int c=((LaidoutViewport *)viewport)->curobjPage();
 		if (c>=0) {
+			PageStyle *ps=doc->pages.e[c]->pagestyle;
+			if (!(ps->flags&PAGESTYLE_AUTONOMOUS)) {
+				ps=(PageStyle *)ps->duplicate();
+				doc->pages.e[c]->InstallPageStyle(ps,0);
+			}
 			doc->pages.e[c]->pagestyle->set("pageclips",-1);
 			pageclips->State(doc->pages.e[c]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
 		}

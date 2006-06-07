@@ -52,14 +52,16 @@ Imposition *newImposition(const char *impos)
 	return NULL;
 }
 
-//**** new Impositions might want to install various novel Style/Styledefs,
-//	***** or other initializations might have to occur... more thought required here!!
 /*! \fn Laxkit::PtrStack<Imposition> *GetBuiltinImpositionPool(Laxkit::PtrStack<Imposition> *existingpool)
  * \ingroup pools
  */
 //! Return a stack of defined impositions.
-/*! blah
- *
+/*! \ingroup pools
+ * 
+ * \todo **** new Impositions might want to install various novel Style/Styledefs,
+ *    or other initializations might have to occur... more thought required here!!
+ *    maybe have StyleDef *MakeSinglesStyledef() instead of the def making in Style. Then 
+ *    any new instance is properly created from the StyleDef::newfunc...
  */
 PtrStack<Imposition> *GetBuiltinImpositionPool(PtrStack<Imposition> *existingpool) //existingpool=NULL
 {

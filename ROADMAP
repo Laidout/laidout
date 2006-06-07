@@ -11,17 +11,19 @@ VERSION 0.04
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
        Have imagepatch be a transform you can apply to any image
-       A style manager, which is Not dependent on laxkit::refcounter
+(done) A style manager, which is Not dependent on laxkit::refcounter
        ObjectInterface for selecting and resizing multiple stuff
        Finish implementing project based setup, especially when loading and saving
        Allow for window docking, floating, swapping panes, etc.
-       from laxkit: clean up and beef up SplitWindow: swap window positions, tabbed panes
+(done) from laxkit: SplitWindow: swap window positions
+       from laxkit: SplitWindow: tabbed panes, and temporary maximize
        parent/child nesting and masking,
        interface for that: nesting, and grouping
        plus configurable icon panel/menu system
        Page Ranges controlling page number label and which imposition should lay it out
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        perhaps have image open window? drag and drop in images? that would be AWESOME
+       RSS feed for website
 
 
 VERSION 0.1
@@ -57,6 +59,7 @@ VERSION 0.1
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo for about
        Vx (aka uberconvertor) support?
+       have an image in the little pan popups
 
 
 VERSION 0.2
