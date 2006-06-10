@@ -38,6 +38,7 @@ objs= \
 	spreadeditor.o \
 	somedialogs.o \
 	laidout-more.o \
+	limagepatch.o \
 	laidout.o 
 
 all: laidout
