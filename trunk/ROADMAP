@@ -7,30 +7,32 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.04
 -----------
-       Fix non-centerfold page bleeding in booklets when printing
-       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
-       Have imagepatch be a transform you can apply to any image
+(done) Palette Window
+(done) RSS feed for website
 (done) A style manager, which is Not dependent on laxkit::refcounter
-       ObjectInterface for selecting and resizing multiple stuff
+(done) from laxkit: SplitWindow: swap window positions
+       perhaps have image open window? drag and drop in images? that would be AWESOME
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
+       Page Ranges controlling page number label and which imposition should lay it out
        Finish implementing project based setup, especially when loading and saving
        Allow for window docking, floating, swapping panes, etc.
-(done) from laxkit: SplitWindow: swap window positions
        from laxkit: SplitWindow: tabbed panes, and temporary maximize
+       plus configurable icon panel/menu system
+       ObjectInterface for selecting and resizing multiple stuff
        parent/child nesting and masking,
        interface for that: nesting, and grouping
-       plus configurable icon panel/menu system
-       Page Ranges controlling page number label and which imposition should lay it out
-       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
-       perhaps have image open window? drag and drop in images? that would be AWESOME
-       RSS feed for website
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
+       Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
 
 
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
        Seriously optimize the whole ImagePatchData stuff
+       Have imagepatch be a transform you can apply to any image
        Have images have any number of various kinds of transforms applied to it
+       NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        PathInterface should finally work right, and bez part should have segment move like inkscape
        Basic infrastructure for most things (except text) should be in place.
        Fully configurable shortcuts
@@ -50,7 +52,6 @@ VERSION 0.1
        PDF out, and/or use ghostscripts alleged ability to do transparent images in postscript files
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
-       NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
