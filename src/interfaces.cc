@@ -20,7 +20,7 @@
 #include "laidout.h"
 #include <lax/lists.cc>
 #include <lax/interfaces/imageinterface.h>
-#include <lax/interfaces/imagepatchinterface.h>
+#include "limagepatch.h"
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
@@ -49,7 +49,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	int id=1;
 	existingpool->push(new ImageInterface(id++,NULL),1);
 	
-	ImagePatchInterface *ip=new ImagePatchInterface(id++,NULL);
+	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	ip->recurse=2;
 	existingpool->push(ip,1);
 	

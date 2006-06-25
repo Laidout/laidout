@@ -59,6 +59,9 @@ class LaidoutApp : public Laxkit::anXApp
 //	ControlPanel *maincontrolpanel;
 	Project *project;
 	Document *curdoc;
+	Laxkit::anXWindow *lastview;
+
+	unsigned long curcolor;
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
