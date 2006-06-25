@@ -34,6 +34,7 @@
 #include "about.h"
 #include "spreadeditor.h"
 #include "viewwindow.h"
+#include "headwindow.h"
 #include "laidout.h"
 #include "extras.h"
 #include "drawdata.h"
@@ -288,6 +289,13 @@ LaidoutViewport::~LaidoutViewport()
 
 	 //checkin limbo objects vie limbo's Group::flush()
 	limbo.flush();
+}
+
+//! On any FocusIn event, set laidout->lastview to this.
+int LaidoutViewport::event(XEvent *e)
+{
+	if (e->type==FocusIn) laidout->lastview=dynamic_cast<ViewWindow *>(win_parent);
+	return ViewportWindow::event(e);
 }
 
 //! Replace existing doc with this doc.
@@ -2217,7 +2225,6 @@ int ViewWindow::init()
 	p->WrapWidth();
 	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
 
-	ColorBox *colorbox;
 	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",255,0,0);
 	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
@@ -2592,7 +2599,20 @@ void ViewWindow::updateContext()
  */
 int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
-	if (!strcmp(mes,"curcolor")) {
+	if (!strcmp(mes,"change color")) {
+		 // apply message as new current color, pass on to viewport
+		LineStyle linestyle;
+		linestyle.red=e->data.l[1];
+		linestyle.green=e->data.l[2];
+		linestyle.blue=e->data.l[3];
+		linestyle.alpha=255;//***
+		linestyle.color=app->rgbcolor(linestyle.red,linestyle.green,linestyle.blue);
+		colorbox->Set(linestyle.red,linestyle.green,linestyle.blue);
+		if (curtool)
+			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
+		
+		return 0;
+	} else if (!strcmp(mes,"curcolor")) {
 		 // apply message as new current color, pass on to viewport
 		LineStyle linestyle;
 		linestyle.red=e->data.l[0];
@@ -2748,13 +2768,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-//! *** this is a dirty hack to keep loaddir updated, and should be removed
+//! On any FocusIn event, set laidout->lastview to this.
 int ViewWindow::event(XEvent *e)
 {
-	//*** here is a quick cheap, VERY dirty hack to keep loaddir updated:
-//	if (e->xany.window!=loaddir->window && strcmp(app->load_dir,loaddir->GetCText())) {
-//		loaddir->SetText(app->load_dir);
-//	}
+	if (e->type==FocusIn) laidout->lastview=this;
 	return ViewerWindow::event(e);
 }
 
@@ -2848,7 +2865,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		//*** popup a SpreadEditor
 		char blah[30+strlen(doc->Name())+1];
 		sprintf(blah,"Spread Editor for %s",doc->Name());
-		app->addwindow(new SpreadEditor(NULL,blah,0, 0,0,500,500,0, project,doc));
+		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;
 	}
 	return ViewerWindow::CharInput(ch,state);

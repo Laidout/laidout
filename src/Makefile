@@ -33,6 +33,7 @@ objs= \
 	objectcontainer.o \
 	saveppt.o \
 	viewwindow.o \
+	palettes.o \
 	extras.o \
 	drawdata.o \
 	spreadeditor.o \

@@ -21,7 +21,7 @@
 #include "helpwindow.h"
 #include "commandwindow.h"
 #include "buttonbox.h"
-#include <lax/palette.h>
+#include "palettes.h"
 
 #include <iostream>
 using namespace std;
@@ -43,7 +43,9 @@ using namespace LaxFiles;
  */
 anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	PaletteWindow *palette=new PaletteWindow(parnt,ntitle,style, 0,0,0,0,1, NULL,None,NULL);
+	Window owner=None;
+	if (laidout->lastview) owner=laidout->lastview->window;
+	PaletteWindow *palette=new PalettePane(parnt,ntitle,style, 0,0,0,0,1, NULL,owner,"change color");
 	return palette;
 }
 
@@ -144,6 +146,8 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 
 //! Create a new head window based on att.
 /*! \todo *** should return NULL if the att was invalid
+ *  \todo *** for plugins that have new pane types, there must be mechanism to
+ *    add those types to new and existing headwindows
  */
 anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 {
@@ -156,6 +160,9 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 /*! \class HeadWindow
  * \brief Top level windows to hold other stuff such as a ViewWindow.
  *
+ * When coding new pane types, currently the built in ones must be manually added
+ * in the constructor.
+ * 
  * <pre>
  * *** menu: (todo for splitwindow probably)
  *  hide tabs for stacked panes
@@ -204,7 +211,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	AddWindowType("ButtonBox","Buttons",
 			ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
 			newButtonBoxFunc,0);
-	AddWindowType("PaletteWindow","Palette",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newPaletteWindowFunc,0);
+	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD|ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newPaletteWindowFunc,0);
 }
 
 //! Empty virtual destructor.

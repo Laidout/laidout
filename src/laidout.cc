@@ -183,6 +183,9 @@ void print_usage()
  */
 LaidoutApp::LaidoutApp() : anXApp()
 {	
+	curcolor=0;
+	lastview=NULL;
+	
 	project=NULL;
 	curdoc=NULL;
 	tooltips=1000;
