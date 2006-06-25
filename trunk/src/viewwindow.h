@@ -21,6 +21,7 @@
 #include <lax/numinputslider.h>
 #include <lax/lineedit.h>
 #include <lax/textbutton.h>
+#include <lax/colorbox.h>
 #include <lax/iconbutton.h>
 #include <X11/extensions/Xdbe.h>
 #include "document.h"
@@ -84,6 +85,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual const char *whattype() { return "LaidoutViewport"; }
 	virtual void Refresh();
 	virtual int init();
+	virtual int event(XEvent *e);
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
@@ -138,6 +140,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	Laxkit::NumInputSlider *var1, *var2, *var3;
 	Laxkit::LineEdit *loaddir;
 	Laxkit::IconButton *pageclips;
+	Laxkit::ColorBox *colorbox;
  public:
 	Project *project;
 	Document *doc;
@@ -146,8 +149,8 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 						int xx,int yy,int ww,int hh,int brder,
 						Document *newdoc);
-	virtual int ViewWindow::event(XEvent *e);//***this shouldn't be here, see the .cc
 	virtual const char *whattype() { return "ViewWindow"; }
+	virtual int event(XEvent *e);
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int init();
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
