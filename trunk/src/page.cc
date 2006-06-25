@@ -306,17 +306,33 @@ Style *RectPageStyle::duplicate(Style *s)//s=NULL
 	return PageStyle::duplicate(s);
 }
 
+//! The newfunc for PageStyle instances.
+/*! \ingroup stylesandstyledefs
+ */
+Style *NewRectPageStyle(StyleDef *def)
+{ return new RectPageStyle; }
+
+/*! \todo **** the newfunc is not quite right...
+ */
 StyleDef *RectPageStyle::makeStyleDef() 
 {
 	StyleDef *sd;
+	
+//	StyleDef(const char *nextends,const char *nname,const char *nName,const char *ttip,
+//			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
+//			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
+//			NewStyleFunc nnewfunc=0);
 	if (recttype&RECTPAGE_IOTB) 
 		sd=new StyleDef("pagestyle","facingrectstyle","Rectangular Facing Page","Rectangular Facing Page",
-						"Rectangular Facing Page",Element_Fields,NULL,NULL);
+						"Rectangular Facing Page",Element_Fields,NULL,NULL,
+						NULL,0,NewRectPageStyle);
 	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
 						"Rectangular Top Facing Page","Rectangular Top Facing Page",
-						"Rectangular Top Facing Page",Element_Fields,NULL,NULL);
+						"Rectangular Top Facing Page",Element_Fields,NULL,NULL,
+						NULL,0,NewRectPageStyle);
 	else sd=new StyleDef("pagestyle","RectPageStyle","Rectangular Page","Rectangular Page",
-					"Rectangular Page",Element_Fields,NULL,NULL);
+					"Rectangular Page",Element_Fields,NULL,NULL,
+					NULL,0,NewRectPageStyle);
 	
 	 // the left or inside
 	if (recttype&RECTPAGE_LRIO) 
@@ -494,9 +510,14 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"pagestyle")) {
 			PageStyle *ps=NULL;
-			if (strcmp(value,"default")) {
-				ps=(PageStyle *)stylemanager.newStyle(value);
-				if (ps) ps->dump_in_atts(att->attributes.e[c],flag);
+			if (value) {
+				if (strcmp(value,"default")) {
+					ps=(PageStyle *)stylemanager.newStyle(value);
+				}
+			} else ps=(PageStyle *)stylemanager.newStyle("PageStyle");
+			if (ps) {
+				ps->dump_in_atts(att->attributes.e[c],flag);
+				ps->flags|=PAGESTYLE_AUTONOMOUS;
 			}
 			InstallPageStyle(ps,0);
 		} else if (!strcmp(name,"layer")) {
@@ -516,7 +537,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 void Page::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (pagestyle && pagestyle->flags&PAGESTYLE_AUTONOMOUS) {
+	if (pagestyle && (pagestyle->flags&PAGESTYLE_AUTONOMOUS)) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
 		pagestyle->dump_out(f,indent+2,0);
 	}

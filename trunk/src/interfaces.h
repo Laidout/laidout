@@ -18,7 +18,6 @@
 
 #include <lax/lists.h>
 #include <lax/interfaces/aninterface.h>
-#include <lax/interfaces/pathinterface.h>
 
 void PushBuiltinPathops();
 
