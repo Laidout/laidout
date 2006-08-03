@@ -13,9 +13,6 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/***  Laidout   ****/
-/*** Tom Lechner ***/
-/***   2006+-3   ***/
 
 
 /*! \defgroup pools Builtin Pools
@@ -447,6 +444,17 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 	
 	DBG cout <<"---------end options"<<endl;
+}
+
+//! Return whether win is in topwindows.
+/*! This is used by HeadWindow to verify that a previously marked window
+ * is still around. Note that this sort of query is not threadsafe,
+ * but window access happens so soon after calling this function, it is 
+ * not likely to crash the program.
+ */
+int LaidoutApp::isTopWindow(anXWindow *win)
+{
+	return topwindows.findindex(win)>=0;
 }
 
 //! Find the doc with saveas.

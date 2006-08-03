@@ -65,7 +65,7 @@ class DocumentStyle : public Style
 
 //---------------------------- PageRange ---------------------------------------
 
-class PageRange
+class PageRange : public LaxFiles::DumpUtility
 {
  public:
 	int impositiongroup;
@@ -75,6 +75,9 @@ class PageRange
 	PageRange(const char *newbase="#",int ltype=Numbers_Default);
 	~PageRange() { if (labelbase) delete[] labelbase; }
 	char *PageRange::GetLabel(int i);
+
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 //------------------------- Document ------------------------------------
@@ -100,6 +103,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual Page *Curpage();
 	virtual int NewPages(int starting,int n);
 	virtual int RemovePages(int start,int n);
+	virtual int SyncPages(int start,int n);
 	
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
@@ -111,6 +115,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 
 		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return NULL; }
+
 //	int SaveAs(char *newfile,int format=1); // format: binary, xml, pdata
 //	int New();
 //	int Print();

@@ -173,6 +173,15 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
  * </pre>
  */  
 
+ //for SplitWindow::mode
+#define MAXIMIZED 4
+#define SWAPWITH  50
+#define DROPTO    51
+
+
+
+Laxkit::PlainWinBox *HeadWindow::markedpane=NULL;
+HeadWindow *HeadWindow::markedhead=NULL;
 
 //! Pass SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED to SplitWindow.
 /*! Adds the main window type generating functions.
@@ -217,6 +226,52 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 //! Empty virtual destructor.
 HeadWindow::~HeadWindow()
 {}
+
+//! Redefined to use a global mark, rather than per SplitWindow.
+int HeadWindow::Mark(int c)
+{
+	if (c==-1) {
+		markedpane=curbox;
+		markedhead=this;
+		DBG cout <<"----head marking curbox in window "<<window<<endl;
+	} else {
+		if (c<0 || c>windows.n) return 1;
+		markedpane=windows.e[c];
+		markedhead=this;
+		DBG cout <<"----head marking box "<<c<<" in window "<<window<<endl;
+	}
+	return 0;
+}
+
+//! Redefined to use a global mark, rather than per SplitWindow.
+/*! Returns 0 for success, nonzero error.
+ */
+int HeadWindow::SwapWithMarked()
+{
+	if (curbox==NULL || markedpane==NULL || markedhead==NULL || curbox==markedpane) return 0;
+
+	 // make sure markedhead is toplevel
+	if (laidout->isTopWindow(markedhead)) {
+		 // make sure markedpane is still pane of markedhead
+		if (markedhead->FindBoxIndex(markedpane)>=0) {
+			 // must potentially reparent!!!
+			if (markedhead!=this) {
+				if (curbox->win) app->reparent(curbox->win,markedhead);
+				if (markedpane->win) app->reparent(markedpane->win,this);
+			}
+			anXWindow *w=curbox->win;
+			curbox->win=markedpane->win;
+			markedpane->win=w;
+			curbox->sync(space/2);
+			markedpane->sync(space/2);
+			return 0;
+		}
+	} 
+	
+	markedpane=NULL;
+	markedhead=NULL;
+	return 1;
+}
 
 /*! Return 0 if window taken, else nonzero error.
  *
@@ -318,8 +373,8 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 				spc,win_x,win_y,win_w,win_h);
 	for (int c=0; c<windows.n; c++) {
 		fprintf(f,"%spane\n",spc);
-		fprintf(f,"%s  xywh %d %d %d %d\n",
-					spc,windows.e[c]->x,windows.e[c]->y,windows.e[c]->w,windows.e[c]->h);
+		fprintf(f,"%s  xyxy %d %d %d %d\n",
+					spc,windows.e[c]->x1,windows.e[c]->y1,windows.e[c]->x2,windows.e[c]->y2);
 		if (windows.e[c]->win) {
 			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win->whattype());
 			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win);
@@ -329,8 +384,8 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 }
 
 //! Set up the window according to windows listed in att.
-/*! \todo *** as time goes on, must ensure that header can deal with new
- * types of windows...
+/*! 
+ * \todo *** as time goes on, must ensure that header can deal with new types of windows...
  */
 void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
@@ -356,12 +411,12 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			for (c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name= att->attributes.e[c]->attributes.e[c2]->name;
 				value=att->attributes.e[c]->attributes.e[c2]->value;
-				if (!strcmp(name,"xywh")) {
+				if (!strcmp(name,"xyxy")) {
 					c3=IntListAttribute(value,i,4);
-					if (c3>0) box->x=i[0];
-					if (c3>1) box->y=i[1];
-					if (c3>2) box->w=i[2];
-					if (c3>3) box->h=i[3];
+					if (c3>0) box->x1=i[0];
+					if (c3>1) box->y1=i[1];
+					if (c3>2) box->x2=i[2];
+					if (c3>3) box->y2=i[3];
 				} else if (!strcmp(name,"window")) {
 					win=NewWindow(value);
 					if (win) {
@@ -373,7 +428,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
 					}
 				}
 			}
-			box->sync(1);
+			box->sync(space/2,1);
 			windows.push(box);
 		}
 	}
@@ -403,21 +458,58 @@ int HeadWindow::init()
 //	return 0;
 }
 
+
 /*! \todo *** work on this..
+ * <pre>
+ *  *** must make something like:
+ *   Split
+ *   Join
+ *   Split...
+ *   Change to >
+ *   Float
+ *   Stack on >
+ *   ------
+ *   (other things defined by curbox?...
+ * </pre>
  */
 MenuInfo *HeadWindow::GetMenu()
 {
-	//*** must make something like:
-	// Split
-	// Join
-	// Split...
-	// Change to >
-	// Float
-	// Stack on >
-	// ------
-	// (other things defined by curbox?...
-	// 
-	return SplitWindow::GetMenu();
+	MenuInfo *menu=new MenuInfo();
+	
+ //make sure this always agrees with SplitWindow::mode!!
+	
+	 //straight from Laxkit, do not change item ids:
+	if (mode!=MAXIMIZED) {
+		menu->AddItem("Split",1);
+		menu->AddItem("Join",2);
+	}
+	if (winfuncs.n) {
+		menu->AddItem("Change to");
+		menu->SubMenu();
+		for (int c=0; c<winfuncs.n; c++) {
+			menu->AddItem(winfuncs.e[c]->desc,101+c);
+		}
+		menu->AddItem("(Blank)",100);
+		menu->EndSubMenu();
+	}
+	if (mode!=MAXIMIZED) {
+		menu->AddItem("Mark",3);
+		menu->AddItem("Swap with marked",4);
+		menu->AddItem("Swap with...",53);
+	}
+	
+	 //laidout additions:
+	menu->AddItem("Drop To...",51);
+	menu->AddItem("Float",52);
+
+	 //straight from Laxkit, do not change item ids:
+	if (mode==MAXIMIZED) menu->AddItem("Un-Maximize",5);
+	else menu->AddItem("Maximize",5);
+	
+	 //laidout additions:
+	menu->AddSep();
+	menu->AddItem("New Window",50);
+	return menu;
 }
 
 /*! Propagate TreeChangeEvent events
@@ -433,7 +525,6 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		 
 		int yes=0;
 		for (int c=0; c<windows.n; c++) {
-			//if (callfrom==windows.e[c]->win) continue; //*** this hardly has effect as most are children of top
 			view=dynamic_cast<ViewWindow *>(windows.e[c]->win);
 			if (view) yes=1;
 			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win), s) yes=1;
@@ -454,10 +545,105 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 	return 1;
 }
 
-//int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
-//{
-//	return SplitWindow::ClientEvent(e,mes);
-//}
+//! Intercept a menu item values 50 to 99.
+/*! 
+ * <pre>
+ *  50: Create new HeadWindow
+ *  51: Drop to...
+ *  52: Float
+ * </pre>
+ */
+int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+{
+	if (!strcmp(mes,"popupsplitmenu") && e->data.l[1]>=50 && e->data.l[1]<100) {
+		if (e->data.l[1]==50) {
+			const char *type=NULL;
+			if (curbox && curbox->win) type=curbox->win->whattype();
+			app->addwindow(newHeadWindow(NULL,type));
+			return 0;
+		} else if (e->data.l[1]==52) {
+			 //Float
+			 
+			 //pop the window to new headwindow
+			if (!curbox || !curbox->win || windows.n<=1) return 0;
+
+			HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+			app->addwindow(head);
+			head->Add(curbox->win);//this reparents win
+			curbox->win=NULL;
+
+			 //then try to join the previous pane with an adjacent pane
+			 //First try last mouse coordinates, then l-r-t-b
+			int c=windows.findindex(curbox);
+			if (joinwindow(mx,my,1)!=0) 
+				if (Join(c,LAX_LEFT,1)<0)
+					if (Join(c,LAX_RIGHT,1)<0)
+						if (Join(c,LAX_TOP,1)<0)
+							Join(c,LAX_BOTTOM,1);
+			return 0;
+		} else if (e->data.l[1]==51) {
+			if (mode!=0 || !curbox) return 0;
+			DBG cout <<"  HeadWindow:: Drop To..."<<endl;
+			
+			XWindowAttributes atts;
+			XGetWindowAttributes(app->dpy,window, &atts);
+			if (atts.map_state!=IsViewable) return 0;
+
+			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
+							 GrabModeAsync,GrabModeAsync,
+							 None, None, CurrentTime)!=GrabSuccess) return 0;
+			markedhead=NULL;
+			markedpane=NULL;
+			mode=DROPTO;
+			return 0;
+		} else if (e->data.l[1]==53) {
+			 // swap with...
+			if (mode!=0 || !curbox) return 0;
+			DBG cout <<"  HeadWindow:: Swap With..."<<endl;
+			
+			XWindowAttributes atts;
+			XGetWindowAttributes(app->dpy,window, &atts);
+			if (atts.map_state!=IsViewable) return 0;
+
+			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
+							 GrabModeAsync,GrabModeAsync,
+							 None, None, CurrentTime)!=GrabSuccess) return 0;
+			markedhead=NULL;
+			markedpane=NULL;
+			mode=SWAPWITH;
+			return 0;
+		}
+	}
+	return SplitWindow::ClientEvent(e,mes);
+}
+
+//! Intercept to do a "drop to..." to or "swap with...".
+int HeadWindow::LBUp(int x,int y,unsigned int state)
+{
+	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state);
+	if (!laidout->isTopWindow(markedhead)) { mode=0; return 0; }
+	
+	if (mode==DROPTO) {
+		cout <<"***\"float\" curbox, then split markedpane according to mouse position"<<endl;
+	} else { //SWAPWITH
+		SwapWithMarked();
+	}
+	
+	mode=0;
+	return 0;
+}
+
+//! Intercept for finding a drop to or swap with location, put in markedhead and markedpane.
+/*! This stores the target head and pane in markedhead and markedpane.
+ */
+int HeadWindow::MouseMove(int x,int y,unsigned int state)
+{//***
+	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::MouseMove(x,y,state);
+	
+	//***based on mouseposition set markedhead and markedpane
+	
+	return 0;
+}
 
 //! Create split panes with names like SplitPane12, where the number is getUniqueNumber().
 /*! New spread editors will be created with the same document of the most recent view.

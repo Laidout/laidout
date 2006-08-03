@@ -149,6 +149,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 						int xx,int yy,int ww,int hh,int brder,
 						Document *newdoc);
+	virtual ~ViewWindow();
 	virtual const char *whattype() { return "ViewWindow"; }
 	virtual int event(XEvent *e);
 	virtual int CharInput(unsigned int ch,unsigned int state);

@@ -24,6 +24,7 @@ MAKING LAIDOUT DEB PACKAGE
  
  make sure Makefile-toinclude points to correct laxkit headers directory
  make sure Makefile has 'prefix=/usr/local/'. This is what should be in a source tarball
+ make sure 'make' does not try to make lax or laxinterfaces...
 
 3. ---hide the debugging garbage and commit---
  make hidegarbage 

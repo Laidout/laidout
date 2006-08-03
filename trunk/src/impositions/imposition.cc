@@ -449,13 +449,12 @@ Style *Imposition::duplicate(Style *s)//s=NULL
  *  and applied to a new duplicate of the actual default pagestyle.
  *  This preserves whether page clips and facing pages bleed.
  *
- * \todo *** perhaps break this down so there's a SyncPage()?
  * \todo *** for more complicated pagestyles, this will forget any
  *   custom changes it may have had, which may or may not be good. ultimately
  *   for arbitrary foldouts, this might be important. There is the PageStyle::pagetype
  *   element that can be used to preserve the basic kind of thing....
  */
-int Imposition::SyncPages(Document *doc,int start,int n)
+int Imposition::SyncPageStyles(Document *doc,int start,int n)
 {
 	if (numpages==0 || numpapers==0) {
 		NumPages(doc->pages.n);

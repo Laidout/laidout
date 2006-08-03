@@ -31,6 +31,9 @@ PalettePane::PalettePane(anXWindow *parnt,const char *ntitle,unsigned long nstyl
 {}
 
 //! Send a anXWindow::sendthis message to laidout->lastview. 
+/*! 
+ * \todo *** there is every possibility that laidout->lastview is no longer valid?
+ */
 int PalettePane::send()
 {
 	if (!laidout->lastview || !laidout->lastview->window || 
@@ -48,7 +51,7 @@ int PalettePane::send()
 		if (c<5) e.xclient.data.l[c+1]=palette->colors.e[curcolor]->channels[c];
 	}
 	for (c++; c<5; c++) e.xclient.data.l[c]=0;
-	XSendEvent(app->dpy,owner,False,0,&e);
+	XSendEvent(app->dpy,laidout->lastview->window,False,0,&e);
 	return 1;
 }
 

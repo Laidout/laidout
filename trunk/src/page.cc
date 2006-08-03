@@ -422,21 +422,25 @@ StyleDef *RectPageStyle::makeStyleDef()
  *
  * The ObjectContainer part returns the individual layers of the page.
  */
-/*! \var int PageLabel::labeltype
+/*! \var char *Page::label
+ * \brief The label for a page.
+ * 
+ * This will usually be something like "2" or "23", but can also be "iii",
+ * "IV", or even "C". See Document and PageRange for more details.
+ */
+/*! \var int Page::labeltype
  * \brief How to show the label in a SpreadEditor
  *
  * <pre>
- * 0 white circle\n
- * 1 gray circle\n
- * 2 dark gray circle\n
- * 3 black circle\n
- * 4 square\n
- * 5 gray square\n
- * 6 dark gray square\n
- * 7 black square\n
+ * 0 white circle
+ * 1 gray circle
+ * 2 dark gray circle
+ * 3 black circle
+ * 4 square
+ * 5 gray square
+ * 6 dark gray square
+ * 7 black square
  * </pre>
- *  \todo *** this will eventually be more versatile, combined with the ability
- *    for ranges of pages to have different labels, like '3' vs 'iii'
  */
 /*! \fn Group *Page::e(int i) 
  * \brief Return dynamic_cast<Group *>(layers.e(i)).

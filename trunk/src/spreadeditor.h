@@ -39,22 +39,6 @@ class LittleSpread : public LaxInterfaces::SomeData
 	virtual void FindBBox();
 };
 
-//----------------------- PageLabel --------------------------------------
-
-class PageLabel
-{
- public:
-	int labeltype; //plain label, circled, highlighted circle, etc..
-	int pagenumber;
-	char *labelbase,*label;
-	PageLabel(int pnum,const char *nlabel="#",int ninfo=0);
-	virtual ~PageLabel();
-	virtual const char *Label() { return label; }
-	virtual const char *Label(const char *nlabel,int ninfo=-1);
-	virtual void UpdateLabel();
-	virtual void Pagenum(int np);
-};
-
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
 
@@ -71,7 +55,6 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	//SpreadView *view;
 	//char dataislocal; 
 	Laxkit::PtrStack<LittleSpread> spreads;
-	Laxkit::PtrStack<PageLabel> pagelabels;
 	int temppagen,*temppagemap;
 	//Laxkit::PtrStack<TextBlock> notes;
 	int SpreadInterface::reversemap(int i);
@@ -111,7 +94,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual int findPage(int x,int y);
 	virtual int findSpread(int x,int y,int *page=NULL);
 	virtual void Center(int w=1);
-	virtual void drawLabel(int x,int y,PageLabel *plabel);
+	virtual void drawLabel(int x,int y,Page *page);
 
 	virtual void Reset();
 	virtual void ApplyChanges();

@@ -70,12 +70,14 @@ class LaidoutApp : public Laxkit::anXApp
 	Laxkit::PtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<Imposition> impositionpool;
 	Laxkit::PtrStack<PaperStyle> papersizes;
+	
 	LaidoutApp();
 	virtual ~LaidoutApp();
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
 	void parseargs(int argc,char **argv);
 	int readinlaidoutrc();
+	int isTopWindow(Laxkit::anXWindow *win);
 
 	Document *findDocument(const char *saveas);
 	Document *LoadDocument(const char *filename);
