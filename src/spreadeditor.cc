@@ -45,7 +45,6 @@ using namespace std;
 ////{
 //// public:
 ////	PtrStack<LittleSpread> littlespreads;
-////	PrtStack<PageLabel> pagelabels;
 ////};
 
 //----------------------- LittleSpread --------------------------------------
@@ -149,101 +148,6 @@ void LittleSpread::mapConnection()
 	//    but rot+scale so min-prev->max is still x axis??
 }
 
-//----------------------- PageLabel --------------------------------------
-
-/*! \class PageLabel
- * \brief Holds how to label the page in a spread in the spread editor.
- *
- * Passing in a label of "#" replaces the '#' with the page number. 
- *
- * \todo *** The label
- * can be just the label printed out, or it can be circled, squared, (triangle? diamond?) 
- * filled with various colors, ... ***do me! this means have shape number, and color..
- * one would define various styles, then pressing m/M runs through them, rather than
- * built in defuaults?
- */
-/*! \fn const char *PageLabel::Label()
- * \brief Just return label. Does not update label.
- */
-/*! \var int PageLabel::labeltype
- * \brief How to show the label
- *
- * pagenumber\<0 shows '?'.
- * 
- * 0 white circle\n
- * 1 gray circle\n
- * 2 dark gray circle\n
- * 3 black circle\n
- * 4 square\n
- * 5 gray square\n
- * 6 dark gray square\n
- * 7 black square\n
- * 
- */
-//class PageLabel
-//{
-// public:
-//	int labeltype; //plain label, circled, highlighted circle, etc..
-//	int pagenumber;
-//	char *labelbase,*label;
-//	PageLabel(int pnum,const char *nlabel="#",int ninfo=0);
-//	virtual ~PageLabel();
-//	virtual const char *Label() { return label; }
-//	virtual const char *Label(const char *nlabel,int ninfo=-1);
-//	virtual void UpdateLabel();
-//	virtual void Pagenum(int np);
-//};
-
-PageLabel::PageLabel(int pnum,const char *nlabel,int ninfo)//ninfo=0, nlabel="#"
-{ 
-	labeltype=ninfo;
-	pagenumber=pnum;
-	labelbase=label=NULL;
-	Label(nlabel,ninfo); 
-}
-
-void PageLabel::Pagenum(int np)
-{
-	pagenumber=np;
-	UpdateLabel();
-}
-
-//! Update the current label. Returns current label.
-/*! If ninfo>=0, then make labeltype=ninfo.
- */
-const char *PageLabel::Label(const char *nlabel, int ninfo)//ninfo=-1
-{
-	if (ninfo>=0) labeltype=ninfo;
-	makestr(labelbase,nlabel);
-	UpdateLabel();
-	return label;
-}
-
-//! Make label correctly correspond to labelbase and pagenumber.
-void PageLabel::UpdateLabel()//ninfo=-1
-{
-	if (!labelbase) {
-		if (label) { delete[] label; label=NULL; }
-		if (pagenumber>=0) label=numtostr(pagenumber+1);
-		else makestr(label,"?");
-		return;
-	}
-	makestr(label,labelbase);
-	char *m,*n=NULL;
-	if (pagenumber>=0) n=numtostr(pagenumber+1);
-	else n=newstr("?");
-	m=replaceall(label,"#",n);
-	delete[] n;
-	delete[] label;
-	label=m;
-	return;
-}
-
-PageLabel::~PageLabel()
-{
-	if (label) delete[] label;
-	if (labelbase) delete[] labelbase;
-}
 
 //----------------------- SpreadInterface --------------------------------------
 
@@ -338,8 +242,6 @@ SpreadInterface::~SpreadInterface()
 	 //for debugging:
 	DBG cout<<"SpreadInterface destructor\n spreads flush"<<endl;
 	spreads.flush();
-	DBG cout <<" pagelabels flush:"<<endl;
-	pagelabels.flush();
 }
 
 
@@ -474,14 +376,12 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 	 // correct temppagemap
 	if (doc->pages.n<=temppagen) {
 		temppagen=doc->pages.n;
-		while (pagelabels.n!=doc->pages.n) pagelabels.remove(pagelabels.n-1);
 	} else {
 		int *tmp=new int[doc->pages.n];
 		memcpy(tmp,temppagemap,sizeof(int)*temppagen);
 		for (c=temppagen; c<doc->pages.n; c++) {
 			tmp[c]=c;
 			if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
-			pagelabels.push(new PageLabel(c,"#",doc->pages.e[c]->labeltype));
 		}
 		delete[] temppagemap;
 		temppagemap=tmp;
@@ -557,7 +457,6 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 void SpreadInterface::GetSpreads()
 {
 	spreads.flush();
-	pagelabels.flush();
 	curspread=NULL;
 	curpage=-1;
 
@@ -571,7 +470,6 @@ void SpreadInterface::GetSpreads()
 	for (c=0; c<doc->pages.n; c++) {
 		temppagemap[c]=c;
 		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
-		pagelabels.push(new PageLabel(c,"#",doc->pages.e[c]->labeltype));
 	}
 	
 	Spread *s;
@@ -784,7 +682,7 @@ int SpreadInterface::Refresh()
 		 // draw page labels
 		for (c2=0; c2<spreads.e[c]->spread->pagestack.n; c2++) {
 			pg=spreads.e[c]->spread->pagestack.e[c2]->index;
-			if (pg>=0 && pg<pagelabels.n) {
+			if (pg>=0 && pg<doc->pages.n) {
 				outline=spreads.e[c]->spread->pagestack.e[c2]->outline;
 				dp->PushAndNewTransform(outline->m());
 				if (centerlabels==0) 
@@ -795,7 +693,7 @@ int SpreadInterface::Refresh()
 				else  p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));
 				x=(int)p.x; // figure out where bottom tip of bbox is
 				y=(int)p.y;
-				drawLabel(x,y,pagelabels.e[pg]);
+				drawLabel(x,y,doc->pages.e[temppagemap[pg]]);
 				dp->PopAxes();
 			}
 		}
@@ -820,19 +718,19 @@ int SpreadInterface::Refresh()
  * 7 dark gray square\n
  * 8 black square\n
  */
-void SpreadInterface::drawLabel(int x,int y,PageLabel *plabel)
+void SpreadInterface::drawLabel(int x,int y,Page *page)
 {
 	 // *** if (plabel->labeltype==circle, filledcircle, etc...) ...
 	 // *** write text
 	int w,h;
-	getextent(plabel->Label(),&w,&h);
+	getextent(page->label,&w,&h);
 	w/=2;
 	h/=2;
 	w+=h;
 	h+=h;
 	unsigned long fcolor=~0,color=0;
 	int t=-1;
-	switch (plabel->labeltype) {
+	switch (page->labeltype) {
 		case 0: fcolor=app->rgbcolor(255,255,255);
 				t=0;
 				break;
@@ -864,7 +762,7 @@ void SpreadInterface::drawLabel(int x,int y,PageLabel *plabel)
 	}
 	drawthing(dp->GetWindow(),app->gc(),x,y,w,h,t,0,fcolor);
 	XSetForeground(app->dpy,app->gc(),color);
-	textout(dp->GetWindow(),plabel->Label(),-1,x,y,LAX_CENTER);
+	textout(dp->GetWindow(),page->label,-1,x,y,LAX_CENTER);
 }
 
 //! Relays left button event to rLBDown or rMBDown depending on reversebuttons.
@@ -1003,9 +901,6 @@ void SpreadInterface::SwapPages(int previouspos, int newpos)
 	temppagemap[previouspos]=temppagemap[newpos];
 	temppagemap[newpos]=t;
 	
-	 // swap page labels
-	pagelabels.swap(previouspos,newpos);
-	
 	 // swap the littlespread->spread->pagestack->page
 	int oc,oc2,nc,nc2;
 	for (oc=0; oc<spreads.n; oc++) {
@@ -1039,26 +934,23 @@ void SpreadInterface::SwapPages(int previouspos, int newpos)
 void SpreadInterface::ApplyChanges()
 {
 	DBG cout<<"ApplyChanges:"<<endl;
-	if (doc->pages.n!=pagelabels.n) {
-		cout <<"doc pages != pagelabels.n, fix this code!"<<endl;
-		exit(0);
-	}
+
+	//****
 
 	int n;
 	char *newlocal,*oldlocal;
 	Page **newpages,**oldpages=doc->pages.extractArrays(&oldlocal,&n);
 	
-	newpages=new Page*[pagelabels.n];
-	newlocal=new char[pagelabels.n];
+	newpages=new Page*[doc->pages.n];
+	newlocal=new char[doc->pages.n];
 	
 	int pg;
-	for (int c=0; c<pagelabels.n; c++) {
-		pg=pagelabels.e[c]->pagenumber;
-		if (pg<0 || pg>=n) { cout <<"** damnation! bad page in a pagelabel"<<endl; exit(0); }
+	for (int c=0; c<n; c++) {
+		DBG cout <<" --move page "<<pg<<" to page "<<c<<endl;
+		pg=temppagemap[c];
 		newpages[c]=oldpages[pg];
 		newlocal[c]=oldlocal[pg];
 
-		pagelabels.e[c]->Pagenum(c);
 		temppagemap[c]=c;
 	}
 	doc->pages.insertArrays(newpages,newlocal,n);
@@ -1066,6 +958,7 @@ void SpreadInterface::ApplyChanges()
 	delete[] oldpages;
 	needtodraw=1;
 
+	doc->SyncPages(0,-1);
 	laidout->notifyDocTreeChanged(curwindow->win_parent,TreePagesMoved,0,-1);
 }
 
@@ -1077,11 +970,11 @@ void SpreadInterface::ApplyChanges()
 void SpreadInterface::Reset()
 {
 	int c,c2;
-	for (c=0; c<pagelabels.n; c++) {
+	for (c=0; c<doc->pages.n; c++) {
 		if (temppagemap[c]==c) continue;
-		for (c2=c+1; c2<pagelabels.n; c2++)
+		for (c2=c+1; c2<doc->pages.n; c2++)
 			if (temppagemap[c2]==c) break;
-		if (c2==pagelabels.n) continue;
+		if (c2==doc->pages.n) continue;
 		SwapPages(c,c2);
 	}
 }
@@ -1220,13 +1113,14 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) { // toggle mark
 		if (curpage<0) return 0;
-		pagelabels.e[curpage]->labeltype=(pagelabels.e[curpage]->labeltype+1)%8;
+		doc->pages.e[temppagemap[curpage]]->labeltype=
+				(doc->pages.e[temppagemap[curpage]]->labeltype+1)%8;
 		needtodraw=1;
 		return 0;
 	} else if (ch=='M' && (state&LAX_STATE_MASK)==ShiftMask) { // toggle mark
 		if (curpage<0) return 0;
-		pagelabels.e[curpage]->labeltype--;
-		if (pagelabels.e[curpage]->labeltype<0) pagelabels.e[curpage]->labeltype=7;
+		doc->pages.e[temppagemap[curpage]]->labeltype=
+				(doc->pages.e[temppagemap[curpage]]->labeltype+7)%8;
 		needtodraw=1;
 		return 0;
 	} else if (ch=='p') { //*** for debugging thumbnails....

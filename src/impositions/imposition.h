@@ -100,7 +100,7 @@ class Imposition : public Style
 	
 //	virtual void AdjustPages(Page **pages) {} // when changing page size and atts, return bases for the new pages
 	virtual Page **CreatePages() = 0;
-	virtual int SyncPages(Document *doc,int start,int n);
+	virtual int SyncPageStyles(Document *doc,int start,int n);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
 	virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords

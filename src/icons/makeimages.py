@@ -68,5 +68,9 @@ for name in names :
 
     command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
         str(bitmapw)+" -h "+str(bitmapw)+" -e "+name+".png icons.svg"
-    print commands #.getoutput(command)
+    print command
+    #print commands.getoutput(command)
+    #print commands.getstatus(command)
+    print commands.getstatusoutput(command)
+	
     

@@ -23,6 +23,8 @@
 class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 {
  protected:
+	static Laxkit::PlainWinBox *markedpane;
+	static HeadWindow *markedhead;
 	virtual int splitthewindow(anXWindow *fillwindow=NULL);
  public:
 	Laxkit::anXWindow *lastview, *lastedit;
@@ -31,15 +33,21 @@ class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
  	virtual const char *whattype() { return "HeadWindow"; }
 	virtual ~HeadWindow();
 	virtual int init();
-	virtual int numwindows() { return windows.n; }
-	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>=0 && i<windows.n) return windows.e[i]; return NULL; }
+	virtual int LBUp(int x,int y,unsigned int state); 
+	virtual int MouseMove(int x,int y,unsigned int state);
+	
+	virtual int Mark(int c);
+	virtual int SwapWithMarked();
 	virtual Laxkit::MenuInfo *GetMenu();
-	//virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
-	virtual void WindowGone(Laxkit::anXWindow *win);
 	virtual int Curbox(int c);
 	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
+	
+	virtual void WindowGone(Laxkit::anXWindow *win);
+	virtual int numwindows() { return windows.n; }
+	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>=0 && i<windows.n) return windows.e[i]; return NULL; }
 	virtual int HasOnlyThis(Document *doc);
 	virtual Document *HeadWindow::findAnyDoc();
 	virtual void dump_out(FILE *f,int indent,int what);

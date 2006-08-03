@@ -2042,6 +2042,14 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 	setup();
 }
 
+//! Make sure laidout->lastview gets reset if necessary.
+/*! \todo *** should really reset to next most relevant view, is just set to null here..
+ */
+ViewWindow::~ViewWindow()
+{
+	if (laidout->lastview==this) laidout->lastview=NULL;
+}
+
 /*! Write out something like:
  * <pre>
  *   document /path/to/doc  # which document
@@ -2324,7 +2332,25 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		int c=viewport->DataEvent(data,mes);
 		updateContext();
 		return c;
-	} else if (!strcmp(mes,"import new image") || !strcmp(mes,"insert new image")) {
+	} else if (!strcmp(mes,"import new image")) {
+		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
+		if (!s || !s->n) return 1;
+
+		int n=dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(), (const char **)(s->strs),s->n,-2, 0); 
+		
+		char mes[35];
+		mes[0]=0;
+		if (n) {
+			if (s->n>1) sprintf(mes,"Images imported.");
+			else sprintf(mes,"Image imported.");
+		} else { 
+			if (s->n>1) sprintf(mes,"Couldn't load images.");
+			else sprintf(mes,"Couldn't load image.");
+		}
+		((LaidoutViewport *)viewport)->postmessage(mes);
+		delete data;
+		return 0;
+	} else if (!strcmp(mes,"insert new image")) {
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		Imlib_Image image=imlib_load_image(s->str);
@@ -2533,7 +2559,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			appendstr(cm," ");
 			//***investigate tmpfile() tmpnam tempnam mktemp
 			char tmp[256];
-			cupsTempFile(tmp,sizeof(tmp));
+			cupsTempFile2(tmp,sizeof(tmp));
 			FILE *f=fopen(tmp,"w");
 			if (f) {
 				mesbar->SetText("Printing, please wait....");
@@ -2608,6 +2634,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.alpha=255;//***
 		linestyle.color=app->rgbcolor(linestyle.red,linestyle.green,linestyle.blue);
 		colorbox->Set(linestyle.red,linestyle.green,linestyle.blue);
+		char blah[100];
+		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
+		mesbar->SetText(blah);
 		if (curtool)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
 		
@@ -2620,6 +2649,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.blue=e->data.l[2];
 		linestyle.alpha=e->data.l[3];
 		linestyle.color=app->rgbcolor(e->data.l[0],e->data.l[1],e->data.l[2]);
+		char blah[100];
+		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
+		mesbar->SetText(blah);
 		if (curtool)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
 		
@@ -2711,7 +2743,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
 		app->rundialog(new FileDialog(NULL,"Import Image",
-					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 					0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {

@@ -11,24 +11,27 @@ VERSION 0.04
 (done) RSS feed for website
 (done) A style manager, which is Not dependent on laxkit::refcounter
 (done) from laxkit: SplitWindow: swap window positions
-       perhaps have image open window? drag and drop in images? that would be AWESOME
+(done) Simple multiple image import
+       Allow for window docking, floating, swapping panes, and temporary pane maximize
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Page Ranges controlling page number label and which imposition should lay it out
+       perhaps have image open window? drag and drop in images? that would be AWESOME
        Finish implementing project based setup, especially when loading and saving
-       Allow for window docking, floating, swapping panes, etc.
-       from laxkit: SplitWindow: tabbed panes, and temporary maximize
-       plus configurable icon panel/menu system
        ObjectInterface for selecting and resizing multiple stuff
-       parent/child nesting and masking,
-       interface for that: nesting, and grouping
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
-       Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
+       parent/child nesting and interface for that: nesting, and grouping
+       Make workspace bounds and popup panner work right
+       Fix page/spread flip by number
 
 
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
+       plus configurable icon panel/menu system
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
+       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
+       Parent masking of children
+       Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
+       for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ImagePatchData stuff
        Have imagepatch be a transform you can apply to any image
        Have images have any number of various kinds of transforms applied to it

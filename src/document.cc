@@ -142,6 +142,9 @@ DocumentStyle::~DocumentStyle()
  */
 /*! \var int PageRange::end
  * \brief The index in doc->pages that this page range ends at.
+ *
+ * This variable should be set by Document, which maintains a stack of PageRange 
+ * objects. It is not written or read from a file. After a dump_in, its value is -1.
  */
 /*! \var int PageRange::labeltype
  * \brief The style of letter, like 1,2,3 or i,ii,iii...
@@ -267,7 +270,7 @@ char *roman_numeral(int i,char cap)
 	return n;
 }
 
-//! Make label correctly correspond to labelbase and pagenumber.
+//! Return a label that correctly corresponds to labelbase and page number i.
 /*! i is index in doc->pages, so number used is (i-start+offset).
  * If index is not in the range, then NULL is returned, else a new'd char[].
  */
@@ -296,6 +299,55 @@ char *PageRange::GetLabel(int i)
 	delete[] lb;
 	return label;
 }
+
+/*! \todo make labeltype be the enum names.. this ultimately means PageRange
+ *    will have to make full switch to Style.
+ */
+void PageRange::dump_out(FILE *f,int indent,int what)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	//int impositiongroup;
+	//int start,end,offset;
+	//char *labelbase;
+	//int labeltype;
+	
+	fprintf(f,"%simpositiongroup %d\n",spc,impositiongroup);
+	fprintf(f,"%sstart %d\n",spc,start);
+	fprintf(f,"%soffset %d\n",spc,offset);
+	fprintf(f,"%slabeltype %d\n",spc,labeltype);
+	fprintf(f,"%slabelbase ",spc);
+	dump_out_escaped(f,labelbase,-1);
+	fprintf(f,"\n");
+}
+
+/*! \todo make labeltype be the enum names.. this ultimately means PageRange
+ *    will have to make full switch to Style.
+ */
+void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
+{
+	if (!att) return;
+	char *name,*value;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"impositiongroup")) {
+			IntAttribute(value,&impositiongroup);
+		} else if (!strcmp(name,"start")) {
+			IntAttribute(value,&start);
+		} else if (!strcmp(name,"end")) {
+			IntAttribute(value,&end);
+		} else if (!strcmp(name,"offset")) {
+			IntAttribute(value,&offset);
+		} else if (!strcmp(name,"labeltype")) {
+			IntAttribute(value,&labeltype);
+		} else if (!strcmp(name,"labelbase")) {
+			makestr(labelbase,value);
+		}
+	}
+	end=-1;
+}
+
 
 
 //---------------------------- Document ---------------------------------------
@@ -413,6 +465,8 @@ Spread *Document::GetLayout(int type, int index)
  * update impositioninst.cc
  *
  * Returns number of pages added, or negative for error.
+ *
+ * \todo *** figure out how to handle upkeep of page range and labels
  */
 int Document::NewPages(int starting,int np)
 {
@@ -423,8 +477,9 @@ int Document::NewPages(int starting,int np)
 		p=new Page(NULL);
 		pages.push(p,1,starting);
 	}
+	if (pageranges.n) pageranges.e[pageranges.n-1]->end=pages.n-1;
 	docstyle->imposition->NumPages(pages.n);
-	docstyle->imposition->SyncPages(this,starting,-1);
+	SyncPages(starting,-1);
 	laidout->notifyDocTreeChanged(NULL,TreePagesAdded, starting,-1);
 	return np;
 }
@@ -540,9 +595,40 @@ int Document::Load(const char *file)
 		}
 	}
 	docstyle->imposition->NumPages(pages.n);
-	docstyle->imposition->SyncPages(this,0,-1);
+	SyncPages(0,-1);
 	DBG cout <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
+}
+
+//! Make sure each page has the correct PageStyle and page label.
+/*! Calls Imposition::SyncPageStyles() then figures out the
+ * labels.
+ *
+ * Returns the number of pages adjusted.
+ */
+int Document::SyncPages(int start,int n)
+{
+	if (start>=pages.n) return 0;
+	if (n<0) n=pages.n;
+	if (start+n>pages.n) n=pages.n-start;
+	
+	if (docstyle && docstyle->imposition)
+		docstyle->imposition->SyncPageStyles(this,start,n);
+	
+	char *label;
+	int range=0;
+	for (int c=start; c<start+n; c++) {
+		if (pageranges.n==0) {
+			label=new char[12];
+			sprintf(label,"%d",c);
+		} else {
+			while (range<pageranges.n && c>pageranges.e[range]->end) range++;
+			label=pageranges.e[range]->GetLabel(c);
+		}
+		if (pages.e[c]->label) delete[] pages.e[c]->label;
+		pages.e[c]->label=label;
+	}
+	return n;
 }
 
 //! Low level reading in a document.
@@ -550,15 +636,17 @@ int Document::Load(const char *file)
  * If docstyle required special treatment, it should have been dealt with
  * previous to coming here.
  *
- * Recognizes 'docstyle' and 'page'. Discards all else. 
- *
+ * Recognizes 'docstyle', 'page', and 'pagerange'. Discards all else. 
+ * Takes special care to make sure that pagerange->end is set correctly for
+ * each range.
  */
 void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	Page *page;
 	char *name,*value;
-	for (int c=0; c<att->attributes.n; c++) {
+	int c;
+	for (c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"saveas")) {
@@ -567,6 +655,10 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			if (docstyle) delete docstyle;
 			docstyle=new DocumentStyle(NULL);
 			docstyle->dump_in_atts(att->attributes.e[c],flag);
+		} else if (!strcmp(name,"pagerange")) {
+			PageRange *pr=new PageRange;
+			pr->dump_in_atts(att->attributes.e[c],flag);
+			pageranges.push(pr,1);
 		} else if (!strcmp(name,"page")) {
 			PageStyle *ps=NULL;
 			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
@@ -575,6 +667,12 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			page->dump_in_atts(att->attributes.e[c],flag);
 			pages.push(page,1);
 		}
+	}
+	
+	 //validate pagerange ends==-1 to scale properly
+	for (c=0; c<pageranges.n; c++) {
+		if (c<pageranges.n-1) pageranges.e[c]->end=pageranges.e[c+1]->start-1;
+		else pageranges.e[c]->end=pages.n-1;
 	}
 	
 	//****** finish this:
@@ -612,6 +710,14 @@ void Document::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%sdocstyle\n",spc);
 		docstyle->dump_out(f,indent+2,0);
 	}
+
+	 // PageRanges
+	int c;
+	for (c=0; c<pageranges.n; c++) {
+		fprintf(f,"%spagerange\n",spc);
+		pageranges.e[c]->dump_out(f,indent+2,0);
+	}
+	
 	 // dump objects
 	for (int c=0; c<pages.n; c++) {
 		fprintf(f,"%spage %d\n",spc,c);

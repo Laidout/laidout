@@ -127,8 +127,8 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nfiles
  * in the future. Adds a count of 1 to the item's count. Does not
  * delete the images array, the calling code should do that.
  *
- * \todo ignores imagesperpage.. should not ignore it!! 1 center, 2 top and bottom, 3 in thirds,
- * 4 in quarters... or "contact sheet"=-1 or "as many as will fit at pages dpi"=-2
+ * If imagesperpage==-2 then place all the images one one page. If imagesperpage==-1, then
+ * put only as many as will fit onto each page.
  *
  * // *** perhaps dpi should be a per page feature? though gs only has it for whole doc, would be
  * reasonable to have page control it here. The imposition dpi is what gets sent to gs
@@ -153,6 +153,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 	if (ddpi>50) dpi=ddpi; else dpi=doc->docstyle->imposition->paperstyle->dpi;
 	endpage=startpage-1;
 	int maxperpage=imagesperpage;
+	if (maxperpage==-2) maxperpage=1000001;
 	if (maxperpage<0) maxperpage=1000000;
 	double x,y,w,h,ww,hh,s,rw,rh,rrh;
 	int c,c2,c3,n,nn,nr=1;
@@ -192,7 +193,7 @@ int dumpImages(Document *doc, int startpage, ImageData **images, int nimages, in
 				rw+=w;
 				if (h>rh) rh=h;
 			}
-			if (nn && rrh+rh>hh) break; // row would be off page, so go on to next page
+			if (nn && rrh+rh>hh && maxperpage!=1000001) break; // row would be off page, so go on to next page
 			x=(ww-rw)/2+outline->minx;
 			y=hh-rrh-rh/2+outline->miny;
 			for (c3=0; c3<c2; c3++) {
