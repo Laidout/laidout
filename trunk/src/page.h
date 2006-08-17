@@ -31,6 +31,7 @@
 #define PAGE_CLIPS           (1<<1)
 #define FACING_PAGES_BLEED   (1<<2)
 #define PAGESTYLE_AUTONOMOUS (1<<3)
+#define DONT_SHOW_PAGE       (1<<4)
 
 class PageStyle : public Style
 {

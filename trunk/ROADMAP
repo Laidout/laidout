@@ -14,7 +14,7 @@ VERSION 0.04
 (done) Simple multiple image import
        Allow for window docking, floating, swapping panes, and temporary pane maximize
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       Page Ranges controlling page number label and which imposition should lay it out
+(done) Page Ranges controlling page number labels
        perhaps have image open window? drag and drop in images? that would be AWESOME
        Finish implementing project based setup, especially when loading and saving
        ObjectInterface for selecting and resizing multiple stuff
@@ -26,6 +26,7 @@ VERSION 0.04
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
+       autoconfiscate
        plus configurable icon panel/menu system
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)

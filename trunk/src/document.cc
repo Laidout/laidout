@@ -39,9 +39,12 @@ using namespace std;
 /*! \class DocumentStyle
  * \brief Style for Document objects, suprisingly enough.
  *
- * Should have enough info to create a specific kind of Document...
- * ----------
- * Keeps a local imposition object.
+ * Should have enough info to create a specific kind of Document.
+ * Currently this just means keeping an Imposition object.
+ *
+ * ***In the future, perhaps it might also have things like whether the default page
+ * advance direction is to the right or left. have to think about interaction between
+ * Document/PageRange/Imposition more.....
  */
 
 
@@ -111,6 +114,8 @@ DocumentStyle::~DocumentStyle()
 /*! \class PageRange
  * \brief Holds info about page labels.
  *
+ * Labels are 1,2,3... or i,ii,iii...
+ * 
  * In the future, might implement which imposition should lay it out, allowing more than
  * one imposition to work on same doc, might still make a CompositeImposition...
  */
@@ -282,8 +287,8 @@ char *PageRange::GetLabel(int i)
 	char *label=NULL,*lb,*n;
 	
 	if (labeltype==Numbers_Arabic_dec || labeltype==Numbers_Roman_dec || labeltype==Numbers_Roman_cap_dec)
-		i=end-(start-i)+offset;
-	else i=start-i+offset;
+		i=end-(i-start)+offset;
+	else i=i-start+offset;
 	
 	int len;
 	lb=make_labelbase_for_printf(labelbase,&len);
@@ -345,6 +350,7 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			makestr(labelbase,value);
 		}
 	}
+	if (labelbase==NULL || strlen(labelbase)==0) labelbase=newstr("#");
 	end=-1;
 }
 
@@ -425,12 +431,22 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 			}
 		}
 	}
+	
+	//****this exists here for debugging purposes, would be preemptible later?
+	//****perhaps this could be the default page range type?
+	//PageRange *range=new PageRange();
+	//range->start=0;
+	//range->end=pages.n-1;
+	//range->offset=5;
+	//pageranges.push(range);
+	SyncPages(0,-1);
 }
 
 Document::~Document()
 {
 	DBG cout <<" Document destructor.."<<endl;
 	pages.flush();
+	pageranges.flush();
 	delete docstyle;
 	if (saveas) delete[] saveas;
 }
@@ -467,6 +483,7 @@ Spread *Document::GetLayout(int type, int index)
  * Returns number of pages added, or negative for error.
  *
  * \todo *** figure out how to handle upkeep of page range and labels
+ * \todo *** if np<0 insert before index starting, else after
  */
 int Document::NewPages(int starting,int np)
 {
@@ -627,6 +644,7 @@ int Document::SyncPages(int start,int n)
 		}
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
+		DBG cout <<"=============page["<<c<<"] label="<<label<<endl;
 	}
 	return n;
 }
