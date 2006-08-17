@@ -292,6 +292,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo *** for tiled pages, or multiples of same object each instance is
  *   rendered independently right now. should make a function to display such
  *   things, thus reduce ps file size substantially..
+ * \todo *** perhaps for the page label, have the page label be "1-2", "4-5,3", etc...
  */
 int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 {
@@ -339,9 +340,16 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	int c,c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page;
+	char *desc;
 	for (c=start; c<=end; c++) {
+		spread=doc->docstyle->imposition->PaperLayout(c);
+		desc=spread->pagesFromSpreadDesc(doc);
+			
 	     //print paper header
-		fprintf(f, "%%%%Page: %d %d\n", c+1,c-start+1);//Page label (ordinal starting at 1)
+		if (desc) {
+			fprintf(f, "%%%%Page: %s %d\n", desc,c-start+1);//Page label (ordinal starting at 1)
+			delete[] desc;
+		} else fprintf(f, "%%%%Page: %d %d\n", c+1,c-start+1);//Page label (ordinal starting at 1)
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
@@ -349,8 +357,6 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
 			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
 		}
-		
-		spread=doc->docstyle->imposition->PaperLayout(c);
 		
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {

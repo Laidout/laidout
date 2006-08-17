@@ -180,6 +180,40 @@ Spread::~Spread()
 	pagestack.flush();
 }
 
+//! Return a new char[] string like "2-4,6-8" corresponding to what pages are in the spread.
+/*! This retrieves the Page::label from the pages in doc.
+ * The returned string is used, for instance, when printing to postscript as the
+ * paper label.
+ *
+ * This assumes that doc exists. In the future it could be made to try to use whatever
+ * page might be in the pagestack if doc==NULL. That would help adapt to Whatever/limbo
+ * spreads.
+ */
+char *Spread::pagesFromSpreadDesc(Document *doc)
+{
+	int *pages=pagesFromSpread();
+	int c=0;
+	char *desc=NULL,*label;
+	while (pages[c]!=-2) {
+		 //single page or first page of range:
+		if (pages[c]>=0 && pages[c]<doc->pages.n) label=doc->pages.e[pages[c]]->label; 
+			else label=NULL;
+		appendstr(desc,(label?label:"?"));
+				
+		 // page range
+		if (pages[c+1]>=0) {
+			if (pages[c+1]>=0 && pages[c+1]<doc->pages.n) label=doc->pages.e[pages[c+1]]->label; 
+				else label=NULL;
+			appendstr(desc,"-");
+			appendstr(desc,(label?label:"?"));
+		}
+		if (pages[c+2]!=-2) appendstr(desc,",");
+		c+=2;
+	}
+	delete[] pages;
+	return desc;
+}
+
 //! Find what pages are in the spread.
 /*! Returns an int[] such that a range of pages is indicated by 2 consecutive nonnegative
  * numbers, single pages are indicated by the page number followed by a -1. The whole array

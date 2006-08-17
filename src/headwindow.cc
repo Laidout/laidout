@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2006
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -22,6 +22,10 @@
 #include "commandwindow.h"
 #include "buttonbox.h"
 #include "palettes.h"
+
+#include <lax/laxutils.h>
+
+#include <X11/cursorfont.h>
 
 #include <iostream>
 using namespace std;
@@ -123,6 +127,8 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  * \todo *** might want to remove doc, or have some more general way to start what is in which.
  *    perhaps have app keep track of most recently accessed doc? or have option to keep a new
  *    head empty
+ * \todo *** WindowGone if was only one window, then remove the headwindow, if that was last one, then
+ *    either quit or spring up default panel
  * \todo *** this will have to be modified later to more easily add windows through plugins...
  */
 anXWindow *newHeadWindow(Document *doc,const char *which)
@@ -174,10 +180,13 @@ anXWindow *newHeadWindow(LaxFiles::Attribute *att)
  */  
 
  //for SplitWindow::mode
-#define MAXIMIZED 4
-#define SWAPWITH  50
-#define DROPTO    51
-
+#define NORMAL          0
+#define MOVE_EDGES      1
+#define VERTICAL_SPLIT  2
+#define HORIZ_SPLIT     3
+#define MAXIMIZED       4
+#define SWAPWITH        50
+#define DROPTO          51
 
 
 Laxkit::PlainWinBox *HeadWindow::markedpane=NULL;
@@ -228,6 +237,9 @@ HeadWindow::~HeadWindow()
 {}
 
 //! Redefined to use a global mark, rather than per SplitWindow.
+/*! If c==-1 then mark curbox. Else if c is out of range, then do not change
+ * markedpane or markedhead. Else set them to the pane of that index.
+ */
 int HeadWindow::Mark(int c)
 {
 	if (c==-1) {
@@ -248,6 +260,7 @@ int HeadWindow::Mark(int c)
  */
 int HeadWindow::SwapWithMarked()
 {
+	//DBG cout <<" --SwapWithMarked: "<<
 	if (curbox==NULL || markedpane==NULL || markedhead==NULL || curbox==markedpane) return 0;
 
 	 // make sure markedhead is toplevel
@@ -545,6 +558,19 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 	return 1;
 }
 
+int HeadWindow::event(XEvent *e)
+{ 
+	//DBG cout <<"SplitWindow::event:"<<event_name(e->type)<<endl;
+	//DBG if (e->type==EnterNotify || e->type==LeaveNotify) { cout <<" crossing:"; printxcrossing(this,e); }
+
+	if (e->type==LeaveNotify && mode!=SWAPWITH && mode!=DROPTO) {
+		mousein=0;
+		DBG cout <<"************************UNDEFINE CURSOR**************** mode="<<mode<<endl;
+		if (!buttondown) XUndefineCursor(app->dpy,window);
+	}
+	return SplitWindow::event(e);
+}
+
 //! Intercept a menu item values 50 to 99.
 /*! 
  * <pre>
@@ -592,6 +618,13 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
 							 GrabModeAsync,GrabModeAsync,
 							 None, None, CurrentTime)!=GrabSuccess) return 0;
+			DBG cout <<"***********************GRAB***********************"<<endl;
+			Cursor cursor=XCreateFontCursor(app->dpy,XC_sb_down_arrow);
+			if (cursor) {
+				DBG cout <<"***********************CURSOR***********************"<<endl;
+				XDefineCursor(app->dpy,window,cursor);
+				XFreeCursor(app->dpy,cursor);
+			}
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=DROPTO;
@@ -605,6 +638,13 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			XGetWindowAttributes(app->dpy,window, &atts);
 			if (atts.map_state!=IsViewable) return 0;
 
+			DBG cout <<"***********************GRAB***********************"<<endl;
+			Cursor cursor=XCreateFontCursor(app->dpy,XC_exchange);
+			if (cursor) {
+				DBG cout <<"***********************CURSOR***********************"<<endl;
+				XDefineCursor(app->dpy,window,cursor);
+				XFreeCursor(app->dpy,cursor);
+			}
 			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
 							 GrabModeAsync,GrabModeAsync,
 							 None, None, CurrentTime)!=GrabSuccess) return 0;
@@ -617,15 +657,37 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return SplitWindow::ClientEvent(e,mes);
 }
 
+//! Intercept and do nothing when grabbed for a "drop to..." to or "swap with...".
+int HeadWindow::LBDown(int x,int y,unsigned int state,int count)
+{
+	DBG cout <<"***********HeadWindow::LBDown mode=="<<mode<<endl;
+	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBDown(x,y,state,count);
+	//markedpane=NULL;
+	//markedhead=NULL;
+	return 0;
+}
+
 //! Intercept to do a "drop to..." to or "swap with...".
 int HeadWindow::LBUp(int x,int y,unsigned int state)
 {
+	DBG cout <<"***********HeadWindow::LBUp mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state);
-	if (!laidout->isTopWindow(markedhead)) { mode=0; return 0; }
+	
+	XUngrabPointer(app->dpy, CurrentTime);
+	DBG cout <<"***********************UN-GRAB***********************"<<endl;
+	if (!laidout->isTopWindow(markedhead)) { 
+		DBG if (!markedhead) cout <<"***********no marked head"<<endl;
+		DBG else cout <<"***********marked head is not top"<<endl;
+		mode=0;
+		return 0; 
+	}
 	
 	if (mode==DROPTO) {
-		cout <<"***\"float\" curbox, then split markedpane according to mouse position"<<endl;
+		 // remove original pane and put it in markedhead/markedpane.
+		 // If there was only one pane in *this, then remove this HeadWindow.
+		cout <<"********\"float\" curbox, then split markedpane according to mouse position"<<endl;
 	} else { //SWAPWITH
+		DBG cout <<"**************** SWAPWITH"<<endl;
 		SwapWithMarked();
 	}
 	
@@ -638,11 +700,48 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
  */
 int HeadWindow::MouseMove(int x,int y,unsigned int state)
 {//***
+	DBG cout <<"***********HeadWindow::MouseMove  mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::MouseMove(x,y,state);
 	
 	//***based on mouseposition set markedhead and markedpane
+	anXWindow *win;
+	mouseposition(&x,&y,NULL,&win,NULL);
+	if (!win) {
+		markedpane=NULL;
+		markedhead=NULL;
+		return 0;
+	}
+	while (win->win_parent!=NULL) {
+		DBG cout <<"  -----"<<win->win_title<<endl;
+		win=win->win_parent;
+	}
+	
+	markedhead=dynamic_cast<HeadWindow *>(win);
+	if (!markedhead) {
+		markedpane=NULL;
+		return 0;
+	}
+	mouseposition(markedhead,&x,&y,NULL,NULL,NULL);
+	x=markedhead->FindBox(x,y);
+	if (x<0) markedhead=NULL;
+	else markedhead->Mark(x);
+	DBG cout <<"***************markedpane="<<x<<endl;
 	
 	return 0;
+}
+
+//! Reset mode when focus somehow leaves the window during non-normal modes.
+int HeadWindow::FocusOff(XFocusChangeEvent *e)
+{ //***
+	DBG cout <<"**********************HeadWindow::FocusOff"<<endl;
+	if (e->detail==NotifyInferior || e->detail==NotifyAncestor || e->detail==NotifyNonlinear) {
+		mode=NORMAL;
+		DBG cout <<"***********************UN-GRAB***********************"<<endl;
+		XUngrabPointer(app->dpy, CurrentTime);
+		if (mode!=NORMAL && buttondown) {
+		}
+	}		 
+	return SplitWindow::FocusOff(e);
 }
 
 //! Create split panes with names like SplitPane12, where the number is getUniqueNumber().

@@ -75,6 +75,7 @@ class Spread : public ObjectContainer
 	Spread();
 	virtual ~Spread();
 	virtual int *pagesFromSpread();
+	virtual char *pagesFromSpreadDesc(Document *doc);
 	virtual int n() { return pagestack.n; }
 	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<pagestack.n) return pagestack.e[i]->page; return NULL; }
 };

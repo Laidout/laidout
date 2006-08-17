@@ -498,21 +498,13 @@ const char *LaidoutViewport::Pageviewlabel()
 		makestr(pageviewlabel,"Page: ");
 	} else { // figure out "Spread [2-4]: "
 		if (spread) { 
-			int *pages=spread->pagesFromSpread();
-			int c=0;
-			char num[20];
+			char *desc=spread->pagesFromSpreadDesc(doc);
+			
 			makestr(pageviewlabel,"Spread [");
-			while (pages[c]!=-2) {
-				if (pages[c+1]==-1) { // single page
-					sprintf(num,"%d%s",pages[c]+1,(pages[c+2]==-2?"":","));
-				} else { // range of pages
-					sprintf(num,"%d-%d%s",pages[c]+1,pages[c+1]+1,(pages[c+2]==-2?"":","));
-				}
-				c+=2;
-				appendstr(pageviewlabel,num);
-			}
+			appendstr(pageviewlabel,desc);
 			appendstr(pageviewlabel,"]: ");
-			delete[] pages;
+
+			delete[] desc;
 		} else { makestr(pageviewlabel,"Spread: "); }
 	}
 	return pageviewlabel;
@@ -1538,7 +1530,7 @@ void LaidoutViewport::Refresh()
 	DBG cout <<"======= Refreshing LaidoutViewport..";
 	
 	 // draw the scratchboard, just blank out screen..
-	//XClearWindow(app->dpy,backbuffer?backbuffer:window);// *** clearwindow(backbuffer) does screwy things!!
+	if (!backbuffer) XClearWindow(app->dpy,window);// *** clearwindow(backbuffer) does screwy things!!
 
 	if (!doc || !doc->docstyle) {
 		DBG cout <<"=====done refreshing, no doc or doc->docstyle"<<endl;
@@ -1631,7 +1623,8 @@ void LaidoutViewport::Refresh()
 			 // this be a togglable feature.
 			p=dp->realtoscreen(flatpoint(0,0));
 			if (page==curpage) dp->NewFG(0,0,0);
-			dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
+			if (page->label) dp->textout((int)p.x,(int)p.y,page->label,-1);
+			  else dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
 
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n(); c2++) {
@@ -2257,10 +2250,10 @@ int ViewWindow::init()
 	ibut->tooltip("Insert an image into the current image or image patch");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpImages",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/DumpInImages.png","Dump in Images");
-	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+//	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpImages",-1,
+//			"/home/tom/p/sourceforge/laidout/src/icons/DumpInImages.png","Dump in Images");
+//	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
+//	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
 			"/home/tom/p/sourceforge/laidout/src/icons/Save.png","Save");
@@ -2277,23 +2270,26 @@ int ViewWindow::init()
 	ibut->tooltip("Print to output.ps, a postscript file");
 	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	loaddir=new LineEdit(this,"load directory",0, 0,0,0,0,1, 
-								NULL,window,"loaddir",
-								app->load_dir,0);
-	loaddir->tooltip("'Dump in images' dumps in\nall images from this directory");
-	AddWin(loaddir,150,0,50,250, loaddir->win_h,0,50,50);
+//	loaddir=new LineEdit(this,"load directory",0, 0,0,0,0,1, 
+//								NULL,window,"loaddir",
+//								app->load_dir,0);
+//	loaddir->tooltip("'Dump in images' dumps in\nall images from this directory");
+//	AddWin(loaddir,150,0,50,250, loaddir->win_h,0,50,50);
 	
 
 	var1=new NumInputSlider(this,"var1",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"var1",
 								NULL,-10000,100000,1);
-	var1->tooltip("Number of images per page to dump in,\n-1=as many as possible,\nShift-click to type a number");
+	var1->tooltip("Number of images per page for import,\n"
+				  "-1=as many as possible,\n"
+				  "-2=all one current page\n"
+				  "Shift-click to type a number");
 	AddWin(var1,var1->win_w,0,50,50, var1->win_h,0,50,50);
 	
 	var2=new NumInputSlider(this,"var2",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"var2",
 								NULL,-10000,100000,1);
-	var2->tooltip("Default dpi of images dumped in.\nShift-click to type a number");
+	var2->tooltip("Default dpi of images imported.\nShift-click to type a number");
 	AddWin(var2,var2->win_w,0,50,50, var2->win_h,0,50,50);
 	
 	var3=new NumInputSlider(this,"var3",NUMSLIDER_WRAP, 0,0,0,0,1, 
@@ -2336,7 +2332,8 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
-		int n=dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(), (const char **)(s->strs),s->n,-2, 0); 
+		int n=dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(), 
+				(const char **)(s->strs),s->n, var1->Value(),var2->Value()); 
 		
 		char mes[35];
 		mes[0]=0;

@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2006
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -33,8 +33,11 @@ class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
  	virtual const char *whattype() { return "HeadWindow"; }
 	virtual ~HeadWindow();
 	virtual int init();
+	virtual int LBDown(int x,int y,unsigned int state,int count);
 	virtual int LBUp(int x,int y,unsigned int state); 
 	virtual int MouseMove(int x,int y,unsigned int state);
+	virtual int FocusOff(XFocusChangeEvent *e);
+	virtual int event(XEvent *e);
 	
 	virtual int Mark(int c);
 	virtual int SwapWithMarked();
