@@ -9,23 +9,23 @@ VERSION 0.04
 -----------
 (done) Palette Window
 (done) RSS feed for website
-(done) A style manager, which is Not dependent on laxkit::refcounter
+(done) A style manager, which is Not dependent on laxkit::refcounter, which is being removed
 (done) from laxkit: SplitWindow: swap window positions
 (done) Simple multiple image import
        Allow for window docking, floating, swapping panes, and temporary pane maximize
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
 (done) Page Ranges controlling page number labels
-       perhaps have image open window? drag and drop in images? that would be AWESOME
-       Finish implementing project based setup, especially when loading and saving
-       ObjectInterface for selecting and resizing multiple stuff
-       parent/child nesting and interface for that: nesting, and grouping
-       Make workspace bounds and popup panner work right
+(done) Make workspace bounds and popup panner work right
        Fix page/spread flip by number
 
 
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
+       perhaps have image open window? drag and drop in images? that would be AWESOME
+       Finish implementing project based setup, especially when loading and saving
+       ObjectInterface for selecting and resizing multiple stuff
+       parent/child nesting and interface for that: nesting, and grouping
        autoconfiscate
        plus configurable icon panel/menu system
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
@@ -65,6 +65,7 @@ VERSION 0.1
        Improve and/or make new logo for about
        Vx (aka uberconvertor) support?
        have an image in the little pan popups
+       Have special function to output to file a pseudocode mockup of the file format
 
 
 VERSION 0.2

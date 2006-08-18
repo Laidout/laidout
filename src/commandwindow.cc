@@ -45,7 +45,7 @@ CommandWindow::~CommandWindow()
 {
 }
 
-/*! Currently can do the new document by spec: 'newdoc letter,40 pages,booklet'.
+/*! Take a whole command line, and process it, returning the command's text output.
  *
  * Must return a new'd char[].
  */
@@ -60,8 +60,23 @@ char *CommandWindow::process(const char *in)
 			if (laidout->NewDocument(in)==0) return newstr("Document added.");
 			else return newstr("Error adding document. Not added");
 		}
+	} else if (!strncmp(in,"open",4) && (isspace(in[5]) || in[5]=='\0')) {
+		if (isspace(in[5])) {
+			 // get filename potentially
+			in+=5;
+			while (isspace(*in)) in++;
+			if (*in!='\0') {
+				//*** try to open up whatever filename is in in
+			}
+		}
+		//*** call up an open dialog for laidout document files
+		return newstr("****** open ALMOST works *****");
 	} else if (!strncmp(in,"?",1) || !strncmp(in,"help",4)) {
-		return newstr("The only recognized commands are:\n newdoc [spec]\n help\n ?");
+		return newstr("The only recognized commands are:\n"
+					  "newdoc [spec]\n"
+					  "open [filename]\n"
+					  "help\n"
+					  "?");
 	}
 
 	return newstr("You are surrounded by twisty passages, all alike.");

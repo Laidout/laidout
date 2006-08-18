@@ -1556,6 +1556,7 @@ void LaidoutViewport::Refresh()
 	}
 	
 	if (spread && showstate==1) {
+		XSetFunction(app->dpy,dp->GetGC(),GXcopy);
 		 // draw 5 pixel offset heavy line like shadow for page first, then fill draw the path...
 		 // draw shadow
 		dp->NewFG(0,0,0);
@@ -2049,6 +2050,8 @@ ViewWindow::~ViewWindow()
  *   pagelayout            # or 'paperlayout' or 'singlelayout'
  *   page 3               # the page number currently on
  *   matrix 1 0 0 1 0 0  # viewport matrix
+ *   xbounds -100 100   # x viewport bounds
+ *   ybounds -100 100  # y viewport bounds
  * </pre>
  *
  * \todo *** still need some standardizing for the little helper controls..
@@ -2073,6 +2076,10 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 	const double *m=vp->dp->Getctm();
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
+	double x1,x2,y1,y2;
+	viewport->dp->GetSpace(&x1,&x2,&y1,&y2);
+	fprintf(f,"%sxbounds %.10g %.10g\n",spc,x1,x2); 
+	fprintf(f,"%sybounds %.10g %.10g\n",spc,y1,y2); 
 }
 
 //! Reverse of dump_out().
@@ -2083,7 +2090,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 	if (!att) return;
 	char *name,*value;
 	int vm=PAGELAYOUT, pn=0;
-	double m[6];
+	double m[6],x1=0,x2=0,y1=0,y2=0;
 	int n;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
@@ -2091,6 +2098,12 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 		if (!strcmp(name,"matrix")) {
 			n=DoubleListAttribute(value,m,6);
 			if (n==6) viewport->dp->NewTransform(m);
+		} else if (!strcmp(name,"xbounds")) {
+			if (DoubleAttribute(value,&x1,&value))
+				DoubleAttribute(value,&x2,NULL);
+		} else if (!strcmp(name,"ybounds")) {
+			if (DoubleAttribute(value,&y1,&value))
+				DoubleAttribute(value,&y2,NULL);
 		} else if (!strcmp(name,"pagelayout")) {
 			vm=PAGELAYOUT;
 		} else if (!strcmp(name,"paperlayout")) {
@@ -2103,6 +2116,9 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 			doc=laidout->findDocument(value);
 		}
 	}
+	//*** there should be error checking on x,y
+	viewport->dp->SetSpace(x1,x2,y1,y2);
+	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
 	((LaidoutViewport *)viewport)->SetViewMode(vm,pn);
 }

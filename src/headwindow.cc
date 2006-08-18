@@ -150,7 +150,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 	return head;
 }
 
-//! Create a new head window based on att.
+//! Create a new head window based on att, that has not been added to the reigning anXApp.
 /*! \todo *** should return NULL if the att was invalid
  *  \todo *** for plugins that have new pane types, there must be mechanism to
  *    add those types to new and existing headwindows
@@ -419,6 +419,21 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			if (c2>1) win_y=i[1];
 			if (c2>2) win_w=i[2];
 			if (c2>3) win_h=i[3];
+
+			if (c2>3 && win_w>0 && win_h>0) {
+				if (!win_sizehints) win_sizehints=XAllocSizeHints();
+				if (win_sizehints && !win_parent) {
+					DBG cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
+					//*** The initial x and y become the upper left corner of the window
+					//manager decorations. ***how to figure out how much room those decorations take,
+					//so as to place things on the screen accurately? like full screen view?
+					win_sizehints->x=win_x;
+					win_sizehints->y=win_y;
+					win_sizehints->width=win_w;
+					win_sizehints->height=win_h;
+					win_sizehints->flags=USPosition|USSize;
+				}
+			}
 		} else if (!strcmp(name,"pane")) {
 			box=new PlainWinBox(NULL,0,0,0,0);
 			for (c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
@@ -454,7 +469,10 @@ void HeadWindow::WindowGone(Laxkit::anXWindow *win)
 {
 	if (!win) return;
 	for (int c=0; c<windows.n; c++) {
-		if (windows.e[c]->win==win) windows.e[c]->win=NULL;
+		if (windows.e[c]->win==win) {
+			windows.e[c]->win=NULL;
+			if (windows.n==1) app->destroywindow(this);
+		}
 	}
 	needtodraw=1;
 }
@@ -619,6 +637,7 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 							 GrabModeAsync,GrabModeAsync,
 							 None, None, CurrentTime)!=GrabSuccess) return 0;
 			DBG cout <<"***********************GRAB***********************"<<endl;
+			app->Tooltips(0);
 			Cursor cursor=XCreateFontCursor(app->dpy,XC_sb_down_arrow);
 			if (cursor) {
 				DBG cout <<"***********************CURSOR***********************"<<endl;
@@ -648,6 +667,7 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
 							 GrabModeAsync,GrabModeAsync,
 							 None, None, CurrentTime)!=GrabSuccess) return 0;
+			app->Tooltips(0);
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=SWAPWITH;
@@ -674,6 +694,7 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state);
 	
 	XUngrabPointer(app->dpy, CurrentTime);
+	app->Tooltips(1);
 	DBG cout <<"***********************UN-GRAB***********************"<<endl;
 	if (!laidout->isTopWindow(markedhead)) { 
 		DBG if (!markedhead) cout <<"***********no marked head"<<endl;
@@ -738,6 +759,7 @@ int HeadWindow::FocusOff(XFocusChangeEvent *e)
 		mode=NORMAL;
 		DBG cout <<"***********************UN-GRAB***********************"<<endl;
 		XUngrabPointer(app->dpy, CurrentTime);
+		app->Tooltips(1);
 		if (mode!=NORMAL && buttondown) {
 		}
 	}		 
