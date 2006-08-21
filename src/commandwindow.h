@@ -22,6 +22,7 @@
 class CommandWindow : public Laxkit::PromptEdit
 {
  protected:
+	char *dir;
 	virtual char *process(const char *in);
  public:
  	CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,

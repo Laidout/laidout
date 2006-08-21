@@ -793,10 +793,10 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 	if (buttondown && buttondown!=LEFTBUTTON) return 1;
 	buttondown|=LEFTBUTTON;
 
-	int pg;
-	DBG int spr=
-	findSpread(x,y,&pg);
+	int pg,spr;
+	spr=findSpread(x,y,&pg);
 	DBG cout <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
+	if (spr>=0) curspread=spreads.e[spr];
 	if (pg<0) {
 		//*** start a selection rectangle
 		dragpage=-1;
@@ -1053,6 +1053,8 @@ int SpreadInterface::findSpread(int x,int y, int *page)
 //}
 
 //! Find the page under screen point (x,y), return index or -1.
+/*! \todo *** imp me!
+ */
 int SpreadInterface::findPage(int x,int y)
 {//***
 	return -1;

@@ -294,7 +294,15 @@ LaidoutViewport::~LaidoutViewport()
 //! On any FocusIn event, set laidout->lastview to this.
 int LaidoutViewport::event(XEvent *e)
 {
-	if (e->type==FocusIn) laidout->lastview=dynamic_cast<ViewWindow *>(win_parent);
+	if (e->type==FocusIn) {
+		laidout->lastview=dynamic_cast<ViewWindow *>(win_parent);
+		if (e->xfocus.detail==NotifyInferior ||
+				e->xfocus.detail==NotifyAncestor ||
+				e->xfocus.detail==NotifyNonlinear) {
+			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
+			if (viewer) viewer->SetParentTitle(doc->Name());
+		}
+	}
 	return ViewportWindow::event(e);
 }
 
@@ -399,7 +407,7 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 			delete spread;
 			spread=NULL;
 			spreadi=-1;
-			setupthings(pg);
+			setupthings(-1,pg);
 			needtodraw=1;
 		} else if (te->changetype==TreeDocGone) {
 			cout <<" ***need to imp LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
@@ -429,7 +437,7 @@ int LaidoutViewport::NextSpread()
 		spreadi++;
 		if (spreadi>=max) spreadi=0;
 	} else spreadi=-1;
-	setupthings(spreadi);
+	setupthings(spreadi,-1);
 	needtodraw=1;
 	return spreadi;
 }
@@ -454,7 +462,7 @@ int LaidoutViewport::PreviousSpread()
 		spreadi--;
 		if (spreadi<0) spreadi=max-1;
 	} else spreadi=-1;
-	setupthings(spreadi);
+	setupthings(spreadi,-1);
 	needtodraw=1;
 	return spreadi;
 }
@@ -481,7 +489,7 @@ const char *LaidoutViewport::SetViewMode(int m,int sprd)
 	if (sprd<0) sprd=spreadi;
 	if (sprd!=spreadi || m!=viewmode) {
 		viewmode=m;
-		setupthings(sprd);
+		setupthings(sprd,-1);
 		Center(1);
 	}
 	needtodraw=1;
@@ -521,6 +529,8 @@ void LaidoutViewport::postmessage(const char *mes)
 //! Called from constructor and from SelectPage. Define curpage, spread, curobj context.
 /*! If topage==-1, sets curpage to doc->Curpage().
  * If topage!=-1 sets up with page topage.
+ * If tospread==-1, then use whatever spread has topage. If tospread!=-1, then definitely
+ * use that spread, trying to select topage only if it is in that spread.
  *
  * curobj is set to have its obj==NULL and context corresponding to topage and layer==0.
  * 
@@ -533,27 +543,42 @@ void LaidoutViewport::postmessage(const char *mes)
  * If doc==NULL or it returns a NULL spread, that is ok. It is assumed that means it
  * is a "Whatever" mode, which is basically just the limbo scratchboard and no spread.
  */
-void LaidoutViewport::setupthings(int tospread)//tospread=-1
+void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 {
-	
 	 // set curobj to proper value
 	 // Also call Clear() on all interfaces
-	if (tospread==-1) {
+	if (tospread==-1 && topage==-1) {
 		 // initialize from nothing
-		if (doc) tospread=doc->curpage;
+		if (doc) topage=doc->curpage;
 	} 
 	if (doc) {
+		if (tospread==-1 && topage>=0) {
+			tospread=doc->docstyle->imposition->SpreadFromPage(topage);
+			
+			if (viewmode==PAGELAYOUT) tospread=doc->docstyle->imposition->SpreadFromPage(topage);
+			else if (viewmode==PAPERLAYOUT) tospread=doc->docstyle->imposition->PaperFromPage(topage);
+			else if (viewmode==SINGLELAYOUT) tospread=topage;
+		}
+		
 		int max=-1;
 		if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
 		else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
 		else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
 
+		 // clamp tospread to the imposition's spread range
 		if (max>=0) {
 			if (tospread>=max) spreadi=max;
 			else if (tospread<0) tospread=0;
 		} else tospread=-1;
-	} else tospread=-1;
 
+		 // clamp topage to the pages in doc
+		if (topage<0) topage=0;
+		else if (topage>=doc->pages.n) topage=doc->pages.n;
+	} else tospread=topage=-1; 
+
+	 // Now tospread and topage should both be >= 0 or both == -1
+	
+	 // clear old data from being used
 	for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
 	ClearSearch();
 	clearCurobj(); //*** clear temp selection group?? -- this clears to limbo or page...
@@ -568,7 +593,7 @@ void LaidoutViewport::setupthings(int tospread)//tospread=-1
 	} 
 
 	 // retrieve the proper spread according to viewmode
-	if (!spread && doc && doc->docstyle && doc->docstyle->imposition) {
+	if (!spread && tospread>=0 && doc && doc->docstyle && doc->docstyle->imposition) {
 		if (viewmode==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(tospread);
 		else if (viewmode==PAPERLAYOUT) spread=doc->docstyle->imposition->PaperLayout(tospread);
 		else spread=doc->docstyle->imposition->SingleLayout(tospread); // default to singlelayout
@@ -584,28 +609,34 @@ void LaidoutViewport::setupthings(int tospread)//tospread=-1
 		curobj.set(NULL,1, 0);
 		return;
 	}
+
 	 //find a good curpage
-	int curpagei=-1;
+	int curpagei=-1,    //index in doc->pages of the new curpage
+		spageindex=-1; //index in spread->pagestack that holds the new curpage
 	if (viewmode==SINGLELAYOUT) {
 		curpage=doc->pages.e[tospread];
 		curpagei=tospread;
+		spageindex=0;
 	} else {
 		int c;
 		for (c=0; c<spread->pagestack.n; c++) {
 			if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
-				curpagei=spread->pagestack.e[0]->index;
+				if (topage==-1 || topage==spread->pagestack.e[0]->index) {
+					curpagei=spread->pagestack.e[c]->index;
+					curpage=doc->pages.e[curpagei];
+					spageindex=c;
+					break;
+				}
+			}
+		}
+		if (curpagei==-1) for (c=0; c<spread->pagestack.n; c++) {
+			if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
+				curpagei=spread->pagestack.e[c]->index;
 				curpage=doc->pages.e[curpagei];
+				spageindex=c;
 				break;
 			}
 		}
-	}
-	
-	int spageindex;
-	for (spageindex=0; spageindex<spread->pagestack.n; spageindex++) 
-		if (spread->pagestack.e[spageindex]->index==curpagei) break;
-	if (spageindex==spread->pagestack.n) {
-		DBG cout <<"****** tospread "<<tospread<<" not found in spread!!!"<<endl;
-		spageindex=-1;
 	}
 	
 	 //set up curobj
@@ -1958,7 +1989,7 @@ int LaidoutViewport::SelectPage(int i)
 	if (i==curobjPage()) return -2;
 	
 	 //setupthings(): clears search, clears any interfacedata... curinterface->Clear()
-	setupthings(i); //***this always deletes and new's spread
+	setupthings(-1,i); //***this always deletes and new's spread
 	Center(1);
 	DBG cout <<" SelectPage made page=="<<curobjPage()<<endl;
 
@@ -2070,6 +2101,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 	else if (vm==PAGELAYOUT) fprintf(f,"%spagelayout\n",spc);
 	else fprintf(f,"%spaperlayout\n",spc);
 	
+	if (vp)	fprintf(f,"%sspread %d\n",spc,vp->spreadi);
 	if (vp->spread && vp->spread->pagestack.n)
 		fprintf(f,"%spage %d\n",spc,vp->spread->pagestack.e[0]->index);
 	
@@ -2089,7 +2121,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 {
 	if (!att) return;
 	char *name,*value;
-	int vm=PAGELAYOUT, pn=0;
+	int vm=PAGELAYOUT, spr=0, pn=0;
 	double m[6],x1=0,x2=0,y1=0,y2=0;
 	int n;
 	for (int c=0; c<att->attributes.n; c++) {
@@ -2110,6 +2142,8 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 			vm=PAPERLAYOUT;
 		} else if (!strcmp(name,"singlelayout")) {
 			vm=SINGLELAYOUT;
+		} else if (!strcmp(name,"spread")) {
+			IntAttribute(value,&spr);
 		} else if (!strcmp(name,"page")) {
 			IntAttribute(value,&pn);
 		} else if (!strcmp(name,"document")) {
@@ -2120,7 +2154,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 	viewport->dp->SetSpace(x1,x2,y1,y2);
 	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
-	((LaidoutViewport *)viewport)->SetViewMode(vm,pn);
+	((LaidoutViewport *)viewport)->SetViewMode(vm,spr);
 }
 
 
@@ -2179,6 +2213,9 @@ int ViewWindow::init()
 	const char *str;
 	char *nstr,*tstr;
 	for (int c=0; c<tools.n; c++) {
+		 // ***this should be standardized a little to have the icon stored with
+		 // the interface.
+		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
 		str=tools.e[c]->whattype();
 		nstr=newstr(str);
 		tstr=strstr(nstr,"Interface");

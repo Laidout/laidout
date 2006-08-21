@@ -38,6 +38,7 @@ class Singles : public Imposition
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
 	virtual int PaperFromPage(int pagenumber);
+	virtual int SpreadFromPage(int pagenumber);
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
@@ -68,6 +69,7 @@ class DoubleSidedSingles : public Singles
 	virtual Page **CreatePages();
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
+	virtual int SpreadFromPage(int pagenumber);
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
@@ -95,6 +97,7 @@ class BookletImposition : public DoubleSidedSingles
 	virtual Spread *PaperLayout(int whichpaper);
 
 	virtual int PaperFromPage(int pagenumber);
+	virtual int SpreadFromPage(int pagenumber);
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);

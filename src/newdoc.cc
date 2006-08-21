@@ -164,6 +164,7 @@ int NewDocWindow::init()
 	int linpheight=textheight+12;
 	TextButton *tbut;
 	anXWindow *last;
+	LineInput *linp;
 
 
 //	//AddWin(lineedit, w,ws,wg,h,valign); for horizontal rows
@@ -225,16 +226,32 @@ int NewDocWindow::init()
 	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
 	
 	 // -----Paper Orientation
-	popup=new StrSliderPopup(this,"paperOrientation",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, popup,window,"orientation");
+	last=popup=new StrSliderPopup(this,"paperOrientation",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, popup,window,"orientation");
 	popup->AddItem("Portrait",0);
 	popup->AddItem("Landscape",1);
 	popup->Select(o&1?1:0);
 	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 
+	 // ------Tiling
+	last=tiley=new LineInput(this,"y tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
+						last,window,"ytile",
+			            "Tile y:","1", 0,
+			           100,0,1,1,3,3);
+	tiley->tooltip("Only for Single, Double, and Booklet");
+	AddWin(tiley, tiley->win_w,0,50,50, linpheight,0,0,50);
+	last=tilex=new LineInput(this,"x tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
+						last,window,"xtile",
+			            "Tile x:","1", 0,
+			           100,0,1,1,3,3);
+	tilex->tooltip("Only for Single, Double, and Booklet");
+	AddWin(tilex, tilex->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+
+	
 	 // -----Number of pages
-	numpages=new LineInput(this,"numpages",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
-						popup,window,"numpages",
+	last=numpages=new LineInput(this,"numpages",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
+						last,window,"numpages",
 			            "Number of pages:","1",0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
 	AddWin(numpages, numpages->win_w,0,50,50, linpheight,0,0,50);
@@ -271,7 +288,6 @@ int NewDocWindow::init()
 	AddWin(custompage, custompage->win_w,0,0,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 
-	LineInput *linp;
 	linp=new LineInput(this,"page x",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						custompage,window,"page x",
 			            "x:",NULL,0,
@@ -420,12 +436,16 @@ NewDocWindow::~NewDocWindow()
 
 int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
-DBG cout <<"newdocmessage: "<<mes<<endl;
+	DBG cout <<"newdocmessage: "<<mes<<endl;
 	if (!strcmp(mes,"paper size")) {
+	} else if (!strcmp(mes,"ytile")) { 
+		DBG cout <<"**** newdoc: new y tile value"<<endl;
+	} else if (!strcmp(mes,"xtile")) { 
+		DBG cout <<"**** newdoc: new x tile value"<<endl;
 	} else if (!strcmp(mes,"paper name")) { 
 		 // new paper selected from the popup, so must find the x/y and set x/y appropriately
 		int i=e->data.l[0];
-DBG cout <<"new paper size:"<<i<<endl;
+		DBG cout <<"new paper size:"<<i<<endl;
 		if (i<0 || i>=papersizes->n) return 0;
 		delete papertype;
 		papertype=(PaperStyle *)papersizes->e[i]->duplicate();
@@ -439,7 +459,7 @@ DBG cout <<"new paper size:"<<i<<endl;
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
 	} else if (!strcmp(mes,"orientation")) {
 		int l=(int)e->data.l[0];
-DBG cout <<"New orientation:"<<l<<endl;
+		DBG cout <<"New orientation:"<<l<<endl;
 		if (l!=curorientation) {
 			char *txt=paperx->GetText(),
 				*txt2=papery->GetText();
@@ -504,8 +524,19 @@ void NewDocWindow::sendNewDoc()
 	}
 	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
 	
-	int npgs=atoi(numpages->GetCText());
+	int npgs=atoi(numpages->GetCText()),
+		xtile=atoi(tilex->GetCText()),
+		ytile=atoi(tiley->GetCText());
 	if (npgs<=0) npgs=1;
+	if (xtile<=0) xtile=1;
+	if (ytile<=0) ytile=1;
+
+	Singles *s=dynamic_cast<Singles *>(imposition);
+	if (s) {
+		s->tilex=xtile;
+		s->tiley=ytile;
+	}
+		
 	imposition->NumPages(npgs);
 	DocumentStyle *newdoc=new DocumentStyle(imposition);
 	newdoc->imposition->SetPaperSize(papertype);

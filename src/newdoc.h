@@ -43,7 +43,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::PtrStack<PaperStyle> *papersizes;
 	Laxkit::StrSliderPopup *impsel;
 	Laxkit::LineEdit *lineedit;
-	Laxkit::LineInput *saveas,*paperx,*papery,*numpages;
+	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*tilex,*tiley;
 	Laxkit::MessageBar *mesbar;
 	Laxkit::CheckBox *defaultpage,*custompage;
  	NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
