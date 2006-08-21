@@ -89,6 +89,7 @@ int EpsData::SetFile(const char *file)
  * 0 for success.
  *
  * \todo *** also need to set up any resources, etc...
+ * \todo gs -dNOPAUSE -sDEVICE=pngalpha -sOutputFile=temp234234234.png -r(resolution) whatever.eps
  */
 int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date, 
 		char **preview, int *depth, int *width, int *height)

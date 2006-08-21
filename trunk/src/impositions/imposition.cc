@@ -375,10 +375,16 @@ int *Spread::pagesFromSpread()
  * \brief Return the number of pages required to fill npapers number of papers.
  */
 /*! \fn int Imposition::GetPapersNeeded(int npages)
- * \brief Return the number of pages required to fill npapers of papers.
+ * \brief Return the number of papers required to hold npages of pages.
+ */
+/*! \fn int Imposition::GetSpreadsNeeded(int npages)
+ * \brief Return the number of spreads required to hold npages of pages.
  */
 /*! \fn int Imposition::PaperFromPage(int pagenumber)
  * \brief Return the (first) paper index number that contains page index pagenumber in doc->pages.
+ */
+/*! \fn int Imposition::SpreadFromPage(int pagenumber)
+ * \brief Return the (first) spread index number that contains page index pagenumber in doc->pages.
  */
 /*! \fn int Imposition::NumPapers()
  * \brief Return the the number of papers the imposition thinks there are.

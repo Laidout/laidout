@@ -480,7 +480,11 @@ int *Singles::PrintingPapers(int frompage,int topage)
 }
 
 //! Just return pagenumber, since 1 page==1 paper
-int Singles::PaperFromPage(int pagenumber) // the paper number containing page pagenumber
+int Singles::PaperFromPage(int pagenumber)
+{ return pagenumber; }
+
+//! Just return pagenumber, since 1 page==1 paper
+int Singles::SpreadFromPage(int pagenumber)
 { return pagenumber; }
 
 //! Is singles, so 1 paper=1 page
@@ -811,6 +815,10 @@ Spread *DoubleSidedSingles::PaperLayout(int whichpaper)
 	return Singles::PaperLayout(whichpaper);
 }
 
+//! Return (pagenumber+1-isleft)/2.
+int DoubleSidedSingles::SpreadFromPage(int pagenumber)
+{ return (pagenumber+1-isleft)/2; }
+
 //! Return (npages-isleft)/2+1.
 int DoubleSidedSingles::GetSpreadsNeeded(int npages)
 { return (npages-isleft)/2+1; } 
@@ -1048,6 +1056,10 @@ int BookletImposition::PaperFromPage(int pagenumber)
 	if (pagenumber+1<=numpapers) return pagenumber;
 	return numpapers-(pagenumber-numpapers)-1;
 }
+
+//! Return (pagenumber+1)/2.
+int BookletImposition::SpreadFromPage(int pagenumber)
+{ return (pagenumber+1)/2; }
 
 //! Is (int((npapers-1)/2)+1)*4. This assumes actually printing double sided later on..
 /*! The actual number of physical papers when printed double sided is half numpapers.

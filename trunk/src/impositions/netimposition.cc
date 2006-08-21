@@ -416,6 +416,13 @@ int NetImposition::PaperFromPage(int pagenumber)
 	return pagenumber/net->nf;
 }
 
+//! Returns pagenumber/net->nf.
+int NetImposition::SpreadFromPage(int pagenumber)
+{
+	if (!net) return 0;
+	return pagenumber/net->nf;
+}
+
 //! Returns npapers*net->nf.
 int NetImposition::GetPagesNeeded(int npapers)
 {

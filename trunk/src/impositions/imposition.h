@@ -119,6 +119,7 @@ class Imposition : public Style
 	virtual int NumPages(int npages);
 
 	virtual int PaperFromPage(int pagenumber) = 0;
+	virtual int SpreadFromPage(int pagenumber) = 0;
 	virtual int GetPagesNeeded(int npapers) = 0;
 	virtual int GetPapersNeeded(int npages) = 0;
 	virtual int GetSpreadsNeeded(int npages) = 0;

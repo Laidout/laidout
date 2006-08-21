@@ -11,11 +11,11 @@ VERSION 0.04
 (done) RSS feed for website
 (done) A style manager, which is Not dependent on laxkit::refcounter, which is being removed
 (done) from laxkit: SplitWindow: swap window positions
-(done) Simple multiple image import
+(done) Simple multiple image import by selecting one or more from a directory
        Allow for window docking, floating, swapping panes, and temporary pane maximize
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
 (done) Page Ranges controlling page number labels
-(done) Make workspace bounds and popup panner work right
+(done) Make workspace bounds and popup panner save with the document
        Fix page/spread flip by number
 
 
