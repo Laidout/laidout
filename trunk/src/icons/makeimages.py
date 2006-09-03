@@ -1,9 +1,13 @@
 #!/usr/bin/python2.3
 
 """
-Take all top items in base layers of the document that
-have ids starting with capital letters, and export the half inch area
-around them to TheId.png.
+Using Inkscape, look in icons.svg and take all top items in base
+layers of the document that have ids starting with capital letters,
+and export the half inch area around them to TheId.png.
+
+Someday I hope to have something to generate the icons internally to
+Laidout, the icons should be able to be generated from svg-ish (or
+laidout-ish vector specs fast enough to not be irritating maybe.
 """
 
 import commands, sys

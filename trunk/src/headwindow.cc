@@ -345,6 +345,7 @@ Document *HeadWindow::findAnyDoc()
  */
 int HeadWindow::splitthewindow(anXWindow *fillwindow)
 {
+	DBG cout <<"********SPLITTING THE WINDOW"<<endl;
 	 //Get doc from curbox. If win has no doc, then get first
 	 //doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
@@ -505,6 +506,7 @@ int HeadWindow::init()
  */
 MenuInfo *HeadWindow::GetMenu()
 {
+	DBG cout <<"*************GetMenu: mode="<<mode<<endl;
 	MenuInfo *menu=new MenuInfo();
 	
  //make sure this always agrees with SplitWindow::mode!!
@@ -527,11 +529,11 @@ MenuInfo *HeadWindow::GetMenu()
 		menu->AddItem("Mark",3);
 		menu->AddItem("Swap with marked",4);
 		menu->AddItem("Swap with...",53);
+		
+		 //laidout additions:
+		menu->AddItem("Drop To...",51);
+		menu->AddItem("Float",52);
 	}
-	
-	 //laidout additions:
-	menu->AddItem("Drop To...",51);
-	menu->AddItem("Float",52);
 
 	 //straight from Laxkit, do not change item ids:
 	if (mode==MAXIMIZED) menu->AddItem("Un-Maximize",5);
@@ -616,14 +618,7 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			head->Add(curbox->win);//this reparents win
 			curbox->win=NULL;
 
-			 //then try to join the previous pane with an adjacent pane
-			 //First try last mouse coordinates, then l-r-t-b
-			int c=windows.findindex(curbox);
-			if (joinwindow(mx,my,1)!=0) 
-				if (Join(c,LAX_LEFT,1)<0)
-					if (Join(c,LAX_RIGHT,1)<0)
-						if (Join(c,LAX_TOP,1)<0)
-							Join(c,LAX_BOTTOM,1);
+			RemoveCurbox();
 			return 0;
 		} else if (e->data.l[1]==51) {
 			if (mode!=0 || !curbox) return 0;
@@ -647,6 +642,7 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=DROPTO;
+			DBG cout <<"***************changing mode to DROPTO"<<endl;
 			return 0;
 		} else if (e->data.l[1]==53) {
 			 // swap with...
@@ -658,19 +654,20 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (atts.map_state!=IsViewable) return 0;
 
 			DBG cout <<"***********************GRAB***********************"<<endl;
+			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
+							 GrabModeAsync,GrabModeAsync,
+							 None, None, CurrentTime)!=GrabSuccess) return 0;
 			Cursor cursor=XCreateFontCursor(app->dpy,XC_exchange);
 			if (cursor) {
 				DBG cout <<"***********************CURSOR***********************"<<endl;
 				XDefineCursor(app->dpy,window,cursor);
 				XFreeCursor(app->dpy,cursor);
 			}
-			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
-							 GrabModeAsync,GrabModeAsync,
-							 None, None, CurrentTime)!=GrabSuccess) return 0;
 			app->Tooltips(0);
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=SWAPWITH;
+			DBG cout <<"***************changing mode to SWAPWITH"<<endl;
 			return 0;
 		}
 	}
@@ -699,20 +696,53 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 	if (!laidout->isTopWindow(markedhead)) { 
 		DBG if (!markedhead) cout <<"***********no marked head"<<endl;
 		DBG else cout <<"***********marked head is not top"<<endl;
+		DBG cout <<"***************changing mode to NORMAL"<<endl;
 		mode=0;
 		return 0; 
 	}
+	if (!markedpane) {
+		DBG cout <<"***********no marked pane"<<endl;
+		return 0;
+	}
 	
 	if (mode==DROPTO) {
-		 // remove original pane and put it in markedhead/markedpane.
-		 // If there was only one pane in *this, then remove this HeadWindow.
-		cout <<"********\"float\" curbox, then split markedpane according to mouse position"<<endl;
+		if (markedpane!=curbox) {
+			 // remove original pane and put it in markedhead/markedpane.
+			 // If there was only one pane in *this, then remove this HeadWindow.
+			 
+			DBG cout <<"********Dropping... \"float\" curbox, then split markedpane according to mouse position"<<endl;
+			int side=-1,x,y;
+			mouseposition(markedhead,&x,&y,NULL);
+			DBG cout <<"********** x,y: "<<x<<','<<y<<endl;
+			//DBG cout <<"********"<<markedhead->win_x<<","<<markedhead->win_y<<"  "<<
+			//*** this should probably go by corner to corner, not x=y and x=-y.
+			x-=markedpane->x1+(markedpane->x2-markedpane->x1)/2;
+			y-=markedpane->y1+(markedpane->y2-markedpane->y1)/2;
+			DBG cout <<"********** x,y: "<<x<<','<<y<<endl;
+			if (y>0 && y>x && y>-x) side=LAX_BOTTOM;
+			else if (y<0 && y<x && y<-x) side=LAX_TOP;
+			else if (x>0 && y<x && y>-x) side=LAX_RIGHT;
+			else side=LAX_LEFT;
+			DBG cout <<"*******side="<<side<<endl;
+			
+			anXWindow *win=curbox->win;
+			curbox->win=NULL;
+			DBG cout <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
+			markedhead->Split(markedhead->FindBoxIndex(markedpane), side, win);//this reparents win
+			DBG cout <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
+			RemoveCurbox();
+			if (windows.n==1) {
+				app->destroywindow(this);
+			}
+			DBG cout <<"*************done Dropping"<<endl;
+		}
 	} else { //SWAPWITH
 		DBG cout <<"**************** SWAPWITH"<<endl;
 		SwapWithMarked();
 	}
 	
 	mode=0;
+	DBG cout <<"***************changing mode to NORMAL"<<endl;
 	return 0;
 }
 
@@ -751,17 +781,36 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
 	return 0;
 }
 
+/*! Intercept Esc to revert anything to NORMAL mode.
+ */
+int HeadWindow::CharInput(unsigned int ch,unsigned int state)
+{
+	if (ch==LAX_Esc) {
+		DBG cout <<"***************changing mode to NORMAL"<<endl;
+		mode=NORMAL;
+		XUndefineCursor(app->dpy,window);
+		XUngrabPointer(app->dpy, CurrentTime);
+		needtodraw=1;
+		return 0;
+	}
+	return SplitWindow::CharInput(ch,state);
+}
+
 //! Reset mode when focus somehow leaves the window during non-normal modes.
 int HeadWindow::FocusOff(XFocusChangeEvent *e)
 { //***
 	DBG cout <<"**********************HeadWindow::FocusOff"<<endl;
 	if (e->detail==NotifyInferior || e->detail==NotifyAncestor || e->detail==NotifyNonlinear) {
-		mode=NORMAL;
-		DBG cout <<"***********************UN-GRAB***********************"<<endl;
-		XUngrabPointer(app->dpy, CurrentTime);
-		app->Tooltips(1);
-		if (mode!=NORMAL && buttondown) {
+		if (mode!=SWAPWITH && mode!=DROPTO && mode!=MAXIMIZED) {
+			mode=NORMAL;
+			DBG cout <<"***********************UN-GRAB***********************"<<endl;
+			XUngrabPointer(app->dpy, CurrentTime);
+			app->Tooltips(1);
+			if (mode!=NORMAL && buttondown) {
+				//****uh?
+			}
 		}
+		return anXWindow::FocusOff(e);
 	}		 
 	return SplitWindow::FocusOff(e);
 }
@@ -794,7 +843,7 @@ int HeadWindow::Curbox(int c)
 	if (!curbox || !curbox->win) return cc;
 	
 	anXWindow *win=curbox->win;
-	if (!strcmp(win->whattype(),"ViewWindow")) lastview=curbox->win;
+	if (win && !strcmp(win->whattype(),"ViewWindow")) lastview=curbox->win;
 
 	return cc;
 }

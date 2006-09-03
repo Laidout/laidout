@@ -29,9 +29,10 @@ void pptdumpobj(FILE *f,double *mm,SomeData *obj)
 {
 	ImageData *img;
 	img=dynamic_cast<ImageData *>(obj);
+	if (!img || !img->filename) return;
+
 	double m[6];
 	transform_mult(m,img->m(),mm);
-	if (!img || !img->filename) return;
 	
 	//<frame name="Raster sewage1.tiff" matrix="0.218182 0 0 0.218182 30.4246 36.7684" 
 	//	lock="false" flowaround="false" obstaclemargin="0" type="raster" file="/home/tom/cartoons/graphic/sewage/tiffs/sewage1.tiff"/>

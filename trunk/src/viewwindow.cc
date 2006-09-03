@@ -25,6 +25,7 @@
 #include <lax/colorbox.h>
 #include <lax/fileutils.h>
 #include <lax/overwrite.h>
+#include <lax/laxutils.h>
 #include <cstdarg>
 #include <cups/cups.h>
 
@@ -504,16 +505,18 @@ const char *LaidoutViewport::Pageviewlabel()
 {
 	if (viewmode==SINGLELAYOUT) {
 		makestr(pageviewlabel,"Page: ");
-	} else { // figure out "Spread [2-4]: "
+	} else { // figure out like "Spread [2-4]: "
 		if (spread) { 
 			char *desc=spread->pagesFromSpreadDesc(doc);
 			
-			makestr(pageviewlabel,"Spread [");
+			makestr(pageviewlabel,"Pgs [");
 			appendstr(pageviewlabel,desc);
 			appendstr(pageviewlabel,"]: ");
+			if (curobjPage()<0) appendstr(pageviewlabel,"limbo");
+			//else PageFlipper appends proper page label...appendstr(pageviewlabel,curpage->label);
 
 			delete[] desc;
-		} else { makestr(pageviewlabel,"Spread: "); }
+		} else { makestr(pageviewlabel,"Limbo: "); }
 	}
 	return pageviewlabel;
 }
@@ -621,7 +624,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 		int c;
 		for (c=0; c<spread->pagestack.n; c++) {
 			if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
-				if (topage==-1 || topage==spread->pagestack.e[0]->index) {
+				if (topage==-1 || topage==spread->pagestack.e[c]->index) {
 					curpagei=spread->pagestack.e[c]->index;
 					curpage=doc->pages.e[curpagei];
 					spageindex=c;
@@ -1971,7 +1974,7 @@ int LaidoutViewport::curobjPage()
  *
  * Calls Clear() on all interfaces on the stack (from a call to setupthings()).
  * 
- * \todo *** should be able to remember what was current on different pages...
+ * \todo *** should be able to remember what was current on different pages...?
  *
  * \todo *** if i==-2 uses curobj, but what if curobj is in limbo?
  */
@@ -2175,6 +2178,57 @@ void ViewWindow::setup()
 	//AddWin(new LayerChooser);...
 }
 
+//--------- ***special page flipper
+class PageFlipper : public NumInputSlider
+{
+ public:
+	Document *doc;
+	PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
+				anXWindow *prev,Window nowner,const char *nsendthis,const char *nlabel);
+	virtual void Refresh();
+};
+
+PageFlipper::PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
+						 anXWindow *prev,Window nowner,const char *nsendthis,const char *nlabel)
+	: NumInputSlider(parnt,ntitle,NUMSLIDER_WRAP,0,0,0,0,1, prev,nowner,nsendthis,nlabel,0,1)
+{
+	doc=ndoc;
+}
+
+void PageFlipper::Refresh()
+{
+	if (!win_on || !needtodraw) return;
+	XSetBackground(app->dpy,app->gc(),bkcolor);
+	XClearWindow(app->dpy,window);
+	int x,y;
+	unsigned int state;
+	mouseposition(this,&x,&y,&state);
+	if (buttondown || x>=0 && x<win_w && y>0 && y<win_h) {
+		if (x<win_w/2) {
+			 // draw left arrow
+			XSetForeground(app->dpy,app->gc(),app->coloravg(bkcolor,textcolor,.1));
+			drawthing(window,app->gc(),win_w/4,win_h/2, win_w/4,win_h/2,1, 6);
+		} else {
+			 // draw right arrow
+			XSetForeground(app->dpy,app->gc(),app->coloravg(bkcolor,textcolor,.1));
+			drawthing(window,app->gc(),win_w*3/4,win_h/2, win_w/4,win_h/2,1, 5);
+		}
+	}
+
+	XSetForeground(app->dpy,app->gc(),textcolor);
+	
+	char *str=newstr(label);
+	if (curitem>=0 && curitem<doc->pages.n) appendstr(str,doc->pages.e[curitem]->label);
+	else appendstr(str,"limbo");
+	
+	textout(window,str,-1,win_w/2,win_h/2,LAX_CENTER);
+	delete[] str;
+	
+	needtodraw=0;
+}
+
+//-------------end PageFlipper
+
 //! Add extra goodies to viewerwindow stack, like page/layer/mag/obj indicators
 int ViewWindow::init()
 {
@@ -2242,9 +2296,10 @@ int ViewWindow::init()
 //	toolselector->WrapWidth();
 //	AddWin(toolselector);
 	
-	last=pagenumber=new NumInputSlider(this,"page number",NUMSLIDER_WRAP, 0,0,0,0,1, 
-								NULL,window,"newPageNumber",
-								"Page: ",1,1000000,1);
+	 //----- Page Flipper
+	last=pagenumber=new PageFlipper(doc,this,"page number", 
+									last,window,"newPageNumber",
+									"Page: ");
 	pagenumber->tooltip("The pages in the spread\nand the current page");
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
@@ -2265,17 +2320,18 @@ int ViewWindow::init()
 	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
 	updateContext();
 
-	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
-								NULL,window,"newLayerNumber",
-								"Layer: ",1,1,1); //*** get cur page, use those layers....
-	num->tooltip("Sorry, layer control not well\nimplemented yet");
-	AddWin(num,num->win_w,0,50,50, num->win_h,0,50,50);
+//	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
+//								NULL,window,"newLayerNumber",
+//								"Layer: ",1,1,1); //*** get cur page, use those layers....
+//	num->tooltip("Sorry, layer control not well\nimplemented yet");
+//	AddWin(num,num->win_w,0,50,50, num->win_h,0,50,50);
 	
 	StrSliderPopup *p=new StrSliderPopup(this,"view type",0, 0,0,0,0,1, NULL,window,"newViewType");
+	int vm=((LaidoutViewport *)viewport)->ViewMode(NULL);
 	p->AddItem("Single",SINGLELAYOUT);
 	p->AddItem("Page Layout",PAGELAYOUT);
 	p->AddItem("Paper Layout",PAPERLAYOUT);
-	p->Select(1);
+	p->Select(vm);
 	p->WrapWidth();
 	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
 
@@ -2295,7 +2351,9 @@ int ViewWindow::init()
 
 	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
 			"/home/tom/p/sourceforge/laidout/src/icons/ImportImage.png","Import Image");
-	ibut->tooltip("Import a single image");
+	ibut->tooltip("Import one or more images, with \n"
+				  "number per page and dpi from the\n"
+				  "number sliders in the View Window");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
@@ -2362,6 +2420,7 @@ int ViewWindow::init()
 	//         page x,y
 	//         object x,y
 	
+	updateContext();
 	Sync(1);	
 	return 0;
 }
@@ -2652,7 +2711,8 @@ void ViewWindow::updateContext()
 {
 	int page=((LaidoutViewport *)viewport)->curobjPage();
 	pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
-	pagenumber->Select(page+1);
+	pagenumber->Select(page);
+	pagenumber->NewMax(doc->pages.n-1);
 
 	if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
 	else pageclips->State(LAX_OFF);
@@ -2753,15 +2813,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		// Document sends the notifyDocTreeChanged..
 
 		return 0;
-	} else if (!strcmp(mes,"newPageNumber")) { // 
+	} else if (!strcmp(mes,"newPageNumber")) {
 		if (e->data.l[0]>doc->pages.n) {
-			e->data.l[0]=1;
+			e->data.l[0]=0;
 			pagenumber->Select(e->data.l[0]);
-		} else if (e->data.l[0]<1) {
-			e->data.l[0]=doc->pages.n;
+		} else if (e->data.l[0]<0) {
+			e->data.l[0]=doc->pages.n-1;
 			pagenumber->Select(e->data.l[0]);
 		}
-		((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]-1);
+		((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]);
 		updateContext();
 		return 0;
 	} else if (!strcmp(mes,"prevSpread")) {
@@ -2804,7 +2864,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"dumpImages")) {
 		//DBG cout <<" --- dumpImages...."<<endl;
 		dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
-		pagenumber->NewMinMax(1,doc->pages.n);
+		pagenumber->NewMinMax(0,doc->pages.n-1);
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
 	} else if (!strcmp(mes,"loaddir")) {

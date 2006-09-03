@@ -703,6 +703,8 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 		cout <<"**** no docstyle in Document::dump_in_atts\n";
 	}
 	
+	 // make sure pages all have proper labels and pagestyles
+	SyncPages(0,-1);
 	
 	 // search for windows to create after reading in all pages
 	HeadWindow *head;
@@ -714,6 +716,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			if (head) laidout->addwindow(head);
 		}
 	}
+
 }
 
 //! Dumps docstyle, pages.

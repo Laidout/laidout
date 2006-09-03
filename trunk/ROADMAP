@@ -6,26 +6,36 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 VERSION 0.04
------------
+------------
 (done) Palette Window
 (done) RSS feed for website
 (done) A style manager, which is Not dependent on laxkit::refcounter, which is being removed
 (done) from laxkit: SplitWindow: swap window positions
 (done) Simple multiple image import by selecting one or more from a directory
-       Allow for window docking, floating, swapping panes, and temporary pane maximize
-       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+(done) Allow for window docking, floating, swapping panes, and temporary pane maximize
 (done) Page Ranges controlling page number labels
 (done) Make workspace bounds and popup panner save with the document
-       Fix page/spread flip by number
+(done) Fix page/spread flip by number
 
 
-VERSION 0.1
------------
-       Of course, need copious testing by people who are not me.
+VERSION 0.05
+------------
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+       Linear guides
        perhaps have image open window? drag and drop in images? that would be AWESOME
        Finish implementing project based setup, especially when loading and saving
        ObjectInterface for selecting and resizing multiple stuff
        parent/child nesting and interface for that: nesting, and grouping
+       Have imagepatch be a transform you can apply to any image
+       Use a ~/.laidout/0.05/laidoutrc ?
+       Start to do serious optimizing for docs with a billion big images in them
+       Make the ImageInterface scaling control suck less
+       
+       
+
+VERSION 0.1
+-----------
+       Of course, need copious testing by people who are not me.
        autoconfiscate
        plus configurable icon panel/menu system
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
@@ -34,7 +44,6 @@ VERSION 0.1
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ImagePatchData stuff
-       Have imagepatch be a transform you can apply to any image
        Have images have any number of various kinds of transforms applied to it
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        PathInterface should finally work right, and bez part should have segment move like inkscape
@@ -43,7 +52,7 @@ VERSION 0.1
        This means some sort of basic scripting infrastructure,
        undo: here's an idea: undo per object (as possible)! rather than just a monolithic undo.. maybe not useful..
        allow for easy method for runaround area determination
-       Full color management implemented
+       Full color management implemented, with up to 16 bit color
        a real PrintDialog
        Generic style edit window
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
@@ -66,6 +75,7 @@ VERSION 0.1
        Vx (aka uberconvertor) support?
        have an image in the little pan popups
        Have special function to output to file a pseudocode mockup of the file format
+       Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
 
 
 VERSION 0.2
@@ -81,7 +91,6 @@ fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Also most likely means finally deciding on a real rendering backend: cairo? antigrain? freetype/pango?
-  which also means start to do serious optimizing for docs with a billion big images in them
 ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost sort of things
@@ -89,6 +98,7 @@ Would be nice to be able to handle lilypond sort of things
 Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from xcf
 Story editor
 Internal generic impositioner for arbitrary .ps files
+Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
 
 
 VERSION 0.3
