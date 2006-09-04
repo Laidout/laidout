@@ -1,5 +1,9 @@
-laidout (0.02.1) unstable; urgency=low
+laidout (0.04.1) unstable; urgency=low
 
+  * Fourth release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Mon, 9 Sep 2006 15:29:50 -0800
+ 
   * Second release 
   * First debian package of it too
 
