@@ -45,7 +45,7 @@ anInterface *LImagePatchInterface::duplicate(anInterface *dup)
 
 int LImagePatchInterface::CharInput(unsigned int ch,unsigned int state)
 {
-	DBG cout <<"*****************in LImagePatchInterface::CharInput"<<endl;
+	//DBG cout <<"*****************in LImagePatchInterface::CharInput"<<endl;
 	int r=recurse;
 	int cc=ImagePatchInterface::CharInput(ch,state);
 	if (cc==1) return 1;

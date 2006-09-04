@@ -89,17 +89,17 @@ int Project::Load(const char *file)
 int Project::Save()
 {
 	if (!filename || !strcmp(filename,"")) {
-		DBG cout <<"**** cannot save, filename is null."<<endl;
+		//DBG cout <<"**** cannot save, filename is null."<<endl;
 		return 2;
 	}
 	FILE *f=NULL;
 	f=fopen(filename,"w");
 	if (!f) {
-		DBG cout <<"**** cannot save project, file \""<<filename<<"\" cannot be opened for writing."<<endl;
+		//DBG cout <<"**** cannot save project, file \""<<filename<<"\" cannot be opened for writing."<<endl;
 		return 3;
 	}
 
-	DBG cout <<"....Saving project to "<<filename<<endl;
+	//DBG cout <<"....Saving project to "<<filename<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);
 	dump_out(f,0,0);

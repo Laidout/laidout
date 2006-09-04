@@ -47,7 +47,7 @@ void Imlib_ImageToPS(FILE *psout,Imlib_Image image)
 	int len=3*width*height;
 	unsigned char rgbbuf[15];
 	unsigned char r,g,b;
-	DBG cout <<endl;
+	//DBG cout <<endl;
 	fprintf(psout,
 			"/DeviceRGB setcolorspace\n"
 			"<<\n"
@@ -115,7 +115,7 @@ void ps_Imlib_Image_out(Imlib_Image image)
 {
 	FILE *f=fopen("temp.ps","w");
 	if (!f) {
-		DBG cout <<"Failed to open temp.ps."<<endl;
+		//DBG cout <<"Failed to open temp.ps."<<endl;
 		return;
 	}
 
