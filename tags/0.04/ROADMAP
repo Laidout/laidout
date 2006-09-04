@@ -1,0 +1,174 @@
+LAIDOUT ROADMAP
+---------------
+Things to do before the next release.
+This is a very rough draft of a roadmap, and is by no means the final word.
+
+
+
+VERSION 0.04
+------------
+(done) Palette Window
+(done) RSS feed for website
+(done) A style manager, which is Not dependent on laxkit::refcounter, which is being removed
+(done) from laxkit: SplitWindow: swap window positions
+(done) Simple multiple image import by selecting one or more from a directory
+(done) Allow for window docking, floating, swapping panes, and temporary pane maximize
+(done) Page Ranges controlling page number labels
+(done) Make workspace bounds and popup panner save with the document
+(done) Fix page/spread flip by number
+
+
+VERSION 0.05
+------------
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+       Linear guides
+       perhaps have image open window? drag and drop in images? that would be AWESOME
+       Finish implementing project based setup, especially when loading and saving
+       ObjectInterface for selecting and resizing multiple stuff
+       parent/child nesting and interface for that: nesting, and grouping
+       Have imagepatch be a transform you can apply to any image
+       Use a ~/.laidout/0.05/laidoutrc ?
+       Start to do serious optimizing for docs with a billion big images in them
+       Make the ImageInterface scaling control suck less
+       
+       
+
+VERSION 0.1
+-----------
+       Of course, need copious testing by people who are not me.
+       autoconfiscate
+       plus configurable icon panel/menu system
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
+       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
+       Parent masking of children
+       Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
+       for laxkit: SplitWindow: tabbed panes
+       Seriously optimize the whole ImagePatchData stuff
+       Have images have any number of various kinds of transforms applied to it
+       NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
+       PathInterface should finally work right, and bez part should have segment move like inkscape
+       Basic infrastructure for most things (except text) should be in place.
+       Fully configurable shortcuts
+       This means some sort of basic scripting infrastructure,
+       undo: here's an idea: undo per object (as possible)! rather than just a monolithic undo.. maybe not useful..
+       allow for easy method for runaround area determination
+       Full color management implemented, with up to 16 bit color
+       a real PrintDialog
+       Generic style edit window
+       plain text edit window for notes/scripts/whatever save with project or doc or its own file
+       Make commands actually available in the command prompt window
+       non-hacky new document box
+       also means all things must define their styledefs
+       Plugin infrastructure should be in place
+       Low level tree editor, akin to the xml editor in inkscape
+       libintl support
+       PDF out, and/or use ghostscripts alleged ability to do transparent images in postscript files
+       start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
+          of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
+       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
+       SpreadEditor: optionally work with whole spreads, rather than just single pages
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
+       Provide some kind of visual feedback while doing lengthy operations
+       Finish implementing booklet/double sided vertical, and BasicBookImposition
+       Improve and/or make new logo for about
+       Vx (aka uberconvertor) support?
+       have an image in the little pan popups
+       Have special function to output to file a pseudocode mockup of the file format
+       Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
+
+
+VERSION 0.2
+-----------
+Bezier color patch freeform, rather than just grid.
+The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
+Possibly allow pure function gradients, and redefining the functions for the other gradients..
+Combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
+import/export as possible: passepartout (out is partially done)?,scribus?,svg
+Freehand drawing with tablet support
+Somehow be able to do foldouts from within any page of an imposition
+fancy arranging to align along any path, and use any path as a kind of tab stop
+Text for god's sake!! This means at least a basic line breaker,
+layout inside anything that provides an 'area' and runaround facility.
+Also most likely means finally deciding on a real rendering backend: cairo? antigrain? freetype/pango?
+ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
+Would be nice to have tex/latex text and equation reader
+Would be nice to be able to handle metapost sort of things
+Would be nice to be able to handle lilypond sort of things
+Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from xcf
+Story editor
+Internal generic impositioner for arbitrary .ps files
+Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
+
+
+VERSION 0.3
+-----------
+End world hunger
+Stabilize the biosphere
+Impeach Bush
+Neutralize all nuclear waste
+Evaporate my student loans
+While i'm at it, I'd like a pony.
+
+
+
+            .--------------. 
+------------- OLD RELEASES -----------------
+            `--------------' 
+
+VERSION 0.03  -- released 13 May 2006!
+-----------
+(done,but needs serious optimizing) Bezier patch with image for the color (this would be HOT for the gimp! a side project..)
+(done) if an image is selected, should be able to import an image to it
+(done) printing: produce masked images based on 50% threshhold of alpha channel of images
+(done) When loading files from the command line, should understand: 'file:///path/to/it'
+(done) Whoops! Change reference from LGPL to GPL in source code!! Crap!!
+(done) Load and save window configurations
+(done) EPS out to file###.eps by page not paper
+(done) Be able to print a paper range
+(done) an About window
+(done) command prompt window
+(done) Get rid of vertical white stripe toward bottom of the laidout webpage
+(done) SpreadEditor: drag to viewer to work on that page or spread
+(done) SpreadEditor: fix auto arranging
+(done) Make doc tree changes sanely update the various windows
+(done) Be able to DEselect all objects!!
+
+
+VERSION 0.02 - released 8 April 2006!
+------------
+(done) Rename Disposition to Imposition. Why oh why did I call it Disposition??
+(done) Insert some way to turn off debug info dumped to cout (done in a convoluted way, perhaps)
+(done) Linear Gradients edit, save, and printout
+(done) Circle Gradients edit, save, and printout
+(done) Color patches should work better than in 0.01
+(done) Overall windowing setup using Laxkit::SplitWindows, 
+(done) from laxkit: replacement of 'datastack' should be complete, do same here
+(done) Popup tool selector
+(done) ObjectInterface for resizing and shearing
+(done) Make Save/Save As dialog box suck less: 'test/1.doc' should mean cd test, save '1.doc'
+(done) Make it easy to make deb packages from source
+(done) extremely basic print dialog: print to file (ask on overwrite) or send via shell command
+(done) make the directory spot in viewer keep updated current directory
+(done) debug SpreadEditor thumbnail updating, and clip thumb to page
+(done) A help button to popup a list of all the otherwise unmentioned key shortcuts
+(done) Debug 'Delete Page'
+(done) Button for pageclips
+(done) Implement SpreadEditor Reset button
+
+
+VERSION 0.01 -- released 12 March 2006!
+------------
+(done) Clean up web page a bit.
+(done) TILING MUST WORK!!!!!!! for booklets also 
+(done) Get NetDisposition sort of going
+(done) Implement page clipping for display AND for printing..
+(done) Images should work well
+(done) Color patches should work enough to be getting on with
+(done) in the laxkit: menuselector,
+(done) tooltips IMPORTANT!!,
+(done) and set said tooltips for the mystery numbers in ViewWindow 
+(done) Add copyright notice to source files
+(done) Add and Delete Page buttons
+(done) Throw together a quick key-stroke cheat sheet
+

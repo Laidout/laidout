@@ -1,0 +1,79 @@
+LAIDOUT Version 0.03.1
+--------------------
+http://laidout.org
+
+Please post any complaints and other correspondence to the Laidout
+general mailing list found at:
+https://lists.sourceforge.net/lists/listinfo/laidout-general
+
+Currently the only developer (and creator of Laidout) is also a client:
+Tom Lechner <tomlechner@users.sourceforge.net>
+http://www.tomlechner.com
+
+
+WHAT IT CAN DO RIGHT NOW
+------------------------
+Laidout is currently in the 'Kind of a hack, but mostly works
+on my machine' stage of development.
+
+Laidout currently can handle images and gradients (linear, radial, 
+and bezier patches) fairly well. Also, you can make a type of image
+that can be stretched around. The very basics to get my cartoon 
+books done, in other words. Many more features are planned, like 
+such non-essentials (to me anyway) as text! Who needs text when a
+picture is worth a thousand words? 
+
+Many of the features are only partially implemented, and the
+real meat of the program is only half in place right now.
+Be advised that you can construct paths on screen, but path 
+printing (to the printer) is badly implemented currently.
+
+Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
+some of the burden of the 'meat' of the program, but anyway...
+
+
+COMPILING
+---------
+
+Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
+available. For the Laidout development version, you will need the
+Laxkit development version from the same date. Laidout expects 
+Imlib2 support to have been compiled into the Laxkit (which is the 
+default). Make sure that Laxkit headers are in the place specified 
+by the LAXDIR variable in the file Makefile-toinclude, then type:
+
+make
+make install
+
+There is no 'configure' at the moment. 'make install' will put
+laidout-(whatever version) in (usually) /usr/local/bin, and make a
+symbolic link /usr/local/bin/laidout point to it.
+
+DISTRO WARNING: the Makefiles here are for the development source, which
+also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
+so intertwined. Just remove those parts of the Makefiles
+if you want to compile only Laidout.
+
+After successfully making, the program 'laidout' in the src
+directory is the thing you want. It does not depend on any other
+files currently, thus it can be run from wherever it is located.
+
+Running the program might spit out copious amounts of debugging
+info. If this is the case, you can turn this off with 'make hidegarbage'
+before doing 'make' (the same goes for the Laxkit). Or, you can just 
+run the program like this:
+
+./laidout > /dev/null
+
+
+SOURCE DOCUMENTATION and CONTRIBUTING
+-------------------------------------
+
+There is a lot of source documentation available via doxygen, just type:
+
+make docs
+
+and it dumps it all out to docs/html. In particular, you will have a 
+rapidly expanding todo list. If you want to contribute, that is a good
+place to start. That and the Laxkit todo list.
+
