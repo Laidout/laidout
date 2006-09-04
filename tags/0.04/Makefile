@@ -28,7 +28,7 @@ INSTALLDIR=install -d
 
 ##----------- you shouldn't have to modify anything below here --------------
 
-LAIDOUTVERSION=0.03.1
+LAIDOUTVERSION=0.04
 LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: 

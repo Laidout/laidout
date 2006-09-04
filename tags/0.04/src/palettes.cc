@@ -47,7 +47,7 @@ int PalettePane::send()
 	e.xclient.data.l[0]=0;
 	int c;
 	for (c=0; c<palette->colors.e[curcolor]->numcolors; c++) {
-		DBG cout <<"send palette color "<<c<<": "<< palette->colors.e[curcolor]->channels[c];
+		//DBG cout <<"send palette color "<<c<<": "<< palette->colors.e[curcolor]->channels[c];
 		if (c<5) e.xclient.data.l[c+1]=palette->colors.e[curcolor]->channels[c];
 	}
 	for (c++; c<5; c++) e.xclient.data.l[c]=0;

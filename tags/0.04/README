@@ -1,4 +1,4 @@
-LAIDOUT Version 0.03.1
+LAIDOUT Version 0.04
 --------------------
 http://laidout.org
 
@@ -35,12 +35,19 @@ some of the burden of the 'meat' of the program, but anyway...
 COMPILING
 ---------
 
-Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
+NOTE about icons: These require Inkscape (http://www.inkscape.org)
+to generate icons from src/icons/icons.svg, and python to run
+the script that calls Inkscape. But, Laidout will work fine without
+the icons. You must manually adjust src/icons.h to indicate the
+actual directory that the icons will be installed in. I know this
+is really ugly. It will be cleared up when I get around to 
+autoconfiscating Laidout. See src/icons/makeimages.py for more.
+
+Now then, ensure that you have the Laxkit (http://laxkit.sourceforge.net)
 available. For the Laidout development version, you will need the
-Laxkit development version from the same date. Laidout expects 
-Imlib2 support to have been compiled into the Laxkit (which is the 
-default). Make sure that Laxkit headers are in the place specified 
-by the LAXDIR variable in the file Makefile-toinclude, then type:
+Laxkit development version from the same date.  Make sure that Laxkit 
+headers are in the place specified by the LAXDIR variable in the file
+Makefile-toinclude, then type:
 
 make
 make install
@@ -48,11 +55,6 @@ make install
 There is no 'configure' at the moment. 'make install' will put
 laidout-(whatever version) in (usually) /usr/local/bin, and make a
 symbolic link /usr/local/bin/laidout point to it.
-
-DISTRO WARNING: the Makefiles here are for the development source, which
-also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
-so intertwined. Just remove those parts of the Makefiles
-if you want to compile only Laidout.
 
 After successfully making, the program 'laidout' in the src
 directory is the thing you want. It does not depend on any other
