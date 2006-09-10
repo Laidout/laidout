@@ -59,14 +59,17 @@ p=pf.make_parser("xml.sax.drivers.drv_xmlproc")
 p.setDocumentHandler(SAXtracer("doc_handler"))
 p.parse("icons.svg")
 
+print
 for name in names :
+    print
     X=int(float(commands.getoutput("inkscape -I "+name+" -X icons.svg")))
     Y=int(float(commands.getoutput("inkscape -I "+name+" -Y icons.svg")))
     W=int(float(commands.getoutput("inkscape -I "+name+" -W icons.svg")))
     H=int(float(commands.getoutput("inkscape -I "+name+" -H icons.svg")))
 
+    print str(X)+","+str(Y)+" "+str(W)+"x"+str(H)
     x1=int(X/45)*45
-    y1=int(Y/45)*45
+    y1=11*90-int(Y/45)*45-45
     x2=x1+45
     y2=y1+45
 
@@ -76,5 +79,4 @@ for name in names :
     #print commands.getoutput(command)
     #print commands.getstatus(command)
     print commands.getstatusoutput(command)
-	
-    
+   

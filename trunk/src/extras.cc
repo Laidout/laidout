@@ -40,7 +40,6 @@
 
 #include "extras.h"
 #include <dirent.h>
-#include <Imlib2.h>
 
 
 #include <iostream>
@@ -96,15 +95,14 @@ int dumpImages(Document *doc, int startpage, const char **imagefiles, int nfiles
 {
 	ImageData **images=new ImageData*[nfiles];
 	int i=0,c;
-	Imlib_Image image;
+	LaxImage *image=NULL;
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
-		image=imlib_load_image(imagefiles[c]);
+		image=load_image(imagefiles[c]);
 		if (image) {
 			DBG cout << "dump image files: "<<imagefiles[c]<<endl;
 			images[i]=new ImageData;//creates with one count
 			images[i]->SetImage(image);
-			makestr(images[i]->filename,imagefiles[c]);
 			i++;
 		} else {
 			DBG cout <<"** warning: bad image file "<<imagefiles[c]<<endl;

@@ -180,6 +180,10 @@ void print_usage()
  */
 LaidoutApp::LaidoutApp() : anXApp()
 {	
+	config_dir=newstr(getenv("HOME"));
+	appendstr(config_dir,"/.laidout/");
+	appendstr(config_dir,LAIDOUT_VERSION);
+	
 	curcolor=0;
 	lastview=NULL;
 	
@@ -226,6 +230,7 @@ LaidoutApp::~LaidoutApp()
 //	interfacepool.flush();
 //	PathInterface::basepathops.flush();
 	if (project) delete project;
+	if (config_dir) delete[] config_dir;
 }
 
 //! Init pools, parse args, create a main control window.
@@ -282,8 +287,8 @@ int LaidoutApp::init(int argc,char **argv)
 	delete ps;
 
 	 //read in laidoutrc
-	if (!readinlaidoutrc()) {
-		cout<<"***imp me! install ~/.laidout/laidoutrc"<<endl;
+	if (!readinLaidoutDefaults()) {
+		createlaidoutrc();
 	}
 	
 	// **** Init Imlib
@@ -308,11 +313,54 @@ int LaidoutApp::init(int argc,char **argv)
 	return 0;
 };
 
-//! Read in the laidoutrc. Return 0 if it doesn't exist, 1 if ok.
-int LaidoutApp::readinlaidoutrc()
+//! Called from init(), creates a user's laidoutrc if readinLaidoutDefaults failed.
+/*! Return 0 for created ok, else non-zero error.
+ */
+int LaidoutApp::createlaidoutrc()
 {
+	DBG cout <<"-------------Creating $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+
+	 // ensure that ~/.ladiout/(version) exists
+	 //   if not, create, and put in a README explaining what's what:
+	 //   	laidoutrc
+	 //   	icons/
+	 //   	palettes/
+	 //   	templates/
+	 //   	         /default
+	 // if no ~/.laidout/(version)/laidoutrc exists, possibly import
+	 //   from other installed laidout versions
+	 //   otherwise perhaps touch laidoutrc, and put in a much
+	 //   commented empty version
+	
+	int t=check_dirs(config_dir,1);
+	if (t==-1) { // dirs were ok
+		 // create "~/.laidout/(version)/laidoutrc"
+		char configfile[strlen(config_dir)+20];
+		sprintf(configfile,"%s/laidoutrc",config_dir);
+		FILE *f=fopen(configfile,"w");
+		if (f) {
+			fwrite("# Laidout global configuration options go in here.\n",1,51,f);
+			fwrite("# An explanation of what goes in here should have \n",1,51,f);
+			fwrite("# come with Laidout.",1,20,f);
+			fclose(f);
+		}
+	} else return -1;
+	return 0;
+}
+
+//! Read in various startup defaults.
+/*! These include the laidoutrc and icons.
+ *
+ * Return 0 if laidoutrc doesn't exist, 1 if ok.
+ * The default location is $HOME/.laidout/(version)/laidoutrc.
+ */
+int LaidoutApp::readinLaidoutDefaults()
+{
+	DBG cout <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	FILE *f=NULL;
-	if (!readable_file("~/.laidout/laidoutrc",&f)) return 0;
+	char configfile[strlen(config_dir)+20];
+	sprintf(configfile,"%s/laidoutrc",config_dir);
+	if (!readable_file(configfile,&f)) return 0;
 
 	 //now f is open, must read in...
 	Attribute att;
@@ -322,16 +370,28 @@ int LaidoutApp::readinlaidoutrc()
 		name =att.attributes.e[c]->name;
 		value=att.attributes.e[c]->value;
 		if (!name) continue;
+
+		DBG cout <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
 		if (!strcmp(name,"appcolors")) {
 			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
-		} else if (!strcmp(name,"defaultdoc")) {
+		} else if (!strcmp(name,"defaultstartdoc")) {
 			cout <<"***imp me! readinlaidoutrc: defaultdoc"<<endl;
 		} else if (!strcmp(name,"defaultpapersize")) {
 			cout <<"***imp me! readinlaidoutrc: defaultpapersize"<<endl;
+		} else if (!strcmp(name,"template")) {
+			//*** for multiple startup templates,
+			// > laidout --template consumptionIssue
+			// > laidout --template 1paperPamphlet
+		} else if (!strcmp(name,"palette_dir")) {
+			//****
+		} else if (!strcmp(name,"temp_dir")) {
+			//**** default "config_dir/temp/pid/"?
+			//				or projectdir/.laidouttemp/previews
 		}
 	}
 	
 	fclose(f);
+	DBG cout <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	return 1;
 }
 

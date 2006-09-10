@@ -57,6 +57,7 @@ class LaidoutApp : public Laxkit::anXApp
 {
  public:
 //	ControlPanel *maincontrolpanel;
+	char *config_dir;
 	Project *project;
 	Document *curdoc;
 	Laxkit::anXWindow *lastview;
@@ -76,7 +77,8 @@ class LaidoutApp : public Laxkit::anXApp
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
 	void parseargs(int argc,char **argv);
-	int readinlaidoutrc();
+	int readinLaidoutDefaults();
+	int createlaidoutrc();
 	int isTopWindow(Laxkit::anXWindow *win);
 
 	Document *findDocument(const char *saveas);

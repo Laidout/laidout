@@ -40,6 +40,7 @@
 #include "extras.h"
 #include "drawdata.h"
 #include "helpwindow.h"
+#include "icons.h"
 
 #include <iostream>
 #include <sys/stat.h>
@@ -646,7 +647,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	 // in the future, this could involve apply further groups...
 	//...like any saved cur group for that page or layer?...
 	VObjContext voc;
-	voc.set(NULL,2, 1,spageindex);
+	voc.set(NULL,3, 1,spageindex,0);
 	setCurobj(&voc);
 }
 
@@ -2275,7 +2276,8 @@ int ViewWindow::init()
 		tstr=strstr(nstr,"Interface");
 		if (tstr) *tstr='\0';
 		tstr=nstr;
-		nstr=newstr("/home/tom/p/sourceforge/laidout/src/icons/");
+		nstr=newstr(ICON_DIRECTORY);
+		appendstr(nstr,"/");
 		appendstr(nstr,tstr);
 		appendstr(nstr,".png");
 		last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
@@ -2304,18 +2306,22 @@ int ViewWindow::init()
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	TextButton *tbut;
+	char iconfile[strlen(ICON_DIRECTORY)+50];
+	sprintf(iconfile,"%s/PreviousSpread.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/PreviousSpread.png","<");
+			iconfile,"<");
 	ibut->tooltip("Previous spread");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	sprintf(iconfile,"%s/NextSpread.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"next spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"nextSpread",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/NextSpread.png",">");
+			iconfile,">");
 	ibut->tooltip("Next spread");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	sprintf(iconfile,"%s/PageClips.png",ICON_DIRECTORY);
 	last=pageclips=new IconButton(this,"pageclips",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pageclips",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/PageClips.png","Page Clips");
+			iconfile,"Page Clips");
 	pageclips->tooltip("Whether pages clips its contents");
 	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
 	updateContext();
@@ -2339,35 +2345,41 @@ int ViewWindow::init()
 	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
+	sprintf(iconfile,"%s/AddPage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"add page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"addPage",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/AddPage.png","Add Page");
+			iconfile,"Add Page");
 	ibut->tooltip("Add 1 page after this one");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	sprintf(iconfile,"%s/DeletePage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"delete page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"deletePage",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/DeletePage.png","Delete Page");
+			iconfile,"Delete Page");
 	ibut->tooltip("Delete the current page");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	sprintf(iconfile,"%s/ImportImage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/ImportImage.png","Import Image");
+			iconfile,"Import Image");
 	ibut->tooltip("Import one or more images, with \n"
 				  "number per page and dpi from the\n"
 				  "number sliders in the View Window");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	sprintf(iconfile,"%s/InsertImage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/InsertImage.png","Insert Image");
+			iconfile,"Insert Image");
 	ibut->tooltip("Insert an image into the current image or image patch");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+//	sprintf(iconfile,"%s/DumpInImages.png",ICON_DIRECTORY);
 //	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpImages",-1,
-//			"/home/tom/p/sourceforge/laidout/src/icons/DumpInImages.png","Dump in Images");
+//			iconfile,"Dump in Images");
 //	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
 //	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	sprintf(iconfile,"%s/Save.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/Save.png","Save");
+			iconfile,"Save");
 	ibut->tooltip("Save the current document");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
@@ -2376,8 +2388,9 @@ int ViewWindow::init()
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	tbut=new TextButton(this,"print",0, 0,0,0,0,1, NULL,window,"print","Print");
+	sprintf(iconfile,"%s/Print.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"print",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/Print.png","Print");
+			iconfile,"Print");
 	ibut->tooltip("Print to output.ps, a postscript file");
 	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
 
@@ -2410,8 +2423,9 @@ int ViewWindow::init()
 	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
 	tbut=new TextButton(this,"help",0, 0,0,0,0,1, NULL,window,"help","Help!");
+	sprintf(iconfile,"%s/Help.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
-			"/home/tom/p/sourceforge/laidout/src/icons/Help.png","Help!");
+			iconfile,"Help!");
 	ibut->tooltip("Popup a list of shortcuts");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
@@ -2462,7 +2476,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 	} else if (!strcmp(mes,"insert new image")) {
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
-		Imlib_Image image=imlib_load_image(s->str);
+		LaxImage *image=load_image(s->str);
 
 		if (image) {
 			SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
@@ -2471,20 +2485,17 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					 //set in image
 					ImageData *img=dynamic_cast<ImageData *>(curobj);
 					img->SetImage(image);
-					makestr(img->filename,s->str);
 					((anXWindow *)viewport)->Needtodraw(1);
 				} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
 					 //set in imagepatch
 					dynamic_cast<ImagePatchData *>(curobj)->SetImage(s->str);
-					imlib_context_set_image(image);
-					imlib_free_image();
+					image->dec_count();
 					((anXWindow *)viewport)->Needtodraw(1);
 				} else curobj=NULL;
 			} else curobj=NULL;
 			if (!curobj) {
 				ImageData *newdata=new ImageData();
 				newdata->SetImage(image);
-				makestr(newdata->filename,s->str);
 				//*** must scale image to fit the page at default dpi!!
 				newdata->xaxis(newdata->xaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
 				newdata->yaxis(newdata->yaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
@@ -2800,15 +2811,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		LaidoutViewport *vp=((LaidoutViewport *)viewport);
 		int curpage=vp->curobjPage();
 
-		//vp->curobj.set(NULL, 1, 0);
-		//vp->clearCurobj();
-		//delete vp->spread;
-		//vp->spread=NULL;
-		//vp->curpage=NULL;
-
 		int c=doc->RemovePages(curpage,1); //remove curpage
 		if (c==1) GetMesbar()->SetText("Page deleted.");
-			else GetMesbar()->SetText("Error deleting page.");
+		else if (c==-2) GetMesbar()->SetText("Cannot delete the only page.");
+		else GetMesbar()->SetText("Error deleting page.");
+		
 
 		// Document sends the notifyDocTreeChanged..
 
@@ -2857,9 +2864,32 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
+		 //***** find full path of old image if any, modify to have dir and basename
+		char *oldimage=NULL,*oldimgname=NULL;
+		SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
+		if (curobj) {
+			//***this is rather messy, should standardize finding properties from interfaces
+			if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
+				ImageData *img=dynamic_cast<ImageData *>(curobj);
+				makestr(oldimage,img->filename);
+			} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
+				 //set in imagepatch
+				ImagePatchData *img=dynamic_cast<ImagePatchData *>(curobj);
+				makestr(oldimage,img->filename);
+			} 
+		}
+		if (oldimage) {
+			oldimgname=strrchr(oldimage,'/');
+			if (oldimgname) {
+				*(oldimgname++)='\0';
+			}
+		}
+			
 		app->rundialog(new FileDialog(NULL,"Insert Image",
 					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-					0,0,500,500,0, window,"insert new image"));
+					0,0,500,500,0, window,"insert new image",
+					oldimgname,oldimage));
+		if (oldimage) delete[] oldimage;
 		return 0;
 	} else if (!strcmp(mes,"dumpImages")) {
 		//DBG cout <<" --- dumpImages...."<<endl;

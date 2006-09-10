@@ -622,7 +622,7 @@ ImageData *Page::Thumbnail()
 //	imlib_context_set_image(tnail);
 //	imlib_blend_image_onto_image(thumbnail->imlibimage,0,0,0,100,100,0,0,100,100);
 		
-	thumbnail->SetImage(tnail); //*** must implement using diff size image than is in maxx,y
+	thumbnail->SetImage(new LaxImlibImage(NULL,tnail)); //*** must implement using diff size image than is in maxx,y
 	//thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
 	//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
 	XFreePixmap(anXApp::app->dpy,pix);

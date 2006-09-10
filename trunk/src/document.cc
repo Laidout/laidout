@@ -504,11 +504,15 @@ int Document::NewPages(int starting,int np)
 //! Remove pages [start,start+n-1].
 /*! Return the number of pages removed, or negative for error.
  *
+ * Return -1 for start out of range, -2 for not enough pages to allow deleting.
+ * 
+ * \todo *** figure out how to handle upkeep of page range and labels
  * \todo *** this is slightly broken.. does not reorient pagestyles
- * properly.
+ *   properly.
  */
 int Document::RemovePages(int start,int n)
 {
+	if (pages.n<=1) return -2;
 	if (start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
@@ -516,6 +520,8 @@ int Document::RemovePages(int start,int n)
 		pages.remove(start);
 		DBG cout << "---  Done removing page "<<start+c<<endl;
 	}
+	docstyle->imposition->NumPages(pages.n);
+	SyncPages(start,-1);
 	laidout->notifyDocTreeChanged(NULL,TreePagesDeleted, start,-1);
 	return n;
 }

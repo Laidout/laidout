@@ -50,7 +50,7 @@ AboutWindow::AboutWindow()
 {
 }
 
-/*! The default MessageBox::init() sets m[1]=m[7]=10000, which is supposed 
+/*! The default MessageBox::init() sets m[1]=m[7]=BOX_SHOULD_WRAP, which is supposed 
  * to trigger a wrap to extent. However, if a window has a stretch of 2000, say
  * like the main messagebar, then that window is stretched
  * to that amount, which is silly. So, intercept this to be a more reasonable width.
@@ -60,8 +60,8 @@ int AboutWindow::preinit()
 	//Screen *screen=DefaultScreenOfDisplay(app->dpy);
 	
 	//m[1]=screen->width/2;
-	m[1]=10000;
-	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+	m[1]=BOX_SHOULD_WRAP;
+	m[7]=BOX_SHOULD_WRAP; //<-- this triggers a wrap in rowcol-figureDims
 
 	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,
 			"[insert splash logo here!]\n"
@@ -99,8 +99,8 @@ int AboutWindow::preinit()
 int AboutWindow::init()
 {
 	
-//	m[1]=10000;
-//	m[7]=10000; //<-- this triggers a wrap in rowcol-figureDims
+//	m[1]=BOX_SHOULD_WRAP;
+//	m[7]=BOX_SHOULD_WRAP; //<-- this triggers a wrap in rowcol-figureDims
 //	//WrapToExtent: 
 //	arrangeBoxes(1);
 //	win_w=m[1];

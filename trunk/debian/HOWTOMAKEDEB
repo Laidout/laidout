@@ -20,6 +20,7 @@ MAKING LAIDOUT DEB PACKAGE
    all the example docs
  make sure the Quick Key References are accurate. There are separate versions
    of it in ./QUICKREF, debian/laidout.1, and src/helpwindow.cc
+ make sure icon directory is set for after install (src/icons.h)?!
  make depends  in the src directory
  
  make sure Makefile-toinclude points to correct laxkit headers directory
