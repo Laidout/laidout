@@ -21,6 +21,8 @@
 using namespace std;
 #define DBG 
 
+using namespace Laxkit;
+
 void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img);
 	
 //! Output postscript for a Laxkit::ImageData. 
@@ -34,6 +36,7 @@ void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img);
  * \todo *** the output should be tailored to the specified psDpi(), otherwise the output
  *   file will sometimes be quite enormous. Also, repeat images are outputted for each
  *   instance, which also potentially increases size a lot
+ * \todo *** this still assumes a LaxImlibImage.
  */
 void psImage(FILE *f,LaxInterfaces::ImageData *img)
 {
@@ -41,8 +44,12 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	 // in the image is ??? so must set
 	 // up proper transforms
 	
-	if (!img || !img->imlibimage) return;
-	imlib_context_set_image(img->imlibimage);
+	if (!img || !img->image) return;
+
+	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
+	if (!imlibimg) return;
+	
+	imlib_context_set_image(imlibimg->Image());
 	
 	//if (imlib_image_has_alpha()) { psImage_masked_interleave1(f,img); return; }
 	if (imlib_image_has_alpha()) { psImage_masked_interleave1(f,img); return; }
@@ -118,9 +125,12 @@ void psImage_masked_interleave2(FILE *f,LaxInterfaces::ImageData *img)
 	 // in the image is ??? so must set
 	 // up proper transforms
 	
-	if (!img || !img->imlibimage) return;
+	if (!img || !img->image) return;
+
+	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
+	if (!imlibimg) return;
 	
-	imlib_context_set_image(img->imlibimage);
+	imlib_context_set_image(imlibimg->Image());
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
@@ -213,9 +223,12 @@ void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img)
 	 // in the image is ??? so must set
 	 // up proper transforms
 	
-	if (!img || !img->imlibimage) return;
+	if (!img || !img->image) return;
 	
-	imlib_context_set_image(img->imlibimage);
+	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
+	if (!imlibimg) return;
+	
+	imlib_context_set_image(imlibimg->Image());
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
@@ -303,9 +316,12 @@ void psImage_103(FILE *f,LaxInterfaces::ImageData *img)
 	 // in the image is ??? so must set
 	 // up proper transforms
 	
-	if (!img || !img->imlibimage) return;
+	if (!img || !img->image) return;
 	
-	imlib_context_set_image(img->imlibimage);
+	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
+	if (!imlibimg) return;
+	
+	imlib_context_set_image(imlibimg->Image());
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();

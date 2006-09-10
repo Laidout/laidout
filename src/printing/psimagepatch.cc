@@ -81,7 +81,8 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	imlib_image_put_back_data(buf);
 	imlib_image_flip_vertical();
 	ImageData img;
-	img.SetImage(image);
+	LaxImage *limg=new LaxImlibImage(NULL,image);
+	img.SetImage(limg);
 	//imlib_context_set_image(image);
 	//imlib_save_image("temp.jpg");
 

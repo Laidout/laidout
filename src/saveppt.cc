@@ -34,9 +34,6 @@ void pptdumpobj(FILE *f,double *mm,SomeData *obj)
 	double m[6];
 	transform_mult(m,img->m(),mm);
 	
-	//<frame name="Raster sewage1.tiff" matrix="0.218182 0 0 0.218182 30.4246 36.7684" 
-	//	lock="false" flowaround="false" obstaclemargin="0" type="raster" file="/home/tom/cartoons/graphic/sewage/tiffs/sewage1.tiff"/>
-		
 	char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
 										 // not modify the string.
 	fprintf(f,"    <frame name=\"Raster %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
