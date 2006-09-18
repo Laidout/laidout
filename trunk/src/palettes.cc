@@ -30,6 +30,12 @@ PalettePane::PalettePane(anXWindow *parnt,const char *ntitle,unsigned long nstyl
 	: PaletteWindow(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,prev,nowner,nsend)
 {}
 
+const char *PalettePane::PaletteDir()
+{
+	return laidout->palette_dir;
+}
+
+
 //! Send a anXWindow::sendthis message to laidout->lastview. 
 /*! 
  * \todo *** there is every possibility that laidout->lastview is no longer valid?

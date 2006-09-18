@@ -528,6 +528,8 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			Group *g=new Group;
 			g->dump_in_atts(att->attributes.e[c],flag);
 			layers.push(g,1);
+		} else if (!strcmp(name,"labeltype")) {
+			IntAttribute(value,&labeltype);
 		} else { 
 			DBG cout <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
 		}
@@ -541,6 +543,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 void Page::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	fprintf(f,"%slabeltype %d\n",spc,labeltype);
 	if (pagestyle && (pagestyle->flags&PAGESTYLE_AUTONOMOUS)) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
 		pagestyle->dump_out(f,indent+2,0);

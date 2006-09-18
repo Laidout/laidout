@@ -146,6 +146,7 @@ FieldPlace &FieldPlace::operator=(const FieldPlace &place)
  * pushing a FieldPlace, the pointer is transfered (as opposed to copying the contents).
  */
 
+
 //! Constructor with all numbers, comma separated field specs, ext is like: "34.234.6.7,3.4"
 /*! No whitespace allowed. Adds fields until no more in ext, or until the current field spec
  * is somehow invalid. If it is invalid, the previous valid ones remain pushed, but no new ones
@@ -490,6 +491,8 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  *   The Name would be used as shown in an edit dialog.
  *   The description would be used in some sort of help system
  *  </pre>
+ *
+ *  \todo Perhaps the fields stack can be migrated to Laxkit's RefPtrStack.
  */
 /*! \var ElementType StyleDef::format
  * \brief What is the nature of *this.
@@ -547,7 +550,7 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 	if (extends) {
 		extendsdef=stylemanager.FindDef(extends); // must look up extends and inc_count()
 		if (extendsdef) extendsdef->inc_count();
-	}
+	} extendsdef=NULL;
 	
 	makestr(name,nname);
 	makestr(Name,nName);
@@ -573,6 +576,16 @@ StyleDef::~StyleDef()
 	if (defaultvalue) delete[] defaultvalue;
 	
 	if (extendsdef) extendsdef->dec_count();
+
+	if (fields) {
+		DBG cout <<"---deleting styledef fields:"<<endl;
+		for (int c=0; c<fields->n; c++) {
+			fields->e[c]->dec_count();
+		}
+		DBG cout <<"---Delete fields stack"<<endl;
+		delete fields;
+		fields=NULL;
+	}
 }
 
 //! Write out the stuff inside. 
@@ -621,6 +634,8 @@ int StyleDef::push(const char *nname,const char *nName,const char *ttip,const ch
 }
 
 //! Push def with fields. If pushing this new field onto fields fails, return 1, else 0
+/*! Note that the counts for the subfields are not incremented further.
+ */
 int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
 		ElementType fformat,const char *nrange, const char *newdefval,
 		Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
@@ -632,24 +647,29 @@ int StyleDef::push(const char *nname,const char *nName,const char *ttip,const ch
 	return c;
 }
 
-//! Push newfield onto fields.
+//! Push newfield onto fields as not local. Its count is not incremented.
 /*! Returns whatever PtrStack::push returns.
+ * 
+ * Only use pop() when removing elements, as that pops from the stack, then calls
+ * its dec_count() function, rather than just deleting.
  */
 int StyleDef::push(StyleDef *newfield)
 {
 	if (!newfield) return 1;
 	if (!fields) fields=new PtrStack<StyleDef>;
-	return fields->push(newfield);
+	return fields->push(newfield,0);
 }
 
-//! Special care must be taken when popping to ensure Style/StyleDef pointer integrity!
-/*! This function calls remove on fieldindex in fields.
- * Returns whatever PtrStack::remove returns.
+//! The element is popped off the fields stack, then thatelement->dec_count() is called.
+/*! Returns 1 if item is removed, else 0.
  */
 int StyleDef::pop(int fieldindex)
 {
 	if (!fields || !fields->n || fieldindex<0 || fieldindex>=fields->n) return 0;
-	return fields->remove(fieldindex);
+	StyleDef *d=fields->pop(fieldindex);
+	if (!d) return 0;
+	d->dec_count();
+	return 1;
 }
 
 

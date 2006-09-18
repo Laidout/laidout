@@ -24,6 +24,7 @@
 #include "palettes.h"
 
 #include <lax/laxutils.h>
+#include <lax/filedialog.h>
 
 #include <X11/cursorfont.h>
 
@@ -555,7 +556,8 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (!te) return 1;
 		ViewWindow *view;
 		SpreadEditor *s;
-		 
+		
+		 // Relay docTreeChange to each pane 
 		int yes=0;
 		for (int c=0; c<windows.n; c++) {
 			view=dynamic_cast<ViewWindow *>(windows.e[c]->win);
@@ -565,14 +567,25 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		 	 //construct events for the panes
 			if (yes){
 				edata=new TreeChangeEvent();
-				edata=te;
+				*edata=*te;
 				edata->send_towindow=windows.e[c]->win->window;
 				app->SendMessage(edata);
 				DBG cout <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
 				yes=0;
 			}
 		}
-		delete te;
+		delete data;
+		return 0;
+	} else if (!strcmp(mes,"open document")) {
+		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
+		if (!s || !s->n) return 1;
+
+		for (int c=0; c<s->n; c++) {
+			if (!laidout->NewDocument(s->strs[c])) {
+				DBG cout <<"*** fail to open "<<s->strs[c]<<endl;
+			}
+		}
+		delete data;
 		return 0;
 	}
 	return 1;
@@ -792,6 +805,12 @@ int HeadWindow::CharInput(unsigned int ch,unsigned int state)
 		XUngrabPointer(app->dpy, CurrentTime);
 		needtodraw=1;
 		return 0;
+	} else if (ch=='o' && (state&LAX_STATE_MASK)==ControlMask) {
+		app->rundialog(new FileDialog(NULL,"Open Document",
+					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					0,0,500,500,0, window,"open document"));
+		return 0;
+		
 	}
 	return SplitWindow::CharInput(ch,state);
 }

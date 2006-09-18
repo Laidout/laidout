@@ -19,6 +19,7 @@
 #include <lax/interfaces/fillstyle.h>
 #include <lax/transformmath.h>
 #include <lax/strsliderpopup.h>
+#include <lax/sliderpopup.h>
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/imagepatchinterface.h>
 #include <lax/filedialog.h>
@@ -2265,8 +2266,15 @@ int ViewWindow::init()
 	IconButton *ibut;
 	
 	 // tool section
+	 //*** clean me! sampling diff methods of tool selector
+	SliderPopup *toolselector;
+	last=toolselector=new SliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, 
+			NULL,window,"viewtoolselector",
+			NULL,0);
+	
 	const char *str;
 	char *nstr,*tstr;
+	LaxImage *img;
 	for (int c=0; c<tools.n; c++) {
 		 // ***this should be standardized a little to have the icon stored with
 		 // the interface.
@@ -2280,23 +2288,24 @@ int ViewWindow::init()
 		appendstr(nstr,"/");
 		appendstr(nstr,tstr);
 		appendstr(nstr,".png");
-		last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
-				tools.e[c]->id,nstr,tstr);
+		img=load_image(nstr);
+		//last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
+		//		tools.e[c]->id,nstr,tstr);
 		appendstr(tstr," Tool");
-		ibut->tooltip(tstr);
-		AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);	
+		
+		//ibut->tooltip(tstr);
+		//ibut->SetIcon(img); //does not call inc_count()
+		//ibut->WrapToExtent(3);
+		//AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);	
+		
+		toolselector->AddItem(tstr,img,tools.e[c]->id); //does not call inc_count()
+		//if (img) img->dec_count();
+		
 		delete[] tstr;
 		delete[] nstr;
 	}
-//	-----
-//	StrSliderPopup *toolselector;
-//	toolselector=new StrSliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, NULL,window,"viewtoolselector");
-//	for (int c=0; c<tools.n; c++) {
-//		toolselector->AddItem(tools.e[c]->whattype(),tools.e[c]->id);
-//		DBG cout <<"make tool selector, "<<tools.e[c]->whattype()<<" "<<c<<": id="<<tools.e[c]->id<<endl;
-//	}
-//	toolselector->WrapWidth();
-//	AddWin(toolselector);
+	toolselector->WrapToExtent();
+	AddWin(toolselector);
 	
 	 //----- Page Flipper
 	last=pagenumber=new PageFlipper(doc,this,"page number", 
@@ -2754,7 +2763,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.blue=e->data.l[3];
 		linestyle.alpha=255;//***
 		linestyle.color=app->rgbcolor(linestyle.red,linestyle.green,linestyle.blue);
-		colorbox->Set(linestyle.red,linestyle.green,linestyle.blue);
+		colorbox->Set(linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
 		char blah[100];
 		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
 		mesbar->SetText(blah);
@@ -2845,7 +2854,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"viewtoolselector")) {
 		DBG cout <<"***** viewtoolselector change to id:"<<e->data.l[0]<<endl;
-		SelectTool(e->data.l[1]);
+		SelectTool(e->data.l[0]);
 		return 0;
 	} else if (!strcmp(mes,"newViewType")) {
 		 // must update labels have Spread [2-3]: 2

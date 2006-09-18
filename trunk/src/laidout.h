@@ -40,6 +40,14 @@ enum TreeChangeType {
 		TreeObjectAdded
 	};
 
+enum PreviewImageStyle {
+		Preview_None,
+		Preview_Temporary,
+		Preview_ProjectDir,
+		Preview_SameDir
+	};
+
+
 class TreeChangeEvent : public Laxkit::EventData
 {
  public:
@@ -63,6 +71,12 @@ class LaidoutApp : public Laxkit::anXApp
 	Laxkit::anXWindow *lastview;
 
 	unsigned long curcolor;
+	PreviewImageStyle preview_images;
+	int max_preview_length;
+	char *defaultpaper;
+	char *palette_dir;
+	char *icon_dir;
+	char *temp_dir;
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
