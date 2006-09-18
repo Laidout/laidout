@@ -70,6 +70,9 @@ lax:
 laxinterface:
 	cd $(LAXIDIR) && $(MAKE)
 
+test: lax laxinterface stylewindow.o  styles.o stylemanager.o test.o
+	$(LD) $(LDFLAGS) test.o stylewindow.o styles.o stylemanager.o -llaxinterfaces -llaxkit -o $@
+
 docs:
 	cd ../docs && doxygen 
 

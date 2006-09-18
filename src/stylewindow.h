@@ -17,9 +17,26 @@
 #define STYLEWINDOW_H
 
 #include "laidout.h"
+#include <lax/rowframe.h>
 
 
+class GenericStyleDialog : public Laxkit::RowFrame
+{
+ protected:
+	Style *style;
+	StyleDef *def;
+	anXWindow *last;
+ public:
+	GenericStyleDialog(Style *nstyle,anXWindow *owner);
+	GenericStyleDialog(StyleDef *nsd,anXWindow *owner);
+	virtual ~GenericStyleDialog();
+	virtual int init();
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual void MakeControls(const char *startext,StyleDef *sd);
+	virtual int CharInput(unsigned int ch,unsigned int state);
+};
 
 
 
 #endif
+

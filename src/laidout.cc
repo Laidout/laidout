@@ -40,6 +40,8 @@
 #include "stylemanager.h"
 #include <lax/lists.cc>
 
+#include <sys/stat.h>
+#include <cstdio>
 
 StyleManager stylemanager;
 
@@ -132,6 +134,9 @@ void print_usage()
  * of the various classes. In most cases, this would not be reasonable, as you might have a single class
  * that provides more than one type of behavior, like having a default BoldStyle and a default ItalicStyle,
  * but both might be instances of the same class...
+ *
+ * \todo When Laxkit::FileDialog is more fully developed, palette_dir should be more
+ *   like palette_path, and the paths beyound the first dir would be bookmarks.
  */
 /*! \var Laxkit::PtrStack<Laxkit::anInterface> LaidoutApp::interfacepool
  * \ingroup pools
@@ -191,6 +196,14 @@ LaidoutApp::LaidoutApp() : anXApp()
 	curdoc=NULL;
 	tooltips=1000;
 
+	 // laidoutrc defaults
+	defaultpaper=NULL;
+	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
+	icon_dir=NULL;
+	temp_dir=NULL;
+	max_preview_length=200;
+	preview_images=Preview_SameDir;
+
 //	MenuInfo *menu=new MenuInfo("Main Menu");
 //	 menu->AddItem("File",1);
 //	 menu->SubMenu("File");
@@ -231,6 +244,12 @@ LaidoutApp::~LaidoutApp()
 //	PathInterface::basepathops.flush();
 	if (project) delete project;
 	if (config_dir) delete[] config_dir;
+	
+	if (defaultpaper) delete[] defaultpaper;
+	if (palette_dir) delete[] palette_dir;
+	if (icon_dir) delete[] icon_dir;
+	if (temp_dir) delete[] temp_dir;
+	
 }
 
 //! Init pools, parse args, create a main control window.
@@ -326,7 +345,8 @@ int LaidoutApp::createlaidoutrc()
 	 //   	icons/
 	 //   	palettes/
 	 //   	templates/
-	 //   	         /default
+	 //   	templates/default
+	 //   	impositions/
 	 // if no ~/.laidout/(version)/laidoutrc exists, possibly import
 	 //   from other installed laidout versions
 	 //   otherwise perhaps touch laidoutrc, and put in a much
@@ -335,15 +355,28 @@ int LaidoutApp::createlaidoutrc()
 	int t=check_dirs(config_dir,1);
 	if (t==-1) { // dirs were ok
 		 // create "~/.laidout/(version)/laidoutrc"
-		char configfile[strlen(config_dir)+20];
-		sprintf(configfile,"%s/laidoutrc",config_dir);
-		FILE *f=fopen(configfile,"w");
+		char path[strlen(config_dir)+20];
+		sprintf(path,"%s/laidoutrc",config_dir);
+		FILE *f=fopen(path,"w");
 		if (f) {
 			fwrite("# Laidout global configuration options go in here.\n",1,51,f);
 			fwrite("# An explanation of what goes in here should have \n",1,51,f);
-			fwrite("# come with Laidout.",1,20,f);
+			fwrite("# come with Laidout.\n",1,21,f);
+			fwrite("\n# The maximum dimension for preview images\n#maxPreviewLength 200\n",1,66,f);
+			fwrite("\n#usePreviewImages no\n",1,22,f);
+			fwrite("#usePreviewImages sameDir\n",1,26,f);
+			fwrite("#usePreviewImages temporary\n",1,28,f);
+			fwrite("#usePreviewImages projectDir\n",1,29,f);
+			fwrite("\n#palette_dir /usr/share/gimp/2.0/palettes\n",1,42,f);
 			fclose(f);
 		}
+		 // create the other relevant directories
+		sprintf(path,"%s/templates",config_dir);
+		mkdir(path,0755);
+		sprintf(path,"%s/impositions",config_dir);
+		mkdir(path,0755);
+		sprintf(path,"%s/palettes",config_dir);
+		mkdir(path,0755);
 	} else return -1;
 	return 0;
 }
@@ -376,17 +409,28 @@ int LaidoutApp::readinLaidoutDefaults()
 			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
 		} else if (!strcmp(name,"defaultstartdoc")) {
 			cout <<"***imp me! readinlaidoutrc: defaultdoc"<<endl;
+			//default to config_dir/templates/default
 		} else if (!strcmp(name,"defaultpapersize")) {
-			cout <<"***imp me! readinlaidoutrc: defaultpapersize"<<endl;
+			makestr(defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc
 		} else if (!strcmp(name,"template")) {
-			//*** for multiple startup templates,
+			cout <<"***imp me! readinlaidoutrc: template"<<endl;
+			//*** for multiple startup templates not found in config_dir/templates,
+			// template nickname /file/path
 			// > laidout --template consumptionIssue
 			// > laidout --template 1paperPamphlet
 		} else if (!strcmp(name,"palette_dir")) {
-			//****
+			if (file_exists(value,1,NULL)==S_IFDIR) makestr(palette_dir,value);
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
 			//				or projectdir/.laidouttemp/previews
+		} else if (!strcmp(name,"usePreviewImages")) {
+			if (value==NULL || !strcmp(value,"sameDir") || !strcmp(value,"yes")) {
+				preview_images=Preview_SameDir;
+			} else if (!strcmp(value,"temporary")) preview_images=Preview_Temporary;
+			else if (!strcmp(value,"projectDir")) preview_images=Preview_ProjectDir;
+			else preview_images=Preview_None;
+		} else if (!strcmp(name,"maxPreviewLength")) {
+			IntAttribute(value,&max_preview_length);
 		}
 	}
 	
