@@ -35,17 +35,31 @@ some of the burden of the 'meat' of the program, but anyway...
 COMPILING
 ---------
 
+There is no 'configure' at the moment, and you must manually configure 
+some things.
+
+NOTE about icons: These require Inkscape (http://www.inkscape.org)
+to generate icons from src/icons/icons.svg, and python to run
+the script that calls Inkscape. But, Laidout will work fine without
+the icons. You must manually adjust src/icons.h to indicate the
+actual directory that the icons will be installed in. I know this
+is really ugly. It will be cleared up when I get around to 
+autoconfiscating Laidout or something.
+See src/icons/makeimages.py for more.
+
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
 available. For the Laidout development version, you will need the
 Laxkit development version from the same date. Laidout expects 
 Imlib2 support to have been compiled into the Laxkit (which is the 
-default). Make sure that Laxkit headers are in the place specified 
-by the LAXDIR variable in the file Makefile-toinclude, then type:
+default). You can change where Laidout will get installed by changing
+the PREFIX variable in the Makefile in this directory.
+Make sure that Laxkit headers are in the place specified 
+by the LAXDIR variable in the file Makefile-toinclude.
 
 make
 make install
 
-There is no 'configure' at the moment. 'make install' will put
+'make install' will put
 laidout-(whatever version) in (usually) /usr/local/bin, and make a
 symbolic link /usr/local/bin/laidout point to it.
 
@@ -56,7 +70,8 @@ if you want to compile only Laidout.
 
 After successfully making, the program 'laidout' in the src
 directory is the thing you want. It does not depend on any other
-files currently, thus it can be run from wherever it is located.
+files currently (except icons, but they are not needed to actually run),
+thus it can be run from wherever it is located.
 
 Running the program might spit out copious amounts of debugging
 info. If this is the case, you can turn this off with 'make hidegarbage'

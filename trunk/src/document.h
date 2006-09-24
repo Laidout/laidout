@@ -115,6 +115,8 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 
 		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return NULL; }
+	virtual int GroupItems(FieldPlace whatlevel, int *items);
+	virtual int UnGroup(FieldPlace which);
 
 //	int SaveAs(char *newfile,int format=1); // format: binary, xml, pdata
 //	int New();

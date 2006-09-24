@@ -44,8 +44,9 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) printing impositions
-	$(LD) $(LDFLAGS) $(objs) printing/*.o impositions/*.o -llaxinterfaces -llaxkit -o $@
+laidout: lax laxinterface $(objs) dataobjects printing impositions 
+	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
+			-llaxinterfaces -llaxkit -o $@
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
@@ -56,13 +57,15 @@ hidegarbage:
 	./hidegarbage *.cc
 	cd printing && $(MAKE) hidegarbage
 	cd impositions && $(MAKE) hidegarbage
+	cd dataobjects && $(MAKE) hidegarbage
 
 # This changes in *.cc all occurrences of 
 # '(whitespace)//DBG' to '(same ws)DBG'.
 unhidegarbage:
 	./hidegarbage -0 *.cc
-	cd printing && $(MAKE) hidegarbage
-	cd impositions && $(MAKE) hidegarbage
+	cd printing && $(MAKE) unhidegarbage
+	cd impositions && $(MAKE) unhidegarbage
+	cd dataobjects && $(MAKE) unhidegarbage
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
@@ -80,6 +83,7 @@ depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
 	cd printing && $(MAKE) depends
 	cd impositions && $(MAKE) depends
+	cd dataobjects && $(MAKE) depends
 
 include makedepend
 
@@ -89,9 +93,13 @@ printing:
 impositions:
 	cd impositions && $(MAKE)
 
-.PHONY: clean lax docs printing impositions hidegarbage unhidegarbage
+dataobjects: 
+	cd dataobjects && $(MAKE)
+
+.PHONY: clean lax docs printing impositions hidegarbage unhidegarbage dataobjects
 clean:
 	rm -f laidout *.o
 	cd printing && $(MAKE) clean
 	cd impositions && $(MAKE) clean
+	cd dataobjects && $(MAKE) clean
 	

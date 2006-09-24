@@ -28,6 +28,9 @@
 class FieldPlace : protected Laxkit::NumStack<int>
 {
  public:
+	FieldPlace() {}
+	FieldPlace(const FieldPlace &place);
+	virtual ~FieldPlace() {}
 	virtual int n() const { return Laxkit::NumStack<int>::n; }
 	virtual int e(int i) const { if (i>=0 && i<Laxkit::NumStack<int>::n) 
 		return Laxkit::NumStack<int>::e[i];  return -1; }
@@ -35,7 +38,6 @@ class FieldPlace : protected Laxkit::NumStack<int>
 		{ return Laxkit::NumStack<int>::e[i]=val; }  return -1; }
 	virtual int operator==(const FieldPlace &place) const;
 	virtual FieldPlace &operator=(const FieldPlace &place);
-	virtual ~FieldPlace() {}
 	virtual int push(int nd,int where=-1) { return Laxkit::NumStack<int>::push(nd,where); }
 	virtual int pop(int which=-1) { return Laxkit::NumStack<int>::pop(which); }
 	virtual void flush() { Laxkit::NumStack<int>::flush(); }

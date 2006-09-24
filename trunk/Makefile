@@ -23,6 +23,7 @@ SHAREDIR=$(PREFIX)/share
  ### already, then uncomment the line with the '--backup=t' and comment out the other.
 #INSTALL=install -D --backup=t 
 INSTALL=install -D
+
 INSTALLDIR=install -d
 
 
@@ -68,6 +69,7 @@ touchdepends:
 	touch src/makedepend
 	touch src/impositions/makedepend
 	touch src/printing/makedepend
+	touch src/dataobjects/makedepend
 
 .PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:
