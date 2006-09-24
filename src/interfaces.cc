@@ -25,7 +25,7 @@
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/bezpathoperator.h>
-#include <lax/interfaces/rectinterface.h>
+#include "dataobjects/groupinterface.h"
 
 
 using namespace Laxkit;
@@ -61,7 +61,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(gi,1);
 	
 	existingpool->push(new ColorPatchInterface(id++,NULL),1);
-	existingpool->push(new RectInterface(id++,NULL),1);
+	existingpool->push(new GroupInterface(id++,NULL),1);
 	
 	//existingpool->push(new Interface(*****),1);
 	

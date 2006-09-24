@@ -7,30 +7,32 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.05
 ------------
-       Start to do serious optimizing for docs with a billion big images in them
+       Be able to work with preview images, rather than hundreds of 15M tiffs while working.
 (done) Use a ~/.laidout/0.05/laidoutrc ?
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
        perhaps have image open window? drag and drop in images? that would be AWESOME
-       ObjectInterface for selecting and resizing multiple stuff
+(done) ObjectInterface for selecting and resizing multiple stuff
        parent/child nesting and interface for that: nesting, and grouping
-       Have imagepatch be a transform you can apply to any image
 (done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
-       autoconfiscate
+       autoconfiscate or cmake
+       Finish implementing project based setup, especially when loading and saving
+       Should be able to 'Open Document' without restarting Laidout!!
+       Find and fix the damn memory hole
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-       Image and Color patches should allow transparency
-       Finish implementing project based setup, especially when loading and saving
-       Make the button box actually function
-       Find and fix the damn memory hole
-       Linear guides
-       
+       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips
+
        
 
 VERSION 0.1
 -----------
        Of course, need copious testing by people who are not me.
+       Image and Color patches, gradients, etc should allow transparency
+       Make the button box actually function
+       Have imagepatch be a transform you can apply to any image
        plus configurable icon panel/menu system
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
+       Linear guides
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Parent masking of children
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
@@ -43,7 +45,7 @@ VERSION 0.1
        Fully configurable shortcuts
        This means some sort of basic scripting infrastructure,
        allow for easy method for runaround area determination
-       Full color management implemented, with up to 16 bit color
+       Full color management implemented, with up to 16 bit per channel color
        undo/redo
        a real PrintDialog
        Generic style edit window
@@ -54,18 +56,20 @@ VERSION 0.1
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
-       PDF out, and/or use ghostscripts alleged ability to do transparent images in postscript files
+       PDF in/out, and/or use ghostscripts alleged ability to do transparent images in postscript files
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
-       Improve and/or make new logo for about
+       Improve and/or make new logo and splash image
        Vx (aka uberconvertor) support?
        have an image in the little pan popups
        Have special function to output to file a pseudocode mockup of the file format
+       Combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
+       Be able to have paper objects in addition to the normal page objects (ie master page numbers)
 
 
 VERSION 0.2
@@ -73,7 +77,6 @@ VERSION 0.2
 Bezier color patch freeform, rather than just grid.
 The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
-Combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
 import/export as possible: passepartout (out is partially done)?,scribus?,svg,tiff,png,etc
 Freehand drawing with tablet support
 Somehow be able to do foldouts from within any page of an imposition
@@ -85,10 +88,10 @@ ImageMagick plugin or integration: benefits: a gazillion file formats, including
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost sort of things
 Would be nice to be able to handle lilypond sort of things
-Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from xcf
+Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from/to xcf
+Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
 Story editor
 Internal generic impositioner for arbitrary .ps files
-Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
 Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend
 

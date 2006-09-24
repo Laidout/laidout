@@ -387,9 +387,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="4"
-     inkscape:cx="430.39772"
-     inkscape:cy="515.96157"
+     inkscape:zoom="1"
+     inkscape:cx="455.39772"
+     inkscape:cy="663.96157"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1278"
@@ -1015,9 +1015,9 @@
        ry="0.025489558" />
     <path
        sodipodi:nodetypes="cccccccc"
-       id="path1683"
+       id="Object"
        d="M 164.85029,40.70711 L 153.97529,24.20711 L 149.22529,33.20711 L 144.61284,7.44455 L 166.35029,17.20711 L 158.22529,19.83211 L 171.35029,33.20711 L 164.85029,40.70711 z "
-       style="opacity:1;fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:1.79999995;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+       style="opacity:1;fill:black;fill-opacity:1;stroke:white;stroke-width:1.79999995;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     <path
        style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999995;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        d="M 208.85029,39.70711 L 197.97529,23.20711 L 193.22529,32.20711 L 188.61284,6.44455 L 210.35029,16.20711 L 202.22529,18.83211 L 215.35029,32.20711 L 208.85029,39.70711 z "

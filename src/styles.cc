@@ -96,9 +96,18 @@ const char *element_TypeNames[11]={
  *
  * FieldMask is stack of these objects.
  */
-//class FieldPlace : protected Laxkit::NumStack<int>
-//{
 
+
+FieldPlace::FieldPlace(const FieldPlace &place)
+{
+	if (place.NumStack<int>::e) {
+		NumStack<int>::n=place.NumStack<int>::n;
+		max=NumStack<int>::n+delta;
+		NumStack<int>::e=new int[max];
+		memcpy(NumStack<int>::e,place.NumStack<int>::e,NumStack<int>::n*sizeof(int));
+	}
+}
+	
 //! For debugging, dumps to stdout.
 void FieldPlace::out(const char *str)
 {

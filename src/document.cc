@@ -787,3 +787,17 @@ Page *Document::Curpage()
 	return pages.e[curpage];
 }
 
+//! Put the -1 terminated list of items at whatlevel in their own group.
+int Document::GroupItems(FieldPlace whatlevel, int *items)
+{
+	cout <<"*** imp Document::GroupItems!!"<<endl;
+	return 0;
+}
+
+//! Replace the Group object found at which with all its contents.
+int Document::UnGroup(FieldPlace which)
+{
+	cout <<"*** imp Document::UnGroup!!"<<endl;
+	return 0;
+}
+

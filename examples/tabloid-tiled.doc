@@ -1,10 +1,17 @@
-#Laidout 0.03.1 Document
-saveas /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
+#Laidout 0.04.1 Document
+saveas /home/tom/p/sourceforge/laidout/examples/tabloid-tiled.doc
 docstyle
   imposition Booklet
     creep 0
     bodycolor 0x7fffffff
     covercolor 0x7fffffff
+    defaultpagestyler
+      marginl 0
+      marginr 0
+      margint 0
+      marginb 0
+      width 5.5
+      height 5.666666667
     insetl 0
     insetr 0
     insett 0
@@ -13,6 +20,10 @@ docstyle
     tiley 3
     numpages 4
     defaultpagestyle
+      marginl 0
+      marginr 0
+      margint 0
+      marginb 0
       width 5.5
       height 5.666666667
     defaultpaperstyle
@@ -22,7 +33,12 @@ docstyle
       dpi 360
       portrait
 page 0
-  pagestyle PageStyle
+  labeltype 0
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
     width 5.5
     height 5.666666667
   layer 0
@@ -38,12 +54,17 @@ page 0
       radial
       spot #0
         t 0
-        rgba 0 0 255 4284756011
+        rgba 0 0 255 2147483647
       spot #1
         t 1.06150048
-        rgba 255 0 0 4282918162
+        rgba 255 0 0 2147483647
 page 1
-  pagestyle PageStyle
+  labeltype 1
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
     width 5.5
     height 5.666666667
   layer 0
@@ -64,7 +85,12 @@ page 1
         t 0.9738371281
         rgba 255 255 0 0
 page 2
-  pagestyle PageStyle
+  labeltype 2
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
     width 5.5
     height 5.666666667
   layer 0
@@ -85,7 +111,12 @@ page 2
         t 1
         rgba 255 153 0 1845771070
 page 3
-  pagestyle PageStyle
+  labeltype 3
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
     width 5.5
     height 5.666666667
   layer 0
@@ -106,15 +137,25 @@ page 3
         t 0.9949912868
         rgba 16 38 0 1845771070
 window
-  xywh 4 4 555 688
+  xywh 256 260 516 580
   pane
-    xywh 4 502 547 182
+    xyxy 0 0 516 436
+    window ViewWindow
+      document /home/tom/p/sourceforge/laidout/examples/tabloid-tiled.doc
+      pagelayout
+      spread 1
+      page 1
+      matrix 38.67768595 0 0 -38.67768595 22 257
+      xbounds -11 22
+      ybounds -17 34
+  pane
+    xyxy 0 436 516 580
     window SpreadEditor
-      document /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
-      centerlabels 1
+      document /home/tom/p/sourceforge/laidout/examples/tabloid-tiled.doc
+      centerlabels 3
       drawthumbnails 1
       arrangetype 4
-      matrix 16.32231405 0 0 -16.32231405 22 116
+      matrix 15.0802139 0 0 -15.0802139 47 89
       spread
         index 0
         matrix 1 0 0 1 -5.5 0
@@ -124,10 +165,3 @@ window
       spread
         index 3
         matrix 1 0 0 1 20.9 0
-  pane
-    xywh 4 4 547 494
-    window ViewWindow
-      document /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
-      singlelayout
-      page 0
-      matrix 57.59358289 0 0 -57.59358289 93.03478924 341.2884795
