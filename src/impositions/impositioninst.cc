@@ -87,12 +87,15 @@ Singles::Singles() : Imposition("Singles")
 	else {
 		styledef=makeStyleDef();
 		if (styledef) stylemanager.AddStyleDef(styledef);
+		 // so this new styledef should have a count of 2. The destructor removes
+		 // 1 count, and the stylemanager should remove the other
 	}
 }
 
 //! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
+	DBG cout <<"--Singles destructor"<<endl;
 	pagestyle->dec_count();
 }
 
@@ -259,7 +262,9 @@ Style *NewSingles(StyleDef *def)
 /*  Required by Style, this defines the various names for fields relevant to Singles,
  *  basically just the inset[lrtb], plus the standard Imposition npages and npapers.
  *  Two of the fields would be the pagestyle and paperstyle. They have their own
- *  styledefs stored in the style def manager *** whatever and wherever that is!!!
+ *  styledefs stored in a StyleManager.
+ *
+ *  Returns a new StyleDef with a count of 1.
  */
 StyleDef *Singles::makeStyleDef()
 {
@@ -561,6 +566,7 @@ DoubleSidedSingles::DoubleSidedSingles()
 //! Calls pagestyler->dec_count().
 DoubleSidedSingles::~DoubleSidedSingles()
 {
+	DBG cout <<"--Double Sided Singles Singles destructor"<<endl;
 	pagestyler->dec_count();
 }
 

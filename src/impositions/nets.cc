@@ -176,6 +176,9 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)
  */
 /*! \var int *NetFace::facelink
  * \brief List of indices into Net::faces for which edges connect to which faces.
+ *
+ * That is, connected by virtue of Net::pointmap, not by which faces touch in the
+ * flattened net.
  */
 /*! \var int NetFace::aligno
  * An index into the face's point list.
@@ -491,8 +494,8 @@ Net *Net::duplicate()
  * matrix 1 0 0 1 0 0  # optional extra matrix to map this net to a page
  * points \
  *    1 1   to 0  # 0,  the optional 'to number' is map to whatever, goes in pointmap
- *    -1 1  to 1  # 1   it can be used to point to original 3-d points, for instance
- *    -1 -1 to 2  # 2
+ *    -1 1  to 1  # 1   it can be used to point to original 3-d points, for instance.
+ *    -1 -1 to 2  # 2   pointmap is also used to build facelink in NetFace
  *    1 -1  to 3  # 3
  *    
  *  # All the lines to draw when laying out on the page. Numbers are
@@ -617,7 +620,7 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				t=e;
 				while (isspace(*t) && *t!='\n') t++;
 				if (t[0]=='t' && t[1]=='o' && isspace(t[2])) {
-					pm=strtol(t,&e,10);
+					pm=strtol(t+2,&e,10);
 					if (e==t) break; // broken file
 					t=e;
 				}
@@ -657,8 +660,12 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	DBG cout <<"----------------end Net dump:-------------"<<endl;
 }
 
-//! Return a transformation basis to face which. Includes this->m() if total!=0.
-/*! If m==NULL, then return a new double[6]. 
+//! Return a transformation basis to face which.
+/*! If total!=0, then includes this->m(). Thus the transform brings face points
+ * to the containing coordinates of the net. If total==0, the the returned transform
+ * only maps face points to net units.
+ * 
+ * If m==NULL, then return a new double[6]. 
  * If that face is not available, then return NULL.
  *
  * Will construct a basis such that the xaxis goes from NetFace::aligno

@@ -559,7 +559,7 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 	if (extends) {
 		extendsdef=stylemanager.FindDef(extends); // must look up extends and inc_count()
 		if (extendsdef) extendsdef->inc_count();
-	} extendsdef=NULL;
+	} else extendsdef=NULL;
 	
 	makestr(name,nname);
 	makestr(Name,nName);
@@ -576,6 +576,8 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 //! Delete the various strings, and styledef->dec_count().
 StyleDef::~StyleDef()
 {
+	DBG cout <<"StyleDef \""<<name<<"\" destructor"<<endl;
+	
 	if (extends)      delete[] extends;
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
@@ -584,11 +586,17 @@ StyleDef::~StyleDef()
 	if (range)        delete[] range;
 	if (defaultvalue) delete[] defaultvalue;
 	
-	if (extendsdef) extendsdef->dec_count();
+	if (extendsdef) {
+		DBG cout <<" extended: "<<extendsdef->name<<endl;
+		extendsdef->dec_count();
+	} else {
+		DBG cout <<"------------no extends"<<endl;
+	}
 
 	if (fields) {
 		DBG cout <<"---deleting styledef fields:"<<endl;
 		for (int c=0; c<fields->n; c++) {
+			DBG cout <<"----f number "<<c<<endl;
 			fields->e[c]->dec_count();
 		}
 		DBG cout <<"---Delete fields stack"<<endl;
@@ -1115,6 +1123,7 @@ Style::Style(StyleDef *sdef,Style *bsdon,const char *nstn)
  */
 Style::~Style()
 {
+	//DBG cout <<"Style \""<<stylename<<"\" destructor"<<endl;
 	if (stylename) delete[] stylename;
 	if (styledef) styledef->dec_count();
 }

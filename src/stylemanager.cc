@@ -16,7 +16,7 @@
 
 
 #include "stylemanager.h"
-#include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 #include <iostream>
 using namespace std;
@@ -45,6 +45,12 @@ typedef Style *(*StyleCreateFunc)(StyleDef *def);
  * \brief Holds style definitions and style instances.
  */
 
+
+StyleManager::StyleManager()
+{}
+
+StyleManager::~StyleManager()
+{}
 
 //! Mainly For debugging at the moment... w&1 defs, w&2 styles...
 /*! In the future, this could be used to automatically dump out a 
@@ -78,19 +84,18 @@ void StyleManager::flush()
  *
  * If it does not exist already, then def->inc_count() is called.
  *
- * If absorb, then the def was just created, and one of its count
- * refers to def. The calling code does not want to worry about that
- * count whether or not the style was taken already. So if the style was
- * taken already, then def->dec_count() is called, which will typically
- * destroy def. If the style is new, then its count will increase by one
- * here, which refers to the stylemanager reference.
+ * It is assumed that def has one count referring to the pointer
+ * used to call the function with. 
+ * 
+ * If absorb, then the calling code does not want to worry about def
+ * anymore, whether or not the StyleDef is in the manager or net. So if the
+ * def was there already, def->dec_count() is called. If the def was not
+ * in the manager, then that initial 1 count will become the stylemanager's
+ * reference.
  *
  * If absorb==0, the initial tick for the def pointer remains whether or
- * not the style existed already.
- * 
- * \todo decide whether StyleManager gets its own count on the def,
- *   or if it puts a special deleteMe in the def to tell manager to
- *   remove all reference to it..
+ * not the styledef existed already. The count of def is increased only when
+ * the def was not already in the manager.
  */
 int StyleManager::AddStyleDef(StyleDef *def, int absorb)
 {
@@ -98,12 +103,12 @@ int StyleManager::AddStyleDef(StyleDef *def, int absorb)
 	for (c=0; c<styledefs.n; c++) {
 		if (!strcmp(def->name,styledefs.e[c]->name)) {
 			if (absorb) def->dec_count();
-			return 1;
+			return 1; // def was already there
 		}
 	}
 	//def->deleteMe=RemoveStyleDefFromManager;
-	styledefs.push(def,0);
-	if (!absorb) def->inc_count();
+	styledefs.push(def,3); // this incs count
+	if (absorb) def->dec_count();
 	return 0;
 }
 

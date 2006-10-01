@@ -203,6 +203,7 @@ LaidoutApp::LaidoutApp() : anXApp()
 	temp_dir=NULL;
 	max_preview_length=200;
 	preview_images=Preview_SameDir;
+	//preview_images=Preview_None;
 
 //	MenuInfo *menu=new MenuInfo("Main Menu");
 //	 menu->AddItem("File",1);
@@ -296,6 +297,8 @@ int LaidoutApp::init(int argc,char **argv)
 	GetBuiltinInterfaces(&interfacepool);
 
 	 // manually adding a couple of pagestyles
+	 // *** why?
+	DBG cout <<"---manually adding a couple of pagestyles"<<endl;
 	PageStyle *ps=new PageStyle;
 	StyleDef *sd=ps->makeStyleDef();
 	stylemanager.AddStyleDef(sd,1);
@@ -423,6 +426,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
 			//				or projectdir/.laidouttemp/previews
+			cout <<" *** imp temp_dir in laidoutrc"<<endl;
 		} else if (!strcmp(name,"usePreviewImages")) {
 			if (value==NULL || !strcmp(value,"sameDir") || !strcmp(value,"yes")) {
 				preview_images=Preview_SameDir;

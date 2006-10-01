@@ -247,7 +247,6 @@ int VObjContext::isequal(const ObjectContext *oc)
 /*! \var int LaidoutViewport::searchmode
  * \brief 0==none, 1==FindObject, 2==SelectObject(prev/next)
  */
-//--------------------------------
 
 
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
@@ -1245,6 +1244,11 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 	
 	DBG if (curobj.obj) cout <<"setCurobj: "<<curobj.obj->object_id<<" ("<<curobj.obj->whattype()<<") ";
 	DBG curobj.context.out("setCurobj");//debugging
+
+	if (!lfirsttime) {
+		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
+		if (viewer) viewer->updateContext();
+	}
 }
 
 //! Strip down curobj so that it is at most a layer or limbo. Calls dec_count() on the object.
@@ -1278,11 +1282,31 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 	return ViewportWindow::MouseMove(x,y,state);
 }
 
+//! Set up the viewport context to oc.
+int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
+{
+	DBG cout <<"ChangeContext to supplied oc"<<endl;
+	VObjContext *loc=dynamic_cast<VObjContext *>(oc);
+	if (!loc) return 0;
+	if (loc->obj) {
+		 // strip down obj, we want only the plain context
+		VObjContext noc;
+		noc=*loc;
+		noc.obj=NULL;
+		noc.context.pop();
+		setCurobj(&noc);
+	} else setCurobj(loc);
+	ClearSearch(); //these must be called after setCurobj() since
+	clearCurobj(); //  oc is likely a search context
+	return 1;
+}
+	
 //! Call this to update the context for screen coordinate (x,y).
 /*! This sets curobj to be at layer level of curobj if possible, otherwise
  * to the top level of whatever page is under screen coordinate (x,y).
  *
  * Clears old curobj (via clearCurobj()) and sets oc to point to the new curobj.
+ * The previous contents of oc are ignored.
  *
  * Return 0 for context changed, nonzero for not.
  */
@@ -1329,7 +1353,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
  * of d is neither limbo, nor a layer of a page, then nothing special is done.
  *
  * The object changes parents when it is no longer contained in its old parent, as
- * long as the parent is limbo or a page.
+ * long as the parent is limbo or a layer of a page.
  * If the parent is limbo, then any partial containment transfers the object to 
  * a page. Conversely, if the parent is a layer on a page, the object has to become
  * totally uncontained by the layer for it to enter limbo or another page.
@@ -1349,11 +1373,21 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	DBG cout <<"ObjectMove "<<d->object_id<<": ";
 	DBG curobj.context.out(NULL);
 	
-	if (!d || d!=curobj.obj) return 0;
+	if (!d) return 0;
+	if (d!=curobj.obj) {
+		VObjContext voc;
+		voc.obj=d;
+		if (locateObject(d,voc.context)<=0) return 0;
+		setCurobj(&voc); //incs count 1 for the curobj ref
+	}
 	if (curobj.spread()==0 && curobj.context.n()>2) return 0;
 	if (curobj.spread()==1 && curobj.context.n()>4) return 0;
 	if (curobj.spread()!=0 && curobj.spread()!=1) return 0;
-	if (!validContext(&curobj)) return 0;
+	if (!validContext(&curobj)) {
+		DBG cout <<"  invalid context, abort move"<<endl;
+		return 0;
+	}
+	
 	DoubleBBox bbox,bbox2;
 	SomeData *outline;
 	int c,i=-1;
@@ -2019,28 +2053,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
  * hack at the moment.. must work out that useful way of creating windows that I
  * haven't gotten around to coding..
  */
-//class ViewWindow : public Laxkit::ViewerWindow, public LaxFiles::DumpUtility
-//{
-// protected:
-//	void setup();
-//	Laxkit::NumSlider *pagenumber;
-//	Laxkit::LineEdit *loaddir;
-// public:
-//	Project *project;
-//	Document *doc;
-//
-//	ViewWindow(Document *newdoc);
-//	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-//						int xx,int yy,int ww,int hh,int brder,
-//						Document *newdoc);
-//	virtual const char *whattype() { return "ViewWindow"; }
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-//	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
-//	virtual int init();
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//	virtual void updateContext();
-//	virtual void SetParentTitle(const char *str);
-//};
+
 
 //	ViewerWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 //						int xx,int yy,int ww,int hh,int brder,
@@ -2054,6 +2067,9 @@ ViewWindow::ViewWindow(Document *newdoc)
 	project=NULL;
 	pagenumber=NULL;
 	loaddir=NULL;
+	toolselector=NULL;
+	colorbox=NULL;
+	pageclips=NULL;
 	doc=newdoc;
 	setup();
 }
@@ -2066,6 +2082,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 {
 	project=NULL;
 	var1=var2=var3=NULL;
+	toolselector=NULL;
 	pagenumber=NULL;
 	loaddir=NULL;
 	doc=newdoc;
@@ -2267,7 +2284,6 @@ int ViewWindow::init()
 	
 	 // tool section
 	 //*** clean me! sampling diff methods of tool selector
-	SliderPopup *toolselector;
 	last=toolselector=new SliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, 
 			NULL,window,"viewtoolselector",
 			NULL,0);
@@ -2275,11 +2291,13 @@ int ViewWindow::init()
 	const char *str;
 	char *nstr,*tstr;
 	LaxImage *img;
+	int obji=0;
 	for (int c=0; c<tools.n; c++) {
 		 // ***this should be standardized a little to have the icon stored with
 		 // the interface.
 		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
 		str=tools.e[c]->whattype();
+		if (!strcmp(str,"ObjectInterface")) obji=tools.e[c]->id;
 		nstr=newstr(str);
 		tstr=strstr(nstr,"Interface");
 		if (tstr) *tstr='\0';
@@ -2305,6 +2323,7 @@ int ViewWindow::init()
 		delete[] nstr;
 	}
 	toolselector->WrapToExtent();
+	SelectTool(obji);
 	AddWin(toolselector);
 	
 	 //----- Page Flipper
@@ -2385,6 +2404,12 @@ int ViewWindow::init()
 //			iconfile,"Dump in Images");
 //	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
 //	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+
+	sprintf(iconfile,"%s/Open.png",ICON_DIRECTORY);
+	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
+			iconfile,"Open");
+	ibut->tooltip("Open a document from disk");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	sprintf(iconfile,"%s/Save.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
@@ -2730,12 +2755,16 @@ void ViewWindow::SetParentTitle(const char *str)
 void ViewWindow::updateContext()
 {
 	int page=((LaidoutViewport *)viewport)->curobjPage();
-	pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
-	pagenumber->Select(page);
-	pagenumber->NewMax(doc->pages.n-1);
+	if (pagenumber) {
+		pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
+		pagenumber->Select(page);
+		pagenumber->NewMax(doc->pages.n-1);
+	}
 
-	if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
-	else pageclips->State(LAX_OFF);
+	if (pageclips) {
+		if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
+		else pageclips->State(LAX_OFF);
+	}
 }
 
 //! Deal with various indicator/control events
@@ -2916,6 +2945,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			mesbar->SetText(blah);
 		}
 		return 0;
+	} else if (!strcmp(mes,"openDoc")) { 
+		//*** hack right here:
+		((HeadWindow *)win_parent)->CharInput('o',ControlMask);
+		return 0;
 	} else if (!strcmp(mes,"saveDoc")) { 
 		if (strstr(doc->Name(),"untitled")==doc->Name()) { //***or shift-click for saveas??
 			 // launch saveas!!
@@ -2954,6 +2987,13 @@ int ViewWindow::event(XEvent *e)
 {
 	if (e->type==FocusIn) laidout->lastview=this;
 	return ViewerWindow::event(e);
+}
+
+int ViewWindow::SelectTool(int id)
+{
+	int c=ViewerWindow::SelectTool(id);
+	if (toolselector) toolselector->Select(curtool->id);
+	return c;
 }
 
 /*! <pre>

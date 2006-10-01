@@ -19,6 +19,7 @@
 
 #include <lax/interfaces/viewerwindow.h>
 #include <lax/numinputslider.h>
+#include <lax/sliderpopup.h>
 #include <lax/lineedit.h>
 #include <lax/textbutton.h>
 #include <lax/colorbox.h>
@@ -113,6 +114,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 					LaxInterfaces::ObjectContext **oc);
 	virtual void ClearSearch();
 	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
+	virtual int ChangeContext(LaxInterfaces::ObjectContext *oc);
 	
 	virtual const char *SetViewMode(int m,int page);
 	virtual int ViewMode(int *page);
@@ -141,6 +143,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	Laxkit::LineEdit *loaddir;
 	Laxkit::IconButton *pageclips;
 	Laxkit::ColorBox *colorbox;
+	Laxkit::SliderPopup *toolselector;
  public:
 	Project *project;
 	Document *doc;
@@ -156,6 +159,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	virtual int init();
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int SelectTool(int id);
 	virtual void updateContext();
 	virtual void SetParentTitle(const char *str);
 

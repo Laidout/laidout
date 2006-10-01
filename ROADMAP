@@ -7,17 +7,18 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.05
 ------------
-       Be able to work with preview images, rather than hundreds of 15M tiffs while working.
+       Be able to work with preview images, rather than hundreds of 15M tiffs
+(done) Show adjacent pages in Net Singles view (prelude to being able to unwrap shapes any way they can)
 (done) Use a ~/.laidout/0.05/laidoutrc ?
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
        perhaps have image open window? drag and drop in images? that would be AWESOME
 (done) ObjectInterface for selecting and resizing multiple stuff
-       parent/child nesting and interface for that: nesting, and grouping
+       parent/child nesting and interface for that: nesting, and grouping: layer trees
 (done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
        autoconfiscate or cmake
        Finish implementing project based setup, especially when loading and saving
        Should be able to 'Open Document' without restarting Laidout!!
-       Find and fix the damn memory hole
+       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
        from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips
@@ -26,6 +27,8 @@ VERSION 0.05
 
 VERSION 0.1
 -----------
+       When adjusting things with the object tool, must have option to be temporarily a little tranparent
+       group combine properties, like most importantly transparency
        Of course, need copious testing by people who are not me.
        Image and Color patches, gradients, etc should allow transparency
        Make the button box actually function
@@ -40,10 +43,10 @@ VERSION 0.1
        Seriously optimize the whole ImagePatchData stuff
        Have images have any number of various kinds of transforms applied to it
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
-       PathInterface should finally work right, and bez part should have segment move like inkscape
+       PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Basic infrastructure for most things (except text) should be in place.
        Fully configurable shortcuts
-       This means some sort of basic scripting infrastructure,
+       Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,
        allow for easy method for runaround area determination
        Full color management implemented, with up to 16 bit per channel color
        undo/redo

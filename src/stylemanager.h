@@ -16,7 +16,7 @@
 #ifndef STYLEMANAGER_H
 #define STYLEMANAGER_H
 
-#include <lax/lists.h>
+#include <lax/refptrstack.h>
 #include "styles.h"
 
 class StyleManager
@@ -24,8 +24,11 @@ class StyleManager
  protected:
 	int firstuserdef;
  public:
-	Laxkit::PtrStack<StyleDef> styledefs;
-	Laxkit::PtrStack<Style> styles;
+	Laxkit::RefPtrStack<StyleDef> styledefs;
+	Laxkit::RefPtrStack<Style> styles;
+
+	StyleManager();
+	~StyleManager();
 	int AddStyleDef(StyleDef *def,int absorb=0);
 	//void deleteStyle(Style *style);
 	Style *newStyle(const char *styledef);

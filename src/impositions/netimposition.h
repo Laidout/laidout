@@ -38,6 +38,8 @@ class NetImposition : public Imposition
 
 	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local);
 
+	virtual Spread *SingleLayout(int whichpage); 
+	virtual Spread *SingleLayoutWithAdjacent(int whichpage); 
 	virtual Spread *PageLayout(int whichspread); 
 	virtual Spread *PaperLayout(int whichpaper);
 
