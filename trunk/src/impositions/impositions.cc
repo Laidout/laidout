@@ -73,6 +73,8 @@ PtrStack<Imposition> *GetBuiltinImpositionPool(PtrStack<Imposition> *existingpoo
 	existingpool->push(new DoubleSidedSingles(),1);
 	existingpool->push(new BookletImposition(),1);
 	existingpool->push(new NetImposition(),1);
+
+	 // todo:
 	//existingpool->push(new CompositeImposition(),1);
 	//existingpool->push(new BasicBook(),1);
 	//existingpool->push(new AnyOtherSpecificImpositionsYouWantBuiltIn,1);

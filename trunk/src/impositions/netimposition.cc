@@ -312,6 +312,7 @@ LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 	flatpoint p[net->faces[pg].np];
 	DBG cout <<"NetImposition::GetPage:\n";
 	for (int c=0; c<net->faces[pg].np; c++) {
+		 // transform the net point to page coordinates
 		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
 		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
 	}
@@ -322,6 +323,129 @@ LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 	return newpath;
 }
 
+Spread *NetImposition::SingleLayout(int whichpage)
+{
+	return SingleLayoutWithAdjacent(whichpage);
+}
+
+/*! \fn Spread *NetImposition::PageLayout(int whichspread)
+ * \brief Returns a page view spread that contains whichspread, in viewer coords.
+ *
+ * whichpage starts at 0.
+ * Derived classes must fill the spread with a path, and the PageLocation stack.
+ * The path holds the outline of the spread, and the PageLocation stack holds
+ * transforms to get from the overall coords to each page's coords.
+ */
+Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
+{
+	if (!net) return NULL;
+	
+	DBG cout <<"--Build Net Single Layout with adjacent--"<<endl;
+	Spread *spread=new Spread();
+	spread->style=SPREAD_PAGE;
+	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+
+	int basepage=whichpage%net->nf;
+
+	 // fill pagestack
+	SomeData *newpath;
+
+	 // create base page
+	 // This returns the page outline, with the transform to its place in the net
+	 // in a whole spread.
+	newpath=GetPage(whichpage%net->nf,0); // transformed page, count at least 1 more
+	spread->pagestack.push(new PageLocation(whichpage,NULL,newpath,0)); //incs newpath count
+	double baseinv[6];
+	transform_invert(baseinv,newpath->m());
+	transform_identity(newpath->m()); // make the base page have origin at viewer (0,0)
+	newpath->dec_count();//remove extra count
+
+	 // add on any adjacent that can be found..
+	 // ***ultimately this would be done with facelink, this is the long way around.
+	int p1,p2,dir=1; // edge match is p1 and p2, dir=-1 means p1,p2 in matched actually goes p2,p1
+	int c,c2,c3;
+	for (c=0; c<net->faces[basepage].np; c++) {
+		p1=net->pointmap[net->faces[basepage].points[c]];
+		p2=net->pointmap[net->faces[basepage].points[(c+1)%net->faces[basepage].np]];
+		if (p1==-1 || p2==-1) continue;
+
+		 // search every other face for edges matching p1--p2
+		for (c2=0; c2<net->nf; c2++) {
+			if (c2==basepage) continue;
+			for (c3=0; c3<net->faces[c2].np; c3++) {
+				if (net->pointmap[net->faces[c2].points[c3]]==p1) {
+					if (net->pointmap[net->faces[c2].points[(c3+1)%net->faces[c2].np]]==p2) break;
+					if (net->pointmap[net->faces[c2].points[(c3+net->faces[c2].np-1)%net->faces[c2].np]]==p2) {
+						dir=-1;
+						break;
+					}
+				}
+			}
+			if (c3!=net->faces[c2].np) break; // found a match
+		}
+		if (c2!=net->nf) {
+			DBG cout <<"----found a match with face #"<<c2<<endl;
+			 // found a match with face c2. p1 and p2 get assigned back to flat point indices:
+			 // Original edge is p1--p2, corresponding to c--(c+1)%net->faces[basepage]->np
+			 //  matched edge is q1--q2
+			int q1=c3,q2=q1+dir;
+			if (q2<0) q2+=net->faces[c2].np;
+			q2%=net->faces[c2].np;
+			p1=c;
+			p2=(c+1)%net->faces[basepage].np;
+
+			 // find transform of face c2 from its normal place in the net to its
+			 // place adjacent to basepage
+			flatpoint o1,o2,x1,x2,y1,y2,p;
+			o1=transform_point(net->m(),net->points[net->faces[basepage].points[p1]]);
+			x1=transform_point(net->m(),net->points[net->faces[basepage].points[p2]])-o1;
+			y1=transpose(x1);
+
+			o2=transform_point(net->m(),net->points[net->faces[c2].points[q1]]);
+			x2=transform_point(net->m(),net->points[net->faces[c2].points[q2]])-o2;
+			y2=transpose(x2);
+
+			double M[6],  // matrix before
+				   M2[6], // matrix after 
+				   U[6],  // M2 * U * M^-1 == I,  U == M2^-1 * M
+				   T[6];  // temp matrix
+			 // Basic linear algebra: Transform a generic M to M2. Find N. This same N
+			 //  transforms any other affine matrix. The transform for the adjacent page is
+			 //  found with: adj->m() == adj_orig->m() * N * basepage->m()^-1
+			transform_from_basis(M ,o1,x1,y1);
+			transform_from_basis(M2,o2,x2,y2);
+			transform_invert(T,M2);
+			transform_mult(U,T,M);
+			
+			newpath=GetPage(c2,0); // transformed page, count at least 1 more
+			transform_mult(T,U,baseinv);
+			transform_mult(M2,newpath->m(),T);
+			transform_copy(newpath->m(),M2);
+				
+			 // push face onto pagestack
+			spread->pagestack.push(new PageLocation(c2,NULL,newpath,0)); //incs newpath count
+			newpath->dec_count();//remove extra count
+		}
+	}
+
+	 // fill spread with net outline
+	 //***** should have outline of all the faces present
+	SomeData *npath=GetPage(whichpage,0);
+	transform_identity(npath->m());
+	spread->path=npath;
+	spread->pathislocal=0; //current npach count is 1, so this is ok
+	
+	 // define max/min points
+	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
+		else newpath=npath;
+	spread->minimum=transform_point(newpath->m(),
+			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+	spread->maximum=transform_point(newpath->m(),
+			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+
+	DBG cout <<"--end Build Net Single Layout with adjacent--"<<endl;
+	return spread;
+}
 
 /*! \fn Spread *NetImposition::PageLayout(int whichspread)
  * \brief Returns a page view spread that contains whichspread, in viewer coords.
