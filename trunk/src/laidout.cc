@@ -150,35 +150,16 @@ void print_usage()
  * \ingroup pools
  * \brief Stack of available paper sizes.
  */
-//class LaidoutApp : public anXApp
-//{
-// public:
-////	ControlPanel *maincontrolpanel;
-//	Project *project;
-//	Document *curdoc;
-////	PtrStack<Style> stylestack:
-////	PtrStack<FontThing> fontstack;
-////	PtrStack<Project> projectstack;
-////	ScreenStyle *screen;
-//	Laxkit::PtrStack<Laxkit::anInterface> interfacepool;
-//	PtrStack<Imposition> impositionpool;
-//	PtrStack<PaperStyle> papersizes;
-//	LaidoutApp();
-//	virtual ~LaidoutApp();
-//	virtual int init(int argc,char **argv);
-//	virtual void setupdefaultcolors();
-//	void parseargs(int argc,char **argv);
-//
-//	Document *findDocument(const char *saveas);
-//	int LoadDocument(const char *filename);
-//	int NewDocument(DocumentStyle *docinfo);
-//	int NewDocument(const char *spec);
-//	int DumpWindows(FILE *f,int indent,Document *doc);
-//
-//	void notifyDocTreeChanged(anXWindow *callfrom=NULL);
-//};
+/*! \var PreviewImageStyle LaidoutApp::preview_images
+ * \brief where new preview images should be placed.
+ *
+ * This specifies location, and preview_transient says if newly created previews
+ * should be deleted when no longer in use.
+ */
+/*! \var char LaidoutApp::preview_transient
+ * \brief Whether newly created previews should be deleted when no longer in use.
+ */
 
-//---
 
 //! Laidout constructor, just inits a few variables to 0.
 /*! 
@@ -201,7 +182,9 @@ LaidoutApp::LaidoutApp() : anXApp()
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 	icon_dir=NULL;
 	temp_dir=NULL;
+
 	max_preview_length=200;
+	preview_transient=1;
 	preview_images=Preview_SameDir;
 	//preview_images=Preview_None;
 
@@ -370,6 +353,7 @@ int LaidoutApp::createlaidoutrc()
 			fwrite("#usePreviewImages sameDir\n",1,26,f);
 			fwrite("#usePreviewImages temporary\n",1,28,f);
 			fwrite("#usePreviewImages projectDir\n",1,29,f);
+			fwrite("\n#previewTransient no  #whether new previews are deleted when no longer used\n",1,22,f);
 			fwrite("\n#palette_dir /usr/share/gimp/2.0/palettes\n",1,42,f);
 			fclose(f);
 		}
@@ -410,29 +394,40 @@ int LaidoutApp::readinLaidoutDefaults()
 		DBG cout <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
 		if (!strcmp(name,"appcolors")) {
 			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
+			
 		} else if (!strcmp(name,"defaultstartdoc")) {
 			cout <<"***imp me! readinlaidoutrc: defaultdoc"<<endl;
 			//default to config_dir/templates/default
+
 		} else if (!strcmp(name,"defaultpapersize")) {
 			makestr(defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc
+		
 		} else if (!strcmp(name,"template")) {
 			cout <<"***imp me! readinlaidoutrc: template"<<endl;
 			//*** for multiple startup templates not found in config_dir/templates,
 			// template nickname /file/path
 			// > laidout --template consumptionIssue
 			// > laidout --template 1paperPamphlet
+		
 		} else if (!strcmp(name,"palette_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(palette_dir,value);
+		
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
 			//				or projectdir/.laidouttemp/previews
+			//	make sure supplied tempdir is writable before using.
 			cout <<" *** imp temp_dir in laidoutrc"<<endl;
+		
+		} else if (!strcmp(name,"previewTransient")) {
+			preview_transient=BooleanAttribute(value);
+		
 		} else if (!strcmp(name,"usePreviewImages")) {
 			if (value==NULL || !strcmp(value,"sameDir") || !strcmp(value,"yes")) {
 				preview_images=Preview_SameDir;
 			} else if (!strcmp(value,"temporary")) preview_images=Preview_Temporary;
 			else if (!strcmp(value,"projectDir")) preview_images=Preview_ProjectDir;
 			else preview_images=Preview_None;
+		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
 		}

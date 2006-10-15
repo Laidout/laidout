@@ -72,6 +72,7 @@ class LaidoutApp : public Laxkit::anXApp
 
 	unsigned long curcolor;
 	PreviewImageStyle preview_images;
+	char preview_transient;
 	int max_preview_length;
 	char *defaultpaper;
 	char *palette_dir;

@@ -2765,6 +2765,14 @@ void ViewWindow::updateContext()
 		if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
 		else pageclips->State(LAX_OFF);
 	}
+
+	char blah[((LaidoutViewport *)viewport)->curobj.context.n()*10];
+	blah[0]='\0';
+	for (int c=0; c<((LaidoutViewport *)viewport)->curobj.context.n(); c++) {
+		sprintf(blah+strlen(blah),"%d,",((LaidoutViewport *)viewport)->curobj.context.e(c));
+	}
+	blah[strlen(blah)-1]='\0';
+	mesbar->SetText(blah);
 }
 
 //! Deal with various indicator/control events
