@@ -7,22 +7,27 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.05
 ------------
-       Be able to work with preview images, rather than hundreds of 15M tiffs
+(done) Be able to work with preview images, rather than hundreds of 15M tiffs
 (done) Show adjacent pages in Net Singles view (prelude to being able to unwrap shapes any way they can)
 (done) Use a ~/.laidout/0.05/laidoutrc ?
        Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       perhaps have image open window? drag and drop in images? that would be AWESOME
 (done) ObjectInterface for selecting and resizing multiple stuff
        parent/child nesting and interface for that: nesting, and grouping: layer trees
 (done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
-       autoconfiscate or cmake
+       autoconfiscate or cmake or have simple "configure" thingy
        Finish implementing project based setup, especially when loading and saving
-       Should be able to 'Open Document' without restarting Laidout!!
+(done) Should be able to 'Open Document' without restarting Laidout!!
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips
+       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips occasionally
 
+
+VERSION 0.06
+------------
+       perhaps have image open window? drag and drop in images? that would be AWESOME
+       PathInterface must be drastically improved, and bez part should have segment move like inkscape
+	   Change cursor to indicate what will happen as mouse moves around
        
 
 VERSION 0.1
@@ -32,7 +37,6 @@ VERSION 0.1
        Of course, need copious testing by people who are not me.
        Image and Color patches, gradients, etc should allow transparency
        Make the button box actually function
-       Have imagepatch be a transform you can apply to any image
        plus configurable icon panel/menu system
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
        Linear guides
@@ -41,9 +45,9 @@ VERSION 0.1
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ImagePatchData stuff
-       Have images have any number of various kinds of transforms applied to it
+       Have imagepatch be a transform you can apply to any image
+       Allow objects to have any number of various kinds of transforms applied to it
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
-       PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Basic infrastructure for most things (except text) should be in place.
        Fully configurable shortcuts
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,

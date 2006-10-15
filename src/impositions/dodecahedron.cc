@@ -17,6 +17,7 @@
 
 
 #include "dodecahedron.h"
+#include <lax/strmanip.h>
 
 using namespace Laxkit;
 using namespace LaxInterfaces;

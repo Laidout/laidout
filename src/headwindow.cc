@@ -581,7 +581,7 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (!s || !s->n) return 1;
 
 		for (int c=0; c<s->n; c++) {
-			if (!laidout->NewDocument(s->strs[c])) {
+			if (!laidout->LoadDocument(s->strs[c])) {
 				DBG cout <<"*** fail to open "<<s->strs[c]<<endl;
 			}
 		}
@@ -837,7 +837,7 @@ int HeadWindow::FocusOff(XFocusChangeEvent *e)
 //! Create split panes with names like SplitPane12, where the number is getUniqueNumber().
 /*! New spread editors will be created with the same document of the most recent view.
  */
-anXWindow *HeadWindow::NewWindow(const char *wtype)
+anXWindow *HeadWindow::NewWindow(const char *wtype,anXWindow *likethis)
 {
 	if (!wtype) 
 		if (defaultwinfunc<0) return NULL;
@@ -849,6 +849,13 @@ anXWindow *HeadWindow::NewWindow(const char *wtype)
 	for (int c=0; c<winfuncs.n; c++) {
 		if (!strcmp(winfuncs.e[c]->name,wtype)) {
 			win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style);
+			if (!win || !likethis) return win;
+
+			cout <<"*** need to repair HeadWindow::NewWindow"<<endl;
+
+			// need to dump_out_atts from likethis, then if wtype is same, dump in atts,
+			// else just transfer the Document...
+
 			return win;
 		}
 	}

@@ -45,7 +45,7 @@ class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 	virtual Laxkit::MenuInfo *GetMenu();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
-	virtual Laxkit::anXWindow *NewWindow(const char *wtype);
+	virtual Laxkit::anXWindow *NewWindow(const char *wtype,anXWindow *likethis=NULL);
 	virtual int Curbox(int c);
 	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
 	
