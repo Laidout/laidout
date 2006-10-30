@@ -35,7 +35,7 @@
 //};
 
 EpsData::EpsData()
-	: ImageData(NULL);
+	: ImageData(NULL)
 {
 	title=creationdate=NULL;
 }

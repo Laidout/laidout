@@ -35,6 +35,8 @@ should be able to stretch any image.. makes new image preview,
 	 	...
 	 ...
 
+when closing a window, and only that window refers to a particular document, should
+ ask if user wants to really close that document, or simply hide it
 
 Next: MUst have color management..., have to imp the color system....
 
@@ -48,11 +50,10 @@ to any paper size, possibly with stuff off paper..
 the WhackedImposition: have a single page data map to many papers (using different transforms),
 sometimes known as posterizing..
 
-main control panel still needs to be implemented with
+Some sort of main control panel still needs to be implemented with
  Laxkit::TabbedMenuSelector or whatever it'll be called!!!
 
 work on page and spread flipper:   < page 2 >,       < > page ixv,    
-tool flipper:  [< Path Tool >]
 
 *** figure out consistent way to have Attribute things attached to various kinds of objects.
 
@@ -66,11 +67,11 @@ viewport options:
 		[ruler|]
 		[     v]
 
-interfaces: have it configurable: mapping buttons?? or just sock it to em?
+interfaces: have it configurable: mapping mouse buttons?? or just sock it to em?
 
 Dynamic content object, for instance a box that lets you swirl 3-dimensional things
-around until you get a view that you like, and that view is what prints. (openoffice has
-something of the kind)
+ around until you get a view that you like, and that view is what prints. (openoffice has
+ something of the kind, and pdf 1.6 has such 3-d support)
 
 
 pages need to be able to preempt the page boundaries given by disposition,

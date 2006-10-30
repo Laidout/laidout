@@ -14,9 +14,8 @@ MAKING LAIDOUT DEB PACKAGE
    debian/laidout.1              :Version ****, for laying out books
    docs/doxygen/laidoutintro.txt :-- Version ***** --\n
    docs/Doxyfile                 :PROJECT_NUMBER         = *****
-   Makefile                      :LAIDOUTVERSION=****
+   configure
    README                        :LAIDOUT Version *****
-   src/version.h                 :#define LAIDOUT_VERSION "****"
    all the example docs
  make sure the Quick Key References are accurate. There are separate versions
    of it in ./QUICKREF, debian/laidout.1, and src/helpwindow.cc
@@ -48,3 +47,4 @@ MAKING LAIDOUT DEB PACKAGE
 6. ---build the package---
 dpkg-buildpackage -rfakeroot in top laidout directory
 
+7. don't forget to update the help and screenshots sections on the website
