@@ -16,7 +16,7 @@
 
 #include <cstdio>
 #include "buttonbox.h"
-#include "icons.h"
+#include "configured.h"
 
 using namespace Laxkit;
 using namespace std;

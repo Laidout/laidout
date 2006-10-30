@@ -9,25 +9,31 @@ VERSION 0.05
 ------------
 (done) Be able to work with preview images, rather than hundreds of 15M tiffs
 (done) Show adjacent pages in Net Singles view (prelude to being able to unwrap shapes any way they can)
-(done) Use a ~/.laidout/0.05/laidoutrc ?
-       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+(done) Use a ~/.laidout/0.05/laidoutrc
+       SpreadEditor: re-fix auto arranging
 (done) ObjectInterface for selecting and resizing multiple stuff
+       Import images from a list file
        parent/child nesting and interface for that: nesting, and grouping: layer trees
 (done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
-       autoconfiscate or cmake or have simple "configure" thingy
-       Finish implementing project based setup, especially when loading and saving
+(done) autoconfiscate or cmake or (this one)have simple "configure" thingy
 (done) Should be able to 'Open Document' without restarting Laidout!!
-       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips occasionally
+       Improve internal icon management
 
 
 VERSION 0.06
 ------------
+       Abandon the "laidout-general" mailing list, and create instead a "laidout" mailing list?
+       Build a features.html for the webpage
+       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
+       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips occasionally
+       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
+       Be able to work with preview images more easily, and implement all preview config options
+       Finish implementing project based setup, especially when loading and saving
        perhaps have image open window? drag and drop in images? that would be AWESOME
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
-	   Change cursor to indicate what will happen as mouse moves around
+       Change cursor to indicate what will happen as mouse moves around
        
 
 VERSION 0.1
@@ -35,10 +41,10 @@ VERSION 0.1
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        group combine properties, like most importantly transparency
        Of course, need copious testing by people who are not me.
-       Image and Color patches, gradients, etc should allow transparency
+       Image and Color patches, gradients, etc should allow transparent colors
        Make the button box actually function
        plus configurable icon panel/menu system
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps or eps
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf, or image
        Linear guides
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Parent masking of children
@@ -49,7 +55,7 @@ VERSION 0.1
        Allow objects to have any number of various kinds of transforms applied to it
        NetImposition needs much beefing up: import/export net, build net, interactive unwrapper
        Basic infrastructure for most things (except text) should be in place.
-       Fully configurable shortcuts
+       Fully configurable shortcuts, with optional multi-key shortcuts
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,
        allow for easy method for runaround area determination
        Full color management implemented, with up to 16 bit per channel color
@@ -71,12 +77,12 @@ VERSION 0.1
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo and splash image
-       Vx (aka uberconvertor) support?
        have an image in the little pan popups
        Have special function to output to file a pseudocode mockup of the file format
        Combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Be able to have paper objects in addition to the normal page objects (ie master page numbers)
+       Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
 
 
 VERSION 0.2
@@ -101,6 +107,7 @@ Story editor
 Internal generic impositioner for arbitrary .ps files
 Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend
+Vx (aka uberconvertor) support?
 
 
 VERSION 0.3

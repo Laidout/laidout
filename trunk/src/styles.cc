@@ -480,9 +480,10 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  * references to it. **** still need to work out good framework for this.
  *
  * \todo ***eventually include accepted functions, not just variables??
- *
  * \todo Currently, this stuff is an internationalization nightmare (english only right now).. would have to integrate with
  *   gettext somehow (gotta read up on that!!!)
+ * \todo Perhaps the fields stack can be migrated to Laxkit's RefPtrStack.
+ * \todo have dialog format hints
  * 
  *  example: 
  *  <pre>
@@ -501,7 +502,6 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  *   The description would be used in some sort of help system
  *  </pre>
  *
- *  \todo Perhaps the fields stack can be migrated to Laxkit's RefPtrStack.
  */
 /*! \var ElementType StyleDef::format
  * \brief What is the nature of *this.

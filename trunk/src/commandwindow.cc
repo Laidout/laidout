@@ -107,11 +107,17 @@ char *CommandWindow::process(const char *in)
 				if (in==NULL) return newstr("Could not load that.");
 
 				if (laidout->findDocument(in)) return newstr("That document is already loaded.");
+				int n=laidout->numTopWindows();
 				Document *doc=laidout->LoadDocument(in);
 				if (!doc) return newstr("Could not load that.");
 
-				anXWindow *win=newHeadWindow(doc,"ViewWindow");
-				if (win) app->addwindow(win);
+				 // create new window only if LoadDocument() didn't create new windows
+				 // ***this is a little icky since any previously saved windows might not
+				 // actually refer to the document opened
+				if (n!=laidout->numTopWindows()) {
+					anXWindow *win=newHeadWindow(doc,"ViewWindow");
+					if (win) app->addwindow(win);
+				}
 				return newstr("Opened.");
 			}
 		}

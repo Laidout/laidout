@@ -2,6 +2,7 @@ LAIDOUT Version 0.04.1
 --------------------
 http://laidout.org
 
+
 Please post any complaints and other correspondence to the Laidout
 general mailing list found at:
 https://lists.sourceforge.net/lists/listinfo/laidout-general
@@ -16,12 +17,13 @@ WHAT IT CAN DO RIGHT NOW
 Laidout is currently in the 'Kind of a hack, but mostly works
 on my machine' stage of development.
 
-Laidout currently can handle images and gradients (linear, radial, 
-and bezier patches) fairly well. Also, you can make a type of image
-that can be stretched around. The very basics to get my cartoon 
-books done, in other words. Many more features are planned, like 
-such non-essentials (to me anyway) as text! Who needs text when a
-picture is worth a thousand words? 
+Laidout currently can arrange pages into a couple different impositions,
+such as a booklet, or even a dodecahedron. You can manipulate images
+and gradients (linear, radial, and bezier patches) fairly well. Also, 
+you can make a type of image that can be stretched around. The very 
+basics to get my cartoon books done, in other words. Many more features
+are planned, like such non-essentials (to me anyway) as text! Who needs 
+text when a picture is worth a thousand words? 
 
 Many of the features are only partially implemented, and the
 real meat of the program is only half in place right now.
@@ -35,27 +37,28 @@ some of the burden of the 'meat' of the program, but anyway...
 COMPILING
 ---------
 
-There is no 'configure' at the moment, and you must manually configure 
-some things.
-
-NOTE about icons: These require Inkscape (http://www.inkscape.org)
-to generate icons from src/icons/icons.svg, and python to run
-the script that calls Inkscape. But, Laidout will work fine without
-the icons. You must manually adjust src/icons.h to indicate the
-actual directory that the icons will be installed in. I know this
-is really ugly. It will be cleared up when I get around to 
-autoconfiscating Laidout or something.
-See src/icons/makeimages.py for more.
+You will need a few extra development libraries on your computer in order
+to compile Laidout. Running ./configure does a simple check for these,
+but the check is so simple, that it may miss them. You will need the
+header files for Imlib2, freetype2, fontconfig, x11, and cups.
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
-available. For the Laidout development version, you will need the
-Laxkit development version from the same date. Laidout expects 
-Imlib2 support to have been compiled into the Laxkit (which is the 
-default). You can change where Laidout will get installed by changing
-the PREFIX variable in the Makefile in this directory.
-Make sure that Laxkit headers are in the place specified 
-by the LAXDIR variable in the file Makefile-toinclude.
+available. If you have downloaded a release, then the Laxkit should
+have been included.
 
+Here are the current "./configure" options:
+ --help                       Show the options you can pass to ./configure
+ --prefix=/where/to/install   Default /usr/local
+ --gs=/path/to/gs             Where is your ghostscript executable? This is quite
+                               optional, and is not planned to be used at all 
+                               until version 0.06. Then, it will only be used to
+                               generate a preview image of EPS files.
+ --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit
+                               is currently included in release downloads
+
+To compile and install Laidout, just run these three easy steps:
+
+./configure
 make
 make install
 
@@ -63,20 +66,35 @@ make install
 laidout-(whatever version) in (usually) /usr/local/bin, and make a
 symbolic link /usr/local/bin/laidout point to it.
 
-DISTRO WARNING: the Makefiles here are for the development source, which
-also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
-so intertwined. Just remove those parts of the Makefiles
-if you want to compile only Laidout.
-
 After successfully making, the program 'laidout' in the src
 directory is the thing you want. It does not depend on any other
 files currently (except icons, but they are not needed to actually run),
 thus it can be run from wherever it is located.
 
+
+IF COMPILING FROM SVN
+---------------------
+For the Laidout development version, you will need the
+Laxkit development version from the same date.
+
+The Makefiles here are for the development source, which
+also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
+being developed basically side by side. Just remove those parts of the Makefiles
+if you want to compile only Laidout.
+
+Note about icons: If you downloaded through svn, the icons need to be 
+generated. This requires Inkscape (http://www.inkscape.org)
+to generate icons from src/icons/icons.svg, and python to run
+the script that calls Inkscape. But, Laidout will work fine without
+the icons. Ultimately, the icons will themselves be stored in a laidout
+file, and Laidout itself will generate the icons.
+See src/icons/makeimages.py for more.
+
 Running the program might spit out copious amounts of debugging
-info. If this is the case, you can turn this off with 'make hidegarbage'
-before doing 'make' (the same goes for the Laxkit). Or, you can just 
-run the program like this:
+info if you run from a terminal. If this is the case, you can turn this 
+off with 'make hidegarbage' before doing 'make' (the same goes for the 
+Laxkit). Be advised that this requires Perl to be installed. Or, you 
+can just run the program like this:
 
 ./laidout > /dev/null
 

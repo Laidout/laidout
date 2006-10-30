@@ -41,7 +41,7 @@
 #include "extras.h"
 #include "drawdata.h"
 #include "helpwindow.h"
-#include "icons.h"
+#include "configured.h"
 
 #include <iostream>
 #include <sys/stat.h>
@@ -2302,11 +2302,15 @@ int ViewWindow::init()
 		tstr=strstr(nstr,"Interface");
 		if (tstr) *tstr='\0';
 		tstr=nstr;
+		//>>>
+		//img=laidout->icons->GetIcon(tstr);
+		//===
 		nstr=newstr(ICON_DIRECTORY);
 		appendstr(nstr,"/");
 		appendstr(nstr,tstr);
 		appendstr(nstr,".png");
 		img=load_image(nstr);
+		//<<<
 		//last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
 		//		tools.e[c]->id,nstr,tstr);
 		appendstr(tstr," Tool");
@@ -2334,10 +2338,15 @@ int ViewWindow::init()
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	TextButton *tbut;
+	//<<<
 	char iconfile[strlen(ICON_DIRECTORY)+50];
 	sprintf(iconfile,"%s/PreviousSpread.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
 			iconfile,"<");
+	//===
+	//last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
+	//		laidout->icons->GetIcon("PreviousSpread"),"<");
+	//>>>
 	ibut->tooltip("Previous spread");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
@@ -2400,7 +2409,7 @@ int ViewWindow::init()
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 //	sprintf(iconfile,"%s/DumpInImages.png",ICON_DIRECTORY);
-//	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpImages",-1,
+//	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpInImages",-1,
 //			iconfile,"Dump in Images");
 //	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
 //	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
@@ -2492,7 +2501,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
-		int n=dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(), 
+		int n=dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(), 
 				(const char **)(s->strs),s->n, var1->Value(),var2->Value()); 
 		
 		char mes[35];
@@ -2783,7 +2792,7 @@ void ViewWindow::updateContext()
  *    newViewType, 
  *    importImage,
  *    insertImage,
- *    dumpImages,
+ *    dumpInImages,
  *    deletePage,
  *    addPage,
  *    help (pops up a HelpWindow),
@@ -2937,9 +2946,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					oldimgname,oldimage));
 		if (oldimage) delete[] oldimage;
 		return 0;
-	} else if (!strcmp(mes,"dumpImages")) {
-		//DBG cout <<" --- dumpImages...."<<endl;
-		dumpImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
+	} else if (!strcmp(mes,"dumpInImages")) {
+		//DBG cout <<" --- dumpInImages...."<<endl;
+		dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
 		pagenumber->NewMinMax(0,doc->pages.n-1);
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
