@@ -24,6 +24,9 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
+	# LAIDOUT NOTE: the laxkit place here is assumed to be at the following location,
+	#  but laxkit must be manually placed there after downloading laidout from svn
+	$(CURDIR)/configure --prefix=$(CURDIR)/debian/laidout --laxkit=$(CURDIR)/laxkit/lax
 
 	touch configure-stamp
 

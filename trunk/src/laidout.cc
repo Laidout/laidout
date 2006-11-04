@@ -38,6 +38,7 @@
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"
+#include "configured.h"
 #include <lax/lists.cc>
 
 #include <sys/stat.h>
@@ -180,9 +181,8 @@ LaidoutApp::LaidoutApp() : anXApp()
 	 // laidoutrc defaults
 	defaultpaper=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
-	icon_dir=NULL;
 	temp_dir=NULL;
-
+	
 	max_preview_length=200;
 	preview_transient=1;
 	preview_images=Preview_SameDir;
@@ -231,7 +231,6 @@ LaidoutApp::~LaidoutApp()
 	
 	if (defaultpaper) delete[] defaultpaper;
 	if (palette_dir) delete[] palette_dir;
-	if (icon_dir) delete[] icon_dir;
 	if (temp_dir) delete[] temp_dir;
 	
 }
@@ -263,10 +262,41 @@ LaidoutApp::~LaidoutApp()
  *
  * \todo  manually adding a couple of pagestyles here there should be a better way to handle initializations.
  *   this should be cleared when plugin architecture is functional
+ * \todo when the program is run before installing, should be able to automatically detect that
+ *   and find icons and other resources (partially done)
  */
 int LaidoutApp::init(int argc,char **argv)
 {
 	anXApp::init(argc,argv); //setupdefaultcolors() is called here
+	
+	 //------------ make adjustments to some standard dirs 
+	 //             when running before installing
+ 
+	 // find the current executable path
+	char *curexecpath;
+	if (argv[0][0]!='/') {
+		char *d=get_current_dir_name();
+		curexecpath=newstr(d);
+		appendstr(curexecpath,"/");
+		appendstr(curexecpath,argv[0]);
+		free(d);
+		simplify_path(curexecpath);
+	} else curexecpath=newstr(argv[0]);
+	
+	 // add either configured icon_dir to icons 
+	 // or ./icons if the installed executable path is not the same as current executable path
+	if (strcmp(BIN_PATH,curexecpath)) {
+		char *iconpath=lax_dirname(curexecpath,0);
+		appendstr(iconpath,"/icons");
+		icons.addpath(iconpath);
+		DBG cout <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
+		delete[] iconpath;
+	} else {
+		DBG cout <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		icons.addpath(ICON_DIRECTORY);
+	}
+	delete[] curexecpath;
+
 
 	 //------setup initial pools
 	DBG cout <<"---imposition pool init"<<endl;

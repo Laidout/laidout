@@ -57,20 +57,7 @@ using namespace std;
  * 1 == thread of pages\n
  * 2 == thread of spreads
  */
-//class LittleSpread : public LaxInterfaces::SomeData
-//{
-// public:
-//	int what;
-//	Spread *spread; // holds the outline, etc..
-//	PathsData *connection;
-//	int lowestpage,highestpage;
-//	LittleSpread *prev,*next;
-//	LittleSpread(Spread *sprd, LittleSpread *prv);
-//	virtual ~LittleSpread();
-//	virtual int pointin(flatpoint pp,int pin=1);
-//	virtual void mapConnection();
-//	virtual void FindBBox();
-//};
+
 
 //! Return if the point is in the littlespread.
 /*! pin==1 means return if point is within the spread's path.

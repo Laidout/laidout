@@ -25,6 +25,7 @@
 #include "newdoc.h"
 #include "interfaces.h"
 #include "impositions/imposition.h"
+#include "iconmanager.h"
 
 const char *LaidoutVersion();
 
@@ -76,8 +77,9 @@ class LaidoutApp : public Laxkit::anXApp
 	int max_preview_length;
 	char *defaultpaper;
 	char *palette_dir;
-	char *icon_dir;
 	char *temp_dir;
+
+	IconManager icons;
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;

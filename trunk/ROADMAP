@@ -13,15 +13,15 @@ VERSION 0.05
        SpreadEditor: re-fix auto arranging
 (done) ObjectInterface for selecting and resizing multiple stuff
        Import images from a list file
-       parent/child nesting and interface for that: nesting, and grouping: layer trees
 (done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
 (done) autoconfiscate or cmake or (this one)have simple "configure" thingy
 (done) Should be able to 'Open Document' without restarting Laidout!!
-       Improve internal icon management
+(done) Improve internal icon management
 
 
 VERSION 0.06
 ------------
+       parent/child nesting and interface for that: nesting, and grouping: layer trees
        Abandon the "laidout-general" mailing list, and create instead a "laidout" mailing list?
        Build a features.html for the webpage
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)

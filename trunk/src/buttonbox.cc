@@ -17,6 +17,7 @@
 #include <cstdio>
 #include "buttonbox.h"
 #include "configured.h"
+#include "laidout.h"
 
 using namespace Laxkit;
 using namespace std;
@@ -26,68 +27,37 @@ ButtonBox::ButtonBox(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long n
 	: TabFrame(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
 {
 	//tabframe->AddWin(new ProgressBar2(tabframe,"tf-progressbar4",PROGRESS_OVAL, 0,0,0,0, 1), "p4",NULL,0);
-	char file[strlen(ICON_DIRECTORY)+50];
 
-	sprintf(file,"%s/Image.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/ColorPatch.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Gradient.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/ImagePatch.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Path.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Text.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Zoom.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/DumpInImages.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/DeletePage.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/AddPage.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/PreviousSpread.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/NextSpread.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/ImportImage.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/InsertImage.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/PageClips.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/NewDocument.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/NewProject.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Open.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/SinglePageView.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/PageView.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/PaperView.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Print.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Quit.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/CloseDocument.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Save.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/SaveAll.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/SaveAs.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Undo.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Redo.png",ICON_DIRECTORY);
-	AddIcon(file,0);
-	sprintf(file,"%s/Help.png",ICON_DIRECTORY);
-	AddIcon(file,0);
+	AddBox(NULL,laidout->icons.GetIcon("Image"),0);
+	AddBox(NULL,laidout->icons.GetIcon("ColorPatch"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Gradient"),0);
+	AddBox(NULL,laidout->icons.GetIcon("ImagePatch"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Path"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Text"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Zoom"),0);
+	AddBox(NULL,laidout->icons.GetIcon("DumpInImages"),0);
+	AddBox(NULL,laidout->icons.GetIcon("DeletePage"),0);
+	AddBox(NULL,laidout->icons.GetIcon("AddPage"),0);
+	AddBox(NULL,laidout->icons.GetIcon("PreviousSpread"),0);
+	AddBox(NULL,laidout->icons.GetIcon("NextSpread"),0);
+	AddBox(NULL,laidout->icons.GetIcon("ImportImage"),0);
+	AddBox(NULL,laidout->icons.GetIcon("InsertImage"),0);
+	AddBox(NULL,laidout->icons.GetIcon("PageClips"),0);
+	AddBox(NULL,laidout->icons.GetIcon("NewDocument"),0);
+	AddBox(NULL,laidout->icons.GetIcon("NewProject"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Open"),0);
+	AddBox(NULL,laidout->icons.GetIcon("SinglePageView"),0);
+	AddBox(NULL,laidout->icons.GetIcon("PageView"),0);
+	AddBox(NULL,laidout->icons.GetIcon("PaperView"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Print"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Quit"),0);
+	AddBox(NULL,laidout->icons.GetIcon("CloseDocument"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Save"),0);
+	AddBox(NULL,laidout->icons.GetIcon("SaveAll"),0);
+	AddBox(NULL,laidout->icons.GetIcon("SaveAs"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Undo"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Redo"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Help"),0);
 }
 
 ButtonBox::~ButtonBox()

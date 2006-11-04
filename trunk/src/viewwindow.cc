@@ -2288,8 +2288,9 @@ int ViewWindow::init()
 			NULL,window,"viewtoolselector",
 			NULL,0);
 	
-	const char *str;
-	char *nstr,*tstr;
+	const char *str; //the whattype: "BlahInterface"
+	char *nstr,     // the base name: "Blah" then later "Blah Tool"
+		 *tstr;    // temp pointer
 	LaxImage *img;
 	int obji=0;
 	for (int c=0; c<tools.n; c++) {
@@ -2301,29 +2302,20 @@ int ViewWindow::init()
 		nstr=newstr(str);
 		tstr=strstr(nstr,"Interface");
 		if (tstr) *tstr='\0';
-		tstr=nstr;
-		//>>>
-		//img=laidout->icons->GetIcon(tstr);
-		//===
-		nstr=newstr(ICON_DIRECTORY);
-		appendstr(nstr,"/");
-		appendstr(nstr,tstr);
-		appendstr(nstr,".png");
-		img=load_image(nstr);
-		//<<<
+		
+		img=laidout->icons.GetIcon(nstr);
 		//last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
 		//		tools.e[c]->id,nstr,tstr);
-		appendstr(tstr," Tool");
+		appendstr(nstr," Tool");
 		
 		//ibut->tooltip(tstr);
 		//ibut->SetIcon(img); //does not call inc_count()
 		//ibut->WrapToExtent(3);
 		//AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);	
 		
-		toolselector->AddItem(tstr,img,tools.e[c]->id); //does not call inc_count()
+		toolselector->AddItem(nstr,img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
 		
-		delete[] tstr;
 		delete[] nstr;
 	}
 	toolselector->WrapToExtent();
@@ -2338,27 +2330,18 @@ int ViewWindow::init()
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	TextButton *tbut;
-	//<<<
-	char iconfile[strlen(ICON_DIRECTORY)+50];
-	sprintf(iconfile,"%s/PreviousSpread.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
-			iconfile,"<");
-	//===
-	//last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
-	//		laidout->icons->GetIcon("PreviousSpread"),"<");
-	//>>>
+			laidout->icons.GetIcon("PreviousSpread"),"<");
 	ibut->tooltip("Previous spread");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/NextSpread.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"next spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"nextSpread",-1,
-			iconfile,">");
+			laidout->icons.GetIcon("NextSpread"),">");
 	ibut->tooltip("Next spread");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/PageClips.png",ICON_DIRECTORY);
 	last=pageclips=new IconButton(this,"pageclips",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pageclips",-1,
-			iconfile,"Page Clips");
+			laidout->icons.GetIcon("PageClips"),"Page Clips");
 	pageclips->tooltip("Whether pages clips its contents");
 	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
 	updateContext();
@@ -2382,47 +2365,40 @@ int ViewWindow::init()
 	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
-	sprintf(iconfile,"%s/AddPage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"add page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"addPage",-1,
-			iconfile,"Add Page");
+			laidout->icons.GetIcon("AddPage"),"Add Page");
 	ibut->tooltip("Add 1 page after this one");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/DeletePage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"delete page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"deletePage",-1,
-			iconfile,"Delete Page");
+			laidout->icons.GetIcon("DeletePage"),"Delete Page");
 	ibut->tooltip("Delete the current page");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/ImportImage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
-			iconfile,"Import Image");
+			laidout->icons.GetIcon("ImportImage"),"Import Image");
 	ibut->tooltip("Import one or more images, with \n"
 				  "number per page and dpi from the\n"
 				  "number sliders in the View Window");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/InsertImage.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
-			iconfile,"Insert Image");
+			laidout->icons.GetIcon("InsertImage"),"Insert Image");
 	ibut->tooltip("Insert an image into the current image or image patch");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-//	sprintf(iconfile,"%s/DumpInImages.png",ICON_DIRECTORY);
 //	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpInImages",-1,
-//			iconfile,"Dump in Images");
+//			laidout->icons.GetIcon("ImportImages"),"Dump in Images");
 //	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
 //	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/Open.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
-			iconfile,"Open");
+			laidout->icons.GetIcon("Open"),"Open");
 	ibut->tooltip("Open a document from disk");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	sprintf(iconfile,"%s/Save.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
-			iconfile,"Save");
+			laidout->icons.GetIcon("Save"),"Save");
 	ibut->tooltip("Save the current document");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
@@ -2430,10 +2406,8 @@ int ViewWindow::init()
 	tbut->tooltip("Save to a Passepartout file.\nOnly saves images");
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"print",0, 0,0,0,0,1, NULL,window,"print","Print");
-	sprintf(iconfile,"%s/Print.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"print",-1,
-			iconfile,"Print");
+			laidout->icons.GetIcon("Print"),"Print");
 	ibut->tooltip("Print to output.ps, a postscript file");
 	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
 
@@ -2465,10 +2439,8 @@ int ViewWindow::init()
 	var3->tooltip("(undefined)");
 	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
-	tbut=new TextButton(this,"help",0, 0,0,0,0,1, NULL,window,"help","Help!");
-	sprintf(iconfile,"%s/Help.png",ICON_DIRECTORY);
 	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
-			iconfile,"Help!");
+			laidout->icons.GetIcon("Help"),"Help!");
 	ibut->tooltip("Popup a list of shortcuts");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
