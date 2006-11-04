@@ -4,7 +4,6 @@
 ##############                      ###############
 ###################################################
 
-#LAXDIR=/home/tom/p/sourceforge/laxkit/lax
 include ../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
 
@@ -24,6 +23,7 @@ objs= \
 	document.o \
 	project.o \
 	interfaces.o \
+	iconmanager.o \
 	about.o \
 	buttonbox.o \
 	commandwindow.o \
