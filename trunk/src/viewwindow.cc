@@ -2429,7 +2429,7 @@ int ViewWindow::init()
 	
 	var2=new NumInputSlider(this,"var2",NUMSLIDER_WRAP, 0,0,0,0,1, 
 								NULL,window,"var2",
-								NULL,-10000,100000,1);
+								NULL,-10000,100000,360);
 	var2->tooltip("Default dpi of images imported.\nShift-click to type a number");
 	AddWin(var2,var2->win_w,0,50,50, var2->win_h,0,50,50);
 	

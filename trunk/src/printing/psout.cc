@@ -314,9 +314,9 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	fprintf(f,"%%%%Pages: %d\n",end-start+1);
 	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
-			  "%%%%CreationDate: %s\n"
+			  "%%%%CreationDate: %s" //ctime puts a terminating newline
 			  "%%%%Creator: Laidout %s\n"
-			  "%%%%For: whoever (i686, Linux 2.6.15-1-k7)\n",
+			  "%%%%For: whoever \n",
 			  		ctime(&t),LAIDOUT_VERSION);
 	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
 				doc->docstyle->imposition->paperstyle->name, 

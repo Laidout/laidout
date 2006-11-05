@@ -210,7 +210,6 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	reversebuttons=0;
 	temppagemap=NULL;
 	temppagen=0;
-	GetSpreads();
 	curspread=NULL;
 	curpage=-1;
 	dragpage=-1;
@@ -219,6 +218,8 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	arrangetype=ArrangeAutoTillMod;
 	arrangestate=ArrangeNeedsArranging;
 
+	GetSpreads();
+	
 	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
 	buttonmask=Button1Mask|Button2Mask;
 }
@@ -347,7 +348,7 @@ int SpreadInterface::reversemap(int i)
  * 
  * If endpage==-1, then doc->pages.n-1 is assumed.
  *
- * ***this is very messy...
+ * \todo ***this is very messy...
  */
 void SpreadInterface::CheckSpreads(int startpage,int endpage)
 {
@@ -425,21 +426,8 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 //! Create all the LittleSpread objects and default page labels.
 /*! This is typically geared only for page spreads, not paper spreads.
  *
- * This can handle spreads with 
- * non continuous ranges of pages.
- * Normally it is a very poor design to have such non-continuous ranges,
- * but just in case, this covers for it.(see the todo about numspreads)
- *
  * PaperLayouts are non-continuous, but PageLayouts should be continuous.
  * The spread editor currently only does PageLayouts.
- *
- * \todo currently, this just plops down spreads returned from
- *   Imposition::GetLittleSpread(). From the first one, gets the highest page in
- *   the spread, then gets the next spread based on that one, until highestpage
- *   is equal to doc->pages.n. would be better to search within already created
- *   spreads to be sure not skipping pages..
- * \todo should probably have numspreads in addition to numpages and numpapers in
- *   Imposition, then can do GetLittleSpread(spreadnumber)..
  */
 void SpreadInterface::GetSpreads()
 {
@@ -488,12 +476,14 @@ void SpreadInterface::GetSpreads()
  * how==-1 means use default arrangetype. 
  * Otherwise, 0==auto, 1==1 row, 2==1 column, 3=grid by proportion of curwindow
  *
- * This is called on 'A', a firsttime refresh, and curwindow resize.
+ * This is called on shift-'a' keypress, a firsttime refresh, and curwindow resize.
  * 
  * \todo the auto grid arranging could be brighter
  */
 void SpreadInterface::ArrangeSpreads(int how)//how==-1
 { 
+	if (firsttime) return; // need real window info before arranging...
+	
 	if (arrangetype==arrangestate) return;
 	if (arrangetype==ArrangeCustom) {
 		if (arrangestate!=ArrangeNeedsArranging) { arrangestate=ArrangeCustom; return; }
@@ -599,10 +589,10 @@ int SpreadInterface::Refresh()
 	if (!needtodraw) return 1;
 	
 	if (firsttime) {
+		firsttime=0;
 		ArrangeSpreads();
 		Center(1);
 		//((ViewportWindow *)curwindow)->syncrulers();
-		firsttime=0;
 	}
 	dp->Updates(0);	
 	
@@ -1324,7 +1314,7 @@ int SpreadEditor::CharInput(unsigned int ch,unsigned int state)
 	return 1;
 }
 
-//! Trigger an ArrangeSpreads if arrangetype is 0.
+//! Trigger an ArrangeSpreads if arrangetype is auto.
 int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 {
 	int c=ViewerWindow::MoveResize(nx,ny,nw,nh);
@@ -1334,7 +1324,7 @@ int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 	return c;
 }
 
-//! Trigger an ArrangeSpreads if arrangetype is 0.
+//! Trigger an ArrangeSpreads if arrangetype is auto.
 int SpreadEditor::Resize(int nw,int nh)
 {
 	int c=ViewerWindow::Resize(nw,nh);
