@@ -10,9 +10,9 @@ VERSION 0.05
 (done) Be able to work with preview images, rather than hundreds of 15M tiffs
 (done) Show adjacent pages in Net Singles view (prelude to being able to unwrap shapes any way they can)
 (done) Use a ~/.laidout/0.05/laidoutrc
-       SpreadEditor: re-fix auto arranging
+(done) SpreadEditor: re-fix auto arranging
 (done) ObjectInterface for selecting and resizing multiple stuff
-       Import images from a list file
+(done) Import images from a list file
 (done) Make ImageInterface scaling suck less, and distinguish between no image and broken image
 (done) autoconfiscate or cmake or (this one)have simple "configure" thingy
 (done) Should be able to 'Open Document' without restarting Laidout!!
@@ -38,6 +38,7 @@ VERSION 0.06
 
 VERSION 0.1
 -----------
+       Should have option to print or not print big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        group combine properties, like most importantly transparency
        Of course, need copious testing by people who are not me.
@@ -70,6 +71,7 @@ VERSION 0.1
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
        PDF in/out, and/or use ghostscripts alleged ability to do transparent images in postscript files
+	   svg in/out
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide

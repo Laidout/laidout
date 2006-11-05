@@ -49,7 +49,7 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
 	if (!imlibimg) return;
 	
-	imlib_context_set_image(imlibimg->Image());
+	imlib_context_set_image(imlibimg->Image(1));
 	
 	//if (imlib_image_has_alpha()) { psImage_masked_interleave1(f,img); return; }
 	if (imlib_image_has_alpha()) { psImage_masked_interleave1(f,img); return; }
@@ -109,6 +109,7 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	Ascii85_out(f,rgbbuf,len,1,75);
 
 	delete[] rgbbuf;
+	imlibimg->doneForNow();
 }
 
 
@@ -130,7 +131,7 @@ void psImage_masked_interleave2(FILE *f,LaxInterfaces::ImageData *img)
 	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
 	if (!imlibimg) return;
 	
-	imlib_context_set_image(imlibimg->Image());
+	imlib_context_set_image(imlibimg->Image(1));
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
@@ -228,7 +229,7 @@ void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img)
 	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
 	if (!imlibimg) return;
 	
-	imlib_context_set_image(imlibimg->Image());
+	imlib_context_set_image(imlibimg->Image(1));
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();
@@ -321,7 +322,7 @@ void psImage_103(FILE *f,LaxInterfaces::ImageData *img)
 	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
 	if (!imlibimg) return;
 	
-	imlib_context_set_image(imlibimg->Image());
+	imlib_context_set_image(imlibimg->Image(1));
 	int width,height;
 	width=imlib_image_get_width();
 	height=imlib_image_get_height();

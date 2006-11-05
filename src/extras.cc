@@ -76,13 +76,6 @@ using namespace LaxInterfaces;
  * be scaled down to fit.
  */
 
-void ImagePlopInfo::add(ImageData *img, int ndpi, int npage, double *d)
-{
-	ImagePlopInfo *p=this;
-	while (p->next) p=p->next;
-	p->next=new ImagePlopInfo(img,ndpi,npage,d);
-}
-
 ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 	: image(img), error(0), dpi(ndpi), page(npage), next(NULL)
 {
@@ -90,6 +83,13 @@ ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 		xywh=new double[4];
 		memcpy(xywh,d,4*sizeof(double));
 	} else xywh=NULL;
+}
+
+void ImagePlopInfo::add(ImageData *img, int ndpi, int npage, double *d)
+{
+	ImagePlopInfo *p=this;
+	while (p->next) p=p->next;
+	p->next=new ImagePlopInfo(img,ndpi,npage,d);
 }
 
 ImagePlopInfo::~ImagePlopInfo()
@@ -174,7 +174,7 @@ static void getPreviewAndDesc(const char *value,char **preview,char **desc)
 	}
 	char *e,*p=QuotedAttribute(value,&e);
 	if (p) {
-		if (!strncmp(p,"file://",7)) memmove(p,p+7,strlen(p)-7);
+		if (!strncmp(p,"file://",7)) memmove(p,p+7,strlen(p)-6);
 		if (!strncmp(p,"/",1) || !strncmp(p,"./",2) || !strncmp(p,"../",7)) {
 			 // we have a preview file name
 			*preview=p;
@@ -187,7 +187,7 @@ static void getPreviewAndDesc(const char *value,char **preview,char **desc)
 	}
 }
 
-//! Plop down images from the list contained in att.
+//! Plop down images from the list contained in a LaxFiles::Attribute.
 /*! \ingroup extras
  *  Returns the page index of the final page or -1 if error.
  *
@@ -230,8 +230,16 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			onedirperpage=BooleanAttribute(value);
 		} else if (!strcmp(name,"path")) {
 			if (value) makestr(path,value);
+		} else if (!strcmp(name,"pagebreak")) {
+			flush=1;
+			jumptopage=-1;
+		} else if (!strcmp(name,"page")) {
+			if (IntAttribute(value,&jumptopage,NULL)) {
+				if (jumptopage<0) { error=1; break; }
+				flush=1;
+			}
 		} else if (!strncmp(name,"file://",7) || !strncmp(name,"/",1) || 
-					!strncmp(name,"./",2) || !strncmp(name,"../",7)) {
+					!strncmp(name,"./",2) || !strncmp(name,"../",3)) {
  			 // single line variant:  file:///aoeuaoen  /path/to/preview/  name
 			 // multi line has further options
 			int curdpi=defaultdpi;
@@ -240,6 +248,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			
 			if (!strncmp(name,"file://",7)) name+=7;
 			file=full_path_for_file(name,path,1); // expand "./" and "../" and "blah"=="./blah"
+			simplify_path(file,1);
 				
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++)  {
 				name=att->attributes.e[c2]->name;
@@ -265,6 +274,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			 // ok, so we now have file, preview, desc, curdpi, xywh if useplace
 			image=new ImageData(file,preview,0,0,0);
 			image->SetDescription(desc);
+			delete[] file;
 			if (!image->image) {
 				 //broken image, make it have dimensions curdpi x curdpi
 				image->maxx=image->maxy=curdpi;
@@ -283,20 +293,12 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 				}
 			}
 			
-			if (!images) images=new ImagePlopInfo(image,curdpi,pg,xywh);
-			else images->add(image,curdpi,pg,xywh);
+			if (!images) images=new ImagePlopInfo(image,curdpi,pg,(useplace?xywh:NULL));
+			else images->add(image,curdpi,pg,(useplace?xywh:NULL));
 			
 			if (preview) delete[] preview;
 			if (desc) delete[] desc;
 			preview=desc=NULL;
-		} else if (!strcmp(name,"pagebreak")) {
-			flush=1;
-			jumptopage=-1;
-		} else if (!strcmp(name,"page")) {
-			if (IntAttribute(value,&jumptopage,NULL)) {
-				if (jumptopage<0) { error=1; break; }
-				flush=1;
-			}
 		} else {
 			DBG cout <<" *** potential error in list, found unknown attribute"<<endl;
 		}
@@ -367,6 +369,10 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
  * Returns the page index of the final page or -1 if error.
  *
  * \todo *** should probably put in **previewimages..
+ * \todo *** if an image list is encountered, it is immediately shunted to the dumpInImageList()
+ *   function. what it should do instead is add to a list of files and dump them all at once.
+ *   this entails slightly rewriting said dumpInImageList() function, and adding a flag for
+ *   to signal a page break, maybe page==-3 and no image?
  */
 int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfiles, int perpage, int ddpi)
 {
@@ -375,6 +381,8 @@ int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfil
 	LaxImage *image=NULL;
 	ImageData *imaged;
 	int curpage=startpage;
+	FILE *f;
+	char data[50],*p;
 	
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
@@ -399,6 +407,23 @@ int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfil
 			else images->add(imaged,ddpi,pg,NULL);
 			if (numonpage==0) curpage++;
 		} else {
+			 // check to see if it is an image list, otherwise ignore
+			f=fopen(imagefiles[c],"r");
+			if (f) {
+				int n=0;
+				n=fread(data,1,50,f);
+				fclose(f);
+				if (n) {
+					data[n]='\0';
+					if (!strncasecmp(data,"#Laidout ",9)) {
+						p=data+9;
+						if (strcasestr(p,"image list")) {
+							 //this is likely an image list, so grab all data....
+							dumpInImageList(doc,imagefiles[c],startpage,ddpi,perpage);
+						}
+					}
+				}
+			}
 			DBG cout <<"** warning: bad image file "<<imagefiles[c]<<endl;
 		}
 	}
