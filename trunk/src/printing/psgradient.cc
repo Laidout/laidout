@@ -45,8 +45,12 @@ void psGradient(FILE *f,GradientData *g)
 				  "  /N 1\n"
 				  ">> def\n\n",
 					c, 
-					g->colors.e[c-1]->red/255.0, g->colors.e[c-1]->green/255.0, g->colors.e[c-1]->blue/255.0, 
-					g->colors.e[c  ]->red/255.0, g->colors.e[c  ]->green/255.0, g->colors.e[c  ]->blue/255.0
+					g->colors.e[c-1]->color.red/65535.0, 
+					g->colors.e[c-1]->color.green/65535.0,
+					g->colors.e[c-1]->color.blue/65535.0, 
+					g->colors.e[c  ]->color.red/65535.0,
+					g->colors.e[c  ]->color.green/65535.0, 
+					g->colors.e[c  ]->color.blue/65535.0
 				);
 	}
 

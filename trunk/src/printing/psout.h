@@ -24,6 +24,7 @@ double psDpi(double n);
 
 void psConcat(double *m);
 void psConcat(double a,double b,double c,double d,double e,double f);
+double *psCtmInit();
 double *psCTM();
 void psPushCtm();
 void psPopCtm();

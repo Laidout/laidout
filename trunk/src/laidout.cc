@@ -263,7 +263,7 @@ LaidoutApp::~LaidoutApp()
  * \todo  manually adding a couple of pagestyles here there should be a better way to handle initializations.
  *   this should be cleared when plugin architecture is functional
  * \todo when the program is run before installing, should be able to automatically detect that
- *   and find icons and other resources (partially done)
+ *   and find icons and other resources (***NOT WORKING RIGHT NOW!!!)
  */
 int LaidoutApp::init(int argc,char **argv)
 {
@@ -285,6 +285,7 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 // add either configured icon_dir to icons 
 	 // or ./icons if the installed executable path is not the same as current executable path
+	 //*******this doesn't work, curexecpath resolves to $curdir/laidout when you run. CRAP!!
 	if (strcmp(BIN_PATH,curexecpath)) {
 		char *iconpath=lax_dirname(curexecpath,0);
 		appendstr(iconpath,"/icons");
@@ -335,7 +336,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 // Note parseargs has to come after initing all the pools and whatever else
 	parseargs(argc,argv);
 	
-	 // Define default project if necessayr, and Pop something up if there hasn't been anything yet
+	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
 	if (!project) project=new Project();
 
 	 //*** set up main control window

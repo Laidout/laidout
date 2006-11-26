@@ -31,13 +31,13 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	GroupInterface(int nid,Laxkit::Displayer *ndp);
 	virtual ~GroupInterface();
 	//virtual const char *whattype() { return "ObjectInterface"; }
-	//virtual const char *whatdatatype() { return "Selection"; }
+	virtual const char *whatdatatype() { return "Group"; }
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 	//virtual int UseThis(anObject *newdata,unsigned int);
 	//virtual int DrawData(anObject *ndata,anObject *a1,anObject *a2,int);
 	//virtual int AddToSelection(ObjectContext *oc);
 	//virtual int FreeSelection();
-	//virtual int GrabSelection(unsigned int state);
+	virtual int GrabSelection(unsigned int state);
 	virtual int ToggleGroup();
 };
 

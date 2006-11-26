@@ -118,6 +118,8 @@ DocumentStyle::~DocumentStyle()
  * 
  * In the future, might implement which imposition should lay it out, allowing more than
  * one imposition to work on same doc, might still make a CompositeImposition...
+ *
+ * \todo *** this might be better off as a doubly linked list
  */
 /*! \var char *PageRange::labelbase
  * \brief The template for creation of page labels.
@@ -167,17 +169,62 @@ DocumentStyle::~DocumentStyle()
  *  Numbers_ABC           A,B,C,...
  * </pre>
  */
-//class PageRange
-//{
-// public:
-//	int impositiongroup;
-//	int start,end,offset;
-//	char *labelbase;
-//	int labeltype;
-//	PageRange(const char *newbase="#",int ltype=Numbers_Default);
-//	~PageRange() { if (labelbase) delete[] labelbase; }
-//	char *PageRange::GetLabel(int i);
-//};
+
+
+StyleDef *PageRangeStyleDef()
+{
+	StyleDef *sd=new StyleDef(NULL,"PageRange","Page Label for Range","Page labels","Page labels",
+			Element_Fields, NULL,NULL);
+
+	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
+	sd->newfunc=NULL; 
+	sd->push("startindex",
+			"Start",
+			"The page index at which this range starts.",
+			"The page index at which this range starts.",
+			Element_Int, "0,context.doc.pages.n","0",
+			0,
+			NULL);
+	sd->push("offset",
+			"Index offset",
+			"Offset to add to the index before making an actual label",
+			"Offset to add to the index before making an actual label",
+			Element_Int, NULL,"0",
+			0,
+			NULL);
+	sd->push("labelbase",
+			"Page label template",
+			"Page label template",
+			"Page label template",
+			Element_String, NULL,"0",
+			0,
+			NULL);
+	StyleDef *e=new StyleDef(NULL,
+			"labeltype",
+			"Number style",
+			"Number style",
+			"Number style",
+			Element_Enum, NULL,"Arabic",
+			NULL,0,NULL);
+	e->push("arabic", "Arabic", "Arabic: 1,2,3...", "Arabic: 1,2,3...", 
+			Element_EnumVal, NULL,NULL,0,NULL);
+	e->push("roman", "Lower case roman", "Roman: i,ii,iii...", "Roman: i,ii,iii...", 
+			Element_EnumVal, NULL,NULL,0,NULL);
+	e->push("roman_cap", "Upper case roman", "Roman: I,II,III...", "Roman: I,II,III...", 
+			Element_EnumVal, NULL,NULL,0,NULL);
+	e->push("abc", "Letter numbering", "a,b,c,..,aa,ab,...", "a,b,c,..,aa,ab,...", 
+			Element_EnumVal, NULL,NULL,0,NULL);
+	sd->push(e);
+	sd->push("reverse",
+			"Reverse order",
+			"Whether the range goes 1,2,3.. or ..3,2,1.",
+			"Whether the range goes 1,2,3.. or ..3,2,1.",
+			Element_Boolean, NULL,"1",
+			0,
+			NULL);
+	
+	return sd;
+}
 
 PageRange::PageRange(const char *newbase,int ltype)
 {
@@ -576,14 +623,16 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 /*! This only clears the current variables when the file can be loaded (but
  * not necessarily read correctly).
  *
- * ***This should maybe be a standalone? or at least have a standalone
- * implemented somewhere?
- *
  * Return 0 for not loaded, positive for loaded.
  *
  * \todo *** for file, check that it is in fact a Laidout file! If it can
- * be interpreted as another importable file, then loading should be delegated
- * to some appropriate function....
+ *   be interpreted as another importable file, then loading should be delegated
+ *   to some appropriate function....
+ * \todo ***This should maybe be a standalone? or at least have a standalone
+ *   implemented somewhere?
+ * \todo window attributes are found when document is saved independent of a project.
+ *   must have mechanism to pass those back to LaidoutApp? right now, that is in
+ *   dump_in_atts(), and it shouldn't be there....
  */
 int Document::Load(const char *file)
 {
@@ -663,6 +712,10 @@ int Document::SyncPages(int start,int n)
  * Recognizes 'docstyle', 'page', and 'pagerange'. Discards all else. 
  * Takes special care to make sure that pagerange->end is set correctly for
  * each range.
+ *
+ * \todo *** should remove the HeadWindow thing? LaidoutApp should be
+ *   handling all the window business. Always nice to separate the windows
+ *   from the doc structure.
  */
 void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
@@ -791,6 +844,7 @@ Page *Document::Curpage()
 int Document::GroupItems(FieldPlace whatlevel, int *items)
 {
 	cout <<"*** imp Document::GroupItems!!"<<endl;
+	//locate group at whatlevel, then g->GroupObjs(n,items);
 	return 0;
 }
 
@@ -798,6 +852,7 @@ int Document::GroupItems(FieldPlace whatlevel, int *items)
 int Document::UnGroup(FieldPlace which)
 {
 	cout <<"*** imp Document::UnGroup!!"<<endl;
+	//locate object which and if it is a group, do ungroup with parent group
 	return 0;
 }
 

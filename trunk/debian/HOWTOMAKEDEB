@@ -22,9 +22,9 @@ MAKING LAIDOUT DEB PACKAGE
  make sure icon directory is set for after install (src/icons.h)?!
  make depends  in the src directory
  
- make sure Makefile-toinclude points to correct laxkit headers directory
- make sure Makefile has 'prefix=/usr/local/'. This is what should be in a source tarball
- make sure 'make' does not try to make lax or laxinterfaces...
+ make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball
+ make sure 'make' does not try to make lax or laxinterfaces unless laxkit has been 
+   downloaded into the source tree...
 
 3. ---hide the debugging garbage and commit---
  make hidegarbage 

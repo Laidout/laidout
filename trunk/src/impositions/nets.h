@@ -66,6 +66,8 @@ class Net : public LaxInterfaces::SomeData
 	char *thenettype;
 	int np,tabs; 
 	flatpoint *points;
+	spacepoint *vertices; // optional list of 3-d points
+	int nvertices;
 	int *pointmap; // which thing (possibly 3-d points) corresponding point maps to
 	int nl;
 	NetLine *lines;
@@ -88,6 +90,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual void pushline(NetLine &l,int where=-1);
 	virtual void pushface(NetFace &f);
 	virtual void pushpoint(flatpoint pp,int pmap=-1);
+	virtual void push3dpoint(double x,double y,double z);
 	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 
 	//--perhaps for future:

@@ -41,6 +41,7 @@ class FieldPlace : protected Laxkit::NumStack<int>
 	virtual int push(int nd,int where=-1) { return Laxkit::NumStack<int>::push(nd,where); }
 	virtual int pop(int which=-1) { return Laxkit::NumStack<int>::pop(which); }
 	virtual void flush() { Laxkit::NumStack<int>::flush(); }
+	virtual const int *list() { return (const int *)Laxkit::NumStack<int>::e; }
 	virtual void out(const char *str);//for debugging
 };
 

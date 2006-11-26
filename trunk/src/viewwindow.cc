@@ -241,9 +241,6 @@ int VObjContext::isequal(const ObjectContext *oc)
 /*! \fn int LaidoutViewport::n()
  * \brief  Return 2 if spread exists, or 1 for just limbo.
  */
-/*! \fn Laxkit::anObject *LaidoutViewport::object_e(int i)
- * \brief  Return pointer to limbo if i==0, and spread if i==2.
- */
 /*! \var int LaidoutViewport::searchmode
  * \brief 0==none, 1==FindObject, 2==SelectObject(prev/next)
  */
@@ -328,6 +325,7 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 	return 0;
 }
 
+//! Return pointer to limbo if i==0, and spread if i==1.
 Laxkit::anObject *LaidoutViewport::object_e(int i)
 {
 	if (i==0) return &limbo;
@@ -812,10 +810,10 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 //! -2==prev, -1==next obj, else select obj i??
 /*! Return 0 if curobj not changed, else nonzero.
  *
- * \todo *** this is rather broken just at the moment
- *
+ * \todo *** this is rather broken just at the moment, does only -1 and -2.
  * \todo *** could have search mode, one mode is search under particular coords, another
- * mode is step through all on screen objects, another step through all in spread.
+ *   mode is step through all on screen objects, another step through all in spread,
+ *   another step through all in current layer.
  */
 int LaidoutViewport::SelectObject(int i)
 {
@@ -1101,6 +1099,12 @@ int LaidoutViewport::nextObject(VObjContext *oc)
 	
 	return 0;
 }
+
+// ****
+// return the object at place(offset).place(offset+1)...place(offset+n-1)
+// If n==0, then use the rest of place from offset.
+//LaxInterfaces::SomeData *LaidoutViewport::locateObject(FieldPlace &place,int offset,int n)
+//{***}
 
 //! Return place.n if d is found in the displayed pages or in limbo somewhere, and put location in place.
 /*! Flushes place whether or not the object is found, it does not append to an existing spot.
@@ -1575,16 +1579,14 @@ int LaidoutViewport::init()
  *
  * </pre>
  *
- * *** have choice whether to back buffer, also smart refreshing, and in diff.
- * thread.. periodically check to see if more recent refresh requested...
- *
+ * \todo *** have choice whether to back buffer, also smart refreshing, and in diff.
+ *   thread.. periodically check to see if more recent refresh requested?
  * \todo *** this is rather horrible, needs near complete revamp, have to decide
- * on graphics backend. cairo? antigrain?
- *
+ *   on graphics backend. cairo? antigrain?
  * \todo *** implement the 'whatever' page, which is basically just a big whiteboard
- *
  * \todo *** this should be modified so order things are drawn is adjustible,
- * so limbo then pages, or pages then limbo, or just limbo, etc..
+ *   so limbo then pages, or pages then limbo, or just limbo, etc: drawing zones,
+ *   including limbo, spread(s), paper objects, imposition control objects, etc..
  */
 void LaidoutViewport::Refresh()
 {
@@ -1633,11 +1635,11 @@ void LaidoutViewport::Refresh()
 		dp->PushAxes();
 		dp->ShiftScreen(5,5);
 		if (spread->path) {
-			FillStyle fs(0,0,0, WindingRule,FillSolid,GXcopy);
+			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,GXcopy);
 			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
 			DrawData(dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
 			 // draw outline *** must draw filled with paper color
-			fs.color=~0;
+			fs.Color(0xffff,0xffff,0xffff,0xffff);
 			dp->PopAxes();
 			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
 			DrawData(dp,spread->path,NULL,&fs,drawflags);
@@ -1660,13 +1662,6 @@ void LaidoutViewport::Refresh()
 			if (drawflags&DRAW_AXES) dp->drawaxes();
 			
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-//				//-------debugging:---vvv
-//				XPoint clip[]={{0,win_h/2},{win_w/2,0},{win_w,win_h/2},{win_w/2,win_h},{0,win_h/2}};
-//				XDrawLines(dp->GetDpy(),dp->GetWindow(),dp->GetGC(),clip,5,CoordModeOrigin);
-//				Region region=XPolygonRegion(clip,5,WindingRule);
-//				XSetRegion(dp->GetDpy(),dp->GetGC(),region);
-//				XDestroyRegion(region);
-//				//-------------^^^
 				 // setup clipping region to be the page
 				Region region;
 				region=GetRegionFromPaths(sd,dp->m());
@@ -2747,12 +2742,14 @@ void ViewWindow::updateContext()
 		else pageclips->State(LAX_OFF);
 	}
 
-	char blah[((LaidoutViewport *)viewport)->curobj.context.n()*10];
+	LaidoutViewport *v=((LaidoutViewport *)viewport);
+	char blah[v->curobj.context.n()*10+50];
 	blah[0]='\0';
-	for (int c=0; c<((LaidoutViewport *)viewport)->curobj.context.n(); c++) {
-		sprintf(blah+strlen(blah),"%d,",((LaidoutViewport *)viewport)->curobj.context.e(c));
+	for (int c=0; c<v->curobj.context.n(); c++) {
+		sprintf(blah+strlen(blah),"%d,",v->curobj.context.e(c));
 	}
-	blah[strlen(blah)-1]='\0';
+	blah[strlen(blah)-1]=':';
+	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
 	mesbar->SetText(blah);
 }
 
@@ -2776,14 +2773,14 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	if (!strcmp(mes,"change color")) {
 		 // apply message as new current color, pass on to viewport
 		LineStyle linestyle;
-		linestyle.red=e->data.l[1];
-		linestyle.green=e->data.l[2];
-		linestyle.blue=e->data.l[3];
-		linestyle.alpha=255;//***
-		linestyle.color=app->rgbcolor(linestyle.red,linestyle.green,linestyle.blue);
-		colorbox->Set(linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
+		linestyle.color.red=e->data.l[1];
+		linestyle.color.green=e->data.l[2];
+		linestyle.color.blue=e->data.l[3];
+		linestyle.color.alpha=e->data.l[4];
+		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		char blah[100];
-		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
+		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",
+				linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		mesbar->SetText(blah);
 		if (curtool)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
@@ -2792,13 +2789,13 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"curcolor")) {
 		 // apply message as new current color, pass on to viewport
 		LineStyle linestyle;
-		linestyle.red=e->data.l[0];
-		linestyle.green=e->data.l[1];
-		linestyle.blue=e->data.l[2];
-		linestyle.alpha=e->data.l[3];
-		linestyle.color=app->rgbcolor(e->data.l[0],e->data.l[1],e->data.l[2]);
+		linestyle.color.red=e->data.l[0];
+		linestyle.color.green=e->data.l[1];
+		linestyle.color.blue=e->data.l[2];
+		linestyle.color.alpha=e->data.l[3];
 		char blah[100];
-		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",linestyle.red,linestyle.green,linestyle.blue,linestyle.alpha);
+		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",
+				linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		mesbar->SetText(blah);
 		if (curtool)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);

@@ -580,9 +580,18 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
+		//**** this is really hacky if doc already open...
+		int nw;
+		Document *d;
 		for (int c=0; c<s->n; c++) {
-			if (!laidout->LoadDocument(s->strs[c])) {
-				DBG cout <<"*** fail to open "<<s->strs[c]<<endl;
+			nw=laidout->numTopWindows();
+			d=laidout->LoadDocument(s->strs[c]);
+			if (!d) {
+				//DBG cout <<"*** fail to open "<<s->strs[c]<<endl;
+			} else {
+				if (nw==laidout->numTopWindows()) {
+					app->addwindow(newHeadWindow(d));
+				}
 			}
 		}
 		delete data;

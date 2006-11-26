@@ -14,6 +14,7 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	limagepatch.o \
 	groupinterface.o 
 
 

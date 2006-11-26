@@ -20,7 +20,7 @@
 #include "laidout.h"
 #include <lax/lists.cc>
 #include <lax/interfaces/imageinterface.h>
-#include "limagepatch.h"
+#include "dataobjects/limagepatch.h"
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>

@@ -26,8 +26,9 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
  protected:
 	Laxkit::PtrStack<LaxInterfaces::SomeData> objs;
  public:
-	int locked, visible, prints;
-	Group() { locked=0; visible=prints=1; }
+	char locked, visible, prints, selectable;
+	int blendmode;
+	Group();
 	virtual ~Group();
 	virtual const char *whattype() { return "Group"; }
 	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
@@ -35,6 +36,7 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
 	virtual int push(LaxInterfaces::SomeData *obj,int local);
 	virtual int pushnodup(LaxInterfaces::SomeData *obj,int local);
 	virtual int remove(int i);
+	virtual LaxInterfaces::SomeData *pop(int which,int *local=NULL);
 	virtual int popp(LaxInterfaces::SomeData *d,int *local=NULL);
 	virtual void flush();
 	virtual void swap(int i1,int i2) { objs.swap(i1,i2); }
@@ -49,6 +51,9 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
 	virtual LaxInterfaces::SomeData *e(int i);
 	virtual int n() { return objs.n; }
 	virtual Laxkit::anObject *object_e(int i) { return e(i); }
+	virtual int GroupObjs(int n, int *which);
+	virtual int UnGroup(int which);
+	virtual int UnGroup(int n,const int *which);
 };
 
 

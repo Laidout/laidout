@@ -614,7 +614,7 @@ int SpreadInterface::Refresh()
 	int pg,x,y;
 	flatpoint p;
 	
-	FillStyle fs(255,255,255, WindingRule,FillSolid,GXcopy);
+	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy);
 	//Page *page;
 	ImageData *thumb=NULL;
 	dp->clearclip();

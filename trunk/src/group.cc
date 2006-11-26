@@ -15,9 +15,11 @@
 //
 /****************** group.cc ********************/
 
+#include "laidout.h"
 #include "group.h"
 #include "drawdata.h"
 #include <lax/strmanip.h>
+#include <lax/transformmath.h>
 
 using namespace LaxFiles;
 
@@ -48,8 +50,21 @@ using namespace std;
 /*! \fn const char *Group::whattype()
  * \brief Returns 'Group'.
  */
+/*! \var char Group::selectable
+ * \brief Whether when cycling through objects the group itself can be selected.
+ *
+ * For instance, the Page::layers is a Group, but it cannot be modified, or
+ * deleted, so it is not selectable.
+ */
 
 
+Group::Group()
+{
+	blendmode=0;
+	locked=0;
+	visible=prints=selectable=1; 
+}
+	
 //! Destructor, calls flush() to checkin any objects.
 Group::~Group() 
 {
@@ -284,6 +299,12 @@ int Group::popp(LaxInterfaces::SomeData *d,int *local)
 	return objs.popp(d,local);
 }
 
+//! Return the popped item. Does not change its count.
+LaxInterfaces::SomeData *Group::pop(int which,int *local)//local=NULL
+{
+	return objs.pop(which,local);
+}
+
 //! Remove item with index i. Return 1 for item removed, 0 for not.
 /*! This will decrement the object's count by 1 if its local value is 0.
  */
@@ -410,4 +431,103 @@ LaxInterfaces::SomeData *Group::findobj(LaxInterfaces::SomeData *d,int *n)
 	return NULL;
 }
 
+//! Take all the elements in the list which, and put them in a new group at the first index.
+/*! If any of which are not in objs, then nothing is changed. If ne<=0 then the which list
+ * is assumed to be terminated by a -1.
+ *
+ * Return 0 for success, or nonzero error.
+ */
+int Group::GroupObjs(int ne, int *which)
+{
+	if (ne<0) {
+		ne=0;
+		while (which[ne]>=0) ne++;
+	}
+	
+	 // first verify that all in which are in objs
+	int c;
+	for (c=0; c<ne; c++) if (which[c]<0 || which[c]>=n()) return 1;
+	
+	Group *g=new Group;
+	int where,w[ne];
+	memcpy(w,which,ne*sizeof(int));
+	where=w[0];
+	SomeData *d;
+	int local;
+	while (ne) {
+		d=pop(w[ne-1],&local); //doesnt change count
+		g->push(d,local); //incs count
+		d->dec_count();
+		ne--;
+		for (int c2=0; c2<ne; c2++)
+			if (w[c2]>w[ne]) w[c2]--;
+	}
+	g->FindBBox();
+	objs.push(g,0,where);
+	FindBBox();
+	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
+	return 0;
+}
+
+//! If element which is a Group, then make its elements direct elements of this, and remove the group.
+/*! Return 0 for success, or nonzero error.
+ */
+int Group::UnGroup(int which)
+{
+	if (which<0 || which>=n()) return 1;
+	if (strcmp(object_e(which)->whattype(),"Group")) return 1;
+	Group *g=dynamic_cast<Group *>(objs.pop(which));
+	if (!g) return 1;
+	
+	SomeData *d;
+	double mm[6];
+	int local;
+	for (int c=0; g->n(); c++) {
+		d=g->pop(0,&local);
+		transform_mult(mm,g->m(),d->m());
+		transform_copy(d->m(),mm);
+		objs.push(d,local,which++);
+	}
+	g->dec_count();
+	FindBBox();
+	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
+	return 0;
+}
+
+//! Ungroup some descendent of this Group.
+/*! which is list of indices of subgroup. So say which=={1,3,6},
+ * then ungroup the element this->1->3->6, which is a great
+ * grandchild of this. All intervening elements must be Group objects
+ * as must be the final object. Then the other UnGroup() is called.
+ *
+ * If n<=0, then which is assumed to be a -1 terminated list.
+ *
+ *  Return 0 for success, or nonzero error.
+ */
+int Group::UnGroup(int n,const int *which)
+{
+	if (n<=0) {
+		n=0;
+		while (which[n]!=-1) n++;
+	}
+	if (n==0) return 1;
+	if (*which<0 || *which>=objs.n) return 2;
+	Group *g=dynamic_cast<Group *>(objs.e[*which]);
+	if (!g) return 3;
+	if (n>1) return UnGroup(n-1,which+1);
+	
+	SomeData *d;
+	int local;
+	double mm[6];
+	while (d=g->pop(0,&local), d) {
+		transform_mult(mm,d->m(),g->m());
+		transform_copy(d->m(),mm);
+		objs.push(d,local,*which+1);
+		d->dec_count();
+	}
+	remove(*which);
+	FindBBox();
+	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
+	return 0;
+}
 
