@@ -9,7 +9,7 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng -lcups `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
+LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng -lcups `imlib2-config --libs` -L$(LAXIDIR) -L$(LAXDIR)
 CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
 DEBUGFLAGS= -g -DDEBUG
 
@@ -39,7 +39,6 @@ objs= \
 	spreadeditor.o \
 	somedialogs.o \
 	laidout-more.o \
-	limagepatch.o \
 	laidout.o 
 
 all: laidout
@@ -47,6 +46,8 @@ all: laidout
 laidout: lax laxinterface $(objs) dataobjects printing impositions 
 	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
 			-llaxinterfaces -llaxkit -o $@
+#	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
+#			-llaxinterfaces -llaxkit -o $@
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'

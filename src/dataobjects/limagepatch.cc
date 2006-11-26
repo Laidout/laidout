@@ -15,7 +15,7 @@
 //
 
 #include "limagepatch.h"
-#include "laidout.h"
+#include "../laidout.h"
 
 #include <iostream>
 using namespace std;

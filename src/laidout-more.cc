@@ -59,6 +59,8 @@ using namespace Laxkit;
 
 //! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
 /*! Sends a TreeChangeEvent to all SpreadEditor and ViewWindow panes in each top level HeadWindow.
+ *
+ * \todo *** should probably replace s and e with a FieldPlace: doc,page,obj,obj,...
  */
 void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e)
 {

@@ -412,14 +412,28 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)//
  *  3  tabs on all edges (all or yes)
  * </pre>
  */
+/*! \var spacepoint *Net::vertices
+ * \brief Optional list of 3-d points. See also the pointmap list.
+ */
+/*! \var int Net::nvertices
+ * \brief The number of elements in the vertices array.
+ */
+/*! \var int *Net::pointmap;
+ * \brief Which thing (possibly 3-d points) corresponding (2-d) point maps to.
+ *
+ * If there is a vertices array, then the values in pointmap are assumed to be
+ * indices into the vertices array. Those vertices can be used to map a 
+ * polyhedron net into a spherical texture map and vice versa.
+ */
 
 
 //! Init.
 Net::Net()
 {
-	np=nl=nf=0;
+	np=nl=nf=nvertices=0;
 	points=NULL;
 	pointmap=NULL;
+	vertices=NULL;
 	lines=NULL;
 	faces=NULL;
 	tabs=0;
@@ -451,6 +465,11 @@ void Net::clear()
 		faces=NULL;
 		nf=0;
 	}
+	if (vertices) {
+		delete[] vertices;
+		vertices=NULL;
+		nvertices=0;
+	}
 }
 
 //! Return a new copy of this.
@@ -460,6 +479,11 @@ Net *Net::duplicate()
 	makestr(net->thenettype,thenettype);
 	net->np=np;
 	net->tabs=tabs;
+	if (vertices) {
+		net->vertices=new spacepoint[nvertices];
+		net->nvertices=nvertices;
+		memcpy(net->vertices,vertices,sizeof(spacepoint));
+	}
 	if (np) {
 		net->pointmap=new int[np];
 		net->points=new flatpoint[np];
@@ -549,9 +573,18 @@ void Net::dump_out(FILE *f,int indent,int what)
 	if (np) {
 		fprintf(f,"%spoints \\\n",spc);
 		for (c=0; c<np; c++) {
-			fprintf(f,"%s  %.10g %.10g ",spc,points[c].x,points[c].y);
+			fprintf(f,"%s  %-13.10g %-13.10g ",spc,points[c].x,points[c].y);
 			if (pointmap && pointmap[c]>=0) fprintf(f,"to %d ",pointmap[c]);
 			fprintf(f,"# %d\n",c);
+		}
+		fprintf(f,"\n");
+	}
+	
+	 // dump 3-d points
+	if (nvertices) {
+		fprintf(f,"%svertices \\\n",spc);
+		for (c=0; c<nvertices; c++) {
+			fprintf(f,"%s  %-13.10g %-13.10g %-13.10g # %d\n",spc,vertices[c].x,vertices[c].y,vertices[c].z,c);
 		}
 		fprintf(f,"\n");
 	}
@@ -626,6 +659,25 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				}
 				pushpoint(flatpoint(x,y),pm);
 			}
+		} else if (!strcmp(name,"vertices")) {
+			 // parse arbitrarily long list of 3-d points
+			 //   1.2 1.5 -1.8 \n ...
+			if (nvertices) {
+				delete[] vertices;
+				vertices=NULL;
+				nvertices=0;
+			}
+			int n;
+			double p3[3];
+			t=e=value;
+			while (t && *t) {
+				n=DoubleListAttribute(t,p3,3,&e);
+				if (e==t) break;
+				if (n!=3) { t=e; continue; }
+				while (*e && *e!='\n') e++;
+				t=*e?e+1:NULL;
+				push3dpoint(p3[0],p3[1],p3[2]);
+			}
 		} else if (!strcmp(name,"outline")) {
 			hadoutline=1;
 			NetLine netline;
@@ -658,6 +710,21 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	DBG cout <<"----------------this was set in Net:-------------"<<endl;
 	DBG dump_out(stdout,0,0);
 	DBG cout <<"----------------end Net dump:-------------"<<endl;
+}
+
+//! Add a 3-d point to vertices at the end.
+void Net::push3dpoint(double x,double y,double z)
+{
+	spacepoint *npts=new spacepoint[nvertices];
+	if (vertices) {
+		memcpy((void *)npts,(const void *)vertices, np*sizeof(spacepoint));
+		delete[] vertices;
+	}
+	npts[nvertices].x=x;
+	npts[nvertices].y=y;
+	npts[nvertices].z=z;
+	vertices=npts;
+	nvertices++;
 }
 
 //! Return a transformation basis to face which.

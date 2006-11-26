@@ -87,6 +87,17 @@ void psConcat(double *m)
 	DBG cout << "ctm: "; dumpctm(psctm);
 }
 
+//! Initialize to identity and return ctm.
+/*! \ingroup postscript 
+ * If psctm==NULL, then create new. This should be done, for instance, by
+ * any output stuff like pdf that makes use of psctm, which is static to psout.cc.
+ */
+double *psCtmInit()
+{
+	psctm=transform_identity(psctm);
+	return psctm;
+}
+
 //! New ps ctm=m*oldctm.
 /*! \ingroup postscript */
 void psConcat(double a,double b,double c,double d,double e,double f)
@@ -292,7 +303,6 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo *** for tiled pages, or multiples of same object each instance is
  *   rendered independently right now. should make a function to display such
  *   things, thus reduce ps file size substantially..
- * \todo *** perhaps for the page label, have the page label be "1-2", "4-5,3", etc...
  */
 int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 {

@@ -96,6 +96,9 @@ const char *element_TypeNames[11]={
  *
  * FieldMask is stack of these objects.
  */
+/*! \fn const int *FieldPlace::list()
+ * \brief Return a const int list of the place's elements. There are n() of them.
+ */
 
 
 FieldPlace::FieldPlace(const FieldPlace &place)

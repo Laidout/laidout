@@ -461,10 +461,15 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
 	if (psislocal==0 && pagestyle) {
 		pagestyle->inc_count();
 	}
+	labeltype=-1;
 	thumbnail=0;
 	pagenumber=num;
-	layers.push(new Group,1);
-	labeltype=-1;
+
+	 // initialize page contents to 1 empty layer.
+	Group *g=new Group;
+	g->selectable=0;
+	layers.push(g,1);
+	layers.selectable=0;
 }
 
 //! Destructor, destroys the thumbnail, and pagestyle according to psislocal.
@@ -595,8 +600,8 @@ ImageData *Page::Thumbnail()
 	dp.SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
 	dp.Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
 		
-	dp.NewBG(255,255,255); //*** this should be the paper color for paper the page is on...
-	dp.NewFG(0,0,0);
+	dp.NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
+	dp.NewFG(0,0,0,255);
 	//dp.m()[4]=0;
 	//dp.m()[5]=2*h;
 	//dp.Newmag(w/(bbox.maxx-bbox.minx));

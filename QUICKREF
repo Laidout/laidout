@@ -58,10 +58,17 @@ SpreadEditor:
    'p'    *** for debugging thumbs
 
 
-RectInterface:
-  'c'     toggle if drag resizes from center or opposite edge
-  'd'     toggle showdecs
-  'n'     normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+ObjectInterface:
+  'c'          toggle if drag resizes from center or opposite edge
+  'd'          toggle the showing of decorations
+  'n'          normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  bksp or del  remove whichever of center, rotation handle, or shear handle
+                 is selected
+  ^left-click  define a center, rotation handle, or shear handle
+  
+  plain click on a center, rotation handle, or shear handle, then press control
+    to move the point, rather than modify the object
+  
   
 
 ImageInterface:

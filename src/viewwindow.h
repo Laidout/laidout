@@ -131,6 +131,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int curobjPage();
 
 	friend class ViewWindow;
+	friend class GroupInterface;
 };
 
 //------------------------------- ViewWindow ---------------------------

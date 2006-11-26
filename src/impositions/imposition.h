@@ -71,6 +71,7 @@ class Spread : public ObjectContainer
 	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
 	
 	Laxkit::PtrStack<PageLocation> pagestack;
+	//Group spreadobjects; *** for paper objects not on a page, or other imposition specific objects
 
 	Spread();
 	virtual ~Spread();

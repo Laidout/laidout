@@ -40,6 +40,8 @@ install:
 	$(INSTALL) -m755 src/laidout $(BINDIR)/$(LAIDOUTNAME)
 	$(INSTALLDIR) $(SHAREDIR)/laidout/examples
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/examples examples/*
+	$(INSTALLDIR) $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons
+	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons src/icons/*.png
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
 

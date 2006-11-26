@@ -17,7 +17,7 @@
 .\" for manpage-specific macros, see man(7)
 .SH NAME
 .B Laidout
-Version 0.04.1, for laying out books
+Version 0.05.1, for laying out books
 .SH SYNOPSIS
 .B laidout
 .RI [ options ] " files" ...
@@ -102,10 +102,16 @@ In a viewer:
    end       drop selection to bottom within layer
   
 
-RectInterface:
-  'c'     toggle if drag resizes from center or opposite edge
-  'd'     toggle showdecs
-  'n'     normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+ObjectInterface:
+  'c'          toggle if drag resizes from center or opposite edge
+  'd'          toggle the showing of decorations
+  'n'          normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  bksp or del  remove whichever of center, rotation handle, or shear handle
+                 is selected
+  ^left-click  define a center, rotation handle, or shear handle
+  
+  plain click on a center, rotation handle, or shear handle, then press control
+    to move the point, rather than modify the object
   
 
 SpreadEditor:
