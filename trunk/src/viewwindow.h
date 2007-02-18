@@ -58,7 +58,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	char lfirsttime;
  protected:
 	unsigned int drawflags;
-	int viewmode,searchmode;
+	int viewmode;
+	int searchmode,searchcriteria;
 	int showstate;
 	int transformlevel;
 	double ectm[6];
@@ -67,7 +68,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual void setupthings(int tospread=-1,int topage=-1);
 	virtual void LaidoutViewport::setCurobj(VObjContext *voc);
 	virtual void LaidoutViewport::findAny();
-	virtual int nextObject(VObjContext *oc);
+	virtual int nextObject(VObjContext *oc,int inc=0);
 	virtual void transformToContext(double *m,FieldPlace &place,int invert=1);
  public:
 	 //*** maybe these should be protected?
@@ -102,7 +103,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 
 	virtual const char *Pageviewlabel();
 	virtual void Center(int w=0);
-	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc=NULL);
+	virtual int NewData(LaxInterfaces::SomeData *d);
+	virtual int NewCurobj(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc=NULL);
 	virtual int SelectPage(int i);
 	virtual int NextSpread();
 	virtual int PreviousSpread();

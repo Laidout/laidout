@@ -81,12 +81,12 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual int Refresh();
 //	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
 //	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
-//	//virtual void Clear();
 //	//virtual void deletedata();
 	virtual int InterfaceOn();
 //	//virtual int InterfaceOff();
 	virtual const char *whattype() { return "SpreadInterface"; }
 	virtual const char *whatdatatype() { return "LittleSpread"; }
+	virtual void Clear(LaxInterfaces::SomeData *d);
 
 	virtual void CheckSpreads(int startpage,int endpage);
 	virtual void GetSpreads();

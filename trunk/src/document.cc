@@ -42,9 +42,9 @@ using namespace std;
  * Should have enough info to create a specific kind of Document.
  * Currently this just means keeping an Imposition object.
  *
- * ***In the future, perhaps it might also have things like whether the default page
- * advance direction is to the right or left. have to think about interaction between
- * Document/PageRange/Imposition more.....
+ * \todo ***In the future, perhaps it might also have things like whether the default page
+ *   advance direction is to the right or left. have to think about interaction between
+ *   Document/PageRange/Imposition more.....
  */
 
 
