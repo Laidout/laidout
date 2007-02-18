@@ -52,6 +52,25 @@ anInterface *GroupInterface::duplicate(anInterface *dup)
 	return ObjectInterface::duplicate(g);
 }
 
+/*! Return 0 if newdata accepted, 1 if accepted.
+ *
+ * \todo *** UseThis() should optionally use object contexts, not just an anObject.
+ */
+int GroupInterface::UseThis(anObject *newdata,unsigned int)
+{
+	if (!newdata) return 0;
+	SomeData *d=dynamic_cast<SomeData *>(newdata);
+	if (!d) return 0;
+
+	FreeSelection();
+	VObjContext oc;
+	oc.obj=d; 
+	((LaidoutViewport *)viewport)->locateObject(d,oc.context);
+	AddToSelection(&oc);
+	needtodraw=1;
+	return 1;
+}
+
 //! Return 1 if change, else 0.
 int GroupInterface::ToggleGroup()
 {

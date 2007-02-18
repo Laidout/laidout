@@ -232,6 +232,11 @@ SpreadInterface::~SpreadInterface()
 	spreads.flush();
 }
 
+/*! Doesn't do anything..
+ */
+void SpreadInterface::Clear(LaxInterfaces::SomeData *)
+{
+}
 
 /*! Something like:
  * <pre>
@@ -1163,7 +1168,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 						//Window owner,const char *mes, 
 						Project *nproj,Document *ndoc)
 	: ViewerWindow(parnt,ntitle,nstyle|ANXWIN_DELETEABLE|VIEWPORT_RIGHT_HANDED|VIEWER_BACK_BUFFER, 
-					xx,yy,ww,hh, brder, NULL)//final null is standard ViewportWindow...
+					xx,yy,ww,hh, brder, NULL)
 {
 	project=nproj;
 	doc=ndoc;
@@ -1179,6 +1184,9 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 			if (project->docs.n) doc=project->docs.e[0];
 		}
 	} 
+	if (!viewport) viewport=new ViewportWindow(this,"spread-editor-viewport",
+									ANXWIN_HOVER_FOCUS|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
+									0,0,0,0,0,NULL);
 	viewport->win_xatts.background_pixel=app->rgbcolor(200,200,200);
 	viewport->win_xattsmask|=CWBackPixel;
 	viewport->dp->NewBG(255,255,255);

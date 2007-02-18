@@ -242,8 +242,37 @@ int VObjContext::isequal(const ObjectContext *oc)
  * \brief  Return 2 if spread exists, or 1 for just limbo.
  */
 /*! \var int LaidoutViewport::searchmode
- * \brief 0==none, 1==FindObject, 2==SelectObject(prev/next)
+ * <pre>
+ *  Search_None    0
+ *  Search_Find    1
+ *  Search_Select  2
+ * </pre>
  */
+/*! \var int LaidoutViewport::searchcriteria
+ * <pre>
+ *  Search_Any         0 <-- any held by the viewport
+ *  Search_Visible     1 <-- any visible on screen
+ *  Search_UnderMouse  2 <-- any under the mouse 
+ *  Search_WhereMask   3
+ *   -- or with:--
+ *  Search_SameLevel        (0<<4) <-- object and its siblings only
+ *  Search_SameOrUnderLevel (1<<4) <-- all descendents of object's parent
+ *  Search_HowMask          (12)
+ * </pre>
+ * \todo *** implement these
+ */
+#define Search_None    0
+#define Search_Find    1
+#define Search_Select  2
+
+#define Search_Any              0
+#define Search_Visible          1
+#define Search_UnderMouse       2 
+#define Search_WhereMask        3
+
+#define Search_SameLevel        (0<<4)
+#define Search_SameOrUnderLevel (1<<4)
+#define Search_HowMask          (12)
 
 
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
@@ -264,7 +293,10 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	spreadi=-1;
 	curpage=NULL;
 	pageviewlabel=NULL;
-	searchmode=0;
+
+	searchmode=Search_None;
+	searchcriteria=Search_Any;
+	
 	viewmode=-1;
 	SetViewMode(PAGELAYOUT,-1);
 //	SetViewMode(SINGLELAYOUT,-1);//*** note that viewwindow has a button for this, which defs to PAGELAYOUT
@@ -668,7 +700,7 @@ int LaidoutViewport::PlopData(LaxInterfaces::SomeData *ndata,char nearmouse)
 	//	***
 	//}
 	
-	NewData(ndata,NULL);
+	NewCurobj(ndata,NULL);
 	if (curobj.obj) {
 		 // activate right tool for object
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
@@ -721,6 +753,16 @@ int LaidoutViewport::DeleteObject()
 	return 1;
 }
 
+/*! \todo cut out the relevant stuff from NewCurobj and put in here, right now
+ *    just calls the old one..
+ */
+int LaidoutViewport::NewData(LaxInterfaces::SomeData *d)
+{
+	int c=NewCurobj(d,NULL);
+	if (c!=0) return -1;
+	return curobj.context.e(curobj.context.n()-1);
+}
+
 //! Shove this data onto curobj context.
 /*! This function should only be called directly by interfaces. It is an aid to 
  * set up curobj to some object found in a search, and for new data the interfaces create.
@@ -747,7 +789,7 @@ int LaidoutViewport::DeleteObject()
  * If d is not NULL, but there is another object in oc, then d us used, but oc->context
  * is also used.
  */
-int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc)
+int LaidoutViewport::NewCurobj(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc)
 {
 	 //*** this is probably wrong, oc might itself be where to put
 	 //*** d, rather than the context for d itself
@@ -811,9 +853,9 @@ int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectCon
 /*! Return 0 if curobj not changed, else nonzero.
  *
  * \todo *** this is rather broken just at the moment, does only -1 and -2.
- * \todo *** could have search mode, one mode is search under particular coords, another
- *   mode is step through all on screen objects, another step through all in spread,
- *   another step through all in current layer.
+ * \todo *** implement searchcriteria, one criteria is search under particular coords, another
+ *   criteria is step through all on screen objects, another step through all in spread,
+ *   another step through all in current layer, etc
  */
 int LaidoutViewport::SelectObject(int i)
 {
@@ -821,22 +863,21 @@ int LaidoutViewport::SelectObject(int i)
 		findAny();
 		if (firstobj.obj) setCurobj(&firstobj);
 		else return 0;
-	} else if (i==-2) { //prev
-		VObjContext prev;
-		prev=curobj;
-		if (searchmode!=2) {
+	} else if (i==-2 || i==-1) { //prev or next
+		VObjContext o;
+		o=curobj;
+		if (searchmode!=Search_Select) {
 			ClearSearch();
 			firstobj=curobj;
-			searchmode=2;
+			searchmode=Search_Select;
 		}
-		if (nextObject(&prev)!=1) {
+		DBG o.context.out("Finding Object adjacent to :");
+		if (nextObject(&o,i==-2?0:1)!=1) {
 			firstobj=curobj;
-			prev=curobj;
-			if (nextObject(&prev)!=1) { searchmode=0; return 0; }
+			o=curobj;
+			if (nextObject(&o,i==-2?0:1)!=1) { searchmode=Search_None; return 0; }
 		}
-		setCurobj(&prev);
-	} else if (i==-1) { //next
-		cout <<"***next obj: imp me!"<<endl;
+		setCurobj(&o);
 	} else return 0;
 	
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
@@ -886,10 +927,10 @@ int LaidoutViewport::ChangeObject(LaxInterfaces::SomeData *d,LaxInterfaces::Obje
 //! Find object in current spread underneath screen coordinate x,y.
 /*! If an interfaces receives a lbdown outside of their object, then it would
  * call viewport->FindObject, which will possibly return an object that the 
- * interface can handle. If so, the interface would call NewData with it. The interface
+ * interface can handle. If so, the interface would call ChangeData with it. The interface
  * can keep searching until it finds one it can handle.
  * If FindObject does not return something the interface can handle, then
- * it should call ChangeObject(that other data).
+ * it should call ChangeObject(with that other data).
  * 
  * If an object of the proper type is found, its context is put in oc and 1 is returned.
  * Internally, this object will be in LaidoutViewport::foundtypeobj. This context gets
@@ -916,7 +957,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	
 	 //init the search, if necessary
 	VObjContext nextindex;
-	if (searchmode!=1 || start || x!=searchx || y!=searchy) { //init search
+	if (searchmode!=Search_Find || start || x!=searchx || y!=searchy) { //init search
 		foundobj.clear();
 		firstobj.clear();
 		 
@@ -939,7 +980,7 @@ int LaidoutViewport::FindObject(int x,int y,
 		searchtype=NULL;
 		if (start==2 || start==0) exclude=NULL;
 		start=1;
-		searchmode=1;
+		searchmode=Search_Find;
 		
 		if (exclude && nextindex.obj==exclude) nextObject(&nextindex);
 	} else {
@@ -1005,22 +1046,18 @@ int LaidoutViewport::FindObject(int x,int y,
 }
 
 //! Make a transform that takes a point from viewer past all objects in place.
-/*! *** perhaps return how many transforms were applied, so 0 means success, 
- * >0 would mean that many ignored. maybe have some other special 
- * return for invalid context?
- *
+/*! 
  * If invert!=0, then return a transform that transforms a point from the place
  * to the viewer, which is analogous to the SomeData::m().
  * 
- * ***work this out!! Say an object is g1.g2.g3.obj corresponding to a place something like
- * "1.2.3", then m gets filled with g3->m()*g2->m()*g1->m(),
- * where the m() are the matrix as used in Laxkit::Displayer discussion.
- *
- * *** since no multiple nesting yet, i keep confusing myself whether these
- * matrices are multiplied correctly!!
- * 
- * \todo *** occassionally, there is a PageLocation with a proper index,
- * but its page element is NULL, must find where this happens!!
+ * \todo *** perhaps return how many transforms were applied, so 0 means success, 
+ *   >0 would mean that many ignored. maybe have some other special 
+ *   return for invalid context?
+ * \todo ***work this out!! Say an object is g1.g2.g3.obj corresponding to a place something like
+ *   "1.2.3", then m gets filled with g3->m()*g2->m()*g1->m(),
+ *   where the m() are the matrix as used in Laxkit::Displayer discussion.
+ * \todo *** since no multiple nesting yet, i keep confusing myself whether these
+ *   matrices are multiplied correctly!!
  */
 void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert)
 {
@@ -1054,6 +1091,7 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
 	} else {}
 	
 	while (g && i<place.n()) {
+		//transform_mult(mm,m,g->m());
 		transform_mult(mm,g->m(),m);
 		transform_copy(m,mm);
 				
@@ -1066,7 +1104,11 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
 }
 
 //! Step oc to next object. 
-/*! This is used to step through object tree no matter how deep.
+/*! If inc==1 then increment indices, else decrment indices.
+ *
+ * \todo *** update this:
+ *
+ * This is used to step through object tree no matter how deep.
  * For groups, steps through the group's contents first, then the group
  * itself, then moves on to a sibling of that group, etc.
  *
@@ -1074,22 +1116,35 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
  * wrap around at this level. This also implies that all subobjects of what oc points
  * to have already been stepped through.
  * 
- * Returns 0 if there isn't a next obj for some reason.
+ * Returns 0 if there isn't a next obj for some reason, and 1 if there is.
  */
-int LaidoutViewport::nextObject(VObjContext *oc)
+int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 {
 	int c;
 	anObject *d;
+	DBG int cn=1;
 	do {
-		c=ObjectContainer::nextObject(oc->context,firstobj.context,0,&d);
+		DBG cout <<"LaidoutViewport->nextObject count="<<cn++<<endl;
+
+		c=ObjectContainer::nextObject2(oc->context,0,inc?Next_Increment:Next_Decrement,&d);
 		oc->obj=dynamic_cast<SomeData *>(d);
-		if (c!=1 || !(oc->obj)) return 0;
-		if (!validContext(oc)) {
-			DBG cout <<"**** damnation, invalid context found in lov.nextObject!"<<endl;//debugging
-			//exit(1);
-		}
+		if (c==Next_Error) return 0; //error finding a next
+
+		 //at this point oc/d might be a somedata, or it might be a container
+		 //like this, or a spread..
+		if (*oc==firstobj) return 0; //wrapped around to first
 		
-		 //if is NOT (limbo or page or page->layer or spread) then break, else continue.
+		//***assume nextObject returned a valid object, further check for 
+		//***"validity" is below...
+		//if (!validContext(oc)) {
+		//	DBG cout <<"**** damnation, invalid context found in lov.nextObject:";
+		//	DBG oc->context.out(NULL);
+		//	//exit(1);
+		//}
+		
+		 //if is NOT (limbo or page or page->layer or spread) then return
+		 //with the found next object, else continue.
+		if (!(oc->obj)) continue;
 		if (!(oc->spread()==0 && oc->context.n()<=1 ||   
 			oc->spread()==1 && oc->context.n()<=3)) {
 			DBG oc->context.out("  lov-next");
@@ -1100,7 +1155,7 @@ int LaidoutViewport::nextObject(VObjContext *oc)
 	return 0;
 }
 
-// ****
+// ****replace the other locateObject with this one:
 // return the object at place(offset).place(offset+1)...place(offset+n-1)
 // If n==0, then use the rest of place from offset.
 //LaxInterfaces::SomeData *LaidoutViewport::locateObject(FieldPlace &place,int offset,int n)
@@ -1169,18 +1224,25 @@ void LaidoutViewport::findAny()
 //! Check whether oc is a valid object context.
 /*! Assumes oc->obj is what you actually want, and checks oc->context against it.
  * Object has to be in the spread or in limbo for it to be valid.
+ * Note that oc->obj is a SomeData. So if the context is limbo or a spread,
+ * rather than an object contained in it, it is technically an invalid context..
  *
  * Return 0 if invalid,
  * otherwise return 1 if it is valid.
+ *
+ * \todo might be useful to check against all objects in tree, not just for
+ *   selectable SomeDatas
  */
 int LaidoutViewport::validContext(VObjContext *oc)
 {
+	//if (oc && oc->context.n()==0 && anobj==this) return 1;
 	if (!oc || oc->spread()<0) return 0;
 	
 	SomeData *d=oc->obj;
 	
 	if (oc->spread()==0) { // scratchboard/limbo
-		if (d==limbo.getanObject(oc->context,1)) return 1;
+		if (oc->context.n()==1) return 1;
+		else if (d==limbo.getanObject(oc->context,1)) return 1;
 		return 0;
 	}
 	
@@ -1208,7 +1270,7 @@ void LaidoutViewport::ClearSearch()
 	foundtypeobj.clear();
 	searchx=searchy=-1;
 	searchtype=NULL;
-	searchmode=0;
+	searchmode=Search_None;
 }
 
 //! Update ectm. Set curobj if voc!=NULL.
@@ -1787,6 +1849,9 @@ void LaidoutViewport::Refresh()
  */
 int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 {
+	DBG if (ch=='m') {
+	DBG 	cout << ".....mark...."<<endl;
+	DBG }
 	
 	 // check these first, before asking interfaces
 	if (ch==' ') {
@@ -2744,9 +2809,9 @@ void ViewWindow::updateContext()
 
 	LaidoutViewport *v=((LaidoutViewport *)viewport);
 	char blah[v->curobj.context.n()*10+50];
-	blah[0]='\0';
+	strcpy(blah,"viewer");
 	for (int c=0; c<v->curobj.context.n(); c++) {
-		sprintf(blah+strlen(blah),"%d,",v->curobj.context.e(c));
+		sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
 	}
 	blah[strlen(blah)-1]=':';
 	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());

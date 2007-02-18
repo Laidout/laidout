@@ -114,8 +114,10 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  * This text should be the same as is returned by the object's whattype() function.
  *
  * Currently recognized data are:
- * - SomeData
+ * - SomeData *** should remove this one?
+ * - Group
  * - ImageData
+ * - ImagePatchData
  * - PathsData
  * - GradientData
  * - ColorPatchData
@@ -129,7 +131,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 SomeData *newObject(const char *thetype)
 {
 	if (!strcmp(thetype,"SomeData")) return new SomeData();
-	if (!strcmp(thetype,"Group")) return new SomeData();
+	if (!strcmp(thetype,"Group")) return new Group();
 	if (!strcmp(thetype,"ImageData")) return new ImageData();
 	if (!strcmp(thetype,"ImagePatchData")) return new ImagePatchData();
 	if (!strcmp(thetype,"PathsData")) return new PathsData();
