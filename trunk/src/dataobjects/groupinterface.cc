@@ -96,12 +96,17 @@ int GroupInterface::ToggleGroup()
 		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
 		return 0;
 	} 
+
+	DBG place.out("toggle this group: ");
+
+	 // find the base group which contains the group to ungroup, or which contains the
+	 // first selected object to group with others..
 	if (place.e(0)==0) { // is limbo
 		base=&((LaidoutViewport *)viewport)->limbo;
 	} else if (place.e(0)==1) {
 		 // is doc pages spread, need the page->layers containing the selection
 		Page *p=NULL;
-		if (place.e(1)>=0) {
+		if (place.e(1)>=0) { // if there is a valid spread page...
 			Spread *s=((LaidoutViewport *)viewport)->spread;
 			if (s) p=dynamic_cast<Page *>(s->object_e(place.e(1))); //spread->object_e returns Page
 		}
@@ -112,10 +117,12 @@ int GroupInterface::ToggleGroup()
 		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
 		return 0;
 	}
-	 // now base is the base Group object, and place is the full place of selection[0]
+	 // now base is either limbo or the Group of page layers, and place is the full place of selection[0]
 	
 	if (selection.n==1) {
 		 // a single Group is selected, ungroup its objects...
+		 // or there is a single object that is not a Group, should have option to
+		 // force a group of one object maybe..
 		if (strcmp(selection.e[0]->whattype(),"Group")) {
 			viewport->postmessage("Cannot group single objects like that.");
 			return 1;
@@ -132,7 +139,8 @@ int GroupInterface::ToggleGroup()
 		} else error=1;
 
 		viewport->postmessage(error?"Ungroup failed.":"Ungrouped.");
-		cout <<"*** revamp selection after ungroup"<<endl;
+		
+		cout <<"*** must revamp selection after ungroup to have all the subobjs selected!!"<<endl;
 		FreeSelection();
 		return error?0:1;
 		

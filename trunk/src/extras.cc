@@ -468,14 +468,19 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		   rw,rh,
 		   rrh;         // height of all rows found so far
 	int n,         // total number of images
-		nn;        // number of images in current row
+		nn,        // number of images in current row
+		nnn;       // number of images in a current page
 	n=0; // total number of images placed, nn is placed for page
 	SomeData *outline=NULL;
 	SomeData *obj;
 
 	while (info) { // one loop per page
 		//***if (progressfunc) progressfunc(progressarg, curimgi/numimgs);
+		
+		nnn=0;
 	
+		 // info points to the first image on a page
+		
 		DBG cout <<"  starting page "<<curpage+1<<endl;
 		if (!info->image) { info=info->next; continue; }
 		
@@ -515,30 +520,31 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		 // flow onto page (into a rectangle)
 		rw=rh=rrh=0;
 		DBG int nr=0; // number of rows so far
-		last=flow=info;
 		
 		 // find maxperpage
 		int maxperpage=0;
 		int flowtype=1; //0=as will fit, 1=force fit 
+		last=info;
 		while (last && (last->page==-1 || last->page==-2 || last->page==curpage)) {
 			if (last->page==-1) flowtype=0;
 			maxperpage++;
 			last=last->next;
 		}
 			
-		nn=0;
+		last=flow=info;
 		do { //one loop per row,
 			 //rows on a single page. if doesn't all fit, then break out of this loop
 			 //and advance main loop one and start on a new page
+			 //flow should be pointing to the first image for a new row
 			if (info->dpi>0) curdpi=info->dpi; else curdpi=dpi;
 			s=1./curdpi; 
-			
-			if (flow!=info) flow=flow->next;
+		
+			nn=0;        // reset row counter
 			last=flow;   // last is used to point to first image of a row
 			
 			rw=rh=0;
 			DBG cout <<"  row number "<<++nr<<endl;
-			while (flow) { 
+			while (flow && nnn+nn<maxperpage) { 
 				 // find all for a row
 				obj=flow->image;
 				obj->xaxis(flatpoint(s,0));
@@ -546,43 +552,52 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 				w=(obj->maxx-obj->minx)*s;
 				h=(obj->maxy-obj->miny)*s;
 				t=(h>rh?h:rh);
-				if (last!=flow && (rw+w>ww || rrh+t>hh)) break; // fit all that could be fit on row
+				if (nn && (rw+w>ww || rrh+t>hh)) {
+					 // If the image is either off the end of the row
+					 //  or off the bottom of the page, then break.
+					 // this puts at least one in a row
+					break;
+				}
 				nn++;
 				rw+=w;
 				if (h>rh) rh=h;
-				if (!flow->next || nn==maxperpage) break;
 				flow=flow->next;
 			}
-			if (last!=flow && rrh+rh>hh && flowtype==0) 
-				break; // end adding rows to page, row would be off page
+			 // flow now points to the one after the end of the row
+			
+			if (nnn && rrh+rh>hh && flowtype==0) {
+				 // if there is something on the page so far, and the
+				 // row is too big, then end adding rows to page
+				flow=last;
+				break;
+			}
 
-			 // apply origin and scaling to all between and including last and flow
+			 // apply origin and scaling to all in [last,flow)
 			x=(ww-rw)/2+outline->minx;
 			y=hh-rrh-rh/2+outline->miny; // y is centerline for row
 			rrh+=rh;
-			for (flow2=last; flow2; ) {
+			for (flow2=last; flow2!=flow; ) {
 				w=(flow2->image->maxx-flow2->image->minx)*s;
 				h=(flow2->image->maxy-flow2->image->miny)*s;
 				flow2->image->origin(flatpoint(x,y-h/2));
 				x+=w;
-				if (flow2==flow) break;
 				flow2=flow2->next;
 			}
-		} while (flow->next && nn<maxperpage); // continue doing rows
+			nnn+=nn;
+		} while (flow && nnn<maxperpage); // continue doing rows
 
-		 // now do final arranging of nn images in range [info,flow]
+		 // now do final vertical arranging of nnn images in range [info,flow)
 		 // push images onto the page, adjusting their origins appropriately
 		DBG cout <<"  add "<<nn<<" images to page "<<curpage<<endl;
-		while (1) {
+		while (info!=flow) {
 			DBG cout <<"   adding image ..."<<endl;
 			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)/2));
 			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
 			g->push(info->image,0); //incs the obj's count
-			if (info==flow) break;
 			info=info->next;
 		}
-		info=info->next;
-		n+=nn;
+		n+=nnn;
+		curpage++;
 	} // end loop block for page
 
 	DBG cout <<"-----------------end dump images[]----------------"<<endl;

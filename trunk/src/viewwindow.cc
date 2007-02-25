@@ -1756,6 +1756,7 @@ void LaidoutViewport::Refresh()
 
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n(); c2++) {
+				DBG cout <<"  num objs in page: "<<page->n()<<endl;
 				DBG cout <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
 				DrawData(dp,page->e(c2),NULL,NULL,drawflags);
 			}
@@ -2421,7 +2422,7 @@ int ViewWindow::init()
 	p->WrapWidth();
 	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
 
-	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",255,0,0);
+	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",65535,0,0,65535,65535,255);
 	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
@@ -2813,7 +2814,7 @@ void ViewWindow::updateContext()
 	for (int c=0; c<v->curobj.context.n(); c++) {
 		sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
 	}
-	blah[strlen(blah)-1]=':';
+	strcat(blah,":");
 	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
 	mesbar->SetText(blah);
 }
@@ -2844,8 +2845,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.color.alpha=e->data.l[4];
 		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		char blah[100];
-		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",
-				linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
+		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",
+				(float) linestyle.color.red   / 65535,
+				(float) linestyle.color.green / 65535,
+				(float) linestyle.color.blue  / 65535,
+				(float) linestyle.color.alpha / 65535);
 		mesbar->SetText(blah);
 		if (curtool)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
@@ -2859,8 +2863,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.color.blue=e->data.l[2];
 		linestyle.color.alpha=e->data.l[3];
 		char blah[100];
-		sprintf(blah,"New Color r:%d g:%d b:%d a:%d",
-				linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
+		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",
+				(float) linestyle.color.red   / 65535,
+				(float) linestyle.color.green / 65535,
+				(float) linestyle.color.blue  / 65535,
+				(float) linestyle.color.alpha / 65535);
 		mesbar->SetText(blah);
 		if (curtool)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);

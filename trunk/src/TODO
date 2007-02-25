@@ -26,6 +26,13 @@
 NEED major overhaul of the rendering, which should allow among other things
 output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
  
+
+startup new document dialog using templates, which can be in various stages of 
+specificity. So one might have letter on orange cardstock, another might be
+an icosahedron net on legal.. when loading would have option to reset all 
+unspecified fields to the global default or not?
+
+ 
 should be able to stretch any image.. makes new image preview, 
  attach transforms of various sorts to an image:
    image

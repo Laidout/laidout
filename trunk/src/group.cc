@@ -353,7 +353,7 @@ int Group::UnGroup(int n,const int *which)
 	if (*which<0 || *which>=objs.n) return 2;
 	Group *g=dynamic_cast<Group *>(objs.e[*which]);
 	if (!g) return 3;
-	if (n>1) return UnGroup(n-1,which+1);
+	if (n>1) return g->UnGroup(n-1,which+1);
 	
 	SomeData *d;
 	int local;
