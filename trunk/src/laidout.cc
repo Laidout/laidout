@@ -84,10 +84,9 @@ void print_usage()
 	cout <<LaidoutVersion()<<endl<<
 		"\n laidout [options] [file1] [file2] ...\n\n"
 		"Options:\n"
+		"  -t --template templatename       Start laidout from this template in the .laidout/templates\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
-		"    -n default (default not yet!)  default is single letter portrait, or whatever is in laidoutrc\n"
-		"    -n pamphlet (not yet!)         other things can be tags to a doc style in .laidout/templates/*\n"
-		"    -n whatever (not yet!)\n" 
+		"    -n whatever (not yet!)         Start up laidout with a Whatever imposition\n" 
 		"  -f --rescan-fonts (not yet!)     Rescan font directories\n"
 		"  -p --new-font-path dir (nope!)   Add dir to font path, and rescan fonts\n"
 		"  --no-x (nope!)                   Start up command line, no other interface, useful for quick printing??\n"
@@ -160,6 +159,23 @@ void print_usage()
 /*! \var char LaidoutApp::preview_transient
  * \brief Whether newly created previews should be deleted when no longer in use.
  */
+/*! \var char *LaidoutApp::temp_dir
+ * \brief Where to store temporary files.
+ *
+ * \todo *** imp me! Maybe: create laidoutrc->temp_dir/pid, then upon program termination,
+ *   delete that directory.
+ */
+/*! \var char *LaidoutApp::preview_file_base
+ * \brief The template used to name preview files for images.
+ *
+ * When Laidout generates new preview images for existing image files,
+ * the original suffix for the image file is stripped and inserted
+ * into this string. So say a file is "image.tiff" and preview_file_base
+ * is "%s-s.jpg" (which is the default), then the preview file will
+ * be "image-s.jpg". Generated preview files are always jpg files. If
+ * the base is "../thumbs/%s-s.jpg" then the preview file will be
+ * generated at "../thumbs" relative to where the image file is located.
+ */
 
 
 //! Laidout constructor, just inits a few variables to 0.
@@ -174,7 +190,7 @@ LaidoutApp::LaidoutApp() : anXApp()
 	curcolor=0;
 	lastview=NULL;
 	
-	project=NULL;
+	project=new Project;
 	curdoc=NULL;
 	tooltips=1000;
 
@@ -182,9 +198,12 @@ LaidoutApp::LaidoutApp() : anXApp()
 	defaultpaper=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 	temp_dir=NULL;
+	default_template=NULL;
 	
+	preview_file_base=newstr("%s-s.jpg");
 	max_preview_length=200;
-	preview_transient=1;
+	max_preview_width=max_preview_height=-1;
+	preview_transient=1; 
 	preview_images=Preview_SameDir;
 	//preview_images=Preview_None;
 
@@ -263,7 +282,11 @@ LaidoutApp::~LaidoutApp()
  * \todo  manually adding a couple of pagestyles here there should be a better way to handle initializations.
  *   this should be cleared when plugin architecture is functional
  * \todo when the program is run before installing, should be able to automatically detect that
- *   and find icons and other resources (***NOT WORKING RIGHT NOW!!!)
+ *   and find icons and other resources (***NOT WORKING RIGHT NOW!!!) this seems to require checking
+ *   argv[0]. If it is an absolute pathname or a definite pathname like "dir/blah" then it's
+ *   location is clear. If it is merely "blah" then the PATH environmental variable must be
+ *   used to search for the first user executable path1/blah, path2/blah, etc. However, care must
+ *   be taken to traverse links properly, and not get caught in never ending link loops.
  */
 int LaidoutApp::init(int argc,char **argv)
 {
@@ -343,6 +366,9 @@ int LaidoutApp::init(int argc,char **argv)
 	//maincontrolpanel=new ControlPanel(***);
 	
 	 // if no other windows have been launched yet, then launch newdoc window
+	if (topwindows.n==0 && default_template) {
+		cout << "*** implement creation of new file from default_template!"<<endl;
+	}
 	if (topwindows.n==0)
 		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
@@ -351,6 +377,9 @@ int LaidoutApp::init(int argc,char **argv)
 
 //! Called from init(), creates a user's laidoutrc if readinLaidoutDefaults failed.
 /*! Return 0 for created ok, else non-zero error.
+ *
+ * \todo should separate the laidoutrc writing functions to allow easy dumping to any
+ *   stream like stdout.
  */
 int LaidoutApp::createlaidoutrc()
 {
@@ -376,16 +405,25 @@ int LaidoutApp::createlaidoutrc()
 		sprintf(path,"%s/laidoutrc",config_dir);
 		FILE *f=fopen(path,"w");
 		if (f) {
-			fwrite("# Laidout global configuration options go in here.\n",1,51,f);
-			fwrite("# An explanation of what goes in here should have \n",1,51,f);
-			fwrite("# come with Laidout.\n",1,21,f);
-			fwrite("\n# The maximum dimension for preview images\n#maxPreviewLength 200\n",1,66,f);
-			fwrite("\n#usePreviewImages no\n",1,22,f);
-			fwrite("#usePreviewImages sameDir\n",1,26,f);
-			fwrite("#usePreviewImages temporary\n",1,28,f);
-			fwrite("#usePreviewImages projectDir\n",1,29,f);
-			fwrite("\n#previewTransient no  #whether new previews are deleted when no longer used\n",1,22,f);
-			fwrite("\n#palette_dir /usr/share/gimp/2.0/palettes\n",1,42,f);
+			fprintf(f,"#Laidout %s laidoutrc\n",LAIDOUT_VERSION);
+			fprintf(f,"\n");
+			fprintf(f,"# Laidout global configuration options go in here.\n");
+			fprintf(f,"\n");
+			fprintf(f,"\n# The maximum dimension for preview images\n#maxPreviewLength 200\n");
+			fprintf(f,"#maxPreviewWidth 200\n");
+			fprintf(f,"#maxPreviewHeight 200\n");
+			fprintf(f,"\n#usePreviewImages no\n");
+			fprintf(f,"#usePreviewImages sameDir\n");
+			fprintf(f,"#usePreviewImages temporary\n");
+			fprintf(f,"#usePreviewImages projectDir\n");
+			fprintf(f,"\n#previewTransient no  #whether new previews are deleted when no longer used\n");
+			fprintf(f,"\n#palette_dir /usr/share/gimp/2.0/palettes\n");
+			fprintf(f,"\n");
+			fprintf(f," #if the following is commented out, then running \"laidout\" will\n");
+			fprintf(f," #always bring up the new document dialog. If it is uncommented, then the\n");
+			fprintf(f," #specified file is loaded with no name so that trying to save will\n");
+			fprintf(f," #force entering a new name and location.\n");
+			fprintf(f,"#default_template ./templates/default\n");
 			fclose(f);
 		}
 		 // create the other relevant directories
@@ -399,9 +437,8 @@ int LaidoutApp::createlaidoutrc()
 	return 0;
 }
 
-//! Read in various startup defaults.
-/*! These include the laidoutrc and icons.
- *
+//! Read in various startup defaults. Essentially read in the laidoutrc.
+/*! 
  * Return 0 if laidoutrc doesn't exist, 1 if ok.
  * The default location is $HOME/.laidout/(version)/laidoutrc.
  */
@@ -426,8 +463,8 @@ int LaidoutApp::readinLaidoutDefaults()
 		if (!strcmp(name,"appcolors")) {
 			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
 			
-		} else if (!strcmp(name,"defaultstartdoc")) {
-			cout <<"***imp me! readinlaidoutrc: defaultdoc"<<endl;
+		} else if (!strcmp(name,"default_template")) {
+			if (file_exists(value,1,NULL)==S_IFREG) makestr(default_template,value);
 			//default to config_dir/templates/default
 
 		} else if (!strcmp(name,"defaultpapersize")) {
@@ -524,13 +561,14 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ "new",           1, 0, 'n' },
 			{ "load-dir",      1, 0, 'l' },
 			{ "no-x",          0, 0, 'x' },
+			{ "template",      1, 0, 't' },
 			{ "version",       0, 0, 'v' },
 			{ "help",          0, 0, 'h' },
 			{ 0,0,0,0 }
 		};
 	int c,index;
 	while (1) {
-		c=getopt_long(argc,argv,"fp:n:vh",long_options,&index);
+		c=getopt_long(argc,argv,"t:fp:n:vh",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
 			case ':': cout <<"missing parameter..."<<endl; exit(1); // missing parameter
@@ -539,7 +577,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'v':  // Show version info, then exit
 				cout <<LaidoutVersion()<<endl;
 				exit(0);
-					  
+
+			case 't': { // load in template
+					LoadTemplate(optarg);
+				} break;
 			case 'f': { // --rescan-fonts
 					cout << "**** rescan font path "<< endl;
 				} break;
@@ -598,6 +639,90 @@ Document *LaidoutApp::findDocument(const char *saveas)
 		if (!strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
 	}
 	return NULL;
+}
+
+//! Given a Laidout resource name, find the absolute file path for it. Returns a new char[].
+/*! \todo *** this should be expanded to be a more full featured search for resources.
+ *     this could involve find("blah","templates") or file("palette_name","palette_dir_or_path").
+ *     could have an index file in base of the resource directory? that would be a map of
+ *     human readable aliases to actual files?
+ * \todo right now just searches in the user's home directory. Should also search in
+ *   system wide directory
+ *
+ * If dir!=NULL, then look in ~/.laidout/(version)/dir for the file. 
+ *
+ * name should be either an absolute file path or a more general name. If it is an
+ * absolute path, then dir is ignored. Absolute paths will begin with "file://", "./",
+ * "../" or "/".
+ * 
+ * If name is not an absolute path, then it is something like "blah/file".
+ * In that case, blah should be an actual
+ * directory name, a subdirectory of dir. If name is not found, then name minus
+ * a final suffix is searched for. So if name is "thing", and file "thing" is not
+ * found, then if "thing.laidout" is found, then that is used.
+ */
+char *LaidoutApp::full_path_for_resource(const char *name,char *dir)//dir=NULL
+{
+	int c=0;
+	if (!strncmp(name,"file://",7)) { name+=7; c=1; }
+	char *fullname=newstr(name);
+	
+	if (c || !strncmp(fullname,"/",1) || !strncmp(fullname,"./",2) || !strncmp(fullname,"../",3)) {
+		 // is filename
+		full_path_for_file(fullname,NULL,0);
+		if (readable_file(fullname)) return fullname;
+		delete[] fullname;
+		return NULL;
+	} else {
+		 // else is a name
+		if (dir) {
+			appendstr(fullname,"/",1);
+			appendstr(fullname,dir,1);
+			appendstr(fullname,"/",1);
+			appendstr(fullname,config_dir,1);
+		} 
+		full_path_for_file(fullname,NULL,0);
+		if (readable_file(fullname)) return fullname;
+		
+		cout <<"imp full_path_for_resource for name not file! ***"<<endl;
+	}
+	delete[] fullname;//***
+	fullname=NULL;//***
+
+	return fullname;
+}
+
+////! ***todo Find a resource by the human readable name, rather than by filename
+//char *full_path_for_resource_by_name(const char *name,char *dir)//dir=NULL
+//{
+//}
+	
+//! Similar to LoadDocument(const char *), but remove the saveas, so as to force a rename.
+/*! If a doc with the same filename is already loaded, it is ignored. Templates will only
+ * be created from files straight from disk.
+ *
+ * Note that this does not automatically create a new window, but it does add the
+ * new Document to LaidoutApp::project.
+ */
+Document *LaidoutApp::LoadTemplate(const char *name)
+{
+	 // find absolute path to a file
+	char *fullname=full_path_for_resource(name,"templates");
+		
+	Document *doc=new Document(NULL,fullname);
+	
+	 //must push before Load to not screw up setting up windows and other controls
+	project->docs.push(doc); // docs is a plain Laxkit::PtrStack of Document
+	if (doc->Load(fullname)==0) { // load failed
+		project->docs.pop();
+		delete doc;
+		return NULL;
+	}
+	
+	makestr(doc->saveas,NULL); // this forces a change of name, must be done after Load
+	delete[] fullname;
+	curdoc=doc;
+	return doc;
 }
 
 //! Load a document from filename, putting in project, make it curdoc and return on successful load.
@@ -741,6 +866,9 @@ int LaidoutApp::NewDocument(const char *spec)
  *
  * The docinfo is passed onto Document, which takes control of it. The calling
  * code should not delete it.
+ *
+ * filename is where is should be saved, and is assumed to not exist. If the calling
+ * code is not sure if something exists there, then filename should be passed NULL.
  */
 int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 {
