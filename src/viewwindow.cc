@@ -1349,6 +1349,12 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 }
 
 //! Set up the viewport context to oc.
+/*! If oc contains an object, then the final entry in its context is ignored,
+ * and only the context before it is used. If oc has no object then oc's full
+ * context is used.
+ *
+ * This clears the current object, and resets the search.
+ */
 int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 {
 	DBG cout <<"ChangeContext to supplied oc"<<endl;
@@ -2472,6 +2478,11 @@ int ViewWindow::init()
 	ibut->tooltip("Print to output.ps, a postscript file");
 	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	last=ibut=new IconButton(this,"pdf",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pdf",-1,
+			laidout->icons.GetIcon("PDF"),"Pdf");
+	ibut->tooltip("Create a PDF 1.4 file");
+	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
+
 //	loaddir=new LineEdit(this,"load directory",0, 0,0,0,0,1, 
 //								NULL,window,"loaddir",
 //								app->load_dir,0);
@@ -2796,6 +2807,7 @@ void ViewWindow::SetParentTitle(const char *str)
  */
 void ViewWindow::updateContext()
 {
+	if (!doc) return;
 	int page=((LaidoutViewport *)viewport)->curobjPage();
 	if (pagenumber) {
 		pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
@@ -3035,6 +3047,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 										1, 1,doc->pages.n,curpage+1);
 		app->rundialog(p);
 		return 0;
+	} else if (!strcmp(mes,"pdf")) { // print to output.pdf 
+		cout <<" *** imp pdf out!"<<endl;
 	}
 	
 	return 1;

@@ -623,13 +623,14 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 /*! This only clears the current variables when the file can be loaded (but
  * not necessarily read correctly).
  *
- * Return 0 for not loaded, positive for loaded.
+ * Return 0 for not loaded, positive for loaded. Note that no new window is created
+ * here unless there is a window attribute in the file. (should probably separate
+ * window creation from base Document class).
  *
- * \todo *** for file, check that it is in fact a Laidout file! If it can
+ * \todo *** for file, check that it is in fact a Laidout file! Maybe there should
+ *   be a similar function as a standalone so if the file can
  *   be interpreted as another importable file, then loading should be delegated
- *   to some appropriate function....
- * \todo ***This should maybe be a standalone? or at least have a standalone
- *   implemented somewhere?
+ *   to the appropriate function....
  * \todo window attributes are found when document is saved independent of a project.
  *   must have mechanism to pass those back to LaidoutApp? right now, that is in
  *   dump_in_atts(), and it shouldn't be there....
@@ -639,6 +640,7 @@ int Document::Load(const char *file)
 	//*** need to create a new DocumentStyle from what's in the file..
 	DBG cout <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	FILE *f=fopen(file,"r");
+
 	//*** make sure it is a laidout document!!
 	if (!f) {
 		DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;

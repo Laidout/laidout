@@ -27,24 +27,10 @@ using namespace std;
 
 /*! \class Print
  * \brief Laidout's printing dialog
+ *
+ * \todo this needs a lot of work
  */
-//class PrintingDialog : public Laxkit::SimplePrint
-//{
-// protected:
-//	Laxkit::LineEdit *filesedit;
-//	Laxkit::CheckBox *filescheck;
-//	virtual void changeTofile(int t);
-//	int curpage;
-//	Document *doc;
-// public:
-//	PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
-//						 const char *file="output.ps", const char *command="lp",
-//						 const char *thisfile=NULL,
-//						 int ntof=1,int pmin=-1,int pmax=-1,int pcur=-1);
-//	virtual ~PrintingDialog() { }
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//	virtual int Print();
-//};
+
 
 /*! Install options to print to eps files.
  */

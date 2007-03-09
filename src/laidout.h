@@ -72,9 +72,14 @@ class LaidoutApp : public Laxkit::anXApp
 	Laxkit::anXWindow *lastview;
 
 	unsigned long curcolor;
+	
 	PreviewImageStyle preview_images;
 	char preview_transient;
-	int max_preview_length;
+	int max_preview_length, max_preview_width, max_preview_height;
+	char *preview_file_base;
+
+	char *default_template;
+	
 	char *defaultpaper;
 	char *palette_dir;
 	char *temp_dir;
@@ -101,11 +106,13 @@ class LaidoutApp : public Laxkit::anXApp
 
 	Document *findDocument(const char *saveas);
 	Document *LoadDocument(const char *filename);
+	Document *LoadTemplate(const char *filename);
 	int NewDocument(DocumentStyle *docinfo, const char *filename);
 	int NewDocument(const char *spec);
 	int DumpWindows(FILE *f,int indent,Document *doc);
 
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
+	char *full_path_for_resource(const char *name,char *dir=NULL);
 };
 
 // if included in laidout.cc, then don't include "extern" when defining *laidout
