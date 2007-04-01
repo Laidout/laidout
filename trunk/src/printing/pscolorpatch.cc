@@ -232,10 +232,10 @@ void psContinueColorPatch(FILE *f,ColorPatchData *g,
 				g->points[i+ro[o][14]*xs+co[o][14]].x, g->points[i+ro[o][14]*xs+co[o][14]].y,
 				g->points[i+ro[o][15]*xs+co[o][15]].x, g->points[i+ro[o][15]*xs+co[o][15]].y,
 				 //colors
-				g->colors[c1].red/256.0, g->colors[c1].green/256.0, g->colors[c1].blue/256.0,
-				g->colors[c2].red/256.0, g->colors[c2].green/256.0, g->colors[c2].blue/256.0,
-				g->colors[c3].red/256.0, g->colors[c3].green/256.0, g->colors[c3].blue/256.0,
-				g->colors[c4].red/256.0, g->colors[c4].green/256.0, g->colors[c4].blue/256.0);
+				g->colors[c1].red/65535.0, g->colors[c1].green/65535.0, g->colors[c1].blue/65535.0,
+				g->colors[c2].red/65535.0, g->colors[c2].green/65535.0, g->colors[c2].blue/65535.0,
+				g->colors[c3].red/65535.0, g->colors[c3].green/65535.0, g->colors[c3].blue/65535.0,
+				g->colors[c4].red/65535.0, g->colors[c4].green/65535.0, g->colors[c4].blue/65535.0);
 	} else {
 		fprintf(f,
 			"      %.10g %.10g  %.10g %.10g  %.10g %.10g  %.10g %.10g \n" // 4 5 6 7
@@ -256,7 +256,7 @@ void psContinueColorPatch(FILE *f,ColorPatchData *g,
 				g->points[i+ro[o][14]*xs+co[o][14]].x, g->points[i+ro[o][14]*xs+co[o][14]].y,
 				g->points[i+ro[o][15]*xs+co[o][15]].x, g->points[i+ro[o][15]*xs+co[o][15]].y,
 				 //colors
-				g->colors[c3].red/256.0, g->colors[c3].green/256.0, g->colors[c3].blue/256.0,
-				g->colors[c4].red/256.0, g->colors[c4].green/256.0, g->colors[c4].blue/256.0);
+				g->colors[c3].red/65535.0, g->colors[c3].green/65535.0, g->colors[c3].blue/65535.0,
+				g->colors[c4].red/65535.0, g->colors[c4].green/65535.0, g->colors[c4].blue/65535.0);
 	}
 }
