@@ -1,3 +1,13 @@
+/*! \namespace Laxkit
+ *  \brief Stuff defined in the Laxkit.
+ */
+/*! \namespace LaxInterfaces
+ *  \brief Interfaces defined in the Laxkit.
+ */
+/*! \namespace LaxFiles
+ *  \brief File manipulation and Attribute stuff defined in the Laxkit.
+ */
+
 /*! \mainpage
 
 \section     Laidout  
