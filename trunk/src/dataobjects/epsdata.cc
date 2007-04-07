@@ -15,6 +15,7 @@
 //
 
 #include <lax/fileutils.h>
+#include <lax/strmanip.h>
 #include "epsdata.h"
 #include "../printing/epsutils.h"
 #include "../configured.h"
@@ -50,6 +51,120 @@ EpsData::~EpsData()
 	if (creationdate) delete[] creationdate;
 }
 
+//! Return new EpsInterface.
+/*! If dup!=NULL and it cannot be cast to EpsInterface, then return NULL.
+ */
+LaxInterfaces::anInterface *EpsInterface::duplicate(LaxInterfaces::anInterface *dup)
+{
+	if (dup==NULL) dup=new EpsInterface(id,NULL);
+	else if (!dynamic_cast<EpsInterface *>(dup)) return NULL;
+	return ImageInterface::duplicate(dup);
+}
+
+/*! 
+ * Default dump for an EpsData. The bounding box is saved, but beware that the actual
+ * bounding box in the eps may have different values. This helps compensate
+ * for broken images when source files are moved around: you still save the working dimensions.
+ * On a dump in, if the image exists, then the dimensions at time of load are used,
+ * rather than what was saved in the file.
+ *
+ * Dumps:
+ * <pre>
+ *  minx 34
+ *  miny 50
+ *  maxx 100
+ *  maxy 200
+ *  filename filename.eps
+ *  previewfile .filename-preview.png
+ *  desc "Blah blah blah"
+ * </pre>
+ * If previewfile is not an absolute path, then it is relative to filename.
+ *
+ * If what==-1, then dump out a psuedocode mockup of what gets dumped. This makes it very easy
+ * for programs to keep track of their file formats, that is, when the programmers remember to
+ * update this code as change happens.
+ * Otherwise dumps out in indented data format as above.
+ */
+void EpsData::dump_out(FILE *f,int indent,int what)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	if (what==-1) {
+		fprintf(f,"%sfilename /path/to/file\n",spc);
+		fprintf(f,"%spreviewfile /path/to/preview/file  #if not absolute, is relative to filename\n",spc);
+		fprintf(f,"%sminx 50  #the bounding box\n",spc);
+		fprintf(f,"%sminy 50  \n",spc);
+		fprintf(f,"%smaxx 100  \n",spc);
+		fprintf(f,"%smaxy 200  \n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0  #affine transform to apply to the eps\n",spc);
+		fprintf(f,"%sdesc \"Blah blah\" #a description of the eps \n",spc);
+		return;
+	}
+	
+	if (filename) fprintf(f,"%sfilename \"%s\"\n",spc,filename);
+	if (previewfile && previewflag&1) fprintf(f,"%spreviewfile \"%s\"\n",spc,previewfile);
+	fprintf(f,"%sminx %.10g\n",spc,minx);
+ 	fprintf(f,"%sminy %.10g\n",spc,miny);
+	fprintf(f,"%smaxx %.10g\n",spc,maxx);
+	fprintf(f,"%smaxy %.10g\n",spc,maxy);
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
+				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+	if (desc) {
+		fprintf(f,"%sdesc",spc);
+		dump_out_value(f,indent+2,desc);
+	}
+}
+	
+/*! When the image listed in the attribute cannot be loaded,
+ * image is set to NULL, and the width and height attributes
+ * are used if present. If the image can be loaded, then width and
+ * height as given in the file are curretly ignored, and the actual pixel 
+ * width and height of the image are used instead.
+ */
+void EpsData::dump_in_atts(Attribute *att,int flag)
+{
+	if (!att) return;
+	char *name,*value;
+	minx=miny=0;
+	maxx=maxy=-1;
+	char *fname=NULL,*pname=NULL;
+	double x1,x2,y1,y2;
+	x1=x2=y1=y2=0;
+	previewflag=(previewflag&~1);
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"matrix")) {
+			DoubleListAttribute(value,m(),6);
+		} else if (!strcmp(name,"description")) {
+			makestr(desc,value);
+		} else if (!strcmp(name,"filename")) {
+			fname=value;
+		} else if (!strcmp(name,"previewfile")) {
+			pname=value;
+		} else if (!strcmp(name,"minx")) {
+			DoubleAttribute(value,&x1);
+		} else if (!strcmp(name,"miny")) {
+			DoubleAttribute(value,&y1);
+		} else if (!strcmp(name,"maxx")) {
+			DoubleAttribute(value,&x2);
+		} else if (!strcmp(name,"maxy")) {
+			DoubleAttribute(value,&y2);
+		}
+	}
+	 // if filename is given, and old file is NULL, or is different...
+	if (fname && (!filename || filename && strcmp(fname,filename))) 
+		if (pname) previewflag|=1;
+		 // load an image with existing preview, do not destroy that preview when
+		 // image is destroyed:
+		if (LoadImage(fname,pname,0,0,0)) {
+			 // error loading image, so use the above w,h
+			minx=x1;
+			miny=y1;
+			maxx=x2;
+			maxy=y2;
+		}
+}
 
 /*! Return 0 for success, nonzero error.
  *
@@ -61,6 +176,7 @@ EpsData::~EpsData()
  * 
  * \todo in general must figure out a decent way to deal with errors while loading images,
  *    for instance.
+ * \todo del is ignored
  */
 int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del)
 {
@@ -69,6 +185,9 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 	
 	char *preview=NULL;
 	int c,depth,width,height;
+
+	makestr(filename,fname);
+	makestr(previewfile,npreview);
 
 	 // puts the eps BoundingBox into this::DoubleBBox
 	c=scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);

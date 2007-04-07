@@ -43,6 +43,8 @@
 #include "helpwindow.h"
 #include "configured.h"
 
+#include "dataobjects/epsdata.h"
+
 #include <iostream>
 #include <sys/stat.h>
 using namespace std;
@@ -2360,7 +2362,8 @@ int ViewWindow::init()
 		 *tstr;    // temp pointer
 	LaxImage *img;
 	int obji=0;
-	for (int c=0; c<tools.n; c++) {
+	int c;
+	for (c=0; c<tools.n; c++) {
 		 // ***this should be standardized a little to have the icon stored with
 		 // the interface.
 		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
@@ -2854,10 +2857,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 // data[0]==max color value
 		LineStyle linestyle;
 		float max=e->data.l[0];
-		linestyle.color.red=e->data.l[1]/max*65535;
-		linestyle.color.green=e->data.l[2]/max*65535;
-		linestyle.color.blue=e->data.l[3]/max*65535;
-		linestyle.color.alpha=e->data.l[4]/max*65535;
+		linestyle.color.red=  (unsigned short) (e->data.l[1]/max*65535);
+		linestyle.color.green=(unsigned short) (e->data.l[2]/max*65535);
+		linestyle.color.blue= (unsigned short) (e->data.l[3]/max*65535);
+		linestyle.color.alpha=(unsigned short) (e->data.l[4]/max*65535);
 		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		char blah[100];
 		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",

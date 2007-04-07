@@ -79,6 +79,9 @@ test: lax laxinterface stylewindow.o  styles.o stylemanager.o test.o
 docs:
 	cd ../docs && doxygen 
 
+alldocs:
+	cd ../docs && doxygen Doxyfile-with-laxkit
+
 depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
 	cd printing && $(MAKE) depends

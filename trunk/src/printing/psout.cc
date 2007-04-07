@@ -362,21 +362,21 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 		 //define functions to simplify inclusion of EPS files
 		fprintf(f,"BeginEPS {\n"
 			  "  /starting_state save def\n"
-			  "  dict_count countdictstack def \n"
-			  "  op_count count 1 sub def\n"
+			  "  /dict_count countdictstack def \n"
+			  "  /op_count count 1 sub def\n"
 			  "  userdict begin\n"
 			  "  /showpage { } def\n"
 			  "  0 setgray     0 setlinecap     1 setlinewidth\n"
 			  "  0 setlinejoin 10 setmiterlimit [ ] 0 setdash   newpath\n"
 			  "  /languagelevel where\n"
 			  "  { pop languagelevel 1 ne\n"
-			  "    { false setoverprint  false setstrokadjust\n"
+			  "    { false setoverprint  false setstrokeadjust\n"
 			  "    } if\n"
 			  "  } if\n"
 			  "} bind def\n");
 		fprintf(f,"EndEPS {\n"
 			  "  count op_count sub { pop } repeat\n"
-			  "  countdictstack dict_count sub { pop } repeat\n"
+			  "  countdictstack dict_count sub { end } repeat\n"
 			  "  starting_state restore\n"
 			  "} bind def\n");
 	//}

@@ -67,8 +67,9 @@ int AboutWindow::preinit()
 			"[insert splash logo here!]\n"
 			"\n"
 			"Laidout Version " LAIDOUT_VERSION "\n"
+			"so far written entirely\n"
 			"by Tom Lechner,\n"
-			"2004-2006\n"
+			"2004-2007\n"
 			"\n"
 			"using Laxkit\n version " LAXKIT_VERSION "\n");
 			

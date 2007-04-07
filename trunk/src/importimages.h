@@ -14,19 +14,4 @@
 //
 
 
-*********** NOTE: not currently used *******************
-
-
-#include "somedialogs.h"
-
-using namespace Laxkit;
-
-
-
-////-------------------------- Overwrite ------------------------------------
-//class SaveToBox : public Laxkit::LineInput
-//{
-// public:
-//};
-
-
+#include <lax/filedialog.h>
