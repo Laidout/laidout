@@ -25,10 +25,10 @@ basics to get my cartoon books done, in other words. Many more features
 are planned, like such non-essentials (to me anyway) as text! Who needs 
 text when a picture is worth a thousand words? 
 
-Many of the features are only partially implemented, and the
-real meat of the program is only half in place right now.
-Be advised that you can construct paths on screen, but path 
-printing (to the printer) is badly implemented currently.
+Many of the features are only partially implemented, and the real meat
+of the program is only half in place right now. Be advised that you can,
+after great hassle, construct paths on screen, but path printing
+(to the printer) is badly implemented currently.
 
 Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
 some of the burden of the 'meat' of the program, but anyway...
@@ -67,9 +67,27 @@ laidout-(whatever version) in (usually) /usr/local/bin, and make a
 symbolic link /usr/local/bin/laidout point to it.
 
 After successfully making, the program 'laidout' in the src
-directory is the thing you want. It does not depend on any other
+directory is the thing you want. It does not really depend on any other
 files currently (except icons, but they are not needed to actually run),
 thus it can be run from wherever it is located.
+
+
+INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
+----------------------------------------------
+
+It is quite ok to install different versions of Laidout at the same time.
+The ~/.laidout/ directory keeps all the config information in subdirectories
+based on the version. The same applies for installed binaries and other
+resources that get put in prefix/laidout. This way, you do not risk
+clobbering or corrupting files from other versions. 
+
+HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
+things that were installed to those directories outside of "make install". 
+Right now, everything in prefix/share/laidout will be removed on uninstall
+(but not anything in ~/.laidout).
+
+In any case, if you can, it's really safer to build the deb package, which 
+automatically keeps track of such things.
 
 
 IF COMPILING FROM SVN
@@ -86,7 +104,7 @@ Note about icons: If you downloaded through svn, the icons need to be
 generated. This requires Inkscape (http://www.inkscape.org)
 to generate icons from src/icons/icons.svg, and python to run
 the script that calls Inkscape. But, Laidout will work fine without
-the icons. Ultimately, the icons will themselves be stored in a laidout
+the icons. Ultimately, the icons will themselves be stored in a Laidout
 file, and Laidout itself will generate the icons.
 See src/icons/makeimages.py for more.
 
@@ -94,7 +112,7 @@ Running the program might spit out copious amounts of debugging
 info if you run from a terminal. If this is the case, you can turn this 
 off with 'make hidegarbage' before doing 'make' (the same goes for the 
 Laxkit). Be advised that this requires Perl to be installed. Or, you 
-can just run the program like this:
+can just run Laidout like this:
 
 ./laidout > /dev/null
 
@@ -109,4 +127,16 @@ make docs
 and it dumps it all out to docs/html. In particular, you will have a 
 rapidly expanding todo list. If you want to contribute, that is a good
 place to start. That and the Laxkit todo list.
+
+
+Compiling on Mac OS X
+--------- -- --- ----
+For the adventurous, you can help make Laidout work on OS X.
+Straight from downloading, it will not compile all the way on OS X.
+You'll still need x11, Imlib2, freetype2, fontconfig, and cups.
+I'm just guessing, since I don't have access to an OS X or other BSD
+based machine, but it shouldn't be too hard to make Laidout work on them.
+There are a few places where I use GNU-only functions, like getline(),
+which shouldn't be very difficult to replace or define similar functions.
+
 

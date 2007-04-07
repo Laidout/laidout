@@ -195,6 +195,10 @@ HeadWindow *HeadWindow::markedhead=NULL;
 
 //! Pass SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED to SplitWindow.
 /*! Adds the main window type generating functions.
+ *
+ * \todo Currently, every new HeadWindow instance gets its own set of window generator functions.
+ *   This should be changed to a HeadWindow static list, allowing all instances to share one
+ *   list, which can easily be added to by plugins..
  */
 HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)

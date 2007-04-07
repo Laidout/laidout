@@ -13,7 +13,6 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/************* extras.cc ****************/
 
 /*! \file
  *
@@ -32,16 +31,18 @@
  * how many per page, and either a list of image files, a directory that contains the images,
  * or a list of ImageData objects.
  *
- * Planned but not implemented yet is applyPageNumbers, which automatically inserts
- * particular images representing the page numbers on each page. You would specify
+ * Another extra planned but not implemented yet is applyPageNumbers, which automatically inserts
+ * particular images representing the page numbers down in the corner on each page. You would specify
  * the directory that contains the images, and the code does the rest..
  *
  * \todo *** must figure out how to integrate extras into menus, and incorporate callbacks?
- * \todo implement dumping in Images for page numbers at defined positions
+ *   Have a class Extra that holds everything about it?
+ * \todo implement dumping in Images for page numbers at defined positions (arrangements)
  * \todo Still must work out good mechanism for being able to add on any extras via plugins...
  */
 
 #include "extras.h"
+#include "dataobjects/epsdata.h"
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <dirent.h>
@@ -61,6 +62,10 @@ using namespace LaxInterfaces;
 /*! \class ImagePlopInfo
  * \ingroup extras
  * \brief Class to simplify dumping multiple images from a list into a Document.
+ *
+ * \todo *** in future, this should be expanded to be PlopInfo, to allow for
+ *   importation of other kinds of files than images, like EPS, as well as being a general 
+ *   object distribution utility.
  */
 /*! \var int ImagePlopInfo::page
  * 
@@ -72,9 +77,10 @@ using namespace LaxInterfaces;
  * \brief A box with x,y,w,h in page coordinates to fit an image inside of.
  * 
  * The image is not distorted to fit the box. It is only scaled so that it is
- * contained within the box. This will override the dpi setting only if has to
+ * contained within the box. This will override the dpi setting only if it has to
  * be scaled down to fit.
  */
+
 
 ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 	: image(img), error(0), dpi(ndpi), page(npage), next(NULL)
@@ -106,6 +112,9 @@ ImagePlopInfo::~ImagePlopInfo()
  * Returns the page index of the final page or -1 if error.
  * 
  * Any file in the list that does not appear to be an image will be installed as a broken image.
+ * 
+ * This function reads in the file to a Laxkit::Attribute, then calls 
+ * dumpInImageList(Document *,LaxFiles::Attribute *, int, int, int).
  * 
  * The file should be formated as follows, using the usual space (not tabs) indentation
  *  to indicate related data. Note that the "dir:///" thing is not yet implemented:
@@ -195,9 +204,16 @@ static void getPreviewAndDesc(const char *value,char **preview,char **desc)
  *  dumpInImageList(Document *,const char *, int, int, int). The order of the elements
  *  matters.
  *
+ *  This function sets up an ImagePlopInfo list, and sends to 
+ *  dumpInImages(Document *doc, ImagePlopInfo *images, int startpage).
+ *
  * \todo Right now, if an error occurs midstream, the document is still modified. should
  *    instead change doc only if no errors occur all through stream..
  * \todo implement dir:///some/dir/with/images/in/it 
+ * \todo *** must be expanded somehow to allow a more general object importing mechanism, right now
+ *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
+ *   easier to have easily added import "filters"... This would also mean have a file type mask
+ *   to limit only to images, say, or only TIFFS, EPS, etc..
  */
 int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int defaultdpi, int perpage)
 {
@@ -272,7 +288,28 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			}
 			
 			 // ok, so we now have file, preview, desc, curdpi, xywh if useplace
-			image=new ImageData(file,preview,0,0,0);
+			//***HACK: check for EPS first, then imlib image, must later expand to "import filter" thing
+			FILE *f=fopen(file,"r");
+			if (f) {
+				int n=0;
+				char data[51];
+				n=fread(data,1,50,f);
+				fclose(f);
+				if (n) {
+					data[n]='\0';
+					 //---check if is EPS
+					if (!strncmp(data,"%!PS-Adobe-",11)) { // possible EPS
+						float psversion,epsversion;
+						n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&psversion,&epsversion);
+						if (n==2) {
+							DBG cout <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
+							image=new EpsData(file,preview,0,0,0);
+						} else continue;
+					}
+				}
+			}
+			if (!image) image=new ImageData(file,preview,0,0,0);
+			//*** should be LoadObject? ImportObject
 			image->SetDescription(desc);
 			delete[] file;
 			if (!image->image) {
@@ -373,6 +410,10 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
  *   function. what it should do instead is add to a list of files and dump them all at once.
  *   this entails slightly rewriting said dumpInImageList() function, and adding a flag for
  *   to signal a page break, maybe page==-3 and no image?
+ * \todo *** must be expanded somehow to allow a more general object importing mechanism, right now
+ *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
+ *   easier to have easily added import "filters"... This would also mean have a file type mask
+ *   to limit only to images, say, or only TIFFS, EPS, etc..
  */
 int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfiles, int perpage, int ddpi)
 {
@@ -386,6 +427,8 @@ int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfil
 	
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
+		
+		 //first check if Imlib2 recognizes it as image (the easiest check)
 		image=load_image(imagefiles[c]);
 		if (image) {
 			DBG cout << "dump image files: "<<imagefiles[c]<<endl;
@@ -393,21 +436,9 @@ int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfil
 			imaged=new ImageData;//creates with one count
 			imaged->SetImage(image);
 
-			numonpage++;
-			int pg;
-			if (perpage==-1) pg=-1;
-			else if (perpage==-2) pg=curpage;
-			else {
-				pg=curpage;
-				if (numonpage==perpage) {
-					numonpage=0;
-				}
-			}
-			if (!images) images=new ImagePlopInfo(imaged,ddpi,pg,NULL);
-			else images->add(imaged,ddpi,pg,NULL);
-			if (numonpage==0) curpage++;
 		} else {
-			 // check to see if it is an image list, otherwise ignore
+			 // check to see if it is an image list or EPS based on first chars of file.
+			 // Otherwise ignore
 			f=fopen(imagefiles[c],"r");
 			if (f) {
 				int n=0;
@@ -415,18 +446,46 @@ int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nfil
 				fclose(f);
 				if (n) {
 					data[n]='\0';
+					 //---check if is image list
 					if (!strncasecmp(data,"#Laidout ",9)) {
 						p=data+9;
 						if (strcasestr(p,"image list")) {
 							 //this is likely an image list, so grab all data....
 							dumpInImageList(doc,imagefiles[c],startpage,ddpi,perpage);
 						}
+						continue;
+					} 
+
+					 //---check if is EPS
+					if (!strncmp(data,"%!PS-Adobe-",11)) { // possible EPS
+						float psversion,epsversion;
+						n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&psversion,&epsversion);
+						if (n==2) {
+							DBG cout <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
+							imaged=new EpsData(imagefiles[c]);
+						} else continue;
 					}
 				}
 			}
-			DBG cout <<"** warning: bad image file "<<imagefiles[c]<<endl;
 		}
+		
+		if (!imaged) continue;
+
+		numonpage++;
+		int pg;
+		if (perpage==-1) pg=-1;
+		else if (perpage==-2) pg=curpage;
+		else {
+			pg=curpage;
+			if (numonpage==perpage) {
+				numonpage=0;
+			}
+		}
+		if (!images) images=new ImagePlopInfo(imaged,ddpi,pg,NULL);
+		else images->add(imaged,ddpi,pg,NULL);
+		if (numonpage==0) curpage++;
 	}
+
 	if (images) c=dumpInImages(doc,images,startpage);
 	delete images;
 	return c;

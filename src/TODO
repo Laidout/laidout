@@ -6,6 +6,7 @@
  for many of the 'local' tags, perhaps should use them ONLY on creation, to create a brand
    new instance, but then still dec_count() when deleting in either case...
 
+ in configure, should check to see that gs is actually executable?
 
  for sarge, there's a problem with ImagePatch, for some reason, there are artifacts
    to window pos 0,0 along one edge.. these do not show on unstable..

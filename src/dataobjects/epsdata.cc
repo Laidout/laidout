@@ -14,9 +14,17 @@
 // correspondence about this software.
 //
 
+#include <lax/fileutils.h>
 #include "epsdata.h"
+#include "../printing/epsutils.h"
+#include "../configured.h"
 
+#include <iostream>
+using namespace std;
+#define DBG 
 
+using namespace LaxFiles;
+using namespace Laxkit;
 
 //-------------------------------- EpsData ----------------------------------
 /*! \class EpsData
@@ -25,123 +33,81 @@
  * This class can scan in an eps file, and attempt to extract the
  * preview image if present.
  */
-//class EpsData : public LaxInterfaces::ImageData
-//{
-// public:
-//	char *title, *creationdate;
-//	EpsData();
-//	virtual ~EpsData();
-//	virtual int SetFile(const char *file);
-//};
 
-EpsData::EpsData()
+
+EpsData::EpsData(const char *nfilename, const char *npreview, 
+			  int maxpx, int maxpy, char delpreview)
 	: ImageData(NULL)
 {
-	title=creationdate=NULL;
+	resources=title=creationdate=NULL;
+	LoadImage(nfilename,npreview,maxpx, maxpy, delpreview);
 }
 
 EpsData::~EpsData()
 {
 	if (title) delete[] title;
+	if (resources) delete[] resources;
 	if (creationdate) delete[] creationdate;
 }
 
+
 /*! Return 0 for success, nonzero error.
  *
- * import the file...
- * and set up the preview if any
+ * Import the file by opening, then using scaninEPS() to read in the relevant information.
+ *
+ * Also set up the preview if any. If the file is EPSI, then the preview present in that is
+ * read in. Otherwise, if there is known Ghostscript executable, then Laidout uses that to
+ * generate a preview png with transparency.
+ * 
+ * \todo in general must figure out a decent way to deal with errors while loading images,
+ *    for instance.
  */
-int EpsData::SetFile(const char *file)
+int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del)
 {
-	FILE *f=fopen(file,"r");
+	FILE *f=fopen(fname,"r");
 	if (!f) return -1;
-	DoubleBBox bbox;
+	
 	char *preview=NULL;
-	int c,d,w,h;
-	c=scaninEPS(f,&bbox,&title,&creationdate,&preview,&d,&w,&h);
+	int c,depth,width,height;
+
+	 // puts the eps BoundingBox into this::DoubleBBox
+	c=scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);
+	fclose(f);
+	
 	if (c!=0) return -2;
 	
 	 // set up the preview if any
-	if (imlibimage) {
-		imlib_context_set_image(imlibimage);
-		imlib_free_image();
+	if (image) { image->dec_count(); image=NULL; }
+	
+	Imlib_Image imlibimage=NULL;
+	if (file_exists(npreview,1,NULL)) {
+		// do nothing if preview file already exists..
+		//*** perhaps optionally regenerate?
+	} else if (strcmp("",GHOSTSCRIPT_BIN)) {
+		 // call ghostscript from command line, save preview ***where?
+		char *error=NULL;
+		
+		c=WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+						 fname, width, height,
+						 npreview, maxpw, maxph,
+						 &error);
+		DBG if (error) cout <<"EPS gs preview generation returned with error: "<<error<<endl;
+		if (c) {
+			if (error) delete[] error;
+			return -3;
+		}
+	} else if (preview) {
+		 // install preview image from EPSI data
+		imlibimage=EpsPreviewToImlib(preview,width,height,depth);
+		//if (imlibimage) { use this as preview image for eps, set up below.... }
 	}
-	imlibimage=imlib_image_create(w,h);
-	imlib_context_set_image(imlibimage);
-	DATA32 *buf=imlib_image_get_data_for_reading_only();
-	int pos=0;
-	unsigned char p[8];
-	do {
-		***
-		***pixel=((unsigned char)preview[pos])<<(8-depth);
-		buf[pos++]=buf[pos++]=buf[pos++]=pixel;
-	} while (pos<w*h*4);
+
+	 // now set this->image to have the generated preview as the main image
+	image=new LaxImlibImage(npreview,imlibimage);
+	
+	return 0;
 }
 
-//----------- eps helper funcs:
-
-//! Get the bounding box, and the preview, title and creation date (if present).
-/*! \todo In future, must also be able to extract any resources that must go
- * at the top of an including ps file. Turns preview to a new'd char[], with same
- * depth and data as the preview if any. 
- *
- * Return -1 for not a readable EPS. -2 for error during some point in the reading.
- * 0 for success.
- *
- * \todo *** also need to set up any resources, etc...
- * \todo gs -dNOPAUSE -sDEVICE=pngalpha -sOutputFile=temp234234234.png -r(resolution) whatever.eps
- */
-int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date, 
-		char **preview, int *depth, int *width, int *height)
-{
-	if (!f) return -1;
-	
-	char buf[1024];
-	int c,off=0;
-	int languagelevel;
-	char *line;
-	DoubleBBox bbox;
-	
-	c=fread(buf+off,sizeof(char),1024-off,f); // c==0 is either error or eof
-	if (!c) break;
-
-	if (strncmp(buf,"%!PS-Adobe-3.0 EPSF-3.0",23) && strncmp(buf,"%!PS-Adobe-2.0 EPSF-2.0",23)) {
-		 // not a readable eps
-		return -1;
-	}
-	
-	int pos,ppos=0,plen,llen;
-	*preview=NULL;
-		
-	getaline(buf,1024,&line,f);
-	while (line) {
-		if (!strncmp(line,"%%BoundingBox:",14)) {
-		} else if (!strncmp(line,"%%Title:",8)) {
-		} else if (!strncmp(line,"%%CreationDate:",15)) {
-		} else if (!strncmp(line,"%%BeginPreview:",15)) {
-			p=splitonspace(line+15,&n);
-			if (n<3) *** error!!;
-			
-			width=strtol(p[0],NULL,10);
-			height=strtol(p[1],NULL,10);
-			depth=strtol(p[2],NULL,10);
-			plen=(width*depth/8+1)*height;    //expected number of bytes of preview
-			llen=width*depth/8+1; //num bytes per line
-			*preview=new char[plen];
-			while (1) {
-				if (getaline(buf,1024,&line,f)<=0) break;
-				if (!strncmp(line,"%%EndPreview")) break;
-				pos=0;
-				while (line[pos] && !isxdigit(line[pos])) pos++;
-				(*preview)[ppos++]=line[pos++];
-				if (ppos>plen) *** more data than expected... break;
-			}
-			if (ppos<plen) *** less data than expected...
-		} else if (!strncmp(line,"%%Page:",7)) break;
-		
-		if (!getaline(buf,1024,&line,f)) break;
-	}
-}
 
 //-------------------------------- EpsInterface ----------------------------------
 /*! \class EpsInterface
@@ -150,23 +116,34 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
  * If there is an epsi style preview in the eps, then that is what is put
  * on screen. Otherwise, the title/file/date are put on.
  */
-//class EpsInterface : public LaxInterfaces::ImageInterface
-//{
-// public:
-//	EpsInterface(int nid,Laxkit::Displayer *ndp);
-//	const char *whattype() { return "EpsInterface"; }
-//	const char *whatdatatype() { return "EpsData"; }
-//	ImageData *newData();
-//	int Refresh();
-//};
+
 
 EpsInterface::EpsInterface(int nid,Laxkit::Displayer *ndp)
 	: ImageInterface(nid,ndp)
 {
 }
 
-//! Redefine same from ImageInterface to never create a random new eps. These can only be imported.
-ImageData *EpsInterface::newData()
+//! Return whether this interface can draw the given type of object.
+/*! \todo should redo this to be more easily expandable for other
+ *    image types. Each spunky new image type might have many idiosyncracies (like EPS),
+ *    so each added image type would need to define:
+ *     an import filter, returning an ImageData pointer,
+ *     output functions for various types: bitmap, ps, etc.,
+ *     Refresh() extras,
+ *     additional controls if any including extra StyleDef elements.
+ *   could have an interface shell, whose purpose is to have one tool icon, but
+ *   several sub tools that it dispatches events to...
+ *   
+ */
+int EpsInterface::draws(const char *what)
+{
+	//if (!strcmp(what,"ImageData") || !strcmp("EpsData")) return 1;
+	if (!strcmp(what,"EpsData")) return 1;
+	return 0;		
+}
+
+//! Redefine ImageInterface::newData() to never create a random new eps. These can only be imported.
+LaxInterfaces::ImageData *EpsInterface::newData()
 {
 	return NULL;
 }
@@ -178,7 +155,7 @@ int EpsInterface::Refresh()
 	if (c!=0) return c;
 
 	 // draw title or filename...
-	if (!data->imlibimage && data->filename) {
+	if (!data->image && data->filename) {
 		flatpoint fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
 		dp->textout((int)fp.x,(int)fp.y,data->filename,0);
 	}

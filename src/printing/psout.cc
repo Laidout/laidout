@@ -31,6 +31,7 @@
 #include "psimagepatch.h"
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
+#include "pseps.h"
 #include "../laidoutdefs.h"
 
 
@@ -180,8 +181,11 @@ void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		psColorPatch(f,dynamic_cast<ColorPatchData *>(obj));
 		
-	} else if (dynamic_cast<PathsData *>(obj)) {
+	} else if (!strcmp(obj->whattype(),"PathsData")) {
 		psPathsData(f,dynamic_cast<PathsData *>(obj));
+
+	} else if (!strcmp(obj->whattype(),"EpsData")) {
+		psEps(f,dynamic_cast<EpsData *>(obj));
 
 	}
 	
@@ -303,6 +307,8 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo *** for tiled pages, or multiples of same object each instance is
  *   rendered independently right now. should make a function to display such
  *   things, thus reduce ps file size substantially..
+ * \todo for EPS that include specific resources, extensions, or language level, these must be
+ *   mentioned in the postscript file's comments...
  */
 int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 {
@@ -332,13 +338,50 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 				doc->docstyle->imposition->paperstyle->name, 
 				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
 				72*doc->docstyle->imposition->paperstyle->height);
-	fprintf(f,"%%%%EndComments\n"
-			  "%%%%BeginDefaults\n"
+	fprintf(f,"%%%%EndComments\n");
+			
+	 //---------------------------Defaults
+	fprintf(f,"%%%%BeginDefaults\n"
 			  "%%%%PageMedia: %s\n",doc->docstyle->imposition->paperstyle->name);
 	fprintf(f,"%%%%EndDefaults\n"
-			  "\n"
-			  "%%%%BeginProlog\n"
-			  "%%%%EndProlog\n"
+			  "\n");
+			  
+	 //*** Extensions are general header comment. If an EPS has extensions, they must
+	 //be listed here also:
+	 //%%Extensions: DPS|CMYK|Composite|FileSystem  <-- seems to be more a concern for LL1 docs only?
+
+	 //---------------------------Prolog, for procedure sets
+	fprintf(f,"%%%%BeginProlog\n");
+	//if (doc->hasEPS()) { *** including these defs always isn't harmful, and much easier to implement..
+ 		 // if an EPS has extra resources, they are mentioned here in the prolog(?)
+		//***
+		//%%BeginResource: procsetname
+		//...
+		//%%EndResource
+		 
+		 //define functions to simplify inclusion of EPS files
+		fprintf(f,"BeginEPS {\n"
+			  "  /starting_state save def\n"
+			  "  dict_count countdictstack def \n"
+			  "  op_count count 1 sub def\n"
+			  "  userdict begin\n"
+			  "  /showpage { } def\n"
+			  "  0 setgray     0 setlinecap     1 setlinewidth\n"
+			  "  0 setlinejoin 10 setmiterlimit [ ] 0 setdash   newpath\n"
+			  "  /languagelevel where\n"
+			  "  { pop languagelevel 1 ne\n"
+			  "    { false setoverprint  false setstrokadjust\n"
+			  "    } if\n"
+			  "  } if\n"
+			  "} bind def\n");
+		fprintf(f,"EndEPS {\n"
+			  "  count op_count sub { pop } repeat\n"
+			  "  countdictstack dict_count sub { pop } repeat\n"
+			  "  starting_state restore\n"
+			  "} bind def\n");
+	//}
+			  
+	fprintf(f,"%%%%EndProlog\n"
 			  "\n"
 			  "%%%%BeginSetup\n"
 			  "%%%%EndSetup\n"

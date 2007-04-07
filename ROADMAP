@@ -7,25 +7,33 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.06
 ------------
-       parent/child nesting and interface for that: nesting, and grouping: layer trees
+(done) parent/child nesting and interface for that: nesting, and grouping: layer trees
+(done) New document creation from templates
+       Be able to work with preview images more easily, and implement all preview config options
+       Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
+       Image and Color patches, gradients, etc should have vastly better interfaces
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+         (it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
        from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips occasionally
-       Basic (opaque) EPS import, would open up all kinds of down and dirty tricks using other progs:latex,lilypond,...
-       Be able to work with preview images more easily, and implement all preview config options
-       Finish implementing project based setup, especially when loading and saving
-       perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
-       Gui for modifying Page Labels
-       Image and Color patches, gradients, etc should allow transparent colors
-       Image and Color patches, gradients, etc should have vastly better interfaces
-       Net imposition interactive unwrapper
 
+VERSION 0.07
+------------
+       Image and Color patches, gradients, etc should allow transparent colors
+       PDF out
+       perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
+       Net imposition interactive unwrapper
+       Gui for modifying Page Labels
+       out to image(s)
 
 VERSION 0.1
 -----------
+       Improve open from template to be able to use names (defined in a file), not just filenames
+       should probably put laidout stuff in its own namespace, just to be polite
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
+       Finish implementing project based setup, especially when loading and saving
        Change cursor to indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
@@ -54,7 +62,7 @@ VERSION 0.1
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Make commands actually available in the command prompt window
        non-hacky new document box
-       also means all things must define their styledefs
+       all things must define their styledefs
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
        libintl support
@@ -69,11 +77,12 @@ VERSION 0.1
        Improve and/or make new logo and splash image
        have an image in the little pan popups
        Have special function to output to file a pseudocode mockup of the file format
-       Combine the ViewWindow and SpreadEditor to allow the sort of 'infinite scroll'
+       Combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Be able to have paper objects in addition to the normal page objects (ie master page numbers)
        Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
        Non-polygonal pages, to allow nets for shapes resulting from intersecting cylinders, for instance
+       Optional Midi controller usage
 
 
 VERSION 0.2
@@ -97,10 +106,12 @@ Would be nice to be able to handle lilypond sort of things
 Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from/to xcf
 Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
 Story editor
-Internal generic impositioner for arbitrary .ps files
+Internal generic impositioner for ps files that follow the ps doc. structure guidelines
 Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend
 Vx (aka uberconvertor) support?
+Verse support?
+Net/polyhedron layout 3-d previewer extra (maybe?? opengl?)
 
 
 VERSION 0.3

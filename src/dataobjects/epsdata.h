@@ -22,10 +22,12 @@
 class EpsData : public LaxInterfaces::ImageData
 {
  public:
-	char *title, *creationdate;
-	EpsData();
+	char *title, *creationdate, *resources;
+	EpsData(const char *nfilename=NULL, const char *npreview=NULL, 
+			  int maxpx=0, int maxpy=0, char delpreview=1);
 	virtual ~EpsData();
-	virtual int SetFile(const char *file);
+	virtual const char *whattype() { return "EpsData"; }
+	virtual int LoadImage(const char *fname, const char *npreview=NULL, int maxpx=0, int maxpy=0, char del=0);
 };
 
 //-------------------------------- EpsInterface ----------------------------------
@@ -33,10 +35,11 @@ class EpsInterface : public LaxInterfaces::ImageInterface
 {
  public:
 	EpsInterface(int nid,Laxkit::Displayer *ndp);
-	const char *whattype() { return "EpsInterface"; }
-	const char *whatdatatype() { return "EpsData"; }
-	ImageData *newData();
-	int Refresh();
+	virtual const char *whattype() { return "EpsInterface"; }
+	virtual const char *whatdatatype() { return "EpsData"; }
+	virtual int draws(const char *what);
+	virtual LaxInterfaces::ImageData *newData();
+	virtual int Refresh();
 };
 
 #endif
