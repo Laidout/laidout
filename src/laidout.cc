@@ -162,8 +162,8 @@ void print_usage()
 /*! \var char *LaidoutApp::temp_dir
  * \brief Where to store temporary files.
  *
- * \todo *** imp me! Maybe: create laidoutrc->temp_dir/pid, then upon program termination,
- *   delete that directory.
+ * \todo *** imp me! Maybe: create laidoutrc->temp_dir/pid, then upon program termination
+ *   or completion, delete that directory.
  */
 /*! \var char *LaidoutApp::preview_file_base
  * \brief The template used to name preview files for images.
@@ -175,6 +175,8 @@ void print_usage()
  * be "image-s.jpg". Generated preview files are always jpg files. If
  * the base is "../thumbs/%s-s.jpg" then the preview file will be
  * generated at "../thumbs" relative to where the image file is located.
+ *
+ * \todo be able to create preview files of different types by default...
  */
 
 
@@ -333,6 +335,7 @@ int LaidoutApp::init(int argc,char **argv)
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
+	
 	 // manually adding a couple of pagestyles
 	 // *** why?
 	DBG cout <<"---manually adding a couple of pagestyles"<<endl;

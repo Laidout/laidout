@@ -95,10 +95,11 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 		if (!strncmp(line,"%%BoundingBox:",14)) {
 			if (sscanf(line,"%%%%BoundingBox: %lf %lf %lf %lf",
 						&bbox->minx,&bbox->miny,&bbox->maxx,&bbox->maxy)==4) {
-				bbox->minx/=72.; //convert to inches
-				bbox->maxx/=72.;
-				bbox->miny/=72.;
-				bbox->maxy/=72.;
+				//***do not convert to inches, keep as ps units?
+				//bbox->minx/=72.; //convert to inches
+				//bbox->maxx/=72.;
+				//bbox->miny/=72.;
+				//bbox->maxy/=72.;
 			} else {
 				error=-4;
 				break;
@@ -351,6 +352,8 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 						 char **error_ret)
 {
 	if (error_ret) *error_ret=NULL;
+	
+	if (!fullgspath || !epsfile || !previewfile) return 1;
 	
 	 //figure out decent preview size. If maxw and/or maxh are greater than 0, then
 	 //generate preview via:

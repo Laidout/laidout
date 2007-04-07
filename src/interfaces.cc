@@ -50,9 +50,11 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	}
 
 	int id=1;
+
 	existingpool->push(new ImageInterface(id++,NULL),1);
-	existingpool->push(new EpsInterface(id++,NULL),1);//*** combine with Image somehow?
 	
+	existingpool->push(new EpsInterface(id++,NULL),1);//*** combine with Image somehow?
+
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	ip->recurse=2;
 	existingpool->push(ip,1);
@@ -65,8 +67,10 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(gi,1);
 	
 	existingpool->push(new ColorPatchInterface(id++,NULL),1);
+	
 	existingpool->push(new GroupInterface(id++,NULL),1);
 	
+	//...
 	//existingpool->push(new Interface(*****),1);
 	
 	return existingpool;

@@ -93,12 +93,26 @@ CompositeDisposition
 
 
 
-have option to save preview images for images over a certain size. 
-This saves mondo time when restarting when
-working on documents with lots of huge images: preview images don't have to be
-generated each time, just load the already figured ones, but check for image being
-newer than the preview!!
-like huge.tiff -> .huge.preview.png
+
+FOR THOUGHT
+-----------
+multipage-tiff??
+
+class DataTypeManager
+{
+ public:
+	virtual LaidoutInterface *GetInterface();
+	virtual const char *DataType();
+	virtual const char **DataTypes(int *n_ret);
+	virtual SomeData *Factory(options...);
+	virtual StyleDef *GetStyleDef();
+	OutputFunctions(for pdf, ps, etc..)
+};
+class LaidoutInterface : public Laxkit::InterfaceWithDp
+{
+ public:
+	
+}
 
 </pre>
 
