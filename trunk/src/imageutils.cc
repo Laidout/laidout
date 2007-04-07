@@ -22,6 +22,13 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
+***
+*** NOTE This file is not active yet, it is to be used to manage preview images
+***
+*** TODO: must catch a sigkill, and remove any temp files...
+***
+
+
 class PreviewCacheNode 
 {
  public:
@@ -38,7 +45,7 @@ void deleteLaidoutImage(LaxImage *img)
 }
 
 /*! \ingroup misc
- * Redefines the default image loader to automatically use previews
+ * Redefines the default Laxkit image loader to automatically use previews
  * above a certain size. This function just returns
  * laidout->load_image(filename).
  */

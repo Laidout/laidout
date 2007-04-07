@@ -50,7 +50,7 @@ int PalettePane::send()
 	e.xclient.window=laidout->lastview->window;
 	e.xclient.message_type=sendthis;
 	e.xclient.format=32;
-	e.xclient.data.l[0]=0;
+	e.xclient.data.l[0]=palette->defaultmaxcolor;
 	int c;
 	for (c=0; c<palette->colors.e[curcolor]->numcolors; c++) {
 		DBG cout <<"send palette color "<<c<<": "<< palette->colors.e[curcolor]->channels[c];

@@ -21,6 +21,8 @@ objs= \
 	psimage.o \
 	psimagepatch.o \
 	pspathsdata.o \
+	pseps.o \
+	epsutils.o \
 	psout.o
 
 

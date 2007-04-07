@@ -26,6 +26,7 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/bezpathoperator.h>
 #include "dataobjects/groupinterface.h"
+#include "dataobjects/epsdata.h"
 
 
 using namespace Laxkit;
@@ -39,6 +40,8 @@ void PushBuiltinPathops()
 
 //! Get the built in interfaces. NOTE: Must be called after GetBuiltinPathops().
 /*! The PathInterface requires that pathoppool be filled already.
+ *
+ * \todo combine with EpsInterface with ImageInterface somehow to make easily expandable..
  */
 PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool) //existingpool=NULL
 {
@@ -48,6 +51,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 
 	int id=1;
 	existingpool->push(new ImageInterface(id++,NULL),1);
+	existingpool->push(new EpsInterface(id++,NULL),1);//*** combine with Image somehow?
 	
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	ip->recurse=2;

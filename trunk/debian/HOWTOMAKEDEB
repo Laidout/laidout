@@ -25,6 +25,8 @@ MAKING LAIDOUT DEB PACKAGE
  make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball
  make sure 'make' does not try to make lax or laxinterfaces unless laxkit has been 
    downloaded into the source tree...
+ 
+ make sure all the examples work, and have the correct version number
 
 3. ---hide the debugging garbage and commit---
  make hidegarbage 

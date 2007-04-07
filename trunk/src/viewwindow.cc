@@ -2550,7 +2550,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		
 		char mes[35];
 		mes[0]=0;
-		if (n) {
+		if (n>=0) {
 			if (s->n>1) sprintf(mes,"Images imported.");
 			else sprintf(mes,"Image imported.");
 		} else { 
@@ -2850,11 +2850,14 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
 	if (!strcmp(mes,"change color")) {
 		 // apply message as new current color, pass on to viewport
+		 // sent from at least PalettePane
+		 // data[0]==max color value
 		LineStyle linestyle;
-		linestyle.color.red=e->data.l[1];
-		linestyle.color.green=e->data.l[2];
-		linestyle.color.blue=e->data.l[3];
-		linestyle.color.alpha=e->data.l[4];
+		float max=e->data.l[0];
+		linestyle.color.red=e->data.l[1]/max*65535;
+		linestyle.color.green=e->data.l[2]/max*65535;
+		linestyle.color.blue=e->data.l[3]/max*65535;
+		linestyle.color.alpha=e->data.l[4]/max*65535;
 		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		char blah[100];
 		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",

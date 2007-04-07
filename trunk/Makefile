@@ -45,6 +45,11 @@ install:
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
 
+# ****** TODO!!! this is very primitive make uninstall!!
+# should only uninstall things that were actually installed. Any resource added by
+# the user to the system wide directories should not be uninstalled. Should use
+# config log perhaps. The $(BINDIR)/laidout should be removed only if it points to
+# $(BINDIR)/$(LAIDOUTNAME)
 uninstall: 
 	echo 'Uninstalling laidout.'
 	rm -f  $(BINDIR)/laidout

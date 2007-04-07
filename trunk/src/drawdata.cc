@@ -33,6 +33,7 @@
 
 #include <lax/interfaces/somedataref.h>
 #include "drawdata.h"
+#include "dataobjects/epsdata.h"
 #include "laidout.h"
 
 using namespace Laxkit;
@@ -121,6 +122,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  * - PathsData
  * - GradientData
  * - ColorPatchData
+ * - EpsData
  *
  *   \todo *** there needs to be a mechanism to automate this so new types can be
  *   added on the fly:
@@ -137,6 +139,7 @@ SomeData *newObject(const char *thetype)
 	if (!strcmp(thetype,"PathsData")) return new PathsData();
 	if (!strcmp(thetype,"GradientData")) return new GradientData();
 	if (!strcmp(thetype,"ColorPatchData")) return new ColorPatchData();
+	if (!strcmp(thetype,"EpsData")) return new EpsData();
 	return NULL;
 }
 

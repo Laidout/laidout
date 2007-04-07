@@ -37,7 +37,6 @@ objs= \
 	extras.o \
 	drawdata.o \
 	spreadeditor.o \
-	somedialogs.o \
 	laidout-more.o \
 	laidout.o 
 

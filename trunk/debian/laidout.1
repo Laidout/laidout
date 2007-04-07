@@ -35,7 +35,7 @@ Please be advised that this is a very early version of Laidout. There is a maili
 list and a page describing various bugs and deficiencies at the Laidout website:
 http://www.laidout.org. Only you can help stop bugs.
 
-Donations are encouraged! Money, that is, not bugs.
+Donations are encouraged! Money and code, that is, not bugs.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
@@ -58,6 +58,18 @@ imposition, and number of pages. So for instance a 40 page booklet on folded
 legal sized paper oriented as landscape would be specified with:
 
 .B laidout \-n 'legal,landscape,booklet,40'
+.TP
+.B \-t, \-\-template \fItemplate_name\fI
+Open laidout from this template. If the name does not start with "../", "./",
+or "/", then it looks in your $HOME/.laidout/(version)/templates directory.
+These templates can be any valid Laidout document file. The file is loaded,
+and its file location cleared so that you will be forced to enter a new
+location for it when you try to save it.
+
+If you have default_template set to something in your laidoutrc file, such as with
+a line like "default_template default" then when you start Laidout with
+no arguments, that template will be loaded (in this case templates/default
+will be loaded), rather then prompting you through the new document dialog.
 
 
 .SH QUICK KEY REFERENCE

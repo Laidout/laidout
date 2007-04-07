@@ -55,7 +55,8 @@ using namespace LaxInterfaces;
  * to be relative to the paper, rather than the ctm.
  *
  * \todo *** could have a pdfSpreadOut function to do a 1-off of any old spread, optionally
- *   fit to a supplied box
+ *   fit to a supplied box, really this should be a general print option: to image file,
+ *   to postscript file, or to printer
  */
 
 
