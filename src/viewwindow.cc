@@ -13,7 +13,6 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/******* viewwindow.cc *********/
 
 #include <lax/numslider.h>
 #include <lax/interfaces/fillstyle.h>
@@ -42,8 +41,6 @@
 #include "drawdata.h"
 #include "helpwindow.h"
 #include "configured.h"
-
-#include "dataobjects/epsdata.h"
 
 #include <iostream>
 #include <sys/stat.h>
