@@ -501,6 +501,7 @@ int dumpInImages(Document *doc, int startpage,
 	int curpage=startpage, dpi;
 	FILE *f;
 	char data[50],*p;
+	double *xywh=NULL;
 	
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
@@ -546,15 +547,15 @@ int dumpInImages(Document *doc, int startpage,
 							//*******
 							char *pname;
 							if (previewfiles && previewfiles[c]) pname=newstr(previewfiles[c]);
-								else pname=previewFileName(imagefiles[c],"%s-s.png");
+								else pname=previewFileName(imagefiles[c],"%-s.png");
 							imaged=new EpsData(imagefiles[c],pname,200,200,0);//*** should use laidout->maxwidth..
 							delete[] pname;
-							double d[4];
-							d[0]=imaged->minx/72;
-							d[1]=imaged->miny/72;
-							d[2]=imaged->maxx/72;
-							d[3]=imaged->maxy/72;
-							//dpi=***
+							xywh=new double[4];
+							xywh[0]=imaged->minx/72;
+							xywh[1]=imaged->miny/72;
+							xywh[2]=(imaged->maxx-imaged->minx)/72;
+							xywh[3]=(imaged->maxy-imaged->miny)/72;
+							dpi=72;
 						} else continue;
 					}
 				}
@@ -573,8 +574,9 @@ int dumpInImages(Document *doc, int startpage,
 				numonpage=0;
 			}
 		}
-		if (!images) images=new ImagePlopInfo(imaged,dpi,pg,NULL);
-		else images->add(imaged,dpi,pg,NULL);
+		if (!images) images=new ImagePlopInfo(imaged,dpi,pg,xywh);
+		else images->add(imaged,dpi,pg,xywh);
+		if (xywh) { delete[] xywh; xywh=NULL; }
 		if (numonpage==0) curpage++;
 	}
 

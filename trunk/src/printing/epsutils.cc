@@ -100,6 +100,8 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 				//bbox->maxx/=72.;
 				//bbox->miny/=72.;
 				//bbox->maxy/=72.;
+				if (width)  *width =bbox->maxx-bbox->minx;
+				if (height) *height=bbox->maxy-bbox->miny;
 			} else {
 				error=-4;
 				break;
@@ -235,8 +237,8 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 				cout <<" *** less preview data than expected (ppos="<<ppos<<", plen="<<plen<<") in EPS..."<<endl;
 			//} else if (error) {***
 			}
-		} else if (!strncmp(line,"%%EndProlog",13)) { 
-			break; 
+		} else if (!strncmp(line,"%%BeginProlog",13)) { 
+			break; // stop scanning at the beginning of prolog. Preview is just before prolog.
 		} //else break;
 		//} //***??else if (!strncmp(line,"%%Page:",7)) break;
 		
@@ -360,9 +362,9 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
  	 //* gs -dNOPAUSE -sDEVICE=pngalpha -sOutputFile=temp234234234.png
 	 //     -dBATCH -r(resolution) whatever.eps
 	double dpi,t;
-	dpi=maxw ? 200 : maxw*72/epsw;
-	t  =maxh*72/epsh;
-	if (maxh && t<dpi) dpi=t;
+	dpi=maxw ? maxw*72./epsw : 200;
+	t  =maxh*72./epsh;
+	if (maxh && t && t<dpi) dpi=t;
 	
 	char *arglist[10], str1[20], str2[300];
 	arglist[0]="gs";
