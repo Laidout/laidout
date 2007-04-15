@@ -150,12 +150,6 @@ void print_usage()
  * \ingroup pools
  * \brief Stack of available paper sizes.
  */
-/*! \var PreviewImageStyle LaidoutApp::preview_images
- * \brief where new preview images should be placed.
- *
- * This specifies location, and preview_transient says if newly created previews
- * should be deleted when no longer in use.
- */
 /*! \var char LaidoutApp::preview_transient
  * \brief Whether newly created previews should be deleted when no longer in use.
  */
@@ -171,12 +165,18 @@ void print_usage()
  * When Laidout generates new preview images for existing image files,
  * the original suffix for the image file is stripped and inserted
  * into this string. So say a file is "image.tiff" and preview_file_base
- * is "%s-s.jpg" (which is the default), then the preview file will
- * be "image-s.jpg". Generated preview files are always jpg files. If
- * the base is "../thumbs/%s-s.jpg" then the preview file will be
+ * is "%-s.jpg" (which is the default), then the preview file will
+ * be "image-s.jpg". Generated preview files are typically jpg files. If
+ * the base is "../thumbs/%-s.jpg" then the preview file will be
  * generated at "../thumbs" relative to where the image file is located.
  *
+ * If the base is ".laidout-*.jpg", using a '*' rather than a '%', when
+ * the full filename is substituted, rather than just the basename.
+ *
  * \todo be able to create preview files of different types by default...
+ */ 
+/*! \var int LaidoutApp::preview_over_this_size
+ * \brief The file size in kilobytes over which preview images should be used where possible.
  */
 
 
@@ -202,12 +202,11 @@ LaidoutApp::LaidoutApp() : anXApp()
 	temp_dir=NULL;
 	default_template=NULL;
 	
-	preview_file_base=newstr("%s-s.jpg");
+	preview_over_this_size=150; 
+	preview_file_base=newstr("%-s.jpg");
 	max_preview_length=200;
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
-	preview_images=Preview_SameDir;
-	//preview_images=Preview_None;
 
 //	MenuInfo *menu=new MenuInfo("Main Menu");
 //	 menu->AddItem("File",1);
@@ -353,7 +352,7 @@ int LaidoutApp::init(int argc,char **argv)
 		createlaidoutrc();
 	}
 	
-	// **** Init Imlib
+	//****this should be done in a more automatic way via Laxkit: Init Imlib
 	imlib_context_set_display(dpy);
 	imlib_context_set_visual(vis);
 	imlib_context_set_colormap(DefaultColormap(dpy, DefaultScreen(dpy)));
@@ -368,10 +367,12 @@ int LaidoutApp::init(int argc,char **argv)
 	 //*** set up main control window
 	//maincontrolpanel=new ControlPanel(***);
 	
-	 // if no other windows have been launched yet, then launch newdoc window
+	 //try to load the default template if no windows are up
 	if (topwindows.n==0 && default_template) {
-		cout << "*** implement creation of new file from default_template!"<<endl;
+		LoadTemplate(default_template);
 	}
+	
+	 // if no other windows have been launched yet, then launch newdoc window
 	if (topwindows.n==0)
 		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
@@ -409,24 +410,51 @@ int LaidoutApp::createlaidoutrc()
 		FILE *f=fopen(path,"w");
 		if (f) {
 			fprintf(f,"#Laidout %s laidoutrc\n",LAIDOUT_VERSION);
-			fprintf(f,"\n");
-			fprintf(f,"# Laidout global configuration options go in here.\n");
-			fprintf(f,"\n");
-			fprintf(f,"\n# The maximum dimension for preview images\n#maxPreviewLength 200\n");
-			fprintf(f,"#maxPreviewWidth 200\n");
-			fprintf(f,"#maxPreviewHeight 200\n");
-			fprintf(f,"\n#usePreviewImages no\n");
-			fprintf(f,"#usePreviewImages sameDir\n");
-			fprintf(f,"#usePreviewImages temporary\n");
-			fprintf(f,"#usePreviewImages projectDir\n");
-			fprintf(f,"\n#previewTransient no  #whether new previews are deleted when no longer used\n");
-			fprintf(f,"\n#palette_dir /usr/share/gimp/2.0/palettes\n");
-			fprintf(f,"\n");
-			fprintf(f," #if the following is commented out, then running \"laidout\" will\n");
-			fprintf(f," #always bring up the new document dialog. If it is uncommented, then the\n");
-			fprintf(f," #specified file is loaded with no name so that trying to save will\n");
-			fprintf(f," #force entering a new name and location.\n");
-			fprintf(f,"#default_template ./templates/default\n");
+			fprintf(f,"\n"
+					  "# Laidout global configuration options go in here.\n"
+					  "\n"
+					  " #The number of kilobytes a file must be to trigger\n"
+					  " #the automatic creation of a smaller preview image file.\n"
+					  "#previewThreshhold 200\n"
+					  "#previewThreshhold never\n"
+					  "\n"
+					  " #You can have previews that are created during the program\n"
+					  " #be deleted when the program exits, or have newly created previews remain:\n"
+					  "#temporaryPreviews yes  #yes to delete new previews on exit\n"
+					  "#temporaryPreviews      #same as: temporaryPreviews yes\n"
+					  "#permanentPreviews yes  #yes to not delete new preview images on exit\n"
+					  "\n"
+					  " #When preview files are not specified, Laidout tries to find one\n"
+					  " #based on a sort of name template. Say an image is filename.tiff, then\n"
+					  " #the first line implies using a preview file called filename-s.jpg,\n"
+					  " #where the '%%' stands for the original filename minus its the final suffix.\n"
+					  " #The second looks for .laidout-previews/filename.tiff.jpg, relative to the\n"
+					  " #directory of the original file. The '*' stands for the entire original filename.\n"
+					  " #The final example is an absolute path, and will try to create all preview files\n"
+					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
+					  "#defaultPreviewName %%-s.jpg\n"
+					  "#defaultPreviewName .laidout-previews/*.jpg\n"
+					  "#defaultPreviewName ~/.laidout/tmp/*.jpg\n"
+					  "\n"
+					  "\n# The maximum width or height for preview images\n"
+					  "#maxPreviewLength 200\n"
+					  //" # Alternately, you can specify the maximum width and height separately:\n"
+					  //"#maxPreviewWidth 200\n"
+					  //"#maxPreviewHeight 200\n"
+					  "\n"
+
+					  " #if the following is commented out, then running \"laidout\" will\n"
+					  " #always bring up the new document dialog. If it is uncommented, then the\n"
+					  " #specified file is loaded with the filename removed so that trying to save will\n"
+					  " #force entering a new name and location. If the file is not an absolute path,\n"
+					  " #then it is assumed to be relative to ~/laidout/(version)/templates.\n"
+					  "#default_template ./templates/default\n"
+					  "\n"
+					  " # Some assorted directories:\n");
+			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
+			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
+					  "\n"
+					  "\n");
 			fclose(f);
 		}
 		 // create the other relevant directories
@@ -468,7 +496,12 @@ int LaidoutApp::readinLaidoutDefaults()
 			
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(default_template,value);
-			//default to config_dir/templates/default
+			else {
+				char *fullname=full_path_for_resource(value,"templates");
+				if (file_exists(fullname,1,NULL)==S_IFREG) makestr(default_template,value);
+				delete[] fullname;
+			}
+			//default to config_dir/templates/default?
 
 		} else if (!strcmp(name,"defaultpapersize")) {
 			makestr(defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc
@@ -480,6 +513,10 @@ int LaidoutApp::readinLaidoutDefaults()
 			// > laidout --template consumptionIssue
 			// > laidout --template 1paperPamphlet
 		
+		} else if (!strcmp(name,"icon_dir")) {
+			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
+			cout <<" *** must implement icon_dir in laidoutrc!!"<<endl;
+		
 		} else if (!strcmp(name,"palette_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(palette_dir,value);
 		
@@ -488,16 +525,20 @@ int LaidoutApp::readinLaidoutDefaults()
 			//				or projectdir/.laidouttemp/previews
 			//	make sure supplied tempdir is writable before using.
 			cout <<" *** imp temp_dir in laidoutrc"<<endl;
+
+		 //--------------preview related options:
+		} else if (!strcmp(name,"previewThreshhold")) {
+			if (value && !strcmp(value,"never")) preview_over_this_size=INT_MAX;
+			else IntAttribute(value,&preview_over_this_size);
 		
-		} else if (!strcmp(name,"previewTransient")) {
+		} else if (!strcmp(name,"permanentPreviews")) {
+			preview_transient=!BooleanAttribute(value);
+		
+		} else if (!strcmp(name,"temporaryPreviews")) {
 			preview_transient=BooleanAttribute(value);
 		
-		} else if (!strcmp(name,"usePreviewImages")) {
-			if (value==NULL || !strcmp(value,"sameDir") || !strcmp(value,"yes")) {
-				preview_images=Preview_SameDir;
-			} else if (!strcmp(value,"temporary")) preview_images=Preview_Temporary;
-			else if (!strcmp(value,"projectDir")) preview_images=Preview_ProjectDir;
-			else preview_images=Preview_None;
+		} else if (!strcmp(name,"defaultPreviewName")) {
+			makestr(preview_file_base,value);
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
@@ -651,6 +692,7 @@ Document *LaidoutApp::findDocument(const char *saveas)
  *     human readable aliases to actual files?
  * \todo right now just searches in the user's home directory. Should also search in
  *   system wide directory
+ * \todo allow "~/whatever" as an absolute path
  *
  * If dir!=NULL, then look in ~/.laidout/(version)/dir for the file. 
  *

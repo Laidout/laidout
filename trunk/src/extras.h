@@ -39,7 +39,8 @@ class ImagePlopInfo
 int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdpi, int perpage);
 int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int defaultdpi, int perpage);
 int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int perpage=1, int ddpi=150);
-int dumpInImages(Document *doc, int startpage, const char **imagefiles, int nimages, int perpage=1, int ddpi=150);
+int dumpInImages(Document *doc, int startpage, const char **imagefiles, const char **previewfiles, 
+				 int nimages, int perpage=1, int ddpi=150);
 //int dumpInImages(Document *doc, int startpage, LaxInterfaces::ImageData **images, int nimages, int perpage=1, int ddpi=150);
 int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage);
 

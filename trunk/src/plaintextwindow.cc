@@ -15,6 +15,8 @@
 //
 
 
+**************** NOT FUNCTIONAL YET
+ 
 #include "plaintextwindow.h"
 
 using namespace Laxkit;
@@ -29,54 +31,67 @@ using namespace Laxkit;
  *
  * Ultimately, they might contain something like Latex code that an EPS
  * grabber might run to get formulas.... Big todo!!
+ *
+ * \todo allow 8bit text OR utf8
  */
-class PlainText : public Laxkit::anObject, public Laxkit::RefCounted
-{
- public:
-	int ownertype;
-	union {
-		Laxkit::anObject *owner;
-		char *filename;
-	} owner;
-	clock_t lastmodtime;
-	char *thetext;
-};
 
 
 //------------------------------ PlainTextWindow -------------------------------
 /*! \class PlainTextWindow
  * \brief Editor for plain text
  *
- * ***NOTE: Directly descending from GoodEditWW is temporary.
+ * <pre>
+ *  [  the edit box       ]
+ *  [owner/filename][apply][name [v]] <-- click name to retrieve other plain text objects
+ *  [run (internally)][run with... (externally)]
+ * </pre>
  */
-//class PlainTextWindow : public Laxkit::RowFrame
-//{
-// protected:
-// public:
-// 	PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-// 		int xx,int yy,int ww,int hh,int brder);
-// 	virtual const char *whattype() { return "PlainTextWindow"; }
-// 	virtual int init();
-//	virtual ~PlainTextWindow();
-//	virtual int UseThis(PlainText *txt);
-//};
 
+
+/*! Increments the count of newtext.
+ */
 PlainTextWindow::PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
- 		int xx,int yy,int ww,int hh,int brder)
+ 		int xx,int yy,int ww,int hh,int brder, PlainText *newtext)
 	: RowFrame(parnt,ntitle,nstyle, xx,yy,ww,hh,brder)
 {
+	textobj=newtext;
+	if (textobj) textobj->inc_count();
 }
 
 PlainTextWindow::~PlainTextWindow()
 {
+	if (textobj) textobj->dec_count();
 }
+
+int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+{
+	DBG cout <<"plaintext message: "<<mes<<endl;
+	if (!strcmp(mes,"text change")) {
+		***update textobj from edit
+	} else if (!strcmp(mes,"***")) { 
+	}
 
 int PlainTextWindow::init()
 {
 	
-	
+	GoodEditWW *editbox;
+	editbox=new GoodEditWW(***textobj->thetext);
 	
 	Sync(1);
+	return 0;
+}
+
+/*! Return 0 for success, nonzero for error.
+ *
+ * Increments the count of txt.
+ */
+int PlainTextWindow::UseThis(PlainText *txt)
+{
+	if (txt==textobj) return 0;
+	if (textobj) textobj->dec_count();
+	textobj=newtext;
+	if (textobj) textobj->inc_count();
+	***update edit from textobj
 	return 0;
 }
 

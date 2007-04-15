@@ -64,35 +64,67 @@ using namespace LaxInterfaces;
 //! Create a preview file name based on a name template.
 /*! \ingroup misc
  *
- * From something like "%s-s.png", transform a file like "/blah/2/file.tiff"
+ * From something like "%-s.png", transform a file like "/blah/2/file.tiff"
  * to "/blah/2/file-s.png". The template can be an absolute path, or relative.
  * If not in same dir as the image, then it is ok to have a relative path from there,
- * such as "../thumbs/%s-s.png". If the template is "/tmp/thumbs/%s-s.png", then that
- * absolute path is used.
+ * such as "../thumbs/%-s.png". If the template is "/tmp/thumbs/%-s.png", then that
+ * absolute path is used. A template like "*.jpg" uses the whole filename, so
+ * file.tiff would become "file.tiff.jpg".
+ *
+ * It is assumed there is only one '%' or '*'. More than one will be removed from the name.
+ * If there is neither a % nor a *, then assume nametemplate is just a suffix to tack onto
+ * file.
+ *
+ * Note that this does not check the filesystem for existence or not of the generated preview
+ * name. Those duties lie elsewhere.
  *
  * \todo *** warning: no sanity checking on template is done. Assumes that a "%s" is present.
  * \todo this function must be put somewhere rational
+ * \todo *** should be able to use "~/" as part of an absolute path
+ * \todo when there is no '%' or '*', this currently does wrong for templates that have a directory component
+ *   
  */
 char *previewFileName(const char *file, const char *nametemplate)
 {
+	if (!file || !nametemplate) return NULL;
+	
 	const char *b=lax_basename(file);
 	if (!b) return NULL;
 
 	char *path;
 	char *bname=newstr(b);
 
-	path=strrchr(bname,'.');
-	if (path && path!=bname) *path='\0'; //cut off suffix
+	 //fix up nametemplate
+	char *tmplate=new char[strlen(nametemplate)+5];
+	strcpy(tmplate,nametemplate);
 	
-	if (nametemplate[0]!='/') path=lax_dirname(file,1); else path=NULL;
+	path=strchr(tmplate,'%');
+	if (path) { //chop suffix
+		replace(tmplate,"%s",path-tmplate,path-tmplate,NULL);
+		path=strrchr(bname,'.');
+		if (path && path!=bname) *path='\0';
+	} else {
+		path=strchr(tmplate,'*');
+		if (path) {
+			replace(tmplate,"%s",path-tmplate,path-tmplate,NULL);
+		} else {
+			 // tmplate had neither a % nor a *
+			path=strrchr(tmplate,'/');
+			if (path) appendstr(tmplate,"%s");//***this is a hack!
+			else appendstr(tmplate,"%s",1);//prepends
+		}
+	}
 	
-	char *previewname=new char[strlen(bname)+strlen(nametemplate)];
-	sprintf(previewname,nametemplate,bname);
+	if (tmplate[0]!='/') path=lax_dirname(file,1); else path=NULL;
+		
+	char *previewname=new char[strlen(bname)+strlen(tmplate)];
+	sprintf(previewname,tmplate,bname);
 	if (path) {
 		appendstr(previewname,path,1);
 		delete[] path;
 	}
 	delete[] bname;
+	delete[] tmplate;
 	return previewname;
 }
 //--------------------------
@@ -430,7 +462,7 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
 		free(dirents[c]);
 	}
 	free(dirents);
-	c=dumpInImages(doc,startpage,(const char **)imagefiles,i,perpage,ddpi);
+	c=dumpInImages(doc,startpage,(const char **)imagefiles,NULL,i,perpage,ddpi);
 	deletestrs(imagefiles,i);
 	return c;
 }
@@ -446,7 +478,7 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
  * 
  * Returns the page index of the final page or -1 if error.
  *
- * \todo *** should probably put in **previewimages..
+ * \todo *** must test **previewimages, and more fully make use of it
  * \todo *** if an image list is encountered, it is immediately shunted to the dumpInImageList()
  *   function. what it should do instead is add to a list of files and dump them all at once.
  *   this entails slightly rewriting said dumpInImageList() function, and adding a flag for
@@ -458,6 +490,7 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
  */
 int dumpInImages(Document *doc, int startpage, 
 				 const char **imagefiles,
+				 const char **previewfiles,
 				 int nfiles,
 				 int perpage, int ddpi)
 {
@@ -475,7 +508,7 @@ int dumpInImages(Document *doc, int startpage,
 		dpi=ddpi;
 
 		 //first check if Imlib2 recognizes it as image (the easiest check)
-		image=load_image(imagefiles[c]);
+		image=load_image_with_preview(imagefiles[c],previewfiles?previewfiles[c]:NULL,0,0,0);
 		if (image) {
 			DBG cout << "dump image files: "<<imagefiles[c]<<endl;
 
@@ -511,17 +544,17 @@ int dumpInImages(Document *doc, int startpage,
 							 //create new EpsData, which has bounding box pulled from
 							 //the eps file, kept in postscript units (1 inch == 72 units)
 							//*******
-							char *pname=previewFileName(imagefiles[c],"%s-s.png");
+							char *pname;
+							if (previewfiles && previewfiles[c]) pname=newstr(previewfiles[c]);
+								else pname=previewFileName(imagefiles[c],"%s-s.png");
 							imaged=new EpsData(imagefiles[c],pname,200,200,0);//*** should use laidout->maxwidth..
+							delete[] pname;
 							double d[4];
 							d[0]=imaged->minx/72;
 							d[1]=imaged->miny/72;
 							d[2]=imaged->maxx/72;
 							d[3]=imaged->maxy/72;
 							//dpi=***
-							if (!images) images=new ImagePlopInfo(imaged,dpi,-1,d);
-							else images->add(imaged,dpi,-1,d);
-							continue;
 						} else continue;
 					}
 				}
