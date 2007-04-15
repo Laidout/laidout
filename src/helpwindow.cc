@@ -2,16 +2,14 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
-//
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
 //
 
 #include "headwindow.h"
@@ -35,18 +33,7 @@ using namespace Laxkit;
  * Laxkit will have ability to track the short cuts on the fly, so this
  * window will latch on to that, as well as provide other info...
  */  
-//class HelpWindow : public Laxkit::MessageBox
-//{
-//	int s;
-// public:
-// 	HelpWindow(int style);
-//	virtual ~HelpWindow() {}
-// 	virtual const char *whattype() { return "HelpWindow"; }
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//	virtual int preinit();
-//	virtual int init();
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-//};
+
 
 //! If style!=0, then do no special sizing in preinit...
 /*! \todo anyhow need to work out sizing in Laxkit::MessageBox!!
@@ -172,6 +159,7 @@ int HelpWindow::init()
 			"  'c'      Move image to real origin\n"
 			"  'C'      Move image to real origin and clear rotation\n"
 			"  'd'      Toggle drawing decorations\n"
+			"  'f'      Toggle writing the filename next to the image\n"
 			"\n"
 			"\n"
 			"ColorPatchInterface and ImagePatchInterface:\n"

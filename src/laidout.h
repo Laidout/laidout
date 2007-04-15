@@ -41,13 +41,6 @@ enum TreeChangeType {
 		TreeObjectAdded
 	};
 
-enum PreviewImageStyle {
-		Preview_None,
-		Preview_Temporary,
-		Preview_ProjectDir,
-		Preview_SameDir
-	};
-
 
 class TreeChangeEvent : public Laxkit::EventData
 {
@@ -73,15 +66,16 @@ class LaidoutApp : public Laxkit::anXApp
 
 	unsigned long curcolor;
 	
-	PreviewImageStyle preview_images;
 	char preview_transient;
-	int max_preview_length, max_preview_width, max_preview_height;
+	int preview_over_this_size;
 	char *preview_file_base;
+	int max_preview_length, max_preview_width, max_preview_height;
 
 	char *default_template;
 	
 	char *defaultpaper;
 	char *palette_dir;
+	char *icon_dir;
 	char *temp_dir;
 
 	IconManager icons;

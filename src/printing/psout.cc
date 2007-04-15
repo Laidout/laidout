@@ -360,7 +360,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 		//%%EndResource
 		 
 		 //define functions to simplify inclusion of EPS files
-		fprintf(f,"BeginEPS {\n"
+		fprintf(f,"/BeginEPS {\n"
 			  "  /starting_state save def\n"
 			  "  /dict_count countdictstack def \n"
 			  "  /op_count count 1 sub def\n"
@@ -374,7 +374,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 			  "    } if\n"
 			  "  } if\n"
 			  "} bind def\n");
-		fprintf(f,"EndEPS {\n"
+		fprintf(f,"/EndEPS {\n"
 			  "  count op_count sub { pop } repeat\n"
 			  "  countdictstack dict_count sub { end } repeat\n"
 			  "  starting_state restore\n"

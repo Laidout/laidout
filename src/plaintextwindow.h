@@ -20,14 +20,34 @@
 
 #include <lax/rowframe.h>
 
+//------------------------------ PlainText -------------------------------
+
+class PlainText : public Laxkit::anObject, public Laxkit::RefCounted
+{
+ public:
+	int ownertype;
+	union {
+		Laxkit::anObject *owner;
+		char *filename;
+	} owner;
+	clock_t lastmodtime;
+	char *thetext;
+	char *name;
+	virtual const char *whattype() { return "PlainText"; }
+};
+
+//------------------------------ PlainTextWindow -------------------------------
+
 class PlainTextWindow : public Laxkit::RowFrame
 {
  protected:
+	PlainText *textobj;
  public:
  	PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
  	virtual const char *whattype() { return "PlainTextWindow"; }
 	virtual ~PlainTextWindow();
+	virtual int UseThis(PlainText *txt);
 };
 
 #endif

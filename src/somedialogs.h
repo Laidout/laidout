@@ -17,6 +17,8 @@
 #define SOMEDIALOGS_H
 
 
+*********** NOTE: not currently used *******************
+
 #include <lax/messagebox.h>
 
 

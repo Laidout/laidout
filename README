@@ -19,7 +19,7 @@ on my machine' stage of development.
 
 Laidout currently can arrange pages into a couple different impositions,
 such as a booklet, or even a dodecahedron. You can manipulate images
-and gradients (linear, radial, and bezier patches) fairly well. Also, 
+and gradients (linear, radial, and bezier patches). Also, 
 you can make a type of image that can be stretched around. The very 
 basics to get my cartoon books done, in other words. Many more features
 are planned, like such non-essentials (to me anyway) as text! Who needs 
@@ -78,13 +78,16 @@ INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
 It is quite ok to install different versions of Laidout at the same time.
 The ~/.laidout/ directory keeps all the config information in subdirectories
 based on the version. The same applies for installed binaries and other
-resources that get put in prefix/laidout. This way, you do not risk
+resources that get put in prefix/share/laidout. This way, you do not risk
 clobbering or corrupting files from other versions. 
 
 HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
 things that were installed to those directories outside of "make install". 
 Right now, everything in prefix/share/laidout will be removed on uninstall
 (but not anything in ~/.laidout).
+
+Also, though you can have different versions coexist, there is not currently an
+automatic way to convert resources from older laidout versions to newer ones.
 
 In any case, if you can, it's really safer to build the deb package, which 
 automatically keeps track of such things.
@@ -127,6 +130,18 @@ make docs
 and it dumps it all out to docs/html. In particular, you will have a 
 rapidly expanding todo list. If you want to contribute, that is a good
 place to start. That and the Laxkit todo list.
+
+A down and dirty way to become aquainted with the source code is to 
+download the Laxkit to the top laidout directory (if it is not there
+already), and change the following lines in the Doxyfile-with-laxkit
+to say YES rather than NO:
+
+SOURCE_BROWSER         = YES
+EXTRACT_ALL            = YES
+
+Then from the docs directory, run 'doxygen Doxyfile-with-laxkit', which
+will generate a clickable source tree accessible from your favorite web 
+browser.
 
 
 Compiling on Mac OS X

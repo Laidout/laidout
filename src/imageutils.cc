@@ -68,7 +68,9 @@ LaxImage *LaidoutApp::load_image(const char *filename)
 	 // created previews should be deleted when the program exits, maybe past
 	 // a certain size......
 	
-	if (preview_images==Preview_None) return _load_imlib_image(filename);
+	if (preview_over_this_size<0 || file_size(filename)>preview_over_this_size)
+		return _load_imlib_image(filename);
+	
 	char *tempfile=NULL;
 	if (preview_images==Preview_Temporary) {
 		 // from /a/b/blah.jpg, make ~/.laidout/.tmp/3adc4ep8yg.jpg
