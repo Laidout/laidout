@@ -10,11 +10,11 @@ VERSION 0.06
 (done) parent/child nesting and interface for that: nesting, and grouping: layer trees
 (done) New document creation from templates
        Be able to work with preview images more easily
-       Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
-       Image and Color patches, gradients, etc should have vastly better interfaces
+(done) Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
 
 VERSION 0.07
 ------------
+       Image and Color patches, gradients, etc should have vastly better interfaces
        Image and Color patches, gradients, etc should allow transparent colors
        Gui for modifying Page Labels
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf, or image
