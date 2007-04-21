@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -15,8 +15,8 @@
 //
 /************************ styles.cc **************************/
 
-// This file is currently not used.
-//
+******* This file is currently not used.
+
 
 #ifndef DOXYGEN_SHOULD_IGNORE_THIS
 
