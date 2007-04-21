@@ -55,7 +55,9 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	imagei->style=1;
 	existingpool->push(imagei,1);
 	
-	existingpool->push(new EpsInterface(id++,NULL),1);//*** combine with Image somehow?
+	EpsInterface *eps=new EpsInterface(id++,NULL);
+	eps->style=1;
+	existingpool->push(eps,1);//*** combine with Image somehow?
 
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	ip->recurse=2;

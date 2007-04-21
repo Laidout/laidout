@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -24,7 +24,7 @@ class EpsData : public LaxInterfaces::ImageData
  public:
 	char *title, *creationdate, *resources;
 	EpsData(const char *nfilename=NULL, const char *npreview=NULL, 
-			  int maxpx=0, int maxpy=0, char delpreview=1);
+			  int maxpx=0, int maxpy=0, char delpreview=0);
 	virtual ~EpsData();
 	virtual const char *whattype() { return "EpsData"; }
 	virtual int LoadImage(const char *fname, const char *npreview=NULL, int maxpx=0, int maxpy=0, char del=0);
