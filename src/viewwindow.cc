@@ -11,6 +11,8 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
+// Copyright (c) 2004-2007 Tom Lechner
+//
 
 #include <lax/numslider.h>
 #include <lax/interfaces/fillstyle.h>
@@ -444,6 +446,20 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		
 		delete te;
 		return 0;
+	} else if (!strcmp(mes,"image properties")) {
+		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
+		if (se) {
+			if (curobj.obj && !strcmp(curobj.obj->whattype(),"ImageData")) {
+				ImageData *img=dynamic_cast<ImageData *>(curobj.obj);
+				if (img) {
+					img->SetDescription(se->strs[3]);
+					img->LoadImage(se->strs[0],se->strs[1]);
+					needtodraw=1;
+					delete se;
+					return 0;
+				}
+			}
+		}
 	}
 	return 1;
 }

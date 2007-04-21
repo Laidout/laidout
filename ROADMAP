@@ -23,6 +23,7 @@ VERSION 0.07
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
        Net imposition interactive unwrapper
        Implement all preview config options
+       Fix multi-object selection move when crossing page boundaries
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up

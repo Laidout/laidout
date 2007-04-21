@@ -680,7 +680,7 @@ int LaidoutApp::isTopWindow(anXWindow *win)
 Document *LaidoutApp::findDocument(const char *saveas)
 {
 	for (int c=0; c<project->docs.n; c++) {
-		if (!strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
+		if (project->docs.e[c]->saveas && !strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
 	}
 	return NULL;
 }
