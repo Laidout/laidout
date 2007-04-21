@@ -552,6 +552,39 @@ int epsout(const char *fname,Document *doc,int start,int end,
 				  "%%%%Creator: Laidout %s\n",
 						ctime(&t),LAIDOUT_VERSION);
 	
+		fprintf(f,"%%%%EndComments\n");
+		fprintf(f,"%%%%BeginProlog\n");
+		//if (doc->hasEPS()) { *** including these defs always isn't harmful, and much easier to implement..
+			 // if an EPS has extra resources, they are mentioned here in the prolog(?)
+			//***
+			//%%BeginResource: procsetname
+			//...
+			//%%EndResource
+			 
+			 //define functions to simplify inclusion of EPS files
+			fprintf(f,"/BeginEPS {\n"
+				  "  /starting_state save def\n"
+				  "  /dict_count countdictstack def \n"
+				  "  /op_count count 1 sub def\n"
+				  "  userdict begin\n"
+				  "  /showpage { } def\n"
+				  "  0 setgray     0 setlinecap     1 setlinewidth\n"
+				  "  0 setlinejoin 10 setmiterlimit [ ] 0 setdash   newpath\n"
+				  "  /languagelevel where\n"
+				  "  { pop languagelevel 1 ne\n"
+				  "    { false setoverprint  false setstrokeadjust\n"
+				  "    } if\n"
+				  "  } if\n"
+				  "} bind def\n");
+			fprintf(f,"/EndEPS {\n"
+				  "  count op_count sub { pop } repeat\n"
+				  "  countdictstack dict_count sub { end } repeat\n"
+				  "  starting_state restore\n"
+				  "} bind def\n");
+		//}
+				  
+		fprintf(f,"%%%%EndProlog\n");
+			
 	     //print paper header
 		fprintf(f, "%%%%Page: %d 1\n", c+1);//Page label (ordinal starting at 1)
 		fprintf(f, "save\n");

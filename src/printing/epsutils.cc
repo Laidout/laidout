@@ -12,6 +12,8 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
+// Copyright (c) 2004-2007 Tom Lechner
+//
 
 
 #include <cstdio>
