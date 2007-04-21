@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -102,7 +102,7 @@ void EpsData::dump_out(FILE *f,int indent,int what)
 	}
 	
 	if (filename) fprintf(f,"%sfilename \"%s\"\n",spc,filename);
-	if (previewfile && previewflag&1) fprintf(f,"%spreviewfile \"%s\"\n",spc,previewfile);
+	if (previewfile && !(previewflag&1)) fprintf(f,"%spreviewfile \"%s\"\n",spc,previewfile);
 	fprintf(f,"%sminx %.10g\n",spc,minx);
  	fprintf(f,"%sminy %.10g\n",spc,miny);
 	fprintf(f,"%smaxx %.10g\n",spc,maxx);

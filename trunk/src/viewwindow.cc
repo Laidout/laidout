@@ -449,7 +449,8 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 	} else if (!strcmp(mes,"image properties")) {
 		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
 		if (se) {
-			if (curobj.obj && !strcmp(curobj.obj->whattype(),"ImageData")) {
+			//if (curobj.obj && !strcmp(curobj.obj->whattype(),"ImageData")) {
+			if (curobj.obj && dynamic_cast<ImageData *>(curobj.obj)) {
 				ImageData *img=dynamic_cast<ImageData *>(curobj.obj);
 				if (img) {
 					img->SetDescription(se->strs[3]);
