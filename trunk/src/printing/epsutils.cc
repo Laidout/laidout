@@ -100,8 +100,8 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 				//bbox->maxx/=72.;
 				//bbox->miny/=72.;
 				//bbox->maxy/=72.;
-				if (width)  *width =bbox->maxx-bbox->minx;
-				if (height) *height=bbox->maxy-bbox->miny;
+				if (width)  *width =int(bbox->maxx-bbox->minx);
+				if (height) *height=int(bbox->maxy-bbox->miny);
 			} else {
 				error=-4;
 				break;
