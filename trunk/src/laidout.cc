@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2005-2007 by Tom Lechner
 //
 
 
@@ -20,7 +20,7 @@
  * The pools are available through the main LaidoutApp.
  * 
  * *** The interface pool is necessary to be able to draw anything any old time.
- * The others could probably be absorbed bythe stylemanager.
+ * The others could probably be absorbed by the stylemanager.
  */
 
 //---------------------<< start program! >>-------------------------
@@ -39,6 +39,7 @@
 #include "version.h"
 #include "stylemanager.h"
 #include "configured.h"
+#include "printing/epsutils.h"
 #include <lax/lists.cc>
 
 #include <sys/stat.h>
@@ -102,6 +103,34 @@ void print_usage()
  * Random stuff that needs a home in the source tree that
  * is perhaps a little more meaningful or something...
  */
+
+//! Redefinition of the default Laxkit preview generator.
+/*! \ingroup misc
+ *
+ * This can create previews of eps files..
+ *
+ * Return 0 for success.
+ */
+int laidout_preview_maker(const char *original, const char *preview, int width, int height, int fit)
+{
+	if (!_laximlib_generate_preview(original,preview,width,height,fit)) return 0;
+
+	 //normal preview maker didn't work, so try something else...
+	DoubleBBox bbox;
+	char *title,*date;
+	int depth,w,h;
+	FILE *f=fopen(original,"r");
+	if (!f) return 1;
+	int c=scaninEPS(f,&bbox,&title,&date,NULL,&depth,&w,&h);
+	fclose(f);
+	if (c) return 1; //not eps probably
+	return WriteEpsPreviewAsPng(GHOSTSCRIPT_BIN,
+						 original,w,h,
+						 preview,width,height,
+						 NULL);
+}
+
+
 
 
 
@@ -971,6 +1000,9 @@ int main(int argc,char **argv)
 		}
 	}
 				
+	 //refedine Laxkit's default preview maker
+	generate_preview_image=laidout_preview_maker;
+
 	laidout=new LaidoutApp();
 	
 	laidout->init(argc,argv);

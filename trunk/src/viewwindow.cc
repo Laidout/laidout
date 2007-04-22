@@ -2695,11 +2695,11 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				}
 			}
 
-			delete data;
 			if (bname) delete[] bname;
 			if (dir)   delete[] dir;
 			if (file)  delete[] file;
 		}
+		delete data;
 		return 0;
 	} else if (!strcmp(mes,"reallyprintfile")) {
 		 // print to file without overwrite check 

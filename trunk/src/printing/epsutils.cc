@@ -2,15 +2,14 @@
 // $Id$
 //	
 // Laidout, for laying out
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
 // License as published by the Free Software Foundation; either
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
-//
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
 //
 // Copyright (c) 2004-2007 Tom Lechner
 //
@@ -38,7 +37,8 @@ using namespace Laxkit;
  * to that specification. The preview data returned is packed by rows with no padding.
  *
  * title, date, and preview are also turned into new'd char[], or NULL if none present. The previous
- * contents of those variables are all ignored, so beware of memory hole potential here.
+ * contents of those variables are all ignored, so beware of memory hole potential here. It is
+ * ok to pass in NULL for preview, but the others must be valid pointers.
  *
  * Return -1 for not a readable EPS. -2 for error during some point in the reading.
  * 0 for success.
@@ -70,7 +70,8 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 	if (!f) return -1;
 	
 	 // initialize the return vars
-	*title=*date=*preview=NULL;
+	*title=*date=NULL;
+	if (preview) *preview=NULL;
 	
 	int c;
 	int languagelevel=3;
@@ -126,10 +127,11 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 			if (!strlen(*date)) { delete[] *date; *date=NULL; }
 			continue;
 		} else if (!strncmp(line,"%%BeginPreview:",15)) {
+			if (!preview) break; //ignore rest
 			 //%%BeginPreview width height depth lines
 			 //
 			 //scan in the EPSI formatted preview
-			 //This occurs right after the %%EndComments, and before the prolog.
+			 //This occurs right after the %%EndComments, and before the %%BeginProlog.
 			 //Each scan line of the preview (width dots with given depth) must be given in
 			 //segments that are multiples of 8 bits. If the end of a scan line falls short of
 			 //that, then the source data is padded with 0 bits. Note that each hex char
@@ -355,6 +357,7 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 						 const char *previewfile, int maxw, int maxh,
 						 char **error_ret)
 {
+	char *error=NULL;
 	if (error_ret) *error_ret=NULL;
 	
 	if (!fullgspath || !epsfile || !previewfile) return 1;
@@ -392,20 +395,23 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 	if (child==0) { // is child
 		execv(fullgspath,arglist);
 		cout <<"*** error in exec!"<<endl;
-		if (error_ret) *error_ret=newstr("Error trying to run Ghostscript.");
+		error=newstr("Error trying to run Ghostscript.");
 		exit(1);
 	} 
 	int status;
 	waitpid(child,&status,0);
 	if (!WIFEXITED(status)) {
 		DBG cout <<"*** error in child process, not returned normally!"<<endl;
-		if (error_ret) *error_ret=newstr("Ghostscript interrupted from making preview.");
+		error=newstr("Ghostscript interrupted from making preview.");
 	} else if (WEXITSTATUS(status)!=0) {
 		DBG cout <<"*** ghostscript returned error while trying to make preview"<<endl;
-		if (error_ret) *error_ret=newstr("Ghostscript had error while making preview.");
+		error=newstr("Ghostscript had error while making preview.");
 	}
 
-	if (*error_ret) return -3;
+	if (error) {
+		if (error_ret) *error_ret=error;
+		return -3;
+	}
 	return 0;
 }
 
