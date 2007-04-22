@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2005-2007 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public

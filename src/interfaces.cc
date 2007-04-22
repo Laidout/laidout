@@ -38,6 +38,39 @@ void PushBuiltinPathops()
 	PathInterface::basepathops.push(new BezpathOperator(NULL,1,NULL),1);
 }
 
+////---------------------
+///*! \class LImageInterface
+// * \brief add on a little custom behavior.
+// * \todo *** move this somewhere more appropriate
+// */
+//class LImageInterface : public LaxInterfaces::ImageInterface
+//{
+// protected:
+//	virtual void runImageDialog();
+// public:
+//	LImageInterface(int nid,Displayer *ndp);
+//};
+//
+//LImageInterface::LImageInterface(int nid,Displayer *ndp) : ImageInterface(nid,ndp)
+//{
+//	style=1;
+//}
+//
+///*! Redefine to blot out title from the dialog.
+// */
+//void LImageInterface::runImageDialog()
+//{
+//	 //after Laxkit event system is rewritten, this will be very different:
+//	ImageInfo *inf=new ImageInfo(data->filename,data->previewfile,NULL,data->desc,0);
+//	curwindow->app->rundialog(new ImageDialog(NULL,"imagedialog for imageinterface",
+//					ANXWIN_DELETEABLE|IMGD_NO_TITLE,
+//					0,0,400,400,0,
+//					NULL,curwindow->window,"image properties",
+//					inf));
+//	inf->dec_count();
+//}
+////---------------------
+
 //! Get the built in interfaces. NOTE: Must be called after GetBuiltinPathops().
 /*! The PathInterface requires that pathoppool be filled already.
  *

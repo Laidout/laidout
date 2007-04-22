@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (c) 2004-2007 Tom Lechner
 //
 /********** psout.cc ****************/
 
@@ -317,6 +317,37 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	if (end<0 || end>=doc->docstyle->imposition->numpapers) 
 		end=doc->docstyle->imposition->numpapers-1;
 
+	 //Basically, postscript documents following the ps document structure 
+	 //guidelines are structured like this:
+	 //-----------------header--------------
+	 // %!PS-Adobe-3.0
+	 // %%Pages: 3
+	 // ...more header comments until a line not beginning with '%' or line with %%EndComments
+	 // %%EndComments
+	 // --------(epsi preview data goes here)-------
+	 // ---------------procedure setup----------
+	 // %%BeginProlog
+	 // ...
+	 // %%BeginResource
+	 // ...
+	 // %%EndResource
+	 // %%EndProlog
+	 // -----------doc setup--------------
+	 // %%BeginSetup
+	 // ...
+	 // %%EndSetup
+	 // ---------------pages--------------------
+	 // %%Page:
+	 // %%BeginPageSetup
+	 // ...
+	 // %%EndPageSetup
+	 // ...
+	 // %%PageTrailer
+	 // %%Trailer
+	 // ...
+	 // %%EOF
+
+	
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
@@ -495,13 +526,14 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		int layouttype,unsigned int flags)
 {
 	if (!doc) return 1;
+	
 	if (start<0) start=0;
 	if (layouttype==PAPERLAYOUT) {
 		if (end<0 || end>=doc->docstyle->imposition->numpapers) 
 			end=doc->docstyle->imposition->numpapers-1;
 	} else if (layouttype==PAGELAYOUT) {
-		if (end<0 || end>=doc->pages.n) 
-			end=doc->pages.n-1;
+		if (end<0 || end>=doc->docstyle->imposition->numspreads) 
+			end=doc->docstyle->imposition->numspreads-1;
 	} else { // singles
 		if (end<0 || end>=doc->pages.n) 
 			end=doc->pages.n-1;
@@ -586,7 +618,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		fprintf(f,"%%%%EndProlog\n");
 			
 	     //print paper header
-		fprintf(f, "%%%%Page: %d 1\n", c+1);//Page label (ordinal starting at 1)
+		fprintf(f, "%%%%Page: %d 1\n", c+1);//%%Page (label) (ordinal starting at 1)
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
@@ -636,11 +668,6 @@ int epsout(const char *fname,Document *doc,int start,int end,
 			psPopCtm();
 		}
 
-		//**** ugly workaround for page spreads, need perhaps a numpagespreads var in imposition
-		if (layouttype==PAGELAYOUT) 
-			for (c2=0; c2<spread->pagestack.n; c2++)
-				if (spread->pagestack.e[c2]->index>c) c=spread->pagestack.e[c2]->index;
-			
 		delete spread;
 		
 		 // print out paper footer
@@ -659,3 +686,5 @@ int epsout(const char *fname,Document *doc,int start,int end,
 
 	return 0;
 }
+
+
