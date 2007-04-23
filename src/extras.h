@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 #ifndef EXTRAS_H
 #define EXTRAS_H
@@ -36,6 +36,7 @@ class ImagePlopInfo
 
 
 //------------------------------------- functions -------------------------------
+char *previewFileName(const char *file, const char *nametemplate);
 int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdpi, int perpage);
 int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int defaultdpi, int perpage);
 int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int perpage=1, int ddpi=150);

@@ -59,7 +59,7 @@ using namespace std;
 
 //----------------------------------- pre-run misc -----------------------------------
 
-//! "Laidout Version LAIDOUT_VERSION by Tom Lechner, sometime in 2006"
+//! "Laidout Version LAIDOUT_VERSION by Tom Lechner, sometime in 2007"
 /*! \ingroup lmisc
  */
 const char *LaidoutVersion() 
@@ -68,7 +68,7 @@ const char *LaidoutVersion()
 	if (version_str==NULL) {
 		makestr(version_str,"Laidout Version ");
 		appendstr(version_str,LAIDOUT_VERSION);
-		appendstr(version_str,"\nby Tom Lechner, sometime in 2006\n");
+		appendstr(version_str,"\nby Tom Lechner, sometime in 2007\n");
 		appendstr(version_str,"Released under the GNU Public License, Version 2.\n");
 		appendstr(version_str," (using Laxkit Version ");
 		appendstr(version_str,LAXKIT_VERSION);
@@ -231,8 +231,8 @@ LaidoutApp::LaidoutApp() : anXApp()
 	temp_dir=NULL;
 	default_template=NULL;
 	
-	preview_over_this_size=150; 
-	preview_file_base=newstr("%-s.jpg");
+	preview_over_this_size=250; 
+	preview_file_base=newstr(".laidout-%.jpg");
 	max_preview_length=200;
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
