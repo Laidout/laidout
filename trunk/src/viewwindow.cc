@@ -41,6 +41,7 @@
 #include "drawdata.h"
 #include "helpwindow.h"
 #include "configured.h"
+#include "importimages.h"
 
 #include <iostream>
 #include <sys/stat.h>
@@ -2986,9 +2987,14 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
-		app->rundialog(new FileDialog(NULL,"Import Image",
+		app->rundialog(new ImportImagesDialog(NULL,"Import Images",
 					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,500,500,0, window,"import new image"));
+					0,0,500,500,0, window,"import new image",
+					NULL,NULL,NULL,
+					doc,0,var2->Value()));
+		//app->rundialog(new FileDialog(NULL,"Import Image",
+		//			ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+		//			0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
 		 //***** find full path of old image if any, modify to have dir and basename

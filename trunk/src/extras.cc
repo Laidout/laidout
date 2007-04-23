@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 
 /*! \file
@@ -154,7 +154,8 @@ char *previewFileName(const char *file, const char *nametemplate)
  */
 
 
-/*! Copies the d array, but transfers pointer of img.
+/*! Copies the d array, but transfers pointer of img. Does not alter the count of 
+ * img here in th constructor, but does dec in destructor.
  */
 ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 	: image(img), error(0), dpi(ndpi), page(npage), next(NULL)
@@ -165,6 +166,9 @@ ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 	} else xywh=NULL;
 }
 
+/*! Copies the d array, but transfers pointer of img. Does not alter the count of 
+ * img here in th constructor, but does dec in destructor.
+ */
 void ImagePlopInfo::add(ImageData *img, int ndpi, int npage, double *d)
 {
 	ImagePlopInfo *p=this;
@@ -172,6 +176,8 @@ void ImagePlopInfo::add(ImageData *img, int ndpi, int npage, double *d)
 	p->next=new ImagePlopInfo(img,ndpi,npage,d);
 }
 
+/*! Delete xywh, next, and dec_count() of image.
+ */
 ImagePlopInfo::~ImagePlopInfo()
 {
 	if (xywh) delete[] xywh;
@@ -193,7 +199,7 @@ ImagePlopInfo::~ImagePlopInfo()
  * The file should be formated as follows, using the usual space (not tabs) indentation
  *  to indicate related data. Note that the "dir:///" thing is not yet implemented:
  * <pre>
- *    \#Laidout 0.04.1 Image List
+ *    \#Laidout 0.05.1 Image List
  *    path /blah1/blah2  \#any subsequent "./file" becomes "/blah1/blah2/file"
  *    dpi 600    # default dpi, overridable per image
  *    perPage -1 # -1 == auto, as will fit on the page
@@ -406,6 +412,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			
 			if (!images) images=new ImagePlopInfo(image,curdpi,pg,(useplace?xywh:NULL));
 			else images->add(image,curdpi,pg,(useplace?xywh:NULL));
+			image=NULL;
 			
 			if (preview) delete[] preview;
 			if (desc) delete[] desc;
@@ -415,12 +422,14 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 		}
 		
 		if (flush>0) {
-			 // flush all pending insertions
-			curpage=dumpInImages(doc,images,curpage);
-			if (jumptopage>=0) curpage=jumptopage;
-			else curpage++;
-			delete images;
-			images=NULL;
+			if (images) {
+				 // flush all pending insertions
+				curpage=dumpInImages(doc,images,curpage);
+				if (jumptopage>=0) curpage=jumptopage;
+				else curpage++;
+				delete images;
+				images=NULL;
+			}
 			flush=-1;
 		}
 	}
@@ -529,6 +538,9 @@ int dumpInImages(Document *doc, int startpage,
 					 //---check if is image list
 					if (!strncasecmp(data,"#Laidout ",9)) {
 						p=data+9;
+						//**** should parse in the version of the image list,
+						//**** right now just assumes it is an image list
+						//**** if that string appears in the first 50 chars..
 						if (strcasestr(p,"image list")) {
 							 //this is likely an image list, so grab all data....
 							dumpInImageList(doc,imagefiles[c],startpage,ddpi,perpage);
@@ -580,8 +592,10 @@ int dumpInImages(Document *doc, int startpage,
 		if (numonpage==0) curpage++;
 	}
 
-	if (images) c=dumpInImages(doc,images,startpage);
-	delete images;
+	if (images) {
+		c=dumpInImages(doc,images,startpage);
+		delete images;
+	}
 	return c;
 }
 
@@ -641,7 +655,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		
 		if (curpage>=doc->pages.n) { 
 			DBG cout <<" adding new page..."<<endl;
-			doc->NewPages(-1,doc->pages.n-curpage+1); // add extra page(s) at end
+			doc->NewPages(-1,curpage-doc->pages.n+1); // add extra page(s) at end
 		}
 		
 		 // figure out page characteristics: dpi, ww, hh, and scaling
@@ -744,6 +758,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		DBG cout <<"  add "<<nn<<" images to page "<<curpage<<endl;
 		while (info!=flow) {
 			DBG cout <<"   adding image ..."<<endl;
+			//while (curpage>doc->pages.n) doc->
 			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)/2));
 			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
 			g->push(info->image,0); //incs the obj's count
@@ -755,7 +770,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 
 	DBG cout <<"-----------------end dump images[]----------------"<<endl;
 	if (outline) { outline->dec_count(); outline=NULL; }
-	return curpage;
+	return curpage-1;
 }
 
 

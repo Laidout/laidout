@@ -38,6 +38,7 @@ objs= \
 	drawdata.o \
 	spreadeditor.o \
 	laidout-more.o \
+	importimages.o \
 	laidout.o 
 
 all: laidout
