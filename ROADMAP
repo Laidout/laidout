@@ -9,7 +9,7 @@ VERSION 0.06
 ------------
 (done) parent/child nesting and interface for that: nesting, and grouping: layer trees
 (done) New document creation from templates
-       Be able to work with preview images more easily
+(done) Be able to work with preview images more easily
 (done) Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
 
 VERSION 0.07
