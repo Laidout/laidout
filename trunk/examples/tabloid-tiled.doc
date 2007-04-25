@@ -1,4 +1,4 @@
-#Laidout 0.04.1 Document
+#Laidout 0.06 Document
 saveas /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
 docstyle
   imposition Booklet
@@ -54,10 +54,10 @@ page 0
       radial
       spot #0
         t 0
-        rgba 0 0 255 2147483647
+        rgba 0 0 65535 65535
       spot #1
         t 1.06150048
-        rgba 255 0 0 2147483647
+        rgba 65535 0 0 65535
 page 1
   labeltype 1
   pagestyle RectPageStyle
@@ -80,10 +80,10 @@ page 1
       radial
       spot #0
         t 0
-        rgba 0 0 255 0
+        rgba 0 0 65535 65535
       spot #1
         t 0.9738371281
-        rgba 255 255 0 0
+        rgba 65535 65535 0 65535
 page 2
   labeltype 2
   pagestyle RectPageStyle
@@ -106,10 +106,10 @@ page 2
       radial
       spot #0
         t 0.104149262
-        rgba 0 0 255 0
+        rgba 0 0 65535 65535
       spot #1
         t 1
-        rgba 255 153 0 1845771070
+        rgba 65535 40000 0 65535
 page 3
   labeltype 3
   pagestyle RectPageStyle
@@ -132,10 +132,10 @@ page 3
       radial
       spot #0
         t 0
-        rgba 9 255 0 778503806
+        rgba 0 65535 0 65535
       spot #1
         t 0.9949912868
-        rgba 16 38 0 1845771070
+        rgba 4000 8000 0 65535
 window
   xywh 257 280 516 580
   pane
