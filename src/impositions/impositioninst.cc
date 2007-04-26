@@ -95,7 +95,7 @@ Singles::Singles() : Imposition("Singles")
 //! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
-	DBG cout <<"--Singles destructor"<<endl;
+	//DBG cout <<"--Singles destructor"<<endl;
 	pagestyle->dec_count();
 }
 
@@ -566,7 +566,7 @@ DoubleSidedSingles::DoubleSidedSingles()
 //! Calls pagestyler->dec_count().
 DoubleSidedSingles::~DoubleSidedSingles()
 {
-	DBG cout <<"--Double Sided Singles Singles destructor"<<endl;
+	//DBG cout <<"--Double Sided Singles Singles destructor"<<endl;
 	pagestyler->dec_count();
 }
 

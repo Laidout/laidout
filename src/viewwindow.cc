@@ -418,7 +418,7 @@ double LaidoutViewport::GetVMag(int x,int y)
  */
 int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 {
-	DBG cout <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
+	//DBG cout <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
 		if (!te || te->changer && te->changer==static_cast<anXWindow *>(this)) return 1;
@@ -532,7 +532,7 @@ int LaidoutViewport::ViewMode(int *page)
  */
 const char *LaidoutViewport::SetViewMode(int m,int sprd)
 {
-	DBG cout <<"---- setviewmode:"<<m<<endl;
+	//DBG cout <<"---- setviewmode:"<<m<<endl;
 	if (sprd<0) sprd=spreadi;
 	if (sprd!=spreadi || m!=viewmode) {
 		viewmode=m;
@@ -886,7 +886,7 @@ int LaidoutViewport::SelectObject(int i)
 			firstobj=curobj;
 			searchmode=Search_Select;
 		}
-		DBG o.context.out("Finding Object adjacent to :");
+		//DBG o.context.out("Finding Object adjacent to :");
 		if (nextObject(&o,i==-2?0:1)!=1) {
 			firstobj=curobj;
 			o=curobj;
@@ -1011,10 +1011,10 @@ int LaidoutViewport::FindObject(int x,int y,
 	 
 	flatpoint p,pp;
 	p=dp->screentoreal(x,y); // so this is in viewer coordinates
-	DBG cout <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
+	//DBG cout <<"lov.FindObject: "<<p.x<<','<<p.y<<endl;
 
 	double m[6];
-	DBG firstobj.context.out("firstobj");
+	//DBG firstobj.context.out("firstobj");
 	
 	//while (start || (!start && !(nextindex==firstobj))) {
 	int nob=1;
@@ -1029,12 +1029,12 @@ int LaidoutViewport::FindObject(int x,int y,
 		transformToContext(m,nextindex.context);
 
 		pp=transform_point(m,p);
-		DBG cout <<"lov.FindObject oc: "; nextindex.context.out("");
-		DBG cout <<"lov.FindObject pp: "<<pp.x<<','<<pp.y<<"  check on "
-		DBG		<<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
+		//DBG cout <<"lov.FindObject oc: "; nextindex.context.out("");
+		//DBG cout <<"lov.FindObject pp: "<<pp.x<<','<<pp.y<<"  check on "
+		//DBG		<<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
 
 		if (nextindex.obj->pointin(pp)) {
-			DBG cout <<" -- found"<<endl;
+			//DBG cout <<" -- found"<<endl;
 			if (!foundobj.obj) foundobj=nextindex;
 			if (searchtype && strcmp(nextindex.obj->whattype(),searchtype)) {
 				nob=nextObject(&nextindex);
@@ -1043,10 +1043,10 @@ int LaidoutViewport::FindObject(int x,int y,
 			 // matching object found!
 			foundtypeobj=nextindex;
 			if (oc) *oc=&foundtypeobj;
-			DBG foundtypeobj.context.out("  foundtype");//for debugging
+			//DBG foundtypeobj.context.out("  foundtype");//for debugging
 			return 1;
 		}
-		DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
+		//DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
 		nob=nextObject(&nextindex);
 	}
 	 
@@ -1093,7 +1093,7 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
 			if (pl && pl->outline) {
 				if (!pl->page) {
 					if (pl->index>=0 && pl->index<doc->pages.n) pl->page=doc->pages.e[pl->index];
-					DBG else cout <<"*-*-* bad index in pl, but requesting a transform!!"<<endl;
+					//DBG else cout <<"*-*-* bad index in pl, but requesting a transform!!"<<endl;
 				}
 				transform_copy(m,pl->outline->m());
 				ObjectContainer *o;
@@ -1137,9 +1137,9 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 {
 	int c;
 	anObject *d;
-	DBG int cn=1;
+	//DBG int cn=1;
 	do {
-		DBG cout <<"LaidoutViewport->nextObject count="<<cn++<<endl;
+		//DBG cout <<"LaidoutViewport->nextObject count="<<cn++<<endl;
 
 		c=ObjectContainer::nextObject2(oc->context,0,inc?Next_Increment:Next_Decrement,&d);
 		oc->obj=dynamic_cast<SomeData *>(d);
@@ -1162,7 +1162,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 		if (!(oc->obj)) continue;
 		if (!(oc->spread()==0 && oc->context.n()<=1 ||   
 			oc->spread()==1 && oc->context.n()<=3)) {
-			DBG oc->context.out("  lov-next");
+			//DBG oc->context.out("  lov-next");
 			return 1;
 		}
 	} while (1);
@@ -1221,7 +1221,7 @@ void LaidoutViewport::findAny()
 			page=dynamic_cast<Page *>(spread->object_e(c));
 			if (!page) continue;
 			for (c2=0; c2<page->layers.n(); c2++) {
-				DBG cout <<" findAny: pg="<<c<<":"<<spread->pagestack.e[c]->index<<"  has "<<page->e(c2)->n()<<" objs"<<endl;
+				//DBG cout <<" findAny: pg="<<c<<":"<<spread->pagestack.e[c]->index<<"  has "<<page->e(c2)->n()<<" objs"<<endl;
 				if (!page->e(c2)->n()) continue;
 				firstobj.set(page->e(c2)->e(0),4, 1,c,c2,0);
 				return;
@@ -1316,15 +1316,15 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 		if (curobj.spreadpage()>=0) {
 			curpage=spread->pagestack.e[curobj.spreadpage()]->page;
 			if (!curpage) {
-				DBG cout <<"** warning! in setCurobj, curpage was not defined for curobj context"<<endl;
+				//DBG cout <<"** warning! in setCurobj, curpage was not defined for curobj context"<<endl;
 				curpage=doc->pages.e[spread->pagestack.e[curobj.spreadpage()]->index];
 			}
 		}
 		else curpage=NULL;
 	}
 	
-	DBG if (curobj.obj) cout <<"setCurobj: "<<curobj.obj->object_id<<" ("<<curobj.obj->whattype()<<") ";
-	DBG curobj.context.out("setCurobj");//debugging
+	//DBG if (curobj.obj) cout <<"setCurobj: "<<curobj.obj->object_id<<" ("<<curobj.obj->whattype()<<") ";
+	//DBG curobj.context.out("setCurobj");//debugging
 
 	if (!lfirsttime) {
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
@@ -1349,17 +1349,17 @@ void LaidoutViewport::clearCurobj()
 //! *** for debugging, show which page mouse is over..
 int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 {
-	DBG if (!buttondown) {
-	DBG 	int c=-1;
-	DBG 	flatpoint p=dp->screentoreal(x,y);
-	DBG 	if (spread) {
-	DBG 		for (c=0; c<spread->pagestack.n; c++) {
-	DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
-	DBG 		}
-	DBG 		if (c==spread->pagestack.n) c=-1;
-	DBG 	}
-	DBG 	cout <<"mouse over: "<<c<<endl;
-	DBG }
+	//DBG if (!buttondown) {
+	//DBG 	int c=-1;
+	//DBG 	flatpoint p=dp->screentoreal(x,y);
+	//DBG 	if (spread) {
+	//DBG 		for (c=0; c<spread->pagestack.n; c++) {
+	//DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
+	//DBG 		}
+	//DBG 		if (c==spread->pagestack.n) c=-1;
+	//DBG 	}
+	//DBG 	cout <<"mouse over: "<<c<<endl;
+	//DBG }
 	return ViewportWindow::MouseMove(x,y,state);
 }
 
@@ -1372,7 +1372,7 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
  */
 int LaidoutViewport::ChangeContext(LaxInterfaces::ObjectContext *oc)
 {
-	DBG cout <<"ChangeContext to supplied oc"<<endl;
+	//DBG cout <<"ChangeContext to supplied oc"<<endl;
 	VObjContext *loc=dynamic_cast<VObjContext *>(oc);
 	if (!loc) return 0;
 	if (loc->obj) {
@@ -1403,7 +1403,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	clearCurobj();
 	flatpoint p=dp->screentoreal(x,y);
 	if (curobj.spread()==1 && spread->pagestack.e[curobj.spreadpage()]->outline->pointin(p)) {
-		DBG curobj.context.out("context change");
+		//DBG curobj.context.out("context change");
 		return 1; // context was cur page
 	}
 	 // else must search for it
@@ -1428,7 +1428,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	if (curobjPage()>=0) curpage=doc->pages.e[curobjPage()];
 		else curpage=NULL;
 	if (oc) *oc=&curobj;
-	DBG curobj.context.out("context change");
+	//DBG curobj.context.out("context change");
 	 
 	return 1;
 }
@@ -1457,8 +1457,8 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
  */
 int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 {
-	DBG cout <<"ObjectMove "<<d->object_id<<": ";
-	DBG curobj.context.out(NULL);
+	//DBG cout <<"ObjectMove "<<d->object_id<<": ";
+	//DBG curobj.context.out(NULL);
 	
 	if (!d) return 0;
 	if (d!=curobj.obj) {
@@ -1471,7 +1471,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	if (curobj.spread()==1 && curobj.context.n()>4) return 0;
 	if (curobj.spread()!=0 && curobj.spread()!=1) return 0;
 	if (!validContext(&curobj)) {
-		DBG cout <<"  invalid context, abort move"<<endl;
+		//DBG cout <<"  invalid context, abort move"<<endl;
 		return 0;
 	}
 	
@@ -1494,7 +1494,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 		bbox.setbounds(outline);
 		bbox2.addtobounds(curobj.obj->m(),curobj.obj);
 		if (bbox.intersect(&bbox2)) {
-			DBG cout <<"  still on page"<<endl;
+			//DBG cout <<"  still on page"<<endl;
 			return 0; //still on page
 		}
 	}
@@ -1518,18 +1518,18 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	int tosp=-1;
 	if (c==spread->pagestack.n) { // new page not found, obj is to go to limob
 		if (curobj.spread()==0) {
-			DBG cout <<"  already in limbo"<<endl;
+			//DBG cout <<"  already in limbo"<<endl;
 			return 0; //already in limbo
 		}
 		 //if not page found partially containing object, then transfer to limbo
-		DBG cout <<" --moving to limbo "<<endl;
+		//DBG cout <<" --moving to limbo "<<endl;
 	} else {
 		 // found a page for it to be in, so set topage to point to it..
 		 //
-		DBG cout <<" --moving to spreadpage "<<c<<endl;
+		//DBG cout <<" --moving to spreadpage "<<c<<endl;
 		topage=spread->pagestack.e[c]->page;
 		if (!topage) {
-			DBG cout <<"*** warning! page was not defined in pagestack"<<endl;
+			//DBG cout <<"*** warning! page was not defined in pagestack"<<endl;
 			topage=spread->pagestack[c]->page=dynamic_cast<Page *>(doc->object_e(spread->pagestack.e[c]->index));
 		}
 		tosp=c;
@@ -1545,19 +1545,19 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 		 // pop from old page
 		Page *frompage=spread->pagestack.e[curobj.spreadpage()]->page;
 		if (!frompage) {
-			DBG cout <<"*** warning! page was not defined in pagestack"<<endl;
+			//DBG cout <<"*** warning! page was not defined in pagestack"<<endl;
 			frompage=spread->pagestack[curobj.spreadpage()]->page=
 				dynamic_cast<Page *>(doc->object_e(spread->pagestack.e[curobj.spreadpage()]->index));
 		}
 		i=curobj.layer();
 		if (i<0 || i>=frompage->layers.n()) {
-			DBG cout <<"*** warning! bad context in LaidoutViewport::ObjectMove!"<<endl;
+			//DBG cout <<"*** warning! bad context in LaidoutViewport::ObjectMove!"<<endl;
 			return 0;
 		}
 		c=frompage->e(i)->popp(curobj.obj,&islocal); // does not modify obj count
 	}
 	if (c!=1) {
-		DBG cout <<"*** warning ObjectMove asked to move an invalid object!"<<endl;
+		//DBG cout <<"*** warning ObjectMove asked to move an invalid object!"<<endl;
 		return 0;
 	}
 	
@@ -1579,8 +1579,8 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 		curobj.set(curobj.obj,2, 0,limbo.n()-1);
 	}
 	setCurobj(NULL);
-	DBG cout <<"  moved "<<d->object_id<<" to: ";
-	DBG curobj.context.out(NULL);
+	//DBG cout <<"  moved "<<d->object_id<<" to: ";
+	//DBG curobj.context.out(NULL);
 	needtodraw=1;
 	return 1;
 }
@@ -1682,13 +1682,13 @@ void LaidoutViewport::Refresh()
 		lfirsttime=0; 
 		Center(1); 
 	}
-	DBG cout <<"======= Refreshing LaidoutViewport..";
+	//DBG cout <<"======= Refreshing LaidoutViewport..";
 	
 	 // draw the scratchboard, just blank out screen..
 	if (!backbuffer) XClearWindow(app->dpy,window);// *** clearwindow(backbuffer) does screwy things!!
 
 	if (!doc || !doc->docstyle) {
-		DBG cout <<"=====done refreshing, no doc or doc->docstyle"<<endl;
+		//DBG cout <<"=====done refreshing, no doc or doc->docstyle"<<endl;
 		return;
 	}
 	
@@ -1705,7 +1705,7 @@ void LaidoutViewport::Refresh()
 	dp->Updates(0);
 
 	 // draw limbo objects
-	DBG cout <<"drawing limbo objects.."<<endl;
+	//DBG cout <<"drawing limbo objects.."<<endl;
 	for (c=0; c<limbo.n(); c++) {
 		DrawData(dp,limbo.e(c),NULL,NULL,drawflags);
 	}
@@ -1733,7 +1733,7 @@ void LaidoutViewport::Refresh()
 		flatpoint p;
 		SomeData *sd=NULL;
 		for (c=0; c<spread->pagestack.n; c++) {
-			DBG cout <<" drawing from pagestack.e["<<c<<"]"<<endl;
+			//DBG cout <<" drawing from pagestack.e["<<c<<"]"<<endl;
 			page=spread->pagestack.e[c]->page;
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) 
@@ -1751,9 +1751,9 @@ void LaidoutViewport::Refresh()
 				if (!XEmptyRegion(region)) {
 					dp->clip(region,3);
 					//XSetRegion(dp->GetDpy(),dp->GetGC(),region);
-					DBG cout <<"***** set clip path!"<<endl;
+					//DBG cout <<"***** set clip path!"<<endl;
 				} else {
-					DBG cout <<"***** no clip path to set."<<endl;
+					//DBG cout <<"***** no clip path to set."<<endl;
 				}
 				//XDestroyRegion(region);
 			}
@@ -1777,8 +1777,8 @@ void LaidoutViewport::Refresh()
 
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n(); c2++) {
-				DBG cout <<"  num objs in page: "<<page->n()<<endl;
-				DBG cout <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
+				//DBG cout <<"  num objs in page: "<<page->n()<<endl;
+				//DBG cout <<"  Layer "<<c2<<", objs.n="<<page->e(c2)->n()<<endl;
 				DrawData(dp,page->e(c2),NULL,NULL,drawflags);
 			}
 			
@@ -1803,11 +1803,11 @@ void LaidoutViewport::Refresh()
 		
 		 // Refresh interfaces, should draw whatever SomeData they have locked
 		 //*** maybe Refresh(drawonly decs?) then remove lock check above?
-		//DBG cout <<"  drawing interface..";
+		////DBG cout <<"  drawing interface..";
 		SomeData *dd;
 		for (int c=0; c<interfaces.n; c++) {
 			//if (interfaces.e[c]->Needtodraw()) { // assume always needs to draw??
-				//DBG cout <<" \ndrawing "<<interfaces.e[c]->whattype()<<" "<<c<<endl;
+				////DBG cout <<" \ndrawing "<<interfaces.e[c]->whattype()<<" "<<c<<endl;
 				if (dynamic_cast<InterfaceWithDp *>(interfaces.e[c]))
 					dd=((InterfaceWithDp *)interfaces.e[c])->Curdata();
 					else dd=NULL;
@@ -1816,7 +1816,7 @@ void LaidoutViewport::Refresh()
 				interfaces.e[c]->Refresh();
 				if (dd) dp->PopAxes();
 			//}
-			DBG cout <<interfaces.e[c]->whattype()<<" needtodraw="<<interfaces.e[c]->Needtodraw()<<endl;
+			//DBG cout <<interfaces.e[c]->whattype()<<" needtodraw="<<interfaces.e[c]->Needtodraw()<<endl;
 				
 		}
 		dp->PopAxes(); // remove curpage transform
@@ -1832,7 +1832,7 @@ void LaidoutViewport::Refresh()
 		XdbeSwapBuffers(app->dpy,&swapinfo,1);
 	}
 
-	DBG cout <<"======= done refreshing LaidoutViewport.."<<endl;
+	//DBG cout <<"======= done refreshing LaidoutViewport.."<<endl;
 }
 
 
@@ -1871,9 +1871,9 @@ void LaidoutViewport::Refresh()
  */
 int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 {
-	DBG if (ch=='m') {
-	DBG 	cout << ".....mark...."<<endl;
-	DBG }
+	//DBG if (ch=='m') {
+	//DBG 	cout << ".....mark...."<<endl;
+	//DBG }
 	
 	 // check these first, before asking interfaces
 	if (ch==' ') {
@@ -1900,7 +1900,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	} else if (ch=='M' && (state&LAX_STATE_MASK)==ShiftMask|Mod1Mask) {
 		 //for debugging to make a delineation in the cout stuff
-		DBG cout<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
+		//DBG cout<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
 		return 0;
 	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) {
 		if (curobj.obj) {
@@ -1943,12 +1943,12 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 			return 0;
 		}
 	} else if (ch=='D' && (state&LAX_STATE_MASK)==ShiftMask) {
-		DBG cout << "----drawflags: "<<drawflags;
+		//DBG cout << "----drawflags: "<<drawflags;
 		if (drawflags==DRAW_AXES) drawflags=DRAW_BOX;
 		else if (drawflags==DRAW_BOX) drawflags=DRAW_BOX|DRAW_AXES;
 		else if (drawflags==(DRAW_AXES|DRAW_BOX)) drawflags=0;
 		else drawflags=DRAW_AXES;
-		DBG cout << " --> "<<drawflags<<endl;
+		//DBG cout << " --> "<<drawflags<<endl;
 		needtodraw=1;
 		return 0;
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
@@ -2005,19 +2005,19 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
  */
 int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 {
-	DBG cout <<"Circulate: dir="<<dir<<"  i="<<i<<endl;
+	//DBG cout <<"Circulate: dir="<<dir<<"  i="<<i<<endl;
 	if (!curobj.obj) return 0;
 	if (dir==0) { // raise in layer
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==g->n()-1) { 
 			curobj.push(curpos);
-			//DBG curobj.context.out("raise by 1 fail");
+			////DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->swap(curpos,curpos+1);
 		curobj.push(curpos+1);
-		//DBG curobj.context.out("raise by 1");
+		////DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==1) { // lower in layer
@@ -2025,12 +2025,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==0) { 
 			curobj.push(curpos);
-			//DBG curobj.context.out("raise by 1 fail");
+			////DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->swap(curpos,curpos-1);
 		curobj.push(curpos-1);
-		//DBG curobj.context.out("lower by 1");
+		////DBG curobj.context.out("lower by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==2) { // raise to top
@@ -2038,12 +2038,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==g->n()-1) { 
 			curobj.push(curpos);
-			//DBG curobj.context.out("raise by 1 fail");
+			////DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->slide(curpos,g->n()-1);
 		curobj.push(g->n()-1);
-		//DBG curobj.context.out("raise by 1");
+		////DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==3) { // lower to bottom
@@ -2051,12 +2051,12 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==0) { 
 			curobj.push(curpos);
-			//DBG curobj.context.out("raise by 1 fail");
+			////DBG curobj.context.out("raise by 1 fail");
 			return 0; 
 		}
 		g->slide(curpos,0);
 		curobj.push(0);
-		//DBG curobj.context.out("raise by 1");
+		////DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
 	} else if (dir==4) { // move to place i in current context
@@ -2112,7 +2112,7 @@ int LaidoutViewport::SelectPage(int i)
 	 //setupthings(): clears search, clears any interfacedata... curinterface->Clear()
 	setupthings(-1,i); //***this always deletes and new's spread
 	Center(1);
-	DBG cout <<" SelectPage made page=="<<curobjPage()<<endl;
+	//DBG cout <<" SelectPage made page=="<<curobjPage()<<endl;
 
 	needtodraw=1;
 	return curobjPage();
@@ -2345,7 +2345,7 @@ int ViewWindow::init()
 	
 	if (!win_sizehints) win_sizehints=XAllocSizeHints();
 	if (win_sizehints && !win_parent) {
-		DBG cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
+		//DBG cout <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
 
 		//*** The initial x and y become the upper left corner of the window
 		//manager decorations. ***how to figure out how much room those decorations take,
@@ -2685,7 +2685,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					GetMesbar()->SetText("Illegal characters in file name. Not saved.");
 				} else {
 					 //set name in doc and headwindow
-					DBG cout <<"*** file by this point should be absolute path name:"<<file<<endl;
+					//DBG cout <<"*** file by this point should be absolute path name:"<<file<<endl;
 					if (doc && doc->Name(file)) SetParentTitle(doc->Name());
 					
 					if (doc->Save()==0) {
@@ -2740,7 +2740,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		if (s->info==2) { // print to files
-			DBG cout <<"***** print to epss: "<<s->str<<endl;
+			//DBG cout <<"***** print to epss: "<<s->str<<endl;
 			
 			mesbar->SetText("Printing to files, please wait....");
 			mesbar->Refresh();
@@ -2972,7 +2972,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		cout <<"***** new layer number.... *** imp me!"<<endl;
 		return 0;
 	} else if (!strcmp(mes,"viewtoolselector")) {
-		DBG cout <<"***** viewtoolselector change to id:"<<e->data.l[0]<<endl;
+		//DBG cout <<"***** viewtoolselector change to id:"<<e->data.l[0]<<endl;
 		SelectTool(e->data.l[0]);
 		return 0;
 	} else if (!strcmp(mes,"newViewType")) {
@@ -3025,7 +3025,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (oldimage) delete[] oldimage;
 		return 0;
 	} else if (!strcmp(mes,"dumpInImages")) {
-		//DBG cout <<" --- dumpInImages...."<<endl;
+		////DBG cout <<" --- dumpInImages...."<<endl;
 		dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
 		pagenumber->NewMinMax(0,doc->pages.n-1);
 		((anXWindow *)viewport)->Needtodraw(1);
@@ -3111,7 +3111,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 	if (ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask) || 
 			ch=='s' && (state&LAX_STATE_MASK)==ControlMask) { // save file
 		if (!doc) return 1;
-		DBG cout <<"....viewwindow says save.."<<endl;
+		//DBG cout <<"....viewwindow says save.."<<endl;
 		if (strstr(doc->Name(),"untitled")==doc->Name() || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
@@ -3144,7 +3144,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		SelectTool(-1);
 		return 0;
 	} else if (ch=='<') { //prev page
-		DBG cout <<"'<'  should be prev page"<<endl;
+		//DBG cout <<"'<'  should be prev page"<<endl;
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-2);
 		curtool->Clear();
 		for (int c=0; c<kids.n; c++) if (!strcmp(kids.e[c]->win_title,"page number")) {
@@ -3154,7 +3154,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		updateContext();
 		return 0;
 	} else if (ch=='>') { //next page
-		DBG cout <<"'>' should be prev page"<<endl;
+		//DBG cout <<"'>' should be prev page"<<endl;
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-1);
 		for (int c=0; c<kids.n; c++) if (!strcmp(kids.e[c]->win_title,"page number")) {
 			((NumSlider *)kids.e[c])->Select(pg+1);

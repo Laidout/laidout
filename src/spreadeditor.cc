@@ -228,7 +228,7 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 SpreadInterface::~SpreadInterface()
 {
 	 //for debugging:
-	DBG cout<<"SpreadInterface destructor\n spreads flush"<<endl;
+	//DBG cout<<"SpreadInterface destructor\n spreads flush"<<endl;
 	spreads.flush();
 }
 
@@ -639,12 +639,12 @@ int SpreadInterface::Refresh()
 					if (pg>=0 && pg<doc->pages.n) thumb=doc->pages.e[pg]->Thumbnail();
 				}
 				if (thumb) {
-					DBG cout <<"drawing thumbnail for "<<pg<<endl;
+					//DBG cout <<"drawing thumbnail for "<<pg<<endl;
 					dp->PushAndNewTransform(spreads.e[c]->spread->pagestack.e[c2]->outline->m());
 					
 					 // always setup clipping region to be the page
 					region=GetRegionFromPaths(spreads.e[c]->spread->pagestack.e[c2]->outline,dp->m());
-					//DBG ::DrawData(dp,spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,NULL);
+					////DBG ::DrawData(dp,spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,NULL);
 					if (!XEmptyRegion(region)) dp->clip(region,3); 
 					
 					::DrawData(dp,thumb,NULL,NULL);
@@ -777,7 +777,7 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
 
 	int pg,spr;
 	spr=findSpread(x,y,&pg);
-	DBG cout <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
+	//DBG cout <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
 	if (spr>=0) curspread=spreads.e[spr];
 	if (pg<0) {
 		//*** start a selection rectangle
@@ -815,9 +815,9 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	if (dragpage<0) return 0;
 	
 	int pg;
-	DBG int spr=
+	//DBG int spr=
 	findSpread(x,y,&pg);
-	DBG cout <<"SpreadInterface lbup found page "<<pg<<" in spread "<<spr<<endl;
+	//DBG cout <<"SpreadInterface lbup found page "<<pg<<" in spread "<<spr<<endl;
 	if (pg<0) {
 		 // do not drop page anywhere
 		 //*** in the future this will be something like pop page into limbo?
@@ -831,7 +831,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 				vp->UseThisDoc(doc);
 				vp->SelectPage(dragpage);
 				
-				DBG cout <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
+				//DBG cout <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
 			}
 		}
 		dragpage=-1;
@@ -839,7 +839,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state)
 	}
 	
 	 // swap dragpage and pg
-	DBG cout <<"*** swap "<<dragpage<<" to position "<<pg<<endl;
+	//DBG cout <<"*** swap "<<dragpage<<" to position "<<pg<<endl;
 	if ((state&LAX_STATE_MASK)==0) SlidePages(dragpage,pg);
 	else if ((state&LAX_STATE_MASK)==ShiftMask) SwapPages(dragpage,pg);
 
@@ -915,7 +915,7 @@ void SpreadInterface::SwapPages(int previouspos, int newpos)
 /*! */
 void SpreadInterface::ApplyChanges()
 {
-	DBG cout<<"ApplyChanges:"<<endl;
+	//DBG cout<<"ApplyChanges:"<<endl;
 
 	//****
 
@@ -928,7 +928,7 @@ void SpreadInterface::ApplyChanges()
 	
 	int pg;
 	for (int c=0; c<n; c++) {
-		DBG cout <<" --move page "<<pg<<" to page "<<c<<endl;
+		//DBG cout <<" --move page "<<pg<<" to page "<<c<<endl;
 		pg=temppagemap[c];
 		newpages[c]=oldpages[pg];
 		newlocal[c]=oldlocal[pg];
@@ -1108,20 +1108,20 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 		needtodraw=1;
 		return 0;
 	} else if (ch=='p') { //*** for debugging thumbnails....
-		DBG if (curpage<0) return 0;
-		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
-		DBG cout <<"'P' image dump:"<<endl;
-		DBG thumb->dump_out(stdout,2,0);
-		DBG if (thumb) {
-		DBG 	dp->StartDrawing(curwindow);
-		DBG 	//double i[6];
-		DBG 	//transform_invert(i,thumb->m());
-		DBG 	//dp->PushAndNewTransform(i);
-		DBG 	::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
-		DBG 	//dp->PopAxes();
-		DBG 	dp->EndDrawing();
-		DBG }
-		DBG return 0;
+		//DBG if (curpage<0) return 0;
+		//DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
+		//DBG cout <<"'P' image dump:"<<endl;
+		//DBG thumb->dump_out(stdout,2,0);
+		//DBG if (thumb) {
+		//DBG 	dp->StartDrawing(curwindow);
+		//DBG 	//double i[6];
+		//DBG 	//transform_invert(i,thumb->m());
+		//DBG 	//dp->PushAndNewTransform(i);
+		//DBG 	::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
+		//DBG 	//dp->PopAxes();
+		//DBG 	dp->EndDrawing();
+		//DBG }
+		//DBG return 0;
 	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
 		drawthumbnails=!drawthumbnails;
 		needtodraw=1;
@@ -1257,7 +1257,7 @@ int SpreadEditor::init()
  */
 int SpreadEditor::DataEvent(Laxkit::EventData *data,const char *mes)
 {
-	DBG cout <<"SpreadEditor got message: "<<mes<<endl;
+	//DBG cout <<"SpreadEditor got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
 		if (!te || te->changer==this) return 1;
@@ -1267,7 +1267,7 @@ int SpreadEditor::DataEvent(Laxkit::EventData *data,const char *mes)
 				te->changetype==TreeObjectDiffPage ||
 				te->changetype==TreeObjectDeleted ||
 				te->changetype==TreeObjectAdded) {
-			DBG cout <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
+			//DBG cout <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
 		} else if (te->changetype==TreePagesAdded ||
 				te->changetype==TreePagesDeleted ||
 				te->changetype==TreePagesMoved) {

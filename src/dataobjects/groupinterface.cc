@@ -39,7 +39,7 @@ GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 
 GroupInterface::~GroupInterface()
 {
-	DBG cout <<"---- in GroupInterface destructor"<<endl;
+	//DBG cout <<"---- in GroupInterface destructor"<<endl;
 }
 
 anInterface *GroupInterface::duplicate(anInterface *dup)
@@ -83,7 +83,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count)
 //! Return 1 if change, else 0.
 int GroupInterface::ToggleGroup()
 {
-	DBG cout <<"*******GroupInterface.ToggleGroup"<<endl;
+	//DBG cout <<"*******GroupInterface.ToggleGroup"<<endl;
 
 	if (selection.n==0) {
 		viewport->postmessage("No objects selected.");
@@ -106,7 +106,7 @@ int GroupInterface::ToggleGroup()
 		return 0;
 	} 
 
-	DBG place.out("toggle this group: ");
+	//DBG place.out("toggle this group: ");
 
 	 // find the base group which contains the group to ungroup, or which contains the
 	 // first selected object to group with others..

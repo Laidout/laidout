@@ -43,7 +43,8 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) dataobjects printing impositions 
+#laidout: lax laxinterface $(objs) dataobjects printing impositions 
+laidout:  $(objs) dataobjects printing impositions 
 	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
 			-llaxinterfaces -llaxkit -o $@
 #	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
