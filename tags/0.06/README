@@ -1,4 +1,4 @@
-LAIDOUT Version 0.05.1
+LAIDOUT Version 0.06
 --------------------
 http://laidout.org
 
@@ -23,7 +23,8 @@ and gradients (linear, radial, and bezier patches). Also,
 you can make a type of image that can be stretched around. The very 
 basics to get my cartoon books done, in other words. Many more features
 are planned, like such non-essentials (to me anyway) as text! Who needs 
-text when a picture is worth a thousand words? 
+text when a picture is worth a thousand words? Oh, and you can import
+EPS files from other programs as a way to fake having text.
 
 Many of the features are only partially implemented, and the real meat
 of the program is only half in place right now. Be advised that you can,
@@ -50,8 +51,7 @@ Here are the current "./configure" options:
  --help                       Show the options you can pass to ./configure
  --prefix=/where/to/install   Default /usr/local
  --gs=/path/to/gs             Where is your ghostscript executable? This is quite
-                               optional, and is not planned to be used at all 
-                               until version 0.06. Then, it will only be used to
+                               optional, and is used at the moment only to
                                generate a preview image of EPS files.
  --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit
                                is currently included in release downloads

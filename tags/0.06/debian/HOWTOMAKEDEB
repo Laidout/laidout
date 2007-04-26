@@ -1,14 +1,16 @@
 note to self: 
-MAKING LAIDOUT DEB PACKAGE
+               NEW RELEASES
+MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 ----------------------
 (if anyone has a better way of doing this, let me know, I'm new at this)
 
 1. ----Copy trunk to a new tag------
- svn copy https://svn.sourceforge.net/svnroot/laidout/trunk \
-          https://svn.sourceforge.net/svnroot/laidout/tags/(whatever version)
+ svn copy https://laidout.svn.sourceforge.net/svnroot/laidout/trunk \
+          https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whatever version)
  make sure the Makefile does not try to compile lax
 
 2. ----modify source---
+ check out the branch: svn co https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(version)
  make sure version number is correct in any source files that refer to it, currently:
    debian/changelog
    debian/laidout.1              :Version ****, for laying out books
