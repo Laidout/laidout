@@ -1,0 +1,35 @@
+/*! \page fileformat File Format
+
+This is the file format for Laidout stuff. Everything is hierarchically arranged,
+and grouped according to indentation similar to python and Yaml, rather than, for instance, XML tags.
+
+\todo should make a conversion program to do passepartout---laidout---scribus---svg.
+  see VectorSection (formerly uberconvertor)!!
+
+**** Please note that the following is not correct. work is in progress to have Laidout
+automatically dump out the Attribute version of a dtd for the file format..
+
+\verbatim
+#Laidout 0.1, 0.1
+# ^^  first line mandatory, Laidout programVersion, fileFormatVersion
+
+project # don't have to include project if you dont want to
+  document
+    curpage  3
+    page  3
+      paths  yeckh
+        path
+          points \
+            bezlc  23,34
+            bezv   35,323
+            bezrc  322,324
+    	path
+    	  segment  function
+    	    equation  sin(t),t*cos(t)
+    	    start  23,35
+    	    end  454,54
+        path
+          d "12 3 z 32 23" # accepts svg style listing of path points.
+\endverbatim
+
+*/
