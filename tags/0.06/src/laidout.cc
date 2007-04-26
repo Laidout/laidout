@@ -269,7 +269,7 @@ LaidoutApp::LaidoutApp() : anXApp()
 //! Destructor, only have to delete project!
 LaidoutApp::~LaidoutApp() 
 {
-	DBG cout <<"Laidout destructor.."<<endl;
+	//DBG cout <<"Laidout destructor.."<<endl;
 	 //these flush automatically, but are listed here for occasional debugging purposes...
 //	papersizes.flush(); 
 //	impositionpool.flush();
@@ -343,30 +343,30 @@ int LaidoutApp::init(int argc,char **argv)
 		char *iconpath=lax_dirname(curexecpath,0);
 		appendstr(iconpath,"/icons");
 		icons.addpath(iconpath);
-		DBG cout <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
+		//DBG cout <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
 		delete[] iconpath;
 	} else {
-		DBG cout <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		//DBG cout <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
 		icons.addpath(ICON_DIRECTORY);
 	}
 	delete[] curexecpath;
 
 
 	 //------setup initial pools
-	DBG cout <<"---imposition pool init"<<endl;
+	//DBG cout <<"---imposition pool init"<<endl;
 	GetBuiltinImpositionPool(&impositionpool);
 	
-	DBG cout <<"---papersizes pool init"<<endl;
+	//DBG cout <<"---papersizes pool init"<<endl;
 	GetBuiltinPaperSizes(&papersizes);
 	
-	DBG cout <<"---interfaces pool init"<<endl;
+	//DBG cout <<"---interfaces pool init"<<endl;
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
 	
 	 // manually adding a couple of pagestyles
 	 // *** why?
-	DBG cout <<"---manually adding a couple of pagestyles"<<endl;
+	//DBG cout <<"---manually adding a couple of pagestyles"<<endl;
 	PageStyle *ps=new PageStyle;
 	StyleDef *sd=ps->makeStyleDef();
 	stylemanager.AddStyleDef(sd,1);
@@ -416,7 +416,7 @@ int LaidoutApp::init(int argc,char **argv)
  */
 int LaidoutApp::createlaidoutrc()
 {
-	DBG cout <<"-------------Creating $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cout <<"-------------Creating $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 
 	 // ensure that ~/.ladiout/(version) exists
 	 //   if not, create, and put in a README explaining what's what:
@@ -504,7 +504,7 @@ int LaidoutApp::createlaidoutrc()
  */
 int LaidoutApp::readinLaidoutDefaults()
 {
-	DBG cout <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cout <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	FILE *f=NULL;
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/laidoutrc",config_dir);
@@ -519,7 +519,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		value=att.attributes.e[c]->value;
 		if (!name) continue;
 
-		DBG cout <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
+		//DBG cout <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
 		if (!strcmp(name,"appcolors")) {
 			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
 			
@@ -575,7 +575,7 @@ int LaidoutApp::readinLaidoutDefaults()
 	}
 	
 	fclose(f);
-	DBG cout <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cout <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	return 1;
 }
 
@@ -626,7 +626,7 @@ void LaidoutApp::setupdefaultcolors()
  */
 void LaidoutApp::parseargs(int argc,char **argv)
 {
-	DBG cout <<"---------start options"<<endl;
+	//DBG cout <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
 			{ "rescan-fonts",  0, 0, 'f' },
@@ -674,24 +674,24 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 	int readin=0;
 	if (optind<argc && argv[optind][0]=='-') { 
-		DBG cout << "**** read in doc from stdin\n";
+		//DBG cout << "**** read in doc from stdin\n";
 		readin=1;
 	}
 
 
 	// load in any docs after the args
-	DBG if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
-	DBG cout <<"*** read in these files:"<<endl;
+	//DBG if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
+	//DBG cout <<"*** read in these files:"<<endl;
 	Document *doc;
 	index=topwindows.n;
 	if (!project) project=new Project;
 	for (c=optind; c<argc; c++) {
-		DBG cout <<"----Read in:  "<<argv[c]<<endl;
+		//DBG cout <<"----Read in:  "<<argv[c]<<endl;
 		doc=LoadDocument(argv[c]);
 		if (doc && topwindows.n==index) addwindow(newHeadWindow(doc));
 	}
 	
-	DBG cout <<"---------end options"<<endl;
+	//DBG cout <<"---------end options"<<endl;
 }
 
 //! Return whether win is in topwindows.
@@ -849,7 +849,7 @@ int LaidoutApp::NewDocument(const char *spec)
 {
 	if (!spec) return 1;
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
-	DBG cout <<"------create new doc from \""<<spec<<"\""<<endl;
+	//DBG cout <<"------create new doc from \""<<spec<<"\""<<endl;
 	
 	char *saveas=NULL;
 	Imposition *imp=NULL;
@@ -951,7 +951,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	Document *newdoc=new Document(docinfo,filename);
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
-	DBG cout <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
+	//DBG cout <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);
 	return 0;
@@ -1007,23 +1007,23 @@ int main(int argc,char **argv)
 	
 	laidout->init(argc,argv);
 
-	DBG cout <<"------------ stylemanager->dump --------------------"<<endl;
-	DBG stylemanager.dump(stdout,3);
-	DBG cout <<"---------- stylemanager->dump end ---------------------"<<endl;
+	//DBG cout <<"------------ stylemanager->dump --------------------"<<endl;
+	//DBG stylemanager.dump(stdout,3);
+	//DBG cout <<"---------- stylemanager->dump end ---------------------"<<endl;
 
 	laidout->run();
 
-	DBG cout <<"---------Laidout Close--------------"<<endl;
+	//DBG cout <<"---------Laidout Close--------------"<<endl;
 	laidout->close();
 	delete laidout;
 	
-	DBG cout <<"---------------stylemanager-----------------"<<endl;
-	DBG cout <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
-	DBG cout <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
+	//DBG cout <<"---------------stylemanager-----------------"<<endl;
+	//DBG cout <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
+	//DBG cout <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.flush();
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;
-	DBG cout <<"------------end of code, default destructors follow--------"<<endl;
+	//DBG cout <<"------------end of code, default destructors follow--------"<<endl;
 
 	return 0;
 }

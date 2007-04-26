@@ -249,7 +249,7 @@ int GenericStyleDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 int GenericStyleDialog::CharInput(unsigned int ch,unsigned int state)
 {
-	DBG cout <<"******************************************"<<endl;
+	//DBG cout <<"******************************************"<<endl;
 	if (ch==LAX_Esc) app->destroywindow(this);
 	return 0;
 }

@@ -157,7 +157,7 @@ int PrintingDialog::Print()
 			data->info3=atoi(  printend->GetCText());
 		}
 	}
-	DBG cout << " print to file: \""<<filesedit->GetCText()<<"\""<<endl;
+	//DBG cout << " print to file: \""<<filesedit->GetCText()<<"\""<<endl;
 	data->info=2;
 	data->str=newstr(filesedit->GetCText());
 	app->SendMessage(data,owner,sendthis,window);

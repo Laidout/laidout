@@ -310,11 +310,11 @@ LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
 	
 	flatpoint p[net->faces[pg].np];
-	DBG cout <<"NetImposition::GetPage:\n";
+	//DBG cout <<"NetImposition::GetPage:\n";
 	for (int c=0; c<net->faces[pg].np; c++) {
 		 // transform the net point to page coordinates
 		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
-		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
+		//DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
 	}
 	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
 	newpath->close();
@@ -340,7 +340,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 {
 	if (!net) return NULL;
 	
-	DBG cout <<"--Build Net Single Layout with adjacent--"<<endl;
+	//DBG cout <<"--Build Net Single Layout with adjacent--"<<endl;
 	Spread *spread=new Spread();
 	spread->style=SPREAD_PAGE;
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
@@ -384,7 +384,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 			if (c3!=net->faces[c2].np) break; // found a match
 		}
 		if (c2!=net->nf) {
-			DBG cout <<"----found a match with face #"<<c2<<endl;
+			//DBG cout <<"----found a match with face #"<<c2<<endl;
 			 // found a match with face c2. p1 and p2 get assigned back to flat point indices:
 			 // Original edge is p1--p2, corresponding to c--(c+1)%net->faces[basepage]->np
 			 //  matched edge is q1--q2
@@ -443,7 +443,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	spread->maximum=transform_point(newpath->m(),
 			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
 
-	DBG cout <<"--end Build Net Single Layout with adjacent--"<<endl;
+	//DBG cout <<"--end Build Net Single Layout with adjacent--"<<endl;
 	return spread;
 }
 
@@ -660,9 +660,9 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				tempnet=new Net();
 				tempnet->dump_in_atts(att->attributes.e[c],flag);
 				SetNet(tempnet);
-				DBG cout <<"-----------after dump_in net and set----------"<<endl;
-				DBG net->dump_out(stdout,2,0);
-				DBG cout <<"-----------end netimpos..----------"<<endl;
+				//DBG cout <<"-----------after dump_in net and set----------"<<endl;
+				//DBG net->dump_out(stdout,2,0);
+				//DBG cout <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);

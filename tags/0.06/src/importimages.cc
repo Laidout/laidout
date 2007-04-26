@@ -208,7 +208,7 @@ int ImportImagesDialog::findWindowIndex(const char *name)
 int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
 	if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
-		DBG cout <<"*************** !!!!!"<<mes<<endl;
+		//DBG cout <<"*************** !!!!!"<<mes<<endl;
 		int c;
 		if (!strcmp(mes,"perpageexactly")) c=0;
 		else if (!strcmp(mes,"perpagefit")) c=1;
@@ -246,7 +246,7 @@ int ImportImagesDialog::send()
 {
 	//if (!owner) return 0;
 	
-	DBG cout <<"====Generating file names for import images..."<<endl;
+	//DBG cout <<"====Generating file names for import images..."<<endl;
 	
 	int *which=filelist->WhichSelected(LAX_ON);
 	int n=0;

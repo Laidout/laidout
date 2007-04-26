@@ -64,7 +64,7 @@ using namespace Laxkit;
  */
 void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e)
 {
-	DBG cout<<"notifyDocTreeChanged sending.."<<endl;
+	//DBG cout<<"notifyDocTreeChanged sending.."<<endl;
 	HeadWindow *h;
 	PlainWinBox *pwb;
 	ViewWindow *view;
@@ -97,14 +97,14 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 				*edata=*te;
 				edata->send_towindow=w->window;
 				app->SendMessage(edata);
-				DBG cout <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
-				DBG 	w->win_title<< "("<<w->whattype()<<")"<<endl;
+				//DBG cout <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
+				//DBG 	w->win_title<< "("<<w->whattype()<<")"<<endl;
 				yes=0;
 			}
 		}
 	}
 	delete te;
-	DBG cout <<"eo notifyDocTreeChanged"<<endl;
+	//DBG cout <<"eo notifyDocTreeChanged"<<endl;
 	return;
 }
 

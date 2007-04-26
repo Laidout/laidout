@@ -141,11 +141,11 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 			int nn,lines;
 			nn=sscanf(line,"%%%%BeginPreview: %d %d %d %d", width, height, depth, &lines);
 			if (nn!=4) {
-				DBG cout <<"corrupt preview in EPS at %%BeginPreview line"<<endl;
+				//DBG cout <<"corrupt preview in EPS at %%BeginPreview line"<<endl;
 				break;
 			}
 
-			DBG cout <<"w,h,d,l:" <<*width<<"x"<<*height<<"  d:"<<*depth<<" l:"<<lines<<endl;
+			//DBG cout <<"w,h,d,l:" <<*width<<"x"<<*height<<"  d:"<<*depth<<" l:"<<lines<<endl;
 			
 		
 			int plen=*width * *height * *depth/8+1; //expected number of bytes of preview data
@@ -164,16 +164,16 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 			hlen=((*width * *depth-1)/8+1)*2; //num chars per line
 			paddingbits=hlen*4 - *width * *depth;
 			
-			DBG int linessofar=0;
+			//DBG int linessofar=0;
 				
 			 //now for each line, convert "%%ab35f12..." to binary data in preview
 			 //by building a byte from bit data, and tacking the bit to preview.
 			for ( ; lines && !error; lines--) {
-				//DBG cout <<endl;
+				////DBG cout <<endl;
 
 				c=getline(&line,&n,f);
 				
-				DBG linessofar++;
+				//DBG linessofar++;
 			
 				if (c<=0) {
 					error=-5;
@@ -186,7 +186,7 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 				if (lpos==0) continue; //***note this shouldn't happen maybe?
 				while (isspace(line[lpos])) lpos++;
 
-				DBG cout <<"begin scan line, bits="<<bits<<endl;
+				//DBG cout <<"begin scan line, bits="<<bits<<endl;
 				
 				nn=strlen(line);
 				while (lpos<nn) { //loop till eol
@@ -202,13 +202,13 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 					else byte|=tolower(ch)-'a'+10;
 					bits+=4;
 
-					DBG cout <<ch<<" bits:"<<bits<<"  byte:"<<byte<<"  cpos:"<<cpos<<"  l:"<<linessofar<<endl;
+					//DBG cout <<ch<<" bits:"<<bits<<"  byte:"<<byte<<"  cpos:"<<cpos<<"  l:"<<linessofar<<endl;
 					
 					if (cpos==hlen && paddingbits) {
 						 // full scanline read, possible padding to deal with
 						 
-						//DBG printf(" eoscanline, lsofar:%d\n",linessofar);
-						DBG printf(" eoscanline, bits=%d\n",bits);
+						////DBG printf(" eoscanline, lsofar:%d\n",linessofar);
+						//DBG printf(" eoscanline, bits=%d\n",bits);
 						
 						byte>>=paddingbits;
 						bits-=paddingbits;
@@ -218,8 +218,8 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 
 					if (bits>=(unsigned)8+paddingbits) {
 						(*preview)[ppos++]=byte>>(bits-8);
-						//DBG printf("%x",(*preview)[ppos-1]);
-						DBG printf(".");
+						////DBG printf("%x",(*preview)[ppos-1]);
+						//DBG printf(".");
 						
 						if (bits-8) {
 							bits-=8;
@@ -274,7 +274,7 @@ Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int de
 				 nbuf;     //size of buf
 	nbuf=width*height;
 	
-	DBG int cc=0;
+	//DBG int cc=0;
 	do { //one iteration per sample
 		sample=0;
 		t=depth;
@@ -297,14 +297,14 @@ Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int de
 		 //insert next whole bytes
 		while (t>=8) {
 			sample=(sample<<8)|preview[ppos++];
-			//DBG printf("%x",sample);
+			////DBG printf("%x",sample);
 			t-=8;
 		}
 
 		 //insert final bits that do not form a whole byte in preview
 		if (t) {
 			d=preview[ppos++];
-			//DBG printf("%x",d);
+			////DBG printf("%x",d);
 			nd=8-t;
 			sample<<=t;
 			while (t) {
@@ -332,17 +332,17 @@ Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int de
 		//sample=ss|(ss<<8)|(ss<<16)|(255<<24);
 		sample=(ss|(ss<<8)|(ss<<16))^~0; //swap black for white as per EPSI spec
 
-		DBG printf("%x",(sample&0xffffff)?1:0);
+		//DBG printf("%x",(sample&0xffffff)?1:0);
 		buf[pos++]=sample;
 
-		DBG cc++;
-		DBG if (cc==width) { printf("\n"); cc=0; }
+		//DBG cc++;
+		//DBG if (cc==width) { printf("\n"); cc=0; }
 	} while (pos<nbuf);
 
 	imlib_image_put_back_data(buf);
 	//imlib_save_image("epspreview.png");
 	
-	DBG cout <<endl;
+	//DBG cout <<endl;
 	return imlibimage;
 }
 
@@ -387,9 +387,9 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 	arglist[7]=const_cast<char *>(epsfile);
 	arglist[8]=NULL;
 		 
-	DBG cout <<"Creating preview via:    "<<fullgspath<<' ';
-	DBG for (int c=1; c<8; c++) cout <<arglist[c]<<' ';
-	DBG cout <<endl;
+	//DBG cout <<"Creating preview via:    "<<fullgspath<<' ';
+	//DBG for (int c=1; c<8; c++) cout <<arglist[c]<<' ';
+	//DBG cout <<endl;
 	
 	pid_t child=fork();
 	if (child==0) { // is child
@@ -401,10 +401,10 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 	int status;
 	waitpid(child,&status,0);
 	if (!WIFEXITED(status)) {
-		DBG cout <<"*** error in child process, not returned normally!"<<endl;
+		//DBG cout <<"*** error in child process, not returned normally!"<<endl;
 		error=newstr("Ghostscript interrupted from making preview.");
 	} else if (WEXITSTATUS(status)!=0) {
-		DBG cout <<"*** ghostscript returned error while trying to make preview"<<endl;
+		//DBG cout <<"*** ghostscript returned error while trying to make preview"<<endl;
 		error=newstr("Ghostscript had error while making preview.");
 	}
 

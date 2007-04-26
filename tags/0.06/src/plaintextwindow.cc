@@ -65,7 +65,7 @@ PlainTextWindow::~PlainTextWindow()
 
 int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
-	DBG cout <<"plaintext message: "<<mes<<endl;
+	//DBG cout <<"plaintext message: "<<mes<<endl;
 	if (!strcmp(mes,"text change")) {
 		***update textobj from edit
 	} else if (!strcmp(mes,"***")) { 
