@@ -1,5 +1,9 @@
-laidout (0.05.1) unstable; urgency=low
+laidout (0.06) unstable; urgency=low
 
+  * Sixth release 
+
+ -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 25 Apr 2007 21:10:50 -0800
+ 
   * Fifth release 
 
  -- Tom Lechner <tomlechner@users.sourceforge.net>  Sun, 5 Nov 2006 15:29:50 -0800
