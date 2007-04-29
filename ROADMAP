@@ -5,15 +5,9 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.06
-------------
-(done) parent/child nesting and interface for that: nesting, and grouping: layer trees
-(done) New document creation from templates
-(done) Be able to work with preview images more easily
-(done) Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
-
 VERSION 0.07
 ------------
+(done) Have command line option to output to a file a pseudocode mockup of the file format
        Image and Color patches, gradients, etc should have vastly better interfaces
        Image and Color patches, gradients, etc should allow transparent colors
        Gui for modifying Page Labels
@@ -22,18 +16,22 @@ VERSION 0.07
        PDF out
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
        Net imposition interactive unwrapper
-       Implement all preview config options
+       Implement all preview config options, namely auto preview files over a certain size
        Fix multi-object selection move when crossing page boundaries
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
        from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips occasionally
+       figure out how to sign deb packages when creating them
 
-VERSION 0.1
+VERSION 0.1 
 -----------
+       Basic infrastructure for most things (except text) should be in place.
+       Must be Stable, not merely "Stable"
+       Of course, need copious testing by people who are not me.
        Improve open from template to be able to use names (defined in a file), not just filenames
-       should probably put laidout stuff in its own namespace, just to be polite
+       should probably put laidout stuff in its own namespace, just to be polite for plugin makers
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
        Finish implementing project based setup, especially when loading and saving
@@ -41,7 +39,6 @@ VERSION 0.1
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        group combine properties, like most importantly transparency
-       Of course, need copious testing by people who are not me.
        Make the button box actually function
        Configurable icon panel/menu system
        Linear guides
@@ -53,7 +50,6 @@ VERSION 0.1
        Have imagepatch be a transform you can apply to any image
        Allow objects to have any number of various kinds of transforms applied to it
        NetImposition needs much beefing up: import/export net, build net
-       Basic infrastructure for most things (except text) should be in place.
        Fully configurable shortcuts, with optional multi-key shortcuts
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,
        allow for easy method for runaround area determination
@@ -76,9 +72,8 @@ VERSION 0.1
        SpreadEditor: optionally work with whole spreads, rather than just single pages
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
-       Improve and/or make new logo and splash image
+       Improve and/or make new logo and splash image, and generate icons from a laidout doc
        have an image in the little pan popups
-       Have special function to output to file a pseudocode mockup of the file format
        Combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Be able to have paper objects in addition to the normal page objects (ie master page numbers)
@@ -130,6 +125,14 @@ While i'm at it, I'd like a pony.
             .--------------. 
 ------------- OLD RELEASES -----------------
             `--------------' 
+
+VERSION 0.06  -- released 25 April 2007!
+------------
+(done) parent/child nesting and interface for that: nesting, and grouping: layer trees
+(done) New document creation from templates
+(done) Be able to work with preview images more easily
+(done) Basic EPS import, would open up all kinds of down and dirty tricks using other programs:latex,lilypond,...
+
 
 VERSION 0.05  -- released 4 November 2006!
 ------------
