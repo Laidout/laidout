@@ -37,6 +37,7 @@ class ImagePlopInfo
 
 //------------------------------------- functions -------------------------------
 char *previewFileName(const char *file, const char *nametemplate);
+int dumpOutImageListFormat(FILE *f);
 int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdpi, int perpage);
 int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int defaultdpi, int perpage);
 int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int perpage=1, int ddpi=150);

@@ -13,15 +13,16 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/********************** laidout-more **********************/
 
-// defines some stuff not stack dependent, so doesn't need lax/lists.cc
+
+// This file is for LaidoutApp functions that are not stack dependent, so doesn't need lax/lists.cc
 
 #include "laidout.h"
 #include "viewwindow.h"
 #include "spreadeditor.h"
 #include "headwindow.h"
 #include "version.h"
+#include "extras.h"
 
 #include <lax/fileutils.h>
 
@@ -134,9 +135,25 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	FILE *f=fopen(file,"w");
 	if (!f) return 1;
 
-	fprintf(f,"#Laidout %s File Format\n\n",LAIDOUT_VERSION);
+	fprintf(f,"#Laidout %s File Formats\n\n",LAIDOUT_VERSION);
 
-	fprintf(f," # The basic file of a Laidout document is a Project file,\n"
+	fprintf(f," # This file describes:\n"
+			  " #  1. Project files, which contain almost all of the possible Laidout elements\n"
+			  " #  2. a Laidout Image List file.\n"
+			  " # The laidoutrc file in ~/.laidout/(version)/laidoutrc documents itself.\n"
+			  "\n"
+			  " # Throughout this file format, data is grouped according to how much it is indented,\n"
+			  " # reminiscent of python, and the yaml file format. The format here is kind of a simplified\n"
+			  " # yaml. Here, there are basically a name and value (together called an attribute), plus any number\n"
+			  " # of subattributes. A value can be on the same line as the name, or it can span several lines.\n"
+			  " # If you write \"thename \\\" on one line, then the next several lines that are more indented\n"
+			  " # than the name line contain the value. Always remember to use spaces for\n"
+			  " # indents. NEVER tabs, because they cause too much confusion. Comments begin with a '#'\n"
+			  " # character, and go until the end of the line. If you have a value that has such a character\n"
+			  " # in it, then simply put double quotes around the value. Finally, everything is case sensitive.\n"
+			  "\n\n"
+			  "#----------------- Laidout Project files ------------------\n\n"
+			  " # The basic working file of a Laidout document is a Project file,\n"
 			  " # which references several Document files, or just a Document file itself.\n"
 			  " # For a project, the first line of the file will be (including the '#'):\n\n");
 	fprintf(f,"#Laidout %s Project\n\n",LAIDOUT_VERSION);
@@ -144,20 +161,12 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	fprintf(f,"#Laidout %s Document\n\n",LAIDOUT_VERSION);
 	fprintf(f," # followed by Document attributes. This pattern follows for most fragments of\n"
 			  " # Laidout elements, so for instance, a stand alone Laidout palette file will start:\n");
-	fprintf(f," # \"Laidout %s Palette\"",LAIDOUT_VERSION);
+	fprintf(f," # \"#Laidout %s Palette\"",LAIDOUT_VERSION);
 	fprintf(f," and will then continue with only palette attributes. Many resources, including\n"
 			  " # palettes, and window arrangements, can appear at the Project level or the Document level.\n"
 			  "\n"
-			  " # Throughout this file format, data is grouped according to how much it is indented,\n"
-			  " # reminiscent of python, and the Yaml file format. The format here is kind of a simplified\n"
-			  " # yaml. Here, there are basically a name and value (called an attribute), plus any number\n"
-			  " # of name-value pairs. A value can be on the same line as the name, or it can span several lines,\n"
-			  " # if you write \"thename \\\" on one line, then the next several lines that are more indented\n"
-			  " # than the name line contain the value. Always remember to use spaces for\n"
-			  " # indents. NEVER tabs, because they cause too much confusion.\n"
-			  "\n"
-			  " # Without further ado, here are the actual elements, starting at the Project level.\n");
-	fprintf(f,"\n\n#-----------------a Laidout Project file-----\n");
+			  " # Without further ado, here are the actual elements, starting at the Project level:\n\n"
+			  "#----------------- (starts on next line) ------------\n");
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);
 	
 	if (project) project->dump_out(f,0,-1);
@@ -169,9 +178,14 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 
 	HeadWindow h(NULL,"",0, 0,0,0,0,0);
 	fprintf(f,"#Window arrangements can be dumped out. These can be project attributes or Document\n"
-			  "#or Document attributes, but if you are working on a project, not just a single Document,\n"
-			  "#then the window attributes in a Document file are currently ignored.\n");
+			  "#attributes. If you are working on a project, not just a single Document,\n"
+			  "#then the window attributes in a Document file are currently ignored.\n"
+			  "\n"
+			  "window\n");
 	h.dump_out(f,2,-1);
+	
+	fprintf(f,"\n\n\n#----------------- a Laidout Image List file ------------------\n");
+	dumpOutImageListFormat(f);
 	
 	fclose(f);
 

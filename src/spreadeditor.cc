@@ -255,6 +255,7 @@ void SpreadInterface::Clear(LaxInterfaces::SomeData *)
  *   from modified.. needs to be a check somewhere to ask whether to
  *   apply changes before saving..
  *   if (checkPendingChanges(thing)) thing->applyChanges();
+ * \todo xbounds and ybounds!!
  */
 void SpreadInterface::dump_out(FILE *f,int indent,int what)
 {
@@ -305,6 +306,7 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			doc=laidout->findDocument(value);
 		} else if (!strcmp(name,"centerlabels")) {
 			IntAttribute(value,&centerlabels);
+			if (centerlabels<0 || centerlabels>4) centerlabels=0;
 		} else if (!strcmp(name,"drawthumbnails")) {
 			drawthumbnails=BooleanAttribute(value);
 		} else if (!strcmp(name,"arrangetype")) {

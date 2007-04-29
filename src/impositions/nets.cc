@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /************ impositions/nets.cc *************/
 
@@ -517,10 +517,15 @@ Net *Net::duplicate()
  * name "Square split diagonally"
  * matrix 1 0 0 1 0 0  # optional extra matrix to map this net to a page
  * points \
- *    1 1   to 0  # 0,  the optional 'to number' is map to whatever, goes in pointmap
- *    -1 1  to 1  # 1   it can be used to point to original 3-d points, for instance.
- *    -1 -1 to 2  # 2   pointmap is also used to build facelink in NetFace
- *    1 -1  to 3  # 3
+ *    1 1   to 3  # 0,  the optional 'to number' is map to whatever, goes in pointmap
+ *    -1 1  to 2  # 1   it can be used to point to original 3-d points, for instance.
+ *    -1 -1 to 0  # 2   pointmap is also used to build facelink in NetFace
+ *    1 -1  to 1  # 3
+ * vertices \     #list of 3d points
+ *    0  0  0   #0
+ *    1  0  0   #1
+ *    0  1  0   #2
+ *    .5 .5 .7  #3
  *    
  *  # All the lines to draw when laying out on the page. Numbers are
  *  # indices into the point list above.
@@ -558,8 +563,29 @@ Net *Net::duplicate()
 void Net::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sname Bent Square #this is just any name you give the net\n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0  # transform to map the net to a paper\n",spc);
+		fprintf(f,"%stabs no             #(***TODO) whether to put tabs on face edges\n",spc);
+		fprintf(f,"%spoints \\ \n",spc);
+		fprintf(f,"%s  1 1   to 0  # 0, the optional 'to number' is map to some common index, usually\n",spc);
+		fprintf(f,"%s  -1 1  to 1  # 1   the 3-d vertex index of the vertices list below. These let the\n",spc);
+		fprintf(f,"%s  -1 -1 to 2  # 2   interactive net unwrapper actually work\n",spc);
+		fprintf(f,"%s  1 -1  to 3  # 3\n",spc);
+		fprintf(f,"%svertices \\       #optional list of 3d points\n",spc);
+		fprintf(f,"%s  0  0  0   #0\n",spc);
+		fprintf(f,"%s  1  0  0   #1\n",spc);
+		fprintf(f,"%s  0  1  0   #2\n",spc);
+		fprintf(f,"%s  .5 .5 .7  #3\n",spc);
+		fprintf(f,"%sface 0 1 3       #defines a face by list of indices into the points list.\n",spc);
+		fprintf(f,"%sface 2 3 1       # The origin is by default at the first point, and the\n",spc);
+		fprintf(f,"%s                 # x axis extends to the next point.\n",spc);
+		fprintf(f,"%sline 0 3         #defines a line made from the points list that gets drawn onscreen\n",spc);
+		fprintf(f,"%soutline 0 1 2 3  #defines a (closed) outline, onto which tabs can be placed\n",spc);
+		
+		return;
+	}
 	int c;
-
 	fprintf(f,"%sname %s\n",spc,whatshape());
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 			spc,matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);

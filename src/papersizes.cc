@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /*************** papersizes.cc ********************/
 
@@ -115,6 +115,14 @@ const char *BuiltinPaperSizes[33*3]=
 void PaperStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sname Letter  #the name of the paper\n",spc);
+		fprintf(f,"%swidth 8.5    #in inches\n",spc); 
+		fprintf(f,"%sheight 11    #in inches\n",spc);
+		fprintf(f,"%sdpi 360      #default dpi for the paper\n",spc);
+		fprintf(f,"%slandscape    #could be portrait (the default) instead\n",spc);
+		return;
+	}
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	fprintf(f,"%swidth %.10g\n",spc,width); 
 	fprintf(f,"%sheight %.10g\n",spc,height);

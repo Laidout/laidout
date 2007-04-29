@@ -201,10 +201,29 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
  *  defaultpaperstyle
  *    ...
  * </pre>
+ *
+ * If what==-1, dump out a pseudocode mockup of the file format.
+ *
+ * \todo *** finish what==-1
  */
 void Singles::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%s#insets are regions of a paper not taken up by the page\n",spc);
+		fprintf(f,"%sinsetl 0   #The left inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsetr 0   #The right inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsett 0   #The top inset from the side of a paper\n",spc);
+		fprintf(f,"%sinsetb 0   #The bottom inset from the side of a paper\n",spc);
+		fprintf(f,"%stilex 1    #number of times to tile the page horizontally\n",spc);
+		fprintf(f,"%stiley 1    #number of times to tile the page horizontally\n",spc);
+		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
+		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
+		paperstyle->dump_out(f,indent+2,-1);
+		fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
+		pagestyle->dump_out(f,indent+2,-1);
+		return;
+	}
 	fprintf(f,"%sinsetl %.10g\n",spc,insetl);
 	fprintf(f,"%sinsetr %.10g\n",spc,insetr);
 	fprintf(f,"%sinsett %.10g\n",spc,insett);
@@ -690,10 +709,21 @@ void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 }
 
 /*! Write out isvertical, then Singles::dump_out.
+ *
+ * If what==-1, dump out a pseudocode mockup of the file format.
  */
 void DoubleSidedSingles::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		Singles::dump_out(f,indent,-1);
+		fprintf(f,"%sdefaultpagestyler #default right or bottom page style\n",spc);
+		fprintf(f,"%s  #(same kinds of attributes as the defaultpagestyle)\n",spc);
+		fprintf(f,"%sisvertical  #whether the fold is up/down or the default left/right\n",spc);
+		fprintf(f,"%sisleft      #whether page 0 is to be displayed by itself or to the left of page 1\n",spc);
+		fprintf(f,"%sistop       #like isleft, but for isvertical impositioning\n",spc);
+		return;
+	}
 	if (isvertical) fprintf(f,"%sisvertical\n",spc);
 	if (isleft)
 		if (isvertical) fprintf(f,"%sistop\n",spc);
@@ -1119,10 +1149,22 @@ int *BookletImposition::PrintingPapers(int frompage,int topage)
  *
  *  Note that DoubleSidedSingles::dump_out() is not called, so as to avoid outputting isleft.
  *  But Singles::dump_out() is called.
+ *
+ * If what==-1, dump out a pseudocode mockup of the file format.
  */
 void BookletImposition::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		Singles::dump_out(f,indent,-1);
+		fprintf(f,"%sdefaultpagestyler #default right or bottom page style\n",spc);
+		fprintf(f,"%s  #(same kinds of attributes as the defaultpagestyle)\n",spc);
+		fprintf(f,"%sisvertical  #whether the pages fold up/down or the default left/right\n",spc);
+		fprintf(f,"%screep  0    #(todo) how much creep is introduced by the fold when all pages folded over\n",spc);
+		fprintf(f,"%sbodycolor  0xffffff  #(todo)8bit rgb color of the pages\n",spc);
+		fprintf(f,"%scovercolor 0xffffff  #(todo)8bit rgb color of the pages\n",spc);
+		return;
+	}
 	fprintf(f,"%screep %.10g\n",spc,creep);
 	fprintf(f,"%sbodycolor 0x%.6lx\n",spc,bodycolor);
 	fprintf(f,"%scovercolor 0x%.6lx\n",spc,covercolor);
@@ -1238,9 +1280,15 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 //}
 //
 ////! Write out flags, width, height
+///*!
+// * If what==-1, dump out a pseudocode mockup of the file format.
+// */
 //void BasicBook::dump_out(FILE *f,int indent,int what)
 //{
 //	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+//	if (what==-1) {
+//		***
+//	}
 //	fprintf(f,"%swidth %s\n",spc,w());
 //	fprintf(f,"%sheight %s\n",spc,h());
 //	if (flags&MARGINS_CLIP) fprintf(f,"%smarginsclip\n",spc);

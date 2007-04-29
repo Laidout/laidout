@@ -41,6 +41,7 @@
  * \todo Still must work out good mechanism for being able to add on any extras via plugins...
  */
 
+#include "version.h"
 #include "extras.h"
 #include "dataobjects/epsdata.h"
 #include <lax/attributes.h>
@@ -187,6 +188,49 @@ ImagePlopInfo::~ImagePlopInfo()
 
 //--------------------------------- Dump In Images --------------------------------------------
 
+//! Dump out to f a pseudocode mockup of the image list file format.
+/*! \ingroup extras
+ */
+int dumpOutImageListFormat(FILE *f)
+{
+	if (!f) return 1;
+	
+	fprintf(f,"#Laidout %s Image List\n\n",LAIDOUT_VERSION);
+	fprintf(f,"path /blah1/blah2     #any subsequent \"./file\" becomes \"/blah1/blah2/file\"\n"
+			  "dpi 600               # default dpi, overridable per image\n"
+			  "\n"
+			  "perPage  asWillFit    # same as -1, put as many as will fit on each page\n"
+			  "#perPage allOnOnePage # same as -2, put all on the same page, may make them fall off the edges\n"
+			  "#perPage 5            #  >0 == exactly that many per page\n"
+			  "\n"
+			  "page 3                # change current page to page index 3 (not page label 3)\n"
+			  "\n"
+			  "dir:///path/to/a/directory  #(TODO!) dumps all in dir, no previews, always same dpi\n"
+			  "\n"
+			  "# Note that file and preview fields must begin with \"/\", \"./\", \"../\", or \"file://\".\n"
+			  "# File listings are file, then preview, then description. If the preview field doesn't\n"
+			  "# start with the above, then it is assumed that everything after the file is the description.\n"
+			  "# The preview and description fields are optional.\n"
+			  "\n"
+			  "file:///aoeuaoen  /path/to/preview/  Description\n"
+			  "\"/file/file with spaces\"\n"
+			  "./relative/file\n"
+			  "../another/relative/file  file:///path/to/preview/  description\n"
+			  "/some/file                /path/to/preview/         description\n"
+			  "file:///aoeuaoen\n"
+			  "  dpi 300                    #overrides the current dpi for this file\n"
+			  "  xywh 0 0 2 2               #fit image in this box, in page coordinates.\n"
+			  "                             #  overrides dpi if that dpi would make it too big for the box\n"
+			  "  preview /path/to/preview/  #preview and description fields can also be given\n"
+			  "  description \\              #as subattributes of the file\n"
+			  "    Blah blah blah\n"
+			  "    blah blah\n"
+			  "\n"
+			  "pagebreak # no more pictures for this page, goes to page 4\n"
+			  "\n");
+	return 0;
+}
+
 //! Plop down images from the list contained in file.
 /*! \ingroup extras
  * Returns the page index of the final page or -1 if error.
@@ -196,39 +240,10 @@ ImagePlopInfo::~ImagePlopInfo()
  * This function reads in the file to a Laxkit::Attribute, then calls 
  * dumpInImageList(Document *,LaxFiles::Attribute *, int, int, int).
  * 
- * The file should be formated as follows, using the usual space (not tabs) indentation
- *  to indicate related data. Note that the "dir:///" thing is not yet implemented:
- * <pre>
- *    \#Laidout 0.05.1 Image List
- *    path /blah1/blah2  \#any subsequent "./file" becomes "/blah1/blah2/file"
- *    dpi 600    # default dpi, overridable per image
- *    perPage -1 # -1 == auto, as will fit on the page
- *                 # -2 == put all on same page
- *                 #  0 == ??
- *                 #  >0 == that many per page
- *    oneDirPerPage false
- *    page 3 # change current page to 3
- *    
- *     # Note that file sections must begin with "/" "./" or "../" "file://"
- *    dir:///path/to/a/directory \#dumps all in dir, no previews, always same dpi
- *    %file:///aoeuaoen  /path/to/preview/  name
- *    ./relative/file
- *    ../another/relative/file  /path/to/preview/  description
- *    /some/file                /path/to/preview/  description
- *    %file:///aoeuaoen          /path/to/preview/  description
- *      dpi 300 \#overrides the current dpi
- *      xywh 0 0 2 2  # fit image in this box, in page coordinates overrides dpi
- *                    # if too big for the box
- *    pagebreak # no more pictures for this page, goes to page 4
- *    %file:///aoeuaoen  
- *      preview /path/to/preview/  
- *      description blah blah blah
- *    page 5
- *    ...
- * </pre>
- *
- * \todo implement the "dir:///" thing 
- * \todo allow specifying Arrangements
+ * NOTE: if you change this, you MUST ALSO CHANGE dumpOutImageListFormat() to accurately
+ * reflect the changes.
+ * 
+ * The file should be formated as in the dumpOutImageListFormat() function.
  */
 int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdpi, int perpage)
 {
@@ -263,8 +278,8 @@ static void getPreviewAndDesc(const char *value,char **preview,char **desc)
 	}
 	char *e,*p=QuotedAttribute(value,&e);
 	if (p) {
-		if (!strncmp(p,"file://",7)) memmove(p,p+7,strlen(p)-6);
-		if (!strncmp(p,"/",1) || !strncmp(p,"./",2) || !strncmp(p,"../",7)) {
+		if (!strncmp(p,"file://",7) || !strncmp(p,"/",1) || !strncmp(p,"./",2) || !strncmp(p,"../",7)) {
+			if (!strncmp(p,"file://",7)) memmove(p,p+7,strlen(p)-6);
 			 // we have a preview file name
 			*preview=p;
 			value=(const char *)e;
@@ -288,8 +303,11 @@ static void getPreviewAndDesc(const char *value,char **preview,char **desc)
  *  dumpInImages(Document *doc, ImagePlopInfo *images, int startpage).
  *
  * \todo Right now, if an error occurs midstream, the document is still modified. should
- *    instead change doc only if no errors occur all through stream..
+ *    instead change doc only if no errors occur all through stream? this will be easy once
+ *    undo/redo is implemented
  * \todo implement dir:///some/dir/with/images/in/it 
+ * \todo allow specifying Arrangements
+ * \todo allow overriding the preview base name
  * \todo *** must be expanded somehow to allow a more general object importing mechanism, right now
  *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
  *   easier to have easily added import "filters"... This would also mean have a file type mask
@@ -319,7 +337,11 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 		if (!strcmp(name,"dpi")) {
 			IntAttribute(value,&defaultdpi,NULL);
 		} else if (!strcmp(name,"perPage")) {
-			IntAttribute(value,&perpage);
+			if (!strcmp(value,"allOnOnePage")) perpage=-2;
+			else if (!strcmp(value,"asWillFit")) perpage=-1;
+			else IntAttribute(value,&perpage);
+			
+			if (perpage<-2 || perpage==0) perpage=-1;
 			flush=1;
 			jumptopage=-1;
 		} else if (!strcmp(name,"oneDirPerPage")) {
