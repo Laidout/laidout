@@ -232,9 +232,43 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
 }
 
 //! Write out the objects.
+/*! If what==-1, dump out pseudocode of file format for a group.
+ *
+ * \todo automate object management, necessary here for what==-1
+ */
 void Group::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
+		fprintf(f,"%svisible #indicates that this group cannot be seen on screen nor printed out\n",spc);
+		fprintf(f,"%sprints  #indicates that this group can be seen on screen, but cannot be printed\n",spc);
+		fprintf(f,"\n%s#Groups contain any number of drawable objects. Here are all the possible such\n",spc);
+		fprintf(f,"%s#objects currently installed:\n",spc);
+		fprintf(f,"\n%sobject Group\n%s  #...a subgroup...\n",spc,spc);
+		SomeData *obj;
+		
+		//*** hack until auto obj. type insertion done
+		char *objecttypelist[]={
+				"Group",
+				"ImageData",
+				"ImagePatchData",
+				"PathsData",
+				"GradientData",
+				"ColorPatchData",
+				"EpsData",
+				NULL
+			};
+
+		for (int c=0; objecttypelist[c]; c++) {
+			if (!strcmp(objecttypelist[c],"Group")) continue;
+			fprintf(f,"\n%sobject %s\n",spc,objecttypelist[c]);
+			obj=newObject(objecttypelist[c]);
+			obj->dump_out(f,indent+2,-1);
+			delete obj;
+		}
+		return;
+	}
 	if (locked) fprintf(f,"%slocked\n",spc);
 	if (visible) fprintf(f,"%svisible\n",spc);
 	if (prints) fprintf(f,"%sprints\n",spc);

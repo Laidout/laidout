@@ -87,10 +87,11 @@ void print_usage()
 		"Options:\n"
 		"  -t --template templatename       Start laidout from this template in the .laidout/templates\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
-		"    -n whatever (not yet!)         Start up laidout with a Whatever imposition\n" 
-		"  -f --rescan-fonts (not yet!)     Rescan font directories\n"
-		"  -p --new-font-path dir (nope!)   Add dir to font path, and rescan fonts\n"
-		"  --no-x (nope!)                   Start up command line, no other interface, useful for quick printing??\n"
+		//***"    -n whatever (not yet!)         Start up laidout with a Whatever imposition\n" 
+		//***"  -f --rescan-fonts (not yet!)     Rescan font directories\n"
+		//***"  -p --new-font-path dir (nope!)   Add dir to font path, and rescan fonts\n"
+		//***"  --no-x (nope!)                   Start up command line, no other interface, useful for quick printing??\n"
+		"  --file-format file               Write out a pseudocode mockup of the file format to file, then exit\n"    
 		"  -v --version                     Print out version info, then exit.\n"
 		"  -h --help                        Show this summary and exit.\n";
 	exit(0);
@@ -326,6 +327,8 @@ int LaidoutApp::init(int argc,char **argv)
 	 //             when running before installing
  
 	 // find the current executable path
+	 //****** this is wrong!!
+	 //could use /proc/(pid)/exe, which is link to actual executable
 	char *curexecpath;
 	if (argv[0][0]!='/') {
 		char *d=get_current_dir_name();
@@ -339,16 +342,17 @@ int LaidoutApp::init(int argc,char **argv)
 	 // add either configured icon_dir to icons 
 	 // or ./icons if the installed executable path is not the same as current executable path
 	 //*******this doesn't work, curexecpath resolves to $curdir/laidout when you run. CRAP!!
-	if (strcmp(BIN_PATH,curexecpath)) {
-		char *iconpath=lax_dirname(curexecpath,0);
-		appendstr(iconpath,"/icons");
-		icons.addpath(iconpath);
-		DBG cout <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
-		delete[] iconpath;
-	} else {
+//	if (strcmp(BIN_PATH,curexecpath)) {
+//		char *iconpath=lax_dirname(curexecpath,0);
+//		appendstr(iconpath,"/icons");
+//		icons.addpath(iconpath);
+//		DBG cout <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
+//		delete[] iconpath;
+//	} else {
 		DBG cout <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		if (icon_dir) icons.addpath(icon_dir);
 		icons.addpath(ICON_DIRECTORY);
-	}
+//	}
 	delete[] curexecpath;
 
 
@@ -410,6 +414,8 @@ int LaidoutApp::init(int argc,char **argv)
 
 //! Called from init(), creates a user's laidoutrc if readinLaidoutDefaults failed.
 /*! Return 0 for created ok, else non-zero error.
+ *
+ * See also dump_out_file_format().
  *
  * \todo should separate the laidoutrc writing functions to allow easy dumping to any
  *   stream like stdout.
@@ -629,6 +635,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	DBG cout <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
+			{ "file-format",   1, 0, 'F' },
 			{ "rescan-fonts",  0, 0, 'f' },
 			{ "new-font-path", 1, 0, 'p' },
 			{ "new",           1, 0, 'n' },
@@ -644,8 +651,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		c=getopt_long(argc,argv,"t:fp:n:vh",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
-			case ':': cout <<"missing parameter..."<<endl; exit(1); // missing parameter
-			case '?': cout <<"Unknown option...."<<endl; exit(1);  // unknown option
+			case ':': cerr <<"missing parameter..."<<endl; exit(1); // missing parameter
+			case '?': cerr <<"Unknown option...."<<endl; exit(1);  // unknown option
 			case 'h': print_usage(); // Show usage summary, then exit
 			case 'v':  // Show version info, then exit
 				cout <<LaidoutVersion()<<endl;
@@ -669,6 +676,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 			case 'l': { // load dir
 					makestr(load_dir,optarg);
+				} break;
+			case 'F': { // dump out file format
+					if (dump_out_file_format(optarg,0)) exit(1);
+					exit(0);
 				} break;
 		}
 	}

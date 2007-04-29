@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
@@ -25,13 +25,11 @@ class Document;
 enum PageLabelType {
 	Numbers_Default,
 	Numbers_Arabic,
-	Numbers_Arabic_dec,
 	Numbers_Roman,
-	Numbers_Roman_dec,
 	Numbers_Roman_cap,
-	Numbers_Roman_cap_dec,
 	Numbers_abc,
 	Numbers_ABC,
+	Numbers_max
 };
 
 enum  LaidoutSaveFormat {
@@ -71,7 +69,7 @@ class PageRange : public LaxFiles::DumpUtility
 	int impositiongroup;
 	int start,end,offset;
 	char *labelbase;
-	int labeltype;
+	int labeltype,decreasing;
 	PageRange(const char *newbase="#",int ltype=Numbers_Default);
 	~PageRange() { if (labelbase) delete[] labelbase; }
 	char *PageRange::GetLabel(int i);

@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /********************* document.cc *************************/
 
@@ -78,10 +78,28 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	}
 }
 
-//! Call imposition->dump(f,indent+2,0).
+/*! Writes like:
+ * <pre>
+ *  Imposition Singles
+ *    ...
+ * <pre>
+ *
+ * Calls imposition->dump(f,indent+2,0).
+ *
+ * If what==-1, write out pseudocode mockup.
+ */
 void DocumentStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%s#A document has only 1 of the following impositions attached to it.\n",spc);
+		fprintf(f,"%s#These are all the impositions currently installed:\n",spc);
+		for (int c=0; c<laidout->impositionpool.n; c++) {
+			fprintf(f,"%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
+			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1);
+		}
+		return;
+	}
 	if (imposition) {
 		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
 		imposition->dump_out(f,indent+2,0);
@@ -233,6 +251,7 @@ PageRange::PageRange(const char *newbase,int ltype)
 	end=-1;
 	labelbase=newstr(newbase);
 	labeltype=ltype;
+	decreasing=0;
 }
 
 //! Convert things like "A-###" to "A-%s" and puts the number of '#' chars in len.
@@ -333,14 +352,13 @@ char *PageRange::GetLabel(int i)
 
 	char *label=NULL,*lb,*n;
 	
-	if (labeltype==Numbers_Arabic_dec || labeltype==Numbers_Roman_dec || labeltype==Numbers_Roman_cap_dec)
-		i=end-(i-start)+offset;
+	if (decreasing) i=end-(i-start)+offset;
 	else i=i-start+offset;
 	
 	int len;
 	lb=make_labelbase_for_printf(labelbase,&len);
-	if (labeltype==Numbers_Roman_dec || labeltype==Numbers_Roman) n=roman_numeral(i,0);
-	else if (labeltype==Numbers_Roman_cap_dec || labeltype==Numbers_Roman_cap) n=roman_numeral(i,1);
+	if (labeltype==Numbers_Roman) n=roman_numeral(i,0);
+	else if (labeltype==Numbers_Roman_cap) n=roman_numeral(i,1);
 	else if (labeltype==Numbers_abc) letter_numeral(i,0);
 	else if (labeltype==Numbers_ABC) letter_numeral(i,1);
 	else n=numtostr(i+1);
@@ -352,12 +370,51 @@ char *PageRange::GetLabel(int i)
 	return label;
 }
 
+/*! \ingroup misc
+ * \todo put me somewhere
+ */
+const char *labeltypename(PageLabelType t)
+{
+	switch (t) {
+		case Numbers_Default:       return "default";
+		case Numbers_Arabic:        return "arabic";
+		case Numbers_Roman:         return "roman";
+		case Numbers_Roman_cap:     return "roman_capitals";
+		case Numbers_abc:           return "abc";
+		case Numbers_ABC:           return "ABC";
+		default: return NULL;
+	}
+}
+
 /*! \todo make labeltype be the enum names.. this ultimately means PageRange
  *    will have to make full switch to Style.
+ *
+ * If what==-1, write out pseudocode mockup.
+ *
+ * \todo *** finish what==-1
  */
 void PageRange::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (what==-1) {
+		cout <<"*** finish PageRange::dump_out what==-1"<<endl;
+		fprintf(f,"%simpositiongroup 0  #(unimplemented)\n",spc);
+		fprintf(f,"%sstart 0            #the starting page index for the range\n",spc);
+		fprintf(f,"%soffset 2           #amount to add to the index of each page\n",spc);
+		fprintf(f,"%s#labelbase is a template to construct labels from:\n",spc);
+		fprintf(f,"%slabelbase \"#\"      #(default) would make normal numbers: 0,1,2,3,...\n",spc);
+		fprintf(f,"%s#labelbase \"###\"   #would make labels with 0 padding: 000,001,...100,999,1000,...\n",spc);
+		fprintf(f,"%s#labelbase \"A-#\"   #would make: A-0,A-1,A-2,A-3,...\n",spc);
+		fprintf(f,"%sdecreasing         #make the range count down rather than up\n",spc);
+		fprintf(f,"%slabeltype default  #this can instead be one of the following:\n",spc);
+		fprintf(f,"%s                   # arabic              ->  1,2,3,...\n",spc);
+		fprintf(f,"%s                   # roman               ->  i,ii,iii,iv,...\n",spc);
+		fprintf(f,"%s                   # roman_capitals      ->  I,II,III,...\n",spc);
+		fprintf(f,"%s                   # abc                 ->  a,b,c,...\n",spc);
+		fprintf(f,"%s                   # ABC                 ->  A,B,C,...\n",spc);
+		return;
+	}
 
 	//int impositiongroup;
 	//int start,end,offset;
@@ -367,14 +424,13 @@ void PageRange::dump_out(FILE *f,int indent,int what)
 	fprintf(f,"%simpositiongroup %d\n",spc,impositiongroup);
 	fprintf(f,"%sstart %d\n",spc,start);
 	fprintf(f,"%soffset %d\n",spc,offset);
-	fprintf(f,"%slabeltype %d\n",spc,labeltype);
+	fprintf(f,"%slabeltype %s\n",spc,labeltypename((PageLabelType)labeltype));
 	fprintf(f,"%slabelbase ",spc);
 	dump_out_escaped(f,labelbase,-1);
 	fprintf(f,"\n");
 }
 
-/*! \todo make labeltype be the enum names.. this ultimately means PageRange
- *    will have to make full switch to Style.
+/*! \todo ultimately PageRange will have to make full switch to Style.
  */
 void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
@@ -392,7 +448,16 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
 		} else if (!strcmp(name,"offset")) {
 			IntAttribute(value,&offset);
 		} else if (!strcmp(name,"labeltype")) {
-			IntAttribute(value,&labeltype);
+			if (!strcmp(value,"arabic")) labeltype=Numbers_Arabic;
+			else if (!strcmp(value,"roman")) labeltype=Numbers_Roman;
+			else if (!strcmp(value,"roman_capitals")) labeltype=Numbers_Roman_cap;
+			else if (!strcmp(value,"abc")) labeltype=Numbers_abc;
+			else if (!strcmp(value,"ABC")) labeltype=Numbers_ABC;
+			else labeltype=Numbers_Default;
+		} else if (!strcmp(name,"decreasing")) {
+			decreasing=BooleanAttribute(value);
+		} else if (!strcmp(name,"increasing")) {
+			decreasing=!BooleanAttribute(value);
 		} else if (!strcmp(name,"labelbase")) {
 			makestr(labelbase,value);
 		}
@@ -586,6 +651,7 @@ int Document::RemovePages(int start,int n)
  * *** only checks for saveas existence, does no sanity checking on it...
  *
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
+ * \todo **** need to work out when window arrangements are saved
  */
 int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 {
@@ -780,10 +846,48 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 
 }
 
-//! Dumps docstyle, pages.
+//! Dumps docstyle, pages, pageranges.
+/*! If what==-1, write out pseudocode mockup.
+ */
 void Document::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (what==-1) {
+		fprintf(f,"%ssaveas /path/to/filename.doc  #The path previously saved as, which\n",spc);
+		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
+		
+		fprintf(f,"\n%s#The document style:\n",spc);
+		fprintf(f,"%sdocstyle\n",spc);
+		if (docstyle) docstyle->dump_out(f,indent+2,-1);
+		else {
+			DocumentStyle d(NULL);
+			d.dump_out(f,indent+2,-1);
+		}
+	
+		fprintf(f,"\n\n%s#The page labels for a document are defined within zero or more page ranges.\n",spc);
+		fprintf(f,"%s#If no page range blocks are given, then the default numbering 0,1,2... is assumed.\n",spc);
+		fprintf(f,"%spagerange\n",spc);
+		if (pageranges.n) pageranges.e[0]->dump_out(f,indent+2,-1);
+		else {
+			PageRange pr;
+			pr.dump_out(f,indent+2,-1);
+		}
+		
+		fprintf(f,"\n\n%s#The pages of a document are currently just a collection\n",spc);
+		fprintf(f,"%s#of layers containing drawing objects.\n",spc);
+		fprintf(f,"%s#The order of the pages in the document is the same as the order listed in the file,\n",spc);
+		fprintf(f,"%s#regardless of any label after \"Page\".\n",spc);
+		fprintf(f,"%spage\n",spc);
+		
+		if (pages.n) pages.e[0]->dump_out(f,indent+2,-1);
+		else {
+			Page p;
+			p.dump_out(f,indent+2,-1);
+		}
+		
+		return;
+	}
 
 	 //*** shouldn't have this? it is just the filename, file knows that already
 	if (saveas) fprintf(f,"%ssaveas %s\n",spc,saveas);

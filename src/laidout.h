@@ -95,6 +95,7 @@ class LaidoutApp : public Laxkit::anXApp
 	void parseargs(int argc,char **argv);
 	int readinLaidoutDefaults();
 	int createlaidoutrc();
+	int dump_out_file_format(const char *file, int nooverwrite);
 	int isTopWindow(Laxkit::anXWindow *win);
 	int numTopWindows() { return topwindows.n; }
 

@@ -11,7 +11,9 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-/***************** drawdata.cc **********************/
+// Copyright (c) 2004-2007 Tom Lechner
+//
+
 
 //------------------------- General Drawing Object Utilities --------------------------------
 
