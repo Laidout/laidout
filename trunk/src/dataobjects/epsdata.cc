@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2007 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 
 #include <lax/fileutils.h>
@@ -92,12 +92,12 @@ void EpsData::dump_out(FILE *f,int indent,int what)
 	if (what==-1) {
 		fprintf(f,"%sfilename /path/to/file\n",spc);
 		fprintf(f,"%spreviewfile /path/to/preview/file  #if not absolute, is relative to filename\n",spc);
-		fprintf(f,"%sminx 50  #the bounding box\n",spc);
+		fprintf(f,"%sminx 50  #the bounding box, which should be same as the %%%%BoundingBox comment in the EPS\n",spc);
 		fprintf(f,"%sminy 50  \n",spc);
 		fprintf(f,"%smaxx 100  \n",spc);
 		fprintf(f,"%smaxy 200  \n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  #affine transform to apply to the eps\n",spc);
-		fprintf(f,"%sdesc \"Blah blah\" #a description of the eps \n",spc);
+		fprintf(f,"%sdescription \"Blah blah\" #a description of the eps \n",spc);
 		return;
 	}
 	

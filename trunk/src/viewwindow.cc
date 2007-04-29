@@ -2189,6 +2189,8 @@ ViewWindow::~ViewWindow()
  *   ybounds -100 100  # y viewport bounds
  * </pre>
  *
+ * If what==-1 return a pseudocode mockup of file format.
+ * 
  * \todo *** still need some standardizing for the little helper controls..
  * \todo *** need to dump_out the space, not just the matrix!!
  * \todo *** dump out limbo...
@@ -2197,7 +2199,19 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
-	fprintf(f,"%sdocument %s\n",spc,doc->saveas);
+	if (what==-1) {
+		fprintf(f,"%ssinglelayout  #put the view mode to singles\n",spc);
+		fprintf(f,"%s#pagelayout   #put the view mode to page spreads\n",spc);
+		fprintf(f,"%s#paperlayout  #put the view mode to paper spreads\n",spc);
+		
+		fprintf(f,"%sspread 1      #the index of the spread for the acting imposition\n",spc);
+		fprintf(f,"%spage   0      #the document page index of the page to set context to\n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform between screen and real space\n",spc);
+		fprintf(f,"%sxbounds -20 20      #what distance a horizontal scrollbar represents\n",spc);
+		fprintf(f,"%sybounds -20 20      #what distance a vertical scrollbar represents\n",spc);
+		return;
+	}
+	if (doc && doc->saveas) fprintf(f,"%sdocument %s\n",spc,doc->saveas);
 
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	int vm=vp->viewmode;

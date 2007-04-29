@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2006 by Tom Lechner
 //
 /******** stylewindow.cc **********/
 
@@ -112,6 +112,7 @@ int GenericStyleDialog::init()
 		}
 							
 		AddWin(new MessageBar(this,style->Stylename()?style->Stylename():"unknown",MB_MOVE, 0,0,0,0, 0,blah));
+		AddNull();
 		delete[] blah;
 	} else {
 		last=NULL;
@@ -210,6 +211,7 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 					 //	 [sub 2]
 					AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,
 										  sd->Name));
+					AddNull();
 					char *ext=NULL;
 					for (int c=0; c<sd->fields->n; c++) {
 						ext=new char[strlen(startext)+6];

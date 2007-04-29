@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 
 #include "project.h"
@@ -56,13 +56,30 @@ Project::~Project()
 /*! If doc->saveas in not NULL ***make sure this works right!!!
  * then assume that doc is saved in its own file. Else dump_out
  * the doc.
+ *
+ * If what==-1, then dump out a pseudocode mockup of the file format.
  */
 void Project::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%s# Documents can be included in the project file itself, or\n",spc);
+		fprintf(f,"%s# merely referenced, which is usually the more convenient way.\n",spc);
+		fprintf(f,"%s# If merely referenced, the line will look like:\n\n",spc);
+		fprintf(f,"%sDocument blah.doc\n\n",spc);
+		fprintf(f,"%s#and the file, if relative pathname is given, is relative to the project file itself.\n",spc);
+		fprintf(f,"%s#Moving on, there can be any number of Documents, in the following format:\n\n",spc);
+		fprintf(f,"%sDocument\n",spc);
+		if (docs.n) docs.e[0]->dump_out(f,indent+2,-1);
+		else {
+			Document d;
+			d.dump_out(f,indent+2,-1);
+		}
+		return;
+	}
 	if (docs.n) {
 		for (int c=0; c<docs.n; c++) {
-			fprintf(f,"%sdocument",spc);
+			fprintf(f,"%sDocument",spc);
 			if (docs.e[c]->saveas) fprintf(f," %s\n",docs.e[c]->saveas);
 			else {
 				fprintf(f,"\n");
@@ -73,14 +90,20 @@ void Project::dump_out(FILE *f,int indent,int what)
 	//*** dump_out the window configs..
 }
 
+/*! \todo *** imp me!
+ */
 void Project::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
+	cout <<"*** implement dump_in_atts(LaxFiles::Attribute *att,int flag)!!!"<<endl;
 }
 
 /*! Returns 0 for success or nonzero error.
+ *
+ * \todo ***imp me!
  */
 int Project::Load(const char *file)
 {
+	cout <<"*** implement Project::Load(const char *file)!!!"<<endl;
 	return 1;
 }
 

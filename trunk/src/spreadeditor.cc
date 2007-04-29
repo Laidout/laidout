@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /********** spreadeditor.cc *************/
 
@@ -148,22 +148,22 @@ void LittleSpread::mapConnection()
  * Left button selecting and moving usually acts on individual pages, and the middle
  * button acts on whole spreads.
  *
- * \todo *** There is much work to be done here!! I have many more features planned,
- * Do it NOW, since this is perhaps the most unique feature of Laidout!
- * 
+ * \todo *** There is much work to be done here!! I have many more features planned, Do it NOW!
  * \todo *** could allow page ranges in limbo, too.. just have the connecting lines be
- * a different color.
- * 
- * Ultimately, this should be ported to Inkscape and Scribus, ESPECially Inkscape, when the
- * SVG spec allows multiple pages which makes it fair game for Inkscape, that is..
+ *   a different color.
+ * \todo Ultimately, this should be ported to Inkscape and Scribus, ESPECially Inkscape, when the
+ *   SVG spec allows multiple pages which makes it fair game for Inkscape, that is..
  */
 /*! \var int SpreadInterface::curpage
  * \brief Index that can be used to pagelabel stack..
  */
 /*! \var int SpreadInterface::arrangetype
  * \brief How arranging should be done.
+ */
+/*! \var int SpreadInterface::centertype
+ * \brief Where page labels should be written.
  *
- * -1 means auto row or column depending on whether the window is wider or taller.
+ * \todo this could be transfered to pages on per page basis perhaps..
  */
 /*! \var int *SpreadInterface::temppagemap
  * \brief How the document's pages have been rearranged.
@@ -249,6 +249,8 @@ void SpreadInterface::Clear(LaxInterfaces::SomeData *)
  *    matrix 1 0 0 1 0 0
  * </pre>
  *
+ * If what==-1, dump out a pseudocode mockup of file format.
+ * 
  * \todo **** when modified but not applied, will save index values
  *   from modified.. needs to be a check somewhere to ask whether to
  *   apply changes before saving..
@@ -257,6 +259,15 @@ void SpreadInterface::Clear(LaxInterfaces::SomeData *)
 void SpreadInterface::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	if (what==-1) {
+		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform between screen and real space\n",spc);
+		fprintf(f,"%scenterlabels 0      #0=center, 1=bottom, 2=left, 3=top, 4=right\n",spc);
+		fprintf(f,"%sdrawthumbnails      #whether to use page thumbnails rather than a blank page outline\n",spc);
+		fprintf(f,"%sarrangetype 0       #*** this is in flux, check back later\n",spc);
+		cout <<"*** work out a good way to keep track of autoarranging in SpreadInterface" <<endl;
+		return;
+	}
 	
 	fprintf(f,"%sdocument %s\n",spc,doc->saveas);
 
@@ -327,7 +338,7 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag)
  */
 int SpreadInterface::InterfaceOn()
 {
-	for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
+	if (doc) for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
 	return 0;
 }
 
@@ -1198,7 +1209,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 //! Passes off to SpreadInterface::dump_out().
 void SpreadEditor::dump_out(FILE *f,int indent,int what)
 {
-	((SpreadInterface *)curtool)->dump_out(f,indent,0);
+	((SpreadInterface *)curtool)->dump_out(f,indent,what);
 }
 
 //! Passes off to SpreadInterface::dump_in_atts().

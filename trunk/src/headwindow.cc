@@ -22,6 +22,7 @@
 #include "commandwindow.h"
 #include "buttonbox.h"
 #include "palettes.h"
+#include "headwindow.h"
 
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
@@ -380,11 +381,34 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 
 
 //! Dump out what's in the window, and the borders.
-/*! \todo *** stacked panes
+/*! \todo *** stacked panes, simply have multiple window blocks under pane
  */
 void HeadWindow::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (what==-1) {
+		fprintf(f,"%sxywh 0 0 500 500  #The x,y,width,height of the window on the screen\n",spc);
+		fprintf(f,"%s#windows contain 1 or more panes, which contain a subwindow\n",spc);
+		fprintf(f,"%s#It is dangerous to try to construct panes yourself, because\n",spc);
+		fprintf(f,"%s#the borders must touch without gaps. The programming does not currently\n",spc);
+		fprintf(f,"%s#recover well when the panes have improper metrics.\n",spc);
+		fprintf(f,"%s#What follows is one pane for each of the installed subwindow types.\n",spc);
+		anXWindow *win;
+		DumpUtility *dump;
+		for (int c=0; c<winfuncs.n; c++) {
+			fprintf(f,"\n%spane\n",spc);
+			fprintf(f,"%s  xyxy 0 0 500 500  #xmin,ymin, and xmax,ymax of the pane\n",spc);
+			
+			win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style);
+			fprintf(f,"%s  window %s\n",spc,win->whattype());
+			dump=dynamic_cast<DumpUtility *>(win);
+			if (dump) dump->dump_out(f,indent+4,-1);
+			else fprintf(f,"%s    #this window has no setable options\n",spc);
+			delete win;
+		}
+		return;
+	}
 	
 	//anXWindow *win;
 	LaxFiles::DumpUtility *wind;

@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /********* page.cc ************/
 
@@ -542,12 +542,23 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 }
 
 //! Write out pagestyle and layers. Ignore pagenumber.
-/*! ***Each page writes out its own pagestyle.. this should probably be a reference
- * to somewhere in the file... too much duplication...
+/*!
+ * 
+ * If what==-1, then output pseudocode mockup of file format.
  */
 void Page::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	if (what==-1) {
+		fprintf(f,"%s#Pages contain layers which contain drawable objects.\n",spc);
+		fprintf(f,"%s#Layers are really just a group whose parent is a page.\n",spc);
+		fprintf(f,"%slayer\n",spc);
+		Group g;
+		g.dump_out(f,indent+2,-1);
+		return;
+	}
+	
 	fprintf(f,"%slabeltype %d\n",spc,labeltype);
 	if (pagestyle && (pagestyle->flags&PAGESTYLE_AUTONOMOUS)) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
