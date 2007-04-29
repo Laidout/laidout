@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /**************** impositions/netimposition.cc *********************/
 
@@ -617,10 +617,25 @@ int NetImposition::SpreadType(int spread)
  *    name "A dodecahedron"
  * </pre>
  * See also Net::dump_out().
+ *
+ * \todo *** dump_out what==-1 with list of built in net types
  */
 void NetImposition::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%snumpages 3   #number of pages in the document. This is ignored on readin\n",spc);
+		fprintf(f,"%sprintnet yes #whether the net lines get printed out with the page data\n",spc);
+		fprintf(f,"%snet NetType  #if NetType is a built in net, then the subattributes are not necessary\n",spc);
+		if (net) net->dump_out(f,indent+2,-1);
+		else {
+			Net n;
+			n.dump_out(f,indent+2,-1);
+		}
+		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
+		paperstyle->dump_out(f,indent+2,-1);
+		return;
+	}
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 	if (paperstyle) {
 		fprintf(f,"%sdefaultpaperstyle\n",spc);

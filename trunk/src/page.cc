@@ -13,7 +13,6 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/********* page.cc ************/
 
 
 
@@ -134,6 +133,14 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 void PageStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%swidth 8.5    #overrides the default page width\n",spc);
+		fprintf(f,"%sheight 11    #overrides the default page height\n",spc);
+		fprintf(f,"%smarginsclip  #whether the margins clip page contents\n",spc);
+		fprintf(f,"%spageclips    #whether the page outline clips page contents\n",spc);
+		fprintf(f,"%sfacingpagesbleed  #whether facing pages are allowed to bleed onto this one\n",spc);
+		return;
+	}
 	fprintf(f,"%swidth %.10g\n",spc,w());
 	fprintf(f,"%sheight %.10g\n",spc,h());
 	if (flags&MARGINS_CLIP) fprintf(f,"%smarginsclip\n",spc);
@@ -272,10 +279,27 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 
 /*! Write out marginsl/r/t/b, leftpage or rightpage, lrtb, iotb, lrio,
  * and call PageStyle::dump_out for flags, width, height.
+ *
+ * \todo when reading in, must remember to let some features be overridden,
+ *   but lrtb, iotb, etc are always set by the imposition
  */
 void RectPageStyle::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%smarginl 0  #amount in from the left or outside for a margin\n",spc);
+		fprintf(f,"%smarginr 0  #amount in from the right or inside for a margin\n",spc);
+		fprintf(f,"%smargint 0  #amount in from the top   for a margin\n",spc);
+		fprintf(f,"%smarginb 0  #amount in from the bottom for a margin\n",spc);
+		fprintf(f,"%stoppage    #page is tagged as being on the top in a spread\n", spc);
+		fprintf(f,"%sbottompage #page is tagged as being on the bottom in a spread\n", spc);
+		fprintf(f,"%sleftpage   #page is tagged as being on the left in a spread\n", spc);
+		fprintf(f,"%srightpage  #page is tagged as being on the right in a spread\n", spc);
+		fprintf(f,"%slrtb       #tag that page has left, right, top, and bottom margins\n",spc);
+		fprintf(f,"%siotb       #tag that page has inside, outside, top, and bottom margins\n",spc);
+		fprintf(f,"%slrio       #tag that page has left, right, inside, and outside margins\n",spc);
+		return;
+	}
 	fprintf(f,"%smarginl %.10g\n",spc,ml);
 	fprintf(f,"%smarginr %.10g\n",spc,mr);
 	fprintf(f,"%smargint %.10g\n",spc,mt);
