@@ -56,7 +56,7 @@ int PalettePane::send()
 		DBG cout <<"send palette color "<<c<<": "<< palette->colors.e[curcolor]->channels[c];
 		if (c<5) e.xclient.data.l[c+1]=palette->colors.e[curcolor]->channels[c];
 	}
-	for (c++; c<5; c++) e.xclient.data.l[c]=0;
+	for (c++; c<5; c++) e.xclient.data.l[c]=palette->defaultmaxcolor;
 	XSendEvent(app->dpy,laidout->lastview->window,False,0,&e);
 	return 1;
 }
