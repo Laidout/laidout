@@ -51,7 +51,7 @@ anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned lon
 {
 	Window owner=None;
 	if (laidout->lastview) owner=laidout->lastview->window;
-	PaletteWindow *palette=new PalettePane(parnt,ntitle,style, 0,0,0,0,1, NULL,owner,"change color");
+	PaletteWindow *palette=new PalettePane(parnt,ntitle,style, 0,0,0,0,1, NULL,owner,"curcolor");
 	return palette;
 }
 

@@ -483,7 +483,7 @@ int LaidoutApp::createlaidoutrc()
 					  " #specified file is loaded with the filename removed so that trying to save will\n"
 					  " #force entering a new name and location. If the file is not an absolute path,\n"
 					  " #then it is assumed to be relative to ~/laidout/(version)/templates.\n"
-					  "#default_template ./templates/default\n"
+					  "#default_template default\n"
 					  "\n"
 					  " # Some assorted directories:\n");
 			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
