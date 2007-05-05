@@ -38,8 +38,8 @@ docs:
 install: 
 	echo 'Installing to $(BINDIR)/laidout which points to $(BINDIR)/$(LAIDOUTNAME)'
 	$(INSTALL) -m755 src/laidout $(BINDIR)/$(LAIDOUTNAME)
-	$(INSTALLDIR) $(SHAREDIR)/laidout/examples
-	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/examples examples/*
+	$(INSTALLDIR) $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/examples
+	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/examples examples/*
 	$(INSTALLDIR) $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons src/icons/*.png
 	rm -f $(BINDIR)/laidout
@@ -53,7 +53,7 @@ install:
 uninstall: 
 	echo 'Uninstalling laidout.'
 	rm -f  $(BINDIR)/laidout
-	rm -fr $(SHAREDIR)/laidout
+	rm -fr $(SHAREDIR)/laidout/$(LAIDOUTVERSION)
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 
 hidegarbage: touchdepends
