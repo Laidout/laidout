@@ -11,6 +11,8 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
+// Copyright (C) 2004-2007 by Tom Lechner
+//
 
 #include "headwindow.h"
 #include "helpwindow.h"
@@ -181,6 +183,7 @@ int HelpWindow::init()
 			"  'd'    toggle decorations\n"
 			"  'h'    select all points adjacent horizontally to current points\n"
 			"  'v'    select all points adjacent vertically to current points\n"
+			"  'b'    toggle which control points are available\n"
 			"  '1'    select corners:  0,0  0,3  3,0  3,3\n"
 			"  '2'    select center controls: 1,1  1,2  2,1  2,2\n"
 			"  '3'    select edge controls: 0,1  0,2  1,0  2,0  1,3  2,3  3,1  3,2\n"

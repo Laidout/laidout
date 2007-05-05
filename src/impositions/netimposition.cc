@@ -47,6 +47,9 @@ using namespace std;
  * \todo needs a little more work to keep track of kinds of pages, especially
  *   when creating getting pagestyles for them.. if pagestyle starts having
  *   outlines, this will become important
+ * \todo the net imposition should be able to display pages as they look when
+ *   folded over.. So a 3 page spread should be able to be previewed, and the paper
+ *   must be able to be positioned independently of the net
  */
 
 

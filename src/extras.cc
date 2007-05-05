@@ -81,9 +81,11 @@ using namespace LaxInterfaces;
  *
  * \todo *** warning: no sanity checking on template is done. Assumes that a "%s" is present.
  * \todo this function must be put somewhere rational
- * \todo *** should be able to use "~/" as part of an absolute path
+ * \todo *** should be able to use "~/", indicating an absolute path
  * \todo when there is no '%' or '*', this currently does wrong for templates that have a directory component
- *   
+ * \todo this could add '@' or something to replace with md5 thingy of file.. this, if I've understood right, 
+ *   would allow easy implementation of freedesktop.org thumbnail spec, by simply creating previews in
+ *   ~/.thumbnails/normal/@.png or ~/.thumbnails/large/@.png, as well as for searching for existing previews..
  */
 char *previewFileName(const char *file, const char *nametemplate)
 {
@@ -126,6 +128,7 @@ char *previewFileName(const char *file, const char *nametemplate)
 	}
 	delete[] bname;
 	delete[] tmplate;
+	simplify_path(previewname,1);
 	return previewname;
 }
 //--------------------------
