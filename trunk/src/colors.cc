@@ -19,6 +19,8 @@
 /*! \defgroup colors Color Management
  *
  * These are functions and classes related to color management...
+ *
+ * *** please note that no kind of color management is currently functional
  */
 
  // TODO

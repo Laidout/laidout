@@ -23,8 +23,7 @@
 class ImportImagesDialog : public Laxkit::FileDialog
 {
  protected:
-	virtual int findWindowIndex(const char *name);
-	virtual Laxkit::anXWindow *findWindow(const char *name);
+	virtual void rebuildPreviewName();
  public:
 	double dpi;
 	int startpage;
