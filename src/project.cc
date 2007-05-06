@@ -34,7 +34,11 @@ using namespace std;
  *
  * Also, the Project maintains its own StyleManager***??????
  *
- * \todo *** implement filelist
+ * \todo *** implement a filelist, rather than stack of Document instances.. each filelist
+ *   element would have:
+ *     path to the document,
+ *     pointer to document if loaded,
+ *     title of document, should be same as name in document
  */
 
 

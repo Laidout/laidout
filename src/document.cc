@@ -13,7 +13,6 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/********************* document.cc *************************/
 
 #include <lax/strmanip.h>
 #include <lax/lists.cc>
@@ -95,7 +94,7 @@ void DocumentStyle::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%s#A document style has only 1 of the following impositions attached to it.\n",spc);
 		fprintf(f,"%s#These are all the impositions currently installed:\n",spc);
 		for (int c=0; c<laidout->impositionpool.n; c++) {
-			fprintf(f,"%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
+			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
 			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1);
 		}
 		return;

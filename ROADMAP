@@ -9,7 +9,7 @@ VERSION 0.07
 ------------
 (done) Have command line option to output to a file a pseudocode mockup of the file format
        EPS out booklet is broken, fix it!
-       Implement all preview config options, namely auto preview files over a certain size
+(done, after a fashion) Implement all preview config options, namely auto preview files over a certain size
        Be able to search for existing previews in ~/.thumbnails/large and normal
        Make the select by dragging out a rectangle work
        Fix multi-object selection move when crossing page boundaries
@@ -34,6 +34,7 @@ VERSION 0.08
        Selected region out to image(s)
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Tools should remember their settings
+       Clean up image import dialog, and have some similar options in insert image and image properties diags.
 
 
 VERSION 0.1 
