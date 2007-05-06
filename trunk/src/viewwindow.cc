@@ -906,6 +906,7 @@ int LaidoutViewport::SelectObject(int i)
  *
  * If d!=NULL, then try to make that object the current object. It must be within
  * the current spread somewhere. If d==NULL, then the same goes for where oc points to.
+ * The first interface to report being able to handle d->whattype() will be activated.
  *
  * Returns 1 for current object changed, otherwise 0 for not changed or d not found.
  *
@@ -1890,7 +1891,9 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 	if (ViewportWindow::CharInput(ch,state)==0) return 0;
 
 	 // deal with all other LaidoutViewport specific stuff
-	if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
+	if (ch=='0' &&  (state&LAX_STATE_MASK)==0) {
+		//*** activate GroupInterface?
+	} else if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
 		if (!DeleteObject()) return 1;
 		return 0;
 	} else if (ch=='s' && (state&LAX_STATE_MASK)==0) {

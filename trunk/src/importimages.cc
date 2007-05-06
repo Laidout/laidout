@@ -18,12 +18,14 @@
 #include "laidout.h"
 #include "extras.h"
 #include <lax/checkbox.h>
+#include <lax/fileutils.h>
 
 #include <iostream>
 using namespace std;
 #define DBG 
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
 
 /*! \class ImportImagesDialog
@@ -173,6 +175,14 @@ int ImportImagesDialog::init()
 				  "% gets replaced with the file name without the final suffix (\"file\")\n");
 	AddWin(linp);
 	AddNull();
+	
+	last=linp=new LineInput(this,"PreviewWidth",0, 0,0,0,0,0, last,window,"previewwidth",
+						"Default max width for new previews:",NULL,0,
+						0,0,2,2,2,2);
+	linp->GetLineEdit()->SetText(laidout->max_preview_length);
+	linp->tooltip("Any newly generated previews must fit\nin a square this many pixels wide");
+	AddWin(linp);
+	AddNull();
 	 
 	last=check=new CheckBox(this,"autopreview",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
 						last,window,"autopreview", "Make previews for files larger than",5,5);
@@ -229,6 +239,8 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//***should gray and ungray the previews for over size
 	} else if (!strcmp(mes,"mintopreview")) {
 	} else if (!strcmp(mes,"previewbase")) {
+	} else if (!strcmp(mes,"generate")) {
+		 //**** must generate what is in preview for file
 	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
 		rebuildPreviewName();
 	}
@@ -260,11 +272,48 @@ void ImportImagesDialog::rebuildPreviewName()
 	delete[] prev;
 }
 
+//! Convert things like "24kb" and "3M" to kb.
+/*! "never" gets translated to INT_MAX. "34" becomes 34 kilobytes
+ *
+ * Return 0 for success or nonzero for unknown.
+ */
+int str_to_byte_size(const char *s, long *ll)
+{
+	char *str=newstr(s);
+	stripws(str);
+	if (!strcasecmp(str,"never")) {
+		delete[] str;
+		if (ll) *ll=INT_MAX;
+		return 0;
+	}
+	char *e;
+	long l=strtol(str,&e,10);
+	if (e==str) {
+		delete[] str;
+		return 1;
+	}
+	while (isspace(*e)) e++;
+	if (*e) {
+		if (!strcasecmp(e,"m")) l*=1024;
+		else if (!strcasecmp(e,"g")) l*=1024*1024;
+		else if (!strcasecmp(e,"kb")) ;
+		else {
+			delete[] str;
+			return 2;
+		}
+	}
+	delete[] str;
+	if (ll) *ll=l;
+	return 0;
+}
+
 //! Instead of sending the file name(s) to owner, call dump_images directly.
 /*! Returns 0 if nothing done. Else nonzero.
  *  
  *  \todo on success, should probably send a status message to whoever called up
  *    this dialog? right now it only knows doc, not a specific location
+ *  \todo implement preview base as list of possible preview bases and search
+ *    mechanism, that is, by file, or by freedesktop thumbnail spec, kphotoalbum thumbs, etc
  */
 int ImportImagesDialog::send()
 {
@@ -301,7 +350,7 @@ int ImportImagesDialog::send()
 		char *blah=path->GetText();
 		if (blah[strlen(blah)]!='/') appendstr(blah,"/");
 		appendstr(blah,file->GetCText());
-		if (!strcmp(blah,"")) { //***** should sanity check better! whitespace not allowed!
+		if (isblank(blah)) { //******** need better sanity checking here
 			delete[] blah;
 			deletestrs(imagefiles,1);
 			deletestrs(previewfiles,1);
@@ -311,9 +360,29 @@ int ImportImagesDialog::send()
 	}
 
 	 //generate standard preview files to search for
-	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+	LineInput *templi,*prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
 	for (int c=0; c<n; c++) {
 		previewfiles[c]=previewFileName(imagefiles[c],prevbase->GetCText());
+		if (!file_exists(previewfiles[c],1,NULL)) {
+			if (dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON) {
+
+				long si,
+					 s=file_size(imagefiles[c],1,NULL);
+				templi=dynamic_cast<LineInput *>(findWindow("MinSize"));			
+				str_to_byte_size(templi->GetCText(), &si);
+				if (s>si) {
+					DBG cout <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
+					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
+					if (si<10) si=128;
+					if (generate_preview_image(imagefiles[c],previewfiles[c],si,si,1)) {
+						DBG cout <<"              ***generate preview failed....."<<endl;
+					}
+				}
+			} else {
+				delete[] previewfiles[c];
+				previewfiles[c]=NULL;
+			}
+		}
 	}
 	startpage=dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(NULL);
 	dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetLong(NULL);
