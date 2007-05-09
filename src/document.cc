@@ -81,7 +81,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
  * <pre>
  *  Imposition Singles
  *    ...
- * <pre>
+ * </pre>
  *
  * Calls imposition->dump(f,indent+2,0).
  *

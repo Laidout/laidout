@@ -3,13 +3,9 @@
 
 \section Overall Overall...
 <pre>
- for many of the 'local' tags, perhaps should use them ONLY on creation, to create a brand
-   new instance, but then still dec_count() when deleting in either case...
 
  in configure, should check to see that gs is actually executable?
 
- for sarge, there's a problem with ImagePatch, for some reason, there are artifacts
-   to window pos 0,0 along one edge.. these do not show on unstable..
 
  enhance SpreadEditor:
    eject in addition to swap and slide,
@@ -24,9 +20,13 @@
    then edit the file, then load
  pdf out
  
+
 NEED major overhaul of the rendering, which should allow among other things
 output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
  
+
+for postscript simulation of transparent objects, should dither a bitmask!
+get on this! 
 
 startup new document dialog using templates, which can be in various stages of 
 specificity. So one might have letter on orange cardstock, another might be

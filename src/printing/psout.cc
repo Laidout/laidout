@@ -622,7 +622,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
-		if (doc->docstyle->imposition->paperstyle->flags&1) {
+		if (layouttype==PAPERLAYOUT && doc->docstyle->imposition->paperstyle->flags&1) {
 			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
 			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
 		}
