@@ -39,6 +39,8 @@ using namespace std;
  *     path to the document,
  *     pointer to document if loaded,
  *     title of document, should be same as name in document
+ *     count of links to the document. when count==only 1 for project, then
+ *       unload the document
  */
 
 
