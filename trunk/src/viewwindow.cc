@@ -2523,26 +2523,26 @@ int ViewWindow::init()
 //	AddWin(loaddir,150,0,50,250, loaddir->win_h,0,50,50);
 	
 
-	var1=new NumInputSlider(this,"var1",NUMSLIDER_WRAP, 0,0,0,0,1, 
-								NULL,window,"var1",
-								NULL,-10000,100000,1);
-	var1->tooltip("Number of images per page for import,\n"
-				  "-1=as many as possible,\n"
-				  "-2=all one current page\n"
-				  "Shift-click to type a number");
-	AddWin(var1,var1->win_w,0,50,50, var1->win_h,0,50,50);
-	
-	var2=new NumInputSlider(this,"var2",NUMSLIDER_WRAP, 0,0,0,0,1, 
-								NULL,window,"var2",
-								NULL,-10000,100000,360);
-	var2->tooltip("Default dpi of images imported.\nShift-click to type a number");
-	AddWin(var2,var2->win_w,0,50,50, var2->win_h,0,50,50);
-	
-	var3=new NumInputSlider(this,"var3",NUMSLIDER_WRAP, 0,0,0,0,1, 
-								NULL,window,"var3",
-								NULL,-10000,100000,1);
-	var3->tooltip("(undefined)");
-	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
+//	var1=new NumInputSlider(this,"var1",NUMSLIDER_WRAP, 0,0,0,0,1, 
+//								NULL,window,"var1",
+//								NULL,-10000,100000,1);
+//	var1->tooltip("Number of images per page for import,\n"
+//				  "-1=as many as possible,\n"
+//				  "-2=all one current page\n"
+//				  "Shift-click to type a number");
+//	AddWin(var1,var1->win_w,0,50,50, var1->win_h,0,50,50);
+//	
+//	var2=new NumInputSlider(this,"var2",NUMSLIDER_WRAP, 0,0,0,0,1, 
+//								NULL,window,"var2",
+//								NULL,-10000,100000,360);
+//	var2->tooltip("Default dpi of images imported.\nShift-click to type a number");
+//	AddWin(var2,var2->win_w,0,50,50, var2->win_h,0,50,50);
+//	
+//	var3=new NumInputSlider(this,"var3",NUMSLIDER_WRAP, 0,0,0,0,1, 
+//								NULL,window,"var3",
+//								NULL,-10000,100000,1);
+//	var3->tooltip("(undefined)");
+//	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
 	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
 			laidout->icons.GetIcon("Help"),"Help!");
@@ -2575,6 +2575,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		updateContext();
 		return c;
 	} else if (!strcmp(mes,"import new image")) {
+		 //*** not this is currently not used...
 		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
@@ -3063,6 +3064,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (oldimage) delete[] oldimage;
 		return 0;
 	} else if (!strcmp(mes,"dumpInImages")) {
+		 //*** not this is currently not used...
 		//DBG cout <<" --- dumpInImages...."<<endl;
 		dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
 		pagenumber->NewMinMax(0,doc->pages.n-1);
