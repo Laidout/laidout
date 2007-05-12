@@ -120,6 +120,8 @@ int HelpWindow::init()
 			"   'm'       move current selection to another page, pops up a dialog ***imp me!\n"
 			"   ' '       center the spread\n"
 			"   +' '      center the page\n"
+			"   '='       zoom in around mouse\n"
+			"   '-'       zoom out around mouse\n"
 			"\n"
 			"    // these are like inkscape:\n"
 			"   pgup      raise selection by 1 within layer\n"
