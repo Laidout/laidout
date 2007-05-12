@@ -17,7 +17,7 @@
 #include <lax/strmanip.h>
 #include <lax/lists.cc>
 #include "document.h"
-#include "saveppt.h"
+#include "filetypes/ppt.h"
 #include "printing/psout.h"
 #include "version.h"
 #include <lax/attributes.h>
@@ -304,7 +304,7 @@ char *letter_numeral(int i,char cap)
 	d[1]='\0';
 	while (i>0) { 
 		d[0]=i%26+'a'; 
-		appendstr(n,d,1); //prepends
+		prependstr(n,d);
 		i/=26; 
 	}
 

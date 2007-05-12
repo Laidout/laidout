@@ -31,7 +31,6 @@ objs= \
 	helpwindow.o \
 	newdoc.o \
 	objectcontainer.o \
-	saveppt.o \
 	viewwindow.o \
 	palettes.o \
 	extras.o \
@@ -43,11 +42,11 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) dataobjects printing impositions 
-	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
-			-llaxinterfaces -llaxkit -o $@
-#	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o \
-#			-llaxinterfaces -llaxkit -o $@
+laidout: lax laxinterface $(objs) dataobjects printing impositions filetypes
+	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o filetypes/*.o \
+			-llaxinterfaces -llaxkit -lssl -o $@
+#	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o filetypes/*.o \
+#			-llaxinterfaces -llaxkit -lssl -o $@
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
@@ -59,6 +58,7 @@ hidegarbage:
 	cd printing && $(MAKE) hidegarbage
 	cd impositions && $(MAKE) hidegarbage
 	cd dataobjects && $(MAKE) hidegarbage
+	cd filetypes && $(MAKE) hidegarbage
 
 # This changes in *.cc all occurrences of 
 # '(whitespace)//DBG' to '(same ws)DBG'.
@@ -67,6 +67,7 @@ unhidegarbage:
 	cd printing && $(MAKE) unhidegarbage
 	cd impositions && $(MAKE) unhidegarbage
 	cd dataobjects && $(MAKE) unhidegarbage
+	cd filetypes && $(MAKE) unhidegarbage
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
@@ -88,8 +89,12 @@ depends:
 	cd printing && $(MAKE) depends
 	cd impositions && $(MAKE) depends
 	cd dataobjects && $(MAKE) depends
+	cd filetypes && $(MAKE) depends
 
 include makedepend
+
+filetypes: 
+	cd filetypes && $(MAKE)
 
 printing: 
 	cd printing && $(MAKE)
@@ -100,10 +105,11 @@ impositions:
 dataobjects: 
 	cd dataobjects && $(MAKE)
 
-.PHONY: clean lax docs printing impositions hidegarbage unhidegarbage dataobjects
+.PHONY: clean lax docs printing impositions hidegarbage unhidegarbage dataobjects filetypes
 clean:
 	rm -f laidout *.o
 	cd printing && $(MAKE) clean
 	cd impositions && $(MAKE) clean
 	cd dataobjects && $(MAKE) clean
+	cd filetypes && $(MAKE) clean
 	

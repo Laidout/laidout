@@ -48,6 +48,10 @@
 #include <lax/fileutils.h>
 #include <dirent.h>
 
+ //for freedesktop thumbnail md5 names:
+#include <openssl/evp.h>
+#include <openssl/md5.h>
+
 
 #include <iostream>
 using namespace std;
@@ -62,30 +66,33 @@ using namespace LaxInterfaces;
 
 
 //*****************-----------------------put this somewhere else
-//! Create a preview file name based on a name template.
+//! Create a preview file name based on a name template and the absolute path in file.
 /*! \ingroup misc
  *
+ * An initial "~/" will expand to the user's $HOME environment variable.
+ * 
  * From something like "%-s.png", transform a file like "/blah/2/file.tiff"
  * to "/blah/2/file-s.png". The template can be an absolute path, or relative.
  * If not in same dir as the image, then it is ok to have a relative path from there,
  * such as "../thumbs/%-s.png". If the template is "/tmp/thumbs/%-s.png", then that
  * absolute path is used. A template like "*.jpg" uses the whole filename, so
- * file.tiff would become "file.tiff.jpg".
+ * file.tiff would become "file.tiff.jpg". 
  *
- * It is assumed there is only one '%' or '*'. More than one will be removed from the name.
- * If there is neither a % nor a *, then assume nametemplate is just a suffix to tack onto
- * file.
+ * Also, nametemplate may have '@', which will be replaced by the name adhering to the  
+ * freedesktop.org thumbnail management specification, which calls for having 128x128 or smaller previews
+ * in ~/.thumbnails/normal/@, and up to 256x256 in ~/.thumbnails/large/@.
+ *   
+ * There should be only one of '%', '@' or '*'. Any such characters ofter the first one
+ * will be replaced by a '-' character. If there are none of those characters, then assume
+ * nametemplate is just a prefix to tack onto file, thus "path/to/file.jpg" with a template of
+ * "blah." will return "path/to/blah.file.jpg". In this case if there are further '/' chars 
+ * in nametemplate, they are converted to '-' chars, so just be sure to include a proper wildcard.
  *
  * Note that this does not check the filesystem for existence or not of the generated preview
  * name. Those duties lie elsewhere.
  *
- * \todo *** warning: no sanity checking on template is done. Assumes that a "%s" is present.
  * \todo this function must be put somewhere rational
- * \todo *** should be able to use "~/", indicating an absolute path
- * \todo when there is no '%' or '*', this currently does wrong for templates that have a directory component
- * \todo this could add '@' or something to replace with md5 thingy of file.. this, if I've understood right, 
- *   would allow easy implementation of freedesktop.org thumbnail spec, by simply creating previews in
- *   ~/.thumbnails/normal/@.png or ~/.thumbnails/large/@.png, as well as for searching for existing previews..
+ * \todo *** maybe should do check to make sure file is an absolute path...
  */
 char *previewFileName(const char *file, const char *nametemplate)
 {
@@ -95,35 +102,56 @@ char *previewFileName(const char *file, const char *nametemplate)
 	if (!b) return NULL;
 
 	char *path;
-	char *bname=newstr(b);
+	char *bname;
 
 	 //fix up nametemplate
 	char *tmplate=new char[strlen(nametemplate)+5];
 	strcpy(tmplate,nametemplate);
 	
-	path=strchr(tmplate,'%');
-	if (path) { //chop suffix
-		replace(tmplate,"%s",path-tmplate,path-tmplate,NULL);
-		path=strrchr(bname,'.');
-		if (path && path!=bname) *path='\0';
-	} else {
-		path=strchr(tmplate,'*');
-		if (path) {
-			replace(tmplate,"%s",path-tmplate,path-tmplate,NULL);
-		} else {
-			 // tmplate had neither a % nor a *
-			path=strrchr(tmplate,'/');
-			if (path) appendstr(tmplate,"%s");//***this is a hack!
-			else appendstr(tmplate,"%s",1);//prepends
+	 //set bname to the thing to be placed in the template wildcard
+	 //and replace the wildcard in tmplate with "%s" to be used in 
+	 //later sprintf
+	char *tmp=strpbrk(tmplate,"%*@");
+	if (tmp) {
+		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);
+		if (*tmp=='@') {
+			 //bname gets something like "83ab3492fa02f3bcd23829eaf2837243.png"
+			//*******note if file is not an absolute path, this will crash
+			char *str=file_to_uri(file);
+			char *h;
+			unsigned char md[17];
+			bname=new char[40];
+			
+			MD5((unsigned char *)str, strlen(str), md);
+			h=bname;
+			for (int c2=0; c2<16; c2++) {
+				sprintf(h,"%x",(int)md[c2]);
+				h+=2;
+			}
+			strcat(bname,".png");
+			delete[] str;
+		} else if (*tmp=='%') { //chop suffix in bname
+			bname=newstr(b);
+			tmp=strrchr(bname,'.');
+			if (tmp && tmp!=bname) *tmp='\0';
+		} else { //'*'
+			bname=newstr(b);
 		}
+	} else { //no "%*@" found
+		while (tmp=strchr(tmplate,'/'),tmp) *tmp='-';
+		bname=newstr(b);
+		appendstr(tmplate,"%s");
 	}
+	 //remove extraneous wildcard chars
+	while (tmp=strpbrk(tmplate,"%*@"),tmp) *tmp='-';
 	
+	if (tmplate[0]=='~' && tmplate[1]=='/') expand_home(tmplate,1);
 	if (tmplate[0]!='/') path=lax_dirname(file,1); else path=NULL;
 		
 	char *previewname=new char[strlen(bname)+strlen(tmplate)];
 	sprintf(previewname,tmplate,bname);
 	if (path) {
-		appendstr(previewname,path,1);
+		prependstr(previewname,path);
 		delete[] path;
 	}
 	delete[] bname;

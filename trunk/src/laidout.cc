@@ -189,8 +189,8 @@ int laidout_preview_maker(const char *original, const char *preview, int width, 
  * \todo *** imp me! Maybe: create laidoutrc->temp_dir/pid, then upon program termination
  *   or completion, delete that directory.
  */
-/*! \var char *LaidoutApp::preview_file_base
- * \brief The template used to name preview files for images.
+/*! \var Laxkit::PtrStack<char> LaidoutApp::preview_file_bases
+ * \brief The templates used to name preview files for images.
  *
  * When Laidout generates new preview images for existing image files,
  * the original suffix for the image file is stripped and inserted
@@ -203,7 +203,15 @@ int laidout_preview_maker(const char *original, const char *preview, int width, 
  * If the base is ".laidout-*.jpg", using a '*' rather than a '%', when
  * the full filename is substituted, rather than just the basename.
  *
- * \todo be able to create preview files of different types by default...
+ * A '@' will expand to the freedesktop.org thumbnail management spec, namely
+ * the md5 digest of "file:///path/to/file", with ".png" added to the end.
+ * This can be used to search in "~/.thumbnails/large/@ and "~/.thumbnails/normal/@".
+ * 
+ * \todo be able to create preview files of different types by default... Should be able
+ *   to more fully suggest preview generation perhaps? The thing with '@' is a little
+ *   hacky maybe. Should be able to select something equivalent to 
+ *   "Search by freedesktop thumb spec" which would automatically search both the large
+ *   and normal dirs.. that also affects default max width for previews......
  */ 
 /*! \var int LaidoutApp::preview_over_this_size
  * \brief The file size in kilobytes over which preview images should be used where possible.
@@ -213,7 +221,7 @@ int laidout_preview_maker(const char *original, const char *preview, int width, 
 //! Laidout constructor, just inits a few variables to 0.
 /*! 
  */
-LaidoutApp::LaidoutApp() : anXApp()
+LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 {	
 	config_dir=newstr(getenv("HOME"));
 	appendstr(config_dir,"/.laidout/");
@@ -233,7 +241,7 @@ LaidoutApp::LaidoutApp() : anXApp()
 	default_template=NULL;
 	
 	preview_over_this_size=250; 
-	preview_file_base=newstr(".laidout-%.jpg");
+	preview_file_bases.push(newstr(".laidout-%.jpg"));
 	max_preview_length=200;
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
@@ -467,9 +475,15 @@ int LaidoutApp::createlaidoutrc()
 					  " #directory of the original file. The '*' stands for the entire original filename.\n"
 					  " #The final example is an absolute path, and will try to create all preview files\n"
 					  " #in that place, in this case, it would try ~/laidout/tmp/filename.tiff.jpg.\n"
-					  "#defaultPreviewName %%-s.jpg\n"
-					  "#defaultPreviewName .laidout-previews/*.jpg\n"
-					  "#defaultPreviewName ~/.laidout/tmp/*.jpg\n"
+					  " #A '@' will expand to the freedesktop.org thumbnail management defined md5\n"
+					  " #representation of the original file. In other words, ~/.thumbnails/large/@\n"
+					  " #is a valid preview name. When you have many previewName, then all are selectable\n"
+					  " #in various dialogs, and the first one is the default.\n"
+					  "#previewName %%-s.jpg\n"
+					  "#previewName .laidout-previews/*.jpg\n"
+					  "#previewName ~/.laidout/tmp/*.jpg\n"
+					  "#previewName ~/.thumbnails/large/@    #these two cover all the current freedesktop\n"  
+					  "#previewName ~/.thumbnails/normal/@   #thumbnail locations\n"
 					  "\n"
 					  "\n# The maximum width or height for preview images\n"
 					  "#maxPreviewLength 200\n"
@@ -572,8 +586,8 @@ int LaidoutApp::readinLaidoutDefaults()
 		} else if (!strcmp(name,"temporaryPreviews")) {
 			preview_transient=BooleanAttribute(value);
 		
-		} else if (!strcmp(name,"defaultPreviewName")) {
-			makestr(preview_file_base,value);
+		} else if (!strcmp(name,"previewName")) {
+			preview_file_bases.push(newstr(value));
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
@@ -761,10 +775,10 @@ char *LaidoutApp::full_path_for_resource(const char *name,char *dir)//dir=NULL
 	} else {
 		 // else is a name
 		if (dir) {
-			appendstr(fullname,"/",1);
-			appendstr(fullname,dir,1);
-			appendstr(fullname,"/",1);
-			appendstr(fullname,config_dir,1);
+			prependstr(fullname,"/");
+			prependstr(fullname,dir);
+			prependstr(fullname,"/");
+			prependstr(fullname,config_dir);
 		} 
 		full_path_for_file(fullname,NULL,0);
 		if (readable_file(fullname)) return fullname;

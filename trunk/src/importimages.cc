@@ -19,6 +19,7 @@
 #include "extras.h"
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
+#include <lax/menubutton.h>
 
 #include <iostream>
 using namespace std;
@@ -168,12 +169,23 @@ int ImportImagesDialog::init()
 	
 	 //------------------------ preview options ----------------------
 	last=linp=new LineInput(this,"PreviewBase",0, 0,0,0,0,0, last,window,"previewbase",
-						"Default name for previews:",laidout->preview_file_base,0,
+						"Default name for previews:",
+						laidout->preview_file_bases.n?laidout->preview_file_bases.e[0]:".laidout.%.jpg",0,
 						0,0,2,2,2,2);
 	linp->tooltip("For file.jpg,\n"
 				  "* gets replaced with the original file name (\"file.jpg\"), and\n"
 				  "% gets replaced with the file name without the final suffix (\"file\")\n");
 	AddWin(linp);
+	MenuInfo *menu=new MenuInfo("Preview Bases");
+	for (c=0; c<laidout->preview_file_bases.n; c++) {
+		menu->AddItem(laidout->preview_file_bases.e[c],c);
+	}
+	MenuButton *menub=new MenuButton(this,"PreviewBase",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
+									 last,window,"previewbasemenu",0,
+									 menu,1,
+									 (const char *)NULL,"v");
+	menub->tooltip("Select from the available preview bases");
+	AddWin(menub);
 	AddNull();
 	
 	last=linp=new LineInput(this,"PreviewWidth",0, 0,0,0,0,0, last,window,"previewwidth",
@@ -239,6 +251,11 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//***should gray and ungray the previews for over size
 	} else if (!strcmp(mes,"mintopreview")) {
 	} else if (!strcmp(mes,"previewbase")) {
+	} else if (!strcmp(mes,"previewbasemenu")) {
+		if (e->data.l[0]>=0 && e->data.l[0]<laidout->preview_file_bases.n) {
+			LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+			prevbase->SetText(laidout->preview_file_bases.e[e->data.l[0]]);
+		}
 	} else if (!strcmp(mes,"generate")) {
 		 //**** must generate what is in preview for file
 	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change

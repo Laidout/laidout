@@ -17,10 +17,13 @@
 
 #include <lax/interfaces/imageinterface.h>
 #include <lax/transformmath.h>
-#include "saveppt.h"
+#include <lax/attributes.h>
+#include "ppt.h"
 #include <iostream>
+
 using namespace std;
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -107,4 +110,19 @@ int pptout(Document *doc)
 	fclose(f);
 	return 0;
 	
+}
+
+//! Import a Passepartout file.
+/*! If doc!=NULL, then import the pptout files to Document starting at page startpage.
+ * Otherwise, create a brand new Singles based document.
+ */
+Document *pptin(const char *file,Document *doc,int startpage)
+{
+	cout <<"***imp pptin(Document *doc,int startpage)!!"<<endl;
+
+	//if (!doc) doc=new Document(***);
+	//Attribute *att=XMLFileToAttribute(NULL,file,NULL);
+
+	//return doc;
+	return NULL;
 }

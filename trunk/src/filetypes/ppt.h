@@ -16,9 +16,10 @@
 #ifndef SAVEPPT_H
 #define SAVEPPT_H
 
-#include "document.h"
+#include "../document.h"
 
 int pptout(Document *doc);
+Document *pptin(const char *file,Document *doc,int startpage);
 
 #endif
 	

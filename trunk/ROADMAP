@@ -8,22 +8,23 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.07
 ------------
 (done) Have command line option to output to a file a pseudocode mockup of the file format
-       EPS out booklet is broken, fix it!
+(done) EPS out booklet landscape is broken, fix it!
 (done, after a fashion) Implement all preview config options, namely auto preview files over a certain size
        Be able to search for existing previews in ~/.thumbnails/large and normal
        Make the select by dragging out a rectangle work
        Fix multi-object selection move when crossing page boundaries
-       Image and Color patches, gradients, etc should have vastly better interfaces
+(done) Linear and radial Gradients should have vastly better interfaces
+       Image and Color patches should have vastly better interfaces
        Image and Color patches, gradients, etc should allow transparent colors
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        PDF out
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        Gui for modifying Page Labels
        Net imposition interactive unwrapper
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
-         (it is somewhere in imposition classes, something to do with PageStyles)
+         (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips occasionally
+       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
        figure out how to sign deb packages when creating them
 
 
@@ -33,7 +34,7 @@ VERSION 0.08
        Print/export to images
        Selected region out to image(s)
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
-       Tools should remember their settings
+       Tools should remember their settings, dialogs should remember their placements
        Clean up image import dialog, and have some similar options in insert image and image properties diags.
 
 
@@ -52,6 +53,7 @@ VERSION 0.1
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        group combine properties, like most importantly transparency
+       for plain postscript, there's bitmask, but no transparency. should optionally do simulation with dithered bitmask
        Make the button box actually function
        Configurable icon panel/menu system
        Linear (including curvilinear) guides
@@ -67,11 +69,11 @@ VERSION 0.1
        undo/redo
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,
        allow for easy method for runaround area determination
-       Full color management implemented, with up to 16 bit per channel color
-       a real PrintDialog
+       Full color management implemented, with up to at least 16 bit per channel color
+       a real PrintDialog that can configure itself based on ppds
        Generic style edit window
        Make commands actually available in the command prompt window
-       non-hacky new document box
+       non-hacky new document box that can understand ppds
        all things must define their styledefs
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
@@ -92,6 +94,7 @@ VERSION 0.1
        Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
        Non-polygonal pages, to allow nets for shapes resulting from intersecting cylinders, for instance
        Optional Midi controller usage
+       Able to select and transform nodes from different objects at the same time
 
 
 VERSION 0.2
@@ -120,7 +123,8 @@ Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend
 Vx (aka uberconvertor) support?
 Verse support?
-Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?)
+Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.7 or something can embed rotatable 3-d
+Perhaps have animation support/mode, 1 page=1 frame
 
 
 VERSION 0.3
