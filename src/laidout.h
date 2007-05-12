@@ -68,7 +68,7 @@ class LaidoutApp : public Laxkit::anXApp
 	
 	char preview_transient;
 	int preview_over_this_size;
-	char *preview_file_base;
+	Laxkit::PtrStack<char>preview_file_bases;
 	int max_preview_length, max_preview_width, max_preview_height;
 
 	char *default_template;

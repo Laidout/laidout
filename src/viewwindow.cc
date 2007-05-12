@@ -3030,7 +3030,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 					0,0,500,500,0, window,"import new image",
 					NULL,NULL,NULL,
-					doc,0,var2->Value()));
+					doc,0,doc->docstyle->imposition->paperstyle->dpi));
 		//app->rundialog(new FileDialog(NULL,"Import Image",
 		//			ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 		//			0,0,500,500,0, window,"import new image"));
