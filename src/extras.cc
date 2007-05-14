@@ -93,6 +93,7 @@ using namespace LaxInterfaces;
  *
  * \todo this function must be put somewhere rational
  * \todo *** maybe should do check to make sure file is an absolute path...
+ * \todo **** should probably keep relative templates as relative files...
  */
 char *previewFileName(const char *file, const char *nametemplate)
 {
@@ -101,8 +102,8 @@ char *previewFileName(const char *file, const char *nametemplate)
 	const char *b=lax_basename(file);
 	if (!b) return NULL;
 
-	char *path;
-	char *bname;
+	char *path=NULL;
+	char *bname=NULL;
 
 	 //fix up nametemplate
 	char *tmplate=new char[strlen(nametemplate)+5];
@@ -113,8 +114,13 @@ char *previewFileName(const char *file, const char *nametemplate)
 	 //later sprintf
 	char *tmp=strpbrk(tmplate,"%*@");
 	if (tmp) {
+		char c=*tmp;
 		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);
-		if (*tmp=='@') {
+
+		 //remove extraneous wildcard chars
+		while (tmp=strpbrk(tmp+1,"%*@"),tmp) *tmp='-';
+		
+		if (c=='@') {
 			 //bname gets something like "83ab3492fa02f3bcd23829eaf2837243.png"
 			//*******note if file is not an absolute path, this will crash
 			char *str=file_to_uri(file);
@@ -125,12 +131,12 @@ char *previewFileName(const char *file, const char *nametemplate)
 			MD5((unsigned char *)str, strlen(str), md);
 			h=bname;
 			for (int c2=0; c2<16; c2++) {
-				sprintf(h,"%x",(int)md[c2]);
+				sprintf(h,"%02x",(int)md[c2]);
 				h+=2;
 			}
 			strcat(bname,".png");
 			delete[] str;
-		} else if (*tmp=='%') { //chop suffix in bname
+		} else if (c=='%') { //chop suffix in bname
 			bname=newstr(b);
 			tmp=strrchr(bname,'.');
 			if (tmp && tmp!=bname) *tmp='\0';
@@ -142,8 +148,6 @@ char *previewFileName(const char *file, const char *nametemplate)
 		bname=newstr(b);
 		appendstr(tmplate,"%s");
 	}
-	 //remove extraneous wildcard chars
-	while (tmp=strpbrk(tmplate,"%*@"),tmp) *tmp='-';
 	
 	if (tmplate[0]=='~' && tmplate[1]=='/') expand_home(tmplate,1);
 	if (tmplate[0]!='/') path=lax_dirname(file,1); else path=NULL;

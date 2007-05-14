@@ -10,38 +10,41 @@ VERSION 0.07
 (done) Have command line option to output to a file a pseudocode mockup of the file format
 (done) EPS out booklet landscape is broken, fix it!
 (done, after a fashion) Implement all preview config options, namely auto preview files over a certain size
+       Clean up image import dialog, and have some similar options in insert image and image properties diags.
        Be able to search for existing previews in ~/.thumbnails/large and normal
        Make the select by dragging out a rectangle work
        Fix multi-object selection move when crossing page boundaries
 (done) Linear and radial Gradients should have vastly better interfaces
        Image and Color patches should have vastly better interfaces
-       Image and Color patches, gradients, etc should allow transparent colors
-       PDF out
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        Gui for modifying Page Labels
-       Net imposition interactive unwrapper
+       Net imposition interactive unwrapper and paper tiler
+       PDF out
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-       from laxkit: fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
+(done, but only because I can't reproduce it any more for some mysterious reason) from laxkit: 
+           fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
        figure out how to sign deb packages when creating them
 
 
 VERSION 0.08
 ------------
+       Image and Color patches, gradients, etc should allow transparent colors
+       Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        Export as a Scribus document
        Print/export to images
        Selected region out to image(s)
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Tools should remember their settings, dialogs should remember their placements
-       Clean up image import dialog, and have some similar options in insert image and image properties diags.
+       NetImposition needs import/export net, build net
 
 
 VERSION 0.1 
 -----------
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
+       Export to various things or print from command line: batch processing
        Of course, need copious testing by people who are not me.
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
@@ -53,7 +56,7 @@ VERSION 0.1
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        group combine properties, like most importantly transparency
-       for plain postscript, there's bitmask, but no transparency. should optionally do simulation with dithered bitmask
+       for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
        Make the button box actually function
        Configurable icon panel/menu system
        Linear (including curvilinear) guides
@@ -64,7 +67,6 @@ VERSION 0.1
        Seriously optimize the whole ImagePatchData stuff
        Have imagepatch be a transform you can apply to any image
        Allow objects to have any number of various kinds of transforms applied to it
-       NetImposition needs much beefing up: import/export net, build net
        Fully configurable shortcuts, with optional multi-key shortcuts
        undo/redo
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,
@@ -123,11 +125,12 @@ Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend
 Vx (aka uberconvertor) support?
 Verse support?
-Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.7 or something can embed rotatable 3-d
-Perhaps have animation support/mode, 1 page=1 frame
+Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
+Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
+a FlexibleImposition for html/streamed output target?
 
 
-VERSION 0.3
+VERSION 1.0
 -----------
 End world hunger
 Stabilize the biosphere

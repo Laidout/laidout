@@ -940,8 +940,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!paper) paper=papersizes.e[0];
 	unsigned int flags=paper->flags;
 	paper->flags=(paper->flags&~1)|landscape;
-	if (paper) imp->SetPaperSize(paper); // makes a duplicate of paper
-	else imp->SetPaperSize(papersizes.e[0]);
+	imp->SetPaperSize(paper); // makes a duplicate of paper
 	if (numpages==0) numpages=1;
 	imp->NumPages(numpages);
 	paper->flags=flags;

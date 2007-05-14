@@ -2377,6 +2377,15 @@ int ViewWindow::init()
 		win_sizehints->flags=USPosition|USSize;
 	}
 	
+//	 //add a menu button thingy in corner between rulers
+//	**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
+//	**** mostly same as would be in right-click in viewport.....	
+//	MenuButton *menub=new MenuButton(this,"rulercornerbutton",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
+//									 NULL,window,"rulercornerbutton",0,
+//									 menu,1,
+//									 (const char *)NULL,"v");
+//	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
+	
 	AddNull();//makes the status bar take up whole line.
 	anXWindow *last=NULL;
 	IconButton *ibut;
