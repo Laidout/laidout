@@ -524,7 +524,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 		DBG cout <<"***need to implement get default document in Document constructor.."<<endl;
 	}
 	if (docstyle==NULL) {
-		DBG cout <<"***need to implement document constructor.."<<endl;
+		cout <<"***need to implement document constructor with NULL docstyle.."<<endl;
 	} else {
 		 // create the pages
 		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();

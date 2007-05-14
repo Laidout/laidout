@@ -86,6 +86,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	DocumentStyle *docstyle;
 	char *saveas;
 	
+	//Laxkit::Attribute metadata;
 	Laxkit::PtrStack<Page> pages;
 	Laxkit::PtrStack<PageRange> pageranges;
 	int curpage;

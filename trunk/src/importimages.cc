@@ -84,22 +84,45 @@ int ImportImagesDialog::init()
 	// menuinfo that allows rearranging, and has other info about what page image will be on...
 	//--- for future! ---
 
-	 //---------------------- insert preview line input
+
+	 //---------------------- add prev/next file buttons next to file
 	linp=dynamic_cast<LineInput *>(findWindow("file"));
+	linp->SetLabel(" ");
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
+	c=findWindowIndex("file");
+	AddWin(new MessageBar(this,"file",MB_MOVE, 0,0, 0,0, 0, "File? "), c);
+	tbut=new TextButton(this,"prev file",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			linp,window,"prevfile",
+			"<",3,3);
+	tbut->tooltip("Jump to previous selected file");
+	AddWin(tbut,c+1);
+	tbut=new TextButton(this,"next file",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			tbut,window,"nextfile",
+			">",3,3);
+	tbut->tooltip("Jump to next selected file");
+	AddWin(tbut,c+2);
+	
+	 //---------------------- insert preview line input
 	c=findWindowIndex("path");
+	AddWin(new MessageBar(this,"previewm",MB_MOVE, 0,0, 0,0, 0, "Preview: "), c);
+	MenuButton *menub=new MenuButton(this,"previewlist",MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER, 0,0,0,0,0,
+									 linp,window,"previewlist",0,
+									 NULL,1,
+									 (const char *)NULL,"v");
+	menub->tooltip("Select from possible automatic previews");
+	AddWin(menub,c+1);
 	last=linp=new LineInput(this,"preview",LINP_FILE, 0,0,0,0,0, last,window,"preview",
-						"Preview:",NULL,0,
+						" ",NULL,0,
 						0,0,2,2,2,2);
 	//makestr(linp->GetLineEdit()->qualifier,****);
 //	virtual int AddWin(anXWindow *win,int npw,int nws,int nwg,int nhalign, int nph,int nhs,int nhg,int nvalign);
-	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50, c);
+	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50, c+2);
 	tbut=new TextButton(this,"generate preview",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			NULL,window,"generate",
 			"Generate",3,3);
 	tbut->tooltip("Generate a preview for file at this location.");
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50, c+1);
-	AddNull(c+2);
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50, c+3);
+	AddNull(c+4);
 	
 	
 	 //---------------------- per image preview controls ---------------------------
@@ -180,7 +203,7 @@ int ImportImagesDialog::init()
 	for (c=0; c<laidout->preview_file_bases.n; c++) {
 		menu->AddItem(laidout->preview_file_bases.e[c],c);
 	}
-	MenuButton *menub=new MenuButton(this,"PreviewBase",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
+	menub=new MenuButton(this,"PreviewBase",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
 									 last,window,"previewbasemenu",0,
 									 menu,1,
 									 (const char *)NULL,"v");
@@ -225,6 +248,21 @@ int ImportImagesDialog::init()
 	return 0;
 }
 
+int ImportImagesDialog::DataEvent(EventData *data,const char *mes)
+{
+	if (!strcmp(mes,"usethispreview")) {
+		StrsEventData *strs=dynamic_cast<StrsEventData *>(data);
+		if (!strs) return 1;
+
+		LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
+		preview->SetText(strs->strs[0]+2);
+		
+		delete data;
+		return 0;
+	}
+	return 1;
+}
+
 int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
 	if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
@@ -243,6 +281,7 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		
 		check=dynamic_cast<CheckBox *>(findWindow("perpageall"));
 		if (c==2) check->State(LAX_ON); else check->State(LAX_OFF);
+		return 0;
 	} else if (!strcmp(mes,"perpageexactlyn")) {
 	} else if (!strcmp(mes,"dpi")) {
 	} else if (!strcmp(mes,"startpage")) {
@@ -251,6 +290,43 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//***should gray and ungray the previews for over size
 	} else if (!strcmp(mes,"mintopreview")) {
 	} else if (!strcmp(mes,"previewbase")) {
+	} else if (!strcmp(mes,"previewlist")) {
+
+		 // build and launch possible preview files menu
+		if (isblank(file->GetCText())) return 0;
+				
+		MenuInfo *menu=new MenuInfo("Possible Preview Files");
+		char *str,*full;
+		LaxImage *img;
+		full=fullFilePath(NULL);
+		for (int c=0; c<laidout->preview_file_bases.n; c++) {
+			str=previewFileName(full,laidout->preview_file_bases.e[c]);
+			img=load_image(str);
+			if (img) {
+				prependstr(str,"* ");
+				img->dec_count();
+			} else prependstr(str,"  ");
+			menu->AddItem(str,c);
+		}
+		MenuSelector *popup=new MenuSelector(NULL,menu->title, 
+						ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
+						0,0,0,0, 1, 
+						NULL,window,"usethispreview", 
+						MENUSEL_LEFT
+						 | MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
+						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
+						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
+						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
+					 	 | MENUSEL_SEND_STRINGS,
+						menu,1);
+		popup->pad=3;
+		popup->Select(0);
+	//	popup->SetFirst(curitem,x,y); 
+		popup->WrapToMouse(None);
+		app->rundialog(popup);
+		if (popup->window) app->setfocus(popup);
+		else { app->destroywindow(popup); popup=NULL; }
+		return 0;	
 	} else if (!strcmp(mes,"previewbasemenu")) {
 		if (e->data.l[0]>=0 && e->data.l[0]<laidout->preview_file_bases.n) {
 			LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
@@ -260,6 +336,11 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //**** must generate what is in preview for file
 	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
 		rebuildPreviewName();
+		return 0;
+	} else if (!strcmp(mes,"nextfile")) {
+		cout <<"*** imp nexfile"<<endl;
+	} else if (!strcmp(mes,"prevfile")) {
+		cout <<"*** imp prevfile"<<endl;
 	}
 
 	if (!FileDialog::ClientEvent(e,mes)) return 0;
