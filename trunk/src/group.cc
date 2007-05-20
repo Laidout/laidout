@@ -241,8 +241,8 @@ void Group::dump_out(FILE *f,int indent,int what)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
 		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
-		fprintf(f,"%svisible #indicates that this group cannot be seen on screen nor printed out\n",spc);
-		fprintf(f,"%sprints  #indicates that this group can be seen on screen, but cannot be printed\n",spc);
+		fprintf(f,"%svisible #no indicates that this group cannot be seen on screen nor printed out\n",spc);
+		fprintf(f,"%sprints  #no indicates that this group can be seen on screen, but cannot be printed\n",spc);
 		fprintf(f,"\n%s#Groups contain any number of drawable objects. Here are all the possible such\n",spc);
 		fprintf(f,"%s#objects currently installed:\n",spc);
 		fprintf(f,"\n%sobject Group\n%s  #...a subgroup...\n",spc,spc);

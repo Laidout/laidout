@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 //
 
@@ -25,10 +25,35 @@ using namespace std;
 
 //---------------------------- PrintingDialog ----------------------------------
 
-/*! \class Print
+/*! \class PrintingDialog
  * \brief Laidout's printing dialog
  *
  * \todo this needs a lot of work
+ *
+ * Ideally would be like:
+ * <pre>
+ * Format_______svg_______[v]
+ * To File________________
+ * To Files_______________
+ * By Command_____________
+ *
+ * Layout Type___Singles__[v]
+ * [ ] All
+ * [*] Current
+ * [ ] From ____ to ______
+ *
+ * Settings: Custom [v]   --> is edit to allow change name
+ *    pops a menu:
+ *      settings 1
+ *      pdf all
+ *      [Remember current settings...] 
+ * </pre>
+ *
+ * The format would be:
+ *    a name,
+ *    whether the format supports multiple pages,
+ *      if no and to file selected, can only select one page, not from==to,
+ *    default file name, files template, command
  */
 
 

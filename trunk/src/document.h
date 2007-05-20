@@ -37,7 +37,8 @@ enum  LaidoutSaveFormat {
 	Save_PPT,
 	Save_PS,
 	Save_EPS,
-	Save_PDF,
+	Save_PDF_1_3,
+	Save_PDF_1_4,
 	Save_HTML,
 	Save_SVG,
 	Save_Scribus,
@@ -66,12 +67,13 @@ class DocumentStyle : public Style
 class PageRange : public LaxFiles::DumpUtility
 {
  public:
+	char *name;
 	int impositiongroup;
 	int start,end,offset;
 	char *labelbase;
 	int labeltype,decreasing;
 	PageRange(const char *newbase="#",int ltype=Numbers_Default);
-	~PageRange() { if (labelbase) delete[] labelbase; }
+	virtual ~PageRange();
 	char *PageRange::GetLabel(int i);
 
 	virtual void dump_out(FILE *f,int indent,int what);

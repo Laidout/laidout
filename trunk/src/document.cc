@@ -245,6 +245,7 @@ StyleDef *PageRangeStyleDef()
 
 PageRange::PageRange(const char *newbase,int ltype)
 {
+	name=NULL;
 	impositiongroup=0;
 	start=offset=0;
 	end=-1;
@@ -252,6 +253,13 @@ PageRange::PageRange(const char *newbase,int ltype)
 	labeltype=ltype;
 	decreasing=0;
 }
+
+PageRange::~PageRange()
+{
+	if (labelbase) delete[] labelbase; 
+	if (name) delete[] name;
+}
+
 
 //! Convert things like "A-###" to "A-%s" and puts the number of '#' chars in len.
 /*! \ingroup misc
@@ -398,6 +406,7 @@ void PageRange::dump_out(FILE *f,int indent,int what)
 
 	if (what==-1) {
 		cout <<"*** finish PageRange::dump_out what==-1"<<endl;
+		fprintf(f,"%sname Blah          #optional name of the range\n",spc);
 		fprintf(f,"%simpositiongroup 0  #(unimplemented)\n",spc);
 		fprintf(f,"%sstart 0            #the starting page index for the range\n",spc);
 		fprintf(f,"%soffset 2           #amount to add to the index of each page\n",spc);
@@ -420,6 +429,7 @@ void PageRange::dump_out(FILE *f,int indent,int what)
 	//char *labelbase;
 	//int labeltype;
 	
+	if (name) fprintf(f,"%sname %s\n",spc,name);
 	fprintf(f,"%simpositiongroup %d\n",spc,impositiongroup);
 	fprintf(f,"%sstart %d\n",spc,start);
 	fprintf(f,"%soffset %d\n",spc,offset);
@@ -438,7 +448,9 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"impositiongroup")) {
+		if (!strcmp(name,"name")) {
+			makestr(this->name,value);
+		} else if (!strcmp(name,"impositiongroup")) {
 			IntAttribute(value,&impositiongroup);
 		} else if (!strcmp(name,"start")) {
 			IntAttribute(value,&start);

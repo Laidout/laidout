@@ -85,7 +85,8 @@ void print_usage()
 	cout <<LaidoutVersion()<<endl<<
 		"\n laidout [options] [file1] [file2] ...\n\n"
 		"Options:\n"
-		"  -t --template templatename       Start laidout from this template in the .laidout/templates\n"
+		"  -t --template templatename       Start laidout from this template in .laidout/(version)/templates\n"
+		"  -N --no-template                  Do not use a default template\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
 		//***"    -n whatever (not yet!)         Start up laidout with a Whatever imposition\n" 
 		//***"  -f --rescan-fonts (not yet!)     Rescan font directories\n"
@@ -241,7 +242,6 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	default_template=NULL;
 	
 	preview_over_this_size=250; 
-	preview_file_bases.push(newstr(".laidout-%.jpg"));
 	max_preview_length=200;
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
@@ -392,6 +392,8 @@ int LaidoutApp::init(int argc,char **argv)
 	if (!readinLaidoutDefaults()) {
 		createlaidoutrc();
 	}
+	
+	if (!preview_file_bases.n) preview_file_bases.push(newstr(".laidout-%.jpg"));
 	
 	//****this should be done in a more automatic way via Laxkit: Init Imlib
 	imlib_context_set_display(dpy);
@@ -656,13 +658,14 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ "load-dir",      1, 0, 'l' },
 			{ "no-x",          0, 0, 'x' },
 			{ "template",      1, 0, 't' },
+			{ "no-template",   1, 0, 'N' },
 			{ "version",       0, 0, 'v' },
 			{ "help",          0, 0, 'h' },
 			{ 0,0,0,0 }
 		};
 	int c,index;
 	while (1) {
-		c=getopt_long(argc,argv,"t:fp:n:vh",long_options,&index);
+		c=getopt_long(argc,argv,"Nt:fp:n:vh",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
 			case ':': cerr <<"missing parameter..."<<endl; exit(1); // missing parameter
@@ -690,6 +693,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 			case 'l': { // load dir
 					makestr(load_dir,optarg);
+				} break;
+			case 'N': { // do not use a default template
+					if (default_template) { delete[] default_template; default_template=NULL; }
 				} break;
 			case 'F': { // dump out file format
 					if (dump_out_file_format(optarg,0)) exit(1);

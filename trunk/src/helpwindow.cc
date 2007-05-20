@@ -140,6 +140,7 @@ int HelpWindow::init()
 			"  'c'          toggle if drag resizes from center or opposite edge\n"
 			"  'd'          toggle the showing of decorations\n"
 			"  'n'          normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)\n"
+            "  'N'          like 'n', but also clear rotation\n"
 			"  bksp or del  remove whichever of center, rotation handle, or shear handle\n"
 			"                 is selected\n"
 			"  ^left-click  define a center, rotation handle, or shear handle\n"
