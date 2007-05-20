@@ -3235,8 +3235,8 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		DBG cout <<"'<'  should be prev page"<<endl;
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-2);
 		curtool->Clear();
-		for (int c=0; c<kids.n; c++) if (!strcmp(kids.e[c]->win_title,"page number")) {
-			((NumSlider *)kids.e[c])->Select(pg+1);
+		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
+			((NumSlider *)_kids.e[c])->Select(pg+1);
 			break;
 		}
 		updateContext();
@@ -3244,8 +3244,8 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 	} else if (ch=='>') { //next page
 		DBG cout <<"'>' should be prev page"<<endl;
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-1);
-		for (int c=0; c<kids.n; c++) if (!strcmp(kids.e[c]->win_title,"page number")) {
-			((NumSlider *)kids.e[c])->Select(pg+1);
+		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
+			((NumSlider *)_kids.e[c])->Select(pg+1);
 			break;
 		}
 		updateContext();
