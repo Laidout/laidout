@@ -6,6 +6,10 @@
 
  in configure, should check to see that gs is actually executable?
 
+ export from command line, allowing batch processing:
+   laidout --export 'page 4-20, svg, to: blah###.svg' 1.doc \
+           --export 'eps, page 3, to: blah.eps' 2.doc 
+
 
  enhance SpreadEditor:
    eject in addition to swap and slide,

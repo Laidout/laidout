@@ -17,13 +17,18 @@
 #define IMPORTIMAGES_H
 
 #include <lax/filedialog.h>
+#include <lax/imageinfo.h>
+#include <lax/lists.h>
 #include "document.h"
 
 
 class ImportImagesDialog : public Laxkit::FileDialog
 {
  protected:
+	Laxkit::PtrStack<Laxkit::ImageInfo> images;
 	virtual void rebuildPreviewName();
+	virtual void updateFileList();
+	virtual Laxkit::ImageInfo *findImageInfo(const char *fullfile);
  public:
 	double dpi;
 	int startpage;

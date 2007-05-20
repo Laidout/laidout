@@ -26,6 +26,7 @@
 #include <lax/fileutils.h>
 #include <lax/overwrite.h>
 #include <lax/laxutils.h>
+#include <lax/menubutton.h>
 #include <cstdarg>
 #include <cups/cups.h>
 
@@ -48,6 +49,8 @@
 using namespace std;
 
 #define DBG 
+
+
 
 
 #define SINGLELAYOUT       0
@@ -1059,6 +1062,18 @@ int LaidoutViewport::FindObject(int x,int y,
 	} 
 	if (oc) *oc=NULL;
 	return 0; // search ended, found nothing
+}
+
+//! Find multiple objects in box.
+/*! Return value is the number of objects found. If none, then date_ret and c_ret 
+ * are set to NULL.
+ */
+int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascurobj,
+							SomeData ***data_ret, ObjectContext ***c_ret)
+{
+	if (data_ret) *data_ret=NULL;
+	if (c_ret) *c_ret=NULL;
+	return 0;
 }
 
 //! Make a transform that takes a point from viewer past all objects in place.
@@ -2377,14 +2392,24 @@ int ViewWindow::init()
 		win_sizehints->flags=USPosition|USSize;
 	}
 	
-//	 //add a menu button thingy in corner between rulers
-//	**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
-//	**** mostly same as would be in right-click in viewport.....	
-//	MenuButton *menub=new MenuButton(this,"rulercornerbutton",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
-//									 NULL,window,"rulercornerbutton",0,
-//									 menu,1,
-//									 (const char *)NULL,"v");
-//	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
+	MenuInfo *menu;
+	MenuButton *menub;
+	 //add a menu button thingy in corner between rulers
+	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
+	//**** mostly same as would be in right-click in viewport.....	
+	menu=new MenuInfo("Documents");
+	for (int c=0; c<laidout->project->docs.n; c++) {
+		menu->AddItem(laidout->project->docs.e[c]->Name()); //*****
+	}
+//	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
+//							 menu,1,
+//							 laidout->icons.GetIcon("Export"),"Export");
+	menub=new MenuButton(this,"rulercornerbutton",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
+									 NULL,window,"rulercornerbutton",0,
+									 menu,1,
+									 laidout->icons.GetIcon("Laidout"),NULL);
+	menub->tooltip("Document list");
+	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
 	
 	AddNull();//makes the status bar take up whole line.
 	anXWindow *last=NULL;
@@ -2395,7 +2420,7 @@ int ViewWindow::init()
 	last=toolselector=new SliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, 
 			NULL,window,"viewtoolselector",
 			NULL,0);
-	
+	toolselector->tooltip("The current tool");
 	const char *str; //the whattype: "BlahInterface"
 	char *nstr,     // the base name: "Blah" then later "Blah Tool"
 		 *tstr;    // temp pointer
@@ -2438,7 +2463,6 @@ int ViewWindow::init()
 	pagenumber->tooltip("The pages in the spread\nand the current page");
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
-	TextButton *tbut;
 	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
 			laidout->icons.GetIcon("PreviousSpread"),"<");
 	ibut->tooltip("Previous spread");
@@ -2486,20 +2510,13 @@ int ViewWindow::init()
 
 	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
 			laidout->icons.GetIcon("ImportImage"),"Import Image");
-	ibut->tooltip("Import one or more images, with \n"
-				  "number per page and dpi from the\n"
-				  "number sliders in the View Window");
+	ibut->tooltip("Import one or more images");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
 			laidout->icons.GetIcon("InsertImage"),"Insert Image");
 	ibut->tooltip("Insert an image into the current image or image patch");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
-
-//	last=ibut=new IconButton(this,"import images",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"dumpInImages",-1,
-//			laidout->icons.GetIcon("ImportImages"),"Dump in Images");
-//	ibut->tooltip("Import a whole lot of images\nand put across multiple pages\n(see the other buttons)");
-//	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
 			laidout->icons.GetIcon("Open"),"Open");
@@ -2511,25 +2528,34 @@ int ViewWindow::init()
 	ibut->tooltip("Save the current document");
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	tbut=new TextButton(this,"ppt out",0, 0,0,0,0,1, NULL,window,"pptout","ppt");
-	tbut->tooltip("Save to a Passepartout file.\nOnly saves images");
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	 //---------------******** export
+	 //*** this needs an automatic way to do it, needs a pool to access somewhere..
+	 //Export:
+	 // Print
+	 // -----
+	 // Ppt
+	 // svg,...
+	 // -----
+	 // Export style 1: ppt pg 3-6
+	 // Export style 2: SVG pg 2
+	 //then Print button would have the last export settings, single click does that..
+	menu=new MenuInfo("Export");
+	menu->AddItem("Passepartout",Save_PPT);
+	menu->AddItem("Pdf 1.4",     Save_PDF_1_4);
+	menu->AddItem("Svg",         Save_SVG);
+	menu->AddItem("Scribus",     Save_Scribus);
+	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
+							 menu,1,
+							 laidout->icons.GetIcon("Export"),"Export");
+	menub->tooltip("Export the document as something other than a Laidout document");
+	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
 
-	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"print",-1,
+	
+	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
 			laidout->icons.GetIcon("Print"),"Print");
 	ibut->tooltip("Print to output.ps, a postscript file");
-	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	last=ibut=new IconButton(this,"pdf",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pdf",-1,
-			laidout->icons.GetIcon("PDF"),"Pdf");
-	ibut->tooltip("Create a PDF 1.4 file");
-	AddWin(ibut,tbut->win_w,0,50,50, ibut->win_h,0,50,50);
-
-//	loaddir=new LineEdit(this,"load directory",0, 0,0,0,0,1, 
-//								NULL,window,"loaddir",
-//								app->load_dir,0);
-//	loaddir->tooltip("'Dump in images' dumps in\nall images from this directory");
-//	AddWin(loaddir,150,0,50,250, loaddir->win_h,0,50,50);
 	
 
 //	var1=new NumInputSlider(this,"var1",NUMSLIDER_WRAP, 0,0,0,0,1, 
@@ -2892,6 +2918,7 @@ void ViewWindow::updateContext()
  */
 int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
+	DBG cout <<"ViewWindow "<<win_title<<" got "<<mes<<endl;
 //	if (!strcmp(mes,"change color")) {
 //		 // apply message as new current color, pass on to viewport
 //		 // sent from at least PalettePane
@@ -3045,7 +3072,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//			0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
-		 //***** find full path of old image if any, modify to have dir and basename
+		 // run a dialog to grab a new image for an ImageData and ImagePatchData
 		char *oldimage=NULL,*oldimgname=NULL;
 		SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
 		if (curobj) {
@@ -3082,11 +3109,23 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"loaddir")) {
 		if (loaddir->GetCText()) makestr(app->load_dir,loaddir->GetCText());
 		return 0;
-	} else if (!strcmp(mes,"pptout")) { // dump to passepartout file
-		if (!doc->Save(Save_PPT)) {
-			char blah[strlen(doc->saveas+10)];
-			sprintf(blah,"Saved as a Passepartout file to %s.ppt",doc->saveas);
-			mesbar->SetText(blah);
+	} else if (!strcmp(mes,"export")) { // dump to passepartout file
+		 //***********this needs automation
+		DBG cout <<" ----- data="<<e->data.l[0]<<endl;
+		if (e->data.l[1]==Save_PPT) {
+			if (!doc->Save(Save_PPT)) {
+				char blah[strlen(doc->saveas+10)];
+				sprintf(blah,"Saved as a Passepartout file to %s.ppt",doc->saveas);
+				mesbar->SetText(blah);
+			} else {
+				mesbar->SetText("Error writing out Passepartout file.");
+			}
+		} else if (e->data.l[1]==Save_SVG) {
+			mesbar->SetText("Sorry, svg export not quite working yet.");
+		} else if (e->data.l[1]==Save_PDF_1_4) {
+			mesbar->SetText("Sorry, PDF export not quite working yet.");
+		} else if (e->data.l[1]==Save_Scribus) {
+			mesbar->SetText("Sorry, Scribus export not quite working yet.");
 		}
 		return 0;
 	} else if (!strcmp(mes,"openDoc")) { 

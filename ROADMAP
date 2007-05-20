@@ -10,15 +10,13 @@ VERSION 0.07
 (done) Have command line option to output to a file a pseudocode mockup of the file format
 (done) EPS out booklet landscape is broken, fix it!
 (done, after a fashion) Implement all preview config options, namely auto preview files over a certain size
-       Clean up image import dialog, and have some similar options in insert image and image properties diags.
-       Be able to search for existing previews in ~/.thumbnails/large and normal
+(done) Be able to search for existing previews in ~/.thumbnails/large and normal
        Make the select by dragging out a rectangle work
        Fix multi-object selection move when crossing page boundaries
 (done) Linear and radial Gradients should have vastly better interfaces
        Image and Color patches should have vastly better interfaces
        Gui for modifying Page Labels
        Net imposition interactive unwrapper and paper tiler
-       PDF out
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -30,25 +28,28 @@ VERSION 0.07
 
 VERSION 0.08
 ------------
+       Clean up image import dialog, and have some similar options in insert image and image properties diags.
        Image and Color patches, gradients, etc should allow transparent colors
+       PDF out
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
+       Export to various things or print from command line: batch processing
        Export as a Scribus document
        Print/export to images
        Selected region out to image(s)
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Tools should remember their settings, dialogs should remember their placements
-       NetImposition needs import/export net, build net
+       NetImposition needs import/export net including OFF files, and build net interface
+       libintl support
+       should probably put laidout stuff in its own namespace, just to be polite for plugin makers
 
 
 VERSION 0.1 
 -----------
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
-       Export to various things or print from command line: batch processing
        Of course, need copious testing by people who are not me.
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
-       should probably put laidout stuff in its own namespace, just to be polite for plugin makers
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
        Finish implementing project based setup, especially when loading and saving
@@ -79,7 +80,6 @@ VERSION 0.1
        all things must define their styledefs
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
-       libintl support
        PDF in?
        svg in/out
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation

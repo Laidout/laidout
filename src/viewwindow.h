@@ -114,6 +114,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
 					LaxInterfaces::ObjectContext **oc);
+	virtual int FindObjects(Laxkit::DoubleBBox *box, char real, char ascurobj,
+							LaxInterfaces::SomeData ***data_ret, LaxInterfaces::ObjectContext ***c_ret);
 	virtual void ClearSearch();
 	virtual int ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc);
 	virtual int ChangeContext(LaxInterfaces::ObjectContext *oc);

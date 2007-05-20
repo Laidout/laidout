@@ -161,6 +161,11 @@ int boxisin(flatpoint *points, int n,DoubleBBox *bbox)
 /*! \ingroup objects
  * Assumes that you want a closed path, so it automatically checks
  * the segment [firstpoint,lastpoint].
+ *
+ * If positive x is to the right, and positive y is up, then the winding is
+ * counted clockwise around the x axis. 0 means the point is not inside.
+ *
+ * \todo ****** remove, use Laxkit's version
  */
 int pointisin(flatpoint *points, int n,flatpoint p)
 {

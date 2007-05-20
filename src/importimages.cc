@@ -21,6 +21,8 @@
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
 
+#include <lax/lists.cc>
+
 #include <iostream>
 using namespace std;
 #define DBG 
@@ -256,6 +258,10 @@ int ImportImagesDialog::DataEvent(EventData *data,const char *mes)
 
 		LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
 		preview->SetText(strs->strs[0]+2);
+		char *full=fullFilePath(NULL);
+		ImageInfo *info=findImageInfo(full);
+		delete[] full;
+		if (info) makestr(info->previewfile,strs->strs[0]+2);
 		
 		delete data;
 		return 0;
@@ -265,7 +271,19 @@ int ImportImagesDialog::DataEvent(EventData *data,const char *mes)
 
 int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
-	if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
+	if (!strcmp(mes,"files")) {
+		FileDialog::ClientEvent(e,mes);
+		updateFileList();
+		rebuildPreviewName();
+		return 0;
+	} else if (!strcmp(mes,"new file")) {
+		FileDialog::ClientEvent(e,mes);
+		char *full=fullFilePath(NULL);
+		if (file_exists(full,1,NULL)) updateFileList();
+		delete[] full;
+		rebuildPreviewName();
+		return 0;
+	} else if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
 		DBG cout <<"*************** !!!!!"<<mes<<endl;
 		int c;
 		if (!strcmp(mes,"perpageexactly")) c=0;
@@ -334,6 +352,7 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 	} else if (!strcmp(mes,"generate")) {
 		 //**** must generate what is in preview for file
+		cout <<"*** imp ImportImageDialog -> generate!!"<<endl;
 	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
 		rebuildPreviewName();
 		return 0;
@@ -361,19 +380,59 @@ void ImportImagesDialog::rebuildPreviewName()
 	//linp=dynamic_cast<LineInput *>(findWindow("file"));
 	//const char *f=linp->GetCText();
 	
+	 // find file in list 
 	char *full=fullFilePath(NULL);
-	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+	ImageInfo *info=findImageInfo(full);
 	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
-	char *prev=previewFileName(full,prevbase->GetCText());
+	
+	char *prev=NULL;
+	if (info) {
+		prev=newstr(info->previewfile);
+	} 
+	if (!prev) {
+		LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+		prev=previewFileName(full,prevbase->GetCText());
+	}
 	preview->SetText(prev);
 	delete[] full;
 	delete[] prev;
 }
 
+//! Create new ImageInfo nodes for any selected files not in the list.
+/*! \todo this adds nodes to images. should put them in sorted to speed up checking?
+ */
+void ImportImagesDialog::updateFileList()
+{
+	int *which=filelist->WhichSelected(LAX_ON);
+	if (!which) return;
+	const MenuItem *item;
+	ImageInfo *info;
+	char *full;
+	for (int c=0; c<which[0]; c++) {
+		item=filelist->Item(which[c+1]);
+		
+		 // find file in list 
+		full=fullFilePath(NULL);
+		info=findImageInfo(full);
+		if (!info) {
+			 // add node
+			LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+			char *prev=previewFileName(full,prevbase->GetCText());
+			images.push(new ImageInfo(full,prev,NULL,NULL,0));
+			delete[] prev;
+		} 
+
+		delete[] full;	
+	}
+	delete[] which;
+}
+	
 //! Convert things like "24kb" and "3M" to kb.
 /*! "never" gets translated to INT_MAX. "34" becomes 34 kilobytes
  *
  * Return 0 for success or nonzero for unknown.
+ *
+ * \todo this could be a Laxkit attribute reader
  */
 int str_to_byte_size(const char *s, long *ll)
 {
@@ -403,6 +462,21 @@ int str_to_byte_size(const char *s, long *ll)
 	delete[] str;
 	if (ll) *ll=l;
 	return 0;
+}
+
+Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile)
+{
+	int c;
+	char *full;
+	for (c=0; c<images.n; c++) {
+		full=fullFilePath(NULL);
+		if (!strcmp(full,images.e[c]->file)) {
+			delete[] full;
+			return images.e[c];
+		}
+		delete[] full;
+	}
+	return NULL;
 }
 
 //! Instead of sending the file name(s) to owner, call dump_images directly.
