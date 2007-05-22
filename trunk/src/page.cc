@@ -630,7 +630,8 @@ ImageData *Page::Thumbnail()
 	Displayer dp;
 	
 	 // setup dp to have proper scaling...
-	dp.NewTransform(1.,0.,0.,-1.,0.,0.);
+	//dp.NewTransform(1.,0.,0.,-1.,0.,0.);
+	dp.NewTransform(1.,0.,0.,1.,0.,0.);
 	dp.StartDrawing(pix);
 	dp.SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
 	dp.Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
