@@ -13,11 +13,12 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/********** spreadeditor.cc *************/
+
 
 #include <lax/transformmath.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
+#include "language.h"
 #include "spreadeditor.h"
 #include "laidout.h"
 #include "drawdata.h"
@@ -191,13 +192,13 @@ void LittleSpread::mapConnection()
 
 static const char *arrangetypestring(int a)
 {
-	if (a==ArrangeAutoAlways) return "Auto arrange on each window size change";
-	else if (a==ArrangeAutoTillMod) return "Auto arrange until you move a spread";
-	else if (a==Arrange1Row) return "Arrange in one row";
-	else if (a==Arrange1Column) return "Arrange in one column";
-	else if (a==ArrangeGrid) return "Arrange in a grid based on screen proportions";
-	else if (a==ArrangeCustom) return "You will do all arranging";
-	return "? error: bad arrange value";
+	if (a==ArrangeAutoAlways)       return _("Auto arrange on each window size change");
+	else if (a==ArrangeAutoTillMod) return _("Auto arrange until you move a spread");
+	else if (a==Arrange1Row)        return _("Arrange in one row");
+	else if (a==Arrange1Column)     return _("Arrange in one column");
+	else if (a==ArrangeGrid)        return _("Arrange in a grid based on screen proportions");
+	else if (a==ArrangeCustom)      return _("You will do all arranging");
+	return _("? error: bad arrange value");
 }
 
 //! Initialize everything and call GetSpreads().
@@ -1253,13 +1254,13 @@ int SpreadEditor::init()
 	wholelist.e[wholelist.n-1]->pw(100);
 	//AddNull(); // makes the status bar fill whole line
 
-	last=tbut=new TextButton(this,"applybutton",0, 0,0,0,0,1, NULL,window,"applybutton","Apply");
+	last=tbut=new TextButton(this,"applybutton",0, 0,0,0,0,1, NULL,window,"applybutton",_("Apply"));
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
-	last=tbut=new TextButton(this,"resetbutton",0, 0,0,0,0,1, last,window,"resetbutton","Reset");
+	last=tbut=new TextButton(this,"resetbutton",0, 0,0,0,0,1, last,window,"resetbutton",_("Reset"));
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
-	last=tbut=new TextButton(this,"updatethumbs",0, 0,0,0,0,1, last,window,"updatethumbs","Update Thumbs");
+	last=tbut=new TextButton(this,"updatethumbs",0, 0,0,0,0,1, last,window,"updatethumbs",_("Update Thumbs"));
 	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
 
 	Sync(1);	

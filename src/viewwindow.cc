@@ -30,6 +30,7 @@
 #include <cstdarg>
 #include <cups/cups.h>
 
+#include "language.h"
 #include "printing/print.h"
 #include "printing/psout.h"
 #include "helpwindow.h"
@@ -503,8 +504,6 @@ int LaidoutViewport::NextSpread()
 //! Select the spread with page number less than current page not in current spread.
 /*! Returns the current page index on success, else a negative number.
  *
- * ***this is wrong for paper layout!! maybe setupthings(page, or paper)
- *
  * Return -1 for error or the index of the spread.
  */
 int LaidoutViewport::PreviousSpread()
@@ -557,11 +556,13 @@ const char *LaidoutViewport::SetViewMode(int m,int sprd)
 //! Update and return pageviewlabel.
 /*! This is a label that says what pages are in the current spread, 
  * and also which is the current page.
+ *
+ * \todo how to internationalize this?
  */
 const char *LaidoutViewport::Pageviewlabel()
 {
 	if (viewmode==SINGLELAYOUT) {
-		makestr(pageviewlabel,"Page: ");
+		makestr(pageviewlabel,_("Page: "));
 	} else { // figure out like "Spread [2-4]: "
 		if (spread) { 
 			char *desc=spread->pagesFromSpreadDesc(doc);
@@ -569,11 +570,11 @@ const char *LaidoutViewport::Pageviewlabel()
 			makestr(pageviewlabel,"Pgs [");
 			appendstr(pageviewlabel,desc);
 			appendstr(pageviewlabel,"]: ");
-			if (curobjPage()<0) appendstr(pageviewlabel,"limbo");
+			if (curobjPage()<0) appendstr(pageviewlabel,_("limbo"));
 			//else PageFlipper appends proper page label...appendstr(pageviewlabel,curpage->label);
 
 			delete[] desc;
-		} else { makestr(pageviewlabel,"Limbo: "); }
+		} else { makestr(pageviewlabel,_("Limbo: ")); }
 	}
 	return pageviewlabel;
 }
@@ -2320,6 +2321,10 @@ void ViewWindow::setup()
 }
 
 //--------- ***special page flipper
+/*! \class PageFlipper
+ * \ingroup misc
+ * \todo put me somewhere meaningful!
+ */
 class PageFlipper : public NumInputSlider
 {
  public:
@@ -2371,6 +2376,8 @@ void PageFlipper::Refresh()
 //-------------end PageFlipper
 
 //! Add extra goodies to viewerwindow stack, like page/layer/mag/obj indicators
+/*! \todo internationalize tool names
+ */
 int ViewWindow::init()
 {
 	ViewerWindow::init();
@@ -2416,7 +2423,7 @@ int ViewWindow::init()
 									 NULL,window,"rulercornerbutton",0,
 									 menu,1,
 									 laidout->icons.GetIcon("Laidout"),NULL);
-	menub->tooltip("Document list");
+	menub->tooltip(_("Document list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
 	
 	AddNull();//makes the status bar take up whole line.
@@ -2428,7 +2435,7 @@ int ViewWindow::init()
 	last=toolselector=new SliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, 
 			NULL,window,"viewtoolselector",
 			NULL,0);
-	toolselector->tooltip("The current tool");
+	toolselector->tooltip(_("The current tool"));
 	const char *str; //the whattype: "BlahInterface"
 	char *nstr,     // the base name: "Blah" then later "Blah Tool"
 		 *tstr;    // temp pointer
@@ -2467,73 +2474,74 @@ int ViewWindow::init()
 	 //----- Page Flipper
 	last=pagenumber=new PageFlipper(doc,this,"page number", 
 									last,window,"newPageNumber",
-									"Page: ");
-	pagenumber->tooltip("The pages in the spread\nand the current page");
+									_("Page: "));
+	pagenumber->tooltip(_("The pages in the spread\nand the current page"));
 	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
 	
 	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
 			laidout->icons.GetIcon("PreviousSpread"),"<");
-	ibut->tooltip("Previous spread");
+	ibut->tooltip(_("Previous spread"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"next spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"nextSpread",-1,
 			laidout->icons.GetIcon("NextSpread"),">");
-	ibut->tooltip("Next spread");
+	ibut->tooltip(_("Next spread"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=pageclips=new IconButton(this,"pageclips",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pageclips",-1,
 			laidout->icons.GetIcon("PageClips"),"Page Clips");
-	pageclips->tooltip("Whether pages clips its contents");
+	pageclips->tooltip(_("Whether pages clips its contents"));
 	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
 	updateContext();
 
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 //								NULL,window,"newLayerNumber",
 //								"Layer: ",1,1,1); //*** get cur page, use those layers....
-//	num->tooltip("Sorry, layer control not well\nimplemented yet");
+//	num->tooltip(_("Sorry, layer control not well\nimplemented yet"));
 //	AddWin(num,num->win_w,0,50,50, num->win_h,0,50,50);
 	
 	StrSliderPopup *p=new StrSliderPopup(this,"view type",0, 0,0,0,0,1, NULL,window,"newViewType");
 	int vm=((LaidoutViewport *)viewport)->ViewMode(NULL);
-	p->AddItem("Single",SINGLELAYOUT);
-	p->AddItem("Page Layout",PAGELAYOUT);
-	p->AddItem("Paper Layout",PAPERLAYOUT);
+	p->AddItem(_("Single"),SINGLELAYOUT);
+	p->AddItem(_("Page Layout"),PAGELAYOUT);
+	p->AddItem(_("Paper Layout"),PAPERLAYOUT);
 	p->Select(vm);
 	p->WrapWidth();
 	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
 
 	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",65535,0,0,65535,65535,255);
-	colorbox->tooltip("Current color:\nDrag left for red,\n middle for green,\n right for red");
+	colorbox->tooltip(_("Current color:\nDrag left for red,\n middle for green,\n right for red"));
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
 	last=ibut=new IconButton(this,"add page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"addPage",-1,
-			laidout->icons.GetIcon("AddPage"),"Add Page");
-	ibut->tooltip("Add 1 page after this one");
+			laidout->icons.GetIcon("AddPage"),_("Add Page"));
+	ibut->tooltip(_("Add 1 page after this one"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"delete page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"deletePage",-1,
-			laidout->icons.GetIcon("DeletePage"),"Delete Page");
-	ibut->tooltip("Delete the current page");
+			laidout->icons.GetIcon("DeletePage"),_("Delete Page"));
+	ibut->tooltip(_("Delete the current page"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
-			laidout->icons.GetIcon("ImportImage"),"Import Image");
-	ibut->tooltip("Import one or more images");
+			laidout->icons.GetIcon("ImportImage"),_("Import Images"));
+	ibut->tooltip(_("Import one or more images"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
-			laidout->icons.GetIcon("InsertImage"),"Insert Image");
-	ibut->tooltip("Insert an image into the current image or image patch");
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+//*******unnecessary anymore? replaced by image properties dialog
+//	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
+//			laidout->icons.GetIcon("InsertImage"),_("Insert Image"));
+//	ibut->tooltip(_("Insert an image into the current image or image patch"));
+//	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
-			laidout->icons.GetIcon("Open"),"Open");
-	ibut->tooltip("Open a document from disk");
+			laidout->icons.GetIcon("Open"),_("Open"));
+	ibut->tooltip(_("Open a document from disk"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
-			laidout->icons.GetIcon("Save"),"Save");
-	ibut->tooltip("Save the current document");
+			laidout->icons.GetIcon("Save"),_("Save"));
+	ibut->tooltip(_("Save the current document"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	 //---------------******** export
@@ -2554,22 +2562,22 @@ int ViewWindow::init()
 	menu->AddItem("Scribus",     Save_Scribus);
 	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
 							 menu,1,
-							 laidout->icons.GetIcon("Export"),"Export");
-	menub->tooltip("Export the document as something other than a Laidout document");
+							 laidout->icons.GetIcon("Export"),_("Export"));
+	menub->tooltip(_("Export the document as something other than a Laidout document"));
 	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
 
 	 //-------------import
-	 //*** this can be somehow combined with import images...
+	 //*** this can be somehow combined with import images maybe?...
 	last=ibut=new IconButton(this,"import",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"import",-1,
-			laidout->icons.GetIcon("Import"),"Import");
-	ibut->tooltip("Try to import various vector based files into the document");
+			laidout->icons.GetIcon("Import"),_("Import"));
+	ibut->tooltip(_("Try to import various vector based files into the document"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	
 	 //-----------print
 	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
-			laidout->icons.GetIcon("Print"),"Print");
-	ibut->tooltip("Print to output.ps, a postscript file");
+			laidout->icons.GetIcon("Print"),_("Print"));
+	ibut->tooltip(_("Print to output.ps, a postscript file"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	
@@ -2596,8 +2604,8 @@ int ViewWindow::init()
 //	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
 	
 	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
-			laidout->icons.GetIcon("Help"),"Help!");
-	ibut->tooltip("Popup a list of shortcuts");
+			laidout->icons.GetIcon("Help"),_("Help!"));
+	ibut->tooltip(_("Popup a list of shortcuts"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	//**** add screen x,y
@@ -2637,11 +2645,11 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		char mes[35];
 		mes[0]=0;
 		if (n>=0) {
-			if (s->n>1) sprintf(mes,"Images imported.");
-			else sprintf(mes,"Image imported.");
+			if (s->n>1) sprintf(mes,_("Images imported."));
+			else sprintf(mes,_("Image imported."));
 		} else { 
-			if (s->n>1) sprintf(mes,"Couldn't load images.");
-			else sprintf(mes,"Couldn't load image.");
+			if (s->n>1) sprintf(mes,_("Couldn't load images."));
+			else sprintf(mes,_("Couldn't load image."));
 		}
 		((LaidoutViewport *)viewport)->postmessage(mes);
 		delete data;
@@ -2676,7 +2684,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			}
 		} else { 
 			char mes[30+strlen(s->str)+1];
-			sprintf(mes,"Couldn't load image from \"%s\".",s->str);
+			sprintf(mes,_("Couldn't load image from \"%s\"."),s->str);
 			((LaidoutViewport *)viewport)->postmessage(mes);
 		}
 		delete data;
@@ -2691,9 +2699,9 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		doc->Save();
 		if (doc->Save()==0) {
 			char blah[strlen(doc->Name())+15];
-			sprintf(blah,"Saved to %s.",doc->Name());
+			sprintf(blah,_("Saved to %s."),doc->Name());
 			GetMesbar()->SetText(blah);
-		} else GetMesbar()->SetText("Problem saving. Not saved.");
+		} else GetMesbar()->SetText(_("Problem saving. Not saved."));
 
 		delete data;
 		return 0;
@@ -2717,7 +2725,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				if (chdir(dir)!=0) {
 					 // could not chdir;
 					char mes[50+strlen(dir)];
-					sprintf(mes,"File not saved: Could not change directory to \"%s\"",dir);
+					sprintf(mes,_("File not saved: Could not change directory to \"%s\""),dir);
 					((LaidoutViewport *)viewport)->postmessage(mes);
 					delete data;
 					delete[] bname;
@@ -2751,7 +2759,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				app->rundialog(ob);
 			} else {
 				if (!is_good_filename(file)) {//***how does it know?
-					GetMesbar()->SetText("Illegal characters in file name. Not saved.");
+					GetMesbar()->SetText(_("Illegal characters in file name. Not saved."));
 				} else {
 					 //set name in doc and headwindow
 					DBG cout <<"*** file by this point should be absolute path name:"<<file<<endl;
@@ -2759,9 +2767,9 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					
 					if (doc->Save()==0) {
 						char blah[strlen(doc->Name())+15];
-						sprintf(blah,"Saved to %s.",doc->Name());
+						sprintf(blah,_("Saved to %s."),doc->Name());
 						GetMesbar()->SetText(blah);
-					} else GetMesbar()->SetText("Problem saving. Not saved.");
+					} else GetMesbar()->SetText(_("Problem saving. Not saved."));
 				}
 			}
 
@@ -2779,14 +2787,14 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (!s) return 1;
 		
 		if (!is_good_filename(s->str)) {
-			GetMesbar()->SetText("Illegal characters in file name. Not printed.");
+			GetMesbar()->SetText(_("Illegal characters in file name. Not printed."));
 			delete data;
 			return 0;
 		} 
 		
 		FILE *f=fopen(s->str,"w");
 		if (f) {
-			mesbar->SetText("Printing to file, please wait....");
+			mesbar->SetText(_("Printing to file, please wait...."));
 			mesbar->Refresh();
 			XSync(app->dpy,False);
 	
@@ -2794,15 +2802,15 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			fclose(f);
 			
 			char tmp[21+strlen(s->str)];
-			sprintf(tmp,"Printed to %s.",s->str);
+			sprintf(tmp,_("Printed to %s."),s->str);
 			mesbar->SetText(tmp);
 		} else {
 			char tmp[21+strlen(s->str)];
-			sprintf(tmp,"Error printing to %s.",s->str);
+			sprintf(tmp,_("Error printing to %s."),s->str);
 			mesbar->SetText(tmp);
 		}
 
-		cout << "----- ViewWindow Print to file: "<<s->str<<endl;
+		DBG cout << "----- ViewWindow Print to file: "<<s->str<<endl;
 		delete data;
 		return 0;
 	} else if (!strcmp(mes,"printfile")) {
@@ -2811,16 +2819,16 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (s->info==2) { // print to files
 			DBG cout <<"***** print to epss: "<<s->str<<endl;
 			
-			mesbar->SetText("Printing to files, please wait....");
+			mesbar->SetText(_("Printing to files, please wait...."));
 			mesbar->Refresh();
 			XSync(app->dpy,False);
 	
 			char blah[100];
 			int c=epsout(s->str,doc,s->info2-1,s->info3-1,SINGLELAYOUT,0);
 			if (c) {
-				sprintf(blah,"Error printing to %s at file %d.",s->str,c);
+				sprintf(blah,_("Error printing to %s at file %d."),s->str,c);
 			} else {
-				sprintf(blah,"Printed to %s.",s->str);
+				sprintf(blah,_("Printed to %s."),s->str);
 			}
 			mesbar->SetText(blah);
 
@@ -2855,7 +2863,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			cupsTempFile2(tmp,sizeof(tmp));
 			FILE *f=fopen(tmp,"w");
 			if (f) {
-				mesbar->SetText("Printing, please wait....");
+				mesbar->SetText(_("Printing, please wait...."));
 				mesbar->Refresh();
 				XSync(app->dpy,False);
 				psout(f,doc,s->info2-1,s->info3-1);
@@ -2864,9 +2872,9 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				system(cm);
 				//*** have to delete (unlink) tmp!
 				
-				mesbar->SetText("Doc sent to print.");
-			} else mesbar->SetText("Error printing.");
-			cout << "*** ViewWindow Printed to command: "<<cm<<endl;
+				mesbar->SetText(_("Document sent to print."));
+			} else mesbar->SetText(_("Error printing."));
+			DBG cout << "*** ViewWindow Printed to command: "<<cm<<endl;
 		}
 
 
@@ -2969,7 +2977,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.color.alpha=(unsigned short) (e->data.l[4]/max*65535);
 		char blah[100];
 		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
-		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",
+		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
 				(float) linestyle.color.red   / 65535,
 				(float) linestyle.color.green / 65535,
 				(float) linestyle.color.blue  / 65535,
@@ -2989,7 +2997,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		alpha=(unsigned short) (e->data.l[4]/max*65535);
 		colorbox->Set(red,green,blue,alpha);
 		char blah[100];
-		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",
+		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
 				(float) red   / 65535,
 				(float) green / 65535,
 				(float) blue  / 65535,
@@ -3022,8 +3030,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"addPage")) { // 
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
 		int c=doc->NewPages(curpage+1,1); //add after curpage
-		if (c>=0) GetMesbar()->SetText("Page added.");
-			else GetMesbar()->SetText("Error adding page.");
+		if (c>=0) GetMesbar()->SetText(_("Page added."));
+			else GetMesbar()->SetText(_("Error adding page."));
 		return 0;
 	} else if (!strcmp(mes,"deletePage")) { // 
 		 // this in response to delete button command
@@ -3031,9 +3039,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		int curpage=vp->curobjPage();
 
 		int c=doc->RemovePages(curpage,1); //remove curpage
-		if (c==1) GetMesbar()->SetText("Page deleted.");
-		else if (c==-2) GetMesbar()->SetText("Cannot delete the only page.");
-		else GetMesbar()->SetText("Error deleting page.");
+		if (c==1) GetMesbar()->SetText(_("Page deleted."));
+		else if (c==-2) GetMesbar()->SetText(_("Cannot delete the only page."));
+		else GetMesbar()->SetText(_("Error deleting page."));
 		
 
 		// Document sends the notifyDocTreeChanged..
@@ -3131,17 +3139,17 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (e->data.l[1]==Save_PPT) {
 			if (!doc->Save(Save_PPT)) {
 				char blah[strlen(doc->saveas+10)];
-				sprintf(blah,"Saved as a Passepartout file to %s.ppt",doc->saveas);
+				sprintf(blah,_("Saved as a Passepartout file to %s.ppt"),doc->saveas);
 				mesbar->SetText(blah);
 			} else {
-				mesbar->SetText("Error writing out Passepartout file.");
+				mesbar->SetText(_("Error writing out Passepartout file."));
 			}
 		} else if (e->data.l[1]==Save_SVG) {
-			mesbar->SetText("Sorry, svg export not quite working yet.");
+			mesbar->SetText(_("Sorry, svg export not quite working yet."));
 		} else if (e->data.l[1]==Save_PDF_1_4) {
-			mesbar->SetText("Sorry, PDF export not quite working yet.");
+			mesbar->SetText(_("Sorry, PDF export not quite working yet."));
 		} else if (e->data.l[1]==Save_Scribus) {
-			mesbar->SetText("Sorry, Scribus export not quite working yet.");
+			mesbar->SetText(_("Sorry, Scribus export not quite working yet."));
 		}
 		return 0;
 	} else if (!strcmp(mes,"openDoc")) { 
@@ -3165,7 +3173,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				char blah[strlen(doc->Name())+15];
 				sprintf(blah,"Saved to %s.",doc->Name());
 				GetMesbar()->SetText(blah);
-			} else GetMesbar()->SetText("Problem saving. Not saved.");
+			} else GetMesbar()->SetText(_("Problem saving. Not saved."));
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
@@ -3236,9 +3244,9 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		} else {
 			if (doc->Save()==0) {
 				char blah[strlen(doc->Name())+15];
-				sprintf(blah,"Saved to %s.",doc->Name());
+				sprintf(blah,_("Saved to %s."),doc->Name());
 				GetMesbar()->SetText(blah);
-			} else GetMesbar()->SetText("Problem saving. Not saved.");
+			} else GetMesbar()->SetText(_("Problem saving. Not saved."));
 		}
 		return 0;
 	} else if (ch==LAX_Left || ch=='T') {  // left, prev tool
