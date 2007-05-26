@@ -65,16 +65,22 @@ NetImposition::NetImposition(Net *newnet)
 	paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
+
+	DBG cout <<"   net 1"<<endl;
 	
 	net=NULL;
 	pagestyle=NULL;
 	if (!newnet) {
-		SetNet(makeDodecahedronNet(paperstyle->w(),paperstyle->h()));
+		newnet=makeDodecahedronNet(paperstyle->w(),paperstyle->h());
+		SetNet(newnet);
+		newnet->dec_count();
 		netisbuiltin=1; //this line must be after SetNet
 	} else {
 		SetNet(newnet);
 		netisbuiltin=0;
 	}
+
+	DBG cout <<"   net 2"<<endl;
 
 	printnet=1;
 	
@@ -84,6 +90,8 @@ NetImposition::NetImposition(Net *newnet)
 		styledef=makeStyleDef();
 		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
+	
+	DBG cout <<"imposition netimposition init"<<endl;
 }
  
 //! Dec_count() of the net, and pagestyle.

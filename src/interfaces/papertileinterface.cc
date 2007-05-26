@@ -15,6 +15,7 @@
 //
 
 
+#include "../language.h"
 #include "papertileinterface.h"
 #include <lax/strmanip.h>
 
@@ -28,14 +29,9 @@ using namespace std;
 
 //------------------------------------- PaperBox --------------------------------------
 
-class PaperBox : public Laxkit::RefCounted
-{
- public:
-	PaperStyle *paperstyle; //the media box
-	DoubleBBox printable, bleed, trim, crop, art;
-	PaperBox();
-	virtual ~PaperBox();
-};
+/*! \class PaperBox 
+ * \brief Wrapper around a paper style, for use in a PaperTileInterface.
+ */
 
 /*! Incs count of paper.
  */
@@ -52,13 +48,9 @@ PaperBox::~PaperBox()
 
 //------------------------------------- PaperBoxData --------------------------------------
 
-class PaperBoxData : public PaperBox
-{
- public:
-	int index;
-	PaperBoxData(PaperStyle *paper);
-	virtual ~PaperBoxData();
-};
+/*! \class PaperBoxData
+ * \brief Somedata Wrapper around a paper style, for use in a PaperTileInterface.
+ */
 
 PaperBoxData::PaperBoxData(PaperStyle *paper)
 	: PaperBox(paper)
@@ -72,6 +64,10 @@ PaperBoxData::PaperBoxData(PaperStyle *paper)
 
 //------------------------------------- PaperTileInterface --------------------------------------
 	
+/*! \class PaperTileInterface 
+ * \brief Interface to arrange an arbitrary spread to print on many sheets of paper.
+ */
+
 
 PaperTileInterface::PaperTileInterface(int nid,Displayer *ndp)
 	: InterfaceWithDp(nid,ndp) 
@@ -195,5 +191,5 @@ int CharRelease(unsigned int ch,unsigned int state)
 }
 
 
-} // namespace Laxkit
+//} // namespace Laidout
 

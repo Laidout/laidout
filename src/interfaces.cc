@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,10 +11,8 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2005-2007 by Tom Lechner
 //
-/**** laidout/src/interfaces.cc *****/
 
 
 #include "interfaces.h"
@@ -93,6 +92,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(eps,1);//*** combine with Image somehow?
 
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
+	ip->style=IMGPATCHI_POPUP_INFO;
 	ip->recurse=2;
 	existingpool->push(ip,1);
 	

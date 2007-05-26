@@ -11,6 +11,7 @@ VERSION 0.07
 (done) EPS out booklet landscape is broken, fix it!
 (done, after a fashion) Implement all preview config options, namely auto preview files over a certain size
 (done) Be able to search for existing previews in ~/.thumbnails/large and normal
+       Clean up image import dialog, and have some similar options in insert image and image properties diags.
        Make the select by dragging out a rectangle work
        Fix multi-object selection move when crossing page boundaries
 (done) Linear and radial Gradients should have vastly better interfaces
@@ -28,7 +29,6 @@ VERSION 0.07
 
 VERSION 0.08
 ------------
-       Clean up image import dialog, and have some similar options in insert image and image properties diags.
        Image and Color patches, gradients, etc should allow transparent colors
        PDF out
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
@@ -36,6 +36,7 @@ VERSION 0.08
        Export as a Scribus document
        Print/export to images
        Selected region out to image(s)
+       Standardize the import/output mechanism, make it easy to add/remove/prioritize/replace filters
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Tools should remember their settings, dialogs should remember their placements
        NetImposition needs import/export net including OFF files, and build net interface
@@ -128,6 +129,7 @@ Verse support?
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
 a FlexibleImposition for html/streamed output target?
+JDF support?
 
 
 VERSION 1.0

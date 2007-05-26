@@ -463,8 +463,16 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 					delete se;
 					return 0;
 				}
+			} else if (curobj.obj && !strcmp(curobj.obj->whattype(),"ImagePatchData")) {
+				 //set in imagepatch
+				ImagePatchData *ipatch=dynamic_cast<ImagePatchData *>(curobj.obj);
+				if (ipatch) {
+					ipatch->SetImage(se->strs[0]);
+					needtodraw=1;
+				}
 			}
 		}
+		return 1;
 	}
 	return 1;
 }
@@ -2550,7 +2558,15 @@ int ViewWindow::init()
 	menub->tooltip("Export the document as something other than a Laidout document");
 	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
 
+	 //-------------import
+	 //*** this can be somehow combined with import images...
+	last=ibut=new IconButton(this,"import",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"import",-1,
+			laidout->icons.GetIcon("Import"),"Import");
+	ibut->tooltip("Try to import various vector based files into the document");
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+
 	
+	 //-----------print
 	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
 			laidout->icons.GetIcon("Print"),"Print");
 	ibut->tooltip("Print to output.ps, a postscript file");

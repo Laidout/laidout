@@ -443,6 +443,8 @@ Imposition::Imposition(const char *nsname)
 	doc=NULL;
 	paperstyle=NULL; 
 	numpages=numspreads=numpapers=0; 
+	
+	DBG cout <<"imposition base class init"<<endl;
 }
 
 /*! Does paperstyle->dec_count().
@@ -451,6 +453,8 @@ Imposition::Imposition(const char *nsname)
 Imposition::~Imposition()
 {
 	if (paperstyle) paperstyle->dec_count();
+
+	DBG cout <<"imposition destructor"<<endl;
 }
 
 //! Return an imposition specific tool for use with the given layout type

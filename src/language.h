@@ -20,11 +20,22 @@
 #define LANGUAGE_H
 
 
+#if 0
+
+ //yes gettext
 #include <libintl.h>
 
 #define _(str) gettext(str)
 #define gettext_noop(str) str
 #define N_(str) gettext_noop(str)
+#else
+
+ //no gettext
+#define _(str) str
+#define gettext_noop(str) str
+#define N_(str) gettext_noop(str)
+
+#endif
 
 
 #endif

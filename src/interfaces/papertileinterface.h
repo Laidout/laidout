@@ -19,6 +19,30 @@
 #include <lax/interfaces/aninterface.h>
 
 
+//------------------------------------- PaperBox --------------------------------------
+
+class PaperBox : public Laxkit::RefCounted
+{
+ public:
+	PaperStyle *paperstyle; //the media box
+	DoubleBBox printable, bleed, trim, crop, art;
+	PaperBox();
+	virtual ~PaperBox();
+};
+
+
+//------------------------------------- PaperBoxData --------------------------------------
+
+class PaperBoxData : public PaperBox
+{
+ public:
+	int index;
+	PaperBoxData(PaperStyle *paper);
+	virtual ~PaperBoxData();
+};
+
+
+//------------------------------------- PaperTileInterface --------------------------------------
 
 class PaperTileInterface : public LaxInterfaces::InterfaceWithDp
 {

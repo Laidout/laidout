@@ -90,6 +90,8 @@ Singles::Singles() : Imposition("Singles")
 		 // so this new styledef should have a count of 2. The destructor removes
 		 // 1 count, and the stylemanager should remove the other
 	}
+	
+	DBG cout <<"imposition singles init"<<endl;
 }
 
 //! Calls pagestyle->dec_count().
@@ -216,7 +218,7 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%sinsett 0   #The top inset from the side of a paper\n",spc);
 		fprintf(f,"%sinsetb 0   #The bottom inset from the side of a paper\n",spc);
 		fprintf(f,"%stilex 1    #number of times to tile the page horizontally\n",spc);
-		fprintf(f,"%stiley 1    #number of times to tile the page horizontally\n",spc);
+		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
 		paperstyle->dump_out(f,indent+2,-1);
@@ -580,6 +582,8 @@ DoubleSidedSingles::DoubleSidedSingles()
 		styledef=makeStyleDef();
 		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
+	
+	DBG cout <<"imposition doublesidedsingles init"<<endl;
 } 
 
 //! Calls pagestyler->dec_count().
@@ -951,6 +955,8 @@ BookletImposition::BookletImposition()
 		styledef=makeStyleDef();
 		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
+	
+	DBG cout <<"imposition booklet init"<<endl;
 }
 
 //! Using the paperstyle and isvertical, create a new default pagestyle.
@@ -1160,7 +1166,7 @@ void BookletImposition::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%sdefaultpagestyler #default right or bottom page style\n",spc);
 		fprintf(f,"%s  #(same kinds of attributes as the defaultpagestyle)\n",spc);
 		fprintf(f,"%sisvertical  #whether the pages fold up/down or the default left/right\n",spc);
-		fprintf(f,"%screep  0    #(todo) how much creep is introduced by the fold when all pages folded over\n",spc);
+		fprintf(f,"%screep  0    #(todo) how much creep is introduced by the fold when all pages are folded over\n",spc);
 		fprintf(f,"%sbodycolor  0xffffff  #(todo)8bit rgb color of the pages\n",spc);
 		fprintf(f,"%scovercolor 0xffffff  #(todo)8bit rgb color of the pages\n",spc);
 		return;
