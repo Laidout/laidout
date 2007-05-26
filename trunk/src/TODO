@@ -4,6 +4,8 @@
 \section Overall Overall...
 <pre>
 
+ group interface: 'm' should perhaps make the current selection draggable to other windows
+
  in configure, should check to see that gs is actually executable?
 
  export from command line, allowing batch processing:

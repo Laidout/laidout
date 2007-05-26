@@ -32,6 +32,7 @@
 #include <getopt.h>
 
 #define LAIDOUT_CC
+#include "language.h"
 #include "laidout.h"
 #include "viewwindow.h"
 #include "impositions/impositioninst.h"
@@ -66,13 +67,13 @@ const char *LaidoutVersion()
 { 
 	static char *version_str=NULL;
 	if (version_str==NULL) {
-		makestr(version_str,"Laidout Version ");
-		appendstr(version_str,LAIDOUT_VERSION);
-		appendstr(version_str,"\nby Tom Lechner, sometime in 2007\n");
-		appendstr(version_str,"Released under the GNU Public License, Version 2.\n");
-		appendstr(version_str," (using Laxkit Version ");
-		appendstr(version_str,LAXKIT_VERSION);
-		appendstr(version_str,")\n");
+		const char *outstr=
+						_("Laidout Version %s\n"
+						  "by Tom Lechner, sometime in 2007\n"
+						  "Released under the GNU Public License, Version 2.\n"
+						  " (using Laxkit Version %s)");
+		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
+		sprintf(version_str,outstr,LAIDOUT_VERSION,LAXKIT_VERSION);
 	}
 	return version_str; 
 }
@@ -83,18 +84,14 @@ const char *LaidoutVersion()
 void print_usage()
 {
 	cout <<LaidoutVersion()<<endl<<
-		"\n laidout [options] [file1] [file2] ...\n\n"
+		_("\n laidout [options] [file1] [file2] ...\n\n"
 		"Options:\n"
 		"  -t --template templatename       Start laidout from this template in .laidout/(version)/templates\n"
 		"  -N --no-template                  Do not use a default template\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
-		//***"    -n whatever (not yet!)         Start up laidout with a Whatever imposition\n" 
-		//***"  -f --rescan-fonts (not yet!)     Rescan font directories\n"
-		//***"  -p --new-font-path dir (nope!)   Add dir to font path, and rescan fonts\n"
-		//***"  --no-x (nope!)                   Start up command line, no other interface, useful for quick printing??\n"
 		"  --file-format file               Write out a pseudocode mockup of the file format to file, then exit\n"    
 		"  -v --version                     Print out version info, then exit.\n"
-		"  -h --help                        Show this summary and exit.\n";
+		"  -h --help                        Show this summary and exit.\n");
 	exit(0);
 }
 
@@ -436,6 +433,7 @@ int LaidoutApp::init(int argc,char **argv)
  *
  * \todo should separate the laidoutrc writing functions to allow easy dumping to any
  *   stream like stdout.
+ * \todo how best to internationalize?
  */
 int LaidoutApp::createlaidoutrc()
 {
@@ -675,8 +673,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		c=getopt_long(argc,argv,"Nt:fp:n:vh",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
-			case ':': cerr <<"missing parameter..."<<endl; exit(1); // missing parameter
-			case '?': cerr <<"Unknown option...."<<endl; exit(1);  // unknown option
+			case ':': cerr <<_("Missing parameter...")<<endl; exit(1); // missing parameter
+			case '?': cerr <<_("Unknown option")<<endl; exit(1);  // unknown option
 			case 'h': print_usage(); // Show usage summary, then exit
 			case 'v':  // Show version info, then exit
 				cout <<LaidoutVersion()<<endl;
@@ -695,7 +693,6 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					cout << "**** do not use X " << endl;
 				} break;
 			case 'n': { // --new "letter singes 3 pages blah blah blah"
-					//cout << " make new doc from: \""<< optarg << "\""<< endl;
 					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1];
 				} break;
 			case 'l': { // load dir
@@ -720,6 +717,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	// load in any docs after the args
 	DBG if (optind<argc) cout << "First non-option argv[optind]="<<argv[optind] << endl;
 	DBG cout <<"*** read in these files:"<<endl;
+
 	Document *doc;
 	index=topwindows.n;
 	if (!project) project=new Project;
@@ -988,7 +986,9 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	Document *newdoc=new Document(docinfo,filename);
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
+	
 	DBG cout <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
+	
 	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);
 	return 0;
