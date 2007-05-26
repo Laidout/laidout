@@ -113,9 +113,9 @@ void print_usage()
  *
  * Return 0 for success.
  */
-int laidout_preview_maker(const char *original, const char *preview, int width, int height, int fit)
+int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
 {
-	if (!_laximlib_generate_preview(original,preview,width,height,fit)) return 0;
+	if (!_laximlib_generate_preview(original,preview,format,width,height,fit)) return 0;
 
 	 //normal preview maker didn't work, so try something else...
 	DoubleBBox bbox;
@@ -367,6 +367,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 //------setup initial pools
 	DBG cout <<"---imposition pool init"<<endl;
 	GetBuiltinImpositionPool(&impositionpool);
+	DBG cout <<"---imposition pool init done"<<endl;
 	
 	DBG cout <<"---papersizes pool init"<<endl;
 	GetBuiltinPaperSizes(&papersizes);
@@ -393,7 +394,13 @@ int LaidoutApp::init(int argc,char **argv)
 		createlaidoutrc();
 	}
 	
-	if (!preview_file_bases.n) preview_file_bases.push(newstr(".laidout-%.jpg"));
+	 //if no bases defined add freedesktop style
+	if (!preview_file_bases.n) {
+		preview_file_bases.push(newstr("~/.thumbnails/large/@"));
+		preview_file_bases.push(newstr("~/.thumbnails/normal/@"));
+		preview_file_bases.push(newstr(".laidout-%.jpg"));
+		preview_file_bases.push(newstr(".laidout-%.jpg"));
+	}
 	
 	//****this should be done in a more automatic way via Laxkit: Init Imlib
 	imlib_context_set_display(dpy);

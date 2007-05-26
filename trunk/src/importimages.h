@@ -25,10 +25,12 @@
 class ImportImagesDialog : public Laxkit::FileDialog
 {
  protected:
+	int curitem;
 	Laxkit::PtrStack<Laxkit::ImageInfo> images;
 	virtual void rebuildPreviewName();
 	virtual void updateFileList();
-	virtual Laxkit::ImageInfo *findImageInfo(const char *fullfile);
+	virtual Laxkit::ImageInfo *findImageInfo(const char *fullfile,int *i=NULL);
+	virtual char *getPreviewFileName(const char *full);
  public:
 	double dpi;
 	int startpage;
@@ -42,6 +44,7 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int send();
+	virtual void SetFile(const char *f,const char *pfile);
 };
 
 

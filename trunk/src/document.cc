@@ -410,9 +410,9 @@ void PageRange::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%simpositiongroup 0  #(unimplemented)\n",spc);
 		fprintf(f,"%sstart 0            #the starting page index for the range\n",spc);
 		fprintf(f,"%soffset 2           #amount to add to the index of each page\n",spc);
-		fprintf(f,"%s#labelbase is a template to construct labels from:\n",spc);
+		fprintf(f,"%s#labelbase is a template used to construct labels:\n",spc);
 		fprintf(f,"%slabelbase \"#\"      #(default) would make normal numbers: 0,1,2,3,...\n",spc);
-		fprintf(f,"%s#labelbase \"###\"   #would make labels with 0 padding: 000,001,...100,999,1000,...\n",spc);
+		fprintf(f,"%s#labelbase \"###\"   #would make labels with 0 padding: 000,001,...100,...999,1000,...\n",spc);
 		fprintf(f,"%s#labelbase \"A-#\"   #would make: A-0,A-1,A-2,A-3,...\n",spc);
 		fprintf(f,"%sdecreasing         #make the range count down rather than up\n",spc);
 		fprintf(f,"%slabeltype default  #this can instead be one of the following:\n",spc);

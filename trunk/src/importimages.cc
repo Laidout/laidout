@@ -14,6 +14,7 @@
 // Copyright (c) 2007 Tom Lechner
 //
 
+#include "language.h"
 #include "importimages.h"
 #include "laidout.h"
 #include "extras.h"
@@ -49,6 +50,7 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsig
 	dpi=defdpi;
 	startpage=startpg;
 	doc=ndoc;
+	curitem=-1;
 
 	dialog_style|=FILES_PREVIEW;
 	win_h=win_w=700;
@@ -96,12 +98,12 @@ int ImportImagesDialog::init()
 	tbut=new TextButton(this,"prev file",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			linp,window,"prevfile",
 			"<",3,3);
-	tbut->tooltip("Jump to previous selected file");
+	tbut->tooltip(_("Jump to previous selected file"));
 	AddWin(tbut,c+1);
 	tbut=new TextButton(this,"next file",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			tbut,window,"nextfile",
 			">",3,3);
-	tbut->tooltip("Jump to next selected file");
+	tbut->tooltip(_("Jump to next selected file"));
 	AddWin(tbut,c+2);
 	
 	 //---------------------- insert preview line input
@@ -111,7 +113,7 @@ int ImportImagesDialog::init()
 									 linp,window,"previewlist",0,
 									 NULL,1,
 									 (const char *)NULL,"v");
-	menub->tooltip("Select from possible automatic previews");
+	menub->tooltip(_("Select from possible automatic previews"));
 	AddWin(menub,c+1);
 	last=linp=new LineInput(this,"preview",LINP_FILE, 0,0,0,0,0, last,window,"preview",
 						" ",NULL,0,
@@ -121,8 +123,8 @@ int ImportImagesDialog::init()
 	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50, c+2);
 	tbut=new TextButton(this,"generate preview",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			NULL,window,"generate",
-			"Generate",3,3);
-	tbut->tooltip("Generate a preview for file at this location.");
+			_("Generate"),3,3);
+	tbut->tooltip(_("Generate a preview for file at this location."));
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50, c+3);
 	AddNull(c+4);
 	
@@ -137,14 +139,14 @@ int ImportImagesDialog::init()
 	 //---------------------- extra image layout controls ---------------------------
 	str=numtostr(startpage,0);
 	last=linp=new LineInput(this,"StartPage",0, 0,0,0,0,0, last,window,"startpage",
-						"Start Page:",str,0,
+						_("Start Page:"),str,0,
 						0,0,2,2,2,2);
 	delete[] str; str=NULL;
 	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50);
 	
 	str=numtostr(dpi,0);
 	last=linp=new LineInput(this,"DPI",0, 0,0,0,0,0, last,window,"dpi",
-						"Default dpi:",str,0,
+						_("Default dpi:"),str,0,
 						0,0,2,2,2,2);
 	delete[] str; str=NULL;
 //	virtual int AddWin(anXWindow *win,int npw,int nws,int nwg,int nhalign, int nph,int nhs,int nhg,int nvalign);
@@ -153,7 +155,7 @@ int ImportImagesDialog::init()
 	
 //	str=numtostr(end,0);
 //	last=linp=new LineInput(this,"EndPage",0, 0,0,0,0,0, last,window,"endpage",
-//						"End Page:",str,0,
+//						_("End Page:"),str,0,
 //						0,0,2,2,2,2);
 //	delete[] str; str=NULL;
 //	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50);
@@ -163,14 +165,14 @@ int ImportImagesDialog::init()
 	 //------------------------------ Images Per Page
 	//Images Per Page ____, or "as many as will fit", or "all on 1 page"
 		
-	mesbar=new MessageBar(this,"perpage",MB_MOVE, 0,0, 0,0, 0, "Images Per Page:");
+	mesbar=new MessageBar(this,"perpage",MB_MOVE, 0,0, 0,0, 0, _("Images Per Page:"));
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
 	AddWin(NULL, 1000,1000,0,50, 0,0,0,50);
 	AddNull();
 	
 	last=check=new CheckBox(this,"perpageexactly",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"perpageexactly", "Exactly this many:",5,5);
-	check->State(LAX_ON);
+						last,window,"perpageexactly", _("Exactly this many:"),5,5);
+	check->State(LAX_OFF);
 	AddWin(check, check->win_w,0,0,50, check->win_h,0,0,50);
 	last=linp=new LineInput(this,"NumPerPage",0, 0,0,0,0,0, last,window,"perpageexactlyn",
 						NULL,"1",0,
@@ -180,26 +182,27 @@ int ImportImagesDialog::init()
 	AddNull();
 	
 	last=check=new CheckBox(this,"perpagefit",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"perpagefit", "As many as will fit per page",5,5);
-	check->State(LAX_OFF);
+						last,window,"perpagefit", _("As many as will fit per page"),5,5);
+	check->State(LAX_ON);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
 	AddWin(NULL, 1000,1000,0,50, 0,0,0,50);
 	AddNull();
 	
 	last=check=new CheckBox(this,"perpageall",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"perpageall", "All on one page",5,5);
+						last,window,"perpageall", _("All on one page"),5,5);
 	check->State(LAX_OFF);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
 	AddWin(NULL, 1000,1000,0,50, 0,0,0,50);
 	
 	 //------------------------ preview options ----------------------
 	last=linp=new LineInput(this,"PreviewBase",0, 0,0,0,0,0, last,window,"previewbase",
-						"Default name for previews:",
-						laidout->preview_file_bases.n?laidout->preview_file_bases.e[0]:".laidout.%.jpg",0,
+						_("Default name for previews:"),
+						_("any"),0,
+						//laidout->preview_file_bases.n?laidout->preview_file_bases.e[0]:".laidout.%.jpg",0,
 						0,0,2,2,2,2);
-	linp->tooltip("For file.jpg,\n"
+	linp->tooltip(_("For file.jpg,\n"
 				  "* gets replaced with the original file name (\"file.jpg\"), and\n"
-				  "% gets replaced with the file name without the final suffix (\"file\")\n");
+				  "% gets replaced with the file name without the final suffix (\"file\")\n"));
 	AddWin(linp);
 	MenuInfo *menu=new MenuInfo("Preview Bases");
 	for (c=0; c<laidout->preview_file_bases.n; c++) {
@@ -209,20 +212,20 @@ int ImportImagesDialog::init()
 									 last,window,"previewbasemenu",0,
 									 menu,1,
 									 (const char *)NULL,"v");
-	menub->tooltip("Select from the available preview bases");
+	menub->tooltip(_("Select from the available preview bases"));
 	AddWin(menub);
 	AddNull();
 	
 	last=linp=new LineInput(this,"PreviewWidth",0, 0,0,0,0,0, last,window,"previewwidth",
-						"Default max width for new previews:",NULL,0,
+						_("Default max width for new previews:"),NULL,0,
 						0,0,2,2,2,2);
 	linp->GetLineEdit()->SetText(laidout->max_preview_length);
-	linp->tooltip("Any newly generated previews must fit\nin a square this many pixels wide");
+	linp->tooltip(_("Any newly generated previews must fit\nin a square this many pixels wide"));
 	AddWin(linp);
 	AddNull();
 	 
 	last=check=new CheckBox(this,"autopreview",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"autopreview", "Make previews for files larger than",5,5);
+						last,window,"autopreview", _("Make previews for files larger than"),5,5);
 	check->State(LAX_OFF);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
 	
@@ -231,10 +234,10 @@ int ImportImagesDialog::init()
 						" ",NULL,0,
 						textheight*6,0,2,2,2,2);
 	linp->GetLineEdit()->SetText(laidout->preview_over_this_size);
-	linp->tooltip("Previews will be automatically generated \n"
+	linp->tooltip(_("Previews will be automatically generated \n"
 			      "for files over this size, and then only \n"
 				  "whenever the generated preview name doesn't\n"
-				  "exist already");
+				  "exist already"));
 	AddWin(linp);
 	mesbar=new MessageBar(this,"kb",MB_MOVE, 0,0, 0,0, 0, "kB");
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
@@ -301,13 +304,19 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (c==2) check->State(LAX_ON); else check->State(LAX_OFF);
 		return 0;
 	} else if (!strcmp(mes,"perpageexactlyn")) {
+		//nothing to do
 	} else if (!strcmp(mes,"dpi")) {
+		//nothing to do
 	} else if (!strcmp(mes,"startpage")) {
+		//nothing to do
 	//} else if (!strcmp(mes,"endpage")) {
+		//nothing to do
 	} else if (!strcmp(mes,"autopreview")) {
-		//***should gray and ungray the previews for over size
+		cout <<" ***should gray and ungray the previews for over size"<<endl;
 	} else if (!strcmp(mes,"mintopreview")) {
+		cout <<" ***imp: mintopreview"<<endl;
 	} else if (!strcmp(mes,"previewbase")) {
+		cout <<" ***imp: previewbase"<<endl;
 	} else if (!strcmp(mes,"previewlist")) {
 
 		 // build and launch possible preview files menu
@@ -351,20 +360,58 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 			prevbase->SetText(laidout->preview_file_bases.e[e->data.l[0]]);
 		}
 	} else if (!strcmp(mes,"generate")) {
-		 //**** must generate what is in preview for file
+		 // must generate what is in preview for file
 		cout <<"*** imp ImportImageDialog -> generate!!"<<endl;
 	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
 		rebuildPreviewName();
 		return 0;
-	} else if (!strcmp(mes,"nextfile")) {
-		cout <<"*** imp nexfile"<<endl;
-	} else if (!strcmp(mes,"prevfile")) {
-		cout <<"*** imp prevfile"<<endl;
+	} else if (!strcmp(mes,"nextfile") || !strcmp(mes,"prevfile")) {
+			
+		int *which=filelist->WhichSelected(LAX_ON);
+		if (!images.n || !which) return 0;
+		int c,i;
+		if (curitem<1 || curitem>which[0]) {
+			c=filelist->Curitem();
+			for (i=1; i<=which[0]; i++) 
+				if (which[i]==c) break;
+			if (i<=which[0]) curitem=i;
+			else curitem=1;
+		}
+		if (!strcmp(mes,"prevfile")) {
+			curitem--;
+			if (curitem<1) curitem=which[0];
+		} else {
+			curitem++;
+			if (curitem>which[0]) curitem=1;
+		}
+
+		 //set current file/path/previewer to c
+		const MenuItem *m=filelist->Item(which[curitem]);
+		char *full=fullFilePath(m->name);
+		ImageInfo *info=findImageInfo(full,&c);
+		delete[] full;
+		if (info) {
+			SetFile(info->file,info->previewfile);
+			previewer->Preview(info->file);
+		}
+		delete[] which;
+		return 0;
 	}
 
 	if (!FileDialog::ClientEvent(e,mes)) return 0;
 	
 	return 1;
+}
+
+//! Set the file and preview fields, changing directory if need be.
+/*! \todo should probably redefine FileDialog::SetFile() also, and check against
+ * 		images?
+ */
+void ImportImagesDialog::SetFile(const char *f,const char *pfile)
+{
+	FileDialog::SetFile(f);
+	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
+	preview->SetText(pfile);
 }
 
 //! Change the Preview input to reflect a new file name.
@@ -389,10 +436,7 @@ void ImportImagesDialog::rebuildPreviewName()
 	if (info) {
 		prev=newstr(info->previewfile);
 	} 
-	if (!prev) {
-		LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
-		prev=previewFileName(full,prevbase->GetCText());
-	}
+	if (!prev) prev=getPreviewFileName(full);
 	preview->SetText(prev);
 	delete[] full;
 	delete[] prev;
@@ -403,6 +447,7 @@ void ImportImagesDialog::rebuildPreviewName()
  */
 void ImportImagesDialog::updateFileList()
 {
+	curitem=-1;
 	int *which=filelist->WhichSelected(LAX_ON);
 	if (!which) return;
 	const MenuItem *item;
@@ -412,15 +457,16 @@ void ImportImagesDialog::updateFileList()
 		item=filelist->Item(which[c+1]);
 		
 		 // find file in list 
-		full=fullFilePath(NULL);
-		info=findImageInfo(full);
-		if (!info) {
-			 // add node
-			LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
-			char *prev=previewFileName(full,prevbase->GetCText());
-			images.push(new ImageInfo(full,prev,NULL,NULL,0));
-			delete[] prev;
-		} 
+		full=fullFilePath(item->name);
+		if (file_exists(full,1,NULL)==S_IFREG) {
+			info=findImageInfo(full);
+			if (!info) {
+				 // add node
+				char *prev=getPreviewFileName(full);
+				images.push(new ImageInfo(full,prev,NULL,NULL,0));
+				delete[] prev;
+			} 
+		}
 
 		delete[] full;	
 	}
@@ -464,18 +510,21 @@ int str_to_byte_size(const char *s, long *ll)
 	return 0;
 }
 
-Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile)
+//! Return the Laxkit::ImageInfo in images with fullfile as the path.
+Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i)
 {
 	int c;
 	char *full;
 	for (c=0; c<images.n; c++) {
-		full=fullFilePath(NULL);
+		full=fullFilePath(fullfile);
 		if (!strcmp(full,images.e[c]->file)) {
 			delete[] full;
+			if (i) *i=c;
 			return images.e[c];
 		}
 		delete[] full;
 	}
+	if (i) *i=-1;
 	return NULL;
 }
 
@@ -495,7 +544,7 @@ int ImportImagesDialog::send()
 	
 	int *which=filelist->WhichSelected(LAX_ON);
 	int n=0;
-	char **imagefiles, **previewfiles;
+	char **imagefiles=NULL, **previewfiles=NULL;
 	if (which!=NULL) {
 		n=which[0];
 		imagefiles  =new char*[n];
@@ -515,26 +564,33 @@ int ImportImagesDialog::send()
 	} else { 
 		 //nothing currently selected in the item list...
 		 // so just use the single file in file input
-		n=1;
-		imagefiles  =new char*[n];
-		previewfiles=new char*[n];
-		
 		char *blah=path->GetText();
 		if (blah[strlen(blah)]!='/') appendstr(blah,"/");
 		appendstr(blah,file->GetCText());
 		if (isblank(blah)) { //******** need better sanity checking here
 			delete[] blah;
-			deletestrs(imagefiles,1);
-			deletestrs(previewfiles,1);
 			return 0;
 		}
+		
+		n=1;
+		imagefiles  =new char*[n];
+		previewfiles=new char*[n];
 		imagefiles[0]=blah;
 	}
 
 	 //generate standard preview files to search for
-	LineInput *templi,*prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+	LineInput *templi;
+	ImageInfo *info;
 	for (int c=0; c<n; c++) {
-		previewfiles[c]=previewFileName(imagefiles[c],prevbase->GetCText());
+		if (!imagefiles[c]) continue;
+		if (file_exists(imagefiles[c],1,NULL)!=S_IFREG) {
+			delete[] imagefiles[c];
+			imagefiles[c]=NULL;
+			continue;
+		}
+		info=findImageInfo(imagefiles[c]);
+		if (info) previewfiles[c]=newstr(info->previewfile);
+			else  previewfiles[c]=getPreviewFileName(imagefiles[c]);
 		if (!file_exists(previewfiles[c],1,NULL)) {
 			if (dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON) {
 
@@ -546,7 +602,7 @@ int ImportImagesDialog::send()
 					DBG cout <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
 					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
 					if (si<10) si=128;
-					if (generate_preview_image(imagefiles[c],previewfiles[c],si,si,1)) {
+					if (generate_preview_image(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
 						DBG cout <<"              ***generate preview failed....."<<endl;
 					}
 				}
@@ -570,5 +626,38 @@ int ImportImagesDialog::send()
 	deletestrs(previewfiles,n);
 			
 	return 1;
+}
+
+//! Based on what is in the preview file base selector/edit, return a file name.
+/*! If the text of PreviewBase edit is "any", than select the first preview file that exists,
+ * based on the names in laidout->preview_base_names. If none exist, then use the first in 
+ * laidout->preview_base_names. If there are no templates there, use ".ladiout-*.jpg".
+ *
+ * f is the full file path.
+ *
+ * \todo *** this should be moved to somewhere outside of the dialog, as it is generally useful.
+ * \todo *** this checks only existence of regular file at location, not whether it can actually be
+ *   read in as an image.
+ */
+char *ImportImagesDialog::getPreviewFileName(const char *full)
+{
+	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+	const char *prevtext=prevbase->GetCText();
+	char *prev=NULL;
+	if (!strcasecmp(prevtext,_("any"))) {
+		int c;
+		for (c=0; c<laidout->preview_file_bases.n; c++) {
+			prev=previewFileName(full,laidout->preview_file_bases.e[c]);
+			if (file_exists(prev,1,NULL)==S_IFREG) {
+				break;
+			}
+		}
+		if (c==laidout->preview_file_bases.n) {
+			if (laidout->preview_file_bases.n) prev=previewFileName(full,laidout->preview_file_bases.e[0]);
+			else prev=previewFileName(full,".laidout-*.jpg");
+		}
+	} else prev=previewFileName(full,prevbase->GetCText());
+
+	return prev;
 }
 

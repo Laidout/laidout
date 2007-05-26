@@ -207,9 +207,13 @@ int GroupInterface::ToggleGroup()
 	return 1;
 }
 
+/*! Returns the number of new things added to the selection.
+ */
 int GroupInterface::GrabSelection(unsigned int state)
 {
+	if (!data) return 1;
 	cout <<"***imp GrabSelection(unsigned int state)"<<endl;
+	//viewer->FindObjects(data,);
 	return ObjectInterface::GrabSelection(state);
 }
 
