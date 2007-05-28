@@ -25,12 +25,12 @@ open (OUTFILE, "<$outfile")   or die "can't open $outfile";
 open (OUT2FILE, ">$out2file") or die "can't open $out2file";
 
 $line=<OUTFILE>;
-while (1) {
+while (defined($line)) {
 	print "$line\n";
 	if ($line =~ m/^.*(\d*).*created/) {
 		$num=$1;
 		print "  $num created";
-		if (!($line=<OUTFILE>)) {
+		if (!defined($line=<OUTFILE>)) {
 			print " but NOT destroyed\n";
 			break;
 		}
@@ -42,7 +42,7 @@ while (1) {
 			print " and destroyed\n";
 		}
 	} else {
-		if (!($line=<OUTFILE>)) { break; }
+		if (!defined($line=<OUTFILE>)) { break; }
 	}
 }
 close(INFILE);

@@ -424,7 +424,7 @@ void ImportImagesDialog::SetFile(const char *f,const char *pfile)
  */
 void ImportImagesDialog::rebuildPreviewName()
 {
-	//linp=dynamic_cast<LineInput *>(findWindow("file"));
+	//int ifauto=dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON;
 	//const char *f=linp->GetCText();
 	
 	 // find file in list 
@@ -437,6 +437,7 @@ void ImportImagesDialog::rebuildPreviewName()
 		prev=newstr(info->previewfile);
 	} 
 	if (!prev) prev=getPreviewFileName(full);
+	if (!prev) prev=newstr("");
 	preview->SetText(prev);
 	delete[] full;
 	delete[] prev;

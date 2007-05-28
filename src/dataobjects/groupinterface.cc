@@ -213,7 +213,10 @@ int GroupInterface::GrabSelection(unsigned int state)
 {
 	if (!data) return 1;
 	cout <<"***imp GrabSelection(unsigned int state)"<<endl;
-	//viewer->FindObjects(data,);
+//	int n;
+//	VObjContext **objs;
+//	n=viewport->FindObjects(bbox,0,0,NULL,&objs);
+	
 	return ObjectInterface::GrabSelection(state);
 }
 

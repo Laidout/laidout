@@ -30,6 +30,9 @@
 #include <cstdarg>
 #include <cups/cups.h>
 
+#include <lax/lists.cc>
+
+
 #include "language.h"
 #include "printing/print.h"
 #include "printing/psout.h"
@@ -450,6 +453,12 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		}
 		
 		delete te;
+		return 0;
+	} else if (!strcmp(mes,"rulercornermenu")) {
+		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
+		if (!se || !se->n || !se->strs[0]) return 1;
+		//***set document to se->strs[0]
+		delete se;
 		return 0;
 	} else if (!strcmp(mes,"image properties")) {
 		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
@@ -1076,13 +1085,74 @@ int LaidoutViewport::FindObject(int x,int y,
 //! Find multiple objects in box.
 /*! Return value is the number of objects found. If none, then date_ret and c_ret 
  * are set to NULL.
+ *
+ * \todo *** this needs more thought, as does FindObject(), need to implement checking
+ *   of permissions for selecting objects, zones, and rect touching/inside. Also, would
+ *   be nice to have a lasso selector.
  */
 int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascurobj,
 							SomeData ***data_ret, ObjectContext ***c_ret)
 {
+	 //init the search, if necessary
+	VObjContext nextindex;
+	
+	 //init search
+	foundobj.clear();
+	firstobj.clear();
+	 
+	 // Set up firstobj
+	FieldPlace context;
+	firstobj=curobj; //***need validation check
+	if (!firstobj.obj) findAny();
+	if (!firstobj.obj) return 0;
+	nextindex=firstobj;
+	
+	searchmode=Search_Find;
+	
+	foundtypeobj.clear(); // this one is always reset?
+	if (!firstobj.obj) return 0;
+
+	 // nextindex now points to the first object to consider.
+	 
+	double m[6];
+	//DoubleBBox obox;
+	DBG firstobj.context.out("firstobj");
+	
+	int nob=1;
+	VObjContext *obj=NULL;
+	PtrStack<VObjContext> objects;
+	do {
+		 //find transform to nextindex coords
+		transformToContext(m,nextindex.context);
+
+		DBG cout <<"lov.FindObject oc: "; nextindex.context.out("");
+		DBG	if (nextindex.obj) cout <<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
+
+		if (box->intersect(m,nextindex.obj,1,0)) {
+			 // matching object found! add to list that gets returned
+			DBG cout <<" -- found"<<endl;
+			if (!foundobj.obj) foundobj=nextindex;
+
+			obj=new VObjContext;
+			*obj=nextindex;
+			objects.push(obj,1);
+			DBG foundtypeobj.context.out("  foundtype");//for debugging
+			return 1;
+		}
+		DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
+		nob=nextObject(&nextindex);
+	} while (nob);
+	 
+	int n;
+	if (c_ret) *c_ret=(ObjectContext **)objects.extractArrays(NULL,&n);
 	if (data_ret) *data_ret=NULL;
-	if (c_ret) *c_ret=NULL;
-	return 0;
+	
+	return n; // search ended
+	
+//	-------------
+//	if (data_ret) *data_ret=NULL;
+//	if (c_ret) *c_ret=NULL;
+//	return 0;
 }
 
 //! Make a transform that takes a point from viewer past all objects in place.
@@ -1157,6 +1227,7 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
  * to have already been stepped through.
  * 
  * Returns 0 if there isn't a next obj for some reason, and 1 if there is.
+ * If the object stepped to == firstobj, then return 0;
  */
 int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 {
@@ -2407,21 +2478,15 @@ int ViewWindow::init()
 		win_sizehints->flags=USPosition|USSize;
 	}
 	
-	MenuInfo *menu;
 	MenuButton *menub;
 	 //add a menu button thingy in corner between rulers
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
-	menu=new MenuInfo("Documents");
-	for (int c=0; c<laidout->project->docs.n; c++) {
-		menu->AddItem(laidout->project->docs.e[c]->Name()); //*****
-	}
-//	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
-//							 menu,1,
-//							 laidout->icons.GetIcon("Export"),"Export");
-	menub=new MenuButton(this,"rulercornerbutton",MENUBUTTON_DOWNARROW, 0,0,0,0,0,
+	menub=new MenuButton(this,"rulercornerbutton",
+									 MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
+									 0,0,0,0,0,
 									 NULL,window,"rulercornerbutton",0,
-									 menu,1,
+									 NULL,0,
 									 laidout->icons.GetIcon("Laidout"),NULL);
 	menub->tooltip(_("Document list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
@@ -2534,14 +2599,11 @@ int ViewWindow::init()
 //	ibut->tooltip(_("Insert an image into the current image or image patch"));
 //	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
-			laidout->icons.GetIcon("Open"),_("Open"));
-	ibut->tooltip(_("Open a document from disk"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
-
-	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
-			laidout->icons.GetIcon("Save"),_("Save"));
-	ibut->tooltip(_("Save the current document"));
+	 //-------------import
+	 //*** this can be somehow combined with import images maybe?...
+	last=ibut=new IconButton(this,"import",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"import",-1,
+			laidout->icons.GetIcon("Import"),_("Import"));
+	ibut->tooltip(_("Try to import various vector based files into the document"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	 //---------------******** export
@@ -2555,7 +2617,7 @@ int ViewWindow::init()
 	 // Export style 1: ppt pg 3-6
 	 // Export style 2: SVG pg 2
 	 //then Print button would have the last export settings, single click does that..
-	menu=new MenuInfo("Export");
+	MenuInfo *menu=new MenuInfo("Export");
 	menu->AddItem("Passepartout",Save_PPT);
 	menu->AddItem("Pdf 1.4",     Save_PDF_1_4);
 	menu->AddItem("Svg",         Save_SVG);
@@ -2566,14 +2628,17 @@ int ViewWindow::init()
 	menub->tooltip(_("Export the document as something other than a Laidout document"));
 	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
 
-	 //-------------import
-	 //*** this can be somehow combined with import images maybe?...
-	last=ibut=new IconButton(this,"import",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"import",-1,
-			laidout->icons.GetIcon("Import"),_("Import"));
-	ibut->tooltip(_("Try to import various vector based files into the document"));
+	
+	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
+			laidout->icons.GetIcon("Open"),_("Open"));
+	ibut->tooltip(_("Open a document from disk"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	
+	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
+			laidout->icons.GetIcon("Save"),_("Save"));
+	ibut->tooltip(_("Save the current document"));
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+
 	 //-----------print
 	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
 			laidout->icons.GetIcon("Print"),_("Print"));
@@ -3004,6 +3069,38 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				(float) alpha / 65535);
 		mesbar->SetText(blah);
 		return 0;
+	} else if (!strcmp(mes,"rulercornerbutton")) {
+		 //pop up a list of available documents
+		 //*** in future, this will be more full featured, with:
+		 //Doc1
+		 //Doc2
+		 //---
+		 //limbo1
+		 //limbo2
+		 //----
+		 //zone1
+		 //zone2
+
+		MenuInfo *menu;
+		menu=new MenuInfo("Documents");
+		for (int c=0; c<laidout->project->docs.n; c++) {
+			menu->AddItem(laidout->project->docs.e[c]->Name()); 
+		}
+		MenuSelector *popup;
+		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
+						0,0,0,0, 1, 
+						NULL,owner,"rulercornermenu", 
+						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
+						 | MENUSEL_SEND_STRINGS
+						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
+						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
+						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF,
+						menu,1);
+		popup->pad=5;
+		popup->Select(0);
+		popup->WrapToMouse(None);
+		app->rundialog(popup);
+		return 0;
 	} else if (!strcmp(mes,"help")) {
 		app->addwindow(new HelpWindow());
 		return 0;
@@ -3090,12 +3187,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 					0,0,500,500,0, window,"import new image",
 					NULL,NULL,NULL,
-					doc,0,doc->docstyle->imposition->paperstyle->dpi));
+					doc,
+					((LaidoutViewport *)viewport)->curobjPage(),
+					doc->docstyle->imposition->paperstyle->dpi));
 		//app->rundialog(new FileDialog(NULL,"Import Image",
 		//			ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 		//			0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
+		 //******currently not used in favor of image dialog
 		 // run a dialog to grab a new image for an ImageData and ImagePatchData
 		char *oldimage=NULL,*oldimgname=NULL;
 		SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
@@ -3133,7 +3233,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"loaddir")) {
 		if (loaddir->GetCText()) makestr(app->load_dir,loaddir->GetCText());
 		return 0;
-	} else if (!strcmp(mes,"export")) { // dump to passepartout file
+	} else if (!strcmp(mes,"import")) { 
+		mesbar->SetText(_("Sorry, importing not quite working yet."));
+		return 0;
+	} else if (!strcmp(mes,"export")) { 
 		 //***********this needs automation
 		DBG cout <<" ----- data="<<e->data.l[0]<<endl;
 		if (e->data.l[1]==Save_PPT) {
