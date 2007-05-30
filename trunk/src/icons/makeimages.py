@@ -1,4 +1,4 @@
-#!/usr/bin/python2.3
+#!/usr/bin/python2.4
 
 """
 Using Inkscape, look in icons.svg and take all top items in base
@@ -11,7 +11,8 @@ laidout-ish vector specs fast enough to not be irritating maybe.
 """
 
 import commands, sys
-from xml.sax import saxexts
+#from xml.sax import saxexts
+import xml.sax
 
 if (len(sys.argv)>1) : bitmapw=int(sys.argv[1])
 else : bitmapw=24
@@ -54,7 +55,7 @@ class SAXtracer:
 
 # --- Main prog
 
-pf=saxexts.ParserFactory()
+pf=xml.sax.saxexts.ParserFactory()
 p=pf.make_parser("xml.sax.drivers.drv_xmlproc")
 p.setDocumentHandler(SAXtracer("doc_handler"))
 p.parse("icons.svg")

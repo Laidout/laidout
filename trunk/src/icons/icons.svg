@@ -497,9 +497,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="794.97678"
-     inkscape:cy="569.58026"
+     inkscape:zoom="5.6568542"
+     inkscape:cx="767.28533"
+     inkscape:cy="614.23377"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1278"
@@ -3705,7 +3705,7 @@
          x="48.083263"
          y="565.7359">Laidout</tspan></text>
     <g
-       id="g3693">
+       id="Laidout">
       <path
          sodipodi:nodetypes="cccccccc"
          id="path3662"
@@ -3724,7 +3724,7 @@
       <path
          id="path3660"
          d="M 100.99306,574.23897 L 100.96934,552.61801 L 117.05476,556.81516 L 117.05476,577.28173 L 100.99306,574.23897 z "
-         style="fill:#00b4ff;fill-opacity:1;stroke:#46467b;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         style="fill:#a3c1ff;fill-opacity:1;stroke:#46467b;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          sodipodi:nodetypes="ccccc" />
       <path
          id="path3685"
@@ -3772,8 +3772,8 @@
          id="path3722"
          sodipodi:nodetypes="ccccccc" />
       <path
-         style="opacity:1;fill:#00b4ff;fill-opacity:1;stroke:#000000;stroke-width:2.03091764;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         d="M 782.22723,319.66857 L 792.22723,319.66857 L 791.44013,334.01807 L 798.79573,334.64157 L 788.13266,345.10278 L 776.46144,335.20192 L 783.44516,334.04028 L 782.22723,319.66857 z "
+         style="opacity:1;fill:#a3c1ff;fill-opacity:1;stroke:#000000;stroke-width:2.03091764;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         d="M 783.82287,319.66857 L 790.83105,319.46912 L 790.04395,335.61371 L 798.39682,335.23993 L 788.13266,345.10278 L 776.46144,335.20192 L 784.64189,335.23701 L 783.82287,319.66857 z "
          id="path3724"
          sodipodi:nodetypes="cccccccc" />
     </g>
@@ -3797,8 +3797,8 @@
       <path
          sodipodi:nodetypes="cccccccc"
          id="path2701"
-         d="M 791.56566,385.73142 L 783.45267,385.98142 L 782.77528,372.51348 L 777.63102,371.71087 L 787.45669,364.06411 L 797.17587,372.33923 L 792.11121,372.99379 L 791.56566,385.73142 z "
-         style="fill:#00b4ff;fill-opacity:1;stroke:#000000;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         d="M 790.85855,385.9082 L 784.15978,385.98142 L 784.18949,372.15993 L 777.45424,371.18054 L 787.45669,364.06411 L 797.52942,371.10179 L 790.52022,372.28668 L 790.85855,385.9082 z "
+         style="fill:#a3c1ff;fill-opacity:1;stroke:#000000;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
   </g>
 </svg>
