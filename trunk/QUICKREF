@@ -17,6 +17,8 @@ In a viewer:
    +' '       center the page
    '=' or '+' zoom in around mouse
    '-'        zoom out around mouse
+   'o'        clear any display rotation
+   'O'        center the viewer on the viewer origin
 
    left       previous tool
    right      next tool
@@ -57,7 +59,6 @@ SpreadEditor:
    't'    toggle drawing of thumbnails
    'A'    toggle how to arrange the spreads
   ^'A'    force arranging the spreads using current arrange style
-   'p'    *** for debugging thumbs
 
 
 ObjectInterface:
