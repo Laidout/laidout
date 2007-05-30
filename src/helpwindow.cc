@@ -76,6 +76,8 @@ int HelpWindow::preinit()
 }
 
 /*! Pops up a box with the QUICKREF and an ok button.
+ *
+ * \todo when shortcuts are fully implemented, the text here will be basically automatic.
  */
 int HelpWindow::init()
 {
@@ -122,6 +124,8 @@ int HelpWindow::init()
 			"   +' '       center the page\n"
 			"   '=' or '+' zoom in around mouse\n"
 			"   '-'        zoom out around mouse\n"
+			"   'o'        clear any display rotation\n"
+			"   'O'        center the viewer on the viewer origin\n"
 			"\n"
 			"    // these are like inkscape:\n"
 			"   pgup      raise selection by 1 within layer\n"
