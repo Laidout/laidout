@@ -58,13 +58,14 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	char lfirsttime;
  protected:
 	unsigned int drawflags;
+	int viewportmode;
 	int viewmode;
 	int searchmode,searchcriteria;
 	int showstate;
 	int transformlevel;
 	double ectm[6];
 	XdbeBackBuffer backbuffer;
-	Group limbo;
+	Group *limbo;
 	virtual void setupthings(int tospread=-1,int topage=-1);
 	virtual void LaidoutViewport::setCurobj(VObjContext *voc);
 	virtual void LaidoutViewport::findAny();
@@ -89,6 +90,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int init();
 	virtual int event(XEvent *e);
 	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int LBDown(int x,int y,unsigned int state,int count);
+	virtual int LBUp(int x,int y,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 

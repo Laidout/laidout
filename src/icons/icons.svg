@@ -497,9 +497,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6568542"
-     inkscape:cx="767.28533"
-     inkscape:cy="614.23377"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="444.01754"
+     inkscape:cy="681.9674"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1278"
@@ -920,7 +920,7 @@
          sodipodi:nodetypes="ccccc" />
     </g>
     <g
-       id="ImportImage"
+       id="ImportImage2"
        transform="matrix(0.87878,0,0,0.87878,199.7209,368.6533)">
       <rect
          ry="0.029005606"
@@ -1486,7 +1486,7 @@
          transform="matrix(0.75713,0,0,0.594225,104.8819,34.36931)" />
     </g>
     <g
-       id="g2694">
+       id="ImportImage">
       <rect
          style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.58124995;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          id="rect2532"
