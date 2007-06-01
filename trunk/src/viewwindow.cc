@@ -48,6 +48,7 @@
 #include "configured.h"
 #include "importimages.h"
 
+#include <X11/cursorfont.h>
 #include <iostream>
 #include <sys/stat.h>
 using namespace std;
@@ -242,8 +243,10 @@ int VObjContext::isequal(const ObjectContext *oc)
  * space editing and new objects are put down, then the curobj becomes a group with the 
  * former curobj part of that group.
  */
-/*! \var Group LaidoutViewport::limbo
+/*! \var Group *LaidoutViewport::limbo
  * \brief Essentially the scratchboard, which persists even when changing spreads and pages.
+ *
+ * These are saved with the document, and each view can select which limbo to work with.
  */
 /*! \fn int LaidoutViewport::n()
  * \brief  Return 2 if spread exists, or 1 for just limbo.
@@ -282,10 +285,14 @@ int VObjContext::isequal(const ObjectContext *oc)
 #define Search_HowMask          (12)
 
 
+#define VIEW_NORMAL      0
+#define VIEW_GRAB_COLOR  1
+
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
 LaidoutViewport::LaidoutViewport(Document *newdoc)
 	: ViewportWindow(NULL,"laidoutviewport",ANXWIN_HOVER_FOCUS|VIEWPORT_ROTATABLE,0,0,0,0,0)
 {
+	viewportmode=VIEW_NORMAL;
 	showstate=1;
 	backbuffer=0;
 	lfirsttime=1;
@@ -304,6 +311,10 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	searchmode=Search_None;
 	searchcriteria=Search_Any;
 	
+	//**** this should get added to laidout app:
+	limbo=new Group;//****group with 1 count
+	
+	
 	viewmode=-1;
 	SetViewMode(PAGELAYOUT,-1);
 //	SetViewMode(SINGLELAYOUT,-1);//*** note that viewwindow has a button for this, which defs to PAGELAYOUT
@@ -319,14 +330,13 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 }
 
 //! Delete spread, doc and page are assumed non-local.
-/*! Also calls limbo.flush().
+/*! Does limbo->dec_count().
  */
 LaidoutViewport::~LaidoutViewport()
 {
 	if (spread) delete spread;
 
-	 //checkin limbo objects vie limbo's Group::flush()
-	limbo.flush();
+	limbo->dec_count();
 }
 
 //! On any FocusIn event, set laidout->lastview to this.
@@ -367,7 +377,7 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 //! Return pointer to limbo if i==0, and spread if i==1.
 Laxkit::anObject *LaidoutViewport::object_e(int i)
 {
-	if (i==0) return &limbo;
+	if (i==0) return limbo;
 	if (i==1 && spread) return spread;
 	return NULL;
 }
@@ -767,7 +777,7 @@ int LaidoutViewport::DeleteObject()
 
 	 // remove d from wherever it's at:
 	if (curobj.spread()==0) { //in limbo
-		limbo.remove(curobj.limboi());
+		limbo->remove(curobj.limboi());
 	} else { // is somewhere in document
 		Group *g=curpage->e(curobj.layer());
 		g->remove(g->findindex(d));
@@ -865,8 +875,8 @@ int LaidoutViewport::NewCurobj(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectC
 	int i=-1;
 	if (!spread || !curpage || curobj.layer()<0 || curobj.layer()>=curpage->layers.n()) {
 		 // add object to limbo, this likely does not install proper transform
-		i=limbo.pushnodup(d,0);
-		context->set(d,2,0,i>=0?i:limbo.n()-1);
+		i=limbo->pushnodup(d,0);
+		context->set(d,2,0,i>=0?i:limbo->n()-1);
 	} else {
 		 // push onto cur spread/page/layer
 		 //*** this should push on curobj level, not simply page->layer
@@ -1114,7 +1124,7 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 
 	 // nextindex now points to the first object to consider.
 	 
-	double m[6];
+	double m[6],mm[6];
 	//DoubleBBox obox;
 	DBG firstobj.context.out("firstobj");
 	
@@ -1122,13 +1132,14 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 	VObjContext *obj=NULL;
 	PtrStack<VObjContext> objects;
 	do {
-		 //find transform to nextindex coords
-		transformToContext(m,nextindex.context);
+		 //find transform from nextindex coords
+		transformToContext(m,nextindex.context,1);
+		transform_mult(mm,m,nextindex.obj->m());
 
 		DBG cout <<"lov.FindObject oc: "; nextindex.context.out("");
 		DBG	if (nextindex.obj) cout <<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
 
-		if (box->intersect(m,nextindex.obj,1,0)) {
+		if (box->intersect(mm,nextindex.obj,1,0)) {
 			 // matching object found! add to list that gets returned
 			DBG cout <<" -- found"<<endl;
 			if (!foundobj.obj) foundobj=nextindex;
@@ -1136,10 +1147,10 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 			obj=new VObjContext;
 			*obj=nextindex;
 			objects.push(obj,1);
-			DBG foundtypeobj.context.out("  foundtype");//for debugging
-			return 1;
+			DBG foundobj.context.out("  foundobj");//for debugging
+		} else {
+			DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
 		}
-		DBG cout <<" -- not found in "<<nextindex.obj->object_id<<endl;
 		nob=nextObject(&nextindex);
 	} while (nob);
 	 
@@ -1178,7 +1189,7 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
 	if (i==0) { 
 		 // in limbo, which adds only identity, so proceed to object transforms
 		i++;
-		g=dynamic_cast<Group *>(limbo.e(place.e(1)));
+		g=dynamic_cast<Group *>(limbo->e(place.e(1)));
 	} else if (i==1 && spread) {
 		 // in a spread, must apply the page transform
 		 // spread->pagelocation->layer->layeri->objs...
@@ -1281,8 +1292,8 @@ int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 {
 	place.flush();
 	 // check limbo
-	if (limbo.n()) {
-		if (limbo.contains(d,place)) {
+	if (limbo->n()) {
+		if (limbo->contains(d,place)) {
 			place.push(0,0);
 			return place.n();
 		}
@@ -1325,8 +1336,8 @@ void LaidoutViewport::findAny()
 		}
 	}
 	if (!obj) {
-		if (limbo.n()) {
-			firstobj.set(limbo.e(0),2,0,0);
+		if (limbo->n()) {
+			firstobj.set(limbo->e(0),2,0,0);
 			return;
 		}	
 	}
@@ -1353,7 +1364,7 @@ int LaidoutViewport::validContext(VObjContext *oc)
 	
 	if (oc->spread()==0) { // scratchboard/limbo
 		if (oc->context.n()==1) return 1;
-		else if (d==limbo.getanObject(oc->context,1)) return 1;
+		else if (d==limbo->getanObject(oc->context,1)) return 1;
 		return 0;
 	}
 	
@@ -1442,9 +1453,55 @@ void LaidoutViewport::clearCurobj()
 	setCurobj(NULL);
 }
 
+//! Intercept for the color grabber.
+int LaidoutViewport::LBDown(int x,int y,unsigned int state,int count)
+{
+	if (viewportmode==VIEW_GRAB_COLOR) {
+		buttondown|=LEFTBUTTON;
+		return 0;
+	}
+	return ViewportWindow::LBDown(x,y,state,count);
+}
+
+//! Intercept to reset to normal from the color grabber.
+int LaidoutViewport::LBUp(int x,int y,unsigned int state)
+{
+	if (viewportmode==VIEW_GRAB_COLOR) {
+		buttondown&=~LEFTBUTTON;
+		viewportmode=VIEW_NORMAL;
+		XUndefineCursor(app->dpy,window);
+		return 0;
+	}
+	return ViewportWindow::LBUp(x,y,state);
+}
+
 //! *** for debugging, show which page mouse is over..
 int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 {
+	if (viewportmode==VIEW_GRAB_COLOR) {
+		//***on focus off, reset mode to normal
+			//click down starts grabbing color
+			//click up ends grabbing, and sets viewmode no to normal
+		if (buttondown&LEFTBUTTON) {
+			unsigned long pix=screen_color_at_mouse();
+			int r,g,b;
+			app->colorrgb(pix,&r,&g,&b);
+			DBG cout << "grab color:"<<r<<','<<g<<','<<b<<endl;
+			XEvent e;
+			e.xclient.type=ClientMessage;
+			e.xclient.display=app->dpy;
+			e.xclient.window=win_parent->window;
+			e.xclient.message_type=XInternAtom(app->dpy,"curcolor",False);
+			e.xclient.format=32;
+			e.xclient.data.l[0]=255;
+			e.xclient.data.l[1]=r;
+			e.xclient.data.l[2]=g;
+			e.xclient.data.l[3]=b;
+			e.xclient.data.l[4]=255;
+			XSendEvent(app->dpy,win_parent->window,False,0,&e);
+		}
+		return 0;
+	}
 	DBG if (!buttondown) {
 	DBG 	int c=-1;
 	DBG 	flatpoint p=dp->screentoreal(x,y);
@@ -1636,7 +1693,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	transformToContext(m,curobj.context,0);
 	if (curobj.spread()==0) {
 		 // pop from limbo
-		c=limbo.popp(curobj.obj,&islocal); // does not modify obj count
+		c=limbo->popp(curobj.obj,&islocal); // does not modify obj count
 	} else {
 		 // pop from old page
 		Page *frompage=spread->pagestack.e[curobj.spreadpage()]->page;
@@ -1670,9 +1727,9 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	} else {
 		transform_mult(mm,curobj.obj->m(),m);
 		transform_copy(curobj.obj->m(),mm);
-		limbo.push(d,islocal); //adds 1 count
+		limbo->push(d,islocal); //adds 1 count
 		curobj.obj->dec_count();
-		curobj.set(curobj.obj,2, 0,limbo.n()-1);
+		curobj.set(curobj.obj,2, 0,limbo->n()-1);
 	}
 	setCurobj(NULL);
 	DBG cout <<"  moved "<<d->object_id<<" to: ";
@@ -1802,8 +1859,8 @@ void LaidoutViewport::Refresh()
 
 	 // draw limbo objects
 	DBG cout <<"drawing limbo objects.."<<endl;
-	for (c=0; c<limbo.n(); c++) {
-		DrawData(dp,limbo.e(c),NULL,NULL,drawflags);
+	for (c=0; c<limbo->n(); c++) {
+		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
 	}
 	
 	if (spread && showstate==1) {
@@ -1944,6 +2001,8 @@ void LaidoutViewport::Refresh()
  * 's'       toggle showing of the spread (shows only limbo)
  * 'm'       move current selection to another page, popus up a dialog ***imp me!
  * ' '       Center(), *** need center obj, page, spread, center+fit obj,page,spread,objcomponent
+ * 'o'       clear angle of viewport
+ * 'O'       set middle of viewport to the real origin
  *  // these are like inkscape
  * pgup      ***raise selection by 1 within layer
  * pgdown    ***lower selection by 1 within layer
@@ -1972,7 +2031,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 	DBG }
 	
 	 // check these first, before asking interfaces
-	if (ch==' ') {
+	if (ch==' ') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
 		if ((state&LAX_STATE_MASK)==0) {
 			Center(1);
 			return 0;
@@ -1986,7 +2045,26 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 	if (ViewportWindow::CharInput(ch,state)==0) return 0;
 
 	 // deal with all other LaidoutViewport specific stuff
-	if (ch=='0' &&  (state&LAX_STATE_MASK)==0) {
+	if (ch=='g' && viewportmode!=VIEW_GRAB_COLOR &&  (state&LAX_STATE_MASK)==0) {
+		
+		Cursor cursor=XCreateFontCursor(app->dpy,XC_circle);
+		if (cursor) {
+			viewportmode=VIEW_GRAB_COLOR;
+			DBG cout <<"***********************viewport:CURSOR***********************"<<endl;
+			XDefineCursor(app->dpy,window,cursor);
+			XFreeCursor(app->dpy,cursor);
+		}
+	} else if (viewportmode==VIEW_GRAB_COLOR && (ch=='g' || ch==LAX_Esc) && (state&LAX_STATE_MASK)==0) {
+		if (viewportmode==VIEW_GRAB_COLOR) {
+			viewportmode=VIEW_NORMAL;
+			XUndefineCursor(app->dpy,window);
+			return 0;
+		}
+	} else if (ch=='o' &&  (state&LAX_STATE_MASK)==0) {
+		return ViewportWindow::CharInput(' ',ShiftMask);
+	} else if (ch=='O' &&  (state&LAX_STATE_MASK)==ShiftMask) {
+		return ViewportWindow::CharInput(' ',0);
+	} else if (ch=='0' &&  (state&LAX_STATE_MASK)==0) {
 		//*** activate GroupInterface?
 	} else if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
 		if (!DeleteObject()) return 1;
@@ -3054,6 +3132,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"make curcolor")) {
 		 //change color box color to what's in the event
+		 //(sent from interfaces)
 		float max=e->data.l[0];
 		unsigned int red,green,blue,alpha;
 		red=  (unsigned short) (e->data.l[1]/max*65535);

@@ -270,26 +270,15 @@ int svgout(const char *version, Document *doc,const char *filename, int layout,i
 	
 }
 
-//! Import a Passepartout file.
+//! Import an SVG file.
 /*! If doc!=NULL, then import the svg file to Document starting at page startpage.
  * Otherwise, create a brand new Singles based document.
  *
- * Does no check on the file to ensure that it is in fact a Passepartout file.
+ * Does no check on the file to ensure that it is in fact an svg file.
  *
  * It will be a file something like:
  * <pre>
- * <?xml version="1.0"?>
- * <document paper_name="Letter" doublesided="true" landscape="false" first_page_num="1">
- *   <page>
- *      <frame name="Raster beetile-501x538.jpg"
- *             matrix="0.812233 0 0 0.884649 98.6048 243.107"
- *             lock="false"
- *             flowaround="false"
- *             obstaclemargin="0" 
- *             type="raster"
- *             file="beetile-501x538.jpg"/>
- *   </page>
- * </document>         
+ *   ??????
  * </pre>
  *
  * \todo ***** finish imp me!

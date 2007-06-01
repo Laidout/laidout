@@ -14,6 +14,7 @@
 // Copyright (C) 2005-2007 by Tom Lechner
 //
 
+#include <lax/transformmath.h>
 #include "groupinterface.h"
 #include "../project.h"
 #include "../viewwindow.h"
@@ -23,6 +24,7 @@ using namespace std;
 #define DBG 
 
 using namespace LaxInterfaces;
+using namespace Laxkit;
 
 //----------------------------- GroupInterface -----------------------
 
@@ -111,7 +113,7 @@ int GroupInterface::ToggleGroup()
 	 // find the base group which contains the group to ungroup, or which contains the
 	 // first selected object to group with others..
 	if (place.e(0)==0) { // is limbo
-		base=&((LaidoutViewport *)viewport)->limbo;
+		base=((LaidoutViewport *)viewport)->limbo;
 	} else if (place.e(0)==1) {
 		 // is doc pages spread, need the page->layers containing the selection
 		Page *p=NULL;
@@ -213,11 +215,34 @@ int GroupInterface::GrabSelection(unsigned int state)
 {
 	if (!data) return 1;
 	cout <<"***imp GrabSelection(unsigned int state)"<<endl;
-//	int n;
-//	VObjContext **objs;
-//	n=viewport->FindObjects(bbox,0,0,NULL,&objs);
+
+	DoubleBBox bbox;
+	bbox.addtobounds(transform_point(data->m(),data->minx,data->miny));
+	bbox.addtobounds(transform_point(data->m(),data->maxx,data->maxy));
 	
-	return ObjectInterface::GrabSelection(state);
+	DBG cout <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
+	DBG cout <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
+	
+	int n;
+	VObjContext **objs;
+	n=viewport->FindObjects(&bbox,0,0,NULL,(ObjectContext ***)(&objs));
+
+	DBG if (n && !objs) cout <<"*******ERROR! says found objects, but no objects returned."<<endl;
+	DBG else {
+	DBG 	cout <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
+	DBG 	cout <<"Found objects: "<<n<<endl;
+	DBG }
+
+	 //add
+	for (int c=0; c<n; c++) {
+		DBG cout << "  ";
+		DBG if (objs[c]) objs[c]->context.out("");
+
+		AddToSelection(objs[c]);
+	}
+	
+	//return ObjectInterface::GrabSelection(state);
+	return n;
 }
 
 
