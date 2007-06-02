@@ -240,6 +240,10 @@ int GroupInterface::GrabSelection(unsigned int state)
 
 		AddToSelection(objs[c]);
 	}
+	if (n==0) {
+		deletedata();
+		needtodraw=1;
+	}
 	
 	//return ObjectInterface::GrabSelection(state);
 	return n;
