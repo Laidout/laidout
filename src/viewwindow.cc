@@ -2385,6 +2385,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform between screen and real space\n",spc);
 		fprintf(f,"%sxbounds -20 20      #what distance a horizontal scrollbar represents\n",spc);
 		fprintf(f,"%sybounds -20 20      #what distance a vertical scrollbar represents\n",spc);
+		fprintf(f,"%slimbo               #limbo objects, if any\n",spc);
 		return;
 	}
 	if (doc && doc->saveas) fprintf(f,"%sdocument %s\n",spc,doc->saveas);
@@ -2406,6 +2407,13 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 	viewport->dp->GetSpace(&x1,&x2,&y1,&y2);
 	fprintf(f,"%sxbounds %.10g %.10g\n",spc,x1,x2); 
 	fprintf(f,"%sybounds %.10g %.10g\n",spc,y1,y2); 
+	if (vp->limbo->n()) {
+		fprintf(f,"%slimbo\n",spc); 
+		for (int c=0; c<vp->limbo->n(); c++) {
+			fprintf(f,"%s  object %d %s\n",spc,c,vp->limbo->e(c)->whattype());
+			vp->limbo->e(c)->dump_out(f,indent+4,what);
+		}
+	}
 }
 
 //! Reverse of dump_out().
@@ -2442,6 +2450,8 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 			IntAttribute(value,&pn);
 		} else if (!strcmp(name,"document")) {
 			doc=laidout->findDocument(value);
+		} else if (!strcmp(name,"limbo")) {
+			((LaidoutViewport *)viewport)->limbo->dump_in_atts(att->attributes.e[c],0);
 		}
 	}
 	//*** there should be error checking on x,y
