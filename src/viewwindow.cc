@@ -2724,6 +2724,13 @@ int ViewWindow::init()
 	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
 
 	
+	 //-----------print
+	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
+			laidout->icons.GetIcon("Print"),_("Print"));
+	ibut->tooltip(_("Print the document"));
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+
+
 	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
 			laidout->icons.GetIcon("Open"),_("Open"));
 	ibut->tooltip(_("Open a document from disk"));
@@ -2734,35 +2741,8 @@ int ViewWindow::init()
 	ibut->tooltip(_("Save the current document"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-	 //-----------print
-	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
-			laidout->icons.GetIcon("Print"),_("Print"));
-	ibut->tooltip(_("Print to output.ps, a postscript file"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
-
 	
 
-//	var1=new NumInputSlider(this,"var1",NUMSLIDER_WRAP, 0,0,0,0,1, 
-//								NULL,window,"var1",
-//								NULL,-10000,100000,1);
-//	var1->tooltip("Number of images per page for import,\n"
-//				  "-1=as many as possible,\n"
-//				  "-2=all one current page\n"
-//				  "Shift-click to type a number");
-//	AddWin(var1,var1->win_w,0,50,50, var1->win_h,0,50,50);
-//	
-//	var2=new NumInputSlider(this,"var2",NUMSLIDER_WRAP, 0,0,0,0,1, 
-//								NULL,window,"var2",
-//								NULL,-10000,100000,360);
-//	var2->tooltip("Default dpi of images imported.\nShift-click to type a number");
-//	AddWin(var2,var2->win_w,0,50,50, var2->win_h,0,50,50);
-//	
-//	var3=new NumInputSlider(this,"var3",NUMSLIDER_WRAP, 0,0,0,0,1, 
-//								NULL,window,"var3",
-//								NULL,-10000,100000,1);
-//	var3->tooltip("(undefined)");
-//	AddWin(var3,var3->win_w,0,50,50, var3->win_h,0,50,50);
-	
 	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
 			laidout->icons.GetIcon("Help"),_("Help!"));
 	ibut->tooltip(_("Popup a list of shortcuts"));
