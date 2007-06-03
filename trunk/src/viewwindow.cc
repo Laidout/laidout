@@ -468,6 +468,9 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
 		if (!se || !se->n || !se->strs[0]) return 1;
 		//***set document to se->strs[0]
+		//****str is base name
+		Document *doc=laidout->findDocument(se->strs[0]);
+		if (doc) UseThisDoc(doc);
 		delete se;
 		return 0;
 	} else if (!strcmp(mes,"image properties")) {
@@ -1832,8 +1835,8 @@ void LaidoutViewport::Refresh()
 	if (lfirsttime) { 
 		 //setup doublebuffer
 		if (!backbuffer) backbuffer=XdbeAllocateBackBufferName(app->dpy,window,XdbeBackground);
+		if (lfirsttime==1) Center(1); 
 		lfirsttime=0; 
-		Center(1); 
 	}
 	DBG cout <<"======= Refreshing LaidoutViewport..";
 	
@@ -2425,13 +2428,12 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 	char *name,*value;
 	int vm=PAGELAYOUT, spr=0, pn=0;
 	double m[6],x1=0,x2=0,y1=0,y2=0;
-	int n;
+	int n=0;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"matrix")) {
 			n=DoubleListAttribute(value,m,6);
-			if (n==6) viewport->dp->NewTransform(m);
 		} else if (!strcmp(name,"xbounds")) {
 			if (DoubleAttribute(value,&x1,&value))
 				DoubleAttribute(value,&x2,NULL);
@@ -2459,6 +2461,11 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
 	((LaidoutViewport *)viewport)->SetViewMode(vm,spr);
+	if (n==6) {
+		viewport->dp->NewTransform(m);
+		if (((LaidoutViewport *)viewport)->lfirsttime) ((LaidoutViewport *)viewport)->lfirsttime++;
+		if (((LaidoutViewport *)viewport)->firsttime)  ((LaidoutViewport *)viewport)->firsttime++;
+	}
 }
 
 
@@ -3173,12 +3180,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		MenuInfo *menu;
 		menu=new MenuInfo("Documents");
 		for (int c=0; c<laidout->project->docs.n; c++) {
-			menu->AddItem(laidout->project->docs.e[c]->Name()); 
+			if (laidout->project->docs.e[c]->saveas && strlen(laidout->project->docs.e[c]->saveas))
+				menu->AddItem(laidout->project->docs.e[c]->saveas); 
+			else 
+				menu->AddItem(laidout->project->docs.e[c]->Name()); 
 		}
 		MenuSelector *popup;
 		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
-						NULL,owner,"rulercornermenu", 
+						NULL,viewport->window,"rulercornermenu", 
 						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
 						 | MENUSEL_SEND_STRINGS
 						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
