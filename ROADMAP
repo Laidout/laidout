@@ -9,52 +9,58 @@ VERSION 0.07
 ------------
 (done) Have command line option to output to a file a pseudocode mockup of the file format
 (done) EPS out booklet landscape is broken, fix it!
-(done, after a fashion) Implement all preview config options, namely auto preview files over a certain size
+(done) Implement all preview config options, namely auto preview files over a certain size
 (done) Be able to search for existing previews in ~/.thumbnails/large and normal
-       Clean up image import dialog, and have some similar options in insert image and image properties diags.
-       Make the select by dragging out a rectangle work
-       Fix multi-object selection move when crossing page boundaries
+(done) Document selector button up in corner should work
+(done) Clean up image import dialog
+(done) Fix icons/makeimages.py!! "from xml.sax import saxexts" somehow stopped working
+(done) Eye dropper-ish color grabber, ideally grab any color anywhere on the screen
+(done, sort of) Make the select by dragging out a rectangle work
+(done) limbo objects should save with the document, instead of just disappearing!!!
 (done) Linear and radial Gradients should have vastly better interfaces
-       Image and Color patches should have vastly better interfaces
-       Gui for modifying Page Labels
-       Net imposition interactive unwrapper and paper tiler
-       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
-         (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
+(done) Image and Color patches should have vastly better interfaces
 (done, but only because I can't reproduce it any more for some mysterious reason) from laxkit: 
            fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
-       figure out how to sign deb packages when creating them
 
 
 VERSION 0.08
 ------------
+       Soup up the color box so one can recall previous colors
+       Fix multi-object selection move when crossing page boundaries
+       In image properties dialog, have the popup list of potential previews
+       Gui for modifying Page Labels
+       double click on group should change selection area to group contents?
        Image and Color patches, gradients, etc should allow transparent colors
+       Standardize the import/output mechanism, make it easy to add/remove/prioritize/replace filters
        PDF out
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        Export to various things or print from command line: batch processing
        Export as a Scribus document
        Print/export to images
-       Selected region out to image(s)
-       Standardize the import/output mechanism, make it easy to add/remove/prioritize/replace filters
+       Selected region out to image(s), regions optionally remembered
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Tools should remember their settings, dialogs should remember their placements
        NetImposition needs import/export net including OFF files, and build net interface
-       libintl support
-       should probably put laidout stuff in its own namespace, just to be polite for plugin makers
+       libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+       Net imposition interactive unwrapper and paper tiler
+       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+         (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.1 
 -----------
+       Of course, need copious testing by people who are not me.
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
-       Of course, need copious testing by people who are not me.
+       should probably put laidout stuff in its own namespace, just to be polite for plugin makers
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
        Finish implementing project based setup, especially when loading and saving
-       Change cursor to indicate what will happen as mouse moves around
+       Change cursor or otherwise indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        group combine properties, like most importantly transparency
@@ -66,7 +72,7 @@ VERSION 0.1
        Parent masking of children
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
-       Seriously optimize the whole ImagePatchData stuff
+       Seriously optimize the whole ColorPatch/ImagePatchData stuff
        Have imagepatch be a transform you can apply to any image
        Allow objects to have any number of various kinds of transforms applied to it
        Fully configurable shortcuts, with optional multi-key shortcuts

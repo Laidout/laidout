@@ -115,10 +115,11 @@ int ImportImagesDialog::init()
 									 (const char *)NULL,"v");
 	menub->tooltip(_("Select from possible automatic previews"));
 	AddWin(menub,c+1);
-	last=linp=new LineInput(this,"preview",LINP_FILE, 0,0,0,0,0, last,window,"preview",
+	last=linp=new LineInput(this,"preview",
+						LINP_FILE, 0,0,0,0,0, last,window,"preview",
 						" ",NULL,0,
 						0,0,2,2,2,2);
-	//makestr(linp->GetLineEdit()->qualifier,****);
+	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
 //	virtual int AddWin(anXWindow *win,int npw,int nws,int nwg,int nhalign, int nph,int nhs,int nhg,int nvalign);
 	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50, c+2);
 	tbut=new TextButton(this,"generate preview",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
@@ -130,7 +131,7 @@ int ImportImagesDialog::init()
 	
 	
 	 //---------------------- per image preview controls ---------------------------
-//	***filename:_____________
+//	   filename:_____________
 //		previewfile:_________
 //		[[Re]Generate Preview]
 //		use temporary preview
@@ -279,6 +280,13 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		updateFileList();
 		rebuildPreviewName();
 		return 0;
+	} else if (!strcmp(mes,"preview")) {
+		 //something's been typed in the preview edit
+		LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
+		ImageInfo *info=findImageInfo(file->GetCText());
+		if (!info) return 0;
+		makestr(info->previewfile,preview->GetCText());
+		return 0;
 	} else if (!strcmp(mes,"new file")) {
 		FileDialog::ClientEvent(e,mes);
 		char *full=fullFilePath(NULL);
@@ -287,7 +295,6 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		rebuildPreviewName();
 		return 0;
 	} else if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
-		DBG cout <<"*************** !!!!!"<<mes<<endl;
 		int c;
 		if (!strcmp(mes,"perpageexactly")) c=0;
 		else if (!strcmp(mes,"perpagefit")) c=1;
