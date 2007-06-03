@@ -67,8 +67,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	XdbeBackBuffer backbuffer;
 	Group *limbo;
 	virtual void setupthings(int tospread=-1,int topage=-1);
-	virtual void LaidoutViewport::setCurobj(VObjContext *voc);
-	virtual void LaidoutViewport::findAny();
+	virtual void setCurobj(VObjContext *voc);
+	virtual void findAny();
 	virtual int nextObject(VObjContext *oc,int inc=0);
 	virtual void transformToContext(double *m,FieldPlace &place,int invert=1);
  public:

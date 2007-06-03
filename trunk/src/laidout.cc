@@ -571,7 +571,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		
 		} else if (!strcmp(name,"icon_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
-			cout <<" *** must implement icon_dir in laidoutrc!!"<<endl;
+			if (!isblank(icon_dir)) icons.addpath(icon_dir);
 		
 		} else if (!strcmp(name,"palette_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(palette_dir,value);

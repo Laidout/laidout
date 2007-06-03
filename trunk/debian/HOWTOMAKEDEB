@@ -45,7 +45,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
  svn export https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whichever) laidout-(version)
   If Laxkit is to be included, you should export that to the top laidout dir: 
  svn export https://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
-  then cd to parent dir and to:
+  then cd to parent dir and do:
  tar cjv (the dir) > laidout-version.tar.bz2 
    this should be the distributed tarball, also
 
