@@ -74,7 +74,7 @@ class PageRange : public LaxFiles::DumpUtility
 	int labeltype,decreasing;
 	PageRange(const char *newbase="#",int ltype=Numbers_Default);
 	virtual ~PageRange();
-	char *PageRange::GetLabel(int i);
+	char *GetLabel(int i);
 
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);

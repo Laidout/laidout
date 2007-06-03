@@ -57,7 +57,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	Laxkit::PtrStack<LittleSpread> spreads;
 	int temppagen,*temppagemap;
 	//Laxkit::PtrStack<TextBlock> notes;
-	int SpreadInterface::reversemap(int i);
+	int reversemap(int i);
  public:
 	Document *doc;
 	Project *project;

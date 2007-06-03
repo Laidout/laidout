@@ -53,7 +53,7 @@ class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
 	virtual int numwindows() { return windows.n; }
 	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>=0 && i<windows.n) return windows.e[i]; return NULL; }
 	virtual int HasOnlyThis(Document *doc);
-	virtual Document *HeadWindow::findAnyDoc();
+	virtual Document *findAnyDoc();
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };

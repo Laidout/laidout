@@ -4,7 +4,7 @@
 # --prefix=/blah/blah
 
 
-LAIDOUTVERSION=0.06.1
+LAIDOUTVERSION=0.07.1
 PREFIX="/usr/local"
 LAXDIR="/usr/local/include/lax"
 GS="/usr/bin/gs"
@@ -32,9 +32,8 @@ while true ; do
         echo " --help                       Show this stuff"
         echo " --prefix=/where/to/install   Default /usr/local"
         echo " --gs=/path/to/gs             Where is your ghostscript executable? This is quite"
-        echo "                                optional, and is not planned to be used at all "
-        echo "                                until version 0.06. Then, it will only be used to"
-        echo "                                generate a preview image of EPS files."
+        echo "                                optional, and is currently used only to generate"
+        echo "                                previews of EPS files."
         echo " --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit"
         echo "                                is currently included in release downloads"
 		echo " --version=OtherVersionNum    You may force Laidout to compile with a different"
@@ -79,19 +78,16 @@ done
 
 
 # do check for required libraries:
-#   NEEDED      libX11.so.6
-#   NEEDED      libXpm.so.4
-#   NEEDED      libpng12.so.0
-#   NEEDED      libcups.so.2
-#   NEEDED      libImlib2.so.1
-#   NEEDED      libfreetype.so.6
-#   NEEDED      libz.so.1
-#   NEEDED      libXext.so.6
+#  NEEDED      libX11.so.6
+#  NEEDED      libImlib2.so.1
+#  NEEDED      libfreetype.so.6
+#  NEEDED      libssl.so.0.9.8
+							  
 
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
-#NEED='x11 cupsys freetype2 imlib2 xext'
-NEED='x11  freetype2 imlib2'
+#NEED='x11 cupsys freetype2 imlib2 xext ssl'
+NEED='x11  freetype2 imlib2 libssl'
 NUM='1'
 
 for NAME in $NEED; do
