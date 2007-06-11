@@ -562,6 +562,19 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 	return 0;
 }
 
+//! Return the number of spreads of type layout.
+/*! \todo Ultimately, this will replace the other NumPapers(), NumPages(), etc.
+ *    it is much more adaptible for nets right now, just relays based on 
+ *    PAGELAYOUT, PAPERLAYOUT, SINGLESLAYOUT
+ */
+int Imposition::NumSpreads(int layout)
+{
+	if (layout==PAPERLAYOUT) return NumPapers();
+	if (layout==PAGELAYOUT) return NumSpreads();
+	if (layout==SINGLELAYOUT) return numpages;
+	return 0;
+}
+
 //! Set the number of papers to npapers, and set numpages,numspreads as appropriate.
 /*! Default is to set numpapers=npapers, 
  *  numpages=GetPagesNeeded(numpapers), and 
@@ -617,6 +630,20 @@ SomeData *Imposition::GetPaper(int papernum,int local)
 	newpath->maxy=paperstyle->h();
 	//nothing special is done when local==0
 	return newpath;
+}
+
+//! Return the which'th spread of type layout.
+/*! \todo Ultimately, this will replace the other PaperLayout(), PageLayout(), etc.
+ *    it is much more adaptible for nets right now, just relays based on 
+ *    PAGELAYOUT, PAPERLAYOUT, SINGLESLAYOUT, LITTLESPREADLAYOUT
+ */
+Spread *Imposition::Layout(int layout,int which)
+{
+	if (layout==PAPERLAYOUT) return PaperLayout(which);
+	if (layout==PAGELAYOUT) return PageLayout(which);
+	if (layout==SINGLELAYOUT) return SingleLayout(which);
+	if (layout==LITTLESPREADLAYOUT) return GetLittleSpread(which);
+	return NULL;
 }
 
 //! Return a spread corresponding to the single whichpage.

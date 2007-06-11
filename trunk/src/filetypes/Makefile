@@ -14,6 +14,8 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	filefilters.o \
+	filters.o \
 	ppt.o 
 
 

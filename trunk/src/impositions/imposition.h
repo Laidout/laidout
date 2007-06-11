@@ -108,11 +108,15 @@ class Imposition : public Style
 	virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
 	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
 	
+	virtual Spread *Layout(int layout,int which); 
+	//----*** ^^ this will ultimately replace these vv
 	virtual Spread *SingleLayout(int whichpage); 
 	virtual Spread *PageLayout(int whichspread) = 0; 
 	virtual Spread *PaperLayout(int whichpaper) = 0;
 	virtual Spread *GetLittleSpread(int whichspread) { return PageLayout(whichspread); } 
 	
+	virtual int NumSpreads(int layout); 
+	//----*** ^^ this will ultimately replace these vv
 	virtual int NumPapers() { return numpapers; } 
 	virtual int NumPapers(int npapers);
 	virtual int NumSpreads() { return numspreads; }

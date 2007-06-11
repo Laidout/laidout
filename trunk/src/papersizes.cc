@@ -35,13 +35,14 @@ using namespace Laxkit;
 
 //       PAPERSIZE    X inches   Y inches   X cm      Y cm
 //       -----------------------------------------------------
-const char *BuiltinPaperSizes[33*3]=
+const char *BuiltinPaperSizes[34*3]=
 	{
 		"Letter","8.5","11",
 		"Legal","8.5","14",
 		"Tabloid","11","17",
 		"Ledger","17","11",
 		"Index","3","5",
+		"Executive","7.25","10.5",
 		"A4","8.26389","11.6944",
 		"A3","11.6944","16.5278",
 		"A2","16.5278","23.3889",

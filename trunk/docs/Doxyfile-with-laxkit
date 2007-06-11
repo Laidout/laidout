@@ -401,7 +401,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = doxygen/laidoutintro.txt ../src/TODO doxygen/gpl-license ../src ../src/fileformat.txt doxygen/miscdocs.txt ../laxkit/docs/doxygen/laxintro.txt ../laxkit/lax/TODO ../laxkit/docs/doxygen/laxrc.txt ../laxkit/docs/doxygen/math.txt ../laxkit/docs/doxygen/xlibforlaxkit.txt ../laxkit/docs/doxygen/checklist.txt ../laxkit/docs/doxygen/lgpl_v2.txt ../laxkit/lax/interfaces/interfaces.txt ../laxkit/lax/interfaces/TODO ../laxkit/docs/doxygen/codinghuh.txt ../laxkit/docs/doxygen/misc.txt ../laxkit/lax ../laxkit/lax/interfaces
+INPUT                  = doxygen/laidoutintro.txt ../src/TODO doxygen/gpl-license ../src  doxygen/miscdocs.txt ../laxkit/docs/doxygen/laxintro.txt ../laxkit/lax/TODO ../laxkit/docs/doxygen/laxrc.txt ../laxkit/docs/doxygen/math.txt ../laxkit/docs/doxygen/xlibforlaxkit.txt ../laxkit/docs/doxygen/checklist.txt ../laxkit/docs/doxygen/lgpl_v2.txt ../laxkit/lax/interfaces/interfaces.txt ../laxkit/lax/interfaces/TODO ../laxkit/docs/doxygen/codinghuh.txt ../laxkit/docs/doxygen/misc.txt ../laxkit/lax ../laxkit/lax/interfaces
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

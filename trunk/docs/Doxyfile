@@ -391,7 +391,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = doxygen/laidoutintro.txt ../src/TODO doxygen/gpl-license ../src ../src/fileformat.txt doxygen/miscdocs.txt
+INPUT                  = doxygen/laidoutintro.txt ../src/TODO doxygen/gpl-license ../src doxygen/miscdocs.txt
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

@@ -24,6 +24,7 @@
 #include <lax/fileutils.h>
 #include "laidout.h"
 #include "headwindow.h"
+#include "language.h"
 
 
 using namespace LaxFiles;
@@ -510,7 +511,7 @@ Document::Document(const char *filename)
 	docstyle=NULL;
 	curpage=-1;
 	
-	Load(filename);
+	Load(filename,NULL);
 }
 
 //! Constructor from a DocumentStyle
@@ -651,28 +652,13 @@ int Document::RemovePages(int start,int n)
 
 	
 //! Return 0 if saved, return nonzero if not saved.
-/*! format==Save_PPT does pptout(this) which is a Passepartout file.\n
- * format==Save_PS calls psout(this,NULL) which dumps out to 'output.ps'
- *
- * format==Save_Normal is the standard Laidout format.
- *
- * future formats would be: pdf, scribus?
- *  Save_EPS, Save_HTML, Save_SVG, Save_Scribus, .....
- * 
- * *** only checks for saveas existence, does no sanity checking on it...
- *
+/*! 
+ * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
- * \todo **** need to work out when window arrangements are saved
+ * \todo implement error message return
  */
-int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
+int Document::Save(int includewindows,char **error_ret)
 {
-	if (format==Save_PPT) return pptout(this);
-	if (format==Save_PS) return psout(this);
-	if (format!=Save_Normal) {
-		//anXApp::app->postmessage("That save format is not implemented.");
-		DBG cout << "Format "<<format<<" is not implemented."<<endl;
-		return 1;
-	}
 	
 	FILE *f=NULL;
 	if (!saveas || !strcmp(saveas,"")) {
@@ -690,7 +676,7 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
 	dump_out(f,0,0);
-	laidout->DumpWindows(f,0,this);
+	if (includewindows) laidout->DumpWindows(f,0,this);
 	
 	fclose(f);
 	return 0;
@@ -712,17 +698,59 @@ int Document::Save(LaidoutSaveFormat format)//format=Save_Normal
  *   must have mechanism to pass those back to LaidoutApp? right now, that is in
  *   dump_in_atts(), and it shouldn't be there....
  */
-int Document::Load(const char *file)
+int Document::Load(const char *file,char **error_ret)
 {
 	//*** need to create a new DocumentStyle from what's in the file..
 	DBG cout <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
-	FILE *f=fopen(file,"r");
-
-	//*** make sure it is a laidout document!!
-	if (!f) {
-		DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
+	
+	if (error_ret) *error_ret=NULL;
+	if (file_exists(file,1,NULL)!=S_IFREG) {
+		if (error_ret) {
+			*error_ret=new char[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(*error_ret, _("%s does not appear to be a Laidout Document file."), file);
+		}
 		return 0;
 	}
+	
+	FILE *f=fopen(file,"r");
+
+	if (!f) {
+		DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
+
+		if (error_ret) {
+			*error_ret=new char[strlen(file)+50];//****this 50 fudge is likely to cause problems!!
+			sprintf(*error_ret, _("%s cannot be opened for reading."), file);
+		}
+		return 0;
+	}
+	
+
+	//*** make sure it is a laidout document!! this procedure should be extracted to be a more useful general purpose tool
+	char first100[100];
+	int n=fread(first100,1,100,f);
+	first100[n-1]='\0';
+	int err=1;
+	if (!strncmp(first100,"#Laidout ",9)) {
+		char *version=first100+9;
+		int c=9,c2=0,c3;
+		while (c<n && isspace(*version) && *version!='\n') { version++; c++; }
+		while (c<n && !isspace(version[c2])) { c2++; c++; }
+		 //now the laidout version of the file is in version[0..c2)
+		c3=c2;
+		while (c<n && isspace(version[c3])) { c3++; c++; }
+		if (!strncmp(version+c3,"Document",8) && isspace(version[c3+8])) err=0;
+	}
+	if (err) {
+		if (error_ret) {
+			*error_ret=new char[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(*error_ret, _("%s does not appear to be a Laidout Document file."), file);
+		}
+		fclose(f);
+		return 0;
+	}
+	rewind(f);
+
+	
 	clear();
 	dump_in(f,0,0,NULL);
 	fclose(f);

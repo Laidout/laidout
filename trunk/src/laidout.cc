@@ -41,6 +41,7 @@
 #include "stylemanager.h"
 #include "configured.h"
 #include "printing/epsutils.h"
+#include "filetypes/filters.h"
 #include <lax/lists.cc>
 
 #include <sys/stat.h>
@@ -362,6 +363,9 @@ int LaidoutApp::init(int argc,char **argv)
 
 
 	 //------setup initial pools
+	DBG cout <<"---file filters init"<<endl;
+	installFilters();
+	
 	DBG cout <<"---imposition pool init"<<endl;
 	GetBuiltinImpositionPool(&impositionpool);
 	DBG cout <<"---imposition pool init done"<<endl;
@@ -813,6 +817,8 @@ char *LaidoutApp::full_path_for_resource(const char *name,char *dir)//dir=NULL
  *
  * Note that this does not automatically create a new window, but it does add the
  * new Document to LaidoutApp::project.
+ *
+ * \todo deal with returned error when load failed
  */
 Document *LaidoutApp::LoadTemplate(const char *name)
 {
@@ -823,7 +829,7 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 	
 	 //must push before Load to not screw up setting up windows and other controls
 	project->docs.push(doc); // docs is a plain Laxkit::PtrStack of Document
-	if (doc->Load(fullname)==0) { // load failed
+	if (doc->Load(fullname,NULL)==0) { // load failed
 		project->docs.pop();
 		delete doc;
 		return NULL;
@@ -837,6 +843,8 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 
 //! Load a document from filename, putting in project, make it curdoc and return on successful load.
 /*! If a doc with the same filename is already loaded, then make that curdoc, and return it.
+ *
+ * \todo deal with returned error when load failed
  */
 Document *LaidoutApp::LoadDocument(const char *filename)
 {
@@ -852,7 +860,7 @@ Document *LaidoutApp::LoadDocument(const char *filename)
 	doc=new Document(NULL,fullname);
 	project->docs.push(doc);
 	
-	if (doc->Load(fullname)==0) {
+	if (doc->Load(fullname, NULL)==0) {
 		project->docs.pop();
 		delete doc;
 		return NULL;

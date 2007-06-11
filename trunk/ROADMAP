@@ -5,33 +5,16 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.07
-------------
-(done) Have command line option to output to a file a pseudocode mockup of the file format
-(done) EPS out booklet landscape is broken, fix it!
-(done) Implement all preview config options, namely auto preview files over a certain size
-(done) Be able to search for existing previews in ~/.thumbnails/large and normal
-(done) Document selector button up in corner should work
-(done) Clean up image import dialog
-(done) Fix icons/makeimages.py!! "from xml.sax import saxexts" somehow stopped working
-(done) Eye dropper-ish color grabber, ideally grab any color anywhere on the screen
-(done, sort of) Make the select by dragging out a rectangle work
-(done) limbo objects should save with the document, instead of just disappearing!!!
-(done) Linear and radial Gradients should have vastly better interfaces
-(done) Image and Color patches should have vastly better interfaces
-(done, but only because I can't reproduce it any more for some mysterious reason) from laxkit: 
-           fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
-
-
 VERSION 0.08
 ------------
+       Finish implementing project based setup, especially when loading and saving
        Soup up the color box so one can recall previous colors
        Fix multi-object selection move when crossing page boundaries
        In image properties dialog, have the popup list of potential previews
        Gui for modifying Page Labels
        double click on group should change selection area to group contents?
        Image and Color patches, gradients, etc should allow transparent colors
-       Standardize the import/output mechanism, make it easy to add/remove/prioritize/replace filters
+       Standardize the import/output mechanism
        PDF out
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        Export to various things or print from command line: batch processing
@@ -59,7 +42,6 @@ VERSION 0.1
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
-       Finish implementing project based setup, especially when loading and saving
        Change cursor or otherwise indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
@@ -87,6 +69,7 @@ VERSION 0.1
        all things must define their styledefs
        Plugin infrastructure should be in place
        Low level tree editor, akin to the xml editor in inkscape
+       make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
        svg in/out
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
@@ -152,6 +135,24 @@ While i'm at it, I'd like a pony.
             .--------------. 
 ------------- OLD RELEASES -----------------
             `--------------' 
+
+VERSION 0.07  --  released 2 June 2007!
+------------
+(done) Have command line option to output to a file a pseudocode mockup of the file format
+(done) EPS out booklet landscape is broken, fix it!
+(done) Implement all preview config options, namely auto preview files over a certain size
+(done) Be able to search for existing previews in ~/.thumbnails/large and normal
+(done) Document selector button up in corner should work
+(done) Clean up image import dialog
+(done) Fix icons/makeimages.py!! "from xml.sax import saxexts" somehow stopped working
+(done) Eye dropper-ish color grabber, ideally grab any color anywhere on the screen
+(done, sort of) Make the select by dragging out a rectangle work
+(done) limbo objects should save with the document, instead of just disappearing!!!
+(done) Linear and radial Gradients should have vastly better interfaces
+(done) Image and Color patches should have vastly better interfaces
+(done, but only because I can't reproduce it any more for some mysterious reason) from laxkit: 
+           fix tooltips: seems laxkit accidentally allows multiple tooltips on rare occasions
+
 
 VERSION 0.06  -- released 25 April 2007!
 ------------

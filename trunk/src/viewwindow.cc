@@ -644,9 +644,11 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 		}
 		
 		int max=-1;
-		if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
-		else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
-		else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+		//if (doc && doc->docstyle && doc->docstyle->imposition) {
+			if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
+			else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
+			else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+		//}
 
 		 // clamp tospread to the imposition's spread range
 		if (max>=0) {
@@ -2543,6 +2545,8 @@ void PageFlipper::Refresh()
 
 //! Add extra goodies to viewerwindow stack, like page/layer/mag/obj indicators
 /*! \todo internationalize tool names
+ * \todo ***** import/export menus should be dynamically created when clicked... this will only be
+ *   relevant when plugins are implemented
  */
 int ViewWindow::init()
 {
@@ -2704,23 +2708,24 @@ int ViewWindow::init()
 	 //---------------******** export
 	 //*** this needs an automatic way to do it, needs a pool to access somewhere..
 	 //Export:
-	 // Print
-	 // -----
 	 // Ppt
 	 // svg,...
 	 // -----
 	 // Export style 1: ppt pg 3-6
 	 // Export style 2: SVG pg 2
 	 //then Print button would have the last export settings, single click does that..
-	MenuInfo *menu=new MenuInfo("Export");
-	menu->AddItem("Passepartout",Save_PPT);
-	menu->AddItem("Pdf 1.4",     Save_PDF_1_4);
-	menu->AddItem("Svg",         Save_SVG);
-	menu->AddItem("Scribus",     Save_Scribus);
+	MenuInfo *menu=NULL;
+	if (laidout->exportfilters.n) {
+		menu=new MenuInfo(_("Export"));
+		for (int c=0; c<laidout->exportfilters.n; c++) {
+			//***** this should be dynamically created when clicked
+			menu->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
+		}
+	}
 	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
 							 menu,1,
 							 laidout->icons.GetIcon("Export"),_("Export"));
-	menub->tooltip(_("Export the document as something other than a Laidout document"));
+	menub->tooltip(_("Export the document in various ways"));
 	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
 
 	
@@ -2836,16 +2841,22 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		
 		if (doc && doc->Name(s->str)) SetParentTitle(doc->Name());
 		
-		doc->Save();
-		if (doc->Save()==0) {
+		char *error;
+		if (doc->Save(1,&error)==0) {
 			char blah[strlen(doc->Name())+15];
 			sprintf(blah,_("Saved to %s."),doc->Name());
 			GetMesbar()->SetText(blah);
-		} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+		} else {
+			if (error) {
+				GetMesbar()->SetText(error);
+				delete[] error;
+			} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+		}
 
 		delete data;
 		return 0;
 	} else if (!strcmp(mes,"saveAsPopup")) {
+		 //user entered a new file name to save document as
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		if (s->str && s->str[0]) {
@@ -2905,11 +2916,17 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					DBG cout <<"*** file by this point should be absolute path name:"<<file<<endl;
 					if (doc && doc->Name(file)) SetParentTitle(doc->Name());
 					
-					if (doc->Save()==0) {
+					char *error;
+					if (doc->Save(1,&error)==0) {
 						char blah[strlen(doc->Name())+15];
 						sprintf(blah,_("Saved to %s."),doc->Name());
 						GetMesbar()->SetText(blah);
-					} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+					} else {
+						if (error) {
+							GetMesbar()->SetText(error);
+							delete[] error;
+						} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+					}
 				}
 			}
 
@@ -3316,22 +3333,20 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		mesbar->SetText(_("Sorry, importing not quite working yet."));
 		return 0;
 	} else if (!strcmp(mes,"export")) { 
-		 //***********this needs automation
+		 //user clicked down on the export button, and selected an export type from menu..
 		DBG cout <<" ----- data="<<e->data.l[0]<<endl;
-		if (e->data.l[1]==Save_PPT) {
-			if (!doc->Save(Save_PPT)) {
-				char blah[strlen(doc->saveas+10)];
-				sprintf(blah,_("Saved as a Passepartout file to %s.ppt"),doc->saveas);
-				mesbar->SetText(blah);
+
+		if (e->data.l[1]>=0 && e->data.l[1]<laidout->exportfilters.n) {
+			DocumentExportConfig config(doc,"exported-file.huh",NULL,PAPERLAYOUT,0,doc->docstyle->imposition->NumPapers()-1);
+			char *error=NULL;
+			if (laidout->exportfilters.e[e->data.l[1]]->Out(NULL,&config,&error)==0) {
+				mesbar->SetText(_("Exported."));
 			} else {
-				mesbar->SetText(_("Error writing out Passepartout file."));
+				if (error) {
+					mesbar->SetText(error);
+					delete[] error;
+				} else mesbar->SetText(_("Error exporting."));
 			}
-		} else if (e->data.l[1]==Save_SVG) {
-			mesbar->SetText(_("Sorry, svg export not quite working yet."));
-		} else if (e->data.l[1]==Save_PDF_1_4) {
-			mesbar->SetText(_("Sorry, PDF export not quite working yet."));
-		} else if (e->data.l[1]==Save_Scribus) {
-			mesbar->SetText(_("Sorry, Scribus export not quite working yet."));
 		}
 		return 0;
 	} else if (!strcmp(mes,"openDoc")) { 
@@ -3339,6 +3354,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		((HeadWindow *)win_parent)->CharInput('o',ControlMask);
 		return 0;
 	} else if (!strcmp(mes,"saveDoc")) { 
+		 //user clicked save button
 		if (strstr(doc->Name(),"untitled")==doc->Name()) { //***or shift-click for saveas??
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
@@ -3351,11 +3367,17 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 						0,0,500,500,0, window,"saveAsPopup",
 						doc->Name()));
 		} else {
-			if (doc->Save()==0) {
+			char *error=NULL;
+			if (doc->Save(1,&error)==0) {
 				char blah[strlen(doc->Name())+15];
 				sprintf(blah,"Saved to %s.",doc->Name());
 				GetMesbar()->SetText(blah);
-			} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+			} else {
+				if (error) {
+					GetMesbar()->SetText(error);
+					delete[] error;
+				} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+			}
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
@@ -3424,11 +3446,17 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 //						"Enter new filename:",doc->Name(),0,
 //						0,0,5,5,3,3));
 		} else {
-			if (doc->Save()==0) {
+			char *error=NULL;
+			if (doc->Save(1,&error)==0) {
 				char blah[strlen(doc->Name())+15];
-				sprintf(blah,_("Saved to %s."),doc->Name());
+				sprintf(blah,"Saved to %s.",doc->Name());
 				GetMesbar()->SetText(blah);
-			} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+			} else {
+				if (error) {
+					GetMesbar()->SetText(error);
+					delete[] error;
+				} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+			}
 		}
 		return 0;
 	} else if (ch==LAX_Left || ch=='T') {  // left, prev tool

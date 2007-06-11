@@ -15,9 +15,22 @@
 //
 
 #include "utils.h"
+#include <lax/strmanip.h>
+#include <lax/fileutils.h>
+#include <cctype>
+#include <cstdlib>
 
-int laidout_file_type(const char *file, char **version, char **typ)
 
+using namespace LaxFiles;
+
+
+
+
+////! Find out the type of Laidout file this is, if any.
+//int laidout_file_type(const char *file, char **version, char **typ)
+
+
+	
 //! Check if the file is a Laidout type typ, with a version [minversion,maxversion].
 /*! Return 0 for file ok, else nonzero.
  *
