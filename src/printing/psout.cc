@@ -494,6 +494,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	}
 
 	 //print out footer
+	fprintf(f, "\n%%%%Trailer\n");
 	fprintf(f, "\n%%%%EOF\n");
 
 	DBG cout <<"=================== end printing ========================\n";
@@ -676,6 +677,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 				  "\n");		
 		
 		 //print out footer
+		fprintf(f, "\n%%%%Trailer\n");
 		fprintf(f, "\n%%%%EOF\n");
 
 		fclose(f);
