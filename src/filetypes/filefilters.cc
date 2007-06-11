@@ -11,12 +11,46 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2007 by Tom Lechner
 //
 
 #include "filefilters.h"
 #include "../language.h"
+#include <lax/strmanip.h>
 
+
+//---------------------------- DocumentExportConfig ------------------------------
+/*! \class DocumentExportConfig
+ * \brief Holds basic settings for exporting a document.
+ *
+ * If filename==NULL and tofiles!=NULL, then write out one spread per file, and tofiles
+ * must be a file name template.
+ */
+
+DocumentExportConfig::DocumentExportConfig()
+{
+	filename=NULL;
+	tofiles=NULL;
+	start=end=0;
+	layout=0;
+	doc=NULL;
+}
+
+DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, const char *to,int l,int s,int e)
+{
+	filename=newstr(file);
+	tofiles=newstr(to);
+	start=s;
+	end=e;
+	layout=l;
+	doc=ndoc;
+}
+
+DocumentExportConfig::~DocumentExportConfig()
+{
+	if (filename) delete[] filename;
+	if (tofiles)  delete[] tofiles;
+}
 
 //------------------------------------- FileFilter -----------------------------------
 /*! \class FileFilter
@@ -32,6 +66,10 @@
  */
 
 
+/*! \var Plugin *FileFilter::plugin;
+ * \brief Which plugin, if any, the filter came from. NULL if is built in.
+ * \todo *** implement plugins!!
+ */
 /*! \fn ~FileFilter()
  * \brief Empty virtual destructor.
  */
@@ -46,19 +84,20 @@
  *
  * For instance, this would be "Postscript", "Svg", etc.
  */
-/*! \fn const char **FileFilter::FormatVersions(int *n)
- * \brief A NULL terminated list of the versions of Format() that the filter knows how to deal with.
- *
- * For PDF, for instance, this might would be {"1.4","1.3",NULL}.
- * For SVG, this could even be broken down into {"1.0","1.1","1.0-inkscape",NULL}, for instance.
- *
- * If n!=NULL, then put the number of versions into it.
+/*! \fn const char *FileFilter::DefaultExtension()
+ * \brief Return default file extension, something like "eps" or "svg".
  */
-/*! \fn const char *FileFilter::VersionName(const char *version)
- * \brief A name for a screen dialog corresponding to version.
+/*! \fn const char *FileFilter::Version()
+ * \brief The version of Format() that the filter knows how to deal with.
+ *
+ * For PDF, for instance, this might be "1.4" or "1.3".
+ * For SVG, this could even be broken down into "1.0", "1.1", or "1.0-inkscape", for instance.
+ */
+/*! \fn const char *FileFilter::VersionName()
+ * \brief A name for the format and version for a screen dialog.
  *
  * This might be "Postscript LL3", or "Svg, version 1.1". In the latter case, the
- * format was "SVG" and the version was "1.1", but the name is something composite, that
+ * format was "SVG" and the version was "1.1", but the name is something composite, which
  * is open to translations.
  */
 /*! \fn const char *FileFilter::FilterClass()
@@ -87,17 +126,38 @@
 /*! \fn const char *FileInputFilter::FileType(const char *first100bytes)
  * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
  */
+/*! \fn int FileInputFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
+ * \brief The function that outputs the stuff.
+ *
+ * context must be a configuration object that the filter understands. For instance, this
+ * might be a DocumentExportConfig object.
+ *
+ * Return 0 for success, or nonzero for error. If there is an error, then an error string is put in
+ * error_ret.
+ */
 
 //------------------------------------- FileOutputFilter -----------------------------------
 /*! \class FileOutputFilter
  * \brief Abstract base class of input file filters.
  */
 /*! \fn int FileOutputFilter::Verify(Laxkit::anObject *context)
- * \brief Preflight checker
+ * \brief Preflight checker.
+ *
+ * This feature is not thought out enough to even have decent documentation. Default just returns 1.
  *
  * \todo Ideally, this function should return some sort of set of objects that cannot be transfered
  *   in the given format, and other objects that can be transfered, but only in a lossless way.
  */
+/*! \fn int FileOutputFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
+ * \brief The function that outputs the stuff.
+ *
+ * context must be a configuration object that the filter understands. For instance, this
+ * might be a DocumentExportConfig object.
+ *
+ * Return 0 for success, or nonzero for error. If there is an error, then an error string is put in
+ * error_ret.
+ */
+	
 
 
 

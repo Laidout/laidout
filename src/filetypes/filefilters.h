@@ -11,13 +11,31 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2007 by Tom Lechner
 //
 #ifndef FILEFILTERS_H
 #define FILEFILTERS_H
 
 #include <lax/anxapp.h>
+#include <lax/refcounted.h>
 
+
+
+class Document;
+
+//------------------------------- DocumentExportConfig ----------------------------------
+class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted
+{
+ public:
+	int start,end;
+	int layout;
+	Document *doc;
+	char *filename;
+	char *tofiles;
+	DocumentExportConfig();
+	DocumentExportConfig(Document *ndoc, const char *file, const char *to, int l,int s,int e);
+	virtual ~DocumentExportConfig();
+};
 
 //------------------------------------- FileFilter -----------------------------------
 typedef void Plugin; //******must implement plugins!!
@@ -31,8 +49,9 @@ class FileFilter : public Laxkit::anObject
 	virtual const char *FilterVersion() = 0;
 	
 	virtual const char *Format() = 0;
-	virtual const char **FormatVersions(int *n) = 0;
-	virtual const char *VersionName(const char *version) = 0;
+	virtual const char *DefaultExtension() = 0;
+	virtual const char *Version() = 0;
+	virtual const char *VersionName() = 0;
 	virtual const char *FilterClass() = 0;
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
@@ -40,22 +59,22 @@ class FileFilter : public Laxkit::anObject
 
 
 //------------------------------------- FileInputFilter -----------------------------------
-class FileInputFilter : public FileFilter
+class ImportFilter : public FileFilter
 {
  public:
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
-	virtual int In(const char *file, Laxkit::anObject *context) = 0;
+	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
 };
 
 
 //------------------------------------- FileOutputFilter -----------------------------------
-class FileOutputFilter : public FileFilter
+class ExportFilter : public FileFilter
 {
  public:
 	virtual const char *whattype() { return "FileOutputFilter"; }
-	virtual int Out(const char *file, Laxkit::anObject *context) = 0;
-	virtual int Verify(Laxkit::anObject *context) = 0; //preflight checker
+	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
+	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //preflight checker
 };
 
 

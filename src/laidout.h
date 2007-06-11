@@ -26,6 +26,7 @@
 #include "interfaces.h"
 #include "impositions/imposition.h"
 #include "iconmanager.h"
+#include "filetypes/filefilters.h"
 
 const char *LaidoutVersion();
 
@@ -80,13 +81,14 @@ class LaidoutApp : public Laxkit::anXApp
 
 	IconManager icons;
 	
+//	ScreenStyle *screen;
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
-//	Laxkit::PtrStack<Project> projectstack;
-//	ScreenStyle *screen;
 	Laxkit::PtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<Imposition> impositionpool;
 	Laxkit::PtrStack<PaperStyle> papersizes;
+	Laxkit::PtrStack<ExportFilter> exportfilters;
+	Laxkit::PtrStack<ImportFilter>  importfilters;
 	
 	LaidoutApp();
 	virtual ~LaidoutApp();

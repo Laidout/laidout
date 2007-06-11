@@ -19,6 +19,7 @@
 class Document;
 #include "styles.h"
 #include "impositions/imposition.h"
+#include "laidoutdefs.h"
 
 
 
@@ -44,10 +45,6 @@ enum  LaidoutSaveFormat {
 	Save_Scribus,
 };
 
-#define SINGLELAYOUT       0
-#define PAGELAYOUT         1
-#define PAPERLAYOUT        2
-#define LITTLESPREADLAYOUT 3
 
 //------------------------- DocumentStyle ------------------------------------
 
@@ -108,8 +105,8 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility
 	
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
-	virtual int Load(const char *file);
-	virtual int Save(LaidoutSaveFormat format=Save_Normal);
+	virtual int Load(const char *file,char **error_ret);
+	virtual int Save(int includewindows,char **error_ret);
 	
 	virtual Spread *GetLayout(int type, int index);
 	

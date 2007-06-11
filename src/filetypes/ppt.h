@@ -16,10 +16,50 @@
 #ifndef SAVEPPT_H
 #define SAVEPPT_H
 
+#include <lax/interfaces/somedata.h>
+#include "../version.h"
 #include "../document.h"
+#include "filefilters.h"
 
-int pptout(Document *doc);
-Document *pptin(const char *file,Document *doc,int startpage);
+
+void installPptFilter();
+
+//------------------------------------- PptoutFilter -----------------------------------
+class PptoutFilter : public ExportFilter
+{
+ protected:
+ public:
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+	
+	virtual const char *Format() { return "Passepartout"; }
+	virtual const char *DefaultExtension() { return "ppt"; }
+	virtual const char *Version() { return "0.6"; }
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+	
+	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+};
+
+
+////------------------------------------- PptinFilter -----------------------------------
+//class PptinFilter : public ImportFilter
+//{
+// public:
+//	virtual const char *Author() { return "Laidout"; }
+//	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+//	
+//	virtual const char *Format() { return "Passepartout"; }
+//	virtual const char *DefaultExtension() { return "ppt"; }
+//	virtual const char *Version() { return "0.6"; }
+//	virtual const char *VersionName();
+//	virtual const char *FilterClass() { return "document"; }
+//	
+//	virtual const char *FileType(const char *first100bytes);
+//	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
+//};
+
+
 
 #endif
 	
