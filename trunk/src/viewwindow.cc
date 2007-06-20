@@ -47,6 +47,7 @@
 #include "helpwindow.h"
 #include "configured.h"
 #include "importimages.h"
+#include "filetypes/exportdialog.h"
 
 #include <X11/cursorfont.h>
 #include <iostream>
@@ -2714,19 +2715,24 @@ int ViewWindow::init()
 	 // Export style 1: ppt pg 3-6
 	 // Export style 2: SVG pg 2
 	 //then Print button would have the last export settings, single click does that..
-	MenuInfo *menu=NULL;
-	if (laidout->exportfilters.n) {
-		menu=new MenuInfo(_("Export"));
-		for (int c=0; c<laidout->exportfilters.n; c++) {
-			//***** this should be dynamically created when clicked
-			menu->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
-		}
-	}
-	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
-							 menu,1,
-							 laidout->icons.GetIcon("Export"),_("Export"));
-	menub->tooltip(_("Export the document in various ways"));
-	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
+//	MenuInfo *menu=NULL;
+//	if (laidout->exportfilters.n) {
+//		menu=new MenuInfo(_("Export"));
+//		for (int c=0; c<laidout->exportfilters.n; c++) {
+//			//***** this should be dynamically created when clicked
+//			menu->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
+//		}
+//	}
+//	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
+//							 menu,1,
+//							 laidout->icons.GetIcon("Export"),_("Export"));
+//	menub->tooltip(_("Export the document in various ways"));
+//	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
+//-----------------
+	last=ibut=new IconButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
+			laidout->icons.GetIcon("Export"),_("Export"));
+	ibut->tooltip(_("Export the document in various ways"));
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	
 	 //-----------print
@@ -3334,21 +3340,29 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"export")) { 
 		 //user clicked down on the export button, and selected an export type from menu..
-		DBG cout <<" ----- data="<<e->data.l[0]<<endl;
-
-		if (e->data.l[1]>=0 && e->data.l[1]<laidout->exportfilters.n) {
-			DocumentExportConfig config(doc,"exported-file.huh",NULL,PAPERLAYOUT,0,doc->docstyle->imposition->NumPapers()-1);
-			char *error=NULL;
-			if (laidout->exportfilters.e[e->data.l[1]]->Out(NULL,&config,&error)==0) {
-				mesbar->SetText(_("Exported."));
-			} else {
-				if (error) {
-					mesbar->SetText(error);
-					delete[] error;
-				} else mesbar->SetText(_("Error exporting."));
-			}
-		}
+		ExportDialog *d=new ExportDialog(0,window,"export config", 
+										 doc,
+										 laidout->exportfilters.e[e->data.l[1]],
+										 "exported-file.huh",
+										 PAPERLAYOUT,
+										 0,
+										 doc->docstyle->imposition->NumPapers()-1,
+										 doc->docstyle->imposition->PaperFromPage(
+											((LaidoutViewport *)viewport)->curobjPage()));
+		app->addwindow(d);
 		return 0;
+		//------------------------------------------------
+		//char *error=NULL;
+		//DocumentExportConfig config(doc,"exported-file.huh",NULL,PAPERLAYOUT,0,doc->docstyle->imposition->NumPapers()-1);
+		//if (laidout->exportfilters.e[e->data.l[1]]->Out(NULL,&config,&error)==0) {
+		//	mesbar->SetText(_("Exported."));
+		//} else {
+		//	if (error) {
+		//		mesbar->SetText(error);
+		//		delete[] error;
+		//	} else mesbar->SetText(_("Error exporting."));
+		//}
+		//return 0;
 	} else if (!strcmp(mes,"openDoc")) { 
 		//*** hack right here:
 		((HeadWindow *)win_parent)->CharInput('o',ControlMask);

@@ -16,6 +16,7 @@ DEBUGFLAGS= -g
 objs= \
 	filefilters.o \
 	filters.o \
+	exportdialog.o \
 	ppt.o 
 
 

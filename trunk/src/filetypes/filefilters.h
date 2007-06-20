@@ -18,6 +18,7 @@
 
 #include <lax/anxapp.h>
 #include <lax/refcounted.h>
+#include "../document.h"
 
 
 

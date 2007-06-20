@@ -36,6 +36,8 @@ DocumentExportConfig::DocumentExportConfig()
 	doc=NULL;
 }
 
+/*! Increments count on ndoc if it exists.
+ */
 DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, const char *to,int l,int s,int e)
 {
 	filename=newstr(file);
@@ -44,12 +46,16 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, con
 	end=e;
 	layout=l;
 	doc=ndoc;
+	if (doc) doc->inc_count();
 }
 
+/*! Decrements doc if it exists.
+ */
 DocumentExportConfig::~DocumentExportConfig()
 {
 	if (filename) delete[] filename;
 	if (tofiles)  delete[] tofiles;
+	if (doc) doc->dec_count();
 }
 
 //------------------------------------- FileFilter -----------------------------------

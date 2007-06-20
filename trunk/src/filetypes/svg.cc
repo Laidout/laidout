@@ -257,6 +257,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char &*error_ret,int &warning)
 //	virtual const char *Author() = 0;
 //	virtual const char *FilterVersion() = 0;
 //	
+//	virtual const char *DefaultExtension() { return "svg"; }
 //	virtual const char *Format() = 0;
 //	virtual const char **FormatVersions(int *n) = 0;
 //	virtual const char *VersionName(const char *version) = 0;
