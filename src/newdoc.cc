@@ -140,7 +140,9 @@ using namespace Laxkit;
 
 NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
-		: RowFrame(parnt,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER,xx,yy,ww,hh,brder,10)
+		: RowFrame(parnt,ntitle,nstyle|ANXWIN_DELETEABLE|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER,
+					xx,yy,ww,hh,brder, NULL,None,NULL,
+					10)
 {
 	marginl=_("Left:");
 	marginr=_("Right:");

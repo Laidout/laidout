@@ -13,8 +13,9 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/**************** imposition.cc *********************/
 
+
+#include "../language.h"
 #include "imposition.h"
 #include <lax/lists.cc>
 #include <lax/interfaces/pathinterface.h>
@@ -643,6 +644,20 @@ Spread *Imposition::Layout(int layout,int which)
 	if (layout==PAGELAYOUT) return PageLayout(which);
 	if (layout==SINGLELAYOUT) return SingleLayout(which);
 	if (layout==LITTLESPREADLAYOUT) return GetLittleSpread(which);
+	return NULL;
+}
+
+//! Return the name of layout, or NULL if layout not recognized.
+/*! Default is to return "Papers", "Pages", or "Singles".
+ *
+ * Note that it returns const char[], not a new char[].
+ */
+const char *Imposition::LayoutName(int layout)
+{
+	if (layout==PAPERLAYOUT) return _("Papers");
+	if (layout==PAGELAYOUT) return _("Pages");
+	if (layout==SINGLELAYOUT) return _("Singles");;
+	if (layout==LITTLESPREADLAYOUT) return _("Little Spreads");
 	return NULL;
 }
 

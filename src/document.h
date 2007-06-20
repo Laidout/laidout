@@ -79,7 +79,7 @@ class PageRange : public LaxFiles::DumpUtility
 
 //------------------------- Document ------------------------------------
 
-class Document : public ObjectContainer, public LaxFiles::DumpUtility
+class Document : public ObjectContainer, public LaxFiles::DumpUtility, public Laxkit::RefCounted
 {
  public:
 	DocumentStyle *docstyle;

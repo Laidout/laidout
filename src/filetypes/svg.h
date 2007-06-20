@@ -30,6 +30,7 @@ class SvgOutputFilter
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	
+	virtual const char *DefaultExtension() { return "svg"; }
 	virtual const char *Format() { return "Svg"; }
 	virtual const char *Version() { return "1.0"; }
 	virtual const char *VersionName();
