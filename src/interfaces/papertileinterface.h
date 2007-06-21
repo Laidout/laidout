@@ -19,13 +19,23 @@
 #include <lax/interfaces/aninterface.h>
 
 
+enum BoxTypes {
+	None         =0,
+	MediaBox     =(1<<0),
+	ArtBox       =(1<<1),
+	TrimBox      =(1<<2),
+	PrintableBox =(1<<3),
+	BleedBox     =(1<<4),
+	TrimBox      =(1<<5)
+};
+
 //------------------------------------- PaperBox --------------------------------------
 
 class PaperBox : public Laxkit::RefCounted
 {
  public:
-	PaperStyle *paperstyle; //the media box
-	DoubleBBox printable, bleed, trim, crop, art;
+	PaperStyle *paperstyle;
+	DoubleBBox media, printable, bleed, trim, crop, art;
 	PaperBox();
 	virtual ~PaperBox();
 };
@@ -42,19 +52,23 @@ class PaperBoxData : public PaperBox
 };
 
 
-//------------------------------------- PaperTileInterface --------------------------------------
+//------------------------------------- PaperInterface --------------------------------------
 
-class PaperTileInterface : public LaxInterfaces::InterfaceWithDp
+#define PAPERTILE_ONE_ONLY   (1<<0)
+
+class PaperInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
 	Laxkit::PtrStack<PaperBoxData> papers;
+	Laxkit::PtrStack<PaperBoxData> curboxes;
 	PaperBoxData *curbox;
+	BoxTypes editwhat, drawwhat;
  public:
-	PaperTileInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
-	PaperTileInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
-	virtual ~PaperTileInterface();
+	PaperInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
+	PaperInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
+	virtual ~PaperInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
-	virtual const char *whattype() { return "PaperTileInterface"; }
+	virtual const char *whattype() { return "PaperInterface"; }
 	virtual const char *whatdatatype() { return "PaperBoxData"; }
 
 	virtual int InterfaceOn();
