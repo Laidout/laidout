@@ -30,7 +30,13 @@ using namespace std;
 //------------------------------------- PaperBox --------------------------------------
 
 /*! \class PaperBox 
- * \brief Wrapper around a paper style, for use in a PaperTileInterface.
+ * \brief Wrapper around a paper style, for use in a PaperInterface.
+ */
+/*! \var Laxkit::DoubleBBox PaperBox::media
+ * \brief Normally, this will be the same as paperstyle.
+ */
+/*! \var Laxkit::DoubleBBox PaperBox::printable
+ * \brief Basically, the area of media that a printer can physically print on.
  */
 
 /*! Incs count of paper.
@@ -41,6 +47,8 @@ PaperBox::PaperBox(PaperStyle *paper)
 	if (paper) paper->inc_count();
 }
 
+/*! Decs count of paper.
+ */
 PaperBox::~PaperBox()
 {
 	if (paper) paper->dec_count();
@@ -49,7 +57,7 @@ PaperBox::~PaperBox()
 //------------------------------------- PaperBoxData --------------------------------------
 
 /*! \class PaperBoxData
- * \brief Somedata Wrapper around a paper style, for use in a PaperTileInterface.
+ * \brief Somedata Wrapper around a paper style, for use in a PaperInterface.
  */
 
 PaperBoxData::PaperBoxData(PaperStyle *paper)
@@ -62,52 +70,37 @@ PaperBoxData::PaperBoxData(PaperStyle *paper)
 	}
 }
 
-//------------------------------------- PaperTileInterface --------------------------------------
+//------------------------------------- PaperInterface --------------------------------------
 	
-/*! \class PaperTileInterface 
- * \brief Interface to arrange an arbitrary spread to print on many sheets of paper.
+/*! \class PaperInterface 
+ * \brief Interface to arrange an arbitrary spread to print on one or more sheets of paper.
+ *
+ * This can be used to position a single paper over real space, or set to allow any
+ * number of papers. Also can be used to set rectangles for crop, bleed, and trim.
  */
 
 
-PaperTileInterface::PaperTileInterface(int nid,Displayer *ndp)
+PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	: InterfaceWithDp(nid,ndp) 
 { 
 }
 
-PaperTileInterface::PaperTileInterface(anInterface *nowner,int nid,Displayer *ndp)
+PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: InterfaceWithDp(nowner,nid,ndp) 
 {
 }
 
-PaperTileInterface::~PaperTileInterface()
+PaperInterface::~PaperInterface()
 {
-	DBG cout <<"PaperTileInterface destructor.."<<endl;
+	DBG cout <<"PaperInterface destructor.."<<endl;
 }
 
 
-//! Return a new PaperTileInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
-/*! Normally, this is called when setting up a ViewportWindow/ViewerWindow system.
- * In a scenario, the dp and the data if present should not be copied, as they will
- * be assigned new stuff by the window, thus those things are not transferred to the
- * duplicate. Typically, the specific interface will create their
- * own blank instance of themselves, and in doing so, the dp and and data will
- * be set to NULL there. Nothing is copied over in this function, so interfaces 
- * can call anInterface::duplicate() from their duplicate(), rather than this duplicate().
- *
- * Typical duplicate function in an interface looks like this:\n
- * <pre>
- * anInterface *TheInterface::duplicate()
- * {
- *    dup=new TheInterface();
- *    // add any other TheInterface specific initialization
- *    return anInterface::duplicate(dup);
- * }
- * </pre>
- *  
- *  This function does not allow creation of a blank PaperTileInterface object. If dup==NULL, then
+//! Return a new PaperInterface if dup=NULL, or anInterface::duplicate(dup) otherwise.
+/*! This function does not allow creation of a blank PaperInterface object. If dup==NULL, then
  *  NULL is returned.
  */
-anInterface *PaperTileInterface::duplicate(anInterface *dup)//dup=NULL
+anInterface *PaperInterface::duplicate(anInterface *dup)//dup=NULL
 {***
 	if (dup==NULL) return NULL;
 	return anInterface::duplicate(dup);
@@ -118,7 +111,10 @@ int InterfaceOn()
 {***
 }
 
-int InterfaceOff(); 
+int InterfaceOff()
+{***
+}
+
 void Clear(SomeData *d)
 {***
 }
@@ -144,6 +140,56 @@ int DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
 
 int Refresh()
 {***
+	if (!papers.n) return 0;
+
+	PaperBoxData *box;
+	flatpoint p[4];
+	int c,c2;
+	for (c=0; c<papers.n; c++) {
+		box=papers.e[c];
+		if (drawwhat&MediaBox) {
+			p[0]=dp->realtoscreen(box->media->minx,box->media->miny);
+			p[1]=dp->realtoscreen(box->media->minx,box->media->maxy);
+			p[2]=dp->realtoscreen(box->media->maxx,box->media->maxy);
+			p[3]=dp->realtoscreen(box->media->maxx,box->media->miny);
+			dp->drawlines(p,4,1);
+		}
+		if (drawwhat&ArtBox) {
+			p[0]=dp->realtoscreen(box->art->minx,box->art->miny);
+			p[1]=dp->realtoscreen(box->art->minx,box->art->maxy);
+			p[2]=dp->realtoscreen(box->art->maxx,box->art->maxy);
+			p[3]=dp->realtoscreen(box->art->maxx,box->art->miny);
+			dp->drawlines(p,4,1);
+		}
+		if (drawwhat&TrimBox) {
+			p[0]=dp->realtoscreen(box->trim->minx,box->trim->miny);
+			p[1]=dp->realtoscreen(box->trim->minx,box->trim->maxy);
+			p[2]=dp->realtoscreen(box->trim->maxx,box->trim->maxy);
+			p[3]=dp->realtoscreen(box->trim->maxx,box->trim->miny);
+			dp->drawlines(p,4,1);
+		}
+		if (drawwhat&PrintableBox) {
+			p[0]=dp->realtoscreen(box->printable->minx,box->printable->miny);
+			p[1]=dp->realtoscreen(box->printable->minx,box->printable->maxy);
+			p[2]=dp->realtoscreen(box->printable->maxx,box->printable->maxy);
+			p[3]=dp->realtoscreen(box->printable->maxx,box->printable->miny);
+			dp->drawlines(p,4,1);
+		}
+		if (drawwhat&BleedBox) {
+			p[0]=dp->realtoscreen(box->bleed->minx,box->bleed->miny);
+			p[1]=dp->realtoscreen(box->bleed->minx,box->bleed->maxy);
+			p[2]=dp->realtoscreen(box->bleed->maxx,box->bleed->maxy);
+			p[3]=dp->realtoscreen(box->bleed->maxx,box->bleed->miny);
+			dp->drawlines(p,4,1);
+		}
+		if (drawwhat&TrimBox) {
+			p[0]=dp->realtoscreen(box->trim->minx,box->trim->miny);
+			p[1]=dp->realtoscreen(box->trim->minx,box->trim->maxy);
+			p[2]=dp->realtoscreen(box->trim->maxx,box->trim->maxy);
+			p[3]=dp->realtoscreen(box->trim->maxx,box->trim->miny);
+			dp->drawlines(p,4,1);
+		}
+	}
 }
 	
 int LBDown(int x,int y,unsigned int state,int count)
@@ -180,10 +226,22 @@ int But5(int x,int y,unsigned int state)
 
 int MouseMove(int x,int y,unsigned int state)
 {***
+	if (!buttondown) return 1;
+
+
+	return 0;
 }
 
 int CharInput(unsigned int ch,unsigned int state)
 {***
+	if (ch==LAX_Left && (state&LAX_STATE_MASK)==0) {
+		*** select previous paper
+		return 0;
+	} else if (ch==LAX_Right && (state&LAX_STATE_MASK)==0) {
+		*** select next paper
+		return 0;
+	}
+	return 1;
 }
 
 int CharRelease(unsigned int ch,unsigned int state)
