@@ -13,15 +13,13 @@ VERSION 0.08
        In image properties dialog, have the popup list of potential previews
        Gui for modifying Page Labels
        double click on group should change selection area to group contents?
-       Image and Color patches, gradients, etc should allow transparent colors
-       Standardize the import/output mechanism
+(done) Standardize the import/output mechanism
        PDF out
        Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
        Export to various things or print from command line: batch processing
        Export as a Scribus document
        Print/export to images
        Selected region out to image(s), regions optionally remembered
-       plain text edit window for notes/scripts/whatever save with project or doc or its own file
        Tools should remember their settings, dialogs should remember their placements
        NetImposition needs import/export net including OFF files, and build net interface
        libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
@@ -32,11 +30,18 @@ VERSION 0.08
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
+VERSION 0.09
+------------
+       Image and Color patches, gradients, etc should allow transparent colors
+       plain text edit window for notes/scripts/whatever save with project or doc or its own file
+
+
 VERSION 0.1 
 -----------
        Of course, need copious testing by people who are not me.
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
+       Construct a command core, so that no X connection necessary for batch processing
        should probably put laidout stuff in its own namespace, just to be polite for plugin makers
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
@@ -67,7 +72,7 @@ VERSION 0.1
        Make commands actually available in the command prompt window
        non-hacky new document box that can understand ppds
        all things must define their styledefs
-       Plugin infrastructure should be in place
+       Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
@@ -102,7 +107,7 @@ Somehow be able to do foldouts from within any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
-Also most likely means finally deciding on a real rendering backend: cairo? antigrain? freetype/pango?
+Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango?
 ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost sort of things
