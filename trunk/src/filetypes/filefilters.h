@@ -18,25 +18,12 @@
 
 #include <lax/anxapp.h>
 #include <lax/refcounted.h>
+#include <lax/dump.h>
 #include "../document.h"
 
 
 
 class Document;
-
-//------------------------------- DocumentExportConfig ----------------------------------
-class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted
-{
- public:
-	int start,end;
-	int layout;
-	Document *doc;
-	char *filename;
-	char *tofiles;
-	DocumentExportConfig();
-	DocumentExportConfig(Document *ndoc, const char *file, const char *to, int l,int s,int e);
-	virtual ~DocumentExportConfig();
-};
 
 //------------------------------------- FileFilter -----------------------------------
 typedef void Plugin; //******must implement plugins!!
@@ -76,6 +63,24 @@ class ExportFilter : public FileFilter
 	virtual const char *whattype() { return "FileOutputFilter"; }
 	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //preflight checker
+};
+
+//------------------------------- DocumentExportConfig ----------------------------------
+class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+{
+ public:
+	int start,end;
+	int layout;
+	Document *doc;
+	char *filename;
+	char *tofiles;
+	ExportFilter *filter;
+	DocumentExportConfig();
+	DocumentExportConfig(Document *ndoc, const char *file, const char *to, int l,int s,int e);
+	virtual ~DocumentExportConfig();
+
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 

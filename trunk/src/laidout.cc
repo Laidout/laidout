@@ -87,7 +87,10 @@ void print_usage()
 	cout <<LaidoutVersion()<<endl<<
 		_("\n laidout [options] [file1] [file2] ...\n\n"
 		"Options:\n"
-		"  -t --template templatename       Start laidout from this template in .laidout/(version)/templates\n"
+		"  --export-formats                 List all the available export formats\n"
+		"  --list-export-options format     List all the options for the given format\n"
+		"  --export \"format=EPS\"            Export a document based on the given options\n"
+		"  -t --template templatename       Start laidout from this template in ~/.laidout/(version)/templates\n"
 		"  -N --no-template                  Do not use a default template\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
 		"  --file-format file               Write out a pseudocode mockup of the file format to file, then exit\n"    
@@ -363,6 +366,7 @@ int LaidoutApp::init(int argc,char **argv)
 
 
 	 //------setup initial pools
+	 
 	DBG cout <<"---file filters init"<<endl;
 	installFilters();
 	
@@ -639,37 +643,25 @@ void LaidoutApp::setupdefaultcolors()
 
 //! Parse command line options, and load up initial documents or projects.
 /*! 
- * <pre>
- *  Command line options
- *  
- *  laidout file1 file2 ...
- *  
- *     -f --rescan-fonts                 Rescan font directories
- *     -p --new-font-path dir            Add dir to font path, scan it and add to already stored list
- *     -n --new "letter, portrait 3pgs"  Open and create new document
- *        -n default                      default is single letter portrait, or whatever is in laidoutrc
- *        -n pamphlet                     other things can be tags to a doc style in .laidout/templates dir
- *        -n whatever
- *     --no-x                            Start up command line, no other interface, useful for quick printing??
- *     -v --version                      Print out version info, then exit.
- *     -h --help                         Show this summary.
- *  </pre>
  */
 void LaidoutApp::parseargs(int argc,char **argv)
 {
 	DBG cout <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
-			{ "file-format",   1, 0, 'F' },
-			{ "rescan-fonts",  0, 0, 'f' },
-			{ "new-font-path", 1, 0, 'p' },
-			{ "new",           1, 0, 'n' },
-			{ "load-dir",      1, 0, 'l' },
-			{ "no-x",          0, 0, 'x' },
-			{ "template",      1, 0, 't' },
-			{ "no-template",   1, 0, 'N' },
-			{ "version",       0, 0, 'v' },
-			{ "help",          0, 0, 'h' },
+			{ "export",              1, 0, 'e' },
+			{ "list-export-options", 1, 0, 'O' },
+			{ "export-formats",      0, 0, 'X' },
+			{ "file-format",         1, 0, 'F' },
+			{ "rescan-fonts",        0, 0, 'f' },
+			{ "new-font-path",       1, 0, 'p' },
+			{ "new",                 1, 0, 'n' },
+			{ "load-dir",            1, 0, 'l' },
+			{ "no-x",                0, 0, 'x' },
+			{ "template",            1, 0, 't' },
+			{ "no-template",         1, 0, 'N' },
+			{ "version",             0, 0, 'v' },
+			{ "help",                0, 0, 'h' },
 			{ 0,0,0,0 }
 		};
 	int c,index;
@@ -694,7 +686,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					cout << "**** add \""<< optarg << "\" to font path"<< endl;
 				} break;
 			case 'x': { // --no-x
-					cout << "**** do not use X " << endl;
+					cout << "**** must implement do not use X " << endl;
 				} break;
 			case 'n': { // --new "letter singes 3 pages blah blah blah"
 					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1];
@@ -707,6 +699,17 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 			case 'F': { // dump out file format
 					if (dump_out_file_format(optarg,0)) exit(1);
+					exit(0);
+				} break;
+			case 'E': { // export
+				} break;
+			case 'O': { // list export options for a given format
+					cout <<"***** must implement --list-export-options"<<endl;
+					exit(1);
+				} break;
+			case 'X': { // list export formats
+					for (int c=0; c<exportfilters.n; c++) 
+						cout << exportfilters.e[c]->VersionName() <<endl;
 					exit(0);
 				} break;
 		}

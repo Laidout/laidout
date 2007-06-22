@@ -50,7 +50,11 @@ void installSvgFilter()
 
 //------------------------------------ SvgOutputFilter ----------------------------------
 	
-	
+/*! \class SvgOutputFilter
+ * \brief Filter for exporting SVG 1.0.
+ */
+
+
 const char *SvgOutputFilter::VersionName()
 {
 	return _("Svg 1.0");
@@ -83,7 +87,7 @@ const char *SvgOutputFilter::VersionName()
  *    as patch gradients
  */
 int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *&error_ret)
-{***
+{
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(config);
 	if (!outconfig) return 1;
 	doc     =out->doc;
@@ -138,18 +142,18 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			  "     version=\"1.0\"\n");
 	fprintf(f,"     width=\"%fin***inches by default?\"\n", spread->outline->maxx-spread->outline->minx);
 	fprintf(f,"     height=\"%fin\"\n", spread->outline->maxy-spread->outline->miny);
-	fprintf(f,"   >\n"
+	fprintf(f,"   >\n");
 			
 	 //write out global defs section
 	fprintf(f,"  <defs>\n");
-	*************** gradients and such
+	//*************** gradients and such
 	fprintf(f,"  </defs>\n");
 			
 	
 	 // Write out spread....
 	fprintf(f,"  <g>\n");
 
-	 // for each page in paper layout..
+	 // for each page in spread..
 	for (c2=0; c2<spread->pagestack.n; c2++) {
 		pg=spread->pagestack.e[c2]->index;
 		if (pg<0 || pg>=doc->pages.n) continue;

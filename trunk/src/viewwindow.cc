@@ -2330,7 +2330,6 @@ ViewWindow::ViewWindow(Document *newdoc)
 	var1=var2=var3=NULL;
 	project=NULL;
 	pagenumber=NULL;
-	loaddir=NULL;
 	toolselector=NULL;
 	colorbox=NULL;
 	pageclips=NULL;
@@ -2348,7 +2347,6 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 	var1=var2=var3=NULL;
 	toolselector=NULL;
 	pagenumber=NULL;
-	loaddir=NULL;
 	doc=newdoc;
 	setup();
 }
@@ -2785,7 +2783,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		updateContext();
 		return c;
 	} else if (!strcmp(mes,"import new image")) {
-		 //*** not this is currently not used...
+		 //*** not this is currently not used... ImportImagesDialog calls dumpin directly, and sends no message back.
 		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
@@ -2806,6 +2804,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		delete data;
 		return 0;
 	} else if (!strcmp(mes,"insert new image")) {
+		 //******currently not used in favor of image dialog
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		LaxImage *image=load_image(s->str);
@@ -2942,105 +2941,18 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		}
 		delete data;
 		return 0;
-	} else if (!strcmp(mes,"reallyprintfile")) {
-		 // print to file without overwrite check 
-		 // *** hopping around with messages is not a
-		 // good overwrite protection
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		
-		if (!is_good_filename(s->str)) {
-			GetMesbar()->SetText(_("Illegal characters in file name. Not printed."));
-			delete data;
-			return 0;
-		} 
-		
-		FILE *f=fopen(s->str,"w");
-		if (f) {
-			mesbar->SetText(_("Printing to file, please wait...."));
-			mesbar->Refresh();
-			XSync(app->dpy,False);
-	
-			psout(f,doc,s->info2-1,s->info3-1);
-			fclose(f);
-			
-			char tmp[21+strlen(s->str)];
-			sprintf(tmp,_("Printed to %s."),s->str);
-			mesbar->SetText(tmp);
+	} else if (!strcmp(mes,"export config")) {
+		ConfigEventData *d=dynamic_cast<ConfigEventData *>(data);
+		if (!d || !d->config->filter) return 1;
+		char *error=NULL;
+		if (d->config->filter->Out(NULL,d->config,&error)==0) {
+			mesbar->SetText(_("Exported."));
 		} else {
-			char tmp[21+strlen(s->str)];
-			sprintf(tmp,_("Error printing to %s."),s->str);
-			mesbar->SetText(tmp);
+			if (error) {
+				mesbar->SetText(error);
+				delete[] error;
+			} else mesbar->SetText(_("Error exporting."));
 		}
-
-		DBG cout << "----- ViewWindow Print to file: "<<s->str<<endl;
-		delete data;
-		return 0;
-	} else if (!strcmp(mes,"printfile")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		if (s->info==2) { // print to files
-			DBG cout <<"***** print to epss: "<<s->str<<endl;
-			
-			mesbar->SetText(_("Printing to files, please wait...."));
-			mesbar->Refresh();
-			XSync(app->dpy,False);
-	
-			char blah[100];
-			int c=epsout(s->str,doc,s->info2-1,s->info3-1,SINGLELAYOUT,0);
-			if (c) {
-				sprintf(blah,_("Error printing to %s at file %d."),s->str,c);
-			} else {
-				sprintf(blah,_("Printed to %s."),s->str);
-			}
-			mesbar->SetText(blah);
-
-			delete data;
-			return 0;
-		} else if (s->info==1) { // print to file
-			 // overwrite protection
-			int c,err;
-			c=file_exists(s->str,1,&err);
-			if (c && c!=S_IFREG) {
-				 // has to be a regular file to overwrite
-				mesbar->SetText("Cannot overwrite that type of file.");
-				delete data;
-				return 0;
-			}
-			 // file existed, so ask to overwrite
-			if (c) {
-				anXWindow *ob=new Overwrite(window,"reallyprintfile", s->str, s->info, s->info2, s->info3);
-				app->rundialog(ob);
-				s->str=NULL;
-				delete data;
-				return 0;
-			}
-			 // else really print
-			DataEvent(s,"reallyprintfile");
-			return 0;
-		} else { // print by command
-			char *cm=newstr(s->str);
-			appendstr(cm," ");
-			//***investigate tmpfile() tmpnam tempnam mktemp
-			char tmp[256];
-			cupsTempFile2(tmp,sizeof(tmp));
-			FILE *f=fopen(tmp,"w");
-			if (f) {
-				mesbar->SetText(_("Printing, please wait...."));
-				mesbar->Refresh();
-				XSync(app->dpy,False);
-				psout(f,doc,s->info2-1,s->info3-1);
-				fclose(f);
-				appendstr(cm,tmp);
-				system(cm);
-				//*** have to delete (unlink) tmp!
-				
-				mesbar->SetText(_("Document sent to print."));
-			} else mesbar->SetText(_("Error printing."));
-			DBG cout << "*** ViewWindow Printed to command: "<<cm<<endl;
-		}
-
-
 		delete data;
 		return 0;
 	}
@@ -3325,25 +3237,19 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					oldimgname,oldimage));
 		if (oldimage) delete[] oldimage;
 		return 0;
-	} else if (!strcmp(mes,"dumpInImages")) {
-		 //*** not this is currently not used...
-		//DBG cout <<" --- dumpInImages...."<<endl;
-		dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(),loaddir->GetCText(),var1->Value(),var2->Value());
-		pagenumber->NewMinMax(0,doc->pages.n-1);
-		((anXWindow *)viewport)->Needtodraw(1);
-		return 0;
-	} else if (!strcmp(mes,"loaddir")) {
-		if (loaddir->GetCText()) makestr(app->load_dir,loaddir->GetCText());
-		return 0;
 	} else if (!strcmp(mes,"import")) { 
-		mesbar->SetText(_("Sorry, importing not quite working yet."));
+		if (laidout->importfilters.n==0) {
+			mesbar->SetText(_("Sorry, there are no import filters installed."));
+			return 0;
+		} 	
+		cout <<"**** need to implement import filters"<<endl;
 		return 0;
 	} else if (!strcmp(mes,"export")) { 
 		 //user clicked down on the export button, and selected an export type from menu..
 		ExportDialog *d=new ExportDialog(0,window,"export config", 
 										 doc,
-										 laidout->exportfilters.e[e->data.l[1]],
-										 "exported-file.huh",
+										 NULL,//***should be last filter...
+										 "exported-file.huh",//****this should be more adaptive
 										 PAPERLAYOUT,
 										 0,
 										 doc->docstyle->imposition->NumPapers()-1,
@@ -3395,16 +3301,26 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 	} else if (!strcmp(mes,"print")) { // print to output.ps
-		int curpage=((LaidoutViewport *)viewport)->curobjPage();
-		if (curpage<0) curpage=-1;//*** should be what is first page in spread->pagestack?
+		 //user clicked print button
+		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+		int curpage=vp->curobjPage();
+		if (curpage<0 && vp->spread) {
+			 //grab what is first page found in spread->pagestack
+			int c;
+			for (c=0; c<vp->spread->pagestack.n; c++) {
+				if (vp->spread->pagestack.e[c]->index>=0) {
+					curpage=vp->spread->pagestack.e[c]->index>=0;
+					break;
+				}
+			}
+		}
 		PrintingDialog *p=new PrintingDialog(doc,window,"printfile",
 										"output.ps","lp",NULL,
-										1, 1,doc->pages.n,curpage+1);
+										PAPERLAYOUT, 
+										0,doc->pages.n-1,curpage,
+										mesbar);
 		app->rundialog(p);
 		return 0;
-	} else if (!strcmp(mes,"pdf")) { // print to output.pdf 
-		GetMesbar()->SetText("Sorry, pdf out is not quite working yet.");
-		cout <<" *** imp pdf out!"<<endl;
 	}
 	
 	return 1;

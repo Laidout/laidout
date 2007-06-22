@@ -39,7 +39,7 @@ class SvgOutputFilter
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	
 	
-	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
+	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret);
 	virtual int Verify(Laxkit::anObject *context) = 0; //preflight checker
 };
 

@@ -18,6 +18,7 @@
 #include "../language.h"
 #include <lax/strmanip.h>
 
+using namespace LaxFiles;
 
 //---------------------------- DocumentExportConfig ------------------------------
 /*! \class DocumentExportConfig
@@ -34,6 +35,7 @@ DocumentExportConfig::DocumentExportConfig()
 	start=end=0;
 	layout=0;
 	doc=NULL;
+	filter=NULL;
 }
 
 /*! Increments count on ndoc if it exists.
@@ -46,6 +48,7 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, con
 	end=e;
 	layout=l;
 	doc=ndoc;
+	filter=NULL;
 	if (doc) doc->inc_count();
 }
 
@@ -56,6 +59,55 @@ DocumentExportConfig::~DocumentExportConfig()
 	if (filename) delete[] filename;
 	if (tofiles)  delete[] tofiles;
 	if (doc) doc->dec_count();
+}
+
+void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sfilename /file/to/export/to\n",spc);
+		fprintf(f,"%stofiles  \"/files/like###.this\"  #the # section is replaced with the page index\n",spc);
+		fprintf(f,"%s                                #Only one of filename or tofiles should be present\n",spc);
+		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
+		fprintf(f,"%simposition  Booklet  #the imposition used\n",spc);
+		fprintf(f,"%slayout pages         #this is particular to the imposition used by the document\n",spc);
+		fprintf(f,"%sstart 3   #the starting index to export\n",spc);
+		fprintf(f,"%send   5   #the ending index to export\n",spc);
+		return;
+	}
+	if (filename) fprintf(f,"%sfilename %s\n",spc,filename);
+	if (tofiles) fprintf(f,"%stofiles  \"%s\"\n",spc,tofiles);
+	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
+	if (doc && doc->docstyle && doc->docstyle->imposition) {
+		fprintf(f,"%simposition \"%s\"\n",spc,doc->docstyle->imposition->whattype());
+		fprintf(f,"%slayout \"%s\"\n",spc,doc->docstyle->imposition->LayoutName(layout));
+	}
+	fprintf(f,"%sstart %d\n",spc,start);
+	fprintf(f,"%send   %d\n\n",spc,end);
+}
+
+void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
+{
+	char *name,*value;
+	for (int c=0; c<att->attributes.n; c++)  {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"filename")) {
+			makestr(filename,value);
+		} else if (!strcmp(name,"tofiles")) {
+			makestr(tofiles,value);
+		} else if (!strcmp(name,"format")) {
+			//***
+		} else if (!strcmp(name,"imposition")) {
+			//***
+		} else if (!strcmp(name,"layout")) {
+			//***
+		} else if (!strcmp(name,"start")) {
+			IntAttribute(value,&start);
+		} else if (!strcmp(name,"end")) {
+			IntAttribute(value,&end);
+		}
+	}
 }
 
 //------------------------------------- FileFilter -----------------------------------

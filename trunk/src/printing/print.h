@@ -18,25 +18,23 @@
 #ifndef PRINT_H
 #define PRINT_H
 
-#include <lax/simpleprint.h>
+#include "../filetypes/exportdialog.h"
 #include "../document.h"
+#include <lax/mesbar.h>
 
-class PrintingDialog : public Laxkit::SimplePrint
+class PrintingDialog : public ExportDialog
 {
  protected:
-	Laxkit::LineEdit *filesedit;
-	Laxkit::CheckBox *filescheck;
-	virtual void changeTofile(int t);
-	int curpage;
-	Document *doc;
  public:
 	PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
-						 const char *file="output.ps", const char *command="lp",
-						 const char *thisfile=NULL,
-						 int ntof=1,int pmin=-1,int pmax=-1,int pcur=-1);
-	virtual ~PrintingDialog() { }
+						 const char *file, const char *command,
+						 const char *thisfile,
+						 int layout,int pmin,int pmax,int pcur,
+						 Laxkit::MessageBar *progress);
+	virtual ~PrintingDialog();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int Print();
+	virtual int init();
 };
 
 

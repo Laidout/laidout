@@ -22,24 +22,44 @@
 
 #include "filefilters.h"
 
-namespace Laxkit {
 
-#define SIMPP_SEND_TO_PRINTER  (1<<16)
-#define SIMPP_DEL_PRINTTHIS    (1<<17)
-#define SIMPP_PRINTRANGE       (1<<18)
+#define EXPORT_COMMAND (1<<16)
 	
+//---------------------------- ConfigEventData -------------------------
+class ConfigEventData : public Laxkit::EventData
+{
+ public:
+	DocumentExportConfig *config;
+	ConfigEventData(DocumentExportConfig *c);
+	virtual ~ConfigEventData();
+};
+
+//---------------------------- ExportDialog -------------------------
 class ExportDialog : public Laxkit::RowFrame
 {
  protected:
 	DocumentExportConfig *config;
 	
-	int tofile, cur;
-	LineEdit *fileedit,*filesedit,*commandedit,*printstart,*printend;
-	CheckBox *filecheck,*filescheck,*commandcheck;
-	CheckBox *printall,*printcurrent,*printrange;
-	virtual void changeTofile(int t);
+	int overwriteok;
+	unsigned long dialog_style;
+	int tofile, cur, max, min;
+	Laxkit::LineEdit *fileedit,*filesedit,*printstart,*printend,*command;
+	Laxkit::CheckBox *filecheck,*filescheck,*commandcheck;
+	Laxkit::CheckBox *printall,*printcurrent,*printrange;
 	ExportFilter *filter;
+
+	virtual void changeTofile(int t);
+	virtual void changeRangeTarget(int t);
+	virtual void configBounds();
+	virtual void overwriteCheck();
 	virtual int send();
+
+	virtual void start(int s);
+	virtual int  start();
+	virtual void end(int e);
+	virtual int  end();
+	virtual void findMinMax();
+	virtual int updateExt();
  public:
 	ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 				 Document *doc, ExportFilter *nfilter, const char *file, int layout,
@@ -48,9 +68,9 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual int init();
 	virtual int CharInput(unsigned int ch, unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 };
 
-} // namespace Laxkit
 
 
 #endif

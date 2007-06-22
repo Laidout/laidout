@@ -13,9 +13,9 @@
 //
 // Copyright (c) 2004-2007 Tom Lechner
 //
-/********** psout.cc ****************/
 
 
+#include "../language.h"
 #include "psout.h"
 #include "../version.h"
 
@@ -32,6 +32,7 @@
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
 #include "pseps.h"
+#include "../filetypes/filefilters.h"
 #include "../laidoutdefs.h"
 
 
@@ -85,7 +86,7 @@ void psConcat(double *m)
 	double *mm=transform_mult(NULL,m,psctm);
 	delete[] psctm;
 	psctm=mm;
-	DBG cout << "ctm: "; dumpctm(psctm);
+	DBG cerr << "ctm: "; dumpctm(psctm);
 }
 
 //! Initialize to identity and return ctm.
@@ -194,25 +195,6 @@ void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
 	psPopCtm();
 }
 
-//! Open file, or 'output.ps' if file==NULL, and output postscript for doc via psout(FILE*,Document*).
-/*! \ingroup postscript
- * \todo *** does not sanity checking on file, nor check for previous existence of file
- *
- * Return 1 if not saved, 0 if saved.
- */
-int psout(Document *doc,const char *file)//file=NULL
-{
-	if (file==NULL) file="output.ps";
-
-	FILE *f=fopen(file,"w");
-	if (!f) return 1;
-	int c=psout(f,doc);
-	fclose(f);
-
-	if (c) return 1;
-	return 0;
-}
-
 //! Output a postscript clipping path from outline.
 /*! \ingroup postscript
  * outline can be a group of PathsData, a SomeDataRef to a PathsData, 
@@ -309,13 +291,54 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  *   things, thus reduce ps file size substantially..
  * \todo for EPS that include specific resources, extensions, or language level, these must be
  *   mentioned in the postscript file's comments...
+ * \todo *** fix non-paper layout media/paper type
  */
-int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
+int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
-	if (!f || !doc) return 1;
+	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
+	if (!out) return 1;
+
+	if (error_ret) *error_ret=NULL;
+	Document *doc =out->doc;
+	int start     =out->start;
+	int end       =out->end;
+	int layout    =out->layout;
+	if (!filename) filename=out->filename;
+
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) {
+		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
+		return 1;
+	}
+	
+	FILE *f=NULL;
+	char *file=NULL;
+	if (!filename) {
+		if (!doc->saveas || !strcmp(doc->saveas,"")) {
+			DBG cout <<"**** cannot save, null filename, doc->saveas is null."<<endl;
+			
+			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
+			return 2;
+		}
+		file=newstr(doc->saveas);
+		appendstr(file,".ps");
+	} else file=newstr(filename);
+
+	f=fopen(file,"w");
+	if (!f) {
+		DBG cout <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
+
+		delete[] file;
+		if (error_ret) *error_ret=newstr(_("Error opening file for writing."));
+		return 3;
+	}
+
 	if (start<0) start=0;
-	if (end<0 || end>=doc->docstyle->imposition->numpapers) 
-		end=doc->docstyle->imposition->numpapers-1;
+	else if (start>=doc->docstyle->imposition->NumSpreads(layout))
+		start=doc->docstyle->imposition->NumSpreads(layout)-1;
+	if (end<start) end=start;
+	else if (end>=doc->docstyle->imposition->NumSpreads(layout))
+		end=doc->docstyle->imposition->NumSpreads(layout)-1;
+
 
 	 //Basically, postscript documents following the ps document structure 
 	 //guidelines are structured like this:
@@ -347,17 +370,23 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	 // ...
 	 // %%EOF
 
+	 //figure out paper size
+	int landscape=0;
+	int c;
+	if (layout==PAPERLAYOUT) {
+		landscape=((doc->docstyle->imposition->paperstyle->flags&1)?1:0);
+	} 
 	
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
-	DBG cout <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
+	DBG cerr <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
 	
 	 // print out header
 	fprintf (f,
 			"%%!PS-Adobe-3.0\n"
 			"%%%%Orientation: ");
-	fprintf (f,"%s\n",(doc->docstyle->imposition->paperstyle->flags&1)?"Landscape":"Portrait");
+	fprintf (f,"%s\n",(landscape?"Landscape":"Portrait"));
 	fprintf(f,"%%%%Pages: %d\n",end-start+1);
 	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
@@ -365,12 +394,25 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 			  "%%%%Creator: Laidout %s\n"
 			  "%%%%For: whoever \n",
 			  		ctime(&t),LAIDOUT_VERSION);
-	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
+	if (layout==PAPERLAYOUT) {
+		fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
 				doc->docstyle->imposition->paperstyle->name, 
 				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
 				72*doc->docstyle->imposition->paperstyle->height);
+	} else {
+		//PaperStyle *paper=doc->docstyle->imposition->Paper(layout)); 
+		//paper->width
+		//paper->height
+		//paper->dec_count();
+		fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
+				doc->docstyle->imposition->paperstyle->name, 
+				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
+				72*doc->docstyle->imposition->paperstyle->height);
+		//***this should be specific to layout?
+	}
 	fprintf(f,"%%%%EndComments\n");
 			
+
 	 //---------------------------Defaults
 	fprintf(f,"%%%%BeginDefaults\n"
 			  "%%%%PageMedia: %s\n",doc->docstyle->imposition->paperstyle->name);
@@ -381,9 +423,11 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	 //be listed here also:
 	 //%%Extensions: DPS|CMYK|Composite|FileSystem  <-- seems to be more a concern for LL1 docs only?
 
+
 	 //---------------------------Prolog, for procedure sets
 	fprintf(f,"%%%%BeginProlog\n");
 	//if (doc->hasEPS()) { *** including these defs always isn't harmful, and much easier to implement..
+	
  		 // if an EPS has extra resources, they are mentioned here in the prolog(?)
 		//***
 		//%%BeginResource: procsetname
@@ -421,15 +465,15 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	 // Write out paper spreads....
 	Spread *spread;
 	double m[6];
-	int c,c2,l,pg;
+	int c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page;
 	char *desc;
 	for (c=start; c<=end; c++) {
-		spread=doc->docstyle->imposition->PaperLayout(c);
+		spread=doc->docstyle->imposition->Layout(layout,c);
 		desc=spread->pagesFromSpreadDesc(doc);
 			
-	     //print paper header
+	     //print (postscript) paper header
 		if (desc) {
 			fprintf(f, "%%%%Page: %s %d\n", desc,c-start+1);//Page label (ordinal starting at 1)
 			delete[] desc;
@@ -445,7 +489,7 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			//DBG cout <<"marks data:\n";
+			//DBG cerr <<"marks data:\n";
 			//DBG spread->marks->dump_out(stdout,2,0);
 			psdumpobj(f,spread->marks);
 		}
@@ -467,12 +511,12 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 			psConcat(m);
 
 			 // set clipping region
-			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..
@@ -497,7 +541,10 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
 	fprintf(f, "\n%%%%Trailer\n");
 	fprintf(f, "\n%%%%EOF\n");
 
-	DBG cout <<"=================== end printing ========================\n";
+	DBG cerr <<"=================== end printing ========================\n";
+
+	fclose(f);
+	delete[] file;
 
 	return 0;
 }
@@ -523,28 +570,38 @@ int psout(FILE *f,Document *doc,int start,int end,unsigned int flags)
  * \todo *** doing page layouts is potentially broken for impositions that do not provide page layouts 
  *   with pages that increase one by one: [1,2]->[3,4]->etc. No good: [1,3]->[2,4]
  */
-int epsout(const char *fname,Document *doc,int start,int end,
-		int layouttype,unsigned int flags)
+int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
-	if (!doc) return 1;
+	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
+	if (!out) return 1;
+
+	 //set up config
+	if (error_ret) *error_ret=NULL;
+	Document *doc =out->doc;
+	int start     =out->start;
+	int end       =out->end;
+	int layout    =out->layout;
+	if (!filename) filename=out->tofiles;
+	if (!filename) filename="output#.eps";
+
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) {
+		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
+		return 1;
+	}
 	
 	if (start<0) start=0;
-	if (layouttype==PAPERLAYOUT) {
-		if (end<0 || end>=doc->docstyle->imposition->numpapers) 
-			end=doc->docstyle->imposition->numpapers-1;
-	} else if (layouttype==PAGELAYOUT) {
-		if (end<0 || end>=doc->docstyle->imposition->numspreads) 
-			end=doc->docstyle->imposition->numspreads-1;
-	} else { // singles
-		if (end<0 || end>=doc->pages.n) 
-			end=doc->pages.n-1;
-	}
+	else if (start>=doc->docstyle->imposition->NumSpreads(layout))
+		start=doc->docstyle->imposition->NumSpreads(layout)-1;
+	if (end<start) end=start;
+	else if (end>=doc->docstyle->imposition->NumSpreads(layout))
+		end=doc->docstyle->imposition->NumSpreads(layout)-1;
+
 
 	 //figure out base filename
-	char *filebase=LaxFiles::make_filename_base(fname);
-	char filename[strlen(filebase)+10];
+	char *filebase=LaxFiles::make_filename_base(filename);
+	char epsfilename[strlen(filebase)+10];
 
-	DBG cout <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
+	DBG cerr <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
 		
 	 // Write out paper spreads....
 	Spread *spread;
@@ -555,9 +612,13 @@ int epsout(const char *fname,Document *doc,int start,int end,
 	Page *page;
 	FILE *f;
 	for (c=start; c<=end; c++) {
-		sprintf(filename,filebase,c+1);
-		f=fopen(filename,"w");
+		sprintf(epsfilename,filebase,c);
+		f=fopen(epsfilename,"w");
 		if (!f) {
+			if (error_ret) {
+				*error_ret=new char[100];
+				sprintf(*error_ret,_("Error opening %s for writing during EPS out."),epsfilename);
+			}
 			delete[] filebase;
 			return c+1;
 		}
@@ -567,9 +628,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		psctm=transform_identity(psctm);
 
 		 // Find bbox
-		if (layouttype==SINGLELAYOUT) spread=doc->docstyle->imposition->SingleLayout(c);
-		else if (layouttype==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(c);
-		else if (layouttype==PAPERLAYOUT) spread=doc->docstyle->imposition->PaperLayout(c);
+		spread=doc->docstyle->imposition->Layout(layout,c);
 		bbox.clear();
 		bbox.addtobounds(spread->path);
 		
@@ -623,7 +682,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
-		if (layouttype==PAPERLAYOUT && doc->docstyle->imposition->paperstyle->flags&1) {
+		if (layout==PAPERLAYOUT && doc->docstyle->imposition->paperstyle->flags&1) {
 			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
 			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
 		}
@@ -631,7 +690,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			//DBG cout <<"marks data:\n";
+			//DBG cerr <<"marks data:\n";
 			//DBG spread->marks->dump_out(stdout,2,0);
 			psdumpobj(f,spread->marks);
 		}
@@ -653,12 +712,12 @@ int epsout(const char *fname,Document *doc,int start,int end,
 			psConcat(m);
 
 			 // set clipping region
-			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..
@@ -684,7 +743,7 @@ int epsout(const char *fname,Document *doc,int start,int end,
 
 	}
 
-	DBG cout <<"=================== end printing eps ========================\n";
+	DBG cerr <<"=================== end printing eps ========================\n";
 
 	return 0;
 }
