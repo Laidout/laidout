@@ -17,6 +17,7 @@ objs= \
 	filefilters.o \
 	filters.o \
 	exportdialog.o \
+	postscript.o \
 	ppt.o 
 
 

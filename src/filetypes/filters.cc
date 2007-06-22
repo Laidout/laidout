@@ -17,17 +17,17 @@
 #include "../laidout.h"
 
 #include "ppt.h"
+#include "postscript.h"
 //#include "svg.h"
 //#include "scribus.h"
 //#include "pdf.h"
-//#include "ps.h"
 
 void installFilters()
 {
 	installPptFilter();
+	installPostscriptFilters();
+
 	//installSvgFilter();
 	//installScribusFilter();
 	//installPdfFilter();
-	//installPsFilter();
-	//installEpsFilter();
 }

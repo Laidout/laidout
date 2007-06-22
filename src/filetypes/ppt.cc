@@ -43,7 +43,7 @@ void installPptFilter()
 	laidout->exportfilters.push(pptout);
 	
 	//PptinFilter *pptin=new PptinFilter;
-	//laidout->inportfilters.push(pptin);
+	//laidout->importfilters.push(pptin);
 }
 
 
@@ -114,7 +114,10 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	int layout    =out->layout;
 	if (!filename) filename=out->filename;
 	
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) {
+		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
+		return 1;
+	}
 	
 	FILE *f=NULL;
 	char *file=NULL;
@@ -159,8 +162,8 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	
 	 // write out header
 	fprintf(f,"<?xml version=\"1.0\"?>\n");
-	fprintf(f,"<document paper_name=\"%s\" doublesided=\"false\" landscape=\"%s\" first_page_num=\"1\">\n",
-				papersize, landscape);
+	fprintf(f,"<document paper_name=\"%s\" doublesided=\"false\" landscape=\"%s\" first_page_num=\"%d\">\n",
+				papersize, landscape, start);
 	
 	 // Write out paper spreads....
 	Spread *spread;
@@ -176,7 +179,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 	
 	transform_set(m,1,0,0,1,0,0);
-	for (c=start; c<end; c++) {
+	for (c=start; c<=end; c++) {
 		fprintf(f,"  <page>\n");
 		spread=doc->docstyle->imposition->Layout(layout,c);
 		

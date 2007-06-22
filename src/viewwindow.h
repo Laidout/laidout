@@ -148,7 +148,6 @@ class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtil
 	void setup();
 	Laxkit::NumInputSlider *pagenumber;
 	Laxkit::NumInputSlider *var1, *var2, *var3;
-	Laxkit::LineEdit *loaddir;
 	Laxkit::IconButton *pageclips;
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
