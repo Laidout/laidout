@@ -76,8 +76,8 @@ ObjectInterface:
   
 
 ImageInterface:
-  'c'      Move image to real origin
-  'C'      Move image to real origin and clear rotation
+  'n'      normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  'N'      like 'n', but also clear rotation
   'd'      Toggle drawing decorations
   'f'      Toggle writing the filename next to the image
 
