@@ -215,7 +215,7 @@ int scribusout(const char *scribusversion,
 	char *file;
 	if (!filename) {
 		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cout <<"**** cannot save, doc->saveas is null."<<endl;
+			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
 			if (error_ret) *error_ret=newstr(_("Cannot save without a valid filename."));
 			return 2;
 		}
@@ -227,7 +227,7 @@ int scribusout(const char *scribusversion,
 	delete[] file; file=NULL;
 	
 	if (!f) {
-		DBG cout <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
+		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
 		if (error_ret) *error_ret=newstr(_("Cannot open file for writing."));
 		return 3;
 	}

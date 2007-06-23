@@ -453,7 +453,7 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		changeRangeTarget(3);
 		return 0;
 	} else if (!strcmp(mes,"start")) {
-		DBG cout <<"start data: "<<e->data.l[0]<<endl;
+		DBG cerr <<"start data: "<<e->data.l[0]<<endl;
 		if (e->data.l[0]==2) {
 			changeRangeTarget(3);
 		} else {
@@ -461,7 +461,7 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 	} else if (!strcmp(mes,"end")) {
-		DBG cout <<"end data: "<<e->data.l[0]<<endl;
+		DBG cerr <<"end data: "<<e->data.l[0]<<endl;
 		if (e->data.l[0]==2) {
 			 //focus on
 			changeRangeTarget(3);
@@ -536,7 +536,7 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 void ExportDialog::overwriteCheck()
 {
-	DBG cout <<"-----overwrite check "<<endl;
+	DBG cerr <<"-----overwrite check "<<endl;
 
 	int valid,err;
 	unsigned long color=app->rgbcolor(255,255,255);
@@ -674,7 +674,7 @@ int ExportDialog::send()
 		
 		char tmp[256];
 		cupsTempFile2(tmp,sizeof(tmp));
-		DBG cout <<"attempting to write temp file for printing: "<<tmp<<endl;
+		DBG cerr <<"attempting to write temp file for printing: "<<tmp<<endl;
 
 		FILE *f=fopen(tmp,"w");
 		if (f) {
@@ -691,7 +691,7 @@ int ExportDialog::send()
 				 //now do the actual command
 				int c=system(cm); //-1 for error, else the return value of the call
 				if (c!=0) {
-					DBG cout <<"there was an error printing...."<<endl;
+					DBG cerr <<"there was an error printing...."<<endl;
 				}
 				//*** have to delete (unlink) tmp!
 				

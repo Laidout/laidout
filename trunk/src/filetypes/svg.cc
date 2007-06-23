@@ -86,7 +86,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return 0;
 
-		if (grad->style&RADIAL_GRADIENT) {
+		if (grad->style&GRADIENT_RADIAL) {
 			//***
 		} else {
 			fprintf(f,"    <rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
@@ -146,7 +146,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return 0;
 
-		if (grad->style&RADIAL_GRADIENT) {
+		if (grad->style&GRADIENT_RADIAL) {
 			//***
 		} else {
 			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
@@ -216,7 +216,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	char *file;
 	if (!filename) {
 		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cout <<"**** cannot save, doc->saveas is null."<<endl;
+			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
 			*error_ret=newstr(_("Cannot save to SVG without a filename."));
 			return 2;
 		}
@@ -228,7 +228,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	delete[] file; file=NULL;
 
 	if (!f) {
-		DBG cout <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
+		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
 		*error_ret=newstr(_("Error opening file for writing."));
 		return 3;
 	}

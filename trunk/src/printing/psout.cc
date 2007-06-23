@@ -314,7 +314,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	char *file=NULL;
 	if (!filename) {
 		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cout <<"**** cannot save, null filename, doc->saveas is null."<<endl;
+			DBG cerr <<"**** cannot save, null filename, doc->saveas is null."<<endl;
 			
 			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
@@ -325,7 +325,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 
 	f=fopen(file,"w");
 	if (!f) {
-		DBG cout <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		DBG cerr <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
 
 		delete[] file;
 		if (error_ret) *error_ret=newstr(_("Error opening file for writing."));
@@ -490,7 +490,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
 			//DBG cerr <<"marks data:\n";
-			//DBG spread->marks->dump_out(stdout,2,0);
+			//DBG spread->marks->dump_out(stderr,2,0);
 			psdumpobj(f,spread->marks);
 		}
 		
@@ -691,7 +691,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
 			//DBG cerr <<"marks data:\n";
-			//DBG spread->marks->dump_out(stdout,2,0);
+			//DBG spread->marks->dump_out(stderr,2,0);
 			psdumpobj(f,spread->marks);
 		}
 		

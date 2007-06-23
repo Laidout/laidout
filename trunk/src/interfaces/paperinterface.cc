@@ -92,7 +92,7 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 PaperInterface::~PaperInterface()
 {
-	DBG cout <<"PaperInterface destructor.."<<endl;
+	DBG cerr <<"PaperInterface destructor.."<<endl;
 }
 
 

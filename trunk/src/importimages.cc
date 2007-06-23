@@ -548,7 +548,7 @@ int ImportImagesDialog::send()
 {
 	//if (!owner) return 0;
 	
-	DBG cout <<"====Generating file names for import images..."<<endl;
+	DBG cerr <<"====Generating file names for import images..."<<endl;
 	
 	int *which=filelist->WhichSelected(LAX_ON);
 	int n=0;
@@ -607,11 +607,11 @@ int ImportImagesDialog::send()
 				templi=dynamic_cast<LineInput *>(findWindow("MinSize"));			
 				str_to_byte_size(templi->GetCText(), &si);
 				if (s>si) {
-					DBG cout <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
+					DBG cerr <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
 					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
 					if (si<10) si=128;
 					if (generate_preview_image(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
-						DBG cout <<"              ***generate preview failed....."<<endl;
+						DBG cerr <<"              ***generate preview failed....."<<endl;
 					}
 				}
 			} else {

@@ -24,9 +24,9 @@
 
 void installFilters()
 {
-	installPptFilter();
 	installPostscriptFilters();
 	installSvgFilter();
+	installPptFilter();
 
 	//installScribusFilter();
 	//installPdfFilter();

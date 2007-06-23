@@ -277,7 +277,7 @@ int pdfout(FILE *f,
 	 // initialize outside accessible ctm
 	psCtmInit();
 	psctms.flush();
-	DBG cout <<"=================== start pdf out "<<start<<" to "<<end<<" ====================\n";
+	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<" ====================\n";
 
 	 // a PDF is:
 	 //   header
@@ -420,8 +420,8 @@ int pdfout(FILE *f,
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			//DBG cout <<"marks data:\n";
-			//DBG spread->marks->dump_out(stdout,2,0);
+			//DBG cerr <<"marks data:\n";
+			//DBG spread->marks->dump_out(stderr,2,0);
 			pdfdumpobj(f,spread->marks);
 		}
 		
@@ -442,12 +442,12 @@ int pdfout(FILE *f,
 			psConcat(m);
 
 			 // set clipping region
-			DBG cout <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				DBG cout <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..
@@ -566,7 +566,7 @@ int pdfout(FILE *f,
 	fprintf(f,"%%%%EOF\n");
 
 
-	DBG cout <<"=================== end pdf out ========================\n";
+	DBG cerr <<"=================== end pdf out ========================\n";
 
 	return 0;
 }

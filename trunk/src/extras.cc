@@ -439,7 +439,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 						float psversion,epsversion;
 						n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&psversion,&epsversion);
 						if (n==2) {
-							DBG cout <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
+							DBG cerr <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
 							image=new EpsData(file,preview,0,0,0);
 						} else continue;
 					}
@@ -475,7 +475,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			if (desc) delete[] desc;
 			preview=desc=NULL;
 		} else {
-			DBG cout <<" *** potential error in list, found unknown attribute"<<endl;
+			DBG cerr <<" *** potential error in list, found unknown attribute"<<endl;
 		}
 		
 		if (flush>0) {
@@ -577,7 +577,7 @@ int dumpInImages(Document *doc, int startpage,
 		 //first check if Imlib2 recognizes it as image (the easiest check)
 		image=load_image_with_preview(imagefiles[c],previewfiles?previewfiles[c]:NULL,0,0,0);
 		if (image) {
-			DBG cout << "dump image files: "<<imagefiles[c]<<endl;
+			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
 			imaged=new ImageData;//creates with one count
 			imaged->SetImage(image);
@@ -610,7 +610,7 @@ int dumpInImages(Document *doc, int startpage,
 						float psversion,epsversion;
 						n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&psversion,&epsversion);
 						if (n==2) {
-							DBG cout <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
+							DBG cerr <<"--found EPS, ps:"<<psversion<<", eps:"<<epsversion<<endl;
 							 //create new EpsData, which has bounding box pulled from
 							 //the eps file, kept in postscript units (1 inch == 72 units)
 							//*******
@@ -677,7 +677,7 @@ int dumpInImages(Document *doc, int startpage,
  */
 int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 {
-	DBG cout<<"---dump in images from ImagePlopInfo list..."<<endl;
+	DBG cerr<<"---dump in images from ImagePlopInfo list..."<<endl;
 	if (!images) return -1;
 	if (startpage<0) startpage=0;
 
@@ -705,13 +705,13 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 	
 		 // info points to the first image on a page
 		
-		DBG cout <<"  starting page "<<curpage+1<<endl;
+		DBG cerr <<"  starting page "<<curpage+1<<endl;
 		if (!info->image) { info=info->next; continue; }
 		
 		if (info->page>=0) curpage=info->page;
 		
 		if (curpage>=doc->pages.n) { 
-			DBG cout <<" adding new page..."<<endl;
+			DBG cerr <<" adding new page..."<<endl;
 			doc->NewPages(-1,curpage-doc->pages.n+1); // add extra page(s) at end
 		}
 		
@@ -722,7 +722,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		outline=doc->docstyle->imposition->GetPage(curpage,0); //adds 1 count already
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
-		//DBG cout <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
+		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
 		
 		if (info->dpi>0) curdpi=info->dpi; else curdpi=dpi;
 		s=1./curdpi; 
@@ -767,7 +767,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 			last=flow;   // last is used to point to first image of a row
 			
 			rw=rh=0;
-			DBG cout <<"  row number "<<++nr<<endl;
+			DBG cerr <<"  row number "<<++nr<<endl;
 			while (flow && nnn+nn<maxperpage) { 
 				 // find all for a row
 				obj=flow->image;
@@ -812,9 +812,9 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 
 		 // now do final vertical arranging of nnn images in range [info,flow)
 		 // push images onto the page, adjusting their origins appropriately
-		DBG cout <<"  add "<<nn<<" images to page "<<curpage<<endl;
+		DBG cerr <<"  add "<<nn<<" images to page "<<curpage<<endl;
 		while (info!=flow) {
-			DBG cout <<"   adding image ..."<<endl;
+			DBG cerr <<"   adding image ..."<<endl;
 			//while (curpage>doc->pages.n) doc->
 			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)/2));
 			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
@@ -825,7 +825,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		curpage++;
 	} // end loop block for page
 
-	DBG cout <<"-----------------end dump images[]----------------"<<endl;
+	DBG cerr <<"-----------------end dump images[]----------------"<<endl;
 	if (outline) { outline->dec_count(); outline=NULL; }
 	return curpage-1;
 }

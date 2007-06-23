@@ -41,7 +41,7 @@ GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 
 GroupInterface::~GroupInterface()
 {
-	DBG cout <<"---- in GroupInterface destructor"<<endl;
+	DBG cerr <<"---- in GroupInterface destructor"<<endl;
 }
 
 anInterface *GroupInterface::duplicate(anInterface *dup)
@@ -85,7 +85,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count)
 //! Return 1 if change, else 0.
 int GroupInterface::ToggleGroup()
 {
-	DBG cout <<"*******GroupInterface.ToggleGroup"<<endl;
+	DBG cerr <<"*******GroupInterface.ToggleGroup"<<endl;
 
 	if (selection.n==0) {
 		viewport->postmessage("No objects selected.");
@@ -214,28 +214,27 @@ int GroupInterface::ToggleGroup()
 int GroupInterface::GrabSelection(unsigned int state)
 {
 	if (!data) return 1;
-	cout <<"***imp GrabSelection(unsigned int state)"<<endl;
 
 	DoubleBBox bbox;
 	bbox.addtobounds(transform_point(data->m(),data->minx,data->miny));
 	bbox.addtobounds(transform_point(data->m(),data->maxx,data->maxy));
 	
-	DBG cout <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
-	DBG cout <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
+	DBG cerr <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
+	DBG cerr <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
 	
 	int n;
 	VObjContext **objs;
 	n=viewport->FindObjects(&bbox,0,0,NULL,(ObjectContext ***)(&objs));
 
-	DBG if (n && !objs) cout <<"*******ERROR! says found objects, but no objects returned."<<endl;
+	DBG if (n && !objs) cerr <<"*******ERROR! says found objects, but no objects returned."<<endl;
 	DBG else {
-	DBG 	cout <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
-	DBG 	cout <<"Found objects: "<<n<<endl;
+	DBG 	cerr <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
+	DBG 	cerr <<"Found objects: "<<n<<endl;
 	DBG }
 
 	 //add
 	for (int c=0; c<n; c++) {
-		DBG cout << "  ";
+		DBG cerr << "  ";
 		DBG if (objs[c]) objs[c]->context.out("");
 
 		AddToSelection(objs[c]);
