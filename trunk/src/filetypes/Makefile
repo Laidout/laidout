@@ -18,7 +18,8 @@ objs= \
 	filters.o \
 	exportdialog.o \
 	postscript.o \
-	ppt.o 
+	ppt.o \
+	svg.o
 
 
 

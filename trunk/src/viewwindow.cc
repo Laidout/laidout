@@ -2941,10 +2941,18 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		}
 		delete data;
 		return 0;
+	} else if (!strcmp(mes,"print config")) {
+		 //sent from PrintingDialog
+		//***
+		return 0;
 	} else if (!strcmp(mes,"export config")) {
+		 //sent from ExportDialog
 		ConfigEventData *d=dynamic_cast<ConfigEventData *>(data);
 		if (!d || !d->config->filter) return 1;
 		char *error=NULL;
+		mesbar->SetText("Exporting...");
+		mesbar->Refresh();
+		XSync(app->dpy,False);
 		if (d->config->filter->Out(NULL,d->config,&error)==0) {
 			mesbar->SetText(_("Exported."));
 		} else {
@@ -3314,7 +3322,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				}
 			}
 		}
-		PrintingDialog *p=new PrintingDialog(doc,window,"printfile",
+		PrintingDialog *p=new PrintingDialog(doc,window,"export config",
 										"output.ps","lp",NULL,
 										PAPERLAYOUT, 
 										0,doc->pages.n-1,curpage,

@@ -26,12 +26,16 @@
 class Document;
 
 //------------------------------------- FileFilter -----------------------------------
+
+#define FILTER_MULTIPAGE  (1<<0)
+
 typedef void Plugin; //******must implement plugins!!
 class FileFilter : public Laxkit::anObject
 {
  public:
+	unsigned int flags;
 	Plugin *plugin; //***which plugin, if any, the filter came from.
-	FileFilter() { plugin=NULL; }
+	FileFilter();
 	virtual ~FileFilter() {}
 	virtual const char *Author() = 0;
 	virtual const char *FilterVersion() = 0;
@@ -69,6 +73,7 @@ class ExportFilter : public FileFilter
 class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
+	int target;
 	int start,end;
 	int layout;
 	Document *doc;

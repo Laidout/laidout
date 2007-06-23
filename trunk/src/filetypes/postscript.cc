@@ -60,6 +60,11 @@ void installPostscriptFilters()
  * \brief Output filter for Postscript LL3 files.
  */
 
+PsOutFilter::PsOutFilter()
+{
+	flags=FILTER_MULTIPAGE;
+}
+
 const char *PsOutFilter::VersionName()
 {
 	return _("Postscript LL3");
