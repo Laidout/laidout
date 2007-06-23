@@ -16,6 +16,7 @@
 
 
 #include <lax/interfaces/imageinterface.h>
+#include <lax/interfaces/gradientinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
@@ -81,7 +82,23 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 			svgdumpobj(f,NULL,g->e(c),error_ret,warning); 
 		fprintf(f,"    </g>\n");
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
-		//***
+		GradientData *grad;
+		grad=dynamic_cast<GradientData *>(obj);
+		if (!grad) return 0;
+
+		if (grad->style&RADIAL_GRADIENT) {
+			//***
+		} else {
+			fprintf(f,"    <rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"        fill=\"url(#linearGradient%ld)\"\n", grad->object_id);
+			fprintf(f,"        x=\"%f\"\n", grad->minx);
+			fprintf(f,"        y=\"%f\"\n", grad->miny);
+			fprintf(f,"        width=\"%f\"\n", grad->maxx-grad->minx);
+			fprintf(f,"        height=\"%f\"\n", grad->maxy-grad->miny);
+			fprintf(f,"     />\n");
+		}
+
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
 		appendstr(*error_ret,_("Cannot import Eps objects into svg.\n"));
 		warning++;
@@ -95,7 +112,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		o+=obj->yaxis()*(obj->maxy-obj->miny);
 		
 		fprintf(f,"    <image  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-				     obj->m(0)*72, obj->m(1)*72, -obj->m(2)*72, -obj->m(3)*72, o.x*72, o.y*72);
+				     obj->m(0), obj->m(1), -obj->m(2), -obj->m(3), o.x, o.y);
 		fprintf(f,"        xlink:href=\"%s\" \n", img->filename);
 		fprintf(f,"        x=\"%f\"\n", img->minx);
 		fprintf(f,"        y=\"%f\"\n", img->miny);
@@ -110,6 +127,46 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
 		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
 		warning++;
+	}
+	return 0;
+}
+
+//! Function to dump out any gradients to the defs section of an svg.
+/*! Return nonzero for fatal errors encountered, else 0.
+ */
+int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
+{
+
+	if (!strcmp(obj->whattype(),"Group")) {
+		Group *g=dynamic_cast<Group *>(obj);
+		for (int c=0; c<g->n(); c++) 
+			svgdumpdef(f,NULL,g->e(c),error_ret,warning); 
+	} else if (!strcmp(obj->whattype(),"GradientData")) {
+		GradientData *grad;
+		grad=dynamic_cast<GradientData *>(obj);
+		if (!grad) return 0;
+
+		if (grad->style&RADIAL_GRADIENT) {
+			//***
+		} else {
+			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
+			fprintf(f,"        x1=\"%f\"\n", grad->p1);
+			fprintf(f,"        y1=\"0\"\n");
+			fprintf(f,"        x2=\"%f\"\n", grad->p2);
+			fprintf(f,"        y2=\"0\"\n");
+			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
+			double clen=grad->colors.e[grad->colors.n-1]->t-grad->colors.e[0]->t;
+			for (int c=0; c<grad->colors.n; c++) {
+				fprintf(f,"      <stop offset=\"%f\" stop-color=\"#%02x%02x%02x\" stop-opacity=\"%f\" />\n",
+								(grad->colors.e[c]->t-grad->colors.e[0]->t)/clen, //offset
+								grad->colors.e[c]->color.red>>8, //color
+								grad->colors.e[c]->color.green>>8, 
+								grad->colors.e[c]->color.blue>>8, 
+								grad->colors.e[c]->color.alpha/65535.); //opacity
+			}
+			fprintf(f,"    </linearGradient>\n");
+		}
+
 	}
 	return 0;
 }
@@ -206,11 +263,25 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //write out global defs section
 	fprintf(f,"  <defs>\n");
 	//*************** gradients and such
+	 // for each page in spread..
+	for (c2=0; c2<spread->pagestack.n; c2++) {
+		pg=spread->pagestack.e[c2]->index;
+		if (pg<0 || pg>=doc->pages.n) continue;
+		 // for each layer on the page..
+		for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+			 // for each object in layer
+			g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+			for (c3=0; c3<g->n(); c3++) {
+				transform_copy(m,spread->pagestack.e[c2]->outline->m());
+				svgdumpdef(f,m,g->e(c3),error_ret,warning);
+			}
+		}
+	}
 	fprintf(f,"  </defs>\n");
 			
 	
 	 // Write out spread....
-	fprintf(f,"  <g transform=\"matrix(1.25,0,0,-1.25, 0,%f)\">\n", height*72*1.25);
+	fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
 
 	 // for each page in spread..
 	for (c2=0; c2<spread->pagestack.n; c2++) {
