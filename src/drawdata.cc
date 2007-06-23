@@ -72,7 +72,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
 		dp->NewFG(128,128,128);
-		DBG cout<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
+		DBG cerr<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
 		dp->drawrline(flatpoint(data->minx,data->miny),flatpoint(data->maxx,data->miny));
 		dp->drawrline(flatpoint(data->maxx,data->miny),flatpoint(data->maxx,data->maxy));
 		dp->drawrline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));

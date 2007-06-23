@@ -66,7 +66,7 @@ NetImposition::NetImposition(Net *newnet)
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
 
-	DBG cout <<"   net 1"<<endl;
+	DBG cerr <<"   net 1"<<endl;
 	
 	net=NULL;
 	pagestyle=NULL;
@@ -80,7 +80,7 @@ NetImposition::NetImposition(Net *newnet)
 		netisbuiltin=0;
 	}
 
-	DBG cout <<"   net 2"<<endl;
+	DBG cerr <<"   net 2"<<endl;
 
 	printnet=1;
 	
@@ -91,7 +91,7 @@ NetImposition::NetImposition(Net *newnet)
 		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
 	
-	DBG cout <<"imposition netimposition init"<<endl;
+	DBG cerr <<"imposition netimposition init"<<endl;
 }
  
 //! Dec_count() of the net, and pagestyle.
@@ -321,11 +321,11 @@ LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
 	
 	flatpoint p[net->faces[pg].np];
-	DBG cout <<"NetImposition::GetPage:\n";
+	DBG cerr <<"NetImposition::GetPage:\n";
 	for (int c=0; c<net->faces[pg].np; c++) {
 		 // transform the net point to page coordinates
 		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
-		DBG cout <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
+		DBG cerr <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
 	}
 	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
 	newpath->close();
@@ -351,7 +351,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 {
 	if (!net) return NULL;
 	
-	DBG cout <<"--Build Net Single Layout with adjacent--"<<endl;
+	DBG cerr <<"--Build Net Single Layout with adjacent--"<<endl;
 	Spread *spread=new Spread();
 	spread->style=SPREAD_PAGE;
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
@@ -395,7 +395,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 			if (c3!=net->faces[c2].np) break; // found a match
 		}
 		if (c2!=net->nf) {
-			DBG cout <<"----found a match with face #"<<c2<<endl;
+			DBG cerr <<"----found a match with face #"<<c2<<endl;
 			 // found a match with face c2. p1 and p2 get assigned back to flat point indices:
 			 // Original edge is p1--p2, corresponding to c--(c+1)%net->faces[basepage]->np
 			 //  matched edge is q1--q2
@@ -454,7 +454,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	spread->maximum=transform_point(newpath->m(),
 			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
 
-	DBG cout <<"--end Build Net Single Layout with adjacent--"<<endl;
+	DBG cerr <<"--end Build Net Single Layout with adjacent--"<<endl;
 	return spread;
 }
 
@@ -686,9 +686,9 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				tempnet=new Net();
 				tempnet->dump_in_atts(att->attributes.e[c],flag);
 				SetNet(tempnet);
-				DBG cout <<"-----------after dump_in net and set----------"<<endl;
-				DBG net->dump_out(stdout,2,0);
-				DBG cout <<"-----------end netimpos..----------"<<endl;
+				DBG cerr <<"-----------after dump_in net and set----------"<<endl;
+				DBG net->dump_out(stderr,2,0);
+				DBG cerr <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);

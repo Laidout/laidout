@@ -91,13 +91,13 @@ Singles::Singles() : Imposition("Singles")
 		 // 1 count, and the stylemanager should remove the other
 	}
 	
-	DBG cout <<"imposition singles init"<<endl;
+	DBG cerr <<"imposition singles init"<<endl;
 }
 
 //! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
-	DBG cout <<"--Singles destructor"<<endl;
+	DBG cerr <<"--Singles destructor"<<endl;
 	pagestyle->dec_count();
 }
 
@@ -583,13 +583,13 @@ DoubleSidedSingles::DoubleSidedSingles()
 		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
 	
-	DBG cout <<"imposition doublesidedsingles init"<<endl;
+	DBG cerr <<"imposition doublesidedsingles init"<<endl;
 } 
 
 //! Calls pagestyler->dec_count().
 DoubleSidedSingles::~DoubleSidedSingles()
 {
-	DBG cout <<"--Double Sided Singles Singles destructor"<<endl;
+	DBG cerr <<"--Double Sided Singles Singles destructor"<<endl;
 	pagestyler->dec_count();
 }
 
@@ -956,7 +956,7 @@ BookletImposition::BookletImposition()
 		if (styledef) stylemanager.AddStyleDef(styledef);
 	}
 	
-	DBG cout <<"imposition booklet init"<<endl;
+	DBG cerr <<"imposition booklet init"<<endl;
 }
 
 //! Using the paperstyle and isvertical, create a new default pagestyle.

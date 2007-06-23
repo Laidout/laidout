@@ -235,9 +235,9 @@ int *Spread::pagesFromSpread()
 			if (c2==list.n) { list.push(i,c2); }
 		}
 	}
-	DBG cout <<"pagesfromSpread list: ";
-	DBG for (c=0; c<list.n; c++) cout <<list.e[c]<<' '; 
-	DBG cout <<endl;
+	DBG cerr <<"pagesfromSpread list: ";
+	DBG for (c=0; c<list.n; c++) cerr <<list.e[c]<<' '; 
+	DBG cerr <<endl;
 	
 	 //now list holds a monotonically increasing list of pages. 
 	 //now crunch down ranges..
@@ -251,9 +251,9 @@ int *Spread::pagesFromSpread()
 	}
 	list2.push(-2);
 
-	DBG cout <<"pagesfromSpread list2: ";
-	DBG for (c=0; c<list2.n; c++) cout <<list2.e[c]<<' ';
-	DBG cout <<endl;
+	DBG cerr <<"pagesfromSpread list2: ";
+	DBG for (c=0; c<list2.n; c++) cerr <<list2.e[c]<<' ';
+	DBG cerr <<endl;
 
 	return list2.extractArray();
 }
@@ -445,7 +445,7 @@ Imposition::Imposition(const char *nsname)
 	paperstyle=NULL; 
 	numpages=numspreads=numpapers=0; 
 	
-	DBG cout <<"imposition base class init"<<endl;
+	DBG cerr <<"imposition base class init"<<endl;
 }
 
 /*! Does paperstyle->dec_count().
@@ -455,7 +455,7 @@ Imposition::~Imposition()
 {
 	if (paperstyle) paperstyle->dec_count();
 
-	DBG cout <<"imposition destructor"<<endl;
+	DBG cerr <<"imposition destructor"<<endl;
 }
 
 //! Return an imposition specific tool for use with the given layout type

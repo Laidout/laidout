@@ -73,7 +73,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			imposition=newImposition(value);
 			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag);
 		} else { 
-			DBG cout <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
+			DBG cerr <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -534,7 +534,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	if (docstyle==NULL) {
 		//*** need to create a new DocumentStyle
 		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		DBG cout <<"***need to implement get default document in Document constructor.."<<endl;
+		DBG cerr <<"***need to implement get default document in Document constructor.."<<endl;
 	}
 	if (docstyle==NULL) {
 		cout <<"***need to implement document constructor with NULL docstyle.."<<endl;
@@ -542,7 +542,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 		 // create the pages
 		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
 		else { 
-			DBG cout << "**** in new Document, docstyle has no imposition"<<endl;
+			DBG cerr << "**** in new Document, docstyle has no imposition"<<endl;
 		}
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
@@ -568,7 +568,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 
 Document::~Document()
 {
-	DBG cout <<" Document destructor.."<<endl;
+	DBG cerr <<" Document destructor.."<<endl;
 	pages.flush();
 	pageranges.flush();
 	delete docstyle;
@@ -640,9 +640,9 @@ int Document::RemovePages(int start,int n)
 	if (start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
-		DBG cout << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
+		DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
-		DBG cout << "---  Done removing page "<<start+c<<endl;
+		DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
 	docstyle->imposition->NumPages(pages.n);
 	SyncPages(start,-1);
@@ -662,16 +662,16 @@ int Document::Save(int includewindows,char **error_ret)
 	
 	FILE *f=NULL;
 	if (!saveas || !strcmp(saveas,"")) {
-		DBG cout <<"**** cannot save, saveas is null."<<endl;
+		DBG cerr <<"**** cannot save, saveas is null."<<endl;
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
-		DBG cout <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
+		DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
 		return 3;
 	}
 
-	DBG cout <<"....Saving document to "<<saveas<<endl;
+	DBG cerr <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
@@ -701,7 +701,7 @@ int Document::Save(int includewindows,char **error_ret)
 int Document::Load(const char *file,char **error_ret)
 {
 	//*** need to create a new DocumentStyle from what's in the file..
-	DBG cout <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
+	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
 	if (error_ret) *error_ret=NULL;
 	if (file_exists(file,1,NULL)!=S_IFREG) {
@@ -715,7 +715,7 @@ int Document::Load(const char *file,char **error_ret)
 	FILE *f=fopen(file,"r");
 
 	if (!f) {
-		DBG cout <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
+		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
 
 		if (error_ret) {
 			*error_ret=new char[strlen(file)+50];//****this 50 fudge is likely to cause problems!!
@@ -775,7 +775,7 @@ int Document::Load(const char *file,char **error_ret)
 	}
 	docstyle->imposition->NumPages(pages.n);
 	SyncPages(0,-1);
-	DBG cout <<"------ Done reading "<<file<<endl<<endl;
+	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
 
@@ -806,7 +806,7 @@ int Document::SyncPages(int start,int n)
 		}
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
-		DBG cout <<"=============page["<<c<<"] label="<<label<<endl;
+		DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
 	}
 	return n;
 }

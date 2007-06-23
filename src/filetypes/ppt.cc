@@ -123,7 +123,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	char *file=NULL;
 	if (!filename) {
 		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cout <<"**** cannot save, null filename, doc->saveas is null."<<endl;
+			DBG cerr <<"**** cannot save, null filename, doc->saveas is null."<<endl;
 			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
 		}
@@ -133,7 +133,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 
 	f=fopen(file,"w");
 	if (!f) {
-		DBG cout <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		DBG cerr <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		if (error_ret) *error_ret=newstr(_("Error opening file for writing."));
 		return 3;

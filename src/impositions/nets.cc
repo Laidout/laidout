@@ -733,9 +733,9 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	//***sanity check on all point references..
 	FindBBox();
 
-	DBG cout <<"----------------this was set in Net:-------------"<<endl;
-	DBG dump_out(stdout,0,0);
-	DBG cout <<"----------------end Net dump:-------------"<<endl;
+	DBG cerr <<"----------------this was set in Net:-------------"<<endl;
+	DBG dump_out(stderr,0,0);
+	DBG cerr <<"----------------end Net dump:-------------"<<endl;
 }
 
 //! Add a 3-d point to vertices at the end.
@@ -774,11 +774,11 @@ double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 	transform_identity(mm);
 
 	DBG //*** for debugging	
-	DBG  cout <<"basisOfFace "<<which<<":\n";
+	DBG  cerr <<"basisOfFace "<<which<<":\n";
 	flatpoint p;
 	DBG for (int c=0; c<faces[which].np; c++) {
 	DBG 	p=points[faces[which].points[c]];
-	DBG 	cout <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
+	DBG 	cerr <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
 	DBG }
 	
 	int o=faces[which].aligno,x=faces[which].alignx;
@@ -796,13 +796,13 @@ double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
 		else transform_copy(mm,s.m());
 
 	DBG //*** for debugging	
-	DBG cout <<"--transformed face "<<which<<":"<<endl;
+	DBG cerr <<"--transformed face "<<which<<":"<<endl;
 	DBG transform_invert(s.m(),mm);
 	DBG double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
 	DBG p=transform_point(mm,flatpoint(0,0));
-	DBG cout <<"  origin:"<<p.x<<" "<<p.y<<endl;
+	DBG cerr <<"  origin:"<<p.x<<" "<<p.y<<endl;
 	DBG p=transform_point(mm,flatpoint(slen,0));
-	DBG cout <<"  point 1:"<<p.x<<" "<<p.y<<endl;
+	DBG cerr <<"  point 1:"<<p.x<<" "<<p.y<<endl;
 
 	
 	return mm;

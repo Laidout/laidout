@@ -98,7 +98,7 @@ int PrintingDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 //				
 //				mesbar->SetText(_("Document sent to print."));
 //			} else mesbar->SetText(_("Error printing."));
-//			DBG cout << "*** ViewWindow Printed to command: "<<cm<<endl;
+//			DBG cerr << "*** ViewWindow Printed to command: "<<cm<<endl;
 //		}
 //
 //
