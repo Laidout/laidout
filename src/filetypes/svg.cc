@@ -55,10 +55,65 @@ void installSvgFilter()
  */
 
 
+SvgOutputFilter::SvgOutputFilter()
+{
+	//flags=FILTERS_MULTIPAGE; //***not multipage yet!
+}
+
 const char *SvgOutputFilter::VersionName()
 {
 	return _("Svg 1.0");
 }
+
+//! Function to dump out obj as svg.
+/*! Return nonzero for fatal errors encountered, else 0.
+ *
+ * \todo put in indentation
+ */
+int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
+{
+
+	if (!strcmp(obj->whattype(),"Group")) {
+		fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		Group *g=dynamic_cast<Group *>(obj);
+		for (int c=0; c<g->n(); c++) 
+			svgdumpobj(f,NULL,g->e(c),error_ret,warning); 
+		fprintf(f,"    </g>\n");
+	} else if (!strcmp(obj->whattype(),"GradientData")) {
+		//***
+	} else if (!strcmp(obj->whattype(),"EpsData")) {
+		appendstr(*error_ret,_("Cannot import Eps objects into svg.\n"));
+		warning++;
+		
+	} else if (!strcmp(obj->whattype(),"ImageData")) {
+		ImageData *img;
+		img=dynamic_cast<ImageData *>(obj);
+		if (!img || !img->filename) return 0;
+
+		flatpoint o=obj->origin();
+		o+=obj->yaxis()*(obj->maxy-obj->miny);
+		
+		fprintf(f,"    <image  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+				     obj->m(0)*72, obj->m(1)*72, -obj->m(2)*72, -obj->m(3)*72, o.x*72, o.y*72);
+		fprintf(f,"        xlink:href=\"%s\" \n", img->filename);
+		fprintf(f,"        x=\"%f\"\n", img->minx);
+		fprintf(f,"        y=\"%f\"\n", img->miny);
+		fprintf(f,"        width=\"%f\"\n", img->maxx-img->minx);
+		fprintf(f,"        height=\"%f\"\n", img->maxy-img->miny);
+		fprintf(f,"       />\n");
+		
+	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
+		appendstr(*error_ret,_("Cannot export Color Patch objects into svg.\n"));
+		warning++;
+		
+	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
+		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
+		warning++;
+	}
+	return 0;
+}
+
 
 ////--------------------------------*************
 //class SvgFilterConfig
@@ -86,15 +141,17 @@ const char *SvgOutputFilter::VersionName()
  * \todo *** should have option of rasterizing or approximating the things not supported in svg, such 
  *    as patch gradients
  */
-int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *&error_ret)
+int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(config);
-	if (!outconfig) return 1;
-	doc     =out->doc;
-	start   =out->start;
-	end     =out->end;
-	layout  =out->layout;
-	filename=out->filename;
+	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
+	if (!out) return 1;
+
+	if (error_ret) *error_ret=NULL;
+	Document *doc =out->doc;
+	int start     =out->start;
+	//int end       =out->end;
+	int layout    =out->layout;
+	if (!filename) filename=out->filename;
 	
 	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
 	
@@ -103,7 +160,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	if (!filename) {
 		if (!doc->saveas || !strcmp(doc->saveas,"")) {
 			DBG cout <<"**** cannot save, doc->saveas is null."<<endl;
-			error_ret=newstr(_("Cannot save to SVG without a filename."));
+			*error_ret=newstr(_("Cannot save to SVG without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);
@@ -115,7 +172,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	if (!f) {
 		DBG cout <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
-		error_ret=newstr(_("Error opening file for writing."));
+		*error_ret=newstr(_("Error opening file for writing."));
 		return 3;
 	}
 
@@ -123,7 +180,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	Spread *spread;
 	Group *g;
 	double m[6];
-	int c,c2,l,pg,c3;
+	//int c;
+	int c2,l,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
 
 	if (start<0) start=0;
@@ -133,6 +191,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 	
 	 // write out header
+	double height=spread->path->maxy-spread->path->miny;
 	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fprintf(f,"<!-- Created with Laidout, http://www.laidout.org -->\n");
 	fprintf(f,"<svg \n"
@@ -140,8 +199,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			  "     xmlns=\"http://www.w3.org/2000/svg\"\n"
 			  "     xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
 			  "     version=\"1.0\"\n");
-	fprintf(f,"     width=\"%fin***inches by default?\"\n", spread->outline->maxx-spread->outline->minx);
-	fprintf(f,"     height=\"%fin\"\n", spread->outline->maxy-spread->outline->miny);
+	fprintf(f,"     width=\"%fin\"\n", spread->path->maxx-spread->path->minx); //***inches by default?
+	fprintf(f,"     height=\"%fin\"\n", height);
 	fprintf(f,"   >\n");
 			
 	 //write out global defs section
@@ -151,7 +210,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			
 	
 	 // Write out spread....
-	fprintf(f,"  <g>\n");
+	fprintf(f,"  <g transform=\"matrix(1.25,0,0,-1.25, 0,%f)\">\n", height*72*1.25);
 
 	 // for each page in spread..
 	for (c2=0; c2<spread->pagestack.n; c2++) {
@@ -205,49 +264,6 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	return 0;
 	
 }
-
-//! Function to dump out obj as svg.
-/*! Return nonzero for fatal errors encountered, else 0.
- */
-int svgdumpobj(FILE *f,double *mm,SomeData *obj,char &*error_ret,int &warning)
-{
-	if (!strcmp(obj->whattype(),"Group")) {
-		***
-		double m[6];
-		fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" ",
-				 m[0]*72, m[1]*72, m[2]*72, m[3]*72, m[4]*72, m[5]*72);
-	} else if (!strcmp(obj->whattype(),"GradientData")) {
-		***
-	} else if (!strcmp(obj->whattype(),"EpsData")) {
-		appendstr(error_ret,_("Cannot import Eps objects into svg.\n"));
-		warning++;
-		
-	} else if (!strcmp(obj->whattype(),"ImageData")) {
-		***
-		ImageData *img;
-		img=dynamic_cast<ImageData *>(obj);
-		if (!img || !img->filename) return;
-
-		double m[6];
-		transform_mult(m,img->m(),mm);
-		
-		char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
-											 // not modify the string.
-		fprintf(f,"    <frame name=\"Raster %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
-				bname, m[0]*72, m[1]*72, m[2]*72, m[3]*72, m[4]*72, m[5]*72);
-		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"raster\" file=\"%s\" />\n",
-				img->filename);
-		
-	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
-		appendstr(error_ret,_("Cannot import Color Patch objects into svg.\n"));
-		warning++;
-		
-	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
-		appendstr(error_ret,_("Cannot import Image Patch objects into svg.\n"));
-		warning++;
-	}
-}
-
 
 ////------------------------------------ SvgInputFilter ----------------------------------
 ///*! \class SvgInputFileFilter

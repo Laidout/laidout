@@ -16,16 +16,21 @@
 #ifndef FILETYPES_SVG_H
 #define FILETYPES_SVG_H
 
+#include "../version.h"
 #include "../document.h"
+#include "filefilters.h"
 
-int svgout(const char *version, Document *doc);
-Document *svgin(const char *file,Document *doc,int startpage);
+
+
+void installSvgFilter();
+
 
 //------------------------------------ SvgOutputFilter ----------------------------------
-class SvgOutputFilter
+class SvgOutputFilter : public ExportFilter
 {
  protected:
  public:
+	SvgOutputFilter();
 	virtual ~SvgOutputFilter() {}
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
@@ -36,11 +41,10 @@ class SvgOutputFilter
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 
+	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
-	
-	
-	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret);
-	virtual int Verify(Laxkit::anObject *context) = 0; //preflight checker
+	//virtual int Verify(Laxkit::anObject *context); //preflight checker
 };
 
 

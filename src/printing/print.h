@@ -33,7 +33,6 @@ class PrintingDialog : public ExportDialog
 						 Laxkit::MessageBar *progress);
 	virtual ~PrintingDialog();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int Print();
 	virtual int init();
 };
 

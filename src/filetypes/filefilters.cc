@@ -14,9 +14,12 @@
 // Copyright (C) 2007 by Tom Lechner
 //
 
-#include "filefilters.h"
-#include "../language.h"
 #include <lax/strmanip.h>
+
+#include "../language.h"
+#include "filefilters.h"
+#include "../laidout.h"
+
 
 using namespace LaxFiles;
 
@@ -27,9 +30,16 @@ using namespace LaxFiles;
  * If filename==NULL and tofiles!=NULL, then write out one spread per file, and tofiles
  * must be a file name template.
  */
+/*! \var int DocumentExportConfig::target
+ * 
+ * 0 for filename,
+ * 1 for tofiles: 1 spread per file,
+ * 2 for command.
+ */
 
 DocumentExportConfig::DocumentExportConfig()
 {
+	target=0;
 	filename=NULL;
 	tofiles=NULL;
 	start=end=0;
@@ -42,6 +52,7 @@ DocumentExportConfig::DocumentExportConfig()
  */
 DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, const char *to,int l,int s,int e)
 {
+	target=0;
 	filename=newstr(file);
 	tofiles=newstr(to);
 	start=s;
@@ -69,7 +80,7 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%stofiles  \"/files/like###.this\"  #the # section is replaced with the page index\n",spc);
 		fprintf(f,"%s                                #Only one of filename or tofiles should be present\n",spc);
 		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
-		fprintf(f,"%simposition  Booklet  #the imposition used\n",spc);
+		fprintf(f,"%simposition  Booklet  #the imposition used. This is set automatically when exporting a document\n",spc);
 		fprintf(f,"%slayout pages         #this is particular to the imposition used by the document\n",spc);
 		fprintf(f,"%sstart 3   #the starting index to export\n",spc);
 		fprintf(f,"%send   5   #the ending index to export\n",spc);
@@ -89,7 +100,8 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
 void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 {
 	char *name,*value;
-	for (int c=0; c<att->attributes.n; c++)  {
+	int c,c2;
+	for (c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"filename")) {
@@ -97,7 +109,13 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 		} else if (!strcmp(name,"tofiles")) {
 			makestr(tofiles,value);
 		} else if (!strcmp(name,"format")) {
-			//***
+			filter=NULL;
+			for (c2=0; c2<laidout->exportfilters.n; c2++) {
+				if (!strcmp(laidout->exportfilters.e[c2]->VersionName(),value)) {
+					filter=laidout->exportfilters.e[c2];
+					break;
+				}
+			}
 		} else if (!strcmp(name,"imposition")) {
 			//***
 		} else if (!strcmp(name,"layout")) {
@@ -175,6 +193,12 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
  * \todo *** implement this feature!
  */
 
+FileFilter::FileFilter()
+{
+	plugin=NULL; 
+	flags=0;
+}
+
 //------------------------------------- FileInputFilter -----------------------------------
 /*! \class FileInputFilter
  * \brief Abstract base class of input file filters.
@@ -186,6 +210,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
  */
 /*! \fn int FileInputFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
  * \brief The function that outputs the stuff.
+ *
+ * If file!=NULL, then output to that single file, and ignore the files in context.
  *
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object.

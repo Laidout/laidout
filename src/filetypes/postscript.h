@@ -48,6 +48,7 @@ class PsOutFilter : public ExportFilter
 {
  protected:
  public:
+	PsOutFilter();
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	

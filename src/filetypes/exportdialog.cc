@@ -15,6 +15,8 @@
 //
 
 
+#include <cups/cups.h>
+
 #include <lax/strsliderpopup.h>
 #include <lax/simpleprint.h>
 #include <lax/mesbar.h>
@@ -664,6 +666,46 @@ int ExportDialog::send()
 	if (findChildWindow("export")->Grayed()) return 0;
 
 	config->filter=filter;
+	if (commandcheck && commandcheck->State()==LAX_ON) {
+		//----------**** clean this up or move it back to ViewWindow!!
+		char *cm=newstr(command->GetCText());
+		appendstr(cm," ");
+		//***investigate tmpfile() tmpnam tempnam mktemp
+		
+		char tmp[256];
+		cupsTempFile2(tmp,sizeof(tmp));
+		DBG cout <<"attempting to write temp file for printing: "<<tmp<<endl;
+
+		FILE *f=fopen(tmp,"w");
+		if (f) {
+			fclose(f);
+
+			//mesbar->SetText(_("Printing, please wait...."));
+			//mesbar->Refresh();
+			//XSync(app->dpy,False);
+
+			char *error;
+			if (filter->Out(tmp,config,&error)==1) {
+				appendstr(cm,tmp);
+
+				 //now do the actual command
+				int c=system(cm); //-1 for error, else the return value of the call
+				if (c!=0) {
+					DBG cout <<"there was an error printing...."<<endl;
+				}
+				//*** have to delete (unlink) tmp!
+				
+				//mesbar->SetText(_("Document sent to print."));
+			} else {
+				//there was an error during filter export
+			}
+		}
+		//---------
+		app->destroywindow(this);
+		return 0;
+	}
+
+
 	ConfigEventData *data=new ConfigEventData(config);
 	app->SendMessage(data,owner,sendthis,window);
 	app->destroywindow(this);
