@@ -433,6 +433,12 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		findMinMax();
 		configBounds();
 		updateExt();
+		overwriteCheck();
+		return 0;
+	} else if (!strcmp(mes,"layout")) {
+		config->layout=e->data.l[0];
+		findMinMax();
+		configBounds();
 		return 0;
 	} else if (!strcmp(mes,"command-check")) {
 		changeTofile(3);

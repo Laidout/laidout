@@ -87,7 +87,13 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		if (!grad) return 0;
 
 		if (grad->style&GRADIENT_RADIAL) {
-			//***
+			fprintf(f,"    <circle  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"        fill=\"url(#radialGradient%ld)\"\n", grad->object_id);
+			fprintf(f,"        cx=\"%f\"\n", fabs(grad->r1)>fabs(grad->r2)?grad->p1:grad->p2);
+			fprintf(f,"        cy=\"0\"\n");
+			fprintf(f,"        r=\"%f\"\n", fabs(grad->r1)>fabs(grad->r2)?fabs(grad->r1):fabs(grad->r2));
+			fprintf(f,"     />\n");
 		} else {
 			fprintf(f,"    <rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
@@ -147,7 +153,67 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		if (!grad) return 0;
 
 		if (grad->style&GRADIENT_RADIAL) {
-			//***
+			double r1,r2,p1,p2;
+			int rr;
+			if (fabs(grad->r1)>fabs(grad->r2)) { 
+				p2=grad->p1;
+				p1=grad->p2;
+				r2=fabs(grad->r1);
+				r1=fabs(grad->r2);
+				rr=1; 
+			} else {
+				p1=grad->p1;
+				p2=grad->p2;
+				r1=fabs(grad->r1);
+				r2=fabs(grad->r2); 
+				rr=0; 
+			}
+
+			 // now figure out the color spots
+			double clen=grad->colors.e[grad->colors.n-1]->t-grad->colors.e[0]->t,
+				   plen=MAX((p2-r2)-(p1-r1),(p2+r2)-(p1+r1)),
+				   chunk,
+				   c0=grad->colors.e[(rr?grad->colors.n-1:0)]->t,
+				   c1;
+
+			int cc;
+			if (r1!=0) {
+				 // need extra 2 stops for transparent inner circle
+				chunk=r1/plen;
+				c1=grad->colors.e[(rr?grad->colors.n-1:0)]->t;
+				if (rr) {
+					c1+=1e-4;
+					c0=c1+clen*chunk;
+					clen+=clen*chunk;
+				} else {
+					c1+=1e-4;
+					c0=c1-clen*chunk;
+					clen+=clen*chunk;
+				}
+			}
+
+			fprintf(f,"    <radialGradient  id=\"radialGradient%ld\"\n", grad->object_id);
+			fprintf(f,"        cx=\"%f\"\n", p2);
+			fprintf(f,"        cy=\"0\"\n");
+			fprintf(f,"        fx=\"%f\"\n", p1); //**** wrong!!
+			if (r1!=0) cout <<"*** need to fix placement of fx in svg out for radial gradients"<<endl;
+			fprintf(f,"        fy=\"0\"\n");
+			fprintf(f,"        r=\"%f\"\n", r2);
+			fprintf(f,"        gradientUnits=\"userSpaceOnUse\">\n");
+
+			for (int c=(r1==0?0:-2); c<grad->colors.n; c++) {
+				if (rr && c>=0) cc=grad->colors.n-1-c; else cc=c;
+				if (cc==-2) fprintf(f,"      <stop offset=\"0\" stop-color=\"#ffffff\" stop-opacity=\"0\" />\n");
+				else if (cc==-1) fprintf(f,"      <stop offset=\"%f\" stop-color=\"#ffffff\" stop-opacity=\"0\" />\n",
+											fabs(c1-c0)/clen); //offset
+				else fprintf(f,"      <stop offset=\"%f\" stop-color=\"#%02x%02x%02x\" stop-opacity=\"%f\" />\n",
+								fabs(grad->colors.e[cc]->t - c0)/clen, //offset
+								grad->colors.e[cc]->color.red>>8, //color
+								grad->colors.e[cc]->color.green>>8, 
+								grad->colors.e[cc]->color.blue>>8, 
+								grad->colors.e[cc]->color.alpha/65535.); //opacity
+			}
+			fprintf(f,"    </radialGradient>\n");
 		} else {
 			fprintf(f,"    <linearGradient  id=\"linearGradient%ld\"\n", grad->object_id);
 			fprintf(f,"        x1=\"%f\"\n", grad->p1);
