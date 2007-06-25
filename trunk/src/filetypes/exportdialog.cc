@@ -82,7 +82,6 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 			   0,0,500,300,0,
 			   NULL,nowner,nsend, 5)
 {
-	win_style|=ANXWIN_DELETEABLE;
 	dialog_style=nstyle&~ANXWIN_MASK;
 
 	//DocumentExportConfig(Document *ndoc, const char *file, const char *to, int l,int s,int e);
@@ -526,12 +525,12 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		send();
 		return 0;
 	} else if (!strcmp(mes,"filesaveas")) {
-		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_DELETEABLE,
+		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE,
 									  0,0,400,500,0,window,"get new file",
 									  fileedit->GetCText()));
 		return 0;
 	} else if (!strcmp(mes,"filessaveas")) {
-		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_DELETEABLE,
+		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE,
 									  0,0,400,500,0,window,"get new files",
 									  filesedit->GetCText()));
 		return 0;

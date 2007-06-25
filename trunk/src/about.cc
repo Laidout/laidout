@@ -46,7 +46,7 @@ using namespace Laxkit;
 //};
 
 AboutWindow::AboutWindow()
-	: MessageBox(NULL,"About",ANXWIN_CENTER|ANXWIN_DELETEABLE, 0,0,500,600,0, NULL,None,NULL, NULL)
+	: MessageBox(NULL,"About",ANXWIN_CENTER, 0,0,500,600,0, NULL,None,NULL, NULL)
 {
 }
 

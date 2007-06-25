@@ -41,7 +41,7 @@ using namespace Laxkit;
 /*! \todo anyhow need to work out sizing in Laxkit::MessageBox!!
  */
 HelpWindow::HelpWindow(int style)
-	: MessageBox(NULL,"Help!",ANXWIN_DELETEABLE, 0,0,500,600,0, NULL,None,NULL, NULL)
+	: MessageBox(NULL,"Help!",0, 0,0,500,600,0, NULL,None,NULL, NULL)
 {
 	s=style;
 }

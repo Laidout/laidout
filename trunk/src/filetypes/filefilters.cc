@@ -82,8 +82,8 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
 		fprintf(f,"%simposition  Booklet  #the imposition used. This is set automatically when exporting a document\n",spc);
 		fprintf(f,"%slayout pages         #this is particular to the imposition used by the document\n",spc);
-		fprintf(f,"%sstart 3   #the starting index to export\n",spc);
-		fprintf(f,"%send   5   #the ending index to export\n",spc);
+		fprintf(f,"%sstart 3   #the starting index to export, counting from 0\n",spc);
+		fprintf(f,"%send   5   #the ending index to export, counting from 0\n",spc);
 		return;
 	}
 	if (filename) fprintf(f,"%sfilename %s\n",spc,filename);
@@ -216,8 +216,8 @@ FileFilter::FileFilter()
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object.
  *
- * Return 0 for success, or nonzero for error. If there is an error, then an error string is put in
- * error_ret.
+ * On success, return 0. If there are any warnings they are put in error_ret.
+ * On failure, return nonzero, and put error messages in error_ret.
  */
 
 //------------------------------------- FileOutputFilter -----------------------------------
@@ -238,8 +238,8 @@ FileFilter::FileFilter()
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object.
  *
- * Return 0 for success, or nonzero for error. If there is an error, then an error string is put in
- * error_ret.
+ * On success, return 0. If there are any warnings they are put in error_ret.
+ * On failure, return nonzero, and put error messages in error_ret.
  */
 	
 

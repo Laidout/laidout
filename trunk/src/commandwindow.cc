@@ -15,6 +15,7 @@
 //
 
 
+#include "language.h"
 #include "commandwindow.h"
 #include "headwindow.h"
 #include "laidout.h"
@@ -69,13 +70,13 @@ char *CommandWindow::process(const char *in)
 		if (!isalnum(in[6])) {
 			in+=6;
 			while (isspace(*in)) in++;
-			if (laidout->NewDocument(in)==0) return newstr("Document added.");
-			else return newstr("Error adding document. Not added");
+			if (laidout->NewDocument(in)==0) return newstr(_("Document added."));
+			else return newstr(_("Error adding document. Not added"));
 		}
 	} else if (!strncmp(in,"show",4)) {
-		char *temp=newstr("Project: "), temp2[10];
+		char *temp=newstr(_("Project: ")), temp2[10];
 		if (laidout->project->name) appendstr(temp,laidout->project->name);
-		else appendstr(temp,"(untitled)");
+		else appendstr(temp,_("(untitled)"));
 		appendstr(temp,"\n");
 		for (int c=0; c<laidout->project->docs.n; c++) {
 			sprintf(temp2," %d. ",c+1);
@@ -83,7 +84,7 @@ char *CommandWindow::process(const char *in)
 			appendstr(temp,laidout->project->docs.e[c]->Name());
 			appendstr(temp,"\n");
 		}
-		return (temp?temp:newstr("No documents in project."));
+		return (temp?temp:newstr(_("No documents in project.")));
 	} else if (!strncmp(in,"open",4) && (isspace(in[4]) || in[4]=='\0')) {
 		if (isspace(in[4])) {
 			 // get filename potentially
@@ -104,12 +105,17 @@ char *CommandWindow::process(const char *in)
 				}
 				if (file_exists(temp,1,NULL)!=S_IFREG) in=NULL;
 				delete[] temp;
-				if (in==NULL) return newstr("Could not load that.");
+				if (in==NULL) return newstr(_("Could not load that."));
 
-				if (laidout->findDocument(in)) return newstr("That document is already loaded.");
+				if (laidout->findDocument(in)) return newstr(_("That document is already loaded."));
 				int n=laidout->numTopWindows();
-				Document *doc=laidout->LoadDocument(in);
-				if (!doc) return newstr("Could not load that.");
+				char *error=NULL;
+				Document *doc=laidout->LoadDocument(in,&error);
+				if (!doc) {
+					prependstr(error,_("Errors loading.\n"));
+					appendstr(error,_("Not loaded."));
+					return error;
+				}
 
 				 // create new window only if LoadDocument() didn't create new windows
 				 // ***this is a little icky since any previously saved windows might not
@@ -118,20 +124,23 @@ char *CommandWindow::process(const char *in)
 					anXWindow *win=newHeadWindow(doc,"ViewWindow");
 					if (win) app->addwindow(win);
 				}
-				return newstr("Opened.");
+				if (!error) return newstr("Opened.");
+				prependstr(error,_("Warnings encountered while loading:\n"));
+				appendstr(error,_("Loaded."));
+				return error;
 			}
 		}
 		//*** call up an open dialog for laidout document files
 		return newstr("****** open ALMOST works *****");
 	} else if (!strncmp(in,"?",1) || !strncmp(in,"help",4)) {
-		return newstr("The only recognized commands are:\n"
+		return newstr(_("The only recognized commands are:\n"
 					  "newdoc [spec]\n"
 					  "open [a laidout document]\n"
 					  "help\n"
 					  "quit\n"
-					  "?");
+					  "?"));
 	}
 
-	return newstr("You are surrounded by twisty passages, all alike.");
+	return newstr(_("You are surrounded by twisty passages, all alike."));
 }
 

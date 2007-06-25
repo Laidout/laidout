@@ -43,7 +43,7 @@ PrintingDialog::PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
 						 const char *thisfile,
 						 int layout,int pmin,int pmax,int pcur,
 						 Laxkit::MessageBar *progress)
-	: ExportDialog(ANXWIN_DELETEABLE|ANXWIN_CENTER|EXPORT_COMMAND,nowner,nsend,
+	: ExportDialog(ANXWIN_CENTER|EXPORT_COMMAND,nowner,nsend,
 				   ndoc,NULL,file,
 				   layout,pmin,pmax,pcur)
 {
