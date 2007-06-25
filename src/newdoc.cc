@@ -140,7 +140,7 @@ using namespace Laxkit;
 
 NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
-		: RowFrame(parnt,ntitle,nstyle|ANXWIN_DELETEABLE|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER,
+		: RowFrame(parnt,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER,
 					xx,yy,ww,hh,brder, NULL,None,NULL,
 					10)
 {
@@ -498,7 +498,7 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"saveas")) { // from control button
 		//***get defaults
 		app->rundialog(new FileDialog(NULL,_("Save As"),
-					ANXWIN_DELETEABLE|ANXWIN_CENTER|FILES_SAVE_AS, 0,0, 400,400,0,
+					ANXWIN_CENTER|FILES_SAVE_AS, 0,0, 400,400,0,
 					saveas->window, "save as","untitled"));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {

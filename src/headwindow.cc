@@ -143,7 +143,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 			doc=laidout->project->docs.e[0];
 		}
 	}
-	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
@@ -159,7 +159,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
  */
 anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 {
-	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
 	head->dump_in_atts(att,0);
 	return head;
 }
@@ -228,14 +228,14 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	lastview=lastedit=NULL;
 	
 	 // add the window generator funcs
-	AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newViewWindowFunc,1);
-	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newSpreadEditorFunc,0);
-	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newHelpWindowFunc,0);
-	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newCommandWindowFunc,0);
+	AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE,newViewWindowFunc,1);
+	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE,newSpreadEditorFunc,0);
+	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE,newHelpWindowFunc,0);
+	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE,newCommandWindowFunc,0);
 	AddWindowType("ButtonBox","Buttons",
-			ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
+			ANXWIN_LOCAL_ACTIVE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
 			newButtonBoxFunc,0);
-	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD|ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE,newPaletteWindowFunc,0);
+	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD|ANXWIN_LOCAL_ACTIVE,newPaletteWindowFunc,0);
 }
 
 //! Empty virtual destructor.
@@ -611,12 +611,20 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		//**** this is really hacky if doc already open...
 		int nw;
 		Document *d;
+		char *error=NULL;
 		for (int c=0; c<s->n; c++) {
 			nw=laidout->numTopWindows();
-			d=laidout->LoadDocument(s->strs[c]);
+			d=laidout->LoadDocument(s->strs[c],&error);
 			if (!d) {
-				//DBG cerr <<"*** fail to open "<<s->strs[c]<<endl;
+				if (error) {
+					cout <<"*** imp pop up error message headwindow open document"<<endl;
+					delete[] error; error=NULL;
+				}
 			} else {
+				if (error) {
+					cout <<"*** imp pop up warning message headwindow open document"<<endl;
+					delete[] error; error=NULL;
+				}
 				if (nw==laidout->numTopWindows()) {
 					app->addwindow(newHeadWindow(d));
 				}
@@ -663,7 +671,7 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			 //pop the window to new headwindow
 			if (!curbox || !curbox->win || windows.n<=1) return 0;
 
-			HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE|ANXWIN_DELETEABLE, 0,0,500,500,0);
+			HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
 			app->addwindow(head);
 			head->Add(curbox->win);//this reparents win
 			curbox->win=NULL;
@@ -844,7 +852,7 @@ int HeadWindow::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	} else if (ch=='o' && (state&LAX_STATE_MASK)==ControlMask) {
 		app->rundialog(new FileDialog(NULL,"Open Document",
-					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 					0,0,500,500,0, window,"open document"));
 		return 0;
 		

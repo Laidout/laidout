@@ -17,6 +17,7 @@
 
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
+#include <lax/interfaces/colorpatchinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
@@ -129,6 +130,11 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		appendstr(*error_ret,_("Cannot export Color Patch objects into svg.\n"));
 		warning++;
+//		---------
+//		if (***config allows it) {
+//			 //approximate gradient with svg elements
+//			***
+//		}
 		
 	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
 		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));

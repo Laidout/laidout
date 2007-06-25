@@ -79,7 +79,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual Net *duplicate();
 	virtual const char *whatshape() { return thenettype; }
 	virtual void FindBBox();
-	virtual void FitToData(LaxInterfaces::SomeData *data,double margin);
+	virtual void FitToData(Laxkit::DoubleBBox *data,double margin);
 	virtual void ApplyTransform(double *mm=NULL);
 	virtual void Center();
 	virtual const char *whattype() { return thenettype; }
@@ -93,9 +93,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual void push3dpoint(double x,double y,double z);
 	virtual double *basisOfFace(int which,double *mm=NULL,int total=0);
 
-	//--perhaps for future:
-	//virtual void PrintSVG(std::ostream &svg,LaxInterfaces::SomeData *paper,int month=1,int year=2006);
-	//virtual void PrintPS(std::ofstream &ps,LaxInterfaces::SomeData *paper);
+	virtual int LoadOFF(const char *filename,char **error_ret);
 };
 
 

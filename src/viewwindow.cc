@@ -2324,7 +2324,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //						int npad=0);
 //! Passes in a new LaidoutViewport.
 ViewWindow::ViewWindow(Document *newdoc)
-	: ViewerWindow(NULL,((newdoc && newdoc->Name())?newdoc->Name() :"untitled"),ANXWIN_DELETEABLE,
+	: ViewerWindow(NULL,((newdoc && newdoc->Name())?newdoc->Name() :"untitled"),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
 	var1=var2=var3=NULL;
@@ -2955,6 +2955,14 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		XSync(app->dpy,False);
 		if (d->config->filter->Out(NULL,d->config,&error)==0) {
 			mesbar->SetText(_("Exported."));
+			if (error) {
+				MessageBox *mbox=new MessageBox(NULL,_("Warning!"),0, 0,0,0,0,0,
+											NULL,None,NULL, error);
+				mbox->AddButton(TBUT_OK);
+				mbox->AddButton(_("Dammit!"),0);
+				app->rundialog(mbox);
+				delete[] error;
+			}
 		} else {
 			if (error) {
 				mesbar->SetText(error);
@@ -3206,14 +3214,14 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
 		app->rundialog(new ImportImagesDialog(NULL,"Import Images",
-					ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 					0,0,500,500,0, window,"import new image",
 					NULL,NULL,NULL,
 					doc,
 					((LaidoutViewport *)viewport)->curobjPage(),
 					doc->docstyle->imposition->paperstyle->dpi));
 		//app->rundialog(new FileDialog(NULL,"Import Image",
-		//			ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+		//			ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 		//			0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
@@ -3291,7 +3299,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 			app->rundialog(new FileDialog(NULL,"Save As...",
-						ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_SAVE_AS,
+						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
 						0,0,500,500,0, window,"saveAsPopup",
 						doc->Name()));
 		} else {
@@ -3374,11 +3382,11 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 			app->rundialog(new FileDialog(NULL,"Save As...",
-						ANXWIN_CENTER|ANXWIN_DELETEABLE|FILES_FILES_ONLY|FILES_SAVE_AS,
+						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
 						0,0,500,500,0, window,"saveAsPopup",
 						doc->Name()));
 //			app->rundialog(new LineInput(NULL,"Save As...",
-//						ANXWIN_CENTER|ANXWIN_DELETEABLE|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
+//						ANXWIN_CENTER|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
 //						100,100,200,100,0, 
 //						NULL,window,"saveAsPopup",
 //						"Enter new filename:",doc->Name(),0,

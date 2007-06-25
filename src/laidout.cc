@@ -429,7 +429,7 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 // if no other windows have been launched yet, then launch newdoc window
 	if (topwindows.n==0)
-		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_DELETEABLE|ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
+		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,500,600, 0));
 	
 	return 0;
 };
@@ -665,8 +665,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ 0,0,0,0 }
 		};
 	int c,index;
+	char *exprt=NULL;
 	while (1) {
-		c=getopt_long(argc,argv,"Nt:fp:n:vh",long_options,&index);
+		c=getopt_long(argc,argv,":Nt:fp:n:vh",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
 			case ':': cerr <<_("Missing parameter...")<<endl; exit(1); // missing parameter
@@ -701,11 +702,19 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					if (dump_out_file_format(optarg,0)) exit(1);
 					exit(0);
 				} break;
-			case 'E': { // export
+			case 'e': { // export
+					exprt=newstr(optarg);
 				} break;
 			case 'O': { // list export options for a given format
-					cout <<"***** must implement --list-export-options"<<endl;
-					exit(1);
+					cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
+					printf("format   = \"%s\"    #the format to export as\n",optarg);
+					printf("filename = /file/to/export/to\n");
+					printf("tofiles  = \"/files/like###.this\"  #the # section is replaced with the page index\n");
+					printf("                                  #Only one of filename or tofiles should be present\n");
+					printf("layout   = pages   #the value depends on the particular imposition used by the document\n");
+					printf("start    = 3       #the starting index to export, counting from 0\n");
+					printf("end      = 5       #the ending index to export, counting from 0\n");
+					exit(0);
 				} break;
 			case 'X': { // list export formats
 					for (int c=0; c<exportfilters.n; c++) 
@@ -715,8 +724,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 	}
 	int readin=0;
-	if (optind<argc && argv[optind][0]=='-') { 
-		DBG cerr << "**** read in doc from stdin\n";
+	if (optind<argc && argv[optind][0]=='-' && argv[optind][0]=='\0') { 
+		cout << "**** must implement read in doc from stdin\n";
 		readin=1;
 	}
 
@@ -724,13 +733,65 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	// load in any docs after the args
 	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
 	DBG cerr <<"*** read in these files:"<<endl;
+	DBG for (c=optind; c<argc; c++) 
+	DBG 	cerr <<"----Read in:  "<<argv[c]<<endl;
+
+	 //export doc if found, then exit
+	if (exprt) {
+		//*** this should probably be moved to its own function so command line pane can call it
+
+		 //parse the config string into a config
+		DocumentExportConfig config;
+		Attribute att;
+		NameValueToAttribute(&att,exprt,'=',0);
+
+		 //figure out where to export to
+		const char *filename=NULL;
+		if (optind<argc) filename=argv[optind];
+		config.dump_in_atts(&att,0);
+		 
+		 //-------export
+		if (!filename || !config.filter) {
+			cout <<_("Bad export configuration");
+			exit(1);
+		}
+		char *error=NULL;
+		 
+		 //load in document to pass with config
+		Document *doc=LoadDocument(filename,&error);
+		if (error) {
+			if (!doc) {
+				cout << _("Fatal errors loading document:") << endl 
+					 << error <<endl;
+				exit(1);
+			}
+			cout << _("Warnings encountered while loading document:") << endl 
+				 << error <<endl;
+			delete[] error; error=NULL;
+		}
+
+		config.doc=doc;
+		config.dump_in_atts(&att,0);//second time with doc!
+		if (config.filter->Out(NULL,&config,&error)!=0) {
+			cout <<error;
+			cout <<_("Export failed.")<<endl;
+			exit(1);
+		} else if (error) {
+			cout <<_("Export finished with warnings:")<<endl;
+			cout <<error<<endl;
+			delete[] error; error=NULL;
+		} else {
+			cout <<_("Exported.")<<endl;
+		}
+		exit(0);
+	}
 
 	Document *doc;
 	index=topwindows.n;
 	if (!project) project=new Project;
 	for (c=optind; c<argc; c++) {
 		DBG cerr <<"----Read in:  "<<argv[c]<<endl;
-		doc=LoadDocument(argv[c]);
+		doc=LoadDocument(argv[c],NULL);
 		if (doc && topwindows.n==index) addwindow(newHeadWindow(doc));
 	}
 	
@@ -751,6 +812,7 @@ int LaidoutApp::isTopWindow(anXWindow *win)
 //! Find the doc with saveas.
 Document *LaidoutApp::findDocument(const char *saveas)
 {
+	if (!project) return NULL;
 	for (int c=0; c<project->docs.n; c++) {
 		if (project->docs.e[c]->saveas && !strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
 	}
@@ -814,7 +876,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,char *dir)//dir=NULL
 //{
 //}
 	
-//! Similar to LoadDocument(const char *), but remove the saveas, so as to force a rename.
+//! Similar to LoadDocument(), but remove the saveas, so as to force a rename.
 /*! If a doc with the same filename is already loaded, it is ignored. Templates will only
  * be created from files straight from disk.
  *
@@ -847,9 +909,11 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 //! Load a document from filename, putting in project, make it curdoc and return on successful load.
 /*! If a doc with the same filename is already loaded, then make that curdoc, and return it.
  *
- * \todo deal with returned error when load failed
+ * If there are fatal errors, then an error message is returned in error_ret, and NULL is returned.
+ * Sometimes there are merely warnings, in which case those are returned it error_ret, but
+ * a Document object is returned.
  */
-Document *LaidoutApp::LoadDocument(const char *filename)
+Document *LaidoutApp::LoadDocument(const char *filename, char **error_ret)
 {
 	if (!strncmp(filename,"file://",7)) filename+=7;
 	char *fullname=newstr(filename);
@@ -861,15 +925,16 @@ Document *LaidoutApp::LoadDocument(const char *filename)
 	}
 		
 	doc=new Document(NULL,fullname);
-	project->docs.push(doc);
+	if (!project) project=new Project;
+	project->docs.push(doc); //important: this must be before doc->Load()
 	
-	if (doc->Load(fullname, NULL)==0) {
+	if (doc->Load(fullname, error_ret)==0) {
 		project->docs.pop();
 		delete doc;
-		return NULL;
+		doc=NULL;
 	}
 	delete[] fullname;
-	curdoc=doc;
+	if (doc) curdoc=doc;
 	return doc;
 }
 

@@ -1181,7 +1181,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 						int xx, int yy, int ww, int hh, int brder,
 						//Window owner,const char *mes, 
 						Project *nproj,Document *ndoc)
-	: ViewerWindow(parnt,ntitle,nstyle|ANXWIN_DELETEABLE|VIEWPORT_RIGHT_HANDED|VIEWER_BACK_BUFFER, 
+	: ViewerWindow(parnt,ntitle,nstyle|VIEWPORT_RIGHT_HANDED|VIEWER_BACK_BUFFER, 
 					xx,yy,ww,hh, brder, NULL)
 {
 	project=nproj;

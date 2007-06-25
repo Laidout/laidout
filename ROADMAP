@@ -13,17 +13,18 @@ VERSION 0.08
        In image properties dialog, have the popup list of potential previews
        Gui for modifying Page Labels
        double click on group should change selection area to group contents?
-(done) Standardize the import/output mechanism
+(done) Standardize the import/export mechanism
        PDF out
-       Print all/current paper/paper range, by singles, page layout, or paper layout to ps, eps, pdf
-       Export to various things or print from command line: batch processing
+(done) svg out
+(done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
+(done) Export to various things from command line to allow batch processing
        Export as a Scribus document
-       Print/export to images
-       Selected region out to image(s), regions optionally remembered
+       Print/export to images (via ghostscript)
        Tools should remember their settings, dialogs should remember their placements
-       NetImposition needs import/export net including OFF files, and build net interface
        libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
-       Net imposition interactive unwrapper and paper tiler
+       NetImposition needs import/export net including OFF files
+       Net imposition interactive unwrapper and build net interface
+       Paper tiler interface
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -34,6 +35,8 @@ VERSION 0.09
 ------------
        Image and Color patches, gradients, etc should allow transparent colors
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
+       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
+       Selected region out to image(s), regions optionally remembered
 
 
 VERSION 0.1 
@@ -55,7 +58,6 @@ VERSION 0.1
        Make the button box actually function
        Configurable icon panel/menu system
        Linear (including curvilinear) guides
-       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Parent masking of children
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
@@ -76,7 +78,7 @@ VERSION 0.1
        Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
-       svg in/out
+       svg in
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
@@ -101,7 +103,7 @@ Do a poor man's version of a multi-contact touch screen interface with 2 mice pl
 Bezier color patch freeform, rather than just grid.
 The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
-import/export as possible: passepartout (out is partially done)?,scribus?,svg,tiff,png,etc
+import/export with preserve unknown elements as possible: passepartout?,scribus?,svg,tiff,png,etc
 Freehand drawing with tablet support
 Somehow be able to do foldouts from within any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop

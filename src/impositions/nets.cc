@@ -13,17 +13,19 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/************ impositions/nets.cc *************/
 
-#include "nets.h"
 
 #include <lax/strmanip.h>
 #include <lax/transformmath.h>
-//#include <lax/lists.cc>
-
 #include <lax/attributes.h>
-using namespace LaxFiles;
+#include <lax/fileutils.h>
 
+#include <lax/lists.cc>
+
+#include "../language.h"
+#include "nets.h"
+
+using namespace LaxFiles;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -521,7 +523,7 @@ Net *Net::duplicate()
  *    -1 1  to 2  # 1   it can be used to point to original 3-d points, for instance.
  *    -1 -1 to 0  # 2   pointmap is also used to build facelink in NetFace
  *    1 -1  to 1  # 3
- * vertices \     #list of 3d points
+ * vertices \     \#list of 3d points
  *    0  0  0   #0
  *    1  0  0   #1
  *    0  1  0   #2
@@ -884,7 +886,7 @@ void Net::ApplyTransform(double *mm)//mm=NULL
 //! Make *this fit inside bounding box of data (inset by margin).
 /*! \todo ***  this clears any rotation that was in the net->m() and it shouldn't
  */
-void Net::FitToData(LaxInterfaces::SomeData *data,double margin)
+void Net::FitToData(Laxkit::DoubleBBox *data,double margin)
 {
 	if (!data || !np) return;
 	double wW=(data->maxx-data->minx-2*margin)/(maxx-minx);
@@ -943,6 +945,77 @@ void Net::pushline(NetLine &l,int where)//where=-1
 	delete[] lines;
 	lines=nlines;
 	nl++;
+}
+
+//! Replace the existing net with a net generated from the given OFF file.
+/*! Return 0 for success, or nonzero for error.
+ */
+int Net::LoadOFF(const char *filename,char **error_ret)
+{
+	if (file_exists(filename,1,NULL)!=S_IFREG) {
+		if (error_ret) *error_ret=_("Cannot read that file.");
+		return 1;
+	}
+	FILE *f=fopen(filename,"r");
+	if (!f) {
+		if (error_ret) *error_ret=_("Cannot read that file.");
+		return 1;
+	}
+	if (error_ret) *error_ret=NULL;
+
+	int e=0, 
+		numv=0,
+		numf=0,
+		c;
+	NumStack<spacepoint> pts;
+	PtrStack<int> fcs(2);
+	char *line=NULL;
+	size_t n=0;
+	while (1) {
+		c=getline(&line,&n,f);
+		if (c<=0 || strcmp(line,"OFF")) { e=1; break; }
+
+		c=getline(&line,&n,f);
+		if (c<=0) { e=1; break; }
+
+		int *i=new int[3];
+		double p[4];
+		c=IntListAttribute(line,i,3,NULL);
+		if (c!=3) { e=1; break; }
+		numv=i[0];
+		numf=i[1];
+		for (int v=0; v<numv; v++) {
+			c=getline(&line,&n,f);
+			if (c<=0) { e=1; break; }
+			
+			c=DoubleListAttribute(line,p,3,NULL);
+			if (c!=3) { e=1; break; }
+
+			pts.push(spacepoint(p));
+		}
+
+		delete[] i; i=NULL;
+		int *ff;
+		for (int fc=0; fc<numf; fc++) {
+			c=getline(&line,&n,f);
+			if (c<=0) { e=1; break; }
+			
+			c=IntListAttribute(line,&i,NULL,NULL);
+			if (!i || c!=i[0]+1) { e=1; break; }
+
+			ff=new int[i[0]];
+			memcpy(ff,i,i[0]*sizeof(int));
+			fcs.push(ff);
+			delete[] i; i=NULL;
+		}
+	}
+	if (line) free(line);
+	fclose(f);
+	if (e && error_ret) *error_ret=_("Bad OFF file.");
+
+	cout <<"***convert pts and fcs to some kind of net"<<endl;
+
+	return e;
 }
 
 
