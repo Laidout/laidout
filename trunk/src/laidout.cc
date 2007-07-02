@@ -247,6 +247,8 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
 
+	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
+
 //	MenuInfo *menu=new MenuInfo("Main Menu");
 //	 menu->AddItem("File",1);
 //	 menu->SubMenu("File");
@@ -577,6 +579,9 @@ int LaidoutApp::readinLaidoutDefaults()
 			// > laidout --template consumptionIssue
 			// > laidout --template 1paperPamphlet
 		
+		} else if (!strcmp(name,"ghostscript_binary")) {
+			if (file_exists(value,1,NULL)==S_IFREG) makestr(ghostscript_binary,value);
+
 		} else if (!strcmp(name,"icon_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
 			if (!isblank(icon_dir)) icons.addpath(icon_dir);
@@ -752,7 +757,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		 
 		 //-------export
 		if (!filename || !config.filter) {
-			cout <<_("Bad export configuration");
+			cout <<_("Bad export configuration")<<endl;
 			exit(1);
 		}
 		char *error=NULL;
@@ -816,6 +821,20 @@ Document *LaidoutApp::findDocument(const char *saveas)
 	for (int c=0; c<project->docs.n; c++) {
 		if (project->docs.e[c]->saveas && !strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
 	}
+	return NULL;
+}
+
+//! Return the path corresponding to the requested program.
+/*! Currently, this responds only to "gs", which returns the current path for 
+ * ghostscript, if any.
+ *
+ * \todo the undocumented laidoutrc attribute ghostscript_binary will set that variable in LaidoutApp. 
+ *   In future, should probably have section devoted to known, modifiable external executables like
+ *   gs, inkscape, gimp, tex, etc.
+ */
+const char *LaidoutApp::binary(const char *what)
+{
+	if (!strcmp(what,"gs")) return ghostscript_binary;
 	return NULL;
 }
 

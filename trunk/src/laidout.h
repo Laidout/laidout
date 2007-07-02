@@ -72,6 +72,8 @@ class LaidoutApp : public Laxkit::anXApp
 	Laxkit::PtrStack<char>preview_file_bases;
 	int max_preview_length, max_preview_width, max_preview_height;
 
+	char *ghostscript_binary;
+
 	char *default_template;
 	
 	char *defaultpaper;
@@ -110,6 +112,7 @@ class LaidoutApp : public Laxkit::anXApp
 
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
 	char *full_path_for_resource(const char *name,char *dir=NULL);
+	const char *binary(const char *what);
 };
 
 // if included in laidout.cc, then don't include "extern" when defining *laidout

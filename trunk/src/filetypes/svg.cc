@@ -128,15 +128,47 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		fprintf(f,"       />\n");
 		
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
-		appendstr(*error_ret,_("Cannot export Color Patch objects into svg.\n"));
+		appendstr(*error_ret,_("Warning: interpolating a color patch object\n"));
 		warning++;
-//		---------
-//		if (***config allows it) {
+//		//---------
+//		//if (***config allows it) {
+//		if (1) {***
 //			 //approximate gradient with svg elements
-//			***
+//			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
+//			if (!patch) return 0;
+//
+//			 //make a group with a mask of outline of original patch, and blur filter
+//			fprintf(f,"    <g mask=\"url(#colorPatchMask%l)\" filter=\"patchBlur%l\"\n", 
+//								patch->object_id, patch->object_id);
+//
+//			 //for each subpatch, break down into many sub-rectangles
+//			int c,r, cc,rr;
+//			int numdiv=5;
+//			flatpoint p[4];
+//			char color[20];
+//			for (r=0; r<patch->ysize-1; r+=3) {
+//				for (c=0; c<patch->xsize-1; c+=3) {
+//					for (rr=0; rr<numdiv; r++) {
+//						for (cc=0; cc<numdiv; cc++) {
+//							***get color for point (r+rr,c+cc)
+//							sprintf(color,"#%02x%02x%02x", ***r,g,b,***a);
+//							***get coords for that little rect
+//							fprintf(f,"      <path d=\"M %f %f L %f %f L %f %f L %f %f\ z" stroke="none" fill=\"%s\"/>"
+//										p[0].x,p[0].y,
+//										p[1].x,p[1].y,
+//										p[2].x,p[2].y,
+//										p[3].x,p[3].y,
+//										color);
+//						}
+//					}		
+//				}
+//			}
+//
+//			fprintf(f,"    </g>\n");
 //		}
 		
 	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
+		//***if (config->collect_for_out) { rasterize, and put image in out directory }
 		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
 		warning++;
 	}
@@ -238,7 +270,32 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 			}
 			fprintf(f,"    </linearGradient>\n");
 		}
-
+	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
+		//if (***config allows it) {
+//		if (1) {
+//			 //insert mask for patch
+//			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
+//			if (!patch) return 0;
+//
+//			***get outline of patch, insert a bezier path object of it
+//			fprintf(f,"    <mask id=\"colorPatchMask%l\" maskunits=\"userSpaceOnUse\" ", patch->object_id);
+//			fprintf(f,"       x=\"%f\" y=\"%f\" width=\"%f\" height=\"%f\">\n",
+//							patch->minx,patch->miny,
+//							patch->maxx-patch->minx, patch->maxy-patch->miny);
+//
+//			fprintf(f,"      <path d=\"\" />\n");***
+//
+//			fprintf(f,"    </mask>\n");
+//
+//			 //insert blur filter *** only 1 needed?
+//			fprintf(f,"    <filter id=\"patchBlur%l\" filterunits=userSpaceOnUse", patch->object_id);
+//			fprintf(f,"       x=\"%f\" y=\"%f\" width=\"%f\" height=\"%f\">\n", ******);
+//
+//			fprintf(f,"      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"4\"/>\n");
+//
+//			fprintf(f,"    </filter>\n");
+//
+//		}
 	}
 	return 0;
 }

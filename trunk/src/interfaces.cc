@@ -24,9 +24,10 @@
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/bezpathoperator.h>
+
 #include "dataobjects/groupinterface.h"
 #include "dataobjects/epsdata.h"
-
+#include "interfaces/paperinterface.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -107,6 +108,8 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	
 	existingpool->push(new GroupInterface(id++,NULL),1);
 	
+	existingpool->push(new PaperInterface(id++,NULL),1);
+
 	//...
 	//existingpool->push(new Interface(*****),1);
 	

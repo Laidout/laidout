@@ -11,7 +11,6 @@ VERSION 0.08
        Soup up the color box so one can recall previous colors
        Fix multi-object selection move when crossing page boundaries
        In image properties dialog, have the popup list of potential previews
-       Gui for modifying Page Labels
        double click on group should change selection area to group contents?
 (done) Standardize the import/export mechanism
        PDF out
@@ -19,10 +18,10 @@ VERSION 0.08
 (done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
-       Print/export to images (via ghostscript)
+(done) Print/export to images (via ghostscript)
        Tools should remember their settings, dialogs should remember their placements
        libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
-       NetImposition needs import/export net including OFF files
+       NetImposition needs import/export net and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
        Paper tiler interface
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
@@ -37,6 +36,8 @@ VERSION 0.09
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Selected region out to image(s), regions optionally remembered
+       Gui for modifying Page Labels
+       When importing, preserve mystery data as much as possible, to be later exported back out
 
 
 VERSION 0.1 

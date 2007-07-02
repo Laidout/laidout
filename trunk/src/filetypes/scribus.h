@@ -19,11 +19,36 @@
 
 ****************** NOT ACTIVE ******************************
 
+#include "../version.h"
 #include "../document.h"
+#include "filefilters.h"
 
 
-int scribusout(const char *scribusversion, Document *doc,const char *filename,	int layout,int start,int end);
-Document *scribusin(const char *file,Document *doc,int startpage);
+
+void installSvgFilter();
+
+
+//------------------------------------ ScribusOutputFilter ----------------------------------
+class ScribusOutputFilter : public ExportFilter
+{
+ protected:
+ public:
+	ScribusOutputFilter();
+	virtual ~ScribusOutputFilter() {}
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+	
+	virtual const char *DefaultExtension() { return "sla"; }
+	virtual const char *Format() { return "Scribus"; }
+	virtual const char *Version() { return "1.3.3.8"; }
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+
+	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+
+	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
+	//virtual int Verify(Laxkit::anObject *context); //preflight checker
+};
 
 
 #endif

@@ -19,6 +19,7 @@
 #include "ppt.h"
 #include "postscript.h"
 #include "svg.h"
+#include "image.h"
 //#include "scribus.h"
 //#include "pdf.h"
 
@@ -26,6 +27,7 @@ void installFilters()
 {
 	installPostscriptFilters();
 	installSvgFilter();
+	installImageFilter();
 	installPptFilter();
 
 	//installScribusFilter();

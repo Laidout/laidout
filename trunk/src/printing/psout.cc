@@ -370,7 +370,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	 // ...
 	 // %%EOF
 
-	 //figure out paper size
+	 //figure out paper orientation
 	int landscape=0;
 	int c;
 	if (layout==PAPERLAYOUT) {

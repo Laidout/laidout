@@ -1,8 +1,8 @@
-#############################################################
-##############                                ###############
-#############  Laidout src/filetypes Makefile  ##############
-##############                                ###############
-#############################################################
+##############################################################
+##############                                 ###############
+#############  Laidout src/interfaces Makefile  ##############
+##############                                 ###############
+##############################################################
 
 include ../../Makefile-toinclude
 LAXIDIR=$(LAXDIR)/interfaces
@@ -14,17 +14,11 @@ DEBUGFLAGS= -g
 
 
 objs= \
-	filefilters.o \
-	filters.o \
-	exportdialog.o \
-	image.o \
-	postscript.o \
-	ppt.o \
-	svg.o
+	paperinterface.o
 
 
 
-filetypes: $(objs)
+interfaces: $(objs)
 
 depends:
 	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
@@ -38,7 +32,7 @@ unhidegarbage:
 	../hidegarbage -0 *.cc
 
 
-.PHONY: clean filetypes hidegarbage unhidegarbage
+.PHONY: clean interfaces hidegarbage unhidegarbage
 clean:
 	rm -f *.o
 	

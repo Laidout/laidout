@@ -59,21 +59,38 @@ const char *PptoutFilter::VersionName()
 }
 
 //! Internal function to dump out the obj if it is an ImageData.
-void pptdumpobj(FILE *f,double *mm,SomeData *obj)
+void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 {
-	ImageData *img;
-	img=dynamic_cast<ImageData *>(obj);
-	if (!img || !img->filename) return;
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
-	double m[6];
-	transform_mult(m,img->m(),mm);
-	
-	char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
-										 // not modify the string.
-	fprintf(f,"    <frame name=\"Raster %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
-			bname, m[0]*72, m[1]*72, m[2]*72, m[3]*72, m[4]*72, m[5]*72);
-	fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"raster\" file=\"%s\" />\n",
-			img->filename);
+	if (!strcmp(obj->whattype(),"Group")) {
+		Group *g;
+		g=dynamic_cast<Group *>(obj);
+		if (!g || !g->n()) return;
+
+		double m[6];
+		transform_mult(m,g->m(),mm);
+		
+		fprintf(f,"%s<frame type=\"group\" transform=\"%.10g %.10g %.10g %.10g %.10g %.10g\" >\n",
+				spc, m[0], m[1], m[2], m[3], m[4], m[5]);
+		transform_identity(m);
+		for (int c=0; c<g->n(); c++) pptdumpobj(f,m,g->e(c),indent+2);
+		fprintf(f,"%s</frame>\n",spc);
+	} else if (!strcmp(obj->whattype(),"ImageData")) {
+		ImageData *img;
+		img=dynamic_cast<ImageData *>(obj);
+		if (!img || !img->filename) return;
+
+		double m[6];
+		transform_mult(m,img->m(),mm);
+		
+		char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
+											 // not modify the string.
+		fprintf(f,"%s<frame name=\"Raster %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
+				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
+		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"raster\" file=\"%s\" />\n",
+				img->filename);
+	}
 }
 
 static const char *pptpaper[12]= {
@@ -99,7 +116,7 @@ static const char *pptpaper[12]= {
  * Letter is used.
  *    
  * \todo if unknown paper, should really use some default paper size, if it is valid, 
- *   and then otherwise "Letter"
+ *   and then otherwise "Letter", or choose a size that is big enough to hold the spreads
  * \todo for singles, should figure out what paper size to export as..
  */
 int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
@@ -178,7 +195,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	else if (end>=doc->docstyle->imposition->NumSpreads(layout))
 		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 	
-	transform_set(m,1,0,0,1,0,0);
+	transform_set(m,72,0,0,72,0,0);
 	for (c=start; c<=end; c++) {
 		fprintf(f,"  <page>\n");
 		spread=doc->docstyle->imposition->Layout(layout,c);
@@ -194,8 +211,8 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 				 // for each object in layer
 				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 				for (c3=0; c3<g->n(); c3++) {
-					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					pptdumpobj(f,m,g->e(c3));
+					//transform_copy(m,spread->pagestack.e[c2]->outline->m());
+					pptdumpobj(f,m,g->e(c3),4);
 				}
 			}
 		}
@@ -315,15 +332,20 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 //					t=frame->find("type");
 //					n=frame->find("name");
 //					m=frame->find("matrix");
-//					if (a && a->value && t && !strcmp(t->value,"raster")) {
-//						img=load_image(a->value);
-//						if (img) {
-//							image=new ImageData;
-//							if (n) image->SetDescription(n->value);
-//							image->SetImage(img);
-//							if (m) DoubleListAttribute(m->value,M,6,NULL);
-//							dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
-//							image->dec_count();
+//					if (a && a->value && t) {
+//						if (!strcmp(t->value,"raster")) {
+//							img=load_image(a->value);
+//							if (img) {
+//								image=new ImageData;
+//								if (n) image->SetDescription(n->value);
+//								image->SetImage(img);
+//								if (m) DoubleListAttribute(m->value,M,6,NULL);
+//								dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
+//								image->dec_count();
+//							}
+//						} else if (!strcmp(t->value,"group")) {
+//							***
+//							pptDumpInGroup(page->attributes.e[c]->attributes***
 //						}
 //					}
 //				}
