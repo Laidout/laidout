@@ -47,6 +47,240 @@
  * </pre>
  */
 
+const char *ScribusOutputFilter::VersionName()
+{
+	return _("Scribus 1.3.3.8");
+}
+
+
+//! Export the document as a Scribus file.
+/*! 
+ */
+int ScribusOutputFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+{***
+	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
+	if (!out) return 1;
+
+	if (error_ret) *error_ret=NULL;
+	Document *doc =out->doc;
+	int start     =out->start;
+	//int end       =out->end;
+	int layout    =out->layout;
+	if (!filename) filename=out->filename;
+	
+	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
+	
+	FILE *f=NULL;
+	char *file;
+	if (!filename) {
+		if (!doc->saveas || !strcmp(doc->saveas,"")) {
+			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
+			*error_ret=newstr(_("Cannot save to SVG without a filename."));
+			return 2;
+		}
+		file=newstr(doc->saveas);
+		appendstr(file,".svg");
+	} else file=newstr(filename);
+	
+	f=fopen(file,"w");
+	delete[] file; file=NULL;
+
+	if (!f) {
+		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
+		*error_ret=newstr(_("Error opening file for writing."));
+		return 3;
+	}
+
+	int warning=0;
+	Spread *spread;
+	Group *g;
+	double m[6];
+	//int c;
+	int c2,l,pg,c3;
+	transform_set(m,1,0,0,1,0,0);
+
+	if (start<0) start=0;
+	else if (start>doc->docstyle->imposition->NumSpreads(layout))
+		start=doc->docstyle->imposition->NumSpreads(layout)-1;
+	spread=doc->docstyle->imposition->Layout(layout,start);
+	
+	
+	 // write out header
+	fprintf(f,"<SCRIBUSUTF8NEW Version=\"1.3.3.8\"?>\n");
+	
+	
+	 //figure out paper orientation
+	int landscape=0;
+	int c;
+	if (layout==PAPERLAYOUT) {
+		landscape=((doc->docstyle->imposition->paperstyle->flags&1)?1:0);
+	} 
+	
+	 //------------ write out document attributes
+	fprintf(f,"  <DOCUMENT "
+			  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
+			  "    ANZPAGES=\"%d\" \n",end-start+1); //number of pages
+	fprintf(f,"    AUTHOR=\"\" \n"
+			  "    AUTOSPALTEN=1 \n" \\Number of Colums in automatic Textframes
+			  //"    BOOK***** " *** has facing pages if present: doublesidedsingles
+			  "    BORDERBOTTOM=\"0\" \n"	//margins!
+			  "    BORDERLEFT=\"0\" \n"	
+			  "    BORDERRIGHT=\"0\" \n"	
+			  "    BORDERTOP=\"0\" \n"	
+			  "    COMMENTS=\"\" \n"
+			  "    DFONT=\"Times-Roman\" \n" //default font
+			  "    DSIZE=\"12\" \n"
+			  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
+			  "    FIRSTPAGENUM=\"%d\" \n", start); ***check this is right
+	fprintf(f,"    KEYWORDS=\"\" "
+			  "    ORIENTATION=\"%d\" ",landscape);
+	fprintf(f,"    PAGEHEIGHT=\"%f\" \n"
+			  "    PAGEWIDTH=\"%f\" \n",width,height);****
+	fprintf(f,"    TITLE=\"\" \n"
+			  "    VHOCH=\"33\" \n"      //Percentage for Superscript
+			  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
+			  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
+			  "    VTIEF=\"33\" \n"       //Percentage for Subscript
+			  "    VTIEFSC=\"100\" \n"   //Percentage for scaling of the Glyphs in Subscript
+			  "    >\n");
+	
+	
+				
+	//****write out <COLOR> sections
+		
+	
+	 //----------Write layers, assuming just background. Everything else is grouping
+	fprintf(f,"	   <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
+
+	
+	//********write out <PDF> chunk
+	fprintf(f,"    <PDF displayThumbs=\"0\" "
+					   "ImagePr=\"0\" "
+					   "fitWindow=\"0\" "
+					   "displayBookmarks=\"0\" "
+					   "BTop=\"18\" "
+					   "UseProfiles=\"0\" "
+					   "BLeft=\"18\" "
+					   "PrintP=\"Fogra27L CMYK Coated Press\" "
+					   "RecalcPic=\"0\" "
+					   "UseSpotColors=\"1\" "
+					   "ImageP=\"sRGB IEC61966-2.1\" SolidP=\"sRGB IEC61966-2.1\" "
+					   "PicRes=\"300\" "
+					   "Thumbnails=\"0\" "
+					   "hideToolBar=\"0\" "
+					   "CMethod=\"0\" "
+					   "displayLayers=\"0\" "
+					   "doMultiFile=\"0\" "
+					   "UseLayers=\"0\" "
+					   "Encrypt=\"0\" "
+					   "BRight=\"18\" "
+					   "Binding=\"0\" "
+					   "Articles=\"0\" "
+					   "InfoString=\"\" "
+					   "RGBMode=\"1\" "
+					   "Grayscale=\"0\" "
+					   "PresentMode=\"0\" "
+					   "openAction=\"\" "
+					   "displayFullscreen=\"0\" "
+					   "Permissions=\"-4\" "
+					   "Intent=\"1\" "
+					   "Compress=\"1\" "
+					   "hideMenuBar=\"0\" "
+					   "Version=\"14\" "
+					   "Resolution=\"300\" "
+					   "Bookmarks=\"0\" "
+					   "UseProfiles2=\"0\" "
+					   "RotateDeg=\"0\" "
+					   "Clip=\"0\" "
+					   "MirrorV=\"0\" "
+					   "Quality=\"0\" "
+					   "PageLayout=\"0\" "
+					   "UseLpi=\"0\" "
+					   "PassUser=\"\" "
+					   "BBottom=\"18\" "
+					   "Intent2=\"1\" "
+					   "MirrorH=\"0\" "
+					   "PassOwner=\"\" >\n"
+			  "      <LPI Angle=\"45\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Black\" />\n"
+			  "      <LPI Angle=\"105\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Cyan\" />\n"
+			  "      <LPI Angle=\"75\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Magenta\" />\n"
+			  "      <LPI Angle=\"90\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Yellow\" />\n"
+			  "    </PDF>\n");
+
+	
+	//*************DocItemAttributes not 1.2
+	//************TablesOfContents   not 1.2
+	//************Sections  not 1.2
+	//************PageSets  not 1.2
+	//************MASTERPAGE not separate entity in 1.2
+	
+			
+	//------------PAGE/PAGEOBJECTS
+	
+
+	 // Write out paper spreads....
+	 //*****
+	 //***** holy cow, scribus has EVERY object by reference!!!! still trying to
+	 //***** figure out how objects are mapped onto groups, layers, and pages..
+	 //*****
+	Spread *spread;
+	Group *g;
+	double m[6];
+	int c,c2,l,pg,c3;
+	transform_set(m,1,0,0,1,0,0);
+	for (c=start; c<=end; c++) {
+		 //------------page header
+		fprintf(f,"  <PAGE "
+				  "    Size=\"Letter\" \n" *****
+				  "    PAGEHEIGHT=\"792\" \n" ****
+				  "    PAGEWIDTH=\"612\" \n"****
+				  "    NUM=\"%d\" \n",c); ***check this is right  //number of the page, starting at 0
+		fprintf(f,"    BORDERTOP=\"18\" \n"     //page margins?
+				  "    BORDERLEFT=\"18\" \n"
+				  "    BORDERBOTTOM=\"18\" \n"
+				  "    BORDERRIGHT=\"18\" \n"
+				  "    NAM=\"\" \n"            //name of master page, empty when normal
+				  "    LEFT=\"0\" \n"          //if is left master page
+				  "    Orientation=\"0\" \n"
+				  "    PAGEXPOS=\"108\" \n"
+				  "    PAGEYPOS=\"18\" \n"
+				  "    MNAM=\"Normal\" \n"        //name of attached master page
+				  "    HorizontalGuides=\"\" \n"
+				  "    NumHGuides=\"0\" \n"
+				  "    VerticalGuides=\"\" \n"
+				  "    NumVGuides=\"0\" \n"
+				  "    />\n");
+
+				
+		
+		spread=doc->docstyle->imposition->Layout(layout,c);
+			
+		 // for each page in paper layout..
+		for (c2=0; c2<spread->pagestack.n; c2++) {
+			pg=spread->pagestack.e[c2]->index;
+			if (pg>=doc->pages.n) continue;
+			 // for each layer on the page..
+			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+				 // for each object in layer
+				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				for (c3=0; c3<g->n(); c3++) {
+					transform_copy(m,spread->pagestack.e[c2]->outline->m());
+					scribusdumpobj(f,m,g->e(c3));
+				}
+			}
+		}
+
+		delete spread;
+	}
+		
+	
+	 // write out footer
+	fprintf(f,"  </DOCUMENT>\n"
+			  "</SCRIBUSUTF8NEW>");
+	
+	fclose(f);
+	return 0;
+}
 
 
 
@@ -58,6 +292,11 @@
  */
 static void scribusdumpobj(FILE *f,double *mm,SomeData *obj)
 {
+	***possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
+		gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
+		images: LOCALSCX LOCALSCY PFILE
+
+
 	fprintf(f,"  <PAGEOBJECT \n"
 			  "    ANNAME=\"\" \n"        //field name, also object name
 			  "    ANNOTATION=\"0\" \n"   //1 if is pdf annotation
@@ -187,6 +426,8 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj)
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return;
 		
+		***
+
 		return;	
 	}
 	
@@ -194,225 +435,23 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj)
 		Group *group=dynamic_cast<Group *>(obj);
 		if (!group) return;
 
+		***
+
 		return;
 	}
 		
+	char *tmp=new char[strlen(_("Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1]
+	sprintf(tmp,_("Cannot export %s to Scribus.\n"),obj->whattype());
+	appendstr(*error_ret,tmp);
+	delete[] tmp;
 }
 
 
 
-//! Save the document as a Scribus file to doc->saveas".sla"
-/*! This only saves unnested images, and the page size and orientation.
- *
- */
-int scribusout(const char *scribusversion, 
-				Document *doc,const char *filename,	int layout,int start,int end,
-				char **error_ret)
-{
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
-	
-	FILE *f=NULL;
-	char *file;
-	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
-			if (error_ret) *error_ret=newstr(_("Cannot save without a valid filename."));
-			return 2;
-		}
-		file=newstr(doc->saveas);
-		appendstr(file,".sla");
-	} else file=newstr(filename);
-	
-	f=fopen(file,"w");
-	delete[] file; file=NULL;
-	
-	if (!f) {
-		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
-		if (error_ret) *error_ret=newstr(_("Cannot open file for writing."));
-		return 3;
-	}
 
-	 //initialize error, multiple errors are concatenated
-	if (error_ret) *error_ret=NULL;
-	
-	****sanity check start, end
-	**** find width, height
-	
-	
-	 // write out header
-	fprintf(f,"<SCRIBUSUTF8NEW Version=\"1.3.3.8\"?>\n");
-	
-	
-	 //------------ write out document attributes
-	fprintf(f,"  <DOCUMENT "
-			  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
-			  "    ANZPAGES=\"%d\" \n",end-start+1); //number of pages
-	fprintf(f,"    AUTHOR=\"\" \n"
-			  "    AUTOSPALTEN=1 \n" \\Number of Colums in automatic Textframes
-			  //"    BOOK***** " *** has facing pages if present
-			  "    BORDERBOTTOM=\"0\" \n"	//margins!
-			  "    BORDERLEFT=\"0\" \n"	
-			  "    BORDERRIGHT=\"0\" \n"	
-			  "    BORDERTOP=\"0\" \n"	
-			  "    COMMENTS=\"\" \n"
-			  "    DFONT=\"Times-Roman\" \n" //default font
-			  "    DSIZE=\"12\" \n"
-			  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
-			  "    FIRSTPAGENUM=\"0\" \n" //***could be custom for some pagerange styles
-			  "    KEYWORDS=\"\" "
-			  "    ORIENTATION=\"%d\" ",doc->docstyle->imposition->paperstyle->flags&1)?1:0);
-	fprintf(f,"    PAGEHEIGHT=\"%f\" \n"
-			  "    PAGEWIDTH=\"%f\" \n",width,height);
-	fprintf(f,"    TITLE=\"\" \n"
-			  "    VHOCH=\"33\" \n"      //Percentage for Superscript
-			  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
-			  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
-			  "    VTIEF=\"33\" \n"       //Percentage for Subscript
-			  "    VTIEFSC=\"100\" \n"   //Percentage for scaling of the Glyphs in Subscript
-			  "    >\n");
-	
-	
-				
-	//****write out <COLOR> sections
-		
-	
-	 //----------Write layers, assuming just background. Everything else is grouping
-	fprintf(f,"	   <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
-
-	
-	//********write out <PDF> chunk
-	fprintf(f,"    <PDF displayThumbs=\"0\" "
-					   "ImagePr=\"0\" "
-					   "fitWindow=\"0\" "
-					   "displayBookmarks=\"0\" "
-					   "BTop=\"18\" "
-					   "UseProfiles=\"0\" "
-					   "BLeft=\"18\" "
-					   "PrintP=\"Fogra27L CMYK Coated Press\" "
-					   "RecalcPic=\"0\" "
-					   "UseSpotColors=\"1\" "
-					   "ImageP=\"sRGB IEC61966-2.1\" SolidP=\"sRGB IEC61966-2.1\" "
-					   "PicRes=\"300\" "
-					   "Thumbnails=\"0\" "
-					   "hideToolBar=\"0\" "
-					   "CMethod=\"0\" "
-					   "displayLayers=\"0\" "
-					   "doMultiFile=\"0\" "
-					   "UseLayers=\"0\" "
-					   "Encrypt=\"0\" "
-					   "BRight=\"18\" "
-					   "Binding=\"0\" "
-					   "Articles=\"0\" "
-					   "InfoString=\"\" "
-					   "RGBMode=\"1\" "
-					   "Grayscale=\"0\" "
-					   "PresentMode=\"0\" "
-					   "openAction=\"\" "
-					   "displayFullscreen=\"0\" "
-					   "Permissions=\"-4\" "
-					   "Intent=\"1\" "
-					   "Compress=\"1\" "
-					   "hideMenuBar=\"0\" "
-					   "Version=\"14\" "
-					   "Resolution=\"300\" "
-					   "Bookmarks=\"0\" "
-					   "UseProfiles2=\"0\" "
-					   "RotateDeg=\"0\" "
-					   "Clip=\"0\" "
-					   "MirrorV=\"0\" "
-					   "Quality=\"0\" "
-					   "PageLayout=\"0\" "
-					   "UseLpi=\"0\" "
-					   "PassUser=\"\" "
-					   "BBottom=\"18\" "
-					   "Intent2=\"1\" "
-					   "MirrorH=\"0\" "
-					   "PassOwner=\"\" >\n"
-			  "      <LPI Angle=\"45\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Black\" />\n"
-			  "      <LPI Angle=\"105\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Cyan\" />\n"
-			  "      <LPI Angle=\"75\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Magenta\" />\n"
-			  "      <LPI Angle=\"90\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Yellow\" />\n"
-			  "    </PDF>\n");
-
-	
-	//*************DocItemAttributes not 1.2
-	//************TablesOfContents   not 1.2
-	//************Sections  not 1.2
-	//************PageSets  not 1.2
-	//************MASTERPAGE not separate entity in 1.2
-	
-			
-	//***********PAGE/PAGEOBJECTS
-	
-
-	 // Write out paper spreads....
-	 //*****
-	 //***** holy cow, scribus has EVERY object by reference!!!! still trying to
-	 //***** figure out how objects are mapped onto groups, layers, and pages..
-	 //*****
-	Spread *spread;
-	Group *g;
-	double m[6];
-	int c,c2,l,pg,c3;
-	transform_set(m,1,0,0,1,0,0);
-	for (c=start; c<end; c++) {
-		 //------------page header
-		fprintf(f,"  <PAGE "
-				  "    Size=\"Letter\" \n"
-				  "    PAGEHEIGHT=\"792\" \n"
-				  "    PAGEWIDTH=\"612\" \n"
-				  "    NUM=\"0\" \n",c-start);   //number of the page, starting at 0
-		fprintf(f,"    BORDERTOP=\"18\" \n"     //page margins?
-				  "    BORDERLEFT=\"18\" \n"
-				  "    BORDERBOTTOM=\"18\" \n"
-				  "    BORDERRIGHT=\"18\" \n"
-				  "    NAM=\"\" \n"            //name of master page, empty when normal
-				  "    LEFT=\"0\" \n"          //if is left master page
-				  "    Orientation=\"0\" \n"
-				  "    PAGEXPOS=\"108\" \n"
-				  "    PAGEYPOS=\"18\" \n"
-				  "    MNAM=\"Normal\" \n"        //name of attached master page
-				  "    HorizontalGuides=\"\" \n"
-				  "    NumHGuides=\"0\" \n"
-				  "    VerticalGuides=\"\" \n"
-				  "    NumVGuides=\"0\" \n"
-				  "    />\n");
-
-				
-		
-		spread=doc->docstyle->imposition->GetLayout(layout,c);***
-			
-		 // for each page in paper layout..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
-			pg=spread->pagestack.e[c2]->index;
-			if (pg>=doc->pages.n) continue;
-			 // for each layer on the page..
-			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
-				 // for each object in layer
-				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-				for (c3=0; c3<g->n(); c3++) {
-					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					scribusdumpobj(f,m,g->e(c3));
-				}
-			}
-		}
-
-		delete spread;
-	}
-		
-	
-	 // write out footer
-	fprintf(f,"  </DOCUMENT>\n"
-			  "</SCRIBUSUTF8NEW>");
-	
-	fclose(f);
-	return 0;
-	
-}
-
-Document *scribusin(const char *file,Document *doc,int startpage)
-{
-}
+//Document *scribusin(const char *file,Document *doc,int startpage)
+//{
+//}
 
 
 

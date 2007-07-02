@@ -28,6 +28,7 @@ class Document;
 //------------------------------------- FileFilter -----------------------------------
 
 #define FILTER_MULTIPAGE  (1<<0)
+#define FILTER_MANY_FILES (1<<1)
 
 typedef void Plugin; //******must implement plugins!!
 class FileFilter : public Laxkit::anObject
@@ -50,7 +51,7 @@ class FileFilter : public Laxkit::anObject
 };
 
 
-//------------------------------------- FileInputFilter -----------------------------------
+//------------------------------------- ImportFilter -----------------------------------
 class ImportFilter : public FileFilter
 {
  public:
@@ -60,7 +61,7 @@ class ImportFilter : public FileFilter
 };
 
 
-//------------------------------------- FileOutputFilter -----------------------------------
+//------------------------------------- ExportFilter -----------------------------------
 class ExportFilter : public FileFilter
 {
  public:

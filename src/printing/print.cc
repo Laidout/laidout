@@ -104,3 +104,5 @@ int PrintingDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 //
 //		delete data;
 //		return 0;
+
+

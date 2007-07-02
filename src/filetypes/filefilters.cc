@@ -29,6 +29,12 @@ using namespace LaxFiles;
  *
  * If filename==NULL and tofiles!=NULL, then write out one spread per file, and tofiles
  * must be a file name template.
+ *
+ * \todo On exporting, should have option to collect for out to a directory. This includes
+ *   possibly rasterizing certain portions of a document, and making references to it in
+ *   the exported document. If this happens, also output an output log of warnings/errors
+ *   and a list of applied work arounds to the output directory. Finally, collect for out should 
+ *   have option to zip up the output directory?
  */
 /*! \var int DocumentExportConfig::target
  * 
@@ -101,6 +107,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 {
 	char *name,*value;
 	int c,c2;
+	start=end=-1;
 	for (c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -126,6 +133,8 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 			IntAttribute(value,&end);
 		}
 	}
+	if (start<0) start=0;
+	if (end<0) end=1000000000;
 }
 
 //------------------------------------- FileFilter -----------------------------------

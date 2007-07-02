@@ -9,10 +9,17 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng -lcups `imlib2-config --libs` -L$(LAXIDIR) -L$(LAXDIR)
-CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/..
+LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lXpm -lpng -lcups `imlib2-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
+CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2
 DEBUGFLAGS= -g -DDEBUG
 
+
+dirs= \
+	dataobjects \
+	impositions \
+	interfaces \
+	filetypes \
+	printing 
 
 objs= \
 	styles.o \
@@ -42,11 +49,8 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) dataobjects printing impositions filetypes
-	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o filetypes/*.o \
-			-llaxinterfaces -llaxkit -lssl -o $@
-#	$(LD) $(LDFLAGS) $(objs) dataobjects/*.o printing/*.o impositions/*.o filetypes/*.o \
-#			-llaxinterfaces -llaxkit -lssl -o $@
+laidout: lax laxinterface $(objs) $(dirs) 
+	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
@@ -55,19 +59,13 @@ laidout: lax laxinterface $(objs) dataobjects printing impositions filetypes
 # like #defining DBG to be: //
 hidegarbage:
 	./hidegarbage *.cc
-	cd printing && $(MAKE) hidegarbage
-	cd impositions && $(MAKE) hidegarbage
-	cd dataobjects && $(MAKE) hidegarbage
-	cd filetypes && $(MAKE) hidegarbage
+	for NAME in $(dirs); do $(MAKE) -C $$NAME hidegarbage; done
 
 # This changes in *.cc all occurrences of 
 # '(whitespace)//DBG' to '(same ws)DBG'.
 unhidegarbage:
 	./hidegarbage -0 *.cc
-	cd printing && $(MAKE) unhidegarbage
-	cd impositions && $(MAKE) unhidegarbage
-	cd dataobjects && $(MAKE) unhidegarbage
-	cd filetypes && $(MAKE) unhidegarbage
+	for NAME in $(dirs); do $(MAKE) -C $$NAME unhidegarbage; done
 
 lax:
 	cd $(LAXDIR) && $(MAKE)
@@ -86,12 +84,12 @@ alldocs:
 
 depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
-	cd printing && $(MAKE) depends
-	cd impositions && $(MAKE) depends
-	cd dataobjects && $(MAKE) depends
-	cd filetypes && $(MAKE) depends
+	for NAME in $(dirs); do $(MAKE) -C $$NAME depends; done
 
 include makedepend
+
+interfaces: 
+	cd interfaces && $(MAKE)
 
 filetypes: 
 	cd filetypes && $(MAKE)
@@ -105,11 +103,8 @@ impositions:
 dataobjects: 
 	cd dataobjects && $(MAKE)
 
-.PHONY: clean lax docs printing impositions hidegarbage unhidegarbage dataobjects filetypes
+.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage
 clean:
 	rm -f laidout *.o
-	cd printing && $(MAKE) clean
-	cd impositions && $(MAKE) clean
-	cd dataobjects && $(MAKE) clean
-	cd filetypes && $(MAKE) clean
+	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
 	
