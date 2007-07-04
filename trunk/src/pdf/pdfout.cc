@@ -267,6 +267,7 @@ int pdfout(FILE *f,
 		   int end,           //!< The ending unit in format
 		   unsigned int flags,
 		   const char *pdfformat) //!< "1.4" is only one right now, so this value is ignored.
+int pdfout(const char *filename, Laxkit::anObject *context, char **error_ret,int pdf_version)
 {***
 	if (!f || !doc) return 1;
 	if (start<0) start=0;
