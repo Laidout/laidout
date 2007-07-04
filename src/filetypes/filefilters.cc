@@ -82,17 +82,17 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
-		fprintf(f,"%sfilename /file/to/export/to\n",spc);
+		fprintf(f,"%stofile /file/to/export/to \n",spc);
 		fprintf(f,"%stofiles  \"/files/like###.this\"  #the # section is replaced with the page index\n",spc);
 		fprintf(f,"%s                                #Only one of filename or tofiles should be present\n",spc);
 		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
 		fprintf(f,"%simposition  Booklet  #the imposition used. This is set automatically when exporting a document\n",spc);
 		fprintf(f,"%slayout pages         #this is particular to the imposition used by the document\n",spc);
-		fprintf(f,"%sstart 3   #the starting index to export, counting from 0\n",spc);
-		fprintf(f,"%send   5   #the ending index to export, counting from 0\n",spc);
+		fprintf(f,"%sstart 3              #the starting index to export, counting from 0\n",spc);
+		fprintf(f,"%send   5              #the ending index to export, counting from 0\n",spc);
 		return;
 	}
-	if (filename) fprintf(f,"%sfilename %s\n",spc,filename);
+	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
 	if (tofiles) fprintf(f,"%stofiles  \"%s\"\n",spc,tofiles);
 	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
 	if (doc && doc->docstyle && doc->docstyle->imposition) {
@@ -111,16 +111,26 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 	for (c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"filename")) {
+		if (!strcmp(name,"tofile")) {
 			makestr(filename,value);
 		} else if (!strcmp(name,"tofiles")) {
 			makestr(tofiles,value);
 		} else if (!strcmp(name,"format")) {
 			filter=NULL;
+			 //search for exact format match first
 			for (c2=0; c2<laidout->exportfilters.n; c2++) {
 				if (!strcmp(laidout->exportfilters.e[c2]->VersionName(),value)) {
 					filter=laidout->exportfilters.e[c2];
 					break;
+				}
+			}
+			 //if no match, search for first case insensitive match
+			if (filter==NULL) {
+				for (c2=0; c2<laidout->exportfilters.n; c2++) {
+					if (!strncasecmp(laidout->exportfilters.e[c2]->VersionName(),value,strlen(value))) {
+						filter=laidout->exportfilters.e[c2];
+						break;
+					}
 				}
 			}
 		} else if (!strcmp(name,"imposition")) {
