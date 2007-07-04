@@ -2956,7 +2956,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (d->config->filter->Out(NULL,d->config,&error)==0) {
 			mesbar->SetText(_("Exported."));
 			if (error) {
-				MessageBox *mbox=new MessageBox(NULL,_("Warning!"),0, 0,0,0,0,0,
+				MessageBox *mbox=new MessageBox(NULL,_("Warning!"),ANXWIN_CENTER, 0,0,0,0,0,
 											NULL,None,NULL, error);
 				mbox->AddButton(TBUT_OK);
 				mbox->AddButton(_("Dammit!"),0);

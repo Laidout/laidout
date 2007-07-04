@@ -24,6 +24,8 @@ VERSION 0.08
        NetImposition needs import/export net and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
        Paper tiler interface
+       Clean up patch controls
+       Fix linear/radial gradient editing when object is sheared
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
