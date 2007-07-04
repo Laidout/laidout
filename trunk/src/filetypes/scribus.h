@@ -17,24 +17,22 @@
 #define FILETYPES_SCRIBUS_H
 
 
-****************** NOT ACTIVE ******************************
-
 #include "../version.h"
 #include "../document.h"
 #include "filefilters.h"
 
 
 
-void installSvgFilter();
+void installScribusFilter();
 
 
-//------------------------------------ ScribusOutputFilter ----------------------------------
-class ScribusOutputFilter : public ExportFilter
+//------------------------------------ ScribusExportFilter ----------------------------------
+class ScribusExportFilter : public ExportFilter
 {
  protected:
  public:
-	ScribusOutputFilter();
-	virtual ~ScribusOutputFilter() {}
+	ScribusExportFilter();
+	virtual ~ScribusExportFilter() {}
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	

@@ -54,6 +54,8 @@ void installSvgFilter()
 	
 /*! \class SvgOutputFilter
  * \brief Filter for exporting SVG 1.0.
+ *
+ * \todo implement PAGE and PAGESET elements of draft svg 1.2
  */
 
 
@@ -72,15 +74,16 @@ const char *SvgOutputFilter::VersionName()
  *
  * \todo put in indentation
  */
-int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
+int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, int indent)
 {
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0'; 
 
 	if (!strcmp(obj->whattype(),"Group")) {
-		fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
-					obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+		fprintf(f,"%s<g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
-			svgdumpobj(f,NULL,g->e(c),error_ret,warning); 
+			svgdumpobj(f,NULL,g->e(c),error_ret,warning,indent+2); 
 		fprintf(f,"    </g>\n");
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		GradientData *grad;
@@ -88,26 +91,26 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		if (!grad) return 0;
 
 		if (grad->style&GRADIENT_RADIAL) {
-			fprintf(f,"    <circle  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-			fprintf(f,"        fill=\"url(#radialGradient%ld)\"\n", grad->object_id);
-			fprintf(f,"        cx=\"%f\"\n", fabs(grad->r1)>fabs(grad->r2)?grad->p1:grad->p2);
-			fprintf(f,"        cy=\"0\"\n");
-			fprintf(f,"        r=\"%f\"\n", fabs(grad->r1)>fabs(grad->r2)?fabs(grad->r1):fabs(grad->r2));
-			fprintf(f,"     />\n");
+			fprintf(f,"%s<circle  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+						 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"%s    fill=\"url(#radialGradient%ld)\"\n", spc,grad->object_id);
+			fprintf(f,"%s    cx=\"%f\"\n",spc, fabs(grad->r1)>fabs(grad->r2)?grad->p1:grad->p2);
+			fprintf(f,"%s    cy=\"0\"\n",spc);
+			fprintf(f,"%s    r=\"%f\"\n",spc,fabs(grad->r1)>fabs(grad->r2)?fabs(grad->r1):fabs(grad->r2));
+			fprintf(f,"%s  />\n",spc);
 		} else {
-			fprintf(f,"    <rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-						 obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-			fprintf(f,"        fill=\"url(#linearGradient%ld)\"\n", grad->object_id);
-			fprintf(f,"        x=\"%f\"\n", grad->minx);
-			fprintf(f,"        y=\"%f\"\n", grad->miny);
-			fprintf(f,"        width=\"%f\"\n", grad->maxx-grad->minx);
-			fprintf(f,"        height=\"%f\"\n", grad->maxy-grad->miny);
-			fprintf(f,"     />\n");
+			fprintf(f,"%s<rect  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+						 spc,obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"%s    fill=\"url(#linearGradient%ld)\"\n", spc,grad->object_id);
+			fprintf(f,"%s    x=\"%f\"\n", spc,grad->minx);
+			fprintf(f,"%s    y=\"%f\"\n", spc,grad->miny);
+			fprintf(f,"%s    width=\"%f\"\n", spc,grad->maxx-grad->minx);
+			fprintf(f,"%s    height=\"%f\"\n", spc,grad->maxy-grad->miny);
+			fprintf(f,"%s  />\n",spc);
 		}
 
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
-		appendstr(*error_ret,_("Cannot import Eps objects into svg.\n"));
+		appendstr(*error_ret,_("Cannot export Eps objects into svg.\n"));
 		warning++;
 		
 	} else if (!strcmp(obj->whattype(),"ImageData")) {
@@ -118,54 +121,72 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		flatpoint o=obj->origin();
 		o+=obj->yaxis()*(obj->maxy-obj->miny);
 		
-		fprintf(f,"    <image  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-				     obj->m(0), obj->m(1), -obj->m(2), -obj->m(3), o.x, o.y);
-		fprintf(f,"        xlink:href=\"%s\" \n", img->filename);
-		fprintf(f,"        x=\"%f\"\n", img->minx);
-		fprintf(f,"        y=\"%f\"\n", img->miny);
-		fprintf(f,"        width=\"%f\"\n", img->maxx-img->minx);
-		fprintf(f,"        height=\"%f\"\n", img->maxy-img->miny);
-		fprintf(f,"       />\n");
+		fprintf(f,"%s<image  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+				     spc, obj->m(0), obj->m(1), -obj->m(2), -obj->m(3), o.x, o.y);
+		fprintf(f,"%s    xlink:href=\"%s\" \n", spc,img->filename);
+		fprintf(f,"%s    x=\"%f\"\n", spc,img->minx);
+		fprintf(f,"%s    y=\"%f\"\n", spc,img->miny);
+		fprintf(f,"%s    width=\"%f\"\n", spc,img->maxx-img->minx);
+		fprintf(f,"%s    height=\"%f\"\n", spc,img->maxy-img->miny);
+		fprintf(f,"%s  />\n",spc);
 		
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		appendstr(*error_ret,_("Warning: interpolating a color patch object\n"));
 		warning++;
-//		//---------
-//		//if (***config allows it) {
-//		if (1) {***
-//			 //approximate gradient with svg elements
-//			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
-//			if (!patch) return 0;
-//
-//			 //make a group with a mask of outline of original patch, and blur filter
-//			fprintf(f,"    <g mask=\"url(#colorPatchMask%l)\" filter=\"patchBlur%l\"\n", 
-//								patch->object_id, patch->object_id);
-//
-//			 //for each subpatch, break down into many sub-rectangles
-//			int c,r, cc,rr;
-//			int numdiv=5;
-//			flatpoint p[4];
-//			char color[20];
-//			for (r=0; r<patch->ysize-1; r+=3) {
-//				for (c=0; c<patch->xsize-1; c+=3) {
-//					for (rr=0; rr<numdiv; r++) {
-//						for (cc=0; cc<numdiv; cc++) {
-//							***get color for point (r+rr,c+cc)
-//							sprintf(color,"#%02x%02x%02x", ***r,g,b,***a);
-//							***get coords for that little rect
-//							fprintf(f,"      <path d=\"M %f %f L %f %f L %f %f L %f %f\ z" stroke="none" fill=\"%s\"/>"
-//										p[0].x,p[0].y,
-//										p[1].x,p[1].y,
-//										p[2].x,p[2].y,
-//										p[3].x,p[3].y,
-//										color);
-//						}
-//					}		
-//				}
-//			}
-//
-//			fprintf(f,"    </g>\n");
-//		}
+		//---------
+		//if (***config allows it) {
+		if (1) {
+			 //approximate gradient with svg elements
+			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
+			if (!patch) return 0;
+
+			 //make a group with a mask of outline of original patch, and blur filter
+			fprintf(f,"%s<g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+				     spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"%s   clip-path=\"url(#colorPatchMask%ld)\" filter=\"url(#patchBlur%ld)\">\n", 
+						spc, patch->object_id, patch->object_id);
+
+			 //for each subpatch, break down into many sub-rectangles
+			int c,r, cc,rr;
+			int numdiv=5;
+			flatpoint p[4];
+			XRenderColor color;
+			double s,ds, t,dt;
+			ds=1./(patch->xsize/3)/numdiv;
+			dt=1./(patch->ysize/3)/numdiv;
+			double fudge=1.05; //so there are no transparent boundaries between the divided up rects
+			for (r=0; r<patch->ysize/3; r++) {
+			  for (c=0; c<patch->xsize/3; c++) {
+			    for (rr=0; rr<numdiv; rr++) {
+			      for (cc=0; cc<numdiv; cc++) {
+					s=(c+(float)cc/numdiv)/(patch->xsize/3);
+					t=(r+(float)rr/numdiv)/(patch->ysize/3);
+					DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
+
+				     //get color for point (r+rr,c+cc)
+					patch->getColor(s/(1-ds),t/(1-dt),&color);
+
+			  		 //get coords for that little rect
+					p[0]=patch->getPoint(s   ,t);
+					p[1]=patch->getPoint(s+fudge*ds,t);
+					p[2]=patch->getPoint(s+fudge*ds,t+fudge*dt);
+					p[3]=patch->getPoint(s   ,t+fudge*dt);
+
+			  		fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
+							  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",
+			  					spc, p[0].x,p[0].y,
+			  					p[1].x,p[1].y,
+			  					p[2].x,p[2].y,
+			  					p[3].x,p[3].y,
+			  					color.red>>8, color.green>>8, color.blue>>8,
+								color.alpha/65535.);
+			      }
+			    }		
+			  }
+			}
+
+			fprintf(f,"%s</g>\n",spc);
+		}
 		
 	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
 		//***if (config->collect_for_out) { rasterize, and put image in out directory }
@@ -177,6 +198,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 
 //! Function to dump out any gradients to the defs section of an svg.
 /*! Return nonzero for fatal errors encountered, else 0.
+ *
+ * \todo fix radial gradient output for inner circle empty
  */
 int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
@@ -272,30 +295,44 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 		}
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		//if (***config allows it) {
-//		if (1) {
-//			 //insert mask for patch
-//			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
-//			if (!patch) return 0;
-//
-//			***get outline of patch, insert a bezier path object of it
-//			fprintf(f,"    <mask id=\"colorPatchMask%l\" maskunits=\"userSpaceOnUse\" ", patch->object_id);
-//			fprintf(f,"       x=\"%f\" y=\"%f\" width=\"%f\" height=\"%f\">\n",
-//							patch->minx,patch->miny,
-//							patch->maxx-patch->minx, patch->maxy-patch->miny);
-//
-//			fprintf(f,"      <path d=\"\" />\n");***
-//
-//			fprintf(f,"    </mask>\n");
-//
-//			 //insert blur filter *** only 1 needed?
-//			fprintf(f,"    <filter id=\"patchBlur%l\" filterunits=userSpaceOnUse", patch->object_id);
-//			fprintf(f,"       x=\"%f\" y=\"%f\" width=\"%f\" height=\"%f\">\n", ******);
-//
-//			fprintf(f,"      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"4\"/>\n");
-//
-//			fprintf(f,"    </filter>\n");
-//
-//		}
+		if (1) {
+			 //insert mask for patch
+			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
+			if (!patch) return 0;
+
+			 //get outline of patch, insert a bezier path object of it
+			int n=2*(patch->xsize-1) + 2*(patch->ysize-1);
+			flatpoint points[n];
+			patch->bezOfPatch(points, 0,patch->ysize/3, 0,patch->xsize/3);
+			fprintf(f,"    <clipPath id=\"colorPatchMask%ld\" >\n", patch->object_id);
+			fprintf(f,"      <path d=\"");
+			fprintf(f,"M %f %f ",points[1].x,points[1].y);
+			for (int c=2; c<n-1; c+=3) {
+				fprintf(f,"C %f %f %f %f %f %f ",
+						points[c  ].x,points[c  ].y,
+						points[c+1].x,points[c+1].y,
+						points[c+2].x,points[c+2].y);
+			}
+			fprintf(f,"C %f %f %f %f %f %f ",
+						points[n-1].x,points[n-1].y,
+						points[0  ].x,points[0  ].y,
+						points[1  ].x,points[1  ].y);
+			fprintf(f,"z\" />\n");
+
+			fprintf(f,"    </clipPath>\n");
+
+			 //insert blur filter
+			fprintf(f,"    <filter id=\"patchBlur%ld\" \n"
+					  "       filterUnits=\"objectBoundingBox\"\n", patch->object_id);
+			fprintf(f,"       x=\"0\"\n"
+					  "       y=\"0\"\n"
+					  "       width=\"1\"\n"
+					  "       height=\"1\">\n"); 
+
+			fprintf(f,"      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\".5\"/>\n");
+
+			fprintf(f,"    </filter>\n");
+		}
 	}
 	return 0;
 }
@@ -422,7 +459,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 			for (c3=0; c3<g->n(); c3++) {
 				transform_copy(m,spread->pagestack.e[c2]->outline->m());
-				svgdumpobj(f,m,g->e(c3),error_ret,warning);
+				svgdumpobj(f,m,g->e(c3),error_ret,warning,4);
 			}
 		}
 	}
