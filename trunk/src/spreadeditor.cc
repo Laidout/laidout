@@ -267,7 +267,9 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%scenterlabels 0      #0=center, 1=bottom, 2=left, 3=top, 4=right\n",spc);
 		fprintf(f,"%sdrawthumbnails      #whether to use page thumbnails rather than a blank page outline\n",spc);
 		fprintf(f,"%sarrangetype 0       #*** this is in flux, check back later\n",spc);
-		cout <<"*** work out a good way to keep track of autoarranging in SpreadInterface" <<endl;
+
+		cerr <<"*** work out a good way to keep track of autoarranging in SpreadInterface" <<endl;
+		
 		return;
 	}
 	

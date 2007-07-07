@@ -20,50 +20,6 @@
 
 #include "../laidout.h"
 
-enum BoxTypes {
-	NoBox        =0,
-	MediaBox     =(1<<0),
-	ArtBox       =(1<<1),
-	TrimBox      =(1<<2),
-	PrintableBox =(1<<3),
-	BleedBox     =(1<<4),
-};
-
-//------------------------------------- PaperBox --------------------------------------
-
-class PaperBox : public Laxkit::RefCounted
-{
- public:
-	int which;
-	PaperStyle *paperstyle;
-	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
-	PaperBox(PaperStyle *paper);
-	virtual ~PaperBox();
-};
-
-
-//------------------------------------- PaperBoxData --------------------------------------
-
-class PaperBoxData : public LaxInterfaces::SomeData
-{
- public:
-	PaperBox *box;
-	int index;
-	unsigned int which;
-	PaperBoxData(PaperBox *paper);
-	virtual ~PaperBoxData();
-};
-
-//------------------------------------- PaperGroup --------------------------------------
-class PaperGroup : public Laxkit::RefCounted
-{
- public:
-	char *name;
-	char *Name;
-	Laxkit::PtrStack<PaperBoxData> papers;
-	Laxkit::anObject *owner;
-};
-
 //------------------------------------- PaperInterface --------------------------------------
 
 #define PAPERTILE_ONE_ONLY   (1<<0)

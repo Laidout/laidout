@@ -20,7 +20,7 @@
 #include "postscript.h"
 #include "svg.h"
 #include "image.h"
-//#include "scribus.h"
+#include "scribus.h"
 //#include "pdf.h"
 
 void installFilters()
@@ -29,7 +29,7 @@ void installFilters()
 	installSvgFilter();
 	installImageFilter();
 	installPptFilter();
+	installScribusFilter();
 
-	//installScribusFilter();
 	//installPdfFilter();
 }

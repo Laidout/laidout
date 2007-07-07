@@ -537,7 +537,7 @@ int pdfout(const char *filename, Laxkit::anObject *context, char **error_ret,int
 	//obje->number=infodict;
 	//obje->byteoffset=ftell(f);
 	//fprintf(f,"%d 0 obj\n<<\n",infodict);
-	//fprintf(f,"  /Title (%s)\n",doc->Name()); //***warning, does not sanity check the string
+	//fprintf(f,"  /Title (%s)\n",doc->Name(1)); //***warning, does not sanity check the string
 	//fprintf(f,"  /Author (%s)\n",***);
 	//fprintf(f,"  /Subject (%s)\n",***);
 	//fprintf(f,"  /Keywords (%s)\n",***);

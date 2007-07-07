@@ -93,6 +93,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int LBDown(int x,int y,unsigned int state,int count);
 	virtual int LBUp(int x,int y,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 
 	virtual int UseThisDoc(Document *ndoc);

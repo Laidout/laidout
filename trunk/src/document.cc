@@ -406,7 +406,6 @@ void PageRange::dump_out(FILE *f,int indent,int what)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
-		cout <<"*** finish PageRange::dump_out what==-1"<<endl;
 		fprintf(f,"%sname Blah          #optional name of the range\n",spc);
 		fprintf(f,"%simpositiongroup 0  #(unimplemented)\n",spc);
 		fprintf(f,"%sstart 0            #the starting page index for the range\n",spc);
@@ -505,6 +504,7 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
  */
 Document::Document(const char *filename)
 { 
+	name=NULL;
 	saveas=NULL;
 	makestr(saveas,filename);
 	modtime=times(NULL);
@@ -529,15 +529,15 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	modtime=times(NULL);
 	curpage=-1;
 	saveas=newstr(filename);
+	name=NULL;
 	
 	docstyle=stuff;
 	if (docstyle==NULL) {
 		//*** need to create a new DocumentStyle
 		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		DBG cerr <<"***need to implement get default document in Document constructor.."<<endl;
-	}
-	if (docstyle==NULL) {
-		cout <<"***need to implement document constructor with NULL docstyle.."<<endl;
+		//DBG cerr <<"***need to implement get default document in Document constructor.."<<endl;
+		//
+		//this is used for code that manually builds a Document, so no special treatment necessary
 	} else {
 		 // create the pages
 		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
@@ -573,6 +573,7 @@ Document::~Document()
 	pageranges.flush();
 	delete docstyle;
 	if (saveas) delete[] saveas;
+	if (name) delete[] name;
 }
 
 //! Remove everything from the document.
@@ -580,6 +581,8 @@ void Document::clear()
 {
 	pages.flush();
 	if (docstyle) { delete docstyle; docstyle=NULL; }
+	if (saveas) { delete[] saveas; saveas=NULL; }
+	if (name) { delete[] name; name=NULL; }
 	curpage=-1;
 }
 
@@ -589,12 +592,8 @@ void Document::clear()
  */
 Spread *Document::GetLayout(int type, int index)
 {
-	if (!docstyle) return NULL;
-	if (type==SINGLELAYOUT)       return docstyle->imposition->SingleLayout(index);
-	if (type==PAGELAYOUT)         return docstyle->imposition->PageLayout(index);
-	if (type==PAPERLAYOUT)        return docstyle->imposition->PaperLayout(index);
-	if (type==LITTLESPREADLAYOUT) return docstyle->imposition->GetLittleSpread(index);
-	return NULL;
+	if (!docstyle || !docstyle->imposition) return NULL;
+	return docstyle->imposition->Layout(type,index);
 }
 	
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
@@ -659,15 +658,17 @@ int Document::RemovePages(int start,int n)
  */
 int Document::Save(int includewindows,char **error_ret)
 {
-	
+	if (error_ret) *error_ret=NULL;
 	FILE *f=NULL;
-	if (!saveas || !strcmp(saveas,"")) {
+	if (isblank(saveas)) {
 		DBG cerr <<"**** cannot save, saveas is null."<<endl;
+		if (error_ret) makestr(*error_ret,_("Need a file name to save to!"));
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
 		DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
+		if (error_ret) makestr(*error_ret,_("File cannot be opened for writing"));
 		return 3;
 	}
 
@@ -828,22 +829,24 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
 	if (!att) return;
 	Page *page;
-	char *name,*value;
+	char *nme,*value;
 	int c;
 	for (c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
+		nme= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"saveas")) {
+		if (!strcmp(nme,"name")) {
+			makestr(name,value);
+		} else if (!strcmp(nme,"saveas")) {
 			makestr(saveas,value);//*** make sure saveas is abs path
-		} else if (!strcmp(name,"docstyle")) {
+		} else if (!strcmp(nme,"docstyle")) {
 			if (docstyle) delete docstyle;
 			docstyle=new DocumentStyle(NULL);
 			docstyle->dump_in_atts(att->attributes.e[c],flag);
-		} else if (!strcmp(name,"pagerange")) {
+		} else if (!strcmp(nme,"pagerange")) {
 			PageRange *pr=new PageRange;
 			pr->dump_in_atts(att->attributes.e[c],flag);
 			pageranges.push(pr,1);
-		} else if (!strcmp(name,"page")) {
+		} else if (!strcmp(nme,"page")) {
 			PageStyle *ps=NULL;
 			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
 			page=new Page(ps,0);
@@ -875,9 +878,9 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	 // search for windows to create after reading in all pages
 	HeadWindow *head;
 	for (int c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
+		nme= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"window")) {
+		if (!strcmp(nme,"window")) {
 			head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
 			if (head) laidout->addwindow(head);
 		}
@@ -893,6 +896,7 @@ void Document::dump_out(FILE *f,int indent,int what)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
+		fprintf(f,"%sname   Some name for the doc  #any random name you care to give the document\n",spc);
 		fprintf(f,"%ssaveas /path/to/filename.doc  #The path previously saved as, which\n",spc);
 		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
 		
@@ -928,6 +932,7 @@ void Document::dump_out(FILE *f,int indent,int what)
 		return;
 	}
 
+	if (name) fprintf(f,"%sname %s\n",spc,name);
 	 //*** shouldn't have this? it is just the filename, file knows that already
 	if (saveas) fprintf(f,"%ssaveas %s\n",spc,saveas);
 	 // dump docstyle
@@ -953,26 +958,79 @@ void Document::dump_out(FILE *f,int indent,int what)
 }
 
 //! Rename the saveas part of the document. Return 1 for success, 0 for fail.
-int Document::Name(const char *nname)
+int Document::Saveas(const char *n)
 {
-	if (!nname || !nname[0]) return 0;
-	makestr(saveas,nname);
+	if (isblank(n)) return 0;
+	makestr(saveas,n);
 	if (saveas[0]!='/') full_path_for_file(saveas); 
 	return 1;
 }
 
-//! Returns basename part of saveas if it exists, else "untitled"
-/*! Returns a pointer to a part of saveas, so calling code should immediately
- * copy the returned string, lest saveas be reallocated, and the pointer point
- * to trouble.
- */
-const char *Document::Name()
+//! Returns saveas.
+const char *Document::Saveas()
+{ return saveas; }
+
+//! Return a new string for something like "Untitled 3".
+char *Untitled()
 {
-	const char *nm=saveas;
-	if (!nm || nm && nm[0]=='\0') return "untitled";
-	char *bn=strrchr(saveas,'/');
-	if (bn) return bn+1;
-	return saveas;
+	static int untitled=0;
+	untitled++;
+
+	if (untitled==1) return newstr(_("Untitled"));
+
+	char *str=new char[strlen(_("Untitled"))+10];
+	sprintf(str,"%s %d",_("Untitled"),untitled);
+	return str;
+}
+
+//! Rename the document. Return 1 for success, 0 for fail.
+/*! Can't really fail.. is ok to rename to NULL or "". If that is the case,
+ * name gets something like "Untitled 3".
+ */
+int Document::Name(const char *nname)
+{
+	if (isblank(nname)) {
+		if (name) delete[] name;
+		name=Untitled();
+	}
+	makestr(name,nname);
+	return 1;
+}
+
+//! Returns basename part of saveas if it exists, else "untitled"
+/*! If name is blank, then return "basename saveas  (dirname saveas)". 
+ * Otherwise return name. If withsaveas!=0, then return something
+ * like "name (saveas)"
+ *
+ * WARNING: this uses a static variable to store the returned value.. Someday
+ * this may change, but for now, as long as laidout is single threaded, beware!
+ *
+ * \todo when modifications implemented, then also return some indication that
+ *   the document is in a modified state.
+ */
+const char *Document::Name(int withsaveas)
+{
+	static char *nme=NULL;
+	if (nme) { delete[] nme; nme=NULL; }
+
+	if (!withsaveas) return name;
+
+	char *n=NULL,*extra=NULL;
+	if (isblank(name)) {
+		if (!isblank(saveas)) {
+			n=newstr(lax_basename(saveas));
+			extra=lax_dirname(saveas,0);
+		}
+	} else {
+		n=newstr(name);
+		if (!isblank(saveas)) extra=newstr(saveas);
+	}
+
+	nme=new char[(n?strlen(n):3) + (extra?strlen(extra):3) + 4];
+	sprintf(nme,"%s (%s)", n?n:"???", extra?extra:_("new"));
+	delete[] n;
+	delete[] extra;
+	return nme;
 }
 
 //! Return the internal Page object corresponding to curpage.

@@ -20,6 +20,7 @@ objs= \
 	image.o \
 	postscript.o \
 	ppt.o \
+	scribus.o \
 	svg.o
 
 

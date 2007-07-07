@@ -84,6 +84,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
  public:
 	DocumentStyle *docstyle;
 	char *saveas;
+	char *name;
 	
 	//Laxkit::Attribute metadata;
 	Laxkit::PtrStack<Page> pages;
@@ -94,7 +95,9 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
 	Document(const char *filename);
 	Document(DocumentStyle *stuff=NULL,const char *filename=NULL);
 	virtual ~Document();
-	virtual const char *Name();
+	virtual const char *Saveas();
+	virtual int Saveas(const char *nsaveas);
+	virtual const char *Name(int withsaveas);
 	virtual int Name(const char *nname);
 	virtual void clear();
 
