@@ -349,7 +349,7 @@ int LaidoutViewport::event(XEvent *e)
 				e->xfocus.detail==NotifyAncestor ||
 				e->xfocus.detail==NotifyNonlinear) {
 			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
-			if (viewer) viewer->SetParentTitle(doc->Name());
+			if (viewer) viewer->SetParentTitle(doc->Name(1));
 		}
 	}
 	return ViewportWindow::event(e);
@@ -369,6 +369,10 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 	curpage=NULL;
 
 	doc=ndoc;
+	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent);
+	if (viewer) { 
+		viewer->doc=doc;
+	}
 	setupthings();
 	Center(1);
 	needtodraw=1;
@@ -432,6 +436,16 @@ double LaidoutViewport::GetVMag(int x,int y)
 	return dp->GetVMag(x,y);
 }
 
+int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
+{
+	if (!strcmp(mes,"rulercornermenu")) {
+		if (e->data.l[0]>=0 && e->data.l[0]<laidout->project->docs.n) 
+			UseThisDoc(laidout->project->docs.e[e->data.l[0]]);
+		return 0;
+	}
+	return ViewportWindow::ClientEvent(e,mes);
+}
+
 /*! Catches "docTreeChange".
  */
 int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
@@ -466,12 +480,13 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		delete te;
 		return 0;
 	} else if (!strcmp(mes,"rulercornermenu")) {
+		 //******* probably won't use... use ClientEvent instead
 		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
 		if (!se || !se->n || !se->strs[0]) return 1;
 		//***set document to se->strs[0]
 		//****str is base name
-		Document *doc=laidout->findDocument(se->strs[0]);
-		if (doc) UseThisDoc(doc);
+		Document *ndoc=laidout->findDocument(se->strs[0]);
+		if (ndoc) UseThisDoc(ndoc);
 		delete se;
 		return 0;
 	} else if (!strcmp(mes,"image properties")) {
@@ -607,7 +622,7 @@ void LaidoutViewport::postmessage(const char *mes)
 {
 	ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
 	if (!vw) return;
-	if (vw->GetMesbar()) vw->GetMesbar()->SetText(mes);
+	vw->PostMessage(mes);
 }
 
 //! Called from constructor and from SelectPage. Define curpage, spread, curobj context.
@@ -2324,7 +2339,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //						int npad=0);
 //! Passes in a new LaidoutViewport.
 ViewWindow::ViewWindow(Document *newdoc)
-	: ViewerWindow(NULL,((newdoc && newdoc->Name())?newdoc->Name() :"untitled"),0,
+	: ViewerWindow(NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
 	var1=var2=var3=NULL;
@@ -2844,18 +2859,18 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		
-		if (doc && doc->Name(s->str)) SetParentTitle(doc->Name());
+		if (doc && doc->Saveas(s->str)) SetParentTitle(doc->Name(1));
 		
-		char *error;
+		char *error=NULL;
 		if (doc->Save(1,&error)==0) {
-			char blah[strlen(doc->Name())+15];
-			sprintf(blah,_("Saved to %s."),doc->Name());
-			GetMesbar()->SetText(blah);
+			char blah[strlen(doc->Saveas())+15];
+			sprintf(blah,_("Saved to %s."),doc->Saveas());
+			PostMessage(blah);
 		} else {
 			if (error) {
-				GetMesbar()->SetText(error);
+				PostMessage(error);
 				delete[] error;
-			} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+			} else PostMessage(_("Problem saving. Not saved."));
 		}
 
 		delete data;
@@ -2915,22 +2930,25 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				app->rundialog(ob);
 			} else {
 				if (!is_good_filename(file)) {//***how does it know?
-					GetMesbar()->SetText(_("Illegal characters in file name. Not saved."));
+					PostMessage(_("Illegal characters in file name. Not saved."));
 				} else {
 					 //set name in doc and headwindow
 					DBG cerr <<"*** file by this point should be absolute path name:"<<file<<endl;
-					if (doc && doc->Name(file)) SetParentTitle(doc->Name());
+					if (doc) {
+						SetParentTitle(doc->Name(1));
+						doc->Saveas(file);
+					}
 					
 					char *error;
 					if (doc->Save(1,&error)==0) {
-						char blah[strlen(doc->Name())+15];
-						sprintf(blah,_("Saved to %s."),doc->Name());
-						GetMesbar()->SetText(blah);
+						char blah[strlen(doc->Saveas())+15];
+						sprintf(blah,_("Saved to %s."),doc->Saveas());
+						PostMessage(blah);
 					} else {
 						if (error) {
-							GetMesbar()->SetText(error);
+							PostMessage(error);
 							delete[] error;
-						} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+						} else PostMessage(_("Problem saving. Not saved."));
 					}
 				}
 			}
@@ -3013,7 +3031,8 @@ void ViewWindow::updateContext()
 	}
 	strcat(blah,":");
 	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
-	mesbar->SetText(blah);
+	else strcat(blah,"none");
+	if (mesbar) mesbar->SetText(blah);
 }
 
 //! Deal with various indicator/control events
@@ -3101,6 +3120,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //*** in future, this will be more full featured, with:
 		 //Doc1
 		 //Doc2
+		 //None
 		 //---
 		 //limbo1
 		 //limbo2
@@ -3110,21 +3130,27 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 		MenuInfo *menu;
 		menu=new MenuInfo("Documents");
-		for (int c=0; c<laidout->project->docs.n; c++) {
-			if (laidout->project->docs.e[c]->saveas && strlen(laidout->project->docs.e[c]->saveas))
-				menu->AddItem(laidout->project->docs.e[c]->saveas); 
-			else 
-				menu->AddItem(laidout->project->docs.e[c]->Name()); 
+		int c;
+		for (c=0; c<laidout->project->docs.n; c++) {
+			menu->AddItem(laidout->project->docs.e[c]->Name(1),c); 
+			menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
+			if (laidout->project->docs.e[c]==doc) {
+				menu->menuitems.e[c]->state|=LAX_CHECKED;
+			}
 		}
+		menu->AddItem(_("None"),c);
+		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
+		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
 		MenuSelector *popup;
 		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
 						NULL,viewport->window,"rulercornermenu", 
 						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
-						 | MENUSEL_SEND_STRINGS
+						 //| MENUSEL_SEND_STRINGS
 						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
 						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF,
+						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
+						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
 						menu,1);
 		popup->pad=5;
 		popup->Select(0);
@@ -3157,8 +3183,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"addPage")) { // 
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
 		int c=doc->NewPages(curpage+1,1); //add after curpage
-		if (c>=0) GetMesbar()->SetText(_("Page added."));
-			else GetMesbar()->SetText(_("Error adding page."));
+		if (c>=0) PostMessage(_("Page added."));
+			else PostMessage(_("Error adding page."));
 		return 0;
 	} else if (!strcmp(mes,"deletePage")) { // 
 		 // this in response to delete button command
@@ -3166,9 +3192,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		int curpage=vp->curobjPage();
 
 		int c=doc->RemovePages(curpage,1); //remove curpage
-		if (c==1) GetMesbar()->SetText(_("Page deleted."));
-		else if (c==-2) GetMesbar()->SetText(_("Cannot delete the only page."));
-		else GetMesbar()->SetText(_("Error deleting page."));
+		if (c==1) PostMessage(_("Page deleted."));
+		else if (c==-2) PostMessage(_("Cannot delete the only page."));
+		else PostMessage(_("Error deleting page."));
 		
 
 		// Document sends the notifyDocTreeChanged..
@@ -3291,7 +3317,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"saveDoc")) { 
 		 //user clicked save button
-		if (strstr(doc->Name(),"untitled")==doc->Name()) { //***or shift-click for saveas??
+		if (isblank(doc->Saveas())) { //***or shift-click for saveas??
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
 						//int xx,int yy,int ww,int hh,int brder,
@@ -3301,18 +3327,18 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			app->rundialog(new FileDialog(NULL,"Save As...",
 						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
 						0,0,500,500,0, window,"saveAsPopup",
-						doc->Name()));
+						doc->Saveas()));
 		} else {
 			char *error=NULL;
 			if (doc->Save(1,&error)==0) {
-				char blah[strlen(doc->Name())+15];
-				sprintf(blah,"Saved to %s.",doc->Name());
-				GetMesbar()->SetText(blah);
+				char blah[strlen(doc->Saveas())+15];
+				sprintf(blah,"Saved to %s.",doc->Saveas());
+				PostMessage(blah);
 			} else {
 				if (error) {
-					GetMesbar()->SetText(error);
+					PostMessage(error);
 					delete[] error;
-				} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+				} else PostMessage(_("Problem saving. Not saved."));
 			}
 		}
 		return 0;
@@ -3374,7 +3400,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 			ch=='s' && (state&LAX_STATE_MASK)==ControlMask) { // save file
 		if (!doc) return 1;
 		DBG cerr <<"....viewwindow says save.."<<endl;
-		if (strstr(doc->Name(),"untitled")==doc->Name() || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
+		if (isblank(doc->Saveas()) || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
 						//int xx,int yy,int ww,int hh,int brder,
@@ -3384,24 +3410,24 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 			app->rundialog(new FileDialog(NULL,"Save As...",
 						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
 						0,0,500,500,0, window,"saveAsPopup",
-						doc->Name()));
+						doc->Saveas()));
 //			app->rundialog(new LineInput(NULL,"Save As...",
 //						ANXWIN_CENTER|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
 //						100,100,200,100,0, 
 //						NULL,window,"saveAsPopup",
-//						"Enter new filename:",doc->Name(),0,
+//						"Enter new filename:",doc->Saveas(),0,
 //						0,0,5,5,3,3));
 		} else {
 			char *error=NULL;
 			if (doc->Save(1,&error)==0) {
-				char blah[strlen(doc->Name())+15];
-				sprintf(blah,"Saved to %s.",doc->Name());
-				GetMesbar()->SetText(blah);
+				char blah[strlen(doc->Saveas())+15];
+				sprintf(blah,"Saved to %s.",doc->Saveas());
+				PostMessage(blah);
 			} else {
 				if (error) {
-					GetMesbar()->SetText(error);
+					PostMessage(error);
 					delete[] error;
-				} else GetMesbar()->SetText(_("Problem saving. Not saved."));
+				} else PostMessage(_("Problem saving. Not saved."));
 			}
 		}
 		return 0;
@@ -3450,8 +3476,8 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {
 		//*** popup a SpreadEditor
-		char blah[30+strlen(doc->Name())+1];
-		sprintf(blah,"Spread Editor for %s",doc->Name());
+		char blah[30+strlen(doc->Name(0))+1];
+		sprintf(blah,"Spread Editor for %s",doc->Name(0));
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;
 	}

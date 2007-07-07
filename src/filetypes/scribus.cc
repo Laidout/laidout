@@ -35,28 +35,8 @@ using namespace LaxInterfaces;
 
 
 
-/*! \file 
- *
- * <pre>
- *  current 1.3.3.* file format is at:
- *  http://docs.scribus.net/index.php?lang=en&sm=scribusfileformat&page=scribusfileformat
- *
- *  for gradients: all optional tags:
- *  	DOCUMENT->PAGE->PAGEOBJECT:
- *  	  GRSTARTX
- *  	  GRENDX
- *  	  GRSTARTY
- *  	  GRENDY
- *  	  GRTYP: 6==free linear, 7==free radial
- *  	DOCUMENT->PAGE->PAGEOBJECT->CSTOP: (whole thing is optional)
- *  	  NAME   of the stop color
- *  	  RAMP   [0..1]
- *  	  SHADE  in percent
- *  	  TRANS  [0..1]
- *  for images:
- *  	 
- * </pre>
- */
+
+static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
 
 //--------------------------------- install Scribus filter
 
@@ -74,11 +54,17 @@ void installScribusFilter()
 
 /*! \class ScribusExportFilter
  * \brief Export as 1.3.3.8 or thereabouts.
+ *
+ * <pre>
+ *  current 1.3.3.* file format is supposedly at:
+ *  http://docs.scribus.net/index.php?lang=en&sm=scribusfileformat&page=scribusfileformat
+ *  but it only has fully written up 1.2 format
+ * </pre>
  */
 
 ScribusExportFilter::ScribusExportFilter()
 {
-	flags=FILTERS_MULTIPAGE;
+	flags=FILTER_MULTIPAGE;
 }
 
 //! "Scribus 1.3.3.8".
@@ -87,22 +73,25 @@ const char *ScribusExportFilter::VersionName()
 	return _("Scribus 1.3.3.8");
 }
 
-//int countGroups(Group *g)
-//{
-//	int count=0;
-//	Group *grp;
-//	for (int c=0; c<g->n(); c++) {
-//		 // for each object in group
-//		grp=dynamic_cast<Group *>(g->e(c));
-//		if (grp) {
-//			count++;
-//			count+=countGroups(grp);
-//		}
-//	}
-//	return count;
-//}
+static int currentpage;
+static NumStack<int> groups;
+static int groupc=1,ongroup;
 
-static int groupnum=1;
+int countGroups(Group *g)
+{
+	int count=0;
+	Group *grp;
+	for (int c=0; c<g->n(); c++) {
+		 // for each object in group
+		grp=dynamic_cast<Group *>(g->e(c));
+		if (grp) {
+			count++;
+			count+=countGroups(grp);
+		}
+	}
+	return count;
+}
+
 
 //! Export the document as a Scribus file.
 /*! 
@@ -152,28 +141,30 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	if (start<0) start=0;
 	else if (start>doc->docstyle->imposition->NumSpreads(layout))
 		start=doc->docstyle->imposition->NumSpreads(layout)-1;
+	if (end<start) end=start;
+	else if (end>doc->docstyle->imposition->NumSpreads(layout))
+		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 	
-//	 //find out how many groups there are for DOCUMENT->GROUPC
-//	 //**** is this necessary? marked as optional in 1.2 spec
-//	int groups=0;
-//	for (c=start; c<=end; c++) {
-//		spread=doc->docstyle->imposition->Layout(layout,c);
-//		 // for each page in spread layout..
-//		for (c2=0; c2<spread->pagestack.n; c2++) {
-//			pg=spread->pagestack.e[c2]->index;
-//			if (pg>=doc->pages.n) continue;
-//			 // for each layer on the page..
-//			g++;
-//			g=layers;
-//			groups+=countGroups(g);
-//		}
-//		delete spread; spread=NULL;
-//	}
-	
-	spread=doc->docstyle->imposition->Layout(layout,start);
+	 //find out how many groups there are for DOCUMENT->GROUPC
+	 //**** is this necessary? marked as optional in 1.2 spec
+	 //*** also grab all color references
+	groupc=0;
+	for (c=start; c<=end; c++) {
+		spread=doc->docstyle->imposition->Layout(layout,c);
+		 // for each page in spread layout..
+		for (c2=0; c2<spread->pagestack.n; c2++) {
+			pg=spread->pagestack.e[c2]->index;
+			if (pg>=doc->pages.n) continue;
+			 // for each layer on the page..
+			//groupc++;
+			g=&doc->pages.e[pg]->layers;
+			groupc+=countGroups(g);
+		}
+		delete spread; spread=NULL;
+	}
 	
 	 // write out header
-	fprintf(f,"<SCRIBUSUTF8NEW Version=\"1.3.3.8\"?>\n");
+	fprintf(f,"<SCRIBUSUTF8NEW Version=\"1.3.3.8\">\n");
 	
 	
 	 //figure out paper orientation
@@ -183,11 +174,12 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	} 
 	
 	 //------------ write out document attributes
-	fprintf(f,"  <DOCUMENT "
+	spread=doc->docstyle->imposition->Layout(layout,start); //grab for page size
+	fprintf(f,"  <DOCUMENT \n"
 			  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
 			  "    ANZPAGES=\"%d\" \n",end-start+1); //number of pages
 	fprintf(f,"    AUTHOR=\"\" \n"
-			  "    AUTOSPALTEN=1 \n" \\Number of Colums in automatic Textframes
+			  "    AUTOSPALTEN=\"1\" \n" //Number of Colums in automatic Textframes
 			  //"    BOOK***** " *** has facing pages if present: doublesidedsingles
 			  "    BORDERBOTTOM=\"0\" \n"	//margins!
 			  "    BORDERLEFT=\"0\" \n"	
@@ -197,18 +189,19 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			  "    DFONT=\"Times-Roman\" \n" //default font
 			  "    DSIZE=\"12\" \n"
 			  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
-			  "    FIRSTPAGENUM=\"%d\" \n", start); ***check this is right
-	fprintf(f,"    KEYWORDS=\"\" "
-			  "    ORIENTATION=\"%d\" ",landscape);
-	fprintf(f,"    PAGEHEIGHT=\"%f\" \n",spread->outline->maxy-spread->outline->miny);
-	fprintf(f,"    PAGEWIDTH=\"%f\" \n",spread->outline->maxx-spread->outline->minx);//***
+			  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
+	fprintf(f,"    KEYWORDS=\"\" \n"
+			  "    ORIENTATION=\"%d\" \n",landscape);
+	fprintf(f,"    PAGEHEIGHT=\"%f\" \n",spread->path->maxy-spread->path->miny);
+	fprintf(f,"    PAGEWIDTH=\"%f\" \n",spread->path->maxx-spread->path->minx);//***
 	fprintf(f,"    TITLE=\"\" \n"
 			  "    VHOCH=\"33\" \n"      //Percentage for Superscript
 			  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
 			  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
 			  "    VTIEF=\"33\" \n"       //Percentage for Subscript
 			  "    VTIEFSC=\"100\" \n"   //Percentage for scaling of the Glyphs in Subscript
-			  "    >\n");
+			  "   >\n");
+	delete spread;
 	
 	
 				
@@ -216,7 +209,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		
 	
 	 //----------Write layers, assuming just background. Everything else is grouping
-	fprintf(f,"	   <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
+	fprintf(f,"    <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
 
 	
 	//********write out <PDF> chunk
@@ -289,17 +282,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 //***** holy cow, scribus has EVERY object by reference!!!! still trying to
 	 //***** figure out how objects are mapped onto groups, layers, and pages..
 	 //*****
-	Group *g;
-	double m[6];
-	int c,c2,l,pg,c3;
+	groups.flush();
+	ongroup=0;
 	transform_set(m,1,0,0,1,0,0);
 	for (c=start; c<=end; c++) {
+		currentpage=c;
 		spread=doc->docstyle->imposition->Layout(layout,c);
 		 //------------page header
-		fprintf(f,"  <PAGE "
+		fprintf(f,"  <PAGE \n"
 				  "    Size=\"Custom\" \n");
-		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",spread->outline->maxy-spread->outline->miny);
-		fprintf(f,"    PAGEWIDTH=\"%f\" \n",spread->outline->maxx-spread->outline->minx);//***
+		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",72*spread->path->maxy-spread->path->miny);
+		fprintf(f,"    PAGEWIDTH=\"%f\" \n",72*spread->path->maxx-spread->path->minx);//***
 		fprintf(f,"    NUM=\"%d\" \n",c-start); //***check this is right  //number of the page, starting at 0
 		fprintf(f,"    BORDERTOP=\"0\" \n"     //page margins?
 				  "    BORDERLEFT=\"0\" \n"
@@ -327,7 +320,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 				for (c3=0; c3<g->n(); c3++) {
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					scribusdumpobj(f,m,g->e(c3),error_ret,warning,c);
+					scribusdumpobj(f,m,g->e(c3),error_ret,warning);
 				}
 			}
 		}
@@ -352,39 +345,75 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning,int page)
+static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
 	//***possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
 	//	images: LOCALSCX LOCALSCY PFILE
 
-	int ptype=-1; //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 
 	ImageData *img=NULL;
 	GradientData *grad=NULL;
+	int numpo=0;
+	flatpoint *pocoor;
+	int ptype=-1; //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+
 	if (!strcmp(obj->whattype(),"ImageData")) {
 		img=dynamic_cast<ImageData *>(obj);
-		if (img && img->filename) return;
+		if (!img || !img->filename) return;
 		ptype=2;
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		grad=dynamic_cast<GradientData *>(obj);
 		if (!grad) return;
 		ptype=-2;
 	} else if (!strcmp(obj->whattype(),"Group")) {
-		 //***must propogate transform...
+		 //must propogate transform...
 		Group *g;
 		g=dynamic_cast<Group *>(obj);
 		if (!g) return;
+		double m[6];
+		transform_mult(m,mm,g->m());
 
-		**** objects have GROUPS list for what groups they belong to, should
-			maintain a list of current group nesting, this list will be the GROUPS
-			element of subsequent objects
-			groupnum is a counter for how many distinct groups have been found
+		 // objects have GROUPS list for what groups they belong to, should
+		 // maintain a list of current group nesting, this list will be the GROUPS
+		 // element of subsequent objects
+		 // global var groupc is a counter for how many distinct groups have been found,
+		 // which has been found already
 
+		ongroup++;
+		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,NULL,g->e(c),error_ret,warning);
+			scribusdumpobj(f,m,g->e(c),error_ret,warning);
+		groups.pop();
+		return;
+	} else {
+		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
+		sprintf(tmp,_("Warning: Cannot export %s to Scribus.\n"),obj->whattype());
+		appendstr(*error_ret,tmp);
+		warning++;
+		delete[] tmp;
 		return;
 	}
+
+	//******HACK!
+	numpo=16;
+	pocoor=new flatpoint[numpo];
+	flatpoint p;
+	double mmm[6];
+	//transform_mult(mmm,obj->m(),mm);
+	transform_copy(mmm,mm);
+	pocoor[14]=pocoor[15]=pocoor[ 0]=pocoor[ 1]=transform_point(mmm,flatpoint(obj->minx,obj->miny));
+	pocoor[ 2]=pocoor[ 3]=pocoor[ 4]=pocoor[ 5]=transform_point(mmm,flatpoint(obj->maxx,obj->miny));
+	pocoor[ 6]=pocoor[ 7]=pocoor[ 8]=pocoor[ 9]=transform_point(mmm,flatpoint(obj->maxx,obj->maxy));
+	pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(mmm,flatpoint(obj->minx,obj->maxy));
+	p=transform_point(mm,flatpoint(0,0));
+	double rot,x,y,width,height;
+	rot=atan2(pocoor[2].y-pocoor[1].y, pocoor[2].x-pocoor[1].x);
+	x=p.x;
+	y=p.y;
+	//x=y=0;
+	width=norm(pocoor[2]-pocoor[1]);
+	height=norm(pocoor[6]-pocoor[2]);
 
 	fprintf(f,"  <PAGEOBJECT \n"
 			  "    ANNOTATION=\"0\" \n"   //1 if is pdf annotation
@@ -402,7 +431,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			  "    isGroupControl=\"0\" \n" //not 1.2
 			  "    isInline=\"0\" \n"       //not 1.2
 			  "    OnMasterPage=\"\" \n"    //not 1.2
-			  "    OwnPage=\"%d\" \n",page);  //not 1.2, the page on object is on? ****
+			  "    OwnPage=\"%d\" \n",currentpage);  //not 1.2, the page on object is on? ****
 
 	fprintf(f,"    AUTOTEXT=\"0\" \n"     //1 if object is auto text frame
 			  "    BACKITEM=\"-1\" \n"    //Number of the previous frame of linked textframe
@@ -454,18 +483,18 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			  "    TransValue=\"0\" \n"      //(opt) transparency value for fill
 			  "    TransValueS=\"0\" \n"     //(opt) Transparency value for stroke
 			  "    PCOLOR2=\"Black\" \n"    //color of stroke
-			  "    PCOLOR=\"Burlywood2\" \n");//color of fill
+			  "    PCOLOR=\"None\" \n");    //color of fill
 		//---------gradient tags:
 	if (ptype==-2) { //is a gradient
 		fprintf(f,"    GRTYP=\"%d\" \n",          // 	Type of the gradient fill
-				(grad->flags&GRADIENT_RADIAL)?7:6);	//  0 = No gradient fill,       1 = Horizontal gradient
+				(grad->style&GRADIENT_RADIAL)?7:6);	//  0 = No gradient fill,       1 = Horizontal gradient
 											//  2 = Vertical gradient,      3 = Diagonal gradient
 											//  4 = Cross diagonal gradient 5 = Radial gradient
 											//  6 = Free linear gradient    7 = Free radial gradient
-		fprintf(f,"    GRSTARTX=\"0\" \n"       //(grad only)X-Value of the start position of the gradient
-				  "    GRENDX=\"0\"   \n"       //(grad only)X-Value of the end position of the gradient
-				  "    GRSTARTY=\"0\" \n"       //(grad only)Y-Value of the start position of the gradient
-				  "    GRENDY=\"0\"   \n");      //(grad only)Y-Value of the end position of the gradient
+		fprintf(f,"    GRSTARTX=\"***\" \n"       //(grad only)X-Value of the start position of the gradient
+				  "    GRENDX=\"***\"   \n"       //(grad only)X-Value of the end position of the gradient
+				  "    GRSTARTY=\"***\" \n"       //(grad only)Y-Value of the start position of the gradient
+				  "    GRENDY=\"***\"   \n");      //(grad only)Y-Value of the end position of the gradient
 	} else { // not a gradient
 		fprintf(f,
 			  "    GRTYP=\"0\" \n" 
@@ -493,72 +522,36 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			ptype==2?img->filename:"");
 
 		//-------------general object tags:
-	*** fix ptype to be more accurate
+	 // fix ptype to be more accurate
+	if (ptype==-2) ptype=7;
 	fprintf(f,"    PTYPE=\"%d\" \n",ptype);  //object type, 2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 	fprintf(f,"    ANNAME=\"\" \n"        //field name, also object name
 			  "    FLIPPEDH=\"0\" \n"       //Set to an uneven number if object is flipped horizontal
 			  "    FLIPPEDV=\"0\" \n"       //Set to an uneven number if object is flipped vertical
 			  "    PRINTABLE=\"1\" \n"      //1 for object should be printed
-			  "    NUMPO=\"16\" \n"        //num coords in POCOOR==stroke
-			  "    POCOOR=\"0 0 0 0 250 0 250 0 250 0 250 283 250 283 0 283 0 283 0 283 0 283 0 0 0 0 \" \n"
-			  "    NUMCO=\"16\" \n"        //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt)
-			  "    COCOOR=\"0 0 0 0 250 0 250 0 250 0 250 0 250 283 250 283 250 283 250 283 0 283 0 283 0 283 0 283 0 0 0 0 \" \n"
-			  "    NUMGROUP=\"******\" \n"       //number of entries in GROUPS
-			  "    GROUPS=\"*****\" \n"			//List of group identifiers
+			  "    NUMPO=\"%d\" \n",numpo); //num coords in POCOOR==stroke
+	fprintf(f,"    POCOOR=\"");
+	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
+	fprintf(f,"\" \n"
+			  "    NUMCO=\"0\" \n"        //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt)
+			  "    COCOOR=\"\" \n"
+			  "    NUMGROUP=\"%d\" \n",groups.n);       //number of entries in GROUPS
+	fprintf(f,"    GROUPS=\"");             //List of group identifiers
+	for (int c=0; c<groups.n; c++) 
+		fprintf(f,"%d ",groups.e[c]);
+	fprintf(f,"\" \n"			
 			  "    LAYER=\"0\" \n"          //layer number object belongs to
 			  "    LOCK=\"0\" \n"           //(opt) 1 if object locked
 			  "    LOCKR=\"0\" \n"          //(opt) 1 if object protected against resizing
-			  "    FRTYPE=\"7\" \n"         //shape of obj: 0=rect, 1=ellipse, 2=rounded rect, 3=free
-			  "    ROT=\"***\" \n"           //rotation of object
-			  "    WIDTH=\"*****\" \n"       //width of object
-			  "    HEIGHT=\"***\" \n"      //height of object
-			  "    XPOS=\"***\" \n"        //x of object
-			  "    YPOS=\"****\" \n"       //y of object
-			  "    >\n");
+			  "    FRTYPE=\"3\" \n"         //shape of obj: 0=rect, 1=ellipse, 2=rounded rect, 3=free
+			  "    ROT=\"%f\" \n"           //rotation of object
+			  "    XPOS=\"%f\" \n"        //x of object
+			  "    YPOS=\"%f\" \n"       //y of object
+			  "    WIDTH=\"%f\" \n"       //width of object
+			  "    HEIGHT=\"%f\" \n"      //height of object
+			  "   />\n", rot,x,y,width,height);
 
-	--------------
-	if (!strcmp(obj->whattype(),"ImageData")) {
-		ImageData *img;
-		img=dynamic_cast<ImageData *>(obj);
-		if (img && img->filename) return;
-
-		double m[6];
-		transform_mult(m,img->m(),mm);
-		
-		char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
-											 // not modify the string.
-		fprintf(f,"    <frame name=\"Raster %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
-				bname, m[0]*72, m[1]*72, m[2]*72, m[3]*72, m[4]*72, m[5]*72);
-		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"raster\" file=\"%s\" />\n",
-				img->filename);
-		return;
-	}
-	
-	if (!strcmp(obj->whattype(),"GradientData")) {
-		GradientData *grad;
-		grad=dynamic_cast<GradientData *>(obj);
-		if (!grad) return;
-		
-		***
-
-		return;	
-	}
-	
-	if (!strcmp(obj->whattype(),"Group")) {
-		Group *group=dynamic_cast<Group *>(obj);
-		if (!group) return;
-
-		***
-
-		return;
-	}
-		
-	--------------
-
-	char *tmp=new char[strlen(_("Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1]
-	sprintf(tmp,_("Cannot export %s to Scribus.\n"),obj->whattype());
-	appendstr(*error_ret,tmp);
-	delete[] tmp;
+	delete[] pocoor;
 }
 
 

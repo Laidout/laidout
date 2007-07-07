@@ -13,14 +13,8 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/*************** papersizes.cc ********************/
 
-//TODO
-//******* make this a Style, and define StyleDef
-//
-//*** various screen sizes: 800x600 72dpi, 1024x768 100dpi, 1280x1024, 1600x1200
-//*** put in color attribute, 
-//*** separate the list.cc/list.h
+
 
 //#include <cstdio>
 #include <cstdlib>
@@ -33,9 +27,11 @@ using namespace std;
 using namespace LaxFiles;
 using namespace Laxkit;
 
+//-------------------------------- GetBuiltinPaperSizes ------------------
+
 //       PAPERSIZE    X inches   Y inches   X cm      Y cm
 //       -----------------------------------------------------
-const char *BuiltinPaperSizes[34*3]=
+const char *BuiltinPaperSizes[41*3]=
 	{
 		"Letter","8.5","11",
 		"Legal","8.5","14",
@@ -69,9 +65,85 @@ const char *BuiltinPaperSizes[34*3]=
 		"Flse","8.5","13",
 		"Halfletter","5.5","8.5",
 		"Note","7.5","10",
+		"4:3", "4","3"
+		"16:9", "16","9"
+		"640x480","640","480",
+		"800x600","800","600",
+		"1024x768","1024","768",
+		"1280x1024","1280","1024",
+		"1600x1200","1600","1200",
 		"Custom","8.5","11",
 		"Whatever","8.5","11"
 	};
+
+//! Get a stack of PaperStyles with all the builtin paper sizes.
+/*! \ingroup pools
+ * If papers is NULL, then a new stack is created, filled and returned, otherwise,
+ * the buitlins are pushed onto the given stack.
+ * 
+ * Currently, the builtin sizes (in inches X by Y) are:
+ * <pre>
+ *		"Letter","8.5","11",
+ *		"Legal","8.5","14",
+ *		"Tabloid","11","17",
+ *		"Ledger","17","11",
+ *		"Index","3","5",
+ *		"A4","8.26389","11.6944",
+ *		"A3","11.6944","16.5278",
+ *		"A2","16.5278","23.3889",
+ *		"A1","23.3889","33.0556",
+ *		"A0","33.0556","46.7778",
+ *		"A5","5.84722","8.26389",
+ *		"A6","4.125","5.84722",
+ *		"A7","2.91667","4.125",
+ *		"A8","2.05556","2.91667",
+ *		"A9","1.45833","2.05556",
+ *		"A10","1.02778","1.45833",
+ *		"B0","39.3889","55.6667",
+ *		"B1","27.8333","39.3889",
+ *		"B2","19.6944","27.8333",
+ *		"B3","13.9167","19.6944",
+ *		"B4","9.84722","13.9167",
+ *		"B5","6.95833","9.84722",
+ *		"ArchA","9","12",
+ *		"ArchB","12","18",
+ *		"ArchC","18","24",
+ *		"ArchD","24","36",
+ *		"ArchE","36","48",
+ *		"Flsa","8.5","13",
+ *		"Flse","8.5","13",
+ *		"Halfletter","5.5","8.5",
+ *		"Note","7.5","10",
+ *		"4:3", "4","3"
+ *		"16:9", "16","9"
+ *		"scr:640x480","640","480",
+ *		"scr:800x600","800","600",
+ *		"scr:1024x768","1024","768",
+ *		"scr:1280x1024","1280","1024",
+ *		"scr:1600x1200","1600","1200",
+ *		"Custom","-","-",
+ *		"Whatever","-","-"
+ * </pre>
+ *
+ * \todo *** add NTSC, HDTV, a "Monitor" setting 72dpi, etc.. This could also imply
+ *   splitting dpi to xdpi and ydpi
+ * \todo this needs nested organizing
+ */
+PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
+{
+	if (papers==NULL) papers=new PtrStack<PaperStyle>;
+	double x,y; 
+	int dpi;
+	for (int c=0; c<33*3; c+=3) {
+		 // x,y were in inches
+		x=atof(BuiltinPaperSizes[c+1]);
+		y=atof(BuiltinPaperSizes[c+2]);
+		if (!strncmp(BuiltinPaperSizes[c],"scr:",4)) dpi=1; else dpi=360;
+		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,dpi));
+	}
+	return papers;
+}
+	
 //---------------------------------- PaperStyle --------------------------------
 
 /*! \class PaperStyle
@@ -100,6 +172,19 @@ const char *BuiltinPaperSizes[34*3]=
 /*! \fn double PaperStyle::h()
  * \brief If landscape (flags&&1), then return width, else return height.
  */
+
+//! Simple constructor, sets name, w, h, flags, dpi.
+PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,int ndpi)
+{
+	if (nname) {
+		name=new char[strlen(nname)+1];
+		strcpy(name,nname);
+	} else name=NULL;
+	width=w;
+	height=h;
+	dpi=ndpi;
+	flags=nflags;
+}
 
 
 /*! Dump out like the following. Note that the width and height are for the portrait
@@ -168,77 +253,59 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
 	return s;
 }
 
-//! Simple constructor, sets name, w, h, f, dpi.
-PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int f,int ndpi)
-{
-	if (nname) {
-		name=new char[strlen(nname)+1];
-		strcpy(name,nname);
-	} else name=NULL;
-	width=w;
-	height=h;
-	dpi=ndpi;
-	flags=f;
-}
 
-//-------------------------------- GetBuiltinPaperSizes ------------------
+//------------------------------------- PaperBox --------------------------------------
 
-//! Get a stack of PaperStyles with all the builtin paper sizes.
-/*! \ingroup pools
- * If papers is NULL, then a new stack is created, filled and returned, otherwise,
- * the buitlins are pushed onto the given stack.
- * 
- * Currently, the builtin sizes (in inches X by Y) are:
- * <pre>
- *		"Letter","8.5","11",
- *		"Legal","8.5","14",
- *		"Tabloid","11","17",
- *		"Ledger","17","11",
- *		"Index","3","5",
- *		"A4","8.26389","11.6944",
- *		"A3","11.6944","16.5278",
- *		"A2","16.5278","23.3889",
- *		"A1","23.3889","33.0556",
- *		"A0","33.0556","46.7778",
- *		"A5","5.84722","8.26389",
- *		"A6","4.125","5.84722",
- *		"A7","2.91667","4.125",
- *		"A8","2.05556","2.91667",
- *		"A9","1.45833","2.05556",
- *		"A10","1.02778","1.45833",
- *		"B0","39.3889","55.6667",
- *		"B1","27.8333","39.3889",
- *		"B2","19.6944","27.8333",
- *		"B3","13.9167","19.6944",
- *		"B4","9.84722","13.9167",
- *		"B5","6.95833","9.84722",
- *		"ArchA","9","12",
- *		"ArchB","12","18",
- *		"ArchC","18","24",
- *		"ArchD","24","36",
- *		"ArchE","36","48",
- *		"Flsa","8.5","13",
- *		"Flse","8.5","13",
- *		"Halfletter","5.5","8.5",
- *		"Note","7.5","10",
- *		"Custom","-","-",
- *		"Whatever","-","-"
- * </pre>
- *
- * *** add NTSC, HDTV, 800x600, 1024x768, etc
+/*! \class PaperBox 
+ * \brief Wrapper around a paper style, for use in a PaperInterface.
  */
-PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
+/*! \var Laxkit::DoubleBBox PaperBox::media
+ * \brief Normally, this will be the same as paperstyle.
+ */
+/*! \var Laxkit::DoubleBBox PaperBox::printable
+ * \brief Basically, the area of media that a printer can physically print on.
+ */
+
+/*! Incs count of paper.
+ */
+PaperBox::PaperBox(PaperStyle *paper)
 {
-	if (papers==NULL) papers=new PtrStack<PaperStyle>;
-	double x,y; 
-	for (int c=0; c<33*3; c+=3) {
-		 // x,y were in inches
-		x=atof(BuiltinPaperSizes[c+1]);
-		y=atof(BuiltinPaperSizes[c+2]);
-		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,360));
+	which=0; //a mask of which boxes are defined
+	paperstyle=paper;
+	if (paper) {
+		paper->inc_count();
+		which=MediaBox;
+		media.minx=media.miny=0;
+		media.maxx=paper->w(); //takes into account paper orientation
+		media.maxy=paper->h();
 	}
-	return papers;
 }
-	
+
+/*! Decs count of paper.
+ */
+PaperBox::~PaperBox()
+{
+	if (paperstyle) paperstyle->dec_count();
+}
+
+//------------------------------------- PaperBoxData --------------------------------------
+
+/*! \class PaperBoxData
+ * \brief Somedata Wrapper around a paper style, for use in a PaperInterface.
+ */
+
+PaperBoxData::PaperBoxData(PaperBox *paper)
+{
+	box=paper;
+	if (box) {
+		box->inc_count();
+		setbounds(&box->media);
+	}
+}
+
+PaperBoxData::~PaperBoxData()
+{
+	if (box) box->dec_count();
+}
 
 

@@ -81,7 +81,7 @@ char *CommandWindow::process(const char *in)
 		for (int c=0; c<laidout->project->docs.n; c++) {
 			sprintf(temp2," %d. ",c+1);
 			appendstr(temp,temp2);
-			appendstr(temp,laidout->project->docs.e[c]->Name());
+			appendstr(temp,laidout->project->docs.e[c]->Name(1));
 			appendstr(temp,"\n");
 		}
 		return (temp?temp:newstr(_("No documents in project.")));

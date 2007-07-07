@@ -93,7 +93,7 @@ void print_usage()
 		"  -t --template templatename       Start laidout from this template in ~/.laidout/(version)/templates\n"
 		"  -N --no-template                 Do not use a default template\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
-		"  --file-format file               Write out a pseudocode mockup of the file format to file, then exit\n"    
+		"  --file-format                    Print out a pseudocode mockup of the file format, then exit\n"
 		"  -v --version                     Print out version info, then exit.\n"
 		"  -h --help                        Show this summary and exit.\n");
 	exit(0);
@@ -657,7 +657,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ "export",              1, 0, 'e' },
 			{ "list-export-options", 1, 0, 'O' },
 			{ "export-formats",      0, 0, 'X' },
-			{ "file-format",         1, 0, 'F' },
+			{ "file-format",         0, 0, 'F' },
 			{ "rescan-fonts",        0, 0, 'f' },
 			{ "new-font-path",       1, 0, 'p' },
 			{ "new",                 1, 0, 'n' },
@@ -704,7 +704,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					if (default_template) { delete[] default_template; default_template=NULL; }
 				} break;
 			case 'F': { // dump out file format
-					if (dump_out_file_format(optarg,0)) exit(1);
+					if (dump_out_file_format("-",0)) exit(1);
 					exit(0);
 				} break;
 			case 'e': { // export
@@ -1052,14 +1052,14 @@ int LaidoutApp::NewDocument(const char *spec)
 	paper->flags=flags;
 	
 	if (!saveas) { // make a unique temporary name...
-		makestr(saveas,"untitled");
+		makestr(saveas,_("untitled"));
 	}
 	
 	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate
 	Document *newdoc=new Document(docinfo,saveas);
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
-	delete[] saveas;
+	if (saveas) delete[] saveas;
 
 	addwindow(newHeadWindow(newdoc));
 	return 0;

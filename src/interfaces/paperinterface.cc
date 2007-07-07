@@ -30,60 +30,6 @@ using namespace std;
 #define DBG 
 
 
-//------------------------------------- PaperBox --------------------------------------
-
-/*! \class PaperBox 
- * \brief Wrapper around a paper style, for use in a PaperInterface.
- */
-/*! \var Laxkit::DoubleBBox PaperBox::media
- * \brief Normally, this will be the same as paperstyle.
- */
-/*! \var Laxkit::DoubleBBox PaperBox::printable
- * \brief Basically, the area of media that a printer can physically print on.
- */
-
-/*! Incs count of paper.
- */
-PaperBox::PaperBox(PaperStyle *paper)
-{
-	which=0; //a mask of which boxes are defined
-	paperstyle=paper;
-	if (paper) {
-		paper->inc_count();
-		which=MediaBox;
-		media.minx=media.miny=0;
-		media.maxx=paper->w(); //takes into account paper orientation
-		media.maxy=paper->h();
-	}
-}
-
-/*! Decs count of paper.
- */
-PaperBox::~PaperBox()
-{
-	if (paperstyle) paperstyle->dec_count();
-}
-
-//------------------------------------- PaperBoxData --------------------------------------
-
-/*! \class PaperBoxData
- * \brief Somedata Wrapper around a paper style, for use in a PaperInterface.
- */
-
-PaperBoxData::PaperBoxData(PaperBox *paper)
-{
-	box=paper;
-	if (box) {
-		box->inc_count();
-		setbounds(&box->media);
-	}
-}
-
-PaperBoxData::~PaperBoxData()
-{
-	if (box) box->dec_count();
-}
-
 //------------------------------------- PaperInterface --------------------------------------
 	
 /*! \class PaperInterface 
@@ -308,7 +254,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 		papergroup->papers.push(maybebox);
 		maybebox=NULL;
 		needtodraw=1;
-		return 0;
+		//return 0; -- do not return, continue to let box be added..
 	}
 
 	int b=scan(x,y);

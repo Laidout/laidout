@@ -22,15 +22,30 @@
 #undef LAX_LISTS_H_ONLY
 
 #include "styles.h"
+#include <lax/interfaces/somedata.h>
 
+
+//--------------------------------- BoxTypesEnum --------------------------------
+enum BoxTypes {
+	NoBox        =0,
+	MediaBox     =(1<<0),
+	ArtBox       =(1<<1),
+	TrimBox      =(1<<2),
+	PrintableBox =(1<<3),
+	BleedBox     =(1<<4),
+};
+
+
+//------------------------------------- PaperStyle --------------------------------------
 class PaperStyle : public Style
 {
  public:
+	int color_red,color_green,color_blue;
 	char *name;
 	double width,height;
 	int dpi;
 	unsigned int flags; //1=landscape !(&1)=portrait
-	PaperStyle(const char *nname,double ww,double hh,unsigned int f,int ndpi);
+	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,int ndpi);
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual Style *duplicate(Style *s=NULL);
@@ -39,7 +54,45 @@ class PaperStyle : public Style
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
+
+//----------------------------- GetBuiltInPaperSizes() --------------------------------------
 Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> *papers);
+
+
+//------------------------------------- PaperBox --------------------------------------
+class PaperBox : public Laxkit::RefCounted
+{
+ public:
+	int which;
+	PaperStyle *paperstyle;
+	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
+	PaperBox(PaperStyle *paper);
+	virtual ~PaperBox();
+};
+
+
+//------------------------------------- PaperBoxData --------------------------------------
+class PaperBoxData : public LaxInterfaces::SomeData
+{
+ public:
+	PaperBox *box;
+	int index;
+	unsigned int which;
+	PaperBoxData(PaperBox *paper);
+	virtual ~PaperBoxData();
+};
+
+
+//------------------------------------- PaperGroup --------------------------------------
+class PaperGroup : public Laxkit::RefCounted
+{
+ public:
+	char *name;
+	char *Name;
+	Laxkit::PtrStack<PaperBoxData> papers;
+	Laxkit::anObject *owner;
+};
+
 
 
 #endif
