@@ -40,6 +40,8 @@ VERSION 0.09
        Selected region out to image(s), regions optionally remembered
        Gui for modifying Page Labels
        When importing, preserve mystery data as much as possible, to be later exported back out
+       PathInterface must be drastically improved, and bez part should have segment move like inkscape
+       Masking
 
 
 VERSION 0.1 
@@ -51,7 +53,6 @@ VERSION 0.1
        should probably put laidout stuff in its own namespace, just to be polite for plugin makers
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
-       PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
        Change cursor or otherwise indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image

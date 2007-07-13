@@ -3245,7 +3245,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					NULL,NULL,NULL,
 					doc,
 					((LaidoutViewport *)viewport)->curobjPage(),
-					doc->docstyle->imposition->paperstyle->dpi));
+					doc->docstyle->imposition->paper->paperstyle->dpi));
 		//app->rundialog(new FileDialog(NULL,"Import Image",
 		//			ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 		//			0,0,500,500,0, window,"import new image"));

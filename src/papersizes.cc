@@ -24,6 +24,8 @@ using namespace std;
 #include "papersizes.h"
 #include <lax/strmanip.h>
 
+#include <lax/refptrstack.cc>
+
 using namespace LaxFiles;
 using namespace Laxkit;
 
@@ -308,4 +310,50 @@ PaperBoxData::~PaperBoxData()
 	if (box) box->dec_count();
 }
 
+
+//------------------------------------- PaperGroup --------------------------------------
+	//char *name;
+	//char *Name;
+	//Laxkit::PtrStack<PaperBoxData> papers;
+	//Laxkit::anObject *owner;
+
+PaperGroup::PaperGroup()
+{
+	name=Name=NULL;
+	owner=NULL;
+}
+
+PaperGroup::~PaperGroup()
+{
+	if (name) delete[] name;
+	if (Name) delete[] Name;
+}
+
+void PaperGroup::dump_out(FILE *f,int indent,int what)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sname somename         #a string id. no whitespace\n",spc);
+		fprintf(f,"%sName Descriptive Name #human readable name\n",spc);
+		//if (owner) ***;
+		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
+		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
+		fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
+		fprintf(f,"%s  miny 0\n",spc);
+		fprintf(f,"%s  maxx 8.5\n",spc);
+		fprintf(f,"%s  minx 11\n",spc);
+		return;
+	}
+	if (name) fprintf(f,"%sname %s\n",spc,name);
+	if (Name) fprintf(f,"%sName %s\n",spc,Name);
+	//if (owner) ***;
+	for (int c=0; c<papers.n; c++) { //***fix
+		fprintf(f,"%spaper\n",spc);
+		papers.e[c]->dump_out(f,indent+2,0);
+	}
+}
+
+void PaperGroup::dump_in_atts(Attribute *att,int flag)
+{//***
+}
 

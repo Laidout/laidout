@@ -376,7 +376,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	int layout    =out->layout;
 	if (!filename) filename=out->filename;
 	
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
+	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) return 1;
 	
 	FILE *f=NULL;
 	char *file;

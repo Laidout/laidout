@@ -13,7 +13,7 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/**************** impositions/netimposition.cc *********************/
+
 
 #include "netimposition.h"
 #include "dodecahedron.h"
@@ -62,16 +62,18 @@ NetImposition::NetImposition(Net *newnet)
 	: Imposition("Net")
 { 
 	 // setup default paperstyle and pagestyle
-	paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
+	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
+	SetPaperSize(paperstyle);
+	paperstyle->dec_count();
 
 	DBG cerr <<"   net 1"<<endl;
 	
 	net=NULL;
 	pagestyle=NULL;
 	if (!newnet) {
-		newnet=makeDodecahedronNet(paperstyle->w(),paperstyle->h());
+		newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy);
 		SetNet(newnet);
 		newnet->dec_count();
 		netisbuiltin=1; //this line must be after SetNet
@@ -110,7 +112,7 @@ NetImposition::~NetImposition()
 int NetImposition::SetNet(const char *nettype)
 {
 	if (!strcmp(nettype,"dodecahedron")) {
-		Net *newnet=makeDodecahedronNet(paperstyle->w(),paperstyle->h()); //1 count
+		Net *newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy); //1 count
 		SetNet(newnet); //adds a count
 		newnet->dec_count(); //remove extra count
 		netisbuiltin=1;
@@ -137,18 +139,18 @@ int NetImposition::SetNet(Net *newnet)
 	
 	 // fit to page
 	SomeData page;
-	page.maxx=paperstyle->w();
-	page.maxy=paperstyle->h();
+	page.maxx=paper->media.maxx;
+	page.maxy=paper->media.maxy;
 	net->FitToData(&page,page.maxx*.05);
 	setPage();
 
 	return 0;
 }
 
-//! Using the paperstyle, create a new default pagestyle.
+//! Using the paper, create a new default pagestyle.
 void NetImposition::setPage()
 {
-	if (!paperstyle) return;
+	if (!paper) return;
 	if (pagestyle) pagestyle->dec_count();
 	pagestyle=new PageStyle();
 	pagestyle->pagetype=0;
@@ -365,7 +367,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	 // This returns the page outline, with the transform to its place in the net
 	 // in a whole spread.
 	newpath=GetPage(whichpage%net->nf,0); // transformed page, count at least 1 more
-	spread->pagestack.push(new PageLocation(whichpage,NULL,newpath,0)); //incs newpath count
+	spread->pagestack.push(new PageLocation(whichpage,NULL,newpath)); //incs newpath count
 	double baseinv[6];
 	transform_invert(baseinv,newpath->m());
 	transform_identity(newpath->m()); // make the base page have origin at viewer (0,0)
@@ -434,7 +436,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 			transform_copy(newpath->m(),M2);
 				
 			 // push face onto pagestack
-			spread->pagestack.push(new PageLocation(c2,NULL,newpath,0)); //incs newpath count
+			spread->pagestack.push(new PageLocation(c2,NULL,newpath)); //incs newpath count
 			newpath->dec_count();//remove extra count
 		}
 	}
@@ -444,7 +446,6 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	SomeData *npath=GetPage(whichpage,0);
 	transform_identity(npath->m());
 	spread->path=npath;
-	spread->pathislocal=0; //current npach count is 1, so this is ok
 	
 	 // define max/min points
 	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
@@ -482,7 +483,7 @@ Spread *NetImposition::PageLayout(int whichspread)
 	for (int c=0; c<net->nf; c++) {
 		if (firstpage+c>=numpages) break;
 		newpath=GetPage(c,0); // transformed page, count at least 1 more
-		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath,0)); //incs newpath count
+		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
 	}
 
@@ -498,7 +499,6 @@ Spread *NetImposition::PageLayout(int whichspread)
 	}
 	npath->FindBBox();
 	spread->path=npath;
-	spread->pathislocal=0; //current npach count is 1, so this is ok
 	
 	 // define max/min points
 	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
@@ -525,7 +525,6 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	if (printnet) {
 		spread->mask|=SPREAD_PRINTERMARKS;
 		spread->marks=path;
-		spread->marksarelocal=0;
 		path->inc_count();
 	}
 	
@@ -536,7 +535,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	PathsData *path2=new PathsData();//the paper outline
 	g->push(path2,0);   //incs count
 	path2->dec_count(); //remove extra count
-	path2->appendRect(0,0,paperstyle->w(),paperstyle->h(),0);
+	path2->appendRect(0,0,paper->media.maxx,paper->media.maxy,0);
 
 	g->FindBBox();
 
@@ -644,14 +643,14 @@ void NetImposition::dump_out(FILE *f,int indent,int what)
 			n.dump_out(f,indent+2,-1);
 		}
 		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
-		paperstyle->dump_out(f,indent+2,-1);
+		//***paperstyle->dump_out(f,indent+2,-1);
 		return;
 	}
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
-	if (paperstyle) {
-		fprintf(f,"%sdefaultpaperstyle\n",spc);
-		paperstyle->dump_out(f,indent+2,0);
-	}
+//	if (paper) { ***
+//		fprintf(f,"%sdefaultpaperstyle\n",spc);
+//		paperstyle->dump_out(f,indent+2,0);
+//	}
 	if (printnet) fprintf(f,"%sprintnet\n",spc);
 		else fprintf(f,"%sprintnet false\n",spc);
 	if (net) {
@@ -676,9 +675,9 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			IntAttribute(value,&numpages);
 			if (numpages<0) numpages=0;
 		} else if (!strcmp(name,"defaultpaperstyle")) {
-			if (paperstyle) delete paperstyle;
-			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
-			paperstyle->dump_in_atts(att->attributes.e[c],flag);
+			//***if (paperstyle) delete paperstyle;
+			//paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
+			//paperstyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"net")) {
 			if (value && strcmp(value,"")) { // is a built in
 				SetNet(value);

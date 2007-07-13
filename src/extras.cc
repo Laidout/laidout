@@ -684,7 +684,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 	ImagePlopInfo *info=images,*last=NULL,*flow, *flow2;
 	Group *g;
 	int curpage;
-	int dpi=doc->docstyle->imposition->paperstyle->dpi,curdpi=dpi;
+	int dpi=doc->docstyle->imposition->paper->paperstyle->dpi,curdpi=dpi;
 	curpage=startpage;
 	double x,y,w,h,t,   // temp info while computing each row
 		   ww,hh,       // width and height of page

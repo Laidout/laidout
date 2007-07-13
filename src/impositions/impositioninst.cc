@@ -75,9 +75,11 @@ Singles::Singles() : Imposition("Singles")
 	insetl=insetr=insett=insetb=0;
 	tilex=tiley=1;
 
-	paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
+	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
+	SetPaperSize(paperstyle);
+	paperstyle->dec_count();
 			
 	pagestyle=NULL;
 	setPage();
@@ -106,12 +108,12 @@ Singles::~Singles()
  */
 void Singles::setPage()
 {
-	if (!paperstyle) return;
+	if (!paper) return;
 	if (pagestyle) pagestyle->dec_count();
 	
 	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-	pagestyle->width=(paperstyle->w()-insetl-insetr)/tilex;
-	pagestyle->height=(paperstyle->h()-insett-insetb)/tiley;
+	pagestyle->width=(paper->media.maxx-insetl-insetr)/tilex;
+	pagestyle->height=(paper->media.maxy-insett-insetb)/tiley;
 	pagestyle->pagetype=0;
 }
 
@@ -181,9 +183,10 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			pagestyle=new RectPageStyle(RECTPAGE_LRTB);
 			pagestyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"defaultpaperstyle")) {
-			if (paperstyle) delete paperstyle;
+			PaperStyle *paperstyle;
 			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***should be global def
 			paperstyle->dump_in_atts(att->attributes.e[c],flag);
+			SetPaperSize(paperstyle);
 		}
 	}
 	if (pages<0) setPage();
@@ -221,7 +224,7 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
-		paperstyle->dump_out(f,indent+2,-1);
+		//paperstyle->dump_out(f,indent+2,-1);
 		fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
 		pagestyle->dump_out(f,indent+2,-1);
 		return;
@@ -237,10 +240,10 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%sdefaultpagestyle\n",spc);
 		pagestyle->dump_out(f,indent+2,0);
 	}
-	if (paperstyle) {
-		fprintf(f,"%sdefaultpaperstyle\n",spc);
-		paperstyle->dump_out(f,indent+2,0);
-	}
+//	if (paperstyle) {
+//		fprintf(f,"%sdefaultpaperstyle\n",spc);
+//		paperstyle->dump_out(f,indent+2,0);
+//	}
 }
 
 //! Duplicate this, or fill in this attributes.
@@ -403,31 +406,30 @@ Spread *Singles::PaperLayout(int whichpaper)
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 	
 	 // define max/min points
-	spread->minimum=flatpoint(paperstyle->w()/5,paperstyle->h()/2);
-	spread->maximum=flatpoint(paperstyle->w()*4/5,paperstyle->h()/2);
+	spread->minimum=flatpoint(paper->media.maxx/5,  paper->media.maxy/2);
+	spread->maximum=flatpoint(paper->media.maxx*4/5,paper->media.maxy/2);
 
 	 // fill spread with paper and page outline
 	PathsData *newpath=new PathsData();
 	spread->path=(SomeData *)newpath;
-	spread->pathislocal=1;
 	
 	 // make the paper outline
-	newpath->appendRect(0,0,paperstyle->w(),paperstyle->h());
+	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
 	
 	 // make the outline around the inset, then lines to demarcate the tiles
 	 // there are tilex*tiley pages, all pointing to the same page data
 	newpath->pushEmpty(); // later could have a certain linestyle
-	newpath->appendRect(insetl,insetb, paperstyle->w()-insetl-insetr,paperstyle->h()-insett-insetb);
+	newpath->appendRect(insetl,insetb, paper->media.maxx-insetl-insetr,paper->media.maxy-insett-insetb);
 	int x,y;
 	for (x=1; x<tilex; x++) {
 		newpath->pushEmpty();
-		newpath->append(insetl+x*(paperstyle->w()-insetr-insetl)/tilex, insett);
-		newpath->append(insetl+x*(paperstyle->w()-insetr-insetl)/tilex, insetb);
+		newpath->append(insetl+x*(paper->media.maxx-insetr-insetl)/tilex, insett);
+		newpath->append(insetl+x*(paper->media.maxx-insetr-insetl)/tilex, insetb);
 	}
 	for (y=1; y<tiley; y++) {
 		newpath->pushEmpty();
-		newpath->append(insetl, insetb+y*(paperstyle->h()-insetb-insett)/tiley);
-		newpath->append(insetr, insetb+y*(paperstyle->h()-insetb-insett)/tiley);
+		newpath->append(insetl, insetb+y*(paper->media.maxy-insetb-insett)/tiley);
+		newpath->append(insetr, insetb+y*(paper->media.maxy-insetb-insett)/tiley);
 	}
 	
 	 // setup spread->pagestack
@@ -439,9 +441,9 @@ Spread *Singles::PaperLayout(int whichpaper)
 			ntrans=new PathsData();
 			ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 			ntrans->FindBBox();
-			ntrans->origin(flatpoint(insetl+x*(paperstyle->w()-insetr-insetl)/tilex,
-									 insetb+y*(paperstyle->h()-insett-insetb)/tiley));
-			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans,1));
+			ntrans->origin(flatpoint(insetl+x*(paper->media.maxx-insetr-insetl)/tilex,
+									 insetb+y*(paper->media.maxy-insett-insetb)/tiley));
+			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans));
 		}
 	}
 	
@@ -453,38 +455,37 @@ Spread *Singles::PaperLayout(int whichpaper)
 		PathsData *marks=new PathsData();
 		if (insetl>0) {
 			marks->pushEmpty();
-			marks->append(0,        paperstyle->h()-insett);
-			marks->append(insetl*.9,paperstyle->h()-insett);
+			marks->append(0,        paper->media.maxy-insett);
+			marks->append(insetl*.9,paper->media.maxy-insett);
 			marks->pushEmpty();
 			marks->append(0,        insetb);
 			marks->append(insetl*.9,insetb);
 		}
 		if (insetr>0) {
 			marks->pushEmpty();
-			marks->append(paperstyle->w(),          paperstyle->h()-insett);
-			marks->append(paperstyle->w()-.9*insetr,paperstyle->h()-insett);
+			marks->append(paper->media.maxx,          paper->media.maxy-insett);
+			marks->append(paper->media.maxx-.9*insetr,paper->media.maxy-insett);
 			marks->pushEmpty();
-			marks->append(paperstyle->w(),          insetb);
-			marks->append(paperstyle->w()-.9*insetr,insetb);
+			marks->append(paper->media.maxx,          insetb);
+			marks->append(paper->media.maxx-.9*insetr,insetb);
 		}
 		if (insetb>0) {
 			marks->pushEmpty();
 			marks->append(insetl,0);
 			marks->append(insetl,.9*insetb);
 			marks->pushEmpty();
-			marks->append(paperstyle->w()-insetr,0);
-			marks->append(paperstyle->w()-insetr,.9*insetb);
+			marks->append(paper->media.maxx-insetr,0);
+			marks->append(paper->media.maxx-insetr,.9*insetb);
 		}
 		if (insett>0) {
 			marks->pushEmpty();
-			marks->append(insetl,paperstyle->h());
-			marks->append(insetl,paperstyle->h()-.9*insett);
+			marks->append(insetl,paper->media.maxy);
+			marks->append(insetl,paper->media.maxy-.9*insett);
 			marks->pushEmpty();
-			marks->append(paperstyle->w()-insetr,paperstyle->h());
-			marks->append(paperstyle->w()-insetr,paperstyle->h()-.9*insett);
+			marks->append(paper->media.maxx-insetr,paper->media.maxy);
+			marks->append(paper->media.maxx-insetr,paper->media.maxy-.9*insett);
 		}
 		spread->marks=marks;
-		spread->marksarelocal=1;
 	}
 
 	return spread;
@@ -604,8 +605,8 @@ void DoubleSidedSingles::setPage()
 	pagestyler=new RectPageStyle((isvertical?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
 	pagestyler->pagetype=(isvertical?3:0);
 				
-	pagestyler->width= pagestyle->width =(paperstyle->w()-insetl-insetr)/tilex;
-	pagestyler->height=pagestyle->height=(paperstyle->h()-insett-insetb)/tiley;
+	pagestyler->width= pagestyle->width =(paper->media.maxx-insetl-insetr)/tilex;
+	pagestyler->height=pagestyle->height=(paper->media.maxy-insett-insetb)/tiley;
 }
 
 //! The newfunc for DoubleSidedSingles instances.
@@ -780,7 +781,6 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 	newpath->maxy=(isvertical?2:1)*pagestyle->h();
 	
 	spread->path=(SomeData *)newpath;
-	spread->pathislocal=1;
 
 	if (left<0 || right>=numpages) {
 		 // first and possibly last are just single pages, so just have single box
@@ -812,7 +812,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 		g=new Group;  // 1 count
 		g->push(noutline,0); // this checks it out again.. noutline->count 2
 		g->FindBBox();
-		spread->pagestack.push(new PageLocation(left,NULL,g,0)); // incs count of g (to 2)
+		spread->pagestack.push(new PageLocation(left,NULL,g)); // incs count of g (to 2)
 		g->dec_count(); // remove extra tick
 		g=NULL;
 		if (isvertical) {
@@ -830,7 +830,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 		g->push(noutline,0); // this incs count on outline..
 		if (!isvertical) g->m()[4]+=pagestyle->w();
 		g->FindBBox();
-		spread->pagestack.push(new PageLocation(right,NULL,g,0)); //incs count of g
+		spread->pagestack.push(new PageLocation(right,NULL,g)); //incs count of g
 		g->dec_count(); //remove extra tick
 		if (isvertical) spread->maximum=flatpoint(pagestyle->w()/2,pagestyle->h()/5);
 		else spread->maximum=flatpoint(pagestyle->w()*9/5,pagestyle->h()/2);
@@ -1058,8 +1058,8 @@ Spread *BookletImposition::PaperLayout(int whichpaper)
 	PathsData *ntrans;
 	for (x=0; x<tilex; x++) {
 		for (y=0; y<tiley; y++) {
-			dx=insetl+x*(paperstyle->w()-insetr-insetl)/tilex;
-			dy=insetb+y*(paperstyle->h()-insett-insetb)/tiley;
+			dx=insetl+x*(paper->media.maxx-insetr-insetl)/tilex;
+			dy=insetb+y*(paper->media.maxy-insett-insetb)/tiley;
 			
 			 //install 2 page cells for each tile, according to isvertical
 			 //the left or top:
@@ -1077,14 +1077,14 @@ Spread *BookletImposition::PaperLayout(int whichpaper)
 				ntrans=new PathsData();
 				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 				ntrans->origin(flatpoint(dx,dy+(isvertical?pagestyle->h():0)));
-				spread->pagestack.push(new PageLocation(left,NULL,ntrans,1));
+				spread->pagestack.push(new PageLocation(left,NULL,ntrans));
 			}
 			 //the right or bottom:
 			if (right>=0 && right<numpages) {
 				ntrans=new PathsData();
 				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 				ntrans->origin(flatpoint(isvertical?0:pagestyle->w()+dx, dy));
-				spread->pagestack.push(new PageLocation(right,NULL,ntrans,1));
+				spread->pagestack.push(new PageLocation(right,NULL,ntrans));
 			}
 		}
 	}

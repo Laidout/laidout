@@ -58,37 +58,24 @@ using namespace std;
  *
  * It is typically a PathsData, but the actual form of it is up to the Imposition.
  */
-//class PageLocation : public Laxkit::anObject
-//{	
-// public:
-//	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans,int outlineislocal);
-//	~PageLocation();
-//	int index;
-//	Page *page;
-//	LaxInterfaces::SomeData *outline;
-//	int outlineislocal;
-//};
+
 
 //! Constructor, just copies over pointers.
-/*! The page and attributes are assumed to not be owned locally. If local==0, then
- * outline is assumed to be managed with its count, which will be incremented here, and decremented in
- * the destructor. If local==1, then outline is local, and will be delete'd in the destructor.
- * If local is any other value, no action is taken on outline in the destructor.
+/*! The page is assumed to not be owned locally. The count of poutline will be incremented here,
+ * and decremented in the destructor.
  */
-PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline,int local)
+PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline)
 {
 	index=ni;
 	page=npage;
 	outline=poutline;
-	outlineislocal=local;
-	if (local==0) poutline->inc_count();
+	if (outline) poutline->inc_count();
 }
 
 //! Page, attributes not delete'd, see constructor for how outline is dealt with.
 PageLocation::~PageLocation()
 {
-	if (outlineislocal==0) outline->dec_count();
-	else if (outlineislocal==1) delete outline;
+	if (outline) outline->dec_count();
 }
 
 //----------------------- Spread -------------------------------
@@ -147,12 +134,6 @@ PageLocation::~PageLocation()
  * on which Imposition function was called. Could be a single page, page spread,
  * or paper spread, etc.
  */
-/*! \var int Spread::pathislocal
- * \brief Delete path if pathislocal==1, otherwise path->dec_count().
- */
-/*! \var int Spread::marksarelocal
- * \brief Delete marks if marksarelocal==1, otherwise marks->dec_count().
- */
 /*! \var int Spread::spreadtype
  * \brief What is the shape of this spread.
  *
@@ -166,18 +147,13 @@ Spread::Spread()
 {
 	mask=style=0;
 	path=marks=NULL;
-	pathislocal=marksarelocal=0;
 }
 
-//! Deletes path and marks if local==1, otherwise call dec_count() for them.
+//! Dec count of path and marks.
 Spread::~Spread()
 {
-	if (path) {
-		if (pathislocal) delete path; else path->dec_count();
-	}
-	if (marks) {
-		if (marksarelocal) delete marks; else marks->dec_count();
-	}
+	if (path) path->dec_count();
+	if (marks) marks->dec_count();
 	pagestack.flush();
 }
 
@@ -303,8 +279,11 @@ int *Spread::pagesFromSpread()
 /*! \var int Imposition::numpages
  * \brief The number of pages available.
  */
-/*! \var PaperStyle *Imposition::paperstyle
- * \brief A local instance of the type of paper to print on.
+/*! \var PaperBox *Imposition::paper
+ * \brief The base type of paper to print on.
+ *
+ * This is a convenience pointer to the first box of papergroup (if any), or to a generic
+ * paper to base impositions on.
  */
 /*! \fn LaxInterfaces::SomeData *Imposition::GetPrinterMarks(int papernum=-1)
  * \brief Return the printer marks for paper papernum in paper coordinates.
@@ -442,7 +421,8 @@ Imposition::Imposition(const char *nsname)
 	: Style (NULL,NULL,nsname)
 { 
 	doc=NULL;
-	paperstyle=NULL; 
+	paper=NULL; 
+	papergroup=NULL;
 	numpages=numspreads=numpapers=0; 
 	
 	DBG cerr <<"imposition base class init"<<endl;
@@ -453,7 +433,8 @@ Imposition::Imposition(const char *nsname)
  */
 Imposition::~Imposition()
 {
-	if (paperstyle) paperstyle->dec_count();
+	if (paper) paper->dec_count();
+	if (papergroup) papergroup->dec_count();
 
 	DBG cerr <<"imposition destructor"<<endl;
 }
@@ -474,10 +455,19 @@ LaxInterfaces::InterfaceWithDp *Imposition::Interface(int layouttype)
  */
 Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)//page=1
 {
-	if (!paperstyle) return NULL;
+	if (!paper) return NULL;
 	
 	if (!bbox) bbox=new DoubleBBox();
-	bbox->setbounds(-paperstyle->width,2*paperstyle->width,-paperstyle->height,2*paperstyle->height);
+	bbox->clear();
+	if (papergroup) {
+		for (int c=0; c<papergroup->papers.n; c++) {
+			bbox->addtobounds(papergroup->papers.e[c]);
+		}
+	} else if (paper) {
+		bbox->setbounds(&paper->media);
+	} else {
+		bbox->setbounds(0,1,0,1);
+	}
 	return bbox;
 }
 
@@ -536,30 +526,47 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n)
 	return 0;
 }
 
-//! Default is to delete old paperstyle and replace it with a duplicate of the given PaperStyle.
-/*! Derived classes might react to getting
- * a new paper style by changing the pagestyle, for instance. This function basically
- * bypasses the Style methods of returning a FieldMask of other values that change.
- * So, this function should only be called when it is known the FieldMask feedback
- * is not needed. Otherwise one should call imposition.set("paperstyle",PaperStyle)
- * or whatever is appropriate for that imposition.
- *
- * Derived classes are responsible for setting the PageStyle to an appropriate
- * value in response to the new papersize.
+//! This incs count of ngroup and sets papergroup to it, dec_counting the old group if any.
+/*! 
+ * Derived classes are responsible for setting PageStyle objects to appropriate
+ * values in response to the new papersize.
  *
  * Return 0 success, nonzero error.
+ */
+int Imposition::SetPaperGroup(PaperGroup *ngroup)
+{
+	if (!ngroup) return 1;
+	if (papergroup) papergroup->dec_count();
+	papergroup=ngroup;
+	if (papergroup) papergroup->inc_count();
+	return 0;
+}
+
+//! Default is to set up a brand new papergroup and paper based on npaper.
+/*! This is a convenience function to simply alter a paper size an imposition
+ * goes by. The newly created paper group will work from a copy of npaper,
+ * not from a link to it.
  *
- * \todo *** perhaps this should also be dec_count(), not delete?
+ * Derived classes are responsible for setting PageStyle objects to appropriate
+ * values in response to the new paper size.
+ *
+ * Return 0 success, nonzero error.
  */
 int Imposition::SetPaperSize(PaperStyle *npaper)
 {
 	if (!npaper) return 1;
-	PaperStyle *pp;
-	pp=(PaperStyle *)npaper->duplicate();
-	if (pp) {
-		if (paperstyle) delete paperstyle;
-		paperstyle=pp;
-	}
+
+	PaperStyle *newpaper=(PaperStyle *)npaper->duplicate();
+	if (paper) paper->dec_count();
+	paper=new PaperBox(newpaper);
+	newpaper->dec_count();
+	PaperBoxData *newboxdata=new PaperBoxData(paper);
+
+	if (papergroup) papergroup->dec_count();
+	papergroup=new PaperGroup;
+	papergroup->papers.push(newboxdata);
+	newboxdata->dec_count();
+
 	return 0;
 }
 
@@ -626,9 +633,9 @@ int Imposition::NumPages(int npages)
 SomeData *Imposition::GetPaper(int papernum,int local)
 {
 	PathsData *newpath=new PathsData();//count==1
-	newpath->appendRect(0,0,paperstyle->w(),paperstyle->h());
-	newpath->maxx=paperstyle->w();
-	newpath->maxy=paperstyle->h();
+	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
+	newpath->maxx=paper->media.maxx;
+	newpath->maxy=paper->media.maxy;
 	//nothing special is done when local==0
 	return newpath;
 }
@@ -680,7 +687,6 @@ Spread *Imposition::SingleLayout(int whichpage)
 	 // Get the page outline. It will be a counted object with 1 count for path pointer.
 	spread->path=GetPage(whichpage,0);
 	transform_identity(spread->path->m()); // clear any transform
-	spread->pathislocal=0;
 	
 	 // define maximum/minimum points 
 	double x,y,w,h;
@@ -693,7 +699,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 
 	 // setup spread->pagestack with the single page.
 	 // page width/height must map to proper area on page.
-	spread->pagestack.push(new PageLocation(whichpage,NULL,spread->path,0)); //(index,page,somedata,local)
+	spread->pagestack.push(new PageLocation(whichpage,NULL,spread->path)); //(index,page,somedata)
 	//at this point spread->path has additional count of 2, 1 for pagestack.e[0]->outline
 	//and 1 for spread->path
 

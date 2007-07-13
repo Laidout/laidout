@@ -16,6 +16,7 @@
 
 #include "iconmanager.h"
 #include <lax/strmanip.h>
+#include <lax/lists.cc>
 
 using namespace Laxkit;
 

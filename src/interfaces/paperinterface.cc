@@ -18,6 +18,7 @@
 #include "../language.h"
 #include "paperinterface.h"
 #include <lax/strmanip.h>
+#include <lax/laxutils.h>
 
 #include <lax/lists.cc>
 
@@ -149,16 +150,33 @@ void PaperInterface::Clear(SomeData *d)
 //{***
 //}
 
+/*! \todo draw arrow to indicate paper up direction
+ */
 int PaperInterface::Refresh()
 {
 	if (!needtodraw) return 0;
 	needtodraw=0;
-	if (!papergroup || !papergroup->papers.n) return 0;
 
 	PaperBox *box;
 	flatpoint p[4];
-	int c;
+	if (maybebox) {
+		box=maybebox->box;
+		dp->PushAndNewTransform(maybebox->m());
+		XSetLineAttributes(dp->GetDpy(),dp->GetGC(),0,LineDoubleDash,CapButt,JoinMiter);
+		p[0]=dp->realtoscreen(box->media.minx,box->media.miny);
+		p[1]=dp->realtoscreen(box->media.minx,box->media.maxy);
+		p[2]=dp->realtoscreen(box->media.maxx,box->media.maxy);
+		p[3]=dp->realtoscreen(box->media.maxx,box->media.miny);
+		dp->drawlines(1,0,0,4,p);
+		dp->PopAxes(); 
+	}
+
+	if (!papergroup || !papergroup->papers.n) return 0;
+	int c,w;
 	for (c=0; c<papergroup->papers.n; c++) {
+		w=0;
+		if (papergroup->papers.e[c]==curbox) w=2;
+		XSetLineAttributes(dp->GetDpy(),dp->GetGC(),w,LineSolid,CapButt,JoinMiter);
 		dp->PushAndNewTransform(papergroup->papers.e[c]->m());
 
 		box=papergroup->papers.e[c]->box;
@@ -226,7 +244,7 @@ void PaperInterface::createMaybebox(flatpoint p)
 	if (curbox) box=curbox->box;
 	else if (papergroup->papers.n) box=papergroup->papers.e[0]->box;
 	else if (doc) {
-		box=new PaperBox((PaperStyle *)doc->docstyle->imposition->paperstyle->duplicate());
+		box=new PaperBox((PaperStyle *)doc->docstyle->imposition->paper->paperstyle->duplicate());
 		box->paperstyle->dec_count();
 		del=1;
 	} else {
@@ -248,7 +266,8 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 
 	mx=x; my=y;
 	flatpoint fp=dp->screentoreal(x,y);
-	if ((state&LAX_STATE_MASK)==ShiftMask) {
+	int over=scan(x,y);
+	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
 		//add a new box
 		if (!maybebox) createMaybebox(dp->screentoreal(x,y));
 		papergroup->papers.push(maybebox);
@@ -263,6 +282,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 		curbox=papergroup->papers.e[b];
 		curbox->inc_count();
 		curboxes.pushnodup(curbox,0);
+		needtodraw=1;
 	}
 
 	return 0;
@@ -274,7 +294,7 @@ int PaperInterface::LBUp(int x,int y,unsigned int state)
 	buttondown&=~LEFTBUTTON;
 
 	//***
-	if (curbox) { curbox->dec_count(); curbox=NULL; }
+	//if (curbox) { curbox->dec_count(); curbox=NULL; }
 	if (curboxes.n) curboxes.flush();
 
 	return 0;
@@ -289,11 +309,29 @@ int PaperInterface::LBUp(int x,int y,unsigned int state)
 
 int PaperInterface::MouseMove(int x,int y,unsigned int state)
 {
-	DBG cerr <<"over box: "<<scan(x,y)<<endl;
+	int over=scan(x,y);
+
+	DBG cerr <<"over box: "<<over<<endl;
+
 	if (!buttondown) {
 		if (!(state&ShiftMask)) return 1;
 		//*** activate maybebox
-		if (!maybebox) createMaybebox(dp->screentoreal(x,y));
+		if (over>=0) {
+			if (maybebox) { 
+				maybebox->dec_count();
+				maybebox=NULL;
+				needtodraw=1;
+			}
+			mx=x; my=y;
+			return 0;
+		}
+		if (!maybebox) {
+			createMaybebox(dp->screentoreal(x,y));
+		} else {
+			maybebox->origin(maybebox->origin()
+						+dp->screentoreal(x,y)-dp->screentoreal(mx,my));
+		}
+		mx=x; my=y;
 		needtodraw=1;
 		return 0;
 	}
@@ -331,11 +369,29 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
  */
 int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 {
-	if (ch==LAX_Left && (state&LAX_STATE_MASK)==0) {
+	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	if (ch==LAX_Shift) {
+		if (maybebox) return 0;
+		int x,y;
+		if (mouseposition(viewport,&x,&y,NULL,NULL,NULL)!=0) return 0;
+		if (scan(x,y)>=0) return 0;
+		mx=x; my=y;
+		createMaybebox(flatpoint(dp->screentoreal(x,y)));
+		needtodraw=1;
+		return 0;
+	} else if (ch==LAX_Left && (state&LAX_STATE_MASK)==0) {
 		//*** select previous paper
 		return 0;
 	} else if (ch==LAX_Right && (state&LAX_STATE_MASK)==0) {
 		//*** select next paper
+		return 0;
+	} else if ((ch==LAX_Del || ch==LAX_Bksp) && (state&LAX_STATE_MASK)==0) {
+		if (!curbox || !papergroup) return 0;
+		int c=papergroup->papers.findindex(curbox);
+		if (c<0) return 0;
+		papergroup->papers.remove(c);
+		curbox->dec_count(); curbox=NULL;
+		needtodraw=1;
 		return 0;
 	}
 	return 1;
@@ -343,6 +399,13 @@ int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 
 int PaperInterface::CharRelease(unsigned int ch,unsigned int state)
 {//***
+	if (ch==LAX_Shift) {
+		if (!maybebox) return 1;
+		maybebox->dec_count();
+		maybebox=NULL;
+		needtodraw=1;
+		return 0;
+	}
 	return 1;
 }
 
