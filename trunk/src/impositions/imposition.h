@@ -33,12 +33,11 @@ class Spread;
 class PageLocation
 {	
  public:
-	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans,int outlineislocal);
+	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans);
 	~PageLocation();
 	int index;
 	Page *page;
 	LaxInterfaces::SomeData *outline;
-	int outlineislocal;
 };
 
 //----------------------- Spread -------------------------------
@@ -65,9 +64,7 @@ class Spread : public ObjectContainer
 	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
 	int spreadtype;
 	LaxInterfaces::SomeData *path;
-	int pathislocal;
 	LaxInterfaces::SomeData *marks;
-	int marksarelocal;
 	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
 	
 	Laxkit::PtrStack<PageLocation> pagestack;
@@ -91,12 +88,14 @@ class Imposition : public Style
 	int numspreads;
 	int numpages;
 	Document *doc;
-	PaperStyle *paperstyle;
+	PaperGroup *papergroup;
+	PaperBox *paper;
 	
 	Imposition(const char *nsname);
 	virtual ~Imposition();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
+	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
 	

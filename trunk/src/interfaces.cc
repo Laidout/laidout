@@ -84,6 +84,8 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 
 	int id=1;
 
+	existingpool->push(new GroupInterface(id++,NULL),1);
+	
 	ImageInterface *imagei=new ImageInterface(id++,NULL);
 	imagei->style=1;
 	existingpool->push(imagei,1);
@@ -105,8 +107,6 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(gi,1);
 	
 	existingpool->push(new ColorPatchInterface(id++,NULL),1);
-	
-	existingpool->push(new GroupInterface(id++,NULL),1);
 	
 	existingpool->push(new PaperInterface(id++,NULL),1);
 

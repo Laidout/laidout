@@ -116,7 +116,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	if (!filename) filename=out->tofiles;
 	if (!filename) filename="output#.eps";
 	
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
+	if (!doc->docstyle || !doc->docstyle->imposition 
+			|| !doc->docstyle->imposition->paper->paperstyle) return 1;
 	
 	const char *gspath=laidout->binary("gs");
 	if (!gspath) {
@@ -163,7 +164,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	//t  =maxh*72./epsh;
 	//if (maxh && t && t<dpi) dpi=t;
 	//dpi=150;//***
-	dpi=doc->docstyle->imposition->paperstyle->dpi;
+	dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
 	
 	char *arglist[10], str1[20];
 	arglist[0]=const_cast<char *>(gspath);

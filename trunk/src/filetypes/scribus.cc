@@ -24,6 +24,7 @@
 #include "../language.h"
 #include "scribus.h"
 #include "../laidout.h"
+#include "../printing/psout.h"
 
 #include <iostream>
 #define DBG 
@@ -37,6 +38,11 @@ using namespace LaxInterfaces;
 
 
 static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
+
+
+#define CANVAS_MARGIN_X 100.
+#define CANVAS_MARGIN_Y 20.
+
 
 //--------------------------------- install Scribus filter
 
@@ -108,7 +114,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	int layout    =out->layout;
 	if (!filename) filename=out->filename;
 	
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
+	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) return 1;
 	
 	FILE *f=NULL;
 	char *file;
@@ -170,7 +176,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 //figure out paper orientation
 	int landscape=0;
 	if (layout==PAPERLAYOUT) {
-		landscape=((doc->docstyle->imposition->paperstyle->flags&1)?1:0);
+		landscape=((doc->docstyle->imposition->paper->paperstyle->flags&1)?1:0);
 	} 
 	
 	 //------------ write out document attributes
@@ -285,6 +291,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	groups.flush();
 	ongroup=0;
 	transform_set(m,1,0,0,1,0,0);
+
+	psFlushCtms();
+	psCtmInit();
 	for (c=start; c<=end; c++) {
 		currentpage=c;
 		spread=doc->docstyle->imposition->Layout(layout,c);
@@ -293,6 +302,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				  "    Size=\"Custom\" \n");
 		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",72*spread->path->maxy-spread->path->miny);
 		fprintf(f,"    PAGEWIDTH=\"%f\" \n",72*spread->path->maxx-spread->path->minx);//***
+		fprintf(f,"    PAGEXPOS=\"%f\" \n",CANVAS_MARGIN_X);
+		fprintf(f,"    PAGEYPOS=\"%f\" \n",CANVAS_MARGIN_Y);
 		fprintf(f,"    NUM=\"%d\" \n",c-start); //***check this is right  //number of the page, starting at 0
 		fprintf(f,"    BORDERTOP=\"0\" \n"     //page margins?
 				  "    BORDERLEFT=\"0\" \n"
@@ -301,8 +312,6 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				  "    NAM=\"\" \n"            //name of master page, empty when normal
 				  "    LEFT=\"0\" \n"          //if is left master page
 				  "    Orientation=\"0\" \n"
-				  "    PAGEXPOS=\"108\" \n"
-				  "    PAGEYPOS=\"18\" \n"
 				  "    MNAM=\"Normal\" \n"        //name of attached master page
 				  "    HorizontalGuides=\"\" \n"
 				  "    NumHGuides=\"0\" \n"
@@ -312,9 +321,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				
 		 // for each page in spread layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
+			psConcat(72.,0.,0.,72.,0.,0.);
+			if (landscape) {
+				psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
+			}
 			pg=spread->pagestack.e[c2]->index;
 			if (pg>=doc->pages.n) continue;
+
 			 // for each layer on the page..
+			psPushCtm();
+			transform_copy(m,spread->pagestack.e[c2]->outline->m());
+			psConcat(m);
 			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 				 // for each object in layer
 				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
@@ -323,6 +340,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 					scribusdumpobj(f,m,g->e(c3),error_ret,warning);
 				}
 			}
+			psPopCtm();
 		}
 
 		delete spread;
@@ -351,6 +369,8 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
 	//	images: LOCALSCX LOCALSCY PFILE
 
+	psPushCtm();
+	psConcat(obj->m());
 
 	ImageData *img=NULL;
 	GradientData *grad=NULL;
@@ -371,8 +391,6 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		Group *g;
 		g=dynamic_cast<Group *>(obj);
 		if (!g) return;
-		double m[6];
-		transform_mult(m,mm,g->m());
 
 		 // objects have GROUPS list for what groups they belong to, should
 		 // maintain a list of current group nesting, this list will be the GROUPS
@@ -383,8 +401,9 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,m,g->e(c),error_ret,warning);
+			scribusdumpobj(f,NULL,g->e(c),error_ret,warning);
 		groups.pop();
+		psPopCtm();
 		return;
 	} else {
 		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
@@ -392,25 +411,26 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		appendstr(*error_ret,tmp);
 		warning++;
 		delete[] tmp;
+		psPopCtm();
 		return;
 	}
 
 	//******HACK!
 	numpo=16;
 	pocoor=new flatpoint[numpo];
-	flatpoint p;
-	double mmm[6];
-	//transform_mult(mmm,obj->m(),mm);
-	transform_copy(mmm,mm);
-	pocoor[14]=pocoor[15]=pocoor[ 0]=pocoor[ 1]=transform_point(mmm,flatpoint(obj->minx,obj->miny));
-	pocoor[ 2]=pocoor[ 3]=pocoor[ 4]=pocoor[ 5]=transform_point(mmm,flatpoint(obj->maxx,obj->miny));
-	pocoor[ 6]=pocoor[ 7]=pocoor[ 8]=pocoor[ 9]=transform_point(mmm,flatpoint(obj->maxx,obj->maxy));
-	pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(mmm,flatpoint(obj->minx,obj->maxy));
-	p=transform_point(mm,flatpoint(0,0));
+	flatpoint p,p1,p2;
+	double *ctm=psCTM();
+	pocoor[14]=pocoor[15]=pocoor[ 0]=pocoor[ 1]=transform_point(ctm,flatpoint(obj->minx,obj->miny));
+	pocoor[ 2]=pocoor[ 3]=pocoor[ 4]=pocoor[ 5]=transform_point(ctm,flatpoint(obj->maxx,obj->miny));
+	pocoor[ 6]=pocoor[ 7]=pocoor[ 8]=pocoor[ 9]=transform_point(ctm,flatpoint(obj->maxx,obj->maxy));
+	pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
+	p=transform_point(ctm,flatpoint(0,0));
 	double rot,x,y,width,height;
-	rot=atan2(pocoor[2].y-pocoor[1].y, pocoor[2].x-pocoor[1].x);
-	x=p.x;
-	y=p.y;
+	p1=pocoor[1];
+	p2=pocoor[2];
+	rot=-atan2(p2.y-p1.y, p2.x-p1.x)/M_PI*180;
+	x=p.x+CANVAS_MARGIN_X;
+	y=p.y+CANVAS_MARGIN_Y;
 	//x=y=0;
 	width=norm(pocoor[2]-pocoor[1]);
 	height=norm(pocoor[6]-pocoor[2]);
@@ -552,6 +572,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			  "   />\n", rot,x,y,width,height);
 
 	delete[] pocoor;
+	psPopCtm();
 }
 
 

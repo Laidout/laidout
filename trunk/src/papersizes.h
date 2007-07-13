@@ -17,9 +17,7 @@
 #define PAPERSIZES_H
 
 
-#define LAX_LISTS_H_ONLY
-#include <lax/lists.h>
-#undef LAX_LISTS_H_ONLY
+#include <lax/refptrstack.h>
 
 #include "styles.h"
 #include <lax/interfaces/somedata.h>
@@ -84,13 +82,18 @@ class PaperBoxData : public LaxInterfaces::SomeData
 
 
 //------------------------------------- PaperGroup --------------------------------------
-class PaperGroup : public Laxkit::RefCounted
+class PaperGroup : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
 	char *name;
 	char *Name;
-	Laxkit::PtrStack<PaperBoxData> papers;
+	Laxkit::RefPtrStack<PaperBoxData> papers;
 	Laxkit::anObject *owner;
+
+	PaperGroup();
+	virtual ~PaperGroup();
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 

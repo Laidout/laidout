@@ -109,7 +109,11 @@ const char *PdfOutputFilter::VersionName()
  * \todo *** need integration of global units, assumes inches now. generally must work
  *    out what shall be the default working units...
  */
-void pdfdumpobj(FILE *f,LaxInterfaces::SomeData *obj)
+void pdfdumpobj(FILE *f,
+				char *&stream,
+				int &objectcount,
+				LaxInterfaces::SomeData *obj,
+				char *&error_ret,int &warning)
 {***
 	if (!obj) return;
 	
@@ -251,27 +255,10 @@ class PdfPageInfo : public PdfObjData
 	int contents;
 	DoubleBBox bbox;
 	char *pagelabel;
+	char *resources;
 	PdfPageInfo(int n) { next=NULL; pagelabel=NULL; objnum=n; }
 	~PdfPageInfo() { if (next) delete next; if (pagelabel) delete[] pagelabel; }
 }:
-
-//! Write out the xref table dictionary. Return byte offset of table.
-/*! \ingroup pdf
- * start is the starting number for this sequence of objects in this xref table.
- * start overrides whatever is in obj->number.
- */
-long writeXrefTable(FILE *f,int start,PdfObjData *objs)
-{
-	long xrefpos=ftell(f);
-	int count=0;
-	PdfObjData *o=objs;
-	while (o) { count++; o=o->objs; }
-	fprintf("xref\n%d %d",start,count);
-	while (objs) {
-		fprintf(f,"%010lu %05d %c\n",objs->byteoffset,objs->generation,objs->inuse);
-		objs=objs->next;
-	}
-}
 
 
 //! Save the document as PDF.
@@ -358,138 +345,134 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 // print out header
 	if (pdf_version==4) fprintf (f,"%%!PDF-1.4\n");
 	else fprintf (f,"%%!PDF-1.3\n");
-	fprintf(f,"%%%04x\n",0xffef); //binary file indicator
+	fprintf(f,"%%%04x\n",0xffff); //binary file indicator
 
 	
+	 //figure out paper size
+	int landscape=0;
+	if (layout==PAPERLAYOUT) {
+		landscape=doc->docstyle->imposition->paperstyle->flags&1;
+	}
+
 	 // find basic pdf page info, and generate content streams
 	int page, pages;
 	Spread *spread;
 	PdfPageInfo *pageobjs,*pageobjsstart;
 	PdfPageInfo *pg;
+	double m[6];
+	Page *page;
+	char *stream=NULL;
+	char scratch[300];
 	for (int c=start; c<=end; c++) {
 		pg=new PdfPageInfo;
-		pg->contents=objcount++;
 		spread=doc->docstyle->imposition->Layout(layout,c);
 		pg->pagelabel=spread->pagesFromSpreadDesc(doc);
 		pg->bbox.setbounds(spread->outline);
 
-		***create content stream, add those objects to objs
-		--==========--------------
-		
-		 // Write out paper spreads....
-		Spread *spread;
-		double m[6];
-		int c,c2,l,pg;
 		transform_set(m,1,0,0,1,0,0);
-		Page *page;
-		char *desc;
-		for (c=start; c<=end; c++) {
-			spread=doc->docstyle->imposition->Layout(layout,c);
-			desc=spread->pagesFromSpreadDesc(doc);
-				
-			 //print paper header
-			if (desc) {
-				fprintf(f, "%%%%Page: %s %d\n", desc,c-start+1);//Page label (ordinal starting at 1)
-				delete[] desc;
-			} else fprintf(f, "%%%%Page: %d %d\n", c+1,c-start+1);//Page label (ordinal starting at 1)
-			fprintf(f, "save\n");
-			fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
-			psConcat(72.,0.,0.,72.,0.,0.);
-			if (doc->docstyle->imposition->paperstyle->flags&1) {
-				fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
-				psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
-			}
+		appendstr(stream,"q\n"
+				  		 "72 0 0 72 0 0 cm\n"); // convert from inches
+		psConcat(72.,0.,0.,72.,0.,0.);
+		if (landscape) {
+			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
+			sprintf(scratch,"0 1 -1 0 %.10g 0 cm\n",doc->docstyle->imposition->paperstyle->width);
+			appendstr(stream,scratch);
+			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
+		}
+		
+		 // print out printer marks
+		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+			//DBG cerr <<"marks data:\n";
+			//DBG spread->marks->dump_out(stderr,2,0);
+			pdfdumpobj(f,stream,objcount,pageobj->resources,spread->marks,*error_ret,warning);
+		}
+		
+		 // for each paper in paper layout..
+		for (c2=0; c2<spread->pagestack.n; c2++) {
+			psDpi(doc->docstyle->imposition->paperstyle->dpi);
 			
-			 // print out printer marks
-			if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
-				fprintf(f," .01 setlinewidth\n");
-				//DBG cerr <<"marks data:\n";
-				//DBG spread->marks->dump_out(stderr,2,0);
-				objcount=pdfdumpobj(objcount,f,spread->marks);
-			}
+			pgindex=spread->pagestack.e[c2]->index;
+			if (pgindex<0 || pgindex>=doc->pages.n) continue;
+			page=doc->pages.e[pgindex];
 			
-			 // for each paper in paper layout..
-			for (c2=0; c2<spread->pagestack.n; c2++) {
-				psDpi(doc->docstyle->imposition->paperstyle->dpi);
-				
-				pg=spread->pagestack.e[c2]->index;
-				if (pg<0 || pg>=doc->pages.n) continue;
-				page=doc->pages.e[pg];
-				
-				 // transform to page
-				fprintf(f,"gsave\n");
-				psPushCtm();
-				transform_copy(m,spread->pagestack.e[c2]->outline->m());
-				fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-						m[0], m[1], m[2], m[3], m[4], m[5]); 
-				psConcat(m);
+			 // transform to page
+			appendstr(stream,"q\n"); //save ctm
+			psPushCtm();
+			transform_copy(m,spread->pagestack.e[c2]->outline->m());
+			sprintf(scratch,"%.10g %.10g %.10g %.10g %.10g %.10g cm\n ",
+					m[0], m[1], m[2], m[3], m[4], m[5]); 
+			appendstr(stream,stratch);
+			psConcat(m);
 
-				 // set clipping region
-				DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
-				if (page->pagestyle->flags&PAGE_CLIPS) {
-					DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
-					psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
-				} else {
-					DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
-				}
-					
-				 // for each layer on the page..
-				for (l=0; l<page->layers.n(); l++) {
-					pdfdumpobj(f,page->layers.e(l));
-				}
-				fprintf(f,"grestore\n");
-				psPopCtm();
+			 // set clipping region
+			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			if (page->pagestyle->flags&PAGE_CLIPS) {
+				pdfSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
+			} 
+				
+			 // for each layer on the page..
+			for (l=0; l<page->layers.n(); l++) {
+				pdfdumpobj(f,stream,objcount,page->layers.e(l),*error_ret,warning);
 			}
 
-			delete spread;
-			
-			 // print out paper footer
-			fprintf(f,"\n"
-					  "restore\n"
-					  "\n"
-					  "showpage\n"
-					  "\n");		
+			appendstr(stream,"Q\n"); //pop ctm
+			psPopCtm();
 		}
 
-		-------------------
+		 // print out paper footer
+		appendstr(stream,"Q\n"); //pop ctm
+		psPopCtm();
 
-		if (pageobjs) {
-			pageobjs->next=pg;
-			pageobjs=pageobjs->next;
-		} else pageobs=pageobjsstart=pg;
 
 		delete spread;
 
-		 // dump out objs
-		obj=objs;
-		while (obj) {
-			fprintf(f,"%d 0 obj\n",obj->number);
-			fwrite(obj->data,1,obj->len,f);
+		 // dumpobj will have output objects relevant to the stream. Now dump out this
+		 // page's content stream to an object:
+		obj=new PdfObjData;
+		obj->number=objcount++;
+		obj->byteoffset=ftell(f);
+		fprintf(f,"%d 0 obj\n"
+				  "<< /Length %d >>\n"
+				  "stream\n",
+				  	obj->number,strlen(stream));
+		fprintf(f,stream);  //write(obj->data,1,obj->len,f);
+		fprintf(f,"\nendstream\n"
+				  "endobj\n");
+		delete[] stream;
 
-			obj=obj->next;
-		}
-		delete objs;
-		objs=NULL;
+		pg->contents=obj->number;
+		//pg->number=objcount++;
+		//pg->byteoffset=ftell(f);
+		if (pageobjs) {
+			pageobjs->next=pg;
+			pageobjs=pageobjs->next;
+		} else pageobjs=pageobjsstart=pg;
 	}
 
 	
 	
-	 // write out pdf /Page dicts
-	--<<<<<<<<<<<--------------
+	 // write out pdf /Page dicts, which do not have their object number yet
 	pages=objcount + end-start+1;
-	pageobjs=pageobjsstart;
+	pageobj=pageobjsstart;
+	obj->next=pageobj;
 	for (int c=start; c<=end; c++) {
-		pageobjs->number=objcount++;
+		pageobj->number=objcount++;
+		pageobj->byteoffset=ftell(f);
 
-		fprintf(f,"%d 0 obj\n",pageobjs->number);
+		fprintf(f,"%d 0 obj\n",pageobj->number);
 		 //required
 		fprintf(f,"<<\n  /Type /Page\n");
 		fprintf(f,"  /Parent %d 0 R\n",pages);
-		fprintf(f,"  /Resources << >>\n"); ***** would include referenced xobjects!!
+		 // would include referenced xobjects!!
+		if (pageobj->resources) {
+			fprintf(f,"  /Resources <<\n"
+					  "%s",pageobj->resources);  //eg "/XObject << /X0 4 0 R"
+			fprintf(f,"  >>\n"
+		} else 	fprintf(f,"  /Resources << >>\n");
 		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-				pageobjs->bbox.minx, pageobjs->miny,
-				pageobjs->bbox.maxx, pageobjs->maxy);
-		fprintf(f,"  /Contents %d 0 R\n",pageobjs->contents); //not req, but of course necessary if stuff on page
+				pageobj->bbox.minx, pageobjs->miny,
+				pageobj->bbox.maxx, pageobjs->maxy);
+		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
 		//fprintf(f,"  /Rotate %d\n",number of 90 increments to rotate clockwise);
 		fprintf(f,"  /Rotate 0\n");
 		 //the rest is optional
@@ -514,7 +497,8 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		//fprintf(f,"  /SeparationInfo << >>\n");
 		fprintf(f,">>\nendobj\n"); 
 
-		pageobjs=pageobjs->next;
+		if (pageobj->next) obj=pageobj->next;
+		pageobj=pageobj->next;
 	}
 	
 	 //write out top /Pages page tree node
@@ -542,21 +526,22 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 	
 	 // write out PageLabels
-	int pagelabels;
-	if (doc->pageranges.n) {
-		pagelabels=objcount++;	
-		//***
-		pagelabels=-1;
-	} else pagelabels=-1;
+	int pagelabels=-1;
+//	int pagelabels;
+//	if (doc->pageranges.n) {
+//		pagelabels=objcount++;	
+//		//***
+//		pagelabels=-1;
+//	} else pagelabels=-1;
 
 	
 	 // write out Root doc catalog dict:
 	 // this must be written after Pages and other items' object numbers figured out
 	doccatalog=objcount++;
-	obje->next=new PdfObjData;
-	obje=obje->next;
-	obje->number=doccatalog;
-	obje->byteoffset=ftell(f);
+	obj->next=new PdfObjData;
+	obj=obj->next;
+	obj->number=doccatalog;
+	obj->byteoffset=ftell(f);
 	fprintf(f,"%d 0 obj\n<<\n",doccatalog);
 	 //required fields
 	fprintf(f,"  /Type /Catalog\n");
@@ -596,10 +581,10 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	//infodict=-1;
 	infodict=objcount++;
 	time_t t=time(NULL);
-	obje->next=new PdfObjData;
-	obje=obje->next;
-	obje->number=infodict;
-	obje->byteoffset=ftell(f);
+	obj->next=new PdfObjData;
+	obj=obj->next;
+	obj->number=infodict;
+	obj->byteoffset=ftell(f);
 	fprintf(f,"%d 0 obj\n<<\n",infodict);
 	fprintf(f,"  /Title (%s)\n",doc->Name(0)); //***warning, does not sanity check the string
 	//fprintf(f,"  /Author (%s)\n",***);
@@ -613,8 +598,17 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,">>\nendobj\n");
 	
 	
-	 //write xref
-	long xrefpos=writeXrefTable(f,0,objs);
+	 //write xref table
+	long xrefpos=ftell(f);
+	int count=0;
+	PdfObjData *obj=objs;
+	while (obj) { count++; obj=obj->objs; }
+	fprintf("xref\n%d %d",0,count);
+	obj=objs;
+	while (obj) {
+		fprintf(f,"%010lu %05d %c\n",obj->byteoffset,obj->generation,obj->inuse);
+		obj=obj->next;
+	}
 
 	
 	 //write trailer dict, startxref, and EOF
@@ -632,7 +626,7 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 
 	 //clean up
-	delete ***;
+	//delete ***;
 	if (objs) delete objs;
 	delete pageobjs;
 

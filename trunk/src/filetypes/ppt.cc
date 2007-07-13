@@ -131,7 +131,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	int layout    =out->layout;
 	if (!filename) filename=out->filename;
 	
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) {
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) {
 		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
 		return 1;
 	}
@@ -161,15 +161,15 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	int c;
 	if (layout==PAPERLAYOUT) {
 		const char **tmp;
-		landscape=((doc->docstyle->imposition->paperstyle->flags&1)?"true":"false");
+		landscape=((doc->docstyle->imposition->paper->paperstyle->flags&1)?"true":"false");
 		for (c=0, tmp=pptpaper; *tmp; c++, tmp++) {
-			if (!strcmp(doc->docstyle->imposition->paperstyle->name,*tmp)) break;
+			if (!strcmp(doc->docstyle->imposition->paper->paperstyle->name,*tmp)) break;
 		}
 		if (*tmp) papersize=*tmp;
-		else if (!strcmp(doc->docstyle->imposition->paperstyle->name,"Tabloid")) {
+		else if (!strcmp(doc->docstyle->imposition->paper->paperstyle->name,"Tabloid")) {
 			papersize="Tabloid/Ledger";
 			if (landscape[0]=='t') landscape="false"; else landscape="true";
-		} else if (!strcmp(doc->docstyle->imposition->paperstyle->name,"Ledger")) {
+		} else if (!strcmp(doc->docstyle->imposition->paper->paperstyle->name,"Ledger")) {
 			papersize="Tabloid/Ledger";
 		} else papersize="Letter";
 	} else {
