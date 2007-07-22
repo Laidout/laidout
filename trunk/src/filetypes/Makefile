@@ -18,6 +18,7 @@ objs= \
 	filters.o \
 	exportdialog.o \
 	image.o \
+	pdf.o \
 	postscript.o \
 	ppt.o \
 	scribus.o \

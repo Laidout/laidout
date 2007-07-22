@@ -16,20 +16,21 @@
 #ifndef FILETYPES_PDF_H
 #define FILETYPES_PDF_H
 
+#include "filefilters.h"
+#include "../version.h"
 
 
 void installPdfFilter();
 
 
-//------------------------------------ PdfOutputFilter ----------------------------------
-class PdfOutputFilter : public ExportFilter
+//------------------------------------ PdfExportFilter ----------------------------------
+class PdfExportFilter : public ExportFilter
 {
  protected:
 	int pdf_version;
-	virtual int pdfdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
  public:
-	PdfOutputFilter(int which);
-	virtual ~PdfOutputFilter() {}
+	PdfExportFilter(int which);
+	virtual ~PdfExportFilter() {}
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	
