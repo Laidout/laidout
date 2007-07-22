@@ -21,7 +21,7 @@
 #include "svg.h"
 #include "image.h"
 #include "scribus.h"
-//#include "pdf.h"
+#include "pdf.h"
 
 void installFilters()
 {
@@ -30,6 +30,5 @@ void installFilters()
 	installImageFilter();
 	installPptFilter();
 	installScribusFilter();
-
-	//installPdfFilter();
+	installPdfFilter();
 }

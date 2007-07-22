@@ -21,6 +21,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../printing/psout.h"
 #include "pdf.h"
 #include "../impositions/impositioninst.h"
 
@@ -39,10 +40,10 @@ using namespace LaxInterfaces;
 //! Tells the Laidout application that there's a new filter in town.
 void installPdfFilter()
 {
-	//PdfOutputFilter *pdfout=new PdfOutputFilter(3);
+	//PdfExportFilter *pdfout=new PdfExportFilter(3);
 	//laidout->exportfilters.push(pdfout);
 	
-	pdfout=new PdfOutputFilter(4);
+	PdfExportFilter *pdfout=new PdfExportFilter(4);
 	laidout->exportfilters.push(pdfout);
 	
 	//PdfInputFilter *pdfin=new PdfInputFilter;
@@ -50,31 +51,32 @@ void installPdfFilter()
 }
 
 
-//------------------------------------ PdfOutputFilter ----------------------------------
+//------------------------------------ PdfExportFilter ----------------------------------
 	
-/*! \class PdfOutputFilter
- * \brief Filter for exporting PDF 1.3.
+/*! \class PdfExportFilter
+ * \brief Filter for exporting PDF 1.3 or 1.4.
  *
- * \todo implement 1.4!
+ * \todo implement difference between 1.3 and 1.4!
  */
-/*! \var int PdfOutputFilter::pdf_version
+/*! \var int PdfExportFilter::pdf_version
  * \brief 4 for 1.4, 3 for 1.3.
  */
 
 
-PdfOutputFilter::PdfOutputFilter(int which)
+PdfExportFilter::PdfExportFilter(int which)
 {
-	if (which==4) pdf_version=1.4; else pdf_version=1.3;
-	flags=FILTERS_MULTIPAGE;
+	if (which==4) pdf_version=4; //1.4
+			 else pdf_version=3; //1.3
+	flags=FILTER_MULTIPAGE;
 }
 
-const char *PdfOutputFilter::Version()
+const char *PdfExportFilter::Version()
 {
 	if (pdf_version==4) return "1.4";
 	return "1.3";
 }
 
-const char *PdfOutputFilter::VersionName()
+const char *PdfExportFilter::VersionName()
 {
 	if (pdf_version==4) return _("Pdf 1.4");
 	return _("Pdf 1.3");
@@ -112,41 +114,43 @@ const char *PdfOutputFilter::VersionName()
 void pdfdumpobj(FILE *f,
 				char *&stream,
 				int &objectcount,
+				char *&resources,
 				LaxInterfaces::SomeData *obj,
-				char *&error_ret,int &warning)
-{***
+				char *&error_ret,
+				int &warning)
+{//***
 	if (!obj) return;
 	
 	 // push axes
 	psPushCtm();
 	psConcat(obj->m());
-	fprintf(f,"gsave\n"
-			  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-				obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
-	
-	if (!strcmp(obj->whattype(),"Group")) {
-		Group *g=dynamic_cast<Group *>(obj);
-		for (int c=0; c<g->n(); c++) pdfdumpobj(f,g->e(c)); 
-		
-	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
-		pdfImagePatch(f,dynamic_cast<ImagePatchData *>(obj));
-		
-	} else if (!strcmp(obj->whattype(),"ImageData")) {
-		pdfImage(f,dynamic_cast<ImageData *>(obj));
-		
-	} else if (!strcmp(obj->whattype(),"GradientData")) {
-		pdfGradient(f,dynamic_cast<GradientData *>(obj));
-		
-	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
-		pdfColorPatch(f,dynamic_cast<ColorPatchData *>(obj));
-		
-	} else if (dynamic_cast<PathsData *>(obj)) {
-		pdfPathsData(f,dynamic_cast<PathsData *>(obj));
-
-	}
-	
-	 // pop axes
-	fprintf(f,"grestore\n\n");
+//	fprintf(f,"gsave\n"
+//			  "[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+//				obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
+//	
+//	if (!strcmp(obj->whattype(),"Group")) {
+//		Group *g=dynamic_cast<Group *>(obj);
+//		for (int c=0; c<g->n(); c++) pdfdumpobj(f,g->e(c)); 
+//		
+//	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
+//		pdfImagePatch(f,dynamic_cast<ImagePatchData *>(obj));
+//		
+//	} else if (!strcmp(obj->whattype(),"ImageData")) {
+//		pdfImage(f,dynamic_cast<ImageData *>(obj));
+//		
+//	} else if (!strcmp(obj->whattype(),"GradientData")) {
+//		pdfGradient(f,dynamic_cast<GradientData *>(obj));
+//		
+//	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
+//		pdfColorPatch(f,dynamic_cast<ColorPatchData *>(obj));
+//		
+//	} else if (dynamic_cast<PathsData *>(obj)) {
+//		pdfPathsData(f,dynamic_cast<PathsData *>(obj));
+//
+//	}
+//	
+//	 // pop axes
+//	fprintf(f,"grestore\n\n");
 	psPopCtm();
 }
 
@@ -168,67 +172,68 @@ void pdfdumpobj(FILE *f,
  * actually more implemented, this will change..
  */
 int pdfSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//iscontinuing=0
-{***
-	PathsData *path=dynamic_cast<PathsData *>(outline);
-
-	 //If is not a path, but is a reference to a path
-	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
-		SomeDataRef *ref;
-		 // skip all nested SomeDataRefs
-		do {
-			ref=dynamic_cast<SomeDataRef *>(outline);
-			if (ref) outline=ref->thedata;
-		} while (ref);
-		if (outline) path=dynamic_cast<PathsData *>(outline);
-	}
-
-	int n=0; //the number of objects interpreted
-	
-	 // If is not a path, and is not a ref to a path, but is a group,
-	 // then check that its elements 
-	if (!path && dynamic_cast<Group *>(outline)) {
-		Group *g=dynamic_cast<Group *>(outline);
-		SomeData *d;
-		double m[6];
-		for (int c=0; c<g->n(); c++) {
-			d=g->e(c);
-			 //add transform of group element
-			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
-			n+=psSetClipToPath(f,g->e(c),1);
-			transform_invert(m,d->m());
-			 //reverse the transform
-			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-					m[0], m[1], m[2], m[3], m[4], m[5]); 
-		}
-	}
-	
-	if (!path) return n;
-	
-	 // finally append to clip path
-	Coordinate *start,*p;
-	for (int c=0; c<path->paths.n; c++) {
-		start=p=path->paths.e[c]->path;
-		if (!p) continue;
-		do { p=p->next; } while (p && p!=start);
-		if (p==start) { // only include closed paths
-			n++;
-			p=start;
-			do {
-				fprintf(f,"%.10g %.10g ",p->x(),p->y());
-				if (p==start) fprintf(f,"moveto\n");
-				else fprintf(f,"lineto\n");
-				p=p->next;	
-			} while (p && p!=start);
-			fprintf(f,"closepath\n");
-		}
-	}
-	
-	if (n && !iscontinuing) {
-		//fprintf(f,".1 setlinewidth stroke\n");
-		fprintf(f,"clip\n");
-	}
-	return n;
+{//***
+	return 0;
+//	PathsData *path=dynamic_cast<PathsData *>(outline);
+//
+//	 //If is not a path, but is a reference to a path
+//	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
+//		SomeDataRef *ref;
+//		 // skip all nested SomeDataRefs
+//		do {
+//			ref=dynamic_cast<SomeDataRef *>(outline);
+//			if (ref) outline=ref->thedata;
+//		} while (ref);
+//		if (outline) path=dynamic_cast<PathsData *>(outline);
+//	}
+//
+//	int n=0; //the number of objects interpreted
+//	
+//	 // If is not a path, and is not a ref to a path, but is a group,
+//	 // then check that its elements 
+//	if (!path && dynamic_cast<Group *>(outline)) {
+//		Group *g=dynamic_cast<Group *>(outline);
+//		SomeData *d;
+//		double m[6];
+//		for (int c=0; c<g->n(); c++) {
+//			d=g->e(c);
+//			 //add transform of group element
+//			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+//					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
+//			n+=psSetClipToPath(f,g->e(c),1);
+//			transform_invert(m,d->m());
+//			 //reverse the transform
+//			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+//					m[0], m[1], m[2], m[3], m[4], m[5]); 
+//		}
+//	}
+//	
+//	if (!path) return n;
+//	
+//	 // finally append to clip path
+//	Coordinate *start,*p;
+//	for (int c=0; c<path->paths.n; c++) {
+//		start=p=path->paths.e[c]->path;
+//		if (!p) continue;
+//		do { p=p->next; } while (p && p!=start);
+//		if (p==start) { // only include closed paths
+//			n++;
+//			p=start;
+//			do {
+//				fprintf(f,"%.10g %.10g ",p->x(),p->y());
+//				if (p==start) fprintf(f,"moveto\n");
+//				else fprintf(f,"lineto\n");
+//				p=p->next;	
+//			} while (p && p!=start);
+//			fprintf(f,"closepath\n");
+//		}
+//	}
+//	
+//	if (n && !iscontinuing) {
+//		//fprintf(f,".1 setlinewidth stroke\n");
+//		fprintf(f,"clip\n");
+//	}
+//	return n;
 }
 
 //---------------------------- PdfObjData
@@ -245,6 +250,7 @@ class PdfObjData
 	PdfObjData() 
 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(NULL), data(NULL), len(0)
 	 {}
+	virtual ~PdfObjData() { if (next) delete next; }
 };
 
 //---------------------------- PdfPageInfo
@@ -256,10 +262,16 @@ class PdfPageInfo : public PdfObjData
 	DoubleBBox bbox;
 	char *pagelabel;
 	char *resources;
-	PdfPageInfo(int n) { next=NULL; pagelabel=NULL; objnum=n; }
-	~PdfPageInfo() { if (next) delete next; if (pagelabel) delete[] pagelabel; }
-}:
+	PdfPageInfo() { resources=NULL; next=NULL; pagelabel=NULL; }
+	virtual ~PdfPageInfo();
+};
 
+PdfPageInfo::~PdfPageInfo()
+{
+	if (next) delete next;
+	if (pagelabel) delete[] pagelabel; 
+	if (resources) delete[] resources; 
+}
 
 //! Save the document as PDF.
 /*! This does not export EpsData.
@@ -271,7 +283,7 @@ class PdfPageInfo : public PdfObjData
  * \todo *** should have option of rasterizing or approximating the things not supported in pdf, such 
  *    as image patch objects
  */
-int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -283,7 +295,9 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	int layout    =out->layout;
 	if (!filename) filename=out->filename;
 	
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) return 1;
+	if (!doc->docstyle || !doc->docstyle->imposition 
+			|| !doc->docstyle->imposition->paper 
+			|| !doc->docstyle->imposition->paper->paperstyle) return 1;
 	
 	FILE *f=NULL;
 	char *file;
@@ -309,19 +323,18 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	if (start<0) start=0;
 	else if (start>doc->docstyle->imposition->NumSpreads(layout))
 		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	spread=doc->docstyle->imposition->Layout(layout,start);
+	//***spread=doc->docstyle->imposition->Layout(layout,start);
 	
 	int warning=0;
-	Spread *spread;
-	Group *g;
+	Spread *spread=NULL;
 	//int c;
-	int c2,l,pg,c3;
+	int c2,l;
 
 	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<" ====================\n";
 
 	 // initialize outside accessible ctm
 	psCtmInit();
-	psctms.flush();
+	psFlushCtms();
 
 	 // a fresh PDF is:
 	 //   header: %!PDF-1.4
@@ -335,7 +348,6 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 // the next free object. Since this is a fresh pdf, there are no 
 	 // other free objects.
 	PdfObjData *objs=new PdfObjData,
-			   *obje=objs,
 			   *obj=objs;
 	obj->inuse='f';
 	obj->number=0; 
@@ -351,13 +363,13 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //figure out paper size
 	int landscape=0;
 	if (layout==PAPERLAYOUT) {
-		landscape=doc->docstyle->imposition->paperstyle->flags&1;
+		landscape=doc->docstyle->imposition->paper->paperstyle->flags&1;
 	}
 
 	 // find basic pdf page info, and generate content streams
-	int page, pages;
-	Spread *spread;
-	PdfPageInfo *pageobjs,*pageobjsstart;
+	int pages;
+	int pgindex;
+	PdfPageInfo *pageobj,*pageobjs,*pageobjsstart;
 	PdfPageInfo *pg;
 	double m[6];
 	Page *page;
@@ -367,29 +379,29 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		pg=new PdfPageInfo;
 		spread=doc->docstyle->imposition->Layout(layout,c);
 		pg->pagelabel=spread->pagesFromSpreadDesc(doc);
-		pg->bbox.setbounds(spread->outline);
+		pg->bbox.setbounds(spread->path);
 
 		transform_set(m,1,0,0,1,0,0);
 		appendstr(stream,"q\n"
 				  		 "72 0 0 72 0 0 cm\n"); // convert from inches
 		psConcat(72.,0.,0.,72.,0.,0.);
 		if (landscape) {
-			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
-			sprintf(scratch,"0 1 -1 0 %.10g 0 cm\n",doc->docstyle->imposition->paperstyle->width);
+			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paper->paperstyle->width);
+			sprintf(scratch,"0 1 -1 0 %.10g 0 cm\n",doc->docstyle->imposition->paper->paperstyle->width);
 			appendstr(stream,scratch);
-			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
+			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
 		}
 		
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			//DBG cerr <<"marks data:\n";
 			//DBG spread->marks->dump_out(stderr,2,0);
-			pdfdumpobj(f,stream,objcount,pageobj->resources,spread->marks,*error_ret,warning);
+			pdfdumpobj(f,stream,objcount,pg->resources,spread->marks,*error_ret,warning);
 		}
 		
 		 // for each paper in paper layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psDpi(doc->docstyle->imposition->paperstyle->dpi);
+			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
 			
 			pgindex=spread->pagestack.e[c2]->index;
 			if (pgindex<0 || pgindex>=doc->pages.n) continue;
@@ -401,7 +413,7 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			transform_copy(m,spread->pagestack.e[c2]->outline->m());
 			sprintf(scratch,"%.10g %.10g %.10g %.10g %.10g %.10g cm\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
-			appendstr(stream,stratch);
+			appendstr(stream,scratch);
 			psConcat(m);
 
 			 // set clipping region
@@ -412,7 +424,7 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 				
 			 // for each layer on the page..
 			for (l=0; l<page->layers.n(); l++) {
-				pdfdumpobj(f,stream,objcount,page->layers.e(l),*error_ret,warning);
+				pdfdumpobj(f,stream,objcount,pg->resources,page->layers.e(l),*error_ret,warning);
 			}
 
 			appendstr(stream,"Q\n"); //pop ctm
@@ -431,10 +443,10 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		obj=new PdfObjData;
 		obj->number=objcount++;
 		obj->byteoffset=ftell(f);
-		fprintf(f,"%d 0 obj\n"
-				  "<< /Length %d >>\n"
+		fprintf(f,"%ld 0 obj\n"
+				  "<< /Length %u >>\n"
 				  "stream\n",
-				  	obj->number,strlen(stream));
+				  	obj->number, strlen(stream));
 		fprintf(f,stream);  //write(obj->data,1,obj->len,f);
 		fprintf(f,"\nendstream\n"
 				  "endobj\n");
@@ -459,7 +471,7 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		pageobj->number=objcount++;
 		pageobj->byteoffset=ftell(f);
 
-		fprintf(f,"%d 0 obj\n",pageobj->number);
+		fprintf(f,"%ld 0 obj\n",pageobj->number);
 		 //required
 		fprintf(f,"<<\n  /Type /Page\n");
 		fprintf(f,"  /Parent %d 0 R\n",pages);
@@ -467,11 +479,11 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (pageobj->resources) {
 			fprintf(f,"  /Resources <<\n"
 					  "%s",pageobj->resources);  //eg "/XObject << /X0 4 0 R"
-			fprintf(f,"  >>\n"
-		} else 	fprintf(f,"  /Resources << >>\n");
+			fprintf(f,"  >>\n");
+		} else fprintf(f,"  /Resources << >>\n");
 		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-				pageobj->bbox.minx, pageobjs->miny,
-				pageobj->bbox.maxx, pageobjs->maxy);
+				pageobj->bbox.minx, pageobjs->bbox.miny,
+				pageobj->bbox.maxx, pageobjs->bbox.maxy);
 		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
 		//fprintf(f,"  /Rotate %d\n",number of 90 increments to rotate clockwise);
 		fprintf(f,"  /Rotate 0\n");
@@ -508,7 +520,7 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,"<<\n  /Type /Pages\n");
 	fprintf(f,"  /Kids [");
 	while (pageobjs) {
-		fprintf(f,"%d 0 R ",pageobjs->number);
+		fprintf(f,"%ld 0 R ",pageobjs->number);
 		pageobjs=pageobjs->next;
 	}
 	fprintf(f,"]\n");
@@ -537,12 +549,12 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 	 // write out Root doc catalog dict:
 	 // this must be written after Pages and other items' object numbers figured out
-	doccatalog=objcount++;
+	long doccatalog=objcount++;
 	obj->next=new PdfObjData;
 	obj=obj->next;
 	obj->number=doccatalog;
 	obj->byteoffset=ftell(f);
-	fprintf(f,"%d 0 obj\n<<\n",doccatalog);
+	fprintf(f,"%ld 0 obj\n<<\n",doccatalog);
 	 //required fields
 	fprintf(f,"  /Type /Catalog\n");
 	fprintf(f,"  /Version /1.4\n");
@@ -579,13 +591,13 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 	 // write out doc info dict:
 	//infodict=-1;
-	infodict=objcount++;
+	long infodict=objcount++;
 	time_t t=time(NULL);
 	obj->next=new PdfObjData;
 	obj=obj->next;
 	obj->number=infodict;
 	obj->byteoffset=ftell(f);
-	fprintf(f,"%d 0 obj\n<<\n",infodict);
+	fprintf(f,"%ld 1 obj\n<<\n",infodict);
 	fprintf(f,"  /Title (%s)\n",doc->Name(0)); //***warning, does not sanity check the string
 	//fprintf(f,"  /Author (%s)\n",***);
 	//fprintf(f,"  /Subject (%s)\n",***);
@@ -601,9 +613,9 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //write xref table
 	long xrefpos=ftell(f);
 	int count=0;
-	PdfObjData *obj=objs;
-	while (obj) { count++; obj=obj->objs; }
-	fprintf("xref\n%d %d",0,count);
+	obj=objs;
+	while (obj) { count++; obj=obj->next; }
+	fprintf(f,"xref\n%d %d",0,count);
 	obj=objs;
 	while (obj) {
 		fprintf(f,"%010lu %05d %c\n",obj->byteoffset,obj->generation,obj->inuse);
@@ -612,9 +624,9 @@ int PdfOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	
 	 //write trailer dict, startxref, and EOF
-	fprintf(f,"trailer\n<< /Size %d\n",totalobjs);
-	fprintf(f,"    /Root %d 0 R\n", doccatalog);
-	if (infodict>0) fprintf(f,"    /Info %d 0 R\n", infodict);
+	fprintf(f,"trailer\n<< /Size %d\n",count);
+	fprintf(f,"    /Root %ld 0 R\n", doccatalog);
+	if (infodict>0) fprintf(f,"    /Info %ld 0 R\n", infodict);
 	
 	//fprintf(f,"    /Encrypt %d***\n", encryption dict);
 	//fprintf(f,"    /ID %d\n",      2 string id);
