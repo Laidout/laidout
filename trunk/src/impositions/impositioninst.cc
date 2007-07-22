@@ -74,6 +74,7 @@ Singles::Singles() : Imposition("Singles")
 { 
 	insetl=insetr=insett=insetb=0;
 	tilex=tiley=1;
+	pagestyle=NULL;
 
 	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());

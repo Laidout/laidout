@@ -169,11 +169,11 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 			  " # in it, then simply put double quotes around the value. Finally, everything is case sensitive.\n"
 			  "\n\n"
 			  "#----------------- Laidout Project files ------------------\n\n"
-			  " # The basic working file of a Laidout document is a Project file,\n"
-			  " # which references several Document files, or just a Document file itself.\n"
+			  " # The broadest file of a Laidout document is a Project file,\n"
+			  " # which contains 0 or more Document files, plus other resources.\n"
 			  " # For a project, the first line of the file will be (including the '#'):\n\n");
 	fprintf(f,"#Laidout %s Project\n\n",LAIDOUT_VERSION);
-	fprintf(f," # followed by all the project attributes. A single Document will start:\n\n");
+	fprintf(f," # followed by all the project attributes. A stand alone Document file will start:\n\n");
 	fprintf(f,"#Laidout %s Document\n\n",LAIDOUT_VERSION);
 	fprintf(f," # followed by Document attributes. This pattern follows for most fragments of\n"
 			  " # Laidout elements, so for instance, a stand alone Laidout palette file will start:\n");

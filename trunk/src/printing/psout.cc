@@ -59,6 +59,8 @@ using namespace LaxInterfaces;
  *
  * \todo *** could have a psSpreadOut function to do a 1-off of any old spread, optionally
  *   fit to a supplied box
+ * \todo there is way too much code duplication between psout and epsout... should combine the two
+ * \todo should probably isolate the psCtm() related functions to be more useful to filters
  */
 
 
@@ -305,7 +307,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	int layout    =out->layout;
 	if (!filename) filename=out->filename;
 
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) {
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) {
 		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
 		return 1;
 	}
@@ -374,7 +376,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	int landscape=0;
 	int c;
 	if (layout==PAPERLAYOUT) {
-		landscape=((doc->docstyle->imposition->paperstyle->flags&1)?1:0);
+		landscape=((doc->docstyle->imposition->paper->paperstyle->flags&1)?1:0);
 	} 
 	
 	 // initialize outside accessible ctm
@@ -396,18 +398,18 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 			  		ctime(&t),LAIDOUT_VERSION);
 	if (layout==PAPERLAYOUT) {
 		fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
-				doc->docstyle->imposition->paperstyle->name, 
-				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
-				72*doc->docstyle->imposition->paperstyle->height);
+				doc->docstyle->imposition->paper->paperstyle->name, 
+				72*doc->docstyle->imposition->paper->paperstyle->width,  //width and height ignoring landscape/portrait
+				72*doc->docstyle->imposition->paper->paperstyle->height);
 	} else {
 		//PaperStyle *paper=doc->docstyle->imposition->Paper(layout)); 
 		//paper->width
 		//paper->height
 		//paper->dec_count();
 		fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
-				doc->docstyle->imposition->paperstyle->name, 
-				72*doc->docstyle->imposition->paperstyle->width,  //width and height ignoring landscape/portrait
-				72*doc->docstyle->imposition->paperstyle->height);
+				doc->docstyle->imposition->paper->paperstyle->name, 
+				72*doc->docstyle->imposition->paper->paperstyle->width,  //width and height ignoring landscape/portrait
+				72*doc->docstyle->imposition->paper->paperstyle->height);
 		//***this should be specific to layout?
 	}
 	fprintf(f,"%%%%EndComments\n");
@@ -415,7 +417,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 
 	 //---------------------------Defaults
 	fprintf(f,"%%%%BeginDefaults\n"
-			  "%%%%PageMedia: %s\n",doc->docstyle->imposition->paperstyle->name);
+			  "%%%%PageMedia: %s\n",doc->docstyle->imposition->paper->paperstyle->name);
 	fprintf(f,"%%%%EndDefaults\n"
 			  "\n");
 			  
@@ -481,9 +483,9 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
-		if (doc->docstyle->imposition->paperstyle->flags&1) {
-			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
-			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
+		if (doc->docstyle->imposition->paper->paperstyle->flags&1) {
+			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paper->paperstyle->width);
+			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
 		}
 		
 		 // print out printer marks
@@ -496,7 +498,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		
 		 // for each paper in paper layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psDpi(doc->docstyle->imposition->paperstyle->dpi);
+			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
 			
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
@@ -584,7 +586,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	if (!filename) filename=out->tofiles;
 	if (!filename) filename="output#.eps";
 
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paperstyle) {
+	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) {
 		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
 		return 1;
 	}
@@ -682,9 +684,9 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		fprintf(f, "save\n");
 		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
 		psConcat(72.,0.,0.,72.,0.,0.);
-		if (layout==PAPERLAYOUT && doc->docstyle->imposition->paperstyle->flags&1) {
-			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paperstyle->width);
-			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paperstyle->width,0.);
+		if (layout==PAPERLAYOUT && doc->docstyle->imposition->paper->paperstyle->flags&1) {
+			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paper->paperstyle->width);
+			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
 		}
 		
 		 // print out printer marks
@@ -697,7 +699,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		
 		 // for each paper in paper layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psDpi(doc->docstyle->imposition->paperstyle->dpi);
+			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
 			
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;

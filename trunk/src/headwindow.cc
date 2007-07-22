@@ -614,7 +614,8 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		char *error=NULL;
 		for (int c=0; c<s->n; c++) {
 			nw=laidout->numTopWindows();
-			d=laidout->LoadDocument(s->strs[c],&error);
+			d=NULL;
+			if (laidout->Load(s->strs[c],&error)==0) d=laidout->curdoc;
 			if (!d) {
 				if (error) {
 					cout <<"*** imp pop up error message headwindow open document"<<endl;

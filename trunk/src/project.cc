@@ -15,7 +15,10 @@
 //
 
 #include "project.h"
+#include "utils.h"
 #include "version.h"
+#include "headwindow.h"
+#include "laidout.h"
 
 #include <lax/lists.cc>
 
@@ -73,7 +76,10 @@ void Project::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%s# merely referenced, which is usually the more convenient way.\n",spc);
 		fprintf(f,"%s# If merely referenced, the line will look like:\n\n",spc);
 		fprintf(f,"%sDocument blah.doc\n\n",spc);
-		fprintf(f,"%s#and the file, if relative pathname is given, is relative to the project file itself.\n",spc);
+		fprintf(f,"%s#and the file, if relative pathname is given, is relative to the project file itself.\n\n",spc);
+		fprintf(f,"%s#You can specify any number of scratch spaces (limbo) that can be attached to views.\n",spc);
+		fprintf(f,"%slimbo IdOfLimbo\n",spc);
+		fprintf(f,"%s  object ... #each limbo is really just a Group of objects\n\n",spc);
 		fprintf(f,"%s#Moving on, there can be any number of Documents, in the following format:\n\n",spc);
 		fprintf(f,"%sDocument\n",spc);
 		if (docs.n) docs.e[0]->dump_out(f,indent+2,-1);
@@ -82,6 +88,15 @@ void Project::dump_out(FILE *f,int indent,int what)
 			d.dump_out(f,indent+2,-1);
 		}
 		return;
+	}
+	if (limbos.n()) {
+		Group *gg;
+		for (int c=0; c<limbos.n(); c++) {
+			gg=dynamic_cast<Group *>(limbos.e(c));
+			fprintf(f,"%slimbo %s\n",spc,(gg->id?gg->id:""));
+			//fprintf(f,"%s  object %s\n",spc,limbos.e(c)->whattype());
+			limbos.e(c)->dump_out(f,indent+2,0);
+		}
 	}
 	if (docs.n) {
 		for (int c=0; c<docs.n; c++) {
@@ -96,26 +111,80 @@ void Project::dump_out(FILE *f,int indent,int what)
 	//*** dump_out the window configs..
 }
 
-/*! \todo *** imp me!
- */
 void Project::dump_in_atts(LaxFiles::Attribute *att,int flag)
 {
-	cout <<"*** implement dump_in_atts(LaxFiles::Attribute *att,int flag)!!!"<<endl;
+	if (!att) return;
+	char *name,*value;
+	char *error=NULL;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"Document")) {
+			if (att->attributes.e[c]->attributes.n==0) {
+				 // assume file name is value
+				if (isblank(value)) continue;
+				Document *doc=new Document;
+				if (doc->Load(value,&error)) docs.push(doc);
+				else {
+					delete doc;
+					doc=NULL;
+					DBG cerr <<"error loading project:"<<(error?error:"(unknown error)")<<endl;
+				}
+				if (error) delete[] error;
+			} else {
+				 // assume document is embedded
+				Document *doc=new Document;
+				doc->dump_in_atts(att->attributes.e[c],flag);
+				docs.push(doc);
+			}
+		} else if (!strcmp(name,"limbo")) {
+			Group *g=new Group;  //count=1
+			g->dump_in_atts(att->attributes.e[c],flag);
+			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
+			limbos.push(g,0); // incs count
+			g->dec_count();   //remove extra first count
+		}
+	}
+
+	 // search for windows to create after reading in everything else
+	HeadWindow *head;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"window")) {
+			head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
+			if (head) laidout->addwindow(head);
+		}
+	}
 }
 
-/*! Returns 0 for success or nonzero error.
- *
- * \todo ***imp me!
+/*! \todo imp me...
  */
-int Project::Load(const char *file)
+int Project::clear()
 {
-	cout <<"*** implement Project::Load(const char *file)!!!"<<endl;
-	return 1;
+	cerr << " *** must implement Project::clear()"<<endl;
+	return 0;
+
 }
 
 /*! Returns 0 for success or nonzero error.
  */
-int Project::Save()
+int Project::Load(const char *file,char **error_ret)
+{
+	FILE *f=open_file_to_read(file,"Project",error_ret);
+	if (!f) return 1;
+	
+	clear();
+	makestr(filename,file);
+	dump_in(f,0,0,NULL);
+	if (!name) makestr(name,filename);
+	fclose(f);
+	return 0;
+}
+
+/*! Returns 0 for success or nonzero error.
+ */
+int Project::Save(char **error_ret)
 {
 	if (!filename || !strcmp(filename,"")) {
 		DBG cerr <<"**** cannot save, filename is null."<<endl;

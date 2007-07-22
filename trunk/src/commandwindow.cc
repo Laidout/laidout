@@ -110,7 +110,8 @@ char *CommandWindow::process(const char *in)
 				if (laidout->findDocument(in)) return newstr(_("That document is already loaded."));
 				int n=laidout->numTopWindows();
 				char *error=NULL;
-				Document *doc=laidout->LoadDocument(in,&error);
+				Document *doc=NULL;
+				if (laidout->Load(in,&error)>=0) doc=laidout->curdoc;
 				if (!doc) {
 					prependstr(error,_("Errors loading.\n"));
 					appendstr(error,_("Not loaded."));
