@@ -17,10 +17,11 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-
+#include <cstdio>
 
 int laidout_file_type(const char *file, char *minversion, char *maxversion, char *typ);
 int laidout_version_check(const char *version, const char *minversion, const char *maxversion);
+FILE *open_file_to_read(const char *file,const char *what,char **error_ret);
 
 
 #endif

@@ -13,7 +13,7 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/****************** group.cc ********************/
+
 
 #include "laidout.h"
 #include "group.h"
@@ -202,7 +202,9 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	for (int c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"locked")) {
+		if (!strcmp(name,"id")) {
+			makestr(id,value);
+		} else if (!strcmp(name,"locked")) {
 			locked=BooleanAttribute(value);
 		} else if (!strcmp(name,"visible")) {
 			visible=BooleanAttribute(value);
@@ -240,6 +242,7 @@ void Group::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
+		fprintf(f,"%sid      #the name of a group. There can be no whitespace in the id\n",spc);
 		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
 		fprintf(f,"%svisible #no indicates that this group cannot be seen on screen nor printed out\n",spc);
 		fprintf(f,"%sprints  #no indicates that this group can be seen on screen, but cannot be printed\n",spc);
@@ -269,6 +272,7 @@ void Group::dump_out(FILE *f,int indent,int what)
 		}
 		return;
 	}
+	if (id) fprintf(f,"%sid %s\n",spc,id);
 	if (locked) fprintf(f,"%slocked\n",spc);
 	if (visible) fprintf(f,"%svisible\n",spc);
 	if (prints) fprintf(f,"%sprints\n",spc);

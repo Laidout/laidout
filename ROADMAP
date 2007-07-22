@@ -7,11 +7,12 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.08
 ------------
-       Finish implementing project based setup, especially when loading and saving
-       Soup up the color box so one can recall previous colors
-       Fix multi-object selection move when crossing page boundaries
-       In image properties dialog, have the popup list of potential previews
-       double click on group should change selection area to group contents?
+(done, sort of) Finish implementing project based setup, especially when loading and saving
+(done) limbos should be selectable, and saved independently of windows
+       Paper tiler interface
+       Clean up patch controls
+       Fix linear/radial gradient editing when object is sheared
+       Tools should remember their settings, dialogs should remember their placements
 (done) Standardize the import/export mechanism
        PDF out
 (done) svg out
@@ -19,13 +20,13 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-       Tools should remember their settings, dialogs should remember their placements
        libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
        NetImposition needs import/export net and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
-       Paper tiler interface
-       Clean up patch controls
-       Fix linear/radial gradient editing when object is sheared
+       Fix multi-object selection move when crossing page boundaries
+       In image properties dialog, have the popup list of potential previews
+       double click on group should change selection area to group contents?
+       Soup up the color box so one can recall previous colors
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -116,7 +117,7 @@ layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango?
 ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
-Would be nice to be able to handle metapost sort of things
+Would be nice to be able to handle metapost/metafun sort of things
 Would be nice to be able to handle lilypond sort of things
 Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from/to xcf
 Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?

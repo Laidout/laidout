@@ -22,6 +22,7 @@ dirs= \
 	printing 
 
 objs= \
+	utils.o \
 	styles.o \
 	stylemanager.o \
 	papersizes.o \

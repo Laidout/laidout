@@ -312,8 +312,13 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	searchmode=Search_None;
 	searchcriteria=Search_Any;
 	
-	//**** this should get added to laidout app:
-	limbo=new Group;//****group with 1 count
+	 //**** there's probably a better way to do this:
+	limbo=NULL;
+	//limbo=new Group;//group with 1 count
+	//char txt[30];
+	//sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
+	//makestr(limbo->id,txt);
+	//laidout->project->limbos.push(limbo,0);//adds 1 count
 	
 	
 	viewmode=-1;
@@ -327,6 +332,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 		newdoc->docstyle->imposition->GoodWorkspaceSize(&bb);
 		dp->SetSpace(bb.minx,bb.maxx,bb.miny,bb.maxy);
 		//Center(); //this doesn't do anything because dp->Minx,Maxx... are 0
+	} else {
+		dp->SetSpace(-8.5,17,-11,22);
 	}
 }
 
@@ -349,23 +356,21 @@ int LaidoutViewport::event(XEvent *e)
 				e->xfocus.detail==NotifyAncestor ||
 				e->xfocus.detail==NotifyNonlinear) {
 			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
-			if (viewer) viewer->SetParentTitle(doc->Name(1));
+			if (viewer) viewer->SetParentTitle(doc&&doc->Name(1)?doc->Name(1):_("(no doc)"));
 		}
 	}
 	return ViewportWindow::event(e);
 }
 
-//! Replace existing doc with this doc.
-/*! Return 0 for success, nonzero error.
+//! Replace existing doc with this doc. NULL is ok.
+/*! Return 0 for success or doc already that one, or nonzero error or not changed.
  *
  * If new==old, then do nothing and return 0.
  */
 int LaidoutViewport::UseThisDoc(Document *ndoc)
 {
-	if (!ndoc) return 1;
 	if (doc==ndoc) return 0;
-	ClearSearch();
-	clearCurobj();
+
 	curpage=NULL;
 
 	doc=ndoc;
@@ -374,6 +379,8 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 		viewer->doc=doc;
 	}
 	setupthings();
+	ClearSearch();
+	clearCurobj();
 	Center(1);
 	needtodraw=1;
 	return 0;
@@ -439,8 +446,28 @@ double LaidoutViewport::GetVMag(int x,int y)
 int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
 	if (!strcmp(mes,"rulercornermenu")) {
-		if (e->data.l[0]>=0 && e->data.l[0]<laidout->project->docs.n) 
-			UseThisDoc(laidout->project->docs.e[e->data.l[0]]);
+		int i=e->data.l[1];
+		if (i>=0 && i<laidout->project->docs.n) {
+			UseThisDoc(laidout->project->docs.e[i]);
+			return 0;
+		}
+		if (i==laidout->project->docs.n) {
+			UseThisDoc(NULL);
+			return 0;
+		}
+		i-=1000;
+		if (i>=0 && i<laidout->project->limbos.n()) {
+			if (limbo==laidout->project->limbos.e(i)) return 0;
+			for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
+			clearCurobj();
+			limbo->dec_count();
+			limbo=dynamic_cast<Group *>(laidout->project->limbos.e(i));
+			limbo->inc_count();
+			needtodraw=1;
+			return 0;
+		}
+		i-=1000;
+		//**** change zones? other menu?
 		return 0;
 	}
 	return ViewportWindow::ClientEvent(e,mes);
@@ -602,7 +629,7 @@ const char *LaidoutViewport::Pageviewlabel()
 	if (viewmode==SINGLELAYOUT) {
 		makestr(pageviewlabel,_("Page: "));
 	} else { // figure out like "Spread [2-4]: "
-		if (spread) { 
+		if (spread && doc) { 
 			char *desc=spread->pagesFromSpreadDesc(doc);
 			
 			makestr(pageviewlabel,"Pgs [");
@@ -801,7 +828,7 @@ int LaidoutViewport::DeleteObject()
 		limbo->remove(curobj.limboi());
 	} else { // is somewhere in document
 		Group *g=curpage->e(curobj.layer());
-		g->remove(g->findindex(d));
+		if (g) g->remove(g->findindex(d));
 		//***g->findandremove(d,curobj.context,4); //removes at offset 4 in context
 		//*** when deleting a group, deleting one might make the other objs out
 		//of whack, have to either modify their context or do fresh search for them..
@@ -1464,7 +1491,7 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 void LaidoutViewport::clearCurobj()
 {
 	if (curobj.obj) curobj.obj->dec_count();
-	if (curobj.spread()==0) { // is limbo
+	if (!doc || curobj.spread()==0) { // is limbo
 		curobj.set(NULL,1, 0);
 		return;
 	}
@@ -1676,21 +1703,25 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	// 
 	//search for some page for the object to be in
 	double m[6],mm[6];
-	for (c=0; c<spread->pagestack.n; c++) {
-		if (c==i) continue; // don't check same page twice
-		 //*** this is rather poor, but fast and good enough for now:
-		outline=spread->pagestack.e[c]->outline;
-		bbox.clear();
-		bbox.addtobounds(outline->m(),outline);
-		transformToContext(m,curobj.context,0);
-		transform_mult(mm,curobj.obj->m(),m);
-		bbox2.clear();
-		bbox2.addtobounds(mm,curobj.obj);
-		if (bbox.intersect(&bbox2)) break; //found one
+	c=-1;
+	if (spread) {
+		for (c=0; c<spread->pagestack.n; c++) {
+			if (c==i) continue; // don't check same page twice
+			 //*** this is rather poor, but fast and good enough for now:
+			outline=spread->pagestack.e[c]->outline;
+			bbox.clear();
+			bbox.addtobounds(outline->m(),outline);
+			transformToContext(m,curobj.context,0);
+			transform_mult(mm,curobj.obj->m(),m);
+			bbox2.clear();
+			bbox2.addtobounds(mm,curobj.obj);
+			if (bbox.intersect(&bbox2)) break; //found one
+		}
+		if (c==spread->pagestack.n) c=-1;
 	}
 	Page *topage=NULL;
 	int tosp=-1;
-	if (c==spread->pagestack.n) { // new page not found, obj is to go to limob
+	if (c==-1) { // new page not found, obj is to go to limob
 		if (curobj.spread()==0) {
 			DBG cerr <<"  already in limbo"<<endl;
 			return 0; //already in limbo
@@ -1809,6 +1840,14 @@ int LaidoutViewport::init()
 {
 	XSetWindowBackground(app->dpy,window,~0);
 	
+	if (!limbo) {
+		limbo=new Group;//group with 1 count
+		char txt[30];
+		sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
+		makestr(limbo->id,txt);
+		laidout->project->limbos.push(limbo,0);//adds 1 count
+	}
+	
 	return 0;
 }
 
@@ -1861,11 +1900,6 @@ void LaidoutViewport::Refresh()
 	 // draw the scratchboard, just blank out screen..
 	if (!backbuffer) XClearWindow(app->dpy,window);// *** clearwindow(backbuffer) does screwy things!!
 
-	if (!doc || !doc->docstyle) {
-		DBG cerr <<"=====done refreshing, no doc or doc->docstyle"<<endl;
-		return;
-	}
-	
 	dp->StartDrawing(this,backbuffer);
 	if (drawflags&DRAW_AXES) dp->drawaxes();
 	int c,c2;
@@ -2404,7 +2438,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform between screen and real space\n",spc);
 		fprintf(f,"%sxbounds -20 20      #what distance a horizontal scrollbar represents\n",spc);
 		fprintf(f,"%sybounds -20 20      #what distance a vertical scrollbar represents\n",spc);
-		fprintf(f,"%slimbo               #limbo objects, if any\n",spc);
+		fprintf(f,"%slimbo name          #limbo name, or subattributes with objects (optional)\n",spc);
 		return;
 	}
 	if (doc && doc->saveas) fprintf(f,"%sdocument %s\n",spc,doc->saveas);
@@ -2426,7 +2460,19 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 	viewport->dp->GetSpace(&x1,&x2,&y1,&y2);
 	fprintf(f,"%sxbounds %.10g %.10g\n",spc,x1,x2); 
 	fprintf(f,"%sybounds %.10g %.10g\n",spc,y1,y2); 
-	if (vp->limbo->n()) {
+
+	 //dump out limbo
+	int c;
+	Group *g;
+	for (c=0; c<laidout->project->limbos.n(); c++) {
+		if (laidout->project->limbos.e(c)==((LaidoutViewport *)viewport)->limbo) {
+			g=dynamic_cast<Group *>(laidout->project->limbos.e(c));
+			if (!isblank(g->id)) fprintf(f,"%slimbo %s",spc,g->id);
+			else fprintf(f,"%slimbo Limbo%d",spc,c);
+			break;
+		}
+	} 
+	if (c==laidout->project->limbos.n() && vp->limbo->n()) {
 		fprintf(f,"%slimbo\n",spc); 
 		for (int c=0; c<vp->limbo->n(); c++) {
 			fprintf(f,"%s  object %d %s\n",spc,c,vp->limbo->e(c)->whattype());
@@ -2469,6 +2515,17 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 		} else if (!strcmp(name,"document")) {
 			doc=laidout->findDocument(value);
 		} else if (!strcmp(name,"limbo")) {
+			LaidoutViewport *vp=(LaidoutViewport *)viewport;
+			Group *g;
+			for (int c2=0; c2<laidout->project->limbos.n(); c2++) {
+				g=dynamic_cast<Group *>(laidout->project->limbos.e(c2));
+				if (!isblank(value) && !isblank(g->id) && !strcmp(value,g->id)) {
+					if (vp->limbo) vp->limbo->dec_count();
+					vp->limbo=g;
+					vp->limbo->inc_count();
+					break;
+				}
+			} 
 			((LaidoutViewport *)viewport)->limbo->dump_in_atts(att->attributes.e[c],0);
 		}
 	}
@@ -2862,7 +2919,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (doc && doc->Saveas(s->str)) SetParentTitle(doc->Name(1));
 		
 		char *error=NULL;
-		if (doc->Save(1,&error)==0) {
+		if (doc->Save(1,1,&error)==0) {
 			char blah[strlen(doc->Saveas())+15];
 			sprintf(blah,_("Saved to %s."),doc->Saveas());
 			PostMessage(blah);
@@ -2940,7 +2997,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					}
 					
 					char *error;
-					if (doc->Save(1,&error)==0) {
+					if (doc->Save(1,1,&error)==0) {
 						char blah[strlen(doc->Saveas())+15];
 						sprintf(blah,_("Saved to %s."),doc->Saveas());
 						PostMessage(blah);
@@ -3116,7 +3173,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		mesbar->SetText(blah);
 		return 0;
 	} else if (!strcmp(mes,"rulercornerbutton")) {
-		 //pop up a list of available documents
+		 //pop up a list of available documents and limbos
 		 //*** in future, this will be more full featured, with:
 		 //Doc1
 		 //Doc2
@@ -3129,7 +3186,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //zone2
 
 		MenuInfo *menu;
-		menu=new MenuInfo("Documents");
+		menu=new MenuInfo("Viewer");
+
+		 //add document list
 		int c;
 		for (c=0; c<laidout->project->docs.n; c++) {
 			menu->AddItem(laidout->project->docs.e[c]->Name(1),c); 
@@ -3141,6 +3200,27 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		menu->AddItem(_("None"),c);
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
+
+		 //add limbo list
+		char txt[20];
+		Group *g;
+		int where;
+		if (laidout->project->limbos.n()) {
+			menu->AddSep();
+			for (c=0; c<laidout->project->limbos.n(); c++) {
+				g=dynamic_cast<Group *>(laidout->project->limbos.e(c));
+				if (!isblank(g->id)) where=menu->AddItem(g->id,1000+c)-1; 
+				else {
+					sprintf(txt,_("(Limbo %d)"),c);
+					where=menu->AddItem(txt,1000+c)-1;
+				}
+				menu->menuitems.e[where]->state|=LAX_ISTOGGLE;
+				if (g==((LaidoutViewport *)viewport)->limbo) {
+					menu->menuitems.e[where]->state|=LAX_CHECKED;
+				}
+			}
+		}
+
 		MenuSelector *popup;
 		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
@@ -3330,7 +3410,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 						doc->Saveas()));
 		} else {
 			char *error=NULL;
-			if (doc->Save(1,&error)==0) {
+			if (doc->Save(1,1,&error)==0) {
 				char blah[strlen(doc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",doc->Saveas());
 				PostMessage(blah);
@@ -3419,7 +3499,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 //						0,0,5,5,3,3));
 		} else {
 			char *error=NULL;
-			if (doc->Save(1,&error)==0) {
+			if (doc->Save(1,1,&error)==0) {
 				char blah[strlen(doc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",doc->Saveas());
 				PostMessage(blah);

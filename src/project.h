@@ -25,6 +25,7 @@ class Project : public LaxFiles::DumpUtility
  public:
 	char *name,*filename;
 	Laxkit::PtrStack<Document> docs;
+	Group limbos;
 	
 	//StyleManager styles;
 	//Page scratchboard;
@@ -35,8 +36,9 @@ class Project : public LaxFiles::DumpUtility
 
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
-	virtual int Load(const char *file);
-	virtual int Save();
+	virtual int Load(const char *file,char **error_ret);
+	virtual int Save(char **error_ret);
+	virtual int clear();
 };
 
 #endif

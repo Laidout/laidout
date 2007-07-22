@@ -109,7 +109,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 	virtual int Load(const char *file,char **error_ret);
-	virtual int Save(int includewindows,char **error_ret);
+	virtual int Save(int includelimbos,int includewindows,char **error_ret);
 	
 	virtual Spread *GetLayout(int type, int index);
 	

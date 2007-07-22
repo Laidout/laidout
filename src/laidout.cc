@@ -42,6 +42,7 @@
 #include "configured.h"
 #include "printing/epsutils.h"
 #include "filetypes/filters.h"
+#include "utils.h"
 #include <lax/lists.cc>
 
 #include <sys/stat.h>
@@ -735,7 +736,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 
 
-	// load in any docs after the args
+	 // options are now basically parsed, must handle any resulting commands like export
 	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
 	DBG cerr <<"*** read in these files:"<<endl;
 	DBG for (c=optind; c<argc; c++) 
@@ -763,7 +764,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		char *error=NULL;
 		 
 		 //load in document to pass with config
-		Document *doc=LoadDocument(filename,&error);
+		Document *doc=NULL;
+		if (Load(filename,&error)==0) doc=curdoc;
 		if (error) {
 			if (!doc) {
 				cout << _("Fatal errors loading document:") << endl 
@@ -791,13 +793,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		exit(0);
 	}
 
+	 // load in any projects or documents after the args
 	Document *doc;
 	index=topwindows.n;
 	if (!project) project=new Project;
 	for (c=optind; c<argc; c++) {
 		DBG cerr <<"----Read in:  "<<argv[c]<<endl;
-		doc=LoadDocument(argv[c],NULL);
-		if (doc && topwindows.n==index) addwindow(newHeadWindow(doc));
+		doc=NULL;
+		if (Load(argv[c],NULL)==0) doc=curdoc;
+		if (topwindows.n==index) {
+			if (!doc && project->docs.n) doc=project->docs.e[0];
+			if (doc) addwindow(newHeadWindow(doc));
+		}
 	}
 	
 	DBG cerr <<"---------end options"<<endl;
@@ -895,7 +902,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,char *dir)//dir=NULL
 //{
 //}
 	
-//! Similar to LoadDocument(), but remove the saveas, so as to force a rename.
+//! Similar to Load(), but only for Document, not Project, and forces a rename.
 /*! If a doc with the same filename is already loaded, it is ignored. Templates will only
  * be created from files straight from disk.
  *
@@ -925,14 +932,18 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 	return doc;
 }
 
-//! Load a document from filename, putting in project, make it curdoc and return on successful load.
-/*! If a doc with the same filename is already loaded, then make that curdoc, and return it.
+//! Load a project or document from filename, make it curdoc and return on successful load.
+/*! If a doc with the same filename is already loaded, then make that curdoc.
  *
  * If there are fatal errors, then an error message is returned in error_ret, and NULL is returned.
- * Sometimes there are merely warnings, in which case those are returned it error_ret, but
- * a Document object is returned.
+ * Sometimes there are merely warnings, in which case those are returned in error_ret, but
+ * the document or project is still loaded.
+ *
+ * Returns 0 for document loaded or document already loaded,
+ * 1 for project loaded, or a negative number for fatal error
+ * encountered.
  */
-Document *LaidoutApp::LoadDocument(const char *filename, char **error_ret)
+int LaidoutApp::Load(const char *filename, char **error_ret)
 {
 	if (!strncmp(filename,"file://",7)) filename+=7;
 	char *fullname=newstr(filename);
@@ -940,9 +951,22 @@ Document *LaidoutApp::LoadDocument(const char *filename, char **error_ret)
 	Document *doc=findDocument(fullname);
 	if (doc) {
 		delete[] fullname;
-		return curdoc=doc;
+		curdoc=doc;
+		return 0;
 	}
 		
+	FILE *f=open_file_to_read(fullname,"Project",error_ret);
+	if (f) {
+		fclose(f);
+		if (project) project->clear();
+		if (project->Load(fullname,error_ret)==0) {
+			delete[] fullname;
+			return 1;
+		} 
+		delete[] fullname;
+		return -1;
+	}
+
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
 	project->docs.push(doc); //important: this must be before doc->Load()
@@ -953,8 +977,8 @@ Document *LaidoutApp::LoadDocument(const char *filename, char **error_ret)
 		doc=NULL;
 	}
 	delete[] fullname;
-	if (doc) curdoc=doc;
-	return doc;
+	if (doc) { curdoc=doc; return 0; }
+	return -1;
 }
 
 //! Create a new document from spec and call up a new ViewWindow.

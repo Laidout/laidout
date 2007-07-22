@@ -104,7 +104,7 @@ class LaidoutApp : public Laxkit::anXApp
 	int numTopWindows() { return topwindows.n; }
 
 	Document *findDocument(const char *saveas);
-	Document *LoadDocument(const char *filename, char **error_ret);
+	int Load(const char *filename, char **error_ret);
 	Document *LoadTemplate(const char *filename);
 	int NewDocument(DocumentStyle *docinfo, const char *filename);
 	int NewDocument(const char *spec);

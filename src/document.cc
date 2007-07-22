@@ -24,6 +24,7 @@
 #include <lax/fileutils.h>
 #include "laidout.h"
 #include "headwindow.h"
+#include "utils.h"
 #include "language.h"
 
 
@@ -651,12 +652,13 @@ int Document::RemovePages(int start,int n)
 
 	
 //! Return 0 if saved, return nonzero if not saved.
-/*! 
+/*! Save as document file. 
+ *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
  * \todo implement error message return
  */
-int Document::Save(int includewindows,char **error_ret)
+int Document::Save(int includelimbos,int includewindows,char **error_ret)
 {
 	if (error_ret) *error_ret=NULL;
 	FILE *f=NULL;
@@ -677,6 +679,16 @@ int Document::Save(int includewindows,char **error_ret)
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
 	dump_out(f,0,0);
+	Group *g,*gg;
+	if (includelimbos) {
+		g=&laidout->project->limbos;
+		for (int c=0; c<g->n(); c++) {
+			gg=dynamic_cast<Group *>(g->e(c));
+			fprintf(f,"limbo %s\n",(gg->id?gg->id:""));
+			//fprintf(f,"%s  object %s\n",spc,limbos.e(c)->whattype());
+			gg->dump_out(f,2,0);
+		}
+	}
 	if (includewindows) laidout->DumpWindows(f,0,this);
 	
 	fclose(f);
@@ -704,53 +716,8 @@ int Document::Load(const char *file,char **error_ret)
 	//*** need to create a new DocumentStyle from what's in the file..
 	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
-	if (error_ret) *error_ret=NULL;
-	if (file_exists(file,1,NULL)!=S_IFREG) {
-		if (error_ret) {
-			*error_ret=new char[strlen(file)+60];//****this 60 is likely to cause problems!!
-			sprintf(*error_ret, _("%s does not appear to be a Laidout Document file."), file);
-		}
-		return 0;
-	}
-	
-	FILE *f=fopen(file,"r");
-
-	if (!f) {
-		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
-
-		if (error_ret) {
-			*error_ret=new char[strlen(file)+50];//****this 50 fudge is likely to cause problems!!
-			sprintf(*error_ret, _("%s cannot be opened for reading."), file);
-		}
-		return 0;
-	}
-	
-
-	//*** make sure it is a laidout document!! this procedure should be extracted to be a more useful general purpose tool
-	char first100[100];
-	int n=fread(first100,1,100,f);
-	first100[n-1]='\0';
-	int err=1;
-	if (!strncmp(first100,"#Laidout ",9)) {
-		char *version=first100+9;
-		int c=9,c2=0,c3;
-		while (c<n && isspace(*version) && *version!='\n') { version++; c++; }
-		while (c<n && !isspace(version[c2])) { c2++; c++; }
-		 //now the laidout version of the file is in version[0..c2)
-		c3=c2;
-		while (c<n && isspace(version[c3])) { c3++; c++; }
-		if (!strncmp(version+c3,"Document",8) && isspace(version[c3+8])) err=0;
-	}
-	if (err) {
-		if (error_ret) {
-			*error_ret=new char[strlen(file)+60];//****this 60 is likely to cause problems!!
-			sprintf(*error_ret, _("%s does not appear to be a Laidout Document file."), file);
-		}
-		fclose(f);
-		return 0;
-	}
-	rewind(f);
-
+	FILE *f=open_file_to_read(file,"Document",error_ret);
+	if (!f) return 0;
 	
 	clear();
 	dump_in(f,0,0,NULL);
@@ -853,6 +820,12 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c],flag);
 			pages.push(page,1);
+		} else if (!strcmp(nme,"limbo")) {
+			Group *g=new Group;  //count=1
+			g->dump_in_atts(att->attributes.e[c],flag);
+			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
+			laidout->project->limbos.push(g,0); // incs count
+			g->dec_count();   //remove extra first count
 		}
 	}
 	
