@@ -37,7 +37,7 @@ using namespace LaxInterfaces;
 
 
 
-static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char **error_ret,int &warning);
 
 
 #define CANVAS_MARGIN_X 100.
@@ -139,7 +139,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	int warning=0;
 	Spread *spread;
 	Group *g;
-	double m[6];
+	double m[6],spready;
 	//int c;
 	int c,c2,l,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
@@ -331,13 +331,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			 // for each layer on the page..
 			psPushCtm();
 			transform_copy(m,spread->pagestack.e[c2]->outline->m());
+			spready=spread->path->maxy*72;//****
 			psConcat(m);
 			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 				 // for each object in layer
 				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 				for (c3=0; c3<g->n(); c3++) {
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					scribusdumpobj(f,m,g->e(c3),error_ret,warning);
+					scribusdumpobj(f,spready,m,g->e(c3),error_ret,warning);
 				}
 			}
 			psPopCtm();
@@ -363,7 +364,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
+static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
 	//***possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
@@ -376,6 +377,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	GradientData *grad=NULL;
 	int numpo=0;
 	flatpoint *pocoor;
+	double localscx=1,localscy=1;
 	int ptype=-1; //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 
 	if (!strcmp(obj->whattype(),"ImageData")) {
@@ -401,7 +403,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,NULL,g->e(c),error_ret,warning);
+			scribusdumpobj(f,spready,NULL,g->e(c),error_ret,warning);
 		groups.pop();
 		psPopCtm();
 		return;
@@ -430,10 +432,19 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	p2=pocoor[2];
 	rot=-atan2(p2.y-p1.y, p2.x-p1.x)/M_PI*180;
 	x=p.x+CANVAS_MARGIN_X;
-	y=p.y+CANVAS_MARGIN_Y;
-	//x=y=0;
+	y=spready-(p.y+CANVAS_MARGIN_Y);
+	//y=p.y+CANVAS_MARGIN_Y;
 	width=norm(pocoor[2]-pocoor[1]);
 	height=norm(pocoor[6]-pocoor[2]);
+	for (int c=0; c<16; c++) {
+		pocoor[c]-=p;
+		//pocoor[c].y=spready-pocoor[c].y;
+	}
+	if (ptype==2) {
+		localscx=norm(pocoor[2]-pocoor[1])/(img->maxx-img->minx);
+		localscy=norm(pocoor[6]-pocoor[2])/(img->maxy-img->miny);
+	}
+
 
 	fprintf(f,"  <PAGEOBJECT \n"
 			  "    ANNOTATION=\"0\" \n"   //1 if is pdf annotation
@@ -441,13 +452,13 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			  "    PFILE2=\"\" \n"          //(opt) file for pressed image in pdf button
 			  "    PFILE3=\"\" \n"          //(opt) file for rollover image in pdf button
 
-			  //"    CLIPEDIT=\"1\" \n"    //1 if shape was editted (opt)
-			  "    doOverprint=\"0\" \n"   //not 1.2
+			  //"    CLIPEDIT=\"1\" \n"     //1 if shape was editted (opt)
+			  "    doOverprint=\"0\" \n"    //not 1.2
 			  "    fillRule=\"1\" \n"       //not 1.2
-			  "    gHeight=\"551\" \n"      //not 1.2
-			  "    gWidth=\"324\" \n"       //not 1.2
-			  "    gXpos=\"74\" \n"         //not 1.2
-			  "    gYpos=\"268\" \n"        //not 1.2
+			  "    gHeight=\"0\" \n"        //not 1.2
+			  "    gWidth=\"0\" \n"         //not 1.2
+			  "    gXpos=\"0\" \n"          //not 1.2
+			  "    gYpos=\"0\" \n"          //not 1.2
 			  "    isGroupControl=\"0\" \n" //not 1.2
 			  "    isInline=\"0\" \n"       //not 1.2
 			  "    OnMasterPage=\"\" \n"    //not 1.2
@@ -534,12 +545,12 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			  "    ImageRes=\"1\" \n"       //not 1.2 ??????
 			  "    SCALETYPE=\"1\" \n"      //(opt) how image can scale,0=free, 1=bound to frame
 			  "    PICART=\"1\" \n"         //1 if image should be shown
-			  "    LOCALSCX=\"1\" \n"       //image scaling in x direction
-			  "    LOCALSCY=\"1\" \n"       //image scaling in y direction
 			  "    LOCALX=\"0\" \n"         //xpos of image in frame
-			  "    LOCALY=\"0\" \n"         //ypos of image in frame
+			  "    LOCALY=\"0\" \n");       //ypos of image in frame
+	fprintf(f,"    LOCALSCX=\"%f\" \n"      //image scaling in x direction
+			  "    LOCALSCY=\"%f\" \n"      //image scaling in y direction
 			  "    PFILE=\"%s\" \n",	    //file of image
-			ptype==2?img->filename:"");
+			localscx,localscy,ptype==2?img->filename:"");
 
 		//-------------general object tags:
 	 // fix ptype to be more accurate
@@ -553,8 +564,10 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	fprintf(f,"    POCOOR=\"");
 	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
 	fprintf(f,"\" \n"
-			  "    NUMCO=\"0\" \n"        //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt)
-			  "    COCOOR=\"\" \n"
+			  "    NUMCO=\"%d\" \n",numpo); //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt
+	fprintf(f,"    COCOOR=\"");
+	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
+	fprintf(f,"\" \n"
 			  "    NUMGROUP=\"%d\" \n",groups.n);       //number of entries in GROUPS
 	fprintf(f,"    GROUPS=\"");             //List of group identifiers
 	for (int c=0; c<groups.n; c++) 
