@@ -1506,6 +1506,8 @@ int LaidoutViewport::LBDown(int x,int y,unsigned int state,int count)
 {
 	if (viewportmode==VIEW_GRAB_COLOR) {
 		buttondown|=LEFTBUTTON;
+		mx=x; my=y;
+		MouseMove(x,y,state);
 		return 0;
 	}
 	return ViewportWindow::LBDown(x,y,state,count);
