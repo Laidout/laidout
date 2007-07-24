@@ -146,7 +146,6 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			fprintf(f,"%s   clip-path=\"url(#colorPatchMask%ld)\" filter=\"url(#patchBlur%ld)\">\n", 
 						spc, patch->object_id, patch->object_id);
 
-			 //for each subpatch, break down into many sub-rectangles
 			int c,r, cc,rr;
 			int numdiv=5;
 			flatpoint p[4];
@@ -155,6 +154,34 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			ds=1./(patch->xsize/3)/numdiv;
 			dt=1./(patch->ysize/3)/numdiv;
 			double fudge=1.05; //so there are no transparent boundaries between the divided up rects
+
+//********needs work:
+//			 //create border colors so as to not have transparent outer edge sections
+//			int np=patch->bezOfPatch(NULL,0,0,0,0);
+//			flatpoint pe[np],po[np],
+//					  pcenter=patch->getPoint(.5,.5);
+//			patch->bezOfPatch(pe,0,0,0,0);
+//			for (c=1; c<np; c+=3) po[c]=pcenter+1.333*(pe[c]-pcenter);
+//			for (c=1; c<np-3; c+=3) {
+//				if (c<patch->xsize) patch->getColor((double)c/patch->xsize,0.,&color);
+//				else if (c>np-patch->ysize) patch->getColor(0.,(double)(np-c)/patch->ysize,&color);
+//				else if (c<np/2) patch->getColor(1.,(double)(c-patch->xsize)/patch->ysize,&color);
+//				else patch->getColor(1.-(double)(c-(patch->xsize+patch->ysize))/patch->xsize,1.,&color);
+//
+//			  	fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
+//						  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",	spc,
+//						    pe[c  ].x,pe[c  ].y,
+//			  				pe[c+3].x,pe[c+3].y,
+//			  				po[c+3].x,po[c+3].y,
+//			  				po[c  ].x,po[c  ].y,
+//			  				color.red>>8, color.green>>8, color.blue>>8,
+//							color.alpha/65535.);
+//			}
+			
+
+			
+			
+			 //for each subpatch, break down into many sub-rectangles
 			for (r=0; r<patch->ysize/3; r++) {
 			  for (c=0; c<patch->xsize/3; c++) {
 			    for (rr=0; rr<numdiv; rr++) {
