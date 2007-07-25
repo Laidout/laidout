@@ -323,7 +323,10 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	if (start<0) start=0;
 	else if (start>doc->docstyle->imposition->NumSpreads(layout))
 		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	//***spread=doc->docstyle->imposition->Layout(layout,start);
+	if (end<start) end=start;
+	else if (end>doc->docstyle->imposition->NumSpreads(layout))
+		end=doc->docstyle->imposition->NumSpreads(layout)-1;
+
 	
 	int warning=0;
 	Spread *spread=NULL;
@@ -337,7 +340,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	psFlushCtms();
 
 	 // a fresh PDF is:
-	 //   header: %!PDF-1.4
+	 //   header: %PDF-1.4
 	 //   body: a list of indirect objects
 	 //   cross reference table
 	 //   trailer
@@ -355,9 +358,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	int objcount=1;
 	
 	 // print out header
-	if (pdf_version==4) fprintf (f,"%%!PDF-1.4\n");
-	else fprintf (f,"%%!PDF-1.3\n");
-	fprintf(f,"%%%04x\n",0xffff); //binary file indicator
+	if (pdf_version==4) fprintf (f,"%%PDF-1.4\n");
+	else fprintf (f,"%%PDF-1.3\n");
+	fprintf(f,"%%\xff\xff\n"); //binary file indicator
 
 	
 	 //figure out paper size
@@ -369,8 +372,10 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 // find basic pdf page info, and generate content streams
 	int pages;
 	int pgindex;
-	PdfPageInfo *pageobj,*pageobjs,*pageobjsstart;
-	PdfPageInfo *pg;
+	PdfPageInfo *pageobj=NULL,
+				*pageobjs=NULL,
+				*pageobjsstart=NULL,
+				*pg=NULL;
 	double m[6];
 	Page *page;
 	char *stream=NULL;
@@ -438,9 +443,10 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 		delete spread;
 
-		 // dumpobj will have output objects relevant to the stream. Now dump out this
+		 // pdfdumpobj() outputs objects relevant to the stream. Now dump out this
 		 // page's content stream to an object:
-		obj=new PdfObjData;
+		obj->next=new PdfObjData;
+		obj=obj->next;
 		obj->number=objcount++;
 		obj->byteoffset=ftell(f);
 		fprintf(f,"%ld 0 obj\n"
@@ -463,10 +469,11 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	
 	
-	 // write out pdf /Page dicts, which do not have their object number yet
+	 // write out pdf /Page dicts, which do not have their object number or offsets yet
 	pages=objcount + end-start+1;
 	pageobj=pageobjsstart;
 	obj->next=pageobj;
+	obj=obj->next;
 	for (int c=start; c<=end; c++) {
 		pageobj->number=objcount++;
 		pageobj->byteoffset=ftell(f);
@@ -482,8 +489,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			fprintf(f,"  >>\n");
 		} else fprintf(f,"  /Resources << >>\n");
 		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-				pageobj->bbox.minx, pageobjs->bbox.miny,
-				pageobj->bbox.maxx, pageobjs->bbox.maxy);
+				pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
+				pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
 		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
 		//fprintf(f,"  /Rotate %d\n",number of 90 increments to rotate clockwise);
 		fprintf(f,"  /Rotate 0\n");
@@ -513,9 +520,13 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		pageobj=pageobj->next;
 	}
 	
-	 //write out top /Pages page tree node
+	 //write out top /Pages page tree node ***add to obj->next?
 	objcount++;
 	pageobjs=pageobjsstart;
+	obj->next=new PdfObjData;
+	obj=obj->next;
+	obj->byteoffset=ftell(f);
+	obj->number=pages;
 	fprintf(f,"%d 0 obj\n",pages);
 	fprintf(f,"<<\n  /Type /Pages\n");
 	fprintf(f,"  /Kids [");
@@ -598,24 +609,28 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	obj->number=infodict;
 	obj->byteoffset=ftell(f);
 	fprintf(f,"%ld 1 obj\n<<\n",infodict);
-	fprintf(f,"  /Title (%s)\n",doc->Name(0)); //***warning, does not sanity check the string
+	if (!isblank(doc->Name(0))) fprintf(f,"  /Title (%s)\n",doc->Name(0)); //***warning, does not sanity check the string
 	//fprintf(f,"  /Author (%s)\n",***);
 	//fprintf(f,"  /Subject (%s)\n",***);
 	//fprintf(f,"  /Keywords (%s)\n",***);
 	//fprintf(f,"  /Creator (Laidout %s)\n",LAIDOUT_VERSION);
 	//fprintf(f,"  /Producer (Laidout %s)\n",LAIDOUT_VERSION);
 	//fprintf(f,"  /CreationDate (%s)\n",***);
-	fprintf(f,"  /ModDate (%s)\n",ctime(&t));
+	char *tmp=newstr(ctime(&t));
+	tmp[strlen(tmp)-1]='\0';
+	fprintf(f,"  /ModDate (%s)\n",tmp);
+	delete[] tmp;
 	//fprintf(f,"  /Trapped /False\n");
 	fprintf(f,">>\nendobj\n");
 	
+	cout <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
 	
 	 //write xref table
 	long xrefpos=ftell(f);
 	int count=0;
 	obj=objs;
 	while (obj) { count++; obj=obj->next; }
-	fprintf(f,"xref\n%d %d",0,count);
+	fprintf(f,"xref\n%d %d\n",0,count);
 	obj=objs;
 	while (obj) {
 		fprintf(f,"%010lu %05d %c\n",obj->byteoffset,obj->generation,obj->inuse);

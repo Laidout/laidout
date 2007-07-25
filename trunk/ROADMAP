@@ -11,7 +11,7 @@ VERSION 0.08
 (done) limbos should be selectable, and saved independently of windows
        Paper tiler interface
        Clean up patch controls
-       Fix linear/radial gradient editing when object is sheared
+(done) Fix linear/radial gradient editing when object is sheared
        Tools should remember their settings, dialogs should remember their placements
 (done) Standardize the import/export mechanism
        PDF out
@@ -20,13 +20,8 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-       libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
-       NetImposition needs import/export net and import 3-d models such as from OFF files
-       Net imposition interactive unwrapper and build net interface
-       Fix multi-object selection move when crossing page boundaries
        In image properties dialog, have the popup list of potential previews
-       double click on group should change selection area to group contents?
-       Soup up the color box so one can recall previous colors
+       Soup up the color box so one can recall previous colors, and/or palette window integration
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -35,12 +30,18 @@ VERSION 0.08
 
 VERSION 0.09
 ------------
+       Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
+       Fix multi-object selection move when crossing page boundaries
+       libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+       NetImposition needs import/export net and import 3-d models such as from OFF files
+       Net imposition interactive unwrapper and build net interface
        Image and Color patches, gradients, etc should allow transparent colors
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Selected region out to image(s), regions optionally remembered
        Gui for modifying Page Labels
        When importing, preserve mystery data as much as possible, to be later exported back out
+       double click on group should change selection area to group contents?
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Masking
 
@@ -71,7 +72,8 @@ VERSION 0.1
        Allow objects to have any number of various kinds of transforms applied to it
        Fully configurable shortcuts, with optional multi-key shortcuts
        undo/redo
-       Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins,
+       Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins
+       Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
        Full color management implemented, with up to at least 16 bit per channel color
        a real PrintDialog that can configure itself based on ppds
@@ -79,7 +81,6 @@ VERSION 0.1
        Make commands actually available in the command prompt window
        non-hacky new document box that can understand ppds
        all things must define their styledefs
-       Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
@@ -92,7 +93,7 @@ VERSION 0.1
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo and splash image, and generate icons from a laidout doc
        have an image in the little pan popups
-       Combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
+       Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Be able to have paper objects in addition to the normal page objects (ie master page numbers)
        Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
@@ -106,9 +107,8 @@ VERSION 0.2
 Do a poor man's version of a multi-contact touch screen interface with 2 mice plugged in and
   one of them not set to send core events. Or normal mouse and tablet or ... ?
 Bezier color patch freeform, rather than just grid.
-The other Postscript LL3 gradients: Triangle strip and Triangle Mesh
+The other Postscript/Pdf gradients: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
-import/export with preserve unknown elements as possible: passepartout?,scribus?,svg,tiff,png,etc
 Freehand drawing with tablet support
 Somehow be able to do foldouts from within any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop
