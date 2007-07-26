@@ -163,10 +163,22 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 //			patch->bezOfPatch(pe,0,0,0,0);
 //			for (c=1; c<np; c+=3) po[c]=pcenter+1.333*(pe[c]-pcenter);
 //			for (c=1; c<np-3; c+=3) {
-//				if (c<patch->xsize) patch->getColor((double)c/patch->xsize,0.,&color);
-//				else if (c>np-patch->ysize) patch->getColor(0.,(double)(np-c)/patch->ysize,&color);
-//				else if (c<np/2) patch->getColor(1.,(double)(c-patch->xsize)/patch->ysize,&color);
-//				else patch->getColor(1.-(double)(c-(patch->xsize+patch->ysize))/patch->xsize,1.,&color);
+//		      for (cc=0; cc<numdiv; cc++) {
+//				if (c<patch->xsize) {
+//					s=(double)(c+3.*cc/numdiv)/patch->xsize;
+//					t=0.;
+//				} else if (c>np-patch->ysize) {
+//					s=0.;
+//					t=(double)((np-c)+3.*cc/numdiv)/patch->ysize;
+//				} else if (c<np/2) {
+//					s=1.;
+//					t=(double)((c-patch->xsize)+3.*cc/numdiv)/patch->ysize;
+//				} else { 
+//					s=1.-(double)(c-(patch->xsize+patch->ysize)+3.*cc/numdiv)/patch->xsize;
+//					t=1.;
+//				}
+//
+//				patch->getColor(s,t,&color);
 //
 //			  	fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
 //						  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",	spc,
@@ -176,6 +188,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 //			  				po[c  ].x,po[c  ].y,
 //			  				color.red>>8, color.green>>8, color.blue>>8,
 //							color.alpha/65535.);
+//			  }
 //			}
 			
 
