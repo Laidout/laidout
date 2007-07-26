@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 
 #include "psgradient.h"
@@ -30,12 +30,13 @@ using namespace std;
 void psGradient(FILE *f,GradientData *g)
 {
 	 // Radial vs. axial gradients are virtually identical.
-	 // They differ in the Coords memeber: [x0 y0 r0 x1 y1 r1] vx. [x0 y0 x1 y1] 
+	 // They differ in the Coords member: [x0 y0 r0 x1 y1 r1] vs. [x0 y0 x1 y1] 
 	 // And shading dict type 3 vs. 2
 	 
 	int c;
 	double clen=g->colors[g->colors.n-1]->t-g->colors[0]->t;
 	fprintf(f,"\n\n");
+	 //individual functions
 	for (c=1; c<g->colors.n; c++) {
 		fprintf(f,"/gradientf%d <<\n"
 				  "  /FunctionType 2\n"
@@ -54,6 +55,7 @@ void psGradient(FILE *f,GradientData *g)
 				);
 	}
 
+	 //shading dictionary
 	fprintf(f,
 			"<<\n"
 			"    /ShadingType  %d\n"
