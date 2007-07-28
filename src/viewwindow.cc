@@ -344,7 +344,7 @@ LaidoutViewport::~LaidoutViewport()
 {
 	if (spread) delete spread;
 
-	limbo->dec_count();
+	if (limbo) limbo->dec_count();
 }
 
 //! On any FocusIn event, set laidout->lastview to this.

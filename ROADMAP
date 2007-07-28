@@ -14,7 +14,7 @@ VERSION 0.08
 (done) Fix linear/radial gradient editing when object is sheared
        Tools should remember their settings, dialogs should remember their placements
 (done) Standardize the import/export mechanism
-       PDF out
+(done) PDF out
 (done) svg out
 (done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
 (done) Export to various things from command line to allow batch processing

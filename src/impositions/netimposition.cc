@@ -61,17 +61,18 @@ using namespace std;
 NetImposition::NetImposition(Net *newnet)
 	: Imposition("Net")
 { 
+	net=NULL;
+	pagestyle=NULL;
+
 	 // setup default paperstyle and pagestyle
 	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
-	SetPaperSize(paperstyle);
+	Imposition::SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 
 	DBG cerr <<"   net 1"<<endl;
 	
-	net=NULL;
-	pagestyle=NULL;
 	if (!newnet) {
 		newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy);
 		SetNet(newnet);
