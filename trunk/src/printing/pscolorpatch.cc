@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /**************** printing/pscolorpatch.cc ******************/
 
@@ -33,7 +33,7 @@ using namespace LaxInterfaces;
 #define RBRT 6 
 #define RTLT 7
 
-void psContinueColorPatch(FILE *f,ColorPatchData *g, int flag,int o, int r,int c);
+void psContinueColorPatch(FILE *f,LaxInterfaces::ColorPatchData *g,int flag,int o,int r,int c);
 
 //! Output postscript for a ColorPatchData. 
 /*! \ingroup postscript
@@ -69,6 +69,7 @@ void psColorPatch(FILE *f,ColorPatchData *g)
 	 // handle single column case separately
 	if (columns==1) {
 		r=1;
+		c=0;
 		if (r<rows) {
 			psContinueColorPatch(f,g, 3,RTLT, r,c);
 			r++;
@@ -132,22 +133,22 @@ void psColorPatch(FILE *f,ColorPatchData *g)
 			">> shfill\n\n");
 }
 
-static char ro[][16]={{3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
-					  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
-					  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
-					  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
-					  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
-					  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
-					  {3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
-					  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2}},
-			co[][16]={{0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
-					  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
-					  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
-					  {3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
-					  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
-					  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
-					  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
-					  {3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2}};
+char ro[][16]={{3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
+			  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
+			  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
+			  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
+			  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
+			  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
+			  {3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
+			  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2}},
+	co[][16]={{0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
+			  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
+			  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
+			  {3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
+			  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
+			  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
+			  {3,3,3,3,2,1,0,0,0,0,1,2,2,2,1,1},
+			  {3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2}};
 
 //! Continue writing out the 'DataSource' element of a bez color patch shading dictionary.
 /*! \ingroup postscript
