@@ -139,6 +139,14 @@ PdfPageInfo::~PdfPageInfo()
 	if (pagelabel) delete[] pagelabel; 
 }
 
+//----------------forward declarations
+
+static void pdfColorPatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount,
+				  Attribute &resources, ColorPatchData *g);
+static void pdfImage(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+					 LaxInterfaces::ImageData *img, char *&error_ret,int &warning);
+
+
 //-------------------------------- pdfdumpobj
 
 //! Internal function to dump out the obj in PDF. Called by pdfout().
@@ -178,20 +186,20 @@ void pdfdumpobj(FILE *f,
 		for (int c=0; c<g->n(); c++) 
 			pdfdumpobj(f,obj,stream,objectcount,resources,g->e(c),error_ret,warning);
 		
-//	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
-//		pdfImagePatch(f,dynamic_cast<ImagePatchData *>(object));
-//		
-//	} else if (!strcmp(object->whattype(),"ImageData")) {
-//		pdfImage(f,dynamic_cast<ImageData *>(object));
-//		
 //	} else if (!strcmp(object->whattype(),"PathsData")) {
 //		PathsData *path=dynamic_cast<PathsData *>(object);
 //		if (path) {
 //		}
 //
-//	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
-//		pdfColorPatch(f,dynamic_cast<ColorPatchData *>(object));
+//	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
+//		pdfImagePatch(f,dynamic_cast<ImagePatchData *>(object));
 //		
+	} else if (!strcmp(object->whattype(),"ImageData")) {
+		pdfImage(f,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), error_ret,warning);
+		
+	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
+		pdfColorPatch(f,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object));
+		
 	} else if (!strcmp(object->whattype(),"GradientData")) {
 		GradientData *g=dynamic_cast<GradientData *>(object);
 		if (g) {
@@ -341,9 +349,9 @@ void pdfdumpobj(FILE *f,
  * If iscontinuing!=0, then doesn't write 'clip' at the end.
  *
  * \todo *** currently, uses all points (vertex and control points)
- * in the paths as a polyline, not as the full curvy business 
- * that PathsData are capable of. when pdf output of paths is 
- * actually more implemented, this will change..
+ *   in the paths as a polyline, not as the full curvy business 
+ *   that PathsData are capable of. when pdf output of paths is 
+ *   actually more implemented, this will change..
  */
 int pdfSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//iscontinuing=0
 {//***
@@ -411,6 +419,8 @@ int pdfSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)/
 //	return n;
 }
 
+//--------------------------------------- PDF Out ------------------------------------
+
 //! Save the document as PDF.
 /*! This does not export EpsData.
  * Files are not checked for existence. They are clobbered if they already exist, and are writable.
@@ -440,7 +450,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	FILE *f=NULL;
 	char *file;
 	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
+		if (isblank(doc->saveas)) {
 			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
 			*error_ret=newstr(_("Cannot save to PDF without a filename."));
 			return 2;
@@ -687,8 +697,6 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	//can also include (from Page dict): /Resources, /MediaBox, /CropBox, and /Rotate
 	fprintf(f,">>\nendobj\n"); 
 	
-
-	
 		
 	 // write out Outlines
 	//outlines=objcount++;
@@ -796,12 +804,376 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //clean up
 	 //*** double check that this is all that needs cleanup:
 	if (objs) delete objs;
+	fclose(f);
 
 	DBG cerr <<"=================== end pdf out ========================\n";
 
 	return 0;
-	
-	
+}
+
+//------------------------------- Color Patch Out ---------------------------------
+
+#define LBLT 0
+#define LTRT 1
+#define RTRB 2
+#define RBLB 3
+#define LTLB 4
+#define LBRB 5
+#define RBRT 6 
+#define RTLT 7
+
+extern char ro[][16], co[][16];
+
+static void writeout(char *stream,int &len,int val)
+{
+	if (val<0) val=0;
+	else if (val>65535) val=65535;
+	stream[len++]=(val&0xff00)>>8;
+	stream[len++]=val&0xff;
+}
+
+/*! Add to stream, using 16 bit coordintates, 8 bit color, and 8 bits for the flag.
+ * The coordinates are scaled so that the range [0..65535] is scaled to the objects bounding box.
+ *
+ * \todo for transparency soft masks, need a version that only appends alpha, not the colors
+ */
+static void pdfContinueColorPatch(char *&stream,
+								  int &len,
+								  int &maxlen,
+								  ColorPatchData *g,
+								  char flag, //!< The edge flag
+								  int o,     //!< orientation of the section
+								  int r,     //!< Row of upper corner (patch index, not coord index)
+								  int c)     //!< Column of upper corner (patch index, not coord index)
+{
+	 //make sure stream has enough space allocated
+	if (!stream) {
+		stream=new char[1024];
+		maxlen=1024;
+		len=0;
+	} else if (len+200>maxlen) {
+		maxlen+=1024;
+		char *nstream=new char[maxlen];
+		memcpy(nstream,stream,len);
+	}
+
+	stream[len++]=flag;
+
+	r*=3; 
+	c*=3;
+	int xs=g->xsize, 
+		i=r*g->xsize+c,
+		cx=g->xsize/3+1, ci=r/3*cx+c/3,
+		c3=ci + (ro[o][6]?1:0)*cx + (co[o][6]?1:0),
+		c4=ci + (ro[o][9]?1:0)*cx + (co[o][9]?1:0);
+
+	 //write out coords first.
+	double ax=65535/(g->maxx-g->minx),
+		   bx=ax*g->minx,
+		   ay=65535/(g->maxy-g->miny),
+		   by=ay*g->miny;
+	if (flag==0) {
+		writeout(stream,len,(int)(g->points[i+ro[o][ 0]*xs+co[o][ 0]].x*ax-bx));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 0]*xs+co[o][ 0]].y*ay-by));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 1]*xs+co[o][ 1]].x*ax-bx));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 1]*xs+co[o][ 1]].y*ay-by));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 2]*xs+co[o][ 2]].x*ax-bx));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 2]*xs+co[o][ 2]].y*ay-by));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 3]*xs+co[o][ 3]].x*ax-bx));
+		writeout(stream,len,(int)(g->points[i+ro[o][ 3]*xs+co[o][ 3]].y*ay-by));
+	}
+	for (int cc=4; cc<16; cc++) {
+		writeout(stream,len,(int)(g->points[i+ro[o][cc]*xs+co[o][cc]].x*ax-bx));
+		writeout(stream,len,(int)(g->points[i+ro[o][cc]*xs+co[o][cc]].y*ay-by));
+	}
+
+	 //write out colors
+	if (flag==0) {
+		int c1=ci + (ro[o][0]?1:0)*cx + (co[o][0]?1:0),
+			c2=ci + (ro[o][3]?1:0)*cx + (co[o][3]?1:0);
+		stream[len++]=g->colors[c1].red/256;
+		stream[len++]=g->colors[c1].green/256;
+		stream[len++]=g->colors[c1].blue/256;
+		stream[len++]=g->colors[c2].red/256;
+		stream[len++]=g->colors[c2].green/256;
+		stream[len++]=g->colors[c2].blue/256;
+	}
+	stream[len++]=g->colors[c3].red/256;
+	stream[len++]=g->colors[c3].green/256;
+	stream[len++]=g->colors[c3].blue/256;
+	stream[len++]=g->colors[c4].red/256;
+	stream[len++]=g->colors[c4].green/256;
+	stream[len++]=g->colors[c4].blue/256;
 }
 
 
+//! Output pdf shading dictionary for a ColorPatchData. 
+/*! Currently, the ColorPatchData objects exist only in grids, so this function
+ * figures out the proper listing for the DataSource tag of the tensor product 
+ * patch shading dictionary.
+ *
+ * The strategy is do each patch horizontally to the right, then move one down, then do
+ * the next row travelling to the left, and so on.
+ */
+static void pdfColorPatch(FILE *f,
+				  PdfObjInfo *&obj,
+				  char *&stream,
+				  int &objectcount,
+				  Attribute &resources,
+				  ColorPatchData *g)
+{
+	//---------generate shading source stream
+	int r,c,          // row and column of a patch, not of the coords, which are *3
+		rows,columns, // the number of patches
+		xs,ys;        //g->xsize and ysize
+	xs=g->xsize;
+	ys=g->ysize;
+	rows=g->ysize/3;
+	columns=g->xsize/3;
+	r=0;
+
+	int srcstreamlen=0, maxlen=0;
+	char *srcstream=NULL;
+
+	 // install first patch
+	pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 0,LBLT, 0,0);
+
+	 // handle single column case separately
+	if (columns==1) {
+		r=1;
+		c=0;
+		if (r<rows) {
+			pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 3,RTLT, r,c);
+			r++;
+			while (r<rows) {
+				if (r%2) pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 2,RTLT, r,c);
+					else pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 2,LTRT, r,c);
+				r++;
+			}
+		}
+	}
+	 
+	 // general case
+	c=1;
+	while (r<rows) {
+
+		 // add patches left to right
+		while (c<columns) {
+			if (c%2) pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 2,LTLB, r,c);
+				else pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 2,LBLT, r,c);
+			c++;
+		}
+		r++;
+
+		 // if more rows, add the next row, travelling right to left
+		if (r<rows) {
+			c--;
+			 // add connection downward, and the patch immediately
+			 // to the left of it.
+			if (c%2) {
+				pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 1,LTRT, r,c);
+				c--;
+				if (c>=0) pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 3,RBRT, r,c);
+				c--;
+			} else {
+				pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 3,RTLT, r,c);
+				c--;
+				if (c>=0) { pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 1,RTRB, r,c); c--; }
+				c--;
+			}
+
+			 // continue adding patches right to left
+			while (c>=0) {
+				  // add patches leftward
+				if (c%2) pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 2,RTRB, r,c);
+					else pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 2,RBRT, r,c);
+				 c--;
+			}
+			r++;
+			 // add connection downward, and the patch to the right
+			if (r<rows) {
+				c++;
+				 // 0 is always even, so only one kind of extention here
+				pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 3,LTRT, r,c);
+				c++; // c will be 1 here, and columns we already know is > 1
+				pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 1,LTLB, r,c);
+				c++;
+			}
+		}
+	}
+	//----------done generating stream
+
+	 // shading dict
+	obj->next=new PdfObjInfo;
+	obj=obj->next;
+	obj->byteoffset=ftell(f);
+	obj->number=objectcount++;
+	int shadedict=obj->number;
+	fprintf(f,"%ld 0 obj\n",obj->number);
+	fprintf(f,"<<\n"
+			  "  /ShadingType 7\n"
+			  "  /ColorSpace  /DeviceRGB\n"
+			  "  /BitsPerCoordinate 16\n" //coords in range [0..65535], which map by /Decode
+			  "  /BitsPerComponent  8\n"
+			  "  /BitsPerFlag       8\n"
+			  "  /Decode     [%.10g %.10g %.10g %.10g 0 1 0 1 0 1]\n", //xxyy r g b
+			  	g->minx,g->maxx,g->miny,g->maxy);
+	fprintf(f,"  /Length      %d\n", srcstreamlen);
+	fprintf(f,">>\n"
+			  "stream\n");
+	
+	fwrite(srcstream,1,srcstreamlen,f);
+	fprintf(f,"\nendstream\n"
+			  "endobj\n");
+
+	 //attach to content stream
+	char scratch[50];
+	sprintf(scratch,"/colorpatch%ld sh\n\n",g->object_id);
+	appendstr(stream,scratch);
+
+	 //Add shading function to resources
+	Attribute *shading=resources.find("/Shading");
+	sprintf(scratch,"/colorpatch%ld %d 0 R\n",g->object_id,shadedict);
+	if (shading) {
+		appendstr(shading->value,scratch);
+	} else {
+		resources.push("/Shading",scratch);
+	}
+}
+
+//--------------------------------------- pdfImage() ----------------------------------------
+
+//! Append an image to pdf export. 
+/*! 
+ * \todo *** the output should be tailored to a specified dpi, otherwise the output
+ *   file will sometimes be quite enormous. Also, repeat images are outputted for each
+ *   instance, which also potentially increases size a lot
+ * \todo *** this still assumes a LaxImlibImage.
+ * \todo image alternates?
+ */
+static void pdfImage(FILE *f,
+					 PdfObjInfo *&obj,
+					 char *&stream,
+					 int &objectcount,
+					 Attribute &resources,
+					 LaxInterfaces::ImageData *img,
+					 char *&error_ret,int &warning)
+{
+	 // the image gets put in a postscript box with sides 1x1, and the matrix
+	 // in the image is ??? so must set
+	 // up proper transforms
+	
+	if (!img || !img->image) return;
+
+	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
+	if (!imlibimg) return;
+	
+	imlib_context_set_image(imlibimg->Image(1));
+	int width=imlib_image_get_width(),
+		height=imlib_image_get_height();
+	DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
+	
+	int softmask=-1;
+	if (imlib_image_has_alpha()) { 
+		 // softmask image XObject dict
+		softmask=objectcount++;
+
+		obj->next=new PdfObjInfo;
+		obj=obj->next;
+		obj->byteoffset=ftell(f);
+		obj->number=softmask;
+		fprintf(f,"%ld 0 obj\n",obj->number);
+		fprintf(f,"<<\n"
+				  "  /Type /XObject\n"
+				  "  /Subtype /Image\n"
+				  "  /Width  %d\n"
+				  "  /Height %d\n",
+				 width, height);
+		fprintf(f,"  /ColorSpace  /DeviceGray\n"
+				  "  /BitsPerComponent  8\n"
+				  //"  /Intent \n" (opt 1.1) ignored
+				  //"  /Decode     [0 1 0 1 0 1]\n", //(opt) r g b
+				  //"  /Interpolate false\n" //(opt)
+				  //"  /Matte *** \n" //(opt, 1.4), for use when img is pre-multiplied alpha
+				  "  /Length %d\n",
+				 width*height);
+		fprintf(f,">>\n"
+				  "stream\n");
+
+		unsigned char a;
+		for (int y=0; y<height; y++) {
+			for (int x=0; x<width; x++) {
+				a=(buf[y*width+x]&(0xff000000))>>24;
+				fprintf(f,"%c",a);
+			}
+		}
+		fprintf(f,"\nendstream\n"
+				  "endobj\n");
+	}
+	
+
+
+	 // image XObject dict
+	obj->next=new PdfObjInfo;
+	obj=obj->next;
+	obj->byteoffset=ftell(f);
+	obj->number=objectcount++;
+	int shadedict=obj->number;
+	fprintf(f,"%ld 0 obj\n",obj->number);
+	fprintf(f,"<<\n"
+			  "  /Type /XObject\n"
+			  "  /Subtype /Image\n"
+			  "  /Width  %d\n"
+			  "  /Height %d\n",
+			 width, height);
+	fprintf(f,"  /ColorSpace  /DeviceRGB\n"
+			  "  /BitsPerComponent  8\n");
+			  //"  /Intent \n" (opt 1.1)
+			  //"  /ImageMask false\n" // (opt)
+			  //"  /Mask  ***\n"  //(opt, 1.3) image mask, stream or array of color keys
+	if (softmask>0) 
+		fprintf(f,"  /SMask %d 0 R\n", //(opt, 1.4) soft mask for image, overrides mask and gstate mask
+				 softmask);
+			  //"  /Decode     [0 1 0 1 0 1]\n", //(opt) r g b
+			  //"  /Interpolate false\n" //(opt)
+			  //"  /Alternates array\n"  //(opt 1.3) not allowed in imgs that are themselves alternates
+			  //"  /Name  str\n" //(req 1.0, else opt)
+			  //"  /StructParent ??\n"
+			  //"  /ID...(opt1.3) \n  /OPI(opt1.2)\n"
+			  //"  /Metadata stream\n"
+
+	fprintf(f,"  /Length %d\n", 3*width*height);
+	fprintf(f,">>\n"
+			  "stream\n");
+
+	unsigned char r,g,b;
+	for (int y=0; y<height; y++) {
+		for (int x=0; x<width; x++) {
+			r=(buf[y*width+x]&(0xff0000))>>16;
+			g=(buf[y*width+x]&(0xff00))>>8;
+			b=buf[y*width+x]& 0xff;
+			fprintf(f,"%c%c%c",r,g,b);
+		}
+	}
+	fprintf(f,"\nendstream\n"
+			  "endobj\n");
+
+	imlibimg->doneForNow();
+
+	 //attach to content stream
+	char scratch[70];
+	sprintf(scratch,"%.10g 0 0 %.10g 0 0 cm\n"
+					"/image%ld Do\n\n",
+				img->maxx,img->maxy,
+				img->object_id);
+	appendstr(stream,scratch);
+
+	 //Add shading function to resources
+	Attribute *shading=resources.find("/XObject");
+	sprintf(scratch,"/image%ld %d 0 R\n",img->object_id,shadedict);
+	if (shading) {
+		appendstr(shading->value,scratch);
+	} else {
+		resources.push("/XObject",scratch);
+	}
+}
