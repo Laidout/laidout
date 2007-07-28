@@ -225,7 +225,7 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
-		//paperstyle->dump_out(f,indent+2,-1);
+		papergroup->dump_out(f,indent+2,-1);
 		fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
 		pagestyle->dump_out(f,indent+2,-1);
 		return;
@@ -241,10 +241,10 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%sdefaultpagestyle\n",spc);
 		pagestyle->dump_out(f,indent+2,0);
 	}
-//	if (paperstyle) {
-//		fprintf(f,"%sdefaultpaperstyle\n",spc);
-//		paperstyle->dump_out(f,indent+2,0);
-//	}
+	if (papergroup) {
+		fprintf(f,"%sdefaultpapers\n",spc);
+		papergroup->dump_out(f,indent+2,0);
+	}
 }
 
 //! Duplicate this, or fill in this attributes.

@@ -35,8 +35,6 @@ using namespace LaxInterfaces;
  */
 void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 {
-	cout << " ***** Print psImagePatch: fix me!!"<<endl;
-	 
 	 // make an ImageData covering the bounding box
 
 	Imlib_Image image;

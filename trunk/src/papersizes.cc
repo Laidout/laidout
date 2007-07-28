@@ -329,6 +329,19 @@ PaperGroup::~PaperGroup()
 	if (Name) delete[] Name;
 }
 
+/*!
+ * <pre>
+ *   name somename
+ *   Name Descriptive name, human readable
+ *   paper  #one or more of these
+ *     matrix 1 0 0 1 0 0 #optional
+ *     name Letter
+ *     width 8.5
+ *     height 11
+ *     portrait #or landscape
+ *     dpi 360
+ * </pre>
+ */
 void PaperGroup::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -338,22 +351,51 @@ void PaperGroup::dump_out(FILE *f,int indent,int what)
 		//if (owner) ***;
 		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
 		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
-		fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
-		fprintf(f,"%s  miny 0\n",spc);
-		fprintf(f,"%s  maxx 8.5\n",spc);
-		fprintf(f,"%s  minx 11\n",spc);
+		PaperStyle paperstyle(NULL,0,0,0,0);
+		paperstyle.dump_out(f,indent+2,-1);
+		//fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
+		//fprintf(f,"%s  miny 0\n",spc);
+		//fprintf(f,"%s  maxx 8.5\n",spc);
+		//fprintf(f,"%s  minx 11\n",spc);
 		return;
 	}
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	if (Name) fprintf(f,"%sName %s\n",spc,Name);
 	//if (owner) ***;
-	for (int c=0; c<papers.n; c++) { //***fix
+	
+	double *m;
+	for (int c=0; c<papers.n; c++) {
 		fprintf(f,"%spaper\n",spc);
-		papers.e[c]->dump_out(f,indent+2,0);
+		m=papers.e[c]->m();
+		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+			spc, m[0],m[1],m[2],m[3],m[4],m[5]);
+		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0);
 	}
 }
 
 void PaperGroup::dump_in_atts(Attribute *att,int flag)
-{//***
+{
+	if (!att) return;
+
+	char *nme,*value;
+	for (int c=0; c<att->attributes.n; c++)  {
+		nme=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(nme,"name")) {
+			makestr(name,value);
+		} else if (!strcmp(nme,"Name")) {
+			makestr(Name,value);
+		} else if (!strcmp(nme,"paper")) {
+			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0);
+			paperstyle->dump_in_atts(att->attributes.e[c],flag);
+			PaperBox *paperbox=new PaperBox(paperstyle);
+			paperstyle->dec_count();
+			PaperBoxData *boxdata=new PaperBoxData(paperbox);
+			paperbox->dec_count();
+			boxdata->dump_in_atts(att->attributes.e[c],flag);
+			papers.push(boxdata);
+			boxdata->dec_count();
+		}
+	}
 }
 

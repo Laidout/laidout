@@ -16,6 +16,7 @@
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
+#include <lax/interfaces/imagepatchinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
@@ -33,7 +34,9 @@ using namespace Laxkit;
 using namespace LaxFiles;
 using namespace LaxInterfaces;
 
-
+/*! \file 
+ * Pdf export code.
+ */
 
 //--------------------------------- install PDF filter
 
@@ -56,17 +59,20 @@ void installPdfFilter()
 /*! \class PdfExportFilter
  * \brief Filter for exporting PDF 1.3 or 1.4.
  *
- * \todo implement difference between 1.3 and 1.4!
+ * \todo implement difference between 1.3 and 1.4! Currently will only do 1.4.
  */
 /*! \var int PdfExportFilter::pdf_version
  * \brief 4 for 1.4, 3 for 1.3.
  */
 
 
+/*! which==3 is 1.3, 4 is 1.4. However, only 1.4 is implemented.
+ */
 PdfExportFilter::PdfExportFilter(int which)
 {
-	if (which==4) pdf_version=4; //1.4
-			 else pdf_version=3; //1.3
+	pdf_version=4;
+//	if (which==4) pdf_version=4; //1.4
+//			 else pdf_version=3; //1.3
 	flags=FILTER_MULTIPAGE;
 }
 
@@ -145,6 +151,8 @@ static void pdfColorPatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectc
 				  Attribute &resources, ColorPatchData *g);
 static void pdfImage(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 					 LaxInterfaces::ImageData *img, char *&error_ret,int &warning);
+static void pdfImagePatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+					 LaxInterfaces::ImagePatchData *img, char *&error_ret,int &warning);
 
 
 //-------------------------------- pdfdumpobj
@@ -191,9 +199,10 @@ void pdfdumpobj(FILE *f,
 //		if (path) {
 //		}
 //
-//	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
-//		pdfImagePatch(f,dynamic_cast<ImagePatchData *>(object));
-//		
+	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
+		pdfImagePatch(f,obj,stream,objectcount,resources,
+				dynamic_cast<ImagePatchData *>(object), error_ret,warning);
+		
 	} else if (!strcmp(object->whattype(),"ImageData")) {
 		pdfImage(f,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), error_ret,warning);
 		
@@ -644,12 +653,18 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			}
 			fprintf(f,"  >>\n");
 		} else fprintf(f,"  /Resources << >>\n");
-		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-				pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
-				pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
 		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
-		//fprintf(f,"  /Rotate %d\n",number of 90 increments to rotate clockwise);
-		fprintf(f,"  /Rotate 0\n");
+		if (landscape) {
+			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+					pageobj->bbox.miny*72, pageobjs->bbox.minx*72,
+					pageobj->bbox.maxy*72, pageobjs->bbox.maxx*72);
+			fprintf(f,"  /Rotate 90\n");   //number of 90 increments to rotate clockwise
+		} else {
+			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+					pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
+					pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
+			fprintf(f,"  /Rotate 0\n");   //number of 90 increments to rotate clockwise
+		}
 
 		 //the rest is optional
 		//fprintf(f,"  /LastModified %s\n",lastmoddate);
@@ -1177,3 +1192,83 @@ static void pdfImage(FILE *f,
 		resources.push("/XObject",scratch);
 	}
 }
+
+//--------------------------------------- pdfImagePatch() ----------------------------------------
+
+//! Output pdf for an ImagePatchData. 
+/*!
+ * \todo *** this is in the serious hack stage
+ */
+static void pdfImagePatch(FILE *f,
+						  PdfObjInfo *&obj,
+						  char *&stream,
+						  int &objectcount,
+						  Attribute &resources,
+						  LaxInterfaces::ImagePatchData *i,
+						  char *&error_ret,int &warning)
+{
+	 // make an ImageData covering the bounding box
+
+	Imlib_Image image;
+	int width,height;
+
+	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny)),
+			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
+			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
+			  lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
+	//DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
+	//DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
+	//DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
+	//DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
+
+	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
+	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
+	
+	image=imlib_create_image(width,height);
+	imlib_context_set_image(image);
+	imlib_image_set_has_alpha(1);
+	DATA32 *buf=imlib_image_get_data();
+	memset(buf,0,width*height*4); // make whole transparent/black
+	//memset(buf,0xff,width*height*4); // makes whole non-transparent/white
+	
+	 // create an image where the patch goes
+	double m[6]; //takes points from i to buffer
+	unsigned char *buffer;
+	buffer=(unsigned char *) buf;
+	double a=(i->maxx-i->minx)/width,
+		   d=(i->miny-i->maxy)/height;
+	m[0]=1/a;
+	m[1]=0;
+	m[2]=0;
+	m[3]=1/d;
+	m[4]=-i->minx/a;
+	m[5]=-i->maxy/d;
+	ImagePatchInterface imginterf(0,NULL);
+	imginterf.data=i;
+	imginterf.renderToBuffer(buffer,m,width,height);
+	imginterf.data=NULL;
+	imlib_image_put_back_data(buf);
+	imlib_image_flip_vertical();
+	ImageData img;
+	LaxImage *limg=new LaxImlibImage(NULL,image);
+	img.SetImage(limg);
+
+	 // set image transform
+	transform_invert(img.m(),m);
+
+	 // push axes
+	psPushCtm();
+	psConcat(img.m());
+	char scratch[100];
+	sprintf(scratch,"q\n"
+			  "%.10g %.10g %.10g %.10g %.10g %.10g cm\n ",
+				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
+	appendstr(stream,scratch);
+	
+	pdfImage(f,obj,stream,objectcount,resources,&img, error_ret,warning);
+
+	 // pop axes
+	appendstr(stream,"Q\n");
+	psPopCtm();
+}
+
