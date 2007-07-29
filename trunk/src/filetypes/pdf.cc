@@ -17,6 +17,8 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/imagepatchinterface.h>
+#include <lax/interfaces/pathinterface.h>
+#include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
@@ -185,7 +187,7 @@ void pdfdumpobj(FILE *f,
 	psConcat(object->m());
 	char scratch[100];
 	sprintf(scratch,"q\n"
-			  "%.10g %.10g %.10g %.10g %.10g %.10g cm\n ",
+			  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 				object->m(0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
 	appendstr(stream,scratch);
 	
@@ -259,15 +261,15 @@ void pdfdumpobj(FILE *f,
 			fprintf(f,"<<\n"
 					  "  /ShadingType %d\n",(g->style&GRADIENT_RADIAL)?3:2);
 			fprintf(f,"  /ColorSpace /DeviceRGB\n"
-					  "    /BBox   [ %.10g %.10g %.10g %.10g ]\n", //[l b r t]
+					  "    /BBox   [ %.10f %.10f %.10f %.10f ]\n", //[l b r t]
 					    g->minx, g->miny, g->maxx, g->maxy);
 			fprintf(f,"  /Domain [0 1]\n");
 
 			 //Coords
-			if (g->style&GRADIENT_RADIAL) fprintf(f,"  /Coords [ %.10g 0 %.10g %.10g 0 %.10g ]\n",
+			if (g->style&GRADIENT_RADIAL) fprintf(f,"  /Coords [ %.10f 0 %.10f %.10f 0 %.10f ]\n",
 					  g->p1, fabs(g->r1), //x0, r0
 					  g->p2, fabs(g->r2)); //x1, r1
-			else fprintf(f,"  /Coords [ %.10g 0 %.10g 0]\n", g->p1, g->p2);
+			else fprintf(f,"  /Coords [ %.10f 0 %.10f 0]\n", g->p1, g->p2);
 			fprintf(f,"  /Function %d 0 R\n"
 					  ">>\n"
 					  "endobj\n", objectcount);
@@ -285,7 +287,7 @@ void pdfdumpobj(FILE *f,
 			for (c=1; c<g->colors.n; c++) fprintf(f,"0 1 ");
 			fprintf(f,"]\n"
 					  "  /Bounds [");
-			for (c=1; c<g->colors.n-1; c++) fprintf(f,"%.10g ", (g->colors.e[c]->t-g->colors.e[0]->t)/clen);
+			for (c=1; c<g->colors.n-1; c++) fprintf(f,"%.10f ", (g->colors.e[c]->t-g->colors.e[0]->t)/clen);
 			fprintf(f,
 					"]\n");
 			fprintf(f,"  /Functions [");
@@ -304,8 +306,8 @@ void pdfdumpobj(FILE *f,
 						  "<<\n"
 						  "  /FunctionType 2\n"
 						  "  /Domain [0 1]\n"
-						  "  /C0 [%.10g %.10g %.10g]\n"
-						  "  /C1 [%.10g %.10g %.10g]\n"
+						  "  /C0 [%.10f %.10f %.10f]\n"
+						  "  /C1 [%.10f %.10f %.10f]\n"
 						  "  /N 1\n"
 						  ">>\n"
 						  "endobj\n",
@@ -345,8 +347,8 @@ void pdfdumpobj(FILE *f,
 	psPopCtm();
 }
 
-//! Output a postscript clipping path from outline.
-/*! \ingroup pdf
+//! Output a pdf clipping path from outline.
+/*! 
  * outline can be a group of PathsData, a SomeDataRef to a PathsData, 
  * or a single PathsData.
  *
@@ -355,77 +357,77 @@ void pdfdumpobj(FILE *f,
  *
  * Returns the number of single paths interpreted.
  *
- * If iscontinuing!=0, then doesn't write 'clip' at the end.
+ * If iscontinuing!=0, then doesn't install path yet.
  *
  * \todo *** currently, uses all points (vertex and control points)
  *   in the paths as a polyline, not as the full curvy business 
  *   that PathsData are capable of. when pdf output of paths is 
  *   actually more implemented, this will change..
  */
-int pdfSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//iscontinuing=0
-{//***
-	cout <<"*** must implement pdfSetClipToPath()!!"<<endl;
-	return 0;
-//	PathsData *path=dynamic_cast<PathsData *>(outline);
-//
-//	 //If is not a path, but is a reference to a path
-//	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
-//		SomeDataRef *ref;
-//		 // skip all nested SomeDataRefs
-//		do {
-//			ref=dynamic_cast<SomeDataRef *>(outline);
-//			if (ref) outline=ref->thedata;
-//		} while (ref);
-//		if (outline) path=dynamic_cast<PathsData *>(outline);
-//	}
-//
-//	int n=0; //the number of objects interpreted
-//	
-//	 // If is not a path, and is not a ref to a path, but is a group,
-//	 // then check that its elements 
-//	if (!path && dynamic_cast<Group *>(outline)) {
-//		Group *g=dynamic_cast<Group *>(outline);
-//		SomeData *d;
-//		double m[6];
-//		for (int c=0; c<g->n(); c++) {
-//			d=g->e(c);
-//			 //add transform of group element
-//			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-//					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
-//			n+=psSetClipToPath(f,g->e(c),1);
-//			transform_invert(m,d->m());
-//			 //reverse the transform
-//			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
-//					m[0], m[1], m[2], m[3], m[4], m[5]); 
-//		}
-//	}
-//	
-//	if (!path) return n;
-//	
-//	 // finally append to clip path
-//	Coordinate *start,*p;
-//	for (int c=0; c<path->paths.n; c++) {
-//		start=p=path->paths.e[c]->path;
-//		if (!p) continue;
-//		do { p=p->next; } while (p && p!=start);
-//		if (p==start) { // only include closed paths
-//			n++;
-//			p=start;
-//			do {
-//				fprintf(f,"%.10g %.10g ",p->x(),p->y());
-//				if (p==start) fprintf(f,"moveto\n");
-//				else fprintf(f,"lineto\n");
-//				p=p->next;	
-//			} while (p && p!=start);
-//			fprintf(f,"closepath\n");
-//		}
-//	}
-//	
+int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontinuing)//iscontinuing=0
+{
+	PathsData *path=dynamic_cast<PathsData *>(outline);
+
+	 //If is not a path, but is a reference to a path
+	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
+		SomeDataRef *ref;
+		 // skip all nested SomeDataRefs
+		do {
+			ref=dynamic_cast<SomeDataRef *>(outline);
+			if (ref) outline=ref->thedata;
+		} while (ref);
+		if (outline) path=dynamic_cast<PathsData *>(outline);
+	}
+
+	int n=0; //the number of objects interpreted
+	char scratch[200];
+	
+	 // If is not a path, and is not a ref to a path, but is a group,
+	 // then check that its elements 
+	if (!path && dynamic_cast<Group *>(outline)) {
+		Group *g=dynamic_cast<Group *>(outline);
+		SomeData *d;
+		double m[6];
+		for (int c=0; c<g->n(); c++) {
+			d=g->e(c);
+			 //add transform of group element
+			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+					d->m(0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
+			appendstr(stream,scratch);
+			n+=pdfSetClipToPath(stream,g->e(c),1);
+			transform_invert(m,d->m());
+			 //reverse the transform
+			sprintf(stream,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+					m[0], m[1], m[2], m[3], m[4], m[5]); 
+			appendstr(stream,scratch);
+		}
+	}
+	
+	if (!path) return n;
+	
+	 // finally append to clip path
+	Coordinate *start,*p;
+	for (int c=0; c<path->paths.n; c++) {
+		start=p=path->paths.e[c]->path;
+		if (!p) continue;
+		do { p=p->next; } while (p && p!=start);
+		if (p==start) { // only include closed paths
+			n++;
+			p=start;
+			do {
+				sprintf(scratch,"%.10f %.10f %s\n",
+						p->x(),p->y(), (p==start?"m":"l"));
+				appendstr(stream,scratch);
+				p=p->next;	
+			} while (p && p!=start);
+			appendstr(stream,"W n\n");
+		}
+	}
+	
 //	if (n && !iscontinuing) {
-//		//fprintf(f,".1 setlinewidth stroke\n");
-//		fprintf(f,"clip\n");
+//		appendstr(stream,"W n\n");
 //	}
-//	return n;
+	return n;
 }
 
 //--------------------------------------- PDF Out ------------------------------------
@@ -559,7 +561,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		psConcat(72.,0.,0.,72.,0.,0.);
 		if (landscape) {
 			 // paperstyle->width 0 translate   90 rotate  
-			sprintf(scratch,"0 1 -1 0 %.10g 0 cm\n",doc->docstyle->imposition->paper->paperstyle->width);
+			sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",doc->docstyle->imposition->paper->paperstyle->width);
 			appendstr(stream,scratch);
 			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
 		}
@@ -582,7 +584,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			appendstr(stream,"q\n"); //save ctm
 			psPushCtm();
 			transform_copy(m,spread->pagestack.e[c2]->outline->m());
-			sprintf(scratch,"%.10g %.10g %.10g %.10g %.10g %.10g cm\n ",
+			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			appendstr(stream,scratch);
 			psConcat(m);
@@ -590,7 +592,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			 // set clipping region
 			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				pdfSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
+				pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0);
 			} 
 				
 			 // for each layer on the page..
@@ -684,7 +686,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		//fprintf(f,"  /PieceInfo << >>\n");
 		//fprintf(f,"  /StructParents << >>\n");
 		//fprintf(f,"  /ID ()\n");
-		//fprintf(f,"  /PZ %.10g\n");
+		//fprintf(f,"  /PZ %.10f\n");
 		//fprintf(f,"  /SeparationInfo << >>\n");
 		fprintf(f,">>\nendobj\n"); 
 
@@ -993,7 +995,7 @@ static void pdfColorPatch(FILE *f,
 			} else {
 				pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 3,RTLT, r,c);
 				c--;
-				if (c>=0) { pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 1,RTRB, r,c); c--; }
+				if (c>=0) { pdfContinueColorPatch(srcstream,srcstreamlen,maxlen, g, 1,RTRB, r,c); }
 				c--;
 			}
 
@@ -1031,7 +1033,7 @@ static void pdfColorPatch(FILE *f,
 			  "  /BitsPerCoordinate 16\n" //coords in range [0..65535], which map by /Decode
 			  "  /BitsPerComponent  8\n"
 			  "  /BitsPerFlag       8\n"
-			  "  /Decode     [%.10g %.10g %.10g %.10g 0 1 0 1 0 1]\n", //xxyy r g b
+			  "  /Decode     [%.10f %.10f %.10f %.10f 0 1 0 1 0 1]\n", //xxyy r g b
 			  	g->minx,g->maxx,g->miny,g->maxy);
 	fprintf(f,"  /Length      %d\n", srcstreamlen);
 	fprintf(f,">>\n"
@@ -1177,7 +1179,7 @@ static void pdfImage(FILE *f,
 
 	 //attach to content stream
 	char scratch[70];
-	sprintf(scratch,"%.10g 0 0 %.10g 0 0 cm\n"
+	sprintf(scratch,"%.10f 0 0 %.10f 0 0 cm\n"
 					"/image%ld Do\n\n",
 				img->maxx,img->maxy,
 				img->object_id);
@@ -1261,7 +1263,7 @@ static void pdfImagePatch(FILE *f,
 	psConcat(img.m());
 	char scratch[100];
 	sprintf(scratch,"q\n"
-			  "%.10g %.10g %.10g %.10g %.10g %.10g cm\n ",
+			  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
 	appendstr(stream,scratch);
 	
