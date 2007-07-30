@@ -31,6 +31,7 @@ enum BoxTypes {
 	TrimBox      =(1<<2),
 	PrintableBox =(1<<3),
 	BleedBox     =(1<<4),
+	AllBoxes     =31
 };
 
 
@@ -78,6 +79,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 	unsigned int which;
 	PaperBoxData(PaperBox *paper);
 	virtual ~PaperBoxData();
+	virtual const char *whattype() { return "PaperBoxData"; }
 };
 
 
@@ -87,6 +89,7 @@ class PaperGroup : public Laxkit::anObject, public Laxkit::RefCounted, public La
  public:
 	char *name;
 	char *Name;
+	char locked;
 	Laxkit::RefPtrStack<PaperBoxData> papers;
 	Laxkit::anObject *owner;
 

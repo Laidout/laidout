@@ -48,6 +48,7 @@
 #include "configured.h"
 #include "importimages.h"
 #include "filetypes/exportdialog.h"
+#include "interfaces/paperinterface.h"
 
 #include <X11/cursorfont.h>
 #include <iostream>
@@ -293,6 +294,8 @@ int VObjContext::isequal(const ObjectContext *oc)
 LaidoutViewport::LaidoutViewport(Document *newdoc)
 	: ViewportWindow(NULL,"laidoutviewport",ANXWIN_HOVER_FOCUS|VIEWPORT_ROTATABLE,0,0,0,0,0)
 {
+	papergroup=NULL;
+
 	viewportmode=VIEW_NORMAL;
 	showstate=1;
 	backbuffer=0;
@@ -343,6 +346,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 LaidoutViewport::~LaidoutViewport()
 {
 	if (spread) delete spread;
+	if (papergroup) papergroup->dec_count();
 
 	if (limbo) limbo->dec_count();
 }
@@ -1922,18 +1926,31 @@ void LaidoutViewport::Refresh()
 	
 	if (spread && showstate==1) {
 		XSetFunction(app->dpy,dp->GetGC(),GXcopy);
+		
+		 //draw papergroup
+		PaperGroup *pgrp=papergroup;
+		if (!pgrp) pgrp=spread->papergroup;
+		if (pgrp) {
+			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+			PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
+			if (pi) pi->DrawGroup(pgrp,1);
+		}
+
 		 // draw 5 pixel offset heavy line like shadow for page first, then fill draw the path...
 		 // draw shadow
-		dp->NewFG(0,0,0);
-		dp->PushAxes();
-		dp->ShiftScreen(5,5);
 		if (spread->path) {
+			 //draw shadow if papergroup does not exist
 			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,GXcopy);
-			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
-			DrawData(dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
+			if (!pgrp) {
+				dp->NewFG(0,0,0);
+				dp->PushAxes();
+				dp->ShiftScreen(5,5);
+				DrawData(dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
+				dp->PopAxes();
+			}
+
 			 // draw outline *** must draw filled with paper color
 			fs.Color(0xffff,0xffff,0xffff,0xffff);
-			dp->PopAxes();
 			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
 			DrawData(dp,spread->path,NULL,&fs,drawflags);
 		}

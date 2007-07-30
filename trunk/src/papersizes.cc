@@ -319,6 +319,7 @@ PaperBoxData::~PaperBoxData()
 
 PaperGroup::PaperGroup()
 {
+	locked=0;
 	name=Name=NULL;
 	owner=NULL;
 }

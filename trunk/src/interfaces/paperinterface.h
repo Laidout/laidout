@@ -29,6 +29,7 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
  protected:
 	int showdecs;
 	PaperGroup *papergroup;
+	PaperBoxData *paperboxdata;
 	Laxkit::PtrStack<PaperBoxData> curboxes;
 	PaperBoxData *curbox, *maybebox;
 	BoxTypes editwhat, drawwhat, snapto;
@@ -43,6 +44,7 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 	virtual const char *whattype() { return "PaperInterface"; }
 	virtual const char *whatdatatype() { return "PaperGroup"; }
+	virtual int draws(const char *atype);
 
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
@@ -61,6 +63,10 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int CharRelease(unsigned int ch,unsigned int state);
 	virtual int Refresh();
+	virtual void DrawPaper(PaperBoxData *data,int what,char fill,int shadow);
+	virtual void DrawGroup(PaperGroup *group,int shadow);
+	virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
+					Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=1);
 
 	
 	//virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 

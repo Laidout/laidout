@@ -63,7 +63,7 @@ void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,u
  *
  * Note that for groups, a1 and a2 are passed along to all the group members..
  *
- * \todo currently this looks up which interface to dcaw an object wich in laidout,
+ * \todo currently this looks up which interface to draw an object with in LaidoutApp,
  *   but it should first check for suitable one in the relevant viewport.
  */
 void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
@@ -78,8 +78,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		dp->drawrline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));
 		dp->drawrline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
 	}
-	if (dynamic_cast<Group *>(data)) { // Is a layer or a group
-		 //*** perhaps this should rather check whattype==Group?
+	if (!strcmp(data->whattype(),"Group")) { // Is a layer or a group
 		Group *g=dynamic_cast<Group *>(data);
 		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
 		dp->PopAxes();
@@ -90,6 +89,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		dp->PopAxes();
 		return;
 	} 
+
 	 // find interface in interfacepool
 	int c;
 	anInterface *interf=NULL;

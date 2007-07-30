@@ -188,6 +188,8 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***should be global def
 			paperstyle->dump_in_atts(att->attributes.e[c],flag);
 			SetPaperSize(paperstyle);
+		} else if (!strcmp(name,"defaultpapers")) {
+			cout <<"*** dump in papers"<<endl;
 		}
 	}
 	if (pages<0) setPage();
@@ -405,6 +407,11 @@ Spread *Singles::PaperLayout(int whichpaper)
 	Spread *spread=new Spread();
 	spread->style=SPREAD_PAPER;
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+
+	if (papergroup) {
+		spread->papergroup=papergroup;
+		spread->papergroup->inc_count();
+	}
 	
 	 // define max/min points
 	spread->minimum=flatpoint(paper->media.maxx/5,  paper->media.maxy/2);

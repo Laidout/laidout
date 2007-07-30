@@ -140,11 +140,15 @@ PageLocation::~PageLocation()
  * This value is used by SpreadEditors to only generate a new spread if the current
  * one is the wrong shape.
  */
+/*! \var PaperGroup *Spread::papergroup
+ * \brief The default paper group to use with the spread.
+ */
 
 
 //! Basic init, set all to 0.
 Spread::Spread()
 {
+	papergroup=NULL;
 	mask=style=0;
 	path=marks=NULL;
 }
@@ -152,6 +156,7 @@ Spread::Spread()
 //! Dec count of path and marks.
 Spread::~Spread()
 {
+	if (papergroup) papergroup->dec_count();
 	if (path) path->dec_count();
 	if (marks) marks->dec_count();
 	pagestack.flush();
@@ -279,11 +284,18 @@ int *Spread::pagesFromSpread()
 /*! \var int Imposition::numpages
  * \brief The number of pages available.
  */
+/*! \var PaperGroup *Imposition::papergroup
+ * \brief The group of papers to print spreads on.
+ *
+ * By convention, this will be applied to the PAPERLAYOUT spread type, but really that is
+ * up to the imposition instance. When printing and displaying, this papergroup might be
+ * overridden, for instance when a user wants to tile for posters, but the same spread will be used.
+ */
 /*! \var PaperBox *Imposition::paper
  * \brief The base type of paper to print on.
  *
  * This is a convenience pointer to the first box of papergroup (if any), or to a generic
- * paper to base impositions on.
+ * paper to base impositions on. It usually points to a component of papergroup.
  */
 /*! \fn LaxInterfaces::SomeData *Imposition::GetPrinterMarks(int papernum=-1)
  * \brief Return the printer marks for paper papernum in paper coordinates.
