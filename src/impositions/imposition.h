@@ -63,6 +63,7 @@ class Spread : public ObjectContainer
 	unsigned int mask; // which of path,min,max,pages is defined
 	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
 	int spreadtype;
+	PaperGroup *papergroup;
 	LaxInterfaces::SomeData *path;
 	LaxInterfaces::SomeData *marks;
 	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor

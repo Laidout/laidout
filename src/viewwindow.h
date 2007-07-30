@@ -78,6 +78,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	 // these all have to refer to proper values in each other!
 	Document *doc;
 	Spread *spread;
+	PaperGroup *papergroup;
 	int spreadi;
 	Page *curpage;
 	 // these shadow viewport window variables of the same name but diff. type

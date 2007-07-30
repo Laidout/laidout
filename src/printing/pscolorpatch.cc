@@ -106,7 +106,7 @@ void psColorPatch(FILE *f,ColorPatchData *g)
 			} else {
 				psContinueColorPatch(f,g, 3,RTLT, r,c);
 				c--;
-				if (c>=0) { psContinueColorPatch(f,g, 1,RTRB, r,c); c--; }
+				if (c>=0) { psContinueColorPatch(f,g, 1,RTRB, r,c); }
 				c--;
 			}
 

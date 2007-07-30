@@ -432,13 +432,15 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 			transform_mult(U,T,M);
 			
 			newpath=GetPage(c2,0); // transformed page, count at least 1 more
-			transform_mult(T,U,baseinv);
-			transform_mult(M2,newpath->m(),T);
-			transform_copy(newpath->m(),M2);
-				
-			 // push face onto pagestack
-			spread->pagestack.push(new PageLocation(c2,NULL,newpath)); //incs newpath count
-			newpath->dec_count();//remove extra count
+			if (newpath) {
+				transform_mult(T,U,baseinv);
+				transform_mult(M2,newpath->m(),T);
+				transform_copy(newpath->m(),M2);
+					
+				 // push face onto pagestack
+				spread->pagestack.push(new PageLocation(c2,NULL,newpath)); //incs newpath count
+				newpath->dec_count();//remove extra count
+			}
 		}
 	}
 
@@ -519,7 +521,6 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	Spread *spread=PageLayout(whichpaper*net->nf);
 	spread->style=SPREAD_PAPER;
 
-	 // make the paper outline
 	PathsData *path=static_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
 
 	 // put a reference to the outline in marks if printnet
@@ -529,16 +530,10 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 		path->inc_count();
 	}
 	
-	Group *g=new Group;
-	spread->path=static_cast<SomeData *>(g);
-	g->push(path,0);    //incs count: the net outline
-	
-	PathsData *path2=new PathsData();//the paper outline
-	g->push(path2,0);   //incs count
-	path2->dec_count(); //remove extra count
-	path2->appendRect(0,0,paper->media.maxx,paper->media.maxy,0);
-
-	g->FindBBox();
+	if (papergroup) {
+		spread->papergroup=papergroup;
+		spread->papergroup->inc_count();
+	}
 
 	return spread;
 }

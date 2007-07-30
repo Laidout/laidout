@@ -39,7 +39,9 @@ using namespace std;
  * This can be used to position a single paper over real space, or set to allow any
  * number of papers. Also can be used to set rectangles for crop, bleed, and trim.
  */
-
+/*! \var PaperBoxData *PaperInterface::paperboxdata
+ * \brief Temporary pointer to aid viewport refreshing of PaperBoxData objects.
+ */
 
 PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	: InterfaceWithDp(nid,ndp) 
@@ -49,6 +51,7 @@ PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	drawwhat=MediaBox;
 	curbox=maybebox=NULL;
 	papergroup=NULL;
+	paperboxdata=NULL;
 	showdecs=0;
 	doc=NULL;
 
@@ -66,6 +69,7 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	drawwhat=MediaBox;
 	curbox=maybebox=NULL;
 	papergroup=NULL;
+	paperboxdata=NULL;
 	showdecs=0;
 	doc=NULL;
 
@@ -95,6 +99,13 @@ int PaperInterface::UseThisDocument(Document *ndoc)
 	doc=ndoc;
 	if (ndoc) ndoc->inc_count();
 	return 0;
+}
+
+/*! PaperGroup or PaperBoxData.
+ */
+int PaperInterface::draws(const char *atype)
+{
+	return !strcmp(atype,"PaperBoxData") || !strcmp(atype,"PaperGroup");
 }
 
 
@@ -144,11 +155,122 @@ void PaperInterface::Clear(SomeData *d)
 //			Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=0)
 //{***
 //}
-//
-//int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
-//			Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=1)
-//{***
-//}
+
+/*! This will be called by viewports, and the papers will be displayed opaque with
+ * drop shadow.
+ */
+int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
+			Laxkit::anObject *a1,Laxkit::anObject *a2,int info)
+{
+	PaperBoxData *data=dynamic_cast<PaperBoxData *>(tdata);
+	if (!data) return 1;
+	int td=showdecs,ntd=needtodraw;
+	BoxTypes tdrawwhat=drawwhat;
+	drawwhat=AllBoxes;
+	showdecs=2;
+	needtodraw=1;
+	Displayer *olddp=dp;
+	dp=tdp;
+	DrawPaper(data,~0,1,5);
+	dp=olddp;
+	drawwhat=tdrawwhat;
+	needtodraw=ntd;
+	showdecs=td;
+	paperboxdata=NULL;
+	return 1;
+}
+
+/*! If fill!=0, then fill the media box with the paper color.
+ * If shadow!=0, then put a black drop shadow under a filled media box,
+ * at an offset pixel length shadow.
+ */
+void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow)
+{
+	if (!data) return;
+	int w=1;
+	if (data==curbox || curboxes.findindex(data)>=0) w=2;
+	XSetLineAttributes(dp->GetDpy(),dp->GetGC(),w,LineSolid,CapButt,JoinMiter);
+	//dp->PushAndNewTransform(data->m());
+
+	PaperBox *box=data->box;
+	flatpoint p[4];
+	if ((what&MediaBox) && (box->which&MediaBox)) {
+		p[0]=flatpoint(box->media.minx,box->media.miny);
+		p[1]=flatpoint(box->media.minx,box->media.maxy);
+		p[2]=flatpoint(box->media.maxx,box->media.maxy);
+		p[3]=flatpoint(box->media.maxx,box->media.miny);
+
+		XSetFillStyle(dp->GetDpy(),dp->GetGC(),FillSolid);
+		XSetFillRule(dp->GetDpy(),dp->GetGC(),WindingRule);
+
+		 //draw black shadow
+		//dp->NewFG(255,0,0);
+		//dp->NewBG(~0);
+		if (shadow) {
+			dp->NewFG(0,0,0);
+			dp->PushAxes();
+			dp->ShiftScreen(shadow,shadow);
+			dp->drawlines(1,1,1,4,p);
+			dp->PopAxes();
+		}
+		
+		 //draw white fill or plain outline
+		if (fill||shadow) {
+			dp->NewFG(0,0,255);
+			dp->NewBG(~0);
+			dp->drawlines(1,1,2,4,p);
+		} else {
+			dp->NewFG(0,0,255);
+			dp->drawlines(1,1,0,4,p);
+		}
+	}
+	if ((what&ArtBox) && (box->which&ArtBox)) {
+		p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
+		p[1]=dp->realtoscreen(box->art.minx,box->art.maxy);
+		p[2]=dp->realtoscreen(box->art.maxx,box->art.maxy);
+		p[3]=dp->realtoscreen(box->art.maxx,box->art.miny);
+		dp->drawlines(1,0,0,4,p);
+	}
+	if ((what&TrimBox) && (box->which&TrimBox)) {
+		p[0]=dp->realtoscreen(box->trim.minx,box->trim.miny);
+		p[1]=dp->realtoscreen(box->trim.minx,box->trim.maxy);
+		p[2]=dp->realtoscreen(box->trim.maxx,box->trim.maxy);
+		p[3]=dp->realtoscreen(box->trim.maxx,box->trim.miny);
+		dp->drawlines(1,0,0,4,p);
+	}
+	if ((what&PrintableBox) && (box->which&PrintableBox)) {
+		p[0]=dp->realtoscreen(box->printable.minx,box->printable.miny);
+		p[1]=dp->realtoscreen(box->printable.minx,box->printable.maxy);
+		p[2]=dp->realtoscreen(box->printable.maxx,box->printable.maxy);
+		p[3]=dp->realtoscreen(box->printable.maxx,box->printable.miny);
+		dp->drawlines(1,0,0,4,p);
+	}
+	if ((what&BleedBox) && (box->which&BleedBox)) {
+		p[0]=dp->realtoscreen(box->bleed.minx,box->bleed.miny);
+		p[1]=dp->realtoscreen(box->bleed.minx,box->bleed.maxy);
+		p[2]=dp->realtoscreen(box->bleed.maxx,box->bleed.maxy);
+		p[3]=dp->realtoscreen(box->bleed.maxx,box->bleed.miny);
+		dp->drawlines(1,0,0,4,p);
+	}
+	//dp->PopAxes(); //spread axes
+}
+
+void PaperInterface::DrawGroup(PaperGroup *group,int shadow)
+{
+	 //draw shadow under whole group
+	if (shadow) {
+		for (int c=0; c<group->papers.n; c++) {
+			dp->PushAndNewTransform(group->papers.e[c]->m());
+			DrawPaper(group->papers.e[c],MediaBox, 1,5);
+			dp->PopAxes(); 
+		}
+	}
+	for (int c=0; c<group->papers.n; c++) {
+		dp->PushAndNewTransform(group->papers.e[c]->m());
+		DrawPaper(group->papers.e[c],drawwhat, 1,0);
+		dp->PopAxes(); 
+	}
+}
 
 /*! \todo draw arrow to indicate paper up direction
  */
@@ -172,51 +294,9 @@ int PaperInterface::Refresh()
 	}
 
 	if (!papergroup || !papergroup->papers.n) return 0;
-	int c,w;
-	for (c=0; c<papergroup->papers.n; c++) {
-		w=0;
-		if (papergroup->papers.e[c]==curbox) w=2;
-		XSetLineAttributes(dp->GetDpy(),dp->GetGC(),w,LineSolid,CapButt,JoinMiter);
-		dp->PushAndNewTransform(papergroup->papers.e[c]->m());
 
-		box=papergroup->papers.e[c]->box;
-		if ((drawwhat&MediaBox) && (box->which&MediaBox)) {
-			p[0]=dp->realtoscreen(box->media.minx,box->media.miny);
-			p[1]=dp->realtoscreen(box->media.minx,box->media.maxy);
-			p[2]=dp->realtoscreen(box->media.maxx,box->media.maxy);
-			p[3]=dp->realtoscreen(box->media.maxx,box->media.miny);
-			dp->drawlines(1,0,0,4,p);
-		}
-		if ((drawwhat&ArtBox) && (box->which&ArtBox)) {
-			p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
-			p[1]=dp->realtoscreen(box->art.minx,box->art.maxy);
-			p[2]=dp->realtoscreen(box->art.maxx,box->art.maxy);
-			p[3]=dp->realtoscreen(box->art.maxx,box->art.miny);
-			dp->drawlines(1,0,0,4,p);
-		}
-		if ((drawwhat&TrimBox) && (box->which&TrimBox)) {
-			p[0]=dp->realtoscreen(box->trim.minx,box->trim.miny);
-			p[1]=dp->realtoscreen(box->trim.minx,box->trim.maxy);
-			p[2]=dp->realtoscreen(box->trim.maxx,box->trim.maxy);
-			p[3]=dp->realtoscreen(box->trim.maxx,box->trim.miny);
-			dp->drawlines(1,0,0,4,p);
-		}
-		if ((drawwhat&PrintableBox) && (box->which&PrintableBox)) {
-			p[0]=dp->realtoscreen(box->printable.minx,box->printable.miny);
-			p[1]=dp->realtoscreen(box->printable.minx,box->printable.maxy);
-			p[2]=dp->realtoscreen(box->printable.maxx,box->printable.maxy);
-			p[3]=dp->realtoscreen(box->printable.maxx,box->printable.miny);
-			dp->drawlines(1,0,0,4,p);
-		}
-		if ((drawwhat&BleedBox) && (box->which&BleedBox)) {
-			p[0]=dp->realtoscreen(box->bleed.minx,box->bleed.miny);
-			p[1]=dp->realtoscreen(box->bleed.minx,box->bleed.maxy);
-			p[2]=dp->realtoscreen(box->bleed.maxx,box->bleed.maxy);
-			p[3]=dp->realtoscreen(box->bleed.maxx,box->bleed.miny);
-			dp->drawlines(1,0,0,4,p);
-		}
-		dp->PopAxes(); //spread axes
-	}
+	DrawGroup(papergroup,1);
+
 	return 1;
 }
 
@@ -225,9 +305,10 @@ int PaperInterface::scan(int x,int y)
 {
 	if (!papergroup->papers.n) return -1;
 	flatpoint fp=dp->screentoreal(x,y);
-	if (curbox && curbox->pointin(fp)) return papergroup->papers.findindex(curbox);
 
-	for (int c=0; c<papergroup->papers.n; c++) {
+	//if (curbox && curbox->pointin(fp)) return papergroup->papers.findindex(curbox);
+
+	for (int c=papergroup->papers.n-1; c>=0; c--) {
 		if (papergroup->papers.e[c]->pointin(fp)) return c;
 	}
 	return -1;
@@ -281,6 +362,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 		if (curbox) curbox->dec_count();
 		curbox=papergroup->papers.e[b];
 		curbox->inc_count();
+		if ((state&LAX_STATE_MASK)!=ShiftMask) curboxes.flush();
 		curboxes.pushnodup(curbox,0);
 		needtodraw=1;
 	}
@@ -295,7 +377,7 @@ int PaperInterface::LBUp(int x,int y,unsigned int state)
 
 	//***
 	//if (curbox) { curbox->dec_count(); curbox=NULL; }
-	if (curboxes.n) curboxes.flush();
+	//if (curboxes.n) curboxes.flush();
 
 	return 0;
 }
@@ -392,6 +474,16 @@ int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 		papergroup->papers.remove(c);
 		curbox->dec_count(); curbox=NULL;
 		needtodraw=1;
+		return 0;
+	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
+		if (!papergroup) return 1;
+		needtodraw=1;
+		int n=curboxes.n;
+		curboxes.flush();
+		if (curbox) { curbox->dec_count(); curbox=NULL; }
+		if (n) return 0;
+		for (int c=0; c<papergroup->papers.n; c++) 
+			curboxes.push(papergroup->papers.e[c],0);
 		return 0;
 	}
 	return 1;

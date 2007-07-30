@@ -20,8 +20,6 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-       In image properties dialog, have the popup list of potential previews
-       Soup up the color box so one can recall previous colors, and/or palette window integration
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -30,6 +28,9 @@ VERSION 0.08
 
 VERSION 0.09
 ------------
+       Soup up the color box so one can recall previous colors, and/or palette window integration
+       In image properties dialog, have the popup list of potential previews
+       When importing from an image list file, should be able to say if and when to auto-make previews
        Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
        Fix multi-object selection move when crossing page boundaries
        libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
@@ -85,6 +86,7 @@ VERSION 0.1
        make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
        svg in
+       support for the svg filters?
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
