@@ -553,6 +553,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				ps->flags|=PAGESTYLE_AUTONOMOUS;
 			}
 			InstallPageStyle(ps,0);
+			ps->dec_count();
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
 			g->dump_in_atts(att->attributes.e[c],flag);

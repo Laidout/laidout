@@ -158,12 +158,18 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 //********needs work:
 //			 //create border colors so as to not have transparent outer edge sections
 //			int np=patch->bezOfPatch(NULL,0,0,0,0);
-//			flatpoint pe[np],po[np],
+//			int nb=np/3*numdiv; //number of broken down points
+//			flatpoint e[np],pe[nb],po[nb],
 //					  pcenter=patch->getPoint(.5,.5);
-//			patch->bezOfPatch(pe,0,0,0,0);
-//			for (c=1; c<np; c+=3) po[c]=pcenter+1.333*(pe[c]-pcenter);
+//			patch->bezOfPatch(e,0,0,0,0);
+//			bez_points(pe,np/3,e,numdiv,1,0);
+//			for (c=0; c<nb; c++) {
+//				po[c]=pcenter+1.333*(pe[c]-pcenter);
+//			}
+//
 //			for (c=1; c<np-3; c+=3) {
 //		      for (cc=0; cc<numdiv; cc++) {
+//				***this stuff now broken:
 //				if (c<patch->xsize) {
 //					s=(double)(c+3.*cc/numdiv)/patch->xsize;
 //					t=0.;
@@ -190,10 +196,100 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 //							color.alpha/65535.);
 //			  }
 //			}
-			
+//-------OR-----------
+			 //create border colors so as to not have transparent outer edge sections.
+			 //this has to be done before the actual patch, so that the real colors lay
+			 //on top of this stuff.
+			flatpoint pcenter=patch->getPoint(.5,.5);
+			double extend=2;
+			for (r=0; r<patch->ysize/3; r++) {
+			    for (rr=0; rr<numdiv; rr++) {
+					//s=(c+(float)cc/numdiv)/(patch->xsize/3);
+					t=(r+(float)rr/numdiv)/(patch->ysize/3);
 
-			
-			
+					 //---------left side
+				     //get color for point (r+rr,c+cc)
+					patch->getColor(0,t/(1-dt),&color);
+
+			  		 //get coords for that little rect
+					p[0]=patch->getPoint(0   ,t);
+					p[1]=patch->getPoint(0   ,t+fudge*dt);
+					p[2]=pcenter + extend*(p[1]-pcenter);
+					p[3]=pcenter + extend*(p[0]-pcenter);
+
+			  		fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
+							  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",
+			  					spc, p[0].x,p[0].y,
+			  					p[1].x,p[1].y,
+			  					p[2].x,p[2].y,
+			  					p[3].x,p[3].y,
+			  					color.red>>8, color.green>>8, color.blue>>8,
+								color.alpha/65535.);
+
+					 //---------right side
+				     //get color for point (r+rr,c+cc)
+					patch->getColor(1.,t/(1-dt),&color);
+
+			  		 //get coords for that little rect
+					p[0]=patch->getPoint(1.   ,t);
+					p[1]=patch->getPoint(1.   ,t+fudge*dt);
+					p[2]=pcenter+extend*(p[1]-pcenter);
+					p[3]=pcenter+extend*(p[0]-pcenter);
+
+			  		fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
+							  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",
+			  					spc, p[0].x,p[0].y,
+			  					p[1].x,p[1].y,
+			  					p[2].x,p[2].y,
+			  					p[3].x,p[3].y,
+			  					color.red>>8, color.green>>8, color.blue>>8,
+								color.alpha/65535.);
+			    }
+			}
+			for (c=0; c<patch->xsize/3; c++) {
+			    for (cc=0; cc<numdiv; cc++) {
+					s=(c+(float)cc/numdiv)/(patch->xsize/3);
+
+					 //---------top side
+				     //get color for point (r+rr,c+cc)
+					patch->getColor(s/(1-ds),0,&color);
+
+			  		 //get coords for that little rect
+					p[0]=patch->getPoint(s,          0);
+					p[1]=patch->getPoint(s+fudge*ds, 0);
+					p[2]=pcenter+extend*(p[1]-pcenter);
+					p[3]=pcenter+extend*(p[0]-pcenter);
+
+			  		fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
+							  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",
+			  					spc, p[0].x,p[0].y,
+			  					p[1].x,p[1].y,
+			  					p[2].x,p[2].y,
+			  					p[3].x,p[3].y,
+			  					color.red>>8, color.green>>8, color.blue>>8,
+								color.alpha/65535.);
+
+					 //---------bottom side
+				     //get color for point (r+rr,c+cc)
+					patch->getColor(s/(1-ds),1,&color);
+
+			  		 //get coords for that little rect
+					p[0]=patch->getPoint(s,          1);
+					p[1]=patch->getPoint(s+fudge*ds, 1);
+					p[2]=pcenter+extend*(p[1]-pcenter);
+					p[3]=pcenter+extend*(p[0]-pcenter);
+
+			  		fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
+							  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",
+			  					spc, p[0].x,p[0].y,
+			  					p[1].x,p[1].y,
+			  					p[2].x,p[2].y,
+			  					p[3].x,p[3].y,
+			  					color.red>>8, color.green>>8, color.blue>>8,
+								color.alpha/65535.);
+			    }
+			}
+
 			 //for each subpatch, break down into many sub-rectangles
 			for (r=0; r<patch->ysize/3; r++) {
 			  for (c=0; c<patch->xsize/3; c++) {

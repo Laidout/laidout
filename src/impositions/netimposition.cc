@@ -230,7 +230,12 @@ Style *NetImposition::duplicate(Style *s)//s=NULL
 	if (!d) return NULL;
 	
 	 // copy net
-	d->net=net->duplicate();
+	if (d->net) d->net->dec_count();
+	if (netisbuiltin) d->net=net->duplicate();
+	else {
+		net->inc_count();
+		d->net=net;
+	}
 	d->netisbuiltin=netisbuiltin;
 	d->setPage();
 		
@@ -675,12 +680,14 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			//paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
 			//paperstyle->dump_in_atts(att->attributes.e[c],flag);
 		} else if (!strcmp(name,"net")) {
-			if (value && strcmp(value,"")) { // is a built in
+			if (!isblank(value)) { // is a built in
 				SetNet(value);
 			} else {
 				tempnet=new Net();
 				tempnet->dump_in_atts(att->attributes.e[c],flag);
 				SetNet(tempnet);
+				tempnet->dec_count();
+
 				DBG cerr <<"-----------after dump_in net and set----------"<<endl;
 				DBG net->dump_out(stderr,2,0);
 				DBG cerr <<"-----------end netimpos..----------"<<endl;
