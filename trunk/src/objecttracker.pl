@@ -35,8 +35,8 @@ while (defined($line)) {
 			break;
 		}
 		if (!($line =~ m/^.*(\d*).*destroyed/)) {
-			print " but not destroyed\n";
-			print OUT2FILE "$num  created but not destroyed\n";
+			print " but NOT destroyed\n";
+			print OUT2FILE "$num  created but NOT destroyed\n";
 			if (!($line=<OUTFILE>)) { break; }
 		} else {
 			print " and destroyed\n";

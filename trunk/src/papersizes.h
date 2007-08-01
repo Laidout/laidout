@@ -45,6 +45,7 @@ class PaperStyle : public Style
 	int dpi;
 	unsigned int flags; //1=landscape !(&1)=portrait
 	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,int ndpi);
+	virtual ~PaperStyle();
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual Style *duplicate(Style *s=NULL);
@@ -59,7 +60,7 @@ Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> 
 
 
 //------------------------------------- PaperBox --------------------------------------
-class PaperBox : public Laxkit::RefCounted
+class PaperBox :  public Laxkit::anObject, public Laxkit::RefCounted
 {
  public:
 	int which;

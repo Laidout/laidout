@@ -82,8 +82,8 @@ Singles::Singles() : Imposition("Singles")
 	SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 			
-	pagestyle=NULL;
-	setPage();
+	//pagestyle=NULL;
+	//setPage();***<--called from SetPaperSize
 
 	styledef=stylemanager.FindDef("Singles");
 	if (styledef) styledef->inc_count(); 
@@ -188,6 +188,7 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***should be global def
 			paperstyle->dump_in_atts(att->attributes.e[c],flag);
 			SetPaperSize(paperstyle);
+			paperstyle->dec_count();
 		} else if (!strcmp(name,"defaultpapers")) {
 			cout <<"*** dump in papers"<<endl;
 		}

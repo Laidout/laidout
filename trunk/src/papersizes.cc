@@ -19,6 +19,9 @@
 //#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#include <iostream>
+#define DBG 
 using namespace std;
 
 #include "papersizes.h"
@@ -186,6 +189,13 @@ PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,i
 	height=h;
 	dpi=ndpi;
 	flags=nflags;
+	DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
+}
+
+PaperStyle::~PaperStyle()
+{
+	if (name) delete[] name;
+	DBG cerr <<"PaperStyle destroyed, obj "<<object_id<<endl;
 }
 
 
@@ -281,6 +291,7 @@ PaperBox::PaperBox(PaperStyle *paper)
 		media.maxx=paper->w(); //takes into account paper orientation
 		media.maxy=paper->h();
 	}
+	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }
 
 /*! Decs count of paper.
@@ -288,6 +299,7 @@ PaperBox::PaperBox(PaperStyle *paper)
 PaperBox::~PaperBox()
 {
 	if (paperstyle) paperstyle->dec_count();
+	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
 }
 
 //------------------------------------- PaperBoxData --------------------------------------
@@ -322,12 +334,16 @@ PaperGroup::PaperGroup()
 	locked=0;
 	name=Name=NULL;
 	owner=NULL;
+
+	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }
 
 PaperGroup::~PaperGroup()
 {
 	if (name) delete[] name;
 	if (Name) delete[] Name;
+
+	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
 }
 
 /*!

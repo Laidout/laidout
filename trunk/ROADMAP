@@ -20,7 +20,7 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+(done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK

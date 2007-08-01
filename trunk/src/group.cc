@@ -221,6 +221,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				if (data) {
 					data->dump_in_atts(att->attributes[c],flag);
 					push(data,0);
+					data->dec_count();
 				}
 				deletestrs(strs,n);
 			} else {
