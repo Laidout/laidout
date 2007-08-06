@@ -1,8 +1,11 @@
 #$Id$
 
 
+	#$(foreach NAME, `ls *.po`, $(shell msgfmt $(NAME) -o `basename $(NAME) .po`.mo))
 compile:
-	msgfmt *.po
+	@echo "Compiling po files..."
+	$(foreach NAME, $(basename $(shell ls *.po)), $(shell msgfmt $(NAME).po -o $(NAME).mo))
+	@echo "Done!"
 
 update: freshdump
 	msgmerge -U laidout.pot laidout-freshdump.pot

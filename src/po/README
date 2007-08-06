@@ -1,0 +1,56 @@
+TODO: need utf-8 support in the controls!!! only latin-1 still
+  ISO-8859-1
+  UTF-8      <--eventually, this only!!
+TODO: grab pot from Laxkit!!
+
+
+
+-------------------------- Updating Basic Info -----------------------
+1. POTFILES is a list of files to grab translatable strings from.
+   To regenerate that file, do:
+    make potfiles
+
+2. laidout.pot is base template file. Refresh with:
+    make update
+
+
+
+-------------------------- Making New Translations -------------------
+1. Update the basic info as above.
+
+2. The Laxkit also has numerous translatable strings. These can be found
+   in its laxkit.pot file. Those strings may have been translated to the desired
+   language already. If so, then do this:
+    msgmerge laidout.pot laxkit.pot > laidout-and-laxkit.pot
+
+   Now make the necessary changes to that pot file, and save to the correct language
+   name in this directory. For instance, canadian english would be en_CA.po. 
+
+
+
+----------------------- Installation of the translation files ---------------
+1. Plain "make" will compile all the .po files found there.
+
+2. TODO: installation of po files
+
+
+
+-----------------------------------------------------------------------------------------
+-----------For reference, here's the basics of translation file management: -------------
+1. xgettext -C -d laidout  --files-from POTFILES -o laidout.pot --keyword=_ --flag=_:1:pass-c-format
+
+ ----> makes a pot file, usually from a file called po/POTFILES, with translatable strings listed
+ then, edit that file to have a proper header, and make it a master po file.
+ translators make their own en_CA.po, es.po, etc based on the master pot file
+
+2. msgmerge old.pot new.pot > newest.pot  will merge new strings with an existing pot file
+
+3. msgfmt converts the .po files into .mo (or .gmo) files
+
+4. these are installed typically in /usr/share/locale/en_CA/LC_MESSAGES/thedomainname.mo,
+                              or $(prefix)/share/locale/...
+
+		foreach *.mo    install $(prefix)/share/locale/`basename $NAME .po`/LC_MESSAGES/laidout.mo
+
+
+

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-06-10 13:33-0700\n"
+"POT-Creation-Date: 2007-08-06 10:37-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,3 +15,921 @@ msgstr ""
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: ../printing/print.cc:51 ../filetypes/postscript.cc:70
+msgid "Postscript LL3"
+msgstr ""
+
+#: ../printing/print.cc:69 ../viewwindow.cc:2829
+msgid "Print"
+msgstr ""
+
+#: ../printing/psout.cc:311 ../printing/psout.cc:590 ../filetypes/ppt.cc:135
+msgid "Nothing to export!"
+msgstr ""
+
+#: ../printing/psout.cc:321 ../filetypes/ppt.cc:144
+#: ../filetypes/scribus.cc:123 ../filetypes/image.cc:132
+msgid "Cannot save without a filename."
+msgstr ""
+
+#: ../printing/psout.cc:333 ../filetypes/ppt.cc:155 ../filetypes/svg.cc:534
+#: ../filetypes/scribus.cc:135 ../filetypes/pdf.cc:478
+msgid "Error opening file for writing."
+msgstr ""
+
+#: ../printing/psout.cc:622
+#, c-format
+msgid "Error opening %s for writing during EPS out."
+msgstr ""
+
+#: ../impositions/nets.cc:956 ../impositions/nets.cc:961
+msgid "Cannot read that file."
+msgstr ""
+
+#: ../impositions/nets.cc:1014
+msgid "Bad OFF file."
+msgstr ""
+
+#: ../impositions/imposition.cc:676
+msgid "Papers"
+msgstr ""
+
+#: ../impositions/imposition.cc:677
+msgid "Pages"
+msgstr ""
+
+#: ../impositions/imposition.cc:678
+msgid "Singles"
+msgstr ""
+
+#: ../impositions/imposition.cc:679
+msgid "Little Spreads"
+msgstr ""
+
+#: ../importimages.cc:177
+msgid "Jump to previous selected file"
+msgstr ""
+
+#: ../importimages.cc:182
+msgid "Jump to next selected file"
+msgstr ""
+
+#: ../importimages.cc:192
+msgid "Select from possible automatic previews"
+msgstr ""
+
+#: ../importimages.cc:203
+msgid "Generate"
+msgstr ""
+
+#: ../importimages.cc:204
+msgid "Generate a preview for file at this location."
+msgstr ""
+
+#: ../importimages.cc:219
+msgid "Start Page:"
+msgstr ""
+
+#: ../importimages.cc:226
+msgid "Default dpi:"
+msgstr ""
+
+#: ../importimages.cc:245
+msgid "Images Per Page:"
+msgstr ""
+
+#: ../importimages.cc:251
+msgid "Exactly this many:"
+msgstr ""
+
+#: ../importimages.cc:262
+msgid "As many as will fit per page"
+msgstr ""
+
+#: ../importimages.cc:269
+msgid "All on one page"
+msgstr ""
+
+#: ../importimages.cc:276
+msgid "Default name for previews:"
+msgstr ""
+
+#: ../importimages.cc:277 ../importimages.cc:731
+msgid "any"
+msgstr ""
+
+#: ../importimages.cc:280
+#, c-format
+msgid ""
+"For file.jpg,\n"
+"* gets replaced with the original file name (\"file.jpg\"), and\n"
+"% gets replaced with the file name without the final suffix (\"file\")\n"
+msgstr ""
+
+#: ../importimages.cc:292
+msgid "Select from the available preview bases"
+msgstr ""
+
+#: ../importimages.cc:297
+msgid "Default max width for new previews:"
+msgstr ""
+
+#: ../importimages.cc:300
+msgid ""
+"Any newly generated previews must fit\n"
+"in a square this many pixels wide"
+msgstr ""
+
+#: ../importimages.cc:305
+msgid "Make previews for files larger than"
+msgstr ""
+
+#: ../importimages.cc:314
+msgid ""
+"Previews will be automatically generated \n"
+"for files over this size, and then only \n"
+"whenever the generated preview name doesn't\n"
+"exist already"
+msgstr ""
+
+#: ../laidout.cc:73
+#, c-format
+msgid ""
+"Laidout Version %s\n"
+"by Tom Lechner, sometime in 2007\n"
+"Released under the GNU Public License, Version 2.\n"
+" (using Laxkit Version %s)"
+msgstr ""
+
+#: ../laidout.cc:89
+msgid ""
+"\n"
+" laidout [options] [file1] [file2] ...\n"
+"\n"
+"Options:\n"
+"  --export-formats                 List all the available export formats\n"
+"  --list-export-options format     List all the options for the given "
+"format\n"
+"  --export \"format=EPS start=3\"    Export a document based on the given "
+"options\n"
+"  -t --template templatename       Start laidout from this template in ~/."
+"laidout/(version)/templates\n"
+"  -N --no-template                 Do not use a default template\n"
+"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
+"  --file-format                    Print out a pseudocode mockup of the file "
+"format, then exit\n"
+"  -v --version                     Print out version info, then exit.\n"
+"  -h --help                        Show this summary and exit.\n"
+msgstr ""
+
+#: ../laidout.cc:706
+msgid "Missing parameter..."
+msgstr ""
+
+#: ../laidout.cc:707
+msgid "Unknown option"
+msgstr ""
+
+#: ../laidout.cc:788
+msgid "Bad export configuration"
+msgstr ""
+
+#: ../laidout.cc:798
+msgid "Fatal errors loading document:"
+msgstr ""
+
+#: ../laidout.cc:802
+msgid "Warnings encountered while loading document:"
+msgstr ""
+
+#: ../laidout.cc:811
+msgid "Export failed."
+msgstr ""
+
+#: ../laidout.cc:814
+msgid "Export finished with warnings:"
+msgstr ""
+
+#: ../laidout.cc:818 ../viewwindow.cc:3051
+msgid "Exported."
+msgstr ""
+
+#: ../laidout.cc:1106
+msgid "untitled"
+msgstr ""
+
+#: ../newdoc.cc:147
+msgid "Left:"
+msgstr ""
+
+#: ../newdoc.cc:148
+msgid "Right:"
+msgstr ""
+
+#: ../newdoc.cc:149
+msgid "Top:"
+msgstr ""
+
+#: ../newdoc.cc:150
+msgid "Bottom:"
+msgstr ""
+
+#: ../newdoc.cc:187
+msgid "Save As:"
+msgstr ""
+
+#: ../newdoc.cc:208
+msgid "Paper Size  x:"
+msgstr ""
+
+#: ../newdoc.cc:215 ../newdoc.cc:301
+msgid "y:"
+msgstr ""
+
+#: ../newdoc.cc:232
+msgid "Portrait"
+msgstr ""
+
+#: ../newdoc.cc:233
+msgid "Landscape"
+msgstr ""
+
+#: ../newdoc.cc:241
+msgid "Tile y:"
+msgstr ""
+
+#: ../newdoc.cc:247
+msgid "Tile x:"
+msgstr ""
+
+#: ../newdoc.cc:249
+msgid "Only for Single, Double, and Booklet"
+msgstr ""
+
+#: ../newdoc.cc:257
+msgid "Number of pages:"
+msgstr ""
+
+#: ../newdoc.cc:263
+msgid "Imposition:"
+msgstr ""
+
+#: ../newdoc.cc:276
+msgid ""
+"\n"
+"\n"
+"(Unimplemented stuff follows,\n"
+"Look for it in future releases!)"
+msgstr ""
+
+#: ../newdoc.cc:280
+msgid "pagesize:"
+msgstr ""
+
+#: ../newdoc.cc:284
+msgid "default"
+msgstr ""
+
+#: ../newdoc.cc:289
+msgid "custom"
+msgstr ""
+
+#: ../newdoc.cc:295
+msgid "x:"
+msgstr ""
+
+#: ../newdoc.cc:307
+msgid "view:"
+msgstr ""
+
+#: ../newdoc.cc:313
+msgid "single"
+msgstr ""
+
+#: ../newdoc.cc:314
+msgid "page layout"
+msgstr ""
+
+#: ../newdoc.cc:315
+msgid "paper layout"
+msgstr ""
+
+#: ../newdoc.cc:323
+msgid "target dpi:"
+msgstr ""
+
+#: ../newdoc.cc:331
+msgid "default unit:"
+msgstr ""
+
+#: ../newdoc.cc:339
+msgid "color mode:"
+msgstr ""
+
+#: ../newdoc.cc:345
+msgid ""
+"left button: red\n"
+"middle button: green\n"
+"right button: blue"
+msgstr ""
+
+#: ../newdoc.cc:353
+msgid "target printer:"
+msgstr ""
+
+#: ../newdoc.cc:359
+msgid "set options from ppd..."
+msgstr ""
+
+#: ../newdoc.cc:419
+msgid "Ok"
+msgstr ""
+
+#: ../newdoc.cc:422 ../filetypes/exportdialog.cc:388
+msgid "Cancel"
+msgstr ""
+
+#: ../newdoc.cc:500
+msgid "Save As"
+msgstr ""
+
+#: ../viewwindow.cc:363
+msgid "(no doc)"
+msgstr ""
+
+#: ../viewwindow.cc:634 ../viewwindow.cc:2731
+msgid "Page: "
+msgstr ""
+
+#: ../viewwindow.cc:642
+msgid "limbo"
+msgstr ""
+
+#: ../viewwindow.cc:646
+msgid "Limbo: "
+msgstr ""
+
+#: ../viewwindow.cc:1852
+#, c-format
+msgid "Limbo %d"
+msgstr ""
+
+#: ../viewwindow.cc:2395 ../document.cc:953 ../document.cc:955
+#: ../document.cc:956
+msgid "Untitled"
+msgstr ""
+
+#: ../viewwindow.cc:2680
+msgid "Document list"
+msgstr ""
+
+#: ../viewwindow.cc:2692
+msgid "The current tool"
+msgstr ""
+
+#: ../viewwindow.cc:2732
+msgid ""
+"The pages in the spread\n"
+"and the current page"
+msgstr ""
+
+#: ../viewwindow.cc:2737
+msgid "Previous spread"
+msgstr ""
+
+#: ../viewwindow.cc:2742
+msgid "Next spread"
+msgstr ""
+
+#: ../viewwindow.cc:2747
+msgid "Whether pages clips its contents"
+msgstr ""
+
+#: ../viewwindow.cc:2759
+msgid "Single"
+msgstr ""
+
+#: ../viewwindow.cc:2760
+msgid "Page Layout"
+msgstr ""
+
+#: ../viewwindow.cc:2761
+msgid "Paper Layout"
+msgstr ""
+
+#: ../viewwindow.cc:2767
+msgid ""
+"Current color:\n"
+"Drag left for red,\n"
+" middle for green,\n"
+" right for red"
+msgstr ""
+
+#: ../viewwindow.cc:2771
+msgid "Add Page"
+msgstr ""
+
+#: ../viewwindow.cc:2772
+msgid "Add 1 page after this one"
+msgstr ""
+
+#: ../viewwindow.cc:2776
+msgid "Delete Page"
+msgstr ""
+
+#: ../viewwindow.cc:2777
+msgid "Delete the current page"
+msgstr ""
+
+#: ../viewwindow.cc:2781
+msgid "Import Images"
+msgstr ""
+
+#: ../viewwindow.cc:2782
+msgid "Import one or more images"
+msgstr ""
+
+#: ../viewwindow.cc:2794
+msgid "Import"
+msgstr ""
+
+#: ../viewwindow.cc:2795
+msgid "Try to import various vector based files into the document"
+msgstr ""
+
+#: ../viewwindow.cc:2822 ../filetypes/exportdialog.cc:80
+#: ../filetypes/exportdialog.cc:384
+msgid "Export"
+msgstr ""
+
+#: ../viewwindow.cc:2823
+msgid "Export the document in various ways"
+msgstr ""
+
+#: ../viewwindow.cc:2830
+msgid "Print the document"
+msgstr ""
+
+#: ../viewwindow.cc:2835
+msgid "Open"
+msgstr ""
+
+#: ../viewwindow.cc:2836
+msgid "Open a document from disk"
+msgstr ""
+
+#: ../viewwindow.cc:2840
+msgid "Save"
+msgstr ""
+
+#: ../viewwindow.cc:2841
+msgid "Save the current document"
+msgstr ""
+
+#: ../viewwindow.cc:2847
+msgid "Help!"
+msgstr ""
+
+#: ../viewwindow.cc:2848
+msgid "Popup a list of shortcuts"
+msgstr ""
+
+#: ../viewwindow.cc:2888
+#, c-format
+msgid "Images imported."
+msgstr ""
+
+#: ../viewwindow.cc:2889
+#, c-format
+msgid "Image imported."
+msgstr ""
+
+#: ../viewwindow.cc:2891
+#, c-format
+msgid "Couldn't load images."
+msgstr ""
+
+#: ../viewwindow.cc:2892
+#, c-format
+msgid "Couldn't load image."
+msgstr ""
+
+#: ../viewwindow.cc:2928
+#, c-format
+msgid "Couldn't load image from \"%s\"."
+msgstr ""
+
+#: ../viewwindow.cc:2943 ../viewwindow.cc:3021
+#, c-format
+msgid "Saved to %s."
+msgstr ""
+
+#: ../viewwindow.cc:2949 ../viewwindow.cc:3027 ../viewwindow.cc:3440
+#: ../viewwindow.cc:3529
+msgid "Problem saving. Not saved."
+msgstr ""
+
+#: ../viewwindow.cc:2975
+#, c-format
+msgid "File not saved: Could not change directory to \"%s\""
+msgstr ""
+
+#: ../viewwindow.cc:3009
+msgid "Illegal characters in file name. Not saved."
+msgstr ""
+
+#: ../viewwindow.cc:3053
+msgid "Warning!"
+msgstr ""
+
+#: ../viewwindow.cc:3056
+msgid "Dammit!"
+msgstr ""
+
+#: ../viewwindow.cc:3064
+msgid "Error exporting."
+msgstr ""
+
+#: ../viewwindow.cc:3166 ../viewwindow.cc:3187
+#, c-format
+msgid "New Color r:%.4f g:%.4f b:%.4f a:%.4f"
+msgstr ""
+
+#: ../viewwindow.cc:3219
+msgid "None"
+msgstr ""
+
+#: ../viewwindow.cc:3233
+#, c-format
+msgid "(Limbo %d)"
+msgstr ""
+
+#: ../viewwindow.cc:3244
+msgid "Documents"
+msgstr ""
+
+#: ../viewwindow.cc:3285
+msgid "Page added."
+msgstr ""
+
+#: ../viewwindow.cc:3286
+msgid "Error adding page."
+msgstr ""
+
+#: ../viewwindow.cc:3294
+msgid "Page deleted."
+msgstr ""
+
+#: ../viewwindow.cc:3295
+msgid "Cannot delete the only page."
+msgstr ""
+
+#: ../viewwindow.cc:3296
+msgid "Error deleting page."
+msgstr ""
+
+#: ../viewwindow.cc:3383
+msgid "Sorry, there are no import filters installed."
+msgstr ""
+
+#: ../commandwindow.cc:73
+msgid "Document added."
+msgstr ""
+
+#: ../commandwindow.cc:74
+msgid "Error adding document. Not added"
+msgstr ""
+
+#: ../commandwindow.cc:77
+msgid "Project: "
+msgstr ""
+
+#: ../commandwindow.cc:79
+msgid "(untitled)"
+msgstr ""
+
+#: ../commandwindow.cc:87
+msgid "No documents in project."
+msgstr ""
+
+#: ../commandwindow.cc:108
+msgid "Could not load that."
+msgstr ""
+
+#: ../commandwindow.cc:110
+msgid "That document is already loaded."
+msgstr ""
+
+#: ../commandwindow.cc:116
+msgid "Errors loading.\n"
+msgstr ""
+
+#: ../commandwindow.cc:117
+msgid "Not loaded."
+msgstr ""
+
+#: ../commandwindow.cc:129
+msgid "Warnings encountered while loading:\n"
+msgstr ""
+
+#: ../commandwindow.cc:130
+msgid "Loaded."
+msgstr ""
+
+#: ../commandwindow.cc:137
+msgid ""
+"The only recognized commands are:\n"
+"newdoc [spec]\n"
+"open [a laidout document]\n"
+"help\n"
+"quit\n"
+"?"
+msgstr ""
+
+#: ../commandwindow.cc:145
+msgid "You are surrounded by twisty passages, all alike."
+msgstr ""
+
+#: ../spreadeditor.cc:195
+msgid "Auto arrange on each window size change"
+msgstr ""
+
+#: ../spreadeditor.cc:196
+msgid "Auto arrange until you move a spread"
+msgstr ""
+
+#: ../spreadeditor.cc:197
+msgid "Arrange in one row"
+msgstr ""
+
+#: ../spreadeditor.cc:198
+msgid "Arrange in one column"
+msgstr ""
+
+#: ../spreadeditor.cc:199
+msgid "Arrange in a grid based on screen proportions"
+msgstr ""
+
+#: ../spreadeditor.cc:200
+msgid "You will do all arranging"
+msgstr ""
+
+#: ../spreadeditor.cc:201
+msgid "? error: bad arrange value"
+msgstr ""
+
+#: ../spreadeditor.cc:1259
+msgid "Apply"
+msgstr ""
+
+#: ../spreadeditor.cc:1262
+msgid "Reset"
+msgstr ""
+
+#: ../spreadeditor.cc:1265
+msgid "Update Thumbs"
+msgstr ""
+
+#: ../document.cc:667
+msgid "Need a file name to save to!"
+msgstr ""
+
+#: ../document.cc:673
+msgid "File cannot be opened for writing"
+msgstr ""
+
+#: ../document.cc:1004
+msgid "new"
+msgstr ""
+
+#: ../utils.cc:111
+#, c-format
+msgid "%s does not appear to be a Laidout file."
+msgstr ""
+
+#: ../utils.cc:123
+#, c-format
+msgid "%s cannot be opened for reading."
+msgstr ""
+
+#: ../utils.cc:147
+#, c-format
+msgid "%s does not appear to be a Laidout %s file."
+msgstr ""
+
+#: ../filetypes/ppt.cc:58
+msgid "Passepartout"
+msgstr ""
+
+#: ../filetypes/svg.cc:69
+msgid "Svg 1.0"
+msgstr ""
+
+#: ../filetypes/svg.cc:113
+msgid "Cannot export Eps objects into svg.\n"
+msgstr ""
+
+#: ../filetypes/svg.cc:134
+msgid "Warning: interpolating a color patch object\n"
+msgstr ""
+
+#: ../filetypes/svg.cc:329
+msgid "Cannot export Image Patch objects into svg.\n"
+msgstr ""
+
+#: ../filetypes/svg.cc:522
+msgid "Cannot save to SVG without a filename."
+msgstr ""
+
+#: ../filetypes/scribus.cc:79
+msgid "Scribus 1.3.3.8"
+msgstr ""
+
+#: ../filetypes/scribus.cc:411 ../filetypes/scribus.cc:412
+#, c-format
+msgid "Warning: Cannot export %s to Scribus.\n"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:223
+msgid "The file format to export into"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:232
+msgid "By Command: "
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:234 ../filetypes/exportdialog.cc:242
+msgid "Run this command on a single exported file"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:251
+msgid "To File: "
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:253 ../filetypes/exportdialog.cc:265
+#: ../filetypes/exportdialog.cc:635
+msgid "Export to this file"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:270 ../filetypes/exportdialog.cc:300
+msgid "Browse for a new location"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:279
+msgid "To Files: "
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:281 ../filetypes/exportdialog.cc:292
+#: ../filetypes/exportdialog.cc:673
+msgid ""
+"Export to these files. A '#' is replaced with\n"
+"the spread index. A \"###\" for an index like 3\n"
+"will get replaced with \"003\"."
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:323
+msgid "The type of spreads to export"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:336
+msgid "Export All"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:345
+msgid "Export Current"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:353
+msgid "Export From:"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:365
+msgid "The starting index"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:368
+msgid "To:"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:375
+msgid "The ending index"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:627
+msgid "Cannot overwrite this kind of file!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:631
+msgid "WARNING: This file will be overwritten on export!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:641
+msgid "Cannot write to nothing!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:665
+msgid "Some files cannot be overwritten!"
+msgstr ""
+
+#: ../filetypes/exportdialog.cc:669
+msgid "Warning: Some files will be overwritten!"
+msgstr ""
+
+#: ../filetypes/postscript.cc:86
+msgid "EPS 3.0"
+msgstr ""
+
+#: ../filetypes/image.cc:78
+msgid "Image"
+msgstr ""
+
+#: ../filetypes/image.cc:124
+msgid "Currently need Ghostscript to output to image files."
+msgstr ""
+
+#: ../filetypes/image.cc:145
+msgid "Error exporting to image."
+msgstr ""
+
+#: ../filetypes/image.cc:150
+msgid "Export to image failed."
+msgstr ""
+
+#: ../filetypes/image.cc:202
+msgid "Ghostscript interrupted from making image."
+msgstr ""
+
+#: ../filetypes/image.cc:205
+msgid "Ghostscript had error while making image."
+msgstr ""
+
+#: ../filetypes/pdf.cc:89
+msgid "Pdf 1.4"
+msgstr ""
+
+#: ../filetypes/pdf.cc:90
+msgid "Pdf 1.3"
+msgstr ""
+
+#: ../filetypes/pdf.cc:339
+#, c-format
+msgid "Warning: Cannot export %s to Pdf"
+msgstr ""
+
+#: ../filetypes/pdf.cc:466
+msgid "Cannot save to PDF without a filename."
+msgstr ""
+
+#: ../pagerangedialog.cc:65
+msgid "Go to previous page range"
+msgstr ""
+
+#: ../pagerangedialog.cc:71
+msgid "(no name)"
+msgstr ""
+
+#: ../pagerangedialog.cc:71
+msgid "(no ranges)"
+msgstr ""
+
+#: ../pagerangedialog.cc:73
+msgid "The range's name. Click to edit."
+msgstr ""
+
+#: ../pagerangedialog.cc:79
+msgid "Go to next page range"
+msgstr ""
+
+#: ../pagerangedialog.cc:87
+msgid "Start:"
+msgstr ""
+
+#: ../pagerangedialog.cc:90
+msgid "The starting page index of the range."
+msgstr ""
+
+#: ../pagerangedialog.cc:94
+msgid "End:"
+msgstr ""
+
+#: ../pagerangedialog.cc:97
+msgid "The ending page index of the range."
+msgstr ""
+
+#: ../pagerangedialog.cc:105
+msgid "Base:"
+msgstr ""
+
+#: ../pagerangedialog.cc:107
+msgid ""
+"The label base of the range. a '#' gets replaced with the number.\n"
+"Something like \"###\" will produce 001, 002, ..., 010, 011, etc."
+msgstr ""
+
+#: ../pagerangedialog.cc:121
+msgid "Add before"
+msgstr ""
+
+#: ../pagerangedialog.cc:125
+msgid "Add after"
+msgstr ""
