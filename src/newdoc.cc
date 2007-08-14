@@ -113,34 +113,10 @@ using namespace Laxkit;
  * </pre> 
  *  
  */  
-//class NewDocWindow : public RowFrame
-//{
-//	int mx,my;
-//	virtual void sendNewDoc();
-// public:
-//	int curorientation;
-//	// the names of each, so to change Left->Inside, Top->Inside (like calender), etc
-//	const char *marginl,*marginr,*margint,*marginb; 
-//	Imposition *imp;
-//	PaperStyle *papertype;
-//	
-//	Laxkit::StrSliderPopup *impsel;
-//	Laxkit::LineEdit *lineedit;
-//	Laxkit::LineInput *saveas,*paperx,*papery,*numpages;
-//	Laxkit::MessageBar *mesbar;
-//	Laxkit::CheckBox *defaultpage,*custompage;
-// 	NewDocWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-// 		int xx,int yy,int ww,int hh,int brder);
-//	virtual ~NewDocWindow();
-//	virtual int init();
-////	int Refresh();
-////	virtual int CharInput(unsigned int ch,unsigned int state);
-//	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-//};
 
 NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
-		: RowFrame(parnt,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER,
+		: RowFrame(parnt,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER,
 					xx,yy,ww,hh,brder, NULL,None,NULL,
 					10)
 {
@@ -155,6 +131,14 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 
 	imp=NULL;
 	papertype=NULL;
+}
+
+int NewDocWindow::preinit()
+{
+	anXWindow::preinit();
+	if (win_w<=0) win_w=500;
+	if (win_h<=0) win_h=600;
+	return 0;
 }
 
 int NewDocWindow::init()

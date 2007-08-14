@@ -109,7 +109,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 
 //----------------------- SpreadEditor --------------------------------------
 
-class SpreadEditor : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtility
+class SpreadEditor : public LaxInterfaces::ViewerWindow
 {
  protected:
  public:

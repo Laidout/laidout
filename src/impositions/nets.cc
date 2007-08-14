@@ -899,6 +899,7 @@ void Net::FitToData(Laxkit::DoubleBBox *data,double margin)
 	yaxis(flatpoint(0,wW));
 	mid=transform_point(m(),mid);
 	origin(origin()+midp-mid);
+	
 //	xaxis(wW*data->xaxis());
 //	yaxis(wW*data->yaxis());
 //	origin(data->origin()+midp.x*data->xaxis()+midp.y*data->yaxis()-mid.x*xaxis()-mid.y*yaxis());

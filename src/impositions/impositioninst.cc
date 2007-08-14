@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 /*************** impositioninst.cc ********************/
 
@@ -190,7 +190,9 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			SetPaperSize(paperstyle);
 			paperstyle->dec_count();
 		} else if (!strcmp(name,"defaultpapers")) {
-			cout <<"*** dump in papers"<<endl;
+			if (papergroup) papergroup->dec_count();
+			papergroup=new PaperGroup;
+			papergroup->dump_in_atts(att->attributes.e[c],flag);
 		}
 	}
 	if (pages<0) setPage();
@@ -227,7 +229,7 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%stilex 1    #number of times to tile the page horizontally\n",spc);
 		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
-		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
+		fprintf(f,"%sdefaultpapers #default paper group\n",spc);
 		papergroup->dump_out(f,indent+2,-1);
 		fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
 		pagestyle->dump_out(f,indent+2,-1);

@@ -45,7 +45,9 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsig
 			Window nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Document *ndoc,int startpg,double defdpi)
-	: FileDialog(parnt,ntitle,(nstyle&0xffff)|FILES_PREVIEW|FILES_OPEN_MANY,xx,yy,ww,hh,brder,nowner,nsend,nfile,npath,nmask)
+	: FileDialog(parnt,ntitle,
+			(nstyle&0xffff)|FILES_PREVIEW|FILES_OPEN_MANY|ANXWIN_REMEMBER,
+			xx,yy,ww,hh,brder,nowner,nsend,nfile,npath,nmask)
 {
 	dpi=defdpi;
 	startpage=startpg;
@@ -53,7 +55,83 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsig
 	curitem=-1;
 
 	dialog_style|=FILES_PREVIEW;
-	win_h=win_w=700;
+
+//	Attribute *att=const_cast<Attribute *>(laidout->Resource("ImportImagesDialog"));//do not delete it!
+//	if (att) {
+//		dump_in_atts(att,0);
+//		if (!win_sizehints) win_sizehints=XAllocSizeHints();
+//		if (win_sizehints) {
+//			DBG cerr <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
+//			//*** The initial x and y become the upper left corner of the window
+//			//manager decorations. ***how to figure out how much room those decorations take,
+//			//so as to place things on the screen accurately? like full screen view?
+//			win_sizehints->x=win_x;
+//			win_sizehints->y=win_y;
+//			win_sizehints->width=win_w;
+//			win_sizehints->height=win_h;
+//			win_sizehints->flags=USPosition|USSize;
+//		}
+//	} else {
+//		win_style|=ANXWIN_CENTER;
+//	}
+//	if (win_w<=0) win_w=700;
+//	if (win_h<=0) win_h=700;
+}
+
+ImportImagesDialog::~ImportImagesDialog()
+{
+	//*** put back settings
+	Attribute *att=dump_out_atts(NULL,0);
+	laidout->Resource(att); //do not delete att!
+}
+
+void ImportImagesDialog::dump_out(FILE *f,int indent,int what)
+{
+	Attribute *att=dump_out_atts(NULL,0);
+	att->dump_out(f,indent);
+	delete att;
+}
+
+/*! Append to att if att!=NULL, else return new att.
+ */
+Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
+{
+	if (!att) att=new Attribute("ImportImagesDialog",NULL);
+	char scratch[100];
+
+	sprintf(scratch,"%d",win_x);
+	att->push("win_x",scratch);
+
+	sprintf(scratch,"%d",win_y);
+	att->push("win_y",scratch);
+
+	sprintf(scratch,"%d",win_w);
+	att->push("win_w",scratch);
+
+	sprintf(scratch,"%d",win_h);
+	att->push("win_h",scratch);
+
+	return att;
+}
+
+/*! \todo  *** ensure that the dimensions read in are in part on screen...
+ */
+void ImportImagesDialog::dump_in_atts(Attribute *att,int flag)
+{
+	char *name,*value;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"win_x")) {
+			IntAttribute(value,&win_x);
+		} else if (!strcmp(name,"win_y")) {
+			IntAttribute(value,&win_y);
+		} else if (!strcmp(name,"win_w")) {
+			IntAttribute(value,&win_w);
+		} else if (!strcmp(name,"win_h")) {
+			IntAttribute(value,&win_h);
+		}
+	}
 }
 
 /*! \todo preview base should be a list, not a single base, so should laidout->preview_base

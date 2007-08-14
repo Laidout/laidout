@@ -7,12 +7,14 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.08
 ------------
-(done, sort of) Finish implementing project based setup, especially when loading and saving
+       fix hard to trace crash in importimages dialog for shift select range of files
+(done, sort of, load but not save) Finish implementing project based setup, especially when loading
 (done) limbos should be selectable, and saved independently of windows
        Paper tiler interface
        Clean up patch controls
+(done) Zoom handles screw up viewer transform aspect. Fix it!!
 (done) Fix linear/radial gradient editing when object is sheared
-       Tools should remember their settings, dialogs should remember their placements
+(done) Dialogs should remember their placements
 (done) Standardize the import/export mechanism
 (done) PDF out
 (done) svg out
@@ -20,31 +22,35 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-(done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
-         (i'm pretty sure it is somewhere in imposition classes, something to do with PageStyles)
+(partly done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+         (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.09
 ------------
+       Implement save as project
+       libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+       PathInterface must be drastically improved, and bez part should have segment move like inkscape
+       Masking
+       Image and Color patches, gradients, etc should allow transparent colors
+       Finish implementing project based setup, particularly being able to save a project, not just load one
        Soup up the color box so one can recall previous colors, and/or palette window integration
        In image properties dialog, have the popup list of potential previews
        When importing from an image list file, should be able to say if and when to auto-make previews
        Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
        Fix multi-object selection move when crossing page boundaries
-       libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
        NetImposition needs import/export net and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
-       Image and Color patches, gradients, etc should allow transparent colors
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
+       4x2 fold and trim imposition
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Selected region out to image(s), regions optionally remembered
        Gui for modifying Page Labels
        When importing, preserve mystery data as much as possible, to be later exported back out
        double click on group should change selection area to group contents?
-       PathInterface must be drastically improved, and bez part should have segment move like inkscape
-       Masking
+       Tools should remember their settings
 
 
 VERSION 0.1 
@@ -53,6 +59,7 @@ VERSION 0.1
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
        Construct a command core, so that no X connection necessary for batch processing
+       Make commands actually available in the command prompt window
        should probably put laidout stuff in its own namespace, just to be polite for plugin makers
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
@@ -65,7 +72,6 @@ VERSION 0.1
        Make the button box actually function
        Configurable icon panel/menu system
        Linear (including curvilinear) guides
-       Parent masking of children
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ColorPatch/ImagePatchData stuff
@@ -79,7 +85,6 @@ VERSION 0.1
        Full color management implemented, with up to at least 16 bit per channel color
        a real PrintDialog that can configure itself based on ppds
        Generic style edit window
-       Make commands actually available in the command prompt window
        non-hacky new document box that can understand ppds
        all things must define their styledefs
        Low level tree editor, akin to the xml editor in inkscape
@@ -116,7 +121,7 @@ Somehow be able to do foldouts from within any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
-Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango?
+Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
 ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost/metafun sort of things
@@ -131,6 +136,7 @@ Vx (aka uberconvertor) support?
 Verse support?
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
+Akin to animation mode, have movie objects?
 a FlexibleImposition for html/streamed output target?
 JDF support?
 

@@ -59,7 +59,6 @@ class TreeChangeEvent : public Laxkit::EventData
 class LaidoutApp : public Laxkit::anXApp
 {
  protected:
-	LaxFiles::Attribute resources;
 	void dumpOutResources();
  public:
 //	ControlPanel *maincontrolpanel;
@@ -112,9 +111,6 @@ class LaidoutApp : public Laxkit::anXApp
 	int NewDocument(DocumentStyle *docinfo, const char *filename);
 	int NewDocument(const char *spec);
 	int DumpWindows(FILE *f,int indent,Document *doc);
-
-	virtual const LaxFiles::Attribute *Resource(const char *name);
-	virtual int Resource(LaxFiles::Attribute *resource);
 
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
 	char *full_path_for_resource(const char *name,char *dir=NULL);

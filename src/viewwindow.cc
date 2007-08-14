@@ -294,6 +294,7 @@ int VObjContext::isequal(const ObjectContext *oc)
 LaidoutViewport::LaidoutViewport(Document *newdoc)
 	: ViewportWindow(NULL,"laidoutviewport",ANXWIN_HOVER_FOCUS|VIEWPORT_ROTATABLE,0,0,0,0,0)
 {
+	dp->style|=DISPLAYER_NO_SHEAR;
 	papergroup=NULL;
 
 	viewportmode=VIEW_NORMAL;
@@ -528,7 +529,7 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 				ImageData *img=dynamic_cast<ImageData *>(curobj.obj);
 				if (img) {
 					img->SetDescription(se->strs[3]);
-					img->LoadImage(se->strs[0],se->strs[1]);
+					img->LoadImage(se->strs[0],se->strs[1],0,0,0, 1);
 					needtodraw=1;
 					delete se;
 					return 0;
@@ -1379,10 +1380,10 @@ void LaidoutViewport::findAny()
 		for (c=0; c<spread->pagestack.n; c++) {
 			page=dynamic_cast<Page *>(spread->object_e(c));
 			if (!page) continue;
-			for (c2=0; c2<page->layers.n(); c2++) {
+			for (c2=page->layers.n()-1; c2>=0; c2--) {
 				DBG cerr <<" findAny: pg="<<c<<":"<<spread->pagestack.e[c]->index<<"  has "<<page->e(c2)->n()<<" objs"<<endl;
 				if (!page->e(c2)->n()) continue;
-				firstobj.set(page->e(c2)->e(0),4, 1,c,c2,0);
+				firstobj.set(page->e(c2)->e(page->e(c2)->n()-1),4, 1,c,c2,page->e(c2)->n()-1);
 				return;
 			}
 		}
@@ -3339,15 +3340,12 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
 		app->rundialog(new ImportImagesDialog(NULL,"Import Images",
-					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,500,500,0, window,"import new image",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					0,0,0,0,0, window,"import new image",
 					NULL,NULL,NULL,
 					doc,
 					((LaidoutViewport *)viewport)->curobjPage(),
 					doc->docstyle->imposition->paper->paperstyle->dpi));
-		//app->rundialog(new FileDialog(NULL,"Import Image",
-		//			ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-		//			0,0,500,500,0, window,"import new image"));
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
 		 //******currently not used in favor of image dialog
@@ -3510,12 +3508,6 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
 						0,0,500,500,0, window,"saveAsPopup",
 						doc->Saveas()));
-//			app->rundialog(new LineInput(NULL,"Save As...",
-//						ANXWIN_CENTER|LINP_ONTOP|LINP_CENTER|LINP_POPUP,
-//						100,100,200,100,0, 
-//						NULL,window,"saveAsPopup",
-//						"Enter new filename:",doc->Saveas(),0,
-//						0,0,5,5,3,3));
 		} else {
 			char *error=NULL;
 			if (doc->Save(1,1,&error)==0) {
@@ -3563,7 +3555,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		system(blah);
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
-		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,500,600, 0));
+		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,0,0, 0));
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask|ShiftMask) { //reset document
 		//***

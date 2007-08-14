@@ -49,6 +49,8 @@ class NewDocWindow : public Laxkit::RowFrame
  	NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder);
 	virtual ~NewDocWindow();
+	virtual const char *whattype() { return "NewDocWindow"; }
+	virtual int preinit();
 	virtual int init();
 //	virtual int Refresh();
 //	virtual int CharInput(unsigned int ch,unsigned int state);

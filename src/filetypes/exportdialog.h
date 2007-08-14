@@ -19,6 +19,7 @@
 #include <lax/lineedit.h>
 #include <lax/checkbox.h>
 #include <lax/messagebox.h>
+#include <lax/dump.h>
 
 #include "filefilters.h"
 
@@ -69,6 +70,9 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual int CharInput(unsigned int ch, unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 
