@@ -12,6 +12,8 @@ TODO: grab pot from Laxkit!!
 
 2. laidout.pot is base template file. Refresh with:
     make update
+   This will make a file laidout-freshdump.pot, and merge it with any existing laidout.pot.
+   laidout-freshdump.pot may be removed at this point. laidout.pot is the file you want.
 
 
 

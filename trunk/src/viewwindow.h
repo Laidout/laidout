@@ -144,7 +144,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 };
 
 //------------------------------- ViewWindow ---------------------------
-class ViewWindow : public LaxInterfaces::ViewerWindow, public LaxFiles::DumpUtility
+class ViewWindow : public LaxInterfaces::ViewerWindow
 {
  protected:
 	void setup();

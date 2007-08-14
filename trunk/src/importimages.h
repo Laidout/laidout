@@ -19,6 +19,7 @@
 #include <lax/filedialog.h>
 #include <lax/imageinfo.h>
 #include <lax/lists.h>
+#include <lax/dump.h>
 #include "document.h"
 
 
@@ -40,11 +41,17 @@ class ImportImagesDialog : public Laxkit::FileDialog
 			Window nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Document *ndoc,int startpg,double defdpi);
+	virtual ~ImportImagesDialog();
+	virtual const char *whattype() { return "ImportImagesDialog"; }
 	virtual int init();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int send();
 	virtual void SetFile(const char *f,const char *pfile);
+
+	virtual void dump_out(FILE *f,int indent,int what);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
 

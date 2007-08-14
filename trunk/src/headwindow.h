@@ -20,7 +20,7 @@
 #include <lax/attributes.h>
 #include "document.h"
 
-class HeadWindow : public Laxkit::SplitWindow, public LaxFiles::DumpUtility
+class HeadWindow : public Laxkit::SplitWindow
 {
  protected:
 	static Laxkit::PlainWinBox *markedpane;

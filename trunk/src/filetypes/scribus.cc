@@ -288,6 +288,15 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 //***** holy cow, scribus has EVERY object by reference!!!! still trying to
 	 //***** figure out how objects are mapped onto groups, layers, and pages..
 	 //*****
+	 // In Scribus, pages sit on a canvas, and the page has coords PAGEWIDTH,HEIGHT,XPOS,YPOS.
+	 //
+	 // Object's coordinates are relative to ????. Their xpos, ypos, rot, width, and height
+	 // refer to its bounding box. The pocoor and cocoor coordinates are relative to that
+	 // transformed bounding box (????).
+	 //
+	 // Scribus Groups or more like sets. Objects all lie directly on the page, and groups
+	 // are simply a loose tag the objects have. Groups do not apply any additional transformation.
+	 //
 	groups.flush();
 	ongroup=0;
 	transform_set(m,1,0,0,1,0,0);
@@ -321,6 +330,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				
 		 // for each page in spread layout..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
+			psPushCtm();
 			psConcat(72.,0.,0.,72.,0.,0.);
 			if (landscape) {
 				psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
@@ -329,7 +339,6 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			if (pg>=doc->pages.n) continue;
 
 			 // for each layer on the page..
-			psPushCtm();
 			transform_copy(m,spread->pagestack.e[c2]->outline->m());
 			spready=spread->path->maxy*72;//****
 			psConcat(m);
@@ -342,6 +351,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				}
 			}
 			psPopCtm();
+			if (landscape) {
+				psConcat(1.,0.,0.,1., 0.,doc->docstyle->imposition->paper->paperstyle->width);
+			} else {
+				psConcat(1.,0.,0.,1., 0.,doc->docstyle->imposition->paper->paperstyle->height);
+			}
 		}
 
 		delete spread;
@@ -394,8 +408,8 @@ static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char 
 		g=dynamic_cast<Group *>(obj);
 		if (!g) return;
 
-		 // objects have GROUPS list for what groups they belong to, should
-		 // maintain a list of current group nesting, this list will be the GROUPS
+		 // objects have GROUPS list for what groups they belong to, 
+		 // we maintain a list of current group nesting, this list will be the GROUPS
 		 // element of subsequent objects
 		 // global var groupc is a counter for how many distinct groups have been found,
 		 // which has been found already

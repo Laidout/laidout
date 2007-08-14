@@ -635,11 +635,16 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		bbox.addtobounds(spread->path);
 		
 		 // print out header
-		fprintf (f,
-				"%%!PS-Adobe-3.0 EPSF-3.0\n"
-				"%%%%BoundingBox: %d %d %d %d\n",
-				  (int)(spread->path->minx*72), (int)(spread->path->miny*72),
-				  (int)(spread->path->maxx*72), (int)(spread->path->maxy*72));
+		fprintf(f, "%%!PS-Adobe-3.0 EPSF-3.0\n");
+		if (layout==PAPERLAYOUT && doc->docstyle->imposition->paper->paperstyle->flags&1) {
+			fprintf(f,"%%%%BoundingBox: 0 0 %d %d\n",
+					(int)(72*doc->docstyle->imposition->paper->paperstyle->width),
+					(int)(72*doc->docstyle->imposition->paper->paperstyle->height));
+		} else {
+			fprintf(f,"%%%%BoundingBox: %d %d %d %d\n",
+					(int)(spread->path->minx*72), (int)(spread->path->miny*72),
+					(int)(spread->path->maxx*72), (int)(spread->path->maxy*72));\
+		}
 		fprintf(f,"%%%%Pages: 1\n");
 		time_t t=time(NULL);
 		fprintf(f,"%%%%CreationDate: %s\n"
