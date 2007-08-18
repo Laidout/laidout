@@ -44,6 +44,7 @@ install:
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons src/icons/*.png
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
+	cd src/po && $(MAKE) install
 
 # ****** TODO!!! this is very primitive make uninstall!!
 # should only uninstall things that were actually installed. Any resource added by

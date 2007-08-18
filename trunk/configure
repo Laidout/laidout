@@ -152,6 +152,7 @@ echo "#define BIN_DIRECTORY    \"$PREFIX/bin\"" >> src/configured.h
 echo "#define BIN_PATH         \"$PREFIX/bin/laidout\"" >> src/configured.h
 echo "#define SHARED_DIRECTORY \"$PREFIX/share/laidout/$LAIDOUTVERSION/\"" >> src/configured.h
 echo "#define ICON_DIRECTORY   \"$PREFIX/share/laidout/$LAIDOUTVERSION/icons\"" >> src/configured.h
+echo "#define LANGUAGE_PATH    \"$PREFIX/share/\"" >> src/configured.h
 echo "#define GHOSTSCRIPT_BIN  \"$GS\"" >> src/configured.h 
 echo "" >> src/configured.h
 echo "#endif" >> src/configured.h
