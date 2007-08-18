@@ -10,6 +10,7 @@ VERSION 0.08
        fix hard to trace crash in importimages dialog for shift select range of files
 (done, sort of, load but not save) Finish implementing project based setup, especially when loading
 (done) limbos should be selectable, and saved independently of windows
+(done) Basic libintl support, latin-1 translations only!
        Paper tiler interface
        Clean up patch controls
 (done) Zoom handles screw up viewer transform aspect. Fix it!!
@@ -31,7 +32,7 @@ VERSION 0.08
 VERSION 0.09
 ------------
        Implement save as project
-       libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+       More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Masking
        Image and Color patches, gradients, etc should allow transparent colors
@@ -67,7 +68,7 @@ VERSION 0.1
        Change cursor or otherwise indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
-       group combine properties, like most importantly transparency
+       All the pdf 1.4 group combine properties, like most importantly transparency
        for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
        Make the button box actually function
        Configurable icon panel/menu system

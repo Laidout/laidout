@@ -215,7 +215,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	//  ArrangementEditor
 	//  StyleManager
 	//  ObjectTreeEditor
-	
+
 	win_xatts.background_pixel=app->coloravg(app->color_bg,0,.33);
 	space=4;
 
@@ -223,11 +223,11 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 			"  control-left click Splits\n"
 			"  shift-left click Joins\n"
 			"  right click brings up menu"
-		);
+		   );
 
 	lastview=lastedit=NULL;
-	
-	 // add the window generator funcs
+
+	// add the window generator funcs
 	AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE,newViewWindowFunc,1);
 	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE,newSpreadEditorFunc,0);
 	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE,newHelpWindowFunc,0);
@@ -263,17 +263,17 @@ int HeadWindow::Mark(int c)
 
 //! Redefined to use a global mark, rather than per SplitWindow.
 /*! Returns 0 for success, nonzero error.
- */
+*/
 int HeadWindow::SwapWithMarked()
 {
 	//DBG cerr <<" --SwapWithMarked: "<<
 	if (curbox==NULL || markedpane==NULL || markedhead==NULL || curbox==markedpane) return 0;
 
-	 // make sure markedhead is toplevel
+	// make sure markedhead is toplevel
 	if (laidout->isTopWindow(markedhead)) {
-		 // make sure markedpane is still pane of markedhead
+		// make sure markedpane is still pane of markedhead
 		if (markedhead->FindBoxIndex(markedpane)>=0) {
-			 // must potentially reparent!!!
+			// must potentially reparent!!!
 			if (markedhead!=this) {
 				if (curbox->win) app->reparent(curbox->win,markedhead);
 				if (markedpane->win) app->reparent(markedpane->win,this);
@@ -286,7 +286,7 @@ int HeadWindow::SwapWithMarked()
 			return 0;
 		}
 	} 
-	
+
 	markedpane=NULL;
 	markedhead=NULL;
 	return 1;
@@ -300,15 +300,15 @@ int HeadWindow::Change(anXWindow *towhat,anXWindow *which)
 {
 	if (!curbox) return 0;
 
-	 //Get doc from curbox. If win has no doc, then get first
-	 //doc found in head. If none in head, then first in project (***should be last accessed?)
+	//Get doc from curbox. If win has no doc, then get first
+	//doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
 
-	 //change the window
+	//change the window
 	if (SplitWindow::Change(towhat,which)!=0) return 1;
 	if (!doc) return 0;
 
-	 // make sure same doc from old curbox is used for view and spread
+	// make sure same doc from old curbox is used for view and spread
 	ViewWindow *v=dynamic_cast<ViewWindow *>(curbox->win);
 	if (v) {
 		((LaidoutViewport *)(v->viewport))->UseThisDoc(doc);
@@ -346,28 +346,28 @@ Document *HeadWindow::findAnyDoc()
 	if (laidout->project && laidout->project->docs.n) return laidout->project->docs.e[0];
 	return NULL;
 }
-	
+
 /*! \todo ***** should be able to duplicate views/spreadeditor/etc..
- */
+*/
 int HeadWindow::splitthewindow(anXWindow *fillwindow)
 {
 	DBG cerr <<"********SPLITTING THE WINDOW"<<endl;
-	 //Get doc from curbox. If win has no doc, then get first
-	 //doc found in head. If none in head, then first in project (***should be last accessed?)
+	//Get doc from curbox. If win has no doc, then get first
+	//doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
-	
+
 	anXWindow *winold=curbox->win;
 	if (SplitWindow::splitthewindow(fillwindow)!=0) return 1;
 	anXWindow *win=windows.e[windows.n-1]->win;
 	if (!win) return 0;
 
-	 // make sure same doc from old box is used for view and spread
+	// make sure same doc from old box is used for view and spread
 	ViewWindow *v=dynamic_cast<ViewWindow *>(win);
 	if (v) {
 		((LaidoutViewport *)(v->viewport))->UseThisDoc(doc);
 		v->doc=doc;
 		ViewWindow *vold=dynamic_cast<ViewWindow *>(winold);
-		 // duplicate view and page of old
+		// duplicate view and page of old
 		if (vold) {
 			int pg, m=((LaidoutViewport *)(vold->viewport))->ViewMode(&pg);
 			((LaidoutViewport *)(v->viewport))->SetViewMode(m,pg);
@@ -382,7 +382,7 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 
 //! Dump out what's in the window, and the borders.
 /*! \todo *** stacked panes, simply have multiple window blocks under pane
- */
+*/
 void HeadWindow::dump_out(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -399,7 +399,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 		for (int c=0; c<winfuncs.n; c++) {
 			fprintf(f,"\n%spane\n",spc);
 			fprintf(f,"%s  xyxy 0 0 500 500  #xmin,ymin, and xmax,ymax of the pane\n",spc);
-			
+
 			win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style);
 			fprintf(f,"%s  window %s\n",spc,win->whattype());
 			dump=dynamic_cast<DumpUtility *>(win);
@@ -409,15 +409,15 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 		}
 		return;
 	}
-	
+
 	//anXWindow *win;
 	LaxFiles::DumpUtility *wind;
 	fprintf(f,"%sxywh %d %d %d %d\n",
-				spc,win_x,win_y,win_w,win_h);
+			spc,win_x,win_y,win_w,win_h);
 	for (int c=0; c<windows.n; c++) {
 		fprintf(f,"%spane\n",spc);
 		fprintf(f,"%s  xyxy %d %d %d %d\n",
-					spc,windows.e[c]->x1,windows.e[c]->y1,windows.e[c]->x2,windows.e[c]->y2);
+				spc,windows.e[c]->x1,windows.e[c]->y1,windows.e[c]->x2,windows.e[c]->y2);
 		if (windows.e[c]->win) {
 			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win->whattype());
 			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win);
@@ -511,12 +511,12 @@ void HeadWindow::WindowGone(Laxkit::anXWindow *win)
 int HeadWindow::init()
 {
 	return SplitWindow::init();
-//	if (!window) return 1;
-//
-//	//default SplitWindow just adds new box if windows.n==0
-//	//assume there's one alread?
-//	
-//	return 0;
+	//	if (!window) return 1;
+	//
+	//	//default SplitWindow just adds new box if windows.n==0
+	//	//assume there's one alread?
+	//	
+	//	return 0;
 }
 
 
@@ -537,10 +537,10 @@ MenuInfo *HeadWindow::GetMenu()
 {
 	DBG cerr <<"*************GetMenu: mode="<<mode<<endl;
 	MenuInfo *menu=new MenuInfo();
-	
- //make sure this always agrees with SplitWindow::mode!!
-	
-	 //straight from Laxkit, do not change item ids:
+
+	//make sure this always agrees with SplitWindow::mode!!
+
+	//straight from Laxkit, do not change item ids:
 	if (mode!=MAXIMIZED) {
 		menu->AddItem("Split",1);
 		menu->AddItem("Join",2);
@@ -558,24 +558,24 @@ MenuInfo *HeadWindow::GetMenu()
 		menu->AddItem("Mark",3);
 		menu->AddItem("Swap with marked",4);
 		menu->AddItem("Swap with...",53);
-		
-		 //laidout additions:
+
+		//laidout additions:
 		menu->AddItem("Drop To...",51);
 		menu->AddItem("Float",52);
 	}
 
-	 //straight from Laxkit, do not change item ids:
+	//straight from Laxkit, do not change item ids:
 	if (mode==MAXIMIZED) menu->AddItem("Un-Maximize",5);
 	else menu->AddItem("Maximize",5);
-	
-	 //laidout additions:
+
+	//laidout additions:
 	menu->AddSep();
 	menu->AddItem("New Window",50);
 	return menu;
 }
 
 /*! Propagate TreeChangeEvent events
- */
+*/
 int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 {
 	DBG cerr <<"HeadWindow got message: "<<mes<<endl;
@@ -584,15 +584,15 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		if (!te) return 1;
 		ViewWindow *view;
 		SpreadEditor *s;
-		
-		 // Relay docTreeChange to each pane 
+
+		// Relay docTreeChange to each pane 
 		int yes=0;
 		for (int c=0; c<windows.n; c++) {
 			view=dynamic_cast<ViewWindow *>(windows.e[c]->win);
 			if (view) yes=1;
 			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win), s) yes=1;
 
-		 	 //construct events for the panes
+			//construct events for the panes
 			if (yes){
 				edata=new TreeChangeEvent();
 				*edata=*te;
@@ -667,9 +667,9 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			app->addwindow(newHeadWindow(NULL,type));
 			return 0;
 		} else if (e->data.l[1]==52) {
-			 //Float
-			 
-			 //pop the window to new headwindow
+			//Float
+
+			//pop the window to new headwindow
 			if (!curbox || !curbox->win || windows.n<=1) return 0;
 
 			HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
@@ -682,14 +682,14 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		} else if (e->data.l[1]==51) {
 			if (mode!=0 || !curbox) return 0;
 			DBG cerr <<"  HeadWindow:: Drop To..."<<endl;
-			
+
 			XWindowAttributes atts;
 			XGetWindowAttributes(app->dpy,window, &atts);
 			if (atts.map_state!=IsViewable) return 0;
 
 			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
-							 GrabModeAsync,GrabModeAsync,
-							 None, None, CurrentTime)!=GrabSuccess) return 0;
+						GrabModeAsync,GrabModeAsync,
+						None, None, CurrentTime)!=GrabSuccess) return 0;
 			DBG cerr <<"***********************GRAB***********************"<<endl;
 			app->Tooltips(0);
 			Cursor cursor=XCreateFontCursor(app->dpy,XC_sb_down_arrow);
@@ -704,18 +704,18 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			DBG cerr <<"***************changing mode to DROPTO"<<endl;
 			return 0;
 		} else if (e->data.l[1]==53) {
-			 // swap with...
+			// swap with...
 			if (mode!=0 || !curbox) return 0;
 			DBG cerr <<"  HeadWindow:: Swap With..."<<endl;
-			
+
 			XWindowAttributes atts;
 			XGetWindowAttributes(app->dpy,window, &atts);
 			if (atts.map_state!=IsViewable) return 0;
 
 			DBG cerr <<"***********************GRAB***********************"<<endl;
 			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
-							 GrabModeAsync,GrabModeAsync,
-							 None, None, CurrentTime)!=GrabSuccess) return 0;
+						GrabModeAsync,GrabModeAsync,
+						None, None, CurrentTime)!=GrabSuccess) return 0;
 			Cursor cursor=XCreateFontCursor(app->dpy,XC_exchange);
 			if (cursor) {
 				DBG cerr <<"***********************CURSOR***********************"<<endl;
@@ -748,7 +748,7 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 {
 	DBG cerr <<"***********HeadWindow::LBUp mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state);
-	
+
 	XUngrabPointer(app->dpy, CurrentTime);
 	app->Tooltips(1);
 	DBG cerr <<"***********************UN-GRAB***********************"<<endl;
@@ -763,12 +763,12 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 		DBG cerr <<"***********no marked pane"<<endl;
 		return 0;
 	}
-	
+
 	if (mode==DROPTO) {
 		if (markedpane!=curbox) {
-			 // remove original pane and put it in markedhead/markedpane.
-			 // If there was only one pane in *this, then remove this HeadWindow.
-			 
+			// remove original pane and put it in markedhead/markedpane.
+			// If there was only one pane in *this, then remove this HeadWindow.
+
 			DBG cerr <<"********Dropping... \"float\" curbox, then split markedpane according to mouse position"<<endl;
 			int side=-1,x,y;
 			mouseposition(markedhead,&x,&y,NULL);
@@ -783,7 +783,7 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 			else if (x>0 && y<x && y>-x) side=LAX_RIGHT;
 			else side=LAX_LEFT;
 			DBG cerr <<"*******side="<<side<<endl;
-			
+
 			anXWindow *win=curbox->win;
 			curbox->win=NULL;
 			DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
@@ -799,7 +799,7 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 		DBG cerr <<"**************** SWAPWITH"<<endl;
 		SwapWithMarked();
 	}
-	
+
 	mode=0;
 	DBG cerr <<"***************changing mode to NORMAL"<<endl;
 	return 0;
@@ -807,12 +807,12 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 
 //! Intercept for finding a drop to or swap with location, put in markedhead and markedpane.
 /*! This stores the target head and pane in markedhead and markedpane.
- */
+*/
 int HeadWindow::MouseMove(int x,int y,unsigned int state)
 {//***
 	DBG cerr <<"***********HeadWindow::MouseMove  mode=="<<mode<<endl;
 	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::MouseMove(x,y,state);
-	
+
 	//***based on mouseposition set markedhead and markedpane
 	anXWindow *win;
 	mouseposition(&x,&y,NULL,&win,NULL);
@@ -825,7 +825,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
 		DBG cerr <<"  -----"<<win->win_title<<endl;
 		win=win->win_parent;
 	}
-	
+
 	markedhead=dynamic_cast<HeadWindow *>(win);
 	if (!markedhead) {
 		markedpane=NULL;
@@ -836,12 +836,12 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
 	if (x<0) markedhead=NULL;
 	else markedhead->Mark(x);
 	DBG cerr <<"***************markedpane="<<x<<endl;
-	
+
 	return 0;
 }
 
 /*! Intercept Esc to revert anything to NORMAL mode.
- */
+*/
 int HeadWindow::CharInput(unsigned int ch,unsigned int state)
 {
 	if (ch==LAX_Esc) {
@@ -853,8 +853,8 @@ int HeadWindow::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	} else if (ch=='o' && (state&LAX_STATE_MASK)==ControlMask) {
 		app->rundialog(new FileDialog(NULL,"Open Document",
-					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,500,500,0, window,"open document"));
+					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					0,0,0,0,0, window,"open document"));
 		return 0;
 		
 	}

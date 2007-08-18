@@ -12,8 +12,17 @@ compile:
 #TEMP=$(foreach NAME, $(wildcard *.mo), echo $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo)
 #TEMP=$(foreach NAME, $(wildcard *.mo), $(shell echo $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
 install:
-	$(foreach NAME, $(basename $(wildcard *.mo)), $(shell echo $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo >> temp))
-	@echo Install po not working yet!!
+	@echo Installing language files...
+	$(foreach NAME, $(basename $(wildcard *.mo)), \
+		$(shell	install -D -m755 $(NAME).mo $(PO) $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
+	@echo Done installing language files.
+
+#PO=$(foreach NAME, $(basename $(wildcard *.mo)), $(shell echo temp-install/locale/$(NAME)/LC_MESSAGES/laidout.mo >> temp))
+installhere:
+	@echo Installing language files...
+	$(foreach NAME, $(basename $(wildcard *.mo)), \
+		$(shell	install -D -m755 $(NAME).mo $(PO) temp-install/locale/$(NAME)/LC_MESSAGES/laidout.mo))
+	@echo Done installing language files.
 
 update: freshdump
 	msgmerge -U laidout.pot laidout-freshdump.pot
@@ -30,4 +39,4 @@ clean:
 	rm -f laidout-freshdump.pot
 
 
-.PHONY: potfiles rawdump update compile clean all install
+.PHONY: potfiles rawdump update compile clean all install installhere

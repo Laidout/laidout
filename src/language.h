@@ -20,7 +20,7 @@
 #define LANGUAGE_H
 
 
-#if 0
+#if 1
 
  //yes gettext
 #include <libintl.h>
