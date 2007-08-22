@@ -23,10 +23,8 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
        Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-(partly done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.09
@@ -52,6 +50,8 @@ VERSION 0.09
        When importing, preserve mystery data as much as possible, to be later exported back out
        double click on group should change selection area to group contents?
        Tools should remember their settings
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.1 

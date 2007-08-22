@@ -68,6 +68,7 @@ class PaperBox :  public Laxkit::anObject, public Laxkit::RefCounted
 	Laxkit::DoubleBBox media, printable, bleed, trim, crop, art;
 	PaperBox(PaperStyle *paper);
 	virtual ~PaperBox();
+	virtual int Set(PaperStyle *paper);
 };
 
 
@@ -75,6 +76,7 @@ class PaperBox :  public Laxkit::anObject, public Laxkit::RefCounted
 class PaperBoxData : public LaxInterfaces::SomeData
 {
  public:
+	int red,green,blue;
 	PaperBox *box;
 	int index;
 	unsigned int which;

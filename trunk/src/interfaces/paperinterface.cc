@@ -17,8 +17,10 @@
 
 #include "../language.h"
 #include "paperinterface.h"
+#include "viewwindow.h"
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
+#include <lax/transformmath.h>
 
 #include <lax/lists.cc>
 
@@ -88,6 +90,60 @@ PaperInterface::~PaperInterface()
 	if (doc) doc->dec_count();
 }
 
+/*! \todo much of this here will change in future versions as more of the possible
+ *    boxes are implemented.
+ */
+Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y)
+{
+	if (!papergroup || !curboxes.n) return NULL;
+
+	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
+	menu->AddItem(_("Paper Size"),999);
+	menu->SubMenu(_("Paper Size"));
+	for (int c=0; c<laidout->papersizes.n; c++) {
+		menu->AddItem(laidout->papersizes.e[c]->name,c,
+				LAX_ISTOGGLE
+				| (!strcmp(curboxes.e[0]->box->paperstyle->name,laidout->papersizes.e[c]->name)
+				  ? LAX_CHECKED : 0));
+	}
+	menu->EndSubMenu();
+	//int landscape=curboxes.e[0]->box->paperstyle->flags&1;
+	//menu->AddItem(_("Portrait"), 1000, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
+	//menu->AddItem(_("Landscape"),1001, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
+	menu->AddItem(_("Print with paper group"),1002);
+
+	return menu;
+}
+
+/*! Return 0 for menu item processed, 1 for nothing done.
+ */
+int PaperInterface::MenuEvent(XClientMessageEvent *e)
+{
+	int i=e->data.l[1];
+	if (i==1000) {
+		 //portrait
+		return 0;
+	} else if (i==1001) {
+		 //landscape
+		return 0;
+	} else if (i==1002) {
+		 //print with the active paper group
+		return 0;
+	} else if (i>=0 && i<1000) {
+		 //paper size
+		if (i>=laidout->papersizes.n-1) return 1;
+		PaperStyle *newpaper=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
+		for (int c=0; c<curboxes.n; c++) {
+			curboxes.e[c]->box->Set(newpaper);
+			curboxes.e[c]->setbounds(&curboxes.e[c]->box->media);
+		}
+		newpaper->dec_count();
+		needtodraw=1;
+		return 0;
+	}
+	return 1;
+}
+
 /*! incs count of doc.
  *
  * Return 0 for success, nonzero for fail.
@@ -124,7 +180,9 @@ anInterface *PaperInterface::duplicate(anInterface *dup)//dup=NULL
 int PaperInterface::InterfaceOn()
 {
 	DBG cerr <<"paperinterfaceOn()"<<endl;
-	showdecs=1;
+	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+	if (lvp) lvp->UseThisPaperGroup(papergroup);
+	showdecs=3;
 	needtodraw=1;
 	return 0;
 }
@@ -135,6 +193,10 @@ int PaperInterface::InterfaceOff()
 	showdecs=0;
 	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
 	if (curbox) { curbox->dec_count(); curbox=NULL; }
+
+	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+	if (lvp) lvp->UseThisPaperGroup(NULL);
+
 	needtodraw=1;
 	DBG cerr <<"imageinterfaceOff()"<<endl;
 	return 0;
@@ -216,11 +278,11 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow)
 		
 		 //draw white fill or plain outline
 		if (fill||shadow) {
-			dp->NewFG(0,0,255);
+			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
 			dp->NewBG(~0);
 			dp->drawlines(1,1,2,4,p);
 		} else {
-			dp->NewFG(0,0,255);
+			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
 			dp->drawlines(1,1,0,4,p);
 		}
 	}
@@ -279,23 +341,30 @@ int PaperInterface::Refresh()
 	if (!needtodraw) return 0;
 	needtodraw=0;
 
-	PaperBox *box;
-	flatpoint p[4];
-	if (maybebox) {
-		box=maybebox->box;
-		dp->PushAndNewTransform(maybebox->m());
-		XSetLineAttributes(dp->GetDpy(),dp->GetGC(),0,LineDoubleDash,CapButt,JoinMiter);
-		p[0]=dp->realtoscreen(box->media.minx,box->media.miny);
-		p[1]=dp->realtoscreen(box->media.minx,box->media.maxy);
-		p[2]=dp->realtoscreen(box->media.maxx,box->media.maxy);
-		p[3]=dp->realtoscreen(box->media.maxx,box->media.miny);
-		dp->drawlines(1,0,0,4,p);
-		dp->PopAxes(); 
+	if (showdecs!=3) {
+		double m[6];
+		transform_copy(m,dp->m());
+		dp->PopAxes(); //remove transform to viewport context
+		PaperBox *box;
+		flatpoint p[4];
+		if (maybebox) {
+			box=maybebox->box;
+			dp->PushAndNewTransform(maybebox->m());
+			XSetLineAttributes(dp->GetDpy(),dp->GetGC(),0,LineDoubleDash,CapButt,JoinMiter);
+			p[0]=dp->realtoscreen(box->media.minx,box->media.miny);
+			p[1]=dp->realtoscreen(box->media.minx,box->media.maxy);
+			p[2]=dp->realtoscreen(box->media.maxx,box->media.maxy);
+			p[3]=dp->realtoscreen(box->media.maxx,box->media.miny);
+			dp->drawlines(1,0,0,4,p);
+			dp->PopAxes(); 
+		}
+
+		if (!papergroup || !papergroup->papers.n) return 0;
+
+		DrawGroup(papergroup,1);
+
+		dp->PushAndNewTransform(m); //reinstall transform to viewport context
 	}
-
-	if (!papergroup || !papergroup->papers.n) return 0;
-
-	DrawGroup(papergroup,1);
 
 	return 1;
 }
@@ -335,6 +404,7 @@ void PaperInterface::createMaybebox(flatpoint p)
 	}
 
 	maybebox=new PaperBoxData(box); //incs count of box
+	maybebox->red=65535;
 	maybebox->origin(p-flatpoint((maybebox->maxx-maybebox->minx)/2,(maybebox->maxy-maybebox->miny)/2));
 	if (del) box->dec_count();
 }
@@ -366,6 +436,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 		curboxes.pushnodup(curbox,0);
 		needtodraw=1;
 	}
+	lbdown=dp->screentoreal(x,y);
 
 	return 0;
 }
@@ -436,15 +507,57 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
 	}
 
 	 //^ scales
-	//***
+	if ((state&LAX_STATE_MASK)==ControlMask) {
+		SomeData *data;
+		for (int c=0; c<papergroup->papers.n; c++) {
+			data=papergroup->papers.e[c];
+			if (x>mx) {
+				if (data->xaxis()*data->xaxis()<dp->upperbound*dp->upperbound) {
+					data->xaxis(data->xaxis()*1.05);
+					data->yaxis(data->yaxis()*1.05);
+				}
+			} else if (x<mx) {
+				if (data->xaxis()*data->xaxis()>dp->lowerbound*dp->lowerbound) {
+					data->xaxis(data->xaxis()/1.05);
+					data->yaxis(data->yaxis()/1.05);
+				}
+			}
+		}
+		//oo=data->origin() + leftp.x*data->xaxis() + leftp.y*data->yaxis(); // where the point clicked down on is now
+		////DBG cerr <<"  oo="<<oo.x<<','<<oo.y<<endl;
+		//d=lp-oo;
+		//data->origin(data->origin()+d);
+		needtodraw=1;
+		mx=x; my=y;
+		return 0;
+	}
 
 	 //+^ rotates
-	//***
+	if ((state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
+		SomeData *data;
+		flatpoint lp,leftd;
+		for (int c=0; c<curboxes.n; c++) {
+			data=curboxes.e[c];
+			leftd=transform_point_inverse(data->m(),lbdown);
+	  		lp=data->origin() + leftd.x*data->xaxis() + leftd.y*data->yaxis(); 
+			double angle=x-mx;
+			data->xaxis(rotate(data->xaxis(),angle,1));
+			data->yaxis(rotate(data->yaxis(),angle,1));
+			d=lp-(data->origin()+data->xaxis()*leftd.x+data->yaxis()*leftd.y);
+			data->origin(data->origin()+d);
+		}
+		needtodraw=1;
+		mx=x; my=y;
+		return 0;
+	}
 
 	return 0;
 }
 
 /*!
+ * 'a'          select all, or if some are selected, deselect all
+ * del or bksp  delete currently selected papers
+ *
  * \todo auto tile spread contents
  * \todo revert to other group
  * \todo edit another group
@@ -468,11 +581,15 @@ int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 		//*** select next paper
 		return 0;
 	} else if ((ch==LAX_Del || ch==LAX_Bksp) && (state&LAX_STATE_MASK)==0) {
-		if (!curbox || !papergroup) return 0;
-		int c=papergroup->papers.findindex(curbox);
-		if (c<0) return 0;
-		papergroup->papers.remove(c);
-		curbox->dec_count(); curbox=NULL;
+		if (!curboxes.n || !papergroup) return 0;
+		int c2;
+		for (int c=0; c<curboxes.n; c++) {
+			c2=papergroup->papers.findindex(curboxes.e[c]);
+			if (c2<0) continue;
+			papergroup->papers.remove(c2);
+		}
+		curboxes.flush();
+		if (curbox) { curbox->dec_count(); curbox=NULL; }
 		needtodraw=1;
 		return 0;
 	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
@@ -485,6 +602,42 @@ int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 		for (int c=0; c<papergroup->papers.n; c++) 
 			curboxes.push(papergroup->papers.e[c],0);
 		return 0;
+	} else if (ch=='r' && (state&LAX_STATE_MASK)==0) {
+		if (papergroup && papergroup->papers.n) {
+			flatpoint p;
+			for (int c=0; c<papergroup->papers.n; c++) {
+				papergroup->papers.e[c]->m(0,1);
+				papergroup->papers.e[c]->m(1,0);
+				papergroup->papers.e[c]->m(2,0);
+				papergroup->papers.e[c]->m(3,1);
+			}
+			needtodraw=1;
+			return 0;
+		}
+	} else if (ch=='d' && (state&LAX_STATE_MASK)==0) {
+		showdecs++;
+		if (showdecs>3) showdecs=0;
+		needtodraw=1;
+		return 0;
+	} else if (ch=='9' && (state&LAX_STATE_MASK)==0) {
+		 //rotate by 90 degree increments
+		if (curboxes.n) {
+			double x,y;
+			for (int c=0; c<curboxes.n; c++) {
+				 //rotate x axis
+				x=curboxes.e[c]->m(0);
+				y=curboxes.e[c]->m(1);
+				curboxes.e[c]->m(0,-y);
+				curboxes.e[c]->m(1,x);
+				 //rotate y axis
+				x=curboxes.e[c]->m(2);
+				y=curboxes.e[c]->m(3);
+				curboxes.e[c]->m(2,-y);
+				curboxes.e[c]->m(3,x);
+			}
+			needtodraw=1;
+			return 0;
+		}
 	}
 	return 1;
 }

@@ -31,6 +31,10 @@ update: freshdump
 potfiles:
 	find .. -name '*.cc' > POTFILES
 
+potfiles-withlax:
+	find .. -name '*.cc' > POTFILES
+	find ../../laxkit/lax -name '*.cc' >> POTFILES
+
 freshdump:
 	xgettext -C -d laidout  --files-from POTFILES -o laidout-freshdump.pot --keyword=_ --flag=_:1:pass-c-format
 
@@ -39,4 +43,4 @@ clean:
 	rm -f laidout-freshdump.pot
 
 
-.PHONY: potfiles rawdump update compile clean all install installhere
+.PHONY: potfiles potfiles-withlax rawdump update compile clean all install installhere

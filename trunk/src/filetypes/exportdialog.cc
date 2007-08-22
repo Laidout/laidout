@@ -71,6 +71,8 @@ ConfigEventData::~ConfigEventData()
  */
 ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 						   Document *doc,
+						   Group *limbo,
+						   PaperGroup *group,
 						   ExportFilter *nfilter,
 						   const char *file, 
 						   int layout, //!< Type of layout to export
@@ -84,8 +86,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 {
 	dialog_style=nstyle&~ANXWIN_MASK;
 
-	//DocumentExportConfig(Document *ndoc, const char *file, const char *to, int l,int s,int e);
-	config=new DocumentExportConfig(doc,file,NULL,layout,pmin,pmax);
+	config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,group);
 	filter=nfilter;
 	if (!filter && laidout->exportfilters.n) filter=laidout->exportfilters.e[0];
 

@@ -326,7 +326,6 @@ int NewDocWindow::init()
 
 	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "paper color:"));
 	ColorBox *cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, linp,window,"paper color", 255,255,255);
-	cbox->tooltip(_("left button: red\nmiddle button: green\nright button: blue"));
 	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
 
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak

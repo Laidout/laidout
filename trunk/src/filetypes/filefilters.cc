@@ -52,11 +52,17 @@ DocumentExportConfig::DocumentExportConfig()
 	layout=0;
 	doc=NULL;
 	filter=NULL;
+	papergroup=NULL;
 }
 
 /*! Increments count on ndoc if it exists.
  */
-DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, const char *to,int l,int s,int e)
+DocumentExportConfig::DocumentExportConfig(Document *ndoc,
+										   Group *lmbo,
+										   const char *file,
+										   const char *to,
+										   int l,int s,int e,
+										   PaperGroup *group)
 {
 	target=0;
 	filename=newstr(file);
@@ -65,8 +71,13 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc, const char *file, con
 	end=e;
 	layout=l;
 	doc=ndoc;
+	limbo=lmbo;
+
 	filter=NULL;
 	if (doc) doc->inc_count();
+	if (limbo) limbo->inc_count();
+	papergroup=group;
+	if (papergroup) papergroup->inc_count();
 }
 
 /*! Decrements doc if it exists.
@@ -76,6 +87,8 @@ DocumentExportConfig::~DocumentExportConfig()
 	if (filename) delete[] filename;
 	if (tofiles)  delete[] tofiles;
 	if (doc) doc->dec_count();
+	if (limbo) limbo->dec_count();
+	if (papergroup) papergroup->dec_count();
 }
 
 void DocumentExportConfig::dump_out(FILE *f,int indent,int what)

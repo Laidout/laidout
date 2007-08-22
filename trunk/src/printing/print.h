@@ -30,6 +30,8 @@ class PrintingDialog : public ExportDialog
 						 const char *file, const char *command,
 						 const char *thisfile,
 						 int layout,int pmin,int pmax,int pcur,
+						 PaperGroup *group,
+						 Group *limbo,
 						 Laxkit::MessageBar *progress);
 	virtual ~PrintingDialog();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);

@@ -98,6 +98,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 
 	virtual int UseThisDoc(Document *ndoc);
+	virtual int UseThisPaperGroup(PaperGroup *group);
 	
 	virtual int ApplyThis(Laxkit::anObject *thing,unsigned long mask);
 	

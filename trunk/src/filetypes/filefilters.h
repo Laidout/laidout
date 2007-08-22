@@ -78,11 +78,14 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 	int start,end;
 	int layout;
 	Document *doc;
+	Group *limbo;
 	char *filename;
 	char *tofiles;
+	PaperGroup *papergroup;
 	ExportFilter *filter;
 	DocumentExportConfig();
-	DocumentExportConfig(Document *ndoc, const char *file, const char *to, int l,int s,int e);
+	DocumentExportConfig(Document *ndoc, Group *lmbo, const char *file, const char *to,
+						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
 
 	virtual void dump_out(FILE *f,int indent,int what);

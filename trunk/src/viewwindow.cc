@@ -367,6 +367,16 @@ int LaidoutViewport::event(XEvent *e)
 	return ViewportWindow::event(e);
 }
 
+int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
+{
+	if (group==papergroup) return 0;
+	if (papergroup) papergroup->dec_count();
+	papergroup=group;
+	if (papergroup) papergroup->inc_count();
+	needtodraw=1;
+	return 0;
+}
+
 //! Replace existing doc with this doc. NULL is ok.
 /*! Return 0 for success or doc already that one, or nonzero error or not changed.
  *
@@ -1919,6 +1929,13 @@ void LaidoutViewport::Refresh()
 	 //		whatever <-- doesn't draw page outline.. is just big whiteboard
 	dp->Updates(0);
 
+	 //draw papergroup
+	if (papergroup) {
+		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
+		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
+		if (pi) pi->DrawGroup(papergroup,1);
+	}
+	
 	 // draw limbo objects
 	DBG cerr <<"drawing limbo objects.."<<endl;
 	for (c=0; c<limbo->n(); c++) {
@@ -1928,8 +1945,8 @@ void LaidoutViewport::Refresh()
 	if (spread && showstate==1) {
 		XSetFunction(app->dpy,dp->GetGC(),GXcopy);
 		
-		 //draw papergroup
-		PaperGroup *pgrp=papergroup;
+		 //draw the spread's papergroup
+		PaperGroup *pgrp=NULL;
 		if (!pgrp) pgrp=spread->papergroup;
 		if (pgrp) {
 			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
@@ -2765,7 +2782,6 @@ int ViewWindow::init()
 	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
 
 	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",65535,0,0,65535,65535,255);
-	colorbox->tooltip(_("Current color:\nDrag left for red,\n middle for green,\n right for red"));
 	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
 		
 	last=ibut=new IconButton(this,"add page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"addPage",-1,
@@ -3387,6 +3403,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //user clicked down on the export button, and selected an export type from menu..
 		ExportDialog *d=new ExportDialog(0,window,"export config", 
 										 doc,
+										 ((LaidoutViewport *)viewport)->limbo,
+										 ((LaidoutViewport *)viewport)->papergroup,
 										 NULL,//***should be last filter...
 										 "exported-file.huh",//****this should be more adaptive
 										 PAPERLAYOUT,
@@ -3457,6 +3475,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 										"output.ps","lp",NULL,
 										PAPERLAYOUT, 
 										0,doc->pages.n-1,curpage,
+										((LaidoutViewport *)viewport)->papergroup,
+										((LaidoutViewport *)viewport)->limbo,
 										mesbar);
 		app->rundialog(p);
 		return 0;
