@@ -63,7 +63,10 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual int updateExt();
  public:
 	ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
-				 Document *doc, ExportFilter *nfilter, const char *file, int layout,
+				 Document *doc, 
+				 Group *limbo,
+				 PaperGroup *group,
+				 ExportFilter *nfilter, const char *file, int layout,
 				 int pmin, int pmax, int pcur);
 	virtual ~ExportDialog();
 	virtual int init();

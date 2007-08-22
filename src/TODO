@@ -19,6 +19,7 @@
  implement object nesting: 1 parent, many children, this is different
    than having a Group
  text tool, text blocks (big job !!!)
+  see /usr/share/locale/all_languages for a list of languages written in the proper language.. utf8!
  freehand tool
  tablet support
  low level object tree editor would be very convenient, like

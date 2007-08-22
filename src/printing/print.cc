@@ -42,9 +42,11 @@ PrintingDialog::PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
 						 const char *file, const char *command,
 						 const char *thisfile,
 						 int layout,int pmin,int pmax,int pcur,
+						 PaperGroup *group,
+						 Group *limbo,
 						 Laxkit::MessageBar *progress)
 	: ExportDialog(ANXWIN_CENTER|EXPORT_COMMAND,nowner,nsend,
-				   ndoc,NULL,file,
+				   ndoc,limbo,group,NULL,file,
 				   layout,pmin,pmax,pcur)
 {
 	for (int c=0; c<laidout->exportfilters.n; c++)

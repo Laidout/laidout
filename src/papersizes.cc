@@ -291,7 +291,7 @@ PaperBox::PaperBox(PaperStyle *paper)
 		media.maxx=paper->w(); //takes into account paper orientation
 		media.maxy=paper->h();
 	}
-	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
+	DBG cerr <<"PaperBox created, obj "<<object_id<<endl;
 }
 
 /*! Decs count of paper.
@@ -299,7 +299,28 @@ PaperBox::PaperBox(PaperStyle *paper)
 PaperBox::~PaperBox()
 {
 	if (paperstyle) paperstyle->dec_count();
-	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
+	DBG cerr <<"PaperBox destroyed, obj "<<object_id<<endl;
+}
+
+//! Replace the current paper with the given paper.
+/*! Updates media box, but not the other boxes.
+ * Incs count of paper, and decs count of old paperstyle.
+ *
+ * Return 0 for success or nonzero error.
+ */
+int PaperBox::Set(PaperStyle *paper)
+{
+	if (!paper) return 1;
+	if (paperstyle) paperstyle->dec_count();
+	paperstyle=paper;
+
+	paper->inc_count();
+	which|=MediaBox;
+	media.minx=media.miny=0;
+	media.maxx=paper->w(); //takes into account paper orientation
+	media.maxy=paper->h();
+
+	return 0;
 }
 
 //------------------------------------- PaperBoxData --------------------------------------
@@ -310,6 +331,9 @@ PaperBox::~PaperBox()
 
 PaperBoxData::PaperBoxData(PaperBox *paper)
 {
+	red=green=0;
+	blue=65535;
+
 	box=paper;
 	if (box) {
 		box->inc_count();
@@ -328,6 +352,10 @@ PaperBoxData::~PaperBoxData()
 	//char *Name;
 	//Laxkit::PtrStack<PaperBoxData> papers;
 	//Laxkit::anObject *owner;
+
+/*! \class PaperGroup
+ * \brief Holds a collection of PaperBoxData objects.
+ */
 
 PaperGroup::PaperGroup()
 {

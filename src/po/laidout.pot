@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-08-06 10:37-0700\n"
+"POT-Creation-Date: 2007-08-19 10:26-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,6 +20,7 @@ msgid "Postscript LL3"
 msgstr ""
 
 #: ../printing/print.cc:69 ../viewwindow.cc:2829
+#: ../../laxkit/lax/textbutton.cc:120
 msgid "Print"
 msgstr ""
 
@@ -42,11 +43,11 @@ msgstr ""
 msgid "Error opening %s for writing during EPS out."
 msgstr ""
 
-#: ../impositions/nets.cc:956 ../impositions/nets.cc:961
+#: ../impositions/nets.cc:957 ../impositions/nets.cc:962
 msgid "Cannot read that file."
 msgstr ""
 
-#: ../impositions/nets.cc:1014
+#: ../impositions/nets.cc:1015
 msgid "Bad OFF file."
 msgstr ""
 
@@ -66,59 +67,59 @@ msgstr ""
 msgid "Little Spreads"
 msgstr ""
 
-#: ../importimages.cc:177
+#: ../importimages.cc:179
 msgid "Jump to previous selected file"
 msgstr ""
 
-#: ../importimages.cc:182
+#: ../importimages.cc:184
 msgid "Jump to next selected file"
 msgstr ""
 
-#: ../importimages.cc:192
+#: ../importimages.cc:194
 msgid "Select from possible automatic previews"
 msgstr ""
 
-#: ../importimages.cc:203
+#: ../importimages.cc:205
 msgid "Generate"
 msgstr ""
 
-#: ../importimages.cc:204
+#: ../importimages.cc:206
 msgid "Generate a preview for file at this location."
 msgstr ""
 
-#: ../importimages.cc:219
+#: ../importimages.cc:221
 msgid "Start Page:"
 msgstr ""
 
-#: ../importimages.cc:226
+#: ../importimages.cc:228
 msgid "Default dpi:"
 msgstr ""
 
-#: ../importimages.cc:245
+#: ../importimages.cc:247
 msgid "Images Per Page:"
 msgstr ""
 
-#: ../importimages.cc:251
+#: ../importimages.cc:253
 msgid "Exactly this many:"
 msgstr ""
 
-#: ../importimages.cc:262
+#: ../importimages.cc:264
 msgid "As many as will fit per page"
 msgstr ""
 
-#: ../importimages.cc:269
+#: ../importimages.cc:271
 msgid "All on one page"
 msgstr ""
 
-#: ../importimages.cc:276
+#: ../importimages.cc:278
 msgid "Default name for previews:"
 msgstr ""
 
-#: ../importimages.cc:277 ../importimages.cc:731
+#: ../importimages.cc:279 ../importimages.cc:733
 msgid "any"
 msgstr ""
 
-#: ../importimages.cc:280
+#: ../importimages.cc:282
 #, c-format
 msgid ""
 "For file.jpg,\n"
@@ -126,25 +127,25 @@ msgid ""
 "% gets replaced with the file name without the final suffix (\"file\")\n"
 msgstr ""
 
-#: ../importimages.cc:292
+#: ../importimages.cc:294
 msgid "Select from the available preview bases"
 msgstr ""
 
-#: ../importimages.cc:297
+#: ../importimages.cc:299
 msgid "Default max width for new previews:"
 msgstr ""
 
-#: ../importimages.cc:300
+#: ../importimages.cc:302
 msgid ""
 "Any newly generated previews must fit\n"
 "in a square this many pixels wide"
 msgstr ""
 
-#: ../importimages.cc:305
+#: ../importimages.cc:307
 msgid "Make previews for files larger than"
 msgstr ""
 
-#: ../importimages.cc:314
+#: ../importimages.cc:316
 msgid ""
 "Previews will be automatically generated \n"
 "for files over this size, and then only \n"
@@ -152,16 +153,17 @@ msgid ""
 "exist already"
 msgstr ""
 
-#: ../laidout.cc:73
+#: ../laidout.cc:74
 #, c-format
 msgid ""
 "Laidout Version %s\n"
+"http://www.laidout.org\n"
 "by Tom Lechner, sometime in 2007\n"
 "Released under the GNU Public License, Version 2.\n"
 " (using Laxkit Version %s)"
 msgstr ""
 
-#: ../laidout.cc:89
+#: ../laidout.cc:91
 msgid ""
 "\n"
 " laidout [options] [file1] [file2] ...\n"
@@ -182,99 +184,99 @@ msgid ""
 "  -h --help                        Show this summary and exit.\n"
 msgstr ""
 
-#: ../laidout.cc:706
+#: ../laidout.cc:713
 msgid "Missing parameter..."
 msgstr ""
 
-#: ../laidout.cc:707
+#: ../laidout.cc:714
 msgid "Unknown option"
 msgstr ""
 
-#: ../laidout.cc:788
+#: ../laidout.cc:795
 msgid "Bad export configuration"
 msgstr ""
 
-#: ../laidout.cc:798
+#: ../laidout.cc:805
 msgid "Fatal errors loading document:"
 msgstr ""
 
-#: ../laidout.cc:802
+#: ../laidout.cc:809
 msgid "Warnings encountered while loading document:"
 msgstr ""
 
-#: ../laidout.cc:811
+#: ../laidout.cc:818
 msgid "Export failed."
 msgstr ""
 
-#: ../laidout.cc:814
+#: ../laidout.cc:821
 msgid "Export finished with warnings:"
 msgstr ""
 
-#: ../laidout.cc:818 ../viewwindow.cc:3051
+#: ../laidout.cc:825 ../viewwindow.cc:3051
 msgid "Exported."
 msgstr ""
 
-#: ../laidout.cc:1106
+#: ../laidout.cc:1113
 msgid "untitled"
 msgstr ""
 
-#: ../newdoc.cc:147
+#: ../newdoc.cc:123
 msgid "Left:"
 msgstr ""
 
-#: ../newdoc.cc:148
+#: ../newdoc.cc:124
 msgid "Right:"
 msgstr ""
 
-#: ../newdoc.cc:149
+#: ../newdoc.cc:125
 msgid "Top:"
 msgstr ""
 
-#: ../newdoc.cc:150
+#: ../newdoc.cc:126
 msgid "Bottom:"
 msgstr ""
 
-#: ../newdoc.cc:187
+#: ../newdoc.cc:171
 msgid "Save As:"
 msgstr ""
 
-#: ../newdoc.cc:208
+#: ../newdoc.cc:192
 msgid "Paper Size  x:"
 msgstr ""
 
-#: ../newdoc.cc:215 ../newdoc.cc:301
+#: ../newdoc.cc:199 ../newdoc.cc:285
 msgid "y:"
 msgstr ""
 
-#: ../newdoc.cc:232
+#: ../newdoc.cc:216 ../interfaces/paperinterface.cc:110
 msgid "Portrait"
 msgstr ""
 
-#: ../newdoc.cc:233
+#: ../newdoc.cc:217 ../interfaces/paperinterface.cc:111
 msgid "Landscape"
 msgstr ""
 
-#: ../newdoc.cc:241
+#: ../newdoc.cc:225
 msgid "Tile y:"
 msgstr ""
 
-#: ../newdoc.cc:247
+#: ../newdoc.cc:231
 msgid "Tile x:"
 msgstr ""
 
-#: ../newdoc.cc:249
+#: ../newdoc.cc:233
 msgid "Only for Single, Double, and Booklet"
 msgstr ""
 
-#: ../newdoc.cc:257
+#: ../newdoc.cc:241
 msgid "Number of pages:"
 msgstr ""
 
-#: ../newdoc.cc:263
+#: ../newdoc.cc:247
 msgid "Imposition:"
 msgstr ""
 
-#: ../newdoc.cc:276
+#: ../newdoc.cc:260
 msgid ""
 "\n"
 "\n"
@@ -282,147 +284,133 @@ msgid ""
 "Look for it in future releases!)"
 msgstr ""
 
-#: ../newdoc.cc:280
+#: ../newdoc.cc:264
 msgid "pagesize:"
 msgstr ""
 
-#: ../newdoc.cc:284
+#: ../newdoc.cc:268
 msgid "default"
 msgstr ""
 
-#: ../newdoc.cc:289
+#: ../newdoc.cc:273
 msgid "custom"
 msgstr ""
 
-#: ../newdoc.cc:295
+#: ../newdoc.cc:279
 msgid "x:"
 msgstr ""
 
-#: ../newdoc.cc:307
+#: ../newdoc.cc:291
 msgid "view:"
 msgstr ""
 
-#: ../newdoc.cc:313
+#: ../newdoc.cc:297
 msgid "single"
 msgstr ""
 
-#: ../newdoc.cc:314
+#: ../newdoc.cc:298
 msgid "page layout"
 msgstr ""
 
-#: ../newdoc.cc:315
+#: ../newdoc.cc:299
 msgid "paper layout"
 msgstr ""
 
-#: ../newdoc.cc:323
+#: ../newdoc.cc:307
 msgid "target dpi:"
 msgstr ""
 
-#: ../newdoc.cc:331
+#: ../newdoc.cc:315
 msgid "default unit:"
 msgstr ""
 
-#: ../newdoc.cc:339
+#: ../newdoc.cc:323
 msgid "color mode:"
 msgstr ""
 
-#: ../newdoc.cc:345
-msgid ""
-"left button: red\n"
-"middle button: green\n"
-"right button: blue"
-msgstr ""
-
-#: ../newdoc.cc:353
+#: ../newdoc.cc:336
 msgid "target printer:"
 msgstr ""
 
-#: ../newdoc.cc:359
+#: ../newdoc.cc:342
 msgid "set options from ppd..."
 msgstr ""
 
-#: ../newdoc.cc:419
+#: ../newdoc.cc:402 ../../laxkit/lax/textbutton.cc:110
 msgid "Ok"
 msgstr ""
 
-#: ../newdoc.cc:422 ../filetypes/exportdialog.cc:388
+#: ../newdoc.cc:405 ../filetypes/exportdialog.cc:381
+#: ../../laxkit/lax/textbutton.cc:111
 msgid "Cancel"
 msgstr ""
 
-#: ../newdoc.cc:500
+#: ../newdoc.cc:483 ../../laxkit/lax/textbutton.cc:114
 msgid "Save As"
 msgstr ""
 
-#: ../viewwindow.cc:363
+#: ../viewwindow.cc:364
 msgid "(no doc)"
 msgstr ""
 
-#: ../viewwindow.cc:634 ../viewwindow.cc:2731
+#: ../viewwindow.cc:635 ../viewwindow.cc:2732
 msgid "Page: "
 msgstr ""
 
-#: ../viewwindow.cc:642
+#: ../viewwindow.cc:643
 msgid "limbo"
 msgstr ""
 
-#: ../viewwindow.cc:646
+#: ../viewwindow.cc:647
 msgid "Limbo: "
 msgstr ""
 
-#: ../viewwindow.cc:1852
+#: ../viewwindow.cc:1853
 #, c-format
 msgid "Limbo %d"
 msgstr ""
 
-#: ../viewwindow.cc:2395 ../document.cc:953 ../document.cc:955
+#: ../viewwindow.cc:2396 ../document.cc:953 ../document.cc:955
 #: ../document.cc:956
 msgid "Untitled"
 msgstr ""
 
-#: ../viewwindow.cc:2680
+#: ../viewwindow.cc:2681
 msgid "Document list"
 msgstr ""
 
-#: ../viewwindow.cc:2692
+#: ../viewwindow.cc:2693
 msgid "The current tool"
 msgstr ""
 
-#: ../viewwindow.cc:2732
+#: ../viewwindow.cc:2733
 msgid ""
 "The pages in the spread\n"
 "and the current page"
 msgstr ""
 
-#: ../viewwindow.cc:2737
+#: ../viewwindow.cc:2738
 msgid "Previous spread"
 msgstr ""
 
-#: ../viewwindow.cc:2742
+#: ../viewwindow.cc:2743
 msgid "Next spread"
 msgstr ""
 
-#: ../viewwindow.cc:2747
+#: ../viewwindow.cc:2748
 msgid "Whether pages clips its contents"
 msgstr ""
 
-#: ../viewwindow.cc:2759
+#: ../viewwindow.cc:2760
 msgid "Single"
 msgstr ""
 
-#: ../viewwindow.cc:2760
+#: ../viewwindow.cc:2761
 msgid "Page Layout"
 msgstr ""
 
-#: ../viewwindow.cc:2761
+#: ../viewwindow.cc:2762
 msgid "Paper Layout"
-msgstr ""
-
-#: ../viewwindow.cc:2767
-msgid ""
-"Current color:\n"
-"Drag left for red,\n"
-" middle for green,\n"
-" right for red"
 msgstr ""
 
 #: ../viewwindow.cc:2771
@@ -458,7 +446,7 @@ msgid "Try to import various vector based files into the document"
 msgstr ""
 
 #: ../viewwindow.cc:2822 ../filetypes/exportdialog.cc:80
-#: ../filetypes/exportdialog.cc:384
+#: ../filetypes/exportdialog.cc:377
 msgid "Export"
 msgstr ""
 
@@ -470,7 +458,7 @@ msgstr ""
 msgid "Print the document"
 msgstr ""
 
-#: ../viewwindow.cc:2835
+#: ../viewwindow.cc:2835 ../../laxkit/lax/textbutton.cc:112
 msgid "Open"
 msgstr ""
 
@@ -478,7 +466,7 @@ msgstr ""
 msgid "Open a document from disk"
 msgstr ""
 
-#: ../viewwindow.cc:2840
+#: ../viewwindow.cc:2840 ../../laxkit/lax/textbutton.cc:113
 msgid "Save"
 msgstr ""
 
@@ -524,8 +512,8 @@ msgstr ""
 msgid "Saved to %s."
 msgstr ""
 
-#: ../viewwindow.cc:2949 ../viewwindow.cc:3027 ../viewwindow.cc:3440
-#: ../viewwindow.cc:3529
+#: ../viewwindow.cc:2949 ../viewwindow.cc:3027 ../viewwindow.cc:3437
+#: ../viewwindow.cc:3520
 msgid "Problem saving. Not saved."
 msgstr ""
 
@@ -588,7 +576,7 @@ msgstr ""
 msgid "Error deleting page."
 msgstr ""
 
-#: ../viewwindow.cc:3383
+#: ../viewwindow.cc:3380
 msgid "Sorry, there are no import filters installed."
 msgstr ""
 
@@ -745,93 +733,93 @@ msgstr ""
 msgid "Scribus 1.3.3.8"
 msgstr ""
 
-#: ../filetypes/scribus.cc:411 ../filetypes/scribus.cc:412
+#: ../filetypes/scribus.cc:425 ../filetypes/scribus.cc:426
 #, c-format
 msgid "Warning: Cannot export %s to Scribus.\n"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:223
+#: ../filetypes/exportdialog.cc:216
 msgid "The file format to export into"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:232
+#: ../filetypes/exportdialog.cc:225
 msgid "By Command: "
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:234 ../filetypes/exportdialog.cc:242
+#: ../filetypes/exportdialog.cc:227 ../filetypes/exportdialog.cc:235
 msgid "Run this command on a single exported file"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:251
+#: ../filetypes/exportdialog.cc:244
 msgid "To File: "
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:253 ../filetypes/exportdialog.cc:265
-#: ../filetypes/exportdialog.cc:635
+#: ../filetypes/exportdialog.cc:246 ../filetypes/exportdialog.cc:258
+#: ../filetypes/exportdialog.cc:628
 msgid "Export to this file"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:270 ../filetypes/exportdialog.cc:300
+#: ../filetypes/exportdialog.cc:263 ../filetypes/exportdialog.cc:293
 msgid "Browse for a new location"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:279
+#: ../filetypes/exportdialog.cc:272
 msgid "To Files: "
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:281 ../filetypes/exportdialog.cc:292
-#: ../filetypes/exportdialog.cc:673
+#: ../filetypes/exportdialog.cc:274 ../filetypes/exportdialog.cc:285
+#: ../filetypes/exportdialog.cc:666
 msgid ""
 "Export to these files. A '#' is replaced with\n"
 "the spread index. A \"###\" for an index like 3\n"
 "will get replaced with \"003\"."
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:323
+#: ../filetypes/exportdialog.cc:316
 msgid "The type of spreads to export"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:336
+#: ../filetypes/exportdialog.cc:329
 msgid "Export All"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:345
+#: ../filetypes/exportdialog.cc:338
 msgid "Export Current"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:353
+#: ../filetypes/exportdialog.cc:346
 msgid "Export From:"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:365
+#: ../filetypes/exportdialog.cc:358
 msgid "The starting index"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:368
+#: ../filetypes/exportdialog.cc:361
 msgid "To:"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:375
+#: ../filetypes/exportdialog.cc:368
 msgid "The ending index"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:627
+#: ../filetypes/exportdialog.cc:620
 msgid "Cannot overwrite this kind of file!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:631
+#: ../filetypes/exportdialog.cc:624
 msgid "WARNING: This file will be overwritten on export!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:641
+#: ../filetypes/exportdialog.cc:634
 msgid "Cannot write to nothing!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:665
+#: ../filetypes/exportdialog.cc:658
 msgid "Some files cannot be overwritten!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:669
+#: ../filetypes/exportdialog.cc:662
 msgid "Warning: Some files will be overwritten!"
 msgstr ""
 
@@ -878,6 +866,18 @@ msgstr ""
 
 #: ../filetypes/pdf.cc:466
 msgid "Cannot save to PDF without a filename."
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:99
+msgid "Paper Interface"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:100 ../interfaces/paperinterface.cc:101
+msgid "Paper Size"
+msgstr ""
+
+#: ../interfaces/paperinterface.cc:112
+msgid "Print with paper group"
 msgstr ""
 
 #: ../pagerangedialog.cc:65
@@ -932,4 +932,183 @@ msgstr ""
 
 #: ../pagerangedialog.cc:125
 msgid "Add after"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/colorpatchinterface.cc:535
+#: ../../laxkit/lax/interfaces/imagepatchinterface.cc:354
+#, c-format
+msgid "New Recurse Depth %d: "
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/colorpatchinterface.cc:633
+#: ../../laxkit/lax/interfaces/colorpatchinterface.cc:640
+#: ../../laxkit/lax/interfaces/imagepatchinterface.cc:429
+#: ../../laxkit/lax/interfaces/imagepatchinterface.cc:436
+#, c-format
+msgid "Recurse for screen %d times"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2538
+msgid ""
+"a=select all/none, y=constrain y, x=constrain x, r/c/s=subdivide, z=reset, "
+"1,2,3,4,5,8,v,h"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2552
+msgid "Smooth edit mode"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2570
+msgid "Edit as a linear patches"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2571
+msgid "Edit as Coons patches"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2572
+msgid "Edit with border controls only"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2573
+msgid "Edit full cubic bezier patch"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2595
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2601
+#, c-format
+msgid "Divide each row into %d rows now"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2618
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2624
+#, c-format
+msgid "Divide each column into %d columns now"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/patchinterface.cc:2651
+msgid "Patches need more than 1 column of subpatches to warp."
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1626
+msgid "d=decorations, f=flip color order, l=linear, r=radial"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1675
+msgid "Don't show object on top, no decorations"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1676
+msgid "Don't show object on top, but show decorations"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1677
+msgid "Show object on top without decorations"
+msgstr ""
+
+#: ../../laxkit/lax/interfaces/gradientinterface.cc:1678
+msgid "Show object on top with decorations"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:115
+msgid "Save All"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:116
+msgid "Close"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:117
+msgid "Close All"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:118
+msgid "Quit"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:119
+msgid "Quit Anyway"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:121
+msgid "Preview"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:122
+msgid "Yes"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:123
+msgid "No"
+msgstr ""
+
+#: ../../laxkit/lax/textbutton.cc:124
+msgid "Overwrite"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:187
+#, c-format
+msgid "Shift-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:188
+#, c-format
+msgid "Control-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:189
+#, c-format
+msgid "Meta-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:190
+#, c-format
+msgid "Alt-"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:191
+#, c-format
+msgid "Left"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:192
+#, c-format
+msgid "Middle"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:193
+#, c-format
+msgid "Right"
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:203
+msgid "For red, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:210
+msgid "For green, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:217
+msgid "For blue, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:224
+msgid "For cyan, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:231
+msgid "For magenta, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:238
+msgid "For yellow, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:245
+msgid "For black, drag "
+msgstr ""
+
+#: ../../laxkit/lax/colorbox.cc:252
+msgid "For alpha, drag "
 msgstr ""

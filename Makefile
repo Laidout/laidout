@@ -27,6 +27,7 @@ LAIDOUTNAME=laidout-$(LAIDOUTVERSION)
 
 laidout: 
 	cd src && $(MAKE)
+	cd src/po && $(MAKE)
 
 all: laidout docs
 

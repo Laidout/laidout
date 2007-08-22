@@ -37,6 +37,7 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	virtual void createMaybebox(flatpoint p);
 	Document *doc;
 	int mx,my;
+	flatpoint lbdown;
  public:
 	PaperInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
 	PaperInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
@@ -49,6 +50,9 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
 	virtual void Clear(LaxInterfaces::SomeData *d);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y);
+	virtual int MenuEvent(XClientMessageEvent *e);
+
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
 	virtual int LBDown(int x,int y,unsigned int state,int count);
