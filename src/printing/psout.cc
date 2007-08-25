@@ -294,7 +294,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo *** for tiled pages, or multiples of same object each instance is
  *   rendered independently right now. should make a function to display such
  *   things, thus reduce ps file size substantially..
- * \todo for EPS that include specific resources, extensions, or language level, these must be
+ * \todo for embedded EPS that include specific resources, extensions, or language level, these must be
  *   mentioned in the postscript file's comments...
  * \todo *** fix non-paper layout media/paper type
  * \todo DocumentMedia comment must be enhanced. Types of media are according to each paper
@@ -541,7 +541,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 					psdumpobj(f,spread->marks);
 				}
 				
-				 // for each paper in paper layout..
+				 // for each page in spread..
 				for (c2=0; c2<spread->pagestack.n; c2++) {
 					psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
 					

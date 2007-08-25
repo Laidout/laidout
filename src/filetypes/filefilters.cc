@@ -54,6 +54,7 @@ DocumentExportConfig::DocumentExportConfig()
 	doc=NULL;
 	filter=NULL;
 	papergroup=NULL;
+	limbo=NULL;
 }
 
 /*! Increments count on ndoc if it exists.

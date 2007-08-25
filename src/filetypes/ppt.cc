@@ -23,6 +23,8 @@
 #include "../laidout.h"
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
+#include "../utils.h"
+#include "../printing/psout.h"
 #include "ppt.h"
 
 #include <iostream>
@@ -53,13 +55,20 @@ void installPptFilter()
  * \brief Output filter for Passepartout files.
  */
 
+PptoutFilter::PptoutFilter()
+{
+	flags=FILTER_MULTIPAGE;
+}
+
 const char *PptoutFilter::VersionName()
 {
 	return _("Passepartout");
 }
 
 //! Internal function to dump out the obj if it is an ImageData.
-void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
+/*! \todo deal with SomeDataRef
+ */
+static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -69,7 +78,8 @@ void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 		if (!g || !g->n()) return;
 
 		double m[6];
-		transform_mult(m,g->m(),mm);
+		if (mm) transform_mult(m,g->m(),mm);
+		else transform_copy(m,g->m());
 		
 		fprintf(f,"%s<frame type=\"group\" transform=\"%.10g %.10g %.10g %.10g %.10g %.10g\" >\n",
 				spc, m[0], m[1], m[2], m[3], m[4], m[5]);
@@ -82,7 +92,8 @@ void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 		if (!img || !img->filename) return;
 
 		double m[6];
-		transform_mult(m,img->m(),mm);
+		if (mm) transform_mult(m,img->m(),mm);
+		else transform_copy(m,img->m());
 		
 		char *bname=basename(img->filename); // Warning! This assumes the GNU basename, which does
 											 // not modify the string.
@@ -109,7 +120,7 @@ static const char *pptpaper[12]= {
 	};
 
 //! Save the document as a Passepartout file.
-/*! This only saves unnested images, and the page size and orientation.
+/*! This only saves groups and images, and the page size and orientation.
  *
  * If the paper name is not recognized as a Passepartout paper name, which are
  * A0-A6, Executive (7.25 x 10.5in), Legal, Letter, and Tabloid/Ledger, then
@@ -129,18 +140,24 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	int start     =out->start;
 	int end       =out->end;
 	int layout    =out->layout;
+	Group *limbo  =out->limbo;
+	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->filename;
 	
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) {
-		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
+	 //we must have something to export...
+	if (!doc && !limbo) {
+		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
 	
+	 //we must be able to open the export file location...
 	FILE *f=NULL;
 	char *file=NULL;
 	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cerr <<"**** cannot save, null filename, doc->saveas is null."<<endl;
+		if (isblank(doc->saveas)) {
+			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			
 			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
 		}
@@ -148,34 +165,35 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 		appendstr(file,".ppt");
 	} else file=newstr(filename);
 
-	f=fopen(file,"w");
+	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
-		if (error_ret) *error_ret=newstr(_("Error opening file for writing."));
 		return 3;
 	}
 	
-	 //figure out paper size
+	 //figure out paper size and orientation
 	const char *papersize=NULL, *landscape=NULL;
 	int c;
-	if (layout==PAPERLAYOUT) {
-		const char **tmp;
-		landscape=((doc->docstyle->imposition->paper->paperstyle->flags&1)?"true":"false");
-		for (c=0, tmp=pptpaper; *tmp; c++, tmp++) {
-			if (!strcmp(doc->docstyle->imposition->paper->paperstyle->name,*tmp)) break;
-		}
-		if (*tmp) papersize=*tmp;
-		else if (!strcmp(doc->docstyle->imposition->paper->paperstyle->name,"Tabloid")) {
-			papersize="Tabloid/Ledger";
-			if (landscape[0]=='t') landscape="false"; else landscape="true";
-		} else if (!strcmp(doc->docstyle->imposition->paper->paperstyle->name,"Ledger")) {
-			papersize="Tabloid/Ledger";
-		} else papersize="Letter";
-	} else {
-		papersize="Letter";
-		landscape="false";
+	const char **tmp;
+	double paperwidth; //,paperheight;
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	 // The ps Orientation comment determines how onscreen viewers will show 
+	 // pages. This can be overridden by the %%PageOrientation: comment
+	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?"true":"false";
+	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+	 //match the first paper name with a passepartout paper name
+	for (c=0, tmp=pptpaper; *tmp; c++, tmp++) {
+		if (!strcmp(papergroup->papers.e[0]->box->paperstyle->name,*tmp)) break;
 	}
+	if (*tmp) papersize=*tmp;
+	else if (!strcmp(papergroup->papers.e[0]->box->paperstyle->name,"Tabloid")) {
+		papersize="Tabloid/Ledger";
+		if (landscape[0]=='t') landscape="false"; else landscape="true";
+	} else if (!strcmp(papergroup->papers.e[0]->box->paperstyle->name,"Ledger")) {
+		papersize="Tabloid/Ledger";
+	} else papersize="Letter";
 	
 	 // write out header
 	fprintf(f,"<?xml version=\"1.0\"?>\n");
@@ -183,42 +201,70 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 				papersize, landscape, start);
 	
 	 // Write out paper spreads....
-	Spread *spread;
-	Group *g;
-	double m[6];
-	int c2,l,pg,c3;
+	Spread *spread=NULL;
+	Group *g=NULL;
+	double m[6],mm[6],mmm[6];
+	int p,c2,l,pg,c3;
 	
-	if (start<0) start=0;
-	else if (start>=doc->docstyle->imposition->NumSpreads(layout))
-		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	if (end<start) end=start;
-	else if (end>=doc->docstyle->imposition->NumSpreads(layout))
-		end=doc->docstyle->imposition->NumSpreads(layout)-1;
-	
-	transform_set(m,72,0,0,72,0,0);
+	transform_set(mm,72,0,0,72,0,0);
+	psCtmInit();
 	for (c=start; c<=end; c++) {
-		fprintf(f,"  <page>\n");
-		spread=doc->docstyle->imposition->Layout(layout,c);
-		
-		 // for each page in spread..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
-			pg=spread->pagestack.e[c2]->index;
-			if (pg>=doc->pages.n) continue;
-			
-			 // for each layer on the page..
-			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+		for (p=0; p<papergroup->papers.n; p++) {
+			fprintf(f,"  <page>\n");
 
-				 // for each object in layer
-				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-				for (c3=0; c3<g->n(); c3++) {
-					//transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					pptdumpobj(f,m,g->e(c3),4);
-				}
+			 //begin paper contents
+			//fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
+			//psConcat(72.,0.,0.,72.,0.,0.);
+			//if (plandscape) {
+			//	//fprintf(f,"%.10g 0 translate\n90 rotate\n",paperwidth);
+			//	psConcat(0.,1.,-1.,0., paperwidth,0.);
+			//}
+
+			psPushCtm();
+			transform_invert(mmm,papergroup->papers.e[p]->m());
+			transform_mult(m,mmm,mm);
+			fprintf(f,"  <frame type=\"group\" transform=\"%.10g %.10g %.10g %.10g %.10g %.10g\" >\n",
+				      m[0], m[1], m[2], m[3], m[4], m[5]);
+			psConcat(m);
+
+			if (limbo && limbo->n()) {
+				//*** if limbo bbox inside paper bbox? could loop in limbo objs for more specific check
+				pptdumpobj(f,NULL,limbo,4);
 			}
-		}
 
-		delete spread;
-		fprintf(f,"  </page>\n");
+			if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+			if (spread) {
+				// // print out printer marks
+				//if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+				//	//fprintf(f," .01 setlinewidth\n");
+				//	//DBG cerr <<"marks data:\n";
+				//	//DBG spread->marks->dump_out(stderr,2,0);
+				//	pptdumpobj(f,m,spread->marks,4);
+				//}
+				
+				 // for each page in spread..
+				for (c2=0; c2<spread->pagestack.n; c2++) {
+					pg=spread->pagestack.e[c2]->index;
+					if (pg>=doc->pages.n) continue;
+					
+					 // for each layer on the page..
+					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+
+						 // for each object in layer
+						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+						for (c3=0; c3<g->n(); c3++) {
+							transform_copy(mmm,spread->pagestack.e[c2]->outline->m());
+							pptdumpobj(f,mmm,g->e(c3),4);
+						}
+					}
+				}
+
+				delete spread;
+			}
+			psPopCtm(); //remove papergroup->paper transform
+			fprintf(f,"  </frame>\n");
+			fprintf(f,"  </page>\n");
+		}
 	}
 		
 	 // write out footer

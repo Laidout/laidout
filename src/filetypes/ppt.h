@@ -29,6 +29,7 @@ class PptoutFilter : public ExportFilter
 {
  protected:
  public:
+	PptoutFilter();
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	
