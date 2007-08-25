@@ -171,7 +171,7 @@ int Project::clear()
  */
 int Project::Load(const char *file,char **error_ret)
 {
-	FILE *f=open_file_to_read(file,"Project",error_ret);
+	FILE *f=open_laidout_file_to_read(file,"Project",error_ret);
 	if (!f) return 1;
 	
 	clear();

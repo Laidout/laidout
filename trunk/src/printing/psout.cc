@@ -16,15 +16,20 @@
 
 
 #include "../language.h"
+#include "../laidout.h"
 #include "psout.h"
-#include "../version.h"
 
-#include "psfilters.h"
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
 #include <lax/fileutils.h>
+
+#include "../version.h"
+#include "../utils.h"
+#include "psfilters.h"
+#include "../filetypes/filefilters.h"
+#include "../laidoutdefs.h"
 
 #include "psgradient.h"
 #include "psimage.h"
@@ -32,8 +37,6 @@
 #include "pscolorpatch.h"
 #include "pspathsdata.h"
 #include "pseps.h"
-#include "../filetypes/filefilters.h"
-#include "../laidoutdefs.h"
 
 
 #include <iostream>
@@ -294,6 +297,8 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo for EPS that include specific resources, extensions, or language level, these must be
  *   mentioned in the postscript file's comments...
  * \todo *** fix non-paper layout media/paper type
+ * \todo DocumentMedia comment must be enhanced. Types of media are according to each paper
+ *   in papergroup
  */
 int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
@@ -305,18 +310,24 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	int start     =out->start;
 	int end       =out->end;
 	int layout    =out->layout;
+	Group *limbo  =out->limbo;
+	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->filename;
 
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) {
-		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
+	 //we must have something to export...
+	if (!doc && !limbo) {
+		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
-	
+
+
+	 //we must be able to open the export file location...
 	FILE *f=NULL;
 	char *file=NULL;
 	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cerr <<"**** cannot save, null filename, doc->saveas is null."<<endl;
+		if (isblank(doc->saveas)) {
+			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
@@ -325,21 +336,13 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		appendstr(file,".ps");
 	} else file=newstr(filename);
 
-	f=fopen(file,"w");
+	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<"**** cannot save, "<<file<<" cannot be opened for writing."<<endl;
-
+		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
-		if (error_ret) *error_ret=newstr(_("Error opening file for writing."));
 		return 3;
 	}
 
-	if (start<0) start=0;
-	else if (start>=doc->docstyle->imposition->NumSpreads(layout))
-		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	if (end<start) end=start;
-	else if (end>=doc->docstyle->imposition->NumSpreads(layout))
-		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 
 
 	 //Basically, postscript documents following the ps document structure 
@@ -372,12 +375,17 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	 // ...
 	 // %%EOF
 
+
 	 //figure out paper orientation
 	int landscape=0;
+	double paperwidth; //,paperheight;
 	int c;
-	if (layout==PAPERLAYOUT) {
-		landscape=((doc->docstyle->imposition->paper->paperstyle->flags&1)?1:0);
-	} 
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	 // The ps Orientation comment determines how onscreen viewers will show 
+	 // pages. This can be overridden by the %%PageOrientation: comment
+	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
+	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
 	
 	 // initialize outside accessible ctm
 	psctms.flush();
@@ -385,39 +393,33 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	DBG cerr <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
 	
 	 // print out header
-	fprintf (f,
-			"%%!PS-Adobe-3.0\n"
-			"%%%%Orientation: ");
+	fprintf (f,"%%!PS-Adobe-3.0\n"
+			   "%%%%Orientation: ");
 	fprintf (f,"%s\n",(landscape?"Landscape":"Portrait"));
-	fprintf(f,"%%%%Pages: %d\n",end-start+1);
+	fprintf(f,"%%%%Pages: %d\n",(end-start+1)*(papergroup?papergroup->papers.n:1));
 	time_t t=time(NULL);
 	fprintf(f,"%%%%PageOrder: Ascend\n"
 			  "%%%%CreationDate: %s" //ctime puts a terminating newline
 			  "%%%%Creator: Laidout %s\n"
 			  "%%%%For: whoever \n",
 			  		ctime(&t),LAIDOUT_VERSION);
-	if (layout==PAPERLAYOUT) {
-		fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
-				doc->docstyle->imposition->paper->paperstyle->name, 
-				72*doc->docstyle->imposition->paper->paperstyle->width,  //width and height ignoring landscape/portrait
-				72*doc->docstyle->imposition->paper->paperstyle->height);
-	} else {
-		//PaperStyle *paper=doc->docstyle->imposition->Paper(layout)); 
-		//paper->width
-		//paper->height
-		//paper->dec_count();
-		fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2
-				doc->docstyle->imposition->paper->paperstyle->name, 
-				72*doc->docstyle->imposition->paper->paperstyle->width,  //width and height ignoring landscape/portrait
-				72*doc->docstyle->imposition->paper->paperstyle->height);
-		//***this should be specific to layout?
-	}
+
+	 //%%DocumentMedia: list...
+	//*****uses only the first paper of papergroup
+	 //%%DocumentMedia: tag width-ps-units height weight color type
+	 //%%+ tag width height weight color type
+	 //%%+ ...list of used media in order of most used first
+	 //Each page refers to a given media with: %%PageMedia: tag
+	fprintf(f,"%%%%DocumentMedia: %s %.10g %.10g 75 white ( )\n", //75 g/m^2 = 20lb * 3.76 g/lb/m^2 
+			papergroup->papers.e[0]->box->paperstyle->name, 
+			72*papergroup->papers.e[0]->box->paperstyle->width,  //width and height ignoring landscape/portrait
+			72*papergroup->papers.e[0]->box->paperstyle->height);
 	fprintf(f,"%%%%EndComments\n");
 			
 
 	 //---------------------------Defaults
 	fprintf(f,"%%%%BeginDefaults\n"
-			  "%%%%PageMedia: %s\n",doc->docstyle->imposition->paper->paperstyle->name);
+			  "%%%%PageMedia: %s\n",papergroup->papers.e[0]->box->paperstyle->name);//***
 	fprintf(f,"%%%%EndDefaults\n"
 			  "\n");
 			  
@@ -465,88 +467,139 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 			  "\n");
 	
 	 // Write out paper spreads....
-	Spread *spread;
+	Spread *spread=NULL;
 	double m[6];
 	int c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
-	Page *page;
-	char *desc;
+	Page *page=NULL;
+	char *desc=NULL;
+	int p,plandscape;
 	for (c=start; c<=end; c++) {
-		spread=doc->docstyle->imposition->Layout(layout,c);
-		desc=spread->pagesFromSpreadDesc(doc);
+		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		else spread=NULL;
+		if (spread) desc=spread->pagesFromSpreadDesc(doc);
+		else desc=limbo->id?newstr(limbo->id):NULL;
 			
-	     //print (postscript) paper header
-		if (desc) {
-			fprintf(f, "%%%%Page: %s %d\n", desc,c-start+1);//Page label (ordinal starting at 1)
-			delete[] desc;
-		} else fprintf(f, "%%%%Page: %d %d\n", c+1,c-start+1);//Page label (ordinal starting at 1)
-		fprintf(f, "save\n");
-		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
-		psConcat(72.,0.,0.,72.,0.,0.);
-		if (doc->docstyle->imposition->paper->paperstyle->flags&1) {
-			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paper->paperstyle->width);
-			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
-		}
-		
-		 // print out printer marks
-		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
-			fprintf(f," .01 setlinewidth\n");
-			//DBG cerr <<"marks data:\n";
-			//DBG spread->marks->dump_out(stderr,2,0);
-			psdumpobj(f,spread->marks);
-		}
-		
-		 // for each paper in paper layout..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
-			
-			pg=spread->pagestack.e[c2]->index;
-			if (pg<0 || pg>=doc->pages.n) continue;
-			page=doc->pages.e[pg];
-			
-			 // transform to page
+		for (p=0; p<papergroup->papers.n; p++) {
+			DBG cerr<<"Printing paper "<<p<<"..."<<endl;
+			plandscape=papergroup->papers.e[p]->box->paperstyle->flags&1;
+			paperwidth=papergroup->papers.e[p]->box->paperstyle->width;
+
+			 //print (postscript) page header
+			 //%%Page label (ordinal starting at 1)
+			if (desc) {
+				fprintf(f, "%%%%Page: %s %d\n", desc,(c-start)*papergroup->papers.n+p+1);
+			} else fprintf(f, "%%%%Page: %d %d\n", 
+					(c-start)*papergroup->papers.n+p+1,(c-start)*papergroup->papers.n+p+1);
+
+			// //paper media
+			//if (this paper media != default paper media) {
+			//	fprintf(f,"%%%%PageMedia: $s\n",papergroup->papers.e[p]->box->name ???);     ***OR***
+			//	fprintf(f,"%%%%PageMedia: $s\n",papergroup->papers.e[p]->box->paperstyle ???);***
+			//}
+
+			//%%BeginPageSetup
+			if (plandscape!=landscape) {
+				fprintf(f,"%%%%BeginPageSetup\n");
+				fprintf(f,"%%%%PageOrientation: %s\n",((!landscape)?"Landscape":"Portrait"));
+				fprintf(f,"%%%%EndPageSetup\n");
+			}
+			//%%EndPageSetup
+
+			 //begin paper contents
+			fprintf(f, "save\n");
+			fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
+			psConcat(72.,0.,0.,72.,0.,0.);
+			if (plandscape) {
+				fprintf(f,"%.10g 0 translate\n90 rotate\n",paperwidth);
+				psConcat(0.,1.,-1.,0., paperwidth,0.);
+			}
+
 			fprintf(f,"gsave\n");
 			psPushCtm();
-			transform_copy(m,spread->pagestack.e[c2]->outline->m());
+			transform_invert(m,papergroup->papers.e[p]->m());
 			fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			psConcat(m);
 
-			 // set clipping region
-			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
-			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
-				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
-			} else {
-				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+			if (limbo && limbo->n()) {
+				//*** if limbo bbox inside paper bbox? could loop in limbo objs for more specific check
+				psdumpobj(f,limbo);
+				//----OR-----
+				//transform by limbo
+				//for (l=0; l<limbo->n(); l++) {
+				//	if (***inbounds) psdumpobj(f,limbo->e(l));
+				//}
 			}
+			
+			if (spread) {
+				 // print out printer marks
+				if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+					fprintf(f," .01 setlinewidth\n");
+					//DBG cerr <<"marks data:\n";
+					//DBG spread->marks->dump_out(stderr,2,0);
+					psdumpobj(f,spread->marks);
+				}
 				
-			 // for each layer on the page..
-			for (l=0; l<page->layers.n(); l++) {
-				psdumpobj(f,page->layers.e(l));
-			}
-			fprintf(f,"grestore\n");
-			psPopCtm();
-		}
+				 // for each paper in paper layout..
+				for (c2=0; c2<spread->pagestack.n; c2++) {
+					psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
+					
+					pg=spread->pagestack.e[c2]->index;
+					if (pg<0 || pg>=doc->pages.n) continue;
+					page=doc->pages.e[pg];
+					
+					 // transform to page
+					fprintf(f,"gsave\n");
+					psPushCtm();
+					transform_copy(m,spread->pagestack.e[c2]->outline->m());
+					fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+							m[0], m[1], m[2], m[3], m[4], m[5]); 
+					psConcat(m);
 
+					 // set clipping region
+					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+					if (page->pagestyle->flags&PAGE_CLIPS) {
+						DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+						psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
+					} else {
+						DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+					}
+						
+					 // for each layer on the page..
+					for (l=0; l<page->layers.n(); l++) {
+						psdumpobj(f,page->layers.e(l));
+					}
+					fprintf(f,"grestore\n");
+					psPopCtm();
+				}
+
+			}
+			fprintf(f,"grestore\n"); //from papergroup->paper transform
+			psPopCtm();
+
+			 // print out paper footer
+			fprintf(f,"\n"
+					  "restore\n" //from page start
+					  "\n"
+					  "showpage\n"
+					  "\n");		
+			DBG cerr<<"Done printing paper "<<p<<"."<<endl;
+		}
 		delete spread;
-		
-		 // print out paper footer
-		fprintf(f,"\n"
-				  "restore\n"
-				  "\n"
-				  "showpage\n"
-				  "\n");		
+		delete[] desc; desc=NULL;
 	}
 
 	 //print out footer
 	fprintf(f, "\n%%%%Trailer\n");
 	fprintf(f, "\n%%%%EOF\n");
 
-	DBG cerr <<"=================== end printing ========================\n";
+	DBG cerr <<"=================== end printing ps ========================\n";
 
+	 //clean up
 	fclose(f);
 	delete[] file;
+	papergroup->dec_count();
 
 	return 0;
 }
@@ -556,12 +609,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
  * This sets up the ctm as accessible through psCTM(),
  * and flushes the ctm stack.
  *
- * Return 0 for no errors, nonzero for error. If return >0 then the number is which
- * page failed to be output (start+1 means first page attempted).
- * 
- * The directory part of fname (if any) should already be a valid directory.
- * The function returns immediately when it cannot open the file to write. It does
- * not try to figure out why.
+ * Return 0 for no errors, nonzero for error. 
  * 
  * \todo *** this does not currently handle pages that bleed their contents
  *   onto other pages correctly. it bleeds here by paper spread, rather than page spread
@@ -569,8 +617,6 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
  *   rendered independently right now. should make a function to display such
  *   things, thus reduce ps file size substantially..
  * \todo *** bounding box should more accurately reflect the drawn extent.. just does paper bounds here
- * \todo *** doing page layouts is potentially broken for impositions that do not provide page layouts 
- *   with pages that increase one by one: [1,2]->[3,4]->etc. No good: [1,3]->[2,4]
  */
 int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
@@ -583,117 +629,119 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	int start     =out->start;
 	int end       =out->end;
 	int layout    =out->layout;
+	Group *limbo  =out->limbo;
+	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->tofiles;
 	if (!filename) filename="output#.eps";
 
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) {
-		if (error_ret) *error_ret=newstr(_("Nothing to export!"));
-		return 1;
-	}
-	
-	if (start<0) start=0;
-	else if (start>=doc->docstyle->imposition->NumSpreads(layout))
-		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	if (end<start) end=start;
-	else if (end>=doc->docstyle->imposition->NumSpreads(layout))
-		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 
-
-	 //figure out base filename
-	char *filebase=LaxFiles::make_filename_base(filename);
-	char epsfilename[strlen(filebase)+10];
 
 	DBG cerr <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
 		
-	 // Write out paper spreads....
-	Spread *spread;
+	Spread *spread=NULL;
 	DoubleBBox bbox;
 	double m[6];
-	int c,c2,l,pg;
+	int c2,l,pg;
 	transform_set(m,1,0,0,1,0,0);
 	Page *page;
 	FILE *f;
-	for (c=start; c<=end; c++) {
-		sprintf(epsfilename,filebase,c);
-		f=fopen(epsfilename,"w");
-		if (!f) {
-			if (error_ret) {
-				*error_ret=new char[100];
-				sprintf(*error_ret,_("Error opening %s for writing during EPS out."),epsfilename);
-			}
-			delete[] filebase;
-			return c+1;
-		}
-		
-		 // initialize outside accessible ctm
-		psctms.flush();
-		psctm=transform_identity(psctm);
 
-		 // Find bbox
-		spread=doc->docstyle->imposition->Layout(layout,c);
-		bbox.clear();
-		bbox.addtobounds(spread->path);
-		
-		 // print out header
-		fprintf(f, "%%!PS-Adobe-3.0 EPSF-3.0\n");
-		if (layout==PAPERLAYOUT && doc->docstyle->imposition->paper->paperstyle->flags&1) {
-			fprintf(f,"%%%%BoundingBox: 0 0 %d %d\n",
-					(int)(72*doc->docstyle->imposition->paper->paperstyle->width),
-					(int)(72*doc->docstyle->imposition->paper->paperstyle->height));
-		} else {
-			fprintf(f,"%%%%BoundingBox: %d %d %d %d\n",
-					(int)(spread->path->minx*72), (int)(spread->path->miny*72),
-					(int)(spread->path->maxx*72), (int)(spread->path->maxy*72));\
-		}
-		fprintf(f,"%%%%Pages: 1\n");
-		time_t t=time(NULL);
-		fprintf(f,"%%%%CreationDate: %s\n"
-				  "%%%%Creator: Laidout %s\n",
-						ctime(&t),LAIDOUT_VERSION);
+	f=open_file_for_writing(filename,0,error_ret);//appends an error string
+	if (!f) return 1;
 	
-		fprintf(f,"%%%%EndComments\n");
-		fprintf(f,"%%%%BeginProlog\n");
-		//if (doc->hasEPS()) { *** including these defs always isn't harmful, and much easier to implement..
-			 // if an EPS has extra resources, they are mentioned here in the prolog(?)
-			//***
-			//%%BeginResource: procsetname
-			//...
-			//%%EndResource
-			 
-			 //define functions to simplify inclusion of EPS files
-			fprintf(f,"/BeginEPS {\n"
-				  "  /starting_state save def\n"
-				  "  /dict_count countdictstack def \n"
-				  "  /op_count count 1 sub def\n"
-				  "  userdict begin\n"
-				  "  /showpage { } def\n"
-				  "  0 setgray     0 setlinecap     1 setlinewidth\n"
-				  "  0 setlinejoin 10 setmiterlimit [ ] 0 setdash   newpath\n"
-				  "  /languagelevel where\n"
-				  "  { pop languagelevel 1 ne\n"
-				  "    { false setoverprint  false setstrokeadjust\n"
-				  "    } if\n"
-				  "  } if\n"
-				  "} bind def\n");
-			fprintf(f,"/EndEPS {\n"
-				  "  count op_count sub { pop } repeat\n"
-				  "  countdictstack dict_count sub { end } repeat\n"
-				  "  starting_state restore\n"
-				  "} bind def\n");
-		//}
-				  
-		fprintf(f,"%%%%EndProlog\n");
-			
-	     //print paper header
-		fprintf(f, "%%%%Page: %d 1\n", c+1);//%%Page (label) (ordinal starting at 1)
-		fprintf(f, "save\n");
-		fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
-		psConcat(72.,0.,0.,72.,0.,0.);
-		if (layout==PAPERLAYOUT && doc->docstyle->imposition->paper->paperstyle->flags&1) {
-			fprintf(f,"%.10g 0 translate\n90 rotate\n",doc->docstyle->imposition->paper->paperstyle->width);
-			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
-		}
+	 // initialize outside accessible ctm
+	psctms.flush();
+	psctm=transform_identity(psctm);
+
+	 // Find bbox
+	 //*** note bbox is not used!!
+	if (doc) spread=doc->docstyle->imposition->Layout(layout,start);
+	bbox.clear();
+	bbox.addtobounds(spread->path);
+	
+
+	 //figure out paper orientation
+	int landscape=0;
+	double paperwidth; //,paperheight;
+	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
+	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+	
+
+	 // print out header
+	fprintf(f, "%%!PS-Adobe-3.0 EPSF-3.0\n");
+	fprintf(f,"%%%%BoundingBox: 0 0 %d %d\n",
+			(int)(72*papergroup->papers.e[0]->box->paperstyle->width),
+			(int)(72*papergroup->papers.e[0]->box->paperstyle->height));
+
+	fprintf(f,"%%%%Pages: 1\n");
+	time_t t=time(NULL);
+	fprintf(f,"%%%%CreationDate: %s\n"
+			  "%%%%Creator: Laidout %s\n",
+					ctime(&t),LAIDOUT_VERSION);
+
+	fprintf(f,"%%%%EndComments\n");
+	fprintf(f,"%%%%BeginProlog\n");
+	//if (doc->hasEPS()) { *** including these defs always isn't harmful, and much easier to implement..
+		 // if an EPS has extra resources, they are mentioned here in the prolog(?)
+		//***
+		//%%BeginResource: procsetname
+		//...
+		//%%EndResource
+		 
+		 //define functions to simplify inclusion of EPS files
+		fprintf(f,"/BeginEPS {\n"
+			  "  /starting_state save def\n"
+			  "  /dict_count countdictstack def \n"
+			  "  /op_count count 1 sub def\n"
+			  "  userdict begin\n"
+			  "  /showpage { } def\n"
+			  "  0 setgray     0 setlinecap     1 setlinewidth\n"
+			  "  0 setlinejoin 10 setmiterlimit [ ] 0 setdash   newpath\n"
+			  "  /languagelevel where\n"
+			  "  { pop languagelevel 1 ne\n"
+			  "    { false setoverprint  false setstrokeadjust\n"
+			  "    } if\n"
+			  "  } if\n"
+			  "} bind def\n");
+		fprintf(f,"/EndEPS {\n"
+			  "  count op_count sub { pop } repeat\n"
+			  "  countdictstack dict_count sub { end } repeat\n"
+			  "  starting_state restore\n"
+			  "} bind def\n");
+	//}
+			  
+	fprintf(f,"%%%%EndProlog\n");
 		
+	 //print paper header
+	fprintf(f, "%%%%Page: %d 1\n", start+1);//%%Page (label) (ordinal starting at 1)
+
+	 //begin paper contents
+	fprintf(f, "save\n");
+	fprintf(f,"[72 0 0 72 0 0] concat\n"); // convert to inches
+	psConcat(72.,0.,0.,72.,0.,0.);
+	if (landscape) {
+		fprintf(f,"%.10g 0 translate\n90 rotate\n",paperwidth);
+		psConcat(0.,1.,-1.,0., paperwidth,0.);
+	}
+
+	fprintf(f,"gsave\n");
+	psPushCtm();
+	transform_invert(m,papergroup->papers.e[0]->m());
+	fprintf(f,"[%.10g %.10g %.10g %.10g %.10g %.10g] concat\n ",
+			m[0], m[1], m[2], m[3], m[4], m[5]); 
+	psConcat(m);
+
+	if (limbo && limbo->n()) {
+		//*** if limbo bbox inside paper bbox? could loop in limbo objs for more specific check
+		psdumpobj(f,limbo);
+		//----OR-----
+		//transform by limbo
+		//for (l=0; l<limbo->n(); l++) {
+		//	if (***inbounds) psdumpobj(f,limbo->e(l));
+		//}
+	}
+			
+	if (spread) {
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
@@ -701,8 +749,8 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 			//DBG spread->marks->dump_out(stderr,2,0);
 			psdumpobj(f,spread->marks);
 		}
-		
-		 // for each paper in paper layout..
+	
+		 // for each page in spread..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
 			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
 			
@@ -736,19 +784,22 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		}
 
 		delete spread;
-		
-		 // print out paper footer
-		fprintf(f,"\n"
-				  "restore\n"
-				  "\n");		
-		
-		 //print out footer
-		fprintf(f, "\n%%%%Trailer\n");
-		fprintf(f, "\n%%%%EOF\n");
-
-		fclose(f);
-
 	}
+	fprintf(f,"grestore\n");//remove papergroup->paper transform
+	psPopCtm();
+	
+
+	 // print out paper footer
+	fprintf(f,"\n"
+			  "restore\n"
+			  "\n");		
+	
+	 //print out footer
+	fprintf(f, "\n%%%%Trailer\n");
+	fprintf(f, "\n%%%%EOF\n");
+
+	fclose(f);
+
 
 	DBG cerr <<"=================== end printing eps ========================\n";
 

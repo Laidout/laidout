@@ -69,6 +69,7 @@ class ExportDialog : public Laxkit::RowFrame
 				 ExportFilter *nfilter, const char *file, int layout,
 				 int pmin, int pmax, int pcur);
 	virtual ~ExportDialog();
+	virtual const char *whattype() { return "ExportDialog"; }
 	virtual int init();
 	virtual int CharInput(unsigned int ch, unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);

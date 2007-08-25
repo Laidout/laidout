@@ -716,7 +716,7 @@ int Document::Load(const char *file,char **error_ret)
 	//*** need to create a new DocumentStyle from what's in the file..
 	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
-	FILE *f=open_file_to_read(file,"Document",error_ret);
+	FILE *f=open_laidout_file_to_read(file,"Document",error_ret);
 	if (!f) return 0;
 	
 	clear();

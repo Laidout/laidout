@@ -15,6 +15,7 @@
 //
 
 #include <lax/strmanip.h>
+#include <lax/fileutils.h>
 
 #include "../language.h"
 #include "filefilters.h"
@@ -39,7 +40,7 @@ using namespace LaxFiles;
 /*! \var int DocumentExportConfig::target
  * 
  * 0 for filename,
- * 1 for tofiles: 1 spread per file,
+ * 1 for tofiles: 1 spread (or paper slice) per file,
  * 2 for command.
  */
 
@@ -125,8 +126,10 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"tofile")) {
+			target=0;
 			makestr(filename,value);
 		} else if (!strcmp(name,"tofiles")) {
+			target=1;
 			makestr(tofiles,value);
 		} else if (!strcmp(name,"format")) {
 			filter=NULL;
@@ -231,16 +234,16 @@ FileFilter::FileFilter()
 	flags=0;
 }
 
-//------------------------------------- FileInputFilter -----------------------------------
-/*! \class FileInputFilter
- * \brief Abstract base class of input file filters.
+//------------------------------------- ImportFilter -----------------------------------
+/*! \class ImportFilter
+ * \brief Abstract base class of file import filters.
  */
 
 
-/*! \fn const char *FileInputFilter::FileType(const char *first100bytes)
+/*! \fn const char *ImportFilter::FileType(const char *first100bytes)
  * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
  */
-/*! \fn int FileInputFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
+/*! \fn int ImportFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
  * \brief The function that outputs the stuff.
  *
  * If file!=NULL, then output to that single file, and ignore the files in context.
@@ -252,11 +255,11 @@ FileFilter::FileFilter()
  * On failure, return nonzero, and put error messages in error_ret.
  */
 
-//------------------------------------- FileOutputFilter -----------------------------------
-/*! \class FileOutputFilter
- * \brief Abstract base class of input file filters.
+//------------------------------------- ExportFilter -----------------------------------
+/*! \class ExportFilter
+ * \brief Abstract base class of file export filters.
  */
-/*! \fn int FileOutputFilter::Verify(Laxkit::anObject *context)
+/*! \fn int ExportFilter::Verify(Laxkit::anObject *context)
  * \brief Preflight checker.
  *
  * This feature is not thought out enough to even have decent documentation. Default just returns 1.
@@ -264,7 +267,7 @@ FileFilter::FileFilter()
  * \todo Ideally, this function should return some sort of set of objects that cannot be transfered
  *   in the given format, and other objects that can be transfered, but only in a lossless way.
  */
-/*! \fn int FileOutputFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
+/*! \fn int ExportFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
  * \brief The function that outputs the stuff.
  *
  * context must be a configuration object that the filter understands. For instance, this
@@ -277,4 +280,119 @@ FileFilter::FileFilter()
 
 
 
+//------------------------------- export_document() ----------------------------------
+
+//! Export a document from a file or a live Document.
+/*! Return 0 for export successful. 0 is also returned If there are non-fatal errors, in which case
+ * the warning messages get appended to error_ret. If there are fatal errors, then error_ret
+ * gets appended with a message, and 1 is returned.
+ *
+ * If the filter cannot support multiple file output, but there are multiple files to be output,
+ * then this function will call filter->Out() with the correct data for each file.
+ *
+ * Also does sanity checking on config->papergoup, config->start, and config->end. Ensures that
+ * config->papergroup is never NULL, that start<=end, and that start and end are proper for
+ * the requested spreads.
+ *
+ * If no doc is specified, then start=end=0 is passed to the filter. Also ensures that at least
+ * one of doc and limbo is not NULL before calling the filter.
+ */
+int export_document(DocumentExportConfig *config,char **error_ret)
+{
+	if (!config->filter || !(config->doc || config->limbo)) {
+		if (error_ret) appendline(*error_ret,_("Bad export configuration"));
+		return 1;
+	}
+
+	 //figure out what paper arrangement to print out on
+	PaperGroup *papergroup=config->papergroup;
+	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
+	if (!papergroup && config->doc) papergroup=config->doc->docstyle->imposition->papergroup;
+	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
+	if (!papergroup) {
+		int c;
+		for (c=0; c<laidout->papersizes.n; c++) {
+			if (!strcasecmp(laidout->defaultpaper,laidout->papersizes.e[c]->name)) 
+				break;
+		}
+		PaperStyle *ps;
+		if (c==laidout->papersizes.n) c=0;
+		ps=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
+		papergroup=new PaperGroup(ps);
+		ps->dec_count();
+	} else papergroup->inc_count();
+	if (config->papergroup) config->papergroup->dec_count();
+	config->papergroup=papergroup;
+
+	 //establish starting and ending spreads. If no doc, then use only limbo (1 spread)
+	if (!config->doc) {
+		config->start=config->end=0;
+	} else {
+		if (config->start<0) config->start=0;
+		else if (config->start>=config->doc->docstyle->imposition->NumSpreads(config->layout))
+			config->start=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+		if (config->end<config->start) config->end=config->start;
+		else if (config->end>=config->doc->docstyle->imposition->NumSpreads(config->layout))
+			config->end=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+	}
+
+	int n=(config->end-config->start+1)*papergroup->papers.n;
+	if (n>1 && config->target==0 && !(config->filter->flags&FILTER_MULTIPAGE)) {
+		if (error_ret) appendline(*error_ret,_("Filter cannot export more than one page to a single file."));
+		return 1;
+	}
+
+	int err=0;
+	if (n>1 && config->target==1 && !(config->filter->flags&FILTER_MANY_FILES)) {
+		 //filter does not support outputting to many files, so loop over each paper
+		config->target=0;
+		PaperGroup *pg;
+		char *filebase=LaxFiles::make_filename_base(config->filename);//###.ext -> %03d.ext
+		if (papergroup->papers.n>1) {
+			 // basically make base###.ps --> base(spread number)-(paper number).ps
+			char *pos=strchr(filebase,'%'); //pos will never be 0
+			while (*pos!='d') pos++;
+			replace(filebase,"d-%d",pos-filebase,1,NULL);
+		}
+		char filename[strlen(filebase)+20];
+
+		int start=config->start,
+			end=config->end;
+		PaperGroup *oldpg=config->papergroup;
+		int left=0;
+		for (int c=start; c<=end; c++) {
+			for (int p=0; p<papergroup->papers.n; p++) {
+				config->start=config->end=c;
+
+				if (papergroup->papers.n==1) sprintf(filename,filebase,c);
+				else sprintf(filename,filebase,c,p);
+
+				pg=new PaperGroup(papergroup->papers.e[c]);
+				config->papergroup=pg;
+
+				err=config->filter->Out(filename,config,error_ret);
+				pg->dec_count();
+				if (err) { left=papergroup->papers.n-p; break; }
+			}
+			if (err) { left+=(end-c+1)*papergroup->papers.n; break; }
+		}
+		config->papergroup=oldpg;
+		config->start=start;
+		config->end=end;
+		delete[] filebase;
+
+		if (error_ret && left) {
+			char scratch[strlen(_("Export failed at file %d out of %d"))+20];
+			sprintf(scratch,_("Export failed at file %d out of %d"),n-left,n);
+			appendline(*error_ret,scratch);
+		}
+	} else err=config->filter->Out(NULL,config,error_ret);
+	
+	if (err) {
+		if (error_ret) appendline(*error_ret,_("Export failed."));
+		return 1;
+	} 
+	if (error_ret) appendline(*error_ret,_("Exported."));
+	return 0;
+}
 

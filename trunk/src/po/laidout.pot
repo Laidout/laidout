@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-08-19 10:26-0700\n"
+"POT-Creation-Date: 2007-08-24 13:48-0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,32 +15,22 @@ msgstr ""
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../printing/print.cc:51 ../filetypes/postscript.cc:70
+#: ../printing/print.cc:53 ../filetypes/postscript.cc:70
 msgid "Postscript LL3"
 msgstr ""
 
-#: ../printing/print.cc:69 ../viewwindow.cc:2829
+#: ../printing/print.cc:71 ../viewwindow.cc:2846
 #: ../../laxkit/lax/textbutton.cc:120
 msgid "Print"
 msgstr ""
 
-#: ../printing/psout.cc:311 ../printing/psout.cc:590 ../filetypes/ppt.cc:135
+#: ../printing/psout.cc:319 ../printing/psout.cc:668 ../filetypes/ppt.cc:135
 msgid "Nothing to export!"
 msgstr ""
 
-#: ../printing/psout.cc:321 ../filetypes/ppt.cc:144
+#: ../printing/psout.cc:331 ../filetypes/ppt.cc:144
 #: ../filetypes/scribus.cc:123 ../filetypes/image.cc:132
 msgid "Cannot save without a filename."
-msgstr ""
-
-#: ../printing/psout.cc:333 ../filetypes/ppt.cc:155 ../filetypes/svg.cc:534
-#: ../filetypes/scribus.cc:135 ../filetypes/pdf.cc:478
-msgid "Error opening file for writing."
-msgstr ""
-
-#: ../printing/psout.cc:622
-#, c-format
-msgid "Error opening %s for writing during EPS out."
 msgstr ""
 
 #: ../impositions/nets.cc:957 ../impositions/nets.cc:962
@@ -120,7 +110,6 @@ msgid "any"
 msgstr ""
 
 #: ../importimages.cc:282
-#, c-format
 msgid ""
 "For file.jpg,\n"
 "* gets replaced with the original file name (\"file.jpg\"), and\n"
@@ -212,7 +201,7 @@ msgstr ""
 msgid "Export finished with warnings:"
 msgstr ""
 
-#: ../laidout.cc:825 ../viewwindow.cc:3051
+#: ../laidout.cc:825 ../viewwindow.cc:3068
 msgid "Exported."
 msgstr ""
 
@@ -248,11 +237,11 @@ msgstr ""
 msgid "y:"
 msgstr ""
 
-#: ../newdoc.cc:216 ../interfaces/paperinterface.cc:110
+#: ../newdoc.cc:216
 msgid "Portrait"
 msgstr ""
 
-#: ../newdoc.cc:217 ../interfaces/paperinterface.cc:111
+#: ../newdoc.cc:217
 msgid "Landscape"
 msgstr ""
 
@@ -340,7 +329,7 @@ msgstr ""
 msgid "Ok"
 msgstr ""
 
-#: ../newdoc.cc:405 ../filetypes/exportdialog.cc:381
+#: ../newdoc.cc:405 ../filetypes/exportdialog.cc:382
 #: ../../laxkit/lax/textbutton.cc:111
 msgid "Cancel"
 msgstr ""
@@ -353,230 +342,230 @@ msgstr ""
 msgid "(no doc)"
 msgstr ""
 
-#: ../viewwindow.cc:635 ../viewwindow.cc:2732
+#: ../viewwindow.cc:645 ../viewwindow.cc:2749
 msgid "Page: "
 msgstr ""
 
-#: ../viewwindow.cc:643
+#: ../viewwindow.cc:653
 msgid "limbo"
 msgstr ""
 
-#: ../viewwindow.cc:647
+#: ../viewwindow.cc:657
 msgid "Limbo: "
 msgstr ""
 
-#: ../viewwindow.cc:1853
+#: ../viewwindow.cc:1863
 #, c-format
 msgid "Limbo %d"
 msgstr ""
 
-#: ../viewwindow.cc:2396 ../document.cc:953 ../document.cc:955
+#: ../viewwindow.cc:2413 ../document.cc:953 ../document.cc:955
 #: ../document.cc:956
 msgid "Untitled"
 msgstr ""
 
-#: ../viewwindow.cc:2681
+#: ../viewwindow.cc:2698
 msgid "Document list"
 msgstr ""
 
-#: ../viewwindow.cc:2693
+#: ../viewwindow.cc:2710
 msgid "The current tool"
 msgstr ""
 
-#: ../viewwindow.cc:2733
+#: ../viewwindow.cc:2750
 msgid ""
 "The pages in the spread\n"
 "and the current page"
 msgstr ""
 
-#: ../viewwindow.cc:2738
+#: ../viewwindow.cc:2755
 msgid "Previous spread"
 msgstr ""
 
-#: ../viewwindow.cc:2743
+#: ../viewwindow.cc:2760
 msgid "Next spread"
 msgstr ""
 
-#: ../viewwindow.cc:2748
+#: ../viewwindow.cc:2765
 msgid "Whether pages clips its contents"
 msgstr ""
 
-#: ../viewwindow.cc:2760
+#: ../viewwindow.cc:2777
 msgid "Single"
 msgstr ""
 
-#: ../viewwindow.cc:2761
+#: ../viewwindow.cc:2778
 msgid "Page Layout"
 msgstr ""
 
-#: ../viewwindow.cc:2762
+#: ../viewwindow.cc:2779
 msgid "Paper Layout"
 msgstr ""
 
-#: ../viewwindow.cc:2771
+#: ../viewwindow.cc:2788
 msgid "Add Page"
 msgstr ""
 
-#: ../viewwindow.cc:2772
+#: ../viewwindow.cc:2789
 msgid "Add 1 page after this one"
 msgstr ""
 
-#: ../viewwindow.cc:2776
+#: ../viewwindow.cc:2793
 msgid "Delete Page"
 msgstr ""
 
-#: ../viewwindow.cc:2777
+#: ../viewwindow.cc:2794
 msgid "Delete the current page"
 msgstr ""
 
-#: ../viewwindow.cc:2781
+#: ../viewwindow.cc:2798
 msgid "Import Images"
 msgstr ""
 
-#: ../viewwindow.cc:2782
+#: ../viewwindow.cc:2799
 msgid "Import one or more images"
 msgstr ""
 
-#: ../viewwindow.cc:2794
+#: ../viewwindow.cc:2811
 msgid "Import"
 msgstr ""
 
-#: ../viewwindow.cc:2795
+#: ../viewwindow.cc:2812
 msgid "Try to import various vector based files into the document"
 msgstr ""
 
-#: ../viewwindow.cc:2822 ../filetypes/exportdialog.cc:80
-#: ../filetypes/exportdialog.cc:377
+#: ../viewwindow.cc:2839 ../filetypes/exportdialog.cc:82
+#: ../filetypes/exportdialog.cc:378
 msgid "Export"
 msgstr ""
 
-#: ../viewwindow.cc:2823
+#: ../viewwindow.cc:2840
 msgid "Export the document in various ways"
 msgstr ""
 
-#: ../viewwindow.cc:2830
+#: ../viewwindow.cc:2847
 msgid "Print the document"
 msgstr ""
 
-#: ../viewwindow.cc:2835 ../../laxkit/lax/textbutton.cc:112
+#: ../viewwindow.cc:2852 ../../laxkit/lax/textbutton.cc:112
 msgid "Open"
 msgstr ""
 
-#: ../viewwindow.cc:2836
+#: ../viewwindow.cc:2853
 msgid "Open a document from disk"
 msgstr ""
 
-#: ../viewwindow.cc:2840 ../../laxkit/lax/textbutton.cc:113
+#: ../viewwindow.cc:2857 ../../laxkit/lax/textbutton.cc:113
 msgid "Save"
 msgstr ""
 
-#: ../viewwindow.cc:2841
+#: ../viewwindow.cc:2858
 msgid "Save the current document"
 msgstr ""
 
-#: ../viewwindow.cc:2847
+#: ../viewwindow.cc:2864
 msgid "Help!"
 msgstr ""
 
-#: ../viewwindow.cc:2848
+#: ../viewwindow.cc:2865
 msgid "Popup a list of shortcuts"
 msgstr ""
 
-#: ../viewwindow.cc:2888
+#: ../viewwindow.cc:2905
 #, c-format
 msgid "Images imported."
 msgstr ""
 
-#: ../viewwindow.cc:2889
+#: ../viewwindow.cc:2906
 #, c-format
 msgid "Image imported."
 msgstr ""
 
-#: ../viewwindow.cc:2891
+#: ../viewwindow.cc:2908
 #, c-format
 msgid "Couldn't load images."
 msgstr ""
 
-#: ../viewwindow.cc:2892
+#: ../viewwindow.cc:2909
 #, c-format
 msgid "Couldn't load image."
 msgstr ""
 
-#: ../viewwindow.cc:2928
+#: ../viewwindow.cc:2945
 #, c-format
 msgid "Couldn't load image from \"%s\"."
 msgstr ""
 
-#: ../viewwindow.cc:2943 ../viewwindow.cc:3021
+#: ../viewwindow.cc:2960 ../viewwindow.cc:3038
 #, c-format
 msgid "Saved to %s."
 msgstr ""
 
-#: ../viewwindow.cc:2949 ../viewwindow.cc:3027 ../viewwindow.cc:3437
-#: ../viewwindow.cc:3520
+#: ../viewwindow.cc:2966 ../viewwindow.cc:3044 ../viewwindow.cc:3459
+#: ../viewwindow.cc:3547
 msgid "Problem saving. Not saved."
 msgstr ""
 
-#: ../viewwindow.cc:2975
+#: ../viewwindow.cc:2992
 #, c-format
 msgid "File not saved: Could not change directory to \"%s\""
 msgstr ""
 
-#: ../viewwindow.cc:3009
+#: ../viewwindow.cc:3026
 msgid "Illegal characters in file name. Not saved."
 msgstr ""
 
-#: ../viewwindow.cc:3053
+#: ../viewwindow.cc:3070
 msgid "Warning!"
 msgstr ""
 
-#: ../viewwindow.cc:3056
+#: ../viewwindow.cc:3073
 msgid "Dammit!"
 msgstr ""
 
-#: ../viewwindow.cc:3064
+#: ../viewwindow.cc:3081
 msgid "Error exporting."
 msgstr ""
 
-#: ../viewwindow.cc:3166 ../viewwindow.cc:3187
+#: ../viewwindow.cc:3183 ../viewwindow.cc:3204
 #, c-format
 msgid "New Color r:%.4f g:%.4f b:%.4f a:%.4f"
 msgstr ""
 
-#: ../viewwindow.cc:3219
+#: ../viewwindow.cc:3236
 msgid "None"
 msgstr ""
 
-#: ../viewwindow.cc:3233
+#: ../viewwindow.cc:3250
 #, c-format
 msgid "(Limbo %d)"
 msgstr ""
 
-#: ../viewwindow.cc:3244
+#: ../viewwindow.cc:3261
 msgid "Documents"
 msgstr ""
 
-#: ../viewwindow.cc:3285
+#: ../viewwindow.cc:3302
 msgid "Page added."
 msgstr ""
 
-#: ../viewwindow.cc:3286
+#: ../viewwindow.cc:3303
 msgid "Error adding page."
 msgstr ""
 
-#: ../viewwindow.cc:3294
+#: ../viewwindow.cc:3311
 msgid "Page deleted."
 msgstr ""
 
-#: ../viewwindow.cc:3295
+#: ../viewwindow.cc:3312
 msgid "Cannot delete the only page."
 msgstr ""
 
-#: ../viewwindow.cc:3296
+#: ../viewwindow.cc:3313
 msgid "Error deleting page."
 msgstr ""
 
-#: ../viewwindow.cc:3380
+#: ../viewwindow.cc:3397
 msgid "Sorry, there are no import filters installed."
 msgstr ""
 
@@ -690,23 +679,38 @@ msgstr ""
 msgid "new"
 msgstr ""
 
-#: ../utils.cc:111
+#: ../utils.cc:116 ../utils.cc:138
 #, c-format
-msgid "%s does not appear to be a Laidout file."
+msgid "Cannot write to %s."
 msgstr ""
 
-#: ../utils.cc:123
+#: ../utils.cc:125
 #, c-format
-msgid "%s cannot be opened for reading."
+msgid "Cannot overwrite %s."
 msgstr ""
 
-#: ../utils.cc:147
+#: ../utils.cc:160
+#, c-format
+msgid "Cannot read the file %s. Wrong type."
+msgstr ""
+
+#: ../utils.cc:173
+#, c-format
+msgid "Cannot read file %s."
+msgstr ""
+
+#: ../utils.cc:215
 #, c-format
 msgid "%s does not appear to be a Laidout %s file."
 msgstr ""
 
 #: ../filetypes/ppt.cc:58
 msgid "Passepartout"
+msgstr ""
+
+#: ../filetypes/ppt.cc:155 ../filetypes/svg.cc:534 ../filetypes/scribus.cc:135
+#: ../filetypes/pdf.cc:478
+msgid "Error opening file for writing."
 msgstr ""
 
 #: ../filetypes/svg.cc:69
@@ -738,88 +742,88 @@ msgstr ""
 msgid "Warning: Cannot export %s to Scribus.\n"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:216
+#: ../filetypes/exportdialog.cc:217
 msgid "The file format to export into"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:225
+#: ../filetypes/exportdialog.cc:226
 msgid "By Command: "
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:227 ../filetypes/exportdialog.cc:235
+#: ../filetypes/exportdialog.cc:228 ../filetypes/exportdialog.cc:236
 msgid "Run this command on a single exported file"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:244
+#: ../filetypes/exportdialog.cc:245
 msgid "To File: "
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:246 ../filetypes/exportdialog.cc:258
-#: ../filetypes/exportdialog.cc:628
+#: ../filetypes/exportdialog.cc:247 ../filetypes/exportdialog.cc:259
+#: ../filetypes/exportdialog.cc:629
 msgid "Export to this file"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:263 ../filetypes/exportdialog.cc:293
+#: ../filetypes/exportdialog.cc:264 ../filetypes/exportdialog.cc:294
 msgid "Browse for a new location"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:272
+#: ../filetypes/exportdialog.cc:273
 msgid "To Files: "
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:274 ../filetypes/exportdialog.cc:285
-#: ../filetypes/exportdialog.cc:666
+#: ../filetypes/exportdialog.cc:275 ../filetypes/exportdialog.cc:286
+#: ../filetypes/exportdialog.cc:667
 msgid ""
 "Export to these files. A '#' is replaced with\n"
 "the spread index. A \"###\" for an index like 3\n"
 "will get replaced with \"003\"."
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:316
+#: ../filetypes/exportdialog.cc:317
 msgid "The type of spreads to export"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:329
+#: ../filetypes/exportdialog.cc:330
 msgid "Export All"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:338
+#: ../filetypes/exportdialog.cc:339
 msgid "Export Current"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:346
+#: ../filetypes/exportdialog.cc:347
 msgid "Export From:"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:358
+#: ../filetypes/exportdialog.cc:359
 msgid "The starting index"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:361
+#: ../filetypes/exportdialog.cc:362
 msgid "To:"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:368
+#: ../filetypes/exportdialog.cc:369
 msgid "The ending index"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:620
+#: ../filetypes/exportdialog.cc:621
 msgid "Cannot overwrite this kind of file!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:624
+#: ../filetypes/exportdialog.cc:625
 msgid "WARNING: This file will be overwritten on export!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:634
+#: ../filetypes/exportdialog.cc:635
 msgid "Cannot write to nothing!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:658
+#: ../filetypes/exportdialog.cc:659
 msgid "Some files cannot be overwritten!"
 msgstr ""
 
-#: ../filetypes/exportdialog.cc:662
+#: ../filetypes/exportdialog.cc:663
 msgid "Warning: Some files will be overwritten!"
 msgstr ""
 
@@ -868,15 +872,15 @@ msgstr ""
 msgid "Cannot save to PDF without a filename."
 msgstr ""
 
-#: ../interfaces/paperinterface.cc:99
+#: ../interfaces/paperinterface.cc:100
 msgid "Paper Interface"
 msgstr ""
 
-#: ../interfaces/paperinterface.cc:100 ../interfaces/paperinterface.cc:101
+#: ../interfaces/paperinterface.cc:101 ../interfaces/paperinterface.cc:102
 msgid "Paper Size"
 msgstr ""
 
-#: ../interfaces/paperinterface.cc:112
+#: ../interfaces/paperinterface.cc:113
 msgid "Print with paper group"
 msgstr ""
 
@@ -1008,6 +1012,78 @@ msgstr ""
 
 #: ../../laxkit/lax/interfaces/gradientinterface.cc:1678
 msgid "Show object on top with decorations"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:201
+msgid "Path:"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:204
+msgid "File?"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:205
+msgid "Mask:"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:206
+msgid "Filename to use"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:207
+msgid "Current Directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:209
+msgid "Mask to apply to the end of path"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:426
+msgid ""
+"Choose from these files.\n"
+"Right-click drag scrolls"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:440
+msgid "Bookmark"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:442 ../../laxkit/lax/filedialog.cc:448
+#: ../../laxkit/lax/filedialog.cc:464 ../../laxkit/lax/filedialog.cc:470
+#: ../../laxkit/lax/filedialog.cc:476
+msgid "(Not implemented yet)"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:446
+msgid "New Dir"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:452
+msgid "Up"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:453
+msgid "Go up a directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:457
+msgid "Refresh"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:458
+msgid "Re-read current directory"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:462
+msgid "Details"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:468
+msgid "Back"
+msgstr ""
+
+#: ../../laxkit/lax/filedialog.cc:474
+msgid "Forward"
 msgstr ""
 
 #: ../../laxkit/lax/textbutton.cc:115

@@ -279,6 +279,8 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
  */
 
 /*! Incs count of paper.
+ *
+ * Create with media box based on paper. None of the other boxes defined.
  */
 PaperBox::PaperBox(PaperStyle *paper)
 {
@@ -329,6 +331,8 @@ int PaperBox::Set(PaperStyle *paper)
  * \brief Somedata Wrapper around a paper style, for use in a PaperInterface.
  */
 
+/*! Incs count of paper.
+ */
 PaperBoxData::PaperBoxData(PaperBox *paper)
 {
 	red=green=0;
@@ -362,6 +366,38 @@ PaperGroup::PaperGroup()
 	locked=0;
 	name=Name=NULL;
 	owner=NULL;
+
+	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
+}
+
+//! Create a PaperGroup with one paper based on paperstyle, with only media box defined.
+/*! This inc_count()'s paperstyle, does not duplicate it.
+ */
+PaperGroup::PaperGroup(PaperStyle *paperstyle)
+{
+	locked=0;
+	name=Name=NULL;
+	owner=NULL;
+
+	PaperBox *box=new PaperBox(paperstyle);
+	PaperBoxData *data=new PaperBoxData(box);
+	box->dec_count();
+	papers.push(data);
+	data->dec_count();
+
+	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
+}
+
+//! Create a PaperGroup with one paper based on boxdata.
+/*! This inc_count()'s boxdata, does not duplicate it.
+ */
+PaperGroup::PaperGroup(PaperBoxData *boxdata)
+{
+	locked=0;
+	name=Name=NULL;
+	owner=NULL;
+
+	papers.push(boxdata);
 
 	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }

@@ -813,7 +813,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 		config.doc=doc;
 		config.dump_in_atts(&att,0);//second time with doc!
-		if (config.filter->Out(NULL,&config,&error)!=0) {
+		if (export_document(&config,&error)!=0) {
 			cout <<error;
 			cout <<_("Export failed.")<<endl;
 			exit(1);
@@ -989,7 +989,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 		return 0;
 	}
 		
-	FILE *f=open_file_to_read(fullname,"Project",error_ret);
+	FILE *f=open_laidout_file_to_read(fullname,"Project",error_ret);
 	if (f) {
 		fclose(f);
 		if (project) project->clear();

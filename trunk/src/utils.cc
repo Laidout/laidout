@@ -97,18 +97,68 @@ int laidout_version_check(const char *version, const char *minversion, const cha
 	return v>=min && v<=max;
 }
 
-//! Simplify opening files, does basic error checking, such as for existence, and readability.
+//! Simplify opening any sort of file for writing, does basic error checking, such as for existence, and writability.
 /*! \ingroup misc
  *
- * Returns the opened file, or NULL if error, and error_ret gets set to a proper error message.
+ * If nooverwrite, then do not overwrite existing files.
+ *
+ * Returns the opened file, or NULL if file cannot be opened for writing,
+ * and error_ret gets set to a proper error message if *error_ret was NULL,
+ * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
+ * with a blank error, then remember to set it to NULL before calling this function!
  */
-FILE *open_file_to_read(const char *file,const char *what,char **error_ret)
+FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret)
 {
-	if (error_ret) *error_ret=NULL;
+	int exists=file_exists(file,1,NULL);
+	if (exists && exists!=S_IFREG) {
+		if (error_ret) {
+			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(scratch, _("Cannot write to %s."), file);
+			appendstr(*error_ret,scratch);
+		}
+		return NULL;
+	}
+	
+	if (exists && nooverwrite) {
+		if (error_ret) {
+			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(scratch, _("Cannot overwrite %s."), file);
+			appendstr(*error_ret,scratch);
+		}
+		return NULL;
+	}
+
+	FILE *f=fopen(file,"w");
+
+	if (!f) {
+		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for writing."<<endl;
+
+		if (error_ret) {
+			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(scratch, _("Cannot write to %s."), file);
+			appendstr(*error_ret,scratch);
+		}
+		return NULL;
+	}
+
+	return f;
+}
+	
+//! Simplify opening any sort of file for reading, does basic error checking, such as for existence, and readability.
+/*! \ingroup misc
+ *
+ * Returns the opened file, or NULL if file cannot be opened for reading,
+ * and error_ret gets set to a proper error message if *error_ret was NULL,
+ * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
+ * with a blank error, then remember to set it to NULL before calling this function!
+ */
+FILE *open_file_for_reading(const char *file,char **error_ret)
+{
 	if (file_exists(file,1,NULL)!=S_IFREG) {
 		if (error_ret) {
-			*error_ret=new char[strlen(file)+60];//****this 60 is likely to cause problems!!
-			sprintf(*error_ret, _("%s does not appear to be a Laidout file."), file);
+			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(scratch, _("Cannot read the file %s. Wrong type."), file);
+			appendstr(*error_ret,scratch);
 		}
 		return NULL;
 	}
@@ -119,12 +169,30 @@ FILE *open_file_to_read(const char *file,const char *what,char **error_ret)
 		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
 
 		if (error_ret) {
-			*error_ret=new char[strlen(file)+50];//****this 50 fudge is likely to cause problems!!
-			sprintf(*error_ret, _("%s cannot be opened for reading."), file);
+			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
+			sprintf(scratch, _("Cannot read file %s."), file);
+			appendstr(*error_ret,scratch);
 		}
 		return NULL;
 	}
+
+	return f;
+}
 	
+
+//! Simplify opening Laidout specific files, does basic error checking, such as for existence, and readability.
+/*! \ingroup misc
+ *
+ * what is the type of file, for instance "Project" or "Document".	
+ * Returns the opened file, or NULL if file cannot be opened for reading,
+ * and error_ret gets set to a proper error message if *error_ret was NULL,
+ * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
+ * with a blank error, then remember to set it to NULL before calling this function!
+ */
+FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret)
+{
+	FILE *f=open_file_for_reading(file,error_ret);
+	if (!f) return NULL;
 
 	 // make sure it is a laidout file!!
 	char first100[100];

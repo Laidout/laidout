@@ -1959,7 +1959,7 @@ void LaidoutViewport::Refresh()
 		if (spread->path) {
 			 //draw shadow if papergroup does not exist
 			FillStyle fs(0,0,0,0xffff, WindingRule,FillSolid,GXcopy);
-			if (!pgrp) {
+			if (!pgrp && !(papergroup && papergroup->papers.n)) {
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
 				dp->ShiftScreen(5,5);
@@ -3064,21 +3064,16 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		mesbar->SetText("Exporting...");
 		mesbar->Refresh();
 		XSync(app->dpy,False);
-		if (d->config->filter->Out(NULL,d->config,&error)==0) {
-			mesbar->SetText(_("Exported."));
-			if (error) {
-				MessageBox *mbox=new MessageBox(NULL,_("Warning!"),ANXWIN_CENTER, 0,0,0,0,0,
-											NULL,None,NULL, error);
-				mbox->AddButton(TBUT_OK);
-				mbox->AddButton(_("Dammit!"),0);
-				app->rundialog(mbox);
-				delete[] error;
-			}
-		} else {
-			if (error) {
-				mesbar->SetText(error);
-				delete[] error;
-			} else mesbar->SetText(_("Error exporting."));
+		int err=export_document(d->config,&error);
+		if (err==0) mesbar->SetText(_("Exported."));
+		else mesbar->SetText(_("Error exporting."));
+		if (error) {
+			MessageBox *mbox=new MessageBox(NULL,err?_("Error exporting."):_("Warning!"),ANXWIN_CENTER, 0,0,0,0,0,
+										NULL,None,NULL, error);
+			mbox->AddButton(TBUT_OK);
+			mbox->AddButton(_("Dammit!"),0);
+			app->rundialog(mbox);
+			delete[] error;
 		}
 		delete data;
 		return 0;
@@ -3401,17 +3396,20 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"export")) { 
 		 //user clicked down on the export button, and selected an export type from menu..
+		PaperGroup *pg=((LaidoutViewport *)viewport)->papergroup;
+		Group *l;
+		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
 		ExportDialog *d=new ExportDialog(0,window,"export config", 
 										 doc,
-										 ((LaidoutViewport *)viewport)->limbo,
-										 ((LaidoutViewport *)viewport)->papergroup,
+										 l,
+										 pg,
 										 NULL,//***should be last filter...
 										 "exported-file.huh",//****this should be more adaptive
 										 PAPERLAYOUT,
 										 0,
-										 doc->docstyle->imposition->NumPapers()-1,
-										 doc->docstyle->imposition->PaperFromPage(
-											((LaidoutViewport *)viewport)->curobjPage()));
+										 doc?doc->docstyle->imposition->NumPapers()-1:0,
+										 doc?doc->docstyle->imposition->PaperFromPage(
+											((LaidoutViewport *)viewport)->curobjPage()):0);
 		app->addwindow(d);
 		return 0;
 		//------------------------------------------------
@@ -3471,12 +3469,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				}
 			}
 		}
+		PaperGroup *pg=((LaidoutViewport *)viewport)->papergroup;
+		Group *l;
+		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
 		PrintingDialog *p=new PrintingDialog(doc,window,"export config",
 										"output.ps","lp",NULL,
 										PAPERLAYOUT, 
 										0,doc->pages.n-1,curpage,
-										((LaidoutViewport *)viewport)->papergroup,
-										((LaidoutViewport *)viewport)->limbo,
+										pg,
+										l,
 										mesbar);
 		app->rundialog(p);
 		return 0;

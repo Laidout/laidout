@@ -7,12 +7,12 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.08
 ------------
+       Test, test, test! from fresh install to print out, make booklet, portrait, landscape
        fix hard to trace crash in importimages dialog for shift select range of files
 (done, sort of, load but not save) Finish implementing project based setup, especially when loading
 (done) limbos should be selectable, and saved independently of windows
 (done) Basic libintl support, latin-1 translations only!
-       Paper tiler interface
-       Clean up patch controls
+(done) Paper tiler interface
 (done) Zoom handles screw up viewer transform aspect. Fix it!!
 (done) Fix linear/radial gradient editing when object is sheared
 (done) Dialogs should remember their placements
@@ -29,6 +29,7 @@ VERSION 0.08
 
 VERSION 0.09
 ------------
+       Clean up patch controls
        Implement save as project
        More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
@@ -70,8 +71,7 @@ VERSION 0.1
        When adjusting things with the object tool, must have option to be temporarily a little tranparent
        All the pdf 1.4 group combine properties, like most importantly transparency
        for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
-       Make the button box actually function
-       Configurable icon panel/menu system
+       Configurable icon panel/menu system, make the button box actually function
        Linear (including curvilinear) guides
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
