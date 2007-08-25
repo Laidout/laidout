@@ -1,0 +1,58 @@
+How to create a new filter
+--------------------------
+
+There are Import filters and Export filters. When running, there will be
+one instance of each file format and version. For instance there will
+be one export filter for  PDF 1.4 and another one for PDF 1.3.
+
+Filters can define their own configuration dialogs if they wish, or
+they can use the default dialog generated based on the filter's
+StyleDef (unimplemented, todo!!).
+
+Filters should follow the following guidelines.
+
+
+Export Filters
+--------------
+If an ExportFilter can export many pages to the same file, it must have 
+FILTER_MULTIPAGE set in its flags. 
+
+If the filter can export each spread or paper
+to many files, then it must have FILTER_MANY_FILES set. If it cannot export
+to many files, and you try to do so, then export_document() will loop
+over each spread and paper, creating one file per spread per paper.
+
+Export filters are called from export_document(), which does some basic
+verification on the export configuration, so that filters may assume
+that start<=end, that doc or limbo can be NULL, but not both, and that
+papergroup is not NULL and does not need to be changed at all.
+
+export_document() will also ensure that the PaperGroup is not NULL,
+by using if necessary the default PaperGroup for the Document's
+Imposition, or if the Document is NULL, a default single paper is
+used. Otherwise, the given PaperGroup must override the Document Imposition's
+PaperGroup, and will be applied to each spread in the specified range,
+even for spreads identified as paper layouts. If there is no PaperGroup given,
+and no Imposition PaperGroup specified for the desired layout type, then
+a default paper is used.
+
+One may export Document objects, and/or more general drawable objects. When
+a filter is called, it is passed a reference to a Document, PaperGroup,
+and a Group object. If the Document and 
+Group objects are both given, then the Group is assumed to be a limbo
+object, and must be drawn before (that is, under) any Document spreads.
+
+If no Document is given, then the start, end, and layout type passed
+to the filter are to be ignored.
+
+
+Import Filters
+--------------
+Import should be performed in such a way as to preserve as much as possible the
+data that was in the original file so that an ImportFilter's companion 
+ExportFilter can take that preserved original data, and export it back
+into that file format properly.
+
+This magical feat is preformed vie MysteryData objects, and MysteryAttributes
+attached to a Document.
+

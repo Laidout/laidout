@@ -85,7 +85,7 @@ const char *ImageExportFilter::VersionName()
 //{
 // public:
 //	char *imagetype;
-//	int use_transparency;
+//	int use_transparent_bkgd;
 //	StyleDef *OutputStyleDef(); //for auto config dialog creation
 //	StyleDef *InputStyleDef();
 //};
@@ -96,12 +96,14 @@ const char *ImageExportFilter::VersionName()
 /*! This currently uses the postscript filter to make a temporary postscript file,
  * then uses ghostscript to translate that to images.
  *
- * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
- * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
+ * Return 0 for success, or nonzero error. Possible errors are error and nothing written,
+ * and corrupted file possibly written.
  * 
  * \todo must figure out if gs can directly process pdf 1.4 with transparency. If it can, then
  *   when full transparency is implemented, that will be the preferred method, that is until
  *   laidout buffer rendering is capable enough in its own right.
+ * \todo output file names messed up when papergroup has more than one paper, plus starting number
+ *   not accurate...
  */
 int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
@@ -116,21 +118,25 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	if (!filename) filename=out->tofiles;
 	if (!filename) filename="output#.eps";
 	
-	if (!doc->docstyle || !doc->docstyle->imposition 
-			|| !doc->docstyle->imposition->paper->paperstyle) return 1;
+	 //we must have something to export...
+	if (!doc && !out->limbo) {
+		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		return 1;
+	}
 	
 	const char *gspath=laidout->binary("gs");
 	if (!gspath) {
-		if (error_ret) *error_ret=newstr(_("Currently need Ghostscript to output to image files."));
-		return 1;
+		if (error_ret) *appendline(*error_ret,_("Currently need Ghostscript to output to image files."));
+		return 2;
 	} 
 
 	char *filetemplate=NULL;
 	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
+		if (!doc || isblank(doc->saveas)) {
 			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
-			*error_ret=newstr(_("Cannot save without a filename."));
-			return 2;
+			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			return 3;
 		}
 		filetemplate=newstr(doc->saveas);
 		appendstr(filetemplate,"%d.png");
@@ -142,13 +148,13 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
 	FILE *f=fopen(tmp,"w");
 	if (!f) {
-		if (error_ret) *error_ret=newstr(_("Error exporting to image."));
-		return 1;
+		if (error_ret) appendline(*error_ret,_("Error exporting to image."));
+		return 4;
 	}
 	fclose(f);
 	if (psout(tmp,context,error_ret)) {
-		if (error_ret) appendstr(*error_ret,_("Export to image failed."));
-		return 1;
+		if (error_ret) appendline(*error_ret,_("Error exporting to image."));
+		return 5;
 	}
 
 
@@ -191,10 +197,13 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	pid_t child=fork();
 	if (child==0) { // is child
 		execv(gspath,arglist);
-		cout <<"*** error in exec!"<<endl;
-		error=newstr("Error trying to run Ghostscript.");
-		exit(1);
+		cout <<"*** error running exec:"<<endl;
+		for (int c=0; c<8; c++) cout <<arglist[c]<<" ";
+		cout <<endl;
+		//error=newstr("Error trying to run Ghostscript.");//this has no effect
+		exit(1);//exit child thread
 	} 
+	 //continuing in parent thread
 	int status;
 	waitpid(child,&status,0);
 	if (!WIFEXITED(status)) {
