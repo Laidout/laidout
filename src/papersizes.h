@@ -97,6 +97,8 @@ class PaperGroup : public Laxkit::anObject, public Laxkit::RefCounted, public La
 	Laxkit::anObject *owner;
 
 	PaperGroup();
+	PaperGroup(PaperBoxData *boxdata);
+	PaperGroup(PaperStyle *paperstyle);
 	virtual ~PaperGroup();
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);

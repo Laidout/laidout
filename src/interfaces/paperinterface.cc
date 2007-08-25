@@ -128,6 +128,7 @@ int PaperInterface::MenuEvent(XClientMessageEvent *e)
 		return 0;
 	} else if (i==1002) {
 		 //print with the active paper group
+		curwindow->win_parent->ClientEvent(NULL,"print");//***hack Hack HACK
 		return 0;
 	} else if (i>=0 && i<1000) {
 		 //paper size

@@ -324,7 +324,7 @@ int ImportImagesDialog::init()
 	 
 	 //-------------------- change Ok to Import
 	tbut=dynamic_cast<TextButton *>(findWindow("fd-Ok"));
-	if (tbut) tbut->SetName("Import");
+	if (tbut) tbut->SetName(_("Import"));
 
 
 	Sync(1);

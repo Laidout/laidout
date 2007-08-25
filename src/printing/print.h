@@ -34,6 +34,7 @@ class PrintingDialog : public ExportDialog
 						 Group *limbo,
 						 Laxkit::MessageBar *progress);
 	virtual ~PrintingDialog();
+	virtual const char *whattype() { return "PrintingDialog"; }
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int init();
 };

@@ -92,7 +92,9 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
 };
 
+//------------------------------- export_document() ----------------------------------
 
+int export_document(DocumentExportConfig *config,char **error_ret);
 
 #endif
 

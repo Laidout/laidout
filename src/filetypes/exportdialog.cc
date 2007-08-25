@@ -81,7 +81,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 						   int pcur) //!< The current element of the range
 	: RowFrame(NULL,_("Export"),
 			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_VCENTER|ANXWIN_REMEMBER,
-			   0,0,500,300,0,
+			   0,0,0,0,0,
 			   NULL,nowner,nsend, 5)
 {
 	dialog_style=nstyle&~ANXWIN_MASK;
@@ -130,7 +130,7 @@ ExportDialog::~ExportDialog()
  */
 Attribute *ExportDialog::dump_out_atts(Attribute *att,int what)
 {
-	if (!att) att=new Attribute("ImportImagesDialog",NULL);
+	if (!att) att=new Attribute(whattype(),NULL);
 	char scratch[100];
 
 	sprintf(scratch,"%d",win_x);
