@@ -27,6 +27,7 @@
 #include "../printing/psout.h"
 #include "pdf.h"
 #include "../impositions/impositioninst.h"
+#include "../utils.h"
 
 #include <iostream>
 #define DBG 
@@ -438,9 +439,6 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
  *
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
- * 
- * \todo *** should have option of rasterizing or approximating the things not supported in pdf, such 
- *    as image patch objects
  */
 int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
@@ -452,39 +450,38 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	int start     =out->start;
 	int end       =out->end;
 	int layout    =out->layout;
+	Group *limbo  =out->limbo;
+	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->filename;
 	
-	if (!doc->docstyle || !doc->docstyle->imposition 
-			|| !doc->docstyle->imposition->paper 
-			|| !doc->docstyle->imposition->paper->paperstyle) return 1;
+	 //we must have something to export...
+	if (!doc && !limbo) {
+		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		return 1;
+	}
 	
+	 //we must be able to open the export file location...
 	FILE *f=NULL;
-	char *file;
+	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
-			*error_ret=newstr(_("Cannot save to PDF without a filename."));
+			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			
+			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);
-		appendstr(file,".pdf");
+		appendstr(file,".ps");
 	} else file=newstr(filename);
-	
-	f=fopen(file,"w");
-	delete[] file; file=NULL;
 
+	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
-		*error_ret=newstr(_("Error opening file for writing."));
+		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		delete[] file;
 		return 3;
 	}
 
-	if (start<0) start=0;
-	else if (start>doc->docstyle->imposition->NumSpreads(layout))
-		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	if (end<start) end=start;
-	else if (end>doc->docstyle->imposition->NumSpreads(layout))
-		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 
 	
 	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<" ====================\n";
@@ -521,11 +518,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,"%%\xff\xff\n"); //binary file indicator
 
 	
-	 //figure out paper size
+	 //figure out paper orientation
 	int landscape=0;
-	if (layout==PAPERLAYOUT) {
-		landscape=doc->docstyle->imposition->paper->paperstyle->flags&1;
-	}
+	double paperwidth; //,paperheight;
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	 // The ps Orientation comment determines how onscreen viewers will show 
+	 // pages. This can be overridden by the %%PageOrientation: comment
+	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
+	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+
 
 	 //object numbers of various dictionaries
 	int pages=-1;        //Pages dictionary
@@ -537,97 +539,129 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	PdfPageInfo *pageobj=NULL,   //temp pointer
 				*pageobjs=NULL;
 	double m[6];
-	Page *page;   //temp pointer
+	Page *page=NULL;   //temp pointer
 	char *stream=NULL; //page stream
 	char scratch[300]; //temp buffer
 	int pgindex;  //convenience variable
+	char *desc=NULL;
+	int plandscape;
+	int p;
 	
 	 // find basic pdf page info, and generate content streams.
 	 // Actual page objects are written out after the contents of all the pages have been processed.
 	for (int c=start; c<=end; c++) {
-		if (!pageobj) {
-			pageobj=pageobjs=new PdfPageInfo;
-		} else {
-			pageobj->next=new PdfPageInfo;
-			pageobj=(PdfPageInfo *)pageobj->next;
-		}
-		spread=doc->docstyle->imposition->Layout(layout,c);
-		pageobj->pagelabel=spread->pagesFromSpreadDesc(doc);
-		pageobj->bbox.setbounds(spread->path);
+			
+		if (spread) { delete spread; spread=NULL; }
+		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		if (spread) desc=spread->pagesFromSpreadDesc(doc);
+		else desc=limbo->id?newstr(limbo->id):NULL;
 
-		//transform_set(m,1,0,0,1,0,0);
-		appendstr(stream,"q\n"
-				  		 "72 0 0 72 0 0 cm\n"); // convert from inches
-		psConcat(72.,0.,0.,72.,0.,0.);
-		if (landscape) {
-			 // paperstyle->width 0 translate   90 rotate  
-			sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",doc->docstyle->imposition->paper->paperstyle->width);
-			appendstr(stream,scratch);
-			psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
-		}
-		
-		 // print out printer marks
-		 // *** later this will be more like pdf printer mark annotations
-		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
-			pdfdumpobj(f,obj,stream,objcount,pageobj->resources,spread->marks,*error_ret,warning);
-		}
-		
-		 // for each paper in paper layout..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
-			
-			pgindex=spread->pagestack.e[c2]->index;
-			if (pgindex<0 || pgindex>=doc->pages.n) continue;
-			page=doc->pages.e[pgindex];
-			
-			 // transform to page
-			appendstr(stream,"q\n"); //save ctm
-			psPushCtm();
-			transform_copy(m,spread->pagestack.e[c2]->outline->m());
+		for (p=0; p<papergroup->papers.n; p++) {
+			if (!pageobj) {
+				pageobj=pageobjs=new PdfPageInfo;
+			} else {
+				pageobj->next=new PdfPageInfo;
+				pageobj=(PdfPageInfo *)pageobj->next;
+			}
+			plandscape=(papergroup->papers.e[p]->box->paperstyle->flags&1)?1:0;
+
+			pageobj->pagelabel=desc;
+			pageobj->bbox.setbounds(0,
+									papergroup->papers.e[p]->box->paperstyle->width,
+									0,
+									papergroup->papers.e[p]->box->paperstyle->height);
+
+			 //set initial transform: convert from inches and map to paper in papergroup
+			//transform_set(m,1,0,0,1,0,0);
+			appendstr(stream,"q\n"
+							 "72 0 0 72 0 0 cm\n"); // convert from inches
+			psConcat(72.,0.,0.,72.,0.,0.);
+
+			 //adjust for landscape
+			if (plandscape) {
+				 // paperstyle->width 0 translate   90 rotate  
+				sprintf(scratch,"0 1 -1 0 %.10f 0 cm\n",paperwidth);
+				appendstr(stream,scratch);
+				psConcat(0.,1.,-1.,0., paperwidth,0.);
+			}
+
+			 //apply papergroup->paper transform
+			transform_invert(m,papergroup->papers.e[p]->m());
 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 					m[0], m[1], m[2], m[3], m[4], m[5]); 
 			appendstr(stream,scratch);
 			psConcat(m);
-
-			 // set clipping region
-			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
-			if (page->pagestyle->flags&PAGE_CLIPS) {
-				pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0);
-			} 
-				
-			 // for each layer on the page..
-			for (l=0; l<page->layers.n(); l++) {
-				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,page->layers.e(l),*error_ret,warning);
+			
+			 //write out limbo object if any
+			if (limbo && limbo->n()) {
+				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,limbo,*error_ret,warning);
 			}
 
+			if (spread) {
+				 // print out printer marks
+				 // *** later this will be more like pdf printer mark annotations
+				if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+					pdfdumpobj(f,obj,stream,objcount,pageobj->resources,spread->marks,*error_ret,warning);
+				}
+				
+				 // for each paper in paper layout..
+				for (c2=0; c2<spread->pagestack.n; c2++) {
+					psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
+					
+					pgindex=spread->pagestack.e[c2]->index;
+					if (pgindex<0 || pgindex>=doc->pages.n) continue;
+					page=doc->pages.e[pgindex];
+					
+					 // transform to page
+					appendstr(stream,"q\n"); //save ctm
+					psPushCtm();
+					transform_copy(m,spread->pagestack.e[c2]->outline->m());
+					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+							m[0], m[1], m[2], m[3], m[4], m[5]); 
+					appendstr(stream,scratch);
+					psConcat(m);
+
+					 // set clipping region
+					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+					if (page->pagestyle->flags&PAGE_CLIPS) {
+						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0);
+					} 
+						
+					 // for each layer on the page..
+					for (l=0; l<page->layers.n(); l++) {
+						pdfdumpobj(f,obj,stream,objcount,pageobj->resources,page->layers.e(l),*error_ret,warning);
+					}
+
+					appendstr(stream,"Q\n"); //pop ctm
+					psPopCtm();
+				}
+			}
+
+			 // print out paper footer
 			appendstr(stream,"Q\n"); //pop ctm
 			psPopCtm();
+
+
+
+			 // pdfdumpobj() outputs objects relevant to the stream. Now dump out this
+			 // page's content stream to an object:
+			obj->next=new PdfObjInfo;
+			obj=obj->next;
+			obj->number=objcount++;
+			obj->byteoffset=ftell(f);
+			fprintf(f,"%ld 0 obj\n"
+					  "<< /Length %u >>\n"
+					  "stream\n",
+						obj->number, strlen(stream));
+			fprintf(f,stream);  //write(obj->data,1,obj->len,f);
+			fprintf(f,"\nendstream\n"
+					  "endobj\n");
+			delete[] stream; stream=NULL;
+
+			pageobj->contents=obj->number;
+			//pageobj gets its own number and byte offset later
 		}
-
-		 // print out paper footer
-		appendstr(stream,"Q\n"); //pop ctm
-		psPopCtm();
-
-
-		delete spread;
-
-		 // pdfdumpobj() outputs objects relevant to the stream. Now dump out this
-		 // page's content stream to an object:
-		obj->next=new PdfObjInfo;
-		obj=obj->next;
-		obj->number=objcount++;
-		obj->byteoffset=ftell(f);
-		fprintf(f,"%ld 0 obj\n"
-				  "<< /Length %u >>\n"
-				  "stream\n",
-				  	obj->number, strlen(stream));
-		fprintf(f,stream);  //write(obj->data,1,obj->len,f);
-		fprintf(f,"\nendstream\n"
-				  "endobj\n");
-		delete[] stream; stream=NULL;
-
-		pageobj->contents=obj->number;
-		//pageobj gets its own number and byte offset later
+		if (spread) { delete spread; spread=NULL; }
 	}
 
 	

@@ -26,6 +26,7 @@
 #include "svg.h"
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
+#include "../utils.h"
 
 #include <iostream>
 #define DBG 
@@ -510,47 +511,53 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	int start     =out->start;
 	//int end       =out->end;
 	int layout    =out->layout;
+	Group *limbo  =out->limbo;
+	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->filename;
 	
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) return 1;
+	 //we must have something to export...
+	if (!doc && !limbo) {
+		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		return 1;
+	}
 	
+	 //we must be able to open the export file location...
 	FILE *f=NULL;
-	char *file;
+	char *file=NULL;
 	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
-			*error_ret=newstr(_("Cannot save to SVG without a filename."));
+		if (isblank(doc->saveas)) {
+			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			
+			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".svg");
 	} else file=newstr(filename);
-	
-	f=fopen(file,"w");
-	delete[] file; file=NULL;
 
+	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
-		*error_ret=newstr(_("Error opening file for writing."));
+		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		delete[] file;
 		return 3;
 	}
 
 	int warning=0;
-	Spread *spread;
-	Group *g;
-	double m[6];
+	Spread *spread=NULL;
+	Group *g=NULL;
+	double m[6],mm[6],mmm[6];
 	//int c;
 	int c2,l,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
 
-	if (start<0) start=0;
-	else if (start>doc->docstyle->imposition->NumSpreads(layout))
-		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	spread=doc->docstyle->imposition->Layout(layout,start);
-	
+	if (doc) spread=doc->docstyle->imposition->Layout(layout,start);
 	
 	 // write out header
-	double height=spread->path->maxy-spread->path->miny;
+	double height;
+	if (spread) height=spread->path->maxy-spread->path->miny;
+	else height=papergroup->papers.e[0]->box->paperstyle->h();
+
 	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fprintf(f,"<!-- Created with Laidout, http://www.laidout.org -->\n");
 	fprintf(f,"<svg \n"
@@ -562,46 +569,76 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,"     height=\"%fin\"\n", height);
 	fprintf(f,"   >\n");
 			
+
 	 //write out global defs section
 	fprintf(f,"  <defs>\n");
 	//*************** gradients and such
-	 // for each page in spread..
-	for (c2=0; c2<spread->pagestack.n; c2++) {
-		pg=spread->pagestack.e[c2]->index;
-		if (pg<0 || pg>=doc->pages.n) continue;
-		 // for each layer on the page..
-		for (l=0; l<doc->pages[pg]->layers.n(); l++) {
-			 // for each object in layer
-			g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-			for (c3=0; c3<g->n(); c3++) {
-				transform_copy(m,spread->pagestack.e[c2]->outline->m());
-				svgdumpdef(f,m,g->e(c3),error_ret,warning);
+
+	 //dump out defs for limbo objects if any
+	if (limbo && limbo->n()) {
+		svgdumpdef(f,m,limbo,error_ret,warning);
+	}
+
+	if (spread) {
+		if (spread->marks) svgdumpdef(f,m,spread->marks,error_ret,warning);
+
+		 // for each page in spread..
+		for (c2=0; c2<spread->pagestack.n; c2++) {
+			pg=spread->pagestack.e[c2]->index;
+			if (pg<0 || pg>=doc->pages.n) continue;
+			 // for each layer on the page..
+			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+				 // for each object in layer
+				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				for (c3=0; c3<g->n(); c3++) {
+					transform_copy(m,spread->pagestack.e[c2]->outline->m());
+					svgdumpdef(f,m,g->e(c3),error_ret,warning);
+				}
 			}
 		}
 	}
 	fprintf(f,"  </defs>\n");
 			
 	
-	 // Write out spread....
+	 // Write out objects....
+
+	 //transform to paper * conversion to left handed system, and 1/90th of an inch per unit
+	transform_set(mm,90,0,0,-90,0,height*72*1.25);
+	transform_invert(mmm,papergroup->papers.e[0]->m());
+	transform_mult(m,mmm,mm);
 	fprintf(f,"  <g transform=\"matrix(90,0,0,-90, 0,%f)\">\n", height*72*1.25);
 
-	 // for each page in spread..
-	for (c2=0; c2<spread->pagestack.n; c2++) {
-		pg=spread->pagestack.e[c2]->index;
-		if (pg<0 || pg>=doc->pages.n) continue;
-		 // for each layer on the page..
-		for (l=0; l<doc->pages[pg]->layers.n(); l++) {
-			 // for each object in layer
-			g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-			for (c3=0; c3<g->n(); c3++) {
-				transform_copy(m,spread->pagestack.e[c2]->outline->m());
-				svgdumpobj(f,m,g->e(c3),error_ret,warning,4);
+	 //dump out limbo objects if any
+	if (limbo && limbo->n()) {
+		transform_set(m,1,0,0,1,0,0);
+		svgdumpobj(f,m,limbo,error_ret,warning,4);
+	}
+
+
+	if (spread) {
+		 //write out printer marks
+		transform_set(m,1,0,0,1,0,0);
+		if (spread->marks) svgdumpobj(f,m,spread->marks,error_ret,warning,4);
+
+		 // for each page in spread..
+		for (c2=0; c2<spread->pagestack.n; c2++) {
+			pg=spread->pagestack.e[c2]->index;
+			if (pg<0 || pg>=doc->pages.n) continue;
+			 // for each layer on the page..
+			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+				 // for each object in layer
+				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				for (c3=0; c3<g->n(); c3++) {
+					transform_copy(m,spread->pagestack.e[c2]->outline->m());
+					svgdumpobj(f,m,g->e(c3),error_ret,warning,4);
+				}
 			}
 		}
 	}
 
 	delete spread;
-	fprintf(f,"  </g>\n");
+	fprintf(f,"  </g>\n"); //from unit correction and paper
+
 //-------or----------adapt to multipagesvg with page and pagesets
 //	 // Write out spread....
 //	fprintf(f,"  <g>\n");

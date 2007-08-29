@@ -481,7 +481,7 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"saveas")) { // from control button
 		//***get defaults
 		app->rundialog(new FileDialog(NULL,_("Save As"),
-					ANXWIN_CENTER|FILES_SAVE_AS, 0,0, 400,400,0,
+					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
 					saveas->window, "save as","untitled"));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {

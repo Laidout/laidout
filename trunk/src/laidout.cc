@@ -746,7 +746,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exprt=newstr(optarg);
 				} break;
 			case 'O': { // list export options for a given format
-					cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
+					DBG cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
 					printf("format   = \"%s\"    #the format to export as\n",optarg);
 					printf("filename = /file/to/export/to\n");
 					printf("tofiles  = \"/files/like###.this\"  #the # section is replaced with the page index\n");

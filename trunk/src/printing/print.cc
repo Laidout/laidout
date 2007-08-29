@@ -45,7 +45,7 @@ PrintingDialog::PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
 						 PaperGroup *group,
 						 Group *limbo,
 						 Laxkit::MessageBar *progress)
-	: ExportDialog(ANXWIN_CENTER|EXPORT_COMMAND,nowner,nsend,
+	: ExportDialog(EXPORT_COMMAND,nowner,nsend,
 				   ndoc,limbo,group,NULL,file,
 				   layout,pmin,pmax,pcur)
 {
@@ -66,7 +66,7 @@ int PrintingDialog::init()
 	ExportDialog::init();
 	changeTofile(3);
 
-	
+	XStoreName(app->dpy,window,_("Print"));
 	TextButton *print=dynamic_cast<TextButton *>(findChildWindow("export"));
 	print->SetName(_("Print"));
 

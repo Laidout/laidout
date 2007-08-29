@@ -55,35 +55,10 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsig
 	curitem=-1;
 
 	dialog_style|=FILES_PREVIEW;
-
-//	Attribute *att=const_cast<Attribute *>(laidout->Resource("ImportImagesDialog"));//do not delete it!
-//	if (att) {
-//		dump_in_atts(att,0);
-//		if (!win_sizehints) win_sizehints=XAllocSizeHints();
-//		if (win_sizehints) {
-//			DBG cerr <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
-//			//*** The initial x and y become the upper left corner of the window
-//			//manager decorations. ***how to figure out how much room those decorations take,
-//			//so as to place things on the screen accurately? like full screen view?
-//			win_sizehints->x=win_x;
-//			win_sizehints->y=win_y;
-//			win_sizehints->width=win_w;
-//			win_sizehints->height=win_h;
-//			win_sizehints->flags=USPosition|USSize;
-//		}
-//	} else {
-//		win_style|=ANXWIN_CENTER;
-//	}
-//	if (win_w<=0) win_w=700;
-//	if (win_h<=0) win_h=700;
 }
 
 ImportImagesDialog::~ImportImagesDialog()
-{
-	//*** put back settings
-	Attribute *att=dump_out_atts(NULL,0);
-	laidout->Resource(att); //do not delete att!
-}
+{ }
 
 void ImportImagesDialog::dump_out(FILE *f,int indent,int what)
 {
@@ -99,6 +74,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
 	if (!att) att=new Attribute("ImportImagesDialog",NULL);
 	char scratch[100];
 
+	 //window settings
 	sprintf(scratch,"%d",win_x);
 	att->push("win_x",scratch);
 
@@ -111,8 +87,106 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
 	sprintf(scratch,"%d",win_h);
 	att->push("win_h",scratch);
 
+	 //------------export settings
+	int dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetLong(NULL);
+	int perpage=-2; //force to 1 page
+	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
+		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
+	else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON)
+		perpage=-1; //as will fit to page
+
+	 //dpi
+	sprintf(scratch,"%d",dpi);
+	att->push("dpi",scratch);
+
+	 //autopreview
+	att->push("autopreview",
+				(dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON)?"yes":"no");
+
+	 //perPage
+	if (perpage==-2) att->push("perPage","all");
+	else if (perpage==-1) att->push("perPage","fit");
+	else att->push("perPage",perpage,-1);
+
+	 //maxPreviewWidth 200
+	int w=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
+	att->push("maxPreviewWidth",w,-1);
+
+	 //defaultPreviewName any
+	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+	att->push("defaultPreviewName",prevbase->GetText());
+
 	return att;
 }
+
+//-------------------------
+//class ImportImagesConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+//{
+// public:
+//	ImportImagesConfig();
+//	virtual ~ImportImagesConfig();
+//	Document *doc;
+//	Group *group;
+//	char autopreview;
+//	int maxpreviewwidth;
+//	char *defaultpreviewname;
+//	int perpage;
+//	double defaultdpi;
+//
+//	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+//};
+//
+//ImportImagesConfig::ImportImagesConfig()
+//{
+//	doc=NULL;
+//	group=NULL;
+//	defaultpreviewname=NULL;
+//	perpage=1;
+//	defaultdpi=360;
+//	autopreview=0;
+//	maxpreviewwidth=200;//***some laidout default
+//}
+//
+///*! decs count on doc and group.
+// */
+//ImportImagesConfig::~ImportImagesConfig()
+//{
+//	if (group) group->dec_count();
+//	if (defaultpreviewname) delete[] defaultpreviewname;
+//	if (doc) doc->dec_count();
+//}
+//
+//LaxFiles::Attribute *ImportImagesConfig::dump_out_atts(LaxFiles::Attribute *att,int what)
+//{
+//}
+//
+//void ImportImagesConfig::dump_in_atts(LaxFiles::Attribute *att,int flag)
+//{
+//	char *name,*value;
+//	for (int c=0; c<att->attributes.n; c++) {
+//		name= att->attributes.e[c]->name;
+//		value=att->attributes.e[c]->value;
+//
+//		if (!strcmp(name,"dpi")) {
+//			DoubleAttribute(value,&dpi);
+//		} else if (!strcmp(name,"autopreview")) {
+//			autopreview=BooleanAttribute(value);
+//		} else if (!strcmp(name,"perPage")) {
+//			if (isblank(!value)) perpage=-1;
+//			else if (!strcmp(value,"all")) perpage=-2;
+//			else if (!strcmp(value,"fit")) perpage=-1;
+//			else if (IntAttribute(value,&perpage)) ;
+//			else perpage=-1;
+//		} else if (!strcmp(name,"maxPreviewWidth")) {
+//			IntAttribute(value,&maxpreviewwidth);
+//		} else if (!strcmp(name,"defaultPreviewName")) {
+//			makestr(config->defaultpreviewname,value);
+//		}
+//	}
+//}
+//
+//-------------------------
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
