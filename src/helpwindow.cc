@@ -14,6 +14,7 @@
 // Copyright (C) 2004-2007 by Tom Lechner
 //
 
+#include "language.h"
 #include "headwindow.h"
 #include "helpwindow.h"
 #include <lax/mesbar.h>
@@ -82,8 +83,8 @@ int HelpWindow::preinit()
 int HelpWindow::init()
 {
 	//MessageBar *mesbar=new MessageBar(this,"helpmesbar",MB_LEFT|MB_MOVE, 0,0,0,0,0, "test");
-	MessageBar *mesbar=new MessageBar(this,"helpmesbar",MB_LEFT|MB_TOP|MB_MOVE, 0,0,0,0,0,
-			"---- Laidout Quick key reference ----\n"
+	char *help=newstr(
+		  _("---- Laidout Quick key reference ----\n"
 			"\n"
 			"Press escape to get rid of this window.\n"
 			"Right click drag scrolls this help.\n"
@@ -97,7 +98,8 @@ int HelpWindow::init()
 			"   +left-click   Join to adjacent window\n"
 			"   right-click   Get a menu to split, join, or change\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"In a viewer:\n"
 			"   ^'s'          save file\n"
 			"   ^+'s'         save as -- just change the file name?? (not imp)\n"
@@ -108,7 +110,8 @@ int HelpWindow::init()
             "   F1            popup this quick reference\n"
 			"   F2            popup an About window\n"
 			"   F5            popup new spread editor window\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"   left      previous tool   \n"
 			"   right     next tool       \n"
 			"   ','       previous object \n"
@@ -116,7 +119,8 @@ int HelpWindow::init()
 			" +^'a'       deselect all currently selected objects\n"
 			"   '<'       previous page   \n"
 			"   '>'       next page       \n"
-			" \n"
+			" \n"));
+	appendstr(help,_(
 			"   'D'        toggle drawing of axes for each object\n"
 			"   's'        toggle showing of the spread (shows only limbo)\n"
 			"   'm'        move current selection to another page, pops up a dialog ***imp me!\n"
@@ -126,7 +130,8 @@ int HelpWindow::init()
 			"   '-'        zoom out around mouse\n"
 			"   'o'        clear any display rotation\n"
 			"   'O'        center the viewer on the viewer origin\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"    // these are like inkscape:\n"
 			"   pgup      raise selection by 1 within layer\n"
 			"   pgdown    lower selection by 1 within layer\n"
@@ -139,7 +144,8 @@ int HelpWindow::init()
 			"   +^home    ***layer to top\n"
 			"   +^end     ***layer to bottom\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"ObjectInterface:\n"
 			"  'c'          toggle if drag resizes from center or opposite edge\n"
 			"  'd'          toggle the showing of decorations\n"
@@ -152,7 +158,8 @@ int HelpWindow::init()
 			"  plain click on a center, rotation handle, or shear handle, then press control\n"
 			"    to move the point, rather than modify the object\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"SpreadEditor:\n"
 			"   ' '    Center with all little spreads in view\n"
 			"   'c'    toggle where the page labels go\n"
@@ -163,14 +170,16 @@ int HelpWindow::init()
 			"  ^'A'    force arranging the spreads using current arrange style\n"
 			"   'p'    *** for debugging thumbs\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"ImageInterface:\n"
 			"  'n'      normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)\n"
             "  'N'      like 'n', but also clear rotation\n"
 			"  'd'      Toggle drawing decorations\n"
 			"  'f'      Toggle writing the filename next to the image\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"ColorPatchInterface and ImagePatchInterface:\n"
 			"  'w'    warp the patch to an arc, rows are at radius, cols go from center\n"
 			"  'm'    toggle between drawing just the grid, or draw full colors.\n"
@@ -200,7 +209,8 @@ int HelpWindow::init()
 			"  '5'    select left and right controls: 0,1  0,2  3,1  3,2\n"
 			"  '8'    select a 3x3 group of points around each current point\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"GradientInterface:\n"
 			"  'r'   Radial gradient\n"
 			"  'l'   Linear Gradient\n"
@@ -211,7 +221,8 @@ int HelpWindow::init()
 			"  \n"
 			"  shift-left-click: add a new color spot\n"
 			"\n"
-			"\n"
+			"\n"));
+	appendstr(help,_(
 			"PathInterface:\n"
 			"  'o'    Select the next pathop.\n"
 			"  left   Roll the curpoints one step previous.\n"
@@ -223,8 +234,12 @@ int HelpWindow::init()
 			"  delete or bksp: Delete currently selected points.\n"
 			"  'd'    Toggle displaying of decorations\n"
 			"  '?'    Show some kind of help somewhere....?\n"
-			"  'p'    Like a, but only in current part of a compound path\n");
-	mesbar->tooltip("Right click drag scrolls this help.");
+			"  'p'    Like a, but only in current part of a compound path\n"));
+
+	MessageBar *mesbar=new MessageBar(this,"helpmesbar",MB_LEFT|MB_TOP|MB_MOVE, 0,0,0,0,0,help);
+	delete[] help;
+			
+	mesbar->tooltip(_("Right click drag scrolls this help."));
 	AddWin(mesbar,	mesbar->win_w,mesbar->win_w*9/10,2000,50,
 					mesbar->win_h,(mesbar->win_h>10?(mesbar->win_h-10):0),2000,50);
 	AddNull();

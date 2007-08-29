@@ -95,25 +95,6 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 	fileedit=filesedit=printstart=printend=command=NULL;
 	filecheck=filescheck=commandcheck=printall=printcurrent=printrange=NULL;
 
-	Attribute *att=const_cast<Attribute *>(laidout->Resource("ExportDialog"));//do not delete it!
-	if (att) {
-		dump_in_atts(att,0);
-		if (!win_sizehints) win_sizehints=XAllocSizeHints();
-		if (win_sizehints) {
-			DBG cerr <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
-			//*** The initial x and y become the upper left corner of the window
-			//manager decorations. ***how to figure out how much room those decorations take,
-			//so as to place things on the screen accurately? like full screen view?
-			win_sizehints->x=win_x;
-			win_sizehints->y=win_y;
-			win_sizehints->width=win_w;
-			win_sizehints->height=win_h;
-			win_sizehints->flags=USPosition|USSize;
-		}
-	} else {
-		win_style|=ANXWIN_CENTER;
-		win_h=win_w=700;
-	}
 }
 
 /*! Decs count of config.
@@ -121,9 +102,18 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 ExportDialog::~ExportDialog()
 {
 	if (config) config->dec_count();
+}
 
-	Attribute *att=dump_out_atts(NULL,0);
-	laidout->Resource(att); //do not delete att!
+//! Set win_w and win_h to sane values if necessary.
+int ExportDialog::preinit()
+{
+	anXWindow::preinit();
+	if (win_w==0) win_w=500;
+	if (win_h==0) {
+		int textheight=app->defaultfont->max_bounds.ascent+app->defaultfont->max_bounds.descent;
+		win_h=15*(textheight+7)+20;
+	}
+	return 0;
 }
 
 /*! Append to att if att!=NULL, else return new att.
@@ -386,10 +376,10 @@ int ExportDialog::init()
 	
 	updateExt();
 
-	win_h=0;
-	m[1]=m[7]=BOX_SHOULD_WRAP;
+	//win_h=0;
+	//m[1]=m[7]=BOX_SHOULD_WRAP;
 	Sync(1);
-	Resize(m[0],m[6]);
+	//Resize(m[0],m[6]);
 
 	overwriteCheck();
 	return 0;
@@ -590,13 +580,13 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		send();
 		return 0;
 	} else if (!strcmp(mes,"filesaveas")) {
-		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE,
-									  0,0,400,500,0,window,"get new file",
+		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,
+									  0,0,0,0,0,window,"get new file",
 									  fileedit->GetCText()));
 		return 0;
 	} else if (!strcmp(mes,"filessaveas")) {
-		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE,
-									  0,0,400,500,0,window,"get new files",
+		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,
+									  0,0,0,0,0,window,"get new files",
 									  filesedit->GetCText()));
 		return 0;
 	}

@@ -586,7 +586,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 					  "\n");		
 			DBG cerr<<"Done printing paper "<<p<<"."<<endl;
 		}
-		delete spread;
+		if (spread) { delete spread; spread=NULL; }
 		delete[] desc; desc=NULL;
 	}
 
@@ -599,7 +599,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	 //clean up
 	fclose(f);
 	delete[] file;
-	papergroup->dec_count();
+	//papergroup->dec_count();
 
 	return 0;
 }

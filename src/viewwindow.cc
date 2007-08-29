@@ -3382,8 +3382,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 			
 		app->rundialog(new FileDialog(NULL,"Insert Image",
-					ANXWIN_CENTER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-					0,0,500,500,0, window,"insert new image",
+					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+					0,0,0,0,0, window,"insert new image",
 					oldimgname,oldimage));
 		if (oldimage) delete[] oldimage;
 		return 0;
@@ -3438,8 +3438,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 			app->rundialog(new FileDialog(NULL,"Save As...",
-						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
-						0,0,500,500,0, window,"saveAsPopup",
+						ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
+						0,0,0,0,0, window,"saveAsPopup",
 						doc->Saveas()));
 		} else {
 			char *error=NULL;
@@ -3526,8 +3526,8 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 			app->rundialog(new FileDialog(NULL,"Save As...",
-						ANXWIN_CENTER|FILES_FILES_ONLY|FILES_SAVE_AS,
-						0,0,500,500,0, window,"saveAsPopup",
+						ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
+						0,0,0,0,0, window,"saveAsPopup",
 						doc->Saveas()));
 		} else {
 			char *error=NULL;

@@ -209,6 +209,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	transform_set(mm,72,0,0,72,0,0);
 	psCtmInit();
 	for (c=start; c<=end; c++) {
+		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) {
 			fprintf(f,"  <page>\n");
 
@@ -232,7 +233,6 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 				pptdumpobj(f,NULL,limbo,4);
 			}
 
-			if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
 			if (spread) {
 				// // print out printer marks
 				//if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
@@ -259,12 +259,12 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 					}
 				}
 
-				delete spread;
 			}
 			psPopCtm(); //remove papergroup->paper transform
 			fprintf(f,"  </frame>\n");
 			fprintf(f,"  </page>\n");
 		}
+		if (spread) { delete spread; spread=NULL; }
 	}
 		
 	 // write out footer

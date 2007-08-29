@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2007 by Tom Lechner
 //
 
 #include "about.h"
@@ -21,6 +21,7 @@
 #include <lax/version.h>
 #include "headwindow.h"
 #include "version.h"
+#include "language.h"
 
 #include <iostream>
 using namespace std;
@@ -34,16 +35,6 @@ using namespace Laxkit;
 /*! \class AboutWindow
  * \brief Show a little box with the logo, author(s), version, and Laxkit version.
  */  
-//class AboutWindow : public Laxkit::MessageBox
-//{
-// public:
-// 	AboutWindow();
-//	virtual ~AboutWindow() {}
-// 	virtual const char *whattype() { return "AboutWindow"; }
-//	virtual int preinit();
-//	virtual int init();
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-//};
 
 AboutWindow::AboutWindow()
 	: MessageBox(NULL,"About",ANXWIN_CENTER, 0,0,500,600,0, NULL,None,NULL, NULL)
@@ -63,15 +54,20 @@ int AboutWindow::preinit()
 	m[1]=BOX_SHOULD_WRAP;
 	m[7]=BOX_SHOULD_WRAP; //<-- this triggers a wrap in rowcol-figureDims
 
-	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,
+	char *about=newstr(_(
 			"[insert splash logo here!]\n"
 			"\n"
-			"Laidout Version " LAIDOUT_VERSION "\n"
+			"Laidout Version "));
+	appendstr(about,LAIDOUT_VERSION);
+	appendstr(about,_(
+			"\n"
 			"so far written entirely\n"
 			"by Tom Lechner,\n"
 			"2004-2007\n"
 			"\n"
-			"using Laxkit\n version " LAXKIT_VERSION "\n");
+			"using Laxkit\n version " LAXKIT_VERSION "\n"));
+	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
+	delete[] about;
 			
 	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,
 					mesbar->win_h,mesbar->win_h,0,50);

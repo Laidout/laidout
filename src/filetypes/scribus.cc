@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2007 by Tom Lechner
 //
 
 
@@ -25,6 +25,7 @@
 #include "scribus.h"
 #include "../laidout.h"
 #include "../printing/psout.h"
+#include "../utils.h"
 
 #include <iostream>
 #define DBG 
@@ -37,11 +38,11 @@ using namespace LaxInterfaces;
 
 
 
-static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
 
-
-#define CANVAS_MARGIN_X 100.
-#define CANVAS_MARGIN_Y 20.
+//1.5 inches and 1/4 inch
+#define CANVAS_MARGIN_X 108.
+#define CANVAS_MARGIN_Y 18.
 
 
 //--------------------------------- install Scribus filter
@@ -81,9 +82,10 @@ const char *ScribusExportFilter::VersionName()
 
 static int currentpage;
 static NumStack<int> groups;
-static int groupc=1,ongroup;
+//static int groupc=1;
+static int ongroup;
 
-int countGroups(Group *g)
+static int countGroups(Group *g)
 {
 	int count=0;
 	Group *grp;
@@ -112,72 +114,80 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	int start     =out->start;
 	int end       =out->end;
 	int layout    =out->layout;
+	Group *limbo  =out->limbo;
+	PaperGroup *papergroup=out->papergroup;
 	if (!filename) filename=out->filename;
 	
-	if (!doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper) return 1;
+	 //we must have something to export...
+	if (!doc && !limbo) {
+		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		return 1;
+	}
 	
+	
+	 //we must be able to open the export file location...
 	FILE *f=NULL;
-	char *file;
+	char *file=NULL;
 	if (!filename) {
-		if (!doc->saveas || !strcmp(doc->saveas,"")) {
-			*error_ret=newstr(_("Cannot save without a filename."));
+		if (isblank(doc->saveas)) {
+			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			
+			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".sla");
 	} else file=newstr(filename);
-	
-	f=fopen(file,"w");
-	delete[] file; file=NULL;
 
+	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<"**** cannot save, doc->saveas cannot be opened for writing."<<endl;
-		*error_ret=newstr(_("Error opening file for writing."));
+		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		delete[] file;
 		return 3;
 	}
+	
 
 	int warning=0;
-	Spread *spread;
-	Group *g;
-	double m[6],spready;
-	//int c;
+	Spread *spread=NULL;
+	Group *g=NULL;
 	int c,c2,l,pg,c3;
-	transform_set(m,1,0,0,1,0,0);
 
-	if (start<0) start=0;
-	else if (start>doc->docstyle->imposition->NumSpreads(layout))
-		start=doc->docstyle->imposition->NumSpreads(layout)-1;
-	if (end<start) end=start;
-	else if (end>doc->docstyle->imposition->NumSpreads(layout))
-		end=doc->docstyle->imposition->NumSpreads(layout)-1;
 	
-	 //find out how many groups there are for DOCUMENT->GROUPC
-	 //**** is this necessary? marked as optional in 1.2 spec
-	 //*** also grab all color references
-	groupc=0;
-	for (c=start; c<=end; c++) {
-		spread=doc->docstyle->imposition->Layout(layout,c);
-		 // for each page in spread layout..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
-			pg=spread->pagestack.e[c2]->index;
-			if (pg>=doc->pages.n) continue;
-			 // for each layer on the page..
-			//groupc++;
-			g=&doc->pages.e[pg]->layers;
-			groupc+=countGroups(g);
-		}
-		delete spread; spread=NULL;
-	}
+//	 //find out how many groups there are for DOCUMENT->GROUPC
+//	 //**** is this necessary? marked as optional in 1.2 spec
+//	 //*** also grab all color references
+//	groupc=0;
+//	if (doc) {
+//		for (c=start; c<=end; c++) {
+//			spread=doc->docstyle->imposition->Layout(layout,c);
+//			 // for each page in spread layout..
+//			for (c2=0; c2<spread->pagestack.n; c2++) {
+//				pg=spread->pagestack.e[c2]->index;
+//				if (pg>=doc->pages.n) continue;
+//				 // for each layer on the page..
+//				//groupc++;
+//				g=&doc->pages.e[pg]->layers;
+//				groupc+=countGroups(g);
+//			}
+//			delete spread; spread=NULL;
+//		}
+//	}
 	
 	 // write out header
 	fprintf(f,"<SCRIBUSUTF8NEW Version=\"1.3.3.8\">\n");
 	
 	
-	 //figure out paper orientation
+	 //figure out paper size and orientation
 	int landscape=0;
-	if (layout==PAPERLAYOUT) {
-		landscape=((doc->docstyle->imposition->paper->paperstyle->flags&1)?1:0);
-	} 
+	double paperwidth,paperheight;
+	 // note this is orientation for only the first paper in papergroup.
+	 // If there are more than one papers, this may not work as expected...
+	 // The ps Orientation comment determines how onscreen viewers will show 
+	 // pages. This can be overridden by the %%PageOrientation: comment
+	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
+	paperwidth= papergroup->papers.e[0]->box->paperstyle->width;
+	paperheight=papergroup->papers.e[0]->box->paperstyle->height;
 	
 	 //------------ write out document attributes
 	spread=doc->docstyle->imposition->Layout(layout,start); //grab for page size
@@ -198,15 +208,20 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
 	fprintf(f,"    KEYWORDS=\"\" \n"
 			  "    ORIENTATION=\"%d\" \n",landscape);
-	fprintf(f,"    PAGEHEIGHT=\"%f\" \n",spread->path->maxy-spread->path->miny);
-	fprintf(f,"    PAGEWIDTH=\"%f\" \n",spread->path->maxx-spread->path->minx);//***
+	fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
+	fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);//***
 	fprintf(f,"    TITLE=\"\" \n"
 			  "    VHOCH=\"33\" \n"      //Percentage for Superscript
 			  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
 			  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
 			  "    VTIEF=\"33\" \n"       //Percentage for Subscript
-			  "    VTIEFSC=\"100\" \n"   //Percentage for scaling of the Glyphs in Subscript
-			  "   >\n");
+			  "    VTIEFSC=\"100\" \n");   //Percentage for scaling of the Glyphs in Subscript
+	fprintf(f,"    ScratchTop=\"%f\"\n"
+			  "    ScratchBottom=\"%f\"\n"
+			  "    ScratchRight=\"%f\"\n"
+			  "    ScratchLeft=\"%f\"\n"
+			  "   >\n",
+			  	CANVAS_MARGIN_Y, CANVAS_MARGIN_Y, CANVAS_MARGIN_X, CANVAS_MARGIN_X);
 	delete spread;
 	
 	
@@ -276,21 +291,25 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	//*************DocItemAttributes not 1.2
 	//************TablesOfContents   not 1.2
 	//************Sections  not 1.2
-	//************PageSets  not 1.2
+	
+	//------------PageSets  not 1.2
+	//This sets up so there is one column of pages, with 40 units between them.
+	fprintf(f,"    <PageSets>\n"
+			  "      <Set Columns=\"1\" GapBelow=\"40\" Rows=\"1\" FirstPage=\"0\" GapHorizontal=\"0\"\n"
+			  "         Name=\"Single Page\" GapVertical=\"0\" />\n"
+			  "    </PageSets>\n");
+
 	//************MASTERPAGE not separate entity in 1.2
 	
 			
-	//------------PAGE/PAGEOBJECTS
-	
+	//------------PAGE and PAGEOBJECTS
 
-	 // Write out paper spreads....
-	 //*****
-	 //***** holy cow, scribus has EVERY object by reference!!!! still trying to
-	 //***** figure out how objects are mapped onto groups, layers, and pages..
-	 //*****
+	 //
+	 // holy cow, scribus has EVERY object by reference!!!!
 	 // In Scribus, pages sit on a canvas, and the page has coords PAGEWIDTH,HEIGHT,XPOS,YPOS.
 	 //
-	 // Object's coordinates are relative to ????. Their xpos, ypos, rot, width, and height
+	 // Page objects have coordinates in the canvas space, not the paper space.
+	 // Their xpos, ypos, rot, width, and height (notably NOT shear)
 	 // refer to its bounding box. The pocoor and cocoor coordinates are relative to that
 	 // transformed bounding box (????).
 	 //
@@ -299,66 +318,95 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 //
 	groups.flush();
 	ongroup=0;
+	int p;
+	double m[6],mm[6],mmm[6],mmmm[6],ms[6];
 	transform_set(m,1,0,0,1,0,0);
 
 	psFlushCtms();
 	psCtmInit();
+	double pageypos=CANVAS_MARGIN_Y;
+	int pagec;
 	for (c=start; c<=end; c++) {
-		currentpage=c;
-		spread=doc->docstyle->imposition->Layout(layout,c);
-		 //------------page header
-		fprintf(f,"  <PAGE \n"
-				  "    Size=\"Custom\" \n");
-		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",72*spread->path->maxy-spread->path->miny);
-		fprintf(f,"    PAGEWIDTH=\"%f\" \n",72*spread->path->maxx-spread->path->minx);//***
-		fprintf(f,"    PAGEXPOS=\"%f\" \n",CANVAS_MARGIN_X);
-		fprintf(f,"    PAGEYPOS=\"%f\" \n",CANVAS_MARGIN_Y);
-		fprintf(f,"    NUM=\"%d\" \n",c-start); //***check this is right  //number of the page, starting at 0
-		fprintf(f,"    BORDERTOP=\"0\" \n"     //page margins?
-				  "    BORDERLEFT=\"0\" \n"
-				  "    BORDERBOTTOM=\"0\" \n"
-				  "    BORDERRIGHT=\"0\" \n"
-				  "    NAM=\"\" \n"            //name of master page, empty when normal
-				  "    LEFT=\"0\" \n"          //if is left master page
-				  "    Orientation=\"0\" \n"
-				  "    MNAM=\"Normal\" \n"        //name of attached master page
-				  "    HorizontalGuides=\"\" \n"
-				  "    NumHGuides=\"0\" \n"
-				  "    VerticalGuides=\"\" \n"
-				  "    NumVGuides=\"0\" \n"
-				  "   />\n");
-				
-		 // for each page in spread layout..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psPushCtm();
-			psConcat(72.,0.,0.,72.,0.,0.);
-			if (landscape) {
-				psConcat(0.,1.,-1.,0., doc->docstyle->imposition->paper->paperstyle->width,0.);
-			}
-			pg=spread->pagestack.e[c2]->index;
-			if (pg>=doc->pages.n) continue;
+		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		for (p=0; p<papergroup->papers.n; p++) {
+			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->width;
+			paperheight=72*papergroup->papers.e[p]->box->paperstyle->height;
+			pagec=(c-start)*papergroup->papers.n+p;
+			currentpage=pagec;
 
-			 // for each layer on the page..
-			transform_copy(m,spread->pagestack.e[c2]->outline->m());
-			spready=spread->path->maxy*72;//****
+			transform_set(ms,1,0,0,1,CANVAS_MARGIN_X,pageypos); //transform to scribus canvas
+			transform_invert(m,ms);
+
+			psPushCtm(); //starts at identity
+			transform_invert(mmm,papergroup->papers.e[p]->m()); // papergroup->paper transform
+			transform_set(mm,72.,0.,0.,72.,0.,0.);
+			transform_mult(mmmm,mmm,mm);
+			transform_mult(m,mmmm,ms);
 			psConcat(m);
-			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
-				 // for each object in layer
-				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-				for (c3=0; c3<g->n(); c3++) {
+
+			 //------------page header
+			fprintf(f,"  <PAGE \n"
+					  "    Size=\"Custom\" \n");
+			fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
+			fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);
+			fprintf(f,"    PAGEXPOS=\"%f\" \n",CANVAS_MARGIN_X);
+			fprintf(f,"    PAGEYPOS=\"%f\" \n",pageypos);
+			fprintf(f,"    NUM=\"%d\" \n",(c-start)*papergroup->papers.n+p); //number of the page, starting at 0
+			fprintf(f,"    BORDERTOP=\"0\" \n"     //page margins?
+					  "    BORDERLEFT=\"0\" \n"
+					  "    BORDERBOTTOM=\"0\" \n"
+					  "    BORDERRIGHT=\"0\" \n"
+					  "    NAM=\"\" \n"            //name of master page, empty when normal
+					  "    LEFT=\"0\" \n"          //if is left master page
+					  "    Orientation=\"0\" \n"
+					  "    MNAM=\"Normal\" \n"        //name of attached master page
+					  "    HorizontalGuides=\"\" \n"
+					  "    NumHGuides=\"0\" \n"
+					  "    VerticalGuides=\"\" \n"
+					  "    NumVGuides=\"0\" \n"
+					  "   />\n");
+					
+			if (limbo && limbo->n()) {
+				scribusdumpobj(f,NULL,limbo,error_ret,warning);
+			}
+
+			if (spread) {
+				if (spread->marks) {
+					scribusdumpobj(f,NULL,spread->marks,error_ret,warning);
+				}
+
+				 // for each page in spread layout..
+				for (c2=0; c2<spread->pagestack.n; c2++) {
+					psPushCtm();
+					if (landscape) {
+						psConcat(0.,1.,-1.,0., paperwidth,0.);
+					}
+					pg=spread->pagestack.e[c2]->index;
+					if (pg>=doc->pages.n) continue;
+
+					 // for each layer on the page..
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					scribusdumpobj(f,spready,m,g->e(c3),error_ret,warning);
+					psConcat(m);
+					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+						 // for each object in layer
+						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+						for (c3=0; c3<g->n(); c3++) {
+							transform_copy(m,spread->pagestack.e[c2]->outline->m());
+							scribusdumpobj(f,m,g->e(c3),error_ret,warning);
+						}
+					}
+					psPopCtm();
+					if (landscape) {
+						psConcat(1.,0.,0.,1., 0.,paperwidth);
+					} else {
+						psConcat(1.,0.,0.,1., 0.,paperheight);
+					}
 				}
 			}
-			psPopCtm();
-			if (landscape) {
-				psConcat(1.,0.,0.,1., 0.,doc->docstyle->imposition->paper->paperstyle->width);
-			} else {
-				psConcat(1.,0.,0.,1., 0.,doc->docstyle->imposition->paper->paperstyle->height);
-			}
-		}
 
-		delete spread;
+		}
+		if (spread) { delete spread; spread=NULL; }
+		pageypos+=papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny+40;
 	}
 		
 	
@@ -378,7 +426,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char **error_ret,int &warning)
+static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
 	//***possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
@@ -417,7 +465,7 @@ static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char 
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,spready,NULL,g->e(c),error_ret,warning);
+			scribusdumpobj(f,NULL,g->e(c),error_ret,warning);
 		groups.pop();
 		psPopCtm();
 		return;
@@ -431,30 +479,41 @@ static void scribusdumpobj(FILE *f,double spready,double *mm,SomeData *obj,char 
 		return;
 	}
 
-	//******HACK!
+	 //there is no image shearing in Scribus, so images must map to an unsheared variant,
+	 //  and stuck in an appropriate box
+	 //Gradients must have one circle totally inside another. Sheared gradients must be converted
+	 //  to ellipses.
+	 //Object bounding boxes in scribus have no shear, only position, scale, and rotation
+	//***this is still a bit hacky
 	numpo=16;
 	pocoor=new flatpoint[numpo];
-	flatpoint p,p1,p2;
+	flatpoint p,p1,p2, vx,vy;
 	double *ctm=psCTM();
+	double rot,x,y,width,height;
+
+	vx=transform_vector(ctm,flatpoint(1,0));
+	vy=transform_vector(ctm,flatpoint(0,1));
+	rot=-atan2(vx.y, vx.x)/M_PI*180;
+	p=transform_point(ctm,flatpoint(0,0));
+	x=p.x;
+	y=p.y;
+
 	pocoor[14]=pocoor[15]=pocoor[ 0]=pocoor[ 1]=transform_point(ctm,flatpoint(obj->minx,obj->miny));
 	pocoor[ 2]=pocoor[ 3]=pocoor[ 4]=pocoor[ 5]=transform_point(ctm,flatpoint(obj->maxx,obj->miny));
 	pocoor[ 6]=pocoor[ 7]=pocoor[ 8]=pocoor[ 9]=transform_point(ctm,flatpoint(obj->maxx,obj->maxy));
 	pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
-	p=transform_point(ctm,flatpoint(0,0));
-	double rot,x,y,width,height;
-	p1=pocoor[1];
-	p2=pocoor[2];
-	rot=-atan2(p2.y-p1.y, p2.x-p1.x)/M_PI*180;
-	x=p.x+CANVAS_MARGIN_X;
-	y=spready-(p.y+CANVAS_MARGIN_Y);
-	//y=p.y+CANVAS_MARGIN_Y;
+
 	width=norm(pocoor[2]-pocoor[1]);
 	height=norm(pocoor[6]-pocoor[2]);
+
+	double m[6],mmm[6];
+	transform_from_basis(mmm,p,vx,vy);
+	transform_invert(m,mmm);
+
 	for (int c=0; c<16; c++) {
-		pocoor[c]-=p;
-		//pocoor[c].y=spready-pocoor[c].y;
+		pocoor[c]=transform_point(m,pocoor[c]);
 	}
-	if (ptype==2) {
+	if (ptype==2) { //image
 		localscx=norm(pocoor[2]-pocoor[1])/(img->maxx-img->minx);
 		localscy=norm(pocoor[6]-pocoor[2])/(img->maxy-img->miny);
 	}
