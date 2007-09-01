@@ -22,6 +22,10 @@
 #include "../laidout.h"
 
 
+#define DBG
+#include <iostream>
+using namespace std;
+
 using namespace LaxFiles;
 
 //---------------------------- DocumentExportConfig ------------------------------
@@ -305,6 +309,8 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 		return 1;
 	}
 
+	DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
+
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
 	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
@@ -389,11 +395,13 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 		}
 	} else err=config->filter->Out(NULL,config,error_ret);
 	
+	DBG cerr << "export_document end."<<endl;
+
 	if (err) {
 		if (error_ret) appendline(*error_ret,_("Export failed."));
 		return 1;
 	} 
-	if (error_ret) appendline(*error_ret,_("Exported."));
+	//if (error_ret) appendline(*error_ret,_("Exported."));
 	return 0;
 }
 

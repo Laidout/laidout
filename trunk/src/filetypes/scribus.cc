@@ -179,7 +179,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	
 	
 	 //figure out paper size and orientation
-	int landscape=0;
+	int landscape=0,plandscape;
 	double paperwidth,paperheight;
 	 // note this is orientation for only the first paper in papergroup.
 	 // If there are more than one papers, this may not work as expected...
@@ -313,7 +313,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 // refer to its bounding box. The pocoor and cocoor coordinates are relative to that
 	 // transformed bounding box (????).
 	 //
-	 // Scribus Groups or more like sets. Objects all lie directly on the page, and groups
+	 // Scribus Groups are more like sets. Objects all lie directly on the page, and groups
 	 // are simply a loose tag the objects have. Groups do not apply any additional transformation.
 	 //
 	groups.flush();
@@ -329,12 +329,18 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	for (c=start; c<=end; c++) {
 		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) {
-			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->width;
-			paperheight=72*papergroup->papers.e[p]->box->paperstyle->height;
+			psCtmInit();
+			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->w(); //scribus wants visual w/h
+			paperheight=72*papergroup->papers.e[p]->box->paperstyle->h();
+			plandscape=(papergroup->papers.e[p]->box->paperstyle->flags&1)?1:0;
 			pagec=(c-start)*papergroup->papers.n+p;
 			currentpage=pagec;
 
-			transform_set(ms,1,0,0,1,CANVAS_MARGIN_X,pageypos); //transform to scribus canvas
+			//if (landscape) {
+			//	psConcat(0.,1.,-1.,0., paperwidth,0.);
+			//}
+
+			transform_set(ms,1,0,0,-1,CANVAS_MARGIN_X,pageypos+paperheight); //transform to scribus canvas
 			transform_invert(m,ms);
 
 			psPushCtm(); //starts at identity
@@ -343,6 +349,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			transform_mult(mmmm,mmm,mm);
 			transform_mult(m,mmmm,ms);
 			psConcat(m);
+			
+			DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  :";
+			dumpctm(psCTM());
 
 			 //------------page header
 			fprintf(f,"  <PAGE \n"
@@ -358,13 +367,13 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 					  "    BORDERRIGHT=\"0\" \n"
 					  "    NAM=\"\" \n"            //name of master page, empty when normal
 					  "    LEFT=\"0\" \n"          //if is left master page
-					  "    Orientation=\"0\" \n"
+					  "    Orientation=\"%d\" \n"
 					  "    MNAM=\"Normal\" \n"        //name of attached master page
 					  "    HorizontalGuides=\"\" \n"
 					  "    NumHGuides=\"0\" \n"
 					  "    VerticalGuides=\"\" \n"
 					  "    NumVGuides=\"0\" \n"
-					  "   />\n");
+					  "   />\n", plandscape);
 					
 			if (limbo && limbo->n()) {
 				scribusdumpobj(f,NULL,limbo,error_ret,warning);
@@ -378,9 +387,6 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				 // for each page in spread layout..
 				for (c2=0; c2<spread->pagestack.n; c2++) {
 					psPushCtm();
-					if (landscape) {
-						psConcat(0.,1.,-1.,0., paperwidth,0.);
-					}
 					pg=spread->pagestack.e[c2]->index;
 					if (pg>=doc->pages.n) continue;
 
@@ -396,17 +402,13 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 						}
 					}
 					psPopCtm();
-					if (landscape) {
-						psConcat(1.,0.,0.,1., 0.,paperwidth);
-					} else {
-						psConcat(1.,0.,0.,1., 0.,paperheight);
-					}
+
 				}
 			}
-
+			psPopCtm();
+			pageypos+=72*(papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny)+40;
 		}
 		if (spread) { delete spread; spread=NULL; }
-		pageypos+=papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny+40;
 	}
 		
 	
@@ -446,10 +448,10 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		img=dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
 		ptype=2;
-	} else if (!strcmp(obj->whattype(),"GradientData")) {
-		grad=dynamic_cast<GradientData *>(obj);
-		if (!grad) return;
-		ptype=-2;
+	//} else if (!strcmp(obj->whattype(),"GradientData")) {
+	//	grad=dynamic_cast<GradientData *>(obj);
+	//	if (!grad) return;
+	//	ptype=-2;
 	} else if (!strcmp(obj->whattype(),"Group")) {
 		 //must propogate transform...
 		Group *g;
@@ -493,8 +495,9 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 
 	vx=transform_vector(ctm,flatpoint(1,0));
 	vy=transform_vector(ctm,flatpoint(0,1));
-	rot=-atan2(vx.y, vx.x)/M_PI*180;
-	p=transform_point(ctm,flatpoint(0,0));
+	rot=atan2(vx.y, vx.x)/M_PI*180;
+	//p=transform_point(ctm,flatpoint(0,0));
+	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
 	x=p.x;
 	y=p.y;
 
@@ -507,15 +510,19 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	height=norm(pocoor[6]-pocoor[2]);
 
 	double m[6],mmm[6];
+	vx=vx/norm(vx);
+	vy=vy/norm(vy);
+	p=transform_point(ctm,flatpoint(0,0));
 	transform_from_basis(mmm,p,vx,vy);
 	transform_invert(m,mmm);
 
+	 //make pocoor coords relative to the object origin, not the canvas
 	for (int c=0; c<16; c++) {
 		pocoor[c]=transform_point(m,pocoor[c]);
 	}
 	if (ptype==2) { //image
-		localscx=norm(pocoor[2]-pocoor[1])/(img->maxx-img->minx);
-		localscy=norm(pocoor[6]-pocoor[2])/(img->maxy-img->miny);
+		localscx=width /(img->maxx-img->minx);
+		localscy=height/(img->maxy-img->miny);
 	}
 
 

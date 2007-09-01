@@ -21,7 +21,7 @@ VERSION 0.08
 (done) svg out
 (done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
 (done) Export to various things from command line to allow batch processing
-       Export as a Scribus document
+(done) Export as a Scribus document
 (done) Print/export to images (via ghostscript)
        Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
