@@ -1933,7 +1933,7 @@ void LaidoutViewport::Refresh()
 	if (papergroup) {
 		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
 		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
-		if (pi) pi->DrawGroup(papergroup,1);
+		if (pi) pi->DrawGroup(papergroup,1,1);
 	}
 	
 	 // draw limbo objects
@@ -1951,7 +1951,7 @@ void LaidoutViewport::Refresh()
 		if (pgrp) {
 			ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
 			PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
-			if (pi) pi->DrawGroup(pgrp,1);
+			if (pi) pi->DrawGroup(pgrp,1,1);
 		}
 
 		 // draw 5 pixel offset heavy line like shadow for page first, then fill draw the path...
