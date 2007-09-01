@@ -183,7 +183,7 @@ int PaperInterface::InterfaceOn()
 	DBG cerr <<"paperinterfaceOn()"<<endl;
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 	if (lvp) lvp->UseThisPaperGroup(papergroup);
-	showdecs=3;
+	showdecs=2;
 	needtodraw=1;
 	return 0;
 }
@@ -230,11 +230,11 @@ int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
 	int td=showdecs,ntd=needtodraw;
 	BoxTypes tdrawwhat=drawwhat;
 	drawwhat=AllBoxes;
-	showdecs=2;
+	showdecs=1;
 	needtodraw=1;
 	Displayer *olddp=dp;
 	dp=tdp;
-	DrawPaper(data,~0,1,5);
+	DrawPaper(data,~0,1,5,0);
 	dp=olddp;
 	drawwhat=tdrawwhat;
 	needtodraw=ntd;
@@ -247,7 +247,7 @@ int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
  * If shadow!=0, then put a black drop shadow under a filled media box,
  * at an offset pixel length shadow.
  */
-void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow)
+void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow)
 {
 	if (!data) return;
 	int w=1;
@@ -286,6 +286,20 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow)
 			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
 			dp->drawlines(1,1,0,4,p);
 		}
+
+		 //draw orientation arrow
+		if (arrow) {
+			flatpoint p1=dp->realtoscreen((p[0]+p[3])/2),
+					  p2=dp->realtoscreen((p[1]+p[2])/2),
+					  v=p2-p1,
+					  v2=transpose(v);
+			p1=p1+.1*v;
+			p2=p2-.1*v;
+			dp->drawline(p1,p2);
+			dp->drawline(p2,p2-v2*.2-v*.2);
+			dp->drawline(p2,p2+v2*.2-v*.2);
+		}
+
 	}
 	if ((what&ArtBox) && (box->which&ArtBox)) {
 		p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
@@ -318,19 +332,19 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow)
 	//dp->PopAxes(); //spread axes
 }
 
-void PaperInterface::DrawGroup(PaperGroup *group,int shadow)
+void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill)
 {
 	 //draw shadow under whole group
 	if (shadow) {
 		for (int c=0; c<group->papers.n; c++) {
 			dp->PushAndNewTransform(group->papers.e[c]->m());
-			DrawPaper(group->papers.e[c],MediaBox, 1,5);
+			DrawPaper(group->papers.e[c],MediaBox, fill,5,0);
 			dp->PopAxes(); 
 		}
 	}
 	for (int c=0; c<group->papers.n; c++) {
 		dp->PushAndNewTransform(group->papers.e[c]->m());
-		DrawPaper(group->papers.e[c],drawwhat, 1,0);
+		DrawPaper(group->papers.e[c],drawwhat, fill,0,1);
 		dp->PopAxes(); 
 	}
 }
@@ -342,7 +356,11 @@ int PaperInterface::Refresh()
 	if (!needtodraw) return 0;
 	needtodraw=0;
 
-	if (showdecs!=3) {
+	//showdecs:
+	// 0 do not draw
+	// 1 draw with fill
+	// 2 draw without fill
+	if (showdecs) {
 		double m[6];
 		transform_copy(m,dp->m());
 		dp->PopAxes(); //remove transform to viewport context
@@ -362,7 +380,7 @@ int PaperInterface::Refresh()
 
 		if (!papergroup || !papergroup->papers.n) return 0;
 
-		DrawGroup(papergroup,1);
+		DrawGroup(papergroup,0,showdecs==1?1:0);
 
 		dp->PushAndNewTransform(m); //reinstall transform to viewport context
 	}
@@ -617,6 +635,7 @@ int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 		}
 	} else if (ch=='d' && (state&LAX_STATE_MASK)==0) {
 		showdecs++;
+		if (showdecs==1) showdecs++;
 		if (showdecs>3) showdecs=0;
 		needtodraw=1;
 		return 0;
