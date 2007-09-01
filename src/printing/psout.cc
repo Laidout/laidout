@@ -98,9 +98,12 @@ void psConcat(double *m)
 /*! \ingroup postscript 
  * If psctm==NULL, then create new. This should be done, for instance, by
  * any output stuff like pdf that makes use of psctm, which is static to psout.cc.
+ *
+ * Also flushes psctms stack.
  */
 double *psCtmInit()
 {
+	psctms.flush();
 	psctm=transform_identity(psctm);
 	return psctm;
 }

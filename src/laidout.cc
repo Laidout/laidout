@@ -748,7 +748,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'O': { // list export options for a given format
 					DBG cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
 					printf("format   = \"%s\"    #the format to export as\n",optarg);
-					printf("filename = /file/to/export/to\n");
+					printf("tofile   = /file/to/export/to\n");
 					printf("tofiles  = \"/files/like###.this\"  #the # section is replaced with the page index\n");
 					printf("                                  #Only one of filename or tofiles should be present\n");
 					printf("layout   = pages   #the value depends on the particular imposition used by the document\n");
