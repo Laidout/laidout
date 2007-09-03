@@ -8,11 +8,6 @@
 
  in configure, should check to see that gs is actually executable?
 
- export from command line, allowing batch processing:
-   laidout --export 'page 4-20, svg, to: blah###.svg' 1.doc \
-           --export 'eps, page 3, to: blah.eps' 2.doc 
-
-
  enhance SpreadEditor:
    eject in addition to swap and slide,
    chains in limbo
@@ -89,7 +84,7 @@ Dynamic content object, for instance a box that lets you swirl 3-dimensional thi
  something of the kind, and pdf 1.6 has such 3-d support)
 
 
-pages need to be able to preempt the page boundaries given by disposition,
+pages need to be able to preempt the page boundaries given by imposition,
 OR the imposition needs to act on a selection of pages, not all of them..
 This would make cover/book body more reasonable.
 what about centerfolds?? have those

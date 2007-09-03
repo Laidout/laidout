@@ -109,6 +109,7 @@ class Imposition : public Style
 	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
 	
 	virtual Spread *Layout(int layout,int which); 
+	virtual int NumLayouts();
 	virtual const char *LayoutName(int layout); 
 	//----*** ^^ this will ultimately replace these vv
 	virtual Spread *SingleLayout(int whichpage); 

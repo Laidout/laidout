@@ -35,12 +35,12 @@ class VObjContext : public LaxInterfaces::ObjectContext
  public:
 	FieldPlace context;
 	VObjContext() { obj=NULL; context.push(0); }
-	virtual ~VObjContext() {}
+	virtual ~VObjContext();
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc); }
 	virtual VObjContext &operator=(const VObjContext &oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
-	virtual void clear() { obj=NULL; context.flush(); }
+	virtual void clear();
 	virtual void push(int i,int where=-1);
 	virtual int pop(int where=-1);
 	

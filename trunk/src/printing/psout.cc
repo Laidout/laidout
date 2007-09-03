@@ -478,10 +478,15 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	char *desc=NULL;
 	int p,plandscape;
 	for (c=start; c<=end; c++) {
+		 //get spread if any
 		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
 		else spread=NULL;
+		 
+		 //get paper description
 		if (spread) desc=spread->pagesFromSpreadDesc(doc);
 		else desc=limbo->id?newstr(limbo->id):NULL;
+		prependstr(desc,"(");
+		appendstr(desc,")");
 			
 		for (p=0; p<papergroup->papers.n; p++) {
 			DBG cerr<<"Printing paper "<<p<<"..."<<endl;

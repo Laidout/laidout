@@ -64,6 +64,7 @@ ConfigEventData::~ConfigEventData()
  * \todo should allow alternate imposition, notably PosterImposition
  * \todo allow remember settings, and when popped up, bring up last one accessed..
  * \todo overwrite protection
+ * \todo allow selecting alternate imposition (with preview?) as well as layout type..
  */
 
 
@@ -162,7 +163,8 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag)
 void ExportDialog::findMinMax()
 {
 	min=0;
-	max=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+	if (config->doc) max=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+		else max=0;
 }
 
 //! Make sure the kid windows have this as owner.
@@ -292,21 +294,23 @@ int ExportDialog::init()
 
 
 	 //------------------------What kind of layout----------
-	//****doc->docstyle->imposition->Layouts()
-	StrSliderPopup *layouts;
-	last=layouts=new StrSliderPopup(this, "layouts",0, 0,0,0,0,1, last, window, "layout");
-//	for (c=0; c<config->doc->docstyle->imposition->NumLayouts(); c++) {
-//		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(c),c);
-//		if (filter==laidout->exportfilters.e[c]) c2=c;
-//	}
-	layouts->AddItem(config->doc->docstyle->imposition->LayoutName(SINGLELAYOUT),SINGLELAYOUT);
-	layouts->AddItem(config->doc->docstyle->imposition->LayoutName(PAGELAYOUT),  PAGELAYOUT);
-	layouts->AddItem(config->doc->docstyle->imposition->LayoutName(PAPERLAYOUT), PAPERLAYOUT);
-	layouts->Select(config->layout);
-	layouts->WrapWidth();
-	layouts->tooltip(_("The type of spreads to export"));
-	AddWin(layouts, layouts->win_w,0,50,50, layouts->win_h,0,0,50);
-	AddNull();
+	if (config->doc) {
+		//****doc->docstyle->imposition->Layouts()
+		StrSliderPopup *layouts;
+		last=layouts=new StrSliderPopup(this, "layouts",0, 0,0,0,0,1, last, window, "layout");
+	//	for (c=0; c<config->doc->docstyle->imposition->NumLayouts(); c++) {
+	//		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(c),c);
+	//		if (filter==laidout->exportfilters.e[c]) c2=c;
+	//	}
+		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(SINGLELAYOUT),SINGLELAYOUT);
+		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(PAGELAYOUT),  PAGELAYOUT);
+		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(PAPERLAYOUT), PAPERLAYOUT);
+		layouts->Select(config->layout);
+		layouts->WrapWidth();
+		layouts->tooltip(_("The type of spreads to export"));
+		AddWin(layouts, layouts->win_w,0,50,50, layouts->win_h,0,0,50);
+		AddNull();
+	}
 
 
 	 //------------------------Range----------

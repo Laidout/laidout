@@ -23,7 +23,7 @@ VERSION 0.08
 (done) Export to various things from command line to allow batch processing
 (done) Export as a Scribus document
 (done) Print/export to images (via ghostscript)
-       Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+(done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
          (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
 
 
@@ -40,6 +40,9 @@ VERSION 0.09
        In image properties dialog, have the popup list of potential previews
        When importing from an image list file, should be able to say if and when to auto-make previews
        Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
+       Spread editor: load and save spread editor arrangements
+       Load, save, add, delete paper groups
+       Add and delete limbos
        Fix multi-object selection move when crossing page boundaries
        NetImposition needs import/export net and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface

@@ -36,10 +36,12 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	double dpi;
 	int startpage;
 	Document *doc;
+	Group *toobj;
 	ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
 			Window nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
+			Group *obj,
 			Document *ndoc,int startpg,double defdpi);
 	virtual ~ImportImagesDialog();
 	virtual const char *whattype() { return "ImportImagesDialog"; }

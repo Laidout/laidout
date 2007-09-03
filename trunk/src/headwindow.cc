@@ -929,11 +929,11 @@ int HeadWindow::HasOnlyThis(Document *doc)
 		if (!windows.e[c]->win) continue;
 		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
 		if (v)
-			if (v->doc!=doc) return 0;
+			if (v->doc && v->doc!=doc) return 0;
 			else continue;
 		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
 		if (s)
-			if (s->doc!=doc) return 0;
+			if (s->doc && s->doc!=doc) return 0;
 			else continue;
 	}
 	return 1;

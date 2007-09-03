@@ -332,7 +332,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	//dp->PopAxes(); //spread axes
 }
 
-void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill)
+void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arrow)
 {
 	 //draw shadow under whole group
 	if (shadow) {
@@ -344,7 +344,7 @@ void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill)
 	}
 	for (int c=0; c<group->papers.n; c++) {
 		dp->PushAndNewTransform(group->papers.e[c]->m());
-		DrawPaper(group->papers.e[c],drawwhat, fill,0,1);
+		DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
 		dp->PopAxes(); 
 	}
 }
@@ -380,7 +380,7 @@ int PaperInterface::Refresh()
 
 		if (!papergroup || !papergroup->papers.n) return 0;
 
-		DrawGroup(papergroup,0,showdecs==1?1:0);
+		DrawGroup(papergroup,0,showdecs==1?1:0,showdecs==2?1:0);
 
 		dp->PushAndNewTransform(m); //reinstall transform to viewport context
 	}
@@ -409,10 +409,15 @@ void PaperInterface::createMaybebox(flatpoint p)
 
 	 // find a paper size, not so easy!
 	PaperBox *box=NULL;
+	PaperBoxData *boxdata=NULL;
 	int del=0;
-	if (curbox) box=curbox->box;
-	else if (papergroup->papers.n) box=papergroup->papers.e[0]->box;
-	else if (doc) {
+	if (curbox) {
+		box=curbox->box;
+		boxdata=curbox;
+	} else if (papergroup->papers.n) {
+		box=papergroup->papers.e[0]->box;
+		boxdata=papergroup->papers.e[0];
+	} else if (doc) {
 		box=new PaperBox((PaperStyle *)doc->docstyle->imposition->paper->paperstyle->duplicate());
 		box->paperstyle->dec_count();
 		del=1;
@@ -424,7 +429,12 @@ void PaperInterface::createMaybebox(flatpoint p)
 
 	maybebox=new PaperBoxData(box); //incs count of box
 	maybebox->red=65535;
-	maybebox->origin(p-flatpoint((maybebox->maxx-maybebox->minx)/2,(maybebox->maxy-maybebox->miny)/2));
+	if (boxdata) {
+		maybebox->xaxis(boxdata->xaxis());
+		maybebox->yaxis(boxdata->yaxis());
+	}
+	maybebox->origin(p-flatpoint(norm(maybebox->xaxis())*(maybebox->maxx-maybebox->minx)/2,
+								 norm(maybebox->yaxis())*(maybebox->maxy-maybebox->miny)/2));
 	if (del) box->dec_count();
 }
 
@@ -635,8 +645,7 @@ int PaperInterface::CharInput(unsigned int ch,unsigned int state)
 		}
 	} else if (ch=='d' && (state&LAX_STATE_MASK)==0) {
 		showdecs++;
-		if (showdecs==1) showdecs++;
-		if (showdecs>3) showdecs=0;
+		if (showdecs>2) showdecs=0;
 		needtodraw=1;
 		return 0;
 	} else if (ch=='9' && (state&LAX_STATE_MASK)==0) {

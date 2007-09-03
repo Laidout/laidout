@@ -74,9 +74,9 @@ class ColorPrimary
 	int minvalue;
 	ScreenColor screencolor;
 	
-	int natts;   //*** this could be a ColorAttribute class, to allow ridiculously adaptable color systems
-	char **atts; //    like being able to define a sparkle or metal speck fill pattern 
-	             // for each i'th attribute, atts[2*i]==attribute name, atts[2*i+1]==attribute value
+	Attribute *atts; //*** this could be a ColorAttribute class, to allow ridiculously adaptable color systems
+					//    like being able to define a sparkle or metal speck fill pattern 
+	               // for each i'th attribute, atts[2*i]==attribute name, atts[2*i+1]==attribute value
 };
 
 
@@ -120,10 +120,18 @@ class ColorSystem
 class Color
 {
  public:
-	unsigned int system;
+	unsigned int systemid;
+	ColorSystem *system;
 	int n; // num values, put here so you don't have to always look them up in system definition
 	int *value; // the values for each primary
+
+	~Color();
 };
+
+Color::~Color()
+{
+	if (system) system->dec_count();
+}
 
 
 //------------------------------- ColorInstance -------------------------------
@@ -158,6 +166,6 @@ class ColorManager
 {
  protected:
  public:
-	const char *icc_path;
+	PtrStack<char> icc_paths;
 	
 };
