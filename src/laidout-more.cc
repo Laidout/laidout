@@ -195,7 +195,9 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	HeadWindow h(NULL,"",0, 0,0,0,0,0);
 	fprintf(f,"#Window arrangements can be dumped out. These can be project attributes or Document\n"
 			  "#attributes. If you are working on a project, not just a single Document,\n"
-			  "#then the window attributes in a Document file are currently ignored.\n"
+			  "#then the window attributes in a Document file are ignored when the project is loaded,\n"
+			  "#and forgotten when the document is next saved..\n"
+			  "#If there are no window blocks, then a default window with a view is created.\n"
 			  "\n"
 			  "window\n");
 	h.dump_out(f,2,-1);

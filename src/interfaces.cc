@@ -92,29 +92,29 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	imagei->style=1;
 	existingpool->push(imagei,1);
 	
-	 //------EPS
-	EpsInterface *eps=new EpsInterface(id++,NULL);
-	eps->style=1;
-	existingpool->push(eps,1);//*** combine with Image somehow?
-
-	 //------Image Patch
-	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
-	ip->style=IMGPATCHI_POPUP_INFO;
-	ip->recurse=2;
-	existingpool->push(ip,1);
-	
-	 //------Paths
-	existingpool->push(new PathInterface(id++,NULL,NULL),1); //2nd null is pathop pool
-	
 	 //------Gradients
 	GradientInterface *gi=new GradientInterface(id++,NULL);
 	gi->createv=flatpoint(1,0);
 	gi->creater1=gi->creater2=1;
 	existingpool->push(gi,1);
 	
+	 //------Image Patch
+	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
+	ip->style=IMGPATCHI_POPUP_INFO;
+	ip->recurse=2;
+	existingpool->push(ip,1);
+	
 	 //------Color Patch
 	existingpool->push(new ColorPatchInterface(id++,NULL),1);
 	
+	 //------Paths
+	existingpool->push(new PathInterface(id++,NULL,NULL),1); //2nd null is pathop pool
+	
+	 //------EPS
+	EpsInterface *eps=new EpsInterface(id++,NULL);
+	eps->style=1;
+	existingpool->push(eps,1);//*** combine with Image somehow?
+
 	 //------Paper
 	existingpool->push(new PaperInterface(id++,NULL),1);
 

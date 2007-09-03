@@ -156,8 +156,19 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
 			}
 		} else if (!strcmp(name,"imposition")) {
 			//***
+			cout <<"Need to implement export with alternate imposition.."<<endl;
 		} else if (!strcmp(name,"layout")) {
-			//***
+			if (!doc || isblank(value)) { layout=0; continue; }
+			for (c2=0; c2<doc->docstyle->imposition->NumLayouts(); c2++) {
+				if (!strcmp(value,doc->docstyle->imposition->LayoutName(c2))) break;
+			}
+			if (c2==doc->docstyle->imposition->NumLayouts()) {
+				for (c2=0; c2<doc->docstyle->imposition->NumLayouts(); c2++) {
+					if (!strncasecmp(value,doc->docstyle->imposition->LayoutName(c2),strlen(value))) break;
+				}
+			}
+			if (c2==doc->docstyle->imposition->NumLayouts()) c2=0;
+			layout=c2;
 		} else if (!strcmp(name,"start")) {
 			IntAttribute(value,&start);
 		} else if (!strcmp(name,"end")) {

@@ -193,6 +193,11 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			if (papergroup) papergroup->dec_count();
 			papergroup=new PaperGroup;
 			papergroup->dump_in_atts(att->attributes.e[c],flag);
+			if (papergroup->papers.n) {
+				if (paper) paper->dec_count();
+				paper=papergroup->papers.e[0]->box;
+				paper->inc_count();
+			}
 		}
 	}
 	if (pages<0) setPage();
@@ -1059,7 +1064,8 @@ Spread *BookletImposition::PaperLayout(int whichpaper)
 
 	 // grab singles, which draws a tiled page using the inset values,
 	 // including printer marks, and max and min points.
-	 // but the pagestack is incorrect. All but pagestack is ok
+	 // but the pagestack is incorrect. All but pagestack is ok. It
+	 // gets corrected below.
 	Spread *spread=Singles::PaperLayout(whichpaper);
 
 	 // fill pagestack, includes tiling

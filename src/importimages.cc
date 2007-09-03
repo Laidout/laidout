@@ -36,21 +36,28 @@ using namespace LaxFiles;
  * \brief Dialog for importing many images all at once.
  */
 
-// 	FileDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-//			int xx,int yy,int ww,int hh,int brder, 
-//			Window nowner,const char *nsend,
-//			const char *nfile=NULL,const char *npath=NULL,const char *nmask=NULL);
+/*! Only one of obj or doc should be defined. If obj is defined, then dump all the selected images
+ * to obj within obj's bounds. Otherwise dump to doc with the full per page settings.
+ *
+ * \todo default dpi?
+ */
 ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
 			Window nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
+			Group *obj,
 			Document *ndoc,int startpg,double defdpi)
 	: FileDialog(parnt,ntitle,
 			(nstyle&0xffff)|FILES_PREVIEW|FILES_OPEN_MANY|ANXWIN_REMEMBER,
 			xx,yy,ww,hh,brder,nowner,nsend,nfile,npath,nmask)
 {
 	dpi=defdpi;
+	if (dpi<=0) if (doc) dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
+	else dpi=300;//***
+
 	startpage=startpg;
+	toobj=obj;
+	if (toobj) toobj->inc_count();
 	doc=ndoc;
 	curitem=-1;
 
@@ -58,7 +65,9 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsig
 }
 
 ImportImagesDialog::~ImportImagesDialog()
-{ }
+{
+	if (toobj) toobj->dec_count();
+}
 
 void ImportImagesDialog::dump_out(FILE *f,int indent,int what)
 {

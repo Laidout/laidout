@@ -551,6 +551,11 @@ int Imposition::SetPaperGroup(PaperGroup *ngroup)
 	if (papergroup) papergroup->dec_count();
 	papergroup=ngroup;
 	if (papergroup) papergroup->inc_count();
+	if (papergroup->papers.n) {
+		if (paper) paper->dec_count();
+		paper=papergroup->papers.e[0]->box;
+		paper->inc_count();
+	}
 	return 0;
 }
 
@@ -666,8 +671,21 @@ Spread *Imposition::Layout(int layout,int which)
 	return NULL;
 }
 
+//! Return the number of different kinds of layouts the imposition can provide.
+/*! The default is to return 3: singles, pages, and papers.
+ *
+ * You can find the names for the layouts by calling LayoutName(int) and passing
+ * numbers in the range [0..NumLayouts()-1].
+ */
+int Imposition::NumLayouts()
+{
+	return 3;
+}
+
 //! Return the name of layout, or NULL if layout not recognized.
-/*! Default is to return "Papers", "Pages", or "Singles".
+/*! Default is to return "Papers" for 2, "Pages" for 1, or "Singles" for 0.
+ * Note that layout is a straight index, not an arbitrary id number. It should be
+ * in the range [0..NumLayouts()-1].
  *
  * Note that it returns const char[], not a new char[].
  */
@@ -675,7 +693,7 @@ const char *Imposition::LayoutName(int layout)
 {
 	if (layout==PAPERLAYOUT) return _("Papers");
 	if (layout==PAGELAYOUT) return _("Pages");
-	if (layout==SINGLELAYOUT) return _("Singles");;
+	if (layout==SINGLELAYOUT) return _("Singles");
 	if (layout==LITTLESPREADLAYOUT) return _("Little Spreads");
 	return NULL;
 }

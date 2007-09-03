@@ -57,6 +57,7 @@ uninstall:
 	rm -f  $(BINDIR)/laidout
 	rm -fr $(SHAREDIR)/laidout/$(LAIDOUTVERSION)
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
+	cd src/po && $(MAKE) uninstall
 
 hidegarbage: touchdepends
 	cd src && $(MAKE) hidegarbage

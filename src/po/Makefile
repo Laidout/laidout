@@ -4,7 +4,7 @@ include ../../Makefile-toinclude
 
 	#$(foreach NAME, `ls *.po`, $(shell msgfmt $(NAME) -o `basename $(NAME) .po`.mo))
 compile:
-	@echo "Compiling po files..."
+	@echo "Compiling po files... $(wildcard *.po)."
 	$(foreach NAME, $(basename $(shell ls *.po)), $(shell msgfmt $(NAME).po -o $(NAME).mo))
 	@echo "Done!"
 
@@ -23,6 +23,12 @@ installhere:
 	$(foreach NAME, $(basename $(wildcard *.mo)), \
 		$(shell	install -D -m755 $(NAME).mo $(PO) temp-install/locale/$(NAME)/LC_MESSAGES/laidout.mo))
 	@echo Done installing language files.
+
+uninstall:
+	@echo Un-installing language files based on: $(wildcard *.mo)...
+	$(foreach NAME, $(basename $(wildcard *.mo)), \
+		$(shell	rm -vf $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
+	@echo Done uninstalling language files.
 
 update: freshdump
 	msgmerge -U laidout.pot laidout-freshdump.pot

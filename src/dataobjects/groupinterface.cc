@@ -76,8 +76,8 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 int GroupInterface::LBDown(int x, int y,unsigned int state, int count)
 {
 	int c=ObjectInterface::LBDown(x,y,state,count);
-	if (count==2 && selection.n==1 && strcmp(selection.e[c]->whattype(),"Group")) {
-		if (viewport) viewport->ChangeObject(selection.e[c],NULL);
+	if (count==2 && selection.n==1 && strcmp(selection.e[0]->whattype(),"Group")) {
+		if (viewport) viewport->ChangeObject(selection.e[0],NULL);
 	}
 	return c;
 }

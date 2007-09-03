@@ -19,8 +19,9 @@
  * Here are the various pools of stuff and their generating functions.
  * The pools are available through the main LaidoutApp.
  * 
- * *** The interface pool is necessary to be able to draw anything any old time.
- * The others could probably be absorbed by the stylemanager.
+ * \todo The pools might need to be rethought, so to allow for potentially loadable
+ *   modules for file filters, for instance. The interface pool could be rewritten to
+ *   be based on Attributes and interface object factories.
  */
 
 //---------------------<< start program! >>-------------------------
@@ -988,8 +989,10 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 		curdoc=doc;
 		return 0;
 	}
-		
-	FILE *f=open_laidout_file_to_read(fullname,"Project",error_ret);
+	
+	char *error=NULL;
+	FILE *f=open_laidout_file_to_read(fullname,"Project",&error);
+	if (error) delete[] error;
 	if (f) {
 		fclose(f);
 		if (project) project->clear();
@@ -1000,6 +1003,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 		delete[] fullname;
 		return -1;
 	}
+	
 
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
@@ -1155,9 +1159,10 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
  * </pre>
  *
  * If doc!=0 then only output headwindows that only have doc in them. 
- * (this is unimplemented, might be better to have some special check when
- * loading so that if doc is being loaded from a project load, then all windows
- * in the doc are ignored?, or if doc is only doc open?)
+ * 
+ * \todo might be better to have some special check when
+ *   loading so that if doc is being loaded from a project load, then all windows
+ *   in the doc are ignored?, or if doc is only doc open?
  */
 int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 {
