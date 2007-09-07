@@ -22,6 +22,10 @@
 #include <cctype>
 #include <cstdlib>
 
+ //for freedesktop thumbnail md5 names:
+#include <openssl/evp.h>
+#include <openssl/md5.h>
+
 
 #include <iostream>
 #define DBG
@@ -220,3 +224,137 @@ FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_r
 	rewind(f);
 	return f;
 }
+
+//! Create a preview file name based on a name template and the absolute path in file.
+/*! \ingroup misc
+ *
+ * An initial "~/" will expand to the user's $HOME environment variable.
+ * 
+ * From something like "%-s.png", transform a file like "/blah/2/file.tiff"
+ * to "/blah/2/file-s.png". The template can be an absolute path, or relative.
+ * If not in same dir as the image, then it is ok to have a relative path from there,
+ * such as "../thumbs/%-s.png". If the template is "/tmp/thumbs/%-s.png", then that
+ * absolute path is used. A template like "*.jpg" uses the whole filename, so
+ * file.tiff would become "file.tiff.jpg". 
+ *
+ * Also, nametemplate may have '@', which will be replaced by the name adhering to the  
+ * freedesktop.org thumbnail management specification, which calls for having 128x128 or smaller previews
+ * in ~/.thumbnails/normal/@, and up to 256x256 in ~/.thumbnails/large/@.
+ *   
+ * There should be only one of '%', '@' or '*'. Any such characters after the first one
+ * will be replaced by a '-' character. If there are none of those characters, then assume
+ * nametemplate is just a prefix to tack onto file, thus "path/to/file.jpg" with a template of
+ * "blah." will return "path/to/blah.file.jpg". In this case if there are further '/' chars 
+ * in nametemplate, they are converted to '-' chars, so just be sure to include a proper wildcard.
+ *
+ * Note that this does not check the filesystem for existence or not of the generated preview
+ * name. Those duties lie elsewhere.
+ *
+ * \todo *** maybe should do check to make sure file is an absolute path...
+ * \todo **** should probably keep relative templates as relative files...
+ */
+char *previewFileName(const char *file, const char *nametemplate)
+{
+	if (!file || !nametemplate) return NULL;
+	
+	const char *b=lax_basename(file);
+	if (!b) return NULL;
+
+	char *path=NULL;
+	char *bname=NULL;
+
+	 //fix up nametemplate
+	char *tmplate=new char[strlen(nametemplate)+5];
+	strcpy(tmplate,nametemplate);
+	
+	 //set bname to the thing to be placed in the template wildcard
+	 //and replace the wildcard in tmplate with "%s" to be used in 
+	 //later sprintf
+	char *tmp=strpbrk(tmplate,"%*@");
+	if (tmp) {
+		char c=*tmp;
+		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);
+
+		 //remove extraneous wildcard chars
+		while (tmp=strpbrk(tmp+1,"%*@"),tmp) *tmp='-';
+		
+		if (c=='@') {
+			 //bname gets something like "83ab3492fa02f3bcd23829eaf2837243.png"
+			//*******note if file is not an absolute path, this will crash
+			char *str=file_to_uri(file);
+			char *h;
+			unsigned char md[17];
+			bname=new char[40];
+			
+			MD5((unsigned char *)str, strlen(str), md);
+			h=bname;
+			for (int c2=0; c2<16; c2++) {
+				sprintf(h,"%02x",(int)md[c2]);
+				h+=2;
+			}
+			strcat(bname,".png");
+			delete[] str;
+		} else if (c=='%') { //chop suffix in bname
+			bname=newstr(b);
+			tmp=strrchr(bname,'.');
+			if (tmp && tmp!=bname) *tmp='\0';
+		} else { //'*'
+			bname=newstr(b);
+		}
+	} else { //no "%*@" found
+		//***is this even rational: 
+		//  if template was "/a/b/c" then make it "-a-b-c%s", 
+		//  a file "/d/e/f/blah.jpg" becomes "/d/e/f/-a-b-cblah.jpg"
+		while (tmp=strchr(tmplate,'/'),tmp) *tmp='-';//removes template path identifiers
+		bname=newstr(b);
+		appendstr(tmplate,"%s");
+	}
+	
+	if (tmplate[0]=='~' && tmplate[1]=='/') expand_home(tmplate,1);
+	if (tmplate[0]!='/') path=lax_dirname(file,1); else path=NULL;
+		
+	char *previewname=new char[strlen(bname)+strlen(tmplate)];
+	sprintf(previewname,tmplate,bname);
+	if (path) {
+		prependstr(previewname,path);
+		delete[] path;
+	}
+	delete[] bname;
+	delete[] tmplate;
+	simplify_path(previewname,1);
+	return previewname;
+}
+
+/*! \ingroup misc
+ *
+ * Return 1 for yes it is or 0 for no it isn't. If psversion or epsversion are
+ * not NULL, then return the respective versions.
+ */
+int isEpsFile(const char *file,float *psversion, float *epsversion)
+{
+	FILE *f=fopen(file,"r");
+	if (f) {
+		int n=0;
+		char data[51];
+		data[0]='\0';
+		n=fread(data,1,50,f);
+		fclose(f);
+		if (n) {
+			data[n]='\0';
+			 //---check if is EPS
+			if (!strncmp(data,"%!PS-Adobe-",11)) { // possible EPS
+				float ps,eps;
+				n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&ps,&eps);
+				if (n==2) {
+					DBG cerr <<"--found EPS, ps:"<<ps<<", eps:"<<eps<<endl;
+
+					if (psversion)  *psversion =ps;
+					if (epsversion) *epsversion=eps;
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
