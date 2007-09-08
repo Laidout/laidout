@@ -439,13 +439,14 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
  *
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
+ *
+ * error_ret is appended to if possible.
  */
 int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
-	if (error_ret) *error_ret=NULL;
 	Document *doc =out->doc;
 	int start     =out->start;
 	int end       =out->end;
@@ -468,7 +469,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
+			if (error_ret) appendstr(*error_ret,_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);

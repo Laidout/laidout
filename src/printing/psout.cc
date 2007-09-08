@@ -289,6 +289,8 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * Does not open or close f. This sets up the ctm as accessible through psCTM(),
  * and flushes the ctm stack.
  *
+ * error_ret is appended to if possible.
+ *
  * Return 0 for no errors, nonzero for errors.
  * 
  * \todo *** this does not currently handle pages that bleed their contents
@@ -308,7 +310,6 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
-	if (error_ret) *error_ret=NULL;
 	Document *doc =out->doc;
 	int start     =out->start;
 	int end       =out->end;
@@ -332,7 +333,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
+			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);
@@ -617,6 +618,8 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
  * This sets up the ctm as accessible through psCTM(),
  * and flushes the ctm stack.
  *
+ * error_ret is appended to if possible.
+ *
  * Return 0 for no errors, nonzero for error. 
  * 
  * \todo *** this does not currently handle pages that bleed their contents
@@ -632,7 +635,6 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	if (!out) return 1;
 
 	 //set up config
-	if (error_ret) *error_ret=NULL;
 	Document *doc =out->doc;
 	int start     =out->start;
 	int end       =out->end;

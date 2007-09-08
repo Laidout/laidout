@@ -110,7 +110,6 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
-	if (error_ret) *error_ret=NULL;
 	Document *doc =out->doc;
 	//int start     =out->start;
 	//int end       =out->end;
@@ -275,7 +274,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 //{
 //	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
 //	if (!att) {
-//		if (error_ret) error_ret=newstr(_("Could not open file for reading."));
+//		if (error_ret) appendline(*error_ret,_("Could not open file for reading."));
 //		return NULL;
 //	}
 //	
@@ -284,7 +283,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 //			  *page, *frame, *a;
 //	if (!svgdoc) {
 //		delete att; 
-//		if (error_ret) error_ret=newstr(_("Could not open file for reading."));
+//		if (error_ret) appendline(*error_ret,_("Could not open file for reading."));
 //		return NULL; 
 //	}
 //	

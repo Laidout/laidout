@@ -102,14 +102,13 @@ static int countGroups(Group *g)
 
 
 //! Export the document as a Scribus file.
-/*! 
+/*! error_ret is appended to if possible.
  */
 int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
-	if (error_ret) *error_ret=NULL;
 	Document *doc =out->doc;
 	int start     =out->start;
 	int end       =out->end;
@@ -133,7 +132,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
+			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);

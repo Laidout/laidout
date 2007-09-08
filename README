@@ -53,8 +53,12 @@ Here are the current "./configure" options:
  --gs=/path/to/gs             Where is your ghostscript executable? This is quite
                                optional, and is used at the moment only to
                                generate a preview image of EPS files.
- --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit
-                               is currently included in release downloads
+ --laxkit=/laxkit/headers     Default in releases is ./laxkit/lax, since the Laxkit
+                               is currently included in release download
+ --version=OtherVersionNum    You may force Laidout to compile with a different
+                               version string. This will make ~/.laidout/(version)
+                               and the executable becomes laidout-(version), and will
+                               save system stuff in prefix/share/laidout-(version).
 
 To compile and install Laidout, just run these three easy steps:
 
@@ -93,17 +97,39 @@ In any case, if you can, it's really safer to build the deb package, which
 automatically keeps track of such things.
 
 
-IF COMPILING FROM SVN
----------------------
-For the Laidout development version, you will need the
-Laxkit development version from the same date.
+COMPILING FROM SVN
+------------------
+For the Laidout development version, you will need the Laxkit development 
+version from the same date. Here is a fast and easy way to get Laidout up
+and running from svn:
 
-The Makefiles here are for the development source, which
+1. Grab Laidout svn:
+svn co http://laidout.svn.sourceforge.net/svnroot/laidout/trunk laidout-svn
+
+2. Grab Laxkit svn:
+Cd to laidout-svn and get the Laxkit svn:
+svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
+
+3. Compile the goods, by doing this:
+cd laxkit
+./configure
+make depends
+cd ..
+./configure --laxkit=`pwd`/laxkit/lax
+make depends
+make
+
+4. Steps 1-3 have (ideally) compiled everything, but have not made the icons. 
+See below for that. You can run Laidout (at src/laidout) without icons and also
+without installing it anywhere.
+
+
+The Makefiles in the svn code are for the development source, which
 also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
 being developed basically side by side. Just remove those parts of the Makefiles
 if you want to compile only Laidout.
 
-Note about icons: If you downloaded through svn, the icons need to be 
+Note about icons: when downloaded through svn, the icons need to be 
 generated. This requires Inkscape (http://www.inkscape.org)
 to generate icons from src/icons/icons.svg, and python to run
 the script that calls Inkscape. But, Laidout will work fine without
@@ -117,7 +143,7 @@ off with 'make hidegarbage' before doing 'make' (the same goes for the
 Laxkit). Be advised that this requires Perl to be installed. Or, you 
 can just run Laidout like this:
 
-./laidout > /dev/null
+./laidout 2> /dev/null
 
 
 SOURCE DOCUMENTATION and CONTRIBUTING

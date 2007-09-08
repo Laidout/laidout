@@ -125,6 +125,8 @@ static const char *pptpaper[12]= {
  * If the paper name is not recognized as a Passepartout paper name, which are
  * A0-A6, Executive (7.25 x 10.5in), Legal, Letter, and Tabloid/Ledger, then
  * Letter is used.
+ *
+ * error_ret is appended to if possible.
  *    
  * \todo if unknown paper, should really use some default paper size, if it is valid, 
  *   and then otherwise "Letter", or choose a size that is big enough to hold the spreads
@@ -135,7 +137,6 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 	
-	if (error_ret) *error_ret=NULL;
 	Document *doc =out->doc;
 	int start     =out->start;
 	int end       =out->end;
@@ -158,7 +159,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) *error_ret=newstr(_("Cannot save without a filename."));
+			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 2;
 		}
 		file=newstr(doc->saveas);

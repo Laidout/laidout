@@ -51,7 +51,7 @@ class FileFilter : public Laxkit::anObject
 };
 
 
-//------------------------------------- FileInputFilter -----------------------------------
+//------------------------------------- ImportFilter -----------------------------------
 class ImportFilter : public FileFilter
 {
  public:
@@ -61,7 +61,7 @@ class ImportFilter : public FileFilter
 };
 
 
-//------------------------------------- FileOutputFilter -----------------------------------
+//------------------------------------- ExportFilter -----------------------------------
 class ExportFilter : public FileFilter
 {
  public:

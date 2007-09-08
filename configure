@@ -38,7 +38,8 @@ while true ; do
         echo "                                is currently included in release downloads"
 		echo " --version=OtherVersionNum    You may force Laidout to compile with a different"
 		echo "                                version string. This will make ~/.laidout/(version)"
-		echo "                                and the executable becomes laidout-(version)"
+		echo "                                and the executable becomes laidout-(version) and will"
+		echo "                                save system stuff in prefix/share/laidout-(version).
         echo ""
 		exit 1 ;;
     -p | --prefix)  
