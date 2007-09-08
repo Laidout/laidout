@@ -259,7 +259,7 @@ FileFilter::FileFilter()
 /*! \fn const char *ImportFilter::FileType(const char *first100bytes)
  * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
  */
-/*! \fn int ImportFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
+/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
  * \brief The function that outputs the stuff.
  *
  * If file!=NULL, then output to that single file, and ignore the files in context.
@@ -268,7 +268,7 @@ FileFilter::FileFilter()
  * might be a DocumentExportConfig object.
  *
  * On success, return 0. If there are any warnings they are put in error_ret.
- * On failure, return nonzero, and put error messages in error_ret.
+ * On failure, return nonzero, and appends error messages to error_ret.
  */
 
 //------------------------------------- ExportFilter -----------------------------------
@@ -290,7 +290,7 @@ FileFilter::FileFilter()
  * might be a DocumentExportConfig object.
  *
  * On success, return 0. If there are any warnings they are put in error_ret.
- * On failure, return nonzero, and put error messages in error_ret.
+ * On failure, return nonzero, and append error messages to error_ret.
  */
 	
 

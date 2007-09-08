@@ -294,11 +294,13 @@ LaidoutApp::~LaidoutApp()
 
 	dumpOutResources();
 
-	if (project) delete project;
-	if (config_dir) delete[] config_dir;
-	if (defaultpaper) delete[] defaultpaper;
-	if (palette_dir) delete[] palette_dir;
-	if (temp_dir) delete[] temp_dir;
+	if (project)            delete project;
+	if (config_dir)         delete[] config_dir;
+	if (defaultpaper)       delete[] defaultpaper;
+	if (palette_dir)        delete[] palette_dir;
+	if (temp_dir)           delete[] temp_dir;
+	if (default_template)   delete[] default_template;
+	if (ghostscript_binary) delete[] ghostscript_binary;
 	
 }
 
@@ -331,10 +333,7 @@ LaidoutApp::~LaidoutApp()
  *   this should be cleared when plugin architecture is functional
  * \todo when the program is run before installing, should be able to automatically detect that
  *   and find icons and other resources (***NOT WORKING RIGHT NOW!!!) this seems to require checking
- *   argv[0]. If it is an absolute pathname or a definite pathname like "dir/blah" then it's
- *   location is clear. If it is merely "blah" then the PATH environmental variable must be
- *   used to search for the first user executable path1/blah, path2/blah, etc. However, care must
- *   be taken to traverse links properly, and not get caught in never ending link loops.
+ *   argv[0] or the /proc/pid/exe link.  
  */
 int LaidoutApp::init(int argc,char **argv)
 {
@@ -346,14 +345,14 @@ int LaidoutApp::init(int argc,char **argv)
 	 // find the current executable path
 	 //****** this is wrong!!
 	 //could use /proc/(pid)/exe, which is link to actual executable
-	char *curexecpath;
+	char *curexecpath=NULL;
 	if (argv[0][0]!='/') {
 		char *d=get_current_dir_name();
 		curexecpath=newstr(d);
+		free(d);
 		appendstr(curexecpath,"/");
 		appendstr(curexecpath,argv[0]);
-		free(d);
-		simplify_path(curexecpath);
+		simplify_path(curexecpath,1);
 	} else curexecpath=newstr(argv[0]);
 	
 	 // add either configured icon_dir to icons 
@@ -370,7 +369,7 @@ int LaidoutApp::init(int argc,char **argv)
 		if (icon_dir) icons.addpath(icon_dir);
 		icons.addpath(ICON_DIRECTORY);
 //	}
-	delete[] curexecpath;
+	delete[] curexecpath; curexecpath=NULL;
 
 
 	 //------setup initial pools
@@ -600,7 +599,8 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(default_template,value);
 			else {
 				char *fullname=full_path_for_resource(value,"templates");
-				if (file_exists(fullname,1,NULL)==S_IFREG) makestr(default_template,value);
+				//if (file_exists(fullname,1,NULL)==S_IFREG) makestr(default_template,value);
+				if (file_exists(fullname,1,NULL)==S_IFREG) makestr(default_template,fullname);
 				delete[] fullname;
 			}
 			//default to config_dir/templates/default?
@@ -644,6 +644,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		
 		} else if (!strcmp(name,"previewName")) {
 			preview_file_bases.push(newstr(value));
+			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);

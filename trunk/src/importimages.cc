@@ -126,7 +126,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
 
 	 //defaultPreviewName any
 	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
-	att->push("defaultPreviewName",prevbase->GetText());
+	att->push("defaultPreviewName",prevbase->GetCText());
 
 	return att;
 }
