@@ -279,18 +279,21 @@ char *previewFileName(const char *file, const char *nametemplate)
 	if (!tmp) tmp=strchr(tmplate,'@');
 	//------------
 	if (tmp) { //found a wildcard	
-		char c=*tmp;
-		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);
+		char c=*tmp        ;//the wildcard
+		int pos=tmp-tmplate;
+		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);//tmplate different afterwards!!
+		char *tmp2=tmplate+pos+1;
 
 		 //remove extraneous wildcard chars
 		//------
 		//while (tmp=strpbrk(tmp+1,"%*@"),tmp) *tmp='-';
 		//------
 		do {
-			tmp=strchr(tmplate,'%');
-			if (!tmp) tmp=strchr(tmplate,'*');
-			if (!tmp) tmp=strchr(tmplate,'@');
+			tmp=strchr(tmp2,'%');
+			if (!tmp) tmp=strchr(tmp2,'*');
+			if (!tmp) tmp=strchr(tmp2,'@');
 			if (tmp) *tmp='-';
+			tmp2=tmp+1;
 		} while (tmp);
 		//------------
 		

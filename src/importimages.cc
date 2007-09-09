@@ -599,16 +599,16 @@ void ImportImagesDialog::rebuildPreviewName()
 	char *full=fullFilePath(NULL);
 	ImageInfo *info=findImageInfo(full);
 	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
+	DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!!"<<endl; exit(1); }
 	
 	char *prev=NULL;
-	if (info) {
-		prev=newstr(info->previewfile);
-	} 
+	if (info) prev=newstr(info->previewfile);
 	if (!prev) prev=getPreviewFileName(full);
 	if (!prev) prev=newstr("");
 	preview->SetText(prev);
 	delete[] full;
 	delete[] prev;
+	DBG cerr <<"...done with ImportImagesDialog::rebuildPreviewName()"<<endl;
 }
 
 //! Create new ImageInfo nodes for any selected files not in the list.
@@ -616,7 +616,7 @@ void ImportImagesDialog::rebuildPreviewName()
  */
 void ImportImagesDialog::updateFileList()
 {//***
-	//return;//***---DBG!!
+	DBG cerr <<"ImportImagesDialog::updateFileList()"<<endl;
 	curitem=-1;
 	int *which=filelist->WhichSelected(LAX_ON);
 	if (!which) return;
@@ -645,6 +645,7 @@ void ImportImagesDialog::updateFileList()
 		delete[] full;	
 	}
 	delete[] which;
+	DBG cerr <<"... done ImportImagesDialog::updateFileList()"<<endl;
 }
 	
 //! Convert things like "24kb" and "3M" to kb.
@@ -712,6 +713,21 @@ Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i
 	return NULL;
 }
 
+//! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
+/*! \ingroup misc
+ */
+int is_bitmap_image(const char *file)
+{
+	if (isEpsFile(file,NULL,NULL)) return 2;
+
+	LaxImage *img=NULL;
+	img=load_image(file);
+	if (!img) return 0;
+	
+	delete img;
+	return 1;
+}
+
 //! Instead of sending the file name(s) to owner, call dump_images directly.
 /*! Returns 0 if nothing done. Else nonzero.
  *  
@@ -720,6 +736,9 @@ Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i
  *  \todo implement preview base as list of possible preview bases and search
  *    mechanism, that is, by file, or by freedesktop thumbnail spec, kphotoalbum thumbs, etc
  *  \todo implement toobj
+ *  \todo this prescreens files for reading images.. might be better to insert broken images
+ *    rather than that. the dumpin functions do screening all over again.. would be nice if
+ *    it was an option
  */
 int ImportImagesDialog::send()
 {
@@ -730,7 +749,6 @@ int ImportImagesDialog::send()
 	int *which=filelist->WhichSelected(LAX_ON);
 	int n=0;
 	char **imagefiles=NULL, **previewfiles=NULL;
-	LaxImage *img=NULL;
 	if (which!=NULL) {
 		n=0;
 		imagefiles  =new char*[which[0]];
@@ -744,12 +762,10 @@ int ImportImagesDialog::send()
 				imagefiles[n]=path->GetText();
 				if (imagefiles[n][strlen(imagefiles[n])-1]!='/') appendstr(imagefiles[n],"/");
 				appendstr(imagefiles[n],item->name);
-				img=load_image(imagefiles[n]);
-				if (!img) {
-					delete[] imagefiles[n];
-				} else {
-					delete img; img=NULL;
+				if (is_bitmap_image(imagefiles[c])) {
 					n++;
+				} else {
+					delete[] imagefiles[n];
 				}
 			}
 		}
@@ -767,17 +783,15 @@ int ImportImagesDialog::send()
 		if (isblank(blah)) {
 			delete[] blah;
 		} else {
-			img=load_image(blah);
-			if (!img) {
-				delete[] blah; blah=NULL;
-				n=0;
-			} else {
-				delete img; img=NULL;
+			if (is_bitmap_image(blah)) {
 				n=1;
 				imagefiles  =new char*[n];
 				previewfiles=new char*[n];
 				imagefiles[0]=blah;
 				previewfiles[0]=NULL;
+			} else {
+				delete[] blah; blah=NULL;
+				n=0;
 			}
 		}
 

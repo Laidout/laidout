@@ -76,10 +76,11 @@ ObjectInterface:
   
 
 ImageInterface:
-  'n'      normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
-  'N'      like 'n', but also clear rotation
-  'd'      Toggle drawing decorations
-  'f'      Toggle writing the filename next to the image
+  'n'           normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  'N'           like 'n', but also clear rotation
+  'd'           Toggle drawing decorations
+  'f'           Toggle writing the filename next to the image
+  double-click  bring up the image properties dialog
 
 
 ColorPatchInterface:
