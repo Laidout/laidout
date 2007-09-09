@@ -47,7 +47,7 @@ Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
 available. If you have downloaded a release, then the Laxkit should
 have been included.
 
-Here are the current "./configure" options:
+Here are the current "./configure" options. They are all optional:
  --help                       Show the options you can pass to ./configure
  --prefix=/where/to/install   Default /usr/local
  --gs=/path/to/gs             Where is your ghostscript executable? This is quite
@@ -59,6 +59,9 @@ Here are the current "./configure" options:
                                version string. This will make ~/.laidout/(version)
                                and the executable becomes laidout-(version), and will
                                save system stuff in prefix/share/laidout-(version).
+ --language=/path/to/langs    The path where translation files should be installed.
+                               This will normally be prefix/share, and the files
+                               themselves get put in prefix/share/locale/*.
 
 To compile and install Laidout, just run these three easy steps:
 

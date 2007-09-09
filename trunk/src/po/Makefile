@@ -8,26 +8,23 @@ compile:
 	$(foreach NAME, $(basename $(shell ls *.po)), $(shell msgfmt $(NAME).po -o $(NAME).mo))
 	@echo "Done!"
 
-#TEMP=$(foreach NAME, $(basename $(shell ls *.mo)), $(shell echo $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
-#TEMP=$(foreach NAME, $(wildcard *.mo), echo $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo)
-#TEMP=$(foreach NAME, $(wildcard *.mo), $(shell echo $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
 install:
 	@echo Installing language files: $(wildcard *.mo)...
 	$(foreach NAME, $(basename $(wildcard *.mo)), \
-		$(shell	install -D -m644 $(NAME).mo $(PO) $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
+		$(shell	install -D -m644 $(NAME).mo $(PO) $(LANGUAGE_PATH)/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
 	@echo Done installing language files.
 
 #PO=$(foreach NAME, $(basename $(wildcard *.mo)), $(shell echo temp-install/locale/$(NAME)/LC_MESSAGES/laidout.mo >> temp))
 installhere:
 	@echo Installing language files...
 	$(foreach NAME, $(basename $(wildcard *.mo)), \
-		$(shell	install -D -m755 $(NAME).mo $(PO) temp-install/locale/$(NAME)/LC_MESSAGES/laidout.mo))
+		$(shell	install -D -m755 $(NAME).mo $(PO) temp-install/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
 	@echo Done installing language files.
 
 uninstall:
 	@echo Un-installing language files based on: $(wildcard *.mo)...
 	$(foreach NAME, $(basename $(wildcard *.mo)), \
-		$(shell	rm -vf $(PREFIX)/share/locale/$(NAME)/LC_MESSAGES/laidout.mo))
+		$(shell	rm -vf $(LANGUAGE_PATH)/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
 	@echo Done uninstalling language files.
 
 update: freshdump

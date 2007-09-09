@@ -173,10 +173,11 @@ int HelpWindow::init()
 			"\n"));
 	appendstr(help,_(
 			"ImageInterface:\n"
-			"  'n'      normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)\n"
-            "  'N'      like 'n', but also clear rotation\n"
-			"  'd'      Toggle drawing decorations\n"
-			"  'f'      Toggle writing the filename next to the image\n"
+            "  'n'           normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)\n"
+            "  'N'           like 'n', but also clear rotation\n"
+            "  'd'           Toggle drawing decorations\n"
+            "  'f'           Toggle writing the filename next to the image\n"
+            "  double-click  bring up the image properties dialog\n"
 			"\n"
 			"\n"));
 	appendstr(help,_(

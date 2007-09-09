@@ -8,7 +8,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.08
 ------------
        Test, test, test! from fresh install to print out, make booklet, portrait, landscape
-(done, strpbrk trouble, can you beat it?) fix hard to trace crash in importimages dialog for shift select range of files
+(done) fix hard to trace crash in importimages dialog for shift select range of files
 (done, sort of, load but not save) Finish implementing project based setup, especially when loading
 (done) limbos should be selectable, and saved independently of windows
 (done) Basic libintl support, latin-1 translations only!
