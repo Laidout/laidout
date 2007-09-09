@@ -270,13 +270,29 @@ char *previewFileName(const char *file, const char *nametemplate)
 	 //set bname to the thing to be placed in the template wildcard
 	 //and replace the wildcard in tmplate with "%s" to be used in 
 	 //later sprintf
-	char *tmp=strpbrk(tmplate,"%*@");
-	if (tmp) {
+	char *tmp=NULL;
+	//------------**** wtf is wrong with strpbrk!!!! OMFG!!!
+	//tmp=strpbrk(tmplate,"%*@");
+	//-----------
+	tmp=strchr(tmplate,'%');
+	if (!tmp) tmp=strchr(tmplate,'*');
+	if (!tmp) tmp=strchr(tmplate,'@');
+	//------------
+	if (tmp) { //found a wildcard	
 		char c=*tmp;
 		replace(tmplate,"%s",tmp-tmplate,tmp-tmplate,NULL);
 
 		 //remove extraneous wildcard chars
-		while (tmp=strpbrk(tmp+1,"%*@"),tmp) *tmp='-';
+		//------
+		//while (tmp=strpbrk(tmp+1,"%*@"),tmp) *tmp='-';
+		//------
+		do {
+			tmp=strchr(tmplate,'%');
+			if (!tmp) tmp=strchr(tmplate,'*');
+			if (!tmp) tmp=strchr(tmplate,'@');
+			if (tmp) *tmp='-';
+		} while (tmp);
+		//------------
 		
 		if (c=='@') {
 			 //bname gets something like "83ab3492fa02f3bcd23829eaf2837243.png"

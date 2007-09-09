@@ -1958,6 +1958,7 @@ void LaidoutViewport::Refresh()
 	dp->Updates(0);
 
 	 //draw papergroup
+	DBG cerr <<"drawing viewport->papergroup.."<<endl;
 	if (papergroup) {
 		ViewerWindow *vw=dynamic_cast<ViewerWindow *>(win_parent);
 		PaperInterface *pi=dynamic_cast<PaperInterface *>(vw->FindInterface("PaperInterface"));
@@ -1970,6 +1971,7 @@ void LaidoutViewport::Refresh()
 		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
 	}
 	
+	DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
 		XSetFunction(app->dpy,dp->GetGC(),GXcopy);
 		

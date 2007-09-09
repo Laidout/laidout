@@ -730,20 +730,32 @@ int ImportImagesDialog::send()
 	int *which=filelist->WhichSelected(LAX_ON);
 	int n=0;
 	char **imagefiles=NULL, **previewfiles=NULL;
+	LaxImage *img=NULL;
 	if (which!=NULL) {
-		n=which[0];
-		imagefiles  =new char*[n];
-		previewfiles=new char*[n];
+		n=0;
+		imagefiles  =new char*[which[0]];
+		previewfiles=new char*[which[0]];
 		
 		const MenuItem *item;
 		for (int c=0; c<which[0]; c++) {
-			imagefiles[c]=previewfiles[c]=NULL;
+			imagefiles[n]=previewfiles[n]=NULL;
 			item=filelist->Item(which[c+1]);
 			if (item) {
-				imagefiles[c]=path->GetText();
-				if (imagefiles[c][strlen(imagefiles[c])-1]!='/') appendstr(imagefiles[c],"/");
-				appendstr(imagefiles[c],item->name);
+				imagefiles[n]=path->GetText();
+				if (imagefiles[n][strlen(imagefiles[n])-1]!='/') appendstr(imagefiles[n],"/");
+				appendstr(imagefiles[n],item->name);
+				img=load_image(imagefiles[n]);
+				if (!img) {
+					delete[] imagefiles[n];
+				} else {
+					delete img; img=NULL;
+					n++;
+				}
 			}
+		}
+		if (!n) {
+			delete[] imagefiles;   imagefiles=NULL;
+			delete[] previewfiles; previewfiles=NULL;
 		}
 		delete[] which;
 	} else { 
@@ -752,15 +764,27 @@ int ImportImagesDialog::send()
 		char *blah=path->GetText();
 		if (blah[strlen(blah)]!='/') appendstr(blah,"/");
 		appendstr(blah,file->GetCText());
-		if (isblank(blah)) { //******** need better sanity checking here
+		if (isblank(blah)) {
 			delete[] blah;
-			return 0;
+		} else {
+			img=load_image(blah);
+			if (!img) {
+				delete[] blah; blah=NULL;
+				n=0;
+			} else {
+				delete img; img=NULL;
+				n=1;
+				imagefiles  =new char*[n];
+				previewfiles=new char*[n];
+				imagefiles[0]=blah;
+				previewfiles[0]=NULL;
+			}
 		}
-		
-		n=1;
-		imagefiles  =new char*[n];
-		previewfiles=new char*[n];
-		imagefiles[0]=blah;
+
+	}
+	if (!n) {
+		cout <<"***need to implement importimagedialog send message to viewport or message saying no go."<<endl;
+		return 0;
 	}
 
 	 //generate standard preview files to search for
