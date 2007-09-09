@@ -454,12 +454,13 @@ Spread *Singles::PaperLayout(int whichpaper)
 	PathsData *ntrans;
 	for (x=0; x<tilex; x++) {
 		for (y=0; y<tiley; y++) {
-			ntrans=new PathsData();
+			ntrans=new PathsData();//count of 1
 			ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 			ntrans->FindBBox();
 			ntrans->origin(flatpoint(insetl+x*(paper->media.maxx-insetr-insetl)/tilex,
 									 insetb+y*(paper->media.maxy-insett-insetb)/tiley));
-			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans));
+			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans));//ntrans count++
+			ntrans->dec_count();//remove extra count
 		}
 	}
 	
