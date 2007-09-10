@@ -762,7 +762,7 @@ int ImportImagesDialog::send()
 				imagefiles[n]=path->GetText();
 				if (imagefiles[n][strlen(imagefiles[n])-1]!='/') appendstr(imagefiles[n],"/");
 				appendstr(imagefiles[n],item->name);
-				if (is_bitmap_image(imagefiles[c])) {
+				if (is_bitmap_image(imagefiles[n])) {
 					n++;
 				} else {
 					delete[] imagefiles[n];
