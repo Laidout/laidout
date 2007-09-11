@@ -26,6 +26,10 @@
 NEED major overhaul of the rendering, which should allow among other things
 output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
  
+object references: for instance, take a path, make a ref to it. Option to either be a deep
+ reference, using the path's kids, or shallow, using just the path, with kids belonging to
+ the reference.
+
 
 for postscript simulation of transparent objects, should dither a bitmask!
 get on this! 

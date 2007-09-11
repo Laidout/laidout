@@ -244,7 +244,6 @@ int GroupInterface::GrabSelection(unsigned int state)
 		needtodraw=1;
 	}
 	
-	//return ObjectInterface::GrabSelection(state);
 	return n;
 }
 

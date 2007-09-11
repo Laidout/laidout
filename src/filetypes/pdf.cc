@@ -466,9 +466,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 			pageobj->pagelabel=newstr(desc);//***should be specific to spread/paper
 			pageobj->bbox.setbounds(0,
-									papergroup->papers.e[p]->box->paperstyle->width,
+									papergroup->papers.e[p]->box->paperstyle->w(),
 									0,
-									papergroup->papers.e[p]->box->paperstyle->height);
+									papergroup->papers.e[p]->box->paperstyle->h());
 
 			 //set initial transform: convert from inches and map to paper in papergroup
 			//transform_set(m,1,0,0,1,0,0);
