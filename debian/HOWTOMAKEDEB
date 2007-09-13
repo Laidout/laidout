@@ -6,7 +6,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 1. Double check that these are current:
   debian/laidout.1
-  the ladioutrc description dump out in laidout.cc
+  the laidoutrc description dump out in laidout.cc
 
 2. ----Copy trunk to a new tag------
  svn copy https://laidout.svn.sourceforge.net/svnroot/laidout/trunk \
@@ -60,3 +60,4 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 dpkg-buildpackage -rfakeroot in top laidout directory
 
 8. don't forget to update the help and screenshots sections on the website
+
