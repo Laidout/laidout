@@ -292,6 +292,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			}
 
 			 //for each subpatch, break down into many sub-rectangles
+			double tt,ss;
 			for (r=0; r<patch->ysize/3; r++) {
 			  for (c=0; c<patch->xsize/3; c++) {
 			    for (rr=0; rr<numdiv; rr++) {
@@ -301,7 +302,11 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 					DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
 
 				     //get color for point (r+rr,c+cc)
-					patch->getColor(s/(1-ds),t/(1-dt),&color);
+					tt=t/(1-dt);
+					if (tt<0) tt=0; else if (tt>1) tt=1;
+					ss=s/(1-ds);
+					if (ss<0) ss=0; else if (ss>1) ss=1;
+					patch->getColor(tt,ss,&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(s   ,t);
