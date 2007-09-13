@@ -1709,7 +1709,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	if (!d) return 0;
 	if (d!=curobj.obj) {
 		VObjContext voc;
-		voc.obj=d;
+		voc.SetObject(d);
 		if (locateObject(d,voc.context)<=0) return 0;
 		setCurobj(&voc); //incs count 1 for the curobj ref
 	}
