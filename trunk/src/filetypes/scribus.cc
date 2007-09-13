@@ -443,7 +443,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	double localscx=1,localscy=1;
 	int ptype=-1; //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 
-	if (!strcmp(obj->whattype(),"ImageData")) {
+	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		img=dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
 		ptype=2;
@@ -522,6 +522,10 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	if (ptype==2) { //image
 		localscx=width /(img->maxx-img->minx);
 		localscy=height/(img->maxy-img->miny);
+		if (!strcmp(obj->whattype(),"EpsData")) {
+			localscx/=5;
+			localscy/=5;
+		}
 	}
 
 
