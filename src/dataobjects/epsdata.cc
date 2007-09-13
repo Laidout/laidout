@@ -154,7 +154,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag)
 	}
 	 // if filename is given, and old file is NULL, or is different...
 	if (fname && (!filename || filename && strcmp(fname,filename))) 
-		if (pname) previewflag|=1;
+		//if (pname) previewflag|=1;
 		 // load an image with existing preview, do not destroy that preview when
 		 // image is destroyed:
 		if (LoadImage(fname,pname,0,0,0)) {
