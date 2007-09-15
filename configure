@@ -4,7 +4,7 @@
 # --prefix=/blah/blah
 
 
-LAIDOUTVERSION=0.07.1
+LAIDOUTVERSION=0.08
 PREFIX="/usr/local"
 LAXDIR="/usr/local/include/lax"
 GS="/usr/bin/gs"
