@@ -22,10 +22,11 @@ installhere:
 	@echo Done installing language files.
 
 uninstall:
-	@echo Un-installing language files based on: $(wildcard *.mo)...
-	$(foreach NAME, $(basename $(wildcard *.mo)), \
-		$(shell	rm -vf $(LANGUAGE_PATH)/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
-	@echo Done uninstalling language files.
+	rm -fv $(LANGUAGE_PATH)/locale/*/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo
+#	@echo Un-installing language files based on: $(wildcard *.mo)...
+#	$(foreach NAME, $(basename $(wildcard *.mo)), \
+#		$(shell	rm -vf $(LANGUAGE_PATH)/locale/$(NAME)/LC_MESSAGES/laidout-$(LAIDOUTVERSION).mo))
+#	@echo Done uninstalling language files.
 
 update: freshdump
 	msgmerge -U laidout.pot laidout-freshdump.pot
