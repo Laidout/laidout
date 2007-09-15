@@ -1,4 +1,4 @@
-LAIDOUT Version 0.07.1
+LAIDOUT Version 0.08
 --------------------
 http://laidout.org
 
@@ -45,7 +45,7 @@ header files for Imlib2, freetype2, fontconfig, x11, and cups.
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
 available. If you have downloaded a release, then the Laxkit should
-have been included.
+have been included and no extra download is needed.
 
 Here are the current "./configure" options. They are all optional:
  --help                       Show the options you can pass to ./configure
