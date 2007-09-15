@@ -458,7 +458,7 @@ void LaidoutApp::dumpOutResources()
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/autolaidoutrc",config_dir);
 	
-	int fd=open(configfile,O_CREAT|O_WRONLY);
+	int fd=open(configfile,O_CREAT|O_WRONLY|O_TRUNC,S_IREAD|S_IWRITE);
 	if (fd<0) return;
 	flock(fd,LOCK_EX);
 	FILE *f=fdopen(fd,"w");

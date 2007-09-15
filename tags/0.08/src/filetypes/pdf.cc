@@ -766,7 +766,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	DBG cerr <<"done writing pdf, cleaning up.."<<endl;
 	obj=objs;
 	while (obj) {
-		cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
+		DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
 		obj=obj->next;
 	}
 	 //*** double check that this is all that needs cleanup:
