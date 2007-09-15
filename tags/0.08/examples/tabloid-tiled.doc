@@ -1,0 +1,167 @@
+#Laidout 0.06 Document
+saveas /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
+docstyle
+  imposition Booklet
+    creep 0
+    bodycolor 0x7fffffff
+    covercolor 0x7fffffff
+    defaultpagestyler
+      marginl 0
+      marginr 0
+      margint 0
+      marginb 0
+      width 5.5
+      height 5.666666667
+    insetl 0
+    insetr 0
+    insett 0
+    insetb 0
+    tilex 1
+    tiley 3
+    numpages 4
+    defaultpagestyle
+      marginl 0
+      marginr 0
+      margint 0
+      marginb 0
+      width 5.5
+      height 5.666666667
+    defaultpaperstyle
+      name Tabloid
+      width 11
+      height 17
+      dpi 360
+      portrait
+page 0
+  labeltype 0
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    width 5.5
+    height 5.666666667
+  layer 0
+    visible
+    prints
+    object 0 GradientData
+      matrix -0.9609698121 -0.2766532491 0.2766532491 -0.9609698121 3.915416779 2.985415505
+      p1 1.113404989
+      p2 1.113020339
+      r1 0
+      r2 1.487923419
+      a 0
+      radial
+      spot #0
+        t 0
+        rgba 0 0 65535 65535
+      spot #1
+        t 1.06150048
+        rgba 65535 0 0 65535
+page 1
+  labeltype 1
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    width 5.5
+    height 5.666666667
+  layer 0
+    visible
+    prints
+    object 0 GradientData
+      matrix 0.05372827258 0.9985555932 -0.9985555932 0.05372827258 2.780251991 2.294502614
+      p1 0.566215764
+      p2 1.02913786
+      r1 1
+      r2 0
+      a 0
+      radial
+      spot #0
+        t 0
+        rgba 0 0 65535 65535
+      spot #1
+        t 0.9738371281
+        rgba 65535 65535 0 65535
+page 2
+  labeltype 2
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    width 5.5
+    height 5.666666667
+  layer 0
+    visible
+    prints
+    object 0 GradientData
+      matrix 1 0 0 1 1.727337119 2.639157939
+      p1 0.6377337734
+      p2 1.185148515
+      r1 0
+      r2 1
+      a 0
+      radial
+      spot #0
+        t 0.104149262
+        rgba 0 0 65535 65535
+      spot #1
+        t 1
+        rgba 65535 40000 0 65535
+page 3
+  labeltype 3
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    width 5.5
+    height 5.666666667
+  layer 0
+    visible
+    prints
+    object 0 GradientData
+      matrix -0.4836673692 0.8752518929 -0.8752518929 -0.4836673692 3.523736044 1.313367759
+      p1 1.46935343
+      p2 1.48746537
+      r1 1
+      r2 0
+      a 0
+      radial
+      spot #0
+        t 0
+        rgba 0 65535 0 65535
+      spot #1
+        t 0.9949912868
+        rgba 4000 8000 0 65535
+window
+  xywh 257 280 516 580
+  pane
+    xyxy 0 0 516 436
+    window ViewWindow
+      document /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
+      pagelayout
+      spread 1
+      page 1
+      matrix 38.67768595 0 0 -38.67768595 22 257
+      xbounds -11 22
+      ybounds -17 34
+  pane
+    xyxy 0 436 516 580
+    window SpreadEditor
+      document /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
+      centerlabels 3
+      drawthumbnails 1
+      arrangetype 8
+      matrix 13.70928537 0 0 -13.70928537 68.72727273 90.63636364
+      spread
+        index 0
+        matrix 1 0 0 1 -5.5 0
+      spread
+        index 1
+        matrix 1 0 0 1 7.7 -0.07294326242
+      spread
+        index 3
+        matrix 1 0 0 1 20.9 0

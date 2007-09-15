@@ -1,0 +1,186 @@
+LAIDOUT Version 0.07.1
+--------------------
+http://laidout.org
+
+
+Please post any complaints and other correspondence to the Laidout
+general mailing list found at:
+https://lists.sourceforge.net/lists/listinfo/laidout-general
+
+Currently the only developer (and creator of Laidout) is also a client:
+Tom Lechner <tomlechner@users.sourceforge.net>
+http://www.tomlechner.com
+
+
+WHAT IT CAN DO RIGHT NOW
+------------------------
+Laidout is currently in the 'Kind of a hack, but mostly works
+on my machine' stage of development.
+
+Laidout currently can arrange pages into a couple different impositions,
+such as a booklet, or even a dodecahedron. You can manipulate images
+and gradients (linear, radial, and bezier patches). Also, 
+you can make a type of image that can be stretched around. The very 
+basics to get my cartoon books done, in other words. Many more features
+are planned, like such non-essentials (to me anyway) as text! Who needs 
+text when a picture is worth a thousand words? Oh, and you can import
+EPS files from other programs as a way to fake having text.
+
+Many of the features are only partially implemented, and the real meat
+of the program is only half in place right now. Be advised that you can,
+after great hassle, construct paths on screen, but path printing
+(to the printer) is badly implemented currently.
+
+Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
+some of the burden of the 'meat' of the program, but anyway...
+
+
+COMPILING
+---------
+
+You will need a few extra development libraries on your computer in order
+to compile Laidout. Running ./configure does a simple check for these,
+but the check is so simple, that it may miss them. You will need the
+header files for Imlib2, freetype2, fontconfig, x11, and cups.
+
+Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
+available. If you have downloaded a release, then the Laxkit should
+have been included.
+
+Here are the current "./configure" options. They are all optional:
+ --help                       Show the options you can pass to ./configure
+ --prefix=/where/to/install   Default /usr/local
+ --gs=/path/to/gs             Where is your ghostscript executable? This is quite
+                               optional, and is used at the moment only to
+                               generate a preview image of EPS files.
+ --laxkit=/laxkit/headers     Default in releases is ./laxkit/lax, since the Laxkit
+                               is currently included in release download
+ --version=OtherVersionNum    You may force Laidout to compile with a different
+                               version string. This will make ~/.laidout/(version)
+                               and the executable becomes laidout-(version), and will
+                               save system stuff in prefix/share/laidout-(version).
+ --language=/path/to/langs    The path where translation files should be installed.
+                               This will normally be prefix/share, and the files
+                               themselves get put in prefix/share/locale/*.
+
+To compile and install Laidout, just run these three easy steps:
+
+./configure
+make
+make install
+
+'make install' will put
+laidout-(whatever version) in (usually) /usr/local/bin, and make a
+symbolic link /usr/local/bin/laidout point to it.
+
+After successfully making, the program 'laidout' in the src
+directory is the thing you want. It does not really depend on any other
+files currently (except icons, but they are not needed to actually run),
+thus it can be run from wherever it is located.
+
+
+INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
+----------------------------------------------
+
+It is quite ok to install different versions of Laidout at the same time.
+The ~/.laidout/ directory keeps all the config information in subdirectories
+based on the version. The same applies for installed binaries and other
+resources that get put in prefix/share/laidout. This way, you do not risk
+clobbering or corrupting files from other versions. 
+
+HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
+things that were installed to those directories outside of "make install". 
+Right now, everything in prefix/share/laidout will be removed on uninstall
+(but not anything in ~/.laidout).
+
+Also, though you can have different versions coexist, there is not currently an
+automatic way to convert resources from older laidout versions to newer ones.
+
+In any case, if you can, it's really safer to build the deb package, which 
+automatically keeps track of such things.
+
+
+COMPILING FROM SVN
+------------------
+For the Laidout development version, you will need the Laxkit development 
+version from the same date. Here is a fast and easy way to get Laidout up
+and running from svn:
+
+1. Grab Laidout svn:
+svn co http://laidout.svn.sourceforge.net/svnroot/laidout/trunk laidout-svn
+
+2. Grab Laxkit svn:
+Cd to laidout-svn and get the Laxkit svn:
+svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
+
+3. Compile the goods, by doing this:
+cd laxkit
+./configure
+make depends
+cd ..
+./configure --laxkit=`pwd`/laxkit/lax
+make depends
+make
+
+4. Steps 1-3 have (ideally) compiled everything, but have not made the icons. 
+See below for that. You can run Laidout (at src/laidout) without icons and also
+without installing it anywhere.
+
+
+The Makefiles in the svn code are for the development source, which
+also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
+being developed basically side by side. Just remove those parts of the Makefiles
+if you want to compile only Laidout.
+
+Note about icons: when downloaded through svn, the icons need to be 
+generated. This requires Inkscape (http://www.inkscape.org)
+to generate icons from src/icons/icons.svg, and python to run
+the script that calls Inkscape. But, Laidout will work fine without
+the icons. Ultimately, the icons will themselves be stored in a Laidout
+file, and Laidout itself will generate the icons.
+See src/icons/makeimages.py for more.
+
+Running the program might spit out copious amounts of debugging
+info if you run from a terminal. If this is the case, you can turn this 
+off with 'make hidegarbage' before doing 'make' (the same goes for the 
+Laxkit). Be advised that this requires Perl to be installed. Or, you 
+can just run Laidout like this:
+
+./laidout 2> /dev/null
+
+
+SOURCE DOCUMENTATION and CONTRIBUTING
+-------------------------------------
+
+There is a lot of source documentation available via doxygen, just type:
+
+make docs
+
+and it dumps it all out to docs/html. In particular, you will have a 
+rapidly expanding todo list. If you want to contribute, that is a good
+place to start. That and the Laxkit todo list.
+
+A down and dirty way to become aquainted with the source code is to 
+download the Laxkit to the top laidout directory (if it is not there
+already), and change the following lines in the Doxyfile-with-laxkit
+to say YES rather than NO:
+
+SOURCE_BROWSER         = YES
+EXTRACT_ALL            = YES
+
+Then from the docs directory, run 'doxygen Doxyfile-with-laxkit', which
+will generate a clickable source tree accessible from your favorite web 
+browser.
+
+
+Compiling on Mac OS X
+--------- -- --- ----
+For the adventurous, you can help make Laidout work on OS X.
+Straight from downloading, it will not compile all the way on OS X.
+You'll still need x11, Imlib2, freetype2, fontconfig, and cups.
+I'm just guessing, since I don't have access to an OS X or other BSD
+based machine, but it shouldn't be too hard to make Laidout work on them.
+There are a few places where I use GNU-only functions, like getline(),
+which shouldn't be very difficult to replace or define similar functions.
+
+

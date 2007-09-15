@@ -1,0 +1,142 @@
+---- Laidout Quick key reference ----
+
+The keys with a '***' next to them are not implemented yet.
+A + means shift, and a ^ means control.
+
+Window gutter:
+   ^left-click   Split window mouse was in last
+   +left-click   Join to adjacent window
+   right-click   Get a menu to split, join, or change
+
+
+In a viewer:
+   'D'        toggle drawing of axes for each object
+   's'        toggle showing of the spread (shows only limbo)
+   'm'        move current selection to another page, pops up a dialog ***imp me!
+   ' '        center the spread
+   +' '       center the page
+   '=' or '+' zoom in around mouse
+   '-'        zoom out around mouse
+   'o'        clear any display rotation
+   'O'        center the viewer on the viewer origin
+
+   left       previous tool
+   right      next tool
+   ','        previous object
+   '.'        next object  
+ +^'a'        deselect all currently selected objects\n"
+   '<'        previous page  
+   '>'        next page   
+ 
+   'T' or left   prev tool 
+   't' or right  next tool
+   '<'           previous page 
+   '>'           next page
+   ^'s'          save file
+   ^+'s'         save as -- just change the file name?? (not imp)
+   F1            popup this quick reference
+   F2            popup an About window
+   F5            popup new spread editor window
+
+    // these are like inkscape
+   pgup      raise selection by 1 within layer
+   pgdown    lower selection by 1 within layer
+   home      bring selection to top within layer
+   end       drop selection to bottom within layer
+   +pgup     ***move selection up a layer
+   +pgdown   ***move selection down a layer
+   +^pgup    ***raise layer 1
+   +^pgdown  ***lower layer 1
+   +^home    ***layer to top
+   +^end     ***layer to bottom
+  
+
+SpreadEditor:
+   ' '    Center with all little spreads in view
+   'c'    toggle where the page labels go
+   'm'    toggle mark of current page
+   'M'    reverse toggle mark of current page
+   't'    toggle drawing of thumbnails
+   'A'    toggle how to arrange the spreads
+  ^'A'    force arranging the spreads using current arrange style
+
+
+ObjectInterface:
+  'c'          toggle if drag resizes from center or opposite edge
+  'd'          toggle the showing of decorations
+  'n'          normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  'N'          like 'n', but also clear rotation
+  bksp or del  remove whichever of center, rotation handle, or shear handle
+                 is selected
+  ^left-click  define a center, rotation handle, or shear handle
+  
+  plain click on a center, rotation handle, or shear handle, then press control
+    to move the point, rather than modify the object
+  
+  
+
+ImageInterface:
+  'n'           normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)
+  'N'           like 'n', but also clear rotation
+  'd'           Toggle drawing decorations
+  'f'           Toggle writing the filename next to the image
+  double-click  bring up the image properties dialog
+
+
+ColorPatchInterface:
+  'w'    warp the patch to an arc, rows are at radius, cols go from center
+  'm'    toggle between drawing just the grid, or draw full colors.
+  'a'    select all points, or deselect all if any are selected
+  'y'    constrain to y changes, or release the constraint
+  'x'    constrain to x changes, or release the constraint
+  'o'    decrease how much to recurse for rendering screen preview
+  'O'    increase how much to recurse for rendering screen preview
+  'R'    increase how many rows to divide each row into
+ ^'R'    decrease how many rows to divide each row into
+  'r'    subdivide rows
+  'c'    subdivide columns
+  'C'    increase how many columns to divide each column into
+ ^'C'    decrease how many columns to divide each column into
+  's'    subdivide rows and columns
+  'z'    reset to rectangular
+  'w'    warp the patch to an arc, rows are at radius, cols go from center
+  'd'    toggle decorations
+  'h'    select all points adjacent horizontally to current points
+  'v'    select all points adjacent vertically to current points
+  'b'    toggle which control points are available
+  'B'    reverse of 'b'
+  'j'    toggle smooth node editing (j for jagged)
+  '1'    select corners:  0,0  0,3  3,0  3,3
+  '2'    select center controls: 1,1  1,2  2,1  2,2
+  '3'    select edge controls: 0,1  0,2  1,0  2,0  1,3  2,3  3,1  3,2
+  '4'    select top and bottom controls: 1,0  2,0  1,3  2,3
+  '5'    select left and right controls: 0,1  0,2  3,1  3,2
+  '8'    select a 3x3 group of points around each current point
+
+
+
+GradientInterface:
+  'r'   Radial gradient
+  'l'   Linear Gradient
+  'f'   flip the order of the colors
+  'd'   Toggle showing of decorations
+  left  Select next point
+  right Select previous point
+  
+  shift-left-click: add a new color spot
+
+
+
+PathInterface:
+  'o'    Select the next pathop.
+  left   Roll the curpoints one step previous.
+  right  Roll the curpoints one step next.
+  'A'    Toggle whether to add points after or before
+  'a'    Select all if none selected, else deselect all
+  'c'    Toggle closed path
+  'b'    Start a new PathsData
+  delete or bksp: Delete currently selected points.
+  'd'    Toggle displaying of decorations
+  '?'    Show some kind of help somewhere....?
+  'p'    Like a, but only in current part of a compound path
+
