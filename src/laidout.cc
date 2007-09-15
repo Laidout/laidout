@@ -285,7 +285,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 //! Destructor, only have to delete project!
 LaidoutApp::~LaidoutApp() 
 {
-	DBG cerr <<"Laidout destructor.."<<endl;
+	//DBG cerr <<"Laidout destructor.."<<endl;
 	 //these flush automatically, but are listed here for occasional debugging purposes...
 //	papersizes.flush(); 
 //	impositionpool.flush();
@@ -365,7 +365,7 @@ int LaidoutApp::init(int argc,char **argv)
 //		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
 //		delete[] iconpath;
 //	} else {
-		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
+		//DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
 		if (icon_dir) icons.addpath(icon_dir);
 		icons.addpath(ICON_DIRECTORY);
 //	}
@@ -374,24 +374,24 @@ int LaidoutApp::init(int argc,char **argv)
 
 	 //------setup initial pools
 	 
-	DBG cerr <<"---file filters init"<<endl;
+	//DBG cerr <<"---file filters init"<<endl;
 	installFilters();
 	
-	DBG cerr <<"---imposition pool init"<<endl;
+	//DBG cerr <<"---imposition pool init"<<endl;
 	GetBuiltinImpositionPool(&impositionpool);
-	DBG cerr <<"---imposition pool init done"<<endl;
+	//DBG cerr <<"---imposition pool init done"<<endl;
 	
-	DBG cerr <<"---papersizes pool init"<<endl;
+	//DBG cerr <<"---papersizes pool init"<<endl;
 	GetBuiltinPaperSizes(&papersizes);
 	
-	DBG cerr <<"---interfaces pool init"<<endl;
+	//DBG cerr <<"---interfaces pool init"<<endl;
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
 	
 	 // manually adding a couple of pagestyles
 	 // *** why?
-	DBG cerr <<"---manually adding a couple of pagestyles"<<endl;
+	//DBG cerr <<"---manually adding a couple of pagestyles"<<endl;
 	PageStyle *ps=new PageStyle;
 	StyleDef *sd=ps->makeStyleDef();
 	stylemanager.AddStyleDef(sd,1);
@@ -482,7 +482,7 @@ void LaidoutApp::dumpOutResources()
  */
 int LaidoutApp::createlaidoutrc()
 {
-	DBG cerr <<"-------------Creating $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cerr <<"-------------Creating $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 
 	 // ensure that ~/.ladiout/(version) exists
 	 //   if not, create, and put in a README explaining what's what:
@@ -576,7 +576,7 @@ int LaidoutApp::createlaidoutrc()
  */
 int LaidoutApp::readinLaidoutDefaults()
 {
-	DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	FILE *f=NULL;
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/laidoutrc",config_dir);
@@ -591,7 +591,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		value=att.attributes.e[c]->value;
 		if (!name) continue;
 
-		DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
+		//DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
 		if (!strcmp(name,"appcolors")) {
 			cout <<"***imp me! readinlaidoutrc: appcolors"<<endl;
 			
@@ -644,7 +644,7 @@ int LaidoutApp::readinLaidoutDefaults()
 		
 		} else if (!strcmp(name,"previewName")) {
 			preview_file_bases.push(newstr(value));
-			DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
+			//DBG cerr<<"preview_file_bases local for top="<<(int)preview_file_bases.islocal[preview_file_bases.n-1]<<endl;
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
@@ -652,7 +652,7 @@ int LaidoutApp::readinLaidoutDefaults()
 	}
 	
 	fclose(f);
-	DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	//DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
 	return 1;
 }
 
@@ -688,7 +688,7 @@ void LaidoutApp::setupdefaultcolors()
  */
 void LaidoutApp::parseargs(int argc,char **argv)
 {
-	DBG cerr <<"---------start options"<<endl;
+	//DBG cerr <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
 			{ "export",              1, 0, 'e' },
@@ -748,7 +748,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exprt=newstr(optarg);
 				} break;
 			case 'O': { // list export options for a given format
-					DBG cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
+					//DBG cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
 					printf("format   = \"%s\"    #the format to export as\n",optarg);
 					printf("tofile   = /file/to/export/to\n");
 					printf("tofiles  = \"/files/like###.this\"  #the # section is replaced with the page index\n");
@@ -773,10 +773,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 
 	 // options are now basically parsed, must handle any resulting commands like export
-	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
-	DBG cerr <<"*** read in these files:"<<endl;
-	DBG for (c=optind; c<argc; c++) 
-	DBG 	cerr <<"----Read in:  "<<argv[c]<<endl;
+	//DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
+	//DBG cerr <<"*** read in these files:"<<endl;
+	//DBG for (c=optind; c<argc; c++) 
+	//DBG 	cerr <<"----Read in:  "<<argv[c]<<endl;
 
 	 //export doc if found, then exit
 	if (exprt) {
@@ -834,7 +834,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	index=topwindows.n;
 	if (!project) project=new Project;
 	for (c=optind; c<argc; c++) {
-		DBG cerr <<"----Read in:  "<<argv[c]<<endl;
+		//DBG cerr <<"----Read in:  "<<argv[c]<<endl;
 		doc=NULL;
 		if (Load(argv[c],NULL)==0) doc=curdoc;
 		if (topwindows.n==index) {
@@ -843,7 +843,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 	}
 	
-	DBG cerr <<"---------end options"<<endl;
+	//DBG cerr <<"---------end options"<<endl;
 }
 
 //! Return whether win is in topwindows.
@@ -1043,7 +1043,7 @@ int LaidoutApp::NewDocument(const char *spec)
 {
 	if (!spec) return 1;
 	if (!strcmp(spec,"default")) spec="letter, portrait, singles";
-	DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
+	//DBG cerr <<"------create new doc from \""<<spec<<"\""<<endl;
 	
 	char *saveas=NULL;
 	Imposition *imp=NULL;
@@ -1145,7 +1145,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 	if (!project) project=new Project();
 	project->docs.push(newdoc);
 	
-	DBG cerr <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
+	//DBG cerr <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	
 	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);
@@ -1184,15 +1184,17 @@ int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 int main(int argc,char **argv)
 {
 	 //initialize gettext
+	char scratch[100];
+	sprintf(scratch,"laidout-%s",LAIDOUT_VERSION);
 	setlocale(LC_ALL,"");
-	bindtextdomain("laidout",LANGUAGE_PATH);
-	textdomain("laidout");
+	bindtextdomain(scratch,LANGUAGE_PATH);
+	textdomain(scratch);
 
-	DBG cerr<<"---------Intl settings----------"<<endl;
-	DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
-	DBG cerr<<"Domain dir:  "<<bindtextdomain("laidout",NULL)<<endl;
-	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
-	DBG cerr<<"--------------------------------"<<endl;
+	//DBG cerr<<"---------Intl settings----------"<<endl;
+	//DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
+	//DBG cerr<<"Domain dir:  "<<bindtextdomain("laidout",NULL)<<endl;
+	//DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
+	//DBG cerr<<"--------------------------------"<<endl;
 
 
 	//this is rather a hacky way to do this, but:
@@ -1215,23 +1217,23 @@ int main(int argc,char **argv)
 	
 	laidout->init(argc,argv);
 
-	DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
-	DBG stylemanager.dump(stderr,3);
-	DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
+	//DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
+	//DBG stylemanager.dump(stderr,3);
+	//DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
 
 	laidout->run();
 
-	DBG cerr <<"---------Laidout Close--------------"<<endl;
+	//DBG cerr <<"---------Laidout Close--------------"<<endl;
 	laidout->close();
 	delete laidout;
 	
-	DBG cerr <<"---------------stylemanager-----------------"<<endl;
-	DBG cerr <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
-	DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
+	//DBG cerr <<"---------------stylemanager-----------------"<<endl;
+	//DBG cerr <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
+	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.flush();
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;
-	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
+	//DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
 
 	return 0;
 }
