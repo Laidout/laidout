@@ -458,7 +458,7 @@ void LaidoutApp::dumpOutResources()
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/autolaidoutrc",config_dir);
 	
-	int fd=open(configfile,O_CREAT|O_WRONLY);
+	int fd=open(configfile,O_CREAT|O_WRONLY|O_TRUNC,S_IREAD,S_IWRITE);
 	if (fd<0) return;
 	flock(fd,LOCK_EX);
 	FILE *f=fdopen(fd,"w");
@@ -1184,9 +1184,11 @@ int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 int main(int argc,char **argv)
 {
 	 //initialize gettext
+	char scratch[100];
+	sprintf(scratch,"laidout-%s",LAIDOUT_VERSION);
 	setlocale(LC_ALL,"");
-	bindtextdomain("laidout",LANGUAGE_PATH);
-	textdomain("laidout");
+	bindtextdomain(scratch,LANGUAGE_PATH);
+	textdomain(scratch);
 
 	DBG cerr<<"---------Intl settings----------"<<endl;
 	DBG cerr<<"Text domain: "<<textdomain(NULL)<<endl;
