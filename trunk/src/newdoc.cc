@@ -399,10 +399,10 @@ int NewDocWindow::init()
 	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
 	//                        const char *nname=NULL,int npadx=0,int npady=0);
 	//  
-	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, last,window,_("Ok"));
+	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, last,window,"Ok");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
-	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,_("Cancel"));
+	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 
 
