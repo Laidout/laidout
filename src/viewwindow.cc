@@ -3455,7 +3455,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 										 doc?doc->docstyle->imposition->NumPapers()-1:0,
 										 doc?doc->docstyle->imposition->PaperFromPage(
 											((LaidoutViewport *)viewport)->curobjPage()):0);
-		app->addwindow(d);
+		app->rundialog(d);
 		return 0;
 		//------------------------------------------------
 		//char *error=NULL;
@@ -3503,8 +3503,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"print")) { // print to output.ps
 		 //user clicked print button
 		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-		int curpage=vp->curobjPage();
-		if (curpage<0 && vp->spread) {
+		int curpage=doc?doc->docstyle->imposition->PaperFromPage(vp->curobjPage()):0;
+		if (curpage<0 && vp->doc && vp->spread) {
 			 //grab what is first page found in spread->pagestack
 			int c;
 			for (c=0; c<vp->spread->pagestack.n; c++) {
@@ -3514,16 +3514,20 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				}
 			}
 		}
-		PaperGroup *pg=((LaidoutViewport *)viewport)->papergroup;
+		PaperGroup *pg=vp->papergroup;
 		Group *l;
-		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
+		if (!pg || !pg->papers.n) l=NULL; else l=vp->limbo;
 		PrintingDialog *p=new PrintingDialog(doc,window,"export config",
-										"output.ps","lp",NULL,
+										"output.ps", //file
+										"lp",        //command
+										NULL,        //thisfile
 										PAPERLAYOUT, 
-										0,doc->pages.n-1,curpage,
-										pg,
-										l,
-										mesbar);
+										0,              //min
+										doc?doc->docstyle->imposition->NumPapers()-1:0, //max
+										curpage,       //cur
+										pg,           //papergroup
+										l,           //limbo
+										mesbar);     //progress window
 		app->rundialog(p);
 		return 0;
 	}
