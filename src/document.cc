@@ -1000,7 +1000,7 @@ const char *Document::Name(int withsaveas)
 		if (!isblank(saveas)) extra=newstr(saveas);
 	}
 
-	nme=new char[(n?strlen(n):3) + (extra?strlen(extra):3) + 4];
+	nme=new char[(n?strlen(n):3) + (extra?strlen(extra):strlen(_("new"))) + 4];
 	sprintf(nme,"%s (%s)", n?n:"???", extra?extra:_("new"));
 	delete[] n;
 	delete[] extra;

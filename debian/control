@@ -10,7 +10,8 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Lays out pictures in cut and folded books.
  Laidout is burgeoning desktop publishing software.
- It can currently be used to lay out pictures into booklets.
+ It can currently be used to lay out pictures, and linear,
+ radial and patch gradients (aka mesh gradients) into booklets.
  These pictures can be moved between pages by dragging them
  to and from the scratchboard. The pages themselves can be
  rearranged in a convenient page spread editor.
