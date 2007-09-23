@@ -445,6 +445,7 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
  *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
  *   easier to have easily added import "filters"... This would also mean have a file type mask
  *   to limit only to images, say, or only TIFFS, EPS, etc..
+ * \todo might have locale trouble here
  */
 int dumpInImages(Document *doc, int startpage, 
 				 const char **imagefiles,

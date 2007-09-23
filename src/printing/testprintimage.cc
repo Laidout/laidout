@@ -21,6 +21,7 @@
 
 #include <X11/Xlib.h>
 #include <Imlib2.h>
+#include <libintl.h>
 
 #include "psfilters.h"
 
@@ -113,9 +114,11 @@ void Imlib_ImageToPS(FILE *psout,Imlib_Image image)
  */
 void ps_Imlib_Image_out(Imlib_Image image)
 {
+	setlocale(LC_ALL,"C");
 	FILE *f=fopen("temp.ps","w");
 	if (!f) {
 		DBG cerr <<"Failed to open temp.ps."<<endl;
+		setlocale(LC_ALL,"");
 		return;
 	}
 
@@ -166,5 +169,6 @@ void ps_Imlib_Image_out(Imlib_Image image)
 			"%%%%EOF\n");
 
 	fclose(f);
+	setlocale(LC_ALL,"");
 }
 

@@ -233,8 +233,10 @@ void pdfdumpobj(FILE *f,
 		pdfGradient(f,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), error_ret,warning);
 		
 	} else {
+		setlocale(LC_ALL,"");
 		sprintf(scratch,_("Warning: Cannot export %s to Pdf"),object->whattype());
 		appendstr(error_ret,scratch);
+		setlocale(LC_ALL,"C");
 		warning++;
 
 	}
@@ -380,6 +382,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	}
 
 
+	setlocale(LC_ALL,"C");
 	
 	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<", papers:"
 	DBG      <<papergroup->papers.n<<" ====================\n";
@@ -760,6 +763,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,"%%%%EOF\n");
 
 	fclose(f);
+	setlocale(LC_ALL,"");
 
 
 	 //clean up

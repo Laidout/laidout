@@ -176,9 +176,11 @@ int Project::Load(const char *file,char **error_ret)
 	
 	clear();
 	makestr(filename,file);
+	setlocale(LC_ALL,"C");
 	dump_in(f,0,0,NULL);
 	if (!name) makestr(name,filename);
 	fclose(f);
+	setlocale(LC_ALL,"");
 	return 0;
 }
 
@@ -198,11 +200,13 @@ int Project::Save(char **error_ret)
 	}
 
 	DBG cerr <<"....Saving project to "<<filename<<endl;
+	setlocale(LC_ALL,"C");
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);
 	dump_out(f,0,0);
 	
 	fclose(f);
+	setlocale(LC_ALL,"");
 	return 0;
 }
 

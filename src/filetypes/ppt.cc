@@ -173,6 +173,8 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 		return 3;
 	}
 	
+	setlocale(LC_ALL,"C");
+	
 	 //figure out paper size and orientation
 	const char *papersize=NULL, *landscape=NULL;
 	int c;
@@ -272,6 +274,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	fprintf(f,"</document>\n");
 	
 	fclose(f);
+	setlocale(LC_ALL,"");
 	delete[] file;
 	return 0;
 	

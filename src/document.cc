@@ -674,6 +674,7 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 		return 3;
 	}
 
+	setlocale(LC_ALL,"C");
 	DBG cerr <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
@@ -692,6 +693,7 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 	if (includewindows) laidout->DumpWindows(f,0,this);
 	
 	fclose(f);
+	setlocale(LC_ALL,"");
 	return 0;
 }
 
@@ -720,8 +722,10 @@ int Document::Load(const char *file,char **error_ret)
 	if (!f) return 0;
 	
 	clear();
+	setlocale(LC_ALL,"C");
 	dump_in(f,0,0,NULL);
 	fclose(f);
+	setlocale(LC_ALL,"");
 	
 	makestr(saveas,file);
 	if (saveas[0]!='/') full_path_for_file(saveas); 

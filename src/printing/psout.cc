@@ -347,6 +347,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		return 3;
 	}
 
+	setlocale(LC_ALL,"C");
 
 
 	 //Basically, postscript documents following the ps document structure 
@@ -609,6 +610,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	fclose(f);
 	delete[] file;
 	//papergroup->dec_count();
+	setlocale(LC_ALL,"");
 
 	return 0;
 }
@@ -659,6 +661,8 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	f=open_file_for_writing(filename,0,error_ret);//appends an error string
 	if (!f) return 1;
 	
+	setlocale(LC_ALL,"C");
+
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
@@ -809,6 +813,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	fprintf(f, "\n%%%%EOF\n");
 
 	fclose(f);
+	setlocale(LC_ALL,"");
 
 
 	DBG cerr <<"=================== end printing eps ========================\n";

@@ -151,6 +151,7 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	}
 	if (!f) return 1;
 
+	setlocale(LC_ALL,"C");
 	fprintf(f,"#Laidout %s File Formats\n\n",LAIDOUT_VERSION);
 
 	fprintf(f," # This file describes:\n"
@@ -206,6 +207,7 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	dumpOutImageListFormat(f);
 	
 	if (strcmp(file,"-")) fclose(f);
+	setlocale(LC_ALL,"");
 
 	return 0;
 }
