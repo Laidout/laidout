@@ -210,7 +210,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------left side
 				     //get color for point (r+rr,c+cc)
-					patch->getColor(0,t/(1-dt),&color);
+					//patch->getColor(0,t/(1-dt),&color);
+					patch->getColor(t/(1-dt),0,&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(0   ,t);
@@ -229,7 +230,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------right side
 				     //get color for point (r+rr,c+cc)
-					patch->getColor(1.,t/(1-dt),&color);
+					//patch->getColor(1.,t/(1-dt),&color);
+					patch->getColor(t/(1-dt),1,&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(1.   ,t);
@@ -253,7 +255,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------top side
 				     //get color for point (r+rr,c+cc)
-					patch->getColor(s/(1-ds),0,&color);
+					//patch->getColor(s/(1-ds),0,&color);
+					patch->getColor(0,s/(1-ds),&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(s,          0);
@@ -272,7 +275,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------bottom side
 				     //get color for point (r+rr,c+cc)
-					patch->getColor(s/(1-ds),1,&color);
+					//patch->getColor(s/(1-ds),1,&color);
+					patch->getColor(1,s/(1-ds),&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(s,          1);
@@ -299,7 +303,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			      for (cc=0; cc<numdiv; cc++) {
 					s=(c+(float)cc/numdiv)/(patch->xsize/3);
 					t=(r+(float)rr/numdiv)/(patch->ysize/3);
-					DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
+					//DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
 
 				     //get color for point (r+rr,c+cc)
 					tt=t/(1-dt);
@@ -533,7 +537,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 2;
@@ -544,7 +548,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}

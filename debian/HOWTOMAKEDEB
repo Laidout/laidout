@@ -38,26 +38,33 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 4. ---hide the debugging garbage and commit---
  make hidegarbage 
  (make sure same is done for laxkit, as Laidout currently statically
-  links against laxkit, which also uses the same system to hide debugging couts)
+  links against laxkit, which also uses the same system to hide debugging code)
  svn ci -m'Last minute touchups to this tag'
  
 5. Export a copy of the new tag and make a tarball. 
  svn export https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whichever) laidout-(version)
   If Laxkit is to be included, you should export that to the top laidout dir: 
  svn export https://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
-  then cd to parent dir and do:
+ Do './configure' in the laxkit directory, and for the laidout configure, make sure it always
+   configures to the installed laxkit dir. Configure laidout temporarily to get Makefile-toinclude,
+   which lets you do 'make depends'. then 'make clean', cd to dir above laidout, and do:
+ make sure all the makedepend files have RELATIVE references, seems to prefer absolute a lot of the time
  tar cjv (the dir) > laidout-version.tar.bz2 
    this should be the distributed tarball, also
 
  For dev snapshots, the version should be number-rev[SUBVERSION REVISION], so like 0.02-rev234
 
-6. Prepare for deb packaging
- make sure Makefile has 'prefix=$(DESTDIR)/usr'. This is important for the 'make install'
-   part of dpkg-buildpackage's building of the package
-
+6. --Prepare for deb packaging--
+ make sure Makefile has 'PREFIX=$(DESTDIR)/usr'. This is important for the 'make install'
+   part of dpkg-buildpackage's building of the package. Also is important that the configured.h
+   gets the installed paths for after the deb is installed, not $(DESTDIR)/usr!!
+   there must be an easier way to do this, but for now this manual tweaking is necessary..
 
 7. ---build the package---
 dpkg-buildpackage -rfakeroot in top laidout directory
 
-8. don't forget to update the help and screenshots sections on the website
+8. After file release is uploaded, don't forget to:
+     - update the help and screenshots sections on the website, and the website in general
+     - update the laidout rss feed
+     - send announcement to at least the laidout mailing list
 
