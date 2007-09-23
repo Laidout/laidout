@@ -399,10 +399,10 @@ int NewDocWindow::init()
 	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
 	//                        const char *nname=NULL,int npadx=0,int npady=0);
 	//  
-	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, last,window,_("Ok"));
+	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, last,window,"Ok");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
-	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,_("Cancel"));
+	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 
 
@@ -421,16 +421,16 @@ NewDocWindow::~NewDocWindow()
 
 int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
-	DBG cerr <<"newdocmessage: "<<mes<<endl;
+	//DBG cerr <<"newdocmessage: "<<mes<<endl;
 	if (!strcmp(mes,"paper size")) {
 	} else if (!strcmp(mes,"ytile")) { 
-		DBG cerr <<"**** newdoc: new y tile value"<<endl;
+		//DBG cerr <<"**** newdoc: new y tile value"<<endl;
 	} else if (!strcmp(mes,"xtile")) { 
-		DBG cerr <<"**** newdoc: new x tile value"<<endl;
+		//DBG cerr <<"**** newdoc: new x tile value"<<endl;
 	} else if (!strcmp(mes,"paper name")) { 
 		 // new paper selected from the popup, so must find the x/y and set x/y appropriately
 		int i=e->data.l[0];
-		DBG cerr <<"new paper size:"<<i<<endl;
+		//DBG cerr <<"new paper size:"<<i<<endl;
 		if (i<0 || i>=papersizes->n) return 0;
 		delete papertype;
 		papertype=(PaperStyle *)papersizes->e[i]->duplicate();
@@ -444,7 +444,7 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
 	} else if (!strcmp(mes,"orientation")) {
 		int l=(int)e->data.l[0];
-		DBG cerr <<"New orientation:"<<l<<endl;
+		//DBG cerr <<"New orientation:"<<l<<endl;
 		if (l!=curorientation) {
 			char *txt=paperx->GetText(),
 				*txt2=papery->GetText();
@@ -504,7 +504,7 @@ void NewDocWindow::sendNewDoc()
 	}
 	if (c==laidout->impositionpool.n) imposition=new Singles();
 	else {
-		DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
+		//DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
 		imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
 	}
 	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }

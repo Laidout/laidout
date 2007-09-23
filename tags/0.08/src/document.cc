@@ -74,7 +74,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			imposition=newImposition(value);
 			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag);
 		} else { 
-			DBG cerr <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
+			//DBG cerr <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 }
@@ -536,14 +536,14 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 	if (docstyle==NULL) {
 		//*** need to create a new DocumentStyle
 		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		//DBG cerr <<"***need to implement get default document in Document constructor.."<<endl;
+		////DBG cerr <<"***need to implement get default document in Document constructor.."<<endl;
 		//
 		//this is used for code that manually builds a Document, so no special treatment necessary
 	} else {
 		 // create the pages
 		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
 		else { 
-			DBG cerr << "**** in new Document, docstyle has no imposition"<<endl;
+			//DBG cerr << "**** in new Document, docstyle has no imposition"<<endl;
 		}
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
@@ -569,7 +569,7 @@ Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
 
 Document::~Document()
 {
-	DBG cerr <<" Document destructor.."<<endl;
+	//DBG cerr <<" Document destructor.."<<endl;
 	pages.flush();
 	pageranges.flush();
 	delete docstyle;
@@ -640,9 +640,9 @@ int Document::RemovePages(int start,int n)
 	if (start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
-		DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
+		//DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
 		pages.remove(start);
-		DBG cerr << "---  Done removing page "<<start+c<<endl;
+		//DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
 	docstyle->imposition->NumPages(pages.n);
 	SyncPages(start,-1);
@@ -663,18 +663,18 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 	if (error_ret) *error_ret=NULL;
 	FILE *f=NULL;
 	if (isblank(saveas)) {
-		DBG cerr <<"**** cannot save, saveas is null."<<endl;
+		//DBG cerr <<"**** cannot save, saveas is null."<<endl;
 		if (error_ret) makestr(*error_ret,_("Need a file name to save to!"));
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
-		DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
+		//DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
 		if (error_ret) makestr(*error_ret,_("File cannot be opened for writing"));
 		return 3;
 	}
 
-	DBG cerr <<"....Saving document to "<<saveas<<endl;
+	//DBG cerr <<"....Saving document to "<<saveas<<endl;
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
@@ -714,7 +714,7 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 int Document::Load(const char *file,char **error_ret)
 {
 	//*** need to create a new DocumentStyle from what's in the file..
-	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
+	//DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",error_ret);
 	if (!f) return 0;
@@ -743,7 +743,7 @@ int Document::Load(const char *file,char **error_ret)
 	}
 	docstyle->imposition->NumPages(pages.n);
 	SyncPages(0,-1);
-	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
+	//DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
 
@@ -774,7 +774,7 @@ int Document::SyncPages(int start,int n)
 		}
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
-		DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
+		//DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
 	}
 	return n;
 }
@@ -1000,7 +1000,7 @@ const char *Document::Name(int withsaveas)
 		if (!isblank(saveas)) extra=newstr(saveas);
 	}
 
-	nme=new char[(n?strlen(n):3) + (extra?strlen(extra):3) + 4];
+	nme=new char[(n?strlen(n):3) + (extra?strlen(extra):strlen(_("new"))) + 4];
 	sprintf(nme,"%s (%s)", n?n:"???", extra?extra:_("new"));
 	delete[] n;
 	delete[] extra;
