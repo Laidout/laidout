@@ -65,6 +65,6 @@ dpkg-buildpackage -rfakeroot in top laidout directory
 
 8. After file release is uploaded, don't forget to:
      - update the help and screenshots sections on the website, and the website in general
-	 - update the laidout rss feed
-	 - send announcement to at least the laidout mailing list
+     - update the laidout rss feed
+     - send announcement to at least the laidout mailing list
 

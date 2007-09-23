@@ -5,28 +5,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.08
-------------
-       Test, test, test! from fresh install to print out, make booklet, portrait, landscape
-(done) fix hard to trace crash in importimages dialog for shift select range of files
-(done, sort of, load but not save) Finish implementing project based setup, especially when loading
-(done) limbos should be selectable, and saved independently of windows
-(done) Basic libintl support, latin-1 translations only!
-(done) Paper tiler interface
-(done) Zoom handles screw up viewer transform aspect. Fix it!!
-(done) Fix linear/radial gradient editing when object is sheared
-(done) Dialogs should remember their placements
-(done) Standardize the import/export mechanism
-(done) PDF out
-(done) svg out
-(done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
-(done) Export to various things from command line to allow batch processing
-(done) Export as a Scribus document
-(done) Print/export to images (via ghostscript)
-(done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
-         (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
-
-
 VERSION 0.09
 ------------
        Clean up patch controls
@@ -159,6 +137,28 @@ While i'm at it, I'd like a pony.
             .--------------. 
 ------------- OLD RELEASES -----------------
             `--------------' 
+
+VERSION 0.08
+------------
+(done) Test, test, test! from fresh install to print out, make booklet, portrait, landscape
+(done) fix hard to trace crash in importimages dialog for shift select range of files
+(done, sort of, load but not save) Finish implementing project based setup, especially when loading
+(done) limbos should be selectable, and saved independently of windows
+(done) Basic libintl support, latin-1 translations only!
+(done) Paper tiler interface
+(done) Zoom handles screw up viewer transform aspect. Fix it!!
+(done) Fix linear/radial gradient editing when object is sheared
+(done) Dialogs should remember their placements
+(done) Standardize the import/export mechanism
+(done) PDF out
+(done) svg out
+(done) Export all/current paper/paper range, by singles, page layout, or paper layout to any filter
+(done) Export to various things from command line to allow batch processing
+(done) Export as a Scribus document
+(done) Print/export to images (via ghostscript)
+(done) Find and fix the damn memory hole (at least it currently slowly eats memory rather than crashing)
+         (fixed PageStyle mess up, now problem in viewwindow->curobj probably)
+
 
 VERSION 0.07  --  released 2 June 2007!
 ------------
