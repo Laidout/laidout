@@ -38,7 +38,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 4. ---hide the debugging garbage and commit---
  make hidegarbage 
  (make sure same is done for laxkit, as Laidout currently statically
-  links against laxkit, which also uses the same system to hide debugging couts)
+  links against laxkit, which also uses the same system to hide debugging code)
  svn ci -m'Last minute touchups to this tag'
  
 5. Export a copy of the new tag and make a tarball. 

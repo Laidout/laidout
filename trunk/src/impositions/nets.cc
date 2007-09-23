@@ -962,6 +962,7 @@ int Net::LoadOFF(const char *filename,char **error_ret)
 		if (error_ret) *error_ret=_("Cannot read that file.");
 		return 1;
 	}
+	setlocale(LC_ALL,"C");
 	if (error_ret) *error_ret=NULL;
 
 	int e=0, 
@@ -1012,6 +1013,7 @@ int Net::LoadOFF(const char *filename,char **error_ret)
 	}
 	if (line) free(line);
 	fclose(f);
+	setlocale(LC_ALL,"");
 	if (e && error_ret) *error_ret=_("Bad OFF file.");
 
 	cout <<"***convert pts and fcs to some kind of net"<<endl;

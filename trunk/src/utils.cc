@@ -46,7 +46,7 @@ using namespace std;
 /*! \ingroup misc
  * Return 0 for file ok, else nonzero.
  *
- * \todo implement the version check
+ * \todo implement the version check, and watch out for locale snafus
  */
 int laidout_file_type(const char *file, char *minversion, char *maxversion, char *typ)
 {
@@ -110,6 +110,8 @@ int laidout_version_check(const char *version, const char *minversion, const cha
  * and error_ret gets set to a proper error message if *error_ret was NULL,
  * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
  * with a blank error, then remember to set it to NULL before calling this function!
+ *
+ * This assumes that the normal locale is in effect.
  */
 FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret)
 {
@@ -155,6 +157,8 @@ FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret)
  * and error_ret gets set to a proper error message if *error_ret was NULL,
  * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
  * with a blank error, then remember to set it to NULL before calling this function!
+ *
+ * This assumes that the normal locale is in effect.
  */
 FILE *open_file_for_reading(const char *file,char **error_ret)
 {
@@ -192,6 +196,8 @@ FILE *open_file_for_reading(const char *file,char **error_ret)
  * and error_ret gets set to a proper error message if *error_ret was NULL,
  * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
  * with a blank error, then remember to set it to NULL before calling this function!
+ *
+ * This assumes that the normal locale is in effect.
  */
 FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret)
 {

@@ -4,6 +4,10 @@
 \section Overall Overall...
 <pre>
 
+ need a little better locale management during loading and saving. Files generally assume
+  '.' (C locale) is the decimal point, not ',', but the error string handling needs the normal
+  locale...
+
  group interface: 'm' should perhaps make the current selection draggable to other windows
 
  in configure, should check to see that gs is actually executable?

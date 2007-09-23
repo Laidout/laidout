@@ -111,7 +111,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		}
 
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
+		setlocale(LC_ALL,"");
 		appendstr(*error_ret,_("Cannot export Eps objects into svg.\n"));
+		setlocale(LC_ALL,"C");
 		warning++;
 		
 	} else if (!strcmp(obj->whattype(),"ImageData")) {
@@ -132,7 +134,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		fprintf(f,"%s  />\n",spc);
 		
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
+		setlocale(LC_ALL,"");
 		appendstr(*error_ret,_("Warning: interpolating a color patch object\n"));
+		setlocale(LC_ALL,"C");
 		warning++;
 		//---------
 		//if (***config allows it) {
@@ -336,7 +340,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		
 	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
 		//***if (config->collect_for_out) { rasterize, and put image in out directory }
+		setlocale(LC_ALL,"");
 		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
+		setlocale(LC_ALL,"C");
 		warning++;
 	}
 	return 0;
@@ -553,6 +559,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		return 3;
 	}
 
+	setlocale(LC_ALL,"C");
+
 	int warning=0;
 	Spread *spread=NULL;
 	Group *g=NULL;
@@ -681,6 +689,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,"</svg>\n");
 	
 	fclose(f);
+	setlocale(LC_ALL,"");
 	return 0;
 	
 }

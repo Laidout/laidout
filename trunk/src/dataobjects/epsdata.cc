@@ -190,8 +190,10 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 	makestr(previewfile,npreview);
 
 	 // puts the eps BoundingBox into this::DoubleBBox
+	setlocale(LC_ALL,"C");
 	c=scaninEPS(f,this,&title,&creationdate,&preview,&depth,&width,&height);
 	fclose(f);
+	setlocale(LC_ALL,"");
 	
 	if (c!=0) return -2;
 	

@@ -40,6 +40,8 @@ using namespace Laxkit;
  * contents of those variables are all ignored, so beware of memory hole potential here. It is
  * ok to pass in NULL for preview, but the others must be valid pointers.
  *
+ * It is assumed that the locale was set to "C" before calling this function.
+ *
  * Return -1 for not a readable EPS. -2 for error during some point in the reading.
  * 0 for success.
  *

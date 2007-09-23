@@ -9,6 +9,12 @@ Filters can define their own configuration dialogs if they wish, or
 they can use the default dialog generated based on the filter's
 StyleDef (unimplemented, todo!!).
 
+Remember that you might have to set the current locale, so that when you
+output 1.2, for instance, it does not get output as "1,2". To do that,
+simply call setlocale(LC_ALL,"C") before outputting, and (IMPORTANT!!) 
+afterwards, call setlocale(LC_ALL,""). Before In() or Out() is called,
+the locale will be the normal locale, not the "C" locale.
+
 Filters should follow the following guidelines.
 
 
@@ -53,6 +59,6 @@ data that was in the original file so that an ImportFilter's companion
 ExportFilter can take that preserved original data, and export it back
 into that file format properly.
 
-This magical feat is preformed vie MysteryData objects, and MysteryAttributes
+This magical feat is preformed via MysteryData objects, and MysteryAttributes
 attached to a Document.
 

@@ -147,6 +147,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	}
 	
 
+	setlocale(LC_ALL,"C");
+
 	int warning=0;
 	Spread *spread=NULL;
 	Group *g=NULL;
@@ -416,6 +418,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			  "</SCRIBUSUTF8NEW>");
 	
 	fclose(f);
+	setlocale(LC_ALL,"");
 	return 0;
 }
 
@@ -472,8 +475,10 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		return;
 	} else {
 		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
+		setlocale(LC_ALL,"");
 		sprintf(tmp,_("Warning: Cannot export %s to Scribus.\n"),obj->whattype());
 		appendstr(*error_ret,tmp);
+		setlocale(LC_ALL,"C");
 		warning++;
 		delete[] tmp;
 		psPopCtm();
