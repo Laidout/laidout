@@ -171,7 +171,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	//dpi=150;//***
 	dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
 	
-	char *arglist[10], str1[20];
+	char const * arglist[10];
+	char str1[20];
 	arglist[0]=const_cast<char *>(gspath);
 	arglist[1]="-dNOPAUSE";
 	arglist[2]="-dBATCH";
@@ -195,7 +196,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	char *error=NULL;
 	pid_t child=fork();
 	if (child==0) { // is child
-		execv(gspath,arglist);
+		execv(gspath,(char * const *)arglist);
 		cout <<"*** error running exec:"<<endl;
 		for (int c=0; c<8; c++) cout <<arglist[c]<<" ";
 		cout <<endl;

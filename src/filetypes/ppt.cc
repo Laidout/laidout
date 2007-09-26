@@ -280,139 +280,140 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	
 }
 
-//////------------------------------------- PptinFilter -----------------------------------
-///*! \class PptinFilter 
-// * \brief Passepartout input filter.
-// */
-//
-//
-//const char *PptinFilter::FileType(const char *first100bytes)
-//{
-//	return !strncmp(first100bytes,"<?xml version="1.0"?>\n<document",
-//						   strlen("<?xml version="1.0"?>\n<document"))
-//}
-//
-//const char **PptinFilter::FormatVersions(int *n)
-//{
-//	return (const char **){ "0.6", NULL };
-//}
-//
-//
-////! Import a Passepartout file.
-///*! If doc!=NULL, then import the pptout files to Document starting at page startpage.
-// * Otherwise, create a brand new Singles based document.
-// *
-// * Does no check on the file to ensure that it is in fact a Passepartout file.
-// *
-// * It will be a file something like:
-// * <pre>
-// * <?xml version="1.0"?>
-// * <document paper_name="Letter" doublesided="true" landscape="false" first_page_num="1">
-// *   <page>
-// *      <frame name="Raster beetile-501x538.jpg"
-// *             matrix="0.812233 0 0 0.884649 98.6048 243.107"
-// *             lock="false"
-// *             flowaround="false"
-// *             obstaclemargin="0" 
-// *             type="raster"
-// *             file="beetile-501x538.jpg"/>
-// *   </page>
-// * </document>         
-// * </pre>
-// *
-// * \todo ***** finish imp me!
-// * \todo there should be a way to preserve any elements that laidout doesn't understand, so
-// *   when outputting as ppt, these elements would be written back out maybe...
-// */
-//int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
-//{
-//	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
-//	if (!att) return NULL;
-//	
-//	int c;
-//	Attribute *pptdoc=att->find("document"),
-//			  *page, *frame, *a;
-//	if (!pptdoc) { delete att; return NULL; }
-//	
-//	 //figure out the paper size, orientation
-//	a=pptdoc->find("paper_name");
-//	PaperStyle *paper=NULL;
-//	if (a) {
-//		for (c=0; c<laidout->papersizes.n; c++)
-//			if (!strcasecmp(laidout->papersizes.e[c]->name,a->value)) {
-//				paper=laidout->papersizes.e[c];
-//				break;
-//			}
-//	}
-//	if (!paper) paper=laidout->papersizes.e[0];
-//
-//	 //figure out orientation
-//	int landscape;
-//	a=pptdoc->find("landscape");
-//	if (a) landscape=BooleanAttribute(a->value);
-//	else landscape=0;
-//	
-//	 // read in pages
-//	int pagenum=0;
-//	pptdoc=pptdoc->find("contents");
-//	if (!pptdoc) { delete att; return NULL; }
-//
-//	 //create the document
-//	if (!doc) {
-//		Imposition *imp=new Singles;
-//		imp->SetPaperSize(paper);
-//		imp->paperstyle->flags=((imp->paperstyle->flags)&~1)|(landscape?1:0);
-//		DocumentStyle *docstyle=new DocumentStyle(imp);
-//		doc=new Document(docstyle,"untitled");//**** laidout should keep track of: untitled1, untitled2, ...
-//	}
-//
-//	ImageData *image;
-//	LaxImage *img=NULL;
-//	Attribute *t,*n,*m;
-//	double M[6];
-//	
-//	for (c=0; c<pptdoc->attributes.n; c++) {
-//		if (!strcmp(pptdoc->attributes.e[c]->name,"page")) {
-//			if (pagenum>doc->pages.n) doc->NewPages(-1,1);
-//			page=pptdoc->attributes.e[c];
-//			for (int c2=0; c2<page->attributes.n; c2++) {
-//				if (!strcmp(page->attributes.e[c]->name,"frame")) {
-//					frame=page->attributes.e[c];
-//					a=frame->find("file");
-//					t=frame->find("type");
-//					n=frame->find("name");
-//					m=frame->find("matrix");
-//					if (a && a->value && t) {
-//						if (!strcmp(t->value,"raster")) {
-//							img=load_image(a->value);
-//							if (img) {
-//								image=new ImageData;
-//								if (n) image->SetDescription(n->value);
-//								image->SetImage(img);
-//								if (m) DoubleListAttribute(m->value,M,6,NULL);
-//								dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
-//								image->dec_count();
-//							}
-//						} else if (!strcmp(t->value,"group")) {
-//							***
-//							pptDumpInGroup(page->attributes.e[c]->attributes***
-//						}
-//					}
-//				}
-//			}
-//			pagenum++;
-//		}
-//	}
-//	
-//	 //*** set up page labels for "first_page_num"
-//	
-//	 //establish doc in project
-//	laidout->project->docs.push(doc);
-//	laidout->app->addwindow(newHeadWindow(doc));
-//	
-//	delete att;
-//	return doc;
-//}
+////------------------------------------- PptinFilter -----------------------------------
+/*! \class PptinFilter 
+ * \brief Passepartout input filter.
+ */
+
+
+const char *PptinFilter::FileType(const char *first100bytes)
+{
+	if (!strncmp(first100bytes,"<?xml version=\"1.0\"?>\n<document",
+						   strlen("<?xml version=\"1.0\"?>\n<document")))
+		return "0.6";
+	return NULL;
+}
+
+//! Import a Passepartout file.
+/*! If doc!=NULL, then import the pptout files to Document starting at page startpage.
+ * Otherwise, create a brand new Singles based document.
+ *
+ * Does no check on the file to ensure that it is in fact a Passepartout file.
+ *
+ * It will be a file something like:
+ * <pre>
+ * <?xml version="1.0"?>
+ * <document paper_name="Letter" doublesided="true" landscape="false" first_page_num="1">
+ *   <page>
+ *      <frame name="Raster beetile-501x538.jpg"
+ *             matrix="0.812233 0 0 0.884649 98.6048 243.107"
+ *             lock="false"
+ *             flowaround="false"
+ *             obstaclemargin="0" 
+ *             type="raster"
+ *             file="beetile-501x538.jpg"/>
+ *   </page>
+ * </document>         
+ * </pre>
+ *
+ * \todo ***** finish imp me!
+ * \todo there should be a way to preserve any elements that laidout doesn't understand, so
+ *   when outputting as ppt, these elements would be written back out maybe...
+ */
+int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+{
+	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
+	if (!in) return 1;
+
+	Document *doc=in->doc;
+
+	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
+	if (!att) return NULL;
+	
+	int c;
+	Attribute *pptdoc=att->find("document"),
+			  *page, *frame, *a;
+	if (!pptdoc) { delete att; return NULL; }
+	
+	 //figure out the paper size, orientation
+	a=pptdoc->find("paper_name");
+	PaperStyle *paper=NULL;
+	if (a) {
+		for (c=0; c<laidout->papersizes.n; c++)
+			if (!strcasecmp(laidout->papersizes.e[c]->name,a->value)) {
+				paper=laidout->papersizes.e[c];
+				break;
+			}
+	}
+	if (!paper) paper=laidout->papersizes.e[0];
+
+	 //figure out orientation
+	int landscape;
+	a=pptdoc->find("landscape");
+	if (a) landscape=BooleanAttribute(a->value);
+	else landscape=0;
+	
+	 // read in pages
+	int pagenum=0;
+	pptdoc=pptdoc->find("contents");
+	if (!pptdoc) { delete att; return NULL; }
+
+	 //create the document
+	if (!doc) {
+		Imposition *imp=new Singles;
+		paper->flags=((paper->flags)&~1)|(landscape?1:0);
+		imp->SetPaperSize(paper);
+		DocumentStyle *docstyle=new DocumentStyle(imp);
+		doc=new Document(docstyle,"untitled");//**** laidout should keep track of: untitled1, untitled2, ...
+	}
+
+	ImageData *image;
+	LaxImage *img=NULL;
+	Attribute *t,*n,*m;
+	double M[6];
+	
+	for (c=0; c<pptdoc->attributes.n; c++) {
+		if (!strcmp(pptdoc->attributes.e[c]->name,"page")) {
+			if (pagenum>doc->pages.n) doc->NewPages(-1,1);
+			page=pptdoc->attributes.e[c];
+			for (int c2=0; c2<page->attributes.n; c2++) {
+				if (!strcmp(page->attributes.e[c]->name,"frame")) {
+					frame=page->attributes.e[c];
+					a=frame->find("file");
+					t=frame->find("type");
+					n=frame->find("name");
+					m=frame->find("matrix");
+					if (a && a->value && t) {
+						if (!strcmp(t->value,"raster")) {
+							img=load_image(a->value);
+							if (img) {
+								image=new ImageData;
+								if (n) image->SetDescription(n->value);
+								image->SetImage(img);
+								if (m) DoubleListAttribute(m->value,M,6,NULL);
+								dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
+								image->dec_count();
+							}
+						} else if (!strcmp(t->value,"group")) {
+							//***
+							//pptDumpInGroup(page->attributes.e[c]->attributes***
+						}
+					}
+				}
+			}
+			pagenum++;
+		}
+	}
+	
+	 //*** set up page labels for "first_page_num"
+	
+	 //establish doc in project
+	laidout->project->docs.push(doc);
+	laidout->app->addwindow(newHeadWindow(doc));
+	
+	delete att;
+	return 0;
+}
 
 
 

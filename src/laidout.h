@@ -113,7 +113,7 @@ class LaidoutApp : public Laxkit::anXApp
 	int DumpWindows(FILE *f,int indent,Document *doc);
 
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
-	char *full_path_for_resource(const char *name,char *dir=NULL);
+	char *full_path_for_resource(const char *name,const char *dir=NULL);
 	const char *binary(const char *what);
 };
 
