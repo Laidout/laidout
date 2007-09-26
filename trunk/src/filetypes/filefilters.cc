@@ -416,3 +416,21 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 	return 0;
 }
 
+
+//------------------------------ ImportConfig ----------------------------
+/*! \class ImportConfig
+ */
+
+ImportConfig::ImportConfig()
+{
+	filename=NULL;
+	page=spread=layout=-1;
+	doc=NULL;
+	toobj=NULL;
+	filter=NULL;
+}
+
+ImportConfig::~ImportConfig()
+{//***
+}
+

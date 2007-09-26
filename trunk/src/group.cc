@@ -253,7 +253,7 @@ void Group::dump_out(FILE *f,int indent,int what)
 		SomeData *obj;
 		
 		//*** hack until auto obj. type insertion done
-		char *objecttypelist[]={
+		const char *objecttypelist[]={
 				"Group",
 				"ImageData",
 				"ImagePatchData",

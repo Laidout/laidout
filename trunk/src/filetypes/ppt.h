@@ -43,22 +43,22 @@ class PptoutFilter : public ExportFilter
 };
 
 
-////------------------------------------- PptinFilter -----------------------------------
-//class PptinFilter : public ImportFilter
-//{
-// public:
-//	virtual const char *Author() { return "Laidout"; }
-//	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
-//	
-//	virtual const char *Format() { return "Passepartout"; }
-//	virtual const char *DefaultExtension() { return "ppt"; }
-//	virtual const char *Version() { return "0.6"; }
-//	virtual const char *VersionName();
-//	virtual const char *FilterClass() { return "document"; }
-//	
-//	virtual const char *FileType(const char *first100bytes);
-//	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
-//};
+//------------------------------------- PptinFilter -----------------------------------
+class PptinFilter : public ImportFilter
+{
+ public:
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+	
+	virtual const char *Format() { return "Passepartout"; }
+	virtual const char *DefaultExtension() { return "ppt"; }
+	virtual const char *Version() { return "0.6"; }
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+	
+	virtual const char *FileType(const char *first100bytes);
+	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
+};
 
 
 

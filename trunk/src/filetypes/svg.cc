@@ -141,7 +141,12 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		//---------
 		//if (***config allows it) {
 		if (1) {
-			 //approximate gradient with svg elements
+			 //approximate gradient with svg elements.
+			 //in Inkscape, its blur slider is 1 to 100, with 100 corresponding to a blurring
+			 //radius (standard deviation of Gaussian function) of 1/8 of the
+			 //object's bounding box' perimeter (that is, for a square, a blur of
+			 //100% will have the radius equal to half a side, which turns any shape
+			 //into an amorphous cloud).
 			ColorPatchData *patch=dynamic_cast<ColorPatchData *>(obj);
 			if (!patch) return 0;
 
@@ -160,48 +165,6 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			dt=1./(patch->ysize/3)/numdiv;
 			double fudge=1.05; //so there are no transparent boundaries between the divided up rects
 
-//********needs work:
-//			 //create border colors so as to not have transparent outer edge sections
-//			int np=patch->bezOfPatch(NULL,0,0,0,0);
-//			int nb=np/3*numdiv; //number of broken down points
-//			flatpoint e[np],pe[nb],po[nb],
-//					  pcenter=patch->getPoint(.5,.5);
-//			patch->bezOfPatch(e,0,0,0,0);
-//			bez_points(pe,np/3,e,numdiv,1,0);
-//			for (c=0; c<nb; c++) {
-//				po[c]=pcenter+1.333*(pe[c]-pcenter);
-//			}
-//
-//			for (c=1; c<np-3; c+=3) {
-//		      for (cc=0; cc<numdiv; cc++) {
-//				***this stuff now broken:
-//				if (c<patch->xsize) {
-//					s=(double)(c+3.*cc/numdiv)/patch->xsize;
-//					t=0.;
-//				} else if (c>np-patch->ysize) {
-//					s=0.;
-//					t=(double)((np-c)+3.*cc/numdiv)/patch->ysize;
-//				} else if (c<np/2) {
-//					s=1.;
-//					t=(double)((c-patch->xsize)+3.*cc/numdiv)/patch->ysize;
-//				} else { 
-//					s=1.-(double)(c-(patch->xsize+patch->ysize)+3.*cc/numdiv)/patch->xsize;
-//					t=1.;
-//				}
-//
-//				patch->getColor(s,t,&color);
-//
-//			  	fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
-//						  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",	spc,
-//						    pe[c  ].x,pe[c  ].y,
-//			  				pe[c+3].x,pe[c+3].y,
-//			  				po[c+3].x,po[c+3].y,
-//			  				po[c  ].x,po[c  ].y,
-//			  				color.red>>8, color.green>>8, color.blue>>8,
-//							color.alpha/65535.);
-//			  }
-//			}
-//-------OR-----------
 			 //create border colors so as to not have transparent outer edge sections.
 			 //this has to be done before the actual patch, so that the real colors lay
 			 //on top of this stuff.

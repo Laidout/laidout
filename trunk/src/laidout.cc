@@ -234,6 +234,8 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	config_dir=newstr(getenv("HOME"));
 	appendstr(config_dir,"/.laidout/");
 	appendstr(config_dir,LAIDOUT_VERSION);
+
+	makestr(controlfontstr,"sans-11");
 	
 	curcolor=0;
 	lastview=NULL;
@@ -912,7 +914,7 @@ const char *LaidoutApp::binary(const char *what)
  * a final suffix is searched for. So if name is "thing", and file "thing" is not
  * found, then if "thing.laidout" is found, then that is used.
  */
-char *LaidoutApp::full_path_for_resource(const char *name,char *dir)//dir=NULL
+char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=NULL
 {
 	int c=0;
 	if (!strncmp(name,"file://",7)) { name+=7; c=1; }

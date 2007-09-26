@@ -38,6 +38,7 @@ VERSION 0.09
 
 VERSION 0.1 
 -----------
+       Full internationalization support input and output, including left and right languages. pango?
        Of course, need copious testing by people who are not me.
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"

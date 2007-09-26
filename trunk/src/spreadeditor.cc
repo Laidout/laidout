@@ -721,7 +721,7 @@ void SpreadInterface::drawLabel(int x,int y,Page *page)
 	 // *** if (plabel->labeltype==circle, filledcircle, etc...) ...
 	 // *** write text
 	int w,h;
-	getextent(page->label,&w,&h);
+	getextent(page->label,-1,&w,&h);
 	w/=2;
 	h/=2;
 	w+=h;

@@ -67,7 +67,7 @@ class ExportFilter : public FileFilter
  public:
 	virtual const char *whattype() { return "FileOutputFilter"; }
 	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
-	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //preflight checker
+	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
 };
 
 //------------------------------- DocumentExportConfig ----------------------------------
@@ -95,6 +95,19 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 //------------------------------- export_document() ----------------------------------
 
 int export_document(DocumentExportConfig *config,char **error_ret);
+
+//------------------------------ ImportConfig ----------------------------
+class ImportConfig
+{
+ public:
+	char *filename;
+	int page,spread,layout;
+	Document *doc;
+	Group *toobj;
+	ImportFilter *filter;
+	ImportConfig();
+	virtual ~ImportConfig();
+};
 
 #endif
 
