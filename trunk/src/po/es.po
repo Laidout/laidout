@@ -1,20 +1,19 @@
-# translation of Laidout to Spanish
+# translation of es.po to Slang
 # LAIDOUT SPANISH TRANSLATION
 # Copyright (C) 2007
 # This file is distributed under the same license as Laidout.
 #
 # Tom Lechner <tomlechner@users.sourceforge.net>, 2007.
-
 msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-08-25 22:11-0700\n"
-"PO-Revision-Date: 2007-08-25 22:13-0700\n"
+"PO-Revision-Date: 2007-10-07 19:54-0700\n"
 "Last-Translator: Tom Lechner <tomlechner@users.sourceforge.net>\n"
 "Language-Team: Spanish <tomlechner@users.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.2\n"
 
@@ -52,7 +51,7 @@ msgstr "Papeles"
 
 #: ../impositions/imposition.cc:677
 msgid "Pages"
-msgstr "p·ginas"
+msgstr "p√°ginas"
 
 #: ../impositions/imposition.cc:678
 msgid "Singles"
@@ -72,7 +71,7 @@ msgstr "Salte al archivo seleccionado siguente"
 
 #: ../importimages.cc:194
 msgid "Select from possible automatic previews"
-msgstr "Seleccionar de inspecciones previoes autom·ticas posibles"
+msgstr "Seleccionar de inspecciones previoes autom√°ticas posibles"
 
 #: ../importimages.cc:205
 msgid "Generate"
@@ -80,11 +79,11 @@ msgstr "Generar"
 
 #: ../importimages.cc:206
 msgid "Generate a preview for file at this location."
-msgstr "Generar una inspecciÛn previo para el archivo en esta localizaciÛn"
+msgstr "Generar una inspecci√≥n previo para el archivo en esta localizaci√≥n"
 
 #: ../importimages.cc:221
 msgid "Start Page:"
-msgstr "Comenzar la p·gina:"
+msgstr "Comenzar la p√°gina:"
 
 #: ../importimages.cc:228
 msgid "Default dpi:"
@@ -92,7 +91,7 @@ msgstr "Dpi del defecto:"
 
 #: ../importimages.cc:247
 msgid "Images Per Page:"
-msgstr "Im·genes por la p·gina:"
+msgstr "Im√°genes por la p√°gina:"
 
 #: ../importimages.cc:253
 msgid "Exactly this many:"
@@ -100,11 +99,11 @@ msgstr "Exactamente estos muchos:"
 
 #: ../importimages.cc:264
 msgid "As many as will fit per page"
-msgstr "Tanto como cabr· por la p·gina"
+msgstr "Tanto como cabr√° por la p√°gina"
 
 #: ../importimages.cc:271
 msgid "All on one page"
-msgstr "Todos en una p·gina"
+msgstr "Todos en una p√°gina"
 
 #: ../importimages.cc:278
 msgid "Default name for previews:"
@@ -128,23 +127,23 @@ msgstr ""
 
 #: ../importimages.cc:294
 msgid "Select from the available preview bases"
-msgstr "Seleccionar de las bases disponibles de la inspecciÛn previo"
+msgstr "Seleccionar de las bases disponibles de la inspecci√≥n previo"
 
 #: ../importimages.cc:299
 msgid "Default max width for new previews:"
-msgstr "Anchura m·xima del defecto para las nuevas inspecciones previoes:"
+msgstr "Anchura m√°xima del defecto para las nuevas inspecciones previoes:"
 
 #: ../importimages.cc:302
 msgid ""
 "Any newly generated previews must fit\n"
 "in a square this many pixels wide"
 msgstr ""
-"Cualquier inspecciÛn previo nuevamente generada debe\n"
+"Cualquier inspecci√≥n previo nuevamente generada debe\n"
 "caber en un cuadrado este muchos pixeles de par en par"
 
 #: ../importimages.cc:307
 msgid "Make previews for files larger than"
-msgstr "Hacer las inspecciones previoes para los archivos m·s grandes que:"
+msgstr "Hacer las inspecciones previoes para los archivos m√°s grandes que:"
 
 #: ../importimages.cc:316
 msgid ""
@@ -153,9 +152,9 @@ msgid ""
 "whenever the generated preview name doesn't\n"
 "exist already"
 msgstr ""
-"Las inspecciones previoes ser·n generadas autom·ticamente\n"
-"para los archivos sobre este tamaÒo, y entonces solamente\n"
-"siempre que no lo haga el nombre generado de la inspecciÛn\n"
+"Las inspecciones previoes ser√°n generadas autom√°ticamente\n"
+"para los archivos sobre este tama√±o, y entonces solamente\n"
+"siempre que no lo haga el nombre generado de la inspecci√≥n\n"
 "previo existir ya"
 
 #: ../importimages.cc:327 ../viewwindow.cc:2811
@@ -171,11 +170,11 @@ msgid ""
 "Released under the GNU Public License, Version 2.\n"
 " (using Laxkit Version %s)"
 msgstr ""
-"Laidout VersiÛn %s\n"
+"Laidout Versi√≥n %s\n"
 "http://www.laidout.org\n"
 "de Tom Lechner, alguna vez en 2007\n"
-"Lanzado baja el GNU Public License, VersiÛn 2.\n"
-" (utilizado Laxkit VersiÛn %s)"
+"Lanzado baja el GNU Public License, Versi√≥n 2.\n"
+" (utilizado Laxkit Versi√≥n %s)"
 
 #: ../laidout.cc:91
 msgid ""
@@ -202,7 +201,7 @@ msgstr ""
 "\n"
 "Opciones:\n"
 "  --export-formats                 Enumerar todos los formatos disponibles "
-"de la exportaciÛn\n"
+"de la exportaci√≥n\n"
 "  --list-export-options format     Enumerar todos los opciones para el "
 "formato\n"
 "  --export \"format=EPS start=3\"    Exportar un documento basado en "
@@ -212,21 +211,21 @@ msgstr ""
 "  -N --no-template                 No utilizar una plantilla del defecto\n"
 "  -n --new \"letter,portrait,3pgs\"  Crear el nuevo documento\n"
 "  --file-format                    Imprimir hacia fuera una maqueta del "
-"archivo ajustar a formato, despuÈs salir\n"
-"  -v --version                     Demostrar la versiÛn Info, despuÈs salir\n"
+"archivo ajustar a formato, despu√©s salir\n"
+"  -v --version                     Demostrar la versi√≥n Info, despu√©s salir\n"
 "  -h --help                        Demostrar este resumen y salida.\n"
 
 #: ../laidout.cc:713
 msgid "Missing parameter..."
-msgstr "Par·metro que falta"
+msgstr "Par√°metro que falta"
 
 #: ../laidout.cc:714
 msgid "Unknown option"
-msgstr "OpciÛn desconocida"
+msgstr "Opci√≥n desconocida"
 
 #: ../laidout.cc:795 ../filetypes/filefilters.cc:304
 msgid "Bad export configuration"
-msgstr "Mala configuraciÛn de la exportaciÛn"
+msgstr "Mala configuraci√≥n de la exportaci√≥n"
 
 #: ../laidout.cc:805
 msgid "Fatal errors loading document:"
@@ -238,11 +237,11 @@ msgstr "Las advertencias encontraron mientras que documento que carga:"
 
 #: ../laidout.cc:818 ../filetypes/filefilters.cc:393
 msgid "Export failed."
-msgstr "La exportaciÛn fallÛ."
+msgstr "La exportaci√≥n fall√≥."
 
 #: ../laidout.cc:821
 msgid "Export finished with warnings:"
-msgstr "La exportaciÛn acabÛ con advertencias:"
+msgstr "La exportaci√≥n acab√≥ con advertencias:"
 
 #: ../laidout.cc:825 ../viewwindow.cc:3068 ../filetypes/filefilters.cc:396
 msgid "Exported."
@@ -250,7 +249,7 @@ msgstr "Exportado."
 
 #: ../laidout.cc:1113
 msgid "untitled"
-msgstr "sintÌtulo"
+msgstr "sint√≠tulo"
 
 #: ../newdoc.cc:123
 msgid "Left:"
@@ -274,7 +273,7 @@ msgstr "Guardar como:"
 
 #: ../newdoc.cc:192
 msgid "Paper Size  x:"
-msgstr "TamaÒo del papel x:"
+msgstr "Tama√±o del papel x:"
 
 #: ../newdoc.cc:199 ../newdoc.cc:285
 msgid "y:"
@@ -302,11 +301,11 @@ msgstr "Solamente para solo, doble, y el librete"
 
 #: ../newdoc.cc:241
 msgid "Number of pages:"
-msgstr "N˙mero de p·ginas"
+msgstr "N√∫mero de p√°ginas"
 
 #: ../newdoc.cc:247
 msgid "Imposition:"
-msgstr "ImposiciÛn:"
+msgstr "Imposici√≥n:"
 
 #: ../newdoc.cc:260
 msgid ""
@@ -322,7 +321,7 @@ msgstr ""
 
 #: ../newdoc.cc:264
 msgid "pagesize:"
-msgstr "TamaÒo de la p·gina:"
+msgstr "Tama√±o de la p√°gina:"
 
 #: ../newdoc.cc:268
 msgid "default"
@@ -338,7 +337,7 @@ msgstr "x:"
 
 #: ../newdoc.cc:291
 msgid "view:"
-msgstr "visiÛn:"
+msgstr "visi√≥n:"
 
 #: ../newdoc.cc:297
 msgid "single"
@@ -346,11 +345,11 @@ msgstr "solo"
 
 #: ../newdoc.cc:298
 msgid "page layout"
-msgstr "DisposiciÛn de p·gina"
+msgstr "Disposici√≥n de p√°gina"
 
 #: ../newdoc.cc:299
 msgid "paper layout"
-msgstr "DisposiciÛn de papel"
+msgstr "Disposici√≥n de papel"
 
 #: ../newdoc.cc:307
 msgid "target dpi:"
@@ -387,11 +386,11 @@ msgstr "Guarde como"
 
 #: ../viewwindow.cc:364
 msgid "(no doc)"
-msgstr "(ning˙n doc)"
+msgstr "(ning√∫n doc)"
 
 #: ../viewwindow.cc:645 ../viewwindow.cc:2749
 msgid "Page: "
-msgstr "P·gina: "
+msgstr "P√°gina: "
 
 #: ../viewwindow.cc:653
 msgid "limbo"
@@ -409,7 +408,7 @@ msgstr "Limbo %d"
 #: ../viewwindow.cc:2413 ../document.cc:953 ../document.cc:955
 #: ../document.cc:956
 msgid "Untitled"
-msgstr "SintÌtulo"
+msgstr "Sint√≠tulo"
 
 #: ../viewwindow.cc:2698
 msgid "Document list"
@@ -424,20 +423,20 @@ msgid ""
 "The pages in the spread\n"
 "and the current page"
 msgstr ""
-"Las p·ginas en la extensiÛn \n"
-"y la p·gina actual"
+"Las p√°ginas en la extensi√≥n \n"
+"y la p√°gina actual"
 
 #: ../viewwindow.cc:2755
 msgid "Previous spread"
-msgstr "ExtensiÛn anterior"
+msgstr "Extensi√≥n anterior"
 
 #: ../viewwindow.cc:2760
 msgid "Next spread"
-msgstr "ExtensiÛn siguiente"
+msgstr "Extensi√≥n siguiente"
 
 #: ../viewwindow.cc:2765
 msgid "Whether pages clips its contents"
-msgstr "Si una p·gina acorta su contenido"
+msgstr "Si una p√°gina acorta su contenido"
 
 #: ../viewwindow.cc:2777
 msgid "Single"
@@ -445,35 +444,35 @@ msgstr "Solo"
 
 #: ../viewwindow.cc:2778
 msgid "Page Layout"
-msgstr "DisposiciÛn de p·gina"
+msgstr "Disposici√≥n de p√°gina"
 
 #: ../viewwindow.cc:2779
 msgid "Paper Layout"
-msgstr "DisposiciÛn de papel"
+msgstr "Disposici√≥n de papel"
 
 #: ../viewwindow.cc:2788
 msgid "Add Page"
-msgstr "Agregar la p·gina"
+msgstr "Agregar la p√°gina"
 
 #: ../viewwindow.cc:2789
 msgid "Add 1 page after this one"
-msgstr "Agregar 1 p·gina despuÈs Èsta"
+msgstr "Agregar 1 p√°gina despu√©s √©sta"
 
 #: ../viewwindow.cc:2793
 msgid "Delete Page"
-msgstr "Suprimir la p·gina"
+msgstr "Suprimir la p√°gina"
 
 #: ../viewwindow.cc:2794
 msgid "Delete the current page"
-msgstr "Suprimir la p·gina actual"
+msgstr "Suprimir la p√°gina actual"
 
 #: ../viewwindow.cc:2798
 msgid "Import Images"
-msgstr "Importar las Im·genes"
+msgstr "Importar las Im√°genes"
 
 #: ../viewwindow.cc:2799
 msgid "Import one or more images"
-msgstr "Importar unas o m·s im·genes"
+msgstr "Importar unas o m√°s im√°genes"
 
 #: ../viewwindow.cc:2812
 msgid "Try to import various vector based files into the document"
@@ -519,27 +518,27 @@ msgstr "Demostrar una lista de atajos"
 #: ../viewwindow.cc:2905
 #, c-format
 msgid "Images imported."
-msgstr "Las im·genes estan importado."
+msgstr "Las im√°genes estan importado."
 
 #: ../viewwindow.cc:2906
 #, c-format
 msgid "Image imported."
-msgstr "La im·gen esta importado."
+msgstr "La im√°gen esta importado."
 
 #: ../viewwindow.cc:2908
 #, c-format
 msgid "Couldn't load images."
-msgstr "No podÌa cargar im·genes."
+msgstr "No pod√≠a cargar im√°genes."
 
 #: ../viewwindow.cc:2909
 #, c-format
 msgid "Couldn't load image."
-msgstr "No podÌa cargar im·gen."
+msgstr "No pod√≠a cargar im√°gen."
 
 #: ../viewwindow.cc:2945
 #, c-format
 msgid "Couldn't load image from \"%s\"."
-msgstr "No podÌa cargar im·gen de \"%s\"."
+msgstr "No pod√≠a cargar im√°gen de \"%s\"."
 
 #: ../viewwindow.cc:2960 ../viewwindow.cc:3038
 #, c-format
@@ -566,11 +565,11 @@ msgstr "Error mientras que exporta."
 
 #: ../viewwindow.cc:3071
 msgid "Warning!"
-msgstr "°Advertencia!"
+msgstr "¬°Advertencia!"
 
 #: ../viewwindow.cc:3074
 msgid "Dammit!"
-msgstr "MaldiciÛnes!"
+msgstr "Maldici√≥nes!"
 
 #: ../viewwindow.cc:3178 ../viewwindow.cc:3199
 #, c-format
@@ -592,27 +591,27 @@ msgstr "Documentos"
 
 #: ../viewwindow.cc:3297
 msgid "Page added."
-msgstr "P·gina agregada."
+msgstr "P√°gina agregada."
 
 #: ../viewwindow.cc:3298
 msgid "Error adding page."
-msgstr "Error que agrega la p·gina."
+msgstr "Error que agrega la p√°gina."
 
 #: ../viewwindow.cc:3306
 msgid "Page deleted."
-msgstr "La p·gina suprimiÛ."
+msgstr "La p√°gina suprimi√≥."
 
 #: ../viewwindow.cc:3307
 msgid "Cannot delete the only page."
-msgstr "No puede suprimir la ˙nica p·gina."
+msgstr "No puede suprimir la √∫nica p√°gina."
 
 #: ../viewwindow.cc:3308
 msgid "Error deleting page."
-msgstr "Error que suprime la p·gina."
+msgstr "Error que suprime la p√°gina."
 
 #: ../viewwindow.cc:3392
 msgid "Sorry, there are no import filters installed."
-msgstr "Apesadumbrado, no hay filtros de la importaciÛn instalados."
+msgstr "Apesadumbrado, no hay filtros de la importaci√≥n instalados."
 
 #: ../commandwindow.cc:73
 msgid "Document added."
@@ -628,7 +627,7 @@ msgstr "Proyecto: "
 
 #: ../commandwindow.cc:79
 msgid "(untitled)"
-msgstr "(sintÌtulo)"
+msgstr "(sint√≠tulo)"
 
 #: ../commandwindow.cc:87
 msgid "No documents in project."
@@ -636,7 +635,7 @@ msgstr "Ningunos documentos en proyecto."
 
 #: ../commandwindow.cc:108
 msgid "Could not load that."
-msgstr "No podÌa cargar eso."
+msgstr "No pod√≠a cargar eso."
 
 #: ../commandwindow.cc:110
 msgid "That document is already loaded."
@@ -667,7 +666,7 @@ msgid ""
 "quit\n"
 "?"
 msgstr ""
-"Los ˙nicos comandos reconocidos son:\n"
+"Los √∫nicos comandos reconocidos son:\n"
 "newdoc [spec]\n"
 "open [un documento de Laidout]\n"
 "help\n"
@@ -698,11 +697,11 @@ msgstr ""
 
 #: ../spreadeditor.cc:195
 msgid "Auto arrange on each window size change"
-msgstr "Arreglar autom·ticamente cuando la ventana cambia tamaÒo"
+msgstr "Arreglar autom√°ticamente cuando la ventana cambia tama√±o"
 
 #: ../spreadeditor.cc:196
 msgid "Auto arrange until you move a spread"
-msgstr "Arreglar autom·ticamente hasta que mueves una extensiÛn"
+msgstr "Arreglar autom√°ticamente hasta que mueves una extensi√≥n"
 
 #: ../spreadeditor.cc:197
 msgid "Arrange in one row"
@@ -718,7 +717,7 @@ msgstr "Arreglar en una rejilla basada en proporciones de la pantalla"
 
 #: ../spreadeditor.cc:200
 msgid "You will do all arranging"
-msgstr "Har·s todo el arreglo"
+msgstr "Har√°s todo el arreglo"
 
 #: ../spreadeditor.cc:201
 msgid "? error: bad arrange value"
@@ -734,11 +733,11 @@ msgstr "Reajuste"
 
 #: ../spreadeditor.cc:1265
 msgid "Update Thumbs"
-msgstr "Poner al dÌa los iconos"
+msgstr "Poner al d√≠a los iconos"
 
 #: ../document.cc:667
 msgid "Need a file name to save to!"
-msgstr "°Necesitar un nombre del archivo ahorrar a!"
+msgstr "¬°Necesitar un nombre del archivo ahorrar a!"
 
 #: ../document.cc:673
 msgid "File cannot be opened for writing"
@@ -944,12 +943,12 @@ msgstr ""
 #: ../utils.cc:116 ../utils.cc:138
 #, c-format
 msgid "Cannot write to %s."
-msgstr "°No puede escribir a %s!"
+msgstr "¬°No puede escribir a %s!"
 
 #: ../utils.cc:125
 #, c-format
 msgid "Cannot overwrite %s."
-msgstr "°No puede sobreescribir %s!"
+msgstr "¬°No puede sobreescribir %s!"
 
 #: ../utils.cc:160
 #, c-format
@@ -980,7 +979,7 @@ msgstr "No puede exportar los objetos de Eps en svg. \n"
 
 #: ../filetypes/svg.cc:135
 msgid "Warning: interpolating a color patch object\n"
-msgstr "Advertencia: interpolaciÛn de un objeto del remiendo del color\n"
+msgstr "Advertencia: interpolaci√≥n de un objeto del remiendo del color\n"
 
 #: ../filetypes/svg.cc:330
 msgid "Cannot export Image Patch objects into svg.\n"
@@ -1031,7 +1030,7 @@ msgstr "Exportar a este archivo"
 
 #: ../filetypes/exportdialog.cc:264 ../filetypes/exportdialog.cc:294
 msgid "Browse for a new location"
-msgstr "Hojear para una nueva localizaciÛn"
+msgstr "Hojear para una nueva localizaci√≥n"
 
 #: ../filetypes/exportdialog.cc:273
 msgid "To Files: "
@@ -1044,9 +1043,9 @@ msgid ""
 "the spread index. A \"###\" for an index like 3\n"
 "will get replaced with \"003\"."
 msgstr ""
-"ExportaciÛn a estos archivos. Un '#' es con substituido \n"
-"el Ìndice de la extensiÛn. A \"###\" para un Ìndice tienen gusto de 3 \n"
-"conseguir· con substituido \"003\"."
+"Exportaci√≥n a estos archivos. Un '#' es con substituido \n"
+"el √≠ndice de la extensi√≥n. A \"###\" para un √≠ndice tienen gusto de 3 \n"
+"conseguir√° con substituido \"003\"."
 
 #: ../filetypes/exportdialog.cc:317
 msgid "The type of spreads to export"
@@ -1066,7 +1065,7 @@ msgstr "Exportar de:"
 
 #: ../filetypes/exportdialog.cc:359
 msgid "The starting index"
-msgstr "El Ìndice que comienza"
+msgstr "El √≠ndice que comienza"
 
 #: ../filetypes/exportdialog.cc:362
 msgid "To:"
@@ -1074,27 +1073,27 @@ msgstr "A:"
 
 #: ../filetypes/exportdialog.cc:369
 msgid "The ending index"
-msgstr "El Ìndice del conclusiÛn"
+msgstr "El √≠ndice del conclusi√≥n"
 
 #: ../filetypes/exportdialog.cc:621
 msgid "Cannot overwrite this kind of file!"
-msgstr "°No puede sobreescribir esta clase de archivo!"
+msgstr "¬°No puede sobreescribir esta clase de archivo!"
 
 #: ../filetypes/exportdialog.cc:625
 msgid "WARNING: This file will be overwritten on export!"
-msgstr "ADVERTENCIA: °Este archivo ser· sobreescrito en la exportaciÛn!"
+msgstr "ADVERTENCIA: ¬°Este archivo ser√° sobreescrito en la exportaci√≥n!"
 
 #: ../filetypes/exportdialog.cc:635
 msgid "Cannot write to nothing!"
-msgstr "°No puede escribir a nada!"
+msgstr "¬°No puede escribir a nada!"
 
 #: ../filetypes/exportdialog.cc:659
 msgid "Some files cannot be overwritten!"
-msgstr "°Algunos archivos no pueden ser sobreescritos!"
+msgstr "¬°Algunos archivos no pueden ser sobreescritos!"
 
 #: ../filetypes/exportdialog.cc:663
 msgid "Warning: Some files will be overwritten!"
-msgstr "Advertencia: °Algunos archivos ser·n sobreescritos!"
+msgstr "Advertencia: ¬°Algunos archivos ser√°n sobreescritos!"
 
 #: ../filetypes/postscript.cc:86
 msgid "EPS 3.0"
@@ -1114,11 +1113,11 @@ msgstr "Error que exporta a la imagen."
 
 #: ../filetypes/image.cc:211
 msgid "Ghostscript interrupted from making image."
-msgstr "Ghostscript interrumpiÛ de hacer imagen."
+msgstr "Ghostscript interrumpi√≥ de hacer imagen."
 
 #: ../filetypes/image.cc:214
 msgid "Ghostscript had error while making image."
-msgstr "Ghostscript tenÌa error mientras que hacÌa imagen."
+msgstr "Ghostscript ten√≠a error mientras que hac√≠a imagen."
 
 #: ../filetypes/pdf.cc:90
 msgid "Pdf 1.4"
@@ -1139,7 +1138,7 @@ msgstr "Interfaz de papel"
 
 #: ../interfaces/paperinterface.cc:101 ../interfaces/paperinterface.cc:102
 msgid "Paper Size"
-msgstr "TamaÒo del papel:"
+msgstr "Tama√±o del papel:"
 
 #: ../interfaces/paperinterface.cc:113
 msgid "Print with paper group"
@@ -1147,11 +1146,11 @@ msgstr "Imprimir con el grupo de papel"
 
 #: ../pagerangedialog.cc:65
 msgid "Go to previous page range"
-msgstr "Ir a la gama de p·gina anterior"
+msgstr "Ir a la gama de p√°gina anterior"
 
 #: ../pagerangedialog.cc:71
 msgid "(no name)"
-msgstr "(ning˙n nombre)"
+msgstr "(ning√∫n nombre)"
 
 #: ../pagerangedialog.cc:71
 msgid "(no ranges)"
@@ -1163,7 +1162,7 @@ msgstr "El nombre de la gama. Chascar para corregir."
 
 #: ../pagerangedialog.cc:79
 msgid "Go to next page range"
-msgstr "Ir a la gama de p·gina siguiente"
+msgstr "Ir a la gama de p√°gina siguiente"
 
 #: ../pagerangedialog.cc:87
 msgid "Start:"
@@ -1171,7 +1170,7 @@ msgstr "Comienzo:"
 
 #: ../pagerangedialog.cc:90
 msgid "The starting page index of the range."
-msgstr "El comenzar de Ìndice de p·ginas de la gama."
+msgstr "El comenzar de √≠ndice de p√°ginas de la gama."
 
 #: ../pagerangedialog.cc:94
 msgid "End:"
@@ -1179,7 +1178,7 @@ msgstr "Final:"
 
 #: ../pagerangedialog.cc:97
 msgid "The ending page index of the range."
-msgstr "El conclusiÛn de Ìndice de p·ginas de la gama."
+msgstr "El conclusi√≥n de √≠ndice de p√°ginas de la gama."
 
 #: ../pagerangedialog.cc:105
 msgid "Base:"
@@ -1191,8 +1190,8 @@ msgid ""
 "Something like \"###\" will produce 001, 002, ..., 010, 011, etc."
 msgstr ""
 "La base de la etiqueta de la gama. un '#' consigue substituido por el "
-"n˙mero. \n"
-"Algo como \"###\" producir· 001, 002,?, 010, 011, el etc."
+"n√∫mero. \n"
+"Algo como \"###\" producir√° 001, 002,?, 010, 011, el etc."
 
 #: ../pagerangedialog.cc:121
 msgid "Add before"
@@ -1200,7 +1199,7 @@ msgstr "Agregar antes"
 
 #: ../pagerangedialog.cc:125
 msgid "Add after"
-msgstr "Agregar despuÈs"
+msgstr "Agregar despu√©s"
 
 #: ../../laxkit/lax/interfaces/colorpatchinterface.cc:535
 #: ../../laxkit/lax/interfaces/imagepatchinterface.cc:354
@@ -1242,7 +1241,7 @@ msgstr "Corregir con controles de la frontera solamente"
 
 #: ../../laxkit/lax/interfaces/patchinterface.cc:2573
 msgid "Edit full cubic bezier patch"
-msgstr "Corregir el remiendo m·s bezier c˙bico lleno"
+msgstr "Corregir el remiendo m√°s bezier c√∫bico lleno"
 
 #: ../../laxkit/lax/interfaces/patchinterface.cc:2595
 #: ../../laxkit/lax/interfaces/patchinterface.cc:2601
@@ -1258,7 +1257,7 @@ msgstr "Ahora dividir cada columna en filas de %d"
 
 #: ../../laxkit/lax/interfaces/patchinterface.cc:2651
 msgid "Patches need more than 1 column of subpatches to warp."
-msgstr "Los remiendos necesitan m·s de 1 columna de subpatches combarse."
+msgstr "Los remiendos necesitan m√°s de 1 columna de subpatches combarse."
 
 #: ../../laxkit/lax/interfaces/gradientinterface.cc:1626
 msgid "d=decorations, f=flip color order, l=linear, r=radial"
@@ -1302,7 +1301,7 @@ msgstr "Dir actual"
 
 #: ../../laxkit/lax/filedialog.cc:209
 msgid "Mask to apply to the end of path"
-msgstr "M·scara a aplicarse al extremo de la trayectoria"
+msgstr "M√°scara a aplicarse al extremo de la trayectoria"
 
 #: ../../laxkit/lax/filedialog.cc:426
 msgid ""
@@ -1320,7 +1319,7 @@ msgstr "Marca"
 #: ../../laxkit/lax/filedialog.cc:464 ../../laxkit/lax/filedialog.cc:470
 #: ../../laxkit/lax/filedialog.cc:476
 msgid "(Not implemented yet)"
-msgstr "(No programado todavÌa)"
+msgstr "(No programado todav√≠a)"
 
 #: ../../laxkit/lax/filedialog.cc:446
 msgid "New Dir"
@@ -1348,7 +1347,7 @@ msgstr "Detalles"
 
 #: ../../laxkit/lax/filedialog.cc:468
 msgid "Back"
-msgstr "RevÈs"
+msgstr "Rev√©s"
 
 #: ../../laxkit/lax/filedialog.cc:474
 msgid "Forward"
@@ -1376,7 +1375,7 @@ msgstr "Quitar de todos modos"
 
 #: ../../laxkit/lax/textbutton.cc:123
 msgid "Preview"
-msgstr "InspecciÛn previo"
+msgstr "Inspecci√≥n previo"
 
 #: ../../laxkit/lax/textbutton.cc:124
 msgid "Yes"
@@ -1439,7 +1438,7 @@ msgstr "Para el azul, arrastrar"
 
 #: ../../laxkit/lax/colorbox.cc:224
 msgid "For cyan, drag "
-msgstr "Para el ci·nico, arrastrar"
+msgstr "Para el ci√°nico, arrastrar"
 
 #: ../../laxkit/lax/colorbox.cc:231
 msgid "For magenta, drag "
