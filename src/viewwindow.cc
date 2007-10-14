@@ -27,6 +27,7 @@
 #include <lax/overwrite.h>
 #include <lax/laxutils.h>
 #include <lax/menubutton.h>
+#include <lax/inputdialog.h>
 #include <cstdarg>
 #include <cups/cups.h>
 
@@ -493,7 +494,8 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			return 0;
 		}
 		i-=1000;
-		if (i>=0 && i<laidout->project->limbos.n()) {
+		if (i<0) return 0;
+		if (i<laidout->project->limbos.n()) {
 			if (limbo==laidout->project->limbos.e(i)) return 0;
 			for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
 			clearCurobj();
@@ -502,6 +504,47 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			limbo->inc_count();
 			needtodraw=1;
 			return 0;
+		}
+		if (i<1000) {
+			i-=laidout->project->limbos.n();
+			if (i==0) {
+				 //add new limbo with name such as "Limbo 3"
+				if (limbo) limbo->dec_count();
+				limbo=new Group;//group with 1 count
+				char txt[30];
+				sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
+				makestr(limbo->id,txt);
+				laidout->project->limbos.push(limbo,0);//adds 1 count
+				return 0;
+			} else if (i==1) {
+				 //rename current limbo
+				app->rundialog(new InputDialog(NULL,"rename limbo",ANXWIN_CENTER,
+								0,0,0,0,1,
+								NULL, this->window, "rename limbo",
+								limbo->id,
+								_("New name?"),
+								_("Rename"), 1,
+								_("Cancel"), 0));
+				return 0;
+			} else if (i==2) {
+				 //remove current limbo from project, and unlink it from this viewport
+				 //***other viewports might link to the limbo. In that case, each
+				 //   viewport must select another limbo before it stops using the deleted one..
+				 //   would be better to do search for any windows that use it and delete?
+				if (laidout->project->limbos.n()==1) {
+					postmessage(_("Cannot delete the only limbo."));
+					return 0;
+				}
+				int i=laidout->project->limbos.findindex(limbo);
+				if (i<0) return 0;
+				laidout->project->limbos.remove(i);
+				limbo->dec_count();
+				i=(i+1)%laidout->project->limbos.n();
+				limbo=dynamic_cast<Group *>(laidout->project->limbos.e(i));
+				limbo->inc_count();
+				needtodraw=1;
+				return 0;
+			}
 		}
 		i-=1000;
 		//**** change zones? other menu?
@@ -543,16 +586,23 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		
 		delete te;
 		return 0;
+	} else if (!strcmp(mes,"rename limbo")) {
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s) return 1;
+		if (!isblank(s->str)) makestr(limbo->id,s->str);
+		delete data;
+		return 0;
 	} else if (!strcmp(mes,"rulercornermenu")) {
 		 //******* probably won't use... use ClientEvent instead
-		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
-		if (!se || !se->n || !se->strs[0]) return 1;
-		//***set document to se->strs[0]
-		//****str is base name
-		Document *ndoc=laidout->findDocument(se->strs[0]);
-		if (ndoc) UseThisDoc(ndoc);
-		delete se;
-		return 0;
+		cout <<"**********LaidoutViewport::DataEvent got rulercornermenu, and it shouldn't!"<<endl;
+		//StrsEventData *se=dynamic_cast<StrsEventData *>(data);
+		//if (!se || !se->n || !se->strs[0]) return 1;
+		////***set document to se->strs[0]
+		////****str is base name
+		//Document *ndoc=laidout->findDocument(se->strs[0]);
+		//if (ndoc) UseThisDoc(ndoc);
+		//delete se;
+		return 1;
 	} else if (!strcmp(mes,"image properties")) {
 		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
 		if (se) {
@@ -2152,6 +2202,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 	DBG 	cerr << ".....mark...."<<endl;
 	DBG }
 	
+
 	 // check these first, before asking interfaces
 	if (ch==' ') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
 		if ((state&LAX_STATE_MASK)==0) {
@@ -2197,7 +2248,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 		needtodraw=1;
 		return 0;
 	} else if (ch=='M' && (state&LAX_STATE_MASK)==ShiftMask|Mod1Mask) {
-		 //for debugging to make a delineation in the cout stuff
+		DBG  //for debugging to make a delineation in the cerr stuff
 		DBG cerr<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
 		return 0;
 	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) {
@@ -3096,7 +3147,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		ConfigEventData *d=dynamic_cast<ConfigEventData *>(data);
 		if (!d || !d->config->filter) return 1;
 		char *error=NULL;
-		mesbar->SetText("Exporting...");
+		mesbar->SetText(_("Exporting..."));
 		mesbar->Refresh();
 		XSync(app->dpy,False);
 		int err=export_document(d->config,&error);
@@ -3247,6 +3298,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //---
 		 //limbo1
 		 //limbo2
+		 //Delete Current Limbo
+		 //Add New Limbo
 		 //----
 		 //zone1
 		 //zone2
@@ -3254,7 +3307,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		MenuInfo *menu;
 		menu=new MenuInfo("Viewer");
 
-		 //add document list
+		 //add document list, numbers start at 0
 		int c;
 		for (c=0; c<laidout->project->docs.n; c++) {
 			menu->AddItem(laidout->project->docs.e[c]->Name(1),c); 
@@ -3267,7 +3320,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
 
-		 //add limbo list
+		 //add limbo list, numbers starting at 1000...
 		char txt[20];
 		Group *g;
 		int where;
@@ -3286,6 +3339,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				}
 			}
 		}
+		menu->AddItem(_("Add new limbo"),1000+c);
+		c++;
+		menu->AddItem(_("Rename current limbo"),1000+c);
+		c++;
+		if (laidout->project->limbos.n()>1) menu->AddItem(_("Delete current limbo"),1000+c);
 
 		MenuSelector *popup;
 		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
@@ -3314,6 +3372,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //toggle pageclips
 		 //*** this sucks need to dup the style if necessary and
 		 //*** make it based on the old style
+		if (!doc) return 0;
 		int c=((LaidoutViewport *)viewport)->curobjPage();
 		if (c>=0) {
 			PageStyle *ps=doc->pages.e[c]->pagestyle;
@@ -3327,12 +3386,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
 	} else if (!strcmp(mes,"addPage")) { // 
+		if (!doc) return 0;
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
 		int c=doc->NewPages(curpage+1,1); //add after curpage
 		if (c>=0) PostMessage(_("Page added."));
 			else PostMessage(_("Error adding page."));
 		return 0;
 	} else if (!strcmp(mes,"deletePage")) { // 
+		if (!doc) return 0;
+
 		 // this in response to delete button command
 		LaidoutViewport *vp=((LaidoutViewport *)viewport);
 		int curpage=vp->curobjPage();
@@ -3347,6 +3409,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 		return 0;
 	} else if (!strcmp(mes,"newPageNumber")) {
+		if (!doc) return 0;
+
 		if (e->data.l[0]>doc->pages.n) {
 			e->data.l[0]=0;
 			pagenumber->Select(e->data.l[0]);
@@ -3474,6 +3538,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		((HeadWindow *)win_parent)->CharInput('o',ControlMask);
 		return 0;
 	} else if (!strcmp(mes,"saveDoc")) { 
+		if (!doc) return 0;
+		
 		 //user clicked save button
 		if (isblank(doc->Saveas())) { //***or shift-click for saveas??
 			 // launch saveas!!
@@ -3516,7 +3582,23 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		PaperGroup *pg=vp->papergroup;
 		Group *l;
-		if (!pg || !pg->papers.n) l=NULL; else l=vp->limbo;
+		if (!pg || !pg->papers.n) {
+			l=NULL;
+			if (vp->doc) pg=vp->doc->docstyle->imposition->papergroup;
+			if (pg && pg->papers.n==0) pg=NULL;
+			if (!pg) {
+				int c;
+				for (c=0; c<laidout->papersizes.n; c++) {
+					if (!strcasecmp(laidout->defaultpaper,laidout->papersizes.e[c]->name)) 
+						break;
+				}
+				PaperStyle *ps;
+				if (c==laidout->papersizes.n) c=0;
+				ps=(PaperStyle *)laidout->papersizes.e[0]->duplicate();
+				pg=new PaperGroup(ps);
+				ps->dec_count();
+			} else pg->inc_count();
+		} else l=vp->limbo;
 		PrintingDialog *p=new PrintingDialog(doc,window,"export config",
 										"output.ps", //file
 										"lp",        //command
@@ -3528,6 +3610,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 										pg,           //papergroup
 										l,           //limbo
 										mesbar);     //progress window
+		pg->dec_count();
 		app->rundialog(p);
 		return 0;
 	}
@@ -3646,7 +3729,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {
 		//*** popup a SpreadEditor
-		char blah[30+strlen(doc->Name(0))+1];
+		char blah[30+strlen(doc->Name(1))+1];
 		sprintf(blah,"Spread Editor for %s",doc->Name(0));
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;

@@ -13,7 +13,7 @@
 //
 // Copyright (C) 2004-2006 by Tom Lechner
 //
-/******** stylewindow.cc **********/
+
 
 // This file defines the functions to make a generic dialog for
 // and arbitrary StyleDef.
@@ -60,11 +60,14 @@ using namespace Laxkit;
  *     use this new state.
  */
 
+
 //! Create new window from the StyleDef of a Style.
 GenericStyleDialog::GenericStyleDialog(Style *nstyle,anXWindow *owner)
 	: RowFrame(NULL,  nstyle?nstyle->Stylename():"random style",
 			ROWFRAME_STRETCH|ROWFRAME_HORIZONTAL, 
-			0,0,0,0,0, 5)
+			0,0,0,0,0,
+			NULL,None,NULL,
+			5)
 {
 	def=NULL;
 	style=nstyle;
@@ -79,9 +82,12 @@ GenericStyleDialog::GenericStyleDialog(Style *nstyle,anXWindow *owner)
 //! Constructor from a StyleDef, ends by sending a GenericStyle object.
 GenericStyleDialog::GenericStyleDialog(StyleDef *nsd,anXWindow *owner)
 	: RowFrame(NULL,"random style", ROWFRAME_SPACE|ROWFRAME_HORIZONTAL, 
-			   0,0,0,0,0, 5)
+			   0,0,0,0,0,
+			   NULL,None,NULL,
+			   5)
 {
 	def=nsd;
+	if (def) def->inc_count();
 	style=NULL;
 	
 	last=NULL;
