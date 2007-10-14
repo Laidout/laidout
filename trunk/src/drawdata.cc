@@ -34,6 +34,7 @@
 #include <lax/interfaces/somedataref.h>
 #include "drawdata.h"
 #include "dataobjects/epsdata.h"
+#include "dataobjects/mysterydata.h"
 #include "laidout.h"
 
 using namespace Laxkit;
@@ -140,6 +141,7 @@ SomeData *newObject(const char *thetype)
 	if (!strcmp(thetype,"GradientData")) return new GradientData();
 	if (!strcmp(thetype,"ColorPatchData")) return new ColorPatchData();
 	if (!strcmp(thetype,"EpsData")) return new EpsData();
+	if (!strcmp(thetype,"MysteryData")) return new MysteryData();
 	return NULL;
 }
 

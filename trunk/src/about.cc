@@ -60,12 +60,14 @@ int AboutWindow::preinit()
 			"Laidout Version "));
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
-			"\n"
-			"so far written entirely\n"
-			"by Tom Lechner,\n"
+			"\nusing Laxkit version " LAXKIT_VERSION "\n"
 			"2004-2007\n"
 			"\n"
-			"using Laxkit\n version " LAXKIT_VERSION "\n"));
+			"so far coded entirely\n"
+			"by Tom Lechner,\n"
+			"\n"
+			"Translations:\n"
+			"French: Nabyl Bennouri"));
 	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
 	delete[] about;
 			

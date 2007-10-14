@@ -24,7 +24,10 @@
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
 #include "../utils.h"
+#include "../drawdata.h"
 #include "../printing/psout.h"
+#include "../dataobjects/epsdata.h"
+#include "../dataobjects/mysterydata.h"
 #include "ppt.h"
 
 #include <iostream>
@@ -44,8 +47,8 @@ void installPptFilter()
 	PptoutFilter *pptout=new PptoutFilter;
 	laidout->exportfilters.push(pptout);
 	
-	//PptinFilter *pptin=new PptinFilter;
-	//laidout->importfilters.push(pptin);
+	PptinFilter *pptin=new PptinFilter;
+	laidout->importfilters.push(pptin);
 }
 
 
@@ -67,6 +70,7 @@ const char *PptoutFilter::VersionName()
 
 //! Internal function to dump out the obj if it is an ImageData.
 /*! \todo deal with SomeDataRef
+ * \todo *** test EpsData out
  */
 static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 {
@@ -101,6 +105,22 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
 		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"raster\" file=\"%s\" />\n",
 				img->filename);
+	} else if (!strcmp(obj->whattype(),"EpsData")) {
+		 // just like ImageData, but outputs as type="Image"
+		EpsData *eps;
+		eps=dynamic_cast<EpsData *>(obj);
+		if (!eps || !eps->filename) return;
+
+		double m[6];
+		if (mm) transform_mult(m,eps->m(),mm);
+		else transform_copy(m,eps->m());
+		
+		char *bname=basename(eps->filename); // Warning! This assumes the GNU basename, which does
+											 // not modify the string.
+		fprintf(f,"%s<frame name=\"Image %s\" matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
+				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
+		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"image\" file=\"%s\" />\n",
+				eps->filename);
 	}
 }
 
@@ -294,6 +314,11 @@ const char *PptinFilter::FileType(const char *first100bytes)
 	return NULL;
 }
 
+const char *PptinFilter::VersionName()
+{
+	return _("Passepartout");
+}
+
 //! Import a Passepartout file.
 /*! If doc!=NULL, then import the pptout files to Document starting at page startpage.
  * Otherwise, create a brand new Singles based document.
@@ -304,6 +329,7 @@ const char *PptinFilter::FileType(const char *first100bytes)
  * <pre>
  * <?xml version="1.0"?>
  * <document paper_name="Letter" doublesided="true" landscape="false" first_page_num="1">
+ *   <text_stream name="stream1" file="8jeev10.txt" transform=""/>
  *   <page>
  *      <frame name="Raster beetile-501x538.jpg"
  *             matrix="0.812233 0 0 0.884649 98.6048 243.107"
@@ -312,6 +338,17 @@ const char *PptinFilter::FileType(const char *first100bytes)
  *             obstaclemargin="0" 
  *             type="raster"
  *             file="beetile-501x538.jpg"/>
+ *      <frame name="Text stream1"
+ *             matrix="1 0 0 1 140.833 145.245"
+ *             lock="false"
+ *             flowaround="false"
+ *             obstaclemargin="0"
+ *             type="text"
+ *             width="200"
+ *             height="300"
+ *             num_columns="1"
+ *             gutter_width="12"
+ *             stream="stream1"/>
  *   </page>
  * </document>         
  * </pre>
@@ -383,6 +420,9 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 					t=frame->find("type");
 					n=frame->find("name");
 					m=frame->find("matrix");
+
+					if (m) DoubleListAttribute(m->value,M,6,NULL);
+
 					if (a && a->value && t) {
 						if (!strcmp(t->value,"raster")) {
 							img=load_image(a->value);
@@ -390,18 +430,59 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 								image=new ImageData;
 								if (n) image->SetDescription(n->value);
 								image->SetImage(img);
-								if (m) DoubleListAttribute(m->value,M,6,NULL);
 								dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
 								image->dec_count();
 							}
 						} else if (!strcmp(t->value,"group")) {
 							//***
 							//pptDumpInGroup(page->attributes.e[c]->attributes***
+						} else if (!strcmp(t->value,"image")) {
+							//***for eps objects
+						} else if (!strcmp(t->value,"text")) {
+							MysteryData *d=(MysteryData *)newObject("MysteryData");
+							d->generator=newstr(VersionName());
+							 //<frame name="Text stream1"
+							 //       matrix="1 0 0 1 140.833 145.245"
+							 //       lock="false"
+							 //       flowaround="false"
+							 //       obstaclemargin="0"
+							 //       type="text"
+							 //       width="200"
+							 //       height="300"
+							 //       num_columns="1"
+							 //       gutter_width="12"
+							 //       stream="stream1"/>
+							if (m) transform_copy(d->m(),M);
+							char *name,*value;
+							for (int c3=0; c3<frame->attributes.n; c3++) {
+								name= frame->attributes.e[c3]->name;
+								value=frame->attributes.e[c3]->value;
+								if (!strcmp(name,"name")) {
+									//if (!isblank(value)) makestr(d->id,value);
+								} else if (!strcmp(name,"width")) {
+									DoubleAttribute(value,&d->maxx);
+								} else if (!strcmp(name,"height")) {
+									DoubleAttribute(value,&d->maxy);
+								//} else if (!strcmp(name,"lock")) {
+								//} else if (!strcmp(name,"flowaround")) {
+								//} else if (!strcmp(name,"obstaclemargin")) {
+								//} else if (!strcmp(name,"num_columns")) {
+								//} else if (!strcmp(name,"gutter_width")) {
+								//} else if (!strcmp(name,"stream")) {
+								}
+							}
+							d->installAtts(frame);
+							page->attributes.e[c]=NULL;
+							//***install d
 						}
 					}
 				}
 			}
 			pagenum++;
+		} else if (!strcmp(pptdoc->attributes.e[c]->name,"text_stream")) {
+			 //<text_stream name="stream1" file="8jeev10.txt" transform=""/>
+			//***doc->attachFragment(VersionName(),pptdoc->attributes.e[c]);
+			pptdoc->attributes.e[c]=NULL;//***
 		}
 	}
 	
@@ -414,6 +495,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	delete att;
 	return 0;
 }
+
 
 
 

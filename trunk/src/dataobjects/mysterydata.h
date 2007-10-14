@@ -11,25 +11,27 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2007 by Tom Lechner
 //
+#ifndef MYSTERYDATA_H
+#define MYSTERYDATA_H
 
-#ifndef COMMANDWINDOW_H
-#define COMMANDWINDOW_H
+#include <lax/interfaces/somedata.h>
+#include <lax/attributes.h>
 
-#include <lax/promptedit.h>
 
-class CommandWindow : public Laxkit::PromptEdit
+//--------------------------------------- MysteryData ---------------------------------
+class MysteryData : public LaxInterfaces::SomeData
 {
- protected:
-	char *dir;
-	virtual char *process(const char *in);
  public:
- 	CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
- 		int xx,int yy,int ww,int hh,int brder);
- 	virtual const char *whattype() { return "CommandWindow"; }
-	virtual ~CommandWindow();
+	char *generator;
+	LaxFiles::Attribute *attributes;
+	MysteryData(const char *gen=NULL);
+	virtual ~MysteryData();
+	virtual int installAtts(LaxFiles::Attribute *att);
 };
 
+
 #endif
+
 

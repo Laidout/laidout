@@ -185,6 +185,9 @@ void Group::flush()
 }
 
 //! Return object with index i in stack.
+/*! Note that the object's count is not changed. If the calling code wants to hang
+ * on to the object they should quickly inc_count the object.
+ */
 LaxInterfaces::SomeData *Group::e(int i)
 {
 	if (i<0 || i>=objs.n) return NULL;

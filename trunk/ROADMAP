@@ -7,25 +7,24 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.09
 ------------
-       Clean up patch controls
-       Implement save as project
        More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+(done) Add, delete, and rename limbos
+       Load, save, add, delete paper groups
+       Finish implementing project based setup, particularly being able to save a project, not just load one   
+       NetImposition needs import/export net, and import 3-d models such as from OFF files
+       Net imposition interactive unwrapper and build net interface
+       Generic fold and trim imposition
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Masking
+       Clean up patch controls
        Image and Color patches, gradients, etc should allow transparent colors
-       Finish implementing project based setup, particularly being able to save a project, not just load one
-       Soup up the color box so one can recall previous colors, and/or palette window integration
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
        In image properties dialog, have the popup list of potential previews
        When importing from an image list file, should be able to say if and when to auto-make previews
        Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
        Spread editor: load and save spread editor arrangements
-       Load, save, add, delete paper groups
-       Add and delete limbos
        Fix multi-object selection move when crossing page boundaries
-       NetImposition needs import/export net and import 3-d models such as from OFF files
-       Net imposition interactive unwrapper and build net interface
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
-       4x2 fold and trim imposition
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Selected region out to image(s), regions optionally remembered
        Gui for modifying Page Labels
@@ -38,7 +37,7 @@ VERSION 0.09
 
 VERSION 0.1 
 -----------
-       Full internationalization support input and output, including left and right languages. pango?
+       Full internationalization support for input and output, including left and right languages. pango?
        Of course, need copious testing by people who are not me.
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
@@ -96,6 +95,7 @@ VERSION 0.2
 -----------
 Do a poor man's version of a multi-contact touch screen interface with 2 mice plugged in and
   one of them not set to send core events. Or normal mouse and tablet or ... ?
+Full multi-contact touch support with touchlib. See www.nuigroup.com/touchlib for do-it-yourself surfaces
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
@@ -105,7 +105,7 @@ fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
-ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
+GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost/metafun sort of things
 Would be nice to be able to handle lilypond sort of things
@@ -139,7 +139,7 @@ While i'm at it, I'd like a pony.
 ------------- OLD RELEASES -----------------
             `--------------' 
 
-VERSION 0.08
+VERSION 0.08  --  released 15 September 2007!
 ------------
 (done) Test, test, test! from fresh install to print out, make booklet, portrait, landscape
 (done) fix hard to trace crash in importimages dialog for shift select range of files

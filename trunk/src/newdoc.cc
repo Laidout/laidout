@@ -438,9 +438,9 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		papertype->flags=curorientation;
 		char num[30];
 		numtostr(num,30,papertype->w(),0);
-		papery->SetText(num);
-		numtostr(num,30,papertype->h(),0);
 		paperx->SetText(num);
+		numtostr(num,30,papertype->h(),0);
+		papery->SetText(num);
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
 	} else if (!strcmp(mes,"orientation")) {
 		int l=(int)e->data.l[0];

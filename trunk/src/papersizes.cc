@@ -36,7 +36,7 @@ using namespace Laxkit;
 
 //       PAPERSIZE    X inches   Y inches   X cm      Y cm
 //       -----------------------------------------------------
-const char *BuiltinPaperSizes[41*3]=
+const char *BuiltinPaperSizes[42*3]=
 	{
 		"Letter","8.5","11",
 		"Legal","8.5","14",
@@ -70,15 +70,16 @@ const char *BuiltinPaperSizes[41*3]=
 		"Flse","8.5","13",
 		"Halfletter","5.5","8.5",
 		"Note","7.5","10",
-		"4:3", "4","3"
-		"16:9", "16","9"
+		"4:3", "4","3",
+		"16:9", "16","9",
 		"640x480","640","480",
 		"800x600","800","600",
 		"1024x768","1024","768",
 		"1280x1024","1280","1024",
 		"1600x1200","1600","1200",
 		"Custom","8.5","11",
-		"Whatever","8.5","11"
+		"Whatever","8.5","11",
+		NULL,NULL,NULL
 	};
 
 //! Get a stack of PaperStyles with all the builtin paper sizes.
@@ -119,8 +120,8 @@ const char *BuiltinPaperSizes[41*3]=
  *		"Flse","8.5","13",
  *		"Halfletter","5.5","8.5",
  *		"Note","7.5","10",
- *		"4:3", "4","3"
- *		"16:9", "16","9"
+ *		"4:3", "4","3",
+ *		"16:9", "16","9",
  *		"scr:640x480","640","480",
  *		"scr:800x600","800","600",
  *		"scr:1024x768","1024","768",
@@ -139,7 +140,7 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	if (papers==NULL) papers=new PtrStack<PaperStyle>;
 	double x,y; 
 	int dpi;
-	for (int c=0; c<33*3; c+=3) {
+	for (int c=0; BuiltinPaperSizes[c]; c+=3) {
 		 // x,y were in inches
 		x=atof(BuiltinPaperSizes[c+1]);
 		y=atof(BuiltinPaperSizes[c+2]);

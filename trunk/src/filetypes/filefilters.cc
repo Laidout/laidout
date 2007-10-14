@@ -312,6 +312,8 @@ FileFilter::FileFilter()
  *
  * If no doc is specified, then start=end=0 is passed to the filter. Also ensures that at least
  * one of doc and limbo is not NULL before calling the filter.
+ *
+ * \todo perhaps command facility should be here... currently it sits in ExportDialog.
  */
 int export_document(DocumentExportConfig *config,char **error_ret)
 {
@@ -424,13 +426,18 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 ImportConfig::ImportConfig()
 {
 	filename=NULL;
-	page=spread=layout=-1;
+	instart=inend=-1;
+	topage=spread=layout=-1;
 	doc=NULL;
 	toobj=NULL;
 	filter=NULL;
 }
 
 ImportConfig::~ImportConfig()
-{//***
+{
+	if (filename) delete[] filename;
+	if (doc) doc->dec_count();
+	if (toobj) toobj->dec_count();
+	//if (filter) filter->dec_count(); ***filter assumed non-local, always living in laidoutapp?
 }
 

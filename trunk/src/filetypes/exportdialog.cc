@@ -724,6 +724,8 @@ void ExportDialog::changeRangeTarget(int t)
 
 //! Send the config object to owner.
 /*! Note that a new config object is sent, and the receiving code should delete it.
+ *
+ * \todo the print by command should be moved to export_document()?
  */
 int ExportDialog::send()
 {

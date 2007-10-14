@@ -101,7 +101,8 @@ class ImportConfig
 {
  public:
 	char *filename;
-	int page,spread,layout;
+	int instart,inend;
+	int topage,spread,layout;
 	Document *doc;
 	Group *toobj;
 	ImportFilter *filter;
