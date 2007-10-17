@@ -449,7 +449,8 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 // if no other windows have been launched yet, then launch newdoc window
 	if (topwindows.n==0)
-		addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
+		//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
+		addwindow(BrandNew());
 	
 	return 0;
 };
@@ -582,7 +583,7 @@ int LaidoutApp::createlaidoutrc()
  * Return 0 if laidoutrc doesn't exist, 1 if ok.
  * The default location is $HOME/.laidout/(version)/laidoutrc.
  *
- * \todo document appcolors attribute
+ * \todo document appcolors, laxconfig attribute
  */
 int LaidoutApp::readinLaidoutDefaults()
 {
@@ -603,7 +604,11 @@ int LaidoutApp::readinLaidoutDefaults()
 		if (!name) continue;
 
 		DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
-		if (!strcmp(name,"appcolors")) {
+		if (!strcmp(name,"laxconfig")) {
+			dump_in_rc(att.attributes.e[c],NULL);
+			
+		} else if (!strcmp(name,"appcolors")) {
+			//*** this, or force use of laxconfig?
 			dump_in_colors(att.attributes.e[c]);
 			
 		} else if (!strcmp(name,"default_template")) {

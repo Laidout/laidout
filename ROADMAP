@@ -31,13 +31,20 @@ VERSION 0.09
        When importing, preserve mystery data as much as possible, to be later exported back out
        double click on group should change selection area to group contents?
        Tools should remember their settings
+       from laxkit: Fix cut and paste from system clipboard
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
+VERSION 0.091
+------------
+       Svg import
+       Scribus import
+
+
 VERSION 0.1 
 -----------
-       Full internationalization support for input and output, including left and right languages. pango?
+       Full internationalization support for input and output, including left, right, and mixed languages. pango?
        Of course, need copious testing by people who are not me.
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
@@ -72,7 +79,6 @@ VERSION 0.1
        Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
-       svg in
        support for the svg filters?
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
