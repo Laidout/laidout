@@ -15,7 +15,7 @@
 //
 
 
-//TODO
+//TODO ******** THIS FILE IS OLD! WILL BE CHANGED DRAMATICALLY
 //
 //
 //
@@ -76,6 +76,7 @@
 #include "newdoc.h"
 #include "impositions/impositioninst.h"
 #include <lax/filedialog.h>
+#include <lax/tabframe.h>
 	
 #include <iostream>
 using namespace std;
@@ -83,7 +84,34 @@ using namespace std;
 
 using namespace Laxkit;
 
+//--------------------------------- BrandNew() ------------------------------------
 
+//! Return a TabFrame with a NewDocWindow and NewProjectWindow.
+anXWindow *BrandNew()
+{
+	TabFrame *tf=new TabFrame(NULL,_("New"),ANXWIN_REMEMBER|BOXSEL_ROWS
+					|BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS|STRICON_STR_ICON,
+								0,0,500,500,0,
+								NULL,None,NULL,
+								50);
+	tf->AddWin(new NewDocWindow(tf,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
+				_("New Document"),
+				NULL);
+	tf->AddWin(new FileDialog(tf,"open doc",
+					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
+					None, "open doc"),
+				_("Open Document"),
+				NULL);
+	tf->AddWin(new NewProjectWindow(tf,"New Project",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
+				_("New Project"),
+				NULL);
+	tf->AddWin(NULL,
+				_("Recent"),
+				NULL);
+	return tf;
+}
+
+//--------------------------------- NewDocWindow ------------------------------------
 /*! \class NewDocWindow
  *
  * This is currently a god awful hack to get things off the ground.
@@ -254,45 +282,45 @@ int NewDocWindow::init()
 	AddNull();
 	
 
-	 // -------------- page size --------------------
-	
-	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
-			_("\n\n(Unimplemented stuff follows,\nLook for it in future releases!)"));
-	AddWin(mesbar, 2000,1950,0,50, mesbar->win_h,0,0,50);
-	
-	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
-			_("pagesize:"));
-	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
-
-	defaultpage=new CheckBox(this,"default",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"check default", _("default"),5,5);
-	defaultpage->State(LAX_ON);
-	AddWin(defaultpage, defaultpage->win_w,0,0,50, linpheight,0,0,50);
-	
-	custompage=new CheckBox(this,"custom",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						defaultpage,window,"check custom", _("custom"),5,5);
-	AddWin(custompage, custompage->win_w,0,0,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-
-	linp=new LineInput(this,"page x",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						custompage,window,"page x",
-			            _("x:"),NULL,0,
-			            100,0,1,1,3,3);
-	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
-	
-	last=linp=new LineInput(this,"page y",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						linp,window,"page y",
-			            _("y:"),NULL,0,
-			            100,0,1,1,3,3);
-	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	 // -------------- page size --------------------
+//	
+//	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
+//			_("\n\n(Unimplemented stuff follows,\nLook for it in future releases!)"));
+//	AddWin(mesbar, 2000,1950,0,50, mesbar->win_h,0,0,50);
+//	
+//	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
+//			_("pagesize:"));
+//	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
+//
+//	defaultpage=new CheckBox(this,"default",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						last,window,"check default", _("default"),5,5);
+//	defaultpage->State(LAX_ON);
+//	AddWin(defaultpage, defaultpage->win_w,0,0,50, linpheight,0,0,50);
+//	
+//	custompage=new CheckBox(this,"custom",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						defaultpage,window,"check custom", _("custom"),5,5);
+//	AddWin(custompage, custompage->win_w,0,0,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//
+//	linp=new LineInput(this,"page x",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						custompage,window,"page x",
+//			            _("x:"),NULL,0,
+//			            100,0,1,1,3,3);
+//	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
+//	
+//	last=linp=new LineInput(this,"page y",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						linp,window,"page y",
+//			            _("y:"),NULL,0,
+//			            100,0,1,1,3,3);
+//	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
 	 // ------------------- view mode ---------------------------
 	AddWin(new MessageBar(this,"view style",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("view:")));
 	MenuSelector *msel;
 	msel=new MenuSelector(this,"view style",ANXWIN_CLICK_FOCUS,
 						0,0,0,0,0,
-						linp,window,"view style",
+						last,window,"view style",
 						MENUSEL_CHECKBOXES|MENUSEL_LEFT|MENUSEL_CURSSELECTS|MENUSEL_ONE_ONLY);
 	msel->AddItem(_("single"),1,0);
 	msel->AddItem(_("page layout"),2,0);
@@ -399,7 +427,7 @@ int NewDocWindow::init()
 	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
 	//                        const char *nname=NULL,int npadx=0,int npady=0);
 	//  
-	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS|TBUT_OK,0,0,0,0,1, last,window,"Ok");
+	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"Ok", _("Create Document"),TBUT_OK);
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
 	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
@@ -486,9 +514,11 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {
 		sendNewDoc();
-		app->destroywindow(this);
+		if (win_parent) app->destroywindow(win_parent);
+		else app->destroywindow(this);
 	} else if (!strcmp(mes,"Cancel")) {
-		app->destroywindow(this);
+		if (win_parent) app->destroywindow(win_parent);
+		else app->destroywindow(this);
 	}
 	return 0;
 }
@@ -528,3 +558,212 @@ void NewDocWindow::sendNewDoc()
 	laidout->NewDocument(newdoc,saveas->GetCText());
 }
 
+//--------------------------------- NewProjectWindow ------------------------------------
+/*! \class NewProjectWindow
+ *
+ * This is currently a god awful hack to get things off the ground.
+ * Must be restructured to handle any kind of imposition... 
+ * gotta finish the GenericStyleWindow thing, so don't go adding all kinds
+ * of hard-coded windows and such here...
+ *
+ */  
+
+NewProjectWindow::NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+							int xx,int yy,int ww,int hh,int brder)
+		: RowFrame(parnt,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER,
+					xx,yy,ww,hh,brder, NULL,None,NULL,
+					10)
+{
+}
+
+int NewProjectWindow::preinit()
+{
+	anXWindow::preinit();
+	if (win_w<=0) win_w=500;
+	if (win_h<=0) win_h=600;
+	return 0;
+}
+
+int NewProjectWindow::init()
+{
+	if (!window) return 1;
+
+	
+	int textheight=app->defaultlaxfont->textheight();
+	int linpheight=textheight+12;
+	TextButton *tbut=NULL;
+	anXWindow *last=NULL;
+	LineInput *linp=NULL;
+
+
+	
+	 // ------ General Directory Setup ---------------
+	 
+	last=new LineInput(this,"projdir",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
+						NULL,window,"proj dir",
+			            _("Project Directory:"),NULL,0,
+			            0,0,1,0,3,3);
+	AddWin(last, 300,0,2000,50, linpheight,0,0,50);
+	last=tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			last,window,"projdir",
+			"...",3,3);
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+	AddNull();
+	
+
+	
+
+	 // -------------- absolute or relative paths --------------------
+	
+	CheckBox *check=NULL;
+	last=check=new CheckBox(this,"abspath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"abspath", _("Use absolute file paths in saved files"),5,5);
+	check->State(LAX_ON);
+	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
+	AddNull();
+	
+	last=check=new CheckBox(this,"relpath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"relpath", _("Use relative file paths in saved files"),5,5);
+	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
+	AddNull();
+
+	
+		
+	 // ------------------- printing misc ---------------------------
+	 // target dpi:		__300____
+	last=linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"dpi",
+			            _("target dpi:"),"360",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	
+	 // default unit: __inch___
+	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last=linp,window,"unit",
+			            _("default unit:"),"inch",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	
+	 // color mode:		black and white, grayscale, rgb, cmyk, other
+	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"colormode",
+			            _("color mode:"),"rgb",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+
+	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "paper color:"));
+	ColorBox *cbox;
+	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
+	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
+
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	
+	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
+	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"printer",
+			            _("target printer:"),"default (cups)",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+
+	 //   [ set options from ppd... ]
+	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, last,window,"setfromppd",
+			_("set options from ppd..."),3,3);
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+
+
+	
+	//------------------------------ final ok -------------------------------------------------------
+
+	AddNull();
+	
+	 // [ ok ]   [ cancel ]
+	//  TextButton(anxapp *napp,anxwindow *parnt,const char *ntitle,unsigned long nstyle,
+	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
+	//                        const char *nname=NULL,int npadx=0,int npady=0);
+	//  
+	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"Ok", _("Create Project"),TBUT_OK);
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
+	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+
+
+	
+	tbut->CloseControlLoop();
+	Sync(1);
+//	wrapextent();
+	return 0;
+}
+
+NewProjectWindow::~NewProjectWindow()
+{
+}
+
+int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+{//***
+	DBG cerr <<"newprojmessage: "<<mes<<endl;
+	if (!strcmp(mes,"paper size")) {
+	} else if (!strcmp(mes,"ytile")) { 
+		DBG cerr <<"**** newdoc: new y tile value"<<endl;
+	} else if (!strcmp(mes,"xtile")) { 
+		DBG cerr <<"**** newdoc: new x tile value"<<endl;
+	} else if (!strcmp(mes,"paper name")) { 
+	} else if (!strcmp(mes,"target dpi")) {
+	} else if (!strcmp(mes,"target printer")) {
+	} else if (!strcmp(mes,"pagesetup proc")) {
+	} else if (!strcmp(mes,"paper layout")) {
+	} else if (!strcmp(mes,"save as")) {
+	} else if (!strcmp(mes,"projdir")) { // from control button
+		//***get defaults
+//		app->rundialog(new FileDialog(NULL,_("Save As"),
+//					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
+//					saveas->window, "save as","untitled"));
+		return 0;
+	} else if (!strcmp(mes,"Ok")) {
+		sendNewProject();
+		if (win_parent) app->destroywindow(win_parent);
+		else app->destroywindow(this);
+	} else if (!strcmp(mes,"Cancel")) {
+		if (win_parent) app->destroywindow(win_parent);
+		else app->destroywindow(this);
+	}
+	return 0;
+}
+
+//! Create and fill a DocumentStyle, and tell laidout to make a new document
+void NewProjectWindow::sendNewProject()
+{
+//	 // find and get dup of imposition
+//	Imposition *imposition=NULL;
+//	int c;
+//	for (c=0; c<laidout->impositionpool.n; c++) {
+//		if (!strcmp(laidout->impositionpool.e[c]->Stylename(),impsel->GetCurrentItem())) break;
+//	}
+//	if (c==laidout->impositionpool.n) imposition=new Singles();
+//	else {
+//		DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
+//		imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
+//	}
+//	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
+//	
+//	int npgs=atoi(numpages->GetCText()),
+//		xtile=atoi(tilex->GetCText()),
+//		ytile=atoi(tiley->GetCText());
+//	if (npgs<=0) npgs=1;
+//	if (xtile<=0) xtile=1;
+//	if (ytile<=0) ytile=1;
+//
+//	Singles *s=dynamic_cast<Singles *>(imposition);
+//	if (s) {
+//		s->tilex=xtile;
+//		s->tiley=ytile;
+//	}
+//		
+//	imposition->NumPages(npgs);
+//	DocumentStyle *newdoc=new DocumentStyle(imposition);
+//	newdoc->imposition->SetPaperSize(papertype);
+//	laidout->NewDocument(newdoc,saveas->GetCText());
+}

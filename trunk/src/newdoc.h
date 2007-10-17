@@ -57,6 +57,23 @@ class NewDocWindow : public Laxkit::RowFrame
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 };
 
+class NewProjectWindow : public Laxkit::RowFrame
+{
+	int mx,my;
+	virtual void sendNewProject();
+ public:
+ 	NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+			int xx,int yy,int ww,int hh,int brder);
+	virtual ~NewProjectWindow();
+	virtual const char *whattype() { return "NewProjectWindow"; }
+	virtual int preinit();
+	virtual int init();
+//	virtual int Refresh();
+//	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+};
+
+Laxkit::anXWindow *BrandNew();
 
 #endif
 
