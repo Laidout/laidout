@@ -16,12 +16,14 @@
 
 #include <lax/strmanip.h>
 #include <lax/lists.cc>
+#include <lax/attributes.h>
+#include <lax/fileutils.h>
+#include <lax/freedesktop.h>
+
 #include "document.h"
 #include "filetypes/ppt.h"
 #include "printing/psout.h"
 #include "version.h"
-#include <lax/attributes.h>
-#include <lax/fileutils.h>
 #include "laidout.h"
 #include "headwindow.h"
 #include "utils.h"
@@ -694,6 +696,7 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
+	touch_recently_used(saveas,"application/x-laidout-doc","Laidout",NULL);
 	return 0;
 }
 
@@ -747,6 +750,9 @@ int Document::Load(const char *file,char **error_ret)
 	}
 	docstyle->imposition->NumPages(pages.n);
 	SyncPages(0,-1);
+
+	touch_recently_used(file,"application/x-laidout-doc","Laidout",NULL);
+
 	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
 }
