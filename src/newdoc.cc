@@ -97,17 +97,25 @@ anXWindow *BrandNew()
 	tf->AddWin(new NewDocWindow(tf,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
 				_("New Document"),
 				NULL);
-	tf->AddWin(new FileDialog(tf,"open doc",
-					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
-					None, "open doc"),
-				_("Open Document"),
-				NULL);
 	tf->AddWin(new NewProjectWindow(tf,"New Project",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
 				_("New Project"),
 				NULL);
-	tf->AddWin(NULL,
-				_("Recent"),
+	tf->AddWin(new FileDialog(tf,"open doc",
+					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
+					None, "open doc"),
+				_("Open"),
 				NULL);
+	char *tempdir=newstr(laidout->config_dir);
+	appendstr(tempdir,"/templates");
+	tf->AddWin(new FileDialog(tf,"open template",
+					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
+					None, "template",NULL,tempdir),
+				_("Open Template"),
+				NULL);
+	delete[] tempdir;
+//	tf->AddWin(NULL,
+//				_("Recent"),
+//				NULL);
 	return tf;
 }
 
