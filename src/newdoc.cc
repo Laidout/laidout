@@ -100,19 +100,24 @@ anXWindow *BrandNew()
 	tf->AddWin(new NewProjectWindow(tf,"New Project",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
 				_("New Project"),
 				NULL);
-	tf->AddWin(new FileDialog(tf,"open doc",
+
+	FileDialog *fd=new FileDialog(tf,"open doc",
 					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
-					None, "open doc"),
+					None, "open doc", NULL,NULL,NULL, "Laidout");
+	fd->OkButton(_("Open Document"),NULL);
+	tf->AddWin(fd,
 				_("Open"),
 				NULL);
-	char *tempdir=newstr(laidout->config_dir);
-	appendstr(tempdir,"/templates");
-	tf->AddWin(new FileDialog(tf,"open template",
-					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
-					None, "template",NULL,tempdir),
-				_("Open Template"),
-				NULL);
-	delete[] tempdir;
+
+
+//	char *tempdir=newstr(laidout->config_dir);
+//	appendstr(tempdir,"/templates");
+//	tf->AddWin(new FileDialog(tf,"open template",
+//					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
+//					None, "template",NULL,tempdir),
+//				_("Open Template"),
+//				NULL);
+//	delete[] tempdir;
 //	tf->AddWin(NULL,
 //				_("Recent"),
 //				NULL);
@@ -685,7 +690,7 @@ int NewProjectWindow::init()
 	
 	//------------------------------ final ok -------------------------------------------------------
 
-	AddNull();
+	AddWin(NULL, 2000,1990,0,50, 20,0,0,50);
 	
 	 // [ ok ]   [ cancel ]
 	//  TextButton(anxapp *napp,anxwindow *parnt,const char *ntitle,unsigned long nstyle,
@@ -726,9 +731,9 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"save as")) {
 	} else if (!strcmp(mes,"projdir")) { // from control button
 		//***get defaults
-//		app->rundialog(new FileDialog(NULL,_("Save As"),
-//					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-//					saveas->window, "save as","untitled"));
+		app->rundialog(new FileDialog(NULL,_("Save Project In"),
+					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
+					window, "save as","untitled"));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {
 		sendNewProject();

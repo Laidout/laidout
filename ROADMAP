@@ -11,6 +11,7 @@ VERSION 0.09
 (done) Add, delete, and rename limbos
        Load, save, add, delete paper groups
        Finish implementing project based setup, particularly being able to save a project, not just load one   
+(done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
        NetImposition needs import/export net, and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
        Generic fold and trim imposition
@@ -21,14 +22,18 @@ VERSION 0.09
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        In image properties dialog, have the popup list of potential previews
        When importing from an image list file, should be able to say if and when to auto-make previews
-       Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
-       Spread editor: load and save spread editor arrangements
+       SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
+       SpreadEditor: load and save spread editor arrangements
+       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
+       SpreadEditor: optionally work with whole spreads, rather than just single pages
+       SpreadEditor: Corner button should allow changing working document
        Fix multi-object selection move when crossing page boundaries
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Selected region out to image(s), regions optionally remembered
        Gui for modifying Page Labels
        When importing, preserve mystery data as much as possible, to be later exported back out
+       Passepartout import
        double click on group should change selection area to group contents?
        Tools should remember their settings
        from laxkit: Fix cut and paste from system clipboard
@@ -50,13 +55,13 @@ VERSION 0.1
        Must be Stable, not merely "Stable"
        Construct a command core, so that no X connection necessary for batch processing
        Make commands actually available in the command prompt window
-       should probably put laidout stuff in its own namespace, just to be polite for plugin makers
+       should probably put laidout stuff in its own namespace, just to be polite
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
        Change cursor or otherwise indicate what will happen as mouse moves around
        Should have option to print/see or not print/see big, preview, or no images, per image
-       When adjusting things with the object tool, must have option to be temporarily a little tranparent
+       When adjusting things with the object tool, must have option to be temporarily a little transparent
        All the pdf 1.4 group combine properties, like most importantly transparency
        for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
        Configurable icon panel/menu system, make the button box actually function
@@ -67,7 +72,7 @@ VERSION 0.1
        Have imagepatch be a transform you can apply to any image
        Allow objects to have any number of various kinds of transforms applied to it
        Fully configurable shortcuts, with optional multi-key shortcuts
-       undo/redo
+       undo/redo, with saveable undo stack (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins
        Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
@@ -82,8 +87,6 @@ VERSION 0.1
        support for the svg filters?
        start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
           of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
-       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
-       SpreadEditor: optionally work with whole spreads, rather than just single pages
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo and splash image, and generate icons from a laidout doc
@@ -91,7 +94,6 @@ VERSION 0.1
        Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Be able to have paper objects in addition to the normal page objects (ie master page numbers)
-       Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
        Non-polygonal pages, to allow nets for shapes resulting from intersecting cylinders, for instance
        Optional Midi controller usage
        Able to select and transform nodes from different objects at the same time
