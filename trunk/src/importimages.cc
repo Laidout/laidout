@@ -224,7 +224,7 @@ void ImportImagesDialog::dump_in_atts(Attribute *att,int flag)
  */
 int ImportImagesDialog::init() 
 {
-	dialog_style=(dialog_style&~(FILES_PREVIEW|FILES_PREVIEW2))|FILES_PREVIEW;
+	dialog_style|=FILES_PREVIEW;
 	FileDialog::init();
 	AddNull();
 	AddWin(NULL, 2000,1990,0,50, 15,0,0,50);
