@@ -3259,6 +3259,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		linestyle.color.green=(unsigned short) (e->data.l[2]/max*65535);
 		linestyle.color.blue= (unsigned short) (e->data.l[3]/max*65535);
 		linestyle.color.alpha=(unsigned short) (e->data.l[4]/max*65535);
+		linestyle.mask=GCForeground;
 		char blah[100];
 		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
