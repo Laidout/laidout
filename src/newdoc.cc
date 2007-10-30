@@ -345,7 +345,7 @@ int NewDocWindow::init()
 	 // target dpi:		__300____
 	linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						msel,window,"dpi",
-			            _("target dpi:"),"360",0,
+			            _("Default dpi:"),"360",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
@@ -353,7 +353,7 @@ int NewDocWindow::init()
 	 // default unit: __inch___
 	linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						linp,window,"unit",
-			            _("default unit:"),"inch",0,
+			            _("Default Units:"),"inch",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
@@ -361,11 +361,11 @@ int NewDocWindow::init()
 	 // color mode:		black and white, grayscale, rgb, cmyk, other
 	linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						linp,window,"colormode",
-			            _("color mode:"),"rgb",0,
+			            _("Color Mode:"),"rgb",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
-	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "paper color:"));
+	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
 	ColorBox *cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, linp,window,"paper color", 255,255,255);
 	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
 
@@ -374,13 +374,13 @@ int NewDocWindow::init()
 	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
 	linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						cbox,window,"printer",
-			            _("target printer:"),"default (cups)",0,
+			            _("Target Printer:"),"default (cups)",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
 	 //   [ set options from ppd... ]
 	tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, linp,window,"setfromppd",
-			_("set options from ppd..."),3,3);
+			_("Set options from PPD..."),3,3);
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 
@@ -460,6 +460,18 @@ NewDocWindow::~NewDocWindow()
 	delete papertype;
 }
 
+int NewDocWindow::DataEvent(EventData *data,const char *mes)
+{
+	if (!strcmp(mes,"save as")) {
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s) return 1;
+		saveas->SetText(s->str);
+		delete data;
+		return 0;
+	}
+	return 1;
+}
+
 int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
 	DBG cerr <<"newdocmessage: "<<mes<<endl;
@@ -523,7 +535,7 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//***get defaults
 		app->rundialog(new FileDialog(NULL,_("Save As"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-					saveas->window, "save as","untitled"));
+					saveas->window, "save as",""));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {
 		sendNewDoc();
@@ -587,6 +599,7 @@ NewProjectWindow::NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,u
 					xx,yy,ww,hh,brder, NULL,None,NULL,
 					10)
 {
+	saveas=NULL;
 }
 
 int NewProjectWindow::preinit()
@@ -612,7 +625,7 @@ int NewProjectWindow::init()
 	
 	 // ------ General Directory Setup ---------------
 	 
-	last=new LineInput(this,"projdir",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
+	last=saveas=new LineInput(this,"projdir",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
 						NULL,window,"proj dir",
 			            _("Project Directory:"),NULL,0,
 			            0,0,1,0,3,3);
@@ -623,6 +636,7 @@ int NewProjectWindow::init()
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddNull();
 	
+	AddWin(NULL, 2000,1990,0,50, 20,0,0,50);
 
 	
 
@@ -633,12 +647,12 @@ int NewProjectWindow::init()
 						last,window,"abspath", _("Use absolute file paths in saved files"),5,5);
 	check->State(LAX_ON);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	AddNull();
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 	
 	last=check=new CheckBox(this,"relpath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
 						last,window,"relpath", _("Use relative file paths in saved files"),5,5);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	AddNull();
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 
 	
 		
@@ -646,45 +660,45 @@ int NewProjectWindow::init()
 	 // target dpi:		__300____
 	last=linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						last,window,"dpi",
-			            _("target dpi:"),"360",0,
+			            _("Default dpi:"),"360",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 	
 	 // default unit: __inch___
 	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						last=linp,window,"unit",
-			            _("default unit:"),"inch",0,
+			            _("Default Units:"),"inch",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 	
 	 // color mode:		black and white, grayscale, rgb, cmyk, other
 	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						last,window,"colormode",
-			            _("color mode:"),"rgb",0,
+			            _("Color Mode:"),"rgb",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
-	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, "paper color:"));
-	ColorBox *cbox;
-	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
-	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
+	//AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
+	//ColorBox *cbox;
+	//last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
+	//AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
 
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 	
 	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
 	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						last,window,"printer",
-			            _("target printer:"),"default (cups)",0,
+			            _("Target Printer:"),"default (cups)",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
 	 //   [ set options from ppd... ]
 	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, last,window,"setfromppd",
-			_("set options from ppd..."),3,3);
+			_("Set options from PPD..."),3,3);
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 
 
 	
@@ -715,25 +729,42 @@ NewProjectWindow::~NewProjectWindow()
 {
 }
 
+int NewProjectWindow::DataEvent(EventData *data,const char *mes)
+{
+	if (!strcmp(mes,"save as")) {
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s) return 1;
+		saveas->SetText(s->str);
+		delete data;
+		return 0;
+	}
+	return 1;
+}
+
 int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
 	DBG cerr <<"newprojmessage: "<<mes<<endl;
-	if (!strcmp(mes,"paper size")) {
-	} else if (!strcmp(mes,"ytile")) { 
-		DBG cerr <<"**** newdoc: new y tile value"<<endl;
-	} else if (!strcmp(mes,"xtile")) { 
-		DBG cerr <<"**** newdoc: new x tile value"<<endl;
-	} else if (!strcmp(mes,"paper name")) { 
+	if (!strcmp(mes,"relpath")) { 
+		CheckBox *box;
+		box=dynamic_cast<CheckBox *>(findChildWindow("relpath"));
+		if (box) box->State(LAX_ON);
+		box=dynamic_cast<CheckBox *>(findChildWindow("abspath"));
+		if (box) box->State(LAX_OFF);
+		return 0;
+	} else if (!strcmp(mes,"abspath")) { 
+		CheckBox *box;
+		box=dynamic_cast<CheckBox *>(findChildWindow("relpath"));
+		if (box) box->State(LAX_OFF);
+		box=dynamic_cast<CheckBox *>(findChildWindow("abspath"));
+		if (box) box->State(LAX_ON);
+		return 0;
 	} else if (!strcmp(mes,"target dpi")) {
 	} else if (!strcmp(mes,"target printer")) {
-	} else if (!strcmp(mes,"pagesetup proc")) {
-	} else if (!strcmp(mes,"paper layout")) {
-	} else if (!strcmp(mes,"save as")) {
 	} else if (!strcmp(mes,"projdir")) { // from control button
 		//***get defaults
 		app->rundialog(new FileDialog(NULL,_("Save Project In"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-					window, "save as","untitled"));
+					window, "save as",""));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {
 		sendNewProject();
