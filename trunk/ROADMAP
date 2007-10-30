@@ -102,8 +102,8 @@ VERSION 0.1
 VERSION 0.2
 -----------
 Do a poor man's version of a multi-contact touch screen interface with 2 mice plugged in and
-  one of them not set to send core events. Or normal mouse and tablet or ... ?
-Full multi-contact touch support with touchlib. See www.nuigroup.com/touchlib for do-it-yourself surfaces
+  one of them not set to send core events. Or normal mouse and tablet or ... just learned of MPX!
+Full multi-contact, pressure sensitive touch support with touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..

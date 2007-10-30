@@ -854,7 +854,8 @@ int HeadWindow::CharInput(unsigned int ch,unsigned int state)
 	} else if (ch=='o' && (state&LAX_STATE_MASK)==ControlMask) {
 		app->rundialog(new FileDialog(NULL,"Open Document",
 					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,0,0,0, window,"open document"));
+					0,0,0,0,0, window,"open document",
+					NULL,NULL,NULL,"Laidout"));
 		return 0;
 		
 	}

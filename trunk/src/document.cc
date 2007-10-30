@@ -751,7 +751,8 @@ int Document::Load(const char *file,char **error_ret)
 	docstyle->imposition->NumPages(pages.n);
 	SyncPages(0,-1);
 
-	touch_recently_used(file,"application/x-laidout-doc","Laidout",NULL);
+	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) //***bit of a hack to not touch templates
+		touch_recently_used(file,"application/x-laidout-doc","Laidout",NULL);
 
 	DBG cerr <<"------ Done reading "<<file<<endl<<endl;
 	return 1;
