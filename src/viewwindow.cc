@@ -2196,7 +2196,7 @@ void LaidoutViewport::Refresh()
  * '>'       next page       <-- done in ViewWindow
  * </pre>
  */
-int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
+int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
 	DBG if (ch=='m') {
 	DBG 	cerr << ".....mark...."<<endl;
@@ -2215,7 +2215,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 		} 
 	}
 	 // ask interfaces, and default viewport stuff
-	if (ViewportWindow::CharInput(ch,state)==0) return 0;
+	if (ViewportWindow::CharInput(ch,buffer,len,state)==0) return 0;
 
 	 // deal with all other LaidoutViewport specific stuff
 	if (ch=='g' && viewportmode!=VIEW_GRAB_COLOR &&  (state&LAX_STATE_MASK)==0) {
@@ -2234,9 +2234,9 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 			return 0;
 		}
 	} else if (ch=='o' &&  (state&LAX_STATE_MASK)==0) {
-		return ViewportWindow::CharInput(' ',ShiftMask);
+		return ViewportWindow::CharInput(' ',NULL,0,ShiftMask);
 	} else if (ch=='O' &&  (state&LAX_STATE_MASK)==ShiftMask) {
-		return ViewportWindow::CharInput(' ',0);
+		return ViewportWindow::CharInput(' ',NULL,0,0);
 	} else if (ch=='0' &&  (state&LAX_STATE_MASK)==0) {
 		//*** activate GroupInterface?
 	} else if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
@@ -2258,7 +2258,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 			return 0;
 		}
 	} else if (ch==LAX_Pgup) { //pgup
-		if (!curobj.obj) return ViewportWindow::CharInput(ch,state);
+		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state);
 		if ((state&LAX_STATE_MASK)==0) { //raise selection within layer
 			if (CirculateObject(0,0,0)) needtodraw=1;
 			return 0;
@@ -2270,7 +2270,7 @@ int LaidoutViewport::CharInput(unsigned int ch,unsigned int state)
 			return 0;
 		}
 	} else if (ch==LAX_Pgdown) { //pgdown
-		if (!curobj.obj) return ViewportWindow::CharInput(ch,state);
+		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state);
 		if ((state&LAX_STATE_MASK)==0) { //lower selection within layer
 			if (CirculateObject(1,0,0)) needtodraw=1;
 			return 0;
@@ -3536,7 +3536,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//return 0;
 	} else if (!strcmp(mes,"openDoc")) { 
 		//*** hack right here:
-		((HeadWindow *)win_parent)->CharInput('o',ControlMask);
+		((HeadWindow *)win_parent)->CharInput('o',NULL,0,ControlMask);
 		return 0;
 	} else if (!strcmp(mes,"saveDoc")) { 
 		if (!doc) return 0;
@@ -3648,7 +3648,7 @@ int ViewWindow::SelectTool(int id)
  * 'r'     ---for debugging, does system call: "more /proc/(pid)/status"
  * </pre>
  */
-int ViewWindow::CharInput(unsigned int ch,unsigned int state)
+int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
 	if (ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask) || 
 			ch=='s' && (state&LAX_STATE_MASK)==ControlMask) { 
@@ -3735,7 +3735,7 @@ int ViewWindow::CharInput(unsigned int ch,unsigned int state)
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;
 	}
-	return ViewerWindow::CharInput(ch,state);
+	return ViewerWindow::CharInput(ch,buffer,len,state);
 }
 
 

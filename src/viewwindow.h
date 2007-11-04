@@ -90,7 +90,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual void Refresh();
 	virtual int init();
 	virtual int event(XEvent *e);
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
 	virtual int LBDown(int x,int y,unsigned int state,int count);
 	virtual int LBUp(int x,int y,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
@@ -165,7 +165,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual ~ViewWindow();
 	virtual const char *whattype() { return "ViewWindow"; }
 	virtual int event(XEvent *e);
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
 	virtual int init();
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);

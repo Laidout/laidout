@@ -7,7 +7,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.09
 ------------
-       More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+(done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
 (done) Add, delete, and rename limbos
        Load, save, add, delete paper groups
        Finish implementing project based setup, particularly being able to save a project, not just load one   
@@ -36,7 +36,7 @@ VERSION 0.09
        Passepartout import
        double click on group should change selection area to group contents?
        Tools should remember their settings
-       from laxkit: Fix cut and paste from system clipboard
+(done) from laxkit: Fix cut and paste from system clipboard
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
@@ -279,3 +279,6 @@ VERSION 0.01 -- released 12 March 2006!
 (done) Add and Delete Page buttons
 (done) Throw together a quick key-stroke cheat sheet
 
+
+
+$Id$
