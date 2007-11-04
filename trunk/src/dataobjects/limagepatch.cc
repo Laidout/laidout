@@ -43,11 +43,11 @@ anInterface *LImagePatchInterface::duplicate(anInterface *dup)
 	return ImagePatchInterface::duplicate(new LImagePatchInterface(id,NULL));
 }
 
-int LImagePatchInterface::CharInput(unsigned int ch,unsigned int state)
+int LImagePatchInterface::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
 	DBG cerr <<"*****************in LImagePatchInterface::CharInput"<<endl;
 	int r=recurse;
-	int cc=ImagePatchInterface::CharInput(ch,state);
+	int cc=ImagePatchInterface::CharInput(ch,buffer,len,state);
 	if (cc==1) return 1;
 	if (recurse!=r) {
 		for (int c=0; c<laidout->interfacepool.n; c++) {

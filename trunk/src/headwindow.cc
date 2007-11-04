@@ -842,7 +842,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
 
 /*! Intercept Esc to revert anything to NORMAL mode.
 */
-int HeadWindow::CharInput(unsigned int ch,unsigned int state)
+int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
 	if (ch==LAX_Esc) {
 		DBG cerr <<"***************changing mode to NORMAL"<<endl;
@@ -859,7 +859,7 @@ int HeadWindow::CharInput(unsigned int ch,unsigned int state)
 		return 0;
 		
 	}
-	return SplitWindow::CharInput(ch,state);
+	return SplitWindow::CharInput(ch,buffer,len,state);
 }
 
 //! Reset mode when focus somehow leaves the window during non-normal modes.

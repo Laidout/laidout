@@ -373,7 +373,8 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 	t  =maxh*72./epsh;
 	if (maxh && t && t<dpi) dpi=t;
 	
-	char *arglist[10], str1[20], str2[300];
+	char *arglist[10];
+	char  str1[20], str2[300];
 	arglist[0]="gs";
 	arglist[1]="-dNOPAUSE";
 	arglist[2]="-dBATCH";

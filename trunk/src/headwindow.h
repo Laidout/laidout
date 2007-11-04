@@ -35,7 +35,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual int init();
 	virtual int LBDown(int x,int y,unsigned int state,int count);
 	virtual int LBUp(int x,int y,unsigned int state); 
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
 	virtual int FocusOff(XFocusChangeEvent *e);
 	virtual int event(XEvent *e);
