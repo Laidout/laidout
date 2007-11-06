@@ -84,45 +84,95 @@ using namespace std;
 
 using namespace Laxkit;
 
-//--------------------------------- BrandNew() ------------------------------------
 
-//! Return a TabFrame with a NewDocWindow and NewProjectWindow.
-anXWindow *BrandNew()
+//--------------------------------- LaidoutOpenWindow ------------------------------------
+
+class LaidoutOpenWindow : public Laxkit::TabFrame
 {
-	TabFrame *tf=new TabFrame(NULL,_("New"),ANXWIN_REMEMBER|BOXSEL_ROWS
-					|BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS|STRICON_STR_ICON,
-								0,0,500,500,0,
-								NULL,None,NULL,
-								50);
-	tf->AddWin(new NewDocWindow(tf,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
+ public:
+	LaidoutOpenWindow(int whichstart);
+	virtual ~LaidoutOpenWindow();
+	virtual const char *whattype() { return "LaidoutOpenWindow"; }
+	virtual int init();
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
+	virtual int DataEvent(EventData *data,const char *mes);
+};
+
+/*! If whichstart==0, then start with the New Document tab up. 1 is for the New Project tab,
+ * and 2 is for the open tab.
+ */
+LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
+	: TabFrame(NULL,_("Laidout"),
+			   ANXWIN_REMEMBER|BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS|STRICON_STR_ICON,
+			   0,0,500,500,0,
+			   NULL,None,NULL, 50)
+{
+	AddWin(new NewDocWindow(this,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
 				_("New Document"),
 				NULL);
-	tf->AddWin(new NewProjectWindow(tf,"New Project",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
+	AddWin(new NewProjectWindow(this,"New Project",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0),
 				_("New Project"),
 				NULL);
 
-	FileDialog *fd=new FileDialog(tf,"open doc",
-					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
+	FileDialog *fd=new FileDialog(this,"open doc",
+					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_MANY, 0,0, 0,0,0,
 					None, "open doc", NULL,NULL,NULL, "Laidout");
-	fd->OkButton(_("Open Document"),NULL);
-	tf->AddWin(fd,
-				_("Open"),
-				NULL);
+	fd->AddFinalButton(_("Open a copy"),_("This means use that document as a template"),2,1);
+	AddWin(fd, _("Open"), NULL);
 
 
-//	char *tempdir=newstr(laidout->config_dir);
-//	appendstr(tempdir,"/templates");
-//	tf->AddWin(new FileDialog(tf,"open template",
-//					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_ONE, 0,0, 0,0,0,
-//					None, "template",NULL,tempdir),
-//				_("Open Template"),
-//				NULL);
-//	delete[] tempdir;
-//	tf->AddWin(NULL,
-//				_("Recent"),
-//				NULL);
-	return tf;
 }
+
+LaidoutOpenWindow::~LaidoutOpenWindow()
+{ }
+
+int LaidoutOpenWindow::init()
+{ 
+	for (int c=0; c<_kids.n; c++) _kids.e[c]->SetOwner(window);
+	return TabFrame::init();
+}
+
+//! Cancel if ESC.
+int LaidoutOpenWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
+{
+	if (ch==LAX_Esc) {
+		app->destroywindow(this);
+		return 0;
+	}
+	return anXWindow::CharInput(ch,buffer,len,state);
+}
+
+int LaidoutOpenWindow::DataEvent(EventData *data,const char *mes)
+{
+	if (!strcmp(mes,"open doc")) {
+		StrsEventData *strs=dynamic_cast<StrsEventData *>(data);
+		if (strs) {
+			cout << "LaidoutOpenWindow info:"<<strs->info<<endl;
+			//***
+			delete data;
+			return 0;
+		}
+		StrEventData *str=dynamic_cast<StrEventData *>(data);
+		if (str) {
+			cout << "LaidoutOpenWindow info:"<<str->info<<endl;
+			//***
+			delete data;
+			return 0;
+		}
+	}
+	return 1;
+}
+
+//--------------------------------- BrandNew() ------------------------------------
+
+//! Return a TabFrame with a NewDocWindow and NewProjectWindow.
+/*! \todo is this function really still useful?
+ */
+anXWindow *BrandNew()
+{
+	return new LaidoutOpenWindow(0);
+}
+
 
 //--------------------------------- NewDocWindow ------------------------------------
 /*! \class NewDocWindow
@@ -640,21 +690,27 @@ int NewProjectWindow::init()
 
 	
 
-	 // -------------- absolute or relative paths --------------------
-	
-	CheckBox *check=NULL;
-	last=check=new CheckBox(this,"abspath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"abspath", _("Use absolute file paths in saved files"),5,5);
-	check->State(LAX_ON);
-	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
-	
-	last=check=new CheckBox(this,"relpath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"relpath", _("Use relative file paths in saved files"),5,5);
-	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
+//	 // -------------- absolute or relative paths --------------------
+//	
+//	CheckBox *check=NULL;
+//	last=check=new CheckBox(this,"abspath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						last,window,"abspath", _("Use absolute file paths in saved files"),5,5);
+//	check->State(LAX_ON);
+//	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
+//	
+//	last=check=new CheckBox(this,"relpath",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						last,window,"relpath", _("Use relative file paths in saved files"),5,5);
+//	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 
 	
+//	 //------------------ new docs are internal ------------------------
+//	
+//	last=check=new CheckBox(this,"storedoc",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+//						last,window,"storedoc", _("Store new documents in project file"),5,5);
+//	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 		
 	 // ------------------- printing misc ---------------------------
 	 // target dpi:		__300____
@@ -687,18 +743,18 @@ int NewProjectWindow::init()
 
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 	
-	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
-	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last,window,"printer",
-			            _("Target Printer:"),"default (cups)",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-
-	 //   [ set options from ppd... ]
-	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, last,window,"setfromppd",
-			_("Set options from PPD..."),3,3);
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
+//	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
+//	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						last,window,"printer",
+//			            _("Target Printer:"),"default (cups)",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+//
+//	 //   [ set options from ppd... ]
+//	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, last,window,"setfromppd",
+//			_("Set options from PPD..."),3,3);
+//	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 
 
 	

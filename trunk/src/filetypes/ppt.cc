@@ -326,32 +326,32 @@ const char *PptinFilter::VersionName()
  * Does no check on the file to ensure that it is in fact a Passepartout file.
  *
  * It will be a file something like:
- * <pre>
- * <?xml version="1.0"?>
- * <document paper_name="Letter" doublesided="true" landscape="false" first_page_num="1">
- *   <text_stream name="stream1" file="8jeev10.txt" transform=""/>
- *   <page>
- *      <frame name="Raster beetile-501x538.jpg"
- *             matrix="0.812233 0 0 0.884649 98.6048 243.107"
- *             lock="false"
- *             flowaround="false"
- *             obstaclemargin="0" 
- *             type="raster"
- *             file="beetile-501x538.jpg"/>
- *      <frame name="Text stream1"
- *             matrix="1 0 0 1 140.833 145.245"
- *             lock="false"
- *             flowaround="false"
- *             obstaclemargin="0"
- *             type="text"
- *             width="200"
- *             height="300"
- *             num_columns="1"
- *             gutter_width="12"
- *             stream="stream1"/>
- *   </page>
- * </document>         
- * </pre>
+ * \verbatim
+  <?xml version="1.0"?>
+  <document paper_name="Letter" doublesided="true" landscape="false" first_page_num="1">
+    <text_stream name="stream1" file="8jeev10.txt" transform=""/>
+    <page>
+       <frame name="Raster beetile-501x538.jpg"
+              matrix="0.812233 0 0 0.884649 98.6048 243.107"
+              lock="false"
+              flowaround="false"
+              obstaclemargin="0" 
+              type="raster"
+              file="beetile-501x538.jpg"/>
+       <frame name="Text stream1"
+              matrix="1 0 0 1 140.833 145.245"
+              lock="false"
+              flowaround="false"
+              obstaclemargin="0"
+              type="text"
+              width="200"
+              height="300"
+              num_columns="1"
+              gutter_width="12"
+              stream="stream1"/>
+    </page>
+  </document>         
+ \endverbatim
  *
  * \todo ***** finish imp me!
  * \todo there should be a way to preserve any elements that laidout doesn't understand, so
