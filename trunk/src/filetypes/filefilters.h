@@ -88,8 +88,8 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //------------------------------- export_document() ----------------------------------

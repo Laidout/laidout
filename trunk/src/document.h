@@ -55,8 +55,8 @@ class DocumentStyle : public Style
 	DocumentStyle(Imposition *imp);
 	virtual ~DocumentStyle();
 	virtual Style *duplicate(Style *s=NULL);
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //---------------------------- PageRange ---------------------------------------
@@ -73,8 +73,8 @@ class PageRange : public LaxFiles::DumpUtility
 	virtual ~PageRange();
 	char *GetLabel(int i);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //------------------------- Document ------------------------------------
@@ -106,8 +106,8 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
 	virtual int RemovePages(int start,int n);
 	virtual int SyncPages(int start,int n);
 	
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual int Load(const char *file,char **error_ret);
 	virtual int Save(int includelimbos,int includewindows,char **error_ret);
 	

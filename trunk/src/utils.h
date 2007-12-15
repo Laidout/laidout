@@ -19,13 +19,14 @@
 
 #include <cstdio>
 
-int laidout_file_type(const char *file, char *minversion, char *maxversion, char *typ);
+int laidout_file_type(const char *file, const char *minversion, const char *maxversion, const char *typ, char **actual_type);
 int laidout_version_check(const char *version, const char *minversion, const char *maxversion);
 FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret);
 FILE *open_file_for_reading(const char *file,char **error_ret);
 FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret);
 char *previewFileName(const char *file, const char *nametemplate);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
+char *untitled();
 
 
 #endif

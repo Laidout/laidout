@@ -83,8 +83,8 @@ class Net : public LaxInterfaces::SomeData
 	virtual void ApplyTransform(double *mm=NULL);
 	virtual void Center();
 	virtual const char *whattype() { return thenettype; }
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual int pointinface(flatpoint pp);
 	virtual int rotateface(int f,int alignxonly=0);
 	virtual void pushline(NetLine &l,int where=-1);

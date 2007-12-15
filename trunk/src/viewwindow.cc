@@ -486,7 +486,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 	if (!strcmp(mes,"rulercornermenu")) {
 		int i=e->data.l[1];
 		if (i>=0 && i<laidout->project->docs.n) {
-			UseThisDoc(laidout->project->docs.e[i]);
+			UseThisDoc(laidout->project->docs.e[i]->doc);
 			return 0;
 		}
 		if (i==laidout->project->docs.n) {
@@ -2542,7 +2542,7 @@ ViewWindow::~ViewWindow()
  * \todo *** need to dump_out the space, not just the matrix!!
  * \todo *** dump out limbo...
  */
-void ViewWindow::dump_out(FILE *f,int indent,int what)
+void ViewWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -2594,7 +2594,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%slimbo\n",spc); 
 		for (int c=0; c<vp->limbo->n(); c++) {
 			fprintf(f,"%s  object %d %s\n",spc,c,vp->limbo->e(c)->whattype());
-			vp->limbo->e(c)->dump_out(f,indent+4,what);
+			vp->limbo->e(c)->dump_out(f,indent+4,what,context);
 		}
 	}
 }
@@ -2602,7 +2602,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what)
 //! Reverse of dump_out().
 /*! \todo *** need to dump_out the space, not just the matrix!!
  */
-void ViewWindow::dump_in_atts(Attribute *att,int flag)
+void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -2645,7 +2645,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag)
 					break;
 				}
 			} 
-			((LaidoutViewport *)viewport)->limbo->dump_in_atts(att->attributes.e[c],0);
+			((LaidoutViewport *)viewport)->limbo->dump_in_atts(att->attributes.e[c],0,context);
 		}
 	}
 	//*** there should be error checking on x,y
@@ -2745,7 +2745,7 @@ int ViewWindow::init()
 	
 //	if (!doc) {
 //		if (laidout->project && laidout->project->docs.n) {
-//			doc=laidout->project->docs.e[0];
+//			doc=laidout->project->docs.e[0]->doc;
 //			((LaidoutViewport *)viewport)->UseThisDoc(doc);
 //		}
 //	}
@@ -3043,6 +3043,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			char blah[strlen(sdoc->Saveas())+15];
 			sprintf(blah,_("Saved to %s."),sdoc->Saveas());
 			PostMessage(blah);
+			if (!isblank(laidout->project->filename)) laidout->project->Save(NULL);//***collect error msg
 		} else {
 			if (error) {
 				PostMessage(error);
@@ -3311,9 +3312,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //add document list, numbers start at 0
 		int c;
 		for (c=0; c<laidout->project->docs.n; c++) {
-			menu->AddItem(laidout->project->docs.e[c]->Name(1),c); 
+			menu->AddItem(laidout->project->docs.e[c]->doc->Name(1),c); 
 			menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
-			if (laidout->project->docs.e[c]==doc) {
+			if (laidout->project->docs.e[c]->doc==doc) {
 				menu->menuitems.e[c]->state|=LAX_CHECKED;
 			}
 		}
@@ -3642,7 +3643,7 @@ int ViewWindow::SelectTool(int id)
  * '<'     previous page 
  * '>'     next page
  * ^'s'    save file
- * ^+'s'   save as -- just change the file name?? (not imp)
+ * ^+'s'   save as
  * F5      popup new spread editor window
  *
  * 'r'     ---for debugging, does system call: "more /proc/(pid)/status"
@@ -3656,8 +3657,16 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		Document *sdoc=doc;
 		if (!sdoc) sdoc=laidout->curdoc;
 		if (!sdoc) {
+			if (!isblank(laidout->project->filename)) {
+				//***need to collect error msg
+				
+				if (laidout->project->Save(NULL)==0) {
+					PostMessage(_("Project saved."));
+					return 0;
+				}
+			}
 			PostMessage(_("No document to save!"));
-			return 1;
+			return 0;
 		}
 		DBG cerr <<"....viewwindow says save.."<<endl;
 		if (isblank(sdoc->Saveas()) || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
@@ -3667,16 +3676,22 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 						//anXWindow *prev,Window nowner,const char *nsend,
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
+						
+			char *where=newstr(isblank(sdoc->Saveas())?sdoc->Saveas():NULL);
+			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
+
 			app->rundialog(new FileDialog(NULL,"Save As...",
 						ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
 						0,0,0,0,0, window,"saveAsPopup",
-						sdoc->Saveas()));
+						where));
+			if (where) delete[] where;
 		} else {
 			char *error=NULL;
 			if (sdoc->Save(1,1,&error)==0) {
 				char blah[strlen(sdoc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",sdoc->Saveas());
 				PostMessage(blah);
+				if (!isblank(laidout->project->filename)) laidout->project->Save(NULL);//***need to collect error msg
 			} else {
 				if (error) {
 					PostMessage(error);

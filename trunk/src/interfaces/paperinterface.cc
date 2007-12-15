@@ -95,22 +95,38 @@ PaperInterface::~PaperInterface()
  */
 Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y)
 {
-	if (!papergroup || !curboxes.n) return NULL;
-
 	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
-	menu->AddItem(_("Paper Size"),999);
-	menu->SubMenu(_("Paper Size"));
-	for (int c=0; c<laidout->papersizes.n; c++) {
-		menu->AddItem(laidout->papersizes.e[c]->name,c,
-				LAX_ISTOGGLE
-				| (!strcmp(curboxes.e[0]->box->paperstyle->name,laidout->papersizes.e[c]->name)
-				  ? LAX_CHECKED : 0));
+	if (papergroup && curboxes.n) {
+
+		menu->AddItem(_("Paper Size"),999);
+		menu->SubMenu(_("Paper Size"));
+		for (int c=0; c<laidout->papersizes.n; c++) {
+			menu->AddItem(laidout->papersizes.e[c]->name,c,
+					LAX_ISTOGGLE
+					| (!strcmp(curboxes.e[0]->box->paperstyle->name,laidout->papersizes.e[c]->name)
+					  ? LAX_CHECKED : 0));
+		}
+		menu->EndSubMenu();
+		//int landscape=curboxes.e[0]->box->paperstyle->flags&1;
+		//menu->AddItem(_("Portrait"), 1000, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
+		//menu->AddItem(_("Landscape"),1001, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
+		menu->AddItem(_("Print with paper group"),1002);
+		menu->AddSep();	
 	}
-	menu->EndSubMenu();
-	//int landscape=curboxes.e[0]->box->paperstyle->flags&1;
-	//menu->AddItem(_("Portrait"), 1000, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
-	//menu->AddItem(_("Landscape"),1001, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
-	menu->AddItem(_("Print with paper group"),1002);
+	if (laidout->project->papergroups.n) {		
+		menu->SubMenu(_("Paper group"));
+		const char *nme;
+		for (int c=0; c<laidout->project->papergroups.n; c++) {
+			nme=laidout->project->papergroups.e[c]->name;
+			if (!nme) nme=_("(unnamed)");
+			menu->AddItem(nme,2000+c,
+						  LAX_ISTOGGLE
+							| (papergroup==laidout->project->papergroups.e[c] ? LAX_CHECKED : 0));
+		}
+		menu->EndSubMenu();
+	}
+	menu->AddItem(_("New paper group..."),3000);
+	if (papergroup) menu->AddItem(_("Rename current paper group..."),3001);
 
 	return menu;
 }
@@ -141,11 +157,21 @@ int PaperInterface::MenuEvent(XClientMessageEvent *e)
 		newpaper->dec_count();
 		needtodraw=1;
 		return 0;
+	} else if (i>=2000 && i<3000) {
+		//***is selecting a new papergroup from laidout->project->papergroups	
+	} else if (i==3000) {
+		//***New paper group...
+		int i=laidout->project->papergroups.findindex(papergroup);
+		if (i<0) {
+			//***install the papergroup as new in project
+		}
+	} else if (i==3001) {
+		//***Rename paper group...
 	}
 	return 1;
 }
 
-/*! incs count of doc.
+/*! incs count of ndoc if ndoc is not already the current document.
  *
  * Return 0 for success, nonzero for fail.
  */
@@ -591,7 +617,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
  * \todo revert to other group
  * \todo edit another group
  */
-int PaperInterface::CharInput(unsigned int ch,unsigned int state)
+int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state)
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	if (ch==LAX_Shift) {

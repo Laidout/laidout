@@ -19,6 +19,7 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
+#include <lax/interfaces/dumpcontext.h>
 
 #include "document.h"
 #include "filetypes/ppt.h"
@@ -31,6 +32,7 @@
 
 
 using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 #include <iostream>
 using namespace std;
@@ -63,7 +65,7 @@ DocumentStyle::DocumentStyle(Imposition *imp)
 
 /*! Recognizes 'imposition'. Discards all else.
  */
-void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -74,7 +76,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			if (imposition) delete imposition;
 			 // figure out which kind of imposition it is..
 			imposition=newImposition(value);
-			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag);
+			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag,context);
 		} else { 
 			DBG cerr <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
 		}
@@ -87,11 +89,11 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
  *    ...
  * </pre>
  *
- * Calls imposition->dump(f,indent+2,0).
+ * Calls imposition->dump_out().
  *
  * If what==-1, write out pseudocode mockup.
  */
-void DocumentStyle::dump_out(FILE *f,int indent,int what)
+void DocumentStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -99,13 +101,13 @@ void DocumentStyle::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%s#These are all the impositions currently installed:\n",spc);
 		for (int c=0; c<laidout->impositionpool.n; c++) {
 			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
-			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1);
+			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1,NULL);
 		}
 		return;
 	}
 	if (imposition) {
 		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
-		imposition->dump_out(f,indent+2,0);
+		imposition->dump_out(f,indent+2,0,context);
 	}
 }
 
@@ -404,7 +406,7 @@ const char *labeltypename(PageLabelType t)
  *
  * \todo *** finish what==-1
  */
-void PageRange::dump_out(FILE *f,int indent,int what)
+void PageRange::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -444,7 +446,7 @@ void PageRange::dump_out(FILE *f,int indent,int what)
 
 /*! \todo ultimately PageRange will have to make full switch to Style.
  */
-void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -659,6 +661,7 @@ int Document::RemovePages(int start,int n)
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
  * \todo implement error message return
+ * \todo *** implement dump context
  */
 int Document::Save(int includelimbos,int includewindows,char **error_ret)
 {
@@ -681,7 +684,11 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Document\n",LAIDOUT_VERSION);
 	
-	dump_out(f,0,0);
+	char *dir=lax_dirname(laidout->project->filename,0);
+	DumpContext context(dir,1);
+	if (dir) delete[] dir;
+	dump_out(f,0,0,&context);
+
 	Group *g,*gg;
 	if (includelimbos) {
 		g=&laidout->project->limbos;
@@ -689,7 +696,7 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 			gg=dynamic_cast<Group *>(g->e(c));
 			fprintf(f,"limbo %s\n",(gg->id?gg->id:""));
 			//fprintf(f,"%s  object %s\n",spc,limbos.e(c)->whattype());
-			gg->dump_out(f,2,0);
+			gg->dump_out(f,2,0,NULL);
 		}
 	}
 	if (includewindows) laidout->DumpWindows(f,0,this);
@@ -715,6 +722,7 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
  * \todo window attributes are found when document is saved independent of a project.
  *   must have mechanism to pass those back to LaidoutApp? right now, that is in
  *   dump_in_atts(), and it shouldn't be there....
+ * \todo *** implement dump context
  */
 int Document::Load(const char *file,char **error_ret)
 {
@@ -726,7 +734,7 @@ int Document::Load(const char *file,char **error_ret)
 	
 	clear();
 	setlocale(LC_ALL,"C");
-	dump_in(f,0,0,NULL);
+	dump_in(f,0,0,NULL,NULL);
 	fclose(f);
 	setlocale(LC_ALL,"");
 	
@@ -803,7 +811,7 @@ int Document::SyncPages(int start,int n)
  *   handling all the window business. Always nice to separate the windows
  *   from the doc structure.
  */
-void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	Page *page;
@@ -819,10 +827,10 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 		} else if (!strcmp(nme,"docstyle")) {
 			if (docstyle) delete docstyle;
 			docstyle=new DocumentStyle(NULL);
-			docstyle->dump_in_atts(att->attributes.e[c],flag);
+			docstyle->dump_in_atts(att->attributes.e[c],flag,context);
 		} else if (!strcmp(nme,"pagerange")) {
 			PageRange *pr=new PageRange;
-			pr->dump_in_atts(att->attributes.e[c],flag);
+			pr->dump_in_atts(att->attributes.e[c],flag,context);
 			pageranges.push(pr,1);
 		} else if (!strcmp(nme,"page")) {
 			PageStyle *ps=NULL;
@@ -830,11 +838,11 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			page=new Page(ps,0);
 			ps->dec_count();
 			page->layers.flush();
-			page->dump_in_atts(att->attributes.e[c],flag);
+			page->dump_in_atts(att->attributes.e[c],flag,context);
 			pages.push(page,1);
 		} else if (!strcmp(nme,"limbo")) {
 			Group *g=new Group;  //count=1
-			g->dump_in_atts(att->attributes.e[c],flag);
+			g->dump_in_atts(att->attributes.e[c],flag,context);
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			laidout->project->limbos.push(g,0); // incs count
 			g->dec_count();   //remove extra first count
@@ -861,13 +869,16 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	SyncPages(0,-1);
 	
 	 // search for windows to create after reading in all pages
-	HeadWindow *head;
-	for (int c=0; c<att->attributes.n; c++) {
-		nme= att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-		if (!strcmp(nme,"window")) {
-			head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
-			if (head) laidout->addwindow(head);
+	 // only if not in project mode
+	if (isblank(laidout->project->filename)) {
+		HeadWindow *head;
+		for (int c=0; c<att->attributes.n; c++) {
+			nme= att->attributes.e[c]->name;
+			value=att->attributes.e[c]->value;
+			if (!strcmp(nme,"window")) {
+				head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
+				if (head) laidout->addwindow(head);
+			}
 		}
 	}
 
@@ -876,7 +887,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag)
 //! Dumps docstyle, pages, pageranges.
 /*! If what==-1, write out pseudocode mockup.
  */
-void Document::dump_out(FILE *f,int indent,int what)
+void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -887,19 +898,19 @@ void Document::dump_out(FILE *f,int indent,int what)
 		
 		fprintf(f,"\n%s#The document style:\n",spc);
 		fprintf(f,"%sdocstyle\n",spc);
-		if (docstyle) docstyle->dump_out(f,indent+2,-1);
+		if (docstyle) docstyle->dump_out(f,indent+2,-1,NULL);
 		else {
 			DocumentStyle d(NULL);
-			d.dump_out(f,indent+2,-1);
+			d.dump_out(f,indent+2,-1,NULL);
 		}
 	
 		fprintf(f,"\n\n%s#The page labels for a document are defined within zero or more page ranges.\n",spc);
 		fprintf(f,"%s#If no page range blocks are given, then the default numbering 0,1,2... is assumed.\n",spc);
 		fprintf(f,"%spagerange\n",spc);
-		if (pageranges.n) pageranges.e[0]->dump_out(f,indent+2,-1);
+		if (pageranges.n) pageranges.e[0]->dump_out(f,indent+2,-1,NULL);
 		else {
 			PageRange pr;
-			pr.dump_out(f,indent+2,-1);
+			pr.dump_out(f,indent+2,-1,NULL);
 		}
 		
 		fprintf(f,"\n\n%s#The pages of a document are currently just a collection\n",spc);
@@ -908,10 +919,10 @@ void Document::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%s#regardless of any label after \"Page\".\n",spc);
 		fprintf(f,"%spage\n",spc);
 		
-		if (pages.n) pages.e[0]->dump_out(f,indent+2,-1);
+		if (pages.n) pages.e[0]->dump_out(f,indent+2,-1,NULL);
 		else {
 			Page p;
-			p.dump_out(f,indent+2,-1);
+			p.dump_out(f,indent+2,-1,NULL);
 		}
 		
 		return;
@@ -923,20 +934,20 @@ void Document::dump_out(FILE *f,int indent,int what)
 	 // dump docstyle
 	if (docstyle) {
 		fprintf(f,"%sdocstyle\n",spc);
-		docstyle->dump_out(f,indent+2,0);
+		docstyle->dump_out(f,indent+2,0,context);
 	}
 
 	 // PageRanges
 	int c;
 	for (c=0; c<pageranges.n; c++) {
 		fprintf(f,"%spagerange\n",spc);
-		pageranges.e[c]->dump_out(f,indent+2,0);
+		pageranges.e[c]->dump_out(f,indent+2,0,context);
 	}
 	
 	 // dump objects
 	for (int c=0; c<pages.n; c++) {
 		fprintf(f,"%spage %d\n",spc,c);
-		pages.e[c]->dump_out(f,indent+2,0);
+		pages.e[c]->dump_out(f,indent+2,0,context);
 	}
 	 // dump notes/meta data
 	//***

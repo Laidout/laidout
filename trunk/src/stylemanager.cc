@@ -61,13 +61,13 @@ void StyleManager::dump(FILE *f,int w)
 	if (w&1) {
 		for (int c=0; c<styledefs.n; c++) {
 			fprintf(f,"styledef %d\n",c);
-			styledefs.e[c]->dump_out(f,2,0);
+			styledefs.e[c]->dump_out(f,2,0,NULL);
 		}
 	}
 	if (w&2) {
 		for (int c=0; c<styles.n; c++) {
 			fprintf(f,"style %d\n",c);
-			styles.e[c]->dump_out(f,2,0);
+			styles.e[c]->dump_out(f,2,0,NULL);
 		}
 	}
 }

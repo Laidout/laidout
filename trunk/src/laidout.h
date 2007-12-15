@@ -61,7 +61,6 @@ class LaidoutApp : public Laxkit::anXApp
  protected:
 	void dumpOutResources();
  public:
-//	ControlPanel *maincontrolpanel;
 	char *config_dir;
 	Project *project;
 	Document *curdoc;
@@ -85,7 +84,6 @@ class LaidoutApp : public Laxkit::anXApp
 
 	IconManager icons;
 	
-//	ScreenStyle *screen;
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
 	Laxkit::PtrStack<LaxInterfaces::anInterface> interfacepool;
@@ -105,12 +103,13 @@ class LaidoutApp : public Laxkit::anXApp
 	int isTopWindow(Laxkit::anXWindow *win);
 	int numTopWindows() { return topwindows.n; }
 
+	int DumpWindows(FILE *f,int indent,Document *doc);
 	Document *findDocument(const char *saveas);
 	int Load(const char *filename, char **error_ret);
 	Document *LoadTemplate(const char *filename);
 	int NewDocument(DocumentStyle *docinfo, const char *filename);
 	int NewDocument(const char *spec);
-	int DumpWindows(FILE *f,int indent,Document *doc);
+	int NewProject(Project *proj,char **error_ret);
 
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
 	char *full_path_for_resource(const char *name,const char *dir=NULL);

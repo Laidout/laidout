@@ -612,7 +612,7 @@ StyleDef::~StyleDef()
 /*! If this styledef extends another, this does not write out the whole
  * def of that, only the name element of it.
  */
-void StyleDef::dump_out(FILE *f,int indent,int what)
+void StyleDef::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -627,16 +627,16 @@ void StyleDef::dump_out(FILE *f,int indent,int what)
 	if (fields) {
 		for (int c=0; c<fields->n; c++) {
 			fprintf(f,"%sfield\n",spc);
-			fields->e[c]->dump_out(f,indent+2,0);
+			fields->e[c]->dump_out(f,indent+2,0,context);
 		}
 	}
 }
 
 /*! \todo *** imp me!!
  */
-void StyleDef::dump_in_atts(Attribute *att,int flag)
+void StyleDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 {
-	cout<<" *** imp me! StyleDef::dump_in_atts(Attribute *att,int flag)"<<endl;
+	cout<<" *** imp me! StyleDef::dump_in_atts(Attribute *att,int flag,context)"<<endl;
 	
 }
 
@@ -1008,8 +1008,8 @@ void deleteFieldNode(FieldNode *fn)
  *  See GenericStyle for a kind of all-purpose flat Style, that is, it does not
  *  have any fancy hardcoded shortcuts.
  *
- *  Finally, derived classes should remember to define their own dump_out(FILE*,int,what) and
- *  dump_in_atts(Attribute*,int), required by class LaxFiles::DumpUtility.
+ *  Finally, derived classes should remember to define their own dump_out() and
+ *  dump_in_atts(), required by class LaxFiles::DumpUtility.
  *
  *
  * <pre>

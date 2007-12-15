@@ -13,7 +13,7 @@
 //
 // Copyright (C) 2004-2007 by Tom Lechner
 //
-/*************** impositioninst.cc ********************/
+
 
 #include "impositioninst.h"
 #include "stylemanager.h"
@@ -155,7 +155,7 @@ int Singles::SetPaperSize(PaperStyle *npaper)
  * to letter if defaultpaperstyle attribute found, then dumps in that
  * paper style. see todos in Page also.....
  */
-void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	int pages=-1;
@@ -182,17 +182,17 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			pages=c;
 			if (pagestyle) pagestyle->dec_count();
 			pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-			pagestyle->dump_in_atts(att->attributes.e[c],flag);
+			pagestyle->dump_in_atts(att->attributes.e[c],flag,context);
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			PaperStyle *paperstyle;
 			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***should be global def
-			paperstyle->dump_in_atts(att->attributes.e[c],flag);
+			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			SetPaperSize(paperstyle);
 			paperstyle->dec_count();
 		} else if (!strcmp(name,"defaultpapers")) {
 			if (papergroup) papergroup->dec_count();
 			papergroup=new PaperGroup;
-			papergroup->dump_in_atts(att->attributes.e[c],flag);
+			papergroup->dump_in_atts(att->attributes.e[c],flag,context);
 			if (papergroup->papers.n) {
 				if (paper) paper->dec_count();
 				paper=papergroup->papers.e[0]->box;
@@ -222,7 +222,7 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag)
  *
  * \todo *** finish what==-1
  */
-void Singles::dump_out(FILE *f,int indent,int what)
+void Singles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -235,9 +235,9 @@ void Singles::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sdefaultpapers #default paper group\n",spc);
-		papergroup->dump_out(f,indent+2,-1);
+		papergroup->dump_out(f,indent+2,-1,NULL);
 		fprintf(f,"%sdefaultpagestyle #default page style\n",spc);
-		pagestyle->dump_out(f,indent+2,-1);
+		pagestyle->dump_out(f,indent+2,-1,NULL);
 		return;
 	}
 	fprintf(f,"%sinsetl %.10g\n",spc,insetl);
@@ -249,11 +249,11 @@ void Singles::dump_out(FILE *f,int indent,int what)
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 	if (pagestyle) {
 		fprintf(f,"%sdefaultpagestyle\n",spc);
-		pagestyle->dump_out(f,indent+2,0);
+		pagestyle->dump_out(f,indent+2,0,context);
 	}
 	if (papergroup) {
 		fprintf(f,"%sdefaultpapers\n",spc);
-		papergroup->dump_out(f,indent+2,0);
+		papergroup->dump_out(f,indent+2,0,context);
 	}
 }
 
@@ -708,7 +708,7 @@ PageStyle *DoubleSidedSingles::GetPageStyle(int pagenum,int local)
 
 /*! \todo *** must figure out best way to sync up pagestyles...
  */
-void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -724,21 +724,21 @@ void DoubleSidedSingles::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			//pages=c;
 			if (pagestyler) pagestyler->dec_count();
 			pagestyler=new RectPageStyle();
-			pagestyler->dump_in_atts(att->attributes.e[c],flag);
+			pagestyler->dump_in_atts(att->attributes.e[c],flag,context);
 		}
 	}
-	Singles::dump_in_atts(att,flag);
+	Singles::dump_in_atts(att,flag,context);
 }
 
 /*! Write out isvertical, then Singles::dump_out.
  *
  * If what==-1, dump out a pseudocode mockup of the file format.
  */
-void DoubleSidedSingles::dump_out(FILE *f,int indent,int what)
+void DoubleSidedSingles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
-		Singles::dump_out(f,indent,-1);
+		Singles::dump_out(f,indent,-1,NULL);
 		fprintf(f,"%sdefaultpagestyler #default right or bottom page style\n",spc);
 		fprintf(f,"%s  #(same kinds of attributes as the defaultpagestyle)\n",spc);
 		fprintf(f,"%sisvertical  #whether the fold is up/down or the default left/right\n",spc);
@@ -752,9 +752,9 @@ void DoubleSidedSingles::dump_out(FILE *f,int indent,int what)
 		else fprintf(f,"%sisleft\n",spc);
 	if (pagestyler) {
 		fprintf(f,"%sdefaultpagestyler\n",spc);
-		pagestyler->dump_out(f,indent+2,0);
+		pagestyler->dump_out(f,indent+2,0,context);
 	}
-	Singles::dump_out(f,indent,0);
+	Singles::dump_out(f,indent,0,context);
 }
 
 //! Create necessary pages based on default pagestyle
@@ -1176,11 +1176,11 @@ int *BookletImposition::PrintingPapers(int frompage,int topage)
  *
  * If what==-1, dump out a pseudocode mockup of the file format.
  */
-void BookletImposition::dump_out(FILE *f,int indent,int what)
+void BookletImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
-		Singles::dump_out(f,indent,-1);
+		Singles::dump_out(f,indent,-1,NULL);
 		fprintf(f,"%sdefaultpagestyler #default right or bottom page style\n",spc);
 		fprintf(f,"%s  #(same kinds of attributes as the defaultpagestyle)\n",spc);
 		fprintf(f,"%sisvertical  #whether the pages fold up/down or the default left/right\n",spc);
@@ -1195,13 +1195,13 @@ void BookletImposition::dump_out(FILE *f,int indent,int what)
 	if (isvertical) fprintf(f,"%sisvertical\n",spc);
 	if (pagestyler) {
 		fprintf(f,"%sdefaultpagestyler\n",spc);
-		pagestyler->dump_out(f,indent+2,0);
+		pagestyler->dump_out(f,indent+2,0,context);
 	}
-	Singles::dump_out(f,indent,0);
+	Singles::dump_out(f,indent,0,context);
 }
 
 //! Read creep, body and covercolor, then DoubleSidedSigles::dump_in_atts().
-void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -1216,7 +1216,7 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 			if (value) covercolor=strtol(value,NULL,0);
 		}
 	}
-	DoubleSidedSingles::dump_in_atts(att,flag);
+	DoubleSidedSingles::dump_in_atts(att,flag,context);
 	isleft=0;
 }
 
@@ -1229,8 +1229,8 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 // protected:
 //	Imposition *impos;
 //	Ranges ranges; 
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+//	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 //}
 
 
@@ -1277,15 +1277,15 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 ////	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
 ////	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
 //
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+//	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 ////};
 //
 //BasicBook::BasicBook() : Style(NULL,NULL,"Basic Book")
 //{ }
 //
 ////! *** imp me!
-//void BasicBook::dump_in_atts(Attribute *att,int flag)
+//void BasicBook::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 //{***
 //	if (!att) return;
 //	char *name,*value;
@@ -1300,14 +1300,14 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 //			if (value) covercolor=strtol(value,NULL,0);
 //		}
 //	}
-//	DoubleSidedSingles::dump_in_atts(att,flag);
+//	DoubleSidedSingles::dump_in_atts(att,flag,context);
 //}
 //
 ////! Write out flags, width, height
 ///*!
 // * If what==-1, dump out a pseudocode mockup of the file format.
 // */
-//void BasicBook::dump_out(FILE *f,int indent,int what)
+//void BasicBook::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 //{
 //	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 //	if (what==-1) {

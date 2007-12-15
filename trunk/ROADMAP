@@ -10,32 +10,16 @@ VERSION 0.09
 (done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
 (done) Add, delete, and rename limbos
        Load, save, add, delete paper groups
-       Finish implementing project based setup, particularly being able to save a project, not just load one   
+(done) Finish implementing project based setup, particularly being able to save a project, not just load one   
 (done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
        NetImposition needs import/export net, and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
        Generic fold and trim imposition
-       PathInterface must be drastically improved, and bez part should have segment move like inkscape
-       Masking
-       Clean up patch controls
-       Image and Color patches, gradients, etc should allow transparent colors
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
-       In image properties dialog, have the popup list of potential previews
-       When importing from an image list file, should be able to say if and when to auto-make previews
-       SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
-       SpreadEditor: load and save spread editor arrangements
-       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
-       SpreadEditor: optionally work with whole spreads, rather than just single pages
-       SpreadEditor: Corner button should allow changing working document
-       Fix multi-object selection move when crossing page boundaries
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
-       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
-       Selected region out to image(s), regions optionally remembered
-       Gui for modifying Page Labels
        When importing, preserve mystery data as much as possible, to be later exported back out
        Passepartout import
-       double click on group should change selection area to group contents?
-       Tools should remember their settings
+       fix the new memory hole (in papergroups?)
+(done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
@@ -45,6 +29,25 @@ VERSION 0.091
 ------------
        Svg import
        Scribus import
+       PathInterface must be drastically improved, and bez part should have segment move like inkscape
+       Masking
+       Clean up patch controls
+       Image and Color patches, gradients, etc should allow transparent colors
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       In image properties dialog, have the popup list of potential previews
+       SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
+       SpreadEditor: load and save spread editor arrangements
+       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
+       SpreadEditor: optionally work with whole spreads, rather than just single pages
+       SpreadEditor: Corner button should allow changing working document
+       Fix multi-object selection move when crossing page boundaries
+       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
+       Selected region out to image(s), regions optionally remembered
+       Gui for modifying Page Labels
+       double click on group should change selection area to group contents?
+       Tools should remember their settings
+       Clean up project load/save internals and dialogs
+       When importing from an image list file, should be able to say if and when to auto-make previews
 
 
 VERSION 0.1 

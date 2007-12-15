@@ -597,7 +597,7 @@ int LaidoutApp::readinLaidoutDefaults()
 	 //now f is open, must read in...
 	setlocale(LC_ALL,"C");
 	Attribute att;
-	att.dump_in(f,0);
+	att.dump_in(f,0,NULL);
 	char *name,*value;
 	for (int c=0; c<att.attributes.n; c++) {
 		name =att.attributes.e[c]->name;
@@ -750,7 +750,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					cout << "**** must implement do not use X " << endl;
 				} break;
 			case 'n': { // --new "letter singes 3 pages blah blah blah"
-					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1];
+					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1]->doc;
 				} break;
 			case 'l': { // load dir
 					makestr(load_dir,optarg);
@@ -808,7 +808,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		 //figure out where to export to
 		const char *filename=NULL;
 		if (optind<argc) filename=argv[optind];
-		config.dump_in_atts(&att,0);
+		config.dump_in_atts(&att,0,NULL);
 		 
 		 //-------export
 		if (!filename || !config.filter) {
@@ -832,7 +832,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 
 		config.doc=doc;
-		config.dump_in_atts(&att,0);//second time with doc!
+		config.dump_in_atts(&att,0,NULL);//second time with doc!
 		if (export_document(&config,&error)!=0) {
 			cout <<error;
 			cout <<_("Export failed.")<<endl;
@@ -856,7 +856,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		doc=NULL;
 		if (Load(argv[c],NULL)==0) doc=curdoc;
 		if (topwindows.n==index) {
-			if (!doc && project->docs.n) doc=project->docs.e[0];
+			if (!doc && project->docs.n) doc=project->docs.e[0]->doc;
 			if (doc) addwindow(newHeadWindow(doc));
 		}
 	}
@@ -880,7 +880,10 @@ Document *LaidoutApp::findDocument(const char *saveas)
 {
 	if (!project) return NULL;
 	for (int c=0; c<project->docs.n; c++) {
-		if (project->docs.e[c]->saveas && !strcmp(saveas,project->docs.e[c]->saveas)) return project->docs.e[c];
+		if (project->docs.e[c]->doc
+			 && project->docs.e[c]->doc->saveas 
+			 && !strcmp(saveas,project->docs.e[c]->doc->saveas))
+			return project->docs.e[c]->doc;
 	}
 	return NULL;
 }
@@ -973,9 +976,9 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 	Document *doc=new Document(NULL,fullname);
 	
 	 //must push before Load to not screw up setting up windows and other controls
-	project->docs.push(doc); // docs is a plain Laxkit::PtrStack of Document
+	project->Push(doc); // docs is a plain Laxkit::PtrStack of Document
 	if (doc->Load(fullname,NULL)==0) { // load failed
-		project->docs.pop();
+		project->Pop(NULL);
 		delete doc;
 		return NULL;
 	}
@@ -1026,10 +1029,10 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
-	project->docs.push(doc); //important: this must be before doc->Load()
+	project->Push(doc); //important: this must be before doc->Load()
 	
 	if (doc->Load(fullname, error_ret)==0) {
-		project->docs.pop();
+		project->Pop(NULL);
 		delete doc;
 		doc=NULL;
 	}
@@ -1139,7 +1142,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate
 	Document *newdoc=new Document(docinfo,saveas);
 	if (!project) project=new Project();
-	project->docs.push(newdoc);
+	project->Push(newdoc);
 	if (saveas) delete[] saveas;
 
 	addwindow(newHeadWindow(newdoc));
@@ -1161,12 +1164,36 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 
 	Document *newdoc=new Document(docinfo,filename);
 	if (!project) project=new Project();
-	project->docs.push(newdoc);
+	project->Push(newdoc);
 	
 	DBG cerr <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	
 	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);
+	return 0;
+}
+
+/*! Return 0 for success or nonzero for error.
+ */
+int LaidoutApp::NewProject(Project *proj,char **error_ret)
+{
+	if (!proj) return 1;
+	if (proj==project) return 0;
+	delete project;
+	project=proj;
+
+	//***update windows to not reference old documents, limbos, or other resources
+	
+	int n=0;
+	for (int c=0; c<topwindows.n; c++) {
+		if (dynamic_cast<HeadWindow *>(topwindows.e[c])) n++;
+	}
+	
+	if (!n) addwindow(newHeadWindow(NULL,"ViewWindow"));
+
+	project->initDirs();
+	project->Save(error_ret);
+
 	return 0;
 }
 
@@ -1182,6 +1209,7 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
  * \todo might be better to have some special check when
  *   loading so that if doc is being loaded from a project load, then all windows
  *   in the doc are ignored?, or if doc is only doc open?
+ * \todo implement dump context
  */
 int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 {
@@ -1190,9 +1218,9 @@ int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 	HeadWindow *head;
 	for (c=0; c<topwindows.n; c++) {
 		head=dynamic_cast<HeadWindow *>(topwindows.e[c]);
-		if (!head || !head->HasOnlyThis(doc)) continue;
+		if (!head || doc && !head->HasOnlyThis(doc)) continue;
 		fprintf(f,"%swindow\n",spc);
-		head->dump_out(f,indent+2,0);
+		head->dump_out(f,indent+2,0,NULL);
 		n++;
 	}
 	return n;

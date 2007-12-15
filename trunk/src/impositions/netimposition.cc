@@ -631,26 +631,26 @@ int NetImposition::SpreadType(int spread)
  *
  * \todo *** dump_out what==-1 with list of built in net types
  */
-void NetImposition::dump_out(FILE *f,int indent,int what)
+void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
 		fprintf(f,"%snumpages 3   #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sprintnet yes #whether the net lines get printed out with the page data\n",spc);
 		fprintf(f,"%snet NetType  #if NetType is a built in net, then the subattributes are not necessary\n",spc);
-		if (net) net->dump_out(f,indent+2,-1);
+		if (net) net->dump_out(f,indent+2,-1,NULL);
 		else {
 			Net n;
-			n.dump_out(f,indent+2,-1);
+			n.dump_out(f,indent+2,-1,NULL);
 		}
 		fprintf(f,"%sdefaultpaperstyle #default paper style\n",spc);
-		//***paperstyle->dump_out(f,indent+2,-1);
+		//***paperstyle->dump_out(f,indent+2,-1,NULL);
 		return;
 	}
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
 //	if (paper) { ***
 //		fprintf(f,"%sdefaultpaperstyle\n",spc);
-//		paperstyle->dump_out(f,indent+2,0);
+//		paperstyle->dump_out(f,indent+2,0,context);
 //	}
 	if (printnet) fprintf(f,"%sprintnet\n",spc);
 		else fprintf(f,"%sprintnet false\n",spc);
@@ -659,12 +659,12 @@ void NetImposition::dump_out(FILE *f,int indent,int what)
 		if (netisbuiltin) fprintf(f," %s\n",net->whatshape());
 		else {
 			fprintf(f,"\n");
-			net->dump_out(f,indent+2,0); // dump out a custom net
+			net->dump_out(f,indent+2,0,context); // dump out a custom net
 		}
 	}
 }
 
-void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -678,18 +678,18 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag)
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			//***if (paperstyle) delete paperstyle;
 			//paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
-			//paperstyle->dump_in_atts(att->attributes.e[c],flag);
+			//paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 		} else if (!strcmp(name,"net")) {
 			if (!isblank(value)) { // is a built in
 				SetNet(value);
 			} else {
 				tempnet=new Net();
-				tempnet->dump_in_atts(att->attributes.e[c],flag);
+				tempnet->dump_in_atts(att->attributes.e[c],flag,context);
 				SetNet(tempnet);
 				tempnet->dec_count();
 
 				DBG cerr <<"-----------after dump_in net and set----------"<<endl;
-				DBG net->dump_out(stderr,2,0);
+				DBG net->dump_out(stderr,2,0,NULL);
 				DBG cerr <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {

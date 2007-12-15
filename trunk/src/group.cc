@@ -198,7 +198,7 @@ LaxInterfaces::SomeData *Group::e(int i)
  * Discards all else.
  * The objs should have been flushed before coming here.
  */
-void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void Group::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	locked=visible=prints=0;
 	char *name,*value;
@@ -222,7 +222,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				//***strs[0]==that id
 				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
 				if (data) {
-					data->dump_in_atts(att->attributes[c],flag);
+					data->dump_in_atts(att->attributes[c],flag,context);
 					push(data,0);
 					data->dec_count();
 				}
@@ -242,7 +242,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag)
  *
  * \todo automate object management, necessary here for what==-1
  */
-void Group::dump_out(FILE *f,int indent,int what)
+void Group::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -271,7 +271,7 @@ void Group::dump_out(FILE *f,int indent,int what)
 			if (!strcmp(objecttypelist[c],"Group")) continue;
 			fprintf(f,"\n%sobject %s\n",spc,objecttypelist[c]);
 			obj=newObject(objecttypelist[c]);
-			obj->dump_out(f,indent+2,-1);
+			obj->dump_out(f,indent+2,-1,NULL);
 			delete obj;
 		}
 		return;
@@ -282,7 +282,7 @@ void Group::dump_out(FILE *f,int indent,int what)
 	if (prints) fprintf(f,"%sprints\n",spc);
 	for (int c=0; c<objs.n; c++) {
 		fprintf(f,"%sobject %d %s\n",spc,c,objs.e[c]->whattype());
-		objs.e[c]->dump_out(f,indent+2,0);
+		objs.e[c]->dump_out(f,indent+2,0,context);
 	}
 }
 //! Find d somewhere within this (it can be this also). Searches in subobjects too.

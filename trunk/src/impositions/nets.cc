@@ -119,7 +119,7 @@ void NetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
 	if (isclosed) fprintf(f,"%sclosed\n",spc);
 	if (linestyle) {
 		fprintf(f,"%slinestyle\n",spc);
-		linestyle->dump_out(f,indent+2,0);
+		linestyle->dump_out(f,indent+2,0,NULL);//note: context is NULL, is this ok?
 	}
 }
 
@@ -158,7 +158,7 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)
 				linestyle=new LineStyle();
 				lsislocal=1;
 			}
-			linestyle->dump_in_atts(att->attributes.e[c],flag);
+			linestyle->dump_in_atts(att->attributes.e[c],flag,NULL);//note: context is NULL, is this ok?
 		} else if (!strcmp(name,"closed")) {
 			isclosed=BooleanAttribute(value);
 		}
@@ -562,7 +562,7 @@ Net *Net::duplicate()
  *    matrix 1 0 0 1 .2 .3
  * </pre>
  */
-void Net::dump_out(FILE *f,int indent,int what)
+void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -641,7 +641,7 @@ void Net::dump_out(FILE *f,int indent,int what)
  * 
  * \todo *** MUST implement the sanity check..
  */
-void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value,*t,*e,*newname=NULL;
@@ -736,7 +736,7 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag)
 	FindBBox();
 
 	DBG cerr <<"----------------this was set in Net:-------------"<<endl;
-	DBG dump_out(stderr,0,0);
+	DBG dump_out(stderr,0,0,NULL);
 	DBG cerr <<"----------------end Net dump:-------------"<<endl;
 }
 

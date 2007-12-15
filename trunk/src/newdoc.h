@@ -61,7 +61,7 @@ class NewDocWindow : public Laxkit::RowFrame
 class NewProjectWindow : public Laxkit::RowFrame
 {
 	int mx,my;
-	virtual void sendNewProject();
+	virtual int sendNewProject();
 	Laxkit::LineInput *saveas;
  public:
  	NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,

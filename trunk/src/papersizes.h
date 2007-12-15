@@ -50,8 +50,8 @@ class PaperStyle : public Style
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual Style *duplicate(Style *s=NULL);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 
@@ -100,8 +100,8 @@ class PaperGroup : public Laxkit::anObject, public Laxkit::RefCounted, public La
 	PaperGroup(PaperBoxData *boxdata);
 	PaperGroup(PaperStyle *paperstyle);
 	virtual ~PaperGroup();
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 

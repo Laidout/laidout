@@ -64,7 +64,7 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	//virtual int But4(int x,int y,unsigned int state);
 	//virtual int But5(int x,int y,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state);
 	virtual int CharRelease(unsigned int ch,unsigned int state);
 	virtual int Refresh();
 	virtual void DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow);

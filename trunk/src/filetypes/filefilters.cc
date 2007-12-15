@@ -97,7 +97,7 @@ DocumentExportConfig::~DocumentExportConfig()
 	if (papergroup) papergroup->dec_count();
 }
 
-void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
+void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -122,7 +122,7 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what)
 	fprintf(f,"%send   %d\n\n",spc,end);
 }
 
-void DocumentExportConfig::dump_in_atts(Attribute *att,int flag)
+void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 {
 	char *name,*value;
 	int c,c2;

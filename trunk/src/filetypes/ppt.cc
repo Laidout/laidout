@@ -489,7 +489,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	 //*** set up page labels for "first_page_num"
 	
 	 //establish doc in project
-	laidout->project->docs.push(doc);
+	laidout->project->Push(doc);
 	laidout->app->addwindow(newHeadWindow(doc));
 	
 	delete att;

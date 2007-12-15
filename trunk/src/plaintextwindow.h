@@ -22,17 +22,22 @@
 #include "document.h"
 #include <lax/rowframe.h>
 
+//------------------------------ FileRef -------------------------------
+class FileRef : public Laxkit::anObject, public Laxkit::RefCounted
+{
+ public:
+	char *filename;
+	FileRef(const char *file) { filename=newstr(file); }
+	~FileRef() { if (filename) delete[] filename; }
+	virtual const char *whattype() { return "FileRef"; }
+};
+
 //------------------------------ PlainText -------------------------------
 
 class PlainText : public Laxkit::anObject, public Laxkit::RefCounted
 {
  public:
-	int ownertype;
-	union {
-		Document *doc;
-		Project *project;
-		char *filename;
-	} owner;
+	Laxkit::anObject *owner;
 	clock_t lastmodtime;
 	char *thetext;
 	char *name;

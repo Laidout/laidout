@@ -211,7 +211,7 @@ PaperStyle::~PaperStyle()
  *   landscape
  * </pre>
  */
-void PaperStyle::dump_out(FILE *f,int indent,int what)
+void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -230,7 +230,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what)
 }
 
 //! Basically reverse of dump_out.
-void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *aname,*value;
@@ -424,7 +424,7 @@ PaperGroup::~PaperGroup()
  *     dpi 360
  * </pre>
  */
-void PaperGroup::dump_out(FILE *f,int indent,int what)
+void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -434,7 +434,7 @@ void PaperGroup::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
 		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
 		PaperStyle paperstyle(NULL,0,0,0,0);
-		paperstyle.dump_out(f,indent+2,-1);
+		paperstyle.dump_out(f,indent+2,-1,NULL);
 		//fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
 		//fprintf(f,"%s  miny 0\n",spc);
 		//fprintf(f,"%s  maxx 8.5\n",spc);
@@ -451,11 +451,11 @@ void PaperGroup::dump_out(FILE *f,int indent,int what)
 		m=papers.e[c]->m();
 		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 			spc, m[0],m[1],m[2],m[3],m[4],m[5]);
-		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0);
+		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
 	}
 }
 
-void PaperGroup::dump_in_atts(Attribute *att,int flag)
+void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 
@@ -469,12 +469,12 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag)
 			makestr(Name,value);
 		} else if (!strcmp(nme,"paper")) {
 			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0);
-			paperstyle->dump_in_atts(att->attributes.e[c],flag);
+			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			PaperBox *paperbox=new PaperBox(paperstyle);
 			paperstyle->dec_count();
 			PaperBoxData *boxdata=new PaperBoxData(paperbox);
 			paperbox->dec_count();
-			boxdata->dump_in_atts(att->attributes.e[c],flag);
+			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
 			papers.push(boxdata);
 			boxdata->dec_count();
 		}

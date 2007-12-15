@@ -85,7 +85,7 @@ LaxInterfaces::anInterface *EpsInterface::duplicate(LaxInterfaces::anInterface *
  * update this code as change happens.
  * Otherwise dumps out in indented data format as above.
  */
-void EpsData::dump_out(FILE *f,int indent,int what)
+void EpsData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -121,7 +121,7 @@ void EpsData::dump_out(FILE *f,int indent,int what)
  * height as given in the file are curretly ignored, and the actual pixel 
  * width and height of the image are used instead.
  */
-void EpsData::dump_in_atts(Attribute *att,int flag)
+void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;

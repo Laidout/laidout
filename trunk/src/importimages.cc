@@ -72,16 +72,16 @@ ImportImagesDialog::~ImportImagesDialog()
 	if (doc)   doc->dec_count();
 }
 
-void ImportImagesDialog::dump_out(FILE *f,int indent,int what)
+void ImportImagesDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
-	Attribute *att=dump_out_atts(NULL,0);
+	Attribute *att=dump_out_atts(NULL,0,context);
 	att->dump_out(f,indent);
 	delete att;
 }
 
 /*! Append to att if att!=NULL, else return new att.
  */
-Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
+Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context)
 {
 	if (!att) att=new Attribute("ImportImagesDialog",NULL);
 	char scratch[100];
@@ -145,8 +145,8 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
 //	int perpage;
 //	double defaultdpi;
 //
-//	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+//	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 //};
 //
 //ImportImagesConfig::ImportImagesConfig()
@@ -169,11 +169,11 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
 //	if (doc) doc->dec_count();
 //}
 //
-//LaxFiles::Attribute *ImportImagesConfig::dump_out_atts(LaxFiles::Attribute *att,int what)
+//LaxFiles::Attribute *ImportImagesConfig::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
 //{
 //}
 //
-//void ImportImagesConfig::dump_in_atts(LaxFiles::Attribute *att,int flag)
+//void ImportImagesConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 //{
 //	char *name,*value;
 //	for (int c=0; c<att->attributes.n; c++) {
@@ -202,7 +202,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what)
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
-void ImportImagesDialog::dump_in_atts(Attribute *att,int flag)
+void ImportImagesDialog::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
