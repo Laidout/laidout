@@ -16,29 +16,50 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
+#include <lax/refptrstack.h>
 #include "document.h"
+#include "papersizes.h"
+
+//------------------------- ProjDocument ------------------------------------
+class ProjDocument
+{
+ public:
+	Document *doc;
+	char *filename;
+	char *name;
+	int is_in_project;
+	ProjDocument(Document *ndoc,char *file,char *nme);
+	~ProjDocument();
+};
 
 //------------------------- Project ------------------------------------
-
 class Project : public LaxFiles::DumpUtility
 {
  public:
 	char *name,*filename;
-	Laxkit::PtrStack<Document> docs;
+	Laxkit::PtrStack<ProjDocument> docs;
 	Group limbos;
+	Laxkit::RefPtrStack<PaperGroup> papergroups;
+
+	double defaultdpi;
+	//default units
+	//default color mode
 	
 	//StyleManager styles;
-	//Page scratchboard;
-	//Laxkit::PtrStack<char> project_notes;
+	//Laxkit::PtrStack<TextObject> texts;
 
 	Project();
 	virtual ~Project();
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual int Load(const char *file,char **error_ret);
+	virtual int initDirs();
 	virtual int Save(char **error_ret);
 	virtual int clear();
+	virtual int Push(Document *doc);
+	virtual int Pop(Document *doc);
+	virtual int valid();
 };
 
 #endif

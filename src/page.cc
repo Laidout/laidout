@@ -94,7 +94,7 @@ int PageStyle::set(const char *flag, int newstate)
 /*! Recognizes 'pageclips', 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
-void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	flags=0;
@@ -130,7 +130,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
  *  facingpagesbleed
  * </pre>
  */
-void PageStyle::dump_out(FILE *f,int indent,int what)
+void PageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -244,12 +244,12 @@ RectPageStyle::RectPageStyle(unsigned int ntype,double l,double r,double t,doubl
  * 'marginsclip', 'facingpagesbleed', 'width', and 'height'.
  * Discards all else.
  */
-void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	ml=mr=mt=mb=0;
 	recttype=0;
 	char *name,*value;
-	PageStyle::dump_in_atts(att,flag);
+	PageStyle::dump_in_atts(att,flag,context);
 	for (int c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -283,7 +283,7 @@ void RectPageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag)
  * \todo when reading in, must remember to let some features be overridden,
  *   but lrtb, iotb, etc are always set by the imposition
  */
-void RectPageStyle::dump_out(FILE *f,int indent,int what)
+void RectPageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
@@ -313,7 +313,7 @@ void RectPageStyle::dump_out(FILE *f,int indent,int what)
 	if (recttype&RECTPAGE_LRTB) fprintf(f,"%slrtb\n",spc);
 	if (recttype&RECTPAGE_IOTB) fprintf(f,"%siotb\n",spc);
 	if (recttype&RECTPAGE_LRIO) fprintf(f,"%slrio\n",spc);
-	PageStyle::dump_out(f,indent,0);
+	PageStyle::dump_out(f,indent,0,context);
 }
 
 //! Copy over ml,mr,mt,mb,recttype.
@@ -535,7 +535,7 @@ int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
  * pagestyle should have been set to the default page style for this page.
  *
  */
-void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++)  {
@@ -549,14 +549,14 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
 				}
 			} else ps=(PageStyle *)stylemanager.newStyle("PageStyle");
 			if (ps) {
-				ps->dump_in_atts(att->attributes.e[c],flag);
+				ps->dump_in_atts(att->attributes.e[c],flag,context);
 				ps->flags|=PAGESTYLE_AUTONOMOUS;
 			}
 			InstallPageStyle(ps,0);
 			ps->dec_count();
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
-			g->dump_in_atts(att->attributes.e[c],flag);
+			g->dump_in_atts(att->attributes.e[c],flag,context);
 			layers.push(g,1);
 		} else if (!strcmp(name,"labeltype")) {
 			IntAttribute(value,&labeltype);
@@ -571,7 +571,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag)
  * 
  * If what==-1, then output pseudocode mockup of file format.
  */
-void Page::dump_out(FILE *f,int indent,int what)
+void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -580,18 +580,18 @@ void Page::dump_out(FILE *f,int indent,int what)
 		fprintf(f,"%s#Layers are really just a group whose parent is a page.\n",spc);
 		fprintf(f,"%slayer\n",spc);
 		Group g;
-		g.dump_out(f,indent+2,-1);
+		g.dump_out(f,indent+2,-1,context);
 		return;
 	}
 	
 	fprintf(f,"%slabeltype %d\n",spc,labeltype);
 	if (pagestyle && (pagestyle->flags&PAGESTYLE_AUTONOMOUS)) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
-		pagestyle->dump_out(f,indent+2,0);
+		pagestyle->dump_out(f,indent+2,0,context);
 	}
 	for (int c=0; c<layers.n(); c++) {
 		fprintf(f,"%slayer %d\n",spc,c);
-		layers.e(c)->dump_out(f,indent+2,0);
+		layers.e(c)->dump_out(f,indent+2,0,context);
 	}
 }
 
@@ -674,7 +674,7 @@ ImageData *Page::Thumbnail()
 	
 	imlib_context_set_drawable(d);
 	DBG cerr <<"Thumbnail dump_out:"<<endl;
-	DBG thumbnail->dump_out(stderr,2,0);
+	DBG thumbnail->dump_out(stderr,2,0,NULL);
 	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
 	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
 	DBG cerr <<"  miny "<<thumbnail->miny<<endl;

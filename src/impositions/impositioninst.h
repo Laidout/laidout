@@ -46,8 +46,8 @@ class Singles : public Imposition
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	 //-- extra functions for this class:
 	virtual void setPage();
@@ -74,8 +74,8 @@ class DoubleSidedSingles : public Singles
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	virtual void setPage();
 };
@@ -103,8 +103,8 @@ class BookletImposition : public DoubleSidedSingles
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int *PrintingPapers(int frompage,int topage);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	virtual void setPage();
 };
@@ -133,8 +133,8 @@ class BookletImposition : public DoubleSidedSingles
 //	virtual int GetPapersNeeded(int npages);
 //	virtual int GetSpreadsNeeded(int npages);
 //
-//	virtual void dump_out(FILE *f,int indent,int what);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+//	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 //};
 
 ////---------------------------------- CompositeImposition ----------------------------

@@ -69,10 +69,16 @@ char *CommandWindow::process(const char *in)
 		if (laidout->project->name) appendstr(temp,laidout->project->name);
 		else appendstr(temp,_("(untitled)"));
 		appendstr(temp,"\n");
+
+		if (laidout->project->filename) appendstr(temp,laidout->project->filename);
+		appendstr(temp,"\n");
+
 		for (int c=0; c<laidout->project->docs.n; c++) {
 			sprintf(temp2," %d. ",c+1);
 			appendstr(temp,temp2);
-			appendstr(temp,laidout->project->docs.e[c]->Name(1));
+			if (laidout->project->docs.e[c]->doc) //***maybe need project->DocName(int i)
+				appendstr(temp,laidout->project->docs.e[c]->doc->Name(1));
+			else appendstr(temp,_("unknown"));
 			appendstr(temp,"\n");
 		}
 		return (temp?temp:newstr(_("No documents in project.")));

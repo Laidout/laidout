@@ -258,7 +258,7 @@ void SpreadInterface::Clear(LaxInterfaces::SomeData *)
  *   if (checkPendingChanges(thing)) thing->applyChanges();
  * \todo xbounds and ybounds!!
  */
-void SpreadInterface::dump_out(FILE *f,int indent,int what)
+void SpreadInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
@@ -293,7 +293,7 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what)
 
 /*! Note that 'index' is currently ignored.
  */
-void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -1127,7 +1127,7 @@ int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
 		DBG if (curpage<0) return 0;
 		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
 		DBG cerr <<"'P' image dump:"<<endl;
-		DBG thumb->dump_out(stderr,2,0);
+		DBG thumb->dump_out(stderr,2,0,NULL);
 		DBG if (thumb) {
 		DBG 	dp->StartDrawing(curwindow);
 		DBG 	//double i[6];
@@ -1193,11 +1193,11 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 	if (project) {
 		if (doc) { // make sure doc is in proj?
 			int c;
-			for (c=0; c<project->docs.n; c++) if (doc==project->docs.e[c]) break;
+			for (c=0; c<project->docs.n; c++) if (doc==project->docs.e[c]->doc) break;
 			if (c==project->docs.n) doc=NULL;
 		} 
 		if (!doc) { // doc=first proj doc
-			if (project->docs.n) doc=project->docs.e[0];
+			if (project->docs.n) doc=project->docs.e[0]->doc;
 		}
 	} 
 	if (!viewport) viewport=new ViewportWindow(this,"spread-editor-viewport",
@@ -1212,15 +1212,15 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 }
 
 //! Passes off to SpreadInterface::dump_out().
-void SpreadEditor::dump_out(FILE *f,int indent,int what)
+void SpreadEditor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
-	((SpreadInterface *)curtool)->dump_out(f,indent,what);
+	((SpreadInterface *)curtool)->dump_out(f,indent,what,context);
 }
 
 //! Passes off to SpreadInterface::dump_in_atts().
-void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
-	((SpreadInterface *)curtool)->dump_in_atts(att,flag);
+	((SpreadInterface *)curtool)->dump_in_atts(att,flag,context);
 }
 
 /*! Return 0 for success, nonzero error.

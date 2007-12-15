@@ -101,8 +101,8 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual void SwapPages(int previouspos, int newpos);
 	virtual void SlidePages(int previouspos, int newpos);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	friend class SpreadEditor;
 };
@@ -127,8 +127,8 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int Resize(int nw,int nh);
 	virtual int UseThisDoc(Document *ndoc);
 
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 #endif

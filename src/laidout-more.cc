@@ -186,10 +186,10 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 			  "#----------------- (starts on next line) ------------\n");
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);
 	
-	if (project) project->dump_out(f,0,-1);
+	if (project) project->dump_out(f,0,-1,NULL);
 	else {
 		Project p;
-		p.dump_out(f,0,-1);
+		p.dump_out(f,0,-1,NULL);
 	}
 	fprintf(f,"\n");
 
@@ -201,7 +201,7 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 			  "#If there are no window blocks, then a default window with a view is created.\n"
 			  "\n"
 			  "window\n");
-	h.dump_out(f,2,-1);
+	h.dump_out(f,2,-1,NULL);
 	
 	fprintf(f,"\n\n\n#----------------- a Laidout Image List file ------------------\n");
 	dumpOutImageListFormat(f);

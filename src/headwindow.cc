@@ -23,6 +23,7 @@
 #include "buttonbox.h"
 #include "palettes.h"
 #include "headwindow.h"
+#include "plaintextwindow.h"
 
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
@@ -42,6 +43,18 @@ using namespace LaxFiles;
  *
  * These become the panes of a HeadWindow.
  */
+
+////---------------------- newPlainTextWindowFunc
+/*! \ingroup mainwindows
+ * \brief PlainTextWindow window generator for use in HeadWindow.
+ */
+anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+{
+	Window owner=None;
+	if (laidout->lastview) owner=laidout->lastview->window;
+	PlainTextWindow *text=new PlainTextWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
+	return text;
+}
 
 ////---------------------- newPaletteWindowFunc
 /*! \ingroup mainwindows
@@ -139,8 +152,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 		doc=laidout->curdoc;
 		if (!doc) {
 			if (!laidout->project) return NULL;
-			if (!laidout->project->docs.n) return NULL;
-			doc=laidout->project->docs.e[0];
+			if (laidout->project->docs.n) doc=laidout->project->docs.e[0]->doc;
 		}
 	}
 	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
@@ -160,7 +172,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 {
 	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
-	head->dump_in_atts(att,0);
+	head->dump_in_atts(att,0,NULL);//**context?
 	return head;
 }
 
@@ -236,6 +248,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 			ANXWIN_LOCAL_ACTIVE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
 			newButtonBoxFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD|ANXWIN_LOCAL_ACTIVE,newPaletteWindowFunc,0);
+	AddWindowType("PlainTextWindow","Text Editor",ANXWIN_LOCAL_ACTIVE,newPlainTextWindowFunc,0);
 }
 
 //! Empty virtual destructor.
@@ -343,7 +356,7 @@ Document *HeadWindow::findAnyDoc()
 			if (s->doc) return s->doc;
 			else continue;
 	}
-	if (laidout->project && laidout->project->docs.n) return laidout->project->docs.e[0];
+	if (laidout->project && laidout->project->docs.n) return laidout->project->docs.e[0]->doc;
 	return NULL;
 }
 
@@ -383,7 +396,7 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 //! Dump out what's in the window, and the borders.
 /*! \todo *** stacked panes, simply have multiple window blocks under pane
 */
-void HeadWindow::dump_out(FILE *f,int indent,int what)
+void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -403,7 +416,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 			win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style);
 			fprintf(f,"%s  window %s\n",spc,win->whattype());
 			dump=dynamic_cast<DumpUtility *>(win);
-			if (dump) dump->dump_out(f,indent+4,-1);
+			if (dump) dump->dump_out(f,indent+4,-1,NULL);
 			else fprintf(f,"%s    #this window has no setable options\n",spc);
 			delete win;
 		}
@@ -421,7 +434,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 		if (windows.e[c]->win) {
 			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win->whattype());
 			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win);
-			if (wind) wind->dump_out(f,indent+4,what);
+			if (wind) wind->dump_out(f,indent+4,what,context);
 		}
 	}
 }
@@ -430,7 +443,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what)
 /*! 
  * \todo *** as time goes on, must ensure that header can deal with new types of windows...
  */
-void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
+void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
 	char *name,*value;
@@ -479,7 +492,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag)
 					win=NewWindow(value);
 					if (win) {
 						wind=dynamic_cast<DumpUtility *>(win);
-						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2],flag);
+						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2],flag,context);
 						box->win=win;
 					} else {
 						DBG cerr <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
@@ -840,7 +853,9 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
 	return 0;
 }
 
-/*! Intercept Esc to revert anything to NORMAL mode.
+/*! Intercept Esc to revert anything to NORMAL mode.\n
+ * 'o'  open new document\n
+ * 'q'  quit
 */
 int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
@@ -858,7 +873,12 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 					NULL,NULL,NULL,"Laidout"));
 		return 0;
 		
+	} else if (ch=='q' && (state&LAX_STATE_MASK)==ControlMask) { 
+		app->quit();
+		cout <<"Quit!\n";
+		return 0; 
 	}
+
 	return SplitWindow::CharInput(ch,buffer,len,state);
 }
 

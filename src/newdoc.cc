@@ -75,7 +75,9 @@
 #include "language.h"
 #include "newdoc.h"
 #include "impositions/impositioninst.h"
+#include "utils.h"
 #include <lax/filedialog.h>
+#include <lax/fileutils.h>
 #include <lax/tabframe.h>
 	
 #include <iostream>
@@ -83,6 +85,7 @@ using namespace std;
 #define DBG 
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
 
 //--------------------------------- LaidoutOpenWindow ------------------------------------
@@ -144,21 +147,43 @@ int LaidoutOpenWindow::CharInput(unsigned int ch,const char *buffer,int len,unsi
 
 int LaidoutOpenWindow::DataEvent(EventData *data,const char *mes)
 {
+	//****this could be wrapped into a FileDialog subclass specifically for 
+	//    opening Laidout documents and projects...
 	if (!strcmp(mes,"open doc")) {
 		StrsEventData *strs=dynamic_cast<StrsEventData *>(data);
-		if (strs) {
-			cout << "LaidoutOpenWindow info:"<<strs->info<<endl;
-			//***
-			delete data;
-			return 0;
+		if (!strs || !strs->n) return 1;
+		char openingdocs=-1;
+
+		int n=0;
+		for (int c=0; c<strs->n; c++) {
+			if (openingdocs==-1 && laidout_file_type(strs->strs[c],NULL,NULL,"Project",NULL)==0) {
+				 //file is project. open and return.
+				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
+				delete data;
+				app->destroywindow(this);
+				return 0;
+			}
+			if (laidout_file_type(strs->strs[c],NULL,NULL,"Document",NULL)==0) {
+				 //file is document
+				n++;
+				openingdocs=1;
+				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
+				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c]);
+			}
 		}
-		StrEventData *str=dynamic_cast<StrEventData *>(data);
-		if (str) {
-			cout << "LaidoutOpenWindow info:"<<str->info<<endl;
-			//***
-			delete data;
-			return 0;
-		}
+
+		if (n) app->destroywindow(this);
+
+		delete data;
+		return 0;
+
+//		StrEventData *str=dynamic_cast<StrEventData *>(data);
+//		if (str) {
+//			cout << "LaidoutOpenWindow info:"<<str->info<<endl;
+//			//***
+//			delete data;
+//			return 0;
+//		}
 	}
 	return 1;
 }
@@ -257,9 +282,12 @@ int NewDocWindow::init()
 	 // ------ General Directory Setup ---------------
 	 
 	int c,c2,o;
+	char *where=NULL;
+	if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
+
 	saveas=new LineInput(this,"save as",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
 						NULL,window,"save as",
-			            _("Save As:"),NULL,0,
+			            _("Save As:"),where,0,
 			            0,0,1,0,3,3);
 	AddWin(saveas, 300,0,2000,50, linpheight,0,0,50);
 	tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
@@ -582,12 +610,16 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"paper layout")) {
 	} else if (!strcmp(mes,"save as")) {
 	} else if (!strcmp(mes,"saveas")) { // from control button
-		//***get defaults
 		app->rundialog(new FileDialog(NULL,_("Save As"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-					saveas->window, "save as",""));
+					saveas->window, "save as",saveas->GetCText()));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {
+		int c=file_exists(saveas->GetCText(),1,NULL);
+		if (c && c!=S_IFREG) {
+			app->setfocus(saveas->GetController(),0);
+			return 0;
+		}
 		sendNewDoc();
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
@@ -675,10 +707,18 @@ int NewProjectWindow::init()
 	
 	 // ------ General Directory Setup ---------------
 	 
+	last=new LineInput(this,"name",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
+						NULL,window,"name",
+			            _("Project Name:"),NULL,0,
+			            0,0,1,0,3,3);
+	last->tooltip(_("A descriptive name for the project"));
+	AddWin(last, 300,0,2000,50, linpheight,0,0,50);
+	AddNull();
 	last=saveas=new LineInput(this,"projdir",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
-						NULL,window,"proj dir",
+						last,window,"proj dir",
 			            _("Project Directory:"),NULL,0,
 			            0,0,1,0,3,3);
+	last->tooltip(_("The directory to store the project in"));
 	AddWin(last, 300,0,2000,50, linpheight,0,0,50);
 	last=tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			last,window,"projdir",
@@ -775,7 +815,7 @@ int NewProjectWindow::init()
 
 
 	
-	tbut->CloseControlLoop();
+	last->CloseControlLoop();
 	Sync(1);
 //	wrapextent();
 	return 0;
@@ -817,13 +857,12 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"target dpi")) {
 	} else if (!strcmp(mes,"target printer")) {
 	} else if (!strcmp(mes,"projdir")) { // from control button
-		//***get defaults
 		app->rundialog(new FileDialog(NULL,_("Save Project In"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-					window, "save as",""));
+					window, "save as",saveas->GetCText()));
 		return 0;
 	} else if (!strcmp(mes,"Ok")) {
-		sendNewProject();
+		if (sendNewProject()) return 0;
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
 	} else if (!strcmp(mes,"Cancel")) {
@@ -833,37 +872,32 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 0;
 }
 
-//! Create and fill a DocumentStyle, and tell laidout to make a new document
-void NewProjectWindow::sendNewProject()
+//! Tell laidout to establish a new document.
+/*! Return 0 for project established, else nonzero for error.
+ */
+int NewProjectWindow::sendNewProject()
 {
-//	 // find and get dup of imposition
-//	Imposition *imposition=NULL;
-//	int c;
-//	for (c=0; c<laidout->impositionpool.n; c++) {
-//		if (!strcmp(laidout->impositionpool.e[c]->Stylename(),impsel->GetCurrentItem())) break;
-//	}
-//	if (c==laidout->impositionpool.n) imposition=new Singles();
-//	else {
-//		DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
-//		imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
-//	}
-//	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
-//	
-//	int npgs=atoi(numpages->GetCText()),
-//		xtile=atoi(tilex->GetCText()),
-//		ytile=atoi(tiley->GetCText());
-//	if (npgs<=0) npgs=1;
-//	if (xtile<=0) xtile=1;
-//	if (ytile<=0) ytile=1;
-//
-//	Singles *s=dynamic_cast<Singles *>(imposition);
-//	if (s) {
-//		s->tilex=xtile;
-//		s->tiley=ytile;
-//	}
-//		
-//	imposition->NumPages(npgs);
-//	DocumentStyle *newdoc=new DocumentStyle(imposition);
-//	newdoc->imposition->SetPaperSize(papertype);
-//	laidout->NewDocument(newdoc,saveas->GetCText());
+	if (isblank(saveas->GetCText())) return 1;
+		
+	Project *proj=new Project();
+
+	 //default dpi
+	proj->defaultdpi=strtod(((LineInput *)findWindow("dpi"))->GetCText(),NULL);
+
+	 //project file name
+	char *fullpath=full_path_for_file(saveas->GetCText(),NULL);
+	const char *projfile=lax_basename(fullpath);
+	appendstr(fullpath,"/");
+	appendstr(fullpath,projfile);
+	while (fullpath[strlen(fullpath)-1]=='/') fullpath[strlen(fullpath)-1]='\0';
+	appendstr(fullpath,".laidout");
+	makestr(proj->filename,fullpath);
+	delete[] fullpath;
+
+	 //project name
+	makestr(proj->name,((LineInput *)findWindow("name"))->GetCText());
+
+	if (laidout->NewProject(proj,NULL)) { delete proj; return 2; }
+	
+	return 0;
 }

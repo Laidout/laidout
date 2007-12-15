@@ -35,6 +35,7 @@ objs= \
 	about.o \
 	buttonbox.o \
 	commandwindow.o \
+	plaintextwindow.o \
 	headwindow.o \
 	helpwindow.o \
 	newdoc.o \

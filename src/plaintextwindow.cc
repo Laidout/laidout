@@ -18,8 +18,10 @@
 #include <lax/multilineedit.h>
 #include <lax/mesbar.h>
 #include <lax/textbutton.h>
+#include <lax/iconbutton.h>
 #include "plaintextwindow.h"
 #include "language.h"
+#include "laidout.h"
 
 
 #define DBG
@@ -46,7 +48,7 @@ PlainText::PlainText()
 {
 	thetext=NULL;
 	name=NULL;
-	ownertype=0; //0=none, 1=doc, 2=proj, 3=file
+	owner=NULL;
 	lastmodtime=0;
 }
 
@@ -54,8 +56,7 @@ PlainText::~PlainText()
 {
 	if (thetext) delete[] thetext;
 	if (name) delete[] name;
-	if (ownertype==1) owner.doc->dec_count();
-	else if (ownertype==3) delete[] owner.filename;
+	if (owner) dynamic_cast<RefCounted *>(owner)->dec_count();
 }
 
 //class DynamicObject : LaxInterfaces::SomeDataRef
@@ -81,7 +82,7 @@ PlainText::~PlainText()
 PlainTextWindow::PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder,
 		PlainText *newtext)
-	: RowFrame(parnt,ntitle,nstyle, xx,yy,ww,hh,brder, NULL,None,NULL)
+	: RowFrame(parnt,ntitle,ANXWIN_REMEMBER|ROWFRAME_ROWS|nstyle, xx,yy,ww,hh,brder, NULL,None,NULL)
 {
 	textobj=newtext;
 	if (textobj) textobj->inc_count();
@@ -108,7 +109,7 @@ int PlainTextWindow::init()
 
 	MultiLineEdit *editbox;
 	last=editbox=new MultiLineEdit(this,"plain-text-edit",0, 0,0,0,0,1, NULL,window,"ptedit",
-							  0,textobj->thetext);
+							  0,textobj?textobj->thetext:NULL);
 	AddWin(editbox, 100,95,2000,50, 100,95,20000,50);
 	AddNull();
 
@@ -116,12 +117,21 @@ int PlainTextWindow::init()
 
 	const char *txt=NULL;
 	if (textobj) {
-		if (textobj->ownertype==1) txt="doc";
-		else if (textobj->ownertype==2) txt="project";
-		else if (textobj->ownertype==3) txt=lax_basename(textobj->owner.filename);
+		if (textobj->owner) txt=textobj->owner->whattype();
 		else txt="unowned";
-	}
-	if (txt) AddWin(new MessageBar(this,"textowner",MB_MOVE, 0,0,0,0,1, txt));
+	} else txt="(no text object)";
+	AddWin(new MessageBar(this,"textowner",MB_MOVE, 0,0,0,0,1, txt));
+
+	IconButton *ibut=NULL;
+	last=ibut=new IconButton(this,"open",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"open",-1,
+			laidout->icons.GetIcon("Open"),_("Open"));
+	ibut->tooltip(_("Open a file from disk"));
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+
+	last=ibut=new IconButton(this,"save",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
+			laidout->icons.GetIcon("Save"),_("Save"));
+	ibut->tooltip(_("Save the current text"));
+	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	last=new TextButton(this,"apply",0, 0,0,0,0,1, last,window,"apply", _("Apply"));
 	AddWin(last);

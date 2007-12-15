@@ -29,8 +29,8 @@ class EpsData : public LaxInterfaces::ImageData
 	virtual const char *whattype() { return "EpsData"; }
 	virtual int LoadImage(const char *fname, const char *npreview=NULL, int maxpx=0, int maxpy=0, char del=0);
 	
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //-------------------------------- EpsInterface ----------------------------------

@@ -152,8 +152,8 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	 // that is being constructed
 	virtual void cap(int y=1) { if (y) flags|=STYLEDEF_CAPPED; else flags&=~STYLEDEF_CAPPED; }
 	
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //------------------------------------- FieldNode -------------------------------------------
@@ -247,8 +247,8 @@ class EnumStyle : public Style
 	virtual const char *name(int Id);
 	virtual int id(const char *Name);
 	virtual int num() { return names.n; }
-	virtual void dump_out(FILE *f,int indent,int what) {}
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag) {}
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context) {}
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context) {}
 };
 
 #endif

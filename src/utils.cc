@@ -37,18 +37,34 @@ using namespace std;
 
 
 
-////! Find out the type of Laidout file this is, if any.
+////! Find out the version and type of Laidout file this is, if any.
 //int laidout_file_type(const char *file, char **version, char **typ)
 
+
+//! Return a new char[] akin to "untitled 1", "untitled 2", etc.
+char *untitled()
+{
+	static int count=1;
+	char *name=new char[strlen(_("untitled"))+10];
+	sprintf(name,_("untitled %d"),count);
+	count++;
+	return name;
+}
 
 	
 //! Check if the file is a Laidout type typ, with a version [minversion,maxversion].
 /*! \ingroup misc
  * Return 0 for file ok, else nonzero.
  *
+ * If typ==NULL, then 0 is always returned as long as the file starts out something 
+ * like "#Laidout 0.08". If actual_type!=NULL, then *actual_type=new char[] with the
+ * actual Laidout type of the file, such as "Project" or "Document".
+ *
  * \todo implement the version check, and watch out for locale snafus
  */
-int laidout_file_type(const char *file, char *minversion, char *maxversion, char *typ)
+int laidout_file_type(const char *file, 
+					  const char *minversion, const char *maxversion,
+					  const char *typ, char **actual_type)
 {
 	if (file_exists(file,1,NULL)!=S_IFREG) return 1;
 
@@ -66,11 +82,17 @@ int laidout_file_type(const char *file, char *minversion, char *maxversion, char
 		while (c<n && !isspace(version[c2])) { c2++; c++; }
 		
 		 //now the laidout version of the file is in version[0..c2)
-		//*** check!
+		//*** check: check for a min, max, or min AND max
+		//if (minversion && maxversion) ***=laidout_version_check(version, minversion, maxversion);
 
 		c3=c2;
 		while (c<n && isspace(version[c3])) { c3++; c++; }
-		if (!strncmp(version+c3,typ,strlen(typ)) && isspace(version[c3+strlen(typ)])) err=0;
+		if (!typ || !strncmp(version+c3,typ,strlen(typ)) && isspace(version[c3+strlen(typ)])) err=0;
+		if (actual_type) {
+			c2=c3;
+			while (c<n && !isspace(version[c2])) { c2++; c++; }
+			*actual_type=newnstr(version+c3,c2-c3);
+		}
 	}
 
 	fclose(f);
