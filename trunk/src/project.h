@@ -36,7 +36,7 @@ class ProjDocument
 class Project : public LaxFiles::DumpUtility
 {
  public:
-	char *name,*filename;
+	char *name,*filename,*dir;
 	Laxkit::PtrStack<ProjDocument> docs;
 	Group limbos;
 	Laxkit::RefPtrStack<PaperGroup> papergroups;

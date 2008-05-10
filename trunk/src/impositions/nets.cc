@@ -11,10 +11,13 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2008 by Tom Lechner
 //
 
 
+#include "nets.h"
+#include <lax/interfaces/svgcoord.h>
+#include <lax/interfaces/bezutils.h>
 #include <lax/strmanip.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
@@ -23,100 +26,129 @@
 #include <lax/lists.cc>
 
 #include "../language.h"
-#include "nets.h"
 
 using namespace LaxFiles;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
+#include <fstream>
 
 #include <iostream>
 using namespace std;
 #define DBG 
 
 
-int pointisin(flatpoint *points, int n,flatpoint points);
-extern void monthday(const char *str,int *month,int *day);
-
 
 //--------------------------------------- NetLine -------------------------------------------
 /*! \class NetLine
- * \brief Class to hold extra lines for use in Net.
+ * \brief Class to hold lines compiled from the faces of a Net.
+ */
+/*! \var char NetLine::lineinfo
+ * \brief Hint about where the line came from.
+ *
+ * 0 for line is automatically generated from the Net.
+ * Other values mean the line is extra, independent from the actual net.
+ */
+/*! \var int NetLine::tag
+ * \brief What type of line this is.
+ *
+ * This is a shorthand hint that can be used in place of linestyle.
+ * 0 is taken to mean the line is an outline.
+ * 1 is for inner lines, such as where faces meet.
+ * 2 is for tab lines.
  */
 
 
 NetLine::NetLine(const char *list)
 {
+	lineinfo=0;
+	tag=0;
 	linestyle=NULL;
-	lsislocal=0;
-	isclosed=0;
-	np=0;
 	points=NULL;
-	if (list) Set(list);
+	if (list) Set(list,NULL);
 }
 
 NetLine::~NetLine()
 {
-	delete[] points;
-	//if (lsislocal) delete linestyle; else linestyle->dec_count(); ???? 
+	if (points) delete points;
+	if (linestyle) linestyle->dec_count();
 }
 
-//! Set up points like "0 1 2 3 ... n", and make closed if closed!=0.
-/*! Returns the number of points.
+/*! Copies over all. Warning: does a linestyle=line.linestyle.
  */
-int NetLine::Set(int n, int closed)
+const NetLine &NetLine::operator=(const NetLine &l)
 {
-	if (points) delete[] points;
-	points=new int[n];
-	np=n;
-	for (int c=0; c<n; c++) points[c]=c;
-	isclosed=closed;
-	return n;
-}
-
-//! Create points from list like: "1 2 3", or "1 2 3 1" for a closed path.
-/*! Returns the number of points.
- */
-int NetLine::Set(const char *list)
-{
-	if (points) delete[] points;
-	IntListAttribute(list,&points,&np);
-	if (np && points[np-1]==points[0]) {
-		np--;
-		isclosed=1;
+	if (linestyle && l.linestyle) *linestyle=*l.linestyle;//***this is maybe problematic
+	tag=l.tag;
+	lineinfo=l.lineinfo;
+	
+	 //copy points
+	if (points) { delete points; points=NULL; }
+	if (l.points) {
+		Coordinate *pl=l.points,
+				   *p=NULL;
+		while (pl) {
+			if (!p) p=new Coordinate(*pl);
+			else {
+				p->next=new Coordinate(*pl);
+				p->next->prev=p;
+				p=p->next;
+			}
+			pl=pl->next;
+			if (pl==l.points) {
+				p->next=points;
+				points->prev=p;
+				break;
+			}
+		}
 	}
-	return np;
-}
-
-/*! Copies over all. Warning: does a linestyle=line.linestyle,
- * and does not change lsislocal.
- */
-const NetLine &NetLine::operator=(const NetLine &line)
-{
-	isclosed=line.isclosed;
-	np=line.np;
-	
-	if (linestyle && line.linestyle) *linestyle=*line.linestyle;//***this is maybe problematic
-	//lsislocal is not changed
-	
-	if (points) delete[] points;
-	points=new int[np];
-	for (int c=0; c<np; c++) points[c]=line.points[c];
 
 	return *this;
 }
 
-/*! If pfirst!=0, then immediately output the list of points.
- * Otherwise, do points 3 5 6 6...
+//! Create points from an svg style d attribute like this closed square: "0 0  0 1  1 1  1 0 z".
+/*! Returns 0 for success, or nonzero for error.
  */
-void NetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
+int NetLine::Set(const char *d,LineStyle *ls)
+{
+	if (linestyle && ls) linestyle->dec_count();
+	if (ls) { ls->inc_count(); linestyle=ls; }
+	if (points) delete[] points;
+	points=SvgToCoordinate(d,0,NULL);
+	return points?0:1;
+}
+
+/*! If pfirst!=0, then immediately output the list of points.
+ * Otherwise, do "points 3 5 6 6...".
+ *
+ * See dumpInAtts() for description of what is dumped out.
+ *
+ * If what==-1, then dump out description of what gets dumped out.
+ *
+ * \todo maybe if tag<0 have standard "outline", "innerline", or "tabline"?
+ */
+void NetLine::dumpOut(FILE *f,int indent, int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (!pfirst) fprintf(f,"%spoints ",spc);
-	int c;
-	for (c=0; c<np; c++) fprintf(f,"%d ",points[c]);
-	fprintf(f,"\n");
-	if (isclosed) fprintf(f,"%sclosed\n",spc);
+	if (what==-1) {
+		fprintf(f,"%stag  3       #tag number for the line. Might be used as class of line\n",spc);
+		fprintf(f,"%spoints  \\   #svg style defined line\n",spc);
+		fprintf(f,"%s  M-.5 -.5  L-.5 1.5  L1.5 1.5  L1.5 -.5\n",spc);
+		fprintf(f,"%slinestyle    #style of line\n",spc);
+		if (linestyle) linestyle->dump_out(f,indent+2,-1,NULL);
+		else {
+			LineStyle line;
+			line.dump_out(f,indent+2,-1,NULL);
+		}
+		return;
+	}
+	if (points) {
+		fprintf(f,"%spoints ",spc);
+		char *svg=CoordinateToSvg(points);
+		if (svg) fprintf(f,"%s\n",svg);
+	}
+
+	if (tag!=0) fprintf(f,"%stag %d\n",spc,tag); 
 	if (linestyle) {
 		fprintf(f,"%slinestyle\n",spc);
 		linestyle->dump_out(f,indent+2,0,NULL);//note: context is NULL, is this ok?
@@ -125,24 +157,29 @@ void NetLine::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
 
 /*! If val!=NULL, then the att was something like:
  * <pre>
- *   line 1 2 3
+ *   line M 1 1 L 0 4
  *     (other stuff)..
  * </pre>
- * In that case, Net would have parsed the "1 2 3", and it would pass
+ * In that case, Net would have grabbed the "1 1 0 4", and it would pass
  * that here in val. Otherwise, this function will expect a 
- * "points 1 2 3" sub attribute somewhere in att.
+ * "points 1 2 3" subattribute somewhere in att.
  *
- * If there's a list "1 2 3 1" it will make a point list 1,2,3, and
- * set isclosed=1.
+ * To summarize the expected input when everything is in subattributes:
+ * <pre>
+ *   points M 0 0 L 1 0 L 1 1 L 0 1 z  #this is an svg style d path attribute
+ *   linestyle
+ *      ... #attributes for a LaxInterfaces::LineStyle
+ *   tag
+ *      3   #optional integer tag
+ * </pre>
  */
-void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)
+void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 {
 	if (!att) return;
 	int c;
 	if (val) {
 		if (points) delete[] points;
-		points=NULL;
-		c=IntListAttribute(val,&points,&np);
+		points=SvgToCoordinate(val,0,NULL);
 	}
 	char *name,*value;
 	for (c=0; c<att->attributes.n; c++) {
@@ -150,261 +187,520 @@ void NetLine::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"points")) {
 			if (points) delete[] points;
-			points=NULL;
-			IntListAttribute(val,&points,&np);
-			if (np && points[np-1]==points[0]) { np--; isclosed=1; }
+			points=SvgToCoordinate(val,0,NULL);
 		} else if (!strcmp(name,"linestyle")) {
 			if (!linestyle) {
 				linestyle=new LineStyle();
-				lsislocal=1;
 			}
 			linestyle->dump_in_atts(att->attributes.e[c],flag,NULL);//note: context is NULL, is this ok?
-		} else if (!strcmp(name,"closed")) {
-			isclosed=BooleanAttribute(value);
+		} else if (!strcmp(name,"tag")) {
+			IntAttribute(value,&tag);
 		}
 	}
 }
+
+//----------------------------------- NetFaceEdge -----------------------------------
+/*! \class NetFaceEdge
+ * \brief Description for edges in a NetFace.
+ */
+/*! \var int NetFaceEdge::tooriginal
+ * \brief Index number to a face in an AbstractNet.
+ */
+/*! \var int NetFaceEdge::id
+ * \brief Arbitrary number assigned to this edge. Meaning depends on the application.
+ */
+/*! \var int NetFaceEdge::toface
+ * \brief Index in a Net of the face that this edge connects to.
+ */
+/*! \var int NetFaceEdge::tofaceedge
+ * \brief Which edge of toface that this edge connects to.
+ *
+ * Generally, this should be the same edge number as in the the original face 
+ * (see NetFaceEdge::tooriginal).
+ */
+/*! \var int NetFaceEdge::flipflag
+ * \brief Whether the face that connects to this edge is normally oriented (0), or flipped over (nonzero).
+ *
+ * Take the faces such that the vertices are numbered so that the right hand rule says the face's
+ * normal sticks up. Say an edge is between points 0 and 1 on face A, and between points 3 and 4 on
+ * face B. Then if flipflag==0, then point 0 of A connects to point 4 of B, and point 1 to point 3.
+ * Otherwise, 0 connects to point 3, and 1 connects to point 4. Normally, this means that 
+ * this edge connects to the opposite side of the specified face.
+ */
+/*! \var FaceTag NetFaceEdge::tag
+ * \brief The status of the connecting face.
+ *
+ * 0==no link for that edge.\n
+ * 1==Does in fact connect to that face.\n
+ * 2==Can potentially connect to the face, but should be ignored when actually using the net.\n
+ * 3==Would connect to this face, but the face is already laid down elsewhere in the net
+ */
+/*! \var double NetFaceEdge::svalue
+ * \brief For curved edges, the point along the edge to connect to the face.
+ *
+ * 0 is at the edge beginning, and 1 is edge end.
+ */
+/*! \var Coordinate *NetFaceEdge::points
+ * \brief The path of the edge
+ * 
+ * For basic polyhedra, this will just be a poly line. For curvy faces, it will be a 
+ * cubic bezier path, starting with a vertex point and 2 control points. Following that, there can
+ * be any number of vertex-control-control points. So the final point of the list will be
+ * a control point, the vertex point following that control point is in the next edge.
+ */
+
+NetFaceEdge::NetFaceEdge()
+{
+	tooriginal=id=toface=tofaceedge=-1;
+	flipflag=0;
+	tag=FACE_None;
+	svalue=0;
+	points=NULL;
+	//basis_adjustment=NULL;
+}
+
+//! Beware that the points list is deleted here.
+NetFaceEdge::~NetFaceEdge()
+{
+	//if (basis_adjustment) delete[] basis_adjustment;
+	if (points) delete points; //remember Coordinate delete knows if it is in a loop
+}
+
+//! Assignment operator, straightforward copy all.
+const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
+{
+	id        =e.id;
+	tooriginal=e.tooriginal;
+	toface    =e.toface;
+	tofaceedge=e.tofaceedge;
+	flipflag  =e.flipflag;
+	tag       =e.tag;
+	svalue    =e.svalue;
+
+	if (points) { delete points; points=NULL; }
+	Coordinate *p=e.points,*p2=NULL;
+	while (p) {
+		if (!p2) p2=points=new Coordinate(*p);
+		else {
+			p2->next=new Coordinate(*p);
+			p2->next->prev=p2;
+			p2=p2->next;
+		}
+		p=p->next;
+	}
+
+	return *this;
+}
+
 
 //--------------------------------------- NetFace -------------------------------------------
 /*! \class NetFace
  * \brief Class to hold info about a face in a Net.
  */
-/*! \var int *NetFace::points
- * \brief List of indices into Net::points for which points define the net.
+/*! \var double *NetFace::matrix
+ * \brief Additional offset to place the origin of a face.
  *
- * If positive x is to the right and positive y is up, the points should be
- * such that the inside of the face is on the left. That is, interior points
- * are those that get circled in a counterclockwise direction.
- */
-/*! \var int *NetFace::facelink
- * \brief List of indices into Net::faces for which edges connect to which faces.
- *
- * That is, connected by virtue of Net::pointmap, not by which faces touch in the
- * flattened net.
- */
-/*! \var int NetFace::aligno
- * An index into the face's point list.
- * The default is for the face's basis to have the origin at the first listed point,
- * and the x axis lies along the vector going from the first point to the second point.
- * If aligno>=0, then use that point as the origin, and if alignx>=0, use point alignx
- * as where the x axis should point to from aligno. If m is specified, then that is
- * an extra 6 member affine transform matrix to apply to the basis.
- */
-/*! \var int NetFace::alignx
- * \brief See aligno.
- */
-/*! \var double *NetFace::m
- * \brief See aligno.
+ * The default (matrix==NULL or is identity) is for the origin to be at the beginning
+ * of the first edge, and the x axis to be parallel to that edge.
  */ 
-/*! \var int NetFace::faceclass
- * \brief If >=0, then this face should look the same as others in the same class.
+/*! \var int NetFace::original
+ * \brief The index in the AbstractNet corresponding to this face.
  */
-
+/*! \var char NetFace::isfront
+ * \brief If nonzero (the default) then this face is the front side. Otherwise, it is the backside.
+ *
+ * Somewhere else in the net, there may be the reverse side, but that shape will be the
+ * mirror image of this face.
+ */
+/*! \var FaceTag NetFace::tag
+ * \brief The status of the connecting face. Similar in spirit to NetFaceEdge::tag.
+ *
+ * Unlike NetFaceEdge::tag, this tag is usually only:\n
+ * 1==an actual face.\n
+ * 2==a potential face
+ */
 
 NetFace::NetFace()
 {
-	m=NULL;
-	aligno=alignx=-1;
-	faceclass=-1;
-	np=0;
-	points=facelink=NULL; 
+	tag=FACE_None;
+	matrix=NULL;
+	isfront=1;
+	original=-1;
 }
 	
 NetFace::~NetFace()
 { 
-	if (points) delete[] points;
-	if (facelink) delete[] facelink;
-	if (m) delete[] m; 
+	if (matrix) delete[] matrix;
+	//edges.flush();
 }
 
-//! Delete m, points, and facelink, set align stuff to -1.
+//! Delete matrix, set isfront=1, original=-1, flush edges.
 void NetFace::clear()
 {
-	if (points) delete[] points; points=NULL;
-	if (facelink) delete[] facelink; facelink=NULL;
-	if (m) delete[] m; m=NULL;
-	np=0;
-	aligno=alignx=faceclass=-1;
+	if (matrix) { delete[] matrix; matrix=NULL; }
+	edges.flush();
+	original=-1;
+	isfront=1;
 }
 
 //! Assignment operator, straightforward copy all.
 const NetFace &NetFace::operator=(const NetFace &face)
 {
-	if (points) delete[] points;
-	if (facelink) delete[] facelink;
-	if (m) { delete[] m; m=NULL; }
+	if (matrix) { delete[] matrix; matrix=NULL; }
+	edges.flush();
 
-	np=face.np;
-	aligno=face.aligno;
-	alignx=face.alignx;
-	faceclass=face.faceclass;
-	if (face.m) {
-		m=new double[6];
-		transform_copy(m,face.m);
+	original=face.original;
+	isfront=face.isfront;
+	if (face.matrix) {
+		matrix=new double[6];
+		transform_copy(matrix,face.matrix);
 	}
-	if (np) {
-		points=new int[np];
-		facelink=new int[np];
-		for (int c=0; c<np; c++) {
-			points[c]=face.points[c];
-			if (face.facelink) facelink[c]=face.facelink[c]; else facelink[c]=-1;
+
+	NetFaceEdge *newe;
+	if (face.edges.n) {
+		for (int c=0; c<face.edges.n; c++) {
+			newe=new NetFaceEdge();
+			*newe=*face.edges.e[c];
+			edges.push(newe);
 		}
-	} else {
-		points=NULL;
-		facelink=NULL;
 	}
+
 	return *this;
 }
 
-//! Create points and facelink from list like: "1 2 3".
-/*! Returns the number of points.
- *
- * If list and link have differing numbers of elements, link is
- * removed and replaced with a list of -1.
- */
-int NetFace::Set(const char *list, const char *link)
-{
-	if (list && points) { delete[] points; points=NULL; }
-	if (link && facelink) { delete[] facelink; facelink=NULL; }
-	int n;
-	if (link) IntListAttribute(link,&facelink,&n);
-	else n=np;
-	if (list) IntListAttribute(list,&points,&np);
-	if (n!=np) {
-		if (facelink) { delete[] facelink; facelink=NULL; }
-		facelink=new int[np];
-		for (n=0; n<np; n++) facelink[n]=-1;
-	}
-	return np;
-}
+////! Create points and facelink from list like: "1 2 3".
+///*! Returns the number of points.
+// *
+// * If list and link have differing numbers of elements, link is
+// * removed and replaced with a list of -1.
+// */
+//int NetFace::Set(const char *list, const char *link)
+//{***
+//	if (list && points) { delete[] points; points=NULL; }
+//	if (link && facelink) { delete[] facelink; facelink=NULL; }
+//	int n;
+//	if (link) IntListAttribute(link,&facelink,&n);
+//	else n=np;
+//	if (list) IntListAttribute(list,&points,&np);
+//	if (n!=np) {
+//		if (facelink) { delete[] facelink; facelink=NULL; }
+//		facelink=new int[np];
+//		for (n=0; n<np; n++) facelink[n]=-1;
+//	}
+//	return np;
+//}
+//
+////! Set points and facelink from an integer list of length nn.
+///*! If dellists!=0, then take possession of the list and link arrays.
+// * Otherwise, copy list and link.
+// *
+// * Returns the number of points.
+// */
+//int NetFace::Set(int n,int *list,int *link,int dellists)//dellists=0
+//{***
+//	if (list && points) { delete[] points; points=NULL; }
+//	if (link && facelink) { delete[] facelink; facelink=NULL; }
+//	
+//	 // establish new points
+//	if (dellists) points=list;
+//	else {
+//		points=new int[n];
+//		memcpy(points,list,n*sizeof(int));
+//	}
+//	 // establish new links
+//	if (dellists) facelink=link;
+//	else {
+//		facelink=new int[n];
+//		memcpy(facelink,link,n*sizeof(int));
+//	}
+//	np=n;
+//
+//	return np;
+//}
 
-//! Set points and facelink from an integer list of length nn.
-/*! If dellists!=0, then take possession of the list and link arrays.
- * Otherwise, copy list and link.
- *
- * Returns the number of points.
+/*! If what==-1, then dump out psuedo-code mockup of format. Basically that means this:
+ * <pre>
+ *   face
+ *     original 3   #the face index in the abstract net corresponding to this face
+ *     back         #this face is actual the mirror image of the abstract net face
+ *     matrix 1 0 0 1 0 0  #transform that places points in net space
+ *     potential           #whether this face is actually used in the net
+ *     edge              #this is a typical edge for a laidout net
+ *       toface     4.6  #connects to net face index 4, edge index number 6
+ *       tooriginal 3    #connects to original face 3
+ *       potential       #link is only potential. If absent, then program detects it
+ *       svalue   .5     #for bezier edges, the point of contact with adjacent edge, 0 to 1
+ *       points \        #point list for this edge. First point must be a vertex point
+ *         -.5 -.5       # that is actually on the line. following points can be either
+ *         c -.5 1.5     # polyline points or bezier control points
+ *         c 1.5 1.5     
+ *         v 2 2         # the edge's path can be a bezier line of any length, but
+ *         c 1.5 3.6     # remember to leave out the final vertex point. That point is
+ *         c 1.8 3.6     # listed in the following edge's point list.
+ *     edge             #here's a typical edge for a basic abstract net
+ *       tooriginal 2.1  #connects to original face 2 at edge 1
+ *       d  M-.5 -.5  L-.5 1.5  L1.5 1.5  L1.5 -.5  #alternate specification of points with svg
+ * </pre>
  */
-int NetFace::Set(int n,int *list,int *link,int dellists)//dellists=0
-{
-	if (list && points) { delete[] points; points=NULL; }
-	if (link && facelink) { delete[] facelink; facelink=NULL; }
-	
-	 // establish new points
-	if (dellists) points=list;
-	else {
-		points=new int[n];
-		memcpy(points,list,n*sizeof(int));
-	}
-	 // establish new links
-	if (dellists) facelink=link;
-	else {
-		facelink=new int[n];
-		memcpy(facelink,link,n*sizeof(int));
-	}
-	np=n;
-
-	return np;
-}
-
-/*! If pfirst!=0, then immediately output the list of points.
- * Otherwise, do points 3 5 6 6...
- *
- * See Net::dump_out() for what gets put out.
- */
-void NetFace::dump_out(FILE *f,int indent, int pfirst)//pfirst=0
+void NetFace::dumpOut(FILE *f,int indent,int what)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (!pfirst) fprintf(f,"%spoints ",spc);
+
+	if (what==-1) {
+		fprintf(f,"%soriginal 3   #the face index in the abstract net corresponding to this face\n",spc);
+		fprintf(f,"%sback         #this face is actual the mirror image of the abstract net face\n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform that places points in net space\n",spc);
+		fprintf(f,"%spotential           #whether this face is actually used in the net\n",spc);
+		fprintf(f,"%sedge              #this is a typical edge for a laidout net\n",spc);
+		fprintf(f,"%s  toface     4.6  #connects to net face index 4, edge index number 6\n",spc);
+		fprintf(f,"%s  tooriginal 3    #connects to original face 3\n",spc);
+		fprintf(f,"%s  potential       #link is only potential. If absent, then program detects it\n",spc);
+		fprintf(f,"%s  svalue   .5     #for bezier edges, the point of contact with adjacent edge, 0 to 1\n",spc);
+		fprintf(f,"%s  points \\        #point list for this edge. First point must be a vertex point\n",spc);
+		fprintf(f,"%s    -.5 -.5       # that is actually on the line. following points can be either\n",spc);
+		fprintf(f,"%s    c -.5 1.5     # polyline points or bezier control points\n",spc);
+		fprintf(f,"%s    c 1.5 1.5     \n",spc);
+		fprintf(f,"%s    v 2 2         # the edge's path can be a bezier line of any length, but\n",spc);
+		fprintf(f,"%s    c 1.5 3.6     # remember to leave out the final vertex point. That point is\n",spc);
+		fprintf(f,"%s    c 1.8 3.6     # listed in the following edge's point list.\n",spc);
+		fprintf(f,"%sedge             #here's a typical edge for a basic abstract net\n",spc);
+		fprintf(f,"%s  tooriginal 2.1  #connects to original face 2 at edge 1\n",spc);
+		fprintf(f,"%s  d  M-.5 -.5  L-.5 1.5  L1.5 1.5  L1.5 -.5  #alternate specification of points with svg\n",spc);
+		return;
+	}
+	
+	fprintf(f,"%soriginal %d\n",spc,original);
+	if (!isfront) fprintf(f,"%sback\n",spc);
+	if (matrix) fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+				spc,matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+
 	int c;
-	for (c=0; c<np; c++) fprintf(f,"%d ",points[c]);
-	fprintf(f,"\n");
-	if (facelink) {
-		for (c=0; c<np; c++) if (facelink[c]!=-1) break;
-		if (c!=np) {
-			fprintf(f,"%sfacelink",spc);
-			for (c=0; c<np; c++) fprintf(f," %d",facelink[c]);
-			fprintf(f,"\n");
+	if (tag==FACE_Potential) fprintf(f,"%spotential\n",spc);
+	//else fprintf(f,"%stag %d\n",spc,tag);
+	
+	for (c=0; c<edges.n; c++) {
+		fprintf(f,"%sedge\n",spc);
+		if (edges.e[c]->toface>=0) {
+			fprintf(f,"%s  toface %d",spc,edges.e[c]->toface);
+			if (edges.e[c]->tofaceedge>=0) fprintf(f,".%d\n",edges.e[c]->tofaceedge);
+			else fprintf(f,"\n");
+			if (edges.e[c]->tooriginal>=0)
+				fprintf(f,"%s  tooriginal %d\n",spc,edges.e[c]->tooriginal);
+		} else if (edges.e[c]->tooriginal>=0) {
+			fprintf(f,"%s  tooriginal %d",spc,edges.e[c]->tooriginal);
+			if (edges.e[c]->tofaceedge>=0) fprintf(f,".%d\n",edges.e[c]->tofaceedge);
+			else fprintf(f,"\n");
+		}
+		if (edges.e[c]->flipflag) fprintf(f,"%s  flip\n",spc);
+
+		if (edges.e[c]->tag==FACE_Potential) fprintf(f,"%s  potential\n",spc);
+		if (edges.e[c]->tag==FACE_Taken) fprintf(f,"%s  facetaken\n",spc);
+
+		if (edges.e[c]->points) {
+			fprintf(f,"%s  points \\\n",spc);
+			Coordinate *p=edges.e[c]->points;
+			while (p) {
+				if (p->flags&POINT_VERTEX) fprintf(f,"%s    %.10g %.10g\n",spc,p->fp.x,p->fp.y);
+				else fprintf(f,"%s    c %.10g %.10g\n",spc,p->fp.x,p->fp.y);
+				p=p->next;
+			}
 		}
 	}
-	if (faceclass>=0) fprintf(f,"%sfaceclass %d\n",spc,faceclass);
-	if (aligno>=0) {
-		fprintf(f,"%salign %d",spc,aligno);
-		if (alignx>=0) fprintf(f," %d",alignx);
-		fprintf(f,"\n");
-	}
-	if (m) fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
+
+	//if (aligno>=0) {
+	//	fprintf(f,"%salign %d",spc,aligno);
+	//	if (alignx>=0) fprintf(f," %d",alignx);
+	//	fprintf(f,"\n");
+	//}
 }
 
-/*! If val!=NULL, then the att was something like:
- * <pre>
- *   face 1 2 3
- *     (other stuff)..
- * </pre>
- * In that case, Net would have parsed the "1 2 3", and it would pass
- * that here in val. Otherwise, this function will expect a 
- * "points 1 2 3" sub attribute somewhere in att.
+/*!
+ * See dumpOut() for what gets put out.
  */
-void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)//val=NULL
+void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 {
 	if (!att) return;
-	int c,n=0;
-	if (val) {
-		if (points) delete[] points;
-		points=NULL;
-		c=IntListAttribute(val,&points,&np);
-	}
-	char *name,*value;
+	int c;
+	char *name,*value,*e;
+	NetFaceEdge *edge;
+	int error=0;
+
+	isfront=1;
+	tag=FACE_Actual;
+
 	for (c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"matrix")) {
-			DoubleListAttribute(value,m,6);
-		} else if (!strcmp(name,"facelink")) {
-			if (facelink) { delete[] facelink; facelink=NULL; }
-			IntListAttribute(value,&facelink,&n);
-			if (n!=np) {
-				for (int c2=n; c2<np; c2++) facelink[c2]=-1;
+			DoubleListAttribute(value,matrix,6);
+		} else if (!strcmp(name,"back")) {
+			isfront=!BooleanAttribute(value);
+		} else if (!strcmp(name,"front")) {
+			isfront=BooleanAttribute(value);
+		} else if (!strcmp(name,"potential")) {
+			tag=FACE_Potential;
+		} else if (!strcmp(name,"original")) {
+			IntAttribute(value,&original);
+		} else if (!strcmp(name,"edge")) {
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c++) {
+				name= att->attributes.e[c]->attributes.e[c2]->name;
+				value=att->attributes.e[c]->attributes.e[c2]->value;
+				edge=new NetFaceEdge;
+				if (!strcmp(name,"tooriginal")) { //could be "3" or "3.5"
+					IntAttribute(value,&edge->tooriginal,&e);
+					if (e!=value && *e=='.') IntAttribute(value,&edge->tofaceedge);
+				} else if (!strcmp(name,"toface")) {
+					IntAttribute(value,&edge->toface,&e);
+					if (e!=value && *e=='.') IntAttribute(value,&edge->tofaceedge);
+				} else if (!strcmp(name,"svalue")) {
+					DoubleAttribute(value,&edge->svalue,NULL);
+				} else if (!strcmp(name,"points")) {
+					int which=-1;//last point was: 0=vert, 1=c1, 2=c2
+					e=value;
+					Coordinate *pts=NULL;
+					int f;
+					while (e && *e) {
+						 //scan in 'v'|'c'|nothing, then 2 reals
+						while (isspace(*e)) e++;
+						if (*e=='c') {
+							if (which==0) { which=1; f=POINT_TOPREV; }
+							else if (which==1) { which=2; f=POINT_TONEXT; }
+							else {
+								 //too many control points, make this control a vertex
+								f=POINT_VERTEX;
+								which=0;
+							}
+							e++;
+						} else {
+							if (which==1) {
+								 //only 1 control point between vertices,
+								 //so add second control point, same as last on
+								pts->next=new Coordinate(*pts);
+								pts->flags=POINT_TONEXT;
+							}
+							which=0;
+							if (*e=='v') e++;
+							f=POINT_VERTEX;
+						}
+						if (!pts) edge->points=pts=new Coordinate();
+							else { pts->next=new Coordinate(); pts=pts->next; }
+						pts->flags=f;
+						char *ee;
+						DoubleAttribute(e,&pts->fp.x,&ee); //***assumes f will actually be read in..
+						if (ee==e) { error=1; break; }
+						DoubleAttribute(ee,&pts->fp.y,&e);
+						if (ee==e) { error=1; break; }
+					}
+				} else if (!strcmp(name,"d")) {
+					edge->points=SvgToCoordinate(value,0,NULL);
+				} //ignores "potential"
 			}
-		} else if (!strcmp(name,"faceclass")) {
-			IntAttribute(value,&faceclass);
-		} else if (!strcmp(name,"aligno")) {
-			IntAttribute(value,&aligno);
-		} else if (!strcmp(name,"alignx")) {
-			IntAttribute(value,&alignx);
-		} else if (!strcmp(name,"points")) {
-			if (points) delete[] points;
-			points=NULL;
-			IntListAttribute(val,&points,&np);
+			edges.push(edge,1);
+//---old:
+//		} else if (!strcmp(name,"aligno")) {
+//			IntAttribute(value,&aligno);
+//		} else if (!strcmp(name,"alignx")) {
+//			IntAttribute(value,&alignx);
+//		} else if (!strcmp(name,"points")) {
+//			if (points) delete[] points;
+//			points=NULL;
+//			IntListAttribute(val,&points,&np);
 		}
 	}
 }
 
+
+//--------------------------------------- AbstractNet -------------------------------------------
+/*! \class AbstractNet
+ * \brief Abstract base class for objects used to generate Net objects.
+ *
+ * AbstractNet objects hold all the connectivity information used in Net objects.
+ * The Net class holds particular arrangements of the faces in an Abstract Net.
+ */
+
+AbstractNet::AbstractNet()
+{
+	name=NULL;
+}
+
+AbstractNet::~AbstractNet()
+{
+	if (name) delete[] name;
+}
+
+//----------------------------------- BasicNet -----------------------------------
+/*! \class BasicNet
+ * \brief The simplest AbstractNet.
+ *
+ * Merely a stack of 2-d NetFace objects.
+ */
+BasicNet::BasicNet(const char *nname)//nname=NULL
+{
+	makestr(name,nname);
+}
+
+BasicNet::~BasicNet()
+{ }
+
+NetFace *BasicNet::GetFace(int i)
+{//***
+	NetFace *face=new NetFace(*e[i]);
+	return face;
+}
+
+int BasicNet::dumpOutNet(FILE *f,int indent,int what)
+{
+	cout <<"***imp BasicNet::dumpOutNet!"<<endl;
+	return 0;
+}
+
+void BasicNet::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+{
+	cout <<"***imp BasicNet::dump_out!"<<endl;
+}
+
+void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	cout <<"***imp BasicNet::dump_in_atts!"<<endl;
+}
+
+
+
 //--------------------------------------- Net -------------------------------------------
 /*! \class Net
- * \brief A type of SomeData that stores polyhedron cut and fold patterns.
+ * \brief Holds a user unwrapped net.
  *
- * This is used by NetImposition. 
- * 
- * Lines will be drawn, using only those coordinates from points.
- * Tabs are drawn on alternating outline point, or as specified.
- * 
- * net->m() transforms a net->point to the space that contains the net.
- * net->basisOfFace() would transform a point within that face to the net
- * coordinate system. basisOfFace()*m() would transform a face point to
- * the space that contains net.
- * 
+ * A Net consists of an optional AbstractNet, a number of additional lines, and a list of
+ * faces that have been laid down.
+ *
+ * An AbstractNet is the base from which the faces in the
+ * net can be derived. The AbstractNet may hold many more faces than are actually represented
+ * in a Net. The Net can pick up and put down the faces in the AbstractNet as long as the
+ * AbstractNet provides the necessary connectivity information.
+ *
+ * If there is no AbstractNet, then the net is static, and cannot be wrapped and unwrapped.
+ *
  * \todo *** implement tabs
  */ 
-/*! \var NetLine *Net::lines
+/*! \var PtrStack<NetLine> *Net::lines
  * \brief The lines that make up what the net looks like.
  *
- * Line 0 is assumed to be the outline of the whole net. Having lines specified with these
- * makes it so edge lines are not drawn twice, which is what would happen if the net was
- * drawn simply by outlining the faces.
+ * These lines are what should be seen when the net is rendered. The outlines of the faces 
+ * themselves can be accessed through Net::faces.
  *
- * \todo ***actually this might be bad, should perhaps have flag saying that some line is
- * an outline. Tabs get tacked onto outlines, but multiple outlines should be allowed.
+ * Lines can be automatically generated from the way the faces connect, creating 1 or more outlines,
+ * and inner "fold" lines. Lines for tabs on the edges of faces can also be automatically generated.
+ * There can also be other user defined lines that have nothing to do with the faces.
+ */
+/*! \var PtrStack<NetFace> *Net::faces
+ * \brief The faces that make up the net.
+ *
+ * Faces can be actually seen, or only potential faces.
+ */
+/*! \var int Net::info
+ * \brief Not actually used in Net class, extra info variable for applications.
+ *
+ * This is just an extra tag you can use for your own purposes.
  */
 /*! \var int Net::tabs
  * <pre>
@@ -414,133 +710,234 @@ void NetFace::dump_in_atts(LaxFiles::Attribute *att, const char *val,int flag)//
  *  3  tabs on all edges (all or yes)
  * </pre>
  */
-/*! \var spacepoint *Net::vertices
- * \brief Optional list of 3-d points. See also the pointmap list.
- */
-/*! \var int Net::nvertices
- * \brief The number of elements in the vertices array.
- */
-/*! \var int *Net::pointmap;
- * \brief Which thing (possibly 3-d points) corresponding (2-d) point maps to.
- *
- * If there is a vertices array, then the values in pointmap are assumed to be
- * indices into the vertices array. Those vertices can be used to map a 
- * polyhedron net into a spherical texture map and vice versa.
- */
 
 
 //! Init.
 Net::Net()
 {
-	np=nl=nf=nvertices=0;
-	points=NULL;
-	pointmap=NULL;
-	vertices=NULL;
-	lines=NULL;
-	faces=NULL;
+	info=0;
 	tabs=0;
-	thenettype=newstr("Net");
+	netname=newstr("Net");
+	basenet=NULL;
 }
 
-//! Delete points,lines,faces,pointmap,thenettype.
+//! Delete points,lines,faces,pointmap,netname.
 Net::~Net()
 {	clear(); }
 
 void Net::clear()
 {
-	if (thenettype) { delete[] thenettype; thenettype=NULL; }
+	if (netname) { delete[] netname; netname=NULL; }
 	
-	if (points) {
-		delete[] points;
-		delete[] pointmap;
-		points=NULL;
-		pointmap=NULL;
-		np=0;
-	}
-	if (lines) {
-		delete[] lines;
-		lines=NULL;
-		nl=0;
-	}
-	if (faces) {
-		delete[] faces;
-		faces=NULL;
-		nf=0;
-	}
-	if (vertices) {
-		delete[] vertices;
-		vertices=NULL;
-		nvertices=0;
-	}
+	tabs=0;
+	if (basenet) basenet->dec_count();
+	if (faces.n) faces.flush();
+	if (lines.n) lines.flush();
 }
 
+
 //! Return a new copy of this.
+/*! Warning: copies reference to basenet, does not make full copy of basenet.
+ */
 Net *Net::duplicate()
 {
 	Net *net=new Net;
-	makestr(net->thenettype,thenettype);
-	net->np=np;
+	makestr(net->netname,netname);
 	net->tabs=tabs;
-	if (vertices) {
-		net->vertices=new spacepoint[nvertices];
-		net->nvertices=nvertices;
-		memcpy(net->vertices,vertices,sizeof(spacepoint));
-	}
-	if (np) {
-		net->pointmap=new int[np];
-		net->points=new flatpoint[np];
-		for (int c=0; c<np; c++) {
-			if (pointmap) net->pointmap[c]=pointmap[c];
-			else net->pointmap[c]=-1;
-			net->points[c]=points[c];
+	net->basenet=basenet;
+	if (basenet) basenet->inc_count();
+
+	if (lines.n) {
+		for (int c=0; c<lines.n; c++) {
+			net->lines.push(new NetLine(*lines.e[c]));
 		}
 	}
-	if (nf) {
-		net->nf=nf;
-		net->faces=new NetFace[nf];
-		for (int c=0; c<nf; c++) {
-			net->faces[c]=faces[c];
+	if (faces.n) {
+		for (int c=0; c<faces.n; c++) {
+			net->faces.push(new NetFace(*faces.e[c]));
 		}
 	}
-	if (nl) {
-		net->nl=nl;
-		net->lines=new NetLine[nl];
-		for (int c=0; c<nl; c++) {
-			net->lines[c]=lines[c];
-		}
-	}
+
 	transform_copy(net->m(),m());
 	net->FindBBox();
 	return net;
 }
 
+////! Rotate face f coordinate space by moving alignx and/or o by one.
+///*! Return 0 for something changed, nonzero for not.
+// */
+//int Net::rotateFaceOrientation(int f,int alignxonly)//alignxonly=0
+//{ ***may need to code this stuff back in. it is useful
+//	if (f<0 || f>=nf) return 0;
+//	int ao=faces[f].aligno,
+//	    ax=faces[f].alignx;
+//	if (ao<0) ao=0;
+//	if (ax<0) ax=(ao+1)%faces[f].np;
+//	int n=0;
+//	ax=(ax+1)%faces[f].np;
+//	if (!alignxonly) ao=(ao+1)%faces[f].np;
+//	if (ax==ao) ax=-1;
+//	n=1;
+//	if (ax!=faces[f].alignx || ao!=faces[f].aligno) n=0;
+//	faces[f].aligno=ao;
+//	faces[f].alignx=ax;
+//	return n;
+//}
+
+//! Return the outline of an individual net face, in net coordinates.
+/*! Sets p to a new flatpoint[], and n to the number of points in p.
+ * If the line has any bezier control points, then p is a list of points
+ * in the form control-vertex-control-control-vertex-control-etc, and 2 is returned.
+ * Otherwise, the path is a polyline, and 1 is returned.
+ *
+ * If the path cannot be found, then 0 is returned, and p and n are not changed.
+ *
+ * \todo right now assumes that for bez segments, 2 controls exist between each
+ *   vertex, and vertices exist between a NEXT and PREV coordinate.. should
+ *   probably check for validity?
+ */
+int Net::pathOfFace(int i, int *n, flatpoint **p)
+{
+	if (i<0 || i>=faces.n) return 0;
+	NumStack<flatpoint> pts;
+	char isbez=0;
+	Coordinate *cc;
+	for (int c=0; c<faces.e[i]->edges.n; c++) {
+		cc=faces.e[i]->edges.e[c]->points;
+		while (cc) {
+			if (!isbez && (cc->flags&POINT_TONEXT) || (cc->flags&POINT_TOPREV)) {
+				isbez=1;
+				 // convert all pts to bez segs
+				for (int c2=1; c2<pts.n; c2++) {
+					pts.push(pts.e[c2-1]+(pts.e[c2]-pts.e[c2-1])/3,c2);        //c1
+					pts.push(pts.e[c2-1]+(pts.e[c2+1]-pts.e[c2-1])*2./3,c2+1); //c2
+					c2+=2;
+				}
+			}
+			pts.push(cc->fp);
+//			***check for list of vertices next to each other is bez line..
+//			   if so, add controls between those points....
+//			if (isbez) {
+//				if ((cc->flags&POINT_VERTEX) && bezpart==0) ***;
+//
+//				if (cc->flags&POINT_TOPREV) bezpart=1;
+//				else if (cc->flags&POINT_TONEXT) bezpart=2;
+//				else bezpart=0;
+//			}
+			cc=cc->next;
+		}
+	}
+	if (isbez) {
+		 //move final control point to beginning
+		pts.push(pts.e[pts.n-1],0);
+		pts.pop(pts.n-1);
+	}
+	*p=pts.extractArray(n);
+	if (isbez) return 2;
+	return 1;
+}
+
+//! Return the index of the first net face that contains pp, or -1.
+int Net::pointinface(flatpoint pp)
+{
+	double i[6];
+	transform_invert(i,m());
+	pp=transform_point(i,pp);
+	int c,t,n;
+	flatpoint *pts=NULL;
+	for (c=0; c<faces.n; c++) {
+		t=pathOfFace(c,&n,&pts);
+		if (t==1) { if (point_is_in(pp,pts,n)) t=1000; }
+		else if (t==2) { if (point_is_in_bez(pp,pts,n)) t=1000; }
+
+		delete[] pts; pts=NULL;
+		if (t==1000) {
+			return c;
+		}
+	}
+	return -1;
+}
+
+//! Find the bounding box of lines of the net.
+/*! 
+ * \todo right now, this is the naive bbox.. for bez paths, is only grabbing the
+ *   bounding box of vertex and control points, not actual bounds of the curve.
+ */
+void Net::FindBBox()
+{
+	if (!lines.n) return;
+	maxx=maxy=-1;
+	minx=maxy=0;
+	Coordinate *cc;
+	for (int c=0; c<lines.n; c++) {
+		cc=lines.e[c]->points;
+		do {
+			addtobounds(cc->fp);
+			cc=cc->next;
+			if (cc==lines.e[c]->points) cc=NULL;
+		} while (cc);
+	}
+}
+
+////! Center the net around the origin. (changes points)
+//void Net::Center()
+//{ ***
+//	double dx=(maxx+minx)/2,dy=(maxy+miny)/2;
+//	for (int c=0; c<np; c++) {
+//		points[c]-=flatpoint(dx,dy);
+//	}
+//	minx-=dx;
+//	maxx-=dx;
+//	miny-=dy;
+//	maxy-=dy;
+//}
+
+//! Modify net->m() to fit within data with a margin.
+/*! If setpaper!=0, then set the bounds of Net::paper to data.
+ */
+void Net::FitToData(Laxkit::DoubleBBox *data,double margin,int setpaper)
+{
+	DoubleBBox box(*data);
+	if (margin*2<box.maxx-box.minx) {
+		box.minx+=margin;
+		box.maxx-=margin;
+	}
+	if (margin*3<box.maxy-box.miny) {
+		box.miny+=margin;
+		box.maxy-=margin;
+	}
+	fitto(NULL,&box,50,50);
+
+	if (setpaper) {
+		transform_identity(paper.m());
+		paper.origin(flatpoint(data->minx,data->miny));
+		paper.minx=paper.maxx=0;
+		paper.maxx=data->maxx-data->minx;
+		paper.maxy=data->maxy-data->miny;
+	}
+}
+
+//! Add a line to lines before position where. where<0 implies top of stack.
+/*! Makes a copy. The NetLine::tag is what. If how is 0, then the line 
+ * is marked as an automatic line, and will be destroyed whenever picking up or
+ * putting down faces. Otherwise, it is a user-defined line, and will persist.
+ */
+void Net::pushline(NetLine &l,int what,int where,int how)//where=-1, how=1
+{
+	NetLine *newline=new NetLine();
+	*newline=l;
+	newline->lineinfo=(how?1:0);
+	newline->tag=what;
+	lines.push(newline,1,where);
+}
+
+//----------------Net load and save functions:
+
 /*! perhaps:
  * <pre>
  * name "Square split diagonally"
  * matrix 1 0 0 1 0 0  # optional extra matrix to map this net to a page
- * points \
- *    1 1   to 3  # 0,  the optional 'to number' is map to whatever, goes in pointmap
- *    -1 1  to 2  # 1   it can be used to point to original 3-d points, for instance.
- *    -1 -1 to 0  # 2   pointmap is also used to build facelink in NetFace
- *    1 -1  to 1  # 3
- * vertices \     \#list of 3d points
- *    0  0  0   #0
- *    1  0  0   #1
- *    0  1  0   #2
- *    .5 .5 .7  #3
- *    
- *  # All the lines to draw when laying out on the page. Numbers are
- *  # indices into the point list above.
- *  # The line marked with 'outline' internally becomes lines[0].
- *  # If no outline attribute is given, then the point list, in the order
- *  # as given is assumed to be the outline.
- * outline 0 1 2 3
- *    linestyle
- *       color 255 25 25 255
- * line 1 2 3
- *    facelink 0 1 2 # edges link to other faces
- *    linestyle
- *       color 100 100 50 255
+ * line M 1 1 L 0 4    # optional extra user created lines
  *
  *  # Tabs defaults to 'no'.
  *  # and you can also specify 'left' or 'right'.(<-- this bit not imp yet, maybe never)
@@ -561,6 +958,8 @@ Net *Net::duplicate()
  * face 1 2 3
  *    matrix 1 0 0 1 .2 .3
  * </pre>
+ *
+ * \todo *** implement abstract net references and file references
  */
 void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
@@ -568,69 +967,38 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (what==-1) {
 		fprintf(f,"%sname Bent Square #this is just any name you give the net\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  # transform to map the net to a paper\n",spc);
+		fprintf(f,"%sbasenet             #the base abstract net\n",spc);
 		fprintf(f,"%stabs no             #(***TODO) whether to put tabs on face edges\n",spc);
-		fprintf(f,"%spoints \\ \n",spc);
-		fprintf(f,"%s  1 1   to 0  # 0, the optional 'to number' is map to some common index, usually\n",spc);
-		fprintf(f,"%s  -1 1  to 1  # 1   the 3-d vertex index of the vertices list below. These let the\n",spc);
-		fprintf(f,"%s  -1 -1 to 2  # 2   interactive net unwrapper actually work\n",spc);
-		fprintf(f,"%s  1 -1  to 3  # 3\n",spc);
-		fprintf(f,"%svertices \\       #optional list of 3d points\n",spc);
-		fprintf(f,"%s  0  0  0   #0\n",spc);
-		fprintf(f,"%s  1  0  0   #1\n",spc);
-		fprintf(f,"%s  0  1  0   #2\n",spc);
-		fprintf(f,"%s  .5 .5 .7  #3\n",spc);
-		fprintf(f,"%sface 0 1 3       #defines a face by list of indices into the points list.\n",spc);
-		fprintf(f,"%sface 2 3 1       # The origin is by default at the first point, and the\n",spc);
-		fprintf(f,"%s                 # x axis extends to the next point.\n",spc);
-		fprintf(f,"%sline 0 3         #defines a line made from the points list that gets drawn onscreen\n",spc);
-		fprintf(f,"%soutline 0 1 2 3  #defines a (closed) outline, onto which tabs can be placed\n",spc);
 		
+		NetFace face;
+		fprintf(f,"%sface               #there can be any number of laid out faces\n",spc);
+		face.dumpOut(f,indent+2,-1);
+
+		NetLine line;
+		fprintf(f,"%sline               #there can be any number of extra lines\n",spc);
+		line.dumpOut(f,indent+2,-1);
 		return;
 	}
-	int c;
-	fprintf(f,"%sname %s\n",spc,whatshape());
-	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-			spc,matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
-	
-	if (tabs==0) fprintf(f,"%stabs no\n",spc);
-	else if (tabs==1) fprintf(f,"%stabs even\n",spc);
-	else if (tabs==2) fprintf(f,"%stabs odd\n",spc);
-	else if (tabs==3) fprintf(f,"%stabs all\n",spc);
-	
-	 // dump points
-	if (np) {
-		fprintf(f,"%spoints \\\n",spc);
-		for (c=0; c<np; c++) {
-			fprintf(f,"%s  %-13.10g %-13.10g ",spc,points[c].x,points[c].y);
-			if (pointmap && pointmap[c]>=0) fprintf(f,"to %d ",pointmap[c]);
-			fprintf(f,"# %d\n",c);
-		}
-		fprintf(f,"\n");
-	}
-	
-	 // dump 3-d points
-	if (nvertices) {
-		fprintf(f,"%svertices \\\n",spc);
-		for (c=0; c<nvertices; c++) {
-			fprintf(f,"%s  %-13.10g %-13.10g %-13.10g # %d\n",spc,vertices[c].x,vertices[c].y,vertices[c].z,c);
-		}
-		fprintf(f,"\n");
-	}
-	
-	 // dump lines
-	if (nl) {
-		for (c=0; c<nl; c++) {
-			if (c==0) fprintf(f,"%soutline ",spc);
-			else fprintf(f,"%sline ",spc);
-			lines[c].dump_out(f,indent+2,1);
+	if (basenet) {
+		if (basenet->NetName() && !strcmp("BasicNet",basenet->NetName())) {
+			fprintf(f,"%sbasenet BasicNet\n",spc);
+			basenet->dumpOutNet(f,indent+2,0);
+//		} else if (***basenet is from unmodified file) {
+//			fprintf(f,"%sbasenet file://%s\n",spc,basenet->Filename);
+//		} else if (***we are having references to basenet) {
+//			fprintf(f,"%sbasenet ref:/%s\n",spc,basenet->NetName());
 		}
 	}
-	
-	 // dump faces
-	if (nf) {
-		for (c=0; c<nf; c++) {
-			fprintf(f,"%sface ",spc);
-			faces[c].dump_out(f,indent+2,1);
+	if (lines.n) {
+		for (int c=0; c<lines.n; c++) {
+			fprintf(f,"%sline\n",spc);
+			lines.e[c]->dumpOut(f,indent+2,0);
+		}
+	}
+	if (faces.n) {
+		for (int c=0; c<faces.n; c++) {
+			fprintf(f,"%sface\n",spc);
+			faces.e[c]->dumpOut(f,indent+2,0);
 		}
 	}
 }
@@ -644,15 +1012,15 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
-	char *name,*value,*t,*e,*newname=NULL;
-	double x,y;
-	int pm,hadoutline=0;
+	char *name,*value;
 	int c;
+	clear();
+	const char *baseref=NULL;
 	for (c=0; c<att->attributes.n; c++) {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"name")) {
-			makestr(newname,value);
+			makestr(netname,value);
 		} else if (!strcmp(name,"matrix")) {
 			DoubleListAttribute(value,m(),6);
 		} else if (!strcmp(name,"tabs")) {
@@ -664,74 +1032,36 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 				else if (!strcmp(value,"yes") || !strcmp(value,"all")) tabs=3;
 				else tabs=0; // catch all for bad value
 			}
-		} else if (!strcmp(name,"tab")) {
-			cout <<" *** tabs not implemented in Net!"<<endl;
-		} else if (!strcmp(name,"points")) {
-			 // parse arbitrarily long list of 
-			 //   1.223432 3.2342 to 2
-			 //   ...
-			t=value;
-			while (t && *t) {
-				pm=-1;
-				x=strtod(t,&e); 
-				if (e==t) break;
-				t=e;
-				y=strtod(t,&e); 
-				if (e==t) break;
-				t=e;
-				while (isspace(*t) && *t!='\n') t++;
-				if (t[0]=='t' && t[1]=='o' && isspace(t[2])) {
-					pm=strtol(t+2,&e,10);
-					if (e==t) break; // broken file
-					t=e;
+		} else if (!strcmp(name,"basenet")) {
+			if (!value) continue;
+			if (!strcmp(value,"BasicNet")) {
+				basenet=new BasicNet();
+				for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+					name=att->attributes.e[c]->attributes.e[c2]->name;
+					value=att->attributes.e[c]->attributes.e[c2]->value;
+					if (!strcmp(value,"face")) {
+						NetFace *face=new NetFace;
+						face->dumpInAtts(att->attributes.e[c]->attributes.e[c2]);
+					} else if (!strcmp(value,"name")) {
+						makestr(basenet->name,value);
+					}
 				}
-				pushpoint(flatpoint(x,y),pm);
+			} else if (!strncmp(value,"ref:",4)) {
+				baseref=value+4;
+			} else if (!strncmp(value,"file:",4)) {
+				basenet=loadBaseNet(value+5,NULL);//***ignores error string return
 			}
-		} else if (!strcmp(name,"vertices")) {
-			 // parse arbitrarily long list of 3-d points
-			 //   1.2 1.5 -1.8 \n ...
-			if (nvertices) {
-				delete[] vertices;
-				vertices=NULL;
-				nvertices=0;
-			}
-			int n;
-			double p3[3];
-			t=e=value;
-			while (t && *t) {
-				n=DoubleListAttribute(t,p3,3,&e);
-				if (e==t) break;
-				if (n!=3) { t=e; continue; }
-				while (*e && *e!='\n') e++;
-				t=*e?e+1:NULL;
-				push3dpoint(p3[0],p3[1],p3[2]);
-			}
-		} else if (!strcmp(name,"outline")) {
-			hadoutline=1;
-			NetLine netline;
-			netline.dump_in_atts(att->attributes.e[c],value,flag);
-			pushline(netline,0); // pushes onto position 0
 		} else if (!strcmp(name,"line")) {
 			NetLine netline;
-			netline.dump_in_atts(att->attributes.e[c],value,flag);
-			pushline(netline,-1); // pushes onto top
+			netline.dumpInAtts(att->attributes.e[c],value,flag);
+			pushline(netline,1,-1,0); // pushes onto top
 		} else if (!strcmp(name,"face")) {
-			NetFace netface;
-			netface.dump_in_atts(att->attributes.e[c],value,flag);
-			pushface(netface);
+			NetFace *netface=new NetFace;
+			netface->dumpInAtts(att->attributes.e[c]);
+			faces.push(netface,1);
 		}
 	}
 
-	 // if no outline, then assume list of points is the outline.
-	if (!hadoutline) {
-		NetLine line;
-		line.isclosed=1;
-		line.points=new int[np];
-		line.np=np;
-		for (c=0; c<np; c++) line.points[c]=c;	
-		pushline(line,0);
-	}
-	
 	//***sanity check on all point references..
 	FindBBox();
 
@@ -740,489 +1070,620 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 	DBG cerr <<"----------------end Net dump:-------------"<<endl;
 }
 
-//! Add a 3-d point to vertices at the end.
-void Net::push3dpoint(double x,double y,double z)
-{
-	spacepoint *npts=new spacepoint[nvertices];
-	if (vertices) {
-		memcpy((void *)npts,(const void *)vertices, np*sizeof(spacepoint));
-		delete[] vertices;
-	}
-	npts[nvertices].x=x;
-	npts[nvertices].y=y;
-	npts[nvertices].z=z;
-	vertices=npts;
-	nvertices++;
-}
-
-//! Return a transformation basis to face which.
-/*! If total!=0, then includes this->m(). Thus the transform brings face points
- * to the containing coordinates of the net. If total==0, the the returned transform
- * only maps face points to net units.
- * 
- * If m==NULL, then return a new double[6]. 
- * If that face is not available, then return NULL.
- *
- * Will construct a basis such that the xaxis goes from NetFace::aligno
- * toward NetFace::alignx, but whose length is 1 in net coordinates. The
- * yaxis is just the transpose of the x axis.
- *
- * \todo *** this currently ignore NetFace::matrix!!
+//! From a file reference, load the base abstract net.
+/*! This means figuring out what sort of file the base net is. Default Net
+ * classes can only understand BasicNet files in indented format.
  */
-double *Net::basisOfFace(int which,double *mm,int total)//mm=NULL, total=0
+AbstractNet *Net::loadBaseNet(const char *filename,char **error_ret)
 {
-	if (!nf || which<0 || which>=nf) return NULL;
-	if (!mm) mm=new double[6];
-	transform_identity(mm);
-
-	DBG //*** for debugging	
-	DBG  cerr <<"basisOfFace "<<which<<":\n";
-	flatpoint p;
-	DBG for (int c=0; c<faces[which].np; c++) {
-	DBG 	p=points[faces[which].points[c]];
-	DBG 	cerr <<" p"<<c<<": "<<p.x<<" "<<p.y<<endl;
-	DBG }
-	
-	int o=faces[which].aligno,x=faces[which].alignx;
-	if (o<0) o=0;
-	if (x<0) x=(o+1)%faces[which].np;
-	flatpoint origin=points[faces[which].points[o]],
-			  xtip=points[faces[which].points[x]];
-	SomeData s;
-	s.origin(origin);
-	p=xtip-origin;
-	p=p/sqrt(p*p); //normalize p
-	s.xaxis(p);
-	s.yaxis(transpose(p)); // s.m() is (face coords) -> (paper)
-	if (total) transform_mult(mm,s.m(),m());
-		else transform_copy(mm,s.m());
-
-	DBG //*** for debugging	
-	DBG cerr <<"--transformed face "<<which<<":"<<endl;
-	DBG transform_invert(s.m(),mm);
-	DBG double slen=norm(points[faces[which].points[0]]-points[faces[which].points[1]]);
-	DBG p=transform_point(mm,flatpoint(0,0));
-	DBG cerr <<"  origin:"<<p.x<<" "<<p.y<<endl;
-	DBG p=transform_point(mm,flatpoint(slen,0));
-	DBG cerr <<"  point 1:"<<p.x<<" "<<p.y<<endl;
-
-	
-	return mm;
-}
-
-//! Rotate face f by moving alignx and/or o by one.
-/*! Return 0 for something changed, nonzero for not.
- */
-int Net::rotateface(int f,int alignxonly)//alignxonly=0
-{
-	if (f<0 || f>=nf) return 0;
-	int ao=faces[f].aligno,
-	    ax=faces[f].alignx;
-	if (ao<0) ao=0;
-	if (ax<0) ax=(ao+1)%faces[f].np;
-	int n=0;
-	ax=(ax+1)%faces[f].np;
-	if (!alignxonly) ao=(ao+1)%faces[f].np;
-	if (ax==ao) ax=-1;
-	n=1;
-	if (ax!=faces[f].alignx || ao!=faces[f].aligno) n=0;
-	faces[f].aligno=ao;
-	faces[f].alignx=ax;
-	return n;
-}
-
-//! Return the index of the first face that contains points, or -1.
-int Net::pointinface(flatpoint pp)
-{
-	double i[6];
-	transform_invert(i,m());
-	pp=transform_point(i,pp);
-	int c,c2;
-	for (c=0; c<nf; c++) {
-		flatpoint pnts[faces[c].np];
-		for (c2=0; c2<faces[c].np; c2++) pnts[c2]=points[faces[c].points[c2]];
-		if (pointisin(pnts,c2,pp)) return c;
-	}
-	return -1;
-}
-
-//! Find the bounding box of points of the net.
-void Net::FindBBox()
-{
-	if (!np) return;
-	minx=maxx=points[0].x;
-	miny=maxy=points[0].y;
-	for (int c=1; c<np; c++) addtobounds(points[c]);
-}
-
-//! Center the net around the origin. (changes points)
-void Net::Center()
-{
-	double dx=(maxx+minx)/2,dy=(maxy+miny)/2;
-	for (int c=0; c<np; c++) {
-		points[c]-=flatpoint(dx,dy);
-	}
-	minx-=dx;
-	maxx-=dx;
-	miny-=dy;
-	maxy-=dy;
-}
-
-//! Apply a transform to the points, changing them.
-/*! If m==NULL, then use this->m().
- */
-void Net::ApplyTransform(double *mm)//mm=NULL
-{
-	if (mm==NULL) mm=m();
-	maxx=maxy=-1;
-	minx=miny=0;
-	for (int c=0; c<np; c++) {
-		points[c]=transform_point(mm,points[c]);
-		addtobounds(points[c]);
-	}
-	transform_identity(m());
-}
-
-//! Make *this fit inside bounding box of data (inset by margin).
-/*! \todo ***  this clears any rotation that was in the net->m() and it shouldn't
- */
-void Net::FitToData(Laxkit::DoubleBBox *data,double margin)
-{
-	if (!data || !np) return;
-	double wW=(data->maxx-data->minx-2*margin)/(maxx-minx);
-	double hH=(data->maxy-data->miny-2*margin)/(maxy-miny);
-	if (hH<wW) wW=hH; // pick the smaller of the two size ratios
-
-	flatpoint mid=flatpoint((maxx+minx)/2,(maxy+miny)/2),
-			midp=flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)/2);
-	xaxis(flatpoint(wW,0));
-	yaxis(flatpoint(0,wW));
-	mid=transform_point(m(),mid);
-	origin(origin()+midp-mid);
-	
-//	xaxis(wW*data->xaxis());
-//	yaxis(wW*data->yaxis());
-//	origin(data->origin()+midp.x*data->xaxis()+midp.y*data->yaxis()-mid.x*xaxis()-mid.y*yaxis());
-}
-
-//! Add point pp to top of the list of points.
-void Net::pushpoint(flatpoint pp,int pmap)//pmap=-1
-{
-	flatpoint *npts=new flatpoint[np+1];
-	int *newmap=new int[np+1];
-	if (points) memcpy((void *)npts,(const void *)points, np*sizeof(flatpoint));
-	if (pointmap) memcpy((void *)newmap,(const void *)pointmap, np*sizeof(int));
-	else if (np) for (int c=0; c<np; c++) newmap[c]=-1;
-	npts[np]=pp;
-	newmap[np]=pmap;
-	delete[] points;
-	delete[] pointmap;
-	points=npts;
-	pointmap=newmap;
-	np++;
-}
-
-//! Add a face to top of faces.
-/*! Makes a copy */
-void Net::pushface(NetFace &f)
-{
-	NetFace *nfaces=new NetFace[nf+1];
-	for (int c=0; c<nf; c++) nfaces[c]=faces[c]; //cannot do memcpy
-	nfaces[nf]=f;
-	delete[] faces;
-	faces=nfaces;
-	nf++;
-}
-
-//! Add a line to lines before position where. where<0 implies top of stack.
-/*! Makes a copy */
-void Net::pushline(NetLine &l,int where)//where=-1
-{
-	NetLine *nlines=new NetLine[nl+1];
-	if (where<0) where=nl;
-	for (int c=0; c<where; c++) nlines[c]=lines[c]; //cannot do memcpy
-	nlines[where]=l;
-	for (int c=where; c<nl; c++) nlines[c+1]=lines[c]; //cannot do memcpy
-	delete[] lines;
-	lines=nlines;
-	nl++;
+	BasicNet *net=new BasicNet;
+	Attribute att;
+	att.dump_in(filename,NULL);
+	net->dump_in_atts(&att,0,NULL);
+	return net;
 }
 
 //! Replace the existing net with a net generated from the given OFF file.
-/*! Return 0 for success, or nonzero for error.
+/*! This is assumed to be a 2 dimensional net. For 3 dimensional points in an OFF,
+ * only the x and y components are used. Return 0 for success, or nonzero for error.
+ *
+ * \todo *** imp me...
  */
 int Net::LoadOFF(const char *filename,char **error_ret)
+{ //***
+	return 1;
+//	if (file_exists(filename,1,NULL)!=S_IFREG) {
+//		if (error_ret) *error_ret=_("Cannot read that file.");
+//		return 1;
+//	}
+//	FILE *f=fopen(filename,"r");
+//	if (!f) {
+//		if (error_ret) *error_ret=_("Cannot read that file.");
+//		return 1;
+//	}
+//	setlocale(LC_ALL,"C");
+//	if (error_ret) *error_ret=NULL;
+//
+//	int e=0, 
+//		numv=0,
+//		numf=0,
+//		c;
+//	NumStack<spacepoint> pts;
+//	PtrStack<int> fcs(2);
+//	char *line=NULL;
+//	size_t n=0;
+//	while (1) {
+//		c=getline(&line,&n,f);
+//		if (c<=0 || strcmp(line,"OFF")) { e=1; break; }
+//
+//		c=getline(&line,&n,f);
+//		if (c<=0) { e=1; break; }
+//
+//		int *i=new int[3];
+//		double p[4];
+//		c=IntListAttribute(line,i,3,NULL);
+//		if (c!=3) { e=1; break; }
+//		numv=i[0];
+//		numf=i[1];
+//		for (int v=0; v<numv; v++) {
+//			c=getline(&line,&n,f);
+//			if (c<=0) { e=1; break; }
+//			
+//			c=DoubleListAttribute(line,p,3,NULL);
+//			if (c!=3) { e=1; break; }
+//
+//			pts.push(spacepoint(p));
+//		}
+//
+//		delete[] i; i=NULL;
+//		int *ff;
+//		for (int fc=0; fc<numf; fc++) {
+//			c=getline(&line,&n,f);
+//			if (c<=0) { e=1; break; }
+//			
+//			c=IntListAttribute(line,&i,NULL,NULL);
+//			if (!i || c!=i[0]+1) { e=1; break; }
+//
+//			ff=new int[i[0]];
+//			memcpy(ff,i,i[0]*sizeof(int));
+//			fcs.push(ff);
+//			delete[] i; i=NULL;
+//		}
+//	}
+//	if (line) free(line);
+//	fclose(f);
+//	setlocale(LC_ALL,"");
+//	if (e && error_ret) *error_ret=_("Bad OFF file.");
+//
+//	cout <<"***must implement convert pts and fcs to some kind of net"<<endl;
+//
+//	return e;
+}
+
+//! Try to load a net from the given file.
+/*! Currently, the file format must be the native Net format. See dump_out() for details.
+ *
+ * Return 0 for success.
+ *
+ * \todo *** check that file can be either an OFF/COFF file, the native Net format, or cff2 format.
+ * \todo implement cff2 format
+ * \todo *** does not check whether was actually readable format
+ */
+int Net::LoadFile(const char *file,char **error_ret)
 {
-	if (file_exists(filename,1,NULL)!=S_IFREG) {
-		if (error_ret) *error_ret=_("Cannot read that file.");
-		return 1;
-	}
-	FILE *f=fopen(filename,"r");
+	char *error=NULL;
+	int e=LoadOFF(file,&error);
+	if (!e) return 0; //was a readable OFF file
+
+	FILE *f=fopen(file,"r");
 	if (!f) {
-		if (error_ret) *error_ret=_("Cannot read that file.");
+		if (error_ret) appendline(*error_ret,_("Cannot read that file."));
 		return 1;
 	}
-	setlocale(LC_ALL,"C");
-	if (error_ret) *error_ret=NULL;
 
-	int e=0, 
-		numv=0,
-		numf=0,
-		c;
-	NumStack<spacepoint> pts;
-	PtrStack<int> fcs(2);
-	char *line=NULL;
-	size_t n=0;
-	while (1) {
-		c=getline(&line,&n,f);
-		if (c<=0 || strcmp(line,"OFF")) { e=1; break; }
+	cerr << "WARNING: assuming indented format for net file "<<file<<endl;//***check!
+	dump_in(f,0,NULL,NULL);
 
-		c=getline(&line,&n,f);
-		if (c<=0) { e=1; break; }
+	fclose(f);
 
-		int *i=new int[3];
-		double p[4];
-		c=IntListAttribute(line,i,3,NULL);
-		if (c!=3) { e=1; break; }
-		numv=i[0];
-		numf=i[1];
-		for (int v=0; v<numv; v++) {
-			c=getline(&line,&n,f);
-			if (c<=0) { e=1; break; }
+	return 0; //***what if file was not readable format?
+}
+
+//! Write out the lines of the net to SVG.
+int Net::SaveSvg(const char *file,char **error_ret)
+{
+	if (!lines.n) return 1;
+
+	ofstream svg(file);
+	if (!svg.is_open()) return 1;
+
+	 // Define the transformation matrix: net to paper.
+	 // For simplicity, we assume that the bounds in paper hold the size of the paper,
+	 // so Letter is maxx=8.5, maxy=11, and minx=miny=0.
+	 //
+	 // bbox shall have comparable bounds. When paper is invalid, then bbox has the same
+	 // size as the net, but the origin is shifted so that point (0,0) is at a corner
+	 // of the net's bounding box.
+	 //
+	 // The net transforms into parent space, and the paper also transforms into parent space.
+	 // So the transform from net to paper space is net.m()*paper.m()^-1
+	double M[6]; 
+	SomeData bbox;
+	if (paper.validbounds()) {
+		bbox.maxx=paper.maxx;
+		bbox.minx=paper.minx;
+		bbox.maxy=paper.maxy;
+		bbox.miny=paper.miny;
+	} else {
+		bbox.maxx=maxx-minx;
+		bbox.minx=0;
+		bbox.maxy=maxy-miny;
+		bbox.miny=0;
+		transform_copy(bbox.m(),m()); //map same as the net
+		bbox.origin(flatpoint(minx,miny));      //...except for the origin
+	}
+
+	double t[6];
+	transform_invert(t,bbox.m());
+	transform_mult(M,m(),t);
+
+	 //figure out decent line width scaling factor. *** this is a hack!! must use linestyle stuff.
+	 //In SVG, 1in = 90px = 72pt
+	double linewidth=.01; //inches, where 1 inch == 1 paper unit
+	double scaling=1/sqrt(M[0]*M[0]+M[1]*M[1]); //supposed to scale to within the M group
+	DBG cout <<"******--- Scaling="<<scaling<<endl;
+
+	 //define some repeating header stuff
+	char pathheader[400];
+	sprintf(pathheader,"\t<path\n\t\tstyle=\"fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:%.6fpt;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1.0;\"\n\t\t",scaling*linewidth);
+	const char *pathclose="\n\t/>\n";
+	
 			
-			c=DoubleListAttribute(line,p,3,NULL);
-			if (c!=3) { e=1; break; }
+	 // Print out header
+	svg << "<svg"<<endl
+		<< "\twidth=\""<<bbox.maxx<<"in\"\n\theight=\""<<bbox.maxy<<"in\""<<endl
+		<< "\txmlns:sodipodi=\"http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd\""<<endl
+		<< "\txmlns:xlink=\"http://www.w3.org/1999/xlink\""<<endl
+		<<">"<<endl;
+	
+	 // Write matrix
+	svg <<"\t<g transform=\"scale(90)\">"<<endl;
+	//svg <<"\t<g >"<<endl;
+	//svg <<"\t<g transform=\"matrix(1, 0, 0, 1, "<<M[4]<<','<<M[5]<<")\">"<<endl;
+	svg <<"\t<g transform=\"matrix("<<M[0]<<','<<M[1]<<','<<M[2]<<','<<M[3]<<','<<M[4]<<','<<M[5]<<")\">"<<endl;
 
-			pts.push(spacepoint(p));
-		}
 
-		delete[] i; i=NULL;
-		int *ff;
-		for (int fc=0; fc<numf; fc++) {
-			c=getline(&line,&n,f);
-			if (c<=0) { e=1; break; }
-			
-			c=IntListAttribute(line,&i,NULL,NULL);
-			if (!i || c!=i[0]+1) { e=1; break; }
+	
+	 // ---------- draw lines 
+	int c;
+	NetLine *line;
 
-			ff=new int[i[0]];
-			memcpy(ff,i,i[0]*sizeof(int));
-			fcs.push(ff);
-			delete[] i; i=NULL;
+	for (c=0; c<lines.n; c++) {
+		line=lines.e[c];
+		if (line->points) {
+			svg << pathheader << "d=\"";
+			char *d=CoordinateToSvg(line->points);
+			if (d) {
+				svg <<d<<"\""<< pathclose <<endl;
+				delete[] d;
+			}
 		}
 	}
-	if (line) free(line);
-	fclose(f);
-	setlocale(LC_ALL,"");
-	if (e && error_ret) *error_ret=_("Bad OFF file.");
 
-	cout <<"***convert pts and fcs to some kind of net"<<endl;
+	
 
-	return e;
+	 // Close the net grouping
+	svg <<"\t</g>\n";
+	svg <<"\t</g>\n";
+
+	 // Print out footer
+	svg << "\n</svg>\n";
+
+	return 0;
 }
 
 
-//-------- perhaps for future use:
-//1. Helper functions for a dynamic net modifier
-//2. SVG out of the net
-//
-//
-////! Output to an svg file.
-///*! caller must open and close the stream
-// * <pre>
-// *   SVG notes
-// * Net should optionally be able to read in from svg-style
-// * string that has l,L,m,M and closepath(z/Z) commands
-// * thus a normal 4 sided rect= "M 100 100 l 200 0 0 200 -200 0 z" 
-// * m moveto relative
-// * M moveto absolute
-// * l lineto rel
-// * L lineto abs
-// * z/Z closepath
-// *  (note that subsequent commands,	in this case 'l' don't have to be specified)
-// *  grouping:
-// *  \<g id="g2835"  transform="matrix(0.981652,0.000000,0.000000,0.981652,11.18525,18.33537)">
-// * 	 \<path ... />
-// *  \</g>
-// *  or the transform="..." is put within the path: <path ... transform="..." />
-// * </pre>
-// *
-// */
-//void Net::PrintSVG(ostream &svg,SomeData *paper,int month,int year) // month=0, year=2006
-//{***
-//	month--;
-//	if (!np) return;
-//	//if (!np || !dp) return 0;
-//
-//	 // prepare images, which holds where the little images should go.
-//	images.flush();
-//	if (birthdays->attributes.n) {
-//		curatt=0;
-//		monthday(birthdays->attributes[curatt]->value,&nextattmonth,&nextattday);
-//	} else {
-//		curatt=-1;
-//		nextattmonth=13;
-//		nextattday=32;
-//	}
-//	
-//	 // Define the transformation matrix: net to page
-//	 // *** it's getting shortened (scaled down) a little into inkscape, what the hell?
-//	double M[6]; 
-//	flatpoint paperx,papery;
-//	paperx=paper->xaxis()/(paper->xaxis()*paper->xaxis());
-//	papery=paper->yaxis()/(paper->yaxis()*paper->yaxis());
-//	M[0]=xaxis()*paperx;
-//	M[1]=xaxis()*papery;
-//	M[2]=yaxis()*paperx;
-//	M[3]=yaxis()*papery;
-//	M[4]=(origin()-paper->origin())*paperx;
-//	M[5]=(origin()-paper->origin())*papery;
-//	double scaling=1/sqrt(M[0]*M[0]+M[1]*M[1]);
-//cout <<"******--- Scaling="<<scaling<<endl;
-//
-//	char pathheader[400];
-//	sprintf(pathheader,"\t<path\n\t\tstyle=\"fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#000000;stroke-width:%.6fpt;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1.0;\"\n\t\t",scaling);
-//	const char *pathclose="\n\t/>\n";
-//	
-//			
-//	 // Print out header
-//	svg << "<svg"<<endl
-//		<< "\twidth=\"612pt\"\n\theight=\"792pt\""<<endl
-//		<< "\txmlns:sodipodi=\"http://inkscape.sourceforge.net/DTD/sodipodi-0.dtd\""<<endl
-//		<< "\txmlns:xlink=\"http://www.w3.org/1999/xlink\""<<endl
-//		<<">"<<endl;
-//	
-//	 // Write matrix
-//	svg <<"\t<g transform=\"scale(1.25)\">"<<endl;
-//	svg <<"\t<g transform=\"matrix("<<M[0]<<','<<M[1]<<','<<M[2]<<','<<M[3]<<','<<M[4]<<','<<M[5]<<")\">"<<endl;
-//
-//
-//	
-//	 // ---------- draw lines 
-//	int c,c2;
-//	svg << pathheader << "d=\"M ";
-//	
-//	flatpoint pp[np+1];
-//	for (c=0; c<np; c++) {
-//		//pp[c]=dp->realtoscreen(points[c]);***
-//		pp[c]=points[c];
-//		svg << pp[c].x<<' '<<pp[c].y<<' ';
-//		if (c==0) svg << "L ";
-//	}
-//	svg << "z\""<< pathclose <<endl;
-//
-//	
-//	 // draw extra lines. Note that these are open paths
-//	//*** should have linestyle: None, Dotted, Solid
-//	svg << "<g>"<<endl; // group the fold lines to make easier to remove later
-//	for (c=0; c<nl; c++) {
-//		svg << pathheader << "d=\"M ";
-//		c2=0;
-//		while (lines[c][c2]!=-1) {
-//			svg << pp[lines[c][c2]].x<<' '<<pp[lines[c][c2]].y<<' ';
-//			if (c2==0) svg << "L ";
-//			c2++;
+//----------------Net wrapping functions
+
+//! Drop a face down, starting a new grouping of faces.
+/*! basenetfacei is a face index in basenet. If -1 is passed in instead, then 
+ * anchor the next basenet face that is not represented.
+ *
+ * Return 0 for face dropped. Return 1 for face is already dropped. 
+ * Return 2 for no more faces to anchor! Other number
+ * for nothing dropped.
+ *
+ * \todo the placement of new groups is a little flaky... should probably have ability to find
+ *   bbox of each group of faces, and auto spread out so no overlap..
+ */
+int Net::Anchor(int basenetfacei)
+{
+	if (!basenet || basenetfacei>=basenet->NumFaces()) return 1;
+
+	 //search for basenetfacei already in net
+	if (faces.n && basenetfacei>=0) {
+		int c=findOriginalFace(basenetfacei,1,-1);
+		if (c>=0) return 1; //face already existed
+	}
+	 
+	 //if there are faces and we want to anchor the next available, the find the next available...
+	if (faces.n && basenetfacei<0) {
+		for (basenetfacei=0; basenetfacei<basenet->NumFaces(); basenetfacei++) {
+			if (findOriginalFace(basenetfacei,1,-1)==0) break;
+		}
+		if (basenetfacei==basenet->NumFaces()) return 2; //no more faces!
+	}
+	if (basenetfacei<0) basenetfacei=0;
+
+	 //ok, so now we drop basenetfacei
+	NetFace *newface=basenet->GetFace(basenetfacei);
+	newface->tag=FACE_Actual;
+	if (!newface->matrix) newface->matrix=new double[6];
+
+	 //make matrix place it just outside current bbox
+	transform_set(newface->matrix,1,0,0,1,(maxx>=minx?maxx:0),0);
+		
+	faces.push(newface,1);
+
+	 //for each edge of the newly dropped face, add potential/already taken tags
+	addPotentialsToFace(faces.n-1);
+
+	 //remove any potential links to the newly dropped face in all the other faces
+	clearPotentials(newface->original);
+
+	rebuildLines();
+
+	return 0;
+}
+
+//! Add the potential faces to net face number facenum.
+/*! Returns the number of faces added.
+ *
+ * If an edge is tagged Actual, but there is no edge->toface then, the edge is actually
+ * potential, and the potential face is added.
+ */
+int Net::addPotentialsToFace(int facenum)
+{
+	int n=0;
+	for (int c=0; c<faces.e[facenum]->edges.n; c++) {
+		if (findOriginalFace(faces.e[facenum]->edges.e[c]->tooriginal,1,-1)==1) {
+			 //face is already in the net, so mark edge as taken elsewhere
+			faces.e[facenum]->edges.e[c]->tag=FACE_Taken;
+		} else {
+			 //to-face is not laid down yet, so connect a potential face to the new face.
+			 //transform so pface is touching newface along proper edge
+			NetFace *pface=basenet->GetFace(faces.e[facenum]->edges.e[c]->tooriginal);
+			faces.e[facenum]->edges.e[c]->tag=FACE_Potential;
+			pface->tag=FACE_Potential;
+			faces.push(pface,1);
+			connectFaces(facenum,faces.n-1,c);
+			n++;
+		}
+	}
+	return n;
+}
+
+//! Clear any potential face that has the given original number.
+/*! This is called only when a face has been laid down, typicall with Anchor() or Unwrap().
+ * Usually the face will have been potential in several places, so the irrelevent potentials
+ * need to be updated to indicate that the face is taken elsewhere.
+ *
+ * After calling this function, rebuildLines() should be called.
+ *
+ * Return 0 for nothing changed, 1 for successful change, or 2 for original was somehow invalid.
+ */
+int Net::clearPotentials(int original)
+{
+	int changed=0;
+	for (int c=0; c<faces.n; c++) {
+		if (!(faces.e[c]->original==original && faces.e[c]->tag==FACE_Potential)) continue;
+
+		 //need to remove this whole face.
+		 //so for each edge, make the connecting face be tagged taken, with no toface link
+		for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
+			if (faces.e[c]->edges.e[c2]->toface>=0) {
+				 //blank out connecting actual face's link to this potential face
+				faces.e[faces.e[c]->edges.e[c2]->toface]
+					->edges[faces.e[c]->edges.e[c2]->tofaceedge]->toface=-1;
+				 //make connecting actual face's edge link say "taken"
+				faces.e[faces.e[c]->edges.e[c2]->toface]
+					->edges[faces.e[c]->edges.e[c2]->tofaceedge]->tag=FACE_Taken;
+			}
+		}
+		faces.remove(c);
+
+		 //now need to decrement by one links to faces >= c
+		for (int c2=0; c2<faces.n; c2++) {
+			for (int c3=0; c3<faces.e[c2]->edges.n; c3++) {
+				if (faces.e[c2]->edges.e[c3]->toface>c) //hopefully no more are == c
+					faces.e[c2]->edges.e[c3]->toface--;
+			}
+		}
+		
+		changed=1;
+		c--; //we want counter to stay at same number after being incremented...
+	}
+	return changed;
+}
+
+//! Connect net face f1 to net face f2 along edge e of f1.
+/*! If e<0 then autodetect the edge.
+ *
+ * This will change face f2's matrix so that it lies along the proper edge of 
+ * face f1. f1 will not be transformed at all.
+ *
+ * Return 0 for success, nonzero for error, and nothing changed.
+ *
+ * \todo *** implement bezier edge connecting via svalue.
+ * \todo *** right now assumes face normals all stick up, ignores flipflag
+ */
+int	Net::connectFaces(int f1,int f2,int ee)
+{
+	if (f1<0 || f1>=faces.n) return 1;
+	if (f2<0 || f2>=faces.n) return 2;
+	if (ee>=faces.e[f1]->edges.n) return 3;
+
+	NetFace *from=faces.e[f1],
+			*to=faces.e[f2];
+
+	 //if necessary, autodetect the correct edge to place the face
+	if (ee<0) {
+		for (int c=0; c<from->edges.n; c++) {
+			if (from->edges.e[c]->tooriginal==to->original) {
+				ee=c;
+				break; 
+			}
+		}
+	}
+
+	int e2=from->edges.e[ee]->tofaceedge;
+	flatpoint p1 =from->edges.e[ee]->points->fp,
+			  p2 =from->edges.e[(ee+1)%from->edges.n]->points->fp,
+			  pt2=  to->edges.e[e2]->points->fp,
+			  pt1=  to->edges.e[(e2+1)%to->edges.n]->points->fp;
+
+	from->edges.e[ee]->toface=f2;
+	to  ->edges.e[e2]->toface=f1;
+
+	if (!from->matrix) from->matrix=transform_identity(NULL);
+	if (!  to->matrix)   to->matrix=transform_identity(NULL);
+
+	//***figure out if it is f2a-f2b or f2b-f2a
+	
+	 //connect pt1 -> p1,  pt2 -> p2
+	p1 =transform_point(from->matrix,p1);
+	p2 =transform_point(from->matrix,p2);
+	pt1=transform_point(  to->matrix,pt1);
+	pt2=transform_point(  to->matrix,pt2);
+	
+	 // pt1*tm --> T --> p1*fm
+	 // pt2*tm --> T --> p2*fm
+	 //
+	 //   [ a b 0 ]
+	 // T=[ c d 0 ] --> [a,b,c,d,e,f]
+	 //   [ e f 1 ]
+	
+	 //transform
+	double a,b,c,d,e,f; //c=-b, a=d
+	double q1x,q1y,q2x,q2y, p1x,p1y,p2x,p2y, dd;
+	q1x=p1.x;
+	q1y=p1.y;
+	q2x=p2.x;
+	q2y=p2.y;
+	p1x=pt1.x;
+	p1y=pt1.y;
+	p2x=pt2.x;
+	p2y=pt2.y;
+	
+	dd=(p1x*p1x-p1x*p2x-p1y*p2y+p2x*p2x+p1y*p1y-p1y*p2y-p1x*p2x+p2y*p2y);
+	a=(q1x*(p1x-p2x)+q1y*(p1y-p2y)+q2x*(p2x-p1x)+q2y*(p2y-p1y))/dd;
+	b=(q1x*(p2y-p1y)+q1y*(p1x-p2x)+q2x*(p1y-p2y)+q2y*(p2x-p1x))/dd;
+	c=-b;
+	d=a;
+	e=(q1x*(p2x*p2x-p1y*p2y-p1x*p2x+p2y*p2y)+q1y*(p1x*p2y-p1y*p2x)+q2x*(p1x*p1x-p1x*p2x+p1y*p1y-p1y*p2y)+q2y*(p1y*p2x-p1x*p2y))/dd;
+	f=(q1x*(p1y*p2x-p1x*p2y)+q1y*(p2x*p2x-p1x*p2x-p1y*p2y+p2y*p2y)+q2x*(p1x*p2y-p1y*p2x)+q2y*(p1x*p1x-p1y*p2y+p1y*p1y-p1x*p2x))/dd;
+
+	double m[6];
+	m[0]=a;
+	m[1]=b;
+	m[2]=c;
+	m[3]=d;
+	m[4]=e;
+	m[5]=f;
+
+	double mm[6];
+	transform_mult(mm,to->matrix,m);
+	transform_copy(to->matrix,mm);
+
+	return 0;
+}
+
+//! For each edge of each face, make sure edge tag for potential/already-taken is set properly.
+/*! This will add net faces as necessary.
+ *
+ * This is called after a face is dropped down.
+ *
+ * \todo this should be more efficient
+ */
+int Net::validateNet()
+{
+	return 0;
+//	NumStack<int> taken;
+//	int c;
+//	for (c=0; c<faces.n; c++) 
+//		if (faces.e[c]->original>=0) taken.pushnodup(faces.e[c]->original);
+//	for (c=0; c<faces.n; c++) {
+//		if (faces.e[c]->tag==FACE_Potential && taken.findindex(faces.e[c]->original>=0)) {
+//			***remove this potential face:
+//				1. make any edge in any face that potentially points to this net face be AlreadyTaken
+//				2. pop from stack
+//				3. decrement index references >= this face's previous position
 //		}
-//		svg << "\"" <<pathclose <<endl;
-//	}
-//	svg << "</g>"<<endl;
-//	
-//	 //-------- draw tabs 
-//	 //The smallest angle that a tab has to scrunch into is 30 degrees
-//	 //The tabs are drawn on each alternate segment in array points
-//	svg << "<g>"<<endl; // group the tab lines to make easier to remove later
-//	flatpoint p1,p2,p3,v;
-//	for (c=0; c<np; c+=2) { // np should always be even
-//		p1=pp[c];
-//		p2=pp[c+1];
-//		v=(p2-p1)/2;
-//		v=-transpose(v)*tan(29./180*3.14159265359);
-//		p3=(p1+p2)/2+v/2;
-//
-//		svg << pathheader<<"d=\"M "<<p1.x<<' '<<p1.y<<" L "<<p3.x<<' '<<p3.y<<' '<<p2.x<<' '<<p2.y<< "\"" << pathclose <<endl;
-//	}
-//	svg <<"\t</g>\n";
-//		
-//	 // ***----------- draw months 
-//	 // m= month info:  [polygontype refpoint1 refpoint2]
-//	 // months are in order, starting from month,year passed to Draw
-//	SomeData *monthbox=NULL;
-//	for (c=0; c<nm; c++) {
-//		monthbox=GetMonthBox(c);
-//		SVGMonth(svg,1+(month+c)%12,year+(month+c)/12,monthbox);
-//	}
-//
-//	 // draw the images pointing to days.
-//	 // draws filled circle at x,y, then line 5*textheight up and right, 
-//	 // then image, scaled to 4*textheight
-//	if (images.n) {
-//		double scale,x2,y2,x,y,w,h,angle;
-//		svg <<"\t<g>\n";
-//		for (c=0; c<images.n; c++) {
-//			//***
-//			w=images.e[c]->width;
-//			h=images.e[c]->height;
-//			h*=images.e[c]->textheight*3/w;
-//			w=images.e[c]->textheight*3;
-////			w*=scaling;
-////			h*=scaling;
-//			if (images.e[c]->height) scale=w/h;
-//			else scale=1;
-//			x=images.e[c]->x;
-//			y=images.e[c]->y;
-//			x2=images.e[c]->x+images.e[c]->textheight*5;
-//			y2=images.e[c]->y+images.e[c]->textheight*5;
-//			svg <<"\t<path"<<endl
-//				 <<"\t\tstyle=\"opacity:1.0000000;color:#000000;fill:none;fill-opacity:1.0000000;fill-rule:evenodd;stroke:#008200;"
-//				 <<"stroke-width:"<<scaling
-//				 <<";stroke-linecap:butt;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-dashoffset:0.0000000;stroke-opacity:1.0000000;visibility:visible;display:inline;overflow:visible\""<<endl
-//				 <<"\t\td=\"M "<<x<<','<<y<<" C "
-//				 <<x+(x2-x)/3   <<','<< y+(y2-y)/3   << " "
-//				 <<x+(x2-x)*2/3 <<','<< y+(y2-y)*2/3 << " "
-//				 <<x2<<','<<y2<<"\"\n\t/>"<<endl;
-//			svg <<"\t<path"<<endl
-//				 <<"\t\tsodipodi:type=\"arc\""<<endl
-//				 <<"\t\tstyle=\"fill:#dbfffa;fill-opacity:1.0000000;stroke:#ff0000;stroke-width:0.44999999;stroke-miterlimit:4.0000000;stroke-dasharray:none;stroke-opacity:1.0000000\""<<endl
-//				 <<"\t\td=\"M "<<x+images.e[c]->textheight*1.1/2<<','<<y
-//				 <<" A "<<images.e[c]->textheight*1.1<<','<<images.e[c]->textheight*1.1<<" 0 1,1 "
-//				 <<x+images.e[c]->textheight*1.1/2<<','<<y<<" z\" />"<<endl;
-//			angle=180./M_PI*atan2(images.e[c]->m[1],images.e[c]->m[0]);
-//			svg <<"\t<image\n"
-//				 <<"\t\theight=\""<<h<<"\"\n"
-//				 <<"\t\twidth=\""<<w<<"\"\n"
-//				 <<"\t\txlink:href=\""<<images.e[c]->imagepath<<"\"\n"
-//				 //<<"\t\tx=\""<<x2-w/2<<"\"\n"
-//				 //<<"\t\ty=\""<<y2-h/2<<"\"\n"
-//				 <<"\t\ttransform=\"translate("<<x2-w/2<<","<<y2-h/2<<") rotate("<<angle<<")\""<<endl
-//				 <<"\t/>"<<endl;
-////			svg <<"\t<image\n"
-////				 <<"\t\theight=\""<<h<<"\"\n"
-////				 <<"\t\twidth=\""<<w<<"\"\n"
-////				 <<"\t\txlink:href=\""<<images.e[c]->imagepath<<"\"\n"
-////				 <<"\t\tx=\""<<x2-w/2<<"\"\n"
-////				 <<"\t\ty=\""<<y2-h/2<<"\"\n"
-////				 <<"\t\ttransform=\"rotate("<<angle<<")\""<<endl
-////				 <<"\t/>"<<endl;
-//
+//		for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
+//			***
 //		}
-//		svg <<"\t</g>\n";
 //	}
-//
-//	 // Close the net grouping
-//	svg <<"\t</g>\n";
-//	svg <<"\t</g>\n";
-//
-//	 // Print out footer
-//	svg << "\n</svg>\n";
-//}
-//
-////! Output to a postscript file. ***imp me!
-///*! caller must open and close the stream
-// */
-//void Net::PrintPS(ofstream &ps,SomeData *paper)
-//{//***
-//	ps <<"0 setgray";
-//	cout <<" postscript out *** imp me!"<<endl;
-//	return;
-//}
+}
+
+//! Reconstruct the stack of lines as necessary.
+/*! Lines that are tagged as automatically created will be deleted and replaced with new lines.
+ * This function is usually called after laying down or picking up faces.
+ *
+ *
+ * \todo *** FIXME! is lazy lines right now, poly line around every face...
+ */
+int Net::rebuildLines()
+{
+	cerr <<" ***need to do real implementation of Net::rebuildLines()..."<<endl;
+	 // remove auto lines from lines stack...
+	for (int c=lines.n-1; c>=0; c--) {
+		if (lines.e[c]->lineinfo==0) lines.remove(c);
+	}
+	
+	Coordinate *p,*nl,*nlp;
+	NetLine *l;
+	for (int c=0; c<faces.n; c++) {
+		nl=NULL;
+		for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
+			p=faces.e[c]->edges.e[c2]->points;
+			while (p) {
+				if (!nl) { nlp=nl=new Coordinate(); }
+				else { nlp->next=new Coordinate(); nlp->next->prev=nlp; nlp=nlp->next; }
+
+				if (faces.e[c]->matrix) nlp->fp=transform_point(faces.e[c]->matrix,p->fp);
+				else nlp->fp=p->fp;
+
+				p=p->next; 
+			}
+		}
+		nlp->next=nl;
+		nl->prev=nlp;
+		l=new NetLine();
+		l->points=nl;
+		l->lineinfo=0; //means autogenerated
+		lines.push(l,1);
+	}
+	return 0;
+}
+
+//! Find the net face index for an original face index of i.
+/*! 
+ * status==1 means return 1 for actual face found, else 0.
+ * status==2 means return 2 for potential face found, else 0.
+ * status==(any other number) means return 0 for face not found, 1 for actual face found,
+ * and 2 for potential face found.
+ *
+ * If startsearchhere>=0, then start lookind at net faces from net face index startsearchhere.
+ *
+ */
+int Net::findOriginalFace(int i,int status,int startsearchhere)
+{
+	int c;
+	for (c=(startsearchhere>=0?startsearchhere:0); c<faces.n; c++) {
+		if (faces.e[c]->original==i) {
+			if (status!=2 && faces.e[c]->tag==1) return 1;
+			else if (status!=1 && faces.e[c]->tag==2) return 2;
+		}
+	}
+	return 0;
+
+}
+
+//! Drop down the face connected to netfacei, edge number atedge.
+/*! If netfacei==-1, and ategde<0 then completly unwrap the whole of basenet.
+ *  If netfacei==-1, and ategde>=0 then drop original face with index atedge if
+ *  it has not already been dropped.
+ *
+ * If netfacei>=0 and atedge==-1, the drop down all faces connected to netfacei.
+ *
+ * If netfacei>=0 and atedge>=0, then drop down only the face connected to edge number 
+ * atedge of net nace number netfacei.
+ *
+ * Return 0 for success. Nonzero for error.
+ *
+ * \todo *** for dropping fresh faces, should do a bounding box check so no overlap
+ *   with existing faces
+ */
+int Net::Unwrap(int netfacei,int atedge)
+{
+	if (!basenet) return 1;
+	if (netfacei<0) {
+		 //unwrap all or drop a new seed face
+
+		if (atedge<0) { TotalUnwrap(); return 0; }
+		if (atedge>=basenet->NumFaces()) return 2;
+		if (findOriginalFace(atedge,1,0)==1) return 0;
+		 
+		 //drop down original face atedge
+		NetFace *face=basenet->GetFace(atedge);
+		face->tag=FACE_Actual;
+		faces.push(face,1);
+		addPotentialsToFace(faces.n-1);
+		DBG cout <<"------------------unwrap first--"<<endl;
+		DBG dump_out(stdout,0,0,NULL);
+		DBG cout <<"--------------------------------"<<endl;
+		return 0;
+	}
+	if (netfacei>=faces.n) return 3;
+	int s, e;
+	if (atedge>=0) s=e=atedge; else { s=0; e=faces.n-1; }
+
+	NetFace *f1=faces.e[netfacei],
+			*f2;
+	if (s<0 || s>=f1->edges.n || e<0 || e>=f1->edges.n) return 3;
+	int changed=0;
+	for (int c=s; c<e+1; c++) { //for each edge, drop a face
+		atedge=c;
+		if (f1->edges.e[c]->tag!=FACE_Potential) continue;
+
+		 // drop down that face
+		f2=faces.e[f1->edges.e[c]->toface];
+		f1->edges.e[c]->tag=FACE_Actual;
+		f2->tag=FACE_Actual;
+		clearPotentials(f2->original);
+		addPotentialsToFace(faces.findindex(f2));
+		changed=1;
+	}
+
+	if (changed) rebuildLines();
+
+	return 0;
+}
+
+//! For any edges with potential faces, unwrap there, until all is unwrapped.
+int Net::TotalUnwrap()
+{
+	if (!faces.n) Unwrap(-1,0);
+	if (!faces.n) return 1;
+	do {
+		for (int c=0; c<faces.n; c++) {
+			if (faces.e[c]->tag!=FACE_Actual) continue;
+			for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
+				if (faces.e[c]->edges.e[c2]->tag==FACE_Potential) Unwrap(c,c2);
+			}
+
+		}
+		break;
+	} while (1);
+	FindBBox();
+	return 0;
+}
+
+//! Pick up net face number netfacei.
+/*! The easy case is when netfacei connects to only one other actual face. In that case, netfacei
+ * becomes a potential face, rather than an actual one, and cutatedge is ignored.
+ *
+ * If netfacei connects to more than one other face, then edge number cutatedge of the face netfacei
+ * is used as a hint about which group of faces to keep. All faces connected to netfacei EXCEPT the 
+ * one on the other side of edge cutatedge are pulled up. If faces happen to make a loop including 
+ * the faces on both sides of cutadedge, then usually only netfacei is picked up, potentially creating
+ * several disconnected groups of faces.
+ *
+ * Return 0 for success, nonzero for error.
+ */
+int Net::PickUp(int netfacei,int cutatedge)
+{//***
+	cout <<"******** must implement Net::PickUp()"<<endl;
+	return 1;
+}
 

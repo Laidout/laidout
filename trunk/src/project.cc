@@ -73,11 +73,22 @@ ProjDocument::~ProjDocument()
  * \todo perhaps have count of links to the document. when count==only 1 for project, then
  *       unload the document
  */
+/*! \var char *Project::dir
+ * \brief Normally the project directory which contains the project file and other project subdirectories.
+ *
+ * When filename!=NULL, normally dir is just the directory part of filename.
+ * If dir==NULL wher filename!=NULL, then there is no specific project directory. Any
+ * resources are assumed to be contained in the users laidout directory. This allows 
+ * stand alone documents more complicated that single documents, but not so file heavy
+ * as whole project directories.
+ *
+ * \todo finish implementing this!!
+ */
 
 
 Project::Project()
 { 
-	name=filename=NULL;
+	name=filename=dir=NULL;
 	defaultdpi=300;
 }
 
@@ -87,6 +98,7 @@ Project::~Project()
 {
 	docs.flush();
 	if (name) delete[] name;
+	if (dir) delete[] dir;
 	if (filename) delete[] filename;
 }
 
