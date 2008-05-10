@@ -19,7 +19,8 @@ objs= \
 	impositions.o \
 	dodecahedron.o \
 	nets.o \
-	netimposition.o 
+	netimposition.o \
+	poly.o
 
 
 

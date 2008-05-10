@@ -15,11 +15,13 @@
 //
 
 
+#include "../language.h"
 #include "netimposition.h"
 #include "dodecahedron.h"
 #include "stylemanager.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
+#include <lax/refptrstack.cc>
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -61,7 +63,7 @@ using namespace std;
 NetImposition::NetImposition(Net *newnet)
 	: Imposition("Net")
 { 
-	net=NULL;
+	curnet=-1;
 	pagestyle=NULL;
 
 	 // setup default paperstyle and pagestyle
@@ -73,15 +75,15 @@ NetImposition::NetImposition(Net *newnet)
 
 	DBG cerr <<"   net 1"<<endl;
 	
-	if (!newnet) {
-		newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy);
-		SetNet(newnet);
-		newnet->dec_count();
-		netisbuiltin=1; //this line must be after SetNet
-	} else {
-		SetNet(newnet);
-		netisbuiltin=0;
-	}
+//	if (!newnet) {
+//		newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy);
+//		SetNet(newnet);
+//		newnet->info=-1; //***-1 here means net is a built in net
+//		newnet->dec_count();
+//	} else {
+//		SetNet(newnet);
+//		newnet->info=0; //***0 here means net is not a built in net
+//	}
 
 	DBG cerr <<"   net 2"<<endl;
 
@@ -97,11 +99,9 @@ NetImposition::NetImposition(Net *newnet)
 	DBG cerr <<"imposition netimposition init"<<endl;
 }
  
-//! Dec_count() of the net, and pagestyle.
 NetImposition::~NetImposition()
 {
-	if (net) net->dec_count();
-	pagestyle->dec_count();
+	//nets.flush();
 }
 
 //! Sets net to a builtin net.
@@ -115,62 +115,47 @@ int NetImposition::SetNet(const char *nettype)
 	if (!strcmp(nettype,"dodecahedron")) {
 		Net *newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy); //1 count
 		SetNet(newnet); //adds a count
+		newnet->info=-1; //***tag to mean net is builtin
 		newnet->dec_count(); //remove extra count
-		netisbuiltin=1;
 		return 0;	
 	}
 	return 1;
 }
 
 /*! Warning: transfers pointer, does not make duplicate.
- * Dec_count() on the old net, and inc_count() on the new net.
+ * Flush the nets stack, and inc_count() on the new net.
  *
  * NOTE that if newnet happens to be the same as the current net, its
  * count is NOT incremented.
+ *
+ * Sets the net then fits to paper.
  *
  * Return 0 if changed, 1 if not.
  */
 int NetImposition::SetNet(Net *newnet)
 {
 	if (!newnet) return 1;
-	if (net && net!=newnet) net->dec_count();
-	if (net!=newnet) newnet->inc_count();
-	net=newnet;
-	netisbuiltin=0;
+	newnet->inc_count();
+	newnet->info=0;//***tag says net is not built in
+	nets.flush();
 	
 	 // fit to page
 	SomeData page;
 	page.maxx=paper->media.maxx;
 	page.maxy=paper->media.maxy;
-	net->FitToData(&page,page.maxx*.05);
+	//newnet->FitToData(&page,page.maxx*.05);
 	setPage();
 
 	return 0;
 }
 
-//! Using the paper, create a new default pagestyle.
+//! Using a presumably new paper, scale the net to fit the new page.
+/*! NOTE: *** unimplemented
+ *
+ * \todo *** figure out if this is useful or not..
+ */
 void NetImposition::setPage()
 {
-	if (!paper) return;
-	if (pagestyle) pagestyle->dec_count();
-	pagestyle=new PageStyle();
-	pagestyle->pagetype=0;
-	if (!net || !net->nf) return;
-
-	 //find generic bounds of a face
-	 //  find transform from net point to paper face coords
-	DoubleBBox b;
-	double m[6],mm[6];
-
-	net->basisOfFace(0,m,0); // so m: (face) -> (net)
-	transform_invert(mm,m);  //   mm: (net) -> (face)
-
-	NetFace *f=&net->faces[0];
-	for (int c=0; c<f->np; c++) {
-		b.addtobounds(transform_point(mm,net->points[f->points[c]]));
-	}
-	pagestyle->width= b.maxx-b.minx;
-	pagestyle->height=b.maxy-b.miny;
 }
 
 //! The newfunc for Singles instances.
@@ -182,6 +167,8 @@ Style *NewNetImposition(StyleDef *def)
 }
 
 //! Return a new EnumStyle instance that has Dodecahedron listed.
+/*! \todo this has to be automated....
+ */
 Style *CreateNetListEnum(StyleDef *sd)
 {
 	EnumStyle *e=new EnumStyle;
@@ -195,8 +182,10 @@ Style *CreateNetListEnum(StyleDef *sd)
  */
 StyleDef *NetImposition::makeStyleDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"NetImposition","Net",
-			"Imposition of a fairly arbitrary net",
+	StyleDef *sd=new StyleDef(NULL,
+			"NetImposition",
+			_("Net"),
+			_("Imposition of a fairly arbitrary net"),
 			NULL,
 			Element_Fields,
 			NULL,NULL,
@@ -205,15 +194,15 @@ StyleDef *NetImposition::makeStyleDef()
 			NewNetImposition);
 
 	sd->push("printnet",
-			"Print Net",
-			"Whether to show the net outline when printing out a document.",
+			_("Print Net"),
+			_("Whether to show the net outline when printing out a document."),
 			NULL,
 			Element_Boolean,
 			NULL, "1",
 			0,0);
 	sd->push("net",
-			"Net",
-			"What kind of net is the imposition using",
+			_("Net"),
+			_("What kind of net is the imposition using"),
 			NULL,
 			Element_DynamicEnum,
 			NULL, "0",
@@ -230,14 +219,10 @@ Style *NetImposition::duplicate(Style *s)//s=NULL
 	if (!d) return NULL;
 	
 	 // copy net
-	if (d->net) d->net->dec_count();
-	if (netisbuiltin) d->net=net->duplicate();
-	else {
-		net->inc_count();
-		d->net=net;
+	if (d->nets.n) d->nets.flush();
+	for (int c=0; c<nets.n; c++) {
+		d->nets.push(nets.e[c]->duplicate(),1);
 	}
-	d->netisbuiltin=netisbuiltin;
-	d->setPage();
 		
 	return s;
 }
@@ -256,18 +241,19 @@ int NetImposition::SetPaperSize(PaperStyle *npaper)
  * Local styles have count of 1, nonlocal increases the default's count by 1.
  */
 PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
-{
-	if (!pagestyle) return NULL;
-	PageStyle *ps=NULL;
-	if (local || PageType(pagenum)!=pagestyle->pagetype) {
-		ps=(PageStyle *)pagestyle->duplicate();
-		ps->pagetype=PageType(pagenum);
-		ps->flags|=PAGESTYLE_AUTONOMOUS;
-	} else {
-		pagestyle->inc_count();
-		ps=pagestyle;
-	}
-	return ps;
+{//***
+	return NULL;
+//	if (!pagestyle) return NULL;
+//	PageStyle *ps=NULL;
+//	if (local || PageType(pagenum)!=pagestyle->pagetype) {
+//		ps=(PageStyle *)pagestyle->duplicate();
+//		ps->pagetype=PageType(pagenum);
+//		ps->flags|=PAGESTYLE_AUTONOMOUS;
+//	} else {
+//		pagestyle->inc_count();
+//		ps=pagestyle;
+//	}
+//	return ps;
 }
 
 
@@ -282,18 +268,19 @@ PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
  */
 Page **NetImposition::CreatePages()
 {
-	if (numpages==0) return NULL;
-	Page **pages=new Page*[numpages+1];
-	int c;
-	PageStyle *ps;
-	for (c=0; c<numpages; c++) {
-		 // pagestyle is passed to Page where its count is inc'd..
-		ps=GetPageStyle(c,0); //count of 1
-		pages[c]=new Page(ps,0,c);
-		ps->dec_count(); //remove extra count
-	}
-	pages[c]=NULL;
-	return pages;
+	return NULL;
+//	if (numpages==0) return NULL;
+//	Page **pages=new Page*[numpages+1];
+//	int c;
+//	PageStyle *ps;
+//	for (c=0; c<numpages; c++) {
+//		 // pagestyle is passed to Page where its count is inc'd..
+//		ps=GetPageStyle(c,0); //count of 1
+//		pages[c]=new Page(ps,0,c);
+//		ps->dec_count(); //remove extra count
+//	}
+//	pages[c]=NULL;
+//	return pages;
 }
 
 
@@ -312,34 +299,36 @@ Page **NetImposition::CreatePages()
  */
 LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 {
+	if (curnet<0) return NULL;
 	if (pagenum<0 || pagenum>=numpages) return NULL;
-	int pg=pagenum%net->nf;
+	int pg=pagenum%nets.e[curnet]->faces.n;
 	PathsData *newpath=new PathsData(); //count==1
 	
-	 // find transform from paper coords to page coords 
-	 //  (this here is specifically (paper face coords)->(paper),
-	 //   which is slightly different from real page coords. Assumption here
-	 //   is that page lengths are the same as paper lengths)
-	double m[6],mm[6];
-	net->basisOfFace(pg,m,1);
-
-	transform_copy(newpath->m(),m); // newpath->m: (face) -> (paper)
-	
-	transform_invert(m,newpath->m()); // m: (paper) -> (face)
-	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
-	
-	flatpoint p[net->faces[pg].np];
-	DBG cerr <<"NetImposition::GetPage:\n";
-	for (int c=0; c<net->faces[pg].np; c++) {
-		 // transform the net point to page coordinates
-		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
-		DBG cerr <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
-	}
-	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
-	newpath->close();
-	newpath->FindBBox();
-
-	return newpath;
+	return NULL;
+//	 // find transform from paper coords to page coords 
+//	 //  (this here is specifically (paper face coords)->(paper),
+//	 //   which is slightly different from real page coords. Assumption here
+//	 //   is that page lengths are the same as paper lengths)
+//	double m[6],mm[6];
+//	net->basisOfFace(pg,m,1);
+//
+//	transform_copy(newpath->m(),m); // newpath->m: (face) -> (paper)
+//	
+//	transform_invert(m,newpath->m()); // m: (paper) -> (face)
+//	transform_mult(mm,net->m(),m); // so this is (net point)->(paper)->(paper face)
+//	
+//	flatpoint p[net->faces[pg].np];
+//	DBG cerr <<"NetImposition::GetPage:\n";
+//	for (int c=0; c<net->faces[pg].np; c++) {
+//		 // transform the net point to page coordinates
+//		p[c]=transform_point(mm,net->points[net->faces[pg].points[c]]);
+//		DBG cerr <<"  p"<<c<<": "<<p[c].x<<","<<p[c].y<<endl;
+//	}
+//	for (int c=0; c<net->faces[pg].np; c++) newpath->append(p[c].x,p[c].y);
+//	newpath->close();
+//	newpath->FindBBox();
+//
+//	return newpath;
 }
 
 Spread *NetImposition::SingleLayout(int whichpage)
@@ -357,114 +346,115 @@ Spread *NetImposition::SingleLayout(int whichpage)
  */
 Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 {
-	if (!net) return NULL;
+	if (curnet<0) return NULL;
+	return NULL;
 	
-	DBG cerr <<"--Build Net Single Layout with adjacent--"<<endl;
-	Spread *spread=new Spread();
-	spread->style=SPREAD_PAGE;
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
-
-	int basepage=whichpage%net->nf;
-
-	 // fill pagestack
-	SomeData *newpath;
-
-	 // create base page
-	 // This returns the page outline, with the transform to its place in the net
-	 // in a whole spread.
-	newpath=GetPage(whichpage%net->nf,0); // transformed page, count at least 1 more
-	spread->pagestack.push(new PageLocation(whichpage,NULL,newpath)); //incs newpath count
-	double baseinv[6];
-	transform_invert(baseinv,newpath->m());
-	transform_identity(newpath->m()); // make the base page have origin at viewer (0,0)
-	newpath->dec_count();//remove extra count
-
-	 // add on any adjacent that can be found..
-	 // ***ultimately this would be done with facelink, this is the long way around.
-	int p1,p2,dir=1; // edge match is p1 and p2, dir=-1 means p1,p2 in matched actually goes p2,p1
-	int c,c2,c3;
-	for (c=0; c<net->faces[basepage].np; c++) {
-		p1=net->pointmap[net->faces[basepage].points[c]];
-		p2=net->pointmap[net->faces[basepage].points[(c+1)%net->faces[basepage].np]];
-		if (p1==-1 || p2==-1) continue;
-
-		 // search every other face for edges matching p1--p2
-		for (c2=0; c2<net->nf; c2++) {
-			if (c2==basepage) continue;
-			for (c3=0; c3<net->faces[c2].np; c3++) {
-				if (net->pointmap[net->faces[c2].points[c3]]==p1) {
-					if (net->pointmap[net->faces[c2].points[(c3+1)%net->faces[c2].np]]==p2) break;
-					if (net->pointmap[net->faces[c2].points[(c3+net->faces[c2].np-1)%net->faces[c2].np]]==p2) {
-						dir=-1;
-						break;
-					}
-				}
-			}
-			if (c3!=net->faces[c2].np) break; // found a match
-		}
-		if (c2!=net->nf) {
-			DBG cerr <<"----found a match with face #"<<c2<<endl;
-			 // found a match with face c2. p1 and p2 get assigned back to flat point indices:
-			 // Original edge is p1--p2, corresponding to c--(c+1)%net->faces[basepage]->np
-			 //  matched edge is q1--q2
-			int q1=c3,q2=q1+dir;
-			if (q2<0) q2+=net->faces[c2].np;
-			q2%=net->faces[c2].np;
-			p1=c;
-			p2=(c+1)%net->faces[basepage].np;
-
-			 // find transform of face c2 from its normal place in the net to its
-			 // place adjacent to basepage
-			flatpoint o1,o2,x1,x2,y1,y2,p;
-			o1=transform_point(net->m(),net->points[net->faces[basepage].points[p1]]);
-			x1=transform_point(net->m(),net->points[net->faces[basepage].points[p2]])-o1;
-			y1=transpose(x1);
-
-			o2=transform_point(net->m(),net->points[net->faces[c2].points[q1]]);
-			x2=transform_point(net->m(),net->points[net->faces[c2].points[q2]])-o2;
-			y2=transpose(x2);
-
-			double M[6],  // matrix before
-				   M2[6], // matrix after 
-				   U[6],  // M2 * U * M^-1 == I,  U == M2^-1 * M
-				   T[6];  // temp matrix
-			 // Basic linear algebra: Transform a generic M to M2. Find N. This same N
-			 //  transforms any other affine matrix. The transform for the adjacent page is
-			 //  found with: adj->m() == adj_orig->m() * N * basepage->m()^-1
-			transform_from_basis(M ,o1,x1,y1);
-			transform_from_basis(M2,o2,x2,y2);
-			transform_invert(T,M2);
-			transform_mult(U,T,M);
-			
-			newpath=GetPage(c2,0); // transformed page, count at least 1 more
-			if (newpath) {
-				transform_mult(T,U,baseinv);
-				transform_mult(M2,newpath->m(),T);
-				transform_copy(newpath->m(),M2);
-					
-				 // push face onto pagestack
-				spread->pagestack.push(new PageLocation(c2,NULL,newpath)); //incs newpath count
-				newpath->dec_count();//remove extra count
-			}
-		}
-	}
-
-	 // fill spread with net outline
-	 //***** should have outline of all the faces present
-	SomeData *npath=GetPage(whichpage,0);
-	transform_identity(npath->m());
-	spread->path=npath;
-	
-	 // define max/min points
-	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
-		else newpath=npath;
-	spread->minimum=transform_point(newpath->m(),
-			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-	spread->maximum=transform_point(newpath->m(),
-			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-
-	DBG cerr <<"--end Build Net Single Layout with adjacent--"<<endl;
-	return spread;
+//	DBG cerr <<"--Build Net Single Layout with adjacent--"<<endl;
+//	Spread *spread=new Spread();
+//	spread->style=SPREAD_PAGE;
+//	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+//
+//	int basepage=whichpage%net->nf;
+//
+//	 // fill pagestack
+//	SomeData *newpath;
+//
+//	 // create base page
+//	 // This returns the page outline, with the transform to its place in the net
+//	 // in a whole spread.
+//	newpath=GetPage(whichpage%net->nf,0); // transformed page, count at least 1 more
+//	spread->pagestack.push(new PageLocation(whichpage,NULL,newpath)); //incs newpath count
+//	double baseinv[6];
+//	transform_invert(baseinv,newpath->m());
+//	transform_identity(newpath->m()); // make the base page have origin at viewer (0,0)
+//	newpath->dec_count();//remove extra count
+//
+//	 // add on any adjacent that can be found..
+//	 // ***ultimately this would be done with facelink, this is the long way around.
+//	int p1,p2,dir=1; // edge match is p1 and p2, dir=-1 means p1,p2 in matched actually goes p2,p1
+//	int c,c2,c3;
+//	for (c=0; c<net->faces[basepage].np; c++) {
+//		p1=net->pointmap[net->faces[basepage].points[c]];
+//		p2=net->pointmap[net->faces[basepage].points[(c+1)%net->faces[basepage].np]];
+//		if (p1==-1 || p2==-1) continue;
+//
+//		 // search every other face for edges matching p1--p2
+//		for (c2=0; c2<net->nf; c2++) {
+//			if (c2==basepage) continue;
+//			for (c3=0; c3<net->faces[c2].np; c3++) {
+//				if (net->pointmap[net->faces[c2].points[c3]]==p1) {
+//					if (net->pointmap[net->faces[c2].points[(c3+1)%net->faces[c2].np]]==p2) break;
+//					if (net->pointmap[net->faces[c2].points[(c3+net->faces[c2].np-1)%net->faces[c2].np]]==p2) {
+//						dir=-1;
+//						break;
+//					}
+//				}
+//			}
+//			if (c3!=net->faces[c2].np) break; // found a match
+//		}
+//		if (c2!=net->nf) {
+//			DBG cerr <<"----found a match with face #"<<c2<<endl;
+//			 // found a match with face c2. p1 and p2 get assigned back to flat point indices:
+//			 // Original edge is p1--p2, corresponding to c--(c+1)%net->faces[basepage]->np
+//			 //  matched edge is q1--q2
+//			int q1=c3,q2=q1+dir;
+//			if (q2<0) q2+=net->faces[c2].np;
+//			q2%=net->faces[c2].np;
+//			p1=c;
+//			p2=(c+1)%net->faces[basepage].np;
+//
+//			 // find transform of face c2 from its normal place in the net to its
+//			 // place adjacent to basepage
+//			flatpoint o1,o2,x1,x2,y1,y2,p;
+//			o1=transform_point(net->m(),net->points[net->faces[basepage].points[p1]]);
+//			x1=transform_point(net->m(),net->points[net->faces[basepage].points[p2]])-o1;
+//			y1=transpose(x1);
+//
+//			o2=transform_point(net->m(),net->points[net->faces[c2].points[q1]]);
+//			x2=transform_point(net->m(),net->points[net->faces[c2].points[q2]])-o2;
+//			y2=transpose(x2);
+//
+//			double M[6],  // matrix before
+//				   M2[6], // matrix after 
+//				   U[6],  // M2 * U * M^-1 == I,  U == M2^-1 * M
+//				   T[6];  // temp matrix
+//			 // Basic linear algebra: Transform a generic M to M2. Find N. This same N
+//			 //  transforms any other affine matrix. The transform for the adjacent page is
+//			 //  found with: adj->m() == adj_orig->m() * N * basepage->m()^-1
+//			transform_from_basis(M ,o1,x1,y1);
+//			transform_from_basis(M2,o2,x2,y2);
+//			transform_invert(T,M2);
+//			transform_mult(U,T,M);
+//			
+//			newpath=GetPage(c2,0); // transformed page, count at least 1 more
+//			if (newpath) {
+//				transform_mult(T,U,baseinv);
+//				transform_mult(M2,newpath->m(),T);
+//				transform_copy(newpath->m(),M2);
+//					
+//				 // push face onto pagestack
+//				spread->pagestack.push(new PageLocation(c2,NULL,newpath)); //incs newpath count
+//				newpath->dec_count();//remove extra count
+//			}
+//		}
+//	}
+//
+//	 // fill spread with net outline
+//	 //***** should have outline of all the faces present
+//	SomeData *npath=GetPage(whichpage,0);
+//	transform_identity(npath->m());
+//	spread->path=npath;
+//	
+//	 // define max/min points
+//	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
+//		else newpath=npath;
+//	spread->minimum=transform_point(newpath->m(),
+//			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+//	spread->maximum=transform_point(newpath->m(),
+//			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+//
+//	DBG cerr <<"--end Build Net Single Layout with adjacent--"<<endl;
+//	return spread;
 }
 
 /*! \fn Spread *NetImposition::PageLayout(int whichspread)
@@ -477,53 +467,54 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
  */
 Spread *NetImposition::PageLayout(int whichspread)
 {
-	if (!net) return NULL;
-	
-	Spread *spread=new Spread();
-	spread->style=SPREAD_PAGE;
-	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
-
-	int firstpage=whichspread*net->nf;
-
-	 // fill pagestack
-	SomeData *newpath;
-	int c;
-	for (int c=0; c<net->nf; c++) {
-		if (firstpage+c>=numpages) break;
-		newpath=GetPage(c,0); // transformed page, count at least 1 more
-		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath)); //incs newpath count
-		newpath->dec_count();//remove extra count
-	}
-
-	 // fill spread with net outline
-	PathsData *npath=new PathsData();
-	int c2;
-	for (c=0; c<net->nl; c++) {
-		npath->pushEmpty();
-		for (c2=0; c2<net->lines[c].np; c2++) {
-			npath->append(transform_point(net->m(),net->points[net->lines[c].points[c2]]));
-			if (net->lines[c].isclosed) npath->close();
-		}
-	}
-	npath->FindBBox();
-	spread->path=npath;
-	
-	 // define max/min points
-	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
-		else newpath=npath;
-	spread->minimum=transform_point(newpath->m(),
-			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-	spread->maximum=transform_point(newpath->m(),
-			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
-
-	return spread;
+	if (curnet<0) return NULL;
+	return NULL;
+//	
+//	Spread *spread=new Spread();
+//	spread->style=SPREAD_PAGE;
+//	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+//
+//	int firstpage=whichspread*net->nf;
+//
+//	 // fill pagestack
+//	SomeData *newpath;
+//	int c;
+//	for (int c=0; c<net->nf; c++) {
+//		if (firstpage+c>=numpages) break;
+//		newpath=GetPage(c,0); // transformed page, count at least 1 more
+//		spread->pagestack.push(new PageLocation(firstpage+c,NULL,newpath)); //incs newpath count
+//		newpath->dec_count();//remove extra count
+//	}
+//
+//	 // fill spread with net outline
+//	PathsData *npath=new PathsData();
+//	int c2;
+//	for (c=0; c<net->nl; c++) {
+//		npath->pushEmpty();
+//		for (c2=0; c2<net->lines[c].np; c2++) {
+//			npath->append(transform_point(net->m(),net->points[net->lines[c].points[c2]]));
+//			if (net->lines[c].isclosed) npath->close();
+//		}
+//	}
+//	npath->FindBBox();
+//	spread->path=npath;
+//	
+//	 // define max/min points
+//	if (spread->pagestack.n) newpath=spread->pagestack.e[0]->outline;
+//		else newpath=npath;
+//	spread->minimum=transform_point(newpath->m(),
+//			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+//	spread->maximum=transform_point(newpath->m(),
+//			flatpoint(newpath->maxx,newpath->miny+(newpath->maxy-newpath->miny)/2));
+//
+//	return spread;
 }
 
 //! Returns same as PageLayout, but with the paper outline included.
 Spread *NetImposition::PaperLayout(int whichpaper)
 {
-	if (!net) return NULL;
-	Spread *spread=PageLayout(whichpaper*net->nf);
+	if (curnet<0) return NULL;
+	Spread *spread=PageLayout(whichpaper*nets.e[curnet]->faces.n);
 	spread->style=SPREAD_PAPER;
 
 	PathsData *path=static_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
@@ -547,29 +538,29 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 //! Returns pagenumber/net->nf.
 int NetImposition::PaperFromPage(int pagenumber)
 {
-	if (!net) return 0;
-	return pagenumber/net->nf;
+	if (curnet<0) return 0;
+	return pagenumber/nets.e[curnet]->faces.n;
 }
 
 //! Returns pagenumber/net->nf.
 int NetImposition::SpreadFromPage(int pagenumber)
 {
-	if (!net) return 0;
-	return pagenumber/net->nf;
+	if (curnet<0) return 0;
+	return pagenumber/nets.e[curnet]->faces.n;
 }
 
 //! Returns npapers*net->nf.
 int NetImposition::GetPagesNeeded(int npapers)
 {
-	if (!net) return 0;
-	return npapers*net->nf;
+	if (curnet<0) return 0;
+	return npapers*nets.e[curnet]->faces.n;
 }
 
 //! Returns (npages-1)/net->nf+1.
 int NetImposition::GetPapersNeeded(int npages)
 {
-	if (!net) return 0;
-	return (npages-1)/net->nf+1;
+	if (curnet<0) return 0;
+	return (npages-1)/nets.e[curnet]->faces.n+1;
 }
 
 //! Same as GetPapersNeeded().
@@ -589,8 +580,8 @@ int *NetImposition::PrintingPapers(int frompage,int topage)
 {
 	int fp,tp;
 	if (topage<frompage) { tp=topage; topage=frompage; frompage=tp; }
-	fp=frompage/net->nf;
-	tp=topage/net->nf;
+	fp=frompage/nets.e[curnet]->faces.n;
+	tp=topage/nets.e[curnet]->faces.n;
 	if (fp==tp) {
 		int *i=new int[3];
 		i[0]=fp;
@@ -610,7 +601,7 @@ int *NetImposition::PrintingPapers(int frompage,int topage)
  */
 int NetImposition::PageType(int page)
 {
-	return page/net->nf;
+	return page/nets.e[curnet]->faces.n;
 }
 
 //! For now assuming only 1 spread type, which is same as paper spread. Returns 0.
@@ -638,7 +629,7 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 		fprintf(f,"%snumpages 3   #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sprintnet yes #whether the net lines get printed out with the page data\n",spc);
 		fprintf(f,"%snet NetType  #if NetType is a built in net, then the subattributes are not necessary\n",spc);
-		if (net) net->dump_out(f,indent+2,-1,NULL);
+		if (curnet>=0) nets.e[curnet]->dump_out(f,indent+2,-1,NULL);
 		else {
 			Net n;
 			n.dump_out(f,indent+2,-1,NULL);
@@ -654,12 +645,12 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 //	}
 	if (printnet) fprintf(f,"%sprintnet\n",spc);
 		else fprintf(f,"%sprintnet false\n",spc);
-	if (net) {
+	if (curnet>0) {
 		fprintf(f,"%snet",spc);
-		if (netisbuiltin) fprintf(f," %s\n",net->whatshape());
+		if (nets.e[curnet]->info==-1) fprintf(f," %s\n",nets.e[curnet]->whatshape());
 		else {
 			fprintf(f,"\n");
-			net->dump_out(f,indent+2,0,context); // dump out a custom net
+			nets.e[curnet]->dump_out(f,indent+2,0,context); // dump out a custom net
 		}
 	}
 }
@@ -689,7 +680,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 				tempnet->dec_count();
 
 				DBG cerr <<"-----------after dump_in net and set----------"<<endl;
-				DBG net->dump_out(stderr,2,0,NULL);
+				DBG nets.e[curnet]->dump_out(stderr,2,0,NULL);
 				DBG cerr <<"-----------end netimpos..----------"<<endl;
 			}
 		} else if (!strcmp(name,"printnet")) {

@@ -18,14 +18,17 @@
 
 #include "imposition.h"
 #include "nets.h"
+#include "poly.h"
 
 class NetImposition : public Imposition
 {
  public:
 	PageStyle *pagestyle;
-	Net *net;
-	int netisbuiltin;
+	Laxkit::RefPtrStack<Net> nets;
+	int curnet;
 	int printnet;
+
+	Polyhedron *polyhedron;
 
 	NetImposition(Net *newnet=NULL);
 	virtual ~NetImposition();

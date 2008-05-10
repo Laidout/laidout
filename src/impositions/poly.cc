@@ -727,6 +727,26 @@ double Polyhedron::angle(int a, int b,int dec) /* uses planes, not faces */
 }
 
 
+void Polyhedron::AddPoint(spacepoint p)
+{
+	vertices.push(p);
+}
+
+void Polyhedron::AddPoint(double x,double y,double z)
+{
+	vertices.push(spacepoint(x,y,z));
+}
+
+/*! \todo *** need to validate the new face?
+ */
+int Polyhedron::AddFace(const char *str)
+{
+	Face *f=new Face();
+	IntListAttribute(str,&f->p,&f->pn);
+	faces.push(f,1);
+	return 0;
+}
+
 //---------------------------------- dump functions:
 
 //! Save a polyhedron in indented data format.
@@ -1143,6 +1163,8 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 //! Try to read in the file.
 /*! The file can be an OFF file (see dumpInOFF()), or a so-called Polyp file, which is the
  * native indented file format for this class.
+ *
+ * Return 0 for success, nonzero for error.
  */
 int Polyhedron::dumpInFile(const char *file, char **error_ret)
 {

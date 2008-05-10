@@ -131,6 +131,11 @@ class Polyhedron :
 	plane planeofface(int fce,char centr=1);
 	double angle(int a, int b,int dec=0); /* uses planes, not faces */
 
+	 //building functions
+	virtual void AddPoint(spacepoint p);
+	virtual void AddPoint(double x,double y,double z);
+	virtual int  AddFace(const char *str);
+
 	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 
