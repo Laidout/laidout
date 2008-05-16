@@ -88,7 +88,7 @@ const NetLine &NetLine::operator=(const NetLine &l)
 		Coordinate *pl=l.points,
 				   *p=NULL;
 		while (pl) {
-			if (!p) p=new Coordinate(*pl);
+			if (!p) p=points=new Coordinate(*pl);
 			else {
 				p->next=new Coordinate(*pl);
 				p->next->prev=p;
@@ -187,7 +187,7 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"points")) {
 			if (points) delete[] points;
-			points=SvgToCoordinate(val,0,NULL);
+			points=SvgToCoordinate(value,0,NULL);
 		} else if (!strcmp(name,"linestyle")) {
 			if (!linestyle) {
 				linestyle=new LineStyle();
@@ -210,7 +210,10 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
  * \brief Arbitrary number assigned to this edge. Meaning depends on the application.
  */
 /*! \var int NetFaceEdge::toface
- * \brief Index in a Net of the face that this edge connects to.
+ * \brief Net face index that this edge connects to.
+ *
+ * The face connecting to it must actually be connecting to it. If the original face is
+ * somewhere else in the net, then toface would be -1, and the edge tag would be FACE_Taken.
  */
 /*! \var int NetFaceEdge::tofaceedge
  * \brief Which edge of toface that this edge connects to.
@@ -499,9 +502,17 @@ void NetFace::dumpOut(FILE *f,int indent,int what)
 		if (edges.e[c]->points) {
 			fprintf(f,"%s  points \\\n",spc);
 			Coordinate *p=edges.e[c]->points;
+			char scratch[500];
 			while (p) {
-				if (p->flags&POINT_VERTEX) fprintf(f,"%s    %.10g %.10g\n",spc,p->fp.x,p->fp.y);
-				else fprintf(f,"%s    c %.10g %.10g\n",spc,p->fp.x,p->fp.y);
+				if (p->flags&POINT_VERTEX) {
+					sprintf(scratch,"%s    %.10g %.10g\n",spc,p->fp.x,p->fp.y);
+					fprintf(f,"%s",scratch);
+				} else {
+					sprintf(scratch,"%s    c %.10g %.10g\n",spc,p->fp.x,p->fp.y);
+					fprintf(f,"%s",scratch);
+				}
+				//if (p->flags&POINT_VERTEX) fprintf(f,"%s    %.10g %.10g\n",spc,p->fp.x,p->fp.y);
+				//else fprintf(f,"%s    c %.10g %.10g\n",spc,p->fp.x,p->fp.y);
 				p=p->next;
 			}
 		}
@@ -532,6 +543,7 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"matrix")) {
+			if (!matrix) matrix=new double[6];
 			DoubleListAttribute(value,matrix,6);
 		} else if (!strcmp(name,"back")) {
 			isfront=!BooleanAttribute(value);
@@ -542,7 +554,7 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 		} else if (!strcmp(name,"original")) {
 			IntAttribute(value,&original);
 		} else if (!strcmp(name,"edge")) {
-			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c++) {
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name= att->attributes.e[c]->attributes.e[c2]->name;
 				value=att->attributes.e[c]->attributes.e[c2]->value;
 				edge=new NetFaceEdge;
@@ -784,8 +796,11 @@ Net *Net::duplicate()
 //	return n;
 //}
 
-//! Return the outline of an individual net face, in net coordinates.
-/*! Sets p to a new flatpoint[], and n to the number of points in p.
+//! Return the outline of an individual net face.
+/*! If convert==0, then the points are in face coordinates. Otherwise, they
+ * are in net coordinates.
+ *
+ * Sets p to a new flatpoint[], and n to the number of points in p.
  * If the line has any bezier control points, then p is a list of points
  * in the form control-vertex-control-control-vertex-control-etc, and 2 is returned.
  * Otherwise, the path is a polyline, and 1 is returned.
@@ -796,7 +811,7 @@ Net *Net::duplicate()
  *   vertex, and vertices exist between a NEXT and PREV coordinate.. should
  *   probably check for validity?
  */
-int Net::pathOfFace(int i, int *n, flatpoint **p)
+int Net::pathOfFace(int i, int *n, flatpoint **p, int convert)
 {
 	if (i<0 || i>=faces.n) return 0;
 	NumStack<flatpoint> pts;
@@ -832,6 +847,11 @@ int Net::pathOfFace(int i, int *n, flatpoint **p)
 		pts.push(pts.e[pts.n-1],0);
 		pts.pop(pts.n-1);
 	}
+	if (convert && faces.e[i]->matrix) {
+		for (int c=0; c<pts.n; c++) {
+			pts.e[c]=transform_point(faces.e[i]->matrix,pts.e[c]);
+		}
+	}
 	*p=pts.extractArray(n);
 	if (isbez) return 2;
 	return 1;
@@ -846,7 +866,7 @@ int Net::pointinface(flatpoint pp)
 	int c,t,n;
 	flatpoint *pts=NULL;
 	for (c=0; c<faces.n; c++) {
-		t=pathOfFace(c,&n,&pts);
+		t=pathOfFace(c,&n,&pts,1);
 		if (t==1) { if (point_is_in(pp,pts,n)) t=1000; }
 		else if (t==2) { if (point_is_in_bez(pp,pts,n)) t=1000; }
 
@@ -871,7 +891,7 @@ void Net::FindBBox()
 	Coordinate *cc;
 	for (int c=0; c<lines.n; c++) {
 		cc=lines.e[c]->points;
-		do {
+		if (cc) do {
 			addtobounds(cc->fp);
 			cc=cc->next;
 			if (cc==lines.e[c]->points) cc=NULL;
@@ -997,9 +1017,14 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 	if (faces.n) {
 		for (int c=0; c<faces.n; c++) {
+			DBG cerr <<"dump out face "<<c<<endl;
 			fprintf(f,"%sface\n",spc);
 			faces.e[c]->dumpOut(f,indent+2,0);
 		}
+	}
+	if (f!=stdout && f!=stderr) {
+		//fclose(f);
+		//exit(1);
 	}
 }
 
@@ -1068,6 +1093,17 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 	DBG cerr <<"----------------this was set in Net:-------------"<<endl;
 	DBG dump_out(stderr,0,0,NULL);
 	DBG cerr <<"----------------end Net dump:-------------"<<endl;
+}
+
+//! Clear the net, and install newbasenet to basenet.
+/*! This inc's count of newbasenet.
+ */
+int Net::Basenet(AbstractNet *newbasenet)
+{
+	clear();
+	newbasenet->inc_count();
+	basenet=newbasenet;
+	return 0;
 }
 
 //! From a file reference, load the base abstract net.
@@ -1346,6 +1382,11 @@ int Net::addPotentialsToFace(int facenum)
 {
 	int n=0;
 	for (int c=0; c<faces.e[facenum]->edges.n; c++) {
+		 //skip edges already connected to something
+		if (faces.e[facenum]->edges.e[c]->toface>=0) continue;
+
+		 //add potentials to bare edges when that original face is not
+		 //already down somewhere
 		if (findOriginalFace(faces.e[facenum]->edges.e[c]->tooriginal,1,-1)==1) {
 			 //face is already in the net, so mark edge as taken elsewhere
 			faces.e[facenum]->edges.e[c]->tag=FACE_Taken;
@@ -1363,7 +1404,7 @@ int Net::addPotentialsToFace(int facenum)
 	return n;
 }
 
-//! Clear any potential face that has the given original number.
+//! Clear any potential face anywhere in the net that has the given original number.
 /*! This is called only when a face has been laid down, typicall with Anchor() or Unwrap().
  * Usually the face will have been potential in several places, so the irrelevent potentials
  * need to be updated to indicate that the face is taken elsewhere.
@@ -1406,8 +1447,8 @@ int Net::clearPotentials(int original)
 	return changed;
 }
 
-//! Connect net face f1 to net face f2 along edge e of f1.
-/*! If e<0 then autodetect the edge.
+//! Connect net face f1 to net face f2 along edge ee of f1.
+/*! If ee<0 then autodetect the edge.
  *
  * This will change face f2's matrix so that it lies along the proper edge of 
  * face f1. f1 will not be transformed at all.
@@ -1436,20 +1477,20 @@ int	Net::connectFaces(int f1,int f2,int ee)
 		}
 	}
 
-	int e2=from->edges.e[ee]->tofaceedge;
+	int e2=from->edges.e[ee]->tofaceedge; //the edge number in f2
 	flatpoint p1 =from->edges.e[ee]->points->fp,
 			  p2 =from->edges.e[(ee+1)%from->edges.n]->points->fp,
 			  pt2=  to->edges.e[e2]->points->fp,
 			  pt1=  to->edges.e[(e2+1)%to->edges.n]->points->fp;
 
+	from->edges.e[ee]->tag   =to->tag;
+	to  ->edges.e[e2]->tag   =from->tag;
 	from->edges.e[ee]->toface=f2;
 	to  ->edges.e[e2]->toface=f1;
 
 	if (!from->matrix) from->matrix=transform_identity(NULL);
 	if (!  to->matrix)   to->matrix=transform_identity(NULL);
 
-	//***figure out if it is f2a-f2b or f2b-f2a
-	
 	 //connect pt1 -> p1,  pt2 -> p2
 	p1 =transform_point(from->matrix,p1);
 	p2 =transform_point(from->matrix,p2);
@@ -1581,8 +1622,8 @@ int Net::findOriginalFace(int i,int status,int startsearchhere)
 	int c;
 	for (c=(startsearchhere>=0?startsearchhere:0); c<faces.n; c++) {
 		if (faces.e[c]->original==i) {
-			if (status!=2 && faces.e[c]->tag==1) return 1;
-			else if (status!=1 && faces.e[c]->tag==2) return 2;
+			if (status!=2 && faces.e[c]->tag==FACE_Actual) return 1;
+			else if (status!=1 && faces.e[c]->tag==FACE_Potential) return 2;
 		}
 	}
 	return 0;
@@ -1614,7 +1655,8 @@ int Net::Unwrap(int netfacei,int atedge)
 		if (atedge>=basenet->NumFaces()) return 2;
 		if (findOriginalFace(atedge,1,0)==1) return 0;
 		 
-		 //drop down original face atedge
+		 //drop down original face atedge, starting new group
+		 //***this does not properly adjust potentials...
 		NetFace *face=basenet->GetFace(atedge);
 		face->tag=FACE_Actual;
 		faces.push(face,1);
@@ -1669,6 +1711,36 @@ int Net::TotalUnwrap()
 	return 0;
 }
 
+//! Convert a potential net face with index netfacei to an actual one.
+/*! Return 0 for success, or nonzero for error and nothing changed.
+ *
+ * If the face is already tagged with FACE_Actual, then nothing is done,
+ * and 2 is returned.
+ */
+int Net::Drop(int netfacei)
+{
+	if (netfacei<0 || netfacei>=faces.n) return 1;
+	if (faces.e[netfacei]->tag==FACE_Actual) return 2;
+
+	NetFace *netf=faces.e[netfacei];
+
+	 //change the face's tag to actual
+	netf->tag=FACE_Actual;
+
+	 //make any edge pointing to this face be actual
+	for (int c=0; c<netf->edges.n; c++) {
+		if (netf->edges.e[c]->toface>=0) 
+			faces.e[netf->edges.e[c]->toface]->edges.e[netf->edges.e[c]->tofaceedge]->tag=FACE_Actual;
+	}
+
+	 //reconfigure rest of net to be consistent
+	clearPotentials(netf->original);
+	addPotentialsToFace(faces.findindex(netf));
+
+	rebuildLines();
+	return 0;
+}
+
 //! Pick up net face number netfacei.
 /*! The easy case is when netfacei connects to only one other actual face. In that case, netfacei
  * becomes a potential face, rather than an actual one, and cutatedge is ignored.
@@ -1677,13 +1749,97 @@ int Net::TotalUnwrap()
  * is used as a hint about which group of faces to keep. All faces connected to netfacei EXCEPT the 
  * one on the other side of edge cutatedge are pulled up. If faces happen to make a loop including 
  * the faces on both sides of cutadedge, then usually only netfacei is picked up, potentially creating
- * several disconnected groups of faces.
+ * several disconnected groups of faces. (****note that this is not implemented!!)
  *
  * Return 0 for success, nonzero for error.
+ *
+ * \todo fully implement this!!
  */
 int Net::PickUp(int netfacei,int cutatedge)
-{//***
-	cout <<"******** must implement Net::PickUp()"<<endl;
-	return 1;
+{
+	int total=0,n=0,c;
+	NetFace *netf=faces.e[netfacei];
+
+	 //figure out how many faces are set up touching this one
+	for (c=0; c<netf->edges.n; c++) {
+		if (netf->edges.e[c]->toface>=0) {
+			total++;
+			if (netf->edges.e[c]->tag==FACE_Actual) n++;
+		}
+	}
+	DBG cerr <<"face "<<netfacei<<" connected to "<<n<<" actual faces, to "<<total<<" total faces"<<endl;
+	if (n>1) return 2;
+
+	if (n==0) {
+		 //netfacei is standing alone, with possibly several potentials connected to it
+		//***remove all those!
+		//deleteFace(netfacei);
+		return 1;
+	}
+
+	 //face is connected to 1 actual face, and possible many potentials
+	 //***for now assume any potentials connected to it only connect with this one
+
+	 //set this face to potential, whatever it was before, and delete any potentials
+	 //connected to it
+	netf->tag=FACE_Potential;
+	for (int c=0; c<netf->edges.n; c++) {
+		if (netf->edges.e[c]->toface>=0) {
+			 //for actual faces, only change its edge tag
+			if (netf->edges.e[c]->tag==FACE_Actual) { 
+				faces.e[netf->edges[c]->toface]->edges.e[netf->edges[c]->tofaceedge]->tag=FACE_Potential;
+				continue;
+			}
+			if (netf->edges.e[c]->tag==FACE_Potential)
+				deleteFace(netf->edges.e[c]->toface);		
+		}
+	}
+	 
+	 //for each face that points to netf->original, add a potential if necessary
+	 //the face edges could have had FACE_Taken
+	for (int c=0; c<faces.n; c++) {
+		if (faces.e[c]->tag!=FACE_Actual) continue;
+		for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
+			if (faces.e[c]->edges.e[c2]->tooriginal==netf->original
+					&& faces.e[c]->edges.e[c2]->toface<0) {
+				
+				NetFace *pface=basenet->GetFace(netf->original);
+				faces.e[c]->edges.e[c2]->tag=FACE_Potential;
+				pface->tag=FACE_Potential;
+				faces.push(pface,1);
+				connectFaces(c,faces.n-1,c2);
+			}
+		}
+	}
+
+	return 0;
+}
+
+//! Delete the face with net index netfacei.
+/*! This simply removes the face, and updates all the indices in the edge info
+ * of all the faces as necessary. It does NOT update potentials.
+ *
+ * Return 0 for face deleted, nonzero for error, and face not deleted.
+ */
+int Net::deleteFace(int netfacei)
+{
+	if (netfacei<0 || netfacei>=faces.n) return 1;
+	DBG cerr <<"-----deleteFace("<<netfacei<<")"<<endl;
+
+	faces.remove(netfacei);
+
+	 //now need to decrement by one links to faces >= netfacei
+	for (int c2=0; c2<faces.n; c2++) {
+		for (int c3=0; c3<faces.e[c2]->edges.n; c3++) {
+			if (faces.e[c2]->edges.e[c3]->toface>netfacei) { //hopefully no more are == c
+				faces.e[c2]->edges.e[c3]->toface--;
+			} else if (faces.e[c2]->edges.e[c3]->toface==netfacei) {
+				//DBG cerr <<"**** warning! face("<<c2<<")->edge("<<c3<<") == face being deleted!!"<<endl;
+				faces.e[c2]->edges.e[c3]->toface=-1;
+			}
+		}
+	}
+	DBG cerr <<"-----deleteFace done"<<endl;
+	return 0;
 }
 
