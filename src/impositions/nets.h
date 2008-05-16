@@ -119,6 +119,8 @@ class BasicNet : public AbstractNet, public Laxkit::PtrStack<NetFace>
 //----------------------------------- Net -----------------------------------
 class Net : public LaxInterfaces::SomeData
 {
+ protected:
+	virtual int deleteFace(int netfacei);
  public:
 	char *netname;
 	int tabs;
@@ -143,7 +145,7 @@ class Net : public LaxInterfaces::SomeData
 	//virtual void Center();
 	virtual int validateNet();
 
-	virtual int pathOfFace(int i, int *n, flatpoint **p);
+	virtual int pathOfFace(int i, int *n, flatpoint **p, int convert);
 	virtual int pointinface(flatpoint pp);
 	virtual void pushline(NetLine &l,int what,int where=-1,int how=1);
 	//virtual int rotateFaceOrientation(int f,int alignxonly=0);
@@ -154,6 +156,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual int Unwrap(int netfacei,int atedge);
 	virtual int TotalUnwrap();
 	virtual int PickUp(int netfacei,int cutatedge);
+	virtual int Drop(int netfacei);
 	virtual int addPotentialsToFace(int facenum);
 	virtual int findOriginalFace(int i,int status,int startsearchhere);
 	virtual int clearPotentials(int original);
@@ -162,6 +165,7 @@ class Net : public LaxInterfaces::SomeData
 
 
 	 //input and output functions
+	virtual int Basenet(AbstractNet *newbasenet);
 	virtual AbstractNet *loadBaseNet(const char *filename,char **error_ret);
 	virtual int LoadOFF(const char *filename,char **error_ret);
 	virtual int LoadFile(const char *file,char **error_ret);
