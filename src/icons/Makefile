@@ -4,6 +4,6 @@
 all:
 	@if [ ! -e icons.stamp ] ; then \
 			echo "Generating icons..."; \
-			touch icons.stamp; ./makeimages.py; \
+			 ./makeimages.py; touch icons.stamp; \
 		else echo "Icons already made! Remove icons.stamp and run make to redo."; fi
 		
