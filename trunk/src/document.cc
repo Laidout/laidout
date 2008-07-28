@@ -836,7 +836,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			PageStyle *ps=NULL;
 			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
 			page=new Page(ps,0);
-			ps->dec_count();
+			if (ps) ps->dec_count();
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c],flag,context);
 			pages.push(page,1);

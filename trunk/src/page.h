@@ -82,14 +82,20 @@ class RectPageStyle : public PageStyle
 class Page : public ObjectContainer
 {
  public:
+	 //page attributes
 	int labeltype;
 	char *label;
 	int pagenumber;
-	LaxInterfaces::ImageData *thumbnail;
-	clock_t thumbmodtime,modtime;
-	Group layers;
 	PageStyle *pagestyle;
 	int psislocal;
+
+	 //page preview thumbnail
+	LaxInterfaces::ImageData *thumbnail;
+	clock_t thumbmodtime,modtime;
+
+	 //page contents
+	Group layers;
+
 	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }

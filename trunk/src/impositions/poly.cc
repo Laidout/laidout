@@ -1143,7 +1143,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 		c=getline_indent_nonblank(&line,&n,f,0,"#");
 		if (c<=0) return 5;
 
-		nfv=strtod(line,&endptr);
+		nfv=strtol(line,&endptr,10);
 		if (nfv<=0) return 6;
 
 		i=new int[nfv];
@@ -1192,7 +1192,7 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 		c=dumpInOFF(f,error_ret);
 	} else if (!strncmp("#Polyp",first100,6) && isspace(first100[6])) {
 		Attribute att;
-		att.dump_in(f,NULL);
+		att.dump_in(f,0,NULL);
 		dump_in_atts(&att,0,NULL);
 		c=0;
 	} else c=1; 

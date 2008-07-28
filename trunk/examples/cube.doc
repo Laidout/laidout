@@ -8,7 +8,7 @@ docstyle
       height 11
       dpi 360
       portrait
-    net 
+    simplenet 
       name Cube
       matrix 1 0 0 1 0 0
       tabs no
