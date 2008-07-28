@@ -27,6 +27,7 @@ class NetImposition : public Imposition
 	Laxkit::RefPtrStack<Net> nets;
 	int curnet;
 	int printnet;
+	int netisbuiltin;
 
 	Polyhedron *polyhedron;
 

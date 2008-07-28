@@ -24,7 +24,6 @@
  low level object tree editor would be very convenient, like
    the xml editor of inkscape.. to do similar right now, have to save,
    then edit the file, then load
- pdf out
  
 
 NEED major overhaul of the rendering, which should allow among other things
@@ -34,9 +33,6 @@ object references: for instance, take a path, make a ref to it. Option to either
  reference, using the path's kids, or shallow, using just the path, with kids belonging to
  the reference.
 
-
-for postscript simulation of transparent objects, should dither a bitmask!
-get on this! 
 
 startup new document dialog using templates, which can be in various stages of 
 specificity. So one might have letter on orange cardstock, another might be

@@ -37,13 +37,22 @@ using namespace std;
 /*! \class NetImposition
  * \brief Uses a Net object to define the pages and spread.
  *
+ * Each NetImposition holds any number of Net objects that can be used or
+ * rearranged according to the actual imposition's requirements. Each Net
+ * is (or at least can be) an instance of an AbstractNet, which contains
+ * information about how a net's faces connect to other faces in an overall
+ * spread. This is useful mostly for 3 dimensional objects that are unwrapped
+ * into a flat net. Another parallel is to booklet spreads, where each page
+ * wraps over onto adjacent pages.
+ * ----old:
+ *
  * The PaperLayout() returns the same as the PageLayout, with the important
  * addition of the extra matrix. This matrix can be adjusted by the user
  * to potentially make the net blow up way beyond the paper size, so as
  * to make tiles of it.
  *
  * The net's faces should be defined such that the inside is to the left 
- * as you traverse the points, and when you draw on the normal math plane
+ * as you traverse the points, and you draw on the usual math plane
  * which has positive x to the right, and positive y is up.
  *
  * \todo needs a little more work to keep track of kinds of pages, especially
@@ -65,6 +74,7 @@ NetImposition::NetImposition(Net *newnet)
 { 
 	curnet=-1;
 	pagestyle=NULL;
+	netisbuiltin=0;
 
 	 // setup default paperstyle and pagestyle
 	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
@@ -89,6 +99,7 @@ NetImposition::NetImposition(Net *newnet)
 
 	printnet=1;
 	
+	//***can styledef exist already? possible made by a superclass?
 	styledef=stylemanager.FindDef("NetImposition");
 	if (styledef) styledef->inc_count(); 
 	else {
@@ -108,15 +119,24 @@ NetImposition::~NetImposition()
 /*! Can be:
  * <pre>
  *  dodecahedron
+ *  box  4 5 10
  * </pre>
+ * box is special in that you can provide dimensions of the box. If no dimensions
+ * are provided, then a cube is assumed.
  */
 int NetImposition::SetNet(const char *nettype)
 {
 	if (!strcmp(nettype,"dodecahedron")) {
 		Net *newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy); //1 count
 		SetNet(newnet); //adds a count
-		newnet->info=-1; //***tag to mean net is builtin
-		newnet->dec_count(); //remove extra count
+		newnet->dec_count(); //remove creation count
+		netisbuiltin=1;
+		return 0;	
+	} else if (!strcmp(nettype,"box")) {
+		Net *newnet=makeBox(nettype,0,0,0); 
+		SetNet(newnet); //adds a count
+		newnet->dec_count(); //remove creation count
+		netisbuiltin=1;
 		return 0;	
 	}
 	return 1;
@@ -133,7 +153,7 @@ int NetImposition::SetNet(const char *nettype)
  * Return 0 if changed, 1 if not.
  */
 int NetImposition::SetNet(Net *newnet)
-{
+{***
 	if (!newnet) return 1;
 	newnet->inc_count();
 	newnet->info=0;//***tag says net is not built in
@@ -155,12 +175,12 @@ int NetImposition::SetNet(Net *newnet)
  * \todo *** figure out if this is useful or not..
  */
 void NetImposition::setPage()
-{
+{***
 }
 
 //! The newfunc for Singles instances.
 Style *NewNetImposition(StyleDef *def)
-{ 
+{*** 
 	NetImposition *n=new NetImposition;
 	n->styledef=def;
 	return n;
@@ -170,7 +190,7 @@ Style *NewNetImposition(StyleDef *def)
 /*! \todo this has to be automated....
  */
 Style *CreateNetListEnum(StyleDef *sd)
-{
+{***
 	EnumStyle *e=new EnumStyle;
 	e->add("Dodecahedron",0);
 	//e->add("Cube",1);
@@ -181,7 +201,7 @@ Style *CreateNetListEnum(StyleDef *sd)
 /* ...
  */
 StyleDef *NetImposition::makeStyleDef()
-{
+{***
 	StyleDef *sd=new StyleDef(NULL,
 			"NetImposition",
 			_("Net"),
@@ -212,7 +232,7 @@ StyleDef *NetImposition::makeStyleDef()
 
 //! Copy over net and whether it is builtin..
 Style *NetImposition::duplicate(Style *s)//s=NULL
-{
+{***
 	NetImposition *d;
 	if (s==NULL) s=d=new NetImposition();
 	else d=dynamic_cast<NetImposition *>(s);
@@ -229,7 +249,7 @@ Style *NetImposition::duplicate(Style *s)//s=NULL
 
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
 int NetImposition::SetPaperSize(PaperStyle *npaper)
-{
+{***
 	if (Imposition::SetPaperSize(npaper)) return 1;
 	setPage();
 	return 0;
@@ -241,7 +261,7 @@ int NetImposition::SetPaperSize(PaperStyle *npaper)
  * Local styles have count of 1, nonlocal increases the default's count by 1.
  */
 PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
-{//***
+{***//***
 	return NULL;
 //	if (!pagestyle) return NULL;
 //	PageStyle *ps=NULL;
@@ -267,7 +287,7 @@ PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
  *   not create local pagestyles.
  */
 Page **NetImposition::CreatePages()
-{
+{***
 	return NULL;
 //	if (numpages==0) return NULL;
 //	Page **pages=new Page*[numpages+1];
@@ -298,7 +318,7 @@ Page **NetImposition::CreatePages()
  * laying around, and a link to them would be returned.
  */
 LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
-{
+{***
 	if (curnet<0) return NULL;
 	if (pagenum<0 || pagenum>=numpages) return NULL;
 	int pg=pagenum%nets.e[curnet]->faces.n;
@@ -332,7 +352,7 @@ LaxInterfaces::SomeData *NetImposition::GetPage(int pagenum,int local)
 }
 
 Spread *NetImposition::SingleLayout(int whichpage)
-{
+{***
 	return SingleLayoutWithAdjacent(whichpage);
 }
 
@@ -345,7 +365,7 @@ Spread *NetImposition::SingleLayout(int whichpage)
  * transforms to get from the overall coords to each page's coords.
  */
 Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
-{
+{***
 	if (curnet<0) return NULL;
 	return NULL;
 	
@@ -466,7 +486,7 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
  * transforms to get from the overall coords to each page's coords.
  */
 Spread *NetImposition::PageLayout(int whichspread)
-{
+{***
 	if (curnet<0) return NULL;
 	return NULL;
 //	
@@ -512,7 +532,7 @@ Spread *NetImposition::PageLayout(int whichspread)
 
 //! Returns same as PageLayout, but with the paper outline included.
 Spread *NetImposition::PaperLayout(int whichpaper)
-{
+{***
 	if (curnet<0) return NULL;
 	Spread *spread=PageLayout(whichpaper*nets.e[curnet]->faces.n);
 	spread->style=SPREAD_PAPER;
@@ -537,35 +557,35 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 
 //! Returns pagenumber/net->nf.
 int NetImposition::PaperFromPage(int pagenumber)
-{
+{***
 	if (curnet<0) return 0;
 	return pagenumber/nets.e[curnet]->faces.n;
 }
 
 //! Returns pagenumber/net->nf.
 int NetImposition::SpreadFromPage(int pagenumber)
-{
+{***
 	if (curnet<0) return 0;
 	return pagenumber/nets.e[curnet]->faces.n;
 }
 
 //! Returns npapers*net->nf.
 int NetImposition::GetPagesNeeded(int npapers)
-{
+{***
 	if (curnet<0) return 0;
 	return npapers*nets.e[curnet]->faces.n;
 }
 
 //! Returns (npages-1)/net->nf+1.
 int NetImposition::GetPapersNeeded(int npages)
-{
+{***
 	if (curnet<0) return 0;
 	return (npages-1)/nets.e[curnet]->faces.n+1;
 }
 
 //! Same as GetPapersNeeded().
 int NetImposition::GetSpreadsNeeded(int npages)
-{
+{***
 	return GetPapersNeeded(npages);
 }
 
@@ -577,7 +597,7 @@ int NetImposition::GetSpreadsNeeded(int npages)
  * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
  */
 int *NetImposition::PrintingPapers(int frompage,int topage)
-{
+{***
 	int fp,tp;
 	if (topage<frompage) { tp=topage; topage=frompage; frompage=tp; }
 	fp=frompage/nets.e[curnet]->faces.n;
@@ -600,13 +620,13 @@ int *NetImposition::PrintingPapers(int frompage,int topage)
 /*! \todo *** need more redundancy checking among the faces somehow...
  */
 int NetImposition::PageType(int page)
-{
+{***
 	return page/nets.e[curnet]->faces.n;
 }
 
 //! For now assuming only 1 spread type, which is same as paper spread. Returns 0.
 int NetImposition::SpreadType(int spread)
-{
+{***
 	return 0;
 }
 
@@ -623,7 +643,7 @@ int NetImposition::SpreadType(int spread)
  * \todo *** dump_out what==-1 with list of built in net types
  */
 void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{
+{***
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
 		fprintf(f,"%snumpages 3   #number of pages in the document. This is ignored on readin\n",spc);
@@ -656,7 +676,7 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 }
 
 void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{
+{***
 	if (!att) return;
 	char *name,*value;
 	Net *tempnet=NULL;
