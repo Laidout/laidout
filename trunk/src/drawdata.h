@@ -27,7 +27,6 @@ void DrawData(Laxkit::Displayer *dp,double *m,LaxInterfaces::SomeData *data,
 void DrawData(Laxkit::Displayer *dp,LaxInterfaces::SomeData *data,
 				Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,unsigned int flags=0);
 LaxInterfaces::SomeData *newObject(const char *thetype);
-int pointisin(flatpoint *points, int n,flatpoint p);
 int boxisin(flatpoint *points, int n,Laxkit::DoubleBBox *bbox);
 Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m);
 

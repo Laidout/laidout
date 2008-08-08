@@ -81,6 +81,7 @@ class NetFace
 	virtual void clear();
 	//virtual int Set(const char *list, const char *link=NULL);
 	//virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
+	virtual int getOutline(int *n, flatpoint **p, int convert);
 	
 	virtual void dumpOut(FILE *f,int indent,int what);
 	virtual void dumpInAtts(LaxFiles::Attribute *att);
@@ -96,9 +97,13 @@ class AbstractNet :
 	char *name;
 	AbstractNet();
 	virtual ~AbstractNet();
+	virtual const char *whattype() { return "AbstractNet"; }
+	virtual const char *NetName() { return name; }
 	virtual int NumFaces()=0;
 	virtual NetFace *GetFace(int i) = 0;
-	virtual const char *NetName() { return name; }
+	virtual int Modified();
+	virtual int Modified(int m);
+	virtual const char *Filename();
 	virtual int dumpOutNet(FILE *f,int indent,int what) = 0;
 };
 
@@ -108,6 +113,7 @@ class BasicNet : public AbstractNet, public Laxkit::PtrStack<NetFace>
  public:
 	BasicNet(const char *nname=NULL);
 	virtual ~BasicNet();
+	virtual const char *whattype() { return "BasicNet"; }
 	virtual int NumFaces() { return Laxkit::PtrStack<NetFace>::n; }
 	virtual NetFace *GetFace(int i);
 
@@ -124,7 +130,7 @@ class Net : public LaxInterfaces::SomeData
  public:
 	char *netname;
 	int tabs;
-	int info;
+	int info,active;
 	LaxInterfaces::SomeData paper;
 
 	AbstractNet *basenet;

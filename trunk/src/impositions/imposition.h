@@ -105,8 +105,8 @@ class Imposition : public Style
 	virtual int SyncPageStyles(Document *doc,int start,int n);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
-	virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
-	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local) = 0; // return outline of page in page coords
+	//virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
+	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local) = 0; // return outline of page in page coords
 	
 	virtual Spread *Layout(int layout,int which); 
 	virtual int NumLayouts();

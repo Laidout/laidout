@@ -64,6 +64,19 @@ using namespace std;
  *                                  imposition default, ie it is a custom style
  * </pre>
  */
+PageStyle::PageStyle()
+{
+	outline=margin=NULL;
+	pagetype=0;
+	width=height=0;
+	flags=0; 
+}
+
+PageStyle::~PageStyle()
+{
+	if (outline) outline->dec_count();
+	if (margin)  margin->dec_count();
+}
 
 //! Toggle a flag (-1) or set on (1) or off (0).
 /*! \todo ***this must check for if the style is local...

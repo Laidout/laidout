@@ -834,7 +834,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			pageranges.push(pr,1);
 		} else if (!strcmp(nme,"page")) {
 			PageStyle *ps=NULL;
-			if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
+			//***necessary?:if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
 			page=new Page(ps,0);
 			if (ps) ps->dec_count();
 			page->layers.flush();

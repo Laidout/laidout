@@ -385,7 +385,7 @@ Page **Singles::CreatePages()
 }
 
 //! Return outline of page in page coords. 
-SomeData *Singles::GetPage(int pagenum,int local)
+SomeData *Singles::GetPageOutline(int pagenum,int local)
 {
 	PathsData *newpath=new PathsData();//count==1
 	newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
@@ -560,10 +560,6 @@ int Singles::SpreadType(int spread)
  * Please note that Singles::inset* that DoubleSidedSingles inherits are not margins.
  * The insets refer to portions of the paper that would later be chopped off, and are the 
  * same for each page, whether the page is on the left or the right.
- *
- * ***Please note that Singles::GetPage() is not redefined. This is fine for now, since assumption
- * is that pagestyle and pagestyler have same width and height, but if the PageStyle classes take
- * on more things, like outlines relative to paper, this will cause problems.
  */
 /*! \var int DoubleSidedSingles::isvertical
  * \brief Nonzero if pages are top and bottom, rather than left and right.
@@ -820,8 +816,8 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 	 // setup spread->pagestack with the single pages.
 	 // page width/height must map to proper area on page.
 	 //*** maybe keep around a copy of the outline, then checkin in destructor rather
-	 //than GetPage here?
-	SomeData *noutline=GetPage(0,0); //this has 1 count for noutline ptr
+	 //than GetPageOutline here?
+	SomeData *noutline=GetPageOutline(0,0); //this has 1 count for noutline ptr
 	Group *g=NULL;
 
 	 // left page
@@ -943,7 +939,7 @@ int DoubleSidedSingles::SpreadType(int spread)
  * DoubleSidedSingles::isleft is not used. That is to say, no code should cause isleft in
  * a Booklet instance to be anything but 0.
  *
- * Also, see note in DoubleSidedSingles about Singles::GetPage().
+ * Also, see note in DoubleSidedSingles about Singles::GetPageOutline().
  *
  * \todo *** tiling and cut marks are not functional yet
  * \todo *** creep is not implemented

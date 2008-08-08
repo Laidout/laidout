@@ -152,59 +152,11 @@ SomeData *newObject(const char *thetype)
  */
 int boxisin(flatpoint *points, int n,DoubleBBox *bbox)
 {
-	if (!pointisin(points,n,flatpoint(bbox->minx,bbox->miny))) return 0;
-	if (!pointisin(points,n,flatpoint(bbox->maxx,bbox->miny))) return 0;
-	if (!pointisin(points,n,flatpoint(bbox->maxx,bbox->maxy))) return 0;
-	if (!pointisin(points,n,flatpoint(bbox->minx,bbox->maxy))) return 0;
+	if (!point_is_in(flatpoint(bbox->minx,bbox->miny),points,n)) return 0;
+	if (!point_is_in(flatpoint(bbox->maxx,bbox->miny),points,n)) return 0;
+	if (!point_is_in(flatpoint(bbox->maxx,bbox->maxy),points,n)) return 0;
+	if (!point_is_in(flatpoint(bbox->minx,bbox->maxy),points,n)) return 0;
 	return 1;
-}
-
-//! Return the winding number for p within points. 
-/*! \ingroup objects
- * Assumes that you want a closed path, so it automatically checks
- * the segment [firstpoint,lastpoint].
- *
- * If positive x is to the right, and positive y is up, then the winding is
- * counted clockwise around the x axis. 0 means the point is not inside.
- *
- * \todo ****** remove, use Laxkit's version
- */
-int pointisin(flatpoint *points, int n,flatpoint p)
-{
-	int w=0;
-	flatpoint t1,t2,v;
-	t1=points[0]-p;
-	double tyx;
-	for (int c=1; c<=n; t1=t2, c++) {
-		if (c==n) t2=points[0]-p;
-			else t2=points[c]-p;
-		if (t1.x<0 && t2.x<0) continue;
-		if (t1.x>=0 && t2.x>=0) {
-			if (t1.y>0 && t2.y<=0) { w++; continue; }
-			else if (t1.y<=0 && t2.y>0) { w--; continue; }
-		}
-		if (!(t1.y>0 && t2.y<=0 || t1.y<=0 && t2.y>0)) continue;
-		v=t2-t1;
-		tyx=t1.y/t1.x;
-		if (t1.x<=0) { // note that this block looks identical to next block
-			if (t1.y>0) { //-+ to +-
-				if (v.y/v.x>=tyx) w++;
-				continue;
-			} else { //-- to ++
-				if (v.y/v.x<tyx) w--;
-				continue;
-			}
-		} else {
-			if (t1.y>0) { //++ to --
-				if (v.y/v.x>=tyx) w++;
-				continue;
-			} else { //+- to -+
-				if (v.y/v.x<tyx) w--;
-				continue;
-			}
-		}
-	}
-	return w;
 }
 
 

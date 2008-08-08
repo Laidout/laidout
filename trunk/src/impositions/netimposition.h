@@ -20,12 +20,15 @@
 #include "nets.h"
 #include "poly.h"
 
+#define SINGLES_WITH_ADJACENT_LAYOUT 3
+
 class NetImposition : public Imposition
 {
  public:
 	PageStyle *pagestyle;
+	AbstractNet *abstractnet;
 	Laxkit::RefPtrStack<Net> nets;
-	int curnet;
+	int maptoabstractnet;
 	int printnet;
 	int netisbuiltin;
 
@@ -40,13 +43,19 @@ class NetImposition : public Imposition
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
 
-	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local);
+	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 
+	virtual Spread *Layout(int layout,int which); 
+	virtual int NumLayouts();
+	virtual const char *LayoutName(int layout); 
+	virtual Spread *GenerateSpread(Spread *spread, Net *net, int pageoffset);
+	//----------
 	virtual Spread *SingleLayout(int whichpage); 
 	virtual Spread *SingleLayoutWithAdjacent(int whichpage); 
 	virtual Spread *PageLayout(int whichspread); 
 	virtual Spread *PaperLayout(int whichpaper);
 
+	virtual int NumSpreads(int layout); 
 	virtual int PaperFromPage(int pagenumber);
 	virtual int SpreadFromPage(int pagenumber);
 	virtual int GetPagesNeeded(int npapers);
@@ -59,11 +68,14 @@ class NetImposition : public Imposition
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual AbstractNet *AbstractNetFromFile(const char *filename);
 	
 	 //new for this class:
 	virtual int SetNet(const char *nettype);
 	virtual int SetNet(Net *newnet);
 	virtual void setPage();
+	virtual int numActiveFaces();
+	virtual int numActiveNets();
 };
 
 #endif

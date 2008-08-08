@@ -149,6 +149,8 @@ void LittleSpread::mapConnection()
  * Left button selecting and moving usually acts on individual pages, and the middle
  * button acts on whole spreads.
  *
+ * \todo *** for doc pages not represented in active nets, there should be special warning
+ * 	 indicator.
  * \todo *** There is much work to be done here!! I have many more features planned, Do it NOW!
  * \todo *** could allow page ranges in limbo, too.. just have the connecting lines be
  *   a different color.

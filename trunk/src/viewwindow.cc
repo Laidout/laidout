@@ -61,10 +61,6 @@ using namespace std;
 
 
 
-#define SINGLELAYOUT       0
-#define PAGELAYOUT         1
-#define PAPERLAYOUT        2
-#define LITTLESPREADLAYOUT 3
 
 using namespace Laxkit;
 using namespace LaxFiles;

@@ -612,7 +612,8 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		 //*** ultimately this will need to be reworked to more reasonably flow within
 		 //    non-rectangular pages
 		if (outline) { outline->dec_count(); outline=NULL; }
-		outline=doc->docstyle->imposition->GetPage(curpage,0); //adds 1 count already
+		outline=doc->pages.e[curpage]->pagestyle->outline;
+		if (!outline) outline=doc->docstyle->imposition->GetPageOutline(curpage,0); //adds 1 count already
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
