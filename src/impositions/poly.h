@@ -101,7 +101,7 @@ class Polyhedron :
 	virtual public AbstractNet
 {
  public:
-	char *name;
+	char *name, *filename;
 
 	Laxkit::NumStack<spacepoint> vertices;
 	Laxkit::PtrStack<Edge>       edges;
@@ -145,6 +145,7 @@ class Polyhedron :
 
 	virtual NetFace *GetFace(int i);
 	virtual int NumFaces();
+	virtual const char *Filename();
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 };
 

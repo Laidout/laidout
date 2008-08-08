@@ -365,12 +365,12 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	Document *doc=in->doc;
 
 	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
-	if (!att) return NULL;
+	if (!att) return 2;
 	
 	int c;
 	Attribute *pptdoc=att->find("document"),
 			  *page, *frame, *a;
-	if (!pptdoc) { delete att; return NULL; }
+	if (!pptdoc) { delete att; return 3; }
 	
 	 //figure out the paper size, orientation
 	a=pptdoc->find("paper_name");
@@ -393,7 +393,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	 // read in pages
 	int pagenum=0;
 	pptdoc=pptdoc->find("contents");
-	if (!pptdoc) { delete att; return NULL; }
+	if (!pptdoc) { delete att; return 4; }
 
 	 //create the document
 	if (!doc) {

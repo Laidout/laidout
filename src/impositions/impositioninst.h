@@ -34,7 +34,7 @@ class Singles : public Imposition
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
-	virtual LaxInterfaces::SomeData *GetPage(int pagenum,int local);
+	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
 	virtual int PaperFromPage(int pagenumber);

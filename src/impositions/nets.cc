@@ -421,6 +421,66 @@ const NetFace &NetFace::operator=(const NetFace &face)
 //	return np;
 //}
 
+//! Return the outline of the face.
+/*! If convert==0, then the points are in face coordinates. Otherwise, they
+ * are in net coordinates, according to NetFace::matrix, if any.
+ *
+ * Sets p to a new flatpoint[], and n to the number of points in p.
+ * If the line has any bezier control points, then p is a list of points
+ * in the form control-vertex-control-control-vertex-control-etc, and 2 is returned.
+ * Otherwise, the path is a polyline, and 1 is returned.
+ *
+ * If the path cannot be found, then 0 is returned, and p and n are not changed.
+ *
+ * \todo right now assumes that for bez segments, 2 controls exist between each
+ *   vertex, and vertices exist between a NEXT and PREV coordinate.. should
+ *   probably check for validity?
+ */
+int NetFace::getOutline(int *n, flatpoint **p, int convert)
+{
+	NumStack<flatpoint> pts;
+	char isbez=0;
+	Coordinate *cc;
+	for (int c=0; c<edges.n; c++) {
+		cc=edges.e[c]->points;
+		while (cc) {
+			if (!isbez && (cc->flags&POINT_TONEXT) || (cc->flags&POINT_TOPREV)) {
+				isbez=1;
+				 // convert all pts to bez segs
+				for (int c2=1; c2<pts.n; c2++) {
+					pts.push(pts.e[c2-1]+(pts.e[c2]-pts.e[c2-1])/3,c2);        //c1
+					pts.push(pts.e[c2-1]+(pts.e[c2+1]-pts.e[c2-1])*2./3,c2+1); //c2
+					c2+=2;
+				}
+			}
+			pts.push(cc->fp);
+//			***check for list of vertices next to each other is bez line..
+//			   if so, add controls between those points....
+//			if (isbez) {
+//				if ((cc->flags&POINT_VERTEX) && bezpart==0) ***;
+//
+//				if (cc->flags&POINT_TOPREV) bezpart=1;
+//				else if (cc->flags&POINT_TONEXT) bezpart=2;
+//				else bezpart=0;
+//			}
+			cc=cc->next;
+		}
+	}
+	if (isbez) {
+		 //move final control point to beginning
+		pts.push(pts.e[pts.n-1],0);
+		pts.pop(pts.n-1);
+	}
+	if (convert && matrix) {
+		for (int c=0; c<pts.n; c++) {
+			pts.e[c]=transform_point(matrix,pts.e[c]);
+		}
+	}
+	*p=pts.extractArray(n);
+	if (isbez) return 2;
+	return 1;
+}
+
 /*! If what==-1, then dump out psuedo-code mockup of format. Basically that means this:
  * <pre>
  *   face
@@ -630,6 +690,18 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
  * The Net class holds particular arrangements of the faces in an Abstract Net.
  */
 
+/*! \fn NetFace *AbstractNet::GetFace(int i)
+ * \brief Return a NetFace corresponding to AbstractNet face with index i.
+ */
+/*! \fn	const char *AbstractNet::NetName()
+ * \brief Return a human readable title of the net, if any.
+ *
+ * Default returns AbstractNet::name
+ */
+/*! \fn int AbstractNet::dumpOutNet(FILE *f,int indent,int what)
+ * \brief Dump out the net.
+ */
+
 AbstractNet::AbstractNet()
 {
 	name=NULL;
@@ -640,12 +712,32 @@ AbstractNet::~AbstractNet()
 	if (name) delete[] name;
 }
 
+//! Return whether the net has been modified presumably since the last load or save.
+/*! Default is to return 0 for unmodified.
+ *
+ * Derived classes must figure out how to maintain their actual modified status
+ * themselves. There is no default method for that.
+ */
+int AbstractNet::Modified()
+{ 	return 0; }
+
+//! Tag the net as having been modified or not. 
+/*! 0 means pretend it hasn't been. nonzero means it has.
+ */
+int AbstractNet::Modified(int m)
+{ 	return 0; }
+
+//! Return the file associated with this net, if any. Default is return NULL.
+const char *AbstractNet::Filename()
+{	return NULL;  }
+
 //----------------------------------- BasicNet -----------------------------------
 /*! \class BasicNet
  * \brief The simplest AbstractNet.
  *
  * Merely a stack of 2-d NetFace objects.
  */
+
 BasicNet::BasicNet(const char *nname)//nname=NULL
 {
 	makestr(name,nname);
@@ -727,6 +819,7 @@ void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 //! Init.
 Net::Net()
 {
+	active=1;
 	info=0;
 	tabs=0;
 	netname=newstr("Net");
@@ -741,6 +834,7 @@ void Net::clear()
 {
 	if (netname) { delete[] netname; netname=NULL; }
 	
+	active=0;
 	tabs=0;
 	if (basenet) basenet->dec_count();
 	if (faces.n) faces.flush();
@@ -807,54 +901,13 @@ Net *Net::duplicate()
  *
  * If the path cannot be found, then 0 is returned, and p and n are not changed.
  *
- * \todo right now assumes that for bez segments, 2 controls exist between each
- *   vertex, and vertices exist between a NEXT and PREV coordinate.. should
- *   probably check for validity?
+ * This does bounds check on i, then relays the request to NetFace::getOutline().
  */
 int Net::pathOfFace(int i, int *n, flatpoint **p, int convert)
 {
 	if (i<0 || i>=faces.n) return 0;
-	NumStack<flatpoint> pts;
-	char isbez=0;
-	Coordinate *cc;
-	for (int c=0; c<faces.e[i]->edges.n; c++) {
-		cc=faces.e[i]->edges.e[c]->points;
-		while (cc) {
-			if (!isbez && (cc->flags&POINT_TONEXT) || (cc->flags&POINT_TOPREV)) {
-				isbez=1;
-				 // convert all pts to bez segs
-				for (int c2=1; c2<pts.n; c2++) {
-					pts.push(pts.e[c2-1]+(pts.e[c2]-pts.e[c2-1])/3,c2);        //c1
-					pts.push(pts.e[c2-1]+(pts.e[c2+1]-pts.e[c2-1])*2./3,c2+1); //c2
-					c2+=2;
-				}
-			}
-			pts.push(cc->fp);
-//			***check for list of vertices next to each other is bez line..
-//			   if so, add controls between those points....
-//			if (isbez) {
-//				if ((cc->flags&POINT_VERTEX) && bezpart==0) ***;
-//
-//				if (cc->flags&POINT_TOPREV) bezpart=1;
-//				else if (cc->flags&POINT_TONEXT) bezpart=2;
-//				else bezpart=0;
-//			}
-			cc=cc->next;
-		}
-	}
-	if (isbez) {
-		 //move final control point to beginning
-		pts.push(pts.e[pts.n-1],0);
-		pts.pop(pts.n-1);
-	}
-	if (convert && faces.e[i]->matrix) {
-		for (int c=0; c<pts.n; c++) {
-			pts.e[c]=transform_point(faces.e[i]->matrix,pts.e[c]);
-		}
-	}
-	*p=pts.extractArray(n);
-	if (isbez) return 2;
-	return 1;
+
+	return faces.e[i]->getOutline(n,p,convert);
 }
 
 //! Return the index of the first net face that contains pp, or -1.
@@ -988,6 +1041,8 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%sname Bent Square #this is just any name you give the net\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  # transform to map the net to a paper\n",spc);
 		fprintf(f,"%sbasenet             #the base abstract net\n",spc);
+		fprintf(f,"%sactive              #present if the net is supposed to be somehow active.\n",spc);
+		fprintf(f,"%s                    # the exacte meaning of active is application dependent.\n",spc);
 		fprintf(f,"%stabs no             #(***TODO) whether to put tabs on face edges\n",spc);
 		
 		NetFace face;
@@ -999,6 +1054,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		line.dumpOut(f,indent+2,-1);
 		return;
 	}
+	if (active) fprintf(f,"%sactive\n",spc);
 	if (basenet) {
 		if (basenet->NetName() && !strcmp("BasicNet",basenet->NetName())) {
 			fprintf(f,"%sbasenet BasicNet\n",spc);
@@ -1046,6 +1102,8 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"name")) {
 			makestr(netname,value);
+		} else if (!strcmp(name,"active")) {
+			active=BooleanAttribute(value);
 		} else if (!strcmp(name,"matrix")) {
 			DoubleListAttribute(value,m(),6);
 		} else if (!strcmp(name,"tabs")) {
@@ -1630,7 +1688,7 @@ int Net::findOriginalFace(int i,int status,int startsearchhere)
 
 }
 
-//! Drop down the face connected to netfacei, edge number atedge.
+//! Drop down the face connected to net index netfacei, edge number atedge.
 /*! If netfacei==-1, and ategde<0 then completly unwrap the whole of basenet.
  *  If netfacei==-1, and ategde>=0 then drop original face with index atedge if
  *  it has not already been dropped.

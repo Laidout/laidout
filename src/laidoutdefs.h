@@ -16,10 +16,10 @@
 #ifndef LAIDOUTDEFS_H
 #define LAIDOUTDEFS_H
 
+#define LITTLESPREADLAYOUT -1
 #define SINGLELAYOUT 0
 #define PAGELAYOUT   1
 #define PAPERLAYOUT  2
-#define LITTLESPREADLAYOUT 3
 
 #endif
 

@@ -18,6 +18,7 @@
 
 #include <lax/anobject.h>
 #include <lax/interfaces/imageinterface.h>
+#include <lax/interfaces/pathinterface.h>
 #include <X11/Xlib.h>
 #include <Imlib2.h>
 
@@ -39,7 +40,11 @@ class PageStyle : public Style
 	unsigned int flags; // marginsclip,facingpagesbleed;
 	int pagetype;
 	double width,height; // these are to be considered the bounding box for non-rectangular pages
-	PageStyle() { flags=0; }
+
+	LaxInterfaces::PathsData *outline, *margin;
+
+	PageStyle(); 
+	virtual ~PageStyle();
 	virtual StyleDef *makeStyleDef();
 	virtual const char *whattype() { return "PageStyle"; }
 	virtual Style *duplicate(Style *s=NULL);

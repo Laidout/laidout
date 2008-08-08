@@ -552,7 +552,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			obj->number=objcount++;
 			obj->byteoffset=ftell(f);
 			fprintf(f,"%ld 0 obj\n"
-					  "<< /Length %u >>\n"
+					  "<< /Length %lu >>\n"
 					  "stream\n",
 						obj->number, strlen(stream));
 			fwrite(stream,1,strlen(stream),f); //write(obj->data,1,obj->len,f);

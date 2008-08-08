@@ -308,7 +308,7 @@ int *Spread::pagesFromSpread()
  *
  * Derived class must define this function.
  */
-/*! \fn SomeData *Imposition::GetPage(int pagenum,int local)
+/*! \fn SomeData *Imposition::GetPageOutline(int pagenum,int local)
  * \brief Return outline of page in page coords. Origin is page origin.
  *
  * This returns a no frills outline, used primarily to check where the mouse
@@ -414,6 +414,8 @@ int *Spread::pagesFromSpread()
  * a duplicate (with a count of 1) of the default page style of that page.
  * 
  * Derived class must define this function.
+ *
+ * This function is used internally by impositions to set up pages.
  */
 
 
@@ -467,10 +469,9 @@ LaxInterfaces::InterfaceWithDp *Imposition::Interface(int layouttype)
  */
 Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)//page=1
 {
-	if (!paper) return NULL;
-	
 	if (!bbox) bbox=new DoubleBBox();
-	bbox->clear();
+	else bbox->clear();
+
 	if (papergroup) {
 		for (int c=0; c<papergroup->papers.n; c++) {
 			bbox->addtobounds(papergroup->papers.e[c]);
@@ -634,28 +635,29 @@ int Imposition::NumPages(int npages)
 	return numpages;
 }
 
-//! Return outline of paper in paper coords. Origin is paper origin.
-/*! The default is to return a PathsData rectangle with width=paperstyle->w(),
- * and height=paperstyle->h(), and with the origin at the typical postscript
- * position of the lower left corner.
- *
- * This is a no frills outline, used primarily to check where the mouse
- * is clicked down on.
- * If local==1 then return a new local SomeData. Otherwise return a
- * counted object which might exist elsewhere already.
- * In this case, the item will have a count referring to
- * returend pointer. So if it is created here, and immediately
- * checked in, then it is removed from existence.
- */
-SomeData *Imposition::GetPaper(int papernum,int local)
-{
-	PathsData *newpath=new PathsData();//count==1
-	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
-	newpath->maxx=paper->media.maxx;
-	newpath->maxy=paper->media.maxy;
-	//nothing special is done when local==0
-	return newpath;
-}
+//**********remove this? unnecessary?
+////! Return outline of paper in paper coords. Origin is paper origin.
+///*! The default is to return a PathsData rectangle with width=paperstyle->w(),
+// * and height=paperstyle->h(), and with the origin at the typical postscript
+// * position of the lower left corner.
+// *
+// * This is a no frills outline, used primarily to check where the mouse
+// * is clicked down on.
+// * If local==1 then return a new local SomeData. Otherwise return a
+// * counted object which might exist elsewhere already.
+// * In this case, the item will have a count referring to
+// * returend pointer. So if it is created here, and immediately
+// * checked in, then it is removed from existence.
+// */
+//SomeData *Imposition::GetPaper(int papernum,int local)
+//{
+//	PathsData *newpath=new PathsData();//count==1
+//	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
+//	newpath->maxx=paper->media.maxx;
+//	newpath->maxy=paper->media.maxy;
+//	//nothing special is done when local==0
+//	return newpath;
+//}
 
 //! Return the which'th spread of type layout.
 /*! \todo Ultimately, this will replace the other PaperLayout(), PageLayout(), etc.
@@ -700,9 +702,9 @@ const char *Imposition::LayoutName(int layout)
 
 //! Return a spread corresponding to the single whichpage.
 /*! The path created here is one path for the page, which is found with 
- * a call to GetPage(whichpage,0).
+ * a call to GetPageOutline(whichpage,0).
  * The bounds of the page are put in spread->path. Usually, exotic impositions 
- * with strange page shapes need to only redefine GetPage() for this 
+ * with strange page shapes need to only redefine GetPageOutline() for this 
  * function to work right.
  *
  * The spread->pagestack elements holds the outline, and the page index.
@@ -715,7 +717,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 	 // Get the page outline. It will be a counted object with 1 count for path pointer.
-	spread->path=GetPage(whichpage,0);
+	spread->path=GetPageOutline(whichpage,0);
 	transform_identity(spread->path->m()); // clear any transform
 	
 	 // define maximum/minimum points 

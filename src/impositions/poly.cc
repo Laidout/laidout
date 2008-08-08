@@ -377,7 +377,7 @@ Settype &Settype::operator=(const Settype &nset)
 //! Create a totally blank polyhedron.
 Polyhedron::Polyhedron()
 {
-	name=NULL;
+	name=filename=NULL;
 }
 
 //! Destructor, just calls clear().
@@ -423,7 +423,9 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 //! Wipe out all the data in the polyhedron.
 void Polyhedron::clear()
 {
-	delete[] name;  name=NULL;
+	if (name) delete[] name;  name=NULL;
+	if (filename) delete[] filename;  filename=NULL;
+
 	faces.flush();
 	edges.flush();
 	vertices.flush();
@@ -1198,11 +1200,19 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 	} else c=1; 
 
 	fclose(f);
+	if (c==0) makestr(filename,file);
 	return c;
 }
 
 //--------------AbstractNet methods:
 
+//! Just return filename.
+const char *Polyhedron::Filename()
+{
+	return filename;
+}
+
+//! Currently, just pass along to dump_out().
 int Polyhedron::dumpOutNet(FILE *f,int indent,int what)
 {
 	dump_out(f,indent,what,NULL);

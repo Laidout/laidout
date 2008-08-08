@@ -18,8 +18,10 @@ objs= \
 	impositioninst.o \
 	impositions.o \
 	dodecahedron.o \
+	box.o \
 	nets.o \
 	netimposition.o \
+	simplenet.o \
 	poly.o
 
 
