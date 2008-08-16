@@ -365,6 +365,7 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 	int err=0;
 	if (n>1 && config->target==1 && !(config->filter->flags&FILTER_MANY_FILES)) {
 		 //filter does not support outputting to many files, so loop over each paper
+
 		config->target=0;
 		PaperGroup *pg;
 		char *filebase=LaxFiles::make_filename_base(config->filename);//###.ext -> %03d.ext
@@ -380,14 +381,14 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 			end=config->end;
 		PaperGroup *oldpg=config->papergroup;
 		int left=0;
-		for (int c=start; c<=end; c++) {
-			for (int p=0; p<papergroup->papers.n; p++) {
+		for (int c=start; c<=end; c++) { //loop over each spread
+			for (int p=0; p<papergroup->papers.n; p++) { //loop over each paper in a spread
 				config->start=config->end=c;
 
 				if (papergroup->papers.n==1) sprintf(filename,filebase,c);
 				else sprintf(filename,filebase,c,p);
 
-				pg=new PaperGroup(papergroup->papers.e[c]);
+				pg=new PaperGroup(papergroup->papers.e[p]);
 				config->papergroup=pg;
 
 				err=config->filter->Out(filename,config,error_ret);

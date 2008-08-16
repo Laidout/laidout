@@ -182,6 +182,14 @@ int ExportDialog::init()
 		appendstr(config->filename,".");
 		appendstr(config->filename,filter->DefaultExtension());
 	}
+	if (!config->tofiles) {
+		makestr(config->tofiles,config->filename);
+		char *p=strrchr(config->tofiles,'.'),
+			 *s=strrchr(config->tofiles,'/');
+		if (p && p>s && p!=config->tofiles) *p='\0';
+		appendstr(config->tofiles,"#.");
+		appendstr(config->tofiles,filter->DefaultExtension());
+	}
 	
 	//	CheckBox(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 	//						int xx,int yy,int ww,int hh,int brder,
@@ -535,6 +543,7 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"tofiles")) {
 		if (e->data.l[0]==1) {
+			 //1 means enter was pressed
 			send();
 			return 0;
 		} else if (e->data.l[0]==2) {
@@ -546,12 +555,14 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 			makestr(config->tofiles,filesedit->GetCText());
 			return 0;
 		} else if (e->data.l[0]==0) {
+			 //text was modified
 			makestr(config->tofiles,filesedit->GetCText());
 			overwriteCheck();
 			return 0;
 		}
 	} else if (!strcmp(mes,"tofile")) {
 		if (e->data.l[0]==1) {
+			 //1 means enter was pressed
 			send();
 			return 0;
 		} else if (e->data.l[0]==2) {
@@ -563,6 +574,7 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 			makestr(config->filename,fileedit->GetCText());
 			return 0;
 		} else if (e->data.l[0]==0) {
+			 //text was modified
 			makestr(config->filename,fileedit->GetCText());
 			overwriteCheck();
 			return 0;
@@ -698,6 +710,7 @@ int ExportDialog::DataEvent(EventData *data,const char *mes)
 void ExportDialog::changeTofile(int t)
 {
 	tofile=t;
+	config->target=t-1;
 
 	filecheck-> State(tofile==1?LAX_ON:LAX_OFF);
 	filescheck->State(tofile==2?LAX_ON:LAX_OFF);
