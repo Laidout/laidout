@@ -48,7 +48,7 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	virtual int init();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
-	virtual int send();
+	virtual int send(int id);
 	virtual void SetFile(const char *f,const char *pfile);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

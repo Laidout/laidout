@@ -740,7 +740,7 @@ int is_bitmap_image(const char *file)
  *    rather than that. the dumpin functions do screening all over again.. would be nice if
  *    it was an option
  */
-int ImportImagesDialog::send()
+int ImportImagesDialog::send(int id)
 {
 	//if (!owner) return 0;
 	
