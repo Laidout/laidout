@@ -406,58 +406,63 @@ int NewDocWindow::init()
 //	AddWin(linp, 120,0,50,50, linpheight,0,0,50);
 //	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
-	 // ------------------- view mode ---------------------------
-	AddWin(new MessageBar(this,"view style",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("view:")));
-	MenuSelector *msel;
-	msel=new MenuSelector(this,"view style",ANXWIN_CLICK_FOCUS,
-						0,0,0,0,0,
-						last,window,"view style",
-						MENUSEL_CHECKBOXES|MENUSEL_LEFT|MENUSEL_CURSSELECTS|MENUSEL_ONE_ONLY);
-	msel->AddItem(_("single"),1,0);
-	msel->AddItem(_("page layout"),2,0);
-	msel->AddItem(_("paper layout"),3,0);
-	AddWin(msel, 100,0,50,50, (textheight+5)*3,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
+
+
+//	 // ------------------- view mode ---------------------------
+//**** always default to page layout if possible
+//	MenuSelector *msel;
+//	AddWin(new MessageBar(this,"view style",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("view:")));
+//	msel=new MenuSelector(this,"view style",ANXWIN_CLICK_FOCUS,
+//						0,0,0,0,0,
+//						last,window,"view style",
+//						MENUSEL_CHECKBOXES|MENUSEL_LEFT|MENUSEL_CURSSELECTS|MENUSEL_ONE_ONLY);
+//	msel->AddItem(_("single"),1,0);
+//	msel->AddItem(_("page layout"),2,0);
+//	msel->AddItem(_("paper layout"),3,0);
+//	AddWin(msel, 100,0,50,50, (textheight+5)*3,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 		
 	 // ------------------- printing misc ---------------------------
 	 // target dpi:		__300____
-	linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						msel,window,"dpi",
+	last=linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"dpi",
 			            _("Default dpi:"),"360",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
 	 // default unit: __inch___
-	linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						linp,window,"unit",
+	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"unit",
 			            _("Default Units:"),"inch",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
 	 // color mode:		black and white, grayscale, rgb, cmyk, other
-	linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						linp,window,"colormode",
+	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last=linp,window,"colormode",
 			            _("Color Mode:"),"rgb",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
 	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
-	ColorBox *cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, linp,window,"paper color", 255,255,255);
+	ColorBox *cbox;
+	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
 	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
 
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
 	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
-	linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						cbox,window,"printer",
+	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"printer",
 			            _("Target Printer:"),"default (cups)",0,
 			            0,0,1,1,3,3);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
 	 //   [ set options from ppd... ]
-	tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, linp,window,"setfromppd",
+	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			last,window,"setfromppd",
 			_("Set options from PPD..."),3,3);
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
@@ -469,33 +474,33 @@ int NewDocWindow::init()
 	//***first page is page number: 	___1_
 
 	 // ------------------ margins ------------------
-	linp=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
-						tbut,window,"margin t",
+						last,window,"margin t",
 			            margint,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
-	linp=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
-						linp,window,"margin b",
+						last,window,"margin b",
 			            marginb,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
-	linp=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
-						linp,window,"margin l",
+						last,window,"margin l",
 			            marginl,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 	
-	linp=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
-						linp,window,"margin r",
+						last,window,"margin r",
 			            marginr,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
@@ -707,6 +712,7 @@ int NewProjectWindow::init()
 	
 	 // ------ General Directory Setup ---------------
 	 
+	 //--------------Project Name
 	last=new LineInput(this,"name",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
 						NULL,window,"name",
 			            _("Project Name:"),NULL,0,
@@ -714,15 +720,34 @@ int NewProjectWindow::init()
 	last->tooltip(_("A descriptive name for the project"));
 	AddWin(last, 300,0,2000,50, linpheight,0,0,50);
 	AddNull();
-	last=saveas=new LineInput(this,"projdir",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
-						last,window,"proj dir",
-			            _("Project Directory:"),NULL,0,
+
+	 //------------Project file name
+	last=new LineInput(this,"filename",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
+						NULL,window,"filename",
+			            _("Project filename:"),NULL,0,
 			            0,0,1,0,3,3);
-	last->tooltip(_("The directory to store the project in"));
+	last->tooltip(_("Project file location"));
 	AddWin(last, 300,0,2000,50, linpheight,0,0,50);
+	AddNull();
+	 
+	 //-------------Project Directory
+	CheckBox *check=NULL;
+	last=check=new CheckBox(this,"usedir",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"usedir", _("Create directory"),5,5);
+	check->State(LAX_ON);
+	check->tooltip(_("Check if you want to use a dedicated project directory"));
+	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
+	last=saveas=new LineEdit(this,"projdir",
+						LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
+						0,0,0,0, 1, 
+						last,window,"proj dir",
+			            NULL,0);
+	last->tooltip(_("The directory to store the project in"));
+	AddWin(last, 200,0,2000,50, linpheight,0,0,50);
 	last=tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			last,window,"projdir",
 			"...",3,3);
+	last->tooltip(_("Browse for a location"));
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddNull();
 	
@@ -808,6 +833,7 @@ int NewProjectWindow::init()
 	//                        const char *nname=NULL,int npadx=0,int npady=0);
 	//  
 	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"Ok", _("Create Project"),TBUT_OK);
+	UpdateOkToCreate();
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
 	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
@@ -856,11 +882,6 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"target dpi")) {
 	} else if (!strcmp(mes,"target printer")) {
-	} else if (!strcmp(mes,"projdir")) { // from control button
-		app->rundialog(new FileDialog(NULL,_("Save Project In"),
-					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-					window, "save as",saveas->GetCText()));
-		return 0;
 	} else if (!strcmp(mes,"Ok")) {
 		if (sendNewProject()) return 0;
 		if (win_parent) app->destroywindow(win_parent);
@@ -868,6 +889,20 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"Cancel")) {
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
+	} else if (!strcmp(mes,"filename")) {
+		//*** clicked in filename box, update project dir if checked
+	} else if (!strcmp(mes,"usedir")) {
+		//*** clicked project dir checkbox
+		UpdateOkToCreate();
+	} else if (!strcmp(mes,"proj dir")) { //click in lineinput
+		//*** clicked in project dir input, must activate checkbox
+		//    update filename if filename is default, or filename directory
+		UpdateOkToCreate();
+	} else if (!strcmp(mes,"projdir")) { // from control button
+		app->rundialog(new FileDialog(NULL,_("Save Project In"),
+					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
+					window, "save as",saveas->GetCText()));
+		return 0;
 	}
 	return 0;
 }
@@ -901,3 +936,19 @@ int NewProjectWindow::sendNewProject()
 	
 	return 0;
 }
+
+//! Return whether there is enough information to create a project.
+/*! If there is no filename, there needs to be a project directory. If there is
+ * no directory, and dir is unchecked, there needs to be a filename.
+ */
+int NewProjectWindow::UpdateOkToCreate()
+{
+	if (!saveas) return 0;
+	int c=!isblank(saveas->GetCText());
+
+	anXWindow *box=findChildWindow("ok");
+	if (!box) return 0;
+	if (c) box->Grayed(0); else box->Grayed(1);
+	return c;
+}
+

@@ -106,9 +106,15 @@ class ImportConfig
 	Document *doc;
 	Group *toobj;
 	ImportFilter *filter;
+
 	ImportConfig();
 	virtual ~ImportConfig();
 };
+
+//------------------------------- import_document() ----------------------------------
+
+int import_document(DocumentExportConfig *config,char **error_ret);
+
 
 #endif
 

@@ -713,21 +713,6 @@ Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i
 	return NULL;
 }
 
-//! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
-/*! \ingroup misc
- */
-int is_bitmap_image(const char *file)
-{
-	if (isEpsFile(file,NULL,NULL)) return 2;
-
-	LaxImage *img=NULL;
-	img=load_image(file);
-	if (!img) return 0;
-	
-	delete img;
-	return 1;
-}
-
 //! Instead of sending the file name(s) to owner, call dump_images directly.
 /*! Returns 0 if nothing done. Else nonzero.
  *  

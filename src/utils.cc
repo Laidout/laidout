@@ -18,6 +18,7 @@
 #include "utils.h"
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
+#include <lax/laximages.h>
 
 #include <cctype>
 #include <cstdlib>
@@ -403,5 +404,20 @@ int isEpsFile(const char *file,float *psversion, float *epsversion)
 		}
 	}
 	return 0;
+}
+
+//! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
+/*! \ingroup misc
+ */
+int is_bitmap_image(const char *file)
+{
+	if (isEpsFile(file,NULL,NULL)) return 2;
+
+	Laxkit::LaxImage *img=NULL;
+	img=Laxkit::load_image(file);
+	if (!img) return 0;
+	
+	delete img;
+	return 1;
 }
 

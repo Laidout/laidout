@@ -46,8 +46,8 @@ void installSvgFilter()
 	SvgOutputFilter *svgout=new SvgOutputFilter;
 	laidout->exportfilters.push(svgout);
 	
-	//SvgInputFilter *svgin=new SvgInputFilter;
-	//laidout->importfilters(svgin);
+	SvgImportFilter *svgin=new SvgImportFilter;
+	laidout->importfilters.push(svgin);
 }
 
 
@@ -657,35 +657,33 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 }
 
-////------------------------------------ SvgInputFilter ----------------------------------
-///*! \class SvgInputFileFilter
-// * \brief Filter to, amazingly enough, import svg files.
-// */
-//
-//class SvgInputFilter
-//{
-// public:
-//	virtual ~FileFilter() {}
-//	virtual const char *Author() = 0;
-//	virtual const char *FilterVersion() = 0;
-//	
-//	virtual const char *DefaultExtension() { return "svg"; }
-//	virtual const char *Format() = 0;
-//	virtual const char **FormatVersions(int *n) = 0;
-//	virtual const char *VersionName(const char *version) = 0;
-//	virtual const char *FilterClass() = 0;
-//
-//	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
-//	
-//	
-//	virtual const char *FileType(const char *first100bytes) = 0;
-//	virtual int In(const char *file, Laxkit::anObject *context) = 0;
-//};
-//
-//
-//
-////-----------------------------------------------------------
-//
+//------------------------------------ SvgImportFilter ----------------------------------
+/*! \class SvgImportFilter
+ * \brief Filter to, amazingly enough, import svg files.
+ */
+
+
+const char *SvgImportFilter::VersionName()
+{
+	return _("Svg 1.0");
+}
+
+const char *SvgImportFilter::FileType(const char *first100bytes)
+{
+	if (!strstr(first100bytes,"<svg")) return NULL;
+	return "1.0";
+
+	//*** inkscape has inkscape:version tag
+	// also xmlns:svg="http://www.w3.org/2000/svg
+}
+
+int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+{
+	return 1;
+}
+
+
+
 ////! Import an SVG file.
 ///*! If doc!=NULL, then import the svg file to Document starting at page startpage.
 // * Otherwise, create a brand new Singles based document.

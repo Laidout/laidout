@@ -62,7 +62,7 @@ class NewProjectWindow : public Laxkit::RowFrame
 {
 	int mx,my;
 	virtual int sendNewProject();
-	Laxkit::LineInput *saveas;
+	Laxkit::LineEdit *saveas;
  public:
  	NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder);
@@ -74,6 +74,8 @@ class NewProjectWindow : public Laxkit::RowFrame
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+
+	int UpdateOkToCreate();
 };
 
 Laxkit::anXWindow *BrandNew();
