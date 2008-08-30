@@ -17,6 +17,7 @@ objs= \
 	filefilters.o \
 	filters.o \
 	exportdialog.o \
+	importdialog.o \
 	image.o \
 	pdf.o \
 	postscript.o \

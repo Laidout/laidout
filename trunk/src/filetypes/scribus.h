@@ -49,6 +49,27 @@ class ScribusExportFilter : public ExportFilter
 };
 
 
+//------------------------------------ ScribusImportFilter ----------------------------------
+class ScribusImportFilter : public ImportFilter
+{
+ public:
+	virtual ~ScribusImportFilter() {}
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+	
+	virtual const char *DefaultExtension() { return "sla"; }
+	virtual const char *Format() { return "Scribus"; }
+	virtual const char *Version() { return "1.3.*"; }
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+
+	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
+	
+	
+	virtual const char *FileType(const char *first100bytes);
+	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
+};
+
 #endif
 
 

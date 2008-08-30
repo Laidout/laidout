@@ -317,7 +317,7 @@ FileFilter::FileFilter()
  */
 int export_document(DocumentExportConfig *config,char **error_ret)
 {
-	if (!config->filter || !(config->doc || config->limbo)) {
+	if (!config || !config->filter || !(config->doc || config->limbo)) {
 		if (error_ret) appendline(*error_ret,_("Bad export configuration"));
 		return 1;
 	}
@@ -441,4 +441,19 @@ ImportConfig::~ImportConfig()
 	if (toobj) toobj->dec_count();
 	//if (filter) filter->dec_count(); ***filter assumed non-local, always living in laidoutapp?
 }
+
+
+//------------------------------- import_document() ----------------------------------
+//! Import a vector based file based on config.
+/*! Return 0 for success, or nonzero for error.
+ */
+int import_document(ImportConfig *config,char **error_ret)
+{
+	if (!config || !config->filename || !config->filter || !(config->doc || config->toobj)) {
+		if (error_ret) appendline(*error_ret,_("Bad import configuration"));
+		return 1;
+	}
+	return 1;
+}
+
 

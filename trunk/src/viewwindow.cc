@@ -48,6 +48,7 @@
 #include "helpwindow.h"
 #include "configured.h"
 #include "importimages.h"
+#include "filetypes/importdialog.h"
 #include "filetypes/exportdialog.h"
 #include "interfaces/paperinterface.h"
 
@@ -3450,7 +3451,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		Group *toobj=NULL;
 		if (!doc) {
 			 //create a group object with the same aspect as the viewport, and dump images
-			 //into that. This group object gets sent back to the viewer is an event message.
+			 //into that. This group object gets sent back to the viewer in an event message.
 			 //The objects are then inserted into limbo.
 			double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
 			toobj=new Group;
@@ -3498,8 +3499,27 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (laidout->importfilters.n==0) {
 			mesbar->SetText(_("Sorry, there are no import filters installed."));
 			return 0;
-		} 	
-		cout <<"**** need to implement import filters"<<endl;
+		} else {
+			mesbar->SetText(_("Importing..."));
+			Group *toobj=NULL;
+			if (!doc) {
+				 //create a group object with the same aspect as the viewport, and dump images
+				 //into that. This group object gets sent back to the viewer in an event message.
+				 //The objects are then inserted into limbo.
+				double aspect=(viewport->dp->Maxy-viewport->dp->Miny)/(float)(viewport->dp->Maxx-viewport->dp->Minx);
+				toobj=new Group;
+				toobj->maxx=1;
+				toobj->maxy=aspect;
+			}
+			app->rundialog(new ImportFileDialog(NULL,"Import File",
+						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+						0,0,0,0,0, window,"import file",
+						NULL,NULL,NULL,
+						toobj,
+						doc,((LaidoutViewport *)viewport)->curobjPage(),0));
+			if (toobj) toobj->dec_count();
+			return 0;
+		}
 		return 0;
 	} else if (!strcmp(mes,"export")) { 
 		 //user clicked down on the export button, and selected an export type from menu..

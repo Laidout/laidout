@@ -26,6 +26,7 @@ FILE *open_file_for_reading(const char *file,char **error_ret);
 FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret);
 char *previewFileName(const char *file, const char *nametemplate);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
+int is_bitmap_image(const char *file);
 char *untitled();
 
 

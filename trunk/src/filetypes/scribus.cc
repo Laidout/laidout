@@ -53,8 +53,8 @@ void installScribusFilter()
 	ScribusExportFilter *scribusout=new ScribusExportFilter;
 	laidout->exportfilters.push(scribusout);
 	
-	//ScribusImportFilter *scribusin=new ScribusImportFilter;
-	//laidout->importfilters(scribusin);
+	ScribusImportFilter *scribusin=new ScribusImportFilter;
+	laidout->importfilters.push(scribusin);
 }
 
 //---------------------------- ScribusExportFilter --------------------------------
@@ -679,10 +679,30 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 
 
 
-//---------------------------- ScribusImportFilter --------------------------------
-//Document *scribusin(const char *file,Document *doc,int startpage)
-//{
-//}
+
+//------------------------------------ ScribusImportFilter ----------------------------------
+/*! \class ScribusImportFilter
+ * \brief Filter to, amazingly enough, import svg files.
+ */
+
+
+const char *ScribusImportFilter::VersionName()
+{
+	return _("Scribus");
+}
+
+const char *ScribusImportFilter::FileType(const char *first100bytes)
+{
+	if (!strstr(first100bytes,"<SCRIBUSUTF8NEW")) return NULL;
+	return "1.3.*";
+
+	//***ANZPAGES is num of pages
+}
+
+int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+{
+	return 1;
+}
 
 
 

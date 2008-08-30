@@ -48,5 +48,27 @@ class SvgOutputFilter : public ExportFilter
 };
 
 
-#endif
+//------------------------------------ SvgImportFilter ----------------------------------
+class SvgImportFilter : public ImportFilter
+{
+ public:
+	virtual ~SvgImportFilter() {}
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	
+	virtual const char *DefaultExtension() { return "svg"; }
+	virtual const char *Format() { return "Svg"; }
+	virtual const char *Version() { return "1.0"; }
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+
+	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
+	
+	
+	virtual const char *FileType(const char *first100bytes);
+	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
+};
+
+	
+#endif
+
