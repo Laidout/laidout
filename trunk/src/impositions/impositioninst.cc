@@ -743,9 +743,10 @@ void DoubleSidedSingles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *
 		return;
 	}
 	if (isvertical) fprintf(f,"%sisvertical\n",spc);
-	if (isleft)
+	if (isleft) {
 		if (isvertical) fprintf(f,"%sistop\n",spc);
 		else fprintf(f,"%sisleft\n",spc);
+	}
 	if (pagestyler) {
 		fprintf(f,"%sdefaultpagestyler\n",spc);
 		pagestyler->dump_out(f,indent+2,0,context);
@@ -910,16 +911,18 @@ int DoubleSidedSingles::SpreadType(int spread)
 	if (page<0) page=0;
 	left=((page+1)/2)*2-1+isleft,
 	right=left+1;
-	if (left==page)
-		if (right<NumPages()) 
+	if (left==page) {
+		if (right<NumPages()) {
 			if (isvertical) return 5;
 			else return 4;
-		else if (isvertical) return 2;
+		} else if (isvertical) return 2;
 		else return 1;
+	}
 			
-	if (left>=0) 
+	if (left>=0) {
 		if (isvertical) return 5;
 		else return 4;
+	}
 	if (isvertical) return 3;
 	return 0;
 }

@@ -88,7 +88,7 @@ int laidout_file_type(const char *file,
 
 		c3=c2;
 		while (c<n && isspace(version[c3])) { c3++; c++; }
-		if (!typ || !strncmp(version+c3,typ,strlen(typ)) && isspace(version[c3+strlen(typ)])) err=0;
+		if (!typ || (!strncmp(version+c3,typ,strlen(typ)) && isspace(version[c3+strlen(typ)]))) err=0;
 		if (actual_type) {
 			c2=c3;
 			while (c<n && !isspace(version[c2])) { c2++; c++; }

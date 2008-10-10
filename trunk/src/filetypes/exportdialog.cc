@@ -462,7 +462,7 @@ int ExportDialog::updateExt()
 	char *s=fileedit->GetText();
 	char *p=strrchr(s,'.'), *b=strrchr(s,'/');
 	if (p) {
-		if (!b || b && p>b) {
+		if (!b || (b && p>b)) {
 			*p='\0';
 			appendstr(s,".");
 			appendstr(s,filter->DefaultExtension());
@@ -476,7 +476,7 @@ int ExportDialog::updateExt()
 	p=strrchr(s,'.');
 	b=strrchr(s,'/');
 	if (p) {
-		if (!b || b && p>b) {
+		if (!b || (b && p>b)) {
 			*p='\0';
 			appendstr(s,".");
 			appendstr(s,filter->DefaultExtension());

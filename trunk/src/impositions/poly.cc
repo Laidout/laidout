@@ -493,8 +493,8 @@ void Polyhedron::connectFaces()
 
 	  	for (c3=0; c3<faces.n; c3++) {
   		  for (c4=0; c4<faces.e[c]->pn; c4++) {
-  		  	if (faces.e[c3]->p[c4]==a1 && faces.e[c3]->p[(c4+1)%faces.e[c]->pn]==a2
-				 || faces.e[c3]->p[c4]==a2 && faces.e[c3]->p[(c4+1)%faces.e[c]->pn]==a1) {
+  		  	if ((faces.e[c3]->p[c4]==a1 && faces.e[c3]->p[(c4+1)%faces.e[c]->pn]==a2)
+				 || (faces.e[c3]->p[c4]==a2 && faces.e[c3]->p[(c4+1)%faces.e[c]->pn]==a1)) {
   		  		faces.e[c]->f[c2]=c3;
 				faces.e[c3]->f[c4]=c;
 				c3=faces.n;

@@ -444,7 +444,7 @@ int NetFace::getOutline(int *n, flatpoint **p, int convert)
 	for (int c=0; c<edges.n; c++) {
 		cc=edges.e[c]->points;
 		while (cc) {
-			if (!isbez && (cc->flags&POINT_TONEXT) || (cc->flags&POINT_TOPREV)) {
+			if ((!isbez && (cc->flags&POINT_TONEXT)) || (cc->flags&POINT_TOPREV)) {
 				isbez=1;
 				 // convert all pts to bez segs
 				for (int c2=1; c2<pts.n; c2++) {

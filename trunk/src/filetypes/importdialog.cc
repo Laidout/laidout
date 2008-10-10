@@ -60,8 +60,10 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned 
 	curitem=-1;
 
 	dpi=defdpi;
-	if (dpi<=0) if (doc) dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
-	else dpi=300;//***
+	if (dpi<=0) {
+		if (doc) dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
+		else dpi=300;//***
+	}
 
 	dialog_style|=FILES_PREVIEW;
 }
