@@ -79,6 +79,7 @@ enum ElementType {
 	Element_String,
 	Element_Fields, 
 	Element_Boolean,
+	Element_Date,
 	Element_3bit,
 	Element_Enum,
 	Element_DynamicEnum,

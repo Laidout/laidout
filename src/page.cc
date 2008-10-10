@@ -317,12 +317,14 @@ void RectPageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 	fprintf(f,"%smarginr %.10g\n",spc,mr);
 	fprintf(f,"%smargint %.10g\n",spc,mt);
 	fprintf(f,"%smarginb %.10g\n",spc,mb);
-	if (recttype&RECTPAGE_LEFTPAGE)
+	if (recttype&RECTPAGE_LEFTPAGE) {
 		if (recttype&RECTPAGE_LRIO) fprintf(f,"%stoppage\n", spc);
 		else fprintf(f,"%sleftpage\n", spc);
-	if (recttype&RECTPAGE_RIGHTPAGE) 
+	}
+	if (recttype&RECTPAGE_RIGHTPAGE) {
 		if (recttype&RECTPAGE_LRIO) fprintf(f,"%sbottompage\n", spc);
 		else fprintf(f,"%srightpage\n",spc);
+	}
 	if (recttype&RECTPAGE_LRTB) fprintf(f,"%slrtb\n",spc);
 	if (recttype&RECTPAGE_IOTB) fprintf(f,"%siotb\n",spc);
 	if (recttype&RECTPAGE_LRIO) fprintf(f,"%slrio\n",spc);

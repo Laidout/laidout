@@ -360,7 +360,7 @@ int NewDocWindow::init()
 			            _("Number of pages:"),"1",0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
 	AddWin(numpages, numpages->win_w,0,50,50, linpheight,0,0,50);
-	
+	AddNull();
 	
 	 // ------------- Imposition ------------------
 	mesbar=new MessageBar(this,"mesbar 1.1",MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
@@ -370,6 +370,10 @@ int NewDocWindow::init()
 	for (c=0; c<laidout->impositionpool.n; c++)
 		impsel->AddItem(laidout->impositionpool.e[c]->Stylename(),c);
 	AddWin(impsel, 250,100,50,50, linpheight,0,0,50);
+
+	last=tbut=new TextButton(this,"impoptions",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"ImpOptions", _("Imposition Options..."),1);
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+
 	AddNull();
 	
 
@@ -598,6 +602,10 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		imp=(Imposition *)laidout->impositionpool.e[e->data.l[0]]->duplicate();
 		return 0;
 		
+	} else if (!strcmp(mes,"ImpOptions")) {
+		cout <<"*** pop a dialog for imposition options..."<<endl;
+		return 0;
+
 	} else if (!strcmp(mes,"papersizex")) {
 	} else if (!strcmp(mes,"papersizey")) {
 	} else if (!strcmp(mes,"pagesizex")) {

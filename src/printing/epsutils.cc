@@ -23,6 +23,7 @@
 #include "epsutils.h"
 #include "lax/strmanip.h"
 
+#include <cstdlib>
 #include <iostream>
 using namespace std;
 #define DBG
@@ -375,11 +376,11 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 	
 	char *arglist[10];
 	char  str1[20], str2[300];
-	arglist[0]="gs";
-	arglist[1]="-dNOPAUSE";
-	arglist[2]="-dBATCH";
-	arglist[3]="-dEPSCrop";
-	arglist[4]="-sDEVICE=pngalpha";
+	arglist[0]=const_cast<char *>("gs");
+	arglist[1]=const_cast<char *>("-dNOPAUSE");
+	arglist[2]=const_cast<char *>("-dBATCH");
+	arglist[3]=const_cast<char *>("-dEPSCrop");
+	arglist[4]=const_cast<char *>("-sDEVICE=pngalpha");
 
 	sprintf(str1,"-r%f",dpi);
 	arglist[5]=str1;

@@ -348,13 +348,15 @@ Document *HeadWindow::findAnyDoc()
 	for (int c=0; c<windows.n; c++) {
 		if (!windows.e[c]->win) continue;
 		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
-		if (v)
+		if (v) {
 			if (v->doc) return v->doc;
 			else continue;
+		}
 		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
-		if (s)
+		if (s) {
 			if (s->doc) return s->doc;
 			else continue;
+		}
 	}
 	if (laidout->project && laidout->project->docs.n) return laidout->project->docs.e[0]->doc;
 	return NULL;
@@ -906,9 +908,10 @@ int HeadWindow::FocusOff(XFocusChangeEvent *e)
  */
 anXWindow *HeadWindow::NewWindow(const char *wtype,anXWindow *likethis)
 {
-	if (!wtype) 
+	if (!wtype) {
 		if (defaultwinfunc<0) return NULL;
 		else wtype=winfuncs.e[defaultwinfunc]->name;
+	}
 		
 	anXWindow *win=NULL;
 	char blah[100];
@@ -949,13 +952,15 @@ int HeadWindow::HasOnlyThis(Document *doc)
 	for (int c=0; c<windows.n; c++) {
 		if (!windows.e[c]->win) continue;
 		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
-		if (v)
+		if (v) {
 			if (v->doc && v->doc!=doc) return 0;
 			else continue;
+		}
 		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
-		if (s)
+		if (s) {
 			if (s->doc && s->doc!=doc) return 0;
 			else continue;
+		}
 	}
 	return 1;
 }

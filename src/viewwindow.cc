@@ -557,7 +557,7 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 	DBG cerr <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
-		if (!te || te->changer && te->changer==static_cast<anXWindow *>(this)) return 1;
+		if (!te || (te->changer && te->changer==static_cast<anXWindow *>(this))) return 1;
 
 		if (te->changetype==TreeObjectRepositioned) {
 			needtodraw=1;
@@ -1404,8 +1404,8 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 		 //if is NOT (limbo or page or page->layer or spread) then return
 		 //with the found next object, else continue.
 		if (!(oc->obj)) continue;
-		if (!(oc->spread()==0 && oc->context.n()<=1 ||   
-			oc->spread()==1 && oc->context.n()<=3)) {
+		if (!((oc->spread()==0 && oc->context.n()<=1) ||   
+				(oc->spread()==1 && oc->context.n()<=3))) {
 			DBG oc->context.out("  lov-next");
 			return 1;
 		}
@@ -2244,7 +2244,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		else showstate=0;
 		needtodraw=1;
 		return 0;
-	} else if (ch=='M' && (state&LAX_STATE_MASK)==ShiftMask|Mod1Mask) {
+	} else if (ch=='M' && (state&LAX_STATE_MASK)==(ShiftMask|Mod1Mask)) {
 		DBG  //for debugging to make a delineation in the cerr stuff
 		DBG cerr<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
 		return 0;
@@ -2262,7 +2262,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		} else if ((state&LAX_STATE_MASK)==ShiftMask) { //move sel up a layer
 			if (CirculateObject(5,0,0)) needtodraw=1;
 			return 0;
-		} else if ((state&LAX_STATE_MASK)==ShiftMask|ControlMask) { //layer up 1
+		} else if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) { //layer up 1
 			if (CirculateObject(20,0,0)) needtodraw=1;
 			return 0;
 		}
@@ -2274,7 +2274,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		} else if ((state&LAX_STATE_MASK)==ShiftMask) { //move sel down a layer
 			if (CirculateObject(6,0,0)) needtodraw=1;
 			return 0;
-		} else if ((state&LAX_STATE_MASK)==ShiftMask|ControlMask) { //layer down 1
+		} else if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) { //layer down 1
 			if (CirculateObject(21,0,0)) needtodraw=1;
 			return 0;
 		}
@@ -2704,7 +2704,7 @@ void PageFlipper::Refresh()
 	int x,y;
 	unsigned int state;
 	mouseposition(this,&x,&y,&state);
-	if (buttondown || x>=0 && x<win_w && y>0 && y<win_h) {
+	if (buttondown || (x>=0 && x<win_w && y>0 && y<win_h)) {
 		if (x<win_w/2) {
 			 // draw left arrow
 			XSetForeground(app->dpy,app->gc(),app->coloravg(bkcolor,textcolor,.1));
@@ -3667,8 +3667,8 @@ int ViewWindow::SelectTool(int id)
  */
 int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
-	if (ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask) || 
-			ch=='s' && (state&LAX_STATE_MASK)==ControlMask) { 
+	if ((ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) 
+		  || (ch=='s' && (state&LAX_STATE_MASK)==ControlMask)) { 
 		 // save file
 		Document *sdoc=doc;
 		if (!sdoc) sdoc=laidout->curdoc;
@@ -3751,7 +3751,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
 		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,0,0, 0));
 		return 0;
-	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask|ShiftMask) { //reset document
+	} else if (ch=='n' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) { //reset document
 		//***
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
 		app->addwindow(new HelpWindow());
