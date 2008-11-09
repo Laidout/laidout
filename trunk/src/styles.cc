@@ -74,18 +74,21 @@ using namespace LaxFiles;
 /*! \ingroup stylesandstyledefs
  * Names for the ElementType enum.
  */
-const char *element_TypeNames[11]={
+const char *element_TypeNames[14]={
 		"int",
 		"real",
 		"string",
 		"fields",
 		"boolean",
+		"date",
+		"file",
 		"3bit",
 		"enum",
 		"dynamicenum",
 		"enumval",
 		"function",
-		"color"
+		"color",
+		NULL
 	};
 //----------------------------- FieldPlace -----------------------------
 /*! \class FieldPlace

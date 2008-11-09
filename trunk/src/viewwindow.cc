@@ -1442,6 +1442,7 @@ int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 	Page *pagep;
 	for (int spage=0; spage<spread->pagestack.n; spage++) {
 		page=spread->pagestack.e[spage]->index;
+		if (page<0) continue;
 		pagep=doc->pages.e[page];
 		place.flush();
 		if (pagep->contains(d,place)) { // this pushes location onto top of place..

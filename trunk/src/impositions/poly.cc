@@ -217,9 +217,9 @@ Pgon::Pgon(const Face &f)
 	flabel=new int[pn];
 	vlabel=new int[pn];
 	for (int c=0; c<pn; c++) {
-		flabel[c]=f.f[c];
-		elabel[c]=f.v[c]; //*** ?
-		vlabel[c]=f.p[c];
+		flabel[c]=(f.f?f.f[c]:-1);
+		elabel[c]=(f.v?f.v[c]:-1);
+		vlabel[c]=(f.p?f.p[c]:-1);
 	}
 }
 
@@ -745,6 +745,9 @@ int Polyhedron::AddFace(const char *str)
 {
 	Face *f=new Face();
 	IntListAttribute(str,&f->p,&f->pn);
+	f->v=new int[f->pn];
+	f->f=new int[f->pn];
+	for (int c=0; c<f->pn; c++) { f->v[c]=f->f[c]=-1; }
 	faces.push(f,1);
 	return 0;
 }
