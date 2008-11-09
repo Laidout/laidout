@@ -75,6 +75,7 @@
 #include "language.h"
 #include "newdoc.h"
 #include "impositions/impositioninst.h"
+#include "impositions/netimposition.h"
 #include "utils.h"
 #include <lax/filedialog.h>
 #include <lax/fileutils.h>
@@ -236,10 +237,10 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 					xx,yy,ww,hh,brder, NULL,None,NULL,
 					10)
 {
-	marginl=_("Left:");
-	marginr=_("Right:");
-	margint=_("Top:");
-	marginb=_("Bottom:");
+	margintextl=_("Left:");
+	margintextr=_("Right:");
+	margintextt=_("Top:");
+	margintextb=_("Bottom:");
 
 	curorientation=0;
 	papersizes=NULL;
@@ -336,33 +337,68 @@ int NewDocWindow::init()
 	popup->AddItem(_("Landscape"),1);
 	popup->Select(o&1?1:0);
 	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);// forced linebreak
 
-	 // ------Tiling
-	last=tiley=new LineInput(this,"y tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
-						last,window,"ytile",
-			            _("Tile y:"),"1", 0,
-			           100,0,1,1,3,3);
-	tiley->tooltip("Only for Single, Double, and Booklet");
-	AddWin(tiley, tiley->win_w,0,50,50, linpheight,0,0,50);
-	last=tilex=new LineInput(this,"x tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
-						last,window,"xtile",
-			            _("Tile x:"),"1", 0,
-			           100,0,1,1,3,3);
-	tilex->tooltip(_("Only for Single, Double, and Booklet"));
-	AddWin(tilex, tilex->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-
-	
 	 // -----Number of pages
 	last=numpages=new LineInput(this,"numpages",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
 						last,window,"numpages",
 			            _("Number of pages:"),"1",0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
 	AddWin(numpages, numpages->win_w,0,50,50, linpheight,0,0,50);
-	AddNull();
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);
+
+	AddWin(NULL, 2000,2000,0,50, textheight*2/3,0,0,0);// forced linebreak, vertical spacer
+
+	 // ------------------- printing misc ---------------------------
+	 // target dpi:		__300____
+	last=linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"dpi",
+			            _("Default dpi:"),"360",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+	//AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
+	 // default unit: __inch___
+	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last,window,"unit",
+			            _("Default Units:"),"inch",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	
+	 // color mode:		black and white, grayscale, rgb, cmyk, other
+	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+						last=linp,window,"colormode",
+			            _("Color Mode:"),"rgb",0,
+			            0,0,1,1,3,3);
+	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+
+	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
+	ColorBox *cbox;
+	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
+	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
+
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	
+//	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
+//	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						last,window,"printer",
+//			            _("Target Printer:"),"default (cups)",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+
+//	 //   [ set options from ppd... ]
+//	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+//			last,window,"setfromppd",
+//			_("Set options from PPD..."),3,3);
+//	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+
+
+	AddWin(NULL, 2000,2000,0,50, textheight*2/3,0,0,0);//*** forced linebreak
+
 	 // ------------- Imposition ------------------
+	
 	mesbar=new MessageBar(this,"mesbar 1.1",MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
 	last=impsel=new StrSliderPopup(this,"Imposition",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
@@ -371,12 +407,40 @@ int NewDocWindow::init()
 		impsel->AddItem(laidout->impositionpool.e[c]->Stylename(),c);
 	AddWin(impsel, 250,100,50,50, linpheight,0,0,50);
 
-	last=tbut=new TextButton(this,"impoptions",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"ImpOptions", _("Imposition Options..."),1);
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+//	last=tbut=new TextButton(this,"impoptions",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"ImpOptions", _("Imposition Options..."),1);
+//	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 
 	AddNull();
 	
+	 //imposition from file
+	last=impfromfile=new LineInput(this,"impfromfile",LINP_FILE|ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
+						last,window,"impfromfile",
+			            _("From file:"),NULL,0,
+			            0,0,1,0,3,3);
+	impfromfile->tooltip(_("Use an imposition based on a file."));
+	AddWin(impfromfile, impfromfile->win_w,0,2000,50, linpheight,0,0,50);
+	tbut=new TextButton(this,"impfileselect",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			saveas,window,"impfileselect",
+			"...",3,3);
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+	AddNull();
 
+	 // ------Tiling
+	last=tiley=new LineInput(this,"y tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
+						last,window,"ytile",
+			            _("Tile y:"),"1", 0,
+			           100,0,1,1,3,3);
+	tiley->tooltip("How many times to repeat a spread vertically on a paper.\nIgnored by net impositions");
+	AddWin(tiley, tiley->win_w,0,50,50, linpheight,0,0,50);
+	last=tilex=new LineInput(this,"x tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
+						last,window,"xtile",
+			            _("Tile x:"),"1", 0,
+			           100,0,1,1,3,3);
+	tilex->tooltip(_("How many times to repeat a spread horizontally on a paper.\nIgnored by net impositions"));
+	AddWin(tilex, tilex->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+
+	
 //	 // -------------- page size --------------------
 //	
 //	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
@@ -426,86 +490,40 @@ int NewDocWindow::init()
 //	AddWin(msel, 100,0,50,50, (textheight+5)*3,0,0,50);
 //	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 		
-	 // ------------------- printing misc ---------------------------
-	 // target dpi:		__300____
-	last=linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last,window,"dpi",
-			            _("Default dpi:"),"360",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // default unit: __inch___
-	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last,window,"unit",
-			            _("Default Units:"),"inch",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // color mode:		black and white, grayscale, rgb, cmyk, other
-	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last=linp,window,"colormode",
-			            _("Color Mode:"),"rgb",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-
-	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
-	ColorBox *cbox;
-	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
-	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
-
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
-	last=linp=new LineInput(this,"printer",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last,window,"printer",
-			            _("Target Printer:"),"default (cups)",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-
-	 //   [ set options from ppd... ]
-	last=tbut=new TextButton(this,"setfromppd",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-			last,window,"setfromppd",
-			_("Set options from PPD..."),3,3);
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-
-
 
 	 // --------------------- page specific setup ------------------------------------------
 	
 	//***first page is page number: 	___1_
 
 	 // ------------------ margins ------------------
-	last=linp=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=margint=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,window,"margin t",
-			            margint,NULL,0,
+			            margintextt,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
-	last=linp=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=marginb=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,window,"margin b",
-			            marginb,NULL,0,
+			            margintextb,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
-	last=linp=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=marginl=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,window,"margin l",
-			            marginl,NULL,0,
+			            margintextl,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 	
-	last=linp=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+	last=linp=marginr=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,window,"margin r",
-			            marginr,NULL,0,
+			            margintextr,NULL,0,
 			            0,0,3,0,3,3);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
@@ -596,16 +614,19 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			papertype->flags=curorientation;
 		}
 	} else if (!strcmp(mes,"imposition")) {
-		//***
+		 //when new imposition type selected from popup menu
 		if (e->data.l[0]<0 || e->data.l[0]>=laidout->impositionpool.n) return 0;
 		if (imp) delete imp;
 		imp=(Imposition *)laidout->impositionpool.e[e->data.l[0]]->duplicate();
+		if (!strcmp(imp->Stylename(),"Net") || !strcmp(imp->Stylename(),"Singles")) {
+			marginl->SetLabel(_("Left:"));
+			marginr->SetLabel(_("Right:"));
+		} else {
+			marginl->SetLabel(_("Outside:"));
+			marginr->SetLabel(_("Inside:"));
+		}
 		return 0;
 		
-	} else if (!strcmp(mes,"ImpOptions")) {
-		cout <<"*** pop a dialog for imposition options..."<<endl;
-		return 0;
-
 	} else if (!strcmp(mes,"papersizex")) {
 	} else if (!strcmp(mes,"papersizey")) {
 	} else if (!strcmp(mes,"pagesizex")) {
@@ -622,6 +643,11 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"pagesetup proc")) {
 	} else if (!strcmp(mes,"paper layout")) {
 	} else if (!strcmp(mes,"save as")) {
+	} else if (!strcmp(mes,"impfileselect")) { // from control button
+		app->rundialog(new FileDialog(NULL,_("Imposition from file"),
+					ANXWIN_REMEMBER|FILES_OPEN_ONE, 0,0, 0,0,0,
+					impfromfile->window, "save as",impfromfile->GetCText()));
+		return 0;
 	} else if (!strcmp(mes,"saveas")) { // from control button
 		app->rundialog(new FileDialog(NULL,_("Save As"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
@@ -670,6 +696,15 @@ void NewDocWindow::sendNewDoc()
 	if (s) {
 		s->tilex=xtile;
 		s->tiley=ytile;
+		s->insetl=marginl->GetDouble();
+		s->insetr=marginr->GetDouble();
+		s->insett=margint->GetDouble();
+		s->insetb=marginb->GetDouble();
+	} else {
+		NetImposition *n=dynamic_cast<NetImposition *>(imposition);
+		if (n && n->nets.n==0) {
+			n->SetNet("dodecahedron");
+		}
 	}
 		
 	imposition->NumPages(npgs);
@@ -750,7 +785,7 @@ int NewProjectWindow::init()
 						0,0,0,0, 1, 
 						last,window,"proj dir",
 			            NULL,0);
-	last->tooltip(_("The directory to store the project in"));
+	last->tooltip(_("Optional directory for storing project resources and data"));
 	AddWin(last, 200,0,2000,50, linpheight,0,0,50);
 	last=tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			last,window,"projdir",

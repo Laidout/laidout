@@ -73,6 +73,8 @@ Net *makeDodecahedronNet(double ww,double hh)
 	poly->AddFace("5 4 19 9 15");
 	poly->AddFace("6 13 10 17 7");
 	poly->AddFace("6 7 18 8 14");
+
+	poly->makeedges();
 	 
 	Net *net=new Net;
 	net->basenet=poly;

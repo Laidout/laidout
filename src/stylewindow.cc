@@ -58,6 +58,9 @@ using namespace Laxkit;
  *     steps through that mask, retrieving the modified state from
  *     the Style, and telling the corresponding window control to
  *     use this new state.
+ *
+ *  5. Pressing the submit button causes a style object to be sent to
+ *     the owner of the dialog, and optional closing of the dialog.
  */
 
 

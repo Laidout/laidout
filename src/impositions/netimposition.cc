@@ -359,7 +359,8 @@ Page **NetImposition::CreatePages()
 LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 {
 	if (!nets.n) return NULL;
-	if (!doc || pagenum<0 || pagenum>=doc->pages.n) return NULL;
+	//if (!doc || pagenum<0 || pagenum>=doc->pages.n) return NULL; ***
+	if (pagenum<0 || pagenum>=numpages) return NULL;
 
 	int isbez=0,
 		n=0;
@@ -506,7 +507,7 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		netface=net->faces.e[c];
 
 		page=pageoffset+net->faces.e[c]->original;
-		//if (page>=numpages) continue;
+		if (page>=numpages) page=-1;
 
 		newpath=new PathsData;
 		isbez=netface->getOutline(&n, &p, 0);

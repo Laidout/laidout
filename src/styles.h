@@ -80,6 +80,7 @@ enum ElementType {
 	Element_Fields, 
 	Element_Boolean,
 	Element_Date,
+	Element_File,
 	Element_3bit,
 	Element_Enum,
 	Element_DynamicEnum,
@@ -88,7 +89,7 @@ enum ElementType {
 	Element_Color,
 	Element_MaxFormatVal 
 };
-extern const char *element_TypeNames[11];
+extern const char *element_TypeNames[14];
 		
 
 #define STYLEDEF_DUPLICATE 1
