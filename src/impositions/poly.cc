@@ -76,7 +76,7 @@ Face::Face(int numof,int *ps)
 	v=new int[pn];
 	f=new int[pn];
 	p=new int[pn];
-	for (int c=0; c<pn; c++) { p[c]=ps[c]; p[c]=-1; p[c]=-1; }
+	for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; }
 }
 
 //! Shortcut to create polygons with up to 5 vertices.
@@ -666,7 +666,7 @@ Pgon Polyhedron::FaceToPgon(int n, char useplanes)
 	}
 	for (int c=0; c<npgon.pn; c++) {	
 		npgon.p[c]=flatten(vofface(n,c),bas);
-		if (faces.e[n]->p[c]!=-1)
+		if (faces.e[n]->f[c]!=-1)
 			npgon.dihedral[c]=angle(faces.e[n]->planeid,faces.e[faces.e[n]->f[c]]->planeid,1);
 		else npgon.dihedral[c]=-1;
 	}
@@ -1161,6 +1161,7 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 	}
 
 	validate();
+	makeedges();
 	return 0;
 }
 
