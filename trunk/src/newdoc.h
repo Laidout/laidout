@@ -57,6 +57,8 @@ class NewDocWindow : public Laxkit::RowFrame
 //	virtual int CharInput(unsigned int ch,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+
+	void updateImposition();
 };
 
 class NewProjectWindow : public Laxkit::RowFrame

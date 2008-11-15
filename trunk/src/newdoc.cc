@@ -91,6 +91,11 @@ using namespace LaxFiles;
 
 //--------------------------------- LaidoutOpenWindow ------------------------------------
 
+/* \class LaidoutOpenWindow
+ * \brief The dialog that Laidout starts with if no document is specified.
+ *
+ * Allows users to select an existing file, create new project, or create new document.
+ */
 class LaidoutOpenWindow : public Laxkit::TabFrame
 {
  public:
@@ -157,14 +162,14 @@ int LaidoutOpenWindow::DataEvent(EventData *data,const char *mes)
 
 		int n=0;
 		for (int c=0; c<strs->n; c++) {
-			if (openingdocs==-1 && laidout_file_type(strs->strs[c],NULL,NULL,"Project",NULL)==0) {
+			if (openingdocs==-1 && laidout_file_type(strs->strs[c],NULL,NULL,NULL,"Project",NULL)==0) {
 				 //file is project. open and return.
 				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
 				delete data;
 				app->destroywindow(this);
 				return 0;
 			}
-			if (laidout_file_type(strs->strs[c],NULL,NULL,"Document",NULL)==0) {
+			if (laidout_file_type(strs->strs[c],NULL,NULL,NULL,"Document",NULL)==0) {
 				 //file is document
 				n++;
 				openingdocs=1;
@@ -418,6 +423,7 @@ int NewDocWindow::init()
 			            _("From file:"),NULL,0,
 			            0,0,1,0,3,3);
 	impfromfile->tooltip(_("Use an imposition based on a file."));
+	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
 	AddWin(impfromfile, impfromfile->win_w,0,2000,50, linpheight,0,0,50);
 	tbut=new TextButton(this,"impfileselect",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			saveas,window,"impfileselect",
@@ -643,6 +649,12 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"pagesetup proc")) {
 	} else if (!strcmp(mes,"paper layout")) {
 	} else if (!strcmp(mes,"save as")) {
+	} else if (!strcmp(mes,"impfromfile")) { // from control button
+		if (e->data.l[0]==3 || e->data.l[0]==1) {
+			 //focus was lost or enter pressed
+			updateImposition();
+		}
+		return 0;
 	} else if (!strcmp(mes,"impfileselect")) { // from control button
 		app->rundialog(new FileDialog(NULL,_("Imposition from file"),
 					ANXWIN_REMEMBER|FILES_OPEN_ONE, 0,0, 0,0,0,
@@ -667,6 +679,45 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		else app->destroywindow(this);
 	}
 	return 0;
+}
+
+//! Update imposition settings based on a changed file
+void NewDocWindow::updateImposition()
+{
+	DBG cerr<<"----------attempting to updateImposition()-------"<<endl;
+	const char *file=impfromfile->GetCText();
+	if (isOffFile(file)) {
+		Polyhedron *poly=new Polyhedron();
+		if (poly->dumpInFile(file,NULL)) {
+			 //failure!
+			DBG cerr <<"*** Failure to read off file: "<<file<<endl;
+			delete poly;
+			return;
+		}
+		Net *net=new Net;
+		net->basenet=poly;
+		net->TotalUnwrap();
+		delete imp;
+		NetImposition *nimp;
+		imp=nimp=new NetImposition();
+		nimp->SetNet(net);
+
+		 //update popup to net imposition;
+		for (int c=0; c<laidout->impositionpool.n; c++) {
+			if (!strcmp(imp->Stylename(),laidout->impositionpool.e[c]->Stylename())) {
+				impsel->Select(c);
+				break;
+			}
+		}
+		
+		DBG cerr<<"   installed OFF file..."<<endl;
+		return;
+	} else if (laidout_file_type(file,NULL,NULL,NULL,"Imposition",NULL)==0) {
+		//***read in imposition, set things in dialog accordingly
+		return;
+	}
+	impfromfile->GetLineEdit()->Valid(0);
+	DBG cerr<<"   updateImposition() FAILED..."<<endl;
 }
 
 //! Create and fill a DocumentStyle, and tell laidout to make a new document
@@ -781,7 +832,7 @@ int NewProjectWindow::init()
 	check->tooltip(_("Check if you want to use a dedicated project directory"));
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
 	last=saveas=new LineEdit(this,"projdir",
-						LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
+						LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
 						0,0,0,0, 1, 
 						last,window,"proj dir",
 			            NULL,0);

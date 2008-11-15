@@ -38,11 +38,9 @@ using namespace std;
 
 
 
-////! Find out the version and type of Laidout file this is, if any.
-//int laidout_file_type(const char *file, char **version, char **typ)
-
-
 //! Return a new char[] akin to "untitled 1", "untitled 2", etc.
+/*! The number is based on a static int stored in the function.
+ */
 char *untitled()
 {
 	static int count=1;
@@ -53,77 +51,6 @@ char *untitled()
 }
 
 	
-//! Check if the file is a Laidout type typ, with a version [minversion,maxversion].
-/*! \ingroup misc
- * Return 0 for file ok, else nonzero.
- *
- * If typ==NULL, then 0 is always returned as long as the file starts out something 
- * like "#Laidout 0.08". If actual_type!=NULL, then *actual_type=new char[] with the
- * actual Laidout type of the file, such as "Project" or "Document".
- *
- * \todo implement the version check, and watch out for locale snafus
- */
-int laidout_file_type(const char *file, 
-					  const char *minversion, const char *maxversion,
-					  const char *typ, char **actual_type)
-{
-	if (file_exists(file,1,NULL)!=S_IFREG) return 1;
-
-	FILE *f=fopen(file,"r");
-	if (!f) return 2;
-	
-	char first100[100];
-	int n=fread(first100,1,100,f);
-	first100[n-1]='\0';
-	int err=1;
-	if (!strncmp(first100,"#Laidout ",9)) {
-		char *version=first100+9;
-		int c=9,c2=0,c3;
-		while (c<n && isspace(*version) && *version!='\n') { version++; c++; }
-		while (c<n && !isspace(version[c2])) { c2++; c++; }
-		
-		 //now the laidout version of the file is in version[0..c2)
-		//*** check: check for a min, max, or min AND max
-		//if (minversion && maxversion) ***=laidout_version_check(version, minversion, maxversion);
-
-		c3=c2;
-		while (c<n && isspace(version[c3])) { c3++; c++; }
-		if (!typ || (!strncmp(version+c3,typ,strlen(typ)) && isspace(version[c3+strlen(typ)]))) err=0;
-		if (actual_type) {
-			c2=c3;
-			while (c<n && !isspace(version[c2])) { c2++; c++; }
-			*actual_type=newnstr(version+c3,c2-c3);
-		}
-	}
-
-	fclose(f);
-	return err;
-}
-
-/*! \ingroup misc
- * Versions should be something like 0.05.1, or 0.05.custom.
- * This function merely checks the first part of the version string that can be converted
- * to a floating point number. If the version number cannot be so parsed, then 0 will be returned.
- *
- * Otherwise, 1 will be returned if version within bounds, else 0.
- */
-int laidout_version_check(const char *version, const char *minversion, const char *maxversion)
-{
-	float v,min,max;
-	char *end;
-	
-	v=strtof(version,&end);
-	if (end==version) return 0;
-
-	min=strtof(minversion,&end);
-	if (end==minversion) return 0;
-
-	max=strtof(maxversion,&end);
-	if (end==maxversion) return 0;
-
-	return v>=min && v<=max;
-}
-
 //! Simplify opening any sort of file for writing, does basic error checking, such as for existence, and writability.
 /*! \ingroup misc
  *
@@ -371,6 +298,150 @@ char *previewFileName(const char *file, const char *nametemplate)
 	delete[] tmplate;
 	simplify_path(previewname,1);
 	return previewname;
+}
+
+//------------------------------ File identification functions -------------------------------
+
+////! Find out the version and type of Laidout file this is, if any.
+//int laidout_file_type(const char *file, char **version, char **typ)
+
+//! Check if the file is a Laidout type typ, with a version [minversion,maxversion].
+/*! \ingroup misc
+ * If typ==NULL, then 0 is always returned as long as the file starts out something 
+ * like "#Laidout 0.08". If actual_type!=NULL, then *actual_type=new char[] with the
+ * actual Laidout type of the file, such as "Project" or "Document".
+ *
+ * Return 0 if the file is a Laidout file and the type is the correct type.
+ *
+ * \todo implement the version check, and watch out for locale snafus
+ */
+int laidout_file_type(const char *file, 
+					  const char *minversion, const char *maxversion,
+					  char **actual_version,
+					  const char *typ, char **actual_type)
+{
+	if (file_exists(file,1,NULL)!=S_IFREG) return 1;
+
+	FILE *f=fopen(file,"r");
+	if (!f) return 2;
+	
+	char first100[100];
+	int n=fread(first100,1,100,f);
+	first100[n-1]='\0';
+	int err=1;
+	if (!strncmp(first100,"#Laidout ",9)) {
+		char *version=first100+9;
+		int c=9,c2=0,c3;
+		while (c<n && isspace(*version) && *version!='\n') { version++; c++; }
+		while (c<n && !isspace(version[c2])) { c2++; c++; }
+		if (c2 && actual_version) *actual_version=newnstr(version,c2);
+		
+		 //now the laidout version of the file is in version[0..c2)
+		//*** check: check for a min, max, OR min AND max
+		//if (minversion && maxversion) ***=laidout_version_check(version, minversion, maxversion);
+
+		c3=c2;
+		while (c<n && isspace(version[c3])) { c3++; c++; }
+		if (!typ || (!strncmp(version+c3,typ,strlen(typ)) && isspace(version[c3+strlen(typ)]))) err=0;
+		if (actual_type) {
+			c2=c3;
+			while (c<n && !isspace(version[c2])) { c2++; c++; }
+			*actual_type=newnstr(version+c3,c2-c3);
+		}
+	}
+
+	fclose(f);
+	return err;
+}
+
+/*! \ingroup misc
+ * Versions should be something like 0.05.1, or 0.05.custom.
+ * This function merely checks the first part of the version string that can be converted
+ * to a floating point number. If the version number cannot be so parsed, then 0 will be returned.
+ *
+ * Otherwise, 1 will be returned if version within bounds, else 0.
+ *
+ * \todo currently this assumes the version can be converted to a real number (such as 0.05 above),
+ *   so any custom version should conform to that. 0.05.1, 0.05.custom, and 0.05.2 will convert to the same
+ *   value, so watch out! 
+ */
+int laidout_version_check(const char *version, const char *minversion, const char *maxversion)
+{
+	float v,min,max;
+	char *end;
+	
+	v=strtof(version,&end);
+	if (end==version) return 0;
+
+	min=strtof(minversion,&end);
+	if (end==minversion) return 0;
+
+	max=strtof(maxversion,&end);
+	if (end==maxversion) return 0;
+
+	return v>=min && v<=max;
+}
+
+//! Return string identifying the type of file.
+/*! \ingroup misc
+ *
+ * Currently, this checks for EPS, OFF, and Laidout files.
+ *
+ * EPS files return "EPS", with version1==postscript version, version2=eps version.
+ *
+ * OFF files return "OFF", and the versions are NULL.
+ *
+ * Laidout files return "Laidout" with version1 the Laidout version, 
+ * and version2 the specific type of Laidout file, such as "Project",
+ * "Document", "Impostion", etc.
+ *
+ * Returns NULL for file not specifically identified.
+ *
+ * Please note that this is definitely not related to mime types. This function is used
+ * mainly to identify the types of files that Laidout can readily load.
+ */
+const char *IdentifyFile(const char *file, char **version1, char **version2)
+{
+	float v1,v2;
+	if (isEpsFile(file,&v1,&v2)) {
+		if (version1) *version1=numtostr(v1);
+		if (version2) *version2=numtostr(v2);
+		return "EPS";
+	}
+	if (isOffFile(file)) return "OFF";
+	if (laidout_file_type(file, NULL, NULL, version1, NULL, version2)) return "Laidout";
+	return NULL;
+}
+
+//! Return whether file is an OFF file or not.
+/*! The OFF file format is originally from geomview.org.
+ *
+ * \todo this could check a little more accurately
+ */
+int isOffFile(const char *file)
+{
+	FILE *f=fopen(file,"r");
+	if (!f) return 0;
+
+	char first100[101];
+	int c=fread(first100,1,100,f);
+	first100[c]='\0';
+	c=-1;
+
+	 //check for the various OFF starts
+	 //***todo: check for start like this: [ST][C][N][4][n]OFF, see poly.cc for some code..
+	int p=0,
+		foundoff=0;
+	while (p<100 && isalpha(first100[p])) p++;
+	if (p) p--;
+	if (p>=2 && p<10) {
+		if (first100[p-2]=='O' && first100[p-1]=='F' && first100[p]=='F') {
+			//***this could be more thorough...
+			foundoff=1;
+		}
+	}
+	fclose(f);
+	return foundoff;
 }
 
 /*! \ingroup misc

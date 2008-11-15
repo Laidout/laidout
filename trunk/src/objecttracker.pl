@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+#this file is used to track unmatched reference counting
+#do laidout > temp, then run this file, and it will result in listing the
+#object numbers of undeleted objects
+
 use FileHandle;
 
 
