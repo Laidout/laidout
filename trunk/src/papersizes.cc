@@ -131,9 +131,14 @@ const char *BuiltinPaperSizes[42*3]=
  *		"Whatever","-","-"
  * </pre>
  *
+ * The "Custom" and "Whatever" sizes are special cases. Custom allows any dimensions,
+ * where the others are fixed. Whatever means you only want a big scratch space, and
+ * displaying a paper outline is not important.
+ *
  * \todo *** add NTSC, HDTV, a "Monitor" setting 72dpi, etc.. This could also imply
  *   splitting dpi to xdpi and ydpi
  * \todo this needs nested organizing
+ * \todo is "whatever" useful anymore with the no-doc option in ViewWindow?
  */
 PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 {
@@ -153,7 +158,9 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 //---------------------------------- PaperStyle --------------------------------
 
 /*! \class PaperStyle
- * \brief A simple class to hold the dimensions and orientation of a piece of paper.
+ * \brief A simple class to hold the dimensions, orientation, default dpi, and name of a piece of paper.
+ *
+ * For instance, a "Letter" paper is 8.5 x 11 inches, usually portrait.
  *
  * A number of standard sizes are built in. See GetBuiltinPaperSizes() for a list of them.
  * The only thing in flags is (flags&1) if it is landscape, or !(flags&1) if portrait.
@@ -270,7 +277,12 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
 //------------------------------------- PaperBox --------------------------------------
 
 /*! \class PaperBox 
- * \brief Wrapper around a paper style, for use in a PaperInterface.
+ * \brief Wrapper around a PaperStyle, for use in a PaperInterface.
+ *
+ * PaperBox contains rectangles to define areas for media, printable, bleed, trim, crop, art.
+ * These are typically based on the initial PaperStyle (PaperBox::paperstyle).
+ *
+ * These descriptive boxes can be transformed via a PaperBoxData, to be part of a PaperGroup.
  */
 /*! \var Laxkit::DoubleBBox PaperBox::media
  * \brief Normally, this will be the same as paperstyle.
@@ -329,7 +341,9 @@ int PaperBox::Set(PaperStyle *paper)
 //------------------------------------- PaperBoxData --------------------------------------
 
 /*! \class PaperBoxData
- * \brief Somedata Wrapper around a paper style, for use in a PaperInterface.
+ * \brief Somedata Wrapper around a PaperBox, for use in a PaperInterface.
+ *
+ * This lets all the various boxes of a PaperBox be transformed as part of a PaperGroup.
  */
 
 /*! Incs count of paper.
@@ -359,7 +373,13 @@ PaperBoxData::~PaperBoxData()
 	//Laxkit::anObject *owner;
 
 /*! \class PaperGroup
- * \brief Holds a collection of PaperBoxData objects.
+ * \brief An orientation of one or more papers to hold layouts.
+ *
+ * A PaperGroup holds a collection of PaperBoxData objects. Each PaperBoxData is
+ * a wrapper around a PaperBox, which defines various rectangles for 
+ * media, printable, bleed, trim, crop, and art boxes. These boxes are typically based on a base
+ * PaperStyle object, which defines dimensions, orientation, default dpi, and a name for a particular
+ * size of paper, such as Letter or A4.
  */
 
 PaperGroup::PaperGroup()

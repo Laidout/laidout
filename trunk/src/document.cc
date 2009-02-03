@@ -63,6 +63,12 @@ DocumentStyle::DocumentStyle(Imposition *imp)
 	imposition=imp;
 }
 
+//! Deletes saveas and imposition. *** must work out who should be holding what!!!
+DocumentStyle::~DocumentStyle()
+{
+	if (imposition) delete imposition;
+}
+
 /*! Recognizes 'imposition'. Discards all else.
  */
 void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
@@ -124,12 +130,6 @@ Style *DocumentStyle::duplicate(Style *s)//s=NULL
 	ds->imposition=(Imposition *)imposition->duplicate();
 	//ds->saveas?? untitled2 untitled.3  ds->saveas=getUniqueUntitled() ds->saveas=GetUniqueFileName(based on saveas)
 	return s;
-}
-
-//! Deletes saveas and imposition. *** must work out who should be holding what!!!
-DocumentStyle::~DocumentStyle()
-{
-	if (imposition) delete imposition;
 }
 
 

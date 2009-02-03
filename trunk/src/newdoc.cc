@@ -685,6 +685,8 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 void NewDocWindow::updateImposition()
 {
 	DBG cerr<<"----------attempting to updateImposition()-------"<<endl;
+	 //we load the off file here rather than sendNewDoc() 
+	 //to check to see if it is possible to do so... maybe not so important...
 	const char *file=impfromfile->GetCText();
 	if (isOffFile(file)) {
 		Polyhedron *poly=new Polyhedron();
@@ -724,15 +726,17 @@ void NewDocWindow::updateImposition()
 void NewDocWindow::sendNewDoc()
 {
 	 // find and get dup of imposition
-	Imposition *imposition=NULL;
+	Imposition *imposition=imp;
 	int c;
-	for (c=0; c<laidout->impositionpool.n; c++) {
-		if (!strcmp(laidout->impositionpool.e[c]->Stylename(),impsel->GetCurrentItem())) break;
-	}
-	if (c==laidout->impositionpool.n) imposition=new Singles();
-	else {
-		DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
-		imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
+	if (!imposition) {
+		for (c=0; c<laidout->impositionpool.n; c++) {
+			if (!strcmp(laidout->impositionpool.e[c]->Stylename(),impsel->GetCurrentItem())) break;
+		}
+		if (c==laidout->impositionpool.n) imposition=new Singles();
+		else {
+			DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
+			imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
+		}
 	}
 	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
 	
@@ -759,9 +763,9 @@ void NewDocWindow::sendNewDoc()
 	}
 		
 	imposition->NumPages(npgs);
-	DocumentStyle *newdoc=new DocumentStyle(imposition);
-	newdoc->imposition->SetPaperSize(papertype);
-	laidout->NewDocument(newdoc,saveas->GetCText());
+	DocumentStyle *newdocstyle=new DocumentStyle(imposition);
+	newdocstyle->imposition->SetPaperSize(papertype);
+	laidout->NewDocument(newdocstyle,saveas->GetCText());
 }
 
 //--------------------------------- NewProjectWindow ------------------------------------

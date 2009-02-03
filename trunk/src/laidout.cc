@@ -38,6 +38,7 @@
 #include "laidout.h"
 #include "viewwindow.h"
 #include "impositions/impositioninst.h"
+#include "impositions/netimposition.h"
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"
@@ -74,7 +75,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime in 2007\n"
+						  "by Tom Lechner, sometime in 2008\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -98,6 +99,7 @@ void print_usage()
 		"  -N --no-template                 Do not use a default template\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
 		"  --file-format                    Print out a pseudocode mockup of the file format, then exit\n"
+		"  --command-line                   Run Laidout from a console without the gui (***unimplemented)\n"
 		"  -v --version                     Print out version info, then exit.\n"
 		"  -h --help                        Show this summary and exit.\n");
 	exit(0);
@@ -246,6 +248,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 
 	 // laidoutrc defaults
 	defaultpaper=NULL;
+	icon_dir=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 	temp_dir=NULL;
 	default_template=NULL;
@@ -709,6 +712,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	DBG cerr <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
+			{ "command-line",        0, 0, 'C' },
 			{ "export",              1, 0, 'e' },
 			{ "list-export-options", 1, 0, 'O' },
 			{ "export-formats",      0, 0, 'X' },
@@ -717,7 +721,6 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ "new-font-path",       1, 0, 'p' },
 			{ "new",                 1, 0, 'n' },
 			{ "load-dir",            1, 0, 'l' },
-			{ "no-x",                0, 0, 'x' },
 			{ "template",            1, 0, 't' },
 			{ "no-template",         1, 0, 'N' },
 			{ "version",             0, 0, 'v' },
@@ -727,7 +730,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	int c,index;
 	char *exprt=NULL;
 	while (1) {
-		c=getopt_long(argc,argv,":Nt:fp:n:vh",long_options,&index);
+		c=getopt_long(argc,argv,":Nt:fp:n:vhC",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
 			case ':': cerr <<_("Missing parameter...")<<endl; exit(1); // missing parameter
@@ -746,7 +749,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'p': { // --new-font-path
 					cout << "**** add \""<< optarg << "\" to font path"<< endl;
 				} break;
-			case 'x': { // --no-x
+			case 'C': { // --command-line
 					cout << "**** must implement do not use X " << endl;
 				} break;
 			case 'n': { // --new "letter singes 3 pages blah blah blah"
@@ -977,6 +980,7 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 	
 	 //must push before Load to not screw up setting up windows and other controls
 	project->Push(doc); // docs is a plain Laxkit::PtrStack of Document
+	doc->dec_count();
 	if (doc->Load(fullname,NULL)==0) { // load failed
 		project->Pop(NULL);
 		delete doc;
@@ -1030,6 +1034,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
 	project->Push(doc); //important: this must be before doc->Load()
+	doc->dec_count();
 	
 	if (doc->Load(fullname, error_ret)==0) {
 		project->Pop(NULL);
@@ -1115,7 +1120,7 @@ int LaidoutApp::NewDocument(const char *spec)
 		}
 
 		 // check imposition types
-		for (c2=0; c2<impositionpool.n; c2++) {
+		if (!imp) for (c2=0; c2<impositionpool.n; c2++) {
 			if (!strncasecmp(field,impositionpool.e[c2]->Stylename(),n)) {
 				imp=impositionpool.e[c2];
 				break;
@@ -1130,6 +1135,12 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!paper) paper=papersizes.e[0];
 	unsigned int flags=paper->flags;
 	paper->flags=(paper->flags&~1)|landscape;
+	if (!strcmp("Net",imp->Stylename())) {
+		NetImposition *neti=dynamic_cast<NetImposition *>(imp);
+		if (!neti->nets.n) {
+			neti->SetNet("dodecahedron");
+		}
+	}
 	imp->SetPaperSize(paper); // makes a duplicate of paper
 	if (numpages==0) numpages=1;
 	imp->NumPages(numpages);
@@ -1142,7 +1153,8 @@ int LaidoutApp::NewDocument(const char *spec)
 	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate
 	Document *newdoc=new Document(docinfo,saveas);
 	if (!project) project=new Project();
-	project->Push(newdoc);
+	project->Push(newdoc); //adds count to newdoc
+	newdoc->dec_count();
 	if (saveas) delete[] saveas;
 
 	addwindow(newHeadWindow(newdoc));
@@ -1164,7 +1176,8 @@ int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
 
 	Document *newdoc=new Document(docinfo,filename);
 	if (!project) project=new Project();
-	project->Push(newdoc);
+	project->Push(newdoc); //adds count to newdoc
+	newdoc->dec_count();
 	
 	DBG cerr <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	

@@ -1,8 +1,10 @@
 #!/usr/bin/perl
 
 #this file is used to track unmatched reference counting
-#do laidout > temp, then run this file, and it will result in listing the
-#object numbers of undeleted objects
+#do laidout 2> temp, then run:
+#./objecttracker.pl > temp-not-deleted, which will
+#then contain a list of what was deleted or not. Go through that looking
+#for "NOT".....
 
 use FileHandle;
 

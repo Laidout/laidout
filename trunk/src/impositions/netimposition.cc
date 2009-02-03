@@ -179,10 +179,9 @@ int NetImposition::SetNet(const char *nettype)
 int NetImposition::SetNet(Net *newnet)
 {
 	if (!newnet) return 1;
-	newnet->inc_count();
 	newnet->info=0;//***tag says net is not built in
 	nets.flush();
-	nets.push(newnet);
+	nets.push(newnet);//adds a count
 	
 	 //// fit to page
 	setPage();
@@ -390,7 +389,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 	}
 
 	PathsData *newpath=new PathsData(); //count==1
-	unsigned long flag=(isbez?POINT_TONEXT:POINT_VERTEX);
+	unsigned long flag=(isbez==2 ? POINT_TONEXT : POINT_VERTEX);
 	for (int c=0; c<n; c++) {
 		newpath->append(pts[c].x,pts[c].y,flag);
 		if (isbez==2) {
