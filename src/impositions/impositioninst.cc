@@ -90,7 +90,7 @@ Singles::Singles() : Imposition("Singles")
 	else {
 		styledef=makeStyleDef();
 		if (styledef) stylemanager.AddStyleDef(styledef);
-		 // so this new styledef should have a count of 2. The destructor removes
+		 // so this new styledef should have a count of 2. The Style destructor removes
 		 // 1 count, and the stylemanager should remove the other
 	}
 	

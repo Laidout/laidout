@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -13,7 +13,6 @@
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
-/*************** dodecahedron.cc ********************/
 
 
 #include "dodecahedron.h"
@@ -34,6 +33,8 @@ using namespace std;
 
 //-------------------------- Dodecahedron ---------------------------------------------
 
+/*! \todo unwrap in a more pleasing manner
+ */
 Net *makeDodecahedronNet(double ww,double hh)
 {
 	Polyhedron *poly=new Polyhedron;
@@ -61,24 +62,30 @@ Net *makeDodecahedronNet(double ww,double hh)
 	poly->AddPoint(spacevector( -t, -t, -t)); //18
 	poly->AddPoint(spacevector(  t, -t, -t)); //19
 
-	poly->AddFace("0 1 12 5 15");
-	poly->AddFace("1 0 14 6 13");
-	poly->AddFace("2 3 19 4 16");
-	poly->AddFace("3 2 17 7 18");
-	poly->AddFace("0 15 9 8 14");
-	poly->AddFace("8 9 19 3 18");
-	poly->AddFace("12 1 13 10 11");
-	poly->AddFace("11 10 17 2 16");
-	poly->AddFace("5 12 11 16 4");
-	poly->AddFace("5 4 19 9 15");
-	poly->AddFace("6 13 10 17 7");
-	poly->AddFace("6 7 18 8 14");
+	poly->AddFace("0  1  12 5  15");
+	poly->AddFace("1  0  14 6  13");
+	poly->AddFace("2  3  19 4  16");
+	poly->AddFace("3  2  17 7  18");
+	poly->AddFace("0  15 9  8  14");
+	poly->AddFace("8  9  19 3  18");
+	poly->AddFace("12 1  13 10 11");
+	poly->AddFace("11 10 17 2  16");
+	poly->AddFace("5  12 11 16 4");
+	poly->AddFace("5  4  19 9  15");
+	poly->AddFace("6  13 10 17 7");
+	poly->AddFace("6  7  18 8  14");
 
 	poly->makeedges();
 	 
 	Net *net=new Net;
 	net->basenet=poly;
+
+	net->Anchor(0);
+	net->Unwrap(0,-1);
+	net->Unwrap(net->faces.n-1,-1);
 	net->TotalUnwrap();
+
+	//net->TotalUnwrap();
 	return net;
 }
 

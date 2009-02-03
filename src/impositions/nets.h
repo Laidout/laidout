@@ -87,7 +87,7 @@ class NetFace
 	virtual void dumpInAtts(LaxFiles::Attribute *att);
 };
 
-//----------------------------------- Net -----------------------------------
+//----------------------------------- AbstractNet -----------------------------------
 class AbstractNet : 
 	virtual public Laxkit::anObject,
 	virtual public Laxkit::RefCounted,

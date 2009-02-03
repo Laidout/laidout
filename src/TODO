@@ -2,6 +2,12 @@
 \section basics Next on the list..
 
 \section Overall Overall...
+
+This TODO is for general coding and recognized questions in the code that do not necessarily
+relate to pressing goals. Please consult the LEFT--OFF file in the src directory for things
+that a programmer was working on, but left off until tomorrow, and that should be fixed
+immediately.
+
 <pre>
 
  need a little better locale management during loading and saving. Files generally assume
