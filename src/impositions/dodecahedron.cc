@@ -62,30 +62,30 @@ Net *makeDodecahedronNet(double ww,double hh)
 	poly->AddPoint(spacevector( -t, -t, -t)); //18
 	poly->AddPoint(spacevector(  t, -t, -t)); //19
 
-	poly->AddFace("0  1  12 5  15");
-	poly->AddFace("1  0  14 6  13");
-	poly->AddFace("2  3  19 4  16");
-	poly->AddFace("3  2  17 7  18");
-	poly->AddFace("0  15 9  8  14");
-	poly->AddFace("8  9  19 3  18");
-	poly->AddFace("12 1  13 10 11");
-	poly->AddFace("11 10 17 2  16");
-	poly->AddFace("5  12 11 16 4");
-	poly->AddFace("5  4  19 9  15");
-	poly->AddFace("6  13 10 17 7");
-	poly->AddFace("6  7  18 8  14");
+	poly->AddFace("0 1 13 6 14");
+	poly->AddFace("0 15 5 12 1");
+	poly->AddFace("0 14 8 9 15");
+	poly->AddFace("6 7 18 8 14");
+	poly->AddFace("6 13 10 17 7");
+	poly->AddFace("1 12 11 10 13");
+	poly->AddFace("3 19 9 8 18");
+	poly->AddFace("4 5 15 9 19");
+	poly->AddFace("4 16 11 12 5");
+	poly->AddFace("2 17 10 11 16");
+	poly->AddFace("2 3 18 7 17");
+	poly->AddFace("2 16 4 19 3");
 
 	poly->makeedges();
-	 
+
 	Net *net=new Net;
 	net->basenet=poly;
 
 	net->Anchor(0);
 	net->Unwrap(0,-1);
-	net->Unwrap(net->faces.n-1,-1);
-	net->TotalUnwrap();
-
-	//net->TotalUnwrap();
+	net->Unwrap(1,2);
+	net->Unwrap(7,0);
+	net->Unwrap(15,-1);
+	
 	return net;
 }
 
