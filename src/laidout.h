@@ -24,6 +24,7 @@
 #include "project.h"
 #include "newdoc.h"
 #include "interfaces.h"
+#include "calculator/calculator.h"
 #include "impositions/imposition.h"
 #include "iconmanager.h"
 #include "filetypes/filefilters.h"
@@ -65,6 +66,7 @@ class LaidoutApp : public Laxkit::anXApp
 	Project *project;
 	Document *curdoc;
 	Laxkit::anXWindow *lastview;
+	LaidoutCalculator *calculator;
 
 	unsigned long curcolor;
 	
@@ -99,11 +101,13 @@ class LaidoutApp : public Laxkit::anXApp
 	void parseargs(int argc,char **argv);
 	int readinLaidoutDefaults();
 	int createlaidoutrc();
-	int dump_out_file_format(const char *file, int nooverwrite);
 	int isTopWindow(Laxkit::anXWindow *win);
 	int numTopWindows() { return topwindows.n; }
 
+	int dump_out_file_format(const char *file, int nooverwrite);
 	int DumpWindows(FILE *f,int indent,Document *doc);
+
+	 //commands
 	Document *findDocument(const char *saveas);
 	int Load(const char *filename, char **error_ret);
 	Document *LoadTemplate(const char *filename);
@@ -111,7 +115,10 @@ class LaidoutApp : public Laxkit::anXApp
 	int NewDocument(const char *spec);
 	int NewProject(Project *proj,char **error_ret);
 
+	 //data manipulation peacekeeper
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
+
+	 //resource and external executable management
 	char *full_path_for_resource(const char *name,const char *dir=NULL);
 	const char *binary(const char *what);
 };

@@ -106,11 +106,12 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	StyleDef *extendsdef;
 	NewStyleFunc newfunc;
 	Style *newStyle(StyleDef *def) { if (newfunc) return newfunc(this); return NULL; }
-	char *name; //name for interpreter
+	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
 	char *tooltip; // short description
 	char *description; // long description, this would be displayed on a help page, for instance.
-	char *range,*defaultvalue;
+	char *range;
+	char *defaultvalue;
 	
 	 // STYLEDEF_ORIGINAL
 	 // STYLEDEF_DUPLICATE

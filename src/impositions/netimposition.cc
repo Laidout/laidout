@@ -179,10 +179,14 @@ int NetImposition::SetNet(const char *nettype)
 int NetImposition::SetNet(Net *newnet)
 {
 	if (!newnet) return 1;
-	newnet->info=0;//***tag says net is not built in
+	newnet->info=0;//***tag that says net is not built in?? used?
 	nets.flush();
 	nets.push(newnet);//adds a count
 	
+	if (abstractnet) abstractnet->dec_count();
+	abstractnet=newnet->basenet;
+	if (abstractnet) abstractnet->inc_count();
+
 	 //// fit to page
 	setPage();
 
@@ -287,7 +291,7 @@ int NetImposition::SetPaperSize(PaperStyle *npaper)
 /*! Returns a new pagestyle for that page.
  *
  * \todo warning: potential cast problems with Imposition::GetPageOutline(), which
- *   returns a SomeData... should probably make it a path object of some kind.
+ *   returns a SomeData... should probably make that function return a path object of some kind.
  */
 PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
 {
@@ -302,18 +306,27 @@ PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
 /*! If maptoabstractnet==1 then this will be AbstractNet::NumFaces().
  *
  * Otherwise, and also if there is no abstract net,
- * then it is the sum of the number of faces in each active net.
+ * then it is the sum of the number of faces in each active net that are tagged
+ * with FACE_Actual. Note that there may be a ton of FACE_Potential faces
+ * in the net.
  */
 int NetImposition::numActiveFaces()
 {
 	if (maptoabstractnet==1 && abstractnet) return abstractnet->NumFaces();
 
 	int n=0;
-	for (int c=0; c<nets.n; c++) if (nets.e[c]->active) n+=nets.e[c]->faces.n;
+	for (int c=0; c<nets.n; c++) {
+		if (!nets.e[c]->active) continue;
+		for (int c2=0; c2<nets.e[c]->faces.n; c2++) 
+			if (nets.e[c]->faces.e[c2]->tag==FACE_Actual) n++;
+	}
 	return n;
 }
 
 //! Return the sum of number of active nets.
+/*! Note that if a net has only potential faces, it still counts as an active net.
+ * Really, nets should never have only potential faces.
+ */
 int NetImposition::numActiveNets()
 {
 	int n=0;
@@ -334,7 +347,7 @@ Page **NetImposition::CreatePages()
 	for (c=0; c<numpages; c++) {
 		 // pagestyle is passed to Page where its count is inc'd..
 		ps=GetPageStyle(c,0); //count of 1
-		pages[c]=new Page(ps,0,c);
+		pages[c]=new Page(ps,0,c);//adds count to ps
 		ps->dec_count(); //remove extra count
 	}
 
@@ -354,9 +367,11 @@ Page **NetImposition::CreatePages()
  * This currently always creates a new PathsData. In the future when
  * pagetype is implemented more effectively, there will likely be a few outlines
  * laying around, and a link to them would be returned.
+ *
+ * NOTE: The correct matrix for placement in a net is NOT returned with the path.
  */
 LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
-{
+{//**********************************
 	if (!nets.n) return NULL;
 	//if (!doc || pagenum<0 || pagenum>=doc->pages.n) return NULL; ***
 	if (pagenum<0 || pagenum>=numpages) return NULL;
@@ -372,7 +387,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 		isbez=face->getOutline(&n,&pts,0);
 		delete face;
 	} else {
-		 //the face is in a net, page numbers are mapped by active nets
+		 //the face is in a net, page numbers are mapped by active nets and FACE_Actual faces
 
 		 //map document page number to a particular net and net face index
 		int neti, netfacei;
@@ -423,7 +438,7 @@ int NetImposition::NumLayouts()
 //! Added "Singles With Adjacent" to layout types.
 const char *NetImposition::LayoutName(int layout)
 {
-	if (layout==SINGLES_WITH_ADJACENT_LAYOUT) return "Singles With Adjacent";
+	if (layout==SINGLES_WITH_ADJACENT_LAYOUT) return _("Singles With Adjacent");
 	return Imposition::LayoutName(layout);
 }
 
@@ -485,15 +500,17 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 	}
 
 	 // build lines...
-	NetLine *l;
-	Path *path;
+	NetLine *l=NULL;
+	Path *path=NULL;
 	for (int c=0; c<net->lines.n; c++) {
-		l=new NetLine(*net->lines.e[c]);
+		l=new NetLine;
+		*l=*net->lines.e[c];
 		path=new Path(l->points,l->linestyle,0);
 		l->points=NULL;
 		delete l;
 		spreadpath->paths.push(path,1);
 	}
+	spreadpath->FindBBox();
 
 	 //construct faces
 	int page;
@@ -504,6 +521,7 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 	unsigned long flag;
 	for (int c=0; c<net->faces.n; c++) {
 		netface=net->faces.e[c];
+		if (netface->tag!=FACE_Actual) continue;
 
 		page=pageoffset+net->faces.e[c]->original;
 		if (page>=numpages) page=-1;
@@ -523,7 +541,7 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		newpath->FindBBox();
 		delete[] p;
 
-		if (netface->matrix) transform_copy(netface->matrix, newpath->m());
+		if (netface->matrix) transform_copy(newpath->m(), netface->matrix);
 		spread->pagestack.push(new PageLocation(page,NULL,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
 	}
@@ -602,7 +620,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 int NetImposition::NumSpreads(int layout)
 {
 	if (layout==SINGLES_WITH_ADJACENT_LAYOUT) return NumSpreads(SINGLELAYOUT);
-	return NumSpreads(layout);
+	return Imposition::NumSpreads(layout);
 }
 
 //! Returns pagenumber/numActiveFaces().
@@ -611,6 +629,14 @@ int NetImposition::PaperFromPage(int pagenumber)
 	int n=numActiveFaces();
 	if (!n) return 0;
 	return pagenumber/n;
+}
+
+int NetImposition::SpreadFromPage(int layout, int pagenumber)
+{
+	if (layout==SINGLELAYOUT) return pagenumber;
+	if (layout==PAGELAYOUT) return SpreadFromPage(pagenumber);
+	if (layout==PAPERLAYOUT) return PaperFromPage(pagenumber);
+	return pagenumber; //SINGLES_WITH_ADJACENT_LAYOUT
 }
 
 //! Returns pagenumber/numActiveFaces().
@@ -814,11 +840,13 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 					value=att->attributes.e[c]->attributes.e[c2]->value;
 					if (strcmp(name,"filename")) continue;
 					if (isblank(value)) continue;
+					if (abstractnet) abstractnet->dec_count();
 					abstractnet=AbstractNetFromFile(value);
 				}
 			} else if (!strcmp(value,"Polyhedron")) {
 				Polyhedron *poly=new Polyhedron;
 				poly->dump_in_atts(att->attributes.e[c],flag,context);
+				if (abstractnet) abstractnet->dec_count();
 				abstractnet=poly;
 			}
 		}

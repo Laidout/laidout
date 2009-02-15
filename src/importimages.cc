@@ -437,7 +437,7 @@ int ImportImagesDialog::DataEvent(EventData *data,const char *mes)
 		delete data;
 		return 0;
 	}
-	return 1;
+	return FileDialog::DataEvent(data,mes);
 }
 
 int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)

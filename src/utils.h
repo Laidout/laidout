@@ -18,6 +18,7 @@
 #define UTILS_H
 
 #include <cstdio>
+#include <lax/attributes.h>
 
 char *untitled();
 FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret);
@@ -34,6 +35,8 @@ int isOffFile(const char *file);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
 int is_bitmap_image(const char *file);
 
+LaxFiles::Attribute *parse_fields(LaxFiles::Attribute *Att, const char *str,char **end_ptr);
+LaxFiles::Attribute *parse_a_field(LaxFiles::Attribute *Att, const char *str, char **end_ptr);
 
 #endif
 

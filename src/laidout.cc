@@ -29,7 +29,7 @@
 #include <lax/anxapp.h>
 #include <lax/version.h>
 #include <lax/fileutils.h>
-#include <Imlib2.h>
+#include <lax/laximlib.h>
 #include <getopt.h>
 #include <sys/file.h>
 
@@ -75,7 +75,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime in 2008\n"
+						  "by Tom Lechner, sometime between 2006 and 2009\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -99,7 +99,8 @@ void print_usage()
 		"  -N --no-template                 Do not use a default template\n"
 		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
 		"  --file-format                    Print out a pseudocode mockup of the file format, then exit\n"
-		"  --command-line                   Run Laidout from a console without the gui (***unimplemented)\n"
+		"  --command \"newdoc net\"           Run one or more commands without the gui, then exit\n"
+		"  --script /some/file              Like --command, but the commands are in the given file\n"
 		"  -v --version                     Print out version info, then exit.\n"
 		"  -h --help                        Show this summary and exit.\n");
 	exit(0);
@@ -260,6 +261,8 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 
 	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
 
+	calculator=NULL;
+
 //	MenuInfo *menu=new MenuInfo("Main Menu");
 //	 menu->AddItem("File",1);
 //	 menu->SubMenu("File");
@@ -308,7 +311,7 @@ LaidoutApp::~LaidoutApp()
 	if (temp_dir)           delete[] temp_dir;
 	if (default_template)   delete[] default_template;
 	if (ghostscript_binary) delete[] ghostscript_binary;
-	
+	if (calculator)		    calculator->dec_count();
 }
 
 //! Init pools, parse args, create a main control window.
@@ -430,11 +433,17 @@ int LaidoutApp::init(int argc,char **argv)
 		preview_file_bases.push(newstr(".laidout-%.jpg"));
 	}
 	
-	//****this should be done in a more automatic way via Laxkit: Init Imlib
-	imlib_context_set_display(dpy);
-	imlib_context_set_visual(vis);
-	imlib_context_set_colormap(DefaultColormap(dpy, DefaultScreen(dpy)));
-	imlib_set_cache_size(10 * 1024 * 1024); // in bytes
+	 //init imlib and define default icon
+	InitLaxImlib();//***need to be able to set default font and general imlib cache size
+	char *str=newstr(ICON_DIRECTORY);
+	appendstr(str,"/Laidout-shaded-icon-48x48.png");
+	DefaultIcon(str);
+	delete[] str;
+	//imlib_set_cache_size(10 * 1024 * 1024); // in bytes
+
+
+	 //initialize the main calculator
+	if (!calculator) calculator=new LaidoutCalculator();
 
 	 // Note parseargs has to come after initing all the pools and whatever else
 	parseargs(argc,argv);
@@ -712,13 +721,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	DBG cerr <<"---------start options"<<endl;
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
-			{ "command-line",        0, 0, 'C' },
+			{ "command",             1, 0, 'c' },
+			{ "script",              0, 0, 's' },
 			{ "export",              1, 0, 'e' },
 			{ "list-export-options", 1, 0, 'O' },
 			{ "export-formats",      0, 0, 'X' },
 			{ "file-format",         0, 0, 'F' },
-			{ "rescan-fonts",        0, 0, 'f' },
-			{ "new-font-path",       1, 0, 'p' },
 			{ "new",                 1, 0, 'n' },
 			{ "load-dir",            1, 0, 'l' },
 			{ "template",            1, 0, 't' },
@@ -730,7 +738,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	int c,index;
 	char *exprt=NULL;
 	while (1) {
-		c=getopt_long(argc,argv,":Nt:fp:n:vhC",long_options,&index);
+		c=getopt_long(argc,argv,":Nt:n:vhc:s:",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
 			case ':': cerr <<_("Missing parameter...")<<endl; exit(1); // missing parameter
@@ -743,16 +751,15 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 't': { // load in template
 					LoadTemplate(optarg);
 				} break;
-			case 'f': { // --rescan-fonts
-					cout << "**** rescan font path "<< endl;
+			case 's': { // --script
+					cout << "**** must implement script " << endl;
 				} break;
-			case 'p': { // --new-font-path
-					cout << "**** add \""<< optarg << "\" to font path"<< endl;
+			case 'c': { // --command
+					char *str=calculator->In(optarg);
+					if (str) cout <<str<<endl;
+					exit(0);//***this should exit(1) on error?
 				} break;
-			case 'C': { // --command-line
-					cout << "**** must implement do not use X " << endl;
-				} break;
-			case 'n': { // --new "letter singes 3 pages blah blah blah"
+			case 'n': { // --new "letter singles 3 pages blah blah blah"
 					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1]->doc;
 				} break;
 			case 'l': { // load dir
@@ -769,11 +776,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exprt=newstr(optarg);
 				} break;
 			case 'O': { // list export options for a given format
-					DBG cout <<"   ***** THIS IS A HACK!! Fix me! ***"<<endl;
+					DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
 					printf("format   = \"%s\"    #the format to export as\n",optarg);
 					printf("tofile   = /file/to/export/to\n");
-					printf("tofiles  = \"/files/like###.this\"  #the # section is replaced with the page index\n");
-					printf("                                  #Only one of filename or tofiles should be present\n");
+					printf("tofiles  = \"/files/like###.this\"  #the \"###\" section is replaced with the spread index\n");
+					printf("                                  #Either tofile or tofiles should be present, not both\n");
 					printf("layout   = pages   #the value depends on the particular imposition used by the document\n");
 					printf("start    = 3       #the starting index to export, counting from 0\n");
 					printf("end      = 5       #the ending index to export, counting from 0\n");
@@ -1049,7 +1056,11 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 //! Create a new document from spec and call up a new ViewWindow.
 /*! spec would be something passed in on the command line,
  * like (case doesn't matter):\n
- * <tt> laidout -n "saveas blah.doc, letter, 3 pages, booklet"</tt>
+ * <pre>
+ *  laidout -n "saveas blah.doc, letter, 3 pages, booklet"
+ *  laidout -n "3 pages, net(box,3,5,9)"
+ *  laidout -n "net(dodecahedron)"
+ * </pre>
  * 
  * For now, only paper size, number of pages, and very basic imposition type
  * are implemented. Does a comparison only of the characters in the field, so
@@ -1057,13 +1068,15 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
  * 
  * The option parser then calls this function with spec="letter, 3 pages, booklet".
  * At a minimum, you must specify the paper size and imposition.
- * "default" maps to "letter, portrait, 1 page, Singles". *** default should be
- * a setting in the laidoutrc.
+ * "default" or a blank spec currently maps to "letter, portrait, 1 page, Singles".
+ *
+ * Calling this function has the same effect as doing "newdoc spec" in
+ * a command prompt pane.
+ *
+ * \todo *** default should be a setting in the laidoutrc.
  *
  * Return 0 on success, nonzero for fail.
  * 
- * ***--or--?\n
- * DocumentStyle *LaidoutApp::NewDocument(const char *spec)
  */
 int LaidoutApp::NewDocument(const char *spec)
 {
@@ -1076,9 +1089,16 @@ int LaidoutApp::NewDocument(const char *spec)
 	PaperStyle *paper=NULL;
 	int numpages=1;
 	
+	Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
+
+
+//---------------------****
 	 // break down the spec
 	char **fields=split(spec,',',NULL),*field;
-	if (!fields) { cout <<"*** broken spec"<<endl; return 2; }
+	if (!fields) { 
+		DBG cout <<"*** broken spec"<<endl;
+		return 2; 
+	}
 	int c,c2,n; // n is length of first alnum word in field
 	int landscape=0;
 	for (c=0; fields[c]; c++) {
