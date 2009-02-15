@@ -15,6 +15,7 @@ DEBUGFLAGS= -g -DDEBUG
 
 
 dirs= \
+	calculator \
 	dataobjects \
 	impositions \
 	interfaces \
@@ -51,8 +52,27 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) $(dirs) 
+laidout: lax laxinterface $(objs) $(dirs)
+	for NAME in $(dirs); do $(MAKE) -C $$NAME; done 
 	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
+
+calculator:
+	cd calculator && $(MAKE)
+
+dataobjects:
+	cd dataobjects && $(MAKE)
+
+impositions:
+	cd impositions && $(MAKE)
+
+interfaces:
+	cd interfaces && $(MAKE)
+
+filetypes:
+	cd filetypes && $(MAKE)
+
+printing:
+	cd printing && $(MAKE)
 
 # This changes in *.cc all occurrences of '(whitespace)DBG' to '(same ws)//DBG' and
 # '(whitespace)//DBG' to '(same ws)////DBG'
@@ -90,20 +110,6 @@ depends:
 
 include makedepend
 
-interfaces: 
-	cd interfaces && $(MAKE)
-
-filetypes: 
-	cd filetypes && $(MAKE)
-
-printing: 
-	cd printing && $(MAKE)
-
-impositions:
-	cd impositions && $(MAKE)
-
-dataobjects: 
-	cd dataobjects && $(MAKE)
 
 .PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage
 clean:

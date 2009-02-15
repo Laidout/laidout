@@ -11,26 +11,25 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2009 by Tom Lechner
 //
 
-#ifndef COMMANDWINDOW_H
-#define COMMANDWINDOW_H
+#ifndef CALCULATOR_H
+#define CALCULATOR_H
 
-#include <lax/promptedit.h>
-#include "calculator/calculator.h"
+#include <lax/refcounted.h>
 
-class CommandWindow : public Laxkit::PromptEdit
+class LaidoutCalculator : public Laxkit::RefCounted
 {
- protected:
-	LaidoutCalculator *calculator;
-	virtual char *process(const char *in);
+ private:
+	char *dir;
  public:
- 	CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
- 		int xx,int yy,int ww,int hh,int brder);
- 	virtual const char *whattype() { return "CommandWindow"; }
-	virtual ~CommandWindow();
+	LaidoutCalculator();
+	virtual ~LaidoutCalculator();
+
+	virtual char *In(const char *in);
 };
+
 
 #endif
 

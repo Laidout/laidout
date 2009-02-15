@@ -70,11 +70,12 @@ depends: touchdepends
 
 touchdepends:
 	touch src/makedepend
-	touch src/impositions/makedepend
-	touch src/printing/makedepend
+	touch src/calculator/makedepend
 	touch src/dataobjects/makedepend
 	touch src/filetypes/makedepend
+	touch src/impositions/makedepend
 	touch src/interfaces/makedepend
+	touch src/printing/makedepend
 
 .PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:

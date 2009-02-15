@@ -531,6 +531,13 @@ int Singles::PaperFromPage(int pagenumber)
 int Singles::SpreadFromPage(int pagenumber)
 { return pagenumber; }
 
+int Singles::SpreadFromPage(int layout, int pagenumber)
+{
+	if (layout==SINGLELAYOUT) return pagenumber;
+	if (layout==PAGELAYOUT) return SpreadFromPage(pagenumber);
+	return PaperFromPage(pagenumber); //paperlayout
+}
+
 //! Is singles, so 1 paper=1 page
 int Singles::GetPagesNeeded(int npapers) 
 { return npapers; }

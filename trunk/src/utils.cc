@@ -492,3 +492,177 @@ int is_bitmap_image(const char *file)
 	return 1;
 }
 
+//-------------------------- various parsing functions ------------------------------
+
+
+//! Parse str into a series of parameter, as for a function call.
+/*! \ingroup misc
+ * Parsing will terminate if it encounters an unmatched ')'
+ *
+ * Warning: this is really just a hack placeholder, until scripting and data
+ * handling gets a proper implementation.
+ *
+ * This assumes there is a comma separated list of paremeters. You can give
+ * the name of the paremeter, a la python: "width=5". The string will be turned
+ * into a list with each parameter as a seperate subattribute. If you pass in
+ * "width=5", then there will be an attribute with name="width" and value="5".
+ *
+ * Any paremeter that has no explicit name will get name="-". For example,
+ * if you simply pass in "width", then you will get name="-" and value="width".
+ *
+ * Note that this will only expand values, not names. Names must be a string of
+ * non-whitespace characters before an '='. If the value is something 
+ * like "imposition=net.box(3,5)" then
+ * the attribute will be name="imposition" and value="net", and there
+ * will be a subattribute with name="." and value="box", which has further subattributes with
+ * values "3" and "5", and whose names are both '-'.
+ *
+ * Something like "imposition.net.box(width=5,3,6)" will be an attribute like this:
+ * <pre>
+ *  - imposition
+ *     . net
+ *       . box
+ *         width 5
+ *         - 3
+ *         - 6
+ * </pre>
+ *
+ * <pre>
+ *    letter, 3 pages, net.box(3,5,6)
+ *    letter, 3 pages, net.box(width=3,height=5,depth=6)
+ *    blah=blabber, imposition.file(/some/file)
+ *    net.file(/some/file.off)
+ * </pre>
+ *
+ * Used, for instance, in LaidoutApp::parseargs(), or in command line pane.
+ *
+ * \todo ***this is a means to an end at the moment. Full scripting will make this
+ *    more powerful
+ */
+Attribute *parse_fields(Attribute *Att, const char *str,char **end_ptr)
+{
+	Attribute *tatt,*att=Att;
+	if (!att) att=new Attribute;
+	const char *s=str;
+	char *e;
+
+	while (isspace(*s)) s++;
+	while (s && *s) {
+		tatt=parse_a_field(att,s,&e);
+		if (e==s || !tatt) break;
+		if (*e==',') e++;
+		s=e;
+	}
+	if (end_ptr) *end_ptr=e;
+
+	//DBG cout <<"parsed str into attribute:"<<endl;
+	//DBG att->dump_out(stderr,0);
+
+	return att;
+}
+
+/*! \ingroup misc
+ * If nothing parsed, end_ptr is set to str.
+ * See parse_fields() for full explanation
+ */
+Attribute *parse_a_field(Attribute *Att, const char *str, char **end_ptr)
+{
+	Attribute *att=Att;
+	if (!att) att=new Attribute;
+
+	Attribute *subatt=NULL;
+	const char *s,*e;
+	char *name=NULL, *value=NULL;
+	char error=0;
+	while (isspace(*str) && *str!=',' && *str!=')') str++;
+
+	 //now str points to the start of a name..
+	s=str;
+	while (*s && !isspace(*s) && *s!='=' && *s!=',' && *s!=')' && *s!='.' && *s!='(') s++;
+	if (s==str) {
+		 //empty string, or premature ending!
+		if (end_ptr) *end_ptr=const_cast<char*>(s);
+		return NULL; //error! no name found;
+	}
+	e=s;
+	while (isspace(*e)) e++;
+
+	if (*e=='=') {
+		name=newnstr(str,s-str);
+		str=e+1;
+		while (isspace(*str)) str++;
+	} else {
+		//leave str at beginning of what might have been a name
+		name=newstr("-");
+	}
+
+	 //now str points at the start of a value, we must parse the value now
+	subatt=att;
+	do {
+		s=str; //*str!=whitespace
+
+		 //scan for a value string
+		if (isdigit(*s)) while (!isspace(*s) && *s!=',' && *s!=')') s++;
+		else while (*s && !isspace(*s) && *s!=',' && *s!=')' && *s!='.' && *s!='(') s++;
+		if (s==str) {
+			 //reached end of field
+			if (*str==',') str++; //make str point to start of next field
+			if (*s=='(' || *s=='.') error=1;
+			break;
+		}
+
+		 //push new attribute with name and value. we might add subattributes
+		value=newnstr(str,s-str);
+		subatt->push(name,value); //1st is something like "-" -> "net", then "."->"net"
+		delete[] name;  name=NULL;
+		delete[] value; value=NULL;
+
+		while (isspace(*s)) s++;
+		if (*s=='.') {
+			 //found something like "net.box(1,2,3)", and value would be "net"
+			if (name==NULL) name=newstr(".");
+			s++;
+			while (isspace(*s)) s++;
+			str=s;
+			
+			subatt=subatt->attributes.e[subatt->attributes.n-1];
+			continue;
+		}
+		if (*s=='(') {
+			s++;
+			str=s;
+			subatt=subatt->attributes.e[subatt->attributes.n-1];
+			char *ee;
+			if (parse_fields(subatt,str,&ee)==NULL) {
+				error=1;
+				break;
+			}
+			s=ee;
+			if (*s!=')') {
+				error=1; //error! unmatched ')'
+				break;
+			}
+			str=s+1;
+			while (isspace(*str)) str++;
+			if (*str==',') str++;
+			//at this point, there should be ONLY a ')', whitespace, or eol left in field
+			break;
+		}
+		if (*s==')' || *s==',') {
+			 //we have a simple attribute, then we are at end of the field
+			str=s;
+			break;
+		}
+		str=s;
+	} while (str && *str && !error);
+
+	if (name) delete[] name;
+	if (value) delete[] value;
+
+	if (end_ptr) *end_ptr=const_cast<char*>(str);
+	if (error && att!=Att) { delete att; att=NULL; } //att was created locally
+
+	return att;
+}
+
+

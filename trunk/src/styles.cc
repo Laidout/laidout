@@ -528,8 +528,16 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  *    -STYLEDEF_VALUE- (starting at 100) <-- is a number type used in the built-in interpreter
  *    </pre>
  */
+/*! \var char *StyleDef::name
+ *  \brief Basically a class name, meant to be seen in the interpreter.
+ */
+/*! \var char *StyleDef::Name
+ *  \brief Basically a human readable version of the class name.
+ *
+ *  This is used as a label in automatically created edit windows.
+ */
 /*! \var char *StyleDef::extends
- *  \brief Name of which StyleDef this one extends.
+ *  \brief The StyleDef::name of which StyleDef this one extends.
  *  
  *  If there is an extends, the index of all the fields starts with 0, which
  *	is the very first field in the very first base styledef.

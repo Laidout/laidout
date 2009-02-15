@@ -113,7 +113,7 @@ int NetLine::Set(const char *d,LineStyle *ls)
 {
 	if (linestyle && ls) linestyle->dec_count();
 	if (ls) { ls->inc_count(); linestyle=ls; }
-	if (points) delete[] points;
+	if (points) delete points;
 	points=SvgToCoordinate(d,0,NULL);
 	return points?0:1;
 }
@@ -178,7 +178,7 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 	if (!att) return;
 	int c;
 	if (val) {
-		if (points) delete[] points;
+		if (points) delete points;
 		points=SvgToCoordinate(val,0,NULL);
 	}
 	char *name,*value;
@@ -186,7 +186,7 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"points")) {
-			if (points) delete[] points;
+			if (points) delete points;
 			points=SvgToCoordinate(value,0,NULL);
 		} else if (!strcmp(name,"linestyle")) {
 			if (!linestyle) {
@@ -319,8 +319,8 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
  * \brief The status of the connecting face. Similar in spirit to NetFaceEdge::tag.
  *
  * Unlike NetFaceEdge::tag, this tag is usually only:\n
- * 1==an actual face.\n
- * 2==a potential face
+ * FACE_Actual==an actual face.\n
+ * FACE_Potential==a potential face
  */
 
 NetFace::NetFace()
@@ -692,6 +692,10 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 
 /*! \fn NetFace *AbstractNet::GetFace(int i)
  * \brief Return a NetFace corresponding to AbstractNet face with index i.
+ *
+ * The face returned has edges that have indexes of original faces the edges connect
+ * to, but the edge tags are all FACE_None. Upon unwrapping, the Net class is supposed
+ * to change those tags to appropriate values.
  */
 /*! \fn	const char *AbstractNet::NetName()
  * \brief Return a human readable title of the net, if any.
@@ -1074,7 +1078,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (faces.n) {
 		for (int c=0; c<faces.n; c++) {
 			DBG cerr <<"dump out face "<<c<<endl;
-			fprintf(f,"%sface\n",spc);
+			fprintf(f,"%sface #%d\n",spc,c);
 			faces.e[c]->dumpOut(f,indent+2,0);
 		}
 	}
@@ -1433,7 +1437,7 @@ int Net::Anchor(int basenetfacei)
 //! Add the potential faces to net face number facenum.
 /*! Returns the number of faces added.
  *
- * If an edge is tagged Actual, but there is no edge->toface then, the edge is actually
+ * If an edge is tagged FACE_Actual, but there is no edge->toface then, the edge is actually
  * potential, and the potential face is added.
  */
 int Net::addPotentialsToFace(int facenum)
@@ -1642,6 +1646,8 @@ int Net::rebuildLines()
 	Coordinate *p,*nl,*nlp;
 	NetLine *l;
 	for (int c=0; c<faces.n; c++) {
+		if (faces.e[c]->tag!=FACE_Actual) continue;
+
 		nl=NULL;
 		for (int c2=0; c2<faces.e[c]->edges.n; c2++) {
 			p=faces.e[c]->edges.e[c2]->points;
@@ -1725,11 +1731,12 @@ int Net::Unwrap(int netfacei,int atedge)
 		return 0;
 	}
 	if (netfacei>=faces.n) return 3;
-	int s, e;
-	if (atedge>=0) s=e=atedge; else { s=0; e=faces.n-1; }
 
 	NetFace *f1=faces.e[netfacei],
 			*f2;
+	int s, e; //the first and last edges to unwrap 
+	if (atedge>=0) s=e=atedge; else { s=0; e=f1->edges.n-1; }
+
 	if (s<0 || s>=f1->edges.n || e<0 || e>=f1->edges.n) return 3;
 	int changed=0;
 	for (int c=s; c<e+1; c++) { //for each edge, drop a face

@@ -39,6 +39,7 @@ class Singles : public Imposition
 	virtual Spread *PaperLayout(int whichpaper);
 	virtual int PaperFromPage(int pagenumber);
 	virtual int SpreadFromPage(int pagenumber);
+	virtual int SpreadFromPage(int layout, int pagenumber);
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);

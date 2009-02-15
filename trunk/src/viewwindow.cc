@@ -637,9 +637,7 @@ int LaidoutViewport::NextSpread()
 	if (!spread || !(doc && doc->docstyle && doc->docstyle->imposition)) return -1;
 	
 	int max=-1;
-	if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
-	else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
-	else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+	max=doc->docstyle->imposition->NumSpreads(viewmode);
 
 	if (max>=0) {
 		spreadi++;
@@ -660,9 +658,7 @@ int LaidoutViewport::PreviousSpread()
 	if (!spread || !(doc && doc->docstyle && doc->docstyle->imposition)) return -1;
 	
 	int max=-1;
-	if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
-	else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
-	else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
+	max=doc->docstyle->imposition->NumSpreads(viewmode);
 
 	if (max>=0) {
 		spreadi--;
@@ -763,19 +759,11 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	} 
 	if (doc) {
 		if (tospread==-1 && topage>=0) {
-			tospread=doc->docstyle->imposition->SpreadFromPage(topage);
-			
-			if (viewmode==PAGELAYOUT) tospread=doc->docstyle->imposition->SpreadFromPage(topage);
-			else if (viewmode==PAPERLAYOUT) tospread=doc->docstyle->imposition->PaperFromPage(topage);
-			else if (viewmode==SINGLELAYOUT) tospread=topage;
+			tospread=doc->docstyle->imposition->SpreadFromPage(viewmode,topage);
 		}
 		
 		int max=-1;
-		//if (doc && doc->docstyle && doc->docstyle->imposition) {
-			if (viewmode==PAGELAYOUT) max=doc->docstyle->imposition->NumSpreads();
-			else if (viewmode==PAPERLAYOUT) max=doc->docstyle->imposition->NumPapers();
-			else if (viewmode==SINGLELAYOUT) max=doc->docstyle->imposition->NumPages();
-		//}
+		max=doc->docstyle->imposition->NumSpreads(viewmode);
 
 		 // clamp tospread to the imposition's spread range
 		if (max>=0) {
@@ -806,9 +794,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 
 	 // retrieve the proper spread according to viewmode
 	if (!spread && tospread>=0 && doc && doc->docstyle && doc->docstyle->imposition) {
-		if (viewmode==PAGELAYOUT) spread=doc->docstyle->imposition->PageLayout(tospread);
-		else if (viewmode==PAPERLAYOUT) spread=doc->docstyle->imposition->PaperLayout(tospread);
-		else spread=doc->docstyle->imposition->SingleLayout(tospread); // default to singlelayout
+		spread=doc->docstyle->imposition->Layout(viewmode,tospread);
 		spreadi=tospread;
 	}
 
@@ -2548,6 +2534,7 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%ssinglelayout        #put the view mode to singles\n",spc);
 		fprintf(f,"%s#pagelayout         #put the view mode to page spreads\n",spc);
 		fprintf(f,"%s#paperlayout        #put the view mode to paper spreads\n",spc);
+		fprintf(f,"%s#layout Single      #see individual impositions for layout types\n",spc);
 		
 		fprintf(f,"%sspread 1            #the index of the spread for the acting imposition\n",spc);
 		fprintf(f,"%spage   0            #the document page index of the page to set context to\n",spc);
@@ -2561,9 +2548,8 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	int vm=vp->viewmode;
-	if (vm==SINGLELAYOUT) fprintf(f,"%ssinglelayout\n",spc);
-	else if (vm==PAGELAYOUT) fprintf(f,"%spagelayout\n",spc);
-	else fprintf(f,"%spaperlayout\n",spc);
+	if (doc && doc->docstyle->imposition->LayoutName(vm)) 
+		fprintf(f,"%slayout %s\n",spc,doc->docstyle->imposition->LayoutName(vm));
 	
 	if (vp)	fprintf(f,"%sspread %d\n",spc,vp->spreadi);
 	if (vp->spread && vp->spread->pagestack.n)
@@ -2607,6 +2593,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	int vm=PAGELAYOUT, spr=0, pn=0;
 	double m[6],x1=0,x2=0,y1=0,y2=0;
 	int n=0;
+	const char *layouttype=NULL;
 	doc=NULL;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
@@ -2625,6 +2612,8 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			vm=PAPERLAYOUT;
 		} else if (!strcmp(name,"singlelayout")) {
 			vm=SINGLELAYOUT;
+		} else if (!strcmp(name,"layout")) {
+			layouttype=value;
 		} else if (!strcmp(name,"spread")) {
 			IntAttribute(value,&spr);
 		} else if (!strcmp(name,"page")) {
@@ -2650,6 +2639,11 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	viewport->dp->SetSpace(x1,x2,y1,y2);
 	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
+	if (layouttype && doc) {
+		for (int c=0; c<doc->docstyle->imposition->NumLayouts(); c++) {
+			if (!strcmp(layouttype,doc->docstyle->imposition->LayoutName(c))) { vm=c; break; }
+		}
+	}
 	((LaidoutViewport *)viewport)->SetViewMode(vm,spr);
 	if (n==6) {
 		viewport->dp->NewTransform(m);
@@ -2854,9 +2848,20 @@ int ViewWindow::init()
 	
 	StrSliderPopup *p=new StrSliderPopup(this,"view type",0, 0,0,0,0,1, NULL,window,"newViewType");
 	int vm=((LaidoutViewport *)viewport)->ViewMode(NULL);
-	p->AddItem(_("Single"),SINGLELAYOUT);
-	p->AddItem(_("Page Layout"),PAGELAYOUT);
-	p->AddItem(_("Paper Layout"),PAPERLAYOUT);
+	//*****this needs dynamic adjustment for imposition layout options....
+	//****update layout type
+	LaidoutViewport *vp=((LaidoutViewport *)viewport);
+	Imposition *imp=NULL;
+	if (vp->doc && vp->doc->docstyle) imp=vp->doc->docstyle->imposition;
+	if (imp) {
+		for (int c=0; c<imp->NumLayouts(); c++) {
+			p->AddItem(imp->LayoutName(c),c);
+		}
+	} else {
+		p->AddItem(_("Single"),SINGLELAYOUT);
+		p->AddItem(_("Page Layout"),PAGELAYOUT);
+		p->AddItem(_("Paper Layout"),PAPERLAYOUT);
+	}
 	p->Select(vm);
 	p->WrapWidth();
 	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
@@ -3206,6 +3211,21 @@ void ViewWindow::updateContext()
 	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
 	else strcat(blah,"none");
 	if (mesbar) mesbar->SetText(blah);
+
+
+	//****update layout type
+	StrSliderPopup *layouttype=dynamic_cast<StrSliderPopup*>(findChildWindow("view type"));
+	if (layouttype) {
+		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+		Imposition *imp;
+		if (vp->doc && vp->doc->docstyle) imp=vp->doc->docstyle->imposition;
+		if (imp) {
+			layouttype->Flush();
+			for (int c=0; c<imp->NumLayouts(); c++) {
+				layouttype->AddItem(imp->LayoutName(c),c);
+			}
+		}
+	}
 }
 
 //! Deal with various indicator/control events
@@ -3440,13 +3460,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"newViewType")) {
 		 // must update labels have Spread [2-3]: 2
 		int v=e->data.l[0];
-		if (v==SINGLELAYOUT) {
-			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(SINGLELAYOUT,-1));
-		} else if (v==PAGELAYOUT) {
-			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(PAGELAYOUT,-1));
-		} else if (v==PAPERLAYOUT) {
-			pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(PAPERLAYOUT,-1));
-		}
+		pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(v,-1));
 		return 0;
 	} else if (!strcmp(mes,"importImage")) {
 		Group *toobj=NULL;

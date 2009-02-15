@@ -378,6 +378,9 @@ int *Spread::pagesFromSpread()
 /*! \fn int Imposition::SpreadFromPage(int pagenumber)
  * \brief Return the (first) spread index number that contains page index pagenumber in doc->pages.
  */
+/*! \fn int Imposition::SpreadFromPage(int layout,int pagenumber)
+ * \brief Return the (first) spread index number of type layout that contains page index pagenumber in doc->pages.
+ */
 /*! \fn int Imposition::NumPapers()
  * \brief Return the the number of papers the imposition thinks there are.
  */
