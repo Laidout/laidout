@@ -39,6 +39,7 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
+
 //--------------------------------- install Passepartout filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -321,7 +322,7 @@ const char *PptinFilter::VersionName()
 
 //! Import a Passepartout file.
 /*! If doc!=NULL, then import the pptout files to Document starting at page startpage.
- * Otherwise, create a brand new Singles based document.
+ * If doc==NULL, create a brand new Singles based document.
  *
  * Does no check on the file to ensure that it is in fact a Passepartout file.
  *
@@ -356,6 +357,8 @@ const char *PptinFilter::VersionName()
  * \todo ***** finish imp me!
  * \todo there should be a way to preserve any elements that laidout doesn't understand, so
  *   when outputting as ppt, these elements would be written back out maybe...
+ * \todo *** if first_page_num exists, then must set up page labels
+ * \todo *** implement dump into group, rather than doc
  */
 int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
@@ -369,12 +372,14 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	
 	int c;
 	Attribute *pptdoc=att->find("document"),
-			  *page, *frame, *a;
+			  *page, *a;
 	if (!pptdoc) { delete att; return 3; }
 	
 	 //figure out the paper size, orientation
-	a=pptdoc->find("paper_name");
 	PaperStyle *paper=NULL;
+	int landscape;
+
+	a=pptdoc->find("paper_name");
 	if (a) {
 		for (c=0; c<laidout->papersizes.n; c++)
 			if (!strcasecmp(laidout->papersizes.e[c]->name,a->value)) {
@@ -385,117 +390,171 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	if (!paper) paper=laidout->papersizes.e[0];
 
 	 //figure out orientation
-	int landscape;
 	a=pptdoc->find("landscape");
 	if (a) landscape=BooleanAttribute(a->value);
 	else landscape=0;
 	
 	 // read in pages
-	int pagenum=0;
-	pptdoc=pptdoc->find("contents");
+	int pagenum=0; //the page in doc to start dumping into
+	pptdoc=pptdoc->find("content:");
 	if (!pptdoc) { delete att; return 4; }
 
+	 //now pptdoc's subattributes should be one or more "page" or "text_stream" blocks 
+
 	 //create the document
-	if (!doc) {
+	if (!doc && !in->toobj) {
 		Imposition *imp=new Singles;
 		paper->flags=((paper->flags)&~1)|(landscape?1:0);
 		imp->SetPaperSize(paper);
 		DocumentStyle *docstyle=new DocumentStyle(imp);
-		doc=new Document(docstyle,"untitled");//**** laidout should keep track of: untitled1, untitled2, ...
+		doc=new Document(docstyle,Untitled_name());
 	}
 
-	ImageData *image;
-	LaxImage *img=NULL;
-	Attribute *t,*n,*m;
-	double M[6];
+	Attribute *ppthints=NULL;
 	
+	Group *group=in->toobj;
+
 	for (c=0; c<pptdoc->attributes.n; c++) {
 		if (!strcmp(pptdoc->attributes.e[c]->name,"page")) {
-			if (pagenum>doc->pages.n) doc->NewPages(-1,1);
-			page=pptdoc->attributes.e[c];
-			for (int c2=0; c2<page->attributes.n; c2++) {
-				if (!strcmp(page->attributes.e[c]->name,"frame")) {
-					frame=page->attributes.e[c];
-					a=frame->find("file");
-					t=frame->find("type");
-					n=frame->find("name");
-					m=frame->find("matrix");
+			if (doc && pagenum>=doc->pages.n) doc->NewPages(-1,doc->pages.n-pagenum+1);
 
-					if (m) DoubleListAttribute(m->value,M,6,NULL);
-
-					if (a && a->value && t) {
-						if (!strcmp(t->value,"raster")) {
-							img=load_image(a->value);
-							if (img) {
-								image=new ImageData;
-								if (n) image->SetDescription(n->value);
-								image->SetImage(img);
-								dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
-								image->dec_count();
-							}
-						} else if (!strcmp(t->value,"group")) {
-							//***
-							//pptDumpInGroup(page->attributes.e[c]->attributes***
-						} else if (!strcmp(t->value,"image")) {
-							//***for eps objects
-						} else if (!strcmp(t->value,"text")) {
-							MysteryData *d=(MysteryData *)newObject("MysteryData");
-							d->generator=newstr(VersionName());
-							 //<frame name="Text stream1"
-							 //       matrix="1 0 0 1 140.833 145.245"
-							 //       lock="false"
-							 //       flowaround="false"
-							 //       obstaclemargin="0"
-							 //       type="text"
-							 //       width="200"
-							 //       height="300"
-							 //       num_columns="1"
-							 //       gutter_width="12"
-							 //       stream="stream1"/>
-							if (m) transform_copy(d->m(),M);
-							char *name,*value;
-							for (int c3=0; c3<frame->attributes.n; c3++) {
-								name= frame->attributes.e[c3]->name;
-								value=frame->attributes.e[c3]->value;
-								if (!strcmp(name,"name")) {
-									//if (!isblank(value)) makestr(d->id,value);
-								} else if (!strcmp(name,"width")) {
-									DoubleAttribute(value,&d->maxx);
-								} else if (!strcmp(name,"height")) {
-									DoubleAttribute(value,&d->maxy);
-								//} else if (!strcmp(name,"lock")) {
-								//} else if (!strcmp(name,"flowaround")) {
-								//} else if (!strcmp(name,"obstaclemargin")) {
-								//} else if (!strcmp(name,"num_columns")) {
-								//} else if (!strcmp(name,"gutter_width")) {
-								//} else if (!strcmp(name,"stream")) {
-								}
-							}
-							d->installAtts(frame);
-							page->attributes.e[c]=NULL;
-							//***install d
-						}
-					}
-				}
+			if (doc) {
+				 //update group to point to the document page's group
+				group=dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0)); //pick layer 0 of the page
 			}
+
+			page=pptdoc->attributes.e[c]->find("content:");
+
+			 //each page has zero or more "frame" attributes, but the type of the
+			 //frame is within the frame, images and text do not exist as their very
+			 //own objects. They are distinguished by the "type" field.
+			pptDumpInGroup(page, group);
+
 			pagenum++;
 		} else if (!strcmp(pptdoc->attributes.e[c]->name,"text_stream")) {
 			 //<text_stream name="stream1" file="8jeev10.txt" transform=""/>
 			//***doc->attachFragment(VersionName(),pptdoc->attributes.e[c]);
-			pptdoc->attributes.e[c]=NULL;//***
+			if (!ppthints) ppthints=new Attribute(file, "Passepartout");
+			ppthints->push(pptdoc->attributes.e[c],-1);
+			pptdoc->attributes.e[c]=NULL;//blank out original so it is not doubly deleted
 		}
 	}
 	
 	 //*** set up page labels for "first_page_num"
 	
-	 //establish doc in project
-	laidout->project->Push(doc);
-	laidout->app->addwindow(newHeadWindow(doc));
+	 //install global hints if they exist
+	if (ppthints) {
+		if (doc) doc->iohints.push(ppthints,-1);
+		else laidout->project->iohints.push(ppthints,-1);
+	}
+
+	 //if doc is new, push into the project
+	if (doc && doc!=in->doc) {
+		laidout->project->Push(doc);
+		laidout->app->addwindow(newHeadWindow(doc));
+	}
 	
 	delete att;
 	return 0;
 }
 
+/*! Return the number of objects pushed in the group
+ */
+int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
+{
+	Attribute *t, *a, *n, *m;
+	Attribute *frame;
+	double M[6];
+	int numobjs=0;
+	ImageData *image=NULL;
+	LaxImage *img=NULL;
 
+	for (int c=0; c<att->attributes.n; c++) {
+		if (strcmp(att->attributes.e[c]->name,"frame")) continue;
+		
+		frame=att->attributes.e[c];
+		t=frame->find("type");
+		a=frame->find("file");
+		n=frame->find("name");
+		m=frame->find("matrix");
+		if (!m) m=frame->find("transform");
+
+		if (m) {
+			DoubleListAttribute(m->value,M,6,NULL);
+			for (int c2=0; c2<6; c2++) 
+				M[c2]/=72;
+		}
+
+		if (!t) continue; //missing a type
+
+		if (!strcmp(t->value,"raster")) {
+			img=load_image(a->value);
+			if (img) {
+				image=new ImageData;
+				if (n) image->SetDescription(n->value);
+				image->SetImage(img);
+				if (m) transform_copy(image->m(),M);
+				group->push(image,0);
+				image->dec_count();
+				numobjs++;
+			}
+
+		} else if (!strcmp(t->value,"group")) {
+			Group *newgroup=new Group;
+			if (m) transform_copy(newgroup->m(),M);
+			if (pptDumpInGroup(frame->find("content:"),newgroup)>0) {
+				group->push(newgroup,0);
+				numobjs++;
+			}
+			newgroup->dec_count();
+
+		} else if (!strcmp(t->value,"image")) {
+			cout <<"*** need to implement \"image\" type for passepartout import!!"<<endl;
+			//***for eps objects
+
+		} else if (!strcmp(t->value,"text")) {
+			MysteryData *d=(MysteryData *)newObject("MysteryData");
+			d->importer=newstr(VersionName());
+			if (n) d->name=newstr(n->value);
+			 //<frame name="Text stream1"
+			 //       matrix="1 0 0 1 140.833 145.245"
+			 //       lock="false"
+			 //       flowaround="false"
+			 //       obstaclemargin="0"
+			 //       type="text"
+			 //       width="200"
+			 //       height="300"
+			 //       num_columns="1"
+			 //       gutter_width="12"
+			 //       stream="stream1"/>
+			if (m) transform_copy(d->m(),M);
+			char *name,*value;
+			for (int c3=0; c3<frame->attributes.n; c3++) {
+				name= frame->attributes.e[c3]->name;
+				value=frame->attributes.e[c3]->value;
+				if (!strcmp(name,"name")) {
+					//if (!isblank(value)) makestr(d->id,value);
+				} else if (!strcmp(name,"width")) {
+					DoubleAttribute(value,&d->maxx);
+				} else if (!strcmp(name,"height")) {
+					DoubleAttribute(value,&d->maxy);
+				//} else if (!strcmp(name,"lock")) {
+				//} else if (!strcmp(name,"flowaround")) {
+				//} else if (!strcmp(name,"obstaclemargin")) {
+				//} else if (!strcmp(name,"num_columns")) {
+				//} else if (!strcmp(name,"gutter_width")) {
+				//} else if (!strcmp(name,"stream")) {
+				}
+			}
+
+			d->installAtts(frame);
+			att->attributes.e[c]=NULL; //since this was frame
+			group->push(d,0);
+			numobjs++;
+		}
+	} //loop over page contents
+
+	return numobjs;
+}
 
 

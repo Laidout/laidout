@@ -72,11 +72,57 @@ char *LaidoutCalculator::In(const char *in)
 			if (laidout->NewDocument(in)==0) return newstr(_("Document added."));
 			else return newstr(_("Error adding document. Not added"));
 		}
-	} else if (!strncmp(in,"show",4)) {
-		 //this is currently just "show all"
+	} else if (!strncmp(in,"show",4) && (!in[4] || isspace(in[4]))) {
+		in+=4;
+		while (isspace(*in)) in++;
+
+		char *temp=NULL;
+		if (*in) {
+			if (stylemanager.styledefs.n) {
+				StyleDef *sd;
+				for (int c=0; c<stylemanager.styledefs.n; c++) {
+					sd=stylemanager.styledefs.e[c];
+					if (!strcmp(sd->name,in)) {
+						appendstr(temp,sd->name);
+						appendstr(temp,": ");
+						appendstr(temp,sd->Name);
+						appendstr(temp,", ");
+						appendstr(temp,sd->tooltip);
+						if (sd->format!=Element_Fields) {
+							appendstr(temp," (");
+							appendstr(temp,element_TypeNames[sd->format]);
+							appendstr(temp,")");
+						}
+						if (sd->extends) {
+							appendstr(temp,"\n extends ");
+							appendstr(temp,sd->extends);
+						}
+						if (sd->format==Element_Fields && sd->getNumFields()) {
+							const char *nm,*Nm,*tt;
+							appendstr(temp,"\n");
+							for (int c2=0; c2<sd->getNumFields(); c2++) {
+								sd->getInfo(c2,&nm,&Nm,&tt,NULL);
+								appendstr(temp,"  ");
+								appendstr(temp,nm);
+								appendstr(temp,": ");
+								appendstr(temp,Nm);
+								appendstr(temp,", ");
+								appendstr(temp,tt);
+								appendstr(temp,"\n");
+
+							}
+						}
+
+						break;
+					}
+				}
+			}
+			
+			return temp?temp:newstr(_("Unknown name!"));
+		} //else continue to show all
 		 
 		 //Show project and documents
-		char *temp=newstr(_("Project: ")), temp2[10];
+		temp=newstr(_("Project: "));
 		if (laidout->project->name) appendstr(temp,laidout->project->name);
 		else appendstr(temp,_("(untitled)"));
 		appendstr(temp,"\n");
@@ -87,6 +133,7 @@ char *LaidoutCalculator::In(const char *in)
 		}
 
 		if (laidout->project->docs.n) appendstr(temp," documents\n");
+		char temp2[15];
 		for (int c=0; c<laidout->project->docs.n; c++) {
 			sprintf(temp2,"  %d. ",c+1);
 			appendstr(temp,temp2);
@@ -98,14 +145,14 @@ char *LaidoutCalculator::In(const char *in)
 	
 		 //Show object definitions in stylemanager
 		if (stylemanager.styledefs.n) {
-			appendstr(temp,"\nObject Definitions:\n");
+			appendstr(temp,_("\nObject Definitions:\n"));
 			for (int c=0; c<stylemanager.styledefs.n; c++) {
 				appendstr(temp,"  ");
 				appendstr(temp,stylemanager.styledefs.e[c]->name);
 				//appendstr(temp,", ");
 				//appendstr(temp,stylemanager.styledefs.e[c]->Name);
 				if (stylemanager.styledefs.e[c]->extends) {
-					appendstr(temp,". Extends: ");
+					appendstr(temp,", extends: ");
 					appendstr(temp,stylemanager.styledefs.e[c]->extends);
 				}
 				appendstr(temp,"\n");
@@ -163,7 +210,7 @@ char *LaidoutCalculator::In(const char *in)
 		return newstr("****** open ALMOST works *****");
 	} else if (!strncmp(in,"?",1) || !strncmp(in,"help",4)) {
 		return newstr(_("The only recognized commands are:\n"
-					  " show\n"
+					  " show [object type name]w\n"
 					  " newdoc [spec]\n"
 					  " open [a laidout document]\n"
 					  " help\n"

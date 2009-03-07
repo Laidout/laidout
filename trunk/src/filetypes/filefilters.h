@@ -97,23 +97,30 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 int export_document(DocumentExportConfig *config,char **error_ret);
 
 //------------------------------ ImportConfig ----------------------------
-class ImportConfig
+class ImportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
 	char *filename;
+	int keepmystery;
 	int instart,inend;
 	int topage,spread,layout;
 	Document *doc;
 	Group *toobj;
 	ImportFilter *filter;
+	double dpi;
 
 	ImportConfig();
+	ImportConfig(const char *file, double ndpi, int ins, int ine, int top, int spr, int lay,
+				 Document *ndoc, Group *nobj);
 	virtual ~ImportConfig();
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //------------------------------- import_document() ----------------------------------
 
-int import_document(DocumentExportConfig *config,char **error_ret);
+int import_document(ImportConfig *config,char **error_ret);
 
 
 #endif

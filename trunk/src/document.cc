@@ -502,6 +502,15 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 /*! \var char Document::saveas
  * \brief The full absolute path to the document.
  */
+/*! \var LaxFiles::Attribute Document::metadata
+ * \brief Extra descriptive metadata attached to the document.
+ */
+/*! \var LaxFiles::Attribute Document::iohints
+ * \brief Extra hints attached through an import of a document.
+ *
+ * This stuff is installed by importers, and helps exporters export data with a
+ * minimum of fuss.
+ */
 
 
 //! Constructor from a file.

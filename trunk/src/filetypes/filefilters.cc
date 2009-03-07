@@ -267,8 +267,9 @@ FileFilter::FileFilter()
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object.
  *
- * On success, return 0. If there are any warnings they are put in error_ret.
- * On failure, return nonzero, and appends error messages to error_ret.
+ * On complete success, return 0.
+ * If there are non-fatal warnings they are appended to error_ret, and -1 is returned.
+ * On failure, return 1, and append error messages to error_ret.
  */
 
 //------------------------------------- ExportFilter -----------------------------------
@@ -289,8 +290,9 @@ FileFilter::FileFilter()
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object.
  *
- * On success, return 0. If there are any warnings they are put in error_ret.
- * On failure, return nonzero, and append error messages to error_ret.
+ * On complete success, return 0.
+ * If there are non-fatal warnings they are appended to error_ret, and -1 is returned.
+ * On failure, return 1, and append error messages to error_ret.
  */
 	
 
@@ -299,7 +301,7 @@ FileFilter::FileFilter()
 //------------------------------- export_document() ----------------------------------
 
 //! Export a document from a file or a live Document.
-/*! Return 0 for export successful. 0 is also returned If there are non-fatal errors, in which case
+/*! Return 0 for export successful. -1 is returned If there are non-fatal errors, in which case
  * the warning messages get appended to error_ret. If there are fatal errors, then error_ret
  * gets appended with a message, and 1 is returned.
  *
@@ -393,9 +395,9 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 
 				err=config->filter->Out(filename,config,error_ret);
 				pg->dec_count();
-				if (err) { left=papergroup->papers.n-p; break; }
+				if (err>0) { left=papergroup->papers.n-p; break; }
 			}
-			if (err) { left+=(end-c+1)*papergroup->papers.n; break; }
+			if (err>0) { left+=(end-c+1)*papergroup->papers.n; break; }
 		}
 		config->papergroup=oldpg;
 		config->start=start;
@@ -411,7 +413,7 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 	
 	DBG cerr << "export_document end."<<endl;
 
-	if (err) {
+	if (err>0) {
 		if (error_ret) appendline(*error_ret,_("Export failed."));
 		return 1;
 	} 
@@ -423,15 +425,53 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 //------------------------------ ImportConfig ----------------------------
 /*! \class ImportConfig
  */
+/*! \var char *ImportConfig::filename
+ * \brief The file to import.
+ */
+/*! \var Document *ImportConfig::doc
+ * \brief The document to import to, if any.
+ *
+ * There should be either a document to import to, or an object.
+ */
+/*! \var Group *ImportConfig::toobj
+ * \brief The document to import to, if any.
+ *
+ * There should be either a document to import to, or an object.
+ */
 
 ImportConfig::ImportConfig()
 {
 	filename=NULL;
+	keepmystery=0;
 	instart=inend=-1;
 	topage=spread=layout=-1;
 	doc=NULL;
 	toobj=NULL;
 	filter=NULL;
+	dpi=300;
+}
+
+/*! Increments count of ndoc and nobj if given.
+ *
+ * If dpi<=0, the use 300. Else use what's given.
+ */
+ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int top, int spr, int lay,
+				 Document *ndoc, Group *nobj)
+{
+	filename=newstr(file);
+	keepmystery=0;
+	instart=ins;
+	inend=ine;
+	topage=top;
+	spread=spr;
+	layout=lay;
+	doc=ndoc;
+	toobj=nobj;
+	filter=NULL;
+	if (dpi>0) dpi=ndpi; else dpi=300;
+
+	if (doc) doc->inc_count();
+	if (toobj) toobj->inc_count();
 }
 
 ImportConfig::~ImportConfig()
@@ -442,10 +482,61 @@ ImportConfig::~ImportConfig()
 	//if (filter) filter->dec_count(); ***filter assumed non-local, always living in laidoutapp?
 }
 
+void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	cout <<"***ImportConfig::dump_out() is incomplete!! Finish implementing!"<<endl;
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sfromfile /file/to/import/from \n",spc);
+		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to attempt import from\n",spc);
+		return;
+	}
+	if (keepmystery) fprintf(f,"%skeepmystery\n",spc);
+	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
+	//fprintf(f,"%sstart %d\n",spc,start);
+	//fprintf(f,"%send   %d\n\n",spc,end);
+}
+
+void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
+{
+	cout <<"***ImportConfig::dump_in_atts() is incomplete!! Finish implementing!"<<endl;
+
+	char *name,*value;
+	int c,c2;
+	instart=inend=-1;
+	for (c=0; c<att->attributes.n; c++)  {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+		if (!strcmp(name,"keepmystery")) {
+			keepmystery=BooleanAttribute(value);
+		} else if (!strcmp(name,"format")) {
+			filter=NULL;
+			 //search for exact format match first
+			for (c2=0; c2<laidout->importfilters.n; c2++) {
+				if (!strcmp(laidout->importfilters.e[c2]->VersionName(),value)) {
+					filter=laidout->importfilters.e[c2];
+					break;
+				}
+			}
+			 //if no match, search for first case insensitive match
+			if (filter==NULL) {
+				for (c2=0; c2<laidout->importfilters.n; c2++) {
+					if (!strncasecmp(laidout->importfilters.e[c2]->VersionName(),value,strlen(value))) {
+						filter=laidout->importfilters.e[c2];
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (instart<0) instart=0;
+	if (inend<0) inend=1000000000;
+}
+
 
 //------------------------------- import_document() ----------------------------------
 //! Import a vector based file based on config.
-/*! Return 0 for success, or nonzero for error.
+/*! Return 0 for success, greater than zero for fatal error, less than zero for success with warnings.
  */
 int import_document(ImportConfig *config,char **error_ret)
 {
@@ -453,7 +544,7 @@ int import_document(ImportConfig *config,char **error_ret)
 		if (error_ret) appendline(*error_ret,_("Bad import configuration"));
 		return 1;
 	}
-	return 1;
+	return config->filter->In(config->filename,config,error_ret);
 }
 
 

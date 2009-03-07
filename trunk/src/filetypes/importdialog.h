@@ -20,24 +20,21 @@
 #include <lax/imageinfo.h>
 #include <lax/lists.h>
 #include <lax/dump.h>
-#include "document.h"
+
+#include "filefilters.h"
+#include "../document.h"
 
 
 class ImportFileDialog : public Laxkit::FileDialog
 {
  protected:
-	int curitem;
-	Laxkit::PtrStack<Laxkit::ImageInfo> images;
-	virtual Laxkit::ImageInfo *findImageInfo(const char *fullfile,int *i=NULL);
-	//void rebuildPreviewName();
-	//virtual char *getPreviewFileName(const char *full);
  public:
-	double dpi;
-	int startpage;
-	Document *doc;
-	Group *toobj;
+	ImportConfig *config;
+
+
 	Laxkit::LineInput *importpagerange;
 	Laxkit::MessageBar *fileinfo;
+
 	ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
 			Window nowner,const char *nsend,
@@ -50,7 +47,7 @@ class ImportFileDialog : public Laxkit::FileDialog
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int send(int id);
-	virtual void SetFile(const char *f,const char *pfile);
+	//virtual void SetFile(const char *f,const char *pfile);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);

@@ -16,7 +16,7 @@
 #ifndef MYSTERYDATA_H
 #define MYSTERYDATA_H
 
-#include <lax/interfaces/somedata.h>
+#include <lax/interfaces/rectinterface.h>
 #include <lax/attributes.h>
 
 
@@ -24,13 +24,29 @@
 class MysteryData : public LaxInterfaces::SomeData
 {
  public:
-	char *generator;
+	char *importer;
+	char *name;
 	LaxFiles::Attribute *attributes;
 	MysteryData(const char *gen=NULL);
 	virtual ~MysteryData();
+	virtual const char *whattype() { return "MysteryData"; }
 	virtual int installAtts(LaxFiles::Attribute *att);
+	
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
+//-------------------------------- MysteryInterface ----------------------------------
+class MysteryInterface : public LaxInterfaces::RectInterface
+{
+ public:
+	MysteryInterface(int nid,Laxkit::Displayer *ndp);
+	LaxInterfaces::anInterface *duplicate(anInterface *dup);
+	virtual const char *whattype() { return "MysteryInterface"; }
+	virtual const char *whatdatatype() { return "MysteryData"; }
+	virtual int draws(const char *what);
+	virtual int Refresh();
+};
 
 #endif
 

@@ -843,11 +843,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 		config.doc=doc;
 		config.dump_in_atts(&att,0,NULL);//second time with doc!
-		if (export_document(&config,&error)!=0) {
+		int err=export_document(&config,&error);
+		if (err>0) {
 			cout <<error;
 			cout <<_("Export failed.")<<endl;
 			exit(1);
-		} else if (error) {
+		} else if (err<0) {
 			cout <<_("Export finished with warnings:")<<endl;
 			cout <<error<<endl;
 			delete[] error; error=NULL;
@@ -1167,7 +1168,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	paper->flags=flags;
 	
 	if (!saveas) { // make a unique temporary name...
-		makestr(saveas,_("untitled"));
+		makestr(saveas,Untitled_name());
 	}
 	
 	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate

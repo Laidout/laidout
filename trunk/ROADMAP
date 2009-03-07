@@ -19,7 +19,8 @@ VERSION 0.09
        Passepartout import
        Svg import
        Scribus import
-       fix the new memory hole (in papergroups?)
+(done) fix the new memory hole (in papergroups?)
+       fix the other memory hole (in images?)
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -117,6 +118,7 @@ Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
+  Imlib chokes on really big image files, whereas this would not
 Would be nice to have tex/latex text and equation reader
 Would be nice to be able to handle metapost/metafun sort of things
 Would be nice to be able to handle lilypond sort of things
@@ -138,10 +140,9 @@ JDF support?
 VERSION 1.0
 -----------
 End world hunger
-Stabilize the biosphere
-Impeach Bush
+Stabilize the biosphere without causing mass extinction
 Neutralize all nuclear waste
-Evaporate my student loans
+Visit Pluto
 While i'm at it, I'd like a pony.
 
 
