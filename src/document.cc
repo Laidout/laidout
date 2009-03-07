@@ -855,6 +855,16 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			laidout->project->limbos.push(g,0); // incs count
 			g->dec_count();   //remove extra first count
+
+		} else if (!strcmp(nme,"iohints")) {
+			if (iohints.attributes.n) iohints.clear();
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
+				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+
+		} else if (!strcmp(nme,"metadata")) {
+			if (metadata.attributes.n) metadata.clear();
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
+				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
 		}
 	}
 	
@@ -901,10 +911,12 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
+		 //name
 		fprintf(f,"%sname   Some name for the doc  #any random name you care to give the document\n",spc);
 		fprintf(f,"%ssaveas /path/to/filename.doc  #The path previously saved as, which\n",spc);
 		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
 		
+		 //docstyle
 		fprintf(f,"\n%s#The document style:\n",spc);
 		fprintf(f,"%sdocstyle\n",spc);
 		if (docstyle) docstyle->dump_out(f,indent+2,-1,NULL);
@@ -913,6 +925,7 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			d.dump_out(f,indent+2,-1,NULL);
 		}
 	
+		 //page labels
 		fprintf(f,"\n\n%s#The page labels for a document are defined within zero or more page ranges.\n",spc);
 		fprintf(f,"%s#If no page range blocks are given, then the default numbering 0,1,2... is assumed.\n",spc);
 		fprintf(f,"%spagerange\n",spc);
@@ -922,6 +935,7 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			pr.dump_out(f,indent+2,-1,NULL);
 		}
 		
+		 //pages and objects
 		fprintf(f,"\n\n%s#The pages of a document are currently just a collection\n",spc);
 		fprintf(f,"%s#of layers containing drawing objects.\n",spc);
 		fprintf(f,"%s#The order of the pages in the document is the same as the order listed in the file,\n",spc);
@@ -933,7 +947,16 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			Page p;
 			p.dump_out(f,indent+2,-1,NULL);
 		}
+
+		 //iohints
+		fprintf(f,"\n\n%siohints    #When files are imported, sometimes data that is not recognized by laidout\n"
+				      "%s  ....     #can still be remembered in case you export to the same format. iohints\n"
+				      "%s  ....     #contains the document level data of that kind.\n",spc,spc,spc);
 		
+		 //metedata
+		fprintf(f,"\n%smetadata   #Whatever general metadata is attached to the document.\n"
+				    "%s  ....     #This might be author, copyright, etc.\n",spc,spc);
+
 		return;
 	}
 
@@ -958,8 +981,18 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%spage %d\n",spc,c);
 		pages.e[c]->dump_out(f,indent+2,0,context);
 	}
+
 	 // dump notes/meta data
-	//***
+	if (metadata.attributes.n) {
+		fprintf(f,"%smetadata\n",spc);
+		metadata.dump_out(f,indent+2);
+	}
+	
+	 // dump iohints if any
+	if (iohints.attributes.n) {
+		fprintf(f,"%siohints\n",spc);
+		iohints.dump_out(f,indent+2);
+	}
 }
 
 //! Rename the saveas part of the document. Return 1 for success, 0 for fail.
@@ -975,18 +1008,6 @@ int Document::Saveas(const char *n)
 const char *Document::Saveas()
 { return saveas; }
 
-//! Return a new string for something like "Untitled 3".
-char *Untitled()
-{
-	static int untitled=0;
-	untitled++;
-
-	if (untitled==1) return newstr(_("Untitled"));
-
-	char *str=new char[strlen(_("Untitled"))+10];
-	sprintf(str,"%s %d",_("Untitled"),untitled);
-	return str;
-}
 
 //! Rename the document. Return 1 for success, 0 for fail.
 /*! Can't really fail.. is ok to rename to NULL or "". If that is the case,
@@ -996,7 +1017,7 @@ int Document::Name(const char *nname)
 {
 	if (isblank(nname)) {
 		if (name) delete[] name;
-		name=Untitled();
+		name=newstr(Untitled_name());
 	}
 	makestr(name,nname);
 	return 1;

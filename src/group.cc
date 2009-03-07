@@ -264,6 +264,7 @@ void Group::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 				"GradientData",
 				"ColorPatchData",
 				"EpsData",
+				"MysteryData",
 				NULL
 			};
 

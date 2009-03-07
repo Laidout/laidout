@@ -35,7 +35,7 @@ class PptoutFilter : public ExportFilter
 	
 	virtual const char *Format() { return "Passepartout"; }
 	virtual const char *DefaultExtension() { return "ppt"; }
-	virtual const char *Version() { return "0.6"; }
+	virtual const char *Version() { return "0.7"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 	
@@ -54,7 +54,7 @@ class PptinFilter : public ImportFilter
 	
 	virtual const char *Format() { return "Passepartout"; }
 	virtual const char *DefaultExtension() { return "ppt"; }
-	virtual const char *Version() { return "0.6"; }
+	virtual const char *Version() { return "0.7"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 	
