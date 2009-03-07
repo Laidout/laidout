@@ -36,6 +36,7 @@
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "laidout.h"
+#include "language.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -107,7 +108,52 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		InterfaceWithDp *idp=dynamic_cast<InterfaceWithDp *>(interf);
 		if (idp) idp->DrawDataDp(dp,data,a1,a2);
 		else laidout->interfacepool.e[c]->DrawData(data,a1,a2);
+		
+	} else {
+		 //mystery data! might be actual MysteryData, or might be some data for which
+		 //the interface is somehow unavailable
+
+		 // draw question marks and name if any...
+		MysteryData *mdata=dynamic_cast<MysteryData *>(data);
+		if (mdata) {
+
+			flatpoint fp;
+			if (mdata->name || mdata->importer) {
+				char str[(mdata->name?strlen(mdata->name):0)
+						  +(mdata->importer?strlen(mdata->importer):0)+2];
+				sprintf(str,"%s\n%s", mdata->importer?mdata->importer:"",
+									  mdata->name?mdata->name:"");
+				fp=dp->realtoscreen(flatpoint((mdata->maxx+mdata->minx)/2,(mdata->maxy+mdata->miny)/2));
+				dp->textout((int)fp.x,(int)fp.y,str,-1);
+			}
+
+			 //draw question marks in random spots
+			for (int c=0; c<10; c++) {
+				fp=dp->realtoscreen(flatpoint(mdata->minx+(mdata->maxx+mdata->minx)*((double)random()/RAND_MAX),
+											  mdata->miny+(mdata->maxy+mdata->miny)*((double)random()/RAND_MAX)));
+				dp->textout((int)fp.x,(int)fp.y,"?",1);
+				DBG cout << "draw question mark at "<<fp.x<<","<<fp.y<<endl;
+			}
+		} else {
+			flatpoint fp;
+			fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
+			dp->textout((int)fp.x,(int)fp.y,_("unknown"),-1);
+		}
+
+		 //draw box around it
+		dp->NewFG(0,0,255);
+		dp->LineAttributes(2,LineSolid,CapButt,JoinMiter);
+		flatpoint ul=dp->realtoscreen(flatpoint(data->minx,data->miny)), 
+				  ur=dp->realtoscreen(flatpoint(data->maxx,data->miny)), 
+				  ll=dp->realtoscreen(flatpoint(data->minx,data->maxy)), 
+				  lr=dp->realtoscreen(flatpoint(data->maxx,data->maxy));
+		dp->drawline(ul,ur);
+		dp->drawline(ur,lr);
+		dp->drawline(lr,ll);
+		dp->drawline(ll,ul);
+
 	}
+
 	dp->PopAxes();
 }
 
@@ -124,6 +170,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  * - GradientData
  * - ColorPatchData
  * - EpsData
+ * - MysteryData
  *
  *   \todo *** there needs to be a mechanism to automate this so new types can be
  *   added on the fly:

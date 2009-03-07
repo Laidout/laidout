@@ -610,11 +610,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2"
-     inkscape:cx="97.955384"
-     inkscape:cy="233.82017"
+     inkscape:zoom="0.7751634"
+     inkscape:cx="765"
+     inkscape:cy="495"
      inkscape:document-units="px"
-     inkscape:current-layer="LaidoutIcon"
+     inkscape:current-layer="Mystery"
      inkscape:window-width="1278"
      inkscape:window-height="976"
      inkscape:window-x="1"
@@ -3842,16 +3842,27 @@
          x="909"
          y="519">Superscript</tspan></text>
     <text
+       sodipodi:linespacing="100%"
+       id="text3046"
+       y="428.84061"
+       x="104.90128"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;text-align:center;line-height:100%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:URW Bookman L"
+       xml:space="preserve"><tspan
+         y="428.84061"
+         x="104.90128"
+         id="tspan3048"
+         sodipodi:role="line">Eps</tspan></text>
+    <text
        xml:space="preserve"
        style="font-size:12px;font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;text-align:center;line-height:100%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:URW Bookman L"
-       x="104.90128"
-       y="428.84061"
+       x="101.40128"
+       y="473.84061"
        id="text2683"
        sodipodi:linespacing="100%"><tspan
          sodipodi:role="line"
          id="tspan2685"
-         x="104.90128"
-         y="428.84061">Eps</tspan></text>
+         x="101.40128"
+         y="473.84061">Mystery</tspan></text>
     <path
        style="font-size:22px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:100%;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.88625956;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;font-family:URW Gothic L"
        d="M 167.87119,415.58288 C 165.42156,415.58289 163.37456,415.91521 163.35158,423.26166 C 163.05356,421.52246 163.7427,419.60135 161.31809,417.1539 C 160.23106,416.20212 158.95265,415.93636 157.05857,415.93636 L 153.12671,415.93636 C 152.61559,415.94185 152.20217,416.53651 152.19836,417.27173 L 152.19836,437.69502 C 152.20217,438.43023 152.61559,439.02489 153.12671,439.03038 L 154.54655,439.03038 C 155.05767,439.02489 155.47109,438.43023 155.47491,437.69502 L 155.47491,430.78252 L 157.27701,430.78252 C 159.28576,430.78252 160.57601,430.34176 161.64574,429.25077 C 164.02979,426.81934 163.08855,424.78442 163.28402,422.96632 C 163.49355,423.82553 163.82738,426.38117 164.29429,427.01206 C 164.62116,427.46603 164.96706,427.87037 165.44108,428.19033 C 165.91511,428.51029 166.48574,428.76793 167.3251,429.13294 C 168.40743,429.6161 168.90374,429.93297 169.23642,430.27194 C 169.60061,430.63705 169.83712,431.23511 169.83712,432.11789 C 169.83712,433.81071 169.11272,434.8279 167.9531,434.8279 C 167.31466,434.82789 166.70974,434.41297 166.39674,433.84601 C 166.39687,433.83292 166.39687,433.81983 166.39674,433.80674 C 166.09793,433.27459 165.9917,432.94754 165.90526,431.80368 C 165.84664,431.13038 165.44864,430.62524 164.9769,430.62542 L 163.47515,430.62542 C 163.21982,430.62769 162.96785,430.79044 162.79254,431.05745 C 162.61722,431.32447 162.53379,431.67253 162.54679,432.03934 C 162.62458,434.16523 163.17534,436.02295 164.13046,437.34154 C 165.08558,438.66013 166.41587,439.38386 167.89849,439.38386 C 170.81076,439.38385 173.11367,436.16025 173.11367,432.00006 C 173.11367,429.83215 172.47283,427.82393 171.31157,426.58003 C 171.3117,426.56694 171.3117,426.55385 171.31157,426.54076 C 170.65198,425.84498 169.91753,425.34789 168.41728,424.69481 C 167.14392,424.14805 166.88124,424.00484 166.64248,423.71292 C 166.50276,423.53108 166.31483,422.93305 166.31483,422.33827 C 166.31483,420.9447 166.88704,420.09957 167.84388,420.09957 C 168.34815,420.09957 168.70028,420.34954 168.96337,420.72798 C 169.22647,421.10642 169.41863,421.66159 169.45486,422.49538 C 169.48718,423.19976 169.89246,423.74844 170.38321,423.75219 L 171.85766,423.75219 C 172.10807,423.74958 172.33848,423.61781 172.51297,423.35944 C 172.68746,423.10105 172.79146,422.73768 172.78601,422.37755 C 172.7519,420.41459 172.25354,418.68726 171.36618,417.4681 C 170.47881,416.24895 169.23734,415.58288 167.87119,415.58288 z M 142.66906,415.93636 C 142.23355,416.07206 141.92507,416.63084 141.93183,417.27173 L 141.93183,437.69502 C 141.93565,438.43023 142.34906,439.02489 142.86019,439.03038 L 150.61469,439.03038 C 151.12581,439.02489 151.53923,438.43023 151.54305,437.69502 L 151.54305,435.84906 C 151.53923,435.11385 151.12581,434.51919 150.61469,434.5137 L 145.20838,434.5137 L 145.20838,429.64353 L 150.39625,429.64353 C 150.90738,429.63803 151.32079,429.04337 151.32461,428.30816 L 151.32461,426.42293 C 151.32079,425.68772 150.90738,425.09305 150.39625,425.08756 L 145.20838,425.08756 L 145.20838,420.45305 L 150.61469,420.45305 C 151.12581,420.44755 151.53923,419.85289 151.54305,419.11768 L 151.54305,417.27173 C 151.53923,416.53651 151.12581,415.94185 150.61469,415.93636 L 142.86019,415.93636 C 142.79665,415.92697 142.7326,415.92697 142.66906,415.93636 z M 155.47491,420.45305 L 156.56709,420.45305 C 158.15473,420.45305 159.13809,420.73112 159.40677,420.92435 C 159.87743,421.27072 160.1713,421.93598 160.1713,423.43799 C 160.1713,424.65087 159.81508,425.43481 159.46138,425.71597 C 159.11063,426.00891 158.44585,426.22655 157.1951,426.22655 L 155.47491,426.22655 L 155.47491,420.45305 z "
@@ -4268,6 +4279,30 @@
            d="M 94.5,746.25 L 109.44194,749.33839 L 94.5,746.25 z M 89,747 L 108.11872,751.42678 L 89,747 z M 97.75,750.75 L 106.5,753.25 L 97.75,750.75 z"
            style="fill:none;fill-rule:evenodd;stroke:url(#linearGradient3856);stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
       </g>
+    </g>
+    <g
+       id="Mystery"
+       transform="translate(1,-2.5)">
+      <rect
+         ry="0.025489558"
+         rx="0.025489558"
+         y="460.75"
+         x="144"
+         height="27.5"
+         width="25"
+         id="rect3050"
+         style="opacity:1;fill:#f5f5f5;fill-opacity:1;stroke:#000000;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;display:inline" />
+      <text
+         sodipodi:linespacing="100%"
+         id="text3824"
+         y="483.9122"
+         x="145.43898"
+         style="font-size:28px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Charter;-inkscape-font-specification:Bitstream Charter Bold"
+         xml:space="preserve"><tspan
+           y="483.9122"
+           x="145.43898"
+           id="tspan3826"
+           sodipodi:role="line">?!</tspan></text>
     </g>
   </g>
 </svg>

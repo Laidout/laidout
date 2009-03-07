@@ -90,7 +90,10 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 				spc, m[0], m[1], m[2], m[3], m[4], m[5]);
 		transform_identity(m);
 		for (int c=0; c<g->n(); c++) pptdumpobj(f,m,g->e(c),indent+2);
+
 		fprintf(f,"%s</frame>\n",spc);
+		return;
+
 	} else if (!strcmp(obj->whattype(),"ImageData")) {
 		ImageData *img;
 		img=dynamic_cast<ImageData *>(obj);
@@ -106,6 +109,8 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
 		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"raster\" file=\"%s\" />\n",
 				img->filename);
+		return;
+
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
 		 // just like ImageData, but outputs as type="Image"
 		EpsData *eps;
@@ -122,6 +127,31 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 				spc, bname, m[0], m[1], m[2], m[3], m[4], m[5]);
 		fprintf(f,"lock=\"false\" flowaround=\"false\" obstaclemargin=\"0\" type=\"image\" file=\"%s\" />\n",
 				eps->filename);
+		return;
+
+	} else if (!strcmp(obj->whattype(),"MysteryData")) {
+		MysteryData *mdata=dynamic_cast<MysteryData *>(obj);
+		 //NOTE: mdata->importer should be the same as PptoutFilter::VersionName()
+		if (!mdata || !mdata->importer 
+				   || strcmp(mdata->importer,_("Passepartout"))
+				   || !mdata->attributes) return;
+
+		double m[6];
+		if (mm) transform_mult(m,mdata->m(),mm);
+		else transform_copy(m,mdata->m());
+
+		fprintf(f,"%s<frame matrix=\"%.10g %.10g %.10g %.10g %.10g %.10g\" ",
+				spc, m[0], m[1], m[2], m[3], m[4], m[5]);
+		Attribute *att;
+		for (int c=0; c<mdata->attributes->attributes.n; c++) {
+			att=mdata->attributes->attributes.e[c];
+			if (!att) continue;
+			if (!strcmp(att->name,"matrix")) continue;
+			fprintf(f,"%s=\"%s\" ",att->name,att->value);
+		}
+		fprintf(f,"/>\n");
+	
+		return;
 	}
 }
 
@@ -224,6 +254,24 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	fprintf(f,"<document paper_name=\"%s\" doublesided=\"false\" landscape=\"%s\" first_page_num=\"%d\">\n",
 				papersize, landscape, start);
 	
+	 // write out text_stream from doc->iohints, if any
+	if (doc) {
+		Attribute *att,*iohints=doc->iohints.find(_("Passepartout"));
+		if (iohints) {
+			for (int c2=0; c2<iohints->attributes.n; c2++) {
+				if (strcmp(iohints->attributes.e[c2]->name,"text_stream")) continue;
+
+				fprintf(f,"  <text_stream ");
+				for (int c3=0; c3<iohints->attributes.e[c2]->attributes.n; c3++) {
+					att=iohints->attributes.e[c2]->attributes.e[c3];
+					fprintf(f,"%s=\"%s\" ",att->name?att->name:"",
+										   att->value?att->value:"");
+				}
+				fprintf(f,"/>\n");
+			}
+		}
+	}
+
 	 // Write out paper spreads....
 	Spread *spread=NULL;
 	Group *g=NULL;
@@ -248,7 +296,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 			psPushCtm();
 			transform_invert(mmm,papergroup->papers.e[p]->m());
 			transform_mult(m,mmm,mm);
-			fprintf(f,"  <frame type=\"group\" transform=\"%.10g %.10g %.10g %.10g %.10g %.10g\" >\n",
+			fprintf(f,"    <frame type=\"group\" transform=\"%.10g %.10g %.10g %.10g %.10g %.10g\" >\n",
 				      m[0], m[1], m[2], m[3], m[4], m[5]);
 			psConcat(m);
 
@@ -278,14 +326,14 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
 							transform_copy(mmm,spread->pagestack.e[c2]->outline->m());
-							pptdumpobj(f,mmm,g->e(c3),4);
+							pptdumpobj(f,mmm,g->e(c3),6);
 						}
 					}
 				}
 
 			}
 			psPopCtm(); //remove papergroup->paper transform
-			fprintf(f,"  </frame>\n");
+			fprintf(f,"    </frame>\n");
 			fprintf(f,"  </page>\n");
 		}
 		if (spread) { delete spread; spread=NULL; }
@@ -434,7 +482,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 		} else if (!strcmp(pptdoc->attributes.e[c]->name,"text_stream")) {
 			 //<text_stream name="stream1" file="8jeev10.txt" transform=""/>
 			//***doc->attachFragment(VersionName(),pptdoc->attributes.e[c]);
-			if (!ppthints) ppthints=new Attribute(file, "Passepartout");
+			if (!ppthints) ppthints=new Attribute(_("Passepartout"), file);
 			ppthints->push(pptdoc->attributes.e[c],-1);
 			pptdoc->attributes.e[c]=NULL;//blank out original so it is not doubly deleted
 		}
@@ -446,6 +494,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	if (ppthints) {
 		if (doc) doc->iohints.push(ppthints,-1);
 		else laidout->project->iohints.push(ppthints,-1);
+		//remember, do not delete ppthints here!
 	}
 
 	 //if doc is new, push into the project

@@ -102,7 +102,7 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 	double x2,y2;
 	x2=y2=0;
 	for (int c=0; c<att->attributes.n; c++) {
-		nname= att->attributes.e[c]->name;
+		nname=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(nname,"matrix")) {
 			DoubleListAttribute(value,m(),6);
@@ -116,6 +116,7 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 			DoubleAttribute(value,&y2);
 		} else if (!strcmp(nname,"attributes")) {
 			if (attributes) delete attributes;
+			attributes=att->attributes.e[c]->duplicate();
 		}
 	}
 	minx=0;

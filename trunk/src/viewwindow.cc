@@ -143,9 +143,11 @@ VObjContext::~VObjContext()
  */
 VObjContext &VObjContext::operator=(const VObjContext &oc)
 {
-	if (obj) obj->dec_count();
-	obj=oc.obj;
-	if (obj) obj->inc_count();
+	if (obj!=oc.obj) {
+		if (obj) obj->dec_count();
+		obj=oc.obj;
+		if (obj) obj->inc_count();
+	}
 	context=oc.context;
 	return *this;
 }

@@ -34,6 +34,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual const char *whatdatatype() { return "Group"; }
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 	virtual int UseThis(anObject *newdata,unsigned int);
+	virtual int draws(const char *atype);
 
 	virtual int LBDown(int x, int y,unsigned int state, int count);
 	//virtual int DrawData(anObject *ndata,anObject *a1,anObject *a2,int);

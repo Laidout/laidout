@@ -54,6 +54,13 @@ anInterface *GroupInterface::duplicate(anInterface *dup)
 	return ObjectInterface::duplicate(g);
 }
 
+int GroupInterface::draws(const char *atype)
+{
+	//if (!strcmp(atype,"Group") || !strcmp(atype,"MysteryData")) return 1;
+	if (!strcmp(atype,"Group")) return 1;
+	return 0;
+}
+
 /*! Return 0 if newdata accepted, 1 if accepted.
  *
  * \todo *** UseThis() should optionally use object contexts, not just an anObject.
@@ -67,6 +74,7 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 	FreeSelection();
 	VObjContext oc;
 	oc.obj=d; 
+	d->inc_count();
 	((LaidoutViewport *)viewport)->locateObject(d,oc.context);
 	AddToSelection(&oc);
 	needtodraw=1;
