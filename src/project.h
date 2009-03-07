@@ -41,6 +41,8 @@ class Project : public LaxFiles::DumpUtility
 	Group limbos;
 	Laxkit::RefPtrStack<PaperGroup> papergroups;
 
+	LaxFiles::Attribute iohints;
+
 	double defaultdpi;
 	//default units
 	//default color mode

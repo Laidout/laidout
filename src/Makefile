@@ -53,7 +53,6 @@ objs= \
 all: laidout
 
 laidout: lax laxinterface $(objs) $(dirs)
-	for NAME in $(dirs); do $(MAKE) -C $$NAME; done 
 	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
 
 calculator:

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2007 Tom Lechner
+// Copyright (c) 2008-2009 Tom Lechner
 //
 
 #include "importdialog.h"
@@ -34,7 +34,9 @@ using namespace LaxFiles;
 
 
 /*! \class ImportFileDialog
- * \brief Dialog for importing many images all at once.
+ * \brief Dialog for importing a single, primarily vector based file.
+ *
+ * The file will be broken down into Laidout elements as possible, via import_document().
  */
 
 /*! Only one of obj or doc should be defined. If obj is defined, then dump all the selected images
@@ -52,26 +54,19 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned 
 			(nstyle&0xffff)|FILES_PREVIEW|FILES_OPEN_MANY|ANXWIN_REMEMBER,
 			xx,yy,ww,hh,brder,nowner,nsend,nfile,npath,nmask)
 {
-	startpage=startpg;
-	toobj=obj;
-	if (toobj) toobj->inc_count();
-	doc=ndoc;
-	if (doc) doc->inc_count();
-	curitem=-1;
-
-	dpi=defdpi;
-	if (dpi<=0) {
-		if (doc) dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
-		else dpi=300;//***
+	if (defdpi<=0) {
+		if (ndoc) defdpi=ndoc->docstyle->imposition->paper->paperstyle->dpi; //***<-- crash hazard!
+		else defdpi=300;//***
 	}
+
+	config=new ImportConfig(nfile, defdpi, startpg, startpg, -1, -1, -1, ndoc, obj);
 
 	dialog_style|=FILES_PREVIEW;
 }
 
 ImportFileDialog::~ImportFileDialog()
 {
-	if (toobj) toobj->dec_count();
-	if (doc)   doc->dec_count();
+	if (config) config->dec_count();
 }
 
 void ImportFileDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -124,6 +119,9 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObj
 //
 //	 //maxPreviewWidth 200
 //	int w=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
+//
+//	ImportConfig *config=new ImportConfig();
+//
 //	att->push("maxPreviewWidth",w,-1);
 //
 //	 //defaultPreviewName any
@@ -153,7 +151,8 @@ void ImportFileDialog::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *co
 	}
 }
 
-/*! \todo preview base should be a list, not a single base, so should laidout->preview_base
+/*! 
+ *  \todo maybe add "import pages as objects" option?
  */
 int ImportFileDialog::init() 
 {
@@ -177,7 +176,7 @@ int ImportFileDialog::init()
 	anXWindow *last=NULL;
 	LineInput *linp=NULL;
 	CheckBox *check=NULL;
-	TextButton *tbut=NULL;
+	//TextButton *tbut=NULL;
 
 
 	
@@ -203,7 +202,7 @@ int ImportFileDialog::init()
 	
 
 	 //---------------------- import to document or object ---------------------------
-	str=numtostr(startpage,0);
+	str=numtostr(config->instart,0);
 	last=linp=new LineInput(this,"StartIndex",0, 0,0,0,0,0, 
 						last,window,"startindex",
 						_("Start Index:"),str,0,
@@ -223,10 +222,8 @@ int ImportFileDialog::init()
 
 
 
-
 	 //-------------------- change Ok to Import
-	tbut=dynamic_cast<TextButton *>(findWindow("fd-Ok"));
-	if (tbut) tbut->SetName(_("Import"));
+	OkButton(_("Import"), NULL); 
 
 
 	Sync(1);
@@ -236,6 +233,7 @@ int ImportFileDialog::init()
 
 int ImportFileDialog::DataEvent(EventData *data,const char *mes)
 {//***
+	if (FileDialog::DataEvent(data,mes)==0) return 0;
 	return 1;
 }
 
@@ -273,12 +271,26 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (filtertype) {
 			file->GetLineEdit()->Valid(1);
 			fileinfo->SetText(filename);
+			makestr(config->filename,filename);
+			//if (config->filter) config->filter->dec_count();
+			config->filter=filter;
+			//config->filter->inc_count();
+			ok->Grayed(0);
 		} else {
 			file->GetLineEdit()->Valid(0);
 			fileinfo->SetText(_("File cannot be imported."));
+			ok->Grayed(1);
 		}
 		delete[] filename;
 		return 0;
+
+	} else if (!strcmp(mes,"startindex")) {
+		return 0;
+
+	} else if (!strcmp(mes,"keepmystery")) {
+		config->keepmystery=e->data.l[0];
+		return 0;
+
 	}
 
 	if (!FileDialog::ClientEvent(e,mes)) return 0;
@@ -286,182 +298,46 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-//! Set the file and preview fields, changing directory if need be.
-/*! \todo should probably redefine FileDialog::SetFile() also to check against
- * 		images?
- */
-void ImportFileDialog::SetFile(const char *f,const char *pfile)
-{
-	FileDialog::SetFile(f); //sets file and path
-	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
-	preview->SetText(pfile);
-}
-
-////! Change the Preview input to reflect a new file name.
-//void ImportFileDialog::rebuildPreviewName()
-//{//***
-//	DBG cerr <<"ImportFileDialog::rebuildPreviewName()"<<endl;
-//
-//	//int ifauto=dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON;
-//	//const char *f=linp->GetCText();
-//	
-//	 // find file in list 
-//	char *full=fullFilePath(NULL);
-//	ImageInfo *info=findImageInfo(full);
+////! Set the file and preview fields, changing directory if need be.
+///*! \todo should probably redefine FileDialog::SetFile() also to check against
+// * 		images?
+// */
+//void ImportFileDialog::SetFile(const char *f,const char *pfile)
+//{
+//	FileDialog::SetFile(f); //sets file and path
 //	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
-//	DBG if (!preview) { cerr <<"*********rebuildPreviewName ERROR!!"<<endl; exit(1); }
-//	
-//	char *prev=NULL;
-//	if (info) prev=newstr(info->previewfile);
-//	if (!prev) prev=getPreviewFileName(full);
-//	if (!prev) prev=newstr("");
-//	preview->SetText(prev);
-//	delete[] full;
-//	delete[] prev;
-//	DBG cerr <<"...done with ImportFileDialog::rebuildPreviewName()"<<endl;
+//	preview->SetText(pfile);
 //}
-
-//! Return the Laxkit::ImageInfo in images with fullfile as the path.
-/*! If i!=NULL, then set *i=(index of the imageinfo), -1 if not found.
- */
-Laxkit::ImageInfo *ImportFileDialog::findImageInfo(const char *fullfile,int *i)
-{
-	int c;
-	char *full;
-	for (c=0; c<images.n; c++) {
-		full=fullFilePath(fullfile);
-		if (!strcmp(full,images.e[c]->file)) {
-			delete[] full;
-			if (i) *i=c;
-			return images.e[c];
-		}
-		delete[] full;
-	}
-	if (i) *i=-1;
-	return NULL;
-}
 
 //! Call import_file() with proper config.
 /*! Returns 0 if nothing done. Else nonzero.
  *  
- *  \todo on success, should probably send a status message to whoever called up
- *    this dialog? right now it only knows doc, not a specific location
- *  \todo implement preview base as list of possible preview bases and search
- *    mechanism, that is, by file, or by freedesktop thumbnail spec, kphotoalbum thumbs, etc
- *  \todo implement toobj
- *  \todo this prescreens files for reading images.. might be better to insert broken images
- *    rather than that. the dumpin functions do screening all over again.. would be nice if
- *    it was an option
+ *  \todo *** there should really be a global error log that users can peruse
+ *     if necessary
  */
 int ImportFileDialog::send(int id)
 {
+	char *error=NULL;
+	int err=import_document(config,&error);
+
+	if (error) {
+		cerr << "ImportFile error return: "<<error<<endl;
+		delete[] error;
+	}
+
+	if (err>0) {
+		 //send back error;
+		if (owner) app->SendMessage(new StrEventData(_("Error importing file."),
+										  XInternAtom(app->dpy,"statusMessage",False),
+										  window,owner));
+	}
+	if (err<=0) {
+		if (owner) app->SendMessage(new StrEventData(_("File imported."),
+										  XInternAtom(app->dpy,"statusMessage",False),
+										  window,owner));
+
+	}
+
 	return 1;
-	//if (!owner) return 0;
-	
-//	DBG cerr <<"====Generating file names for import images..."<<endl;
-//	
-//	int *which=filelist->WhichSelected(LAX_ON);
-//	int n=0;
-//	char **imagefiles=NULL, **previewfiles=NULL;
-//	if (which!=NULL) {
-//		n=0;
-//		imagefiles  =new char*[which[0]];
-//		previewfiles=new char*[which[0]];
-//		
-//		const MenuItem *item;
-//		for (int c=0; c<which[0]; c++) {
-//			imagefiles[n]=previewfiles[n]=NULL;
-//			item=filelist->Item(which[c+1]);
-//			if (item) {
-//				imagefiles[n]=path->GetText();
-//				if (imagefiles[n][strlen(imagefiles[n])-1]!='/') appendstr(imagefiles[n],"/");
-//				appendstr(imagefiles[n],item->name);
-//				if (is_bitmap_image(imagefiles[n])) {
-//					n++;
-//				} else {
-//					delete[] imagefiles[n];
-//				}
-//			}
-//		}
-//		if (!n) {
-//			delete[] imagefiles;   imagefiles=NULL;
-//			delete[] previewfiles; previewfiles=NULL;
-//		}
-//		delete[] which;
-//	} else { 
-//		 //nothing currently selected in the item list...
-//		 // so just use the single file in file input
-//		char *blah=path->GetText();
-//		if (blah[strlen(blah)]!='/') appendstr(blah,"/");
-//		appendstr(blah,file->GetCText());
-//		if (isblank(blah)) {
-//			delete[] blah;
-//		} else {
-//			if (is_bitmap_image(blah)) {
-//				n=1;
-//				imagefiles  =new char*[n];
-//				previewfiles=new char*[n];
-//				imagefiles[0]=blah;
-//				previewfiles[0]=NULL;
-//			} else {
-//				delete[] blah; blah=NULL;
-//				n=0;
-//			}
-//		}
-//
-//	}
-//	if (!n) {
-//		cout <<"***need to implement importimagedialog send message to viewport or message saying no go."<<endl;
-//		return 0;
-//	}
-//
-//	 //generate standard preview files to search for
-//	LineInput *templi;
-//	ImageInfo *info;
-//	for (int c=0; c<n; c++) {
-//		if (!imagefiles[c]) continue;
-//		if (file_exists(imagefiles[c],1,NULL)!=S_IFREG) {
-//			delete[] imagefiles[c];
-//			imagefiles[c]=NULL;
-//			continue;
-//		}
-//		info=findImageInfo(imagefiles[c]);
-//		if (info) previewfiles[c]=newstr(info->previewfile);
-//			else  previewfiles[c]=getPreviewFileName(imagefiles[c]);
-//		if (!file_exists(previewfiles[c],1,NULL)) {
-//			if (dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON) {
-//
-//				long si,
-//					 s=file_size(imagefiles[c],1,NULL);
-//				templi=dynamic_cast<LineInput *>(findWindow("MinSize"));			
-//				str_to_byte_size(templi->GetCText(), &si);
-//				if (s>si) {
-//					DBG cerr <<"-=-=-=--=-==-==-=-==-- Generate preview at: "<<previewfiles[c]<<endl;
-//					si=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
-//					if (si<10) si=128;
-//					if (generate_preview_image(imagefiles[c],previewfiles[c],"jpg",si,si,1)) {
-//						DBG cerr <<"              ***generate preview failed....."<<endl;
-//					}
-//				}
-//			} else {
-//				delete[] previewfiles[c];
-//				previewfiles[c]=NULL;
-//			}
-//		}
-//	}
-//	startpage=dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(NULL);
-//	dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetLong(NULL);
-//	
-//	int perpage=-2; //force to 1 page
-//	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
-//		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
-//	else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON)
-//		perpage=-1; //as will fit to page
-//		
-//	dumpInImages(doc,startpage,(const char **)imagefiles,(const char **)previewfiles,n,perpage,(int)dpi);
-//	deletestrs(imagefiles,n);
-//	deletestrs(previewfiles,n);
-//			
-//	return 1;
 }
 

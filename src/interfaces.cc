@@ -27,6 +27,7 @@
 
 #include "dataobjects/groupinterface.h"
 #include "dataobjects/epsdata.h"
+#include "dataobjects/mysterydata.h"
 #include "interfaces/paperinterface.h"
 
 using namespace Laxkit;
@@ -114,6 +115,11 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	EpsInterface *eps=new EpsInterface(id++,NULL);
 	eps->style=1;
 	existingpool->push(eps,1);//*** combine with Image somehow?
+
+	 //------MysteryData
+	MysteryInterface *mdata=new MysteryInterface(id++,NULL);
+	mdata->style=1;
+	existingpool->push(mdata,1);//*** combine with Image somehow?
 
 	 //------Paper
 	existingpool->push(new PaperInterface(id++,NULL),1);

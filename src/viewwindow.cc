@@ -2793,6 +2793,7 @@ int ViewWindow::init()
 		 // the interface.
 		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
 		str=tools.e[c]->whattype();
+		//if (!strcmp(str,"MysteryInterface")) continue; //*** for now, don't let users use this! (no icon)
 		if (!strcmp(str,"ObjectInterface")) obji=tools.e[c]->id;
 		nstr=newstr(str);
 		tstr=strstr(nstr,"Interface");
@@ -3056,6 +3057,14 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 
 		delete data;
 		return 0;
+	} else if (!strcmp(mes,"statusMessage")) {
+		 //user entered a new file name to save document as
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s || !s->str) return 1;
+		PostMessage(s->str);
+		delete data;
+		return 0;
+
 	} else if (!strcmp(mes,"saveAsPopup")) {
 		 //user entered a new file name to save document as
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
@@ -3574,7 +3583,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (!doc) return 0;
 		
 		 //user clicked save button
-		if (isblank(doc->Saveas())) { //***or shift-click for saveas??
+		if (isblank(doc->Saveas()) || !strncasecmp(doc->Saveas(),_("untitled"), strlen(_("untitled")))) { //***or shift-click for saveas??
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
 						//int xx,int yy,int ww,int hh,int brder,

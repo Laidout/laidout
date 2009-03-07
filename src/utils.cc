@@ -38,13 +38,16 @@ using namespace std;
 
 
 
-//! Return a new char[] akin to "untitled 1", "untitled 2", etc.
+//! Return a pointer to a char[] akin to "untitled 1", "untitled 2", etc.
 /*! The number is based on a static int stored in the function.
+ *
+ * The name here is stored in a static buffer, so it should be used quickly,
+ * before some other call increments the count.
  */
-char *untitled()
+const char *Untitled_name()
 {
 	static int count=1;
-	char *name=new char[strlen(_("untitled"))+10];
+	static char *name=new char[strlen(_("untitled"))+10];
 	sprintf(name,_("untitled %d"),count);
 	count++;
 	return name;

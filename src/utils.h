@@ -20,7 +20,7 @@
 #include <cstdio>
 #include <lax/attributes.h>
 
-char *untitled();
+const char *Untitled_name();
 FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret);
 FILE *open_file_for_reading(const char *file,char **error_ret);
 FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret);
