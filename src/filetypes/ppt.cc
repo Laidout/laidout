@@ -479,7 +479,7 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 			pptDumpInGroup(page, group);
 
 			pagenum++;
-		} else if (!strcmp(pptdoc->attributes.e[c]->name,"text_stream")) {
+		} else if (in->keepmystery && !strcmp(pptdoc->attributes.e[c]->name,"text_stream")) {
 			 //<text_stream name="stream1" file="8jeev10.txt" transform=""/>
 			//***doc->attachFragment(VersionName(),pptdoc->attributes.e[c]);
 			if (!ppthints) ppthints=new Attribute(_("Passepartout"), file);
@@ -492,8 +492,13 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	
 	 //install global hints if they exist
 	if (ppthints) {
-		if (doc) doc->iohints.push(ppthints,-1);
-		else laidout->project->iohints.push(ppthints,-1);
+		 //remove the old iohint if it is there
+		Attribute *iohints=(doc?&doc->iohints:&laidout->project->iohints);
+		Attribute *oldppt=iohints->find(_("Passepartout"));
+		if (oldppt) {
+			iohints->attributes.remove(iohints->attributes.findindex(oldppt));
+		}
+		iohints->push(ppthints,-1);
 		//remember, do not delete ppthints here!
 	}
 

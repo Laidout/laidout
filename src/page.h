@@ -22,7 +22,7 @@
 #include <X11/Xlib.h>
 #include <Imlib2.h>
 
-#include "group.h"
+#include "dataobjects/group.h"
 #include "styles.h"
 
 

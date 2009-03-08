@@ -28,7 +28,6 @@ objs= \
 	stylemanager.o \
 	papersizes.o \
 	page.o \
-	group.o \
 	document.o \
 	project.o \
 	interfaces.o \
@@ -40,7 +39,6 @@ objs= \
 	headwindow.o \
 	helpwindow.o \
 	newdoc.o \
-	objectcontainer.o \
 	viewwindow.o \
 	palettes.o \
 	extras.o \
