@@ -22,7 +22,7 @@
 #include "../page.h"
 #include "../styles.h"
 #include "../papersizes.h"
-#include "../objectcontainer.h"
+#include "../dataobjects/objectcontainer.h"
 
 class Imposition;
 class Spread;

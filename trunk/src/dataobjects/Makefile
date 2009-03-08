@@ -14,10 +14,12 @@ DEBUGFLAGS= -g
 
 
 objs= \
-	limagepatch.o \
+	group.o \
+	groupinterface.o \
 	epsdata.o \
+	limagepatch.o \
 	mysterydata.o \
-	groupinterface.o 
+	objectcontainer.o
 
 
 
