@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 #include "about.h"
@@ -61,7 +61,7 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2007\n"
+			"2004-2009\n"
 			"\n"
 			"so far coded entirely\n"
 			"by Tom Lechner,\n"

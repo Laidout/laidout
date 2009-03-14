@@ -442,8 +442,10 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 	if (a) landscape=BooleanAttribute(a->value);
 	else landscape=0;
 	
-	 // read in pages
-	int pagenum=0; //the page in doc to start dumping into
+	 // find pages content
+	int pagenum=in->topage; //the page in doc to start dumping into
+	if (pagenum<0) pagenum=0;
+
 	pptdoc=pptdoc->find("content:");
 	if (!pptdoc) { delete att; return 4; }
 

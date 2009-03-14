@@ -65,7 +65,7 @@ using namespace std;
 
 //----------------------------------- pre-run misc -----------------------------------
 
-//! "Laidout Version LAIDOUT_VERSION by Tom Lechner, sometime in 2007"
+//! Return a const pointer to a string with Laidout version information.
 /*! \ingroup lmisc
  */
 const char *LaidoutVersion() 

@@ -26,6 +26,9 @@
 #include "../laidout.h"
 #include "../printing/psout.h"
 #include "../utils.h"
+#include "../headwindow.h"
+#include "../impositions/impositioninst.h"
+#include "../dataobjects/mysterydata.h"
 
 #include <iostream>
 #define DBG 
@@ -694,14 +697,202 @@ const char *ScribusImportFilter::VersionName()
 const char *ScribusImportFilter::FileType(const char *first100bytes)
 {
 	if (!strstr(first100bytes,"<SCRIBUSUTF8NEW")) return NULL;
-	return "1.3.*";
+	return "1.3.3.*";
 
 	//***ANZPAGES is num of pages
 }
 
+//! Import Scribus document.
+/*! If in->doc==NULL and in->toobj==NULL, then create a new document.
+ */
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
-	return 1;
+	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
+	if (!in) return 1;
+
+	Document *doc=in->doc;
+
+	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
+	if (!att) return 2;
+	
+	int c;
+	Attribute *scribusdoc=att->find("SCRIBUSUTF8NEW"),
+			  *version;
+	if (!scribusdoc) { delete att; return 3; }
+	version=scribusdoc->find("Version");
+	scribusdoc=scribusdoc->find("content:");
+	if (!scribusdoc) { delete att; return 4; }
+	scribusdoc=scribusdoc->find("DOCUMENT");
+	if (!scribusdoc) { delete att; return 4; }
+	
+	 //create repository for hints if necessary
+	Attribute *scribushints=NULL;
+	if (in->keepmystery) scribushints=new Attribute(VersionName(),file);
+
+
+	 //figure out the paper size, orientation
+	PaperStyle *paper=NULL;
+	int landscape;
+
+	Attribute *a=scribusdoc->find("PAGESIZE");
+	if (a && a->value) {
+		for (c=0; c<laidout->papersizes.n; c++)
+			if (!strcasecmp(laidout->papersizes.e[c]->name,a->value)) {
+				paper=laidout->papersizes.e[c];
+				break;
+			}
+	}
+	if (!paper) paper=laidout->papersizes.e[0];
+
+	 //figure out orientation
+	a=scribusdoc->find("ORIENTATION");
+	if (a) landscape=BooleanAttribute(a->value);
+	else landscape=0;
+	
+	 //pagenum to start dumping onto
+	int docpagenum=in->topage; //the page in doc to start dumping into
+	int pagenum,
+		curdocpage; //the current page, used in loop below
+	if (docpagenum<0) docpagenum=0;
+
+	 //find the number of pages
+	a=scribusdoc->find("ANZPAGES");
+	int numpages=-1;
+	if (a) IntAttribute(a->value,&numpages);//***should error check here!
+	int start,end;
+	if (in->instart<0) start=0; else start=in->instart;
+	if (in->inend<0 || in->inend>=numpages) end=numpages-1; 
+		else end=in->inend;
+
+	DoubleBBox pagebounds[end-start+1];
+	if (doc && docpagenum+(end-start)>=doc->pages.n) 
+		doc->NewPages(-1,doc->pages.n-(docpagenum+(end-start))+1);
+
+	if (scribushints) {
+		Attribute *slahead=new Attribute("slahead",NULL);
+		for (int c=0; c<scribusdoc->attributes.n; c++) {
+			 //store all document xml attributes in scribus hints, 
+			 //but not the whole content
+			if (!strcmp(scribusdoc->attributes.e[c]->name,"content:")) continue;
+			slahead->push(scribusdoc->attributes.e[c]->duplicate(),-1);
+		}
+	}
+
+	 //get to the contents of the scribus document
+	scribusdoc=scribusdoc->find("content:");
+	if (!scribusdoc) { delete att; return 5; }
+
+
+	 //now scribusdoc's subattributes should be many things. We are primarily interested in
+	 //"PAGE", "PAGEOBJECT", and "COLOR" fields, and maybe "PageSets"
+	 //all the others we can safely ignore, and let pass into iohints
+
+	 //create the document if necessary
+	if (!doc && !in->toobj) {
+		Imposition *imp=new Singles; //*** this is not necessarily so! uses PageSets??
+		paper->flags=((paper->flags)&~1)|(landscape?1:0);
+		imp->SetPaperSize(paper);
+		DocumentStyle *docstyle=new DocumentStyle(imp);
+		doc=new Document(docstyle,Untitled_name());
+	}
+
+	Group *group=in->toobj;
+	Attribute *page,*object;
+	char scratch[50];
+	MysteryData *mdata=NULL;
+
+	for (c=0; c<scribusdoc->attributes.n; c++) {
+		if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {
+			 //this will be something like:
+			 // NAME "White"
+			 // CMYK "#00000000"  (or RGB "#000000")
+			 // Spot "0"
+			 // Register "0"
+			//***** finish me!
+		} else if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGE")) {
+			page=scribusdoc->attributes.e[c];
+			a=page->find("NUM");
+			IntAttribute(a->value,&pagenum); //*** could use some error checking here so corrupt files dont crash laidout!!
+			if (pagenum<start || pagenum>end) continue; //only store pages that'll really be imported
+			DoubleAttribute(page->find("PAGEXPOS")->value,&pagebounds[pagenum].minx);
+			DoubleAttribute(page->find("PAGEYPOS")->value,&pagebounds[pagenum].miny);
+			DoubleAttribute(page->find("PAGEWIDTH")->value,&pagebounds[pagenum].maxx);
+			DoubleAttribute(page->find("PAGEHEIGHT")->value,&pagebounds[pagenum].maxy);
+			pagebounds[pagenum].maxx+=pagebounds[pagenum].minx;
+			pagebounds[pagenum].maxy+=pagebounds[pagenum].miny;
+
+			 //remaining stuff is iohint 
+			a=page->duplicate();
+			sprintf(scratch,"%d",pagenum);
+			makestr(a->value,scratch);
+			if (scribushints) scribushints->push(a,-1);
+
+		} else if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGEOBJECT")) {
+			object=scribusdoc->attributes.e[c];
+			IntAttribute(object->find("OwnPage")->value,&pagenum);
+			if (pagenum<start || pagenum>end) continue; //***watch out for object bleeding!!
+			if (doc) {
+				 //update group to point to the document page's group
+				curdocpage=docpagenum+(pagenum-start);
+				group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
+			}
+			double x,y,rot,w,h;
+			DoubleAttribute(object->find("XPOS")->value  ,&x);//***this could be att->doubleValue("XPOS",&x) for safety
+			DoubleAttribute(object->find("YPOS")->value  ,&y);
+			DoubleAttribute(object->find("ROT")->value   ,&rot);
+			DoubleAttribute(object->find("WIDTH")->value ,&w);
+			DoubleAttribute(object->find("HEIGHT")->value,&h);
+			x-=pagebounds[pagenum].minx;
+			y-=pagebounds[pagenum].miny;
+			int ptype=atoi(object->find("PTYPE")->value); //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+
+			mdata=new MysteryData(VersionName());
+			if (ptype==2) makestr(mdata->name,"Image Frame");
+			else if (ptype==4) makestr(mdata->name,"Text Frame");
+			else if (ptype==5) makestr(mdata->name,"Line");
+			else if (ptype==6) makestr(mdata->name,"Polygon");
+			else if (ptype==7) makestr(mdata->name,"Polyline");
+			else if (ptype==8) makestr(mdata->name,"Text on path");
+			mdata->m(0,cos(rot));
+			mdata->m(1,sin(rot));
+			mdata->m(2,sin(rot));
+			mdata->m(3,-cos(rot));
+			mdata->m(4,x/72);
+			mdata->m(5,y/72);
+			mdata->maxx=w/72;
+			mdata->maxy=h/72;
+			group->push(mdata,-1);
+
+			cout <<"**** finish implementing scribus in!!"<<endl;
+
+		} else if (scribushints) {
+			 //push any other blocks into scribushints.. we can usually safely ignore them
+			Attribute *more=new Attribute("docContent",NULL);
+			more->push(scribusdoc->attributes.e[c]->duplicate(),-1);
+		}
+	}
+	
+
+	 //install global hints if they exist
+	if (scribushints) {
+		 //remove the old iohint if it is there
+		Attribute *iohints=(doc?&doc->iohints:&laidout->project->iohints);
+		Attribute *oldscribus=iohints->find(VersionName());
+		if (oldscribus) {
+			iohints->attributes.remove(iohints->attributes.findindex(oldscribus));
+		}
+		iohints->push(scribushints,-1);
+		//remember, do not delete scribushints here! they become part of the doc/project
+	}
+
+	 //if doc is new, push into the project
+	if (doc && doc!=in->doc) {
+		laidout->project->Push(doc);
+		laidout->app->addwindow(newHeadWindow(doc));
+	}
+	
+	delete att;
+	return 0;
 }
 
 

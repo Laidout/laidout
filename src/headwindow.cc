@@ -148,6 +148,7 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  */
 anXWindow *newHeadWindow(Document *doc,const char *which)
 {
+	if (!laidout->dpy) return NULL;
 	if (doc==NULL) {
 		doc=laidout->curdoc;
 		if (!doc) {

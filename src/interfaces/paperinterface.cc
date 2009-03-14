@@ -33,6 +33,28 @@ using namespace std;
 #define DBG 
 
 
+//------------------------------------ Local functions ---------------------------------
+
+//! Return a new char[] with a name like "Paper Group 3". The number is incremented with each call.
+/*! This will not create a name already used by a papergroup.
+ */
+char *new_paper_group_name()
+{
+	static int num=1;
+	char *str;
+	int c;
+	while (1) {
+		str=new char[strlen(_("Paper Group %d"))+15];
+		sprintf(str,_("Paper Group %d"),num++);
+		for (c=0; c<laidout->project->papergroups.n; c++) {
+			if (!strcmp(str,laidout->project->papergroups.e[c]->Name)) break;
+		}
+		if (c==laidout->project->papergroups.n) return str;
+		delete[] str;
+	}
+	return NULL;
+}
+
 //------------------------------------- PaperInterface --------------------------------------
 	
 /*! \class PaperInterface 
@@ -57,7 +79,7 @@ PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	showdecs=0;
 	doc=NULL;
 
-	papergroup=new PaperGroup;//****
+	papergroup=NULL;
 
 	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
 	buttonmask=Button1Mask;
@@ -75,7 +97,7 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	showdecs=0;
 	doc=NULL;
 
-	papergroup=new PaperGroup;//****
+	papergroup=NULL;
 
 	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
 	buttonmask=Button1Mask;
@@ -114,14 +136,17 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y)
 		menu->AddSep();	
 	}
 	if (laidout->project->papergroups.n) {		
+		menu->AddItem(_("Paper Group"));
 		menu->SubMenu(_("Paper group"));
 		const char *nme;
+		PaperGroup *pg;
 		for (int c=0; c<laidout->project->papergroups.n; c++) {
-			nme=laidout->project->papergroups.e[c]->name;
+			pg=laidout->project->papergroups.e[c];
+			nme=pg->Name;
+			if (!nme) nme=pg->name;
 			if (!nme) nme=_("(unnamed)");
 			menu->AddItem(nme,2000+c,
-						  LAX_ISTOGGLE
-							| (papergroup==laidout->project->papergroups.e[c] ? LAX_CHECKED : 0));
+						  LAX_ISTOGGLE | LAX_OFF | (papergroup==pg ? LAX_CHECKED : 0));
 		}
 		menu->EndSubMenu();
 	}
@@ -159,12 +184,28 @@ int PaperInterface::MenuEvent(XClientMessageEvent *e)
 		return 0;
 	} else if (i>=2000 && i<3000) {
 		//***is selecting a new papergroup from laidout->project->papergroups	
+		i-=2000;
+		if (i<0 || i>laidout->project->papergroups.n) return 0;
+
+		Clear(NULL);
+		papergroup=laidout->project->papergroups.e[i];
+		papergroup->inc_count();
+		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+		if (lvp) lvp->UseThisPaperGroup(papergroup);
+		needtodraw=1;
+		return 0;
+
 	} else if (i==3000) {
-		//***New paper group...
-		int i=laidout->project->papergroups.findindex(papergroup);
-		if (i<0) {
-			//***install the papergroup as new in project
-		}
+		 //New paper group...
+		if (papergroup) papergroup->dec_count();
+		papergroup=new PaperGroup;
+		papergroup->Name=new_paper_group_name();
+		laidout->project->papergroups.push(papergroup);
+		
+		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+		if (lvp) lvp->UseThisPaperGroup(papergroup);
+		needtodraw=1;
+		return 0;
 	} else if (i==3001) {
 		//***Rename paper group...
 	}
@@ -218,8 +259,6 @@ int PaperInterface::InterfaceOff()
 {
 	Clear(NULL);
 	showdecs=0;
-	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
-	if (curbox) { curbox->dec_count(); curbox=NULL; }
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 	if (lvp) lvp->UseThisPaperGroup(NULL);
@@ -229,8 +268,29 @@ int PaperInterface::InterfaceOff()
 	return 0;
 }
 
+//! Use a PaperGroup. Does NOT update viewport.
+int PaperInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
+{
+	PaperGroup *pg=dynamic_cast<PaperGroup *>(ndata);
+	if (!pg && ndata) return 0; //was a non-null object, but not a papergroup
+	Clear(NULL);
+	
+	papergroup=pg;
+	if (papergroup) papergroup->inc_count();
+	needtodraw=1;
+
+	return 1;
+}
+
+/*! Clean maybebox, curbox, curboxes, papergroup.
+ * Does NOT update viewport.
+ */
 void PaperInterface::Clear(SomeData *d)
 {
+	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
+	if (curbox) { curbox->dec_count(); curbox=NULL; }
+	curboxes.flush();
+	if (papergroup) { papergroup->dec_count(); papergroup=NULL; }
 }
 
 	
@@ -375,7 +435,7 @@ void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arro
 	}
 }
 
-/*! \todo draw arrow to indicate paper up direction
+/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
  */
 int PaperInterface::Refresh()
 {
@@ -417,7 +477,7 @@ int PaperInterface::Refresh()
 //! Return the papergroup->papers element index underneath x,y, or -1.
 int PaperInterface::scan(int x,int y)
 {
-	if (!papergroup->papers.n) return -1;
+	if (!papergroup || !papergroup->papers.n) return -1;
 	flatpoint fp=dp->screentoreal(x,y);
 
 	//if (curbox && curbox->pointin(fp)) return papergroup->papers.findindex(curbox);
@@ -440,7 +500,7 @@ void PaperInterface::createMaybebox(flatpoint p)
 	if (curbox) {
 		box=curbox->box;
 		boxdata=curbox;
-	} else if (papergroup->papers.n) {
+	} else if (papergroup && papergroup->papers.n) {
 		box=papergroup->papers.e[0]->box;
 		boxdata=papergroup->papers.e[0];
 	} else if (doc) {
@@ -454,7 +514,8 @@ void PaperInterface::createMaybebox(flatpoint p)
 	}
 
 	maybebox=new PaperBoxData(box); //incs count of box
-	maybebox->red=65535;
+	maybebox->red=maybebox->blue=65535;
+	maybebox->green=0;
 	if (boxdata) {
 		maybebox->xaxis(boxdata->xaxis());
 		maybebox->yaxis(boxdata->yaxis());
@@ -476,16 +537,24 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
 		//add a new box
 		if (!maybebox) createMaybebox(dp->screentoreal(x,y));
-		papergroup->papers.push(maybebox);
+		if (!papergroup) {
+			papergroup=new PaperGroup;
+			papergroup->Name=new_paper_group_name();
+			laidout->project->papergroups.push(papergroup);
+			
+			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+			if (lvp) lvp->UseThisPaperGroup(papergroup);
+		}
+		over=papergroup->papers.push(maybebox);
+		maybebox->dec_count();
 		maybebox=NULL;
 		needtodraw=1;
 		//return 0; -- do not return, continue to let box be added..
 	}
 
-	int b=scan(x,y);
-	if (b>=0) {
+	if (over>=0) {
 		if (curbox) curbox->dec_count();
-		curbox=papergroup->papers.e[b];
+		curbox=papergroup->papers.e[over];
 		curbox->inc_count();
 		if ((state&LAX_STATE_MASK)!=ShiftMask) curboxes.flush();
 		curboxes.pushnodup(curbox,0);
@@ -546,6 +615,8 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
 
 	if (curboxes.n==0) return 1;
 
+	 //if curboxes.n>0, this implies papergroup!=NULL
+
 	flatpoint fp=dp->screentoreal(x,y),
 			  d=fp-dp->screentoreal(mx,my);
 
@@ -563,18 +634,25 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
 
 	 //^ scales
 	if ((state&LAX_STATE_MASK)==ControlMask) {
-		SomeData *data;
+		PaperBoxData *data;
+		//flatpoint leftd=transform_point_inverse(data->m(),lbdown);
 		for (int c=0; c<papergroup->papers.n; c++) {
 			data=papergroup->papers.e[c];
 			if (x>mx) {
 				if (data->xaxis()*data->xaxis()<dp->upperbound*dp->upperbound) {
 					data->xaxis(data->xaxis()*1.05);
 					data->yaxis(data->yaxis()*1.05);
+					if (curboxes.findindex(data)>=0) {
+						data->origin(lbdown+(data->origin()-lbdown)*1.05);
+					}
 				}
 			} else if (x<mx) {
 				if (data->xaxis()*data->xaxis()>dp->lowerbound*dp->lowerbound) {
 					data->xaxis(data->xaxis()/1.05);
 					data->yaxis(data->yaxis()/1.05);
+					if (curboxes.findindex(data)>=0) {
+						data->origin(lbdown+(data->origin()-lbdown)/1.05);
+					}
 				}
 			}
 		}

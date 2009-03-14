@@ -140,9 +140,15 @@ void Project::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
+		 //limbos
 		fprintf(f,"%s#You can specify any number of scratch spaces (limbo) that can be attached to views.\n",spc);
 		fprintf(f,"%slimbo IdOfLimbo\n",spc);
 		fprintf(f,"%s  object ... #each limbo is really just a Group of objects\n\n",spc);
+
+		 //paper groups
+		fprintf(f,"%s#You can have any number of extra paper groups for special occasions.\n",spc);
+		fprintf(f,"%spapergroup \"Name of paper group\"\n",spc);
+		fprintf(f,"%s  (papergroup attributes)\n\n",spc);
 
 		fprintf(f,"%s# Documents can be included in the project file itself, or\n",spc);
 		fprintf(f,"%s# merely referenced, which is usually the more convenient way.\n",spc);
@@ -169,6 +175,14 @@ void Project::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			fprintf(f,"%slimbo %s\n",spc,(gg->id?gg->id:""));
 			//fprintf(f,"%s  object %s\n",spc,limbos.e(c)->whattype());
 			limbos.e(c)->dump_out(f,indent+2,0,context);
+		}
+	}
+	if (papergroups.n) {
+		PaperGroup *pg;
+		for (int c=0; c<papergroups.n; c++) {
+			pg=papergroups.e[c];
+			fprintf(f,"%spapergroup %s\n",spc,(pg->name?pg->name:(pg->Name?pg->Name:"")));
+			pg->dump_out(f,indent+2,0,context);
 		}
 	}
 	if (docs.n) {
@@ -220,12 +234,20 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 				doc->dump_in_atts(att->attributes.e[c],flag,context);
 				Push(doc);
 			}
+
 		} else if (!strcmp(name,"limbo")) {
 			Group *g=new Group;  //count=1
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			limbos.push(g,0); // incs count
 			g->dec_count();   //remove extra first count
+
+		} else if (!strcmp(name,"papergroup")) {
+			PaperGroup *pg=new PaperGroup;
+			pg->dump_in_atts(att->attributes.e[c],flag,context);
+			if (isblank(pg->Name) && !isblank(value)) makestr(pg->Name,value);
+			papergroups.push(pg);
+			pg->dec_count();
 		}
 	}
 

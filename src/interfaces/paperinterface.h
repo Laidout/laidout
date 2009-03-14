@@ -20,6 +20,9 @@
 
 #include "../laidout.h"
 
+//-------------------------- misc PaperGroup utils --------------------------
+char *new_paper_group_name();
+
 //------------------------------------- PaperInterface --------------------------------------
 
 #define PAPERTILE_ONE_ONLY   (1<<0)
@@ -73,7 +76,7 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 					Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=1);
 
 	
-	//virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
+	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	//virtual int DrawData(Laxkit::anObject *ndata,
 	//		Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=0);
 	//virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,

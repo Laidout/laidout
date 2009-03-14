@@ -59,7 +59,7 @@ class ScribusImportFilter : public ImportFilter
 	
 	virtual const char *DefaultExtension() { return "sla"; }
 	virtual const char *Format() { return "Scribus"; }
-	virtual const char *Version() { return "1.3.*"; }
+	virtual const char *Version() { return "1.3.3.*"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 

@@ -60,6 +60,8 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned 
 	}
 
 	config=new ImportConfig(nfile, defdpi, startpg, startpg, -1, -1, -1, ndoc, obj);
+	config->keepmystery=1;
+	//config->inend=3;//****TEMP FOR TESTING!!
 
 	dialog_style|=FILES_PREVIEW;
 }
@@ -196,13 +198,14 @@ int ImportFileDialog::init()
 						last,window,"importpagerange",
 						_("Import page range:"),_("all"),0,
 						0,0,2,2,2,2);
-	importpagerange->tooltip(_("The pages of the file to import"));
+	importpagerange->tooltip(_("The range of pages of the file to import, numbered from 0.\n"
+							   "Such as \"3-9\". Currently, only one range per import"));
 	AddWin(importpagerange, importpagerange->win_w,0,1000,50, importpagerange->win_h,0,0,50);
 	AddNull();
 	
 
 	 //---------------------- import to document or object ---------------------------
-	str=numtostr(config->instart,0);
+	str=numtostr(config->topage,0);
 	last=linp=new LineInput(this,"StartIndex",0, 0,0,0,0,0, 
 						last,window,"startindex",
 						_("Start Index:"),str,0,
@@ -216,7 +219,7 @@ int ImportFileDialog::init()
 	last=check=new CheckBox(this,"keepmystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
 						last,window,"keepmystery", _("Preserve mystery data"),5,5);
 	check->tooltip(_("Try to preserve data that Laidout does not understand"));
-	check->State(LAX_ON);
+	check->State(config->keepmystery?LAX_ON:LAX_OFF);
 	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
 	AddNull();
 
@@ -285,6 +288,7 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"startindex")) {
+		 //the starting page of the document to import to
 		return 0;
 
 	} else if (!strcmp(mes,"keepmystery")) {
@@ -317,6 +321,30 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
  */
 int ImportFileDialog::send(int id)
 {
+	const char *range=importpagerange->GetCText();
+	if (!strcasecmp(range,_("all"))) {
+		config->instart=0;
+		config->inend=-1;
+	} else {
+		char *tmp;
+		int s,e;
+		s=strtol(range,&tmp,10);
+		if (tmp==range) {
+			s=0;
+			e=-1;
+		} else {
+			range=tmp;
+			e=strtol(range,&tmp,10);
+			if (tmp==range) {
+				e=s;
+			}
+		}
+		config->instart=s;
+		config->inend=e;
+	}
+
+
+
 	char *error=NULL;
 	int err=import_document(config,&error);
 
