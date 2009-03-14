@@ -268,7 +268,7 @@ PageRange::~PageRange()
 
 
 //! Convert things like "A-###" to "A-%s" and puts the number of '#' chars in len.
-/*! \ingroup misc
+/*! \ingroup lmisc
  * Assumes there is only one block of '#' chars.
  * 
  * NULL -> NULL, len==0\n
@@ -307,7 +307,7 @@ char *make_labelbase_for_printf(const char *f,int *len)
 }
 
 //! Turn 26 into "z" or 27 into "za", etc. Optionally capitalize.
-/*! \ingroup misc
+/*! \ingroup lmisc
  *  Returns a new'd char[].
  */
 char *letter_numeral(int i,char cap)
@@ -327,7 +327,7 @@ char *letter_numeral(int i,char cap)
 }
 
 //! Make a roman numeral from i, optionally capitalized.
-/*! \ingroup misc
+/*! \ingroup lmisc
  *
  * This makes numbers using ascii i,v,x,l,c,d,m, or I,V,X,L,C,D,M, not the unicode roman numerals U+2150-U+218F.
  * Also, M is the largest chunk of number dealt with, so 5000 translates to "mmmmm" for instance.
@@ -383,7 +383,7 @@ char *PageRange::GetLabel(int i)
 	return label;
 }
 
-/*! \ingroup misc
+/*! \ingroup lmisc
  * \todo put me somewhere
  */
 const char *labeltypename(PageLabelType t)
@@ -665,7 +665,9 @@ int Document::RemovePages(int start,int n)
 
 	
 //! Return 0 if saved, return nonzero if not saved.
-/*! Save as document file. 
+/*! Save as document file.
+ *
+ * If includelimbos, then also save laidout->project->papergroups too.
  *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
@@ -706,6 +708,15 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
 			fprintf(f,"limbo %s\n",(gg->id?gg->id:""));
 			//fprintf(f,"%s  object %s\n",spc,limbos.e(c)->whattype());
 			gg->dump_out(f,2,0,NULL);
+		}
+
+		if (laidout->project->papergroups.n) {
+			PaperGroup *pg;
+			for (int c=0; c<laidout->project->papergroups.n; c++) {
+				pg=laidout->project->papergroups.e[c];
+				fprintf(f,"papergroup %s\n",(pg->name?pg->name:(pg->Name?pg->Name:"")));
+				pg->dump_out(f,2,0,NULL);
+			}
 		}
 	}
 	if (includewindows) laidout->DumpWindows(f,0,this);
@@ -855,6 +866,13 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			laidout->project->limbos.push(g,0); // incs count
 			g->dec_count();   //remove extra first count
+
+		} else if (!strcmp(nme,"papergroup")) {
+			PaperGroup *pg=new PaperGroup;
+			pg->dump_in_atts(att->attributes.e[c],flag,context);
+			if (isblank(pg->Name) && !isblank(value)) makestr(pg->Name,value);
+			laidout->project->papergroups.push(pg);
+			pg->dec_count();
 
 		} else if (!strcmp(nme,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();

@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,10 +11,12 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2009 by Tom Lechner
 //
-/************** colors.cc *************/
+
+**************************this file is not used yet!!**************;
+
+#include <lcms.h>
 
 
 /*! \defgroup colors Color Management
@@ -26,7 +29,7 @@
  // TODO
  //
  // this must be flexible enough to allow sets of colors (like the X11 color names),
- // spot colors that cannot be scaled, Registration color, and None color, which is like
+ // spot colors that cannot be scaled, Registration color, None color, and knockout, which is like
  // an erase as opposed to simply being paper color...
 
 
@@ -74,10 +77,23 @@ class ColorPrimary
 	int minvalue;
 	ScreenColor screencolor;
 	
-	Attribute *atts; //*** this could be a ColorAttribute class, to allow ridiculously adaptable color systems
+	Attribute atts; //*** this could be a ColorAttribute class, to allow ridiculously adaptable color systems
 					//    like being able to define a sparkle or metal speck fill pattern 
-	               // for each i'th attribute, atts[2*i]==attribute name, atts[2*i+1]==attribute value
+	               // for each i'th attribute
+	ColorPrimary();
+	virtual ~ColorPrimary();
 };
+
+ColorPrimary::ColorPrimary()
+{
+	name=NULL;
+	maxvalue=minvalue=0;
+}
+
+ColorPrimary::~ColorPrimary()
+{
+	if (name) delete[] name;
+}
 
 
 //------------------------------- ColorSystem -------------------------------
@@ -103,13 +119,28 @@ class ColorSystem
 	unsigned int systemid;
 	unsigned long style;
 	
-	HProfile iccprofile; //***
+	cmsHPROFILE iccprofile;
+	PtrStack<ColorPrimary> primaries;
 
-	int nprimaries;
-	ColorPrimary *primaries;
+	ColorSystem();
+	virtual ~ColorSystem();
 
-	Color *newColor(int n,...);
+	virtual Color *newColor(int n,...);
 };
+
+ColorSystem::ColorSystem()
+{
+	name=NULL;
+	iccprofile=NULL;
+
+}
+
+ColorSystem::~ColorSystem()
+{
+	if (name) delete[] name;
+	cmsCloseProfile(iccprofile);
+	primaries.flush();
+}
 
 
 //------------------------------- Color -------------------------------
@@ -145,13 +176,36 @@ class ColorInstance
 	Color *color;
 	int alpha;
 	int tint;
-	char *instancename;
+	char *name;
 };
 
+//------------------------------ ColorSet ----------------------------------
+/*! \class ColorSet
+ * \brief Holds a collection of colors.
+ *
+ * This can be used for palettes, for instance.
+ */
+class ColorSet : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
+{
+ public:
+	char *name;
+	RefPtrStack<ColorInstance> colors;
+	ColorSet();
+	virtual ~ColorSet();
+};
+
+ColorSet::ColorSet()
+{
+	name=NULL;
+}
+
+ColorSet::~ColorSet()
+{
+	if (name) delete[] name;
+}
 
 
 //------------------------------- ColorManager -------------------------------
-#include <lcms.h>
 
 /*! \class ColorManager
  * \ingroup colors
@@ -169,3 +223,5 @@ class ColorManager
 	PtrStack<char> icc_paths;
 	
 };
+
+

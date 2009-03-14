@@ -453,6 +453,7 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		//if (owner) ***;
 		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
 		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
+		//fprintf(f,"%s  outlinecolor 65535 0 0 #color of the outline of a paper in the interface\n",spc);
 		PaperStyle paperstyle(NULL,0,0,0,0);
 		paperstyle.dump_out(f,indent+2,-1,NULL);
 		//fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
@@ -471,6 +472,8 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		m=papers.e[c]->m();
 		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
 			spc, m[0],m[1],m[2],m[3],m[4],m[5]);
+		fprintf(f,"%s  outlinecolor %d %d %d\n",
+			spc, papers.e[c]->red, papers.e[c]->green, papers.e[c]->blue);
 		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
 	}
 }
@@ -488,6 +491,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 		} else if (!strcmp(nme,"Name")) {
 			makestr(Name,value);
 		} else if (!strcmp(nme,"paper")) {
+			int foundcolor=0;
 			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0);
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			PaperBox *paperbox=new PaperBox(paperstyle);
@@ -495,6 +499,11 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			PaperBoxData *boxdata=new PaperBoxData(paperbox);
 			paperbox->dec_count();
 			boxdata->dump_in_atts(att->attributes.e[c],flag,context);
+			if (!foundcolor) {
+				boxdata->red=65535;
+				boxdata->green=0;
+				boxdata->blue=65535;
+			}
 			papers.push(boxdata);
 			boxdata->dec_count();
 		}

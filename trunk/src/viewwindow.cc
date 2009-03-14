@@ -484,6 +484,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
 	if (!strcmp(mes,"rulercornermenu")) {
 		int i=e->data.l[1];
+		 //0-999 was document things
 		if (i>=0 && i<laidout->project->docs.n) {
 			UseThisDoc(laidout->project->docs.e[i]->doc);
 			return 0;
@@ -492,6 +493,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			UseThisDoc(NULL);
 			return 0;
 		}
+		 //1000-1999 was limbo things
 		i-=1000;
 		if (i<0) return 0;
 		if (i<laidout->project->limbos.n()) {
@@ -544,8 +546,58 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 				needtodraw=1;
 				return 0;
 			}
+			return 0;
 		}
+		 //2000-3999 was papergroup things (i now 0..1999)
 		i-=1000;
+		if (i<1000) {
+			 //select different paper group
+			if (i<0 || i>laidout->project->papergroups.n) return 0;
+			i--;
+			if (i<0) UseThisPaperGroup(NULL); //***use the default one, must reinstall default!
+			else UseThisPaperGroup(laidout->project->papergroups.e[i]);
+			if (!strcmp(interfaces.e[0]->whattype(),"PaperInterface")) {
+				interfaces.e[0]->UseThis(papergroup);
+			}
+			return 0;
+
+		} else if (i==1000) {
+			 //new papergroup
+			PaperGroup *pg=new PaperGroup;
+			pg->Name=new_paper_group_name();
+			laidout->project->papergroups.push(pg);
+			UseThisPaperGroup(pg);
+			return 0;
+
+		} else if (i==1001) {
+			 //rename current paper group
+			if (!papergroup) return 0;
+			int c=laidout->project->papergroups.findindex(papergroup);
+			if (c<0) return 0;
+			app->rundialog(new InputDialog(NULL,"rename papergroup",ANXWIN_CENTER,
+							0,0,0,0,1,
+							NULL, this->window, "rename papergroup",
+							papergroup->Name,
+							_("New name?"),
+							_("Rename"), 1,
+							_("Cancel"), 0));
+			return 0;
+
+		} else if (i==1002) {
+			 //delete current paper group
+			if (!papergroup) return 0;
+			int c=laidout->project->papergroups.findindex(papergroup);
+			if (c<0) return 0;
+			if (laidout->project->papergroups.e[c]==papergroup) {
+				UseThisPaperGroup(NULL);
+				needtodraw=1;
+			}
+			laidout->project->papergroups.remove(c);
+
+			needtodraw=1;
+
+		}
+
 		//**** change zones? other menu?
 		return 0;
 	}
@@ -585,23 +637,21 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		
 		delete te;
 		return 0;
+
+	} else if (!strcmp(mes,"rename papergroup")) {
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s) return 1;
+		if (!isblank(s->str) && papergroup) makestr(papergroup->Name,s->str);
+		delete data;
+		return 0;
+
 	} else if (!strcmp(mes,"rename limbo")) {
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		if (!isblank(s->str)) makestr(limbo->id,s->str);
 		delete data;
 		return 0;
-	} else if (!strcmp(mes,"rulercornermenu")) {
-		 //******* probably won't use... use ClientEvent instead
-		cout <<"**********LaidoutViewport::DataEvent got rulercornermenu, and it shouldn't!"<<endl;
-		//StrsEventData *se=dynamic_cast<StrsEventData *>(data);
-		//if (!se || !se->n || !se->strs[0]) return 1;
-		////***set document to se->strs[0]
-		////****str is base name
-		//Document *ndoc=laidout->findDocument(se->strs[0]);
-		//if (ndoc) UseThisDoc(ndoc);
-		//delete se;
-		return 1;
+
 	} else if (!strcmp(mes,"image properties")) {
 		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
 		if (se) {
@@ -2771,7 +2821,7 @@ int ViewWindow::init()
 									 NULL,window,"rulercornerbutton",0,
 									 NULL,0,
 									 laidout->icons.GetIcon("Laidout"),NULL);
-	menub->tooltip(_("Document list"));
+	menub->tooltip(_("Display list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
 	
 	AddNull();//makes the status bar take up whole line.
@@ -3338,25 +3388,26 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		MenuInfo *menu;
 		menu=new MenuInfo("Viewer");
 
-		 //add document list, numbers start at 0
-		int c;
+		 //---add document list, numbers start at 0
+		int c,pos;
+		menu->AddSep("Documents");
 		for (c=0; c<laidout->project->docs.n; c++) {
-			menu->AddItem(laidout->project->docs.e[c]->doc->Name(1),c); 
-			menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
+			pos=menu->AddItem(laidout->project->docs.e[c]->doc->Name(1),c)-1;
+			menu->menuitems.e[pos]->state|=LAX_ISTOGGLE;
 			if (laidout->project->docs.e[c]->doc==doc) {
-				menu->menuitems.e[c]->state|=LAX_CHECKED;
+				menu->menuitems.e[pos]->state|=LAX_CHECKED;
 			}
 		}
-		menu->AddItem(_("None"),c);
+		c=menu->AddItem(_("None"),c)-1;
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
 
-		 //add limbo list, numbers starting at 1000...
-		char txt[20];
+		 //----add limbo list, numbers starting at 1000...
+		char txt[40];
 		Group *g;
 		int where;
 		if (laidout->project->limbos.n()) {
-			menu->AddSep();
+			menu->AddSep("Scratch");
 			for (c=0; c<laidout->project->limbos.n(); c++) {
 				g=dynamic_cast<Group *>(laidout->project->limbos.e(c));
 				if (!isblank(g->id)) where=menu->AddItem(g->id,1000+c)-1; 
@@ -3376,6 +3427,41 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		c++;
 		if (laidout->project->limbos.n()>1) menu->AddItem(_("Delete current limbo"),1000+c);
 
+		 //----add papergroup list, numbers starting at 2000...
+		PaperGroup *pg;
+		char *temp;
+		where=-1;
+		int defaultoption;
+		c=0;
+		menu->AddSep(_("Paper Groups"));
+		defaultoption=menu->AddItem(_("default"),2000,LAX_ISTOGGLE|LAX_OFF)-1;
+
+		for (c=0; c<laidout->project->papergroups.n; c++) {
+			pg=dynamic_cast<PaperGroup *>(laidout->project->papergroups.e[c]);
+			if (!isblank(pg->Name)) temp=pg->Name;
+			else if (!isblank(pg->name)) temp=pg->name;
+			else {
+				sprintf(txt,_("(Paper Group %d)"),c);
+				temp=txt;
+			}
+			pos=menu->AddItem(temp,2000+c+1,LAX_ISTOGGLE|LAX_OFF)-1; 
+			if (pg==((LaidoutViewport *)viewport)->papergroup) where=pos;
+		}
+		 //viewport is using a non-default papergroup when where>=0
+		menu->menuitems.e[where>=0 ? where : defaultoption]->state|=LAX_CHECKED;
+
+		c++; //was down one from adding default
+		menu->AddItem(_("Add new paper group"),3000);
+		if (where>=0) {
+			c++;
+			menu->AddItem(_("Rename current paper group"),3001);
+			c++;
+			menu->AddItem(_("Delete current paper group"),3002);
+		}
+
+
+
+		 //create the actual popup menu...
 		MenuSelector *popup;
 		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
@@ -3493,33 +3579,34 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (toobj) toobj->dec_count();
 		return 0;
 	} else if (!strcmp(mes,"insertImage")) {
-		 //******currently not used in favor of image dialog
-		 // run a dialog to grab a new image for an ImageData and ImagePatchData
-		char *oldimage=NULL,*oldimgname=NULL;
-		SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
-		if (curobj) {
-			//***this is rather messy, should standardize finding properties from interfaces
-			if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
-				ImageData *img=dynamic_cast<ImageData *>(curobj);
-				makestr(oldimage,img->filename);
-			} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
-				 //set in imagepatch
-				ImagePatchData *img=dynamic_cast<ImagePatchData *>(curobj);
-				makestr(oldimage,img->filename);
-			} 
-		}
-		if (oldimage) {
-			oldimgname=strrchr(oldimage,'/');
-			if (oldimgname) {
-				*(oldimgname++)='\0';
-			}
-		}
-			
-		app->rundialog(new FileDialog(NULL,"Insert Image",
-					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-					0,0,0,0,0, window,"insert new image",
-					oldimgname,oldimage));
-		if (oldimage) delete[] oldimage;
+//-----------******i should be able to delete this stuff, right??		 
+//		 //******currently not used in favor of image dialog
+//		 // run a dialog to grab a new image for an ImageData and ImagePatchData
+//		char *oldimage=NULL,*oldimgname=NULL;
+//		SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
+//		if (curobj) {
+//			//***this is rather messy, should standardize finding properties from interfaces
+//			if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
+//				ImageData *img=dynamic_cast<ImageData *>(curobj);
+//				makestr(oldimage,img->filename);
+//			} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
+//				 //set in imagepatch
+//				ImagePatchData *img=dynamic_cast<ImagePatchData *>(curobj);
+//				makestr(oldimage,img->filename);
+//			} 
+//		}
+//		if (oldimage) {
+//			oldimgname=strrchr(oldimage,'/');
+//			if (oldimgname) {
+//				*(oldimgname++)='\0';
+//			}
+//		}
+//			
+//		app->rundialog(new FileDialog(NULL,"Insert Image",
+//					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
+//					0,0,0,0,0, window,"insert new image",
+//					oldimgname,oldimage));
+//		if (oldimage) delete[] oldimage;
 		return 0;
 	} else if (!strcmp(mes,"import")) { 
 		if (laidout->importfilters.n==0) {
