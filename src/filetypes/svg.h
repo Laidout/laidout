@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007-2009 by Tom Lechner
 //
 #ifndef FILETYPES_SVG_H
 #define FILETYPES_SVG_H
@@ -30,6 +30,7 @@ class SvgOutputFilter : public ExportFilter
 {
  protected:
  public:
+	double version;
 	SvgOutputFilter();
 	virtual ~SvgOutputFilter() {}
 	virtual const char *Author() { return "Laidout"; }
@@ -37,7 +38,7 @@ class SvgOutputFilter : public ExportFilter
 	
 	virtual const char *DefaultExtension() { return "svg"; }
 	virtual const char *Format() { return "Svg"; }
-	virtual const char *Version() { return "1.0"; }
+	virtual const char *Version();
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
 

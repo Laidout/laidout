@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 #include <lax/fileutils.h>
@@ -76,7 +76,7 @@ LaxInterfaces::anInterface *EpsInterface::duplicate(LaxInterfaces::anInterface *
  *  maxy 200
  *  filename filename.eps
  *  previewfile .filename-preview.png
- *  desc "Blah blah blah"
+ *  description "Blah blah blah"
  * </pre>
  * If previewfile is not an absolute path, then it is relative to filename.
  *
@@ -109,9 +109,9 @@ void EpsData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%smaxy %.10g\n",spc,maxy);
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
 				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
-	if (desc) {
-		fprintf(f,"%sdesc",spc);
-		dump_out_value(f,indent+2,desc);
+	if (description) {
+		fprintf(f,"%sdescription",spc);
+		dump_out_value(f,indent+2,description);
 	}
 }
 	
@@ -137,7 +137,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 		if (!strcmp(name,"matrix")) {
 			DoubleListAttribute(value,m(),6);
 		} else if (!strcmp(name,"description")) {
-			makestr(desc,value);
+			makestr(description,value);
 		} else if (!strcmp(name,"filename")) {
 			fname=value;
 		} else if (!strcmp(name,"previewfile")) {

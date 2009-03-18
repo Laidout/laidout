@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2007 Tom Lechner
+// Copyright (c) 2004-2009 Tom Lechner
 //
 #ifndef VIEWWINDOW_H
 #define VIEWWINDOW_H

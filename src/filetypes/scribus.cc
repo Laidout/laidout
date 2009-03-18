@@ -732,8 +732,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 	 //figure out the paper size, orientation
 	PaperStyle *paper=NULL;
-	int landscape;
+	int landscape=0;
 
+	 //****setup paper based on scribus pagesize only if creating a new document....
 	Attribute *a=scribusdoc->find("PAGESIZE");
 	if (a && a->value) {
 		for (c=0; c<laidout->papersizes.n; c++)
@@ -755,7 +756,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		curdocpage; //the current page, used in loop below
 	if (docpagenum<0) docpagenum=0;
 
-	 //find the number of pages
+	 //find the number of pages to expect in the scribus document
 	a=scribusdoc->find("ANZPAGES");
 	int numpages=-1;
 	if (a) IntAttribute(a->value,&numpages);//***should error check here!
@@ -869,6 +870,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			 //push any other blocks into scribushints.. we can usually safely ignore them
 			Attribute *more=new Attribute("docContent",NULL);
 			more->push(scribusdoc->attributes.e[c]->duplicate(),-1);
+			scribushints->push(more,-1);
 		}
 	}
 	

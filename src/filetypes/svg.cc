@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007-2009 by Tom Lechner
 //
 
 
@@ -23,6 +23,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../dataobjects/mysterydata.h"
 #include "svg.h"
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
@@ -62,12 +63,20 @@ void installSvgFilter()
 
 SvgOutputFilter::SvgOutputFilter()
 {
+	version=1.1;
 	//flags=FILTERS_MULTIPAGE; //***not multipage yet!
+}
+
+const char *SvgOutputFilter::Version()
+{
+	if (version<1.2) return "1.1"; 
+	return "1.2";
 }
 
 const char *SvgOutputFilter::VersionName()
 {
-	return _("Svg 1.0");
+	if (version<1.2) return _("Svg 1.1"); 
+	return _("Svg 1.2");
 }
 
 //! Function to dump out obj as svg.
@@ -622,30 +631,36 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 //-------or----------adapt to multipagesvg with page and pagesets
 //	 // Write out spread....
-//	fprintf(f,"  <g>\n");
-//	*********
-//	for (c=0; c<doc->docstyle->imposition->numpapers; c++) {
-//		fprintf(f,"  <page>\n");
-//		spread=doc->docstyle->imposition->PaperLayout(c);
-//		 // for each page in paper layout..
-//		for (c2=0; c2<spread->pagestack.n; c2++) {
-//			pg=spread->pagestack.e[c2]->index;
-//			if (pg>=doc->pages.n) continue;
-//			 // for each layer on the page..
-//			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
-//				 // for each object in layer
-//				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
-//				for (c3=0; c3<g->n(); c3++) {
-//					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-//					svgdumpobj(f,m,g->e(c3));
+//	if (version==1.2) {
+//		fprintf(f,"  <pageSet>\n");
+//		*********needs work
+//		if (doc) {
+//			for (c=0; c<doc->docstyle->imposition->numpapers; c++) {
+//				fprintf(f,"    <page>\n");
+//				fprintf(f,"      <g>\n");
+//				spread=doc->docstyle->imposition->PaperLayout(c);
+//				 // for each page in paper layout..
+//				for (c2=0; c2<spread->pagestack.n; c2++) {
+//					pg=spread->pagestack.e[c2]->index;
+//					if (pg>=doc->pages.n) continue;
+//					 // for each layer on the page..
+//					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+//						 // for each object in layer
+//						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+//						for (c3=0; c3<g->n(); c3++) {
+//							transform_copy(m,spread->pagestack.e[c2]->outline->m());
+//							svgdumpobj(f,m,g->e(c3));
+//						}
+//					}
 //				}
-//			}
-//		}
 //
-//		delete spread;
-//		fprintf(f,"  </page>\n");
+//				delete spread;
+//				fprintf(f,"      </g>\n");
+//				fprintf(f,"    </page>\n");
+//			}
+//			fprintf(f,"    </pageSet>\n");
+//		}
 //	}
-//	fprintf(f,"  </g>\n");
 //--------------------
 		
 	 // write out footer
@@ -665,139 +680,241 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 const char *SvgImportFilter::VersionName()
 {
-	return _("Svg 1.0");
+	return _("Svg 1.1");
 }
 
 const char *SvgImportFilter::FileType(const char *first100bytes)
 {
 	if (!strstr(first100bytes,"<svg")) return NULL;
-	return "1.0";
+	return "1.1";
 
 	//*** inkscape has inkscape:version tag
 	// also xmlns:svg="http://www.w3.org/2000/svg
 }
 
+//***********forward declaration:
+int svgDumpInObjects(Group *group, Attribute *element, char **error_ret);
+
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
-	return 1;
+	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
+	if (!in) return 1;
+
+	Document *doc=in->doc;
+
+	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
+	if (!att) return 2;
+	
+	 //create repository for hints if necessary
+	Attribute *svghints=NULL,
+			  *svg=NULL; //points to the "svg" section of svghints. Do not delete!!
+	if (in->keepmystery) svghints=new Attribute(VersionName(),file);
+	try {
+
+		 //add xml preamble, and anything not under "svg" to hints if it exists...
+		if (svghints) {
+			for (int c=0; c<att->attributes.n; att++) {
+				if (!strcmp(att->attributes.e[c]->name,"svg")) continue;
+				svghints->push(att->attributes.e[c]->duplicate(),-1);
+			}
+			svg=new Attribute("svg",NULL);
+			svghints->push(svg,-1);
+		}
+
+		int c;
+		double width=0, height=0;
+		Attribute *svgdoc=att->find("svg"),
+				  *version;
+		if (!svgdoc) throw 3;
+
+		for (int c=0; c<svgdoc->attributes.n; att++) {
+			if (!strcmp(svgdoc->attributes.e[c]->name,"content:")) continue;
+
+			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
+			if (!strcmp(svgdoc->attributes.e[c]->name,"width"))
+				DoubleAttribute(svgdoc->attributes.e[c]->value,&width);
+			else if (!strcmp(svgdoc->attributes.e[c]->name,"height"))
+				DoubleAttribute(svgdoc->attributes.e[c]->value,&height);
+		}
+		svgdoc=svgdoc->find("content:");
+		if (!svgdoc || width==0 || height==0) throw 4;
+		
+		 //svg units == 1.2 * (postscript units == 72 / inch)
+		width*=.8/72; //convert width and height to inches *** use postscript units instead??
+		height*=.8/72;
+
+		 //figure out the paper size, orientation
+		PaperStyle *paper=NULL;
+		int landscape=0;
+		 //svg/inkscape uses width and height, but not paper names as far as I can see
+		 //search for paper size known to laidout within certain approximation
+		for (c=0; c<laidout->papersizes.n; c++) {
+			if (     fabs(width- laidout->papersizes.e[c]->width)<.0001
+				  && fabs(height-laidout->papersizes.e[c]->height)) {
+				paper=laidout->papersizes.e[c];
+				break;
+			}
+			if (     fabs(height-laidout->papersizes.e[c]->width)<.0001
+				  && fabs(width -laidout->papersizes.e[c]->height)) {
+				paper=laidout->papersizes.e[c];
+				landscape=1;
+				break;
+			}
+		}
+		if (!paper) paper=laidout->papersizes.e[0];
+		
+		 //pagenum to start dumping onto
+		int docpagenum=in->topage; //the page in laidout doc to start dumping into
+		int pagenum,
+			curdocpage; //the current page in the laidout document, used in loop below
+		if (docpagenum<0) docpagenum=0;
+
+		 //preliminary start and end pages for the svg
+		int numpages=0;
+		int start,end;
+		if (in->instart<0) start=0; else start=in->instart;
+		if (in->inend<0) end=10000000; 
+			else end=in->inend;
+
+
+
+		 //now svgdoc's subattributes should be a combination of 
+		 //defs, sodipodi:namedview, metadata,  and from svg 1.2: pageSet, masterPage
+		 // PLUS any number of graphic elements, such as g, rect, image, text....
+
+		 //create the document if necessary
+		if (!doc && !in->toobj) {
+			Imposition *imp=new Singles;
+			paper->flags=((paper->flags)&~1)|(landscape?1:0);//***note this changes the default paper flag!!
+			imp->SetPaperSize(paper);
+			DocumentStyle *docstyle=new DocumentStyle(imp);
+			doc=new Document(docstyle,Untitled_name());
+		}
+
+		Group *group=in->toobj;
+		Attribute *page,*object;
+		char scratch[50];
+		MysteryData *mdata=NULL;
+
+		if (!group && doc) {
+			 //update group to point to the document page's group
+			curdocpage=docpagenum+(pagenum-start);
+			group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
+		}
+
+		for (c=0; c<svgdoc->attributes.n; c++) {
+			if (!strcmp(svgdoc->attributes.e[c]->name,"metadata")
+				     || !strcmp(svgdoc->attributes.e[c]->name,"sodipodi:namedview")) {
+				 //just copy over "metedata" and "sodipodi:namedview" to svghints
+				if (svghints) {
+					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
+				}
+				continue;
+
+			} else if (!strcmp(svgdoc->attributes.e[c]->name,"defs")) {
+				 //need to read in gradient and filter data...
+				//***
+				continue;
+
+			} else if (!strcmp(svgdoc->attributes.e[c]->name,"masterPage")) {
+				 //masterPages are printed on any page that (somehow!) refers to them...
+				//***not sure how to use these!!
+				//contains g elements...
+				continue;
+
+			} else if (!strcmp(svgdoc->attributes.e[c]->name,"pageSet")) {
+				 //in Svg 1.2, "pageSet"s contain "page" elements in "content:"
+				//***
+				continue;
+
+			} 
+			
+			if (svgDumpInObjects(group,svgdoc->attributes.e[c],error_ret)) continue;
+
+			 //push any other blocks into svghints.. not expected, but you never know
+			if (svghints) {
+				Attribute *more=new Attribute("docContent",NULL);
+				more->push(svgdoc->attributes.e[c]->duplicate(),-1);
+				svghints->push(more,-1);
+			}
+		}
+		
+
+		 //install global hints if they exist
+		if (svghints) {
+			 //remove the old iohint if it is there
+			Attribute *iohints=(doc?&doc->iohints:&laidout->project->iohints);
+			Attribute *oldsvg=iohints->find(VersionName());
+			if (oldsvg) {
+				iohints->attributes.remove(iohints->attributes.findindex(oldsvg));
+			}
+			iohints->push(svghints,-1);
+			//remember, do not delete svghints here! they become part of the doc/project
+		}
+
+		 //if doc is new, push into the project
+		if (doc && doc!=in->doc) {
+			laidout->project->Push(doc);
+			laidout->app->addwindow(newHeadWindow(doc));
+		}
+	
+	} catch (int error) {
+		if (svghints) delete svghints;
+		delete att;
+		return 1;
+	}
+	return 0;
 }
 
+//! Return 1 for attribute used, else 0.
+int svgDumpInObjects(Group *group, Attribute *element, char **error_ret)
+{
+	if (!strcmp(element->name,"g")) {
+		Group *g=new Group;
+		for (int c=0; c<element->attributes.n; c++) {
+			svgDumpInObjects(g,element->attributes.e[c],error_ret);
+		}
+		group->push(g,0);
+		return 1;
 
+	} else if (!strcmp(element->name,"path")) {
+		for (int c=0; c<element->attributes.n; c++) {
+			if (!strcmp(element->attributes.e[c]->name,"id")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"transform")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"style")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"d")) {
+			}
+		}
+	} else if (!strcmp(element->name,"rect")) {
+	} else if (!strcmp(element->name,"circle")) {
+	} else if (!strcmp(element->name,"ellipse")) {
+	} else if (!strcmp(element->name,"line")) {
+	} else if (!strcmp(element->name,"polyline")) {
+	} else if (!strcmp(element->name,"polygon")) {
+	} else if (!strcmp(element->name,"text")) {
+		for (int c=0; c<element->attributes.n; c++) {
+			if (!strcmp(element->attributes.e[c]->name,"id")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"transform")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"style")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"x")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"y")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"content:")) {
+			}
+		}
+	} else if (!strcmp(element->name,"image")) {
+		for (int c=0; c<element->attributes.n; c++) {
+			if (!strcmp(element->attributes.e[c]->name,"id")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"x")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"y")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"width")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"height")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"xlink:href")) {
+			} else if (!strcmp(element->attributes.e[c]->name,"transform")) {
+			}
+		}
+	} else if (!strcmp(element->name,"use")) {
+	}
 
-////! Import an SVG file.
-///*! If doc!=NULL, then import the svg file to Document starting at page startpage.
-// * Otherwise, create a brand new Singles based document.
-// *
-// * Does no check on the file to ensure that it is in fact an svg file.
-// *
-// * It will be a file something like:
-// * <pre>
-// *   ??????
-// * </pre>
-// *
-// * \todo ***** finish imp me!
-// * \todo there should be a way to preserve any elements that laidout doesn't understand, so
-// *   when outputting as svg, these elements would be written back out maybe...
-// */
-//Document *svgin(const char *file,Document *doc,int startpage,char **error_ret)
-//{
-//	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
-//	if (!att) {
-//		if (error_ret) appendline(*error_ret,_("Could not open file for reading."));
-//		return NULL;
-//	}
-//	
-//	int c;
-//	Attribute *svgdoc=att->find("svg"),
-//			  *page, *frame, *a;
-//	if (!svgdoc) {
-//		delete att; 
-//		if (error_ret) appendline(*error_ret,_("Could not open file for reading."));
-//		return NULL; 
-//	}
-//	
-//	 //figure out the paper size, orientation
-//	a=svgdoc->find("width");  //8.5in
-//	a=svgdoc->find("height"); //11in...
-//
-//	 // create doc if not exist already with specified dimensions
-//	a=svgdoc->find("paper_name");
-//	PaperStyle *paper=NULL;
-//	if (a) {
-//		for (c=0; c<laidout->papersizes.n; c++)
-//			if (!strcasecmp(laidout->papersizes.e[c]->name,a->value)) {
-//				paper=laidout->papersizes.e[c];
-//				break;
-//			}
-//	}
-//	if (!paper) paper=laidout->papersizes.e[0];
-//
-//	
-//	 //figure out orientation
-//	int landscape;
-//	a=svgdoc->find("landscape");
-//	if (a) landscape=BooleanAttribute(a->value);
-//	else landscape=0;
-//	
-//	
-//	 // read in defs, which normally includes gradients and other globals...
-//	a=svgdoc->find("defs");
-//	
-//
-//	
-//	 // read in pages
-//	int pagenum=0;
-//	svgdoc=pptdoc->find("contents");
-//	if (!svgdoc) { delete att; return NULL; }
-//
-//	 //create the document
-//	if (!doc) {
-//		Imposition *imp=new Singles;
-//		imp->SetPaperSize(paper);
-//		imp->paperstyle->flags=((imp->paperstyle->flags)&~1)|(landscape?1:0);
-//		DocumentStyle *docstyle=new DocumentStyle(imp);
-//		doc=new Document(docstyle,"untitled");//**** laidout should keep track of: untitled1, untitled2, ...
-//	}
-//
-//	ImageData *image;
-//	LaxImage *img=NULL;
-//	Attribute *t,*n,*m;
-//	double M[6];
-//	
-//	for (c=0; c<svgdoc->attributes.n; c++) {
-//		if (!strcmp(svgdoc->attributes.e[c]->name,"page")) {
-//			if (pagenum>doc->pages.n) doc->NewPages(-1,1);
-//			page=svgdoc->attributes.e[c];
-//			for (int c2=0; c2<page->attributes.n; c2++) {
-//				if (!strcmp(page->attributes.e[c]->name,"frame")) {
-//					frame=page->attributes.e[c];
-//					a=frame->find("file");
-//					t=frame->find("type");
-//					n=frame->find("name");
-//					m=frame->find("matrix");
-//					if (a && a->value && t && !strcmp(t->value,"raster")) {
-//						img=load_image(a->value);
-//						if (img) {
-//							image=new ImageData;
-//							if (n) image->SetDescription(n->value);
-//							image->SetImage(img);
-//							if (m) DoubleListAttribute(m->value,M,6,NULL);
-//							dynamic_cast<Group *>(doc->pages.e[pagenum]->layers.e(0))->push(image,0);
-//							image->dec_count();
-//						}
-//					}
-//				}
-//			}
-//			pagenum++;
-//		}
-//	}
-//	
-//	 //*** set up page labels for "first_page_num"
-//	
-//	 //establish doc in project
-//	laidout->project->Push(doc);
-//	laidout->app->addwindow(newHeadWindow(doc));
-//	
-//	delete att;
-//	return doc;
-//}
+	return 0;
+}
+

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2007 Tom Lechner
+// Copyright (c) 2007-2009 Tom Lechner
 //
 
 #include "language.h"
@@ -566,8 +566,8 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		ImageInfo *info=findImageInfo(full,&c);
 		delete[] full;
 		if (info) {
-			SetFile(info->file,info->previewfile);
-			previewer->Preview(info->file);
+			SetFile(info->filename,info->previewfile);
+			previewer->Preview(info->filename);
 		}
 		delete[] which;
 		return 0;
@@ -704,7 +704,7 @@ Laxkit::ImageInfo *ImportImagesDialog::findImageInfo(const char *fullfile,int *i
 	char *full;
 	for (c=0; c<images.n; c++) {
 		full=fullFilePath(fullfile);
-		if (!strcmp(full,images.e[c]->file)) {
+		if (!strcmp(full,images.e[c]->filename)) {
 			delete[] full;
 			if (i) *i=c;
 			return images.e[c];
