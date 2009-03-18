@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2007 Tom Lechner
+// Copyright (c) 2007-2009 Tom Lechner
 //
 #ifndef IMPORTIMAGES_H
 #define IMPORTIMAGES_H

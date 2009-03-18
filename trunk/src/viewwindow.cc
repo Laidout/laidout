@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2007 Tom Lechner
+// Copyright (c) 2004-2009 Tom Lechner
 //
 
 #include <lax/numslider.h>
@@ -19,8 +19,6 @@
 #include <lax/transformmath.h>
 #include <lax/strsliderpopup.h>
 #include <lax/sliderpopup.h>
-#include <lax/interfaces/imageinterface.h>
-#include <lax/interfaces/imagepatchinterface.h>
 #include <lax/filedialog.h>
 #include <lax/colorbox.h>
 #include <lax/fileutils.h>
@@ -28,8 +26,11 @@
 #include <lax/laxutils.h>
 #include <lax/menubutton.h>
 #include <lax/inputdialog.h>
+
 #include <cstdarg>
 #include <cups/cups.h>
+#include <sys/stat.h>
+#include <X11/cursorfont.h>
 
 #include <lax/lists.cc>
 
@@ -52,9 +53,7 @@
 #include "filetypes/exportdialog.h"
 #include "interfaces/paperinterface.h"
 
-#include <X11/cursorfont.h>
 #include <iostream>
-#include <sys/stat.h>
 using namespace std;
 
 #define DBG 
@@ -653,27 +652,20 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"image properties")) {
-		StrsEventData *se=dynamic_cast<StrsEventData *>(data);
-		if (se) {
-			//if (curobj.obj && !strcmp(curobj.obj->whattype(),"ImageData")) {
-			if (curobj.obj && dynamic_cast<ImageData *>(curobj.obj)) {
-				ImageData *img=dynamic_cast<ImageData *>(curobj.obj);
-				if (img) {
-					img->SetDescription(se->strs[3]);
-					img->LoadImage(se->strs[0],se->strs[1],0,0,0, 1);
-					needtodraw=1;
-					delete se;
-					return 0;
-				}
-			} else if (curobj.obj && !strcmp(curobj.obj->whattype(),"ImagePatchData")) {
-				 //set in imagepatch
-				ImagePatchData *ipatch=dynamic_cast<ImagePatchData *>(curobj.obj);
-				if (ipatch) {
-					ipatch->SetImage(se->strs[0]);
-					needtodraw=1;
-				}
+		 //pass on to the first active interface that wants it, if any
+		RefCountedEventData *e=dynamic_cast<RefCountedEventData *>(data);
+		if (!e) return 1;
+		ImageInfo *imageinfo=dynamic_cast<ImageInfo *>(e->object);
+		if (!imageinfo) return 1;
+
+		for (int c=0; c<interfaces.n; c++) {
+			if (interfaces.e[c]->UseThis(imageinfo,imageinfo->mask)) {
+				needtodraw=1;
+				delete data;
+				return 0;
 			}
 		}
+
 		return 1;
 	}
 	return 1;
@@ -2937,11 +2929,6 @@ int ViewWindow::init()
 	ibut->tooltip(_("Import one or more images"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
-//*******unnecessary anymore? replaced by image properties dialog
-//	last=ibut=new IconButton(this,"insert image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"insertImage",-1,
-//			laidout->icons.GetIcon("InsertImage"),_("Insert Image"));
-//	ibut->tooltip(_("Insert an image into the current image or image patch"));
-//	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	 //-------------import
 	 //*** this can be somehow combined with import images maybe?...
@@ -3028,6 +3015,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		int c=viewport->DataEvent(data,mes);
 		updateContext();
 		return c;
+
 	} else if (!strcmp(mes,"import new image")) {
 		 //*** not this is currently not used... ImportImagesDialog calls dumpin directly, and sends no message back.
 		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
@@ -3049,42 +3037,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		((LaidoutViewport *)viewport)->postmessage(mes);
 		delete data;
 		return 0;
-	} else if (!strcmp(mes,"insert new image")) {
-		 //******currently not used in favor of image dialog
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		LaxImage *image=load_image(s->str);
 
-		if (image) {
-			SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
-			if (!strcmp(mes,"insert new image")) {
-				if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
-					 //set in image
-					ImageData *img=dynamic_cast<ImageData *>(curobj);
-					img->SetImage(image);
-					((anXWindow *)viewport)->Needtodraw(1);
-				} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
-					 //set in imagepatch
-					dynamic_cast<ImagePatchData *>(curobj)->SetImage(s->str);
-					image->dec_count();
-					((anXWindow *)viewport)->Needtodraw(1);
-				} else curobj=NULL;
-			} else curobj=NULL;
-			if (!curobj) {
-				ImageData *newdata=new ImageData();
-				newdata->SetImage(image);
-				//*** must scale image to fit the page at default dpi!!
-				newdata->xaxis(newdata->xaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
-				newdata->yaxis(newdata->yaxis()/300); // set to 300 dpi, assuming 1 unit==1 inch!!
-				if (!((LaidoutViewport *)viewport)->PlopData(newdata)) delete newdata;
-			}
-		} else { 
-			char mes[30+strlen(s->str)+1];
-			sprintf(mes,_("Couldn't load image from \"%s\"."),s->str);
-			((LaidoutViewport *)viewport)->postmessage(mes);
-		}
-		delete data;
-		return 0;
 	} else if (!strcmp(mes,"reallysave")) {
 		 // save without overwrite check
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
@@ -3109,6 +3062,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 
 		delete data;
 		return 0;
+
 	} else if (!strcmp(mes,"statusMessage")) {
 		 //user entered a new file name to save document as
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
@@ -3203,10 +3157,12 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		}
 		delete data;
 		return 0;
+
 	} else if (!strcmp(mes,"print config")) {
 		 //sent from PrintingDialog
 		//***
 		return 0;
+
 	} else if (!strcmp(mes,"export config")) {
 		 //sent from ExportDialog
 		ConfigEventData *d=dynamic_cast<ConfigEventData *>(data);
@@ -3296,7 +3252,6 @@ void ViewWindow::updateContext()
  *    newLayerNumber,
  *    newViewType, 
  *    importImage,
- *    insertImage,
  *    dumpInImages,
  *    deletePage,
  *    addPage,
@@ -3577,36 +3532,6 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 					toobj,
 					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
 		if (toobj) toobj->dec_count();
-		return 0;
-	} else if (!strcmp(mes,"insertImage")) {
-//-----------******i should be able to delete this stuff, right??		 
-//		 //******currently not used in favor of image dialog
-//		 // run a dialog to grab a new image for an ImageData and ImagePatchData
-//		char *oldimage=NULL,*oldimgname=NULL;
-//		SomeData *curobj=((LaidoutViewport *)viewport)->curobj.obj;
-//		if (curobj) {
-//			//***this is rather messy, should standardize finding properties from interfaces
-//			if (curobj && !strcmp(curobj->whattype(),"ImageData")) {
-//				ImageData *img=dynamic_cast<ImageData *>(curobj);
-//				makestr(oldimage,img->filename);
-//			} else if (curobj && !strcmp(curobj->whattype(),"ImagePatchData")) {
-//				 //set in imagepatch
-//				ImagePatchData *img=dynamic_cast<ImagePatchData *>(curobj);
-//				makestr(oldimage,img->filename);
-//			} 
-//		}
-//		if (oldimage) {
-//			oldimgname=strrchr(oldimage,'/');
-//			if (oldimgname) {
-//				*(oldimgname++)='\0';
-//			}
-//		}
-//			
-//		app->rundialog(new FileDialog(NULL,"Insert Image",
-//					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-//					0,0,0,0,0, window,"insert new image",
-//					oldimgname,oldimage));
-//		if (oldimage) delete[] oldimage;
 		return 0;
 	} else if (!strcmp(mes,"import")) { 
 		if (laidout->importfilters.n==0) {
