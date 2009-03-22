@@ -484,24 +484,24 @@ int NetFace::getOutline(int *n, flatpoint **p, int convert)
 /*! If what==-1, then dump out psuedo-code mockup of format. Basically that means this:
  * <pre>
  *   face
- *     original 3   #the face index in the abstract net corresponding to this face
- *     back         #this face is actual the mirror image of the abstract net face
- *     matrix 1 0 0 1 0 0  #transform that places points in net space
- *     potential           #whether this face is actually used in the net
- *     edge              #this is a typical edge for a laidout net
- *       toface     4.6  #connects to net face index 4, edge index number 6
- *       tooriginal 3    #connects to original face 3
- *       potential       #link is only potential. If absent, then program detects it
- *       svalue   .5     #for bezier edges, the point of contact with adjacent edge, 0 to 1
- *       points \        #point list for this edge. First point must be a vertex point
+ *     original 3   # the face index in the abstract net corresponding to this face
+ *     back         # this face is actual the mirror image of the abstract net face
+ *     matrix 1 0 0 1 0 0  # transform that places points in net space
+ *     potential           # whether this face is actually used in the net
+ *     edge              # this is a typical edge for a laidout net
+ *       toface     4.6  # connects to net face index 4, edge index number 6
+ *       tooriginal 3    # connects to original face 3
+ *       potential       # link is only potential. If absent, then program detects it
+ *       svalue   .5     # for bezier edges, the point of contact with adjacent edge, 0 to 1
+ *       points \        # point list for this edge. First point must be a vertex point
  *         -.5 -.5       # that is actually on the line. following points can be either
  *         c -.5 1.5     # polyline points or bezier control points
  *         c 1.5 1.5     
  *         v 2 2         # the edge's path can be a bezier line of any length, but
  *         c 1.5 3.6     # remember to leave out the final vertex point. That point is
  *         c 1.8 3.6     # listed in the following edge's point list.
- *     edge             #here's a typical edge for a basic abstract net
- *       tooriginal 2.1  #connects to original face 2 at edge 1
+ *     edge             # here's a typical edge for a basic abstract net
+ *       tooriginal 2.1  # connects to original face 2 at edge 1
  *       d  M-.5 -.5  L-.5 1.5  L1.5 1.5  L1.5 -.5  #alternate specification of points with svg
  * </pre>
  */

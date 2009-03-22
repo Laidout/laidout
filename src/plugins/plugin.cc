@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,23 +11,51 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2009 by Tom Lechner
 //
 
 
+********this file is not active yet!!!*****************
 
-******************
+/*! \ingroup plugins
+ *
+ * Plugins can provide:
+ * 
+ * main windows
+ * commands (possible return value, optional parameter dialog)
+ * random dialogs (command with optional context)
+ * image import filters
+ * import filters
+ * export filters
+ * interfaces and possibly new data types
+ * impositions
+ * resources, like page sizes, palettes, imposition instance templates, etc
+ * icons/menu items
+ *  particular templates/types of data, master pages for instance
+ * interpreters (python, yacas, octave, tex/latex?)
+ * 
+ * 
+ */
 
-Plugins can provide:
 
-new
-main windows
-commands (no dialog component)
-random dialogs (command with optional context)
-interfaces/new somedatas
-icons/menus
-styles
- impositions
- particular templates/types of data, master pages for instance
-interpreters (python, yacas, octave, tex/latex?)
+class PluginBase
+{
+ public:
+	const char *PluginName() = 0;
+	const char *Description() = 0;
+	const char *Author() = 0;
+	const char *License() = 0;
+	const char *Version() = 0;
+	unsigned long WhatYouGot();
+	ImportFilter **ImportFilters();
+	ImportFilter **ImageImportFilters();
+	ExportFilter **ExportFilters();
+	** Tools();
+	** Resources();
+	
+	PluginBase();
+	virtual ~PluginBase();
+};
+
+
+

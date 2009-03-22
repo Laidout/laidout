@@ -47,6 +47,16 @@ using namespace LaxFiles;
  * 1 for tofiles: 1 spread (or paper slice) per file,
  * 2 for command.
  */
+/*! \var char DocumentExportConfig::collect_for_out
+ * \brief Whether to gather needed extra files to one place.
+ *
+ * If you export to svg, for instance, there will be references to files whereever they are,
+ * plus things that can only be rasterized. This option lets you put copies of all the 
+ * extra files, plus new files resulting from rasterizing all in one directory for later use.
+ * That directory is just the dirname of filename or tofiles.
+ *
+ * \todo *** implement me!!
+ */
 
 DocumentExportConfig::DocumentExportConfig()
 {
@@ -59,6 +69,7 @@ DocumentExportConfig::DocumentExportConfig()
 	filter=NULL;
 	papergroup=NULL;
 	limbo=NULL;
+	collect_for_out=COLLECT_Dont_Collect;
 }
 
 /*! Increments count on ndoc if it exists.
@@ -78,6 +89,7 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 	layout=l;
 	doc=ndoc;
 	limbo=lmbo;
+	collect_for_out=COLLECT_Dont_Collect;
 
 	filter=NULL;
 	if (doc) doc->inc_count();
@@ -230,8 +242,25 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject
 /*! \fn const char *FileFilter::FilterClass()
  * \brief What the filter dumps from or to.
  *
- * \todo These can currently be "document", "object", "image" (a raster image),
+ * \todo **** implement me!!!!!
+ *
+ * These can currently be "document", "object", "image" (a raster image),
  * or resources such as "gradient", "palette", or "net".
+ *
+ * The "document" type is for importing page based documents, and breaking down the page
+ * components into Laidout elements as possible. This might be svg (with or without pageSets),
+ * or Scribus documents. 
+ *
+ * The "image" type is for importing arbitrary files and treating them
+ * like bitmaps. For instance, some output filters can directly use EPS files, but EPS files
+ * are not innately understood by Laidout, so there is a filter to move and transform them
+ * like bitmaps, but the postscript exporter can use the original file. Other output filters
+ * would be able only to use a rasterized version. Same thing for PDF pages, or svg (coverted
+ * to a png by inkscape, perhaps).
+ *
+ * "object" is analogous to the "image" type, that is, it
+ * produces a block of things based on some arbitrary file, and the onscreen version is
+ * represented as a bunch of Laidout elements.
  *
  * LaidoutApp keeps a catalog of filters grouped by FilterClass(), and then by whether
  * they are for input or output.

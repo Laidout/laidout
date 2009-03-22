@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 
@@ -20,32 +20,8 @@
 
 #include "project.h"
 #include "document.h"
+#include "plaintext.h"
 #include <lax/rowframe.h>
-
-//------------------------------ FileRef -------------------------------
-class FileRef : public Laxkit::anObject, public Laxkit::RefCounted
-{
- public:
-	char *filename;
-	FileRef(const char *file) { filename=newstr(file); }
-	~FileRef() { if (filename) delete[] filename; }
-	virtual const char *whattype() { return "FileRef"; }
-};
-
-//------------------------------ PlainText -------------------------------
-
-class PlainText : public Laxkit::anObject, public Laxkit::RefCounted
-{
- public:
-	Laxkit::anObject *owner;
-	clock_t lastmodtime;
-	char *thetext;
-	char *name;
-
-	PlainText();
-	virtual ~PlainText();
-	virtual const char *whattype() { return "PlainText"; }
-};
 
 //------------------------------ PlainTextWindow -------------------------------
 

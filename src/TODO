@@ -55,6 +55,9 @@ should be able to stretch any image.. makes new image preview,
 	 	...
 	 ...
 
+someone should really go through all the dump_in functions, and check for error handling
+ when there is a possibly corrupted file.. there are most likely snafus here and there...
+
 when closing a window, and only that window refers to a particular document, should
  ask if user wants to really close that document, or simply hide it
 

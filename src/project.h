@@ -19,6 +19,7 @@
 #include <lax/refptrstack.h>
 #include "document.h"
 #include "papersizes.h"
+#include "plaintext.h"
 
 //------------------------- ProjDocument ------------------------------------
 class ProjDocument
@@ -48,7 +49,7 @@ class Project : public LaxFiles::DumpUtility
 	//default color mode
 	
 	//StyleManager styles;
-	//Laxkit::PtrStack<TextObject> texts;
+	Laxkit::PtrStack<PlainText> textobjects;
 
 	Project();
 	virtual ~Project();

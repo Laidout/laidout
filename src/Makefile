@@ -27,6 +27,7 @@ objs= \
 	styles.o \
 	stylemanager.o \
 	papersizes.o \
+	plaintext.o \
 	page.o \
 	document.o \
 	project.o \

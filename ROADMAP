@@ -9,18 +9,20 @@ VERSION 0.09
 ------------
 (done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
 (done) Add, delete, and rename limbos
-       Load, save, add, delete paper groups
+(done) Load, save, add, delete paper groups
 (done) Finish implementing project based setup, particularly being able to save a project, not just load one   
 (done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
+       command line option to pass in commands, like "import blah; reimpose box; export blah2"
        plain text edit window for notes/scripts/whatever save with project or doc or its own file
-       When importing, preserve mystery data as much as possible, to be later exported back out
-       Passepartout import
+       At bare minimum, path interface use should not cause a seg fault
+(done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
+(done) Passepartout import
        Svg import
        Scribus import
-(done) fix the new memory hole (in papergroups?)
-       fix the other memory hole (in images?)
+(done) fix the memory hole (in papergroups?)
+       fix the other memory hole (in images?), something in paperinterface, too
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -29,9 +31,12 @@ VERSION 0.09
 
 VERSION 0.091
 ------------
+       Collect for out
        Generic fold and trim imposition
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Masking
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
        Clean up patch controls
        Image and Color patches, gradients, etc should allow transparent colors
        Soup up the color box so one can recall previous colors, and/or integration with palette window
@@ -117,6 +122,7 @@ fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
+Basically full SVG print support
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
 Would be nice to have tex/latex text and equation reader

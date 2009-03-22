@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 
@@ -31,39 +31,6 @@ using namespace std;
 using namespace Laxkit;
 
 
-//------------------------------ PlainText ------------------------------
-
-/*! \class PlainText
- * \brief Holds plain text, which is text with no formatting.
- *
- * These are for holding random notes and scripts.
- *
- * Ultimately, they might contain something like Latex code that an EPS
- * grabber might run to get formulas.... Big todo!!
- *
- * \todo allow 8bit text OR utf8
- */
-
-PlainText::PlainText()
-{
-	thetext=NULL;
-	name=NULL;
-	owner=NULL;
-	lastmodtime=0;
-}
-
-PlainText::~PlainText()
-{
-	if (thetext) delete[] thetext;
-	if (name) delete[] name;
-	if (owner) dynamic_cast<RefCounted *>(owner)->dec_count();
-}
-
-//class DynamicObject : LaxInterfaces::SomeDataRef
-//{
-// public:
-//	 LaxInterfaces::SomeData *ref;
-//};
 
 //------------------------------ PlainTextWindow -------------------------------
 /*! \class PlainTextWindow
@@ -113,6 +80,7 @@ int PlainTextWindow::init()
 	AddWin(editbox, 100,95,2000,50, 100,95,20000,50);
 	AddNull();
 
+	 //------select text object
 	cout <<"*** need to fix PlainTextWindow ownership text"<<endl;
 
 	const char *txt=NULL;
@@ -122,20 +90,25 @@ int PlainTextWindow::init()
 	} else txt="(no text object)";
 	AddWin(new MessageBar(this,"textowner",MB_MOVE, 0,0,0,0,1, txt));
 
+
+	 //--------open
 	IconButton *ibut=NULL;
 	last=ibut=new IconButton(this,"open",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"open",-1,
 			laidout->icons.GetIcon("Open"),_("Open"));
 	ibut->tooltip(_("Open a file from disk"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	 //--------save
 	last=ibut=new IconButton(this,"save",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
 			laidout->icons.GetIcon("Save"),_("Save"));
 	ibut->tooltip(_("Save the current text"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
+	 //--------apply
 	last=new TextButton(this,"apply",0, 0,0,0,0,1, last,window,"apply", _("Apply"));
 	AddWin(last);
 
+	 //--------run
 	last=new TextButton(this,"run",0, 0,0,0,0,1, last,window,"run", _("Run..."));
 	AddWin(last);
 
