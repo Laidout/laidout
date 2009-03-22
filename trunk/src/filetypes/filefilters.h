@@ -71,6 +71,13 @@ class ExportFilter : public FileFilter
 };
 
 //------------------------------- DocumentExportConfig ----------------------------------
+enum CollectForOutValues {
+	COLLECT_Dont_Collect,
+	COLLECT_Only_Rasterized,
+	COLLECT_Only_Existing,
+	COLLECT_Existing_And_Rasterized
+};
+
 class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
@@ -81,6 +88,7 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 	Group *limbo;
 	char *filename;
 	char *tofiles;
+	char collect_for_out;
 	PaperGroup *papergroup;
 	ExportFilter *filter;
 	DocumentExportConfig();

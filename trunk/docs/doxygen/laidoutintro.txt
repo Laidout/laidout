@@ -18,10 +18,10 @@ If you want to hack away at Laidout, you've come to the right place. Please be
 advised that any part of Laidout code may completely change without notice.
 
 This is my sprawling desktop publishing software that I've been making on and off for the last
-3 or 4 years, which is about 2 or 3 years longer than I have really wanted to be doing.
+several years, which is many years longer than I really expected to want to be doing.
 Most of that wasted excess time has been spent developing the 
 <a href="http://laxkit.sourceforge.net">Laxkit</a>, my brand new 
-X window toolkit. Only late last November (2005), 3.5 years in, was I able to get something
+X window toolkit. Only late November of 2005, 3.5 years in, was I able to get something
 onto the screen!
 
 Something found in this program, and not in any other desktop publishing software in the world
@@ -29,7 +29,8 @@ that I am aware of, open source or not, is the ability to create and manipulate 
 that are composed of different kinds of segments, but still be continuous. Often you can have
 circles OR bezier lines OR polygon lines OR nurbs lines, but here you can have ALL of them all
 at the same time and preserve the idiosyncracies of each type of segment! (well, nurbs will
-have to wait until I figure out what a nurb is anyway) The SVG specification
+have to wait until I figure out what a nurb is anyway, *** and well, actually, path editing 
+is not really implemented yet!!! I wrote this when I thought it was just around the corner) The SVG specification
 and Postscript allows for such lines (except no nurbs), but I do not know of programs 
 (except Laidout) that allow easy construction and editing of those lines.
 Eh yo Inkscape! Where are ya? (of course, this assumes I'm not missing bits of the manual)
@@ -38,11 +39,12 @@ Also, Laidout's interface is very configurable. The emphasis is on manipulating 
 on the screen rapidly and all the little helper windows can be big and clunky or slight and
 minimal. (*****in truth, its not quite to that point yet)
 
-Boasting aside, why, really, should any one use Laidout rather than Inkscape, Scribus, or even InDesign?
+Boasting (**that is to say, wishful thinking)
+aside, why, really, should any one use Laidout rather than Inkscape, Scribus, or even InDesign?
 Well, you shouldn't!! Right now, Laidout is still very experimental, and no printing house anywhere
 supports its files, or has even heard of it. If you need something with a proven history, then go for
 Scribus. It apparently produces very clean files that printing houses will probably not hate you for.
-The major deficiency of Scribus (as of May 2006) is the lack of impositioning features, however, that 
+The major deficiency of Scribus (as of March 2009) is the lack of impositioning features, however, that 
 is being worked on
 
 Laidout currently almost suits most of my purposes fairly well,
@@ -120,7 +122,7 @@ the last few years, then perhaps I can get back to making artwork!
 
 While this program is released under the GPL, free for you to use and modify any way you want (as 
 long as you credit things appropriately), it takes resources to devote to development. For instance,
-to pay my bills, the lead developer is employed as a janitor. Therefore, 
+to pay my bills, the lead developer is employed in part as a janitor. Therefore, 
 if you think this program is worth the drive space, please, please send donations of money, fresh 
 fruit (fresh upon the recipient receiving it intact in person), hardware, ski resort reservations,
 etc to the developers (just 1 right now!) found on http://www.laidout.org .
@@ -128,62 +130,8 @@ etc to the developers (just 1 right now!) found on http://www.laidout.org .
 
 \section wishing Feature Wishlist
 
-Not a roadmap so much as things that any reasonable desktop publishing software should have.
-You will note that hardly any of this is currently implemented in Laidout:
+See  http://laidout.org/dtpcompare.html for something resembling a feature wishlist.
 
-<pre>
-Tabstops and guides that lie on arbitrary paths, not just vertical and horizontal
-    lines. Gone are the days of rigidly defined and poorly accessed tabstops!
-Text on a line
-Bezier Patch transforms, (done)
-and bez color patch gradients (done)
-Linear, radial, and circle color gradients (done)
-Arbitrary f(s,t) transforms, and f(s) or f(t) transforms for paths
-Aligning points, text, and/or objects to paths
-Repeater tool along path
-Convert Text to bezier path
-Ellipses, arcs, chords
-Math calculations in input boxes
-Python scripting
-Number scripting (a scripting language I use from time to time for my polyedra stuff)
-Lines/polygons with various methods of shifting edges
-Freehand, including XInput support
-Beginning/end/middle arrows and such
-Edge feathering (as seen in Xara) and metafont-y erase brush
-Fill applied to stroke
-Use Stroke/fill as mask
-Compound paths
-Story Editor
-HTML,pdf,postscript,svg
-Drag n drop
-%Color separations
-RGB/CMYK/CIELab/Grayscale/BW/DeviceN????: %Color specifications with arbitrary primaries
-icc color profiles via littlecms
-Collect for out
-Spiffy Hyphenation and justification
-Plugin Modules
-Autotrace images
-%Spread editor (partial)
-Editable clip and textwrap mask
-arbitrary imposition (almost)
-overprinting/trapping on per object basis
-UCR, BG
-Tables
-Rotate whole page view on screen by arbitrary degrees, not just portrait/landscape (done)
-Import/export: TeX, scribus, passepartout, inkscape, (quark, indesign, ...?)
-
-other kind of neat ideas from other programs, namely Scribus 1.3 roadmap and map suggestions:
-Auto sync keyboard shortcuts with inkscape/gimp/whatever!
-Record macros, like pagestream or vim!
-support for TeX, LaTeX, MathML
-Openclipart integration/scrapbook
-cntl-+/- zooms around object, neat!
-%Color selector previews different shades of color with black and white text on it!!! Fab!
-The scribus color wheel is very clever.
-Insert sample gibberish text!! Yeah!
-Preflight verifier!
-be able to swap any two items, or do same as spreadeditor be able to swap and roll and eject
-</pre>
 */
 
 

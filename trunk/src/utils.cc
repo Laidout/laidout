@@ -482,6 +482,8 @@ int isEpsFile(const char *file,float *psversion, float *epsversion)
 
 //! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
 /*! \ingroup misc
+ *
+ * \todo this should probably be removed in favor of a more robust ImportImageFilter system
  */
 int is_bitmap_image(const char *file)
 {
