@@ -767,7 +767,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 	DoubleBBox pagebounds[end-start+1];
 	if (doc && docpagenum+(end-start)>=doc->pages.n) 
-		doc->NewPages(-1,doc->pages.n-(docpagenum+(end-start))+1);
+		doc->NewPages(-1,(docpagenum+(end-start+1))-doc->pages.n);
 
 	if (scribushints) {
 		Attribute *slahead=new Attribute("slahead",NULL);
@@ -830,7 +830,11 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 		} else if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGEOBJECT")) {
 			object=scribusdoc->attributes.e[c];
-			IntAttribute(object->find("OwnPage")->value,&pagenum);
+
+			 //figure out what page it is supposed to be on..
+			 //***need some way to compensate for bleeding!!!
+			Attribute *tmp=object->find("OwnPage");
+			if (tmp) IntAttribute(tmp->value,&pagenum);
 			if (pagenum<start || pagenum>end) continue; //***watch out for object bleeding!!
 			if (doc) {
 				 //update group to point to the document page's group
@@ -845,6 +849,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			DoubleAttribute(object->find("HEIGHT")->value,&h);
 			x-=pagebounds[pagenum].minx;
 			y-=pagebounds[pagenum].miny;
+			y=pagebounds[pagenum].maxy-pagebounds[pagenum].miny-y; //pageheight-y, needed to flip y around
 			int ptype=atoi(object->find("PTYPE")->value); //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 
 			mdata=new MysteryData(VersionName());

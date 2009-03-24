@@ -18,6 +18,7 @@
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
+#include <lax/interfaces/svgcoord.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
@@ -95,6 +96,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		for (int c=0; c<g->n(); c++) 
 			svgdumpobj(f,NULL,g->e(c),error_ret,warning,indent+2); 
 		fprintf(f,"    </g>\n");
+
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		GradientData *grad;
 		grad=dynamic_cast<GradientData *>(obj);
@@ -693,7 +695,7 @@ const char *SvgImportFilter::FileType(const char *first100bytes)
 }
 
 //***********forward declaration:
-int svgDumpInObjects(Group *group, Attribute *element, char **error_ret);
+int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
@@ -713,7 +715,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 
 		 //add xml preamble, and anything not under "svg" to hints if it exists...
 		if (svghints) {
-			for (int c=0; c<att->attributes.n; att++) {
+			for (int c=0; c<att->attributes.n; c++) {
 				if (!strcmp(att->attributes.e[c]->name,"svg")) continue;
 				svghints->push(att->attributes.e[c]->duplicate(),-1);
 			}
@@ -722,19 +724,23 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 		}
 
 		int c;
+		char *name,*value;
 		double width=0, height=0;
-		Attribute *svgdoc=att->find("svg"),
-				  *version;
+		Attribute *svgdoc=att->find("svg");
 		if (!svgdoc) throw 3;
 
-		for (int c=0; c<svgdoc->attributes.n; att++) {
-			if (!strcmp(svgdoc->attributes.e[c]->name,"content:")) continue;
+		for (c=0; c<svgdoc->attributes.n; c++) {
+			name=svgdoc->attributes.e[c]->name;
+			value=svgdoc->attributes.e[c]->value;
+			if (!strcmp(name,"content:")) continue;
 
 			if (svghints) svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
-			if (!strcmp(svgdoc->attributes.e[c]->name,"width"))
-				DoubleAttribute(svgdoc->attributes.e[c]->value,&width);
-			else if (!strcmp(svgdoc->attributes.e[c]->name,"height"))
-				DoubleAttribute(svgdoc->attributes.e[c]->value,&height);
+			 
+			 //find the width and height of the document
+			if (!strcmp(name,"width"))
+				DoubleAttribute(value,&width);
+			else if (!strcmp(name,"height"))
+				DoubleAttribute(value,&height);
 		}
 		svgdoc=svgdoc->find("content:");
 		if (!svgdoc || width==0 || height==0) throw 4;
@@ -770,7 +776,6 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 		if (docpagenum<0) docpagenum=0;
 
 		 //preliminary start and end pages for the svg
-		int numpages=0;
 		int start,end;
 		if (in->instart<0) start=0; else start=in->instart;
 		if (in->inend<0) end=10000000; 
@@ -792,9 +797,6 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 		}
 
 		Group *group=in->toobj;
-		Attribute *page,*object;
-		char scratch[50];
-		MysteryData *mdata=NULL;
 
 		if (!group && doc) {
 			 //update group to point to the document page's group
@@ -803,33 +805,38 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 		}
 
 		for (c=0; c<svgdoc->attributes.n; c++) {
-			if (!strcmp(svgdoc->attributes.e[c]->name,"metadata")
-				     || !strcmp(svgdoc->attributes.e[c]->name,"sodipodi:namedview")) {
+			name =svgdoc->attributes.e[c]->name;
+			value=svgdoc->attributes.e[c]->value;
+			 //first check for document level things like gradients in defs or metadata,
+			 //then check for drawable things
+			 //then push any other stuff unchanged
+			if (!strcmp(name,"metadata")
+				     || !strcmp(name,"sodipodi:namedview")) {
 				 //just copy over "metedata" and "sodipodi:namedview" to svghints
 				if (svghints) {
 					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 				}
 				continue;
 
-			} else if (!strcmp(svgdoc->attributes.e[c]->name,"defs")) {
+			} else if (!strcmp(name,"defs")) {
 				 //need to read in gradient and filter data...
 				//***
 				continue;
 
-			} else if (!strcmp(svgdoc->attributes.e[c]->name,"masterPage")) {
+			} else if (!strcmp(name,"masterPage")) {
 				 //masterPages are printed on any page that (somehow!) refers to them...
 				//***not sure how to use these!!
 				//contains g elements...
 				continue;
 
-			} else if (!strcmp(svgdoc->attributes.e[c]->name,"pageSet")) {
+			} else if (!strcmp(name,"pageSet")) {
 				 //in Svg 1.2, "pageSet"s contain "page" elements in "content:"
 				//***
 				continue;
 
 			} 
 			
-			if (svgDumpInObjects(group,svgdoc->attributes.e[c],error_ret)) continue;
+			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],error_ret)) continue;
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
@@ -867,24 +874,111 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 }
 
 //! Return 1 for attribute used, else 0.
-int svgDumpInObjects(Group *group, Attribute *element, char **error_ret)
+int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 {
+	char *name,*value;
 	if (!strcmp(element->name,"g")) {
 		Group *g=new Group;
 		for (int c=0; c<element->attributes.n; c++) {
-			svgDumpInObjects(g,element->attributes.e[c],error_ret);
+			name=element->attributes.e[c]->name;
+			value=element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+//				makestr(g->id,value);
+
+			} else if (!strcmp(name,"transform")) {
+				if (!strncmp(value,"matrix(",7)) {
+					DoubleListAttribute(value+8,g->m(),6,NULL);
+				} else {
+					cout <<"***need to implement full svg transform spec"<<endl;
+				}
+
+			} else if (!strcmp(name,"content:")) {
+				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
+					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],error_ret);
+			}
 		}
+		if (top) {
+			for (int c=0; c<6; c++) g->m(c,g->m(c)*.8/72); //correct for svg scaling
+		}
+		g->FindBBox();
 		group->push(g,0);
 		return 1;
 
 	} else if (!strcmp(element->name,"path")) {
+		PathsData *paths=new PathsData;
 		for (int c=0; c<element->attributes.n; c++) {
-			if (!strcmp(element->attributes.e[c]->name,"id")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"transform")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"style")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"d")) {
+			name =element->attributes.e[c]->name;
+			value=element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+			} else if (!strcmp(name,"transform")) {
+				if (!strncmp(value,"matrix(",7)) {
+					DoubleListAttribute(value+7,paths->m(),6,NULL);
+				} else {
+					cout <<"***need to implement full svg transform spec"<<endl;
+				}
+			//} else if (!strcmp(name,"x")) {
+			//} else if (!strcmp(name,"y")) {
+			} else if (!strcmp(name,"style")) {
+			} else if (!strcmp(name,"d")) {
+				Coordinate *coord=SvgToCoordinate(value,0,NULL);
+				if (coord) {
+					Path *p=new Path(coord);
+					paths->paths.push(p,1);
+				}
 			}
 		}
+		if (paths->paths.n) {
+			paths->FindBBox();
+			group->push(paths,0);
+		}
+		paths->dec_count();
+		return 1;
+
+	} else if (!strcmp(element->name,"image")) {
+		ImageData *image=new ImageData;
+		int foundcoord=0;
+		double x=0,y=0,w=0,h=0;
+		for (int c=0; c<element->attributes.n; c++) {
+			name =element->attributes.e[c]->name;
+			value=element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+				//makestr(image->id,value);
+			} else if (!strcmp(name,"x")) {
+				foundcoord|=1;
+				DoubleAttribute(value,&x,NULL);
+			} else if (!strcmp(name,"y")) {
+				foundcoord|=2;
+				DoubleAttribute(value,&y,NULL);
+			} else if (!strcmp(name,"width")) {
+				foundcoord|=4;
+				DoubleAttribute(value,&w,NULL);
+			} else if (!strcmp(name,"height")) {
+				foundcoord|=8;
+				DoubleAttribute(value,&h,NULL);
+			} else if (!strcmp(name,"xlink:href")) {
+				image->LoadImage(value);
+			} else if (!strcmp(name,"transform")) {
+				if (!strncmp(value,"matrix(",7)) {
+					DoubleListAttribute(value+7,image->m(),6,NULL);
+				} else {
+					cout <<"***need to implement full svg transform spec"<<endl;
+				}
+			}
+		}
+		 //adjust matrix
+		if (foundcoord&1) image->m(4,x);
+		if (foundcoord&2) image->m(5,x);
+		if (foundcoord&4 && foundcoord&8) {
+			DoubleBBox bbox(0,0,w,h);
+			image->fitto(NULL,&bbox,0,0);
+		}
+		group->push(image,0);
+		image->dec_count();
+		return 1;
+
 	} else if (!strcmp(element->name,"rect")) {
 	} else if (!strcmp(element->name,"circle")) {
 	} else if (!strcmp(element->name,"ellipse")) {
@@ -899,17 +993,6 @@ int svgDumpInObjects(Group *group, Attribute *element, char **error_ret)
 			} else if (!strcmp(element->attributes.e[c]->name,"x")) {
 			} else if (!strcmp(element->attributes.e[c]->name,"y")) {
 			} else if (!strcmp(element->attributes.e[c]->name,"content:")) {
-			}
-		}
-	} else if (!strcmp(element->name,"image")) {
-		for (int c=0; c<element->attributes.n; c++) {
-			if (!strcmp(element->attributes.e[c]->name,"id")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"x")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"y")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"width")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"height")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"xlink:href")) {
-			} else if (!strcmp(element->attributes.e[c]->name,"transform")) {
 			}
 		}
 	} else if (!strcmp(element->name,"use")) {

@@ -70,18 +70,18 @@ into that file format properly.
 This magical feat is performed via MysteryData objects, and Attribute objects
 attached to otherwise normal Laidout elements.
 
+ImportFilter::In() is called from import_document().
 
 
 
-\section imageimportfilters
+
+\section imageimportfilters Image Import Filters
 
 ***TODO! This is still a work in progress.....
 
-Image import filters convert a random file or text object into a rasterized image.
+Image import filters (ImageImportFilter) convert a random file or text object into a rasterized image.
 This means EPS, PS pages, PDF pages, lilypond pages, etc. These are akin to
 Scribus's TeX Frames.
-
-ImportFilter::In() is called from import_document().
 
 
 */

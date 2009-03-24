@@ -213,6 +213,8 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *con
 			visible=BooleanAttribute(value);
 		} else if (!strcmp(name,"prints")) {
 			prints=BooleanAttribute(value);
+		} else if (!strcmp(name,"matrix")) {
+			DoubleListAttribute(value,m(),6);
 		} else if (!strcmp(name,"object")) {
 			int n;
 			char **strs=splitspace(value,&n);
@@ -250,6 +252,7 @@ void Group::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
 		fprintf(f,"%svisible #no indicates that this group cannot be seen on screen nor printed out\n",spc);
 		fprintf(f,"%sprints  #no indicates that this group can be seen on screen, but cannot be printed\n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0  #affine transform to apply to the whole group\n",spc);
 		fprintf(f,"\n%s#Groups contain any number of drawable objects. Here are all the possible such\n",spc);
 		fprintf(f,"%s#objects currently installed:\n",spc);
 		fprintf(f,"\n%sobject Group\n%s  #...a subgroup...\n",spc,spc);
@@ -277,6 +280,8 @@ void Group::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		}
 		return;
 	}
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
+				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
 	if (id) fprintf(f,"%sid %s\n",spc,id);
 	if (locked) fprintf(f,"%slocked\n",spc);
 	if (visible) fprintf(f,"%svisible\n",spc);
