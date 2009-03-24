@@ -3723,7 +3723,9 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			return 0;
 		}
 		DBG cerr <<"....viewwindow says save.."<<endl;
-		if (isblank(sdoc->Saveas()) || (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
+		if (isblank(sdoc->Saveas()) 
+				|| strstr(sdoc->Saveas(),_("untitled"))
+				|| (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
 						//int xx,int yy,int ww,int hh,int brder,
