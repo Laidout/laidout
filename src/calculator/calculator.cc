@@ -56,8 +56,8 @@ LaidoutCalculator::~LaidoutCalculator()
 	if (dir) delete[] dir;
 }
 
-//! Process a command or script.
-/*! This will return a new char[] with the result.
+//! Process a command or script. Returns a new char[] with the result.
+/*! Do not forget to delete the returned array!
  * 
  * \todo it almost goes without saying this needs automation
  */

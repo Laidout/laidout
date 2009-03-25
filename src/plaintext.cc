@@ -15,11 +15,17 @@
 //
 
 #include "plaintext.h"
+#include "language.h"
+
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 #include <sys/times.h>
 
 using namespace LaxFiles;
+
+
+//to ward off segfaults in calls to times()
+static struct tms tmptimestruct;
 
 
 //------------------------------ FileRef -------------------------------
@@ -32,6 +38,7 @@ using namespace LaxFiles;
 
 FileRef::FileRef(const char *file)
 { filename=newstr(file); }
+
 //------------------------------ PlainText ------------------------------
 
 /*! \class PlainText
@@ -46,12 +53,20 @@ FileRef::FileRef(const char *file)
  *
  * \todo maybe the FileRef thing is not very well though out at the moment...
  */
+/*! \var int PlainText::textsubtype
+ * If texttype is TEXT_Script, then this is the id of the interpreter to use
+ * to run the script.  When other interpreters like Python or Perl are available in Laidout,
+ * this will be more useful. Right now, it can only be run as default
+ * laidout script. If this value is -1, then this text is assumed to not be runnable,
+ */
 
 PlainText::PlainText()
 {
 	thetext=NULL;
 	name=NULL;
 	owner=NULL;
+	texttype=TEXT_Temporary;
+	textsubtype=-1;
 	lastmodtime=lastfiletime=0;
 }
 
@@ -63,11 +78,34 @@ PlainText::~PlainText()
 		dynamic_cast<RefCounted *>(owner)->dec_count();
 }
 
-const char *PlainText::filename()
+const char *PlainText::Filename()
 {
 	FileRef *fileref=dynamic_cast<FileRef *>(owner);
 	if (!owner || !fileref) return NULL;
 	return fileref->filename;
+}
+
+//! Clear whatever is in the object, and replace with file data.
+/*! name will become something like "file whatever.txt".
+ *
+ * Return 0 for success, nonzero for error and nothing changed.
+ */
+int PlainText::LoadFromFile(const char *fname)
+{
+	char *filetext=read_in_whole_file(fname,NULL);
+	if (!filetext) return 1;
+	
+	if (owner && dynamic_cast<RefCounted *>(owner))
+		dynamic_cast<RefCounted *>(owner)->dec_count();
+	owner=new FileRef(fname);
+	makestr(name,lax_basename(fname));
+	prependstr(name,_("file: "));
+	if (thetext) delete[] thetext;
+	thetext=filetext;
+	texttype=TEXT_Temporary;
+	textsubtype=-1;
+	lastmodtime=lastfiletime=times(&tmptimestruct);
+	return 0;
 }
 
 /*! If filename!=NULL, then filename is output, but thetext is ignored, and 
@@ -87,6 +125,8 @@ void PlainText::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
+		fprintf(f,"%stexttype     #the type of text. this is just a hint\n",spc);
+		fprintf(f,"%stextsubtype  #the subtype for texttype. this is just a hint\n",spc);
 		fprintf(f,"%sname tname   #an id for this text object\n",spc);
 		fprintf(f,"%sfilename     #the file containing the text\n",spc);
 		fprintf(f,"%stext \\       #if no filename, then the text is stored here\n",spc);
@@ -95,8 +135,10 @@ void PlainText::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s  the final line of text\n",spc);
 		return;
 	}
+	fprintf(f,"%stexttype %d\n",spc,texttype);
+	fprintf(f,"%stextsubtype %d\n",spc,textsubtype);
 	if (!isblank(name)) fprintf(f,"%sname %s\n",spc,name);
-	if (!isblank(filename())) fprintf(f,"%sfilename %s\n",spc,filename());
+	if (!isblank(Filename())) fprintf(f,"%sfilename %s\n",spc,Filename());
 	else if (thetext) {
 		fprintf(f,"%stext \\\n",spc);
 		LaxFiles::dump_out_indented(f,indent+2,thetext);
@@ -133,8 +175,6 @@ const char *PlainText::GetText()
 	FileRef *fileref=dynamic_cast<FileRef *>(owner);
 	if (!owner || !fileref) return NULL;
 
-	const char *filename;
-
 	if (!S_ISREG(file_exists(fileref->filename,1,NULL))) return NULL;
 
 	int size=file_size(fileref->filename,1,NULL);
@@ -150,7 +190,7 @@ const char *PlainText::GetText()
 	} else thetext[actuallyread]='\0';
 
 	fclose(f);
-	lastmodtime=lastfiletime=times(NULL); //***note: on non-linux, this might segfault with NULL!!
+	lastmodtime=lastfiletime=times(&tmptimestruct);
 	return thetext;
 }
 

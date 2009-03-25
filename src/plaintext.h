@@ -30,16 +30,24 @@ class FileRef : public Laxkit::anObject, public Laxkit::RefCounted
  public:
 	char *filename;
 	FileRef(const char *file);
-	~FileRef() { if (filename) delete[] filename; }
+	virtual ~FileRef() { if (filename) delete[] filename; }
 	virtual const char *whattype() { return "FileRef"; }
 };
 
 //------------------------------ PlainText -------------------------------
 
+enum PlainTextType {
+	TEXT_Note,
+	TEXT_Component,
+	TEXT_Script,
+	TEXT_Temporary
+};
+
 class PlainText : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
 	Laxkit::anObject *owner;
+	int texttype, textsubtype;
 	clock_t lastmodtime;
 	clock_t lastfiletime;
 	char *thetext;
@@ -48,8 +56,9 @@ class PlainText : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	PlainText();
 	virtual ~PlainText();
 	virtual const char *whattype() { return "PlainText"; }
-	const char *filename();
-	const char *GetText();
+	virtual const char *Filename();
+	virtual const char *GetText();
+	virtual int LoadFromFile(const char *fname);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

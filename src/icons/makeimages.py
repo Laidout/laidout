@@ -46,7 +46,7 @@ class SAXtracer:
 
         attr_str="\n"
         for attr in attrs:
-            if (attr=="id" and attrs[attr][0]>='A' and attrs[attr][0]<='Z') : 
+            if (attr=="id" and attrs[attr][0]>='A' and attrs[attr][0]<='Z' and attrs[attr].find("GridFrom")<0) : 
                 names.append(attrs[attr])
                 print attrs[attr]
 
