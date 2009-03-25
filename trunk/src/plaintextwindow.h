@@ -36,6 +36,7 @@ class PlainTextWindow : public Laxkit::RowFrame
  	virtual const char *whattype() { return "PlainTextWindow"; }
 	virtual ~PlainTextWindow();
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int UseThis(PlainText *txt);
 	virtual int init();
 };

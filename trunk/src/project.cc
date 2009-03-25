@@ -259,6 +259,7 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 			if (!isblank(value)) makestr(t->name,value);
 			t->dump_in_atts(att->attributes.e[c],flag,context);
 			textobjects.push(t); //incs count
+			if (t->texttype==TEXT_Temporary) t->texttype=TEXT_Note;
 			t->dec_count();   //remove extra first count
 
 		} else if (!strcmp(name,"limbo")) {

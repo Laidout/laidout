@@ -38,18 +38,18 @@ class Project : public LaxFiles::DumpUtility
 {
  public:
 	char *name,*filename,*dir;
-	Laxkit::PtrStack<ProjDocument> docs;
-	Group limbos;
-	Laxkit::RefPtrStack<PaperGroup> papergroups;
-
-	LaxFiles::Attribute iohints;
-
 	double defaultdpi;
 	//default units
 	//default color mode
-	
+
+	Laxkit::PtrStack<ProjDocument> docs;
+	Group limbos;
+	Laxkit::RefPtrStack<PaperGroup> papergroups;
+	Laxkit::RefPtrStack<PlainText> textobjects;
+
+	LaxFiles::Attribute iohints;
+
 	//StyleManager styles;
-	Laxkit::PtrStack<PlainText> textobjects;
 
 	Project();
 	virtual ~Project();
