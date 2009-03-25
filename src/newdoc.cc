@@ -784,7 +784,7 @@ NewProjectWindow::NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,u
 					xx,yy,ww,hh,brder, NULL,None,NULL,
 					10)
 {
-	saveas=NULL;
+	projectfile=projectdir=NULL;
 }
 
 int NewProjectWindow::preinit()
@@ -820,30 +820,34 @@ int NewProjectWindow::init()
 	AddNull();
 
 	 //------------Project file name
-	last=new LineInput(this,"filename",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
-						NULL,window,"filename",
+	last=linp=new LineInput(this,"filename",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
+						NULL,window,"filenameinput",
 			            _("Project filename:"),NULL,0,
 			            0,0,1,0,3,3);
+	projectfile=linp->GetLineEdit();
 	last->tooltip(_("Project file location"));
 	AddWin(last, 300,0,2000,50, linpheight,0,0,50);
+	last=tbut=new TextButton(this,"saveprojectfile",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			last,window,"projfilebrowse",
+			"...",3,3);
+	last->tooltip(_("Browse for a location"));
+	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddNull();
 	 
 	 //-------------Project Directory
-	CheckBox *check=NULL;
-	last=check=new CheckBox(this,"usedir",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"usedir", _("Create directory"),5,5);
-	check->State(LAX_ON);
-	check->tooltip(_("Check if you want to use a dedicated project directory"));
-	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	last=saveas=new LineEdit(this,"projdir",
-						LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
+	last=useprojectdir=new CheckBox(this,"usedir",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+									last,window,"usedir", _("Create directory"),5,5);
+	useprojectdir->tooltip(_("Check if you want to use a dedicated project directory"));
+	AddWin(useprojectdir, useprojectdir->win_w,0,0,50, linpheight,0,0,50);
+	last=projectdir=new LineEdit(this,"projdir",
+						LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
 						0,0,0,0, 1, 
-						last,window,"proj dir",
+						last,window,"projdirinput",
 			            NULL,0);
 	last->tooltip(_("Optional directory for storing project resources and data"));
 	AddWin(last, 200,0,2000,50, linpheight,0,0,50);
-	last=tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-			last,window,"projdir",
+	last=tbut=new TextButton(this,"saveprojectdir",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
+			last,window,"projdirbrowse",
 			"...",3,3);
 	last->tooltip(_("Browse for a location"));
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
@@ -926,17 +930,14 @@ int NewProjectWindow::init()
 	AddWin(NULL, 2000,1990,0,50, 20,0,0,50);
 	
 	 // [ ok ]   [ cancel ]
-	//  TextButton(anxapp *napp,anxwindow *parnt,const char *ntitle,unsigned long nstyle,
-	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
-	//                        const char *nname=NULL,int npadx=0,int npady=0);
-	//  
 	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"Ok", _("Create Project"),TBUT_OK);
-	UpdateOkToCreate();
+	tbut->State(LAX_OFF);
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
 	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 
+	UpdateOkToCreate();
 
 	
 	last->CloseControlLoop();
@@ -951,13 +952,43 @@ NewProjectWindow::~NewProjectWindow()
 
 int NewProjectWindow::DataEvent(EventData *data,const char *mes)
 {
-	if (!strcmp(mes,"save as")) {
+	if (!strcmp(mes,"savedir")) {
+		 //new directory to save project in
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		saveas->SetText(s->str);
+		if (!s || isblank(s->str)) return 1;
+
+		projectdir->SetText(s->str);
+		if (isblank(projectfile->GetCText())) {
+			if (s->str[strlen(s->str)-1]=='/') s->str[strlen(s->str)-1]='\0';
+			const char *dirend=lax_basename(s->str);
+			if (dirend) {
+				char *newname=newstr(dirend);
+				appendstr(newname,".laidout");
+				projectfile->SetText(newname);
+				delete[] newname;
+			}
+		}
+
+		UpdateOkToCreate();
+		delete data;
+		return 0;
+
+	} else if (!strcmp(mes,"savefile")) {
+		 //new file to save project in
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s || isblank(s->str)) return 1;
+
+		char *dir=lax_dirname(s->str,0);
+		const char *name=lax_basename(s->str);
+		projectfile->SetText(name);
+		if (dir) projectdir->SetText(dir);
+		delete[] dir;
+
+		UpdateOkToCreate();
 		delete data;
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -971,6 +1002,7 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		box=dynamic_cast<CheckBox *>(findChildWindow("abspath"));
 		if (box) box->State(LAX_OFF);
 		return 0;
+
 	} else if (!strcmp(mes,"abspath")) { 
 		CheckBox *box;
 		box=dynamic_cast<CheckBox *>(findChildWindow("relpath"));
@@ -978,28 +1010,53 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		box=dynamic_cast<CheckBox *>(findChildWindow("abspath"));
 		if (box) box->State(LAX_ON);
 		return 0;
+
 	} else if (!strcmp(mes,"target dpi")) {
+		//***
+
 	} else if (!strcmp(mes,"target printer")) {
+		//***
+		
 	} else if (!strcmp(mes,"Ok")) {
 		if (sendNewProject()) return 0;
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
+		return 0;
+
 	} else if (!strcmp(mes,"Cancel")) {
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
-	} else if (!strcmp(mes,"filename")) {
-		//*** clicked in filename box, update project dir if checked
-	} else if (!strcmp(mes,"usedir")) {
-		//*** clicked project dir checkbox
+		return 0;
+
+	} else if (!strcmp(mes,"filenameinput")) {
+		 // clicked in filename box, ***maybe should update project dir if checked
 		UpdateOkToCreate();
-	} else if (!strcmp(mes,"proj dir")) { //click in lineinput
-		//*** clicked in project dir input, must activate checkbox
+		return 0;
+
+	} else if (!strcmp(mes,"usedir")) {
+		// clicked project dir checkbox
+		UpdateOkToCreate();
+		return 0;
+
+	} else if (!strcmp(mes,"projdirinput")) {
+		 //event from project dir LineInput
+		//***must activate checkbox
 		//    update filename if filename is default, or filename directory
 		UpdateOkToCreate();
-	} else if (!strcmp(mes,"projdir")) { // from control button
+		return 0;
+
+	} else if (!strcmp(mes,"projdirbrowse")) { 
+		 // from project "..." button
 		app->rundialog(new FileDialog(NULL,_("Save Project In"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
-					window, "save as",saveas->GetCText()));
+					window, "savedir",projectdir->GetCText()));
+		return 0;
+
+	} else if (!strcmp(mes,"projfilebrowse")) { 
+		 // from filename "..." button
+		app->rundialog(new FileDialog(NULL,_("Save Project In"),
+					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
+					window, "savefile",projectfile->GetCText()));
 		return 0;
 	}
 	return 0;
@@ -1010,43 +1067,58 @@ int NewProjectWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
  */
 int NewProjectWindow::sendNewProject()
 {
-	if (isblank(saveas->GetCText())) return 1;
+	if (!UpdateOkToCreate()) return 1;
 		
 	Project *proj=new Project();
 
 	 //default dpi
 	proj->defaultdpi=strtod(((LineInput *)findWindow("dpi"))->GetCText(),NULL);
 
-	 //project file name
-	char *fullpath=full_path_for_file(saveas->GetCText(),NULL);
-	const char *projfile=lax_basename(fullpath);
-	appendstr(fullpath,"/");
-	appendstr(fullpath,projfile);
-	while (fullpath[strlen(fullpath)-1]=='/') fullpath[strlen(fullpath)-1]='\0';
-	appendstr(fullpath,".laidout");
+	 //figure out dir and file name for project
+	char *fullpath=full_path_for_file(projectfile->GetCText(),projectdir->GetCText());
+	simplify_path(fullpath,1);
+	char *dir=lax_dirname(fullpath,0);
+
 	makestr(proj->filename,fullpath);
+	if (useprojectdir->State()==LAX_ON) makestr(proj->dir,dir);
+
 	delete[] fullpath;
+	delete[] dir;
 
 	 //project name
-	makestr(proj->name,((LineInput *)findWindow("name"))->GetCText());
+	const char *newname=((LineInput *)findWindow("name"))->GetCText();
+	makestr(proj->name,isblank(newname)?_("New Project"):newname);
 
 	if (laidout->NewProject(proj,NULL)) { delete proj; return 2; }
 	
 	return 0;
 }
 
-//! Return whether there is enough information to create a project.
-/*! If there is no filename, there needs to be a project directory. If there is
+//! Gray and ungray the "Create Project" button.
+/*! Return whether there is enough information to create a project.
+ *
+ * If there is no filename, there needs to be a project directory. If there is
  * no directory, and dir is unchecked, there needs to be a filename.
+ * If there is a directory, but no file, and dir is checked, then the filename
+ * defaults to the final bit of the directory plus ".laidout". That is,
+ * if the directory is /1/2/3/blah, then the file will be saved in
+ * /1/2/3/blah/blah.laidout
  */
 int NewProjectWindow::UpdateOkToCreate()
 {
-	if (!saveas) return 0;
-	int c=!isblank(saveas->GetCText());
+	if (!projectdir || !projectfile) return 0; //dialog controls have to exist
+
+	 //c=1 is both file and dir are blank, otherwise 0
+	 //If file is blank, but dir exists
+	int ok=0; 
+	if (useprojectdir->State()==LAX_ON) ok=!isblank(projectfile->GetCText());
+	ok=(ok || !isblank(projectfile->GetCText()));
+
+	DBG cerr << "---------Update ok: "<<ok<<endl;
 
 	anXWindow *box=findChildWindow("ok");
-	if (!box) return 0;
-	if (c) box->Grayed(0); else box->Grayed(1);
-	return c;
+	if (!box) return ok;
+	if (ok) box->Grayed(0); else box->Grayed(1);
+	return ok;
 }
 

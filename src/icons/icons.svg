@@ -643,9 +643,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8"
-     inkscape:cx="345.20155"
-     inkscape:cy="279.20648"
+     inkscape:zoom="0.7751634"
+     inkscape:cx="765"
+     inkscape:cy="495"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1278"
@@ -4330,10 +4330,10 @@
          sodipodi:role="line"
          x="74.424171"
          y="609.25684"
-         id="tspan2826">Laidout Project</tspan></text>
+         id="tspan2826">LaidoutProject</tspan></text>
     <g
        style="display:inline"
-       id="LaidoutIcon"
+       id="theLaidoutIcon"
        transform="matrix(1.6190245,0,0,1.6190245,-85.69537,-146.66069)">
       <g
          id="Laidout-shaded-icon"

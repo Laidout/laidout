@@ -30,10 +30,13 @@ static struct tms tmptimestruct;
 
 //------------------------------ FileRef -------------------------------
 /*! \class FileRef 
+ * \ingroup misc
  * \brief RefCounted pointer to an external file.
  *
  * At some point, this class may become the basis for an external link manager.
  * Then again, it might not.
+ *
+ * \todo put me somewhere useful, or remove me!!
  */
 
 FileRef::FileRef(const char *file)
@@ -41,17 +44,22 @@ FileRef::FileRef(const char *file)
 
 //------------------------------ PlainText ------------------------------
 
+/*! \enum PlainTextType
+ * \brief Enum for PlainText::texttype.
+ */
+
 /*! \class PlainText
  * \brief Holds plain text, which is text with no formatting.
  *
- * These are for holding random notes and scripts.
+ * These are for holding random notes and scripts. Actual text loading can 
+ * be defered. This means that the actual text may or may
+ * not be in PlainText::thetext. If filename!=NULL, then calls to GetText() will
+ * then load the text in.
  *
  * Ultimately, they might contain something like Latex code that an EPS
  * grabber might run to get formulas.... Big todo!!
  *
  * All text is assumed to be utf8, even that contained in files currently.
- *
- * \todo maybe the FileRef thing is not very well though out at the moment...
  */
 /*! \var int PlainText::textsubtype
  * If texttype is TEXT_Script, then this is the id of the interpreter to use
@@ -64,6 +72,7 @@ PlainText::PlainText()
 {
 	thetext=NULL;
 	name=NULL;
+	filename=NULL;
 	owner=NULL;
 	texttype=TEXT_Temporary;
 	textsubtype=-1;
@@ -73,6 +82,7 @@ PlainText::PlainText()
 PlainText::~PlainText()
 {
 	if (thetext) delete[] thetext;
+	if (filename) delete[] name;
 	if (name) delete[] name;
 	if (owner && dynamic_cast<RefCounted *>(owner))
 		dynamic_cast<RefCounted *>(owner)->dec_count();
@@ -80,9 +90,34 @@ PlainText::~PlainText()
 
 const char *PlainText::Filename()
 {
-	FileRef *fileref=dynamic_cast<FileRef *>(owner);
-	if (!owner || !fileref) return NULL;
-	return fileref->filename;
+	return filename;
+}
+
+//! Cause the object to be marked as saving to the given file.
+/*! This does not actually read or write anything to newfile.
+ * Returns pointer to this->filename.
+ */
+const char *PlainText::Filename(const char *newfile)
+{
+	makestr(filename,newfile);
+	return  filename;
+}
+
+//! Save the text to Filename(), completely overwriting what was there.
+/*! Save to the file in filename. 
+ * Return 0 for success, or 1 for no filename, or some other number
+ * for other error.
+ *
+ * Updates lastfiletime to the current time.
+ */
+int PlainText::SaveText()
+{
+	if (!Filename()) return 1;
+	FILE *f=fopen(Filename(),"w");
+	if (!f) return 2;
+	fwrite(thetext,1,strlen(thetext),f);
+	fclose(f);
+	lastfiletime=times(&tmptimestruct);
 }
 
 //! Clear whatever is in the object, and replace with file data.
@@ -95,9 +130,7 @@ int PlainText::LoadFromFile(const char *fname)
 	char *filetext=read_in_whole_file(fname,NULL);
 	if (!filetext) return 1;
 	
-	if (owner && dynamic_cast<RefCounted *>(owner))
-		dynamic_cast<RefCounted *>(owner)->dec_count();
-	owner=new FileRef(fname);
+	makestr(filename,fname);
 	makestr(name,lax_basename(fname));
 	prependstr(name,_("file: "));
 	if (thetext) delete[] thetext;
@@ -106,6 +139,43 @@ int PlainText::LoadFromFile(const char *fname)
 	textsubtype=-1;
 	lastmodtime=lastfiletime=times(&tmptimestruct);
 	return 0;
+}
+
+//! Update the text, and set lastmodtime to the current time.
+/*! Return 0 for success, or nonzero for error.
+ */
+int PlainText::SetText(const char *newtext)
+{
+	makestr(thetext,newtext);
+	lastmodtime=times(&tmptimestruct);
+	return 0;
+}
+
+//! Return relevant text.
+/*! If thetext==NULL, and filename!=NULL, then read in all of file into
+ * thetext, and return thetext, also setting lastmodtime.
+ */
+const char *PlainText::GetText()
+{
+	if (thetext) return thetext;
+
+	if (!S_ISREG(file_exists(Filename(),1,NULL))) return NULL;
+
+	int size=file_size(Filename(),1,NULL);
+	if (size<=0) return NULL;
+
+	FILE *f=fopen(Filename(),"r");
+	if (!f) return NULL;
+	thetext=new char[size+1];
+	int actuallyread=fread(thetext,1,size,f);
+	if (actuallyread>size || actuallyread<=0) {
+		delete thetext;
+		thetext=NULL;
+	} else thetext[actuallyread]='\0';
+
+	fclose(f);
+	lastmodtime=lastfiletime=times(&tmptimestruct);
+	return thetext;
 }
 
 /*! If filename!=NULL, then filename is output, but thetext is ignored, and 
@@ -158,39 +228,8 @@ void PlainText::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 			makestr(thetext,value);
 		} else if (!strcmp(nme,"filename")) {
 			if (isblank(value)) continue;
-			if (owner && dynamic_cast<RefCounted *>(owner))
-				dynamic_cast<RefCounted *>(owner)->dec_count();
-			owner=new FileRef(value);
+			Filename(value);
 		}
 	}
-}
-
-//! Return relevant text.
-/*! If thetext==NULL, and filename!=NULL, then read in all of file into
- * thetext, and return thetext, also setting lastmodtime.
- */
-const char *PlainText::GetText()
-{
-	if (thetext) return thetext;
-	FileRef *fileref=dynamic_cast<FileRef *>(owner);
-	if (!owner || !fileref) return NULL;
-
-	if (!S_ISREG(file_exists(fileref->filename,1,NULL))) return NULL;
-
-	int size=file_size(fileref->filename,1,NULL);
-	if (size<=0) return NULL;
-
-	FILE *f=fopen(fileref->filename,"r");
-	if (!f) return NULL;
-	thetext=new char[size+1];
-	int actuallyread=fread(thetext,1,size,f);
-	if (actuallyread>size || actuallyread<=0) {
-		delete thetext;
-		thetext=NULL;
-	} else thetext[actuallyread]='\0';
-
-	fclose(f);
-	lastmodtime=lastfiletime=times(&tmptimestruct);
-	return thetext;
 }
 

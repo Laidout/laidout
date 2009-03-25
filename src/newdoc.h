@@ -65,7 +65,8 @@ class NewProjectWindow : public Laxkit::RowFrame
 {
 	int mx,my;
 	virtual int sendNewProject();
-	Laxkit::LineEdit *saveas;
+	Laxkit::LineEdit *projectdir,*projectfile;
+	Laxkit::CheckBox *useprojectdir;
  public:
  	NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder);
