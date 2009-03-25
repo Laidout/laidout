@@ -29,6 +29,7 @@ class PlainTextWindow : public Laxkit::RowFrame
 {
  protected:
 	PlainText *textobj;
+	int syncText(int filetoo);
  public:
  	PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder,

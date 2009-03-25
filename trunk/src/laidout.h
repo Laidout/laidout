@@ -106,6 +106,7 @@ class LaidoutApp : public Laxkit::anXApp
 
 	int dump_out_file_format(const char *file, int nooverwrite);
 	int DumpWindows(FILE *f,int indent,Document *doc);
+	int IsProject();
 
 	 //commands
 	Document *findDocument(const char *saveas);

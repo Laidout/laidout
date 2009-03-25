@@ -491,6 +491,12 @@ void LaidoutApp::dumpOutResources()
 	setlocale(LC_ALL,"");
 }
 
+//! Return 1 is saving as a single project, or 0 if saving as individual documents.
+int LaidoutApp::IsProject()
+{
+	return !isblank(project->filename);
+}
+
 //! Called from init(), creates a user's laidoutrc if readinLaidoutDefaults failed.
 /*! Return 0 for created ok, else non-zero error.
  *

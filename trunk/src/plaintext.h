@@ -52,11 +52,15 @@ class PlainText : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	clock_t lastfiletime;
 	char *thetext;
 	char *name;
+	char *filename;
 
 	PlainText();
 	virtual ~PlainText();
 	virtual const char *whattype() { return "PlainText"; }
 	virtual const char *Filename();
+	virtual const char *Filename(const char *newfile);
+	virtual int SaveText();
+	virtual int SetText(const char *newtext);
 	virtual const char *GetText();
 	virtual int LoadFromFile(const char *fname);
 

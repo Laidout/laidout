@@ -15,7 +15,7 @@ VERSION 0.09
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
        Net imposition interactive unwrapper and build net interface
        command line option to pass in commands, like "import blah; reimpose box; export blah2"
-       plain text edit window for notes/scripts/whatever save with project or doc or its own file
+(done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
        At bare minimum, path interface use should not cause a seg fault
 (done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
 (done) Passepartout import

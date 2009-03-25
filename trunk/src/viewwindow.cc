@@ -2808,11 +2808,12 @@ int ViewWindow::init()
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
 	menub=new MenuButton(this,"rulercornerbutton",
-									 MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
-									 0,0,0,0,0,
-									 NULL,window,"rulercornerbutton",0,
-									 NULL,0,
-									 laidout->icons.GetIcon("Laidout"),NULL);
+						 MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
+						 0,0,0,0,0,
+						 NULL,window,"rulercornerbutton",0,
+						 NULL,0,
+						 laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
+						 NULL);
 	menub->tooltip(_("Display list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
 	
