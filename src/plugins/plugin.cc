@@ -21,7 +21,7 @@
  *
  * Plugins can provide:
  * 
- * main windows
+ * main window panes
  * commands (possible return value, optional parameter dialog)
  * random dialogs (command with optional context)
  * image import filters
@@ -47,11 +47,18 @@ class PluginBase
 	const char *License() = 0;
 	const char *Version() = 0;
 	unsigned long WhatYouGot();
-	ImportFilter **ImportFilters();
-	ImportFilter **ImageImportFilters();
-	ExportFilter **ExportFilters();
-	** Tools();
-	** Resources();
+
+	LaidoutDialog     **WindowPanes();
+	LaidoutAction     **Actions();
+	ImageImportFilter **ImageImportFilters();
+	ImportFilter      **ImportFilters();
+	ExportFilter      **ExportFilters();
+	InterfaceWithDp   **Tools();
+	Imposition        **Impositions();
+	Resource          **ResourceInstances();
+	DrawableObject    **ObjectInstances();
+	Config            **Configs();
+	Interpreter       **Interpreters();
 	
 	PluginBase();
 	virtual ~PluginBase();
