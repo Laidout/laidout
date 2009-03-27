@@ -21,6 +21,7 @@
 #include "page.h"
 #include "drawdata.h"
 #include "stylemanager.h"
+#include "language.h"
 
 using namespace LaxFiles;
 using namespace LaxInterfaces;
@@ -182,32 +183,29 @@ Style *NewPageStyle(StyleDef *def)
 StyleDef *PageStyle::makeStyleDef()
 {
 	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-	StyleDef *sd=new StyleDef(NULL,"PageStyle","Generic Page","A page","A Page",
-			Element_Fields, NULL,NULL);
+	StyleDef *sd=new StyleDef(NULL,"PageStyle",
+			_("Generic Page"),
+			_("A page"),
+			Element_Fields,
+			NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NewPageStyle;
 	sd->push("marginsclip",
-			"Margins Clip",
-			"Whether a page's margins clip the contents",
-			"Check this if you want the page's contents to be visible only if they are within the margins.",
+			_("Margins Clip"),
+			_("Whether a page's margins clip the contents"),
 			Element_Boolean, NULL,"0",
 			0,
 			NULL);
 	sd->push("pageclips",
-			"Page Clips",
-			"Whether a page's outline clips the contents",
-			"Check this if you want the page's contents to be visible only if they are within the page outline.",
+			_("Page Clips"),
+			_("Whether a page's outline clips the contents"),
 			Element_Boolean, NULL,"0",
 			0,
 			NULL);
 	sd->push("facingpagesbleed",
-			"Facing Pages Bleed",
-			"Whether contents on a facing page are allowed on to the page",
-			"Check this if you want the contents of pages to cross over onto other pages. "
-			"What exactly bleeds over is determined from a page spread view. Any contents "
-			"that leach out from a page's boundaries and cross onto other pages is shown. "
-			"This is most useful for instance in a center fold of a booklet.",
+			_("Facing Pages Bleed"),
+			_("Whether nearby pages are allowed to bleed onto this page"),
 			Element_Boolean, NULL,"0",
 			0,
 			NULL);
@@ -362,31 +360,37 @@ StyleDef *RectPageStyle::makeStyleDef()
 //			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
 //			NewStyleFunc nnewfunc=0);
 	if (recttype&RECTPAGE_IOTB) 
-		sd=new StyleDef("pagestyle","facingrectstyle","Rectangular Facing Page","Rectangular Facing Page",
-						"Rectangular Facing Page",Element_Fields,NULL,NULL,
-						NULL,0,NewRectPageStyle);
+		sd=new StyleDef("pagestyle","facingrectstyle",
+						_("Rectangular Facing Page"),
+						_("Rectangular Facing Page"),
+						Element_Fields,NULL,NULL,
+						NULL,
+						0,
+						NewRectPageStyle);
 	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
-						"Rectangular Top Facing Page","Rectangular Top Facing Page",
-						"Rectangular Top Facing Page",Element_Fields,NULL,NULL,
+						_("Rectangular Top Facing Page"),
+						_("Rectangular Top Facing Page"),
+						Element_Fields,NULL,NULL,
 						NULL,0,NewRectPageStyle);
-	else sd=new StyleDef("pagestyle","RectPageStyle","Rectangular Page","Rectangular Page",
-					"Rectangular Page",Element_Fields,NULL,NULL,
-					NULL,0,NewRectPageStyle);
+	else sd=new StyleDef("pagestyle","RectPageStyle",
+					_("Rectangular Page"),
+					_("Rectangular Page"),
+					Element_Fields,NULL,NULL,
+					NULL,0,
+					NewRectPageStyle);
 	
 	 // the left or inside
 	if (recttype&RECTPAGE_LRIO) 
 		sd->push("insidemargin",
-			"Inside Margin",
-			"The inside margin",
-			"How much space to put on the inside of facing pages.",
+			_("Inside Margin"),
+			_("How much space to put on the inside of facing pages."),
 			Element_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("leftmargin",
-			"Left Margin",
-			"The left margin",
-			"How much space to put in the left margin.",
+			_("Left Margin"),
+			_("How much space to put in the left margin."),
 			Element_Real,
 			NULL,NULL,
 			0,
@@ -395,17 +399,15 @@ StyleDef *RectPageStyle::makeStyleDef()
 	 // right right or outside
 	if (recttype&RECTPAGE_LRIO) 
 		sd->push("outsidemargin",
-			"Outside Margin",
-			"The outside margin",
-			"How much space to put on the outside of facing pages.",
+			_("Outside Margin"),
+			_("How much space to put on the outside of facing pages."),
 			Element_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("rightmargin",
-			"Right Margin",
-			"The right margin",
-			"How much space to put in the right margin.",
+			_("Right Margin"),
+			_("How much space to put in the right margin."),
 			Element_Real,
 			NULL,NULL,
 			0,
@@ -414,17 +416,15 @@ StyleDef *RectPageStyle::makeStyleDef()
 	 // the top or inside
 	if (recttype&RECTPAGE_IOTB) 
 		sd->push("insidemargin",
-			"Inside Margin",
-			"The inside margin",
-			"How much space to put on the inside of facing pages.",
+			_("Inside Margin"),
+			_("How much space to put on the inside of facing pages."),
 			Element_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("topmargin",
-			"Top Margin",
-			"The top margin",
-			"How much space to put in the top margin.",
+			_("Top Margin"),
+			_("How much space to put in the top margin."),
 			Element_Real,
 			NULL,NULL,
 			0,
@@ -433,17 +433,15 @@ StyleDef *RectPageStyle::makeStyleDef()
 	 // the bottom or outside
 	if (recttype&RECTPAGE_IOTB) 
 		sd->push("outsidemargin",
-			"Outside Margin",
-			"The outside margin",
-			"How much space to put on the outside of facing pages.",
+			_("Outside Margin"),
+			_("How much space to put on the outside of facing pages."),
 			Element_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("bottommargin",
-			"Bottom Margin",
-			"The bottom margin",
-			"How much space to put in the bottom margin.",
+			_("Bottom Margin"),
+			_("How much space to put in the bottom margin."),
 			Element_Real,
 			NULL,NULL,
 			0,

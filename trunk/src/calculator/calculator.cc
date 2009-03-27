@@ -42,6 +42,9 @@ using namespace LaxFiles;
  * LaidoutApp calculator, but if you define your own functions,
  * they remain local, unless you specify them as shared across
  * calculators.
+ *
+ * \todo ***** this will eventually become the entry point for other language bindings
+ *   to Laidout..
  */
 
 
@@ -81,6 +84,9 @@ char *LaidoutCalculator::In(const char *in)
 			if (str_ret) return str_ret;
 			return newstr("");
 
+		} else if (!strncmp(in,"about",5) && !isalnum(in[6])) {
+			return newstr(LaidoutVersion());
+
 		} else if (!strncmp(in,"newdoc",6) && !isalnum(in[6])) {
 			in+=6;
 			while (isspace(*in)) in++;
@@ -106,7 +112,7 @@ char *LaidoutCalculator::In(const char *in)
 							appendstr(temp,": ");
 							appendstr(temp,sd->Name);
 							appendstr(temp,", ");
-							appendstr(temp,sd->tooltip);
+							appendstr(temp,sd->description);
 							if (sd->format!=Element_Fields) {
 								appendstr(temp," (");
 								appendstr(temp,element_TypeNames[sd->format]);
@@ -117,16 +123,16 @@ char *LaidoutCalculator::In(const char *in)
 								appendstr(temp,sd->extends);
 							}
 							if (sd->format==Element_Fields && sd->getNumFields()) {
-								const char *nm,*Nm,*tt;
+								const char *nm,*Nm,*desc;
 								appendstr(temp,"\n");
 								for (int c2=0; c2<sd->getNumFields(); c2++) {
-									sd->getInfo(c2,&nm,&Nm,&tt,NULL);
+									sd->getInfo(c2,&nm,&Nm,&desc);
 									appendstr(temp,"  ");
 									appendstr(temp,nm);
 									appendstr(temp,": ");
 									appendstr(temp,Nm);
 									appendstr(temp,", ");
-									appendstr(temp,tt);
+									appendstr(temp,desc);
 									appendstr(temp,"\n");
 
 								}
@@ -258,14 +264,15 @@ char *LaidoutCalculator::In(const char *in)
 
 
 		} else if (!strncmp(in,"?",1) || !strncmp(in,"help",4)) {
+			appendline(str_ret,_("The only recognized commands are:"));
 			appendline(str_ret,
-						_("The only recognized commands are:\n"
-						  " show [object type name]w\n"
+						  " show [object type name]\n"
 						  " newdoc [spec]\n"
 						  " open [a laidout document]\n"
+						  " about\n"
 						  " help\n"
 						  " quit\n"
-						  " ?"));
+						  " ?");
 		}
 	}
 

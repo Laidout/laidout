@@ -17,6 +17,7 @@
 
 #include "impositioninst.h"
 #include "stylemanager.h"
+#include "language.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/strmanip.h>
 #include <lax/attributes.h>
@@ -303,9 +304,9 @@ Style *NewSingles(StyleDef *def)
  */
 StyleDef *Singles::makeStyleDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"Singles","Singles",
-			"Imposition of single pages",
-			"Imposition of single pages",
+	StyleDef *sd=new StyleDef(NULL,"Singles",
+			_("Singles"),
+			_("Imposition of single pages"),
 			Element_Fields,
 			NULL,NULL,
 			NULL,
@@ -313,50 +314,44 @@ StyleDef *Singles::makeStyleDef()
 			NewSingles);
 
 	sd->push("insetl",
-			"Left Inset",
-			"How much a page is inset in a paper on the left",
-			NULL,
+			_("Left Inset"),
+			_("How much a page is inset in a paper on the left"),
 			Element_Real,
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
 			NULL);//newfunc
 	sd->push("insetr",
-			"Right Inset",
-			"How much a page is inset in a paper on the right",
-			NULL,
+			_("Right Inset"),
+			_("How much a page is inset in a paper on the right"),
 			Element_Real,
 			NULL,
 			"0",
 			0,NULL);
 	sd->push("insett",
-			"Top Inset",
-			"How much a page is inset in a paper from the top",
-			NULL,
+			_("Top Inset"),
+			_("How much a page is inset in a paper from the top"),
 			Element_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("insetb",
-			"Bottom Inset",
-			"How much a page is inset in a paper from the bottom",
-			NULL,
+			_("Bottom Inset"),
+			_("How much a page is inset in a paper from the bottom"),
 			Element_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("tilex",
-			"Tile X",
-			"How many to tile horizontally",
-			NULL,
+			_("Tile X"),
+			_("How many to tile horizontally"),
 			Element_Int,
 			NULL,
 			"1",
 			0,0);
 	sd->push("tiley",
-			"Tile Y",
-			"How many to tile vertically",
-			NULL,
+			_("Tile Y"),
+			_("How many to tile vertically"),
 			Element_Int,
 			NULL,
 			"1",
@@ -647,23 +642,22 @@ Style *NewDoubleSidedSingles(StyleDef *def)
  */
 StyleDef *DoubleSidedSingles::makeStyleDef()
 {
-	StyleDef *sd=new StyleDef("Singles","DoubleSidedSingles","Double Sided Singles",
-			"Imposition of single pages meant to be next to each other",
-			"Imposition of single pages meant to be next to each other",
+	StyleDef *sd=new StyleDef("Singles",
+			"DoubleSidedSingles",
+			_("Double Sided Singles"),
+			_("Imposition of single pages meant to be next to each other"),
 			Element_Fields,NULL,NULL,
 			NULL,0,NewDoubleSidedSingles);
 
 	sd->push("isvertical",
-			"Is Vertical",
-			"Whether pages are arranged left and right, or top and bottom",
-			"Whether pages are arranged left and right, or top and bottom",
+			_("Is Vertical"),
+			_("Whether pages are arranged left and right, or top and bottom"),
 			Element_Boolean,
 			NULL,"0",
 			0,0);
 	sd->push("isleft",
-			"First is on left",
-			"Whether the first page is on the left/top, or right/bottom",
-			NULL,
+			_("First is on left"),
+			_("Whether the first page is on the left/top, or right/bottom"),
 			Element_Boolean,
 			NULL,"0",
 			0,0);
@@ -1007,38 +1001,34 @@ Style *NewBookletFunc(StyleDef *def)
 //! Extend Singles to include isvertical, creep, covercolor, and bodycolor.
 StyleDef *BookletImposition::makeStyleDef()
 {
-	StyleDef *sd=new StyleDef("Singles","Booklet","Booklet",
-			"Imposition for a stack of sheets, folded down the middle",
-			NULL,
+	StyleDef *sd=new StyleDef("Singles","Booklet",
+			_("Booklet"),
+			_("Imposition for a stack of sheets, folded down the middle"),
 			Element_Fields,NULL,NULL,
 			NULL,0,NewBookletFunc);
 
 	sd->push("isvertical",
-			"Is Vertical",
-			"Whether pages are arranged left and right, or top and bottom",
-			NULL,
+			_("Is Vertical"),
+			_("Whether pages are arranged left and right, or top and bottom"),
 			Element_Boolean,
 			NULL,"0",
 			0,NULL);
 	sd->push("creep",
-			"Creep",
-			"The difference in distance from the middle page edge to the outer "
-			   "page edge when the booklet is all folded up. (currently ignored!)",
-			NULL,
+			_("Creep"),
+			_("The difference in distance from the middle page edge to the outer "
+			   "page edge when the booklet is all folded up. (currently ignored!)"),
 			Element_Real,
 			NULL,"0",
 			0,NULL);
 	sd->push("covercolor",
-			"Cover Color",
-			"The color of paper you are using for the cover. This translates to paper number 0 and 1.",
-			NULL,
+			_("Cover Color"),
+			_("The color of paper you are using for the cover. This translates to paper number 0 and 1."),
 			Element_Color,
 			NULL,"#ffffffff",
 			0,NULL);
 	sd->push("bodycolor",
-			"Body Color",
-			"The color of paper you are using for the body pages.",
-			NULL,
+			_("Body Color"),
+			_("The color of paper you are using for the body pages."),
 			Element_Color,
 			NULL,"#ffffffff",
 			0,NULL);

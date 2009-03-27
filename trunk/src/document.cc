@@ -69,6 +69,11 @@ DocumentStyle::~DocumentStyle()
 	if (imposition) delete imposition;
 }
 
+StyleDef* DocumentStyle::makeStyleDef()
+{
+	return NULL; //*****
+}
+
 /*! Recognizes 'imposition'. Discards all else.
  */
 void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
@@ -196,7 +201,7 @@ Style *DocumentStyle::duplicate(Style *s)//s=NULL
 
 StyleDef *PageRangeStyleDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"PageRange","Page Label for Range","Page labels","Page labels",
+	StyleDef *sd=new StyleDef(NULL,"PageRange","Page Label for Range","Page labels",
 			Element_Fields, NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
@@ -204,19 +209,16 @@ StyleDef *PageRangeStyleDef()
 	sd->push("startindex",
 			"Start",
 			"The page index at which this range starts.",
-			"The page index at which this range starts.",
 			Element_Int, "0,context.doc.pages.n","0",
 			0,
 			NULL);
 	sd->push("offset",
 			"Index offset",
 			"Offset to add to the index before making an actual label",
-			"Offset to add to the index before making an actual label",
 			Element_Int, NULL,"0",
 			0,
 			NULL);
 	sd->push("labelbase",
-			"Page label template",
 			"Page label template",
 			"Page label template",
 			Element_String, NULL,"0",
@@ -226,21 +228,19 @@ StyleDef *PageRangeStyleDef()
 			"labeltype",
 			"Number style",
 			"Number style",
-			"Number style",
 			Element_Enum, NULL,"Arabic",
 			NULL,0,NULL);
-	e->push("arabic", "Arabic", "Arabic: 1,2,3...", "Arabic: 1,2,3...", 
+	e->push("arabic", "Arabic", "Arabic: 1,2,3...", 
 			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("roman", "Lower case roman", "Roman: i,ii,iii...", "Roman: i,ii,iii...", 
+	e->push("roman", "Lower case roman numerals", "Roman: i,ii,iii...",  
 			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("roman_cap", "Upper case roman", "Roman: I,II,III...", "Roman: I,II,III...", 
+	e->push("roman_cap", "Upper case roman numerals", "Roman: I,II,III...",  
 			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("abc", "Letter numbering", "a,b,c,..,aa,ab,...", "a,b,c,..,aa,ab,...", 
+	e->push("abc", "Letter numbering", "a,b,c,..,aa,ab,...",  
 			Element_EnumVal, NULL,NULL,0,NULL);
 	sd->push(e);
 	sd->push("reverse",
 			"Reverse order",
-			"Whether the range goes 1,2,3.. or ..3,2,1.",
 			"Whether the range goes 1,2,3.. or ..3,2,1.",
 			Element_Boolean, NULL,"1",
 			0,
@@ -827,6 +827,14 @@ int Document::SyncPages(int start,int n)
 		DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
 	}
 	return n;
+}
+
+/*! Return 0 for success, nonzero error.
+ */
+int Document::ReImpose(Imposition *newimp)
+{
+	//*****
+	return 1;
 }
 
 //! Low level reading in a document.

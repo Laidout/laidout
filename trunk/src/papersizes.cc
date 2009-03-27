@@ -273,6 +273,12 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
 	return s;
 }
 
+StyleDef *PaperStyle::makeStyleDef()
+{
+	cout <<" ***** need to implement PaperStyle::makeStyleDef()!!!"<<endl;
+	return NULL;
+}
+
 
 //------------------------------------- PaperBox --------------------------------------
 

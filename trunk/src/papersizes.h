@@ -49,6 +49,7 @@ class PaperStyle : public Style
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual Style *duplicate(Style *s=NULL);
+	virtual StyleDef *makeStyleDef();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
