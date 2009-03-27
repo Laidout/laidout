@@ -492,10 +492,22 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			UseThisDoc(NULL);
 			return 0;
 		}
+		if (i==999) {
+			 //add new document
+			app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,0,0, 0));
+			return 0;
+		} else if (i==998) {
+			 //Remove current document
+			cout << " *** need to implement remove document!!!"<<endl;
+			return 0;
+		}
+
+
 		 //1000-1999 was limbo things
 		i-=1000;
 		if (i<0) return 0;
 		if (i<laidout->project->limbos.n()) {
+			 //select a limbo
 			if (limbo==laidout->project->limbos.e(i)) return 0;
 			for (int c=0; c<interfaces.n; c++) interfaces.e[c]->Clear();
 			clearCurobj();
@@ -547,7 +559,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			}
 			return 0;
 		}
-		 //2000-3999 was papergroup things (i now 0..1999)
+		 //2000-3999 was papergroup things (i at this line is currently 0..1999)
 		i-=1000;
 		if (i<1000) {
 			 //select different paper group
@@ -3332,6 +3344,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //Doc1
 		 //Doc2
 		 //None
+		 //Add new
+		 //Remove current
 		 //---
 		 //limbo1
 		 //limbo2
@@ -3357,6 +3371,8 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		c=menu->AddItem(_("None"),c)-1;
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
+		menu->AddItem(_("Add new document"),999);
+		if (doc) menu->AddItem(_("Remove current document"),998);
 
 		 //----add limbo list, numbers starting at 1000...
 		char txt[40];

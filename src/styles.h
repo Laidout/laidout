@@ -108,8 +108,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	Style *newStyle(StyleDef *def) { if (newfunc) return newfunc(this); return NULL; }
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
-	char *tooltip; // short description
-	char *description; // long description, this would be displayed on a help page, for instance.
+	char *description; // description
 	char *range;
 	char *defaultvalue;
 	
@@ -124,7 +123,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	Laxkit::PtrStack<StyleDef> *fields; //might be NULL, any fields are assumed to not be local to the stack.
 	
 	StyleDef();
-	StyleDef(const char *nextends,const char *nname,const char *nName,const char *ttip,
+	StyleDef(const char *nextends,const char *nname,const char *nName,
 			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
 			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
 			NewStyleFunc nnewfunc=0);
@@ -134,17 +133,17 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	virtual int getNumFields();
 	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findDef(int index,StyleDef **def);
-	virtual int getInfo(int index,const char **nm=NULL,const char **Nm=NULL,const char **tt=NULL,const char **desc=NULL);
+	virtual int getInfo(int index,const char **nm=NULL,const char **Nm=NULL,const char **desc=NULL);
  	//int *getfields(const char *extstr); // returns 0 terminated list of indices: "1.4.23+ -> { 1,4,23,0 }
 
 	 //-------- StyleDef creation helper functions ------
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
-	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+	virtual int push(const char *nname,const char *nName,const char *ndesc,
 					 ElementType fformat,const char *nrange, const char *newdefval,
 					 unsigned int fflags,
 					 NewStyleFunc nnewfunc);
-	virtual int push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+	virtual int push(const char *nname,const char *nName,const char *ndesc,
 					 ElementType fformat,const char *nrange, const char *newdefval,
 					 Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
 					 NewStyleFunc nnewfunc);
@@ -204,7 +203,7 @@ class Style : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxk
 	Style();
 	Style(StyleDef *sdef,Style *bsdon,const char *nstn);
 	virtual ~Style();
-	virtual StyleDef *makeStyleDef() { return NULL; }
+	virtual StyleDef *makeStyleDef() = 0;
 	virtual StyleDef *GetStyleDef() { return styledef; }
 	virtual const char *Stylename() { return stylename; }
 	virtual int Stylename(const char *nname) { makestr(stylename,nname); return 1; }
@@ -245,6 +244,7 @@ class EnumStyle : public Style
 	Laxkit::PtrStack<char> names;
 
 	EnumStyle();
+	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int add(const char *nname,int nid=-1);
 	virtual const char *name(int Id);

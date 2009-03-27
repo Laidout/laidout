@@ -50,6 +50,8 @@ CommandWindow::~CommandWindow()
 /*! Take a whole command line, and process it, returning the command's text output.
  *
  * Must return a new'd char[].
+ *
+ * \todo ***** need some way to kill wayward scripts
  */
 char *CommandWindow::process(const char *in)
 {

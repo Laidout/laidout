@@ -239,7 +239,6 @@ StyleDef *NetImposition::makeStyleDef()
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
-			NULL,
 			Element_Fields,
 			NULL,NULL,
 			NULL,
@@ -249,14 +248,12 @@ StyleDef *NetImposition::makeStyleDef()
 	sd->push("printnet",
 			_("Print Net"),
 			_("Whether to show the net outline when printing out a document."),
-			NULL,
 			Element_Boolean,
 			NULL, "1",
 			0,0);
 	sd->push("net",
 			_("Net"),
 			_("What kind of net is the imposition using"),
-			NULL,
 			Element_DynamicEnum,
 			NULL, "0",
 			0,0,CreateNetListEnum);

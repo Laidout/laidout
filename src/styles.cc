@@ -495,8 +495,7 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  *  <pre>
  *   name        = spacevector    <-- name as it appears in an interpreter 
  *   Name        = Space Vector   <-- name as it appears as a dialog label
- *   tooltip     = spacevector    <-- tooltip 
- *   description = A three dimensional vector  <-- Longer description for some in-program help system
+ *   description = A three dimensional vector  <-- description for some in-program help system or tooltip
  *    3 subfields:
  *    x,y,z all real
  * 
@@ -557,8 +556,7 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one extend
 			const char *nname, //!< The name that would be used in the interpreter
 			const char *nName, //!< A basic title, most likely an input label
-			const char *ttip,  //!< Tooltip text
-			const char *ndesc,  //!< Long description, newlines ok.
+			const char *ndesc,  //!< Description, newlines ok.
 			ElementType fmt,     //!< Format of this StyleDef
 			const char *nrange,    //!< String showing range of allowed values
 			const char *newdefval,   //!< Default value for the style
@@ -567,7 +565,7 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 			NewStyleFunc nnewfunc)    //!< New creation function
 {
 	newfunc=nnewfunc;
-	range=defaultvalue=extends=name=Name=tooltip=description=NULL;
+	range=defaultvalue=extends=name=Name=description=NULL;
 
 	makestr(extends,nextends);
 	if (extends) {
@@ -577,7 +575,6 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 	
 	makestr(name,nname);
 	makestr(Name,nName);
-	makestr(tooltip,ttip);
 	makestr(description,ndesc);
 	makestr(range,nrange);
 	makestr(defaultvalue,newdefval);
@@ -595,7 +592,6 @@ StyleDef::~StyleDef()
 	if (extends)      delete[] extends;
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
-	if (tooltip)      delete[] tooltip;
 	if (description)  delete[] description;
 	if (range)        delete[] range;
 	if (defaultvalue) delete[] defaultvalue;
@@ -629,7 +625,6 @@ void StyleDef::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	if (Name) fprintf(f,"%sName %s\n",spc,Name);
-	if (tooltip) fprintf(f,"%stooltip %s\n",spc,tooltip);
 	if (description) fprintf(f,"%sdescription %s\n",spc,description);
 	if (extends) fprintf(f,"%sextends %s\n",spc,extends);
 	fprintf(f,"%sflags %u\n",spc,flags);
@@ -652,11 +647,11 @@ void StyleDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 }
 
 //! Push def without fields. If pushing this new field onto fields fails, return -1, else the new field's index.
-int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+int StyleDef::push(const char *nname,const char *nName,const char *ndesc,
 			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags,
 			NewStyleFunc nnewfunc)
 {
-	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,
+	StyleDef *newdef=new StyleDef(NULL,nname,nName,
 								  ndesc,fformat,nrange,newdefval,
 								  NULL,fflags,nnewfunc);
 	int c=push(newdef);
@@ -667,12 +662,12 @@ int StyleDef::push(const char *nname,const char *nName,const char *ttip,const ch
 //! Push def with fields. If pushing this new field onto fields fails, return 1, else 0
 /*! Note that the counts for the subfields are not incremented further.
  */
-int StyleDef::push(const char *nname,const char *nName,const char *ttip,const char *ndesc,
+int StyleDef::push(const char *nname,const char *nName,const char *ndesc,
 		ElementType fformat,const char *nrange, const char *newdefval,
 		Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
 		NewStyleFunc nnewfunc)
 {
-	StyleDef *newdef=new StyleDef(NULL,nname,nName,ttip,ndesc,fformat,nrange,newdefval,nfields,fflags,nnewfunc);
+	StyleDef *newdef=new StyleDef(NULL,nname,nName,ndesc,fformat,nrange,newdefval,nfields,fflags,nnewfunc);
 	int c=push(newdef);
 	if (c<0) delete newdef;
 	return c;
@@ -744,7 +739,7 @@ int StyleDef::getNumFields()
  *
  * Returns 0 success, 1 error.
  */
-int StyleDef::getInfo(int index,const char **nm,const char **Nm,const char **tt,const char **desc)
+int StyleDef::getInfo(int index,const char **nm,const char **Nm,const char **desc)
 {
 	StyleDef *def=NULL;
 	index=findDef(index,&def);
@@ -752,13 +747,11 @@ int StyleDef::getInfo(int index,const char **nm,const char **Nm,const char **tt,
 	if (index==-1) {
 		if (nm) *nm=def->name;
 		if (Nm) *Nm=def->Name;
-		if (tt) *tt=def->tooltip;
 		if (desc) *desc=def->description;
 		return 0;
 	}
 	if (nm) *nm=def->fields->e[index]->name;
 	if (Nm) *Nm=def->fields->e[index]->Name;
-	if (tt) *tt=def->fields->e[index]->tooltip;
 	if (desc) *desc=def->fields->e[index]->description;
 	return 0;
 }
@@ -1070,50 +1063,7 @@ void deleteFieldNode(FieldNode *fn)
 /*! \fn int Style::Stylename(const char *nname)
  * \brief Change stylename. Return 1 for changed, 0 for not.
  */
-//class Style : public Laxkit::anObject
-//{
-// protected:
-//	char *stylename;
-//	StyleDef *styledef;
-//	Style *basedon;
-//	FieldMask fieldmask; 
-// public:
-//	Style();
-//	Style(StyleDef *sdef,Style *bsdon,const char *nstn);
-//	virtual ~Style();
-//	virtual StyleDef *makeStyleDef() { return NULL; }
-//	virtual StyleDef *GetStyleDef(StyleDef **maketohere);
-//	virtual const char *Stylename() { return stylename; }
-//	virtual int Stylename(const char *nname) { makestr(stylename,nname); return 1; }
-//	virtual int getNumFields();
-//	virtual Style *duplicate(Style *s)=0;
-//	
-//	 // these return a mask of what changes when you set the specified value.
-//	 // set must ask the styledef if it can really set that field, 
-//	 // 	the StyleDef returns a mask of what else changes?????***
-//	 // set must create the field in *this if it does not exist
-//	 // get should indicate whether the found value is in *this or a basedon
-//	//maybe:
-////	virtual void *dereference(const char *extstr,int copy);
-////	virtual int set(FieldMask *field,Value *val,FieldMask *mask_ret)=0; 
-////	virtual int set(const char *ext,Value *val,FieldMask *mask_ret)=0;
-//	
-////	virtual FieldMask set(FieldMask *field,Value *val); 
-////	virtual FieldMask set(Fieldmask *field,const char *val);
-////	virtual FieldMask set(const char *ext, const char *val);
-////	virtual FieldMask set(Fieldmask *field,int val);
-////	virtual FieldMask set(const char *ext, int val);
-////	virtual FieldMask set(Fieldmask *field,double val);
-////	virtual FieldMask set(const char *ext, double val);
-////	virtual Value *getvalue(FieldMask *field) { return NULL; }
-////	virtual Value *getvalue(const cahr *ext) { return NULL; }
-////	virtual int getint(FieldMask *field) { return 0; }
-////	virtual int getint(const char *ext) { return 0; }
-////	virtual double getdouble(FieldMask *field) { return 0; };
-////	virtual double getdouble(const char *ext) { return 0; }
-////	virtual char *getstring(FieldMask *field) { return NULL; }
-////	virtual char *getstring(const char *ext) { return NULL; }
-//};
+
 
 //! Start up with blank slate. All null variables.
 Style::Style()
@@ -1185,6 +1135,12 @@ int Style::getNumFields()
 EnumStyle::EnumStyle()
 	: names(2)
 {}
+
+StyleDef *EnumStyle::makeStyleDef()
+{
+	cout <<" *** imp me! EnumStyle::makeStyleDef"<<endl;
+	return NULL; //****
+}
 
 /*! \todo ***imp me!
  */

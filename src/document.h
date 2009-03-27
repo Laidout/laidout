@@ -55,6 +55,7 @@ class DocumentStyle : public Style
 	DocumentStyle(Imposition *imp);
 	virtual ~DocumentStyle();
 	virtual Style *duplicate(Style *s=NULL);
+	virtual StyleDef* makeStyleDef();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
@@ -107,6 +108,7 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
 	virtual int NewPages(int starting,int n);
 	virtual int RemovePages(int start,int n);
 	virtual int SyncPages(int start,int n);
+	virtual int ReImpose(Imposition *newimp);
 	
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

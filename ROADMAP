@@ -13,6 +13,7 @@ VERSION 0.09
 (done) Finish implementing project based setup, particularly being able to save a project, not just load one   
 (done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
+(done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
        Net imposition interactive unwrapper and build net interface
        command line option to pass in commands, like "import blah; reimpose box; export blah2"
 (done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
@@ -48,7 +49,6 @@ VERSION 0.091
        SpreadEditor: Corner button should allow changing working document
        Fix multi-object selection move when crossing page boundaries
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
-       Selected region out to image(s), regions optionally remembered
        Gui for modifying Page Labels
        double click on group should change selection area to group contents?
        Tools should remember their settings
@@ -59,8 +59,8 @@ VERSION 0.091
 
 VERSION 0.1 
 -----------
+       First and foremost, need copious testing by people who are not me.
        Full internationalization support for input and output, including left, right, and mixed languages. pango?
-       Of course, need copious testing by people who are not me.
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
        Construct a command core, so that no X connection necessary for batch processing
@@ -94,24 +94,23 @@ VERSION 0.1
        make it easy to add/remove/prioritize/replace import/export filters
        PDF in?
        support for the svg filters?
-       start thinking about the transplanting of the SpreadEditor to Inkscape, in expectation
-          of multipage-ness with SVG 1.2, or possibly to scribus also as plugin(?)
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo and splash image, and generate icons from a laidout doc
        have an image in the little pan popups
        Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
-       Be able to have paper objects in addition to the normal page objects (ie master page numbers)
-       Non-polygonal pages, to allow nets for shapes resulting from intersecting cylinders, for instance
+       Object and page templates, aka master pages
+       Pages with curved edges, to allow nets for shapes resulting from intersecting cylinders, for instance
        Optional Midi controller usage
        Able to select and transform nodes from different objects at the same time
+	   Color channel density control, to not overdo CMYK mix, for instance
 
 
 VERSION 0.2
 -----------
 Do a poor man's version of a multi-contact touch screen interface with 2 mice plugged in and
-  one of them not set to send core events. Or normal mouse and tablet or ... just learned of MPX!
+  one of them not set to send core events. Or normal mouse and tablet or ... see MPX!
 Full multi-contact, pressure sensitive touch support with touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients: Triangle strip and Triangle Mesh
@@ -133,12 +132,12 @@ Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus
 Story editor
 Internal generic impositioner for ps files that follow the ps doc. structure guidelines
 Cooperate with photo programs like KPhotoalbum
-Make nets cooperate with Hugin/Enblend
-Vx (aka uberconvertor) support?
+Make nets cooperate with Hugin/Enblend: plugin for panorama projection onto nets?
+Uniconverter support? Vx support?
 Verse support?
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
-Akin to animation mode, have movie objects?
+Akin to animation mode, have movie/sound objects available to html export, for instance?
 a FlexibleImposition for html/streamed output target?
 JDF support?
 
