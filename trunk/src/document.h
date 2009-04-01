@@ -104,19 +104,22 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
 	virtual int Name(const char *nname);
 	virtual void clear();
 
+	 //page and imposition management
 	virtual Page *Curpage();
 	virtual int NewPages(int starting,int n);
 	virtual int RemovePages(int start,int n);
 	virtual int SyncPages(int start,int n);
-	virtual int ReImpose(Imposition *newimp);
+	virtual int ReImpose(Imposition *newimp,int scale_page_contents_to_fit);
+	virtual Spread *GetLayout(int type, int index);
 	
+	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual int Load(const char *file,char **error_ret);
 	virtual int Save(int includelimbos,int includewindows,char **error_ret);
 	
-	virtual Spread *GetLayout(int type, int index);
 	
+	 //object content
 	virtual int n() { return pages.n; }
 	virtual Laxkit::anObject *object_e(int i) 
 		{ if (i>=0 && i<pages.n) return (anObject *)(pages.e[i]); return NULL; }

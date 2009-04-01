@@ -56,17 +56,20 @@ using namespace std;
 //! Constructor, copies Imposition pointer, does not duplicate imposition.
 /*! ***should sanity check the save? *** who should be deleting the imp?
  * currently it is deleted in destructor.
+ *
+ * Increments count of imposition.
  */
 DocumentStyle::DocumentStyle(Imposition *imp)
 	: Style(NULL,NULL, ("somedocstyle"))//***
 {
 	imposition=imp;
+	if (imposition) imposition->inc_count();
 }
 
-//! Deletes saveas and imposition. *** must work out who should be holding what!!!
+//! Deletes saveas and decs count of imposition
 DocumentStyle::~DocumentStyle()
 {
-	if (imposition) delete imposition;
+	if (imposition) imposition->dec_count();
 }
 
 StyleDef* DocumentStyle::makeStyleDef()
@@ -84,7 +87,7 @@ void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"imposition")) {
-			if (imposition) delete imposition;
+			if (imposition) imposition->dec_count();
 			 // figure out which kind of imposition it is..
 			imposition=newImposition(value);
 			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag,context);
@@ -201,47 +204,47 @@ Style *DocumentStyle::duplicate(Style *s)//s=NULL
 
 StyleDef *PageRangeStyleDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"PageRange","Page Label for Range","Page labels",
+	StyleDef *sd=new StyleDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
 			Element_Fields, NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NULL; 
 	sd->push("startindex",
-			"Start",
-			"The page index at which this range starts.",
+			_("Start"),
+			_("The page index at which this range starts."),
 			Element_Int, "0,context.doc.pages.n","0",
 			0,
 			NULL);
 	sd->push("offset",
-			"Index offset",
-			"Offset to add to the index before making an actual label",
+			_("Index offset"),
+			_("Offset to add to the index before making an actual label"),
 			Element_Int, NULL,"0",
 			0,
 			NULL);
 	sd->push("labelbase",
-			"Page label template",
-			"Page label template",
+			_("Page label template"),
+			_("Page label template"),
 			Element_String, NULL,"0",
 			0,
 			NULL);
 	StyleDef *e=new StyleDef(NULL,
 			"labeltype",
-			"Number style",
-			"Number style",
+			_("Number style"),
+			_("Number style"),
 			Element_Enum, NULL,"Arabic",
 			NULL,0,NULL);
-	e->push("arabic", "Arabic", "Arabic: 1,2,3...", 
+	e->push("arabic", _("Arabic"), _("Arabic: 1,2,3..."), 
 			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("roman", "Lower case roman numerals", "Roman: i,ii,iii...",  
+	e->push("roman", _("Lower case roman numerals"), _("Roman: i,ii,iii..."),  
 			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("roman_cap", "Upper case roman numerals", "Roman: I,II,III...",  
+	e->push("roman_cap", _("Upper case roman numerals"), _("Roman: I,II,III..."),  
 			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("abc", "Letter numbering", "a,b,c,..,aa,ab,...",  
+	e->push("abc", _("Letter numbering"), _("a,b,c,..,aa,ab,..."),  
 			Element_EnumVal, NULL,NULL,0,NULL);
 	sd->push(e);
 	sd->push("reverse",
-			"Reverse order",
-			"Whether the range goes 1,2,3.. or ..3,2,1.",
+			_("Reverse order"),
+			_("Whether the range goes 1,2,3.. or ..3,2,1."),
 			Element_Boolean, NULL,"1",
 			0,
 			NULL);
@@ -829,11 +832,30 @@ int Document::SyncPages(int start,int n)
 	return n;
 }
 
+//! Remove the old imposition, and establish the new imposition.
 /*! Return 0 for success, nonzero error.
+ *
+ * The new imposition will have its count incremented.
+ * All the pages in the document will have their page styles updated by the
+ * new imposition.
+ *
+ * \todo when master pages are implemented
  */
-int Document::ReImpose(Imposition *newimp)
+int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 {
-	//*****
+	if (!newimp) return 1;
+
+	if (docstyle) delete docstyle;
+	docstyle=new DocumentStyle(newimp);
+
+	docstyle->imposition->NumPages(pages.n);
+	SyncPages(0,-1);
+
+	if (scale_page_contents_to_fit) {
+		cout << " *** need to implement scale page contents to fit Document::ReImpose()!!"<<endl;
+	}
+
+	laidout->notifyDocTreeChanged(NULL,TreePagesMoved, 0,-1);
 	return 1;
 }
 

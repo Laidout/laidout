@@ -1329,7 +1329,7 @@ int Net::SaveSvg(const char *file,char **error_ret)
 	 //In SVG, 1in = 90px = 72pt
 	double linewidth=.01; //inches, where 1 inch == 1 paper unit
 	double scaling=1/sqrt(M[0]*M[0]+M[1]*M[1]); //supposed to scale to within the M group
-	DBG cout <<"******--- Scaling="<<scaling<<endl;
+	DBG cerr <<"******--- Scaling="<<scaling<<endl;
 
 	 //define some repeating header stuff
 	char pathheader[400];
@@ -1725,9 +1725,9 @@ int Net::Unwrap(int netfacei,int atedge)
 		face->tag=FACE_Actual;
 		faces.push(face,1);
 		addPotentialsToFace(faces.n-1);
-		DBG cout <<"------------------unwrap first--"<<endl;
-		DBG dump_out(stdout,0,0,NULL);
-		DBG cout <<"--------------------------------"<<endl;
+		DBG cerr <<"------------------unwrap first--"<<endl;
+		DBG dump_out(stderr,0,0,NULL);
+		DBG cerr <<"--------------------------------"<<endl;
 		return 0;
 	}
 	if (netfacei>=faces.n) return 3;

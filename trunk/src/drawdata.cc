@@ -132,7 +132,6 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 				fp=dp->realtoscreen(flatpoint(mdata->minx+(mdata->maxx+mdata->minx)*((double)random()/RAND_MAX),
 											  mdata->miny+(mdata->maxy+mdata->miny)*((double)random()/RAND_MAX)));
 				dp->textout((int)fp.x,(int)fp.y,"?",1);
-				DBG cout << "draw question mark at "<<fp.x<<","<<fp.y<<endl;
 			}
 		} else {
 			flatpoint fp;

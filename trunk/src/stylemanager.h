@@ -24,18 +24,22 @@ class StyleManager
  protected:
 	int firstuserdef;
  public:
+	Laxkit::RefPtrStack<StyleDef> functions;
 	Laxkit::RefPtrStack<StyleDef> styledefs;
-	Laxkit::RefPtrStack<Style> styles;
+
+	//Laxkit::RefPtrStack<Style> styles;
 
 	StyleManager();
 	~StyleManager();
+	void flush();
+
 	int AddStyleDef(StyleDef *def,int absorb=0);
+	StyleDef *FindDef(const char *styledef);
+
 	//void deleteStyle(Style *style);
 	Style *newStyle(const char *styledef);
 	Style *newStyle(Style *baseonthis);// <--create a generic?
-	StyleDef *FindDef(const char *styledef);
 	Style *FindStyle(const char *style);
-	void flush();
 
 	void dump(FILE *f,int w=1);
 };

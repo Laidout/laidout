@@ -868,8 +868,115 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
 
 
 
-//--------------------------------------------------------------------------------
+//----------------------------- StyleDef utils ------------------------------------------
 
+//! Take the output of parse_fields(), and map to a StyleDef.
+/*! \ingroup stylesandstyledefs
+ *
+ * This is useful for function calls or object creating from a basic script,
+ * and makes it easier to map parameters to actual object methods.
+ *
+ * Note that this modifies the contents of rawparams. It does not create a duplicate.
+ *
+ * On success, it will return the value of rawparams, or NULL if there is any error.
+ *
+ * Something like "paper=letter,imposition.net.box(width=5,3,6), 3 pages" will be parsed 
+ * by parse_fields into an attribute like this:
+ * <pre>
+ *  paper letter
+ *  - imposition
+ *     . net
+ *       . box
+ *         width 5
+ *         - 3
+ *         - 6
+ *  - 3 pages
+ * </pre>
+ *
+ * Now say we have a StyleDef something like:
+ * <pre>
+ *  field 
+ *    name numpages
+ *    format int
+ *  field
+ *    name paper
+ *    format PaperType
+ *  field
+ *    name imposition
+ *    format Imposition
+ * </pre>
+ *
+ * Now paper is the only named parameter. It will be moved to position 1 to match
+ * the position in the styledef. The other 2 are not named, so we try to guess. If
+ * there is an enum field in the styledef, then the value of the parameter, "imposition" 
+ * for instance, is searched for in the enum values. If found, it is moved to the proper
+ * position, and labeled accordingly. Any remaining unclaimed parameters are mapped
+ * in order to the unused styledef fields.
+ *
+ * So the mapping of the above will result in rawparams having:
+ * <pre>
+ *  numpages 3 pages
+ *  paper letter
+ *  imposition imposition
+ *     . net
+ *       . box
+ *         width 5
+ *         - 3
+ *         - 6
+ * </pre>
+ *
+ * \todo enum searching is not currently implemented
+ */
+LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def)
+{
+	if (!rawparams || !def) return NULL;
+	int n=def->getNumFields();
+	int c2;
+	const char *name;
+	Attribute *p;
+	while (rawparams->attributes.n!=n) rawparams->attributes.push(NULL);
+	 //now there are the same number of elements in rawparams and the styledef
+	 //we go through from 0, and swap as needed
+	for (int c=0; c<n; c++) { //for each styledef field
+		def->getInfo(c,&name,NULL,NULL);
+
+		//if (format==Element_DynamicEnum || format==Element_Enum) {
+		//	 //rawparam att name could be any one of the enum names
+		//}
+
+		for (c2=c; c2<rawparams->attributes.n; c2++) { //find the right parameter
+			p=rawparams->attributes.e[c2];
+			if (!strcmp(p->name,"-")) continue;
+			if (!strcmp(p->name,name)) {
+				 //found field name match between a parameter and the styledef
+				if (c2!=c) {
+					 //parameter in the wrong place, so swap with the right place
+					rawparams->attributes.swap(c2,c);
+				} // else param was in right place
+				break;
+			}
+		}
+		if (c2!=rawparams->attributes.n) continue;
+		if (c2==rawparams->attributes.n) {
+			 // did not find a matching name, so grab the 1st "-" parameter
+			for (c2=c; c2<rawparams->attributes.n; c2++) {
+				p=rawparams->attributes.e[c2];
+				if (strcmp(p->name,"-")) continue;
+				if (c2!=c) {
+					 //parameter in the wrong place, so swap with the right place
+					rawparams->attributes.swap(c2,c);
+				} // else param was in right place
+				makestr(rawparams->attributes.e[c]->name,name); //name the parameter correctly
+			}
+		}
+		if (c2==rawparams->attributes.n) {
+			 //there were extra parameters that were not know to the styledef
+			 //this breaks the transfer, return NULL for error
+			return NULL;
+		}
+	}
+	return rawparams;
+}
 
 //------------------------- Style ------------------------------------
 

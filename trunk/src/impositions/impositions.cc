@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,10 +11,9 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2009 by Tom Lechner
 //
-/********* impositions.cc: ****************/
+
 
 //----------------<< Builtin Imposition Instances >>--------------------
 //
@@ -39,6 +39,8 @@ using namespace Laxkit;
 /*! \ingroup objects
  * Searches laidout->impositionpool, and returns a duplicate of
  * the imposition or NULL.
+ *
+ * The imposition returned will have a count of 1.
  */
 Imposition *newImposition(const char *impos)
 {
@@ -75,6 +77,7 @@ PtrStack<Imposition> *GetBuiltinImpositionPool(PtrStack<Imposition> *existingpoo
 	existingpool->push(new NetImposition(),1);
 
 	 // todo:
+	//existingpool->push(new SignatureImposition(),1);
 	//existingpool->push(new CompositeImposition(),1);
 	//existingpool->push(new BasicBook(),1);
 	//existingpool->push(new AnyOtherSpecificImpositionsYouWantBuiltIn,1);

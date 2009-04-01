@@ -3258,6 +3258,7 @@ void ViewWindow::updateContext()
 	}
 }
 
+
 //! Deal with various indicator/control events
 /*! Accepts
  *    curcolor,
@@ -3371,8 +3372,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		c=menu->AddItem(_("None"),c)-1;
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
+		if (doc) {
+			menu->AddItem(_("Edit current document settings"),998);
+			menu->AddItem(_("Remove current document"),998);
+		}
 		menu->AddItem(_("Add new document"),999);
-		if (doc) menu->AddItem(_("Remove current document"),998);
 
 		 //----add limbo list, numbers starting at 1000...
 		char txt[40];
@@ -3431,7 +3435,17 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			menu->AddItem(_("Delete current paper group"),3002);
 		}
 
+		 //---- Project menu
+		menu->AddSep();
+		menu->AddItem(_("Project"));
+		menu->SubMenu(_("Project"));
+		menu->AddItem(_("Save project..."));
+		menu->AddItem(_("New project..."));
+		menu->AddItem(_("Do not save as a project"));
+		menu->EndSubMenu();
 
+
+		DBG menuinfoDump(menu,0);
 
 		 //create the actual popup menu...
 		MenuSelector *popup;

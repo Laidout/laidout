@@ -115,10 +115,30 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			} else if (i==TEXT_Save_In_File) {
 				//****
 			} else if (i==TEXT_Add_New) {
-				//****
 				PlainText *obj=new PlainText();
+				obj->texttype=TEXT_Note;
+
+				 //figure out a unique name
+				char *newname=NULL;
+				int c;
+				makestr(obj->name,_("Text object"));
+				while (1) {
+					for (c=0; c<laidout->project->textobjects.n; c++) {
+						if (!strcmp(obj->name,laidout->project->textobjects.e[c]->name)) {
+							newname=increment_file(obj->name);
+							break;
+						}
+					}
+					if (c==laidout->project->textobjects.n) break; //name not used
+				}
+				 //push object onto project
+				laidout->project->textobjects.push(obj);
+				UseThis(obj);
+				return 0;
+
 			} else if (i==TEXT_Delete_Current) {
-				//****
+				//****if in project, remove from project
+				//either way redo with a temporary object
 			}
 		} else if (i>=0 && i<laidout->project->textobjects.n) {
 			UseThis(laidout->project->textobjects.e[i]);
