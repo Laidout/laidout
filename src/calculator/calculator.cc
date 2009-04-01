@@ -52,6 +52,8 @@ LaidoutCalculator::LaidoutCalculator()
 {
 	dir=NULL; //working directory...
 	DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
+
+	//***set up stylemanager.functions and stylemanager.styledefs here?
 }
 
 LaidoutCalculator::~LaidoutCalculator()
@@ -63,12 +65,14 @@ LaidoutCalculator::~LaidoutCalculator()
 /*! Do not forget to delete the returned array!
  * 
  * \todo it almost goes without saying this needs automation
+ * \todo scan to end of expression does simple check for ';'. needs to parse as it goes...
  */
 char *LaidoutCalculator::In(const char *in)
 {
 	const char *end=NULL,*tmp=NULL;
 	char *str_ret=NULL;
 	int err=0;
+	char *word=NULL;
 	while (!err && in && *in) {
 		if (end) {
 			if (*end) in=end+1;
@@ -79,34 +83,46 @@ char *LaidoutCalculator::In(const char *in)
 		end=in;
 		while (*end && *end!=';') end++;
 
-		if (!strncmp(in,"quit",4)) {
+		tmp=in;
+		while (!isspace(*in)) in++;
+
+		if (in==tmp) break; //no command word!!
+
+		word=newnstr(tmp,in-tmp);
+
+		if (!strcmp(word,"quit")) {
 			laidout->quit();
+			delete[] word;
 			if (str_ret) return str_ret;
 			return newstr("");
 
-		} else if (!strncmp(in,"about",5) && !isalnum(in[6])) {
+		} else if (!strcmp(word,"about")) {
+			delete[] word;
 			return newstr(LaidoutVersion());
 
-		} else if (!strncmp(in,"newdoc",6) && !isalnum(in[6])) {
-			in+=6;
+		} else if (!strcmp(word,"newdoc")) {
 			while (isspace(*in)) in++;
 			tmp=newnstr(in,end-in);
 			if (laidout->NewDocument(tmp)==0) appendline(str_ret,_("Document added."));
 			else appendline(str_ret,_("Error adding document. Not added"));
 			delete[] tmp;
+			delete[] word;
 
-		} else if (!strncmp(in,"show",4) && !isalnum(in[4])) {
-			in+=4;
+		} else if (!strcmp(word,"show")) {
+			delete[] word; word=NULL;
 			while (isspace(*in) && in!=end) in++;
 			tmp=newnstr(in,end-in);
-			DBG cout <<"*****show \""<<tmp<<"\""<<endl;
 			
 			char *temp=NULL;
 			if (*tmp) {
-				if (stylemanager.styledefs.n) {
+				if (stylemanager.styledefs.n || stylemanager.functions.n) {
 					StyleDef *sd;
-					for (int c=0; c<stylemanager.styledefs.n; c++) {
-						sd=stylemanager.styledefs.e[c];
+					int n=stylemanager.styledefs.n + stylemanager.functions.n;
+					for (int c=0; c<n; c++) {
+						 //search in styledefs and functions
+						if (c<stylemanager.styledefs.n) sd=stylemanager.styledefs.e[c];
+						else sd=stylemanager.functions.e[c-stylemanager.styledefs.n];
+
 						if (!strcmp(sd->name,tmp)) {
 							appendstr(temp,sd->name);
 							appendstr(temp,": ");
@@ -118,11 +134,11 @@ char *LaidoutCalculator::In(const char *in)
 								appendstr(temp,element_TypeNames[sd->format]);
 								appendstr(temp,")");
 							}
-							if (sd->extends) {
+							if (sd->format!=Element_Function && sd->extends) {
 								appendstr(temp,"\n extends ");
 								appendstr(temp,sd->extends);
 							}
-							if (sd->format==Element_Fields && sd->getNumFields()) {
+							if ((sd->format==Element_Fields || sd->format==Element_Function) && sd->getNumFields()) {
 								const char *nm,*Nm,*desc;
 								appendstr(temp,"\n");
 								for (int c2=0; c2<sd->getNumFields(); c2++) {
@@ -191,10 +207,9 @@ char *LaidoutCalculator::In(const char *in)
 				delete[] temp;
 			} else appendline(str_ret,_("Nothing to see here. Move along."));
 
-		} else if (!strncmp(in,"open",4) && !isalnum(in[4])) {
+		} else if (!strcmp(word,"open")) {
 			try {
 				 // get filename potentially
-				in+=4;
 				while (isspace(*in) && in!=end) in++;
 				if (in==end) {
 					 //*** ?? call up an open dialog for laidout document files
@@ -263,10 +278,15 @@ char *LaidoutCalculator::In(const char *in)
 			}
 
 
-		} else if (!strncmp(in,"?",1) || !strncmp(in,"help",4)) {
+		} else if (!strcmp(word,"?") || !strcmp(word,"help")) {
 			appendline(str_ret,_("The only recognized commands are:"));
+			 // show stylemanager.functions calculator::in()"<<endl;
+			for (int c=0; c<stylemanager.functions.n; c++) {
+				appendline(str_ret,stylemanager.functions.e[c]->name);
+			}
+			 //show otherwise built in
 			appendline(str_ret,
-						  " show [object type name]\n"
+						  " show [object type or function name]\n"
 						  " newdoc [spec]\n"
 						  " open [a laidout document]\n"
 						  " about\n"

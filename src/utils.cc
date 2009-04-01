@@ -560,7 +560,7 @@ Attribute *parse_fields(Attribute *Att, const char *str,char **end_ptr)
 	}
 	if (end_ptr) *end_ptr=e;
 
-	//DBG cout <<"parsed str into attribute:"<<endl;
+	//DBG cerr <<"parsed str into attribute:"<<endl;
 	//DBG att->dump_out(stderr,0);
 
 	return att;

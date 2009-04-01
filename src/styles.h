@@ -74,6 +74,8 @@ class FieldMask : public Laxkit::PtrStack<FieldPlace>
 
  // for StyleDef::format
 enum ElementType {
+	Element_Any,
+	Element_None,
 	Element_Int,
 	Element_Real,
 	Element_String,
@@ -82,6 +84,7 @@ enum ElementType {
 	Element_Date,
 	Element_File,
 	Element_3bit,
+	Element_Flag,
 	Element_Enum,
 	Element_DynamicEnum,
 	Element_EnumVal,
@@ -120,6 +123,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	unsigned int flags;
 
 	ElementType format; // int,real,string,fields,...
+	int fieldsformat;  //dynamically assigned to new object types
 	Laxkit::PtrStack<StyleDef> *fields; //might be NULL, any fields are assumed to not be local to the stack.
 	
 	StyleDef();
@@ -253,6 +257,16 @@ class EnumStyle : public Style
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context) {}
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context) {}
 };
+
+//-------------------------------- Style/StyleDef utils
+
+
+LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def);
+
+
+
+
+
 
 #endif
 

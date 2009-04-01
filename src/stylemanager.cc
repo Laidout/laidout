@@ -59,28 +59,36 @@ StyleManager::~StyleManager()
 void StyleManager::dump(FILE *f,int w)
 {
 	if (w&1) {
+		for (int c=0; c<functions.n; c++) {
+			fprintf(f,"function %d\n",c);
+			functions.e[c]->dump_out(f,2,0,NULL);
+		}
 		for (int c=0; c<styledefs.n; c++) {
 			fprintf(f,"styledef %d\n",c);
 			styledefs.e[c]->dump_out(f,2,0,NULL);
 		}
 	}
-	if (w&2) {
-		for (int c=0; c<styles.n; c++) {
-			fprintf(f,"style %d\n",c);
-			styles.e[c]->dump_out(f,2,0,NULL);
-		}
-	}
+//	if (w&2) {
+//		for (int c=0; c<styles.n; c++) {
+//			fprintf(f,"style %d\n",c);
+//			styles.e[c]->dump_out(f,2,0,NULL);
+//		}
+//	}
 }
 
 //! Flush styles and styledefs.
 void StyleManager::flush()
 {
+	functions.flush();
 	styledefs.flush();
-	styles.flush();
+	//styles.flush();
 }
 
-//! Currently, just does return styledefs.pushnodup(def,0).
+//! Make the stylemanager remember the StyleDef.
 /*! Return 1 for style exists already. 0 for success.
+ *
+ * If def->format==Element_Function, then push it onto functions.
+ * Otherwise push it onto styledefs.
  *
  * If it does not exist already, then def->inc_count() is called.
  *
@@ -96,18 +104,22 @@ void StyleManager::flush()
  * If absorb==0, the initial tick for the def pointer remains whether or
  * not the styledef existed already. The count of def is increased only when
  * the def was not already in the manager.
+ *
+ * \todo add sorted pushing for faster access
  */
 int StyleManager::AddStyleDef(StyleDef *def, int absorb)
 {
 	int c;
-	for (c=0; c<styledefs.n; c++) {
-		if (!strcmp(def->name,styledefs.e[c]->name)) {
+	RefPtrStack<StyleDef> *stack;
+	if (def->format==Element_Function) stack=&functions; else stack=&styledefs;
+	for (c=0; c<stack->n; c++) {
+		if (!strcmp(def->name,stack->e[c]->name)) {
 			if (absorb) def->dec_count();
 			return 1; // def was already there
 		}
 	}
 	//def->deleteMe=RemoveStyleDefFromManager;
-	styledefs.push(def,3); // this incs count
+	stack->push(def,3); // this incs count
 	if (absorb) def->dec_count();
 	return 0;
 }
@@ -117,6 +129,8 @@ int StyleManager::AddStyleDef(StyleDef *def, int absorb)
  */
 StyleDef *StyleManager::FindDef(const char *styledef)
 {
+	for (int c=0; c<functions.n; c++)
+		if (!strcmp(styledef,functions.e[c]->name)) return functions.e[c];
 	for (int c=0; c<styledefs.n; c++)
 		if (!strcmp(styledef,styledefs.e[c]->name)) return styledefs.e[c];
 	return NULL;
@@ -127,8 +141,8 @@ StyleDef *StyleManager::FindDef(const char *styledef)
  */
 Style *StyleManager::FindStyle(const char *style)
 {
-	for (int c=0; c<styles.n; c++)
-		if (!strcmp(style,styles.e[c]->Stylename())) return styles.e[c];
+//	for (int c=0; c<styles.n; c++)
+//		if (!strcmp(style,styles.e[c]->Stylename())) return styles.e[c];
 	return NULL;
 }
 

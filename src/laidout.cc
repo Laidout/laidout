@@ -1315,7 +1315,7 @@ int main(int argc,char **argv)
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;
 	DBG cerr <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
-	DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
+	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
 	stylemanager.flush();
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;

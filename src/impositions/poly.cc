@@ -448,25 +448,25 @@ double Polyhedron::pdistance(int a, int b)
 int Polyhedron::validate()
 {
 	int c,c2;
-	DBG cout << "Validating..";
+	DBG cerr << "Validating..";
 	for (c=0; c<edges.n; c++)
 		if (    edges.e[c]->p1<0 || edges.e[c]->p1>=vertices.n ||
 				edges.e[c]->p2<0 || edges.e[c]->p2>=vertices.n) {
-			DBG cout << "\nBad edge "<<c<<"."; 
+			DBG cerr << "\nBad edge "<<c<<"."; 
 			return 0; 
 		}
 	for (c=0; c<faces.n; c++) {
 		if (faces.e[c]->pn==0) {
-			DBG cout << "\nEmpty face "<<c<<"."; 
+			DBG cerr << "\nEmpty face "<<c<<"."; 
 			return 0; 
 		}
 		for (c2=0; c2<faces.e[c]->pn; c2++)
 			if (faces.e[c]->p[c2]<0 || faces.e[c]->p[c2]>=vertices.n)	{
-				DBG cout << "\nBad face "<<c<<' '<<c2<<".\n";
+				DBG cerr << "\nBad face "<<c<<' '<<c2<<".\n";
 				return 0; 
 			}
 	}
-	DBG cout <<"..done validating\n";
+	DBG cerr <<"..done validating\n";
 	return 1;
 }
 
@@ -567,7 +567,7 @@ int Polyhedron::makeplanes()
  */
 int Polyhedron::makeedges()
 {
-	DBG cout <<"making edges..."<<endl;
+	DBG cerr <<"making edges..."<<endl;
 	if (faces.n==0 || vertices.n==0) return 0;
 	
 	int c,c2,c3,emax=0,p1,p2;
@@ -576,7 +576,7 @@ int Polyhedron::makeedges()
 	for (c=0; c<faces.n; c++) emax+=faces.e[c]->pn;
 	if (emax<=0) return 0;
 	
-	DBG cout <<"makeedges emax:"<<emax;
+	DBG cerr <<"makeedges emax:"<<emax;
 	
 	for (c=0; c<faces.n; c++) {
 		for (c2=0; c2<faces.e[c]->pn; c2++) {
@@ -607,11 +607,11 @@ int Polyhedron::makeedges()
 			}
 		}
 	}
-	DBG cout <<"...total edges="<<edges.n<<'\n';
+	DBG cerr <<"...total edges="<<edges.n<<'\n';
 	DBG for (c=0; c<faces.n; c++) {
-	DBG 	cout <<"face "<<c<<": ";
-	DBG 	for (c2=0; c2<faces.e[c]->pn; c2++) cout <<faces.e[c]->f[c2]<<" ";
-	DBG 	cout <<endl;
+	DBG 	cerr <<"face "<<c<<": ";
+	DBG 	for (c2=0; c2<faces.e[c]->pn; c2++) cerr <<faces.e[c]->f[c2]<<" ";
+	DBG 	cerr <<endl;
 	DBG }
 	return 1;
 }
@@ -977,21 +977,21 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 	}
 
 	if (error) { 
-		DBG cout << "ERROR";
+		DBG cerr << "ERROR";
 		clear();
 		return; 
 	}
 	
 	makeedges();
 	applysets();
-	DBG cout << "...Done Polyhedron::dump_in_atts() "<<endl;
+	DBG cerr << "...Done Polyhedron::dump_in_atts() "<<endl;
 	
 	if (!validate()) { 
 		clear(); 
-		DBG cout << "Validation failed\n";
+		DBG cerr << "Validation failed\n";
 		return; 
 	}
-	DBG cout << "Validation succeeded\n"; 
+	DBG cerr << "Validation succeeded\n"; 
 }
 
 //! Saves a VRML 2.0 model of the polyhedron to filename.
@@ -1001,11 +1001,11 @@ int Polyhedron::dumpOutVrml(const char *filename) // does edges
 {
 	if (edges.n==0) return 0;
 	if (!filename) return 0;
-	DBG cout << "\nSaving vrml:" << filename <<'.';
+	DBG cerr << "\nSaving vrml:" << filename <<'.';
 
 	FILE *ff=fopen(filename,"r");
 	if (!ff) {
-		DBG cout << "Bad filename.";
+		DBG cerr << "Bad filename.";
 		return 1;
 	}
 	fprintf(ff,"#VRML V2.0 utf8\n\n");
@@ -1046,7 +1046,7 @@ int Polyhedron::dumpOutVrml(const char *filename) // does edges
 
 	fclose(ff);
 	
-	DBG cout << "..done vrmlsave\n";
+	DBG cerr << "..done vrmlsave\n";
 	return 0;
 }
 

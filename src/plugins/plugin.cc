@@ -42,10 +42,12 @@ class PluginBase
 {
  public:
 	const char *PluginName() = 0;
+	const char *Version() = 0;
 	const char *Description() = 0;
 	const char *Author() = 0;
+	const char *ReleaseDate() = 0;
 	const char *License() = 0;
-	const char *Version() = 0;
+
 	unsigned long WhatYouGot();
 
 	LaidoutDialog     **WindowPanes();
