@@ -455,7 +455,8 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 					  "       width=\"1\"\n"
 					  "       height=\"1\">\n"); 
 
-			fprintf(f,"      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\".5\"/>\n");
+			fprintf(f,"      <feGaussianBlur  stdDeviation=\".5\"/>\n");
+			//fprintf(f,"      <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\".5\"/>\n");
 
 			fprintf(f,"    </filter>\n");
 		}
