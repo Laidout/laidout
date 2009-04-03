@@ -42,10 +42,10 @@ objs= \
 	newdoc.o \
 	viewwindow.o \
 	palettes.o \
-	extras.o \
 	drawdata.o \
 	spreadeditor.o \
 	laidout-more.o \
+	importimage.o \
 	importimages.o \
 	laidout.o 
 

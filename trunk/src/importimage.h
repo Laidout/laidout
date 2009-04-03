@@ -11,10 +11,10 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
-#ifndef EXTRAS_H
-#define EXTRAS_H
+#ifndef IMPORT_IMAGE_H
+#define IMPORT_IMAGE_H
 
 #include "laidout.h"
 #include <lax/interfaces/imageinterface.h>

@@ -17,7 +17,6 @@
 #include "importdialog.h"
 #include "../language.h"
 #include "../laidout.h"
-#include "../extras.h"
 #include "../utils.h"
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
