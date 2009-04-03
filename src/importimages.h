@@ -37,6 +37,7 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	int startpage;
 	Document *doc;
 	Group *toobj;
+	Laxkit::MenuSelector *reviewlist;
 	ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
 			Window nowner,const char *nsend,

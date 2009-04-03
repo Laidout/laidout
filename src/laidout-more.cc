@@ -22,7 +22,7 @@
 #include "spreadeditor.h"
 #include "headwindow.h"
 #include "version.h"
-#include "extras.h"
+#include "importimage.h"
 
 #include <lax/fileutils.h>
 

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 /*! \file
@@ -42,7 +42,7 @@
  */
 
 #include "version.h"
-#include "extras.h"
+#include "importimage.h"
 #include "dataobjects/epsdata.h"
 #include "utils.h"
 #include <lax/attributes.h>

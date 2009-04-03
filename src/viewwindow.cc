@@ -44,7 +44,7 @@
 #include "viewwindow.h"
 #include "headwindow.h"
 #include "laidout.h"
-#include "extras.h"
+#include "importimage.h"
 #include "drawdata.h"
 #include "helpwindow.h"
 #include "configured.h"

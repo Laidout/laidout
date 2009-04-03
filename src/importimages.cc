@@ -16,12 +16,13 @@
 
 #include "language.h"
 #include "importimages.h"
+#include "importimage.h"
 #include "laidout.h"
-#include "extras.h"
 #include "utils.h"
 #include <lax/checkbox.h>
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
+#include <lax/tabframe.h>
 
 #include <lax/lists.cc>
 
@@ -58,6 +59,8 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsig
 	doc=ndoc;
 	if (doc) doc->inc_count();
 	curitem=-1;
+
+	reviewlist=NULL;
 
 	dpi=defdpi;
 	if (dpi<=0) {
@@ -250,10 +253,6 @@ int ImportImagesDialog::init()
 	CheckBox *check=NULL;
 	TextButton *tbut=NULL;
 
-	 //---------------------- to insert list, next to main dir listing ---------------------------
-	// menuinfo that allows rearranging, and has other info about what page image will be on...
-	//--- for future! ---
-
 
 	 //---------------------- add prev/next file buttons next to file
 	linp=dynamic_cast<LineInput *>(findWindow("file"));
@@ -296,6 +295,26 @@ int ImportImagesDialog::init()
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50, c+3);
 	AddNull(c+4);
 	
+
+	 //---------------------- to insert list, next to main dir listing ---------------------------
+	// menuinfo that allows rearranging, and has other info about what page image will be on...
+	//--- for future! ---
+	 //---------------------- create choose/review  ---------------------------
+	 //
+//	c=findWindowIndex("files"); //the oroginal file MenuSelector
+//	TabFrame *tabframe=new TabFrame(this,"choose",0,
+//										0,0,0,0,0, 
+//										NULL, window, "choose");
+//	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
+//			filelist,window,"reviewlist",
+//			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
+//			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
+//	//***populate reviewlist as needed...
+//
+//	tabframe->AddWin(filelist,_("Choose"),NULL);
+//	tabframe->AddWin(reviewlist,_("Review"),NULL);
+//	tabframe->SelectN(0);
+//	AddWin(tabframe,c);
 	
 	 //---------------------- per image preview controls ---------------------------
 //	   filename:_____________
@@ -346,21 +365,21 @@ int ImportImagesDialog::init()
 						NULL,"1",0,
 						textheight*10,textheight+4,2,2,2,2);
 	AddWin(linp);
-	AddWin(NULL, 1000,1000,0,50, 0,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);
 	AddNull();
 	
 	last=check=new CheckBox(this,"perpagefit",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
 						last,window,"perpagefit", _("As many as will fit per page"),5,5);
 	check->State(LAX_ON);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	AddWin(NULL, 1000,1000,0,50, 0,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);
 	AddNull();
 	
 	last=check=new CheckBox(this,"perpageall",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
 						last,window,"perpageall", _("All on one page"),5,5);
 	check->State(LAX_OFF);
 	AddWin(check, check->win_w,0,0,50, linpheight,0,0,50);
-	AddWin(NULL, 1000,1000,0,50, 0,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);
 	
 	 //------------------------ preview options ----------------------
 	last=linp=new LineInput(this,"PreviewBase",0, 0,0,0,0,0, last,window,"previewbase",

@@ -118,6 +118,7 @@ int PlainText::SaveText()
 	fwrite(thetext,1,strlen(thetext),f);
 	fclose(f);
 	lastfiletime=times(&tmptimestruct);
+	return 0;
 }
 
 //! Clear whatever is in the object, and replace with file data.
