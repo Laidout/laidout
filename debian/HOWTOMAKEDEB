@@ -15,6 +15,9 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 3. ----modify source---
  check out the branch: svn co https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(version)
+ make sure any references to the current date are accurate, currently:
+   debian/control
+   debian/laidout.1
  make sure version number is correct in any source files that refer to it, currently:
    debian/changelog
    debian/laidout.1              :Version ****, for laying out books

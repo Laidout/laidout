@@ -575,7 +575,7 @@ int LaidoutApp::createlaidoutrc()
 					  " #always bring up the new document dialog. If it is uncommented, then the\n"
 					  " #specified file is loaded with the filename removed so that trying to save will\n"
 					  " #force entering a new name and location. If the file is not an absolute path,\n"
-					  " #then it is assumed to be relative to ~/laidout/(version)/templates.\n"
+					  " #then it is assumed to be relative to ~/.laidout/(version)/templates.\n"
 					  "#default_template default\n"
 					  "\n"
 					  " # Some assorted directories:\n");
@@ -1096,7 +1096,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	PaperStyle *paper=NULL;
 	int numpages=1;
 	
-	Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
+	//Attribute *spec_parameters=parse_fields(NULL,spec,NULL);
 
 
 //---------------------****
@@ -1178,6 +1178,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	}
 	
 	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate
+	if (imp) imp->dec_count();
 	Document *newdoc=new Document(docinfo,saveas);
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc

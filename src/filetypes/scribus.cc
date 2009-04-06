@@ -29,6 +29,7 @@
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
 #include "../dataobjects/mysterydata.h"
+#include "../drawdata.h"
 
 #include <iostream>
 #define DBG 
@@ -71,6 +72,16 @@ void installScribusFilter()
  *  but it only has fully written up 1.2 format
  * </pre>
  */
+
+#define PTYPE_None                  -1
+#define PTYPE_Image                  2
+#define PTYPE_Text                   4
+#define PTYPE_Line                   5
+#define PTYPE_Polygon                6
+#define PTYPE_Polyline               7
+#define PTYPE_Text_On_Path           8
+#define PTYPE_Laidout_Gradient       -2
+#define PTYPE_Laidout_MysteryData    -3
 
 ScribusExportFilter::ScribusExportFilter()
 {
@@ -127,6 +138,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		return 1;
 	}
 	
+	Attribute *scribushints=NULL;
+	if (doc) scribushints=doc->iohints.find("Scribus");
+	else scribushints=laidout->project->iohints.find("Scribus");
 	
 	 //we must be able to open the export file location...
 	FILE *f=NULL;
@@ -179,7 +193,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 //	}
 	
 	 // write out header
-	fprintf(f,"<SCRIBUSUTF8NEW Version=\"1.3.3.8\">\n");
+	Attribute *temp=NULL;
+	const char *str="1.3.3.12";
+	if (scribushints) {
+		temp=scribushints->find("scribusVersion");
+		if (temp) str=temp->value;
+	}
+	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+			  "<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
 	
 	
 	 //figure out paper size and orientation
@@ -187,125 +208,162 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	double paperwidth,paperheight;
 	 // note this is orientation for only the first paper in papergroup.
 	 // If there are more than one papers, this may not work as expected...
-	 // The ps Orientation comment determines how onscreen viewers will show 
-	 // pages. This can be overridden by the %%PageOrientation: comment
 	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
 	paperwidth= papergroup->papers.e[0]->box->paperstyle->width;
 	paperheight=papergroup->papers.e[0]->box->paperstyle->height;
 	
 	 //------------ write out document attributes
-	spread=doc->docstyle->imposition->Layout(layout,start); //grab for page size
+	 //****** all the scribushints.slahead blocks are output as DOCUMENT attributes
+	 //		  EXCEPT: ANZPAGES, PAGEHEIGHT, PAGEWIDTH, ORIENTATION
 	fprintf(f,"  <DOCUMENT \n"
-			  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
 			  "    ANZPAGES=\"%d\" \n",end-start+1); //number of pages
-	fprintf(f,"    AUTHOR=\"\" \n"
-			  "    AUTOSPALTEN=\"1\" \n" //Number of Colums in automatic Textframes
-			  //"    BOOK***** " *** has facing pages if present: doublesidedsingles
-			  "    BORDERBOTTOM=\"0\" \n"	//margins!
-			  "    BORDERLEFT=\"0\" \n"	
-			  "    BORDERRIGHT=\"0\" \n"	
-			  "    BORDERTOP=\"0\" \n"	
-			  "    COMMENTS=\"\" \n"
-			  "    DFONT=\"Times-Roman\" \n" //default font
-			  "    DSIZE=\"12\" \n"
-			  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
-			  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
-	fprintf(f,"    KEYWORDS=\"\" \n"
-			  "    ORIENTATION=\"%d\" \n",landscape);
-	fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
-	fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);//***
-	fprintf(f,"    TITLE=\"\" \n"
-			  "    VHOCH=\"33\" \n"      //Percentage for Superscript
-			  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
-			  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
-			  "    VTIEF=\"33\" \n"       //Percentage for Subscript
-			  "    VTIEFSC=\"100\" \n");   //Percentage for scaling of the Glyphs in Subscript
-	fprintf(f,"    ScratchTop=\"%f\"\n"
-			  "    ScratchBottom=\"%f\"\n"
-			  "    ScratchRight=\"%f\"\n"
-			  "    ScratchLeft=\"%f\"\n"
-			  "   >\n",
+	int dodefaultdoc=1;
+	if (scribushints) {
+		Attribute *slahead=scribushints->find("slahead");
+		if (slahead) {
+			dodefaultdoc=0;
+			 //assume all the imported document attributes can be output as is
+			 //the page size/orientation is just default page size and orientation,
+			 //so it's ok if we don't intercept
+			char *name,*value;
+			for (int c=0; c<slahead->attributes.n; c++) {
+				name =slahead->attributes.e[c]->name;
+				value=slahead->attributes.e[c]->value;
+				if (!strcmp(name,"ANZPAGES")) continue;
+				if (!strcmp(name,"content:")) continue; //shouldn't happen, but just in case
+				fprintf(f,"    %s=\"%s\"\n", name, value?value:"");
+			}
+		}
+	} 
+	if (dodefaultdoc) {
+
+		 //default DOCUMENT attributes
+		fprintf(f,"    AUTHOR=\"\" \n"
+				  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
+				  "    AUTOSPALTEN=\"1\" \n" //Number of Colums in automatic Textframes
+				  //"    BOOK***** " *** has facing pages if present: doublesidedsingles
+				  "    BORDERBOTTOM=\"0\" \n"	//margins!
+				  "    BORDERLEFT=\"0\" \n"	
+				  "    BORDERRIGHT=\"0\" \n"	
+				  "    BORDERTOP=\"0\" \n"	
+				  "    COMMENTS=\"\" \n"
+				  "    DFONT=\"Times-Roman\" \n" //default font
+				  "    DSIZE=\"12\" \n"
+				  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
+				  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
+		fprintf(f,"    KEYWORDS=\"\" \n"
+				  "    ORIENTATION=\"%d\" \n",landscape);
+		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
+		fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);//***
+		fprintf(f,"    TITLE=\"\" \n"
+				  "    VHOCH=\"33\" \n"      //Percentage for Superscript
+				  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
+				  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
+				  "    VTIEF=\"33\" \n"       //Percentage for Subscript
+				  "    VTIEFSC=\"100\" \n");   //Percentage for scaling of the Glyphs in Subscript
+		fprintf(f,"    ScratchTop=\"%f\"\n"
+				  "    ScratchBottom=\"%f\"\n"
+				  "    ScratchRight=\"%f\"\n"
+				  "    ScratchLeft=\"%f\"\n",
 			  	CANVAS_MARGIN_Y, CANVAS_MARGIN_Y, CANVAS_MARGIN_X, CANVAS_MARGIN_X);
-	delete spread;
+	}
+	fprintf(f,    "   >\n"); //close DOCUMENT tag
 	
-	
-				
-	//****write out <COLOR> sections
-		
-	
-	 //----------Write layers, assuming just background. Everything else is grouping
-	fprintf(f,"    <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
 
+	//now we are in the DOCUMENT element section...
 	
-	//********write out <PDF> chunk
-	fprintf(f,"    <PDF displayThumbs=\"0\" "
-					   "ImagePr=\"0\" "
-					   "fitWindow=\"0\" "
-					   "displayBookmarks=\"0\" "
-					   "BTop=\"18\" "
-					   "UseProfiles=\"0\" "
-					   "BLeft=\"18\" "
-					   "PrintP=\"Fogra27L CMYK Coated Press\" "
-					   "RecalcPic=\"0\" "
-					   "UseSpotColors=\"1\" "
-					   "ImageP=\"sRGB IEC61966-2.1\" SolidP=\"sRGB IEC61966-2.1\" "
-					   "PicRes=\"300\" "
-					   "Thumbnails=\"0\" "
-					   "hideToolBar=\"0\" "
-					   "CMethod=\"0\" "
-					   "displayLayers=\"0\" "
-					   "doMultiFile=\"0\" "
-					   "UseLayers=\"0\" "
-					   "Encrypt=\"0\" "
-					   "BRight=\"18\" "
-					   "Binding=\"0\" "
-					   "Articles=\"0\" "
-					   "InfoString=\"\" "
-					   "RGBMode=\"1\" "
-					   "Grayscale=\"0\" "
-					   "PresentMode=\"0\" "
-					   "openAction=\"\" "
-					   "displayFullscreen=\"0\" "
-					   "Permissions=\"-4\" "
-					   "Intent=\"1\" "
-					   "Compress=\"1\" "
-					   "hideMenuBar=\"0\" "
-					   "Version=\"14\" "
-					   "Resolution=\"300\" "
-					   "Bookmarks=\"0\" "
-					   "UseProfiles2=\"0\" "
-					   "RotateDeg=\"0\" "
-					   "Clip=\"0\" "
-					   "MirrorV=\"0\" "
-					   "Quality=\"0\" "
-					   "PageLayout=\"0\" "
-					   "UseLpi=\"0\" "
-					   "PassUser=\"\" "
-					   "BBottom=\"18\" "
-					   "Intent2=\"1\" "
-					   "MirrorH=\"0\" "
-					   "PassOwner=\"\" >\n"
-			  "      <LPI Angle=\"45\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Black\" />\n"
-			  "      <LPI Angle=\"105\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Cyan\" />\n"
-			  "      <LPI Angle=\"75\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Magenta\" />\n"
-			  "      <LPI Angle=\"90\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Yellow\" />\n"
-			  "    </PDF>\n");
 
-	
-	//*************DocItemAttributes not 1.2
-	//************TablesOfContents   not 1.2
-	//************Sections  not 1.2
-	
-	//------------PageSets  not 1.2
-	//This sets up so there is one column of pages, with 40 units between them.
-	fprintf(f,"    <PageSets>\n"
-			  "      <Set Columns=\"1\" GapBelow=\"40\" Rows=\"1\" FirstPage=\"0\" GapHorizontal=\"0\"\n"
-			  "         Name=\"Single Page\" GapVertical=\"0\" />\n"
-			  "    </PageSets>\n");
+	if (scribushints) {
+		 //write out any docContent elements as is. assumes these cover everything in the default setup
+		 //other than PAGE and PAGEOBJECT
+		char *name;
+		for (int c=0; c<scribushints->attributes.n; c++) {
+			name =scribushints->attributes.e[c]->name;
+			if (strcmp(name,"docContent")) continue;
 
-	//************MASTERPAGE not separate entity in 1.2
-	
+			AttributeToXMLFile(f,scribushints->attributes.e[c],4);
+		}
+	} else {
+		 //write out default elements of DOCUMENT
+
+		//****write out <COLOR> sections
 			
+		
+		 //----------Write layers, assuming just background. Everything else is grouping
+		fprintf(f,"    <LAYERS DRUCKEN=\"1\" NUMMER=\"0\" EDIT=\"1\" NAME=\"Background\" SICHTBAR=\"1\" LEVEL=\"0\" />\n");
+
+		
+		//********write out <PDF> chunk
+		fprintf(f,"    <PDF displayThumbs=\"0\" "
+						   "ImagePr=\"0\" "
+						   "fitWindow=\"0\" "
+						   "displayBookmarks=\"0\" "
+						   "BTop=\"18\" "
+						   "UseProfiles=\"0\" "
+						   "BLeft=\"18\" "
+						   "PrintP=\"Fogra27L CMYK Coated Press\" "
+						   "RecalcPic=\"0\" "
+						   "UseSpotColors=\"1\" "
+						   "ImageP=\"sRGB IEC61966-2.1\" SolidP=\"sRGB IEC61966-2.1\" "
+						   "PicRes=\"300\" "
+						   "Thumbnails=\"0\" "
+						   "hideToolBar=\"0\" "
+						   "CMethod=\"0\" "
+						   "displayLayers=\"0\" "
+						   "doMultiFile=\"0\" "
+						   "UseLayers=\"0\" "
+						   "Encrypt=\"0\" "
+						   "BRight=\"18\" "
+						   "Binding=\"0\" "
+						   "Articles=\"0\" "
+						   "InfoString=\"\" "
+						   "RGBMode=\"1\" "
+						   "Grayscale=\"0\" "
+						   "PresentMode=\"0\" "
+						   "openAction=\"\" "
+						   "displayFullscreen=\"0\" "
+						   "Permissions=\"-4\" "
+						   "Intent=\"1\" "
+						   "Compress=\"1\" "
+						   "hideMenuBar=\"0\" "
+						   "Version=\"14\" "
+						   "Resolution=\"300\" "
+						   "Bookmarks=\"0\" "
+						   "UseProfiles2=\"0\" "
+						   "RotateDeg=\"0\" "
+						   "Clip=\"0\" "
+						   "MirrorV=\"0\" "
+						   "Quality=\"0\" "
+						   "PageLayout=\"0\" "
+						   "UseLpi=\"0\" "
+						   "PassUser=\"\" "
+						   "BBottom=\"18\" "
+						   "Intent2=\"1\" "
+						   "MirrorH=\"0\" "
+						   "PassOwner=\"\" >\n"
+				  "      <LPI Angle=\"45\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Black\" />\n"
+				  "      <LPI Angle=\"105\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Cyan\" />\n"
+				  "      <LPI Angle=\"75\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Magenta\" />\n"
+				  "      <LPI Angle=\"90\" Frequency=\"75\" SpotFunction=\"2\" Color=\"Yellow\" />\n"
+				  "    </PDF>\n");
+
+		
+		//*************DocItemAttributes not 1.2
+		//************TablesOfContents   not 1.2
+		//************Sections  not 1.2
+		
+		//------------PageSets  not 1.2
+		//This sets up so there is one column of pages, with 40 units between them.
+		fprintf(f,"    <PageSets>\n"
+				  "      <Set Columns=\"1\" GapBelow=\"40\" Rows=\"1\" FirstPage=\"0\" GapHorizontal=\"0\"\n"
+				  "         Name=\"Single Page\" GapVertical=\"0\" />\n"
+				  "    </PageSets>\n");
+
+		//************MASTERPAGE not separate entity in 1.2
+	} //if !scribushints for non PAGE and PAGEOBJECT elements of DOCUMENT
+			
+
+
 	//------------PAGE and PAGEOBJECTS
 
 	 //
@@ -315,10 +373,12 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 // Page objects have coordinates in the canvas space, not the paper space.
 	 // Their xpos, ypos, rot, width, and height (notably NOT shear)
 	 // refer to its bounding box. The pocoor and cocoor coordinates are relative to that
-	 // transformed bounding box (????).
+	 // rotated and translated bounding box.
 	 //
 	 // Scribus Groups are more like sets. Objects all lie directly on the page, and groups
 	 // are simply a loose tag the objects have. Groups do not apply any additional transformation.
+	 //
+	 // Scribus Layers are ....? (need to research that!)
 	 //
 	groups.flush();
 	ongroup=0;
@@ -426,7 +486,6 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 }
 
 
-
 //! Internal function to dump out the obj.
 /*! Can be Group, ImageData, or GradientData.
  *
@@ -447,16 +506,21 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	int numpo=0;
 	flatpoint *pocoor;
 	double localscx=1,localscy=1;
-	int ptype=-1; //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+	int ptype=-1; //>0 is translatable to scribus object.
+				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
+	Attribute *mysteryatts=NULL;
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		img=dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
-		ptype=2;
+		ptype=PTYPE_Image;
+
 	//} else if (!strcmp(obj->whattype(),"GradientData")) {
 	//	grad=dynamic_cast<GradientData *>(obj);
 	//	if (!grad) return;
-	//	ptype=-2;
+	//	ptype=PTYPE_Laidout_Gradient;
+	
 	} else if (!strcmp(obj->whattype(),"Group")) {
 		 //must propogate transform...
 		Group *g;
@@ -476,9 +540,19 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		groups.pop();
 		psPopCtm();
 		return;
-	} else {
-		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
+
+	} else if (!strcmp(obj->whattype(),"MysteryData")) {
+		MysteryData *mdata=dynamic_cast<MysteryData *>(obj);
+		if (!strcmp(mdata->importer,"Scribus")) {
+			mysteryatts=mdata->attributes;
+			//***need to refigure position and orientation, pocoor, cocoor to scale to current
+			ptype=PTYPE_Laidout_MysteryData;
+		} //else is someone else's mystery data
+	} 
+
+	if (ptype==PTYPE_None) {
 		setlocale(LC_ALL,"");
+		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
 		sprintf(tmp,_("Warning: Cannot export %s to Scribus.\n"),obj->whattype());
 		appendstr(*error_ret,tmp);
 		setlocale(LC_ALL,"C");
@@ -493,28 +567,65 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	 //Gradients must have one circle totally inside another. Sheared gradients must be converted
 	 //  to ellipses.
 	 //Object bounding boxes in scribus have no shear, only position, scale, and rotation
+	 //
+	 //in the sla, XPOS,YPOS is the upper left corner of an object, in scratch space coordinates.
+	 //ROT adds additional rotation around that point, clockwise as you see it in Scribus,
+	 //which is a left handed space (+x to the right, +y is down).
+	 //WIDTH and HEIGHT are bounding box measurements from that corner, and are in scratch space units.
+	 //
 	//***this is still a bit hacky
-	numpo=16;
-	pocoor=new flatpoint[numpo];
+	 
+	 //figure out the COCOOR and POCOOR for an object
 	flatpoint p,p1,p2, vx,vy;
-	double *ctm=psCTM();
+	double *ctm=psCTM(); //scratch space coords=ctm*object coords
 	double rot,x,y,width,height;
 
 	vx=transform_vector(ctm,flatpoint(1,0));
 	vy=transform_vector(ctm,flatpoint(0,1));
-	rot=atan2(vx.y, vx.x)/M_PI*180;
+	rot=atan2(vx.y, vx.x)/M_PI*180; //rotation in degrees
 	//p=transform_point(ctm,flatpoint(0,0));
 	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
 	x=p.x;
 	y=p.y;
 
-	pocoor[14]=pocoor[15]=pocoor[ 0]=pocoor[ 1]=transform_point(ctm,flatpoint(obj->minx,obj->miny));
-	pocoor[ 2]=pocoor[ 3]=pocoor[ 4]=pocoor[ 5]=transform_point(ctm,flatpoint(obj->maxx,obj->miny));
-	pocoor[ 6]=pocoor[ 7]=pocoor[ 8]=pocoor[ 9]=transform_point(ctm,flatpoint(obj->maxx,obj->maxy));
-	pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
+	 //create pocoor outline
+	int createrect=1;
+	if (mysteryatts) {
+		Attribute *pocooratt=mysteryatts->find("POCOOR");
+		//Attribute *pocooratt=mysteryatts->find("COCOOR");
+		if (pocooratt) {
+			createrect=0;
+			//Attribute *tmp=mysteryatts->find("NUMPO");<--get directly from pocoor
+			double *coords=NULL;
+			DoubleListAttribute(pocooratt->value,&coords,&numpo);
+			numpo/=2;
+			pocoor=new flatpoint[numpo];
+			for (int c=0; c<numpo; c++) pocoor[c]=flatpoint(coords[c*2],coords[c*2+1]);
+			//note that these are raw coordinates read on input, they still have to be scaled
+			// to current bounding box
+		}
+	}
+	if (createrect) {
+		 //no coordinate path otherwise found, so create a rectangle based on the object bounding box
+		numpo=16;
+		pocoor=new flatpoint[numpo];
+		pocoor[14]=pocoor[15]=pocoor[ 0]=pocoor[ 1]=transform_point(ctm,flatpoint(obj->minx,obj->miny));
+		pocoor[ 2]=pocoor[ 3]=pocoor[ 4]=pocoor[ 5]=transform_point(ctm,flatpoint(obj->maxx,obj->miny));
+		pocoor[ 6]=pocoor[ 7]=pocoor[ 8]=pocoor[ 9]=transform_point(ctm,flatpoint(obj->maxx,obj->maxy));
+		pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
+	}
 
-	width=norm(pocoor[2]-pocoor[1]);
-	height=norm(pocoor[6]-pocoor[2]);
+	 //find bounds of pocoor
+	flatpoint min=pocoor[0], max=pocoor[0];
+	for (int c=1; c<numpo; c++) {
+		if (pocoor[c].x<min.x) min.x=pocoor[c].x;
+		else if (pocoor[c].x>max.x) max.x=pocoor[c].x;
+		if (pocoor[c].y<min.y) min.y=pocoor[c].y;
+		else if (pocoor[c].y>max.y) max.y=pocoor[c].y;
+	}
+
+	width =norm(transform_point(ctm,flatpoint(obj->maxx,obj->miny)-transform_point(ctm,flatpoint(obj->minx,obj->miny))));
+	height=norm(transform_point(ctm,flatpoint(obj->minx,obj->miny)-transform_point(ctm,flatpoint(obj->minx,obj->maxy))));
 
 	double m[6],mmm[6];
 	vx=vx/norm(vx);
@@ -527,7 +638,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	for (int c=0; c<16; c++) {
 		pocoor[c]=transform_point(m,pocoor[c]);
 	}
-	if (ptype==2) { //image
+	if (ptype==PTYPE_Image) { //image
 		localscx=width /(img->maxx-img->minx);
 		localscy=height/(img->maxy-img->miny);
 		if (!strcmp(obj->whattype(),"EpsData")) {
@@ -537,143 +648,188 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	}
 
 
-	fprintf(f,"  <PAGEOBJECT \n"
-			  "    ANNOTATION=\"0\" \n"   //1 if is pdf annotation
-			  "    BOOKMARK=\"0\" \n"     //1 if obj is pdf bookmark
-			  "    PFILE2=\"\" \n"          //(opt) file for pressed image in pdf button
-			  "    PFILE3=\"\" \n"          //(opt) file for rollover image in pdf button
+	fprintf(f,"  <PAGEOBJECT \n");
+	int content=-1;
+	if (mysteryatts) {
+		char *name,*value;
+		for (int c=0; c<mysteryatts->attributes.n; c++) {
+			name=mysteryatts->attributes.e[c]->name;
+			value=mysteryatts->attributes.e[c]->value;
+			if (!strcmp(name,"OwnPage")) continue;
+			if (!strcmp(name,"LOCALSCX")) continue;
+			if (!strcmp(name,"LOCALSCY")) continue;
+			if (!strcmp(name,"ROT")) continue;
+			if (!strcmp(name,"XPOS")) continue;
+			if (!strcmp(name,"YPOS")) continue;
+			if (!strcmp(name,"WIDTH")) continue;
+			if (!strcmp(name,"HEIGHT")) continue;
+			if (!strcmp(name,"NUMGROUP")) continue;
+			if (!strcmp(name,"GROUPS")) continue;
+			if (!strcmp(name,"NUMPO")) continue; //***need to remap pocoor and cocoor
+			if (!strcmp(name,"NUMCO")) continue;
+			if (!strcmp(name,"POCOOR")) continue;
+			if (!strcmp(name,"COCOOR")) continue;
+			if (!strcmp(name,"content:")) { content=c; continue; }
+			fprintf(f,"    %s=\"%s\"\n", name, value?value:"");
+		}
+	} 
 
-			  //"    CLIPEDIT=\"1\" \n"     //1 if shape was editted (opt)
-			  "    doOverprint=\"0\" \n"    //not 1.2
-			  "    fillRule=\"1\" \n"       //not 1.2
-			  "    gHeight=\"0\" \n"        //not 1.2
-			  "    gWidth=\"0\" \n"         //not 1.2
-			  "    gXpos=\"0\" \n"          //not 1.2
-			  "    gYpos=\"0\" \n"          //not 1.2
-			  "    isGroupControl=\"0\" \n" //not 1.2
-			  "    isInline=\"0\" \n"       //not 1.2
-			  "    OnMasterPage=\"\" \n"    //not 1.2
-			  "    OwnPage=\"%d\" \n",currentpage);  //not 1.2, the page on object is on? ****
-
-	fprintf(f,"    AUTOTEXT=\"0\" \n"     //1 if object is auto text frame
-			  "    BACKITEM=\"-1\" \n"    //Number of the previous frame of linked textframe
-			  "    NEXTITEM=\"-1\" \n"      //number of next frame for linked text frames
-
-			  "    PLTSHOW=\"0\" \n"        //(opt) 1 if path for text on path should be visible
-			  "    RADRECT=\"0\" \n"        //(opt) corner radius of rounded rectangle
-
-			  "    isTableItem=\"0\" \n"    //1 if object belongs to table
-			  "    RightLine=\"0\" \n"      //(opt) 1 it table object has right line
-			  "    LeftLine=\"0\" \n"       //(opt) 1 it table object has left line
-			  "    TopLine=\"0\" \n"         //(opt) 1 it table object has top line
-			  "    BottomLine=\"0\" \n"    //1 if table item has bottom line
-
-			  "    endArrowIndex=\"0\" \n"  //not 1.2
-			  "    startArrowIndex=\"0\" \n" //not 1.2
-
-			  "    TransBlend=\"0\" \n"      //not 1.2
-			  "    TransBlendS=\"0\" \n"     //not 1.2
-		//---------text tags:
-			  "    COLGAP=\"0\" \n"        //Gap between text columns
-			  "    COLUMNS=\"1\" \n"       //Number of columns in text
-			  "    EXTRA=\"0\" \n"          //Distance of text from the left edge of the frame
-			  //"    BASEOF=\"0\" \n"     //text on a line offset (opt)
-			  //"    BEXTRA=\"0\" \n"       //dist of text from bottom of frame (opt)
-			  "    TEXTRA=\"0\" \n"          //Distance of text from the top edge of the frame
-			  "    TEXTFLOW=\"0\" \n"        //1 for text flows around object
-			  "    TEXTFLOW2=\"0\" \n"       //(opt) 1 for text flows around bounding box
-			  "    TEXTFLOW3=\"0\" \n"       //(opt) 1 for text flows around contour
-			  "    TEXTFLOWMODE=\"0\" \n"    //not 1.2
-			  "    textPathFlipped=\"0\" \n" //not 1.2
-			  "    textPathType=\"0\" \n"    //not 1.2
-			  "    REVERS=\"0\" \n"         //(opt) text is rendered reverse
-			  "    REXTRA=\"0\" \n"         //(opt) Distance of text from the right edge of the frame
-		//---------eps tags:
-			  //"    BBOXH=\"0\" \n"      //height of eps object (opt)
-			  //"    BBOXX=\"0\" \n"      //width of eps object (opt)
-		//---------path tags, fill/stroke
-			  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
-			  //"    DASHOFF=\"0\" \n"     //(opt) offset for first dash
-			  "    DASHS=\"\" \n"          //List of dash values, see the postscript manual for details
-			  "    NUMDASH=\"0\" \n"        //number of entries in dash
-			  "    PLINEART=\"1\" \n"       //how line is dashed, 1=solid, 2=- - -, 3=..., 4=-.-.-, 5=-..-..-
-			  "    PLINEEND=\"0\" \n"       //(opt) linecap 0 flatcap, 16 square, 32 round
-			  "    PLINEJOIN=\"0\" \n"      //(opt) line join, 0 miter, 64 bevel, 128 round
-			  "    PWIDTH=\"1\" \n"         //line width of object
-			  "    SHADE=\"100\" \n"         //shading for fill
-			  "    SHADE2=\"100\" \n"        //shading for stroke
-			  "    TransValue=\"0\" \n"      //(opt) transparency value for fill
-			  "    TransValueS=\"0\" \n"     //(opt) Transparency value for stroke
-			  "    PCOLOR2=\"Black\" \n"    //color of stroke
-			  "    PCOLOR=\"None\" \n");    //color of fill
-		//---------gradient tags:
-	if (ptype==-2) { //is a gradient
-		fprintf(f,"    GRTYP=\"%d\" \n",          // 	Type of the gradient fill
-				(grad->style&GRADIENT_RADIAL)?7:6);	//  0 = No gradient fill,       1 = Horizontal gradient
-											//  2 = Vertical gradient,      3 = Diagonal gradient
-											//  4 = Cross diagonal gradient 5 = Radial gradient
-											//  6 = Free linear gradient    7 = Free radial gradient
-		fprintf(f,"    GRSTARTX=\"***\" \n"       //(grad only)X-Value of the start position of the gradient
-				  "    GRENDX=\"***\"   \n"       //(grad only)X-Value of the end position of the gradient
-				  "    GRSTARTY=\"***\" \n"       //(grad only)Y-Value of the start position of the gradient
-				  "    GRENDY=\"***\"   \n");      //(grad only)Y-Value of the end position of the gradient
-	} else { // not a gradient
+	if (!mysteryatts) {
 		fprintf(f,
-			  "    GRTYP=\"0\" \n" 
-			  "    GRSTARTX=\"0\" \n"       //(grad only)X-Value of the start position of the gradient
-			  "    GRENDX=\"0\"   \n"       //(grad only)X-Value of the end position of the gradient
-			  "    GRSTARTY=\"0\" \n"       //(grad only)Y-Value of the start position of the gradient
-			  "    GRENDY=\"0\"   \n");       //(grad only)Y-Value of the end position of the gradient
-	 }
-		//-------------image related
-	fprintf(f,"    IRENDER=\"1\" \n"        //Rendering Intent for Images 
-										//  0=Perceptual 1=Relative Colorimetric 2=Saturation 3=Absolute Colorimetric
-			  "    PRFILE=\"\" \n"          //(opt) icc profile for image
-			  "    EMBEDDED=\"1\" \n"       //(opt) Set to 1 if embedded ICC-Profiles should be used
-			  //"    EPROF=\"\" \n"         //(opt) Embedded ICC-Profile for images
-			  "    RATIO=\"1\" \n"          //(opt) 1 if image scaling should respect aspect
-			  "    ImageClip=\"\" \n"       //not 1.2 ??????
-			  "    ImageRes=\"1\" \n"       //not 1.2 ??????
-			  "    SCALETYPE=\"1\" \n"      //(opt) how image can scale,0=free, 1=bound to frame
-			  "    PICART=\"1\" \n"         //1 if image should be shown
-			  "    LOCALX=\"0\" \n"         //xpos of image in frame
-			  "    LOCALY=\"0\" \n");       //ypos of image in frame
-	fprintf(f,"    LOCALSCX=\"%f\" \n"      //image scaling in x direction
-			  "    LOCALSCY=\"%f\" \n"      //image scaling in y direction
-			  "    PFILE=\"%s\" \n",	    //file of image
-			localscx,localscy,ptype==2?img->filename:"");
+				  "    ANNOTATION=\"0\" \n"   //1 if is pdf annotation
+				  "    BOOKMARK=\"0\" \n"     //1 if obj is pdf bookmark
+				  "    PFILE2=\"\" \n"          //(opt) file for pressed image in pdf button
+				  "    PFILE3=\"\" \n"          //(opt) file for rollover image in pdf button
+
+				  //"    CLIPEDIT=\"1\" \n"     //1 if shape was editted (opt)
+				  "    doOverprint=\"0\" \n"    //not 1.2
+				  "    fillRule=\"1\" \n"       //not 1.2
+				  "    gHeight=\"0\" \n"        //not 1.2
+				  "    gWidth=\"0\" \n"         //not 1.2
+				  "    gXpos=\"0\" \n"          //not 1.2
+				  "    gYpos=\"0\" \n"          //not 1.2
+				  "    isGroupControl=\"0\" \n" //not 1.2
+				  "    isInline=\"0\" \n"       //not 1.2
+				  "    OnMasterPage=\"\" \n");    //not 1.2
+	}
+	fprintf(f,    "    OwnPage=\"%d\" \n",currentpage);  //not 1.2, the page on object is on? ****
+	if (!mysteryatts) {
+		fprintf(f,"    AUTOTEXT=\"0\" \n"     //1 if object is auto text frame
+				  "    BACKITEM=\"-1\" \n"    //Number of the previous frame of linked textframe
+				  "    NEXTITEM=\"-1\" \n"      //number of next frame for linked text frames
+
+				  "    PLTSHOW=\"0\" \n"        //(opt) 1 if path for text on path should be visible
+				  "    RADRECT=\"0\" \n"        //(opt) corner radius of rounded rectangle
+
+				  "    isTableItem=\"0\" \n"    //1 if object belongs to table
+				  "    RightLine=\"0\" \n"      //(opt) 1 it table object has right line
+				  "    LeftLine=\"0\" \n"       //(opt) 1 it table object has left line
+				  "    TopLine=\"0\" \n"         //(opt) 1 it table object has top line
+				  "    BottomLine=\"0\" \n"    //1 if table item has bottom line
+
+				  "    endArrowIndex=\"0\" \n"  //not 1.2
+				  "    startArrowIndex=\"0\" \n" //not 1.2
+
+				  "    TransBlend=\"0\" \n"      //not 1.2
+				  "    TransBlendS=\"0\" \n"     //not 1.2
+			//---------text tags:
+				  "    COLGAP=\"0\" \n"        //Gap between text columns
+				  "    COLUMNS=\"1\" \n"       //Number of columns in text
+				  "    EXTRA=\"0\" \n"          //Distance of text from the left edge of the frame
+				  //"    BASEOF=\"0\" \n"     //text on a line offset (opt)
+				  //"    BEXTRA=\"0\" \n"       //dist of text from bottom of frame (opt)
+				  "    TEXTRA=\"0\" \n"          //Distance of text from the top edge of the frame
+				  "    TEXTFLOW=\"0\" \n"        //1 for text flows around object
+				  "    TEXTFLOW2=\"0\" \n"       //(opt) 1 for text flows around bounding box
+				  "    TEXTFLOW3=\"0\" \n"       //(opt) 1 for text flows around contour
+				  "    TEXTFLOWMODE=\"0\" \n"    //not 1.2
+				  "    textPathFlipped=\"0\" \n" //not 1.2
+				  "    textPathType=\"0\" \n"    //not 1.2
+				  "    REVERS=\"0\" \n"         //(opt) text is rendered reverse
+				  "    REXTRA=\"0\" \n"         //(opt) Distance of text from the right edge of the frame
+			//---------eps tags:
+				  //"    BBOXH=\"0\" \n"      //height of eps object (opt)
+				  //"    BBOXX=\"0\" \n"      //width of eps object (opt)
+			//---------path tags, fill/stroke
+				  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
+				  //"    DASHOFF=\"0\" \n"     //(opt) offset for first dash
+				  "    DASHS=\"\" \n"          //List of dash values, see the postscript manual for details
+				  "    NUMDASH=\"0\" \n"        //number of entries in dash
+				  "    PLINEART=\"1\" \n"       //how line is dashed, 1=solid, 2=- - -, 3=..., 4=-.-.-, 5=-..-..-
+				  "    PLINEEND=\"0\" \n"       //(opt) linecap 0 flatcap, 16 square, 32 round
+				  "    PLINEJOIN=\"0\" \n"      //(opt) line join, 0 miter, 64 bevel, 128 round
+				  "    PWIDTH=\"1\" \n"         //line width of object
+				  "    SHADE=\"100\" \n"         //shading for fill
+				  "    SHADE2=\"100\" \n"        //shading for stroke
+				  "    TransValue=\"0\" \n"      //(opt) transparency value for fill
+				  "    TransValueS=\"0\" \n"     //(opt) Transparency value for stroke
+				  "    PCOLOR2=\"Black\" \n"    //color of stroke
+				  "    PCOLOR=\"None\" \n");    //color of fill
+			//---------gradient tags:
+		if (ptype==PTYPE_Laidout_Gradient) { //is a gradient
+			fprintf(f,"    GRTYP=\"%d\" \n",          // 	Type of the gradient fill
+					(grad->style&GRADIENT_RADIAL)?7:6);	//  0 = No gradient fill,       1 = Horizontal gradient
+												//  2 = Vertical gradient,      3 = Diagonal gradient
+												//  4 = Cross diagonal gradient 5 = Radial gradient
+												//  6 = Free linear gradient    7 = Free radial gradient
+			fprintf(f,"    GRSTARTX=\"***\" \n"       //(grad only)X-Value of the start position of the gradient
+					  "    GRENDX=\"***\"   \n"       //(grad only)X-Value of the end position of the gradient
+					  "    GRSTARTY=\"***\" \n"       //(grad only)Y-Value of the start position of the gradient
+					  "    GRENDY=\"***\"   \n");      //(grad only)Y-Value of the end position of the gradient
+		} else { // not a gradient
+			fprintf(f,
+				  "    GRTYP=\"0\" \n" 
+				  "    GRSTARTX=\"0\" \n"       //(grad only)X-Value of the start position of the gradient
+				  "    GRENDX=\"0\"   \n"       //(grad only)X-Value of the end position of the gradient
+				  "    GRSTARTY=\"0\" \n"       //(grad only)Y-Value of the start position of the gradient
+				  "    GRENDY=\"0\"   \n");       //(grad only)Y-Value of the end position of the gradient
+		 }
+			//-------------image related
+		fprintf(f,"    IRENDER=\"1\" \n"        //Rendering Intent for Images 
+											//  0=Perceptual 1=Relative Colorimetric 2=Saturation 3=Absolute Colorimetric
+				  "    PRFILE=\"\" \n"          //(opt) icc profile for image
+				  "    EMBEDDED=\"1\" \n"       //(opt) Set to 1 if embedded ICC-Profiles should be used
+				  //"    EPROF=\"\" \n"         //(opt) Embedded ICC-Profile for images
+				  "    RATIO=\"1\" \n"          //(opt) 1 if image scaling should respect aspect
+				  "    ImageClip=\"\" \n"       //not 1.2 ??????
+				  "    ImageRes=\"1\" \n"       //not 1.2 ??????
+				  "    SCALETYPE=\"1\" \n"      //(opt) how image can scale,0=free, 1=bound to frame
+				  "    PICART=\"1\" \n"         //1 if image should be shown
+				  "    LOCALX=\"0\" \n"         //xpos of image in frame
+				  "    LOCALY=\"0\" \n");       //ypos of image in frame
+	} //if mysteryatts
+	fprintf(f,    "    LOCALSCX=\"%f\" \n"      //image scaling in x direction
+				  "    LOCALSCY=\"%f\" \n"      //image scaling in y direction
+				  "    PFILE=\"%s\" \n",	    //file of image
+				localscx,localscy,ptype==PTYPE_Image?img->filename:"");
 
 		//-------------general object tags:
 	 // fix ptype to be more accurate
-	if (ptype==-2) ptype=7;
-	fprintf(f,"    PTYPE=\"%d\" \n",ptype);  //object type, 2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
-	fprintf(f,"    ANNAME=\"\" \n"        //field name, also object name
-			  "    FLIPPEDH=\"0\" \n"       //Set to an uneven number if object is flipped horizontal
-			  "    FLIPPEDV=\"0\" \n"       //Set to an uneven number if object is flipped vertical
-			  "    PRINTABLE=\"1\" \n"      //1 for object should be printed
-			  "    NUMPO=\"%d\" \n",numpo); //num coords in POCOOR==stroke
+	if (!mysteryatts) {
+		if (ptype==PTYPE_Laidout_Gradient) ptype=PTYPE_Polyline;
+		fprintf(f,"    PTYPE=\"%d\" \n",ptype); //object type, 2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+		fprintf(f,"    ANNAME=\"\" \n"          //field name, also object name
+				  "    FLIPPEDH=\"0\" \n"       //Set to an uneven number if object is flipped horizontal
+				  "    FLIPPEDV=\"0\" \n"       //Set to an uneven number if object is flipped vertical
+				  "    PRINTABLE=\"1\" \n"      //1 for object should be printed
+				  "    LAYER=\"0\" \n"          //layer number object belongs to
+				  "    LOCK=\"0\" \n"           //(opt) 1 if object locked
+				  "    LOCKR=\"0\" \n"          //(opt) 1 if object protected against resizing
+				  "    FRTYPE=\"3\" \n");       //shape of obj: 0=rect, 1=ellipse, 2=rounded rect, 3=free
+	} //else all those were output above already
+
+	 //following tags are redefined even for mystery data
+	fprintf(f,"    NUMPO=\"%d\" \n",numpo); //num coords in POCOOR==stroke
 	fprintf(f,"    POCOOR=\"");
 	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
 	fprintf(f,"\" \n"
 			  "    NUMCO=\"%d\" \n",numpo); //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt
 	fprintf(f,"    COCOOR=\"");
 	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
+
+	 //groups
 	fprintf(f,"\" \n"
 			  "    NUMGROUP=\"%d\" \n",groups.n);       //number of entries in GROUPS
 	fprintf(f,"    GROUPS=\"");             //List of group identifiers
-	for (int c=0; c<groups.n; c++) 
-		fprintf(f,"%d ",groups.e[c]);
+	for (int c=0; c<groups.n; c++) fprintf(f,"%d ",groups.e[c]);
+
+	 //object metrics
 	fprintf(f,"\" \n"			
-			  "    LAYER=\"0\" \n"          //layer number object belongs to
-			  "    LOCK=\"0\" \n"           //(opt) 1 if object locked
-			  "    LOCKR=\"0\" \n"          //(opt) 1 if object protected against resizing
-			  "    FRTYPE=\"3\" \n"         //shape of obj: 0=rect, 1=ellipse, 2=rounded rect, 3=free
-			  "    ROT=\"%f\" \n"           //rotation of object
-			  "    XPOS=\"%f\" \n"        //x of object
-			  "    YPOS=\"%f\" \n"       //y of object
-			  "    WIDTH=\"%f\" \n"       //width of object
-			  "    HEIGHT=\"%f\" \n"      //height of object
-			  "   />\n", rot,x,y,width,height);
+				  "    ROT=\"%f\" \n"         //rotation of object
+				  "    XPOS=\"%f\" \n"        //x of object
+				  "    YPOS=\"%f\" \n"        //y of object
+				  "    WIDTH=\"%f\" \n"       //width of object
+				  "    HEIGHT=\"%f\" \n",     //height of object
+								 rot,x,(mysteryatts?y-height:y),width,height);
+
+	 //close the tag
+	fprintf(f,">\n"); //close PAGEOBJECT opening tag
+	 //output PAGEOBJECT elements
+	if (mysteryatts && content>=0) {
+		AttributeToXMLFile(f,mysteryatts->attributes.e[content],6);
+	}
+	fprintf(f,"  </PAGEOBJECT>\n");  //end of PAGEOBJECT
+
 
 	delete[] pocoor;
 	psPopCtm();
@@ -704,6 +860,17 @@ const char *ScribusImportFilter::FileType(const char *first100bytes)
 
 //! Import Scribus document.
 /*! If in->doc==NULL and in->toobj==NULL, then create a new document.
+ *
+ * If saving mystery data, it will push onto project (or doc) iohints:
+ * <pre>
+ * Scribus  (VersionName())
+ *   scribusVersion  (whatever the version string was)
+ *   originalFile    originalfile.sla
+ *   slahead         #<-- has all the attributes of DOCUMENT, the element of SCRIBUSUTF8NEW
+ *   docContent      #<-- these were elements of SCRIBUSUTF8NEW.DOCUMENT that were not
+ *                   #    PAGE, or PAGEOBJECT
+ *   scribusPageHint #store original page information just in case
+ * </pre>
  */
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
@@ -727,7 +894,11 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	
 	 //create repository for hints if necessary
 	Attribute *scribushints=NULL;
-	if (in->keepmystery) scribushints=new Attribute(VersionName(),file);
+	if (in->keepmystery) {
+		scribushints=new Attribute("Scribus", VersionName());
+		scribushints->push("scribusVersion",version->value);
+		scribushints->push("originalFile",file);
+	}
 
 
 	 //figure out the paper size, orientation
@@ -773,10 +944,11 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		Attribute *slahead=new Attribute("slahead",NULL);
 		for (int c=0; c<scribusdoc->attributes.n; c++) {
 			 //store all document xml attributes in scribus hints, 
-			 //but not the whole content
+			 //but not the whole content, 
 			if (!strcmp(scribusdoc->attributes.e[c]->name,"content:")) continue;
 			slahead->push(scribusdoc->attributes.e[c]->duplicate(),-1);
 		}
+		scribushints->push(slahead,-1);
 	}
 
 	 //get to the contents of the scribus document
@@ -803,14 +975,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	MysteryData *mdata=NULL;
 
 	for (c=0; c<scribusdoc->attributes.n; c++) {
-		if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {
-			 //this will be something like:
-			 // NAME "White"
-			 // CMYK "#00000000"  (or RGB "#000000")
-			 // Spot "0"
-			 // Register "0"
-			//***** finish me!
-		} else if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGE")) {
+		if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGE")) {
 			page=scribusdoc->attributes.e[c];
 			a=page->find("NUM");
 			IntAttribute(a->value,&pagenum); //*** could use some error checking here so corrupt files dont crash laidout!!
@@ -823,10 +988,14 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			pagebounds[pagenum].maxy+=pagebounds[pagenum].miny;
 
 			 //remaining stuff is iohint 
-			a=page->duplicate();
-			sprintf(scratch,"%d",pagenum);
-			makestr(a->value,scratch);
-			if (scribushints) scribushints->push(a,-1);
+			if (scribushints) {
+				a=page->duplicate();
+				sprintf(scratch,"%d",pagenum);
+				makestr(a->name,"scribusPageHint");
+				makestr(a->value,scratch);
+				scribushints->push(a,-1);
+			}
+			continue;
 
 		} else if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGEOBJECT")) {
 			object=scribusdoc->attributes.e[c];
@@ -842,6 +1011,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
 			}
 			double x,y,rot,w,h;
+			double matrix[6];
 			DoubleAttribute(object->find("XPOS")->value  ,&x);//***this could be att->doubleValue("XPOS",&x) for safety
 			DoubleAttribute(object->find("YPOS")->value  ,&y);
 			DoubleAttribute(object->find("ROT")->value   ,&rot);
@@ -852,30 +1022,56 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			y=pagebounds[pagenum].maxy-pagebounds[pagenum].miny-y; //pageheight-y, needed to flip y around
 			int ptype=atoi(object->find("PTYPE")->value); //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 
-			mdata=new MysteryData(VersionName());
-			if (ptype==2) makestr(mdata->name,"Image Frame");
-			else if (ptype==4) makestr(mdata->name,"Text Frame");
-			else if (ptype==5) makestr(mdata->name,"Line");
-			else if (ptype==6) makestr(mdata->name,"Polygon");
-			else if (ptype==7) makestr(mdata->name,"Polyline");
-			else if (ptype==8) makestr(mdata->name,"Text on path");
-			mdata->m(0,cos(rot));
-			mdata->m(1,sin(rot));
-			mdata->m(2,sin(rot));
-			mdata->m(3,-cos(rot));
-			mdata->m(4,x/72);
-			mdata->m(5,y/72);
-			mdata->maxx=w/72;
-			mdata->maxy=h/72;
-			group->push(mdata,-1);
+			matrix[0]=cos(rot);
+			matrix[1]=sin(rot);
+			matrix[2]=sin(rot);
+			matrix[3]=-cos(rot);
+			matrix[4]=x/72;
+			matrix[5]=y/72;
 
-			cout <<"**** finish implementing scribus in!!"<<endl;
+			if (ptype==2) {
+				 //we found an image
+				Attribute *pfile=object->find("PFILE");
+				ImageData *image=static_cast<ImageData *>(newObject("ImageData"));
+				image->LoadImage(pfile->value); //this will set maxx, maxy to dimensions of the image
+				transform_copy(image->m(),matrix);
+				image->m()[0]*=w/image->maxx/72.;
+				image->m()[1]*=w/image->maxx/72.;
+				image->m()[2]*=h/image->maxy/72.;
+				image->m()[3]*=h/image->maxy/72.;
+				image->Flip(0);
+				group->push(image,-1);
+
+			} else if (scribushints) { 
+				 //undealt with object, push as MysteryData if in->keepmystery
+
+				mdata=new MysteryData("Scribus"); //note, this is untranslated "Scribus"
+				if (ptype==4) makestr(mdata->name,"Text Frame");
+				else if (ptype==5) makestr(mdata->name,"Line");
+				else if (ptype==6) makestr(mdata->name,"Polygon");
+				else if (ptype==7) makestr(mdata->name,"Polyline");
+				else if (ptype==8) makestr(mdata->name,"Text on path");
+				transform_copy(mdata->m(),matrix);
+				mdata->maxx=w/72;
+				mdata->maxy=h/72;
+				mdata->attributes=object->duplicate();
+				group->push(mdata,-1);
+			}
+
+		//} else if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {
+			 //this will be something like:
+			 // NAME "White"
+			 // CMYK "#00000000"  (or RGB "#000000")
+			 // Spot "0"
+			 // Register "0"
+			//***** finish me!
 
 		} else if (scribushints) {
 			 //push any other blocks into scribushints.. we can usually safely ignore them
 			Attribute *more=new Attribute("docContent",NULL);
 			more->push(scribusdoc->attributes.e[c]->duplicate(),-1);
 			scribushints->push(more,-1);
+			continue;
 		}
 	}
 	

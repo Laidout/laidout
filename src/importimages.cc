@@ -254,6 +254,47 @@ int ImportImagesDialog::init()
 	TextButton *tbut=NULL;
 
 
+	 //---------------------- to insert list, next to main dir listing ---------------------------
+	// menuinfo that allows rearranging, and has other info about what page image will be on...
+	//--- for future! ---
+	 //---------------------- create choose/review  ---------------------------
+	 //*** need [Add] on choose tab, and [remove] on review tab
+	c=findWindowIndex("files"); //the original file MenuSelector
+	TabFrame *tabframe=new TabFrame(this,"choose",BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS,
+										50,50,300,200,0, 
+										NULL, window, "choose");
+	tabframe->pw(100);
+	tabframe->wg(1000);
+	tabframe->ph(30);
+	tabframe->hg(1000);
+	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
+			NULL,window,"reviewlist",
+			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
+			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
+	//***populate reviewlist as needed...
+
+	app->destroywindow(filelist);
+	filelist=new MenuSelector(this,"files",0, 0,0,0,0,1,
+			last,window,"files",
+			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
+			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, &files,0);
+	filelist->tooltip(_("Choose from these files.\nRight-click drag scrolls"));
+
+	tabframe->AddWin(filelist,_("Choose"),NULL);
+	tabframe->AddWin(reviewlist,_("Review"),NULL);
+	//tabframe->SelectN(0);
+	wholelist.remove(c);
+	//-------------------
+	//***workaround for broken Laxkit::SquishyBox derived window insertion
+	WinFrameBox *wfb=new WinFrameBox();
+	wfb->win=tabframe;
+	memcpy(wfb->m, tabframe->m, 12*sizeof(int));//***beware sizeof induced segfaults!!
+	AddWin(wfb,1,c);
+	//-------------------
+	//AddWin(tabframe,c);
+	//-------------------
+
+
 	 //---------------------- add prev/next file buttons next to file
 	linp=dynamic_cast<LineInput *>(findWindow("file"));
 	linp->SetLabel(" ");
@@ -296,25 +337,6 @@ int ImportImagesDialog::init()
 	AddNull(c+4);
 	
 
-	 //---------------------- to insert list, next to main dir listing ---------------------------
-	// menuinfo that allows rearranging, and has other info about what page image will be on...
-	//--- for future! ---
-	 //---------------------- create choose/review  ---------------------------
-	 //
-//	c=findWindowIndex("files"); //the oroginal file MenuSelector
-//	TabFrame *tabframe=new TabFrame(this,"choose",0,
-//										0,0,0,0,0, 
-//										NULL, window, "choose");
-//	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
-//			filelist,window,"reviewlist",
-//			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
-//			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
-//	//***populate reviewlist as needed...
-//
-//	tabframe->AddWin(filelist,_("Choose"),NULL);
-//	tabframe->AddWin(reviewlist,_("Review"),NULL);
-//	tabframe->SelectN(0);
-//	AddWin(tabframe,c);
 	
 	 //---------------------- per image preview controls ---------------------------
 //	   filename:_____________
@@ -467,6 +489,7 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		updateFileList();
 		rebuildPreviewName();
 		return 0;
+
 	} else if (!strcmp(mes,"preview")) {
 		 //something's been typed in the preview edit
 		LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
@@ -474,13 +497,19 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (!info) return 0;
 		makestr(info->previewfile,preview->GetCText());
 		return 0;
+
 	} else if (!strcmp(mes,"new file")) {
-		FileDialog::ClientEvent(e,mes);
+//		FileDialog::ClientEvent(e,mes);
 		char *full=fullFilePath(NULL);
 		if (file_exists(full,1,NULL)) updateFileList();
 		delete[] full;
 		rebuildPreviewName();
 		return 0;
+
+//	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
+//		rebuildPreviewName();
+//		return 0;
+
 	} else if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
 		int c;
 		if (!strcmp(mes,"perpageexactly")) c=0;
@@ -556,9 +585,7 @@ int ImportImagesDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"generate")) {
 		 // must generate what is in preview for file
 		cout <<"*** imp ImportImageDialog -> generate!!"<<endl;
-	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
-		rebuildPreviewName();
-		return 0;
+
 	} else if (!strcmp(mes,"nextfile") || !strcmp(mes,"prevfile")) {
 			
 		int *which=filelist->WhichSelected(LAX_ON);
