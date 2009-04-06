@@ -15,6 +15,7 @@ VERSION 0.09
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
        Net imposition interactive unwrapper and build net interface
+       be able to reimpose a document from gui and command
        command line option to pass in commands, like "import blah; reimpose box; export blah2"
 (done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
        At bare minimum, path interface use should not cause a seg fault
@@ -26,6 +27,7 @@ VERSION 0.09
        fix the other memory hole (in images?), something in paperinterface, too
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
+       from laxkit: openbox appears to not grab the mouse when mouse clicked. address this!!!
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
@@ -35,7 +37,7 @@ VERSION 0.091
        Collect for out
        Generic fold and trim imposition
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
-       Masking
+       Masking, clip paths and/or softmask
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
        Clean up patch controls
@@ -60,6 +62,7 @@ VERSION 0.091
 VERSION 0.1 
 -----------
        First and foremost, need copious testing by people who are not me.
+       undo/redo, with saveable undo stack (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
        Full internationalization support for input and output, including left, right, and mixed languages. pango?
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
@@ -81,7 +84,6 @@ VERSION 0.1
        Have imagepatch be a transform you can apply to any image
        Allow objects to have any number of various kinds of transforms applied to it
        Fully configurable shortcuts, with optional multi-key shortcuts
-       undo/redo, with saveable undo stack (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins
        Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
@@ -104,13 +106,14 @@ VERSION 0.1
        Pages with curved edges, to allow nets for shapes resulting from intersecting cylinders, for instance
        Optional Midi controller usage
        Able to select and transform nodes from different objects at the same time
-	   Color channel density control, to not overdo CMYK mix, for instance
+       Color channel density control, to not overdo CMYK mix, for instance
 
 
 VERSION 0.2
 -----------
 Do a poor man's version of a multi-contact touch screen interface with 2 mice plugged in and
   one of them not set to send core events. Or normal mouse and tablet or ... see MPX!
+Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
 Full multi-contact, pressure sensitive touch support with touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients: Triangle strip and Triangle Mesh
@@ -133,8 +136,10 @@ Story editor
 Internal generic impositioner for ps files that follow the ps doc. structure guidelines
 Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection onto nets?
-Uniconverter support? Vx support?
+Uniconverter support?
+Vx support?
 Verse support?
+dbus?
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
 Akin to animation mode, have movie/sound objects available to html export, for instance?
