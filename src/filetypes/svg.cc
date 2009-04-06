@@ -695,7 +695,7 @@ const char *SvgImportFilter::FileType(const char *first100bytes)
 	// also xmlns:svg="http://www.w3.org/2000/svg
 }
 
-//***********forward declaration:
+//forward declaration:
 int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
@@ -711,7 +711,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 	 //create repository for hints if necessary
 	Attribute *svghints=NULL,
 			  *svg=NULL; //points to the "svg" section of svghints. Do not delete!!
-	if (in->keepmystery) svghints=new Attribute(VersionName(),file);
+	//if (in->keepmystery) svghints=new Attribute(VersionName(),file);  ***disable svghints for now
 	try {
 
 		 //add xml preamble, and anything not under "svg" to hints if it exists...
@@ -813,7 +813,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 			 //then push any other stuff unchanged
 			if (!strcmp(name,"metadata")
 				     || !strcmp(name,"sodipodi:namedview")) {
-				 //just copy over "metedata" and "sodipodi:namedview" to svghints
+				 //just copy over "metadata" and "sodipodi:namedview" to svghints
 				if (svghints) {
 					svg->push(svgdoc->attributes.e[c]->duplicate(),-1);
 				}
@@ -825,7 +825,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 				continue;
 
 			} else if (!strcmp(name,"masterPage")) {
-				 //masterPages are printed on any page that (somehow!) refers to them...
+				 //in Svg 1.2, masterPages are printed on any page that (somehow!) refers to them...
 				//***not sure how to use these!!
 				//contains g elements...
 				continue;
@@ -837,7 +837,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 
 			} 
 			
-			if (svgDumpInObjects(1,group,svgdoc->attributes.e[c],error_ret)) continue;
+			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],error_ret)) continue;
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
@@ -875,6 +875,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 }
 
 //! Return 1 for attribute used, else 0.
+/*! If top!=0, then top is the height of the document. We need to flip elements up,
+ * since down is positive y in svg. We also need to scale by .8/72 to convert svg units to Laidout units.
+ */
 int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 {
 	char *name,*value;
@@ -888,11 +891,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 //				makestr(g->id,value);
 
 			} else if (!strcmp(name,"transform")) {
-				if (!strncmp(value,"matrix(",7)) {
-					DoubleListAttribute(value+8,g->m(),6,NULL);
-				} else {
-					cout <<"***need to implement full svg transform spec"<<endl;
-				}
+				svgtransform(value,g->m());
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
@@ -901,6 +900,10 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		}
 		if (top) {
 			for (int c=0; c<6; c++) g->m(c,g->m(c)*.8/72); //correct for svg scaling
+			double t[6],m[6];
+			transform_set(t,1,0,0,-1,0,top*72/.8);
+			transform_mult(m,t,g->m());
+			transform_copy(g->m(),m);
 		}
 		g->FindBBox();
 		group->push(g,0);
@@ -914,11 +917,8 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 
 			if (!strcmp(name,"id")) {
 			} else if (!strcmp(name,"transform")) {
-				if (!strncmp(value,"matrix(",7)) {
-					DoubleListAttribute(value+7,paths->m(),6,NULL);
-				} else {
-					cout <<"***need to implement full svg transform spec"<<endl;
-				}
+				svgtransform(value,paths->m());
+
 			//} else if (!strcmp(name,"x")) {
 			//} else if (!strcmp(name,"y")) {
 			} else if (!strcmp(name,"style")) {
@@ -962,30 +962,38 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			} else if (!strcmp(name,"xlink:href")) {
 				image->LoadImage(value);
 			} else if (!strcmp(name,"transform")) {
-				if (!strncmp(value,"matrix(",7)) {
-					DoubleListAttribute(value+7,image->m(),6,NULL);
-				} else {
-					cout <<"***need to implement full svg transform spec"<<endl;
-				}
+				svgtransform(value,image->m());
 			}
 		}
 		 //adjust matrix
-		if (foundcoord&1) image->m(4,x);
-		if (foundcoord&2) image->m(5,x);
-		if (foundcoord&4 && foundcoord&8) {
-			DoubleBBox bbox(0,0,w,h);
-			image->fitto(NULL,&bbox,0,0);
-		}
+		//if (foundcoord&1) image->m(4,x);
+		//if (foundcoord&2) image->m(5,y);
+		//if (foundcoord&4 && foundcoord&8) {
+			//DoubleBBox bbox(0,0,w,h);
+			//image->fitto(NULL,&bbox,0,0);
+		//}
+		image->minx=x;
+		image->maxx=x+w;
+		image->miny=y;
+		image->maxy=y+h;
+
+		image->Flip(0);
 		group->push(image,0);
 		image->dec_count();
 		return 1;
 
 	} else if (!strcmp(element->name,"rect")) {
+		cout <<"***need to implement svg in:  rect"<<endl;
 	} else if (!strcmp(element->name,"circle")) {
+		cout <<"***need to implement svg in:  circle"<<endl;
 	} else if (!strcmp(element->name,"ellipse")) {
+		cout <<"***need to implement svg in:  ellipse"<<endl;
 	} else if (!strcmp(element->name,"line")) {
+		cout <<"***need to implement svg in:  line"<<endl;
 	} else if (!strcmp(element->name,"polyline")) {
+		cout <<"***need to implement svg in:  polyline"<<endl;
 	} else if (!strcmp(element->name,"polygon")) {
+		cout <<"***need to implement svg in:  polygon"<<endl;
 	} else if (!strcmp(element->name,"text")) {
 		for (int c=0; c<element->attributes.n; c++) {
 			if (!strcmp(element->attributes.e[c]->name,"id")) {
@@ -996,7 +1004,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			} else if (!strcmp(element->attributes.e[c]->name,"content:")) {
 			}
 		}
+		cout <<"***need to implement svg in:  text"<<endl;
 	} else if (!strcmp(element->name,"use")) {
+		cout <<"***need to implement svg in:  use"<<endl;
 	}
 
 	return 0;
