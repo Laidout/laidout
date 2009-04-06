@@ -842,6 +842,11 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 //------------------------------------ ScribusImportFilter ----------------------------------
 /*! \class ScribusImportFilter
  * \brief Filter to, amazingly enough, import svg files.
+ *
+ * \todo perhaps when dumping in to an object, just bring in all objects as they are arranged
+ *   in the scratch space... or if no doc or obj, option to import that way, but with
+ *   a custom papergroup where the pages are... perhaps need a freestyle imposition type
+ *   that is more flexible with differently sized pages.
  */
 
 
@@ -850,6 +855,8 @@ const char *ScribusImportFilter::VersionName()
 	return _("Scribus");
 }
 
+/*! \todo can do more work here to get the actual version of the file...
+ */
 const char *ScribusImportFilter::FileType(const char *first100bytes)
 {
 	if (!strstr(first100bytes,"<SCRIBUSUTF8NEW")) return NULL;
