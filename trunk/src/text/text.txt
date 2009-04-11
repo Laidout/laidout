@@ -1,0 +1,79 @@
+This file is for scribling down rough notes about the requirements for text handling
+
+
+background
+---------
+scribus inline graphics:
+surrounding text can flow around....
+ use the width, but not height. bounding box is used for flow for lines other than current
+
+
+requirements:
+------------
+stream/story editor -> probably easily exportable to html
+
+inserting inline graphics:
+right click->insert reference->limbo n->obj1
+right click->insert object->limbo n->obj1
+
+menu:insert
+  character
+  text  ->textobj1, ...
+  sample text
+  object reference -> limbo1->obj1, ...
+  object (dup an existing object
+
+math mode, basically latex formatting:
+-------------------------------------
+$blah blah$ set as span
+$$blah blah$$ set as div
+superscript: 2^3
+subscript:  a_3
+latex, 4 modes: inline math, eqnarray, displaymath, equation
+
+
+inline objects:
+------------
+objects anchored in text stream, positions:
+ stay in stream, use bbox as glyph box, define alignment, 
+		v and h baseline (default baseline proportional to surrounding font)
+ stay in stream, use bbox as conditional wrap area
+ layout object somewhere in stream containing object, or dynamically defined container (ie page or parent)
+    footnotes
+	images that float off to one side: v and h gravity
+
+
+formatting:
+---------
+initial characters: initial quotes hang out, number of lines long, wrap to box or to glyph/area
+	"1st" char, then some number of next chars.. apply to 1st pp of a section??
+research: find compromise between tex, css, svg, scribus layout mechanisms
+research: what really does latex, context, metapost, metafont add, what requirements to support
+tab stops are arbitrary paths
+streams lay out in sections/pages
+streams composed of any level of parts/chapters/sections/subsections
+toc
+index
+bibliography
+  bib id (ie ch1, ch2, article 1, article 2, etc)
+notes
+  notes id-> figure list
+		  -> table list
+ 		  -> foot notes
+hyphenation, soft breaks, hyphens optionally hang past at eol
+word spacing
+leading, char spacing
+glyph sizing
+math mode -> lots of extra rules for formatting, access to lots of special symbols
+character styles
+paragraph styles
+tagging, to signal urls, colors, special behavior or cataloging, dynamic content, etc
+short words
+language switches
+
+line breaking:
+------------
+choose strategy:
+  first fit: fast, considers only 1 line at a time
+  surrounding fit: sort of fast, define how big a section of text to consider
+  total fit: consider the entire stream when figuring breaks

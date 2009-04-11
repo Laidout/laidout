@@ -299,7 +299,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			getPreviewAndDesc(value,&preview,&desc);
 			
 			if (!strncmp(name,"file://",7)) name+=7;
-			file=full_path_for_file(name,path,1); // expand "./" and "../" and "blah"=="./blah"
+			file=full_path_for_file(name,path); // expand "./" and "../" and "blah"=="./blah"
 			simplify_path(file,1);
 				
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++)  {

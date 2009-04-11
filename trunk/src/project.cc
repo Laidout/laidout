@@ -237,7 +237,7 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 				char *file=NULL;
 				DumpContext *dump=dynamic_cast<DumpContext *>(context);
 				if (dump && dump->basedir) 
-					file=full_path_for_file(value,dump->basedir,1);
+					file=full_path_for_file(value,dump->basedir);
 				Document *doc=new Document;
 				if (doc->Load(file?file:value,&error)) Push(doc);
 				else {

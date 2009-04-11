@@ -291,7 +291,7 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"keepmystery")) {
-		config->keepmystery=e->data.l[0];
+		config->keepmystery=e->data.l[0]==LAX_ON;
 		return 0;
 
 	}

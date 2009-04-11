@@ -20,6 +20,7 @@
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
+#include <lax/fileutils.h>
 
 #include "../language.h"
 #include "scribus.h"
@@ -45,8 +46,9 @@ using namespace LaxInterfaces;
 static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
 
 //1.5 inches and 1/4 inch
-#define CANVAS_MARGIN_X 108.
-#define CANVAS_MARGIN_Y 18.
+#define CANVAS_MARGIN_X 100.
+#define CANVAS_MARGIN_Y 20.
+#define CANVAS_GAP      40.
 
 
 //--------------------------------- install Scribus filter
@@ -64,7 +66,7 @@ void installScribusFilter()
 //---------------------------- ScribusExportFilter --------------------------------
 
 /*! \class ScribusExportFilter
- * \brief Export as 1.3.3.8 or thereabouts.
+ * \brief Export as 1.3.3.12 or thereabouts.
  *
  * <pre>
  *  current 1.3.3.* file format is supposedly at:
@@ -88,10 +90,10 @@ ScribusExportFilter::ScribusExportFilter()
 	flags=FILTER_MULTIPAGE;
 }
 
-//! "Scribus 1.3.3.8".
+//! "Scribus 1.3.3.12".
 const char *ScribusExportFilter::VersionName()
 {
-	return _("Scribus 1.3.3.8");
+	return _("Scribus 1.3.3.12");
 }
 
 static int currentpage;
@@ -199,8 +201,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		temp=scribushints->find("scribusVersion");
 		if (temp) str=temp->value;
 	}
-	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-			  "<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
+	 //>=1.3.5svn needs the xml line, otherwise omit
+	if (!strncmp(str,"1.3.5",5)) {
+		fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+				  "<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
+	} else fprintf(f,"<SCRIBUSUTF8NEW Version=\"%s\">\n",str);
 	
 	
 	 //figure out paper size and orientation
@@ -242,29 +247,29 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
 				  "    AUTOSPALTEN=\"1\" \n" //Number of Colums in automatic Textframes
 				  //"    BOOK***** " *** has facing pages if present: doublesidedsingles
-				  "    BORDERBOTTOM=\"0\" \n"	//margins!
+				  "    BORDERBOTTOM=\"0\" \n"	//default margins!
 				  "    BORDERLEFT=\"0\" \n"	
 				  "    BORDERRIGHT=\"0\" \n"	
 				  "    BORDERTOP=\"0\" \n"	
 				  "    COMMENTS=\"\" \n"
 				  "    DFONT=\"Times-Roman\" \n" //default font
-				  "    DSIZE=\"12\" \n"
+				  "    DSIZE=\"12\" \n"         //default font size
 				  //"    FIRSTLEFT \n"  //*** doublesidedsingles->isleft
 				  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
 		fprintf(f,"    KEYWORDS=\"\" \n"
 				  "    ORIENTATION=\"%d\" \n",landscape);
 		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
-		fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);//***
+		fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);//***default page width and height
 		fprintf(f,"    TITLE=\"\" \n"
 				  "    VHOCH=\"33\" \n"      //Percentage for Superscript
 				  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
 				  "    VKAPIT=\"75\" \n"    //Percentage for scaling of the Glyphs in Small Caps
 				  "    VTIEF=\"33\" \n"       //Percentage for Subscript
 				  "    VTIEFSC=\"100\" \n");   //Percentage for scaling of the Glyphs in Subscript
-		fprintf(f,"    ScratchTop=\"%f\"\n"
-				  "    ScratchBottom=\"%f\"\n"
-				  "    ScratchRight=\"%f\"\n"
-				  "    ScratchLeft=\"%f\"\n",
+		fprintf(f,"    ScratchTop=\"%f\"\n"    //scratch space gap at top
+				  "    ScratchBottom=\"%f\"\n" //scratch space gap at bottom of whole page layout
+				  "    ScratchRight=\"%f\"\n"  //scratch space gap at right of whole layout
+				  "    ScratchLeft=\"%f\"\n",  //scratch space gap at left of whole layout
 			  	CANVAS_MARGIN_Y, CANVAS_MARGIN_Y, CANVAS_MARGIN_X, CANVAS_MARGIN_X);
 	}
 	fprintf(f,    "   >\n"); //close DOCUMENT tag
@@ -353,11 +358,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		//************Sections  not 1.2
 		
 		//------------PageSets  not 1.2
-		//This sets up so there is one column of pages, with 40 units between them.
+		//This sets up so there is one column of pages, with CANVAS_GAP units between them.
 		fprintf(f,"    <PageSets>\n"
-				  "      <Set Columns=\"1\" GapBelow=\"40\" Rows=\"1\" FirstPage=\"0\" GapHorizontal=\"0\"\n"
+				  "      <Set Columns=\"1\" GapBelow=\"%g\" Rows=\"1\" FirstPage=\"0\" GapHorizontal=\"0\"\n"
 				  "         Name=\"Single Page\" GapVertical=\"0\" />\n"
-				  "    </PageSets>\n");
+				  "    </PageSets>\n", CANVAS_GAP);
 
 		//************MASTERPAGE not separate entity in 1.2
 	} //if !scribushints for non PAGE and PAGEOBJECT elements of DOCUMENT
@@ -369,53 +374,64 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 //
 	 // holy cow, scribus has EVERY object by reference!!!!
 	 // In Scribus, pages sit on a canvas, and the page has coords PAGEWIDTH,HEIGHT,XPOS,YPOS.
+	 // Positive x goes to the right. Positive y goes down.
 	 //
-	 // Page objects have coordinates in the canvas space, not the paper space.
+	 // Page objects in the file have coordinates in the canvas space, not the page space,
+	 // but their coordinates in the Scribus ui are relative to the page.
 	 // Their xpos, ypos, rot, width, and height (notably NOT shear)
-	 // refer to its bounding box. The pocoor and cocoor coordinates are relative to that
+	 // refer to the object's bounding box. The pocoor and cocoor coordinates are relative to that
 	 // rotated and translated bounding box.
 	 //
 	 // Scribus Groups are more like sets. Objects all lie directly on the page, and groups
 	 // are simply a loose tag the objects have. Groups do not apply any additional transformation.
 	 //
-	 // Scribus Layers are ....? (need to research that!)
+	 // Scribus Layers are basically groups that have a few extra properties....? (need to research that!)
 	 //
 	groups.flush();
 	ongroup=0;
 	int p;
 	double m[6],mm[6],mmm[6],mmmm[6],ms[6];
-	transform_set(m,1,0,0,1,0,0);
+	transform_identity(m);
 
 	psFlushCtms();
 	psCtmInit();
 	double pageypos=CANVAS_MARGIN_Y;
 	int pagec;
-	for (c=start; c<=end; c++) {
+	for (c=start; c<=end; c++) { //for each spread
 		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
-		for (p=0; p<papergroup->papers.n; p++) {
-			psCtmInit();
+		for (p=0; p<papergroup->papers.n; p++) { //for each paper
 			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->w(); //scribus wants visual w/h
 			paperheight=72*papergroup->papers.e[p]->box->paperstyle->h();
-			plandscape=(papergroup->papers.e[p]->box->paperstyle->flags&1)?1:0;
-			pagec=(c-start)*papergroup->papers.n+p;
+			plandscape=papergroup->papers.e[p]->box->paperstyle->landscape();
+			pagec=(c-start)*papergroup->papers.n+p; //effective scribus page index
 			currentpage=pagec;
 
-			//if (landscape) {
-			//	psConcat(0.,1.,-1.,0., paperwidth,0.);
-			//}
+			 //build transform from laidout space to current page on scribus canvas
+			 //current laidout paper origin (lower left corner) must map to the
+			 //lower left corner of current scribus page,
+			 //which is (CANVAS_MARGIN_X, pageypos+paperheight) in scribus coords
+			transform_set(ms,1,0,0,-1,CANVAS_MARGIN_X,pageypos+paperheight);
+			transform_invert(m,ms); //m=ms^-1
 
-			transform_set(ms,1,0,0,-1,CANVAS_MARGIN_X,pageypos+paperheight); //transform to scribus canvas
-			transform_invert(m,ms);
-
-			psPushCtm(); //starts at identity
+			psCtmInit();
+			psPushCtm(); //so we can always fall back to identity
 			transform_invert(mmm,papergroup->papers.e[p]->m()); // papergroup->paper transform
-			transform_set(mm,72.,0.,0.,72.,0.,0.);
+			transform_set(mm,72.,0.,0.,72.,0.,0.); //correction for inches <-> ps points
 			transform_mult(mmmm,mmm,mm);
-			transform_mult(m,mmmm,ms);
-			psConcat(m);
+			transform_mult(m,mmmm,ms); //m = mmmm * ms
+			psConcat(m); //(scribus page coord) = (laidout paper coord) * psCTM()
 			
-			DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  :";
-			dumpctm(psCTM());
+			DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  paperwidth:"<<paperwidth<<"  paperheight:"<<paperheight<<endl;
+			DBG dumpctm(psCTM());
+			DBG flatpoint pt;
+			DBG pt=transform_point(psCTM(),0,0);
+			DBG cerr <<"ll: "<<pt.x<<","<<pt.y<<endl;
+			DBG pt=transform_point(psCTM(),0,paperheight/72);
+			DBG cerr <<"ul: "<<pt.x<<","<<pt.y<<endl;
+			DBG pt=transform_point(psCTM(),paperwidth/72,paperheight/72);
+			DBG cerr <<"ur: "<<pt.x<<","<<pt.y<<endl;
+			DBG pt=transform_point(psCTM(),paperwidth/72,0);
+			DBG cerr <<"lr: "<<pt.x<<","<<pt.y<<endl;
 
 			 //------------page header
 			fprintf(f,"  <PAGE \n"
@@ -452,28 +468,29 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				for (c2=0; c2<spread->pagestack.n; c2++) {
 					psPushCtm();
 					pg=spread->pagestack.e[c2]->index;
-					if (pg>=doc->pages.n) continue;
+					if (pg<0 || pg>=doc->pages.n) continue;
 
 					 // for each layer on the page..
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					psConcat(m);
+					psConcat(m); //transform to page in spread
 					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							transform_copy(m,spread->pagestack.e[c2]->outline->m());
-							scribusdumpobj(f,m,g->e(c3),error_ret,warning);
+							scribusdumpobj(f,NULL,g->e(c3),error_ret,warning);
 						}
 					}
 					psPopCtm();
 
 				}
-			}
+			} //if (spread)
 			psPopCtm();
-			pageypos+=72*(papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny)+40;
-		}
+			//pageypos+=72*(papergroup->papers.e[p]->box->media.maxy-papergroup->papers.e[p]->box->media.miny)
+			//				+ CANVAS_GAP;
+			pageypos+=paperheight + CANVAS_GAP;
+		} //for each paper
 		if (spread) { delete spread; spread=NULL; }
-	}
+	} //for each spread
 		
 	
 	 // write out footer
@@ -577,7 +594,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	 
 	 //figure out the COCOOR and POCOOR for an object
 	flatpoint p,p1,p2, vx,vy;
-	double *ctm=psCTM(); //scratch space coords=ctm*object coords
+	double *ctm=psCTM(); //(scratch space coords)=(object coords)*(object->m())*ctm
 	double rot,x,y,width,height;
 
 	vx=transform_vector(ctm,flatpoint(1,0));
@@ -624,9 +641,12 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		else if (pocoor[c].y>max.y) max.y=pocoor[c].y;
 	}
 
-	width =norm(transform_point(ctm,flatpoint(obj->maxx,obj->miny)-transform_point(ctm,flatpoint(obj->minx,obj->miny))));
-	height=norm(transform_point(ctm,flatpoint(obj->minx,obj->miny)-transform_point(ctm,flatpoint(obj->minx,obj->maxy))));
+	width =norm(transform_point(ctm,flatpoint(obj->maxx,obj->miny))-transform_point(ctm,flatpoint(obj->minx,obj->miny)));
+	height=norm(transform_point(ctm,flatpoint(obj->minx,obj->miny))-transform_point(ctm,flatpoint(obj->minx,obj->maxy)));
+	DBG cerr <<"object dimensions: "<<width<<" x "<<height<<endl;
 
+	 //create a basis for the object, which has same scaling as the scratch space, but
+	 //does have translation and rotation
 	double m[6],mmm[6];
 	vx=vx/norm(vx);
 	vy=vy/norm(vy);
@@ -639,7 +659,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		pocoor[c]=transform_point(m,pocoor[c]);
 	}
 	if (ptype==PTYPE_Image) { //image
-		localscx=width /(img->maxx-img->minx);
+		localscx=width /(img->maxx-img->minx); //assumes maxx-minx==file width
 		localscy=height/(img->maxy-img->miny);
 		if (!strcmp(obj->whattype(),"EpsData")) {
 			localscx/=5;
@@ -778,8 +798,8 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 				  "    LOCALX=\"0\" \n"         //xpos of image in frame
 				  "    LOCALY=\"0\" \n");       //ypos of image in frame
 	} //if mysteryatts
-	fprintf(f,    "    LOCALSCX=\"%f\" \n"      //image scaling in x direction
-				  "    LOCALSCY=\"%f\" \n"      //image scaling in y direction
+	fprintf(f,    "    LOCALSCX=\"%g\" \n"      //image scaling in x direction
+				  "    LOCALSCY=\"%g\" \n"      //image scaling in y direction
 				  "    PFILE=\"%s\" \n",	    //file of image
 				localscx,localscy,ptype==PTYPE_Image?img->filename:"");
 
@@ -801,11 +821,11 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	 //following tags are redefined even for mystery data
 	fprintf(f,"    NUMPO=\"%d\" \n",numpo); //num coords in POCOOR==stroke
 	fprintf(f,"    POCOOR=\"");
-	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
+	for (int c=0; c<numpo; c++) fprintf(f,"%g %g ",pocoor[c].x,pocoor[c].y);
 	fprintf(f,"\" \n"
 			  "    NUMCO=\"%d\" \n",numpo); //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt
 	fprintf(f,"    COCOOR=\"");
-	for (int c=0; c<numpo; c++) fprintf(f,"%f %f ",pocoor[c].x,pocoor[c].y);
+	for (int c=0; c<numpo; c++) fprintf(f,"%g %g ",pocoor[c].x,pocoor[c].y);
 
 	 //groups
 	fprintf(f,"\" \n"
@@ -815,11 +835,11 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 
 	 //object metrics
 	fprintf(f,"\" \n"			
-				  "    ROT=\"%f\" \n"         //rotation of object
-				  "    XPOS=\"%f\" \n"        //x of object
-				  "    YPOS=\"%f\" \n"        //y of object
-				  "    WIDTH=\"%f\" \n"       //width of object
-				  "    HEIGHT=\"%f\" \n",     //height of object
+				  "    ROT=\"%g\" \n"         //rotation of object
+				  "    XPOS=\"%g\" \n"        //x of object
+				  "    YPOS=\"%g\" \n"        //y of object
+				  "    WIDTH=\"%g\" \n"       //width of object
+				  "    HEIGHT=\"%g\" \n",     //height of object
 								 rot,x,(mysteryatts?y-height:y),width,height);
 
 	 //close the tag
@@ -871,13 +891,15 @@ const char *ScribusImportFilter::FileType(const char *first100bytes)
  * If saving mystery data, it will push onto project (or doc) iohints:
  * <pre>
  * Scribus  (VersionName())
- *   scribusVersion  (whatever the version string was)
+ *   scribusVersion  (whatever the Scribus file version was)
  *   originalFile    originalfile.sla
  *   slahead         #<-- has all the attributes of DOCUMENT, the element of SCRIBUSUTF8NEW
  *   docContent      #<-- these were elements of SCRIBUSUTF8NEW.DOCUMENT that were not
  *                   #    PAGE, or PAGEOBJECT
  *   scribusPageHint #store original page information just in case
  * </pre>
+ *
+ * \todo COLOR, master pages
  */
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
@@ -980,9 +1002,22 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	Attribute *page,*object;
 	char scratch[50];
 	MysteryData *mdata=NULL;
+	char *name, *value;
 
+
+	 //changedir to directory of file to correctly parse relative links
+	 //***warning, not thread safe!!
+	char *dir=lax_dirname(file,0);
+	if (dir) {
+		chdir(dir);
+		delete[] dir; dir=NULL;
+	}
+
+	 //1st pass, scan for PAGE attributes
 	for (c=0; c<scribusdoc->attributes.n; c++) {
-		if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGE")) {
+		name=scribusdoc->attributes.e[c]->name;
+		value=scribusdoc->attributes.e[c]->value;
+		if (!strcmp(name,"PAGE")) {
 			page=scribusdoc->attributes.e[c];
 			a=page->find("NUM");
 			IntAttribute(a->value,&pagenum); //*** could use some error checking here so corrupt files dont crash laidout!!
@@ -1003,8 +1038,17 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				scribushints->push(a,-1);
 			}
 			continue;
+		}
+	}
+	 //now scan for everything other than PAGE
+	for (c=0; c<scribusdoc->attributes.n; c++) {
+		name=scribusdoc->attributes.e[c]->name;
+		value=scribusdoc->attributes.e[c]->value;
 
-		} else if (!strcmp(scribusdoc->attributes.e[c]->name,"PAGEOBJECT")) {
+		if (!strcmp(name,"PAGE")) {
+			continue;
+
+		} else if (!strcmp(name,"PAGEOBJECT")) {
 			object=scribusdoc->attributes.e[c];
 
 			 //figure out what page it is supposed to be on..
@@ -1021,13 +1065,14 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			double matrix[6];
 			DoubleAttribute(object->find("XPOS")->value  ,&x);//***this could be att->doubleValue("XPOS",&x) for safety
 			DoubleAttribute(object->find("YPOS")->value  ,&y);
-			DoubleAttribute(object->find("ROT")->value   ,&rot);
+			DoubleAttribute(object->find("ROT")->value   ,&rot); //rotation is in degrees
 			DoubleAttribute(object->find("WIDTH")->value ,&w);
 			DoubleAttribute(object->find("HEIGHT")->value,&h);
 			x-=pagebounds[pagenum].minx;
 			y-=pagebounds[pagenum].miny;
-			y=pagebounds[pagenum].maxy-pagebounds[pagenum].miny-y; //pageheight-y, needed to flip y around
+			y=(pagebounds[pagenum].maxy-pagebounds[pagenum].miny)-y; //pageheight-y, needed to flip y around
 			int ptype=atoi(object->find("PTYPE")->value); //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+			rot*=-M_PI/180;
 
 			matrix[0]=cos(rot);
 			matrix[1]=sin(rot);
@@ -1040,7 +1085,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				 //we found an image
 				Attribute *pfile=object->find("PFILE");
 				ImageData *image=static_cast<ImageData *>(newObject("ImageData"));
-				image->LoadImage(pfile->value); //this will set maxx, maxy to dimensions of the image
+				char *fullfile=full_path_for_file(pfile->value,NULL);
+				image->LoadImage(fullfile); //this will set maxx, maxy to dimensions of the image
+				delete[] fullfile;
 				transform_copy(image->m(),matrix);
 				image->m()[0]*=w/image->maxx/72.;
 				image->m()[1]*=w/image->maxx/72.;

@@ -91,7 +91,7 @@ void psConcat(double *m)
 	double *mm=transform_mult(NULL,m,psctm);
 	delete[] psctm;
 	psctm=mm;
-	DBG cerr << "ctm: "; dumpctm(psctm);
+	DBG cerr << "ctm concat: "; dumpctm(psctm);
 }
 
 //! Initialize to identity and return ctm.

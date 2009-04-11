@@ -948,7 +948,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 	
 	if (c || !strncmp(fullname,"/",1) || !strncmp(fullname,"./",2) || !strncmp(fullname,"../",3)) {
 		 // is filename
-		full_path_for_file(fullname,NULL,0);
+		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 		delete[] fullname;
 		return NULL;
@@ -960,7 +960,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 			prependstr(fullname,"/");
 			prependstr(fullname,config_dir);
 		} 
-		full_path_for_file(fullname,NULL,0);
+		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 		
 		cout <<"imp full_path_for_resource for name not file! ***"<<endl;
@@ -1022,7 +1022,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 {
 	if (!strncmp(filename,"file://",7)) filename+=7;
 	char *fullname=newstr(filename);
-	full_path_for_file(fullname);
+	convert_to_full_path(fullname,NULL);
 	Document *doc=findDocument(fullname);
 	if (doc) {
 		delete[] fullname;

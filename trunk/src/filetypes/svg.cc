@@ -905,36 +905,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			transform_mult(m,t,g->m());
 			transform_copy(g->m(),m);
 		}
-		g->FindBBox();
-		group->push(g,0);
-		return 1;
-
-	} else if (!strcmp(element->name,"path")) {
-		PathsData *paths=new PathsData;
-		for (int c=0; c<element->attributes.n; c++) {
-			name =element->attributes.e[c]->name;
-			value=element->attributes.e[c]->value;
-
-			if (!strcmp(name,"id")) {
-			} else if (!strcmp(name,"transform")) {
-				svgtransform(value,paths->m());
-
-			//} else if (!strcmp(name,"x")) {
-			//} else if (!strcmp(name,"y")) {
-			} else if (!strcmp(name,"style")) {
-			} else if (!strcmp(name,"d")) {
-				Coordinate *coord=SvgToCoordinate(value,0,NULL);
-				if (coord) {
-					Path *p=new Path(coord);
-					paths->paths.push(p,1);
-				}
-			}
+		 //do not add empty groups
+		if (g->n()!=0) {
+			g->FindBBox();
+			group->push(g,0);
 		}
-		if (paths->paths.n) {
-			paths->FindBBox();
-			group->push(paths,0);
-		}
-		paths->dec_count();
+		g->dec_count();
 		return 1;
 
 	} else if (!strcmp(element->name,"image")) {
@@ -982,18 +958,168 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		image->dec_count();
 		return 1;
 
+	} else if (!strcmp(element->name,"path")) {
+		 //**** TODO for all path based elements, there will possible be a style attribute
+		 //  that defines line width, colors, etc.... really need a fuller implementation
+		 //  of possible svg attributes for all element types: consolidate and reduce code..
+		PathsData *paths=new PathsData;
+		for (int c=0; c<element->attributes.n; c++) {
+			name =element->attributes.e[c]->name;
+			value=element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+			} else if (!strcmp(name,"transform")) {
+				svgtransform(value,paths->m());
+
+			//} else if (!strcmp(name,"x")) {
+			//} else if (!strcmp(name,"y")) {
+			} else if (!strcmp(name,"style")) {
+			} else if (!strcmp(name,"d")) {
+				Coordinate *coord=SvgToCoordinate(value,0,NULL);
+				if (coord) {
+					Path *p=new Path(coord);
+					paths->paths.push(p,1);
+				}
+			}
+		}
+		if (paths->paths.n) {
+			paths->FindBBox();
+			group->push(paths,0);
+		}
+		paths->dec_count();
+		return 1;
+
 	} else if (!strcmp(element->name,"rect")) {
-		cout <<"***need to implement svg in:  rect"<<endl;
-	} else if (!strcmp(element->name,"circle")) {
+		double x=0,y=0,w=0,h=0;
+		double rx=-1, ry=-1;
+		PathsData *paths=new PathsData;
+		for (int c=0; c<element->attributes.n; c++) {
+			name =element->attributes.e[c]->name;
+			value=element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+				//makestr(image->id,value);
+			} else if (!strcmp(name,"rx")) {
+				DoubleAttribute(value,&rx,NULL);
+			} else if (!strcmp(name,"ry")) {
+				DoubleAttribute(value,&ry,NULL);
+			} else if (!strcmp(name,"x")) {
+				DoubleAttribute(value,&x,NULL);
+			} else if (!strcmp(name,"y")) {
+				DoubleAttribute(value,&y,NULL);
+			} else if (!strcmp(name,"width")) {
+				DoubleAttribute(value,&w,NULL);
+			} else if (!strcmp(name,"height")) {
+				DoubleAttribute(value,&h,NULL);
+			} else if (!strcmp(name,"transform")) {
+				svgtransform(value,paths->m());
+			}
+		}
+		 //rx and ry are the x and y radii of an ellipse at the corners
+		if (rx<0) rx=ry;
+		if (ry<0) ry=rx;
+		if (rx>w/2) rx=w/2;
+		if (ry>h/2) ry=h/2;
+		 //put a possible rounded rectangle in x,y,w,h
+		if (w>0 && h>0) {
+			if (rx>0 && ry>0) {
+				double yb=ry-ry*4/3*(sqrt(2)-1), //based on length of bez handle for circle approximation
+					   xb=rx-rx*4/3*(sqrt(2)-1);
+				paths->append(x+xb,y,POINT_TONEXT);
+				paths->append(x+rx,y  );
+				paths->append(x+w-rx,y  );
+				paths->append(x+w-rx-xb,y,   POINT_TOPREV);
+				paths->append(x+w,      y+yb,POINT_TONEXT);
+				paths->append(x+w       ,y+ry);
+				paths->append(x+w       ,y+h/2);
+				paths->append(x+w       ,y+h-ry);
+				paths->append(x+w       ,y+h-yb,POINT_TOPREV);
+				paths->append(x+w-xb    ,y+h,POINT_TONEXT);
+				paths->append(x+w-rx    ,y+h);
+				paths->append(x+rx      ,y+h);
+				paths->append(x+xb      ,y+h, POINT_TOPREV);
+				paths->append(x         ,y+h-yb, POINT_TONEXT);
+				paths->append(x  ,ry);
+				paths->append(x  ,yb);
+				paths->close();
+			} else {
+				paths->append(x  ,y  );
+				paths->append(x+w,y  );
+				paths->append(x+w,y+h);
+				paths->append(x  ,y+h);
+				paths->close();
+			}
+		}
+		if (paths->paths.n) {
+			paths->FindBBox();
+			group->push(paths,0);
+		}
+		paths->dec_count();
+		return 1;
+
+	} else if (!strcmp(element->name,"circle") || !strcmp(element->name,"ellipse")) {
 		cout <<"***need to implement svg in:  circle"<<endl;
-	} else if (!strcmp(element->name,"ellipse")) {
-		cout <<"***need to implement svg in:  ellipse"<<endl;
+		 //using 4 vertices as bez points, the vector length is 4*(sqrt(2)-1)/3 = about .5523 with radius 1
+
+		double cx=0,cy=0,r=-1,rx=-1, ry=-1;
+		PathsData *paths=new PathsData;
+		for (int c=0; c<element->attributes.n; c++) {
+			name =element->attributes.e[c]->name;
+			value=element->attributes.e[c]->value;
+
+			if (!strcmp(name,"id")) {
+				//makestr(image->id,value);
+			} else if (!strcmp(name,"rx")) { //present in ellipses
+				DoubleAttribute(value,&rx,NULL);
+			} else if (!strcmp(name,"ry")) { //present in ellipses 
+				DoubleAttribute(value,&ry,NULL);
+			} else if (!strcmp(name,"r")) { //present in circles
+				DoubleAttribute(value,&r,NULL);
+			} else if (!strcmp(name,"cx")) {
+				DoubleAttribute(value,&cx,NULL);
+			} else if (!strcmp(name,"cy")) {
+				DoubleAttribute(value,&cy,NULL);
+			} else if (!strcmp(name,"transform")) {
+				svgtransform(value,paths->m());
+			}
+		}
+		 //rx and ry are the x and y radii of an ellipse at the corners
+		if (r>0 || (rx>0 && ry>0)) {
+			if (rx<0) { rx=r; ry=r; }
+
+			double yv=ry*4/3*(sqrt(2)-1), //based on length of bez handle for circle approximation
+				   xv=rx*4/3*(sqrt(2)-1);
+			paths->append(cx-xv, cy+ry, POINT_TONEXT);
+			paths->append(cx   , cy+ry);
+			paths->append(cx+xv, cy+ry, POINT_TOPREV);
+			paths->append(cx+rx, cy+yv, POINT_TONEXT);
+			paths->append(cx+rx, cy  );
+			paths->append(cx+rx, cy-yv, POINT_TOPREV);
+			paths->append(cx+xv, cy-ry, POINT_TONEXT);
+			paths->append(cx   , cy-ry);
+			paths->append(cx-xv, cy-ry, POINT_TOPREV);
+			paths->append(cx-rx, cy-yv, POINT_TONEXT);
+			paths->append(cx-rx, cy  );
+			paths->append(cx-rx, cy+yv, POINT_TOPREV);
+			paths->close();
+
+			if (paths->paths.n) {
+				paths->FindBBox();
+				group->push(paths,0);
+			}
+		}
+		paths->dec_count();
+		return 1;
+
 	} else if (!strcmp(element->name,"line")) {
 		cout <<"***need to implement svg in:  line"<<endl;
+
 	} else if (!strcmp(element->name,"polyline")) {
 		cout <<"***need to implement svg in:  polyline"<<endl;
+
 	} else if (!strcmp(element->name,"polygon")) {
 		cout <<"***need to implement svg in:  polygon"<<endl;
+
 	} else if (!strcmp(element->name,"text")) {
 		for (int c=0; c<element->attributes.n; c++) {
 			if (!strcmp(element->attributes.e[c]->name,"id")) {
@@ -1005,7 +1131,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			}
 		}
 		cout <<"***need to implement svg in:  text"<<endl;
+
 	} else if (!strcmp(element->name,"use")) {
+		 //references to other objects
 		cout <<"***need to implement svg in:  use"<<endl;
 	}
 
