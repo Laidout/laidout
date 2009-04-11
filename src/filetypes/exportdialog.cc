@@ -89,7 +89,15 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 
 	config=new DocumentExportConfig(doc,limbo,file,NULL,layout,pmin,pmax,group);
 	filter=nfilter;
-	if (!filter && laidout->exportfilters.n) filter=laidout->exportfilters.e[0];
+	if (!filter && laidout->exportfilters.n) {
+		for (int c=0; c<laidout->exportfilters.n; c++) {
+			if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) {
+				filter=filter=laidout->exportfilters.e[c];
+				break;
+			}
+		}
+		if (!filter) filter=laidout->exportfilters.e[0];
+	}
 
 	cur=pcur;
 
@@ -596,9 +604,11 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		send();
 		return 0;
 	} else if (!strcmp(mes,"filesaveas")) {
-		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,
+		FileDialog *fd=new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,
 									  0,0,0,0,0,window,"get new file",
-									  fileedit->GetCText()));
+									  fileedit->GetCText());
+		fd->OkButton(_("Select"),NULL);
+		app->rundialog(fd);
 		return 0;
 	} else if (!strcmp(mes,"filessaveas")) {
 		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,

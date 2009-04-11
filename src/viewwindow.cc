@@ -3092,7 +3092,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			char *dir,*bname;
 			dir=s->str;
 			s->str=NULL;
-			full_path_for_file(dir);
+			convert_to_full_path(dir,NULL);
 			bname=strrchr(dir,'/');
 			
 			 // if there is a directory component, then cd to there first..

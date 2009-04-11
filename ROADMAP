@@ -17,6 +17,7 @@ VERSION 0.09
        Net imposition interactive unwrapper and build net interface
        be able to reimpose a document from gui and command
        command line option to pass in commands, like "import blah; reimpose box; export blah2"
+       Finish implementing the image list review tab in import images dialog
 (done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
        At bare minimum, path interface use should not cause a seg fault
 (done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
@@ -36,6 +37,7 @@ VERSION 0.091
 ------------
        Collect for out
        Generic fold and trim imposition
+       Object and resource tags
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Masking, clip paths and/or softmask
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
@@ -124,7 +126,7 @@ fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
-Basically full SVG print support
+Basically full SVG print support, once svg print stabilizes
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
 Would be nice to have tex/latex text and equation reader
@@ -132,8 +134,8 @@ Would be nice to be able to handle metapost/metafun sort of things
 Would be nice to be able to handle lilypond sort of things
 Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from/to xcf
 Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
-Story editor
-Internal generic impositioner for ps files that follow the ps doc. structure guidelines
+Stream/Story editor
+Internal generic impositioner for ps files that follow the ps doc. structure guidelines->import ps to mysterydata, export those...
 Cooperate with photo programs like KPhotoalbum
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection onto nets?
 Uniconverter support?
@@ -157,9 +159,9 @@ While i'm at it, I'd like a pony.
 
 
 
-            .--------------. 
+            ---------------- 
 ------------- OLD RELEASES -----------------
-            `--------------' 
+            ----------------
 
 VERSION 0.08  --  released 15 September 2007!
 ------------

@@ -773,7 +773,7 @@ int Document::Load(const char *file,char **error_ret)
 	setlocale(LC_ALL,"");
 	
 	makestr(saveas,file);
-	if (saveas[0]!='/') full_path_for_file(saveas); 
+	if (saveas[0]!='/') convert_to_full_path(saveas,NULL);
 
 	if (!docstyle) docstyle=new DocumentStyle(NULL);
 	if (!docstyle->imposition) docstyle->imposition=newImposition("Singles");
@@ -1067,7 +1067,7 @@ int Document::Saveas(const char *n)
 {
 	if (isblank(n)) return 0;
 	makestr(saveas,n);
-	if (saveas[0]!='/') full_path_for_file(saveas); 
+	if (saveas[1]!='/') convert_to_full_path(saveas,NULL);
 	return 1;
 }
 
