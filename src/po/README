@@ -1,6 +1,4 @@
-TODO: need utf-8 support in the controls!!! only latin-1 still
-  ISO-8859-1 <--po file makers should encode with this, not utf8
-  UTF-8      <--eventually, this only!!
+Any po files you make MUST be encoded as UTF-8 characters.
 
 
 -------------------------- Updating Basic Info -----------------------
