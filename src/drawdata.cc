@@ -133,11 +133,21 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 											  mdata->miny+(mdata->maxy+mdata->miny)*((double)random()/RAND_MAX)));
 				dp->textout((int)fp.x,(int)fp.y,"?",1);
 			}
+
+		 	 //draw outline if any
+			if (mdata->numpoints) {
+				dp->NewFG(0,0,0);
+				dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+				dp->drawbez(mdata->outline,mdata->numpoints/3,
+							mdata->outline[0]==mdata->outline[mdata->numpoints-1],30,0,1);
+			}
+		
 		} else {
 			flatpoint fp;
 			fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
 			dp->textout((int)fp.x,(int)fp.y,_("unknown"),-1);
 		}
+
 
 		 //draw box around it
 		dp->NewFG(0,0,255);

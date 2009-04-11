@@ -31,10 +31,18 @@ using namespace LaxFiles;
  * doesn't understand can still be exported. Other formats will generally ignore the
  * MysteryData.
  */
+/*! \var MysteryData::outline
+ * 
+ * A list of bezier points: c-v-c - c-v-c..., to be displayed in the representative box.
+ * This can give more hints about what it is.
+ */
 
 
 MysteryData::MysteryData(const char *gen)
 {
+	numpoints=0;
+	outline=NULL;
+
 	name=NULL;
 	importer=newstr(gen);
 	attributes=NULL;
@@ -45,6 +53,7 @@ MysteryData::~MysteryData()
 	if (name) delete[] name;
 	if (importer) delete[] importer;
 	if (attributes) delete attributes;
+	if (outline) delete[] outline;
 }
 
 //! Move the att to this->attributes.
@@ -129,9 +138,22 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 /*! \class MysteryInterface
  * \brief Interface to manipulate placement of eps files.
  *
+ * NOTE: *** currently not used.
+ *
  * If there is an epsi style preview in the eps, then that is what is put
  * on screen. Otherwise, the title/file/date are put on.
  */
+class MysteryInterface : public LaxInterfaces::RectInterface
+{
+ public:
+	MysteryInterface(int nid,Laxkit::Displayer *ndp);
+	LaxInterfaces::anInterface *duplicate(anInterface *dup);
+	virtual const char *whattype() { return "MysteryInterface"; }
+	virtual const char *whatdatatype() { return "MysteryData"; }
+	virtual int draws(const char *what);
+	virtual int Refresh();
+};
+
 
 
 MysteryInterface::MysteryInterface(int nid,Laxkit::Displayer *ndp)

@@ -520,8 +520,6 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 
 	ImageData *img=NULL;
 	GradientData *grad=NULL;
-	int numpo=0;
-	flatpoint *pocoor;
 	double localscx=1,localscy=1;
 	int ptype=-1; //>0 is translatable to scribus object.
 				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
@@ -606,8 +604,11 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	y=p.y;
 
 	 //create pocoor outline
+	int        numpo=0,      numco=0;
+	flatpoint *pocoor=NULL, *cocoor=NULL;
 	int createrect=1;
 	if (mysteryatts) {
+		 //map old pocoor coordinates based on potentially new position of the mystery data
 		Attribute *pocooratt=mysteryatts->find("POCOOR");
 		//Attribute *pocooratt=mysteryatts->find("COCOOR");
 		if (pocooratt) {
@@ -617,9 +618,13 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			DoubleListAttribute(pocooratt->value,&coords,&numpo);
 			numpo/=2;
 			pocoor=new flatpoint[numpo];
-			for (int c=0; c<numpo; c++) pocoor[c]=flatpoint(coords[c*2],coords[c*2+1]);
+			for (int c=0; c<numpo; c++) {
+				pocoor[c]=transform_point(ctm,coords[c*2]/72,coords[c*2+1]/72);
+				//pocoor[c]=flatpoint(coords[c*2],coords[c*2+1]);
+				DBG cerr <<"pocoor to canvas: "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
+			}
 			//note that these are raw coordinates read on input, they still have to be scaled
-			// to current bounding box
+			// to current bounding box, which is done below
 		}
 	}
 	if (createrect) {
@@ -632,7 +637,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		pocoor[10]=pocoor[11]=pocoor[12]=pocoor[13]=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
 	}
 
-	 //find bounds of pocoor
+	 //find bounds of pocoor which by now should be in canvas coordinates
 	flatpoint min=pocoor[0], max=pocoor[0];
 	for (int c=1; c<numpo; c++) {
 		if (pocoor[c].x<min.x) min.x=pocoor[c].x;
@@ -646,17 +651,23 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	DBG cerr <<"object dimensions: "<<width<<" x "<<height<<endl;
 
 	 //create a basis for the object, which has same scaling as the scratch space, but
-	 //does have translation and rotation
+	 //possibly different translation and rotation
 	double m[6],mmm[6];
 	vx=vx/norm(vx);
 	vy=vy/norm(vy);
 	p=transform_point(ctm,flatpoint(0,0));
 	transform_from_basis(mmm,p,vx,vy);
 	transform_invert(m,mmm);
+	DBG cerr<<"transform back to object:"; dumpctm(m);
 
+	 //pocoor are in canvas coordinates, need to
 	 //make pocoor coords relative to the object origin, not the canvas
-	for (int c=0; c<16; c++) {
+	for (int c=0; c<numpo; c++) {
+		DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
 		pocoor[c]=transform_point(m,pocoor[c]);
+		if (fabs(pocoor[c].x)<1e-10) pocoor[c].x=0;
+		if (fabs(pocoor[c].y)<1e-10) pocoor[c].y=0;
+		DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 	}
 	if (ptype==PTYPE_Image) { //image
 		localscx=width /(img->maxx-img->minx); //assumes maxx-minx==file width
@@ -823,9 +834,10 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	fprintf(f,"    POCOOR=\"");
 	for (int c=0; c<numpo; c++) fprintf(f,"%g %g ",pocoor[c].x,pocoor[c].y);
 	fprintf(f,"\" \n"
-			  "    NUMCO=\"%d\" \n",numpo); //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt
+			  "    NUMCO=\"%d\" \n",(cocoor?numco:numpo)); //num coords in COCOOR==contour line==text wrap outline (opt) (vv opt
 	fprintf(f,"    COCOOR=\"");
-	for (int c=0; c<numpo; c++) fprintf(f,"%g %g ",pocoor[c].x,pocoor[c].y);
+	if (cocoor) for (int c=0; c<numco; c++) fprintf(f,"%g %g ",cocoor[c].x,cocoor[c].y);
+	else for (int c=0; c<numpo; c++) fprintf(f,"%g %g ",pocoor[c].x,pocoor[c].y);
 
 	 //groups
 	fprintf(f,"\" \n"
