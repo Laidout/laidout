@@ -417,7 +417,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 // print out header
 	if (pdf_version==4) fprintf (f,"%%PDF-1.4\n");
 	else fprintf (f,"%%PDF-1.3\n");
-	fprintf(f,"%%\xff\xff\n"); //binary file indicator
+	fprintf(f,"%%\xff\xff\xff\xff\n"); //4 byte binary file indicator
 
 	
 	 //figure out paper orientation
@@ -745,7 +745,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	fprintf(f,"xref\n%d %d\n",0,count);
 	for (obj=objs; obj; obj=obj->next) {
-		fprintf(f,"%010lu %05d %c\n",obj->byteoffset,obj->generation,obj->inuse);
+		fprintf(f,"%010lu %05d %c \n",obj->byteoffset,obj->generation,obj->inuse);
 	}
 
 	
