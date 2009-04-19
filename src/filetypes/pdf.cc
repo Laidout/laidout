@@ -820,15 +820,18 @@ static void pdfContinueColorPatch(char *&stream,
 								  int r,     //!< Row of upper corner (patch index, not coord index)
 								  int c)     //!< Column of upper corner (patch index, not coord index)
 {
+	DBG cerr <<"pdfContinueColorPatch  len="<<len<<"  maxlen="<<maxlen<<endl;
 	 //make sure stream has enough space allocated
 	if (!stream) {
 		stream=new char[1024];
 		maxlen=1024;
 		len=0;
-	} else if (len+200>maxlen) {
+	} else if (len+400>maxlen) {
 		maxlen+=1024;
 		char *nstream=new char[maxlen];
 		memcpy(nstream,stream,len);
+		delete[] stream;
+		stream=nstream;
 	}
 
 	stream[len++]=flag;
@@ -878,6 +881,8 @@ static void pdfContinueColorPatch(char *&stream,
 	stream[len++]=g->colors[c4].red/256;
 	stream[len++]=g->colors[c4].green/256;
 	stream[len++]=g->colors[c4].blue/256;
+
+	DBG cerr <<"pdfContinueColorPatch  len="<<len<<"  maxlen="<<maxlen<<endl;
 }
 
 
