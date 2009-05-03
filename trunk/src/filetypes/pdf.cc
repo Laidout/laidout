@@ -235,7 +235,7 @@ void pdfdumpobj(FILE *f,
 	} else {
 		setlocale(LC_ALL,"");
 		sprintf(scratch,_("Warning: Cannot export %s to Pdf"),object->whattype());
-		appendstr(error_ret,scratch);
+		appendline(error_ret,scratch);
 		setlocale(LC_ALL,"C");
 		warning++;
 

@@ -626,6 +626,22 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			//note that these are raw coordinates read on input, they still have to be scaled
 			// to current bounding box, which is done below
 		}
+
+		Attribute *cocooratt=mysteryatts->find("COCOOR");
+		if (cocooratt) {
+			createrect=0;
+			//Attribute *tmp=mysteryatts->find("NUMCO");<--get directly from cocoor
+			double *coords=NULL;
+			DoubleListAttribute(cocooratt->value,&coords,&numco);
+			numco/=2;
+			cocoor=new flatpoint[numco];
+			for (int c=0; c<numco; c++) {
+				cocoor[c]=transform_point(ctm,coords[c*2]/72,coords[c*2+1]/72);
+				DBG cerr <<"cocoor to canvas: "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
+			}
+			//note that these are raw coordinates read on input, they still have to be scaled
+			// to current bounding box, which is done below
+		}
 	}
 	if (createrect) {
 		 //no coordinate path otherwise found, so create a rectangle based on the object bounding box
@@ -660,14 +676,21 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	transform_invert(m,mmm);
 	DBG cerr<<"transform back to object:"; dumpctm(m);
 
-	 //pocoor are in canvas coordinates, need to
-	 //make pocoor coords relative to the object origin, not the canvas
+	 //pocoor and cocoor are in canvas coordinates, need to
+	 //make pocoor and cocoor coords relative to the object origin, not the canvas
 	for (int c=0; c<numpo; c++) {
 		DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
 		pocoor[c]=transform_point(m,pocoor[c]);
 		if (fabs(pocoor[c].x)<1e-10) pocoor[c].x=0;
 		if (fabs(pocoor[c].y)<1e-10) pocoor[c].y=0;
 		DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
+	}
+	for (int c=0; c<numco; c++) {
+		DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
+		cocoor[c]=transform_point(m,cocoor[c]);
+		if (fabs(cocoor[c].x)<1e-10) cocoor[c].x=0;
+		if (fabs(cocoor[c].y)<1e-10) cocoor[c].y=0;
+		DBG cerr <<" -->  "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
 	}
 	if (ptype==PTYPE_Image) { //image
 		localscx=width /(img->maxx-img->minx); //assumes maxx-minx==file width
@@ -696,7 +719,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			if (!strcmp(name,"HEIGHT")) continue;
 			if (!strcmp(name,"NUMGROUP")) continue;
 			if (!strcmp(name,"GROUPS")) continue;
-			if (!strcmp(name,"NUMPO")) continue; //***need to remap pocoor and cocoor
+			if (!strcmp(name,"NUMPO")) continue;
 			if (!strcmp(name,"NUMCO")) continue;
 			if (!strcmp(name,"POCOOR")) continue;
 			if (!strcmp(name,"COCOOR")) continue;
@@ -1093,8 +1116,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			matrix[4]=x/72;
 			matrix[5]=y/72;
 
-			if (ptype==2) {
-				 //we found an image
+			if (ptype==2 && in->keepmystery!=2) {
+				 //we found an image so convert it to native Laidout object
 				Attribute *pfile=object->find("PFILE");
 				ImageData *image=static_cast<ImageData *>(newObject("ImageData"));
 				char *fullfile=full_path_for_file(pfile->value,NULL);
