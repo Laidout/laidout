@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 #ifndef STYLES_H
 #define STYLES_H
@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <lax/dump.h>
 #include <lax/refcounted.h>
+#include "calculator/values.h"
 
 //------------------------------ FieldMask -------------------------------------------
 
@@ -101,6 +102,8 @@ extern const char *element_TypeNames[14];
 class StyleDef;
 class Style;
 typedef Style *(*NewStyleFunc)(StyleDef *def);
+typedef int (*StyleFunc)(ValueHash *context, ValueHash *parameters,
+							 Value **value_ret, char **message_ret);
  
 class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
 {
@@ -108,6 +111,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	char *extends;
 	StyleDef *extendsdef;
 	NewStyleFunc newfunc;
+	StyleFunc stylefunc;
 	Style *newStyle(StyleDef *def) { if (newfunc) return newfunc(this); return NULL; }
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
@@ -130,7 +134,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	StyleDef(const char *nextends,const char *nname,const char *nName,
 			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
 			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
-			NewStyleFunc nnewfunc=0);
+			NewStyleFunc nnewfunc=0,StyleFunc nstylefunc=0);
 	virtual ~StyleDef();
 
 	 // helpers to locate fields by name, "blah.3.x"
@@ -146,13 +150,18 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	virtual int push(const char *nname,const char *nName,const char *ndesc,
 					 ElementType fformat,const char *nrange, const char *newdefval,
 					 unsigned int fflags,
-					 NewStyleFunc nnewfunc);
+					 NewStyleFunc nnewfunc,
+					 StyleFunc nstylefunc=NULL);
 	virtual int push(const char *nname,const char *nName,const char *ndesc,
 					 ElementType fformat,const char *nrange, const char *newdefval,
 					 Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
-					 NewStyleFunc nnewfunc);
+					 NewStyleFunc nnewfunc,
+					 StyleFunc nstylefunc=NULL);
 	virtual int push(StyleDef *newfield);
 	virtual int pop(int fieldindex);
+
+//	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
+//							 Value **value_ret, char **message_ret);
 
 	 // cap prevents accidental further adding/removing fields to a styledef
 	 // that is being constructed
@@ -192,7 +201,9 @@ void deleteFieldNode(FieldNode *fn);
 #define STYLE_READONLY
 #define STYLE_NO_EDIT
 
-class Style : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
+class Style : virtual public Laxkit::anObject, 
+			  virtual public LaxFiles::DumpUtility,
+			  virtual public Laxkit::RefCounted
 {
  protected:
 	unsigned long style;
@@ -258,10 +269,6 @@ class EnumStyle : public Style
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context) {}
 };
 
-//-------------------------------- Style/StyleDef utils
-
-
-LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def);
 
 
 

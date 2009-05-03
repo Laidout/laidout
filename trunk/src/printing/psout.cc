@@ -320,7 +320,6 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 
 	 //we must have something to export...
 	if (!doc && !limbo) {
-		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
@@ -481,7 +480,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	int p,plandscape;
 	for (c=start; c<=end; c++) {
 		 //get spread if any
-		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		if (doc) spread=doc->imposition->Layout(layout,c);
 		else spread=NULL;
 		 
 		 //get paper description
@@ -553,7 +552,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 				
 				 // for each page in spread..
 				for (c2=0; c2<spread->pagestack.n; c2++) {
-					psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
+					psDpi(doc->imposition->paper->paperstyle->dpi);
 					
 					pg=spread->pagestack.e[c2]->index;
 					if (pg<0 || pg>=doc->pages.n) continue;
@@ -669,7 +668,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 
 	 // Find bbox
 	 //*** note bbox is not used!!
-	if (doc) spread=doc->docstyle->imposition->Layout(layout,start);
+	if (doc) spread=doc->imposition->Layout(layout,start);
 	bbox.clear();
 	bbox.addtobounds(spread->path);
 	
@@ -766,7 +765,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	
 		 // for each page in spread..
 		for (c2=0; c2<spread->pagestack.n; c2++) {
-			psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
+			psDpi(doc->imposition->paper->paperstyle->dpi);
 			
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;

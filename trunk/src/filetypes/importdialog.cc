@@ -54,7 +54,7 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned 
 			xx,yy,ww,hh,brder,nowner,nsend,nfile,npath,nmask)
 {
 	if (defdpi<=0) {
-		if (ndoc) defdpi=ndoc->docstyle->imposition->paper->paperstyle->dpi; //***<-- crash hazard!
+		if (ndoc) defdpi=ndoc->imposition->paper->paperstyle->dpi; //***<-- crash hazard!
 		else defdpi=300;//***
 	}
 
@@ -215,10 +215,25 @@ int ImportFileDialog::init()
 	AddNull();
 
 	
-	last=check=new CheckBox(this,"keepmystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"keepmystery", _("Preserve mystery data"),5,5);
-	check->tooltip(_("Try to preserve data that Laidout does not understand"));
-	check->State(config->keepmystery?LAX_ON:LAX_OFF);
+	 //---------------------- MysteryData --------------------------------
+	last=check=new CheckBox(this,"ignoremystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"ignoremystery", _("Ignore mystery data"),5,5);
+	check->tooltip(_("Ignore anything Laidout doesn't understand"));
+	check->State(config->keepmystery==0?LAX_ON:LAX_OFF);
+	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
+	AddNull();
+
+	last=check=new CheckBox(this,"keepmostmystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"keepmostmystery", _("Keep mystery data as necessary"),5,5);
+	check->tooltip(_("Use mystery data for things Laidout cannot convert"));
+	check->State(config->keepmystery==1?LAX_ON:LAX_OFF);
+	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
+	AddNull();
+
+	last=check=new CheckBox(this,"keepallmystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+						last,window,"keepallmystery", _("All objects are mystery data"),5,5);
+	check->tooltip(_("Do not convert any object to native Laidout objects"));
+	check->State(config->keepmystery==2?LAX_ON:LAX_OFF);
 	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
 	AddNull();
 
@@ -290,8 +305,43 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		 //the starting page of the document to import to
 		return 0;
 
-	} else if (!strcmp(mes,"keepmystery")) {
-		config->keepmystery=e->data.l[0]==LAX_ON;
+	} else if (!strcmp(mes,"ignoremystery")) {
+		CheckBox *none=dynamic_cast<CheckBox *>(findWindow("ignoremystery"));
+		CheckBox *all=dynamic_cast<CheckBox *>(findWindow("keepallmystery"));
+		CheckBox *most=dynamic_cast<CheckBox *>(findWindow("keepmostmystery"));
+		config->keepmystery=0;
+		if (e->data.l[0]==LAX_ON) {
+			most->State(LAX_OFF);
+			all->State(LAX_OFF);
+		} else {
+			none->State(LAX_ON);
+		}
+		return 0;
+
+	} else if (!strcmp(mes,"keepmostmystery")) {
+		CheckBox *all=dynamic_cast<CheckBox *>(findWindow("keepallmystery"));
+		CheckBox *most=dynamic_cast<CheckBox *>(findWindow("keepmostmystery"));
+		CheckBox *none=dynamic_cast<CheckBox *>(findWindow("ignoremystery"));
+		config->keepmystery=1;
+		if (e->data.l[0]==LAX_ON) {
+			none->State(LAX_OFF);
+			all->State(LAX_OFF);
+		} else {
+			most->State(LAX_ON);
+		}
+		return 0;
+
+	} else if (!strcmp(mes,"keepallmystery")) {
+		CheckBox *none=dynamic_cast<CheckBox *>(findWindow("ignoremystery"));
+		CheckBox *most=dynamic_cast<CheckBox *>(findWindow("keepmostmystery"));
+		CheckBox *all=dynamic_cast<CheckBox *>(findWindow("keepallmystery"));
+		config->keepmystery=2;
+		if (e->data.l[0]==LAX_ON) {
+			most->State(LAX_OFF);
+			none->State(LAX_OFF);
+		} else {
+			all->State(LAX_ON);
+		}
 		return 0;
 
 	}

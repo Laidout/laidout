@@ -119,7 +119,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	
 	 //we must have something to export...
 	if (!doc && !out->limbo) {
-		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		//|| !doc->imposition || !doc->imposition->paper)...
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
@@ -169,7 +169,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	//t  =maxh*72./epsh;
 	//if (maxh && t && t<dpi) dpi=t;
 	//dpi=150;//***
-	dpi=doc->docstyle->imposition->paper->paperstyle->dpi;
+	dpi=doc->imposition->paper->paperstyle->dpi;
 	
 	char const * arglist[10];
 	char str1[20];

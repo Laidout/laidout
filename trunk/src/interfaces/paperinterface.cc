@@ -504,7 +504,7 @@ void PaperInterface::createMaybebox(flatpoint p)
 		box=papergroup->papers.e[0]->box;
 		boxdata=papergroup->papers.e[0];
 	} else if (doc) {
-		box=new PaperBox((PaperStyle *)doc->docstyle->imposition->paper->paperstyle->duplicate());
+		box=new PaperBox((PaperStyle *)doc->imposition->paper->paperstyle->duplicate());
 		box->paperstyle->dec_count();
 		del=1;
 	} else {

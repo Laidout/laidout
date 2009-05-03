@@ -112,7 +112,7 @@ class LaidoutApp : public Laxkit::anXApp
 	Document *findDocument(const char *saveas);
 	int Load(const char *filename, char **error_ret);
 	Document *LoadTemplate(const char *filename);
-	int NewDocument(DocumentStyle *docinfo, const char *filename);
+	int NewDocument(Imposition *imposition, const char *filename);
 	int NewDocument(const char *spec);
 	int NewProject(Project *proj,char **error_ret);
 

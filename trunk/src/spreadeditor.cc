@@ -407,8 +407,8 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 		}
 	}
 	 // redo the spreads
-	for (c=0; c<doc->docstyle->imposition->NumSpreads(); c++) {
-		s=doc->docstyle->imposition->GetLittleSpread(c);
+	for (c=0; c<doc->imposition->NumSpreads(); c++) {
+		s=doc->imposition->GetLittleSpread(c);
 		
 		 // try to preserve previous spread placement
 		if (c<spreads.n) {
@@ -458,7 +458,7 @@ void SpreadInterface::GetSpreads()
 	curspread=NULL;
 	curpage=-1;
 
-	if (!doc || !doc->docstyle || !doc->docstyle->imposition || !doc->pages.n) return;
+	if (!doc || !doc->imposition || !doc->pages.n) return;
 	
 	 // define the default page labels
 	int c;
@@ -472,8 +472,8 @@ void SpreadInterface::GetSpreads()
 	
 	Spread *s;
 	LittleSpread *ls;
-	for (int c=0; c<doc->docstyle->imposition->NumSpreads(); c++) {
-		s=doc->docstyle->imposition->GetLittleSpread(c);
+	for (int c=0; c<doc->imposition->NumSpreads(); c++) {
+		s=doc->imposition->GetLittleSpread(c);
 		ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
 		ls->FindBBox();
 		spreads.push(ls);

@@ -37,9 +37,6 @@ using namespace std;
  * You must not access objs straight. Always go through the n(), e(), etc.
  * This is so the local in the stack can be utilized to either delete or
  * increment and decrement objects.
- * 
- * ***perhaps migrate Group to some kind of GroupData class of Laxkit?
- * groups are perhaps too specialized..
  */
 /*! \fn int Group::findindex(LaxInterfaces::SomeData *d)
  * \brief Just does: return objs.findindex(d);
@@ -96,68 +93,45 @@ int Group::pointin(flatpoint pp,int pin)
 }
 
 //! Push obj onto the stack. (new objects only!)
-/*! If local==1 then obj is delete'd when remove'd from objs.
- * Any other local value means the obj is managed with its inc_count() and dec_count() functions,
- * and its count is incremented here.
- *
+/*! 
  * No previous existence
  * check is done here. For that, use pushnodup().
  */
-int Group::push(LaxInterfaces::SomeData *obj,int local)
+int Group::push(LaxInterfaces::SomeData *obj)
 {
 	if (!obj) return -1;
-	if (local==0) obj->inc_count();
-	return objs.push(obj,(local==1?1:0));
+	return objs.push(obj);
 }
 
 //! Push obj onto the stack only if it is not already there.
 /*! If the item is already on the stack, then its count is not
- * incremented, and local is ignored.
- *
- * If local==1 then obj is delete'd when remove'd from this->objs.
- * Any other local value means the obj is managed with its inc_count() and dec_count() functions,
- * and its count is incremented here.
+ * incremented.
  */
-int Group::pushnodup(LaxInterfaces::SomeData *obj,int local)
+int Group::pushnodup(LaxInterfaces::SomeData *obj)
 {
 	if (!obj) return -1;
-	int c=objs.pushnodup(obj,(local==1?1:0));
-	//if was there, then do not increase count, otherwise:
-	if (c<0 && local==0) obj->inc_count();
+	int c=objs.pushnodup(obj,-1);
 	return c;
 }
 
 //! Pop d, but do not decrement its count.
 /*! Returns 1 for item popped, 0 for not.
- *
- * Puts the object's local value in local.
  */
-int Group::popp(LaxInterfaces::SomeData *d,int *local)
+int Group::popp(LaxInterfaces::SomeData *d)
 {
-	return objs.popp(d,local);
+	return objs.popp(d);
 }
 
 //! Return the popped item. Does not change its count.
-LaxInterfaces::SomeData *Group::pop(int which,int *local)//local=NULL
+LaxInterfaces::SomeData *Group::pop(int which)
 {
-	return objs.pop(which,local);
+	return objs.pop(which);
 }
 
 //! Remove item with index i. Return 1 for item removed, 0 for not.
-/*! This will decrement the object's count by 1 if its local value is 0.
- */
 int Group::remove(int i)
 {
-	int local;
-	SomeData *obj;
-	objs.pop(obj,i,&local);
-	if (obj) {
-		if (local==0) obj->dec_count();
-		else if (local==1) delete obj;
-		else if (local==2) delete[] obj;
-		return 1;
-	}
-	return 0;
+	return objs.remove(i);
 }
 
 //! Pops item i1, then pushes it so that it is in position i2. 
@@ -168,19 +142,16 @@ int Group::remove(int i)
 int Group::slide(int i1,int i2)
 {
 	if (i1<0 || i1>=objs.n || i2<0 || i2>=objs.n) return 0;
-	int local;
 	SomeData *obj;
-	objs.pop(obj,i1,&local);
-	objs.push(obj,local,i2);
+	objs.pop(obj,i1); //does nothing to count 
+	objs.push(obj,-1,i2); //incs count
+	obj->dec_count(); //remove the additional count
 	return 1;
 }
 
-//! Decrement any objects that have local==0, then call objs.flush().
+//! Decrements all objects in objs vie objs.flush().
 void Group::flush()
 {
-	for (int c=0; c<objs.n; c++) {
-		if (objs.islocal[c]==0) objs.e[c]->dec_count();
-	}
 	objs.flush();
 }
 
@@ -225,7 +196,7 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *con
 				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
 				if (data) {
 					data->dump_in_atts(att->attributes[c],flag,context);
-					push(data,0);
+					push(data);
 					data->dec_count();
 				}
 				deletestrs(strs,n);
@@ -340,17 +311,17 @@ int Group::GroupObjs(int ne, int *which)
 	memcpy(w,which,ne*sizeof(int));
 	where=w[0];
 	SomeData *d;
-	int local;
 	while (ne) {
-		d=pop(w[ne-1],&local); //doesnt change count
-		g->push(d,local); //incs count
-		d->dec_count();
+		d=pop(w[ne-1]); //doesn't change count
+		g->push(d); //incs count
+		d->dec_count();  //remove extra count
 		ne--;
 		for (int c2=0; c2<ne; c2++)
 			if (w[c2]>w[ne]) w[c2]--;
 	}
 	g->FindBBox();
-	objs.push(g,0,where);
+	objs.push(g,-1,where); //incs g
+	g->dec_count(); //remove initial count
 	FindBBox();
 	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 	return 0;
@@ -363,19 +334,19 @@ int Group::UnGroup(int which)
 {
 	if (which<0 || which>=n()) return 1;
 	if (strcmp(object_e(which)->whattype(),"Group")) return 1;
-	Group *g=dynamic_cast<Group *>(objs.pop(which));
+	Group *g=dynamic_cast<Group *>(objs.pop(which)); //does not change count of g
 	if (!g) return 1;
 	
 	SomeData *d;
 	double mm[6];
-	int local;
-	for (int c=0; g->n(); c++) {
-		d=g->pop(0,&local);
+	while (g->n()) {
+		d=g->pop(0); //count stays same on d
 		transform_mult(mm,g->m(),d->m());
 		transform_copy(d->m(),mm);
-		objs.push(d,local,which++);
+		objs.push(d,-1,which++); //incs d
+		d->dec_count(); //remove extra count
 	}
-	g->dec_count();
+	g->dec_count(); //dec count of now empty group
 	FindBBox();
 	laidout->notifyDocTreeChanged(NULL,TreeObjectReorder,0,0);
 	return 0;
@@ -404,12 +375,11 @@ int Group::UnGroup(int n,const int *which)
 	if (n>1) return g->UnGroup(n-1,which+1);
 	
 	SomeData *d;
-	int local;
 	double mm[6];
-	while (d=g->pop(0,&local), d) {
+	while (d=g->pop(0), d) {
 		transform_mult(mm,d->m(),g->m());
 		transform_copy(d->m(),mm);
-		objs.push(d,local,*which+1);
+		objs.push(d,-1,*which+1);
 		d->dec_count();
 	}
 	remove(*which);
