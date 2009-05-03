@@ -572,6 +572,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 			Group *g=new Group;
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			layers.push(g);
+			g->dec_count();
 		} else if (!strcmp(name,"labeltype")) {
 			IntAttribute(value,&labeltype);
 		} else { 
