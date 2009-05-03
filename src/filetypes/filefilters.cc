@@ -126,9 +126,9 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
 	if (tofiles) fprintf(f,"%stofiles  \"%s\"\n",spc,tofiles);
 	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
-	if (doc && doc->docstyle && doc->docstyle->imposition) {
-		fprintf(f,"%simposition \"%s\"\n",spc,doc->docstyle->imposition->whattype());
-		fprintf(f,"%slayout \"%s\"\n",spc,doc->docstyle->imposition->LayoutName(layout));
+	if (doc && doc->imposition) {
+		fprintf(f,"%simposition \"%s\"\n",spc,doc->imposition->whattype());
+		fprintf(f,"%slayout \"%s\"\n",spc,doc->imposition->LayoutName(layout));
 	}
 	fprintf(f,"%sstart %d\n",spc,start);
 	fprintf(f,"%send   %d\n\n",spc,end);
@@ -171,15 +171,15 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject
 			cout <<"Need to implement export with alternate imposition.."<<endl;
 		} else if (!strcmp(name,"layout")) {
 			if (!doc || isblank(value)) { layout=0; continue; }
-			for (c2=0; c2<doc->docstyle->imposition->NumLayouts(); c2++) {
-				if (!strcmp(value,doc->docstyle->imposition->LayoutName(c2))) break;
+			for (c2=0; c2<doc->imposition->NumLayouts(); c2++) {
+				if (!strcmp(value,doc->imposition->LayoutName(c2))) break;
 			}
-			if (c2==doc->docstyle->imposition->NumLayouts()) {
-				for (c2=0; c2<doc->docstyle->imposition->NumLayouts(); c2++) {
-					if (!strncasecmp(value,doc->docstyle->imposition->LayoutName(c2),strlen(value))) break;
+			if (c2==doc->imposition->NumLayouts()) {
+				for (c2=0; c2<doc->imposition->NumLayouts(); c2++) {
+					if (!strncasecmp(value,doc->imposition->LayoutName(c2),strlen(value))) break;
 				}
 			}
-			if (c2==doc->docstyle->imposition->NumLayouts()) c2=0;
+			if (c2==doc->imposition->NumLayouts()) c2=0;
 			layout=c2;
 		} else if (!strcmp(name,"start")) {
 			IntAttribute(value,&start);
@@ -358,7 +358,7 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
 	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
-	if (!papergroup && config->doc) papergroup=config->doc->docstyle->imposition->papergroup;
+	if (!papergroup && config->doc) papergroup=config->doc->imposition->papergroup;
 	if (papergroup && papergroup->papers.n==0) papergroup=NULL;
 	if (!papergroup) {
 		int c;
@@ -380,11 +380,11 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 		config->start=config->end=0;
 	} else {
 		if (config->start<0) config->start=0;
-		else if (config->start>=config->doc->docstyle->imposition->NumSpreads(config->layout))
-			config->start=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+		else if (config->start>=config->doc->imposition->NumSpreads(config->layout))
+			config->start=config->doc->imposition->NumSpreads(config->layout)-1;
 		if (config->end<config->start) config->end=config->start;
-		else if (config->end>=config->doc->docstyle->imposition->NumSpreads(config->layout))
-			config->end=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+		else if (config->end>=config->doc->imposition->NumSpreads(config->layout))
+			config->end=config->doc->imposition->NumSpreads(config->layout)-1;
 	}
 
 	int n=(config->end-config->start+1)*papergroup->papers.n;
@@ -466,6 +466,12 @@ int export_document(DocumentExportConfig *config,char **error_ret)
  * \brief The document to import to, if any.
  *
  * There should be either a document to import to, or an object.
+ */
+/*! \var int ImportConfig::keepmystery
+ * \brief How to deal with data Laidout doesn't understand.
+ *
+ * 0 is convert nothing. 1 is convert as possible. 2 is do not convert, all
+ * objects become mystery data.
  */
 
 ImportConfig::ImportConfig()

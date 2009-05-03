@@ -135,7 +135,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
-		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		//|| !doc->imposition || !doc->imposition->paper)...
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
@@ -180,7 +180,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 //	groupc=0;
 //	if (doc) {
 //		for (c=start; c<=end; c++) {
-//			spread=doc->docstyle->imposition->Layout(layout,c);
+//			spread=doc->imposition->Layout(layout,c);
 //			 // for each page in spread layout..
 //			for (c2=0; c2<spread->pagestack.n; c2++) {
 //				pg=spread->pagestack.e[c2]->index;
@@ -398,7 +398,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	double pageypos=CANVAS_MARGIN_Y;
 	int pagec;
 	for (c=start; c<=end; c++) { //for each spread
-		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
 			paperwidth= 72*papergroup->papers.e[p]->box->paperstyle->w(); //scribus wants visual w/h
 			paperheight=72*papergroup->papers.e[p]->box->paperstyle->h();
@@ -1006,8 +1006,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		Imposition *imp=new Singles; //*** this is not necessarily so! uses PageSets??
 		paper->flags=((paper->flags)&~1)|(landscape?1:0);
 		imp->SetPaperSize(paper);
-		DocumentStyle *docstyle=new DocumentStyle(imp);
-		doc=new Document(docstyle,Untitled_name());
+		doc=new Document(imp,Untitled_name());
+		imp->dec_count();
 	}
 
 	Group *group=in->toobj;
@@ -1106,7 +1106,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				image->m()[2]*=h/image->maxy/72.;
 				image->m()[3]*=h/image->maxy/72.;
 				image->Flip(0);
-				group->push(image,-1);
+				group->push(image);
 
 			} else if (scribushints) { 
 				 //undealt with object, push as MysteryData if in->keepmystery
@@ -1121,7 +1121,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				mdata->maxx=w/72;
 				mdata->maxy=h/72;
 				mdata->attributes=object->duplicate();
-				group->push(mdata,-1);
+				group->push(mdata);
 			}
 
 		//} else if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {

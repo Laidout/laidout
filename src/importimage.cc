@@ -577,7 +577,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 	ImagePlopInfo *info=images,*last=NULL,*flow, *flow2;
 	Group *g;
 	int curpage;
-	int dpi=doc->docstyle->imposition->paper->paperstyle->dpi,curdpi=dpi;
+	int dpi=doc->imposition->paper->paperstyle->dpi,curdpi=dpi;
 	curpage=startpage;
 	double x,y,w,h,t,   // temp info while computing each row
 		   ww,hh,       // width and height of page
@@ -613,7 +613,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		 //    non-rectangular pages
 		if (outline) { outline->dec_count(); outline=NULL; }
 		outline=doc->pages.e[curpage]->pagestyle->outline;
-		if (!outline) outline=doc->docstyle->imposition->GetPageOutline(curpage,0); //adds 1 count already
+		if (!outline) outline=doc->imposition->GetPageOutline(curpage,0); //adds 1 count already
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
@@ -630,7 +630,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 			info->image->origin(flatpoint(info->xywh[0],info->xywh[1]));
 			//*** should probably center within box....
 			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
-			g->push(info->image,0); //incs the obj's count
+			g->push(info->image); //incs the obj's count
 			info=info->next; 
 			continue;
 		}
@@ -712,7 +712,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 			//while (curpage>doc->pages.n) doc->
 			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)/2));
 			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
-			g->push(info->image,0); //incs the obj's count
+			g->push(info->image); //incs the obj's count
 			info=info->next;
 		}
 		n+=nnn;

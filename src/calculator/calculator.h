@@ -17,18 +17,27 @@
 #ifndef CALCULATOR_H
 #define CALCULATOR_H
 
-#include <lax/refcounted.h>
+#include "../styles.h"
+#include "values.h"
 
+//----------------------------- LaidoutCalculator -------------------------------------
 class LaidoutCalculator : public Laxkit::RefCounted
 {
  private:
 	char *dir;
+	ValueHash *parse_parameters(StyleDef *def, const char *in, int len, char **error_pos_ret);
+	ValueHash *build_context();
  public:
 	LaidoutCalculator();
 	virtual ~LaidoutCalculator();
 
 	virtual char *In(const char *in);
 };
+
+//------------------------------- parsing helpers ------------------------------------
+LaxFiles::Attribute *parse_fields(LaxFiles::Attribute *Att, const char *str,char **end_ptr);
+LaxFiles::Attribute *parse_a_field(LaxFiles::Attribute *Att, const char *str, char **end_ptr);
+LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def);
 
 
 #endif

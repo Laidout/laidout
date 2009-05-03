@@ -355,7 +355,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
-		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		//|| !doc->imposition || !doc->imposition->paper)...
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
@@ -454,7 +454,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	for (int c=start; c<=end; c++) {
 			
 		if (spread) { delete spread; spread=NULL; }
-		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		if (doc) spread=doc->imposition->Layout(layout,c);
 		if (spread) desc=spread->pagesFromSpreadDesc(doc);
 		else desc=limbo->id?newstr(limbo->id):NULL;
 
@@ -508,7 +508,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 				
 				 // for each paper in paper layout..
 				for (c2=0; c2<spread->pagestack.n; c2++) {
-					psDpi(doc->docstyle->imposition->paper->paperstyle->dpi);
+					psDpi(doc->imposition->paper->paperstyle->dpi);
 					
 					pgindex=spread->pagestack.e[c2]->index;
 					if (pgindex<0 || pgindex>=doc->pages.n) continue;
@@ -820,7 +820,6 @@ static void pdfContinueColorPatch(char *&stream,
 								  int r,     //!< Row of upper corner (patch index, not coord index)
 								  int c)     //!< Column of upper corner (patch index, not coord index)
 {
-	DBG cerr <<"pdfContinueColorPatch  len="<<len<<"  maxlen="<<maxlen<<endl;
 	 //make sure stream has enough space allocated
 	if (!stream) {
 		stream=new char[1024];
@@ -882,7 +881,6 @@ static void pdfContinueColorPatch(char *&stream,
 	stream[len++]=g->colors[c4].green/256;
 	stream[len++]=g->colors[c4].blue/256;
 
-	DBG cerr <<"pdfContinueColorPatch  len="<<len<<"  maxlen="<<maxlen<<endl;
 }
 
 

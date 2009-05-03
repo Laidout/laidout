@@ -198,7 +198,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
-		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		//|| !doc->imposition || !doc->imposition->paper)...
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
@@ -281,7 +281,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	transform_set(mm,72,0,0,72,0,0);
 	psCtmInit();
 	for (c=start; c<=end; c++) {
-		if (doc) spread=doc->docstyle->imposition->Layout(layout,c);
+		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) {
 			fprintf(f,"  <page>\n");
 
@@ -456,8 +456,8 @@ int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_re
 		Imposition *imp=new Singles;
 		paper->flags=((paper->flags)&~1)|(landscape?1:0);
 		imp->SetPaperSize(paper);
-		DocumentStyle *docstyle=new DocumentStyle(imp);
-		doc=new Document(docstyle,Untitled_name());
+		doc=new Document(imp,Untitled_name());
+		imp->dec_count();
 	}
 
 	Attribute *ppthints=NULL;
@@ -550,7 +550,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 				if (n) image->SetDescription(n->value);
 				image->SetImage(img);
 				if (m) transform_copy(image->m(),M);
-				group->push(image,0);
+				group->push(image);
 				image->dec_count();
 				numobjs++;
 			}
@@ -559,7 +559,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 			Group *newgroup=new Group;
 			if (m) transform_copy(newgroup->m(),M);
 			if (pptDumpInGroup(frame->find("content:"),newgroup)>0) {
-				group->push(newgroup,0);
+				group->push(newgroup);
 				numobjs++;
 			}
 			newgroup->dec_count();
@@ -605,7 +605,8 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 
 			d->installAtts(frame);
 			att->attributes.e[c]=NULL; //since this was frame
-			group->push(d,0);
+			group->push(d);
+			d->dec_count();
 			numobjs++;
 		}
 	} //loop over page contents

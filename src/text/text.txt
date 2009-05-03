@@ -21,7 +21,7 @@ menu:insert
   text  ->textobj1, ...
   sample text
   object reference -> limbo1->obj1, ...
-  object (dup an existing object
+  object copy (dup an existing object
 
 math mode, basically latex formatting:
 -------------------------------------
@@ -29,7 +29,7 @@ $blah blah$ set as span
 $$blah blah$$ set as div
 superscript: 2^3
 subscript:  a_3
-latex, 4 modes: inline math, eqnarray, displaymath, equation
+latex, 4 modes: inline math, eqnarray (equation numbers auto inserted on right), displaymath, equation
 
 
 inline objects:
@@ -38,9 +38,12 @@ objects anchored in text stream, positions:
  stay in stream, use bbox as glyph box, define alignment, 
 		v and h baseline (default baseline proportional to surrounding font)
  stay in stream, use bbox as conditional wrap area
- layout object somewhere in stream containing object, or dynamically defined container (ie page or parent)
+ layout object somewhere in stream containing object (flowRegion), or a dynamically specified container (ie page or parent)
     footnotes
 	images that float off to one side: v and h gravity
+	  if positioning float causes text reflow to have the text anchor on next page, have offset
+      flag for whether to keep the float on current page, or force to next page
+ tex can automatically collect figures, and put them on a special page, auto numbering of figures
 
 
 formatting:
@@ -68,8 +71,13 @@ math mode -> lots of extra rules for formatting, access to lots of special symbo
 character styles
 paragraph styles
 tagging, to signal urls, colors, special behavior or cataloging, dynamic content, etc
-short words
-language switches
+short words (Mr. Mrs. etc, that must bind to following word)
+language switches:
+  sometimes one sees things like
+   <i18n>
+    <en>thing</en>
+	<es>cosa</es>
+   </i18n>
 
 line breaking:
 ------------
@@ -77,3 +85,6 @@ choose strategy:
   first fit: fast, considers only 1 line at a time
   surrounding fit: sort of fast, define how big a section of text to consider
   total fit: consider the entire stream when figuring breaks
+
+
+

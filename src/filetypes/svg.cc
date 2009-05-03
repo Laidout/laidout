@@ -508,7 +508,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
-		//|| !doc->docstyle || !doc->docstyle->imposition || !doc->docstyle->imposition->paper)...
+		//|| !doc->imposition || !doc->imposition->paper)...
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
@@ -544,7 +544,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	int c2,l,pg,c3;
 	transform_set(m,1,0,0,1,0,0);
 
-	if (doc) spread=doc->docstyle->imposition->Layout(layout,start);
+	if (doc) spread=doc->imposition->Layout(layout,start);
 	
 	 // write out header
 	double height;
@@ -638,10 +638,10 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 //		fprintf(f,"  <pageSet>\n");
 //		*********needs work
 //		if (doc) {
-//			for (c=0; c<doc->docstyle->imposition->numpapers; c++) {
+//			for (c=0; c<doc->imposition->numpapers; c++) {
 //				fprintf(f,"    <page>\n");
 //				fprintf(f,"      <g>\n");
-//				spread=doc->docstyle->imposition->PaperLayout(c);
+//				spread=doc->imposition->PaperLayout(c);
 //				 // for each page in paper layout..
 //				for (c2=0; c2<spread->pagestack.n; c2++) {
 //					pg=spread->pagestack.e[c2]->index;
@@ -770,10 +770,9 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 		}
 		if (!paper) paper=laidout->papersizes.e[0];
 		
-		 //pagenum to start dumping onto
+		 //document page to start dumping onto
 		int docpagenum=in->topage; //the page in laidout doc to start dumping into
-		int pagenum,
-			curdocpage; //the current page in the laidout document, used in loop below
+		int curdocpage; //the current page in the laidout document, used in loop below
 		if (docpagenum<0) docpagenum=0;
 
 		 //preliminary start and end pages for the svg
@@ -793,15 +792,15 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 			Imposition *imp=new Singles;
 			paper->flags=((paper->flags)&~1)|(landscape?1:0);//***note this changes the default paper flag!!
 			imp->SetPaperSize(paper);
-			DocumentStyle *docstyle=new DocumentStyle(imp);
-			doc=new Document(docstyle,Untitled_name());
+			doc=new Document(imp,Untitled_name());
+			imp->dec_count();
 		}
 
 		Group *group=in->toobj;
 
 		if (!group && doc) {
 			 //update group to point to the document page's group
-			curdocpage=docpagenum+(pagenum-start);
+			curdocpage=docpagenum;
 			group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
 		}
 
@@ -908,7 +907,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		 //do not add empty groups
 		if (g->n()!=0) {
 			g->FindBBox();
-			group->push(g,0);
+			group->push(g);
 		}
 		g->dec_count();
 		return 1;
@@ -954,7 +953,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		image->maxy=y+h;
 
 		image->Flip(0);
-		group->push(image,0);
+		group->push(image);
 		image->dec_count();
 		return 1;
 
@@ -975,16 +974,13 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			//} else if (!strcmp(name,"y")) {
 			} else if (!strcmp(name,"style")) {
 			} else if (!strcmp(name,"d")) {
-				Coordinate *coord=SvgToCoordinate(value,0,NULL);
-				if (coord) {
-					Path *p=new Path(coord);
-					paths->paths.push(p,1);
-				}
+				SvgToPathsData(paths,value,NULL);
+
 			}
 		}
 		if (paths->paths.n) {
 			paths->FindBBox();
-			group->push(paths,0);
+			group->push(paths);
 		}
 		paths->dec_count();
 		return 1;
@@ -1052,7 +1048,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		}
 		if (paths->paths.n) {
 			paths->FindBBox();
-			group->push(paths,0);
+			group->push(paths);
 		}
 		paths->dec_count();
 		return 1;
@@ -1105,7 +1101,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 
 			if (paths->paths.n) {
 				paths->FindBBox();
-				group->push(paths,0);
+				group->push(paths);
 			}
 		}
 		paths->dec_count();

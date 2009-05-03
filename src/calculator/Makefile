@@ -14,6 +14,7 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	values.o \
 	calculator.o 
 
 

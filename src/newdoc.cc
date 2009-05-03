@@ -722,11 +722,12 @@ void NewDocWindow::updateImposition()
 	DBG cerr<<"   updateImposition() FAILED..."<<endl;
 }
 
-//! Create and fill a DocumentStyle, and tell laidout to make a new document
+//! Create and fill a Document, and tell laidout to install the new document
 void NewDocWindow::sendNewDoc()
 {
 	 // find and get dup of imposition
 	Imposition *imposition=imp;
+	if (imposition) imposition->inc_count();
 	int c;
 	if (!imposition) {
 		for (c=0; c<laidout->impositionpool.n; c++) {
@@ -763,9 +764,9 @@ void NewDocWindow::sendNewDoc()
 	}
 		
 	imposition->NumPages(npgs);
-	DocumentStyle *newdocstyle=new DocumentStyle(imposition);
-	newdocstyle->imposition->SetPaperSize(papertype);
-	laidout->NewDocument(newdocstyle,saveas->GetCText());
+	imposition->SetPaperSize(papertype);
+	laidout->NewDocument(imposition,saveas->GetCText());
+	if (imposition) imposition->dec_count();
 }
 
 //--------------------------------- NewProjectWindow ------------------------------------

@@ -825,7 +825,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 	 // left page
 	if (left>=0) {
 		g=new Group;  // 1 count
-		g->push(noutline,0); // this checks it out again.. noutline->count 2
+		g->push(noutline); // this checks it out again.. noutline->count 2
 		g->FindBBox();
 		spread->pagestack.push(new PageLocation(left,NULL,g)); // incs count of g (to 2)
 		g->dec_count(); // remove extra tick
@@ -842,7 +842,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 	 // right page
 	if (right<numpages) {
 		g=new Group();
-		g->push(noutline,0); // this incs count on outline..
+		g->push(noutline); // this incs count on outline..
 		if (!isvertical) g->m()[4]+=pagestyle->w();
 		g->FindBBox();
 		spread->pagestack.push(new PageLocation(right,NULL,g)); //incs count of g

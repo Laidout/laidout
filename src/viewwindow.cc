@@ -349,9 +349,9 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	//setupthings();
 	
 	 // Set workspace bounds.
-	if (newdoc && newdoc->docstyle && newdoc->docstyle->imposition) {
+	if (newdoc && newdoc->imposition) {
 		DoubleBBox bb;
-		newdoc->docstyle->imposition->GoodWorkspaceSize(&bb);
+		newdoc->imposition->GoodWorkspaceSize(&bb);
 		dp->SetSpace(bb.minx,bb.maxx,bb.miny,bb.maxy);
 		//Center(); //this doesn't do anything because dp->Minx,Maxx... are 0
 	} else {
@@ -526,7 +526,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 				char txt[30];
 				sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
 				makestr(limbo->id,txt);
-				laidout->project->limbos.push(limbo,0);//adds 1 count
+				laidout->project->limbos.push(limbo);//adds 1 count
 				return 0;
 			} else if (i==1) {
 				 //rename current limbo
@@ -690,10 +690,10 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
  */
 int LaidoutViewport::NextSpread()
 {
-	if (!spread || !(doc && doc->docstyle && doc->docstyle->imposition)) return -1;
+	if (!spread || !(doc && doc->imposition)) return -1;
 	
 	int max=-1;
-	max=doc->docstyle->imposition->NumSpreads(viewmode);
+	max=doc->imposition->NumSpreads(viewmode);
 
 	if (max>=0) {
 		spreadi++;
@@ -711,10 +711,10 @@ int LaidoutViewport::NextSpread()
  */
 int LaidoutViewport::PreviousSpread()
 {
-	if (!spread || !(doc && doc->docstyle && doc->docstyle->imposition)) return -1;
+	if (!spread || !(doc && doc->imposition)) return -1;
 	
 	int max=-1;
-	max=doc->docstyle->imposition->NumSpreads(viewmode);
+	max=doc->imposition->NumSpreads(viewmode);
 
 	if (max>=0) {
 		spreadi--;
@@ -815,11 +815,11 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	} 
 	if (doc) {
 		if (tospread==-1 && topage>=0) {
-			tospread=doc->docstyle->imposition->SpreadFromPage(viewmode,topage);
+			tospread=doc->imposition->SpreadFromPage(viewmode,topage);
 		}
 		
 		int max=-1;
-		max=doc->docstyle->imposition->NumSpreads(viewmode);
+		max=doc->imposition->NumSpreads(viewmode);
 
 		 // clamp tospread to the imposition's spread range
 		if (max>=0) {
@@ -849,8 +849,8 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	} 
 
 	 // retrieve the proper spread according to viewmode
-	if (!spread && tospread>=0 && doc && doc->docstyle && doc->docstyle->imposition) {
-		spread=doc->docstyle->imposition->Layout(viewmode,tospread);
+	if (!spread && tospread>=0 && doc && doc->imposition) {
+		spread=doc->imposition->Layout(viewmode,tospread);
 		spreadi=tospread;
 	}
 
@@ -1053,12 +1053,12 @@ int LaidoutViewport::NewCurobj(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectC
 	int i=-1;
 	if (!spread || !curpage || curobj.layer()<0 || curobj.layer()>=curpage->layers.n()) {
 		 // add object to limbo, this likely does not install proper transform
-		i=limbo->pushnodup(d,0);
+		i=limbo->pushnodup(d);
 		context->set(d,2,0,i>=0?i:limbo->n()-1);
 	} else {
 		 // push onto cur spread/page/layer
 		 //*** this should push on curobj level, not simply page->layer
-		i=curpage->e(curobj.layer())->pushnodup(d,0);//this is Group::pushnodup()
+		i=curpage->e(curobj.layer())->pushnodup(d);//this is Group::pushnodup()
 		context->set(d,4, 
 					1,
 					curobj.spreadpage(),
@@ -1876,11 +1876,10 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	}
 	
 	 // pop from old place 
-	int islocal;
 	transformToContext(m,curobj.context,0);
 	if (curobj.spread()==0) {
 		 // pop from limbo
-		c=limbo->popp(curobj.obj,&islocal); // does not modify obj count
+		c=limbo->popp(curobj.obj); // does not modify obj count
 	} else {
 		 // pop from old page
 		Page *frompage=spread->pagestack.e[curobj.spreadpage()]->page;
@@ -1894,7 +1893,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 			DBG cerr <<"*** warning! bad context in LaidoutViewport::ObjectMove!"<<endl;
 			return 0;
 		}
-		c=frompage->e(i)->popp(curobj.obj,&islocal); // does not modify obj count
+		c=frompage->e(i)->popp(curobj.obj); // does not modify obj count
 	}
 	if (c!=1) {
 		DBG cerr <<"*** warning ObjectMove asked to move an invalid object!"<<endl;
@@ -1903,7 +1902,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	
 	 // push on new place and transform obj->m() to new context
 	if (topage) {
-		i=topage->e(topage->layers.n()-1)->push(d,islocal); //adds 1 count
+		i=topage->e(topage->layers.n()-1)->push(d); //adds 1 count
 		d->dec_count();
 		curobj.set(curobj.obj,4, 1,tosp,topage->layers.n()-1,topage->e(topage->layers.n()-1)->n()-1);
 		double mmm[6];
@@ -1914,7 +1913,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 	} else {
 		transform_mult(mm,curobj.obj->m(),m);
 		transform_copy(curobj.obj->m(),mm);
-		limbo->push(d,islocal); //adds 1 count
+		limbo->push(d); //adds 1 count
 		curobj.obj->dec_count();
 		curobj.set(curobj.obj,2, 0,limbo->n()-1);
 	}
@@ -1980,7 +1979,7 @@ int LaidoutViewport::init()
 		char txt[30];
 		sprintf(txt,_("Limbo %d"),laidout->project->limbos.n()+1);
 		makestr(limbo->id,txt);
-		laidout->project->limbos.push(limbo,0);//adds 1 count
+		laidout->project->limbos.push(limbo);//adds 1 count
 	}
 	
 	return 0;
@@ -2000,13 +1999,6 @@ int LaidoutViewport::init()
  *   index
  *   page
  *   transform
- * doc
- *  pages (PtrStack)
- *   pagenumber (?) maybe not to enable duplicate pages or NULLs..
- *   thumbnail
- *   etc..
- *  docstyle
- *   imposition
  *
  * </pre>
  *
@@ -2604,8 +2596,8 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	int vm=vp->viewmode;
-	if (doc && doc->docstyle->imposition->LayoutName(vm)) 
-		fprintf(f,"%slayout %s\n",spc,doc->docstyle->imposition->LayoutName(vm));
+	if (doc && doc->imposition->LayoutName(vm)) 
+		fprintf(f,"%slayout %s\n",spc,doc->imposition->LayoutName(vm));
 	
 	if (vp)	fprintf(f,"%sspread %d\n",spc,vp->spreadi);
 	if (vp->spread && vp->spread->pagestack.n)
@@ -2696,8 +2688,8 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
 	if (layouttype && doc) {
-		for (int c=0; c<doc->docstyle->imposition->NumLayouts(); c++) {
-			if (!strcmp(layouttype,doc->docstyle->imposition->LayoutName(c))) { vm=c; break; }
+		for (int c=0; c<doc->imposition->NumLayouts(); c++) {
+			if (!strcmp(layouttype,doc->imposition->LayoutName(c))) { vm=c; break; }
 		}
 	}
 	((LaidoutViewport *)viewport)->SetViewMode(vm,spr);
@@ -2910,7 +2902,7 @@ int ViewWindow::init()
 	//****update layout type
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	Imposition *imp=NULL;
-	if (vp->doc && vp->doc->docstyle) imp=vp->doc->docstyle->imposition;
+	if (vp->doc) imp=vp->doc->imposition;
 	if (imp) {
 		for (int c=0; c<imp->NumLayouts(); c++) {
 			p->AddItem(imp->LayoutName(c),c);
@@ -3248,7 +3240,7 @@ void ViewWindow::updateContext()
 	if (layouttype) {
 		LaidoutViewport *vp=((LaidoutViewport *)viewport);
 		Imposition *imp;
-		if (vp->doc && vp->doc->docstyle) imp=vp->doc->docstyle->imposition;
+		if (vp->doc) imp=vp->doc->imposition;
 		if (imp) {
 			layouttype->Flush();
 			for (int c=0; c<imp->NumLayouts(); c++) {
@@ -3603,14 +3595,14 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 										 "exported-file.huh",//****this should be more adaptive
 										 PAPERLAYOUT,
 										 0,
-										 doc?doc->docstyle->imposition->NumPapers()-1:0,
-										 doc?doc->docstyle->imposition->PaperFromPage(
+										 doc?doc->imposition->NumPapers()-1:0,
+										 doc?doc->imposition->PaperFromPage(
 											((LaidoutViewport *)viewport)->curobjPage()):0);
 		app->rundialog(d);
 		return 0;
 		//------------------------------------------------
 		//char *error=NULL;
-		//DocumentExportConfig config(doc,"exported-file.huh",NULL,PAPERLAYOUT,0,doc->docstyle->imposition->NumPapers()-1);
+		//DocumentExportConfig config(doc,"exported-file.huh",NULL,PAPERLAYOUT,0,doc->imposition->NumPapers()-1);
 		//if (laidout->exportfilters.e[e->data.l[1]]->Out(NULL,&config,&error)==0) {
 		//	mesbar->SetText(_("Exported."));
 		//} else {
@@ -3656,7 +3648,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"print")) { // print to output.ps
 		 //user clicked print button
 		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-		int curpage=doc?doc->docstyle->imposition->PaperFromPage(vp->curobjPage()):0;
+		int curpage=doc?doc->imposition->PaperFromPage(vp->curobjPage()):0;
 		if (curpage<0 && vp->doc && vp->spread) {
 			 //grab what is first page found in spread->pagestack
 			int c;
@@ -3671,7 +3663,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		Group *l;
 		if (!pg || !pg->papers.n) {
 			l=NULL;
-			if (vp->doc) pg=vp->doc->docstyle->imposition->papergroup;
+			if (vp->doc) pg=vp->doc->imposition->papergroup;
 			if (pg && pg->papers.n==0) pg=NULL;
 			if (!pg) {
 				int c;
@@ -3692,7 +3684,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 										NULL,        //thisfile
 										PAPERLAYOUT, 
 										0,              //min
-										doc?doc->docstyle->imposition->NumPapers()-1:0, //max
+										doc?doc->imposition->NumPapers()-1:0, //max
 										curpage,       //cur
 										pg,           //papergroup
 										l,           //limbo

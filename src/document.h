@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
@@ -46,20 +46,6 @@ enum  LaidoutSaveFormat {
 };
 
 
-//------------------------- DocumentStyle ------------------------------------
-
-class DocumentStyle : public Style
-{
- public:
-	Imposition *imposition;
-	DocumentStyle(Imposition *imp);
-	virtual ~DocumentStyle();
-	virtual Style *duplicate(Style *s=NULL);
-	virtual StyleDef* makeStyleDef();
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-};
-
 //---------------------------- PageRange ---------------------------------------
 
 class PageRange : public LaxFiles::DumpUtility
@@ -80,13 +66,14 @@ class PageRange : public LaxFiles::DumpUtility
 
 //------------------------- Document ------------------------------------
 
-class Document : public ObjectContainer, public LaxFiles::DumpUtility, public Laxkit::RefCounted
+class Document : public ObjectContainer, public Style
 {
  public:
-	DocumentStyle *docstyle;
 	char *saveas;
 	char *name;
 	
+	Imposition *imposition;
+
 	LaxFiles::Attribute metadata;
 	LaxFiles::Attribute iohints;
 
@@ -96,13 +83,17 @@ class Document : public ObjectContainer, public LaxFiles::DumpUtility, public La
 	clock_t modtime;
 
 	Document(const char *filename);
-	Document(DocumentStyle *stuff=NULL,const char *filename=NULL);
+	Document(Imposition *imp=NULL,const char *filename=NULL);
 	virtual ~Document();
 	virtual const char *Saveas();
 	virtual int Saveas(const char *nsaveas);
 	virtual const char *Name(int withsaveas);
 	virtual int Name(const char *nname);
 	virtual void clear();
+
+	 //style functions
+	virtual Style *duplicate(Style *s=NULL);
+	virtual StyleDef* makeStyleDef();
 
 	 //page and imposition management
 	virtual Page *Curpage();

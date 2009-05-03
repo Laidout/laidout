@@ -41,7 +41,7 @@ COMPILING
 You will need a few extra development libraries on your computer in order
 to compile Laidout. Running ./configure does a simple check for these,
 but the check is so simple, that it may miss them. You will need the
-header files for Imlib2, freetype2, fontconfig, x11, and cups.
+header files for Imlib2, freetype2, fontconfig, x11, xft, ssl, and cups.
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
 available. If you have downloaded a release, then the Laxkit should
@@ -140,7 +140,7 @@ the icons. Ultimately, the icons will themselves be stored in a Laidout
 file, and Laidout itself will generate the icons.
 See src/icons/makeimages.py for more.
 
-Running the program might spit out copious amounts of debugging
+Running Laidout might spit out copious amounts of debugging
 info if you run from a terminal. If this is the case, you can turn this 
 off with 'make hidegarbage' before doing 'make' (the same goes for the 
 Laxkit). Be advised that this requires Perl to be installed. Or, you 
@@ -177,7 +177,7 @@ Compiling on Mac OS X
 --------- -- --- ----
 For the adventurous, you can help make Laidout work on OS X.
 Straight from downloading, it will not compile all the way on OS X.
-You'll still need x11, Imlib2, freetype2, fontconfig, and cups.
+You'll still need x11, xft, Imlib2, freetype2, fontconfig, ssl, and cups.
 I'm just guessing, since I don't have access to an OS X or other BSD
 based machine, but it shouldn't be too hard to make Laidout work on them.
 There are a few places where I use GNU-only functions, like getline(),

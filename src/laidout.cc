@@ -178,6 +178,8 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
  *
  * \todo When Laxkit::FileDialog is more fully developed, palette_dir should be more
  *   like palette_path, and the paths beyound the first dir would be bookmarks.
+ * \todo would be nice for debugging to be able to restart laidout in any language,
+ *   whatever the current locale actually is (?)
  */
 /*! \var Laxkit::PtrStack<Laxkit::anInterface> LaidoutApp::interfacepool
  * \ingroup pools
@@ -1177,9 +1179,8 @@ int LaidoutApp::NewDocument(const char *spec)
 		makestr(saveas,Untitled_name());
 	}
 	
-	DocumentStyle *docinfo=new DocumentStyle(imp); // copies over imp, not duplicate
+	Document *newdoc=new Document(imp,saveas);
 	if (imp) imp->dec_count();
-	Document *newdoc=new Document(docinfo,saveas);
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc
 	newdoc->dec_count();
@@ -1189,25 +1190,25 @@ int LaidoutApp::NewDocument(const char *spec)
 	return 0;
 }
 
-//! Create a new ViewWindow for a new Document based on docinfo
+//! Create a new ViewWindow for a new Document based on imposition.
 /*! Puts it in the current project, creates new project if none exists.
  *
- * The docinfo is passed onto Document, which takes control of it. The calling
- * code should not delete it.
+ * The imposition is passed onto Document, which increments its count.
  *
  * filename is where is should be saved, and is assumed to not exist. If the calling
  * code is not sure if something exists there, then filename should be passed NULL.
  */
-int LaidoutApp::NewDocument(DocumentStyle *docinfo, const char *filename)
+int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 {
-	if (!docinfo) return 1;
+	if (!imposition) return 1;
 
-	Document *newdoc=new Document(docinfo,filename);
+	Document *newdoc=new Document(imposition,filename);
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc
+
+	DBG cerr <<"***** just pushed newdoc using imposition"<<newdoc->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	newdoc->dec_count();
 	
-	DBG cerr <<"***** just pushed newdoc using docinfo->"<<docinfo->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	
 	anXWindow *blah=newHeadWindow(newdoc); 
 	addwindow(blah);

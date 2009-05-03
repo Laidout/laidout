@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 
@@ -550,6 +550,19 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  *  If there is an extends, the index of all the fields starts with 0, which
  *	is the very first field in the very first base styledef.
  */
+/*! \var NewStyleFunc StyleDef::newfunc
+ * \brief Default constructor when the StyleDef represents an object.
+ *
+ * For full constructor for objects, use stylefunc.
+ */
+/*! \var StyleFunc StyleDef::stylefunc
+ * \brief Callable function for the StyleDef.
+ *
+ * If the styledef represents an object, then stylefunc is a full constructor,
+ * to which you can supply parameters.
+ *
+ * If the styledef is a function, then this is what is called as the function.
+ */
 
 
 //! Constructor.
@@ -562,9 +575,11 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 			const char *newdefval,   //!< Default value for the style
 			Laxkit::PtrStack<StyleDef> *nfields, //!< StyleDef for the subfields or enum values.
 			unsigned int fflags,       //!< New flags
-			NewStyleFunc nnewfunc)    //!< New creation function
+			NewStyleFunc nnewfunc,    //!< Default creation function
+			StyleFunc    nstylefunc)  //!< Full Function 
 {
 	newfunc=nnewfunc;
+	stylefunc=nstylefunc;
 	range=defaultvalue=extends=name=Name=description=NULL;
 
 	makestr(extends,nextends);
@@ -649,7 +664,8 @@ void StyleDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 //! Push def without fields. If pushing this new field onto fields fails, return -1, else the new field's index.
 int StyleDef::push(const char *nname,const char *nName,const char *ndesc,
 			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags,
-			NewStyleFunc nnewfunc)
+			NewStyleFunc nnewfunc,
+		 	StyleFunc nstylefunc)
 {
 	StyleDef *newdef=new StyleDef(NULL,nname,nName,
 								  ndesc,fformat,nrange,newdefval,
@@ -665,7 +681,8 @@ int StyleDef::push(const char *nname,const char *nName,const char *ndesc,
 int StyleDef::push(const char *nname,const char *nName,const char *ndesc,
 		ElementType fformat,const char *nrange, const char *newdefval,
 		Laxkit::PtrStack<StyleDef> *nfields,unsigned int fflags,
-		NewStyleFunc nnewfunc)
+		NewStyleFunc nnewfunc,
+		StyleFunc nstylefunc)
 {
 	StyleDef *newdef=new StyleDef(NULL,nname,nName,ndesc,fformat,nrange,newdefval,nfields,fflags,nnewfunc);
 	int c=push(newdef);
@@ -867,116 +884,6 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
 //}
 
 
-
-//----------------------------- StyleDef utils ------------------------------------------
-
-//! Take the output of parse_fields(), and map to a StyleDef.
-/*! \ingroup stylesandstyledefs
- *
- * This is useful for function calls or object creating from a basic script,
- * and makes it easier to map parameters to actual object methods.
- *
- * Note that this modifies the contents of rawparams. It does not create a duplicate.
- *
- * On success, it will return the value of rawparams, or NULL if there is any error.
- *
- * Something like "paper=letter,imposition.net.box(width=5,3,6), 3 pages" will be parsed 
- * by parse_fields into an attribute like this:
- * <pre>
- *  paper letter
- *  - imposition
- *     . net
- *       . box
- *         width 5
- *         - 3
- *         - 6
- *  - 3 pages
- * </pre>
- *
- * Now say we have a StyleDef something like:
- * <pre>
- *  field 
- *    name numpages
- *    format int
- *  field
- *    name paper
- *    format PaperType
- *  field
- *    name imposition
- *    format Imposition
- * </pre>
- *
- * Now paper is the only named parameter. It will be moved to position 1 to match
- * the position in the styledef. The other 2 are not named, so we try to guess. If
- * there is an enum field in the styledef, then the value of the parameter, "imposition" 
- * for instance, is searched for in the enum values. If found, it is moved to the proper
- * position, and labeled accordingly. Any remaining unclaimed parameters are mapped
- * in order to the unused styledef fields.
- *
- * So the mapping of the above will result in rawparams having:
- * <pre>
- *  numpages 3 pages
- *  paper letter
- *  imposition imposition
- *     . net
- *       . box
- *         width 5
- *         - 3
- *         - 6
- * </pre>
- *
- * \todo enum searching is not currently implemented
- */
-LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def)
-{
-	if (!rawparams || !def) return NULL;
-	int n=def->getNumFields();
-	int c2;
-	const char *name;
-	Attribute *p;
-	while (rawparams->attributes.n!=n) rawparams->attributes.push(NULL);
-	 //now there are the same number of elements in rawparams and the styledef
-	 //we go through from 0, and swap as needed
-	for (int c=0; c<n; c++) { //for each styledef field
-		def->getInfo(c,&name,NULL,NULL);
-
-		//if (format==Element_DynamicEnum || format==Element_Enum) {
-		//	 //rawparam att name could be any one of the enum names
-		//}
-
-		for (c2=c; c2<rawparams->attributes.n; c2++) { //find the right parameter
-			p=rawparams->attributes.e[c2];
-			if (!strcmp(p->name,"-")) continue;
-			if (!strcmp(p->name,name)) {
-				 //found field name match between a parameter and the styledef
-				if (c2!=c) {
-					 //parameter in the wrong place, so swap with the right place
-					rawparams->attributes.swap(c2,c);
-				} // else param was in right place
-				break;
-			}
-		}
-		if (c2!=rawparams->attributes.n) continue;
-		if (c2==rawparams->attributes.n) {
-			 // did not find a matching name, so grab the 1st "-" parameter
-			for (c2=c; c2<rawparams->attributes.n; c2++) {
-				p=rawparams->attributes.e[c2];
-				if (strcmp(p->name,"-")) continue;
-				if (c2!=c) {
-					 //parameter in the wrong place, so swap with the right place
-					rawparams->attributes.swap(c2,c);
-				} // else param was in right place
-				makestr(rawparams->attributes.e[c]->name,name); //name the parameter correctly
-			}
-		}
-		if (c2==rawparams->attributes.n) {
-			 //there were extra parameters that were not know to the styledef
-			 //this breaks the transfer, return NULL for error
-			return NULL;
-		}
-	}
-	return rawparams;
-}
 
 //------------------------- Style ------------------------------------
 

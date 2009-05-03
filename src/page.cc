@@ -505,7 +505,8 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
 	 // initialize page contents to 1 empty layer.
 	Group *g=new Group;
 	g->selectable=0;
-	layers.push(g,1);
+	layers.push(g); //incs count
+	g->dec_count();
 	layers.selectable=0;
 }
 
@@ -570,7 +571,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
 			g->dump_in_atts(att->attributes.e[c],flag,context);
-			layers.push(g,1);
+			layers.push(g);
 		} else if (!strcmp(name,"labeltype")) {
 			IntAttribute(value,&labeltype);
 		} else { 

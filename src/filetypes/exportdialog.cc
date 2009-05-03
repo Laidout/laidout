@@ -171,7 +171,7 @@ void ExportDialog::dump_in_atts(Attribute *att,int flag)
 void ExportDialog::findMinMax()
 {
 	min=0;
-	if (config->doc) max=config->doc->docstyle->imposition->NumSpreads(config->layout)-1;
+	if (config->doc) max=config->doc->imposition->NumSpreads(config->layout)-1;
 		else max=0;
 }
 
@@ -311,16 +311,16 @@ int ExportDialog::init()
 
 	 //------------------------What kind of layout----------
 	if (config->doc) {
-		//****doc->docstyle->imposition->Layouts()
+		//****doc->imposition->Layouts()
 		StrSliderPopup *layouts;
 		last=layouts=new StrSliderPopup(this, "layouts",0, 0,0,0,0,1, last, window, "layout");
-	//	for (c=0; c<config->doc->docstyle->imposition->NumLayouts(); c++) {
-	//		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(c),c);
+	//	for (c=0; c<config->doc->imposition->NumLayouts(); c++) {
+	//		layouts->AddItem(config->doc->imposition->LayoutName(c),c);
 	//		if (filter==laidout->exportfilters.e[c]) c2=c;
 	//	}
-		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(SINGLELAYOUT),SINGLELAYOUT);
-		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(PAGELAYOUT),  PAGELAYOUT);
-		layouts->AddItem(config->doc->docstyle->imposition->LayoutName(PAPERLAYOUT), PAPERLAYOUT);
+		layouts->AddItem(config->doc->imposition->LayoutName(SINGLELAYOUT),SINGLELAYOUT);
+		layouts->AddItem(config->doc->imposition->LayoutName(PAGELAYOUT),  PAGELAYOUT);
+		layouts->AddItem(config->doc->imposition->LayoutName(PAPERLAYOUT), PAPERLAYOUT);
 		layouts->Select(config->layout);
 		layouts->WrapWidth();
 		layouts->tooltip(_("The type of spreads to export"));

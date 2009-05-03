@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009 by Tom Lechner
 //
 
 #include <lax/strmanip.h>
@@ -39,106 +39,6 @@ using namespace std;
 #define DBG 
 
 
-//---------------------------- DocumentStyle ---------------------------------------
-
-/*! \class DocumentStyle
- * \brief Style for Document objects, suprisingly enough.
- *
- * Should have enough info to create a specific kind of Document.
- * Currently this just means keeping an Imposition object.
- *
- * \todo ***In the future, perhaps it might also have things like whether the default page
- *   advance direction is to the right or left. have to think about interaction between
- *   Document/PageRange/Imposition more.....
- */
-
-
-//! Constructor, copies Imposition pointer, does not duplicate imposition.
-/*! ***should sanity check the save? *** who should be deleting the imp?
- * currently it is deleted in destructor.
- *
- * Increments count of imposition.
- */
-DocumentStyle::DocumentStyle(Imposition *imp)
-	: Style(NULL,NULL, ("somedocstyle"))//***
-{
-	imposition=imp;
-	if (imposition) imposition->inc_count();
-}
-
-//! Deletes saveas and decs count of imposition
-DocumentStyle::~DocumentStyle()
-{
-	if (imposition) imposition->dec_count();
-}
-
-StyleDef* DocumentStyle::makeStyleDef()
-{
-	return NULL; //*****
-}
-
-/*! Recognizes 'imposition'. Discards all else.
- */
-void DocumentStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{
-	if (!att) return;
-	char *name,*value;
-	for (int c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"imposition")) {
-			if (imposition) imposition->dec_count();
-			 // figure out which kind of imposition it is..
-			imposition=newImposition(value);
-			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag,context);
-		} else { 
-			DBG cerr <<"DocumentStyle dump_in:*** unknown attribute!!"<<endl;
-		}
-	}
-}
-
-/*! Writes like:
- * <pre>
- *  Imposition Singles
- *    ...
- * </pre>
- *
- * Calls imposition->dump_out().
- *
- * If what==-1, write out pseudocode mockup.
- */
-void DocumentStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%s#A document style has only 1 of the following impositions attached to it.\n",spc);
-		fprintf(f,"%s#These are all the impositions currently installed:\n",spc);
-		for (int c=0; c<laidout->impositionpool.n; c++) {
-			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
-			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1,NULL);
-		}
-		return;
-	}
-	if (imposition) {
-		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
-		imposition->dump_out(f,indent+2,0,context);
-	}
-}
-
-//! *** returns a new DocumentStyle(NULL,NULL)
-/*! Should make "$save.2"?? and duplicate the imposition. Each doc must
- * have own instance of Imposition since there are doc specific settings in imp?
- */
-Style *DocumentStyle::duplicate(Style *s)//s=NULL
-{
-	if (s==NULL) s=new DocumentStyle(NULL);
-	if (!dynamic_cast<DocumentStyle *>(s)) return NULL;
-	DocumentStyle *ds=dynamic_cast<DocumentStyle *>(s);
-	if (!ds) return NULL;
-	ds->imposition=(Imposition *)imposition->duplicate();
-	//ds->saveas?? untitled2 untitled.3  ds->saveas=getUniqueUntitled() ds->saveas=GetUniqueFileName(based on saveas)
-	return s;
-}
 
 
 //---------------------------- PageRange ---------------------------------------
@@ -525,42 +425,35 @@ Document::Document(const char *filename)
 	saveas=NULL;
 	makestr(saveas,filename);
 	modtime=times(NULL);
-	docstyle=NULL;
 	curpage=-1;
 	
 	Load(filename,NULL);
 }
 
-//! Constructor from a DocumentStyle
-/*! Document takes the style. The calling code should not delete it.
+//! Construct from an Imposition.
+/*! Document increments count of imposition.
  *
- * Here, the documents pages are created from the info in stuff (or the default
- * document style). Imposition::CreatePages() creates the pages, and they are
+ * Here, the documents pages are created from the imposition.
+ * Imposition::CreatePages() creates the pages, and they are
  * put in the pages stack.
  *
- * The filename is put in saveas, but the file is not loaded. Settings are
- * taken from stuff.
+ * The filename is put in saveas, but the file is not loaded or saved.
  */
-Document::Document(DocumentStyle *stuff,const char *filename)//stuff=NULL
+Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 { 
 	modtime=times(NULL);
 	curpage=-1;
 	saveas=newstr(filename);
 	name=NULL;
 	
-	docstyle=stuff;
-	if (docstyle==NULL) {
-		//*** need to create a new DocumentStyle
-		//docstyle=Styles::newStyle("DocumentStyle"); //*** should grab default doc style?
-		//DBG cerr <<"***need to implement get default document in Document constructor.."<<endl;
-		//
-		//this is used for code that manually builds a Document, so no special treatment necessary
+	imposition=imp;
+	if (imposition) imposition->inc_count();
+
+	if (imposition==NULL) {
+		//null imposition is used for code that manually builds a Document, so no special treatment necessary
 	} else {
 		 // create the pages
-		if (docstyle->imposition) pages.e=docstyle->imposition->CreatePages();
-		else { 
-			DBG cerr << "**** in new Document, docstyle has no imposition"<<endl;
-		}
+		pages.e=imposition->CreatePages();
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;
@@ -588,29 +481,50 @@ Document::~Document()
 	DBG cerr <<" Document destructor.."<<endl;
 	pages.flush();
 	pageranges.flush();
-	delete docstyle;
 	if (saveas) delete[] saveas;
 	if (name) delete[] name;
+	if (imposition) imposition->dec_count();
 }
 
 //! Remove everything from the document.
 void Document::clear()
 {
 	pages.flush();
-	if (docstyle) { delete docstyle; docstyle=NULL; }
+	if (imposition) { imposition->dec_count(); imposition=NULL; }
 	if (saveas) { delete[] saveas; saveas=NULL; }
 	if (name) { delete[] name; name=NULL; }
 	curpage=-1;
 }
 
+StyleDef* Document::makeStyleDef()
+{
+	cout <<"*** implement Document styledef!!!"<<endl;
+	return NULL; //*****
+}
+
+//! Duplicate a document.
+/*! \todo *** unimplemented! 
+ */
+Style *Document::duplicate(Style *s)//s=NULL
+{
+	cout <<"*** implement Document::duplicate()!!!"<<endl;
+	return NULL;
+	//if (s==NULL) s=new Document(NULL);
+	//if (!dynamic_cast<Document *>(s)) return NULL;
+	//Document *ds=dynamic_cast<Document *>(s);
+	//if (!ds) return NULL;
+	//ds->imposition=(Imposition *)imposition->duplicate();
+	//return s;
+}
+
 //! Return a spread for type and index of that type.
 /*! In the future, different impositions might be used for different page ranges.
- * For now, still the much simpler docstyle->imposition is used.
+ * For now, still the much simpler imposition is used.
  */
 Spread *Document::GetLayout(int type, int index)
 {
-	if (!docstyle || !docstyle->imposition) return NULL;
-	return docstyle->imposition->Layout(type,index);
+	if (!imposition) return NULL;
+	return imposition->Layout(type,index);
 }
 	
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
@@ -627,6 +541,8 @@ Spread *Document::GetLayout(int type, int index)
  */
 int Document::NewPages(int starting,int np)
 {
+	if (!imposition) return -1;
+
 	if (np<=0) return 0;
 	Page *p;
 	if (starting<0) starting=pages.n;
@@ -635,7 +551,7 @@ int Document::NewPages(int starting,int np)
 		pages.push(p,1,starting);
 	}
 	if (pageranges.n) pageranges.e[pageranges.n-1]->end=pages.n-1;
-	docstyle->imposition->NumPages(pages.n);
+	imposition->NumPages(pages.n);
 	SyncPages(starting,-1);
 	laidout->notifyDocTreeChanged(NULL,TreePagesAdded, starting,-1);
 	return np;
@@ -660,7 +576,7 @@ int Document::RemovePages(int start,int n)
 		pages.remove(start);
 		DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
-	docstyle->imposition->NumPages(pages.n);
+	imposition->NumPages(pages.n);
 	SyncPages(start,-1);
 	laidout->notifyDocTreeChanged(NULL,TreePagesDeleted, start,-1);
 	return n;
@@ -760,7 +676,6 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
  */
 int Document::Load(const char *file,char **error_ret)
 {
-	//*** need to create a new DocumentStyle from what's in the file..
 	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",error_ret);
@@ -775,10 +690,9 @@ int Document::Load(const char *file,char **error_ret)
 	makestr(saveas,file);
 	if (saveas[0]!='/') convert_to_full_path(saveas,NULL);
 
-	if (!docstyle) docstyle=new DocumentStyle(NULL);
-	if (!docstyle->imposition) docstyle->imposition=newImposition("Singles");
+	if (!imposition) imposition=newImposition("Singles");
 	if (pages.n==0) {
-		pages.e=docstyle->imposition->CreatePages();
+		pages.e=imposition->CreatePages();
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;
@@ -790,7 +704,7 @@ int Document::Load(const char *file,char **error_ret)
 			}
 		}
 	}
-	docstyle->imposition->NumPages(pages.n);
+	imposition->NumPages(pages.n);
 	SyncPages(0,-1);
 
 	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) //***bit of a hack to not touch templates
@@ -812,8 +726,7 @@ int Document::SyncPages(int start,int n)
 	if (n<0) n=pages.n;
 	if (start+n>pages.n) n=pages.n-start;
 	
-	if (docstyle && docstyle->imposition)
-		docstyle->imposition->SyncPageStyles(this,start,n);
+	if (imposition) imposition->SyncPageStyles(this,start,n);
 	
 	char *label;
 	int range=0;
@@ -845,10 +758,11 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 {
 	if (!newimp) return 1;
 
-	if (docstyle) delete docstyle;
-	docstyle=new DocumentStyle(newimp);
+	if (imposition) imposition->dec_count();
+	imposition=newimp;
+	imposition->inc_count();
 
-	docstyle->imposition->NumPages(pages.n);
+	imposition->NumPages(pages.n);
 	SyncPages(0,-1);
 
 	if (scale_page_contents_to_fit) {
@@ -860,11 +774,7 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 }
 
 //! Low level reading in a document.
-/*! Please note that this deletes docstyle if nonnull.
- * If docstyle required special treatment, it should have been dealt with
- * previous to coming here.
- *
- * Recognizes 'docstyle', 'page', and 'pagerange'. Discards all else. 
+/*! 
  * Takes special care to make sure that pagerange->end is set correctly for
  * each range.
  *
@@ -883,29 +793,35 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 		value=att->attributes.e[c]->value;
 		if (!strcmp(nme,"name")) {
 			makestr(name,value);
+
 		} else if (!strcmp(nme,"saveas")) {
 			makestr(saveas,value);//*** make sure saveas is abs path
-		} else if (!strcmp(nme,"docstyle")) {
-			if (docstyle) delete docstyle;
-			docstyle=new DocumentStyle(NULL);
-			docstyle->dump_in_atts(att->attributes.e[c],flag,context);
+
+		} else if (!strcmp(nme,"imposition")) {
+			if (imposition) imposition->dec_count();
+			 // figure out which kind of imposition it is..
+			imposition=newImposition(value);
+			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag,context);
+
 		} else if (!strcmp(nme,"pagerange")) {
 			PageRange *pr=new PageRange;
 			pr->dump_in_atts(att->attributes.e[c],flag,context);
 			pageranges.push(pr,1);
+
 		} else if (!strcmp(nme,"page")) {
 			PageStyle *ps=NULL;
-			//***necessary?:if (docstyle && docstyle->imposition) ps=docstyle->imposition->GetPageStyle(pages.n,0);
+			//***necessary?:if (imposition) ps=imposition->GetPageStyle(pages.n,0);?
 			page=new Page(ps,0);
 			if (ps) ps->dec_count();
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c],flag,context);
 			pages.push(page,1);
+
 		} else if (!strcmp(nme,"limbo")) {
 			Group *g=new Group;  //count=1
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
-			laidout->project->limbos.push(g,0); // incs count
+			laidout->project->limbos.push(g); // incs count
 			g->dec_count();   //remove extra first count
 
 		} else if (!strcmp(nme,"papergroup")) {
@@ -942,13 +858,9 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 	}
 	
 	//****** finish this:
-	if (docstyle) {
-		if (docstyle->imposition) docstyle->imposition->NumPages(pages.n);
-		else {
-			cout <<"**** no docstyle->imposition in Document::dump_in_atts\n";
-		}
-	} else {
-		cout <<"**** no docstyle in Document::dump_in_atts\n";
+	if (imposition) imposition->NumPages(pages.n);
+	else {
+		DBG cerr <<"**** no imposition in Document::dump_in_atts\n";
 	}
 	
 	 // make sure pages all have proper labels and pagestyles
@@ -970,7 +882,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 
 }
 
-//! Dumps docstyle, pages, pageranges.
+//! Dumps imposition, pages, pageranges, plus various project attributes if not in project mode.
 /*! If what==-1, write out pseudocode mockup.
  */
 void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -983,13 +895,12 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%ssaveas /path/to/filename.doc  #The path previously saved as, which\n",spc);
 		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
 		
-		 //docstyle
-		fprintf(f,"\n%s#The document style:\n",spc);
-		fprintf(f,"%sdocstyle\n",spc);
-		if (docstyle) docstyle->dump_out(f,indent+2,-1,NULL);
-		else {
-			DocumentStyle d(NULL);
-			d.dump_out(f,indent+2,-1,NULL);
+		 //imposition
+		fprintf(f,"%s#A document has only 1 of the following impositions attached to it.\n",spc);
+		fprintf(f,"%s#These are all the impositions currently installed:\n",spc);
+		for (int c=0; c<laidout->impositionpool.n; c++) {
+			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
+			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1,NULL);
 		}
 	
 		 //page labels
@@ -1030,10 +941,11 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	 //*** shouldn't have this? it is just the filename, file knows that already
 	if (saveas) fprintf(f,"%ssaveas %s\n",spc,saveas);
-	 // dump docstyle
-	if (docstyle) {
-		fprintf(f,"%sdocstyle\n",spc);
-		docstyle->dump_out(f,indent+2,0,context);
+
+	 // dump imposition
+	if (imposition) {
+		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
+		imposition->dump_out(f,indent+2,0,context);
 	}
 
 	 // PageRanges
@@ -1131,7 +1043,7 @@ const char *Document::Name(int withsaveas)
  */
 Page *Document::Curpage()
 {
-	if (!docstyle || pages.n==0) return NULL;
+	if (pages.n==0) return NULL;
 	if (curpage==-1) curpage=0;
 	return pages.e[curpage];
 }
