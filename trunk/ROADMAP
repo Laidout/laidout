@@ -21,11 +21,11 @@ VERSION 0.09
        At bare minimum, path interface use should not cause a seg fault
 (done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
 (done) Passepartout import
-       Svg import
+(done-partially, anyway) Svg import
 (done-partially, anyway) Scribus import 
        update french and spanish translations, if possible
 (done) fix the memory hole (in papergroups?)
-       fix the other memory hole (in images?), something in paperinterface, too
+       fix the other memory hole (triggered by importing images?), something in paperinterface, too
 (done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard

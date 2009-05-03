@@ -947,10 +947,12 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			//DoubleBBox bbox(0,0,w,h);
 			//image->fitto(NULL,&bbox,0,0);
 		//}
-		image->minx=x;
-		image->maxx=x+w;
-		image->miny=y;
-		image->maxy=y+h;
+		DoubleBBox bbox(x,x+w, y,y+h);
+		image->fitto(NULL, &bbox, 50, 50);
+		//image->minx=x;
+		//image->maxx=x+w;
+		//image->miny=y;
+		//image->maxy=y+h;
 
 		image->Flip(0);
 		group->push(image);
