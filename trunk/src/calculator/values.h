@@ -29,7 +29,7 @@ enum ValueTypes {
 	VALUE_String,
 	VALUE_Object,
 	VALUE_Set
-}
+};
 
 //----------------------------- Value ----------------------------------
 class Value : public Laxkit::RefCounted
@@ -106,14 +106,19 @@ class ValueHash
  public:
 	ValueHash();
 	~ValueHash();
+
 	int push(const char *name,int i);
 	int push(const char *name,double d);
 	int push(const char *name,const char *string);
 	int push(const char *name,Laxkit::RefCounted *obj);
+	void swap(int i1, int i2);
+	void renameKey(int i,const char *newname);
+	const char *key(int i);
 
+	int n();
 	Value *find(const char *name);
 	int findIndex(const char *name);
-	int findInt(const char *name, int which=-1);
+	long findInt(const char *name, int which=-1);
 	double findDouble(const char *name, int which=-1);
 	const char *findString(const char *name, int which=-1);
 	Laxkit::RefCounted *findObject(const char *name, int which=-1);

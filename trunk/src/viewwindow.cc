@@ -819,7 +819,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 		}
 		
 		int max=-1;
-		max=doc->imposition->NumSpreads(viewmode);
+		if (doc->imposition) max=doc->imposition->NumSpreads(viewmode);
 
 		 // clamp tospread to the imposition's spread range
 		if (max>=0) {
@@ -2687,7 +2687,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	viewport->dp->SetSpace(x1,x2,y1,y2);
 	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
-	if (layouttype && doc) {
+	if (layouttype && doc && doc->imposition) {
 		for (int c=0; c<doc->imposition->NumLayouts(); c++) {
 			if (!strcmp(layouttype,doc->imposition->LayoutName(c))) { vm=c; break; }
 		}

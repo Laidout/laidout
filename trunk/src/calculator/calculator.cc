@@ -61,9 +61,11 @@ LaidoutCalculator::LaidoutCalculator()
 	decimal=1;
 	from=0;
 	curexprs=NULL;
+	curexprslen=0;
 	calcerror=0;
 	calcmes=NULL;
 	messagebuffer=NULL;
+	last_answer=NULL;
 
 
 	DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
@@ -77,6 +79,7 @@ LaidoutCalculator::~LaidoutCalculator()
 	if (curexprs) delete[] curexprs;
 	if (calcmes) delete[] calcmes;
 	if (messagebuffer) delete[] messagebuffer;
+	if (last_answer) last_answer->dec_count();
 }
 
 
@@ -95,7 +98,7 @@ void LaidoutCalculator::clearerror()
 const char *LaidoutCalculator::Message()
 {
 	if (calcmes) return calcmes;
-	if (outexprs) return outexprs;
+	//if (outexprs) return outexprs;
 	return _("Ok.");
 }
 
@@ -159,7 +162,7 @@ char *LaidoutCalculator::getnamestring(int *n)  //  alphanumeric or _
 	if (!isalpha(curexprs[from]) && curexprs[from]!='_') return NULL;
 
 	char *tname=NULL;
-	int c=0,c2;     
+	int c=0;
 	while (from+c<curexprslen && (isalnum(curexprs[from+c]) || curexprs[from+c]=='_')) c++;
 	if (c!=0) {
 		tname=new char[c+1];
@@ -236,7 +239,7 @@ char *LaidoutCalculator::In(const char *in)
 	makestr(messagebuffer,NULL);
 
 	Value *v=NULL;
-
+	int errorpos=0;
 	evaluate(in,-1, &v, &errorpos, NULL);
 
 	if (v) appendstr(messagebuffer,v->toCChar());
@@ -263,7 +266,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 
 	Value *answer=NULL;
 	if (len<0) len=strlen(in);
- 	newcurexprs(in);
+ 	newcurexprs(in,len);
 	if (curexprslen>len) curexprslen=len;
 	skipwscomment();
 
@@ -307,7 +310,7 @@ void LaidoutCalculator::newcurexprs(const char *newex,int len)
 //! Parse any commands that change internal calculator settings like radians versus decimal.
 /*! Set dec==1 if 'deg' or 'degrees', set to 1 if 'rad' or 'radians'
  */
-int LaidoutCalculator::sessioncommand() //  done before evalline 
+int LaidoutCalculator::sessioncommand() //  done before eval
 {
 	char *temp=curexprs+from;     
 	if (!isalpha(*temp)) return 0;
@@ -355,7 +358,7 @@ int LaidoutCalculator::sessioncommand() //  done before evalline
 	if (nextword("show")) {
 		skipwscomment();
 		
-		char *showwhat=getnamestring();
+		char *showwhat=getnamestring(NULL);
 		char *temp=NULL;
 		if (*showwhat) { //show a particular item
 			if (stylemanager.styledefs.n || stylemanager.functions.n) {
@@ -496,7 +499,7 @@ Value *LaidoutCalculator::eval(const char *exprs)
 	texprs=new char[strlen(curexprs)+1];
 	strcpy(texprs,curexprs);
 
-	newcurexprs(exprs);
+	newcurexprs(exprs,-1);
 	num=eval();
 
 	newcurexprs(texprs,tfrom);
@@ -569,8 +572,7 @@ Value *LaidoutCalculator::powerterm()
 Value *LaidoutCalculator::number()
 {
 	Value *snum=NULL;
-	double num;
-	int c=0,sgn=1;
+	int sgn=1;
 	while (1) {
 		if (nextchar('-')) sgn*=-1;
 		else if (!nextchar('+')) break;
@@ -630,14 +632,41 @@ Value *LaidoutCalculator::number()
 		snum=temp;
 	}
 
-	 // get units;
-	Unit *units=getUnits();
-	if (unitstr) {
-		Unit *units=unitmanager->MakeUnit(unitstr);
-		
-		if (snum->ApplyUnits(units)!=0) *** cannot apply units! already exist maybe;
-	}
+//	 // get units;
+//	Unit *units=getUnits();
+//	if (unitstr) {
+//		Unit *units=unitmanager->MakeUnit(unitstr);
+//		
+//		if (snum->ApplyUnits(units)!=0) *** cannot apply units! already exist maybe;
+//	}
 	return snum;
+}
+
+//! Read in a double.
+double LaidoutCalculator::realnumber()
+{
+	char *endptr,*startptr=curexprs+from;
+	long r=strtof(startptr,&endptr);
+	if (endptr==startptr) {
+		calcerr("Expected a number.");
+		return 0;
+	}
+	from+=endptr-startptr;
+	return r;
+}
+
+//! Read in an integer.
+long LaidoutCalculator::intnumber()
+{
+	char *endptr,*startptr=curexprs+from;
+	//long c=strtol(startptr,&endptr,base);
+	long c=strtol(startptr,&endptr,10);
+	if (endptr==startptr) {
+		calcerr("Expected an integer.");
+		return 0;
+	}
+	from+=endptr-startptr;
+	return c;
 }
 
 //! Read in a string enclosed in either single or double quote characters. Quotes are mandatory.
@@ -654,14 +683,13 @@ Value *LaidoutCalculator::number()
  * \\" double quote\n
  * \# number sign, normally used to mark comments.
  */
-Value *CalculatorClass::getstring()
+Value *LaidoutCalculator::getstring()
 {
 	char quote;
 	if (nextchar('\'')) quote='\'';
 	else if (nextchar('"')) quote='"';
 	else return NULL;
 
-	int f=from,nnl=0;
 	int maxstr=20,spos=0;
 	char *newstr=new char[maxstr];
 	char ch;
@@ -721,9 +749,8 @@ Value *LaidoutCalculator::evalname()
 
 		 //build context and find parameters
 		//int error_pos=0;
-		char *error=NULL;
 		ValueHash *context=build_context(); //build calculator context
-		ValueHash *pp=parse_parameters(function); //build parameter hash in order of styledef
+		ValueHash *pp=parseParameters(function); //build parameter hash in order of styledef
 
 		 //call the actual function
 		char *message=NULL;
@@ -936,47 +963,66 @@ ValueHash *LaidoutCalculator::build_context()
 }
 
 //! Take a string and parse into function parameters.
-ValueHash *LaidoutCalculator::parse_parameters(StyleDef *def)
+ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 {
 	if (!def) return NULL;
 
-	ValueHash *pp=new ValueHash;
+	ValueHash *pp=NULL;
 
-	char *str=newnstr(in,len);
+// ***	 //check for when the styledef has 1 string parameter, and you have a large in string.
+//	 //all of in maps to that one string. This allows functions to act like command line strings.
+//	 //They would then call some other function to parse the string or parse it internally.
+//	if (def->getNumFields()==1 ) {
+//		ElementType fmt=Element_None;
+//		const char *nm=NULL;
+//		def->getInfo(0,&nm,NULL,NULL,NULL,NULL,&fmt);
+//		if (fmt==Element_String) {
+//			pp->push(nm,str);
+//			delete[] str;
+//			return pp;
+//		}
+//	}
 
-	 //check for when the styledef has 1 string parameter, and you have a large in string.
-	 //all of in maps to that one string. This allows functions to act like command line strings.
-	 //They would then call some other function to parse the string or parse it internally.
-	if (def->getNumFields()==1 ) {
-		ElementType fmt=Element_None;
-		const char *nm=NULL;
-		def->getInfo(0,&nm,NULL,NULL,NULL,NULL,&fmt);
-		if (fmt==Element_String) {
-			pp->push(nm,str);
-			delete[] str;
-			return pp;
-		}
-	}
+	if (nextchar('(')) {
+		pp=new ValueHash;
+		int tfrom;
+		char *pname=NULL;
+		int namel;
+		Value *v=NULL;
+		if (!nextchar(')'))
+		  do {
+			skipwscomment();
+			tfrom=from;
+			pname=getnamestring(&namel);
+			if (pname) {
+				from+=namel;
+				if (nextchar('=')) {
+					//it is a parameter name (hopefully) so nothing special to do here
+				} else {
+					from=tfrom; //is not a parameter name, so reset from
+				}
+			}
+			v=eval();
+			if (v && !calcerror) {
+				pp->push(pname,v);
+				v->dec_count();
+			}
+			if (pname) { delete[] pname; pname=NULL; }
 
-	char *ee=NULL;
-	Attribute *att=parse_fields(NULL, str, &ee);
-	MapAttParameters(att, def);
+		} while (!calcerror && from!=tfrom && !nextchar(')'));
+	} 
 
-	if (*in=='(') ;
-	***
-
+	if (pp) MapParameters(def,pp);
 	return pp;
 }
 
 
 
-//-------------------------------------REVIEW vvvv --------------------------------
-
 
 
 //----------------------------- StyleDef utils ------------------------------------------
 
-//! Take the output of parse_fields(), and map to a StyleDef.
+//! Map a ValueHash to a function StyleDef.
 /*! \ingroup stylesandstyledefs
  *
  * This is useful for function calls or object creating from a basic script,
@@ -991,11 +1037,6 @@ ValueHash *LaidoutCalculator::parse_parameters(StyleDef *def)
  * <pre>
  *  paper letter
  *  - imposition
- *     . net
- *       . box
- *         width 5
- *         - 3
- *         - 6
  *  - 3 pages
  * </pre>
  *
@@ -1024,237 +1065,59 @@ ValueHash *LaidoutCalculator::parse_parameters(StyleDef *def)
  *  numpages 3 pages
  *  paper letter
  *  imposition imposition
- *     . net
- *       . box
- *         width 5
- *         - 3
- *         - 6
  * </pre>
  *
  * \todo enum searching is not currently implemented
  */
-LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def)
+ValueHash *MapParameters(StyleDef *def,ValueHash *rawparams)
 {
 	if (!rawparams || !def) return NULL;
 	int n=def->getNumFields();
 	int c2;
 	const char *name;
-	Attribute *p;
-	while (rawparams->attributes.n!=n) rawparams->attributes.push(NULL);
+	const char *k;
+
 	 //now there are the same number of elements in rawparams and the styledef
 	 //we go through from 0, and swap as needed
 	for (int c=0; c<n; c++) { //for each styledef field
 		def->getInfo(c,&name,NULL,NULL);
+		if (c>=rawparams->n()) rawparams->push(name,(RefCounted*)NULL);
 
 		//if (format==Element_DynamicEnum || format==Element_Enum) {
 		//	 //rawparam att name could be any one of the enum names
 		//}
 
-		for (c2=c; c2<rawparams->attributes.n; c2++) { //find the right parameter
-			p=rawparams->attributes.e[c2];
-			if (!strcmp(p->name,"-")) continue;
-			if (!strcmp(p->name,name)) {
+		for (c2=c; c2<rawparams->n(); c2++) { //find the parameter named already
+			k=rawparams->key(c2);
+			if (!k) continue; //skip unnamed
+			if (!strcmp(k,name)) {
 				 //found field name match between a parameter and the styledef
 				if (c2!=c) {
 					 //parameter in the wrong place, so swap with the right place
-					rawparams->attributes.swap(c2,c);
+					rawparams->swap(c2,c);
 				} // else param was in right place
 				break;
 			}
 		}
-		if (c2!=rawparams->attributes.n) continue;
-		if (c2==rawparams->attributes.n) {
-			 // did not find a matching name, so grab the 1st "-" parameter
-			for (c2=c; c2<rawparams->attributes.n; c2++) {
-				p=rawparams->attributes.e[c2];
-				if (strcmp(p->name,"-")) continue;
+		if (c2==rawparams->n()) {
+			 // did not find a matching name, so grab the 1st NULL named parameter
+			for (c2=c; c2<rawparams->n(); c2++) {
+				k=rawparams->key(c2);
+				if (k) continue;
 				if (c2!=c) {
 					 //parameter in the wrong place, so swap with the right place
-					rawparams->attributes.swap(c2,c);
+					rawparams->swap(c2,c);
 				} // else param was in right place
-				makestr(rawparams->attributes.e[c]->name,name); //name the parameter correctly
+				rawparams->renameKey(c,name); //name the parameter correctly
 			}
-		}
-		if (c2==rawparams->attributes.n) {
-			 //there were extra parameters that were not know to the styledef
-			 //this breaks the transfer, return NULL for error
-			return NULL;
+			if (c2==rawparams->n()) {
+				 //there were extra parameters that were not known to the styledef
+				 //this breaks the transfer, return NULL for error
+				return NULL;
+			}
 		}
 	}
 	return rawparams;
-}
-
-
-//-------------------------- various parsing functions ------------------------------
-
-
-//! Parse str into a series of parameter, as for a function call.
-/*! \ingroup misc
- * Parsing will terminate if it encounters an unmatched ')'
- *
- * Warning: this is really just a hack placeholder, until scripting and data
- * handling gets a proper implementation.
- *
- * This assumes there is a comma separated list of paremeters. You can give
- * the name of the paremeter, a la python: "width=5". The string will be turned
- * into a list with each parameter as a seperate subattribute. If you pass in
- * "width=5", then there will be an attribute with name="width" and value="5".
- *
- * Any parameter that has no explicit name will get name="-". For example,
- * if you simply pass in "width", then you will get name="-" and value="width".
- *
- * Note that this will only expand values, not names. Names must be a string of
- * non-whitespace characters before an '='. If the value is something 
- * like "imposition=net.box(3,5)" then
- * the attribute will be name="imposition" and value="net", and there
- * will be a subattribute with name="." and value="box", which has further subattributes with
- * values "3" and "5", and whose names are both '-'.
- *
- * Something like "imposition.net.box(width=5,3,6)" will be an attribute like this:
- * <pre>
- *  - imposition
- *     . net
- *       . box
- *         width 5
- *         - 3
- *         - 6
- * </pre>
- *
- * <pre>
- *    letter, 3 pages, net.box(3,5,6)
- *    letter, 3 pages, net.box(width=3,height=5,depth=6)
- *    blah=blabber, imposition.file(/some/file)
- *    net.file(/some/file.off)
- * </pre>
- *
- * Used, for instance, in LaidoutApp::parseargs(), or in command line pane.
- *
- * \todo ***this is a means to an end at the moment. Full scripting will likely obsolete this.
- */
-Attribute *parse_fields(Attribute *Att, const char *str,char **end_ptr)
-{
-	Attribute *tatt,*att=Att;
-	if (!att) att=new Attribute;
-	const char *s=str;
-	char *e;
-
-	while (isspace(*s)) s++;
-	while (s && *s) {
-		tatt=parse_a_field(att,s,&e);
-		if (e==s || !tatt) break;
-		if (*e==',') e++;
-		s=e;
-	}
-	if (end_ptr) *end_ptr=e;
-
-	//DBG cerr <<"parsed str into attribute:"<<endl;
-	//DBG att->dump_out(stderr,0);
-
-	return att;
-}
-
-/*! \ingroup misc
- * If nothing parsed, end_ptr is set to str.
- * See parse_fields() for full explanation
- */
-Attribute *parse_a_field(Attribute *Att, const char *str, char **end_ptr)
-{
-	Attribute *att=Att;
-	if (!att) att=new Attribute;
-
-	Attribute *subatt=NULL;
-	const char *s,*e;
-	char *name=NULL, *value=NULL;
-	char error=0;
-	while (isspace(*str) && *str!=',' && *str!=')') str++;
-
-	 //now str points to the start of a name..
-	s=str;
-	while (*s && !isspace(*s) && *s!='=' && *s!=',' && *s!=')' && *s!='.' && *s!='(') s++;
-	if (s==str) {
-		 //empty string, or premature ending!
-		if (end_ptr) *end_ptr=const_cast<char*>(s);
-		return NULL; //error! no name found;
-	}
-	e=s;
-	while (isspace(*e)) e++;
-
-	if (*e=='=') {
-		name=newnstr(str,s-str);
-		str=e+1;
-		while (isspace(*str)) str++;
-	} else {
-		//leave str at beginning of what might have been a name
-		name=newstr("-");
-	}
-
-	 //now str points at the start of a value, we must parse the value now
-	subatt=att;
-	do {
-		s=str; //*str!=whitespace
-
-		 //scan for a value string
-		if (isdigit(*s)) while (*s && !isspace(*s) && *s!=',' && *s!=')') s++;
-		else while (*s && !isspace(*s) && *s!=',' && *s!=')' && *s!='.' && *s!='(') s++;
-		if (s==str) {
-			 //reached end of field
-			if (*str==',') str++; //make str point to start of next field
-			if (*s=='(' || *s=='.') error=1;
-			break;
-		}
-
-		 //push new attribute with name and value. we might add subattributes
-		value=newnstr(str,s-str);
-		subatt->push(name,value); //1st is something like "-" -> "net", then "."->"net"
-		delete[] name;  name=NULL;
-		delete[] value; value=NULL;
-
-		while (isspace(*s)) s++;
-		if (*s=='.') {
-			 //found something like "net.box(1,2,3)", and value would be "net"
-			if (name==NULL) name=newstr(".");
-			s++;
-			while (isspace(*s)) s++;
-			str=s;
-			
-			subatt=subatt->attributes.e[subatt->attributes.n-1];
-			continue;
-		}
-		if (*s=='(') {
-			s++;
-			str=s;
-			subatt=subatt->attributes.e[subatt->attributes.n-1];
-			char *ee;
-			if (parse_fields(subatt,str,&ee)==NULL) {
-				error=1;
-				break;
-			}
-			s=ee;
-			if (*s!=')') {
-				error=1; //error! unmatched ')'
-				break;
-			}
-			str=s+1;
-			while (isspace(*str)) str++;
-			if (*str==',') str++;
-			//at this point, there should be ONLY a ')', whitespace, or eol left in field
-			break;
-		}
-		if (*s==')' || *s==',') {
-			 //we have a simple attribute, then we are at end of the field
-			str=s;
-			break;
-		}
-		str=s;
-	} while (str && *str && !error);
-
-	if (name) delete[] name;
-	if (value) delete[] value;
-
-	if (end_ptr) *end_ptr=const_cast<char*>(str);
-	if (error && att!=Att) { delete att; att=NULL; } //att was created locally
-
-	return att;
 }
 
 
