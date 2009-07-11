@@ -24,24 +24,58 @@
 class LaidoutCalculator : public Laxkit::RefCounted
 {
  private:
-	char *messagebuffer;
+	 //context state
 	char *dir;
+
+	 //evaluation stuff
+	Value *last_answer;
+	char *messagebuffer;
+	int from,calcerror;
+	char *curexprs;
+	int curexprslen;
+	char *calcmes;
+	char decimal;
+
 	ValueHash *parse_parameters(StyleDef *def, const char *in, int len, char **error_pos_ret);
 	ValueHash *build_context();
+
+	void calcerr(const char *error,const char *where=NULL,int w=0, int surround=40);
+	char *getnamestring(int *n);
+	void skipwscomment();
+	int nextchar(char ch);
+	int nextword(const char *word);
+	void newcurexprs(const char *newex,int len);
+	int sessioncommand();
+	Value *eval(const char *exprs);
+	Value *eval();
+	Value *multterm();
+	Value *powerterm();
+	Value *number();
+	long intnumber();
+	double realnumber();
+	Value *getstring();
+	Value *evalname();
+	void messageOut(const char *str);
+	int add(Value *&num1,Value *&num2);
+	int subtract(Value *&num1,Value *&num2);
+	int multiply(Value *&num1,Value *&num2);
+	int divide(Value *&num1,Value *&num2);
+	int power(Value *&num1,Value *&num2);
+	ValueHash *parseParameters(StyleDef *def);
  protected:
-	char decimal;
  public:
 	LaidoutCalculator();
 	virtual ~LaidoutCalculator();
 
 	virtual char *In(const char *in);
 	virtual int evaluate(const char *in, int len, Value **value_ret, int *error_pos, char **error_ret);
+
+	virtual void clearerror();
+	const char *Message();
 };
 
 //------------------------------- parsing helpers ------------------------------------
-LaxFiles::Attribute *parse_fields(LaxFiles::Attribute *Att, const char *str,char **end_ptr);
-LaxFiles::Attribute *parse_a_field(LaxFiles::Attribute *Att, const char *str, char **end_ptr);
-LaxFiles::Attribute *MapAttParameters(LaxFiles::Attribute *rawparams, StyleDef *def);
+ValueHash *MapParameters(StyleDef *def,ValueHash *rawparams);
 
 
 #endif

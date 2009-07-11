@@ -60,6 +60,30 @@ int ValueHash::push(const char *name,Laxkit::RefCounted *obj)
 	return values.push(new ObjectValue(obj));
 }
 
+int ValueHash::n()
+{ return keys.n; }
+
+void ValueHash::swap(int i1, int i2)
+{
+	if (i1<0 || i1>keys.n || i2<0 || i2>keys.n) return;
+	keys.swap(i1,i2);
+	values.swap(i1,i2);
+}
+
+//! Return name of key at index i.
+const char *ValueHash::key(int i)
+{
+	if (i<0 || i>=keys.n) return NULL;
+	return keys.e[i];
+}
+
+//! Rename key at index i.
+void ValueHash::renameKey(int i,const char *newname)
+{
+	if (i<0 || i>=keys.n) return;
+	makestr(keys.e[i],newname);
+}
+
 //! Return the index corresponding to name, or -1 if not found.
 int ValueHash::findIndex(const char *name)
 {
@@ -155,7 +179,7 @@ const char *DoubleValue::toCChar()
 
 //--------------------------------- StringValue -----------------------------
 StringValue::StringValue(const char *s, int len)
-{ str=newnstr(s); }
+{ str=newnstr(s,len); }
 
 const char *StringValue::toCChar()
 {
