@@ -20,26 +20,49 @@
 #include <lax/refcounted.h>
 
 
+typedef int Unit;
+
+enum ValueTypes {
+	VALUE_None,
+	VALUE_Int,
+	VALUE_Double,
+	VALUE_String,
+	VALUE_Object,
+	VALUE_Set
+}
+
 //----------------------------- Value ----------------------------------
 class Value : public Laxkit::RefCounted
 {
  protected:
 	char *tempstr;
  public:
-	//char *units;
+	Unit units;
 	Value();
 	virtual ~Value();
 	virtual const char *toCChar() = 0;
-	//const char *whattype()=0;
+	const char *whattype() { return "Value"; }
+	virtual int type() = 0;
 };
+
+//----------------------------- SetValue ----------------------------------
+//class SetValue : public Value
+//{
+// public:
+//	RefPtrStack<Value> values;
+//	IntValue(Value *v) { values.push(v); }
+//	virtual const char *toCChar();
+//	virtual int type() { return VALUE_Set; }
+//};
 
 //----------------------------- IntValue ----------------------------------
 class IntValue : public Value
 {
  public:
-	int i;
-	IntValue(int ii=0) { i=ii; }
+	long i;
+	IntValue(long ii=0) { i=ii; }
 	virtual const char *toCChar();
+	virtual int type() { return VALUE_Int; }
 };
 
 //----------------------------- DoubleValue ----------------------------------
@@ -49,6 +72,7 @@ class DoubleValue : public Value
 	double d;
 	DoubleValue(int dd=0) { d=dd; }
 	virtual const char *toCChar();
+	virtual int type() { return VALUE_Double; }
 };
 
 //----------------------------- StringValue ----------------------------------
@@ -56,9 +80,10 @@ class StringValue : public Value
 {
  public:
 	char *str;
-	StringValue(const char *s=NULL);
+	StringValue(const char *s=NULL, int len=-1);
 	virtual ~StringValue() { if (str) delete[] str; }
 	virtual const char *toCChar();
+	virtual int type() { return VALUE_String; }
 };
 
 //----------------------------- ObjectValue ----------------------------------
@@ -69,6 +94,7 @@ class ObjectValue : public Value
 	ObjectValue(RefCounted *obj=NULL);
 	virtual ~ObjectValue();
 	virtual const char *toCChar();
+	virtual int type() { return VALUE_Object; }
 };
 
 //----------------------------- ValueHash ----------------------------------

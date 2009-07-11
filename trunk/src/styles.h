@@ -141,7 +141,14 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	virtual int getNumFields();
 	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findDef(int index,StyleDef **def);
-	virtual int getInfo(int index,const char **nm=NULL,const char **Nm=NULL,const char **desc=NULL);
+	virtual int getInfo(int index,
+						const char **nm=NULL,
+						const char **Nm=NULL,
+						const char **desc=NULL,
+						const char **rng=NULL,
+						const char **defv=NULL,
+						ElementType *fmt=NULL,
+						int *objtype=NULL);
  	//int *getfields(const char *extstr); // returns 0 terminated list of indices: "1.4.23+ -> { 1,4,23,0 }
 
 	 //-------- StyleDef creation helper functions ------

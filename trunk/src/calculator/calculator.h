@@ -24,14 +24,18 @@
 class LaidoutCalculator : public Laxkit::RefCounted
 {
  private:
+	char *messagebuffer;
 	char *dir;
 	ValueHash *parse_parameters(StyleDef *def, const char *in, int len, char **error_pos_ret);
 	ValueHash *build_context();
+ protected:
+	char decimal;
  public:
 	LaidoutCalculator();
 	virtual ~LaidoutCalculator();
 
 	virtual char *In(const char *in);
+	virtual int evaluate(const char *in, int len, Value **value_ret, int *error_pos, char **error_ret);
 };
 
 //------------------------------- parsing helpers ------------------------------------

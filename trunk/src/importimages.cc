@@ -136,7 +136,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anO
 	return att;
 }
 
-//-------------------------
+//-------------------------*** maybe have: ??
 //class ImportImagesConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 //{
 // public:
@@ -149,6 +149,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anO
 //	char *defaultpreviewname;
 //	int perpage;
 //	double defaultdpi;
+//	Arrangement *arrangement;
 //
 //	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 //	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
