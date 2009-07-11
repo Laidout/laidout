@@ -756,7 +756,14 @@ int StyleDef::getNumFields()
  *
  * Returns 0 success, 1 error.
  */
-int StyleDef::getInfo(int index,const char **nm,const char **Nm,const char **desc)
+int StyleDef::getInfo(int index,
+						const char **nm,
+						const char **Nm,
+						const char **desc,
+						const char **rng,
+						const char **defv,
+						ElementType *fmt,
+						int *objtype)
 {
 	StyleDef *def=NULL;
 	index=findDef(index,&def);
@@ -770,6 +777,10 @@ int StyleDef::getInfo(int index,const char **nm,const char **Nm,const char **des
 	if (nm) *nm=def->fields->e[index]->name;
 	if (Nm) *Nm=def->fields->e[index]->Name;
 	if (desc) *desc=def->fields->e[index]->description;
+	if (rng) *rng=def->fields->e[index]->range;
+	if (defv) *defv=def->fields->e[index]->defaultvalue;
+	if (fmt) *fmt=def->fields->e[index]->format;
+	if (objtype) *objtype=def->fields->e[index]->fieldsformat;
 	return 0;
 }
 

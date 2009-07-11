@@ -77,7 +77,7 @@ Value *ValueHash::find(const char *name)
 	return NULL;
 }
 
-int ValueHash::findInt(const char *name, int which)
+long ValueHash::findInt(const char *name, int which)
 {
 	if (which<0) which=findIndex(name);
 	if (which<0) return 0;
@@ -127,7 +127,8 @@ Laxkit::RefCounted *ValueHash::findObject(const char *name, int which)
  */
 
 Value::Value()
-	: tempstr(NULL)
+	: tempstr(NULL),
+	  units(0)
 {
 }
 
@@ -140,21 +141,21 @@ Value::~Value()
 const char *IntValue::toCChar()
 {
 	if (!tempstr) tempstr=new char[20];
-	sprintf(tempstr,"%d",i);
+	sprintf(tempstr,"%ld",i);
 	return tempstr;
 }
 
 //--------------------------------- DoubleValue -----------------------------
 const char *DoubleValue::toCChar()
 {
-	if (!tempstr) tempstr=new char[20];
+	if (!tempstr) tempstr=new char[30];
 	sprintf(tempstr,"%g",d);
 	return tempstr;
 }
 
 //--------------------------------- StringValue -----------------------------
-StringValue::StringValue(const char *s)
-{ str=newstr(s); }
+StringValue::StringValue(const char *s, int len)
+{ str=newnstr(s); }
 
 const char *StringValue::toCChar()
 {
