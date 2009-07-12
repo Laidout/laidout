@@ -110,10 +110,12 @@ class ValueHash
 	int push(const char *name,int i);
 	int push(const char *name,double d);
 	int push(const char *name,const char *string);
-	int push(const char *name,Laxkit::RefCounted *obj);
+	int pushObject(const char *name,Laxkit::RefCounted *obj);
+	int push(const char *name,Value *v);
 	void swap(int i1, int i2);
 	void renameKey(int i,const char *newname);
 	const char *key(int i);
+	Value *value(int i);
 
 	int n();
 	Value *find(const char *name);

@@ -242,7 +242,7 @@ char *LaidoutCalculator::In(const char *in)
 	if (v) {
 		appendstr(messagebuffer,v->toCChar());
 		v->dec_count();
-	} else appendstr(messagebuffer,Message());
+	} else if (!messagebuffer && calcerror) makestr(messagebuffer,calcmes);
 	if (messagebuffer) return newstr(messagebuffer);
 
 	return newstr(_("You are surrounded by twisty passages, all alike."));
@@ -263,6 +263,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 	int num_expr_parsed=0;
 
 	if (in==NULL) { calcerr(_("Blank expression")); return NULL; }
+	clearerror();
 
 	Value *answer=NULL;
 	if (len<0) len=strlen(in);
@@ -275,6 +276,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		tfrom=from;
 		if (answer) { answer->dec_count(); answer=NULL; }
 		if (sessioncommand()) { //  checks for session commands 
+			if (!messagebuffer) messageOut(_("Ok.")); //***
 			skipwscomment();
 			if (from>=curexprslen) break;
 			if (nextchar(';')) ; //advance past a ;
@@ -452,6 +454,12 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 					appendstr(temp,"\n");
 				}
 			}
+
+			 //Show builtin math functions
+			appendstr(temp,_("\nMath functions: "));
+			appendstr(temp,"\npi, e, tau, sin, asin, cos, acos, tan, atan, atan2, abs, sgn, sqrt, int, "
+						   "gint, floor, lint, ceiling, log, ln, exp, cosh, sinh, tanh, factor\n");
+
 
 			 //Show function definitions in stylemanager
 			if (stylemanager.functions.n) {
@@ -722,6 +730,9 @@ Value *LaidoutCalculator::getstring()
 	return str;
 }
 
+/*! from points to beginning of word.
+ * If name not found, then from will still point to beginning of word.
+ */
 Value *LaidoutCalculator::evalname()
 {
 	 //search for function name
@@ -734,6 +745,8 @@ Value *LaidoutCalculator::evalname()
 	//    In this case, the function parameters will have 1 parameter: "commanddata",value=[in..end).
 	//    otherwise, assume nested parsing like "function (x,y)", "function x,y"
 	int c;
+
+	 //search for function in stylemanager
 	for (c=0; c<stylemanager.functions.n; c++) {
 		if (!strcmp(word,stylemanager.functions.e[c]->name)) break;
 	}
@@ -764,7 +777,117 @@ Value *LaidoutCalculator::evalname()
 		if (calcerror) { if (value) value->dec_count(); value=NULL; }
 		return value;
 	}
+
+	 //search for user variables
+	//***
+
+	 //search for innate functions
+	Value *num=evalInnate(word,n);
+	if (num) return num;
+	
 	return NULL;
+}
+
+//! parse and compute standard math functions like sqrt(x), sin(x), etc.
+/*! Also a couple math numbers like e, pi, and tau (golden ratio).
+ *
+ * Another function is factor(i) which returns a string with the factors of i.
+ */
+Value *LaidoutCalculator::evalInnate(const char *word, int len)
+{
+	 //math constants
+	if (!strcmp(word,"pi")) { from+=len; return new DoubleValue(M_PI); }
+	if (!strcmp(word,"e")) { from+=len; return new DoubleValue(exp(1)); }
+	if (!strcmp(word,"tau")) { from+=len; return new DoubleValue((1+sqrt(5))/2); }
+
+	int tfrom=from;
+	from+=len;
+	ValueHash *pp=parseParameters(NULL);
+	if (!pp) return NULL;
+	Value *v=NULL;
+
+	try {
+		v=pp->value(0);
+		double d;
+		if (v->type()==VALUE_Int) d=((IntValue*)v)->i;
+		else if (v->type()==VALUE_Double) d=((DoubleValue*)v)->d;
+		else throw 1;
+
+		if (pp->n()==2) {
+			double d2;
+			v=pp->value(1);
+			if (v->type()==VALUE_Int) d2=((IntValue*)v)->i;
+			else if (v->type()==VALUE_Double) d2=((DoubleValue*)v)->d;
+			else { v=NULL; throw 1; }
+
+			if (!strcmp(word,"atan2")) { d=atan2(d,d2); if (decimal) d*=180/M_PI; v=new DoubleValue(d); }
+			else { v=NULL; throw -1; }
+
+		} else if (pp->n()==1) {
+			if (!strcmp(word,"sin"))  { if (decimal) d*=M_PI/180; v=new DoubleValue(sin(d)); }
+			else if (!strcmp(word,"asin")) { if (d<-1. || d>1.) throw 3; d=asin(d); if (decimal) d*=180/M_PI; v=new DoubleValue(d); }
+			else if (!strcmp(word,"cos"))  { if (decimal) d*=M_PI/180; v=new DoubleValue(cos(d)); }
+			else if (!strcmp(word,"acos")) { if (d<-1. || d>1.) throw 3; d=acos(d); if (decimal) d*=180/M_PI; v=new DoubleValue(d); }
+			else if (!strcmp(word,"tan"))  { if (decimal) d*=M_PI/180; v=new DoubleValue(tan(d)); }
+			else if (!strcmp(word,"atan")) { v=new DoubleValue(atan(d)); }
+
+			else if (!strcmp(word,"abs"))  { 
+				if (v->type()==VALUE_Int) v=new IntValue(abs(((IntValue*)v)->i));
+				else v=new DoubleValue(fabs(d)); 
+			}
+			else if (!strcmp(word,"sgn"))  { v=new IntValue(d>0?1:(d<0?-1:0)); }
+			else if (!strcmp(word,"int"))  { v=new IntValue(int(d)); }
+			else if (!strcmp(word,"gint")) { v=new IntValue(floor(d)); }
+			else if (!strcmp(word,"floor")) { v=new IntValue(floor(d)); }
+			else if (!strcmp(word,"lint")) { v=new IntValue(ceil(d)); }
+			else if (!strcmp(word,"ceiling")) { v=new IntValue(ceil(d)); }
+			else if (!strcmp(word,"exp"))  { v=new DoubleValue(exp(d)); }
+			else if (!strcmp(word,"cosh")) { v=new DoubleValue(cosh(d)); }
+			else if (!strcmp(word,"sinh")) { v=new DoubleValue(sinh(d)); }
+			else if (!strcmp(word,"tanh")) { v=new DoubleValue(tanh(d)); }
+
+			else if (!strcmp(word,"sqrt")) { if (d<0) throw 2; v=new DoubleValue(sqrt(d)); }
+
+			else if (!strcmp(word,"log"))  { if (d<=0) throw 4; v=new DoubleValue(log(d)/log(10)); }
+			else if (!strcmp(word,"ln"))   { if (d<=0) throw 4; v=new DoubleValue(log(d)); } // d must be >0
+
+			else if (!strcmp(word,"factor")) {
+				if (v->type()!=VALUE_Int) throw 1;
+				long n=((IntValue*)v)->i;
+				char *str=NULL, temp[20];
+				
+				double c=2;
+				if (n==0) appendstr(str,"0");
+				else if (n<0) {
+					n=-n;
+					appendstr(str,"-1");
+				} 
+				while (n>1) {
+					if (n-c*(int(n/c))==0) {
+						if (str) appendstr(str,",");
+						sprintf(temp,"%d",int(c));
+						appendstr(str,temp);
+						n/=c;
+						c=2;
+					} else c++;
+				}
+				v=new StringValue(str);
+				delete[] str;
+			} else throw -1;
+
+		} else { v=NULL; throw -1; }
+	} catch (int e) {
+		if (e==-1) from=tfrom;
+		else if (e==1) calcerr(_("Cannot compute with that type"));
+		else if (e==2) calcerr(_("Parameter must be greater than or equal to 0"));
+		else if (e==3) calcerr(_("Parameter must be in range [-1,1]"));
+		else if (e==4) calcerr(_("Parameter must be greater than 0"));
+		else calcerr(_("Can't do that math"));
+		v=NULL;
+	}
+
+	if (pp) delete pp;
+	return v;
 }
 
 //! This will be for status messages during the execution of a script.
@@ -797,18 +920,18 @@ int LaidoutCalculator::add(Value *&num1,Value *&num2)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num1->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
 		((IntValue *) num1)->i+=((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Int) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
 		((DoubleValue *) num1)->d+=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
 		((DoubleValue *) num2)->d+=(double)((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
 		((DoubleValue *) num1)->d+=((DoubleValue*)num2)->d;
-	} else if (num1->type()==VALUE_String && num1->type()==VALUE_String) {
+	} else if (num1->type()==VALUE_String && num2->type()==VALUE_String) {
 		appendstr(((StringValue *)num1)->str,((StringValue *)num2)->str);
 	} else throw _("Cannot add those types");
 
@@ -827,16 +950,16 @@ int LaidoutCalculator::subtract(Value *&num1,Value *&num2)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num1->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
 		((IntValue *) num1)->i-=((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Int) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
 		((DoubleValue *) num1)->d-=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
 		((DoubleValue *) num2)->d=(double)((IntValue*)num1)->i - ((DoubleValue *) num2)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
 		((DoubleValue *) num1)->d-=((DoubleValue*)num2)->d;
 	} else throw _("Cannot subtract those types");
 
@@ -855,16 +978,16 @@ int LaidoutCalculator::multiply(Value *&num1,Value *&num2)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num1->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
 		((IntValue *) num1)->i*=((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Int) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
 		((DoubleValue *) num1)->d*=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
 		((DoubleValue *) num2)->d*=(double)((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
 		((DoubleValue *) num1)->d*=((DoubleValue*)num2)->d;
 	} else throw _("Cannot multiply those types");
 
@@ -898,14 +1021,14 @@ int LaidoutCalculator::divide(Value *&num1,Value *&num2)
 			num1->dec_count();
 			num1=v;
 		}
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Int) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
 		((DoubleValue *) num1)->d/=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
 		((DoubleValue *) num2)->d=(double)((IntValue*)num1)->i / ((DoubleValue *) num2)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num1->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
 		((DoubleValue *) num1)->d/=((DoubleValue*)num2)->d;
 	} else throw _("Cannot divide those types");
 
@@ -913,6 +1036,8 @@ int LaidoutCalculator::divide(Value *&num1,Value *&num2)
 	return 1;
 }
 
+/*! \todo for roots that are actually integers, should maybe check for that.
+ */
 int LaidoutCalculator::power(Value *&num1,Value *&num2)
 {
 	if (num1==NULL) { if (num2) { num2->dec_count(); num2=NULL; } return 0; }
@@ -958,11 +1083,11 @@ ValueHash *LaidoutCalculator::build_context()
 	return pp;
 }
 
-//! Take a string and parse into function parameters.
+//! Parse into function parameters.
+/*! If def!=NULL, then call MapParameters() to get the parameters to match the fields of the StyleDef.
+ */
 ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 {
-	if (!def) return NULL;
-
 	ValueHash *pp=NULL;
 
 // ***	 //check for when the styledef has 1 string parameter, and you have a large in string.
@@ -1005,10 +1130,15 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 			}
 			if (pname) { delete[] pname; pname=NULL; }
 
-		} while (!calcerror && from!=tfrom && !nextchar(')'));
+		} while (!calcerror && from!=tfrom && nextchar(','));
+		if (!nextchar(')')) {
+			delete pp;
+			pp=NULL;
+			calcerr(_("Expected closing ')'")); 
+		}
 	} 
 
-	if (pp) MapParameters(def,pp);
+	if (pp && def) MapParameters(def,pp);
 	return pp;
 }
 
@@ -1077,7 +1207,7 @@ ValueHash *MapParameters(StyleDef *def,ValueHash *rawparams)
 	 //we go through from 0, and swap as needed
 	for (int c=0; c<n; c++) { //for each styledef field
 		def->getInfo(c,&name,NULL,NULL);
-		if (c>=rawparams->n()) rawparams->push(name,(RefCounted*)NULL);
+		if (c>=rawparams->n()) rawparams->push(name,(Value*)NULL);
 
 		//if (format==Element_DynamicEnum || format==Element_Enum) {
 		//	 //rawparam att name could be any one of the enum names
