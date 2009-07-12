@@ -53,11 +53,19 @@ int ValueHash::push(const char *name,const char *value)
 	return values.push(new StringValue(value));
 }
 
+//! Create an ObjectValue with obj, and push.
 /*! Increments obj count. */
-int ValueHash::push(const char *name,Laxkit::RefCounted *obj)
+int ValueHash::pushObject(const char *name,Laxkit::RefCounted *obj)
 {
 	keys.push(newstr(name));
 	return values.push(new ObjectValue(obj));
+}
+
+/*! Increments count on v. */
+int ValueHash::push(const char *name,Value *v)
+{
+	keys.push(newstr(name));
+	return values.push(v);
 }
 
 int ValueHash::n()
@@ -75,6 +83,13 @@ const char *ValueHash::key(int i)
 {
 	if (i<0 || i>=keys.n) return NULL;
 	return keys.e[i];
+}
+
+//! Return the value at index i.
+Value *ValueHash::value(int i)
+{
+	if (i<0 || i>=keys.n) return NULL;
+	return values.e[i];
 }
 
 //! Rename key at index i.

@@ -37,6 +37,7 @@ CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigne
  		int xx,int yy,int ww,int hh,int brder)
 	: PromptEdit(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
 {
+	textstyle|=TEXT_WORDWRAP;
 	padx=pady=6;
 	calculator=new LaidoutCalculator();
 }
