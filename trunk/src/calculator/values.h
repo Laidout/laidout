@@ -70,7 +70,7 @@ class DoubleValue : public Value
 {
  public:
 	double d;
-	DoubleValue(int dd=0) { d=dd; }
+	DoubleValue(double dd=0) { d=dd; }
 	virtual const char *toCChar();
 	virtual int type() { return VALUE_Double; }
 };

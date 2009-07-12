@@ -113,9 +113,6 @@ void LaidoutCalculator::calcerr(const char *error,const char *where,int w, int s
 	calcerror=from;
 	if (from==0) calcerror=1;
 
-	char *temp=NULL;
-
-	appendstr(calcmes,"\n");
 	appendstr(calcmes,error);
 	if (w) appendstr(calcmes,": ");
 	appendstr(calcmes,where);
@@ -139,7 +136,7 @@ void LaidoutCalculator::calcerr(const char *error,const char *where,int w, int s
 		if (bbb) appendstr(calcmes,"...");
 		appendnstr(calcmes,curexprs+before,pos-before);
 	}
-	appendstr(temp,"<*>");
+	appendstr(calcmes,"<*>");
 	if (after>pos) {
 		appendnstr(calcmes,curexprs+pos,after-pos);
 		if (aaa) appendstr(calcmes,"...");
@@ -216,9 +213,9 @@ int LaidoutCalculator::nextword(const char *word)
 {
 	skipwscomment();
 
-	int len=strlen(word)-1;
+	int len=strlen(word);
 	for (int c=0; c<len; c++) if (curexprs[from+c]!=word[c]) return 0;
-	if (isalnum(curexprs[from+len]) || curexprs[from+len]!='_') return 0;
+	if (isalnum(curexprs[from+len]) || curexprs[from+len]=='_') return 0;
 
 	from+=len;
 	return 1;
@@ -242,8 +239,11 @@ char *LaidoutCalculator::In(const char *in)
 	int errorpos=0;
 	evaluate(in,-1, &v, &errorpos, NULL);
 
-	if (v) appendstr(messagebuffer,v->toCChar());
-	if (messagebuffer) return messagebuffer;
+	if (v) {
+		appendstr(messagebuffer,v->toCChar());
+		v->dec_count();
+	} else appendstr(messagebuffer,Message());
+	if (messagebuffer) return newstr(messagebuffer);
 
 	return newstr(_("You are surrounded by twisty passages, all alike."));
 }
@@ -277,6 +277,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		if (sessioncommand()) { //  checks for session commands 
 			skipwscomment();
 			if (from>=curexprslen) break;
+			if (nextchar(';')) ; //advance past a ;
 			continue;
 		}
 		if (calcerror) break;
@@ -292,7 +293,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		if (error_pos) *error_pos=calcerror;
 	} 
 	if (error_ret && calcmes) appendline(*error_ret,calcmes); 
-	if (value_ret) { *value_ret=answer; answer->inc_count(); }
+	if (value_ret) { *value_ret=answer; if (answer) answer->inc_count(); }
 	if (last_answer) last_answer->dec_count();
 	last_answer=answer; //last_answer takes the reference
 
@@ -312,9 +313,6 @@ void LaidoutCalculator::newcurexprs(const char *newex,int len)
  */
 int LaidoutCalculator::sessioncommand() //  done before eval
 {
-	char *temp=curexprs+from;     
-	if (!isalpha(*temp)) return 0;
-	
 	if (nextword("radians"))
 	    { decimal=0; return 1; }
 	
@@ -346,8 +344,6 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		}
 		 //show otherwise built in
 		messageOut(	  " show [object type or function name]\n"
-					  " newdoc [spec]\n"
-					  " open [a laidout document]\n"
 					  " about\n"
 					  " help\n"
 					  " quit\n"
@@ -360,7 +356,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		
 		char *showwhat=getnamestring(NULL);
 		char *temp=NULL;
-		if (*showwhat) { //show a particular item
+		if (showwhat) { //show a particular item
 			if (stylemanager.styledefs.n || stylemanager.functions.n) {
 				StyleDef *sd;
 				int n=stylemanager.styledefs.n + stylemanager.functions.n;
@@ -646,7 +642,7 @@ Value *LaidoutCalculator::number()
 double LaidoutCalculator::realnumber()
 {
 	char *endptr,*startptr=curexprs+from;
-	long r=strtof(startptr,&endptr);
+	double r=strtod(startptr,&endptr);
 	if (endptr==startptr) {
 		calcerr("Expected a number.");
 		return 0;
@@ -780,7 +776,7 @@ Value *LaidoutCalculator::evalname()
  */
 void LaidoutCalculator::messageOut(const char *str)
 {//***
-	cout <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
+	DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
 
 	appendline(messagebuffer,str);
 }
@@ -894,7 +890,7 @@ int LaidoutCalculator::divide(Value *&num1,Value *&num2)
 
 	if (divisor==0) throw _("Division by zero");
 
-	if (num1->type()==VALUE_Int && num1->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
 		if (((IntValue *) num1)->i % ((IntValue*)num2)->i == 0) 
 			((IntValue *) num1)->i/=((IntValue*)num2)->i;
 		else {
@@ -936,8 +932,8 @@ int LaidoutCalculator::power(Value *&num1,Value *&num2)
 	//***this could check for double close enough to int:
 	if (base<0 && num2->type()!=VALUE_Int) throw _("(-x)^(non int): Complex not allowed"); 
 
-	if (num1->type()==VALUE_Int && num1->type()==VALUE_Int && expon>=0) {
-		((IntValue*)num2)->i=(long)(pow(base,expon)+.5);
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int && expon>=0) {
+		((IntValue*)num1)->i=(long)(pow(base,expon)+.5);
 	} else {
 		num1->dec_count();
 		num1=new DoubleValue(pow(base,expon));
