@@ -473,9 +473,18 @@ int export_document(DocumentExportConfig *config,char **error_ret)
  * 0 is convert nothing. 1 is convert as possible. 2 is do not convert, all
  * objects become mystery data.
  */
+/*! \var int ImportConfig::scaletopage
+ * \brief How to scale imported things that don't fit the page.
+ *
+ * 0 means do no scaling. 1 means always scale so an imported page will fit
+ * within the bounds of a document page. If the imported page is smaller,
+ * then it is not scaled. 2 is like 1, except that if a page is smaller,
+ * it IS scaled to the maximum size that still fits in the document page.
+ */
 
 ImportConfig::ImportConfig()
 {
+	scaletopage=0;
 	filename=NULL;
 	keepmystery=0;
 	instart=inend=-1;
@@ -494,6 +503,7 @@ ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int 
 				 Document *ndoc, Group *nobj)
 {
 	filename=newstr(file);
+	scaletopage=0;
 	keepmystery=0;
 	instart=ins;
 	inend=ine;
@@ -526,6 +536,7 @@ void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *contex
 		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to attempt import from\n",spc);
 		return;
 	}
+	fprintf(f,"%sscaletopage %d\n",spc,scaletopage);//***
 	if (keepmystery) fprintf(f,"%skeepmystery\n",spc);
 	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
 	//fprintf(f,"%sstart %d\n",spc,start);
@@ -544,6 +555,8 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *contex
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"keepmystery")) {
 			keepmystery=BooleanAttribute(value);
+		} else if (!strcmp(name,"scaletopage")) {
+			IntAttribute(value,&scaletopage);
 		} else if (!strcmp(name,"format")) {
 			filter=NULL;
 			 //search for exact format match first

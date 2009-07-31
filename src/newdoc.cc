@@ -174,7 +174,7 @@ int LaidoutOpenWindow::DataEvent(EventData *data,const char *mes)
 				n++;
 				openingdocs=1;
 				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
-				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c]);
+				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c],NULL);
 			}
 		}
 
@@ -726,8 +726,8 @@ void NewDocWindow::updateImposition()
 void NewDocWindow::sendNewDoc()
 {
 	 // find and get dup of imposition
-	Imposition *imposition=imp;
-	if (imposition) imposition->inc_count();
+	Imposition *imposition=imp; 
+	imp=NULL; //disable to as to not delete it in ~NewDocWindow()
 	int c;
 	if (!imposition) {
 		for (c=0; c<laidout->impositionpool.n; c++) {
@@ -765,8 +765,8 @@ void NewDocWindow::sendNewDoc()
 		
 	imposition->NumPages(npgs);
 	imposition->SetPaperSize(papertype);
-	laidout->NewDocument(imposition,saveas->GetCText());
-	if (imposition) imposition->dec_count();
+	laidout->NewDocument(imposition,saveas->GetCText()); //incs imp count, should be 2 now
+	if (imposition) imposition->dec_count();//remove excess count
 }
 
 //--------------------------------- NewProjectWindow ------------------------------------

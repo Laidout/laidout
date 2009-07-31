@@ -274,7 +274,7 @@ int ImportImagesDialog::init()
 			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
 	//***populate reviewlist as needed...
 
-	app->destroywindow(filelist);
+	MenuSelector *oldfilelist=filelist;
 	filelist=new MenuSelector(this,"files",0, 0,0,0,0,1,
 			last,window,"files",
 			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
@@ -285,6 +285,7 @@ int ImportImagesDialog::init()
 	tabframe->AddWin(reviewlist,_("Review"),NULL);
 	//tabframe->SelectN(0);
 	wholelist.remove(c);
+	app->destroywindow(oldfilelist);
 	//-------------------
 	//***workaround for broken Laxkit::SquishyBox derived window insertion
 	WinFrameBox *wfb=new WinFrameBox();

@@ -360,7 +360,7 @@ StyleDef *RectPageStyle::makeStyleDef()
 //			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
 //			NewStyleFunc nnewfunc=0);
 	if (recttype&RECTPAGE_IOTB) 
-		sd=new StyleDef("pagestyle","facingrectstyle",
+		sd=new StyleDef("PageStyle","facingrectstyle",
 						_("Rectangular Facing Page"),
 						_("Rectangular Facing Page"),
 						Element_Fields,NULL,NULL,
@@ -372,7 +372,7 @@ StyleDef *RectPageStyle::makeStyleDef()
 						_("Rectangular Top Facing Page"),
 						Element_Fields,NULL,NULL,
 						NULL,0,NewRectPageStyle);
-	else sd=new StyleDef("pagestyle","RectPageStyle",
+	else sd=new StyleDef("PageStyle","RectPageStyle",
 					_("Rectangular Page"),
 					_("Rectangular Page"),
 					Element_Fields,NULL,NULL,

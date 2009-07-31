@@ -1000,8 +1000,10 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	if (in->inend<0 || in->inend>=numpages) end=numpages-1; 
 		else end=in->inend;
 
-	DoubleBBox pagebounds[end-start+1];
-	if (doc && docpagenum+(end-start)>=doc->pages.n) 
+	SomeData pagebounds[end-start+1]; //max/min are the bounds in the Scribus canvas space,
+									 //and m() is optional whole page transform to fit doc pages
+
+	if (doc && docpagenum+(end-start)>=doc->pages.n) //create enough pages to hold the Scribus pages
 		doc->NewPages(-1,(docpagenum+(end-start+1))-doc->pages.n);
 
 	if (scribushints) {
@@ -1072,6 +1074,32 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				makestr(a->value,scratch);
 				scribushints->push(a,-1);
 			}
+
+			 //create extra transform if we need to scale to pages
+			if (doc && in->scaletopage!=0) {
+				PageStyle *pagestyle=doc->pages.e[docpagenum+(pagenum-start)]->pagestyle;
+				double scrw=(pagebounds[pagenum].maxx-pagebounds[pagenum].minx)/72,
+					   scrh=(pagebounds[pagenum].maxy-pagebounds[pagenum].miny)/72;
+				double sx,sy; //scaling factors: laidout page/scribus page
+				sx=pagestyle->w()/scrw;
+				sy=pagestyle->h()/scrh;
+				if (sx>1 && sy>1) {
+					 //scribus page fits entirely within laidout page. We need to center, but
+					 //scale only if scaletopage==2
+					if (in->scaletopage!=2) { sx=sy=1; }
+				} 
+				 //apply scale
+				if (sx!=1 && sy!=1) {
+					if (sy<sx) sx=sy;
+					pagebounds[pagenum].m(0,sx);
+					pagebounds[pagenum].m(3,sx);
+				}
+				 //center when dimensions vary
+				if (scrw!=pagestyle->w() && scrh!=pagestyle->h()) {
+					pagebounds[pagenum].m(4,(pagestyle->w()-scrw*sx)/2);
+					pagebounds[pagenum].m(5,(pagestyle->h()-scrh*sx)/2);
+				}
+			}
 			continue;
 		}
 	}
@@ -1129,7 +1157,15 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				image->m()[2]*=h/image->maxy/72.;
 				image->m()[3]*=h/image->maxy/72.;
 				image->Flip(0);
+				if (in->scaletopage!=0) {
+					 //apply extra page transform to fit document page
+					double mt[6];
+					//transform_mult(mt,pagebounds[pagenum].m(),image->m());
+					transform_mult(mt,image->m(),pagebounds[pagenum].m());
+					transform_copy(image->m(),mt);
+				}
 				group->push(image);
+				image->dec_count();
 
 			} else if (scribushints) { 
 				 //undealt with object, push as MysteryData if in->keepmystery
@@ -1144,7 +1180,15 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				mdata->maxx=w/72;
 				mdata->maxy=h/72;
 				mdata->attributes=object->duplicate();
+				if (in->scaletopage!=0) {
+					 //apply extra page transform to fit document page
+					double mt[6];
+					//transform_mult(mt,pagebounds[pagenum].m(),mdata->m());
+					transform_mult(mt,mdata->m(),pagebounds[pagenum].m());
+					transform_copy(mdata->m(),mt);
+				}
 				group->push(mdata);
+				mdata->dec_count();
 			}
 
 		//} else if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {

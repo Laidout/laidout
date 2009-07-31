@@ -46,6 +46,7 @@
 #include "printing/epsutils.h"
 #include "filetypes/filters.h"
 #include "utils.h"
+#include "api/functions.h"
 #include <lax/lists.cc>
 
 #include <sys/stat.h>
@@ -417,6 +418,10 @@ int LaidoutApp::init(int argc,char **argv)
 	if (!readinLaidoutDefaults()) {
 		createlaidoutrc();
 	}
+
+	 //establish user accesible api
+	DBG cerr<<"---install functions"<<endl;
+	InitFunctions();
 	
 	 //read in resources
 	char configfile[strlen(config_dir)+20];
@@ -445,9 +450,11 @@ int LaidoutApp::init(int argc,char **argv)
 
 
 	 //initialize the main calculator
+	DBG cerr<<"---init main calculator"<<endl;
 	if (!calculator) calculator=new LaidoutCalculator();
 
 	 // Note parseargs has to come after initing all the pools and whatever else
+	DBG cerr <<"---init: parse args"<<endl;
 	parseargs(argc,argv);
 	
 	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
@@ -458,13 +465,15 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 //try to load the default template if no windows are up
 	if (topwindows.n==0 && default_template) {
-		LoadTemplate(default_template);
+		LoadTemplate(default_template,NULL);
 	}
 	
 	 // if no other windows have been launched yet, then launch newdoc window
 	if (topwindows.n==0)
 		//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
 		addwindow(BrandNew());
+
+	DBG cerr <<"---done with init"<<endl;
 	
 	return 0;
 };
@@ -757,7 +766,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				exit(0);
 
 			case 't': { // load in template
-					LoadTemplate(optarg);
+					LoadTemplate(optarg,NULL);
 				} break;
 			case 's': { // --script
 					cout << "**** must implement script " << endl;
@@ -987,7 +996,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
  *
  * \todo deal with returned error when load failed
  */
-Document *LaidoutApp::LoadTemplate(const char *name)
+Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
 {
 	 // find absolute path to a file
 	char *fullname=full_path_for_resource(name,"templates");
@@ -997,7 +1006,7 @@ Document *LaidoutApp::LoadTemplate(const char *name)
 	 //must push before Load to not screw up setting up windows and other controls
 	project->Push(doc); // docs is a plain Laxkit::PtrStack of Document
 	doc->dec_count();
-	if (doc->Load(fullname,NULL)==0) { // load failed
+	if (doc->Load(fullname,error_ret)==0) { // load failed
 		project->Pop(NULL);
 		delete doc;
 		return NULL;
