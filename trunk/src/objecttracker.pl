@@ -32,20 +32,24 @@ open (OUT2FILE, ">$out2file") or die "can't open $out2file";
 
 $line=<OUTFILE>;
 while (defined($line)) {
-	print "$line\n";
-	if ($line =~ m/^.*(\d*).*created/) {
+	#print "$line\n";
+	if ($line =~ /^[a-zA-Z ]*([0-9]*).*created/) {
 		$num=$1;
-		print "  $num created";
+		#print "num:".$num;
+		#print "  $num created";
 		if (!defined($line=<OUTFILE>)) {
-			print " but NOT destroyed\n";
+			 #end of file reached
+			print " $num created but NOT destroyed\n";
 			break;
 		}
-		if (!($line =~ m/^.*(\d*).*destroyed/)) {
-			print " but NOT destroyed\n";
+		if (!($line =~ /^.*(\d*).*destroyed/)) {
+			print " $num  created but NOT destroyed\n";
 			print OUT2FILE "$num  created but NOT destroyed\n";
-			if (!($line=<OUTFILE>)) { break; }
+			next;
+			#if (!($line=<OUTFILE>)) { break; }
 		} else {
-			print " and destroyed\n";
+			#print " and destroyed\n";
+			print " $num  created and destroyed\n";
 		}
 	} else {
 		if (!defined($line=<OUTFILE>)) { break; }

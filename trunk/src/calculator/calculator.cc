@@ -377,8 +377,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 							appendstr(temp,"object ");
 						}
 						appendstr(temp,sd->name);
-						appendstr(temp,": ");
-						appendstr(temp,sd->Name);
+						//appendstr(temp,": ");
+						//appendstr(temp,sd->Name);
 						appendstr(temp,", ");
 						appendstr(temp,sd->description);
 						if (sd->format!=Element_Fields) {

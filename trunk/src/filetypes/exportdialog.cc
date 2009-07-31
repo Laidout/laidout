@@ -525,9 +525,15 @@ int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	} else if (!strcmp(mes,"ps-printall")) {
 		changeRangeTarget(1);
+		start(0);
+		end(max);
+		configBounds();
 		return 0;
 	} else if (!strcmp(mes,"ps-printcurrent")) {
 		changeRangeTarget(2);
+		start(cur);
+		end(cur);
+		configBounds();
 		return 0;
 	} else if (!strcmp(mes,"ps-printrange")) {
 		changeRangeTarget(3);

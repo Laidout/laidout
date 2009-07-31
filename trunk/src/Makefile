@@ -16,6 +16,7 @@ DEBUGFLAGS= -g -DDEBUG
 
 dirs= \
 	calculator \
+	api \
 	dataobjects \
 	impositions \
 	interfaces \
@@ -53,6 +54,9 @@ all: laidout
 
 laidout: lax laxinterface $(objs) $(dirs)
 	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
+
+api:
+	cd api && $(MAKE)
 
 calculator:
 	cd calculator && $(MAKE)

@@ -1749,7 +1749,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 		for (c=0; c<spread->pagestack.n; c++) {
 			if (spread->pagestack.e[c]->outline->pointin(p)) break;
 		}
-		if (c<spread->pagestack.n) {
+		if (c<spread->pagestack.n && spread->pagestack.e[c]->index>=0) {
 			curobj.context.push(1);
 			curobj.context.push(c);
 			curobj.context.push(spread->pagestack.e[c]->page->layers.n()-1);
@@ -2090,13 +2090,33 @@ void LaidoutViewport::Refresh()
 		flatpoint p;
 		SomeData *sd=NULL;
 		for (c=0; c<spread->pagestack.n; c++) {
-			DBG cerr <<" drawing from pagestack.e["<<c<<"]"<<endl;
+			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page=spread->pagestack.e[c]->page;
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) 
 					spread->pagestack.e[c]->page=page=doc->pages.e[spread->pagestack.e[c]->index];
 			}
-			if (!page) continue;
+			if (spread->pagestack.e[c]->index<0) {
+				 //if no page, then draw an x through the page stack outline
+				if (!spread->pagestack.e[c]->outline) continue;
+				PathsData *paths=dynamic_cast<PathsData *>(spread->pagestack.e[c]->outline);
+				if (!paths || !paths->paths.n) continue;
+				Coordinate *p=paths->paths.e[0]->path;
+				if (!p) continue;
+
+				flatpoint center=flatpoint((paths->minx+paths->maxx)/2,(paths->miny+paths->maxy)/2);
+				Coordinate *tp=p->firstPoint(1);
+				dp->NewFG(0,0,0);
+				do {
+					if (tp->flags&POINT_VERTEX) 
+						dp->drawrline(transform_point(paths->m(),center), transform_point(paths->m(),tp->fp));
+					tp=tp->next;
+				} while (tp!=p);
+
+
+
+				continue;
+			}
 			sd=spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
 			if (drawflags&DRAW_AXES) dp->drawaxes();

@@ -112,6 +112,7 @@ class ImportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public 
 	int keepmystery;
 	int instart,inend;
 	int topage,spread,layout;
+	int scaletopage;
 	Document *doc;
 	Group *toobj;
 	ImportFilter *filter;

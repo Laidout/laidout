@@ -29,6 +29,7 @@
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
 #include "../utils.h"
+#include "../drawdata.h"
 
 #include <iostream>
 #define DBG 
@@ -913,7 +914,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		return 1;
 
 	} else if (!strcmp(element->name,"image")) {
-		ImageData *image=new ImageData;
+		ImageData *image=static_cast<ImageData *>(newObject("ImageData"));
 		int foundcoord=0;
 		double x=0,y=0,w=0,h=0;
 		for (int c=0; c<element->attributes.n; c++) {
@@ -963,7 +964,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		 //**** TODO for all path based elements, there will possible be a style attribute
 		 //  that defines line width, colors, etc.... really need a fuller implementation
 		 //  of possible svg attributes for all element types: consolidate and reduce code..
-		PathsData *paths=new PathsData;
+		PathsData *paths=static_cast<PathsData *>(newObject("PathsData"));
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;
@@ -990,7 +991,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 	} else if (!strcmp(element->name,"rect")) {
 		double x=0,y=0,w=0,h=0;
 		double rx=-1, ry=-1;
-		PathsData *paths=new PathsData;
+		PathsData *paths=static_cast<PathsData *>(newObject("PathsData"));
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;
@@ -1060,7 +1061,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 		 //using 4 vertices as bez points, the vector length is 4*(sqrt(2)-1)/3 = about .5523 with radius 1
 
 		double cx=0,cy=0,r=-1,rx=-1, ry=-1;
-		PathsData *paths=new PathsData;
+		PathsData *paths=static_cast<PathsData *>(newObject("PathsData"));
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;

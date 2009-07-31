@@ -442,7 +442,7 @@ Imposition::Imposition(const char *nsname)
 	papergroup=NULL;
 	numpages=numspreads=numpapers=0; 
 	
-	DBG cerr <<"imposition base class init"<<endl;
+	DBG cerr <<"imposition base class init for object "<<object_id<<endl;
 }
 
 /*! Does paperstyle->dec_count().
@@ -453,7 +453,7 @@ Imposition::~Imposition()
 	if (paper) paper->dec_count();
 	if (papergroup) papergroup->dec_count();
 
-	DBG cerr <<"imposition destructor"<<endl;
+	DBG cerr <<"imposition base class destructor for object "<<object_id<<endl;
 }
 
 //! Return an imposition specific tool for use with the given layout type

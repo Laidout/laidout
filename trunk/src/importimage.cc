@@ -16,9 +16,8 @@
 
 /*! \file
  *
- * \todo This file should ultimately hold the mechanism for installing and removing extras.
- *   Currently, the only thing sort of like an extra is the dump images facility,
- *   which ultimately should be in a different file....
+ * \todo This file currently contains the nuts and bolts of importing images, without a gui.
+ *   probably should move this file somewhere more meaningful.
  */
 
 /*! \defgroup extras Extras
