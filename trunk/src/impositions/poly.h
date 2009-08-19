@@ -32,8 +32,8 @@
 class Edge
 {
  public:
-	int p1,p2;
-	int f1,f2; //
+	int p1,p2; //index in Polyhedron::vertices
+	int f1,f2; //index in Polyhedron::faces
 	Edge(void) { p1=p2=0; f1=f2=-1; }
 	Edge(int x, int y,int f=-1,int g=-1) {p1=x; p2=y; f1=f; f2=g; }
 	Edge(flatpoint &f) { p1=(int) f.x; p2=(int) f.y;  f1=f2=-1; }
@@ -41,6 +41,27 @@ class Edge
 };
 
 //-------------------------------- Face --------------------------------------
+/*! \class ExtraFace
+ * \brief class to hold extra cache data for a Polyhedron's faces.
+ */
+class ExtraFace
+{
+ public:
+	int numsides;
+	spacepoint *points3d; //actual 3-d positions of vertices in space
+	flatpoint *points2d; //2-d points in relation to axis
+	int *connectionedge; //edge index in another face this one connects to
+	int *connectionstate; //whether face is actually connected to face in connections
+	basis axis;
+	int facemode; //is face still in normal position, or maybe stage of animation to other position
+	double a;    //can be used for a temporary angle face is tilted at
+	void *extra;
+	clock_t timestamp;
+
+	ExtraFace();
+	virtual ~ExtraFace();
+};
+
 class Face
 {
  public:
@@ -48,11 +69,13 @@ class Face
 	int *p; /* list of vertices */
 	int *f,*v;  /* Face, vert labels (not edges yet) */
 	int planeid,setid;
+	ExtraFace *cache;
+
 	Face();
 	Face(int numof,int *ps);
 	Face(int p1,int p2,int p3, int p4=-1, int p5=-1);
 	Face(const char *pointlist,const char *linklist);
-	~Face() { delete[] p; delete[] f; delete[] v; }
+	~Face();
 	Face(const Face &);
 	Face &operator=(const Face &);
 };
@@ -114,27 +137,32 @@ class Polyhedron :
 	Polyhedron &operator=(const Polyhedron &);
 	virtual ~Polyhedron();
 
+	 //low level management functions
 	virtual void clear();
 	int validate();
 	void connectFaces();
-	spacepoint center(int);
-	double pdistance(int a, int b);
-	double segdistance(int fce,int fr,int p1,int p2);
 	int makeplanes();
 	int makeedges();
-//	void planeson(unsigned long *&,unsigned char *&);
 	void applysets();
-	spacevector vofface(int fce, int pt);
+//	void planeson(unsigned long *&,unsigned char *&);
+
+	 //informational functions
+	spacepoint CenterOfFace(int,int cache=0);
+	spacevector VertexOfFace(int fce, int pt, int cache);
 	Pgon FaceToPgon(int n,char useplanes);
-	basis BasisOfFace(int n);
+	basis basisOfFace(int n);
 	plane planeof(int pln);
-	plane planeofface(int fce,char centr=1);
-	double angle(int a, int b,int dec=0); /* uses planes, not faces */
+	plane planeOfFace(int fce,char centr=1);
+	double pdistance(int a, int b);
+	double segdistance(int fce,int fr,int p1,int p2);
+	double angle(int a, int b,int dec=0); //uses planes, not faces
+
 
 	 //building functions
 	virtual void AddPoint(spacepoint p);
 	virtual void AddPoint(double x,double y,double z);
 	virtual int  AddFace(const char *str);
+	void BuildExtra(); //create face cache
 
 	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
@@ -143,6 +171,7 @@ class Polyhedron :
 	virtual int dumpInOFF(FILE *f,char **error_ret);
 	virtual int dumpOutVrml(const char *filename);
 
+	 //Abstract net functions
 	virtual NetFace *GetFace(int i);
 	virtual int NumFaces();
 	virtual const char *Filename();

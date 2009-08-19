@@ -187,7 +187,8 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"points")) {
 			if (points) delete points;
-			points=SvgToCoordinate(value,0,NULL);
+			points=SvgToCoordinate(value,4,NULL);
+			//cout <<"**** rewrite to watch for LOOP_TERMINATOR stuff!!"<<endl;
 		} else if (!strcmp(name,"linestyle")) {
 			if (!linestyle) {
 				linestyle=new LineStyle();
@@ -620,10 +621,10 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 				edge=new NetFaceEdge;
 				if (!strcmp(name,"tooriginal")) { //could be "3" or "3.5"
 					IntAttribute(value,&edge->tooriginal,&e);
-					if (e!=value && *e=='.') IntAttribute(value,&edge->tofaceedge);
+					if (e!=value && *e=='.' && isdigit(e[1])) IntAttribute(e+1,&edge->tofaceedge);
 				} else if (!strcmp(name,"toface")) {
 					IntAttribute(value,&edge->toface,&e);
-					if (e!=value && *e=='.') IntAttribute(value,&edge->tofaceedge);
+					if (e!=value && *e=='.' && isdigit(e[1])) IntAttribute(e+1,&edge->tofaceedge);
 				} else if (!strcmp(name,"svalue")) {
 					DoubleAttribute(value,&edge->svalue,NULL);
 				} else if (!strcmp(name,"points")) {
@@ -634,6 +635,7 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 					while (e && *e) {
 						 //scan in 'v'|'c'|nothing, then 2 reals
 						while (isspace(*e)) e++;
+						if (!*e) break;
 						if (*e=='c') {
 							if (which==0) { which=1; f=POINT_TOPREV; }
 							else if (which==1) { which=2; f=POINT_TONEXT; }
@@ -805,10 +807,15 @@ void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
  *
  * Faces can be actually seen, or only potential faces.
  */
+/*! \var int Net::active
+ * \brief Not actually used in Net class, another extra info variable for applications.
+ *
+ * This is just an extra tag you can use for your own purposes, like Net::info.
+ */
 /*! \var int Net::info
  * \brief Not actually used in Net class, extra info variable for applications.
  *
- * This is just an extra tag you can use for your own purposes.
+ * This is just an extra tag you can use for your own purposes, like Net::active.
  */
 /*! \var int Net::tabs
  * <pre>
@@ -935,6 +942,41 @@ int Net::pointinface(flatpoint pp)
 	return -1;
 }
 
+//! Return the number of actual faces in the net.
+int Net::numActual()
+{
+	int n=0;
+	for (int c=0; c<faces.n; c++) if (faces.e[c]->tag==FACE_Actual) n++;
+	return n;
+}
+
+//! Return information about how a net face is linked.
+/*! facei is a net face index, and edgei is an optional edge index within the face.
+ *
+ * If edgei<0 then return the number of actual faces this face touchs in the laid out net.
+ * 
+ * If edge>=0 then return as follows. If the face connected to the face at that edge is FACE_Actual, then 
+ * return the net face index of the connecting face. If the connecting face is not
+ * FACE_Actual, then return -1;
+ */
+int Net::actualLink(int facei, int edgei)
+{
+	if (edgei<0) {
+		 //find the number of actual faces touching this face
+		int n=0;
+		for (int c=0; c<faces.e[facei]->edges.n; c++) {
+			if (faces.e[facei]->edges.e[c]->toface>=0
+					&& faces.e[faces.e[facei]->edges.e[c]->toface]->tag==FACE_Actual) 
+				n++;
+		}
+		return n;
+	}
+	if (faces.e[facei]->edges.e[edgei]->toface>=0
+			&& faces.e[faces.e[facei]->edges.e[edgei]->toface]->tag==FACE_Actual)
+		return faces.e[facei]->edges.e[edgei]->toface;
+	return -1;
+}
+
 //! Find the bounding box of lines of the net.
 /*! 
  * \todo right now, this is the naive bbox.. for bez paths, is only grabbing the
@@ -1045,6 +1087,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%sname Bent Square #this is just any name you give the net\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  # transform to map the net to a paper\n",spc);
 		fprintf(f,"%sbasenet             #the base abstract net\n",spc);
+		fprintf(f,"%sinfo  333           #general integer info about the net\n",spc);
 		fprintf(f,"%sactive              #present if the net is supposed to be somehow active.\n",spc);
 		fprintf(f,"%s                    # the exacte meaning of active is application dependent.\n",spc);
 		fprintf(f,"%stabs no             #(***TODO) whether to put tabs on face edges\n",spc);
@@ -1059,6 +1102,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		return;
 	}
 	if (active) fprintf(f,"%sactive\n",spc);
+	fprintf(f,"%sinfo %d\n",spc,info);
 	if (basenet) {
 		if (basenet->NetName() && !strcmp("BasicNet",basenet->NetName())) {
 			fprintf(f,"%sbasenet BasicNet\n",spc);
@@ -1106,6 +1150,8 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"name")) {
 			makestr(netname,value);
+		} else if (!strcmp(name,"info")) {
+			IntAttribute(value,&info);
 		} else if (!strcmp(name,"active")) {
 			active=BooleanAttribute(value);
 		} else if (!strcmp(name,"matrix")) {
@@ -1400,14 +1446,14 @@ int Net::Anchor(int basenetfacei)
 
 	 //search for basenetfacei already in net
 	if (faces.n && basenetfacei>=0) {
-		int c=findOriginalFace(basenetfacei,1,-1);
+		int c=findOriginalFace(basenetfacei,1,-1,NULL);
 		if (c>=0) return 1; //face already existed
 	}
 	 
 	 //if there are faces and we want to anchor the next available, the find the next available...
 	if (faces.n && basenetfacei<0) {
 		for (basenetfacei=0; basenetfacei<basenet->NumFaces(); basenetfacei++) {
-			if (findOriginalFace(basenetfacei,1,-1)==0) break;
+			if (findOriginalFace(basenetfacei,1,-1,NULL)==0) break;
 		}
 		if (basenetfacei==basenet->NumFaces()) return 2; //no more faces!
 	}
@@ -1449,7 +1495,7 @@ int Net::addPotentialsToFace(int facenum)
 
 		 //add potentials to bare edges when that original face is not
 		 //already down somewhere
-		if (findOriginalFace(faces.e[facenum]->edges.e[c]->tooriginal,1,-1)==1) {
+		if (findOriginalFace(faces.e[facenum]->edges.e[c]->tooriginal,1,-1,NULL)==1) {
 			 //face is already in the net, so mark edge as taken elsewhere
 			faces.e[facenum]->edges.e[c]->tag=FACE_Taken;
 		} else {
@@ -1681,23 +1727,24 @@ int Net::rebuildLines()
  * If startsearchhere>=0, then start lookind at net faces from net face index startsearchhere.
  *
  */
-int Net::findOriginalFace(int i,int status,int startsearchhere)
+int Net::findOriginalFace(int i,int status,int startsearchhere, int *index_ret)
 {
 	int c;
 	for (c=(startsearchhere>=0?startsearchhere:0); c<faces.n; c++) {
 		if (faces.e[c]->original==i) {
-			if (status!=2 && faces.e[c]->tag==FACE_Actual) return 1;
-			else if (status!=1 && faces.e[c]->tag==FACE_Potential) return 2;
+			if (status!=2 && faces.e[c]->tag==FACE_Actual) { if (index_ret) *index_ret=c; return 1; }
+			else if (status!=1 && faces.e[c]->tag==FACE_Potential) { if (index_ret) *index_ret=c; return 2; }
 		}
 	}
+	if (index_ret) *index_ret=-1;
 	return 0;
-
 }
 
 //! Drop down the face connected to net index netfacei, edge number atedge.
 /*! If netfacei==-1, and ategde<0 then completly unwrap the whole of basenet.
  *  If netfacei==-1, and ategde>=0 then drop original face with index atedge if
- *  it has not already been dropped.
+ *  it has not already been dropped. If the face is already in the net, then nothing
+ *  is done and 0 is returned.
  *
  * If netfacei>=0 and atedge==-1, the drop down all faces connected to netfacei.
  *
@@ -1717,7 +1764,7 @@ int Net::Unwrap(int netfacei,int atedge)
 
 		if (atedge<0) { TotalUnwrap(); return 0; }
 		if (atedge>=basenet->NumFaces()) return 2;
-		if (findOriginalFace(atedge,1,0)==1) return 0;
+		if (findOriginalFace(atedge,1,0,NULL)==1) return 0;
 		 
 		 //drop down original face atedge, starting new group
 		 //***this does not properly adjust potentials...
@@ -1822,6 +1869,7 @@ int Net::Drop(int netfacei)
  */
 int Net::PickUp(int netfacei,int cutatedge)
 {
+	if (netfacei<0 || netfacei>=faces.n) return 1;
 	int total=0,n=0,c;
 	NetFace *netf=faces.e[netfacei];
 
