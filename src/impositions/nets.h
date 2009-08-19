@@ -72,7 +72,7 @@ class NetFace
 	Laxkit::PtrStack<NetFaceEdge> edges;
 	int original;
 	char isfront;
-	FaceTag tag; //actual, potential
+	FaceTag tag; //FACE_Actual, FACE_Potential
 	double *matrix;
 
 	NetFace();
@@ -151,8 +151,13 @@ class Net : public LaxInterfaces::SomeData
 	//virtual void Center();
 	virtual int validateNet();
 
+	 //informational functions
 	virtual int pathOfFace(int i, int *n, flatpoint **p, int convert);
 	virtual int pointinface(flatpoint pp);
+	virtual int actualLink(int facei, int edgei);
+	virtual int numActual();
+
+	 //building functions
 	virtual void pushline(NetLine &l,int what,int where=-1,int how=1);
 	//virtual int rotateFaceOrientation(int f,int alignxonly=0);
 
@@ -164,7 +169,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual int PickUp(int netfacei,int cutatedge);
 	virtual int Drop(int netfacei);
 	virtual int addPotentialsToFace(int facenum);
-	virtual int findOriginalFace(int i,int status,int startsearchhere);
+	virtual int findOriginalFace(int i,int status,int startsearchhere,int *index_ret);
 	virtual int clearPotentials(int original);
 	virtual int rebuildLines();
 	virtual int connectFaces(int f1,int f2,int e);

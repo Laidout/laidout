@@ -42,13 +42,36 @@ using namespace Laxkit;
  */
 
 
+//-------------------------------- Face --------------------------------------
+/*! \class ExtraFace
+ * \brief class to hold extra cache data for a Polyhedron's Face objects.
+ */
+
+ExtraFace::ExtraFace()
+{
+	numsides=0;
+	points3d=NULL;
+	points2d=NULL;
+	connectionedge=connectionstate=NULL;
+	facemode=-1;
+	extra=NULL;
+	timestamp=0;
+}
+
+ExtraFace::~ExtraFace()
+{
+	if (points3d) delete[] points3d;
+	if (points2d) delete[] points2d;
+	if (connectionedge) delete[] connectionedge;
+	if (connectionstate) delete[] connectionstate;
+}
 //------------------------------ Face -------------------------------------
 
 /*! \class Face
  * \brief Holds point list (indices to v array), and number labels for the edges.
  */
 /*! \var int *Face::f
- * \brief Face labels, on this edge, connects to another face at index of Polyhedron::f.
+ * \brief Face labels, on this edge, connects to another face at index of Polyhedron::faces.
  */
 /*! \var int *Face::v
  * \brief Vertex labels, index of point in Polyhedron::p???. ***diff from p how?
@@ -61,6 +84,7 @@ using namespace Laxkit;
 //! Create empty face.
 Face::Face()
 {
+	cache=NULL;
 	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
 }
 
@@ -69,6 +93,7 @@ Face::Face()
  */
 Face::Face(int numof,int *ps) 
 {
+	cache=NULL;
 	p=NULL; f=NULL; v=NULL;
 	planeid=setid=-1;
 	if (numof<3) { pn=0; return; }
@@ -86,6 +111,7 @@ Face::Face(int numof,int *ps)
  */
 Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
 {
+	cache=NULL;
 	planeid=setid=-1;
 	if (p4==-1) pn=3;
 	else if (p5==-1) pn=4;
@@ -105,6 +131,7 @@ Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
  */
 Face::Face(const char *pointlist,const char *linklist)
 {
+	cache=NULL;
 	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
 
 	IntListAttribute(pointlist,&p,&pn,NULL);
@@ -122,10 +149,19 @@ Face::Face(const char *pointlist,const char *linklist)
 //! Create copy of fce.
 Face::Face(const Face &fce)
 {
+	cache=NULL;
 	v=NULL;
 	f=NULL;
 	p=NULL;
 	*this=fce;
+}
+
+Face::~Face()
+{ 
+	if (cache) delete cache;
+	delete[] p;
+	delete[] f;
+	delete[] v; 
 }
 
 //! Face equals operator.
@@ -392,6 +428,45 @@ Polyhedron::Polyhedron(const Polyhedron &nphed)
 	*this=nphed;
 }
 
+//! Create extra data pertaining to each polyhedron face.
+/*! Will delete any face cache data that already exists.
+ *
+ * This will assume that makeedges() has already been called, or
+ * the edges all already exist.
+ *
+ * Will set facemode=0, and connectionstate[*]=1. The basis is same as basisOfFace(),
+ * which has the basis origin at the first face point, xaxis points toward the second point,
+ * z points away from shape, y=z cross x.
+ */
+void Polyhedron::BuildExtra()
+{
+	if (faces.n==0) return;
+	ExtraFace *cache;
+	Face *face;
+	int n;
+	for (int c=0; c<faces.n; c++) {
+		face=faces.e[c];
+		n=face->pn;
+		if (face->cache) delete face->cache;
+		cache=face->cache=new ExtraFace;
+		cache->numsides=face->pn;
+		cache->points3d=new spacevector[n];
+		cache->points2d=new flatvector[n];
+		cache->connectionedge=new int[n];
+		cache->connectionstate=new int[n];
+		cache->facemode=0;
+		cache->a=0;
+		cache->axis=basisOfFace(c);
+		for (int c2=0; c2<n; c2++) {
+			cache->points3d[c2]=vertices[face->p[c2]];
+			cache->points2d[c2]=flatten(vertices[face->p[c2]],cache->axis);
+
+			cache->connectionstate[c2]=1;
+			cache->connectionedge[c2]=-1;//***should be the actual value...
+		}
+	}
+}
+
 //! Equal operator for Polyhedron.
 Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 {
@@ -545,7 +620,7 @@ int Polyhedron::makeplanes()
 	plane pl;
 	int c2;
 	for (int c=0; c<faces.n; c++) {
-		pl=planeofface(c);
+		pl=planeOfFace(c);
 		for (c2=0; c2<planes.n; c2++) {
 			if (distance(planes.e[c2].p,pl)==0 && isnotvector(pl.n/planes.e[c2].z)) {
 				 // plane exists already
@@ -578,19 +653,24 @@ int Polyhedron::makeedges()
 	
 	DBG cerr <<"makeedges emax:"<<emax;
 	
-	for (c=0; c<faces.n; c++) {
-		for (c2=0; c2<faces.e[c]->pn; c2++) {
-			p1=faces.e[c]->p[c2];
-			p2=faces.e[c]->p[(c2+1)%faces.e[c]->pn];
-			for (c3=0; c3<edges.n; c3++) { //check edge against list
+	 //for each edge of each face, see if it matches any edge in any other face.
+	for (c=0; c<faces.n; c++) {              //for each face in polyhedron
+		for (c2=0; c2<faces.e[c]->pn; c2++) { //for each edge in face
+			p1=faces.e[c]->p[c2];  //point 1 of a face's edge
+			p2=faces.e[c]->p[(c2+1)%faces.e[c]->pn]; //point 2 of a face's edge
+			for (c3=0; c3<edges.n; c3++) { //check current edge against known edges
 				if ((edges.e[c3]->p1==p1 && edges.e[c3]->p2==p2) ||
 					(edges.e[c3]->p1==p2 && edges.e[c3]->p2==p1)) break;
 			}
-			if (c3==edges.n) { // edge not found
+			if (c3==edges.n) { // edge not found in this->edges
 				edges.push(new Edge(p1,p2,c,-1));
-				faces.e[c]->f[c2]=-1;
+				faces.e[c]->f[c2]=-1; //-1 because we are not sure what face it connects to yet
 			} else {
-				edges.e[c3]->f2=c;
+				 //edge already exists, which means that the edge references 1 face, since
+				 //edges was flushed above, and edges will be encountered a total of exactly 2 times.
+				 //so connect face c with face referenced in edge c3:
+				 // change face->f
+				edges.e[c3]->f2=c; //f1 had reference to other face already
 				faces.e[c]->f[c2]=edges.e[c3]->f1; //set f label for vertices=c2
 				for (int c4=0; c4<faces.e[edges.e[c3]->f1]->pn; c4++) {
 					if (faces.e[edges.e[c3]->f1]->p[c4]==p1 && 
@@ -607,38 +687,46 @@ int Polyhedron::makeedges()
 			}
 		}
 	}
+
 	DBG cerr <<"...total edges="<<edges.n<<'\n';
 	DBG for (c=0; c<faces.n; c++) {
 	DBG 	cerr <<"face "<<c<<": ";
 	DBG 	for (c2=0; c2<faces.e[c]->pn; c2++) cerr <<faces.e[c]->f[c2]<<" ";
 	DBG 	cerr <<endl;
 	DBG }
+
 	return 1;
 }
 
 //! Return the average of the points in face with index fce.
-spacepoint Polyhedron::center(int fce)
+/*! If cache!=0, then return the center of the cached face (face->cache->points3d),
+ * not the center of the actual face. If there is no cache, then the actual face
+ * center is returned.
+ */
+spacepoint Polyhedron::CenterOfFace(int fce,int cache)//cache==0
 {
 	spacepoint pnt;
-	for (int c=0; c<faces.e[fce]->pn; c++) pnt=pnt+vertices[faces.e[fce]->p[c]];
-	return(pnt/faces.e[fce]->pn);
+	for (int c=0; c<faces.e[fce]->pn; c++) {
+		if (cache && faces.e[fce]->cache && faces.e[fce]->cache->points3d) 
+			pnt+=faces.e[fce]->cache->points3d[c];
+		else pnt=pnt+vertices[faces.e[fce]->p[c]];
+	}
+	return (pnt/faces.e[fce]->pn);
 }
 
-//! Return the vertex that is pt in list held by face with index fce (vertices[f[fce].vertices[pt]).
-spacevector Polyhedron::vofface(int fce, int pt)
+//! Return the vertex that is pt in list held by face with index fce (vertices[f[fce].p[pt]]).
+/*! If cache!=0 then use the cached points3d points instead.
+ */
+spacevector Polyhedron::VertexOfFace(int fce, int pt, int cache)
 {
 	if (fce<0 || fce>=faces.n) return spacevector(0,0,0);
 	if (pt<0 || pt>=faces.e[fce]->pn) return spacevector();
-	if (faces.e[fce]->p[pt]>=0) return vertices[faces.e[fce]->p[pt]];
+	if (faces.e[fce]->p[pt]>=0) {
+		if (cache && faces.e[fce]->cache && faces.e[fce]->cache->points3d) 
+			return faces.e[fce]->cache->points3d[pt];
+		return vertices[faces.e[fce]->p[pt]];
+	}
 	return spacevector();
-	
-//	 // vertex index is not listed in face, so compute..***??? whats this??
-//	int p2=f[fce].vertices[pt], p3=f[fce].vertices[pt-1<0 ? f[fce].pn-1 : pt-1];
-//	
-//	if (p2==-1 || p3==-1) return spacevector();
-//	return spacevector(plane(planes[fce].vertices,planes[fce].z)*
-//			  plane(planes[p2].vertices, planes[p2].z)*
-//			  plane(planes[p3].vertices, planes[p3].z));
 }
 
 //! Return a Pgon corresponding to face with index n.
@@ -661,11 +749,11 @@ Pgon Polyhedron::FaceToPgon(int n, char useplanes)
 	if (useplanes && faces.e[n]->planeid>=0) bas=planes.e[faces.e[n]->planeid];
 	else {
 		if (faces.e[n]->p[0]==-1) { npgon.clear(); return npgon; }
-		plane pl=planeofface(n,0);
+		plane pl=planeOfFace(n,0);
 		bas=basis(pl.p, pl.p+pl.n, pl.p+vertices.e[faces.e[n]->p[1]]-vertices[faces.e[n]->p[0]]);
 	}
 	for (int c=0; c<npgon.pn; c++) {	
-		npgon.p[c]=flatten(vofface(n,c),bas);
+		npgon.p[c]=flatten(VertexOfFace(n,c,0),bas);
 		if (faces.e[n]->f[c]!=-1)
 			npgon.dihedral[c]=angle(faces.e[n]->planeid,faces.e[faces.e[n]->f[c]]->planeid,1);
 		else npgon.dihedral[c]=-1;
@@ -680,10 +768,10 @@ Pgon Polyhedron::FaceToPgon(int n, char useplanes)
  *
  * If n is out of range, then return identity basis.
  */
-basis Polyhedron::BasisOfFace(int n)
+basis Polyhedron::basisOfFace(int n)
 {
 	if (n<0 || n>=faces.n) return basis();
-	plane pl=planeofface(n,0);
+	plane pl=planeOfFace(n,0);
 	return basis(pl.p, pl.p+pl.n, pl.p+vertices[faces.e[n]->p[1]]-vertices[faces.e[n]->p[0]]);
 }
 
@@ -708,14 +796,14 @@ plane Polyhedron::planeof(int pli)
 //! Return a plane that holds face with index fce. 
 /*! Plain point is the center if centr!=0, else the point is the face's first point.
  */
-plane Polyhedron::planeofface(int fce,char centr)
+plane Polyhedron::planeOfFace(int fce,char centr)
 {
 	if (fce<0 || fce>=faces.n) return plane();
 	if (faces.e[fce]->pn==0 || faces.e[fce]->p[0]==-1) return plane();
 	plane pl1;
 	pl1=plane(vertices[faces.e[fce]->p[0]],vertices[faces.e[fce]->p[1]],vertices[faces.e[fce]->p[2]]);
-	if (centr) pl1.p=center(fce);
-	return(pl1);
+	if (centr) pl1.p=CenterOfFace(fce,0);
+	return pl1;
 }
 
 //! Return the angle between faces with index a and b. dec!=0 means make angle in degrees, not radians.
@@ -723,8 +811,8 @@ double Polyhedron::angle(int a, int b,int dec) /* uses planes, not faces */
 {
 	if (a<0 || a>=faces.n || b<0 || b>=faces.n) return 0;
 	plane pl1,pl2;
-	pl1=planeofface(a);
-	pl2=planeofface(b);
+	pl1=planeOfFace(a);
+	pl2=planeOfFace(b);
 	return(::angle(pl1.n,(-1)*pl2.n,dec));
 }
 
