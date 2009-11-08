@@ -38,6 +38,12 @@ using namespace std;
 #define DBG 
 
 
+const char *tagname[5]={
+	"FACE_Undefined",
+	"FACE_None",
+	"FACE_Actual",
+	"FACE_Potential",
+	"FACE_Taken" };
 
 //--------------------------------------- NetLine -------------------------------------------
 /*! \class NetLine
@@ -257,7 +263,7 @@ NetFaceEdge::NetFaceEdge()
 {
 	tooriginal=id=toface=tofaceedge=-1;
 	flipflag=0;
-	tag=FACE_None;
+	tag=FACE_Undefined;
 	svalue=0;
 	points=NULL;
 	//basis_adjustment=NULL;
@@ -323,9 +329,13 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
  * FACE_Actual==an actual face.\n
  * FACE_Potential==a potential face
  */
+/*! \var int NetFace::tick
+ * \brief Used as a traversal flag to create unwrap paths.
+ */
 
 NetFace::NetFace()
 {
+	tick=0;
 	tag=FACE_None;
 	matrix=NULL;
 	isfront=1;
@@ -514,11 +524,14 @@ void NetFace::dumpOut(FILE *f,int indent,int what)
 		fprintf(f,"%soriginal 3   #the face index in the abstract net corresponding to this face\n",spc);
 		fprintf(f,"%sback         #this face is actual the mirror image of the abstract net face\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform that places points in net space\n",spc);
-		fprintf(f,"%spotential           #whether this face is actually used in the net\n",spc);
+		fprintf(f,"%spotential           #this face might be, but is not necessarily in the net\n",spc);
+		fprintf(f,"%sactual             #this face IS in the net\n",spc);
 		fprintf(f,"%sedge              #this is a typical edge for a laidout net\n",spc);
 		fprintf(f,"%s  toface     4.6  #connects to net face index 4, edge index number 6\n",spc);
 		fprintf(f,"%s  tooriginal 3    #connects to original face 3\n",spc);
-		fprintf(f,"%s  potential       #link is only potential. If absent, then program detects it\n",spc);
+		fprintf(f,"%s  potential       #link is to a potential net face\n",spc);
+		fprintf(f,"%s  actual          #link is to an actual net face\n",spc);
+		fprintf(f,"%s  facetaken       #link is to an actual face that is somehow connected elsewhere\n",spc);
 		fprintf(f,"%s  svalue   .5     #for bezier edges, the point of contact with adjacent edge, 0 to 1\n",spc);
 		fprintf(f,"%s  points \\        #point list for this edge. First point must be a vertex point\n",spc);
 		fprintf(f,"%s    -.5 -.5       # that is actually on the line. following points can be either\n",spc);
@@ -557,8 +570,11 @@ void NetFace::dumpOut(FILE *f,int indent,int what)
 		}
 		if (edges.e[c]->flipflag) fprintf(f,"%s  flip\n",spc);
 
-		if (edges.e[c]->tag==FACE_Potential) fprintf(f,"%s  potential\n",spc);
-		if (edges.e[c]->tag==FACE_Taken) fprintf(f,"%s  facetaken\n",spc);
+		if (edges.e[c]->tag==FACE_Actual) fprintf(f,"%s  actual\n",spc);
+		else if (edges.e[c]->tag==FACE_Potential) fprintf(f,"%s  potential\n",spc);
+		else if (edges.e[c]->tag==FACE_Taken) fprintf(f,"%s  facetaken\n",spc);
+		else if (edges.e[c]->tag==FACE_None) fprintf(f,"%s  noface\n",spc);
+		else if (edges.e[c]->tag==FACE_Undefined) fprintf(f,"%s  undefined\n",spc);
 
 		if (edges.e[c]->points) {
 			fprintf(f,"%s  points \\\n",spc);
@@ -610,15 +626,17 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 			isfront=!BooleanAttribute(value);
 		} else if (!strcmp(name,"front")) {
 			isfront=BooleanAttribute(value);
+		} else if (!strcmp(name,"actual")) {
+			tag=FACE_Actual;
 		} else if (!strcmp(name,"potential")) {
 			tag=FACE_Potential;
 		} else if (!strcmp(name,"original")) {
 			IntAttribute(value,&original);
 		} else if (!strcmp(name,"edge")) {
+			edge=new NetFaceEdge;
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name= att->attributes.e[c]->attributes.e[c2]->name;
 				value=att->attributes.e[c]->attributes.e[c2]->value;
-				edge=new NetFaceEdge;
 				if (!strcmp(name,"tooriginal")) { //could be "3" or "3.5"
 					IntAttribute(value,&edge->tooriginal,&e);
 					if (e!=value && *e=='.' && isdigit(e[1])) IntAttribute(e+1,&edge->tofaceedge);
@@ -667,8 +685,17 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 					}
 				} else if (!strcmp(name,"d")) {
 					edge->points=SvgToCoordinate(value,0,NULL);
-				} //ignores "potential"
+				} else if (!strcmp(name,"potential")) {
+					edge->tag=FACE_Potential;
+				} else if (!strcmp(name,"undefined")) {
+					edge->tag=FACE_Undefined;
+				} else if (!strcmp(name,"facetaken")) {
+					edge->tag=FACE_Taken;
+				} else if (!strcmp(name,"actual")) {
+					edge->tag=FACE_Actual;
+				}
 			}
+			if (edge->toface>=0 && (edge->tag==FACE_Undefined || edge->tag==FACE_None)) edge->tag=FACE_Actual; //***what's this??
 			edges.push(edge,1);
 //---old:
 //		} else if (!strcmp(name,"aligno")) {
@@ -696,7 +723,7 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
  * \brief Return a NetFace corresponding to AbstractNet face with index i.
  *
  * The face returned has edges that have indexes of original faces the edges connect
- * to, but the edge tags are all FACE_None. Upon unwrapping, the Net class is supposed
+ * to, but the edge tags are all FACE_Undefined. Upon unwrapping, the Net class is supposed
  * to change those tags to appropriate values.
  */
 /*! \fn	const char *AbstractNet::NetName()
@@ -830,6 +857,7 @@ void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 //! Init.
 Net::Net()
 {
+	_config=0;
 	active=1;
 	info=0;
 	tabs=0;
@@ -950,10 +978,17 @@ int Net::numActual()
 	return n;
 }
 
+//! Set all the NetFace::tick value to t.
+void Net::resetTick(int t)
+{
+	for (int c=0; c<faces.n; c++) faces.e[c]->tick=t;
+}
+
 //! Return information about how a net face is linked.
 /*! facei is a net face index, and edgei is an optional edge index within the face.
  *
- * If edgei<0 then return the number of actual faces this face touchs in the laid out net.
+ * If edgei<0 then return the number of actual faces this face touches in the laid out net,
+ * based on the tags of the connected faces.
  * 
  * If edge>=0 then return as follows. If the face connected to the face at that edge is FACE_Actual, then 
  * return the net face index of the connecting face. If the connecting face is not
@@ -961,6 +996,7 @@ int Net::numActual()
  */
 int Net::actualLink(int facei, int edgei)
 {
+	if (facei<0) return -1;
 	if (edgei<0) {
 		 //find the number of actual faces touching this face
 		int n=0;
@@ -1121,7 +1157,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 	if (faces.n) {
 		for (int c=0; c<faces.n; c++) {
-			DBG cerr <<"dump out face "<<c<<endl;
+			//DBG cerr <<"dump out face "<<c<<endl;
 			fprintf(f,"%sface #%d\n",spc,c);
 			faces.e[c]->dumpOut(f,indent+2,0);
 		}
@@ -1475,7 +1511,7 @@ int Net::Anchor(int basenetfacei)
 	 //remove any potential links to the newly dropped face in all the other faces
 	clearPotentials(newface->original);
 
-	rebuildLines();
+	if (!(_config&1)) rebuildLines();
 
 	return 0;
 }
@@ -1544,6 +1580,8 @@ int Net::clearPotentials(int original)
 		 //now need to decrement by one links to faces >= c
 		for (int c2=0; c2<faces.n; c2++) {
 			for (int c3=0; c3<faces.e[c2]->edges.n; c3++) {
+				DBG if (faces.e[c2]->edges.e[c3]->toface==c) cerr <<"***WARNING! Still had ref to deleted potential!"<<endl;
+
 				if (faces.e[c2]->edges.e[c3]->toface>c) //hopefully no more are == c
 					faces.e[c2]->edges.e[c3]->toface--;
 			}
@@ -1759,6 +1797,7 @@ int Net::findOriginalFace(int i,int status,int startsearchhere, int *index_ret)
 int Net::Unwrap(int netfacei,int atedge)
 {
 	if (!basenet) return 1;
+	DBG cerr <<"Net::Unwrap netfacei:"<<netfacei<<"  atedge:"<<atedge<<endl;
 	if (netfacei<0) {
 		 //unwrap all or drop a new seed face
 
@@ -1772,35 +1811,62 @@ int Net::Unwrap(int netfacei,int atedge)
 		face->tag=FACE_Actual;
 		faces.push(face,1);
 		addPotentialsToFace(faces.n-1);
-		DBG cerr <<"------------------unwrap first--"<<endl;
-		DBG dump_out(stderr,0,0,NULL);
-		DBG cerr <<"--------------------------------"<<endl;
+
+		//DBG cerr <<"------------------unwrap first--"<<endl;
+		//DBG dump_out(stderr,0,0,NULL);
+		//DBG cerr <<"--------------------------------"<<endl;
+
+		DBG cerr <<"...done unwrap 1"<<endl;
 		return 0;
 	}
 	if (netfacei>=faces.n) return 3;
 
+
 	NetFace *f1=faces.e[netfacei],
-			*f2;
+			*f2=NULL;
 	int s, e; //the first and last edges to unwrap 
 	if (atedge>=0) s=e=atedge; else { s=0; e=f1->edges.n-1; }
 
 	if (s<0 || s>=f1->edges.n || e<0 || e>=f1->edges.n) return 3;
+
+	DBG cerr <<"  ---> drop original "<<faces.e[netfacei]->edges.e[atedge]->tooriginal<<endl;
+	DBG if (faces.e[netfacei]->edges.e[atedge]->tooriginal==301 
+	DBG 	|| faces.e[netfacei]->edges.e[atedge]->tooriginal==287) {
+	DBG 	cerr <<"**************"<<endl;
+	DBG }
+
 	int changed=0;
-	for (int c=s; c<e+1; c++) { //for each edge, drop a face
+	for (int c=s; c<e+1; c++) { //for each edge, drop a face that is potential
 		atedge=c;
-		if (f1->edges.e[c]->tag!=FACE_Potential) continue;
+		if (f1->edges.e[c]->tag!=FACE_Potential) {
+			DBG cerr <<"skipping edge "<<c<<", tag=="<<tagname[f1->edges.e[c]->tag]<<endl;
+			continue;
+		}
 
 		 // drop down that face
 		f2=faces.e[f1->edges.e[c]->toface];
-		f1->edges.e[c]->tag=FACE_Actual;
 		f2->tag=FACE_Actual;
+		f1->edges.e[c]->tag=FACE_Actual;
 		clearPotentials(f2->original);
 		addPotentialsToFace(faces.findindex(f2));
 		changed=1;
 	}
 
-	if (changed) rebuildLines();
+	if (changed && !(_config&1)) rebuildLines();
 
+	//--------------------
+	DBG if (!f2) {
+	DBG 	DBG cerr <<"WARNING!! missing a dropped face!!!"<<endl;
+	DBG } else {
+	DBG   for (int c=0; c<f2->edges.n; c++) {
+	DBG 	cerr <<"Net::Unwrap a face, edge "<<c<<": tag="<<tagname[f2->edges.e[c]->tag]
+	DBG 		<<"  toface:"<<f2->edges.e[c]->toface
+	DBG 		<<"  tooriginal:"<<f2->edges.e[c]->tooriginal<<endl;
+	DBG   }
+	DBG }
+	//--------------------
+
+	DBG cerr <<"...done unwrap 2"<<endl;
 	return 0;
 }
 
@@ -1849,7 +1915,7 @@ int Net::Drop(int netfacei)
 	clearPotentials(netf->original);
 	addPotentialsToFace(faces.findindex(netf));
 
-	rebuildLines();
+	if (!(_config&1)) rebuildLines();
 	return 0;
 }
 

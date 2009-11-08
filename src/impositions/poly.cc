@@ -52,6 +52,7 @@ ExtraFace::ExtraFace()
 	numsides=0;
 	points3d=NULL;
 	points2d=NULL;
+	dihedral=NULL;
 	connectionedge=connectionstate=NULL;
 	facemode=-1;
 	extra=NULL;
@@ -62,6 +63,7 @@ ExtraFace::~ExtraFace()
 {
 	if (points3d) delete[] points3d;
 	if (points2d) delete[] points2d;
+	if (dihedral) delete[] dihedral;
 	if (connectionedge) delete[] connectionedge;
 	if (connectionstate) delete[] connectionstate;
 }
@@ -81,11 +83,19 @@ ExtraFace::~ExtraFace()
  */
 
 
+DBG void dumpface(Face *face,int facenum)
+DBG {
+DBG	cerr <<"face "<<facenum<<", pn="<<face->pn<<":  ";
+DBG	for (int c=0; c<face->pn; c++) cerr <<face->p[c]<<" ";
+DBG	cerr <<endl;
+DBG }
+
 //! Create empty face.
 Face::Face()
 {
 	cache=NULL;
 	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
+	dihedral=NULL;
 }
 
 //! Create a Face with the ps array as the point indices.
@@ -101,7 +111,8 @@ Face::Face(int numof,int *ps)
 	v=new int[pn];
 	f=new int[pn];
 	p=new int[pn];
-	for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; }
+	dihedral=new double[pn];
+	for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; dihedral[c]=0; }
 }
 
 //! Shortcut to create polygons with up to 5 vertices.
@@ -120,10 +131,11 @@ Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
 	p=new int[pn];
 	f=new int[pn];
 	v=new int[pn];
+	dihedral=new double[pn];
 	p[0]=p1; p[1]=p2; p[2]=p3;
 	if (pn>3) p[3]=p4;
 	if (pn>4) p[4]=p5;
-	for (int c=0; c<pn; c++) { f[c]=-1; v[c]=-1; }
+	for (int c=0; c<pn; c++) { f[c]=-1; v[c]=-1; dihedral[c]=0; }
 }
 
 //! Create a new face from a string like "3 4 5" or "3,5,6". Delimiter is ignored.
@@ -133,13 +145,15 @@ Face::Face(const char *pointlist,const char *linklist)
 {
 	cache=NULL;
 	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
+	dihedral=NULL;
 
 	IntListAttribute(pointlist,&p,&pn,NULL);
 	if (!pn) return;
 
 	if (!f) f=new int[pn];
 	v=new int[pn];
-	for (int c=0; c<pn; c++) { f[c]=-1; v[c]=-1; }
+	dihedral=new double[pn];
+	for (int c=0; c<pn; c++) { f[c]=-1; v[c]=-1; dihedral[c]=0; }
 
 	int n;
 	if (linklist) IntListAttribute(linklist,&f,&n,NULL);
@@ -149,6 +163,7 @@ Face::Face(const char *pointlist,const char *linklist)
 //! Create copy of fce.
 Face::Face(const Face &fce)
 {
+	dihedral=NULL;
 	cache=NULL;
 	v=NULL;
 	f=NULL;
@@ -162,6 +177,7 @@ Face::~Face()
 	delete[] p;
 	delete[] f;
 	delete[] v; 
+	if (dihedral) delete[] dihedral;
 }
 
 //! Face equals operator.
@@ -459,11 +475,13 @@ void Polyhedron::BuildExtra()
 		cache->axis=basisOfFace(c);
 		for (int c2=0; c2<n; c2++) {
 			cache->points3d[c2]=vertices[face->p[c2]];
+			cache->center+=cache->points3d[c2];
 			cache->points2d[c2]=flatten(vertices[face->p[c2]],cache->axis);
 
 			cache->connectionstate[c2]=1;
 			cache->connectionedge[c2]=-1;//***should be the actual value...
 		}
+		if (n) cache->center/=n;
 	}
 }
 
@@ -546,6 +564,10 @@ int Polyhedron::validate()
 }
 
 //! Automatically connect faces in Face::f.
+/*! First clears any face connection info in the faces already there, then connects them properly.
+ *
+ * You would call this after doing a lot of AddPoint() and AddFace().
+ */
 void Polyhedron::connectFaces()
 {
 	 //first clear all face links
@@ -639,6 +661,8 @@ int Polyhedron::makeplanes()
 //! From the faces list, construct the edges list.
 /*! Call this when only verts and faces defined, and you want a list of 
  * edges. This also updates the face labels of the face list (Face::flabel).
+ *
+ * Any edges already there are flushed.
  */
 int Polyhedron::makeedges()
 {
@@ -696,6 +720,77 @@ int Polyhedron::makeedges()
 	DBG }
 
 	return 1;
+}
+
+//! Make any vertices within a certain distance be the same vertex.
+/*! For approximation purposes, you can say zero=1e-10, for instance, to 
+ * collapse all points that distance or less. Pass in 0 if the point has to be exactly the same.
+ *
+ * This will update all face references to the points.
+ * You might want to run makeedges() again afterwards, as currently edges is flushed.
+ *
+ * \todo should update edges too, right now just flushes edges
+ * \todo **** must collapse edges when points are too near!! such as for gore tips...
+ */
+void Polyhedron::collapseVertices(double zero, int vstart, int vend)
+{
+	 //remove existing edges
+	edges.flush();
+
+	zero*=zero;
+	double d;
+	spacevector v;
+	if (vstart<0) vstart=0;
+	else if (vstart>=vertices.n) vstart=vertices.n-1;
+	if (vend<0 || vend>=vertices.n) vend=vertices.n-1;
+
+	 //collapse vertices
+	for (int c=vstart; c<=vend; c++) {
+		for (int c2=c+1; c2<=vend; c2++) {
+			v=vertices.e[c2]-vertices.e[c];
+			d=v*v;
+			if (d<zero || (d>0 && vertices.e[c2]==vertices.e[c])) {
+				 //found one to collapse
+				for (int c3=0; c3<faces.n; c3++) {
+					for (int c4=0; c4<faces.e[c3]->pn; c4++) {
+						if (faces.e[c3]->p[c4]==c2) {
+							faces.e[c3]->p[c4]=c;
+						} else if (faces.e[c3]->p[c4]>c2) {
+							faces.e[c3]->p[c4]--;
+						}
+					}
+				}
+				vertices.pop(c2);
+				vend--;
+				c2--;
+			}
+		}
+	}
+
+	 //check faces for null edges and remove.
+	 //If a null face results, then remove
+	int compto;
+	for (int c3=0; c3<faces.n; c3++) {
+		for (int c4=0; c4<faces.e[c3]->pn; c4++) {
+			compto=c4-1;
+			if (compto<0) compto=faces.e[c3]->pn-1;
+
+			if (faces.e[c3]->p[compto]==faces.e[c3]->p[c4]) {
+				 //null edge found...
+
+				 //only move memory if you really have to
+				if (c4>0 && c4<faces.e[c3]->pn-1) {
+					memmove(faces.e[c3]->p+(c4  ),  //to
+							faces.e[c3]->p+(c4+1),  //from
+							(faces.e[c3]->pn-1-c4)*sizeof(int));//count
+					if (faces.e[c3]->f) memmove(faces.e[c3]->f+c4, faces.e[c3]->f+c4+1, (faces.e[c3]->pn-1-c4)*sizeof(int));
+					if (faces.e[c3]->v) memmove(faces.e[c3]->v+c4, faces.e[c3]->v+c4+1, (faces.e[c3]->pn-1-c4)*sizeof(int));
+				}
+				faces.e[c3]->pn--;
+				c4--;
+			}
+		}
+	}
 }
 
 //! Return the average of the points in face with index fce.
@@ -816,17 +911,19 @@ double Polyhedron::angle(int a, int b,int dec) /* uses planes, not faces */
 	return(::angle(pl1.n,(-1)*pl2.n,dec));
 }
 
-
-void Polyhedron::AddPoint(spacepoint p)
+//! Add a vertex to the polyhedron. Returns the index of the new point.
+int Polyhedron::AddPoint(spacepoint p)
 {
-	vertices.push(p);
+	return vertices.push(p);
 }
 
-void Polyhedron::AddPoint(double x,double y,double z)
+//! Add a vertex to the polyhedron. Returns the index of the new point.
+int Polyhedron::AddPoint(double x,double y,double z)
 {
-	vertices.push(spacepoint(x,y,z));
+	return vertices.push(spacepoint(x,y,z));
 }
 
+//! Pass in something like "2 3 6" to make a face out of vertices with indices 2,3,6.
 /*! \todo *** need to validate the new face?
  */
 int Polyhedron::AddFace(const char *str)
@@ -1138,6 +1235,27 @@ int Polyhedron::dumpOutVrml(const char *filename) // does edges
 	return 0;
 }
 
+//! Output an OFF file. Return 0 for things output, else nonzero.
+int Polyhedron::dumpOutOFF(FILE *f,char **error_ret)
+{
+	if (!faces.n || !vertices.n) return 1;
+
+	fprintf(f,"OFF\n");
+	if (name) fprintf(f,"# %s\n",name);
+	fprintf(f,"%d %d 0\n",vertices.n,faces.n);
+
+	for (int c=0; c<vertices.n; c++) {
+		fprintf(f,"%.15g %.15g %.15g\n",vertices.e[c].x,vertices.e[c].y,vertices.e[c].z);
+	}
+	for (int c=0; c<faces.n; c++) {
+		fprintf(f,"%d ",faces.e[c]->pn);
+		for (int c2=0; c2<faces.e[c]->pn; c2++) {
+			fprintf(f,"%d ",faces.e[c]->p[c2]);
+		}
+		fprintf(f,"\n");
+	}
+	return 0;
+}
 
 /*! Return 0 for success, nonzero for error.
  *

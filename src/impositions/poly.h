@@ -49,12 +49,14 @@ class ExtraFace
  public:
 	int numsides;
 	spacepoint *points3d; //actual 3-d positions of vertices in space
+	spacepoint center;
 	flatpoint *points2d; //2-d points in relation to axis
 	int *connectionedge; //edge index in another face this one connects to
 	int *connectionstate; //whether face is actually connected to face in connections
 	basis axis;
 	int facemode; //is face still in normal position, or maybe stage of animation to other position
 	double a;    //can be used for a temporary angle face is tilted at
+	double *dihedral;
 	void *extra;
 	clock_t timestamp;
 
@@ -65,9 +67,10 @@ class ExtraFace
 class Face
 {
  public:
-	int pn; /* number of edges/points */
-	int *p; /* list of vertices */
-	int *f,*v;  /* Face, vert labels (not edges yet) */
+	int pn; // number of edges/points
+	int *p; // list of vertices
+	int *f,*v;  // Face, vert labels (not edges yet)
+	double *dihedral;
 	int planeid,setid;
 	ExtraFace *cache;
 
@@ -159,16 +162,18 @@ class Polyhedron :
 
 
 	 //building functions
-	virtual void AddPoint(spacepoint p);
-	virtual void AddPoint(double x,double y,double z);
-	virtual int  AddFace(const char *str);
+	virtual int AddPoint(spacepoint p);
+	virtual int AddPoint(double x,double y,double z);
+	virtual int AddFace(const char *str);
 	void BuildExtra(); //create face cache
+	void collapseVertices(double zero, int vstart=-1, int vend=-1);
 
 	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 
 	virtual int dumpInFile(const char *file, char **error_ret);
 	virtual int dumpInOFF(FILE *f,char **error_ret);
+	virtual int dumpOutOFF(FILE *f,char **error_ret);
 	virtual int dumpOutVrml(const char *filename);
 
 	 //Abstract net functions

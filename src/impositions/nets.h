@@ -43,6 +43,7 @@ class NetLine
 
 //----------------------------------- NetFaceEdge -----------------------------------
 enum FaceTag {
+	FACE_Undefined,
 	FACE_None,
 	FACE_Actual,
 	FACE_Potential,
@@ -55,7 +56,7 @@ class NetFaceEdge
 	int tooriginal;
 	int toface,tofaceedge;
 	int flipflag;
-	FaceTag tag; //nolink, actual, potential, taken-elsewhere
+	FaceTag tag; //None, Actual, Potential, Taken
 	double svalue;
 	LaxInterfaces::Coordinate *points;
 	//double *basis_adjustment; ***not useful?
@@ -69,6 +70,7 @@ class NetFaceEdge
 class NetFace
 {
  public:
+	int tick;
 	Laxkit::PtrStack<NetFaceEdge> edges;
 	int original;
 	char isfront;
@@ -128,6 +130,7 @@ class Net : public LaxInterfaces::SomeData
  protected:
 	virtual int deleteFace(int netfacei);
  public:
+	unsigned int _config;
 	char *netname;
 	int tabs;
 	int info,active;
@@ -156,6 +159,7 @@ class Net : public LaxInterfaces::SomeData
 	virtual int pointinface(flatpoint pp);
 	virtual int actualLink(int facei, int edgei);
 	virtual int numActual();
+	virtual void resetTick(int t);
 
 	 //building functions
 	virtual void pushline(NetLine &l,int what,int where=-1,int how=1);

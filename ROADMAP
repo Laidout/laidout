@@ -23,7 +23,6 @@ VERSION 0.09
 (done) Passepartout import
 (done-very partially, anyway) Svg import
 (done-very partially, anyway) Scribus import 
-       update french and spanish translations, if possible
 (done) fix the memory hole (in papergroups?)
        fix the other memory hole (triggered by importing images?), something in paperinterface, too
 (done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
@@ -58,6 +57,7 @@ VERSION 0.091
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        Gui for modifying Page Labels
        double click on group should change selection area to group contents?
+       update french and spanish translations, if possible
        Tools should remember their settings
        Clean up project load/save internals and dialogs
        When importing from an image list file, should be able to say if and when to auto-make previews
