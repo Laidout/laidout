@@ -15,6 +15,7 @@
 //
 
 #include <lax/transformmath.h>
+#include <lax/laximages-imlib.h>
 #include "psout.h"
 #include "psimagepatch.h"
 #include "psimage.h"

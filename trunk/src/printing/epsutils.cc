@@ -255,19 +255,18 @@ int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date,
 	return 0;
 }
 
-//! Convert EPSI preview data to an Imlib_Image.
-/*! Return 0 for success, nonzero error.
+//! Convert EPSI preview data to an ARGB buffer.
+/*! If dest==NULL, then return a new'd unsigned char array. The calling code must delete[] it at some point.
+ * Else assume dest has 4*width*height bytes in it.
+ * Return pointer to the buffer on success, or NULL for error.
  *
  * preview has width*height samples of depth bits, packing sequentially with no padding.
  */
-Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int depth)
+unsigned char *EpsPreviewToARGB(unsigned char *dest, const char *preview, int width, int height, int depth)
 {
-	Imlib_Image imlibimage=imlib_create_image(width,height);
-	imlib_context_set_image(imlibimage);
-	imlib_image_set_format("png");
-	DATA32 *buf=imlib_image_get_data();
+	unsigned int *buf=(unsigned int *)dest;
+	if (!buf) buf=new unsigned int[width*height];
 	
-	 // create an Imlib_Image based on the preview data.
 	unsigned int pos=0,    //index to buf
 			 	 ppos=0,   //index to preview
 			 	 t,        //temporary variable
@@ -277,7 +276,7 @@ Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int de
 				 nbuf;     //size of buf
 	nbuf=width*height;
 	
-	DBG int cc=0;
+	//DBG int cc=0;
 	do { //one iteration per sample
 		sample=0;
 		t=depth;
@@ -335,18 +334,16 @@ Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int de
 		//sample=ss|(ss<<8)|(ss<<16)|(255<<24);
 		sample=(ss|(ss<<8)|(ss<<16))^~0; //swap black for white as per EPSI spec
 
-		DBG fprintf(stderr,"%x",(sample&0xffffff)?1:0);
+		//DBG fprintf(stderr,"%x",(sample&0xffffff)?1:0);
 		buf[pos++]=sample;
 
-		DBG cc++;
-		DBG if (cc==width) { fprintf(stderr,"\n"); cc=0; }
+		//DBG cc++;
+		//DBG if (cc==width) { fprintf(stderr,"\n"); cc=0; }
 	} while (pos<nbuf);
 
-	imlib_image_put_back_data(buf);
-	//imlib_save_image("epspreview.png");
 	
-	DBG cerr <<endl;
-	return imlibimage;
+	//DBG cerr <<endl;
+	return (unsigned char *)buf;
 }
 
 //! Have Ghostscript make epsfile into a smaller png previewfile.
