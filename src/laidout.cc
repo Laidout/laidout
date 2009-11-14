@@ -30,6 +30,7 @@
 #include <lax/version.h>
 #include <lax/fileutils.h>
 #include <lax/laximlib.h>
+#include <lax/laximages-imlib.h>
 #include <getopt.h>
 #include <sys/file.h>
 

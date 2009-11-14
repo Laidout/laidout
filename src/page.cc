@@ -18,6 +18,7 @@
 
 #include <X11/Xutil.h>
 #include <lax/lists.cc>
+#include <lax/laximages-imlib.h>
 #include "page.h"
 #include "drawdata.h"
 #include "stylemanager.h"

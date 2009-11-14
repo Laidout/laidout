@@ -16,6 +16,7 @@
 
 #include <lax/fileutils.h>
 #include <lax/strmanip.h>
+#include <lax/laximages-imlib.h>
 #include "epsdata.h"
 #include "../printing/epsutils.h"
 #include "../configured.h"
@@ -177,6 +178,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
  * \todo in general must figure out a decent way to deal with errors while loading images,
  *    for instance.
  * \todo del is ignored
+ * \todo ***rework so as not to depend on imlib
  */
 int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int maxph, char del)
 {
@@ -219,7 +221,10 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 		}
 	} else if (preview) {
 		 // install preview image from EPSI data
-		imlibimage=EpsPreviewToImlib(preview,width,height,depth);
+		imlibimage=imlib_create_image(width,height);
+		DATA32 *data=imlib_image_get_data();
+		EpsPreviewToARGB((unsigned char *)data,preview,width,height,depth);
+		imlib_image_put_back_data(data);
 		//if (imlibimage) { use this as preview image for eps, set up below.... }
 	}
 

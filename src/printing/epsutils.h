@@ -17,12 +17,11 @@
 #define EPSUTILS_H
 
 #include <lax/doublebbox.h>
-#include <Imlib2.h>
 
 
 int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date, 
 		char **preview, int *depth, int *width, int *height);
-Imlib_Image EpsPreviewToImlib(const char *preview, int width, int height, int depth);
+unsigned char *EpsPreviewToARGB(unsigned char *dest, const char *preview, int width, int height, int depth);
 int WriteEpsPreviewAsPng(const char *fullgspath,
 						 const char *epsfile, int epsw, int epsh,
 						 const char *previewfile, int maxw, int maxh,

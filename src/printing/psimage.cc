@@ -14,6 +14,7 @@
 // Copyright (C) 2004-2007 by Tom Lechner
 //
 
+#include <lax/laximages-imlib.h>
 #include "psimage.h"
 #include "psfilters.h"
 

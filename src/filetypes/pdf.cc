@@ -19,6 +19,7 @@
 #include <lax/interfaces/imagepatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/somedataref.h>
+#include <lax/laximages-imlib.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
