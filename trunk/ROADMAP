@@ -28,7 +28,7 @@ VERSION 0.09
 (done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
-       from laxkit: openbox appears to not grab the mouse when mouse clicked, makes color box unusable. address this!!!
+(done) mouse releasing grab when crossing window control boundaries, makes color box unusable. address this!!!
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 

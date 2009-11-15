@@ -1,4 +1,5 @@
 
+***********this file in not active, just some random thoughts**************8
 
 
 
