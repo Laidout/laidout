@@ -156,7 +156,8 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 			if (laidout->project->docs.n) doc=laidout->project->docs.e[0]->doc;
 		}
 	}
-	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,500,500,0);
+	//HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
@@ -241,7 +242,8 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	lastview=lastedit=NULL;
 
 	// add the window generator funcs
-	AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE,newViewWindowFunc,1);
+	AddWindowType("ViewWindow","View Window",0,newViewWindowFunc,1);
+	//AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE,newViewWindowFunc,1);
 	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE,newSpreadEditorFunc,0);
 	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE,newHelpWindowFunc,0);
 	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE,newCommandWindowFunc,0);
@@ -890,7 +892,8 @@ int HeadWindow::FocusOff(XFocusChangeEvent *e)
 { //***
 	DBG cerr <<"**********************HeadWindow::FocusOff"<<endl;
 	if (e->detail==NotifyInferior || e->detail==NotifyAncestor || e->detail==NotifyNonlinear) {
-		if (mode!=SWAPWITH && mode!=DROPTO && mode!=MAXIMIZED) {
+		//if (mode!=SWAPWITH && mode!=DROPTO && mode!=MAXIMIZED) {
+		if (mode==SWAPWITH || mode==DROPTO || mode==MAXIMIZED) {
 			mode=NORMAL;
 			DBG cerr <<"***********************UN-GRAB***********************"<<endl;
 			XUngrabPointer(app->dpy, CurrentTime);
