@@ -1319,7 +1319,6 @@ int main(int argc,char **argv)
 	DBG stylemanager.dump(stderr,3);
 	DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
 
-	laidout->addwindow(new ViewWindow(NULL,"test",0,0,0,500,500,0,NULL));
 	laidout->run();
 
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
