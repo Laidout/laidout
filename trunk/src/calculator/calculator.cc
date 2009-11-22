@@ -272,7 +272,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 	skipwscomment();
 
 	int tfrom=-1;
-	while(tfrom!=from && from<curexprslen) { 
+	while(!calcerror && tfrom!=from && from<curexprslen) { 
 		tfrom=from;
 		if (answer) { answer->dec_count(); answer=NULL; }
 		if (sessioncommand()) { //  checks for session commands 
@@ -282,9 +282,11 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 			if (nextchar(';')) ; //advance past a ;
 			continue;
 		}
+
 		if (calcerror) break;
 		answer=eval();
 		if (calcerror) break;
+
 		//updatehistory(answer,outexprs);
 		num_expr_parsed++;
 
@@ -499,7 +501,7 @@ Value *LaidoutCalculator::eval(const char *exprs)
 	if (!exprs) return(NULL);			 
 	char *texprs;
 	int tfrom=from;
-	Value *num;
+	Value *num=NULL;
 	texprs=new char[strlen(curexprs)+1];
 	strcpy(texprs,curexprs);
 
@@ -527,6 +529,7 @@ Value *LaidoutCalculator::eval()
 			calcerr(err);
 			num->dec_count(); num=NULL;
 			num2->dec_count(); num2=NULL;
+			return NULL;
 		}
 	}
 	return num;
@@ -547,6 +550,7 @@ Value *LaidoutCalculator::multterm()
 			calcerr(err);
 			num->dec_count(); num=NULL;
 			num2->dec_count(); num2=NULL;
+			return NULL;
 		}
 	}
 	return num;
@@ -565,6 +569,7 @@ Value *LaidoutCalculator::powerterm()
 			calcerr(err);
 			num->dec_count(); num=NULL;
 			num2->dec_count(); num2=NULL;
+			return NULL;
 		}
 	}
 	return num;

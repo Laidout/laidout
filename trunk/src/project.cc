@@ -48,6 +48,7 @@ ProjDocument::ProjDocument(Document *ndoc,char *file,char *nme)
 	name=newstr(nme);
 	filename=newstr(file);
 	doc=ndoc;
+	if (!filename && doc->Saveas()) filename=newstr(doc->Saveas());
 	if (doc) doc->inc_count();
 	is_in_project=1;
 }
@@ -77,9 +78,9 @@ ProjDocument::~ProjDocument()
  * \brief Normally the project directory which contains the project file and other project subdirectories.
  *
  * When filename!=NULL, normally dir is just the directory part of filename.
- * If dir==NULL wher filename!=NULL, then there is no specific project directory. Any
- * resources are assumed to be contained in the users laidout directory. This allows 
- * stand alone documents more complicated that single documents, but not so file heavy
+ * If dir==NULL when filename!=NULL, then there is no specific project directory. Any
+ * resources are assumed to be contained in the user's laidout directory. This allows 
+ * stand alone projects that are more complicated than single documents, but not so file heavy
  * as whole project directories.
  *
  * \todo finish implementing this!!

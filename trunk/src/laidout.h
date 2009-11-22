@@ -22,7 +22,6 @@
 #include "papersizes.h"
 #include "document.h"
 #include "project.h"
-#include "newdoc.h"
 #include "interfaces.h"
 #include "calculator/calculator.h"
 #include "impositions/imposition.h"

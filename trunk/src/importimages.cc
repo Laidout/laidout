@@ -268,11 +268,11 @@ int ImportImagesDialog::init()
 	tabframe->wg(1000);
 	tabframe->ph(30);
 	tabframe->hg(1000);
-	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
-			NULL,window,"reviewlist",
-			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
-			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
-	//***populate reviewlist as needed...
+//	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
+//			NULL,window,"reviewlist",
+//			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
+//			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
+//	//***populate reviewlist as needed...
 
 	MenuSelector *oldfilelist=filelist;
 	filelist=new MenuSelector(this,"files",0, 0,0,0,0,1,
@@ -282,7 +282,7 @@ int ImportImagesDialog::init()
 	filelist->tooltip(_("Choose from these files.\nRight-click drag scrolls"));
 
 	tabframe->AddWin(filelist,_("Choose"),NULL);
-	tabframe->AddWin(reviewlist,_("Review"),NULL);
+//	tabframe->AddWin(reviewlist,_("Review"),NULL);
 	//tabframe->SelectN(0);
 	wholelist.remove(c);
 	app->destroywindow(oldfilelist);

@@ -116,6 +116,9 @@ Value *ValueHash::find(const char *name)
 	return NULL;
 }
 
+/*! If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ */
 long ValueHash::findInt(const char *name, int which)
 {
 	if (which<0) which=findIndex(name);
@@ -125,6 +128,9 @@ long ValueHash::findInt(const char *name, int which)
 	return i->i;
 }
 
+/*! If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ */
 double ValueHash::findDouble(const char *name, int which)
 {
 	if (which<0) which=findIndex(name);
@@ -134,6 +140,9 @@ double ValueHash::findDouble(const char *name, int which)
 	return d->d;
 }
 
+/*! If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ */
 const char *ValueHash::findString(const char *name, int which)
 {
 	if (which<0) which=findIndex(name);
@@ -143,7 +152,10 @@ const char *ValueHash::findString(const char *name, int which)
 	return s->str;
 }
 
-/*! Does not increment count of the object. */
+/*! Does not increment count of the object.
+ *  If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ */
 Laxkit::RefCounted *ValueHash::findObject(const char *name, int which)
 {
 	if (which<0) which=findIndex(name);
@@ -157,7 +169,7 @@ Laxkit::RefCounted *ValueHash::findObject(const char *name, int which)
 /*! \class Value
  * \brief Base class of internal scripting objects.
  *
- * WARNING: This is a temporary implementation. It needs vast improvements to handle
+ * \todo WARNING: This is a temporary implementation. It needs vast improvements to handle
  * units, other object types and object operators in LaidoutCalculator. You should NOT write code that 
  * depends on Value or Value subclasses as they are currently. It is very possible that Value
  * will take over the role of Style, and something like ValueDef will likely replace StyleDef.

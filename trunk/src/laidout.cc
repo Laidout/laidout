@@ -48,6 +48,8 @@
 #include "filetypes/filters.h"
 #include "utils.h"
 #include "api/functions.h"
+#include "newdoc.h"
+
 #include <lax/lists.cc>
 
 #include <sys/stat.h>
@@ -904,7 +906,7 @@ int LaidoutApp::isTopWindow(anXWindow *win)
 	return topwindows.findindex(win)>=0;
 }
 
-//! Find the doc with saveas.
+//! Find the doc with saveas. Does not increment its count.
 Document *LaidoutApp::findDocument(const char *saveas)
 {
 	if (!project) return NULL;

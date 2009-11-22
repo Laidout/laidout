@@ -82,7 +82,7 @@ class NewProjectWindow : public Laxkit::RowFrame
 	int UpdateOkToCreate();
 };
 
-Laxkit::anXWindow *BrandNew();
+Laxkit::anXWindow *BrandNew(int which=0);
 
 #endif
 
