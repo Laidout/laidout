@@ -154,6 +154,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::IconButton *pageclips;
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
+	Laxkit::anXWindow *rulercornerbutton;
  public:
 	Project *project;
 	Document *doc;
@@ -171,6 +172,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int SelectTool(int id);
 	virtual void updateContext();
+	virtual void updateProjectStatus();
 	virtual void SetParentTitle(const char *str);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

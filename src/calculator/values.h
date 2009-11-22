@@ -41,7 +41,7 @@ class Value : public Laxkit::RefCounted
 	Value();
 	virtual ~Value();
 	virtual const char *toCChar() = 0;
-	const char *whattype() { return "Value"; }
+	virtual const char *whattype() { return "Value"; }
 	virtual int type() = 0;
 };
 

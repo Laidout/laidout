@@ -199,9 +199,9 @@ int LaidoutOpenWindow::DataEvent(EventData *data,const char *mes)
 //! Return a TabFrame with a NewDocWindow and NewProjectWindow.
 /*! \todo is this function really still useful?
  */
-anXWindow *BrandNew()
+anXWindow *BrandNew(int which)
 {
-	return new LaidoutOpenWindow(0);
+	return new LaidoutOpenWindow(which);
 }
 
 
