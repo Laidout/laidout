@@ -13,6 +13,7 @@ VERSION 0.09
 (done) Finish implementing project based setup, particularly being able to save a project, not just load one   
 (done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
+       Debug net impositions!!
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
        be able to reimpose a document from gui and command
 (done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
