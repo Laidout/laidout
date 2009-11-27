@@ -19,6 +19,10 @@
 #include <lax/refptrstack.cc>
 #include <lax/strmanip.h>
 #include <cstdio>
+#include <iostream>
+
+#define DBG
+using namespace std;
 
 //---------------------------------------- Values --------------------------------------
 /*! \class ValueHash
@@ -33,24 +37,35 @@ ValueHash::ValueHash()
 {}
 
 ValueHash::~ValueHash()
-{}
+{
+	DBG values.flush(); //this should happen automatically anyway
+}
 
 int ValueHash::push(const char *name,int i)
 {
 	keys.push(newstr(name));
-	return values.push(new IntValue(i));
+	Value *v=new IntValue(i);
+	int c=values.push(v);
+	v->dec_count();
+	return c;
 }
 
 int ValueHash::push(const char *name,double d)
 {
 	keys.push(newstr(name));
-	return values.push(new DoubleValue(d));
+	Value *v=new DoubleValue(d);
+	int c=values.push(v);
+	v->dec_count();
+	return c;
 }
 
 int ValueHash::push(const char *name,const char *value)
 {
 	keys.push(newstr(name));
-	return values.push(new StringValue(value));
+	Value *v=new StringValue(value);
+	int c=values.push(v);
+	v->dec_count();
+	return c;
 }
 
 //! Create an ObjectValue with obj, and push.
@@ -58,7 +73,10 @@ int ValueHash::push(const char *name,const char *value)
 int ValueHash::pushObject(const char *name,Laxkit::RefCounted *obj)
 {
 	keys.push(newstr(name));
-	return values.push(new ObjectValue(obj));
+	Value *v=new ObjectValue(obj);
+	int c=values.push(v);
+	v->dec_count();
+	return c;
 }
 
 /*! Increments count on v. */
@@ -219,6 +237,7 @@ const char *StringValue::toCChar()
  */
 ObjectValue::ObjectValue(RefCounted *obj)
 {
+	DBG cerr <<"ObjectValue creation.."<<endl;
 	object=obj; 
 	if (object) object->inc_count();
 }
@@ -227,6 +246,7 @@ ObjectValue::ObjectValue(RefCounted *obj)
  */
 ObjectValue::~ObjectValue()
 {
+	DBG cerr <<"ObjectValue destructor.."<<endl;
 	if (object) object->dec_count();
 }
 

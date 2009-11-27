@@ -91,7 +91,7 @@ enum ElementType {
 	Element_EnumVal,
 	Element_Function,
 	Element_Color,
-	Element_MaxFormatVal 
+	Element_MaxBuiltinFormatValue
 };
 extern const char *element_TypeNames[14];
 		

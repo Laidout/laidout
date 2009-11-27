@@ -15,7 +15,7 @@ VERSION 0.09
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
        Debug net impositions!!
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
-       be able to reimpose a document from gui and command
+       be able to reimpose a document from gui and command (from command mostly works)
 (done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
 (done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
        At bare minimum, path interface use should not cause a seg fault
@@ -39,7 +39,7 @@ VERSION 0.091
        Net imposition interactive unwrapper and build net interface
        Generic fold and trim imposition
        Collect for out
-       Finish implementing the image list review tab in import images dialog
+       Examine and improve ease of use of import images dialog, particularly for previewing
        Externally rendered objects, similar to Scribus render frames
        Object and resource tags
        PathInterface must be drastically improved, and bez part should have segment move like inkscape

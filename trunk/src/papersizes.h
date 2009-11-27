@@ -44,6 +44,7 @@ class PaperStyle : public Style
 	double width,height;
 	int dpi;
 	unsigned int flags; //1=landscape !(&1)=portrait
+	PaperStyle();
 	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,int ndpi);
 	virtual ~PaperStyle();
 	virtual double w() { if (flags&1) return height; else return width; }
@@ -55,6 +56,7 @@ class PaperStyle : public Style
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
+StyleDef *makePaperStyleDef();
 
 
 //----------------------------- GetBuiltInPaperSizes() --------------------------------------

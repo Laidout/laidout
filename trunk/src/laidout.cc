@@ -425,6 +425,7 @@ int LaidoutApp::init(int argc,char **argv)
 	 //establish user accesible api
 	DBG cerr<<"---install functions"<<endl;
 	InitFunctions();
+	InitObjectDefinitions();
 	
 	 //read in resources
 	char configfile[strlen(config_dir)+20];
@@ -820,12 +821,6 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	}
 
 
-	 // options are now basically parsed, must handle any resulting commands like export
-	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
-	DBG cerr <<"*** read in these files:"<<endl;
-	DBG for (c=optind; c<argc; c++) 
-	DBG 	cerr <<"----Read in:  "<<argv[c]<<endl;
-
 	 //export doc if found, then exit
 	if (exprt) {
 		//*** this should probably be moved to its own function so command line pane can call it
@@ -877,6 +872,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 		exit(0);
 	}
+
+	 // options are now basically parsed, must handle any resulting commands like export
+	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
+	DBG cerr <<"Read in these files:"<<endl;
+	DBG for (c=optind; c<argc; c++) 
+	DBG 	cerr <<"  "<<c-optind+1<<"/"<<argc-optind<<":  "<<argv[c]<<endl;
+
 
 	 // load in any projects or documents after the args
 	Document *doc;
@@ -1008,16 +1010,17 @@ Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
 	
 	 //must push before Load to not screw up setting up windows and other controls
 	project->Push(doc); // docs is a plain Laxkit::PtrStack of Document
-	doc->dec_count();
+	//doc->dec_count();
 	if (doc->Load(fullname,error_ret)==0) { // load failed
 		project->Pop(NULL);
-		delete doc;
+		doc->dec_count();
 		return NULL;
 	}
 	
 	makestr(doc->saveas,NULL); // this forces a change of name, must be done after Load
 	delete[] fullname;
 	curdoc=doc;
+	doc->dec_count();
 	return doc;
 }
 
@@ -1062,15 +1065,19 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
 	project->Push(doc); //important: this must be before doc->Load()
-	doc->dec_count();
+	//doc->dec_count();
 	
 	if (doc->Load(fullname, error_ret)==0) {
 		project->Pop(NULL);
-		delete doc;
+		doc->dec_count();
 		doc=NULL;
 	}
 	delete[] fullname;
-	if (doc) { curdoc=doc; return 0; }
+	if (doc) { 
+		curdoc=doc; 
+		doc->dec_count();
+		return 0; 
+	}
 	return -1;
 }
 
