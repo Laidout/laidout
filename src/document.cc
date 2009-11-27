@@ -770,7 +770,7 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 	}
 
 	laidout->notifyDocTreeChanged(NULL,TreePagesMoved, 0,-1);
-	return 1;
+	return 0;
 }
 
 //! Low level reading in a document.

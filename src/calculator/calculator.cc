@@ -245,6 +245,7 @@ char *LaidoutCalculator::In(const char *in)
 	} else if (!messagebuffer && calcerror) makestr(messagebuffer,calcmes);
 	if (messagebuffer) return newstr(messagebuffer);
 
+	if (from!=0) return newstr(_("Ok."));
 	return newstr(_("You are surrounded by twisty passages, all alike."));
 }
 
@@ -790,6 +791,7 @@ Value *LaidoutCalculator::evalname()
 	Value *num=evalInnate(word,n);
 	if (num) return num;
 	
+	calcerr(_("Unknown name!"));
 	return NULL;
 }
 
@@ -1083,7 +1085,8 @@ ValueHash *LaidoutCalculator::build_context()
 {
 	ValueHash *pp=new ValueHash();
 	pp->push("current_directory", dir);
-	if (laidout->project->docs.n) pp->push("document", laidout->project->docs.e[0]->doc->Saveas());//***
+	//if (laidout->project->docs.n) pp->push("document", laidout->project->docs.e[0]->doc->Saveas());//***
+	if (laidout->project->docs.n) pp->pushObject("document", laidout->project->docs.e[0]->doc);
 	//pp.push("window", NULL); ***default to first view window pane in same headwindow?
 	return pp;
 }

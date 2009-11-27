@@ -19,6 +19,7 @@
 
 
 int InitFunctions();
+int InitObjectDefinitions();
 
 
 

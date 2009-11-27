@@ -22,6 +22,8 @@
 //#include "importfunc.h"
 //#include "exportfunc.h"
 
+#include "../papersizes.h"
+
 //! Initialize available functions in stylemanager.
 /*! Return the number of functions added.
  */
@@ -34,6 +36,11 @@ int InitFunctions()
 	//stylemanager.AddStyleDef(makeExportStyleDef(),1);
 	
 	return stylemanager.functions.n;
+}
+
+int InitObjectDefinitions()
+{
+	stylemanager.AddStyleDef(makePaperStyleDef(),1);
 }
 
 

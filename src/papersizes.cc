@@ -28,6 +28,7 @@ using namespace std;
 #include <lax/strmanip.h>
 
 #include <lax/refptrstack.cc>
+#include "language.h"
 
 using namespace LaxFiles;
 using namespace Laxkit;
@@ -186,6 +187,16 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
  * \brief If landscape (flags&&1), then return width, else return height.
  */
 
+PaperStyle::PaperStyle()
+{
+	name=NULL;
+	width=height=0;
+	dpi=360;
+	flags=0;
+
+	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
+}
+
 //! Simple constructor, sets name, w, h, flags, dpi.
 PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,int ndpi)
 {
@@ -273,10 +284,59 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
 	return s;
 }
 
+Style *NewPaperStyle(StyleDef *def)
+{ return new PaperStyle; }
+
 StyleDef *PaperStyle::makeStyleDef()
+{ return makePaperStyleDef(); }
+
+StyleDef *makePaperStyleDef()
 {
-	cout <<" ***** need to implement PaperStyle::makeStyleDef()!!!"<<endl;
-	return NULL;
+	StyleDef *sd=new StyleDef(NULL,
+							  "Paper",
+							  _("Paper"),
+							  _("A basic rectangular paper with orientation"),
+							  Element_Fields,
+							  NULL,
+							  NULL);
+
+	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
+	sd->newfunc=NewPaperStyle;
+	sd->push("name",
+			_("Name"),
+			_("Name of the paper, like A4 or Letter"),
+			Element_String,
+			NULL, //range
+			NULL, //def value
+			0,
+			NULL);
+	sd->push("orientation",
+			_("Orientation"),
+			_("Either portrait (0) or landscape (1)"),
+			Element_String, NULL,"portrait",
+			0,
+			NULL);
+	sd->push("width",
+			_("Width"),
+			_("Width of the paper, after orientation is applied"),
+			Element_Real, NULL,NULL,
+			0,
+			NULL);
+	sd->push("height",
+			_("Height"),
+			_("Height of the paper, after orientation is applied"),
+			Element_Real, NULL,NULL,
+			0,
+			NULL);
+	sd->push("dpi",
+			_("Dpi"),
+			_("Default dots per inch of the paper"),
+			Element_Real, 
+			NULL,
+			NULL,
+			0,
+			NULL);
+	return sd;
 }
 
 

@@ -511,21 +511,10 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 /*! \var ElementType StyleDef::format
  * \brief What is the nature of *this.
  * 
- *   The format of the value of this Styledef. It can be any id that is defined in the value Manager***.
- *   These formats other than FIELDS imply that *this is a single unit. FIELDS implies that there are further
- *   subunits. It may be that the type of value it is has further subfields, but they lay outside the
- *   scope of StyleDef.
- *   <pre>
- *    STYLEDEF_INT      1
- *    STYLEDEF_REAL     2
- *    STYLEDEF_STRING   3
- *    STYLEDEF_FIELDS   4 <-- implies fields holds a stack of the subfields for *this
- *    STYLEDEF_BIT      5 <-- has 2 possible states
- *    STYLEDEF_3BIT     6 <-- has 3 possible states (-1,0,1 or yes,no,maybe for instance)
- *    STYLEDEF_ENUM     7 <-- implies that fields exists, and contains only ENUM_VALs
- *    STYLEDEF_ENUM_VAL 8 <-- is not actually a value of anything. The ENUM can be only one of its ENUM_VALs
- *    -STYLEDEF_VALUE- (starting at 100) <-- is a number type used in the built-in interpreter
- *    </pre>
+ *   The format of the value of this Styledef. It can be any id that is defined in the value Manager***whatever
+ *   that is!!
+ *   These formats other than Element_Fields imply that *this is a single unit.
+ *   Element_Fields implies that there are further subcomponents.
  */
 /*! \var char *StyleDef::name
  *  \brief Basically a class name, meant to be seen in the interpreter.
@@ -544,8 +533,8 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 /*! \var StyleDef *StyleDef::extendsdef
  *  \brief Which StyleDef this one extends.
  *  
- *	This is a pointer to a def in a StyleManager. ***StyleDef should look up extends in
- *	the stylemanager to get the appropriate reference.
+ *	This is a pointer to a def in a StyleManager. StyleDef looks up extends in
+ *	the stylemanager to get the appropriate reference during the constructor.
  *  
  *  If there is an extends, the index of all the fields starts with 0, which
  *	is the very first field in the very first base styledef.

@@ -144,7 +144,7 @@ int ReImposeFunction(ValueHash *context,
 			if (!doc) throw _("Cannot find that document!"); //doc not found!
 		}
 		if (!doc && context) doc=dynamic_cast<Document*>(context->findObject("document"));
-		if (!doc) _("You must specify a document to reimpose."); //no doc to impose!
+		if (!doc) throw _("You must specify a document to reimpose."); //no doc to impose!
 
 		 //2.
 		str=parameters->findString("imposition");
@@ -176,7 +176,13 @@ int ReImposeFunction(ValueHash *context,
 					break;
 				}
 			}
-			if (paper) imp->SetPaperSize(paper); // makes a duplicate of paper
+			if (paper) {
+				paper=(PaperStyle*)paper->duplicate();
+				if (strcasestr(str,"landscape")) paper->flags=1;
+				else if (strcasestr(str,"portrait")) paper->flags=0;
+				imp->SetPaperSize(paper); // makes a duplicate of paper
+				paper->dec_count();
+			}
 		}
 		if (!paper) { delete imp; throw _("You must provide a paper size!"); }
 
@@ -188,7 +194,7 @@ int ReImposeFunction(ValueHash *context,
 		i=parameters->findIndex("createnew");
 		if (i>=0) createnew=parameters->findInt("createnew", i);
 	} catch (const char *error) {
-		if (*error_ret) appendline(*error_ret,error);
+		if (error_ret) appendline(*error_ret,error);
 		if (value_ret) *value_ret=NULL;
 		return 1;
 	}
@@ -196,12 +202,13 @@ int ReImposeFunction(ValueHash *context,
 	 //so parameters passed, so now try to actually reimpose...
 	if (createnew) {
 		 //must duplicate the document, install in laidout, then call reimpose on it
-		cout <<" *** must implement createnew in Reimpose()!!"<<endl;
+		cerr <<" *** must implement createnew in Reimpose()!!"<<endl;
 	}
 	int c=doc->ReImpose(imp, scalepages);
+	imp->dec_count();
 
 	if (value_ret) *value_ret=NULL;
-	return c;
+	return c?1:0;
 }
 
 
