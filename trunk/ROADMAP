@@ -16,10 +16,11 @@ VERSION 0.09
        Debug net impositions!!
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
        be able to reimpose a document from gui and command (from command mostly works)
+       import and export commands
+(done) Make commands actually available in the command prompt window
 (done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
 (done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
-       At bare minimum, path interface use should not cause a seg fault
-       Image and Color patches, gradients, etc should allow transparent colors
+(done) Image and Color patches, gradients should allow transparent colors
 (done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
 (done) Passepartout import
 (done-very partially, anyway) Svg import
@@ -41,6 +42,7 @@ VERSION 0.091
        Collect for out
        Examine and improve ease of use of import images dialog, particularly for previewing
        Externally rendered objects, similar to Scribus render frames
+       At bare minimum, path interface use should not cause a seg fault
        Object and resource tags
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Masking, clip paths and/or softmask
@@ -73,7 +75,6 @@ VERSION 0.1
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
        Construct a command core, so that no X connection necessary for batch processing
-       Make commands actually available in the command prompt window
        should probably put laidout stuff in its own namespace, just to be polite
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME

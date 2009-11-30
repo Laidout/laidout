@@ -189,8 +189,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------left side
 				     //get color for point (r+rr,c+cc)
-					//patch->getColor(0,t/(1-dt),&color);
-					patch->getColor(t/(1-dt),0,&color);
+					patch->WhatColor(0,t/(1-dt),&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(0   ,t);
@@ -209,8 +208,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------right side
 				     //get color for point (r+rr,c+cc)
-					//patch->getColor(1.,t/(1-dt),&color);
-					patch->getColor(t/(1-dt),1,&color);
+					patch->WhatColor(1.,t/(1-dt),&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(1.   ,t);
@@ -234,8 +232,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------top side
 				     //get color for point (r+rr,c+cc)
-					//patch->getColor(s/(1-ds),0,&color);
-					patch->getColor(0,s/(1-ds),&color);
+					patch->WhatColor(s/(1-ds),0,&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(s,          0);
@@ -254,8 +251,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 					 //---------bottom side
 				     //get color for point (r+rr,c+cc)
-					//patch->getColor(s/(1-ds),1,&color);
-					patch->getColor(1,s/(1-ds),&color);
+					patch->WhatColor(s/(1-ds),1,&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(s,          1);
@@ -289,7 +285,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 					if (tt<0) tt=0; else if (tt>1) tt=1;
 					ss=s/(1-ds);
 					if (ss<0) ss=0; else if (ss>1) ss=1;
-					patch->getColor(tt,ss,&color);
+					patch->WhatColor(ss,tt,&color);
 
 			  		 //get coords for that little rect
 					p[0]=patch->getPoint(s   ,t);
