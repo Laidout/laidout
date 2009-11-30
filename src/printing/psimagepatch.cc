@@ -38,9 +38,7 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 {
 	 // make an ImageData covering the bounding box
 
-	Imlib_Image image;
-	int width,height;
-
+	 //find bounds of the patch in paper coordinates
 	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny)),
 			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
 			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
@@ -49,11 +47,13 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
 	DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
 	DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
-	
 
+	 //bounds could be any parallelogram, width and height are lengths along edges
+	int width,height;
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());
 	
+	Imlib_Image image;
 	image=imlib_create_image(width,height);
 	imlib_context_set_image(image);
 	imlib_image_set_has_alpha(1);
@@ -61,29 +61,25 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	memset(buf,0,width*height*4); // make whole transparent/black
 	//memset(buf,0xff,width*height*4); // makes whole non-transparent/white
 	
-	 // create an image where the patch goes
-	double m[6]; //takes points from i to buffer
+	 // create an image that spans the bounding box of the patch
 	unsigned char *buffer;
 	buffer=(unsigned char *) buf;
 	double a=(i->maxx-i->minx)/width,
 		   d=(i->miny-i->maxy)/height;
+	double m[6]; //takes points from i to buffer
 	m[0]=1/a;
 	m[1]=0;
 	m[2]=0;
 	m[3]=1/d;
 	m[4]=-i->minx/a;
 	m[5]=-i->maxy/d;
-	ImagePatchInterface imginterf(0,NULL);
-	imginterf.data=i;
-	imginterf.renderToBuffer(buffer,m,width,height);
-	imginterf.data=NULL;
+
+	i->renderToBuffer(buffer,width,height, 0,8,4);
 	imlib_image_put_back_data(buf);
 	imlib_image_flip_vertical();
 	ImageData img;
 	LaxImage *limg=new LaxImlibImage(NULL,image);
 	img.SetImage(limg);
-	//imlib_context_set_image(image);
-	//imlib_save_image("temp.jpg");
 
 	 // set image transform
 	transform_invert(img.m(),m);

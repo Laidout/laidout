@@ -1206,10 +1206,7 @@ static void pdfImagePatch(FILE *f,
 	m[3]=1/d;
 	m[4]=-i->minx/a;
 	m[5]=-i->maxy/d;
-	ImagePatchInterface imginterf(0,NULL);
-	imginterf.data=i;
-	imginterf.renderToBuffer(buffer,m,width,height);
-	imginterf.data=NULL;
+	i->renderToBuffer(buffer,width,height, 0,8,4);
 	imlib_image_put_back_data(buf);
 	imlib_image_flip_vertical();
 	ImageData img;
