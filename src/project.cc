@@ -48,8 +48,8 @@ ProjDocument::ProjDocument(Document *ndoc,char *file,char *nme)
 	name=newstr(nme);
 	filename=newstr(file);
 	doc=ndoc;
-	if (!filename && doc->Saveas()) filename=newstr(doc->Saveas());
 	if (doc) doc->inc_count();
+	if (!filename && doc->Saveas()) filename=newstr(doc->Saveas());
 	is_in_project=1;
 }
 
@@ -120,14 +120,28 @@ int Project::Push(Document *doc)
 	return 0;
 }
 
+/*! Return 0 for document removed, or 1 for not found or otherwise not removed.
+ *
+ * This will cast a TreeDocGone event via notifyDocTreeChanged(NULL,TreeDocGone).
+ */
 int Project::Pop(Document *doc)
 {
-	if (!doc) { docs.remove(); return 0; }
+	if (!doc) {
+		if (docs.n) {
+			docs.remove();
+			laidout->notifyDocTreeChanged(NULL,TreeDocGone,0,0);
+			return 0;
+		}
+		return 1;
+	}
 
 	int c;
 	for (c=0; c<docs.n; c++) if (doc==docs.e[c]->doc) break;
 	if (c==docs.n) return 1;
-	if (docs.remove(c)) return 0;
+	if (docs.remove(c)) {
+		laidout->notifyDocTreeChanged(NULL,TreeDocGone,0,0);
+		return 0;
+	}
 	return 1;
 }
 
@@ -280,13 +294,15 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 	}
 
 	 // search for windows to create after reading in everything else
-	HeadWindow *head;
-	for (int c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"window")) {
-			head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
-			if (head) laidout->addwindow(head);
+	if (!laidout->donotusex) {
+		HeadWindow *head;
+		for (int c=0; c<att->attributes.n; c++) {
+			name= att->attributes.e[c]->name;
+			value=att->attributes.e[c]->value;
+			if (!strcmp(name,"window")) {
+				head=static_cast<HeadWindow *>(newHeadWindow(att->attributes.e[c]));
+				if (head) laidout->addwindow(head);
+			}
 		}
 	}
 }

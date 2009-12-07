@@ -24,6 +24,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 #include "../dataobjects/mysterydata.h"
 #include "svg.h"
 #include "../headwindow.h"
@@ -54,6 +55,32 @@ void installSvgFilter()
 }
 
 
+//------------------------------------ SvgExportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newSvgExportConfig(StyleDef*)
+{
+	DocumentExportConfig *d=new DocumentExportConfig;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Svg"))
+			d->filter=laidout->exportfilters.e[c];
+	}
+	return d;
+}
+
+//------------------------------------ SvgImportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newSvgImportConfig(StyleDef*)
+{
+	ImportConfig *d=new ImportConfig;
+	for (int c=0; c<laidout->importfilters.n; c++) {
+		if (!strcmp(laidout->importfilters.e[c]->Format(),"Svg"))
+			d->filter=laidout->importfilters.e[c];
+	}
+	return d;
+}
+
 //------------------------------------ SvgOutputFilter ----------------------------------
 	
 /*! \class SvgOutputFilter
@@ -79,6 +106,26 @@ const char *SvgOutputFilter::VersionName()
 {
 	if (version<1.2) return _("Svg 1.1"); 
 	return _("Svg 1.2");
+}
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *SvgOutputFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("DocumentExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"SvgExportConfig");
+	makestr(styledef->Name,_("Svg Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to an svg file."));
+	styledef->newfunc=newSvgExportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
 }
 
 //! Function to dump out obj as svg.
@@ -691,6 +738,28 @@ const char *SvgImportFilter::FileType(const char *first100bytes)
 	//*** inkscape has inkscape:version tag
 	// also xmlns:svg="http://www.w3.org/2000/svg
 }
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *SvgImportFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("ImportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"SvgImportConfig");
+	makestr(styledef->Name,_("Svg Import Configuration"));
+	makestr(styledef->description,_("Configuration to import a Svg file."));
+	styledef->newfunc=newSvgImportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
+}
+
+
 
 //forward declaration:
 int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret);

@@ -372,11 +372,21 @@ int NewDocWindow::init()
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
 	 // color mode:		black and white, grayscale, rgb, cmyk, other
-	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last=linp,window,"colormode",
-			            _("Color Mode:"),"rgb",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+	//-----------------------
+//	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						last=linp,window,"colormode",
+//			            _("Color Mode:"),"rgb",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+	//------------------------
+	last=popup=new StrSliderPopup(this,"colormode",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, popup,window,"colormode");
+	popup->AddItem(_("RGB"),0);
+	popup->AddItem(_("CMYK"),1);
+	popup->AddItem(_("Grayscale"),1);
+	popup->Select(0);
+	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);// forced linebreak
+	//-----------------------
 
 	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
 	ColorBox *cbox;

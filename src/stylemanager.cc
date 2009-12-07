@@ -126,12 +126,15 @@ int StyleManager::AddStyleDef(StyleDef *def, int absorb)
 
 //! Find the styledef with StyleDef::name same as styledef.
 /*! This returns the pointer, but does NOT increase the count on it.
+ *
+ * If which==1, then only look in functions. If which==2, only look in
+ * objects. If which==3 (the default), then look in either.
  */
-StyleDef *StyleManager::FindDef(const char *styledef)
+StyleDef *StyleManager::FindDef(const char *styledef, int which)
 {
-	for (int c=0; c<functions.n; c++)
+	if (which&1) for (int c=0; c<functions.n; c++)
 		if (!strcmp(styledef,functions.e[c]->name)) return functions.e[c];
-	for (int c=0; c<styledefs.n; c++)
+	if (which&2) for (int c=0; c<styledefs.n; c++)
 		if (!strcmp(styledef,styledefs.e[c]->name)) return styledefs.e[c];
 	return NULL;
 }
@@ -151,8 +154,13 @@ Style *StyleManager::FindStyle(const char *style)
  */
 Style *StyleManager::newStyle(const char *styledef)
 {
-	StyleDef *s=FindDef(styledef);
-	if (s && s->newfunc) return s->newfunc(s);
+	StyleDef *s=FindDef(styledef,2);
+	if (!s) return NULL;
+	if (s->newfunc) return s->newfunc(s);
+	if (!s->stylefunc) return NULL;
+
+	//s->stylefunc()
+
 	return NULL;
 }
 

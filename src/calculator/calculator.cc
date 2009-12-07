@@ -374,33 +374,28 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 					}
 
 					if (!strcmp(sd->name,showwhat)) {
-						if (sd->format==Element_Function) {
-							appendstr(temp,"function ");
-						} else {
-							appendstr(temp,"object ");
-						}
+						appendstr(temp,element_TypeNames[sd->format]);
+						appendstr(temp," ");
 						appendstr(temp,sd->name);
 						//appendstr(temp,": ");
 						//appendstr(temp,sd->Name);
 						appendstr(temp,", ");
 						appendstr(temp,sd->description);
-						if (sd->format!=Element_Fields) {
-							appendstr(temp," (");
-							appendstr(temp,element_TypeNames[sd->format]);
-							appendstr(temp,")");
-						}
 						if (sd->format!=Element_Function && sd->extends) {
 							appendstr(temp,"\n extends ");
 							appendstr(temp,sd->extends);
 						}
 						if ((sd->format==Element_Fields || sd->format==Element_Function) && sd->getNumFields()) {
 							const char *nm,*Nm,*desc;
+							ElementType fmt;
 							appendstr(temp,"\n");
 							for (int c2=0; c2<sd->getNumFields(); c2++) {
-								sd->getInfo(c2,&nm,&Nm,&desc);
+								sd->getInfo(c2,&nm,&Nm,&desc,NULL,NULL,&fmt);
 								appendstr(temp,"  ");
 								appendstr(temp,nm);
-								appendstr(temp,": ");
+								appendstr(temp,": (");
+								appendstr(temp,element_TypeNames[fmt]);
+								appendstr(temp,") ");
 								appendstr(temp,Nm);
 								appendstr(temp,", ");
 								appendstr(temp,desc);
@@ -699,6 +694,7 @@ Value *LaidoutCalculator::getstring()
 	if (nextchar('\'')) quote='\'';
 	else if (nextchar('"')) quote='"';
 	else return NULL;
+	int tfrom=from;
 
 	int maxstr=20,spos=0;
 	char *newstr=new char[maxstr];
@@ -726,6 +722,7 @@ Value *LaidoutCalculator::getstring()
 	}
 	if (curexprs[from]!=quote) {
 		delete[] newstr;
+		from=tfrom;
 		calcerr(_("String not closed."));
 		return NULL;
 	}
@@ -750,15 +747,11 @@ Value *LaidoutCalculator::evalname()
 	//    this lets you have "command aeuaoe aoeu aou;" where the function does its own parsing.
 	//    In this case, the function parameters will have 1 parameter: "commanddata",value=[in..end).
 	//    otherwise, assume nested parsing like "function (x,y)", "function x,y"
-	int c;
 
 	 //search for function in stylemanager
-	for (c=0; c<stylemanager.functions.n; c++) {
-		if (!strcmp(word,stylemanager.functions.e[c]->name)) break;
-	}
-	if (c!=stylemanager.functions.n && stylemanager.functions.e[c]->stylefunc) {
+	StyleDef *function=stylemanager.FindDef(word);
+	if (function) {
 		 //we found a function!
-		StyleDef *function=stylemanager.functions.e[c];
 		from+=n;
 		skipwscomment();
 
@@ -770,16 +763,26 @@ Value *LaidoutCalculator::evalname()
 		 //call the actual function
 		char *message=NULL;
 		Value *value=NULL;
-		int status=function->stylefunc(context,pp, &value,&message);
-		delete pp;
-		delete context;
+		int status=0;
+		if (!calcerror) {
+			if (function->stylefunc) status=function->stylefunc(context,pp, &value,&message);
+			else if (function->newfunc) {
+				Style *s=function->newfunc(function);
+				if (s) {
+					status=0;
+					value=new ObjectValue(s);
+				} else status=1;
+			}
 
-		 //cleanup and report
-		if (message) messageOut(message);
-		else {
-			if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
-			else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
+			 //report default success or failure
+			if (message) messageOut(message);
+			else {
+				if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
+				else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
+			}
 		}
+		if (pp) delete pp;
+		if (context) delete context;
 		if (calcerror) { if (value) value->dec_count(); value=NULL; }
 		return value;
 	}
@@ -1115,11 +1118,17 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 	if (nextchar('(')) {
 		pp=new ValueHash;
 		int tfrom;
-		char *pname=NULL;
+		char *pname=NULL, *ename=NULL;
 		int namel;
 		Value *v=NULL;
-		if (!nextchar(')'))
-		  do {
+		int pnum=0;
+		int enumcheck;
+		if (nextchar(')')) { from--; }
+		else do {
+			enumcheck=-1;//def.field number to check for enum values in
+			pnum++; //starts at 1
+
+			 //check for parameter name given
 			skipwscomment();
 			tfrom=from;
 			pname=getnamestring(&namel);
@@ -1127,22 +1136,66 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 				from+=namel;
 				if (nextchar('=')) {
 					//it is a parameter name (hopefully) so nothing special to do here
+					if (def) enumcheck=def->findfield(pname,NULL);
+					tfrom=from; //update from to just after '=', might have to reset after enum check
 				} else {
-					from=tfrom; //is not a parameter name, so reset from
+					 //name was not in the form of parameter assignment
+					ename=pname;
+					pname=NULL;
+					if (def) enumcheck=pnum; //pname might be an enum value for styledef.field[pnum]
 				}
 			}
-			v=eval();
+
+			 //do special check for enum values, and convert to an IntValue, holding
+			 //the index of the corresponding enum value
+			if (def && enumcheck>=0) {
+				 //If the field is known to not be an enum, then do not check for enum values
+				ElementType t;
+				if (def->getInfo(enumcheck, NULL,NULL,NULL,NULL,NULL,&t,NULL)==0 && t==Element_Enum) {
+					if (!ename) {
+						skipwscomment();
+						int len;
+						ename=getnamestring(&len);
+						if (ename) from+=len;
+					}
+					StyleDef *ev=NULL;
+					if (ename) def->getField(enumcheck);
+					DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
+					
+					 //*** warning, assumes no extended enum, or dynamic enum!!! maybe bad....
+					DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
+					if (ev && ev->fields) for (int c=0; c<ev->fields->n; c++) {
+						if (strcmp(ev->fields->e[c]->name,ename)==0) {
+							skipwscomment();
+							if (curexprs[from]!=',' && curexprs[from]!=')') {
+								calcerr(_("Problem parsing enumeration value"));
+							} else v=new IntValue(c);
+							break;
+						}
+					}
+					if (!v) enumcheck=-1; //force scan for value 
+				} else {
+					enumcheck=-1; //either info check failed, or field is not an enum, so still must parse value
+					from=tfrom;
+				}
+				if (ename) delete[] ename;
+			}
+			if (enumcheck<0) v=eval();
+
 			if (v && !calcerror) {
 				pp->push(pname,v);
 				v->dec_count();
+				v=NULL;
 			}
 			if (pname) { delete[] pname; pname=NULL; }
 
-		} while (!calcerror && from!=tfrom && nextchar(','));
-		if (!nextchar(')')) {
-			delete pp;
-			pp=NULL;
-			calcerr(_("Expected closing ')'")); 
+		} while (!calcerror && from!=tfrom && nextchar(',')); //do foreach parameter
+		if (!calcerror) {
+			if (!nextchar(')')) {
+				calcerr(_("Expected closing ')'"));
+				delete pp;
+				pp=NULL;
+			}
 		}
 	} 
 

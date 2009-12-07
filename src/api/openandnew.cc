@@ -19,75 +19,219 @@
 #include "../language.h"
 #include "../laidout.h"
 #include "../headwindow.h"
+#include "../styles.h"
+#include "../papersizes.h"
 
 #include <lax/fileutils.h>
 using namespace LaxFiles;
 
 //------------------------------- Newdoc --------------------------------
 /*! \ingroup api */
-//StyleDef *makeNewdocStyleDef();
-//{***
-//	 //define base
-//	StyleDef *sd=new StyleDef(NULL,"Newdoc",
-//			_("New Document"),
-//			_("Create a document and install in the project"),
-//			Element_Function,
-//			NULL,NULL,
-//			NULL,
-//			0, //new flags
-//			NULL,
-//			NewdocFunction);
-//
-//	 //define parameters
-//	sd->push("pages",
-//			_("Pages"),
-//			_("The number of pages"),
-//			Element_Int,
-//			NULL, //range
-//			"1",  //defvalue
-//			0,    //flags
-//			NULL);//newfunc
-//	sd->push("imposition",
-//			_("New Imposition"),
-//			_("The new imposition to use"),
-//			Element_DynamicEnum, //major hack shortcut
-//			NULL, //range
-//			"Singles",  //defvalue
-//			0,    //flags
-//			NULL);//newfunc
-//	sd->push("paper",
-//			_("Paper"),
-//			_("Type of paper to use"),
-//			Element_DynamicEnum, ***
-//			NULL,
-//			"0",
-//			0,NULL);
-//	sd->push("orientation",
-//			_("Orientiation"),
-//			_("Either portrait or landscape"),
-//			Element_Enum,  ***
-//			NULL,
-//			"portrait",
-//			0,NULL);
-//
-//	return sd;
-//}
-//
-//
-///*! \ingroup api */
-//int NewdocFunction(ValueHash *context, 
-//					 ValueHash *parameters,
-//					 Value **value_ret,
-//					 const char **error_ret)
-//{***
-//	while (isspace(*in)) in++;
-//	tmp=newnstr(in,end-in);
-//	if (laidout->NewDocument(tmp)==0) appendline(str_ret,_("Document added."));
-//	else appendline(str_ret,_("Error adding document. Not added"));
-//	delete[] tmp;
-//	delete[] word;
-//
-//}
+StyleDef *makeNewDocumentStyleDef()
+{
+	 //define base
+	StyleDef *sd=new StyleDef(NULL,"NewDocument",
+			_("New Document"),
+			_("Create a document and install in the project"),
+			Element_Function,
+			NULL,NULL,
+			NULL,
+			0, //new flags
+			NULL,
+			NewDocumentFunction);
+
+	 //define parameters
+	sd->push("pages",
+			_("Pages"),
+			_("The number of pages"),
+			Element_Int,
+			NULL, //range
+			"1",  //defvalue
+			0,    //flags
+			NULL);//newfunc
+	sd->push("imposition",
+			_("New Imposition"),
+			_("The new imposition to use"),
+			Element_Any, //major hack shortcut
+			NULL, //range
+			"Singles",  //defvalue
+			0,    //flags
+			NULL);//newfunc
+	sd->push("paper",
+			_("Paper"),
+			_("Type of paper to use"),
+			Element_Any,
+			NULL,
+			"0",
+			0,NULL);
+	sd->pushEnum("orientation",
+			_("Orientiation"),
+			_("Either portrait (0) or landscape (1)"),
+			"portrait",
+			NULL,NULL,
+			"portrait", _("Portrait"), _("Long direction is vertical"),
+			"landscape", _("Landscape"), _("Short direction is vertical"),
+			NULL
+		);
+	sd->push("saveas",
+			_("Save as"),
+			_("The path to save the document to, if any. It is not saved immediately."),
+			Element_String,
+			NULL, //range
+			NULL,  //defvalue
+			0,    //flags
+			NULL);//newfunc
+	//sd->pushEnum("colormode",...);
+	//sd->push("defaultdpi",...);
+	//sd->push("defaultunits",...);
+
+	return sd;
+}
+
+
+//! Create a new document from values in parameters.
+/*! \ingroup api
+ * \todo should load default template sometimes
+ */
+int NewDocumentFunction(ValueHash *context, 
+					 ValueHash *parameters,
+					 Value **value_ret,
+					 char **error_ret)
+{
+	if (!parameters) {
+		if (value_ret) *value_ret=NULL;
+		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		return 1;
+	}
+
+
+	int err=0;
+	Document *doc=NULL;
+
+	const char *saveas=NULL;
+	int orientation=0;
+	Imposition *imp=NULL;
+	PaperStyle *paper=NULL;
+	int numpages=1;
+
+	try {
+		Value *v;
+		int i;
+
+
+		 //----saveas
+		saveas=parameters->findString("saveas");
+		if (saveas) {
+			if (file_exists(saveas,1,NULL)!=0) throw _("File exists already. Please remove first.");
+			if (laidout->findDocument(saveas)) throw _("Document already loaded");
+		}
+
+
+		 //----pages
+		numpages=parameters->findInt("pages",-1,&i);
+		if (i==2 || (i==0 && numpages<=0)) throw _("Invalid number of pages!");
+		else if (i==1) numpages=1;
+
+
+		 //----imposition
+		v=parameters->find("imposition");
+		if (v) {
+			if (v->type()==VALUE_String) {
+				const char *str=(const char *)dynamic_cast<StringValue*>(v);
+				if (!str) throw _("Invalid object for imposition!");
+
+				for (int c=0; c<laidout->impositionpool.n; c++) {
+					if (!strcmp(laidout->impositionpool.e[c]->Stylename(),str)) {
+						imp=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
+						break;
+					}
+				}
+			} else if (v->type()==VALUE_Object) {
+				imp=dynamic_cast<Imposition*>(dynamic_cast<ObjectValue*>(v));
+				if (imp) imp->inc_count();
+			}
+			if (!imp) throw _("Invalid object for imposition!");
+		}
+
+
+		 //----paper
+		v=parameters->find("paper");
+		if (v) {
+			if (v->type()==VALUE_String) {
+				const char *str=dynamic_cast<StringValue*>(v)->str;
+				if (!str) throw _("Invalid object for paper!");
+				for (int c=0; c<laidout->papersizes.n; c++) {
+					if (strcmp(str,laidout->papersizes.e[c]->name)==0) {
+						paper=(PaperStyle*)laidout->papersizes.e[c]->duplicate();
+						break;
+					}
+				}
+			
+			} else if (v->type()==VALUE_Object) {
+				paper=dynamic_cast<PaperStyle*>(dynamic_cast<ObjectValue*>(v));
+				if (!paper) throw _("Invalid object for paper!");
+				paper=(PaperStyle*)paper->duplicate();
+			}
+		}
+
+
+		 //----orientation
+		orientation=parameters->findInt("orientation",-1,&i);
+		if (i==2) throw _("Invalid format for orientation!");
+
+
+		// todo:
+		 //----colormode
+		 //----defaultdpi
+		 //----defaultunits
+
+
+		if (!paper) throw _("Missing a paper type!");
+		if (!imp) throw _("Missing an imposition type!");
+
+		 //correct orientation if necessary
+		if (orientation && (paper->flags&1)==0) paper->flags|=1;
+		else if (!orientation && (paper->flags&1)!=0) paper->flags&=~1;
+
+		 //finally, create the document
+		imp->NumPages(numpages);
+		imp->SetPaperSize(paper);
+		//doc=new Document(imp,paper);
+		if (laidout->NewDocument(imp,saveas)!=0) throw _("Error creating document instance!");
+
+		 //clean up
+		imp->dec_count();
+		paper->dec_count();
+
+	} catch (const char *str) {
+		if (error_ret) appendline(*error_ret,str);
+		if (imp) { imp->dec_count(); imp=NULL; }
+		if (paper) { paper->dec_count(); paper=NULL; }
+		err=1;
+	} catch (char *str) {
+		if (error_ret) appendline(*error_ret,str);
+		delete[] str;
+		if (imp) { imp->dec_count(); imp=NULL; }
+		if (paper) { paper->dec_count(); paper=NULL; }
+		err=1;
+	}
+
+
+
+	if (value_ret) {
+		if (doc) *value_ret=new ObjectValue(doc);
+		else *value_ret=NULL;
+	}
+	if (doc) doc->dec_count();
+
+	//laidout->NewDocument(tmp)
+	if (error_ret) {
+		if (err==0) appendline(*error_ret,_("Document added."));
+		else appendline(*error_ret,_("Error adding document. Not added"));
+	}
+
+	return err;
+}
 
 //------------------------------- Open --------------------------------
 /*! \ingroup api */
@@ -133,10 +277,14 @@ int OpenFunction(ValueHash *context,
 					 Value **value_ret,
 					 char **error_ret)
 {
-	if (!parameters) return 1;
-	if (!context) return 1;
+	if (!parameters) {
+		if (value_ret) *value_ret=NULL;
+		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		return 1;
+	}
 
 	int astemplate=parameters->findInt("astemplate");
+	char *error=NULL;
 	int err=0;
 
 	char *filename=NULL;
@@ -150,7 +298,7 @@ int OpenFunction(ValueHash *context,
 		 // try to open up the file
 		if (*filename!='/' && strstr("file://",filename)!=filename) {
 			 //assume a relative path. find a full file name
-			char *dir=newstr(context->findString("current_directory"));
+			char *dir=context?newstr(context->findString("current_directory")):NULL;
 			char *temp;
 			if (!dir) {
 				temp=get_current_dir_name();
@@ -170,7 +318,6 @@ int OpenFunction(ValueHash *context,
 		 //now load the document, creating a new view window if the document load
 		 //does not create any new windows of its own
 		int n=laidout->numTopWindows();
-		char *error=NULL;
 		Document *doc=NULL;
 		int loadstatus=0;
 		if (astemplate) doc=laidout->LoadTemplate(filename,&error);
@@ -202,14 +349,15 @@ int OpenFunction(ValueHash *context,
 			err=-1;
 		}
 
+	} catch (const char *str) {
+		if (error_ret) appendline(*error_ret,str);
+		err=1;
 	} catch (char *str) {
 		if (error_ret) appendline(*error_ret,str);
 		delete[] str;
 		err=1;
-	} catch (const char *str) {
-		if (error_ret) appendline(*error_ret,str);
-		err=1;
 	}
+	if (error) delete[] error;
 
 	if (filename) delete[] filename;
 

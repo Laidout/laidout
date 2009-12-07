@@ -86,14 +86,13 @@ enum ElementType {
 	Element_File,
 	Element_3bit,
 	Element_Flag,
-	Element_Enum,
-	Element_DynamicEnum,
+	Element_Enum, //if the def has a function, then it is a dynamic enum
 	Element_EnumVal,
 	Element_Function,
 	Element_Color,
 	Element_MaxBuiltinFormatValue
 };
-extern const char *element_TypeNames[14];
+extern const char *element_TypeNames[16];
 		
 
 #define STYLEDEF_DUPLICATE 1
@@ -131,8 +130,8 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	Laxkit::PtrStack<StyleDef> *fields; //might be NULL, any fields are assumed to not be local to the stack.
 	
 	StyleDef();
-	StyleDef(const char *nextends,const char *nname,const char *nName,
-			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
+	StyleDef(const char *nextends,const char *nname,const char *nName, const char *ndesc,
+			ElementType fmt,const char *nrange, const char *newdefval,
 			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
 			NewStyleFunc nnewfunc=0,StyleFunc nstylefunc=0);
 	virtual ~StyleDef();
@@ -140,7 +139,8 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	 // helpers to locate fields by name, "blah.3.x"
 	virtual int getNumFields();
 	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
-	virtual int findDef(int index,StyleDef **def);
+	virtual int findActualDef(int index,StyleDef **def);
+	virtual StyleDef *getField(int index);
 	virtual int getInfo(int index,
 						const char **nm=NULL,
 						const char **Nm=NULL,
@@ -154,6 +154,12 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	 //-------- StyleDef creation helper functions ------
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
+	virtual int pushEnumValue(const char *str, const char *Str, const char *dsc);
+	virtual int pushEnum(const char *nname,const char *nName,const char *ndesc,
+					 const char *newdefval,
+					 NewStyleFunc nnewfunc,
+					 StyleFunc nstylefunc,
+					 ...);
 	virtual int push(const char *nname,const char *nName,const char *ndesc,
 					 ElementType fformat,const char *nrange, const char *newdefval,
 					 unsigned int fflags,

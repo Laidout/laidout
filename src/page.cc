@@ -560,6 +560,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 			PageStyle *ps=NULL;
 			if (value) {
 				if (strcmp(value,"default")) {
+					 //if it does NOT equal default
 					ps=(PageStyle *)stylemanager.newStyle(value);
 				}
 			} else ps=(PageStyle *)stylemanager.newStyle("PageStyle");

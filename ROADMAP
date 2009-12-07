@@ -16,7 +16,7 @@ VERSION 0.09
        Debug net impositions!!
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
        be able to reimpose a document from gui and command (from command mostly works)
-       import and export commands
+(done) Import(), Export(), NewDocument() commands
 (done) Make commands actually available in the command prompt window
 (done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
 (done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
@@ -144,6 +144,7 @@ Stream/Story editor, maybe html export from streameditor?
 Internal generic impositioner for ps files that follow the ps doc. structure guidelines->import ps to mysterydata, export those...
 Cooperate with photo programs like KPhotoalbum, f-spot
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection onto nets?
+Export PLAN files for podofoimpose
 Uniconverter support?
 Vx support?
 Verse support?

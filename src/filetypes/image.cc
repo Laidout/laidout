@@ -27,6 +27,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 #include "../printing/psout.h"
 #include "image.h"
 #include "../impositions/impositioninst.h"
@@ -47,7 +48,44 @@ using namespace LaxInterfaces;
 void installImageFilter()
 {
 	ImageExportFilter *imageout=new ImageExportFilter;
+	imageout->GetStyleDef();
 	laidout->exportfilters.push(imageout);
+}
+
+
+//----------------------------- ImageExportConfig -----------------------------
+/*! \class ImageExportConfig
+ * \brief Holds extra config for image export.
+ *
+ * \todo currently no extra settings, but could be image type, and background color to use, or transparency...
+ */
+class ImageExportConfig : public DocumentExportConfig
+{
+ public:
+	//char *imagetype;
+	//int use_transparent_bkgd;
+	ImageExportConfig();
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+};
+
+//! Set the filter to the Image export filter stored in the laidout object.
+ImageExportConfig::ImageExportConfig()
+{
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) 
+			filter=laidout->exportfilters.e[c];
+	}
+}
+
+void ImageExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	DocumentExportConfig::dump_out(f,indent,what,context);
+}
+
+void ImageExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	DocumentExportConfig::dump_in_atts(att,flag,context);
 }
 
 
@@ -57,6 +95,8 @@ void installImageFilter()
  * \brief Filter for exporting pages to images via ghostscript.
  *
  * Right now, just exports through pngalpha with ghostscript.
+ *
+ * Uses ImageExportConfig.
  */
 
 
@@ -79,17 +119,66 @@ const char *ImageExportFilter::VersionName()
 }
 
 
+Style *newImageExportConfig(StyleDef*)
+{
+	return new ImageExportConfig;
+}
 
-////--------------------------------*************
-//class ImageFilterConfig
-//{
-// public:
-//	char *imagetype;
-//	int use_transparent_bkgd;
-//	StyleDef *OutputStyleDef(); //for auto config dialog creation
-//	StyleDef *InputStyleDef();
-//};
-////--------------------------------
+/*! \todo *** this needs a going over for safety's sake!! track down ref counting
+ */
+int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,char **error_ret)
+{
+	ImageExportConfig *d=new ImageExportConfig;
+
+	ValueHash *pp=parameters;
+	if (pp==NULL) pp=new ValueHash;
+
+	Value *vv=NULL, *v=NULL;
+	vv=new ObjectValue(d);
+	pp->push("exportconfig",vv);
+
+	int status=createExportConfig(context,pp,&v,error_ret);
+	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<ImageExportConfig *>(((ObjectValue *)v)->object);
+
+	if (d) for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
+			d->filter=laidout->exportfilters.e[c];
+			break;
+		}
+	}
+	*v_ret=v;
+
+	if (pp!=parameters) delete pp;
+
+	return 0;
+}
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *ImageExportFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("ImageExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"ImageExportConfig");
+	makestr(styledef->Name,_("Image Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to a png."));
+	styledef->newfunc=newImageExportConfig;
+	styledef->stylefunc=createImageExportConfig;
+
+	// *** push any other settings:
+	// *** image format
+	// *** background color
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
+}
+
+
 
 
 //! Save the document as png files with transparency.
@@ -99,6 +188,9 @@ const char *ImageExportFilter::VersionName()
  * Return 0 for success, or nonzero error. Possible errors are error and nothing written,
  * and corrupted file possibly written.
  * 
+ * Currently uses a DocumentExportConfig for context, but ultimately should use 
+ * an ImageExportConfig.
+ *
  * \todo must figure out if gs can directly process pdf 1.4 with transparency. If it can, then
  *   when full transparency is implemented, that will be the preferred method, that is until
  *   laidout buffer rendering is capable enough in its own right.
@@ -107,6 +199,7 @@ const char *ImageExportFilter::VersionName()
  */
 int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
+	//ImageExportConfig *iout=dynamic_cast<ImageExportConfig *>(context);
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 

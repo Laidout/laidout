@@ -21,6 +21,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
 #include "postscript.h"
@@ -42,9 +43,11 @@ void installPostscriptFilters()
 {
 	 //--------export
 	PsOutFilter *psout=new PsOutFilter;
+	psout->GetStyleDef();
 	laidout->exportfilters.push(psout);
 	
 	EpsOutFilter *epsout=new EpsOutFilter;
+	epsout->GetStyleDef();
 	laidout->exportfilters.push(epsout);
 	
 	
@@ -53,6 +56,33 @@ void installPostscriptFilters()
 	//laidout->importfilters.push(epsin);
 }
 
+
+//------------------------------------ PsExportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newPsExportConfig(StyleDef*)
+{
+	DocumentExportConfig *d=new DocumentExportConfig;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Postscript"))
+			d->filter=laidout->exportfilters.e[c];
+	}
+	return d;
+}
+
+
+//------------------------------------ EpsExportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newEpsExportConfig(StyleDef*)
+{
+	DocumentExportConfig *d=new DocumentExportConfig;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"EPS"))
+			d->filter=laidout->exportfilters.e[c];
+	}
+	return d;
+}
 
 
 //------------------------------- PsOutFilter --------------------------------------
@@ -76,6 +106,26 @@ int PsOutFilter::Out(const char *filename, Laxkit::anObject *context, char **err
 	return psout(filename,context,error_ret);
 }
 
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *PsOutFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("PsExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"PsExportConfig");
+	makestr(styledef->Name,_("Postscript Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to a postscript file."));
+	styledef->newfunc=newPsExportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
+}
+
 //------------------------------- EpsOutFilter --------------------------------------
 /*! \class EpsOutFilter
  * \brief Output filter for EPS 3.0 files.
@@ -93,6 +143,26 @@ const char *EpsOutFilter::VersionName()
 int EpsOutFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
 	return epsout(filename,context,error_ret);
+}
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *EpsOutFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("EpsExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"EpsExportConfig");
+	makestr(styledef->Name,_("EPS Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to an EPS file."));
+	styledef->newfunc=newEpsExportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
 }
 
 //////------------------------------------- EpsInFilter -----------------------------------

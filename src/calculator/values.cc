@@ -16,6 +16,7 @@
 
 
 #include "values.h"
+#include "../styles.h"
 #include <lax/refptrstack.cc>
 #include <lax/strmanip.h>
 #include <cstdio>
@@ -89,6 +90,13 @@ int ValueHash::push(const char *name,Value *v)
 int ValueHash::n()
 { return keys.n; }
 
+//! Return the Value with index i, or NULL if i is out of bounds.
+Value *ValueHash::e(int i)
+{
+	if (i<0 || i>keys.n) return NULL;
+	return values.e[i];
+}
+
 void ValueHash::swap(int i1, int i2)
 {
 	if (i1<0 || i1>keys.n || i2<0 || i2>keys.n) return;
@@ -136,50 +144,105 @@ Value *ValueHash::find(const char *name)
 
 /*! If which>=0 then interpret that Value and ignore name.
  * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not an IntValue, then sets *error_ret=2.
+ * Otherwise set to 0.
+ *
+ * No cast conversion is done between int and real.
  */
-long ValueHash::findInt(const char *name, int which)
+long ValueHash::findInt(const char *name, int which, int *error_ret)
 {
 	if (which<0) which=findIndex(name);
-	if (which<0) return 0;
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
 	IntValue *i=dynamic_cast<IntValue*>(values.e[which]);
-	if (!i) return 0;
+	if (!i) { if (error_ret) *error_ret=2; return 0; }
+	if (error_ret) *error_ret=0;
 	return i->i;
 }
 
 /*! If which>=0 then interpret that Value and ignore name.
  * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not a DoubleValue, then sets *error_ret=2.
+ * Otherwise set to 0.
+ *
+ * No cast conversion is done between int and real. Use findIntOrDouble() if
+ * you don't care about the difference.
  */
-double ValueHash::findDouble(const char *name, int which)
+double ValueHash::findDouble(const char *name, int which, int *error_ret)
 {
 	if (which<0) which=findIndex(name);
-	if (which<0) return 0;
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
 	DoubleValue *d=dynamic_cast<DoubleValue*>(values.e[which]);
-	if (!d) return 0;
+	if (!d) { if (error_ret) *error_ret=2; return 0; }
+	if (error_ret) *error_ret=0;
 	return d->d;
+}
+
+//! Return a double value from an IntValue or a DoubleValue.
+/*! If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not a DoubleValue, then sets *error_ret=2.
+ * Otherwise set to 0.
+ *
+ * No cast conversion is done between int and real.
+ */
+double ValueHash::findIntOrDouble(const char *name, int which, int *error_ret)
+{
+	if (which<0) which=findIndex(name);
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
+
+	DoubleValue *d=dynamic_cast<DoubleValue*>(values.e[which]);
+	if (d) {
+		if (error_ret) *error_ret=0;
+		return d->d;
+	}
+	IntValue *i=dynamic_cast<IntValue*>(values.e[which]);
+	if (i) {
+		if (error_ret) *error_ret=0;
+		return i->i;
+	}
+
+	if (error_ret) *error_ret=2; //for not found
+	return 0;
 }
 
 /*! If which>=0 then interpret that Value and ignore name.
  * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not a StringValue, then sets *error_ret=2.
+ * Otherwise set to 0.
  */
-const char *ValueHash::findString(const char *name, int which)
+const char *ValueHash::findString(const char *name, int which, int *error_ret)
 {
 	if (which<0) which=findIndex(name);
-	if (which<0) return 0;
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
 	StringValue *s=dynamic_cast<StringValue*>(values.e[which]);
-	if (!s) return NULL;
+	if (!s) { if (error_ret) *error_ret=2; return NULL; }
+	if (error_ret) *error_ret=0;
 	return s->str;
 }
 
 /*! Does not increment count of the object.
  *  If which>=0 then interpret that Value and ignore name.
  * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not an ObjectValue, then sets *error_ret=2.
+ * Otherwise set to 0.
  */
-Laxkit::RefCounted *ValueHash::findObject(const char *name, int which)
+Laxkit::RefCounted *ValueHash::findObject(const char *name, int which, int *error_ret)
 {
 	if (which<0) which=findIndex(name);
-	if (which<0) return 0;
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
 	ObjectValue *o=dynamic_cast<ObjectValue*>(values.e[which]);
-	if (!o) return NULL;
+	if (!o) { if (error_ret) *error_ret=2; return NULL; }
+	if (error_ret) *error_ret=0;
 	return o->object;
 }
 
@@ -206,6 +269,27 @@ Value::~Value()
 	if (tempstr) delete[] tempstr;
 }
 
+//----------------------------- SetValue ----------------------------------
+/*! \class SetValue
+ */
+int SetValue::AddValue(Value *v)
+{
+	if (!v) return 1;
+	if (values.push(v)>=0) return 0;
+	return 1;
+}
+
+const char *SetValue::toCChar()
+{
+	makestr(tempstr,"{");
+	for (int c=0; c<values.n; c++) {
+		appendstr(tempstr,values.e[c]->toCChar());
+		if (c!=values.n-1) appendstr(tempstr,",");
+	}
+	appendstr(tempstr,"}");
+	return tempstr;
+}
+
 //--------------------------------- IntValue -----------------------------
 const char *IntValue::toCChar()
 {
@@ -223,6 +307,9 @@ const char *DoubleValue::toCChar()
 }
 
 //--------------------------------- StringValue -----------------------------
+//! Create a string value with the first len characters of s.
+/*! If len<=0, then use strlen(s).
+ */
 StringValue::StringValue(const char *s, int len)
 { str=newnstr(s,len); }
 
@@ -252,7 +339,13 @@ ObjectValue::~ObjectValue()
 
 const char *ObjectValue::toCChar()
 {
-	return "(object:TODO!!)";
+	if (!object) return NULL;
+	if (dynamic_cast<Style*>(object)) {
+		Style *s=dynamic_cast<Style*>(object);
+		if (s->Stylename()) return s->Stylename();
+		return s->whattype();
+	}
+	return "object(TODO!!)";
 }
 
 

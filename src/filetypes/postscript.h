@@ -38,6 +38,7 @@ class EpsOutFilter : public ExportFilter
 	virtual const char *Version() { return "3.0"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
+	virtual StyleDef *GetStyleDef();
 	
 	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
 };
@@ -57,6 +58,7 @@ class PsOutFilter : public ExportFilter
 	virtual const char *Version() { return "LL3"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
+	virtual StyleDef *GetStyleDef();
 	
 	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
 };

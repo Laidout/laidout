@@ -29,6 +29,7 @@ using namespace std;
 
 #include <lax/refptrstack.cc>
 #include "language.h"
+#include "laidout.h"
 
 using namespace LaxFiles;
 using namespace Laxkit;
@@ -290,6 +291,89 @@ Style *NewPaperStyle(StyleDef *def)
 StyleDef *PaperStyle::makeStyleDef()
 { return makePaperStyleDef(); }
 
+/*! If the paper name is in laidout->papersizes, then grab a duplicate of that,
+ * and overwrite any differing settings.
+ *
+ * \todo if making a copy of a system known paper size, should restrict the w and h
+ *   to the actual values for paper, or auto change the paper name for consistency
+ */
+int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_ret, char **error_ret)
+{
+	if (!parameters) {
+		if (value_ret) *value_ret=NULL;
+		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		return 1;
+	}
+
+
+	PaperStyle *paper=NULL;
+	int err=0;
+	try {
+		int i=0;
+
+		 //---name
+		Value *v=parameters->find("paper");
+		if (v) {
+			if (v->type()==VALUE_String) {
+				const char *str=(const char *)dynamic_cast<StringValue*>(v)->str;
+				if (!str) throw _("Invalid name for paper!");
+				for (int c=0; c<laidout->papersizes.n; c++) {
+					if (strcasecmp(str,laidout->papersizes.e[c]->name)==0) {
+						paper=(PaperStyle*)laidout->papersizes.e[c]->duplicate();
+						break;
+					}
+				}
+				if (!paper) paper=new PaperStyle(str,0,0,0,0);
+			} else throw  _("Invalid object for paper!");
+		}
+
+
+		 //----orientation
+		int orientation=parameters->findInt("orientation",-1,&i);
+		if (i==2) throw _("Invalid format for orientation!");
+		if (i==0) {
+			if (orientation==0) paper->flags&=~1;
+			else paper->flags|=1;
+		}
+
+		 //---width
+		double d=parameters->findIntOrDouble("width",-1,&i);
+		if (i==0) {
+			if (d<=0) throw _("Invalid width parameter!");
+			paper->width=d;
+		} else if (i==2) throw _("Invalid width parameter!");
+
+		 //---height
+		d=parameters->findIntOrDouble("height",-1,&i);
+		if (i==0) {
+			if (d<=0) throw _("Invalid height parameter!");
+			paper->height=d;
+		} else if (i==2) throw _("Invalid height parameter!");
+
+		 //---dpi
+		d=parameters->findIntOrDouble("dpi",-1,&i);
+		if (i==0) {
+			if (d<=0) throw _("Invalid dpi parameter!");
+			paper->dpi=d;
+		} else if (i==2) throw _("Invalid dpi parameter!");
+
+
+	} catch (const char *str) {
+		if (error_ret) appendline(*error_ret,str);
+		if (paper) { paper->dec_count(); paper=NULL; }
+		err=1;
+	}
+
+
+	if (err==0 && value_ret) {
+		if (paper) *value_ret=new ObjectValue(paper);
+		else *value_ret=NULL;
+	}
+	if (paper) paper->dec_count();
+
+	return err;
+}
+
 StyleDef *makePaperStyleDef()
 {
 	StyleDef *sd=new StyleDef(NULL,
@@ -297,11 +381,13 @@ StyleDef *makePaperStyleDef()
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
 							  Element_Fields,
-							  NULL,
-							  NULL);
+							  NULL, //range
+							  NULL, //defval
+							  NULL,0, //fields, flags
+							  NewPaperStyle,
+							  createPaperStyle);
 
-	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
-	sd->newfunc=NewPaperStyle;
+	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc,stylefunc);
 	sd->push("name",
 			_("Name"),
 			_("Name of the paper, like A4 or Letter"),
@@ -313,7 +399,7 @@ StyleDef *makePaperStyleDef()
 	sd->push("orientation",
 			_("Orientation"),
 			_("Either portrait (0) or landscape (1)"),
-			Element_String, NULL,"portrait",
+			Element_Enum, NULL,"portrait",
 			0,
 			NULL);
 	sd->push("width",

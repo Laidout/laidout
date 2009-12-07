@@ -25,6 +25,7 @@
 #include "../language.h"
 #include "scribus.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 #include "../printing/psout.h"
 #include "../utils.h"
 #include "../headwindow.h"
@@ -57,10 +58,76 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 void installScribusFilter()
 {
 	ScribusExportFilter *scribusout=new ScribusExportFilter;
+	scribusout->GetStyleDef();
 	laidout->exportfilters.push(scribusout);
 	
 	ScribusImportFilter *scribusin=new ScribusImportFilter;
+	scribusin->GetStyleDef();
 	laidout->importfilters.push(scribusin);
+}
+
+//------------------------------------ ScribusExportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newScribusExportConfig(StyleDef*)
+{
+	DocumentExportConfig *d=new DocumentExportConfig;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Scribus"))
+			d->filter=laidout->exportfilters.e[c];
+	}
+	return d;
+}
+
+//! For now, just returns createExportConfig(), with filter forced to Scribus.
+int createScribusExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,char **error_ret)
+{
+	DocumentExportConfig *d=NULL;
+	Value *v=NULL;
+	int status=createExportConfig(context,parameters,&v,error_ret);
+	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<DocumentExportConfig *>(((ObjectValue *)v)->object);
+
+	if (d) for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Scribus")) {
+			d->filter=laidout->exportfilters.e[c];
+			break;
+		}
+	}
+	*v_ret=v;
+
+	return 0;
+}
+
+//------------------------------------ ScribusImportConfig ----------------------------------
+
+//! For now, just returns a new ImportConfig.
+Style *newScribusImportConfig(StyleDef*)
+{
+	ImportConfig *d=new ImportConfig;
+	for (int c=0; c<laidout->importfilters.n; c++) {
+		if (!strcmp(laidout->importfilters.e[c]->Format(),"Scribus"))
+			d->filter=laidout->importfilters.e[c];
+	}
+	return d;
+}
+
+//! For now, just returns createImportConfig(), with filter forced to Scribus.
+int createScribusImportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,char **error_ret)
+{
+	ImportConfig *d=NULL;
+	Value *v=NULL;
+	int status=createImportConfig(context,parameters,&v,error_ret);
+	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<ImportConfig *>(((ObjectValue *)v)->object);
+
+	if (d) for (int c=0; c<laidout->importfilters.n; c++) {
+		if (!strcmp(laidout->importfilters.e[c]->Format(),"Scribus")) {
+			d->filter=laidout->importfilters.e[c];
+			break;
+		}
+	}
+	*v_ret=v;
+
+	return 0;
 }
 
 //---------------------------- ScribusExportFilter --------------------------------
@@ -94,6 +161,27 @@ ScribusExportFilter::ScribusExportFilter()
 const char *ScribusExportFilter::VersionName()
 {
 	return _("Scribus 1.3.3.12");
+}
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *ScribusExportFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("DocumentExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"ScribusExportConfig");
+	makestr(styledef->Name,_("Scribus Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to a Scribus file."));
+	styledef->newfunc=newScribusExportConfig;
+	styledef->stylefunc=createScribusExportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
 }
 
 static int currentpage;
@@ -920,6 +1008,27 @@ const char *ScribusImportFilter::FileType(const char *first100bytes)
 	//***ANZPAGES is num of pages
 }
 
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *ScribusImportFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("ScribusImportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"ScribusImportConfig");
+	makestr(styledef->Name,_("Scribus Import Configuration"));
+	makestr(styledef->description,_("Configuration to import a Scribus file."));
+	styledef->newfunc=newScribusImportConfig;
+	styledef->stylefunc=createScribusImportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
+}
+
 //! Import Scribus document.
 /*! If in->doc==NULL and in->toobj==NULL, then create a new document.
  *
@@ -939,12 +1048,18 @@ const char *ScribusImportFilter::FileType(const char *first100bytes)
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
-	if (!in) return 1;
+	if (!in) {
+		if (error_ret) appendline(*error_ret,_("Missing config!"));
+		return 1;
+	}
 
 	Document *doc=in->doc;
 
 	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
-	if (!att) return 2;
+	if (!att) {
+		if (error_ret) appendline(*error_ret,_("Could not read file!"));
+		return 2;
+	}
 	
 	int c;
 	Attribute *scribusdoc=att->find("SCRIBUSUTF8NEW"),
@@ -1003,9 +1118,6 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	SomeData pagebounds[end-start+1]; //max/min are the bounds in the Scribus canvas space,
 									 //and m() is optional whole page transform to fit doc pages
 
-	if (doc && docpagenum+(end-start)>=doc->pages.n) //create enough pages to hold the Scribus pages
-		doc->NewPages(-1,(docpagenum+(end-start+1))-doc->pages.n);
-
 	if (scribushints) {
 		Attribute *slahead=new Attribute("slahead",NULL);
 		for (int c=0; c<scribusdoc->attributes.n; c++) {
@@ -1034,6 +1146,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		doc=new Document(imp,Untitled_name());
 		imp->dec_count();
 	}
+
+	if (doc && docpagenum+(end-start)>=doc->pages.n) //create enough pages to hold the Scribus pages
+		doc->NewPages(-1,(docpagenum+(end-start+1))-doc->pages.n);
 
 	Group *group=in->toobj;
 	Attribute *page,*object;

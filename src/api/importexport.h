@@ -18,11 +18,11 @@
 
 #include "../styles.h"
 
-//StyleDef *makeImportStyleDef();
-//int ImportFunction(ValueHash *context, 
-//					 ValueHash *parameters,
-//					 Value **value_ret,
-//					 char **error_ret);
+StyleDef *makeImportStyleDef();
+int ImportFunction(ValueHash *context, 
+					 ValueHash *parameters,
+					 Value **value_ret,
+					 char **error_ret);
 
 
 

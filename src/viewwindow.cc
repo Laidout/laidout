@@ -332,6 +332,7 @@ void VObjContext::clear()
 #define VIEW_GRAB_COLOR  1
 
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
+/*! Incs count on newdoc. */
 LaidoutViewport::LaidoutViewport(Document *newdoc)
 	: ViewportWindow(NULL,"laidoutviewport",ANXWIN_HOVER_FOCUS|VIEWPORT_ROTATABLE,0,0,0,0,0)
 {
@@ -345,6 +346,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	//drawflags=DRAW_AXES;
 	drawflags=0;
 	doc=newdoc;
+	if (doc) doc->inc_count();
 	dp->NewTransform(1.,0.,0.,-1.,0.,0.); //***this should be adjusted for physical dimensions of monitor screen
 	
 	transformlevel=0;
@@ -383,7 +385,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 }
 
 //! Delete spread, doc and page are assumed non-local.
-/*! Does limbo->dec_count().
+/*! Decrements count on limbo and doc.
  */
 LaidoutViewport::~LaidoutViewport()
 {
@@ -391,6 +393,7 @@ LaidoutViewport::~LaidoutViewport()
 	if (papergroup) papergroup->dec_count();
 
 	if (limbo) limbo->dec_count();
+	if (doc) doc->dec_count();
 }
 
 //! On any FocusIn event, set laidout->lastview to this.
@@ -402,7 +405,7 @@ int LaidoutViewport::event(XEvent *e)
 				e->xfocus.detail==NotifyAncestor ||
 				e->xfocus.detail==NotifyNonlinear) {
 			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
-			if (viewer) viewer->SetParentTitle((doc&&doc->Name(1))?doc->Name(1):_("(no doc)"));
+			if (viewer) viewer->SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
 			
 			if (doc) laidout->curdoc=doc;
 		}
@@ -431,12 +434,14 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 
 	curpage=NULL;
 
+	if (doc) doc->dec_count();
 	doc=ndoc;
+	if (doc) doc->inc_count();
+
 	if (doc) laidout->curdoc=doc;
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent);
-	if (viewer) { 
-		viewer->doc=doc;
-	}
+	if (viewer) viewer->setCurdoc(doc);
+
 	setupthings();
 	ClearSearch();
 	clearCurobj();
@@ -506,6 +511,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 {
 	if (!strcmp(mes,"rulercornermenu")) {
 		int i=e->data.l[1];
+
 		 //0-999 was document things
 		if (i>=0 && i<laidout->project->docs.n) {
 			UseThisDoc(laidout->project->docs.e[i]->doc);
@@ -519,14 +525,21 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			 //add new document
 			app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,0,0, 0));
 			return 0;
+
 		} else if (i==ACTION_RemoveCurrentDocument) {
 			 //Remove current document
-			cout << " *** need to implement remove document!!!"<<endl;
+			if (!doc) { postmessage(_("How does one remove nothing?")); return 0; }
+			Document *sdoc=doc;
+			UseThisDoc(NULL);
+			laidout->project->Pop(sdoc);
+			postmessage(_("Document removed"));
 			return 0;
+
 		} else if (i==ACTION_EditCurrentDocSettings) {
 			cout << " *** need to implement edit settings!!!"<<endl;
 			return 0;
 		}
+
 
 		 //1000..1999 are limbo related
 		if (i>=1000 && i<1000+laidout->project->limbos.n()) {
@@ -686,7 +699,16 @@ int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
 			setupthings(-1,pg);
 			needtodraw=1;
 		} else if (te->changetype==TreeDocGone) {
-			cout <<" ***need to imp LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
+			DBG cerr <<"  --LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
+			if (doc) {
+				int c=0;
+				for (c=0; c<laidout->project->docs.n; c++) 
+					if (doc==laidout->project->docs.e[c]->doc) break;
+				if (c==laidout->project->docs.n) {
+					UseThisDoc(NULL);
+					needtodraw=1;
+				}
+			}	
 		}
 		
 		delete te;
@@ -2585,6 +2607,8 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 //						int xx,int yy,int ww,int hh,int brder,
 //						int npad=0);
 //! Passes in a new LaidoutViewport.
+/*! Incs count on newdoc, if any.
+ */
 ViewWindow::ViewWindow(Document *newdoc)
 	: ViewerWindow(NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
@@ -2596,6 +2620,7 @@ ViewWindow::ViewWindow(Document *newdoc)
 	colorbox=NULL;
 	pageclips=NULL;
 	doc=newdoc;
+	if (doc) doc->inc_count();
 	setup();
 }
 
@@ -2610,6 +2635,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 	toolselector=NULL;
 	pagenumber=NULL;
 	doc=newdoc;
+	if (doc) doc->inc_count();
 	setup();
 }
 
@@ -2619,6 +2645,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 ViewWindow::~ViewWindow()
 {
 	if (laidout->lastview==this) laidout->lastview=NULL;
+	if (doc) doc->dec_count();
 }
 
 /*! Write out something like:
@@ -2705,6 +2732,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	double m[6],x1=0,x2=0,y1=0,y2=0;
 	int n=0;
 	const char *layouttype=NULL;
+	if (doc) doc->dec_count();
 	doc=NULL;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
@@ -2792,14 +2820,22 @@ class PageFlipper : public NumInputSlider
 	Document *doc;
 	PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
 				anXWindow *prev,Window nowner,const char *nsendthis,const char *nlabel);
+	~PageFlipper();
 	virtual void Refresh();
 };
 
+/*! Decs count on doc */
+PageFlipper::~PageFlipper()
+{ if (doc) doc->dec_count(); }
+
+/*! Incs count on doc.
+ */
 PageFlipper::PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
 						 anXWindow *prev,Window nowner,const char *nsendthis,const char *nlabel)
 	: NumInputSlider(parnt,ntitle,NUMSLIDER_WRAP,0,0,0,0,1, prev,nowner,nsendthis,nlabel,0,1)
 {
 	doc=ndoc;
+	if (doc) doc->inc_count();
 }
 
 void PageFlipper::Refresh()
@@ -2835,6 +2871,16 @@ void PageFlipper::Refresh()
 }
 
 //-------------end PageFlipper
+
+//! Dec count of old doc, inc count of newdoc.
+/*! Does not currently update any context labels....
+ */
+void ViewWindow::setCurdoc(Document *newdoc)
+{
+	if (doc) doc->dec_count();
+	doc=newdoc;
+	if (doc) doc->inc_count();
+}
 
 //! Add extra goodies to viewerwindow stack, like page/layer/mag/obj indicators
 /*! \todo internationalize tool names

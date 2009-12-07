@@ -16,6 +16,7 @@ DEBUGFLAGS= -g
 objs= \
 	reimpose.o \
 	openandnew.o \
+	importexport.o \
 	functions.o 
 
 

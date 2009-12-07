@@ -16,6 +16,7 @@
 #ifndef VALUES_H
 #define VALUES_H
 
+#include <lax/anobject.h>
 #include <lax/refptrstack.h>
 #include <lax/refcounted.h>
 
@@ -27,8 +28,18 @@ enum ValueTypes {
 	VALUE_Int,
 	VALUE_Double,
 	VALUE_String,
+	VALUE_File, // *** unimplemented!
+	VALUE_Flag, // *** unimplemented!
+	VALUE_Enum, // *** unimplemented!
+	VALUE_EnumVal, // *** unimplemented!
+	VALUE_Color, // *** unimplemented!
+	VALUE_Date, // *** unimplemented!
+	VALUE_Time, // *** unimplemented!
+	VALUE_Set,
+	VALUE_Boolean, // *** unimplemented!
+	VALUE_Function, // *** unimplemented!
 	VALUE_Object,
-	VALUE_Set
+	VALUE_MaxBuiltIn
 };
 
 //----------------------------- Value ----------------------------------
@@ -46,14 +57,14 @@ class Value : public Laxkit::RefCounted
 };
 
 //----------------------------- SetValue ----------------------------------
-//class SetValue : public Value
-//{
-// public:
-//	RefPtrStack<Value> values;
-//	IntValue(Value *v) { values.push(v); }
-//	virtual const char *toCChar();
-//	virtual int type() { return VALUE_Set; }
-//};
+class SetValue : public Value
+{
+ public:
+	Laxkit::RefPtrStack<Value> values;
+	virtual int AddValue(Value *v);
+	virtual const char *toCChar();
+	virtual int type() { return VALUE_Set; }
+};
 
 //----------------------------- IntValue ----------------------------------
 class IntValue : public Value
@@ -98,7 +109,7 @@ class ObjectValue : public Value
 };
 
 //----------------------------- ValueHash ----------------------------------
-class ValueHash
+class ValueHash : public Laxkit::anObject
 {
 	Laxkit::PtrStack<char> keys;
 	Laxkit::RefPtrStack<Value> values;
@@ -118,12 +129,14 @@ class ValueHash
 	Value *value(int i);
 
 	int n();
+	Value *e(int i);
 	Value *find(const char *name);
 	int findIndex(const char *name);
-	long findInt(const char *name, int which=-1);
-	double findDouble(const char *name, int which=-1);
-	const char *findString(const char *name, int which=-1);
-	Laxkit::RefCounted *findObject(const char *name, int which=-1);
+	long findInt(const char *name, int which=-1, int *error_ret=NULL);
+	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
+	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
+	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
+	Laxkit::RefCounted *findObject(const char *name, int which=-1, int *error_ret=NULL);
 };
 
 
