@@ -40,6 +40,7 @@ class ImageExportFilter : public ExportFilter
 	virtual const char *Version() { return ""; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
+	virtual StyleDef *GetStyleDef();
 
 	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
 

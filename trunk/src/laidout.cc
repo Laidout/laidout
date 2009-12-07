@@ -743,7 +743,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
 	static struct option long_options[] = {
 			{ "command",             1, 0, 'c' },
-			{ "script",              0, 0, 's' },
+			{ "script",              1, 0, 's' },
 			{ "export",              1, 0, 'e' },
 			{ "list-export-options", 1, 0, 'O' },
 			{ "export-formats",      0, 0, 'X' },
@@ -773,9 +773,25 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					LoadTemplate(optarg,NULL);
 				} break;
 			case 's': { // --script
-					cout << "**** must implement script " << endl;
+					donotusex=1;
+					int size=file_size(optarg,1,NULL);
+					if (size<=0) {
+						cerr <<_("No input script!")<<endl;
+						exit(1);
+					}
+					char *instr=new char[size];
+					FILE *f=fopen(optarg,"r");
+					if (!f) {
+						cerr <<_("Could not open ")<<optarg<<endl;
+						exit(1);
+					}
+					fread(instr,1,size,f);
+					char *str=calculator->In(instr);
+					if (str) cout <<str<<endl;
+					exit(0);//***this should exit(1) on error?
 				} break;
 			case 'c': { // --command
+					donotusex=1;
 					char *str=calculator->In(optarg);
 					if (str) cout <<str<<endl;
 					exit(0);//***this should exit(1) on error?
@@ -857,6 +873,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		}
 
 		config.doc=doc;
+		config.doc->inc_count();
 		config.dump_in_atts(&att,0,NULL);//second time with doc!
 		int err=export_document(&config,&error);
 		if (err>0) {
@@ -1098,8 +1115,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
  * At a minimum, you must specify the paper size and imposition.
  * "default" or a blank spec currently maps to "letter, portrait, 1 page, Singles".
  *
- * Calling this function has the same effect as doing "newdoc spec" in
- * a command prompt pane.
+ * This is a looser version of the interpreter's command NewDocument.
  *
  * \todo *** default should be a setting in the laidoutrc.
  *
@@ -1216,6 +1232,10 @@ int LaidoutApp::NewDocument(const char *spec)
  *
  * filename is where is should be saved, and is assumed to not exist. If the calling
  * code is not sure if something exists there, then filename should be passed NULL.
+ * The file is not saved here. The filename is merely where the document will
+ * be saved to at the next save.
+ *
+ * Return 0 for success, or nonzero for error and document not added.
  */
 int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 {
@@ -1229,8 +1249,10 @@ int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 	newdoc->dec_count();
 	
 	
-	anXWindow *blah=newHeadWindow(newdoc); 
-	addwindow(blah);
+	if (!laidout->donotusex) {
+		anXWindow *blah=newHeadWindow(newdoc); 
+		addwindow(blah);
+	}
 	return 0;
 }
 
@@ -1250,7 +1272,7 @@ int LaidoutApp::NewProject(Project *proj,char **error_ret)
 		if (dynamic_cast<HeadWindow *>(topwindows.e[c])) n++;
 	}
 	
-	if (!n) addwindow(newHeadWindow(NULL,"ViewWindow"));
+	if (!laidout->donotusex && !n) addwindow(newHeadWindow(NULL,"ViewWindow"));
 
 	project->initDirs();
 	project->Save(error_ret);

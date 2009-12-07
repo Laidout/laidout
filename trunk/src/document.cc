@@ -868,7 +868,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 	
 	 // search for windows to create after reading in all pages
 	 // only if not in project mode
-	if (isblank(laidout->project->filename)) {
+	if (!laidout->donotusex && isblank(laidout->project->filename)) {
 		HeadWindow *head;
 		for (int c=0; c<att->attributes.n; c++) {
 			nme= att->attributes.e[c]->name;

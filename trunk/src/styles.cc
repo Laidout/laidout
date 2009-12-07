@@ -74,17 +74,19 @@ using namespace LaxFiles;
 /*! \ingroup stylesandstyledefs
  * Names for the ElementType enum.
  */
-const char *element_TypeNames[14]={
+const char *element_TypeNames[16]={
+	 	"any",
+		"none",
 		"int",
 		"real",
 		"string",
-		"fields",
+		"object", //call "fields" an "object"
 		"boolean",
 		"date",
 		"file",
 		"3bit",
+		"flag",
 		"enum",
-		"dynamicenum",
 		"enumval",
 		"function",
 		"color",
@@ -490,6 +492,7 @@ int FieldMask::push(int n,int *list,int where)//where=-1
  *   gettext somehow (gotta read up on that!!!)
  * \todo Perhaps the fields stack can be migrated to Laxkit's RefPtrStack.
  * \todo have dialog format hints
+ * \todo should have dynamic default values...
  * 
  *  example: 
  *  <pre>
@@ -650,6 +653,57 @@ void StyleDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	
 }
 
+//! Push an Element_EnumVal on an Element_enum.
+/*! Return 0 for value pushed or nonzero for error. It is an error to push an
+ * enum value on anything but an enum.
+ */
+int StyleDef::pushEnumValue(const char *str, const char *Str, const char *dsc)
+{
+	if (format!=Element_Enum) return 1;
+	return push(str,Str,dsc, 
+				Element_EnumVal, NULL,NULL,
+				(unsigned int)0, NULL,NULL);
+}
+
+//! Create an enum and pass in all the enum values here.
+/*! The '...' are all const char *, in groups of 3, with a single NULL after the last
+ * description.
+ *
+ * - the enum value scripting name,
+ * - the enum value translated, human readable name
+ * - the description of the value
+ *
+ * For instance, if you are adding 2 enum values, you must supply 6 const char * values, followed
+ * by a single NULL, or all hell will break loose.
+ */
+int StyleDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
+					 const char *newdefval,
+					 NewStyleFunc nnewfunc,
+					 StyleFunc nstylefunc,
+					 ...)
+{
+	StyleDef *e=new StyleDef(NULL,nname,nName,ndesc,
+							 Element_Enum, NULL, newdefval, 
+							 NULL, 0,
+							 nnewfunc, nstylefunc);
+	va_list ap;
+	va_start(ap, nstylefunc);
+	const char *v1,*v2,*v3;
+	while (1) {
+		v1=va_arg(ap,const char *);
+		if (v1==NULL) break;
+		v2=va_arg(ap,const char *);
+		v3=va_arg(ap,const char *);
+
+		e->pushEnumValue(v1,v2,v3);
+	}
+	va_end(ap);
+
+	int c=push(e);
+	if (c<0) delete e;
+	return c;
+}
+
 //! Push def without fields. If pushing this new field onto fields fails, return -1, else the new field's index.
 int StyleDef::push(const char *nname,const char *nName,const char *ndesc,
 			ElementType fformat,const char *nrange, const char *newdefval,unsigned int fflags,
@@ -737,7 +791,7 @@ int StyleDef::getNumFields()
 	return n; 
 }
 
-//! Return const char pointers to the various texts.
+//! Return various information about particular fields.
 /*! Given the index of a desired field, this looks up which StyleDef actually has the text
  * and sets the pointers to point to there. Nothing is done if the particular pointer is NULL.
  *
@@ -755,7 +809,7 @@ int StyleDef::getInfo(int index,
 						int *objtype)
 {
 	StyleDef *def=NULL;
-	index=findDef(index,&def);
+	index=findActualDef(index,&def);
 	if (!def) return 1; // otherwise index should be a valid value in fields, or refer to this
 	if (index==-1) {
 		if (nm) *nm=def->name;
@@ -773,27 +827,44 @@ int StyleDef::getInfo(int index,
 	return 0;
 }
 
-//! Find a valid StyleDef and return a valid index within it corresponding to the given overall index.
+//! Return the StyleDef corresponding to the field at index.
+/*! If the element at index does not have subfields or is not an enum,
+ * then return NULL.
+ */
+StyleDef *StyleDef::getField(int index)
+{
+	StyleDef *def=NULL;
+	index=findActualDef(index, &def);
+	if (index<0 || !def) return NULL;;
+	return def->fields->e[index];
+}
+
+//! From a given total index, return the actual StyleDef the index lies in, and the index within the returned def.
 /*! Does not consider subfields, only top level fields.
  *
- * enum: i=0
- * 	extended enum: i=0, but use this
- * 	no fields, return error
+ * Say *this (call it def1) has 5 fields, and extends def2 which has 4 fields,
+ * which extends def3 which has 2 fields.
+ * Then findActualDef(10,&def_ret) will return 4 with def_ret==def1.
+ * findActualDef(1,&def_ret) will return 1 with def_ret==def3.
+ * findActualDef(4,&def_ret) will return 2 with def_ret==def2.
+ *
+ * On out of bounds, -1 is returned, and def_ret is set to NULL.
  */ 	
-int StyleDef::findDef(int index,StyleDef **def)
+int StyleDef::findActualDef(int index,StyleDef **def_ret)
 {
-	if (index<0) { *def=NULL; return -1; }
-	 // if enum, or this is singe unit (not extending anything): index must be 0
+	if (index<0) { *def_ret=NULL; return -1; }
+	
+	 // if enum, or this is single unit (not extending anything): index must be 0
 	if (index==0 && (format==Element_Enum || (!extendsdef && (!fields || !fields->n)))) {
-		*def=this;
-		return -1;
+		*def_ret=this;
+		return 0;
 	}
 	 // else there should be fields somewhere
 	int n=0;
 	if (extendsdef) {
-		n=extendsdef->getNumFields();
+		n=extendsdef->getNumFields(); //counts all fields in extensions
 		if (index<n) { // index lies in extendsdef somewhere
-			return extendsdef->findDef(index,def);
+			return extendsdef->findActualDef(index,def_ret);
 		} 	
 	}
 	
@@ -801,10 +872,10 @@ int StyleDef::findDef(int index,StyleDef **def)
 	index-=n;
 	 // index>=0 at this point implies that this has fields, assuming original index is valid
 	if (!fields || !fields->n || index<0 || index>=fields->n)  { //error
-		*def=NULL;
+		*def_ret=NULL;
 		return -1;
 	}
-	*def=this;
+	*def_ret=this;
 	return index;
 }
 
@@ -833,7 +904,7 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
 		
 	char *nxt;
 	 // make n the index of the first '.' or end of string
-	n=strchr(fname,'.')-fname;
+	n=strchrnul(fname,'.')-fname;
 	if (n==0) n=strlen(fname);
 
 	 // check for number first: "34.blah.blah"

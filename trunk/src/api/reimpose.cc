@@ -44,7 +44,7 @@ StyleDef *makeReimposeStyleDef()
 	sd->push("imposition",
 			_("New Imposition"),
 			_("The new imposition to use"),
-			Element_String, //Element_DynamicEnum, ***
+			Element_Any, //Element_DynamicEnum, ***
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -56,13 +56,23 @@ StyleDef *makeReimposeStyleDef()
 			NULL,
 			"yes",
 			0,NULL);
-	sd->push("papersize",
+	sd->push("paper",
 			_("Paper Size"),
-			_("New paper size to use in the new imposition. Defaults to the old paper size."),
-			Element_String,
+			_("New paper size to use in the new imposition. Use a Paper object or a known paper name. "
+			  "A string such as \"tabloid,landscape\" will also work."),
+			Element_Any,
 			NULL,
 			NULL,
 			0,NULL);
+	sd->pushEnum("orientation",
+			_("Orientation"),
+			_("Orientation of the paper. Either portrait (0) or landscape (1)."),
+			"portrait",
+			NULL,NULL,
+			"portrait", _("Portrait"), _("Long direction is vertical"),
+			"landscape", _("Landscape"), _("Short direction is vertical"),
+			NULL
+		);
 	sd->push("createnew",
 			_("Create new"),
 			_("Reimpose to a new document"),
@@ -135,8 +145,9 @@ int ReImposeFunction(ValueHash *context,
 
 		 //1.
 		const char *str=NULL;
+		int i;
 
-		str=parameters->findString("document");
+		str=parameters->findString("document",-1,&i);
 		if (str) {
 			 //look in parameters
 			if (!str) throw _("You must specify a document to reimpose."); //no doc to reimpose!
@@ -147,7 +158,7 @@ int ReImposeFunction(ValueHash *context,
 		if (!doc) throw _("You must specify a document to reimpose."); //no doc to impose!
 
 		 //2.
-		str=parameters->findString("imposition");
+		str=parameters->findString("imposition",-1,&i);
 		if (!str) throw _("You must specify an imposition!"); //no new imposition!
 		int c2;
 		for (c2=0; c2<laidout->impositionpool.n; c2++) {
@@ -160,15 +171,25 @@ int ReImposeFunction(ValueHash *context,
 		imp=(Imposition *)imp->duplicate();
 
 		 //3.
+
+		 //----orientation
+		int orientation=parameters->findInt("orientation",-1,&i);
+		if (i==1) orientation=-1;
+		if (i==2) throw _("Invalid format for orientation!");
+
+		 //----paper
 		PaperStyle *paper=NULL;
-		str=parameters->findString("papersize");
-		if (!str) {
+		str=parameters->findString("paper",-1,&i);
+		if (i==2) {
+			paper=dynamic_cast<PaperStyle*>(parameters->findObject("paper"));
+			if (paper) paper=(PaperStyle*)paper->duplicate();
+		} else if (i==1) {
 			//***use a papersize that is big enough to fit;
 			cout <<"*** must implement auto compute paper size for reimposition"<<endl;
 			//figure out w and h of current document
 			//step through list of papers, find one that will fit either WxH or HxW
 			//if no fit, then custom size
-		} else {
+		} else if (str) {
 			 //establish papersize;
 			for (c2=0; c2<laidout->papersizes.n; c2++) {
 				if (!strncasecmp(str,laidout->papersizes.e[c2]->name,strlen(laidout->papersizes.e[c2]->name))) {
@@ -186,13 +207,21 @@ int ReImposeFunction(ValueHash *context,
 		}
 		if (!paper) { delete imp; throw _("You must provide a paper size!"); }
 
+		 //apply orientation
+		if (orientation>=0) {
+			if (orientation) paper->flags|=1;
+			else paper->flags&=~1;
+		}
+
 		 //4. scale pages to fit
-		int i=parameters->findIndex("scalepages");
+		i=parameters->findIndex("scalepages");
 		if (i>=0) scalepages=parameters->findInt("scalepages", i);
 
 		 //5. create a new document
 		i=parameters->findIndex("createnew");
 		if (i>=0) createnew=parameters->findInt("createnew", i);
+
+
 	} catch (const char *error) {
 		if (error_ret) appendline(*error_ret,error);
 		if (value_ret) *value_ret=NULL;

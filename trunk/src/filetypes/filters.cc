@@ -23,6 +23,7 @@
 #include "scribus.h"
 #include "pdf.h"
 
+//! Just call each installWhatever() for the filters defined in other files.
 void installFilters()
 {
 	installPostscriptFilters();

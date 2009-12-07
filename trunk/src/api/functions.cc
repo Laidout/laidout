@@ -19,8 +19,7 @@
 #include "../stylemanager.h"
 #include "reimpose.h"
 #include "openandnew.h"
-//#include "importfunc.h"
-//#include "exportfunc.h"
+#include "importexport.h"
 
 #include "../papersizes.h"
 
@@ -31,9 +30,9 @@ int InitFunctions()
 {
 	stylemanager.AddStyleDef(makeReimposeStyleDef(),1);
 	stylemanager.AddStyleDef(makeOpenStyleDef(),1);
-	//stylemanager.AddStyleDef(makeNewDocumentStyleDef(),1);
-	//stylemanager.AddStyleDef(makeImportStyleDef(),1);
-	//stylemanager.AddStyleDef(makeExportStyleDef(),1);
+	stylemanager.AddStyleDef(makeNewDocumentStyleDef(),1);
+	stylemanager.AddStyleDef(makeImportStyleDef(),1);
+	stylemanager.AddStyleDef(makeExportStyleDef(),1);
 	
 	return stylemanager.functions.n;
 }
@@ -41,6 +40,8 @@ int InitFunctions()
 int InitObjectDefinitions()
 {
 	stylemanager.AddStyleDef(makePaperStyleDef(),1);
+
+	return stylemanager.styledefs.n;
 }
 
 

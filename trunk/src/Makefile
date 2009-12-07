@@ -52,7 +52,7 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(objs) $(dirs)
+laidout: lax laxinterface $(dirs) $(objs)
 	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
 
 api:

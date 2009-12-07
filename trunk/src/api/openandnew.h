@@ -18,12 +18,11 @@
 
 #include "../styles.h"
 
-//StyleDef *makeNewStyleDef();
-
-//int NewdocFunction(ValueHash *context, 
-//					 ValueHash *parameters,
-//					 Value **value_ret,
-//					 char **error_ret);
+StyleDef *makeNewDocumentStyleDef();
+int NewDocumentFunction(ValueHash *context, 
+					 ValueHash *parameters,
+					 Value **value_ret,
+					 char **error_ret);
 
 
 

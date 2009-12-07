@@ -25,6 +25,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 #include "../printing/psout.h"
 #include "pdf.h"
 #include "../impositions/impositioninst.h"
@@ -51,10 +52,24 @@ void installPdfFilter()
 	//laidout->exportfilters.push(pdfout);
 	
 	PdfExportFilter *pdfout=new PdfExportFilter(4);
+	pdfout->GetStyleDef();
 	laidout->exportfilters.push(pdfout);
 	
 	//PdfInputFilter *pdfin=new PdfInputFilter;
 	//laidout->importfilters(pdfin);
+}
+
+//------------------------------------ PdfExportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newPdfExportConfig(StyleDef*)
+{
+	DocumentExportConfig *d=new DocumentExportConfig;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) 
+			d->filter=laidout->exportfilters.e[c];
+	}
+	return d;
 }
 
 
@@ -90,6 +105,27 @@ const char *PdfExportFilter::VersionName()
 {
 	if (pdf_version==4) return _("Pdf 1.4");
 	return _("Pdf 1.3");
+}
+
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *PdfExportFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("PdfExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"PdfExportConfig");
+	makestr(styledef->Name,_("Pdf Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to a pdf."));
+	styledef->newfunc=newPdfExportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
 }
 
 

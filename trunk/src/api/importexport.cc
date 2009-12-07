@@ -26,26 +26,17 @@ using namespace LaxFiles;
 
 
 
-//
-// maybe have:
-//  > export(doc='thing.laidout', tofile="blah.*", SvgExportFilter())
-//  > import(file="blah.sla", laidout.docs.0)
-//  > import(file="blah.sla", ScribusImportFilter())
-//
-//
 
-
-
-
-
-//------------------------------- Newdoc --------------------------------
+//------------------------------- Import --------------------------------
 /*! \ingroup api */
-StyleDef *makeImportStyleDef();
-{***
+StyleDef *makeImportStyleDef()
+{
 	 //define base
 	StyleDef *sd=new StyleDef(NULL,"Import",
 			_("Import"),
-			_("Import a vector file to an existing document or a group"),
+			_("Import a vector file to an existing document or a group. Each filter may have "
+			  "additional options you can pass in. Usually the file format will be detected "
+			  "automatically, but you may also force a specific filter to be used."),
 			Element_Function,
 			NULL,NULL,
 			NULL,
@@ -63,68 +54,18 @@ StyleDef *makeImportStyleDef();
 	//double dpi;
 
 	 //define parameters
-	sd->push("file",
-			_("File"),
+	sd->push("filename",
+			_("Filename"),
 			_("Path to file to import"),
 			Element_Int,
 			NULL, //range
 			"1",  //defvalue
 			0,    //flags
 			NULL);//newfunc
-	sd->push("keepmystery",
-			_("Keep mystery data"),
-			_("Whether to attempt to preserve things not understood"),
-			Element_Enum, //no|sometimes|always
-			NULL, //range
-			"Singles",  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("instart",
-			_("Start"),
-			_("First page to import from a multipage file"),
-			Element_Int,
-			NULL,
-			NULL,
-			0,NULL);
-	sd->push("topage",
-			_("To page"),
-			_("The page in the existing document to begin importing to"),
-			Element_Int,
-			NULL,
-			NULL,
-			0,NULL);
-	sd->push("dpi",
-			_("Default dpi"),
-			_("Default dpi to use while importing if necessary"),
-			Element_Int,
-			NULL,
-			NULL,
-			0,NULL);
-	sd->push("spread",
-			_("Spread"),
-			_("Index of the spread to import to"),
-			Element_Int,
-			NULL,
-			NULL,
-			0,NULL);
-	sd->push("document",
-			_("Document"),
-			_("Which document to import to, if not importing to a group"),
-			Element_Document,
-			NULL,
-			NULL,
-			0,NULL);
-	sd->push("group",
-			_("Group"),
-			_("Group to import to, if not importing to a document"),
-			Element_Group,
-			NULL,
-			NULL,
-			0,NULL);
 	sd->push("filter",
 			_("Filter"),
 			_("The import filter to use to import"),
-			Element_ImportFilter,
+			Element_Any,
 			NULL,
 			NULL,
 			0,NULL);
@@ -133,29 +74,110 @@ StyleDef *makeImportStyleDef();
 }
 
 
+//! Process an import command and try to import a document
 /*! \ingroup api */
 int ImportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 const char **error_ret)
-{***
-	while (isspace(*in)) in++;
-	tmp=newnstr(in,end-in);
-	if (laidout->NewDocument(tmp)==0) appendline(str_ret,_("Document added."));
-	else appendline(str_ret,_("Error adding document. Not added"));
-	delete[] tmp;
-	delete[] word;
+					 char **error_ret)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=NULL;
+		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		return 1;
+	}
+
+	int err=0;
+	char *filename=NULL;
+	ImportFilter *filter=NULL;
+	try {
+		 // get file to import
+		const char *file=parameters->findString("filename");
+		if (!file) throw _("Missing filename.");
+		filename=newstr(file);
+
+
+		 //determine what filter to use
+		int v=parameters->findIndex("filter");
+		if (v>=0) {
+			const char *filtername=parameters->findString("filter",v);
+			if (filtername) {
+				int c2;
+				if (filtername) {
+					for (c2=0; c2<laidout->importfilters.n; c2++) {
+						if (!strcmp(laidout->importfilters.e[c2]->VersionName(),filtername)) {
+							filter=laidout->importfilters.e[c2];
+							break;
+						}
+					}
+					 //if no match, search for first case insensitive match
+					if (filter==NULL) {
+						for (c2=0; c2<laidout->importfilters.n; c2++) {
+							if (!strncasecmp(laidout->importfilters.e[c2]->VersionName(),filtername,strlen(filtername))) {
+								filter=laidout->importfilters.e[c2];
+								break;
+							}
+						}
+					}
+				}
+			} else {
+				filter=dynamic_cast<ImportFilter *>(parameters->findObject("filter",v));
+			}
+			if (!filter) throw _("Unknown filter!");
+
+		} else {
+			 //find filter by querying the file
+			int c;
+			FILE *f=fopen(filename,"r");
+			if (!f) throw _("Cannot open file!");
+			char first100[200];
+			c=fread(first100,1,200,f);
+			fclose(f);
+
+			const char *filtertype=NULL;
+			for (c=0; c<laidout->importfilters.n; c++) {
+				filtertype=laidout->importfilters.e[c]->FileType(first100);
+				if (filtertype) {
+					filter=laidout->importfilters.e[c];
+					break;
+				}
+			}
+		}
+		if (filter==NULL) throw _("Filter not found!");
+
+		 //must create an ImportConfig that will be passed to filter->In().
+		StyleDef *def=filter->GetStyleDef();
+		ImportConfig *config=NULL;
+		Value *value=NULL;
+		char *error=NULL;
+		if (def->stylefunc) (def->stylefunc)(context,parameters,&value,&error);
+		if (value->type()==VALUE_Object) config=dynamic_cast<ImportConfig*>(((ObjectValue*)value)->object);
+		if (config) err=filter->In(filename,config,error_ret);
+		if (value) value->dec_count();
+
+	} catch (const char *str) {
+		if (error_ret) appendline(*error_ret,str);
+		err=1;
+//	} catch (char *str) {
+//		if (error_ret) appendline(*error_ret,str);
+//		delete[] str;
+//		err=1;
+	}
+
+	if (filename) delete[] filename;
+	if (value_ret) *value_ret=NULL;
+	return err;
 
 }
 
-//------------------------------- Open --------------------------------
+//------------------------------- Export --------------------------------
 /*! \ingroup api */
 StyleDef *makeExportStyleDef()
 {
 	 //define base
-	StyleDef *sd=new StyleDef(NULL,"ExportDocument",
+	StyleDef *sd=new StyleDef(NULL,"Export",
 			_("Export"),
-			_("Export a document"),
+			_("Export a document or a group with the specified export filter to the specified file or files."),
 			Element_Function,
 			NULL,NULL,
 			NULL,
@@ -165,54 +187,6 @@ StyleDef *makeExportStyleDef()
 
 
 	 //define parameters
-	sd->push("target",
-			_("Output target"),
-			_("Whether to try to save to a single file, multiple files, or send results to a shell command"),
-			Element_File,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("start",
-			_("Start"),
-			_("Starting page of the document to export"),
-			Element_Int,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("end",
-			_("End"),
-			_("Ending page of the document to export"),
-			Element_Int,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("layout",
-			_("Layout"),
-			_("Type of layout to export as. Possibilities defined by the imposition."),
-			Element_DynamicEnum, ***
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("doc",
-			_("Document"),
-			_("The document to export, if not exporting a group."),
-			Element_****,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("group",
-			_("Group"),
-			_("Group to export, if not exporting a document."),
-			Element_Boolean,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
 	sd->push("filename",
 			_("Filename"),
 			_("Path of exported file. For multiple files, use \"file##.svg\", for instance."),
@@ -221,30 +195,38 @@ StyleDef *makeExportStyleDef()
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
-	sd->push("collect",
-			_("Collect for out"),
-			_("Whether to copy all the accessed resources to the same directory as the exported file."),
-			Element_Boolean,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
-	sd->push("papergroup",
-			_("Paper group"),
-			_("The paper group to export onto. Do not include if you want to use the default paper group."),
-			Element_***,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
+//	sd->push("target",
+//			_("Output target"),
+//			_("Whether to try to save to a single file (0), or multiple files (1)."),
+//			Element_Int,
+//			NULL, //range
+//			NULL,  //defvalue
+//			0,    //flags
+//			NULL);//newfunc
 	sd->push("filter",
 			_("Filter"),
 			_("The filter to export with."),
-			Element_DynamicEnum,
+			Element_Any,
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
+//	sd->push("doc",
+//			_("Document"),
+//			_("The document to export, if not exporting a group."),
+//			Element_Any,
+//			NULL, //range
+//			NULL,  //defvalue
+//			0,    //flags
+//			NULL);//newfunc
+//	sd->push("group",
+//			_("Group"),
+//			_("Group to export, if not exporting a document."),
+//			Element_Any,
+//			NULL, //range
+//			NULL,  //defvalue
+//			0,    //flags
+//			NULL);//newfunc
 
 	return sd;
 }
@@ -257,85 +239,92 @@ int ExportFunction(ValueHash *context,
 					 Value **value_ret,
 					 char **error_ret)
 {
-	if (!parameters) return 1;
-	if (!context) return 1;
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=NULL;
+		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		return 1;
+	}
 
-	int astemplate=parameters->findInt("astemplate");
 	int err=0;
-
-	char *filename=NULL;
+	ExportFilter *filter=NULL;
+	DocumentExportConfig *config=NULL;
 	try {
-		const char *file=parameters->findString("file");
+		 //---get file to export
+		const char *filename=parameters->findString("filename");
 
-		 // get filename potentially
-		if (!file) throw _("Missing filename.");
-		filename=newstr(file);
 
-		 // try to open up the file
-		if (*filename!='/' && strstr("file://",filename)!=filename) {
-			 //assume a relative path. find a full file name
-			char *dir=newstr(context->findString("current_directory"));
-			char *temp;
-			if (!dir) {
-				temp=get_current_dir_name();
-				dir=newstr(temp);
-				free (temp);
+		 //---determine what filter to use, from string, or filter object
+		Value *v=parameters->find("filter");
+		if (v) {
+			if (v->type()==VALUE_String) {
+				const char *filtername=dynamic_cast<StringValue*>(v)->str;
+				if (filtername) {
+					int c2;
+					for (c2=0; c2<laidout->exportfilters.n; c2++) {
+						if (!strcmp(laidout->exportfilters.e[c2]->VersionName(),filtername)) {
+							filter=laidout->exportfilters.e[c2];
+							break;
+						}
+					}
+					 //if no match, search for first case insensitive match
+					if (filter==NULL) {
+						for (c2=0; c2<laidout->exportfilters.n; c2++) {
+							if (!strncasecmp(laidout->exportfilters.e[c2]->VersionName(),filtername,strlen(filtername))) {
+								filter=laidout->exportfilters.e[c2];
+								break;
+							}
+						}
+					}
+				}
+			} else if (v->type()==VALUE_Object) {
+				ObjectValue *vv=dynamic_cast<ObjectValue*>(v);
+				if (vv) {
+					filter=dynamic_cast<ExportFilter *>(vv->object);
+					if (!filter) {
+						config=dynamic_cast<DocumentExportConfig*>(vv->object);
+						if (config) filter=config->filter;
+					}
+				}
 			}
-			appendstr(dir,"/");
-			appendstr(dir,filename);
-			delete[] filename;
-			filename=dir;
-			dir=NULL;
-		}
-		if (file_exists(filename,1,NULL)!=S_IFREG) throw _("Could not load that.");
 
-		if (!astemplate && laidout->findDocument(filename)) throw _("Document already loaded");
+		} 
+		if (v && !filter) throw _("Unknown filter!");
 
-		 //now load the document, creating a new view window if the document load
-		 //does not create any new windows of its own
-		int n=laidout->numTopWindows();
-		char *error=NULL;
-		Document *doc=NULL;
-		int loadstatus=0;
-		if (astemplate) doc=laidout->LoadTemplate(filename,&error);
-		else loadstatus=laidout->Load(filename,&error);
-		if (loadstatus>=0 && !doc) {
-			 //on a successful load, laidout->curdoc is the document just loaded.
-			doc=laidout->curdoc;
-		}
-		if (!doc) {
-			prependstr(error,_("Errors loading:\n"));
-			appendstr(error,_("Not loaded."));
-			throw error;
+		if (filter==NULL) throw _("Filter not found!");
+
+		 //----doc***
+		 //----group***
+
+		 //must create a DocumentExportConfig that will be passed to filter->Out().
+		if (!config) {
+			throw _("Missing an export config!");
+			//******
+			//StyleDef *def=filter->GetStyleDef();
+			//Value *value=NULL;
+			//char *error=NULL;
+			//if (def->stylefunc) (def->stylefunc)(context,parameters,&value,&error);
+			//if (value->type()==VALUE_Object) config=dynamic_cast<DocumentExportConfig*>(((ObjectValue*)value)->object);
+			//if (config) err=filter->Out(filename,config,error_ret);
+			//if (value) value->dec_count();
 		}
 
-		 // create new window only if LoadDocument() didn't create new windows
-		 // ***this is a little icky since any previously saved windows might not
-		 // actually refer to the document opened
-		if (n!=laidout->numTopWindows()) {
-			Laxkit::anXWindow *win=newHeadWindow(doc,"ViewWindow");
-			if (win) laidout->addwindow(win);
-		}
-		if (!error) {
-			if (error_ret) appendline(*error_ret,_("Opened."));
-		} else {
-			prependstr(error,_("Warnings encountered while loading:\n"));
-			appendstr(error,_("Loaded anyway."));
-			if (error_ret) appendline(*error_ret,error);
-			delete[] error;
-			err=-1;
+		if (filename) makestr(config->filename,filename);
+		if (!config->filename) throw _("Missing filename.");
+		if (!config->doc && !config->limbo && context) {
+			config->doc=dynamic_cast<Document*>(context->findObject("document"));
+			if (config->doc) config->doc->inc_count();
 		}
 
-	} catch (char *str) {
-		if (error_ret) appendline(*error_ret,str);
-		delete[] str;
-		err=1;
+		err=export_document(config,error_ret);
+
 	} catch (const char *str) {
 		if (error_ret) appendline(*error_ret,str);
 		err=1;
+//	} catch (char *str) {
+//		if (error_ret) appendline(*error_ret,str);
+//		delete[] str;
+//		err=1;
 	}
-
-	if (filename) delete[] filename;
 
 	if (value_ret) *value_ret=NULL;
 	return err;

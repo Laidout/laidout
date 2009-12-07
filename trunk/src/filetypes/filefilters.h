@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007-2009 by Tom Lechner
 //
 #ifndef FILEFILTERS_H
 #define FILEFILTERS_H
@@ -20,7 +20,7 @@
 #include <lax/refcounted.h>
 #include <lax/dump.h>
 #include "../document.h"
-
+#include "../styles.h"
 
 
 class Document;
@@ -46,6 +46,7 @@ class FileFilter : public Laxkit::anObject
 	virtual const char *Version() = 0;
 	virtual const char *VersionName() = 0;
 	virtual const char *FilterClass() = 0;
+	virtual StyleDef *GetStyleDef() = 0;
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 };
@@ -58,6 +59,7 @@ class ImportFilter : public FileFilter
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
 	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
+	virtual StyleDef *makeStyleDef();
 };
 
 
@@ -68,6 +70,7 @@ class ExportFilter : public FileFilter
 	virtual const char *whattype() { return "FileOutputFilter"; }
 	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
+	virtual StyleDef *makeStyleDef();
 };
 
 //------------------------------- DocumentExportConfig ----------------------------------
@@ -78,7 +81,11 @@ enum CollectForOutValues {
 	COLLECT_Existing_And_Rasterized
 };
 
-class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+StyleDef *makeExportConfigDef();
+int createExportConfig(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, char **message_ret);
+
+class DocumentExportConfig : public Style
 {
  public:
 	int target;
@@ -89,6 +96,7 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 	char *filename;
 	char *tofiles;
 	char collect_for_out;
+	char rasterize;
 	PaperGroup *papergroup;
 	ExportFilter *filter;
 	DocumentExportConfig();
@@ -96,6 +104,8 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
 
+	virtual StyleDef* makeStyleDef();
+	virtual Style* duplicate(Style*);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
@@ -105,7 +115,11 @@ class DocumentExportConfig : public Laxkit::anObject, public Laxkit::RefCounted,
 int export_document(DocumentExportConfig *config,char **error_ret);
 
 //------------------------------ ImportConfig ----------------------------
-class ImportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+StyleDef *makeImportConfigDef();
+int createImportConfig(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, char **message_ret);
+
+class ImportConfig : public Style
 {
  public:
 	char *filename;
@@ -123,6 +137,8 @@ class ImportConfig : public Laxkit::anObject, public Laxkit::RefCounted, public 
 				 Document *ndoc, Group *nobj);
 	virtual ~ImportConfig();
 
+	virtual StyleDef* makeStyleDef();
+	virtual Style* duplicate(Style*);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };

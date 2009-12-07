@@ -34,7 +34,7 @@ class StyleManager
 	void flush();
 
 	int AddStyleDef(StyleDef *def,int absorb=0);
-	StyleDef *FindDef(const char *styledef);
+	StyleDef *FindDef(const char *styledef, int which=3);
 
 	//void deleteStyle(Style *style);
 	Style *newStyle(const char *styledef);

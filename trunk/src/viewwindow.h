@@ -174,6 +174,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual void updateContext();
 	virtual void updateProjectStatus();
 	virtual void SetParentTitle(const char *str);
+	virtual void setCurdoc(Document *newdoc);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

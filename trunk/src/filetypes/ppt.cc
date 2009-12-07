@@ -21,6 +21,7 @@
 
 #include "../language.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 #include "../headwindow.h"
 #include "../impositions/impositioninst.h"
 #include "../utils.h"
@@ -46,12 +47,40 @@ using namespace LaxInterfaces;
 void installPptFilter()
 {
 	PptoutFilter *pptout=new PptoutFilter;
+	pptout->GetStyleDef();
 	laidout->exportfilters.push(pptout);
 	
 	PptinFilter *pptin=new PptinFilter;
+	pptin->GetStyleDef();
 	laidout->importfilters.push(pptin);
 }
 
+
+//------------------------------------ PptExportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newPptExportConfig(StyleDef*)
+{
+	DocumentExportConfig *d=new DocumentExportConfig;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Passepartout"))
+			d->filter=laidout->exportfilters.e[c];
+	}
+	return d;
+}
+
+//------------------------------------ PptImportConfig ----------------------------------
+
+//! For now, just returns a new DocumentExportConfig.
+Style *newPptImportConfig(StyleDef*)
+{
+	ImportConfig *d=new ImportConfig;
+	for (int c=0; c<laidout->importfilters.n; c++) {
+		if (!strcmp(laidout->importfilters.e[c]->Format(),"Passepartout"))
+			d->filter=laidout->importfilters.e[c];
+	}
+	return d;
+}
 
 
 //------------------------------- PptoutFilter --------------------------------------
@@ -67,6 +96,26 @@ PptoutFilter::PptoutFilter()
 const char *PptoutFilter::VersionName()
 {
 	return _("Passepartout");
+}
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *PptoutFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("PassepartoutExportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"PassepartoutExportConfig");
+	makestr(styledef->Name,_("Passepartout Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to a Passepartout file."));
+	styledef->newfunc=newPptExportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
 }
 
 //! Internal function to dump out the obj if it is an ImageData.
@@ -366,6 +415,26 @@ const char *PptinFilter::FileType(const char *first100bytes)
 const char *PptinFilter::VersionName()
 {
 	return _("Passepartout");
+}
+
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+StyleDef *PptinFilter::GetStyleDef()
+{
+	StyleDef *styledef;
+	styledef=stylemanager.FindDef("PassepartoutImportConfig");
+	if (styledef) return styledef; 
+
+	styledef=makeStyleDef();
+	makestr(styledef->name,"PassepartoutImportConfig");
+	makestr(styledef->Name,_("Passepartout Import Configuration"));
+	makestr(styledef->description,_("Configuration to import a Passepartout file."));
+	styledef->newfunc=newPptImportConfig;
+
+	stylemanager.AddStyleDef(styledef);
+
+	return styledef; //dec_count()'d in destructor
 }
 
 //! Import a Passepartout file.

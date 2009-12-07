@@ -41,6 +41,7 @@ class ScribusExportFilter : public ExportFilter
 	virtual const char *Version() { return "1.3.3.8"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
+	virtual StyleDef *GetStyleDef();
 
 	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
 
@@ -62,6 +63,7 @@ class ScribusImportFilter : public ImportFilter
 	virtual const char *Version() { return "1.3.3.*"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
+	virtual StyleDef *GetStyleDef();
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	

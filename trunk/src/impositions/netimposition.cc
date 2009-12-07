@@ -254,7 +254,7 @@ StyleDef *NetImposition::makeStyleDef()
 	sd->push("net",
 			_("Net"),
 			_("What kind of net is the imposition using"),
-			Element_DynamicEnum,
+			Element_Enum,
 			NULL, "0",
 			0,0,CreateNetListEnum);
 	return sd;
