@@ -795,6 +795,8 @@ int StyleDef::getNumFields()
 /*! Given the index of a desired field, this looks up which StyleDef actually has the text
  * and sets the pointers to point to there. Nothing is done if the particular pointer is NULL.
  *
+ * def_ret is the StyleDef of index. This can be used to then read off enum names, for instance.
+ *
  * If index==-1, then the info from *this is provided, rather than from a fields stack.
  *
  * Returns 0 success, 1 error.
@@ -806,7 +808,8 @@ int StyleDef::getInfo(int index,
 						const char **rng,
 						const char **defv,
 						ElementType *fmt,
-						int *objtype)
+						int *objtype,
+						StyleDef **def_ret)
 {
 	StyleDef *def=NULL;
 	index=findActualDef(index,&def);
@@ -815,6 +818,11 @@ int StyleDef::getInfo(int index,
 		if (nm) *nm=def->name;
 		if (Nm) *Nm=def->Name;
 		if (desc) *desc=def->description;
+		if (rng) *rng=def->range;
+		if (defv) *defv=def->defaultvalue;
+		if (fmt) *fmt=def->format;
+		if (objtype) *objtype=def->fieldsformat;
+		if (def_ret) *def_ret=def;
 		return 0;
 	}
 	if (nm) *nm=def->fields->e[index]->name;
@@ -824,6 +832,7 @@ int StyleDef::getInfo(int index,
 	if (defv) *defv=def->fields->e[index]->defaultvalue;
 	if (fmt) *fmt=def->fields->e[index]->format;
 	if (objtype) *objtype=def->fields->e[index]->fieldsformat;
+	if (def_ret) *def_ret=def->fields->e[index];
 	return 0;
 }
 

@@ -164,7 +164,7 @@ StyleDef *makeImportConfigDef()
 	sd->push("file",
 			_("File"),
 			_("Path to file to import"),
-			Element_Int,
+			Element_String,
 			NULL, //range
 			"1",  //defvalue
 			0,    //flags
@@ -202,7 +202,7 @@ StyleDef *makeImportConfigDef()
 	sd->push("dpi",
 			_("Default dpi"),
 			_("Default dpi to use while importing if necessary"),
-			Element_Int,
+			Element_Real,
 			NULL,
 			NULL,
 			0,NULL);
@@ -588,14 +588,15 @@ StyleDef *makeExportConfigDef()
 			NULL,  //defvalue
 			0,    //flags
 			NULL);//newfunc
-	sd->push("target",
+
+	sd->pushEnum("target",
 			_("Output target"),
-			_("Whether to try to save to a single file, multiple files, or send results to a shell command"),
-			Element_String,
-			NULL, //range
-			NULL,  //defvalue
-			0,    //flags
-			NULL);//newfunc
+			_("Whether to try to save to a single file (0), or multiple files (1)"),
+			"one_file",  //defvalue
+			NULL,NULL, //newfunc
+			"one_file", _("One file"), _("Export all pages to a single file if possible"),
+			"many_files", _("Many files"), _("Export each page to different files"),
+			NULL);
 	sd->push("document",
 			_("Document"),
 			_("The document to export, if not exporting a group."),
@@ -687,7 +688,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 	Value *v=NULL;
 	if (parameters) v=parameters->find("exportconfig");
 	if (v) {
-		config=dynamic_cast<DocumentExportConfig*>(dynamic_cast<ObjectValue*>(v));
+		config=dynamic_cast<DocumentExportConfig*>(dynamic_cast<ObjectValue*>(v)->object);
 		if (config) config->inc_count();
 	}
 	if (!config) config=new DocumentExportConfig();
@@ -843,13 +844,13 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 
 DocumentExportConfig::DocumentExportConfig()
 {
+	filter=NULL;
 	target=0;
 	filename=NULL;
 	tofiles=NULL;
 	start=end=-1;
 	layout=0;
 	doc=NULL;
-	filter=NULL;
 	papergroup=NULL;
 	limbo=NULL;
 	collect_for_out=COLLECT_Dont_Collect;

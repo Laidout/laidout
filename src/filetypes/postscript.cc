@@ -122,8 +122,9 @@ StyleDef *PsOutFilter::GetStyleDef()
 	styledef->newfunc=newPsExportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 //------------------------------- EpsOutFilter --------------------------------------
@@ -161,8 +162,9 @@ StyleDef *EpsOutFilter::GetStyleDef()
 	styledef->newfunc=newEpsExportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 //////------------------------------------- EpsInFilter -----------------------------------

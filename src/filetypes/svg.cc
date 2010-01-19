@@ -124,8 +124,9 @@ StyleDef *SvgOutputFilter::GetStyleDef()
 	styledef->newfunc=newSvgExportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 //! Function to dump out obj as svg.
@@ -755,8 +756,9 @@ StyleDef *SvgImportFilter::GetStyleDef()
 	styledef->newfunc=newSvgImportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 

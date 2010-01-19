@@ -124,8 +124,9 @@ StyleDef *PdfExportFilter::GetStyleDef()
 	styledef->newfunc=newPdfExportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 

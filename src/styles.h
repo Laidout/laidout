@@ -148,7 +148,8 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 						const char **rng=NULL,
 						const char **defv=NULL,
 						ElementType *fmt=NULL,
-						int *objtype=NULL);
+						int *objtype=NULL,
+						StyleDef **def_ret=NULL);
  	//int *getfields(const char *extstr); // returns 0 terminated list of indices: "1.4.23+ -> { 1,4,23,0 }
 
 	 //-------- StyleDef creation helper functions ------

@@ -407,7 +407,11 @@ int LaidoutViewport::event(XEvent *e)
 			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
 			if (viewer) viewer->SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
 			
-			if (doc) laidout->curdoc=doc;
+			if (doc) {
+				if (laidout->curdoc) laidout->curdoc->dec_count();
+				laidout->curdoc=doc;
+				laidout->curdoc->inc_count();
+			}
 		}
 	}
 	return ViewportWindow::event(e);
@@ -438,7 +442,11 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 	doc=ndoc;
 	if (doc) doc->inc_count();
 
-	if (doc) laidout->curdoc=doc;
+	if (doc) {
+		if (laidout->curdoc) laidout->curdoc->dec_count();
+		laidout->curdoc=doc;
+		laidout->curdoc->inc_count();
+	}
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent);
 	if (viewer) viewer->setCurdoc(doc);
 

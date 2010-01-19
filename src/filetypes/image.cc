@@ -73,8 +73,10 @@ class ImageExportConfig : public DocumentExportConfig
 ImageExportConfig::ImageExportConfig()
 {
 	for (int c=0; c<laidout->exportfilters.n; c++) {
-		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) 
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
 			filter=laidout->exportfilters.e[c];
+			break; 
+		}
 	}
 }
 
@@ -155,6 +157,8 @@ int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_r
 
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
+ *
+ * \todo implement background color. currently defaults to transparent
  */
 StyleDef *ImageExportFilter::GetStyleDef()
 {
@@ -174,8 +178,9 @@ StyleDef *ImageExportFilter::GetStyleDef()
 	// *** background color
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 
