@@ -153,6 +153,8 @@ void LaidoutCalculator::calcerr(const char *error,const char *where,int w, int s
  * curexprs[from] must be a letter or a '_'. Otherwise NULL is returned.
  * The length of the word is put in *n if n!=NULL.
  * The from variable is not advanced.
+ *
+ * Returns a new char[].
  */
 char *LaidoutCalculator::getnamestring(int *n)  //  alphanumeric or _ 
 {
@@ -388,9 +390,10 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 						if ((sd->format==Element_Fields || sd->format==Element_Function) && sd->getNumFields()) {
 							const char *nm,*Nm,*desc;
 							ElementType fmt;
+							StyleDef *subdef=NULL;
 							appendstr(temp,"\n");
 							for (int c2=0; c2<sd->getNumFields(); c2++) {
-								sd->getInfo(c2,&nm,&Nm,&desc,NULL,NULL,&fmt);
+								sd->getInfo(c2,&nm,&Nm,&desc,NULL,NULL,&fmt,NULL,&subdef);
 								appendstr(temp,"  ");
 								appendstr(temp,nm);
 								appendstr(temp,": (");
@@ -400,6 +403,20 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 								appendstr(temp,", ");
 								appendstr(temp,desc);
 								appendstr(temp,"\n");
+								if (fmt==Element_Enum && subdef && subdef->fields) {
+									appendstr(temp,"    ");
+									appendstr(temp,_("Possible values:\n"));
+									for (int c3=0; c3<subdef->fields->n; c3++) {
+										subdef->getInfo(c3,&nm,&Nm,&desc);
+										appendstr(temp,"      ");
+										appendstr(temp,nm);
+										appendstr(temp,": ");
+										appendstr(temp,Nm);
+										appendstr(temp,", ");
+										appendstr(temp,desc);
+										appendstr(temp,"\n");
+									}
+								}
 
 							}
 						}
@@ -1125,7 +1142,7 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 		int enumcheck;
 		if (nextchar(')')) { from--; }
 		else do {
-			enumcheck=-1;//def.field number to check for enum values in
+			enumcheck=-1;//default field number to check for enum values in
 			pnum++; //starts at 1
 
 			 //check for parameter name given
@@ -1141,7 +1158,7 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 				} else {
 					 //name was not in the form of parameter assignment
 					ename=pname;
-					pname=NULL;
+					pname=NULL; //ename will be deleted below
 					if (def) enumcheck=pnum; //pname might be an enum value for styledef.field[pnum]
 				}
 			}
@@ -1159,7 +1176,7 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 						if (ename) from+=len;
 					}
 					StyleDef *ev=NULL;
-					if (ename) def->getField(enumcheck);
+					if (ename) ev=def->getField(enumcheck);
 					DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
 					
 					 //*** warning, assumes no extended enum, or dynamic enum!!! maybe bad....
@@ -1178,9 +1195,9 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 					enumcheck=-1; //either info check failed, or field is not an enum, so still must parse value
 					from=tfrom;
 				}
-				if (ename) delete[] ename;
+				if (ename) { delete[] ename; ename=NULL; }
 			}
-			if (enumcheck<0) v=eval();
+			if (enumcheck<0) v=eval(); //either enum check failed, or was not an enum
 
 			if (v && !calcerror) {
 				pp->push(pname,v);

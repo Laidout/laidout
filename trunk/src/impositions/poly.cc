@@ -493,8 +493,9 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 	strcpy(name,nphed.name);
 	int c,n;
 	if (nphed.vertices.n) {
+		n=nphed.vertices.n;
 		spacepoint *t;
-		t=new spacepoint[n];
+		t=new spacepoint[nphed.vertices.n];
 		memcpy(t,nphed.vertices.e,sizeof(spacepoint));
 		vertices.insertArray(t,n);
 	}

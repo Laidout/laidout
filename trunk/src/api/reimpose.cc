@@ -201,8 +201,6 @@ int ReImposeFunction(ValueHash *context,
 				paper=(PaperStyle*)paper->duplicate();
 				if (strcasestr(str,"landscape")) paper->flags=1;
 				else if (strcasestr(str,"portrait")) paper->flags=0;
-				imp->SetPaperSize(paper); // makes a duplicate of paper
-				paper->dec_count();
 			}
 		}
 		if (!paper) { delete imp; throw _("You must provide a paper size!"); }
@@ -212,6 +210,8 @@ int ReImposeFunction(ValueHash *context,
 			if (orientation) paper->flags|=1;
 			else paper->flags&=~1;
 		}
+		imp->SetPaperSize(paper); // makes a duplicate of paper
+		paper->dec_count();
 
 		 //4. scale pages to fit
 		i=parameters->findIndex("scalepages");

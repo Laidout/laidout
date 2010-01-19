@@ -180,8 +180,9 @@ StyleDef *ScribusExportFilter::GetStyleDef()
 	styledef->stylefunc=createScribusExportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 static int currentpage;
@@ -1025,8 +1026,9 @@ StyleDef *ScribusImportFilter::GetStyleDef()
 	styledef->stylefunc=createScribusImportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 //! Import Scribus document.

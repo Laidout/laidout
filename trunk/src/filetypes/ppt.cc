@@ -114,8 +114,9 @@ StyleDef *PptoutFilter::GetStyleDef()
 	styledef->newfunc=newPptExportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 //! Internal function to dump out the obj if it is an ImageData.
@@ -433,8 +434,9 @@ StyleDef *PptinFilter::GetStyleDef()
 	styledef->newfunc=newPptImportConfig;
 
 	stylemanager.AddStyleDef(styledef);
+	styledef->dec_count();
 
-	return styledef; //dec_count()'d in destructor
+	return styledef;
 }
 
 //! Import a Passepartout file.

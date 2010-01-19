@@ -310,6 +310,7 @@ LaidoutApp::~LaidoutApp()
 
 	dumpOutResources();
 
+	if (curdoc)             curdoc->dec_count();
 	if (project)            delete project;
 	if (config_dir)         delete[] config_dir;
 	if (defaultpaper)       delete[] defaultpaper;
@@ -797,7 +798,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exit(0);//***this should exit(1) on error?
 				} break;
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
-					if (NewDocument(optarg)==0) curdoc=project->docs.e[project->docs.n-1]->doc;
+					if (NewDocument(optarg)==0) {
+						if (curdoc) curdoc->dec_count();
+						curdoc=project->docs.e[project->docs.n-1]->doc;
+						if (curdoc) curdoc->inc_count();
+					}
 				} break;
 			case 'l': { // load dir
 					makestr(load_dir,optarg);
@@ -1036,8 +1041,9 @@ Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
 	
 	makestr(doc->saveas,NULL); // this forces a change of name, must be done after Load
 	delete[] fullname;
+	if (curdoc) curdoc->dec_count();
 	curdoc=doc;
-	doc->dec_count();
+	//doc->dec_count(); <--count is kept for "curdoc" link
 	return doc;
 }
 
@@ -1060,7 +1066,9 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	Document *doc=findDocument(fullname);
 	if (doc) {
 		delete[] fullname;
+		if (curdoc) curdoc->dec_count();
 		curdoc=doc;
+		if (curdoc) curdoc->inc_count();
 		return 0;
 	}
 	
@@ -1091,8 +1099,9 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	}
 	delete[] fullname;
 	if (doc) { 
+		if (curdoc) curdoc->dec_count();
 		curdoc=doc; 
-		doc->dec_count();
+		//doc->dec_count(); <-- count kept for curdoc link
 		return 0; 
 	}
 	return -1;
@@ -1346,9 +1355,9 @@ int main(int argc,char **argv)
 	
 	laidout->init(argc,argv);
 
-	DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
-	DBG stylemanager.dump(stderr,3);
-	DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
+	//DBG cerr <<"------------ stylemanager->dump --------------------"<<endl;
+	//DBG stylemanager.dump(stderr,3);
+	//DBG cerr <<"---------- stylemanager->dump end ---------------------"<<endl;
 
 	laidout->run();
 
