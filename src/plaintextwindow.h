@@ -30,6 +30,7 @@ class PlainTextWindow : public Laxkit::RowFrame
  protected:
 	PlainText *textobj;
 	int syncText(int filetoo);
+	void uniqueName(PlainText *obj);
  public:
  	PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder,
@@ -40,6 +41,8 @@ class PlainTextWindow : public Laxkit::RowFrame
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int UseThis(PlainText *txt);
 	virtual int init();
+	virtual void updateControls();
+	virtual void callSaveAs();
 };
 
 #endif

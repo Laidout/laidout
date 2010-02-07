@@ -903,7 +903,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 
 	 // load in any projects or documents after the args
-	Document *doc;
+	Document *doc=NULL;
 	index=topwindows.n;
 	if (!project) project=new Project;
 	for (c=optind; c<argc; c++) {
@@ -1031,7 +1031,7 @@ Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
 	Document *doc=new Document(NULL,fullname);
 	
 	 //must push before Load to not screw up setting up windows and other controls
-	project->Push(doc); // docs is a plain Laxkit::PtrStack of Document
+	project->Push(doc);
 	//doc->dec_count();
 	if (doc->Load(fullname,error_ret)==0) { // load failed
 		project->Pop(NULL);
@@ -1093,6 +1093,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	//doc->dec_count();
 	
 	if (doc->Load(fullname, error_ret)==0) {
+		 //load failed
 		project->Pop(NULL);
 		doc->dec_count();
 		doc=NULL;

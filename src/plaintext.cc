@@ -82,7 +82,7 @@ PlainText::PlainText()
 PlainText::~PlainText()
 {
 	if (thetext) delete[] thetext;
-	if (filename) delete[] name;
+	if (filename) delete[] filename;
 	if (name) delete[] name;
 	if (owner && dynamic_cast<RefCounted *>(owner))
 		dynamic_cast<RefCounted *>(owner)->dec_count();

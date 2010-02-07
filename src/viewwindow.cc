@@ -2767,6 +2767,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			IntAttribute(value,&pn);
 		} else if (!strcmp(name,"document")) {
 			doc=laidout->findDocument(value);
+			if (doc) doc->inc_count();
 		} else if (!strcmp(name,"limbo")) {
 			LaidoutViewport *vp=(LaidoutViewport *)viewport;
 			Group *g;
@@ -2779,7 +2780,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 					break;
 				}
 			} 
-			((LaidoutViewport *)viewport)->limbo->dump_in_atts(att->attributes.e[c],0,context);
+			if (vp->limbo) vp->limbo->dump_in_atts(att->attributes.e[c],0,context);
 		}
 	}
 	//*** there should be error checking on x,y
