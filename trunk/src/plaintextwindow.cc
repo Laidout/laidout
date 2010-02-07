@@ -33,11 +33,12 @@ using namespace std;
 
 using namespace Laxkit;
 
-#define TEXT_Select_Temp     -1
-#define TEXT_Add_New         -2
-#define TEXT_Delete_Current  -3
-#define TEXT_Save_Internally -4
-#define TEXT_Save_In_File    -5
+#define TEXT_Select_Temp       -1
+#define TEXT_Add_New           -2
+#define TEXT_Delete_Current    -3
+#define TEXT_Save_With_Project -4
+#define TEXT_Save_Internally   -5
+#define TEXT_Save_In_File      -6
 
 
 //------------------------------ PlainTextWindow -------------------------------
@@ -88,8 +89,45 @@ int PlainTextWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 
 		delete data;
 		return 0;
+
+	} else if (!strcmp(mes,"saveAsPopup")) {
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s || !s->str) return 1;
+	
+		makestr(textobj->filename,s->str);
+		textobj->SaveText();// ***if save error, should notify something
+
+		delete data;
+		return 0;
+
 	}
 	return 1;
+}
+
+//! Update window controls to reflect current state of textobj.
+void PlainTextWindow::updateControls()
+{
+	//***
+	cout <<"Must implement PlainTextWindow::updateControls()!!"<<endl;
+}
+
+//! Make obj->name be a new name not found in the project.
+void PlainTextWindow::uniqueName(PlainText *obj)
+{
+	char *newname=NULL;
+	int c;
+	makestr(obj->name,_("Text object"));
+	while (1) {
+		for (c=0; c<laidout->project->textobjects.n; c++) {
+			if (!strcmp(obj->name,laidout->project->textobjects.e[c]->name)) {
+				newname=increment_file(obj->name);
+				delete[] obj->name;
+				obj->name=newname;
+				break;
+			}
+		}
+		if (c==laidout->project->textobjects.n) break; //name not used
+	}
 }
 
 int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
@@ -109,36 +147,69 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		int i=e->data.l[1];
 		if (i<0) {
 			if (i==TEXT_Select_Temp) {
-				//****
+				 //now you can't really select this any more
+				return 0;
+
+			} else if (i==TEXT_Save_With_Project) {
+				 //Change the save location to save with project.
+				 //If it is file text, then the project will save the file location, not the contents
+				int pos=laidout->project->textobjects.findindex(textobj);
+				if (pos>=0) return 0;
+				if (textobj->texttype==TEXT_Temporary) textobj->texttype=TEXT_Note;
+				if (isblank(textobj->name)) {
+					uniqueName(textobj);
+					LineInput *inp=dynamic_cast<LineInput *>(findChildWindow("nameinput"));
+					if (inp) {
+						const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
+						inp->SetText(str);
+					}
+				}
+				laidout->project->textobjects.push(textobj);
+				updateControls();
+				return 0;
+
 			} else if (i==TEXT_Save_Internally) {
-				//****
+				 //if was saving as a file, remove the filename and make it save with the project/document
+				if (!textobj->filename) return 0;
+				makestr(textobj->filename,NULL);
+				updateControls();
+				return 0;
+
 			} else if (i==TEXT_Save_In_File) {
+				 //Change the save location to save in a file.
 				//****
+				if (textobj->filename) return 0;
+				syncText(0);
+				callSaveAs();
+				return 0;
+
 			} else if (i==TEXT_Add_New) {
+				 //Create a new blank text object, push onto project, 
+				 //and make it the current one in editor
 				PlainText *obj=new PlainText();
 				obj->texttype=TEXT_Note;
 
 				 //figure out a unique name
-				char *newname=NULL;
-				int c;
-				makestr(obj->name,_("Text object"));
-				while (1) {
-					for (c=0; c<laidout->project->textobjects.n; c++) {
-						if (!strcmp(obj->name,laidout->project->textobjects.e[c]->name)) {
-							newname=increment_file(obj->name);
-							break;
-						}
-					}
-					if (c==laidout->project->textobjects.n) break; //name not used
-				}
+				uniqueName(obj);
+
 				 //push object onto project
 				laidout->project->textobjects.push(obj);
 				UseThis(obj);
+				obj->dec_count();
 				return 0;
 
 			} else if (i==TEXT_Delete_Current) {
-				//****if in project, remove from project
-				//either way redo with a temporary object
+				 //if in project, remove from project
+				if (!textobj) return 0;
+				if (textobj->texttype==TEXT_Temporary) return 0;
+				int pos=laidout->project->textobjects.findindex(textobj);
+				if (pos>=0) {
+					laidout->project->textobjects.remove(pos);
+				}
+				if (laidout->project->textobjects.n) UseThis(laidout->project->textobjects.e[0]);
+				else UseThis(NULL);
+				return 0;
+
 			}
 		} else if (i>=0 && i<laidout->project->textobjects.n) {
 			UseThis(laidout->project->textobjects.e[i]);
@@ -151,7 +222,9 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 		 //---add textobject list, numbers start at 0
 		menu->AddSep(_("Project texts"));
-		int c,pos=-1, currentobj=-1, isprojects=0;
+		int c,pos=-1,
+			currentobj=-1,
+			isprojects=0;
 		if (laidout->project->textobjects.n) {
 			for (c=0; c<laidout->project->textobjects.n; c++) {
 				pos=menu->AddItem(laidout->project->textobjects.e[c]->name,c,LAX_ISTOGGLE|LAX_OFF)-1;
@@ -167,9 +240,17 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		menu->AddSep(_("Content save location"));
 		int isinternal=-1;
 		if (textobj) { if (textobj->Filename()) isinternal=0; else isinternal=1; } 
-		pos=menu->AddItem(_("(Temporary)"),TEXT_Select_Temp,LAX_ISTOGGLE|LAX_OFF|(isprojects?0:LAX_CHECKED))-1;
-		menu->AddItem(_("Save with project"),TEXT_Save_Internally,LAX_ISTOGGLE|LAX_OFF|(isinternal==1?LAX_CHECKED:0));
-		menu->AddItem(_("Save in its own file"),   TEXT_Save_In_File,LAX_ISTOGGLE|LAX_OFF|(isinternal==0?LAX_CHECKED:0));
+
+		 //temporary indicator only if text IS temporary..
+		//if (!isprojects) menu->AddItem(_("(Temporary)"),TEXT_Select_Temp,LAX_ISTOGGLE|LAX_OFF|(isprojects?0:LAX_CHECKED));
+		if (!isprojects) menu->AddItem(_("Save with project"),TEXT_Save_With_Project, LAX_OFF);
+		if (isinternal) menu->AddItem(_("Save in its own file"),   TEXT_Save_In_File,LAX_OFF);
+		else {
+			char *str=new char[strlen(_("Save in file: "))+strlen(textobj->filename)+5];
+			sprintf(str,"%s %s",_("Save in file: "),textobj->filename);
+			menu->AddItem(str,   TEXT_Save_In_File,LAX_ISTOGGLE|LAX_OFF|LAX_CHECKED);
+			menu->AddItem(_("Save within project file"),   TEXT_Save_Internally,LAX_ISTOGGLE|LAX_OFF);
+		}
 
 		if (currentobj>=0) menu->menuitems.e[currentobj]->state|=LAX_CHECKED;
 
@@ -186,7 +267,7 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//}
 		menu->AddSep();
 		menu->AddItem(_("Add new to project"), TEXT_Add_New);
-		if (isprojects) menu->AddItem(_("Remove current from project"), TEXT_Delete_Current);
+		if (isprojects) menu->AddItem(_("Remove current"), TEXT_Delete_Current);
 
 
 		 //create the actual popup menu...
@@ -229,7 +310,7 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
 			prependstr(output,":\n");
 			prependstr(output,_("Script output"));
-			MessageBox *mbox=new MessageBox(NULL,_("Script output"),ANXWIN_CENTER, 0,0,0,0,0,
+			MessageBox *mbox=new MessageBox(NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
 										NULL,None,NULL, output);
 			mbox->AddButton(TBUT_OK);
 			mbox->AddButton(_("Dammit!"),0);
@@ -251,6 +332,14 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
+void PlainTextWindow::callSaveAs()
+{
+	app->rundialog(new FileDialog(NULL,"Save As...",
+				ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
+				0,0,0,0,0, window,"saveAsPopup",
+				textobj->filename));
+}
+
 //! Syncronize the text object with the text in the editor.
 /*! This should update any objects that depend on the current\n"
  *  text object, if any.
@@ -266,7 +355,8 @@ int PlainTextWindow::syncText(int filetoo)
 	if (!edit) return 1;
 
 	textobj->SetText(edit->GetCText());
-	if (filetoo) textobj->SaveText();
+	if (filetoo) if (textobj->SaveText()!=0) callSaveAs();
+	updateControls();
 	return 0;
 }
 
@@ -340,9 +430,11 @@ int PlainTextWindow::UseThis(PlainText *txt)
 	if (textobj) textobj->dec_count();
 	textobj=txt;
 	if (textobj) textobj->inc_count();
+	if (!textobj) textobj=new PlainText();
 
 	//***update edit from textobj
 	cout <<"*******need to update the controls in PlainTextWindow!!"<<endl;
+
 	MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindow("plain-text-edit"));
 	if (edit) {
 		edit->SetText(textobj->GetText());

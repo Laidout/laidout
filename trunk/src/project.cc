@@ -40,6 +40,9 @@ using namespace LaxFiles;
  *
  * This allows Projects to contain many documents that may not be loaded all at once.
  */
+/*! \var int ProjDocument::is_in_project
+ * \brief 1 if the document is actually loaded into memory.
+ */
 
 /*! If ndoc!=NULL, its count is incremented.
  */
@@ -50,7 +53,7 @@ ProjDocument::ProjDocument(Document *ndoc,char *file,char *nme)
 	doc=ndoc;
 	if (doc) doc->inc_count();
 	if (!filename && doc->Saveas()) filename=newstr(doc->Saveas());
-	is_in_project=1;
+	is_in_project=(doc?1:0);
 }
 
 ProjDocument::~ProjDocument()
@@ -112,6 +115,7 @@ int Project::valid()
 }
 
 /*! Return 0 for success or non-zero for error.
+ * This will result in doc's count incremented by one.
  */
 int Project::Push(Document *doc)
 {
@@ -121,6 +125,7 @@ int Project::Push(Document *doc)
 }
 
 /*! Return 0 for document removed, or 1 for not found or otherwise not removed.
+ * The doc's count will be decremented.
  *
  * This will cast a TreeDocGone event via notifyDocTreeChanged(NULL,TreeDocGone).
  */
