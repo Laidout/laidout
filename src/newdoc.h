@@ -29,6 +29,8 @@
 #include "laidout.h"
 #include "papersizes.h"
 
+#define NEWDOC_EDIT
+
 class NewDocWindow : public Laxkit::RowFrame
 {
 	int mx,my;
@@ -38,6 +40,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	 // the names of each, so to change Left->Inside, Top->Inside (like calender), etc
 	const char *margintextl,*margintextr,*margintextt,*margintextb; 
 	Imposition *imp;
+	Document *doc;
 	PaperStyle *papertype;
 	
 	Laxkit::PtrStack<PaperStyle> *papersizes;
@@ -48,7 +51,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::MessageBar *mesbar;
 	Laxkit::CheckBox *defaultpage,*custompage;
  	NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-			int xx,int yy,int ww,int hh,int brder);
+			int xx,int yy,int ww,int hh,int brder,Document *ndoc=NULL);
 	virtual ~NewDocWindow();
 	virtual const char *whattype() { return "NewDocWindow"; }
 	virtual int preinit();

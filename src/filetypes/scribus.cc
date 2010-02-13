@@ -1145,8 +1145,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		Imposition *imp=new Singles; //*** this is not necessarily so! uses PageSets??
 		paper->flags=((paper->flags)&~1)|(landscape?1:0);
 		imp->SetPaperSize(paper);
-		doc=new Document(imp,Untitled_name());
-		imp->dec_count();
+		doc=new Document(imp,Untitled_name());//incs imp count
+		imp->dec_count();//remove initial count
 	}
 
 	if (doc && docpagenum+(end-start)>=doc->pages.n) //create enough pages to hold the Scribus pages

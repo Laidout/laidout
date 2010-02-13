@@ -544,7 +544,10 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			return 0;
 
 		} else if (i==ACTION_EditCurrentDocSettings) {
-			cout << " *** need to implement edit settings!!!"<<endl;
+			NewDocWindow *win=new NewDocWindow(NULL,_("Edit document settings"),0,
+							0,0,0,0,0,
+							doc);
+			app->rundialog(win);
 			return 0;
 		}
 

@@ -236,8 +236,11 @@ anXWindow *BrandNew(int which)
  *  
  */  
 
+/*! If doc!=NULL, then assume we are editing settings of that document.
+ */
 NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-							int xx,int yy,int ww,int hh,int brder)
+							int xx,int yy,int ww,int hh,int brder,
+							Document *ndoc)
 		: RowFrame(parnt,ntitle,nstyle|ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER,
 					xx,yy,ww,hh,brder, NULL,None,NULL,
 					10)
@@ -251,8 +254,18 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 	papersizes=NULL;
 	numpages=NULL;
 
-	imp=NULL;
 	papertype=NULL;
+	imp=NULL;
+
+	doc=ndoc;
+	if (doc) doc->inc_count();
+}
+
+NewDocWindow::~NewDocWindow()
+{
+	if (doc) doc->dec_count();
+	if (imp) delete imp;
+	delete papertype;
 }
 
 int NewDocWindow::preinit()
@@ -289,12 +302,14 @@ int NewDocWindow::init()
 	 
 	int c,c2,o;
 	char *where=NULL;
+	if (doc) where=newstr(doc->Saveas());
 	if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
 	saveas=new LineInput(this,"save as",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 1, 
 						NULL,window,"save as",
 			            _("Save As:"),where,0,
 			            0,0,1,0,3,3);
+	if (where) { delete[] where; where=NULL; }
 	AddWin(saveas, 300,0,2000,50, linpheight,0,0,50);
 	tbut=new TextButton(this,"saveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 			saveas,window,"saveas",
@@ -306,9 +321,13 @@ int NewDocWindow::init()
 	 // -------------- Paper Size --------------------
 	
 	papersizes=&laidout->papersizes;
-	papertype=(PaperStyle *)papersizes->e[0]->duplicate();
+
+	if (doc && doc->imposition->paper && doc->imposition->paper->paperstyle)
+		papertype=(PaperStyle*)doc->imposition->paper->paperstyle->duplicate();
+	if (!papertype) papertype=(PaperStyle *)papersizes->e[0]->duplicate();
 	char blah[100],blah2[100];
 	o=papertype->flags;
+	curorientation=o;
 	 // -----Paper Size X
 	sprintf(blah,"%.10g", papertype->w());
 	sprintf(blah2,"%.10g",papertype->h());
@@ -345,10 +364,13 @@ int NewDocWindow::init()
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);// forced linebreak
 
 	 // -----Number of pages
+	int npages=1;
+	if (doc) npages=doc->pages.n;
 	last=numpages=new LineInput(this,"numpages",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
 						last,window,"numpages",
-			            _("Number of pages:"),"1",0, // *** must do auto set papersize
+			            _("Number of pages:"),NULL,0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
+	numpages->SetText(npages);
 	AddWin(numpages, numpages->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);
 
@@ -356,10 +378,12 @@ int NewDocWindow::init()
 
 	 // ------------------- printing misc ---------------------------
 	 // target dpi:		__300____
+	double d=papertype->dpi;
 	last=linp=new LineInput(this,"dpi",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
 						last,window,"dpi",
-			            _("Default dpi:"),"360",0,
+			            _("Default dpi:"),NULL,0,
 			            0,0,1,1,3,3);
+	linp->SetText(d);
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	//AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
@@ -418,8 +442,13 @@ int NewDocWindow::init()
 	AddWin(mesbar, mesbar->win_w,0,0,50, mesbar->win_h,0,0,50);
 	last=impsel=new StrSliderPopup(this,"Imposition",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
 						numpages,window,"imposition");
-	for (c=0; c<laidout->impositionpool.n; c++)
+	int whichimp=0;
+	for (c=0; c<laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->Stylename(),c);
+		if (doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->Stylename()))
+			whichimp=c;
+	}
+	impsel->Select(whichimp);
 	AddWin(impsel, 250,100,50,50, linpheight,0,0,50);
 
 //	last=tbut=new TextButton(this,"impoptions",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"ImpOptions", _("Imposition Options..."),1);
@@ -441,17 +470,28 @@ int NewDocWindow::init()
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddNull();
 
+	if (doc) {
+		CheckBox *box=NULL;
+		last=box=new CheckBox(this,"scalepages",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
+				last,window,"scalepages", _("Scale pages to fit new imposition"),5,5);
+		box->tooltip(_("Scale each page up or down to fit the page sizes in a new imposition"));
+		AddWin(box, box->win_w,0,0,50, linpheight,0,0,50);
+	}
+
 	 // ------Tiling
+	Singles *s=dynamic_cast<Singles *>(imp?imp:(doc?doc->imposition:NULL));
 	last=tiley=new LineInput(this,"y tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
 						last,window,"ytile",
 			            _("Tile y:"),"1", 0,
 			           100,0,1,1,3,3);
+	if (s) tiley->SetText(s->tiley);
 	tiley->tooltip("How many times to repeat a spread vertically on a paper.\nIgnored by net impositions");
 	AddWin(tiley, tiley->win_w,0,50,50, linpheight,0,0,50);
 	last=tilex=new LineInput(this,"x tiling",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 0,0,0,0, 0, 
 						last,window,"xtile",
 			            _("Tile x:"),"1", 0,
 			           100,0,1,1,3,3);
+	if (s) tilex->SetText(s->tilex);
 	tilex->tooltip(_("How many times to repeat a spread horizontally on a paper.\nIgnored by net impositions"));
 	AddWin(tilex, tilex->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
@@ -511,12 +551,17 @@ int NewDocWindow::init()
 	
 	//***first page is page number: 	___1_
 
+//		s->insetl=marginl->GetDouble();
+//		s->insetr=marginr->GetDouble();
+//		s->insett=margint->GetDouble();
+//		s->insetb=marginb->GetDouble();
 	 // ------------------ margins ------------------
 	last=linp=margint=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,window,"margin t",
 			            margintextt,NULL,0,
 			            0,0,3,0,3,3);
+	if (s) linp->SetText(s->insett);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
@@ -525,6 +570,7 @@ int NewDocWindow::init()
 						last,window,"margin b",
 			            margintextb,NULL,0,
 			            0,0,3,0,3,3);
+	if (s) linp->SetText(s->insetb);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
@@ -533,6 +579,7 @@ int NewDocWindow::init()
 						last,window,"margin l",
 			            margintextl,NULL,0,
 			            0,0,3,0,3,3);
+	if (s) linp->SetText(s->insetl);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 	
@@ -541,6 +588,7 @@ int NewDocWindow::init()
 						last,window,"margin r",
 			            margintextr,NULL,0,
 			            0,0,3,0,3,3);
+	if (s) linp->SetText(s->insetr);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 	
@@ -561,7 +609,8 @@ int NewDocWindow::init()
 	//                        int xx,int yy,int ww,int hh,unsigned int brder,anxwindow *prev,window nowner,atom nsendmes,int nid=0,
 	//                        const char *nname=NULL,int npadx=0,int npady=0);
 	//  
-	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"Ok", _("Create Document"),TBUT_OK);
+	last=tbut=new TextButton(this,"ok",ANXWIN_CLICK_FOCUS,0,0,0,0,1, last,window,"Ok",
+			doc?_("Apply settings"):_("Create Document"),TBUT_OK);
 	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 20,0,0,50, 5,0,0,50); // add space of 20 pixels
 	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS|TBUT_CANCEL,0,0,0,0,1, last,window,"Cancel");
@@ -575,18 +624,22 @@ int NewDocWindow::init()
 	return 0;
 }
 
-NewDocWindow::~NewDocWindow()
-{
-	if (imp) delete imp;
-	delete papertype;
-}
-
 int NewDocWindow::DataEvent(EventData *data,const char *mes)
 {
 	if (!strcmp(mes,"save as")) {
+		 //comes after a file select dialog for document save as
 		StrEventData *s=dynamic_cast<StrEventData *>(data);
 		if (!s) return 1;
 		saveas->SetText(s->str);
+		delete data;
+		return 0;
+
+	} else if (!strcmp(mes,"impfile")) {
+		 //comes after a file select dialog for imposition file
+		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		if (!s) return 1;
+		impfromfile->SetText(s->str);
+		updateImposition();
 		delete data;
 		return 0;
 	}
@@ -597,10 +650,14 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
 	DBG cerr <<"newdocmessage: "<<mes<<endl;
 	if (!strcmp(mes,"paper size")) {
+		DBG cerr <<"**** newdoc: new paper size"<<endl;
+
 	} else if (!strcmp(mes,"ytile")) { 
 		DBG cerr <<"**** newdoc: new y tile value"<<endl;
+
 	} else if (!strcmp(mes,"xtile")) { 
 		DBG cerr <<"**** newdoc: new x tile value"<<endl;
+
 	} else if (!strcmp(mes,"paper name")) { 
 		 // new paper selected from the popup, so must find the x/y and set x/y appropriately
 		int i=e->data.l[0];
@@ -616,6 +673,8 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		numtostr(num,30,papertype->h(),0);
 		papery->SetText(num);
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
+		return 0;
+
 	} else if (!strcmp(mes,"orientation")) {
 		int l=(int)e->data.l[0];
 		DBG cerr <<"New orientation:"<<l<<endl;
@@ -629,6 +688,8 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			curorientation=l;
 			papertype->flags=curorientation;
 		}
+		return 0;
+
 	} else if (!strcmp(mes,"imposition")) {
 		 //when new imposition type selected from popup menu
 		if (e->data.l[0]<0 || e->data.l[0]>=laidout->impositionpool.n) return 0;
@@ -643,38 +704,45 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		return 0;
 		
-	} else if (!strcmp(mes,"papersizex")) {
-	} else if (!strcmp(mes,"papersizey")) {
-	} else if (!strcmp(mes,"pagesizex")) {
-	} else if (!strcmp(mes,"pagesizey")) {
-	} else if (!strcmp(mes,"check custom")) {
-		if (custompage->State()==LAX_OFF) custompage->State(LAX_ON);
-		defaultpage->State(LAX_OFF);
-	} else if (!strcmp(mes,"check default")) {
-		if (defaultpage->State()==LAX_OFF) defaultpage->State(LAX_ON);
-		custompage->State(LAX_OFF);
-		//***gray out the x/y inputs for page size? or auto convert to custom when typing there?
-	} else if (!strcmp(mes,"target dpi")) {
-	} else if (!strcmp(mes,"target printer")) {
-	} else if (!strcmp(mes,"pagesetup proc")) {
-	} else if (!strcmp(mes,"paper layout")) {
-	} else if (!strcmp(mes,"save as")) {
-	} else if (!strcmp(mes,"impfromfile")) { // from control button
+	} else if (!strcmp(mes,"paper x")) {
+		//***should switch to custom paper maybe
+
+	} else if (!strcmp(mes,"paper y")) {
+		//***should switch to custom paper maybe
+
+//	} else if (!strcmp(mes,"check custom")) {
+//		if (custompage->State()==LAX_OFF) custompage->State(LAX_ON);
+//		defaultpage->State(LAX_OFF);
+//		return 0;
+//
+//	} else if (!strcmp(mes,"check default")) {
+//		if (defaultpage->State()==LAX_OFF) defaultpage->State(LAX_ON);
+//		custompage->State(LAX_OFF);
+//		//***gray out the x/y inputs for page size? or auto convert to custom when typing there?
+//		return 0;
+
+	} else if (!strcmp(mes,"dpi")) {
+		//****
+
+	} else if (!strcmp(mes,"impfromfile")) { 
 		if (e->data.l[0]==3 || e->data.l[0]==1) {
-			 //focus was lost or enter pressed
+			 //focus was lost or enter pressed from imp file input
 			updateImposition();
 		}
 		return 0;
-	} else if (!strcmp(mes,"impfileselect")) { // from control button
+
+	} else if (!strcmp(mes,"impfileselect")) { // from imp file "..." control button
 		app->rundialog(new FileDialog(NULL,_("Imposition from file"),
 					ANXWIN_REMEMBER|FILES_OPEN_ONE, 0,0, 0,0,0,
-					impfromfile->window, "save as",impfromfile->GetCText()));
+					window, "impfile",impfromfile->GetCText()));
 		return 0;
-	} else if (!strcmp(mes,"saveas")) { // from control button
+
+	} else if (!strcmp(mes,"saveas")) { // from doc save as "..." control button
 		app->rundialog(new FileDialog(NULL,_("Save As"),
 					ANXWIN_REMEMBER|FILES_SAVE_AS, 0,0, 0,0,0,
 					saveas->window, "save as",saveas->GetCText()));
 		return 0;
+
 	} else if (!strcmp(mes,"Ok")) {
 		int c=file_exists(saveas->GetCText(),1,NULL);
 		if (c && c!=S_IFREG) {
@@ -684,32 +752,31 @@ int NewDocWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		sendNewDoc();
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
+		return 0;
+
 	} else if (!strcmp(mes,"Cancel")) {
 		if (win_parent) app->destroywindow(win_parent);
 		else app->destroywindow(this);
+		return 0;
 	}
 	return 0;
 }
 
-//! Update imposition settings based on a changed file
+//! Update imposition settings based on a changed imposition file
 void NewDocWindow::updateImposition()
 {
 	DBG cerr<<"----------attempting to updateImposition()-------"<<endl;
+
 	 //we load the off file here rather than sendNewDoc() 
 	 //to check to see if it is possible to do so... maybe not so important...
 	const char *file=impfromfile->GetCText();
-	if (isOffFile(file)) {
-		Polyhedron *poly=new Polyhedron();
-		if (poly->dumpInFile(file,NULL)) {
-			 //failure!
-			DBG cerr <<"*** Failure to read off file: "<<file<<endl;
-			delete poly;
-			return;
-		}
+	
+	Polyhedron *poly=new Polyhedron();
+	if (poly->dumpInFile(file,NULL)==0) {
 		Net *net=new Net;
 		net->basenet=poly;
 		net->TotalUnwrap();
-		delete imp;
+		if (imp && !(doc && imp==doc->imposition)) delete imp;
 		NetImposition *nimp;
 		imp=nimp=new NetImposition();
 		nimp->SetNet(net);
@@ -722,12 +789,19 @@ void NewDocWindow::updateImposition()
 			}
 		}
 		
-		DBG cerr<<"   installed OFF file..."<<endl;
+		DBG cerr<<"   installed polyhedron file..."<<endl;
 		return;
-	} else if (laidout_file_type(file,NULL,NULL,NULL,"Imposition",NULL)==0) {
-		//***read in imposition, set things in dialog accordingly
+
+	} else {
+		DBG cerr <<"*** Failure to read polyhedron file: "<<file<<endl;
+		delete poly;
+	}
+
+	if (laidout_file_type(file,NULL,NULL,NULL,"Imposition",NULL)==0) {
+		cout <<" ***must implement read in imposition, set things in newdoc dialog accordingly"<<endl;
 		return;
 	}
+
 	impfromfile->GetLineEdit()->Valid(0);
 	DBG cerr<<"   updateImposition() FAILED..."<<endl;
 }
@@ -775,7 +849,16 @@ void NewDocWindow::sendNewDoc()
 		
 	imposition->NumPages(npgs);
 	imposition->SetPaperSize(papertype);
-	laidout->NewDocument(imposition,saveas->GetCText()); //incs imp count, should be 2 now
+
+	if (doc) {
+		cout <<"****** imp sendDoc to newDocPrefs ********"<<endl;
+		CheckBox *box=dynamic_cast<CheckBox *>(findChildWindow("scalepages"));
+
+		doc->Saveas(saveas->GetCText());
+		doc->ReImpose(imposition,box && box->State()==LAX_ON); //1 for scale pages
+	} else {
+		laidout->NewDocument(imposition,saveas->GetCText()); //incs imp count, should be 2 now
+	}
 	if (imposition) imposition->dec_count();//remove excess count
 }
 
