@@ -97,6 +97,8 @@ int PlainTextWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 		makestr(textobj->filename,s->str);
 		textobj->SaveText();// ***if save error, should notify something
 
+		if (isblank(textobj->name)) uniqueName(textobj);
+
 		delete data;
 		return 0;
 
@@ -177,7 +179,6 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 			} else if (i==TEXT_Save_In_File) {
 				 //Change the save location to save in a file.
-				//****
 				if (textobj->filename) return 0;
 				syncText(0);
 				callSaveAs();
@@ -289,6 +290,8 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"save")) { 
+		//if (isblank(textobj->filename)) { syncText(0); callSaveAs(); }
+		//else syncText(1);
 		syncText(1);
 		return 0; 
 
@@ -397,7 +400,7 @@ int PlainTextWindow::init()
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
 
 	 //--------save
-	last=ibut=new IconButton(this,"save",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"saveDoc",-1,
+	last=ibut=new IconButton(this,"save",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"save",-1,
 			laidout->icons.GetIcon("Save"),_("Save"));
 	ibut->tooltip(_("Save the current text"));
 	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);

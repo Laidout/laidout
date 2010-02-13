@@ -42,10 +42,10 @@ class PaperStyle : public Style
 	int color_red,color_green,color_blue;
 	char *name;
 	double width,height;
-	int dpi;
+	double dpi;
 	unsigned int flags; //1=landscape !(&1)=portrait
 	PaperStyle();
-	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,int ndpi);
+	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,double ndpi);
 	virtual ~PaperStyle();
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }

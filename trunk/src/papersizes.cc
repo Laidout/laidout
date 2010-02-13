@@ -146,7 +146,7 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 {
 	if (papers==NULL) papers=new PtrStack<PaperStyle>;
 	double x,y; 
-	int dpi;
+	double dpi;
 	for (int c=0; BuiltinPaperSizes[c]; c+=3) {
 		 // x,y were in inches
 		x=atof(BuiltinPaperSizes[c+1]);
@@ -199,7 +199,7 @@ PaperStyle::PaperStyle()
 }
 
 //! Simple constructor, sets name, w, h, flags, dpi.
-PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,int ndpi)
+PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,double ndpi)
 {
 	if (nname) {
 		name=new char[strlen(nname)+1];
@@ -244,7 +244,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (name) fprintf(f,"%sname %s\n",spc,name);
 	fprintf(f,"%swidth %.10g\n",spc,width); 
 	fprintf(f,"%sheight %.10g\n",spc,height);
-	fprintf(f,"%sdpi %d\n",spc,dpi);
+	fprintf(f,"%sdpi %.10g\n",spc,dpi);
 	fprintf(f,"%s%s\n",spc,(flags&1?"landscape":"portrait"));
 }
 
@@ -263,7 +263,7 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 		} else if (!strcmp(aname,"height")) {
 			DoubleAttribute(value,&height);
 		} else if (!strcmp(aname,"dpi")) {
-			IntAttribute(value,&dpi);
+			DoubleAttribute(value,&dpi);
 		} else if (!strcmp(aname,"landscape")) {
 			flags|=1;//*** make this a define?
 		} else if (!strcmp(aname,"portrait")) {
