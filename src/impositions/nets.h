@@ -102,7 +102,7 @@ class AbstractNet :
 	virtual const char *whattype() { return "AbstractNet"; }
 	virtual const char *NetName() { return name; }
 	virtual int NumFaces()=0;
-	virtual NetFace *GetFace(int i) = 0;
+	virtual NetFace *GetFace(int i,double scaling) = 0;
 	virtual int Modified();
 	virtual int Modified(int m);
 	virtual const char *Filename();
@@ -117,7 +117,7 @@ class BasicNet : public AbstractNet, public Laxkit::PtrStack<NetFace>
 	virtual ~BasicNet();
 	virtual const char *whattype() { return "BasicNet"; }
 	virtual int NumFaces() { return Laxkit::PtrStack<NetFace>::n; }
-	virtual NetFace *GetFace(int i);
+	virtual NetFace *GetFace(int i,double scaling);
 
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);

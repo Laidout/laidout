@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -843,7 +843,7 @@ void NewDocWindow::sendNewDoc()
 	} else {
 		NetImposition *n=dynamic_cast<NetImposition *>(imposition);
 		if (n && n->nets.n==0) {
-			n->SetNet("dodecahedron");
+			n->SetNet("Dodecahedron");
 		}
 	}
 		

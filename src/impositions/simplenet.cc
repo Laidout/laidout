@@ -951,7 +951,7 @@ int SimpleNet::Modified()
 	return 0;
 }
 
-NetFace *SimpleNet::GetFace(int i)
+NetFace *SimpleNet::GetFace(int i,double scaling)
 {//***
 	cout <<"*************  BAD BAD MUST IMPLEMENT SimpleNet::GetFace()!!!"<<endl;
 	return NULL;

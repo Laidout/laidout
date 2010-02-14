@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2008-2010 by Tom Lechner
 //
 
 
@@ -31,7 +31,7 @@ using namespace std;
 #define DBG 
 
 
-//-------------------------- Dodecahedron ---------------------------------------------
+//-------------------------- makeBox ---------------------------------------------
 
 //! Return a net of a rectangular box with the given dimenions. 
 /*! str either starts "box" or with a number. For instance a box with width 1, length 2, and
@@ -61,8 +61,10 @@ Net *makeBox(const char *str,double x,double y,double z)
 
 
 	Polyhedron *poly=new Polyhedron;
-	if (x==y && y==z) makestr(poly->name,"Cube");
-	else makestr(poly->name,"Box");
+	char tstr[100];
+	if (x==y && y==z) sprintf(tstr,"Cube(%.10g)",x);
+	else sprintf(tstr,"Box(%.10g,%.10g,%.10g)",x,y,z);
+	makestr(poly->name,tstr);
 
 	poly->AddPoint(spacevector( x, y, z)); //0
 	poly->AddPoint(spacevector(-x, y, z)); //1
@@ -79,10 +81,16 @@ Net *makeBox(const char *str,double x,double y,double z)
 	poly->AddFace("0 3 6 5");
 	poly->AddFace("3 2 7 6");
 	poly->AddFace("4 5 6 7");
+
+	poly->makeedges();
 	 
 	Net *net=new Net;
+	makestr(net->netname,poly->name);
 	net->basenet=poly;
 	net->TotalUnwrap();
+
+	net->rebuildLines();
+
 	return net;
 }
 

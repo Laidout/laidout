@@ -177,7 +177,7 @@ class Polyhedron :
 	virtual int dumpOutVrml(const char *filename);
 
 	 //Abstract net functions
-	virtual NetFace *GetFace(int i);
+	virtual NetFace *GetFace(int i,double scaling);
 	virtual int NumFaces();
 	virtual const char *Filename();
 	virtual int dumpOutNet(FILE *f,int indent,int what);

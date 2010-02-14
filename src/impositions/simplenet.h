@@ -105,7 +105,7 @@ class SimpleNet : public AbstractNet,
 	virtual int Modified();
 
 	virtual int NumFaces() { return Laxkit::PtrStack<NetFace>::n; }
-	virtual NetFace *GetFace(int i);
+	virtual NetFace *GetFace(int i,double scaling);
 
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 };

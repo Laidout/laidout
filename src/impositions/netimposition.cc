@@ -41,6 +41,10 @@ using namespace std;
 
 //----------------------------- NetImposition --------------------------
 
+ //convenience defines for net->info
+#define NETIMP_Internal          1
+#define NETIMP_AlreadyScaled (1<<1)
+
 /*! \class NetImposition
  * \brief Uses a Net object to define the pages and spread.
  *
@@ -56,6 +60,14 @@ using namespace std;
  * a base AbstractNet. Each net can be active or inactive. When inactive, they
  * are accessible only from the imposition editor, and are ignored when it
  * comes to actually working with page data.
+ *
+ * This class interprets Net::info as follows. info&1 means that the net was
+ * internally generated, so that when saving the file, it saves only the class
+ * of imposition, perhaps with minimal other information, rather than the whole
+ * imposition data. info&2 means that the net has already been scaled to
+ * a paper size, so when a user changes the papergroup, the net will not
+ * be scaled again, so as not to screw up all the positioning done with
+ * the initial scaling.
  *
  * \todo needs a little more work to keep track of kinds of pages, especially
  *   when creating getting pagestyles for them.. if pagestyle starts having
@@ -84,6 +96,14 @@ using namespace std;
 /*! \var int NetImposition::printnet
  * \brief Whether to draw an outline of the net when exporting via PaperLayout.
  */
+/*! \var double NetImposition::scalefromnet
+ * \brief Any final scaling factor from the net to spread coordinates.
+ *
+ * Abstract nets like polyhedra, nets, and spreads can all have their own scaling.
+ * Usually abstract nets use the same distance as nets, but to scale nets onto
+ * paper, it is convenient to have a single final scaling factor handy, 
+ * and independent from any one Net or AbstractNet.
+ */
 
 
 //! Constructor. Transfers newnet pointer, does not duplicate.
@@ -94,6 +114,7 @@ using namespace std;
 NetImposition::NetImposition(Net *newnet)
 	: Imposition("Net")
 { 
+	scalefromnet=1;
 	maptoabstractnet=0;
 	pagestyle=NULL;
 	netisbuiltin=0;
@@ -121,11 +142,11 @@ NetImposition::NetImposition(Net *newnet)
 //	if (!newnet) {
 //		newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy);
 //		SetNet(newnet);
-//		newnet->info=-1; //***-1 here means net is a built in net
+//		newnet->info|=NETIMP_Internal; //***-1 here means net is a built in net
 //		newnet->dec_count();
 //	} else {
 //		SetNet(newnet);
-//		newnet->info=0; //***0 here means net is not a built in net
+//		newnet->info&=~NETIMP_Internal; //***0 here means net is not a built in net
 //	}
 
 	
@@ -151,15 +172,18 @@ NetImposition::~NetImposition()
  */
 int NetImposition::SetNet(const char *nettype)
 {
-	if (!strcmp(nettype,"dodecahedron")) {
+	if (!strcasecmp(nettype,"dodecahedron")) {
 		Net *newnet=makeDodecahedronNet(paper->media.maxx,paper->media.maxy); //1 count
 		int c=SetNet(newnet); //adds a count
+		newnet->info|=NETIMP_Internal;
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
 		return c;	
-	} else if (!strcmp(nettype,"box")) {
+
+	} else if (strcasestr(nettype,"box")==nettype) {
 		Net *newnet=makeBox(nettype,0,0,0); 
 		int c=SetNet(newnet); //adds a count
+		newnet->info|=NETIMP_Internal;
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
 		return c;	
@@ -179,7 +203,7 @@ int NetImposition::SetNet(const char *nettype)
 int NetImposition::SetNet(Net *newnet)
 {
 	if (!newnet) return 1;
-	newnet->info=0;//***tag that says net is not built in?? used?
+	newnet->info=0;//clears the info tag, means it is not internal, and needs to scale to fit paper
 	nets.flush();
 	nets.push(newnet);//adds a count
 	
@@ -187,7 +211,9 @@ int NetImposition::SetNet(Net *newnet)
 	abstractnet=newnet->basenet;
 	if (abstractnet) abstractnet->inc_count();
 
-	 //// fit to page
+	 // fit to paper
+	//newnet->rebuildLines();  <--shouldn't have to do this
+	newnet->FindBBox();
 	setPage();
 
 	return 0;
@@ -196,19 +222,42 @@ int NetImposition::SetNet(Net *newnet)
 //! Using a presumably new paper, scale the net to fit the new paper.
 /*! Based on new paper also set up a default page style, if possible.
  *
- * NOTE: *** currently ignores page style... in fact does nothing at all
- *
  * \todo *** figure out if this is useful or not..
+ * \todo *** when there is more than one net, this scales them differently
+ *   depending on how big they are... not a uniform scaling...
  */
 void NetImposition::setPage()
 {
 	if (!nets.n) return;
-//	SomeData page;
-//	page.minx=paper->media.minx;
-//	page.miny=paper->media.miny;
-//	page.maxx=paper->media.maxx;
-//	page.maxy=paper->media.maxy;
-//	for (int c=0; c<nets.n; c++) nets.e[c]->FitToData(&page,page.maxx*.05);
+
+	SomeData page;
+	page.minx=paper->media.minx;
+	page.miny=paper->media.miny;
+	page.maxx=paper->media.maxx;
+	page.maxy=paper->media.maxy;
+
+	for (int c=0; c<nets.n; c++) {
+		if (nets.e[c]->info & NETIMP_AlreadyScaled) continue;
+
+		nets.e[c]->info|=NETIMP_AlreadyScaled;
+
+		nets.e[c]->FitToData(&page,page.maxx*.05, 1);
+		scalefromnet=norm(nets.e[c]->xaxis());
+
+		DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
+
+		DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->matrix[0]<<", "
+		DBG 	<<nets.e[c]->matrix[1]<<", "
+		DBG 	<<nets.e[c]->matrix[2]<<", "
+		DBG 	<<nets.e[c]->matrix[3]<<", "
+		DBG 	<<nets.e[c]->matrix[4]<<", "
+		DBG 	<<nets.e[c]->matrix[5]<<endl;
+		DBG cerr <<"net "<<c<<" bounds xx-yy: "
+		DBG 	<<nets.e[c]->minx<<", "
+		DBG 	<<nets.e[c]->maxx<<", "
+		DBG 	<<nets.e[c]->miny<<", "
+		DBG 	<<nets.e[c]->maxy<<endl;
+	}
 }
 
 //! The newfunc for NetImposition instances.
@@ -353,7 +402,7 @@ Page **NetImposition::CreatePages()
 }
 
 
-//! Return outline of page in paper coords. Origin is page origin.
+//! Return outline of page in page coords. Origin is page origin.
 /*!
  * This is a no frills outline, used primarily to check where the mouse
  * is clicked down on.
@@ -380,9 +429,8 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 	if (maptoabstractnet && abstractnet) {
 		 //existing nets may or may not have the face defined, so it is safer,
 		 //though sometimes slower, to grab from the abstract net
-		face=abstractnet->GetFace(pagenum%abstractnet->NumFaces());
+		face=abstractnet->GetFace(pagenum%abstractnet->NumFaces(),scalefromnet);
 		isbez=face->getOutline(&n,&pts,0);
-		delete face;
 	} else {
 		 //the face is in a net, page numbers are mapped by active nets and FACE_Actual faces
 
@@ -397,7 +445,21 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 		}
 		DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
 
-		isbez=nets.e[neti]->faces.e[netfacei]->getOutline(&n,&pts,0);
+		face=new NetFace;
+		*face=*nets.e[neti]->faces.e[netfacei];
+		
+		double scaling=norm(nets.e[neti]->xaxis()); //theoretically, this will be same as scalefromnet
+		for (int c=0; c<face->edges.n; c++) {
+			Coordinate *t,*coord=face->edges.e[c]->points;
+			t=coord;
+			do {
+				t->x(scaling*t->x()); //to paper scale
+				t->y(scaling*t->y()); //to paper scale
+				t=t->next;
+			} while (t && t!=coord);
+		}
+
+		isbez=face->getOutline(&n,&pts,0);
 	}
 
 	PathsData *newpath=new PathsData(); //count==1
@@ -413,6 +475,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 	newpath->close();
 	newpath->FindBBox();
 	delete[] pts;
+	delete face;
 
 	return newpath;
 }
@@ -499,12 +562,23 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 	 // build lines...
 	NetLine *l=NULL;
 	Path *path=NULL;
+	Coordinate *tt;
 	for (int c=0; c<net->lines.n; c++) {
+		 //shortcut: use copy function in NetLine to create new coord list
 		l=new NetLine;
 		*l=*net->lines.e[c];
+		 
 		path=new Path(l->points,l->linestyle,0);
 		l->points=NULL;
 		delete l;
+
+		 //transform points out of net coords into paper coords
+		tt=path->path;
+		do {
+			tt->p(transform_point(net->m(),tt->p()));
+			tt=tt->next;
+		} while (tt && tt!=path->path);
+
 		spreadpath->paths.push(path,1);
 	}
 	spreadpath->FindBBox();
@@ -538,7 +612,8 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		newpath->FindBBox();
 		delete[] p;
 
-		if (netface->matrix) transform_copy(newpath->m(), netface->matrix);
+		if (netface->matrix) transform_mult(newpath->m(), netface->matrix, net->m());
+		else transform_copy(newpath->m(), net->m());
 		spread->pagestack.push(new PageLocation(page,NULL,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
 	}
@@ -606,6 +681,16 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 		 //there is no need to actually draw the paper, since that is done by the viewer code
 		spread->papergroup=papergroup;
 		spread->papergroup->inc_count();
+
+		 //center spread in paper
+		flatpoint center1(papergroup->papers.e[0]->box->paperstyle->w()/2,papergroup->papers.e[0]->box->paperstyle->h()/2);
+		flatpoint center2((spread->path->maxx+spread->path->minx)/2, (spread->path->maxy+spread->path->miny)/2);
+		spread->path->origin(spread->path->origin() + center1 - center2);
+
+		for (int c=0; c<spread->pagestack.n; c++) {
+			if (!spread->pagestack.e[c]->outline) continue;
+			spread->pagestack.e[c]->outline->origin(spread->pagestack.e[c]->outline->origin()+ center1 - center2);
+		}
 	}
 
 	return spread;
@@ -735,6 +820,8 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 		fprintf(f,"%sprintnet yes     #whether the net lines get printed out with the page data\n",spc);
 		fprintf(f,"%ssimplenet         #this is the same as using: abstractnet simple\n",spc);
 		fprintf(f,"%s                  #It is a basic net definition roughly equivalent to an OFF file\n",spc);
+		fprintf(f,"%sscalingfromnet 1  #any final scaling to apply to a net before mapping\n",spc);
+		fprintf(f,"%s                  #  onto a spread\n",spc);
 		fprintf(f,"%sabstractnet type  #type can be \"file\" or \"Polyhedron\" or \"simple\".\n",spc);
 		fprintf(f,"%sabstractnet file  #this block demonstrates abstract nets based on files.\n",spc);
 		fprintf(f,"%s  filename /path/to/it  #This is used when the abstract net has not been\n",spc);
@@ -765,6 +852,7 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 	if (printnet) fprintf(f,"%sprintnet\n",spc);
 		else fprintf(f,"%sprintnet false\n",spc);
 
+	if (scalefromnet!=1) fprintf(f,"%sscalingfromnet %.10g\n",spc,scalefromnet);
 	if (abstractnet) {
 		if (!strcmp(abstractnet->whattype(),"SimpleNet")) {
 			fprintf(f,"%ssimplenet\n",spc);
@@ -783,7 +871,7 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 		for (int c=0; c<nets.n; c++) {
 			fprintf(f,"%snet",spc);
 
-			if (nets.e[c]->info==-1) fprintf(f," %s\n",nets.e[c]->whatshape());
+			if (nets.e[c]->info&NETIMP_Internal) fprintf(f," %s\n",nets.e[c]->whatshape());
 			else {
 				fprintf(f,"\n");
 				nets.e[c]->dump_out(f,indent+2,0,context); // dump out a custom net
@@ -821,6 +909,9 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 				SetNet(tempnet);
 				tempnet->dec_count();
 			}
+		} else if (!strcmp(name,"scalingfromnet")) {
+			DoubleAttribute(value,&scalefromnet);
+
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);
 		} else if (!strcmp(name,"simplenet")

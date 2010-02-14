@@ -7,14 +7,14 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.09
 ------------
+       Test, test, test! from fresh install to print out, make booklet, portrait, landscape
 (done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
 (done) Add, delete, and rename limbos
 (done) Load, save, add, delete paper groups
 (done) Finish implementing project based setup, particularly being able to save a project, not just load one   
 (done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
-       Ubuntu with gnome seems to totally not display window decorations correctly. Fix!!
 (done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
-       Debug net impositions!!
+(done) Debug net impositions!!
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
 (done) be able to reimpose a document from gui and command (from command mostly works)
 (done) Import(), Export(), NewDocument() commands

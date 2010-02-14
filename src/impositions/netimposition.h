@@ -27,6 +27,7 @@ class NetImposition : public Imposition
  public:
 	PageStyle *pagestyle;
 	AbstractNet *abstractnet;
+	double scalefromnet;
 	Laxkit::RefPtrStack<Net> nets;
 	int maptoabstractnet;
 	int printnet;
