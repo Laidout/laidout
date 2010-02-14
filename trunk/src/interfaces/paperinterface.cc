@@ -707,12 +707,16 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		createMaybebox(flatpoint(dp->screentoreal(x,y)));
 		needtodraw=1;
 		return 0;
-	} else if (ch==LAX_Left && (state&LAX_STATE_MASK)==0) {
-		//*** select previous paper
-		return 0;
-	} else if (ch==LAX_Right && (state&LAX_STATE_MASK)==0) {
-		//*** select next paper
-		return 0;
+
+//*** these interfere with select next tool keys:
+//	} else if (ch==LAX_Left && (state&LAX_STATE_MASK)==0) {
+//		//*** select previous paper
+//		return 0;
+//
+//	} else if (ch==LAX_Right && (state&LAX_STATE_MASK)==0) {
+//		//*** select next paper
+//		return 0;
+
 	} else if ((ch==LAX_Del || ch==LAX_Bksp) && (state&LAX_STATE_MASK)==0) {
 		if (!curboxes.n || !papergroup) return 0;
 		int c2;
@@ -725,6 +729,7 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		if (curbox) { curbox->dec_count(); curbox=NULL; }
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
 		if (!papergroup) return 1;
 		needtodraw=1;
@@ -735,6 +740,7 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		for (int c=0; c<papergroup->papers.n; c++) 
 			curboxes.push(papergroup->papers.e[c],0);
 		return 0;
+
 	} else if (ch=='r' && (state&LAX_STATE_MASK)==0) {
 		if (papergroup && papergroup->papers.n) {
 			flatpoint p;
@@ -747,11 +753,13 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 			needtodraw=1;
 			return 0;
 		}
+
 	} else if (ch=='d' && (state&LAX_STATE_MASK)==0) {
 		showdecs++;
 		if (showdecs>2) showdecs=0;
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='9' && (state&LAX_STATE_MASK)==0) {
 		 //rotate by 90 degree increments
 		if (curboxes.n) {

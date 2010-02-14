@@ -1432,9 +1432,10 @@ int Polyhedron::dumpOutNet(FILE *f,int indent,int what)
 
 int Polyhedron::NumFaces() { return faces.n; }
 
+//! Returns a new NetFace object for face i.
 /*! \todo if face normals are not defined properly, this may not work as expected.
  */
-NetFace *Polyhedron::GetFace(int i)
+NetFace *Polyhedron::GetFace(int i,double scaling)
 {
 	if (i<0 || i>=faces.n) return NULL;
 
@@ -1458,7 +1459,7 @@ NetFace *Polyhedron::GetFace(int i)
 				}
 			}
 		}
-		e->points=new LaxInterfaces::Coordinate(pgon.p[c].x,pgon.p[c].y);
+		e->points=new LaxInterfaces::Coordinate(pgon.p[c].x*scaling, pgon.p[c].y*scaling);
 		f->edges.push(e,1);
 	}
 	return f;

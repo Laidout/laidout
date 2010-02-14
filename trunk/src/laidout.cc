@@ -1114,7 +1114,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
  * <pre>
  *  laidout -n "saveas blah.doc, letter, 3 pages, booklet"
  *  laidout -n "3 pages, net(box,3,5,9)"
- *  laidout -n "net(dodecahedron)"
+ *  laidout -n 'net("Dodecahedron")'
  * </pre>
  * 
  * For now, only paper size, number of pages, and very basic imposition type
@@ -1148,7 +1148,8 @@ int LaidoutApp::NewDocument(const char *spec)
 
 //---------------------****
 	 // break down the spec
-	char **fields=split(spec,',',NULL),*field;
+	char **fields=split(spec,',',NULL),
+		 *field=NULL;
 	if (!fields) { 
 		DBG cout <<"*** broken spec"<<endl;
 		return 2; 
@@ -1161,6 +1162,12 @@ int LaidoutApp::NewDocument(const char *spec)
 		n=0;
 		while (isalnum(field[n])) n++;
 		if (!field) continue;
+
+		if (strcasestr(field,"box")==field && isspace(field[3])) {
+			NetImposition *nimp=new NetImposition;
+			nimp->SetNet(field);
+			imp=nimp;
+		}
 
 		 // check for new filename
 		if (!strncasecmp(field,"saveas",n)) {
@@ -1212,7 +1219,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!strcmp("Net",imp->Stylename())) {
 		NetImposition *neti=dynamic_cast<NetImposition *>(imp);
 		if (!neti->nets.n) {
-			neti->SetNet("dodecahedron");
+			neti->SetNet("Dodecahedron");
 		}
 	}
 	imp->SetPaperSize(paper); // makes a duplicate of paper

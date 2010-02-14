@@ -358,6 +358,8 @@ void NetFace::clear()
 }
 
 //! Assignment operator, straightforward copy all.
+/*! Except tick and tag.
+ */
 const NetFace &NetFace::operator=(const NetFace &face)
 {
 	if (matrix) { delete[] matrix; matrix=NULL; }
@@ -719,12 +721,15 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
  * The Net class holds particular arrangements of the faces in an Abstract Net.
  */
 
-/*! \fn NetFace *AbstractNet::GetFace(int i)
- * \brief Return a NetFace corresponding to AbstractNet face with index i.
+/*! \fn NetFace *AbstractNet::GetFace(int i,double scaling)
+ * \brief Return a new NetFace corresponding to AbstractNet face with index i.
  *
  * The face returned has edges that have indexes of original faces the edges connect
  * to, but the edge tags are all FACE_Undefined. Upon unwrapping, the Net class is supposed
  * to change those tags to appropriate values.
+ *
+ * If scaling!=1, then each coordinate has been scaled down by that factor. 
+ * Say a point is (10,6), and scaling==.5. Then the point in the returned face will be (5,3).
  */
 /*! \fn	const char *AbstractNet::NetName()
  * \brief Return a human readable title of the net, if any.
@@ -779,7 +784,8 @@ BasicNet::BasicNet(const char *nname)//nname=NULL
 BasicNet::~BasicNet()
 { }
 
-NetFace *BasicNet::GetFace(int i)
+//! Return a new NetFace object corresponding to face i.
+NetFace *BasicNet::GetFace(int i,double scaling)
 {//***
 	NetFace *face=new NetFace(*e[i]);
 	return face;
@@ -1496,7 +1502,7 @@ int Net::Anchor(int basenetfacei)
 	if (basenetfacei<0) basenetfacei=0;
 
 	 //ok, so now we drop basenetfacei
-	NetFace *newface=basenet->GetFace(basenetfacei);
+	NetFace *newface=basenet->GetFace(basenetfacei,1);
 	newface->tag=FACE_Actual;
 	if (!newface->matrix) newface->matrix=new double[6];
 
@@ -1537,7 +1543,7 @@ int Net::addPotentialsToFace(int facenum)
 		} else {
 			 //to-face is not laid down yet, so connect a potential face to the new face.
 			 //transform so pface is touching newface along proper edge
-			NetFace *pface=basenet->GetFace(faces.e[facenum]->edges.e[c]->tooriginal);
+			NetFace *pface=basenet->GetFace(faces.e[facenum]->edges.e[c]->tooriginal,1);
 			faces.e[facenum]->edges.e[c]->tag=FACE_Potential;
 			pface->tag=FACE_Potential;
 			faces.push(pface,1);
@@ -1807,7 +1813,7 @@ int Net::Unwrap(int netfacei,int atedge)
 		 
 		 //drop down original face atedge, starting new group
 		 //***this does not properly adjust potentials...
-		NetFace *face=basenet->GetFace(atedge);
+		NetFace *face=basenet->GetFace(atedge,1);
 		face->tag=FACE_Actual;
 		faces.push(face,1);
 		addPotentialsToFace(faces.n-1);
@@ -1828,12 +1834,6 @@ int Net::Unwrap(int netfacei,int atedge)
 	if (atedge>=0) s=e=atedge; else { s=0; e=f1->edges.n-1; }
 
 	if (s<0 || s>=f1->edges.n || e<0 || e>=f1->edges.n) return 3;
-
-	DBG cerr <<"  ---> drop original "<<faces.e[netfacei]->edges.e[atedge]->tooriginal<<endl;
-	DBG if (faces.e[netfacei]->edges.e[atedge]->tooriginal==301 
-	DBG 	|| faces.e[netfacei]->edges.e[atedge]->tooriginal==287) {
-	DBG 	cerr <<"**************"<<endl;
-	DBG }
 
 	int changed=0;
 	for (int c=s; c<e+1; c++) { //for each edge, drop a face that is potential
@@ -1982,7 +1982,7 @@ int Net::PickUp(int netfacei,int cutatedge)
 			if (faces.e[c]->edges.e[c2]->tooriginal==netf->original
 					&& faces.e[c]->edges.e[c2]->toface<0) {
 				
-				NetFace *pface=basenet->GetFace(netf->original);
+				NetFace *pface=basenet->GetFace(netf->original,1);
 				faces.e[c]->edges.e[c2]->tag=FACE_Potential;
 				pface->tag=FACE_Potential;
 				faces.push(pface,1);

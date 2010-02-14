@@ -57,6 +57,7 @@ using namespace std;
  * \brief Holds the transform to get to the page, and also the outline of the page.
  *
  * It is typically a PathsData, but the actual form of it is up to the Imposition.
+ * After applying outline->m(), coordinates are assumed to be in paper coordinates.
  */
 
 
@@ -133,6 +134,8 @@ PageLocation::~PageLocation()
  * for many functions in Imposition, so the actual meaning of path depends 
  * on which Imposition function was called. Could be a single page, page spread,
  * or paper spread, etc.
+ *
+ * In any case, coordinates after path->m() applied are paper coordinates.
  */
 /*! \var int Spread::spreadtype
  * \brief What is the shape of this spread.

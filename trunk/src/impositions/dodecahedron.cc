@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2009 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -33,11 +33,13 @@ using namespace std;
 
 //-------------------------- Dodecahedron ---------------------------------------------
 
+//! Return a totally uwrapped net based on a dodecahedron abstract net.
 /*! \todo unwrap in a more pleasing manner
  */
 Net *makeDodecahedronNet(double ww,double hh)
 {
 	Polyhedron *poly=new Polyhedron;
+	makestr(poly->name,"Dodecahedron");
 
 	double t=(sqrt(5)+1)/2;
 	double tt=t*t;
@@ -78,13 +80,17 @@ Net *makeDodecahedronNet(double ww,double hh)
 	poly->makeedges();
 
 	Net *net=new Net;
+	makestr(net->netname,poly->name);
 	net->basenet=poly;
 
+	 //unwrap nicely
 	net->Anchor(0);
 	net->Unwrap(0,-1);
 	net->Unwrap(1,2);
 	net->Unwrap(7,0);
 	net->Unwrap(15,-1);
+
+	net->rebuildLines();
 	
 	return net;
 }
