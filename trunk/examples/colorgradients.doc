@@ -1,35 +1,63 @@
-#Laidout 0.06 Document
-saveas /home/tom/p/sourceforge/laidout/src/../examples/colorgradients.doc
-docstyle
-  imposition Singles
-    insetl 0
-    insetr 0
-    insett 0
-    insetb 0
-    tilex 1
-    tiley 1
-    numpages 1
-    defaultpagestyle
+#Laidout 0.08.1 Document
+saveas /home/tom/p/sourceforge/laidout/examples/colorgradients.doc
+imposition Singles
+  insetl 0
+  insetr 0
+  insett 0
+  insetb 0
+  tilex 1
+  tiley 1
+  numpages 1
+  defaultpagestyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    lrtb
+    width 8.5
+    height 11
+  defaultpapers
+    paper
+      matrix 1 0 0 1 0 0
+      outlinecolor 65535 0 65535
+      name letter
       width 8.5
       height 11
-    defaultpaperstyle
-      name Letter
-      width 8.5
-      height 11
-      dpi 360
+      dpi 300
       portrait
 page 0
-  pagestyle PageStyle
+  labeltype -1
+  pagestyle RectPageStyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    lrtb
     width 8.5
     height 11
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
-    object 0 ColorPatchData
+    object 0 GradientData
+      matrix 1.315834028 -0.26232754 -0.3121465252 0.9500339714 0.6861823568 2.927045815
+      p1 0.4380725372
+      p2 1.222018349
+      r1 0
+      r2 1.024209797
+      radial
+      spot #0
+        t 0.2527819946
+        rgba 0 0 65535 65535
+      spot #1
+        t 1
+        rgba 65535 0 0 65535
+    object 1 ColorPatchData
       matrix 1 0 0 1 0 0
       griddivisions 10
       xsize 7
       ysize 7
+      controls full
       points \ #7x7
         2.802244657 7.025226826 65535 0 0 65535 #row 0
         2.830748158 6.278949964 
@@ -80,11 +108,12 @@ page 0
         5.757156636 4.879044099 
         5.765596419 4.395529245 
         5.774036202 3.91201439 65535 65535 0 65535
-    object 1 ColorPatchData
-      matrix 1 0 0 1 0 0.01387614679
+    object 2 ColorPatchData
+      matrix 1 0 0 1 -1.776356839e-15 0.05403157632
       griddivisions 10
       xsize 19
       ysize 7
+      controls full
       points \ #19x7
         5.485537963 5.467201835 5654 0 0 65535 #row 0
         5.472892635 6.209922361 
@@ -200,60 +229,44 @@ page 0
         7.272626543 2.972972901 
         7.97191673 4.184179035 
         7.97191673 5.494954128 
-        8.319330098 5.453325688 65535 65535 65535 65535 #row 6
+        8.319330098 5.453325688 65535 65535 65535 0 #row 6
         8.305453951 6.924890594 
         7.542591929 8.246206376 
-        6.304230624 8.961174609 65535 65535 65535 65535
+        6.304230624 8.961174609 65535 65535 65535 0
         5.065869319 9.676142842 
         3.540145274 9.676142842 
-        2.301783969 8.961174609 65535 65535 65535 65535
+        2.301783969 8.961174609 65535 65535 65535 0
         1.063422664 8.246206376 
         0.3005606415 6.924890594 
-        0.3005606415 5.494954128 65535 65535 65535 65535
+        0.3005606415 5.494954128 65535 65535 65535 0
         0.3005606415 4.065017663 
         1.063422664 2.743701881 
-        2.301783969 2.028733648 65535 65535 65535 65535
+        2.301783969 2.028733648 65535 65535 65535 0
         3.540145274 1.313765415 
         5.065869319 1.313765415 
-        6.304230624 2.028733648 65535 65535 65535 65535
+        6.304230624 2.028733648 65535 65535 65535 0
         7.542591929 2.743701881 
         8.305453951 4.065017663 
-        8.305453951 5.494954128 65535 65535 65535 65535
-    object 2 GradientData
-      matrix 1.315834028 -0.26232754 -0.3121465252 0.9500339714 0.1887506198 1.772513678
-      p1 0.4380725372
-      p2 1.222018349
-      r1 0
-      r2 1
-      a 0
-      radial
-      spot #0
-        t 0.2527819946
-        rgba 0 0 65535 1684627820
-      spot #1
-        t 1
-        rgba 65535 0 0 135664352
+        8.305453951 5.494954128 65535 65535 65535 0
     object 3 GradientData
-      matrix 1.203704136 0.4533657 0.2225052915 0.9749314823 8.296172937 1.681969435
-      p1 -0.2913990826
+      matrix -1.15463478 -0.5345304275 -0.1138556585 -0.7481320674 4.876331312 1.809284589
+      p1 -1.664549149
       p2 -1.109174312
       r1 0
-      r2 1
-      a 0
+      r2 1.337328064
       radial
       spot #0
         t 0.0004187986284
-        rgba 0 65535 4 1868784996
+        rgba 0 65535 4 64515
       spot #1
         t 1
-        rgba 65535 0 0 1929408000
+        rgba 65535 0 0 65280
     object 4 GradientData
       matrix 4.489689821e-11 -1 1 4.489689821e-11 4.204472477 9.879816514
       p1 0
       p2 0.8334862385
       r1 1
       r2 0
-      a 0
       radial
       spot #0
         t 0
@@ -261,3 +274,19 @@ page 0
       spot #1
         t 1
         rgba 61423 0 1 0
+limbo Limbo 1
+  matrix 1 0 0 1 0 0
+  id Limbo 1
+window
+  xywh 390 272 500 500
+  pane
+    xyxy 0 0 500 500
+    window ViewWindow
+      document /home/tom/p/sourceforge/laidout/examples/colorgradients.doc
+      layout Pages
+      spread 0
+      page 0
+      matrix 34.21487603 0 0 -34.21487603 84.85552756 334.300589
+      xbounds 0 8.5
+      ybounds 0 11
+      limbo Limbo 1

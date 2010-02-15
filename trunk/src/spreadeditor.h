@@ -76,7 +76,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 //	//virtual int RBDown(int x,int y,unsigned int state,int count);
 //	//virtual int RBUp(int x,int y,unsigned int state);
 	virtual int MouseMove(int x,int y,unsigned int state);
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state);
 	virtual int CharRelease(unsigned int ch,unsigned int state);
 	virtual int Refresh();
 //	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
@@ -120,7 +120,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 						Project *project, Document *ndoc);
 	virtual int init();
 	virtual const char *whattype() { return "SpreadEditor"; }
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
 	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);

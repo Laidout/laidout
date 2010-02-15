@@ -1,37 +1,36 @@
 #Laidout 0.06 Document
 saveas /home/tom/p/sourceforge/laidout/src/../examples/tabloid-tiled.doc
-docstyle
-  imposition Booklet
-    creep 0
-    bodycolor 0x7fffffff
-    covercolor 0x7fffffff
-    defaultpagestyler
-      marginl 0
-      marginr 0
-      margint 0
-      marginb 0
-      width 5.5
-      height 5.666666667
-    insetl 0
-    insetr 0
-    insett 0
-    insetb 0
-    tilex 1
-    tiley 3
-    numpages 4
-    defaultpagestyle
-      marginl 0
-      marginr 0
-      margint 0
-      marginb 0
-      width 5.5
-      height 5.666666667
-    defaultpaperstyle
-      name Tabloid
-      width 11
-      height 17
-      dpi 360
-      portrait
+imposition Booklet
+  creep 0
+  bodycolor 0x7fffffff
+  covercolor 0x7fffffff
+  defaultpagestyler
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    width 5.5
+    height 5.666666667
+  insetl 0
+  insetr 0
+  insett 0
+  insetb 0
+  tilex 1
+  tiley 3
+  numpages 4
+  defaultpagestyle
+    marginl 0
+    marginr 0
+    margint 0
+    marginb 0
+    width 5.5
+    height 5.666666667
+  defaultpaperstyle
+    name Tabloid
+    width 11
+    height 17
+    dpi 360
+    portrait
 page 0
   labeltype 0
   pagestyle RectPageStyle
