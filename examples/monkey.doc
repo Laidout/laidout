@@ -1,5 +1,5 @@
-#Laidout 0.08.1 Document
-saveas /home/tom/p/sourceforge/laidout/examples/monkey.doc
+#Laidout 0.08 Document
+saveas /home/tom/p/sourceforge/laidout/src/test-monkey2.doc
 imposition Singles
   insetl 0
   insetr 0
@@ -7,7 +7,7 @@ imposition Singles
   insetb 0
   tilex 1
   tiley 1
-  numpages 2
+  numpages 1
   defaultpagestyle
     marginl 0
     marginr 0
@@ -16,57 +16,15 @@ imposition Singles
     lrtb
     width 8.5
     height 11
-  defaultpapers
-    paper
-      matrix 1 0 0 1 0 0
-      outlinecolor 0 0 65535
-      name letter
-      width 8.5
-      height 11
-      dpi 300
-      portrait
+  defaultpaperstyle
+    name Letter
+    width 8.5
+    height 11
+    dpi 360
+    portrait
 page 0
   labeltype -1
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
-    object 0 ColorPatchData
-      matrix 1 0 0 1 -0.4684191792 1.528421053
-      griddivisions 10
-      xsize 4
-      ysize 4
-      points \ #4x4
-        0.8875786378 -0.8349222472 65535 65535 65535 65535 #row 0
-        3.470002849 -0.8349222472 
-        6.05242706 -0.8349222472 
-        8.634851271 -0.8349222472 58082 65278 61166 65535
-        0.8875786378 2.368778941  #row 1
-        3.470002849 2.368778941 
-        6.05242706 2.368778941 
-        8.634851271 2.368778941 
-        0.8875786378 5.57248013  #row 2
-        3.470002849 5.57248013 
-        6.05242706 5.57248013 
-        8.634851271 5.57248013 
-        0.8875786378 8.776181319 0 0 65535 65535 #row 3
-        3.470002849 8.776181319 
-        6.05242706 8.776181319 
-        8.634851271 8.776181319 6168 0 29041 65535
-    object 1 ImageData
-      filename "/home/tom/w/laidout/temp.png"
-      width 683
-      height 557
-      matrix 0.006254217259 0 0 0.006254217259 1.424956872 6.407568386
-    object 2 ImageData
-      filename "/home/tom/images/strobist/pdxstrobist/2009-04-26-woodmill/deadwood/drywoodghost-m.jpg"
-      width 894
-      height 1000
-      matrix 0.00457595235 0 0 0.00457595235 2.343849542 2.553267278
-page 1
-  labeltype -1
-  layer 0
-    matrix 1 0 0 1 0 0
     visible
     prints
     object 0 ColorPatchData
@@ -1497,49 +1455,3 @@ page 1
       spot #2
         t 1.173054644
         rgba 0 0 0 65535
-limbo Limbo 1
-  matrix 1 0 0 1 0 0
-  id Limbo 1
-  visible
-  prints
-limbo Limbo 2
-  matrix 1 0 0 1 0 0
-  id Limbo 2
-  visible
-  prints
-limbo Limbo 3
-  matrix 1 0 0 1 0 0
-  id Limbo 3
-  visible
-  prints
-window
-  xywh 356 2 728 520
-  pane
-    xyxy 354 0 728 425
-    window ViewWindow
-      document /home/tom/p/sourceforge/laidout/examples/monkey.doc
-      layout Pages
-      spread 0
-      page 0
-      matrix 18.65581744 -5.349469567 -5.36552465 -18.71180816 103.638625 267.9172451
-      xbounds -8.5 17
-      ybounds -11 22
-      limbo Limbo 1
-  pane
-    xyxy 0 0 354 519
-    window ViewWindow
-      document /home/tom/p/sourceforge/laidout/examples/monkey.doc
-      layout Pages
-      spread 1
-      page 1
-      matrix 30.16528926 0 0 -30.16528926 26 349
-      xbounds -500 500
-      ybounds -500 500
-      limbo Limbo 2
-  pane
-    xyxy 354 425 728 519
-    window PaletteWindow
-      win_x "356"
-      win_y "427"
-      win_w "368"
-      win_h "88"

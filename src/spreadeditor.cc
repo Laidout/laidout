@@ -941,8 +941,8 @@ void SpreadInterface::ApplyChanges()
 	char *newlocal,*oldlocal;
 	Page **newpages,**oldpages=doc->pages.extractArrays(&oldlocal,&n);
 	
-	newpages=new Page*[doc->pages.n];
-	newlocal=new char[doc->pages.n];
+	newpages=new Page*[n];
+	newlocal=new char[n];
 	
 	int pg;
 	for (int c=0; c<n; c++) {
@@ -1103,7 +1103,7 @@ int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
  *
  * \todo *** space should arrange if auto arrange
  */
-int SpreadInterface::CharInput(unsigned int ch,unsigned int state)
+int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state)
 {
 	if (ch==LAX_Shift && dragpage>=0) {
 		Cursor cursor=XCreateFontCursor(app->dpy, XC_exchange);
@@ -1327,7 +1327,7 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-int SpreadEditor::CharInput(unsigned int ch,unsigned int state)
+int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
 {
 	if (ch==LAX_Esc) {
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);

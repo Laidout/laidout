@@ -90,7 +90,7 @@ VERSION 0.1
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ColorPatch/ImagePatchData stuff
-       Have imagepatch be a transform you can apply to any image
+       Have imagepatch be a transform you can apply to any object
        Allow objects to have any number of various kinds of transforms applied to it
        Fully configurable shortcuts, with optional multi-key shortcuts
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins
