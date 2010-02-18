@@ -743,6 +743,11 @@ int NetImposition::GetPagesNeeded(int npapers)
  */
 int NetImposition::GetPapersNeeded(int npages)
 {
+	int n=numActiveFaces();
+	if (n==0) {
+		DBG cerr <<"*****warning: no active faces in net!!"<<endl;
+		return 0;
+	}
 	return (npages-1)/numActiveFaces()+1;
 }
 
@@ -938,6 +943,14 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 				abstractnet=poly;
 			}
 		}
+	}
+	if (numActiveFaces()==0 && abstractnet) {
+		Net *n=new Net;
+		n->Basenet(abstractnet);
+		n->TotalUnwrap();
+		n->active=1;
+		nets.push(n);
+		n->dec_count();
 	}
 	setPage();
 }

@@ -13,7 +13,7 @@ VERSION 0.09
 (done) Load, save, add, delete paper groups
 (done) Finish implementing project based setup, particularly being able to save a project, not just load one   
 (done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
-(done-sort of) NetImposition needs import net, and import 3-d models such as from OFF files
+(done) NetImposition needs to be able to import 3-d models such as from OFF files
 (done) Debug net impositions!!
 (done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
 (done) be able to reimpose a document from gui and command (from command mostly works)
@@ -27,7 +27,7 @@ VERSION 0.09
 (done-very partially, anyway) Svg import
 (done-very partially, anyway) Scribus import 
 (done) fix the memory hole (in papergroups?)
-       fix the other memory hole (triggered by importing images?), something in paperinterface, too
+(done) fix the other memory hole (triggered by importing images?), something in paperinterface, too
 (done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
@@ -39,8 +39,9 @@ VERSION 0.09
 VERSION 0.091
 ------------
        Net imposition interactive unwrapper and build net interface
-       Scribus export must support master pages
+       Scribus import must support master pages
        Generic fold and trim imposition
+       Be able to load imposition instances, a form of resource
        Collect for out
        Examine and improve ease of use of import images dialog, particularly for previewing
        Externally rendered objects, similar to Scribus render frames
@@ -147,6 +148,7 @@ Internal generic impositioner for ps files that follow the ps doc. structure gui
 Cooperate with photo programs like KPhotoalbum, f-spot
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection onto nets?
 Export PLAN files for podofoimpose
+openoffice files import
 Uniconverter support?
 Vx support?
 Verse support?

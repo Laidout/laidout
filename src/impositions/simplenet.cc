@@ -935,7 +935,7 @@ void SimpleNet::pushline(SimpleNetLine &l,int where)//where=-1
 {
 	SimpleNetLine *nlines=new SimpleNetLine[nl+1];
 	if (where<0) where=nl;
-	for (int c=0; c<where; c++) nlines[c]=lines[c]; //cannot do memcpy
+	for (int c=0; c<where; c++) nlines[c]=lines[c]; //cannot do memcpy,need deep copy
 	nlines[where]=l;
 	for (int c=where; c<nl; c++) nlines[c+1]=lines[c]; //cannot do memcpy
 	delete[] lines;
@@ -955,6 +955,34 @@ NetFace *SimpleNet::GetFace(int i,double scaling)
 {//***
 	cout <<"*************  BAD BAD MUST IMPLEMENT SimpleNet::GetFace()!!!"<<endl;
 	return NULL;
+
+//	-------------------------
+//	if (i<0 || i>=faces.n) return NULL;
+//
+//	NetFaceEdge *e;
+//	NetFace *f=new NetFace();
+//	f->original=i;
+//
+//	Pgon pgon=FaceToPgon(i,0); //generate flattened face
+//	for (int c=0; c<faces.e[i]->pn; c++) {
+//		e=new NetFaceEdge();
+//		e->id=c;
+//		e->tooriginal=faces.e[i]->f[c]; //edge connects to which face
+//		e->toface=-1;
+//
+//		 //find edge of the face this edge connects to
+//		if (e->tooriginal>=0) {
+//			for (int c2=0; c2<faces.e[e->tooriginal]->pn; c2++) {
+//				if (faces.e[e->tooriginal]->f[c2]==i) {
+//					e->tofaceedge=c2;
+//					break;
+//				}
+//			}
+//		}
+//		e->points=new LaxInterfaces::Coordinate(pgon.p[c].x*scaling, pgon.p[c].y*scaling);
+//		f->edges.push(e,1);
+//	}
+//	return f;
 }
 
 int SimpleNet::dumpOutNet(FILE *f,int indent,int what)
