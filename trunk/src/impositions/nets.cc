@@ -1534,6 +1534,7 @@ int Net::addPotentialsToFace(int facenum)
 	for (int c=0; c<faces.e[facenum]->edges.n; c++) {
 		 //skip edges already connected to something
 		if (faces.e[facenum]->edges.e[c]->toface>=0) continue;
+		if (faces.e[facenum]->edges.e[c]->tooriginal<0) continue; //do not connect if nothing at edge!
 
 		 //add potentials to bare edges when that original face is not
 		 //already down somewhere

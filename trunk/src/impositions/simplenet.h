@@ -104,7 +104,7 @@ class SimpleNet : public AbstractNet,
 	virtual const char *Filename() { return filename; }
 	virtual int Modified();
 
-	virtual int NumFaces() { return Laxkit::PtrStack<NetFace>::n; }
+	virtual int NumFaces() { return nf; }
 	virtual NetFace *GetFace(int i,double scaling);
 
 	virtual int dumpOutNet(FILE *f,int indent,int what);
