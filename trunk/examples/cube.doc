@@ -1,43 +1,32 @@
-#Laidout 0.06 Document
-docstyle
-  imposition Net
-    numpages 6
-    defaultpaperstyle
-      name Letter
-      width 8.5
-      height 11
-      dpi 360
-      portrait
-    simplenet 
-      name Cube
-      matrix 1 0 0 1 0 0
-      tabs no
-      points \
-        -1 -1 to 0 # 0
-        1 -1  to 1 # 1
-        1 1   to 2 # 2
-        -1 1  to 3 # 3
-        -1 -3 to 5 # 4
-        1 -3  to 7 # 5
-        3 -1  to 7 # 6
-        3 1   to 6 # 7
-        1 3   to 6 # 8
-        -1 3  to 4 # 9
-        -3 1  to 4 # 10
-        -3 -1 to 5 # 11
-        -1 -5 to 4 # 12
-        1 -5  to 6 # 13
-    
-      outline 7 6 1 5 13 12 4 0 11 10 3 9 8 2 7
-      line 0 1 2 3 0
-      line 4 5
-    
-      face 0 1 2 3 
-      face 1 0 4 5 
-      face 2 1 6 7 
-      face 3 2 8 9 
-      face 0 3 10 11 
-      face 5 4 12 13 
+#Laidout 0.08.1 Document
+imposition Net
+  numpages 6
+  defaultpaperstyle
+    name Letter
+    width 8.5
+    height 11
+    dpi 360
+    portrait
+  abstractnet Polyhedron   
+    name Laid out Cube
+    vertices \
+      1 1 1
+      -1 1 1
+      -1 -1 1
+      1 -1 1
+      -1 1 -1
+      1 1 -1
+      1 -1 -1
+      -1 -1 -1
+    face 0 1 2 3
+    face 1 0 5 4
+    face 2 1 4 7
+    face 0 3 6 5
+    face 3 2 7 6
+    face 4 5 6 7
+    set 0 1
+    set 2 3
+    set 4 5
 page 0
   pagestyle PageStyle
     width 11.44122806
