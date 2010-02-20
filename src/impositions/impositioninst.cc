@@ -1092,6 +1092,7 @@ Spread *BookletImposition::PaperLayout(int whichpaper)
 				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 				ntrans->origin(flatpoint(dx,dy+(isvertical?pagestyle->h():0)));
 				spread->pagestack.push(new PageLocation(left,NULL,ntrans));
+				ntrans->dec_count();
 			}
 			 //the right or bottom:
 			if (right>=0 && right<numpages) {
@@ -1099,6 +1100,7 @@ Spread *BookletImposition::PaperLayout(int whichpaper)
 				ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 				ntrans->origin(flatpoint(isvertical?0:pagestyle->w()+dx, dy));
 				spread->pagestack.push(new PageLocation(right,NULL,ntrans));
+				ntrans->dec_count();
 			}
 		}
 	}

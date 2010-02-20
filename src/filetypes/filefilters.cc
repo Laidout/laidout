@@ -276,7 +276,16 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 		 //---keepmystery
 		i=parameters->findInt("keepmystery",-1,&e);
 		if (e==0) config->keepmystery=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"keepmystery"); throw error; }
+		else if (e==2) { 
+			const char *km=parameters->findString("keepmystery",i,&e);
+			if (e==2) {
+				sprintf(error, _("Invalid format for %s!"),"keepmystery"); 
+				throw error; 
+			}
+			if (!strcmp(km,"no")) config->keepmystery=0;
+			else if (!strcmp(km,"sometimes")) config->keepmystery=1;
+			else if (!strcmp(km,"always")) config->keepmystery=2;
+		}
 
 		 //---instart
 		i=parameters->findInt("instart",-1,&e);
