@@ -150,10 +150,15 @@ int ImportFunction(ValueHash *context,
 		ImportConfig *config=NULL;
 		Value *value=NULL;
 		char *error=NULL;
-		if (def->stylefunc) (def->stylefunc)(context,parameters,&value,&error);
-		if (value->type()==VALUE_Object) config=dynamic_cast<ImportConfig*>(((ObjectValue*)value)->object);
+
+		if (def->stylefunc) err=(def->stylefunc)(context,parameters,&value,&error);
+		if (err!=0 && error && error_ret) appendline(*error_ret,error);
+		if (err==0 && value->type()==VALUE_Object) config=dynamic_cast<ImportConfig*>(((ObjectValue*)value)->object);
+
+		 //run the filter
 		if (config) err=filter->In(filename,config,error_ret);
 		if (value) value->dec_count();
+		if (error) delete[] error;
 
 	} catch (const char *str) {
 		if (error_ret) appendline(*error_ret,str);
