@@ -666,10 +666,13 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			for (l=0; l<doc->pages[pg]->layers.n(); l++) {
 				 // for each object in layer
 				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+				transform_copy(mm,spread->pagestack.e[c2]->outline->m());
+				fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
+					mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 
 				for (c3=0; c3<g->n(); c3++) {
-					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					svgdumpobj(f,m,g->e(c3),error_ret,warning,4);
+					svgdumpobj(f,NULL,g->e(c3),error_ret,warning,6);
 				}
+				fprintf(f,"    </g>\n ");
 			}
 		}
 	}
