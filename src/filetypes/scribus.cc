@@ -211,6 +211,8 @@ static int countGroups(Group *g)
  */
 int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
 {
+	DBG cerr <<"-----Scribus export start-------"<<endl;
+
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
 
@@ -588,6 +590,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
+
+	DBG cerr <<"-----Scribus export end success-------"<<endl;
+
 	return 0;
 }
 
@@ -1049,6 +1054,8 @@ StyleDef *ScribusImportFilter::GetStyleDef()
  */
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
+	DBG cerr <<"-----Scribus import start-------"<<endl;
+
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) {
 		if (error_ret) appendline(*error_ret,_("Missing config!"));
@@ -1342,10 +1349,13 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	if (doc && doc!=in->doc) {
 		laidout->project->Push(doc);
 		laidout->app->addwindow(newHeadWindow(doc));
+		doc->dec_count();
 	}
 	
+	DBG cerr <<"-----Scribus import end successfully-------"<<endl;
 	delete att;
 	return 0;
+
 }
 
 
