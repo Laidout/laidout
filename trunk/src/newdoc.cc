@@ -124,7 +124,7 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 				NULL);
 
 	FileDialog *fd=new FileDialog(this,"open doc",
-					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_MANY, 0,0, 0,0,0,
+					ANXWIN_REMEMBER|FILES_NO_CANCEL|FILES_OPEN_MANY|FILES_FILES_ONLY, 0,0, 0,0,0,
 					None, "open doc", NULL,NULL,NULL, "Laidout");
 	fd->AddFinalButton(_("Open a copy"),_("This means use that document as a template"),2,1);
 	AddWin(fd, _("Open"), NULL);

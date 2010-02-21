@@ -76,6 +76,7 @@ touchdepends:
 	touch src/impositions/makedepend
 	touch src/interfaces/makedepend
 	touch src/printing/makedepend
+	touch src/api/makedepend
 
 .PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:

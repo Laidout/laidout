@@ -864,7 +864,7 @@ void LaidoutViewport::postmessage(const char *mes)
 	vw->PostMessage(mes);
 }
 
-//! Called from constructor and from SelectPage. Define curpage, spread, curobj context.
+//! Called whenever the spread needs updating. Define curpage, spread, curobj context.
 /*! If topage==-1, sets curpage to doc->Curpage().
  * If topage!=-1 sets up with page topage.
  * If tospread==-1, then use whatever spread has topage. If tospread!=-1, then definitely
@@ -923,7 +923,8 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 		spread=NULL; 
 		spreadi=-1;
 	} 
-
+	
+	DBG cerr <<"Viewwindow::setupthings:  viewmode="<<viewmode<<"  tospread="<<tospread<<endl;
 	 // retrieve the proper spread according to viewmode
 	if (!spread && tospread>=0 && doc && doc->imposition) {
 		spread=doc->imposition->Layout(viewmode,tospread);
@@ -2170,9 +2171,10 @@ void LaidoutViewport::Refresh()
 			page=spread->pagestack.e[c]->page;
 			if (!page) { // try to look up page in doc using pagestack->index
 				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) 
-					spread->pagestack.e[c]->page=page=doc->pages.e[spread->pagestack.e[c]->index];
+					page=spread->pagestack.e[c]->page=doc->pages.e[spread->pagestack.e[c]->index];
 			}
-			if (spread->pagestack.e[c]->index<0) {
+			//if (spread->pagestack.e[c]->index<0) {
+			if (!page) {
 				 //if no page, then draw an x through the page stack outline
 				if (!spread->pagestack.e[c]->outline) continue;
 				PathsData *paths=dynamic_cast<PathsData *>(spread->pagestack.e[c]->outline);
@@ -2188,7 +2190,6 @@ void LaidoutViewport::Refresh()
 						dp->drawrline(transform_point(paths->m(),center), transform_point(paths->m(),tp->fp));
 					tp=tp->next;
 				} while (tp!=p);
-
 
 
 				continue;
