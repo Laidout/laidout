@@ -213,7 +213,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	//int end       =out->end;
 	//int layout    =out->layout;
 	if (!filename) filename=out->tofiles;
-	if (!filename) filename="output#.eps";
+	if (!filename) filename="temp-output#.eps";
 	
 	 //we must have something to export...
 	if (!doc && !out->limbo) {

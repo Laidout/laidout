@@ -135,6 +135,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
 			NewStyleFunc nnewfunc=0,StyleFunc nstylefunc=0);
 	virtual ~StyleDef();
+	virtual const char *whattype() { return "StyleDef"; }
 
 	 // helpers to locate fields by name, "blah.3.x"
 	virtual int getNumFields();

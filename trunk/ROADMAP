@@ -24,7 +24,7 @@ VERSION 0.09
 (done) Image and Color patches, gradients should allow transparent colors
 (done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
 (done) Passepartout import
-(done-very partially, anyway) Svg import
+(done-very, very partially, anyway) Svg import
 (done-very partially, anyway) Scribus import 
 (done) fix the memory hole (in papergroups?)
 (done) fix the other memory hole (triggered by importing images?), something in paperinterface, too
@@ -32,14 +32,13 @@ VERSION 0.09
 (done) control-q quits now rather than plain 'q'
 (done) from laxkit: Fix cut and paste from system clipboard
 (done) mouse releasing grab when crossing window control boundaries, makes color box unusable. address this!!!
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.091
 ------------
        Net imposition interactive unwrapper and build net interface
        Scribus import must support master pages
+       need partial Laidout import and export
        Generic fold and trim imposition
        Be able to load imposition instances, a form of resource
        Collect for out
@@ -68,6 +67,8 @@ VERSION 0.091
        Clean up project load/save internals and dialogs
        When importing from an image list file, should be able to say if and when to auto-make previews
        Units, especially Allow changing units in rulers: metric/standard, also physical/object
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.1 
