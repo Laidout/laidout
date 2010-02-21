@@ -1110,7 +1110,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 
 //! Create a new document from spec and call up a new ViewWindow.
 /*! spec would be something passed in on the command line,
- * like (case doesn't matter):\n
+ * like (case doesn't matter) TODO:\n
  * <pre>
  *  laidout -n "saveas blah.doc, letter, 3 pages, booklet"
  *  laidout -n "3 pages, net(box,3,5,9)"

@@ -5,35 +5,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.09
-------------
-       Test, test, test! from fresh install to print out, make booklet, portrait, landscape
-(done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
-(done) Add, delete, and rename limbos
-(done) Load, save, add, delete paper groups
-(done) Finish implementing project based setup, particularly being able to save a project, not just load one   
-(done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
-(done) NetImposition needs to be able to import 3-d models such as from OFF files
-(done) Debug net impositions!!
-(done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
-(done) be able to reimpose a document from gui and command (from command mostly works)
-(done) Import(), Export(), NewDocument() commands
-(done) Make commands actually available in the command prompt window
-(done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
-(done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
-(done) Image and Color patches, gradients should allow transparent colors
-(done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
-(done) Passepartout import
-(done-very, very partially, anyway) Svg import
-(done-very partially, anyway) Scribus import 
-(done) fix the memory hole (in papergroups?)
-(done) fix the other memory hole (triggered by importing images?), something in paperinterface, too
-(done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
-(done) control-q quits now rather than plain 'q'
-(done) from laxkit: Fix cut and paste from system clipboard
-(done) mouse releasing grab when crossing window control boundaries, makes color box unusable. address this!!!
-
-
 VERSION 0.091
 ------------
        Net imposition interactive unwrapper and build net interface
@@ -174,6 +145,35 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.09  --  released 21 February 2010!
+------------
+(done) Test, test, test! from fresh install to print out, make booklet, portrait, landscape
+(done) More libintl support, means finally adapting laxkit and laidout to utf8 internally, no small task!
+(done) Add, delete, and rename limbos
+(done) Load, save, add, delete paper groups
+(done) Finish implementing project based setup, particularly being able to save a project, not just load one   
+(done) Use the freedesktop recommended ~/.recently-used (on laxkit's todo also)
+(done) NetImposition needs to be able to import 3-d models such as from OFF files
+(done) Debug net impositions!!
+(done) Selected region out to image(s), regions optionally remembered (done via custom papergroups)
+(done) be able to reimpose a document from gui and command (from command mostly works)
+(done) Import(), Export(), NewDocument() commands
+(done) Make commands actually available in the command prompt window
+(done) command line option to pass in commands, like "import blah; reimpose box; export blah2"
+(done) plain text edit window for notes/scripts/whatever save with project or doc or its own file
+(done) Image and Color patches, gradients should allow transparent colors
+(done) When importing, need infrastructure to preserve mystery data as possible, to be later exported back out
+(done) Passepartout import
+(done-very, very partially, anyway) Svg import
+(done-very partially, anyway) Scribus import 
+(done) fix the memory hole (in papergroups?)
+(done) fix the other memory hole (triggered by importing images?), something in paperinterface, too
+(done) for some reason, podofobrowser doesn't like laidout produced pdfs, but they're fine with xpdf. huh!
+(done) control-q quits now rather than plain 'q'
+(done) from laxkit: Fix cut and paste from system clipboard
+(done) mouse releasing grab when crossing window control boundaries, makes color box unusable. address this!!!
+
 
 VERSION 0.08  --  released 15 September 2007!
 ------------
