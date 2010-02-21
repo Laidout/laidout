@@ -1,0 +1,135 @@
+/*! \page todo
+\section basics Next on the list..
+
+\section Overall Overall...
+
+This TODO is for general coding and recognized questions in the code that do not necessarily
+relate to pressing goals. Please consult the LEFT--OFF file in the src directory for things
+that a programmer was working on, but left off until tomorrow, and that should be fixed
+immediately.
+
+<pre>
+
+ need a little better locale management during loading and saving. Files generally assume
+  '.' (C locale) is the decimal point, not ',', but the error string handling needs the normal
+  locale...
+
+ group interface: 'm' should perhaps make the current selection draggable to other windows
+
+ in configure, should check to see that gs is actually executable?
+
+ enhance SpreadEditor:
+   eject in addition to swap and slide,
+   chains in limbo
+ implement object nesting: 1 parent, many children, this is different
+   than having a Group
+ text tool, text blocks (big job !!!)
+  see /usr/share/locale/all_languages for a list of languages written in the proper language.. utf8!
+ freehand tool
+ tablet support
+ low level object tree editor would be very convenient, like
+   the xml editor of inkscape.. to do similar right now, have to save,
+   then edit the file, then load
+ 
+
+NEED major overhaul of the rendering, which should allow among other things
+output to image file..  cairo? antigrain? opengl?  hot-swappable rendering backend?
+ 
+object references: for instance, take a path, make a ref to it. Option to either be a deep
+ reference, using the path's kids, or shallow, using just the path, with kids belonging to
+ the reference.
+
+
+startup new document dialog using templates, which can be in various stages of 
+specificity. So one might have letter on orange cardstock, another might be
+an icosahedron net on legal.. when loading would have option to reset all 
+unspecified fields to the global default or not?
+
+ 
+should be able to stretch any image.. makes new image preview, 
+ attach transforms of various sorts to an image:
+   image
+     transform bezpatch
+	 	....bezpatch info
+	 transform contrast
+	 	...
+	 ...
+
+someone should really go through all the dump_in functions, and check for error handling
+ when there is a possibly corrupted file.. there are most likely snafus here and there...
+
+when closing a window, and only that window refers to a particular document, should
+ ask if user wants to really close that document, or simply hide it
+
+Next: MUst have color management..., have to imp the color system....
+
+Define protocols for inter-window communication, and scripting integration...
+
+Have a "security" mode that disables or severely limits system calls from whatever
+scripting gets implemented
+
+impositions should have final printing shift matrix? to temporarily remap any imposition
+to any paper size, possibly with stuff off paper.. 
+the WhackedImposition: have a single page data map to many papers (using different transforms),
+sometimes known as posterizing..
+
+Some sort of main control panel still needs to be implemented with
+ Laxkit::TabbedMenuSelector or whatever it'll be called!!!
+
+work on page and spread flipper:   < page 2 >,       < > page ixv,    
+
+*** figure out consistent way to have Attribute things attached to various kinds of objects.
+
+%Color picker should be like scribus's which has previews of 
+	black/white text of various shades of the picked color
+
+viewport options:
+	one tool per viewport --OR-- optionally keep same tool across viewports.
+
+(ruler==obj || paper/page) [ ruler -> ]
+		[ruler|]
+		[     v]
+
+interfaces: have it configurable: mapping mouse buttons?? or just sock it to em?
+
+Dynamic content object, for instance a box that lets you swirl 3-dimensional things
+ around until you get a view that you like, and that view is what prints. (openoffice has
+ something of the kind, and pdf 1.6 has such 3-d support)
+
+
+pages need to be able to preempt the page boundaries given by imposition,
+OR the imposition needs to act on a selection of pages, not all of them..
+This would make cover/book body more reasonable.
+what about centerfolds?? have those
+pages map to same page? fill out whole spreads like that? auto adjust margins...
+CompositeDisposition
+	range 1-20 Booklet disp
+	range 21-25 Cover disp
+
+
+
+
+FOR THOUGHT
+-----------
+multipage-tiff??
+
+class DataTypeManager
+{
+ public:
+	virtual LaidoutInterface *GetInterface();
+	virtual const char *DataType();
+	virtual const char **DataTypes(int *n_ret);
+	virtual SomeData *Factory(options...);
+	virtual StyleDef *GetStyleDef();
+	OutputFunctions(for pdf, ps, etc..)
+};
+class LaidoutInterface : public Laxkit::InterfaceWithDp
+{
+ public:
+	
+}
+
+</pre>
+
+<hr>
+*/

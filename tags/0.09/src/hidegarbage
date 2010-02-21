@@ -1,0 +1,71 @@
+#!/usr/bin/perl
+
+#
+# Usage to hide stuff:
+# > hidegarbage [files...]
+# This makes all lines from *.cc like:
+#     DBG
+# to:
+#     //DBG
+#
+# To do the reverse of above:
+#   hidegarbage -0 [files...]
+#
+#
+
+
+$numargs=@ARGV;
+if ($ARGV[0] eq "-0") {
+	$unhide=1;
+	@ARGV=@ARGV[1..($numargs-1)];
+	$numargs=@ARGV;
+} else { 
+	$unhide=0; 
+}
+#print "numargs: $numargs\n";
+
+die "$numargs: No files to parse!\n" if ($numargs == 0);
+
+#print $unhide, "\n";
+
+foreach $file (@ARGV) {
+	if (open (INFILE, "<$file")) {
+		if ($unhide==1) {
+			print "Unhiding garbage in $file\n";
+		} else {
+			print "Hiding garbage in $file\n";
+		}
+		open (OUTFILE, ">$file-hidden");
+		while ($line = <INFILE>) {
+			if ($unhide==1) {
+				$line =~ s/^(\s*)(\/*)\/\/DBG/$1$2DBG/; 
+			} else {
+				$line =~ s/^(\s*)(\/*)DBG/$1$2\/\/DBG/; 
+			}
+			print OUTFILE "$line";
+		}
+		close(INFILE);
+		close(OUTFILE);
+	}
+	system("mv -f $file-hidden $file");
+}
+
+
+#--------
+#echo $1;
+#
+#if [ x$1 == x ] ; then
+#	echo hiding...;
+#	for NAME in `ls *.cc`; do
+#		echo $NAME ;
+#		sed -e 's/^\(\s*\)\/\/DBG/\1\/\/\/\/DBG/ ; 	s/^\(\s*\)DBG/\1\/\/DBG/' $NAME > $NAME-hidden; 
+#		mv -f $NAME-hidden $NAME
+#	done
+#else
+#	echo unhiding...;
+#	for NAME in `ls *.cc`; do
+#		echo $NAME ;
+#		sed -e 's/^\(\s*\)\(\/*\)\/\/DBG/\1\2DBG/' $NAME > $NAME-hidden; 
+#		mv -f $NAME-hidden $NAME
+#	done
+#fi

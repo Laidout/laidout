@@ -1,0 +1,77 @@
+#Laidout 0.08.1 Document
+imposition Net
+  numpages 6
+  defaultpaperstyle
+    name Letter
+    width 8.5
+    height 11
+    dpi 360
+    portrait
+  abstractnet Polyhedron   
+    name Laid out Cube
+    vertices \
+      1 1 1
+      -1 1 1
+      -1 -1 1
+      1 -1 1
+      -1 1 -1
+      1 1 -1
+      1 -1 -1
+      -1 -1 -1
+    face 0 1 2 3
+    face 1 0 5 4
+    face 2 1 4 7
+    face 0 3 6 5
+    face 3 2 7 6
+    face 4 5 6 7
+    set 0 1
+    set 2 3
+    set 4 5
+page 0
+  pagestyle PageStyle
+    width 11.44122806
+    height 0.8221181412
+    pageclips
+  layer 0
+    visible
+    prints
+page 1
+  pagestyle PageStyle
+    width 11.44122806
+    height 0.8221181412
+    pageclips
+  layer 0
+    visible
+    prints
+page 2
+  pagestyle PageStyle
+    width 11.44122806
+    height 0.8221181412
+    pageclips
+  layer 0
+    visible
+    prints
+page 3
+  pagestyle PageStyle
+    width 11.44122806
+    height 0.8221181412
+    pageclips
+  layer 0
+    visible
+    prints
+page 4
+  pagestyle PageStyle
+    width 11.44122806
+    height 0.8221181412
+    pageclips
+  layer 0
+    visible
+    prints
+page 5
+  pagestyle PageStyle
+    width 11.44122806
+    height 0.8221181412
+    pageclips
+  layer 0
+    visible
+    prints
