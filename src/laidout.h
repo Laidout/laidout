@@ -11,13 +11,12 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 #ifndef LAIDOUT_H
 #define LAIDOUT_H
 
 #include <lax/anxapp.h>
-#include <lax/version.h>
 
 #include "papersizes.h"
 #include "document.h"
