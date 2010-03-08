@@ -288,7 +288,7 @@ char *previewFileName(const char *file, const char *nametemplate)
 		appendstr(tmplate,"%s");
 	}
 	
-	if (tmplate[0]=='~' && tmplate[1]=='/') expand_home(tmplate,1);
+	if (tmplate[0]=='~' && tmplate[1]=='/') expand_home_inplace(tmplate);
 	if (tmplate[0]!='/') path=lax_dirname(file,1); else path=NULL;
 		
 	char *previewname=new char[strlen(bname)+strlen(tmplate)];
