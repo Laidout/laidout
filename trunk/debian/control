@@ -2,13 +2,14 @@ Source: laidout
 Section: graphics
 Priority: optional
 Maintainer: Tom Lechner <tomlechner@users.sourceforge.net>
-Build-Depends: debhelper (>= 4.0.0), libx11-dev, libimlib2-dev, libxpm-dev, libpng12-dev, libfreetype6-dev, libxext-dev
-Standards-Version: 3.6.2
+Build-Depends: debhelper (>= 7.0.0), libx11-dev, libimlib2-dev, libpng12-dev, libfreetype6-dev, libxext-dev
+Standards-Version: 3.8.4
+Homepage: http://www.laidout.org
 
 Package: laidout
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Lays out pictures in cut and folded books.
+Description: Lay out pictures in cut and folded books.
  Laidout is burgeoning desktop publishing software.
  It can currently be used to lay out pictures, and linear,
  radial and patch gradients (aka mesh gradients) into booklets.
@@ -27,5 +28,4 @@ Description: Lays out pictures in cut and folded books.
  polyhedron, for instance a dodecahedron with 12 images 
  corresponding to the 12 months of the year.
  .
- http://www.laidout.org
- Build date sometime in 2009.
+ Build date sometime in 2010.
