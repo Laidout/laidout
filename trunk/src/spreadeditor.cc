@@ -18,6 +18,9 @@
 #include <lax/transformmath.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
+#include <lax/menubutton.h>
+#include <lax/menuselector.h>
+
 #include "language.h"
 #include "spreadeditor.h"
 #include "laidout.h"
@@ -204,17 +207,23 @@ static const char *arrangetypestring(int a)
 }
 
 //! Initialize everything and call GetSpreads().
+/*! Incs count of docum.
+ */
 SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum)
 	: InterfaceWithDp(0,ndp)
 {
 	firsttime=1;
 	project=proj;
 	doc=docum;
+	if (doc) doc->inc_count();
+
 	reversebuttons=0;
 	temppagemap=NULL;
 	temppagen=0;
 	curspread=NULL;
 	curpage=-1;
+
+	maxmarkertype=8;
 	dragpage=-1;
 	drawthumbnails=1;
 	centerlabels=0;
@@ -227,12 +236,13 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	buttonmask=Button1Mask|Button2Mask;
 }
 
-//! Empty destructor.
+/*! Dec count of doc. */
 SpreadInterface::~SpreadInterface()
 {
 	 //for debugging:
 	DBG cerr<<"SpreadInterface destructor\n spreads flush"<<endl;
 	spreads.flush();
+	if (doc) doc->dec_count();
 }
 
 /*! Doesn't do anything..
@@ -308,7 +318,12 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 			n=DoubleListAttribute(value,m,6);
 			if (n==6) viewport->dp->NewTransform(m);
 		} else if (!strcmp(name,"document")) {
-			doc=laidout->findDocument(value);
+			Document *newdoc=laidout->findDocument(value);
+			if (newdoc) {
+				if (doc) doc->dec_count();
+				doc=newdoc;
+				if (doc) doc->inc_count();
+			}
 		} else if (!strcmp(name,"centerlabels")) {
 			IntAttribute(value,&centerlabels);
 			if (centerlabels<0 || centerlabels>4) centerlabels=0;
@@ -349,6 +364,19 @@ int SpreadInterface::InterfaceOn()
 	return 0;
 }
 
+/*! Return 0 for success, nonzero error.
+ */
+int SpreadInterface::UseThisDoc(Document *ndoc)
+{
+	if (doc) doc->dec_count();
+	doc=ndoc;
+	if (doc) doc->inc_count();
+
+	GetSpreads();
+	ArrangeSpreads(ArrangeGrid); //do auto arrange at start
+	needtodraw=1;
+	return 0;
+}
 //! Return the reverse map from temppagemap[].
 /*!
  * temppagemap elements say what doc->page index is temporarily in
@@ -392,7 +420,7 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 		memcpy(tmp,temppagemap,sizeof(int)*temppagen);
 		for (c=temppagen; c<doc->pages.n; c++) {
 			tmp[c]=c;
-			if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
+			if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%maxmarkertype;
 		}
 		delete[] temppagemap;
 		temppagemap=tmp;
@@ -457,6 +485,7 @@ void SpreadInterface::GetSpreads()
 	spreads.flush();
 	curspread=NULL;
 	curpage=-1;
+	curpages.flush();
 
 	if (!doc || !doc->imposition || !doc->pages.n) return;
 	
@@ -467,7 +496,7 @@ void SpreadInterface::GetSpreads()
 	temppagen=doc->pages.n;
 	for (c=0; c<doc->pages.n; c++) {
 		temppagemap[c]=c;
-		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%8;
+		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%maxmarkertype;
 	}
 	
 	Spread *s;
@@ -638,6 +667,7 @@ int SpreadInterface::Refresh()
 	flatpoint p;
 	
 	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy);
+	LineStyle ls(0,0,0xffff,0xffff, 4,CapButt,JoinMiter,~0,GXcopy);
 	//Page *page;
 	ImageData *thumb=NULL;
 	dp->clearclip();
@@ -679,6 +709,20 @@ int SpreadInterface::Refresh()
 		 // draw path again over whatever was drawn, but don't fill...
 		::DrawData(dp,spreads.e[c]->spread->path,NULL,NULL);
 
+		 // draw currently selected pages with thick line
+		for (int cc=0; cc<curpages.n; cc++) {
+			c2=spreads.e[c]->spread->PagestackIndex(curpages.e[cc]);
+			if (c2>=0) {
+				outline=spreads.e[c]->spread->pagestack.e[c2]->outline;
+
+				unsigned long oldfg=dp->FG();
+				dp->NewFG(0,0,255);
+				dp->LineAttributes(3,LineSolid,CapButt,JoinMiter);
+				::DrawData(dp,outline, &ls,NULL);
+				dp->NewFG(oldfg);
+			}
+		}
+
 		 // draw page labels
 		for (c2=0; c2<spreads.e[c]->spread->pagestack.n; c2++) {
 			pg=spreads.e[c]->spread->pagestack.e[c2]->index;
@@ -693,7 +737,7 @@ int SpreadInterface::Refresh()
 				else  p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));
 				x=(int)p.x; // figure out where bottom tip of bbox is
 				y=(int)p.y;
-				drawLabel(x,y,doc->pages.e[temppagemap[pg]]);
+				drawLabel(x,y,doc->pages.e[temppagemap[pg]],pg==temppagemap[pg]);
 				dp->PopAxes();
 			}
 		}
@@ -718,7 +762,7 @@ int SpreadInterface::Refresh()
  * 7 dark gray square\n
  * 8 black square\n
  */
-void SpreadInterface::drawLabel(int x,int y,Page *page)
+void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 {
 	 // *** if (plabel->labeltype==circle, filledcircle, etc...) ...
 	 // *** write text
@@ -728,7 +772,11 @@ void SpreadInterface::drawLabel(int x,int y,Page *page)
 	h/=2;
 	w+=h;
 	h+=h;
-	unsigned long fcolor=~0,color=0;
+	unsigned long fcolor=~0;//fill color
+	unsigned long color=0; //text color
+	unsigned long outlinecolor=0;
+	if (outlinestatus==0) outlinecolor=app->rgbcolor(255,0,0);
+
 	int t=-1;
 	switch (page->labeltype) {
 		case 0: fcolor=app->rgbcolor(255,255,255);
@@ -759,8 +807,13 @@ void SpreadInterface::drawLabel(int x,int y,Page *page)
 				color=~0;
 				t=1;
 				break;
+		default: fcolor=app->rgbcolor(255,255,255); //default provided just in case
+				t=0;
+				break;
 	}
-	drawthing(dp->GetWindow(),app->gc(),x,y,w,h,t,0,fcolor);
+	
+	//XSetLineAttributes(app->dpy,app->gc(), (outlinestatus==0?4:1), LineSolid,CapButt,JoinMiter);
+	drawthing(dp->GetWindow(),app->gc(),x,y,w,h,t, outlinecolor,fcolor, (outlinestatus==0?4:1));
 	XSetForeground(app->dpy,app->gc(),color);
 	textout(dp->GetWindow(),page->label,-1,x,y,LAX_CENTER);
 }
@@ -984,13 +1037,24 @@ int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count)
 {
 	if (buttondown && buttondown!=MIDDLEBUTTON) return 1;
 	int pg,p=findSpread(x,y,&pg);
-	curspread=NULL;
-	curpage=-1;
-	if (p<0) return 1;
+	if (p<0) {
+		curspread=NULL;
+		curpage=-1;
+		curpages.flush();
+		return 1;
+	}
+
 	buttondown=MIDDLEBUTTON;
 	mx=x; my=y;
 	curspread=spreads.e[p];
+	if ((state&LAX_STATE_MASK)==0) curpages.flush();//clear if not shift or control click
+	if ((state&LAX_STATE_MASK)==ShiftMask) {
+		 //push all pages between curpgae and new curpage
+		for (int c=(curpage<pg?curpage:pg); c<=(curpage>pg?curpage:pg); c++) curpages.pushnodup(c);
+	} else curpages.pushnodup(pg);
 	curpage=pg;
+
+	needtodraw=1;
 	return 0;
 }
 
@@ -1088,6 +1152,25 @@ int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
 	return 1;
 }
 
+//! Change the type of mark for all in curpages.
+/*! If newmark==-1, then make all the marks one more than the 1st page in curpages.
+ *  If newmark==-2, then make all the marks one less than the 1st page in curpages.
+ *  If newmark>=0, then make all the marks that mark.
+ *
+ * Returns the form of the new mark, or -1 for no marks changed.
+ */
+int SpreadInterface::ChangeMarks(int newmark)
+{
+	if (!curpages.n) return -1;
+
+	if (newmark==-1) newmark=(doc->pages.e[temppagemap[curpages.e[0]]]->labeltype+1) % maxmarkertype;
+	else if (newmark==-2) newmark=(doc->pages.e[temppagemap[curpages.e[0]]]->labeltype+maxmarkertype-1) % maxmarkertype;
+
+	for (int c=0; c<curpages.n; c++) doc->pages.e[temppagemap[curpages.e[c]]]->labeltype=newmark;
+
+	return newmark;
+}
+
 //! Key presses.
 /*!
  * <pre>
@@ -1109,22 +1192,20 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		Cursor cursor=XCreateFontCursor(app->dpy, XC_exchange);
 		XDefineCursor(app->dpy, curwindow->window, cursor);
 		XFreeCursor(app->dpy, cursor);
+
 	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
 		Center(1);
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) { // toggle mark
-		if (curpage<0) return 0;
-		doc->pages.e[temppagemap[curpage]]->labeltype=
-				(doc->pages.e[temppagemap[curpage]]->labeltype+1)%8;
-		needtodraw=1;
+		if (ChangeMarks(-1)>=0) needtodraw=1;
 		return 0;
+
 	} else if (ch=='M' && (state&LAX_STATE_MASK)==ShiftMask) { // toggle mark
-		if (curpage<0) return 0;
-		doc->pages.e[temppagemap[curpage]]->labeltype=
-				(doc->pages.e[temppagemap[curpage]]->labeltype+7)%8;
-		needtodraw=1;
+		if (ChangeMarks(-2)>=0) needtodraw=1;
 		return 0;
+
 	} else if (ch=='p') { //*** for debugging thumbnails....
 		DBG if (curpage<0) return 0;
 		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
@@ -1140,20 +1221,24 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		DBG 	dp->EndDrawing();
 		DBG }
 		DBG return 0;
+
 	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
 		drawthumbnails=!drawthumbnails;
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='c' && (state&LAX_STATE_MASK)==0) {
 		centerlabels++;
 		if (centerlabels>4) centerlabels=0;
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
 		arrangestate=ArrangeNeedsArranging;
 		ArrangeSpreads();
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==ShiftMask) {
 		arrangetype++;
 		if (arrangetype==ArrangetypeMax+1) arrangetype=ArrangetypeMin;
@@ -1181,6 +1266,8 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 
 
 //! Make the window using project.
+/*! Inc count of ndoc.
+ */
 SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 						int xx, int yy, int ww, int hh, int brder,
 						//Window owner,const char *mes, 
@@ -1190,16 +1277,17 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 {
 	project=nproj;
 	doc=ndoc;
+	if (doc) doc->inc_count();
 
 	if (!project) project=laidout->project;
 	if (project) {
 		if (doc) { // make sure doc is in proj?
 			int c;
 			for (c=0; c<project->docs.n; c++) if (doc==project->docs.e[c]->doc) break;
-			if (c==project->docs.n) doc=NULL;
+			if (c==project->docs.n) { doc->dec_count(); doc=NULL; }
 		} 
 		if (!doc) { // doc=first proj doc
-			if (project->docs.n) doc=project->docs.e[0]->doc;
+			if (project->docs.n) { doc=project->docs.e[0]->doc; doc->inc_count(); }
 		}
 	} 
 	if (!viewport) viewport=new ViewportWindow(this,"spread-editor-viewport",
@@ -1211,6 +1299,11 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 
 	needtodraw=1;
 	AddTool(new SpreadInterface(viewport->dp,project,doc),1,1); // local, and select it
+}
+
+SpreadEditor::~SpreadEditor()
+{
+	if (doc) doc->dec_count();
 }
 
 //! Passes off to SpreadInterface::dump_out().
@@ -1229,12 +1322,12 @@ void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObje
  */
 int SpreadEditor::UseThisDoc(Document *ndoc)
 {
-	if (!doc) return 1;
+	if (doc) doc->dec_count();
 	doc=ndoc;
+	if (doc) doc->inc_count();
+
 	SpreadInterface *s=((SpreadInterface *)curtool);
-	s->doc=doc;
-	s->GetSpreads();
-	s->ArrangeSpreads(-1);
+	s->UseThisDoc(doc);
 	return 0;
 }
 
@@ -1255,7 +1348,23 @@ int SpreadEditor::init()
 	anXWindow *last=NULL;
 	TextButton *tbut;
 
-	wholelist.e[wholelist.n-1]->pw(100);
+	MenuButton *menub;
+	 //add a menu button thingy in corner between rulers
+	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
+	//**** mostly same as would be in right-click in viewport.....	
+	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",
+						 MENUBUTTON_CLICK_CALLS_OWNER,
+						 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
+						 0,0,0,0,0,
+						 last,window,"rulercornerbutton",0,
+						 NULL,0,
+						 laidout->icons.GetIcon("Laidout"),
+						 NULL);
+	menub->tooltip(_("Document list"));
+	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50, wholelist.n-1);//add before status bar
+	//AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50, -1);//add before status bar
+
+	//wholelist.e[wholelist.n-1]->pw(100);
 	//AddNull(); // makes the status bar fill whole line
 
 	last=tbut=new TextButton(this,"applybutton",0, 0,0,0,0,1, NULL,window,"applybutton",_("Apply"));
@@ -1313,16 +1422,68 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 		SpreadInterface *s=dynamic_cast<SpreadInterface *>(curtool);
 		if (s) s->Reset();
 		return 0;
+
 	} else if (!strcmp("applybutton",mes)) {
 		//cout <<"SpreadEditor got applybutton message"<<endl;
 		SpreadInterface *s=dynamic_cast<SpreadInterface *>(curtool);
 		if (s) s->ApplyChanges();
 		return 0;
+
 	} else if (!strcmp("updatethumbs",mes)) {
 		 // *** kind of a hack
 		for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
+
+	} else if (!strcmp(mes,"rulercornerbutton")) {
+		 //pop up a list of available documents 
+
+		if (!laidout->project->docs.n) return 0;
+		MenuInfo *menu;
+		menu=new MenuInfo("Viewer");
+
+		 //---add document list, numbers start at 0
+		int c,pos;
+		menu->AddSep("Documents");
+		for (c=0; c<laidout->project->docs.n; c++) {
+			pos=menu->AddItem(laidout->project->docs.e[c]->doc->Name(1),c)-1;
+			menu->menuitems.e[pos]->state|=LAX_ISTOGGLE;
+			if (laidout->project->docs.e[c]->doc==doc) {
+				menu->menuitems.e[pos]->state|=LAX_CHECKED;
+			}
+		}
+
+		 //create the actual popup menu...
+		MenuSelector *popup;
+		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
+						0,0,0,0, 1, 
+						NULL,window,"rulercornermenu", 
+						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
+						 //| MENUSEL_SEND_STRINGS
+						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
+						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
+						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
+						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
+						menu,1);
+//		popup=new PopupMenu(_("Documents"), MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT,
+//						0,0,0,0, 1, 
+//						viewport->window,"rulercornermenu", 
+//						menu,1);
+		popup->pad=5;
+		popup->Select(0);
+		popup->WrapToMouse(None);
+		app->rundialog(popup);
+		return 0;
+
+	} else if (!strcmp(mes,"rulercornermenu")) {
+		DBG cerr <<"rulercornermenu:"<<e->data.l[1]<<endl;
+		int i=e->data.l[1];
+
+		 //0-999 was document things
+		if (i>=0 && i<laidout->project->docs.n) {
+			UseThisDoc(laidout->project->docs.e[i]->doc);
+			return 0;
+		}
 	}
 	return 1;
 }

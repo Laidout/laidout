@@ -242,6 +242,17 @@ int *Spread::pagesFromSpread()
 	return list2.extractArray();
 }
 
+//! Return the index in pagestack of the page corresponding to the given docpage index.
+/*! If page not found, then return -1.
+ */
+int Spread::PagestackIndex(int docpage)
+{
+	for (int c=0; c<pagestack.n; c++) {
+		if (pagestack.e[c]->index==docpage) return c;
+	}
+	return -1;
+}
+
 //----------------------------- Imposition --------------------------
 
 /*! \class Imposition
@@ -689,6 +700,14 @@ int Imposition::NumLayouts()
 {
 	return 3;
 }
+
+//! Default is to return GetPageOutile(pagenum,local).
+/*! When a page has its own margins, outside of which objects usually shouldn't go,
+ * this function is used to get that shape. The origin of the returned path 
+ * is the origin of the page, not necessarily a corner of the margin outline.
+ */
+SomeData *Imposition::GetPageMarginOutline(int pagenum,int local)
+{ return GetPageOutline(pagenum,local); }
 
 //! Return the name of layout, or NULL if layout not recognized.
 /*! Default is to return "Papers" for 2, "Pages" for 1, or "Singles" for 0.

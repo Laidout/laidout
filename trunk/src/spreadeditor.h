@@ -45,12 +45,14 @@ class SpreadEditor;
 class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::DumpUtility
 {
  protected:
+	int maxmarkertype;
 	int centerlabels;
 	char drawthumbnails;
 	int arrangetype,arrangestate;
 	int mx,my,firsttime;
 	int reversebuttons;
 	int curpage, dragpage;
+	Laxkit::NumStack<int> curpages;
 	LittleSpread *curspread;
 	//SpreadView *view;
 	//char dataislocal; 
@@ -82,6 +84,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 //	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
 //	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
 //	//virtual void deletedata();
+	virtual int UseThisDoc(Document *ndoc);
 	virtual int InterfaceOn();
 //	//virtual int InterfaceOff();
 	virtual const char *whattype() { return "SpreadInterface"; }
@@ -94,12 +97,13 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual int findPage(int x,int y);
 	virtual int findSpread(int x,int y,int *page=NULL);
 	virtual void Center(int w=1);
-	virtual void drawLabel(int x,int y,Page *page);
+	virtual void drawLabel(int x,int y,Page *page, int outlinestatus);
 
 	virtual void Reset();
 	virtual void ApplyChanges();
 	virtual void SwapPages(int previouspos, int newpos);
 	virtual void SlidePages(int previouspos, int newpos);
+	virtual int ChangeMarks(int newmark);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
@@ -115,9 +119,11 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
  public:
 	Document *doc;
 	Project *project;
+	Laxkit::anXWindow *rulercornerbutton;
 	SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
 						int xx, int yy, int ww, int hh, int brder,
 						Project *project, Document *ndoc);
+	virtual ~SpreadEditor();
 	virtual int init();
 	virtual const char *whattype() { return "SpreadEditor"; }
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);

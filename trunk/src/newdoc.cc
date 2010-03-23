@@ -387,35 +387,29 @@ int NewDocWindow::init()
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	//AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
-	 // default unit: __inch___
-	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last,window,"unit",
-			            _("Default Units:"),"inch",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
-	
-	 // color mode:		black and white, grayscale, rgb, cmyk, other
-	//-----------------------
-//	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-//						last=linp,window,"colormode",
-//			            _("Color Mode:"),"rgb",0,
+// ******* uncomment when implemented!!
+//
+//	 // default unit: __inch___
+//	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						last,window,"unit",
+//			            _("Default Units:"),"inch",0,
 //			            0,0,1,1,3,3);
 //	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	//------------------------
-	last=popup=new StrSliderPopup(this,"colormode",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, popup,window,"colormode");
-	popup->AddItem(_("RGB"),0);
-	popup->AddItem(_("CMYK"),1);
-	popup->AddItem(_("Grayscale"),1);
-	popup->Select(0);
-	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);// forced linebreak
-	//-----------------------
-
-	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
-	ColorBox *cbox;
-	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
-	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+//	
+//	 // color mode:		black and white, grayscale, rgb, cmyk, other
+//	last=popup=new StrSliderPopup(this,"colormode",ANXWIN_CLICK_FOCUS, 0,0, 0,0, 1, popup,window,"colormode");
+//	popup->AddItem(_("RGB"),0);
+//	popup->AddItem(_("CMYK"),1);
+//	popup->AddItem(_("Grayscale"),1);
+//	popup->Select(0);
+//	AddWin(popup, 200,100,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);// forced linebreak
+//
+//	AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
+//	ColorBox *cbox;
+//	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,window,"paper color", 255,255,255);
+//	AddWin(cbox, 40,0,50,50, linpheight,0,0,50);
 
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
@@ -434,6 +428,7 @@ int NewDocWindow::init()
 //	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 
 
+	 //add thin spacer
 	AddWin(NULL, 2000,2000,0,50, textheight*2/3,0,0,0);//*** forced linebreak
 
 	 // ------------- Imposition ------------------
@@ -496,9 +491,54 @@ int NewDocWindow::init()
 	AddWin(tilex, tilex->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 
+	 // ------- imposition paper inset
+	//AddWin(new MessageBar(this,"Paper inset",ANXWIN_CLICK_FOCUS|MB_MOVE|MB_LEFT, 0,0,0,0,0, _("Paper inset:")));
+	//AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak, makes left justify
+
+	last=linp=insett=new LineInput(this,"inset t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+			            5,250,0,0, 0, 
+						last,window,"inset t",
+			            _("Inset Top:"),NULL,0,
+			            0,0,3,0,3,3);
+	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	if (s) linp->SetText(s->insett);
+	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+	
+	last=linp=insetb=new LineInput(this,"inset b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+			            5,250,0,0, 0, 
+						last,window,"inset b",
+			            _("Inset Bottom:"),NULL,0,
+			            0,0,3,0,3,3);
+	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	if (s) linp->SetText(s->insetb);
+	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak, makes left justify
+	
+	last=linp=insetl=new LineInput(this,"inset l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+			            5,250,0,0, 0, 
+						last,window,"inset l",
+			            _("Inset Left:"),NULL,0,
+			            0,0,3,0,3,3);
+	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	if (s) linp->SetText(s->insetl);
+	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+	
+	last=linp=insetr=new LineInput(this,"inset r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
+			            5,250,0,0, 0, 
+						last,window,"inset r",
+			            _("Inset Right:"),NULL,0,
+			            0,0,3,0,3,3);
+	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+	if (s) linp->SetText(s->insetr);
+	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak, makes left justify
+	
 	
 //	 // -------------- page size --------------------
-//	
+
+	 //add thin spacer
+	AddWin(NULL, 2000,2000,0,50, textheight*2/3,0,0,0);//*** forced linebreak
+
 //	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
 //			_("\n\n(Unimplemented stuff follows,\nLook for it in future releases!)"));
 //	AddWin(mesbar, 2000,1950,0,50, mesbar->win_h,0,0,50);
@@ -556,6 +596,9 @@ int NewDocWindow::init()
 //		s->insett=margint->GetDouble();
 //		s->insetb=marginb->GetDouble();
 	 // ------------------ margins ------------------
+	AddWin(new MessageBar(this,"page margins",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Default page margins:")));
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak, makes left justify
+
 	last=linp=margint=new LineInput(this,"margin t",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
 						last,window,"margin t",
@@ -563,7 +606,6 @@ int NewDocWindow::init()
 			            0,0,3,0,3,3);
 	if (s) linp->SetText(s->insett);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
 	
 	last=linp=marginb=new LineInput(this,"margin b",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -572,7 +614,7 @@ int NewDocWindow::init()
 			            0,0,3,0,3,3);
 	if (s) linp->SetText(s->insetb);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//*** forced linebreak
+	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak, makes left justify
 	
 	last=linp=marginl=new LineInput(this,"margin l",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -581,7 +623,6 @@ int NewDocWindow::init()
 			            0,0,3,0,3,3);
 	if (s) linp->SetText(s->insetl);
 	AddWin(linp, 150,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,50);//*** forced linebreak
 	
 	last=linp=marginr=new LineInput(this,"margin r",ANXWIN_CLICK_FOCUS|LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -982,20 +1023,21 @@ int NewProjectWindow::init()
 	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
 	
-	 // default unit: __inch___
-	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last=linp,window,"unit",
-			            _("Default Units:"),"inch",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
-	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
-	
-	 // color mode:		black and white, grayscale, rgb, cmyk, other
-	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
-						last,window,"colormode",
-			            _("Color Mode:"),"rgb",0,
-			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+// ******* uncomment when implemented!!!
+//	 // default unit: __inch___
+//	last=linp=new LineInput(this,"unit",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						last=linp,window,"unit",
+//			            _("Default Units:"),"inch",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
+//	AddWin(NULL, 2000,2000,0,50, 0,0,0,0);//forced linebreak
+//	
+//	 // color mode:		black and white, grayscale, rgb, cmyk, other
+//	last=linp=new LineInput(this,"colormode",ANXWIN_CLICK_FOCUS|LINP_ONLEFT, 5,250,0,0, 0, 
+//						last,window,"colormode",
+//			            _("Color Mode:"),"rgb",0,
+//			            0,0,1,1,3,3);
+//	AddWin(linp, linp->win_w,0,50,50, linpheight,0,0,50);
 
 	//AddWin(new MessageBar(this,"colormes",ANXWIN_CLICK_FOCUS|MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
 	//ColorBox *cbox;

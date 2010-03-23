@@ -390,6 +390,17 @@ SomeData *Singles::GetPageOutline(int pagenum,int local)
 	return newpath;
 }
 
+//! Return outline of page in page coords. 
+SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
+{
+	PathsData *newpath=new PathsData();//count==1
+	newpath->appendRect(pagestyle->ml,pagestyle->mb, 
+						pagestyle->w()-pagestyle->mr,pagestyle->h()-pagestyle->mt);
+	newpath->FindBBox();
+	//nothing special is done when local==0
+	return newpath;
+}
+
 //! Return the single page.
 /*! The path created here is one path for the page.
  * The bounds of the page are put in spread->path.
@@ -879,6 +890,47 @@ int DoubleSidedSingles::GetSpreadsNeeded(int npages)
 { return (npages-isleft)/2+1; } 
 
 
+//! Return outline of page in page coords. 
+SomeData *DoubleSidedSingles::GetPageMarginOutline(int pagenum,int local)
+{
+	PathsData *newpath=new PathsData();//count==1
+	int pagetype=PageType(pagenum);
+	int l, b, r, t;
+
+	if (pagetype==0) {
+		 //right page
+		l=pagestyler->ml;
+		b=pagestyler->mb;
+		r=pagestyler->w()-pagestyle->mr;
+		t=pagestyler->h()-pagestyle->mt;
+	} else if (pagetype==1) {
+		 //left page
+		l=pagestyle->ml;
+		b=pagestyle->mb;
+		r=pagestyle->w()-pagestyle->mr;
+		t=pagestyle->h()-pagestyle->mt;
+	} else if (pagetype==2) {
+		 //top page
+		l=pagestyle->ml;
+		b=pagestyle->mb;
+		r=pagestyle->w()-pagestyle->mr;
+		t=pagestyle->h()-pagestyle->mt;
+	} else if (pagetype==1) {
+		 //bottom page
+		l=pagestyler->ml;
+		b=pagestyler->mb;
+		r=pagestyler->w()-pagestyle->mr;
+		t=pagestyler->h()-pagestyle->mt;
+	}
+
+	newpath->appendRect(l,b, r,t);
+	newpath->FindBBox();
+
+	//nothing special is done when local==0
+	return newpath;
+}
+
+//! Return the page type for the given document page index.
 /*! 
  * <pre>
  *  0=right
