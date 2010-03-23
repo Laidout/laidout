@@ -1,2 +1,2 @@
-?package(laidout):needs="X11" section="Apps/Editors"\
+?package(laidout):needs="X11" section="Applications/Editors"\
   title="Laidout" command="/usr/bin/laidout"

@@ -1,7 +1,19 @@
+//note: this file is processed by doxygen for your viewing pleasure
+
+
+/*! \page translating   Translations
+
+All of this refers to the goings on in the src/po directory.
+For more info on just what the hell
+all these po things are, you can look up the gettext manual at:
+  http://www.gnu.org/software/gettext/manual/gettext.html
+ 
 Any po files you make MUST be encoded as UTF-8 characters.
 
+<pre>
 
 -------------------------- Updating Basic Info -----------------------
+
 1. POTFILES is a list of files to grab translatable strings from.
    To regenerate that file, do:
     make potfiles
@@ -82,3 +94,8 @@ Any po files you make MUST be encoded as UTF-8 characters.
 
 -------------
 $Id$
+
+</pre>
+
+
+*/
