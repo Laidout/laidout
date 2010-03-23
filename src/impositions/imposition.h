@@ -77,6 +77,7 @@ class Spread : public ObjectContainer
 	virtual char *pagesFromSpreadDesc(Document *doc);
 	virtual int n() { return pagestack.n; }
 	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<pagestack.n) return pagestack.e[i]->page; return NULL; }
+	virtual int PagestackIndex(int docpage);
 };
 
 
@@ -107,6 +108,7 @@ class Imposition : public Style
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
 	//virtual LaxInterfaces::SomeData *GetPaper(int papernum,int local); // return outline of paper in paper coords
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local) = 0; // return outline of page in page coords
+	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	
 	virtual Spread *Layout(int layout,int which); 
 	virtual int NumLayouts();

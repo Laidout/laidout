@@ -21,17 +21,19 @@ VERSION 0.091
        Masking, clip paths and/or softmask
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
-       Clean up patch controls
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        In image properties dialog, have the popup list of potential previews
+       Import images as flow/centered within page margins, not within page outline
        SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
-       SpreadEditor: load and save spread editor arrangements
+       SpreadEditor: load and save spread editor arrangements (including marker placement, other settings)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: optionally work with whole spreads, rather than just single pages
-       SpreadEditor: Corner button should allow changing working document
+(done) SpreadEditor: editor should allow changing working document
+(done) SpreadEditor: be able to change marks of many pages at once
+       SpreadEditor: working with >100 pages does strange hangs, and starts really slow. Fix!
+       Gui for modifying Page Labels
        Fix multi-object selection move when crossing page boundaries
        DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
-       Gui for modifying Page Labels
        double click on group should change selection area to group contents?
        update french and spanish translations, if possible
        Tools should remember their settings
@@ -42,14 +44,19 @@ VERSION 0.091
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
+VERSION 0.092
+-------------
+       Clean up patch controls
+
+
 VERSION 0.1 
 -----------
        First and foremost, need copious testing by people who are not me.
-       undo/redo, with saveable undo stack (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
-       Full internationalization support for input and output, including left, right, and mixed languages. pango?
+       undo/redo, with saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
+       Full internationalization support in window controls for input and output, including left, right. pango?
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
-       Construct a command core, so that no X connection necessary for batch processing
+       Construct an adequate command core, so that no X connection necessary for batch processing
        should probably put laidout stuff in its own namespace, just to be polite
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
@@ -57,7 +64,6 @@ VERSION 0.1
        Should have option to print/see or not print/see big, preview, or no images, per image
        When adjusting things with the object tool, must have option to be temporarily a little transparent
        All the pdf 1.4 group combine properties, like most importantly transparency
-       for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
        Configurable icon panel/menu system, make the button box actually function
        Linear (including curvilinear) guides
        Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
@@ -72,7 +78,7 @@ VERSION 0.1
        Full color management implemented, with up to at least 16 bit per channel color
        a real PrintDialog that can configure itself based on ppds
        Generic style edit window
-       non-hacky new document box that can understand ppds
+       non-hacky new document box that can retrieve printer capabilities, and adjust accordingly (ie grok ppds)
        all things must define their styledefs
        Low level tree editor, akin to the xml editor in inkscape
        make it easy to add/remove/prioritize/replace import/export filters
@@ -94,17 +100,25 @@ VERSION 0.1
 
 VERSION 0.2
 -----------
-Do a poor man's version of a multi-contact touch screen interface with 2 mice plugged in and
-  one of them not set to send core events. Or normal mouse and tablet or ... see MPX!
+Do a poor man's version of a multi-contact touch screen interface with 2 mice  ... see Xinput2/MPX!
+Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
-Full multi-contact, blob and pressure sensitive touch support with touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
 Freehand drawing with tablet support
-Somehow be able to do foldouts from within any page of an imposition
+Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
 fancy arranging to align along any path, and use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
+Numbered lists
+Mixed left/right text in text streams
+Tables
+hanging punctuation
+Automatic table of contents
+Bibliography
+Footnotes
+auto track chapter/section
+Automatic, yet overrideable hyphenation
 layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
 Basically full SVG print support, once svg print stabilizes
@@ -117,8 +131,9 @@ Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, 
 Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
 Stream/Story editor, maybe html export from streameditor?
 Internal generic impositioner for ps files that follow the ps doc. structure guidelines->import ps to mysterydata, export those...
+for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
 Cooperate with photo programs like KPhotoalbum, f-spot
-Make nets cooperate with Hugin/Enblend: plugin for panorama projection onto nets?
+Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from nets?
 Export PLAN files for podofoimpose
 openoffice files import
 Uniconverter support?

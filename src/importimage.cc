@@ -11,34 +11,9 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
-/*! \file
- *
- * \todo This file currently contains the nuts and bolts of importing images, without a gui.
- *   probably should move this file somewhere more meaningful.
- */
-
-/*! \defgroup extras Extras
- * Extraneous addon type of things are documented here. These are functions and such
- * that are not considered core functionality, but are still hella useful.
- *
- * Currently:
- * 
- * dumpInImages() plops down a whole lot of images into the document. Specify the start page,
- * how many per page, and either a list of image files, a directory that contains the images,
- * or a list of ImageData objects.
- *
- * Another extra planned but not implemented yet is applyPageNumbers, which automatically inserts
- * particular images representing the page numbers down in the corner on each page. You would specify
- * the directory that contains the images, and the code does the rest..
- *
- * \todo *** must figure out how to integrate extras into menus, and incorporate callbacks?
- *   Have a class Extra that holds everything about it?
- * \todo implement dumping in Images for page numbers at defined positions (arrangements)
- * \todo Still must work out good mechanism for being able to add on any extras via plugins...
- */
 
 #include "version.h"
 #include "importimage.h"
@@ -72,6 +47,7 @@ using namespace LaxInterfaces;
  * \todo *** in future, this should be expanded to be PlopInfo, to allow for
  *   importation of other kinds of files than images, like EPS, as well as being a general 
  *   object distribution utility.
+ * \todo this isn't really an extra, put it somewhere more useful
  */
 /*! \var int ImagePlopInfo::page
  * 
@@ -88,8 +64,10 @@ using namespace LaxInterfaces;
  */
 
 
-/*! Copies the d array, but transfers pointer of img. Does not alter the count of 
- * img here in th constructor, but does dec in destructor.
+/*! d is a double[4], with xywh values.
+ * Copies the d array, but transfers pointer of img, taking possession of its count.
+ * This means it does not alter the count of
+ * img here in the constructor, but does dec in destructor.
  */
 ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 	: image(img), error(0), dpi(ndpi), page(npage), next(NULL)
@@ -124,7 +102,7 @@ ImagePlopInfo::~ImagePlopInfo()
 /*! \ingroup extras
  * Break a value from a file list file attribute into the preview and description.
  *
- * a line is something like "/path/to/preview  description blah blah".
+ * value will be something like "/path/to/preview  description blah blah".
  *
  * The preview and/or description can be quoted, in which case quotes within must
  * have been escaped. If the preview section does not begin
@@ -186,6 +164,7 @@ int dumpOutImageListFormat(FILE *f)
 			  "  xywh 0 0 2 2               #fit image in this box, in page coordinates.\n"
 			  "                             #  overrides dpi if that dpi would make it too big for the box\n"
 			  "  preview /path/to/preview/  #preview and description fields can also be given\n"
+			  "  tags first-tag \"tag with spaces\" tag3 \n"
 			  "  description \\              #as subattributes of the file\n"
 			  "    Blah blah blah\n"
 			  "    blah blah\n"
@@ -206,8 +185,8 @@ int dumpOutImageListFormat(FILE *f)
  * 
  * The file should be formated as in the dumpOutImageListFormat() function.
  *
- * NOTE to devs: if you change this function, you MUST ALSO CHANGE dumpOutImageListFormat() to accurately
- * reflect the changes.
+ * NOTE to devs: if you change this function or any functions it calls,
+ * you MUST ALSO CHANGE dumpOutImageListFormat() to accurately reflect the changes.
  */
 int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdpi, int perpage)
 {
@@ -226,14 +205,17 @@ int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdp
 
 //! Plop down images from the list contained in a LaxFiles::Attribute.
 /*! \ingroup extras
- *  Returns the page index of the final page or -1 if error.
  *
- *  The attribute must follow the format as described in 
- *  dumpInImageList(Document *,const char *, int, int, int). The order of the elements
- *  matters.
+ * The Attribute will have been generated from an image list file.
+ * 
+ * Returns the page index of the final page or -1 if error.
  *
- *  This function sets up an ImagePlopInfo list, and sends to 
- *  dumpInImages(Document *doc, ImagePlopInfo *images, int startpage).
+ * The attribute must follow the format as described in 
+ * dumpInImageList(Document *,const char *, int, int, int). The order of the elements
+ * matters.
+ *
+ * This function sets up an ImagePlopInfo list, and sends to 
+ * dumpInImages(Document *doc, ImagePlopInfo *images, int startpage).
  *
  * \todo Right now, if an error occurs midstream, the document is still modified. should
  *    instead change doc only if no errors occur all through stream? this will be easy once
@@ -245,6 +227,7 @@ int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdp
  *   only imlib2 recognized images, EPS, and Laidout image lists are recognized, but would be much
  *   easier to have easily added import "filters"... This would also mean have a file type mask
  *   to limit only to images, say, or only TIFFS, EPS, etc..
+ * \todo implement dumping in Images for page numbers at defined positions (arrangements)
  */
 int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int defaultdpi, int perpage)
 {
@@ -269,6 +252,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"dpi")) {
 			IntAttribute(value,&defaultdpi,NULL);
+
 		} else if (!strcmp(name,"perPage")) {
 			if (!strcmp(value,"allOnOnePage")) perpage=-2;
 			else if (!strcmp(value,"asWillFit")) perpage=-1;
@@ -277,22 +261,28 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			if (perpage<-2 || perpage==0) perpage=-1;
 			flush=1;
 			jumptopage=-1;
+
 		} else if (!strcmp(name,"oneDirPerPage")) {
 			onedirperpage=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"path")) {
 			if (value) makestr(path,value);
+
 		} else if (!strcmp(name,"pagebreak")) {
 			flush=1;
 			jumptopage=-1;
+
 		} else if (!strcmp(name,"page")) {
 			if (IntAttribute(value,&jumptopage,NULL)) {
 				if (jumptopage<0) { error=1; break; }
 				flush=1;
 			}
+
 		} else if (!strncmp(name,"file://",7) || !strncmp(name,"/",1) || 
 					!strncmp(name,"./",2) || !strncmp(name,"../",3)) {
  			 // single line variant:  file:///aoeuaoen  /path/to/preview/  name
 			 // multi line has further options
+			const char *tags=NULL;
 			int curdpi=defaultdpi;
 			useplace=0;
 			getPreviewAndDesc(value,&preview,&desc);
@@ -306,19 +296,26 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 				value=att->attributes.e[c2]->value;
 				if (!strcmp(name,"dpi")) {
 					IntAttribute(value,&curdpi,NULL);
+
 				} else if (!strcmp(name,"xywh")) {
 					 //set up a box to fit the image into
 					if (DoubleListAttribute(value,xywh,4,NULL)==4) useplace=1;
 					else { error=1; break; }
+
 				} else if (!strcmp(name,"preview")) {
 					 //overrides any old preview
 					makestr(preview,value);
+
 				} else if (!strcmp(name,"description")) {
 					 // append to any existing description, adding a newline if
 					 // none exists at end of old preview.
 					if (!value) continue;
 					if (desc && desc[strlen(desc)-1]!='\n') appendstr(desc,"\n");
 					appendstr(desc,value);
+
+				} else if (!strcmp(name,"tags")) {
+					if (!isblank(value)) tags=value; 
+
 				}
 			}
 			
@@ -339,6 +336,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			 //if not eps, then do generic image. If not openable as image, then create a broken image
 			if (!image) image=new ImageData(file,preview,0,0,0);
 			image->SetDescription(desc);
+			if (tags) makestr(image->tags,tags); //***must convert to Tagged class way of things
 			delete[] file; file=NULL;
 			if (!image->image) {
 				 //broken image, make it have dimensions curdpi x curdpi
@@ -365,8 +363,9 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			if (preview) delete[] preview;
 			if (desc) delete[] desc;
 			preview=desc=NULL;
+
 		} else {
-			DBG cerr <<" *** potential error in list, found unknown attribute"<<endl;
+			DBG cerr <<" *** potential error in list, found unknown attribute: "<<(name?name:"(no name)")<<endl;
 		}
 		
 		if (flush>0) {
@@ -550,8 +549,10 @@ int dumpInImages(Document *doc, int startpage,
 
 //! Plop down images starting at startpage.
 /*! \ingroup extras
- * If there are more images than pages, then add pages. Centers images on each page
+ * If there are more images than pages, then add pages. 
+ * Default is to center images within the margins on each page
  * with the page's default dpi (if the info's dpi==-1). (assumes that the layer is not transformed in any way)
+ * If xywh box information is given, then place in that box, ignoring page margins.
  *
  * Does not delete the images list, the calling code should do that.
  *
@@ -588,7 +589,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		nnn;       // number of images in a current page
 	n=0; // total number of images placed, nn is placed for page
 	SomeData *outline=NULL;
-	SomeData *obj;
+	SomeData *obj=NULL;
 
 	while (info) { // one loop per page
 		//***if (progressfunc) progressfunc(progressarg, curimgi/numimgs);
@@ -612,7 +613,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		 //    non-rectangular pages
 		if (outline) { outline->dec_count(); outline=NULL; }
 		outline=doc->pages.e[curpage]->pagestyle->outline;
-		if (!outline) outline=doc->imposition->GetPageOutline(curpage,0); //adds 1 count already
+		if (!outline) outline=doc->imposition->GetPageMarginOutline(curpage,0); //adds 1 count already
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;

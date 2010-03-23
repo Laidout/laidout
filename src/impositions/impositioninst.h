@@ -35,6 +35,7 @@ class Singles : public Imposition
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
+	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
 	virtual int PaperFromPage(int pagenumber);
@@ -68,6 +69,7 @@ class DoubleSidedSingles : public Singles
 	virtual Style *duplicate(Style *s=NULL);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
+	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
 	virtual int SpreadFromPage(int pagenumber);

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=Laidout
+GenericName=Laidout
+Comment=For laying out
+Exec=laidout
+TryExec=laidout
+Icon=laidout.png
+Type=Application
+Categories=Graphics;2DGraphics;VectorGraphics;Publishing;

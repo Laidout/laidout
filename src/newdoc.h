@@ -47,6 +47,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::StrSliderPopup *impsel;
 	Laxkit::LineEdit *lineedit;
 	Laxkit::LineInput *marginl,*marginr,*margint,*marginb;
+	Laxkit::LineInput *insetl,*insetr,*insett,*insetb;
 	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*tilex,*tiley,*impfromfile;
 	Laxkit::MessageBar *mesbar;
 	Laxkit::CheckBox *defaultpage,*custompage;
