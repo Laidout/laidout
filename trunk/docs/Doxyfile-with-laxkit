@@ -410,7 +410,7 @@ INPUT                  = doxygen/laidoutintro.txt ../src/TODO ../src/README doxy
 # *.c *.cc *.cxx *.cpp *.c++ *.java *.ii *.ixx *.ipp *.i++ *.inl *.h *.hh *.hxx *.hpp 
 # *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm
 
-FILE_PATTERNS          = *.cc *.h
+FILE_PATTERNS          = *.cc *.h README
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 

@@ -14,7 +14,8 @@
 // Copyright (C) 2004-2009 by Tom Lechner
 //
 
-**************************this file is not used yet!!**************;
+***todo 
+// **************************this file is not used yet!!**************;
 
 #include <lcms.h>
 

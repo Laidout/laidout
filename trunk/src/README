@@ -14,6 +14,7 @@ impositions   All things impositions
 interfaces    Extra interfaces
 filetypes     Export and import code
 printing      Code for printing, and postscript export
+extras        Extra plugins and such, not to be considered part of core functionality
 
 </pre>
 
