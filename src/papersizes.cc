@@ -618,7 +618,7 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (Name) fprintf(f,"%sName %s\n",spc,Name);
 	//if (owner) ***;
 	
-	double *m;
+	const double *m;
 	for (int c=0; c<papers.n; c++) {
 		fprintf(f,"%spaper\n",spc);
 		m=papers.e[c]->m();

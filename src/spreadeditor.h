@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 #ifndef SPREADEDITOR_H
 #define SPREADEDITOR_H
@@ -21,23 +21,7 @@
 #include "document.h"
 #include "project.h"
 #include "drawdata.h"
-
-//----------------------- LittleSpread --------------------------------------
-
-class LittleSpread : public LaxInterfaces::SomeData
-{
- public:
-	int what;
-	Spread *spread; // holds the outline, etc..
-	LaxInterfaces::PathsData *connection;
-	int lowestpage,highestpage;
-	LittleSpread *prev,*next;
-	LittleSpread(Spread *sprd, LittleSpread *prv);
-	virtual ~LittleSpread();
-	virtual int pointin(flatpoint pp,int pin=1);
-	virtual void mapConnection();
-	virtual void FindBBox();
-};
+#include "spreadview.h"
 
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
@@ -46,40 +30,38 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 {
  protected:
 	int maxmarkertype;
-	int centerlabels;
+
+	SpreadView *view;
 	char drawthumbnails;
-	int arrangetype,arrangestate;
+
 	int mx,my,firsttime;
 	int reversebuttons;
+	flatpoint lbdown, lastmove;
+
 	int curpage, dragpage;
 	Laxkit::NumStack<int> curpages;
+	Laxkit::PtrStack<LittleSpread> curspreads;
 	LittleSpread *curspread;
-	//SpreadView *view;
-	//char dataislocal; 
-	Laxkit::PtrStack<LittleSpread> spreads;
-	int temppagen,*temppagemap;
-	//Laxkit::PtrStack<TextBlock> notes;
-	int reversemap(int i);
+
  public:
 	Document *doc;
 	Project *project;
 	unsigned int style;
 	unsigned long controlcolor;
+
 	SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum);
 	virtual ~SpreadInterface();
-	virtual int rLBDown(int x,int y,unsigned int state,int count);
-	virtual int rLBUp(int x,int y,unsigned int state);
-	virtual int rMBDown(int x,int y,unsigned int state,int count);
-	virtual int rMBUp(int x,int y,unsigned int state);
-	virtual int LBDown(int x,int y,unsigned int state,int count);
-	virtual int LBUp(int x,int y,unsigned int state);
-	virtual int MBDown(int x,int y,unsigned int state,int count);
-	virtual int MBUp(int x,int y,unsigned int state);
-//	//virtual int RBDown(int x,int y,unsigned int state,int count);
-//	//virtual int RBUp(int x,int y,unsigned int state);
-	virtual int MouseMove(int x,int y,unsigned int state);
-	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state);
-	virtual int CharRelease(unsigned int ch,unsigned int state);
+	virtual int rLBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int rMBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int rMBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
 //	//virtual int DrawData(Laxkit::anObject *ndata,int info=0);
 //	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
@@ -90,12 +72,15 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual const char *whattype() { return "SpreadInterface"; }
 	virtual const char *whatdatatype() { return "LittleSpread"; }
 	virtual void Clear(LaxInterfaces::SomeData *d);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
+	virtual void clearSelection();
+	//virtual int Modified();
 	virtual void CheckSpreads(int startpage,int endpage);
 	virtual void GetSpreads();
 	virtual void ArrangeSpreads(int how=-1);
-	virtual int findPage(int x,int y);
-	virtual int findSpread(int x,int y,int *page=NULL);
+	virtual LittleSpread *findSpread(int x,int y,int *pagestacki, int *thread);
 	virtual void Center(int w=1);
 	virtual void drawLabel(int x,int y,Page *page, int outlinestatus);
 
@@ -120,15 +105,14 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	Document *doc;
 	Project *project;
 	Laxkit::anXWindow *rulercornerbutton;
-	SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+	SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 						int xx, int yy, int ww, int hh, int brder,
 						Project *project, Document *ndoc);
 	virtual ~SpreadEditor();
 	virtual int init();
 	virtual const char *whattype() { return "SpreadEditor"; }
-	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int Event(Laxkit::EventData *data,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);
 	virtual int Resize(int nw,int nh);
 	virtual int UseThisDoc(Document *ndoc);

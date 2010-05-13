@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -568,7 +568,7 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		l=new NetLine;
 		*l=*net->lines.e[c];
 		 
-		path=new Path(l->points,l->linestyle,0);
+		path=new Path(l->points,l->linestyle);
 		l->points=NULL;
 		delete l;
 
@@ -612,8 +612,11 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		newpath->FindBBox();
 		delete[] p;
 
-		if (netface->matrix) transform_mult(newpath->m(), netface->matrix, net->m());
-		else transform_copy(newpath->m(), net->m());
+		if (netface->matrix) {
+			double mm[6];
+			transform_mult(mm, netface->matrix, net->m());
+			newpath->m(mm);
+		} else newpath->m(net->m());
 		spread->pagestack.push(new PageLocation(page,NULL,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
 	}
@@ -785,6 +788,24 @@ int *NetImposition::PrintingPapers(int frompage,int topage)
 //	i[1]=tp;
 //	i[2]=-2;
 //	return i;
+}
+
+//! Assuming one page type per active face.
+int NetImposition::NumPageTypes()
+{
+	return numActiveFaces();
+}
+
+//! Just return a string with the number.
+/*! \todo i doubt it will matter, but this function is not threadsafe. the returned value
+ *    should be used quickly, before anything else calls this function.
+ */
+const char *NetImposition::PageTypeName(int pagetype)
+{
+	if (pagetype<0 || pagetype>=numActiveFaces()) return NULL;
+	static char str[50];
+	sprintf(str,"%d",pagetype);
+	return str;
 }
 
 //! Bit of a cop-out currently, just returns page%numActiveFaces().

@@ -14,11 +14,11 @@
 // Copyright (C) 2004-2009 by Tom Lechner
 //
 
-#include "about.h"
-#include <lax/mesbar.h>
-#include <lax/textbutton.h>
-
+#include <lax/messagebar.h>
+#include <lax/button.h>
 #include <lax/version.h>
+
+#include "about.h"
 #include "headwindow.h"
 #include "version.h"
 #include "language.h"
@@ -37,7 +37,7 @@ using namespace Laxkit;
  */  
 
 AboutWindow::AboutWindow()
-	: MessageBox(NULL,"About",ANXWIN_CENTER, 0,0,500,600,0, NULL,None,NULL, NULL)
+	: MessageBox(NULL,"About",_("About"),ANXWIN_CENTER, 0,0,500,600,0, NULL,0,NULL, NULL)
 {
 }
 
@@ -68,13 +68,13 @@ int AboutWindow::preinit()
 			"\n"
 			"Translations:\n"
 			"French: Nabyl Bennouri"));
-	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
+	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",NULL,MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
 	delete[] about;
 			
-	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,
-					mesbar->win_h,mesbar->win_h,0,50);
+	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,0,
+					mesbar->win_h,mesbar->win_h,0,50,0);
 	AddNull();
-	AddButton(TBUT_OK);
+	AddButton(BUTTON_OK);
 	
 	//WrapToExtent: 
 	arrangeBoxes(1);
@@ -105,14 +105,15 @@ int AboutWindow::init()
 //	win_w=m[1];
 //	win_h=m[7];
 
-	if (!win_sizehints) {
-		win_sizehints=XAllocSizeHints();
+	//*** is this necessary??
+	if (!xlib_win_sizehints) {
+		xlib_win_sizehints=XAllocSizeHints();
 	}
-	win_sizehints->x=win_x;
-	win_sizehints->y=win_y;
-	win_sizehints->width=win_w;
-	win_sizehints->height=win_h;
-	win_sizehints->flags=USPosition|USSize;
+	xlib_win_sizehints->x=win_x;
+	xlib_win_sizehints->y=win_y;
+	xlib_win_sizehints->width=win_w;
+	xlib_win_sizehints->height=win_h;
+	xlib_win_sizehints->flags=USPosition|USSize;
 	      
 	MoveResize(win_x,win_y,win_w,win_h);
 	
@@ -123,7 +124,7 @@ int AboutWindow::init()
 
 /*! Esc  dismiss the window.
  */
-int AboutWindow::CharInput(unsigned int ch,unsigned int state)
+int AboutWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard *d)
 {
 	if (ch==LAX_Esc) {
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);

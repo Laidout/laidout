@@ -24,11 +24,11 @@
 #include "palettes.h"
 #include "headwindow.h"
 #include "plaintextwindow.h"
+#include "language.h"
 
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
-
-#include <X11/cursorfont.h>
+#include <lax/mouseshapes.h>
 
 #include <iostream>
 using namespace std;
@@ -50,9 +50,7 @@ using namespace LaxFiles;
  */
 anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	Window owner=None;
-	if (laidout->lastview) owner=laidout->lastview->window;
-	PlainTextWindow *text=new PlainTextWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
+	PlainTextWindow *text=new PlainTextWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
 	return text;
 }
 
@@ -62,9 +60,9 @@ anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned l
  */
 anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	Window owner=None;
-	if (laidout->lastview) owner=laidout->lastview->window;
-	PaletteWindow *palette=new PalettePane(parnt,ntitle,style, 0,0,0,0,1, NULL,owner,"curcolor");
+	unsigned long owner=0;
+	if (laidout->lastview) owner=laidout->lastview->object_id;
+	PaletteWindow *palette=new PalettePane(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL,owner,"curcolor");
 	return palette;
 }
 
@@ -74,7 +72,7 @@ anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned lon
  */
 anXWindow *newButtonBoxFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	ButtonBox *buttons=new ButtonBox(parnt,ntitle,style, 0,0,0,0,1);
+	ButtonBox *buttons=new ButtonBox(parnt,ntitle,ntitle,style, 0,0,0,0,1);
 	return buttons;
 }
 
@@ -84,7 +82,7 @@ anXWindow *newButtonBoxFunc(anXWindow *parnt,const char *ntitle,unsigned long st
  */
 anXWindow *newCommandWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	CommandWindow *command=new CommandWindow(parnt,ntitle,style, 0,0,0,0,1);
+	CommandWindow *command=new CommandWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1);
 	return command;
 }
 
@@ -94,7 +92,7 @@ anXWindow *newCommandWindowFunc(anXWindow *parnt,const char *ntitle,unsigned lon
  */
 anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	return new ViewWindow(parnt,ntitle,style, 0,0,0,0,1, NULL);
+	return new ViewWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
 }
 
 //------------------------ newSpreadEditorFunc
@@ -103,7 +101,7 @@ anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  */
 anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
-	return new SpreadEditor(parnt,ntitle,style, 0,0,0,0,1, NULL,NULL);
+	return new SpreadEditor(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL,NULL);
 }
 
 //------------------------ newHelpWindowFunc
@@ -113,7 +111,6 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
 anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 {
 	HelpWindow *help=new HelpWindow(1);
-	XFree(help->win_sizehints);
 	help->win_parent=parnt;
 	return help;
 }
@@ -156,8 +153,8 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 			if (laidout->project->docs.n) doc=laidout->project->docs.e[0]->doc;
 		}
 	}
-	HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,500,500,0);
-	//HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
+	//HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,500,500,0);
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
@@ -173,7 +170,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
  */
 anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 {
-	HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
 	head->dump_in_atts(att,0,NULL);//**context?
 	return head;
 }
@@ -215,11 +212,12 @@ HeadWindow *HeadWindow::markedhead=NULL;
  *   This should be changed to a HeadWindow static list, allowing all instances to share one
  *   list, which can easily be added to by plugins..
  */
-HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 							int xx,int yy,int ww,int hh,int brder)
-		: SplitWindow(parnt,ntitle,
+		: SplitWindow(parnt,nname,ntitle,
 				nstyle|SPLIT_WITH_SAME|SPLIT_BEVEL|SPLIT_DRAG_MAPPED,
-				xx,yy,ww,hh,brder)
+				xx,yy,ww,hh,brder,
+				NULL,0,NULL)
 {
 	//*** should fill with funcs for all known default main windows:
 	//  ViewWindow
@@ -230,7 +228,10 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 	//  StyleManager
 	//  ObjectTreeEditor
 
-	win_xatts.background_pixel=app->coloravg(app->color_bg,0,.33);
+	WindowColors *newcolors=new WindowColors(*win_colors);
+	installColors(newcolors);
+	newcolors->dec_count();
+	win_colors->bg=coloravg(win_colors->bg,0,.33);
 	space=4;
 
 	tooltip("With mouse in the gutter:\n"
@@ -243,15 +244,15 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long
 
 	// add the window generator funcs
 	AddWindowType("ViewWindow","View Window",0,newViewWindowFunc,1);
-	//AddWindowType("ViewWindow","View Window",ANXWIN_LOCAL_ACTIVE,newViewWindowFunc,1);
-	AddWindowType("SpreadEditor","Spread Editor",ANXWIN_LOCAL_ACTIVE,newSpreadEditorFunc,0);
-	AddWindowType("HelpWindow","Help Window",ANXWIN_LOCAL_ACTIVE,newHelpWindowFunc,0);
-	AddWindowType("CommandWindow","Command Prompt",ANXWIN_LOCAL_ACTIVE,newCommandWindowFunc,0);
+	//AddWindowType("ViewWindow","View Window",0,newViewWindowFunc,1);
+	AddWindowType("SpreadEditor","Spread Editor",0,newSpreadEditorFunc,0);
+	AddWindowType("HelpWindow","Help Window",0,newHelpWindowFunc,0);
+	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
 	AddWindowType("ButtonBox","Buttons",
-			ANXWIN_LOCAL_ACTIVE|BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
+			BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
 			newButtonBoxFunc,0);
-	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD|ANXWIN_LOCAL_ACTIVE,newPaletteWindowFunc,0);
-	AddWindowType("PlainTextWindow","Text Editor",ANXWIN_LOCAL_ACTIVE,newPlainTextWindowFunc,0);
+	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
+	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
 }
 
 //! Empty virtual destructor.
@@ -267,12 +268,13 @@ int HeadWindow::Mark(int c)
 	if (c==-1) {
 		markedpane=curbox;
 		markedhead=this;
-		DBG cerr <<"----head marking curbox in window "<<window<<endl;
+		DBG cerr <<"----head marking curbox in window "<<object_id<<endl;
+
 	} else {
 		if (c<0 || c>windows.n) return 1;
 		markedpane=windows.e[c];
 		markedhead=this;
-		DBG cerr <<"----head marking box "<<c<<" in window "<<window<<endl;
+		DBG cerr <<"----head marking box "<<c<<" in window "<<object_id<<endl;
 	}
 	return 0;
 }
@@ -468,20 +470,6 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 			if (c2>2) win_w=i[2];
 			if (c2>3) win_h=i[3];
 
-			if (c2>3 && win_w>0 && win_h>0) {
-				if (!win_sizehints) win_sizehints=XAllocSizeHints();
-				if (win_sizehints && !win_parent) {
-					DBG cerr <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
-					//*** The initial x and y become the upper left corner of the window
-					//manager decorations. ***how to figure out how much room those decorations take,
-					//so as to place things on the screen accurately? like full screen view?
-					win_sizehints->x=win_x;
-					win_sizehints->y=win_y;
-					win_sizehints->width=win_w;
-					win_sizehints->height=win_h;
-					win_sizehints->flags=USPosition|USSize;
-				}
-			}
 		} else if (!strcmp(name,"pane")) {
 			box=new PlainWinBox(NULL,0,0,0,0);
 			for (c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
@@ -594,11 +582,12 @@ MenuInfo *HeadWindow::GetMenu()
 
 /*! Propagate TreeChangeEvent events
 */
-int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
+int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
 	DBG cerr <<"HeadWindow got message: "<<mes<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
-		TreeChangeEvent *edata,*te=dynamic_cast<TreeChangeEvent *>(data);
+		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
+
 		if (!te) return 1;
 		ViewWindow *view;
 		SpreadEditor *s;
@@ -612,18 +601,16 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 
 			//construct events for the panes
 			if (yes){
-				edata=new TreeChangeEvent();
-				*edata=*te;
-				edata->send_towindow=windows.e[c]->win->window;
-				app->SendMessage(edata);
+				TreeChangeEvent *edata=new TreeChangeEvent(*te);
+				app->SendMessage(edata,windows.e[c]->win->object_id,"docTreeChange",object_id);
 				DBG cerr <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
 				yes=0;
 			}
 		}
-		delete data;
 		return 0;
+
 	} else if (!strcmp(mes,"open document")) {
-		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
+		const StrsEventData *s=dynamic_cast<const StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
 		//**** this is really hacky if doc already open...
@@ -649,97 +636,76 @@ int HeadWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				}
 			}
 		}
-		delete data;
 		return 0;
-	}
-	return 1;
-}
 
-int HeadWindow::event(XEvent *e)
-{ 
-	//DBG cerr <<"SplitWindow::event:"<<event_name(e->type)<<endl;
-	//DBG if (e->type==EnterNotify || e->type==LeaveNotify) { cerr <<" crossing:"; printxcrossing(this,e); }
-
-	if (e->type==LeaveNotify && mode!=SWAPWITH && mode!=DROPTO) {
+	} else if (data->type==LAX_onMouseOut && mode!=SWAPWITH && mode!=DROPTO) {
 		mousein=0;
 		DBG cerr <<"************************UNDEFINE CURSOR**************** mode="<<mode<<endl;
-		if (!buttondown) XUndefineCursor(app->dpy,window);
-	}
-	return SplitWindow::event(e);
-}
+		const EnterExitData *e=dynamic_cast<const EnterExitData*>(data);
+		if (!buttondown.any()) dynamic_cast<LaxMouse*>(e->device)->setMouseShape(this,0);
 
-//! Intercept a menu item values 50 to 99.
-/*! 
- * <pre>
- *  50: Create new HeadWindow
- *  51: Drop to...
- *  52: Float
- * </pre>
- */
-int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
-{
-	if (!strcmp(mes,"popupsplitmenu") && e->data.l[1]>=50 && e->data.l[1]<100) {
-		if (e->data.l[1]==50) {
+	} else if (!strcmp(mes,"popupsplitmenu")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (s->info2==50) {
 			const char *type=NULL;
 			if (curbox && curbox->win) type=curbox->win->whattype();
 			app->addwindow(newHeadWindow(NULL,type));
 			return 0;
-		} else if (e->data.l[1]==52) {
+
+		} else if (s->info2==52) {
 			//Float
 
 			//pop the window to new headwindow
 			if (!curbox || !curbox->win || windows.n<=1) return 0;
 
-			HeadWindow *head=new HeadWindow(NULL,"head",ANXWIN_LOCAL_ACTIVE, 0,0,500,500,0);
+			HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
 			app->addwindow(head);
 			head->Add(curbox->win);//this reparents win
 			curbox->win=NULL;
 
 			RemoveCurbox();
 			return 0;
-		} else if (e->data.l[1]==51) {
+
+		} else if (s->info2==51) {
 			if (mode!=0 || !curbox) return 0;
 			DBG cerr <<"  HeadWindow:: Drop To..."<<endl;
 
-			XWindowAttributes atts;
-			XGetWindowAttributes(app->dpy,window, &atts);
-			if (atts.map_state!=IsViewable) return 0;
+			//XWindowAttributes atts;
+			//XGetWindowAttributes(app->dpy,window, &atts);
+			//if (atts.map_state!=IsViewable) return 0;
 
-			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
-						GrabModeAsync,GrabModeAsync,
-						None, None, CurrentTime)!=GrabSuccess) return 0;
-			DBG cerr <<"***********************GRAB***********************"<<endl;
+			//if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
+			//			GrabModeAsync,GrabModeAsync,
+			//			None, None, CurrentTime)!=GrabSuccess) return 0;
+			//DBG cerr <<"***********************GRAB***********************"<<endl;
 			app->Tooltips(0);
-			Cursor cursor=XCreateFontCursor(app->dpy,XC_sb_down_arrow);
-			if (cursor) {
-				DBG cerr <<"***********************CURSOR***********************"<<endl;
-				XDefineCursor(app->dpy,window,cursor);
-				XFreeCursor(app->dpy,cursor);
-			}
+
+			DBG cerr <<"***********************CURSOR***********************"<<endl;
+			//***mouse->setMouseShape(this,LAX_MOUSE_Down);
+
 			markedhead=NULL;
 			markedpane=NULL;
 			mode=DROPTO;
 			DBG cerr <<"***************changing mode to DROPTO"<<endl;
 			return 0;
-		} else if (e->data.l[1]==53) {
+
+		} else if (s->info2==53) {
 			// swap with...
 			if (mode!=0 || !curbox) return 0;
 			DBG cerr <<"  HeadWindow:: Swap With..."<<endl;
 
-			XWindowAttributes atts;
-			XGetWindowAttributes(app->dpy,window, &atts);
-			if (atts.map_state!=IsViewable) return 0;
+			//XWindowAttributes atts;
+			//XGetWindowAttributes(app->dpy,window, &atts);
+			//if (atts.map_state!=IsViewable) return 0;
 
-			DBG cerr <<"***********************GRAB***********************"<<endl;
-			if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
-						GrabModeAsync,GrabModeAsync,
-						None, None, CurrentTime)!=GrabSuccess) return 0;
-			Cursor cursor=XCreateFontCursor(app->dpy,XC_exchange);
-			if (cursor) {
-				DBG cerr <<"***********************CURSOR***********************"<<endl;
-				XDefineCursor(app->dpy,window,cursor);
-				XFreeCursor(app->dpy,cursor);
-			}
+			//DBG cerr <<"***********************GRAB***********************"<<endl;
+			//if (XGrabPointer(app->dpy, window, False,ButtonPressMask|ButtonReleaseMask|PointerMotionMask,
+			//			GrabModeAsync,GrabModeAsync,
+			//			None, None, CurrentTime)!=GrabSuccess) return 0;
+
+			DBG cerr <<"***********************CURSOR***********************"<<endl;
+			//***mouse->setMouseShape(this,LAX_MOUSE_Exchange);
+
 			app->Tooltips(0);
 			markedhead=NULL;
 			markedpane=NULL;
@@ -748,24 +714,25 @@ int HeadWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			return 0;
 		}
 	}
-	return SplitWindow::ClientEvent(e,mes);
+
+	return SplitWindow::Event(data,mes);
 }
 
 //! Intercept and do nothing when grabbed for a "drop to..." to or "swap with...".
-int HeadWindow::LBDown(int x,int y,unsigned int state,int count)
+int HeadWindow::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	DBG cerr <<"***********HeadWindow::LBDown mode=="<<mode<<endl;
-	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBDown(x,y,state,count);
+	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBDown(x,y,state,count,d);
 	//markedpane=NULL;
 	//markedhead=NULL;
 	return 0;
 }
 
 //! Intercept to do a "drop to..." to or "swap with...".
-int HeadWindow::LBUp(int x,int y,unsigned int state)
+int HeadWindow::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	DBG cerr <<"***********HeadWindow::LBUp mode=="<<mode<<endl;
-	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state);
+	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::LBUp(x,y,state,d);
 
 	XUngrabPointer(app->dpy, CurrentTime);
 	app->Tooltips(1);
@@ -789,7 +756,7 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 
 			DBG cerr <<"********Dropping... \"float\" curbox, then split markedpane according to mouse position"<<endl;
 			int side=-1,x,y;
-			mouseposition(markedhead,&x,&y,NULL);
+			mouseposition(d->id,markedhead,&x,&y,NULL,NULL);
 			DBG cerr <<"********** x,y: "<<x<<','<<y<<endl;
 			//DBG cerr <<"********"<<markedhead->win_x<<","<<markedhead->win_y<<"  "<<
 			//*** this should probably go by corner to corner, not x=y and x=-y.
@@ -826,14 +793,14 @@ int HeadWindow::LBUp(int x,int y,unsigned int state)
 //! Intercept for finding a drop to or swap with location, put in markedhead and markedpane.
 /*! This stores the target head and pane in markedhead and markedpane.
 */
-int HeadWindow::MouseMove(int x,int y,unsigned int state)
+int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {//***
 	DBG cerr <<"***********HeadWindow::MouseMove  mode=="<<mode<<endl;
-	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::MouseMove(x,y,state);
+	if (mode!=DROPTO && mode!=SWAPWITH) return SplitWindow::MouseMove(x,y,state,d);
 
 	//***based on mouseposition set markedhead and markedpane
-	anXWindow *win;
-	mouseposition(&x,&y,NULL,&win,NULL);
+	anXWindow *win=NULL;
+	mouseposition(d->id,NULL,&x,&y,NULL,&win);
 	if (!win) {
 		markedpane=NULL;
 		markedhead=NULL;
@@ -849,7 +816,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
 		markedpane=NULL;
 		return 0;
 	}
-	mouseposition(markedhead,&x,&y,NULL,NULL,NULL);
+	mouseposition(d->id,markedhead,&x,&y,NULL,NULL);
 	x=markedhead->FindBox(x,y);
 	if (x<0) markedhead=NULL;
 	else markedhead->Mark(x);
@@ -862,19 +829,21 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state)
  * 'o'  open new document\n
  * 'q'  quit
 */
-int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
+int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	if (ch==LAX_Esc) {
 		DBG cerr <<"***************changing mode to NORMAL"<<endl;
 		mode=NORMAL;
-		XUndefineCursor(app->dpy,window);
-		XUngrabPointer(app->dpy, CurrentTime);
+		d->paired_mouse->setMouseShape(this,0);
+		d->paired_mouse->ungrabDevice();
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='o' && (state&LAX_STATE_MASK)==ControlMask) {
-		app->rundialog(new FileDialog(NULL,"Open Document",
-					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,0,0,0, window,"open document",
+		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, object_id,"open document",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
 					NULL,NULL,NULL,"Laidout"));
 		return 0;
 		
@@ -884,21 +853,23 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		return 0; 
 	}
 
-	return SplitWindow::CharInput(ch,buffer,len,state);
+	return SplitWindow::CharInput(ch,buffer,len,state,d);
 }
 
 //! Reset mode when focus somehow leaves the window during non-normal modes.
-int HeadWindow::FocusOff(XFocusChangeEvent *e)
+int HeadWindow::FocusOff(const FocusChangeData *e)
 { //***
 	DBG cerr <<"**********************HeadWindow::FocusOff"<<endl;
-	if (e->detail==NotifyInferior || e->detail==NotifyAncestor || e->detail==NotifyNonlinear) {
+	if (e->target==this) {
 		//if (mode!=SWAPWITH && mode!=DROPTO && mode!=MAXIMIZED) {
 		if (mode==SWAPWITH || mode==DROPTO || mode==MAXIMIZED) {
 			mode=NORMAL;
 			DBG cerr <<"***********************UN-GRAB***********************"<<endl;
-			XUngrabPointer(app->dpy, CurrentTime);
+
+			LaxMouse *mouse=dynamic_cast<LaxKeyboard*>(const_cast<LaxDevice*>(e->device))->paired_mouse;
+			mouse->ungrabDevice();
 			app->Tooltips(1);
-			if (mode!=NORMAL && buttondown) {
+			if (mode!=NORMAL && buttondown.any()) {
 				//****uh?
 			}
 		}

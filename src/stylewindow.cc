@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2006,2010 by Tom Lechner
 //
 
 
@@ -19,7 +19,7 @@
 // and arbitrary StyleDef.
 //
 
-#include <lax/mesbar.h>
+#include <lax/messagebar.h>
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>
 #include "stylewindow.h"
@@ -66,10 +66,10 @@ using namespace Laxkit;
 
 //! Create new window from the StyleDef of a Style.
 GenericStyleDialog::GenericStyleDialog(Style *nstyle,anXWindow *owner)
-	: RowFrame(NULL,  nstyle?nstyle->Stylename():"random style",
+	: RowFrame(NULL,  NULL,nstyle?nstyle->Stylename():"random style",
 			ROWFRAME_STRETCH|ROWFRAME_HORIZONTAL, 
 			0,0,0,0,0,
-			NULL,None,NULL,
+			NULL,0,NULL,
 			5)
 {
 	def=NULL;
@@ -77,16 +77,13 @@ GenericStyleDialog::GenericStyleDialog(Style *nstyle,anXWindow *owner)
 	if (style) style->inc_count();
 	
 	last=NULL;
-	win_xatts.event_mask|=KeyPressMask|KeyReleaseMask|ButtonPressMask|
-						  ButtonReleaseMask|PointerMotionMask|ExposureMask;
-	win_xattsmask|=CWEventMask;
 }
 
 //! Constructor from a StyleDef, ends by sending a GenericStyle object.
 GenericStyleDialog::GenericStyleDialog(StyleDef *nsd,anXWindow *owner)
-	: RowFrame(NULL,"random style", ROWFRAME_SPACE|ROWFRAME_HORIZONTAL, 
+	: RowFrame(NULL,NULL,"random style", ROWFRAME_SPACE|ROWFRAME_HORIZONTAL, 
 			   0,0,0,0,0,
-			   NULL,None,NULL,
+			   NULL,0,NULL,
 			   5)
 {
 	def=nsd;
@@ -94,9 +91,6 @@ GenericStyleDialog::GenericStyleDialog(StyleDef *nsd,anXWindow *owner)
 	style=NULL;
 	
 	last=NULL;
-	win_xatts.event_mask|=KeyPressMask|KeyReleaseMask|ButtonPressMask|
-						  ButtonReleaseMask|PointerMotionMask|ExposureMask;
-	win_xattsmask|=CWEventMask;
 }
 
 GenericStyleDialog::~GenericStyleDialog()
@@ -120,7 +114,7 @@ int GenericStyleDialog::init()
 			appendstr(blah," has unspecified fields.");
 		}
 							
-		AddWin(new MessageBar(this,style->Stylename()?style->Stylename():"unknown",MB_MOVE, 0,0,0,0, 0,blah));
+		AddWin(new MessageBar(this,NULL,style->Stylename()?style->Stylename():"unknown",MB_MOVE, 0,0,0,0, 0,blah));
 		AddNull();
 		delete[] blah;
 	} else {
@@ -139,12 +133,6 @@ int GenericStyleDialog::init()
  */
 void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 {
-	 	//LineInput (anXWindow *parnt, const char *ntitle, unsigned int nstyle, 
-		//			 int xx, int yy, int ww, int hh, int brder,
-		//			 anXWindow *prev, Window nowner=None, const char *nsend=NULL, 
-		//			 const char *newlabel=NULL, const char *newtext=NULL, 
-		//			 unsigned int ntstyle=0, int nlew=0, int nleh=0, 
-		//			 int npadx=0, int npady=0, int npadlx=0, int npadly=0)
 		
 	 //*** use Name, tooltip
 	switch (sd->format) {
@@ -170,45 +158,45 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 				//else makestr(blah,style->getstring(startext));
 
 				LineInput *linp;
-				last=linp=new LineInput(this,"***some name***", 0,
+				last=linp=new LineInput(this,NULL,"***some name***", 0,
 						0,0,0,0,0,
 						last, window, startext,
 						sd->Name, blah);
 				last->tooltip(sd->tooltip);
-				AddWin(linp,linp->win_w,0,0,50, linp->win_h,0,0,50);
+				AddWin(linp,linp->win_w,0,0,50,0, linp->win_h,0,0,50,0);
 			} break;
 							  
 		 // checkbox:
 		case Element_Boolean: {
 				CheckBox *box;
-				last=box=new CheckBox(this,startext,CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"control",sd->Name);
+				last=box=new CheckBox(this,NULL,startext,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"control",sd->Name);
 				box->tooltip(sd->tooltip);
-				AddWin(box,box->win_w,0,0,50, box->win_h,0,0,50);
+				AddWin(box,box->win_w,0,0,50,0, box->win_h,0,0,50,0);
 			} break;
 
 		 // ??? 3 field checkbox menuselector?
 		case Element_Date: {
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: Date"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: Date"));
 				//***
 			} break;
 							
 		case Element_3bit: {
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: 3bit"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: 3bit"));
 				//***
 			} break;
 							
 		 // one only checkbox menuselector
 		case Element_Enum: {
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enum"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enum"));
 				//***add sliderpopup with the field's enum names
 			} break;
 		case Element_EnumVal: { 
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enumval"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enumval"));
 				cout << "***shouldn't have ENUM_VAL here!"<<endl; 
 			} break;
 		case Element_DynamicEnum: { 
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: dynamic enum"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: dynamic enum"));
 				cout << "***implement dynamice enum here!"<<endl; 
 				//***add sliderinputpopup with the field's enum names
 			} break;
@@ -224,7 +212,7 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 					 //*** --Name----
 					 //	 [sub 1]
 					 //	 [sub 2]
-					AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,
+					AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,
 										  sd->Name));
 					AddNull();
 					char *ext=NULL;
@@ -240,19 +228,19 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 				}
 			} break;
 		case Element_Color: {
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: color"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: color"));
 			} break;
 		case Element_Function: {
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: function"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: function"));
 				//nothing doing here.. could have option for this to be listed...
 			} break;
 		default: {
-				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: unknown"));
+				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: unknown"));
 			 } break;
 	}
 }
 
-int GenericStyleDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
+int GenericStyleDialog::Event(EventData *e,const char *mes)
 {
 	if (!strcmp(mes,"xscroller")) {
 		//***
@@ -264,7 +252,7 @@ int GenericStyleDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 0;
 } 
 
-int GenericStyleDialog::CharInput(unsigned int ch,unsigned int state)
+int GenericStyleDialog::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr <<"******************************************"<<endl;
 	if (ch==LAX_Esc) app->destroywindow(this);

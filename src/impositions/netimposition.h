@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 #ifndef NETIMPOSITION_H
 #define NETIMPOSITION_H
@@ -65,6 +65,8 @@ class NetImposition : public Imposition
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int *PrintingPapers(int frompage,int topage);
 
+	virtual int NumPageTypes();
+	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
 

@@ -15,15 +15,15 @@
 //
 
 
-#include "interfaces.h"
-#include "laidout.h"
-#include <lax/lists.cc>
-#include <lax/interfaces/imageinterface.h>
-#include "dataobjects/limagepatch.h"
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
-#include <lax/interfaces/bezpathoperator.h>
+#include <lax/interfaces/imageinterface.h>
+#include <lax/lists.cc>
+
+#include "interfaces.h"
+#include "laidout.h"
+#include "dataobjects/limagepatch.h"
 
 #include "dataobjects/groupinterface.h"
 #include "dataobjects/epsdata.h"
@@ -36,7 +36,6 @@ using namespace LaxInterfaces;
 //! Push any necessary PathOperator instances onto PathInterface::basepathops
 void PushBuiltinPathops()
 {
-	PathInterface::basepathops.push(new BezpathOperator(NULL,1,NULL),1);
 }
 
 ////---------------------
@@ -109,7 +108,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(new ColorPatchInterface(id++,NULL),1);
 	
 	 //------Paths
-	existingpool->push(new PathInterface(id++,NULL,NULL),1); //2nd null is pathop pool
+	existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
 	
 	 //------EPS
 	EpsInterface *eps=new EpsInterface(id++,NULL);

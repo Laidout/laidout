@@ -219,7 +219,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			int c,r, cc,rr;
 			int numdiv=5;
 			flatpoint p[4];
-			XRenderColor color;
+			ScreenColor color;
 			double s,ds, t,dt;
 			ds=1./(patch->xsize/3)/numdiv;
 			dt=1./(patch->ysize/3)/numdiv;
@@ -961,7 +961,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 //				makestr(g->id,value);
 
 			} else if (!strcmp(name,"transform")) {
-				svgtransform(value,g->m());
+				double m[6];
+				svgtransform(value,m);
+				g->m(m);
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
@@ -973,7 +975,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			double t[6],m[6];
 			transform_set(t,1,0,0,-1,0,top*72/.8);
 			transform_mult(m,t,g->m());
-			transform_copy(g->m(),m);
+			g->m(m);
 		}
 		 //do not add empty groups
 		if (g->n()!=0) {
@@ -1008,7 +1010,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			} else if (!strcmp(name,"xlink:href")) {
 				image->LoadImage(value);
 			} else if (!strcmp(name,"transform")) {
-				svgtransform(value,image->m());
+				double m[6];
+				svgtransform(value,m);
+				image->m(m);
 			}
 		}
 		 //adjust matrix
@@ -1041,7 +1045,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 
 			if (!strcmp(name,"id")) {
 			} else if (!strcmp(name,"transform")) {
-				svgtransform(value,paths->m());
+				double m[6];
+				svgtransform(value,m);
+				paths->m(m);
 
 			//} else if (!strcmp(name,"x")) {
 			//} else if (!strcmp(name,"y")) {
@@ -1081,7 +1087,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			} else if (!strcmp(name,"height")) {
 				DoubleAttribute(value,&h,NULL);
 			} else if (!strcmp(name,"transform")) {
-				svgtransform(value,paths->m());
+				double m[6];
+				svgtransform(value,m);
+				paths->m(m);
 			}
 		}
 		 //rx and ry are the x and y radii of an ellipse at the corners
@@ -1149,7 +1157,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 			} else if (!strcmp(name,"cy")) {
 				DoubleAttribute(value,&cy,NULL);
 			} else if (!strcmp(name,"transform")) {
-				svgtransform(value,paths->m());
+				double m[6];
+				svgtransform(value,m);
+				paths->m(m);
 			}
 		}
 		 //rx and ry are the x and y radii of an ellipse at the corners

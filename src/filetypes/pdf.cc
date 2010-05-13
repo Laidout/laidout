@@ -1251,7 +1251,9 @@ static void pdfImagePatch(FILE *f,
 	img.SetImage(limg);
 
 	 // set image transform
-	transform_invert(img.m(),m);
+	double mm[6];
+	transform_invert(mm,m);
+	img.m(mm);
 
 	 // push axes
 	psPushCtm();

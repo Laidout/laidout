@@ -32,6 +32,7 @@ class Singles : public Imposition
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
+	virtual int SetDefaultMargins(double l,double r,double t,double b);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
@@ -45,6 +46,8 @@ class Singles : public Imposition
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
 	virtual int *PrintingPapers(int frompage,int topage);
+	virtual int NumPageTypes();
+	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
 
@@ -69,11 +72,14 @@ class DoubleSidedSingles : public Singles
 	virtual Style *duplicate(Style *s=NULL);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	virtual Page **CreatePages();
+	virtual int SetDefaultMargins(double l,double r,double t,double b);
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 
 	virtual Spread *PaperLayout(int whichpaper);
 	virtual int SpreadFromPage(int pagenumber);
 	virtual int GetSpreadsNeeded(int npages);
+	virtual int NumPageTypes();
+	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
 

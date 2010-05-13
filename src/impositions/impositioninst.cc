@@ -111,12 +111,23 @@ Singles::~Singles()
 void Singles::setPage()
 {
 	if (!paper) return;
-	if (pagestyle) pagestyle->dec_count();
+	double oldl=0, oldr=0, oldt=0, oldb=0;
+	if (pagestyle) {
+		oldl=pagestyle->ml;
+		oldr=pagestyle->mr;
+		oldt=pagestyle->mt;
+		oldb=pagestyle->mb;
+		pagestyle->dec_count();
+	}
 	
 	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
 	pagestyle->width=(paper->media.maxx-insetl-insetr)/tilex;
 	pagestyle->height=(paper->media.maxy-insett-insetb)/tiley;
 	pagestyle->pagetype=0;
+	pagestyle->ml=oldl;
+	pagestyle->mr=oldr;
+	pagestyle->mt=oldt;
+	pagestyle->mb=oldb;
 }
 
 //! Return the default page style for that page.
@@ -144,6 +155,20 @@ int Singles::SetPaperSize(PaperStyle *npaper)
 {
 	if (Imposition::SetPaperSize(npaper)) return 1;
 	setPage();
+	return 0;
+}
+
+//! Set default left, right, top, bottom margins.
+/*! Return 0 for success, or nonzero error.
+ */
+int Singles::SetDefaultMargins(double l,double r,double t,double b)
+{
+	if (!pagestyle) return 1;
+	pagestyle->ml=l;
+	pagestyle->mr=r;
+	pagestyle->mt=t;
+	pagestyle->mb=b;
+
 	return 0;
 }
 
@@ -390,12 +415,19 @@ SomeData *Singles::GetPageOutline(int pagenum,int local)
 	return newpath;
 }
 
-//! Return outline of page in page coords. 
+//! Return outline of page margin in page coords. 
+/*! Calling code should call dec_count() on the returned object when it is no longer needed.
+ *
+ * If all the margins are 0, then NULL is returned.
+ */
 SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 {
+	 //return if no margins.
+	if (pagestyle->ml==0 && pagestyle->mr==0 && pagestyle->mt==0 && pagestyle->mb==0) return NULL;
+
 	PathsData *newpath=new PathsData();//count==1
 	newpath->appendRect(pagestyle->ml,pagestyle->mb, 
-						pagestyle->w()-pagestyle->mr,pagestyle->h()-pagestyle->mt);
+						pagestyle->w()-pagestyle->mr-pagestyle->ml,pagestyle->h()-pagestyle->mt-pagestyle->mb);
 	newpath->FindBBox();
 	//nothing special is done when local==0
 	return newpath;
@@ -419,6 +451,7 @@ Spread *Singles::PageLayout(int whichpage)
 Spread *Singles::PaperLayout(int whichpaper)
 {
 	Spread *spread=new Spread();
+	spread->spreadtype=1;
 	spread->style=SPREAD_PAPER;
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
@@ -556,6 +589,13 @@ int Singles::GetPapersNeeded(int npages)
 int Singles::GetSpreadsNeeded(int npages)
 { return npages; } 
 
+int Singles::NumPageTypes()
+{ return 1; }
+
+//! Just return "Page".
+const char *Singles::PageTypeName(int pagetype)
+{ return pagetype==0 ? _("Page") : NULL; }
+
 //! There is only one type of page, so return 0.
 int Singles::PageType(int page)
 { return 0; }
@@ -623,13 +663,34 @@ DoubleSidedSingles::~DoubleSidedSingles()
 //! Using the paperstyle and isvertical, create new default pagestyles.
 void DoubleSidedSingles::setPage()
 {
-	if (pagestyle) pagestyle->dec_count();
+	double oldl=0, oldr=0, oldt=0, oldb=0;
+	if (pagestyle) {
+		oldl=pagestyle->ml;
+		oldr=pagestyle->mr;
+		oldt=pagestyle->mt;
+		oldb=pagestyle->mb;
+		pagestyle->dec_count();
+	}
 	pagestyle=new RectPageStyle((isvertical?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
 	pagestyle->pagetype=(isvertical?2:1);
+	pagestyle->ml=oldl;
+	pagestyle->mr=oldr;
+	pagestyle->mt=oldt;
+	pagestyle->mb=oldb;
 
-	if (pagestyler) pagestyler->dec_count();
+	if (pagestyler) {
+		oldl=pagestyler->ml;
+		oldr=pagestyler->mr;
+		oldt=pagestyler->mt;
+		oldb=pagestyler->mb;
+		pagestyler->dec_count();
+	}
 	pagestyler=new RectPageStyle((isvertical?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
 	pagestyler->pagetype=(isvertical?3:0);
+	pagestyler->ml=oldl;
+	pagestyler->mr=oldr;
+	pagestyler->mt=oldt;
+	pagestyler->mb=oldb;
 				
 	pagestyler->width= pagestyle->width =(paper->media.maxx-insetl-insetr)/tilex;
 	pagestyler->height=pagestyle->height=(paper->media.maxy-insett-insetb)/tiley;
@@ -704,7 +765,7 @@ PageStyle *DoubleSidedSingles::GetPageStyle(int pagenum,int local)
 	if (!pagestyle || !pagestyler) return NULL;
 	PageStyle *p;
 	int c=PageType(pagenum);
-	if (c==1 || c==2) p=pagestyle; else p=pagestyler;
+	if (c==0) p=pagestyle; else p=pagestyler;
 	if (local) {
 		PageStyle *ps=(PageStyle *)p->duplicate();
 		ps->flags|=PAGESTYLE_AUTONOMOUS;
@@ -794,6 +855,7 @@ Page **DoubleSidedSingles::CreatePages()
 Spread *DoubleSidedSingles::PageLayout(int whichspread)
 {
 	Spread *spread=new Spread();
+	spread->spreadtype=2;
 	spread->style=SPREAD_PAGE;
 	spread->mask=SPREAD_PATH|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 	int whichpage=whichspread*2-isleft,
@@ -810,8 +872,12 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 
 	if (left<0 || right>=numpages) {
 		 // first and possibly last are just single pages, so just have single box
-		if (left<0) newpath->appendRect(pagestyler->w(),0,pagestyler->w(),pagestyler->h());
-		else newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
+		if (left<0) {
+			spread->spreadtype=-1;
+			newpath->appendRect(pagestyler->w(),0,pagestyler->w(),pagestyler->h());
+		} else {
+			newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
+		}
 	} else {
 		 // 2 lines, 1 for 2 pages, and line down the middle
 		newpath->appendRect(0,0,(isvertical?1:2)*pagestyle->w(),(isvertical?2:1)*pagestyle->h());
@@ -854,7 +920,7 @@ Spread *DoubleSidedSingles::PageLayout(int whichspread)
 	if (right<numpages) {
 		g=new Group();
 		g->push(noutline); // this incs count on outline..
-		if (!isvertical) g->m()[4]+=pagestyle->w();
+		if (!isvertical) g->m(4, g->m(4)+pagestyle->w());
 		g->FindBBox();
 		spread->pagestack.push(new PageLocation(right,NULL,g)); //incs count of g
 		g->dec_count(); //remove extra tick
@@ -890,48 +956,78 @@ int DoubleSidedSingles::GetSpreadsNeeded(int npages)
 { return (npages-isleft)/2+1; } 
 
 
+//! Set default left, right, top, bottom margins.
+/*! Return 0 for success, or nonzero error.
+ *
+ * pagestyle and pagestyler must already exist.
+ */
+int DoubleSidedSingles::SetDefaultMargins(double l,double r,double t,double b)
+{
+	if (!pagestyle || !pagestyler) return 1;
+	pagestyle->ml=l;
+	pagestyle->mr=r;
+	pagestyle->mt=t;
+	pagestyle->mb=b;
+
+	if (isvertical) {
+		pagestyler->ml=l;
+		pagestyler->mr=r;
+		pagestyler->mt=b;
+		pagestyler->mb=t;
+	} else {
+		pagestyler->ml=r;
+		pagestyler->mr=l;
+		pagestyler->mt=t;
+		pagestyler->mb=b;
+	}
+	
+	return 0;
+}
+
 //! Return outline of page in page coords. 
+/*! If all the margins are 0, then NULL is returned.
+ */
 SomeData *DoubleSidedSingles::GetPageMarginOutline(int pagenum,int local)
 {
-	PathsData *newpath=new PathsData();//count==1
 	int pagetype=PageType(pagenum);
-	int l, b, r, t;
 
-	if (pagetype==0) {
-		 //right page
-		l=pagestyler->ml;
-		b=pagestyler->mb;
-		r=pagestyler->w()-pagestyle->mr;
-		t=pagestyler->h()-pagestyle->mt;
-	} else if (pagetype==1) {
-		 //left page
-		l=pagestyle->ml;
-		b=pagestyle->mb;
-		r=pagestyle->w()-pagestyle->mr;
-		t=pagestyle->h()-pagestyle->mt;
-	} else if (pagetype==2) {
-		 //top page
-		l=pagestyle->ml;
-		b=pagestyle->mb;
-		r=pagestyle->w()-pagestyle->mr;
-		t=pagestyle->h()-pagestyle->mt;
-	} else if (pagetype==1) {
-		 //bottom page
-		l=pagestyler->ml;
-		b=pagestyler->mb;
-		r=pagestyler->w()-pagestyle->mr;
-		t=pagestyler->h()-pagestyle->mt;
-	}
+	RectPageStyle *ps;
+	if (pagetype==0) ps=pagestyle;
+	else ps=pagestyler;
 
-	newpath->appendRect(l,b, r,t);
+	 //return if no margins.
+	if (ps->ml==0 && ps->mr==0 && ps->mt==0 && ps->mb==0) return NULL;
+
+	PathsData *newpath=new PathsData();//count==1
+	newpath->appendRect(ps->ml,ps->mb, ps->w() - ps->mr - ps->ml, ps->h() - ps->mt - ps->mb);
+	//newpath->appendRect(x,y, w,h);
 	newpath->FindBBox();
+
+	DBG cerr <<"********newpath bounds ll:"<<newpath->minx<<','<<newpath->miny
+	DBG      <<"  ur:"<<newpath->maxx<<','<<newpath->maxy<<endl;
+
+	//DBG cerr <<"********    xywh:"<<x<<','<<y
+	//DBG      <<",  "<<w<<','<<h<<endl;
 
 	//nothing special is done when local==0
 	return newpath;
 }
 
+int DoubleSidedSingles::NumPageTypes()
+{ return 2; }
+
+//! If isvertical, return "Top" or "Bottom" else return "Left" or "Right".
+/*! Returns NULL if not a valid pagetype.
+ */
+const char *DoubleSidedSingles::PageTypeName(int pagetype)
+{
+	if (pagetype==0) return isvertical ? _("Top") : _("Left");
+	if (pagetype==1) return isvertical ? _("Bottom") : _("Right");
+	return NULL;
+}
+
 //! Return the page type for the given document page index.
-/*! 
+/*! 0 is either top or left. 1 is either bottom or right.
  * <pre>
  *  0=right
  *  1=left
@@ -942,10 +1038,10 @@ SomeData *DoubleSidedSingles::GetPageMarginOutline(int pagenum,int local)
 int DoubleSidedSingles::PageType(int page)
 { 
 	int left=((page+1)/2)*2-1+isleft;
-	if (left==page && isvertical) return 2;
-	if (left==page) return 1;
-	if (isvertical) return 3;
-	return 0; 
+	if (left==page && isvertical) return 0; //top
+	if (left==page) return 0; //left
+	if (isvertical) return 1; //bottom
+	return 1; //right
 }
 
 /*! 

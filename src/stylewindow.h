@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2006,2010 by Tom Lechner
 //
 #ifndef STYLEWINDOW_H
 #define STYLEWINDOW_H
@@ -31,9 +31,10 @@ class GenericStyleDialog : public Laxkit::RowFrame
 	GenericStyleDialog(StyleDef *nsd,anXWindow *owner);
 	virtual ~GenericStyleDialog();
 	virtual int init();
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int Event(EventData *e,const char *mes);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+
 	virtual void MakeControls(const char *startext,StyleDef *sd);
-	virtual int CharInput(unsigned int ch,unsigned int state);
 };
 
 

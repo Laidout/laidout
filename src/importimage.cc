@@ -70,7 +70,14 @@ using namespace LaxInterfaces;
  * img here in the constructor, but does dec in destructor.
  */
 ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
-	: image(img), error(0), dpi(ndpi), page(npage), next(NULL)
+	: image(img), 
+	  scaleflag(0),
+	  alignx(50),
+	  aligny(50),
+	  error(0),
+	  dpi(ndpi),
+	  page(npage),
+	  next(NULL)
 {
 	if (d) {
 		xywh=new double[4];
@@ -145,7 +152,16 @@ int dumpOutImageListFormat(FILE *f)
 			  "#perPage allOnOnePage # same as -2, put all on the same page, may make them fall off the edges\n"
 			  "#perPage 5            #  >0 == exactly that many per page\n"
 			  "\n"
-			  "page 3                # change current page to page index 3 (not page label 3)\n"
+			  "scaleByDpi            #for each block of images on a page, scale by current dpi (this is default)\n"
+			  "scaleToFit            #for each block of images on a page, scale up or down to fit target area\n"
+			  "scaleDownToFit        #for each block of images on a page, only scale down to fit target area\n"
+			  "alignment 50 50    #horizontal and verticalalignment for blocks of images.\n"
+			  "                   #50=center, 0=flush left or top, 100=flush right or bottom\n"
+			  "alignment\n"
+			  "  pagetype Left  x 0   y 100  #for \"Left\" pagetypes, put on lower left corner\n"
+			  "  pagetype Right x 100 y 100  #for \"Right\" pagetypes, put on lower right corner\n"
+			  "\n"
+			  "page 3                #change current page to page index 3 (not page label 3)\n"
 			  "\n"
 			  "dir:///path/to/a/directory  #(TODO!) dumps all in dir, no previews, always same dpi\n"
 			  "\n"
@@ -253,6 +269,30 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 		if (!strcmp(name,"dpi")) {
 			IntAttribute(value,&defaultdpi,NULL);
 
+		} else if (!strcmp(name,"scaleByDpi")) {
+			cout << " *** must implement scaleByDpi in image list file"<<endl;
+
+		} else if (!strcmp(name,"scaleToFit")) {
+			cout << " *** must implement scaleToFit in image list file"<<endl;
+
+		} else if (!strcmp(name,"scaleDownToFit")) {
+			cout << " *** must implement scaleDownToFit in image list file"<<endl;
+
+		} else if (!strcmp(name,"alignment")) {
+			if (!isblank(value)) {
+				//*** //parse value into "50 50", "x 50 y 50" or some such
+				cout << " *** must implement alignment in image list file"<<endl;
+			} else {
+				for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+					name=att->attributes.e[c]->attributes.e[c2]->name;
+					value=att->attributes.e[c]->attributes.e[c2]->value;
+					if (!strcmp(name,"pagetype")) {
+						//*** //parse value into "Pagetypename x 50 y 50"
+						cout << " *** must implement pagetype alignment in image list file"<<endl;
+					}
+				}
+			}
+
 		} else if (!strcmp(name,"perPage")) {
 			if (!strcmp(value,"allOnOnePage")) perpage=-2;
 			else if (!strcmp(value,"asWillFit")) perpage=-1;
@@ -336,7 +376,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 			 //if not eps, then do generic image. If not openable as image, then create a broken image
 			if (!image) image=new ImageData(file,preview,0,0,0);
 			image->SetDescription(desc);
-			if (tags) makestr(image->tags,tags); //***must convert to Tagged class way of things
+			if (tags) image->InsertTags(tags,0);
 			delete[] file; file=NULL;
 			if (!image->image) {
 				 //broken image, make it have dimensions curdpi x curdpi
@@ -614,6 +654,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		if (outline) { outline->dec_count(); outline=NULL; }
 		outline=doc->pages.e[curpage]->pagestyle->outline;
 		if (!outline) outline=doc->imposition->GetPageMarginOutline(curpage,0); //adds 1 count already
+		if (!outline) outline=doc->imposition->GetPageOutline(curpage,0); //adds 1 count already
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;

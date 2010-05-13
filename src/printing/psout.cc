@@ -86,7 +86,7 @@ PtrStack<double> psctms(2);
 
 //! New ps ctm=m*oldctm.
 /*! \ingroup postscript */
-void psConcat(double *m)
+void psConcat(const double *m)
 {
 	double *mm=transform_mult(NULL,m,psctm);
 	delete[] psctm;

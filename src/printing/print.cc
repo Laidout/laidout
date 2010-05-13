@@ -66,45 +66,12 @@ int PrintingDialog::init()
 	ExportDialog::init();
 	changeTofile(3);
 
-	XStoreName(app->dpy,window,_("Print"));
-	TextButton *print=dynamic_cast<TextButton *>(findChildWindow("export"));
-	print->SetName(_("Print"));
+	WindowTitle(_("Print"));
+	Button *print=dynamic_cast<Button *>(findChildWindowByName("export"));
+	print->Label(_("Print"));
 
 	return 0;
 }
 
-//! Keep the controls straight.
-int PrintingDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
-{
-	return ExportDialog::ClientEvent(e,mes);
-}
-
-
-
-//		} else { // print by command
-//			char *cm=newstr(s->str);
-//			appendstr(cm," ");
-//			//***investigate tmpfile() tmpnam tempnam mktemp
-//			char tmp[256];
-//			cupsTempFile2(tmp,sizeof(tmp));
-//			FILE *f=fopen(tmp,"w");
-//			if (f) {
-//				mesbar->SetText(_("Printing, please wait...."));
-//				mesbar->Refresh();
-//				XSync(app->dpy,False);
-//				psout(f,doc,s->info2-1,s->info3-1,0,NULL);
-//				fclose(f);
-//				appendstr(cm,tmp);
-//				system(cm);
-//				//*** have to delete (unlink) tmp!
-//				
-//				mesbar->SetText(_("Document sent to print."));
-//			} else mesbar->SetText(_("Error printing."));
-//			DBG cerr << "*** ViewWindow Printed to command: "<<cm<<endl;
-//		}
-//
-//
-//		delete data;
-//		return 0;
 
 

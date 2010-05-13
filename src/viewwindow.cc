@@ -11,13 +11,12 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2009 Tom Lechner
+// Copyright (c) 2004-2010 Tom Lechner
 //
 
 #include <lax/numslider.h>
 #include <lax/interfaces/fillstyle.h>
 #include <lax/transformmath.h>
-#include <lax/strsliderpopup.h>
 #include <lax/sliderpopup.h>
 #include <lax/filedialog.h>
 #include <lax/colorbox.h>
@@ -27,11 +26,12 @@
 #include <lax/menubutton.h>
 #include <lax/inputdialog.h>
 #include <lax/popupmenu.h>
+#include <lax/colors.h>
+#include <lax/mouseshapes.h>
 
 #include <cstdarg>
 #include <cups/cups.h>
 #include <sys/stat.h>
-#include <X11/cursorfont.h>
 
 #include <lax/lists.cc>
 
@@ -334,14 +334,14 @@ void VObjContext::clear()
 //! Constructor, set up initial dp->ctm, init various things, call setupthings(), and set workspace bounds.
 /*! Incs count on newdoc. */
 LaidoutViewport::LaidoutViewport(Document *newdoc)
-	: ViewportWindow(NULL,"laidoutviewport",ANXWIN_HOVER_FOCUS|VIEWPORT_ROTATABLE,0,0,0,0,0)
+	: ViewportWindow(NULL,"laidoutviewport",NULL,ANXWIN_HOVER_FOCUS|ANXWIN_DOUBLEBUFFER|VIEWPORT_ROTATABLE,0,0,0,0,0)
 {
 	dp->style|=DISPLAYER_NO_SHEAR;
 	papergroup=NULL;
+	win_colors->bg=rgbcolor(255,255,255);
 
 	viewportmode=VIEW_NORMAL;
 	showstate=1;
-	backbuffer=0;
 	lfirsttime=1;
 	//drawflags=DRAW_AXES;
 	drawflags=0;
@@ -389,32 +389,13 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
  */
 LaidoutViewport::~LaidoutViewport()
 {
+	DBG cerr <<"in LaidoutViewport destructor"<<endl;
+
 	if (spread) delete spread;
 	if (papergroup) papergroup->dec_count();
 
 	if (limbo) limbo->dec_count();
 	if (doc) doc->dec_count();
-}
-
-//! On any FocusIn event, set laidout->lastview to this.
-int LaidoutViewport::event(XEvent *e)
-{
-	if (e->type==FocusIn) {
-		laidout->lastview=dynamic_cast<ViewWindow *>(win_parent);
-		if (e->xfocus.detail==NotifyInferior ||
-				e->xfocus.detail==NotifyAncestor ||
-				e->xfocus.detail==NotifyNonlinear) {
-			ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
-			if (viewer) viewer->SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
-			
-			if (doc) {
-				if (laidout->curdoc) laidout->curdoc->dec_count();
-				laidout->curdoc=doc;
-				laidout->curdoc->inc_count();
-			}
-		}
-	}
-	return ViewportWindow::event(e);
 }
 
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
@@ -515,10 +496,97 @@ double LaidoutViewport::GetVMag(int x,int y)
 	return dp->GetVMag(x,y);
 }
 
-int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
+//! On any FocusIn event, set laidout->lastview to this.
+int LaidoutViewport::FocusOn(const Laxkit::FocusChangeData *e)
 {
-	if (!strcmp(mes,"rulercornermenu")) {
-		int i=e->data.l[1];
+	laidout->lastview=dynamic_cast<ViewWindow *>(win_parent);
+	if (e->target==this) {
+		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
+		if (viewer) viewer->SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
+		
+		if (doc) {
+			if (laidout->curdoc) laidout->curdoc->dec_count();
+			laidout->curdoc=doc;
+			laidout->curdoc->inc_count();
+		}
+	}
+	return anXWindow::FocusOn(e);
+}
+
+int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
+{
+	DBG cerr <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
+
+
+	if (!strcmp(mes,"docTreeChange")) {
+		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
+		if (!te || (te->changer && te->changer==static_cast<anXWindow *>(this))) return 1;
+
+		if (te->changetype==TreeObjectRepositioned) {
+			needtodraw=1;
+		} else if (te->changetype==TreeObjectReorder ||
+				te->changetype==TreeObjectDiffPage ||
+				te->changetype==TreeObjectDeleted ||
+				te->changetype==TreeObjectAdded || 
+				te->changetype==TreePagesAdded ||
+				te->changetype==TreePagesDeleted ||
+				te->changetype==TreePagesMoved) {
+			 //***
+			int pg=curobjPage();
+			curobj.set(NULL, 1, 0);
+			clearCurobj();
+			delete spread;
+			spread=NULL;
+			spreadi=-1;
+			setupthings(-1,pg);
+			needtodraw=1;
+		} else if (te->changetype==TreeDocGone) {
+			DBG cerr <<"  --LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
+			if (doc) {
+				int c=0;
+				for (c=0; c<laidout->project->docs.n; c++) 
+					if (doc==laidout->project->docs.e[c]->doc) break;
+				if (c==laidout->project->docs.n) {
+					UseThisDoc(NULL);
+					needtodraw=1;
+				}
+			}	
+		}
+		
+		return 0;
+
+	} else if (!strcmp(mes,"rename papergroup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s) return 1;
+		if (!isblank(s->str) && papergroup) makestr(papergroup->Name,s->str);
+		return 0;
+
+	} else if (!strcmp(mes,"rename limbo")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s) return 1;
+		if (!isblank(s->str)) makestr(limbo->id,s->str);
+		return 0;
+
+	} else if (!strcmp(mes,"image properties")) {
+		 //pass on to the first active interface that wants it, if any
+		const RefCountedEventData *e=dynamic_cast<const RefCountedEventData *>(data);
+		if (!e) return 1;
+		ImageInfo *imageinfo=dynamic_cast<ImageInfo *>(e->object);
+		if (!imageinfo) return 1;
+
+		for (int c=0; c<interfaces.n; c++) {
+			if (interfaces.e[c]->UseThis(imageinfo,imageinfo->mask)) {
+				needtodraw=1;
+				return 0;
+			}
+		}
+
+		return 1;
+
+	} else if (!strcmp(mes,"rulercornermenu")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+
+		int i=s->info2;
 
 		 //0-999 was document things
 		if (i>=0 && i<laidout->project->docs.n) {
@@ -531,7 +599,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		if (i==ACTION_AddNewDocument) {
 			 //add new document
-			app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,0,0, 0));
+			app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
 			return 0;
 
 		} else if (i==ACTION_RemoveCurrentDocument) {
@@ -544,7 +612,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			return 0;
 
 		} else if (i==ACTION_EditCurrentDocSettings) {
-			NewDocWindow *win=new NewDocWindow(NULL,_("Edit document settings"),0,
+			NewDocWindow *win=new NewDocWindow(NULL,NULL,_("Edit document settings"),0,
 							0,0,0,0,0,
 							doc);
 			app->rundialog(win);
@@ -577,9 +645,9 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 				return 0;
 			} else if (i==ACTION_RenameCurrentLimbo) {
 				 //rename current limbo
-				app->rundialog(new InputDialog(NULL,"rename limbo",ANXWIN_CENTER,
+				app->rundialog(new InputDialog(NULL,"rename limbo",NULL,ANXWIN_CENTER,
 								0,0,0,0,1,
-								NULL, this->window, "rename limbo",
+								NULL, object_id, "rename limbo",
 								limbo->id,
 								_("New name?"),
 								_("Rename"), 1,
@@ -632,9 +700,9 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (!papergroup) return 0;
 			int c=laidout->project->papergroups.findindex(papergroup);
 			if (c<0) return 0;
-			app->rundialog(new InputDialog(NULL,"rename papergroup",ANXWIN_CENTER,
+			app->rundialog(new InputDialog(NULL,"rename papergroup",NULL,ANXWIN_CENTER,
 							0,0,0,0,1,
-							NULL, this->window, "rename papergroup",
+							NULL, object_id, "rename papergroup",
 							papergroup->Name,
 							_("New name?"),
 							_("Rename"), 1,
@@ -679,84 +747,7 @@ int LaidoutViewport::ClientEvent(XClientMessageEvent *e,const char *mes)
 		//**** change zones? other menu?
 		return 0;
 	}
-	return ViewportWindow::ClientEvent(e,mes);
-}
-
-/*! Catches "docTreeChange".
- */
-int LaidoutViewport::DataEvent(Laxkit::EventData *data,const char *mes)
-{
-	DBG cerr <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
-	if (!strcmp(mes,"docTreeChange")) {
-		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
-		if (!te || (te->changer && te->changer==static_cast<anXWindow *>(this))) return 1;
-
-		if (te->changetype==TreeObjectRepositioned) {
-			needtodraw=1;
-		} else if (te->changetype==TreeObjectReorder ||
-				te->changetype==TreeObjectDiffPage ||
-				te->changetype==TreeObjectDeleted ||
-				te->changetype==TreeObjectAdded || 
-				te->changetype==TreePagesAdded ||
-				te->changetype==TreePagesDeleted ||
-				te->changetype==TreePagesMoved) {
-			 //***
-			int pg=curobjPage();
-			curobj.set(NULL, 1, 0);
-			clearCurobj();
-			delete spread;
-			spread=NULL;
-			spreadi=-1;
-			setupthings(-1,pg);
-			needtodraw=1;
-		} else if (te->changetype==TreeDocGone) {
-			DBG cerr <<"  --LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
-			if (doc) {
-				int c=0;
-				for (c=0; c<laidout->project->docs.n; c++) 
-					if (doc==laidout->project->docs.e[c]->doc) break;
-				if (c==laidout->project->docs.n) {
-					UseThisDoc(NULL);
-					needtodraw=1;
-				}
-			}	
-		}
-		
-		delete te;
-		return 0;
-
-	} else if (!strcmp(mes,"rename papergroup")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		if (!isblank(s->str) && papergroup) makestr(papergroup->Name,s->str);
-		delete data;
-		return 0;
-
-	} else if (!strcmp(mes,"rename limbo")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		if (!isblank(s->str)) makestr(limbo->id,s->str);
-		delete data;
-		return 0;
-
-	} else if (!strcmp(mes,"image properties")) {
-		 //pass on to the first active interface that wants it, if any
-		RefCountedEventData *e=dynamic_cast<RefCountedEventData *>(data);
-		if (!e) return 1;
-		ImageInfo *imageinfo=dynamic_cast<ImageInfo *>(e->object);
-		if (!imageinfo) return 1;
-
-		for (int c=0; c<interfaces.n; c++) {
-			if (interfaces.e[c]->UseThis(imageinfo,imageinfo->mask)) {
-				needtodraw=1;
-				delete data;
-				return 0;
-			}
-		}
-
-		return 1;
-	}
-	return 1;
+	return ViewportWindow::Event(data,mes);
 }
 
 //! Select the spread with page number greater than current page not in current spread.
@@ -1712,57 +1703,48 @@ void LaidoutViewport::clearCurobj()
 }
 
 //! Intercept for the color grabber.
-int LaidoutViewport::LBDown(int x,int y,unsigned int state,int count)
+int LaidoutViewport::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse)
 {
 	if (viewportmode==VIEW_GRAB_COLOR) {
-		buttondown|=LEFTBUTTON;
-		mx=x; my=y;
-		MouseMove(x,y,state);
+		buttondown.down(mouse->id,LEFTBUTTON);
+		MouseMove(x,y,state,mouse);
 		return 0;
 	}
-	return ViewportWindow::LBDown(x,y,state,count);
+	return ViewportWindow::LBDown(x,y,state,count,mouse);
 }
 
 //! Intercept to reset to normal from the color grabber.
-int LaidoutViewport::LBUp(int x,int y,unsigned int state)
+int LaidoutViewport::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 	if (viewportmode==VIEW_GRAB_COLOR) {
-		buttondown&=~LEFTBUTTON;
+		buttondown.up(mouse->id,~LEFTBUTTON);
 		viewportmode=VIEW_NORMAL;
-		XUndefineCursor(app->dpy,window);
+		const_cast<LaxMouse*>(mouse)->setMouseShape(this,0);
 		return 0;
 	}
-	return ViewportWindow::LBUp(x,y,state);
+	return ViewportWindow::LBUp(x,y,state,mouse);
 }
 
 //! *** for debugging, show which page mouse is over..
-int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
+int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 	if (viewportmode==VIEW_GRAB_COLOR) {
 		//***on focus off, reset mode to normal
 			//click down starts grabbing color
 			//click up ends grabbing, and sets viewmode no to normal
-		if (buttondown&LEFTBUTTON) {
-			unsigned long pix=screen_color_at_mouse();
+		if (buttondown.isdown(mouse->id,LEFTBUTTON)) {
+			unsigned long pix=screen_color_at_mouse(mouse->id);
 			int r,g,b;
-			app->colorrgb(pix,&r,&g,&b);
+			colorrgb(pix,&r,&g,&b);
 			DBG cerr << "grab color:"<<r<<','<<g<<','<<b<<endl;
-			XEvent e;
-			e.xclient.type=ClientMessage;
-			e.xclient.display=app->dpy;
-			e.xclient.window=win_parent->window;
-			e.xclient.message_type=XInternAtom(app->dpy,"curcolor",False);
-			e.xclient.format=32;
-			e.xclient.data.l[0]=255;
-			e.xclient.data.l[1]=r;
-			e.xclient.data.l[2]=g;
-			e.xclient.data.l[3]=b;
-			e.xclient.data.l[4]=255;
-			XSendEvent(app->dpy,win_parent->window,False,0,&e);
+
+			SimpleColorEventData *e=new SimpleColorEventData(255,r,g,b,255);
+			app->SendMessage(e,win_parent->object_id,"curcolor",object_id);
 		}
 		return 0;
 	}
-	DBG if (!buttondown) {
+
+	DBG if (!buttondown.any()) {
 	DBG 	int c=-1;
 	DBG 	flatpoint p=dp->screentoreal(x,y);
 	DBG 	if (spread) {
@@ -1773,7 +1755,8 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state)
 	DBG 	}
 	DBG 	cerr <<"mouse over: "<<c<<endl;
 	DBG }
-	return ViewportWindow::MouseMove(x,y,state);
+
+	return ViewportWindow::MouseMove(x,y,state,mouse);
 }
 
 //! Set up the viewport context to oc.
@@ -1986,10 +1969,10 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 		transform_mult(mm,curobj.obj->m(),m);//old m??
 		transformToContext(mmm,curobj.context,1); //trans from view to new curobj place
 		transform_mult(m,mm,mmm); //(new obj m)=(old obj m)*(old context)*(newcontext)^-1
-		transform_copy(curobj.obj->m(),m);
+		curobj.obj->m(m);
 	} else {
 		transform_mult(mm,curobj.obj->m(),m);
-		transform_copy(curobj.obj->m(),mm);
+		curobj.obj->m(mm);
 		limbo->push(d); //adds 1 count
 		curobj.obj->dec_count();
 		curobj.set(curobj.obj,2, 0,limbo->n()-1);
@@ -2049,8 +2032,6 @@ void LaidoutViewport::Center(int w)
  */
 int LaidoutViewport::init()
 {
-	XSetWindowBackground(app->dpy,window,~0);
-	
 	if (!limbo) {
 		limbo=new Group;//group with 1 count
 		char txt[30];
@@ -2095,16 +2076,15 @@ void LaidoutViewport::Refresh()
 
 	if (lfirsttime) { 
 		 //setup doublebuffer
-		if (!backbuffer) backbuffer=XdbeAllocateBackBufferName(app->dpy,window,XdbeBackground);
 		if (lfirsttime==1) Center(1); 
 		lfirsttime=0; 
 	}
 	DBG cerr <<"======= Refreshing LaidoutViewport..";
 	
 	 // draw the scratchboard, just blank out screen..
-	if (!backbuffer) XClearWindow(app->dpy,window);// *** clearwindow(backbuffer) does screwy things!!
+	clear_window(this);//***does this work with backbuffer?? use only window, not backbuffer?
 
-	dp->StartDrawing(this,backbuffer);
+	dp->StartDrawing(this);
 	if (drawflags&DRAW_AXES) dp->drawaxes();
 	int c,c2;
 
@@ -2163,15 +2143,19 @@ void LaidoutViewport::Refresh()
 		}
 		 
 		 // draw the pages
-		Page *page;
+		Page *page=NULL;
+		int pagei=-1;
 		flatpoint p;
 		SomeData *sd=NULL;
 		for (c=0; c<spread->pagestack.n; c++) {
 			DBG cerr <<" drawing from pagestack.e["<<c<<"], which has page "<<spread->pagestack.e[c]->index<<endl;
 			page=spread->pagestack.e[c]->page;
+			pagei=spread->pagestack.e[c]->index;
 			if (!page) { // try to look up page in doc using pagestack->index
-				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) 
-					page=spread->pagestack.e[c]->page=doc->pages.e[spread->pagestack.e[c]->index];
+				if (spread->pagestack.e[c]->index>=0 && spread->pagestack.e[c]->index<doc->pages.n) {
+					pagei=spread->pagestack.e[c]->index;
+					page=spread->pagestack.e[c]->page=doc->pages.e[pagei];
+				}
 			}
 			//if (spread->pagestack.e[c]->index<0) {
 			if (!page) {
@@ -2187,29 +2171,22 @@ void LaidoutViewport::Refresh()
 				dp->NewFG(0,0,0);
 				do {
 					if (tp->flags&POINT_VERTEX) 
-						dp->drawrline(transform_point(paths->m(),center), transform_point(paths->m(),tp->fp));
+						dp->drawline(transform_point(paths->m(),center), transform_point(paths->m(),tp->fp));
 					tp=tp->next;
 				} while (tp!=p);
 
 
 				continue;
 			}
+			 //else we have a page, so draw it all
 			sd=spread->pagestack.e[c]->outline;
 			dp->PushAndNewTransform(sd->m()); // transform to page coords
 			if (drawflags&DRAW_AXES) dp->drawaxes();
 			
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				 // setup clipping region to be the page
-				Region region;
-				region=GetRegionFromPaths(sd,dp->m());
-				if (!XEmptyRegion(region)) {
-					dp->clip(region,3);
-					//XSetRegion(dp->GetDpy(),dp->GetGC(),region);
-					DBG cerr <<"***** set clip path!"<<endl;
-				} else {
-					DBG cerr <<"***** no clip path to set."<<endl;
-				}
-				//XDestroyRegion(region);
+				dp->PushClip(1);
+				SetClipFromPaths(dp,sd,dp->m());
 			}
 			
 			 //*** debuggging: draw X over whole page...
@@ -2229,6 +2206,17 @@ void LaidoutViewport::Refresh()
 			if (page->label) dp->textout((int)p.x,(int)p.y,page->label,-1);
 			  else dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
 
+			 // Draw page margin path, if any
+			SomeData *marginoutline=doc->imposition->GetPageMarginOutline(pagei,1);
+			if (marginoutline) {
+				DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
+				DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
+				// ***DrawData(dp,marginoutline,&margin_linestyle,NULL,drawflags);
+				LineStyle ls(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,~0,GXcopy);
+				DrawData(dp,marginoutline,&ls,NULL,drawflags);
+				marginoutline->dec_count();
+			}
+
 			 // Draw all the page's objects.
 			for (c2=0; c2<page->layers.n(); c2++) {
 				DBG cerr <<"  num objs in page: "<<page->n()<<endl;
@@ -2238,8 +2226,7 @@ void LaidoutViewport::Refresh()
 			
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				 //remove clipping region
-				dp->clearclip();
-				//XSetClipMask(dp->GetDpy(),dp->GetGC(),None);
+				dp->PopClip();
 			}
 
 			dp->PopAxes(); // remove page transform
@@ -2279,12 +2266,7 @@ void LaidoutViewport::Refresh()
 	dp->Updates(1);
 
 	 // swap buffers
-	if (backbuffer) {
-		XdbeSwapInfo swapinfo;
-		swapinfo.swap_window=window;
-		swapinfo.swap_action=XdbeBackground;
-		XdbeSwapBuffers(app->dpy,&swapinfo,1);
-	}
+	SwapBuffers();
 
 	DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
 }
@@ -2325,7 +2307,7 @@ void LaidoutViewport::Refresh()
  * '>'       next page       <-- done in ViewWindow
  * </pre>
  */
-int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
+int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG if (ch=='m') {
 	DBG 	cerr << ".....mark...."<<endl;
@@ -2344,50 +2326,55 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		} 
 	}
 	 // ask interfaces, and default viewport stuff
-	if (ViewportWindow::CharInput(ch,buffer,len,state)==0) return 0;
+	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
 
 	 // deal with all other LaidoutViewport specific stuff
 	if (ch=='g' && viewportmode!=VIEW_GRAB_COLOR &&  (state&LAX_STATE_MASK)==0) {
 		
-		Cursor cursor=XCreateFontCursor(app->dpy,XC_circle);
-		if (cursor) {
-			viewportmode=VIEW_GRAB_COLOR;
-			DBG cerr <<"***********************viewport:CURSOR***********************"<<endl;
-			XDefineCursor(app->dpy,window,cursor);
-			XFreeCursor(app->dpy,cursor);
-		}
+		viewportmode=VIEW_GRAB_COLOR;
+		DBG cerr <<"***********************viewport:CURSOR***********************"<<endl;
+		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(this,LAX_MOUSE_Circle);
+
 	} else if (viewportmode==VIEW_GRAB_COLOR && (ch=='g' || ch==LAX_Esc) && (state&LAX_STATE_MASK)==0) {
 		if (viewportmode==VIEW_GRAB_COLOR) {
 			viewportmode=VIEW_NORMAL;
-			XUndefineCursor(app->dpy,window);
+			const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(this,0);
 			return 0;
 		}
+
 	} else if (ch=='o' &&  (state&LAX_STATE_MASK)==0) {
-		return ViewportWindow::CharInput(' ',NULL,0,ShiftMask);
+		return ViewportWindow::CharInput(' ',NULL,0,ShiftMask,d);
+
 	} else if (ch=='O' &&  (state&LAX_STATE_MASK)==ShiftMask) {
-		return ViewportWindow::CharInput(' ',NULL,0,0);
+		return ViewportWindow::CharInput(' ',NULL,0,0,d);
+
 	} else if (ch=='0' &&  (state&LAX_STATE_MASK)==0) {
 		//*** activate GroupInterface?
+
 	} else if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
 		if (!DeleteObject()) return 1;
 		return 0;
+
 	} else if (ch=='s' && (state&LAX_STATE_MASK)==0) {
 		if (showstate==0) showstate=1;
 		else showstate=0;
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='M' && (state&LAX_STATE_MASK)==(ShiftMask|Mod1Mask)) {
 		DBG  //for debugging to make a delineation in the cerr stuff
 		DBG cerr<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
 		return 0;
+
 	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) {
 		if (curobj.obj) {
 			cout<<"**** move object to another page: imp me!"<<endl;
 			//if (CirculateObject(9,i,0)) needtodraw=1;
 			return 0;
 		}
+
 	} else if (ch==LAX_Pgup) { //pgup
-		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state);
+		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state,d);
 		if ((state&LAX_STATE_MASK)==0) { //raise selection within layer
 			if (CirculateObject(0,0,0)) needtodraw=1;
 			return 0;
@@ -2398,8 +2385,9 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 			if (CirculateObject(20,0,0)) needtodraw=1;
 			return 0;
 		}
+
 	} else if (ch==LAX_Pgdown) { //pgdown
-		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state);
+		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state,d);
 		if ((state&LAX_STATE_MASK)==0) { //lower selection within layer
 			if (CirculateObject(1,0,0)) needtodraw=1;
 			return 0;
@@ -2410,16 +2398,19 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 			if (CirculateObject(21,0,0)) needtodraw=1;
 			return 0;
 		}
+
 	} else if (ch==LAX_Home) { //home
 		if (curobj.obj && (state&LAX_STATE_MASK)==0) {	//raise selection to top
 			if (CirculateObject(2,0,0)) needtodraw=1;
 			return 0;
 		}
+
 	} else if (ch==LAX_End) { //end
 		if (curobj.obj && (state&LAX_STATE_MASK)==0) {	//lower selection to bottom
 			if (CirculateObject(3,0,0)) needtodraw=1;
 			return 0;
 		}
+
 	} else if (ch=='D' && (state&LAX_STATE_MASK)==ShiftMask) {
 		DBG cerr << "----drawflags: "<<drawflags;
 		if (drawflags==DRAW_AXES) drawflags=DRAW_BOX;
@@ -2429,6 +2420,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		DBG cerr << " --> "<<drawflags<<endl;
 		needtodraw=1;
 		return 0;
+
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
 		if (!curobj.obj) return 0;
 		
@@ -2443,6 +2435,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		needtodraw=1;
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -2622,7 +2615,7 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 /*! Incs count on newdoc, if any.
  */
 ViewWindow::ViewWindow(Document *newdoc)
-	: ViewerWindow(NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
+	: ViewerWindow(NULL,NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
 	var1=var2=var3=NULL;
@@ -2637,10 +2630,10 @@ ViewWindow::ViewWindow(Document *newdoc)
 }
 
 //! More general constructor. Passes in a new LaidoutViewport.
-ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 						int xx,int yy,int ww,int hh,int brder,
 						Document *newdoc)
-	: ViewerWindow(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
+	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
 	project=NULL;
 	var1=var2=var3=NULL;
@@ -2656,6 +2649,8 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
  */
 ViewWindow::~ViewWindow()
 {
+	DBG cerr <<"in ViewWindow destructor"<<endl;
+
 	if (laidout->lastview==this) laidout->lastview=NULL;
 	if (doc) doc->dec_count();
 }
@@ -2792,7 +2787,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	viewport->dp->syncPanner();
 	((LaidoutViewport *)viewport)->UseThisDoc(doc);
 	if (layouttype && doc && doc->imposition) {
-		for (int c=0; c<doc->imposition->NumLayouts(); c++) {
+		for (int c=0; c<doc->imposition->NumLayoutTypes(); c++) {
 			if (!strcmp(layouttype,doc->imposition->LayoutName(c))) { vm=c; break; }
 		}
 	}
@@ -2810,9 +2805,7 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
  */
 void ViewWindow::setup()
 {
-	win_xatts.event_mask|=KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask;
-	win_xattsmask|=CWEventMask;
-	if (viewport) viewport->dp->NewBG(app->rgbcolor(255,255,255));
+	if (viewport) viewport->dp->NewBG(rgbcolor(255,255,255));
 
 	//***this should be making dups of interfaces stack? or set current tool, etc...
 	for (int c=0; c<laidout->interfacepool.n; c++) {
@@ -2832,7 +2825,7 @@ class PageFlipper : public NumInputSlider
  public:
 	Document *doc;
 	PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
-				anXWindow *prev,Window nowner,const char *nsendthis,const char *nlabel);
+				anXWindow *prev,unsigned long nowner,const char *nsendthis,const char *nlabel);
 	~PageFlipper();
 	virtual void Refresh();
 };
@@ -2844,8 +2837,8 @@ PageFlipper::~PageFlipper()
 /*! Incs count on doc.
  */
 PageFlipper::PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
-						 anXWindow *prev,Window nowner,const char *nsendthis,const char *nlabel)
-	: NumInputSlider(parnt,ntitle,NUMSLIDER_WRAP,0,0,0,0,1, prev,nowner,nsendthis,nlabel,0,1)
+						 anXWindow *prev,unsigned long nowner,const char *nsendthis,const char *nlabel)
+	: NumInputSlider(parnt,ntitle,NULL,NUMSLIDER_WRAP,0,0,0,0,1, prev,nowner,nsendthis,nlabel,0,1)
 {
 	doc=ndoc;
 	if (doc) doc->inc_count();
@@ -2854,32 +2847,35 @@ PageFlipper::PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
 void PageFlipper::Refresh()
 {
 	if (!win_on || !needtodraw) return;
-	XSetBackground(app->dpy,app->gc(),bkcolor);
-	XClearWindow(app->dpy,window);
+	background_color(win_colors->bg);
+	clear_window(this);
+
 	int x,y;
 	unsigned int state;
-	mouseposition(this,&x,&y,&state);
-	if (buttondown || (x>=0 && x<win_w && y>0 && y<win_h)) {
-		if (x<win_w/2) {
-			 // draw left arrow
-			XSetForeground(app->dpy,app->gc(),app->coloravg(bkcolor,textcolor,.1));
-			drawthing(window,app->gc(),win_w/4,win_h/2, win_w/4,win_h/2,1, 6);
-		} else {
-			 // draw right arrow
-			XSetForeground(app->dpy,app->gc(),app->coloravg(bkcolor,textcolor,.1));
-			drawthing(window,app->gc(),win_w*3/4,win_h/2, win_w/4,win_h/2,1, 5);
+	if (buttondown) {
+		mouseposition(buttondowndevice,this,&x,&y,&state,NULL);
+		if ((x>=0 && x<win_w && y>0 && y<win_h)) {
+			if (x<win_w/2) {
+				 // draw left arrow
+				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
+				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, 6);
+			} else {
+				 // draw right arrow
+				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
+				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, 5);
+			}
 		}
 	}
 
-	XSetForeground(app->dpy,app->gc(),textcolor);
+	foreground_color(win_colors->fg);
 	
 	char *str=newstr(label);
 	if (doc && curitem>=0 && curitem<doc->pages.n) appendstr(str,doc->pages.e[curitem]->label);
 	else appendstr(str,"limbo");
-	
-	textout(window,str,-1,win_w/2,win_h/2,LAX_CENTER);
+
+	textout(this, str,-1,win_w/2,win_h/2,LAX_CENTER);
 	delete[] str;
-	
+
 	needtodraw=0;
 }
 
@@ -2912,46 +2908,33 @@ int ViewWindow::init()
 //		}
 //	}
 	
-	if (!win_sizehints) win_sizehints=XAllocSizeHints();
-	if (win_sizehints && !win_parent) {
-		DBG cerr <<"doingwin_sizehintsfor"<<(win_title?win_title:"untitled")<<endl;
-
-		//*** The initial x and y become the upper left corner of the window
-		//manager decorations. ***how to figure out how much room those decorations take,
-		//so as to place things on the screen accurately? like full screen view?
-		win_sizehints->x=win_x;
-		win_sizehints->y=win_y;
-		win_sizehints->width=win_w;
-		win_sizehints->height=win_h;
-	//	win_sizehints->width_inc=1;
-	//	win_sizehints->height_inc=1;
-	//	win_sizehints->flags=PMinSize|PResizeInc|USPosition|USSize
-		win_sizehints->flags=USPosition|USSize;
-	}
+	int buttongap=0;
 	
 	MenuButton *menub;
 	 //add a menu button thingy in corner between rulers
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
-	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",
+	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",NULL,
 						 MENUBUTTON_CLICK_CALLS_OWNER,
 						 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
 						 0,0,0,0,0,
-						 NULL,window,"rulercornerbutton",0,
-						 NULL,0,
-						 laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
-						 NULL);
+						 NULL,object_id,"rulercornerbutton",
+						 0,
+						 NULL,0, //menu
+						 "o", //label
+						 NULL,laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
+						 buttongap);
 	menub->tooltip(_("Display list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
 	
 	AddNull();//makes the status bar take up whole line.
 	anXWindow *last=NULL;
-	IconButton *ibut;
+	Button *ibut;
 	
 	 // tool section
 	 //*** clean me! sampling diff methods of tool selector
-	last=toolselector=new SliderPopup(this,"viewtoolselector",0, 0,0,0,0,1, 
-			NULL,window,"viewtoolselector",
+	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,0, 0,0,0,0,1, 
+			NULL,object_id,"viewtoolselector",
 			NULL,0);
 	toolselector->tooltip(_("The current tool"));
 	const char *str; //the whattype: "BlahInterface"
@@ -2972,14 +2955,14 @@ int ViewWindow::init()
 		if (tstr) *tstr='\0';
 		
 		img=laidout->icons.GetIcon(nstr);
-		//last=ibut=new IconButton(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"viewtoolselector",
+		//last=ibut=new Button(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"viewtoolselector",
 		//		tools.e[c]->id,nstr,tstr);
 		appendstr(nstr," Tool");
 		
 		//ibut->tooltip(tstr);
 		//ibut->SetIcon(img); //does not call inc_count()
 		//ibut->WrapToExtent(3);
-		//AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);	
+		//AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);	
 		
 		toolselector->AddItem(nstr,img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
@@ -2990,36 +2973,37 @@ int ViewWindow::init()
 	SelectTool(obji);
 	AddWin(toolselector);
 	
+
 	 //----- Page Flipper
 	last=pagenumber=new PageFlipper(doc,this,"page number", 
-									last,window,"newPageNumber",
+									last,object_id,"newPageNumber",
 									_("Page: "));
 	pagenumber->tooltip(_("The pages in the spread\nand the current page"));
-	AddWin(pagenumber,90,0,50,50, pagenumber->win_h,0,50,50);
+	AddWin(pagenumber,90,0,50,50,0, pagenumber->win_h,0,50,50,0);
 	
-	last=ibut=new IconButton(this,"prev spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"prevSpread",-1,
-			laidout->icons.GetIcon("PreviousSpread"),"<");
+	last=ibut=new Button(this,"prev spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"prevSpread",-1,
+						 "<",NULL,laidout->icons.GetIcon("PreviousSpread"),buttongap);
 	ibut->tooltip(_("Previous spread"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
-	last=ibut=new IconButton(this,"next spread",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"nextSpread",-1,
-			laidout->icons.GetIcon("NextSpread"),">");
+	last=ibut=new Button(this,"next spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"nextSpread",-1,
+						 ">",NULL,laidout->icons.GetIcon("NextSpread"),buttongap);
 	ibut->tooltip(_("Next spread"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
-	last=pageclips=new IconButton(this,"pageclips",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"pageclips",-1,
-			laidout->icons.GetIcon("PageClips"),"Page Clips");
+	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,
+							  _("Page Clips"),NULL,laidout->icons.GetIcon("PageClips"),buttongap);
 	pageclips->tooltip(_("Whether pages clips its contents"));
-	AddWin(pageclips,pageclips->win_w,0,50,50, pageclips->win_h,0,50,50);
+	AddWin(pageclips,pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0);
 	updateContext();
 
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
-//								NULL,window,"newLayerNumber",
+//								NULL,object_id,"newLayerNumber",
 //								"Layer: ",1,1,1); //*** get cur page, use those layers....
 //	num->tooltip(_("Sorry, layer control not well\nimplemented yet"));
-//	AddWin(num,num->win_w,0,50,50, num->win_h,0,50,50);
+//	AddWin(num,num->win_w,0,50,50,0, num->win_h,0,50,50,0);
 	
-	StrSliderPopup *p=new StrSliderPopup(this,"view type",0, 0,0,0,0,1, NULL,window,"newViewType");
+	SliderPopup *p=new SliderPopup(this,"view type",NULL,0, 0,0,0,0,1, NULL,object_id,"newViewType");
 	int vm=((LaidoutViewport *)viewport)->ViewMode(NULL);
 	//*****this needs dynamic adjustment for imposition layout options....
 	//****update layout type
@@ -3027,7 +3011,7 @@ int ViewWindow::init()
 	Imposition *imp=NULL;
 	if (vp->doc) imp=vp->doc->imposition;
 	if (imp) {
-		for (int c=0; c<imp->NumLayouts(); c++) {
+		for (int c=0; c<imp->NumLayoutTypes(); c++) {
 			p->AddItem(imp->LayoutName(c),c);
 		}
 	} else {
@@ -3036,34 +3020,35 @@ int ViewWindow::init()
 		p->AddItem(_("Paper Layout"),PAPERLAYOUT);
 	}
 	p->Select(vm);
-	p->WrapWidth();
-	AddWin(p,p->win_w,0,50,50, p->win_h,0,50,50);
+	p->WrapToExtent();
+	AddWin(p,p->win_w,0,50,50,0, p->win_h,0,50,50,0);
 
-	last=colorbox=new ColorBox(this,"colorbox",0, 0,0,0,0,1, NULL,window,"curcolor",65535,0,0,65535,65535,255);
-	AddWin(colorbox, 50,0,50,50, p->win_h,0,50,50);
+	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",65535,150,
+							   LAX_COLOR_RGB,65535,0,0,65535);
+	AddWin(colorbox, 50,0,50,50,0, p->win_h,0,50,50,0);
 		
-	last=ibut=new IconButton(this,"add page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"addPage",-1,
-			laidout->icons.GetIcon("AddPage"),_("Add Page"));
+	last=ibut=new Button(this,"add page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"addPage",-1,
+						 _("Add Page"),NULL,laidout->icons.GetIcon("AddPage"),buttongap);
 	ibut->tooltip(_("Add 1 page after this one"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
-	last=ibut=new IconButton(this,"delete page",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"deletePage",-1,
-			laidout->icons.GetIcon("DeletePage"),_("Delete Page"));
+	last=ibut=new Button(this,"delete page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"deletePage",-1,
+						 _("Delete Page"),NULL,laidout->icons.GetIcon("DeletePage"),buttongap);
 	ibut->tooltip(_("Delete the current page"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
-	last=ibut=new IconButton(this,"import image",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"importImage",-1,
-			laidout->icons.GetIcon("ImportImage"),_("Import Images"));
+	last=ibut=new Button(this,"import image",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"importImage",-1,
+						 _("Import Images"),NULL,laidout->icons.GetIcon("ImportImage"),buttongap);
 	ibut->tooltip(_("Import one or more images"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 
 	 //-------------import
 	 //*** this can be somehow combined with import images maybe?...
-	last=ibut=new IconButton(this,"import",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"import",-1,
-			laidout->icons.GetIcon("Import"),_("Import"));
+	last=ibut=new Button(this,"import",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"import",-1,
+						 _("Import"),NULL,laidout->icons.GetIcon("Import"),buttongap);
 	ibut->tooltip(_("Try to import various vector based files into the document"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	 //---------------******** export
 	 //*** this needs an automatic way to do it, needs a pool to access somewhere..
@@ -3082,41 +3067,41 @@ int ViewWindow::init()
 //			menu->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
 //		}
 //	}
-//	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
+//	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"export",-1,
 //							 menu,1,
 //							 laidout->icons.GetIcon("Export"),_("Export"));
 //	menub->tooltip(_("Export the document in various ways"));
-//	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50);
+//	AddWin(menub,menub->win_w,0,50,50,0, menub->win_h,0,50,50,0);
 //-----------------
-	last=ibut=new IconButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"export",-1,
-			laidout->icons.GetIcon("Export"),_("Export"));
+	last=ibut=new Button(this,"export",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"export",-1,
+						 _("Export"),NULL,laidout->icons.GetIcon("Export"),buttongap);
 	ibut->tooltip(_("Export the document in various ways"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	
 	 //-----------print
-	last=ibut=new IconButton(this,"print",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"print",-1,
-			laidout->icons.GetIcon("Print"),_("Print"));
+	last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"print",-1,
+						 _("Print"),NULL,laidout->icons.GetIcon("Print"),buttongap);
 	ibut->tooltip(_("Print the document"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 
-	last=ibut=new IconButton(this,"open doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"openDoc",-1,
-			laidout->icons.GetIcon("Open"),_("Open"));
+	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"openDoc",-1,
+						 _("Open"),NULL,laidout->icons.GetIcon("Open"),buttongap);
 	ibut->tooltip(_("Open a document from disk"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
-	last=ibut=new IconButton(this,"save doc",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"saveDoc",-1,
-			laidout->icons.GetIcon("Save"),_("Save"));
+	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"saveDoc",-1,
+						 _("Save"),NULL,laidout->icons.GetIcon("Save"),buttongap);
 	ibut->tooltip(_("Save the current document"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	
 
-	last=ibut=new IconButton(this,"help",IBUT_ICON_ONLY, 0,0,0,0,1, NULL,window,"help",-1,
-			laidout->icons.GetIcon("Help"),_("Help!"));
+	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"help",-1,
+						 _("Help!"),NULL,laidout->icons.GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	//**** add screen x,y
 	//		   real x,y
@@ -3137,16 +3122,18 @@ int ViewWindow::init()
  *
  * \todo *** the response to saveAsPopup could largely be put elsewhere
  */
-int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
+int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
+	DBG cerr <<"ViewWindow "<<win_title<<" got "<<(mes?mes:"unknown")<<endl;
+
 	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
-		int c=viewport->DataEvent(data,mes);
+		int c=viewport->Event(data,mes);
 		updateContext();
 		return c;
 
 	} else if (!strcmp(mes,"import new image")) {
 		 //*** not this is currently not used... ImportImagesDialog calls dumpin directly, and sends no message back.
-		StrsEventData *s=dynamic_cast<StrsEventData *>(data);
+		const StrsEventData *s=dynamic_cast<const StrsEventData *>(data);
 		if (!s || !s->n) return 1;
 
 		int n=dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(), 
@@ -3163,12 +3150,11 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			else sprintf(mes,_("Couldn't load image."));
 		}
 		((LaidoutViewport *)viewport)->postmessage(mes);
-		delete data;
 		return 0;
 
 	} else if (!strcmp(mes,"reallysave")) {
 		 // save without overwrite check
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
 		
 		Document *sdoc=doc;
@@ -3188,25 +3174,22 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			} else PostMessage(_("Problem saving. Not saved."));
 		}
 
-		delete data;
 		return 0;
 
 	} else if (!strcmp(mes,"statusMessage")) {
 		 //user entered a new file name to save document as
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s || !s->str) return 1;
 		PostMessage(s->str);
-		delete data;
 		return 0;
 
 	} else if (!strcmp(mes,"saveAsPopup")) {
 		 //user entered a new file name to save document as
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
 		if (s->str && s->str[0]) {
 			char *dir,*bname;
-			dir=s->str;
-			s->str=NULL;
+			dir=newstr(s->str);
 			convert_to_full_path(dir,NULL);
 			bname=strrchr(dir,'/');
 			
@@ -3222,7 +3205,6 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 					char mes[50+strlen(dir)];
 					sprintf(mes,_("File not saved: Could not change directory to \"%s\""),dir);
 					((LaidoutViewport *)viewport)->postmessage(mes);
-					delete data;
 					delete[] bname;
 					delete[] dir;
 					return 0;
@@ -3242,7 +3224,6 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 				char mes[50];
 				sprintf(mes,"Cannot overwrite that type of file.");
 				((LaidoutViewport *)viewport)->postmessage(mes);
-				delete data;
 				delete[] bname;
 				delete[] dir;
 				delete[] file;
@@ -3250,7 +3231,7 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			}
 			 // file existed, so ask to overwrite ***
 			if (c) {
-				anXWindow *ob=new Overwrite(window,"reallysave", file, s->info, s->info2, s->info3);
+				anXWindow *ob=new Overwrite(object_id,"reallysave", file, s->info1, s->info2, s->info3);
 				app->rundialog(ob);
 			} else {
 				if (!is_good_filename(file)) {//***how does it know?
@@ -3283,7 +3264,6 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 			if (dir)   delete[] dir;
 			if (file)  delete[] file;
 		}
-		delete data;
 		return 0;
 
 	} else if (!strcmp(mes,"print config")) {
@@ -3293,145 +3273,40 @@ int ViewWindow::DataEvent(Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"export config")) {
 		 //sent from ExportDialog
-		ConfigEventData *d=dynamic_cast<ConfigEventData *>(data);
+		const ConfigEventData *d=dynamic_cast<const ConfigEventData *>(data);
 		if (!d || !d->config->filter) return 1;
 		char *error=NULL;
 		mesbar->SetText(_("Exporting..."));
 		mesbar->Refresh();
-		XSync(app->dpy,False);
+		//XSync(app->dpy,False);
 		int err=export_document(d->config,&error);
 		if (err==0) mesbar->SetText(_("Exported."));
 		else mesbar->SetText(_("Error exporting."));
 		if (error) {
-			MessageBox *mbox=new MessageBox(NULL,err?_("Error exporting."):_("Warning!"),ANXWIN_CENTER, 0,0,0,0,0,
-										NULL,None,NULL, error);
-			mbox->AddButton(TBUT_OK);
+			MessageBox *mbox=new MessageBox(NULL,NULL,err?_("Error exporting."):_("Warning!"),ANXWIN_CENTER, 0,0,0,0,0,
+										NULL,0,NULL, error);
+			mbox->AddButton(BUTTON_OK);
 			mbox->AddButton(_("Dammit!"),0);
 			app->rundialog(mbox);
 			delete[] error;
 		}
-		delete data;
 		return 0;
-	}
-	return 1;
-}
 
-//! Set the title of the top level window containing this window.
-void ViewWindow::SetParentTitle(const char *str)
-{
-	if (!str) return;
-	XStoreName(app->dpy,window,str);
-	anXWindow *win=win_parent;
-	while (win && win->win_parent) win=win->win_parent;
-	if (win) XStoreName(app->dpy,win->window,str);
-}
+	} else if (!strcmp(mes,"curcolor")) {
+		const SimpleColorEventData *ce=dynamic_cast<const SimpleColorEventData *>(data);
+		if (!ce) return 1;
 
-//! Make the ruler corner button have the right icon.
-void ViewWindow::updateProjectStatus()
-{
-	((MenuButton *)rulercornerbutton)->SetIcon(laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"));
-}
-
-//! Make the pagenumber label be correct.
-/*! Also set the pageclips thing.
- *
- * \todo *** need to implement the updating all of helper windows to cur context
- */
-void ViewWindow::updateContext()
-{
-	if (!doc) return;
-	int page=((LaidoutViewport *)viewport)->curobjPage();
-	if (pagenumber) {
-		pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
-		pagenumber->Select(page);
-		pagenumber->NewMax(doc->pages.n-1);
-	}
-
-	if (pageclips) {
-		if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
-		else pageclips->State(LAX_OFF);
-	}
-
-	LaidoutViewport *v=((LaidoutViewport *)viewport);
-	char blah[v->curobj.context.n()*10+50];
-	strcpy(blah,"viewer");
-	for (int c=0; c<v->curobj.context.n(); c++) {
-		sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
-	}
-	strcat(blah,":");
-	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
-	else strcat(blah,"none");
-	if (mesbar) mesbar->SetText(blah);
-
-
-	//****update layout type
-	StrSliderPopup *layouttype=dynamic_cast<StrSliderPopup*>(findChildWindow("view type"));
-	if (layouttype) {
-		LaidoutViewport *vp=((LaidoutViewport *)viewport);
-		Imposition *imp;
-		if (vp->doc) imp=vp->doc->imposition;
-		if (imp) {
-			layouttype->Flush();
-			for (int c=0; c<imp->NumLayouts(); c++) {
-				layouttype->AddItem(imp->LayoutName(c),c);
-			}
-		}
-	}
-}
-
-
-//! Deal with various indicator/control events
-/*! Accepts
- *    curcolor,
- *    newPageNumber,
- *    newLayerNumber,
- *    newViewType, 
- *    importImage,
- *    dumpInImages,
- *    deletePage,
- *    addPage,
- *    help (pops up a HelpWindow),
- *    pageclips
- *
- */
-int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
-{
-	DBG cerr <<"ViewWindow "<<win_title<<" got "<<mes<<endl;
-//	if (!strcmp(mes,"change color")) {
-//		 // apply message as new current color, pass on to viewport
-//		 // sent from at least PalettePane
-//		 // data[0]==max color value
-//		LineStyle linestyle;
-//		float max=e->data.l[0];
-//		linestyle.color.red=  (unsigned short) (e->data.l[1]/max*65535);
-//		linestyle.color.green=(unsigned short) (e->data.l[2]/max*65535);
-//		linestyle.color.blue= (unsigned short) (e->data.l[3]/max*65535);
-//		linestyle.color.alpha=(unsigned short) (e->data.l[4]/max*65535);
-//		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
-//		char blah[100];
-//		sprintf(blah,"New Color r:%.4f g:%.4f b:%.4f a:%.4f",
-//				(float) linestyle.color.red   / 65535,
-//				(float) linestyle.color.green / 65535,
-//				(float) linestyle.color.blue  / 65535,
-//				(float) linestyle.color.alpha / 65535);
-//		mesbar->SetText(blah);
-//		if (curtool)
-//			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
-//		
-//		return 0;
-//	} else
-	if (!strcmp(mes,"curcolor")) {
 		 // apply message as new current color, pass on to viewport
 		 // (sent from color box)
 		LineStyle linestyle;
-		float max=e->data.l[0];
-		linestyle.color.red=  (unsigned short) (e->data.l[1]/max*65535);
-		linestyle.color.green=(unsigned short) (e->data.l[2]/max*65535);
-		linestyle.color.blue= (unsigned short) (e->data.l[3]/max*65535);
-		linestyle.color.alpha=(unsigned short) (e->data.l[4]/max*65535);
+		float max=ce->max;
+		linestyle.color.red=  (unsigned short) (ce->channels[0]/max*65535);
+		linestyle.color.green=(unsigned short) (ce->channels[1]/max*65535);
+		linestyle.color.blue= (unsigned short) (ce->channels[2]/max*65535);
+		linestyle.color.alpha=(unsigned short) (ce->channels[3]/max*65535);
 		linestyle.mask=GCForeground;
 		char blah[100];
-		colorbox->Set(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
+		colorbox->SetRGB(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
 				(float) linestyle.color.red   / 65535,
 				(float) linestyle.color.green / 65535,
@@ -3442,24 +3317,26 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			if (curtool->UseThis(&linestyle,GCForeground)) ((anXWindow *)viewport)->Needtodraw(1);
 		
 		return 0;
-	} else if (!strcmp(mes,"make curcolor")) {
-		 //change color box color to what's in the event
-		 //(sent from interfaces)
-		float max=e->data.l[0];
-		unsigned int red,green,blue,alpha;
-		red=  (unsigned short) (e->data.l[1]/max*65535);
-		green=(unsigned short) (e->data.l[2]/max*65535);
-		blue= (unsigned short) (e->data.l[3]/max*65535);
-		alpha=(unsigned short) (e->data.l[4]/max*65535);
-		colorbox->Set(red,green,blue,alpha);
-		char blah[100];
-		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
-				(float) red   / 65535,
-				(float) green / 65535,
-				(float) blue  / 65535,
-				(float) alpha / 65535);
-		mesbar->SetText(blah);
-		return 0;
+
+//	} else if (!strcmp(mes,"make curcolor")) {
+//		 //change color box color to what's in the event
+//		 //(sent from interfaces)
+//		float max=s->info1;
+//		unsigned int red,green,blue,alpha;
+//		red=  (unsigned short) (s->info2/max*65535);
+//		green=(unsigned short) (e->data.l[2]/max*65535);
+//		blue= (unsigned short) (e->data.l[3]/max*65535);
+//		alpha=(unsigned short) (e->data.l[4]/max*65535);
+//		colorbox->Set(red,green,blue,alpha);
+//		char blah[100];
+//		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
+//				(float) red   / 65535,
+//				(float) green / 65535,
+//				(float) blue  / 65535,
+//				(float) alpha / 65535);
+//		mesbar->SetText(blah);
+//		return 0;
+
 	} else if (!strcmp(mes,"rulercornerbutton")) {
 		 //pop up a list of available documents and limbos
 		 //*** in future, this will be more full featured, with:
@@ -3571,7 +3448,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		MenuSelector *popup;
 //		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 //						0,0,0,0, 1, 
-//						NULL,viewport->window,"rulercornermenu", 
+//						NULL,viewport->object_id,"rulercornermenu", 
 //						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
 //						 //| MENUSEL_SEND_STRINGS
 //						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
@@ -3579,9 +3456,11 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 //						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
 //						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
 //						menu,1);
-		popup=new PopupMenu(_("Documents"), MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT,
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		popup=new PopupMenu(NULL,_("Documents"), MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT,
 						0,0,0,0, 1, 
-						viewport->window,"rulercornermenu", 
+						viewport->object_id,"rulercornermenu", 
+						s->info3, //id of device that triggered the send
 						menu,1);
 		popup->pad=5;
 		popup->Select(0);
@@ -3592,10 +3471,12 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"help")) {
 		app->addwindow(new HelpWindow());
 		return 0;
+
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
 		//***
 		updateContext();
 		return 0;
+
 	} else if (!strcmp(mes,"pageclips")) { // 
 		 //toggle pageclips
 		 //*** this sucks need to dup the style if necessary and
@@ -3613,6 +3494,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		}
 		((anXWindow *)viewport)->Needtodraw(1);
 		return 0;
+
 	} else if (!strcmp(mes,"addPage")) { // 
 		if (!doc) return 0;
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
@@ -3620,6 +3502,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		if (c>=0) PostMessage(_("Page added."));
 			else PostMessage(_("Error adding page."));
 		return 0;
+
 	} else if (!strcmp(mes,"deletePage")) { // 
 		if (!doc) return 0;
 
@@ -3636,40 +3519,52 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		// Document sends the notifyDocTreeChanged..
 
 		return 0;
+
 	} else if (!strcmp(mes,"newPageNumber")) {
 		if (!doc) return 0;
 
-		if (e->data.l[0]>doc->pages.n) {
-			e->data.l[0]=0;
-			pagenumber->Select(e->data.l[0]);
-		} else if (e->data.l[0]<0) {
-			e->data.l[0]=doc->pages.n-1;
-			pagenumber->Select(e->data.l[0]);
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int p=s->info1;
+		if (p>doc->pages.n) {
+			p=0;
+			pagenumber->Select(p);
+		} else if (p<0) {
+			p=doc->pages.n-1;
+			pagenumber->Select(p);
 		}
-		((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]);
+		((LaidoutViewport *)viewport)->SelectPage(p);
 		updateContext();
 		return 0;
+
 	} else if (!strcmp(mes,"prevSpread")) {
 		((LaidoutViewport *)viewport)->PreviousSpread();
 		updateContext();
 		return 0;
+
 	} else if (!strcmp(mes,"nextSpread")) {
 		((LaidoutViewport *)viewport)->NextSpread();
 		updateContext();
 		return 0;
+
 	} else if (!strcmp(mes,"newLayerNumber")) { // 
-		//((LaidoutViewport *)viewport)->SelectPage(e->data.l[0]);
+		//((LaidoutViewport *)viewport)->SelectPage(s->info1);
 		cout <<"***** new layer number.... *** imp me!"<<endl;
 		return 0;
+
 	} else if (!strcmp(mes,"viewtoolselector")) {
-		DBG cerr <<"***** viewtoolselector change to id:"<<e->data.l[0]<<endl;
-		SelectTool(e->data.l[0]);
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		DBG cerr <<"***** viewtoolselector change to id:"<<s->info1<<endl;
+
+		SelectTool(s->info1);
 		return 0;
+
 	} else if (!strcmp(mes,"newViewType")) {
 		 // must update labels have Spread [2-3]: 2
-		int v=e->data.l[0];
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		int v=s->info1;
 		pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(v,-1));
 		return 0;
+
 	} else if (!strcmp(mes,"importImage")) {
 		Group *toobj=NULL;
 		if (!doc) {
@@ -3681,14 +3576,15 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			toobj->maxx=1;
 			toobj->maxy=aspect;
 		}
-		app->rundialog(new ImportImagesDialog(NULL,"Import Images",
+		app->rundialog(new ImportImagesDialog(NULL,"Import Images",_("Import Images"),
 					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					0,0,0,0,0, window,"import new image",
+					0,0,0,0,0, object_id,"import new image",
 					NULL,NULL,NULL,
 					toobj,
 					doc,((LaidoutViewport *)viewport)->curobjPage(),0));
 		if (toobj) toobj->dec_count();
 		return 0;
+
 	} else if (!strcmp(mes,"import")) { 
 		if (laidout->importfilters.n==0) {
 			mesbar->SetText(_("Sorry, there are no import filters installed."));
@@ -3705,9 +3601,9 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				toobj->maxx=1;
 				toobj->maxy=aspect;
 			}
-			app->rundialog(new ImportFileDialog(NULL,"Import File",
+			app->rundialog(new ImportFileDialog(NULL,NULL,_("Import File"),
 						FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-						0,0,0,0,0, window,"import file",
+						0,0,0,0,0, object_id,"import file",
 						NULL,NULL,NULL,
 						toobj,
 						doc,((LaidoutViewport *)viewport)->curobjPage(),0));
@@ -3715,12 +3611,13 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			return 0;
 		}
 		return 0;
+
 	} else if (!strcmp(mes,"export")) { 
 		 //user clicked down on the export button, and selected an export type from menu..
 		PaperGroup *pg=((LaidoutViewport *)viewport)->papergroup;
 		Group *l;
 		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
-		ExportDialog *d=new ExportDialog(0,window,"export config", 
+		ExportDialog *d=new ExportDialog(0,object_id,"export config", 
 										 doc,
 										 l,
 										 pg,
@@ -3733,22 +3630,16 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 											((LaidoutViewport *)viewport)->curobjPage()):0);
 		app->rundialog(d);
 		return 0;
-		//------------------------------------------------
-		//char *error=NULL;
-		//DocumentExportConfig config(doc,"exported-file.huh",NULL,PAPERLAYOUT,0,doc->imposition->NumPapers()-1);
-		//if (laidout->exportfilters.e[e->data.l[1]]->Out(NULL,&config,&error)==0) {
-		//	mesbar->SetText(_("Exported."));
-		//} else {
-		//	if (error) {
-		//		mesbar->SetText(error);
-		//		delete[] error;
-		//	} else mesbar->SetText(_("Error exporting."));
-		//}
-		//return 0;
+
 	} else if (!strcmp(mes,"openDoc")) { 
-		//*** hack right here:
-		((HeadWindow *)win_parent)->CharInput('o',NULL,0,ControlMask);
+		 //sends the open message to the head window... hmm...
+		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, win_parent->object_id,"open document",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					NULL,NULL,NULL,"Laidout"));
 		return 0;
+
 	} else if (!strcmp(mes,"saveDoc")) { 
 		if (!doc) return 0;
 		
@@ -3760,9 +3651,10 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 						//anXWindow *prev,Window nowner,const char *nsend,
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
-			app->rundialog(new FileDialog(NULL,"Save As...",
-						ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
-						0,0,0,0,0, window,"saveAsPopup",
+			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
+						ANXWIN_REMEMBER,
+						0,0,0,0,0, object_id,"saveAsPopup",
+						FILES_FILES_ONLY|FILES_SAVE_AS,
 						doc->Saveas()));
 		} else {
 			char *error=NULL;
@@ -3778,6 +3670,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			}
 		}
 		return 0;
+
 	} else if (!strcmp(mes,"print")) { // print to output.ps
 		 //user clicked print button
 		LaidoutViewport *vp=((LaidoutViewport *)viewport);
@@ -3811,7 +3704,7 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				ps->dec_count();
 			} else pg->inc_count();
 		} else l=vp->limbo;
-		PrintingDialog *p=new PrintingDialog(doc,window,"export config",
+		PrintingDialog *p=new PrintingDialog(doc,object_id,"export config",
 										"output.ps", //file
 										"lp",        //command
 										NULL,        //thisfile
@@ -3827,17 +3720,80 @@ int ViewWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 	}
 	
-	return 1;
+	return anXWindow::Event(data,mes);
 }
 
-//! On any FocusIn event, set laidout->lastview to this.
-int ViewWindow::event(XEvent *e)
+
+//! Set the title of the top level window containing this window.
+void ViewWindow::SetParentTitle(const char *str)
 {
-	if (e->type==FocusIn) {
-		//if (doc) laidout->curdoc=doc;
-		laidout->lastview=this;
+	if (!str) return;
+	WindowTitle(str);
+	anXWindow *win=win_parent;
+	while (win && win->win_parent) win=win->win_parent;
+	if (win) win->WindowTitle(str);
+}
+
+//! Make the ruler corner button have the right icon.
+void ViewWindow::updateProjectStatus()
+{
+	((MenuButton *)rulercornerbutton)->SetIcon(laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"));
+}
+
+//! Make the pagenumber label be correct.
+/*! Also set the pageclips thing.
+ *
+ * \todo *** need to implement the updating all of helper windows to cur context
+ */
+void ViewWindow::updateContext()
+{
+	if (!doc) return;
+	int page=((LaidoutViewport *)viewport)->curobjPage();
+	if (pagenumber) {
+		pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
+		pagenumber->Select(page);
+		pagenumber->NewMax(doc->pages.n-1);
 	}
-	return ViewerWindow::event(e);
+
+	if (pageclips) {
+		if (page>=0) pageclips->State(doc->pages.e[page]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
+		else pageclips->State(LAX_OFF);
+	}
+
+	LaidoutViewport *v=((LaidoutViewport *)viewport);
+	char blah[v->curobj.context.n()*10+50];
+	strcpy(blah,"viewer");
+	for (int c=0; c<v->curobj.context.n(); c++) {
+		sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
+	}
+	strcat(blah,":");
+	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
+	else strcat(blah,"none");
+	if (mesbar) mesbar->SetText(blah);
+
+
+	//update layout type, this could probably be more efficient...
+	SliderPopup *layouttype=dynamic_cast<SliderPopup*>(findChildWindowByName("view type"));
+	if (layouttype) {
+		layouttype->Flush();
+		LaidoutViewport *vp=((LaidoutViewport *)viewport);
+		Imposition *imp;
+		if (vp->doc) imp=vp->doc->imposition;
+		if (imp) {
+			for (int c=0; c<imp->NumLayoutTypes(); c++) {
+				layouttype->AddItem(imp->LayoutName(c),c);
+			}
+		}
+	}
+}
+
+
+//! On any FocusIn event, set laidout->lastview to this.
+int ViewWindow::FocusOn(const Laxkit::FocusChangeData *e)
+{
+	//if (doc) laidout->curdoc=doc;
+	laidout->lastview=this;
+	return anXWindow::FocusOn(e);
 }
 
 int ViewWindow::SelectTool(int id)
@@ -3859,7 +3815,7 @@ int ViewWindow::SelectTool(int id)
  * 'r'     ---for debugging, does system call: "more /proc/(pid)/status"
  * </pre>
  */
-int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
+int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	if ((ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) 
 		  || (ch=='s' && (state&LAX_STATE_MASK)==ControlMask)) { 
@@ -3892,9 +3848,10 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			char *where=newstr(isblank(sdoc->Saveas())?sdoc->Saveas():NULL);
 			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
-			app->rundialog(new FileDialog(NULL,"Save As...",
-						ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
-						0,0,0,0,0, window,"saveAsPopup",
+			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
+						ANXWIN_REMEMBER,
+						0,0,0,0,0, object_id,"saveAsPopup",
+						FILES_FILES_ONLY|FILES_SAVE_AS,
 						where));
 			if (where) delete[] where;
 		} else {
@@ -3945,7 +3902,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		system(blah);
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
-		app->rundialog(new NewDocWindow(NULL,"New Document",0,0,0,0,0, 0));
+		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
 		return 0;
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) { //reset document
 		//***
@@ -3962,7 +3919,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;
 	}
-	return ViewerWindow::CharInput(ch,buffer,len,state);
+	return ViewerWindow::CharInput(ch,buffer,len,state,d);
 }
 
 

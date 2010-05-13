@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2009 Tom Lechner
+// Copyright (c) 2004-2010 Tom Lechner
 //
 #ifndef VIEWWINDOW_H
 #define VIEWWINDOW_H
@@ -21,10 +21,9 @@
 #include <lax/numinputslider.h>
 #include <lax/sliderpopup.h>
 #include <lax/lineedit.h>
-#include <lax/textbutton.h>
 #include <lax/colorbox.h>
-#include <lax/iconbutton.h>
-#include <X11/extensions/Xdbe.h>
+#include <lax/button.h>
+
 #include "document.h"
 
 
@@ -64,8 +63,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	int showstate;
 	int transformlevel;
 	double ectm[6];
-	XdbeBackBuffer backbuffer;
 	Group *limbo;
+
 	virtual void setupthings(int tospread=-1,int topage=-1);
 	virtual void setCurobj(VObjContext *voc);
 	virtual void findAny();
@@ -89,13 +88,12 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual const char *whattype() { return "LaidoutViewport"; }
 	virtual void Refresh();
 	virtual int init();
-	virtual int event(XEvent *e);
-	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
-	virtual int LBDown(int x,int y,unsigned int state,int count);
-	virtual int LBUp(int x,int y,unsigned int state);
-	virtual int MouseMove(int x,int y,unsigned int state);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
+	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
+	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 
 	virtual int UseThisDoc(Document *ndoc);
 	virtual int UseThisPaperGroup(PaperGroup *group);
@@ -151,7 +149,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	void setup();
 	Laxkit::NumInputSlider *pagenumber;
 	Laxkit::NumInputSlider *var1, *var2, *var3;
-	Laxkit::IconButton *pageclips;
+	Laxkit::Button *pageclips;
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
@@ -160,16 +158,16 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Document *doc;
 
 	ViewWindow(Document *newdoc);
-	ViewWindow(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+	ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 						int xx,int yy,int ww,int hh,int brder,
 						Document *newdoc);
 	virtual ~ViewWindow();
 	virtual const char *whattype() { return "ViewWindow"; }
-	virtual int event(XEvent *e);
-	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
 	virtual int init();
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
+	virtual int FocusOn(const Laxkit::FocusChangeData *e);
+
 	virtual int SelectTool(int id);
 	virtual void updateContext();
 	virtual void updateProjectStatus();

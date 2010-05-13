@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2007-2009 Tom Lechner
+// Copyright (c) 2007-2010 Tom Lechner
 //
 #ifndef IMPORTIMAGES_H
 #define IMPORTIMAGES_H
@@ -38,17 +38,16 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	Document *doc;
 	Group *toobj;
 	Laxkit::MenuSelector *reviewlist;
-	ImportImagesDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+	ImportImagesDialog(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
-			Window nowner,const char *nsend,
+			unsigned long nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
 			Document *ndoc,int startpg,double defdpi);
 	virtual ~ImportImagesDialog();
 	virtual const char *whattype() { return "ImportImagesDialog"; }
 	virtual int init();
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int send(int id);
 	virtual void SetFile(const char *f,const char *pfile);
 

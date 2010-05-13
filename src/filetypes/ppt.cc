@@ -620,7 +620,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 				image=new ImageData;
 				if (n) image->SetDescription(n->value);
 				image->SetImage(img);
-				if (m) transform_copy(image->m(),M);
+				if (m) image->m(M);
 				group->push(image);
 				image->dec_count();
 				numobjs++;
@@ -628,7 +628,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 
 		} else if (!strcmp(t->value,"group")) {
 			Group *newgroup=new Group;
-			if (m) transform_copy(newgroup->m(),M);
+			if (m) newgroup->m(M);
 			if (pptDumpInGroup(frame->find("content:"),newgroup)>0) {
 				group->push(newgroup);
 				numobjs++;
@@ -654,7 +654,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 			 //       num_columns="1"
 			 //       gutter_width="12"
 			 //       stream="stream1"/>
-			if (m) transform_copy(d->m(),M);
+			if (m) d->m(M);
 			char *name,*value;
 			for (int c3=0; c3<frame->attributes.n; c3++) {
 				name= frame->attributes.e[c3]->name;

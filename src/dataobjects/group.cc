@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -22,7 +22,6 @@
 #include <lax/transformmath.h>
 
 using namespace LaxFiles;
-
 using namespace Laxkit;
 
 #include <iostream>
@@ -185,7 +184,8 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *con
 		} else if (!strcmp(name,"prints")) {
 			prints=BooleanAttribute(value);
 		} else if (!strcmp(name,"matrix")) {
-			DoubleListAttribute(value,m(),6);
+			double mm[6];
+			if (DoubleListAttribute(value,mm,6)==6) m(mm);
 		} else if (!strcmp(name,"object")) {
 			int n;
 			char **strs=splitspace(value,&n);
@@ -342,7 +342,7 @@ int Group::UnGroup(int which)
 	while (g->n()) {
 		d=g->pop(0); //count stays same on d
 		transform_mult(mm,g->m(),d->m());
-		transform_copy(d->m(),mm);
+		d->m(mm);
 		objs.push(d,-1,which++); //incs d
 		d->dec_count(); //remove extra count
 	}
@@ -378,7 +378,7 @@ int Group::UnGroup(int n,const int *which)
 	double mm[6];
 	while (d=g->pop(0), d) {
 		transform_mult(mm,d->m(),g->m());
-		transform_copy(d->m(),mm);
+		d->m(mm);
 		objs.push(d,-1,*which+1);
 		d->dec_count();
 	}

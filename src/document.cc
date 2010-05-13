@@ -15,11 +15,12 @@
 //
 
 #include <lax/strmanip.h>
-#include <lax/lists.cc>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
 #include <lax/interfaces/dumpcontext.h>
+
+#include <lax/refptrstack.cc>
 
 #include "document.h"
 #include "filetypes/ppt.h"

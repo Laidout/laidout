@@ -24,11 +24,11 @@ class HelpWindow : public Laxkit::MessageBox
  public:
  	HelpWindow(int style=0);
 	virtual ~HelpWindow() {}
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
+	virtual int Event(const Laxkit::EventData *e,const char *mes);
  	virtual const char *whattype() { return "HelpWindow"; }
 	virtual int preinit();
 	virtual int init();
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
 
 #endif

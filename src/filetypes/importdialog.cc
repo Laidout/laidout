@@ -43,15 +43,17 @@ using namespace LaxFiles;
  *
  * \todo default dpi?
  */
-ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
-			Window nowner,const char *nsend,
+			unsigned long nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
 			Document *ndoc,int startpg,double defdpi)
-	: FileDialog(parnt,ntitle,
-			(nstyle&0xffff)|FILES_PREVIEW|FILES_OPEN_MANY|ANXWIN_REMEMBER,
-			xx,yy,ww,hh,brder,nowner,nsend,nfile,npath,nmask)
+	: FileDialog(parnt,nname,ntitle,
+			(nstyle&0xffff),
+			xx,yy,ww,hh,brder,nowner,nsend,
+			FILES_PREVIEW|FILES_OPEN_MANY|ANXWIN_REMEMBER,
+			nfile,npath,nmask)
 {
 	if (defdpi<=0) {
 		if (ndoc) defdpi=ndoc->imposition->paper->paperstyle->dpi; //***<-- crash hazard!
@@ -98,11 +100,11 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObj
 	att->push("win_h",scratch);
 
 //	 //------------export settings
-//	int dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetLong(NULL);
+//	int dpi      =dynamic_cast<LineInput *>(findChildWindowByName("DPI"))->GetLineEdit()->GetLong(NULL);
 //	int perpage=-2; //force to 1 page
-//	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
-//		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
-//	else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON)
+//	if (dynamic_cast<CheckBox *>(findChildWindowByName("perpageexactly"))->State()==LAX_ON)
+//		perpage=dynamic_cast<LineInput *>(findChildWindowByName("NumPerPage"))->GetLineEdit()->GetLong(NULL);
+//	else if (dynamic_cast<CheckBox *>(findChildWindowByName("perpagefit"))->State()==LAX_ON)
 //		perpage=-1; //as will fit to page
 //
 //	 //dpi
@@ -111,7 +113,7 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObj
 //
 //	 //autopreview
 //	att->push("autopreview",
-//				(dynamic_cast<CheckBox *>(findWindow("autopreview"))->State()==LAX_ON)?"yes":"no");
+//				(dynamic_cast<CheckBox *>(findChildWindowByName("autopreview"))->State()==LAX_ON)?"yes":"no");
 //
 //	 //perPage
 //	if (perpage==-2) att->push("perPage","all");
@@ -119,14 +121,14 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObj
 //	else att->push("perPage",perpage,-1);
 //
 //	 //maxPreviewWidth 200
-//	int w=dynamic_cast<LineInput *>(findWindow("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
+//	int w=dynamic_cast<LineInput *>(findChildWindowByName("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
 //
 //	ImportConfig *config=new ImportConfig();
 //
 //	att->push("maxPreviewWidth",w,-1);
 //
 //	 //defaultPreviewName any
-//	LineInput *prevbase=dynamic_cast<LineInput *>(findWindow("PreviewBase"));
+//	LineInput *prevbase=dynamic_cast<LineInput *>(findChildWindowByName("PreviewBase"));
 //	att->push("defaultPreviewName",prevbase->GetCText());
 
 	return att;
@@ -160,7 +162,7 @@ int ImportFileDialog::init()
 	dialog_style|=FILES_PREVIEW;
 	FileDialog::init();
 	AddNull();
-	AddWin(NULL, 2000,1990,0,50, 15,0,0,50);
+	AddWin(NULL, 2000,1990,0,50,0, 15,0,0,50,0);
 
 	 // set up the extra windows....
 	  
@@ -170,7 +172,7 @@ int ImportFileDialog::init()
 //			const char *newlabel,const char *newtext,unsigned int ntstyle,
 //			int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 	
-	int textheight=app->defaultfont->max_bounds.ascent+app->defaultfont->max_bounds.descent;
+	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+4;
 	char *str=NULL;
 	
@@ -185,56 +187,56 @@ int ImportFileDialog::init()
 	last=NULL;
 
 	 //--------------------- File Info message bar
-	fileinfo=new MessageBar(this,"perpage",MB_MOVE, 0,0, 0,0, 0, _("No file selected"));
-	AddWin(fileinfo, 200,100,1000,50, linpheight,0,0,50);
+	fileinfo=new MessageBar(this,"perpage",NULL,MB_MOVE, 0,0, 0,0, 0, _("No file selected"));
+	AddWin(fileinfo, 200,100,1000,50,0, linpheight,0,0,50,0);
 	AddNull();
-	AddWin(NULL, 200,100,3000,50, linpheight/2,0,0,50);
+	AddWin(NULL, 200,100,3000,50,0, linpheight/2,0,0,50,0);
 	AddNull();
 
 	 //---------------------- import from file ---------------------------
 
-	last=importpagerange=new LineInput(this,"importpagerange",0, 0,0,0,0,0, 
-						last,window,"importpagerange",
+	last=importpagerange=new LineInput(this,"importpagerange",NULL,0, 0,0,0,0,0, 
+						last,object_id,"importpagerange",
 						_("Import page range:"),_("all"),0,
 						0,0,2,2,2,2);
 	importpagerange->tooltip(_("The range of pages of the file to import, numbered from 0.\n"
 							   "Such as \"3-9\". Currently, only one range per import"));
-	AddWin(importpagerange, importpagerange->win_w,0,1000,50, importpagerange->win_h,0,0,50);
+	AddWin(importpagerange, importpagerange->win_w,0,1000,50,0, importpagerange->win_h,0,0,50,0);
 	AddNull();
 	
 
 	 //---------------------- import to document or object ---------------------------
 	str=numtostr(config->topage,0);
-	last=linp=new LineInput(this,"StartIndex",0, 0,0,0,0,0, 
-						last,window,"startindex",
+	last=linp=new LineInput(this,"StartIndex",NULL,0, 0,0,0,0,0, 
+						last,object_id,"startindex",
 						_("Start Index:"),str,0,
 						0,0,2,2,2,2);
 	delete[] str; str=NULL;
 	linp->tooltip(_("The document page to start importing into"));
-	AddWin(linp,200,100,1000,50, linp->win_h,0,0,50);
+	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
 	AddNull();
 
 	
 	 //---------------------- MysteryData --------------------------------
-	last=check=new CheckBox(this,"ignoremystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"ignoremystery", _("Ignore mystery data"),5,5);
+	last=check=new CheckBox(this,"ignoremystery",NULL,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"ignoremystery", _("Ignore mystery data"),5,5);
 	check->tooltip(_("Ignore anything Laidout doesn't understand"));
 	check->State(config->keepmystery==0?LAX_ON:LAX_OFF);
-	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
+	AddWin(check, check->win_w,0,3000,50,0, linpheight,0,0,50,0);
 	AddNull();
 
-	last=check=new CheckBox(this,"keepmostmystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"keepmostmystery", _("Keep mystery data as necessary"),5,5);
+	last=check=new CheckBox(this,"keepmostmystery",NULL,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"keepmostmystery", _("Keep mystery data as necessary"),5,5);
 	check->tooltip(_("Use mystery data for things Laidout cannot convert"));
 	check->State(config->keepmystery==1?LAX_ON:LAX_OFF);
-	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
+	AddWin(check, check->win_w,0,3000,50,0, linpheight,0,0,50,0);
 	AddNull();
 
-	last=check=new CheckBox(this,"keepallmystery",ANXWIN_CLICK_FOCUS|CHECK_LEFT, 0,0,0,0,1, 
-						last,window,"keepallmystery", _("All objects are mystery data"),5,5);
+	last=check=new CheckBox(this,"keepallmystery",NULL,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"keepallmystery", _("All objects are mystery data"),5,5);
 	check->tooltip(_("Do not convert any object to native Laidout objects"));
 	check->State(config->keepmystery==2?LAX_ON:LAX_OFF);
-	AddWin(check, check->win_w,0,3000,50, linpheight,0,0,50);
+	AddWin(check, check->win_w,0,3000,50,0, linpheight,0,0,50,0);
 	AddNull();
 
 
@@ -248,17 +250,11 @@ int ImportFileDialog::init()
 	return 0;
 }
 
-int ImportFileDialog::DataEvent(EventData *data,const char *mes)
-{//***
-	if (FileDialog::DataEvent(data,mes)==0) return 0;
-	return 1;
-}
-
-int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
+int ImportFileDialog::Event(const EventData *e,const char *mes)
 {//***
 	if (!strcmp(mes,"new file") || !strcmp(mes,"files")) {
 		 //when a new file name is typed or selected
-		FileDialog::ClientEvent(e,mes);
+		FileDialog::Event(e,mes);
 
 		if (!file) return 0;
 		char *filename=fullFilePath(NULL);
@@ -306,11 +302,12 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"ignoremystery")) {
-		CheckBox *none=dynamic_cast<CheckBox *>(findWindow("ignoremystery"));
-		CheckBox *all=dynamic_cast<CheckBox *>(findWindow("keepallmystery"));
-		CheckBox *most=dynamic_cast<CheckBox *>(findWindow("keepmostmystery"));
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		CheckBox *none=dynamic_cast<CheckBox *>(findChildWindowByName("ignoremystery"));
+		CheckBox *all=dynamic_cast<CheckBox *>(findChildWindowByName("keepallmystery"));
+		CheckBox *most=dynamic_cast<CheckBox *>(findChildWindowByName("keepmostmystery"));
 		config->keepmystery=0;
-		if (e->data.l[0]==LAX_ON) {
+		if (s->info1==LAX_ON) {
 			most->State(LAX_OFF);
 			all->State(LAX_OFF);
 		} else {
@@ -319,11 +316,12 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"keepmostmystery")) {
-		CheckBox *all=dynamic_cast<CheckBox *>(findWindow("keepallmystery"));
-		CheckBox *most=dynamic_cast<CheckBox *>(findWindow("keepmostmystery"));
-		CheckBox *none=dynamic_cast<CheckBox *>(findWindow("ignoremystery"));
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		CheckBox *all=dynamic_cast<CheckBox *>(findChildWindowByName("keepallmystery"));
+		CheckBox *most=dynamic_cast<CheckBox *>(findChildWindowByName("keepmostmystery"));
+		CheckBox *none=dynamic_cast<CheckBox *>(findChildWindowByName("ignoremystery"));
 		config->keepmystery=1;
-		if (e->data.l[0]==LAX_ON) {
+		if (s->info1==LAX_ON) {
 			none->State(LAX_OFF);
 			all->State(LAX_OFF);
 		} else {
@@ -332,11 +330,12 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"keepallmystery")) {
-		CheckBox *none=dynamic_cast<CheckBox *>(findWindow("ignoremystery"));
-		CheckBox *most=dynamic_cast<CheckBox *>(findWindow("keepmostmystery"));
-		CheckBox *all=dynamic_cast<CheckBox *>(findWindow("keepallmystery"));
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		CheckBox *none=dynamic_cast<CheckBox *>(findChildWindowByName("ignoremystery"));
+		CheckBox *most=dynamic_cast<CheckBox *>(findChildWindowByName("keepmostmystery"));
+		CheckBox *all=dynamic_cast<CheckBox *>(findChildWindowByName("keepallmystery"));
 		config->keepmystery=2;
-		if (e->data.l[0]==LAX_ON) {
+		if (s->info1==LAX_ON) {
 			most->State(LAX_OFF);
 			none->State(LAX_OFF);
 		} else {
@@ -346,9 +345,7 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 	}
 
-	if (!FileDialog::ClientEvent(e,mes)) return 0;
-	
-	return 1;
+	return FileDialog::Event(e,mes);
 }
 
 ////! Set the file and preview fields, changing directory if need be.
@@ -358,7 +355,7 @@ int ImportFileDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
 //void ImportFileDialog::SetFile(const char *f,const char *pfile)
 //{
 //	FileDialog::SetFile(f); //sets file and path
-//	LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
+//	LineInput *preview= dynamic_cast<LineInput *>(findChildWindowByName("preview"));
 //	preview->SetText(pfile);
 //}
 
@@ -404,14 +401,12 @@ int ImportFileDialog::send(int id)
 
 	if (err>0) {
 		 //send back error;
-		if (owner) app->SendMessage(new StrEventData(_("Error importing file."),
-										  XInternAtom(app->dpy,"statusMessage",False),
-										  window,owner));
+		if (win_owner) app->SendMessage(new StrEventData(_("Error importing file."),0,0,0,0),
+										  win_owner,"statusMessage",object_id);
 	}
 	if (err<=0) {
-		if (owner) app->SendMessage(new StrEventData(_("File imported."),
-										  XInternAtom(app->dpy,"statusMessage",False),
-										  window,owner));
+		if (win_owner) app->SendMessage(new StrEventData(_("File imported."),0,0,0,0),
+										  win_owner,"statusMessage",object_id);
 
 	}
 

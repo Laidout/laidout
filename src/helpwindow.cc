@@ -14,11 +14,12 @@
 // Copyright (C) 2004-2007 by Tom Lechner
 //
 
+#include <lax/messagebar.h>
+#include <lax/button.h>
+
 #include "language.h"
 #include "headwindow.h"
 #include "helpwindow.h"
-#include <lax/mesbar.h>
-#include <lax/textbutton.h>
 
 #include <iostream>
 using namespace std;
@@ -42,7 +43,7 @@ using namespace Laxkit;
 /*! \todo anyhow need to work out sizing in Laxkit::MessageBox!!
  */
 HelpWindow::HelpWindow(int style)
-	: MessageBox(NULL,"Help!",0, 0,0,500,600,0, NULL,None,NULL, NULL)
+	: MessageBox(NULL,NULL,"Help!",ANXWIN_ESCAPABLE, 0,0,500,600,0, NULL,0,NULL, NULL)
 {
 	s=style;
 }
@@ -237,30 +238,30 @@ int HelpWindow::init()
 			"  '?'    Show some kind of help somewhere....?\n"
 			"  'p'    Like a, but only in current part of a compound path\n"));
 
-	MessageBar *mesbar=new MessageBar(this,"helpmesbar",MB_LEFT|MB_TOP|MB_MOVE, 0,0,0,0,0,help);
+	MessageBar *mesbar=new MessageBar(this,"helpmesbar",NULL,MB_LEFT|MB_TOP|MB_MOVE, 0,0,0,0,0,help);
 	delete[] help;
 			
 	mesbar->tooltip(_("Right click drag scrolls this help."));
-	AddWin(mesbar,	mesbar->win_w,mesbar->win_w*9/10,2000,50,
-					mesbar->win_h,(mesbar->win_h>10?(mesbar->win_h-10):0),2000,50);
+	AddWin(mesbar,	mesbar->win_w,mesbar->win_w*9/10,2000,50,0,
+					mesbar->win_h,(mesbar->win_h>10?(mesbar->win_h-10):0),2000,50,0);
 	AddNull();
-	AddButton(TBUT_OK);
+	AddButton(BUTTON_OK);
 	
 	MessageBox::init();
 
 	return 0;
 }
 
-int HelpWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+int HelpWindow::Event(const Laxkit::EventData *e,const char *mes)
 {
 	if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
-	return MessageBox::ClientEvent(e,mes);
+	return MessageBox::Event(e,mes);
 }
 
 	
 /*! Esc  dismiss the window.
  */
-int HelpWindow::CharInput(unsigned int ch,unsigned int state)
+int HelpWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard *d)
 {
 	if (ch==LAX_Esc) {
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);

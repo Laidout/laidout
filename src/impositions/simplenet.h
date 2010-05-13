@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 #ifndef SIMPLENET_H
 #define SIMPLENET_H
@@ -85,7 +85,7 @@ class SimpleNet : public AbstractNet,
 	virtual const char *whatshape() { return thenettype; }
 	virtual void FindBBox();
 	virtual void FitToData(Laxkit::DoubleBBox *data,double margin);
-	virtual void ApplyTransform(double *mm=NULL);
+	virtual void ApplyTransform(const double *mm=NULL);
 	virtual void Center();
 	virtual int pointinface(flatpoint pp);
 	virtual int rotateface(int f,int alignxonly=0);

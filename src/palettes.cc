@@ -15,6 +15,8 @@
 //
 
 
+#include <lax/colors.h>
+
 #include "palettes.h"
 #include "laidout.h"
 
@@ -24,10 +26,10 @@ using namespace std;
 
 using namespace Laxkit;
 
-PalettePane::PalettePane(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+PalettePane::PalettePane(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder,
-		anXWindow *prev,Window nowner,const char *nsend)
-	: PaletteWindow(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,prev,nowner,nsend)
+		anXWindow *prev,unsigned long nowner,const char *nsend)
+	: PaletteWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,prev,nowner,nsend)
 {}
 
 const char *PalettePane::PaletteDir()
@@ -42,22 +44,24 @@ const char *PalettePane::PaletteDir()
  */
 int PalettePane::send()
 {
-	if (!laidout->lastview || !laidout->lastview->window || 
-			!sendthis || !palette || curcolor<0) return 0;
-	XEvent e;
-	e.xclient.type=ClientMessage;
-	e.xclient.display=app->dpy;
-	e.xclient.window=laidout->lastview->window;
-	e.xclient.message_type=sendthis;
-	e.xclient.format=32;
-	e.xclient.data.l[0]=palette->defaultmaxcolor;
+	if (!win_sendthis || !palette || curcolor<0) return 0;
+
+	unsigned long owner=0;
+	if (laidout->lastview) owner=laidout->lastview->object_id;
+	if (!owner) owner=win_owner;
+	if (!owner) return 0;
+
+	SimpleColorEventData *e=new SimpleColorEventData;
+
+	e->max=palette->defaultmaxcolor;
+	e->numchannels=palette->colors.e[curcolor]->numcolors;
+	e->channels=new int[e->numchannels];
+
 	int c;
-	for (c=0; c<palette->colors.e[curcolor]->numcolors; c++) {
-		DBG cerr <<"send palette color "<<c<<": "<< palette->colors.e[curcolor]->channels[c];
-		if (c<5) e.xclient.data.l[c+1]=palette->colors.e[curcolor]->channels[c];
-	}
-	for (c++; c<5; c++) e.xclient.data.l[c]=palette->defaultmaxcolor;
-	XSendEvent(app->dpy,laidout->lastview->window,False,0,&e);
+	for (c=0; c<palette->colors.e[curcolor]->numcolors; c++) 
+		e->channels[c]=palette->colors.e[curcolor]->channels[c];
+	
+	app->SendMessage(e,owner,win_sendthis,object_id);
 	return 1;
 }
 

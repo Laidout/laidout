@@ -127,7 +127,7 @@ void print_usage()
  */
 int laidout_preview_maker(const char *original, const char *preview, const char *format, int width, int height, int fit)
 {
-	if (!_laximlib_generate_preview(original,preview,format,width,height,fit)) return 0;
+	if (!laximlib_generate_preview(original,preview,format,width,height,fit)) return 0;
 
 	 //normal preview maker didn't work, so try something else...
 	DoubleBBox bbox;
@@ -714,25 +714,10 @@ int LaidoutApp::readinLaidoutDefaults()
  */
 void LaidoutApp::setupdefaultcolors()
 {
-	color_fg=          rgbcolor(32,32,32);
-	color_bg=          rgbcolor(192,192,192);
-	color_text=        rgbcolor(64,64,64);
-	color_textbg=      rgbcolor(255,255,255);
-	color_htext=       rgbcolor(0,0,0);
-	color_htextbg=     rgbcolor(127,127,127);
-	color_border=      rgbcolor(128,128,128);
-	color_aborder=     rgbcolor(0,0,0);
-	color_menutext=    rgbcolor(0,0,0);
-	color_menuhtext=   rgbcolor(255,0,0);
-	color_menuhbg=     rgbcolor(127,127,127);
-	color_menuofftext= rgbcolor(127,0,0);
-	color_button=      rgbcolor(192,192,192);
-	color_buttontext=  rgbcolor(0,0,0);
-	color_buttonmo=    rgbcolor(164,164,164);
-	color_pad=         rgbcolor(128,128,128);
-	color_tooltipbg=   rgbcolor(255,255,128);
-	color_tooltiptext= rgbcolor(0,0,0);
-	color_bw=          1;
+	char *oldpf=app_profile;
+	app_profile=NULL; //force it to light colors
+	anXApp::setupdefaultcolors();
+	app_profile=oldpf;
 }
 
 //! Parse command line options, and load up initial documents or projects.
@@ -928,6 +913,17 @@ void LaidoutApp::parseargs(int argc,char **argv)
 int LaidoutApp::isTopWindow(anXWindow *win)
 {
 	return topwindows.findindex(win)>=0;
+}
+
+//! Find the doc with the given obect_id. Does not increment its count.
+Document *LaidoutApp::findDocumentById(unsigned long id)
+{
+	if (!project) return NULL;
+	for (int c=0; c<project->docs.n; c++) {
+		if (project->docs.e[c]->doc && project->docs.e[c]->doc->object_id==id)
+			return project->docs.e[c]->doc;
+	}
+	return NULL;
 }
 
 //! Find the doc with saveas. Does not increment its count.

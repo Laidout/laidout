@@ -112,6 +112,16 @@ PaperInterface::~PaperInterface()
 	if (doc) doc->dec_count();
 }
 
+#define PAPERM_PaperSize        1
+#define PAPERM_Landscape        2 
+#define PAPERM_Portrait         3 
+#define PAPERM_NewPaperGroup    4 
+#define PAPERM_RenamePaperGroup 5
+#define PAPERM_Print            6 
+
+#define PAPERM_first_pagesize   1000
+#define PAPERM_first_papergroup 2000
+
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
@@ -120,19 +130,19 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y)
 	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
 	if (papergroup && curboxes.n) {
 
-		menu->AddItem(_("Paper Size"),999);
+		menu->AddItem(_("Paper Size"),PAPERM_PaperSize);
 		menu->SubMenu(_("Paper Size"));
 		for (int c=0; c<laidout->papersizes.n; c++) {
-			menu->AddItem(laidout->papersizes.e[c]->name,c,
+			menu->AddItem(laidout->papersizes.e[c]->name,PAPERM_first_pagesize+c,
 					LAX_ISTOGGLE
 					| (!strcmp(curboxes.e[0]->box->paperstyle->name,laidout->papersizes.e[c]->name)
 					  ? LAX_CHECKED : 0));
 		}
 		menu->EndSubMenu();
 		//int landscape=curboxes.e[0]->box->paperstyle->flags&1;
-		//menu->AddItem(_("Portrait"), 1000, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
-		//menu->AddItem(_("Landscape"),1001, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
-		menu->AddItem(_("Print with paper group"),1002);
+		//menu->AddItem(_("Portrait"), PAPERM_Portrait, LAX_OFF|MENU_ISTOGGLE|(landscape?0:MENU_CHECKED));
+		//menu->AddItem(_("Landscape"),PAPERM_Landscape, LAX_OFF|MENU_ISTOGGLE|(landscape?MENU_CHECKED:0));
+		menu->AddItem(_("Print with paper group"),PAPERM_Print);
 		menu->AddSep();	
 	}
 	if (laidout->project->papergroups.n) {		
@@ -145,69 +155,79 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y)
 			nme=pg->Name;
 			if (!nme) nme=pg->name;
 			if (!nme) nme=_("(unnamed)");
-			menu->AddItem(nme,2000+c,
+			menu->AddItem(nme, PAPERM_first_papergroup+c,
 						  LAX_ISTOGGLE | LAX_OFF | (papergroup==pg ? LAX_CHECKED : 0));
 		}
 		menu->EndSubMenu();
 	}
-	menu->AddItem(_("New paper group..."),3000);
-	if (papergroup) menu->AddItem(_("Rename current paper group..."),3001);
+	menu->AddItem(_("New paper group..."),PAPERM_NewPaperGroup);
+	if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERM_RenamePaperGroup);
 
 	return menu;
 }
 
 /*! Return 0 for menu item processed, 1 for nothing done.
  */
-int PaperInterface::MenuEvent(XClientMessageEvent *e)
+int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
-	int i=e->data.l[1];
-	if (i==1000) {
-		 //portrait
-		return 0;
-	} else if (i==1001) {
-		 //landscape
-		return 0;
-	} else if (i==1002) {
-		 //print with the active paper group
-		curwindow->win_parent->ClientEvent(NULL,"print");//***hack Hack HACK
-		return 0;
-	} else if (i>=0 && i<1000) {
-		 //paper size
-		if (i>=laidout->papersizes.n-1) return 1;
-		PaperStyle *newpaper=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
-		for (int c=0; c<curboxes.n; c++) {
-			curboxes.e[c]->box->Set(newpaper);
-			curboxes.e[c]->setbounds(&curboxes.e[c]->box->media);
+	if (!strcmp(mes,"menuevent")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		int i=s->info2; //id of menu item
+		if (i==PAPERM_Portrait) {
+			 //portrait
+			return 0;
+
+		} else if (i==PAPERM_Landscape) {
+			 //landscape
+			return 0;
+
+		} else if (i==PAPERM_Print) {
+			 //print with the active paper group
+			curwindow->win_parent->Event(NULL,"print");//***hack Hack HACK
+			return 0;
+
+		} else if (i>=PAPERM_first_pagesize && i<PAPERM_first_pagesize+1000) {
+			 //paper size
+			i-=PAPERM_first_pagesize;
+			if (i>=laidout->papersizes.n-1) return 1;
+			PaperStyle *newpaper=(PaperStyle *)laidout->papersizes.e[i]->duplicate();
+			for (int c=0; c<curboxes.n; c++) {
+				curboxes.e[c]->box->Set(newpaper);
+				curboxes.e[c]->setbounds(&curboxes.e[c]->box->media);
+			}
+			newpaper->dec_count();
+			needtodraw=1;
+			return 0;
+
+		} else if (i>=PAPERM_first_papergroup && i<PAPERM_first_papergroup+1000) {
+			//***is selecting a new papergroup from laidout->project->papergroups	
+			i-=PAPERM_first_papergroup;
+			if (i<0 || i>laidout->project->papergroups.n) return 0;
+
+			Clear(NULL);
+			papergroup=laidout->project->papergroups.e[i];
+			papergroup->inc_count();
+			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+			if (lvp) lvp->UseThisPaperGroup(papergroup);
+			needtodraw=1;
+			return 0;
+
+		} else if (i==PAPERM_NewPaperGroup) {
+			 //New paper group...
+			if (papergroup) papergroup->dec_count();
+			papergroup=new PaperGroup;
+			papergroup->Name=new_paper_group_name();
+			laidout->project->papergroups.push(papergroup);
+			
+			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
+			if (lvp) lvp->UseThisPaperGroup(papergroup);
+			needtodraw=1;
+			return 0;
+
+		} else if (i==PAPERM_RenamePaperGroup) {
+			//***Rename paper group...
 		}
-		newpaper->dec_count();
-		needtodraw=1;
 		return 0;
-	} else if (i>=2000 && i<3000) {
-		//***is selecting a new papergroup from laidout->project->papergroups	
-		i-=2000;
-		if (i<0 || i>laidout->project->papergroups.n) return 0;
-
-		Clear(NULL);
-		papergroup=laidout->project->papergroups.e[i];
-		papergroup->inc_count();
-		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
-		if (lvp) lvp->UseThisPaperGroup(papergroup);
-		needtodraw=1;
-		return 0;
-
-	} else if (i==3000) {
-		 //New paper group...
-		if (papergroup) papergroup->dec_count();
-		papergroup=new PaperGroup;
-		papergroup->Name=new_paper_group_name();
-		laidout->project->papergroups.push(papergroup);
-		
-		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
-		if (lvp) lvp->UseThisPaperGroup(papergroup);
-		needtodraw=1;
-		return 0;
-	} else if (i==3001) {
-		//***Rename paper group...
 	}
 	return 1;
 }
@@ -338,7 +358,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 	if (!data) return;
 	int w=1;
 	if (data==curbox || curboxes.findindex(data)>=0) w=2;
-	XSetLineAttributes(dp->GetDpy(),dp->GetGC(),w,LineSolid,CapButt,JoinMiter);
+	dp->LineAttributes(w,LineSolid,CapButt,JoinMiter);
 	//dp->PushAndNewTransform(data->m());
 
 	PaperBox *box=data->box;
@@ -349,8 +369,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		p[2]=flatpoint(box->media.maxx,box->media.maxy);
 		p[3]=flatpoint(box->media.maxx,box->media.miny);
 
-		XSetFillStyle(dp->GetDpy(),dp->GetGC(),FillSolid);
-		XSetFillRule(dp->GetDpy(),dp->GetGC(),WindingRule);
+		dp->FillAttributes(FillSolid,WindingRule);
 
 		 //draw black shadow
 		//dp->NewFG(255,0,0);
@@ -359,7 +378,7 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 			dp->NewFG(0,0,0);
 			dp->PushAxes();
 			dp->ShiftScreen(shadow,shadow);
-			dp->drawlines(1,1,1,4,p);
+			dp->drawlines(p,4,1,1);
 			dp->PopAxes();
 		}
 		
@@ -367,10 +386,10 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 		if (fill||shadow) {
 			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
 			dp->NewBG(~0);
-			dp->drawlines(1,1,2,4,p);
+			dp->drawlines(p,4,1,2);
 		} else {
 			dp->NewFG(data->red>>8,data->green>>8,data->blue>>8);
-			dp->drawlines(1,1,0,4,p);
+			dp->drawlines(p,4,1,0);
 		}
 
 		 //draw orientation arrow
@@ -381,40 +400,44 @@ void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,
 					  v2=transpose(v);
 			p1=p1+.1*v;
 			p2=p2-.1*v;
+			dp->DrawScreen();
 			dp->drawline(p1,p2);
 			dp->drawline(p2,p2-v2*.2-v*.2);
 			dp->drawline(p2,p2+v2*.2-v*.2);
+			dp->DrawReal();
 		}
 
 	}
+	dp->DrawScreen();
 	if ((what&ArtBox) && (box->which&ArtBox)) {
 		p[0]=dp->realtoscreen(box->art.minx,box->art.miny);
 		p[1]=dp->realtoscreen(box->art.minx,box->art.maxy);
 		p[2]=dp->realtoscreen(box->art.maxx,box->art.maxy);
 		p[3]=dp->realtoscreen(box->art.maxx,box->art.miny);
-		dp->drawlines(1,0,0,4,p);
+		dp->drawlines(p,4,1,0);
 	}
 	if ((what&TrimBox) && (box->which&TrimBox)) {
 		p[0]=dp->realtoscreen(box->trim.minx,box->trim.miny);
 		p[1]=dp->realtoscreen(box->trim.minx,box->trim.maxy);
 		p[2]=dp->realtoscreen(box->trim.maxx,box->trim.maxy);
 		p[3]=dp->realtoscreen(box->trim.maxx,box->trim.miny);
-		dp->drawlines(1,0,0,4,p);
+		dp->drawlines(p,4,1,0);
 	}
 	if ((what&PrintableBox) && (box->which&PrintableBox)) {
 		p[0]=dp->realtoscreen(box->printable.minx,box->printable.miny);
 		p[1]=dp->realtoscreen(box->printable.minx,box->printable.maxy);
 		p[2]=dp->realtoscreen(box->printable.maxx,box->printable.maxy);
 		p[3]=dp->realtoscreen(box->printable.maxx,box->printable.miny);
-		dp->drawlines(1,0,0,4,p);
+		dp->drawlines(p,4,1,0);
 	}
 	if ((what&BleedBox) && (box->which&BleedBox)) {
 		p[0]=dp->realtoscreen(box->bleed.minx,box->bleed.miny);
 		p[1]=dp->realtoscreen(box->bleed.minx,box->bleed.maxy);
 		p[2]=dp->realtoscreen(box->bleed.maxx,box->bleed.maxy);
 		p[3]=dp->realtoscreen(box->bleed.maxx,box->bleed.miny);
-		dp->drawlines(1,0,0,4,p);
+		dp->drawlines(p,4,1,0);
 	}
+	dp->DrawReal();
 	//dp->PopAxes(); //spread axes
 }
 
@@ -455,12 +478,12 @@ int PaperInterface::Refresh()
 		if (maybebox) {
 			box=maybebox->box;
 			dp->PushAndNewTransform(maybebox->m());
-			XSetLineAttributes(dp->GetDpy(),dp->GetGC(),0,LineDoubleDash,CapButt,JoinMiter);
-			p[0]=dp->realtoscreen(box->media.minx,box->media.miny);
-			p[1]=dp->realtoscreen(box->media.minx,box->media.maxy);
-			p[2]=dp->realtoscreen(box->media.maxx,box->media.maxy);
-			p[3]=dp->realtoscreen(box->media.maxx,box->media.miny);
-			dp->drawlines(1,0,0,4,p);
+			dp->LineAttributes(0,LineDoubleDash,CapButt,JoinMiter);
+			p[0]=flatpoint(box->media.minx,box->media.miny);
+			p[1]=flatpoint(box->media.minx,box->media.maxy);
+			p[2]=flatpoint(box->media.maxx,box->media.maxy);
+			p[3]=flatpoint(box->media.maxx,box->media.miny);
+			dp->drawlines(p,4,1,0);
 			dp->PopAxes(); 
 		}
 
@@ -527,9 +550,10 @@ void PaperInterface::createMaybebox(flatpoint p)
 
 /*! Add maybe box if shift is down.
  */
-int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
+int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	buttondown|=LEFTBUTTON;
+	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
+	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
 	mx=x; my=y;
 	flatpoint fp=dp->screentoreal(x,y);
@@ -565,10 +589,10 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count)
 	return 0;
 }
 
-int PaperInterface::LBUp(int x,int y,unsigned int state)
+int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	if (!(buttondown&LEFTBUTTON)) return 1;
-	buttondown&=~LEFTBUTTON;
+	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
+	buttondown.up(d->id,LEFTBUTTON);
 
 	//***
 	//if (curbox) { curbox->dec_count(); curbox=NULL; }
@@ -584,13 +608,14 @@ int PaperInterface::LBUp(int x,int y,unsigned int state)
 //int PaperInterface::But4(int x,int y,unsigned int state);
 //int PaperInterface::But5(int x,int y,unsigned int state);
 
-int PaperInterface::MouseMove(int x,int y,unsigned int state)
+int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 	int over=scan(x,y);
 
 	DBG cerr <<"over box: "<<over<<endl;
 
-	if (!buttondown) {
+	buttondown.move(mouse->id,x,y);
+	if (!buttondown.any()) {
 		if (!(state&ShiftMask)) return 1;
 		//*** activate maybebox
 		if (over>=0) {
@@ -618,7 +643,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
 	 //if curboxes.n>0, this implies papergroup!=NULL
 
 	flatpoint fp=dp->screentoreal(x,y),
-			  d=fp-dp->screentoreal(mx,my);
+			  d =fp-dp->screentoreal(mx,my);
 
 	 //plain or + moves curboxes (or the box given by editwhat)
 	if ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ShiftMask) {
@@ -695,13 +720,13 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state)
  * \todo revert to other group
  * \todo edit another group
  */
-int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state)
+int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	if (ch==LAX_Shift) {
 		if (maybebox) return 0;
 		int x,y;
-		if (mouseposition(viewport,&x,&y,NULL,NULL,NULL)!=0) return 0;
+		if (mouseposition(d->paired_mouse->id,viewport,&x,&y,NULL,NULL)!=0) return 0;
 		if (scan(x,y)>=0) return 0;
 		mx=x; my=y;
 		createMaybebox(flatpoint(dp->screentoreal(x,y)));
@@ -783,7 +808,7 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 	return 1;
 }
 
-int PaperInterface::CharRelease(unsigned int ch,unsigned int state)
+int PaperInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d)
 {//***
 	if (ch==LAX_Shift) {
 		if (!maybebox) return 1;

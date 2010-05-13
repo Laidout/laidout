@@ -20,6 +20,9 @@
 #include <lax/attributes.h>
 #include "document.h"
 
+
+//------------------------------- HeadWindow ---------------------------------------
+
 class HeadWindow : public Laxkit::SplitWindow
 {
  protected:
@@ -28,23 +31,21 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual int splitthewindow(anXWindow *fillwindow=NULL);
  public:
 	Laxkit::anXWindow *lastview, *lastedit;
- 	HeadWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ 	HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
  	virtual const char *whattype() { return "HeadWindow"; }
 	virtual ~HeadWindow();
 	virtual int init();
-	virtual int LBDown(int x,int y,unsigned int state,int count);
-	virtual int LBUp(int x,int y,unsigned int state); 
-	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
-	virtual int MouseMove(int x,int y,unsigned int state);
-	virtual int FocusOff(XFocusChangeEvent *e);
-	virtual int event(XEvent *e);
+	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d); 
+	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int FocusOff(const Laxkit::FocusChangeData *e);
+	virtual int Event(const Laxkit::EventData *e,const char *mes);
 	
 	virtual int Mark(int c);
 	virtual int SwapWithMarked();
 	virtual Laxkit::MenuInfo *GetMenu();
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype,anXWindow *likethis=NULL);
 	virtual int Curbox(int c);
 	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
@@ -54,6 +55,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual Laxkit::PlainWinBox *windowe(int i) { if (i>=0 && i<windows.n) return windows.e[i]; return NULL; }
 	virtual int HasOnlyThis(Document *doc);
 	virtual Document *findAnyDoc();
+
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };

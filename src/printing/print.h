@@ -20,13 +20,13 @@
 
 #include "../filetypes/exportdialog.h"
 #include "../document.h"
-#include <lax/mesbar.h>
+#include <lax/messagebar.h>
 
 class PrintingDialog : public ExportDialog
 {
  protected:
  public:
-	PrintingDialog(Document *ndoc,Window nowner,const char *nsend,
+	PrintingDialog(Document *ndoc,unsigned long nowner,const char *nsend,
 						 const char *file, const char *command,
 						 const char *thisfile,
 						 int layout,int pmin,int pmax,int pcur,
@@ -35,7 +35,6 @@ class PrintingDialog : public ExportDialog
 						 Laxkit::MessageBar *progress);
 	virtual ~PrintingDialog();
 	virtual const char *whattype() { return "PrintingDialog"; }
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
 	virtual int init();
 };
 

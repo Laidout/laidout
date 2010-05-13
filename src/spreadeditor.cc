@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -20,14 +20,15 @@
 #include <lax/laxutils.h>
 #include <lax/menubutton.h>
 #include <lax/menuselector.h>
+#include <lax/mouseshapes.h>
+
+#include <lax/lists.cc>
 
 #include "language.h"
 #include "spreadeditor.h"
 #include "laidout.h"
 #include "drawdata.h"
 #include "document.h"
-#include <lax/lists.cc>
-#include <X11/cursorfont.h>
 #include "headwindow.h"
 #include "helpwindow.h"
 #include "viewwindow.h"
@@ -42,104 +43,6 @@ using namespace std;
 
 
 
-////----------------------- SpreadView --------------------------------------
-// *** class to hold a view that can be saved and loaded independent of a
-// SpreadEditor or SpreadInterface
-////class SpreadView
-////{
-//// public:
-////	PtrStack<LittleSpread> littlespreads;
-////};
-
-//----------------------- LittleSpread --------------------------------------
-
-/*! \class LittleSpread
- * \brief Data class for use in SpreadEditor
- */
-/*! \var int LittleSpread::what
- * 0 == main thread\n
- * 1 == thread of pages\n
- * 2 == thread of spreads
- */
-
-
-//! Return if the point is in the littlespread.
-/*! pin==1 means return if point is within the spread's path.
- * pin==2 means return the index listed in the spread->pagestack element
- * whose outline contains pp, plus 1. That plus 1 enables 0 to
- * still be used as meaning "not in".
- */
-int LittleSpread::pointin(flatpoint pp,int pin)
-{
-	if (spread) {
-		int c;
-		double i[6];
-		transform_invert(i,m());
-		pp=transform_point(i,pp); //makes point in littlespread coords
-		c=spread->path->pointin(pp,1);
-		if (pin==1 || c==0) return c;
-		for (c=0; c<spread->pagestack.n; c++) {
-			if (spread->pagestack.e[c]->outline->pointin(pp,1)) 
-				return spread->pagestack.e[c]->index+1;
-		}
-	}
-	return 0;
-}
-
-//! Transfers pointer, does not dupicate s or check it out.
-LittleSpread::LittleSpread(Spread *s, LittleSpread *prv)
-{
-	spread=s;
-	connection=NULL;
-	prev=prv;
-	next=NULL;
-	if (prev) {
-		prev->next=this;
-		mapConnection();
-	}
-}
-
-//! Destructor, deletes connection and spread;
-LittleSpread::~LittleSpread()
-{
-	if (connection) delete connection;
-	if (spread) delete spread;
-}
-
-void LittleSpread::FindBBox()
-{
-	maxx=minx-1;
-	if (!spread) return;
-	addtobounds(spread->path->m(),spread->path);
-}
-
-//! Either create or adjust the connection line to the previous spread.
-void LittleSpread::mapConnection()
-{
-	if (!prev) {
-		if (connection) delete connection; 
-		connection=NULL;
-		return;
-	}
-	
-	if (connection) { delete connection; }
-	connection=new PathsData;
-	flatpoint min,max;
-	double i[6];
-	transform_mult(i,m(),spread->path->m());
-	min=transform_point(i,      spread->minimum);
-	transform_mult(i,prev->m(),prev->spread->path->m());
-	max=transform_point(i,prev->spread->maximum);
-	connection->append(min);
-	connection->append(min+(max-min)*.33333333, POINT_TOPREV, 1);
-	connection->append(min+(max-min)*.66666666, POINT_TONEXT, 1);
-	connection->append(max);
-	
-	//*** could just preserve any modifications made, except for first and last point??
-	//    but rot+scale so min-prev->max is still x axis??
-}
-
-
 //----------------------- SpreadInterface --------------------------------------
 
 /*! \class SpreadInterface
@@ -147,70 +50,30 @@ void LittleSpread::mapConnection()
  *
  * Fancy page order rearranger. Show all the available page layout spreads, and allows
  * rearranging the pages by dragging either pages or whole spreads. Also uses a kind of
- * page limbo, where temporarily unplaced pages hover.
+ * page limbo, where temporarily unplaced pages hover. The spreads used come from
+ * Imposition::LittleSpreads().
  *
  * Left button selecting and moving usually acts on individual pages, and the middle
  * button acts on whole spreads.
  *
- * \todo *** for doc pages not represented in active nets, there should be special warning
- * 	 indicator.
- * \todo *** There is much work to be done here!! I have many more features planned, Do it NOW!
- * \todo *** could allow page ranges in limbo, too.. just have the connecting lines be
- *   a different color.
- * \todo Ultimately, this should be ported to Inkscape and Scribus, ESPECially Inkscape, when the
+ * \todo when there are threads, apply button should be grayed
+ * \todo *** for doc pages not represented in active nets, there should be special warning indicator.
+ * \todo Ultimately, this should be ported to Inkscape and Scribus (devs willing), ESPECially Inkscape, when the
  *   SVG spec allows multiple pages which makes it fair game for Inkscape, that is..
  */
+
 /*! \var int SpreadInterface::curpage
  * \brief Index that can be used to pagelabel stack..
  */
-/*! \var int SpreadInterface::arrangetype
- * \brief How arranging should be done.
- */
-/*! \var int SpreadInterface::centertype
- * \brief Where page labels should be written.
- *
- * \todo this could be transfered to pages on per page basis perhaps..
- */
-/*! \var int *SpreadInterface::temppagemap
- * \brief How the document's pages have been rearranged.
- *
- * temppagemap elements say what doc->page index is temporarily in littlespread index. For instance,
- * if temppagemap=={0,1,2,3,4}, after swapping 4 and 1, temppagemap=={0,4,2,3,1}.
- */
 
 
-
- // values for arrangestate
- // arrangetype has to be within the min to max.
-#define ArrangeNeedsArranging -1
-#define ArrangeTempRow         1
-#define ArrangeTempColumn      2
-
-#define  ArrangetypeMin        3
-#define ArrangeAutoAlways      3
-#define ArrangeAutoTillMod     4
-#define Arrange1Row            5
-#define Arrange1Column         6
-#define ArrangeGrid            7
-#define ArrangeCustom          8
-#define  ArrangetypeMax        8
-
-static const char *arrangetypestring(int a)
-{
-	if (a==ArrangeAutoAlways)       return _("Auto arrange on each window size change");
-	else if (a==ArrangeAutoTillMod) return _("Auto arrange until you move a spread");
-	else if (a==Arrange1Row)        return _("Arrange in one row");
-	else if (a==Arrange1Column)     return _("Arrange in one column");
-	else if (a==ArrangeGrid)        return _("Arrange in a grid based on screen proportions");
-	else if (a==ArrangeCustom)      return _("You will do all arranging");
-	return _("? error: bad arrange value");
-}
 
 //! Initialize everything and call GetSpreads().
 /*! Incs count of docum.
  */
 SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum)
-	: InterfaceWithDp(0,ndp)
+	: InterfaceWithDp(0,ndp),
+	  curspreads(0)
 {
 	firsttime=1;
 	project=proj;
@@ -218,30 +81,24 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 	if (doc) doc->inc_count();
 
 	reversebuttons=0;
-	temppagemap=NULL;
-	temppagen=0;
 	curspread=NULL;
 	curpage=-1;
 
 	maxmarkertype=8;
 	dragpage=-1;
 	drawthumbnails=1;
-	centerlabels=0;
-	arrangetype=ArrangeAutoTillMod;
-	arrangestate=ArrangeNeedsArranging;
 
+	view=NULL;
 	GetSpreads();
-	
-	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
-	buttonmask=Button1Mask|Button2Mask;
 }
 
 /*! Dec count of doc. */
 SpreadInterface::~SpreadInterface()
 {
 	 //for debugging:
-	DBG cerr<<"SpreadInterface destructor\n spreads flush"<<endl;
-	spreads.flush();
+	DBG cerr<<"SpreadInterface destructor"<<endl;
+
+	if (view) view->dec_count();
 	if (doc) doc->dec_count();
 }
 
@@ -253,13 +110,14 @@ void SpreadInterface::Clear(LaxInterfaces::SomeData *)
 
 /*! Something like:
  * <pre>
- *  matrix 1 0 0 1 0 0
- *  spread
- *    index 1
- *    matrix 1 0 0 1 0 0
- *  spread
- *    index 3
- *    matrix 1 0 0 1 0 0
+ *  document blah
+ *  view
+ *    spread
+ *      index 1 #the document page index of a page in a spread
+ *      matrix 1 0 0 1 0 0
+ *    spread
+ *      index 3
+ *      matrix 1 0 0 1 0 0
  * </pre>
  *
  * If what==-1, dump out a pseudocode mockup of file format.
@@ -275,31 +133,22 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *con
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
 	if (what==-1) {
-		fprintf(f,"%smatrix 1 0 0 1 0 0  #transform between screen and real space\n",spc);
-		fprintf(f,"%scenterlabels 0      #0=center, 1=bottom, 2=left, 3=top, 4=right\n",spc);
-		fprintf(f,"%sdrawthumbnails      #whether to use page thumbnails rather than a blank page outline\n",spc);
-		fprintf(f,"%sarrangetype 0       #*** this is in flux, check back later\n",spc);
-
-		cerr <<"*** work out a good way to keep track of autoarranging in SpreadInterface" <<endl;
+		fprintf(f,"%sdocument blah   #the name of the document currently viewed\n",spc);
+		fprintf(f,"%sview viewname   #the name of the view belonging to the document\n",spc);
+		fprintf(f,"\n%s  #If the view is a temporary view, then its format is as follows\n",spc);
+		fprintf(f,"%sview\n",spc);
+		view->dump_out(f,indent+2,-1,NULL);
 		
 		return;
 	}
 	
 	fprintf(f,"%sdocument %s\n",spc,doc->saveas);
 
-	fprintf(f,"%scenterlabels %d\n",spc,centerlabels);
-	fprintf(f,"%sdrawthumbnails %d\n",spc,drawthumbnails);
-	fprintf(f,"%sarrangetype %d\n",spc,arrangetype);
-	
-	const double *m=dp->Getctm();
-	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
-	for (int c=0; c<spreads.n; c++) {
-		fprintf(f,"%sspread\n",spc);
-		fprintf(f,"%s  index %d\n",spc,spreads.e[c]->spread->pagestack.e[0]->index);
-		m=spreads.e[c]->m();
-		fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
+	transform_copy(view->matrix,dp->Getctm());
+	if (view->doc_id && view->Name()) fprintf(f,"%sview %s\n",spc,view->Name());
+	else {
+		fprintf(f,"%sview\n",spc);
+		view->dump_out(f,indent+2,what,context);
 	}
 }
 
@@ -309,50 +158,43 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 {
 	if (!att) return;
 	char *name,*value;
-	double m[6];
-	int n;
+	const char *viewname=NULL;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"matrix")) {
-			n=DoubleListAttribute(value,m,6);
-			if (n==6) viewport->dp->NewTransform(m);
-		} else if (!strcmp(name,"document")) {
+
+		if (!strcmp(name,"document")) {
 			Document *newdoc=laidout->findDocument(value);
 			if (newdoc) {
 				if (doc) doc->dec_count();
 				doc=newdoc;
 				if (doc) doc->inc_count();
 			}
-		} else if (!strcmp(name,"centerlabels")) {
-			IntAttribute(value,&centerlabels);
-			if (centerlabels<0 || centerlabels>4) centerlabels=0;
+
+		} else if (!strcmp(name,"view")) {
+			if (view) { view->dec_count(); view=NULL; }
+			if (isblank(value)) {
+				 //no view name given, so assume is temporary view
+				view=new SpreadView();
+				view->dump_in_atts(att->attributes.e[c], flag,context);
+			} else viewname=value;
+
 		} else if (!strcmp(name,"drawthumbnails")) {
 			drawthumbnails=BooleanAttribute(value);
-		} else if (!strcmp(name,"arrangetype")) {
-			IntAttribute(value,&arrangetype);
 		}
 	}
 	
-	GetSpreads();
-	int s=0,c,c2;
-	
-	for (c=0; c<att->attributes.n; c++) {
-		name= att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"spread")) {
-			for (c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
-				name= att->attributes.e[c]->attributes.e[c2]->name;
-				value=att->attributes.e[c]->attributes.e[c2]->value;
-				if (!strcmp(name,"matrix")) {
-					n=DoubleListAttribute(value,m,6);
-					if (n==6) transform_copy(spreads.e[s]->m(),m);
-				}
+	if (!view && viewname && doc) {
+		for (int v=0; v<doc->spreadviews.n; v++) {
+			if (doc->spreadviews.e[v]->Name() && !strcmp(doc->spreadviews.e[v]->Name(),viewname)) {
+				view=doc->spreadviews.e[v];
+				view->inc_count();
 			}
-			s++;
-			if (s==spreads.n) break;
 		}
 	}
+
+	if (view) view->Update(doc);
+	needtodraw=1;
 }
 
 /*! \todo *** this is a bit of a hack to force refiguring of page thumbnails
@@ -368,30 +210,19 @@ int SpreadInterface::InterfaceOn()
  */
 int SpreadInterface::UseThisDoc(Document *ndoc)
 {
+	if (ndoc==doc) return 0;
+
 	if (doc) doc->dec_count();
 	doc=ndoc;
 	if (doc) doc->inc_count();
+	if (view) { view->dec_count(); view=NULL; }
 
 	GetSpreads();
+	transform_copy(view->matrix,dp->Getctm());//matrix not normally updated otherwise
 	ArrangeSpreads(ArrangeGrid); //do auto arrange at start
+	Center();
 	needtodraw=1;
 	return 0;
-}
-//! Return the reverse map from temppagemap[].
-/*!
- * temppagemap elements say what doc->page index is temporarily in
- * littlespread->spread->pagestack->index. For instance,
- * if temppagemap=={0,1,2,3,4}, after swapping 4 and 1, temppagemap=={0,4,2,3,1}.
- * 
- * So reversemap(4) would return 1, reversemap(1) returns 4, etc.
- *
- * Return -1 on not found.
- */
-int SpreadInterface::reversemap(int i)
-{
-	for (int c=0; c<temppagen; c++) 
-		if (temppagemap[c]==i) return c;
-	return -1;
 }
 
 //! Check to make sure spreads containing pages in range [startpage,endpage] are correct.
@@ -399,114 +230,40 @@ int SpreadInterface::reversemap(int i)
  * 
  * If endpage==-1, then doc->pages.n-1 is assumed.
  *
- * \todo ***this is very messy...
+ * \todo ignores startpage and endpage, always checks whole layout for validation
  */
 void SpreadInterface::CheckSpreads(int startpage,int endpage)
 {
+	//if (view) needtodraw=view->Update(doc,startpage,endpage);
+	if (view) needtodraw=view->Update(doc);
+
+	//init doc page markers... maybe this should be done elsewhere?
 	if (!doc) return;
-	if (endpage<0) endpage=doc->pages.n-1;
-
-	LittleSpread *newspread;
-	double x=0,y=0;
-	NumStack<int> pgs;
-	Spread *s;
-	int c=0,c2;
-	
-	 // correct temppagemap
-	if (doc->pages.n<=temppagen) {
-		temppagen=doc->pages.n;
-	} else {
-		int *tmp=new int[doc->pages.n];
-		memcpy(tmp,temppagemap,sizeof(int)*temppagen);
-		for (c=temppagen; c<doc->pages.n; c++) {
-			tmp[c]=c;
-			if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%maxmarkertype;
-		}
-		delete[] temppagemap;
-		temppagemap=tmp;
-		temppagen=doc->pages.n;
-	}
-			
-	 // for simplicity, map the spreads to normal
-	for (c=0; c<spreads.n; c++) {
-		s=spreads.e[c]->spread;
-		for (c2=0; c2<s->pagestack.n; c2++) {
-			s->pagestack.e[c2]->index=reversemap(s->pagestack.e[c2]->index);
-		}
-	}
-	 // redo the spreads
-	for (c=0; c<doc->imposition->NumSpreads(); c++) {
-		s=doc->imposition->GetLittleSpread(c);
-		
-		 // try to preserve previous spread placement
-		if (c<spreads.n) {
-			x=spreads.e[c]->m(4);
-			y=spreads.e[c]->m(5);		
-		} else if (c>=0) {
-			x+=(spreads.e[c-1]->maxx-spreads.e[c-1]->minx)*1.2;
-		}
-
-		 // set up and install replacement spread
-		newspread=new LittleSpread(s,c>0?spreads.e[c-1]:NULL); //takes pointer, not dups or checkout
-		newspread->m(4,x);
-		newspread->m(5,y);
-		newspread->FindBBox();
-		if (c<spreads.n) {
-			delete spreads.e[c];
-			spreads.e[c]=newspread;
-		} else {
-			spreads.push(newspread);
-		}
-		if (c>0) spreads.e[c]->mapConnection();
-
-		 // find next page
-	}
-	while (c!=spreads.n) spreads.remove(c);
-
-	 // map the pages back
-	for (c=0; c<spreads.n; c++) {
-		s=spreads.e[c]->spread;
-		for (c2=0; c2<s->pagestack.n; c2++) {
-			s->pagestack.e[c2]->index=temppagemap[c];
-			s->pagestack.e[c2]->page=doc->pages.e[temppagemap[c]];
-		}
-	}
-	needtodraw=1;
+	for (int c=0; c<doc->pages.n; c++)
+		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%maxmarkertype;
 }
 
 //! Create all the LittleSpread objects and default page labels.
 /*! This is typically geared only for page spreads, not paper spreads.
  *
- * PaperLayouts are non-continuous, but PageLayouts should be continuous.
- * The spread editor currently only does PageLayouts.
+ * It is assumed that the developers have adhered to the guideline that
+ * Imposition::GetLittleSpread() will return spreads such that the page counts
+ * that map to them make sense with next and previous little spreads.
  */
 void SpreadInterface::GetSpreads()
 {
-	spreads.flush();
 	curspread=NULL;
 	curpage=-1;
 	curpages.flush();
+	curspreads.flush();
 
-	if (!doc || !doc->imposition || !doc->pages.n) return;
-	
-	 // define the default page labels
-	int c;
-	if (temppagemap) delete[] temppagemap;
-	temppagemap=new int[doc->pages.n];
-	temppagen=doc->pages.n;
-	for (c=0; c<doc->pages.n; c++) {
-		temppagemap[c]=c;
-		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%maxmarkertype;
+	if (!doc || !doc->imposition || !doc->pages.n) {
+		if (view) { view->dec_count(); view=NULL; }
+		return;
 	}
-	
-	Spread *s;
-	LittleSpread *ls;
-	for (int c=0; c<doc->imposition->NumSpreads(); c++) {
-		s=doc->imposition->GetLittleSpread(c);
-		ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
-		ls->FindBBox();
-		spreads.push(ls);
-	}
+
+	if (!view) view=new SpreadView;
+	view->Update(doc);
 }
 
 // // values for arrangestate
@@ -533,109 +290,22 @@ void SpreadInterface::GetSpreads()
  * \todo the auto grid arranging could be brighter
  */
 void SpreadInterface::ArrangeSpreads(int how)//how==-1
-{ 
-	if (firsttime) return; // need real window info before arranging...
+{
+	if (!view || firsttime) return; // need real window info before arranging...
 	
-	if (arrangetype==arrangestate) return;
-	if (arrangetype==ArrangeCustom) {
-		if (arrangestate!=ArrangeNeedsArranging) { arrangestate=ArrangeCustom; return; }
-	}
+	view->ArrangeSpreads(dp,how);
 
-	 // figure out how we should be laying out spreads
-	 // return if already arranged according to arrangetype
-	int towhat=arrangetype;
-	double winw,winh;
-	winw=dp->Maxx-dp->Minx;
-	winh=dp->Maxy-dp->Miny;
-	if (towhat==ArrangeAutoAlways || towhat==ArrangeAutoTillMod) {
-		 // could be row or column
-		if (winw>winh) {
-			if (arrangestate==ArrangeTempRow || arrangestate==Arrange1Row) {
-				arrangestate=ArrangeTempRow;
-				return;
-			}
-			towhat=Arrange1Row;
-			arrangestate=ArrangeTempRow;
-		} else {
-			if (arrangestate==ArrangeTempColumn || arrangestate==Arrange1Column) {
-				arrangestate=ArrangeTempColumn;
-				return;
-			}
-			towhat=Arrange1Column;
-			arrangestate=ArrangeTempColumn;
-		}
-	} else if (towhat==ArrangeCustom) {
-		towhat=ArrangeGrid;
-		arrangestate=ArrangeCustom;
-	} else arrangestate=arrangetype;
-	
-	 // find the bounding box for all spreads
-	DoubleBBox bbox;
-	double gap;
-	int perrow;
-	for (int c=0; c<spreads.n; c++) {
-		bbox.addtobounds(spreads.e[c]);
+	if (dp) {
+		double X=view->minx,
+			   Y=view->miny,
+			   W=view->maxx-view->minx,
+			   H=view->maxy-view->miny;
+		dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
+		dp->Center(X,X+W,Y,Y+H);
 	}
-	gap=(bbox.maxx-bbox.minx)*.2;
-	
-	 // figure out how many spreads per row
-	if (towhat==ArrangeGrid) {
-		double r=sqrt(spreads.n*winh/winw*(bbox.maxx-bbox.minx+gap)/(bbox.maxy-bbox.miny+gap));
-		perrow=(int)(spreads.n/r);
-		if (perrow==0) perrow=1;
-		//perrow=int(sqrt((double)spreads.n)+1); //put within a square
-	} else if (towhat==Arrange1Column) perrow=1;
-	else   if (towhat==Arrange1Row) perrow=1000000;
-	
-	
-	double x,y,w,h,X,Y,W,H;
-	x=y=w=h=X=Y=W=H=0;
-
-	 // Find how many pixels make 1 inch, basescaling=inches/pixel
-	double scaling,basescaling=double(XDisplayWidthMM(app->dpy,0))/25.4/XDisplayWidth(app->dpy,0);
-	
-	 // Position the LittleSpreads...
-	DoubleBBox bb;
-	double rh=0,rw=0;
-
-	for (int c=0; c<spreads.n; c++) {
-		w=spreads.e[c]->maxx-spreads.e[c]->minx;
-		h=spreads.e[c]->maxy-spreads.e[c]->miny;
-		if (c==0) { scaling=1./(basescaling*w); }
-		spreads.e[c]->origin(flatpoint(x-spreads.e[c]->minx,y-spreads.e[c]->miny));
-		x+=w+gap;
-		rw+=w+gap;
-		if (h>rh) rh=h;
-		if (c==spreads.n-1 || (c+1)%perrow==0) { // start a new row.
-			H+=rh;
-			x=0;
-			y-=rh+gap;
-			if (rw>W) W=rw; 
-			rw=rh=0;
-		}
-	}
-	if (W==0) W=rw;
-	if (H==0) H=rh;
-	
-	 //sync up the connecting lines
-	for (int c=1; c<spreads.n; c++) {
-		spreads.e[c]->mapConnection();
-	}
-	
-	X-=W*.1;
-	W+=.2*W;
-	Y-=H*.1;
-	H+=.2*H;
-//	if (dp) {
-//		dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
-//		dp->Center(X,X+W,Y,Y+H);
-//	}
 }
 
 //! Draw the little spreads, connection lines, page labels, whatever else...
-/*! \todo *** should have option to bring connecting lines forward, or put them
- * behind the spreads.
- */
 int SpreadInterface::Refresh()
 {
 	if (!needtodraw) return 1;
@@ -646,59 +316,69 @@ int SpreadInterface::Refresh()
 		Center(1);
 		//((ViewportWindow *)curwindow)->syncrulers();
 	}
+
+	needtodraw=0;
+
 	dp->Updates(0);	
 	
 	dp->NewBG(200,200,200);
 	dp->ClearWindow();
+	if (!view) { dp->Updates(1); return 1; }
+
 	int c,c2;
 	
 	 // Draw the connecting lines
 	 // draw the connection lines in front of the spreads..
 	 //*** this needs little bubble at back of arrows, and little arrow at front
-	for (c=0; c<spreads.n; c++) {
-		if (spreads.e[c]->prev) {
-			::DrawData(dp,spreads.e[c]->connection,NULL,NULL);
+	for (c=0; c<view->spreads.n; c++) {
+		if (view->spreads.e[c]->prev) {
+			::DrawData(dp,view->spreads.e[c]->connection,NULL,NULL);
 		}
 	}
 	 
+
 	 // Draw the spreads
 	SomeData *outline;
 	int pg,x,y;
 	flatpoint p;
 	
 	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy);
+	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy);
 	LineStyle ls(0,0,0xffff,0xffff, 4,CapButt,JoinMiter,~0,GXcopy);
 	//Page *page;
 	ImageData *thumb=NULL;
-	dp->clearclip();
-	for (c=0; c<spreads.n; c++) {
-		dp->PushAndNewTransform(spreads.e[c]->m());
+	dp->ClearClip();
+
+	for (c=0; c<view->spreads.n; c++) {
+		dp->PushAndNewTransform(view->spreads.e[c]->m());
 		
 		 //draw the spread's path
-		::DrawData(dp,spreads.e[c]->spread->path,NULL,&fs);
+		::DrawData(dp,view->spreads.e[c]->spread->path,NULL,&fs);
 
-		Region region;
-		for (c2=0; c2<spreads.e[c]->spread->pagestack.n; c2++) {
+		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n; c2++) {
 			 // draw thumbnails
-			pg=spreads.e[c]->spread->pagestack.e[c2]->index;
-			if (drawthumbnails) {
+			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
+			thumb=NULL;
+			if (pg<0) {
+				 //no page index means this place is an empty page, for a page in a thread
+				::DrawData(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,&efs);
+			} else if (drawthumbnails) {
 				if (pg>=0 && pg<doc->pages.n) {
-					pg=temppagemap[pg];
+					pg=view->temppagemap[pg];
 					if (pg>=0 && pg<doc->pages.n) thumb=doc->pages.e[pg]->Thumbnail();
 				}
 				if (thumb) {
 					DBG cerr <<"drawing thumbnail for "<<pg<<endl;
-					dp->PushAndNewTransform(spreads.e[c]->spread->pagestack.e[c2]->outline->m());
+					dp->PushAndNewTransform(view->spreads.e[c]->spread->pagestack.e[c2]->outline->m());
 					
 					 // always setup clipping region to be the page
-					region=GetRegionFromPaths(spreads.e[c]->spread->pagestack.e[c2]->outline,dp->m());
-					//DBG ::DrawData(dp,spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,NULL);
-					if (!XEmptyRegion(region)) dp->clip(region,3); 
+					dp->PushClip(1);
+					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->m());
 					
 					::DrawData(dp,thumb,NULL,NULL);
 					
 					 //remove clipping region
-					dp->clearclip();
+					dp->PopClip();
 
 					dp->PopAxes();
 					thumb=NULL;
@@ -707,13 +387,13 @@ int SpreadInterface::Refresh()
 		}	
 		
 		 // draw path again over whatever was drawn, but don't fill...
-		::DrawData(dp,spreads.e[c]->spread->path,NULL,NULL);
+		::DrawData(dp,view->spreads.e[c]->spread->path,NULL,NULL);
 
 		 // draw currently selected pages with thick line
 		for (int cc=0; cc<curpages.n; cc++) {
-			c2=spreads.e[c]->spread->PagestackIndex(curpages.e[cc]);
+			c2=view->spreads.e[c]->spread->PagestackIndex(curpages.e[cc]);
 			if (c2>=0) {
-				outline=spreads.e[c]->spread->pagestack.e[c2]->outline;
+				outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
 
 				unsigned long oldfg=dp->FG();
 				dp->NewFG(0,0,255);
@@ -724,30 +404,127 @@ int SpreadInterface::Refresh()
 		}
 
 		 // draw page labels
-		for (c2=0; c2<spreads.e[c]->spread->pagestack.n; c2++) {
-			pg=spreads.e[c]->spread->pagestack.e[c2]->index;
+		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n; c2++) {
+			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
 			if (pg>=0 && pg<doc->pages.n) {
-				outline=spreads.e[c]->spread->pagestack.e[c2]->outline;
+				outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
 				dp->PushAndNewTransform(outline->m());
-				if (centerlabels==0) 
-					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2));
-				else if (centerlabels==1) p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));
-				else if (centerlabels==2) p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));
-				else if (centerlabels==3) p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));
-				else  p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));
+
+				int centerlabels=view->centerlabels;
+				if (centerlabels==0)
+					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
+				else if (centerlabels==1) p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));//bottom
+				else if (centerlabels==2) p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));//left
+				else if (centerlabels==3) p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));//top
+				else  p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));//right
 				x=(int)p.x; // figure out where bottom tip of bbox is
 				y=(int)p.y;
-				drawLabel(x,y,doc->pages.e[temppagemap[pg]],pg==temppagemap[pg]);
+				drawLabel(x,y,doc->pages.e[view->temppagemap[pg]], pg==view->temppagemap[pg]);
+
 				dp->PopAxes();
 			}
 		}
 
 		dp->PopAxes(); //spread axes
 	}
+
+	 //draw selection rectangle, if any
+	if (buttondown.isdown(0,LEFTBUTTON) && dragpage<0) {
+		dp->NewFG(0,0,255);
+		dp->DrawScreen();
+		dp->drawline(  lbdown.x,   lbdown.y,   lbdown.x, lastmove.y);
+		dp->drawline(  lbdown.x, lastmove.y, lastmove.x, lastmove.y);
+		dp->drawline(lastmove.x, lastmove.y, lastmove.x,   lbdown.y);
+		dp->drawline(lastmove.x,   lbdown.y,   lbdown.x,   lbdown.y);
+		dp->DrawReal();
+	}
 	
 	dp->Updates(1);	
-	needtodraw=0;
 	return 1;
+}
+
+#define SE_First            1000
+#define SE_PageLabels       1000
+#define SE_InsertPage       1001
+#define SE_InsertDummyPage  1002
+#define SE_DetachPages      1003
+#define SE_DeletePages      1004
+#define SE_ExportPages      1005
+#define SE_NewView          1006
+#define SE_SaveView         1007
+#define SE_DeleteView       1008
+#define SE_RenameView       1009
+
+Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
+{
+	MenuInfo *menu=new MenuInfo(_("Spread Editor"));
+
+	menu->AddItem(_("Page Labels..."),SE_PageLabels);
+	menu->AddItem(_("Insert Page"),SE_InsertPage);
+	menu->AddItem(_("Insert Dummy Page"),SE_InsertDummyPage);
+
+	if (curpages.n) {
+		menu->AddSep(_("Current pages"));
+		menu->AddItem(_("Detach"),SE_DetachPages);//create a limbo page string
+		menu->AddItem(curpages.n>1?_("Delete Pages..."):_("Delete Page"),SE_DeletePages);
+		menu->AddItem(_("Export to new document..."),SE_ExportPages);
+	}
+
+	menu->AddSep();
+	menu->AddItem(_("New view"),SE_NewView);
+	if (!view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
+	else {
+		menu->AddItem(_("Delete current view"),SE_DeleteView);
+		menu->AddItem(_("Rename current view"),SE_RenameView);
+	}
+
+	 //new ones not explicitly added to document will be saved only if there are active windows using it
+	//if (doc && doc->spreadviews.n>1) menu->AddItem(_("Delete current arrangement"), 202);
+
+	 //add spread arrangement list
+	if (doc->spreadviews.n) {
+		menu->AddSep("Views");
+		for (int c=0; c<doc->spreadviews.n; c++) {
+			menu->AddItem(doc->spreadviews.e[c]->Name(), c, 
+						  LAX_ISTOGGLE | (doc->spreadviews.e[c]==view?LAX_CHECKED:0) );
+		}
+	}
+
+	return menu;
+}
+
+//! Respond to context menu event.
+int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
+{
+	if (!strcmp(mes,"viewportmenu")) return 1;
+
+	const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+	if (!s) return 1;
+
+	int i=s->info2;
+	
+	if (i==SE_PageLabels) {
+	} else if (i==SE_InsertPage) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_InsertDummyPage) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_DetachPages) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_DeletePages) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_ExportPages) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_NewView) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_SaveView) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_DeleteView) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SE_RenameView) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	}
+
+	return 0;
 }
 
 //! Draw the label.
@@ -775,64 +552,63 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 	unsigned long fcolor=~0;//fill color
 	unsigned long color=0; //text color
 	unsigned long outlinecolor=0;
-	if (outlinestatus==0) outlinecolor=app->rgbcolor(255,0,0);
+	if (outlinestatus==0) outlinecolor=rgbcolor(255,0,0);
 
 	int t=-1;
 	switch (page->labeltype) {
-		case 0: fcolor=app->rgbcolor(255,255,255);
+		case 0: fcolor=rgbcolor(255,255,255);
 				t=0;
 				break;
-		case 1: fcolor=app->rgbcolor(175,175,175);
+		case 1: fcolor=rgbcolor(175,175,175);
 				t=0;
 				break;
-		case 2: fcolor=app->rgbcolor(100,100,100);
+		case 2: fcolor=rgbcolor(100,100,100);
 				color=~0;
 				t=0;
 				break;
-		case 3: fcolor=app->rgbcolor(0,0,0);
+		case 3: fcolor=rgbcolor(0,0,0);
 				color=~0;
 				t=0;
 				break;
-		case 4: fcolor=app->rgbcolor(255,255,255);
+		case 4: fcolor=rgbcolor(255,255,255);
 				t=1;
 				break;
-		case 5: fcolor=app->rgbcolor(175,175,175);
+		case 5: fcolor=rgbcolor(175,175,175);
 				t=1;
 				break;
-		case 6: fcolor=app->rgbcolor(100,100,100);
+		case 6: fcolor=rgbcolor(100,100,100);
 				color=~0;
 				t=1;
 				break;
-		case 7: fcolor=app->rgbcolor(0,0,0);
+		case 7: fcolor=rgbcolor(0,0,0);
 				color=~0;
 				t=1;
 				break;
-		default: fcolor=app->rgbcolor(255,255,255); //default provided just in case
+		default: fcolor=rgbcolor(255,255,255); //default provided just in case
 				t=0;
 				break;
 	}
 	
-	//XSetLineAttributes(app->dpy,app->gc(), (outlinestatus==0?4:1), LineSolid,CapButt,JoinMiter);
-	drawthing(dp->GetWindow(),app->gc(),x,y,w,h,t, outlinecolor,fcolor, (outlinestatus==0?4:1));
-	XSetForeground(app->dpy,app->gc(),color);
-	textout(dp->GetWindow(),page->label,-1,x,y,LAX_CENTER);
+	draw_thing(dp->GetXw(),x,y,w,h,t, outlinecolor,fcolor, (outlinestatus==0?4:1));
+	foreground_color(color);
+	textout(dp->GetXw(),page->label,-1,x,y,LAX_CENTER);
 }
 
 //! Relays left button event to rLBDown or rMBDown depending on reversebuttons.
-int SpreadInterface::LBDown(int x,int y,unsigned int state,int count)
-{ if (reversebuttons) return rMBDown(x,y,state,count); else return rLBDown(x,y,state,count); }
+int SpreadInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rMBDown(x,y,state,count,d); else return rLBDown(x,y,state,count,d); }
 
 //! Relays left button event to rLBUp or rMBUp depending on reversebuttons.
-int SpreadInterface::LBUp(int x,int y,unsigned int state)
-{ if (reversebuttons) return rMBUp(x,y,state); else return rLBUp(x,y,state); }
+int SpreadInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rMBUp(x,y,state,d); else return rLBUp(x,y,state,d); }
 
 //! Relays middle button event to rLBDown or rMBDown depending on reversebuttons.
-int SpreadInterface::MBDown(int x,int y,unsigned int state,int count)
-{ if (reversebuttons) return rLBDown(x,y,state,count); else return rMBDown(x,y,state,count); }
+int SpreadInterface::MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rLBDown(x,y,state,count,d); else return rMBDown(x,y,state,count,d); }
 
 //! Relays middle button event to rLBUp or rMBDown depending on reversebuttons.
-int SpreadInterface::MBUp(int x,int y,unsigned int state)
-{ if (reversebuttons) return rLBUp(x,y,state); else return rMBUp(x,y,state); }
+int SpreadInterface::MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rLBUp(x,y,state,d); else return rMBUp(x,y,state,d); }
 
 //! Selects pages.
 /*! If down on nothing, then start a selection rectangle. 
@@ -841,31 +617,49 @@ int SpreadInterface::MBUp(int x,int y,unsigned int state)
  * out which page button is down on. If shift, add to selection, if control, toggle selected
  * state of it.
  */
-int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
+int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	if (buttondown && buttondown!=LEFTBUTTON) return 1;
-	buttondown|=LEFTBUTTON;
+	if (buttondown.any()) return 1;
+	buttondown.down(d->id,LEFTBUTTON, x,y,state);
 
-	int pg,spr;
-	spr=findSpread(x,y,&pg);
-	DBG cerr <<"SpreadInterface lbdown found page "<<pg<<" in spread "<<spr<<endl;
-	if (spr>=0) curspread=spreads.e[spr];
-	if (pg<0) {
-		//*** start a selection rectangle
+	int psi,page=-1,thread;
+	LittleSpread *spread=findSpread(x,y,&psi,&thread);
+	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+
+	DBG cerr <<"SpreadInterface lbdown found page "<<page<<" in thread "<<thread<<endl;
+	if (page<0) {
+		// start a selection rectangle. note: could be click down inside an empty page
+		lbdown=lastmove=flatpoint(x,y);
 		dragpage=-1;
 		return 0;
 	}
 	
-	dragpage=pg;
-	Cursor cursor;
-	//cursor=XCreateFontCursor(app->dpy, XC_top_left_corner);
-	
-	if ((state&LAX_STATE_MASK)==0) cursor=XCreateFontCursor(app->dpy, XC_right_side);
-	else cursor=XCreateFontCursor(app->dpy, XC_exchange);
-	XDefineCursor(app->dpy, curwindow->window, cursor);
-	XFreeCursor(app->dpy, cursor);
+	needtodraw=1;
+	dragpage=page;
+	int i=curpages.pushnodup(page);
+	curspreads.pushnodup(spread,0);
+	if (i<0 && !(state&ShiftMask)) { //item wasn't already selected
+		curspreads.flush();
+		curpages.flush();
+		curpages.push(page);
+		curspreads.push(spread,0);
+	}
+
+	int shape=0;
+	if ((state&LAX_STATE_MASK)==0 || curpages.n>1) shape=LAX_MOUSE_To_E;
+	else shape=LAX_MOUSE_Exchange;
+	const_cast<LaxMouse*>(d)->setMouseShape(curwindow,shape);
 
 	return 0;
+}
+
+void SpreadInterface::clearSelection()
+{
+	curpage=-1;
+	curspread=NULL;
+	curpages.flush();
+	curspreads.flush();
+	needtodraw=1;
 }
 
 //! Drops pages.
@@ -878,41 +672,55 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count)
  * bring the spreadeditor forward, double click on a page which causes
  * the view to come forward with that page selected..
  */
-int SpreadInterface::rLBUp(int x,int y,unsigned int state)
+int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	if (!(buttondown&LEFTBUTTON)) return 1;
-	XUndefineCursor(app->dpy, curwindow->window);
-	buttondown&=~LEFTBUTTON;
-	if (dragpage<0) return 0;
-	
-	int pg;
-	DBG int spr=
-	findSpread(x,y,&pg);
-	DBG cerr <<"SpreadInterface lbup found page "<<pg<<" in spread "<<spr<<endl;
-	if (pg<0) {
-		 // do not drop page anywhere
-		 //*** in the future this will be something like pop page into limbo?
-		if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
-			 // mouse up outside window so search for a ViewWindow to shift view for
-			anXWindow *win=NULL;
-			int mx,my;
-			mouseposition(&mx,&my,NULL,&win);
-			if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
-				LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
-				vp->UseThisDoc(doc);
-				vp->SelectPage(dragpage);
-				
-				DBG cerr <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
-			}
-		}
-		dragpage=-1;
+	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
+	const_cast<LaxMouse*>(d)->setMouseShape(curwindow,0);
+	buttondown.up(d->id,LEFTBUTTON);
+
+	if (dragpage<0) {
+		 //dragged out a selection, so select everything inside the box
+		if ((state&LAX_STATE_MASK)==0) clearSelection();
+		cout <<" **** spread editor must implement select all in box!!!"<<endl;
+		needtodraw=1;
 		return 0;
 	}
 	
-	 // swap dragpage and pg
-	DBG cerr <<"*** swap "<<dragpage<<" to position "<<pg<<endl;
-	if ((state&LAX_STATE_MASK)==0) SlidePages(dragpage,pg);
-	else if ((state&LAX_STATE_MASK)==ShiftMask) SwapPages(dragpage,pg);
+	int psi,thread,page;
+	LittleSpread *spread=findSpread(x,y,&psi,&thread);
+	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+	DBG cerr <<"SpreadInterface lbup found page "<<psi<<" in thread "<<thread<<endl;
+
+	 //If mouse up outside window, maybe call up that page in a view window
+	if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
+		 // mouse up outside window so search for a ViewWindow to shift view for
+		anXWindow *win=NULL;
+		int mx,my;
+		mouseposition(d->id,NULL,&mx,&my,NULL,&win);
+		if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
+			LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
+			vp->UseThisDoc(doc);
+			vp->SelectPage(dragpage);
+			
+			DBG cerr <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
+		}
+		dragpage=-1;
+		needtodraw=1;
+		return 0;
+	}
+	//***finish imp here!!!
+	
+	 // swap dragpage and page
+	DBG cerr <<"*** drag "<<dragpage<<" to "<<(spread?"swap":"make thread")<<endl;
+
+	if (!spread) {
+		//*** transfer all the curpages to a thread
+	} else {
+		if ((state&LAX_STATE_MASK)==0 || curpages.n>1)
+			SlidePages(view->reversemap(dragpage),view->reversemap(page));
+		else if ((state&LAX_STATE_MASK)==ShiftMask)
+			SwapPages(view->reversemap(dragpage),view->reversemap(page));
+	}
 
 	dragpage=-1;
 	
@@ -939,80 +747,37 @@ void SpreadInterface::SlidePages(int previouspos, int newpos)
 	}
 }
 
-//! Swaps pagelabel and the littlespread->spread->pagestack[??]->page.
-/*! previouspos and newpos are both page indices at the document level, not
- * the spread or little spread level. Changes are temporary here. Permanent
+//! Swap the pages corresponding to previouspos and newpos.
+/*! previouspos and newpos are both indices corresponding to document
+ * pages via (doc page index)=view->map(previouspos) and view->map(newpos).
+ *
+ * Changes are temporary here. Permanent
  * changes to the document are made in ApplyChanges()
  */
 void SpreadInterface::SwapPages(int previouspos, int newpos)
 {
-	if (previouspos<0 || previouspos>=doc->pages.n ||
+	if (!view || previouspos<0 || previouspos>=doc->pages.n ||
 	    newpos<0 || newpos>=doc->pages.n) return;
-	
-	 // swap index map
-	int t=temppagemap[previouspos];
-	temppagemap[previouspos]=temppagemap[newpos];
-	temppagemap[newpos]=t;
-	
-	 // swap the littlespread->spread->pagestack->page
-	int oc,oc2,nc,nc2;
-	for (oc=0; oc<spreads.n; oc++) {
-		for (oc2=0; oc2<spreads.e[oc]->spread->pagestack.n; oc2++) {
-			if (spreads.e[oc]->spread->pagestack.e[oc2]->index==previouspos) break;
-		}
-		if (oc2!=spreads.e[oc]->spread->pagestack.n) break;
-	}
-	if (oc==spreads.n) return;
-	for (nc=0; nc<spreads.n; nc++) {
-		for (nc2=0; nc2<spreads.e[nc]->spread->pagestack.n; nc2++) {
-			if (spreads.e[nc]->spread->pagestack.e[nc2]->index==previouspos) break;
-		}
-		if (nc2!=spreads.e[nc]->spread->pagestack.n) break;
-	}
-	if (nc==spreads.n) return;
 
-	 //*** this is a little shoddy... needs more checking, swap which attributes??
-	Page *tpage=spreads.e[oc]->spread->pagestack.e[oc2]->page;
-	spreads.e[oc]->spread->pagestack.e[oc2]->page=spreads.e[nc]->spread->pagestack.e[nc2]->page;
-	spreads.e[nc]->spread->pagestack.e[nc2]->page=tpage;
-	t=spreads.e[oc]->spread->pagestack.e[oc2]->index;
-	spreads.e[oc]->spread->pagestack.e[oc2]->index=spreads.e[nc]->spread->pagestack.e[nc2]->index;
-	spreads.e[nc]->spread->pagestack.e[nc2]->index=t;
-
+	view->SwapPages(previouspos,newpos);
 	needtodraw=1;
 }
 
 //! Apply however pages have been rearranged to the document.
-/*! */
+/*! If there are any threads, then changes will not be applied.
+ */
 void SpreadInterface::ApplyChanges()
 {
 	DBG cerr<<"ApplyChanges:"<<endl;
 
-	//****
-
-	int n;
-	char *newlocal,*oldlocal;
-	Page **newpages,**oldpages=doc->pages.extractArrays(&oldlocal,&n);
-	
-	newpages=new Page*[n];
-	newlocal=new char[n];
-	
-	int pg;
-	for (int c=0; c<n; c++) {
-		DBG cerr <<" --move page "<<pg<<" to page "<<c<<endl;
-		pg=temppagemap[c];
-		newpages[c]=oldpages[pg];
-		newlocal[c]=oldlocal[pg];
-
-		temppagemap[c]=c;
+	if (view->threads.n) {
+		if (viewport) viewport->postmessage(_("Cannot apply when there are unconnected threads"));
+		return;
 	}
-	doc->pages.insertArrays(newpages,newlocal,n);
-	delete[] oldlocal;
-	delete[] oldpages;
-	needtodraw=1;
 
-	doc->SyncPages(0,-1);
+	view->ApplyChanges();
 	laidout->notifyDocTreeChanged(curwindow->win_parent,TreePagesMoved,0,-1);
+	needtodraw=1;
 }
 
 //! Reset whatever tentative changes to page order have been made since last apply.
@@ -1022,87 +787,112 @@ void SpreadInterface::ApplyChanges()
  */
 void SpreadInterface::Reset()
 {
-	int c,c2;
-	for (c=0; c<doc->pages.n; c++) {
-		if (temppagemap[c]==c) continue;
-		for (c2=c+1; c2<doc->pages.n; c2++)
-			if (temppagemap[c2]==c) break;
-		if (c2==doc->pages.n) continue;
-		SwapPages(c,c2);
-	}
+	if (!view) return;
+	view->Reset();
 }
 
 //! Selects spreads.
-int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count)
+int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	if (buttondown && buttondown!=MIDDLEBUTTON) return 1;
-	int pg,p=findSpread(x,y,&pg);
-	if (p<0) {
-		curspread=NULL;
-		curpage=-1;
-		curpages.flush();
+	if (!view || buttondown.any()) return 1;
+	int page=-1,psi,thread;
+	LittleSpread *spread=findSpread(x,y,&psi,&thread);
+	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+	if (!spread) {
+		clearSelection();
 		return 1;
 	}
 
-	buttondown=MIDDLEBUTTON;
+	buttondown.down(d->id,MIDDLEBUTTON, x,y,state);
 	mx=x; my=y;
-	curspread=spreads.e[p];
-	if ((state&LAX_STATE_MASK)==0) curpages.flush();//clear if not shift or control click
-	if ((state&LAX_STATE_MASK)==ShiftMask) {
-		 //push all pages between curpgae and new curpage
-		for (int c=(curpage<pg?curpage:pg); c<=(curpage>pg?curpage:pg); c++) curpages.pushnodup(c);
-	} else curpages.pushnodup(pg);
-	curpage=pg;
+
+	if ((state&LAX_STATE_MASK)==0) {
+		clearSelection();//clear if not shift or control click
+		curpages.pushnodup(page);
+		curspreads.pushnodup(spread,0);
+
+	} else if ((state&LAX_STATE_MASK)==ShiftMask) {
+		 //push all pages between curpage and new curpage
+		for (int c=(curpage<page?curpage:page); c<=(curpage>page?curpage:page); c++) {
+			curpages.pushnodup(c);
+			curspreads.pushnodup(view->SpreadOfPage(c,NULL),0);
+		}
+	}
+	curpage=page;
+	curspread=spread;
 
 	needtodraw=1;
 	return 0;
 }
 
 //! Drops spreads.
-int SpreadInterface::rMBUp(int x,int y,unsigned int state)
+int SpreadInterface::rMBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	if (buttondown!=MIDDLEBUTTON) return 1;
-	buttondown=0;
+	if (buttondown.isdown(d->id,MIDDLEBUTTON)) return 1;
+	buttondown.up(d->id,MIDDLEBUTTON);
 	return 0;
 }
 
 //! Drag spreads or pages
-int SpreadInterface::MouseMove(int x,int y,unsigned int state)
+int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	if (!buttondown) return 1;
-	if (!curspread) return 1;
+	if (!buttondown.any()) return 1;
+	if (!view || !curspreads.n) return 1;
 
-	if (buttondown==MIDDLEBUTTON) {
-		curspread->origin(curspread->origin()+screentoreal(x,y)-screentoreal(mx,my));
-		curspread->mapConnection();
-		if (curspread->next) curspread->next->mapConnection();
-		arrangetype=arrangestate=ArrangeCustom;
+	if (buttondown.isdown(d->id,MIDDLEBUTTON)) {
+		 //move around spreads
+		LittleSpread *s;
+		for (int c=0; c<curspreads.n; c++) {
+			s=curspreads.e[c];
+			s->origin(s->origin()+screentoreal(x,y)-screentoreal(mx,my));
+			s->mapConnection();
+			if (s->next) s->next->mapConnection();
+		}
+		view->arrangetype=view->arrangestate=ArrangeCustom;
 		mx=x; my=y;
 		needtodraw=1;
-	} else if (buttondown==LEFTBUTTON) {
+
+	} else if (buttondown.isdown(d->id,LEFTBUTTON)) {
+		if (dragpage<0) {
+			 //draw select rectangle
+			 //*** need to temp select pages which box touches them...
+			needtodraw=1;
+			lastmove.x=x;
+			lastmove.y=y;
+			mx=x; my=y;
+		} else {
+			//*** if moving back to original area, make cursor be a "cancel" cursor
+			//*** for dropping pages to limbo, use XC_sizing
+
+			int page=-1,psi,thread;
+			LittleSpread *spread=findSpread(x,y,&psi,&thread);
+			if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+			if (curpages.findindex(page)>=0) {
+				//const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+			} else {
+				//const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
+			}
+		}
+
 	} else return 1;
 
 	return 0;
 }
 
-//! Find the spread under screen point (x,y), return index or -1.
-/*! If page!=NULL, then also find the index of 
+//! Find the spread under screen point (x,y), return it, or NULL.
+/*! Also find the index of the page clicked down on, and
+ * the thread number, where 0 means the main thread, and any other positive number
+ * is the index of the thread in threads stack plus 1.
+ *
+ * Please note that pagestacki and thread are assumed to not be null, as that is where
+ * the pagestack index and thread numbers get returned.
  */
-int SpreadInterface::findSpread(int x,int y, int *page)
+LittleSpread *SpreadInterface::findSpread(int x,int y, int *pagestacki, int *thread)
 {
+	if (!view) return NULL;
+
 	flatpoint p=screentoreal(x,y);
-	int pg=-1,c;
-	for (c=spreads.n-1; c>=0; c--) {
-		if (page) pg=spreads.e[c]->pointin(p,2);
-		else pg=spreads.e[c]->pointin(p,1);
-		if (pg) break;
-	}
-	if (c!=-1) {
-		if (page) *page=pg-1; // find page number too.*** what index is a dummy page??
-		return c;
-	} 
-	if (page) *page=-1;
-	return -1;
+	return view->findSpread(p.x,p.y,pagestacki,thread);
 }
 
 ////! With spread coordinate p, find corresponding pagestack index in the spread, or -1
@@ -1116,40 +906,19 @@ int SpreadInterface::findSpread(int x,int y, int *page)
 //	}
 //}
 
-//! Find the page under screen point (x,y), return index or -1.
-/*! \todo *** imp me!
- */
-int SpreadInterface::findPage(int x,int y)
-{//***
-	return -1;
-}
-
 //! Center all (w==1)...
 void SpreadInterface::Center(int w)
 {
-	DoubleBBox bb;
-	for (int c=0; c<spreads.n; c++) {
-		bb.addtobounds(spreads.e[c]->m(),spreads.e[c]);
-	}
-	double ww=bb.maxx-bb.minx,
-		   hh=bb.maxy-bb.miny;
-	bb.minx-=ww*.05;
-	bb.maxx+=ww*.05;
-	bb.miny-=hh*.05;
-	bb.maxy+=hh*.05;
-	dp->Center(bb.minx,bb.maxx,bb.miny,bb.maxy);
-}
+	if (!view) { dp->CenterReal(); return; }
 
-/*! Switch to slide cursor when shift up.
- */
-int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
-{
-	if (ch==LAX_Shift && dragpage>=0) {
-		Cursor cursor=XCreateFontCursor(app->dpy, XC_right_side);
-		XDefineCursor(app->dpy, curwindow->window, cursor);
-		XFreeCursor(app->dpy, cursor);
-	}
-	return 1;
+	double X=view->minx,
+		   Y=view->miny,
+		   W=view->maxx-view->minx,
+		   H=view->maxy-view->miny;
+	dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
+	dp->Center(X,X+W,Y,Y+H);
+
+	needtodraw=1;
 }
 
 //! Change the type of mark for all in curpages.
@@ -1161,14 +930,24 @@ int SpreadInterface::CharRelease(unsigned int ch,unsigned int state)
  */
 int SpreadInterface::ChangeMarks(int newmark)
 {
-	if (!curpages.n) return -1;
+	if (!view || !curpages.n) return -1;
 
-	if (newmark==-1) newmark=(doc->pages.e[temppagemap[curpages.e[0]]]->labeltype+1) % maxmarkertype;
-	else if (newmark==-2) newmark=(doc->pages.e[temppagemap[curpages.e[0]]]->labeltype+maxmarkertype-1) % maxmarkertype;
+	if (newmark==-1) newmark=(doc->pages.e[view->map(curpages.e[0])]->labeltype+1) % maxmarkertype;
+	else if (newmark==-2) newmark=(doc->pages.e[view->map(curpages.e[0])]->labeltype+maxmarkertype-1) % maxmarkertype;
 
-	for (int c=0; c<curpages.n; c++) doc->pages.e[temppagemap[curpages.e[c]]]->labeltype=newmark;
+	for (int c=0; c<curpages.n; c++) doc->pages.e[view->map(curpages.e[c])]->labeltype=newmark;
 
 	return newmark;
+}
+
+/*! Switch to slide cursor when shift up.
+ */
+int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	if (ch==LAX_Shift && dragpage>=0) {
+		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_To_E);
+	}
+	return 1;
 }
 
 //! Key presses.
@@ -1186,12 +965,11 @@ int SpreadInterface::ChangeMarks(int newmark)
  *
  * \todo *** space should arrange if auto arrange
  */
-int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state)
+int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	if (ch==LAX_Shift && dragpage>=0) {
-		Cursor cursor=XCreateFontCursor(app->dpy, XC_exchange);
-		XDefineCursor(app->dpy, curwindow->window, cursor);
-		XFreeCursor(app->dpy, cursor);
+	if (ch==LAX_Shift && dragpage>=0 && curpages.n==1) {
+		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
+		return 0;
 
 	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
 		Center(1);
@@ -1228,23 +1006,26 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		return 0;
 
 	} else if (ch=='c' && (state&LAX_STATE_MASK)==0) {
-		centerlabels++;
-		if (centerlabels>4) centerlabels=0;
+		if (view->centerlabels==LAX_CENTER) view->centerlabels=LAX_TOP;
+		else if (view->centerlabels==LAX_TOP) view->centerlabels=LAX_RIGHT;
+		else if (view->centerlabels==LAX_RIGHT) view->centerlabels=LAX_BOTTOM;
+		else if (view->centerlabels==LAX_BOTTOM) view->centerlabels=LAX_LEFT;
+		else if (view->centerlabels==LAX_LEFT) view->centerlabels=LAX_CENTER;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
-		arrangestate=ArrangeNeedsArranging;
+		view->arrangestate=ArrangeNeedsArranging;
 		ArrangeSpreads();
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==ShiftMask) {
-		arrangetype++;
-		if (arrangetype==ArrangetypeMax+1) arrangetype=ArrangetypeMin;
+		view->arrangetype++;
+		if (view->arrangetype==ArrangetypeMax+1) view->arrangetype=ArrangetypeMin;
 
-		if (viewport) viewport->postmessage(arrangetypestring(arrangetype));
-		else app->postmessage(arrangetypestring(arrangetype));
+		if (viewport) viewport->postmessage(arrangetypestring(view->arrangetype));
+		else app->postmessage(arrangetypestring(view->arrangetype));
 
 		ArrangeSpreads();
 		needtodraw=1;
@@ -1268,11 +1049,11 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 //! Make the window using project.
 /*! Inc count of ndoc.
  */
-SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 						int xx, int yy, int ww, int hh, int brder,
 						//Window owner,const char *mes, 
 						Project *nproj,Document *ndoc)
-	: ViewerWindow(parnt,ntitle,nstyle|VIEWPORT_RIGHT_HANDED|VIEWER_BACK_BUFFER, 
+	: ViewerWindow(parnt,nname,ntitle,nstyle|VIEWPORT_RIGHT_HANDED|VIEWER_BACK_BUFFER, 
 					xx,yy,ww,hh, brder, NULL)
 {
 	project=nproj;
@@ -1290,11 +1071,10 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *ntitle,unsigned 
 			if (project->docs.n) { doc=project->docs.e[0]->doc; doc->inc_count(); }
 		}
 	} 
-	if (!viewport) viewport=new ViewportWindow(this,"spread-editor-viewport",
-									ANXWIN_HOVER_FOCUS|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
+	if (!viewport) viewport=new ViewportWindow(this,"spread-editor-viewport","spread-editor-viewport",
+									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
 									0,0,0,0,0,NULL);
-	viewport->win_xatts.background_pixel=app->rgbcolor(200,200,200);
-	viewport->win_xattsmask|=CWBackPixel;
+	win_colors->bg=rgbcolor(200,200,200);
 	viewport->dp->NewBG(255,255,255);
 
 	needtodraw=1;
@@ -1341,50 +1121,55 @@ int SpreadEditor::init()
 	wholelist.remove(0); //first null
 	wholelist.remove(0); //x
 	wholelist.remove(0); //y
-	
-	//XSetWindowBackground(app->dpy,viewport->window,~0);
-//	viewport->syncrulers();
+
 
 	anXWindow *last=NULL;
-	TextButton *tbut;
+	Button *tbut;
 
 	MenuButton *menub;
 	 //add a menu button thingy in corner between rulers
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
-	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",
-						 MENUBUTTON_CLICK_CALLS_OWNER,
-						 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
-						 0,0,0,0,0,
-						 last,window,"rulercornerbutton",0,
-						 NULL,0,
-						 laidout->icons.GetIcon("Laidout"),
-						 NULL);
+	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",NULL,
+										 MENUBUTTON_CLICK_CALLS_OWNER,
+										 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
+										 0,0,0,0, 0,
+										 last,object_id,"rulercornerbutton",0,
+										 NULL,0, //menu, local
+										 "v",
+										 NULL,laidout->icons.GetIcon("Laidout")
+										);
 	menub->tooltip(_("Document list"));
-	AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50, wholelist.n-1);//add before status bar
+	AddWin(menub,menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, wholelist.n-1);//add before status bar
 	//AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50, -1);//add before status bar
 
 	//wholelist.e[wholelist.n-1]->pw(100);
 	//AddNull(); // makes the status bar fill whole line
 
-	last=tbut=new TextButton(this,"applybutton",0, 0,0,0,0,1, NULL,window,"applybutton",_("Apply"));
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=tbut=new Button(this,"applybutton",NULL, 0, 0,0,0,0,1, NULL,object_id,"applybutton",0,_("Apply"));
+	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
 
-	last=tbut=new TextButton(this,"resetbutton",0, 0,0,0,0,1, last,window,"resetbutton",_("Reset"));
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=tbut=new Button(this,"resetbutton",NULL, 0, 0,0,0,0,1, last,object_id,"resetbutton",0,_("Reset"));
+	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
 
-	last=tbut=new TextButton(this,"updatethumbs",0, 0,0,0,0,1, last,window,"updatethumbs",_("Update Thumbs"));
-	AddWin(tbut,tbut->win_w,0,50,50, tbut->win_h,0,50,50);
+	last=tbut=new Button(this,"updatethumbs",NULL, 0, 0,0,0,0,1, last,object_id,"updatethumbs",0,_("Update Thumbs"));
+	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
 
 	Sync(1);	
 	return 0;
 }
 
-/*! Catches "docTreeChange".
+/*! Responds to:
+ *
+ * "resetbutton",
+ * "applybutton",
+ * "updatethumbs",
+ * "docTreeChange".
  */
-int SpreadEditor::DataEvent(Laxkit::EventData *data,const char *mes)
+int SpreadEditor::Event(Laxkit::EventData *data,const char *mes)
 {
 	DBG cerr <<"SpreadEditor got message: "<<mes<<endl;
+
 	if (!strcmp(mes,"docTreeChange")) {
 		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
 		if (!te || te->changer==this) return 1;
@@ -1403,21 +1188,9 @@ int SpreadEditor::DataEvent(Laxkit::EventData *data,const char *mes)
 			cout <<" ***need to imp SpreadEditor::DataEvent -> TreeDocGone"<<endl;
 		}
 		
-		delete te;
 		return 0;
-	}
-	return 1;
-}
 
-/*! Responds to:
- *
- * "resetbutton",
- * "applybutton",
- * "updatethumbs"
- */
-int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
-{
-	if (!strcmp("resetbutton",mes)) {
+	} else if (!strcmp("resetbutton",mes)) {
 		//cout <<"SpreadEditor got resetbutton message"<<endl;
 		SpreadInterface *s=dynamic_cast<SpreadInterface *>(curtool);
 		if (s) s->Reset();
@@ -1455,10 +1228,11 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 		 //create the actual popup menu...
 		MenuSelector *popup;
-		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
+		popup=new MenuSelector(NULL,"Documents",_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
-						NULL,window,"rulercornermenu", 
-						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
+						NULL,object_id,"rulercornermenu", 
+						MENUSEL_ZERO_OR_ONE
+						 | MENUSEL_CURSSELECTS
 						 //| MENUSEL_SEND_STRINGS
 						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
 						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
@@ -1467,7 +1241,7 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 						menu,1);
 //		popup=new PopupMenu(_("Documents"), MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT,
 //						0,0,0,0, 1, 
-//						viewport->window,"rulercornermenu", 
+//						viewport->object_id,"rulercornermenu", 
 //						menu,1);
 		popup->pad=5;
 		popup->Select(0);
@@ -1476,8 +1250,10 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"rulercornermenu")) {
-		DBG cerr <<"rulercornermenu:"<<e->data.l[1]<<endl;
-		int i=e->data.l[1];
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+
+		int i=s->info2;
+		DBG cerr <<"rulercornermenu:"<<i<<endl;
 
 		 //0-999 was document things
 		if (i>=0 && i<laidout->project->docs.n) {
@@ -1488,12 +1264,13 @@ int SpreadEditor::ClientEvent(XClientMessageEvent *e,const char *mes)
 	return 1;
 }
 
-int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state)
+int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	if (ch==LAX_Esc) {
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
 		app->destroywindow(this);
 		return 0;
+
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
 		app->addwindow(new HelpWindow());
 		return 0;
@@ -1505,8 +1282,8 @@ int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned 
 int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 {
 	int c=ViewerWindow::MoveResize(nx,ny,nw,nh);
-	if (((SpreadInterface *)curtool)->arrangetype==ArrangeAutoTillMod ||
-			((SpreadInterface *)curtool)->arrangetype==ArrangeAutoAlways) 
+	if (((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoTillMod ||
+			((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoAlways) 
 		((SpreadInterface *)curtool)->ArrangeSpreads();
 	return c;
 }
@@ -1515,8 +1292,8 @@ int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 int SpreadEditor::Resize(int nw,int nh)
 {
 	int c=ViewerWindow::Resize(nw,nh);
-	if (((SpreadInterface *)curtool)->arrangetype==ArrangeAutoTillMod ||
-			((SpreadInterface *)curtool)->arrangetype==ArrangeAutoAlways) 
+	if (((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoTillMod ||
+			((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoAlways) 
 		((SpreadInterface *)curtool)->ArrangeSpreads();
 	return c;
 }

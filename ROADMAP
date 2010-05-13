@@ -7,8 +7,9 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.091
 ------------
+       Do a poor man's version of a multi-contact touch screen interface with 2 mice  ... see Xinput2/MPX!
        Net imposition interactive unwrapper and build net interface
-       Scribus import must support master pages
+       Scribus import must support master pages, and make sure linked text mystery data behave properly on export
        need partial Laidout import and export
        Generic fold and trim imposition
        Be able to load imposition instances, a form of resource
@@ -23,17 +24,15 @@ VERSION 0.091
        drag-n-drop with system, like drag images into viewwindow from an external file browser
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        In image properties dialog, have the popup list of potential previews
-       Import images as flow/centered within page margins, not within page outline
+(done) Import images as flow/centered within page margins, not within page outline
+       Import images with alignment per page type into the page margin region
        SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
-       SpreadEditor: load and save spread editor arrangements (including marker placement, other settings)
+       SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
-       SpreadEditor: optionally work with whole spreads, rather than just single pages
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
-       SpreadEditor: working with >100 pages does strange hangs, and starts really slow. Fix!
+       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        Gui for modifying Page Labels
-       Fix multi-object selection move when crossing page boundaries
-       DumpImages within Arrangements, which are sort of a template of positions (2-d guides)
        double click on group should change selection area to group contents?
        update french and spanish translations, if possible
        Tools should remember their settings
@@ -46,7 +45,9 @@ VERSION 0.091
 
 VERSION 0.092
 -------------
+       DumpImages within Arrangements, sort of a template of positions (2-d guides)
        Clean up patch controls
+       Fix multi-object selection move when crossing page boundaries
 
 
 VERSION 0.1 
@@ -100,7 +101,6 @@ VERSION 0.1
 
 VERSION 0.2
 -----------
-Do a poor man's version of a multi-contact touch screen interface with 2 mice  ... see Xinput2/MPX!
 Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
 Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
 Bezier color patch freeform, rather than just grid.
@@ -136,7 +136,7 @@ Cooperate with photo programs like KPhotoalbum, f-spot
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from nets?
 Export PLAN files for podofoimpose
 openoffice files import
-Uniconverter support?
+Uniconverter support
 Vx support?
 Verse support?
 dbus?

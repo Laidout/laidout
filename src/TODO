@@ -70,8 +70,6 @@ scripting gets implemented
 
 impositions should have final printing shift matrix? to temporarily remap any imposition
 to any paper size, possibly with stuff off paper.. 
-the WhackedImposition: have a single page data map to many papers (using different transforms),
-sometimes known as posterizing..
 
 Some sort of main control panel still needs to be implemented with
  Laxkit::TabbedMenuSelector or whatever it'll be called!!!

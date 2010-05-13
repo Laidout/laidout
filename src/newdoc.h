@@ -21,9 +21,9 @@
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>
 #include <lax/menuselector.h>
-#include <lax/strsliderpopup.h>
-#include <lax/textbutton.h>
-#include <lax/mesbar.h>
+#include <lax/sliderpopup.h>
+#include <lax/button.h>
+#include <lax/messagebar.h>
 #include <lax/colorbox.h>
 
 #include "laidout.h"
@@ -44,23 +44,21 @@ class NewDocWindow : public Laxkit::RowFrame
 	PaperStyle *papertype;
 	
 	Laxkit::PtrStack<PaperStyle> *papersizes;
-	Laxkit::StrSliderPopup *impsel;
+	Laxkit::SliderPopup *impsel;
 	Laxkit::LineEdit *lineedit;
 	Laxkit::LineInput *marginl,*marginr,*margint,*marginb;
 	Laxkit::LineInput *insetl,*insetr,*insett,*insetb;
 	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*tilex,*tiley,*impfromfile;
 	Laxkit::MessageBar *mesbar;
 	Laxkit::CheckBox *defaultpage,*custompage;
- 	NewDocWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+
+ 	NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder,Document *ndoc=NULL);
 	virtual ~NewDocWindow();
 	virtual const char *whattype() { return "NewDocWindow"; }
 	virtual int preinit();
 	virtual int init();
-//	virtual int Refresh();
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	void updateImposition();
 };
@@ -72,16 +70,13 @@ class NewProjectWindow : public Laxkit::RowFrame
 	Laxkit::LineEdit *projectdir,*projectfile;
 	Laxkit::CheckBox *useprojectdir;
  public:
- 	NewProjectWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ 	NewProjectWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder);
 	virtual ~NewProjectWindow();
 	virtual const char *whattype() { return "NewProjectWindow"; }
 	virtual int preinit();
 	virtual int init();
-//	virtual int Refresh();
-//	virtual int CharInput(unsigned int ch,unsigned int state);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	int UpdateOkToCreate();
 };
