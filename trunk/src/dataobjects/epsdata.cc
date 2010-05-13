@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 #include <lax/fileutils.h>
@@ -136,7 +136,8 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"matrix")) {
-			DoubleListAttribute(value,m(),6);
+			double mm[6];
+			if (DoubleListAttribute(value,mm,6)==6) m(mm);
 		} else if (!strcmp(name,"description")) {
 			makestr(description,value);
 		} else if (!strcmp(name,"filename")) {

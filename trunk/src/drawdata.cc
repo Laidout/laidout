@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2007 Tom Lechner
+// Copyright (c) 2004-2010 Tom Lechner
 //
 
 
@@ -75,10 +75,10 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 	if (flags&DRAW_BOX && data->validbounds()) {
 		dp->NewFG(128,128,128);
 		DBG cerr<<" drawing obj "<<data->object_id<<":"<<data->minx<<' '<<data->maxx<<' '<<data->miny<<' '<<data->maxy<<endl;
-		dp->drawrline(flatpoint(data->minx,data->miny),flatpoint(data->maxx,data->miny));
-		dp->drawrline(flatpoint(data->maxx,data->miny),flatpoint(data->maxx,data->maxy));
-		dp->drawrline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));
-		dp->drawrline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
+		dp->drawline(flatpoint(data->minx,data->miny),flatpoint(data->maxx,data->miny));
+		dp->drawline(flatpoint(data->maxx,data->miny),flatpoint(data->maxx,data->maxy));
+		dp->drawline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));
+		dp->drawline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
 	}
 	if (!strcmp(data->whattype(),"Group")) { // Is a layer or a group
 		Group *g=dynamic_cast<Group *>(data);
@@ -139,7 +139,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 				dp->NewFG(0,0,0);
 				dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 				dp->drawbez(mdata->outline,mdata->numpoints/3,
-							mdata->outline[0]==mdata->outline[mdata->numpoints-1],30,0,1);
+							mdata->outline[0]==mdata->outline[mdata->numpoints-1],0);
 			}
 		
 		} else {
@@ -216,26 +216,24 @@ int boxisin(flatpoint *points, int n,DoubleBBox *bbox)
 }
 
 
-//! Return a list of points corresponding to the area.
+//! Append clipping paths to dp.
 /*! \ingroup objects
  * Converts a a group of PathsData, a SomeDataRef to a PathsData, 
- * or a single PathsData to a poly-line list of flatpoints. The union
- * of the returned lists is the area corresponding to outline.
- * If extra_m is not NULL, then apply this transform to the points.
+ * or a single PathsData to a clipping path. The final region is just 
+ * the union of all the paths there.
  *
  * Non-PathsData elements in a group does not break the finding.
  * Those extra objects are just ignored.
  *
  * Returns the number of single paths interpreted, or negative number for error.
  *
- * If iscontinuing!=0, then ***.
- *
  * \todo *** currently, uses all points (vertex and control points)
- * in the paths as a polyline, not as the full curvy business 
- * that PathsData are capable of. when ps output of paths is 
- * actually more implemented, this will change..
+ *   in the paths as a polyline, not as the full curvy business 
+ *   that PathsData are capable of. when ps output of paths is 
+ *   actually more implemented, this will change..
+ * \todo this would be good to transplant into laxkit
  */
-Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m)
+int SetClipFromPaths(Laxkit::Displayer *dp,LaxInterfaces::SomeData *outline, const double *extra_m)
 {
 	PathsData *path=dynamic_cast<PathsData *>(outline);
 
@@ -251,7 +249,6 @@ Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m)
 	}
 
 	int n=0; //the number of objects interpreted and that have non-empty paths
-	Region region=0,region2=0,region3=0; //in Xlib currently, Regions are pointers...
 	
 	 // If is not a path, and is not a ref to a path, but is a group,
 	 // then check its elements 
@@ -261,43 +258,36 @@ Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m)
 		double m[6];
 		for (int c=0; c<g->n(); c++) {
 			d=g->e(c);
+
 			 //add transform of group element
 			if (extra_m) transform_mult(m,d->m(),extra_m);
 			else transform_copy(m,d->m());
-			region2=GetRegionFromPaths(d,m);
-			if (!XEmptyRegion(region2)) {
-				if (!region3) region3=XCreateRegion();
-				if (!region)   region=XCreateRegion();
-				XUnionRegion(region2,region,region3);
-				if (region) { XDestroyRegion(region); region=0; }
-				XDestroyRegion(region2); region2=0;
-				region=region3;
-				region3=NULL;
-			}
+
+			n+=SetClipFromPaths(dp,d,m);
 		}
 	}
 	
 	if (!path) {
-		if (!region) region=XCreateRegion();
-		return region;
+		return n;
 	}
 	
 	 // finally append to clip path
 	Coordinate *start,*p;
 	int np,maxp=0;
-	XPoint *points=NULL;
+	flatpoint *points=NULL;
 	flatpoint pp;
 	int c,c2;
 	for (c=0; c<path->paths.n; c++) {
 		np=0;
 		start=p=path->paths.e[c]->path;
 		if (!p) continue;
+
 		do { p=p->next; np++; } while (p && p!=start);
 		if (p==start) { // only include closed paths
 			if (np>maxp) {
 				if (points) delete[] points; 
 				maxp=np;
-				points=new XPoint[maxp];
+				points=new flatpoint[maxp];
 			}
 			n++;
 			c2=0;
@@ -310,20 +300,14 @@ Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m)
 				p=p->next;	
 				c2++;
 			} while (p && p!=start);
-			if (!region)   region=XCreateRegion();
-			region2=XPolygonRegion(points,np,WindingRule);
-			if (!region3) region3=XCreateRegion();
-			XUnionRegion(region,region2,region3);
-			XDestroyRegion(region);
-			XDestroyRegion(region2); region2=0;
-			region=region3;
-			region3=NULL;
+
+			dp->Clip(points,np,1);
+			n++;
 		}
 	}
 	if (points) delete[] points;
 	
-	if (!region) region=XCreateRegion();
-	return region;
+	return n;
 }
 
 ////! Create an X region from one or more closed paths.

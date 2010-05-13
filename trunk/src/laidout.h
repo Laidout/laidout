@@ -53,6 +53,8 @@ class TreeChangeEvent : public Laxkit::EventData
 		Laxkit::anObject *obj;
 	} obj;
 	int start,end;
+	TreeChangeEvent() : changer(NULL),start(0),end(0) {}
+	TreeChangeEvent(const TreeChangeEvent &te);
 };
 
 class LaidoutApp : public Laxkit::anXApp
@@ -107,6 +109,7 @@ class LaidoutApp : public Laxkit::anXApp
 	int IsProject();
 
 	 //commands
+	Document *findDocumentById(unsigned long id);
 	Document *findDocument(const char *saveas);
 	int Load(const char *filename, char **error_ret);
 	Document *LoadTemplate(const char *filename, char **error_ret);

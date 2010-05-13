@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2007 Tom Lechner
+// Copyright (c) 2004-2010 Tom Lechner
 //
 #ifndef DRAWDATA_H
 #define DRAWDATA_H
@@ -28,7 +28,8 @@ void DrawData(Laxkit::Displayer *dp,LaxInterfaces::SomeData *data,
 				Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,unsigned int flags=0);
 LaxInterfaces::SomeData *newObject(const char *thetype);
 int boxisin(flatpoint *points, int n,Laxkit::DoubleBBox *bbox);
-Region GetRegionFromPaths(LaxInterfaces::SomeData *outline, double *extra_m);
+
+int SetClipFromPaths(Laxkit::Displayer *dp,LaxInterfaces::SomeData *outline, const double *extra_m);
 
 #endif
 

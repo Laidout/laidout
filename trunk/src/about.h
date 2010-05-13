@@ -26,7 +26,7 @@ class AboutWindow : public Laxkit::MessageBox
  	virtual const char *whattype() { return "AboutWindow"; }
 	virtual int preinit();
 	virtual int init();
-	virtual int CharInput(unsigned int ch,unsigned int state);
+	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
 
 #endif

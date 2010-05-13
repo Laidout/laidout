@@ -21,9 +21,9 @@
 class PalettePane : public Laxkit::PaletteWindow
 {
  public:
-	PalettePane(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+	PalettePane(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder,
-		anXWindow *prev,Window nowner,const char *nsend);
+		anXWindow *prev,unsigned long nowner,const char *nsend);
 	virtual int send();
 	virtual const char *PaletteDir();
 };

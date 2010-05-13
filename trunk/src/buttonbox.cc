@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2006,2010 by Tom Lechner
 //
 
 #include <cstdio>
@@ -22,9 +22,9 @@
 using namespace Laxkit;
 using namespace std;
 
-ButtonBox::ButtonBox(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ButtonBox::ButtonBox(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder)
-	: TabFrame(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
+	: TabFrame(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,NULL)
 {
 	//tabframe->AddWin(new ProgressBar2(tabframe,"tf-progressbar4",PROGRESS_OVAL, 0,0,0,0, 1), "p4",NULL,0);
 
@@ -64,12 +64,12 @@ ButtonBox::~ButtonBox()
 {
 }
 
-int ButtonBox::RBDown(int x,int y,unsigned int state,int count)
+int ButtonBox::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	return 0;
 }
 
-int ButtonBox::RBUp(int x,int y,unsigned int state)
+int ButtonBox::RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	return 0;
 }

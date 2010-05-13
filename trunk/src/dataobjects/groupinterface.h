@@ -36,7 +36,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual int UseThis(anObject *newdata,unsigned int);
 	virtual int draws(const char *atype);
 
-	virtual int LBDown(int x, int y,unsigned int state, int count);
+	virtual int LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse);
 	//virtual int DrawData(anObject *ndata,anObject *a1,anObject *a2,int);
 	//virtual int AddToSelection(ObjectContext *oc);
 	//virtual int FreeSelection();

@@ -11,12 +11,12 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
 #include <lax/multilineedit.h>
-#include <lax/mesbar.h>
+#include <lax/messagebar.h>
 //#include <lax/textbutton.h>
 #include <lax/menubutton.h>
 #include <lax/filedialog.h>
@@ -55,10 +55,10 @@ using namespace Laxkit;
 
 /*! Increments the count of newtext.
  */
-PlainTextWindow::PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+PlainTextWindow::PlainTextWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder,
 		PlainText *newtext)
-	: RowFrame(parnt,ntitle,ANXWIN_REMEMBER|ROWFRAME_ROWS|nstyle, xx,yy,ww,hh,brder, NULL,None,NULL)
+	: RowFrame(parnt,nname,ntitle,ANXWIN_REMEMBER|ROWFRAME_ROWS|nstyle, xx,yy,ww,hh,brder, NULL,None,NULL)
 {
 	textobj=newtext;
 	if (textobj) textobj->inc_count();
@@ -70,40 +70,6 @@ PlainTextWindow::PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,uns
 PlainTextWindow::~PlainTextWindow()
 {
 	if (textobj) textobj->dec_count();
-}
-
-int PlainTextWindow::DataEvent(Laxkit::EventData *data,const char *mes)
-{
-	if (!strcmp(mes,"openPopup")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s || !s->str) return 1;
-
-		 //remove old text object, and install new one
-		PlainText *newobj=new PlainText();
-		if (newobj->LoadFromFile(s->str)==0) {
-			newobj->texttype=TEXT_Note;
-			UseThis(newobj);
-			laidout->project->textobjects.push(newobj);
-		} // else failed to load, do not replace text object
-		newobj->dec_count(); //remove excess count
-
-		delete data;
-		return 0;
-
-	} else if (!strcmp(mes,"saveAsPopup")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s || !s->str) return 1;
-	
-		makestr(textobj->filename,s->str);
-		textobj->SaveText();// ***if save error, should notify something
-
-		if (isblank(textobj->name)) uniqueName(textobj);
-
-		delete data;
-		return 0;
-
-	}
-	return 1;
 }
 
 //! Update window controls to reflect current state of textobj.
@@ -132,21 +98,48 @@ void PlainTextWindow::uniqueName(PlainText *obj)
 	}
 }
 
-int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
+int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
 	DBG cerr <<"plaintext message: "<<mes<<endl;
 
-	if (!strcmp(mes,"open")) {
-		FileDialog *fd=new FileDialog(NULL,"Open text file...",
+	if (!strcmp(mes,"openPopup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || !s->str) return 1;
+
+		 //remove old text object, and install new one
+		PlainText *newobj=new PlainText();
+		if (newobj->LoadFromFile(s->str)==0) {
+			newobj->texttype=TEXT_Note;
+			UseThis(newobj);
+			laidout->project->textobjects.push(newobj);
+		} // else failed to load, do not replace text object
+		newobj->dec_count(); //remove excess count
+
+		return 0;
+
+	} else if (!strcmp(mes,"saveAsPopup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || !s->str) return 1;
+	
+		makestr(textobj->filename,s->str);
+		textobj->SaveText();// ***if save error, should notify something
+
+		if (isblank(textobj->name)) uniqueName(textobj);
+
+		return 0;
+
+	} else if (!strcmp(mes,"open")) {
+		FileDialog *fd=new FileDialog(NULL,NULL,_("Open text file..."),
 					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
-					0,0,0,0,0, window,"openPopup",
+					0,0,0,0,0, object_id,"openPopup",
 					NULL);
 		fd->OkButton(_("Open as text"),NULL);
 		app->rundialog(fd);
 		return 0;
 
 	} else if (!strcmp(mes,"whichtext")) { 
-		int i=e->data.l[1];
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int i=s->info2;
 		if (i<0) {
 			if (i==TEXT_Select_Temp) {
 				 //now you can't really select this any more
@@ -160,7 +153,7 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 				if (textobj->texttype==TEXT_Temporary) textobj->texttype=TEXT_Note;
 				if (isblank(textobj->name)) {
 					uniqueName(textobj);
-					LineInput *inp=dynamic_cast<LineInput *>(findChildWindow("nameinput"));
+					LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
 					if (inp) {
 						const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
 						inp->SetText(str);
@@ -273,9 +266,9 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 		 //create the actual popup menu...
 		MenuSelector *popup;
-		popup=new MenuSelector(NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
+		popup=new MenuSelector(NULL,NULL,_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
 						0,0,0,0, 1, 
-						NULL,window,"whichtext", 
+						NULL,object_id,"whichtext", 
 						MENUSEL_ZERO_OR_ONE|MENUSEL_CURSSELECTS
 						 //| MENUSEL_SEND_STRINGS
 						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
@@ -302,7 +295,7 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	} else if (!strcmp(mes,"run")) { 
 		//if (!textobj) return 0;
 		const char *input=NULL;
-		MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindow("plain-text-edit"));
+		MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindowByName("plain-text-edit"));
 		if (edit) {
 			input=edit->GetCText();
 		}
@@ -313,9 +306,9 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 			DBG cerr << "script in: "<<input<<endl<< "script out" << output<<endl;
 			prependstr(output,":\n");
 			prependstr(output,_("Script output"));
-			MessageBox *mbox=new MessageBox(NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
-										NULL,None,NULL, output);
-			mbox->AddButton(TBUT_OK);
+			MessageBox *mbox=new MessageBox(NULL,NULL,_("Script output"),ANXWIN_CENTER|MB_LEFT, 0,0,0,0,0,
+										NULL,0,NULL, output);
+			mbox->AddButton(BUTTON_OK);
 			mbox->AddButton(_("Dammit!"),0);
 			app->rundialog(mbox);
 			delete[] output;
@@ -323,11 +316,12 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"nameinput")) { 
-		DBG cerr<<"plaintextwindow nameinput update "<<e->data.l[0]<<endl;
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		DBG cerr<<"plaintextwindow nameinput update "<<s->info1<<endl;
 		if (!textobj) return 0;
-		int i=e->data.l[0];
+		int i=s->info1;
 		if (i==1 || i==3) { //focus left or enter pressed for nameinput
-			LineInput *inp=dynamic_cast<LineInput *>(findChildWindow("nameinput"));
+			LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
 			if (!inp) return 0;
 			makestr(textobj->name,inp->GetCText());
 		}
@@ -337,9 +331,10 @@ int PlainTextWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 
 void PlainTextWindow::callSaveAs()
 {
-	app->rundialog(new FileDialog(NULL,"Save As...",
-				ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_SAVE_AS,
-				0,0,0,0,0, window,"saveAsPopup",
+	app->rundialog(new FileDialog(NULL,"Save As...",_("Save As..."),
+				ANXWIN_REMEMBER,
+				0,0,0,0,0, object_id,"saveAsPopup",
+				FILES_FILES_ONLY|FILES_SAVE_AS,
 				textobj->filename));
 }
 
@@ -354,7 +349,7 @@ void PlainTextWindow::callSaveAs()
 int PlainTextWindow::syncText(int filetoo)
 {
 	if (!textobj) return 1;
-	MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindow("plain-text-edit"));
+	MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindowByName("plain-text-edit"));
 	if (!edit) return 1;
 
 	textobj->SetText(edit->GetCText());
@@ -368,56 +363,56 @@ int PlainTextWindow::init()
 	anXWindow *last=NULL;
 
 	MultiLineEdit *editbox;
-	last=editbox=new MultiLineEdit(this,"plain-text-edit",0, 0,0,0,0,1, NULL,window,"ptedit",
+	last=editbox=new MultiLineEdit(this,"plain-text-edit",NULL,0, 0,0,0,0,1, NULL,object_id,"ptedit",
 							  0,textobj?textobj->thetext:NULL);
-	AddWin(editbox, 100,95,2000,50, 100,95,20000,50);
+	AddWin(editbox, 100,95,2000,50,0, 100,95,20000,50,0);
 	AddNull();
 
 
 	//-----------textobject name edit
 	LineInput *nameinput=NULL;
 	const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
-	last=nameinput=new LineInput(this,"nameinput",
+	last=nameinput=new LineInput(this,"nameinput",NULL,
 						0, 0,0,0,0,0, 
-						last,window,"nameinput",
+						last,object_id,"nameinput",
 						_("Name:"),str,0,
 						0,0,2,2,2,2);
 	nameinput->GetLineEdit()->win_style|=LINEEDIT_SEND_FOCUS_OFF;
-	AddWin(nameinput,200,100,1000,50, nameinput->win_h,0,0,50);
+	AddWin(nameinput,200,100,1000,50,0, nameinput->win_h,0,0,50,0);
 
 
 	 //------select text object
-	IconButton *ibut=NULL;
-	last=ibut=new IconButton(this,"whichtext",0, 0,0,0,0,1, NULL,window,"whichtextbutton",-1,
-			(const char *)NULL,"v");
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	Button *ibut=NULL;
+	last=ibut=new Button(this,"whichtext",NULL,0, 0,0,0,0,1, NULL,object_id,"whichtextbutton",-1,
+						 "v");
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 
 	 //--------open
-	last=ibut=new IconButton(this,"open",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"open",-1,
-			laidout->icons.GetIcon("Open"),_("Open"));
+	last=ibut=new Button(this,"open",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"open",-1,
+						 _("Open"),NULL,laidout->icons.GetIcon("Open"));
 	ibut->tooltip(_("Open a file from disk"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	 //--------save
-	last=ibut=new IconButton(this,"save",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"save",-1,
-			laidout->icons.GetIcon("Save"),_("Save"));
+	last=ibut=new Button(this,"save",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"save",-1,
+						 _("Save"),NULL,laidout->icons.GetIcon("Save"));
 	ibut->tooltip(_("Save the current text"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	 //--------apply
-	last=ibut=new IconButton(this,"apply",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"apply",-1,
-			laidout->icons.GetIcon("ApplyText"),_("Apply"));
+	last=ibut=new Button(this,"apply",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"apply",-1,
+						 _("Apply"),NULL,laidout->icons.GetIcon("ApplyText"));
 	ibut->tooltip(_("Syncronize the text object with the text in the editor\n"
 				    "This should update any objects that depend on the current\n"
 					"text object, if any"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	 //--------run
-	last=ibut=new IconButton(this,"Run",IBUT_ICON_ONLY, 0,0,0,0,1, last,window,"run",-1,
-			laidout->icons.GetIcon("Run"),_("Run"));
+	last=ibut=new Button(this,"Run",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"run",-1,
+						 _("Run"),NULL,laidout->icons.GetIcon("Run"));
 	ibut->tooltip(_("Run this text as a script"));
-	AddWin(ibut,ibut->win_w,0,50,50, ibut->win_h,0,50,50);
+	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
 
 	Sync(1);
 	return 0;
@@ -438,11 +433,11 @@ int PlainTextWindow::UseThis(PlainText *txt)
 	//***update edit from textobj
 	cout <<"*******need to update the controls in PlainTextWindow!!"<<endl;
 
-	MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindow("plain-text-edit"));
+	MultiLineEdit *edit=dynamic_cast<MultiLineEdit *>(findChildWindowByName("plain-text-edit"));
 	if (edit) {
 		edit->SetText(textobj->GetText());
 	}
-	LineInput *inp=dynamic_cast<LineInput *>(findChildWindow("nameinput"));
+	LineInput *inp=dynamic_cast<LineInput *>(findChildWindowByName("nameinput"));
 	if (inp) {
 		const char *str=(textobj?(textobj->texttype==TEXT_Temporary?_("(temporary)"):textobj->name):NULL);
 		inp->SetText(str);

@@ -17,11 +17,12 @@
 
 #include <cups/cups.h>
 
-#include <lax/strsliderpopup.h>
+#include <lax/sliderpopup.h>
 #include <lax/simpleprint.h>
-#include <lax/mesbar.h>
+#include <lax/messagebar.h>
 #include <lax/filedialog.h>
 #include <lax/fileutils.h>
+#include <lax/laxutils.h>
 
 #include "../laidout.h"
 #include "../language.h"
@@ -70,7 +71,7 @@ ConfigEventData::~ConfigEventData()
 
 /*! Controls are added here, rather than waiting for init().
  */
-ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
+ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char *nsend,
 						   Document *doc,
 						   Group *limbo,
 						   PaperGroup *group,
@@ -80,7 +81,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
 						   int pmin, //!< The minimum of the range
 						   int pmax, //!< The maximum of the range
 						   int pcur) //!< The current element of the range
-	: RowFrame(NULL,_("Export"),
+	: RowFrame(NULL,NULL,_("Export"),
 			   (nstyle&ANXWIN_MASK)|ROWFRAME_ROWS|ROWFRAME_VCENTER|ANXWIN_REMEMBER,
 			   0,0,0,0,0,
 			   NULL,nowner,nsend, 5)
@@ -119,7 +120,7 @@ int ExportDialog::preinit()
 	anXWindow::preinit();
 	if (win_w==0) win_w=500;
 	if (win_h==0) {
-		int textheight=app->defaultfont->max_bounds.ascent+app->defaultfont->max_bounds.descent;
+		int textheight=app->defaultlaxfont->textheight();
 		win_h=15*(textheight+7)+20;
 	}
 	return 0;
@@ -181,7 +182,7 @@ int ExportDialog::init()
 	findMinMax();
 
 	anXWindow *last=NULL;
-	TextButton *tbut=NULL;
+	Button *tbut=NULL;
 	int c;
 	int linpheight=app->defaultlaxfont->textheight();
 
@@ -199,57 +200,48 @@ int ExportDialog::init()
 		appendstr(config->tofiles,filter->DefaultExtension());
 	}
 	
-	//	CheckBox(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
-	//						int xx,int yy,int ww,int hh,int brder,
-	//						anXWindow *prev,Window nowner,const char *nsendmes,
-	//						const char *nname=NULL,int npadx=0,int npady=0);
-	//	LineEdit(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
-	//			int xx,int yy,int ww,int hh,int brder,
-	//			anXWindow *prev,Window nowner=None,const char *nsend=NULL,
-	//			const char *newtext=NULL,unsigned int ntstyle=0);
-	
 	
 
 	//------------------------Destination----------
 	 
 	 //--------- format
 	int c2=-1;
-	StrSliderPopup *format;
-	last=format=new StrSliderPopup(this, "format",0, 0,0,0,0,1, last, window, "format");
+	SliderPopup *format;
+	last=format=new SliderPopup(this, "format",NULL,0, 0,0,0,0,1, last, object_id, "format",NULL,0);
 	for (c=0; c<laidout->exportfilters.n; c++) {
 		format->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
 		if (filter==laidout->exportfilters.e[c]) c2=c;
 	}
 	if (c2>=0) format->Select(c2);
-	format->WrapWidth();
+	format->WrapToExtent();
 	format->tooltip(_("The file format to export into"));
-	AddWin(format, format->win_w,0,50,50, format->win_h,0,0,50);
+	AddWin(format, format->win_w,0,50,50,0, format->win_h,0,0,50,0);
 	AddNull();
 
 	 //--------- to command
 	if (dialog_style&EXPORT_COMMAND) {
-		last=commandcheck=new CheckBox(this,"command-check",CHECK_CIRCLE|CHECK_LEFT, 
+		last=commandcheck=new CheckBox(this,"command-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 							 0,0,0,0,0, 
-							 last,window,"command-check",
+							 last,object_id,"command-check",
 							 _("By Command: "), 0,5);
 		commandcheck->State(LAX_ON);
 		commandcheck->tooltip(_("Run this command on a single exported file"));
 		AddWin(commandcheck);
 
-		last=command=new LineEdit(this,"command",LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
+		last=command=new LineEdit(this,"command",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
 							 0,0,100,20, 1,
-							 last,window,"command",
+							 last,object_id,"command",
 							 "lp",0);
 		command->padx=5;
 		command->tooltip(_("Run this command on a single exported file"));
-		AddWin(command, command->win_w,0,1000,50, command->win_h,0,0,50);
+		AddWin(command, command->win_w,0,1000,50,0, command->win_h,0,0,50,0);
 		AddNull();
 	}
 	
 	 //--------- to file
-	last=filecheck=new CheckBox(this,"tofile-check",CHECK_CIRCLE|CHECK_LEFT, 
+	last=filecheck=new CheckBox(this,"tofile-check",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
-	 					 last,window,"tofile-check",
+	 					 last,object_id,"tofile-check",
 						 _("To File: "), 0,5);
 	filecheck->State(LAX_ON);
 	filecheck->tooltip(_("Export to this file"));
@@ -258,26 +250,27 @@ int ExportDialog::init()
 //	 ***** have: [!] _filename_   <-- meaning file exists, tooltip to say what it means
 //		         [O]              <-- meaning ok to overwrite
 //				 [ ]              <-- meaning does not exist, ok to write to
-	last=fileedit=new LineEdit(this,"tofile",
+	last=fileedit=new LineEdit(this,"tofile",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
 						 0,0,100,20, 1,
-						 last,window,"tofile",
+						 last,object_id,"tofile",
 						 config->filename,0);
 	fileedit->padx=5;
 	fileedit->tooltip(_("Export to this file"));
-	AddWin(fileedit, fileedit->win_w,0,1000,50, fileedit->win_h,0,0,50);
-	last=tbut=new TextButton(this,"filesaveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-			last,window,"filesaveas",
-			"...",3,3);
+	AddWin(fileedit, fileedit->win_w,0,1000,50,0, fileedit->win_h,0,0,50,0);
+	last=tbut=new Button(this,"filesaveas",NULL,0,
+						0,0,0,0, 1, 
+						last,object_id,"filesaveas",
+						0,"...",NULL,NULL,3,3);
 	tbut->tooltip(_("Browse for a new location"));
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
 	AddNull();
 	
 	 //--------- to files
 //	 ***** have: [!] _filename_   <-- meaning file exists, tooltip to say what files in range will be overwritten
-	last=filescheck=new CheckBox(this,"tofiles",CHECK_CIRCLE|CHECK_LEFT, 
+	last=filescheck=new CheckBox(this,"tofiles",NULL,CHECK_CIRCLE|CHECK_LEFT, 
 						 0,0,0,0,0, 
-	 					 last,window,"tofiles-check",
+	 					 last,object_id,"tofiles-check",
 						 _("To Files: "), 0,5);
 	filescheck->State(LAX_OFF);
 	filescheck->tooltip(_("Export to these files. A '#' is replaced with\n"
@@ -285,35 +278,35 @@ int ExportDialog::init()
 						  "will get replaced with \"003\"."));
 	AddWin(filescheck);
 
-	last=filesedit=new LineEdit(this,"tofiles",
+	last=filesedit=new LineEdit(this,"tofiles",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
 						 0,0,100,20, 1,
-						 last,window,"tofiles",
+						 last,object_id,"tofiles",
 						 config->tofiles,0);
 	filesedit->padx=5;
 	filesedit->tooltip(_("Export to these files. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
-	AddWin(filesedit, filesedit->win_w,0,1000,50, filesedit->win_h,0,0,50);
+	AddWin(filesedit, filesedit->win_w,0,1000,50,0, filesedit->win_h,0,0,50,0);
 	 // a "..." to pop file dialog:
-	last=tbut=new TextButton(this,"filessaveas",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-			last,window,"filessaveas",
-			"...",3,3);
+	last=tbut=new Button(this,"filessaveas",NULL,0, 0,0,0,0, 1, 
+						last,object_id,"filessaveas",
+						0,"...",NULL,NULL,3,3);
 	tbut->tooltip(_("Browse for a new location"));
-	AddWin(tbut, tbut->win_w,0,50,50, linpheight,0,0,50);
+	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
 	AddNull();
 	
 
 	 //--- add a vertical spacer
-	AddWin(NULL, 0,0,9999,50, 12,0,0,50);
+	AddWin(NULL, 0,0,9999,50,0, 12,0,0,50,0);
 	AddNull();
 
 
 	 //------------------------What kind of layout----------
 	if (config->doc) {
 		//****doc->imposition->Layouts()
-		StrSliderPopup *layouts;
-		last=layouts=new StrSliderPopup(this, "layouts",0, 0,0,0,0,1, last, window, "layout");
+		SliderPopup *layouts;
+		last=layouts=new SliderPopup(this, "layouts",NULL,0, 0,0,0,0,1, last, object_id, "layout",NULL,0);
 	//	for (c=0; c<config->doc->imposition->NumLayouts(); c++) {
 	//		layouts->AddItem(config->doc->imposition->LayoutName(c),c);
 	//		if (filter==laidout->exportfilters.e[c]) c2=c;
@@ -322,9 +315,9 @@ int ExportDialog::init()
 		layouts->AddItem(config->doc->imposition->LayoutName(PAGELAYOUT),  PAGELAYOUT);
 		layouts->AddItem(config->doc->imposition->LayoutName(PAPERLAYOUT), PAPERLAYOUT);
 		layouts->Select(config->layout);
-		layouts->WrapWidth();
+		layouts->WrapToExtent();
 		layouts->tooltip(_("The type of spreads to export"));
-		AddWin(layouts, layouts->win_w,0,50,50, layouts->win_h,0,0,50);
+		AddWin(layouts, layouts->win_w,0,50,50,0, layouts->win_h,0,0,50,0);
 		AddNull();
 	}
 
@@ -334,64 +327,64 @@ int ExportDialog::init()
 	 //-------------[ ] All
 	 //             [ ] From _____ to ______  <-- need to know their ranges!! and use labels for pages
 
-	last=printall=new CheckBox(this,"ps-printall",CHECK_CIRCLE|CHECK_LEFT,
+	last=printall=new CheckBox(this,"ps-printall",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
-						 last,window,"ps-printall",
+						 last,object_id,"ps-printall",
 						 _("Export All"), 0,5);
 	printall->State(LAX_ON);
-	//AddWin(printall, win_w,0,2000,0, printall->win_h,0,0,50);
-	AddWin(printall, win_w,0,2000,0, 20,0,0,50);
+	//AddWin(printall, win_w,0,2000,0, printall->win_h,0,0,50,0);
+	AddWin(printall, win_w,0,2000,0,0, 20,0,0,50,0);
 	AddNull();
 
-	last=printcurrent=new CheckBox(this,"ps-printcurrent",CHECK_CIRCLE|CHECK_LEFT,
+	last=printcurrent=new CheckBox(this,"ps-printcurrent",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
-						 last,window,"ps-printcurrent",
+						 last,object_id,"ps-printcurrent",
 						 _("Export Current"), 0,5);
 	printcurrent->State(LAX_OFF);
-	AddWin(printcurrent, win_w,0,2000,0, 20,0,0,50);
+	AddWin(printcurrent, win_w,0,2000,0,0, 20,0,0,50,0);
 	AddNull();
 
-	last=printrange=new CheckBox(this,"ps-printrange",CHECK_CIRCLE|CHECK_LEFT,
+	last=printrange=new CheckBox(this,"ps-printrange",NULL,CHECK_CIRCLE|CHECK_LEFT,
 						 0,0,0,0,0, 
-						 last,window,"ps-printrange",
+						 last,object_id,"ps-printrange",
 						 _("Export From:"), 0,5);
 	printrange->State(LAX_OFF);
 	AddWin(printrange);
 
 	char blah[15];
 	sprintf(blah,"%d",config->start);
-	last=printstart=new LineEdit(this,"start",
+	last=printstart=new LineEdit(this,"start",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
 						 0,0,50,20, 1,
-						 last,window,"start",
+						 last,object_id,"start",
 						 blah,0);
 	printstart->padx=5;
 	printstart->tooltip(_("The starting index"));
-	AddWin(printstart, printstart->win_w,0,1000,50, printstart->win_h,0,0,50);
+	AddWin(printstart, printstart->win_w,0,1000,50,0, printstart->win_h,0,0,50,0);
 		
-	AddWin(new MessageBar(this,"end",0, 0,0,0,0,0, _("To:")));
+	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("To:")));
 	sprintf(blah,"%d",config->end);
-	last=printend=new LineEdit(this,"end",LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
+	last=printend=new LineEdit(this,"end",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
 						 0,0,50,20, 1,
-						 last,window,"end",
+						 last,object_id,"end",
 						 blah,0);
 	printend->padx=5;
 	printend->tooltip(_("The ending index"));
-	AddWin(printend, printend->win_w,0,1000,50, printend->win_h,0,0,50);
+	AddWin(printend, printend->win_w,0,1000,50,0, printend->win_h,0,0,50,0);
 	AddNull();
-	AddWin(NULL, 0,0,9999,50, 12,0,0,50);
+	AddWin(NULL, 0,0,9999,50,0, 12,0,0,50,0);
 	AddNull();
 
-	AddWin(NULL, 0,0,1000,50, 0,0,0,50);
-	last=tbut=new TextButton(this,"export",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-			last,window,"export",
-			_("Export"),3,3);
-	AddWin(tbut, tbut->win_w,0,50,50, tbut->win_h,0,0,50);
-	last=tbut=new TextButton(this,"cancel",ANXWIN_CLICK_FOCUS, 0,0,0,0, 1, 
-			last,window,"cancel",
-			_("Cancel"),3,3);
-	AddWin(tbut, tbut->win_w,0,50,50, tbut->win_h,0,0,50);
-	AddWin(NULL, 0,0,1000,50, 0,0,0,50);
+	AddWin(NULL, 0,0,1000,50,0, 0,0,0,50,0);
+	last=tbut=new Button(this,"export",NULL,0, 0,0,0,0, 1, 
+						last,object_id,"export",
+						0,_("Export"),NULL,NULL,3,3);
+	AddWin(tbut, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0);
+	last=tbut=new Button(this,"cancel",NULL,0, 0,0,0,0, 1, 
+						last,object_id,"cancel",
+						0,_("Cancel"),NULL,NULL,3,3);
+	AddWin(tbut, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0);
+	AddWin(NULL, 0,0,1000,50,0, 0,0,0,50,0);
 	last->CloseControlLoop();
 	
 	updateExt();
@@ -500,125 +493,155 @@ int ExportDialog::updateExt()
 /*! 
  * \todo ability to use page/layout names like iii, instead of index numbers
  */
-int ExportDialog::ClientEvent(XClientMessageEvent *e,const char *mes)
+int ExportDialog::Event(const EventData *ee,const char *mes)
 {
-	if (!strcmp(mes,"format")) {
-		filter=laidout->exportfilters.e[e->data.l[0]];
+	const SimpleMessage *e=dynamic_cast<const SimpleMessage *>(ee);
+
+	if (!strcmp(mes,"get new file")) {
+		if (!e) return 1;
+		fileedit->SetText(e->str);
+		return 0;
+
+	} else if (!strcmp(mes,"get new files")) {
+		if (!e) return 1;
+		filesedit->SetText(e->str);
+		return 0;
+
+	} else if (!strcmp(mes,"format")) {
+		filter=laidout->exportfilters.e[e->info1];
 		findMinMax();
 		configBounds();
 		updateExt();
 		overwriteCheck();
 		return 0;
+
 	} else if (!strcmp(mes,"layout")) {
-		config->layout=e->data.l[0];
+		config->layout=e->info1;
 		findMinMax();
 		configBounds();
 		return 0;
+
 	} else if (!strcmp(mes,"command-check")) {
 		changeTofile(3);
 		return 0;
+
 	} else if (!strcmp(mes,"tofile-check")) {
 		changeTofile(1);
 		return 0;
+
 	} else if (!strcmp(mes,"tofiles-check")) {
 		changeTofile(2);
 		return 0;
+
 	} else if (!strcmp(mes,"ps-printall")) {
 		changeRangeTarget(1);
 		start(0);
 		end(max);
 		configBounds();
 		return 0;
+
 	} else if (!strcmp(mes,"ps-printcurrent")) {
 		changeRangeTarget(2);
 		start(cur);
 		end(cur);
 		configBounds();
 		return 0;
+
 	} else if (!strcmp(mes,"ps-printrange")) {
 		changeRangeTarget(3);
 		return 0;
+
 	} else if (!strcmp(mes,"start")) {
-		DBG cerr <<"start data: "<<e->data.l[0]<<endl;
-		if (e->data.l[0]==2) {
+		DBG cerr <<"start data: "<<e->info1<<endl;
+		if (e->info1==2) {
 			changeRangeTarget(3);
 		} else {
 			configBounds();
 		}
 		return 0;
+
 	} else if (!strcmp(mes,"end")) {
-		DBG cerr <<"end data: "<<e->data.l[0]<<endl;
-		if (e->data.l[0]==2) {
+		DBG cerr <<"end data: "<<e->info1<<endl;
+		if (e->info1==2) {
 			 //focus on
 			changeRangeTarget(3);
 		} else {
 			configBounds();
 		}
 		return 0;
+
 	} else if (!strcmp(mes,"tofiles")) {
-		if (e->data.l[0]==1) {
+		if (e->info1==1) {
 			 //1 means enter was pressed
 			send();
 			return 0;
-		} else if (e->data.l[0]==2) {
+		} else if (e->info1==2) {
 			 //focus on
 			changeTofile(2);
 			return 0;
-		} else if (e->data.l[0]==3) {
+		} else if (e->info1==3) {
 			 //focus off
 			makestr(config->tofiles,filesedit->GetCText());
 			return 0;
-		} else if (e->data.l[0]==0) {
+		} else if (e->info1==0) {
 			 //text was modified
 			makestr(config->tofiles,filesedit->GetCText());
 			overwriteCheck();
 			return 0;
 		}
+
 	} else if (!strcmp(mes,"tofile")) {
-		if (e->data.l[0]==1) {
+		if (e->info1==1) {
 			 //1 means enter was pressed
 			send();
 			return 0;
-		} else if (e->data.l[0]==2) {
+		} else if (e->info1==2) {
 			 //focus on
 			changeTofile(1);
 			return 0;
-		} else if (e->data.l[0]==3) {
+		} else if (e->info1==3) {
 			 //focus off
 			makestr(config->filename,fileedit->GetCText());
 			return 0;
-		} else if (e->data.l[0]==0) {
+		} else if (e->info1==0) {
 			 //text was modified
 			makestr(config->filename,fileedit->GetCText());
 			overwriteCheck();
 			return 0;
 		}
+
 	} else if (!strcmp(mes,"command")) {
-		if (e->data.l[0]==1) { 
+		if (e->info1==1) { 
 			send();
 			return 0; 
-		} else if (e->data.l[0]==2) {
+		} else if (e->info1==2) {
 			 //focus on
 			changeTofile(3);
 			return 0;
 		}
 		return 0;
+
 	} else if (!strcmp(mes,"cancel")) {
 		app->destroywindow(this);
 		return 0;
+
 	} else if (!strcmp(mes,"export")) {
 		send();
 		return 0;
+
 	} else if (!strcmp(mes,"filesaveas")) {
-		FileDialog *fd=new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,
-									  0,0,0,0,0,window,"get new file",
+		FileDialog *fd=new FileDialog(NULL,"get new file",NULL,ANXWIN_REMEMBER,
+									  0,0,0,0,0,object_id,"get new file",
+									  FILES_OPEN_ONE,
 									  fileedit->GetCText());
 		fd->OkButton(_("Select"),NULL);
 		app->rundialog(fd);
 		return 0;
+
 	} else if (!strcmp(mes,"filessaveas")) {
-		app->rundialog(new FileDialog(NULL,"get new file",FILES_OPEN_ONE|ANXWIN_REMEMBER,
-									  0,0,0,0,0,window,"get new files",
+		app->rundialog(new FileDialog(NULL,"get new file",NULL,ANXWIN_REMEMBER,
+									  0,0,0,0,0,object_id,"get new files",
+									  FILES_OPEN_ONE,
 									  filesedit->GetCText()));
 		return 0;
 	}
@@ -631,7 +654,7 @@ void ExportDialog::overwriteCheck()
 	DBG cerr <<"-----overwrite check "<<endl;
 
 	int valid,err;
-	unsigned long color=app->rgbcolor(255,255,255);
+	unsigned long color=rgbcolor(255,255,255);
 
 	if (filecheck->State()==LAX_ON) {
 		 //else check file
@@ -639,23 +662,23 @@ void ExportDialog::overwriteCheck()
 		else valid=file_exists(fileedit->GetCText(),1,&err);
 		if (valid) {
 			if (valid!=S_IFREG) { // exists, but is not regular file
-				if (valid!=1) color=app->rgbcolor(255,100,100);
+				if (valid!=1) color=rgbcolor(255,100,100);
 				fileedit->tooltip(_("Cannot overwrite this kind of file!"));
-				findChildWindow("export")->Grayed(1);
+				findChildWindowByName("export")->Grayed(1);
 			} else { // was existing regular file
-				color=app->rgbcolor(255,255,0);
+				color=rgbcolor(255,255,0);
 				fileedit->tooltip(_("WARNING: This file will be overwritten on export!"));
-				findChildWindow("export")->Grayed(0);
+				findChildWindowByName("export")->Grayed(0);
 			}
 		} else {
 			fileedit->tooltip(_("Export to this file"));
-			findChildWindow("export")->Grayed(0);
+			findChildWindowByName("export")->Grayed(0);
 		}
 		fileedit->Valid(!valid,color);
 	} else if (filescheck->State()==LAX_ON) {
 		if (isblank(filesedit->GetCText())) {
 			filesedit->tooltip(_("Cannot write to nothing!"));
-			findChildWindow("export")->Grayed(1);
+			findChildWindowByName("export")->Grayed(1);
 			filesedit->Valid(0,color);
 			return;
 		}
@@ -677,40 +700,22 @@ void ExportDialog::overwriteCheck()
 			}
 		}
 		if (e) {
-			color=app->rgbcolor(255,100,100);
+			color=rgbcolor(255,100,100);
 			filesedit->tooltip(_("Some files cannot be overwritten!"));
-			findChildWindow("export")->Grayed(1);
+			findChildWindowByName("export")->Grayed(1);
 		} else if (w) {
-			color=app->rgbcolor(255,255,0);
+			color=rgbcolor(255,255,0);
 			filesedit->tooltip(_("Warning: Some files will be overwritten!"));
-			findChildWindow("export")->Grayed(0);
+			findChildWindowByName("export")->Grayed(0);
 		} else {
 			 //note: this must be same tip as in init().
 			filesedit->tooltip(_("Export to these files. A '#' is replaced with\n"
 					  "the spread index. A \"###\" for an index like 3\n"
 					  "will get replaced with \"003\"."));
-			findChildWindow("export")->Grayed(0);
+			findChildWindowByName("export")->Grayed(0);
 		}
 		filesedit->Valid(!valid,color);
 	}
-}
-
-int ExportDialog::DataEvent(EventData *data,const char *mes)
-{
-	if (!strcmp(mes,"get new file")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		fileedit->SetText(s->str);
-		delete data;
-		return 0;
-	} else if (!strcmp(mes,"get new files")) {
-		StrEventData *s=dynamic_cast<StrEventData *>(data);
-		if (!s) return 1;
-		filesedit->SetText(s->str);
-		delete data;
-		return 0;
-	}
-	return 1;
 }
 
 
@@ -758,7 +763,7 @@ void ExportDialog::changeRangeTarget(int t)
  */
 int ExportDialog::send()
 {
-	if (findChildWindow("export")->Grayed()) return 0;
+	if (findChildWindowByName("export")->Grayed()) return 0;
 
 	config->filter=filter;
 	if (commandcheck && commandcheck->State()==LAX_ON) {
@@ -802,7 +807,7 @@ int ExportDialog::send()
 
 
 	ConfigEventData *data=new ConfigEventData(config);
-	app->SendMessage(data,owner,sendthis,window);
+	app->SendMessage(data,win_owner,win_sendthis,object_id);
 	app->destroywindow(this);
 	return 1;
 }
@@ -810,7 +815,7 @@ int ExportDialog::send()
 //! Character input.
 /*! ESC  cancel exporting
  */
-int ExportDialog::CharInput(unsigned int ch, unsigned int state)
+int ExportDialog::CharInput(unsigned int ch, unsigned int state,const LaxKeyboard *d)
 {
 	if (ch==LAX_Esc) {
 		app->destroywindow(this);

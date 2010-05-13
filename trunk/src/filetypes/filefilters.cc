@@ -342,13 +342,13 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 			} else if (doc && doc->imposition && v->type()==VALUE_String) {
 				str=dynamic_cast<StringValue*>(v)->str;
 				int c=0;
-				for (c=0; c<doc->imposition->NumLayouts(); c++) {
+				for (c=0; c<doc->imposition->NumLayoutTypes(); c++) {
 					if (!strcmp(str,doc->imposition->LayoutName(c))) {
 						config->layout=c;
 						break;
 					}
 				}
-				if (c==doc->imposition->NumLayouts()) throw _("Invalid layout name!");
+				if (c==doc->imposition->NumLayoutTypes()) throw _("Invalid layout name!");
 			} else { sprintf(error, _("Invalid format for %s!"),"layout"); throw error; }
 		}
 
@@ -787,13 +787,13 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 			} else if (doc && doc->imposition && v->type()==VALUE_String) {
 				str=dynamic_cast<StringValue*>(v)->str;
 				int c=0;
-				for (c=0; c<doc->imposition->NumLayouts(); c++) {
+				for (c=0; c<doc->imposition->NumLayoutTypes(); c++) {
 					if (!strcmp(str,doc->imposition->LayoutName(c))) {
 						config->layout=c;
 						break;
 					}
 				}
-				if (c==doc->imposition->NumLayouts()) throw _("Invalid layout name!");
+				if (c==doc->imposition->NumLayoutTypes()) throw _("Invalid layout name!");
 			} else { sprintf(error, _("Invalid format for %s!"),"layout"); throw error; }
 		}
 
@@ -965,15 +965,15 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject
 			cout <<"Need to implement export with alternate imposition.."<<endl;
 		} else if (!strcmp(name,"layout")) {
 			if (!doc || isblank(value)) { layout=0; continue; }
-			for (c2=0; c2<doc->imposition->NumLayouts(); c2++) {
+			for (c2=0; c2<doc->imposition->NumLayoutTypes(); c2++) {
 				if (!strcmp(value,doc->imposition->LayoutName(c2))) break;
 			}
-			if (c2==doc->imposition->NumLayouts()) {
-				for (c2=0; c2<doc->imposition->NumLayouts(); c2++) {
+			if (c2==doc->imposition->NumLayoutTypes()) {
+				for (c2=0; c2<doc->imposition->NumLayoutTypes(); c2++) {
 					if (!strncasecmp(value,doc->imposition->LayoutName(c2),strlen(value))) break;
 				}
 			}
-			if (c2==doc->imposition->NumLayouts()) c2=0;
+			if (c2==doc->imposition->NumLayoutTypes()) c2=0;
 			layout=c2;
 		} else if (!strcmp(name,"start")) {
 			IntAttribute(value,&start);

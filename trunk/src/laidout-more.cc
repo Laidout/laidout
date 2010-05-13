@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -61,6 +61,19 @@ using namespace LaxFiles;
  * </pre>
  */
 
+TreeChangeEvent::TreeChangeEvent(const TreeChangeEvent &te)
+{
+	start=te.start;
+	end=te.end;
+	changer=te.changer;
+	obj.doc=te.obj.doc;
+	type=te.type;
+	subtype=te.subtype;
+	send_time=te.send_time;
+	makestr(send_message,te.send_message);
+	propagate=0;
+}
+
 
 //! Tell all ViewWindow, SpreadEditor, and other main windows that the doc has changed.
 /*! Sends a TreeChangeEvent to all SpreadEditor and ViewWindow panes in each top level HeadWindow.
@@ -75,8 +88,11 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 	ViewWindow *view;
 	SpreadEditor *se;
 	anXWindow *w;
-	TreeChangeEvent *edata,*te=new TreeChangeEvent;
-	te->send_message=XInternAtom(laidout->dpy,"docTreeChange",False);
+
+	TreeChangeEvent *edata;
+	TreeChangeEvent *te=new TreeChangeEvent;
+
+	te->send_message=newstr("docTreeChange");
 	te->changer=callfrom;
 	te->changetype=change;
 	te->start=s;
@@ -98,17 +114,18 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 
 			 //construct events for the panes
 			if (yes){
-				edata=new TreeChangeEvent();
-				*edata=*te;
-				edata->send_towindow=w->window;
-				app->SendMessage(edata);
+				edata=new TreeChangeEvent(*te);
+				edata->to=w->object_id;
+
+				app->SendMessage(edata,w->object_id,"docTreeChange");
+
 				DBG cerr <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
 				DBG 	w->win_title<< "("<<w->whattype()<<")"<<endl;
 				yes=0;
 			}
 		}
 	}
-	delete te;
+	delete te; //delete template object
 	DBG cerr <<"eo notifyDocTreeChanged"<<endl;
 	return;
 }
@@ -193,7 +210,7 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	}
 	fprintf(f,"\n");
 
-	HeadWindow h(NULL,"",0, 0,0,0,0,0);
+	HeadWindow h(NULL,"","",0, 0,0,0,0,0);
 	fprintf(f,"#Window arrangements can be dumped out. These can be project attributes or Document\n"
 			  "#attributes. If you are working on a project, not just a single Document,\n"
 			  "#then the window attributes in a Document file are ignored when the project is loaded,\n"

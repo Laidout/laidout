@@ -81,9 +81,9 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 	return 1;
 }
 
-int GroupInterface::LBDown(int x, int y,unsigned int state, int count)
+int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse)
 {
-	int c=ObjectInterface::LBDown(x,y,state,count);
+	int c=ObjectInterface::LBDown(x,y,state,count,mouse);
 	if (count==2 && selection.n==1 && strcmp(selection.e[0]->whattype(),"Group")) {
 		if (viewport) viewport->ChangeObject(selection.e[0],NULL);
 	}

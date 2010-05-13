@@ -20,8 +20,10 @@ class Document;
 #include "styles.h"
 #include "impositions/imposition.h"
 #include "laidoutdefs.h"
+#include "spreadview.h"
 
 
+class SpreadView;
 
 enum PageLabelType {
 	Numbers_Default,
@@ -77,9 +79,11 @@ class Document : public ObjectContainer, public Style
 	LaxFiles::Attribute metadata;
 	LaxFiles::Attribute iohints;
 
+	int curpage;
 	Laxkit::PtrStack<Page> pages;
 	Laxkit::PtrStack<PageRange> pageranges;
-	int curpage;
+	Laxkit::RefPtrStack<SpreadView> spreadviews;
+
 	clock_t modtime;
 
 	Document(const char *filename);

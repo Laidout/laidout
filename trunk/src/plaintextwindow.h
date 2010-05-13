@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -32,13 +32,12 @@ class PlainTextWindow : public Laxkit::RowFrame
 	int syncText(int filetoo);
 	void uniqueName(PlainText *obj);
  public:
- 	PlainTextWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ 	PlainTextWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder,
 		PlainText *newtext);
  	virtual const char *whattype() { return "PlainTextWindow"; }
 	virtual ~PlainTextWindow();
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int UseThis(PlainText *txt);
 	virtual int init();
 	virtual void updateControls();

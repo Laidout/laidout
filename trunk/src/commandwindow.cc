@@ -33,9 +33,9 @@ using namespace LaxFiles;
 
 
 //! Set pads to 6.
-CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+CommandWindow::CommandWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder)
-	: PromptEdit(parnt,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
+	: PromptEdit(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,None,NULL)
 {
 	textstyle|=TEXT_WORDWRAP;
 	padx=pady=6;

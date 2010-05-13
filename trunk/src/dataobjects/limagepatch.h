@@ -24,7 +24,7 @@ class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface
  public:
 	LImagePatchInterface(int nid,Laxkit::Displayer *ndp);
 	virtual anInterface *duplicate(anInterface *dup=NULL);
-	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 };
 
 

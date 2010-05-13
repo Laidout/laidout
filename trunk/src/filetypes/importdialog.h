@@ -35,17 +35,16 @@ class ImportFileDialog : public Laxkit::FileDialog
 	Laxkit::LineInput *importpagerange;
 	Laxkit::MessageBar *fileinfo;
 
-	ImportFileDialog(anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+	ImportFileDialog(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
-			Window nowner,const char *nsend,
+			unsigned long nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
 			Document *ndoc,int startpg,double defdpi);
 	virtual ~ImportFileDialog();
 	virtual const char *whattype() { return "ImportFileDialog"; }
 	virtual int init();
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int send(int id);
 	//virtual void SetFile(const char *f,const char *pfile);
 

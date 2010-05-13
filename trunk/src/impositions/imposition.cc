@@ -59,6 +59,9 @@ using namespace std;
  * It is typically a PathsData, but the actual form of it is up to the Imposition.
  * After applying outline->m(), coordinates are assumed to be in paper coordinates.
  */
+/*! \var int PageLocation::info
+ * \brief Used by SpreadEditor to keep track of pages that are temporarily away from main page list.
+ */
 
 
 //! Constructor, just copies over pointers.
@@ -67,13 +70,14 @@ using namespace std;
  */
 PageLocation::PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *poutline)
 {
+	info=0;
 	index=ni;
 	page=npage;
 	outline=poutline;
 	if (outline) poutline->inc_count();
 }
 
-//! Page, attributes not delete'd, see constructor for how outline is dealt with.
+//! Page not delete'd, see constructor for how outline is dealt with.
 PageLocation::~PageLocation()
 {
 	if (outline) outline->dec_count();
@@ -152,7 +156,9 @@ PageLocation::~PageLocation()
 Spread::Spread()
 {
 	papergroup=NULL;
-	mask=style=0;
+	mask=0;
+	spreadtype=0;
+	style=0;
 	path=marks=NULL;
 }
 
@@ -403,11 +409,27 @@ int Spread::PagestackIndex(int docpage)
  */
 /*! \fn int Imposition::NumSpreads()
  * \brief Return the the number of spreads the imposition thinks there are.
+ *
+ * Usually, this will be such that each spread contains a continuous range of document pages,
+ * that continues the index count from the previous spread. For instance, in booklets,
+ * the first spread would have document page 0, the next spread has doc pages 1 and 2, 
+ * the next has 3 and 4, and so on. This is very different from paper based spreads or other
+ * custom net spreads that may have any unordered selection of document pages.
+ */
+/*! \fn int Imposition::NumPageTypes()
+ * \brief Return the number of types of pages.
+ *
+ * For instance, booklets have 2 types. Horizontal booklets have Left and right,
+ * vertical have top and bottom.
+ */
+/*! \fn const char *Imposition::PageTypeName(int pagetype)
+ * \brief Return a name for the pagetype (as returned by PageType().
  */
 /*! \fn int Imposition::PageType(int page)
  * \brief Return the type of page this page index requires.
  *
- * This value makes sense only to the type of imposition. It is used to ensure that
+ * This value makes sense only to the type of imposition, but will be a number in
+ * the range [0..NumPageTypes()-1]. It is used to ensure that
  * pages have the proper PageStyle, like left page versus right page.
  *
  * page==-1 means return the number of different page types.
@@ -615,6 +637,7 @@ int Imposition::NumSpreads(int layout)
 	if (layout==PAPERLAYOUT) return NumPapers();
 	if (layout==PAGELAYOUT) return NumSpreads();
 	if (layout==SINGLELAYOUT) return numpages;
+	if (layout==LITTLESPREADLAYOUT) return NumSpreads();
 	return 0;
 }
 
@@ -652,30 +675,6 @@ int Imposition::NumPages(int npages)
 	return numpages;
 }
 
-//**********remove this? unnecessary?
-////! Return outline of paper in paper coords. Origin is paper origin.
-///*! The default is to return a PathsData rectangle with width=paperstyle->w(),
-// * and height=paperstyle->h(), and with the origin at the typical postscript
-// * position of the lower left corner.
-// *
-// * This is a no frills outline, used primarily to check where the mouse
-// * is clicked down on.
-// * If local==1 then return a new local SomeData. Otherwise return a
-// * counted object which might exist elsewhere already.
-// * In this case, the item will have a count referring to
-// * returend pointer. So if it is created here, and immediately
-// * checked in, then it is removed from existence.
-// */
-//SomeData *Imposition::GetPaper(int papernum,int local)
-//{
-//	PathsData *newpath=new PathsData();//count==1
-//	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
-//	newpath->maxx=paper->media.maxx;
-//	newpath->maxy=paper->media.maxy;
-//	//nothing special is done when local==0
-//	return newpath;
-//}
-
 //! Return the which'th spread of type layout.
 /*! \todo Ultimately, this will replace the other PaperLayout(), PageLayout(), etc.
  *    it is much more adaptible for nets right now, just relays based on 
@@ -696,18 +695,18 @@ Spread *Imposition::Layout(int layout,int which)
  * You can find the names for the layouts by calling LayoutName(int) and passing
  * numbers in the range [0..NumLayouts()-1].
  */
-int Imposition::NumLayouts()
+int Imposition::NumLayoutTypes()
 {
 	return 3;
 }
 
-//! Default is to return GetPageOutile(pagenum,local).
+//! Default is to return NULL.
 /*! When a page has its own margins, outside of which objects usually shouldn't go,
  * this function is used to get that shape. The origin of the returned path 
  * is the origin of the page, not necessarily a corner of the margin outline.
  */
 SomeData *Imposition::GetPageMarginOutline(int pagenum,int local)
-{ return GetPageOutline(pagenum,local); }
+{ return NULL; }
 
 //! Return the name of layout, or NULL if layout not recognized.
 /*! Default is to return "Papers" for 2, "Pages" for 1, or "Singles" for 0.
@@ -743,7 +742,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 
 	 // Get the page outline. It will be a counted object with 1 count for path pointer.
 	spread->path=GetPageOutline(whichpage,0);
-	transform_identity(spread->path->m()); // clear any transform
+	spread->path->m_clear(); // clear any transform
 	
 	 // define maximum/minimum points 
 	double x,y,w,h;

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -504,7 +504,7 @@ SimpleNet *SimpleNet::duplicate()
 			net->lines[c]=lines[c];
 		}
 	}
-	transform_copy(net->m(),m());
+	net->m(m());
 	net->FindBBox();
 	return net;
 }
@@ -649,7 +649,8 @@ void SimpleNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 		if (!strcmp(name,"name")) {
 			makestr(newname,value);
 		} else if (!strcmp(name,"matrix")) {
-			DoubleListAttribute(value,m(),6);
+			double mm[6];
+			if (DoubleListAttribute(value,mm,6)==6) m(mm);
 		} else if (!strcmp(name,"tabs")) {
 			if (!value) tabs=1;
 			else {
@@ -866,7 +867,7 @@ void SimpleNet::Center()
 //! Apply a transform to the points, changing them.
 /*! If m==NULL, then use this->m().
  */
-void SimpleNet::ApplyTransform(double *mm)//mm=NULL
+void SimpleNet::ApplyTransform(const double *mm)//mm=NULL
 {
 	if (mm==NULL) mm=m();
 	maxx=maxy=-1;
@@ -875,7 +876,7 @@ void SimpleNet::ApplyTransform(double *mm)//mm=NULL
 		points[c]=transform_point(mm,points[c]);
 		addtobounds(points[c]);
 	}
-	transform_identity(m());
+	m_clear();
 }
 
 //! Make *this fit inside bounding box of data (inset by margin).

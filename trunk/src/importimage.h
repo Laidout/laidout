@@ -23,7 +23,10 @@
 class ImagePlopInfo
 {
  public:
-	LaxInterfaces::ImageData *image;
+	LaxInterfaces::ImageData *image; //if image==NULL, then is settings object
+	int scaleflag; //0=scale by dpi, 1=scale to fit always, 2=scale down to fit if necessary
+	double alignx; //0=full left, 100=full right
+	double aligny; //0=full top, 100=full bottom
 	int error;
 	int dpi;
 	int page;

@@ -16,9 +16,9 @@
 
 
 
-#include <X11/Xutil.h>
 #include <lax/lists.cc>
 #include <lax/laximages-imlib.h>
+
 #include "page.h"
 #include "drawdata.h"
 #include "stylemanager.h"
@@ -620,85 +620,85 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
  */
 ImageData *Page::Thumbnail()
 {
-	if (!pagestyle) return NULL;
-	if (thumbmodtime>modtime) return thumbnail;
-
-	DoubleBBox bbox;
-	int c;
-	for (c=0; c<layers.n(); c++) {
-		layers.e(c)->FindBBox();
-		bbox.addtobounds(layers.e(c)->m(),layers.e(c));
-	}
-	
-	double w=bbox.maxx-bbox.minx,
-		   h=bbox.maxy-bbox.miny;
-	h=h*100./w;
-	w=100.;
-	DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
-	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
-	if (!thumbnail) thumbnail=new ImageData(); 
-	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
-	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
-	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
-	
-	Pixmap pix=XCreatePixmap(anXApp::app->dpy,DefaultRootWindow(anXApp::app->dpy),
-								(int)w,(int)h,XDefaultDepth(anXApp::app->dpy,0));
-	Drawable d=imlib_context_get_drawable();
-	imlib_context_set_drawable(pix);
-	Displayer dp;
-	
-	 // setup dp to have proper scaling...
-	//dp.NewTransform(1.,0.,0.,-1.,0.,0.);
-	dp.NewTransform(1.,0.,0.,1.,0.,0.);
-	dp.StartDrawing(pix);
-	dp.SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
-	dp.Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
-		
-	dp.NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
-	dp.NewFG(0,0,0,255);
-	//dp.m()[4]=0;
-	//dp.m()[5]=2*h;
-	//dp.Newmag(w/(bbox.maxx-bbox.minx));
-	dp.ClearWindow();
-
-	//DBG flatpoint p;
-	//DBG p=dp.realtoscreen(1,1);
-	//DBG dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(1,-1);
-	//DBG dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(-1,1);
-	//DBG dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(-1,-1);
-	//DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
-	//DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
-
-	for (int c=0; c<layers.n(); c++) {
-		//dp.PushAndNewTransform(layers.e[c]->m());
-		DrawData(&dp,layers.e(c));
-		//dp.PopAxes();
-	}
-	dp.EndDrawing();
-	Imlib_Image tnail=imlib_create_image_from_drawable(0,0,0,(int)w,(int)h,1);
-	 
-//	//***test output to thumb...
-//	imlib_context_set_image(tnail);
-//	imlib_blend_image_onto_image(thumbnail->imlibimage,0,0,0,100,100,0,0,100,100);
-		
-	thumbnail->SetImage(new LaxImlibImage(NULL,tnail)); //*** must implement using diff size image than is in maxx,y
-	//thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
-	//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
-	XFreePixmap(anXApp::app->dpy,pix);
-	
-	imlib_context_set_drawable(d);
-	DBG cerr <<"Thumbnail dump_out:"<<endl;
-	DBG thumbnail->dump_out(stderr,2,0,NULL);
-	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
-	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
-	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
-	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
-
-	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
-	thumbmodtime=times(NULL);
+//	if (!pagestyle) return NULL;
+//	if (thumbmodtime>modtime) return thumbnail;
+//
+//	DoubleBBox bbox;
+//	int c;
+//	for (c=0; c<layers.n(); c++) {
+//		layers.e(c)->FindBBox();
+//		bbox.addtobounds(layers.e(c)->m(),layers.e(c));
+//	}
+//	
+//	double w=bbox.maxx-bbox.minx,
+//		   h=bbox.maxy-bbox.miny;
+//	h=h*100./w;
+//	w=100.;
+//	DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
+//	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
+//	if (!thumbnail) thumbnail=new ImageData(); 
+//	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
+//	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
+//	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
+//	
+//	Pixmap pix=XCreatePixmap(anXApp::app->dpy,DefaultRootWindow(anXApp::app->dpy),
+//								(int)w,(int)h,XDefaultDepth(anXApp::app->dpy,0));
+//	Drawable d=imlib_context_get_drawable();
+//	imlib_context_set_drawable(pix);
+//	Displayer dp;
+//	
+//	 // setup dp to have proper scaling...
+//	dp.NewTransform(1.,0.,0.,-1.,0.,0.);
+//	//dp.NewTransform(1.,0.,0.,1.,0.,0.);
+//	dp.StartDrawing(pix);
+//	dp.SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+//	dp.Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+//		
+//	dp.NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
+//	dp.NewFG(0,0,0,255);
+//	//dp.m()[4]=0;
+//	//dp.m()[5]=2*h;
+//	//dp.Newmag(w/(bbox.maxx-bbox.minx));
+//	dp.ClearWindow();
+//
+//	//DBG flatpoint p;
+//	//DBG p=dp.realtoscreen(1,1);
+//	//DBG dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
+//	//DBG p=dp.realtoscreen(1,-1);
+//	//DBG dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
+//	//DBG p=dp.realtoscreen(-1,1);
+//	//DBG dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
+//	//DBG p=dp.realtoscreen(-1,-1);
+//	//DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
+//	//DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
+//
+//	for (int c=0; c<layers.n(); c++) {
+//		//dp.PushAndNewTransform(layers.e[c]->m());
+//		DrawData(&dp,layers.e(c));
+//		//dp.PopAxes();
+//	}
+//	dp.EndDrawing();
+//	Imlib_Image tnail=imlib_create_image_from_drawable(0,0,0,(int)w,(int)h,1);
+//	 
+////	//***test output to thumb...
+////	imlib_context_set_image(tnail);
+////	imlib_blend_image_onto_image(thumbnail->imlibimage,0,0,0,100,100,0,0,100,100);
+//		
+//	thumbnail->SetImage(new LaxImlibImage(NULL,tnail)); //*** must implement using diff size image than is in maxx,y
+//	//thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
+//	//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
+//	XFreePixmap(anXApp::app->dpy,pix);
+//	
+//	imlib_context_set_drawable(d);
+//	DBG cerr <<"Thumbnail dump_out:"<<endl;
+//	DBG thumbnail->dump_out(stderr,2,0,NULL);
+//	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
+//	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
+//	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
+//	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
+//
+//	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
+//	thumbmodtime=times(NULL);
 	return thumbnail;
 }
 

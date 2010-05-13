@@ -1275,18 +1275,18 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				char *fullfile=full_path_for_file(pfile->value,NULL);
 				image->LoadImage(fullfile); //this will set maxx, maxy to dimensions of the image
 				delete[] fullfile;
-				transform_copy(image->m(),matrix);
-				image->m()[0]*=w/image->maxx/72.;
-				image->m()[1]*=w/image->maxx/72.;
-				image->m()[2]*=h/image->maxy/72.;
-				image->m()[3]*=h/image->maxy/72.;
+				image->m(matrix);
+				image->m(0,image->m(0)*w/image->maxx/72.);
+				image->m(1,image->m(1)*w/image->maxx/72.);
+				image->m(2,image->m(2)*h/image->maxy/72.);
+				image->m(3,image->m(3)*h/image->maxy/72.);
 				image->Flip(0);
 				if (in->scaletopage!=0) {
 					 //apply extra page transform to fit document page
 					double mt[6];
 					//transform_mult(mt,pagebounds[pagenum].m(),image->m());
 					transform_mult(mt,image->m(),pagebounds[pagenum].m());
-					transform_copy(image->m(),mt);
+					image->m(mt);
 				}
 				group->push(image);
 				image->dec_count();
@@ -1300,7 +1300,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				else if (ptype==6) makestr(mdata->name,"Polygon");
 				else if (ptype==7) makestr(mdata->name,"Polyline");
 				else if (ptype==8) makestr(mdata->name,"Text on path");
-				transform_copy(mdata->m(),matrix);
+				mdata->m(matrix);
 				mdata->maxx=w/72;
 				mdata->maxy=h/72;
 				mdata->attributes=object->duplicate();
@@ -1309,7 +1309,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 					double mt[6];
 					//transform_mult(mt,pagebounds[pagenum].m(),mdata->m());
 					transform_mult(mt,mdata->m(),pagebounds[pagenum].m());
-					transform_copy(mdata->m(),mt);
+					mdata->m(mt);
 				}
 				group->push(mdata);
 				mdata->dec_count();

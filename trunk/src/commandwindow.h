@@ -26,7 +26,7 @@ class CommandWindow : public Laxkit::PromptEdit
 	LaidoutCalculator *calculator;
 	virtual char *process(const char *in);
  public:
- 	CommandWindow(Laxkit::anXWindow *parnt,const char *ntitle,unsigned long nstyle,
+ 	CommandWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
  	virtual const char *whattype() { return "CommandWindow"; }
 	virtual ~CommandWindow();

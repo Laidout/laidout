@@ -17,7 +17,7 @@
 
 #include "nets.h"
 #include <lax/interfaces/svgcoord.h>
-#include <lax/interfaces/bezutils.h>
+#include <lax/bezutils.h>
 #include <lax/strmanip.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
@@ -909,7 +909,7 @@ Net *Net::duplicate()
 		}
 	}
 
-	transform_copy(net->m(),m());
+	net->m(m());
 	net->FindBBox();
 	return net;
 }
@@ -1070,7 +1070,7 @@ void Net::FitToData(Laxkit::DoubleBBox *data,double margin,int setpaper)
 	fitto(NULL,&box,50,50);
 
 	if (setpaper) {
-		transform_identity(paper.m());
+		paper.m_clear();
 		paper.origin(flatpoint(data->minx,data->miny));
 		paper.minx=paper.maxx=0;
 		paper.maxx=data->maxx-data->minx;
@@ -1197,7 +1197,8 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 		} else if (!strcmp(name,"active")) {
 			active=BooleanAttribute(value);
 		} else if (!strcmp(name,"matrix")) {
-			DoubleListAttribute(value,m(),6);
+			double mm[6];
+			if (DoubleListAttribute(value,mm,6)==6) m(mm);
 		} else if (!strcmp(name,"tabs")) {
 			if (!value) tabs=1;
 			else {
@@ -1405,7 +1406,7 @@ int Net::SaveSvg(const char *file,char **error_ret)
 		bbox.minx=0;
 		bbox.maxy=maxy-miny;
 		bbox.miny=0;
-		transform_copy(bbox.m(),m()); //map same as the net
+		bbox.m(m()); //map same as the net
 		bbox.origin(flatpoint(minx,miny));      //...except for the origin
 	}
 

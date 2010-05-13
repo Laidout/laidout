@@ -114,7 +114,8 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 		nname=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 		if (!strcmp(nname,"matrix")) {
-			DoubleListAttribute(value,m(),6);
+			double mm[6];
+			if (DoubleListAttribute(value,mm,6)==6) m(mm);
 		} else if (!strcmp(nname,"importer")) {
 			makestr(importer,value);
 		} else if (!strcmp(nname,"name")) {

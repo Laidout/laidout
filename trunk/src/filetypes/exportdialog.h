@@ -62,7 +62,7 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual void findMinMax();
 	virtual int updateExt();
  public:
-	ExportDialog(unsigned long nstyle,Window nowner,const char *nsend,
+	ExportDialog(unsigned long nstyle,unsigned long nowner,const char *nsend,
 				 Document *doc, 
 				 Group *limbo,
 				 PaperGroup *group,
@@ -72,9 +72,8 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual const char *whattype() { return "ExportDialog"; }
 	virtual int preinit();
 	virtual int init();
-	virtual int CharInput(unsigned int ch, unsigned int state);
-	virtual int ClientEvent(XClientMessageEvent *e,const char *mes);
-	virtual int DataEvent(Laxkit::EventData *data,const char *mes);
+	virtual int CharInput(unsigned int ch, unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag);

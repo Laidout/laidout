@@ -35,6 +35,7 @@ class PageLocation
  public:
 	PageLocation(int ni,Page *npage,LaxInterfaces::SomeData *trans);
 	~PageLocation();
+	int info;
 	int index;
 	Page *page;
 	LaxInterfaces::SomeData *outline;
@@ -111,7 +112,7 @@ class Imposition : public Style
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	
 	virtual Spread *Layout(int layout,int which); 
-	virtual int NumLayouts();
+	virtual int NumLayoutTypes();
 	virtual const char *LayoutName(int layout); 
 	//----*** ^^ this will ultimately replace these vv
 	virtual Spread *SingleLayout(int whichpage); 
@@ -134,6 +135,8 @@ class Imposition : public Style
 	virtual int GetSpreadsNeeded(int npages) = 0;
 	virtual int *PrintingPapers(int frompage,int topage) = 0;
 	
+	virtual int NumPageTypes()=0;
+	virtual const char *PageTypeName(int pagetype)=0;
 	virtual int PageType(int page)=0;
 	virtual int SpreadType(int spread)=0;
 
