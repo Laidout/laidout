@@ -124,14 +124,18 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 				sprintf(str,"%s\n%s", mdata->importer?mdata->importer:"",
 									  mdata->name?mdata->name:"");
 				fp=dp->realtoscreen(flatpoint((mdata->maxx+mdata->minx)/2,(mdata->maxy+mdata->miny)/2));
+				dp->DrawScreen();
 				dp->textout((int)fp.x,(int)fp.y,str,-1);
+				dp->DrawReal();
 			}
 
 			 //draw question marks in random spots
 			for (int c=0; c<10; c++) {
 				fp=dp->realtoscreen(flatpoint(mdata->minx+(mdata->maxx+mdata->minx)*((double)random()/RAND_MAX),
 											  mdata->miny+(mdata->maxy+mdata->miny)*((double)random()/RAND_MAX)));
+				dp->DrawScreen();
 				dp->textout((int)fp.x,(int)fp.y,"?",1);
+				dp->DrawReal();
 			}
 
 		 	 //draw outline if any
@@ -145,7 +149,9 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		} else {
 			flatpoint fp;
 			fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
+			dp->DrawScreen();
 			dp->textout((int)fp.x,(int)fp.y,_("unknown"),-1);
+			dp->DrawReal();
 		}
 
 
@@ -156,11 +162,12 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 				  ur=dp->realtoscreen(flatpoint(data->maxx,data->miny)), 
 				  ll=dp->realtoscreen(flatpoint(data->minx,data->maxy)), 
 				  lr=dp->realtoscreen(flatpoint(data->maxx,data->maxy));
+		dp->DrawScreen();
 		dp->drawline(ul,ur);
 		dp->drawline(ur,lr);
 		dp->drawline(lr,ll);
 		dp->drawline(ll,ul);
-
+		dp->DrawReal();
 	}
 
 	dp->PopAxes();
