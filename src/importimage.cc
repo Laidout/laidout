@@ -511,7 +511,8 @@ int dumpInImages(Document *doc, int startpage,
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
 			imaged=new ImageData;//creates with one count
-			imaged->SetImage(image);
+			imaged->SetImage(image);//incs count
+			image->dec_count();
 
 		} else {
 			 // check to see if it is an image list or EPS based on first chars of file.

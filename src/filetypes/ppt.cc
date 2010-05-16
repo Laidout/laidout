@@ -620,6 +620,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 				image=new ImageData;
 				if (n) image->SetDescription(n->value);
 				image->SetImage(img);
+				img->dec_count();
 				if (m) image->m(M);
 				group->push(image);
 				image->dec_count();

@@ -32,7 +32,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	int maxmarkertype;
 
 	SpreadView *view;
-	char drawthumbnails;
+	int drawthumbnails;
 
 	int mx,my,firsttime;
 	int reversebuttons;
@@ -87,7 +87,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual void Reset();
 	virtual void ApplyChanges();
 	virtual void SwapPages(int previouspos, int newpos);
-	virtual void SlidePages(int previouspos, int newpos);
+	virtual void SlidePages(int previouspos, int newpos,int thread);
 	virtual int ChangeMarks(int newmark);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
