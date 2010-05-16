@@ -2081,10 +2081,11 @@ void LaidoutViewport::Refresh()
 	}
 	DBG cerr <<"======= Refreshing LaidoutViewport..";
 	
-	 // draw the scratchboard, just blank out screen..
-	clear_window(this);//***does this work with backbuffer?? use only window, not backbuffer?
-
 	dp->StartDrawing(this);
+
+	 // draw the scratchboard, just blank out screen..
+	dp->ClearWindow();
+
 	if (drawflags&DRAW_AXES) dp->drawaxes();
 	int c,c2;
 
@@ -2112,7 +2113,7 @@ void LaidoutViewport::Refresh()
 	
 	DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
-		XSetFunction(app->dpy,dp->GetGC(),GXcopy);
+		dp->BlendMode(GXcopy);
 		
 		 //draw the spread's papergroup
 		PaperGroup *pgrp=NULL;
@@ -2203,8 +2204,10 @@ void LaidoutViewport::Refresh()
 			 // this be a togglable feature.
 			p=dp->realtoscreen(flatpoint(0,0));
 			if (page==curpage) dp->NewFG(0,0,0);
+			dp->DrawScreen();
 			if (page->label) dp->textout((int)p.x,(int)p.y,page->label,-1);
 			  else dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
+			dp->DrawReal();
 
 			 // Draw page margin path, if any
 			SomeData *marginoutline=doc->imposition->GetPageMarginOutline(pagei,1);
