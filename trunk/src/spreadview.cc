@@ -102,7 +102,7 @@ LittleSpread::~LittleSpread()
 
 //! Return if the point is in the littlespread.
 /*! pin==1 means return if point is within the spread's path.
- * pin==2 means return the index listed in the spread->pagestack element
+ * pin==2 means return the pagestack index of the spread->pagestack element
  * whose outline contains pp, plus 1. That plus 1 enables 0 to
  * still be used as meaning "not in".
  */
@@ -117,7 +117,7 @@ int LittleSpread::pointin(flatpoint pp,int pin)
 		if (pin==1 || c==0) return c;
 		for (c=0; c<spread->pagestack.n; c++) {
 			if (spread->pagestack.e[c]->outline->pointin(pp,1)) 
-				return spread->pagestack.e[c]->index+1;
+				return c+1;
 		}
 	}
 	return 0;
@@ -547,7 +547,7 @@ int SpreadView::Update(Document *doc)
 		}
 		Spread *s;
 		LittleSpread *ls;
-		for (int c=0; c<doc->imposition->NumSpreads(SPREAD_LITTLESPREAD); c++) {
+		for (int c=0; c<doc->imposition->NumSpreads(LITTLESPREADLAYOUT); c++) {
 			s=doc->imposition->GetLittleSpread(c);
 			ls=new LittleSpread(s,(spreads.n?spreads.e[spreads.n-1]:NULL)); //takes pointer, not dups or checkout
 			ls->FindBBox();
@@ -854,8 +854,8 @@ int SpreadView::SwapPages(int previouspos, int newpos)
 	int page2=map(newpos);
 	if (page1<0 || page2<0) return 3;
 
-	s1=SpreadOfPage(previouspos,&thread1);
-	s2=SpreadOfPage(newpos,     &thread2);
+	s1=SpreadOfPage(page1,&thread1);
+	s2=SpreadOfPage(page2,&thread2);
 	if (!s1 || !s2) return 1;
 
 	ps1=s1->spread->PagestackIndex(page1);

@@ -1249,6 +1249,7 @@ static void pdfImagePatch(FILE *f,
 	ImageData img;
 	LaxImage *limg=new LaxImlibImage(NULL,image);
 	img.SetImage(limg);
+	limg->dec_count();
 
 	 // set image transform
 	double mm[6];

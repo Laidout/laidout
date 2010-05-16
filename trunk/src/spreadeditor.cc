@@ -359,12 +359,13 @@ int SpreadInterface::Refresh()
 			 // draw thumbnails
 			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
 			thumb=NULL;
+
 			if (pg<0) {
 				 //no page index means this place is an empty page, for a page in a thread
 				::DrawData(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,&efs);
+
 			} else if (drawthumbnails) {
 				if (pg>=0 && pg<doc->pages.n) {
-					pg=view->temppagemap[pg];
 					if (pg>=0 && pg<doc->pages.n) thumb=doc->pages.e[pg]->Thumbnail();
 				}
 				if (thumb) {
@@ -411,15 +412,19 @@ int SpreadInterface::Refresh()
 				dp->PushAndNewTransform(outline->m());
 
 				int centerlabels=view->centerlabels;
-				if (centerlabels==0)
+				if (centerlabels==LAX_CENTER)
 					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
-				else if (centerlabels==1) p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));//bottom
-				else if (centerlabels==2) p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));//left
-				else if (centerlabels==3) p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));//top
-				else  p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));//right
+				else if (centerlabels==LAX_BOTTOM)
+					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));//bottom
+				else if (centerlabels==LAX_LEFT)
+					p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));//left
+				else if (centerlabels==LAX_TOP)
+					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));//top
+				else //LAX_RIGHT
+					p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));//right
 				x=(int)p.x; // figure out where bottom tip of bbox is
 				y=(int)p.y;
-				drawLabel(x,y,doc->pages.e[view->temppagemap[pg]], pg==view->temppagemap[pg]);
+				drawLabel(x,y,doc->pages.e[pg], pg==view->temppagemap[pg]);
 
 				dp->PopAxes();
 			}
@@ -622,7 +627,7 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxk
 	if (buttondown.any()) return 1;
 	buttondown.down(d->id,LEFTBUTTON, x,y,state);
 
-	int psi,page=-1,thread;
+	int psi=-1,page=-1,thread=-1;
 	LittleSpread *spread=findSpread(x,y,&psi,&thread);
 	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
 
@@ -643,6 +648,7 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxk
 		curpages.flush();
 		curpages.push(page);
 		curspreads.push(spread,0);
+		curpage=page;
 	}
 
 	int shape=0;
@@ -659,6 +665,7 @@ void SpreadInterface::clearSelection()
 	curspread=NULL;
 	curpages.flush();
 	curspreads.flush();
+	dragpage=-1;
 	needtodraw=1;
 }
 
@@ -717,11 +724,14 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 		//*** transfer all the curpages to a thread
 	} else {
 		if ((state&LAX_STATE_MASK)==0 || curpages.n>1)
-			SlidePages(view->reversemap(dragpage),view->reversemap(page));
+			//SlidePages(dragpage,page,0);
+			SlidePages(view->reversemap(dragpage),view->reversemap(page),0);
 		else if ((state&LAX_STATE_MASK)==ShiftMask)
+			//SwapPages(dragpage,page);
 			SwapPages(view->reversemap(dragpage),view->reversemap(page));
 	}
 
+	//if (dragged) clearSelection();
 	dragpage=-1;
 	
 	return 0;
@@ -730,13 +740,15 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 /*! *** this function is temporary! the full SpreadInterface will be much more robust.
  * this is provided here just to get things off the ground....
  *
- * Move page at previouspos to newpos, sliding the intervening pages toward the
- * newly open slot..
+ * Move page at previouspos to newpos (indices for the given thread),
+ * sliding the intervening pages toward the newly open slot..
  *
  * \todo *** later, this will optionally push the replaced page into limbo
  */
-void SpreadInterface::SlidePages(int previouspos, int newpos)
+void SpreadInterface::SlidePages(int previouspos, int newpos, int thread)
 {
+	if (!view) return;
+
 	if (previouspos==newpos) return;
 	if (previouspos<newpos) { 
 		 // 01234 -> 12304 (move 0 to 3 position)
@@ -750,6 +762,7 @@ void SpreadInterface::SlidePages(int previouspos, int newpos)
 //! Swap the pages corresponding to previouspos and newpos.
 /*! previouspos and newpos are both indices corresponding to document
  * pages via (doc page index)=view->map(previouspos) and view->map(newpos).
+ * temp:*** they are indices into current thread...
  *
  * Changes are temporary here. Permanent
  * changes to the document are made in ApplyChanges()
@@ -795,6 +808,7 @@ void SpreadInterface::Reset()
 int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	if (!view || buttondown.any()) return 1;
+
 	int page=-1,psi,thread;
 	LittleSpread *spread=findSpread(x,y,&psi,&thread);
 	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
@@ -828,7 +842,8 @@ int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count,const Laxk
 //! Drops spreads.
 int SpreadInterface::rMBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	if (buttondown.isdown(d->id,MIDDLEBUTTON)) return 1;
+	if (!buttondown.isdown(d->id,MIDDLEBUTTON)) return 1;
+
 	buttondown.up(d->id,MIDDLEBUTTON);
 	return 0;
 }
@@ -837,9 +852,11 @@ int SpreadInterface::rMBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (!buttondown.any()) return 1;
-	if (!view || !curspreads.n) return 1;
+	if (!view) return 1;
 
-	if (buttondown.isdown(d->id,MIDDLEBUTTON)) {
+	buttondown.move(d->id,x,y);
+
+	if (buttondown.isdown(d->id,MIDDLEBUTTON) && curspreads.n) {
 		 //move around spreads
 		LittleSpread *s;
 		for (int c=0; c<curspreads.n; c++) {
@@ -868,9 +885,14 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 			LittleSpread *spread=findSpread(x,y,&psi,&thread);
 			if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
 			if (curpages.findindex(page)>=0) {
-				//const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+			} else if (!spread) {
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
 			} else {
-				//const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
+				if ((state&LAX_STATE_MASK)==0) 
+					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_To_E);
+				else 
+					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
 			}
 		}
 
@@ -945,7 +967,29 @@ int SpreadInterface::ChangeMarks(int newmark)
 int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	if (ch==LAX_Shift && dragpage>=0) {
-		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_To_E);
+		 //update mouse shape
+		int mid=buttondown.whichdown(0);
+		if (!mid) return 1;
+		if (!buttondown.isdown(mid,LEFTBUTTON)) return 1;
+
+		LaxMouse *mouse=app->devicemanager->findMouse(mid);
+		if (!mouse) return 1;
+		int x,y;
+		buttondown.getinfo(mid,LEFTBUTTON, NULL,NULL, NULL,NULL, &x,&y);
+
+		int page=-1,psi,thread;
+		LittleSpread *spread=findSpread(x,y,&psi,&thread);
+		if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+		if (curpages.findindex(page)>=0) {
+			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+		} else if (!spread) {
+			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
+		} else {
+			//if ((state&LAX_STATE_MASK)==0) 
+				const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_To_E);
+			//else 
+				//const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
+		}
 	}
 	return 1;
 }
@@ -1002,6 +1046,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 
 	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
 		drawthumbnails=!drawthumbnails;
+		DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
 		needtodraw=1;
 		return 0;
 
@@ -1168,7 +1213,7 @@ int SpreadEditor::init()
  */
 int SpreadEditor::Event(Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"SpreadEditor got message: "<<mes<<endl;
+	DBG cerr <<"SpreadEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"docTreeChange")) {
 		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
