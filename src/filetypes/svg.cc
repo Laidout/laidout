@@ -85,8 +85,6 @@ Style *newSvgImportConfig(StyleDef*)
 	
 /*! \class SvgOutputFilter
  * \brief Filter for exporting SVG 1.0.
- *
- * \todo implement PAGE and PAGESET elements of draft svg 1.2
  */
 
 
@@ -98,14 +96,12 @@ SvgOutputFilter::SvgOutputFilter()
 
 const char *SvgOutputFilter::Version()
 {
-	if (version<1.2) return "1.1"; 
-	return "1.2";
+	return "1.1"; 
 }
 
 const char *SvgOutputFilter::VersionName()
 {
-	if (version<1.2) return _("Svg 1.1"); 
-	return _("Svg 1.2");
+	return _("Svg 1.1"); 
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -681,7 +677,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	fprintf(f,"  </g>\n"); //from unit correction and paper
 
 //-------or----------adapt to multipagesvg with page and pagesets
-//	 // Write out spread....
+//	 // Write out spread....  *** SVG 1.2 has been abandoned!!
 //	if (version==1.2) {
 //		fprintf(f,"  <pageSet>\n");
 //		*********needs work
@@ -855,7 +851,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 
 
 		 //now svgdoc's subattributes should be a combination of 
-		 //defs, sodipodi:namedview, metadata,  and from svg 1.2: pageSet, masterPage
+		 //defs, sodipodi:namedview, metadata
 		 // PLUS any number of graphic elements, such as g, rect, image, text....
 
 		 //create the document if necessary
@@ -894,17 +890,18 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 				//***
 				continue;
 
-			} else if (!strcmp(name,"masterPage")) {
-				 //in Svg 1.2, masterPages are printed on any page that (somehow!) refers to them...
-				//***not sure how to use these!!
-				//contains g elements...
-				continue;
-
-			} else if (!strcmp(name,"pageSet")) {
-				 //in Svg 1.2, "pageSet"s contain "page" elements in "content:"
-				//***
-				continue;
-
+//****************svg 1.2 has been abandonded
+//			} else if (!strcmp(name,"masterPage")) {
+//				 //in Svg 1.2, masterPages are printed on any page that (somehow!) refers to them...
+//				//***not sure how to use these!!
+//				//contains g elements...
+//				continue;
+//
+//			} else if (!strcmp(name,"pageSet")) {
+//				 //in Svg 1.2, "pageSet"s contain "page" elements in "content:"
+//				//***
+//				continue;
+//
 			} 
 			
 			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],error_ret)) continue;

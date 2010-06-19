@@ -83,6 +83,7 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 
 int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse)
 {
+	DBG cerr <<"GroupInterface::LBDown..."<<endl;
 	int c=ObjectInterface::LBDown(x,y,state,count,mouse);
 	if (count==2 && selection.n==1 && strcmp(selection.e[0]->whattype(),"Group")) {
 		if (viewport) viewport->ChangeObject(selection.e[0],NULL);

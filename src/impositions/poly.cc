@@ -945,6 +945,8 @@ int Polyhedron::AddFace(const char *str)
  *  This function does not write that out. If a file is created with "#Polyp", then
  *  it can be recognized by dumpInFile() as an indented polyhedron file.
  *
+ * If what==-1, then output a pseudocode mockup of the file format.
+ *
  * <pre>
  *  name Cube
  *  vertices \
@@ -971,7 +973,7 @@ int Polyhedron::AddFace(const char *str)
  *    faces 2 3
  *    off
  *  plane 
- *    vertices 0 0 0
+ *    p 0 0 0
  *    x 1 0 0
  *    y 0 1 0
  *    z 0 0 1
@@ -983,7 +985,29 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context
 	if (!ff) return;
 
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	
+
+	if (what==-1) {
+		fprintf(ff,"%sname \"Some name\"  #whatever name you give the polyhedron\n",spc);
+		fprintf(ff,"%svertices \\  #a list of 3-d vertices of the polyhedron\n",spc);
+		fprintf(ff,"%s   0 0 0    #the 0th vertex\n",spc);
+		fprintf(ff,"%s   1 0 0    #the 1st vertex\n",spc);
+		fprintf(ff,"%s   0 1 0    #etc\n",spc);
+		fprintf(ff,"%s   0 0 1\n",spc);
+		fprintf(ff,"%sedge 0 1    #an edge connected those vertices. optional, generated automatically\n",spc);
+		fprintf(ff,"%sface 0 1 2  #a face, defined by connected vertices 0, 1, and 2\n",spc);
+		fprintf(ff,"%sset \"Some set name\"  #extra information for grouping faces\n",spc);
+		fprintf(ff,"%s  faces 0 1  #which faces are in the set (number is order they appear in file)\n",spc);
+		fprintf(ff,"%s  on        #or off. whether faces in this set should be displayed or not\n",spc);
+		fprintf(ff,"%s  color 255 0 0 #color of these faces\n",spc);
+		fprintf(ff,"%splane       #optionally define particular planes that things happen on\n",spc);
+		fprintf(ff,"%s            #planes might contain any number of faces\n",spc);
+		fprintf(ff,"%s  p 0 0 0   #a 3-d point that is in the plane\n",spc);
+		fprintf(ff,"%s  x 0 0 0   #the x direction in the plane\n",spc);
+		fprintf(ff,"%s  y 0 0 0   #the y direction in the plane\n",spc);
+		fprintf(ff,"%s  z 0 0 0   #the normal direction away from the plane\n",spc);
+		return;
+	}
+
 	if (name) fprintf(ff,"%sname %s\n",spc,name);
 	
 	int c;
