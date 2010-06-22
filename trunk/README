@@ -106,12 +106,20 @@ For the Laidout development version, you will need the Laxkit development
 version from the same date. Here is a fast and easy way to get Laidout up
 and running from svn:
 
+
 1. Grab Laidout svn:
 svn co http://laidout.svn.sourceforge.net/svnroot/laidout/trunk laidout-svn
 
+
 2. Grab Laxkit svn:
 Cd to laidout-svn and get the Laxkit svn:
+
+Note: temporarily, Laidout is using a branch of the Laxkit here:
+svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/branches/0.0.6.1-overhaul/ laxkit
+
+Normally, you would use the main line of the Laxkit:
 svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
+
 
 3. Compile the goods, by doing this:
 cd laxkit
@@ -121,6 +129,7 @@ cd ..
 ./configure --laxkit=`pwd`/laxkit/lax
 make depends
 make
+
 
 4. Steps 1-3 have (ideally) compiled everything, but have not made the icons. 
 See below for that. You can run Laidout (at src/laidout) without icons and also
