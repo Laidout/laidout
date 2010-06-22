@@ -53,7 +53,7 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
 	virtual void Clear(LaxInterfaces::SomeData *d);
-	virtual Laxkit::MenuInfo *ContextMenu(int x,int y);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
 
 	

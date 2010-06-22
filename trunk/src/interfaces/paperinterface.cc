@@ -125,7 +125,7 @@ PaperInterface::~PaperInterface()
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y)
+Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
 	if (papergroup && curboxes.n) {
