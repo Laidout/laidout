@@ -17,12 +17,21 @@
 #define LIMAGEPATCH_H
 
 #include <lax/interfaces/imagepatchinterface.h>
+#include <lax/interfaces/colorpatchinterface.h>
 
 
 class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface
 {
  public:
 	LImagePatchInterface(int nid,Laxkit::Displayer *ndp);
+	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
+};
+
+class LColorPatchInterface : public LaxInterfaces::ColorPatchInterface
+{
+ public:
+	LColorPatchInterface(int nid,Laxkit::Displayer *ndp);
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 };

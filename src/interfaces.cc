@@ -105,7 +105,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(ip,1);
 	
 	 //------Color Patch
-	existingpool->push(new ColorPatchInterface(id++,NULL),1);
+	existingpool->push(new LColorPatchInterface(id++,NULL),1);
 	
 	 //------Paths
 	existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
