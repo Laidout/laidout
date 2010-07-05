@@ -695,6 +695,13 @@
        y2="861.27655"
        gradientUnits="userSpaceOnUse"
        gradientTransform="translate(0.50681181,1.8959076)" />
+    <inkscape:perspective
+       id="perspective3577"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -703,20 +710,21 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.0962466"
-     inkscape:cx="78.645033"
-     inkscape:cy="138.45174"
+     inkscape:zoom="6.2013072"
+     inkscape:cx="216.21558"
+     inkscape:cy="717.0466"
      inkscape:document-units="px"
-     inkscape:current-layer="text3568"
+     inkscape:current-layer="layer1"
      inkscape:window-width="1278"
      inkscape:window-height="976"
      inkscape:window-x="1"
      inkscape:window-y="2"
-     showgrid="false"
+     showgrid="true"
      inkscape:grid-bbox="false"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:window-maximized="0">
+     inkscape:window-maximized="0"
+     inkscape:snap-global="false">
     <inkscape:grid
        id="GridFromPre046Settings"
        type="xygrid"
@@ -1115,16 +1123,27 @@
          style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999995;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
     <text
-       xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-       x="709.80707"
+       sodipodi:linespacing="100%"
+       id="text3565"
        y="516.36743"
+       x="709.80707"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="516.36743"
+         x="709.80707"
+         id="tspan3567"
+         sodipodi:role="line">Net</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="699.48663"
+       y="566.35687"
        id="text3811"
        sodipodi:linespacing="100%"><tspan
          sodipodi:role="line"
          id="tspan3813"
-         x="709.80707"
-         y="516.36743">Net</tspan></text>
+         x="699.48663"
+         y="566.35687">Folding</tspan></text>
     <g
        id="Net">
       <rect
@@ -4362,13 +4381,13 @@
          y="249.53665">RadialGradient</tspan></text>
     <path
        sodipodi:type="arc"
-       style="opacity:1;fill:url(#radialGradient3809);fill-opacity:1.0;stroke:#000000;stroke-width:1.79999995;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       id="path3801"
+       style="fill:url(#radialGradient3809);fill-opacity:1;stroke:#000000;stroke-width:1.79999995;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="RadialGradient"
        sodipodi:cx="112.42998"
        sodipodi:cy="247.18434"
        sodipodi:rx="14.495688"
        sodipodi:ry="14.495688"
-       d="M 126.92567 247.18434 A 14.495688 14.495688 0 1 1  97.934289,247.18434 A 14.495688 14.495688 0 1 1  126.92567 247.18434 z"
+       d="m 126.92567,247.18434 a 14.495688,14.495688 0 1 1 -28.991381,0 14.495688,14.495688 0 1 1 28.991381,0 z"
        transform="translate(44.90128,0)" />
     <text
        xml:space="preserve"
@@ -4748,6 +4767,85 @@
          d="m 73.177243,846.12981 c -0.799999,2.75999 -1.520001,4.28 -2.6,5.6 -1.639998,1.95999 -3.920003,3 -6.76,3 l -0.84,0 c -1.959998,0 -2.48,-0.08 -2.96,-0.56 -0.519999,-0.48 -0.64,-0.92 -0.64,-2.24 l 0,-18.16 c 0,-2.52 0,-2.68 0.28,-3 0.36,-0.44 1.200002,-0.6 3.32,-0.6 l 0.88,0 0,-2.16 -15.84,0 0,2.16 0.6,0 c 2.079998,0 2.92,0.16 3.28,0.6 0.28,0.32 0.28,0.48 0.28,3 l 0,17.32 c 0,2.55999 0,2.72 -0.28,3.04 -0.36,0.44 -1.200002,0.6 -3.28,0.6 l -0.6,0 0,2.16 26.8,0 0.48,-10.76 -2.12,0"
          style="font-variant:normal;font-weight:bold;font-stretch:normal;line-height:100%;fill:url(#linearGradient4354);fill-opacity:1;stroke:#46467b;stroke-width:1.57144785;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Century Schoolbook L;-inkscape-font-specification:Century Schoolbook L Medium"
          id="path3574" />
+    </g>
+    <g
+       id="Folding">
+      <g
+         transform="matrix(1,0,0,0.77673993,582.41994,478.86104)"
+         style="fill:#000000;fill-opacity:1;stroke-width:1.79999995;stroke-miterlimit:4;stroke-dasharray:none;display:inline"
+         inkscape:export-ydpi="68.07"
+         inkscape:export-xdpi="68.07"
+         inkscape:export-filename="/home/tom/p/sourceforge/laidout/src/icons/test.png"
+         id="PageView-4">
+        <rect
+           ry="0.025055822"
+           rx="0.023736453"
+           y="-110.8786"
+           x="291.6424"
+           height="25.167776"
+           width="15.043483"
+           id="rect3600"
+           style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           transform="matrix(0.72432648,0.68945714,0,1,0,0)" />
+        <rect
+           ry="0.025055822"
+           rx="0.023736453"
+           y="-90.322128"
+           x="261.4761"
+           height="25.167776"
+           width="15.043483"
+           id="rect3602"
+           style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           transform="matrix(0.72432648,0.68945714,0,1,0,0)" />
+        <rect
+           transform="matrix(-0.72432648,0.68945714,0,1,0,0)"
+           style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           id="rect2382-4"
+           width="15.043483"
+           height="25.167776"
+           x="-291.54706"
+           y="291.12494"
+           rx="0.023736453"
+           ry="0.025055822" />
+      </g>
+      <g
+         id="g4376"
+         inkscape:export-filename="/home/tom/p/sourceforge/laidout/src/icons/test.png"
+         inkscape:export-xdpi="68.07"
+         inkscape:export-ydpi="68.07"
+         style="stroke-width:1.79999995;stroke-miterlimit:4;stroke-dasharray:none;display:inline"
+         transform="matrix(1,0,0,0.77673993,582.19189,477.03663)">
+        <rect
+           transform="matrix(0.72432648,0.68945714,0,1,0,0)"
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           id="rect4378"
+           width="15.043483"
+           height="25.167776"
+           x="291.6424"
+           y="-110.8786"
+           rx="0.023736453"
+           ry="0.025055822" />
+        <rect
+           transform="matrix(0.72432648,0.68945714,0,1,0,0)"
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           id="rect4380"
+           width="15.043483"
+           height="25.167776"
+           x="261.4761"
+           y="-90.322128"
+           rx="0.023736453"
+           ry="0.025055822" />
+        <rect
+           ry="0.025055822"
+           rx="0.023736453"
+           y="291.12494"
+           x="-291.54706"
+           height="25.167776"
+           width="15.043483"
+           id="rect4382"
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           transform="matrix(-0.72432648,0.68945714,0,1,0,0)" />
+      </g>
     </g>
   </g>
 </svg>
