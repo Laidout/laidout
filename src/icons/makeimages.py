@@ -1,6 +1,11 @@
 #!/usr/bin/python
 
 """
+./makeimages.py            <-- make all icons
+./makeimages.py 24         <-- make all icons this many pixels wide
+./makeimages.py IconId     <-- make only this icon
+./makeimages.py 24 IconId     <-- make only this icon, and that wide
+
 Using Inkscape, look in icons.svg and take all top items in base
 layers of the document that have ids starting with capital letters,
 and export the half inch area around them to TheId.png.
@@ -15,8 +20,18 @@ import commands, sys
 import xml.sax
 import types
 
-if (len(sys.argv)>1) : bitmapw=int(sys.argv[1])
-else : bitmapw=24
+makethisonly="" #maybe select only one icon to generate
+bitmapw=24
+
+if (len(sys.argv)>1) :
+    arg=sys.argv[1]
+    if (arg[0]>='A' and arg[0]<='Z') : makethisonly=arg
+    else :
+        bitmapw=int(sys.argv[1])
+        if (len(sys.argv)>2) :
+            arg=sys.argv[2]
+            if (arg[0]>='A' and arg[0]<='Z') : makethisonly=arg
+
 print "Make icons this many pixels wide: "+str(bitmapw)
 
 dpi=int(90.0*bitmapw/45)
@@ -51,6 +66,7 @@ class SAXtracer (xml.sax.handler.ContentHandler):
         id=attrs.get("id")
         if (type(id)==types.NoneType) : return
         if (id=="") : return
+        if (makethisonly!="" and id!=makethisonly) : return
 
          #there is an element that is of depth 3 whose id is capitalized
          #so we specifically have to skip that
