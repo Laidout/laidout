@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 
 """
 Using Inkscape, look in icons.svg and take all top items in base
@@ -13,10 +13,11 @@ laidout-ish vector specs fast enough to not be irritating maybe.
 import commands, sys
 #from xml.sax import saxexts
 import xml.sax
+import types
 
 if (len(sys.argv)>1) : bitmapw=int(sys.argv[1])
 else : bitmapw=24
-print "Width: "+str(bitmapw)
+print "Make icons this many pixels wide: "+str(bitmapw)
 
 dpi=int(90.0*bitmapw/45)
 
@@ -24,7 +25,7 @@ dpi=int(90.0*bitmapw/45)
 names=[]
 
 depth=0
-class SAXtracer:
+class SAXtracer (xml.sax.handler.ContentHandler):
 
     def __init__(self,objname):
         self.objname=objname
@@ -42,25 +43,35 @@ class SAXtracer:
         globals()["depth"]=globals()["depth"]+1
         #print "depth=",globals()["depth"]
   
+        #print "depth="+str(globals()["depth"])+", attr name:"+name
+        #print "attrs="+str(attrs)
         if (globals()["depth"]!=3) : return 
 
-        attr_str="\n"
-        for attr in attrs:
-            if (attr=="id" and attrs[attr][0]>='A' and attrs[attr][0]<='Z' and attrs[attr].find("GridFrom")<0) : 
-                names.append(attrs[attr])
-                print attrs[attr]
+
+        id=attrs.get("id")
+        if (type(id)==types.NoneType) : return
+        if (id=="") : return
+
+         #there is an element that is of depth 3 whose id is capitalized
+         #so we specifically have to skip that
+        if (id[0]>='A' and id[0]<='Z' and id.find("GridFrom")<0) : 
+            names.append(id)
+            print id
 
     def trace(self,*rest):
         return
 
 # --- Main prog
 
-pf=xml.sax.saxexts.ParserFactory()
-p=pf.make_parser("xml.sax.drivers.drv_xmlproc")
-p.setDocumentHandler(SAXtracer("doc_handler"))
-p.parse("icons.svg")
+print
+print "Detecting icons to make:"
+p=xml.sax.make_parser();
+curHandler=SAXtracer("my parser")
+p.setContentHandler(curHandler)
+p.parse(open("icons.svg"))
 
 print
+print "Making icons:"
 for name in names :
     print
     X=int(float(commands.getoutput("inkscape -I "+name+" -X icons.svg")))
