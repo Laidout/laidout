@@ -26,6 +26,17 @@
 #include "styles.h"
 
 
+//---------------------------- PageBleed ---------------------------------
+
+class PageBleed
+{
+ public:
+	int index;
+	int hasbleeds;
+	double matrix[6];
+	PageBleed(int i, const double *m);
+};
+
 //---------------------------- PageStyle ---------------------------------
 
 #define MARGINS_CLIP         (1<<0)
@@ -42,6 +53,7 @@ class PageStyle : public Style
 	double width,height; // these are to be considered the bounding box for non-rectangular pages
 
 	LaxInterfaces::PathsData *outline, *margin;
+	Laxkit::PtrStack<PageBleed> pagebleeds;
 
 	PageStyle(); 
 	virtual ~PageStyle();
