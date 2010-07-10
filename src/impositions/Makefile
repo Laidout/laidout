@@ -22,6 +22,8 @@ objs= \
 	nets.o \
 	netimposition.o \
 	simplenet.o \
+	signatures.o \
+	signatureinterface.o \
 	poly.o
 
 

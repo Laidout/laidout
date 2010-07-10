@@ -28,10 +28,9 @@
 class FoldedPageInfo
 {
  public:
-	int currentrow, currentcol;
-	int positive_y, positive_x;
-	int paperheight;
-	int foldedheight;
+	int currentrow, currentcol; //where this original is currently
+	int y_flipped, x_flipped; //how this one is flipped around in its current location
+	Laxkit::NumStack<int> pages; //what pages are actually there, r,c are pushed
 };
 
 class SignatureInterface : public LaxInterfaces::InterfaceWithDp
@@ -39,15 +38,24 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
  protected:
 	int showdecs;
 	Signature *signature;
+	PaperStyle *papersize;
 	Document *doc;
 
-	double patternwidth, patternheight;
+	int foldr1, foldc1, foldr2, foldc2;
+	int lbdown_row, lbdown_col;
+	int folddirection;
+	int foldunder;
+	int foldindex;
+	double foldprogress;
+
+	double totalwidth, totalheight;
 
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
 	void reallocateFoldinfo();
 
-	virtual int scan(int x,int y,int *row,int *col);
+	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey);
+	virtual int scanhandle(int x,int y);
  public:
 	SignatureInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
 	SignatureInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);

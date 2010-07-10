@@ -1013,6 +1013,9 @@ SomeData *DoubleSidedSingles::GetPageMarginOutline(int pagenum,int local)
 	return newpath;
 }
 
+//! Return 2, for Top/Left or Bottom/Right.
+/*! Which of top or left is determined by isvertical. Same for bottom/right.
+ */
 int DoubleSidedSingles::NumPageTypes()
 { return 2; }
 
@@ -1028,12 +1031,6 @@ const char *DoubleSidedSingles::PageTypeName(int pagetype)
 
 //! Return the page type for the given document page index.
 /*! 0 is either top or left. 1 is either bottom or right.
- * <pre>
- *  0=right
- *  1=left
- *  2=top
- *  3=bottom
- * </pre>
  */
 int DoubleSidedSingles::PageType(int page)
 { 
