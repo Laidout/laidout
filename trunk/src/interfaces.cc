@@ -29,6 +29,7 @@
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "interfaces/paperinterface.h"
+#include "impositions/signatureinterface.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -123,6 +124,9 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	 //------Paper
 	existingpool->push(new PaperInterface(id++,NULL),1);
 
+
+
+	existingpool->push(new SignatureInterface(id++,NULL),1);
 
 
 	//...

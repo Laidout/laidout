@@ -35,12 +35,14 @@ enum FoldDirectionType {
 	FOLD_Bottom_Under_To_Top,
 };
 
+const char *FoldDirectionName(FoldDirectionType dir, int translate=1);
+
 class Fold
 {
  public:
-	FoldDirectionType folddirection; //l over to r, l under to r, rol, rul, tob, tub, bot, but
+	FoldDirectionType direction; //l over to r, l under to r, rol, rul, tob, tub, bot, but
 	int whichfold; //index from the left or top side of completely unfolded paper of which fold to act on
-	Fold(FoldDirectionType f, int which) { folddirection=f; whichfold=which; }
+	Fold(FoldDirectionType f, int which) { direction=f; whichfold=which; }
 };
 
 
@@ -50,19 +52,20 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 {
  public:
 	PaperStyle *paperbox; //optional
+	double totalwidth, totalheight;
 
-	int sheetsperpattern;
+	int sheetspersignature;
 	double insetleft, insetright, insettop, insetbottom;
+
 	double tilegapx, tilegapy;
+	int tilex, tiley; //how many partitions per sheet of paper
+
+	double creep;
 	double rotation; //in practice, not really sure how this works, 
 					 //it is mentioned here and there that minor rotation is sometimes needed
 					 //for some printers
-	int tilex, tiley; //how many partitions per sheet of paper
-
 	char work_and_turn; //0 for no, 1 work and turn == rotate on axis || to major dim, 2 work and tumble=rot axis || minor dim
 	int pilesections; //if tiling, whether to repeat content, or continue content (ignored currently)
-
-	double creep;
 
 	int numhfolds, numvfolds;
 	Laxkit::PtrStack<Fold> folds;
@@ -71,7 +74,7 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	double trimleft, trimright, trimtop, trimbottom; // number<0 means don't trim that edge (for accordion styles)
 	double marginleft, marginright, margintop, marginbottom;
 
-	char updirection; //which direction is up 'l|r|t|b', ie 'l' means points toward the left
+	char up; //which direction is up 'l|r|t|b', ie 'l' means points toward the left
 	char binding;    //direction to place binding 'l|r|t|b'
 	char positivex;  //direction of the positive x axis: 'l|r|t|b'
 	char positivey;  //direction of the positive x axis: 'l|r|t|b'
@@ -81,7 +84,12 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
-	unsigned int Validity();
+	virtual int IsVertical();
+	virtual unsigned int Validity();
+	virtual double PatternHeight();
+	virtual double PatternWidth();
+	virtual double PageHeight();
+	virtual double PageWidth();
 };
 
 
@@ -89,6 +97,9 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 class SignatureImposition : public Imposition
 {
  protected:
+	int showwholecover; //whether you see the cover+backcover next to each other, or by themselves
+	int autoaddsheets;
+	PaperStyle *papersize;
 	Signature *signature;      //folding pattern
 	//PaperPartition *partition; //partition to insert folding pattern
  public:
@@ -96,6 +107,11 @@ class SignatureImposition : public Imposition
 	virtual ~SignatureImposition();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+
+	virtual int NumPageTypes();
+	virtual const char *PageTypeName(int pagetype);
+	virtual int PageType(int page);
+	virtual int SpreadType(int spread);
 };
 
 
