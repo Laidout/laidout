@@ -2861,11 +2861,11 @@ void PageFlipper::Refresh()
 			if (x<win_w/2) {
 				 // draw left arrow
 				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, 6);
+				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Left);
 			} else {
 				 // draw right arrow
 				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, 5);
+				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Right);
 			}
 		}
 	}
@@ -2953,6 +2953,7 @@ int ViewWindow::init()
 		str=tools.e[c]->whattype();
 		//if (!strcmp(str,"MysteryInterface")) continue; //*** for now, don't let users use this! (no icon)
 		if (!strcmp(str,"ObjectInterface")) obji=tools.e[c]->id;
+		else if (!strcmp(str,"SignatureInterface")) str="FoldingInterface";
 		nstr=newstr(str);
 		tstr=strstr(nstr,"Interface");
 		if (tstr) *tstr='\0';
