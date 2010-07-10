@@ -16,6 +16,7 @@
 
 
 
+#include <lax/transformmath.h>
 #include <lax/lists.cc>
 
 #include "page.h"
@@ -30,6 +31,18 @@ using namespace Laxkit;
 #include <iostream>
 using namespace std;
 #define DBG 
+
+//----------------------------------- PageBleed ----------------------------------------
+/*! \class PageBleed
+ * \brief Simple class to keep track of how pages bleed onto each other.
+ */
+
+PageBleed::PageBleed(int i, const double *m)
+{
+	index=i;
+	transform_copy(matrix,m);
+	hasbleeds=0;
+}
 
 //----------------------------------- PageStyles ----------------------------------------
 
@@ -46,7 +59,7 @@ using namespace std;
 /*! \var int PageStyle::pagetype
  * \brief A number given by an imposition saying what type of pagestyle this is.
  *
- * ***this variable has potential, but is barely used currently.
+ * \todo ***this variable has potential, but is barely used currently.
  */
 /*! \var double PageStyle::width
  * \brief The width of the bounding box of the page.
