@@ -559,38 +559,38 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 	unsigned long outlinecolor=0;
 	if (outlinestatus==0) outlinecolor=rgbcolor(255,0,0);
 
-	int t=-1;
+	int t=THING_None;
 	switch (page->labeltype) {
 		case 0: fcolor=rgbcolor(255,255,255);
-				t=0;
+				t=THING_Circle;
 				break;
 		case 1: fcolor=rgbcolor(175,175,175);
-				t=0;
+				t=THING_Circle;
 				break;
 		case 2: fcolor=rgbcolor(100,100,100);
 				color=~0;
-				t=0;
+				t=THING_Circle;
 				break;
 		case 3: fcolor=rgbcolor(0,0,0);
 				color=~0;
-				t=0;
+				t=THING_Circle;
 				break;
 		case 4: fcolor=rgbcolor(255,255,255);
-				t=1;
+				t=THING_Square;
 				break;
 		case 5: fcolor=rgbcolor(175,175,175);
-				t=1;
+				t=THING_Square;
 				break;
 		case 6: fcolor=rgbcolor(100,100,100);
 				color=~0;
-				t=1;
+				t=THING_Square;
 				break;
 		case 7: fcolor=rgbcolor(0,0,0);
 				color=~0;
-				t=1;
+				t=THING_Square;
 				break;
 		default: fcolor=rgbcolor(255,255,255); //default provided just in case
-				t=0;
+				t=THING_Circle;
 				break;
 	}
 	
