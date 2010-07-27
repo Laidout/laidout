@@ -114,10 +114,6 @@ svn co http://laidout.svn.sourceforge.net/svnroot/laidout/trunk laidout-svn
 2. Grab Laxkit svn:
 Cd to laidout-svn and get the Laxkit svn:
 
-Note: temporarily, Laidout is using a branch of the Laxkit here:
-svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/branches/0.0.6.1-overhaul/ laxkit
-
-Normally, you would use the main line of the Laxkit:
 svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
 
 
