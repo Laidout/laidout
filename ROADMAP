@@ -7,23 +7,13 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.091
 ------------
-       Do a poor man's version of a multi-contact touch screen interface with 2 mice  ... see Xinput2/MPX!
-       Net imposition interactive unwrapper and build net interface
+(done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
+       Images should maintain their aspect ratio by default when scaling
        Scribus import must support master pages, and make sure linked text mystery data behave properly on export
-       need partial Laidout import and export
        Generic fold and trim imposition
-       Be able to load imposition instances, a form of resource
-       Collect for out
-       Examine and improve ease of use of import images dialog, particularly for previewing
-       Externally rendered objects, similar to Scribus render frames
+(done) Be able to load imposition instances, a form of resource
        At bare minimum, path interface use should not cause a seg fault
-       Object and resource tags
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
-       Masking, clip paths and/or softmask
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
-       In image properties dialog, have the popup list of potential previews
 (done) Import images as flow/centered within page margins, not within page outline
        Import images with alignment per page type into the page margin region
        SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
@@ -32,19 +22,30 @@ VERSION 0.091
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
        SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
-       Gui for modifying Page Labels
-       double click on group should change selection area to group contents?
-       update french and spanish translations, if possible
-       Tools should remember their settings
-       Clean up project load/save internals and dialogs
-       When importing from an image list file, should be able to say if and when to auto-make previews
-       Units, especially Allow changing units in rulers: metric/standard, also physical/object
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.092
 -------------
+       Gui for modifying Page Labels
+       Net imposition interactive unwrapper and build net interface
+       need partial Laidout import and export
+       When importing from an image list file, should be able to say if and when to auto-make previews
+       Units, especially Allow changing units in rulers: metric/standard, also physical/object
+       In image properties dialog, have the popup list of potential previews
+       Examine and improve ease of use of import images dialog, particularly for previewing
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       Object and resource tags
+       Masking, clip paths and/or softmask
+       Externally rendered objects, similar to Scribus render frames
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
+       Clean up project load/save internals and dialogs
+       Collect for out
+       double click on group should change selection area to group contents?
+       update french and spanish translations, if possible
+       Tools should remember their settings
        DumpImages within Arrangements, sort of a template of positions (2-d guides)
        Clean up patch controls
        Fix multi-object selection move when crossing page boundaries
@@ -53,6 +54,7 @@ VERSION 0.092
 VERSION 0.1 
 -----------
        First and foremost, need copious testing by people who are not me.
+       Implement poor man's multi-contact interface for all appropriate interfaces
        undo/redo, with saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
        Full internationalization support in window controls for input and output, including left, right. pango?
        Basic infrastructure for most things (except text) should be in place.
