@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 #ifndef IMPOSITION_H
 #define IMPOSITION_H
@@ -142,12 +142,31 @@ class Imposition : public Style
 };
 
 
+//---------------------------------- ImpositionResource ----------------------------------
+
+class ImpositionResource
+{
+ public:
+	char *name; //imposition instance name, not class name
+	char *impositionfile;
+	char *description;
+	char *styledef;
+	LaxFiles::Attribute *config;
+	char configislocal;
+	ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
+					   LaxFiles::Attribute *conf,int local);
+	~ImpositionResource();
+	Imposition *Create();
+};
+
 
 //--------------------- GetBuiltinImpositionPool ------------------------------
 
  // These functions are defined in impositions.cc
-Laxkit::PtrStack<Imposition> *GetBuiltinImpositionPool(Laxkit::PtrStack<Imposition> *existingpool=NULL);
-Imposition *newImposition(const char *impos);
+Laxkit::PtrStack<ImpositionResource> *GetBuiltinImpositionPool(Laxkit::PtrStack<ImpositionResource> *existingpool=NULL);
+int AddToImpositionPool(Laxkit::PtrStack<ImpositionResource> *existingpool, const char *directory);
+Imposition *newImpositionByResource(const char *impos);
+Imposition *newImpositionByType(const char *impos);
 
 #endif
 

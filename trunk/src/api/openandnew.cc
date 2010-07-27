@@ -141,8 +141,8 @@ int NewDocumentFunction(ValueHash *context,
 				if (!str) throw _("Invalid object for imposition!");
 
 				for (int c=0; c<laidout->impositionpool.n; c++) {
-					if (!strcmp(laidout->impositionpool.e[c]->Stylename(),str)) {
-						imp=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
+					if (!strcmp(laidout->impositionpool.e[c]->name,str)) {
+						imp=laidout->impositionpool.e[c]->Create();
 						break;
 					}
 				}

@@ -78,6 +78,7 @@
 #include "newdoc.h"
 #include "impositions/impositioninst.h"
 #include "impositions/netimposition.h"
+#include "impositions/signatureinterface.h"
 #include "utils.h"
 	
 #include <iostream>
@@ -276,6 +277,11 @@ int NewDocWindow::preinit()
 	return 0;
 }
 
+#define IMP_NEW_SINGLES    10000
+#define IMP_NEW_SIGNATURE  10001
+#define IMP_NEW_NET        10002
+#define IMP_FROM_FILE      10003
+
 int NewDocWindow::init()
 {
 	
@@ -431,7 +437,7 @@ int NewDocWindow::init()
 	 //add thin spacer
 	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);//*** forced linebreak
 
-	 // ------------- Imposition ------------------
+	 // ------------- Imposition selection menu ------------------
 	
 	mesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
 	AddWin(mesbar, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0);
@@ -439,10 +445,19 @@ int NewDocWindow::init()
 						numpages,object_id,"imposition");
 	int whichimp=0;
 	for (c=0; c<laidout->impositionpool.n; c++) {
-		impsel->AddItem(laidout->impositionpool.e[c]->Stylename(),c);
-		if (doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->Stylename()))
+		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
+		if (doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->name))
 			whichimp=c;
 	}
+	 // *** these need to be all the imposition base creation types
+	//impsel->AddItem(_("NEW Singles...",   IMP_NEW_SINGLES);
+	impsel->AddSep();
+	impsel->AddItem(_("From file..."),     IMP_FROM_FILE);
+	impsel->SetState(-1,SLIDER_IGNORE_ON_BROWSE,1);
+	impsel->AddItem(_("NEW Signature..."), IMP_NEW_SIGNATURE);
+	impsel->SetState(-1,SLIDER_IGNORE_ON_BROWSE,1);
+	impsel->AddItem(_("NEW Net..."),       IMP_NEW_NET);
+	impsel->SetState(-1,SLIDER_IGNORE_ON_BROWSE,1);
 	impsel->Select(whichimp);
 	AddWin(impsel, 250,100,50,50,0, linpheight,0,0,50,0);
 
@@ -456,13 +471,14 @@ int NewDocWindow::init()
 						last,object_id,"impfromfile",
 			            _("From file:"),NULL,0,
 			            0,0,1,0,3,3);
-	impfromfile->tooltip(_("Use an imposition based on a file."));
+	impfromfile->tooltip(_("Create from an imposition file, or perhaps a polyhedron file."));
 	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
 	AddWin(impfromfile, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0);
 	tbut=new Button(this,"impfileselect",NULL,0, 0,0,0,0, 1, 
 			saveas,object_id,"impfileselect",
 			-1,
 			"...",NULL,NULL,3,3);
+	tbut->tooltip(_("Search for an imposition file, or polyhedron file"));
 	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
 	AddNull();
 
@@ -732,10 +748,29 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
 		 //when new imposition type selected from popup menu
+		if (s->info1==IMP_NEW_SIGNATURE) {
+			app->rundialog(new SignatureEditor(NULL,"sigeditor","sigeditor",
+						   this,"newsig",
+						   NULL,papertype));
+			return 0;
+
+		} else if (s->info1==IMP_NEW_NET) {
+			//app->rundialog(new NetEditor(NULL,this,papertype));
+			return 0;
+
+		} else if (s->info1==IMP_FROM_FILE) {
+			app->rundialog(new FileDialog(NULL,NULL,_("Imposition from file"),
+					ANXWIN_REMEMBER, 0,0, 0,0,0,
+					object_id, "impfile",
+					FILES_OPEN_ONE,
+					impfromfile->GetCText()));
+			return 0;
+		}
+
 		if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
 		if (imp) delete imp;
-		imp=(Imposition *)laidout->impositionpool.e[s->info1]->duplicate();
-		if (!strcmp(imp->Stylename(),"Net") || !strcmp(imp->Stylename(),"Singles")) {
+		imp=laidout->impositionpool.e[s->info1]->Create();
+		if (!strcmp(imp->styledef->name,"NetImposition") || !strcmp(imp->styledef->name,"Singles")) {
 			marginl->SetLabel(_("Left:"));
 			marginr->SetLabel(_("Right:"));
 		} else {
@@ -828,12 +863,12 @@ void NewDocWindow::updateImposition()
 
 		 //update popup to net imposition;
 		for (int c=0; c<laidout->impositionpool.n; c++) {
-			if (!strcmp(imp->Stylename(),laidout->impositionpool.e[c]->Stylename())) {
+			if (!strcmp(imp->Stylename(),laidout->impositionpool.e[c]->name)) {
 				impsel->Select(c);
 				break;
 			}
 		}
-		
+
 		DBG cerr<<"   installed polyhedron file..."<<endl;
 		return;
 
@@ -860,12 +895,12 @@ void NewDocWindow::sendNewDoc()
 	int c;
 	if (!imposition) {
 		for (c=0; c<laidout->impositionpool.n; c++) {
-			if (!strcmp(laidout->impositionpool.e[c]->Stylename(),impsel->GetCurrentItem())) break;
+			if (!strcmp(laidout->impositionpool.e[c]->name,impsel->GetCurrentItem())) break;
 		}
 		if (c==laidout->impositionpool.n) imposition=new Singles();
 		else {
-			DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->Stylename())<<endl;
-			imposition=(Imposition *)(laidout->impositionpool.e[c]->duplicate());
+			DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->name)<<endl;
+			imposition=laidout->impositionpool.e[c]->Create();
 		}
 	}
 	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }

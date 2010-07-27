@@ -90,6 +90,8 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	virtual double PatternWidth();
 	virtual double PageHeight();
 	virtual double PageWidth();
+
+	virtual int SetPaper(PaperStyle *p);
 };
 
 

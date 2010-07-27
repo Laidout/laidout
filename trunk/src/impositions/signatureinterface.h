@@ -16,6 +16,7 @@
 #ifndef INTERFACES_SIGNATUREINTERFACE_H
 #define INTERFACES_SIGNATUREINTERFACE_H
 
+#include <lax/interfaces/viewerwindow.h>
 #include <lax/interfaces/aninterface.h>
 
 #include "../laidout.h"
@@ -30,16 +31,16 @@ class FoldedPageInfo
  public:
 	int currentrow, currentcol; //where this original is currently
 	int y_flipped, x_flipped; //how this one is flipped around in its current location
+	int finalindexfront, finalindexback;
 	Laxkit::NumStack<int> pages; //what pages are actually there, r,c are pushed
+
+	FoldedPageInfo();
 };
 
 class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
 	int showdecs;
-	Signature *signature;
-	PaperStyle *papersize;
-	Document *doc;
 
 	int foldr1, foldc1, foldr2, foldc2;
 	int lbdown_row, lbdown_col;
@@ -47,6 +48,7 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int foldunder;
 	int foldindex;
 	double foldprogress;
+	int finalr,finalc;
 
 	double totalwidth, totalheight;
 
@@ -57,7 +59,10 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey);
 	virtual int scanhandle(int x,int y);
  public:
-	SignatureInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
+	Signature *signature;
+	PaperStyle *papersize;
+
+	SignatureInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Signature *sig=NULL, PaperStyle *p=NULL);
 	SignatureInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~SignatureInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
@@ -87,10 +92,30 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int Refresh();
 
 	
-	virtual int UseThisDocument(Document *doc);
 //!	virtual int UseThisImposition(Signature *sig);
 };
 
+
+//------------------------------------- SignatureEditor --------------------------------------
+
+class SignatureEditor : public LaxInterfaces::ViewerWindow
+{
+ protected:
+ public:
+	PaperStyle *p;
+	Signature *sig;
+	SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
+						Laxkit::anXWindow *nowner, const char *mes,
+						Signature *sig, PaperStyle *p);
+	virtual ~SignatureEditor();
+	virtual int init();
+	virtual const char *whattype() { return "SignatureEditor"; }
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+};
 
 
 #endif

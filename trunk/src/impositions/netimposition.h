@@ -37,6 +37,7 @@ class NetImposition : public Imposition
 
 	NetImposition(Net *newnet=NULL);
 	virtual ~NetImposition();
+	static ImpositionResource *getDefaultResource();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	

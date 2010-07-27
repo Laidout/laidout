@@ -11,12 +11,13 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
 #include "../language.h"
 #include "imposition.h"
+#include "../utils.h"
 #include <lax/lists.cc>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>
@@ -761,3 +762,62 @@ Spread *Imposition::SingleLayout(int whichpage)
 
 	return spread;
 }
+
+//---------------------------------- ImpositionResource ----------------------------------
+
+/*! \class ImpositionResource
+ * \brief Info about how to create new Imposition instances.
+ */
+/*! \var char *ImpositionResource::styledef
+ * \brief StyleDef name for the type of Imposition this is.
+ */
+
+
+/*! If local!=0, then delete the Attribute in the destructor.
+ */
+ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
+					   				   LaxFiles::Attribute *conf,int local)
+{
+	styledef=newstr(sdef);
+	name=newstr(nname);
+	impositionfile=newstr(file);
+	description=newstr(desc);
+	config=conf;
+	configislocal=local;
+}
+
+ImpositionResource::~ImpositionResource()
+{
+	if (styledef) delete[] styledef;
+	if (name) delete[] name;
+	if (impositionfile) delete[] impositionfile;
+	if (description) delete[] description;
+	if (configislocal && config) delete config;
+}
+
+//! Create a new imposition instance based on this resource.
+/*! If the resource has non-null impositionfile, then that file is read in,
+ * and the proper type of Imposition is created.
+ * Otherwise, if the resource has styledef, then that type of Imposition is created.
+ *
+ * Then, if there is a config, then those attributes are applied.
+ *
+ * \todo should probably have an error return.
+ */
+Imposition *ImpositionResource::Create()
+{
+	Imposition *imp=NULL;
+	if (impositionfile) {
+		FILE *f=open_laidout_file_to_read(impositionfile,"Imposition",NULL);
+		if (!f) return NULL; //file was bad
+		fclose(f);
+
+	} else if (styledef) {
+		imp=newImpositionByType(styledef);
+
+	} else return NULL; //no file and no styledef!
+
+	if (config && imp) imp->dump_in_atts(config,0,NULL);
+	return imp;
+}
+

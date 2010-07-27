@@ -162,13 +162,12 @@ int ReImposeFunction(ValueHash *context,
 		if (!str) throw _("You must specify an imposition!"); //no new imposition!
 		int c2;
 		for (c2=0; c2<laidout->impositionpool.n; c2++) {
-			if (!strncasecmp(str,laidout->impositionpool.e[c2]->Stylename(),strlen(laidout->impositionpool.e[c2]->Stylename()))) {
-				imp=laidout->impositionpool.e[c2];
+			if (!strncasecmp(str,laidout->impositionpool.e[c2]->name,strlen(laidout->impositionpool.e[c2]->name))) {
 				break;
 			}
 		}
-		if (!imp || c2==laidout->impositionpool.n) _("Imposition not found!"); //no imposition to use!
-		imp=(Imposition *)imp->duplicate();
+		if (c2==laidout->impositionpool.n) _("Imposition not found!"); //no imposition to use!
+		imp=laidout->impositionpool.e[c2]->Create();
 
 		 //3.
 

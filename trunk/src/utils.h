@@ -20,10 +20,12 @@
 #include <cstdio>
 #include <lax/attributes.h>
 
+char *make_id(const char *base);
 const char *Untitled_name();
 FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret);
 FILE *open_file_for_reading(const char *file,char **error_ret);
 FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret);
+int resource_name_and_desc(FILE *f,char **name, char **desc);
 char *previewFileName(const char *file, const char *nametemplate);
 
 int laidout_file_type(const char *file, const char *minversion, const char *maxversion, char **actual_version,

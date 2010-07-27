@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -71,7 +71,7 @@ using namespace std;
 
 /*! \todo *** rethink styledef assignment..
  */
-Singles::Singles() : Imposition("Singles")
+Singles::Singles() : Imposition(_("Singles"))
 { 
 	insetl=insetr=insett=insetb=0;
 	tilex=tiley=1;
@@ -103,6 +103,16 @@ Singles::~Singles()
 {
 	DBG cerr <<"--Singles destructor"<<endl;
 	pagestyle->dec_count();
+}
+
+//! Static imposition resource creation function.
+ImpositionResource *Singles::getDefaultResource()
+{
+	return new ImpositionResource("Singles",
+								  _("Singles"),
+								  NULL,
+								  _("One sided single sheets"),
+								  NULL,0);
 }
 
 //! Using the paperstyle, create a new default pagestyle.
@@ -252,6 +262,9 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
+		fprintf(f,"%sname \"Some name\"   #this can be any string you want.\n",spc);
+		fprintf(f,"%sdescription  Single sheets  #Some description beyond just a name.\n",spc);
+		fprintf(f,"%s                            #name and description are used by the imposition resource mechanism\n",spc);
 		fprintf(f,"%s#insets are regions of a paper not taken up by the page\n",spc);
 		fprintf(f,"%sinsetl 0   #The left inset from the side of a paper\n",spc);
 		fprintf(f,"%sinsetr 0   #The right inset from the side of a paper\n",spc);
@@ -639,7 +652,7 @@ DoubleSidedSingles::DoubleSidedSingles()
 	setPage();
 	
 	 // make style instance name "Double Sided Singles"  perhaps remove the spaces??
-	makestr(stylename,"Double Sided Singles");
+	makestr(stylename,_("Double Sided Singles"));
 
 	//**** this gets a little expensive, perhaps pass in a StyleDef in constructor?
 	if (styledef) styledef->dec_count();//remove the one from Singles..
@@ -694,6 +707,24 @@ void DoubleSidedSingles::setPage()
 				
 	pagestyler->width= pagestyle->width =(paper->media.maxx-insetl-insetr)/tilex;
 	pagestyler->height=pagestyle->height=(paper->media.maxy-insett-insetb)/tiley;
+}
+
+//! Default new Singles function, used by imposition resource initializer.
+Imposition *newDoubleSidedSingles(LaxFiles::Attribute *config)
+{
+	DoubleSidedSingles *s=new DoubleSidedSingles;
+	if (config) s->dump_in_atts(config,0,NULL);
+	return s;
+}
+
+//! Static imposition resource creation function.
+ImpositionResource *DoubleSidedSingles::getDefaultResource()
+{
+	return new ImpositionResource("DoubleSidedSingles",
+								  _("Double Sided Singles"),
+								  NULL,
+								  _("Imposition of single pages meant to be next to each other"),
+								  NULL,0);
 }
 
 //! The newfunc for DoubleSidedSingles instances.
@@ -1103,7 +1134,7 @@ BookletImposition::BookletImposition()
 	creep=0;
 	covercolor=bodycolor=~0;
 
-	makestr(stylename,"Booklet");
+	makestr(stylename,_("Booklet"));
 	isleft=0;//isleft must always be 0.
 
 	setPage();
@@ -1135,7 +1166,17 @@ void BookletImposition::setPage()
 	
 }
 
-//! The newfunc for Booklet instances.
+//! Static imposition resource creation function.
+ImpositionResource *BookletImposition::getDefaultResource()
+{
+	return new ImpositionResource("Booklet",
+								  _("Booklet"),
+								  NULL,
+								  _("Imposition for a stack of sheets, folded down the middle"),
+								  NULL,0);
+}
+
+//! The newfunc for Booklet Style instances.
 Style *NewBookletFunc(StyleDef *def)
 { 
 	BookletImposition *s=new BookletImposition;
