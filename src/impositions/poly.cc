@@ -1396,6 +1396,102 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
 	return 0;
 }
 
+//! Read in an Obj file.
+/*! An obj file has lists of vertices, texture coordinates, and normals.
+ * Faces reference those vertex and normal lists.
+ *
+ * The file format has many features, but the things Polyhedron cares about are:
+ * <pre>
+ *   # This is a comment, a line with pound symbol at the beginning.
+ *   # List of Vertices, with (x,y,z) coordinates.
+ *   # 1st is vertex 1, not 0...
+ *   v 0.123 0.234 0.345
+ *   v ...
+ *   ...
+ *  
+ *   # Face Definitions, 1st line is simple vertices.
+ *   # second is vertex/texture points, next is vertex/texture/normals.
+ *   # We ignore all but the vertex points.
+ *   f 1 2 3
+ *   f 3/1 4/2 5/3
+ *   f 6/4/1 3/5/3 7/6/5
+ *   f ...
+ * </pre>
+ * 
+ * Texture vertices start with "vt", normals "vn", curving surface points "vp". We only care about 
+ * simple "v" points, and the "f" face definitions.
+ *
+ * Return 0 for success, nonzero for error.
+ */
+int Polyhedron::dumpInObj(FILE *f,char **error_ret)
+{
+	char *line=NULL, *ptr,*e;
+	size_t n=0;
+	int c;
+	int firstvertex=vertices.n;
+	int firstface=faces.n;
+	double d[3];
+	int error=0;
+
+
+	while (!feof(f)) {
+		c=getline(&line, &n, f);
+		if (!c) continue;
+
+		ptr=line;
+		while (*ptr && isspace(*ptr)) ptr++;
+
+		if (*ptr=='#') continue; //skip comments
+
+		if (*ptr=='v' && ptr[1]==' ') {
+			 //found vertex
+			ptr++;
+			e=NULL;
+			c=DoubleListAttribute(ptr,d,3, &e);
+			if (c!=3) { error=1; break; } // *** Error! Broken vertex definition
+
+			vertices.push(spacepoint(d));
+
+		} else if (*ptr=='f' && ptr[1]==' ') {
+			 //found face
+			while (*ptr && isspace(*ptr)) ptr++;
+			e=ptr;
+
+			do {
+				if (!isdigit(*e)) { error=3; break; }
+				while (isdigit(*e)) e++; //skip over first number
+				if (*e=='/') {
+					*e=' '; e++;
+					while (isdigit(*e)) { *e=' '; e++; }//blank out parts we don't need
+					if (*e=='/') {
+						*e=' '; e++;
+						while (isdigit(*e)) { *e=' '; e++; }//blank out parts we don't need
+					}
+				}
+
+				while (*e && isspace(*e)) e++;
+			} while (*e);
+			if (error) break;
+
+			Face *face=new Face(ptr,NULL); //face disects as a point list
+			if (face->pn<3) { error=2; delete face; break; }
+
+			 //remap to actual vertex list
+			for (int c=0; c<face->pn; c++) face->p[c]+=firstvertex-1;
+
+			faces.push(face);
+		}
+	}
+	if (line) free(line);
+
+	if (error) {
+		 // delete all added faces and vertices
+		while (vertices.n!=firstvertex) vertices.pop();
+		while (faces.n!=firstface) faces.remove();
+	}
+
+	return error;
+}
 
 //! Try to read in the file.
 /*! The file can be an OFF file (see dumpInOFF()), or a so-called Polyp file, which is the
@@ -1424,14 +1520,17 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 			foundoff=1;
 		}
 	}
+
 	if (foundoff) {
 		clear();
 		c=dumpInOFF(f,error_ret);
+
 	} else if (!strncmp("#Polyp",first100,6) && isspace(first100[6])) {
 		Attribute att;
 		att.dump_in(f,0,NULL);
 		dump_in_atts(&att,0,NULL);
 		c=0;
+
 	} else c=1; 
 
 	fclose(f);

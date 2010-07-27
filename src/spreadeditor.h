@@ -112,7 +112,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int init();
 	virtual const char *whattype() { return "SpreadEditor"; }
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
-	virtual int Event(Laxkit::EventData *data,const char *mes);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int MoveResize(int nx,int ny,int nw,int nh);
 	virtual int Resize(int nw,int nh);
 	virtual int UseThisDoc(Document *ndoc);

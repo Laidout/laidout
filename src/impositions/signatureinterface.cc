@@ -17,7 +17,9 @@
 
 #include "../language.h"
 #include "signatureinterface.h"
-#include "viewwindow.h"
+#include "../viewwindow.h"
+#include "../headwindow.h"
+
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
@@ -33,27 +35,46 @@ using namespace std;
 #define DBG 
 
 
+//------------------------------------- FoldedPageInfo --------------------------------------
+/*! \class FoldedPageInfo
+ * \brief Info about partial folded states of signatures.
+ */
+
+FoldedPageInfo::FoldedPageInfo()
+{
+	x_flipped=y_flipped=0;
+	currentrow=currentcol=0;
+	finalindexback=finalindexfront=-1;
+}
+
+
 //------------------------------------- SignatureInterface --------------------------------------
 	
 /*! \class SignatureInterface 
  * \brief Interface to fold around a Signature on the edit space.
  */
 
-SignatureInterface::SignatureInterface(int nid,Displayer *ndp)
+SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, PaperStyle *p)
 	: InterfaceWithDp(nid,ndp) 
 {
 	showdecs=0;
-	doc=NULL;
-	signature=new Signature;
 	papersize=NULL;
+
+	signature=new Signature;
+	if (p) signature->SetPaper(p);
 
 	foldr1=foldc1=foldr2=foldc2=-1;
 	folddirection=0;
 	lbdown_row=lbdown_col=-1;
 
-	totalheight=totalwidth=5;
-	signature->totalheight=totalheight;
-	signature->totalwidth=totalwidth;
+	if (!p) {
+		totalheight=totalwidth=5;
+		signature->totalheight=totalheight;
+		signature->totalwidth=totalwidth;
+	} else {
+		totalheight=signature->totalheight;
+		totalwidth =signature->totalwidth;
+	}
 	
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	foldinfo=NULL;
@@ -64,7 +85,6 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 	: InterfaceWithDp(nowner,nid,ndp) 
 {
 	showdecs=0;
-	doc=NULL;
 	signature=new Signature;
 	papersize=NULL;
 
@@ -107,7 +127,6 @@ SignatureInterface::~SignatureInterface()
 {
 	DBG cerr <<"SignatureInterface destructor.."<<endl;
 
-	if (doc) doc->dec_count();
 	if (signature) signature->dec_count();
 	if (papersize) papersize->dec_count();
 }
@@ -143,18 +162,6 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 //{***
 //}
 
-/*! incs count of ndoc if ndoc is not already the current document.
- *
- * Return 0 for success, nonzero for fail.
- */
-int SignatureInterface::UseThisDocument(Document *ndoc)
-{
-	if (ndoc==doc) return 0;
-	if (doc) doc->dec_count();
-	doc=ndoc;
-	if (ndoc) ndoc->inc_count();
-	return 0;
-}
 
 /*! PaperGroup or PaperBoxData.
  */
@@ -241,9 +248,84 @@ int SignatureInterface::Refresh()
 
 	x=signature->insetleft;
 	flatpoint pts[4];
+	int facedown=0;
+	int hasface;
+	int rrr,ccc;
+	double xx,yy;
+	int xflip, yflip;
 	for (int tx=0; tx<signature->tilex; tx++) {
 	  y=signature->insetbottom;
 	  for (int ty=0; ty<signature->tiley; ty++) {
+		 //fill in light gray for elements with no current faces
+		 //or draw orientation arrow and number for existing faces
+		for (int rr=0; rr<signature->numhfolds+1; rr++) {
+		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
+			hasface=foldinfo[rr][cc].pages.n;
+
+			 //first draw filled face, grayed if no current faces
+			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			pts[0]=flatpoint(x+cc*ew,y+rr*eh);
+			pts[1]=pts[0]+flatpoint(ew,0);
+			pts[2]=pts[0]+flatpoint(ew,eh);
+			pts[3]=pts[0]+flatpoint(0,eh);
+
+			if (hasface) dp->NewFG(1.,1.,1.);
+			else dp->NewFG(.75,.75,.75);
+
+			dp->drawlines(pts,4,1,1);
+
+			if (hasface) {
+				rrr=foldinfo[rr][cc].pages[foldinfo[rr][cc].pages.n-2];
+				ccc=foldinfo[rr][cc].pages[foldinfo[rr][cc].pages.n-1];
+
+				 //there are faces in this spot, draw arrow and page number
+				dp->NewFG(.75,.75,.75);
+				xflip=foldinfo[rrr][ccc].x_flipped;
+				yflip=foldinfo[rrr][ccc].y_flipped;
+				facedown=((xflip && !yflip) || (!xflip && yflip));
+
+				if (facedown) dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
+				else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+				pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
+				dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
+			}
+
+			 //draw markings for final page binding edge, up, trim, margin
+			if (foldlevel==-1 && rr==finalr && cc==finalc) {
+				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
+				
+				xx=x+cc*ew;
+				yy=y+rr*eh;
+
+				 //draw gray margin edge
+				dp->NewFG(.75,.75,.75);
+				dp->drawline(xx,yy+signature->marginbottom,   xx+ew,yy+signature->marginbottom);			
+				dp->drawline(xx,yy+eh-signature->margintop,   xx+ew,yy+eh-signature->margintop);			
+				dp->drawline(xx+signature->marginleft,yy,     xx+signature->marginleft,yy+eh);			
+				dp->drawline(xx+ew-signature->marginright,yy, xx+ew-signature->marginright,yy+eh);			
+
+				 //draw red trim edge
+				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+				dp->NewFG(1.,0.,0.);
+				if (signature->trimbottom>0) dp->drawline(xx,yy+signature->trimbottom, xx+ew,yy+signature->trimbottom);			
+				if (signature->trimtop>0)    dp->drawline(xx,yy+eh-signature->trimtop, xx+ew,yy+eh-signature->trimtop);			
+				if (signature->trimleft>0)   dp->drawline(xx+signature->trimleft,yy, xx+signature->trimleft,yy+eh);			
+				if (signature->trimright>0)  dp->drawline(xx+ew-signature->trimright,yy, xx+ew-signature->trimright,yy+eh);			
+
+				 //draw green binding edge
+				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
+				dp->NewFG(0.,1.,0.);
+
+				int b=signature->binding;
+				if (b=='l')      dp->drawline(xx,yy, xx,yy+eh);
+				else if (b=='r') dp->drawline(xx+ew,yy, xx+ew,yy+eh);
+				else if (b=='t') dp->drawline(xx,yy+eh, xx+ew,yy+eh);
+				else if (b=='b') dp->drawline(xx,yy, xx+ew,yy);
+
+			}
+		  } //cc
+		}  //rr
+
 		 //draw fold pattern outline
 		dp->NewFG(1.,0.,0.);
 		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
@@ -252,38 +334,23 @@ int SignatureInterface::Refresh()
 		dp->drawline(x+w,y+h, x  ,y+h);
 		dp->drawline(x,  y+h, x,y);
 
-		 //fill in light gray for elements with no current faces
-		dp->NewFG(.75,.75,.75);
-		for (int rr=0; rr<signature->numhfolds+1; rr++) {
-		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
-			if (foldinfo[rr][cc].pages.n) continue;
-			pts[0]=flatpoint(x+cc*ew,y+rr*eh);
-			pts[1]=pts[0]+flatpoint(ew,0);
-			pts[2]=pts[0]+flatpoint(ew,eh);
-			pts[3]=pts[0]+flatpoint(0,eh);
-			dp->drawlines(pts,4,1,1);
-		  }
-		}
 		 //draw all fold lines
 		dp->NewFG(.5,.5,.5);
 		dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
-		for (int c=0; c<signature->numvfolds; c++) {
+		for (int c=0; c<signature->numvfolds; c++) { //verticals
 			dp->drawline(x+(c+1)*ew,y, x+(c+1)*ew,y+h);
 		}
 
-		for (int c=0; c<signature->numhfolds; c++) {
+		for (int c=0; c<signature->numhfolds; c++) { //horizontals
 			dp->drawline(x,y+(c+1)*eh, x+w,y+(c+1)*eh);
 		}
 		
 		y+=patternheight+signature->tilegapy;
-	  }
+	  } //tx
 	  x+=patternwidth+signature->tilegapx;
-	}
+	} //ty
 
-	 //draw markings for final page binding edge, up, trim, margin
-	if (foldlevel==signature->folds.n) {
-	}
-
+	 //draw in progress folding
 	int device=0;
 	DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
 	if (buttondown.any(0,LEFTBUTTON,&device) && folddirection && folddirection!='x') {
@@ -331,7 +398,6 @@ int SignatureInterface::Refresh()
 		  y=signature->insetbottom;
 		  for (int ty=0; ty<signature->tiley; ty++) {
 
-			 //fill in light gray for elements with no current faces
 			if (folddirection=='l' || folddirection=='r') { //horizontal fold
 				pts[0]=flatpoint(x+foldindex*ew,y+eh*foldr1);
 				pts[1]=pts[0]+axis*w;
@@ -350,6 +416,29 @@ int SignatureInterface::Refresh()
 		  }
 		  x+=patternwidth+signature->tilegapx;
 		}
+	}
+
+	 //draw overlays
+	int thing;
+	int radius=10;
+	x=radius;
+
+	dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
+
+	y=(dp->Maxy+dp->Miny)/2 - (signature->folds.n+1)*(radius-3);
+	dp->NewFG(1.,1.,1.);
+	dp->drawthing(x,y, radius,radius, 1, THING_Circle);
+	dp->NewFG(1.,0.,1.);
+	dp->drawthing(x,y, radius,radius, 0, THING_Circle);
+
+	y=(dp->Maxy+dp->Miny)/2 + signature->folds.n*radius;
+	for (int c=0; c<signature->folds.n; c++) {
+		if (c==0) thing=THING_Square; else thing=THING_Triangle_Down;
+		dp->NewFG(1.,1.,1.);
+		dp->drawthing(x,y, radius,radius, 1, thing);
+		dp->NewFG(1.,0.,1.);
+		dp->drawthing(x,y, radius,radius, 0, thing);
+		y-=2*radius-3;
 	}
 
 //	 //-----------------draw control handles
@@ -520,7 +609,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 				newc=foldindex+(foldindex-c-1);
 			} else if (folddirection=='l') {
 				newr=r;
-				newc=foldindex-(foldindex-c+1);
+				newc=foldindex-(c-foldindex+1);
 			} else if (folddirection=='t') {
 				newc=c;
 				newr=foldindex+(foldindex-r-1);
@@ -561,6 +650,56 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			else           foldtype=FOLD_Right_Over_To_Left;
 		}
 		signature->folds.push(new Fold(foldtype,foldindex),1);
+		foldlevel=signature->folds.n-1;
+
+		 //check the immediate neighors of newr,newc. If none, then we are totally folded.
+
+		int stillmore=4;
+
+		 //check above
+		tr=newr-1; tc=newc;
+		if (tr<0 || foldinfo[tr][tc].pages.n==0) stillmore--;
+
+		 //check below
+		tr=newr+1; tc=newc;
+		if (tr>signature->numhfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
+		
+		 //check left
+		tr=newr; tc=newc-1;
+		if (tc<0 || foldinfo[tr][tc].pages.n==0) stillmore--;
+
+		 //check if right
+		tr=newr; tc=newc+1;
+		if (tc>signature->numvfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
+
+		if (stillmore==0) {
+			foldlevel=-1;
+			finalr=newr;
+			finalc=newc;
+
+			int page,xflip,yflip;
+			for (int c=foldinfo[finalr][finalc].pages.n-2; c>=0; c-=2) {
+				page=(foldinfo[finalr][finalc].pages.n-2-c)/2;
+
+				tr=foldinfo[finalr][finalc].pages.e[c];
+				tc=foldinfo[finalr][finalc].pages.e[c+1];
+
+				xflip=foldinfo[tr][tc].x_flipped;
+				yflip=foldinfo[tr][tc].y_flipped;
+
+				if ((xflip && !yflip) || (!xflip && yflip)) {
+					 //back side of paper is up
+					foldinfo[tr][tc].finalindexback=page;
+					foldinfo[tr][tc].finalindexfront=page+1;
+				} else {
+					foldinfo[tr][tc].finalindexback=page+1;
+					foldinfo[tr][tc].finalindexfront=page;
+				}
+			}
+		}
+
+		folddirection=0;
+		foldprogress=0;
 	}
 
 	needtodraw=1;
@@ -581,14 +720,16 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	int over=scan(x,y,&row,&col,&mm.x,&mm.y);
 	//fp now holds coordinates relative to the element cell
 
-	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<endl;
+	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y;
+	DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
+	DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped<<endl;
 
 	int mx,my;
 	if (!buttondown.any()) return 0;
 	buttondown.move(mouse->id,x,y);
 
 	if (lbdown_row<0 || lbdown_col<0) return 0;
-	if (row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds) {
+	if (foldlevel==-1 || row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds) {
 		if (folddirection!=0) {
 			folddirection=0;
 			needtodraw=1;
@@ -772,6 +913,11 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
+		//--------------select how many folds to display
+	} else if (ch>='0' && ch <='9') {
+		// ***
+		return 0;
+
 		//--------------change inset
 	} else if (ch=='i') {
 		signature->insettop+=totalheight*.01;
@@ -804,26 +950,22 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 
 		//-------------tilex and tiley
 	} else if (ch=='x') {
-		if (foldlevel!=0) return 0;
 		signature->tilex++;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='X') {
-		if (foldlevel!=0) return 0;
 		signature->tilex--;
 		if (signature->tilex<=1) signature->tilex=1;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='y') {
-		if (foldlevel!=0) return 0;
 		signature->tiley++;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='Y') {
-		if (foldlevel!=0) return 0;
 		signature->tiley--;
 		if (signature->tiley<=1) signature->tiley=1;
 		needtodraw=1;
@@ -875,6 +1017,14 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
+	} else if (ch=='B') {
+		if (signature->binding=='l') signature->binding='b';
+		else if (signature->binding=='b') signature->binding='r';
+		else if (signature->binding=='r') signature->binding='t';
+		else if (signature->binding=='t') signature->binding='l';
+		needtodraw=1;
+		return 0;
+
 		//---------------page orientation
 	} else if (ch=='u') { //up direction
 		if (signature->up=='l') signature->up='t';
@@ -886,15 +1036,15 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 
 		//--------------change page trim
 	} else if (ch=='t') {
-		signature->trimtop+=totalheight*.01;
-		signature->trimbottom+=totalheight*.01;
-		signature->trimleft+=totalheight*.01;
-		signature->trimright+=totalheight*.01;
+		signature->trimtop+=signature->PatternHeight()*.01;
+		signature->trimbottom+=signature->PatternHeight()*.01;
+		signature->trimleft+=signature->PatternHeight()*.01;
+		signature->trimright+=signature->PatternHeight()*.01;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='T') {
-		signature->trimtop-=totalheight*.01;
+		signature->trimtop-=signature->PatternHeight()*.01;
 		if (signature->trimtop<0) signature->trimtop=0;
 		signature->trimbottom=signature->trimleft=signature->trimright=signature->trimtop;
 		needtodraw=1;
@@ -902,15 +1052,15 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 
 		//--------------change page margin
 	} else if (ch=='m') {
-		signature->margintop+=totalheight*.01;
-		signature->marginbottom+=totalheight*.01;
-		signature->marginleft+=totalheight*.01;
-		signature->marginright+=totalheight*.01;
+		signature->margintop   +=signature->PatternHeight()*.01;
+		signature->marginbottom+=signature->PatternHeight()*.01;
+		signature->marginleft  +=signature->PatternHeight()*.01;
+		signature->marginright +=signature->PatternHeight()*.01;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='M') {
-		signature->margintop-=totalheight*.01;
+		signature->margintop-=signature->PatternHeight()*.01;
 		if (signature->margintop<0) signature->margintop=0;
 		signature->marginbottom=signature->marginleft=signature->marginright=signature->margintop;
 		needtodraw=1;
@@ -928,6 +1078,120 @@ int SignatureInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::L
 //	}
 	return 1;
 }
+
+
+//----------------------- SignatureEditor --------------------------------------
+
+/*! \class SignatureEditor
+ * \brief A Laxkit::ViewerWindow that gets filled with stuff appropriate for signature editing.
+ *
+ * This creates the window with a SignatureInterface.
+ */
+
+
+//! Make the window using project.
+/*! Inc count of ndoc.
+ */
+SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
+						Laxkit::anXWindow *nowner, const char *mes,
+						Signature *sig, PaperStyle *p)
+	: ViewerWindow(parnt,nname,ntitle,
+				   ANXWIN_REMEMBER
+					|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_NO_SCROLLERS|VIEWPORT_NO_RULERS, 
+					0,0,500,500, 0, NULL)
+{
+	SetOwner(nowner,mes);
+
+	//signature=sig;
+	//if (signature) signature->inc_count();
+
+	if (!viewport) viewport=new ViewportWindow(this,"signature-editor-viewport","signature-editor-viewport",
+									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
+									0,0,0,0,0,NULL);
+
+	win_colors->bg=rgbcolor(200,200,200);
+	viewport->dp->NewBG(200,200,200);
+
+	needtodraw=1;
+	AddTool(new SignatureInterface(1,viewport->dp,sig,p),1,1); // local, and select it
+	// *** add signature and paper if any...
+}
+
+SignatureEditor::~SignatureEditor()
+{ }
+
+//! Passes off to SignatureInterface::dump_out().
+void SignatureEditor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	// *** ((SignatureInterface *)curtool)->dump_out(f,indent,what,context);
+}
+
+//! Passes off to SignatureInterface::dump_in_atts().
+void SignatureEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	// *** ((SignatureInterface *)curtool)->dump_in_atts(att,flag,context);
+}
+
+/*! Removes rulers and adds Apply, Reset, and Update Thumbs.
+ */
+int SignatureEditor::init()
+{
+	ViewerWindow::init();
+	viewport->dp->NewBG(200,200,200);
+
+	anXWindow *last=NULL;
+	Button *tbut;
+
+	last=tbut=new Button(this,"ok",NULL, 0, 0,0,0,0,1, last,object_id,"ok",0,_("Ok"));
+	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+
+	last=tbut=new Button(this,"cancel",NULL, 0, 0,0,0,0,1, last,object_id,"cancel",0,_("Cancel"));
+	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+
+	Sync(1);	
+
+	SignatureInterface *si=dynamic_cast<SignatureInterface *>(tools.e[0]);
+	int h=si->signature->totalheight;
+	int w=si->signature->totalwidth;
+	viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
+	return 0;
+}
+
+/*! Responds to: "ok", "cancel"
+ *
+ */
+int SignatureEditor::Event(const Laxkit::EventData *data,const char *mes)
+{
+	DBG cerr <<"SignatureEditor got message: "<<(mes?mes:"?")<<endl;
+
+	if (!strcmp(mes,"ok")) {
+		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+		app->destroywindow(this);
+		return 0;
+
+	} else if (!strcmp("cancel",mes)) {
+		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+		app->destroywindow(this);
+		return 0;
+
+	}
+	return 1;
+}
+
+int SignatureEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	if (ch==LAX_Esc) {
+		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+		app->destroywindow(this);
+		return 0;
+
+//	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
+//		app->addwindow(new HelpWindow());
+//		return 0;
+	}
+	return 1;
+}
+
 
 
 //} // namespace Laidout

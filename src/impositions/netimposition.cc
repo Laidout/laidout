@@ -112,7 +112,7 @@ using namespace std;
  * If newnet is not NULL, then its count is incremented (in SetNet()).
  */
 NetImposition::NetImposition(Net *newnet)
-	: Imposition("Net")
+	: Imposition(_("Net"))
 { 
 	scalefromnet=1;
 	maptoabstractnet=0;
@@ -157,6 +157,16 @@ NetImposition::~NetImposition()
 {
 	if (abstractnet) abstractnet->dec_count();
 	//nets.flush();
+}
+
+//! Static imposition resource creation function.
+ImpositionResource *NetImposition::getDefaultResource()
+{
+	return new ImpositionResource("NetImposition", //styledef
+								  _("Net"),       //name
+								  NULL,          //file
+								  _("A net of connected faces"),
+								  NULL,0);
 }
 
 //! Sets net to a builtin net.

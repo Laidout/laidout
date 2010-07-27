@@ -691,7 +691,7 @@ int Document::Load(const char *file,char **error_ret)
 	makestr(saveas,file);
 	if (saveas[0]!='/') convert_to_full_path(saveas,NULL);
 
-	if (!imposition) imposition=newImposition("Singles");
+	if (!imposition) imposition=newImpositionByType("Singles");
 	if (pages.n==0) {
 		pages.e=imposition->CreatePages();
 		if (pages.e) { // must manually count how many element in e, put that in n
@@ -801,7 +801,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 		} else if (!strcmp(nme,"imposition")) {
 			if (imposition) imposition->dec_count();
 			 // figure out which kind of imposition it is..
-			imposition=newImposition(value);
+			imposition=newImpositionByType(value);
 			if (imposition) imposition->dump_in_atts(att->attributes.e[c],flag,context);
 
 		} else if (!strcmp(nme,"pagerange")) {
@@ -898,10 +898,12 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		
 		 //imposition
 		fprintf(f,"%s#A document has only 1 of the following impositions attached to it.\n",spc);
-		fprintf(f,"%s#These are all the impositions currently installed:\n",spc);
+		fprintf(f,"%s#These are all the imposition resources currently installed:\n",spc);
 		for (int c=0; c<laidout->impositionpool.n; c++) {
-			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->Stylename());
-			laidout->impositionpool.e[c]->dump_out(f,indent+2,-1,NULL);
+			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->name);
+			//laidout->impositionpool.e[c]->dump_out(f,indent+2,-1,NULL);
+			// *** need to figure out which actual styledefs are accessed, and output formats of those
+			// base imposition classes, not just resource names!!!
 		}
 	
 		 //page labels

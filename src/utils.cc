@@ -19,6 +19,7 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 #include <lax/laximages.h>
+#include <lax/misc.h>
 
 #include <cctype>
 #include <cstdlib>
@@ -32,11 +33,25 @@
 #define DBG
 
 using namespace LaxFiles;
+using namespace Laxkit;
 using namespace std;
 
 
 
-
+//! Return a roughly unique id. Uniqueness is not guaranteed!
+/*! Say base=="blah" then something like "blah12" will be returned.
+ *
+ * This currently uses Laxkit::getUniqueNumber(), and simply appends it to base.
+ * Please note that if you load in something, either a laidout document or a resource,
+ * it is possible to have name collision.
+ */
+char *make_id(const char *base)
+{
+	if (!base) base="id";
+	char *str=new char[strlen(base)+30];
+	sprintf(str,"%s%d",base,getUniqueNumber());
+	return str;
+}
 
 //! Return a pointer to a char[] akin to "untitled 1", "untitled 2", etc.
 /*! The number is based on a static int stored in the function.
@@ -151,6 +166,8 @@ FILE *open_file_for_reading(const char *file,char **error_ret)
  * with a blank error, then remember to set it to NULL before calling this function!
  *
  * This assumes that the normal locale is in effect.
+ *
+ * The file pointer will point to the very beginning of the file on return.
  */
 FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret)
 {
@@ -183,6 +200,41 @@ FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_r
 	rewind(f);
 	return f;
 }
+
+//! Retrieve name and description from a resource file.
+/*! This partially reads from a file for "name" and "description" attributes.
+ *
+ * Return 0 for name and description not found.
+ * Return 1 for only name found.
+ * Return 2 for only description found.
+ * Return 3 for both name and description found.
+ *
+ * If a name or description attribute is found, then return a new char[] with
+ * the corresponding value.
+ */
+int resource_name_and_desc(FILE *f,char **name, char **desc)
+{
+	if (!f) return 0;
+	if (!name && !desc) return 0;
+	Attribute att, *patt=NULL;
+
+	int ret=0;
+	while (ret!=3) {
+		att.dump_in(f,0,&patt);
+		if (!patt) break; //no more in file
+		if (name && !(ret&1) && !strcmp(patt->name,"name")) {
+			*name=newstr(patt->value);
+			ret|=1;
+
+		} else if (desc && !(ret&2) && !strcmp(patt->name,"description")) {
+			*desc=newstr(patt->value);
+			ret|=2;
+		}
+		skip_to_next_attribute(f,0);
+	}
+	return ret;
+}
+
 
 //! Create a preview file name based on a name template and the absolute path in file.
 /*! \ingroup misc

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 #ifndef IMPOSITIONINST_H
 #define IMPOSITIONINST_H
@@ -29,6 +29,8 @@ class Singles : public Imposition
 
 	Singles();
 	virtual ~Singles();
+	static ImpositionResource *getDefaultResource();
+
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
@@ -68,6 +70,8 @@ class DoubleSidedSingles : public Singles
 
 	DoubleSidedSingles();
 	virtual ~DoubleSidedSingles();
+	static ImpositionResource *getDefaultResource();
+
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
@@ -99,6 +103,7 @@ class BookletImposition : public DoubleSidedSingles
 	unsigned long bodycolor;
 
 	BookletImposition();
+	static ImpositionResource *getDefaultResource();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	

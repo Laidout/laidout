@@ -173,6 +173,7 @@ class Polyhedron :
 
 	virtual int dumpInFile(const char *file, char **error_ret);
 	virtual int dumpInOFF(FILE *f,char **error_ret);
+	virtual int dumpInObj(FILE *f,char **error_ret);
 	virtual int dumpOutOFF(FILE *f,char **error_ret);
 	virtual int dumpOutVrml(const char *filename);
 

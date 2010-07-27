@@ -166,7 +166,7 @@ Signature::Signature()
 
 	numhfolds=numvfolds=0;
 	foldedwidth=foldedheight=1;
-	trimleft=trimright=trimtop=trimbottom=-1;
+	trimleft=trimright=trimtop=trimbottom=0;
 	marginleft=marginright=margintop=marginbottom=0;
 
 	up='t';         //which direction is up 'l|r|t|b', ie 'l' means points toward the left
@@ -177,6 +177,23 @@ Signature::Signature()
 
 Signature::~Signature()
 {
+	if (paperbox) paperbox->dec_count();
+}
+
+//! Set the size of the signature to this paper.
+/*! This will duplicate p. The count of p will not change.
+ */
+int Signature::SetPaper(PaperStyle *p)
+{
+	if (paperbox) paperbox->dec_count();
+	paperbox=NULL;
+
+	if (p) {
+		paperbox=(PaperStyle*)p->duplicate();
+		totalheight=paperbox->h();
+		totalwidth =paperbox->w();
+	}
+	return 0;
 }
 
 //! Convert 't','b','l','r' to top,bottom,left,right.

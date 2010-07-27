@@ -189,7 +189,7 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
  * \ingroup pools
  * \brief Stack of available interfaces for ViewWindow objects.
  */
-/*!	\var Laxkit::PtrStack<Imposition> LaidoutApp::impositionpool
+/*!	\var Laxkit::PtrStack<ImpositionResource> LaidoutApp::impositionpool
  * \ingroup pools
  * \brief Stack of available impositions.
  */
@@ -979,7 +979,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 	int c=0;
 	if (!strncmp(name,"file://",7)) { name+=7; c=1; }
 	char *fullname=newstr(name);
-	
+
 	if (c || !strncmp(fullname,"/",1) || !strncmp(fullname,"./",2) || !strncmp(fullname,"../",3)) {
 		 // is filename
 		convert_to_full_path(fullname,NULL);
@@ -996,7 +996,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 		} 
 		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
-		
+
 		cout <<"imp full_path_for_resource for name not file! ***"<<endl;
 	}
 	delete[] fullname;//***
@@ -1009,7 +1009,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 //char *full_path_for_resource_by_name(const char *name,char *dir)//dir=NULL
 //{
 //}
-	
+
 //! Similar to Load(), but only for Document, not Project, and forces a rename.
 /*! If a doc with the same filename is already loaded, it is ignored. Templates will only
  * be created from files straight from disk.
@@ -1196,10 +1196,10 @@ int LaidoutApp::NewDocument(const char *spec)
 			continue;
 		}
 
-		 // check imposition types
+		 // check imposition resources
 		if (!imp) for (c2=0; c2<impositionpool.n; c2++) {
-			if (!strncasecmp(field,impositionpool.e[c2]->Stylename(),n)) {
-				imp=impositionpool.e[c2];
+			if (!strncasecmp(field,impositionpool.e[c2]->name,n)) {
+				imp=impositionpool.e[c2]->Create();
 				break;
 			}
 		}
@@ -1212,7 +1212,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!paper) paper=papersizes.e[0];
 	unsigned int flags=paper->flags;
 	paper->flags=(paper->flags&~1)|landscape;
-	if (!strcmp("Net",imp->Stylename())) {
+	if (!strcmp("NetImposition",imp->styledef->name)) {
 		NetImposition *neti=dynamic_cast<NetImposition *>(imp);
 		if (!neti->nets.n) {
 			neti->SetNet("Dodecahedron");
@@ -1258,7 +1258,7 @@ int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc
 
-	DBG cerr <<"***** just pushed newdoc using imposition"<<newdoc->imposition->Stylename()<<", must make viewwindow *****"<<endl;
+	DBG cerr <<"***** just pushed newdoc using imposition "<<newdoc->imposition->Stylename()<<", must make viewwindow *****"<<endl;
 	newdoc->dec_count();
 	
 	

@@ -1098,7 +1098,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 						int xx, int yy, int ww, int hh, int brder,
 						//Window owner,const char *mes, 
 						Project *nproj,Document *ndoc)
-	: ViewerWindow(parnt,nname,ntitle,nstyle|VIEWPORT_RIGHT_HANDED|VIEWER_BACK_BUFFER, 
+	: ViewerWindow(parnt,nname,ntitle,nstyle|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER, 
 					xx,yy,ww,hh, brder, NULL)
 {
 	project=nproj;
@@ -1162,10 +1162,12 @@ int SpreadEditor::init()
 {
 	//AddWin(***)...
 	ViewerWindow::init();
-	 //***remove the rulers
+
+	 // *** remove the rulers.... not actually deleting?
 	wholelist.remove(0); //first null
 	wholelist.remove(0); //x
 	wholelist.remove(0); //y
+	viewport->UseTheseRulers(NULL,NULL);
 
 
 	anXWindow *last=NULL;
@@ -1211,12 +1213,12 @@ int SpreadEditor::init()
  * "updatethumbs",
  * "docTreeChange".
  */
-int SpreadEditor::Event(Laxkit::EventData *data,const char *mes)
+int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 {
 	DBG cerr <<"SpreadEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"docTreeChange")) {
-		TreeChangeEvent *te=dynamic_cast<TreeChangeEvent *>(data);
+		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
 		if (!te || te->changer==this) return 1;
 
 		if (te->changetype==TreeObjectRepositioned ||

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2010 by Tom Lechner
 //
 
 
@@ -29,59 +29,137 @@
 
 
 #include "../laidout.h"
+#include "utils.h"
 #include "imposition.h"
 #include "impositioninst.h"
 #include "netimposition.h"
+#include "configured.h"
+
+#include <lax/fileutils.h>
+#include <dirent.h>
 
 using namespace Laxkit;
+using namespace LaxFiles;
 
-//! Return a new Imposition instance that is type impos.
+//! Return a new Imposition instance that is like the imposition resource named impos.
 /*! \ingroup objects
- * Searches laidout->impositionpool, and returns a duplicate of
- * the imposition or NULL.
+ * Searches laidout->impositionpool.
  *
  * The imposition returned will have a count of 1.
  */
-Imposition *newImposition(const char *impos)
+Imposition *newImpositionByResource(const char *impos)
 {
 	if (!impos) return NULL;
 	int c;
 	for (c=0; c<laidout->impositionpool.n; c++) {
-		if (!strcmp(impos,laidout->impositionpool.e[c]->Stylename())) {
-			return (Imposition *)laidout->impositionpool.e[c]->duplicate();
+		if (!strcmp(impos,laidout->impositionpool.e[c]->name)) {
+			return laidout->impositionpool.e[c]->Create();
 		}
 	}
 	return NULL;
 }
 
-/*! \fn Laxkit::PtrStack<Imposition> *GetBuiltinImpositionPool(Laxkit::PtrStack<Imposition> *existingpool)
- * \ingroup pools
+//! Return a new Imposition instance that is like the imposition resource named impos.
+/*! \ingroup objects
+ *
+ * Returns for "Singles", "Double Sided Singles", "Booklet", "Net".
+ *
+ * The imposition returned will have a count of 1.
+ *
+ * \todo *** this needs to be automated!!
  */
+Imposition *newImpositionByType(const char *impos)
+{
+	if (!strcmp(impos,"Singles")) return new Singles;
+	if (!strcmp(impos,"DoubleSidedSingles")) return new DoubleSidedSingles;
+	if (!strcmp(impos,"Booklet")) return new BookletImposition;
+	if (!strcmp(impos,"NetImposition")) return new NetImposition;
+
+	return NULL;
+}
+
+//--------------------------------- GetBuiltinImpositionPool -------------------------------------
+
 //! Return a stack of defined impositions.
 /*! \ingroup pools
  * 
- * \todo **** new Impositions might want to install various novel Style/Styledefs,
- *    or other initializations might have to occur... more thought required here!!
- *    maybe have StyleDef *MakeSinglesStyledef() instead of the def making in Style. Then 
- *    any new instance is properly created from the StyleDef::newfunc...
+ * If existingpool==NULL, then return a new pool. Otherwise, add to it.
  */
-PtrStack<Imposition> *GetBuiltinImpositionPool(PtrStack<Imposition> *existingpool) //existingpool=NULL
+PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResource> *existingpool)
 {
-	if (!existingpool) { // create new pool if you are not appending to an existing one.
-		existingpool=new PtrStack<Imposition>;
+	 //read in imposition resources from specified directory, and add to stack
+
+	if (!existingpool) existingpool=new PtrStack<ImpositionResource>;
+	
+	char *globalresourcedir=newstr(SHARED_DIRECTORY);
+	char *localresourcedir=newstr(laidout->config_dir);
+	char *projectresourcedir=newstr(laidout->project->dir);
+
+	appendstr(localresourcedir,"impositions/");
+	appendstr(globalresourcedir,"impositions/");
+	if (projectresourcedir) appendstr(globalresourcedir,"impositions/");
+
+	AddToImpositionPool(existingpool,globalresourcedir);
+	AddToImpositionPool(existingpool,localresourcedir);
+	if (projectresourcedir) AddToImpositionPool(existingpool,projectresourcedir);
+
+	if (!existingpool->n) {
+		 //there were no resources found, so add some built in defaults
+		existingpool->push(Singles::getDefaultResource(),1);
+		existingpool->push(DoubleSidedSingles::getDefaultResource(),1);
+		existingpool->push(BookletImposition::getDefaultResource(),1);
+		existingpool->push(NetImposition::getDefaultResource(),1);
 	}
-
-	existingpool->push(new Singles(),1);
-	existingpool->push(new DoubleSidedSingles(),1);
-	existingpool->push(new BookletImposition(),1);
-	existingpool->push(new NetImposition(),1);
-
-	 // todo:
-	//existingpool->push(new SignatureImposition(),1);
-	//existingpool->push(new CompositeImposition(),1);
-	//existingpool->push(new BasicBook(),1);
-	//existingpool->push(new AnyOtherSpecificImpositionsYouWantBuiltIn,1);
-	//...
 
 	return existingpool;
 }
+
+//! Add any imposition resources found in the specified directory to existing pool.
+/*! Returns the number of imposition resources added.
+ */
+int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *directory)
+{
+	if (!directory) return 0;
+
+	DIR *dir=opendir(directory);
+	if (!dir) return 0;
+
+	int errorcode;
+	char *str=NULL;
+	struct dirent entry,*result;
+	char *name,*desc,*temp=NULL;
+	int numadded=0;
+	do {
+		errorcode=readdir_r(dir,&entry,&result);
+		if (!strcmp(entry.d_name,".") || !strcmp(entry.d_name,"..")) continue;
+		if (result) {
+			if (str) delete[] str;
+			str=full_path_for_file(entry.d_name, directory);
+			FILE *f=open_laidout_file_to_read(str,"Imposition",NULL);
+			if (!f) {
+				cerr << " Warning! Non imposition file in imposition resource directory " <<endl
+					 << "   file: "<<entry.d_name<<"   directory: "<<directory<<endl;
+				continue;
+			}
+
+			resource_name_and_desc(f,&name,&desc);
+			if (isblank(name)) temp=make_id("imposition");
+			numadded++;
+			existingpool->push(new ImpositionResource(NULL,   //styledef name
+													  name?name:temp,//instance name
+													  str,    //filename
+													  desc,//desc
+													  NULL,0) //attribute
+							  );
+			if (temp) delete[] temp; temp=NULL;
+			if (name) delete[] name; name=NULL;
+			if (desc) delete[] desc; desc=NULL;
+			fclose(f);
+		}
+	} while (result);
+	if (str) delete[] str;
+	closedir(dir);
+
+	return numadded;
+}
+
