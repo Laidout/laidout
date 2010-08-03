@@ -350,7 +350,7 @@ int Signature::IsVertical()
 /*! \var int Signature::autoaddsheets
  * \brief Whether to stack up more sheets of paper in a signature when adding pages.
  *
- * If nonzero, then any increase will only use more stacked sheets. Otherwise, 
+ * If nonzero, then any increase will only use more stacked sheets per signature. Otherwise, 
  * more signatures are used, and it is assumed that these will be bound back to back.
  */
 /*! \var int Signature::showwholecover
