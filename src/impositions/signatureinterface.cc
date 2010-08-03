@@ -101,6 +101,14 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 	reallocateFoldinfo();
 }
 
+SignatureInterface::~SignatureInterface()
+{
+	DBG cerr <<"SignatureInterface destructor.."<<endl;
+
+	if (signature) signature->dec_count();
+	if (papersize) papersize->dec_count();
+}
+
 //! Reallocate foldinfo, usually after adding fold lines.
 /*! this will flush any folds stored in the signature.
  */
@@ -123,12 +131,22 @@ void SignatureInterface::reallocateFoldinfo()
 	foldinfo[r]=NULL; //terminating NULL, so we don't need to remember sig->n
 }
 
-SignatureInterface::~SignatureInterface()
+//! Check if the signature is totally folded or not.
+/*! If there are no fold lines, then we need to be at foldlevel==-1 for
+ * totally folded, letting us set margin, final trim, and binding.
+ *
+ * If update!=0, then if foldlevel==-1, make sure binding and updirection is
+ * applied to foldinfo.
+ */
+int SignatureInterface::checkFoldlevel(int update)
 {
-	DBG cerr <<"SignatureInterface destructor.."<<endl;
+	 //first check if there are no folds.. then foldlevel must be set to -1
+	if (signature->numhfolds==0 && signature->numvfolds==0) {
+		foldlevel=-1;
+	}
 
-	if (signature) signature->dec_count();
-	if (papersize) papersize->dec_count();
+	if (update && foldlevel==-1) {
+	}
 }
 
 /*! \todo much of this here will change in future versions as more of the possible

@@ -100,7 +100,7 @@ class SignatureImposition : public Imposition
 {
  protected:
 	int showwholecover; //whether you see the cover+backcover next to each other, or by themselves
-	int autoaddsheets;
+	int autoaddsheets; //whether you increase the num of sheets per sig, or num sigs when adding pages, 
 	PaperStyle *papersize;
 	Signature *signature;      //folding pattern
 	//PaperPartition *partition; //partition to insert folding pattern

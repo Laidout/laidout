@@ -58,6 +58,7 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 
 	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey);
 	virtual int scanhandle(int x,int y);
+	virtual int checkFoldlevel(int update);
  public:
 	Signature *signature;
 	PaperStyle *papersize;
