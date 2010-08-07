@@ -749,7 +749,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		 //when new imposition type selected from popup menu
 		if (s->info1==IMP_NEW_SIGNATURE) {
-			app->rundialog(new SignatureEditor(NULL,"sigeditor","sigeditor",
+			app->rundialog(new SignatureEditor(NULL,"sigeditor",_("Signature Editor"),
 						   this,"newsig",
 						   NULL,papertype));
 			return 0;

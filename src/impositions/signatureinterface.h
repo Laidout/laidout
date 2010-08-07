@@ -26,17 +26,6 @@
 
 //------------------------------------- SignatureInterface --------------------------------------
 
-class FoldedPageInfo
-{
- public:
-	int currentrow, currentcol; //where this original is currently
-	int y_flipped, x_flipped; //how this one is flipped around in its current location
-	int finalindexfront, finalindexback;
-	Laxkit::NumStack<int> pages; //what pages are actually there, r,c are pushed
-
-	FoldedPageInfo();
-};
-
 class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
@@ -55,10 +44,13 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
 	void reallocateFoldinfo();
+	void resetFoldinfo();
+	void applyFold(char folddir, int index, int under);
 
-	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey);
+	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
 	virtual int scanhandle(int x,int y);
 	virtual int checkFoldlevel(int update);
+	virtual void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
  public:
 	Signature *signature;
 	PaperStyle *papersize;
@@ -85,8 +77,8 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	//virtual int MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	//virtual int RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	//virtual int RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
-	//virtual int WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
-	//virtual int WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
