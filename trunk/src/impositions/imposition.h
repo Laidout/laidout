@@ -133,10 +133,10 @@ class Imposition : public Style
 	virtual int GetSpreadsNeeded(int npages) = 0;
 	virtual int *PrintingPapers(int frompage,int topage) = 0;
 	
-	virtual int NumPageTypes()=0;
-	virtual const char *PageTypeName(int pagetype)=0;
-	virtual int PageType(int page)=0;
-	virtual int SpreadType(int spread)=0;
+	virtual int NumPageTypes() = 0;
+	virtual const char *PageTypeName(int pagetype) = 0;
+	virtual int PageType(int page) = 0;
+	virtual int SpreadType(int spread) = 0;
 
 	virtual LaxInterfaces::InterfaceWithDp *Interface(int layouttype);
 };

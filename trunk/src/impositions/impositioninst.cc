@@ -1349,7 +1349,7 @@ int *BookletImposition::PrintingPapers(int frompage,int topage)
  *  <pre>
  *    creep .05
  *    bodycolor 0xffffffff
- *    colorcolor 0xffffffff
+ *    covercolor 0xffffffff
  *    isvertical
  *    defaultpagestyler
  *    ...Singles stuff..
@@ -1405,115 +1405,5 @@ void BookletImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::a
 }
 
 
-////---------------------------------- CompositeImposition ----------------------------
-//
-// // class to enable certain page ranges to be administred by different impositions...
-//class CompositeImposition : public Imposition
-//{
-// protected:
-//	Imposition *impos;
-//	Ranges ranges; 
-//	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-//}
 
 
-
-////----------------------------------- BasicBook -------------------------------------------
-///*! \class BasicBook
-// * \brief A more general imposition geared more for books with several sections.
-// *
-// * A book in this case has muliple numbers of sections, and each section has a certain
-// * number of pages. Each of these sections would then be folded and assembled back
-// * to back to form the body pages and sewn onto binding tape, and fastened onto the
-// * book cover. Alternately, the sections could just be chopped in half the result
-// * perfect bound with the cover.
-// *
-// * The optional cover is mostly for perfect bound books. It will have different dimensions 
-// * than the body page because of the extra thickness of the spine. Indeed the cover often 
-// * times printed on a different size piece of paper to accomodate that. For instance, I often 
-// * make the body pages legal size paper chopped in half, and print the covers on thick
-// * tabloid size paper, then trim it all down after the cover is attached to the body.
-// *
-// * This imposition will automatically set up the cover paper to have the proper cut marks
-// * to fit around the sections with the specified spine thickness. Specifically, this means
-// * the vertical dimension of the coverpage will be the same as a body page, but the width
-// * will be 2 pages plus the spine width.
-// */
-////************* should this be broken down into a Project, rather than complete Imposition????
-////************* because it implies 2 different breakdowns of pages. Imposition should be one kind of breakdown
-////class BasicBook : public Imposition
-////{
-//// public:
-////	int numsections;
-////	int paperspersection; // 0 does not mean 0. 0 means infinity (or MAX_INT).
-////	int creeppersection; 
-////	int insetl,insetr,insett,insetb;
-////	int tilex,tiley;
-////	unsigned long bodycolor;
-////	
-////	char specifycover;
-////	int spinewidth;
-////	unsigned long covercolor;
-////	PaperStyle coverpaper;
-////	PageStyle coverpage;
-////	
-////	virtual int GetPagesNeeded(int npapers); // how many pages needed when you have n papers
-////	virtual int GetPapersNeeded(int npages); // how many papers needed to contain n pages
-//
-//	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-////};
-//
-//BasicBook::BasicBook() : Style(NULL,NULL,"Basic Book")
-//{ }
-//
-////! *** imp me!
-//void BasicBook::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
-//{***
-//	if (!att) return;
-//	char *name,*value;
-//	for (int c=0; c<att->attributes.n; c++) {
-//		name= att->attributes.e[c]->name;
-//		value=att->attributes.e[c]->value;
-//		if (!strcmp(name,"creep")) {
-//			DoubleAttribute(value,&creep);
-//		} else if (!strcmp(name,bodycolor)) {
-//			if (value) bodycolor=strtol(value,NULL,0);
-//		} else if (!strcmp(name,covercolor)) {
-//			if (value) covercolor=strtol(value,NULL,0);
-//		}
-//	}
-//	DoubleSidedSingles::dump_in_atts(att,flag,context);
-//}
-//
-////! Write out flags, width, height
-///*!
-// * If what==-1, dump out a pseudocode mockup of the file format.
-// */
-//void BasicBook::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-//{
-//	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-//	if (what==-1) {
-//		***
-//	}
-//	fprintf(f,"%swidth %s\n",spc,w());
-//	fprintf(f,"%sheight %s\n",spc,h());
-//	if (flags&MARGINS_CLIP) fprintf(f,"%smarginsclip\n",spc);
-//	if (flags&FACING_PAGES_BLEED) fprintf(f,"%sfacingpagesbleed\n",spc);
-//}
-//
-//int BasicBook::GetPagesNeeded(int npapers)
-//{ return npapers*4; }
-//
-////! Get the number of papers needed to hold this many pages.
-///*! This uses the same sheets per section, and may imply a change
-// *  in the number of sections actually used.
-// */
-//int BasicBook::GetPapersNeeded(int npages)
-//{*** 
-//	if (!paperspersection) return (npages-1)/4;
-//	return ((npages-1)/4/paperspersection+1)*paperspersection; 
-//}
-//
-//

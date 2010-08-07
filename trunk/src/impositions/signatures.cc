@@ -17,7 +17,11 @@
 #include "signatures.h"
 #include "../language.h"
 
+#include <lax/attributes.h>
 #include <lax/lists.cc>
+
+
+using namespace LaxFiles;
 
 
 //------------------------------------- Fold --------------------------------------
@@ -46,6 +50,34 @@ const char *FoldDirectionName(FoldDirectionType dir, int translate)
 	return translate?_(str):str;
 }
 
+/*! \ingroup misc
+ *
+ * For case insensitive comparisons to "left", "right", "top", "bottom", return
+ * 'l', 'r', 't', 'b'.
+ *
+ * If one of those are found, return 0, else 1.
+ */
+int LRTBAttribute(const char *v, char *ret)
+{
+	if (!strcasecmp(v,"left"))   { *ret='l'; return 0; }
+	if (!strcasecmp(v,"right"))  { *ret='r'; return 0; }
+	if (!strcasecmp(v,"top"))    { *ret='t'; return 0; }
+	if (!strcasecmp(v,"bottom")) { *ret='b'; return 0; }
+
+	return 1;
+}
+
+//! Convert 't','b','l','r' to top,bottom,left,right.
+/*! \ingroup misc
+ */
+const char *CtoStr(char c)
+{
+	if (c=='t') return "Top";
+	if (c=='b') return "Bottom";
+	if (c=='l') return "Left";
+	if (c=='r') return "Right";
+	return NULL;
+}
 
 /*! \class Fold
  * \brief Line description node in a Signature
@@ -58,6 +90,19 @@ const char *FoldDirectionName(FoldDirectionType dir, int translate)
 /*! \var int FoldDirection::whichfold
  * \brief Index from the left or top side of completely unfolded paper of which fold to act on
  */
+
+
+//------------------------------------- FoldedPageInfo --------------------------------------
+/*! \class FoldedPageInfo
+ * \brief Info about partial folded states of signatures.
+ */
+
+FoldedPageInfo::FoldedPageInfo()
+{
+	x_flipped=y_flipped=0;
+	currentrow=currentcol=0;
+	finalindexback=finalindexfront=-1;
+}
 
 
 //------------------------------------- Signature --------------------------------------
@@ -173,11 +218,53 @@ Signature::Signature()
 	binding='l';    //direction to place binding 'l|r|t|b'
 	positivex='r';  //direction of the positive x axis: 'l|r|t|b'
 	positivey='u';  //direction of the positive x axis: 'l|r|t|b'
+
+	foldinfo=NULL;
 }
 
 Signature::~Signature()
 {
 	if (paperbox) paperbox->dec_count();
+
+	if (foldinfo) {
+		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
+		delete[] foldinfo;
+	}
+}
+
+//! Reallocate and map foldinfo.
+/*! This will base the new foldinfo on the actual number of folds in the folds stack.
+ *
+ * Each fold info cell will have only itself in its pages stack.
+ * To apply folds, use applyFold().
+ */
+void Signature::reallocateFoldinfo()
+{ // ***
+	if (foldinfo) {
+		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
+		delete[] foldinfo;
+	}
+	foldinfo=new FoldedPageInfo*[numhfolds+2];
+	int r;
+	for (r=0; r<numhfolds+1; r++) {
+		foldinfo[r]=new FoldedPageInfo[numvfolds+2];
+		for (int c=0; c<numvfolds+1; c++) {
+			foldinfo[r][c].pages.push(r);
+			foldinfo[r][c].pages.push(c);
+		}
+	}
+	foldinfo[r]=NULL; //terminating NULL, so we don't need to remember sig->n
+}
+
+/*! If foldlevel==0, then fill with info about when there are no folds.
+ * foldlevel==1 means after the 1st fold in the folds stack, etc.
+ *
+ * If fromscratch==1, then reset the info, and apply each fold below foldlevel
+ * before applying the fold at foldlevel.
+ */
+int Signature::applyFold(FoldedPageInfo **foldinfo, int foldlevel, int fromscratch)
+{ // ***
+	return 0;
 }
 
 //! Set the size of the signature to this paper.
@@ -196,16 +283,6 @@ int Signature::SetPaper(PaperStyle *p)
 	return 0;
 }
 
-//! Convert 't','b','l','r' to top,bottom,left,right.
-const char *CtoStr(char c)
-{
-	if (c=='t') return "Top";
-	if (c=='b') return "Bottom";
-	if (c=='l') return "Left";
-	if (c=='r') return "Right";
-	return NULL;
-}
-
 void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 { // ***
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -221,12 +298,12 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%stilex 1        #The number of folding sections horizontally to divide a piece of paper\n",spc);
 		fprintf(f,"%stiley 1        #The number of folding sections vertically to divide a piece of paper\n",spc);
 		fprintf(f,"\n");
-		fprintf(f,"%snumhfolds 0    #The number of horizontal fold lines of a folding pattern\n",spc);
-		fprintf(f,"%snumvfolds 0    #The number of vertical fold lines of a folding pattern\n",spc);
-		fprintf(f,"%sfold           #There will be numhfolds+numvfolds fold blocks. When reading in, the number\n",spc);
-		fprintf(f,"%s               #of these blocks will override values of numhfolds and numvfolds.\n",spc);
-		fprintf(f,"%s  index        #which horizontal or vertical fold, counting from the left or the top\n",spc);
-		fprintf(f,"%s  direction right  #Can be right, left, top, bottom, under right, under left,\n",spc);
+		fprintf(f,"%snumhfolds 0       #The number of horizontal fold lines of a folding pattern\n",spc);
+		fprintf(f,"%snumvfolds 0        #The number of vertical fold lines of a folding pattern\n",spc);
+		fprintf(f,"%sfold 3 Under Left  #There will be numhfolds+numvfolds fold blocks. When reading in, the number\n",spc);
+		fprintf(f,"%sfold 2 Top         #of these blocks will override values of numhfolds and numvfolds.\n",spc);
+		fprintf(f,"%s                   #1st number is which horizontal or vertical fold, counting from the left or the top\n",spc);
+		fprintf(f,"%s                   #The direction Can be right, left, top, bottom, under right, under left,\n",spc);
 		fprintf(f,"%s                   #under top, under bottom. The \"under\" values fold in that\n",spc);
 		fprintf(f,"%s                   #direction, but the fold is behind as you look at it,\n",spc);
 		fprintf(f,"%s                   #rather than the default of over and on top.\n",spc);
@@ -262,9 +339,9 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%snumvfolds %d\n",spc,numvfolds);
 	
 	for (int c=0; c<folds.n; c++) {
-		fprintf(f,"%sfold #%d\n",spc,c);
-		fprintf(f,"%s  index %d\n",spc,folds.e[c]->whichfold);
-		fprintf(f,"%s  direction %s\n",spc,FoldDirectionName(folds.e[c]->direction,0));
+		fprintf(f,"%sfold %d %s #%d\n",spc,folds.e[c]->whichfold, FoldDirectionName(folds.e[c]->direction,0), c);
+		//fprintf(f,"%s  index %d\n",spc,folds.e[c]->whichfold);
+		//fprintf(f,"%s  direction %s\n",spc,FoldDirectionName(folds.e[c]->direction,0));
 	}
 
 	fprintf(f,"%sbinding %s\n",spc,CtoStr(binding));
@@ -285,10 +362,116 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 }
 
 void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{ // ***
+{
+	char *name,*value;
+	int numhf=0, numvf=0;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"sheetspersignature")) {
+			IntAttribute(value,&sheetspersignature);
+
+		} else if (!strcmp(name,"insettop")) {
+			DoubleAttribute(value,&insettop);
+
+		} else if (!strcmp(name,"insetbottom")) {
+			DoubleAttribute(value,&insetbottom);
+
+		} else if (!strcmp(name,"insetleft")) {
+			DoubleAttribute(value,&insetleft);
+
+		} else if (!strcmp(name,"insetright")) {
+			DoubleAttribute(value,&insetright);
+
+		} else if (!strcmp(name,"tilegapx")) {
+			DoubleAttribute(value,&tilegapx);
+
+		} else if (!strcmp(name,"tilegapy")) {
+			DoubleAttribute(value,&tilegapy);
+
+		} else if (!strcmp(name,"tilex")) {
+			IntAttribute(value,&tilex);
+
+		} else if (!strcmp(name,"tiley")) {
+			IntAttribute(value,&tiley);
+
+		} else if (!strcmp(name,"numhfolds")) {
+			IntAttribute(value,&numhfolds);
+
+		} else if (!strcmp(name,"numvfolds")) {
+			IntAttribute(value,&numvfolds);
+
+		} else if (!strcmp(name,"trimtop")) {
+			DoubleAttribute(value,&trimtop);
+
+		} else if (!strcmp(name,"trimbottom")) {
+			DoubleAttribute(value,&trimbottom);
+
+		} else if (!strcmp(name,"trimleft")) {
+			DoubleAttribute(value,&trimleft);
+
+		} else if (!strcmp(name,"trimright")) {
+			DoubleAttribute(value,&trimright);
+
+		} else if (!strcmp(name,"margintop")) {
+			DoubleAttribute(value,&margintop);
+
+		} else if (!strcmp(name,"marginbottom")) {
+			DoubleAttribute(value,&marginbottom);
+
+		} else if (!strcmp(name,"marginleft")) {
+			DoubleAttribute(value,&marginleft);
+
+		} else if (!strcmp(name,"marginright")) {
+			DoubleAttribute(value,&marginright);
+
+		} else if (!strcmp(name,"binding")) {
+			LRTBAttribute(value,&binding);
+
+		} else if (!strcmp(name,"up")) {
+			LRTBAttribute(value,&binding);
+
+		} else if (!strcmp(name,"positivex")) {
+			LRTBAttribute(value,&positivex);
+
+		} else if (!strcmp(name,"positivey")) {
+			LRTBAttribute(value,&positivey);
+
+		} else if (!strcmp(name,"fold")) {
+			char *e=NULL;
+			int index=-1;
+			FoldDirectionType folddir;
+			int under=0;
+			char dir=0;
+			IntAttribute(value,&index,&e);
+			while (*e && isspace(*e)) e++;
+			if (!strncasecmp(e,"under ",6)) { under=1; e+=6; }
+			LRTBAttribute(e,&dir);
+			if (under) {
+				if      (dir=='r') { folddir=FOLD_Left_Under_To_Right; numvf++; }
+				else if (dir=='l') { folddir=FOLD_Right_Under_To_Left; numvf++; }
+				else if (dir=='b') { folddir=FOLD_Top_Under_To_Bottom; numhf++; }
+				else if (dir=='t') { folddir=FOLD_Bottom_Under_To_Top; numhf++; }
+			} else {
+				if      (dir=='l') { folddir=FOLD_Right_Over_To_Left; numvf++; }
+				else if (dir=='b') { folddir=FOLD_Top_Over_To_Bottom; numhf++; }
+				else if (dir=='t') { folddir=FOLD_Bottom_Over_To_Top; numhf++; }
+				else if (dir=='r') { folddir=FOLD_Left_Over_To_Right; numvf++; }
+			}
+			Fold *newfold=new Fold(folddir,index);
+			folds.push(newfold);
+
+		}
+	}
+	numhfolds=numhf; //note: overrides that stored in atts
+	numvfolds=numvf;
 }
 
 //! Ensure that the Signature's values are actually sane.
+/*! \todo TODO!
+ */ 
 unsigned int Signature::Validity()
 {
 	 //inset, gap, trim and margin values all must be within the proper boundaries
@@ -340,8 +523,11 @@ double Signature::PageWidth()
  */
 int Signature::IsVertical()
 {
-	return (up=='t' || up=='b') && (binding=='t' || binding=='b');
+	if  ((up=='t' || up=='b') && (binding=='t' || binding=='b')) return 1;
+	if  ((up=='l' || up=='r') && (binding=='r' || binding=='l')) return 1;
+	return 0;
 }
+
 
 //------------------------------------- SignatureImposition --------------------------------------
 /*! \class SignatureImposition
@@ -389,6 +575,19 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
 
 void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 { // ***
+	char *name,*value;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"showwholecover")) {
+			showwholecover=BooleanAttribute(value);
+
+		} else if (!strcmp(name,"signature")) {
+			signature->dump_in_atts(att->attributes.e[c],flag,context);
+		}
+	}
 }
 
 
@@ -413,19 +612,202 @@ const char *SignatureImposition::PageTypeName(int pagetype)
  */
 int SignatureImposition::PageType(int page)
 {
-	int left=((page+1)/2)*2-1+showwholecover;
+	//int left=((page+1)/2)*2-1+showwholecover;  <-- *** showwholecover does not map page numbers!!
+	int left=((page+1)/2)*2-1;
 	if (left==page && signature->IsVertical()) return 0; //top
 	if (left==page) return 0; //left
 	if (signature->IsVertical()) return 1; //bottom
 	return 1; //right
 }
 
+//! Return the type of spread that the given spread index is.
 int SignatureImposition::SpreadType(int spread)
 { // ***
 	return 0;
 }
 
+//! Return which paper number the given document page lays on.
+int SignatureImposition::PaperFromPage(int pagenumber)
+{// ***
+	 //if a signature is 4x3 cells, each paper holds 24 pages. 12 front, and 12 back.
+	 //whether a paper holds a page on the front or back alternates during those 24.
+	return 0;
+}
 
+int SignatureImposition::SpreadFromPage(int layout, int pagenumber)
+{// ***
+	if (layout==SINGLELAYOUT) return pagenumber;
+	if (layout==PAPERLAYOUT) return PaperFromPage(pagenumber);
+	//if (layout==PAGELAYOUT) return SpreadFromPage(pagenumber);
+	return 0;
+}
+
+int SignatureImposition::GetPagesNeeded(int npapers)
+{
+	return npapers * signature->sheetspersignature*2*(signature->numhfolds+1)*(signature->numvfolds+1);
+}
+
+/*! Paper back and front count as two different papers.
+ */
+int SignatureImposition::GetPapersNeeded(int npages)
+{
+	int numcells=signature->sheetspersignature*2*(signature->numhfolds+1)*(signature->numvfolds+1);
+	return (npages/numcells+1)*2;
+}
+
+int SignatureImposition::GetSpreadsNeeded(int npages)
+{ return (npages)/2+1; } 
+
+int *SignatureImposition::PrintingPapers(int frompage,int topage)
+{// ***
+	cerr <<" *** note to self: is Imposition::PrintingPapers() needed?"<<endl;
+	return NULL;
+}
+
+
+//-----------basic setup
+Style *SignatureImposition::duplicate(Style *s)
+{// ***
+	return NULL;
+}
+
+int SignatureImposition::SetPaperSize(PaperStyle *npaper)
+{// ***
+	return 1;
+}
+
+int SignatureImposition::SetPaperGroup(PaperGroup *ngroup)
+{// ***
+	return 1;
+}
+
+PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
+{// ***
+	return NULL;
+}
+
+Laxkit::DoubleBBox *SignatureImposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)
+{// ***
+	return NULL;
+}
+
+int SignatureImposition::NumSpreads(int layout)
+{// ***
+	return 0;
+}
+
+int SignatureImposition::NumSpreads(int layout,int setthismany)
+{// ***
+	return 0;
+}
+
+int SignatureImposition::NumPapers()
+{// ***
+	return numpapers;
+}
+
+//! Set the number of papers.
+/*! Returns the number of papers the imposition thinks it needs.
+ * This will not be less than npapers, but might be more.
+ */
+int SignatureImposition::NumPapers(int npapers)
+{// ***
+	return 0;
+}
+
+int SignatureImposition::NumPages()
+{// ***
+	return numpages;
+}
+
+//! Set the number of document pages that must be fit into the imposition.
+/*! Returns the new value of numpages.
+ */
+int SignatureImposition::NumPages(int npages)
+{ //***
+	//update the number of papers to accomodate npages
+	return 0;
+}
+
+
+//---------------doc pages maintenance
+Page **SignatureImposition::CreatePages()
+{// ***
+	return NULL;
+}
+
+int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
+{// ***
+	return NULL;
+}
+
+	
+//! Return outline of page in page coords.
+LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int local)
+{// ***
+	return NULL;
+}
+
+LaxInterfaces::SomeData *SignatureImposition::GetPageMarginOutline(int pagenum,int local)
+{// ***
+	return NULL;
+}
+
+
+LaxInterfaces::SomeData *SignatureImposition::GetPrinterMarks(int papernum)
+{// ***
+	return NULL;
+}
+	
+//---------------spread generation
+Spread *SignatureImposition::Layout(int layout,int which)
+{// ***
+	return NULL;
+}
+
+//! Return 3 plus the total number of folds.
+int SignatureImposition::NumLayoutTypes()
+{
+	return 2+signature->numhfolds+signature->numvfolds;
+}
+
+const char *SignatureImposition::LayoutName(int layout)
+{
+	if (layout==PAPERLAYOUT) return _("Papers");
+	if (layout==PAGELAYOUT) return _("Pages");
+	if (layout==SINGLELAYOUT) return _("Singles");
+	if (layout==LITTLESPREADLAYOUT) return _("Little Spreads");
+
+	layout-=MAXDEFAULTLAYOUTNUMBER;
+	if (layout>=0 && layout<signature->numhfolds+signature->numvfolds) {
+		static char str[100]; //not thread safe, but probably ok.
+		if (layout==0) sprintf(str,_("After 1 fold"));
+		else sprintf(str,_("After %d folds"),layout+1);
+		return str;
+	}
+
+	return NULL;
+}
+
+Spread *SignatureImposition::SingleLayout(int whichpage)
+{
+	return Imposition::SingleLayout(whichpage);
+}
+
+Spread *SignatureImposition::PageLayout(int whichspread)
+{// ***
+	return NULL;
+}
+
+Spread *SignatureImposition::PaperLayout(int whichpaper)
+{// ***
+	return NULL;
+}
+
+Spread *SignatureImposition::GetLittleSpread(int whichspread)
+{// ***
+	return PageLayout(whichspread);
+}
 
 
 
