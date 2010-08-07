@@ -22,7 +22,7 @@ VERSION 0.091
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
        SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
@@ -99,6 +99,7 @@ VERSION 0.1
        Able to select and transform nodes from different objects at the same time
        Color channel density control, to not overdo CMYK mix, for instance
        Align and distribute tool
+       Allow accessing scribus image cache, or try to spin off a non project specific general image cache
 
 
 VERSION 0.2
