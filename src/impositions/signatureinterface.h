@@ -37,7 +37,10 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int foldunder;
 	int foldindex;
 	double foldprogress;
+	int currentfold;
 	int finalr,finalc;
+	int onoverlay;
+	int hasfinal;
 
 	double totalwidth, totalheight;
 

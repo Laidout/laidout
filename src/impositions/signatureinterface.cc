@@ -46,6 +46,9 @@ using namespace std;
  * If moving up or down, foldindex is the row immediately above the fold.
  * If moving left or right, foldindex is the column immediately to the right of the fold.
  */
+/*! \var int SignatureInterface::foldlevel
+ * \brief The current unfolding. 0 is totally unfolded.
+ */
 
 SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, PaperStyle *p)
 	: InterfaceWithDp(nid,ndp) 
@@ -59,6 +62,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	foldr1=foldc1=foldr2=foldc2=-1;
 	folddirection=0;
 	lbdown_row=lbdown_col=-1;
+	currentfold=-1;
 
 	if (!p) {
 		totalheight=totalwidth=5;
@@ -71,6 +75,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	foldinfo=NULL;
+	hasfinal=0;
 	reallocateFoldinfo();
 }
 
@@ -108,6 +113,8 @@ SignatureInterface::~SignatureInterface()
 void SignatureInterface::reallocateFoldinfo()
 {
 	signature->folds.flush();
+	hasfinal=0;
+
 	if (foldinfo) {
 		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
 		delete[] foldinfo;
@@ -141,6 +148,9 @@ void SignatureInterface::resetFoldinfo()
 //! Low level flipping across folds.
 /*! This will flip everything on one side of a fold to the other side (if possible).
  * It is not a selective flipping.
+ *
+ * This is called to ONLY apply the fold. It does not check and apply final index settings
+ * or check for validity of the fold.
  */
 void SignatureInterface::applyFold(char folddir, int index, int under)
 {
@@ -149,41 +159,43 @@ void SignatureInterface::applyFold(char folddir, int index, int under)
 
 	if (folddir=='l') {
 		fr1=0;
-		fr2=signature->numvfolds;
+		fr2=signature->numhfolds;
 		fc1=index;
-		fc2=signature->numhfolds;
+		fc2=signature->numvfolds;
 	} else if (folddir=='r') {
 		fr1=0;
-		fr2=signature->numvfolds;
+		fr2=signature->numhfolds;
 		fc1=0;
 		fc2=index-1;
 	} else if (folddir=='b') {
 		fr1=index;
-		fr2=signature->numvfolds;
+		fr2=signature->numhfolds;
 		fc1=0;
-		fc2=signature->numhfolds;
+		fc2=signature->numvfolds;
 	} else if (folddir=='t') {
 		fr1=0;
 		fr2=index-1;
 		fc1=0;
-		fc2=signature->numhfolds;
+		fc2=signature->numvfolds;
 	}
 
 	for (int r=fr1; r<=fr2; r++) {
 	  for (int c=fc1; c<=fc2; c++) {
+		if (foldinfo[r][c].pages.n==0) continue; //skip blank cells
+
 		 //find new positions
-		if (folddirection=='b') {
+		if (folddir=='b') {
 			newc=c;
-			newr=foldindex-(r-foldindex+1);
-		} else if (folddirection=='r') {
+			newr=index-(r-index+1);
+		} else if (folddir=='r') {
 			newr=r;
-			newc=foldindex+(foldindex-c-1);
-		} else if (folddirection=='l') {
+			newc=index+(index-c-1);
+		} else if (folddir=='l') {
 			newr=r;
-			newc=foldindex-(c-foldindex+1);
-		} else if (folddirection=='t') {
+			newc=index-(c-index+1);
+		} else if (folddir=='t') {
 			newc=c;
-			newr=foldindex+(foldindex-r-1);
+			newr=index+(index-r-1);
 		}
 
 		 //swap old and new positions
@@ -203,29 +215,79 @@ void SignatureInterface::applyFold(char folddir, int index, int under)
 			}
 		}
 		 //flip the original place.
-		if (folddirection=='b' || folddirection=='t') foldinfo[tr][tc].y_flipped=!foldinfo[r][c].y_flipped;
-		else foldinfo[tr][tc].x_flipped=!foldinfo[r][c].x_flipped;
+		if (!hasfinal) {
+			if (folddir=='b' || folddir=='t') foldinfo[tr][tc].y_flipped=!foldinfo[r][c].y_flipped;
+			else foldinfo[tr][tc].x_flipped=!foldinfo[r][c].x_flipped;
+		}
 	  }
 	}
 }
 
 //! Check if the signature is totally folded or not.
-/*! If there are no fold lines, then we need to be at foldlevel==-1 for
+/*! Remember that if there are no fold lines, then we need to be hasfinal==1 for
  * totally folded, letting us set margin, final trim, and binding.
  *
- * If update!=0, then if foldlevel==-1, make sure binding and updirection is
+ * TODO: If update!=0, then if hasfinal==1, make sure binding and updirection is
  * applied to foldinfo.
  *
  * Returns foldlevel.
  */
 int SignatureInterface::checkFoldlevel(int update)
 {
-	 //*** first check if there are no folds.. then foldlevel must be set to -1
-	if (signature->numhfolds==0 && signature->numvfolds==0) {
-		foldlevel=-1;
+	 //check the immediate neighors of the first cell with pages.
+	 //If there are no neighbors, then we are totally folded.
+
+	 //find a non blank cell
+	int newr=0,newc=0;
+	for (newr=0; newr<=signature->numhfolds; newr++) {
+	  for (newc=0; newc<=signature->numvfolds; newc++) {
+		if (foldinfo[newr][newc].pages.n!=0) break;
+	  }
+	  if (newc!=signature->numvfolds+1) break;
 	}
 
-	if (update && foldlevel==-1) {
+	int stillmore=4;
+	int tr,tc;
+
+	 //check above
+	tr=newr-1; tc=newc;
+	if (tr<0 || foldinfo[tr][tc].pages.n==0) stillmore--;
+
+	 //check below
+	tr=newr+1; tc=newc;
+	if (tr>signature->numhfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
+	
+	 //check left
+	tr=newr; tc=newc-1;
+	if (tc<0 || foldinfo[tr][tc].pages.n==0) stillmore--;
+
+	 //check if right
+	tr=newr; tc=newc+1;
+	if (tc>signature->numvfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
+
+	if (stillmore==0) {
+		int finalr=newr;
+		int finalc=newc;
+
+		int page=0,xflip,yflip;
+		for (int c=foldinfo[finalr][finalc].pages.n-2; c>=0; c-=2) {
+			tr=foldinfo[finalr][finalc].pages.e[c];
+			tc=foldinfo[finalr][finalc].pages.e[c+1];
+
+			xflip=foldinfo[tr][tc].x_flipped;
+			yflip=foldinfo[tr][tc].y_flipped;
+
+			if ((xflip && !yflip) || (!xflip && yflip)) {
+				 //back side of paper is up
+				foldinfo[tr][tc].finalindexback=page;
+				foldinfo[tr][tc].finalindexfront=page+1;
+			} else {
+				foldinfo[tr][tc].finalindexback=page+1;
+				foldinfo[tr][tc].finalindexfront=page;
+			}
+			page+=2;
+		}
+		hasfinal=1;
 	}
 
 	return foldlevel;
@@ -348,7 +410,7 @@ int SignatureInterface::Refresh()
 	h=patternheight;
 
 	x=signature->insetleft;
-	flatpoint pts[4];
+	flatpoint pts[4],fp;
 	int facedown=0;
 	int hasface;
 	int rrr,ccc;
@@ -379,20 +441,26 @@ int SignatureInterface::Refresh()
 				rrr=foldinfo[rr][cc].pages[foldinfo[rr][cc].pages.n-2];
 				ccc=foldinfo[rr][cc].pages[foldinfo[rr][cc].pages.n-1];
 
-				 //there are faces in this spot, draw arrow and page number
-				dp->NewFG(.75,.75,.75);
-				xflip=foldinfo[rrr][ccc].x_flipped;
-				yflip=foldinfo[rrr][ccc].y_flipped;
-				facedown=((xflip && !yflip) || (!xflip && yflip));
+				if (foldinfo[rr][cc].finalindexfront>=0) {
+					 //there are faces in this spot, draw arrow and page number
+					dp->NewFG(.75,.75,.75);
+					xflip=foldinfo[rrr][ccc].x_flipped;
+					yflip=foldinfo[rrr][ccc].y_flipped;
+					facedown=((xflip && !yflip) || (!xflip && yflip));
 
-				if (facedown) dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
-				else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-				pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
-				dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
+					if (facedown) dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
+					else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+					pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
+					dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
+					fp=dp->realtoscreen(pts[0]);
+					if (facedown) sprintf(str,"%d/%d",foldinfo[rrr][ccc].finalindexback,foldinfo[rrr][ccc].finalindexfront);
+					else sprintf(str,"%d/%d",foldinfo[rrr][ccc].finalindexfront,foldinfo[rrr][ccc].finalindexback);
+					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
+				}
 			}
 
 			 //draw markings for final page binding edge, up, trim, margin
-			if (foldlevel==-1 && rr==finalr && cc==finalc) {
+			if (hasfinal && foldlevel==signature->folds.n && rr==finalr && cc==finalc) {
 				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
 				
 				xx=x+cc*ew;
@@ -467,7 +535,7 @@ int SignatureInterface::Refresh()
 		else if (folddirection=='r') dir.x=1;
 
 		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-		dp->drawarrow(p,dir,0,25,0);
+		//dp->drawarrow(p,dir,0,25,0);
 
 
 		 //draw partially folded region foldr1..foldr2, foldc1..foldc2
@@ -525,10 +593,14 @@ int SignatureInterface::Refresh()
 	int thing;
 	for (int c=signature->folds.n-1; c>=-1; c--) {
 		if (c==-1) thing=THING_Circle;
-		else if (c==signature->folds.n-1) thing=THING_Square;
+		else if (c==signature->folds.n-1 && hasfinal) thing=THING_Square;
 		else thing=THING_Triangle_Down;
 		getFoldIndicatorPos(c, &x,&y,&w,&h);
-		dp->NewFG(1.,1.,1.);
+
+		 //color hightlighted to show which fold we are currently on
+		if (foldlevel==c+1) dp->NewFG(1.,.5,1.);
+		else dp->NewFG(1.,1.,1.);
+
 		dp->drawthing(x+w/2,y+h/2, w/2,h/2, 1, thing); //filled
 		dp->NewFG(1.,0.,1.);
 		dp->drawthing(x+w/2,y+h/2, w/2,h/2, 0, thing); //outline
@@ -563,7 +635,7 @@ int SignatureInterface::Refresh()
 //	}
 //
 //	 //draw arrow handles for trim and margin
-//	if (foldlevel==signature->folds.n-1) {
+//	if (hasfinal && foldlevel==signature->folds.n-1) {
 //		 //trim handle
 //		dp->NewFG(1.,0.,0.);
 //
@@ -624,6 +696,8 @@ void SignatureInterface::getFoldIndicatorPos(int which, double *x,double *y, dou
 
 #define SP_Sheets_Per_Sig 23
 #define SP_Stack_Or_Add   24
+
+#define SP_FOLDS          100
 
 
 
@@ -722,16 +796,30 @@ int SignatureInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 
 int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int row,col;
-	int over=scan(x,y, &row,&col, NULL,NULL, NULL,NULL);
+	int row,col,tilerow,tilecol;
+	int over=scan(x,y, &row,&col, NULL,NULL, &tilerow,&tilecol);
 	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
 
 	if (buttondown.any()) return 0;
 
 	buttondown.down(d->id,LEFTBUTTON, x,y, row,col);
 
+	 //check overlays first
+	double xx,yy,w,h;
+	onoverlay=SP_None;
+	for (int c=signature->folds.n-1; c>=-1; c--) {
+		getFoldIndicatorPos(c, &xx,&yy,&w,&h);
+		if (x>=xx && x<xx+w && y>=yy && y<yy+h) {
+			onoverlay=SP_FOLDS+1+c;
+			foldprogress=-1;
+			return 0;
+		}
+	}
+
 	if (row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds
-		  || foldinfo[row][col].pages.n==0) {
+		  || foldinfo[row][col].pages.n==0
+		  || tilerow<0 || tilecol<0
+		  || tilerow>signature->tiley || tilecol>signature->tilex) {
 		lbdown_row=lbdown_col=-1;
 	} else {
 		lbdown_row=row;
@@ -747,7 +835,43 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (!(buttondown.isdown(d->id,LEFTBUTTON))) return 1;
-	buttondown.up(d->id,LEFTBUTTON);
+	int dragged=buttondown.up(d->id,LEFTBUTTON);
+
+	if (onoverlay) {
+		if (onoverlay>=SP_FOLDS) {
+			 //selecting different fold maybe...
+			if (!dragged) {
+				 //we clicked down then up on the same overlay
+
+				int folds=onoverlay-SP_FOLDS; //0 means totally unfolded
+
+				if (foldlevel==folds) return 0; //already at that fold level
+
+				 //we must remap the folds to reflect the new fold level
+				resetFoldinfo();
+				FoldDirectionType f;
+				char folddir;
+				int under;
+				for (int c=0; c<folds; c++) {
+					f=signature->folds.e[c]->direction;
+					if (f==FOLD_Left_Under_To_Right || f==FOLD_Right_Under_To_Left 
+						 || f==FOLD_Top_Under_To_Bottom || f==FOLD_Bottom_Under_To_Top) under=1;
+					else under=0;
+
+					if (f==FOLD_Left_Under_To_Right || f==FOLD_Left_Over_To_Right) folddir='r';
+					else if (f==FOLD_Right_Over_To_Left  || f==FOLD_Right_Under_To_Left) folddir='l';
+					else if (f==FOLD_Bottom_Over_To_Top  || f==FOLD_Bottom_Under_To_Top) folddir='t';
+					else if (f==FOLD_Top_Over_To_Bottom  || f==FOLD_Top_Under_To_Bottom) folddir='b';
+
+					applyFold(folddir, signature->folds.e[c]->whichfold, under);
+				}
+				foldlevel=folds;
+				//checkFoldlevel(1);
+				needtodraw=1;
+			}
+		}
+		return 0;
+	}
 
 	if (folddirection && folddirection!='x' && foldprogress>.9) {
 		 //apply the fold...
@@ -804,8 +928,11 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			if (foldunder) foldtype=FOLD_Right_Under_To_Left;
 			else           foldtype=FOLD_Right_Over_To_Left;
 		}
+		if (foldlevel<signature->folds.n) {
+			while (foldlevel<signature->folds.n) signature->folds.remove();
+		}
 		signature->folds.push(new Fold(foldtype,foldindex),1);
-		foldlevel=signature->folds.n-1;
+		foldlevel=signature->folds.n;
 
 		 //check the immediate neighors of newr,newc. If none, then we are totally folded.
 
@@ -828,14 +955,12 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		if (tc>signature->numvfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
 
 		if (stillmore==0) {
-			foldlevel=-1;
+			hasfinal=1;
 			finalr=newr;
 			finalc=newc;
 
-			int page,xflip,yflip;
+			int page=0,xflip,yflip;
 			for (int c=foldinfo[finalr][finalc].pages.n-2; c>=0; c-=2) {
-				page=(foldinfo[finalr][finalc].pages.n-2-c)/2;
-
 				tr=foldinfo[finalr][finalc].pages.e[c];
 				tc=foldinfo[finalr][finalc].pages.e[c+1];
 
@@ -850,8 +975,9 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 					foldinfo[tr][tc].finalindexback=page+1;
 					foldinfo[tr][tc].finalindexfront=page;
 				}
+				page+=2;
 			}
-		}
+		} else hasfinal=0;
 
 		folddirection=0;
 		foldprogress=0;
@@ -885,7 +1011,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	buttondown.move(mouse->id,x,y);
 
 	if (lbdown_row<0 || lbdown_col<0) return 0;
-	if (foldlevel==-1 || row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds) {
+	if ((hasfinal && foldlevel==signature->folds.n-1)
+			|| row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds) {
 		if (folddirection!=0) {
 			folddirection=0;
 			needtodraw=1;
@@ -936,7 +1063,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		int nextcol=adjacentcol;
 		while (nextcol<signature->numvfolds) nextcol++; //it's ok to fold over onto blank areas
 
-		if (nextcol>signature->numvfolds || nextcol-adjacentcol+1<ocol-prevcol+1) {
+		if (nextcol>signature->numvfolds || nextcol-adjacentcol+1<ocol-prevcol+1
+				|| (adjacentcol<=signature->numvfolds && foldinfo[orow][adjacentcol].pages.n==0)) {
 			 //can't do the fold
 			folddirection='x';
 		} else {
@@ -968,7 +1096,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		int prevcol=adjacentcol;
 		while (prevcol>0) prevcol--; //it's ok to fold over onto blank areas
 
-		if (prevcol<0 || adjacentcol-prevcol+1<nextcol-ocol+1) {
+		if (prevcol<0 || adjacentcol-prevcol+1<nextcol-ocol+1
+				|| (adjacentcol>=0 && foldinfo[orow][adjacentcol].pages.n==0)) {
 			 //can't do the fold
 			folddirection='x';
 		} else {
@@ -1000,7 +1129,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		int nextrow=adjacentrow;
 		while (nextrow<signature->numhfolds) nextrow++; //it's ok to fold over onto blank areas
 
-		if (nextrow>signature->numhfolds || nextrow-adjacentrow+1<orow-prevrow+1) {
+		if (nextrow>signature->numhfolds || nextrow-adjacentrow+1<orow-prevrow+1
+				|| (adjacentrow<=signature->numhfolds && foldinfo[adjacentrow][ocol].pages.n==0)) {
 			 //can't do the fold
 			folddirection='x';
 		} else {
@@ -1032,7 +1162,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		int prevrow=adjacentrow;
 		while (prevrow>0) prevrow--; //it's ok to fold over onto blank areas
 
-		if (prevrow<0 || adjacentrow-prevrow+1<nextrow-orow+1) {
+		if (prevrow<0 || adjacentrow-prevrow+1<nextrow-orow+1
+				|| (adjacentrow>=0 && foldinfo[adjacentrow][ocol].pages.n==0)) {
 			 //can't do the fold
 			folddirection='x';
 		} else {
