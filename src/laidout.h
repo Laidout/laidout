@@ -66,7 +66,10 @@ class LaidoutApp : public Laxkit::anXApp
 	Project *project;
 	Document *curdoc;
 	Laxkit::anXWindow *lastview;
+
 	LaidoutCalculator *calculator;
+	double unitmultiplier;
+	char *unitname;
 
 	unsigned long curcolor;
 	
