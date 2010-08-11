@@ -268,6 +268,8 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
 
 	calculator=NULL;
+	unitmultiplier=1; //transform from inches. ie, for cm this would be 2.54 (2.54 cm == 1 inch)
+	unitname=newstr("inches"); // *** later this should be part of a units manager, integrated with rulers
 
 //	MenuInfo *menu=new MenuInfo("Main Menu");
 //	 menu->AddItem("File",1);
@@ -738,6 +740,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ "load-dir",            1, 0, 'l' },
 			{ "template",            1, 0, 't' },
 			{ "no-template",         1, 0, 'N' },
+			{ "default-units",       1, 0, 'u' },
 			{ "version",             0, 0, 'v' },
 			{ "help",                0, 0, 'h' },
 			{ 0,0,0,0 }
@@ -758,6 +761,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 't': { // load in template
 					LoadTemplate(optarg,NULL);
 				} break;
+
 			case 's': { // --script
 					donotusex=1;
 					int size=file_size(optarg,1,NULL);
@@ -776,12 +780,14 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					if (str) cout <<str<<endl;
 					exit(0);//***this should exit(1) on error?
 				} break;
+
 			case 'c': { // --command
 					donotusex=1;
 					char *str=calculator->In(optarg);
 					if (str) cout <<str<<endl;
 					exit(0);//***this should exit(1) on error?
 				} break;
+
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
 					if (NewDocument(optarg)==0) {
 						if (curdoc) curdoc->dec_count();
@@ -789,19 +795,24 @@ void LaidoutApp::parseargs(int argc,char **argv)
 						if (curdoc) curdoc->inc_count();
 					}
 				} break;
+
 			case 'l': { // load dir
 					makestr(load_dir,optarg);
 				} break;
+
 			case 'N': { // do not use a default template
 					if (default_template) { delete[] default_template; default_template=NULL; }
 				} break;
+
 			case 'F': { // dump out file format
 					if (dump_out_file_format("-",0)) exit(1);
 					exit(0);
 				} break;
+
 			case 'e': { // export
 					exprt=newstr(optarg);
 				} break;
+
 			case 'O': { // list export options for a given format
 					DBG cout <<"   ***** --list-export-options IS A HACK!! Code me right! ***"<<endl;
 					printf("format   = \"%s\"    #the format to export as\n",optarg);
@@ -813,10 +824,24 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					printf("end      = 5       #the ending index to export, counting from 0\n");
 					exit(0);
 				} break;
+
 			case 'X': { // list export formats
 					for (int c=0; c<exportfilters.n; c++) 
 						cout << exportfilters.e[c]->VersionName() <<endl;
 					exit(0);
+				} break;
+
+			case 'u': { // default units
+					 // *** THIS IS TEMPORARY!!!!
+					makestr(unitname,optarg);
+					if (!strcasecmp(unitname,"inches"))      unitmultiplier=1;
+					else if (!strcasecmp(unitname,"in"))     unitmultiplier=1;
+					else if (!strcasecmp(unitname,"cm"))     unitmultiplier=2.54;
+					else if (!strcasecmp(unitname,"mm"))     unitmultiplier=25.4;
+					else if (!strcasecmp(unitname,"m"))      unitmultiplier=.0254;
+					else if (!strcasecmp(unitname,"ft"))     unitmultiplier=1./12;
+					else if (!strcasecmp(unitname,"feet"))   unitmultiplier=1./12;
+					else if (!strcasecmp(unitname,"yards"))  unitmultiplier=1./36;
 				} break;
 		}
 	}
