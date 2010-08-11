@@ -31,16 +31,18 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
  protected:
 	int showdecs;
 
-	int foldr1, foldc1, foldr2, foldc2;
 	int lbdown_row, lbdown_col;
+
+	 //to keep track of current partial fold:
+	int foldr1, foldc1, foldr2, foldc2;
 	int folddirection;
 	int foldunder;
 	int foldindex;
 	double foldprogress;
-	int currentfold;
-	int finalr,finalc;
-	int onoverlay;
-	int hasfinal;
+
+	int finalr,finalc; //cell location of totally folded pages
+	int onoverlay; //nonzero if mouse clicked down on and is over an overlay
+	int hasfinal; //whether the pattern has been totally folded yet or not
 
 	double totalwidth, totalheight;
 
@@ -52,8 +54,10 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 
 	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
 	virtual int scanhandle(int x,int y);
-	virtual int checkFoldlevel(int update);
+	virtual int checkFoldLevel(int update);
 	virtual void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
+
+	void dumpFoldinfo();
  public:
 	Signature *signature;
 	PaperStyle *papersize;
@@ -69,7 +73,7 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
 	virtual void Clear(LaxInterfaces::SomeData *d);
-	virtual Laxkit::MenuInfo *ContextMenu(int x,int y);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y, int deviceid);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	
