@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2009 by Tom Lechner
+// Copyright (C) 2005-2010 by Tom Lechner
 //
 
 
@@ -29,7 +29,6 @@
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "interfaces/paperinterface.h"
-#include "impositions/signatureinterface.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -72,7 +71,8 @@ void PushBuiltinPathops()
 //}
 ////---------------------
 
-//! Get the built in interfaces. NOTE: Must be called after GetBuiltinPathops().
+
+//! Get the built in interfaces. NOTE: Must be called after PushBuiltinPathops().
 /*! The PathInterface requires that pathoppool be filled already.
  *
  * \todo combine with EpsInterface with ImageInterface somehow to make easily expandable..
@@ -84,6 +84,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	}
 
 	int id=1;
+
 
 	 //------Group
 	existingpool->push(new GroupInterface(id++,NULL),1);
@@ -124,9 +125,6 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	 //------Paper
 	existingpool->push(new PaperInterface(id++,NULL),1);
 
-
-
-	existingpool->push(new SignatureInterface(id++,NULL),1);
 
 
 	//...
