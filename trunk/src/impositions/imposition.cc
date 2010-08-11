@@ -502,12 +502,12 @@ LaxInterfaces::InterfaceWithDp *Imposition::Interface(int layouttype)
 }
 
 
-//! Return a box describing a good scratchboard size for pagelayout (page==1) or paper layout (page==0).
-/*! Default is to return bounds 3 times the paper size.
+//! Return a box describing a good scratchboard size for this imposition.
+/*! Default is to return bounds 3 times the paper size wide, and twice the height.
  *
  * Place results in bbox if bbox!=NULL. If bbox==NULL, then create a new DoubleBBox and return that.
  */
-Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)//page=1
+Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)
 {
 	if (!bbox) bbox=new DoubleBBox();
 	else bbox->clear();
@@ -521,6 +521,15 @@ Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)//pag
 	} else {
 		bbox->setbounds(0,1,0,1);
 	}
+
+	 //add a bit of a buffer
+	double w=bbox->maxx-bbox->minx;
+	double h=bbox->maxy-bbox->miny;
+	bbox->minx-=w;
+	bbox->maxx+=w;
+	bbox->miny-=h/2;
+	bbox->maxy+=h/2;
+
 	return bbox;
 }
 
