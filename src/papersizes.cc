@@ -34,54 +34,84 @@ using namespace std;
 using namespace LaxFiles;
 using namespace Laxkit;
 
+//A Size mm × mm 	in × in 		B mm × mm 	in × in 		C mm × mm 	in × in
+//0 	841 × 1189 	33.1 × 46.8 	1000 × 1414 39.4 × 55.7 	917 × 1297 	36.1 × 51.1
+//1 	594 × 841 	23.4 × 33.1 	707 × 1000 	27.8 × 39.4 	648 × 917 	25.5 × 36.1
+//2 	420 × 594 	16.5 × 23.4 	500 × 707 	19.7 × 27.8 	458 × 648 	18.0 × 25.5
+//3 	297 × 420 	11.7 × 16.5 	353 × 500 	13.9 × 19.7 	324 × 458 	12.8 × 18.0
+//4 	210 × 297 	8.3 × 11.7 		250 × 353 	9.8 × 13.9 		229 × 324 	9.0 × 12.8
+//5 	148 × 210 	5.8 × 8.3 		176 × 250 	6.9 × 9.8 		162 × 229 	6.4 × 9.0
+//6 	105 × 148 	4.1 × 5.8 		125 × 176 	4.9 × 6.9 		114 × 162 	4.5 × 6.4
+//7 	74 × 105 	2.9 × 4.1 		88 × 125 	3.5 × 4.9 		81 × 114 	3.2 × 4.5
+//8 	52 × 74 	2.0 × 2.9 		62 × 88 	2.4 × 3.5 		57 × 81 	2.2 × 3.2
+//9 	37 × 52 	1.5 × 2.0 		44 × 62 	1.7 × 2.4 		40 × 57 	1.6 × 2.2
+//10 	26 × 37 	1.0 × 1.5 		31 × 44 	1.2 × 1.7 		28 × 40 	1.1 × 1.6
+
+
 //-------------------------------- GetBuiltinPaperSizes ------------------
 
 //       PAPERSIZE    X inches   Y inches   X cm      Y cm
 //       -----------------------------------------------------
-const char *BuiltinPaperSizes[42*3]=
+const char *BuiltinPaperSizes[58*4]=
 	{
-		"Letter","8.5","11",
-		"Legal","8.5","14",
-		"Tabloid","11","17",
-		"Ledger","17","11",
-		"Index","3","5",
-		"Executive","7.25","10.5",
-		"A4","8.26389","11.6944",
-		"A3","11.6944","16.5278",
-		"A2","16.5278","23.3889",
-		"A1","23.3889","33.0556",
-		"A0","33.0556","46.7778",
-		"A5","5.84722","8.26389",
-		"A6","4.125","5.84722",
-		"A7","2.91667","4.125",
-		"A8","2.05556","2.91667",
-		"A9","1.45833","2.05556",
-		"A10","1.02778","1.45833",
-		"B0","39.3889","55.6667",
-		"B1","27.8333","39.3889",
-		"B2","19.6944","27.8333",
-		"B3","13.9167","19.6944",
-		"B4","9.84722","13.9167",
-		"B5","6.95833","9.84722",
-		"ArchA","9","12",
-		"ArchB","12","18",
-		"ArchC","18","24",
-		"ArchD","24","36",
-		"ArchE","36","48",
-		"Flsa","8.5","13",
-		"Flse","8.5","13",
-		"Halfletter","5.5","8.5",
-		"Note","7.5","10",
-		"4:3", "4","3",
-		"16:9", "16","9",
-		"640x480","640","480",
-		"800x600","800","600",
-		"1024x768","1024","768",
-		"1280x1024","1280","1024",
-		"1600x1200","1600","1200",
-		"Custom","8.5","11",
-		"Whatever","8.5","11",
-		NULL,NULL,NULL
+		"Letter"   ,"8.5" ,"11"  ,"in",
+		"Legal"    ,"8.5" ,"14"  ,"in",
+		"Tabloid"  ,"11"  ,"17"  ,"in",
+		"Index"    ,"3"   ,"5"   ,"in",
+		"A4"       ,"210" ,"297" ,"mm",
+		"A3"       ,"297" ,"420" ,"mm",
+		"A2"       ,"420" ,"594" ,"mm",
+		"A1"       ,"594" ,"841" ,"mm",
+		"A0"       ,"841" ,"1189","mm",
+		"A5"       ,"148" ,"210" ,"mm",
+		"A6"       ,"105" ,"148" ,"mm",
+		"A7"       ,"74"  ,"105" ,"mm",
+		"A8"       ,"52"  ,"74"  ,"mm",
+		"A9"       ,"37"  ,"52"  ,"mm",
+		"A10"      ,"26"  ,"37"  ,"mm",
+		"B0"       ,"1000","1414","mm",
+		"B1"       ,"707" ,"1000","mm",
+		"B2"       ,"500" ,"707" ,"mm",
+		"B3"       ,"353" ,"500" ,"mm",
+		"B4"       ,"250" ,"353" ,"mm",
+		"B5"       ,"176" ,"250" ,"mm",
+		"B6"       ,"125" ,"176" ,"mm",
+		"B7"       ,"88"  ,"125" ,"mm",
+		"B8"       ,"62"  ,"88"  ,"mm",
+		"B9"       ,"44"  ,"62"  ,"mm",
+		"B10"      ,"31"  ,"44"  ,"mm",
+		"C0"       ,"917" ,"1297","mm",
+		"C1"       ,"648" ,"917" ,"mm",
+		"C2"       ,"458" ,"648" ,"mm",
+		"C3"       ,"324" ,"458" ,"mm",
+		"C4"       ,"229" ,"324" ,"mm",
+		"C5"       ,"162" ,"229" ,"mm",
+		"C6"       ,"114" ,"162" ,"mm",
+		"C7"       ,"81"  ,"114" ,"mm",
+		"C8"       ,"57"  ,"81"  ,"mm",
+		"C9"       ,"40"  ,"57"  ,"mm",
+		"C10"      ,"28"  ,"40"  ,"mm",
+		"ArchA"    ,"9"   ,"12"  ,"in",
+		"ArchB"    ,"12"  ,"18"  ,"in",
+		"ArchC"    ,"18"  ,"24"  ,"in",
+		"ArchD"    ,"24"  ,"36"  ,"in",
+		"ArchE"    ,"36"  ,"48"  ,"in",
+		"Flsa"     ,"8.5" ,"13"  ,"in",
+		"Flse"     ,"8.5" ,"13"  ,"in",
+		"Executive","7.25","10.5","mm",
+		"Ledger"   ,"17"  ,"11"  ,"in",
+		"Halfletter","5.5","8.5" ,"in",
+		"Note"      ,"7.5","10"  ,"in",
+		"4:3"       ,"4"  ,"3"   ,"in",
+		"16:9"      ,"16" ,"9"   ,"in",
+		"640x480"   ,"640","480" ,"px",
+		"800x600"   ,"800","600" ,"px",
+		"1024x768"  ,"1024","768","px",
+		"1280x1024" ,"1280","1024","px",
+		"1600x1200" ,"1600","1200","px",
+		"Custom"    ,"8.5","11"   ,"in",
+		"Whatever"  ,"8.5","11"   ,"in",
+		NULL,NULL,NULL,NULL
 	};
 
 //! Get a stack of PaperStyles with all the builtin paper sizes.
@@ -89,53 +119,13 @@ const char *BuiltinPaperSizes[42*3]=
  * If papers is NULL, then a new stack is created, filled and returned, otherwise,
  * the buitlins are pushed onto the given stack.
  * 
- * Currently, the builtin sizes (in inches X by Y) are:
- * <pre>
- *		"Letter","8.5","11",
- *		"Legal","8.5","14",
- *		"Tabloid","11","17",
- *		"Ledger","17","11",
- *		"Index","3","5",
- *		"A4","8.26389","11.6944",
- *		"A3","11.6944","16.5278",
- *		"A2","16.5278","23.3889",
- *		"A1","23.3889","33.0556",
- *		"A0","33.0556","46.7778",
- *		"A5","5.84722","8.26389",
- *		"A6","4.125","5.84722",
- *		"A7","2.91667","4.125",
- *		"A8","2.05556","2.91667",
- *		"A9","1.45833","2.05556",
- *		"A10","1.02778","1.45833",
- *		"B0","39.3889","55.6667",
- *		"B1","27.8333","39.3889",
- *		"B2","19.6944","27.8333",
- *		"B3","13.9167","19.6944",
- *		"B4","9.84722","13.9167",
- *		"B5","6.95833","9.84722",
- *		"ArchA","9","12",
- *		"ArchB","12","18",
- *		"ArchC","18","24",
- *		"ArchD","24","36",
- *		"ArchE","36","48",
- *		"Flsa","8.5","13",
- *		"Flse","8.5","13",
- *		"Halfletter","5.5","8.5",
- *		"Note","7.5","10",
- *		"4:3", "4","3",
- *		"16:9", "16","9",
- *		"scr:640x480","640","480",
- *		"scr:800x600","800","600",
- *		"scr:1024x768","1024","768",
- *		"scr:1280x1024","1280","1024",
- *		"scr:1600x1200","1600","1200",
- *		"Custom","-","-",
- *		"Whatever","-","-"
- * </pre>
+ * See src/papersizes.cc for all the built in paper sizes. This includes common
+ * US sizes, european A, B, and C sizes, some architectural sizes, and a sampling
+ * of common tv and  computer aspect ratio sizes, such as 4:3 or 1024x768.
  *
  * The "Custom" and "Whatever" sizes are special cases. Custom allows any dimensions,
  * where the others are fixed. Whatever means you only want a big scratch space, and
- * displaying a paper outline is not important.
+ * displaying a paper outline (and thus using any imposition at all) is not important.
  *
  * \todo *** add NTSC, HDTV, a "Monitor" setting 72dpi, etc.. This could also imply
  *   splitting dpi to xdpi and ydpi
@@ -147,11 +137,15 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	if (papers==NULL) papers=new PtrStack<PaperStyle>;
 	double x,y; 
 	double dpi;
-	for (int c=0; BuiltinPaperSizes[c]; c+=3) {
+	for (int c=0; BuiltinPaperSizes[c]; c+=4) {
 		 // x,y were in inches
 		x=atof(BuiltinPaperSizes[c+1]);
 		y=atof(BuiltinPaperSizes[c+2]);
-		if (!strncmp(BuiltinPaperSizes[c],"scr:",4)) dpi=1; else dpi=360;
+
+		if (!strcmp(BuiltinPaperSizes[c+3],"mm")) { x/=25.4; y/=25.4; }
+		else if (!strcmp(BuiltinPaperSizes[c+3],"cm")) { x/=2.54; y/=2.54; }
+		else if (!strcmp(BuiltinPaperSizes[c+3],"px")) dpi=1; else dpi=360;
+
 		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,dpi));
 	}
 	return papers;

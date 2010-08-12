@@ -50,6 +50,7 @@ class PaperStyle : public Style
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }
 	virtual int landscape() { return flags&1; }
+	virtual int landscape(int l) { if (l) flags|=1; else flags&=~1; return flags&1; }
 	virtual Style *duplicate(Style *s=NULL);
 	virtual StyleDef *makeStyleDef();
 
