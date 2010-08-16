@@ -284,8 +284,8 @@ int ImportImagesDialog::init()
 			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, &files,0);
 	filelist->tooltip(_("Choose from these files.\nRight-click drag scrolls"));
 
-	tabframe->AddWin(filelist,_("Choose"),NULL);
-//	tabframe->AddWin(reviewlist,_("Review"),NULL);
+	tabframe->AddWin(filelist,1, _("Choose"),NULL,0);
+//	tabframe->AddWin(reviewlist,1, _("Review"),NULL);
 	//tabframe->SelectN(0);
 	wholelist.remove(c);
 	app->destroywindow(oldfilelist);
