@@ -2,9 +2,8 @@
 
 #this file is used to track unmatched reference counting
 #do laidout 2> temp, then run:
-#./objecttracker.pl > temp-not-deleted, which will
-#then contain a list of what was deleted or not. Go through that looking
-#for "NOT".....
+#./objecttracker.pl, which will make a file temp-parsed
+#that contains a list of what objects were not deleted.
 
 use FileHandle;
 
