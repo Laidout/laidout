@@ -37,6 +37,7 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
 
+
 //---------------------------- HeadWindow Pane Generators -----------------------
 
 /*! \defgroup mainwindows Main Pane Windows For HeadWindows
@@ -257,7 +258,9 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 
 //! Empty virtual destructor.
 HeadWindow::~HeadWindow()
-{}
+{
+	DBG cerr <<"in HeadWindow destructor"<<endl;
+}
 
 //! Redefined to use a global mark, rather than per SplitWindow.
 /*! If c==-1 then mark curbox. Else if c is out of range, then do not change
