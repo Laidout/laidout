@@ -117,12 +117,14 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 			   0,0,500,500,0,
 			   NULL,0,NULL, 50)
 {
-	AddWin(new NewDocWindow(this,"New Document",_("New Document"),0, 0,0,0,0, 0),
+	AddWin(new NewDocWindow(this,"New Document",_("New Document"),0, 0,0,0,0, 0), 1,
 				_("New Document"),
-				NULL);
-	AddWin(new NewProjectWindow(this,"New Project",_("New Project"),0, 0,0,0,0, 0),
+				NULL,
+				0);
+	AddWin(new NewProjectWindow(this,"New Project",_("New Project"),0, 0,0,0,0, 0), 1,
 				_("New Project"),
-				NULL);
+				NULL,
+				0);
 
 	FileDialog *fd=new FileDialog(this,"open doc","open doc",
 					ANXWIN_REMEMBER, 0,0,0,0, 0,
@@ -131,7 +133,7 @@ LaidoutOpenWindow::LaidoutOpenWindow(int whichstart)
 					NULL,NULL,NULL,
 					"Laidout");//recent group
 	fd->AddFinalButton(_("Open a copy"),_("This means use that document as a template"),2,1);
-	AddWin(fd, _("Open"), NULL);
+	AddWin(fd, 1, _("Open"), NULL,0);
 
 
 }
@@ -260,6 +262,12 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char
 
 	doc=ndoc;
 	if (doc) doc->inc_count();
+
+
+	tilex=tiley=NULL;
+	insetl=insetr=insett=insetb=NULL;
+	marginl=marginr=margint=marginb=NULL;
+	impfromfile=NULL;
 }
 
 NewDocWindow::~NewDocWindow()
@@ -767,7 +775,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 					ANXWIN_REMEMBER, 0,0, 0,0,0,
 					object_id, "impfile",
 					FILES_OPEN_ONE,
-					impfromfile->GetCText()));
+					impfromfile?impfromfile->GetCText():NULL));
 			return 0;
 		}
 
@@ -909,10 +917,11 @@ void NewDocWindow::sendNewDoc()
 	}
 	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
 	
-	int npgs=atoi(numpages->GetCText()),
-		xtile=atoi(tilex->GetCText()),
-		ytile=atoi(tiley->GetCText());
+	int npgs=atoi(numpages->GetCText()), xtile=1, ytile=1;
+	if (tilex) xtile=atoi(tilex->GetCText());
+	if (tiley) ytile=atoi(tiley->GetCText());
 	if (npgs<=0) npgs=1;
+
 	if (xtile<=0) xtile=1;
 	if (ytile<=0) ytile=1;
 
@@ -920,11 +929,11 @@ void NewDocWindow::sendNewDoc()
 	if (s) {
 		s->tilex=xtile;
 		s->tiley=ytile;
-		s->insetl=insetl->GetDouble();
-		s->insetr=insetr->GetDouble();
-		s->insett=insett->GetDouble();
-		s->insetb=insetb->GetDouble();
-		s->SetDefaultMargins(marginl->GetDouble(),marginr->GetDouble(),margint->GetDouble(),marginb->GetDouble());
+		s->insetl=insetl?insetl->GetDouble():0;
+		s->insetr=insetr?insetr->GetDouble():0;
+		s->insett=insett?insett->GetDouble():0;
+		s->insetb=insetb?insetb->GetDouble():0;
+		if (marginl) s->SetDefaultMargins(marginl->GetDouble(),marginr->GetDouble(),margint->GetDouble(),marginb->GetDouble());
 	} else {
 		NetImposition *n=dynamic_cast<NetImposition *>(imposition);
 		if (n && n->nets.n==0) {
