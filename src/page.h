@@ -53,17 +53,17 @@ class PageStyle : public Style
 	double width,height; // these are to be considered the bounding box for non-rectangular pages
 
 	LaxInterfaces::PathsData *outline, *margin;
-	Laxkit::PtrStack<PageBleed> pagebleeds;
 
 	PageStyle(); 
 	virtual ~PageStyle();
 	virtual StyleDef *makeStyleDef();
 	virtual const char *whattype() { return "PageStyle"; }
 	virtual Style *duplicate(Style *s=NULL);
-	virtual double w() { return width; }
-	virtual double h() { return height; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+
+	virtual double w() { return width; }
+	virtual double h() { return height; }
 	virtual int set(const char *flag, int newstate);
 };
 
@@ -112,6 +112,7 @@ class Page : public ObjectContainer
 
 	 //page contents
 	Group layers;
+	Laxkit::PtrStack<PageBleed> pagebleeds;
 
 	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
 	virtual ~Page(); 

@@ -546,9 +546,9 @@ Style *Imposition::duplicate(Style *s)//s=NULL
 	return s;
 }
 
-//! Ensure that each page has a proper pagestyle.
+//! Ensure that each page has a proper pagestyle and bleed information.
 /*! This is called when pages are added or removed. It replaces the pagestyle for
- *  the whichever page with the pagestyle returned by GetPageStyle(c,0).
+ *  each page with the pagestyle returned by GetPageStyle(c,0).
  *
  *  When the pagestyle is a custom style, then the PageStyle::flags are preserved,
  *  and applied to a new duplicate of the actual default pagestyle.

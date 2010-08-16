@@ -17,37 +17,40 @@
 #include "signatures.h"
 #include "../language.h"
 
+#include <lax/interfaces/pathinterface.h>
 #include <lax/attributes.h>
 #include <lax/lists.cc>
 
 
+using namespace Laxkit;
+using namespace LaxInterfaces;
 using namespace LaxFiles;
 
 
-//------------------------------------- Fold --------------------------------------
-
-/*! \enum FoldDirection
- * \brief Used in aFold.
- */
+//----------------------------- naming helper functions -----------------------------
 
 //! Return the name of the fold direction.
 /*! This will be "Right" or "Under Left" or some such.
  *
  * If translate!=0, then return that translated, else return english.
  */
-const char *FoldDirectionName(FoldDirectionType dir, int translate)
+const char *FoldDirectionName(char dir, int under, int translate)
 {
 	const char *str=NULL;
-	if (dir==FOLD_Left_Over_To_Right)       str="Right";
-	else if (dir==FOLD_Left_Under_To_Right) str="Under Right";
-	else if (dir==FOLD_Right_Over_To_Left)  str="Left";
-	else if (dir==FOLD_Right_Under_To_Left) str="Under Left";
-	else if (dir==FOLD_Top_Over_To_Bottom)  str="Bottom";
-	else if (dir==FOLD_Top_Under_To_Bottom) str="Under Bottom";
-	else if (dir==FOLD_Bottom_Over_To_Top)  str="Top";
-	else if (dir==FOLD_Bottom_Under_To_Top) str="Under Top";
 
-	return translate?_(str):str;
+	if (under) {
+		if (dir=='r')      str= translate ? _("Under Right") :"Under Right";
+		else if (dir=='l') str= translate ? _("Under Left")  :"Under Left";
+		else if (dir=='b') str= translate ? _("Under Bottom"):"Under Bottom";
+		else if (dir=='t') str= translate ? _("Under Top")   :"Under Top";
+	} else {
+		if (dir=='r')      str= translate ? _("Right") :"Right";
+		else if (dir=='l') str= translate ? _("Left")  :"Left";
+		else if (dir=='b') str= translate ? _("Bottom"):"Bottom";
+		else if (dir=='t') str= translate ? _("Top")   :"Top";
+	}
+
+	return str;
 }
 
 /*! \ingroup misc
@@ -78,6 +81,9 @@ const char *CtoStr(char c)
 	if (c=='r') return "Right";
 	return NULL;
 }
+
+
+//------------------------------------- Fold --------------------------------------
 
 /*! \class Fold
  * \brief Line description node in a Signature
@@ -246,7 +252,7 @@ Signature::~Signature()
 
 const Signature &Signature::operator=(const Signature &sig)
 {
-	if (paperbox) paperbox->dec_count();
+	if (paperbox) { paperbox->dec_count(); paperbox=NULL; }
 	if (sig.paperbox) paperbox=(PaperStyle*)sig.paperbox->duplicate();
 
 	totalwidth=sig.totalwidth;
@@ -274,7 +280,7 @@ const Signature &Signature::operator=(const Signature &sig)
 	numvfolds=sig.numvfolds;
 	folds.flush();
 	for (int c=0; c<sig.folds.n; c++) {
-		folds.push(new Fold(sig.folds.e[c]->direction, sig.folds.e[c]->whichfold), 1);
+		folds.push(new Fold(sig.folds.e[c]->direction, sig.folds.e[c]->under, sig.folds.e[c]->whichfold), 1);
 	}
 
 	trimleft=sig.trimleft;
@@ -519,7 +525,6 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 		} else if (!strcmp(name,"fold")) {
 			char *e=NULL;
 			int index=-1;
-			FoldDirectionType folddir;
 			int under=0;
 			char dir=0;
 			IntAttribute(value,&index,&e);
@@ -527,17 +532,17 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 			if (!strncasecmp(e,"under ",6)) { under=1; e+=6; }
 			LRTBAttribute(e,&dir);
 			if (under) {
-				if      (dir=='r') { folddir=FOLD_Left_Under_To_Right; numvf++; }
-				else if (dir=='l') { folddir=FOLD_Right_Under_To_Left; numvf++; }
-				else if (dir=='b') { folddir=FOLD_Top_Under_To_Bottom; numhf++; }
-				else if (dir=='t') { folddir=FOLD_Bottom_Under_To_Top; numhf++; }
+				if      (dir=='r') { numvf++; }
+				else if (dir=='l') { numvf++; }
+				else if (dir=='b') { numhf++; }
+				else if (dir=='t') { numhf++; }
 			} else {
-				if      (dir=='l') { folddir=FOLD_Right_Over_To_Left; numvf++; }
-				else if (dir=='b') { folddir=FOLD_Top_Over_To_Bottom; numhf++; }
-				else if (dir=='t') { folddir=FOLD_Bottom_Over_To_Top; numhf++; }
-				else if (dir=='r') { folddir=FOLD_Left_Over_To_Right; numvf++; }
+				if      (dir=='l') { numvf++; }
+				else if (dir=='b') { numhf++; }
+				else if (dir=='t') { numhf++; }
+				else if (dir=='r') { numvf++; }
 			}
-			Fold *newfold=new Fold(folddir,index);
+			Fold *newfold=new Fold(dir,under,index);
 			folds.push(newfold);
 
 		}
@@ -682,7 +687,10 @@ SignatureImposition::SignatureImposition()
 
 	papersize=NULL;
 	signature=NULL;
+	numsignatures=1;
 	//partition=NULL;
+	
+	pagestyle=pagestyleodd=NULL;
 }
 
 SignatureImposition::~SignatureImposition()
@@ -880,15 +888,15 @@ int SignatureImposition::SetPaperGroup(PaperGroup *ngroup)
 	return 1;
 }
 
-PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
-{// ***
-	return NULL;
-}
-
+//! Return the number of spreads for the given type that currently exist.
 int SignatureImposition::NumSpreads(int layout)
-{// ***
-	if (layout==PAPERLAYOUT) ;
-	if (layout==PAGELAYOUT || layout==LITTLESPREADLAYOUT) ;
+{
+	if (layout==PAPERLAYOUT) {
+		return numsignatures * signature->sheetspersignature*2;
+	}
+	if (layout==PAGELAYOUT || layout==LITTLESPREADLAYOUT) {
+		return numpages/2+1;
+	}
 	if (layout==SINGLELAYOUT) return numpages;
 	return 0;
 }
@@ -928,31 +936,127 @@ int SignatureImposition::NumPages(int npages)
 
 
 //---------------doc pages maintenance
-Page **SignatureImposition::CreatePages()
-{// ***
-	return NULL;
+
+//! Create or recreate pagestyle and pagestyleodd.
+/*! This facilitates sharing the same PageStyle objects across all pages.
+ * There are only ever 2 different page styles per signature.
+ */
+void SignatureImposition::setPageStyles()
+{
+	if (pagestyle) pagestyle->dec_count();
+	if (pagestyleodd) pagestyleodd->dec_count();
+
+	pagestyle=new RectPageStyle((signature->IsVertical()?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
+	pagestyle->pagetype=(signature->IsVertical()?2:1);
+	pagestyle->outline=(PathsData*)GetPageOutline(0,1);
+	pagestyle->margin =(PathsData*)GetPageMarginOutline(0,1);
+	pagestyle->ml=pagestyle->margin->minx;
+	pagestyle->mr=pagestyle->outline->maxx-pagestyle->margin->maxx;
+	pagestyle->mt=pagestyle->outline->maxy-pagestyle->margin->maxy;
+	pagestyle->mb=pagestyle->margin->miny;
+	pagestyle->width =pagestyle->outline->maxx;
+	pagestyle->height=pagestyle->outline->maxy;
+
+
+	pagestyleodd=new RectPageStyle((signature->IsVertical()?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
+	pagestyleodd->pagetype=(signature->IsVertical()?3:0);
+	pagestyleodd->outline=(PathsData*)GetPageOutline(1,1);
+	pagestyleodd->margin =(PathsData*)GetPageMarginOutline(1,1);
+	pagestyleodd->ml=pagestyleodd->margin->minx;
+	pagestyleodd->mr=pagestyleodd->outline->maxx-pagestyleodd->margin->maxx;
+	pagestyleodd->mt=pagestyleodd->outline->maxy-pagestyleodd->margin->maxy;
+	pagestyleodd->mb=pagestyleodd->margin->miny;
+	pagestyleodd->width =pagestyleodd->outline->maxx;
+	pagestyleodd->height=pagestyleodd->outline->maxy;
 }
 
+//! Return NULL terminated list of Page objects.
+Page **SignatureImposition::CreatePages()
+{
+	if (numpages==0) return NULL;
+	if (!pagestyle || !pagestyleodd) {
+		 //create if they were null
+		setPageStyles();
+	}
+	
+	Page **newpages=new Page*[numpages+1];
+	int c;
+	for (c=0; c<numpages; c++) {
+		newpages[c]=new Page(((c%2)?pagestyleodd:pagestyle),0,c); // this incs count of pagestyle
+	}
+	newpages[c]=NULL;
+	return newpages;
+}
+
+//! Ensure that each page has a proper pagestyle and bleed information.
+/*! This is called when pages are added or removed. It replaces the pagestyle for
+ *  each page with the pagestyle returned by GetPageStyle(c,0).
+ */
 int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
 {// ***
+	if (!pagestyle || !pagestyleodd) setPageStyles(); //create if they were null
+
 	return NULL;
 }
 
+PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
+{
+	if (!pagestyle || !pagestyleodd) setPageStyles(); //create if they were null
+
+	PageStyle *style= (pagenum%2) ? pagestyleodd : pagestyle;
+	style->inc_count();
+	return style;
+}
 	
 //! Return outline of page in page coords.
 LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int local)
-{// ***
-	return NULL;
+{
+	PathsData *newpath=new PathsData();//count==1
+	newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
+	newpath->maxx=pagestyle->w();
+	newpath->maxy=pagestyle->h();
+	//nothing special is done when local==0
+	return newpath;
 }
 
+/*! The origin is the page origin.
+ */
 LaxInterfaces::SomeData *SignatureImposition::GetPageMarginOutline(int pagenum,int local)
-{// ***
-	return NULL;
+{
+	int oddpage=pagenum%2;
+	DoubleBBox box;
+	signature->PageBounds(1,&box);
+	double w=box.maxx-box.minx,
+		   h=box.maxy-box.miny,
+		   pw=signature->PageWidth(1),
+		   ph=signature->PageHeight(1);
+	PathsData *newpath=new PathsData();//count==1
+
+	if (signature->binding=='l') {
+		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+
+	} else if (signature->binding=='r') {
+		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+
+	} else if (signature->binding=='t') {
+		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+
+	} else if (signature->binding=='b') {
+		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+	}
+
+	newpath->FindBBox();
+	//nothing special is done when local==0
+	return newpath;
 }
 
 
 LaxInterfaces::SomeData *SignatureImposition::GetPrinterMarks(int papernum)
-{// ***
+{
 	return NULL;
 }
 	

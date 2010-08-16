@@ -57,3 +57,6 @@ while (defined($line)) {
 }
 close(INFILE);
 
+
+print "\nNow look in temp-parsed for which objects were not deleted!\n";
+

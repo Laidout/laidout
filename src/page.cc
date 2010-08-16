@@ -35,6 +35,9 @@ using namespace std;
 //----------------------------------- PageBleed ----------------------------------------
 /*! \class PageBleed
  * \brief Simple class to keep track of how pages bleed onto each other.
+ *
+ * index is a Document page index, and matrix is the transform by which coordinates from
+ * that page are transformed to the current page.
  */
 
 PageBleed::PageBleed(int i, const double *m)
@@ -48,6 +51,11 @@ PageBleed::PageBleed(int i, const double *m)
 
 /*! \class PageStyle
  * \brief Basic Page style.
+ *
+ * PageStyle objects are supposed to be basically independent of particular page numbers. They
+ * are maintained by whatever imposition is in charge. You might have 1000 pages, but only
+ * a couple page types, so the page style with margin and boundary information can be shared
+ * across many pages.
  *
  * flags can indicate whether margins clip, and whether contents from other pages are allowed to bleed onto this one.
  *
@@ -104,11 +112,13 @@ int PageStyle::set(const char *flag, int newstate)
 		else if (newstate==0) flags&=~MARGINS_CLIP;
 		else if (newstate==1) flags|=MARGINS_CLIP;
 		return flags&MARGINS_CLIP;
+
 	} else if (!strcmp(flag,"pageclips")) {
 		if (newstate==-1) flags^=PAGE_CLIPS;
 		else if (newstate==0) flags&=~PAGE_CLIPS;
 		else if (newstate==1) flags|=PAGE_CLIPS;
 		return flags&PAGE_CLIPS;
+
 	} else if (!strcmp(flag,"facingpagesbleed")) {
 		if (newstate==-1) flags^=FACING_PAGES_BLEED;
 		else if (newstate==0) flags&=~FACING_PAGES_BLEED;
@@ -130,17 +140,23 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 	for (int c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"marginsclip")) {
 			if (BooleanAttribute(value)) flags|=MARGINS_CLIP;
+
 		} else if (!strcmp(name,"pageclips")) {
 			//cout <<"*****adding page clips"<<endl;
 			if (BooleanAttribute(value)) flags|=PAGE_CLIPS;
+
 		} else if (!strcmp(name,"facingpagesbleed")) {
 			if (BooleanAttribute(value)) flags|=FACING_PAGES_BLEED;
+
 		} else if (!strcmp(name,"width")) {
 			DoubleAttribute(value,&width);
+
 		} else if (!strcmp(name,"height")) {
 			DoubleAttribute(value,&height);
+
 		} else { 
 			DBG cerr <<"PageStyle dump_in:*** unknown attribute!!"<<endl;
 		}
@@ -168,6 +184,7 @@ void PageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%sfacingpagesbleed  #whether facing pages are allowed to bleed onto this one\n",spc);
 		return;
 	}
+
 	fprintf(f,"%swidth %.10g\n",spc,w());
 	fprintf(f,"%sheight %.10g\n",spc,h());
 	if (flags&MARGINS_CLIP) fprintf(f,"%smarginsclip\n",spc);
