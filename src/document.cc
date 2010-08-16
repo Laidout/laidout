@@ -41,7 +41,6 @@ using namespace std;
 
 
 
-
 //---------------------------- PageRange ---------------------------------------
 /*! \class PageRange
  * \brief Holds info about page labels.

@@ -504,7 +504,7 @@ int LaidoutViewport::FocusOn(const Laxkit::FocusChangeData *e)
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
 		if (viewer) viewer->SetParentTitle((doc && doc->Name(1)) ? doc->Name(1) :_("(no doc)"));
 		
-		if (doc) {
+		if (doc && laidout->curdoc!=doc) {
 			if (laidout->curdoc) laidout->curdoc->dec_count();
 			laidout->curdoc=doc;
 			laidout->curdoc->inc_count();
@@ -2621,6 +2621,7 @@ ViewWindow::ViewWindow(Document *newdoc)
 	: ViewerWindow(NULL,NULL,(newdoc ? newdoc->Name(1) : _("Untitled")),0,
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
+	viewport->dec_count(); //remove extra creation count
 	var1=var2=var3=NULL;
 	project=NULL;
 	pagenumber=NULL;
@@ -2652,7 +2653,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
  */
 ViewWindow::~ViewWindow()
 {
-	DBG cerr <<"in ViewWindow destructor"<<endl;
+	DBG cerr <<"in ViewWindow destructor (object "<<object_id<<")"<<endl;
 
 	if (laidout->lastview==this) laidout->lastview=NULL;
 	if (doc) doc->dec_count();
