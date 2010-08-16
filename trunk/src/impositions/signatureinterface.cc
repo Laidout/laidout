@@ -34,6 +34,8 @@ using namespace LaxInterfaces;
 using namespace std;
 #define DBG 
 
+//size of the fold indicators on left of screen
+#define INDICATOR_SIZE 10
 
 //------------------------------------- SignatureInterface --------------------------------------
 	
@@ -66,14 +68,10 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	onoverlay=0;
 
 	if (!p) {
-		totalheight=totalwidth=5;
-		signature->totalheight=totalheight;
-		signature->totalwidth=totalwidth;
-	} else {
-		totalheight=signature->totalheight;
-		totalwidth =signature->totalwidth;
+		signature->totalheight=5;
+		signature->totalwidth=5;
 	}
-	
+
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	foldinfo=NULL;
 	hasfinal=0;
@@ -93,9 +91,8 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 
 	onoverlay=0;
 
-	totalheight=totalwidth=5;
-	signature->totalheight=totalheight;
-	signature->totalwidth=totalwidth;
+	signature->totalheight=5;
+	signature->totalwidth=5;
 	
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	foldinfo=NULL;
@@ -108,6 +105,11 @@ SignatureInterface::~SignatureInterface()
 
 	if (signature) signature->dec_count();
 	if (papersize) papersize->dec_count();
+
+	if (foldinfo) {
+		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
+		delete[] foldinfo;
+	}
 }
 
 //! Reallocate foldinfo, usually after adding fold lines.
@@ -171,6 +173,13 @@ void SignatureInterface::dumpFoldinfo()
 		cerr << endl;
 	}
 	cerr << endl;
+}
+
+//! Call the other applyFold() with the value found in the given fold.
+void SignatureInterface::applyFold(Fold *fold)
+{
+	if (!fold) return;
+	applyFold(fold->direction, fold->whichfold, fold->under);
 }
 
 //! Low level flipping across folds.
@@ -362,7 +371,50 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
  */
 int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 {
+	if (!strcmp(mes,"menuevent")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int i=s->info2;
+
+		if (i==SIGM_Landscape) {
+			if (signature->paperbox && !signature->paperbox->landscape()) {
+				signature->paperbox->landscape(1);
+				double t=signature->totalheight;
+				signature->totalheight=signature->totalwidth;
+				signature->totalwidth=t;
+				remapHandles();
+				needtodraw=1;
+			}
+			return 0;
+
+		} else if (i==SIGM_Portrait) {
+			if (signature->paperbox && signature->paperbox->landscape()) {
+				signature->paperbox->landscape(0);
+				double t=signature->totalheight;
+				signature->totalheight=signature->totalwidth;
+				signature->totalwidth=t;
+				remapHandles();
+				needtodraw=1;
+			}
+			return 0;
+
+		} else if (i<999) {
+			 //selecting new paper size
+			if (i>=0 && i<laidout->papersizes.n) {
+				signature->SetPaper(laidout->papersizes.e[i]);
+				remapHandles();
+				needtodraw=1;
+			}
+			return 0;
+		}
+		return 1;
+	}
+
 	return 1;
+}
+
+void SignatureInterface::remapHandles()
+{
+	// ***
 }
 
 //int UseThisImposition(SignatureImposition *sig)
@@ -432,8 +484,8 @@ int SignatureInterface::Refresh()
 
 	 //----------------draw whole outline
 	dp->NewFG(1.,0.,1.); //purple for paper outline, like custom papergroup border color
-	w=totalwidth;
-	h=totalheight;
+	w=signature->totalwidth;
+	h=signature->totalheight;
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 	dp->drawline(0,0, w,0);
 	dp->drawline(w,0, w,h);
@@ -583,6 +635,9 @@ int SignatureInterface::Refresh()
 	int device=0;
 	DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
 	if (buttondown.any(0,LEFTBUTTON,&device) && folddirection && folddirection!='x') {
+		 //this will draw a light gray tilting region across foldindex, in folddirection, with foldunder.
+		 //it will correspond to foldr1,foldr2, and foldc1,foldc2.
+
 		DBG cerr <<"--------------------------------showing dir"<<endl;
 		int mx,my;
 		buttondown.getinitial(device,LEFTBUTTON,&mx,&my);
@@ -721,7 +776,7 @@ int SignatureInterface::Refresh()
  */
 void SignatureInterface::getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h)
 {
-	int radius=10;
+	int radius=INDICATOR_SIZE;
 
 	*x=dp->Minx;
 	*y=(dp->Maxy+dp->Miny)/2 - (signature->folds.n+1)*(radius-3);
@@ -884,6 +939,7 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 		if (x>=xx && x<xx+w && y>=yy && y<yy+h) {
 			onoverlay=SP_FOLDS+1+c;
 			foldprogress=-1;
+			buttondown.moveinfo(d->id,LEFTBUTTON, c,0); //record which indicator is clicked down in
 			return 0;
 		}
 	}
@@ -921,21 +977,8 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 
 				 //we must remap the folds to reflect the new fold level
 				resetFoldinfo();
-				FoldDirectionType f;
-				char folddir;
-				int under;
 				for (int c=0; c<folds; c++) {
-					f=signature->folds.e[c]->direction;
-					if (f==FOLD_Left_Under_To_Right || f==FOLD_Right_Under_To_Left 
-						 || f==FOLD_Top_Under_To_Bottom || f==FOLD_Bottom_Under_To_Top) under=1;
-					else under=0;
-
-					if (f==FOLD_Left_Under_To_Right || f==FOLD_Left_Over_To_Right) folddir='r';
-					else if (f==FOLD_Right_Over_To_Left  || f==FOLD_Right_Under_To_Left) folddir='l';
-					else if (f==FOLD_Bottom_Over_To_Top  || f==FOLD_Bottom_Under_To_Top) folddir='t';
-					else if (f==FOLD_Top_Over_To_Bottom  || f==FOLD_Top_Under_To_Bottom) folddir='b';
-
-					applyFold(folddir, signature->folds.e[c]->whichfold, under);
+					applyFold(signature->folds.e[c]);
 				}
 				foldlevel=folds;
 				//checkFoldLevel(1);
@@ -948,23 +991,8 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	if (folddirection && folddirection!='x' && foldprogress>.9) {
 		 //apply the fold, and add to the signature...
 
-		FoldDirectionType foldtype;
-
 		applyFold(folddirection,foldindex,foldunder);
 
-		if (folddirection=='b') {
-			if (foldunder) foldtype=FOLD_Top_Under_To_Bottom;
-			else 		   foldtype=FOLD_Top_Over_To_Bottom;
-		} else if (folddirection=='t') {
-			if (foldunder) foldtype=FOLD_Bottom_Under_To_Top;
-			else 		   foldtype=FOLD_Bottom_Over_To_Top;
-		} else if (folddirection=='r') {
-			if (foldunder) foldtype=FOLD_Left_Under_To_Right;
-			else           foldtype=FOLD_Left_Over_To_Right;
-		} else if (folddirection=='l') {
-			if (foldunder) foldtype=FOLD_Right_Under_To_Left;
-			else           foldtype=FOLD_Right_Over_To_Left;
-		}
 		if (foldlevel<signature->folds.n) {
 			 //we have tried to fold when there are already further folds, so we must remove any
 			 //after the current foldlevel.
@@ -972,7 +1000,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			hasfinal=0;
 		}
 
-		signature->folds.push(new Fold(foldtype,foldindex),1);
+		signature->folds.push(new Fold(folddirection,foldunder,foldindex),1);
 		foldlevel=signature->folds.n;
 
 		checkFoldLevel(1);
@@ -1003,8 +1031,52 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	DBG         <<"  pages:"<<foldinfo[row][col].pages.n<<endl;
 
 	int mx,my;
+	int lx,ly;
 	if (!buttondown.any()) return 0;
-	buttondown.move(mouse->id,x,y);
+	buttondown.move(mouse->id,x,y, &lx,&ly);
+
+	if (onoverlay!=SP_None) {
+		if (onoverlay>=SP_FOLDS) {
+			if (ly-y==0) return 0; //return if not moved vertically
+
+			int startindicator,lasty;
+			buttondown.getinitial(mouse->id,LEFTBUTTON, &mx,&my);
+			buttondown.getlast(mouse->id,LEFTBUTTON, NULL,&lasty);
+			buttondown.getextrainfo(mouse->id,LEFTBUTTON, &startindicator,NULL);
+			double curdist =(    y-my)/(INDICATOR_SIZE-3) + startindicator;
+			double lastdist=(lasty-my)/(INDICATOR_SIZE-3) + startindicator;
+
+			if ((int)curdist==(int)lastdist || (lastdist<0 && curdist<0) 
+					|| (lastdist>=signature->folds.n && curdist>=signature->folds.n)) {
+				 //only change foldprogress, still in same fold indicator
+				if (foldprogress==-1) {
+					 //we have not moved before, so we must do an initial map of affected cells
+					remapAffectedCells((int)curdist);
+				}
+				foldprogress=curdist-lastdist;
+				if (foldprogress<0) foldprogress=0;
+				if (foldprogress>1) foldprogress=1;
+				needtodraw=1;
+				return 0;
+
+			} else if ((int)curdist<(int)lastdist) {
+				 //need to unfold a previous fold, for this, we need to get the map of state not including
+				 //the current fold, to know which cells are actually affected by the unfolding..
+				//***
+
+			} else {
+				 //need to advance one fold
+				if (curdist>signature->folds.n) curdist=signature->folds.n;
+				applyFold(signature->folds.e[(int)curdist-1]);
+				remapAffectedCells((int)curdist);
+				foldprogress=curdist-floor(curdist);
+				needtodraw=1;
+				return 0;
+			}
+		}
+		return 0;
+	}
+
 
 	if (lbdown_row<0 || lbdown_col<0) return 0;
 	if ((hasfinal && foldlevel==signature->folds.n-1)
@@ -1191,6 +1263,37 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	return 0;
 }
 
+//! Adjust foldr1,foldr2,foldc1,foldc2 to reflect which cells get moved for whichfold.
+void SignatureInterface::remapAffectedCells(int whichfold)
+{
+	FoldedPageInfo **finfo=NULL;
+	if (whichfold==foldlevel+1) {
+		 //we can use the current foldinfo
+		finfo=foldinfo;
+	} else {
+		 //we need to use a temporary foldinfo
+		finfo=new FoldedPageInfo*[signature->numhfolds+2];
+		int r;
+		for (r=0; r<signature->numhfolds+1; r++) {
+			finfo[r]=new FoldedPageInfo[signature->numvfolds+2];
+			for (int c=0; c<signature->numvfolds+1; c++) {
+				finfo[r][c].pages.push(r);
+				finfo[r][c].pages.push(c);
+			}
+		}
+		finfo[r]=NULL; //terminating NULL, so we don't need to remember sig->n
+
+		signature->applyFold(finfo,whichfold,1);
+	}
+
+	// *** figure out cells based on direction and index
+
+	if (finfo!=foldinfo) {
+		for (int c=0; finfo[c]; c++) delete[] finfo[c];
+		delete[] finfo;
+	}
+}
+
 /*!
  * \todo inset shortcuts should be able to selectively adjust lrt or b insets and other things, not just all at once,
  * 		maybe have 'i' toggle which inset value to adjust, then subsequent arrow keys adjust values, modifiers adjust
@@ -1211,17 +1314,24 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		// ***
 		return 0;
 
+	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
+		int h=signature->totalheight;
+		int w=signature->totalwidth;
+		viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
+		needtodraw=1;
+		return 0;
+		
 		//--------------change inset
 	} else if (ch=='i') {
-		signature->insettop+=totalheight*.01;
-		signature->insetbottom+=totalheight*.01;
-		signature->insetleft+=totalheight*.01;
-		signature->insetright+=totalheight*.01;
+		signature->insettop   +=signature->totalheight*.01;
+		signature->insetbottom+=signature->totalheight*.01;
+		signature->insetleft  +=signature->totalheight*.01;
+		signature->insetright +=signature->totalheight*.01;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='I') {
-		signature->insettop-=totalheight*.01;
+		signature->insettop-=signature->totalheight*.01;
 		if (signature->insettop<0) signature->insettop=0;
 		signature->insetbottom=signature->insetleft=signature->insetright=signature->insettop;
 		needtodraw=1;
@@ -1229,13 +1339,13 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 
 		//--------------change tile gap
 	} else if (ch=='g') {
-		signature->tilegapx+=totalheight*.01;
-		signature->tilegapy+=totalheight*.01;
+		signature->tilegapx+=signature->totalheight*.01;
+		signature->tilegapy+=signature->totalheight*.01;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='G') {
-		signature->tilegapx-=totalheight*.01;
+		signature->tilegapx-=signature->totalheight*.01;
 		if (signature->tilegapx<0) signature->tilegapx=0;
 		signature->tilegapy=signature->tilegapx;
 		needtodraw=1;

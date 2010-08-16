@@ -44,20 +44,21 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int onoverlay; //nonzero if mouse clicked down on and is over an overlay
 	int hasfinal; //whether the pattern has been totally folded yet or not
 
-	double totalwidth, totalheight;
-
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
 	void reallocateFoldinfo();
 	void resetFoldinfo();
 	void applyFold(char folddir, int index, int under);
+	void applyFold(Fold *fold);
 
-	virtual int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
-	virtual int scanhandle(int x,int y);
-	virtual int checkFoldLevel(int update);
-	virtual void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
+	int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
+	int scanhandle(int x,int y);
+	int checkFoldLevel(int update);
+	void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
+	void remapHandles();
+	void remapAffectedCells(int whichfold);
 
-	void dumpFoldinfo();
+	void dumpFoldinfo();//for debugging
  public:
 	Signature *signature;
 	PaperStyle *papersize;

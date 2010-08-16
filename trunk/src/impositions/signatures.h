@@ -24,25 +24,15 @@
 
 //------------------------------------- Fold --------------------------------------
 
-enum FoldDirectionType {
-	FOLD_Left_Over_To_Right,
-	FOLD_Left_Under_To_Right,
-	FOLD_Right_Over_To_Left,
-	FOLD_Right_Under_To_Left,
-	FOLD_Top_Over_To_Bottom,
-	FOLD_Top_Under_To_Bottom,
-	FOLD_Bottom_Over_To_Top,
-	FOLD_Bottom_Under_To_Top,
-};
-
-const char *FoldDirectionName(FoldDirectionType dir, int translate=1);
+const char *FoldDirectionName(char dir, int under, int translate=1);
 
 class Fold
 {
  public:
-	FoldDirectionType direction; //l over to r, l under to r, rol, rul, tob, tub, bot, but
+	char direction; //l,r,t, or b
+	int under; //1 for folding under in direction
 	int whichfold; //index from the left or top side of completely unfolded paper of which fold to act on
-	Fold(FoldDirectionType f, int which) { direction=f; whichfold=which; }
+	Fold(char dir,int u, int which) { direction=dir; under=u; whichfold=which; }
 };
 
 //--------------------------------------- FoldedPageInfo ---------------------------------------
@@ -125,8 +115,12 @@ class SignatureImposition : public Imposition
  protected:
 	int showwholecover; //whether you see the cover+backcover next to each other, or by themselves
 	PaperStyle *papersize;
+	RectPageStyle *pagestyle,*pagestyleodd;
 	Signature *signature;      //folding pattern
+	int numsignatures;
 	//PaperPartition *partition; //partition to insert folding pattern
+	
+	virtual void setPageStyles();
  public:
 	SignatureImposition();
 	virtual ~SignatureImposition();

@@ -322,6 +322,9 @@ int NewDocWindow::init()
 	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
 	AddNull();//*** forced linebreak
 	
+	 //add thin spacer
+	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);//*** forced linebreak
+
 
 	 // -------------- Paper Size --------------------
 	
@@ -376,10 +379,12 @@ int NewDocWindow::init()
 			            _("Number of pages:"),NULL,0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
 	numpages->SetText(npages);
+	numpages->tooltip(_("The number of pages required."));
 	AddWin(numpages, numpages->win_w,0,50,50,0, linpheight,0,0,50,0);
 	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);
 
 	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
+
 
 	 // ------------------- printing misc ---------------------------
 	 // target dpi:		__300____
@@ -459,28 +464,40 @@ int NewDocWindow::init()
 	impsel->AddItem(_("NEW Net..."),       IMP_NEW_NET);
 	impsel->SetState(-1,SLIDER_IGNORE_ON_BROWSE,1);
 	impsel->Select(whichimp);
-	AddWin(impsel, 250,100,50,50,0, linpheight,0,0,50,0);
+	impsel->WrapToExtent();
+	AddWin(impsel, impsel->win_w,0,50,50,0, linpheight,0,0,50,0);
 
 //	last=tbut=new Button(this,"impoptions",0,0,0,0,0,1, last,object_id,"ImpOptions", _("Imposition Options..."),1);
 //	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
 
-	AddNull();
-	
-	 //imposition from file
-	last=impfromfile=new LineInput(this,"impfromfile",NULL,LINP_FILE|LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"impfromfile",
-			            _("From file:"),NULL,0,
-			            0,0,1,0,3,3);
-	impfromfile->tooltip(_("Create from an imposition file, or perhaps a polyhedron file."));
-	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
-	AddWin(impfromfile, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0);
-	tbut=new Button(this,"impfileselect",NULL,0, 0,0,0,0, 1, 
-			saveas,object_id,"impfileselect",
+	 //--------edit imp...
+	AddWin(NULL, linpheight/2,0,0,50,0, 20,0,0,50,0);
+	tbut=new Button(this,"impedit",NULL,0, 0,0,0,0, 1, 
+			saveas,object_id,"impedit",
 			-1,
-			"...",NULL,NULL,3,3);
-	tbut->tooltip(_("Search for an imposition file, or polyhedron file"));
+			"Edit imposition...",NULL,NULL,3,3);
+	tbut->tooltip(_("Edit the Search for an imposition file, or polyhedron file"));
 	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddNull();
+
+	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);
+
+	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
+
+//	 //imposition from file
+//	last=impfromfile=new LineInput(this,"impfromfile",NULL,LINP_FILE|LINP_ONLEFT, 0,0,0,0, 0, 
+//						last,object_id,"impfromfile",
+//			            _("From file:"),NULL,0,
+//			            0,0,1,0,3,3);
+//	impfromfile->tooltip(_("Create from an imposition file, or perhaps a polyhedron file."));
+//	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
+//	AddWin(impfromfile, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0);
+//	tbut=new Button(this,"impfileselect",NULL,0, 0,0,0,0, 1, 
+//			saveas,object_id,"impfileselect",
+//			-1,
+//			"...",NULL,NULL,3,3);
+//	tbut->tooltip(_("Search for an imposition file, or polyhedron file"));
+//	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+//	AddNull();
 
 	if (doc) {
 		CheckBox *box=NULL;
@@ -490,72 +507,73 @@ int NewDocWindow::init()
 		AddWin(box, box->win_w,0,0,50,0, linpheight,0,0,50,0);
 	}
 
-	 // ------Tiling
-	Singles *s=dynamic_cast<Singles *>(imp?imp:(doc?doc->imposition:NULL));
-	last=tiley=new LineInput(this,"y tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"ytile",
-			            _("Tile y:"),"1", 0,
-			           100,0,1,1,3,3);
-	if (s) tiley->SetText(s->tiley);
-	tiley->tooltip("How many times to repeat a spread vertically on a paper.\nIgnored by net impositions");
-	AddWin(tiley, tiley->win_w,0,50,50,0, linpheight,0,0,50,0);
-	last=tilex=new LineInput(this,"x tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
-						last,object_id,"xtile",
-			            _("Tile x:"),"1", 0,
-			           100,0,1,1,3,3);
-	if (s) tilex->SetText(s->tilex);
-	tilex->tooltip(_("How many times to repeat a spread horizontally on a paper.\nIgnored by net impositions"));
-	AddWin(tilex, tilex->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//*** forced linebreak
-
-	 // ------- imposition paper inset
-	//AddWin(new MessageBar(this,"Paper inset",MB_MOVE|MB_LEFT, 0,0,0,0,0, _("Paper inset:")));
-	//AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak, makes left justify
-
-	last=linp=insett=new LineInput(this,"inset t",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset t",
-			            _("Inset Top:"),NULL,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (s) linp->SetText(s->insett);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	
-	last=linp=insetb=new LineInput(this,"inset b",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset b",
-			            _("Inset Bottom:"),NULL,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (s) linp->SetText(s->insetb);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
-	
-	last=linp=insetl=new LineInput(this,"inset l",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset l",
-			            _("Inset Left:"),NULL,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (s) linp->SetText(s->insetl);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	
-	last=linp=insetr=new LineInput(this,"inset r",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"inset r",
-			            _("Inset Right:"),NULL,0,
-			            0,0,3,0,3,3);
-	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (s) linp->SetText(s->insetr);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
-	
-	
+//------------------vvv--not used here anymore, maybe use for Singles edit dialog??
+//	 // ------Tiling
+//	Singles *s=dynamic_cast<Singles *>(imp?imp:(doc?doc->imposition:NULL));
+//	last=tiley=new LineInput(this,"y tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+//						last,object_id,"ytile",
+//			            _("Tile y:"),"1", 0,
+//			           100,0,1,1,3,3);
+//	if (s) tiley->SetText(s->tiley);
+//	tiley->tooltip("How many times to repeat a spread vertically on a paper.\nIgnored by net impositions");
+//	AddWin(tiley, tiley->win_w,0,50,50,0, linpheight,0,0,50,0);
+//	last=tilex=new LineInput(this,"x tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+//						last,object_id,"xtile",
+//			            _("Tile x:"),"1", 0,
+//			           100,0,1,1,3,3);
+//	if (s) tilex->SetText(s->tilex);
+//	tilex->tooltip(_("How many times to repeat a spread horizontally on a paper.\nIgnored by net impositions"));
+//	AddWin(tilex, tilex->win_w,0,50,50,0, linpheight,0,0,50,0);
+//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//*** forced linebreak
+//
+//	 // ------- imposition paper inset
+//	//AddWin(new MessageBar(this,"Paper inset",MB_MOVE|MB_LEFT, 0,0,0,0,0, _("Paper inset:")));
+//	//AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0);//forced linebreak, makes left justify
+//
+//	last=linp=insett=new LineInput(this,"inset t",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"inset t",
+//			            _("Inset Top:"),NULL,0,
+//			            0,0,3,0,3,3);
+//	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+//	if (s) linp->SetText(s->insett);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	
+//	last=linp=insetb=new LineInput(this,"inset b",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"inset b",
+//			            _("Inset Bottom:"),NULL,0,
+//			            0,0,3,0,3,3);
+//	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+//	if (s) linp->SetText(s->insetb);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
+//	
+//	last=linp=insetl=new LineInput(this,"inset l",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"inset l",
+//			            _("Inset Left:"),NULL,0,
+//			            0,0,3,0,3,3);
+//	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+//	if (s) linp->SetText(s->insetl);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	
+//	last=linp=insetr=new LineInput(this,"inset r",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"inset r",
+//			            _("Inset Right:"),NULL,0,
+//			            0,0,3,0,3,3);
+//	linp->tooltip(_("Amount to chop from paper before applying tiling"));
+//	if (s) linp->SetText(s->insetr);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
+//	
+//	
 //	 // -------------- page size --------------------
-
-	 //add thin spacer
-	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);//*** forced linebreak
-
+//
+//	 //add thin spacer
+//	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);//*** forced linebreak
+//
 //	mesbar=new MessageBar(this,"mesbar 2",ANXWIN_HOVER_FOCUS|MB_MOVE, 0,0, 0,0, 0, 
 //			_("\n\n(Unimplemented stuff follows,\nLook for it in future releases!)"));
 //	AddWin(mesbar, 2000,1950,0,50,0, mesbar->win_h,0,0,50,0);
@@ -589,67 +607,53 @@ int NewDocWindow::init()
 	
 
 
-//	 // ------------------- view mode ---------------------------
-//**** always default to page layout if possible
-//	MenuSelector *msel;
-//	AddWin(new MessageBar(this,"view style",MB_MOVE, 0,0,0,0,0, _("view:")));
-//	msel=new MenuSelector(this,"view style",0,
-//						0,0,0,0,0,
-//						last,object_id,"view style",
-//						MENUSEL_CHECKBOXES|MENUSEL_LEFT|MENUSEL_CURSSELECTS|MENUSEL_ONE_ONLY);
-//	msel->AddItem(_("single"),1,0);
-//	msel->AddItem(_("page layout"),2,0);
-//	msel->AddItem(_("paper layout"),3,0);
-//	AddWin(msel, 100,0,50,50,0, (textheight+5)*3,0,0,50,0);
+//	 // --------------------- page specific setup ------------------------------------------
+//	
+//	//***first page is page number: 	___1_
+//
+////		s->insetl=marginl->GetDouble();
+////		s->insetr=marginr->GetDouble();
+////		s->insett=margint->GetDouble();
+////		s->insetb=marginb->GetDouble();
+//	 // ------------------ margins ------------------
+//	AddWin(new MessageBar(this,"page margins",NULL,MB_MOVE, 0,0,0,0,0, _("Default page margins:")));
+//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
+//
+//	last=linp=margint=new LineInput(this,"margin t",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"margin t",
+//			            margintextt,NULL,0,
+//			            0,0,3,0,3,3);
+//	if (s) linp->SetText(s->insett);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	
+//	last=linp=marginb=new LineInput(this,"margin b",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"margin b",
+//			            margintextb,NULL,0,
+//			            0,0,3,0,3,3);
+//	if (s) linp->SetText(s->insetb);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
+//	
+//	last=linp=marginl=new LineInput(this,"margin l",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"margin l",
+//			            margintextl,NULL,0,
+//			            0,0,3,0,3,3);
+//	if (s) linp->SetText(s->insetl);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+//	
+//	last=linp=marginr=new LineInput(this,"margin r",NULL,LINP_ONLEFT,
+//			            5,250,0,0, 0, 
+//						last,object_id,"margin r",
+//			            margintextr,NULL,0,
+//			            0,0,3,0,3,3);
+//	if (s) linp->SetText(s->insetr);
+//	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
 //	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);//*** forced linebreak
-		
-
-	 // --------------------- page specific setup ------------------------------------------
-	
-	//***first page is page number: 	___1_
-
-//		s->insetl=marginl->GetDouble();
-//		s->insetr=marginr->GetDouble();
-//		s->insett=margint->GetDouble();
-//		s->insetb=marginb->GetDouble();
-	 // ------------------ margins ------------------
-	AddWin(new MessageBar(this,"page margins",NULL,MB_MOVE, 0,0,0,0,0, _("Default page margins:")));
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
-
-	last=linp=margint=new LineInput(this,"margin t",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"margin t",
-			            margintextt,NULL,0,
-			            0,0,3,0,3,3);
-	if (s) linp->SetText(s->insett);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	
-	last=linp=marginb=new LineInput(this,"margin b",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"margin b",
-			            margintextb,NULL,0,
-			            0,0,3,0,3,3);
-	if (s) linp->SetText(s->insetb);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
-	
-	last=linp=marginl=new LineInput(this,"margin l",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"margin l",
-			            margintextl,NULL,0,
-			            0,0,3,0,3,3);
-	if (s) linp->SetText(s->insetl);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	
-	last=linp=marginr=new LineInput(this,"margin r",NULL,LINP_ONLEFT,
-			            5,250,0,0, 0, 
-						last,object_id,"margin r",
-			            margintextr,NULL,0,
-			            0,0,3,0,3,3);
-	if (s) linp->SetText(s->insetr);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);//*** forced linebreak
-	
+//	
+//------------------^^^--not used here anymore
 
 
 	//***	[ ] margins clip
@@ -770,13 +774,13 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
 		if (imp) delete imp;
 		imp=laidout->impositionpool.e[s->info1]->Create();
-		if (!strcmp(imp->styledef->name,"NetImposition") || !strcmp(imp->styledef->name,"Singles")) {
-			marginl->SetLabel(_("Left:"));
-			marginr->SetLabel(_("Right:"));
-		} else {
-			marginl->SetLabel(_("Outside:"));
-			marginr->SetLabel(_("Inside:"));
-		}
+//		if (!strcmp(imp->styledef->name,"NetImposition") || !strcmp(imp->styledef->name,"Singles")) {
+//			marginl->SetLabel(_("Left:"));
+//			marginr->SetLabel(_("Right:"));
+//		} else {
+//			marginl->SetLabel(_("Outside:"));
+//			marginr->SetLabel(_("Inside:"));
+//		}
 		return 0;
 		
 	} else if (!strcmp(mes,"paper x")) {
