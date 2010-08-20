@@ -19,6 +19,7 @@
 
 #include <lax/interfaces/pathinterface.h>
 #include <lax/attributes.h>
+#include <lax/transformmath.h>
 #include <lax/lists.cc>
 
 
@@ -983,9 +984,44 @@ Page **SignatureImposition::CreatePages()
 	int c;
 	for (c=0; c<numpages; c++) {
 		newpages[c]=new Page(((c%2)?pagestyleodd:pagestyle),0,c); // this incs count of pagestyle
+
+		 //add bleed information
+		fixPageBleeds(c,newpages[c]);
 	}
 	newpages[c]=NULL;
+
 	return newpages;
+}
+
+//! Make sure the page bleeding is set up correctly.
+void SignatureImposition::fixPageBleeds(int index,Page *page)
+{
+	 //fix pagestyle
+	if (page->pagestyle) page->pagestyle->dec_count();
+	page->InstallPageStyle((index%2)?pagestyleodd:pagestyle, 0);
+	page->pagebleeds.flush();
+
+	 //fix page bleed info
+	int adjacent=-1;	
+	double m[6];
+	transform_identity(m);
+	char dir=0;
+	int odd=(index%2);
+	double pw=signature->PageWidth(1);
+	double ph=signature->PageHeight(1);
+
+	if (signature->binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
+	else if (signature->binding=='r') { if (odd) { dir='l'; adjacent=index+1; } else { dir='r'; adjacent=index-1; } }
+	else if (signature->binding=='t') { if (odd) { dir='b'; adjacent=index+1; } else { dir='t'; adjacent=index-1; } }
+	else { if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
+
+	m[4]=m[5]=0;
+	if (dir=='l') { m[4]=pw; }
+	else if (dir=='r') { m[4]=-pw; }
+	else if (dir=='t') { m[5]=-ph; }
+	else { m[5]=ph; } //botom binding
+
+	if (adjacent>=0) page->pagebleeds.push(new PageBleed(adjacent,m));
 }
 
 //! Ensure that each page has a proper pagestyle and bleed information.
@@ -993,10 +1029,14 @@ Page **SignatureImposition::CreatePages()
  *  each page with the pagestyle returned by GetPageStyle(c,0).
  */
 int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
-{// ***
+{
 	if (!pagestyle || !pagestyleodd) setPageStyles(); //create if they were null
 
-	return NULL;
+	for (int c=start; c<doc->pages.n; c++) {
+		fixPageBleeds(c,doc->pages.e[c]);
+	}
+
+	return Imposition::SyncPageStyles(doc,start,n);
 }
 
 PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
@@ -1062,14 +1102,18 @@ LaxInterfaces::SomeData *SignatureImposition::GetPrinterMarks(int papernum)
 	
 //---------------spread generation
 Spread *SignatureImposition::Layout(int layout,int which)
-{// ***
+{
+	if (layout==PAPERLAYOUT) PaperLayout(which);
+	if (layout==PAGELAYOUT) PageLayout(which);
+	if (layout==SINGLELAYOUT) SingleLayout(which);
+	if (layout==LITTLESPREADLAYOUT) PageLayout(which);
 	return NULL;
 }
 
 //! Return 3 plus the total number of folds.
 int SignatureImposition::NumLayoutTypes()
 {
-	return 3;
+	return 3; //paper, pages, single
 	//return 2+signature->numhfolds+signature->numvfolds;
 }
 
@@ -1097,14 +1141,230 @@ Spread *SignatureImposition::SingleLayout(int whichpage)
 	return Imposition::SingleLayout(whichpage);
 }
 
+//! Return a spread with either one or two pages on it.
+/*! If showwholecover!=0, then the first spread has the first page and the last one
+ * in one spread, and objects can bleed to each other. If not, spread 0 has only page
+ * 0, and the final spread only has the back cover (final page).
+ */
 Spread *SignatureImposition::PageLayout(int whichspread)
-{// ***
-	return NULL;
+{
+	Spread *spread=new Spread();
+	spread->spreadtype=2;
+	spread->style=SPREAD_PAGE;
+	spread->mask=SPREAD_PATH|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+
+
+	 //first figure out which pages should be on the spread
+	int page1=whichspread*2, page2; //eventually, page1 is the one with lower left corner at origin.
+
+	double patternheight=signature->PatternHeight();
+	double patternwidth =signature->PatternWidth();
+	double ew=patternwidth/(signature->numvfolds+1);
+	double eh=patternheight/(signature->numhfolds+1);
+	double pw=ew-signature->trimleft-signature->trimright;
+	double ph=eh-signature->trimtop -signature->trimbottom;
+
+	double page2offsetx=0, page2offsety=0;
+
+	if (signature->binding=='l') { page2offsetx=pw; page2=page1; page1--; }
+	else if (signature->binding=='r') { page2offsetx=pw; page2=page1-1; }
+	else if (signature->binding=='t') { page2offsetx=pw; page2=page1-1; }
+	else { page2offsety=ph; page2=page1; page1--; } //botom binding
+
+	 //wrap back cover to front cover ONLY IF the final document page is actually physically on the back cover..
+	if (showwholecover && numpages==signature->PagesPerSignature()*numsignatures-1) {
+		if (page1<0) page1=signature->PagesPerSignature()*numsignatures-1;
+		else if (page2<0) page2=signature->PagesPerSignature()*numsignatures-1;
+		else if (page1>=signature->PagesPerSignature()*numsignatures) page1=0;
+		else if (page2>=signature->PagesPerSignature()*numsignatures) page2=0;
+	}
+	if (page1>=numpages) page1=-1;
+	if (page2>=numpages) page2=-1;
+
+	PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
+	if (signature->binding=='l' || signature->binding=='r') {
+		double o=0, w=pw;
+		if (page1>=0 && page2>=0) w+=pw;
+		if (page1<0) o+=pw;
+
+		spread->path=(SomeData *)newpath;
+		newpath->appendRect(o,0, w,ph);
+		if (page1>=0 && page2>=0) {
+			newpath->pushEmpty();
+			newpath->append(pw,0);
+			newpath->append(pw,ph);
+		}
+
+	} else {
+		double o=0, h=pw;
+		if (page1>=0 && page2>=0) h+=ph;
+		if (page1<0) o+=ph;
+
+		PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
+		spread->path=(SomeData *)newpath;
+		newpath->appendRect(0,o, pw,h);
+		if (page1>=0 && page2>=0) {
+			newpath->pushEmpty();
+			newpath->append(0,ph);
+			newpath->append(pw,ph);
+		}
+	}
+	newpath->FindBBox();
+
+
+	 // Now setup spread->pagestack with the single pages.
+	 // page width/height must map to proper area on page.
+
+	newpath=new PathsData;  // 1 count
+	newpath->appendRect(0,0, pw,ph);
+
+	if (page1>=0) {
+		spread->pagestack.push(new PageLocation(page1,NULL,newpath)); // incs count of g (to 2)
+		newpath->dec_count(); // remove extra tick
+	}
+
+	if (page2>=0) {
+		newpath->origin(flatpoint(page2offsetx,page2offsety));
+		spread->pagestack.push(new PageLocation(page1,NULL,newpath)); // incs count of g (to 2)
+		newpath->dec_count(); // remove extra tick
+	}
+
+	 //set minimum and maximum
+	if (signature->binding=='l') {
+		if (page1>=0) spread->minimum=flatpoint(pw/5,ph/2);
+		else spread->minimum=flatpoint(pw*1.2,ph/2);
+		if (page2>=0) spread->maximum=flatpoint(pw*1.8,ph/2);
+		else spread->maximum=flatpoint(pw*.8,ph/2);
+
+	} else if (signature->binding=='r') {
+		if (page1>=0) spread->maximum=flatpoint(pw/5,ph/2);
+		else spread->maximum=flatpoint(pw*1.2,ph/2);
+		if (page2>=0) spread->minimum=flatpoint(pw*1.8,ph/2);
+		else spread->minimum=flatpoint(pw*.8,ph/2);
+
+	} else if (signature->binding=='t') {
+		if (page1>=0) spread->maximum=flatpoint(pw/2,ph*.2);
+		else spread->maximum=flatpoint(pw/2,ph*1.2);
+		if (page2>=0) spread->minimum=flatpoint(pw/2,ph*1.8);
+		else spread->minimum=flatpoint(pw/2,ph*.8);
+
+	} else { //botom binding
+		if (page1>=0) spread->minimum=flatpoint(pw/2,ph*.2);
+		else spread->minimum=flatpoint(pw/2,ph*1.2);
+		if (page2>=0) spread->maximum=flatpoint(pw/2,ph*1.8);
+		else spread->maximum=flatpoint(pw/2,ph*.8);
+	}
+
+	return spread;
 }
 
+//! Return spread with all the pages properly flipped.
+/*! There are two paper spreads per physical piece of paper.
+ *
+ * The back side of a paper is constructed as if you flipped the paper over left to right.
+ */
 Spread *SignatureImposition::PaperLayout(int whichpaper)
-{// ***
-	return NULL;
+{
+	int front=(1+whichpaper)%2;
+	int sigpaper=whichpaper%(2*signature->sheetspersignature);
+	int mainpageoffset=(whichpaper/2/signature->sheetspersignature)*signature->PagesPerSignature();
+
+	Spread *spread=new Spread();
+	spread->spreadtype=1;
+	spread->style=SPREAD_PAPER;
+	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
+
+
+	 //install default paper group if any
+	if (papergroup) {
+		spread->papergroup=papergroup;
+		spread->papergroup->inc_count();
+	}
+
+	 // define max/min points
+	spread->minimum=flatpoint(paper->media.maxx/5,  paper->media.maxy/2);
+	spread->maximum=flatpoint(paper->media.maxx*4/5,paper->media.maxy/2);
+
+//	if (foldinfo[0][0].finalindexfront<0) {
+//		*** signature is incomplete, should do something meaningful?
+//	}
+	
+	 //--- make the paper outline
+	PathsData *newpath=new PathsData();
+	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
+	newpath->FindBBox();
+	spread->path=(SomeData *)newpath;
+
+
+	 //---- make the pagelocation stack
+	double x,y;
+	double xx,yy;
+	int xflip, yflip;
+
+	double patternheight=signature->PatternHeight();
+	double patternwidth =signature->PatternWidth();
+	double ew=patternwidth/(signature->numvfolds+1);
+	double eh=patternheight/(signature->numhfolds+1);
+	double pw=ew-signature->trimleft-signature->trimright;
+	double ph=eh-signature->trimtop -signature->trimbottom;
+
+	 //in a signature, if there is only one sheet, each page cell can map to 2 pages,
+	 //the front and the back, whose document page indices are adjacent. When there are
+	 //more than 1 paper sheet per signature, then each cell maps to (num sheets)*2 pages.
+	int rangeofpages=signature->sheetspersignature*2;
+	int pageindex;
+
+	 //for each tile:
+	x=(front?signature->insetleft:signature->insetright);
+	PathsData *pageoutline;
+	for (int tx=0; tx<signature->tilex; tx++) {
+	  y=signature->insetbottom;
+	  for (int ty=0; ty<signature->tiley; ty++) {
+
+		 //for each cell within each tile:
+		for (int rr=0; rr<signature->numhfolds+1; rr++) {
+		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
+
+			xflip=signature->foldinfo[rr][cc].finalxflip;
+			yflip=signature->foldinfo[rr][cc].finalyflip;
+
+			xx=x+cc*ew;
+			yy=y+rr*eh; //coordinates of corner of page cell
+			 //take in to account the final trim
+			if (xflip) xx+=signature->trimright; else xx+=signature->trimleft;
+			if (yflip) yy+=signature->trimtop;   else yy+=signature->trimbottom;
+
+			if (signature->foldinfo[rr][cc].finalindexfront>signature->foldinfo[rr][cc].finalindexback) {
+				pageindex= mainpageoffset + signature->foldinfo[rr][cc].finalindexfront*rangeofpages-1 - sigpaper;
+			} else {
+				pageindex= mainpageoffset + signature->foldinfo[rr][cc].finalindexback*rangeofpages + sigpaper;
+			}
+
+			pageoutline=new PathsData();//count of 1
+			pageoutline->appendRect(0,0, pw,ph);
+			pageoutline->FindBBox();
+			if (yflip) {
+				 //rotate 180 degrees when page is upside down
+				pageoutline->origin(flatpoint(xx+pw,yy+ph));
+				pageoutline->xaxis(flatpoint(-1,0));
+				pageoutline->yaxis(flatpoint(0,-1));
+			} else {
+				pageoutline->origin(flatpoint(xx,yy));
+			}
+
+			spread->pagestack.push(new PageLocation(pageindex,NULL,pageoutline));
+			pageoutline->dec_count();//remove extra count
+
+		  } //cc
+		}  //rr
+
+		y+=patternheight+signature->tilegapy;
+	  } //tx
+	  x+=patternwidth+signature->tilegapx;
+	} //ty
+
+
+	return spread;
 }
 
 Spread *SignatureImposition::GetLittleSpread(int whichspread)

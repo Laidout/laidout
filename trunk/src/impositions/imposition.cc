@@ -91,6 +91,12 @@ PageLocation::~PageLocation()
  * This class gets used by other classes, and those other classes are 
  * responsible for maintaining Spread's components.
  *
+ * A Spread can contain a relevant PaperGroup, a drawing of the spread (path),
+ * additional printing marks that are not associated with specific pages,
+ * locations of what might be considered minimum and maximum points, for use
+ * in a SpreadEditor for connecting spreads. Also contains a stack of actual
+ * pages in the spread, which in turn contain page outlines.
+ *
  * The type of thing the spread represents is held in mask, which are or'd
  * values from the following defines.
  * \code
