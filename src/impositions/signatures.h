@@ -121,6 +121,7 @@ class SignatureImposition : public Imposition
 	//PaperPartition *partition; //partition to insert folding pattern
 	
 	virtual void setPageStyles();
+	virtual void fixPageBleeds(int index,Page *page);
  public:
 	SignatureImposition();
 	virtual ~SignatureImposition();

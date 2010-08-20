@@ -559,6 +559,8 @@ Page::~Page()
  * This should later be corrected by imposition->SyncPages().
  *
  * Return 0 for success, nonzero for error.
+ *
+ * \todo if there is any custom margin information, it should be transferred...
  */
 int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
 {

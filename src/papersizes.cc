@@ -500,10 +500,6 @@ PaperBoxData::~PaperBoxData()
 
 
 //------------------------------------- PaperGroup --------------------------------------
-	//char *name;
-	//char *Name;
-	//Laxkit::PtrStack<PaperBoxData> papers;
-	//Laxkit::anObject *owner;
 
 /*! \class PaperGroup
  * \brief An orientation of one or more papers to hold layouts.
