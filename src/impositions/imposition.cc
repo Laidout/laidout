@@ -463,6 +463,13 @@ int Spread::PagestackIndex(int docpage)
  *
  * This function is used internally by impositions to set up pages.
  */
+/*! \fn const char *Imposition::BriefDescription()
+ * \brief One line description, for use in a new document dialog.
+ *
+ * For signatures, this would be something like "2 fold, 8 page signature"
+ * This exists to try to avoid unnecessarily large dialogs and still have it easy
+ * to navigate to a particular imposition you want.
+ */
 
 
 

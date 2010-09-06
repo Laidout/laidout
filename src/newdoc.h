@@ -49,7 +49,7 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::LineInput *marginl,*marginr,*margint,*marginb;
 	Laxkit::LineInput *insetl,*insetr,*insett,*insetb;
 	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*tilex,*tiley,*impfromfile;
-	Laxkit::MessageBar *mesbar;
+	Laxkit::MessageBar *impmesbar;
 	Laxkit::CheckBox *defaultpage,*custompage;
 
  	NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
@@ -60,7 +60,8 @@ class NewDocWindow : public Laxkit::RowFrame
 	virtual int init();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
-	void updateImposition();
+	int UseThisImposition(Imposition *imp);
+	void impositionFromFile(const char *file);
 };
 
 class NewProjectWindow : public Laxkit::RowFrame

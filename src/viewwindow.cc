@@ -1996,6 +1996,7 @@ int LaidoutViewport::ObjectMove(LaxInterfaces::SomeData *d)
 void LaidoutViewport::Center(int w)
 {
 	if (!curpage || !curpage->pagestyle || !spread || dp->Minx>=dp->Maxx) return;
+
 	if (w==0) { // center page
 		 //find the bounding box in dp real units of the page in question...
 		int c=curobj.spreadpage();
@@ -2013,6 +2014,7 @@ void LaidoutViewport::Center(int w)
 		//dp->Center(m,spread->pagestack.e[c]->outline);
 		syncrulers();
 		needtodraw=1;
+
 	} else if (w==1) { // center spread
 		double w=spread->path->maxx-spread->path->minx,
 		       h=spread->path->maxy-spread->path->miny;
@@ -2020,6 +2022,7 @@ void LaidoutViewport::Center(int w)
 				spread->path->miny-.05*h,spread->path->maxy+.05*h);
 		syncrulers();
 		needtodraw=1;
+
 	} else if (w==3) { // center curobj
 		if (!curobj.obj) return;
 		double m[6];

@@ -129,11 +129,9 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 		x=atof(BuiltinPaperSizes[c+1]);
 		y=atof(BuiltinPaperSizes[c+2]);
 
-		if (!strcmp(BuiltinPaperSizes[c+3],"mm")) { x/=25.4; y/=25.4; }
-		else if (!strcmp(BuiltinPaperSizes[c+3],"cm")) { x/=2.54; y/=2.54; }
-		else if (!strcmp(BuiltinPaperSizes[c+3],"px")) dpi=1; else dpi=360;
+		if (!strcmp(BuiltinPaperSizes[c+3],"px")) dpi=1;  else dpi=360;
 
-		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,dpi));
+		papers->push(new PaperStyle(BuiltinPaperSizes[c],x,y,0,dpi,BuiltinPaperSizes[c+3]));
 	}
 	return papers;
 }
@@ -168,6 +166,11 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 /*! \fn double PaperStyle::h()
  * \brief If landscape (flags&&1), then return width, else return height.
  */
+/*! \var char *PaperStyle::defaultunits
+ * \brief Hint for what should be default units for this paper type.
+ * 
+ * The width and height are still in inches. This is just a hint.
+ */
 
 PaperStyle::PaperStyle()
 {
@@ -175,12 +178,16 @@ PaperStyle::PaperStyle()
 	width=height=0;
 	dpi=360;
 	flags=0;
+	defaultunits=newstr("in");
 
 	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
 }
 
 //! Simple constructor, sets name, w, h, flags, dpi.
-PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,double ndpi)
+/*! w and h are in units. They are converted to inches internally,
+ * and PaperStyle::defaultunits is only a hint.
+ */
+PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,double ndpi,const char *units)
 {
 	if (nname) {
 		name=new char[strlen(nname)+1];
@@ -190,12 +197,20 @@ PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,d
 	height=h;
 	dpi=ndpi;
 	flags=nflags;
+	defaultunits=newstr(units);
+	if (!defaultunits) defaultunits=newstr("in");
+
+	if (!strcmp(defaultunits,"mm")) { width/=25.4; height/=25.4; }
+	else if (!strcmp(defaultunits,"cm")) { width/=2.54; height/=2.54; }
+
 	DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
 }
 
 PaperStyle::~PaperStyle()
 {
 	if (name) delete[] name;
+	if (defaultunits) delete[] defaultunits;
+
 	DBG cerr <<"PaperStyle destroyed, obj "<<object_id<<endl;
 }
 
@@ -215,16 +230,23 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
-		fprintf(f,"%sname Letter  #the name of the paper\n",spc);
-		fprintf(f,"%swidth 8.5    #in inches\n",spc); 
-		fprintf(f,"%sheight 11    #in inches\n",spc);
-		fprintf(f,"%sdpi 360      #default dpi for the paper\n",spc);
-		fprintf(f,"%slandscape    #could be portrait (the default) instead\n",spc);
+		fprintf(f,"%sname Letter     #the name of the paper\n",spc);
+		fprintf(f,"%swidth 8.5       #in inches\n",spc); 
+		fprintf(f,"%sheight 11       #in inches\n",spc);
+		fprintf(f,"%sdpi 360         #default dpi for the paper\n",spc);
+		fprintf(f,"%slandscape       #could be portrait (the default) instead\n",spc);
+		fprintf(f,"%sunits in        #(optional) When reading in, width and height are converted from this\n",spc);
 		return;
 	}
 	if (name) fprintf(f,"%sname %s\n",spc,name);
-	fprintf(f,"%swidth %.10g\n",spc,width); 
-	fprintf(f,"%sheight %.10g\n",spc,height);
+	double scale=1;
+	if (defaultunits) {
+		fprintf(f,"%sunits %s\n",spc,defaultunits);
+		if (!strcmp(defaultunits,"mm")) scale=25.4;
+		else if (!strcmp(defaultunits,"cm")) scale=2.54;
+	}
+	fprintf(f,"%swidth %.10g\n",spc,width*scale); 
+	fprintf(f,"%sheight %.10g\n",spc,height*scale);
 	fprintf(f,"%sdpi %.10g\n",spc,dpi);
 	fprintf(f,"%s%s\n",spc,(flags&1?"landscape":"portrait"));
 }
@@ -234,6 +256,7 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 {
 	if (!att) return;
 	char *aname,*value;
+	const char *convertunits=NULL;
 	for (int c=0; c<att->attributes.n; c++) {
 		aname= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -249,20 +272,32 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 			flags|=1;//*** make this a define?
 		} else if (!strcmp(aname,"portrait")) {
 			flags&=~1;
+		} else if (!strcmp(aname,"defaultunits")) {
+			makestr(defaultunits,value);
+		} else if (!strcmp(aname,"units")) {
+			convertunits=value;
 		}
+	}
+	if (convertunits) {
+		 // *** someday automate this adequately
+		makestr(defaultunits,convertunits);
+		if (!strcasecmp(convertunits,"cm")) { width/=2.54; height/=2.54; }
+		if (!strcasecmp(convertunits,"mm")) { width/=25.4; height/=25.4; }
+		//nothing special done for in or px
 	}
 }
 
 //! Copy over name, width, height, dpi.
 Style *PaperStyle::duplicate(Style *s)//s==NULL
 {
-	if (s==NULL) return (Style *)new PaperStyle(name,width,height,flags,dpi);
+	if (s==NULL) return (Style *)new PaperStyle(name,width,height,flags,dpi,defaultunits);
 	if (!dynamic_cast<PaperStyle *>(s)) return NULL;
 	PaperStyle *ps=dynamic_cast<PaperStyle *>(s);
 	if (!ps) return NULL;
 	makestr(ps->name,name);
 	ps->width=width;
 	ps->height=height;
+	makestr(ps->defaultunits,defaultunits);
 	return s;
 }
 
@@ -304,7 +339,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 						break;
 					}
 				}
-				if (!paper) paper=new PaperStyle(str,0,0,0,0);
+				if (!paper) paper=new PaperStyle(str,0,0,0,0,"in");
 			} else throw  _("Invalid object for paper!");
 		}
 
@@ -583,7 +618,7 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
 		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
 		//fprintf(f,"%s  outlinecolor 65535 0 0 #color of the outline of a paper in the interface\n",spc);
-		PaperStyle paperstyle(NULL,0,0,0,0);
+		PaperStyle paperstyle(NULL,0,0,0,0,"in");
 		paperstyle.dump_out(f,indent+2,-1,NULL);
 		//fprintf(f,"%s  minx 0              #the bounds for the media box\n",spc);
 		//fprintf(f,"%s  miny 0\n",spc);
@@ -621,7 +656,7 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			makestr(Name,value);
 		} else if (!strcmp(nme,"paper")) {
 			int foundcolor=0;
-			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0);
+			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0,"in");
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			PaperBox *paperbox=new PaperBox(paperstyle);
 			paperstyle->dec_count();

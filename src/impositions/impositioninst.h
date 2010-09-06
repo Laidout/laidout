@@ -31,6 +31,7 @@ class Singles : public Imposition
 	virtual ~Singles();
 	static ImpositionResource *getDefaultResource();
 
+	virtual const char *BriefDescription();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
@@ -72,6 +73,7 @@ class DoubleSidedSingles : public Singles
 	virtual ~DoubleSidedSingles();
 	static ImpositionResource *getDefaultResource();
 
+	virtual const char *BriefDescription();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
@@ -106,6 +108,7 @@ class BookletImposition : public DoubleSidedSingles
 	static ImpositionResource *getDefaultResource();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
+	virtual const char *BriefDescription();
 	
 	//virtual SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
 	virtual Spread *PaperLayout(int whichpaper);

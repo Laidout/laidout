@@ -85,7 +85,11 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	 //for easy storing of final arrangement:
 	FoldedPageInfo **foldinfo;
 	virtual void reallocateFoldinfo();
-	virtual int applyFold(FoldedPageInfo **foldinfo, int foldlevel, int fromscratch);
+	virtual void resetFoldinfo(FoldedPageInfo **finfo);
+	virtual int  applyFold(FoldedPageInfo **finfo, int foldlevel);
+	virtual void applyFold(FoldedPageInfo **finfo, char folddir, int index, int under);
+	virtual int checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalcol);
+
 
 	Signature();
 	virtual ~Signature();
@@ -106,6 +110,9 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	virtual int PagesPerSignature();
 
 	virtual int SetPaper(PaperStyle *p);
+	virtual int locatePaperFromPage(int pagenumber, int *row, int *col);
+
+	virtual Signature *duplicate();
 };
 
 
@@ -116,19 +123,22 @@ class SignatureImposition : public Imposition
 	int showwholecover; //whether you see the cover+backcover next to each other, or by themselves
 	PaperStyle *papersize;
 	RectPageStyle *pagestyle,*pagestyleodd;
-	Signature *signature;      //folding pattern
 	int numsignatures;
 	//PaperPartition *partition; //partition to insert folding pattern
 	
 	virtual void setPageStyles();
 	virtual void fixPageBleeds(int index,Page *page);
  public:
-	SignatureImposition();
+	Signature *signature;      //folding pattern
+
+	SignatureImposition(Signature *newsig=NULL);
 	virtual ~SignatureImposition();
+	virtual int UseThisSignature(Signature *newsig);
 	virtual StyleDef *makeStyleDef();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
+	virtual const char *BriefDescription();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);

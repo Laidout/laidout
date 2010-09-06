@@ -114,6 +114,7 @@ using namespace std;
 NetImposition::NetImposition(Net *newnet)
 	: Imposition(_("Net"))
 { 
+	briefdesc=NULL;
 	scalefromnet=1;
 	maptoabstractnet=0;
 	pagestyle=NULL;
@@ -124,7 +125,7 @@ NetImposition::NetImposition(Net *newnet)
 	 // setup default paperstyle
 	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
-	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
+	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
 	Imposition::SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 
@@ -167,6 +168,26 @@ ImpositionResource *NetImposition::getDefaultResource()
 								  NULL,          //file
 								  _("A net of connected faces"),
 								  NULL,0);
+}
+
+//! Return what type of thing this is.
+/*! If there is an abstract net, then return abstractnet->NetName().
+ * Otherwise, return "Net".
+ */
+const char *NetImposition::NetImpositionName()
+{
+	if (abstractnet && abstractnet->NetName()) return abstractnet->NetName();
+	return _("Net");
+}
+
+//! Return something "Dodecahedron, 12 page net".
+const char *NetImposition::BriefDescription()
+{
+	int n=numActiveFaces();
+	if (briefdesc) delete[] briefdesc;
+	briefdesc=new char[30+strlen(NetImpositionName())];
+	sprintf(briefdesc,_("%s, %d page net"), NetImpositionName(), n);
+	return briefdesc;
 }
 
 //! Sets net to a builtin net.
@@ -934,7 +955,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			//*** ignoring defaultpaperstyle.....
 			//***if (paperstyle) delete paperstyle;
-			//paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***
+			//paperstyle=new PaperStyle("Letter",8.5,11,0,300,"in");//***
 			//paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 		} else if (!strcmp(name,"net")) {
 			if (!isblank(value)) { // is a built in

@@ -92,8 +92,8 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
 
-	
-//!	virtual int UseThisImposition(Signature *sig);
+	virtual int UseThisImposition(SignatureImposition *sigimp);
+	virtual int UseThisSignature(Signature *sig);
 };
 
 
@@ -102,17 +102,17 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 class SignatureEditor : public LaxInterfaces::ViewerWindow
 {
  protected:
+	SignatureInterface *tool;
  public:
-	PaperStyle *p;
-	Signature *sig;
 	SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 						Laxkit::anXWindow *nowner, const char *mes,
-						Signature *sig, PaperStyle *p);
+						SignatureImposition *sigimp, PaperStyle *p);
 	virtual ~SignatureEditor();
 	virtual int init();
 	virtual const char *whattype() { return "SignatureEditor"; }
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
+	virtual void send();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
