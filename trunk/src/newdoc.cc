@@ -273,7 +273,7 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char
 NewDocWindow::~NewDocWindow()
 {
 	if (doc) doc->dec_count();
-	if (imp) delete imp;
+	if (imp) imp->dec_count();
 	delete papertype;
 }
 
@@ -298,6 +298,7 @@ int NewDocWindow::init()
 	Button *tbut;
 	anXWindow *last;
 	LineInput *linp;
+	MessageBar *mesbar;
 
 
 //	//AddWin(lineedit, w,ws,wg,h,valign); for horizontal rows
@@ -457,6 +458,10 @@ int NewDocWindow::init()
 	last=impsel=new SliderPopup(this,"Imposition",NULL,0, 0,0,0,0, 1, 
 						numpages,object_id,"imposition");
 	int whichimp=0;
+	if (doc) {
+		whichimp=laidout->impositionpool.n;
+		impsel->AddItem(_("Current"),c);
+	}
 	for (c=0; c<laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
 		if (doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->name))
@@ -487,7 +492,13 @@ int NewDocWindow::init()
 	tbut->tooltip(_("Edit the Search for an imposition file, or polyhedron file"));
 	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
 
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);
+	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);//line break
+
+	 //------ imposition brief description
+	impmesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_LEFT|MB_MOVE, 0,0, 0,0, 0,
+			(doc?doc->imposition->BriefDescription()
+			 :laidout->impositionpool.e[0]->description));
+	AddWin(impmesbar, 2500,2300,0,50,0, linpheight,0,0,50,0);
 
 	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
 
@@ -513,6 +524,8 @@ int NewDocWindow::init()
 				last,object_id,"scalepages", _("Scale pages to fit new imposition"),5,5);
 		box->tooltip(_("Scale each page up or down to fit the page sizes in a new imposition"));
 		AddWin(box, box->win_w,0,0,50,0, linpheight,0,0,50,0);
+
+		AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
 	}
 
 //------------------vvv--not used here anymore, maybe use for Singles edit dialog??
@@ -705,11 +718,11 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"impfile")) {
-		 //comes after a file select dialog for imposition file
+		 //comes after a file select dialog for imposition file, from "From File..." imposition select
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
-		impfromfile->SetText(s->str);
-		updateImposition();
+		if (impfromfile) impfromfile->SetText(s->str);
+		impositionFromFile(s->str);
 		return 0;
 
 	} else 	if (!strcmp(mes,"paper size")) {
@@ -762,7 +775,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		 //when new imposition type selected from popup menu
 		if (s->info1==IMP_NEW_SIGNATURE) {
 			app->rundialog(new SignatureEditor(NULL,"sigeditor",_("Signature Editor"),
-						   this,"newsig",
+						   this,"newimposition",
 						   NULL,papertype));
 			return 0;
 
@@ -779,9 +792,16 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 			return 0;
 		}
 
-		if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
-		if (imp) delete imp;
+		if (s->info1==laidout->impositionpool.n && doc) {
+			if (imp) imp->dec_count();
+			imp=(Imposition*)doc->imposition->duplicate();
+			impmesbar->SetText(imp->BriefDescription());
+
+		} else if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
+
+		if (imp) imp->dec_count();
 		imp=laidout->impositionpool.e[s->info1]->Create();
+		impmesbar->SetText(laidout->impositionpool.e[s->info1]->description);
 //		if (!strcmp(imp->styledef->name,"NetImposition") || !strcmp(imp->styledef->name,"Singles")) {
 //			marginl->SetLabel(_("Left:"));
 //			marginr->SetLabel(_("Right:"));
@@ -790,7 +810,18 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 //			marginr->SetLabel(_("Inside:"));
 //		}
 		return 0;
-		
+
+	} else if (!strcmp(mes,"newimposition")) {
+		const RefCountedEventData *r=dynamic_cast<const RefCountedEventData *>(data);
+		Imposition *i=dynamic_cast<Imposition *>(const_cast<RefCountedEventData*>(r)->TheObject());
+		if (!i) return 0;
+
+		if (imp) imp->dec_count();
+		imp=i;
+		imp->inc_count();
+		impmesbar->SetText(imp->BriefDescription());
+		return 0;
+
 	} else if (!strcmp(mes,"paper x")) {
 		//***should switch to custom paper maybe
 
@@ -812,14 +843,18 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		//****
 
 	} else if (!strcmp(mes,"impfromfile")) { 
+		 // *** still used?
+		 //change in impfromfile text edit
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		if (s->info1==3 || s->info1==1) {
 			 //focus was lost or enter pressed from imp file input
-			updateImposition();
+			impositionFromFile(impfromfile->GetCText());
 		}
 		return 0;
 
-	} else if (!strcmp(mes,"impfileselect")) { // from imp file "..." control button
+	} else if (!strcmp(mes,"impfileselect")) {
+		 // *** still used?
+		 // from imp file "..." control button next to file text edit
 		app->rundialog(new FileDialog(NULL,NULL,_("Imposition from file"),
 					ANXWIN_REMEMBER, 0,0, 0,0,0,
 					object_id, "impfile",
@@ -854,21 +889,36 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 	return 1;
 }
 
-//! Update imposition settings based on a changed imposition file
-void NewDocWindow::updateImposition()
+//! Use the specified imposition as potentially the new one for the document.
+/*! Return 0 for success or nonzero for error, and imp not used.
+ *
+ * This will increment the count of newimp.
+ */
+int NewDocWindow::UseThisImposition(Imposition *newimp)
 {
-	DBG cerr<<"----------attempting to updateImposition()-------"<<endl;
+	if (!newimp) return 1;
+	if (imp) imp->dec_count();
+	imp=newimp;
+	imp->inc_count();
+	impmesbar->SetText(imp->BriefDescription());
+
+	return 0;
+}
+
+//! Update imposition settings based on a changed imposition file
+void NewDocWindow::impositionFromFile(const char *file)
+{
+	DBG cerr<<"----------attempting to impositionFromFile()-------"<<endl;
 
 	 //we load the off file here rather than sendNewDoc() 
 	 //to check to see if it is possible to do so... maybe not so important...
-	const char *file=impfromfile->GetCText();
 	
 	Polyhedron *poly=new Polyhedron();
 	if (poly->dumpInFile(file,NULL)==0) {
 		Net *net=new Net;
 		net->basenet=poly;
 		net->TotalUnwrap();
-		if (imp && !(doc && imp==doc->imposition)) delete imp;
+		if (imp) imp->dec_count();
 		NetImposition *nimp;
 		imp=nimp=new NetImposition();
 		nimp->SetNet(net);
@@ -894,8 +944,9 @@ void NewDocWindow::updateImposition()
 		return;
 	}
 
-	impfromfile->GetLineEdit()->Valid(0);
-	DBG cerr<<"   updateImposition() FAILED..."<<endl;
+	if (impfromfile) impfromfile->GetLineEdit()->Valid(0);
+
+	DBG cerr<<"   impositionFromFile() FAILED..."<<endl;
 }
 
 //! Create and fill a Document, and tell laidout to install the new document
@@ -945,12 +996,14 @@ void NewDocWindow::sendNewDoc()
 	imposition->SetPaperSize(papertype);
 
 	if (doc) {
-		cout <<"****** imp sendDoc to newDocPrefs ********"<<endl;
+		 //we have a document already, so we are just reimposing
 		CheckBox *box=dynamic_cast<CheckBox *>(findChildWindowByName("scalepages"));
 
 		doc->Saveas(saveas->GetCText());
 		doc->ReImpose(imposition,box && box->State()==LAX_ON); //1 for scale pages
+
 	} else {
+		 //create a new document based on imposition
 		laidout->NewDocument(imposition,saveas->GetCText()); //incs imp count, should be 2 now
 	}
 	if (imposition) imposition->dec_count();//remove excess count

@@ -102,6 +102,7 @@ class Imposition : public Style
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
+	virtual const char *BriefDescription() = 0;
 	
 	virtual Page **CreatePages() = 0;
 	virtual int SyncPageStyles(Document *doc,int start,int n);

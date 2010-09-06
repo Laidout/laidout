@@ -24,6 +24,7 @@
 
 class NetImposition : public Imposition
 {
+	char *briefdesc;
  public:
 	PageStyle *pagestyle;
 	AbstractNet *abstractnet;
@@ -40,6 +41,7 @@ class NetImposition : public Imposition
 	static ImpositionResource *getDefaultResource();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
+	virtual const char *BriefDescription();
 	
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
@@ -78,6 +80,7 @@ class NetImposition : public Imposition
 	 //new for this class:
 	virtual int SetNet(const char *nettype);
 	virtual int SetNet(Net *newnet);
+	virtual const char *NetImpositionName();
 	virtual void setPage();
 	virtual int numActiveFaces();
 	virtual int numActiveNets();

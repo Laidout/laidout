@@ -27,6 +27,7 @@ using namespace Laxkit;
 using namespace LaxInterfaces;
 using namespace LaxFiles;
 
+#define DBG 
 
 //----------------------------- naming helper functions -----------------------------
 
@@ -239,6 +240,9 @@ Signature::Signature()
 	positivey='u';  //direction of the positive x axis: 'l|r|t|b', for when up might not be positivey!
 
 	foldinfo=NULL;
+	reallocateFoldinfo();
+	foldinfo[0][0].finalindexfront=0;
+	foldinfo[0][0].finalindexback=1;
 }
 
 Signature::~Signature()
@@ -299,10 +303,18 @@ const Signature &Signature::operator=(const Signature &sig)
 	positivey=sig.positivey;
 
 	reallocateFoldinfo();
-	applyFold(NULL,-1,1);
+	applyFold(NULL,-1);
 
 	return *this;
 }
+
+Signature *Signature::duplicate()
+{
+	Signature *sig=new Signature;
+	*sig=*this;
+	return sig;
+}
+
 
 //! Reallocate and map foldinfo.
 /*! This will base the new foldinfo on numhfolds and numvfolds.
@@ -328,21 +340,213 @@ void Signature::reallocateFoldinfo()
 	foldinfo[r]=NULL; //terminating NULL, so we don't need to remember sig->numhfolds
 }
 
+//! Flush all the foldinfo pages stacks, as if there have been no folds yet.
+/*! Please note this does not create or reallocate foldinfo. 
+ * If finfo==NULL then use this->foldinfo.
+ *
+ * It is assumed that finfo is allocated properly for the number of folds.
+ */
+void Signature::resetFoldinfo(FoldedPageInfo **finfo)
+{
+	if (!finfo) finfo=foldinfo;
+
+	for (int r=0; r<numhfolds+1; r++) {
+		for (int c=0; c<numvfolds+1; c++) {
+			finfo[r][c].pages.flush();
+			finfo[r][c].pages.push(r);
+			finfo[r][c].pages.push(c);
+
+			finfo[r][c].x_flipped=0;
+			finfo[r][c].y_flipped=0;
+		}
+	}
+}
+
 /*! If foldlevel==0, then fill with info about when there are no folds.
  * foldlevel==1 means after the 1st fold in the folds stack, etc.
  * foldlevel==-1 means apply all the folds, and apply final page settings.
  *
- * If fromscratch==1, then reset the info, and apply each fold below foldlevel
- * before applying the fold at foldlevel.
+ * First the fold info is reset, then each fold is applied up to foldlevel.
+ * If foldlevel==0, then the result is for no folds done.
  */
-int Signature::applyFold(FoldedPageInfo **finfo, int foldlevel, int fromscratch)
-{ // ***
+int Signature::applyFold(FoldedPageInfo **finfo, int foldlevel)
+{
 	if (!finfo) {
 		if (!foldinfo) reallocateFoldinfo();
 		finfo=foldinfo;
 	}
-	cerr <<" **** need to implement Signature::applyFold()"<<endl;
+
+	resetFoldinfo(finfo);
+
+	if (foldlevel<0) foldlevel=folds.n;
+	Fold *fold;
+	for (int c=0; c<foldlevel; c++) {
+		fold=folds.e[c];
+		applyFold(finfo, fold->direction, fold->whichfold, fold->under);
+	}
 	return 0;
+}
+
+//! Low level flipping across folds.
+/*! This will flip everything on one side of a fold to the other side (if possible).
+ * It is not a selective flipping.
+ *
+ * This is called to ONLY apply the fold. It does not check and apply final index settings
+ * or check for validity of the fold.
+ *
+ * If finfo==NULL, then use this->foldinfo.
+ */
+void Signature::applyFold(FoldedPageInfo **finfo, char folddir, int index, int under)
+{
+	if (!finfo) finfo=foldinfo;
+
+	int newr,newc, tr,tc;
+	int fr1,fr2, fc1,fc2;
+
+	if (folddir=='l') {
+		fr1=0;
+		fr2=numhfolds;
+		fc1=index;
+		fc2=numvfolds;
+	} else if (folddir=='r') {
+		fr1=0;
+		fr2=numhfolds;
+		fc1=0;
+		fc2=index-1;
+	} else if (folddir=='b') {
+		fr1=index;
+		fr2=numhfolds;
+		fc1=0;
+		fc2=numvfolds;
+	} else if (folddir=='t') {
+		fr1=0;
+		fr2=index-1;
+		fc1=0;
+		fc2=numvfolds;
+	}
+
+	for (int r=fr1; r<=fr2; r++) {
+	  for (int c=fc1; c<=fc2; c++) {
+		if (finfo[r][c].pages.n==0) continue; //skip blank cells
+
+		 //find new positions
+		if (folddir=='b') {
+			newc=c;
+			newr=index-(r-index+1);
+		} else if (folddir=='r') {
+			newr=r;
+			newc=index+(index-c-1);
+		} else if (folddir=='l') {
+			newr=r;
+			newc=index-(c-index+1);
+		} else if (folddir=='t') {
+			newc=c;
+			newr=index+(index-r-1);
+		}
+
+		 //swap old and new positions
+		if (under) {
+			while(finfo[r][c].pages.n) {
+				tc=finfo[r][c].pages.pop(0);
+				tr=finfo[r][c].pages.pop(0);
+				finfo[newr][newc].pages.push(tc,0);
+				finfo[newr][newc].pages.push(tr,0);
+
+				 //flip the original place.
+				if (folddir=='b' || folddir=='t') finfo[tr][tc].y_flipped=!finfo[tr][tc].y_flipped;
+				else finfo[tr][tc].x_flipped=!finfo[tr][tc].x_flipped;
+			}
+		} else {
+			while(finfo[r][c].pages.n) {
+				tc=finfo[r][c].pages.pop();
+				tr=finfo[r][c].pages.pop();
+				finfo[newr][newc].pages.push(tr);
+				finfo[newr][newc].pages.push(tc);
+
+				 //flip the original place.
+				if (folddir=='b' || folddir=='t') finfo[tr][tc].y_flipped=!finfo[tr][tc].y_flipped;
+				else finfo[tr][tc].x_flipped=!finfo[tr][tc].x_flipped;
+			}
+		}
+	  }
+	}
+}
+
+//! Check if the signature is totally folded or not.
+/*! If we are totally folded, then apply the page indices to finfo.
+ *
+ * Returns 1 if we are totally folded. Otherwise 0. If we are totally folded, then
+ * return the final position in finalrow,finalcol. Put -1 in each if we are not totally folded.
+ *
+ * If finfo==NULL, then use this->foldinfo.
+ */
+int Signature::checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalcol)
+{
+	if (!finfo) finfo=foldinfo;
+
+	 //check the immediate neighors of the first cell with pages.
+	 //If there are no neighbors, then we are totally folded.
+
+	 //find a non blank cell
+	int newr=0,newc=0;
+	for (newr=0; newr<=numhfolds; newr++) {
+	  for (newc=0; newc<=numvfolds; newc++) {
+		if (finfo[newr][newc].pages.n!=0) break;
+	  }
+	  if (newc!=numvfolds+1) break;
+	}
+
+	int hasfinal=0;
+	int stillmore=4;
+	int tr,tc;
+
+	 //check above
+	tr=newr-1; tc=newc;
+	if (tr<0 || finfo[tr][tc].pages.n==0) stillmore--;
+
+	 //check below
+	tr=newr+1; tc=newc;
+	if (tr>numhfolds || finfo[tr][tc].pages.n==0) stillmore--;
+	
+	 //check left
+	tr=newr; tc=newc-1;
+	if (tc<0 || finfo[tr][tc].pages.n==0) stillmore--;
+
+	 //check if right
+	tr=newr; tc=newc+1;
+	if (tc>numvfolds || finfo[tr][tc].pages.n==0) stillmore--;
+
+	if (stillmore==0) {
+		 //apply final flip values
+		int finalr=newr;
+		int finalc=newc;
+
+		int page=0,xflip,yflip;
+		for (int c=finfo[finalr][finalc].pages.n-2; c>=0; c-=2) {
+			tr=finfo[finalr][finalc].pages.e[c];
+			tc=finfo[finalr][finalc].pages.e[c+1];
+
+			xflip=finfo[tr][tc].x_flipped;
+			yflip=finfo[tr][tc].y_flipped;
+			finfo[tr][tc].finalyflip=finfo[tr][tc].y_flipped;
+			finfo[tr][tc].finalxflip=finfo[tr][tc].x_flipped;
+
+			if ((xflip && !yflip) || (!xflip && yflip)) {
+				 //back side of paper is up
+				finfo[tr][tc].finalindexback=page;
+				finfo[tr][tc].finalindexfront=page+1;
+			} else {
+				finfo[tr][tc].finalindexback=page+1;
+				finfo[tr][tc].finalindexfront=page;
+			}
+			page+=2;
+		}
+		hasfinal=1;
+	} else hasfinal=0;
+
+	if (finalrow) *finalrow= hasfinal ? newr : -1;
+	if (finalcol) *finalcol= hasfinal ? newc : -1;
+	return hasfinal;
 }
 
 //! Set the size of the signature to this paper.
@@ -550,6 +754,10 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 	}
 	numhfolds=numhf; //note: overrides that stored in atts
 	numvfolds=numvf;
+
+	reallocateFoldinfo();
+	applyFold(NULL,-1);
+	checkFoldLevel(NULL,NULL,NULL);
 }
 
 //! Ensure that the Signature's values are actually sane.
@@ -587,7 +795,7 @@ double Signature::PatternWidth()
 }
 
 //! The height of a single element of a folding section.
-/*! For part==0, this is PatternHeight()/(numhfolds+1).
+/*! For part==0, this is the cell height: PatternHeight()/(numhfolds+1).
  * For part==1, this is like 0, but removing the top and bottom trim.
  */
 double Signature::PageHeight(int part)
@@ -597,7 +805,7 @@ double Signature::PageHeight(int part)
 }
 
 //! The width of a single element of a folding section.
-/*! For part==0, this is PatternWidth()/(numvfolds+1).
+/*! For part==0, this is the cell width: PatternWidth()/(numvfolds+1).
  * For part==1, this is like 0, but removing the left and right trim.
  */
 double Signature::PageWidth(int part)
@@ -618,7 +826,7 @@ double Signature::PageWidth(int part)
  */
 Laxkit::DoubleBBox *Signature::PageBounds(int part, Laxkit::DoubleBBox *bbox)
 {
-	if (bbox) bbox=new Laxkit::DoubleBBox;
+	if (!bbox) bbox=new Laxkit::DoubleBBox;
 
 	if (part==0) { //trim box
 		bbox->minx=bbox->miny=0;
@@ -671,6 +879,60 @@ int Signature::PagesPerSignature()
 	return (sheetspersignature>0?sheetspersignature:1)*PagesPerPattern();
 }
 
+//! Return which paper spread contains the given document page number.
+/*! If row or col are not NULL, then return which cell the page is in.
+ * Note that this row,col is for a paper spread, and by convention the backside of a sheet of
+ * paper is flipped left to right in relation to the front side.
+ */
+int Signature::locatePaperFromPage(int pagenumber, int *row, int *col)
+{
+	int whichsig=pagenumber/PagesPerSignature();//takes into account sheetspersignature
+	int pageindex=pagenumber%PagesPerSignature();//page index within the signature
+	int pagespercell=2*(sheetspersignature>0?sheetspersignature:1); //total pages per cell
+	int sigindex      =pageindex/(pagespercell/2);//page index assuming a single page in signature
+	int sigindexoffset=pageindex%(pagespercell/2);//index within cell of the page
+
+	 //sigindex is the same as pageindex when there is only 1 sheet per signature.
+	 //Now we need to find which side of the paper sigindex is on, then map that if necessary
+	 //to the right piece of paper.
+	 //
+	 //To do this, we find where it is in the pattern...
+
+	int front;  //Whether sigindex is on top or bottom of unfolded pattern
+	int countdir; //Whether a pattern cell has a higher page number on top (1) or not (0).
+	int rr=-1, cc=-1;
+	for (rr=0; rr<numhfolds+1; rr++) {
+	  for (cc=0; cc<numvfolds+1; cc++) {
+		if (sigindex==foldinfo[rr][cc].finalindexfront) {
+			front=1;
+			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
+			break;
+		} else if (sigindex==foldinfo[rr][cc].finalindexback) {
+			front=0;
+			countdir=(foldinfo[rr][cc].finalindexfront>foldinfo[rr][cc].finalindexback);
+			break;
+		}
+	  } //cc
+	  if (cc!=numvfolds+1) break;
+	}  //rr
+
+	DBG if (rr==numhfolds+1) { 
+	DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
+	DBG 	exit(0);
+	DBG }
+
+	 //now rr,cc is the cell that contains sigindex.
+	 //We must figure out how it maps to pieces of paper
+	int papernumber;
+	if (countdir==1) papernumber=pagespercell-1-sigindexoffset;
+	else papernumber=sigindexoffset;
+
+	if (row) *row=rr;
+	if (col) *col=((sigindexoffset%1) ? (numvfolds-cc) : cc);
+
+	return whichsig*PagesPerSignature() + papernumber;
+}
+
 
 //------------------------------------- SignatureImposition --------------------------------------
 /*! \class SignatureImposition
@@ -681,15 +943,18 @@ int Signature::PagesPerSignature()
  */
 
 
-SignatureImposition::SignatureImposition()
+/*! This will increment the count of newsig.
+ */
+SignatureImposition::SignatureImposition(Signature *newsig)
 	: Imposition("Signature")
 {
 	showwholecover=0;
 
 	papersize=NULL;
-	signature=NULL;
+
 	numsignatures=1;
-	//partition=NULL;
+	signature=newsig;
+	if (signature) signature->inc_count();
 	
 	pagestyle=pagestyleodd=NULL;
 }
@@ -701,11 +966,38 @@ SignatureImposition::~SignatureImposition()
 	//if (partition) partition->dec_count();
 }
 
+/*! Return 0 for success, or nonzero for error.
+ */
+int SignatureImposition::UseThisSignature(Signature *newsig)
+{
+	if (!newsig) return 1;
+
+	newsig->inc_count();
+	if (signature) signature->dec_count();
+	signature=newsig;
+	if (papersize) signature->SetPaper(papersize);
+
+	return 0;
+}
+
+//! Return something like "2 fold, 8 page signature".
+const char *SignatureImposition::BriefDescription()
+{
+	static char briefdesc[100];
+	if (signature->tilex>1 || signature->tiley>1) 
+		sprintf(briefdesc,_("%d, %d page signature, tiled %dx%d"),
+					signature->folds.n,signature->PagesPerPattern(),
+					signature->tilex, signature->tiley);
+	else sprintf(briefdesc,_("%d fold, %d page signature"),signature->folds.n,signature->PagesPerPattern());
+
+	return briefdesc;
+}
+
 Style *SignatureImposition::duplicate(Style *s)
 {// ***
 	SignatureImposition *sn;
 	if (s==NULL) {
-		s=sn=new SignatureImposition();
+		s=sn=new SignatureImposition(signature);
 	} else sn=dynamic_cast<SignatureImposition *>(s);
 	if (!sn) return NULL;
 	if (styledef) {
@@ -713,8 +1005,7 @@ Style *SignatureImposition::duplicate(Style *s)
 		if (sn->styledef) sn->styledef->dec_count();
 		sn->styledef=styledef;
 	}
-
-	sn->signature=signature;
+	sn->showwholecover=showwholecover;
 
 	return Imposition::duplicate(s);  
 }
@@ -728,7 +1019,7 @@ Style *NewSignature(StyleDef *def)
 }
 
 StyleDef *SignatureImposition::makeStyleDef()
-{
+{ // *** finish imp this!!
 	StyleDef *sd=new StyleDef(NULL,"Signature",
 			_("Signature"),
 			_("Imposition based on signatures"),
@@ -824,15 +1115,7 @@ int SignatureImposition::SpreadType(int spread)
 //! Return which paper number the given document page lays on.
 int SignatureImposition::PaperFromPage(int pagenumber)
 {
-	 //if a signature is 4x3 cells, each paper holds 24 pages. 12 front, and 12 back.
-	 //whether a paper holds a page on the front or back alternates during those 24.
-	int whichsig=pagenumber/signature->PagesPerSignature();
-	int sigindex=pagenumber%signature->PagesPerSignature();
-
-	//***
-	
-
-	return 0;
+	return signature->locatePaperFromPage(pagenumber,NULL,NULL);
 }
 
 int SignatureImposition::SpreadFromPage(int layout, int pagenumber)
@@ -846,11 +1129,14 @@ int SignatureImposition::SpreadFromPage(int layout, int pagenumber)
 
 //-----------basic setup
 
+//! Return the number of pages needed to fill this many paper spreads.
+/*! Note that there are 2 paper spreads per actual piece of paper.
+ */
 int SignatureImposition::GetPagesNeeded(int npapers)
 {
-	npapers/=signature->sheetspersignature;
-	if (npapers==0) npapers=1;
-	return npapers * signature->PagesPerSignature();
+	int numsigs=npapers/2/signature->sheetspersignature;
+	if (numsigs==0) numsigs=1;
+	return numsigs * signature->PagesPerSignature();
 }
 
 //! Return the number of paper spreads needed to hold that many pages.
@@ -904,11 +1190,15 @@ int SignatureImposition::NumSpreads(int layout)
 
 int SignatureImposition::NumSpreads(int layout,int setthismany)
 {// ***
+	cerr <<"  ********** implement SignatureImposition::NumSpreads(int layout,int setthismany)"<<endl;
 	return 0;
 }
 
+//! Return the number of paper spreads.
+/*! This is twice the number of physical pieces of paper.
+ */
 int SignatureImposition::NumPapers()
-{// ***
+{
 	return numpapers;
 }
 
@@ -918,21 +1208,40 @@ int SignatureImposition::NumPapers()
  */
 int SignatureImposition::NumPapers(int npapers)
 {// ***
+
+	cerr <<"  ********** implement SignatureImposition::NumPapers(int npapers)"<<endl;
 	return 0;
 }
 
+//! Returns the number of pages the imposition thinks there should be.
+/*! Please note this might be different than the number of actual document pages.
+ */
 int SignatureImposition::NumPages()
-{// ***
+{
 	return numpages;
 }
 
 //! Set the number of document pages that must be fit into the imposition.
-/*! Returns the new value of numpages.
+/*! Returns the new value of numpages, which might be more than npages.
  */
 int SignatureImposition::NumPages(int npages)
-{ //***
+{
 	//update the number of papers to accomodate npages
-	return 0;
+
+	if (signature->autoaddsheets) {
+		signature->sheetspersignature=1+npages/(signature->PagesPerPattern()*signature->tilex*signature->tiley);
+		numsignatures=1;
+		numpapers=2*signature->sheetspersignature;
+		numpages=signature->PagesPerSignature();
+
+	} else {
+		numsignatures=npages/signature->PagesPerSignature();
+		if (numsignatures==0) numsignatures=1;
+		numpapers=numsignatures*2;
+		numpages=numsignatures*signature->PagesPerSignature();
+	}
+
+	return numpages;
 }
 
 
@@ -997,7 +1306,6 @@ Page **SignatureImposition::CreatePages()
 void SignatureImposition::fixPageBleeds(int index,Page *page)
 {
 	 //fix pagestyle
-	if (page->pagestyle) page->pagestyle->dec_count();
 	page->InstallPageStyle((index%2)?pagestyleodd:pagestyle, 0);
 	page->pagebleeds.flush();
 
@@ -1052,9 +1360,11 @@ PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
 LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int local)
 {
 	PathsData *newpath=new PathsData();//count==1
-	newpath->appendRect(0,0,pagestyle->w(),pagestyle->h());
-	newpath->maxx=pagestyle->w();
-	newpath->maxy=pagestyle->h();
+	double pw=signature->PageWidth(1),
+		   ph=signature->PageHeight(1);
+	newpath->appendRect(0,0,pw,ph);
+	newpath->maxx=pw;
+	newpath->maxy=ph;
 	//nothing special is done when local==0
 	return newpath;
 }
@@ -1103,10 +1413,10 @@ LaxInterfaces::SomeData *SignatureImposition::GetPrinterMarks(int papernum)
 //---------------spread generation
 Spread *SignatureImposition::Layout(int layout,int which)
 {
-	if (layout==PAPERLAYOUT) PaperLayout(which);
-	if (layout==PAGELAYOUT) PageLayout(which);
-	if (layout==SINGLELAYOUT) SingleLayout(which);
-	if (layout==LITTLESPREADLAYOUT) PageLayout(which);
+	if (layout==PAPERLAYOUT) return PaperLayout(which);
+	if (layout==PAGELAYOUT) return PageLayout(which);
+	if (layout==SINGLELAYOUT) return SingleLayout(which);
+	if (layout==LITTLESPREADLAYOUT) return PageLayout(which);
 	return NULL;
 }
 
@@ -1214,19 +1524,21 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 
 	 // Now setup spread->pagestack with the single pages.
 	 // page width/height must map to proper area on page.
-
-	newpath=new PathsData;  // 1 count
-	newpath->appendRect(0,0, pw,ph);
-
 	if (page1>=0) {
+		newpath=new PathsData;  // 1 count
+		newpath->appendRect(0,0, pw,ph);
 		spread->pagestack.push(new PageLocation(page1,NULL,newpath)); // incs count of g (to 2)
 		newpath->dec_count(); // remove extra tick
+		newpath=NULL;
 	}
 
 	if (page2>=0) {
+		newpath=new PathsData;  // 1 count
+		newpath->appendRect(0,0, pw,ph);
 		newpath->origin(flatpoint(page2offsetx,page2offsety));
-		spread->pagestack.push(new PageLocation(page1,NULL,newpath)); // incs count of g (to 2)
+		spread->pagestack.push(new PageLocation(page2,NULL,newpath)); // incs count of g (to 2)
 		newpath->dec_count(); // remove extra tick
+		newpath=NULL;
 	}
 
 	 //set minimum and maximum
@@ -1265,8 +1577,8 @@ Spread *SignatureImposition::PageLayout(int whichspread)
  */
 Spread *SignatureImposition::PaperLayout(int whichpaper)
 {
-	int front=(1+whichpaper)%2;
-	int sigpaper=whichpaper%(2*signature->sheetspersignature);
+	int front=(1+whichpaper)%2; //whether to horizontall flip columns
+	int sigpaper=whichpaper%(2*signature->sheetspersignature); //which paper spread within a single signature
 	int mainpageoffset=(whichpaper/2/signature->sheetspersignature)*signature->PagesPerSignature();
 
 	Spread *spread=new Spread();

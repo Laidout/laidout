@@ -58,7 +58,8 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	showdecs=0;
 	papersize=NULL;
 
-	signature=new Signature;
+	if (sig) signature=sig->duplicate();
+	else signature=new Signature;
 	if (p) signature->SetPaper(p);
 
 	foldr1=foldc1=foldr2=foldc2=-1;
@@ -67,7 +68,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 
 	onoverlay=0;
 
-	if (!p) {
+	if (!p && !sig) {
 		signature->totalheight=5;
 		signature->totalwidth=5;
 	}
@@ -147,16 +148,7 @@ void SignatureInterface::reallocateFoldinfo()
  */
 void SignatureInterface::resetFoldinfo()
 {
-	for (int r=0; r<signature->numhfolds+1; r++) {
-		for (int c=0; c<signature->numvfolds+1; c++) {
-			foldinfo[r][c].pages.flush();
-			foldinfo[r][c].pages.push(r);
-			foldinfo[r][c].pages.push(c);
-
-			foldinfo[r][c].x_flipped=0;
-			foldinfo[r][c].y_flipped=0;
-		}
-	}
+	signature->resetFoldinfo(foldinfo);
 }
 
 // *** temp! note to self: remove when not needed
@@ -191,76 +183,7 @@ void SignatureInterface::applyFold(Fold *fold)
  */
 void SignatureInterface::applyFold(char folddir, int index, int under)
 {
-	int newr,newc, tr,tc;
-	int fr1,fr2, fc1,fc2;
-
-	if (folddir=='l') {
-		fr1=0;
-		fr2=signature->numhfolds;
-		fc1=index;
-		fc2=signature->numvfolds;
-	} else if (folddir=='r') {
-		fr1=0;
-		fr2=signature->numhfolds;
-		fc1=0;
-		fc2=index-1;
-	} else if (folddir=='b') {
-		fr1=index;
-		fr2=signature->numhfolds;
-		fc1=0;
-		fc2=signature->numvfolds;
-	} else if (folddir=='t') {
-		fr1=0;
-		fr2=index-1;
-		fc1=0;
-		fc2=signature->numvfolds;
-	}
-
-	for (int r=fr1; r<=fr2; r++) {
-	  for (int c=fc1; c<=fc2; c++) {
-		if (foldinfo[r][c].pages.n==0) continue; //skip blank cells
-
-		 //find new positions
-		if (folddir=='b') {
-			newc=c;
-			newr=index-(r-index+1);
-		} else if (folddir=='r') {
-			newr=r;
-			newc=index+(index-c-1);
-		} else if (folddir=='l') {
-			newr=r;
-			newc=index-(c-index+1);
-		} else if (folddir=='t') {
-			newc=c;
-			newr=index+(index-r-1);
-		}
-
-		 //swap old and new positions
-		if (foldunder) {
-			while(foldinfo[r][c].pages.n) {
-				tc=foldinfo[r][c].pages.pop(0);
-				tr=foldinfo[r][c].pages.pop(0);
-				foldinfo[newr][newc].pages.push(tc,0);
-				foldinfo[newr][newc].pages.push(tr,0);
-
-				 //flip the original place.
-				if (folddir=='b' || folddir=='t') foldinfo[tr][tc].y_flipped=!foldinfo[tr][tc].y_flipped;
-				else foldinfo[tr][tc].x_flipped=!foldinfo[tr][tc].x_flipped;
-			}
-		} else {
-			while(foldinfo[r][c].pages.n) {
-				tc=foldinfo[r][c].pages.pop();
-				tr=foldinfo[r][c].pages.pop();
-				foldinfo[newr][newc].pages.push(tr);
-				foldinfo[newr][newc].pages.push(tc);
-
-				 //flip the original place.
-				if (folddir=='b' || folddir=='t') foldinfo[tr][tc].y_flipped=!foldinfo[tr][tc].y_flipped;
-				else foldinfo[tr][tc].x_flipped=!foldinfo[tr][tc].x_flipped;
-			}
-		}
-	  }
-	}
+	signature->applyFold(foldinfo, folddir,index,under);
 }
 
 //! Check if the signature is totally folded or not.
@@ -274,65 +197,7 @@ void SignatureInterface::applyFold(char folddir, int index, int under)
  */
 int SignatureInterface::checkFoldLevel(int update)
 {
-	 //check the immediate neighors of the first cell with pages.
-	 //If there are no neighbors, then we are totally folded.
-
-	 //find a non blank cell
-	int newr=0,newc=0;
-	for (newr=0; newr<=signature->numhfolds; newr++) {
-	  for (newc=0; newc<=signature->numvfolds; newc++) {
-		if (foldinfo[newr][newc].pages.n!=0) break;
-	  }
-	  if (newc!=signature->numvfolds+1) break;
-	}
-
-	int stillmore=4;
-	int tr,tc;
-
-	 //check above
-	tr=newr-1; tc=newc;
-	if (tr<0 || foldinfo[tr][tc].pages.n==0) stillmore--;
-
-	 //check below
-	tr=newr+1; tc=newc;
-	if (tr>signature->numhfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
-	
-	 //check left
-	tr=newr; tc=newc-1;
-	if (tc<0 || foldinfo[tr][tc].pages.n==0) stillmore--;
-
-	 //check if right
-	tr=newr; tc=newc+1;
-	if (tc>signature->numvfolds || foldinfo[tr][tc].pages.n==0) stillmore--;
-
-	if (stillmore==0) {
-		 //apply final flip values
-		finalr=newr;
-		finalc=newc;
-
-		int page=0,xflip,yflip;
-		for (int c=foldinfo[finalr][finalc].pages.n-2; c>=0; c-=2) {
-			tr=foldinfo[finalr][finalc].pages.e[c];
-			tc=foldinfo[finalr][finalc].pages.e[c+1];
-
-			xflip=foldinfo[tr][tc].x_flipped;
-			yflip=foldinfo[tr][tc].y_flipped;
-			foldinfo[tr][tc].finalyflip=foldinfo[tr][tc].y_flipped;
-			foldinfo[tr][tc].finalxflip=foldinfo[tr][tc].x_flipped;
-
-			if ((xflip && !yflip) || (!xflip && yflip)) {
-				 //back side of paper is up
-				foldinfo[tr][tc].finalindexback=page;
-				foldinfo[tr][tc].finalindexfront=page+1;
-			} else {
-				foldinfo[tr][tc].finalindexback=page+1;
-				foldinfo[tr][tc].finalindexfront=page;
-			}
-			page+=2;
-		}
-		hasfinal=1;
-	} else if (update) hasfinal=0;
-
+	hasfinal=signature->checkFoldLevel(foldinfo,&finalr,&finalc);
 	return foldlevel;
 }
 
@@ -417,9 +282,18 @@ void SignatureInterface::remapHandles()
 	// ***
 }
 
-//int UseThisImposition(SignatureImposition *sig)
-//{***
-//}
+int SignatureInterface::UseThisImposition(SignatureImposition *sigimp)
+{
+	// ***
+	return 1;
+}
+
+int SignatureInterface::UseThisSignature(Signature *sig)
+{
+	// ***
+	return 1;
+}
+
 
 
 /*! PaperGroup or PaperBoxData.
@@ -740,7 +614,8 @@ int SignatureInterface::Refresh()
 
 	 //write out final page dimensions
 	dp->NewFG(0.,0.,0.);
-	sprintf(str,_("Final page: %g x %g %s"),
+	sprintf(str,_("%d pages per pattern, Final size: %g x %g %s"),
+				signature->PagesPerPattern(),
 				signature->PageWidth(1)*laidout->unitmultiplier,
 				signature->PageHeight(1)*laidout->unitmultiplier,
 				laidout->unitname);
@@ -1283,7 +1158,7 @@ void SignatureInterface::remapAffectedCells(int whichfold)
 		}
 		finfo[r]=NULL; //terminating NULL, so we don't need to remember sig->n
 
-		signature->applyFold(finfo,whichfold,1);
+		signature->applyFold(finfo,whichfold);
 	}
 
 	// *** figure out cells based on direction and index
@@ -1497,7 +1372,7 @@ int SignatureInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::L
  */
 SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 						Laxkit::anXWindow *nowner, const char *mes,
-						Signature *sig, PaperStyle *p)
+						SignatureImposition *sigimp, PaperStyle *p)
 	: ViewerWindow(parnt,nname,ntitle,
 				   ANXWIN_REMEMBER
 					|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_NO_SCROLLERS|VIEWPORT_NO_RULERS, 
@@ -1516,7 +1391,8 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 	viewport->dp->NewBG(200,200,200);
 
 	needtodraw=1;
-	AddTool(new SignatureInterface(1,viewport->dp,sig,p),1,1); // local, and select it
+	tool=new SignatureInterface(1,viewport->dp,(sigimp?sigimp->signature:NULL),p);
+	AddTool(tool,1,1); // local, and select it
 	// *** add signature and paper if any...
 }
 
@@ -1553,11 +1429,20 @@ int SignatureEditor::init()
 
 	Sync(1);	
 
-	SignatureInterface *si=dynamic_cast<SignatureInterface *>(tools.e[0]);
-	int h=si->signature->totalheight;
-	int w=si->signature->totalwidth;
+	int h=tool->signature->totalheight;
+	int w=tool->signature->totalwidth;
 	viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
 	return 0;
+}
+
+//! Send the current imposition to win_owner.
+void SignatureEditor::send()
+{
+	SignatureImposition *sigimp=new SignatureImposition(tool->signature);
+	RefCountedEventData *data=new RefCountedEventData(sigimp);
+	sigimp->dec_count();
+
+	app->SendMessage(data, win_owner, win_sendthis, object_id);
 }
 
 /*! Responds to: "ok", "cancel"
@@ -1568,6 +1453,7 @@ int SignatureEditor::Event(const Laxkit::EventData *data,const char *mes)
 	DBG cerr <<"SignatureEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"ok")) {
+		send();
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
 		app->destroywindow(this);
 		return 0;

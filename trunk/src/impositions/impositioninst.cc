@@ -79,7 +79,7 @@ Singles::Singles() : Imposition(_("Singles"))
 
 	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
-	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300);
+	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
 	SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 			
@@ -113,6 +113,12 @@ ImpositionResource *Singles::getDefaultResource()
 								  NULL,
 								  _("One sided single sheets"),
 								  NULL,0);
+}
+
+//! Just return "Singles".
+const char *Singles::BriefDescription()
+{
+	return _("Singles");
 }
 
 //! Using the paperstyle, create a new default pagestyle.
@@ -221,7 +227,7 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 			pagestyle->dump_in_atts(att->attributes.e[c],flag,context);
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			PaperStyle *paperstyle;
-			paperstyle=new PaperStyle("Letter",8.5,11,0,300);//***should be global def
+			paperstyle=new PaperStyle("Letter",8.5,11,0,300,"in");//***should be global def
 			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
 			SetPaperSize(paperstyle);
 			paperstyle->dec_count();
@@ -671,6 +677,12 @@ DoubleSidedSingles::~DoubleSidedSingles()
 {
 	DBG cerr <<"--Double Sided Singles Singles destructor"<<endl;
 	pagestyler->dec_count();
+}
+
+//! Just return "Double Sided Singles".
+const char *DoubleSidedSingles::BriefDescription()
+{
+	return _("Double Sided Singles");
 }
 
 //! Using the paperstyle and isvertical, create new default pagestyles.
@@ -1150,6 +1162,12 @@ BookletImposition::BookletImposition()
 	}
 	
 	DBG cerr <<"imposition booklet init"<<endl;
+}
+
+//! Just return "Booklet".
+const char *BookletImposition::BriefDescription()
+{
+	return _("Booklet");
 }
 
 //! Using the paperstyle and isvertical, create a new default pagestyle.
