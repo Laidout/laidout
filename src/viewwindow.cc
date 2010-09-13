@@ -967,6 +967,10 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	VObjContext voc;
 	voc.set(NULL,3, 1,spageindex,0);
 	setCurobj(&voc);
+
+	char scratch[50];
+	sprintf(scratch,_("Viewing spread number %d"),spreadi);
+	postmessage(scratch);
 }
 
 //! Insert ndata into the curobj context.
@@ -1684,7 +1688,7 @@ void LaidoutViewport::setCurobj(VObjContext *voc)
 
 	if (!lfirsttime) {
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); 
-		if (viewer) viewer->updateContext();
+		if (viewer) viewer->updateContext(1);
 	}
 }
 
@@ -3003,7 +3007,7 @@ int ViewWindow::init()
 							  _("Page Clips"),NULL,laidout->icons.GetIcon("PageClips"),buttongap);
 	pageclips->tooltip(_("Whether pages clips its contents"));
 	AddWin(pageclips,pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0);
-	updateContext();
+	updateContext(1);
 
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 //								NULL,object_id,"newLayerNumber",
@@ -3116,7 +3120,7 @@ int ViewWindow::init()
 	//         page x,y
 	//         object x,y
 	
-	updateContext();
+	updateContext(1);
 	Sync(1);	
 	return 0;
 }
@@ -3136,7 +3140,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
 		int c=viewport->Event(data,mes);
-		updateContext();
+		updateContext(0);
 		return c;
 
 	} else if (!strcmp(mes,"import new image")) {
@@ -3482,7 +3486,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
 		//***
-		updateContext();
+		updateContext(1);
 		return 0;
 
 	} else if (!strcmp(mes,"pageclips")) { // 
@@ -3507,8 +3511,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (!doc) return 0;
 		int curpage=((LaidoutViewport *)viewport)->curobjPage();
 		int c=doc->NewPages(curpage+1,1); //add after curpage
-		if (c>=0) PostMessage(_("Page added."));
-			else PostMessage(_("Error adding page."));
+		if (c>=0) {
+			char scratch[100];
+			sprintf(scratch,_("Page number %d added (%d total)."),curpage+1,doc->pages.n);
+			PostMessage(scratch);
+		} else PostMessage(_("Error adding page."));
 		return 0;
 
 	} else if (!strcmp(mes,"deletePage")) { // 
@@ -3519,8 +3526,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		int curpage=vp->curobjPage();
 
 		int c=doc->RemovePages(curpage,1); //remove curpage
-		if (c==1) PostMessage(_("Page deleted."));
-		else if (c==-2) PostMessage(_("Cannot delete the only page."));
+		if (c==1) {
+			char scratch[100];
+			sprintf(scratch,_("Page %d deleted. %d remaining."),curpage,doc->pages.n);
+			PostMessage(scratch);
+		} else if (c==-2) PostMessage(_("Cannot delete the only page."));
 		else PostMessage(_("Error deleting page."));
 		
 
@@ -3541,17 +3551,17 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			pagenumber->Select(p);
 		}
 		((LaidoutViewport *)viewport)->SelectPage(p);
-		updateContext();
+		updateContext(0);
 		return 0;
 
 	} else if (!strcmp(mes,"prevSpread")) {
 		((LaidoutViewport *)viewport)->PreviousSpread();
-		updateContext();
+		updateContext(0);
 		return 0;
 
 	} else if (!strcmp(mes,"nextSpread")) {
 		((LaidoutViewport *)viewport)->NextSpread();
-		updateContext();
+		updateContext(0);
 		return 0;
 
 	} else if (!strcmp(mes,"newLayerNumber")) { // 
@@ -3751,9 +3761,11 @@ void ViewWindow::updateProjectStatus()
 //! Make the pagenumber label be correct.
 /*! Also set the pageclips thing.
  *
+ * If messagetoo!=0, then update the viewwindow message bar to state the new context.
+ *
  * \todo *** need to implement the updating all of helper windows to cur context
  */
-void ViewWindow::updateContext()
+void ViewWindow::updateContext(int messagetoo)
 {
 	if (!doc) return;
 	int page=((LaidoutViewport *)viewport)->curobjPage();
@@ -3768,16 +3780,18 @@ void ViewWindow::updateContext()
 		else pageclips->State(LAX_OFF);
 	}
 
-	LaidoutViewport *v=((LaidoutViewport *)viewport);
-	char blah[v->curobj.context.n()*10+50];
-	strcpy(blah,"viewer");
-	for (int c=0; c<v->curobj.context.n(); c++) {
-		sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
+	if (messagetoo) {
+		LaidoutViewport *v=((LaidoutViewport *)viewport);
+		char blah[v->curobj.context.n()*10+50];
+		strcpy(blah,"viewer");
+		for (int c=0; c<v->curobj.context.n(); c++) {
+			sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
+		}
+		strcat(blah,":");
+		if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
+		else strcat(blah,"none");
+		if (mesbar) mesbar->SetText(blah);
 	}
-	strcat(blah,":");
-	if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
-	else strcat(blah,"none");
-	if (mesbar) mesbar->SetText(blah);
 
 
 	//update layout type, this could probably be more efficient...
@@ -3891,7 +3905,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			((NumSlider *)_kids.e[c])->Select(pg+1);
 			break;
 		}
-		updateContext();
+		updateContext(0);
 		return 0;
 	} else if (ch=='>') { //next page
 		DBG cerr <<"'>' should be prev page"<<endl;
@@ -3900,7 +3914,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			((NumSlider *)_kids.e[c])->Select(pg+1);
 			break;
 		}
-		updateContext();
+		updateContext(0);
 		return 0;
 	} else if (ch=='r') {
 		//**** for debugging:

@@ -169,7 +169,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 
 	virtual int SelectTool(int id);
-	virtual void updateContext();
+	virtual void updateContext(int messagetoo);
 	virtual void updateProjectStatus();
 	virtual void SetParentTitle(const char *str);
 	virtual void setCurdoc(Document *newdoc);
