@@ -1596,6 +1596,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	 // define max/min points
 	spread->minimum=flatpoint(paper->media.maxx/5,  paper->media.maxy/2);
 	spread->maximum=flatpoint(paper->media.maxx*4/5,paper->media.maxy/2);
+	double paperwidth=paper->media.maxx;
 
 //	if (foldinfo[0][0].finalindexfront<0) {
 //		*** signature is incomplete, should do something meaningful?
@@ -1626,6 +1627,8 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	int rangeofpages=signature->sheetspersignature*2;
 	int pageindex;
 
+	DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
+
 	 //for each tile:
 	x=(front?signature->insetleft:signature->insetright);
 	PathsData *pageoutline;
@@ -1640,16 +1643,26 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			xflip=signature->foldinfo[rr][cc].finalxflip;
 			yflip=signature->foldinfo[rr][cc].finalyflip;
 
+			DBG cerr <<signature->foldinfo[rr][cc].finalindexfront<<"/"<<signature->foldinfo[rr][cc].finalindexback<<"  ";
+
 			xx=x+cc*ew;
 			yy=y+rr*eh; //coordinates of corner of page cell
+
 			 //take in to account the final trim
 			if (xflip) xx+=signature->trimright; else xx+=signature->trimleft;
 			if (yflip) yy+=signature->trimtop;   else yy+=signature->trimbottom;
 
-			if (signature->foldinfo[rr][cc].finalindexfront>signature->foldinfo[rr][cc].finalindexback) {
-				pageindex= mainpageoffset + signature->foldinfo[rr][cc].finalindexfront*rangeofpages-1 - sigpaper;
+			 //flip horizontally for odd numbered paper spreads (the backs of papers)
+			if (whichpaper%2) xx=paperwidth-xx-ew;
+
+			if (signature->foldinfo[rr][cc].finalindexfront > signature->foldinfo[rr][cc].finalindexback) {
+				pageindex= mainpageoffset 
+							+ signature->foldinfo[rr][cc].finalindexback*rangeofpages/2
+							+ rangeofpages-1 - sigpaper;
 			} else {
-				pageindex= mainpageoffset + signature->foldinfo[rr][cc].finalindexback*rangeofpages + sigpaper;
+				pageindex= mainpageoffset 
+							+ signature->foldinfo[rr][cc].finalindexfront*rangeofpages/2 
+							+ sigpaper;
 			}
 
 			pageoutline=new PathsData();//count of 1
@@ -1671,6 +1684,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		}  //rr
 
 		y+=patternheight+signature->tilegapy;
+		DBG cerr <<endl;
 	  } //tx
 	  x+=patternwidth+signature->tilegapx;
 	} //ty

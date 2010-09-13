@@ -61,6 +61,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	if (sig) signature=sig->duplicate();
 	else signature=new Signature;
 	if (p) signature->SetPaper(p);
+	foldinfo=signature->foldinfo;
 
 	foldr1=foldc1=foldr2=foldc2=-1;
 	folddirection=0;
@@ -74,7 +75,6 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	}
 
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
-	foldinfo=NULL;
 	hasfinal=0;
 	reallocateFoldinfo();
 }
@@ -84,6 +84,7 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 {
 	showdecs=0;
 	signature=new Signature;
+	foldinfo=signature->foldinfo;
 	papersize=NULL;
 
 	foldr1=foldc1=foldr2=foldc2=-1;
@@ -96,7 +97,7 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 	signature->totalwidth=5;
 	
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
-	foldinfo=NULL;
+	hasfinal=0;
 	reallocateFoldinfo();
 }
 
@@ -106,11 +107,6 @@ SignatureInterface::~SignatureInterface()
 
 	if (signature) signature->dec_count();
 	if (papersize) papersize->dec_count();
-
-	if (foldinfo) {
-		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
-		delete[] foldinfo;
-	}
 }
 
 //! Reallocate foldinfo, usually after adding fold lines.
@@ -119,36 +115,14 @@ SignatureInterface::~SignatureInterface()
 void SignatureInterface::reallocateFoldinfo()
 {
 	signature->folds.flush();
+	signature->reallocateFoldinfo();
 	hasfinal=0;
-
-	if (foldinfo) {
-		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
-		delete[] foldinfo;
-	}
-	foldinfo=new FoldedPageInfo*[signature->numhfolds+2];
-	int r;
-	for (r=0; r<signature->numhfolds+1; r++) {
-		foldinfo[r]=new FoldedPageInfo[signature->numvfolds+2];
-		for (int c=0; c<signature->numvfolds+1; c++) {
-			foldinfo[r][c].pages.push(r);
-			foldinfo[r][c].pages.push(c);
-		}
-	}
-	foldinfo[r]=NULL; //terminating NULL, so we don't need to remember sig->n
 
 	if (viewport) {
 		char str[200];
 		sprintf(str,_("Base holds %d pages."),2*(signature->numvfolds+1)*(signature->numhfolds+1));
 		viewport->postmessage(str);
 	}
-}
-
-//! Flush all the foldinfo pages stacks, as if there have been no folds yet.
-/*! Please note this does not create or reallocate foldinfo.
- */
-void SignatureInterface::resetFoldinfo()
-{
-	signature->resetFoldinfo(foldinfo);
 }
 
 // *** temp! note to self: remove when not needed
@@ -851,7 +825,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 				if (foldlevel==folds) return 0; //already at that fold level
 
 				 //we must remap the folds to reflect the new fold level
-				resetFoldinfo();
+				signature->resetFoldinfo(NULL);
 				for (int c=0; c<folds; c++) {
 					applyFold(signature->folds.e[c]);
 				}

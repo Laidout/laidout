@@ -47,7 +47,6 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
 	void reallocateFoldinfo();
-	void resetFoldinfo();
 	void applyFold(char folddir, int index, int under);
 	void applyFold(Fold *fold);
 

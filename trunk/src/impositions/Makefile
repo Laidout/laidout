@@ -19,12 +19,13 @@ objs= \
 	impositions.o \
 	dodecahedron.o \
 	box.o \
+	poly.o \
 	nets.o \
 	netimposition.o \
 	simplenet.o \
 	signatures.o \
 	signatureinterface.o \
-	poly.o
+	netdialog.o
 
 
 

@@ -79,6 +79,7 @@
 #include "impositions/impositioninst.h"
 #include "impositions/netimposition.h"
 #include "impositions/signatureinterface.h"
+#include "impositions/netdialog.h"
 #include "utils.h"
 	
 #include <iostream>
@@ -780,7 +781,8 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 			return 0;
 
 		} else if (s->info1==IMP_NEW_NET) {
-			//app->rundialog(new NetEditor(NULL,this,papertype));
+			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
+							this->object_id,"newnet",papertype));
 			return 0;
 
 		} else if (s->info1==IMP_FROM_FILE) {
