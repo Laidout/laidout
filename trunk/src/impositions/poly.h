@@ -181,6 +181,7 @@ class Polyhedron :
 	virtual NetFace *GetFace(int i,double scaling);
 	virtual int NumFaces();
 	virtual const char *Filename();
+	virtual const char *NetName() { return name; }
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 };
 

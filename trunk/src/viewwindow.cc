@@ -2175,7 +2175,8 @@ void LaidoutViewport::Refresh()
 				if (!p) continue;
 
 				flatpoint center=flatpoint((paths->minx+paths->maxx)/2,(paths->miny+paths->maxy)/2);
-				Coordinate *tp=p->firstPoint(1);
+				p=p->firstPoint(1);
+				Coordinate *tp=p;
 				dp->NewFG(0,0,0);
 				do {
 					if (tp->flags&POINT_VERTEX) 

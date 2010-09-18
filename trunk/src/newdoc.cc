@@ -290,6 +290,7 @@ int NewDocWindow::preinit()
 #define IMP_NEW_SIGNATURE  10001
 #define IMP_NEW_NET        10002
 #define IMP_FROM_FILE      10003
+#define IMP_CURRENT        10004
 
 int NewDocWindow::init()
 {
@@ -461,7 +462,7 @@ int NewDocWindow::init()
 	int whichimp=0;
 	if (doc) {
 		whichimp=laidout->impositionpool.n;
-		impsel->AddItem(_("Current"),c);
+		impsel->AddItem(_("Current"),IMP_CURRENT);
 	}
 	for (c=0; c<laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
@@ -782,7 +783,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		} else if (s->info1==IMP_NEW_NET) {
 			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
-							this->object_id,"newnet",papertype));
+							this->object_id,"newimposition",papertype));
 			return 0;
 
 		} else if (s->info1==IMP_FROM_FILE) {
@@ -792,12 +793,14 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 					FILES_OPEN_ONE,
 					impfromfile?impfromfile->GetCText():NULL));
 			return 0;
+
 		}
 
-		if (s->info1==laidout->impositionpool.n && doc) {
+		if (s->info1==IMP_CURRENT && doc) {
 			if (imp) imp->dec_count();
 			imp=(Imposition*)doc->imposition->duplicate();
 			impmesbar->SetText(imp->BriefDescription());
+			return 0;
 
 		} else if (s->info1<0 || s->info1>=laidout->impositionpool.n) return 0;
 

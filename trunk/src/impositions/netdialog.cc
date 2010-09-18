@@ -46,7 +46,7 @@ using namespace LaxFiles;
 NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 					 unsigned int owner, const char *mes,
 					 PaperStyle *paper)
-		: RowFrame(parnt,nname,ntitle,ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER,
+		: RowFrame(parnt,nname,ntitle,ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
 					0,0,500,500,0, NULL,owner,mes,
 					10)
 {
@@ -60,6 +60,7 @@ NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 	
 	boxdims=NULL;
 	impfromfile=NULL;
+	checkbox=checkdod=checkfile=NULL;
 }
 
 NetDialog::~NetDialog()
@@ -75,7 +76,7 @@ int NetDialog::init()
 	Button *tbut=NULL;
 	anXWindow *last=NULL;
 	//LineInput *linp=NULL;
-	CheckBox *check=NULL;
+	//CheckBox *check=NULL;
 
 
 
@@ -85,26 +86,27 @@ int NetDialog::init()
 
 
 	//------------------------------ Dodecahedron -------------------------------------------------------
-	last=check=new CheckBox(this,_("Select Dodecahedron"),"selectdodecahedron",CHECK_LEFT, 0,0,0,0,1, 
+	last=checkdod=new CheckBox(this,_("Select Dodecahedron"),"selectdodecahedron",CHECK_LEFT, 0,0,0,0,1, 
 							last,object_id,"checkdod",
 							_("Dodecahedron"), 5,5);
-	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
+	checkdod->State(LAX_ON);
+	AddWin(checkdod, checkdod->win_w,0,0,50,0, linpheight,0,0,50,0);
 	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0); //basically force line break, left justify
 	
 
 	 //------------- imposition from file -------------------------------
-	last=check=new CheckBox(this,"selectfile",_("Select File"),CHECK_LEFT, 0,0,0,0,1, 
-							last,object_id,"checkhedron",
+	last=checkfile=new CheckBox(this,"selectfile",_("Select File"),CHECK_LEFT, 0,0,0,0,1, 
+							last,object_id,"checkfile",
 							_("Polyhedron or net"), 5,5);
-	check->tooltip(_("Create from a polyhedron or a net file."));
-	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
+	checkfile->tooltip(_("Create from a polyhedron or a net file."));
+	AddWin(checkfile, checkfile->win_w,0,0,50,0, linpheight,0,0,50,0);
 
 	last=impfromfile=new LineInput(this,"impfromfile",NULL,LINP_FILE|LINP_ONLEFT, 0,0,0,0, 0, 
 									last,object_id,"impfromfile",
 			        			    " ",NULL,0,
 						            0,0,1,0,3,3);
 	impfromfile->tooltip(_("Create from a polyhedron or a net file."));
-	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
+	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(impfromfile, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0);
 	last=tbut=new Button(this,"impfileselect",NULL,0, 0,0,0,0, 1, 
 					last,object_id,"impfileselect",
@@ -116,21 +118,36 @@ int NetDialog::init()
 
 
 	//------------------------------ box -------------------------------------------------------
-	last=check=new CheckBox(this,_("Select Box"),"selectbox",CHECK_LEFT, 0,0,0,0,1, 
+	last=checkbox=new CheckBox(this,_("Select Box"),"selectbox",CHECK_LEFT, 0,0,0,0,1, 
 							last,object_id,"checkbox",
 							_("Box "), 5,5);
-	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
+	AddWin(checkbox, checkbox->win_w,0,0,50,0, linpheight,0,0,50,0);
 	
 	last=boxdims=new LineInput(this,"box dims","box dims",LINP_ONLEFT, 0,0,0,0, 0, 
 								last,object_id,"boxdims",
 				        	    _("Width, length, height:"),"1,1,1",0,
 			    	        	100,0,1,1,3,3);
+	boxdims->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(boxdims, boxdims->win_w,0,50,50,0, linpheight,0,0,50,0);
 
 
 
 
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0); //force left justify and line break
+	//------------------------------ extra scaling -------------------------------------------------------
+	AddWin(NULL, 3000,2990,0,50,0, 20,0,0,50,0); //force left justify and line break
+	AddWin(NULL, 3000,2990,0,50,0, linpheight/2,0,0,50,0); //extra spacer
+
+	last=scaling=new LineInput(this,"scaling","scaling",LINP_ONLEFT, 0,0,0,0, 0, 
+								last,object_id,"scaling",
+				        	    _("Extra scaling"),"1",0,
+			    	        	100,0,1,1,3,3);
+	scaling->tooltip(_("Extra scaling by which to multiply lengths of a net.\n1 means no extra scaling."));
+	AddWin(scaling, scaling->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(NULL, 3000,2990,0,50,0, 20,0,0,50,0); //force left justify and line break
+
+	AddWin(NULL, 3000,2990,0,50,0, linpheight/2,0,0,50,0); //extra spacer
+
+
 
 	//------------------------------ final ok -------------------------------------------------------
 
@@ -159,9 +176,18 @@ int NetDialog::Event(const EventData *data,const char *mes)
 {
 	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
-	if (!strcmp(mes,"checkhedron")) {
+	if (!strcmp(mes,"checkfile")) {
+		checkdod->State(LAX_OFF);
+		checkbox->State(LAX_OFF);
+
 	} else if (!strcmp(mes,"checkdod")) {
+		checkfile->State(LAX_OFF);
+		checkbox->State(LAX_OFF);
+
 	} else if (!strcmp(mes,"checkbox")) {
+		checkfile->State(LAX_OFF);
+		checkdod->State(LAX_OFF);
+
 
 	} else if (!strcmp(mes,"impfile")) {
 		 //comes after a file select dialog for polyhedron file
@@ -171,16 +197,36 @@ int NetDialog::Event(const EventData *data,const char *mes)
 		//updateImposition();
 		return 0;
 
+	} else if (!strcmp(mes,"boxdims")) { 
+		 //activity in hedron file input
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		if (s->info1==3 || s->info1==1) {
+			 //focus was lost or enter pressed from imp file input
+			//updateImposition();
+		} else if (s->info1==2) { //focus on
+			checkfile->State(LAX_OFF);
+			checkbox->State(LAX_ON);
+			checkdod->State(LAX_OFF);
+		}
+		return 0;
+
 	} else if (!strcmp(mes,"impfromfile")) { 
 		 //activity in hedron file input
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		if (s->info1==3 || s->info1==1) {
 			 //focus was lost or enter pressed from imp file input
 			//updateImposition();
+		} else if (s->info1==2) { //focus on
+			checkfile->State(LAX_ON);
+			checkbox->State(LAX_OFF);
+			checkdod->State(LAX_OFF);
 		}
 		return 0;
 
 	} else if (!strcmp(mes,"impfileselect")) { // from hedron file "..." control button
+		checkfile->State(LAX_ON);
+		checkbox->State(LAX_OFF);
+		checkdod->State(LAX_OFF);
 		app->rundialog(new FileDialog(NULL,NULL,_("Imposition from file"),
 					ANXWIN_REMEMBER, 0,0, 0,0,0,
 					object_id, "impfile",
@@ -195,7 +241,9 @@ int NetDialog::Event(const EventData *data,const char *mes)
 //			app->setfocus(saveas->GetController(),0);
 //			return 0;
 //		}
-		sendNewImposition();
+		int status=sendNewImposition();
+		if (status!=0) return 0;
+
 		if (win_parent && dynamic_cast<HeadWindow*>(win_parent)) dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
 		else app->destroywindow(this);
 		return 0;
@@ -211,7 +259,40 @@ int NetDialog::Event(const EventData *data,const char *mes)
 
 
 //! Create and fill a Document, and tell laidout to install the new document
-void NetDialog::sendNewImposition()
+/*! Return 0 for success, 1 for failure and nothing sent.
+ */
+int NetDialog::sendNewImposition()
 {
+	NetImposition *imp=NULL;
+
+	if (checkdod->State()==LAX_ON) {
+		imp=new NetImposition;
+		imp->SetNet("dodecahedron");
+
+	} else if (checkfile->State()==LAX_ON) {
+		imp=new NetImposition;
+		if (imp->SetNetFromFile(impfromfile->GetCText())!=0) {
+			delete imp;
+			return 1;
+		}
+
+	} else { //is box
+		char *str=boxdims->GetText();
+		prependstr(str,"box ");
+		imp=new NetImposition;
+		imp->SetNet(str);
+		delete[] str;
+	}
+
+	double s=scaling->GetDouble();
+	if (s<=0) s=1;
+	imp->scalefromnet=s;
+
+	RefCountedEventData *data=new RefCountedEventData(imp);
+	imp->dec_count();
+
+	app->SendMessage(data, win_owner, win_sendthis, object_id);
+
+	return 0;
 }
 

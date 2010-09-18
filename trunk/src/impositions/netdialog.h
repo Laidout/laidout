@@ -19,13 +19,15 @@
 
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
+#include <lax/checkbox.h>
 #include "../papersizes.h"
 
 class NetDialog : public Laxkit::RowFrame
 {
  public:
 	PaperStyle *paperstyle;
-	Laxkit::LineInput *boxdims,*impfromfile;
+	Laxkit::CheckBox *checkbox,*checkdod,*checkfile;
+	Laxkit::LineInput *boxdims,*impfromfile,*scaling;
 
 	NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 					 unsigned int owner, const char *mes,
@@ -35,7 +37,7 @@ class NetDialog : public Laxkit::RowFrame
 	virtual int init();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
-	void sendNewImposition();
+	int sendNewImposition();
 };
 
 

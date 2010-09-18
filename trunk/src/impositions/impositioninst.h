@@ -29,7 +29,7 @@ class Singles : public Imposition
 
 	Singles();
 	virtual ~Singles();
-	static ImpositionResource *getDefaultResource();
+	static ImpositionResource **getDefaultResources();
 
 	virtual const char *BriefDescription();
 	virtual StyleDef *makeStyleDef();
@@ -61,108 +61,6 @@ class Singles : public Imposition
 	virtual void setPage();
 };
 
-//------------------------ Double Sided Singles ---------------------------
-
-class DoubleSidedSingles : public Singles
-{
- public:
-	int isvertical,isleft;
-	RectPageStyle *pagestyler;
-
-	DoubleSidedSingles();
-	virtual ~DoubleSidedSingles();
-	static ImpositionResource *getDefaultResource();
-
-	virtual const char *BriefDescription();
-	virtual StyleDef *makeStyleDef();
-	virtual Style *duplicate(Style *s=NULL);
-	virtual PageStyle *GetPageStyle(int pagenum,int local);
-	virtual Page **CreatePages();
-	virtual int SetDefaultMargins(double l,double r,double t,double b);
-	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
-	virtual Spread *PageLayout(int whichpage); 
-	virtual Spread *PaperLayout(int whichpaper);
-	virtual int SpreadFromPage(int pagenumber);
-	virtual int GetSpreadsNeeded(int npages);
-	virtual int NumPageTypes();
-	virtual const char *PageTypeName(int pagetype);
-	virtual int PageType(int page);
-	virtual int SpreadType(int spread);
-
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-
-	virtual void setPage();
-};
-
-////------------------------ Booklet ---------------------------
-//
-class BookletImposition : public DoubleSidedSingles
-{
- public:
-	double creep;
-	unsigned long covercolor;
-	unsigned long bodycolor;
-
-	BookletImposition();
-	static ImpositionResource *getDefaultResource();
-	virtual StyleDef *makeStyleDef();
-	virtual Style *duplicate(Style *s=NULL);
-	virtual const char *BriefDescription();
-	
-	//virtual SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
-	virtual Spread *PaperLayout(int whichpaper);
-
-	virtual int PaperFromPage(int pagenumber);
-	virtual int SpreadFromPage(int pagenumber);
-	virtual int GetPagesNeeded(int npapers);
-	virtual int GetPapersNeeded(int npages);
-	virtual int GetSpreadsNeeded(int npages);
-	virtual int *PrintingPapers(int frompage,int topage);
-
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-
-	virtual void setPage();
-};
-
-
-////------------------------ Basic Book ---------------------------
-//
-//class BasicBook : public Imposition
-//{
-// public:
-//	int numsections;
-//	int paperspersection; // 0 does not mean 0. 0 means infinity (or MAX_INT).
-//	int creeppersection; 
-//	int insetl,insetr,insett,insetb;
-//	int tilex,tiley;
-//	unsigned long bodycolor;
-//	
-//	char specifycover;
-//	int spinewidth;
-//	unsigned long covercolor;
-//	PaperStyle coverpaper;
-//	PageStyle coverpage;
-//	virtual Style *duplicate(Style *s=NULL);
-//	
-//	virtual int GetPagesNeeded(int npapers);
-//	virtual int GetPapersNeeded(int npages);
-//	virtual int GetSpreadsNeeded(int npages);
-//
-//	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-//};
-
-////---------------------------------- CompositeImposition ----------------------------
-//****
-//
-//
-
-////---------------------------------- WhatupImposition ----------------------------
-//****
-//
-//
 
 
 

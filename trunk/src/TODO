@@ -14,6 +14,9 @@ immediately.
   '.' (C locale) is the decimal point, not ',', but the error string handling needs the normal
   locale...
 
+ WhatupImposition, to hold another imposition, to print multiple papers on a single paper,
+   or allows different papers to map to the same paper, like posterizing
+
  group interface: 'm' should perhaps make the current selection draggable to other windows
 
  in configure, should check to see that gs is actually executable?
