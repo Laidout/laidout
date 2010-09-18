@@ -723,9 +723,9 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		fprintf(f,"  /PageMode /UseOutlines\n");
 		fprintf(f,"  /Outlines %d 0 R\n", outlines);
 	}
-//	if (!strcmp(doc->imposition->whattype(),"DoubleSidedSingles")) {
-//		DoubleSidedSingles *dss=dynamic_cast<DoubleSidedSingles *>(doc->imposition);
-//		if (dss->isvertical==0 && ***)
+//	if (is booklet type layout....) {
+//		SignatureImposition *dss=dynamic_cast<SignatureImposition *>(doc->imposition);
+//		if (dss->IsVertical() && ***)
 //		fprintf(f,"  /PageLayout /SinglePage\n");
 //		fprintf(f,"  /PageLayout /OneColumn\n");
 //		fprintf(f,"  /PageLayout /TwoColumnLeft\n");

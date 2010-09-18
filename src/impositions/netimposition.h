@@ -38,7 +38,7 @@ class NetImposition : public Imposition
 
 	NetImposition(Net *newnet=NULL);
 	virtual ~NetImposition();
-	static ImpositionResource *getDefaultResource();
+	static ImpositionResource **getDefaultResources();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual const char *BriefDescription();
@@ -75,9 +75,10 @@ class NetImposition : public Imposition
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	virtual AbstractNet *AbstractNetFromFile(const char *filename);
 	
 	 //new for this class:
+	virtual AbstractNet *AbstractNetFromFile(const char *filename);
+	virtual int SetNetFromFile(const char *file);
 	virtual int SetNet(const char *nettype);
 	virtual int SetNet(Net *newnet);
 	virtual const char *NetImpositionName();

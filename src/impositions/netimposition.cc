@@ -157,17 +157,32 @@ NetImposition::NetImposition(Net *newnet)
 NetImposition::~NetImposition()
 {
 	if (abstractnet) abstractnet->dec_count();
+	if (briefdesc) delete[] briefdesc;
 	//nets.flush();
 }
 
 //! Static imposition resource creation function.
-ImpositionResource *NetImposition::getDefaultResource()
+ImpositionResource **NetImposition::getDefaultResources()
 {
-	return new ImpositionResource("NetImposition", //styledef
-								  _("Net"),       //name
-								  NULL,          //file
-								  _("A net of connected faces"),
-								  NULL,0);
+	ImpositionResource **r=new ImpositionResource*[3];
+	Attribute *att;
+	
+	att=new Attribute;
+	att->push("net","dodecahedron");
+	r[0]=new ImpositionResource("NetImposition",     //styledef
+								  _("Dodecahedron"), //name
+								  NULL,              //file
+								  _("12 pentagons"),
+								  att,1);
+	att=new Attribute;
+	att->push("net","cube");
+	r[1]=new ImpositionResource("NetImposition",     //styledef
+								  _("Cube"),         //name
+								  NULL,              //file
+								  _("6 squares"),
+								  att,1);
+	r[2]=NULL;
+	return r;
 }
 
 //! Return what type of thing this is.
@@ -181,12 +196,17 @@ const char *NetImposition::NetImpositionName()
 }
 
 //! Return something "Dodecahedron, 12 page net".
+/*! If briefdesc!=NULL, then return that. Otherwise make briefdesc
+ * reflect teh current net info.
+ */
 const char *NetImposition::BriefDescription()
 {
+	if (briefdesc) return briefdesc;
+
 	int n=numActiveFaces();
-	if (briefdesc) delete[] briefdesc;
+	delete[] briefdesc;
 	briefdesc=new char[30+strlen(NetImpositionName())];
-	sprintf(briefdesc,_("%s, %d page net"), NetImpositionName(), n);
+	sprintf(briefdesc,_("%s, %d face net"), NetImpositionName(), n);
 	return briefdesc;
 }
 
@@ -209,6 +229,7 @@ int NetImposition::SetNet(const char *nettype)
 		newnet->info|=NETIMP_Internal;
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
+		makestr(briefdesc,_("Dodecahedron"));
 		return c;	
 
 	} else if (strcasestr(nettype,"box")==nettype) {
@@ -217,6 +238,16 @@ int NetImposition::SetNet(const char *nettype)
 		newnet->info|=NETIMP_Internal;
 		newnet->dec_count(); //remove creation count
 		netisbuiltin=1;
+		makestr(briefdesc,newnet->basenet->NetName());
+		return c;	
+
+	} else if (!strcasecmp(nettype,"cube")) {
+		Net *newnet=makeBox(nettype,1,1,1);
+		int c=SetNet(newnet); //adds a count
+		newnet->info|=NETIMP_Internal;
+		newnet->dec_count(); //remove creation count
+		netisbuiltin=1;
+		makestr(briefdesc,_("Cube"));
 		return c;	
 	}
 	return 1;
@@ -629,11 +660,11 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		if (page>=numpages) page=-1;
 
 		newpath=new PathsData;
-		isbez=netface->getOutline(&n, &p, 0);
+		isbez= (netface->getOutline(&n, &p, 0)==2);
 		flag=(isbez?POINT_TONEXT:POINT_VERTEX);
 		for (int c2=0; c2<n; c2++) {
 			newpath->append(p[c2].x,p[c2].y,flag);
-			if (isbez==2) {
+			if (isbez) {
 				if (flag==POINT_TONEXT) flag=POINT_VERTEX;
 				else if (flag==POINT_VERTEX) flag=POINT_TOPREV;
 				else flag=POINT_TONEXT;
@@ -1024,3 +1055,32 @@ AbstractNet *NetImposition::AbstractNetFromFile(const char *filename)
 	//***try to load a simple net...
 	return NULL;
 }
+
+//! Try to set up imposition based on file.
+/*! File can be either a polyhedron file, net file.
+ *
+ * Return 0 for success, nonzero for failure.
+ */
+int NetImposition::SetNetFromFile(const char *file)
+{
+	AbstractNet *absnet=AbstractNetFromFile(file);
+	if (absnet) {
+		nets.flush();
+		if (abstractnet) abstractnet->dec_count();
+		abstractnet=absnet;
+		makestr(briefdesc,NULL);
+
+		if (numActiveFaces()==0 && abstractnet) {
+			Net *n=new Net;
+			n->Basenet(abstractnet);
+			n->TotalUnwrap();
+			n->active=1;
+			nets.push(n);
+			n->dec_count();
+		}
+		return 0;
+	}
+
+	return 1;
+}
+

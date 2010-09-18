@@ -47,9 +47,11 @@ Net *makeBox(const char *str,double x,double y,double z)
 			x=strtod(str,&e);
 			if (e!=str) {
 				str=e;
+				if (*str==',') str++;
 				y=strtod(str,&e);
 				if (e!=str) {
 					str=e;
+					if (*str==',') str++;
 					z=strtod(str,&e);
 				}
 			}

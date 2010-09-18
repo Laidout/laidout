@@ -30,10 +30,12 @@
 
 #include "../laidout.h"
 #include "utils.h"
+#include "configured.h"
+
 #include "imposition.h"
 #include "impositioninst.h"
 #include "netimposition.h"
-#include "configured.h"
+#include "signatures.h"
 
 #include <lax/fileutils.h>
 #include <dirent.h>
@@ -71,9 +73,10 @@ Imposition *newImpositionByResource(const char *impos)
 Imposition *newImpositionByType(const char *impos)
 {
 	if (!strcmp(impos,"Singles")) return new Singles;
-	if (!strcmp(impos,"DoubleSidedSingles")) return new DoubleSidedSingles;
-	if (!strcmp(impos,"Booklet")) return new BookletImposition;
+	//if (!strcmp(impos,"DoubleSidedSingles")) return new DoubleSidedSingles;
+	//if (!strcmp(impos,"Booklet")) return new BookletImposition;
 	if (!strcmp(impos,"NetImposition")) return new NetImposition;
+	if (!strcmp(impos,"Signature")) return new SignatureImposition;
 
 	return NULL;
 }
@@ -103,12 +106,26 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 	AddToImpositionPool(existingpool,localresourcedir);
 	if (projectresourcedir) AddToImpositionPool(existingpool,projectresourcedir);
 
+	ImpositionResource **rr;
 	if (!existingpool->n) {
 		 //there were no resources found, so add some built in defaults
-		existingpool->push(Singles::getDefaultResource(),1);
-		existingpool->push(DoubleSidedSingles::getDefaultResource(),1);
-		existingpool->push(BookletImposition::getDefaultResource(),1);
-		existingpool->push(NetImposition::getDefaultResource(),1);
+		rr=Singles::getDefaultResources();
+		if (rr) {
+			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
+			delete rr;
+		}
+
+		rr=SignatureImposition::getDefaultResources();
+		if (rr) {
+			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
+			delete rr;
+		}
+
+		rr=NetImposition::getDefaultResources();
+		if (rr) {
+			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
+			delete rr;
+		}
 	}
 
 	return existingpool;

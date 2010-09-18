@@ -133,6 +133,8 @@ class SignatureImposition : public Imposition
 
 	SignatureImposition(Signature *newsig=NULL);
 	virtual ~SignatureImposition();
+	static ImpositionResource **getDefaultResources();
+
 	virtual int UseThisSignature(Signature *newsig);
 	virtual StyleDef *makeStyleDef();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

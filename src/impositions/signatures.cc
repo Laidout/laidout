@@ -15,6 +15,7 @@
 //
 
 #include "signatures.h"
+#include "stylemanager.h"
 #include "../language.h"
 
 #include <lax/interfaces/pathinterface.h>
@@ -205,6 +206,8 @@ FoldedPageInfo::FoldedPageInfo()
  * These keeps track of the actual number of sheets per signature. For arrangements where
  * one adds sheets to the same signature when more pages are added (ie saddle stitched booklets),
  * then autoaddsheets will be 1.
+ *
+ * Note that there are 2 paper spreads per sheet.
  */
 /*! \var int Signature::autoaddsheets
  * \brief Whether to stack up more sheets of paper in a signature when adding pages.
@@ -957,6 +960,13 @@ SignatureImposition::SignatureImposition(Signature *newsig)
 	if (signature) signature->inc_count();
 	
 	pagestyle=pagestyleodd=NULL;
+
+	styledef=stylemanager.FindDef("Signature");
+	if (styledef) styledef->inc_count(); 
+	else {
+		styledef=makeStyleDef();
+		if (styledef) stylemanager.AddStyleDef(styledef);
+	}
 }
 
 SignatureImposition::~SignatureImposition()
@@ -964,6 +974,36 @@ SignatureImposition::~SignatureImposition()
 	if (papersize) papersize->dec_count();
 	if (signature) signature->dec_count();
 	//if (partition) partition->dec_count();
+}
+
+//! Static imposition resource creation function.
+/*! Returns NULL terminated list of default resources.
+ *
+ * \todo return resources for double sided singles, booklet, calendar, 2 fold, 3 fold
+ */
+ImpositionResource **SignatureImposition::getDefaultResources()
+{
+	ImpositionResource **r=new ImpositionResource*[2];
+
+	Attribute *att=new Attribute;
+	att->push("binding","left");
+	r[0]=new ImpositionResource("Signature",
+								  _("Double Sided Singles"),
+								  NULL,
+								  _("Imposition of single pages meant to be next to each other"),
+								  att,1);
+	att=new Attribute;
+	att->push("fold","0 Left");
+	att->push("numvfolds","1");
+	att->push("autoaddsheets",NULL);
+	att->push("binding","left");
+	r[1]=new ImpositionResource("SignatureImposition",
+								  _("Booklet"),
+								  NULL,
+								  _("Imposition for a stack of sheets, folded down the middle"),
+								  att,1);
+	r[2]=NULL;
+	return r;
 }
 
 /*! Return 0 for success, or nonzero for error.
@@ -1019,7 +1059,7 @@ Style *NewSignature(StyleDef *def)
 }
 
 StyleDef *SignatureImposition::makeStyleDef()
-{ // *** finish imp this!!
+{
 	StyleDef *sd=new StyleDef(NULL,"Signature",
 			_("Signature"),
 			_("Imposition based on signatures"),
@@ -1037,6 +1077,28 @@ StyleDef *SignatureImposition::makeStyleDef()
 			"0",  //defvalue
 			0,    //flags
 			NULL);//newfunc
+
+	sd->push("showwholecover",
+			_("Show whole cover"),
+			_("Whether to let the front cover bleed over onto the back cover"),
+			Element_Boolean,
+			NULL,
+			"0",
+			0,
+			NULL);
+//	----------
+//	sd->push("covercolor",
+//			_("Cover Color"),
+//			_("The color of paper you are using for the cover. This translates to paper number 0 and 1."),
+//			Element_Color,
+//			NULL,"#ffffffff",
+//			0,NULL);
+//	sd->push("bodycolor",
+//			_("Body Color"),
+//			_("The color of paper you are using for the body pages."),
+//			Element_Color,
+//			NULL,"#ffffffff",
+//			0,NULL);
 
 	cerr <<" *** finish implementing SignatureImposition::makeStyleDef()!!"<<endl;
 
@@ -1058,6 +1120,7 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
 
 void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
+	if (!signature) signature=new Signature;
 	char *name,*value;
 
 	for (int c=0; c<att->attributes.n; c++) {
@@ -1235,9 +1298,9 @@ int SignatureImposition::NumPages(int npages)
 		numpages=signature->PagesPerSignature();
 
 	} else {
-		numsignatures=npages/signature->PagesPerSignature();
+		numsignatures=1+npages/signature->PagesPerSignature();
 		if (numsignatures==0) numsignatures=1;
-		numpapers=numsignatures*2;
+		numpapers=2*numsignatures*signature->sheetspersignature;
 		numpages=numsignatures*signature->PagesPerSignature();
 	}
 
