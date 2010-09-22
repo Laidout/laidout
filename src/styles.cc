@@ -74,7 +74,7 @@ using namespace LaxFiles;
 /*! \ingroup stylesandstyledefs
  * Names for the ElementType enum.
  */
-const char *element_TypeNames[16]={
+const char *element_TypeNames[17]={
 	 	"any",
 		"none",
 		"int",
@@ -88,8 +88,9 @@ const char *element_TypeNames[16]={
 		"flag",
 		"enum",
 		"enumval",
-		"function",
 		"color",
+		"set",
+		"function",
 		NULL
 	};
 //----------------------------- FieldPlace -----------------------------

@@ -22,6 +22,10 @@
 
 #define SINGLES_WITH_ADJACENT_LAYOUT 3
 
+
+//----------------------------------- NetImposition ---------------------------------
+StyleDef *makeNetImpositionStyleDef();
+
 class NetImposition : public Imposition
 {
 	char *briefdesc;

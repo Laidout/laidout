@@ -51,6 +51,8 @@ class FoldedPageInfo
 
 
 //------------------------------------ Signature -----------------------------------------
+StyleDef *makeSignatureImpositionStyleDef();
+
 class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
@@ -133,6 +135,7 @@ class SignatureImposition : public Imposition
 
 	SignatureImposition(Signature *newsig=NULL);
 	virtual ~SignatureImposition();
+	virtual const char *whattype() { return "SignatureImposition"; }
 	static ImpositionResource **getDefaultResources();
 
 	virtual int UseThisSignature(Signature *newsig);

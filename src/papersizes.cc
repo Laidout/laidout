@@ -44,7 +44,6 @@ const char *BuiltinPaperSizes[58*4]=
 		"Letter"   ,"8.5" ,"11"  ,"in",
 		"Legal"    ,"8.5" ,"14"  ,"in",
 		"Tabloid"  ,"11"  ,"17"  ,"in",
-		"Index"    ,"3"   ,"5"   ,"in",
 		"A4"       ,"210" ,"297" ,"mm",
 		"A3"       ,"297" ,"420" ,"mm",
 		"A2"       ,"420" ,"594" ,"mm",
@@ -85,6 +84,7 @@ const char *BuiltinPaperSizes[58*4]=
 		"ArchE"    ,"36"  ,"48"  ,"in",
 		"Flsa"     ,"8.5" ,"13"  ,"in",
 		"Flse"     ,"8.5" ,"13"  ,"in",
+		"Index"    ,"3"   ,"5"   ,"in",
 		"Executive","7.25","10.5","in",
 		"Ledger"   ,"17"  ,"11"  ,"in",
 		"Halfletter","5.5","8.5" ,"in",
@@ -290,7 +290,8 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 //! Copy over name, width, height, dpi.
 Style *PaperStyle::duplicate(Style *s)//s==NULL
 {
-	if (s==NULL) return (Style *)new PaperStyle(name,width,height,flags,dpi,defaultunits);
+	if (s==NULL) s=(Style *)new PaperStyle();
+
 	if (!dynamic_cast<PaperStyle *>(s)) return NULL;
 	PaperStyle *ps=dynamic_cast<PaperStyle *>(s);
 	if (!ps) return NULL;
@@ -298,6 +299,7 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
 	ps->width=width;
 	ps->height=height;
 	makestr(ps->defaultunits,defaultunits);
+	ps->landscape(landscape());
 	return s;
 }
 

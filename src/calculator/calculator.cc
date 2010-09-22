@@ -388,16 +388,22 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 							appendstr(temp,sd->extends);
 						}
 						if ((sd->format==Element_Fields || sd->format==Element_Function) && sd->getNumFields()) {
-							const char *nm,*Nm,*desc;
+							const char *nm,*Nm,*desc,*rng;
 							ElementType fmt;
 							StyleDef *subdef=NULL;
 							appendstr(temp,"\n");
 							for (int c2=0; c2<sd->getNumFields(); c2++) {
-								sd->getInfo(c2,&nm,&Nm,&desc,NULL,NULL,&fmt,NULL,&subdef);
+								sd->getInfo(c2,&nm,&Nm,&desc,&rng,NULL,&fmt,NULL,&subdef);
 								appendstr(temp,"  ");
 								appendstr(temp,nm);
 								appendstr(temp,": (");
 								appendstr(temp,element_TypeNames[fmt]);
+								if (fmt==Element_Set) {
+									if (!isblank(rng)) {
+										appendstr(temp," of ");
+										appendstr(temp,rng);
+									}
+								}
 								appendstr(temp,") ");
 								appendstr(temp,Nm);
 								appendstr(temp,", ");

@@ -1413,6 +1413,7 @@ int SignatureEditor::init()
 void SignatureEditor::send()
 {
 	SignatureImposition *sigimp=new SignatureImposition(tool->signature);
+	sigimp->SetPaperSize(sigimp->signature->paperbox);
 	RefCountedEventData *data=new RefCountedEventData(sigimp);
 	sigimp->dec_count();
 
@@ -1433,6 +1434,9 @@ int SignatureEditor::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp("cancel",mes)) {
+		EventData *e=new EventData(LAX_onCancel);
+		app->SendMessage(e, win_owner, win_sendthis, object_id);
+
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
 		app->destroywindow(this);
 		return 0;

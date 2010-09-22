@@ -36,6 +36,8 @@ enum BoxTypes {
 
 
 //------------------------------------- PaperStyle --------------------------------------
+#define PAPERSTYLE_Landscape  1
+
 class PaperStyle : public Style
 {
  public:
@@ -50,8 +52,9 @@ class PaperStyle : public Style
 	virtual ~PaperStyle();
 	virtual double w() { if (flags&1) return height; else return width; }
 	virtual double h() { if (flags&1) return width; else return height; }
-	virtual int landscape() { return flags&1; }
-	virtual int landscape(int l) { if (l) flags|=1; else flags&=~1; return flags&1; }
+	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
+	virtual int landscape(int l)
+		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }
 	virtual Style *duplicate(Style *s=NULL);
 	virtual StyleDef *makeStyleDef();
 

@@ -622,7 +622,7 @@ int Imposition::SetPaperGroup(PaperGroup *ngroup)
 	return 0;
 }
 
-//! Default is to set up a brand new papergroup and paper based on npaper.
+//! Default is to duplicate npaper and base a brand new papergroup on the duplicate.
 /*! This is a convenience function to simply alter a paper size an imposition
  * goes by. The newly created paper group will work from a copy of npaper,
  * not from a link to it.

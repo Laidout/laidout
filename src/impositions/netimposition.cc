@@ -344,7 +344,7 @@ Style *CreateNetListEnum(StyleDef *sd)
 //! Make an instance of the NetImposition styledef.
 /* ...
  */
-StyleDef *NetImposition::makeStyleDef()
+StyleDef *makeNetImpositionStyleDef()
 {
 	StyleDef *sd=new StyleDef(NULL,
 			"NetImposition",
@@ -369,6 +369,11 @@ StyleDef *NetImposition::makeStyleDef()
 			NULL, "0",
 			0,0,CreateNetListEnum);
 	return sd;
+}
+
+StyleDef *NetImposition::makeStyleDef()
+{
+	return makeNetImpositionStyleDef();
 }
 
 //! Copy over net and whether it is builtin..
