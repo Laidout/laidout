@@ -38,10 +38,10 @@ class NewDocWindow : public Laxkit::RowFrame
  public:
 	int curorientation;
 	 // the names of each, so to change Left->Inside, Top->Inside (like calender), etc
-	const char *margintextl,*margintextr,*margintextt,*margintextb; 
 	Imposition *imp;
 	Document *doc;
 	PaperStyle *papertype;
+	int oldimp;
 	
 	Laxkit::PtrStack<PaperStyle> *papersizes;
 	Laxkit::SliderPopup *impsel;
@@ -62,6 +62,7 @@ class NewDocWindow : public Laxkit::RowFrame
 
 	int UseThisImposition(Imposition *imp);
 	void impositionFromFile(const char *file);
+	void UpdatePaper(int dialogtoimp);
 };
 
 class NewProjectWindow : public Laxkit::RowFrame

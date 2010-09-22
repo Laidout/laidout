@@ -32,6 +32,7 @@
 #include "utils.h"
 #include "configured.h"
 
+#include "../stylemanager.h"
 #include "imposition.h"
 #include "impositioninst.h"
 #include "netimposition.h"
@@ -76,7 +77,7 @@ Imposition *newImpositionByType(const char *impos)
 	//if (!strcmp(impos,"DoubleSidedSingles")) return new DoubleSidedSingles;
 	//if (!strcmp(impos,"Booklet")) return new BookletImposition;
 	if (!strcmp(impos,"NetImposition")) return new NetImposition;
-	if (!strcmp(impos,"Signature")) return new SignatureImposition;
+	if (!strcmp(impos,"SignatureImposition")) return new SignatureImposition;
 
 	return NULL;
 }
@@ -90,6 +91,25 @@ Imposition *newImpositionByType(const char *impos)
  */
 PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResource> *existingpool)
 {
+	 //first install basic imposition styledefs, since they do not otherwise get installed
+	 //unless the imposition is instantiated
+	StyleDef *def;
+	def=stylemanager.FindDef("Singles");
+	if (!def) {
+		def=makeSinglesStyleDef();
+		stylemanager.AddStyleDef(def,1);
+	}
+	def=stylemanager.FindDef("Signature");
+	if (!def) {
+		def=makeSignatureImpositionStyleDef();
+		stylemanager.AddStyleDef(def,1);
+	}
+	def=stylemanager.FindDef("NetImposition");
+	if (!def) {
+		def=makeNetImpositionStyleDef();
+		stylemanager.AddStyleDef(def,1);
+	}
+
 	 //read in imposition resources from specified directory, and add to stack
 
 	if (!existingpool) existingpool=new PtrStack<ImpositionResource>;

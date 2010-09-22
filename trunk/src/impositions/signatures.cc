@@ -557,6 +557,8 @@ int Signature::checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalco
  */
 int Signature::SetPaper(PaperStyle *p)
 {
+	if (!p || p==paperbox) return 0;
+
 	if (paperbox) paperbox->dec_count();
 	paperbox=NULL;
 
@@ -957,7 +959,12 @@ SignatureImposition::SignatureImposition(Signature *newsig)
 
 	numsignatures=1;
 	signature=newsig;
-	if (signature) signature->inc_count();
+	if (signature) {
+		signature->inc_count();
+
+		 //sets imposition::paperbox and papergroup with dup of paperbox
+		if (signature->paperbox) Imposition::SetPaperSize(signature->paperbox);
+	}
 	
 	pagestyle=pagestyleodd=NULL;
 
@@ -987,7 +994,7 @@ ImpositionResource **SignatureImposition::getDefaultResources()
 
 	Attribute *att=new Attribute;
 	att->push("binding","left");
-	r[0]=new ImpositionResource("Signature",
+	r[0]=new ImpositionResource("SignatureImposition",
 								  _("Double Sided Singles"),
 								  NULL,
 								  _("Imposition of single pages meant to be next to each other"),
@@ -1058,34 +1065,151 @@ Style *NewSignature(StyleDef *def)
 	return s;
 }
 
-StyleDef *SignatureImposition::makeStyleDef()
+StyleDef *makeSignatureImpositionStyleDef()
 {
 	StyleDef *sd=new StyleDef(NULL,"Signature",
 			_("Signature"),
 			_("Imposition based on signatures"),
 			Element_Fields,
-			NULL,NULL,
-			NULL,
+			NULL,NULL, //range, default value
+			NULL, //fields
 			0, //new flags
-			NewSignature);
+			NewSignature); //newfunc
 
-	sd->push("name",
-			_("Name"),
-			_("Name of the imposition"),
+	sd->push("name", _("Name"), _("Name of the imposition"),
 			Element_String,
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
 			NULL);//newfunc
 
-	sd->push("showwholecover",
-			_("Show whole cover"),
-			_("Whether to let the front cover bleed over onto the back cover"),
+	sd->push("description", _("Description"), _("Brief, one line description of the imposition"),
+			Element_String,
+			NULL, //range
+			NULL,  //defvalue
+			0,    //flags
+			NULL);//newfunc
+
+	sd->push("showwholecover", _("Show whole cover"), _("Whether to let the front cover bleed over onto the back cover"),
 			Element_Boolean,
 			NULL,
 			"0",
 			0,
 			NULL);
+
+	//--------signature variables:
+	sd->push("sheetspersignature", _("Sheets per signature"), _("Number of pieces of paper in each signature"),
+			Element_Int, "1..", "1", 0, NULL);
+
+	sd->push("autoaddsheets", _("Auto add sheets"),
+			 _("When adding pages, whether to add new sheets to a signature, using only one "
+			   "signature for the whole document, or add more signatures"),
+			Element_Boolean, NULL, "0", 0, NULL);
+
+	sd->push("insettop", _("Top Inset"), _("Space at the top of a paper before tiling for signatures"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("insetbottom", _("Bottom Inset"), _("Space at the bottom of a paper before tiling for signatures"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("insetleft", _("Left Inset"), _("Space at the left of a paper before tiling for signatures"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("insetright", _("Right Inset"), _("Space at the right of a paper before tiling for signatures"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("tilex", _("Horizontal Tiles"), _("The number of folding sections horizontally to divide a piece of paper"),
+			Element_Int, "[1..", "0", 0, NULL);
+
+	sd->push("tiley", _("Vertical Tiles"), _("The number of folding sections vertically to divide a piece of paper"),
+			Element_Int, "[1..", "0", 0, NULL);
+
+	sd->push("tilegapx", _("H Tile Gap"), _("How much space to put between folding areas horizontally"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("tilegapy", _("V Tile Gap"), _("How much space to put between folding areas vertically"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("numhfolds", _("Horizontal Folds"), _("The number of horizontal fold lines of a folding pattern"),
+			Element_Int, "[0..", "0", 0, NULL);
+
+	sd->push("numvfolds", _("Vertical Folds"), _("The number of vertical fold lines of a folding pattern"),
+			Element_Int, "[0..", "0", 0, NULL);
+
+	 //make Fold StyleDef
+	StyleDef *foldd=stylemanager.FindDef("Fold");
+	if (!foldd) {
+		foldd=new StyleDef(NULL,"Fold",
+				_("Fold"),
+				_("Info about a fold in a signature"),
+				Element_Fields,
+				NULL,NULL, //range, default value
+				NULL, //fields
+				0, //new flags
+				NULL); //newfunc
+
+		foldd->push("index", _("Index"), _("The index of the fold, starting from 0, from the top or left."),
+				Element_Int, "[0..", "0", 0, NULL);
+
+		foldd->pushEnum("direction", _("Direction"), _("Direction of the fold: left, right, top, or bottom."),
+					 NULL, NULL, NULL,
+					 "Left",_("Left"),_("Right over to Left"),
+					 "UnderLeft",_("Under Left"),_("Right under to Left"),
+					 "Right",_("Right"),_("Left over to Right"),
+					 "Under Right",_("Right"),_("Left under to Right"),
+					 "Top",_("Top"),_("Bottom over to Top"),
+					 "UnderTop",_("Top"),_("Bottom under to Top"),
+					 "Bottom",_("Bottom"),_("Top over to Bottom"),
+					 "UnderBottom",_("Bottom"),_("Top under to Bottom"),
+					 NULL
+					);
+		stylemanager.AddStyleDef(foldd);
+		foldd->dec_count();
+	}
+
+	sd->push("folds", _("Folds"), _("Set of the folds making the signature"),
+			Element_Set, "Fold", NULL, 0, NULL);
+
+
+
+	sd->pushEnum("binding", _("Binding"), _("left, right, top, or bottom. The side to expect a document to be bound."),
+				 "Left", NULL, NULL, //defvalue, newfunc, newstylefunc
+				 "Left",_("Left"),_("Left"),
+				 "Right",_("Right"),_("Right"),
+				 "Top",_("Top"),_("Top"),
+				 "Bottom",_("Bottom"),_("Bottom"),
+				 NULL
+				 );
+
+	sd->push("trimtop", _("Top Trim"), _("How much to trim off the top of a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("trimbottom", _("Bottom Trim"), _("How much to trim off the bottom of a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("trimleft", _("Left Trim"), _("How much to trim off the left of a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("trimright", _("Right Trim"), _("How much to trim off the right of a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("margintop", _("Top Margin"), _("Default top margin on a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("marginbottom", _("Bottom Margin"), _("Default bottom margin on a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("marginleft", _("Left Margin"), _("Default left margin on a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+	sd->push("marginright", _("Right Margin"), _("Default right margin on a totally folded section"),
+			Element_Real, "[0..", "0", 0, NULL);
+
+
+	//fprintf(f,"%sup top          #When displaying pages, this direction should be toward the top of the screen\n",spc);
+	//fprintf(f,"%spositivex right #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
+	//fprintf(f,"%spositivey top   #(optional) Default to the same direction as up\n",spc);
+
 //	----------
 //	sd->push("covercolor",
 //			_("Cover Color"),
@@ -1100,11 +1224,13 @@ StyleDef *SignatureImposition::makeStyleDef()
 //			NULL,"#ffffffff",
 //			0,NULL);
 
-	cerr <<" *** finish implementing SignatureImposition::makeStyleDef()!!"<<endl;
-
 	return sd;
 }
 
+StyleDef *SignatureImposition::makeStyleDef()
+{
+	return makeSignatureImpositionStyleDef();
+}
 
 void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {

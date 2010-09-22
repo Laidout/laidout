@@ -318,6 +318,11 @@ Style *NewSingles(StyleDef *def)
 	return s;
 }
 
+StyleDef *Singles::makeStyleDef()
+{
+	return makeSinglesStyleDef();
+}
+
 //! Make an instance of the Singles imposition styledef.
 /*  Required by Style, this defines the various names for fields relevant to Singles,
  *  basically just the inset[lrtb], plus the standard Imposition npages and npapers.
@@ -326,7 +331,7 @@ Style *NewSingles(StyleDef *def)
  *
  *  Returns a new StyleDef with a count of 1.
  */
-StyleDef *Singles::makeStyleDef()
+StyleDef *makeSinglesStyleDef()
 {
 	StyleDef *sd=new StyleDef(NULL,"Singles",
 			_("Singles"),
@@ -337,7 +342,7 @@ StyleDef *Singles::makeStyleDef()
 			0, //new flags
 			NewSingles);
 
-	sd->push("insetl",
+	sd->push("insetleft",
 			_("Left Inset"),
 			_("How much a page is inset in a paper on the left"),
 			Element_Real,
@@ -345,21 +350,21 @@ StyleDef *Singles::makeStyleDef()
 			"0",  //defvalue
 			0,    //flags
 			NULL);//newfunc
-	sd->push("insetr",
+	sd->push("insetright",
 			_("Right Inset"),
 			_("How much a page is inset in a paper on the right"),
 			Element_Real,
 			NULL,
 			"0",
 			0,NULL);
-	sd->push("insett",
+	sd->push("insettop",
 			_("Top Inset"),
 			_("How much a page is inset in a paper from the top"),
 			Element_Real,
 			NULL,
 			"0",
 			0,0);
-	sd->push("insetb",
+	sd->push("insetbottom",
 			_("Bottom Inset"),
 			_("How much a page is inset in a paper from the bottom"),
 			Element_Real,
@@ -380,6 +385,7 @@ StyleDef *Singles::makeStyleDef()
 			NULL,
 			"1",
 			0,0);
+
 	return sd;
 }
 

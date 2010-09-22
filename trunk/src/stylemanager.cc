@@ -96,7 +96,7 @@ void StyleManager::flush()
  * used to call the function with. 
  * 
  * If absorb, then the calling code does not want to worry about def
- * anymore, whether or not the StyleDef is in the manager or net. So if the
+ * anymore, whether or not the StyleDef is in the manager. So if the
  * def was there already, def->dec_count() is called. If the def was not
  * in the manager, then that initial 1 count will become the stylemanager's
  * reference.

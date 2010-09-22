@@ -249,6 +249,9 @@ int NetDialog::Event(const EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"Cancel")) {
+		EventData *e=new EventData(LAX_onCancel);
+		app->SendMessage(e, win_owner, win_sendthis, object_id);
+
 		if (win_parent && dynamic_cast<HeadWindow*>(win_parent)) dynamic_cast<HeadWindow*>(win_parent)->WindowGone(this);
 		else app->destroywindow(this);
 		return 0;

@@ -20,6 +20,8 @@
 
 //------------------------ Singles ---------------------------
 
+StyleDef *makeSinglesStyleDef();
+
 class Singles : public Imposition
 {
   public:
