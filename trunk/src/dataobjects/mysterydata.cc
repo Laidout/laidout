@@ -44,6 +44,7 @@ MysteryData::MysteryData(const char *gen)
 	outline=NULL;
 
 	name=NULL;
+	nativeid=-1;
 	importer=newstr(gen);
 	attributes=NULL;
 }
