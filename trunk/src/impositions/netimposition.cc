@@ -195,6 +195,20 @@ const char *NetImposition::NetImpositionName()
 	return _("Net");
 }
 
+void NetImposition::GetDimensions(int which, double *x, double *y)
+{
+	if (which==0) {
+		*x=papergroup->papers.e[0]->box->paperstyle->w();
+		*y=papergroup->papers.e[0]->box->paperstyle->h();
+		return;
+	}
+
+	PageStyle *p=GetPageStyle(0,1);
+	*x=p->w();
+	*y=p->h();
+	p->dec_count();
+}
+
 //! Return something "Dodecahedron, 12 page net".
 /*! If briefdesc!=NULL, then return that. Otherwise make briefdesc
  * reflect teh current net info.
@@ -411,7 +425,7 @@ PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
 	PageStyle *ps=new PageStyle();
 	ps->flags|=PAGESTYLE_AUTONOMOUS;
 	ps->outline=dynamic_cast<PathsData *>(GetPageOutline(pagenum,0));
-	ps->margin=ps->outline;	ps->outline->inc_count();
+	ps->margin=ps->outline;	if (ps->outline) ps->outline->inc_count();
 	return ps;
 }
 
@@ -450,9 +464,11 @@ int NetImposition::numActiveNets()
 /*! \fn Page **NetImposition::CreatePages()
  * \brief Create the required pages, with appropriate PageStyle objects attached.
  */
-Page **NetImposition::CreatePages()
+Page **NetImposition::CreatePages(int npages)
 {
 	if (!nets.n || numActiveFaces()==0) return NULL;
+
+	if (npages>0) NumPages(npages);
 
 	int c=0;
 	Page **pages=new Page*[numpages+1]; //assumes numpages set properly
@@ -764,6 +780,24 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	}
 
 	return spread;
+}
+
+//! Return how many pages the current setup can hold.
+/*! For instance, for a cube, if the document only has 3 pages,
+ * 6 pages will still be returned.
+ */
+int NetImposition::NumPages()
+{
+	int n=numActiveFaces();
+	if (!n) return 0;
+
+	return (numpages/n+1) *n;
+}
+
+int NetImposition::NumPages(int npages)
+{
+	numpages=npages;
+	return NumPages();
 }
 
 //! Redefined to also return for SINGLES_WITH_ADJACENT_LAYOUT.

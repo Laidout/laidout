@@ -95,6 +95,18 @@ ImpositionResource **Singles::getDefaultResources()
 	return r;
 }
 
+//! Return paper dimensions (which==0) or page dimensions (which!=0).
+void Singles::GetDimensions(int which, double *x, double *y)
+{
+	if (which==0) {
+		*x=papergroup->papers.e[0]->box->paperstyle->w();
+		*y=papergroup->papers.e[0]->box->paperstyle->h();
+	}
+
+	*x=pagestyle->w();
+	*y=pagestyle->h();
+}
+
 //! Just return "Singles".
 const char *Singles::BriefDescription()
 {
@@ -392,9 +404,11 @@ StyleDef *makeSinglesStyleDef()
 //! Create necessary pages based on default pagestyle.
 /*! Currently returns NULL terminated list of pages.
  */
-Page **Singles::CreatePages()
+Page **Singles::CreatePages(int npages)
 {
+	if (npages>0) NumPages(npages);
 	if (numpages==0) return NULL;
+
 	Page **pages=new Page*[numpages+1];
 	int c;
 	PageStyle *ps;

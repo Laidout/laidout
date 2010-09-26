@@ -126,6 +126,7 @@ class SignatureImposition : public Imposition
 	PaperStyle *papersize;
 	RectPageStyle *pagestyle,*pagestyleodd;
 	int numsignatures;
+	int numdocpages;
 	//PaperPartition *partition; //partition to insert folding pattern
 	
 	virtual void setPageStyles();
@@ -144,12 +145,13 @@ class SignatureImposition : public Imposition
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	virtual const char *BriefDescription();
+	virtual void GetDimensions(int paperorpage, double *x, double *y);
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
 	
-	virtual Page **CreatePages();
+	virtual Page **CreatePages(int npages);
 	virtual int SyncPageStyles(Document *doc,int start,int n);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1);

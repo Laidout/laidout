@@ -330,8 +330,8 @@ int Spread::PagestackIndex(int docpage)
  * Default is to return NULL.
  * This is usually a group of SomeData.
  */
-/*! \fn Page **Imposition::CreatePages()
- * \brief Create the required pages.
+/*! \fn Page **Imposition::CreatePages(int npages)
+ * \brief Create the required pages. If npages>0, then assume the document wants this many pages.
  *
  * Derived class must define this function.
  */
