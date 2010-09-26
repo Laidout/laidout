@@ -7,15 +7,15 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.091
 ------------
+       Debug enough to not be too embarrassing
 (done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
        Images should maintain their aspect ratio by default when scaling
-       Scribus import must support master pages, and make sure linked text mystery data behave properly on export
+       Scribus import must make sure linked text and linked table mystery data behave properly on export
        Generic fold and trim imposition
+       Fix page bleeding for signatures and nets
 (done) Be able to load imposition instances, a form of resource
-       At bare minimum, path interface use should not cause a seg fault
-       PathInterface must be drastically improved, and bez part should have segment move like inkscape
 (done) Import images as flow/centered within page margins, not within page outline
-       Import images with alignment per page type into the page margin region
+(done) Import images with alignment per page type into the page margin region
        SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
        SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
@@ -28,6 +28,9 @@ VERSION 0.091
 
 VERSION 0.092
 -------------
+       At bare minimum, path interface use should not cause a seg fault
+       Scribus import must support master pages
+       PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Gui for modifying Page Labels
        Net imposition interactive unwrapper and build net interface
        need partial Laidout import and export
@@ -69,7 +72,6 @@ VERSION 0.1
        All the pdf 1.4 group combine properties, like most importantly transparency
        Configurable icon panel/menu system, make the button box actually function
        Linear (including curvilinear) guides
-       Fix non-centerfold page bleeding in booklets/doublesidedsingles when printing
        for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ColorPatch/ImagePatchData stuff
        Have imagepatch be a transform you can apply to any object
