@@ -605,7 +605,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
  */
 static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
-	//***possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
+	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
 	//	images: LOCALSCX LOCALSCY PFILE
 
@@ -798,6 +798,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 
 	fprintf(f,"  <PAGEOBJECT \n");
 	int content=-1;
+	int nextitem=-1, backitem=-1;
 	if (mysteryatts) {
 		char *name,*value;
 		for (int c=0; c<mysteryatts->attributes.n; c++) {
@@ -842,11 +843,12 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	}
 	fprintf(f,    "    OwnPage=\"%d\" \n",currentpage);  //not 1.2, the page on object is on? ****
 	if (!mysteryatts) {
-		fprintf(f,"    AUTOTEXT=\"0\" \n"     //1 if object is auto text frame
-				  "    BACKITEM=\"-1\" \n"    //Number of the previous frame of linked textframe
-				  "    NEXTITEM=\"-1\" \n"      //number of next frame for linked text frames
+		fprintf(f,"    AUTOTEXT=\"0\" \n");     //1 if object is auto text frame
+		fprintf(f,"    BACKITEM=\"%d\" \n"    //Number of the previous frame of linked textframe
+				  "    NEXTITEM=\"%d\" \n",      //number of next frame for linked text frames
+				  		backitem,nextitem);
 
-				  "    PLTSHOW=\"0\" \n"        //(opt) 1 if path for text on path should be visible
+		fprintf(f,"    PLTSHOW=\"0\" \n"        //(opt) 1 if path for text on path should be visible
 				  "    RADRECT=\"0\" \n"        //(opt) corner radius of rounded rectangle
 
 				  "    isTableItem=\"0\" \n"    //1 if object belongs to table
@@ -1228,6 +1230,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		}
 	}
 	 //now scan for everything other than PAGE
+	int pageobjectcount=-1;
+
 	for (c=0; c<scribusdoc->attributes.n; c++) {
 		name=scribusdoc->attributes.e[c]->name;
 		value=scribusdoc->attributes.e[c]->value;
@@ -1237,9 +1241,10 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 		} else if (!strcmp(name,"PAGEOBJECT")) {
 			object=scribusdoc->attributes.e[c];
+			pageobjectcount++;
 
 			 //figure out what page it is supposed to be on..
-			 //***need some way to compensate for bleeding!!!
+			 // ***need some way to compensate for bleeding!!!
 			Attribute *tmp=object->find("OwnPage");
 			if (tmp) IntAttribute(tmp->value,&pagenum);
 			if (pagenum<start || pagenum>end) continue; //***watch out for object bleeding!!
@@ -1295,6 +1300,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				 //undealt with object, push as MysteryData if in->keepmystery
 
 				mdata=new MysteryData("Scribus"); //note, this is untranslated "Scribus"
+				mdata->nativeid=pageobjectcount;
+
 				if (ptype==4) makestr(mdata->name,"Text Frame");
 				else if (ptype==5) makestr(mdata->name,"Line");
 				else if (ptype==6) makestr(mdata->name,"Polygon");
@@ -1313,6 +1320,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				}
 				group->push(mdata);
 				mdata->dec_count();
+
 			}
 
 		//} else if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {

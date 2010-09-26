@@ -23,6 +23,7 @@
 #include <lax/fileutils.h>
 #include <lax/menubutton.h>
 #include <lax/tabframe.h>
+#include <lax/sliderpopup.h>
 
 #include <lax/lists.cc>
 
@@ -50,13 +51,12 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 			Group *obj,
 			Document *ndoc,int startpg,double defdpi)
 	: FileDialog(parnt,nname,ntitle,
-			(nstyle&0xffff)|ANXWIN_REMEMBER,
+			(nstyle&0xffff)|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
 			xx,yy,ww,hh,brder,
 			nowner,nsend,
 			FILES_PREVIEW|FILES_OPEN_MANY,
 			nfile,npath,nmask)
 {
-	startpage=startpg;
 	toobj=obj;
 	if (toobj) toobj->inc_count();
 	doc=ndoc;
@@ -65,11 +65,15 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 
 	reviewlist=NULL;
 
-	dpi=defdpi;
+	settings=new ImportImageSettings;
+	settings->startpage=startpg;
+
+	double dpi=defdpi;
 	if (dpi<=0) {
 		if (doc) dpi=doc->imposition->paper->paperstyle->dpi;
 		else dpi=300;//***
 	}
+	settings->defaultdpi=dpi;
 
 	dialog_style|=FILES_PREVIEW;
 }
@@ -78,6 +82,8 @@ ImportImagesDialog::~ImportImagesDialog()
 {
 	if (toobj) toobj->dec_count();
 	if (doc)   doc->dec_count();
+
+	if (settings) settings->dec_count();
 }
 
 void ImportImagesDialog::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -108,7 +114,8 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anO
 	att->push("win_h",scratch);
 
 	 //------------export settings
-	int dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetLong(NULL);
+	double dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(NULL);
+
 	int perpage=-2; //force to 1 page
 	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
 		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
@@ -116,7 +123,7 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anO
 		perpage=-1; //as will fit to page
 
 	 //dpi
-	sprintf(scratch,"%d",dpi);
+	sprintf(scratch,"%.10g",dpi);
 	att->push("dpi",scratch);
 
 	 //autopreview
@@ -138,76 +145,6 @@ Attribute *ImportImagesDialog::dump_out_atts(Attribute *att,int what,Laxkit::anO
 
 	return att;
 }
-
-//-------------------------*** maybe have: ??
-//class ImportImagesConfig : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
-//{
-// public:
-//	ImportImagesConfig();
-//	virtual ~ImportImagesConfig();
-//	Document *doc;
-//	Group *group;
-//	char autopreview;
-//	int maxpreviewwidth;
-//	char *defaultpreviewname;
-//	int perpage;
-//	double defaultdpi;
-//	Arrangement *arrangement;
-//
-//	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
-//	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-//};
-//
-//ImportImagesConfig::ImportImagesConfig()
-//{
-//	doc=NULL;
-//	group=NULL;
-//	defaultpreviewname=NULL;
-//	perpage=1;
-//	defaultdpi=360;
-//	autopreview=0;
-//	maxpreviewwidth=200;//***some laidout default
-//}
-//
-///*! decs count on doc and group.
-// */
-//ImportImagesConfig::~ImportImagesConfig()
-//{
-//	if (group) group->dec_count();
-//	if (defaultpreviewname) delete[] defaultpreviewname;
-//	if (doc) doc->dec_count();
-//}
-//
-//LaxFiles::Attribute *ImportImagesConfig::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
-//{
-//}
-//
-//void ImportImagesConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-//{
-//	char *name,*value;
-//	for (int c=0; c<att->attributes.n; c++) {
-//		name= att->attributes.e[c]->name;
-//		value=att->attributes.e[c]->value;
-//
-//		if (!strcmp(name,"dpi")) {
-//			DoubleAttribute(value,&dpi);
-//		} else if (!strcmp(name,"autopreview")) {
-//			autopreview=BooleanAttribute(value);
-//		} else if (!strcmp(name,"perPage")) {
-//			if (isblank(!value)) perpage=-1;
-//			else if (!strcmp(value,"all")) perpage=-2;
-//			else if (!strcmp(value,"fit")) perpage=-1;
-//			else if (IntAttribute(value,&perpage)) ;
-//			else perpage=-1;
-//		} else if (!strcmp(name,"maxPreviewWidth")) {
-//			IntAttribute(value,&maxpreviewwidth);
-//		} else if (!strcmp(name,"defaultPreviewName")) {
-//			makestr(config->defaultpreviewname,value);
-//		}
-//	}
-//}
-//
-//-------------------------
 
 /*! \todo  *** ensure that the dimensions read in are in part on screen...
  */
@@ -248,7 +185,7 @@ int ImportImagesDialog::init()
 	
 	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+4;
-	char *str=NULL;
+	char str[50];
 	int c;
 	
 	anXWindow *last=NULL;
@@ -258,46 +195,47 @@ int ImportImagesDialog::init()
 	Button *tbut=NULL;
 
 
+// ************** tabframe stuff NOT WORKING!!!
 	 //---------------------- to insert list, next to main dir listing ---------------------------
 	// menuinfo that allows rearranging, and has other info about what page image will be on...
 	//--- for future! ---
 	 //---------------------- create choose/review  ---------------------------
 	 //*** need [Add] on choose tab, and [remove] on review tab
-	c=findWindowIndex("files"); //the original file MenuSelector
-	TabFrame *tabframe=new TabFrame(this,"choose",NULL,BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS,
-										50,50,300,200,0, 
-										NULL, object_id, "choose");
-	tabframe->pw(100);
-	tabframe->wg(1000);
-	tabframe->ph(30);
-	tabframe->hg(1000);
-//	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
-//			NULL,window,"reviewlist",
+//	c=findWindowIndex("files"); //the original file MenuSelector
+//	TabFrame *tabframe=new TabFrame(this,"choose",NULL,BOXSEL_LEFT|BOXSEL_TOP|BOXSEL_ONE_ONLY|BOXSEL_ROWS,
+//										50,50,300,200,0, 
+//										NULL, object_id, "choose");
+//	tabframe->pw(100);
+//	tabframe->wg(1000);
+//	tabframe->ph(30);
+//	tabframe->hg(1000);
+////	reviewlist=new MenuSelector(this,"reviewlist",0, 0,0,0,0,1,
+////			NULL,window,"reviewlist",
+////			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
+////			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
+////	//***populate reviewlist as needed...
+//
+//	MenuSelector *oldfilelist=filelist;
+//	filelist=new MenuSelector(this,"files",NULL,0, 0,0,0,0,1,
+//			last,object_id,"files",
 //			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
-//			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, NULL,0);
-//	//***populate reviewlist as needed...
-
-	MenuSelector *oldfilelist=filelist;
-	filelist=new MenuSelector(this,"files",NULL,0, 0,0,0,0,1,
-			last,object_id,"files",
-			MENUSEL_SEND_ON_UP|MENUSEL_CURSSELECTS|MENUSEL_TEXTCOLORS|
-			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, &files,0);
-	filelist->tooltip(_("Choose from these files.\nRight-click drag scrolls"));
-
-	tabframe->AddWin(filelist,1, _("Choose"),NULL,0);
-//	tabframe->AddWin(reviewlist,1, _("Review"),NULL);
-	//tabframe->SelectN(0);
-	wholelist.remove(c);
-	app->destroywindow(oldfilelist);
-	//-------------------
-	//***workaround for broken Laxkit::SquishyBox derived window insertion
-	WinFrameBox *wfb=new WinFrameBox();
-	wfb->win=tabframe;
-	memcpy(wfb->m, tabframe->m, 12*sizeof(int));//***beware sizeof induced segfaults!!
-	AddWin(wfb,1,c);
-	//-------------------
-	//AddWin(tabframe,c);
-	//-------------------
+//			MENUSEL_LEFT|MENUSEL_SUB_ON_LEFT|MENUSEL_SUB_FOLDER, &files,0);
+//	filelist->tooltip(_("Choose from these files.\nRight-click drag scrolls"));
+//
+//	tabframe->AddWin(filelist,1, _("Choose"),NULL,0);
+////	tabframe->AddWin(reviewlist,1, _("Review"),NULL);
+//	//tabframe->SelectN(0);
+//	wholelist.remove(c);
+//	app->destroywindow(oldfilelist);
+//	//-------------------
+//	//***workaround for broken Laxkit::SquishyBox derived window insertion
+//	WinFrameBox *wfb=new WinFrameBox();
+//	wfb->win=tabframe;
+//	memcpy(wfb->m, tabframe->m, 14*sizeof(int));//***beware sizeof induced segfaults!!
+//	AddWin(wfb,1,c);
+//	//-------------------
+//	//AddWin(tabframe,c);
+//	//-------------------
 
 
 	 //---------------------- add prev/next file buttons next to file
@@ -352,30 +290,80 @@ int ImportImagesDialog::init()
 //		description:_________
 
 	 //---------------------- extra image layout controls ---------------------------
+	 //start page __0__   alignx___ aligny___
 	last=NULL;
-	str=numtostr(startpage,0);
+	sprintf(str,"%d",settings->startpage);
 	last=linp=new LineInput(this,"StartPage",NULL,0, 0,0,0,0,0, last,object_id,"startpage",
 						_("Start Page:"),str,0,
 						0,0,2,2,2,2);
-	delete[] str; str=NULL;
-	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
+	linp->tooltip(_("The starting document page index to drop images onto. 0 is the first page."));
+	AddWin(linp,linp->win_w+linpheight*8,100,1000,50,0, linp->win_h,0,0,50,0);
+
+	int currentpagetype=0;
+	if (doc) {
+		AddWin(NULL, linpheight*5,0,0,50,0, linpheight,0,0,50,0);
+		if (doc->imposition->NumPageTypes()>1) {
+			 //only add this for more than one type
+			mesbar=new MessageBar(this,"thispage",NULL,MB_MOVE, 0,0, 0,0, 0, _("Align on page:"));
+			AddWin(mesbar, mesbar->win_w,0,50,50,0, linpheight,0,0,50,0);
 	
-	str=numtostr(dpi,0);
+			SliderPopup *pagetypes;
+			last=pagetypes=new SliderPopup(this,"pageTypes",NULL,0, 0,0, 0,0, 1, last,object_id,"pagetype");
+			for (int c=0; c<doc->imposition->NumPageTypes(); c++) {
+				pagetypes->AddItem(doc->imposition->PageTypeName(c),c);
+			}
+			pagetypes->tooltip(_("Alignment for this page type"));
+			AddWin(pagetypes, 200,100,50,50,0, linpheight,0,0,50,0);
+		}
+
+		 //install default alignment settings per page type
+		for (int c=settings->alignment.n; c<doc->imposition->NumPageTypes(); c++) {
+			settings->alignment.push(flatpoint(50,50));
+		}
+	}
+
+	 //-----align x and y for each page type, this shows the settings for currentpagetype
+	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].x);
+	else sprintf(str,"center"); 
+	last=linp=new LineInput(this,"alignx",NULL,0, 0,0,0,0,0, last,object_id,"alignx",
+						_("Align X:"),str,0,
+						0,0,2,2,2,2);
+	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
+	linp->tooltip(_("0 means align left, 50 center, 100 right, etc."));
+	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
+
+	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].y);
+	else sprintf(str,"center"); 
+	last=linp=new LineInput(this,"aligny",NULL,0, 0,0,0,0,0, last,object_id,"aligny",
+						_("Align Y:"),str,0,
+						0,0,2,2,2,2);
+	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
+	linp->tooltip(_("0 means align top, 50 center, 100 bottom, etc."));
+	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
+	AddNull();
+
+
+	 //----dpi
+	sprintf(str,"%.10g",settings->defaultdpi);
 	last=linp=new LineInput(this,"DPI",NULL,0, 0,0,0,0,0, last,object_id,"dpi",
 						_("Default dpi:"),str,0,
 						0,0,2,2,2,2);
-	delete[] str; str=NULL;
-	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
-	AddNull();
+	AddWin(linp,linp->win_w+linpheight*8,10,100,50,0, linp->win_h,0,0,50,0);
 	
-//	str=numtostr(end,0);
-//	last=linp=new LineInput(this,"EndPage",0, 0,0,0,0,0, last,object_id,"endpage",
-//						_("End Page:"),str,0,
-//						0,0,2,2,2,2);
-//	delete[] str; str=NULL;
-//	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
-//	AddNull();
+	last=check=new CheckBox(this,"scaleup",NULL,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"scaleup", _("Scale up"),5,5);
+	if (settings->scaleup) check->State(LAX_ON); else check->State(LAX_OFF);
+	check->tooltip(_("If necessary, scale up images to just fit within the target area"));
+	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
 
+	last=check=new CheckBox(this,"scaledown",NULL,CHECK_LEFT, 0,0,0,0,1, 
+						last,object_id,"scaledown", _("Scale down"),5,5);
+	if (settings->scaledown) check->State(LAX_ON); else check->State(LAX_OFF);
+	check->tooltip(_("If necessary, scale down images to just fit within the target area"));
+	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
+
+	AddWin(NULL, 3000,2990,0,50,0, 0,0,0,50,0);
+	
 	
 	 //------------------------------ Images Per Page
 	//Images Per Page ____, or "as many as will fit", or "all on 1 page"
@@ -385,30 +373,43 @@ int ImportImagesDialog::init()
 	AddWin(NULL, 1000,1000,0,50,0, 0,0,0,50,0);
 	AddNull();
 	
+	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpageexactly",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"perpageexactly", _("Exactly this many:"),5,5);
-	check->State(LAX_OFF);
+	if (settings->perpage>=0) {
+		check->State(LAX_ON); 
+		sprintf(str,"%d",settings->perpage);
+	} else {
+		check->State(LAX_OFF);
+		sprintf(str,"1");
+	}
 	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
+
+	sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
 	last=linp=new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
-						NULL,"1",0,
+						NULL,str,0,
 						textheight*10,textheight+4,2,2,2,2);
+	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(linp);
 	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);
 	AddNull();
-	
+
+	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpagefit",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"perpagefit", _("As many as will fit per page"),5,5);
-	check->State(LAX_ON);
-	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
+	if (settings->perpage==-1) check->State(LAX_ON); else check->State(LAX_OFF);
+	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
 	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);
 	AddNull();
-	
+
+	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpageall",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"perpageall", _("All on one page"),5,5);
-	check->State(LAX_OFF);
-	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
+	if (settings->perpage==-2) check->State(LAX_ON); else check->State(LAX_OFF);
+	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
 	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);
-	
+
+
 	 //------------------------ preview options ----------------------
 	last=linp=new LineInput(this,"PreviewBase",NULL,0, 0,0,0,0,0, last,object_id,"previewbase",
 						_("Default name for previews:"),
@@ -429,7 +430,7 @@ int ImportImagesDialog::init()
 									 "v");
 	menub->tooltip(_("Select from the available preview bases"));
 	AddWin(menub);
-	AddNull();
+	AddWin(NULL, 3000,3000,0,50,0, 0,0,0,50,0);//force left justify
 	
 	last=linp=new LineInput(this,"PreviewWidth",NULL,0, 0,0,0,0,0, last,object_id,"previewwidth",
 						_("Default max width for new previews:"),NULL,0,
@@ -437,7 +438,7 @@ int ImportImagesDialog::init()
 	linp->GetLineEdit()->SetText(laidout->max_preview_length);
 	linp->tooltip(_("Any newly generated previews must fit\nin a square this many pixels wide"));
 	AddWin(linp);
-	AddNull();
+	AddWin(NULL, 3000,3000,0,50,0, 0,0,0,50,0);//force left justify
 	 
 	last=check=new CheckBox(this,"autopreview",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"autopreview", _("Make previews for files larger than"),5,5);
@@ -456,8 +457,9 @@ int ImportImagesDialog::init()
 	AddWin(linp);
 	mesbar=new MessageBar(this,"kb",NULL,MB_MOVE, 0,0, 0,0, 0, "kB");
 	AddWin(mesbar, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0);
-	AddNull();
+	AddWin(NULL, 3000,3000,0,50,0, 0,0,0,50,0);//force left justify
 	 
+
 	 //-------------------- change Ok to Import
 	tbut=dynamic_cast<Button *>(findWindow("fd-Ok"));
 	if (tbut) tbut->Label(_("Import"));
@@ -506,9 +508,54 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		rebuildPreviewName();
 		return 0;
 
-//	} else if (!strcmp(mes,"new file")) { //sent by the file input on any change
-//		rebuildPreviewName();
-//		return 0;
+	} else if (!strcmp(mes,"pagetype")) {
+		SliderPopup *p=dynamic_cast<SliderPopup *>(findWindow("pageTypes"));
+		LineInput *x=dynamic_cast<LineInput *>(findWindow("alignx"));
+		LineInput *y=dynamic_cast<LineInput *>(findWindow("aligny"));
+
+		int current=p->GetCurrentItemN();
+		if (settings->alignment.e[current].x==0) x->SetText(_("left"));
+		else if (settings->alignment.e[current].x==50) x->SetText(_("center"));
+		else if (settings->alignment.e[current].x==100) x->SetText(_("right"));
+		else x->SetText(settings->alignment.e[current].x);
+
+		if (settings->alignment.e[current].y==0) y->SetText(_("top"));
+		else if (settings->alignment.e[current].y==50) y->SetText(_("center"));
+		else if (settings->alignment.e[current].y==100) y->SetText(_("bottom"));
+		else y->SetText(settings->alignment.e[current].y);
+
+		return 0;
+		
+
+	} else if (!strcmp(mes,"alignx")) {
+		LineInput *i=dynamic_cast<LineInput *>(findWindow("alignx"));
+		double a=50;
+		if (!strcasecmp(i->GetCText(),_("left"))) a=0;
+		else if (!strcasecmp(i->GetCText(),_("center"))) a=50;
+		else if (!strcasecmp(i->GetCText(),_("right"))) a=100;
+		else a=i->GetDouble();
+
+		int current=0;
+		SliderPopup *p=dynamic_cast<SliderPopup *>(findWindow("pageTypes"));
+		if (p) current=p->GetCurrentItemN();
+		settings->alignment.e[current].x=a;
+
+		return 0;
+
+	} else if (!strcmp(mes,"aligny")) {
+		LineInput *i=dynamic_cast<LineInput *>(findWindow("aligny"));
+		double a=50;
+		if (!strcasecmp(i->GetCText(),_("top"))) a=0;
+		else if (!strcasecmp(i->GetCText(),_("center"))) a=50;
+		else if (!strcasecmp(i->GetCText(),_("bottom"))) a=100;
+		else a=i->GetDouble();
+
+		int current=0;
+		SliderPopup *p=dynamic_cast<SliderPopup *>(findWindow("pageTypes"));
+		if (p) current=p->GetCurrentItemN();
+		settings->alignment.e[current].y=a;
+
+		return 0;
 
 	} else if (!strcmp(mes,"perpageexactly") || !strcmp(mes,"perpagefit") || !strcmp(mes,"perpageall")) {
 		int c;
@@ -528,7 +575,18 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"perpageexactlyn")) {
-		//nothing to do
+		 //just make sure perpageexactly check box is checked
+		CheckBox *check;
+		check=dynamic_cast<CheckBox *>(findWindow("perpageexactly"));
+		check->State(LAX_ON);
+		
+		check=dynamic_cast<CheckBox *>(findWindow("perpagefit"));
+		check->State(LAX_OFF);
+		
+		check=dynamic_cast<CheckBox *>(findWindow("perpageall"));
+		check->State(LAX_OFF);
+
+		return 0;
 
 	} else if (!strcmp(mes,"dpi")) {
 		//nothing to do
@@ -818,6 +876,7 @@ int ImportImagesDialog::send(int id)
 			delete[] previewfiles; previewfiles=NULL;
 		}
 		delete[] which;
+
 	} else { 
 		 //nothing currently selected in the item list...
 		 // so just use the single file in file input
@@ -879,19 +938,24 @@ int ImportImagesDialog::send(int id)
 			}
 		}
 	}
-	startpage=dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(NULL);
-	dpi      =dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetLong(NULL);
+	settings->startpage =dynamic_cast<LineInput *>(findWindow("StartPage"))->GetLineEdit()->GetLong(NULL);
+	settings->defaultdpi=dynamic_cast<LineInput *>(findWindow("DPI"))->GetLineEdit()->GetDouble(NULL);
 	
 	int perpage=-2; //force to 1 page
 	if (dynamic_cast<CheckBox *>(findWindow("perpageexactly"))->State()==LAX_ON)
 		perpage=dynamic_cast<LineInput *>(findWindow("NumPerPage"))->GetLineEdit()->GetLong(NULL);
 	else if (dynamic_cast<CheckBox *>(findWindow("perpagefit"))->State()==LAX_ON)
 		perpage=-1; //as will fit to page
+	if (perpage==0 || perpage<-2) perpage=-1;
+	settings->perpage=perpage;
 		
-	dumpInImages(doc,startpage,(const char **)imagefiles,(const char **)previewfiles,n,perpage,(int)dpi);
+	dumpInImages(settings, doc, (const char **)imagefiles,(const char **)previewfiles,n);
 	deletestrs(imagefiles,n);
 	deletestrs(previewfiles,n);
-			
+
+	SimpleMessage *mes=new SimpleMessage(NULL, n,0,0,0, win_sendthis);
+	app->SendMessage(mes,win_owner,win_sendthis,object_id);
+
 	return 1;
 }
 

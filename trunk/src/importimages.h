@@ -20,6 +20,8 @@
 #include <lax/imageinfo.h>
 #include <lax/lists.h>
 #include <lax/dump.h>
+
+#include "importimage.h"
 #include "document.h"
 
 
@@ -32,12 +34,13 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	virtual void updateFileList();
 	virtual Laxkit::ImageInfo *findImageInfo(const char *fullfile,int *i=NULL);
 	virtual char *getPreviewFileName(const char *full);
+
  public:
-	double dpi;
-	int startpage;
+	ImportImageSettings *settings;
 	Document *doc;
 	Group *toobj;
 	Laxkit::MenuSelector *reviewlist;
+
 	ImportImagesDialog(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 			int xx,int yy,int ww,int hh,int brder, 
 			unsigned long nowner,const char *nsend,
