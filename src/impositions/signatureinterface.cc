@@ -116,6 +116,7 @@ void SignatureInterface::reallocateFoldinfo()
 {
 	signature->folds.flush();
 	signature->reallocateFoldinfo();
+	foldinfo=signature->foldinfo;
 	hasfinal=0;
 
 	if (viewport) {

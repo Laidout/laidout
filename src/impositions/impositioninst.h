@@ -33,13 +33,14 @@ class Singles : public Imposition
 	virtual ~Singles();
 	static ImpositionResource **getDefaultResources();
 
+	virtual void GetDimensions(int which, double *x, double *y);
 	virtual const char *BriefDescription();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetDefaultMargins(double l,double r,double t,double b);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
-	virtual Page **CreatePages();
+	virtual Page **CreatePages(int npages);
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum,int local);
 	virtual Spread *PageLayout(int whichpage); 

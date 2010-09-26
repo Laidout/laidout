@@ -46,10 +46,11 @@ class NetImposition : public Imposition
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual const char *BriefDescription();
+	virtual void GetDimensions(int which, double *x, double *y);
 	
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
-	virtual Page **CreatePages();
+	virtual Page **CreatePages(int npages);
 
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 
@@ -64,6 +65,8 @@ class NetImposition : public Imposition
 	virtual Spread *PaperLayout(int whichpaper);
 
 	virtual int NumSpreads(int layout); 
+	virtual int NumPages();
+	virtual int NumPages(int npages);
 	virtual int PaperFromPage(int pagenumber);
 	virtual int SpreadFromPage(int pagenumber);
 	virtual int SpreadFromPage(int layout, int pagenumber);

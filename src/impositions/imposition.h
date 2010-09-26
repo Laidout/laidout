@@ -103,8 +103,9 @@ class Imposition : public Style
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
 	virtual const char *BriefDescription() = 0;
+	virtual void GetDimensions(int paperorpage, double *x, double *y) = 0;
 	
-	virtual Page **CreatePages() = 0;
+	virtual Page **CreatePages(int npages) = 0;
 	virtual int SyncPageStyles(Document *doc,int start,int n);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
