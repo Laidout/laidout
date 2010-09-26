@@ -37,6 +37,80 @@ using namespace LaxInterfaces;
 
 
 
+//------------------------------------- ImportImageSettings ------------------------------------
+/*! \class ImportImageSettings
+ * \brief Class to hold info about how to import mass quantities of images.
+ */
+/*! \var int ImportImageSettings::perpage
+ * \brief -1 for as will fit, -2 for all in one page, otherwise that many per area.
+ */
+
+
+ImportImageSettings::ImportImageSettings()
+{
+	settingsname=NULL;
+	filename=NULL;
+	defaultdpi=360;
+	scaleup=scaledown=0;
+	startpage=0;
+	perpage=0;
+	destination=0;
+	destobject=NULL;
+}
+
+ImportImageSettings::~ImportImageSettings()
+{
+	if (settingsname) delete[] settingsname;
+	if (filename) delete[] filename;
+	if (destobject) destobject->dec_count();
+}
+
+ImportImageSettings *ImportImageSettings::duplicate()
+{
+	ImportImageSettings *d=new ImportImageSettings();
+	
+	d->settingsname=NULL; //do not dup the name
+	d->filename    =NULL; //do not dup the filename
+	d->defaultdpi  =defaultdpi;
+	d->scaleup     =scaleup=scaledown;
+	d->startpage   =startpage;
+	d->perpage     =perpage;
+	d->destination =destination;
+	d->destobject  =destobject;
+
+	for (int c=0; c<alignment.n; c++) d->alignment.push(alignment.e[c]);
+
+	return d;
+}
+
+void ImportImageSettings::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	char *name,*value;
+	for (int c=0; c<att->attributes.n; c++) {
+		name= att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"dpi")) {
+			DoubleAttribute(value,&defaultdpi);
+
+//		} else if (!strcmp(name,"autopreview")) {
+//			autopreview=BooleanAttribute(value);
+
+		} else if (!strcmp(name,"perPage")) {
+			if (isblank(!value)) perpage=-1;
+			else if (!strcmp(value,"all")) perpage=-2;
+			else if (!strcmp(value,"fit")) perpage=-1;
+			else if (IntAttribute(value,&perpage)) ;
+			else perpage=-1;
+		}
+
+	}
+}
+
+void ImportImageSettings::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+}
+
 
 
 //------------------------------------- ImagePlopInfo ------------------------------------
@@ -69,11 +143,12 @@ using namespace LaxInterfaces;
  * This means it does not alter the count of
  * img here in the constructor, but does dec in destructor.
  */
-ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
+ImagePlopInfo::ImagePlopInfo(ImageData *img, double ndpi, int npage, int sflag, double *d)
 	: image(img), 
-	  scaleflag(0),
+	  scaleflag(sflag),
 	  alignx(50),
 	  aligny(50),
+	  alignment(NULL),
 	  error(0),
 	  dpi(ndpi),
 	  page(npage),
@@ -88,11 +163,11 @@ ImagePlopInfo::ImagePlopInfo(ImageData *img, int ndpi, int npage, double *d)
 /*! Copies the d array, but transfers pointer of img. Does not alter the count of 
  * img here in th constructor, but does dec in destructor.
  */
-void ImagePlopInfo::add(ImageData *img, int ndpi, int npage, double *d)
+void ImagePlopInfo::add(ImageData *img, double ndpi, int npage, int sflag, double *d)
 {
 	ImagePlopInfo *p=this;
 	while (p->next) p=p->next;
-	p->next=new ImagePlopInfo(img,ndpi,npage,d);
+	p->next=new ImagePlopInfo(img,ndpi,npage,sflag,d);
 }
 
 /*! Delete xywh, next, and dec_count() of image.
@@ -152,11 +227,10 @@ int dumpOutImageListFormat(FILE *f)
 			  "#perPage allOnOnePage # same as -2, put all on the same page, may make them fall off the edges\n"
 			  "#perPage 5            #  >0 == exactly that many per page\n"
 			  "\n"
-			  "scaleByDpi            #for each block of images on a page, scale by current dpi (this is default)\n"
-			  "scaleToFit            #for each block of images on a page, scale up or down to fit target area\n"
-			  "scaleDownToFit        #for each block of images on a page, only scale down to fit target area\n"
-			  "alignment 50 50    #horizontal and verticalalignment for blocks of images.\n"
-			  "                   #50=center, 0=flush left or top, 100=flush right or bottom\n"
+			  "scaleUpToFit  yes     #for each block of images on a page, scale up to fit target area\n"
+			  "scaleDownToFit no     #for each block of images on a page, only scale down to fit target area\n"
+			  "alignment 50 50       #horizontal and verticalalignment for blocks of images.\n"
+			  "                      #50=center, 0=flush left or top, 100=flush right or bottom\n"
 			  "alignment\n"
 			  "  pagetype Left  x 0   y 100  #for \"Left\" pagetypes, put on lower left corner\n"
 			  "  pagetype Right x 100 y 100  #for \"Right\" pagetypes, put on lower right corner\n"
@@ -204,7 +278,7 @@ int dumpOutImageListFormat(FILE *f)
  * NOTE to devs: if you change this function or any functions it calls,
  * you MUST ALSO CHANGE dumpOutImageListFormat() to accurately reflect the changes.
  */
-int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdpi, int perpage)
+int dumpInImageList(ImportImageSettings *settings, Document *doc,const char *file)
 {
 	LaxFiles::Attribute att;
 	if (att.dump_in(file)) return -1;
@@ -216,7 +290,7 @@ int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdp
 	}
 	att.push("path",dir,0);
 	delete[] dir;
-	return dumpInImageList(doc,&att,startpage,defaultdpi,perpage);
+	return dumpInImageList(settings,doc,&att);
 }
 
 //! Plop down images from the list contained in a LaxFiles::Attribute.
@@ -245,14 +319,19 @@ int dumpInImageList(Document *doc,const char *file, int startpage, int defaultdp
  *   to limit only to images, say, or only TIFFS, EPS, etc..
  * \todo implement dumping in Images for page numbers at defined positions (arrangements)
  */
-int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int defaultdpi, int perpage)
+int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attribute *att)
 {
+	int	startpage =settings->startpage,
+		defaultdpi=settings->defaultdpi,
+		perpage   =settings->perpage;
+
 	if (!att) return -1;
 	if (startpage<0) startpage=0;
 	else if (startpage>=doc->pages.n) startpage=doc->pages.n-1;
 	if (defaultdpi<1) defaultdpi=150;
 	int curpage=startpage;
 	int onedirperpage;
+	int scaleflags=0;
 	char error=0;
 	char *preview=NULL,*desc=NULL,*path=NULL;
 	double xywh[4];
@@ -261,22 +340,25 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 	ImageData *image=NULL;
 	int jumptopage;
 	int numonpage=0;
+
+	ImportImageSettings *newsettings=settings->duplicate();
+	newsettings->startpage=startpage;
 	
 	char *name,*value,*file=NULL;
 	for (int c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"dpi")) {
 			IntAttribute(value,&defaultdpi,NULL);
 
-		} else if (!strcmp(name,"scaleByDpi")) {
-			cout << " *** must implement scaleByDpi in image list file"<<endl;
-
-		} else if (!strcmp(name,"scaleToFit")) {
-			cout << " *** must implement scaleToFit in image list file"<<endl;
+		} else if (!strcmp(name,"scaleUpToFit")) {
+			if (BooleanAttribute(value)) scaleflags|=1; else scaleflags&=~1;
+			newsettings->scaleup=BooleanAttribute(value);
 
 		} else if (!strcmp(name,"scaleDownToFit")) {
-			cout << " *** must implement scaleDownToFit in image list file"<<endl;
+			if (BooleanAttribute(value)) scaleflags|=2; else scaleflags&=~2;
+			newsettings->scaledown=BooleanAttribute(value);
 
 		} else if (!strcmp(name,"alignment")) {
 			if (!isblank(value)) {
@@ -396,8 +478,8 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 				}
 			}
 			
-			if (!images) images=new ImagePlopInfo(image,curdpi,pg,(useplace?xywh:NULL));
-			else images->add(image,curdpi,pg,(useplace?xywh:NULL));
+			if (!images) images=new ImagePlopInfo(image,curdpi,pg,scaleflags,(useplace?xywh:NULL));
+			else images->add(image,curdpi,pg,scaleflags,(useplace?xywh:NULL));
 			image=NULL;
 			
 			if (preview) delete[] preview;
@@ -411,7 +493,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 		if (flush>0) {
 			if (images) {
 				 // flush all pending insertions
-				curpage=dumpInImages(doc,images,curpage);
+				curpage=dumpInImages(newsettings, doc,images,curpage);
 				if (jumptopage>=0) curpage=jumptopage;
 				else curpage++;
 				delete images;
@@ -421,9 +503,10 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
 		}
 	}
 	if (flush==-1 && images) {
-		curpage=dumpInImages(doc,images,curpage);
+		curpage=dumpInImages(newsettings, doc,images,curpage);
 	} else curpage--;
 	
+	if (newsettings) delete newsettings;
 	if (images) delete images;
 	if (error) {
 		return -1;
@@ -438,7 +521,7 @@ int dumpInImageList(Document *doc,LaxFiles::Attribute *att, int startpage, int d
  *
  * Returns the page index of the final page or -1 if error.
  */
-int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int perpage, int ddpi)
+int dumpInImages(ImportImageSettings *settings, Document *doc, const char *pathtoimagedir)
 {
 	 // prepare to read all images in directory pathtoimagedir....
 	if (pathtoimagedir==NULL) pathtoimagedir=".";
@@ -458,7 +541,7 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
 		free(dirents[c]);
 	}
 	free(dirents);
-	c=dumpInImages(doc,startpage,(const char **)imagefiles,NULL,i,perpage,ddpi);
+	c=dumpInImages(settings, doc, (const char **)imagefiles,NULL,i);
 	deletestrs(imagefiles,i);
 	return c;
 }
@@ -485,25 +568,31 @@ int dumpInImages(Document *doc, int startpage, const char *pathtoimagedir, int p
  *   to limit only to images, say, or only TIFFS, EPS, etc..
  * \todo might have locale trouble here
  */
-int dumpInImages(Document *doc, int startpage, 
+int dumpInImages(ImportImageSettings *settings,
+				 Document *doc, 
 				 const char **imagefiles,
 				 const char **previewfiles,
-				 int nfiles,
-				 int perpage, int ddpi)
+				 int nfiles)
 {
 	ImagePlopInfo *images=NULL;
 	int c,numonpage=0;
 	LaxImage *image=NULL;
 	ImageData *imaged;
-	int curpage=startpage, dpi;
+
+	int curpage=settings->startpage;
+	double dpi;
+	int scaleup=settings->scaleup;
+	int scaledown=settings->scaledown;
+	int scaleflag=(scaleup?1:0)|(scaledown?2:0);
+	double *xywh=NULL;
+
 	FILE *f;
 	char data[50],*p;
-	double *xywh=NULL;
 	
 	for (c=0; c<nfiles; c++) {
 		if (!imagefiles[c] || !strcmp(imagefiles[c],".") || !strcmp(imagefiles[c],"..")) continue;
 		
-		dpi=ddpi;
+		dpi=settings->defaultdpi;
 
 		 //first check if Imlib2 recognizes it as image (the easiest check)
 		image=load_image_with_preview(imagefiles[c],previewfiles?previewfiles[c]:NULL,0,0,0);
@@ -532,7 +621,7 @@ int dumpInImages(Document *doc, int startpage,
 						//**** if that string appears in the first 50 chars..
 						if (strcasestr(p,"image list")) {
 							 //this is likely an image list, so grab all data....
-							dumpInImageList(doc,imagefiles[c],startpage,ddpi,perpage);
+							dumpInImageList(settings, doc,imagefiles[c]);
 						}
 						continue;
 					} 
@@ -567,22 +656,22 @@ int dumpInImages(Document *doc, int startpage,
 
 		numonpage++;
 		int pg;
-		if (perpage==-1) pg=-1;
-		else if (perpage==-2) pg=curpage;
+		if (settings->perpage==-1) pg=-1;
+		else if (settings->perpage==-2) pg=curpage;
 		else {
 			pg=curpage;
-			if (numonpage==perpage) {
+			if (numonpage==settings->perpage) {
 				numonpage=0;
 			}
 		}
-		if (!images) images=new ImagePlopInfo(imaged,dpi,pg,xywh);
-		else images->add(imaged,dpi,pg,xywh);
+		if (!images) images=new ImagePlopInfo(imaged,dpi,pg,scaleflag,xywh);
+		else images->add(imaged,dpi,pg,scaleflag,xywh);
 		if (xywh) { delete[] xywh; xywh=NULL; }
 		if (numonpage==0) curpage++;
 	}
 
 	if (images) {
-		c=dumpInImages(doc,images,startpage);
+		c=dumpInImages(settings, doc,images,settings->startpage);
 		delete images;
 	}
 	return c;
@@ -600,6 +689,8 @@ int dumpInImages(Document *doc, int startpage,
  * Returns the page index of the final page or -1 if error. Note that this might not be the maximum
  * page number added. It is just the final page in the list.
  * 
+ * startpage overrides settings->startpage.
+ *
  * \todo *** please note that i have big plans for this extra, involving being able to dump
  *   stuff into 'arrangements' which will be kind of like template pages. Each spot of an
  *   arrangement will be able to hold the item(s) centered, scaled to fit, scaled and rotated to fit,
@@ -609,33 +700,42 @@ int dumpInImages(Document *doc, int startpage,
  * \todo this can certainly be abstracted a bit, and use any object list, not just images,
  *   then this function would call some other layout object or something for align/distribute..
  */
-int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
+int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *images, int startpage)
 {
 	DBG cerr<<"---dump in images from ImagePlopInfo list..."<<endl;
 	if (!images) return -1;
+	if (startpage<0 && settings) startpage=settings->startpage;
 	if (startpage<0) startpage=0;
 
-	ImagePlopInfo *info=images,*last=NULL,*flow, *flow2;
+	ImagePlopInfo *info=images, *last=NULL, *flow, *flow2;
 	Group *g;
-	int curpage;
-	int dpi=doc->imposition->paper->paperstyle->dpi,curdpi=dpi;
-	curpage=startpage;
-	double x,y,w,h,t,   // temp info while computing each row
-		   ww,hh,       // width and height of page
-		   s,           // scaling == 1/dpi
+	SomeData *outline=NULL;
+	SomeData *obj=NULL;
+
+	int curpage=startpage;
+	int scaleup  =settings->scaleup;
+	int scaledown=settings->scaledown;
+	double dpi=doc->imposition->paper->paperstyle->dpi;
+	double curdpi=dpi;
+	double x,y,w,h,t,      // temp info while computing each row
+		   ww,hh,          // width and height of page
+		   s,              // scaling == 1/dpi
 		   rw,rh,
-		   rrh;         // height of all rows found so far
+		   rrh,            // height of all rows found so far
+		   alignx, aligny; //overall alignment for current area
 	int n,         // total number of images
 		nn,        // number of images in current row
 		nnn;       // number of images in a current page
 	n=0; // total number of images placed, nn is placed for page
-	SomeData *outline=NULL;
-	SomeData *obj=NULL;
+	if (settings->alignment.n) {
+		alignx=settings->alignment.e[0].x;
+		aligny=settings->alignment.e[0].y;
+	} else alignx=aligny=50;
 
 	while (info) { // one loop per page
 		//***if (progressfunc) progressfunc(progressarg, curimgi/numimgs);
-		
-		nnn=0;
+
+		nnn=0; //num images on current page
 	
 		 // info points to the first image on a page
 		
@@ -648,20 +748,32 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 			DBG cerr <<" adding new page..."<<endl;
 			doc->NewPages(-1,curpage-doc->pages.n+1); // add extra page(s) at end
 		}
+
+		 //establish alignment for current page type
+		if (settings->alignment.n && doc) {
+			int curpagetype=doc->imposition->PageType(curpage);
+			if (curpagetype>=0 && curpagetype<settings->alignment.n) {
+				alignx=settings->alignment.e[curpagetype].x/100;
+				aligny=settings->alignment.e[curpagetype].y/100;
+			}
+		}
+		
 		
 		 // figure out page characteristics: dpi, ww, hh, and scaling
 		 //*** ultimately this will need to be reworked to more reasonably flow within
 		 //    non-rectangular pages
 		if (outline) { outline->dec_count(); outline=NULL; }
-		outline=doc->pages.e[curpage]->pagestyle->outline;
 		if (!outline) outline=doc->imposition->GetPageMarginOutline(curpage,0); //adds 1 count already
 		if (!outline) outline=doc->imposition->GetPageOutline(curpage,0); //adds 1 count already
+		if (!outline) { outline=doc->pages.e[curpage]->pagestyle->outline; if (outline) outline->inc_count(); }
 		ww=outline->maxx-outline->minx;
 		hh=outline->maxy-outline->miny;;
 		//DBG cerr <<": ww,hh:"<<ww<<','<<hh<<"  x,y,w,h"<<x<<','<<y<<','<<w<<','<<h<<endl;
 		
 		if (info->dpi>0) curdpi=info->dpi; else curdpi=dpi;
 		s=1./curdpi; 
+		scaleup=info->scaleflag&1;
+		scaledown=info->scaleflag&2;
 		
 		 // fit into box if necessary
 		if (info->xywh) {
@@ -733,7 +845,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 			}
 
 			 // apply origin and scaling to all in [last,flow)
-			x=(ww-rw)/2+outline->minx;
+			x=(ww-rw)*alignx + outline->minx;
 			y=hh-rrh-rh/2+outline->miny; // y is centerline for row
 			rrh+=rh;
 			for (flow2=last; flow2!=flow; ) {
@@ -752,7 +864,7 @@ int dumpInImages(Document *doc, ImagePlopInfo *images, int startpage)
 		while (info!=flow) {
 			DBG cerr <<"   adding image ..."<<endl;
 			//while (curpage>doc->pages.n) doc->
-			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)/2));
+			info->image->origin(info->image->origin()+flatpoint(0,(rrh-hh)*aligny));
 			g=doc->pages.e[curpage]->e(doc->pages.e[curpage]->layers.n()-1);
 			g->push(info->image); //incs the obj's count
 			info=info->next;

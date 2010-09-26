@@ -3145,22 +3145,16 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return c;
 
 	} else if (!strcmp(mes,"import new image")) {
-		 //*** not this is currently not used... ImportImagesDialog calls dumpin directly, and sends no message back.
-		const StrsEventData *s=dynamic_cast<const StrsEventData *>(data);
-		if (!s || !s->n) return 1;
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		if (!s) return 1;
 
-		int n=dumpInImages(doc,((LaidoutViewport *)viewport)->curobjPage(), 
-				(const char **)(s->strs),NULL,s->n,
-				var1->Value(),var2->Value()); 
-		
-		char mes[35];
+		char mes[50];
 		mes[0]=0;
-		if (n>=0) {
-			if (s->n>1) sprintf(mes,_("Images imported."));
+		if (s->info1>=0) {
+			if (s->info1>1) sprintf(mes,_("%d images imported."),s->info1);
 			else sprintf(mes,_("Image imported."));
 		} else { 
-			if (s->n>1) sprintf(mes,_("Couldn't load images."));
-			else sprintf(mes,_("Couldn't load image."));
+			sprintf(mes,_("No images imported."));
 		}
 		((LaidoutViewport *)viewport)->postmessage(mes);
 		return 0;

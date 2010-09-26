@@ -841,8 +841,8 @@ Laxkit::DoubleBBox *Signature::PageBounds(int part, Laxkit::DoubleBBox *bbox)
 	} else if (part==1) { //margin box
 		bbox->minx=marginleft-trimleft;
 		bbox->miny=marginbottom-trimbottom;
-		bbox->maxx=bbox->minx + marginright-marginleft;
-		bbox->maxy=bbox->miny + margintop-marginbottom;
+		bbox->maxx=PageWidth(1)  - (marginright-marginleft);
+		bbox->maxy=PageHeight(1) - (margintop-marginbottom);
 
 	} else { //page cell box
 		bbox->minx=-trimleft;
