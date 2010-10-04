@@ -25,6 +25,7 @@
 #include "impositions/netimposition.h"
 #include "impositions/signatureinterface.h"
 #include "impositions/netdialog.h"
+#include "impositions/singleseditor.h"
 #include "utils.h"
 	
 #include <iostream>
@@ -188,13 +189,14 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char
 	oldimp=-1;
 
 	doc=ndoc;
-	if (doc) doc->inc_count();
+	if (doc) {
+		imp=(Imposition*)doc->imposition->duplicate();
+		doc->inc_count();
+	}
 
 
-	tilex=tiley=NULL;
-	insetl=insetr=insett=insetb=NULL;
-	marginl=marginr=margint=marginb=NULL;
 	impfromfile=NULL;
+	pageinfo=NULL;
 }
 
 NewDocWindow::~NewDocWindow()
@@ -224,7 +226,7 @@ int NewDocWindow::init()
 	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+12;
 	Button *tbut;
-	anXWindow *last;
+	anXWindow *last=NULL;
 	LineInput *linp;
 	MessageBar *mesbar;
 
@@ -237,14 +239,14 @@ int NewDocWindow::init()
 	if (doc) where=newstr(doc->Saveas());
 	if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
-	saveas=new LineInput(this,"save as",NULL,LINP_ONLEFT, 0,0,0,0, 1, 
+	last=saveas=new LineInput(this,"save as",NULL,LINP_ONLEFT, 0,0,0,0, 1, 
 						NULL,object_id,"save as",
 			            _("Save As:"),where,0,
 			            0,0,1,0,3,3);
 	if (where) { delete[] where; where=NULL; }
 	AddWin(saveas, 300,0,2000,50,0, linpheight,0,0,50,0);
-	tbut=new Button(this,"saveas",NULL,0, 0,0,0,0, 1, 
-			saveas,object_id,"saveas",
+	last=tbut=new Button(this,"saveas",NULL,0, 0,0,0,0, 1, 
+			last,object_id,"saveas",
 			-1,
 			"...",NULL,NULL,3,3);
 	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
@@ -267,15 +269,15 @@ int NewDocWindow::init()
 	 // -----Paper Size X
 	sprintf(blah,"%.10g", papertype->w());
 	sprintf(blah2,"%.10g",papertype->h());
-	paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
-						tbut,object_id,"paper x",
+	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+						last,object_id,"paper x",
 			            _("Paper Size  x:"),(o&1?blah2:blah),0,
 			            100,0,1,1,3,3);
 	AddWin(paperx, paperx->win_w,0,50,50,0, linpheight,0,0,50,0);
 	
 	 // -----Paper Size Y
-	papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
-						paperx,object_id,"paper y",
+	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+						last,object_id,"paper y",
 			            _("y:"),(o&1?blah:blah2),0,
 			           100,0,1,1,3,3);
 	AddWin(papery, papery->win_w,0,50,50,0, linpheight,0,0,50,0);
@@ -283,7 +285,7 @@ int NewDocWindow::init()
 
 	 // -----Paper Name
     SliderPopup *popup;
-	popup=new SliderPopup(this,"paperName",NULL,0, 0,0, 0,0, 1, papery,object_id,"paper name");
+	last=popup=new SliderPopup(this,"paperName",NULL,0, 0,0, 0,0, 1, last,object_id,"paper name");
 	for (int c=0; c<papersizes->n; c++) {
 		if (!strcmp(papersizes->e[c]->name,papertype->name)) c2=c;
 		popup->AddItem(papersizes->e[c]->name,c);
@@ -292,7 +294,7 @@ int NewDocWindow::init()
 	AddWin(popup, 200,100,50,50,0, linpheight,0,0,50,0);
 	
 	 // -----Paper Orientation
-	last=popup=new SliderPopup(this,"paperOrientation",NULL,0, 0,0, 0,0, 1, popup,object_id,"orientation");
+	last=popup=new SliderPopup(this,"paperOrientation",NULL,0, 0,0, 0,0, 1, last,object_id,"orientation");
 	popup->AddItem(_("Portrait"),0);
 	popup->AddItem(_("Landscape"),1);
 	popup->Select(o&1?1:0);
@@ -306,9 +308,13 @@ int NewDocWindow::init()
 						last,object_id,"numpages",
 			            _("Number of pages:"),NULL,0, // *** must do auto set papersize
 			            100,0,1,1,3,3);
+	numpages->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
 	numpages->SetText(npages);
-	numpages->tooltip(_("The number of pages required."));
+	numpages->tooltip(_("The number of pages with which to start a document."));
 	AddWin(numpages, numpages->win_w,0,50,50,0, linpheight,0,0,50,0);
+
+	pageinfo=mesbar=new MessageBar(this,"pageinfo",NULL,MB_MOVE, 0,0, 0,0, 0, pagesDescription(0));
+	AddWin(mesbar, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0);
 	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);
 
 	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
@@ -377,7 +383,7 @@ int NewDocWindow::init()
 	mesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
 	AddWin(mesbar, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0);
 	last=impsel=new SliderPopup(this,"Imposition",NULL,0, 0,0,0,0, 1, 
-						numpages,object_id,"imposition");
+						last,object_id,"imposition");
 	int whichimp=0;
 	if (doc) {
 		whichimp=laidout->impositionpool.n;
@@ -404,8 +410,8 @@ int NewDocWindow::init()
 
 	 //--------edit imp...
 	AddWin(NULL, linpheight/2,0,0,50,0, 20,0,0,50,0);
-	tbut=new Button(this,"impedit",NULL,0, 0,0,0,0, 1, 
-			saveas,object_id,"impedit",
+	last=tbut=new Button(this,"impedit",NULL,0, 0,0,0,0, 1, 
+			last,object_id,"impedit",
 			-1,
 			"Edit imposition...",NULL,NULL,3,3);
 	tbut->tooltip(_("Edit the currently selected imposition"));
@@ -460,6 +466,33 @@ int NewDocWindow::init()
 	return 0;
 }
 
+//! Update the message bar that says how many pages the imposition can hold.
+const char *NewDocWindow::pagesDescription(int updatetoo)
+{
+	if (!imp) {
+		if (updatetoo) pageinfo->SetText(" ");
+		return " ";
+	}
+
+	double x,y;
+	imp->GetDimensions(1, &x,&y);
+	int n=imp->NumPages();
+	if (n<=0) {
+		int nn=atoi(numpages->GetCText());
+		if (nn<=0) nn=1;
+		n=imp->NumPages(nn);
+	}
+
+
+	static char dims[100];
+	if (n==1) sprintf(dims,_("Imposition holds 1 page, %.3g x %.3g"),x,y);
+	else sprintf(dims,_("Imposition holds %d pages, %.3g x %.3g"),n,x,y);
+
+	if (updatetoo) pageinfo->SetText(dims);
+
+	return dims;
+}
+
 int NewDocWindow::Event(const EventData *data,const char *mes)
 {
 	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
@@ -471,6 +504,10 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		saveas->SetText(s->str);
 		return 0;
 
+	} else if (!strcmp(mes,"numpages")) {
+		pagesDescription(1);
+		return 0;
+
 	} else if (!strcmp(mes,"impedit")) {
 		if (!imp) {
 			 //find which resource is selected, create then edit
@@ -478,6 +515,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 			if (which<0 || which>=laidout->impositionpool.n) return 0;
 			imp=laidout->impositionpool.e[which]->Create();
 		}
+		imp->SetPaperSize(papertype);
 
 		if (!strcmp(imp->whattype(),"NetImposition")) {
 			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
@@ -491,7 +529,11 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 			return 0;
 
 		} else if (!strcmp(imp->whattype(),"Singles")) {
-			cerr << " ***  must implement new doc edit singles"<<endl;
+			app->rundialog(new SinglesEditor(NULL,"singleseditor",_("Singles Editor"),
+						   object_id,"newimposition",
+						   NULL, //doc
+						   dynamic_cast<Singles*>(imp),
+						   NULL)); //paper
 			return 0;
 		}
 
@@ -583,7 +625,12 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (imp) imp->dec_count();
 		oldimp=s->info1;
 		imp=laidout->impositionpool.e[s->info1]->Create();
+		imp->SetPaperSize(papertype);
+		int nn=atoi(numpages->GetCText());
+		if (nn<=0) nn=1;
+		imp->NumPages(nn);
 		impmesbar->SetText(laidout->impositionpool.e[s->info1]->description);
+		pagesDescription(1);
 
 		return 0;
 
@@ -650,6 +697,7 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 {
 	if (dialogtoimp) {
 		if (imp) imp->SetPaperSize(papertype);
+		pagesDescription(1);	
 		return;
 	}
 
@@ -684,6 +732,8 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 		paperx->SetText(num);
 		numtostr(num,30,papertype->h(),0);
 		papery->SetText(num);
+
+		pagesDescription(1);	
 	}
 }
 
@@ -733,7 +783,7 @@ void NewDocWindow::impositionFromFile(const char *file)
 		return;
 
 	} else {
-		DBG cerr <<"*** Failure to read polyhedron file: "<<file<<endl;
+		DBG cerr <<"*** Failure to read polyhedron file: "<<(file?file:"")<<endl;
 		delete poly;
 	}
 
@@ -766,13 +816,8 @@ void NewDocWindow::sendNewDoc()
 	}
 	if (!imposition) { cout <<"**** no imposition in newdoc!!"<<endl; return; }
 	
-	int npgs=atoi(numpages->GetCText()), xtile=1, ytile=1;
-	if (tilex) xtile=atoi(tilex->GetCText());
-	if (tiley) ytile=atoi(tiley->GetCText());
+	int npgs=atoi(numpages->GetCText());
 	if (npgs<=0) npgs=1;
-
-	if (xtile<=0) xtile=1;
-	if (ytile<=0) ytile=1;
 
 	imposition->NumPages(npgs);
 	imposition->SetPaperSize(papertype);

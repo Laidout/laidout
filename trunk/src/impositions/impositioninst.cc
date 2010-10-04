@@ -49,7 +49,9 @@ using namespace std;
 Singles::Singles() : Imposition(_("Singles"))
 { 
 	insetl=insetr=insett=insetb=0;
+	marginl=marginr=margint=marginb=0;
 	tilex=tiley=1;
+	gapx=gapy=0;
 	pagestyle=NULL;
 
 	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
@@ -205,6 +207,18 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 			DoubleAttribute(value,&insett);
 		} else if (!strcmp(name,"insetb")) {
 			DoubleAttribute(value,&insetb);
+		} else if (!strcmp(name,"marginl")) {
+			DoubleAttribute(value,&marginl);
+		} else if (!strcmp(name,"marginr")) {
+			DoubleAttribute(value,&marginr);
+		} else if (!strcmp(name,"margint")) {
+			DoubleAttribute(value,&margint);
+		} else if (!strcmp(name,"marginb")) {
+			DoubleAttribute(value,&marginb);
+		} else if (!strcmp(name,"gapx")) {
+			DoubleAttribute(value,&gapx);
+		} else if (!strcmp(name,"gapy")) {
+			DoubleAttribute(value,&gapy);
 		} else if (!strcmp(name,"tilex")) {
 			IntAttribute(value,&tilex);
 		} else if (!strcmp(name,"tiley")) {
@@ -268,8 +282,14 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%sinsetr 0   #The right inset from the side of a paper\n",spc);
 		fprintf(f,"%sinsett 0   #The top inset from the side of a paper\n",spc);
 		fprintf(f,"%sinsetb 0   #The bottom inset from the side of a paper\n",spc);
+		fprintf(f,"%sgapx 0     #Gap between tiles horizontally\n",spc);
+		fprintf(f,"%sgapy 0     #Gap between tiles vertically\n",spc);
 		fprintf(f,"%stilex 1    #number of times to tile the page horizontally\n",spc);
 		fprintf(f,"%stiley 1    #number of times to tile the page vertically\n",spc);
+		fprintf(f,"%smarginl 0   #The default left page margin\n",spc);
+		fprintf(f,"%smarginr 0   #The default right page margin\n",spc);
+		fprintf(f,"%smargint 0   #The default top page margin\n",spc);
+		fprintf(f,"%smarginb 0   #The default bottom page margin\n",spc);
 		fprintf(f,"%snumpages 3 #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sdefaultpapers #default paper group\n",spc);
 		papergroup->dump_out(f,indent+2,-1,NULL);
@@ -277,6 +297,10 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		pagestyle->dump_out(f,indent+2,-1,NULL);
 		return;
 	}
+	fprintf(f,"%smarginl %.10g\n",spc,marginl);
+	fprintf(f,"%smarginr %.10g\n",spc,marginr);
+	fprintf(f,"%smargint %.10g\n",spc,margint);
+	fprintf(f,"%smarginb %.10g\n",spc,marginb);
 	fprintf(f,"%sinsetl %.10g\n",spc,insetl);
 	fprintf(f,"%sinsetr %.10g\n",spc,insetr);
 	fprintf(f,"%sinsett %.10g\n",spc,insett);
@@ -313,6 +337,10 @@ Style *Singles::duplicate(Style *s)//s=NULL
 		pagestyle->inc_count();
 		sn->pagestyle=pagestyle;
 	}
+	sn->marginl=marginl;
+	sn->marginr=marginr;
+	sn->margint=margint;
+	sn->marginb=marginb;
 	sn->insetl=insetl;
 	sn->insetr=insetr;
 	sn->insett=insett;
@@ -396,6 +424,49 @@ StyleDef *makeSinglesStyleDef()
 			Element_Int,
 			NULL,
 			"1",
+			0,0);
+	sd->push("gapx",
+			_("Horizontal gap"),
+			_("Gap between tiles horizontally"),
+			Element_Real,
+			NULL,
+			"0",
+			0,0);
+	sd->push("gapy",
+			_("Vertical gap"),
+			_("Gap between tiles vertically"),
+			Element_Real,
+			NULL,
+			"0",
+			0,0);
+	sd->push("marginleft",
+			_("Left Margin"),
+			_("Default left page margin"),
+			Element_Real,
+			NULL, //range
+			"0",  //defvalue
+			0,    //flags
+			NULL);//newfunc
+	sd->push("marginright",
+			_("Right Margin"),
+			_("Default right page margin"),
+			Element_Real,
+			NULL,
+			"0",
+			0,NULL);
+	sd->push("margintop",
+			_("Top Margin"),
+			_("Default top page margin"),
+			Element_Real,
+			NULL,
+			"0",
+			0,0);
+	sd->push("marginbottom",
+			_("Bottom Margin"),
+			_("Default bottom page margin"),
+			Element_Real,
+			NULL,
+			"0",
 			0,0);
 
 	return sd;

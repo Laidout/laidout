@@ -453,7 +453,7 @@ Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 		//null imposition is used for code that manually builds a Document, so no special treatment necessary
 	} else {
 		 // create the pages
-		pages.e=imposition->CreatePages();
+		pages.e=imposition->CreatePages(-1);
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;
@@ -692,7 +692,7 @@ int Document::Load(const char *file,char **error_ret)
 
 	if (!imposition) imposition=newImpositionByType("Singles");
 	if (pages.n==0) {
-		pages.e=imposition->CreatePages();
+		pages.e=imposition->CreatePages(-1);
 		if (pages.e) { // must manually count how many element in e, put that in n
 			int c=0;
 			while (pages.e[c]!=NULL) c++;

@@ -42,6 +42,7 @@ class NetImposition : public Imposition
 
 	NetImposition(Net *newnet=NULL);
 	virtual ~NetImposition();
+	virtual const char *whattype() { return "NetImposition"; }
 	static ImpositionResource **getDefaultResources();
 	virtual StyleDef *makeStyleDef();
 	virtual Style *duplicate(Style *s=NULL);

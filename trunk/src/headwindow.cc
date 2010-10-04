@@ -2,7 +2,8 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006
+// Please consult http://www.laidout.org about where to send any
+// correspondence about this software.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -10,8 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Please consult http://www.laidout.org about where to send any
-// correspondence about this software.
+// Copyright (C) 2004-2006,2010 by Tom Lechner
 //
 
 #include "headwindow.h"
@@ -296,12 +296,14 @@ int HeadWindow::SwapWithMarked()
 		if (markedhead->FindBoxIndex(markedpane)>=0) {
 			// must potentially reparent!!!
 			if (markedhead!=this) {
-				if (curbox->win) app->reparent(curbox->win,markedhead);
-				if (markedpane->win) app->reparent(markedpane->win,this);
+				if (curbox->win()) app->reparent(curbox->win(),markedhead);
+				if (markedpane->win()) app->reparent(markedpane->win(),this);
 			}
-			anXWindow *w=curbox->win;
-			curbox->win=markedpane->win;
-			markedpane->win=w;
+			anXWindow *w=curbox->win();
+			w->inc_count();
+			curbox->NewWindow(markedpane->win());
+			markedpane->NewWindow(w);
+			w->dec_count();
 			curbox->sync(space/2);
 			markedpane->sync(space/2);
 			return 0;
@@ -330,12 +332,12 @@ int HeadWindow::Change(anXWindow *towhat,anXWindow *which)
 	if (!doc) return 0;
 
 	// make sure same doc from old curbox is used for view and spread
-	ViewWindow *v=dynamic_cast<ViewWindow *>(curbox->win);
+	ViewWindow *v=dynamic_cast<ViewWindow *>(curbox->win());
 	if (v) {
 		((LaidoutViewport *)(v->viewport))->UseThisDoc(doc);
 		v->doc=doc;
 	} else {
-		SpreadEditor *s=dynamic_cast<SpreadEditor *>(curbox->win);
+		SpreadEditor *s=dynamic_cast<SpreadEditor *>(curbox->win());
 		if (s) s->UseThisDoc(doc);
 	}
 
@@ -348,19 +350,19 @@ Document *HeadWindow::findAnyDoc()
 	ViewWindow *v;
 	SpreadEditor *s;
 	if (curbox) {
-		v=dynamic_cast<ViewWindow *>(curbox->win);
+		v=dynamic_cast<ViewWindow *>(curbox->win());
 		if (v && v->doc) return v->doc;
-		s=dynamic_cast<SpreadEditor *>(curbox->win);
+		s=dynamic_cast<SpreadEditor *>(curbox->win());
 		if (s && s->doc) return s->doc;
 	}
 	for (int c=0; c<windows.n; c++) {
-		if (!windows.e[c]->win) continue;
-		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
+		if (!windows.e[c]->win()) continue;
+		v=dynamic_cast<ViewWindow *>(windows.e[c]->win());
 		if (v) {
 			if (v->doc) return v->doc;
 			else continue;
 		}
-		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
+		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win());
 		if (s) {
 			if (s->doc) return s->doc;
 			else continue;
@@ -379,9 +381,9 @@ int HeadWindow::splitthewindow(anXWindow *fillwindow)
 	//doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
 
-	anXWindow *winold=curbox->win;
+	anXWindow *winold=curbox->win();
 	if (SplitWindow::splitthewindow(fillwindow)!=0) return 1;
-	anXWindow *win=windows.e[windows.n-1]->win;
+	anXWindow *win=windows.e[windows.n-1]->win();
 	if (!win) return 0;
 
 	// make sure same doc from old box is used for view and spread
@@ -441,9 +443,9 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%spane\n",spc);
 		fprintf(f,"%s  xyxy %d %d %d %d\n",
 				spc,windows.e[c]->x1,windows.e[c]->y1,windows.e[c]->x2,windows.e[c]->y2);
-		if (windows.e[c]->win) {
-			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win->whattype());
-			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win);
+		if (windows.e[c]->win()) {
+			fprintf(f,"%s  window %s\n",spc,windows.e[c]->win()->whattype());
+			wind=dynamic_cast<DumpUtility *>(windows.e[c]->win());
 			if (wind) wind->dump_out(f,indent+4,what,context);
 		}
 	}
@@ -489,7 +491,8 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 					if (win) {
 						wind=dynamic_cast<DumpUtility *>(win);
 						if (wind) wind->dump_in_atts(att->attributes.e[c]->attributes.e[c2],flag,context);
-						box->win=win;
+						box->NewWindow(win); //incs count
+						win->dec_count();
 					} else {
 						DBG cerr <<"**** *** warning: window func not found for "<<(value?value:"(unknown)")<<endl;
 					}
@@ -508,8 +511,8 @@ void HeadWindow::WindowGone(Laxkit::anXWindow *win)
 {
 	if (!win) return;
 	for (int c=0; c<windows.n; c++) {
-		if (windows.e[c]->win==win) {
-			windows.e[c]->win=NULL;
+		if (windows.e[c]->win()==win) {
+			windows.e[c]->NewWindow(NULL);
 			if (windows.n==1) app->destroywindow(this);
 		}
 	}
@@ -528,6 +531,11 @@ int HeadWindow::init()
 	//	return 0;
 }
 
+//further menu codes. NOTE TO DEVS: These must not conflict with SplitWindow codes!!
+#define HEADW_NewWindow       50
+#define HEADW_DropTo          51
+#define HEADW_Float           52
+#define HEADW_SwapWith        53
 
 /*! \todo *** work on this..
  * <pre>
@@ -551,35 +559,35 @@ MenuInfo *HeadWindow::GetMenu()
 
 	//straight from Laxkit, do not change item ids:
 	if (mode!=MAXIMIZED) {
-		menu->AddItem("Split",1);
-		menu->AddItem("Join",2);
+		menu->AddItem("Split",SPLITW_Split);
+		menu->AddItem("Join",SPLITW_Join);
 	}
 	if (winfuncs.n) {
 		menu->AddItem("Change to");
 		menu->SubMenu();
 		for (int c=0; c<winfuncs.n; c++) {
-			menu->AddItem(winfuncs.e[c]->desc,101+c);
+			menu->AddItem(winfuncs.e[c]->desc,SPLITW_ChangeTo_Start+c);
 		}
-		menu->AddItem("(Blank)",100);
+		menu->AddItem("(Blank)",SPLITW_ChangeTo_Blank);
 		menu->EndSubMenu();
 	}
 	if (mode!=MAXIMIZED) {
-		menu->AddItem("Mark",3);
-		menu->AddItem("Swap with marked",4);
-		menu->AddItem("Swap with...",53);
+		menu->AddItem("Mark",SPLITW_Mark);
+		menu->AddItem("Swap with marked",SPLITW_Swap_With_Mark);
 
 		//laidout additions:
-		menu->AddItem("Drop To...",51);
-		menu->AddItem("Float",52);
+		menu->AddItem("Swap with...",HEADW_SwapWith);
+		menu->AddItem("Drop To...",HEADW_DropTo);
+		menu->AddItem("Float",HEADW_Float);
 	}
 
 	//straight from Laxkit, do not change item ids:
-	if (mode==MAXIMIZED) menu->AddItem("Un-Maximize",5);
-	else menu->AddItem("Maximize",5);
+	if (mode==MAXIMIZED) menu->AddItem("Un-Maximize",SPLITW_UnMaximize);
+	else menu->AddItem("Maximize",SPLITW_Maximize);
 
 	//laidout additions:
 	menu->AddSep();
-	menu->AddItem("New Window",50);
+	menu->AddItem("New Window",HEADW_NewWindow);
 	return menu;
 }
 
@@ -598,15 +606,16 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 		// Relay docTreeChange to each pane 
 		int yes=0;
 		for (int c=0; c<windows.n; c++) {
-			view=dynamic_cast<ViewWindow *>(windows.e[c]->win);
+			view=dynamic_cast<ViewWindow *>(windows.e[c]->win());
 			if (view) yes=1;
-			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win), s) yes=1;
+			else if (s=dynamic_cast<SpreadEditor *>(windows.e[c]->win()), s) yes=1;
 
 			//construct events for the panes
 			if (yes){
 				TreeChangeEvent *edata=new TreeChangeEvent(*te);
-				app->SendMessage(edata,windows.e[c]->win->object_id,"docTreeChange",object_id);
-				DBG cerr <<"---sending docTreeChange to "<<windows.e[c]->win->win_title<<endl;
+				app->SendMessage(edata,windows.e[c]->win()->object_id,"docTreeChange",object_id);
+				DBG cerr <<"---sending docTreeChange to "<<
+				DBG 	(windows.e[c]->win()->win_title?windows.e[c]->win()->win_title:"untitled")<<endl;
 				yes=0;
 			}
 		}
@@ -626,12 +635,12 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (laidout->Load(s->strs[c],&error)==0) d=laidout->curdoc;
 			if (!d) {
 				if (error) {
-					cout <<"*** imp pop up error message headwindow open document"<<endl;
+					DBG cerr <<"*** imp pop up error message headwindow open document"<<endl;
 					delete[] error; error=NULL;
 				}
 			} else {
 				if (error) {
-					cout <<"*** imp pop up warning message headwindow open document"<<endl;
+					DBG cerr <<"*** imp pop up warning message headwindow open document"<<endl;
 					delete[] error; error=NULL;
 				}
 				if (nw==laidout->numTopWindows()) {
@@ -649,27 +658,33 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"popupsplitmenu")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
-		if (s->info2==50) {
+		DBG cerr <<"popupsplitmenu: "<<s->info2<<endl;
+
+		if (s->info2==HEADW_NewWindow) {
+			 //add new window
+
 			const char *type=NULL;
-			if (curbox && curbox->win) type=curbox->win->whattype();
+			if (curbox && curbox->win()) type=curbox->win()->whattype();
 			app->addwindow(newHeadWindow(NULL,type));
 			return 0;
 
-		} else if (s->info2==52) {
+		} else if (s->info2==HEADW_Float) {
 			//Float
 
 			//pop the window to new headwindow
-			if (!curbox || !curbox->win || windows.n<=1) return 0;
+			if (!curbox || !curbox->win() || windows.n<=1) return 0;
 
 			HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
 			app->addwindow(head);
-			head->Add(curbox->win);//this reparents win
-			curbox->win=NULL;
+			head->Add(curbox->win());//this reparents win
+			curbox->NewWindow(NULL);
 
 			RemoveCurbox();
 			return 0;
 
-		} else if (s->info2==51) {
+		} else if (s->info2==HEADW_DropTo) {
+			 //set mode to select which pane to drop a window to
+
 			if (mode!=0 || !curbox) return 0;
 			DBG cerr <<"  HeadWindow:: Drop To..."<<endl;
 
@@ -692,8 +707,9 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			DBG cerr <<"***************changing mode to DROPTO"<<endl;
 			return 0;
 
-		} else if (s->info2==53) {
+		} else if (s->info2==HEADW_SwapWith) {
 			// swap with...
+
 			if (mode!=0 || !curbox) return 0;
 			DBG cerr <<"  HeadWindow:: Swap With..."<<endl;
 
@@ -772,10 +788,12 @@ int HeadWindow::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 			else side=LAX_LEFT;
 			DBG cerr <<"*******side="<<side<<endl;
 
-			anXWindow *win=curbox->win;
-			curbox->win=NULL;
+			anXWindow *win=curbox->win();
+			win->inc_count();
+			curbox->NewWindow(NULL);
 			DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
 			markedhead->Split(markedhead->FindBoxIndex(markedpane), side, win);//this reparents win
+			win->dec_count();
 			DBG cerr <<"***********markedhead->numwindows()="<<markedhead->numwindows()<<endl;
 			RemoveCurbox();
 			if (windows.n==1) {
@@ -810,7 +828,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 		return 0;
 	}
 	while (win->win_parent!=NULL) {
-		DBG cerr <<"  -----"<<win->win_title<<endl;
+		DBG cerr <<"  -----"<<(win->win_title?win->win_title:"untitled")<<endl;
 		win=win->win_parent;
 	}
 
@@ -899,7 +917,7 @@ anXWindow *HeadWindow::NewWindow(const char *wtype,anXWindow *likethis)
 			win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style);
 			if (!win || !likethis) return win;
 
-			cout <<"*** need to repair HeadWindow::NewWindow"<<endl;
+			DBG cerr <<"*** need to repair HeadWindow::NewWindow"<<endl;
 
 			// need to dump_out_atts from likethis, then if wtype is same, dump in atts,
 			// else just transfer the Document...
@@ -914,10 +932,10 @@ anXWindow *HeadWindow::NewWindow(const char *wtype,anXWindow *likethis)
 int HeadWindow::Curbox(int c)
 {
 	int cc=SplitWindow::Curbox(c);
-	if (!curbox || !curbox->win) return cc;
+	if (!curbox || !curbox->win()) return cc;
 	
-	anXWindow *win=curbox->win;
-	if (win && !strcmp(win->whattype(),"ViewWindow")) lastview=curbox->win;
+	anXWindow *win=curbox->win();
+	if (win && !strcmp(win->whattype(),"ViewWindow")) lastview=win;
 
 	return cc;
 }
@@ -928,13 +946,13 @@ int HeadWindow::HasOnlyThis(Document *doc)
 	ViewWindow *v;
 	SpreadEditor *s;
 	for (int c=0; c<windows.n; c++) {
-		if (!windows.e[c]->win) continue;
-		v=dynamic_cast<ViewWindow *>(windows.e[c]->win);
+		if (!windows.e[c]->win()) continue;
+		v=dynamic_cast<ViewWindow *>(windows.e[c]->win());
 		if (v) {
 			if (v->doc && v->doc!=doc) return 0;
 			else continue;
 		}
-		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win);
+		s=dynamic_cast<SpreadEditor *>(windows.e[c]->win());
 		if (s) {
 			if (s->doc && s->doc!=doc) return 0;
 			else continue;
