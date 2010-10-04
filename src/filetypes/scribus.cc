@@ -22,6 +22,8 @@
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 
+#include <lax/lists.cc>
+
 #include "../language.h"
 #include "scribus.h"
 #include "../laidout.h"
@@ -44,7 +46,9 @@ using namespace LaxInterfaces;
 
 
 
-static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void scribusdumpobj(FILE *f,NumStack<SomeData*> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void appendobjfordumping(NumStack<SomeData*> &pageobjects,SomeData *obj);
+static int findobj(NumStack<SomeData*> &pageobjects, Attribute *att, int i);
 
 //1.5 inches and 1/4 inch
 #define CANVAS_MARGIN_X 100.
@@ -488,6 +492,44 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	psCtmInit();
 	double pageypos=CANVAS_MARGIN_Y;
 	int pagec;
+
+	 //find object to pageobject mapping
+	NumStack<SomeData*> pageobjects; //we need to keep track of pageobject correspondence, as scribus docs
+									 //object id is the order they appear in the file, so for linked objects,
+									 //we need to know the order that they will appear!
+	for (c=start; c<=end; c++) { //for each spread
+		if (doc) spread=doc->imposition->Layout(layout,c);
+		for (p=0; p<papergroup->papers.n; p++) { //for each paper
+					
+			if (limbo && limbo->n()) {
+				appendobjfordumping(pageobjects,limbo);
+			}
+
+			if (spread) {
+				if (spread->marks) {
+					appendobjfordumping(pageobjects,spread->marks);
+				}
+
+				 // for each page in spread layout..
+				for (c2=0; c2<spread->pagestack.n; c2++) {
+					pg=spread->pagestack.e[c2]->index;
+					if (pg<0 || pg>=doc->pages.n) continue;
+
+					 // for each layer on the page..
+					for (l=0; l<doc->pages[pg]->layers.n(); l++) {
+						 // for each object in layer
+						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
+						for (c3=0; c3<g->n(); c3++) {
+							appendobjfordumping(pageobjects,g->e(c3));
+						}
+					}
+				}
+			} //if (spread)
+		} //for each paper
+		if (spread) { delete spread; spread=NULL; }
+	} //for each spread
+
+	 //now dump everything out to the file
 	for (c=start; c<=end; c++) { //for each spread
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
@@ -511,7 +553,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			transform_mult(mmmm,mmm,mm);
 			transform_mult(m,mmmm,ms); //m = mmmm * ms
 			psConcat(m); //(scribus page coord) = (laidout paper coord) * psCTM()
-			
+
 			DBG cerr <<"spread:"<<c<<"  paper:"<<p<<"  paperwidth:"<<paperwidth<<"  paperheight:"<<paperheight<<endl;
 			DBG dumpctm(psCTM());
 			DBG flatpoint pt;
@@ -547,12 +589,12 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 					  "   />\n", plandscape);
 					
 			if (limbo && limbo->n()) {
-				scribusdumpobj(f,NULL,limbo,error_ret,warning);
+				scribusdumpobj(f,pageobjects,NULL,limbo,error_ret,warning);
 			}
 
 			if (spread) {
 				if (spread->marks) {
-					scribusdumpobj(f,NULL,spread->marks,error_ret,warning);
+					scribusdumpobj(f,pageobjects,NULL,spread->marks,error_ret,warning);
 				}
 
 				 // for each page in spread layout..
@@ -568,7 +610,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							scribusdumpobj(f,NULL,g->e(c3),error_ret,warning);
+							scribusdumpobj(f,pageobjects,NULL,g->e(c3),error_ret,warning);
 						}
 					}
 					psPopCtm();
@@ -597,13 +639,85 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 }
 
 
+//! Internal function to find object to pageobject mapping.
+/*! This adds one entry per object that will actually be dumped out is scribusdumpobj().
+ *
+ * \todo *** this doesn't work for tiled impositions, anything with multi ref objects!!
+ */
+static void appendobjfordumping(NumStack<SomeData*> &pageobjects,SomeData *obj)
+{
+	ImageData *img=NULL;
+	//GradientData *grad=NULL;
+	int ptype=-1; //>0 is translatable to scribus object.
+				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
+
+	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
+		img=dynamic_cast<ImageData *>(obj);
+		if (!img || !img->filename) return;
+		ptype=PTYPE_Image;
+
+	//} else if (!strcmp(obj->whattype(),"GradientData")) {
+	//	grad=dynamic_cast<GradientData *>(obj);
+	//	if (!grad) return;
+	//	ptype=PTYPE_Laidout_Gradient;
+	
+	} else if (!strcmp(obj->whattype(),"Group")) {
+		 //must propogate transform...
+		Group *g;
+		g=dynamic_cast<Group *>(obj);
+		if (!g) return;
+
+		 // objects have GROUPS list for what groups they belong to, 
+		 // we maintain a list of current group nesting, this list will be the GROUPS
+		 // element of subsequent objects
+		 // global var groupc is a counter for how many distinct groups have been found,
+		 // which has been found already
+
+		for (int c=0; c<g->n(); c++) appendobjfordumping(pageobjects,g->e(c));
+		return;
+
+	} else if (!strcmp(obj->whattype(),"MysteryData")) {
+		MysteryData *mdata=dynamic_cast<MysteryData *>(obj);
+		if (!strcmp(mdata->importer,"Scribus")) {
+			ptype=PTYPE_Laidout_MysteryData;
+		} //else is someone else's mystery data
+	} 
+
+	if (ptype==PTYPE_None) return;
+
+	pageobjects.push(obj);
+}
+
+static int findobj(NumStack<SomeData*> &pageobjects, Attribute *att, const char *what)
+{
+	if (!att) return -1;
+
+	Attribute *a;
+	a=att->find(what);
+	if (!a) return -1;
+
+	int i; //the original object number
+	if (!IntAttribute(a->value,&i)) return -1;
+
+	MysteryData *data;
+	for (int c=0; c<pageobjects.n; c++) {
+		data=dynamic_cast<MysteryData*>(pageobjects.e[c]);
+		if (!data) continue;
+
+		if (data->nativeid==i) return c;
+	}
+
+	return -1;
+}
+
 //! Internal function to dump out the obj.
 /*! Can be Group, ImageData, or GradientData.
  *
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
+static void scribusdumpobj(FILE *f,NumStack<SomeData*> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
@@ -645,7 +759,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,NULL,g->e(c),error_ret,warning);
+			scribusdumpobj(f,pageobjects,NULL,g->e(c),error_ret,warning);
 		groups.pop();
 		psPopCtm();
 		return;
@@ -654,7 +768,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 		MysteryData *mdata=dynamic_cast<MysteryData *>(obj);
 		if (!strcmp(mdata->importer,"Scribus")) {
 			mysteryatts=mdata->attributes;
-			//***need to refigure position and orientation, pocoor, cocoor to scale to current
+			//need to refigure position and orientation, pocoor, cocoor to scale to current, done below
 			ptype=PTYPE_Laidout_MysteryData;
 		} //else is someone else's mystery data
 	} 
@@ -796,9 +910,19 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 	}
 
 
+	int leftlink=-1, rightlink=-1, toplink=-1, bottomlink=-1; //for table grids
+	int nextitem=-1, backitem=-1; //for text object chains
+	if (mysteryatts) {
+		nextitem  =findobj(pageobjects,mysteryatts,"NEXTITEM");
+		backitem  =findobj(pageobjects,mysteryatts,"BACKITEM");
+		leftlink  =findobj(pageobjects,mysteryatts,"LeftLINK");
+		rightlink =findobj(pageobjects,mysteryatts,"RightLINK");
+		toplink   =findobj(pageobjects,mysteryatts,"TopLINK");
+		bottomlink=findobj(pageobjects,mysteryatts,"BottomLINK");
+	}
+
 	fprintf(f,"  <PAGEOBJECT \n");
 	int content=-1;
-	int nextitem=-1, backitem=-1;
 	if (mysteryatts) {
 		char *name,*value;
 		for (int c=0; c<mysteryatts->attributes.n; c++) {
@@ -807,6 +931,7 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			if (!strcmp(name,"OwnPage")) continue;
 			if (!strcmp(name,"LOCALSCX")) continue;
 			if (!strcmp(name,"LOCALSCY")) continue;
+			if (!strcmp(name,"PFILE")) continue;
 			if (!strcmp(name,"ROT")) continue;
 			if (!strcmp(name,"XPOS")) continue;
 			if (!strcmp(name,"YPOS")) continue;
@@ -818,6 +943,12 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 			if (!strcmp(name,"NUMCO")) continue;
 			if (!strcmp(name,"POCOOR")) continue;
 			if (!strcmp(name,"COCOOR")) continue;
+			if (!strcmp(name,"NEXTITEM")) continue;
+			if (!strcmp(name,"BACKITEM")) continue;
+			if (!strcmp(name,"LeftLINK")) continue;
+			if (!strcmp(name,"RightLINK")) continue;
+			if (!strcmp(name,"TopLINK")) continue;
+			if (!strcmp(name,"BottomLINK")) continue;
 			if (!strcmp(name,"content:")) { content=c; continue; }
 			fprintf(f,"    %s=\"%s\"\n", name, value?value:"");
 		}
@@ -842,11 +973,18 @@ static void scribusdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int
 				  "    OnMasterPage=\"\" \n");    //not 1.2
 	}
 	fprintf(f,    "    OwnPage=\"%d\" \n",currentpage);  //not 1.2, the page on object is on? ****
+
+	 //always override object links:
+	fprintf(f,    "    BACKITEM=\"%d\" \n"     //Number of the previous frame of linked textframe
+				  "    NEXTITEM=\"%d\" \n"     //number of next frame for linked text frames
+				  "    LeftLINK=\"%d\" \n"     //object number in table layout
+				  "    RightLINK=\"%d\" \n"     //object number in table layout
+				  "    TopLINK=\"%d\" \n"       //object number in table layout
+				  "    BottomLINK=\"%d\" \n",   //object number in table layout
+				  		backitem,nextitem,
+				  		leftlink,rightlink,toplink,bottomlink);
 	if (!mysteryatts) {
 		fprintf(f,"    AUTOTEXT=\"0\" \n");     //1 if object is auto text frame
-		fprintf(f,"    BACKITEM=\"%d\" \n"    //Number of the previous frame of linked textframe
-				  "    NEXTITEM=\"%d\" \n",      //number of next frame for linked text frames
-				  		backitem,nextitem);
 
 		fprintf(f,"    PLTSHOW=\"0\" \n"        //(opt) 1 if path for text on path should be visible
 				  "    RADRECT=\"0\" \n"        //(opt) corner radius of rounded rectangle
@@ -1311,6 +1449,10 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				mdata->maxx=w/72;
 				mdata->maxy=h/72;
 				mdata->attributes=object->duplicate();
+				//int i=-1;
+				//if (mdata->attributes->find("PFILE",&i)) {
+				//	mdata->attributes.remove(i);
+				//}
 				if (in->scaletopage!=0) {
 					 //apply extra page transform to fit document page
 					double mt[6];

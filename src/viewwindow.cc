@@ -890,7 +890,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 
 		 // clamp tospread to the imposition's spread range
 		if (max>=0) {
-			if (tospread>=max) spreadi=max;
+			if (tospread>=max) tospread=max-1;
 			else if (tospread<0) tospread=0;
 		} else tospread=-1;
 
@@ -969,7 +969,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	setCurobj(&voc);
 
 	char scratch[50];
-	sprintf(scratch,_("Viewing spread number %d"),spreadi);
+	sprintf(scratch,_("Viewing spread number %d/%d"),spreadi+1,doc->imposition->NumSpreads(viewmode));
 	postmessage(scratch);
 }
 
@@ -1802,7 +1802,8 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	ClearSearch();
 	clearCurobj();
 	flatpoint p=dp->screentoreal(x,y);
-	if (curobj.spread()==1 && spread->pagestack.e[curobj.spreadpage()]->outline->pointin(p)) {
+	if (curobj.spread()==1 && curobj.spreadpage()>=0 
+			&& spread->pagestack.e[curobj.spreadpage()]->outline->pointin(p)) {
 		DBG curobj.context.out("context change");
 		return 1; // context was cur page***
 	}
@@ -3137,7 +3138,7 @@ int ViewWindow::init()
  */
 int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"ViewWindow "<<win_title<<" got "<<(mes?mes:"unknown")<<endl;
+	DBG cerr <<"ViewWindow "<<(win_title?win_title:"a viewwindow")<<" got "<<(mes?mes:"unknown")<<endl;
 
 	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
 		int c=viewport->Event(data,mes);
@@ -3510,6 +3511,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			char scratch[100];
 			sprintf(scratch,_("Page number %d added (%d total)."),curpage+1,doc->pages.n);
 			PostMessage(scratch);
+
+			((LaidoutViewport *)viewport)->SelectPage(curpage+1);
+			updateContext(0);
 		} else PostMessage(_("Error adding page."));
 		return 0;
 
@@ -3525,6 +3529,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			char scratch[100];
 			sprintf(scratch,_("Page %d deleted. %d remaining."),curpage,doc->pages.n);
 			PostMessage(scratch);
+			
+			((LaidoutViewport *)viewport)->SelectPage(curpage);
+			updateContext(0);
 		} else if (c==-2) PostMessage(_("Cannot delete the only page."));
 		else PostMessage(_("Error deleting page."));
 		
@@ -3886,12 +3893,15 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			}
 		}
 		return 0;
+
 	} else if (ch==LAX_Left || ch=='T') {  // left, prev tool
 		SelectTool(-2);
 		return 0;
+
 	} else if (ch==LAX_Right || ch=='t') { //right, next tool
 		SelectTool(-1);
 		return 0;
+
 	} else if (ch=='<') { //prev page
 		DBG cerr <<"'<'  should be prev page"<<endl;
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-2);
@@ -3902,6 +3912,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		}
 		updateContext(0);
 		return 0;
+
 	} else if (ch=='>') { //next page
 		DBG cerr <<"'>' should be prev page"<<endl;
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-1);
@@ -3911,6 +3922,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		}
 		updateContext(0);
 		return 0;
+
 	} else if (ch=='r') {
 		//**** for debugging:
 		pid_t pid=getpid();
@@ -3918,17 +3930,21 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		sprintf(blah,"more /proc/%d/status",pid);
 		system(blah);
 		return 0;
+
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
 		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
 		return 0;
+
 	} else if (ch=='n' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) { //reset document
 		//***
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
 		app->addwindow(new HelpWindow());
 		return 0;
+
 	} else if (ch==LAX_F2 && (state&LAX_STATE_MASK)==0) {
 		app->rundialog(new AboutWindow());
 		return 0;
+
 	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {
 		//*** popup a SpreadEditor
 		char blah[30+strlen(doc->Name(1))+1];
@@ -3936,6 +3952,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;
 	}
+
 	return ViewerWindow::CharInput(ch,buffer,len,state,d);
 }
 

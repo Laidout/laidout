@@ -25,7 +25,8 @@ objs= \
 	simplenet.o \
 	signatures.o \
 	signatureinterface.o \
-	netdialog.o
+	netdialog.o \
+	singleseditor.o
 
 
 

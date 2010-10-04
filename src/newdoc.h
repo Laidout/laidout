@@ -35,6 +35,7 @@ class NewDocWindow : public Laxkit::RowFrame
 {
 	int mx,my;
 	virtual void sendNewDoc();
+	const char *pagesDescription(int updatetoo);
  public:
 	int curorientation;
 	 // the names of each, so to change Left->Inside, Top->Inside (like calender), etc
@@ -46,10 +47,8 @@ class NewDocWindow : public Laxkit::RowFrame
 	Laxkit::PtrStack<PaperStyle> *papersizes;
 	Laxkit::SliderPopup *impsel;
 	Laxkit::LineEdit *lineedit;
-	Laxkit::LineInput *marginl,*marginr,*margint,*marginb;
-	Laxkit::LineInput *insetl,*insetr,*insett,*insetb;
-	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*tilex,*tiley,*impfromfile;
-	Laxkit::MessageBar *impmesbar;
+	Laxkit::LineInput *saveas,*paperx,*papery,*numpages,*impfromfile;
+	Laxkit::MessageBar *impmesbar, *pageinfo;
 	Laxkit::CheckBox *defaultpage,*custompage;
 
  	NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,

@@ -26,7 +26,7 @@ class MysteryData : public LaxInterfaces::SomeData
  public:
 	char *importer;
 	char *name;
-	unsigned long nativeid;
+	long nativeid;
 	int numpoints;
 	flatpoint *outline;
 	LaxFiles::Attribute *attributes;

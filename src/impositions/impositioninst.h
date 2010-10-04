@@ -26,11 +26,14 @@ class Singles : public Imposition
 {
   public:
 	double insetl,insetr,insett,insetb;
+	double marginl,marginr,margint,marginb;
+	double gapx,gapy;
 	int tilex,tiley; 
 	RectPageStyle *pagestyle;
 
 	Singles();
 	virtual ~Singles();
+	virtual const char *whattype() { return "Singles"; }
 	static ImpositionResource **getDefaultResources();
 
 	virtual void GetDimensions(int which, double *x, double *y);

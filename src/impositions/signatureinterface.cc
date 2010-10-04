@@ -37,6 +37,44 @@ using namespace std;
 //size of the fold indicators on left of screen
 #define INDICATOR_SIZE 10
 
+
+
+#define SP_None           0
+
+#define SP_Tile_X         1
+#define SP_Tile_Y         2
+#define SP_Tile_Gap_X     3
+#define SP_Tile_Gap_Y     4
+
+#define SP_Inset_Top      5
+#define SP_Inset_Bottom   6
+#define SP_Inset_Left     7
+#define SP_Inset_Right    8
+
+#define SP_H_Folds        9
+#define SP_V_Folds        10
+
+#define SP_Trim_Top       11
+#define SP_Trim_Bottom    12
+#define SP_Trim_Left      13
+#define SP_Trim_Right     14
+
+#define SP_Margin_Top     15
+#define SP_Margin_Bottom  16
+#define SP_Margin_Left    17
+#define SP_Margin_Right   18
+
+#define SP_Binding        19
+#define SP_Up             20
+#define SP_X              21
+#define SP_Y              22
+
+#define SP_Sheets_Per_Sig 23
+#define SP_Stack_Or_Add   24
+
+#define SP_FOLDS          100
+
+
 //------------------------------------- SignatureInterface --------------------------------------
 	
 /*! \class SignatureInterface 
@@ -355,13 +393,14 @@ int SignatureInterface::Refresh()
 	w=patternwidth;
 	h=patternheight;
 
-	x=signature->insetleft;
 	flatpoint pts[4],fp;
 	int facedown=0;
 	int hasface;
 	int rrr,ccc;
 	double xx,yy;
 	int xflip, yflip;
+
+	x=signature->insetleft;
 	for (int tx=0; tx<signature->tilex; tx++) {
 	  y=signature->insetbottom;
 	  for (int ty=0; ty<signature->tiley; ty++) {
@@ -445,12 +484,13 @@ int SignatureInterface::Refresh()
 				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
 				dp->NewFG(0.,1.,0.);
 
-				 //draw a solid line, but a dashed line toward the inner part of the page...??
+				 //todo: draw a solid line, but a dashed line toward the inner part of the page...??
 				int b=signature->binding;
-				if (b=='l')      dp->drawline(xx,yy,    xx,yy+eh);
-				else if (b=='r') dp->drawline(xx+ew,yy, xx+ew,yy+eh);
-				else if (b=='t') dp->drawline(xx,yy+eh, xx+ew,yy+eh);
-				else if (b=='b') dp->drawline(xx,yy,    xx+ew,yy);
+				double in=ew*.05;
+				if (b=='l')      dp->drawline(xx+in,yy,    xx+in,yy+eh);
+				else if (b=='r') dp->drawline(xx-in+ew,yy, xx-in+ew,yy+eh);
+				else if (b=='t') dp->drawline(xx,yy-in+eh, xx+ew,yy-in+eh);
+				else if (b=='b') dp->drawline(xx,yy+in,    xx+ew,yy+in);
 
 			}
 		  } //cc
@@ -635,42 +675,6 @@ void SignatureInterface::getFoldIndicatorPos(int which, double *x,double *y, dou
 
 	*y+=(which+1)*(2*radius-3);
 }
-
-
-#define SP_None           0
-
-#define SP_Tile_X         1
-#define SP_Tile_Y         2
-#define SP_Tile_Gap_X     3
-#define SP_Tile_Gap_Y     4
-
-#define SP_Inset_Top      5
-#define SP_Inset_Bottom   6
-#define SP_Inset_Left     7
-#define SP_Inset_Right    8
-
-#define SP_H_Folds        9
-#define SP_V_Folds        10
-
-#define SP_Trim_Top       11
-#define SP_Trim_Bottom    12
-#define SP_Trim_Left      13
-#define SP_Trim_Right     14
-
-#define SP_Margin_Top     15
-#define SP_Margin_Bottom  16
-#define SP_Margin_Left    17
-#define SP_Margin_Right   18
-
-#define SP_Binding        19
-#define SP_Up             20
-#define SP_X              21
-#define SP_Y              22
-
-#define SP_Sheets_Per_Sig 23
-#define SP_Stack_Or_Add   24
-
-#define SP_FOLDS          100
 
 
 

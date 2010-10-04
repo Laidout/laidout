@@ -11,8 +11,7 @@ VERSION 0.091
 (done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
        Images should maintain their aspect ratio by default when scaling
        Scribus import must make sure linked text and linked table mystery data behave properly on export
-       Generic fold and trim imposition
-       Fix page bleeding for signatures and nets
+(done) Generic fold and trim imposition
 (done) Be able to load imposition instances, a form of resource
 (done) Import images as flow/centered within page margins, not within page outline
 (done) Import images with alignment per page type into the page margin region
@@ -21,7 +20,6 @@ VERSION 0.091
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
-       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
@@ -29,7 +27,9 @@ VERSION 0.091
 VERSION 0.092
 -------------
        At bare minimum, path interface use should not cause a seg fault
+       Fix page bleeding for signatures and nets
        Scribus import must support master pages
+       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Gui for modifying Page Labels
        Net imposition interactive unwrapper and build net interface
