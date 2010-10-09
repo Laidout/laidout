@@ -584,16 +584,16 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s                      #applying inset or folding\n",spc);
 		fprintf(f,"%sautoaddsheets no      #If no, then more pages means use more signatures.\n",spc);
 		fprintf(f,"%s                      #If yes, then add more sheets, and fold all as a single signature.\n",spc);
-		fprintf(f,"%sinsettop    0  #How much to trim off the top of paper before partitioning for folds\n",spc);
-		fprintf(f,"%sinsetbottom 0  #How much to trim off the bottom of paper before partitioning for folds\n",spc);
-		fprintf(f,"%sinsetleft   0  #How much to trim off the left of paper before partitioning for folds\n",spc);
-		fprintf(f,"%sinsetright  0  #How much to trim off the right of paper before partitioning for folds\n",spc);
-		fprintf(f,"%stilegapx 0     #How much space to put between folding areas horizontally\n",spc);
-		fprintf(f,"%stilegapy 0     #How much space to put between folding areas vertically\n",spc);
-		fprintf(f,"%stilex 1        #The number of folding sections horizontally to divide a piece of paper\n",spc);
-		fprintf(f,"%stiley 1        #The number of folding sections vertically to divide a piece of paper\n",spc);
+		fprintf(f,"%sinsettop    0      #How much to trim off the top of paper before partitioning for folds\n",spc);
+		fprintf(f,"%sinsetbottom 0      #How much to trim off the bottom of paper before partitioning for folds\n",spc);
+		fprintf(f,"%sinsetleft   0      #How much to trim off the left of paper before partitioning for folds\n",spc);
+		fprintf(f,"%sinsetright  0      #How much to trim off the right of paper before partitioning for folds\n",spc);
+		fprintf(f,"%stilegapx 0         #How much space to put between folding areas horizontally\n",spc);
+		fprintf(f,"%stilegapy 0         #How much space to put between folding areas vertically\n",spc);
+		fprintf(f,"%stilex 1            #The number of folding sections horizontally to divide a piece of paper\n",spc);
+		fprintf(f,"%stiley 1            #The number of folding sections vertically to divide a piece of paper\n",spc);
 		fprintf(f,"\n");
-		fprintf(f,"%snumhfolds 0       #The number of horizontal fold lines of a folding pattern\n",spc);
+		fprintf(f,"%snumhfolds 0        #The number of horizontal fold lines of a folding pattern\n",spc);
 		fprintf(f,"%snumvfolds 0        #The number of vertical fold lines of a folding pattern\n",spc);
 		fprintf(f,"%sfold 3 Under Left  #There will be numhfolds+numvfolds fold blocks. When reading in, the number\n",spc);
 		fprintf(f,"%sfold 2 Top         #of these blocks will override values of numhfolds and numvfolds.\n",spc);
@@ -603,19 +603,19 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s                   #direction, but the fold is behind as you look at it,\n",spc);
 		fprintf(f,"%s                   #rather than the default of over and on top.\n",spc);
 		fprintf(f,"\n");
-		fprintf(f,"%sbinding left  #left, right, top, or bottom. The side to expect a document to be bound.\n",spc);
-		fprintf(f,"%s              #Any trim value for the binding edge will be ignored.\n",spc);
-		fprintf(f,"%strimtop    0  #How much to trim off the top of a totally folded section\n",spc);
-		fprintf(f,"%strimbottom 0  #How much to trim off the bottom of a totally folded section\n",spc);
-		fprintf(f,"%strimleft   0  #How much to trim off the left of a totally folded section\n",spc);
-		fprintf(f,"%strimright  0  #How much to trim off the right of a totally folded section\n",spc);
-		fprintf(f,"%smargintop    0  #How much of a margin to apply to totally folded pages.\n",spc);
-		fprintf(f,"%smarginbottom 0  #Inside and outside margins are automatically kept track of.\n",spc);
+		fprintf(f,"%sbinding left       #left, right, top, or bottom. The side to expect a document to be bound.\n",spc);
+		fprintf(f,"%s                   #Any trim value for the binding edge will be ignored.\n",spc);
+		fprintf(f,"%strimtop    0       #How much to trim off the top of a totally folded section\n",spc);
+		fprintf(f,"%strimbottom 0       #How much to trim off the bottom of a totally folded section\n",spc);
+		fprintf(f,"%strimleft   0       #How much to trim off the left of a totally folded section\n",spc);
+		fprintf(f,"%strimright  0       #How much to trim off the right of a totally folded section\n",spc);
+		fprintf(f,"%smargintop    0     #How much of a margin to apply to totally folded pages.\n",spc);
+		fprintf(f,"%smarginbottom 0     #Inside and outside margins are automatically kept track of.\n",spc);
 		fprintf(f,"%smarginleft   0\n",spc);
 		fprintf(f,"%smarginright  0\n",spc);
-		fprintf(f,"%sup top          #When displaying pages, this direction should be toward the top of the screen\n",spc);
-		fprintf(f,"%spositivex right #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
-		fprintf(f,"%spositivey top   #(optional) Default to the same direction as up\n",spc);
+		fprintf(f,"%sup top             #When displaying pages, this direction should be toward the top of the screen\n",spc);
+		fprintf(f,"%spositivex right    #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
+		fprintf(f,"%spositivey top      #(optional) Default to the same direction as up\n",spc);
 		return;
 	}
 	fprintf(f,"%ssheetspersignature %d\n",spc,sheetspersignature);
@@ -1263,7 +1263,11 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
 				  "%s  height 11\n", spc,spc,spc,spc);
 		
 		fprintf(f,"%sshowwholecover no #Whether to let the front cover bleed over onto the back cover\n",spc);
-		signature->dump_out(f,indent,-1,NULL);
+		if (signature) signature->dump_out(f,indent,-1,NULL);
+		else {
+			Signature sig;
+			sig.dump_out(f,indent,-1,NULL);
+		}
 		return;
 	}
 

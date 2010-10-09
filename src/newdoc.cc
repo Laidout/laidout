@@ -244,16 +244,16 @@ int NewDocWindow::init()
 			            _("Save As:"),where,0,
 			            0,0,1,0,3,3);
 	if (where) { delete[] where; where=NULL; }
-	AddWin(saveas, 300,0,2000,50,0, linpheight,0,0,50,0);
+	AddWin(saveas,1, 300,0,2000,50,0, linpheight,0,0,50,0, -1);
 	last=tbut=new Button(this,"saveas",NULL,0, 0,0,0,0, 1, 
 			last,object_id,"saveas",
 			-1,
 			"...",NULL,NULL,3,3);
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();//*** forced linebreak
 	
 	 //add thin spacer
-	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);//*** forced linebreak
+	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);//*** forced linebreak
 
 
 	 // -------------- Paper Size --------------------
@@ -273,15 +273,15 @@ int NewDocWindow::init()
 						last,object_id,"paper x",
 			            _("Paper Size  x:"),(o&1?blah2:blah),0,
 			            100,0,1,1,3,3);
-	AddWin(paperx, paperx->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(paperx,1, paperx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	 // -----Paper Size Y
 	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"paper y",
 			            _("y:"),(o&1?blah:blah2),0,
 			           100,0,1,1,3,3);
-	AddWin(papery, papery->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//*** forced linebreak
+	AddWin(papery,1, papery->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
 
 	 // -----Paper Name
     SliderPopup *popup;
@@ -291,15 +291,15 @@ int NewDocWindow::init()
 		popup->AddItem(papersizes->e[c]->name,c);
 	}
 	popup->Select(c2);
-	AddWin(popup, 200,100,50,50,0, linpheight,0,0,50,0);
+	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
 	
 	 // -----Paper Orientation
 	last=popup=new SliderPopup(this,"paperOrientation",NULL,0, 0,0, 0,0, 1, last,object_id,"orientation");
 	popup->AddItem(_("Portrait"),0);
 	popup->AddItem(_("Landscape"),1);
 	popup->Select(o&1?1:0);
-	AddWin(popup, 200,100,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);// forced linebreak
+	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);// forced linebreak
 
 	 // -----Number of pages
 	int npages=1;
@@ -311,13 +311,13 @@ int NewDocWindow::init()
 	numpages->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_OFF,1);
 	numpages->SetText(npages);
 	numpages->tooltip(_("The number of pages with which to start a document."));
-	AddWin(numpages, numpages->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(numpages,1, numpages->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 	pageinfo=mesbar=new MessageBar(this,"pageinfo",NULL,MB_MOVE, 0,0, 0,0, 0, pagesDescription(0));
-	AddWin(mesbar, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);
+	AddWin(mesbar,1, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);
 
-	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
+	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
 
 
 	 // ------------------- printing misc ---------------------------
@@ -328,7 +328,7 @@ int NewDocWindow::init()
 			            _("Default dpi:"),NULL,0,
 			            0,0,1,1,3,3);
 	linp->SetText(d);
-	AddWin(linp, linp->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, linp->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	//AddWin(NULL, 2000,2000,0,50, 0,0,0,0,0);//*** forced linebreak
 	
 
@@ -356,7 +356,7 @@ int NewDocWindow::init()
 //	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", 255,255,255);
 //	AddWin(cbox, 40,0,50,50,0, linpheight,0,0,50,0);
 
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//*** forced linebreak
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
 	
 //	 // ------- target printer: ___whatever____ (file, pdf, html, png, select ppd
 //	last=linp=new LineInput(this,"printer",LINP_ONLEFT, 5,250,0,0, 0, 
@@ -375,13 +375,13 @@ int NewDocWindow::init()
 
 
 	 //add thin spacer
-	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);//*** forced linebreak
+	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);//*** forced linebreak
 
 
 	 //------------- Imposition selection menu ------------------
 	
 	mesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
-	AddWin(mesbar, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0);
+	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
 	last=impsel=new SliderPopup(this,"Imposition",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"imposition");
 	int whichimp=0;
@@ -405,28 +405,28 @@ int NewDocWindow::init()
 	impsel->SetState(-1,SLIDER_IGNORE_ON_BROWSE,1);
 	impsel->Select(whichimp);
 	impsel->WrapToExtent();
-	AddWin(impsel, impsel->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(impsel,1, impsel->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 
 	 //--------edit imp...
-	AddWin(NULL, linpheight/2,0,0,50,0, 20,0,0,50,0);
+	AddWin(NULL,0, linpheight/2,0,0,50,0, 20,0,0,50,0, -1);
 	last=tbut=new Button(this,"impedit",NULL,0, 0,0,0,0, 1, 
 			last,object_id,"impedit",
 			-1,
 			"Edit imposition...",NULL,NULL,3,3);
 	tbut->tooltip(_("Edit the currently selected imposition"));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);//line break
+	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);//line break
 
 
 	 //------ imposition brief description
 	impmesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_LEFT|MB_MOVE, 0,0, 0,0, 0,
 			(doc?doc->imposition->BriefDescription()
 			 :laidout->impositionpool.e[0]->description));
-	AddWin(impmesbar, 2500,2300,0,50,0, linpheight,0,0,50,0);
+	AddWin(impmesbar,1, 2500,2300,0,50,0, linpheight,0,0,50,0, -1);
 
-	AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
+	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
 
 
 	 //------- scale pages to fit
@@ -435,9 +435,9 @@ int NewDocWindow::init()
 		last=box=new CheckBox(this,"scalepages",NULL,CHECK_LEFT, 0,0,0,0,1, 
 				last,object_id,"scalepages", _("Scale pages to fit new imposition"),5,5);
 		box->tooltip(_("Scale each page up or down to fit the page sizes in a new imposition"));
-		AddWin(box, box->win_w,0,0,50,0, linpheight,0,0,50,0);
+		AddWin(box,1, box->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 
-		AddWin(NULL, 2000,2000,0,50,0, textheight*2/3,0,0,0,0);// forced linebreak, vertical spacer
+		AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
 	}
 
 
@@ -445,18 +445,18 @@ int NewDocWindow::init()
 
 	//------------------------------ final ok -------------------------------------------------------
 
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);
+	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
 	
 	 // [ ok ]   [ cancel ]
 	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
 						 BUTTON_OK,
 						 doc?_("Apply settings"):_("Create Document"),
 						 NULL,NULL);
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 20,0,0,50,0, 5,0,0,50,0); // add space of 20 pixels
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
 
 	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 
 	
@@ -881,7 +881,7 @@ int NewProjectWindow::init()
 			            _("Project Name:"),NULL,0,
 			            0,0,1,0,3,3);
 	last->tooltip(_("A descriptive name for the project"));
-	AddWin(last, 300,0,2000,50,0, linpheight,0,0,50,0);
+	AddWin(last,1, 300,0,2000,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 	 //------------Project file name
@@ -891,36 +891,36 @@ int NewProjectWindow::init()
 							0,0,1,0,3,3);
 	projectfile=linp->GetLineEdit();
 	last->tooltip(_("Project file location"));
-	AddWin(last, 300,0,2000,50,0, linpheight,0,0,50,0);
+	AddWin(last,1, 300,0,2000,50,0, linpheight,0,0,50,0, -1);
 	last=tbut=new Button(this,"saveprojectfile",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"projfilebrowse",
 						-1,
 						"...",NULL,NULL,3,3);
 	last->tooltip(_("Browse for a location"));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	 
 	 //-------------Project Directory
 	last=useprojectdir=new CheckBox(this,"usedir",NULL,CHECK_LEFT, 0,0,0,0,1, 
 									last,object_id,"usedir", _("Create directory"),5,5);
 	useprojectdir->tooltip(_("Check if you want to use a dedicated project directory"));
-	AddWin(useprojectdir, useprojectdir->win_w,0,0,50,0, linpheight,0,0,50,0);
+	AddWin(useprojectdir,1, useprojectdir->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 	last=projectdir=new LineEdit(this,"projdir",NULL,
 								LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
 								0,0,0,0, 1, 
 								last,object_id,"projdirinput",
 								NULL,0);
 	last->tooltip(_("Optional directory for storing project resources and data"));
-	AddWin(last, 200,0,2000,50,0, linpheight,0,0,50,0);
+	AddWin(last,1, 200,0,2000,50,0, linpheight,0,0,50,0, -1);
 	last=tbut=new Button(this,"saveprojectdir",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"projdirbrowse",
 						-1,
 						"...",NULL,NULL,3,3);
 	last->tooltip(_("Browse for a location"));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);
+	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
 
 	
 
@@ -952,8 +952,8 @@ int NewProjectWindow::init()
 						last,object_id,"dpi",
 			            _("Default dpi:"),"360",0,
 			            0,0,1,1,3,3);
-	AddWin(linp, linp->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak
+	AddWin(linp,1, linp->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak
 	
 // ******* uncomment when implemented!!!
 //	 // default unit: __inch___
@@ -976,7 +976,7 @@ int NewProjectWindow::init()
 	//last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", 255,255,255);
 	//AddWin(cbox, 40,0,50,50,0, linpheight,0,0,50,0);
 
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak
 	
 //	 // target printer: ___whatever____ (file, pdf, html, png, select ppd
 //	last=linp=new LineInput(this,"printer",LINP_ONLEFT, 5,250,0,0, 0, 
@@ -995,15 +995,15 @@ int NewProjectWindow::init()
 	
 	//------------------------------ final ok -------------------------------------------------------
 
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);
+	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
 	
 	 // [ ok ]   [ cancel ]
 	last=tbut=new Button(this,"ok",NULL,0,0,0,0,0,1, last,object_id,"Ok", BUTTON_OK,_("Create Project"));
 	tbut->State(LAX_OFF);
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 20,0,0,50,0, 5,0,0,50,0); // add space of 20 pixels
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
 	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL,0,0,0,0,1, last,object_id,"Cancel");
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 	UpdateOkToCreate();
 

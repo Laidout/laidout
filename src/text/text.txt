@@ -46,8 +46,9 @@ objects anchored in text stream, positions:
  tex can automatically collect figures, and put them on a special page, auto numbering of figures
 
 
-formatting:
----------
+-----------------------------------------
+Essential stream/text features
+----------------------------
 initial characters: initial quotes hang out, number of lines long, wrap to box or to glyph/area
 	"1st" char, then some number of next chars.. apply to 1st pp of a section??
 research: find compromise between tex, css, svg, scribus layout mechanisms
@@ -79,6 +80,30 @@ language switches:
 	<es>cosa</es>
    </i18n>
 
+
+drop caps
+lists, bullet or numbered
+Baseline grid across columns, anchor points across streams to line up translations
+hanging punctuation
+bibliography, toc, footnotes
+section/subsection control
+continued on page ?? <- auto update
+
+character substitution, like for elipses, dashes, ff, other ligatures, etc
+
+"Math equations support"
+"Story Editor"                            
+"Tabstops that lie on arbitrary paths, not just vertical and horizontal lines"
+"Text on a line"                            
+"Convert Text to editable path"                            
+Tables that can optionally span multiple pages
+"Automatic Hyphenation and justification"                            
+"Insert sample gibberish text!! Yeah!"                            
+"The power of <a href=\"http://www.tug.org\">TeX</a>"
+
+
+
+
 line breaking:
 ------------
 choose strategy:
@@ -88,3 +113,99 @@ choose strategy:
 
 
 
+
+
+Streams divided into chunks:
+---------------------------
+bgp chunk,  a squishybox
+---------
+width
+glue width, only used if not eol
+shrink
+grow
+penalty
+
+pg chunk
+--------
+penalty
+width (at eol only) , such as hanging punctuation
+width (not at eol only) , such as spaces
+shrink
+grow
+flag
+
+tab chunk
+
+font chunk
+font with auto-hyphen chunk
+
+linebreak chunk
+
+region break chunk
+
+section break chunk: depth of break, biggest is page break?? chapter break??
+
+page break chunk
+
+object chunk
+floating object chunk
+
+
+----- STYLE vvvv   ^^^^^ METRICS ----------
+
+blocks of text and objects
+each block can maybe be subdivided.
+along each subdivision, there are special cases for hanging punctuation, and hyphens
+each block points to a single style block.
+each style block can point to many stream blocks
+style blocks can be temporary, or stored somewhere in the stylemanager
+links to biblio, footnotes, toc, index are instances of style blocks
+each style block points to style info
+all style blocks cascade based on what of style info each style block says to use
+each stream block has extra potential metric info
+each stream block has specific coordinates of layout info, which need to be regenerated on any text change
+		--may not immediately update metrics, or use a faster line breaker until user says to 
+		  do it all
+
+
+breaks: line, section, chapter, page
+
+
+
+---------------------------
+Font styles
+------------------------
+----char styles:
+underline
+word underline
+strikethrough
+custom decoration
+small caps
+all caps
+no caps
+font size
+outline (artificial stroking of contour)
+bold   (artificial growing and filling of contour, or selection of bold font of same type)
+italic (artificial shearing)
+color, including alpha
+bg color (highlighting)
+drop shadow
+
+----spacing styles:
+char horizontal scaling
+kerning before
+kerning after
+allowing hyphens
+hyphen width,s,g, penalty
+space w,s,g  (as percent of overriding font size)
+inner word shrink, grow
+before pp
+after pp
+inside pp
+left margin 1st
+left margin normal
+right margin
+tab lines
+drop caps at front of pp: num lines to span, how to wrap, hang initial punc..
+justification (0..100) left=0, right=100, center=50, full justify
+text flow direction

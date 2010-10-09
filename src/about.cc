@@ -71,8 +71,9 @@ int AboutWindow::preinit()
 	MessageBar *mesbar=new MessageBar(this,"aboutmesbar",NULL,MB_CENTER|MB_TOP|MB_MOVE, 0,0,0,0,0,about);
 	delete[] about;
 			
-	AddWin(mesbar,	mesbar->win_w,mesbar->win_w,0,50,0,
-					mesbar->win_h,mesbar->win_h,0,50,0);
+	AddWin(mesbar,1, mesbar->win_w,mesbar->win_w,0,50,0,
+					mesbar->win_h,mesbar->win_h,0,50,0,
+					-1);
 	AddNull();
 	AddButton(BUTTON_OK);
 	

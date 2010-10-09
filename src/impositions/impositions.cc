@@ -82,6 +82,26 @@ Imposition *newImpositionByType(const char *impos)
 	return NULL;
 }
 
+//! For file format dump, write out type definitions for Singles, NetImposition, and SignatureImposition.
+/*! \ingroup pools
+ */
+void dumpOutImpositionTypes(FILE *f,int indent)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+	Singles singles;
+	fprintf(f,"\n%simposition Singles\n",spc);
+	singles.dump_out(f,indent+2,-1,NULL);
+
+	SignatureImposition sig;
+	fprintf(f,"\n%simposition SignatureImposition\n",spc);
+	sig.dump_out(f,indent+2,-1,NULL);
+
+	NetImposition net;
+	fprintf(f,"\n%simposition NetImposition\n",spc);
+	net.dump_out(f,indent+2,-1,NULL);
+}
+
 //--------------------------------- GetBuiltinImpositionPool -------------------------------------
 
 //! Return a stack of defined impositions.

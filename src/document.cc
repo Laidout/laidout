@@ -896,14 +896,17 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s                              #is currently ignored when reading in again.\n",spc);
 		
 		 //imposition
-		fprintf(f,"%s#A document has only 1 of the following impositions attached to it.\n",spc);
-		fprintf(f,"%s#These are all the imposition resources currently installed:\n",spc);
+		fprintf(f,"%s#A document has only 1 imposition. It can be one of any imposition resources\n",spc);
+		fprintf(f,"%s#available, or built from scratch from one of the base imposition types..\n",spc);
+		fprintf(f,"%s#These are all the imposition resources currently available:\n",spc);
 		for (int c=0; c<laidout->impositionpool.n; c++) {
-			fprintf(f,"\n%simposition %s\n",spc,laidout->impositionpool.e[c]->name);
+			fprintf(f,"%simposition %s\n",spc,laidout->impositionpool.e[c]->name);
 			//laidout->impositionpool.e[c]->dump_out(f,indent+2,-1,NULL);
 			// *** need to figure out which actual styledefs are accessed, and output formats of those
 			// base imposition classes, not just resource names!!!
 		}
+		fprintf(f,"\n%s#These are all the base imposition types currently available:\n",spc);
+		dumpOutImpositionTypes(f,indent);
 	
 		 //page labels
 		fprintf(f,"\n\n%s#The page labels for a document are defined within zero or more page ranges.\n",spc);

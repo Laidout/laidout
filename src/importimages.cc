@@ -173,7 +173,7 @@ int ImportImagesDialog::init()
 	dialog_style|=FILES_PREVIEW;
 	FileDialog::init();
 	AddNull();
-	AddWin(NULL, 2000,1990,0,50,0, 15,0,0,50,0);
+	AddWin(NULL,0, 2000,1990,0,50,0, 15,0,0,50,0, -1);
 
 	 // set up the extra windows....
 	  
@@ -243,41 +243,41 @@ int ImportImagesDialog::init()
 	linp->SetLabel(" ");
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
 	c=findWindowIndex("file");
-	AddWin(new MessageBar(this,"file",NULL,MB_MOVE, 0,0, 0,0, 0, "File? "), c);
+	AddWin(new MessageBar(this,"file",NULL,MB_MOVE, 0,0, 0,0, 0, "File? "), 1,c);
 	tbut=new Button(this,"prev file",NULL,0, 0,0,0,0, 1, 
 					linp,object_id,"prevfile",
 					0,"<",NULL,NULL,3,3);
 	tbut->tooltip(_("Jump to previous selected file"));
-	AddWin(tbut,c+1);
+	AddWin(tbut,1, c+1);
 	tbut=new Button(this,"next file",NULL,0, 0,0,0,0, 1, 
 					tbut,object_id,"nextfile",
 					0,
 					">",NULL,NULL,3,3);
 	tbut->tooltip(_("Jump to next selected file"));
-	AddWin(tbut,c+2);
+	AddWin(tbut,1, c+2);
 	
 	 //---------------------- insert preview line input
 	c=findWindowIndex("path");
-	AddWin(new MessageBar(this,"previewm",NULL,MB_MOVE, 0,0, 0,0, 0, "Preview: "), c);
+	AddWin(new MessageBar(this,"previewm",NULL,MB_MOVE, 0,0, 0,0, 0, "Preview: "),1, c);
 	MenuButton *menub;
 	last=menub=new MenuButton(this,"previewlist",NULL,MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER, 0,0,0,0,0,
 							  linp,object_id,"previewlist",0,
 							  NULL,1,
 							  "v",NULL,NULL);
 	menub->tooltip(_("Select from possible automatic previews"));
-	AddWin(menub,c+1);
+	AddWin(menub,1, c+1);
 	last=linp=new LineInput(this,"preview",NULL,
 						LINP_FILE, 0,0,0,0,0, 
 						last,object_id,"preview",
 						" ",NULL,0,
 						0,0,2,2,2,2);
 	linp->GetLineEdit()->win_style|=LINEEDIT_SEND_ANY_CHANGE;
-	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0, c+2);
+	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, c+2);
 	last=tbut=new Button(this,"generate preview",NULL,0, 0,0,0,0, 1, 
 			last,object_id,"generate",0,
 			_("Generate"),NULL,NULL,3,3);
 	tbut->tooltip(_("Generate a preview for file at this location."));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, c+3);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, c+3);
 	AddNull(c+4);
 	
 
@@ -297,15 +297,15 @@ int ImportImagesDialog::init()
 						_("Start Page:"),str,0,
 						0,0,2,2,2,2);
 	linp->tooltip(_("The starting document page index to drop images onto. 0 is the first page."));
-	AddWin(linp,linp->win_w+linpheight*8,100,1000,50,0, linp->win_h,0,0,50,0);
+	AddWin(linp,1, linp->win_w+linpheight*8,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 
 	int currentpagetype=0;
 	if (doc) {
-		AddWin(NULL, linpheight*5,0,0,50,0, linpheight,0,0,50,0);
+		AddWin(NULL,0, linpheight*6,0,0,50,0, linpheight,0,0,50,0, -1);
 		if (doc->imposition->NumPageTypes()>1) {
 			 //only add this for more than one type
 			mesbar=new MessageBar(this,"thispage",NULL,MB_MOVE, 0,0, 0,0, 0, _("Align on page:"));
-			AddWin(mesbar, mesbar->win_w,0,50,50,0, linpheight,0,0,50,0);
+			AddWin(mesbar,1, mesbar->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 			SliderPopup *pagetypes;
 			last=pagetypes=new SliderPopup(this,"pageTypes",NULL,0, 0,0, 0,0, 1, last,object_id,"pagetype");
@@ -313,7 +313,7 @@ int ImportImagesDialog::init()
 				pagetypes->AddItem(doc->imposition->PageTypeName(c),c);
 			}
 			pagetypes->tooltip(_("Alignment for this page type"));
-			AddWin(pagetypes, 200,100,50,50,0, linpheight,0,0,50,0);
+			AddWin(pagetypes,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
 		}
 
 		 //install default alignment settings per page type
@@ -330,7 +330,7 @@ int ImportImagesDialog::init()
 						0,0,2,2,2,2);
 	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align left, 50 center, 100 right, etc."));
-	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
+	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 
 	if (settings->alignment.n) sprintf(str,"%.10g",settings->alignment.e[currentpagetype].y);
 	else sprintf(str,"center"); 
@@ -339,7 +339,7 @@ int ImportImagesDialog::init()
 						0,0,2,2,2,2);
 	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("0 means align top, 50 center, 100 bottom, etc."));
-	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
+	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 	AddNull();
 
 
@@ -348,29 +348,29 @@ int ImportImagesDialog::init()
 	last=linp=new LineInput(this,"DPI",NULL,0, 0,0,0,0,0, last,object_id,"dpi",
 						_("Default dpi:"),str,0,
 						0,0,2,2,2,2);
-	AddWin(linp,linp->win_w+linpheight*8,10,100,50,0, linp->win_h,0,0,50,0);
+	AddWin(linp,1, linp->win_w+linpheight*8,10,100,50,0, linp->win_h,0,0,50,0, -1);
 	
 	last=check=new CheckBox(this,"scaleup",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"scaleup", _("Scale up"),5,5);
 	if (settings->scaleup) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale up images to just fit within the target area"));
-	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
+	AddWin(check,1,  check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 
 	last=check=new CheckBox(this,"scaledown",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"scaledown", _("Scale down"),5,5);
 	if (settings->scaledown) check->State(LAX_ON); else check->State(LAX_OFF);
 	check->tooltip(_("If necessary, scale down images to just fit within the target area"));
-	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
+	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
 
-	AddWin(NULL, 3000,2990,0,50,0, 0,0,0,50,0);
+	AddWin(NULL,0, 3000,2990,0,50,0, 0,0,0,50,0, -1);
 	
 	
 	 //------------------------------ Images Per Page
 	//Images Per Page ____, or "as many as will fit", or "all on 1 page"
 		
 	mesbar=new MessageBar(this,"perpage",NULL,MB_MOVE, 0,0, 0,0, 0, _("Images Per Page:"));
-	AddWin(mesbar, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0);
-	AddWin(NULL, 1000,1000,0,50,0, 0,0,0,50,0);
+	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 1000,1000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 	
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
@@ -383,31 +383,31 @@ int ImportImagesDialog::init()
 		check->State(LAX_OFF);
 		sprintf(str,"1");
 	}
-	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
+	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
 
 	sprintf(str,"%d",settings->perpage>0?settings->perpage:1);
 	last=linp=new LineInput(this,"NumPerPage",NULL,0, 0,0,0,0,0, last,object_id,"perpageexactlyn",
 						NULL,str,0,
 						textheight*10,textheight+4,2,2,2,2);
 	linp->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
-	AddWin(linp);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);
+	AddWin(linp,1, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpagefit",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"perpagefit", _("As many as will fit per page"),5,5);
 	if (settings->perpage==-1) check->State(LAX_ON); else check->State(LAX_OFF);
-	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);
+	AddWin(check,1, check->win_w,0,0,50,0, check->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,50,0, -1);
 	AddNull();
 
 	AddSpacer(linpheight,0,0,50, linpheight,0,0,50);
 	last=check=new CheckBox(this,"perpageall",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"perpageall", _("All on one page"),5,5);
 	if (settings->perpage==-2) check->State(LAX_ON); else check->State(LAX_OFF);
-	AddWin(check, check->win_w,0,0,50,0, check->win_h,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,50,0);
+	AddWin(check,1, check->win_w,1,0,50,0, check->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 2001,2000,0,50,0, 0,0,0,50,0, -1);
 
 
 	 //------------------------ preview options ----------------------
@@ -419,7 +419,7 @@ int ImportImagesDialog::init()
 	linp->tooltip(_("For file.jpg,\n"
 				  "* gets replaced with the original file name (\"file.jpg\"), and\n"
 				  "% gets replaced with the file name without the final suffix (\"file\")\n"));
-	AddWin(linp);
+	AddWin(linp,1, -1);
 	MenuInfo *menu=new MenuInfo("Preview Bases");
 	for (c=0; c<laidout->preview_file_bases.n; c++) {
 		menu->AddItem(laidout->preview_file_bases.e[c],c);
@@ -429,21 +429,21 @@ int ImportImagesDialog::init()
 									 menu,1,
 									 "v");
 	menub->tooltip(_("Select from the available preview bases"));
-	AddWin(menub);
-	AddWin(NULL, 3000,3000,0,50,0, 0,0,0,50,0);//force left justify
+	AddWin(menub,1, -1);
+	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 	
 	last=linp=new LineInput(this,"PreviewWidth",NULL,0, 0,0,0,0,0, last,object_id,"previewwidth",
 						_("Default max width for new previews:"),NULL,0,
 						0,0,2,2,2,2);
 	linp->GetLineEdit()->SetText(laidout->max_preview_length);
 	linp->tooltip(_("Any newly generated previews must fit\nin a square this many pixels wide"));
-	AddWin(linp);
-	AddWin(NULL, 3000,3000,0,50,0, 0,0,0,50,0);//force left justify
+	AddWin(linp,1, -1);
+	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 	 
 	last=check=new CheckBox(this,"autopreview",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"autopreview", _("Make previews for files larger than"),5,5);
 	check->State(LAX_OFF);
-	AddWin(check, check->win_w,0,0,50,0, linpheight,0,0,50,0);
+	AddWin(check,1, check->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 	
 	 //----------------- file size to maybe generate previews for 
 	last=linp=new LineInput(this,"MinSize",NULL,0, 0,0,0,0,0, last,object_id,"mintopreview",
@@ -454,10 +454,10 @@ int ImportImagesDialog::init()
 			      "for files over this size, and then only \n"
 				  "whenever the generated preview name doesn't\n"
 				  "exist already"));
-	AddWin(linp);
+	AddWin(linp,1, -1);
 	mesbar=new MessageBar(this,"kb",NULL,MB_MOVE, 0,0, 0,0, 0, "kB");
-	AddWin(mesbar, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0);
-	AddWin(NULL, 3000,3000,0,50,0, 0,0,0,50,0);//force left justify
+	AddWin(mesbar,1,  mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 3000,3000,0,50,0, 0,0,0,50,0, -1);//force left justify
 	 
 
 	 //-------------------- change Ok to Import

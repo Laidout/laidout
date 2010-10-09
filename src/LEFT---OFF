@@ -7,14 +7,7 @@ with a date that it was done and by who.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-palette window unsightly rect edge marks!!!
-
-anything that uses WinFrameBox, ref counting snafus...
-StackFrame, RowFrame
-
-SplitWindow menu, split, join, etc. frelled
-
-Singles::gapx,y should work
+memory hole in imposition init, laidout -n letter, 63 left un deleted, objs 123-135 for instance
 
 edit imposition for sigs does not have selectable folds in editor!!!
 
@@ -28,32 +21,25 @@ context menu not highlighting, and allows multiples
 
 update dependency check for cups with cups-config and maybe libcrypt
 
-Document::dump_out(-1) needs to dump out imposition TYPES, not resource instance names, which it's doing now
-
 imagepatch once again frelled, not showing image AT ALL!!!!
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
  need infrastructure to propagate and save tool settings
 
-headwindow swapping is now REALLY messed up
-pane swapping/dropto on maximized, swapping in general...
-
 in tiled, can no longer select objects in the other tiles, wtf!!!
 
 print to svg files ignoring '##' mark!
+svg to coord incomplete
+memory hole in svg in? test svg import, svg path import must be done
 
 print by command doesn't seem to work... fails noiselessly
 
-./laidout -n 'box 1 2 3'  -->  11 remaining objects on quit
+./laidout -n 'box 1 2 3'  -->  doesn't work, AND 62 remaining objects on quit
 
 net page tracking is frelled
 
 gradient rendering to buffer memory hole?? gets very slow, then crashes
 
 GradientInterface problem rendering radial when two circles separated by large distance
-
-memory hole in svg in? test svg import, svg path import must be done
-
-svg to coord incomplete
 
 make file. save as to other dir. export. dir is wrong! 
 
@@ -67,8 +53,6 @@ place 3 images, object select, must press delete twice...!?!?!?!
 
 select default papergroup, does not reinstall default papergroup!!
 
-Laxkit::MultiLineEdit needs some serious debugging
-
 add blank image, change description, do not change filename, makes width/height zap back to 0...
 
 control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
@@ -76,6 +60,11 @@ control-drag mouse on object tool does not scale from mouse down point!!!! ggger
 net extra scaling non-functional
 
 --maybe ok to postpone till after .091 release:
+Laxkit::MultiLineEdit needs some serious debugging
+
+headwindow swapping is now REALLY messed up
+pane swapping/dropto on maximized, swapping in general...
+
 WATCH OUT for when preview file is OLDER that original file!!
 
 Transfer groups to limbo does something funky
@@ -118,6 +107,9 @@ debug spread editor
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
+Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
+will likely be very different
+
 bleeding mechanism should be functional
 
 PathInterface should not segfault
@@ -600,4 +592,11 @@ DONE work out new doc singles settings
 
 DONE topwindow/destroywindow/destroyqueued/dialogs ref counting messed up
 DONE SplitWindow::Add not doing ref counting correctly,
+DONE SplitWindow menu, split, join, etc. frelled
+
+DONE palette window unsightly rect edge marks!!!
+
+DONE anything that uses WinFrameBox (all dialogs under RowFrame), ref counting snafus...
+
+DONE Document::dump_out(-1) needs to dump out imposition TYPES, not resource instance names, which it's doing now
 

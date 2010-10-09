@@ -48,7 +48,7 @@ class HeadWindow : public Laxkit::SplitWindow
 	virtual Laxkit::MenuInfo *GetMenu();
 	virtual Laxkit::anXWindow *NewWindow(const char *wtype,anXWindow *likethis=NULL);
 	virtual int Curbox(int c);
-	virtual int Change(anXWindow *towhat,anXWindow *which=NULL);
+	virtual int Change(anXWindow *towhat,int absorbcount,int which);
 	
 	virtual void WindowGone(Laxkit::anXWindow *win);
 	virtual int numwindows() { return windows.n; }

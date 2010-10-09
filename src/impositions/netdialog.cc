@@ -90,8 +90,8 @@ int NetDialog::init()
 							last,object_id,"checkdod",
 							_("Dodecahedron"), 5,5);
 	checkdod->State(LAX_ON);
-	AddWin(checkdod, checkdod->win_w,0,0,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0); //basically force line break, left justify
+	AddWin(checkdod,1, checkdod->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1); //basically force line break, left justify
 	
 
 	 //------------- imposition from file -------------------------------
@@ -99,7 +99,7 @@ int NetDialog::init()
 							last,object_id,"checkfile",
 							_("Polyhedron or net"), 5,5);
 	checkfile->tooltip(_("Create from a polyhedron or a net file."));
-	AddWin(checkfile, checkfile->win_w,0,0,50,0, linpheight,0,0,50,0);
+	AddWin(checkfile,1, checkfile->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 
 	last=impfromfile=new LineInput(this,"impfromfile",NULL,LINP_FILE|LINP_ONLEFT, 0,0,0,0, 0, 
 									last,object_id,"impfromfile",
@@ -107,13 +107,13 @@ int NetDialog::init()
 						            0,0,1,0,3,3);
 	impfromfile->tooltip(_("Create from a polyhedron or a net file."));
 	impfromfile->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
-	AddWin(impfromfile, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0);
+	AddWin(impfromfile,1, impfromfile->win_w,0,2000,50,0, linpheight,0,0,50,0, -1);
 	last=tbut=new Button(this,"impfileselect",NULL,0, 0,0,0,0, 1, 
 					last,object_id,"impfileselect",
 					-1,
 					"...",NULL,NULL,3,3);
 	tbut->tooltip(_("Search for a polyhedron or a net file"));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 
@@ -121,31 +121,31 @@ int NetDialog::init()
 	last=checkbox=new CheckBox(this,_("Select Box"),"selectbox",CHECK_LEFT, 0,0,0,0,1, 
 							last,object_id,"checkbox",
 							_("Box "), 5,5);
-	AddWin(checkbox, checkbox->win_w,0,0,50,0, linpheight,0,0,50,0);
+	AddWin(checkbox,1, checkbox->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 	
 	last=boxdims=new LineInput(this,"box dims","box dims",LINP_ONLEFT, 0,0,0,0, 0, 
 								last,object_id,"boxdims",
 				        	    _("Width, length, height:"),"1,1,1",0,
 			    	        	100,0,1,1,3,3);
 	boxdims->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
-	AddWin(boxdims, boxdims->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(boxdims,1, boxdims->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 
 
 
 	//------------------------------ extra scaling -------------------------------------------------------
-	AddWin(NULL, 3000,2990,0,50,0, 20,0,0,50,0); //force left justify and line break
-	AddWin(NULL, 3000,2990,0,50,0, linpheight/2,0,0,50,0); //extra spacer
+	AddWin(NULL,0, 3000,2990,0,50,0, 20,0,0,50,0, -1); //force left justify and line break
+	AddWin(NULL,0, 3000,2990,0,50,0, linpheight/2,0,0,50,0, -1); //extra spacer
 
 	last=scaling=new LineInput(this,"scaling","scaling",LINP_ONLEFT, 0,0,0,0, 0, 
 								last,object_id,"scaling",
 				        	    _("Extra scaling"),"1",0,
 			    	        	100,0,1,1,3,3);
 	scaling->tooltip(_("Extra scaling by which to multiply lengths of a net.\n1 means no extra scaling."));
-	AddWin(scaling, scaling->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 3000,2990,0,50,0, 20,0,0,50,0); //force left justify and line break
+	AddWin(scaling,1, scaling->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,1, 3000,2990,0,50,0, 20,0,0,50,0, -1); //force left justify and line break
 
-	AddWin(NULL, 3000,2990,0,50,0, linpheight/2,0,0,50,0); //extra spacer
+	AddWin(NULL,1, 3000,2990,0,50,0, linpheight/2,0,0,50,0, -1); //extra spacer
 
 
 
@@ -158,11 +158,11 @@ int NetDialog::init()
 						 //doc?_("Apply settings"):_("Create Document"),
 						 _("Ok"),
 						 NULL,NULL);
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 20,0,0,50,0, 5,0,0,50,0); // add space of 20 pixels
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
 
 	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 
 	

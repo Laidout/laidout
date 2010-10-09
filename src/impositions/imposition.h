@@ -170,6 +170,7 @@ Laxkit::PtrStack<ImpositionResource> *GetBuiltinImpositionPool(Laxkit::PtrStack<
 int AddToImpositionPool(Laxkit::PtrStack<ImpositionResource> *existingpool, const char *directory);
 Imposition *newImpositionByResource(const char *impos);
 Imposition *newImpositionByType(const char *impos);
+void dumpOutImpositionTypes(FILE *f,int indent);
 
 #endif
 

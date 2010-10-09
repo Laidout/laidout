@@ -1187,20 +1187,20 @@ int SpreadEditor::init()
 										 NULL,laidout->icons.GetIcon("Laidout")
 										);
 	menub->tooltip(_("Document list"));
-	AddWin(menub,menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, wholelist.n-1);//add before status bar
+	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, wholelist.n-1);//add before status bar
 	//AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50, -1);//add before status bar
 
 	//wholelist.e[wholelist.n-1]->pw(100);
 	//AddNull(); // makes the status bar fill whole line
 
 	last=tbut=new Button(this,"applybutton",NULL, 0, 0,0,0,0,1, NULL,object_id,"applybutton",0,_("Apply"));
-	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 	last=tbut=new Button(this,"resetbutton",NULL, 0, 0,0,0,0,1, last,object_id,"resetbutton",0,_("Reset"));
-	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 	last=tbut=new Button(this,"updatethumbs",NULL, 0, 0,0,0,0,1, last,object_id,"updatethumbs",0,_("Update Thumbs"));
-	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 	Sync(1);	
 	return 0;
