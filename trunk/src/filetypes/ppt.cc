@@ -23,7 +23,7 @@
 #include "../laidout.h"
 #include "../stylemanager.h"
 #include "../headwindow.h"
-#include "../impositions/impositioninst.h"
+#include "../impositions/singles.h"
 #include "../utils.h"
 #include "../drawdata.h"
 #include "../printing/psout.h"

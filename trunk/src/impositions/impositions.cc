@@ -34,7 +34,7 @@
 
 #include "../stylemanager.h"
 #include "imposition.h"
-#include "impositioninst.h"
+#include "singles.h"
 #include "netimposition.h"
 #include "signatures.h"
 

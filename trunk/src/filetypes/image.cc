@@ -30,7 +30,7 @@
 #include "../stylemanager.h"
 #include "../printing/psout.h"
 #include "image.h"
-#include "../impositions/impositioninst.h"
+#include "../impositions/singles.h"
 
 #include <iostream>
 #define DBG 

@@ -15,7 +15,7 @@
 //
 
 
-#include "impositioninst.h"
+#include "singles.h"
 #include "stylemanager.h"
 #include "language.h"
 #include <lax/interfaces/pathinterface.h>
