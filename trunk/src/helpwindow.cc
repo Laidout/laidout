@@ -242,8 +242,8 @@ int HelpWindow::init()
 	delete[] help;
 			
 	mesbar->tooltip(_("Right click drag scrolls this help."));
-	AddWin(mesbar,	mesbar->win_w,mesbar->win_w*9/10,2000,50,0,
-					mesbar->win_h,(mesbar->win_h>10?(mesbar->win_h-10):0),2000,50,0);
+	AddWin(mesbar,1,mesbar->win_w,mesbar->win_w*9/10,2000,50,0,
+					mesbar->win_h,(mesbar->win_h>10?(mesbar->win_h-10):0),2000,50,0, -1);
 	AddNull();
 	AddButton(BUTTON_OK);
 	

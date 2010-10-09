@@ -162,7 +162,7 @@ int ImportFileDialog::init()
 	dialog_style|=FILES_PREVIEW;
 	FileDialog::init();
 	AddNull();
-	AddWin(NULL, 2000,1990,0,50,0, 15,0,0,50,0);
+	AddWin(NULL,0, 2000,1990,0,50,0, 15,0,0,50,0, -1);
 
 	 // set up the extra windows....
 	  
@@ -188,9 +188,9 @@ int ImportFileDialog::init()
 
 	 //--------------------- File Info message bar
 	fileinfo=new MessageBar(this,"perpage",NULL,MB_MOVE, 0,0, 0,0, 0, _("No file selected"));
-	AddWin(fileinfo, 200,100,1000,50,0, linpheight,0,0,50,0);
+	AddWin(fileinfo,1, 200,100,1000,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
-	AddWin(NULL, 200,100,3000,50,0, linpheight/2,0,0,50,0);
+	AddWin(NULL,0, 200,100,3000,50,0, linpheight/2,0,0,50,0, -1);
 	AddNull();
 
 	 //---------------------- import from file ---------------------------
@@ -201,7 +201,7 @@ int ImportFileDialog::init()
 						0,0,2,2,2,2);
 	importpagerange->tooltip(_("The range of pages of the file to import, numbered from 0.\n"
 							   "Such as \"3-9\". Currently, only one range per import"));
-	AddWin(importpagerange, importpagerange->win_w,0,1000,50,0, importpagerange->win_h,0,0,50,0);
+	AddWin(importpagerange,1, importpagerange->win_w,0,1000,50,0, importpagerange->win_h,0,0,50,0, -1);
 	AddNull();
 	
 
@@ -213,7 +213,7 @@ int ImportFileDialog::init()
 						0,0,2,2,2,2);
 	delete[] str; str=NULL;
 	linp->tooltip(_("The document page to start importing into"));
-	AddWin(linp,200,100,1000,50,0, linp->win_h,0,0,50,0);
+	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 	AddNull();
 
 	
@@ -222,21 +222,21 @@ int ImportFileDialog::init()
 						last,object_id,"ignoremystery", _("Ignore mystery data"),5,5);
 	check->tooltip(_("Ignore anything Laidout doesn't understand"));
 	check->State(config->keepmystery==0?LAX_ON:LAX_OFF);
-	AddWin(check, check->win_w,0,3000,50,0, linpheight,0,0,50,0);
+	AddWin(check,1, check->win_w,0,3000,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 	last=check=new CheckBox(this,"keepmostmystery",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"keepmostmystery", _("Keep mystery data as necessary"),5,5);
 	check->tooltip(_("Use mystery data for things Laidout cannot convert"));
 	check->State(config->keepmystery==1?LAX_ON:LAX_OFF);
-	AddWin(check, check->win_w,0,3000,50,0, linpheight,0,0,50,0);
+	AddWin(check,1, check->win_w,1,3000,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 	last=check=new CheckBox(this,"keepallmystery",NULL,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"keepallmystery", _("All objects are mystery data"),5,5);
 	check->tooltip(_("Do not convert any object to native Laidout objects"));
 	check->State(config->keepmystery==2?LAX_ON:LAX_OFF);
-	AddWin(check, check->win_w,0,3000,50,0, linpheight,0,0,50,0);
+	AddWin(check,1, check->win_w,0,3000,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 

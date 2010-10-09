@@ -319,16 +319,14 @@ int HeadWindow::SwapWithMarked()
  *
  * Note that which is ignored. Works only on curbox.
  */
-int HeadWindow::Change(anXWindow *towhat,anXWindow *which)
+int HeadWindow::Change(anXWindow *towhat,int absorbcount,int which)
 {
-	if (!curbox) return 0;
-
 	//Get doc from curbox. If win has no doc, then get first
 	//doc found in head. If none in head, then first in project (***should be last accessed?)
 	Document *doc=findAnyDoc();
 
 	//change the window
-	if (SplitWindow::Change(towhat,which)!=0) return 1;
+	if (SplitWindow::Change(towhat,absorbcount,which)!=0) return 1;
 	if (!doc) return 0;
 
 	// make sure same doc from old curbox is used for view and spread

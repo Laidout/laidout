@@ -106,15 +106,15 @@ int SinglesEditor::init()
 						last,object_id,"paper x",
 			            _("Paper Size  x:"),(o&1?blah2:blah),0,
 			            100,0,1,1,3,3);
-	AddWin(paperx, paperx->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(paperx,1, paperx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	 // -----Paper Size Y
 	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"paper y",
 			            _("y:"),(o&1?blah:blah2),0,
 			           100,0,1,1,3,3);
-	AddWin(papery, papery->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//*** forced linebreak
+	AddWin(papery,1, papery->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
 
 	 // -----Paper Name
     SliderPopup *popup;
@@ -125,15 +125,15 @@ int SinglesEditor::init()
 		popup->AddItem(laidout->papersizes.e[c]->name,c);
 	}
 	popup->Select(c2);
-	AddWin(popup, 200,100,50,50,0, linpheight,0,0,50,0);
+	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
 	
 	 // -----Paper Orientation
 	last=popup=new SliderPopup(this,"paperOrientation",NULL,0, 0,0, 0,0, 1, last,object_id,"orientation");
 	popup->AddItem(_("Portrait"),0);
 	popup->AddItem(_("Landscape"),1);
 	popup->Select(o&1?1:0);
-	AddWin(popup, 200,100,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);// forced linebreak
+	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);// forced linebreak
 
 	 //add thin spacer
 	AddSpacer(2000,2000,0,50, textheight*2/3,0,0,0);// forced vertical spacer
@@ -146,14 +146,14 @@ int SinglesEditor::init()
 			           100,0,1,1,3,3);
 	if (imp) tiley->SetText(imp->tiley);
 	tiley->tooltip("How many times to repeat a spread vertically on a paper.");
-	AddWin(tiley, tiley->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tiley,1, tiley->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	last=tilex=new LineInput(this,"x tiling",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"xtile",
 			            _("Tile x:"),"1", 0,
 			           100,0,1,1,3,3);
 	if (imp) tilex->SetText(imp->tilex);
 	tilex->tooltip(_("How many times to repeat a spread horizontally on a paper."));
-	AddWin(tilex, tilex->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tilex,1, tilex->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 	last=gapy=new LineInput(this,"y gap",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
@@ -162,14 +162,14 @@ int SinglesEditor::init()
 			           100,0,1,1,3,3);
 	if (imp) gapy->SetText(imp->gapy);
 	gapy->tooltip("Gap between tiles vertically");
-	AddWin(gapy, gapy->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(gapy,1, gapy->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	last=gapx=new LineInput(this,"x gap",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"xgap",
 			            _("Gap x:"),"1", 0,
 			           100,0,1,1,3,3);
 	if (imp) gapx->SetText(imp->gapx);
 	gapx->tooltip("Gap between tiles horizontally");
-	AddWin(gapx, gapx->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(gapx,1, gapx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 
 
@@ -184,7 +184,7 @@ int SinglesEditor::init()
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
 	if (imp) linp->SetText(imp->insett);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=insetb=new LineInput(this,"inset b",NULL,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -193,7 +193,7 @@ int SinglesEditor::init()
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
 	if (imp) linp->SetText(imp->insetb);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
 	last=linp=insetl=new LineInput(this,"inset l",NULL,LINP_ONLEFT,
@@ -203,7 +203,7 @@ int SinglesEditor::init()
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
 	if (imp) linp->SetText(imp->insetl);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=insetr=new LineInput(this,"inset r",NULL,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -212,7 +212,7 @@ int SinglesEditor::init()
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
 	if (imp) linp->SetText(imp->insetr);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
 	
@@ -232,8 +232,8 @@ int SinglesEditor::init()
 //		imp->insett=margint->GetDouble();
 //		imp->insetb=marginb->GetDouble();
 	 // ------------------ margins ------------------
-	AddWin(new MessageBar(this,"page margins",NULL,MB_MOVE, 0,0,0,0,0, _("Default page margins:")));
-	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//forced linebreak, makes left justify
+	AddWin(new MessageBar(this,"page margins",NULL,MB_MOVE, 0,0,0,0,0, _("Default page margins:")), 1,-1);
+	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak, makes left justify
 
 	last=linp=margint=new LineInput(this,"margin t",NULL,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -241,7 +241,7 @@ int SinglesEditor::init()
 			            _("Top Margin"),NULL,0,
 			            0,0,3,0,3,3);
 	if (imp) linp->SetText(imp->insett);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=marginb=new LineInput(this,"margin b",NULL,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -249,7 +249,7 @@ int SinglesEditor::init()
 			            _("Bottom Margin"),NULL,0,
 			            0,0,3,0,3,3);
 	if (imp) linp->SetText(imp->insetb);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
 	last=linp=marginl=new LineInput(this,"margin l",NULL,LINP_ONLEFT,
@@ -258,7 +258,7 @@ int SinglesEditor::init()
 			            _("Left Margin"),NULL,0,
 			            0,0,3,0,3,3);
 	if (imp) linp->SetText(imp->insetl);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=marginr=new LineInput(this,"margin r",NULL,LINP_ONLEFT,
 			            5,250,0,0, 0, 
@@ -266,7 +266,7 @@ int SinglesEditor::init()
 			            _("Right Margin"),NULL,0,
 			            0,0,3,0,3,3);
 	if (imp) linp->SetText(imp->insetr);
-	AddWin(linp, 150,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
 
@@ -276,7 +276,7 @@ int SinglesEditor::init()
 	
 	//------------------------------ final ok -------------------------------------------------------
 
-	AddWin(NULL, 2000,1990,0,50,0, 20,0,0,50,0);
+	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
 	
 	 // [ ok ]   [ cancel ]
 	AddHSpacer(0,0,1000,50);
@@ -284,11 +284,11 @@ int SinglesEditor::init()
 						 BUTTON_OK,
 						 NULL,
 						 NULL,NULL);
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
-	AddWin(NULL, 20,0,0,50,0, 5,0,0,50,0); // add space of 20 pixels
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
 
 	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddHSpacer(0,0,1000,50);
 
 

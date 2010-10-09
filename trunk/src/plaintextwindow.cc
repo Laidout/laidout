@@ -365,7 +365,7 @@ int PlainTextWindow::init()
 	MultiLineEdit *editbox;
 	last=editbox=new MultiLineEdit(this,"plain-text-edit",NULL,0, 0,0,0,0,1, NULL,object_id,"ptedit",
 							  0,textobj?textobj->thetext:NULL);
-	AddWin(editbox, 100,95,2000,50,0, 100,95,20000,50,0);
+	AddWin(editbox,1, 100,95,2000,50,0, 100,95,20000,50,0, -1);
 	AddNull();
 
 
@@ -378,27 +378,27 @@ int PlainTextWindow::init()
 						_("Name:"),str,0,
 						0,0,2,2,2,2);
 	nameinput->GetLineEdit()->win_style|=LINEEDIT_SEND_FOCUS_OFF;
-	AddWin(nameinput,200,100,1000,50,0, nameinput->win_h,0,0,50,0);
+	AddWin(nameinput,1, 200,100,1000,50,0, nameinput->win_h,0,0,50,0, -1);
 
 
 	 //------select text object
 	Button *ibut=NULL;
 	last=ibut=new Button(this,"whichtext",NULL,0, 0,0,0,0,1, NULL,object_id,"whichtextbutton",-1,
 						 "v");
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 
 	 //--------open
 	last=ibut=new Button(this,"open",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"open",-1,
 						 _("Open"),NULL,laidout->icons.GetIcon("Open"));
 	ibut->tooltip(_("Open a file from disk"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //--------save
 	last=ibut=new Button(this,"save",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"save",-1,
 						 _("Save"),NULL,laidout->icons.GetIcon("Save"));
 	ibut->tooltip(_("Save the current text"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //--------apply
 	last=ibut=new Button(this,"apply",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"apply",-1,
@@ -406,13 +406,13 @@ int PlainTextWindow::init()
 	ibut->tooltip(_("Syncronize the text object with the text in the editor\n"
 				    "This should update any objects that depend on the current\n"
 					"text object, if any"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //--------run
 	last=ibut=new Button(this,"Run",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"run",-1,
 						 _("Run"),NULL,laidout->icons.GetIcon("Run"));
 	ibut->tooltip(_("Run this text as a script"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	Sync(1);
 	return 0;

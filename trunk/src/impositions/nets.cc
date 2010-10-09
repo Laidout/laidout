@@ -1126,7 +1126,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
-		fprintf(f,"%sname Bent Square #this is just any name you give the net\n",spc);
+		fprintf(f,"%sname Bent Square    #this is just any name you give the net\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0  # transform to map the net to a paper\n",spc);
 		fprintf(f,"%sbasenet             #the base abstract net\n",spc);
 		fprintf(f,"%sinfo  333           #general integer info about the net\n",spc);

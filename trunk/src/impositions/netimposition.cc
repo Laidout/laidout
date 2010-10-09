@@ -945,14 +945,15 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 	if (what==-1) {
 		fprintf(f,"%snumpages 3      #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sprintnet yes     #whether the net lines get printed out with the page data\n",spc);
-		fprintf(f,"%ssimplenet         #this is the same as using: abstractnet simple\n",spc);
-		fprintf(f,"%s                  #It is a basic net definition roughly equivalent to an OFF file\n",spc);
 		fprintf(f,"%sscalingfromnet 1  #any final scaling to apply to a net before mapping\n",spc);
 		fprintf(f,"%s                  #  onto a spread\n",spc);
 		fprintf(f,"%sabstractnet type  #type can be \"file\" or \"Polyhedron\" or \"simple\".\n",spc);
 		fprintf(f,"%sabstractnet file  #this block demonstrates abstract nets based on files.\n",spc);
 		fprintf(f,"%s  filename /path/to/it  #This is used when the abstract net has not been\n",spc);
 		fprintf(f,"%s                        #modified since being loaded from the file.\n",spc);
+		fprintf(f,"%ssimplenet         #this is the same as using: abstractnet simple\n",spc);
+		fprintf(f,"%s                  #It is a basic net definition the same as a Polyhedron (below),\n",spc);
+		fprintf(f,"%s                  #but using only vertices (with only 2-d vertices) and faces blocks.\n",spc);
 		fprintf(f,"%sabstractnet Polyhedron  #this block demonstrates Polyhedron abstract nets.\n",spc);
 		Polyhedron p;
 		p.dump_out(f,indent+2,-1,NULL);//**** if abstract nets get automated, this must change...

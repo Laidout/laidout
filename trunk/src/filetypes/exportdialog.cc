@@ -215,7 +215,7 @@ int ExportDialog::init()
 	if (c2>=0) format->Select(c2);
 	format->WrapToExtent();
 	format->tooltip(_("The file format to export into"));
-	AddWin(format, format->win_w,0,50,50,0, format->win_h,0,0,50,0);
+	AddWin(format,1, format->win_w,0,50,50,0, format->win_h,0,0,50,0, -1);
 	AddNull();
 
 	 //--------- to command
@@ -226,7 +226,7 @@ int ExportDialog::init()
 							 _("By Command: "), 0,5);
 		commandcheck->State(LAX_ON);
 		commandcheck->tooltip(_("Run this command on a single exported file"));
-		AddWin(commandcheck);
+		AddWin(commandcheck,1,-1);
 
 		last=command=new LineEdit(this,"command",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
 							 0,0,100,20, 1,
@@ -234,7 +234,7 @@ int ExportDialog::init()
 							 "lp",0);
 		command->padx=5;
 		command->tooltip(_("Run this command on a single exported file"));
-		AddWin(command, command->win_w,0,1000,50,0, command->win_h,0,0,50,0);
+		AddWin(command,1, command->win_w,0,1000,50,0, command->win_h,0,0,50,0, -1);
 		AddNull();
 	}
 	
@@ -245,7 +245,7 @@ int ExportDialog::init()
 						 _("To File: "), 0,5);
 	filecheck->State(LAX_ON);
 	filecheck->tooltip(_("Export to this file"));
-	AddWin(filecheck);
+	AddWin(filecheck,1,-1);
 
 //	 ***** have: [!] _filename_   <-- meaning file exists, tooltip to say what it means
 //		         [O]              <-- meaning ok to overwrite
@@ -257,13 +257,13 @@ int ExportDialog::init()
 						 config->filename,0);
 	fileedit->padx=5;
 	fileedit->tooltip(_("Export to this file"));
-	AddWin(fileedit, fileedit->win_w,0,1000,50,0, fileedit->win_h,0,0,50,0);
+	AddWin(fileedit,1, fileedit->win_w,0,1000,50,0, fileedit->win_h,0,0,50,0, -1);
 	last=tbut=new Button(this,"filesaveas",NULL,0,
 						0,0,0,0, 1, 
 						last,object_id,"filesaveas",
 						0,"...",NULL,NULL,3,3);
 	tbut->tooltip(_("Browse for a new location"));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
 	 //--------- to files
@@ -276,7 +276,7 @@ int ExportDialog::init()
 	filescheck->tooltip(_("Export to these files. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
-	AddWin(filescheck);
+	AddWin(filescheck,1,-1);
 
 	last=filesedit=new LineEdit(this,"tofiles",NULL,
 						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF|LINEEDIT_SEND_ANY_CHANGE, 
@@ -287,18 +287,18 @@ int ExportDialog::init()
 	filesedit->tooltip(_("Export to these files. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
-	AddWin(filesedit, filesedit->win_w,0,1000,50,0, filesedit->win_h,0,0,50,0);
+	AddWin(filesedit,1, filesedit->win_w,0,1000,50,0, filesedit->win_h,0,0,50,0, -1);
 	 // a "..." to pop file dialog:
 	last=tbut=new Button(this,"filessaveas",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"filessaveas",
 						0,"...",NULL,NULL,3,3);
 	tbut->tooltip(_("Browse for a new location"));
-	AddWin(tbut, tbut->win_w,0,50,50,0, linpheight,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
 
 	 //--- add a vertical spacer
-	AddWin(NULL, 0,0,9999,50,0, 12,0,0,50,0);
+	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
 	AddNull();
 
 
@@ -317,7 +317,7 @@ int ExportDialog::init()
 		layouts->Select(config->layout);
 		layouts->WrapToExtent();
 		layouts->tooltip(_("The type of spreads to export"));
-		AddWin(layouts, layouts->win_w,0,50,50,0, layouts->win_h,0,0,50,0);
+		AddWin(layouts,1, layouts->win_w,0,50,50,0, layouts->win_h,0,0,50,0, -1);
 		AddNull();
 	}
 
@@ -332,8 +332,7 @@ int ExportDialog::init()
 						 last,object_id,"ps-printall",
 						 _("Export All"), 0,5);
 	printall->State(LAX_ON);
-	//AddWin(printall, win_w,0,2000,0, printall->win_h,0,0,50,0);
-	AddWin(printall, win_w,0,2000,0,0, 20,0,0,50,0);
+	AddWin(printall,1, win_w,0,2000,0,0, 20,0,0,50,0, -1);
 	AddNull();
 
 	last=printcurrent=new CheckBox(this,"ps-printcurrent",NULL,CHECK_CIRCLE|CHECK_LEFT,
@@ -341,7 +340,7 @@ int ExportDialog::init()
 						 last,object_id,"ps-printcurrent",
 						 _("Export Current"), 0,5);
 	printcurrent->State(LAX_OFF);
-	AddWin(printcurrent, win_w,0,2000,0,0, 20,0,0,50,0);
+	AddWin(printcurrent,1, win_w,0,2000,0,0, 20,0,0,50,0, -1);
 	AddNull();
 
 	last=printrange=new CheckBox(this,"ps-printrange",NULL,CHECK_CIRCLE|CHECK_LEFT,
@@ -349,7 +348,7 @@ int ExportDialog::init()
 						 last,object_id,"ps-printrange",
 						 _("Export From:"), 0,5);
 	printrange->State(LAX_OFF);
-	AddWin(printrange);
+	AddWin(printrange,1,-1);
 
 	char blah[15];
 	sprintf(blah,"%d",config->start);
@@ -360,9 +359,9 @@ int ExportDialog::init()
 						 blah,0);
 	printstart->padx=5;
 	printstart->tooltip(_("The starting index"));
-	AddWin(printstart, printstart->win_w,0,1000,50,0, printstart->win_h,0,0,50,0);
+	AddWin(printstart,1, printstart->win_w,0,1000,50,0, printstart->win_h,0,0,50,0, -1);
 		
-	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("To:")));
+	AddWin(new MessageBar(this,"end",NULL,0, 0,0,0,0,0, _("To:")),1,-1);
 	sprintf(blah,"%d",config->end);
 	last=printend=new LineEdit(this,"end",NULL,LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_FOCUS_OFF, 
 						 0,0,50,20, 1,
@@ -370,21 +369,21 @@ int ExportDialog::init()
 						 blah,0);
 	printend->padx=5;
 	printend->tooltip(_("The ending index"));
-	AddWin(printend, printend->win_w,0,1000,50,0, printend->win_h,0,0,50,0);
+	AddWin(printend,1, printend->win_w,0,1000,50,0, printend->win_h,0,0,50,0, -1);
 	AddNull();
-	AddWin(NULL, 0,0,9999,50,0, 12,0,0,50,0);
+	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
 	AddNull();
 
-	AddWin(NULL, 0,0,1000,50,0, 0,0,0,50,0);
+	AddWin(NULL,0, 0,0,1000,50,0, 0,0,0,50,0, -1);
 	last=tbut=new Button(this,"export",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"export",
 						0,_("Export"),NULL,NULL,3,3);
-	AddWin(tbut, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
 	last=tbut=new Button(this,"cancel",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"cancel",
 						0,_("Cancel"),NULL,NULL,3,3);
-	AddWin(tbut, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0);
-	AddWin(NULL, 0,0,1000,50,0, 0,0,0,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
+	AddWin(NULL,0, 0,0,1000,50,0, 0,0,0,50,0, -1);
 	last->CloseControlLoop();
 	
 	updateExt();

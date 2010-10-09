@@ -2938,7 +2938,7 @@ int ViewWindow::init()
 						 NULL,laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
 						 buttongap);
 	menub->tooltip(_("Display list"));
-	dynamic_cast<WinFrameBox *>(wholelist.e[0])->win=menub;
+	dynamic_cast<WinFrameBox *>(wholelist.e[0])->NewWindow(menub);
 	
 	AddNull();//makes the status bar take up whole line.
 	anXWindow *last=NULL;
@@ -2985,7 +2985,7 @@ int ViewWindow::init()
 	}
 	toolselector->WrapToExtent();
 	SelectTool(obji);
-	AddWin(toolselector);
+	AddWin(toolselector,1,-1);
 	
 
 	 //----- Page Flipper
@@ -2993,22 +2993,22 @@ int ViewWindow::init()
 									last,object_id,"newPageNumber",
 									_("Page: "));
 	pagenumber->tooltip(_("The pages in the spread\nand the current page"));
-	AddWin(pagenumber,90,0,50,50,0, pagenumber->win_h,0,50,50,0);
+	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
 	
 	last=ibut=new Button(this,"prev spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"prevSpread",-1,
 						 "<",NULL,laidout->icons.GetIcon("PreviousSpread"),buttongap);
 	ibut->tooltip(_("Previous spread"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"next spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"nextSpread",-1,
 						 ">",NULL,laidout->icons.GetIcon("NextSpread"),buttongap);
 	ibut->tooltip(_("Next spread"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,
 							  _("Page Clips"),NULL,laidout->icons.GetIcon("PageClips"),buttongap);
 	pageclips->tooltip(_("Whether pages clips its contents"));
-	AddWin(pageclips,pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0);
+	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
 	updateContext(1);
 
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
@@ -3035,26 +3035,26 @@ int ViewWindow::init()
 	}
 	p->Select(vm);
 	p->WrapToExtent();
-	AddWin(p,p->win_w,0,50,50,0, p->win_h,0,50,50,0);
+	AddWin(p,1, p->win_w,0,50,50,0, p->win_h,0,50,50,0, -1);
 
 	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",65535,150,
 							   LAX_COLOR_RGB,65535,0,0,65535);
-	AddWin(colorbox, 50,0,50,50,0, p->win_h,0,50,50,0);
+	AddWin(colorbox,1, 50,0,50,50,0, p->win_h,0,50,50,0, -1);
 		
 	last=ibut=new Button(this,"add page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"addPage",-1,
 						 _("Add Page"),NULL,laidout->icons.GetIcon("AddPage"),buttongap);
 	ibut->tooltip(_("Add 1 page after this one"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"delete page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"deletePage",-1,
 						 _("Delete Page"),NULL,laidout->icons.GetIcon("DeletePage"),buttongap);
 	ibut->tooltip(_("Delete the current page"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"import image",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"importImage",-1,
 						 _("Import Images"),NULL,laidout->icons.GetIcon("ImportImage"),buttongap);
 	ibut->tooltip(_("Import one or more images"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 
 	 //-------------import
@@ -3062,7 +3062,7 @@ int ViewWindow::init()
 	last=ibut=new Button(this,"import",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"import",-1,
 						 _("Import"),NULL,laidout->icons.GetIcon("Import"),buttongap);
 	ibut->tooltip(_("Try to import various vector based files into the document"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	 //---------------******** export
 	 //*** this needs an automatic way to do it, needs a pool to access somewhere..
@@ -3090,32 +3090,32 @@ int ViewWindow::init()
 	last=ibut=new Button(this,"export",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"export",-1,
 						 _("Export"),NULL,laidout->icons.GetIcon("Export"),buttongap);
 	ibut->tooltip(_("Export the document in various ways"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	
 	 //-----------print
 	last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"print",-1,
 						 _("Print"),NULL,laidout->icons.GetIcon("Print"),buttongap);
 	ibut->tooltip(_("Print the document"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 
 	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"openDoc",-1,
 						 _("Open"),NULL,laidout->icons.GetIcon("Open"),buttongap);
 	ibut->tooltip(_("Open a document from disk"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"saveDoc",-1,
 						 _("Save"),NULL,laidout->icons.GetIcon("Save"),buttongap);
 	ibut->tooltip(_("Save the current document"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	
 
 	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons.GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
-	AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	//**** add screen x,y
 	//		   real x,y
@@ -3311,8 +3311,10 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		linestyle.color.red=  (unsigned short) (ce->channels[0]/max*65535);
 		linestyle.color.green=(unsigned short) (ce->channels[1]/max*65535);
 		linestyle.color.blue= (unsigned short) (ce->channels[2]/max*65535);
-		linestyle.color.alpha=(unsigned short) (ce->channels[3]/max*65535);
+		if (ce->numchannels>3) linestyle.color.alpha=(unsigned short) (ce->channels[3]/max*65535);
+		else linestyle.color.alpha=65535;
 		linestyle.mask=GCForeground;
+
 		char blah[100];
 		colorbox->SetRGB(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
 		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),

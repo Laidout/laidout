@@ -1401,10 +1401,10 @@ int SignatureEditor::init()
 	Button *tbut;
 
 	last=tbut=new Button(this,"ok",NULL, 0, 0,0,0,0,1, last,object_id,"ok",0,_("Ok"));
-	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 	last=tbut=new Button(this,"cancel",NULL, 0, 0,0,0,0,1, last,object_id,"cancel",0,_("Cancel"));
-	AddWin(tbut,tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 	Sync(1);	
 
