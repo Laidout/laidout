@@ -28,7 +28,7 @@
 #include "../stylemanager.h"
 #include "../printing/psout.h"
 #include "pdf.h"
-#include "../impositions/impositioninst.h"
+#include "../impositions/singles.h"
 #include "../utils.h"
 
 #include <iostream>

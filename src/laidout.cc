@@ -38,7 +38,7 @@
 #include "language.h"
 #include "laidout.h"
 #include "viewwindow.h"
-#include "impositions/impositioninst.h"
+#include "impositions/singles.h"
 #include "impositions/netimposition.h"
 #include "headwindow.h"
 #include "version.h"

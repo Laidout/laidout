@@ -528,13 +528,7 @@ Spread *Document::GetLayout(int type, int index)
 }
 	
 //! Add n new blank pages starting before page index starting, or at end if starting==-1.
-/*! \todo **** this is rather broken, should migrate maintenance of margins and page width
- * and height to Imposition? The correct PageStyle is not being added here. And when pages
- * are inserted, the pagestyles of the following pages (that already existed) are possibly
- * out of sync with the correct pagestyles, since w(), h(), and margins are incorrect... must
- * update impositioninst.cc
- *
- * Returns number of pages added, or negative for error.
+/*! Returns number of pages added, or negative for error.
  *
  * \todo *** figure out how to handle upkeep of page range and labels
  * \todo *** if np<0 insert before index starting, else after

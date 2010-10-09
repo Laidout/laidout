@@ -21,7 +21,7 @@
 
 #include "language.h"
 #include "newdoc.h"
-#include "impositions/impositioninst.h"
+#include "impositions/singles.h"
 #include "impositions/netimposition.h"
 #include "impositions/signatureinterface.h"
 #include "impositions/netdialog.h"

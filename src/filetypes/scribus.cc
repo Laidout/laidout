@@ -31,7 +31,7 @@
 #include "../printing/psout.h"
 #include "../utils.h"
 #include "../headwindow.h"
-#include "../impositions/impositioninst.h"
+#include "../impositions/singles.h"
 #include "../dataobjects/mysterydata.h"
 #include "../drawdata.h"
 

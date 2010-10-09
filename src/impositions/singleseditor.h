@@ -18,7 +18,7 @@
 
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
-#include "impositioninst.h"
+#include "singles.h"
 
 class SinglesEditor : public Laxkit::RowFrame
 {
