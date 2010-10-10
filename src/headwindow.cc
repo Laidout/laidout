@@ -159,7 +159,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
-	else head->Add(new ViewWindow(doc));//***
+	else head->Add(new ViewWindow(doc),0,1);
 
 	return head;
 }
@@ -613,7 +613,7 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 				TreeChangeEvent *edata=new TreeChangeEvent(*te);
 				app->SendMessage(edata,windows.e[c]->win()->object_id,"docTreeChange",object_id);
 				DBG cerr <<"---sending docTreeChange to "<<
-				DBG 	(windows.e[c]->win()->win_title?windows.e[c]->win()->win_title:"untitled")<<endl;
+				DBG 	(windows.e[c]->win()->WindowTitle())<<endl;
 				yes=0;
 			}
 		}
@@ -826,7 +826,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 		return 0;
 	}
 	while (win->win_parent!=NULL) {
-		DBG cerr <<"  -----"<<(win->win_title?win->win_title:"untitled")<<endl;
+		DBG cerr <<"  -----"<<(win->WindowTitle())<<endl;
 		win=win->win_parent;
 	}
 

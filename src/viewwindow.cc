@@ -2939,6 +2939,7 @@ int ViewWindow::init()
 						 buttongap);
 	menub->tooltip(_("Display list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->NewWindow(menub);
+	menub->dec_count(); //remove extra creation count
 	
 	AddNull();//makes the status bar take up whole line.
 	anXWindow *last=NULL;
