@@ -1231,8 +1231,7 @@ int LaidoutApp::NewDocument(const char *spec)
 		if (c2!=impositionpool.n) continue;
 	}
 	
-	if (imp) imp=(Imposition *)imp->duplicate();
-	else imp=new Singles();
+	if (!imp) imp=new Singles(); //either way, imp has count of 1 now
 	 
 	if (!paper) paper=papersizes.e[0];
 	unsigned int flags=paper->flags;
