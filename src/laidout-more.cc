@@ -120,7 +120,7 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 				app->SendMessage(edata,w->object_id,"docTreeChange");
 
 				DBG cerr <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
-				DBG 	(w->win_title?w->win_title:"untitled")<< "("<<w->whattype()<<")"<<endl;
+				DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
 				yes=0;
 			}
 		}

@@ -80,6 +80,7 @@ void MysteryData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context
         fprintf(f,"%smaxx 100               #width of the data\n",spc);
         fprintf(f,"%smaxy 200               #height of the data\n",spc);
 		fprintf(f,"%smatrix 1 0 0 1 0 0     #affine transform to apply to the data\n",spc);
+		fprintf(f,"%snativeid 1             #A numeric id grabbed from the original file, if any\n",spc);
 		fprintf(f,"%sattributes             #the imported hints for this data\n",spc);
 		fprintf(f,"%s  ...                  #  what these are depend on the importer\n",spc);
 		return;
@@ -91,6 +92,7 @@ void MysteryData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context
 	fprintf(f,"%smaxy %.10g\n",spc,maxy);
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
 				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+	fprintf(f,"%snativeid %ld\n",spc,nativeid);
 	if (attributes) {
 		fprintf(f,"%sattributes\n",spc);
 		attributes->dump_out(f,indent+2);
@@ -125,6 +127,8 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 			DoubleAttribute(value,&x2);
 		} else if (!strcmp(nname,"maxy")) {
 			DoubleAttribute(value,&y2);
+		} else if (!strcmp(nname,"nativeid")) {
+			LongAttribute(value,&nativeid);
 		} else if (!strcmp(nname,"attributes")) {
 			if (attributes) delete attributes;
 			attributes=att->attributes.e[c]->duplicate();
