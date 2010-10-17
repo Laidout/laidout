@@ -47,6 +47,8 @@ select default papergroup, does not reinstall default papergroup!!
 
 control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
 
+debug spread editor
+
 
 -----bugs maybe ok to postpone till after .091 release:
 
@@ -76,10 +78,11 @@ need to change GroupInterface to determine contexts, then recompute bounds
 ----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
 DISABLE PATHINTERFACE in stable release
 DISABLE NEW PROJECT!! too unstable and probably pretty useless at this point maybe
+        -> new doc dialog, and menu items in viewer corner button
 
 check laidout.1 when time to release
 update examples to 0.091
-update docs
+update docs, removing absolute paths!
 update translations
 
 
@@ -98,8 +101,6 @@ DONE Generic fold and trim imposition
 		3. folding per section
 		4. specify stitching fold
 		5. trim lines for other folds as desired
-
-debug spread editor
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------

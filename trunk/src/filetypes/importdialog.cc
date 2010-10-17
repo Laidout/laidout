@@ -50,9 +50,9 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *nname,const char
 			Group *obj,
 			Document *ndoc,int startpg,double defdpi)
 	: FileDialog(parnt,nname,ntitle,
-			(nstyle&0xffff),
+			(nstyle&0xffff)|ANXWIN_REMEMBER,
 			xx,yy,ww,hh,brder,nowner,nsend,
-			FILES_PREVIEW|FILES_OPEN_MANY|ANXWIN_REMEMBER,
+			FILES_PREVIEW|FILES_OPEN_MANY,
 			nfile,npath,nmask)
 {
 	if (defdpi<=0) {

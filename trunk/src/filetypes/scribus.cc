@@ -44,6 +44,11 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
+//1.5 inches and 1/4 inch
+#define CANVAS_MARGIN_X 100.
+#define CANVAS_MARGIN_Y 20.
+#define CANVAS_GAP      40.
+
 
 //--------------------------------- install Scribus filter
 
@@ -67,12 +72,25 @@ class PageObject
 	LaxInterfaces::SomeData *data;
 	int count;
 	int cur;
-	PageObject(LaxInterfaces::SomeData *d);
+	int links;
+	int l,r,t,b, next,prev;
+	int nativeid;
+	PageObject(LaxInterfaces::SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp);
 	~PageObject();
 };
 
-PageObject::PageObject(SomeData *d)
+#define LINK_Left    1
+#define LINK_Right   2
+#define LINK_Top     4
+#define LINK_Bottom  8
+#define LINK_Next    16
+#define LINK_Prev    32
+
+PageObject::PageObject(SomeData *d, int native,int ll,int rr,int tt,int bb,int nn,int pp)
 {
+	nativeid=native;
+	l=ll; r=rr; t=tt; b=bb; next=nn; prev=pp;
+	links=0; //bits say if l..prev are original (0) or new (1)
 	data=d;
 	if (d) d->inc_count();
 	count=cur=0;
@@ -84,14 +102,10 @@ PageObject::~PageObject()
 }
 
 
-static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
 static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj);
-static int findobj(PtrStack<PageObject> &pageobjects, Attribute *att, const char *what);
-
-//1.5 inches and 1/4 inch
-#define CANVAS_MARGIN_X 100.
-#define CANVAS_MARGIN_Y 20.
-#define CANVAS_GAP      40.
+static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what);
+static int findobjnumber(Attribute *att, const char *what);
 
 
 //------------------------------------ ScribusExportConfig ----------------------------------
@@ -553,6 +567,100 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		if (spread) { delete spread; spread=NULL; }
 	} //for each spread
 
+	 //establish correct linking
+	int ll,o;
+	PageObject *obj;
+	for (int c=0; c<pageobjects.n; c++) {
+		DBG cerr <<"pageobject "<<c<<": "<<pageobjects.e[c]->data->whattype()<<", count="<<pageobjects.e[c]->count<<endl;
+
+		obj=pageobjects.e[c];
+		ll=obj->links;
+
+		 //it is necessary to check each link, not just one of a pair, since there may be a partial export.
+		 //in that case, links are just terminated.
+		
+		if (!(ll&LINK_Right) && obj->r>=0) {
+			o=findobj(pageobjects,obj->r,LINK_Left);
+			if (o>=0) {
+				obj->links|=LINK_Right;
+				obj->r=o;
+				pageobjects.e[o]->links|=LINK_Left;
+				pageobjects.e[o]->l=c;
+			} else {
+				 //object not found, so zap the link
+				obj->r=-1;
+			}
+		}
+
+		if (!(ll&LINK_Left) && obj->l>=0) {
+			o=findobj(pageobjects,obj->l,LINK_Right);
+			if (o>=0) {
+				obj->links|=LINK_Left;
+				obj->l=o;
+				pageobjects.e[o]->links|=LINK_Right;
+				pageobjects.e[o]->r=c;
+			} else {
+				 //object not found, so zap the link
+				obj->l=-1;
+			}
+		}
+
+		if (!(ll&LINK_Top) && obj->t>=0) {
+			o=findobj(pageobjects,obj->t,LINK_Bottom);
+			if (o>=0) {
+				obj->links|=LINK_Top;
+				obj->t=o;
+				pageobjects.e[o]->links|=LINK_Bottom;
+				pageobjects.e[o]->b=c;
+			} else {
+				 //object not found, so zap the link
+				obj->t=-1;
+			}
+		}
+
+		if (!(ll&LINK_Bottom) && obj->b>=0) {
+			o=findobj(pageobjects,obj->b,LINK_Top);
+			if (o>=0) {
+				obj->links|=LINK_Bottom;
+				obj->b=o;
+				pageobjects.e[o]->links|=LINK_Top;
+				pageobjects.e[o]->t=c;
+			} else {
+				 //object not found, so zap the link
+				obj->b=-1;
+			}
+		}
+
+		if (!(ll&LINK_Next) && obj->next>=0) {
+			o=findobj(pageobjects,obj->next,LINK_Prev);
+			if (o>=0) {
+				obj->links|=LINK_Next;
+				obj->next=o;
+				pageobjects.e[o]->links|=LINK_Prev;
+				pageobjects.e[o]->prev=c;
+			} else {
+				 //object not found, so zap the link
+				obj->next=-1;
+			}
+		}
+
+		if (!(ll&LINK_Prev) && obj->prev>=0) {
+			o=findobj(pageobjects,obj->prev,LINK_Next);
+			if (o>=0) {
+				obj->links|=LINK_Prev;
+				obj->prev=o;
+				pageobjects.e[o]->links|=LINK_Next;
+				pageobjects.e[o]->next=c;
+			} else {
+				 //object not found, so zap the link
+				obj->prev=-1;
+			}
+		}
+	}
+
+
+	int curobj=0;
+
 	 //now dump everything out to the file
 	for (c=start; c<=end; c++) { //for each spread
 		if (doc) spread=doc->imposition->Layout(layout,c);
@@ -613,12 +721,12 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 					  "   />\n", plandscape);
 					
 			if (limbo && limbo->n()) {
-				scribusdumpobj(f,pageobjects,NULL,limbo,error_ret,warning);
+				scribusdumpobj(f,curobj,pageobjects,NULL,limbo,error_ret,warning);
 			}
 
 			if (spread) {
 				if (spread->marks) {
-					scribusdumpobj(f,pageobjects,NULL,spread->marks,error_ret,warning);
+					scribusdumpobj(f,curobj,pageobjects,NULL,spread->marks,error_ret,warning);
 				}
 
 				 // for each page in spread layout..
@@ -634,7 +742,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							scribusdumpobj(f,pageobjects,NULL,g->e(c3),error_ret,warning);
+							scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c3),error_ret,warning);
 						}
 					}
 					psPopCtm();
@@ -677,6 +785,9 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj)
 				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
 
+	int l=-1,r=-1,t=-1,b=-1, next=-1,prev=-1;
+	int nativeid=-1;
+
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		ImageData *img=dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
@@ -706,36 +817,37 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj)
 		MysteryData *mdata=dynamic_cast<MysteryData *>(obj);
 		if (!strcmp(mdata->importer,"Scribus")) {
 			ptype=PTYPE_Laidout_MysteryData;
+			next=findobjnumber(mdata->attributes,"NEXTITEM");
+			prev=findobjnumber(mdata->attributes,"BACKITEM");
+			l   =findobjnumber(mdata->attributes,"LeftLINK");
+			r   =findobjnumber(mdata->attributes,"RightLINK");
+			t   =findobjnumber(mdata->attributes,"TopLINK");
+			b   =findobjnumber(mdata->attributes,"BottomLINK");
+			nativeid=mdata->nativeid;
 		} //else is someone else's mystery data
 	} 
 
 	if (ptype==PTYPE_None) return;
 
-	int c;
+	int c,count=0;
 	for (c=0; c<pageobjects.n; c++) {
 		if (obj==pageobjects.e[c]->data) {
 			 //If the object has already been encountered, then add another instance of it.
 			 //This happens when we are outputting tiled impositions, or clone objects for instance.
 			pageobjects.e[c]->count++;
-			pageobjects.push(pageobjects.e[c],0);
-			return;
+			count++;
+			//pageobjects.push(pageobjects.e[c],0);
+			//return;
 		}
 	}
 	 //Object not found, so add new reference
-	pageobjects.push(new PageObject(obj),0);
+	PageObject *o=new PageObject(obj, nativeid,l,r,t,b,next,prev);
+	o->count=count;
+	pageobjects.push(o,1);
 }
 
-//! Find scribus objects that have been refered to.
-/*! For instance, the NEXTITEM is an object number of the next object in a Scribus text object chain.
- * If there is a MysteryData object with that original object number, then that is what is returned.
- *
- * Return value is the index into the pageobjects stack.
- * 
- * For tiled impositions, there is potential trouble linking items. The PageObject class
- * helps against that at least a little, to ensure that resulting links on export point to
- * things that are at least consistent.
- */
-static int findobj(PtrStack<PageObject> &pageobjects, Attribute *att, const char *what)
+//! Find the original link number for an object, if any.
+static int findobjnumber(Attribute *att, const char *what)
 {
 	if (!att) return -1;
 
@@ -746,18 +858,29 @@ static int findobj(PtrStack<PageObject> &pageobjects, Attribute *att, const char
 	int i; //the original linked object number, as recorded from the original Scribus file
 	if (!IntAttribute(a->value,&i)) return -1;
 
-	 //search for that linked object
-	int skip=-1;
-	MysteryData *data;
-	for (int c=0; c<pageobjects.n; c++) {
-		data=dynamic_cast<MysteryData*>(pageobjects.e[c]->data);
-		if (!data) continue;
+	return i;
+}
 
-		if (data->nativeid==i) {
-			if (skip==-1) skip=pageobjects.e[c]->cur;
-			if (skip) { skip--; continue; }
-			pageobjects.e[c]->cur++;
-			return c;
+//! Find scribus objects that have been refered to, returning index in pageobjects.
+/*! For instance, the NEXTITEM is an object number of the next object in a Scribus text object chain.
+ * If there is a MysteryData object with that original object number, then that is what is returned.
+ *
+ * Return value is the index into the pageobjects stack.
+ * 
+ * For tiled impositions, there is potential trouble linking items. The PageObject class
+ * helps against that at least a little, to ensure that resulting links on export point to
+ * things that are at least consistent.
+ */
+static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what)
+{
+	if (nativeid<0) return -1;
+
+	PageObject *obj;
+	for (int c=0; c<pageobjects.n; c++) {
+		obj=pageobjects.e[c];
+
+		if (obj->nativeid==nativeid) {
+			if (!(obj->links&what)) return c; //return on finding an unassigned link
 		}
 	}
 
@@ -770,7 +893,8 @@ static int findobj(PtrStack<PageObject> &pageobjects, Attribute *att, const char
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning)
+static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,
+							char **error_ret,int &warning)
 {
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
@@ -786,6 +910,8 @@ static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,
 				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
 	Attribute *mysteryatts=NULL;
+	int leftlink=-1, rightlink=-1, toplink=-1, bottomlink=-1; //for table grids
+	int nextitem=-1, backitem=-1; //for text object chains
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		img=dynamic_cast<ImageData *>(obj);
@@ -812,7 +938,7 @@ static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,pageobjects,NULL,g->e(c),error_ret,warning);
+			scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c),error_ret,warning);
 		groups.pop();
 		psPopCtm();
 		return;
@@ -838,6 +964,13 @@ static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,
 		return;
 	}
 
+	leftlink  =pageobjects.e[curobj]->l;
+	rightlink =pageobjects.e[curobj]->r;
+	toplink   =pageobjects.e[curobj]->t;
+	bottomlink=pageobjects.e[curobj]->b;
+	nextitem  =pageobjects.e[curobj]->next;
+	backitem  =pageobjects.e[curobj]->prev;
+
 	 //there is no image shearing in Scribus, so images must map to an unsheared variant,
 	 //  and stuck in an appropriate box
 	 //Gradients must have one circle totally inside another. Sheared gradients must be converted
@@ -848,8 +981,6 @@ static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,
 	 //ROT adds additional rotation around that point, clockwise as you see it in Scribus,
 	 //which is a left handed space (+x to the right, +y is down).
 	 //WIDTH and HEIGHT are bounding box measurements from that corner, and are in scratch space units.
-	 //
-	//***this is still a bit hacky
 	 
 	 //figure out the COCOOR and POCOOR for an object
 	flatpoint p,p1,p2, vx,vy;
@@ -962,17 +1093,6 @@ static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,
 		}
 	}
 
-
-	int leftlink=-1, rightlink=-1, toplink=-1, bottomlink=-1; //for table grids
-	int nextitem=-1, backitem=-1; //for text object chains
-	if (mysteryatts) {
-		nextitem  =findobj(pageobjects,mysteryatts,"NEXTITEM");
-		backitem  =findobj(pageobjects,mysteryatts,"BACKITEM");
-		leftlink  =findobj(pageobjects,mysteryatts,"LeftLINK");
-		rightlink =findobj(pageobjects,mysteryatts,"RightLINK");
-		toplink   =findobj(pageobjects,mysteryatts,"TopLINK");
-		bottomlink=findobj(pageobjects,mysteryatts,"BottomLINK");
-	}
 
 	fprintf(f,"  <PAGEOBJECT \n");
 	int content=-1;
@@ -1175,6 +1295,8 @@ static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,
 
 	delete[] pocoor;
 	psPopCtm();
+
+	curobj++;
 }
 
 

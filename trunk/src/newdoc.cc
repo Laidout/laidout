@@ -384,16 +384,19 @@ int NewDocWindow::init()
 	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
 	last=impsel=new SliderPopup(this,"Imposition",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"imposition");
-	int whichimp=0;
+	int whichimp=-1,singles=-1;
 	if (doc) {
 		whichimp=laidout->impositionpool.n;
 		impsel->AddItem(_("Current"),IMP_CURRENT);
 	}
 	for (c=0; c<laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
-		if (doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->name))
+		if (whichimp<0 && doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->name))
 			whichimp=c;
+		if (!strcmp(laidout->impositionpool.e[c]->name,"Singles")) singles=c;
 	}
+	if (whichimp<0) whichimp=singles;
+
 	 // *** these need to be all the imposition base creation types
 	//impsel->AddItem(_("NEW Singles...",   IMP_NEW_SINGLES);
 	impsel->AddSep();

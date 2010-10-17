@@ -3139,7 +3139,7 @@ int ViewWindow::init()
  */
 int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"ViewWindow "<<(win_title?win_title:"a viewwindow")<<" got "<<(mes?mes:"unknown")<<endl;
+	DBG cerr <<"ViewWindow "<<(WindowTitle())<<" got "<<(mes?mes:"unknown")<<endl;
 
 	if (!strcmp(mes,"docTreeChange")) { // doc tree was changed somehow
 		int c=viewport->Event(data,mes);
