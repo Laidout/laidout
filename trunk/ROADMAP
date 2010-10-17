@@ -10,7 +10,7 @@ VERSION 0.091
        Debug enough to not be too embarrassing
 (done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
        Images should maintain their aspect ratio by default when scaling
-       Scribus import must make sure linked text and linked table mystery data behave properly on export
+(done) Scribus import must make sure linked text and linked table mystery data behave properly on export
 (done) Export PLAN files for podofoimpose
 (done) Generic fold and trim imposition
 (done) Be able to load imposition instances, a form of resource
