@@ -45,17 +45,6 @@ using namespace LaxInterfaces;
 
 
 
-
-static void scribusdumpobj(FILE *f,NumStack<SomeData*> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
-static void appendobjfordumping(NumStack<SomeData*> &pageobjects,SomeData *obj);
-static int findobj(NumStack<SomeData*> &pageobjects, Attribute *att, int i);
-
-//1.5 inches and 1/4 inch
-#define CANVAS_MARGIN_X 100.
-#define CANVAS_MARGIN_Y 20.
-#define CANVAS_GAP      40.
-
-
 //--------------------------------- install Scribus filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -69,6 +58,41 @@ void installScribusFilter()
 	scribusin->GetStyleDef();
 	laidout->importfilters.push(scribusin);
 }
+
+
+//--------------------------------- helper stuff -----------------------------
+class PageObject
+{
+  public:
+	LaxInterfaces::SomeData *data;
+	int count;
+	int cur;
+	PageObject(LaxInterfaces::SomeData *d);
+	~PageObject();
+};
+
+PageObject::PageObject(SomeData *d)
+{
+	data=d;
+	if (d) d->inc_count();
+	count=cur=0;
+}
+
+PageObject::~PageObject()
+{
+	if (data) data->dec_count();
+}
+
+
+static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj);
+static int findobj(PtrStack<PageObject> &pageobjects, Attribute *att, const char *what);
+
+//1.5 inches and 1/4 inch
+#define CANVAS_MARGIN_X 100.
+#define CANVAS_MARGIN_Y 20.
+#define CANVAS_GAP      40.
+
 
 //------------------------------------ ScribusExportConfig ----------------------------------
 
@@ -494,7 +518,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	int pagec;
 
 	 //find object to pageobject mapping
-	NumStack<SomeData*> pageobjects; //we need to keep track of pageobject correspondence, as scribus docs
+	PtrStack<PageObject> pageobjects; //we need to keep track of pageobject correspondence, as scribus docs
 									 //object id is the order they appear in the file, so for linked objects,
 									 //we need to know the order that they will appear!
 	for (c=start; c<=end; c++) { //for each spread
@@ -644,16 +668,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
  *
  * \todo *** this doesn't work for tiled impositions, anything with multi ref objects!!
  */
-static void appendobjfordumping(NumStack<SomeData*> &pageobjects,SomeData *obj)
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj)
 {
-	ImageData *img=NULL;
+	//WARNING! This function must mirror scribusdumpobj() for what objects actually get output..
+
 	//GradientData *grad=NULL;
-	int ptype=-1; //>0 is translatable to scribus object.
+	int ptype=PTYPE_None; //>0 is translatable to scribus object.
 				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
-		img=dynamic_cast<ImageData *>(obj);
+		ImageData *img=dynamic_cast<ImageData *>(obj);
 		if (!img || !img->filename) return;
 		ptype=PTYPE_Image;
 
@@ -686,26 +711,54 @@ static void appendobjfordumping(NumStack<SomeData*> &pageobjects,SomeData *obj)
 
 	if (ptype==PTYPE_None) return;
 
-	pageobjects.push(obj);
+	int c;
+	for (c=0; c<pageobjects.n; c++) {
+		if (obj==pageobjects.e[c]->data) {
+			 //If the object has already been encountered, then add another instance of it.
+			 //This happens when we are outputting tiled impositions, or clone objects for instance.
+			pageobjects.e[c]->count++;
+			pageobjects.push(pageobjects.e[c],0);
+			return;
+		}
+	}
+	 //Object not found, so add new reference
+	pageobjects.push(new PageObject(obj),0);
 }
 
-static int findobj(NumStack<SomeData*> &pageobjects, Attribute *att, const char *what)
+//! Find scribus objects that have been refered to.
+/*! For instance, the NEXTITEM is an object number of the next object in a Scribus text object chain.
+ * If there is a MysteryData object with that original object number, then that is what is returned.
+ *
+ * Return value is the index into the pageobjects stack.
+ * 
+ * For tiled impositions, there is potential trouble linking items. The PageObject class
+ * helps against that at least a little, to ensure that resulting links on export point to
+ * things that are at least consistent.
+ */
+static int findobj(PtrStack<PageObject> &pageobjects, Attribute *att, const char *what)
 {
 	if (!att) return -1;
 
 	Attribute *a;
-	a=att->find(what);
+	a=att->find(what); //something like "NEXTITEM" in mysterydata info
 	if (!a) return -1;
 
-	int i; //the original object number
+	int i; //the original linked object number, as recorded from the original Scribus file
 	if (!IntAttribute(a->value,&i)) return -1;
 
+	 //search for that linked object
+	int skip=-1;
 	MysteryData *data;
 	for (int c=0; c<pageobjects.n; c++) {
-		data=dynamic_cast<MysteryData*>(pageobjects.e[c]);
+		data=dynamic_cast<MysteryData*>(pageobjects.e[c]->data);
 		if (!data) continue;
 
-		if (data->nativeid==i) return c;
+		if (data->nativeid==i) {
+			if (skip==-1) skip=pageobjects.e[c]->cur;
+			if (skip) { skip--; continue; }
+			pageobjects.e[c]->cur++;
+			return c;
+		}
 	}
 
 	return -1;
@@ -717,7 +770,7 @@ static int findobj(NumStack<SomeData*> &pageobjects, Attribute *att, const char 
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.
  */
-static void scribusdumpobj(FILE *f,NumStack<SomeData*> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning)
+static void scribusdumpobj(FILE *f,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning)
 {
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY

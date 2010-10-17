@@ -773,6 +773,8 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 
 //! Ensure that the Signature's values are actually sane.
 /*! \todo TODO!
+ *
+ * Return 0 for totally valid.
  */ 
 unsigned int Signature::Validity()
 {
@@ -1077,6 +1079,221 @@ Style *SignatureImposition::duplicate(Style *s)
 	return Imposition::duplicate(s);  
 }
 
+//! Return a ValueObject with a Fold.
+/*! 
+ */
+int createFold(ValueHash *context, ValueHash *parameters,
+			   Value **value_ret, char **message_ret)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=NULL;
+		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		return 1;
+	}
+
+	int index=-1;
+	int under=0;
+	char dir=0;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+
+		 //---index
+		i=parameters->findInt("index",-1,&e);
+		if (e==0) { 
+			if (i<0) {
+				sprintf(error, _("Index out of range!")); 
+				throw error;
+			} else index=i; 
+		}
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"index"); throw error; }
+
+		 //---direction
+		i=parameters->findInt("direction",-1,&e); //enums are converted to integers in LaidoutCalculator
+		if (e==0) {
+			if (i==0) { dir='l'; }
+			else if (i==1) { dir='l'; under=1; }
+			else if (i==2) { dir='r'; }
+			else if (i==3) { dir='r'; under=1; }
+			else if (i==4) { dir='t'; }
+			else if (i==6) { dir='t'; under=1; }
+			else if (i==5) { dir='b'; }
+			else if (i==7) { dir='b'; under=1; }
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"direction"); throw error; }
+
+
+	} catch (const char *str) {
+		if (message_ret) appendline(*message_ret,str);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		*value_ret=NULL;
+
+		if (dir!=0 && index>=0) {
+			Fold *fold=new Fold(dir,under,index);
+			*value_ret=new ObjectValue(fold);
+			fold->dec_count();
+
+		} else {
+			if (message_ret) appendline(*message_ret,_("Incomplete Fold definition!"));
+			err=1;
+		}
+		
+	}
+
+	return err;
+}
+
+//! Return a ValueObject with a SignatureImposition.
+/*! This does not throw an error for having an incomplete set of parameters.
+ * It just fills what's given.
+ */
+int createSignature(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, char **message_ret)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=NULL;
+		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		return 1;
+	}
+
+	SignatureImposition *imp=new SignatureImposition;
+	Value *v=NULL;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+		double d;
+
+		 //---sheetspersignature
+		i=parameters->findInt("sheetspersignature",-1,&e);
+		if (e==0) imp->signature->sheetspersignature=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"sheetspersignature"); throw error; }
+
+		 //---autoaddsheets
+		i=parameters->findInt("autoaddsheets",-1,&e);
+		if (e==0) imp->signature->autoaddsheets=(i?1:0);
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"autoaddsheets"); throw error; }
+
+		 //---insetleft
+		d=parameters->findDouble("insetleft",-1,&e);
+		if (e==0) imp->signature->insetleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetleft"); throw error; }
+
+		 //---insetright
+		d=parameters->findDouble("insetright",-1,&e);
+		if (e==0) imp->signature->insetright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetright"); throw error; }
+
+		 //---insettop
+		d=parameters->findDouble("insettop",-1,&e);
+		if (e==0) imp->signature->insettop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insettop"); throw error; }
+
+		 //---insetbottom
+		d=parameters->findDouble("insetbottom",-1,&e);
+		if (e==0) imp->signature->insetbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetbottom"); throw error; }
+
+		 //---marginleft
+		d=parameters->findDouble("marginleft",-1,&e);
+		if (e==0) imp->signature->marginleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginleft"); throw error; }
+
+		 //---marginright
+		d=parameters->findDouble("marginright",-1,&e);
+		if (e==0) imp->signature->marginright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginright"); throw error; }
+
+		 //---margintop
+		d=parameters->findDouble("margintop",-1,&e);
+		if (e==0) imp->signature->margintop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"margintop"); throw error; }
+
+		 //---marginbottom
+		d=parameters->findDouble("marginbottom",-1,&e);
+		if (e==0) imp->signature->marginbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginbottom"); throw error; }
+
+		 //---trimleft
+		d=parameters->findDouble("trimleft",-1,&e);
+		if (e==0) imp->signature->trimleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimleft"); throw error; }
+
+		 //---trimright
+		d=parameters->findDouble("trimright",-1,&e);
+		if (e==0) imp->signature->trimright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimright"); throw error; }
+
+		 //---trimtop
+		d=parameters->findDouble("trimtop",-1,&e);
+		if (e==0) imp->signature->trimtop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimtop"); throw error; }
+
+		 //---trimbottom
+		d=parameters->findDouble("trimbottom",-1,&e);
+		if (e==0) imp->signature->trimbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimbottom"); throw error; }
+
+		 //---tilegapx
+		d=parameters->findDouble("tilegapx",-1,&e);
+		if (e==0) imp->signature->tilegapx=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilegapx"); throw error; }
+
+		 //---tilegapy
+		d=parameters->findDouble("tilegapy",-1,&e);
+		if (e==0) imp->signature->tilegapy=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilegapy"); throw error; }
+
+		 //---tilex
+		i=parameters->findInt("tilex",-1,&e);
+		if (e==0) imp->signature->tilex=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilex"); throw error; }
+
+		 //---tiley
+		i=parameters->findInt("tiley",-1,&e);
+		if (e==0) imp->signature->tiley=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tiley"); throw error; }
+
+		 //---folds
+		v=parameters->find("folds");
+		if (v->type()!=VALUE_Set) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
+		SetValue *set=dynamic_cast<SetValue*>(v);
+		ObjectValue *o;
+		Fold *fold;
+		for (int c=0; c<set->values.n; c++) {
+			o=dynamic_cast<ObjectValue*>(set->values.e[c]);
+			if (!o) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
+			fold=dynamic_cast<Fold*>(o->object);
+			if (!fold) { sprintf(error, _("Expecting %s!"),"Fold"); throw error; }
+
+			imp->signature->folds.push(new Fold(fold->direction,fold->under,fold->whichfold));
+		}
+
+
+
+	} catch (const char *str) {
+		if (message_ret) appendline(*message_ret,str);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		if (imp->signature->Validity()==0) *value_ret=new ObjectValue(imp);
+		else {
+			if (message_ret) appendline(*message_ret,_("Imposition has invalid configuration!"));
+			err=1;
+			*value_ret=NULL;
+		}
+	}
+	if (imp) imp->dec_count();
+
+	return err;
+}
+
 //! The newfunc for Singles instances.
 Style *NewSignature(StyleDef *def)
 { 
@@ -1094,7 +1311,8 @@ StyleDef *makeSignatureImpositionStyleDef()
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NewSignature); //newfunc
+			NewSignature, //newfunc
+			createSignature);
 
 	sd->push("name", _("Name"), _("Name of the imposition"),
 			Element_String,
@@ -1166,7 +1384,8 @@ StyleDef *makeSignatureImpositionStyleDef()
 				NULL,NULL, //range, default value
 				NULL, //fields
 				0, //new flags
-				NULL); //newfunc
+				NULL, //newfunc
+				createFold); //newfunc with parameters
 
 		foldd->push("index", _("Index"), _("The index of the fold, starting from 0, from the top or left."),
 				Element_Int, "[0..", "0", 0, NULL);
@@ -1176,7 +1395,7 @@ StyleDef *makeSignatureImpositionStyleDef()
 					 "Left",_("Left"),_("Right over to Left"),
 					 "UnderLeft",_("Under Left"),_("Right under to Left"),
 					 "Right",_("Right"),_("Left over to Right"),
-					 "Under Right",_("Right"),_("Left under to Right"),
+					 "UnderRight",_("Right"),_("Left under to Right"),
 					 "Top",_("Top"),_("Bottom over to Top"),
 					 "UnderTop",_("Top"),_("Bottom under to Top"),
 					 "Bottom",_("Bottom"),_("Top over to Bottom"),
@@ -1271,6 +1490,8 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
 		return;
 	}
 
+	fprintf(f,"%spaper\n",spc);
+	papersize->dump_out(f,indent+2,what,context);
 	fprintf(f,"%sshowwholecover %s\n",spc,showwholecover?"yes":"no");
 	signature->dump_out(f,indent,what,context);
 }
@@ -1389,6 +1610,10 @@ int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 {
 	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
 	signature->SetPaper(npaper);
+	if (npaper!=papersize) {
+		if (papersize) papersize->dec_count();
+		papersize=(PaperStyle*)npaper->duplicate();
+	}
 	return 0;
 }
 
@@ -1928,6 +2153,5 @@ Spread *SignatureImposition::GetLittleSpread(int whichspread)
 {
 	return PageLayout(whichspread);
 }
-
 
 

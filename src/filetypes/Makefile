@@ -20,6 +20,7 @@ objs= \
 	importdialog.o \
 	image.o \
 	pdf.o \
+	podofoimposeplan.o \
 	postscript.o \
 	ppt.o \
 	scribus.o \

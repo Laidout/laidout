@@ -61,7 +61,7 @@ class SetValue : public Value
 {
  public:
 	Laxkit::RefPtrStack<Value> values;
-	virtual int AddValue(Value *v);
+	virtual int Push(Value *v);
 	virtual const char *toCChar();
 	virtual int type() { return VALUE_Set; }
 };

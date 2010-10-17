@@ -243,6 +243,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	config_dir=newstr(getenv("HOME"));
 	appendstr(config_dir,"/.laidout/");
 	appendstr(config_dir,LAIDOUT_VERSION);
+	appendstr(config_dir,"/");
 
 	makestr(controlfontstr,"sans-11");
 	
@@ -955,10 +956,22 @@ Document *LaidoutApp::findDocumentById(unsigned long id)
 Document *LaidoutApp::findDocument(const char *saveas)
 {
 	if (!project) return NULL;
+
+	 //search for full name
 	for (int c=0; c<project->docs.n; c++) {
 		if (project->docs.e[c]->doc
 			 && project->docs.e[c]->doc->saveas 
 			 && !strcmp(saveas,project->docs.e[c]->doc->saveas))
+			return project->docs.e[c]->doc;
+	}
+
+	while (*saveas=='.') saveas++;
+
+	 //search for partial name match
+	for (int c=0; c<project->docs.n; c++) {
+		if (project->docs.e[c]->doc
+			 && project->docs.e[c]->doc->saveas 
+			 && strstr(project->docs.e[c]->doc->saveas,saveas))
 			return project->docs.e[c]->doc;
 	}
 	return NULL;
@@ -1030,6 +1043,15 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 	return fullname;
 }
 
+//! Return the default absolute path for the given resource. 
+char *LaidoutApp::default_path_for_resource(const char *resource)
+{
+	char *path=newstr(config_dir);
+	appendstr(path,"/");
+	appendstr(path,resource);
+	return path;
+}
+
 ////! ***todo Find a resource by the human readable name, rather than by filename
 //char *full_path_for_resource_by_name(const char *name,char *dir)//dir=NULL
 //{
@@ -1095,7 +1117,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	
 	char *error=NULL;
 	FILE *f=open_laidout_file_to_read(fullname,"Project",&error);
-	if (error) delete[] error;
+	if (error) { delete[] error; error=NULL; }
 	if (f) {
 		fclose(f);
 		if (project) project->clear();

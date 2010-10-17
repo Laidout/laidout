@@ -470,6 +470,9 @@ int Spread::PagestackIndex(int docpage)
  * This exists to try to avoid unnecessarily large dialogs and still have it easy
  * to navigate to a particular imposition you want.
  */
+/*! \fn void Imposition::GetDimensions(int paperorpage, double *x, double *y)
+ * \brief Return default paper dimensions if paperorpage==0, or page dimensions for paperorpage==1.
+ */
 
 
 
@@ -832,6 +835,14 @@ Imposition *ImpositionResource::Create()
 	if (impositionfile) {
 		FILE *f=open_laidout_file_to_read(impositionfile,"Imposition",NULL);
 		if (!f) return NULL; //file was bad
+	
+		LaxFiles::Attribute att;
+		att.dump_in(f,0,NULL);
+		if (att.attributes.n!=0 && !strcmp(att.attributes.e[0]->name,"type")) {
+			imp=newImpositionByType(att.attributes.e[0]->value);
+			if (imp) imp->dump_in_atts(&att,0,NULL);
+		}
+
 		fclose(f);
 
 	} else if (styledef) {

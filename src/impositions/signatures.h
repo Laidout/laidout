@@ -26,7 +26,7 @@
 
 const char *FoldDirectionName(char dir, int under, int translate=1);
 
-class Fold
+class Fold : public Laxkit::RefCounted
 {
  public:
 	char direction; //l,r,t, or b
