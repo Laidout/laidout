@@ -1757,7 +1757,7 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 	DBG 		}
 	DBG 		if (c==spread->pagestack.n) c=-1;
 	DBG 	}
-	DBG 	cerr <<"mouse over: "<<c<<endl;
+	DBG 	cerr <<"mouse over: "<<c<<", page "<<(c>=0?spread->pagestack.e[c]->index:-1)<<endl;
 	DBG }
 
 	return ViewportWindow::MouseMove(x,y,state,mouse);

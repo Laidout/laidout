@@ -19,10 +19,13 @@
 #include "signatureinterface.h"
 #include "../viewwindow.h"
 #include "../headwindow.h"
+#include "../utils.h"
+#include "../version.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
+#include <lax/filedialog.h>
 
 #include <lax/lists.cc>
 
@@ -96,10 +99,19 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	showdecs=0;
 	papersize=NULL;
 
-	if (sig) signature=sig->duplicate();
-	else signature=new Signature;
+	if (sig) {
+		signature=sig->duplicate();
+	} else {
+		signature=new Signature;
+		reallocateFoldinfo();
+	}
 	if (p) signature->SetPaper(p);
+
+	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
+	hasfinal=0;
 	foldinfo=signature->foldinfo;
+	checkFoldLevel(1);
+	signature->resetFoldinfo(NULL);
 
 	foldr1=foldc1=foldr2=foldc2=-1;
 	folddirection=0;
@@ -111,10 +123,6 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 		signature->totalheight=5;
 		signature->totalwidth=5;
 	}
-
-	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
-	hasfinal=0;
-	reallocateFoldinfo();
 }
 
 SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -136,7 +144,9 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 	
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	hasfinal=0;
+
 	reallocateFoldinfo();
+	checkFoldLevel(1);
 }
 
 SignatureInterface::~SignatureInterface()
@@ -214,8 +224,9 @@ int SignatureInterface::checkFoldLevel(int update)
 	return foldlevel;
 }
 
-#define SIGM_Portrait   2000
-#define SIGM_Landscape  2001
+#define SIGM_Portrait        2000
+#define SIGM_Landscape       2001
+#define SIGM_SaveAsResource  2002
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -242,6 +253,10 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 				| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
 	}
 	menu->EndSubMenu();
+	if (hasfinal) {
+		menu->AddSep();
+		menu->AddItem(_("Save as resource..."),SIGM_SaveAsResource);
+	}
 	return menu;
 }
 
@@ -253,7 +268,17 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		int i=s->info2;
 
-		if (i==SIGM_Landscape) {
+		if (i==SIGM_SaveAsResource) {
+			char *impdir=laidout->default_path_for_resource("impositions");
+			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
+						ANXWIN_REMEMBER,
+						0,0,0,0,0, object_id,"saveAsPopup",
+						FILES_FILES_ONLY|FILES_SAVE_AS,
+						NULL,impdir));
+			delete[] impdir;
+			return 0;
+
+		} else if (i==SIGM_Landscape) {
 			if (signature->paperbox && !signature->paperbox->landscape()) {
 				signature->paperbox->landscape(1);
 				double t=signature->totalheight;
@@ -285,6 +310,32 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			return 0;
 		}
 		return 1;
+
+	} else if (!strcmp(mes,"saveAsPopup")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s || isblank(s->str)) return 1;
+
+		char *error=NULL;
+		FILE *f=open_file_for_writing(s->str,1,&error);
+		if (!f) {
+			if (error) viewport->postmessage(error);
+			return 0;
+		}
+
+		fprintf(f,"#Laidout %s Imposition\n",LAIDOUT_VERSION);
+		fprintf(f,"type SignatureImposition\n\n");
+		if (signature->paperbox) {
+			fprintf(f,"paper\n");
+			signature->paperbox->dump_out(f,2,0,NULL);
+		}
+
+		signature->dump_out(f,0,0,NULL);
+
+		fclose(f);
+
+		viewport->postmessage(_("Saved."));
+
+		return 0;
 	}
 
 	return 1;
@@ -752,7 +803,7 @@ int SignatureInterface::WheelDown(int x,int y,unsigned int state,int count,const
 	flatpoint fp=screentoreal(x,y);
 	if (fp.x>0 && fp.x<signature->totalwidth && fp.y<-signature->totalheight*.1 && fp.y>-signature->totalheight*.2) {
 		signature->sheetspersignature--;
-		if (signature->sheetspersignature<0) {
+		if (signature->sheetspersignature<=0) {
 			signature->autoaddsheets=1;
 			signature->sheetspersignature=0;
 		}
@@ -1155,7 +1206,7 @@ void SignatureInterface::remapAffectedCells(int whichfold)
  */
 int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" SignatureInterface got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (ch=='d' && (state&LAX_STATE_MASK)==0) {
 		showdecs++;
@@ -1233,6 +1284,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (foldlevel!=0) return 0;
 		signature->numvfolds++;
 		reallocateFoldinfo();
+		checkFoldLevel(1);
 		needtodraw=1;
 		return 0;
 
@@ -1243,6 +1295,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (signature->numvfolds<=0) signature->numvfolds=0;
 		if (old!=signature->numvfolds) {
 			reallocateFoldinfo();
+			checkFoldLevel(1);
 			needtodraw=1;
 		}
 		return 0;
@@ -1251,6 +1304,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (foldlevel!=0) return 0;
 		signature->numhfolds++;
 		reallocateFoldinfo();
+		checkFoldLevel(1);
 		needtodraw=1;
 		return 0;
 
@@ -1261,6 +1315,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (signature->numhfolds<=0) signature->numhfolds=0;
 		if (old!=signature->numhfolds) {
 			reallocateFoldinfo();
+			checkFoldLevel(1);
 			needtodraw=1;
 		}
 		return 0;
@@ -1362,9 +1417,13 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 	//signature=sig;
 	//if (signature) signature->inc_count();
 
-	if (!viewport) viewport=new ViewportWindow(this,"signature-editor-viewport","signature-editor-viewport",
+	if (!viewport) {
+		viewport=new ViewportWindow(this,"signature-editor-viewport","signature-editor-viewport",
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
 									0,0,0,0,0,NULL);
+		app->reparent(viewport,this);
+		viewport->dec_count();
+	}
 
 	win_colors->bg=rgbcolor(200,200,200);
 	viewport->dp->NewBG(200,200,200);

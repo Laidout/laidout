@@ -272,7 +272,11 @@ Value::~Value()
 //----------------------------- SetValue ----------------------------------
 /*! \class SetValue
  */
-int SetValue::AddValue(Value *v)
+
+//! Push val, which increments its count.
+/*! Return 0 for success or nonzero for error.
+ */
+int SetValue::Push(Value *v)
 {
 	if (!v) return 1;
 	if (values.push(v)>=0) return 0;
@@ -289,6 +293,7 @@ const char *SetValue::toCChar()
 	appendstr(tempstr,"}");
 	return tempstr;
 }
+
 
 //--------------------------------- IntValue -----------------------------
 const char *IntValue::toCChar()

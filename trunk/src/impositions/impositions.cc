@@ -147,7 +147,7 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 	if (projectresourcedir) AddToImpositionPool(existingpool,projectresourcedir);
 
 	ImpositionResource **rr;
-	if (!existingpool->n) {
+	//if (!existingpool->n) {
 		 //there were no resources found, so add some built in defaults
 		rr=Singles::getDefaultResources();
 		if (rr) {
@@ -166,7 +166,7 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
 			delete rr;
 		}
-	}
+	//}
 
 	return existingpool;
 }
@@ -200,7 +200,13 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 			}
 
 			resource_name_and_desc(f,&name,&desc);
-			if (isblank(name)) temp=make_id("imposition");
+			if (isblank(name)) {
+				temp=newstr(lax_basename(str));
+				if (isblank(temp)) {
+					if (temp) delete[] temp;
+					temp=make_id("imposition");
+				}
+			}
 			numadded++;
 			existingpool->push(new ImpositionResource(NULL,   //styledef name
 													  name?name:temp,//instance name

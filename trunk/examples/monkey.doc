@@ -1,5 +1,5 @@
 #Laidout 0.08.1 Document
-saveas /home/tom/p/sourceforge/laidout/src/test-monkey2.doc
+saveas ./test-monkey2.doc
 imposition Singles
   insetl 0
   insetr 0

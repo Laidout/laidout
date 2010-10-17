@@ -219,7 +219,7 @@ int resource_name_and_desc(FILE *f,char **name, char **desc)
 	Attribute att, *patt=NULL;
 
 	int ret=0;
-	while (ret!=3) {
+	while (ret!=3 && !feof(f)) {
 		att.dump_in(f,0,&patt);
 		if (!patt) break; //no more in file
 		if (name && !(ret&1) && !strcmp(patt->name,"name")) {

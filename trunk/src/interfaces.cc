@@ -33,6 +33,10 @@
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
+
+#define DBG 
+
+
 //! Push any necessary PathOperator instances onto PathInterface::basepathops
 void PushBuiltinPathops()
 {
@@ -110,7 +114,8 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(new LColorPatchInterface(id++,NULL),1);
 	
 	 //------Paths
-	existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
+	 // **** this is not ready for prime time yet, so enable only in debugging mode
+	DBG existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
 	
 	 //------EPS
 	EpsInterface *eps=new EpsInterface(id++,NULL);

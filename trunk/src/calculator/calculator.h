@@ -54,6 +54,7 @@ class LaidoutCalculator : public Laxkit::RefCounted
 	long intnumber();
 	double realnumber();
 	Value *getstring();
+	SetValue *getset();
 	Value *evalname();
 	Value *evalInnate(const char *word, int len);
 	void messageOut(const char *str);

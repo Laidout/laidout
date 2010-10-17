@@ -621,6 +621,11 @@ Value *LaidoutCalculator::number()
 			return NULL;
 		}
 
+	} else if (nextchar('{')) {
+		from--;
+		snum=getset();
+		if (calcerror) return NULL;
+
 	} else if (curexprs[from]=='\'' || curexprs[from]=='"') {
 		 //read in strings
 		snum=getstring();
@@ -668,6 +673,36 @@ Value *LaidoutCalculator::number()
 //		if (snum->ApplyUnits(units)!=0) *** cannot apply units! already exist maybe;
 //	}
 	return snum;
+}
+
+//! Read in values for a set.
+/*! It is assumed that we are starting at a '(' or a '{'. Otherwise return NULL.
+ */
+SetValue *LaidoutCalculator::getset()
+{
+	char setchar=0;
+	if (nextchar('{')) setchar='}';
+	else if (nextchar('(')) setchar=')';
+	else return NULL;
+
+	SetValue *set=new SetValue;
+	do {
+		Value *num=eval();
+		if (calcerror) {
+			return NULL;
+		}
+		set->Push(num);
+		num->dec_count();
+		
+	} while (nextchar(','));
+
+	if (!nextchar(setchar)) {
+		calcerr("Improperly closed set.");
+		delete set;
+		return NULL;
+	}
+
+	return set;
 }
 
 //! Read in a double.

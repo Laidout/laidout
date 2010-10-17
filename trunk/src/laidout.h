@@ -125,6 +125,7 @@ class LaidoutApp : public Laxkit::anXApp
 
 	 //resource and external executable management
 	char *full_path_for_resource(const char *name,const char *dir=NULL);
+	char *default_path_for_resource(const char *resource);
 	const char *binary(const char *what);
 };
 

@@ -11,6 +11,7 @@ VERSION 0.091
 (done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
        Images should maintain their aspect ratio by default when scaling
        Scribus import must make sure linked text and linked table mystery data behave properly on export
+(done) Export PLAN files for podofoimpose
 (done) Generic fold and trim imposition
 (done) Be able to load imposition instances, a form of resource
 (done) Import images as flow/centered within page margins, not within page outline
@@ -26,6 +27,7 @@ VERSION 0.091
 
 VERSION 0.092
 -------------
+       Signature editor: detect non staplable binding edge, show red rather than green
        At bare minimum, path interface use should not cause a seg fault
        Fix page bleeding for signatures and nets
        Scribus import must support master pages
@@ -62,6 +64,7 @@ VERSION 0.1
        Full internationalization support in window controls for input and output, including left, right. pango?
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
+       Creep management controls
        Construct an adequate command core, so that no X connection necessary for batch processing
        should probably put laidout stuff in its own namespace, just to be polite
        Improve open from template to be able to use names (defined in a file), not just filenames
@@ -139,7 +142,7 @@ Internal generic impositioner for ps files that follow the ps doc. structure gui
 for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
 Cooperate with photo programs like KPhotoalbum, f-spot
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from nets?
-Export PLAN files for podofoimpose
+Work and turn/work and tumble
 openoffice files import
 Uniconverter support
 fore edge printing

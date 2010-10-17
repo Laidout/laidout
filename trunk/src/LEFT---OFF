@@ -7,17 +7,11 @@ with a date that it was done and by who.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-memory hole in imposition init, laidout -n letter, 63 left un deleted, objs 123-135 for instance
-
-edit imposition for sigs does not have selectable folds in editor!!!
+make sure all imposition types are available in interpreter
 
 image import: implement scale up and down
 
-file select-> bookmark menu, click more than once, you get several menus, but it should be locked to the one
-
 project mechanics: either disable or make sure it is consistent enough
-
-context menu not highlighting, and allows multiples
 
 update dependency check for cups with cups-config and maybe libcrypt
 
@@ -25,26 +19,24 @@ imagepatch once again frelled, not showing image AT ALL!!!!
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
  need infrastructure to propagate and save tool settings
 
-in tiled, can no longer select objects in the other tiles, wtf!!!
-
 print to svg files ignoring '##' mark!
 svg to coord incomplete
 memory hole in svg in? test svg import, svg path import must be done
 
 print by command doesn't seem to work... fails noiselessly
 
-./laidout -n 'box 1 2 3'  -->  doesn't work, AND 62 remaining objects on quit
+./laidout -n 'box 1 2 3'  -->  doesn't work
 
 net page tracking is frelled
 
-gradient rendering to buffer memory hole?? gets very slow, then crashes
+net extra scaling non-functional
 
-GradientInterface problem rendering radial when two circles separated by large distance
+gradient rendering to buffer memory hole?? gets very slow, then crashes
 
 make file. save as to other dir. export. dir is wrong! 
 
-createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
-from parameters....
+need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
+from parameters for all filters....
 
 import/export styledefs should use the extendsdef mechanism!!!
 
@@ -53,13 +45,17 @@ place 3 images, object select, must press delete twice...!?!?!?!
 
 select default papergroup, does not reinstall default papergroup!!
 
-add blank image, change description, do not change filename, makes width/height zap back to 0...
-
 control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
 
-net extra scaling non-functional
 
---maybe ok to postpone till after .091 release:
+-----bugs maybe ok to postpone till after .091 release:
+
+add blank image, change description, do not change filename, makes width/height zap back to 0...
+
+GradientInterface problem rendering radial when two circles separated by large distance
+
+in tiled, can no longer select objects in the other tiles, wtf!!!
+
 Laxkit::MultiLineEdit needs some serious debugging
 
 headwindow swapping is now REALLY messed up
@@ -76,6 +72,7 @@ bounding box on move still messed up..
 moving objects does screwy things with rectdata when crossing page boundaries
 need to change GroupInterface to determine contexts, then recompute bounds
 
+
 ----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
 DISABLE PATHINTERFACE in stable release
 DISABLE NEW PROJECT!! too unstable and probably pretty useless at this point maybe
@@ -89,7 +86,6 @@ update translations
 sig editor:
   animated fold controls
   trim, margin, inset, gap, fold, tile handles
-  detect non staplable binding edge, show red rather than green
   cut marks at minimum
 command line func parser for sigs
 menu controls for which controls to show?
@@ -107,6 +103,8 @@ debug spread editor
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
+sigeditor:  detect non staplable binding edge, show red rather than green
+
 Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
 will likely be very different
 
@@ -599,4 +597,12 @@ DONE palette window unsightly rect edge marks!!!
 DONE anything that uses WinFrameBox (all dialogs under RowFrame), ref counting snafus...
 
 DONE Document::dump_out(-1) needs to dump out imposition TYPES, not resource instance names, which it's doing now
+
+DONE memory hole in imposition init, laidout -n letter, 63 left un deleted, objs 123-135 for instance
+
+DONE edit imposition for sigs does not have selectable folds in editor!!!
+
+DONE make podofoimposeplan be an ExportFilter
+	NOTE: podofoimpose is limited to a single size of paper. You cannot impose to both letter and legal
+	in same plan, for instance.
 
