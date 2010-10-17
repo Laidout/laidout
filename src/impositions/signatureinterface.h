@@ -23,6 +23,26 @@
 #include "signatures.h"
 
 
+//------------------------------------- ActionArea ---------------------------
+class ActionArea : public Laxkit::DoubleBBox
+{
+  public:
+	char *tip;
+	char *text;
+	flatpoint *outline, offset;
+	int npoints;
+	int visible; //1 for yes and filled, 2 for selectable, but not drawn
+	unsigned long color;
+
+	int real; //use real coordinates, not screen coordinates
+	int action; //id for the action this overlay corresponds to
+	int type; //basic type this overlay is: handle (movable), slider, button, display only, pan, menu trigger
+	int PointIn(double x,double y);
+
+	ActionArea(int what,int ntype,const char *txt,const char *ntip);
+	virtual ~ActionArea();
+	virtual flatpoint *Points(flatpoint *pts, int n, int takethem);
+};
 
 //------------------------------------- SignatureInterface --------------------------------------
 
@@ -30,6 +50,9 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
 	int showdecs;
+	Laxkit::PtrStack<ActionArea> controls;
+
+	int insetmask, trimmask, marginmask;
 
 	int lbdown_row, lbdown_col;
 
@@ -55,6 +78,7 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int checkFoldLevel(int update);
 	void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
 	void remapHandles();
+	void createHandles();
 	void remapAffectedCells(int whichfold);
 
 	void dumpFoldinfo();//for debugging
