@@ -104,16 +104,19 @@ enum ActionAreaType {
  */
 
 
-ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntip)
+ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntip,int r,int v,unsigned long col,int cat)
 {
 	text=newstr(txt);
 	tip=newstr(ntip);
 	outline=NULL;
 	npoints=0;
-	visible=1;
-	real=0;
+	visible=v;
+	real=r;
+	color=col;
 	action=what;
 	type=ntype;
+	hidden=0;
+	category=cat;
 }
 
 ActionArea::~ActionArea()
@@ -123,7 +126,19 @@ ActionArea::~ActionArea()
 	if (text) delete[] text;
 }
 
+//! Change the position of the area, where pos==offset+hotspot.
+/*! If which&1, adjust x. If which&2, adjust y.
+ */
+void ActionArea::Position(double x,double y,int which)
+{
+	if (which&1) offset.x=x-hotspot.x;
+	if (which&2) offset.y=y-hotspot.y;
+}
+
 //! Return if point is within the outline (If outline is not NULL), or within the ActionArea DoubleBBox bounds otherwise.
+/*! No point transformation is done. If real==1, it is assumed x,y are real coordinates, and otherwise it is
+ * assumed they are screen coordinates.
+ */
 int ActionArea::PointIn(double x,double y)
 {
 	x-=offset.x; y-=offset.y;
@@ -139,6 +154,8 @@ int ActionArea::PointIn(double x,double y)
  * It is presumed that the calling code will then adjust the points.
  *
  * outline will be reallocated only if n>npoints.
+ *
+ * Please note that this function does not set the min/max bounds. You can use FindBBox for that.
  */
 flatpoint *ActionArea::Points(flatpoint *pts, int n, int takethem)
 {
@@ -159,9 +176,20 @@ flatpoint *ActionArea::Points(flatpoint *pts, int n, int takethem)
 	}
 
 	npoints=n;
+
 	return outline;
 }
 
+//! Make the bounds be the actual bounds of outline.
+/*! If there are no points in outline, then do nothing.
+ */
+void ActionArea::FindBBox()
+{
+	if (!npoints) return;
+
+	clear();
+	for (int c=0; c<npoints; c++) addtobounds(outline[c]);
+}
 
 // *************************************
 
@@ -186,6 +214,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	showdecs=0;
 	papersize=NULL;
 	insetmask=15; trimmask=15; marginmask=15;
+	firsttime=1;
 
 	if (sig) {
 		signature=sig->duplicate();
@@ -205,12 +234,21 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	folddirection=0;
 	lbdown_row=lbdown_col=-1;
 
-	onoverlay=0;
-
 	if (!p && !sig) {
 		signature->totalheight=5;
 		signature->totalwidth=5;
 	}
+
+	color_inset=rgbcolorf(.5,0,0);
+	color_margin=rgbcolorf(.75,.75,.75);
+	color_trim=rgbcolorf(1.,0,0);
+	color_binding=rgbcolorf(0,1,0);
+
+	onoverlay=0;
+	overoverlay=0;
+	arrowscale=1;
+	activetilex=activetiley=0;
+	//remapHandles();
 }
 
 SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -431,173 +469,233 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 
 void SignatureInterface::createHandles()
 {
-	controls.push(new ActionArea(SP_Tile_X_top, AREA_Handle, NULL, _("Tile horizontally, wheel or drag changes")));
+	unsigned long c;
 
-	controls.push(new ActionArea(SP_Tile_X_bottom    , AREA_Handle, NULL, _("Tile horizontally, wheel or drag changes")));
-	controls.push(new ActionArea(SP_Tile_Y_left      , AREA_Handle, NULL, _("Tile vertically, wheel or drag changes")));
-	controls.push(new ActionArea(SP_Tile_Y_right     , AREA_Handle, NULL, _("Tile vertically, wheel or drag changes")));
+	//ActionArea categories:
+	//  0 single instance
+	//  1 in pattern area
+	//  2 in page area
+	//  3 in gap area
 
-	controls.push(new ActionArea(SP_Tile_Gap_X       , AREA_Handle, NULL, _("Tile gap horizontally")));
-	controls.push(new ActionArea(SP_Tile_Gap_Y       , AREA_Handle, NULL, _("Tile gap vertically")));
+	c=color_inset;
+	controls.push(new ActionArea(SP_Inset_Top        , AREA_Handle, NULL, _("Inset top"),1,1,c,0));
+	controls.push(new ActionArea(SP_Inset_Bottom     , AREA_Handle, NULL, _("Inset bottom"),1,1,c,0));
+	controls.push(new ActionArea(SP_Inset_Left       , AREA_Handle, NULL, _("Inset left"),1,1,c,0));
+	controls.push(new ActionArea(SP_Inset_Right      , AREA_Handle, NULL, _("Inset right"),1,1,c,0));
 
-	controls.push(new ActionArea(SP_Inset_Top        , AREA_Handle, NULL, _("Inset top")));
-	controls.push(new ActionArea(SP_Inset_Bottom     , AREA_Handle, NULL, _("Inset bottom")));
-	controls.push(new ActionArea(SP_Inset_Left       , AREA_Handle, NULL, _("Inset left")));
-	controls.push(new ActionArea(SP_Inset_Right      , AREA_Handle, NULL, _("Inset right")));
+	c=color_trim;
+	controls.push(new ActionArea(SP_Trim_Top         , AREA_Handle, NULL, _("Trim top of page"),1,1,c,2));
+	controls.push(new ActionArea(SP_Trim_Bottom      , AREA_Handle, NULL, _("Trim bottom of page"),1,1,c,2));
+	controls.push(new ActionArea(SP_Trim_Left        , AREA_Handle, NULL, _("Trim left of page"),1,1,c,2));
+	controls.push(new ActionArea(SP_Trim_Right       , AREA_Handle, NULL, _("Trim right of page"),1,1,c,2));
 
-	controls.push(new ActionArea(SP_H_Folds_left     , AREA_Handle, NULL, _("Number of horizontal folds")));
-	controls.push(new ActionArea(SP_H_Folds_right    , AREA_Handle, NULL, _("Number of horizontal folds")));
-	controls.push(new ActionArea(SP_V_Folds_top      , AREA_Handle, NULL, _("Number of vertical folds")));
-	controls.push(new ActionArea(SP_V_Folds_bottom   , AREA_Handle, NULL, _("Number of vertical folds")));
+	c=coloravg(color_margin,0,.3333);
+	controls.push(new ActionArea(SP_Margin_Top       , AREA_Handle, NULL, _("Margin top of page"),1,1,c,2));
+	controls.push(new ActionArea(SP_Margin_Bottom    , AREA_Handle, NULL, _("Margin bottom of page"),1,1,c,2));
+	controls.push(new ActionArea(SP_Margin_Left      , AREA_Handle, NULL, _("Margin left of page"),1,1,c,2));
+	controls.push(new ActionArea(SP_Margin_Right     , AREA_Handle, NULL, _("Margin right of page"),1,1,c,2));
 
-	controls.push(new ActionArea(SP_Trim_Top         , AREA_Handle, NULL, _("Trim top of page")));
-	controls.push(new ActionArea(SP_Trim_Bottom      , AREA_Handle, NULL, _("Trim bottom of page")));
-	controls.push(new ActionArea(SP_Trim_Left        , AREA_Handle, NULL, _("Trim left of page")));
-	controls.push(new ActionArea(SP_Trim_Right       , AREA_Handle, NULL, _("Trim right of page")));
+	c=color_binding;
+	controls.push(new ActionArea(SP_Binding          , AREA_Handle, NULL, _("Binding edge, drag to place"),1,0,c,2));
 
-	controls.push(new ActionArea(SP_Margin_Top       , AREA_Handle, NULL, _("Margin top of page")));
-	controls.push(new ActionArea(SP_Margin_Bottom    , AREA_Handle, NULL, _("Margin bottom of page")));
-	controls.push(new ActionArea(SP_Margin_Left      , AREA_Handle, NULL, _("Margin left of page")));
-	controls.push(new ActionArea(SP_Margin_Right     , AREA_Handle, NULL, _("Margin right of page")));
+	c=color_inset;
+	controls.push(new ActionArea(SP_Tile_X_top       , AREA_Slider, NULL, _("Tile horizontally, wheel or drag changes"),1,0,c,0));
+	controls.push(new ActionArea(SP_Tile_X_bottom    , AREA_Slider, NULL, _("Tile horizontally, wheel or drag changes"),1,0,c,0));
+	controls.push(new ActionArea(SP_Tile_Y_left      , AREA_Slider, NULL, _("Tile vertically, wheel or drag changes"),1,0,c,0));
+	controls.push(new ActionArea(SP_Tile_Y_right     , AREA_Slider, NULL, _("Tile vertically, wheel or drag changes"),1,0,c,0));
 
-	controls.push(new ActionArea(SP_Binding          , AREA_Handle, NULL, _("Binding edge, drag to place")));
+	controls.push(new ActionArea(SP_Tile_Gap_X       , AREA_Handle, NULL, _("Vertical gap between tiles"),1,0,c,3));
+	controls.push(new ActionArea(SP_Tile_Gap_Y       , AREA_Handle, NULL, _("Horizontal gap between tiles"),1,0,c,3));
 
-	controls.push(new ActionArea(SP_Sheets_Per_Sig   , AREA_Slider, NULL, _("Wheel or drag changes")));
-	controls.push(new ActionArea(SP_Num_Pages        , AREA_Slider, NULL, _("Wheel or drag changes")));
-	controls.push(new ActionArea(SP_Num_Sigs         , AREA_Slider, NULL, _("Wheel or drag changes")));
+	c=color_margin;
+	controls.push(new ActionArea(SP_H_Folds_left     , AREA_Slider, NULL, _("Number of horizontal folds"),1,0,c,1));
+	controls.push(new ActionArea(SP_H_Folds_right    , AREA_Slider, NULL, _("Number of horizontal folds"),1,0,c,1));
+	controls.push(new ActionArea(SP_V_Folds_top      , AREA_Slider, NULL, _("Number of vertical folds"),1,0,c,1));
+	controls.push(new ActionArea(SP_V_Folds_bottom   , AREA_Slider, NULL, _("Number of vertical folds"),1,0,c,1));
+
+	controls.push(new ActionArea(SP_Sheets_Per_Sig   , AREA_Slider, NULL, _("Wheel or drag changes"),1,0,0,0));
+	controls.push(new ActionArea(SP_Num_Pages        , AREA_Slider, NULL, _("Wheel or drag changes"),1,0,0,0));
+	controls.push(new ActionArea(SP_Num_Sigs         , AREA_Slider, NULL, _("Wheel or drag changes"),1,0,0,0));
 
 }
 
-void SignatureInterface::remapHandles()
+ActionArea *SignatureInterface::control(int what)
+{
+	for (int c=0; c<controls.n; c++) if (what==controls.e[c]->action) return controls.e[c];
+	return NULL;
+}
+
+/*! which==0 means do all. which&1 do singletons, which&2 pattern area (category 1), which&4 page area (category 2)
+ */
+void SignatureInterface::remapHandles(int which)
 {
 	if (controls.n==0) createHandles();
 
 	ActionArea *area;
 	flatpoint *p;
 	int n;
-	double scale=1;
 	double ww=signature->totalwidth, hh=signature->totalheight;
 	double w=signature->PageWidth(0), h=signature->PageHeight(0);
+	double www=signature->PatternWidth(), hhh=signature->PatternHeight();
 
-	area=controls.e[SP_Tile_X_top-1]; //trapezoidal area above paper
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,hh);  p[1]=flatpoint(ww,hh); p[2]=flatpoint(ww*1.1,hh*1.1); p[3]=flatpoint(-ww*.1,hh*1.1);
+	arrowscale=2*INDICATOR_SIZE/dp->Getmag();
 
-	area=controls.e[SP_Tile_X_bottom-1]; //trapezoidal area below paper
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,0);  p[1]=flatpoint(ww,0); p[2]=flatpoint(ww*1.1,-hh*.1); p[3]=flatpoint(-ww*.1,-hh*.1);
+	if (which==0 || which&1) {
+		area=control(SP_Tile_X_top); //trapezoidal area above paper
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,hh);  p[1]=flatpoint(ww,hh); p[2]=flatpoint(ww*1.1,hh*1.1); p[3]=flatpoint(-ww*.1,hh*1.1);
 
-	area=controls.e[SP_Tile_Y_left-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,0);  p[1]=flatpoint(0,hh); p[2]=flatpoint(-ww*.1,hh*1.1); p[3]=flatpoint(-ww*.1,-hh*.1);
+		area=control(SP_Tile_X_bottom); //trapezoidal area below paper
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,0);  p[1]=flatpoint(ww,0); p[2]=flatpoint(ww*1.1,-hh*.1); p[3]=flatpoint(-ww*.1,-hh*.1);
 
-	area=controls.e[SP_Tile_Y_right-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(ww,0);  p[1]=flatpoint(ww,hh); p[2]=flatpoint(ww*1.1,hh*1.1); p[3]=flatpoint(ww*1.1,-hh*.1);
+		area=control(SP_Tile_Y_left);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,0);  p[1]=flatpoint(0,hh); p[2]=flatpoint(-ww*.1,hh*1.1); p[3]=flatpoint(-ww*.1,-hh*.1);
 
-	area=controls.e[SP_Tile_Gap_X-1];
-	p=draw_thing_coordinates(THING_Double_Arrow_Horizontal, NULL,0, &n, scale);
-	area->Points(p,n,1);
+		area=control(SP_Tile_Y_right);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(ww,0);  p[1]=flatpoint(ww,hh); p[2]=flatpoint(ww*1.1,hh*1.1); p[3]=flatpoint(ww*1.1,-hh*.1);
 
-	area=controls.e[SP_Tile_Gap_Y-1];
-	p=draw_thing_coordinates(THING_Double_Arrow_Vertical, NULL,0, &n, scale);
-	area->Points(p,n,1);
+		area=control(SP_Tile_Gap_X);
+		p=draw_thing_coordinates(THING_Double_Arrow_Horizontal, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,arrowscale/2);
+		area->Position(0,0,3);
 
-	area=controls.e[SP_Inset_Top-1];
-	p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(ww/2,hh-signature->insettop);
+		area=control(SP_Tile_Gap_Y);
+		p=draw_thing_coordinates(THING_Double_Arrow_Vertical, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,arrowscale/2);
+		area->Position(0,0,3);
 
-	area=controls.e[SP_Inset_Bottom-1];
-	p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(ww/2,signature->insettop-scale);
+		 //------inset
+		area=control(SP_Inset_Top);
+		p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,0);
+		area->offset=flatpoint(ww/2-arrowscale/2,hh-signature->insettop);
 
-	area=controls.e[SP_Inset_Left-1];
-	p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(signature->insetleft-scale,hh/2);
+		area=control(SP_Inset_Bottom);
+		p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,arrowscale);
+		area->offset=flatpoint(ww/2-arrowscale/2,signature->insetbottom-arrowscale);
 
-	area=controls.e[SP_Inset_Right-1];
-	p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(ww-signature->insetright,hh/2);
+		area=control(SP_Inset_Left);
+		p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale,arrowscale/2);
+		area->offset=flatpoint(signature->insetleft-arrowscale,hh/2-arrowscale/2);
 
-	 //-----folds
-	area=controls.e[SP_H_Folds_left-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,0);  p[1]=flatpoint(w*.1,h*.1); p[2]=flatpoint(w*.1,h*.9); p[3]=flatpoint(0,h);
+		area=control(SP_Inset_Right);
+		p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(0,arrowscale/2);
+		area->offset=flatpoint(ww-signature->insetright,hh/2-arrowscale/2);
+	} //which&1
 
-	area=controls.e[SP_H_Folds_right-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(w,0);  p[1]=flatpoint(w,h); p[2]=flatpoint(w*.9,h*.9); p[3]=flatpoint(w*.9,h*.1);
+	if (which==0 || which&2) { //pattern area specific
+		 //-----folds
+		area=control(SP_H_Folds_left);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,0);  p[1]=flatpoint(www*.1,hhh*.1); p[2]=flatpoint(www*.1,hhh*.9); p[3]=flatpoint(0,hhh);
 
-	area=controls.e[SP_V_Folds_top-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,h);  p[1]=flatpoint(w,h); p[2]=flatpoint(w*.9,h*.9); p[3]=flatpoint(w*.1,h*.9);
+		area=control(SP_H_Folds_right);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(www,0);  p[1]=flatpoint(www,hhh); p[2]=flatpoint(www*.9,hhh*.9); p[3]=flatpoint(www*.9,hhh*.1);
 
-	area=controls.e[SP_V_Folds_bottom-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,0);  p[1]=flatpoint(w,0); p[2]=flatpoint(w*.9,h*.1); p[3]=flatpoint(w*.1,h*.1);
+		area=control(SP_V_Folds_top);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,hhh);  p[1]=flatpoint(www,hhh); p[2]=flatpoint(www*.9,hhh*.9); p[3]=flatpoint(www*.1,hhh*.9);
 
-	 //----trim
-	area=controls.e[SP_Trim_Top-1];
-	p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(w/2,h-signature->trimtop);
+		area=control(SP_V_Folds_bottom);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,0);  p[1]=flatpoint(www,0); p[2]=flatpoint(www*.9,hhh*.1); p[3]=flatpoint(www*.1,hhh*.1);
+	}
 
-	area=controls.e[SP_Trim_Bottom-1];
-	p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(w/2,signature->trimbottom-scale);
+	if (which==0 || which&4) { //final page area specific
+		 //----trim
+		area=control(SP_Trim_Top);
+		p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,0);
+		area->offset=flatpoint(w/3-arrowscale/2,h-signature->trimtop);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	area=controls.e[SP_Trim_Left-1];
-	p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(signature->trimleft-scale,h/2);
+		area=control(SP_Trim_Bottom);
+		p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,arrowscale);
+		area->offset=flatpoint(w/3-arrowscale/2,signature->trimbottom-arrowscale);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	area=controls.e[SP_Trim_Right-1];
-	p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(w-signature->trimright,h/2);
+		area=control(SP_Trim_Left);
+		p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale,arrowscale/2);
+		area->offset=flatpoint(signature->trimleft-arrowscale,h/3-arrowscale/2);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	 //------margins
-	area=controls.e[SP_Margin_Top-1];
-	p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(w/2,h-signature->margintop);
+		area=control(SP_Trim_Right);
+		p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(0,arrowscale/2);
+		area->offset=flatpoint(w-signature->trimright,h/3-arrowscale/2);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	area=controls.e[SP_Margin_Bottom-1];
-	p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(w/2,signature->marginbottom-scale);
+		 //------margins
+		area=control(SP_Margin_Top);
+		p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,0);
+		area->offset=flatpoint(w*2/3-arrowscale/2,h-signature->margintop);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	area=controls.e[SP_Margin_Left-1];
-	p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(signature->marginleft-scale,h/2);
+		area=control(SP_Margin_Bottom);
+		p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale/2,arrowscale);
+		area->offset=flatpoint(w*2/3-arrowscale/2,signature->marginbottom-arrowscale);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	area=controls.e[SP_Margin_Right-1];
-	p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, scale);
-	area->Points(p,n,1);
-	area->offset=flatpoint(w-signature->marginright,h/2);
+		area=control(SP_Margin_Left);
+		p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(arrowscale,arrowscale/2);
+		area->offset=flatpoint(signature->marginleft-arrowscale,h*2/3-arrowscale/2);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
-	 //--------binding
-	area=controls.e[SP_Binding-1];
-	area->Points(NULL,4,1);
+		area=control(SP_Margin_Right);
+		p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, arrowscale);
+		area->Points(p,n,1);
+		area->hotspot=flatpoint(0,arrowscale/2);
+		area->offset=flatpoint(w-signature->marginright,h*2/3-arrowscale/2);
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
+
+		 //--------binding
+		area=control(SP_Binding);
+		//area->Points(NULL,4,1); //doesn't actually need points, it is checked for very manually
+		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
+	} //page area items
 
 	 //----- sheets and pages
-	area=controls.e[SP_Sheets_Per_Sig-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,-hh*.1);  p[1]=flatpoint(ww,-hh*.1); p[2]=flatpoint(ww,-hh*.2); p[3]=flatpoint(0,-hh*.2);
+	if (which==0 || which&1) {
+		area=control(SP_Sheets_Per_Sig);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,-hh*.1);  p[1]=flatpoint(ww,-hh*.1); p[2]=flatpoint(ww,-hh*.2); p[3]=flatpoint(0,-hh*.2);
+		area->FindBBox();
 
-	area=controls.e[SP_Num_Pages-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(0,-hh*.2);  p[1]=flatpoint(ww/2,-hh*.2); p[2]=flatpoint(ww/2,-hh*.3); p[3]=flatpoint(0,-hh*.3);
+		area=control(SP_Num_Pages);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,-hh*.2);  p[1]=flatpoint(ww/2,-hh*.2); p[2]=flatpoint(ww/2,-hh*.3); p[3]=flatpoint(0,-hh*.3);
+		area->FindBBox();
 
-	area=controls.e[SP_Num_Sigs-1];
-	p=area->Points(NULL,4,0);
-	p[0]=flatpoint(ww/2,-hh*.2);  p[1]=flatpoint(ww,-hh*.2); p[2]=flatpoint(ww,-hh*.3); p[3]=flatpoint(ww/2,-hh*.3);
+		area=control(SP_Num_Sigs);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(ww/2,-hh*.2);  p[1]=flatpoint(ww,-hh*.2); p[2]=flatpoint(ww,-hh*.3); p[3]=flatpoint(ww/2,-hh*.3);
+		area->FindBBox();
+	}
 }
 
 int SignatureInterface::UseThisImposition(SignatureImposition *sigimp)
@@ -652,21 +750,12 @@ void SignatureInterface::Clear(SomeData *d)
 }
 
 	
-///*! This will be called by viewports, and the papers will be displayed opaque with
-// * drop shadow.
-// */
-//int SignatureInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
-//			Laxkit::anObject *a1,Laxkit::anObject *a2,int info)
-//{
-//	return 1;
-//}
-
-/*! \todo draw arrow to indicate paper up direction
- */
 int SignatureInterface::Refresh()
 {
 	if (!needtodraw) return 0;
 	needtodraw=0;
+
+	if (firsttime) { remapHandles(); firsttime=0; }
 
 	double patternheight=signature->PatternHeight();
 	double patternwidth =signature->PatternWidth();
@@ -685,7 +774,7 @@ int SignatureInterface::Refresh()
 	dp->drawline(0,h, 0,0);
 	
 	 //----------------draw inset
-	dp->NewFG(.5,0.,0.); //dark red for inset
+	dp->NewFG(color_inset); //dark red for inset
 	if (signature->insetleft) dp->drawline(signature->insetleft,0, signature->insetleft,h);
 	if (signature->insetright) dp->drawline(w-signature->insetright,0, w-signature->insetright,h);
 	if (signature->insettop) dp->drawline(0,h-signature->insettop, w,h-signature->insettop);
@@ -766,12 +855,12 @@ int SignatureInterface::Refresh()
 			 //draw markings for final page binding edge, up, trim, margin
 			if (hasfinal && foldlevel==signature->folds.n && rr==finalr && cc==finalc) {
 				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
-				
+
 				xx=x+cc*ew;
 				yy=y+rr*eh;
 
 				 //draw gray margin edge
-				dp->NewFG(.75,.75,.75);
+				dp->NewFG(color_margin);
 				dp->drawline(xx,yy+signature->marginbottom,   xx+ew,yy+signature->marginbottom);			
 				dp->drawline(xx,yy+eh-signature->margintop,   xx+ew,yy+eh-signature->margintop);			
 				dp->drawline(xx+signature->marginleft,yy,     xx+signature->marginleft,yy+eh);			
@@ -779,7 +868,7 @@ int SignatureInterface::Refresh()
 
 				 //draw red trim edge
 				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-				dp->NewFG(1.,0.,0.);
+				dp->NewFG(color_trim);
 				if (signature->trimbottom>0) dp->drawline(xx,yy+signature->trimbottom, xx+ew,yy+signature->trimbottom);			
 				if (signature->trimtop>0)    dp->drawline(xx,yy+eh-signature->trimtop, xx+ew,yy+eh-signature->trimtop);			
 				if (signature->trimleft>0)   dp->drawline(xx+signature->trimleft,yy, xx+signature->trimleft,yy+eh);			
@@ -787,7 +876,7 @@ int SignatureInterface::Refresh()
 
 				 //draw green binding edge
 				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
-				dp->NewFG(0.,1.,0.);
+				dp->NewFG(color_binding);
 
 				 //todo: draw a solid line, but a dashed line toward the inner part of the page...??
 				int b=signature->binding;
@@ -833,10 +922,10 @@ int SignatureInterface::Refresh()
 		 //it will correspond to foldr1,foldr2, and foldc1,foldc2.
 
 		DBG cerr <<"--------------------------------showing dir"<<endl;
-		int mx,my;
-		buttondown.getinitial(device,LEFTBUTTON,&mx,&my);
+		//int mx,my;
+		//buttondown.getinitial(device,LEFTBUTTON,&mx,&my);
 
-		flatpoint p=dp->screentoreal(mx,my);
+		//flatpoint p=dp->screentoreal(mx,my);
 		flatpoint dir;
 		if (folddirection=='t') dir.y=1;
 		else if (folddirection=='b') dir.y=-1;
@@ -924,67 +1013,92 @@ int SignatureInterface::Refresh()
 				laidout->unitname);
 	dp->textout(0,0, str,-1, LAX_LEFT|LAX_TOP);
 
-	 //draw sheet per signature indicator
-	dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
-	dp->NewFG(.5,0.,0.); //dark red for inset
-	y=-signature->totalheight*.1;
-	dp->drawline(0,y, signature->totalwidth,y);
-	y-=signature->totalheight*.01;
-	for (int c=1; c<5 && c<signature->sheetspersignature; c++) {
-		dp->drawline(0,y, signature->totalwidth,y);
-		y-=signature->totalheight*.01;
-	}
-	if (signature->autoaddsheets) sprintf(str,_("Many sheets in a single signature"));
-	else if (signature->sheetspersignature==1) sprintf(str,_("1 sheet per signature"));
-	else sprintf(str,_("%d sheets per signature"),signature->sheetspersignature);
-	pts[0]=dp->realtoscreen(signature->totalwidth/2,y);
-	dp->textout(pts[0].x,pts[0].y, str,-1, LAX_HCENTER|LAX_TOP);
 
 
 	 //-----------------draw control handles
 	ActionArea *area;
-	for (int c=0; c<controls.n; c++) {
+	double d;
+	Signature *s=signature;
+	flatpoint dv;
+	for (int c=controls.n-1; c>=0; c--) {
 		area=controls.e[c];
-		if (!area->visible) continue;
+		if (area->hidden) continue;
 
-		if (controls.e[c]->action==SP_Sheets_Per_Sig) {
-			// ***
-		} else {
-			if (area->outline) {
-				if (area->real) dp->DrawReal(); else dp->DrawScreen();
-				dp->NewFG(area->color);
-				dp->drawlines(area->outline,area->npoints,1,1);
+		if (area->action==SP_Sheets_Per_Sig) {
+			 //draw sheet per signature indicator
+			dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
+			dp->NewFG(.5,0.,0.); //dark red for inset
+			y=area->maxy;
+			dp->drawline(0,y, signature->totalwidth,y);
+			y-=signature->totalheight*.01;
+			for (int c=1; c<5 && c<signature->sheetspersignature; c++) {
+				dp->drawline(0,y, signature->totalwidth,y);
+				y-=signature->totalheight*.01;
 			}
+			if (signature->autoaddsheets) sprintf(str,_("Many sheets in a single signature"));
+			else if (signature->sheetspersignature==1) sprintf(str,_("1 sheet per signature"));
+			else sprintf(str,_("%d sheets per signature"),signature->sheetspersignature);
+			pts[0]=dp->realtoscreen(signature->totalwidth/2,y);
+			dp->textout(pts[0].x,pts[0].y, str,-1, LAX_HCENTER|LAX_TOP);
 
+		} else {
+			if (area->outline && area->visible) {
+				dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
+				dv.x=dv.y=0;
+				if (area->category==2) { //page specific
+					dv.x=s->insetleft  +activetilex*(s->PatternWidth() +s->tilegapx) + finalc*s->PageWidth(0);
+					dv.y=s->insetbottom+activetiley*(s->PatternHeight()+s->tilegapy) + finalr*s->PageHeight(0);
+				}
+				drawHandle(area,dv);
+
+			} else if (area->action==SP_Tile_Gap_X) {
+				if (overoverlay==SP_Tile_Gap_X) {
+					dp->LineAttributes(5, LineSolid, CapButt, JoinMiter);
+					for (int c2=0; c2<signature->tilex-1; c2++) {
+						d=s->insetleft+(c2+1)*(s->tilegapx+s->PatternWidth()) - s->tilegapx/2;
+						dp->drawline(d,0, d,s->totalheight);
+						//----------
+						//area->Position(d,-arrowscale, 3);
+						//drawHandle(area,flatpoint());
+						//area->Position(d,s->totalheight+arrowscale, 3);
+						//drawHandle(area,flatpoint());
+					}
+				}
+
+			} else if (area->action==SP_Tile_Gap_Y) {
+				if (overoverlay==SP_Tile_Gap_Y) {
+					dp->LineAttributes(5, LineSolid, CapButt, JoinMiter);
+					for (int c2=0; c2<signature->tiley-1; c2++) {
+						d=s->insetbottom+(c2+1)*(s->tilegapy+s->PatternHeight()) - s->tilegapy/2;
+						dp->drawline(0,d, s->totalwidth,d);
+						//area->Position(-arrowscale,d, 3);
+						//drawHandle(area,flatpoint());
+						//area->Position(s->totalheight+arrowscale,d, 3);
+						//drawHandle(area,flatpoint());
+					}
+				}
+			}
 		}
 	}
 	dp->DrawReal();
 
-//	int handlepos=3;
-//	if (foldlevel==0 && signature->folds.n==0) {
-//		handlepos=4;
-//	}
-//
-//	 //draw arrow handles for inset and tile gap
-//	if (foldlevel==0) {
-//		dp->NewFG(1.,0.,1.);
-//	}
-//
-//	 //draw arrow handles for trim and margin
-//	if (hasfinal && foldlevel==signature->folds.n-1) {
-//		 //trim handle
-//		dp->NewFG(1.,0.,0.);
-//
-//		 //margin handle
-//		dp->NewFG(0.,0.,1.);
-//
-//		 //binding edge handle
-//		dp->NewFG(1.,0.,0.);
-//	}
-
 	return 0;
 }
 
+void SignatureInterface::drawHandle(ActionArea *area, flatpoint offset)
+{
+	if (area->real) dp->DrawReal(); else dp->DrawScreen();
+	dp->NewFG(area->color);
+	dp->PushAxes();
+	dp->ShiftReal(offset.x,offset.y);
+	dp->ShiftReal(area->offset.x,area->offset.y);
+	dp->drawlines(area->outline,area->npoints,1,area->action==overoverlay);
+	//if (area->action==overoverlay) *** draw numeric value next to handle
+	dp->PopAxes();
+	dp->DrawReal();
+}
+
+//! Return a screen rectangle containing the specified fold level indicator.
 /*! which==-1 means all unfolded. 0 or more means that fold.
  */
 void SignatureInterface::getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h)
@@ -999,35 +1113,109 @@ void SignatureInterface::getFoldIndicatorPos(int which, double *x,double *y, dou
 	*y+=(which+1)*(2*radius-3);
 }
 
+//! Returns 0 for the circle, totally unfolded, or else fold index+1, or -1 for not found.
+int SignatureInterface::scanForFoldIndicator(int x, int y, int ignorex)
+{
+	int radius=INDICATOR_SIZE;
+
+	if (!ignorex && (x>2*radius || x<0)) return -1;
+
+	double xx,yy,w,h;
+	for (int c=signature->folds.n-1; c>=-1; c--) {
+		getFoldIndicatorPos(c, &xx,&yy,&w,&h);
+		if (x>=xx && x<xx+w && y>=yy && y<yy+h) {
+			return c+1;
+		}
+	}
+	return -1;
+}
 
 
 //! Scan for handles to control variables, not for row and column.
-int SignatureInterface::scanhandle(int x,int y)
+/*! Returns which handle screen point is in, or none.
+ */
+int SignatureInterface::scanHandle(int x,int y)
 {
 	flatpoint fp=screentoreal(x,y);
+	flatpoint tp;
+	Signature *s=signature;
 
-	//double xx=fp.x;
-	//double yy=fp.y;
+	for (int c=0; c<controls.n; c++) {
+		if (controls.e[c]->hidden) continue;
 
-	int point=SP_None;
+		if (controls.e[c]->category==0) {
+			 //normal, single instance handles
+			if ((controls.e[c]->real && controls.e[c]->PointIn(fp.x,fp.y))
+					|| (!controls.e[c]->real && controls.e[c]->PointIn(x,y))) {
+				return controls.e[c]->action;
+			}
 
-//	if (foldlevel==0) {
-//		 //check for inset handles, tilex/y, tile gap x/y
-//		if (xx<0 || xx>totalwidth) {
-//			if (yy>0 && yy<totalheight/2) point=SP_Inset_Left;
-//			else if (yy>=totalheight/2 && yy<totalheight) point=SP_Tile_Y;
-//		} else if (yy<0 || yy>totalheight) {
-//			if (xx>0 && xx<totalwidth/2) point=SP_Tile_Y;
-//			else if (yy>=totalheight/2 && yy<totalheight) point=SP_Inset_;
-//		}
-//	}
-//
-//	if (foldlevel==signature->folds.n-1) {
-//		 //check for final page trim lrtb, margin, binding edge, up, x,y
-//		***
-//	}
+		} else if (controls.e[c]->category==1) {
+			 //fold lines, in the pattern area
+			for (int x=0; x<signature->tilex; x++) {
+			  for (int y=0; y<signature->tiley; y++) {
+				tp=fp-flatpoint(s->insetleft,s->insetbottom);
+				tp-=flatpoint(x*(s->tilegapx+s->PatternWidth()), y*(s->tilegapy+s->PatternHeight()));
 
-	return point;
+				if (controls.e[c]->PointIn(tp.x,tp.y)) return controls.e[c]->action;
+			  }
+			}
+
+		} else if (controls.e[c]->category==2) {
+			 //in a final page area
+			double w=s->PageWidth(0);
+			double h=s->PageHeight(0);
+			tp.x=fp.x-(s->insetleft  +activetilex*(s->PatternWidth() +s->tilegapx) + finalc*w);
+			tp.y=fp.y-(s->insetbottom+activetiley*(s->PatternHeight()+s->tilegapy) + finalr*h);
+
+			if (controls.e[c]->action==SP_Binding) {
+				if (s->binding=='l') {
+					if (tp.x>0 && tp.x<w*.1 && tp.y>0 && tp.y<h) return SP_Binding;
+				} else if (s->binding=='r') {
+					if (tp.x>w*.9 && tp.x<w && tp.y>0 && tp.y<h) return SP_Binding;
+				} else if (s->binding=='t') {
+					if (tp.x>0 && tp.x<w && tp.y>h*.9 && tp.y<h) return SP_Binding;
+				} else if (s->binding=='b') {
+					if (tp.x>0 && tp.x<w && tp.y>0 && tp.y<h*.1) return SP_Binding;
+				}
+			} else if (controls.e[c]->PointIn(tp.x,tp.y)) return controls.e[c]->action;
+
+		} else if (controls.e[c]->category==3) {
+			 //tile gaps
+			double d;
+			double zone=5/Getmag(); //selection zone override for really skinny gaps
+
+			if (controls.e[c]->action==SP_Tile_Gap_X) {
+				for (int c=0; c<signature->tilex-1; c++) {
+					 //first check for inside gap itself
+					d=s->insetleft+(c+1)*(s->tilegapx+s->PatternWidth())-s->tilegapx/2;
+					if (s->tilegapx>zone) zone=s->tilegapx;
+					if (fp.y>0 && fp.y<s->totalheight && fp.x<=d+zone/2 && fp.x>=d-zone/2) return SP_Tile_Gap_X;
+				}
+
+			} else { //tile gap y
+				for (int c=0; c<signature->tiley-1; c++) {
+					 //first check for inside gap itself
+					d=s->insetbottom+(c+1)*(s->tilegapy+s->PatternHeight())-s->tilegapy/2;
+					if (s->tilegapy>zone) zone=s->tilegapy;
+					if (fp.x>0 && fp.x<s->totalwidth && fp.y<=d+zone/2 && fp.y>=d-zone/2) return SP_Tile_Gap_Y;
+				}
+			}
+		}
+	}
+
+	 //check for gross areas for insets 
+	if (fp.x>0 && fp.x<signature->totalwidth) {
+		if (fp.y>0 && fp.y<signature->insetbottom) return SP_Inset_Bottom;
+		if (fp.y>s->totalheight-s->insettop && fp.y<s->totalheight) return SP_Inset_Top;
+	}
+	if (fp.y>0 && fp.y<signature->totalheight) {
+		if (fp.x>0 && fp.x<signature->insetleft) return SP_Inset_Left;
+		if (fp.x>s->totalwidth-s->insetright && fp.x<s->totalwidth) return SP_Inset_Right;
+	}
+
+
+	return SP_None;
 }
 
 //! Return 0 for not in pattern, or the row and column in a folding section.
@@ -1073,28 +1261,119 @@ int SignatureInterface::scan(int x,int y,int *row,int *col,double *ex,double *ey
 int SignatureInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	flatpoint fp=screentoreal(x,y);
-	if (fp.x>0 && fp.x<signature->totalwidth && fp.y<-signature->totalheight*.1 && fp.y>-signature->totalheight*.2) {
-		signature->sheetspersignature--;
-		if (signature->sheetspersignature<=0) {
-			signature->autoaddsheets=1;
-			signature->sheetspersignature=0;
-		}
-		needtodraw=1;
-		return 0;
-	}
-	return 1;
+
+	if (state&LAX_STATE_MASK) return 1;
+
+	int handle=scanHandle(x,y);
+	adjustControl(handle,-1);
+
+	return 0; //this will always absorb plain wheel
 }
 
 //! Respond to spinning controls.
 int SignatureInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	flatpoint fp=screentoreal(x,y);
-	if (fp.x>0 && fp.x<signature->totalwidth && fp.y<-signature->totalheight*.1 && fp.y>-signature->totalheight*.2) {
-		signature->sheetspersignature++;
-		signature->autoaddsheets=0;
+
+	if (state&LAX_STATE_MASK) return 1;
+
+	int handle=scanHandle(x,y);
+	adjustControl(handle,1);
+
+	return 0; //this will always absorb plain wheel
+}
+
+//! For controls that are wheel accessible. dir can be 1 or -1.
+/*! Return 0 for control adjusted, or 1 for not able to do that to that control.
+ */
+int SignatureInterface::adjustControl(int handle, int dir)
+{
+	if (handle==SP_None) return 1;
+
+	if (handle==SP_Sheets_Per_Sig) {
+		if (dir==-1) {
+			signature->sheetspersignature--;
+			if (signature->sheetspersignature<=0) {
+				signature->autoaddsheets=1;
+				signature->sheetspersignature=0;
+			}
+			needtodraw=1;
+			return 0;
+
+		} else {
+			signature->sheetspersignature++;
+			signature->autoaddsheets=0;
+			needtodraw=1;
+			return 0;
+		}
+
+	} else if (handle==SP_Tile_X_top || handle==SP_Tile_X_bottom) {
+		if (dir==-1) {
+			signature->tilex--;
+			if (signature->tilex<=1) signature->tilex=1;
+		} else {
+			signature->tilex++;
+		}
+		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (handle==SP_Tile_Y_left || handle==SP_Tile_Y_right) {
+		if (dir==-1) {
+			signature->tiley--;
+			if (signature->tiley<=1) signature->tiley=1;
+		} else {
+			signature->tiley++;
+		}
+		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (handle==SP_H_Folds_left || handle==SP_H_Folds_right) {
+		if (dir==1) {
+			if (foldlevel!=0) return 0;
+			signature->numhfolds++;
+			reallocateFoldinfo();
+			checkFoldLevel(1);
+
+		} else {
+			if (foldlevel!=0) return 0;
+			int old=signature->numhfolds;
+			signature->numhfolds--;
+			if (signature->numhfolds<=0) signature->numhfolds=0;
+			if (old!=signature->numhfolds) {
+				reallocateFoldinfo();
+				checkFoldLevel(1);
+				needtodraw=1;
+			}
+		}
+		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (handle==SP_V_Folds_top || handle==SP_V_Folds_bottom) {
+		if (dir==1) {
+			if (foldlevel!=0) return 0;
+			signature->numvfolds++;
+			reallocateFoldinfo();
+			checkFoldLevel(1);
+
+		} else {
+			if (foldlevel!=0) return 0;
+			int old=signature->numvfolds;
+			signature->numvfolds--;
+			if (signature->numvfolds<=0) signature->numvfolds=0;
+			if (old!=signature->numvfolds) {
+				reallocateFoldinfo();
+				checkFoldLevel(1);
+				needtodraw=1;
+			}
+		}
+		remapHandles();
 		needtodraw=1;
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -1108,25 +1387,29 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 
 	buttondown.down(d->id,LEFTBUTTON, x,y, row,col);
 
-	 //check overlays first
-	double xx,yy,w,h;
 	onoverlay=SP_None;
-	for (int c=signature->folds.n-1; c>=-1; c--) {
-		getFoldIndicatorPos(c, &xx,&yy,&w,&h);
-		if (x>=xx && x<xx+w && y>=yy && y<yy+h) {
-			onoverlay=SP_FOLDS+1+c;
-			foldprogress=-1;
-			buttondown.moveinfo(d->id,LEFTBUTTON, c,0); //record which indicator is clicked down in
-			return 0;
-		}
-	}
 
+	 //check overlays first
+	int i=scanForFoldIndicator(x,y,0);
+	if (i>=0) {
+		onoverlay=SP_FOLDS+i;
+		buttondown.moveinfo(d->id,LEFTBUTTON, i,0); //record which indicator is clicked down in
+		foldprogress=-1;
+		return 0;
+	}
+	onoverlay=scanHandle(x,y);
+	if (onoverlay!=SP_None) return 0;
+
+	 //check for on something to fold
 	if (row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds
 		  || foldinfo[row][col].pages.n==0
 		  || tilerow<0 || tilecol<0
 		  || tilerow>signature->tiley || tilecol>signature->tilex) {
 		lbdown_row=lbdown_col=-1;
 	} else {
+		if (tilerow>=0 && tilerow<signature->tiley && tilerow!=activetiley) { needtodraw=1; activetiley=tilerow; }
+		if (tilecol>=0 && tilecol<signature->tilex && tilecol!=activetilex) { needtodraw=1; activetilex=tilecol; }
+
 		lbdown_row=row;
 		lbdown_col=col;
 		folddirection=0;
@@ -1159,9 +1442,12 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 				}
 				foldlevel=folds;
 				//checkFoldLevel(1);
-				needtodraw=1;
 			}
+
+			folddirection=0;
+			needtodraw=1;
 		}
+		
 		return 0;
 	}
 
@@ -1190,6 +1476,268 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	return 0;
 }
 
+/*! Return 0 for offsetted, or 1 for could not.
+ */
+int SignatureInterface::offsetHandle(int which, flatpoint d)
+{ 
+	ActionArea *area=control(which);
+
+	if (area->type!=AREA_Handle) return 1;
+
+	area->offset+=d;
+	Signature *s=signature;
+	char scratch[100];
+
+	if (which==SP_Inset_Top) {
+		 //adjust signature
+		signature->insettop-=d.y;
+		if (signature->insettop<0) {
+			signature->insettop=0;
+		} else if (s->insettop>s->totalheight - ((s->tiley-1)*s->tilegapy+s->insetbottom)) {
+			s->insettop= s->totalheight - ((s->tiley-1)*s->tilegapy+s->insetbottom);
+		}
+
+		 //adjust handle to match signature
+		d=area->Position();
+		if (d.x<0) area->Position(0,0,1);
+		else if (d.x>signature->totalwidth) area->Position(signature->totalwidth,0,1);
+		area->Position(0,signature->totalheight-signature->insettop,2);
+
+		sprintf(scratch,_("Top Inset")); //to make fewer things to translate
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->insettop);
+		viewport->postmessage(scratch);
+
+		remapHandles(2|4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Inset_Bottom  ) {
+		 //adjust signature
+		signature->insetbottom+=d.y;
+		if (signature->insetbottom<0) {
+			signature->insetbottom=0;
+		} else if (s->insetbottom>s->totalheight - ((s->tiley-1)*s->tilegapy+s->insettop)) {
+			s->insetbottom= s->totalheight - ((s->tiley-1)*s->tilegapy+s->insettop);
+		}
+
+		 //adjust handle to match signature
+		d=area->Position();
+		if (d.x<0) area->Position(0,0,1);
+		else if (d.x>signature->totalwidth) area->Position(signature->totalwidth,0,1);
+		area->Position(0,signature->insetbottom,2);
+
+		sprintf(scratch,_("Bottom Inset")); //to make fewer things to translate
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->insetbottom);
+		viewport->postmessage(scratch);
+
+		remapHandles(2|4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Inset_Left    ) {
+		signature->insetleft+=d.x;
+		if (signature->insetleft<0) {
+			signature->insetleft=0;
+		} else if (s->insetleft>s->totalwidth - ((s->tilex-1)*s->tilegapx+s->insetright)) {
+			s->insetleft= s->totalwidth - ((s->tilex-1)*s->tilegapx+s->insetright);
+		}
+
+		 //adjust handle to match signature
+		d=area->Position();
+		if (d.y<0) area->Position(0,0,2);
+		else if (d.y>signature->totalheight) area->Position(0,signature->totalheight,2);
+		area->Position(signature->insetleft,0,1);
+
+		sprintf(scratch,_("Left Inset")); //to make fewer things to translate
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->insetleft);
+		viewport->postmessage(scratch);
+
+		remapHandles(2|4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Inset_Right   ) {
+		signature->insetright-=d.x;
+		if (signature->insetright<0) {
+			signature->insetright=0;
+		} else if (s->insetright>s->totalwidth - ((s->tilex-1)*s->tilegapx+s->insetleft)) {
+			s->insetright= s->totalwidth - ((s->tilex-1)*s->tilegapx+s->insetleft);
+		}
+
+		 //adjust handle to match signature
+		d=area->Position();
+		if (d.y<0) area->Position(0,0,2);
+		else if (d.y>signature->totalheight) area->Position(0,signature->totalheight,2);
+		area->Position(signature->totalwidth-signature->insetright,0,1);
+
+		sprintf(scratch,_("Right Inset")); //to make fewer things to translate
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->insetright);
+		viewport->postmessage(scratch);
+
+		remapHandles(2|4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Tile_Gap_X    ) {
+		s->tilegapx+=d.x;
+
+		if ((s->tilex-1)*s->tilegapx > s->totalwidth-s->insetleft-s->insetright+s->tilex*s->PatternWidth()) {
+			if (s->tilex==1) s->tilegapx=0;
+			else s->tilegapx=(s->totalwidth-s->insetleft-s->insetright+s->tilex*s->PatternWidth())/(s->tilex-1);
+		} else if (s->tilegapx<0) s->tilegapx=0;
+
+		sprintf(scratch,_("Tile gap")); //to make fewer things to translate
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->tilegapx);
+		viewport->postmessage(scratch);
+
+		remapHandles(2|4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Tile_Gap_Y    ) {
+		s->tilegapy+=d.y;
+
+		if ((s->tiley-1)*s->tilegapy > s->totalheight-s->insettop-s->insetbottom+s->tiley*s->PatternHeight()) {
+			if (s->tiley==1) s->tilegapy=0;
+			else s->tilegapy=(s->totalheight-s->insettop-s->insetbottom+s->tiley*s->PatternHeight())/(s->tiley-1);
+		} else if (s->tilegapy<0) s->tilegapy=0;
+
+		sprintf(scratch,_("Tile gap")); //to make fewer things to translate
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->tilegapy);
+		viewport->postmessage(scratch);
+
+		remapHandles(2|4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Trim_Top      ) {
+		s->trimtop-=d.y;
+
+		double h=s->PageHeight(0);
+		if (s->trimtop<0) s->trimtop=0;
+		else if (s->trimtop>h-s->trimbottom) s->trimtop=h-s->trimbottom;
+
+		sprintf(scratch,_("Top Trim"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimtop);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Trim_Bottom   ) {
+		s->trimbottom+=d.y;
+
+		double h=s->PageHeight(0);
+		if (s->trimbottom<0) s->trimbottom=0;
+		else if (s->trimbottom>h-s->trimtop) s->trimbottom=h-s->trimtop;
+
+		sprintf(scratch,_("Bottom Trim"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimbottom);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Trim_Left     ) {
+		s->trimleft+=d.x;
+
+		double w=s->PageWidth(0);
+		if (s->trimleft<0) s->trimleft=0;
+		else if (s->trimleft>w-s->trimright) s->trimleft=w-s->trimright;
+
+		sprintf(scratch,_("Left Trim"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimleft);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Trim_Right    ) {
+		s->trimright-=d.x;
+
+		double w=s->PageWidth(0);
+		if (s->trimright<0) s->trimright=0;
+		else if (s->trimright>w-s->trimleft) s->trimright=w-s->trimleft;
+
+		sprintf(scratch,_("Right Trim"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->trimright);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Margin_Top      ) {
+		s->margintop-=d.y;
+
+		double h=s->PageHeight(0);
+		if (s->margintop<0) s->margintop=0;
+		else if (s->margintop>h-s->marginbottom) s->margintop=h-s->marginbottom;
+
+		sprintf(scratch,_("Top Margin"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->margintop);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Margin_Bottom   ) {
+		s->marginbottom+=d.y;
+
+		double h=s->PageHeight(0);
+		if (s->marginbottom<0) s->marginbottom=0;
+		else if (s->marginbottom>h-s->margintop) s->marginbottom=h-s->margintop;
+
+		sprintf(scratch,_("Bottom Margin"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->marginbottom);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Margin_Left     ) {
+		s->marginleft+=d.x;
+
+		double w=s->PageWidth(0);
+		if (s->marginleft<0) s->marginleft=0;
+		else if (s->marginleft>w-s->marginright) s->marginleft=w-s->marginright;
+
+		sprintf(scratch,_("Left Margin"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->marginleft);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Margin_Right    ) {
+		s->marginright-=d.x;
+
+		double w=s->PageWidth(0);
+		if (s->marginright<0) s->marginright=0;
+		else if (s->marginright>w-s->marginleft) s->marginright=w-s->marginleft;
+
+		sprintf(scratch,_("Right Margin"));
+		sprintf(scratch+strlen(scratch),_(" %.10g"),s->marginright);
+		viewport->postmessage(scratch);
+
+		remapHandles(4);
+		needtodraw=1;
+		return 0;
+
+	} else if (which==SP_Binding       ) {
+	}
+
+
+	
+	return 1;
+}
+
 //int SignatureInterface::MBDown(int x,int y,unsigned int state,int count)
 //int SignatureInterface::MBUp(int x,int y,unsigned int state)
 //int SignatureInterface::RBDown(int x,int y,unsigned int state,int count)
@@ -1209,37 +1757,89 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 	int mx,my;
 	int lx,ly;
-	if (!buttondown.any()) return 0;
+	if (!buttondown.any()) {
+		int handle=scanHandle(x,y);
+		DBG cerr <<"found handle "<<handle<<endl;
+		if (overoverlay!=handle) needtodraw=1;
+		if (handle==SP_None) {
+			overoverlay=0;
+			viewport->postmessage(" ");
+		} else {
+			overoverlay=handle;
+			viewport->postmessage(control(handle)->tip);
+		}
+		return 0;
+	}
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 
 	if (onoverlay!=SP_None) {
-		if (onoverlay>=SP_FOLDS) {
+		if (onoverlay<SP_FOLDS) {
+			flatpoint d=dp->screentoreal(x,y)-dp->screentoreal(lx,ly);
+			if ((state&LAX_STATE_MASK)==ShiftMask) d*=.1;
+			if ((state&LAX_STATE_MASK)==ControlMask) d*=.01;
+			if ((state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) d*=.001;
+
+			if (onoverlay==SP_Binding) {
+				d=dp->screentoreal(x,y);
+				Signature *s=signature;
+				d.x-=s->insetleft  +activetilex*(s->PatternWidth() +s->tilegapx) + (finalc+.5)*s->PageWidth(0);
+				d.y-=s->insetbottom+activetiley*(s->PatternHeight()+s->tilegapy) + (finalr+.5)*s->PageHeight(0);
+				d.x/=s->PageWidth(0);
+				d.y/=s->PageHeight(0);
+				if (d.y>d.x) {
+					if (d.y>-d.x) { if (s->binding!='t') needtodraw=1; s->binding='t'; }
+					else  { if (s->binding!='l') needtodraw=1; s->binding='l'; }
+				} else {
+					if (d.y>-d.x) { if (s->binding!='r') needtodraw=1; s->binding='r'; }
+					else  { if (s->binding!='b') needtodraw=1; s->binding='b'; }
+				}
+			} else offsetHandle(onoverlay,d);
+			return 0;
+
+		} else if (onoverlay>=SP_FOLDS) {
 			if (ly-y==0) return 0; //return if not moved vertically
 
 			int startindicator,lasty;
 			buttondown.getinitial(mouse->id,LEFTBUTTON, &mx,&my);
 			buttondown.getlast(mouse->id,LEFTBUTTON, NULL,&lasty);
 			buttondown.getextrainfo(mouse->id,LEFTBUTTON, &startindicator,NULL);
-			double curdist =(    y-my)/(INDICATOR_SIZE-3) + startindicator;
-			double lastdist=(lasty-my)/(INDICATOR_SIZE-3) + startindicator;
+			double curdist =(    y-my)/(2.*INDICATOR_SIZE-3) + startindicator;
+			double lastdist=(lasty-my)/(2.*INDICATOR_SIZE-3) + startindicator;
+
+			 //curdist is 0 for very start, totally unfolded paper. Each fold adds 1 to curdist
+
+			DBG cerr <<"curdist:"<<curdist<<"  lastdist:"<<lastdist<<endl;
+
+			if (foldprogress==-1) {
+				 //we have not moved before, so we must do an initial map of affected cells
+				remapAffectedCells((int)curdist);
+			}
+			foldprogress=curdist-floor(curdist);
 
 			if ((int)curdist==(int)lastdist || (lastdist<0 && curdist<0) 
 					|| (lastdist>=signature->folds.n && curdist>=signature->folds.n)) {
 				 //only change foldprogress, still in same fold indicator
-				if (foldprogress==-1) {
-					 //we have not moved before, so we must do an initial map of affected cells
-					remapAffectedCells((int)curdist);
-				}
-				foldprogress=curdist-lastdist;
+				foldprogress=curdist-floor(curdist);
 				if (foldprogress<0) foldprogress=0;
 				if (foldprogress>1) foldprogress=1;
+
+				int f=(int)curdist;
+				if (f<0) f=0; else if (f>=signature->folds.n) f=signature->folds.n-1;
+				folddirection=signature->folds.e[f]->direction;
+				foldunder=signature->folds.e[f]->under;
+				foldindex=signature->folds.e[f]->whichfold;
+
 				needtodraw=1;
 				return 0;
 
 			} else if ((int)curdist<(int)lastdist) {
 				 //need to unfold a previous fold, for this, we need to get the map of state not including
 				 //the current fold, to know which cells are actually affected by the unfolding..
-				//***
+				signature->applyFold(NULL,(int)curdist-1);
+				remapAffectedCells((int)curdist);
+				foldprogress=curdist-floor(curdist);
+				needtodraw=1;
+				return 0;
 
 			} else {
 				 //need to advance one fold
@@ -1493,6 +2093,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 	if (ch=='d' && (state&LAX_STATE_MASK)==0) {
 		showdecs++;
 		if (showdecs>2) showdecs=0;
+		remapHandles();
 		needtodraw=1;
 		return 0;
 
@@ -1505,6 +2106,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		int h=signature->totalheight;
 		int w=signature->totalwidth;
 		viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
+		remapHandles();
 		needtodraw=1;
 		return 0;
 		
@@ -1518,98 +2120,69 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 			viewport->postmessage(str);
 			return 0;
 		}
-		if (insetmask&1) signature->insettop   +=signature->totalheight*.01;
-		if (insetmask&4) signature->insetbottom+=signature->totalheight*.01;
-		if (insetmask&8) signature->insetleft  +=signature->totalheight*.01;
-		if (insetmask&2) signature->insetright +=signature->totalheight*.01;
+		double step=signature->totalheight*.01;
+		if (insetmask&1) offsetHandle(SP_Inset_Top,    flatpoint(0,-step));
+		if (insetmask&4) offsetHandle(SP_Inset_Bottom, flatpoint(0,step));
+		if (insetmask&8) offsetHandle(SP_Inset_Left,   flatpoint(step,0));
+		if (insetmask&2) offsetHandle(SP_Inset_Right,  flatpoint(-step,0));
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='I') {
 		double step=signature->totalheight*.01;
-		if (insetmask&1) { signature->insettop   -=step; if (signature->insettop<0)    signature->insettop=0; }
-		if (insetmask&4) { signature->insetbottom-=step; if (signature->insetbottom<0) signature->insetbottom=0; }
-		if (insetmask&8) { signature->insetleft  -=step; if (signature->insetleft<0)   signature->insetleft=0; }
-		if (insetmask&2) { signature->insetright -=step; if (signature->insetright<0)  signature->insetright=0; }
+		if (insetmask&1) offsetHandle(SP_Inset_Top,    flatpoint(0,step));
+		if (insetmask&4) offsetHandle(SP_Inset_Bottom, flatpoint(0,-step));
+		if (insetmask&8) offsetHandle(SP_Inset_Left,   flatpoint(-step,0));
+		if (insetmask&2) offsetHandle(SP_Inset_Right,  flatpoint(step,0));
 		needtodraw=1;
 		return 0;
 
 		//--------------change tile gap
 	} else if (ch=='g') {
-		signature->tilegapx+=signature->totalheight*.01;
-		signature->tilegapy+=signature->totalheight*.01;
-		needtodraw=1;
+		double step=signature->totalheight*.01;
+		offsetHandle(SP_Tile_Gap_X, flatpoint(step,0));
+		offsetHandle(SP_Tile_Gap_Y, flatpoint(0,step));
 		return 0;
 
 	} else if (ch=='G') {
-		signature->tilegapx-=signature->totalheight*.01;
-		if (signature->tilegapx<0) signature->tilegapx=0;
-		signature->tilegapy=signature->tilegapx;
+		double step=-signature->totalheight*.01;
+		offsetHandle(SP_Tile_Gap_X, flatpoint(step,0));
+		offsetHandle(SP_Tile_Gap_Y, flatpoint(0,step));
 		needtodraw=1;
 		return 0;
 
 		//-------------tilex and tiley
 	} else if (ch=='x') {
-		signature->tilex++;
-		needtodraw=1;
+		adjustControl(SP_Tile_X_top, 1);
 		return 0;
 
 	} else if (ch=='X') {
-		signature->tilex--;
-		if (signature->tilex<=1) signature->tilex=1;
-		needtodraw=1;
+		adjustControl(SP_Tile_X_top, -1);
 		return 0;
 
 	} else if (ch=='y') {
-		signature->tiley++;
-		needtodraw=1;
+		adjustControl(SP_Tile_Y_left, 1);
 		return 0;
 
 	} else if (ch=='Y') {
-		signature->tiley--;
-		if (signature->tiley<=1) signature->tiley=1;
-		needtodraw=1;
+		adjustControl(SP_Tile_Y_left, -1);
 		return 0;
 
 		//-----------numhfolds and numvfolds
 	} else if (ch=='v') {
-		if (foldlevel!=0) return 0;
-		signature->numvfolds++;
-		reallocateFoldinfo();
-		checkFoldLevel(1);
-		needtodraw=1;
+		adjustControl(SP_V_Folds_top, 1);
 		return 0;
 
 	} else if (ch=='V') {
-		if (foldlevel!=0) return 0;
-		int old=signature->numvfolds;
-		signature->numvfolds--;
-		if (signature->numvfolds<=0) signature->numvfolds=0;
-		if (old!=signature->numvfolds) {
-			reallocateFoldinfo();
-			checkFoldLevel(1);
-			needtodraw=1;
-		}
+		adjustControl(SP_V_Folds_top, -1);
 		return 0;
 
 	} else if (ch=='h') {
-		if (foldlevel!=0) return 0;
-		signature->numhfolds++;
-		reallocateFoldinfo();
-		checkFoldLevel(1);
-		needtodraw=1;
+		adjustControl(SP_H_Folds_left, 1);
 		return 0;
 
 	} else if (ch=='H') {
-		if (foldlevel!=0) return 0;
-		int old=signature->numhfolds;
-		signature->numhfolds--;
-		if (signature->numhfolds<=0) signature->numhfolds=0;
-		if (old!=signature->numhfolds) {
-			reallocateFoldinfo();
-			checkFoldLevel(1);
-			needtodraw=1;
-		}
+		adjustControl(SP_H_Folds_left, -1);
 		return 0;
 
 		//---------------move binding edge
@@ -1648,20 +2221,19 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 			viewport->postmessage(str);
 			return 0;
 		}
-		if (trimmask&1) signature->trimtop   +=signature->PageHeight()*.01;
-		if (trimmask&4) signature->trimbottom+=signature->PageHeight()*.01;
-		if (trimmask&8) signature->trimleft  +=signature->PageHeight()*.01;
-		if (trimmask&2) signature->trimright +=signature->PageHeight()*.01;
-		needtodraw=1;
+		double step=signature->PageHeight()*.01;
+		if (trimmask&1) offsetHandle(SP_Trim_Top,    flatpoint(0,-step));
+		if (trimmask&4) offsetHandle(SP_Trim_Bottom, flatpoint(0,step));
+		if (trimmask&8) offsetHandle(SP_Trim_Left,   flatpoint(step,0));
+		if (trimmask&2) offsetHandle(SP_Trim_Right,  flatpoint(-step,0));
 		return 0;
 
 	} else if (ch=='T') {
-		double step=signature->PageHeight()*.01;
-		if (trimmask&1) { signature->trimtop   -=step; if (signature->trimtop<0)    signature->trimtop=0; }
-		if (trimmask&4) { signature->trimbottom-=step; if (signature->trimbottom<0) signature->trimbottom=0; }
-		if (trimmask&8) { signature->trimleft  -=step; if (signature->trimleft<0)   signature->trimleft=0; }
-		if (trimmask&2) { signature->trimright -=step; if (signature->trimright<0)  signature->trimright=0; }
-		needtodraw=1;
+		double step=-signature->PageHeight()*.01;
+		if (trimmask&1) offsetHandle(SP_Trim_Top,    flatpoint(0,-step));
+		if (trimmask&4) offsetHandle(SP_Trim_Bottom, flatpoint(0,step));
+		if (trimmask&8) offsetHandle(SP_Trim_Left,   flatpoint(step,0));
+		if (trimmask&2) offsetHandle(SP_Trim_Right,  flatpoint(-step,0));
 		return 0;
 
 		//--------------change page margin
@@ -1674,20 +2246,19 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 			viewport->postmessage(str);
 			return 0;
 		}
-		if (marginmask&1) signature->margintop   +=signature->PageHeight()*.01;
-		if (marginmask&4) signature->marginbottom+=signature->PageHeight()*.01;
-		if (marginmask&8) signature->marginleft  +=signature->PageHeight()*.01;
-		if (marginmask&2) signature->marginright +=signature->PageHeight()*.01;
-		needtodraw=1;
+		double step=signature->PageHeight()*.01;
+		if (marginmask&1) offsetHandle(SP_Margin_Top,    flatpoint(0,-step));
+		if (marginmask&4) offsetHandle(SP_Margin_Bottom, flatpoint(0,step));
+		if (marginmask&8) offsetHandle(SP_Margin_Left,   flatpoint(step,0));
+		if (marginmask&2) offsetHandle(SP_Margin_Right,  flatpoint(-step,0));
 		return 0;
 
 	} else if (ch=='M') {
-		double step=signature->PageHeight()*.01;
-		if (marginmask&1) { signature->margintop   -=step; if (signature->margintop<0)    signature->margintop=0; }
-		if (marginmask&4) { signature->marginbottom-=step; if (signature->marginbottom<0) signature->marginbottom=0; }
-		if (marginmask&8) { signature->marginleft  -=step; if (signature->marginleft<0)   signature->marginleft=0; }
-		if (marginmask&2) { signature->marginright -=step; if (signature->marginright<0)  signature->marginright=0; }
-		needtodraw=1;
+		double step=-signature->PageHeight()*.01;
+		if (marginmask&1) offsetHandle(SP_Margin_Top,    flatpoint(0,-step));
+		if (marginmask&4) offsetHandle(SP_Margin_Bottom, flatpoint(0,step));
+		if (marginmask&8) offsetHandle(SP_Margin_Left,   flatpoint(step,0));
+		if (marginmask&2) offsetHandle(SP_Margin_Right,  flatpoint(-step,0));
 		return 0;
 
 	}
@@ -1782,6 +2353,7 @@ int SignatureEditor::init()
 	int h=tool->signature->totalheight;
 	int w=tool->signature->totalwidth;
 	viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
+
 	return 0;
 }
 
