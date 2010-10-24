@@ -15,8 +15,6 @@ image import: implement scale up and down
 
 project mechanics: either disable or make sure it is consistent enough
 
-update dependency check for cups with cups-config and maybe libcrypt
-
 imagepatch once again frelled, not showing image AT ALL!!!!
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
  need infrastructure to propagate and save tool settings
@@ -90,10 +88,9 @@ update translations
 
 sig editor:
   animated fold controls
-  trim, margin, inset, gap, fold, tile handles
-  cut marks at minimum
+  DONE trim, margin, inset, gap, fold, tile handles
+cut marks at minimum
 command line func parser for sigs
-menu controls for which controls to show?
 DONE finish implement sigimposition
 DONE edit document settings: need special menu item for "Current"
 DONE respond to menu controls for paper size
@@ -608,4 +605,6 @@ DONE edit imposition for sigs does not have selectable folds in editor!!!
 DONE make podofoimposeplan be an ExportFilter
 	NOTE: podofoimpose is limited to a single size of paper. You cannot impose to both letter and legal
 	in same plan, for instance.
+
+DONE use cups-config in src/Makefile
 

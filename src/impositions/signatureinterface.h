@@ -29,19 +29,24 @@ class ActionArea : public Laxkit::DoubleBBox
   public:
 	char *tip;
 	char *text;
-	flatpoint *outline, offset;
+	flatpoint *outline, offset, hotspot;
 	int npoints;
-	int visible; //1 for yes and filled, 2 for selectable, but not drawn
+	int visible; //1 for yes and filled, 2 for selectable, but not drawn,3 for outline only
+	int hidden; //skip checks for this one
 	unsigned long color;
 
 	int real; //use real coordinates, not screen coordinates
 	int action; //id for the action this overlay corresponds to
+	int category; //extra identifier
 	int type; //basic type this overlay is: handle (movable), slider, button, display only, pan, menu trigger
 	int PointIn(double x,double y);
 
-	ActionArea(int what,int ntype,const char *txt,const char *ntip);
+	ActionArea(int what,int ntype,const char *txt,const char *ntip,int r,int v,unsigned long col,int cat);
 	virtual ~ActionArea();
 	virtual flatpoint *Points(flatpoint *pts, int n, int takethem);
+	virtual void FindBBox();
+	virtual flatpoint Position() { return offset+hotspot; }
+	virtual void Position(double x,double y,int which=3);
 };
 
 //------------------------------------- SignatureInterface --------------------------------------
@@ -52,7 +57,9 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	int showdecs;
 	Laxkit::PtrStack<ActionArea> controls;
 
+	unsigned long color_inset, color_margin, color_trim, color_binding;
 	int insetmask, trimmask, marginmask;
+	int firsttime;
 
 	int lbdown_row, lbdown_col;
 
@@ -64,8 +71,13 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	double foldprogress;
 
 	int finalr,finalc; //cell location of totally folded pages
-	int onoverlay; //nonzero if mouse clicked down on and is over an overlay
 	int hasfinal; //whether the pattern has been totally folded yet or not
+
+	int activetilex,activetiley;
+	int onoverlay,overoverlay; //nonzero if mouse clicked down on and is over an overlay
+	double arrowscale;
+	ActionArea *control(int what);
+	int adjustControl(int handle, int dir);
 
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
@@ -74,12 +86,15 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	void applyFold(Fold *fold);
 
 	int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
-	int scanhandle(int x,int y);
+	int scanHandle(int x,int y);
 	int checkFoldLevel(int update);
 	void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
-	void remapHandles();
+	int scanForFoldIndicator(int x, int y, int ignorex);
+	void remapHandles(int which=0);
 	void createHandles();
+	int offsetHandle(int which, flatpoint d);
 	void remapAffectedCells(int whichfold);
+	void drawHandle(ActionArea *area, flatpoint offset);
 
 	void dumpFoldinfo();//for debugging
  public:
