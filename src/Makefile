@@ -9,7 +9,8 @@ LAXIDIR=$(LAXDIR)/interfaces
 
 
 LD=g++
-LDFLAGS= -L/usr/X11R6/lib -lXi -lX11 -lm -lXpm -lpng -lcups `imlib2-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
+LDFLAGS= -L/usr/X11R6/lib -lXi -lX11 -lm -lXpm -lpng `imlib2-config --libs` \
+		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
 CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2
 DEBUGFLAGS= -g -DDEBUG
 
