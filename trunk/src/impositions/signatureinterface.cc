@@ -1806,6 +1806,11 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			double curdist =(    y-my)/(2.*INDICATOR_SIZE-3) + startindicator;
 			double lastdist=(lasty-my)/(2.*INDICATOR_SIZE-3) + startindicator;
 
+			if (curdist<0) curdist=0;
+			else if (curdist>signature->folds.n) curdist=signature->folds.n;
+			if (lastdist<0) lastdist=0;
+			else if (lastdist>signature->folds.n) lastdist=signature->folds.n;
+
 			 //curdist is 0 for very start, totally unfolded paper. Each fold adds 1 to curdist
 
 			DBG cerr <<"curdist:"<<curdist<<"  lastdist:"<<lastdist<<endl;
@@ -1835,7 +1840,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			} else if ((int)curdist<(int)lastdist) {
 				 //need to unfold a previous fold, for this, we need to get the map of state not including
 				 //the current fold, to know which cells are actually affected by the unfolding..
-				signature->applyFold(NULL,(int)curdist-1);
+				foldlevel=curdist;
+				signature->applyFold(NULL,(int)curdist);
 				remapAffectedCells((int)curdist);
 				foldprogress=curdist-floor(curdist);
 				needtodraw=1;
@@ -1844,6 +1850,8 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			} else {
 				 //need to advance one fold
 				if (curdist>signature->folds.n) curdist=signature->folds.n;
+				foldlevel=curdist;
+				folddirection='x';
 				applyFold(signature->folds.e[(int)curdist-1]);
 				remapAffectedCells((int)curdist);
 				foldprogress=curdist-floor(curdist);
@@ -2041,10 +2049,15 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 }
 
 //! Adjust foldr1,foldr2,foldc1,foldc2 to reflect which cells get moved for whichfold.
+/*! whichfold==0 means what is affected for the 1st fold, as if you were going from totally unfolded
+ * to after the 1st fold.
+ */
 void SignatureInterface::remapAffectedCells(int whichfold)
 {
+	if (whichfold<0 || whichfold>=signature->folds.n) return;
+
 	FoldedPageInfo **finfo=NULL;
-	if (whichfold==foldlevel+1) {
+	if (whichfold==foldlevel) {
 		 //we can use the current foldinfo
 		finfo=foldinfo;
 	} else {
@@ -2064,11 +2077,55 @@ void SignatureInterface::remapAffectedCells(int whichfold)
 	}
 
 	// *** figure out cells based on direction and index
+	int dir  =signature->folds.e[whichfold]->direction;
+	int index=signature->folds.e[whichfold]->whichfold;
+	int fr1,fr2,fc1,fc2;
+
+	 //find the cells that must be moved..
+	 //First find the whole block that might move, then shrink it down to include only active faces
+	if (dir=='l') {
+		fc1=index; //the only known so far
+		fr1=0;
+		fr2=signature->numhfolds;
+		fc2=signature->numvfolds;
+		while (fr1<fr2 && foldinfo[fr1][fc1].pages.n==0) fr1++;
+		while (fr2>fr1 && foldinfo[fr2][fc1].pages.n==0) fr2--;
+		while (fc2>fc1 && foldinfo[fr1][fc2].pages.n==0) fc2--;
+	} else if (dir=='r') {
+		fc2=index-1;
+		fr1=0;
+		fr2=signature->numhfolds;
+		fc1=0;
+		while (fr1<fr2 && foldinfo[fr1][fc2].pages.n==0) fr1++;
+		while (fr2>fr1 && foldinfo[fr2][fc2].pages.n==0) fr2--;
+		while (fc1<fc2 && foldinfo[fr1][fc1].pages.n==0) fc1++;
+	} else if (dir=='b') {
+		fr1=index;
+		fc1=0;
+		fc2=signature->numvfolds;
+		fr2=signature->numhfolds;
+		while (fc1<fc2 && foldinfo[fr1][fc1].pages.n==0) fc1++;
+		while (fc2>fc1 && foldinfo[fr1][fc2].pages.n==0) fc2--;
+		while (fr2>fr1 && foldinfo[fr2][fc1].pages.n==0) fr2--;
+	} else if (dir=='t') {
+		fr2=index-1;
+		fr1=0;
+		fc1=0;
+		fc2=signature->numvfolds;
+		while (fc1<fc2 && foldinfo[fr2][fc1].pages.n==0) fc1++;
+		while (fc2>fc1 && foldinfo[fr2][fc2].pages.n==0) fc2--;
+		while (fr1<fr2 && foldinfo[fr1][fc1].pages.n==0) fr1++;
+	}
 
 	if (finfo!=foldinfo) {
 		for (int c=0; finfo[c]; c++) delete[] finfo[c];
 		delete[] finfo;
 	}
+
+	foldr1=fr1;
+	foldr2=fr2;
+	foldc1=fc1;
+	foldc2=fc2;
 }
 
 static const char *masktostr(int m)
@@ -2081,11 +2138,6 @@ static const char *masktostr(int m)
 	return "?";
 }
 
-/*!
- * \todo inset shortcuts should be able to selectively adjust lrt or b insets and other things, not just all at once,
- * 		maybe have 'i' toggle which inset value to adjust, then subsequent arrow keys adjust values, modifiers adjust
- * 		the scale of the adjustment step
- */
 int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
