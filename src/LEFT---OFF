@@ -7,9 +7,10 @@ with a date that it was done and by who.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-resource impositions not showing description when selected
-
 make sure all imposition types are available in interpreter
+
+need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
+from parameters for all filters....
 
 image import: implement scale up and down
 
@@ -35,11 +36,6 @@ gradient rendering to buffer memory hole?? gets very slow, then crashes
 
 make file. save as to other dir. export. dir is wrong! 
 
-need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
-from parameters for all filters....
-
-import/export styledefs should use the extendsdef mechanism!!!
-
 select default papergroup, does not reinstall default papergroup!!
 
 control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
@@ -48,6 +44,10 @@ debug spread editor
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
+
+import/export styledefs should use the extendsdef mechanism!!!
+
+resource impositions not showing description when selected
 
 object deleting funky, import svg images, select one, hit delete, doesn't delete!!
 place 3 images, object select, must press delete twice...!?!?!?!
@@ -87,7 +87,7 @@ update translations
 
 
 sig editor:
-  animated fold controls
+  DONE animated fold controls
   DONE trim, margin, inset, gap, fold, tile handles
 cut marks at minimum
 command line func parser for sigs
@@ -107,6 +107,8 @@ sigeditor:  detect non staplable binding edge, show red rather than green
 
 Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
 will likely be very different
+
+must have custom printer marks
 
 bleeding mechanism should be functional
 
