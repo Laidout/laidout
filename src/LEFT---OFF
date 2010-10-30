@@ -12,8 +12,6 @@ make sure all imposition types are available in interpreter
 need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
 from parameters for all filters....
 
-image import: implement scale up and down
-
 project mechanics: either disable or make sure it is consistent enough
 
 imagepatch once again frelled, not showing image AT ALL!!!!
@@ -36,14 +34,12 @@ gradient rendering to buffer memory hole?? gets very slow, then crashes
 
 make file. save as to other dir. export. dir is wrong! 
 
-select default papergroup, does not reinstall default papergroup!!
-
-control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
-
 debug spread editor
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
+
+select default papergroup, does not reinstall default papergroup!!
 
 import/export styledefs should use the extendsdef mechanism!!!
 
@@ -609,4 +605,8 @@ DONE make podofoimposeplan be an ExportFilter
 	in same plan, for instance.
 
 DONE use cups-config in src/Makefile
+
+DONE control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
+
+DONE image import: implement scale up and down
 

@@ -492,6 +492,18 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		rebuildPreviewName();
 		return 0;
 
+	} else if (!strcmp(mes,"scaleup")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (!s) return 0;
+		settings->scaleup=(s->info1==LAX_ON);
+		return 0;
+
+	} else if (!strcmp(mes,"scaledown")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		if (!s) return 0;
+		settings->scaledown=(s->info1==LAX_ON);
+		return 0;
+
 	} else if (!strcmp(mes,"preview")) {
 		 //something's been typed in the preview edit
 		LineInput *preview= dynamic_cast<LineInput *>(findWindow("preview"));
