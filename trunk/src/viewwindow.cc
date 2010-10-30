@@ -829,21 +829,28 @@ const char *LaidoutViewport::SetViewMode(int m,int sprd)
  */
 const char *LaidoutViewport::Pageviewlabel()
 {
-	if (viewmode==SINGLELAYOUT) {
-		makestr(pageviewlabel,_("Page: "));
-	} else { // figure out like "Spread [2-4]: "
-		if (spread && doc) { 
-			char *desc=spread->pagesFromSpreadDesc(doc);
-			
-			makestr(pageviewlabel,"Pgs [");
-			appendstr(pageviewlabel,desc);
-			appendstr(pageviewlabel,"]: ");
-			if (curobjPage()<0) appendstr(pageviewlabel,_("limbo"));
-			//else PageFlipper appends proper page label...appendstr(pageviewlabel,curpage->label);
-
-			delete[] desc;
-		} else { makestr(pageviewlabel,_("Limbo: ")); }
+	int pg=curobjPage();
+	if (pg<0) makestr(pageviewlabel,_("Limbo "));
+	else if (pg>=doc->pages.n) makestr(pageviewlabel,_("?"));
+	else {
+		makestr(pageviewlabel,_("Page "));
 	}
+//	----------------
+//	if (viewmode==SINGLELAYOUT) {
+//		makestr(pageviewlabel,_("Page: "));
+//	} else { // figure out like "Spread [2-4]: "
+//		if (spread && doc) { 
+//			char *desc=spread->pagesFromSpreadDesc(doc);
+//			
+//			makestr(pageviewlabel,"Pgs [");
+//			appendstr(pageviewlabel,desc);
+//			appendstr(pageviewlabel,"]: ");
+//			if (curobjPage()<0) appendstr(pageviewlabel,_("limbo"));
+//			//else PageFlipper appends proper page label...appendstr(pageviewlabel,curpage->label);
+//
+//			delete[] desc;
+//		} else { makestr(pageviewlabel,_("Limbo: ")); }
+//	}
 	return pageviewlabel;
 }
 
@@ -2993,7 +3000,7 @@ int ViewWindow::init()
 	last=pagenumber=new PageFlipper(doc,this,"page number", 
 									last,object_id,"newPageNumber",
 									_("Page: "));
-	pagenumber->tooltip(_("The pages in the spread\nand the current page"));
+	pagenumber->tooltip(_("The current page"));
 	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
 	
 	last=ibut=new Button(this,"prev spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"prevSpread",-1,

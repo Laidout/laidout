@@ -21,6 +21,7 @@
 #include "utils.h"
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
+#include <lax/transformmath.h>
 #include <dirent.h>
 
 
@@ -717,11 +718,13 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 	int scaledown=settings->scaledown;
 	double dpi=doc->imposition->paper->paperstyle->dpi;
 	double curdpi=dpi;
+	double m[6];
 	double x,y,w,h,t,      // temp info while computing each row
 		   ww,hh,          // width and height of page
 		   s,              // scaling == 1/dpi
 		   rw,rh,
 		   rrh,            // height of all rows found so far
+		   rrw,            // maximum row width so far on page
 		   alignx, aligny; //overall alignment for current area
 	int n,         // total number of images
 		nn,        // number of images in current row
@@ -790,7 +793,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		}
 		 
 		 // flow onto page (into a rectangle)
-		rw=rh=rrh=0;
+		rw=rh=rrh=rrw=0;
 		DBG int nr=0; // number of rows so far
 		
 		 // find maxperpage
@@ -848,6 +851,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			x=(ww-rw)*alignx + outline->minx;
 			y=hh-rrh-rh/2+outline->miny; // y is centerline for row
 			rrh+=rh;
+			if (rw>rrw) rrw=rw;
 			for (flow2=last; flow2!=flow; ) {
 				w=(flow2->image->maxx-flow2->image->minx)*s;
 				h=(flow2->image->maxy-flow2->image->miny)*s;
@@ -859,8 +863,10 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 		} while (flow && nnn<maxperpage); // continue doing rows
 
 		 // now do final vertical arranging of nnn images in range [info,flow)
-		 // push images onto the page, adjusting their origins appropriately
+		 // push images onto the page, adjusting their origins appropriately.
+		 // info points to the 1st image on the page, flow points to one past the last one on the page
 		DBG cerr <<"  add "<<nn<<" images to page "<<curpage<<endl;
+		flow2=info;
 		while (info!=flow) {
 			DBG cerr <<"   adding image ..."<<endl;
 			//while (curpage>doc->pages.n) doc->
@@ -869,6 +875,38 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 			g->push(info->image); //incs the obj's count
 			info=info->next;
 		}
+
+		if (scaleup || scaledown) {
+			transform_identity(m);
+			double scale=1;
+			double nw,nh;
+			double mm[6];
+			flatpoint o((ww-rrw)*alignx, (hh-rrh)*aligny); //origin of current images bounding box
+
+			if (scaleup && rrw<ww && rrh<hh) {
+				if (hh/rrh>ww/rrw) scale=ww/rrw; else scale=hh/rrh;
+			}
+			if (scaledown && (rrw>ww || rrh>hh)) {
+				if (hh/rrh>ww/rrw) scale=ww/rrw; else scale=hh/rrh;
+			}
+			if (scale!=1) {
+				nw=rrw*scale;
+				nh=rrh*scale;
+				flatpoint no((ww-nw)*alignx, (hh-nh)*aligny); //origin of current images bounding box
+
+				m[0]=m[3]=scale;
+				//m[4]=no.x-o.x;
+				//m[5]=no.y-o.y;
+
+				while (flow2!=flow) {
+					transform_mult(mm,m,flow2->image->m());
+					flow2->image->m(mm);
+					flow2->image->origin(flow2->image->origin()+no-o);
+					flow2=flow2->next;
+				}
+			}
+		}
+
 		n+=nnn;
 		curpage++;
 	} // end loop block for page
