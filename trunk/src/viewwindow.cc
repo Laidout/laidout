@@ -524,6 +524,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
 		if (te->changetype==TreeObjectRepositioned) {
 			needtodraw=1;
+
 		} else if (te->changetype==TreeObjectReorder ||
 				te->changetype==TreeObjectDiffPage ||
 				te->changetype==TreeObjectDeleted ||
@@ -540,6 +541,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			spreadi=-1;
 			setupthings(-1,pg);
 			needtodraw=1;
+
 		} else if (te->changetype==TreeDocGone) {
 			DBG cerr <<"  --LaidoutViewport::DataEvent -> TreeDocGone"<<endl;
 			if (doc) {
@@ -3400,7 +3402,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		Group *g;
 		int where;
 		if (laidout->project->limbos.n()) {
-			menu->AddSep("Scratch");
+			menu->AddSep(_("Scratch"));
 			for (c=0; c<laidout->project->limbos.n(); c++) {
 				g=dynamic_cast<Group *>(laidout->project->limbos.e(c));
 				if (!isblank(g->id)) where=menu->AddItem(g->id,1000+c)-1; 

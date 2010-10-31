@@ -1222,11 +1222,6 @@ int LaidoutApp::NewDocument(const char *spec)
 			continue;
 		}
 		
-		if (isdigit(*field)) { // assume number of pages
-			numpages=atoi(field); 
-			if (numpages<=0) numpages=1;
-			continue;
-		}
 		 // check papertypes
 		for (c2=0; c2<papersizes.n; c2++) {
 			if (!strncasecmp(field,papersizes.e[c2]->name,n)) {
@@ -1241,6 +1236,16 @@ int LaidoutApp::NewDocument(const char *spec)
 		} else if (!strncasecmp(field,"portrait",n)) {
 			landscape=0;
 			continue;
+		}
+
+		if (isdigit(*field)) { // assume number of pages
+			char *ee=NULL;
+			int i=strtol(field,&ee,10);
+			if (!isalpha(*ee)) {
+				numpages=i;
+				if (numpages<=0) numpages=1;
+				continue;
+			}
 		}
 
 		 // check imposition resources

@@ -593,7 +593,7 @@ MenuInfo *HeadWindow::GetMenu()
 */
 int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"HeadWindow got message: "<<mes<<endl;
+	DBG cerr <<"HeadWindow got message: "<<(mes?mes:"(no str)")<<endl;
 	if (!strcmp(mes,"docTreeChange")) {
 		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
 

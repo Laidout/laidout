@@ -183,7 +183,7 @@ int SinglesEditor::init()
 			            _("Inset Top:"),NULL,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(imp->insett);
+	if (imp) linp->SetText(imp->insettop);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=insetb=new LineInput(this,"inset b",NULL,LINP_ONLEFT,
@@ -192,7 +192,7 @@ int SinglesEditor::init()
 			            _("Inset Bottom:"),NULL,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(imp->insetb);
+	if (imp) linp->SetText(imp->insetbottom);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -202,7 +202,7 @@ int SinglesEditor::init()
 			            _("Inset Left:"),NULL,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(imp->insetl);
+	if (imp) linp->SetText(imp->insetleft);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=insetr=new LineInput(this,"inset r",NULL,LINP_ONLEFT,
@@ -211,7 +211,7 @@ int SinglesEditor::init()
 			            _("Inset Right:"),NULL,0,
 			            0,0,3,0,3,3);
 	linp->tooltip(_("Amount to chop from paper before applying tiling"));
-	if (imp) linp->SetText(imp->insetr);
+	if (imp) linp->SetText(imp->insetright);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -240,7 +240,7 @@ int SinglesEditor::init()
 						last,object_id,"margin t",
 			            _("Top Margin"),NULL,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(imp->insett);
+	if (imp) linp->SetText(imp->margintop);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=marginb=new LineInput(this,"margin b",NULL,LINP_ONLEFT,
@@ -248,7 +248,7 @@ int SinglesEditor::init()
 						last,object_id,"margin b",
 			            _("Bottom Margin"),NULL,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(imp->insetb);
+	if (imp) linp->SetText(imp->marginbottom);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -257,7 +257,7 @@ int SinglesEditor::init()
 						last,object_id,"margin l",
 			            _("Left Margin"),NULL,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(imp->insetl);
+	if (imp) linp->SetText(imp->marginleft);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	last=linp=marginr=new LineInput(this,"margin r",NULL,LINP_ONLEFT,
@@ -265,7 +265,7 @@ int SinglesEditor::init()
 						last,object_id,"margin r",
 			            _("Right Margin"),NULL,0,
 			            0,0,3,0,3,3);
-	if (imp) linp->SetText(imp->insetr);
+	if (imp) linp->SetText(imp->marginright);
 	AddWin(linp,1, 150,0,50,50,0, linpheight,0,0,50,0, -1);
 	AddNull();
 	
@@ -383,10 +383,10 @@ void SinglesEditor::send()
 	imposition->tiley=ytile;
 	imposition->gapx=xgap;
 	imposition->gapy=ygap;
-	imposition->insetl=insetl->GetDouble();
-	imposition->insetr=insetr->GetDouble();
-	imposition->insett=insett->GetDouble();
-	imposition->insetb=insetb->GetDouble();
+	imposition->insetleft  =insetl->GetDouble();
+	imposition->insetright =insetr->GetDouble();
+	imposition->insettop   =insett->GetDouble();
+	imposition->insetbottom=insetb->GetDouble();
 	imposition->SetDefaultMargins(marginl->GetDouble(),marginr->GetDouble(),margint->GetDouble(),marginb->GetDouble());
 
 	imposition->NumPages(npgs);

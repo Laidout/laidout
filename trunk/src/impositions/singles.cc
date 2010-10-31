@@ -48,8 +48,8 @@ using namespace std;
  */
 Singles::Singles() : Imposition(_("Singles"))
 { 
-	insetl=insetr=insett=insetb=0;
-	marginl=marginr=margint=marginb=0;
+	insetleft=insetright=insettop=insetbottom=0;
+	marginleft=marginright=margintop=marginbottom=0;
 	tilex=tiley=1;
 	gapx=gapy=0;
 	pagestyle=NULL;
@@ -131,8 +131,8 @@ void Singles::setPage()
 	}
 	
 	pagestyle=new RectPageStyle(RECTPAGE_LRTB);
-	pagestyle->width=(paper->media.maxx-insetl-insetr)/tilex;
-	pagestyle->height=(paper->media.maxy-insett-insetb)/tiley;
+	pagestyle->width=(paper->media.maxx-insetleft-insetright)/tilex;
+	pagestyle->height=(paper->media.maxy-insettop-insetbottom)/tiley;
 	pagestyle->pagetype=0;
 	pagestyle->ml=oldl;
 	pagestyle->mr=oldr;
@@ -199,22 +199,22 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
-		if (!strcmp(name,"insetl")) {
-			DoubleAttribute(value,&insetl);
-		} else if (!strcmp(name,"insetr")) {
-			DoubleAttribute(value,&insetr);
-		} else if (!strcmp(name,"insett")) {
-			DoubleAttribute(value,&insett);
-		} else if (!strcmp(name,"insetb")) {
-			DoubleAttribute(value,&insetb);
-		} else if (!strcmp(name,"marginl")) {
-			DoubleAttribute(value,&marginl);
-		} else if (!strcmp(name,"marginr")) {
-			DoubleAttribute(value,&marginr);
-		} else if (!strcmp(name,"margint")) {
-			DoubleAttribute(value,&margint);
-		} else if (!strcmp(name,"marginb")) {
-			DoubleAttribute(value,&marginb);
+		if (!strcmp(name,"insetleft")) {
+			DoubleAttribute(value,&insetleft);
+		} else if (!strcmp(name,"insetright")) {
+			DoubleAttribute(value,&insetright);
+		} else if (!strcmp(name,"insettop")) {
+			DoubleAttribute(value,&insettop);
+		} else if (!strcmp(name,"insetbottom")) {
+			DoubleAttribute(value,&insetbottom);
+		} else if (!strcmp(name,"marginleft")) {
+			DoubleAttribute(value,&marginleft);
+		} else if (!strcmp(name,"marginright")) {
+			DoubleAttribute(value,&marginright);
+		} else if (!strcmp(name,"margintop")) {
+			DoubleAttribute(value,&margintop);
+		} else if (!strcmp(name,"marginbottom")) {
+			DoubleAttribute(value,&marginbottom);
 		} else if (!strcmp(name,"gapx")) {
 			DoubleAttribute(value,&gapx);
 		} else if (!strcmp(name,"gapy")) {
@@ -253,10 +253,10 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 
 /*! Writes out something like:
  * <pre>
- *  insetl 0
- *  insetr 0
- *  insett 0
- *  insetb 0
+ *  insetleft 0
+ *  insetright 0
+ *  insettop 0
+ *  insetbottom 0
  *  tilex  1
  *  tiley  1
  *  numpages 10
@@ -297,14 +297,14 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		pagestyle->dump_out(f,indent+2,-1,NULL);
 		return;
 	}
-	fprintf(f,"%smarginl %.10g\n",spc,marginl);
-	fprintf(f,"%smarginr %.10g\n",spc,marginr);
-	fprintf(f,"%smargint %.10g\n",spc,margint);
-	fprintf(f,"%smarginb %.10g\n",spc,marginb);
-	fprintf(f,"%sinsetl %.10g\n",spc,insetl);
-	fprintf(f,"%sinsetr %.10g\n",spc,insetr);
-	fprintf(f,"%sinsett %.10g\n",spc,insett);
-	fprintf(f,"%sinsetb %.10g\n",spc,insetb);
+	fprintf(f,"%smarginl %.10g\n",spc,marginleft);
+	fprintf(f,"%smarginr %.10g\n",spc,marginright);
+	fprintf(f,"%smargint %.10g\n",spc,margintop);
+	fprintf(f,"%smarginb %.10g\n",spc,marginbottom);
+	fprintf(f,"%sinsetl %.10g\n",spc,insetleft);
+	fprintf(f,"%sinsetr %.10g\n",spc,insetright);
+	fprintf(f,"%sinsett %.10g\n",spc,insettop);
+	fprintf(f,"%sinsetb %.10g\n",spc,insetbottom);
 	fprintf(f,"%stilex %d\n",spc,tilex);
 	fprintf(f,"%stiley %d\n",spc,tiley);
 	if (numpages) fprintf(f,"%snumpages %d\n",spc,numpages);
@@ -337,14 +337,14 @@ Style *Singles::duplicate(Style *s)//s=NULL
 		pagestyle->inc_count();
 		sn->pagestyle=pagestyle;
 	}
-	sn->marginl=marginl;
-	sn->marginr=marginr;
-	sn->margint=margint;
-	sn->marginb=marginb;
-	sn->insetl=insetl;
-	sn->insetr=insetr;
-	sn->insett=insett;
-	sn->insetb=insetb;
+	sn->marginleft=marginleft;
+	sn->marginright=marginright;
+	sn->margintop=margintop;
+	sn->marginbottom=marginbottom;
+	sn->insetleft=insetleft;
+	sn->insetright=insetright;
+	sn->insettop=insettop;
+	sn->insetbottom=insetbottom;
 	sn->tilex=tilex;
 	sn->tiley=tiley;
 	return Imposition::duplicate(s);  
@@ -356,6 +356,101 @@ Style *NewSingles(StyleDef *def)
 	Singles *s=new Singles;
 	s->styledef=def;
 	return s;
+}
+
+//! Return a ValueObject with a SignatureImposition.
+/*! This does not throw an error for having an incomplete set of parameters.
+ * It just fills what's given.
+ */
+int createSingles(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, char **message_ret)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=NULL;
+		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		return 1;
+	}
+
+	Singles *imp=new Singles();
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+		double d;
+
+		 //---insetleft
+		d=parameters->findDouble("insetleft",-1,&e);
+		if (e==0) imp->insetleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetleft"); throw error; }
+
+		 //---insetright
+		d=parameters->findDouble("insetright",-1,&e);
+		if (e==0) imp->insetright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetright"); throw error; }
+
+		 //---insettop
+		d=parameters->findDouble("insettop",-1,&e);
+		if (e==0) imp->insettop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insettop"); throw error; }
+
+		 //---insetbottom
+		d=parameters->findDouble("insetbottom",-1,&e);
+		if (e==0) imp->insetbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetbottom"); throw error; }
+
+		 //---marginleft
+		d=parameters->findDouble("marginleft",-1,&e);
+		if (e==0) imp->marginleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginleft"); throw error; }
+
+		 //---marginright
+		d=parameters->findDouble("marginright",-1,&e);
+		if (e==0) imp->marginright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginright"); throw error; }
+
+		 //---margintop
+		d=parameters->findDouble("margintop",-1,&e);
+		if (e==0) imp->margintop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"margintop"); throw error; }
+
+		 //---marginbottom
+		d=parameters->findDouble("marginbottom",-1,&e);
+		if (e==0) imp->marginbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginbottom"); throw error; }
+
+		 //---tilegapx
+		d=parameters->findDouble("gapx",-1,&e);
+		if (e==0) imp->gapx=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"gapx"); throw error; }
+
+		 //---tilegapy
+		d=parameters->findDouble("gapy",-1,&e);
+		if (e==0) imp->gapy=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"gapy"); throw error; }
+
+		 //---tilex
+		i=parameters->findInt("tilex",-1,&e);
+		if (e==0) imp->tilex=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilex"); throw error; }
+
+		 //---tiley
+		i=parameters->findInt("tiley",-1,&e);
+		if (e==0) imp->tiley=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tiley"); throw error; }
+
+
+	} catch (const char *str) {
+		if (message_ret) appendline(*message_ret,str);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		*value_ret=new ObjectValue(imp);
+	}
+	if (imp) imp->dec_count();
+
+	return err;
 }
 
 StyleDef *Singles::makeStyleDef()
@@ -380,7 +475,8 @@ StyleDef *makeSinglesStyleDef()
 			NULL,NULL,
 			NULL,
 			0, //new flags
-			NewSingles);
+			NewSingles,
+			createSingles);
 
 	sd->push("insetleft",
 			_("Left Inset"),
@@ -564,17 +660,17 @@ Spread *Singles::PaperLayout(int whichpaper)
 	 // make the outline around the inset, then lines to demarcate the tiles
 	 // there are tilex*tiley pages, all pointing to the same page data
 	newpath->pushEmpty(); // later could have a certain linestyle
-	newpath->appendRect(insetl,insetb, paper->media.maxx-insetl-insetr,paper->media.maxy-insett-insetb);
+	newpath->appendRect(insetleft,insetbottom, paper->media.maxx-insetleft-insetright,paper->media.maxy-insettop-insetbottom);
 	int x,y;
 	for (x=1; x<tilex; x++) {
 		newpath->pushEmpty();
-		newpath->append(insetl+x*(paper->media.maxx-insetr-insetl)/tilex, insett);
-		newpath->append(insetl+x*(paper->media.maxx-insetr-insetl)/tilex, insetb);
+		newpath->append(insetleft+x*(paper->media.maxx-insetright-insetleft)/tilex, insettop);
+		newpath->append(insetleft+x*(paper->media.maxx-insetright-insetleft)/tilex, insetbottom);
 	}
 	for (y=1; y<tiley; y++) {
 		newpath->pushEmpty();
-		newpath->append(insetl, insetb+y*(paper->media.maxy-insetb-insett)/tiley);
-		newpath->append(insetr, insetb+y*(paper->media.maxy-insetb-insett)/tiley);
+		newpath->append(insetleft, insetbottom+y*(paper->media.maxy-insetbottom-insettop)/tiley);
+		newpath->append(insetright, insetbottom+y*(paper->media.maxy-insetbottom-insettop)/tiley);
 	}
 	
 	 // setup spread->pagestack
@@ -586,8 +682,8 @@ Spread *Singles::PaperLayout(int whichpaper)
 			ntrans=new PathsData();//count of 1
 			ntrans->appendRect(0,0, pagestyle->w(),pagestyle->h());
 			ntrans->FindBBox();
-			ntrans->origin(flatpoint(insetl+x*(paper->media.maxx-insetr-insetl)/tilex,
-									 insetb+y*(paper->media.maxy-insett-insetb)/tiley));
+			ntrans->origin(flatpoint(insetleft+x*(paper->media.maxx-insetright-insetleft)/tilex,
+									 insetbottom+y*(paper->media.maxy-insettop-insetbottom)/tiley));
 			spread->pagestack.push(new PageLocation(whichpaper,NULL,ntrans));//ntrans count++
 			ntrans->dec_count();//remove extra count
 		}
@@ -596,40 +692,40 @@ Spread *Singles::PaperLayout(int whichpaper)
 		
 	 // make printer marks if necessary
 	 //*** make this more responsible lengths:
-	if (insetr>0 || insetl>0 || insett>0 || insetb>0) {
+	if (insetright>0 || insetleft>0 || insettop>0 || insetbottom>0) {
 		spread->mask|=SPREAD_PRINTERMARKS;
 		PathsData *marks=new PathsData();
-		if (insetl>0) {
+		if (insetleft>0) {
 			marks->pushEmpty();
-			marks->append(0,        paper->media.maxy-insett);
-			marks->append(insetl*.9,paper->media.maxy-insett);
+			marks->append(0,        paper->media.maxy-insettop);
+			marks->append(insetleft*.9,paper->media.maxy-insettop);
 			marks->pushEmpty();
-			marks->append(0,        insetb);
-			marks->append(insetl*.9,insetb);
+			marks->append(0,        insetbottom);
+			marks->append(insetleft*.9,insetbottom);
 		}
-		if (insetr>0) {
+		if (insetright>0) {
 			marks->pushEmpty();
-			marks->append(paper->media.maxx,          paper->media.maxy-insett);
-			marks->append(paper->media.maxx-.9*insetr,paper->media.maxy-insett);
+			marks->append(paper->media.maxx,          paper->media.maxy-insettop);
+			marks->append(paper->media.maxx-.9*insetright,paper->media.maxy-insettop);
 			marks->pushEmpty();
-			marks->append(paper->media.maxx,          insetb);
-			marks->append(paper->media.maxx-.9*insetr,insetb);
+			marks->append(paper->media.maxx,          insetbottom);
+			marks->append(paper->media.maxx-.9*insetright,insetbottom);
 		}
-		if (insetb>0) {
+		if (insetbottom>0) {
 			marks->pushEmpty();
-			marks->append(insetl,0);
-			marks->append(insetl,.9*insetb);
+			marks->append(insetleft,0);
+			marks->append(insetleft,.9*insetbottom);
 			marks->pushEmpty();
-			marks->append(paper->media.maxx-insetr,0);
-			marks->append(paper->media.maxx-insetr,.9*insetb);
+			marks->append(paper->media.maxx-insetright,0);
+			marks->append(paper->media.maxx-insetright,.9*insetbottom);
 		}
-		if (insett>0) {
+		if (insettop>0) {
 			marks->pushEmpty();
-			marks->append(insetl,paper->media.maxy);
-			marks->append(insetl,paper->media.maxy-.9*insett);
+			marks->append(insetleft,paper->media.maxy);
+			marks->append(insetleft,paper->media.maxy-.9*insettop);
 			marks->pushEmpty();
-			marks->append(paper->media.maxx-insetr,paper->media.maxy);
-			marks->append(paper->media.maxx-insetr,paper->media.maxy-.9*insett);
+			marks->append(paper->media.maxx-insetright,paper->media.maxy);
+			marks->append(paper->media.maxx-insetright,paper->media.maxy-.9*insettop);
 		}
 		spread->marks=marks;
 	}
