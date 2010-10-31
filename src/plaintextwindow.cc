@@ -100,7 +100,7 @@ void PlainTextWindow::uniqueName(PlainText *obj)
 
 int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"plaintext message: "<<mes<<endl;
+	DBG cerr <<"plaintext message: "<<(mes?mes:"(some event)")<<endl;
 
 	if (!strcmp(mes,"openPopup")) {
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);

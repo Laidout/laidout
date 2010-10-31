@@ -25,8 +25,8 @@ StyleDef *makeSinglesStyleDef();
 class Singles : public Imposition
 {
   public:
-	double insetl,insetr,insett,insetb;
-	double marginl,marginr,margint,marginb;
+	double insetleft,insetright,insettop,insetbottom;
+	double marginleft,marginright,margintop,marginbottom;
 	double gapx,gapy;
 	int tilex,tiley; 
 	RectPageStyle *pagestyle;

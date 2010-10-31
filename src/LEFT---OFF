@@ -32,12 +32,12 @@ net extra scaling non-functional
 
 gradient rendering to buffer memory hole?? gets very slow, then crashes
 
-make file. save as to other dir. export. dir is wrong! 
-
 debug spread editor
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
+
+make file. save as to other dir. export. dir is wrong! 
 
 select default papergroup, does not reinstall default papergroup!!
 

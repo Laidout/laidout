@@ -66,6 +66,7 @@ TreeChangeEvent::TreeChangeEvent(const TreeChangeEvent &te)
 	start=te.start;
 	end=te.end;
 	changer=te.changer;
+	changetype=te.changetype;
 	obj.doc=te.obj.doc;
 	type=te.type;
 	subtype=te.subtype;

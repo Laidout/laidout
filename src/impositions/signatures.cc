@@ -778,8 +778,11 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
  */ 
 unsigned int Signature::Validity()
 {
-	 //inset, gap, trim and margin values all must be within the proper boundaries
+	 //inset, gap, trim and margin values all must be within the proper boundaries.
+	 //fold indices and directions must make sense, and fold down to a single page
+
 	cerr <<" *** need to implement Signature sanity check Signature::Validity()"<<endl;
+	if (numvfolds+numhfolds!=folds.n) return 1;
 	return 0;
 }
 
@@ -849,8 +852,8 @@ Laxkit::DoubleBBox *Signature::PageBounds(int part, Laxkit::DoubleBBox *bbox)
 	} else if (part==1) { //margin box
 		bbox->minx=marginleft-trimleft;
 		bbox->miny=marginbottom-trimbottom;
-		bbox->maxx=PageWidth(1)  - (marginright-marginleft);
-		bbox->maxy=PageHeight(1) - (margintop-marginbottom);
+		bbox->maxx=PageWidth(1)  - marginright;
+		bbox->maxy=PageHeight(1) - margintop;
 
 	} else { //page cell box
 		bbox->minx=-trimleft;
@@ -1160,7 +1163,9 @@ int createSignature(ValueHash *context, ValueHash *parameters,
 		return 1;
 	}
 
-	SignatureImposition *imp=new SignatureImposition;
+	Signature *sig=new Signature;
+	SignatureImposition *imp=new SignatureImposition(sig);
+	sig->dec_count();
 	Value *v=NULL;
 
 	char error[100];
@@ -1259,21 +1264,36 @@ int createSignature(ValueHash *context, ValueHash *parameters,
 		if (e==0) imp->signature->tiley=i;
 		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tiley"); throw error; }
 
+		 //---numhfolds
+		i=parameters->findInt("numhfolds",-1,&e);
+		if (e==0) imp->signature->numhfolds=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"numhfolds"); throw error; }
+
+		 //---numvfolds
+		i=parameters->findInt("numvfolds",-1,&e);
+		if (e==0) imp->signature->numvfolds=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"numvfolds"); throw error; }
+
 		 //---folds
 		v=parameters->find("folds");
-		if (v->type()!=VALUE_Set) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
-		SetValue *set=dynamic_cast<SetValue*>(v);
-		ObjectValue *o;
-		Fold *fold;
-		for (int c=0; c<set->values.n; c++) {
-			o=dynamic_cast<ObjectValue*>(set->values.e[c]);
-			if (!o) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
-			fold=dynamic_cast<Fold*>(o->object);
-			if (!fold) { sprintf(error, _("Expecting %s!"),"Fold"); throw error; }
+		if (v) {
+			if (v->type()!=VALUE_Set) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
+			SetValue *set=dynamic_cast<SetValue*>(v);
+			ObjectValue *o;
+			Fold *fold;
+			for (int c=0; c<set->values.n; c++) {
+				o=dynamic_cast<ObjectValue*>(set->values.e[c]);
+				if (!o) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
+				fold=dynamic_cast<Fold*>(o->object);
+				if (!fold) { sprintf(error, _("Expecting %s!"),"Fold"); throw error; }
 
-			imp->signature->folds.push(new Fold(fold->direction,fold->under,fold->whichfold));
+				imp->signature->folds.push(new Fold(fold->direction,fold->under,fold->whichfold));
+			}
 		}
 
+		imp->signature->reallocateFoldinfo();
+		imp->signature->applyFold(NULL,-1);
+		imp->signature->checkFoldLevel(NULL,NULL,NULL);
 
 
 	} catch (const char *str) {

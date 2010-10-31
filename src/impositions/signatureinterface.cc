@@ -1467,6 +1467,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		foldlevel=signature->folds.n;
 
 		checkFoldLevel(1);
+		if (hasfinal) remapHandles(0);
 
 		folddirection=0;
 		foldprogress=0;
