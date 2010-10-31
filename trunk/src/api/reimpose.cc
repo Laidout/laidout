@@ -18,6 +18,8 @@
 #include "../language.h"
 #include "../laidout.h"
 
+using namespace Laxkit;
+
 /*! \ingroup api */
 StyleDef *makeReimposeStyleDef()
 {
@@ -158,16 +160,25 @@ int ReImposeFunction(ValueHash *context,
 		if (!doc) throw _("You must specify a document to reimpose."); //no doc to impose!
 
 		 //2.
-		str=parameters->findString("imposition",-1,&i);
-		if (!str) throw _("You must specify an imposition!"); //no new imposition!
-		int c2;
-		for (c2=0; c2<laidout->impositionpool.n; c2++) {
-			if (!strncasecmp(str,laidout->impositionpool.e[c2]->name,strlen(laidout->impositionpool.e[c2]->name))) {
-				break;
+		int ii=parameters->findIndex("imposition");
+		if (ii<0) throw _("You must specify an imposition!"); //no new imposition!
+		str=parameters->findString("imposition",ii,&i);
+		if (i==0) {
+			int c2;
+			for (c2=0; c2<laidout->impositionpool.n; c2++) {
+				if (!strncasecmp(str,laidout->impositionpool.e[c2]->name,strlen(laidout->impositionpool.e[c2]->name))) {
+					break;
+				}
 			}
+			if (c2==laidout->impositionpool.n) _("Imposition not found!"); //no imposition to use!
+			imp=laidout->impositionpool.e[c2]->Create();
+		} else {
+			RefCounted *obj=parameters->findObject("imposition",ii,&i);
+			Imposition *impmaybe=dynamic_cast<Imposition*>(obj);
+			if (!impmaybe) throw _("Wrong format for imposition!");
+
+			imp=(Imposition*)impmaybe->duplicate();
 		}
-		if (c2==laidout->impositionpool.n) _("Imposition not found!"); //no imposition to use!
-		imp=laidout->impositionpool.e[c2]->Create();
 
 		 //3.
 
@@ -190,7 +201,7 @@ int ReImposeFunction(ValueHash *context,
 			//if no fit, then custom size
 		} else if (str) {
 			 //establish papersize;
-			for (c2=0; c2<laidout->papersizes.n; c2++) {
+			for (int c2=0; c2<laidout->papersizes.n; c2++) {
 				if (!strncasecmp(str,laidout->papersizes.e[c2]->name,strlen(laidout->papersizes.e[c2]->name))) {
 					paper=laidout->papersizes.e[c2];
 					break;
