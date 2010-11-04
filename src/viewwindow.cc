@@ -1759,7 +1759,8 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 
 	DBG if (!buttondown.any()) {
 	DBG 	int c=-1;
-	DBG 	flatpoint p=dp->screentoreal(x,y);
+	DBG 	flatpoint p=dp->screentoreal(x,y);//viewer coordinates
+	DBG 	cerr <<" realp:"<<p.x<<","<<p.y<<"  ";
 	DBG 	if (spread) {
 	DBG 		for (c=0; c<spread->pagestack.n; c++) {
 	DBG 			if (spread->pagestack.e[c]->outline->pointin(p)) break;

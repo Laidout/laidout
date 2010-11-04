@@ -1210,6 +1210,18 @@ int LaidoutApp::NewDocument(const char *spec)
 			NetImposition *nimp=new NetImposition;
 			nimp->SetNet(field);
 			imp=nimp;
+			continue;
+		}
+
+		if (isdigit(*field)) { // assume number of pages
+			char *ee=NULL;
+			int i=strtol(field,&ee,10);
+			while (isspace(*ee)) ee++;
+			if (*ee=='\0' || !strcasecmp(ee,_("pages"))) {
+				numpages=i;
+				if (numpages<=0) numpages=1;
+				continue;
+			}
 		}
 
 		 // check for new filename
@@ -1236,16 +1248,6 @@ int LaidoutApp::NewDocument(const char *spec)
 		} else if (!strncasecmp(field,"portrait",n)) {
 			landscape=0;
 			continue;
-		}
-
-		if (isdigit(*field)) { // assume number of pages
-			char *ee=NULL;
-			int i=strtol(field,&ee,10);
-			if (!isalpha(*ee)) {
-				numpages=i;
-				if (numpages<=0) numpages=1;
-				continue;
-			}
 		}
 
 		 // check imposition resources

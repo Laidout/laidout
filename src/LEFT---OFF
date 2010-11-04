@@ -7,11 +7,6 @@ with a date that it was done and by who.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-make sure all imposition types are available in interpreter
-
-need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
-from parameters for all filters....
-
 project mechanics: either disable or make sure it is consistent enough
 
 imagepatch once again frelled, not showing image AT ALL!!!!
@@ -24,11 +19,7 @@ memory hole in svg in? test svg import, svg path import must be done
 
 print by command doesn't seem to work... fails noiselessly
 
-./laidout -n 'box 1 2 3'  -->  doesn't work
-
-net page tracking is frelled
-
-net extra scaling non-functional
+refcounting error with nets upon edit current document settings
 
 gradient rendering to buffer memory hole?? gets very slow, then crashes
 
@@ -36,6 +27,15 @@ debug spread editor
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
+
+net extra scaling non-functional
+
+object move to diff page makes object tool handles jump to improper location.. not updating context transform?
+
+need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
+from parameters for all filters....
+
+make sure all imposition types are available in interpreter
 
 make file. save as to other dir. export. dir is wrong! 
 
@@ -83,10 +83,9 @@ update translations
 
 
 sig editor:
-  DONE animated fold controls
-  DONE trim, margin, inset, gap, fold, tile handles
-cut marks at minimum
 command line func parser for sigs
+DONE animated fold controls
+DONE trim, margin, inset, gap, fold, tile handles
 DONE finish implement sigimposition
 DONE edit document settings: need special menu item for "Current"
 DONE respond to menu controls for paper size
@@ -99,6 +98,8 @@ DONE Generic fold and trim imposition
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
+implement cut marks and other custom printer marks!!!
+
 sigeditor:  detect non staplable binding edge, show red rather than green
 
 Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
@@ -609,4 +610,6 @@ DONE use cups-config in src/Makefile
 DONE control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
 
 DONE image import: implement scale up and down
+
+DONE ./laidout -n 'box 1 2 3'  -->  doesn't work
 

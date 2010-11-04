@@ -292,7 +292,7 @@ int Spread::PagestackIndex(int docpage)
  *
  * The imposition's name is stored in stylename inherited from Style.
  *
- * NOTE that numpages, numspreads, and numpapers SHOULD be consistent with the actual number
+ * NOTE that numpages and numpapers SHOULD be consistent with the actual number
  * of pages in a document, but the document can add or remove pages whenever it wants, so
  * care must be taken, especially in Document, to maintain sanity
  * This is ugly!! maybe have imposition point to a doc??
@@ -304,9 +304,6 @@ int Spread::PagestackIndex(int docpage)
  */
 /*! \var int Imposition::numpapers
  * \brief The number of papers available.
- */
-/*! \var int Imposition::numspreads
- * \brief The number of page spreads available.
  */
 /*! \var int Imposition::numpages
  * \brief The number of pages available.
@@ -415,7 +412,10 @@ int Spread::PagestackIndex(int docpage)
  * \brief Return the the number of pages the imposition thinks there are.
  */
 /*! \fn int Imposition::NumSpreads()
- * \brief Return the the number of spreads the imposition thinks there are.
+ * \brief Return the the number of page spreads the imposition thinks there are.
+ *
+ * This should be the main reader spreads, not printer spreads, and not any other strange
+ * assortment of spread.
  *
  * Usually, this will be such that each spread contains a continuous range of document pages,
  * that continues the index count from the previous spread. For instance, in booklets,
@@ -484,7 +484,7 @@ int Spread::PagestackIndex(int docpage)
  *
  *  Otherwise, Imposition subclasses must establish paperstyle, and usually also their
  *  own pagestyles based on the paperstyle. It is assumed that the numpages, numpapers,
- *  and numspreads are set soon after creation by the code that creates the instance
+ *  are set soon after creation by the code that creates the instance
  *  in the first place.
  */
 Imposition::Imposition(const char *nsname)
@@ -493,7 +493,7 @@ Imposition::Imposition(const char *nsname)
 	doc=NULL;
 	paper=NULL; 
 	papergroup=NULL;
-	numpages=numspreads=numpapers=0; 
+	numpages=numpapers=0; 
 	
 	DBG cerr <<"imposition base class init for object "<<object_id<<endl;
 }
@@ -654,23 +654,24 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 }
 
 //! Return the number of spreads of type layout.
-/*! \todo Ultimately, this will replace the other NumPapers(), NumPages(), etc.
+/*! Please note the number returned for LITTLESPREADLAYOUT and PAGELAYOUT is just NumPages(), the same as for SINGLELAYOUT.
+ *
+ * \todo Ultimately, this will replace the other NumPapers(), NumPages(), etc.
  *    it is much more adaptible for nets right now, just relays based on 
  *    PAGELAYOUT, PAPERLAYOUT, SINGLESLAYOUT
  */
 int Imposition::NumSpreads(int layout)
 {
 	if (layout==PAPERLAYOUT) return NumPapers();
-	if (layout==PAGELAYOUT) return NumSpreads();
-	if (layout==SINGLELAYOUT) return numpages;
-	if (layout==LITTLESPREADLAYOUT) return NumSpreads();
+	if (layout==PAGELAYOUT) return NumPages();
+	if (layout==SINGLELAYOUT) return NumPages();
+	if (layout==LITTLESPREADLAYOUT) return NumPages();
 	return 0;
 }
 
-//! Set the number of papers to npapers, and set numpages,numspreads as appropriate.
+//! Set the number of papers to npapers, and set numpages as appropriate.
 /*! Default is to set numpapers=npapers, 
  *  numpages=GetPagesNeeded(numpapers), and 
- *  numspreads=GetSpreadsNeeded(numpages).
  *  
  * Does not check to make sure npapers is a valid number for any document in question.
  * 
@@ -680,14 +681,12 @@ int Imposition::NumPapers(int npapers)
 {
 	numpapers=npapers;
 	numpages=GetPagesNeeded(numpapers);
-	numspreads=GetSpreadsNeeded(numpages);
 	return numpapers;
 }
 
-//! Set the number of pages to npage, and set numpapers,numspreads as appropriate.
+//! Set the number of pages to npage, and set numpapers as appropriate.
 /*! Default is to set numpagess=npages, 
  * numpapers=GetPapersNeeded(numpapers), and 
- * numspreads=GetSpreadsNeeded(numpages).
  * 
  * Does not check to make sure npages is a valid number.
  *
@@ -697,7 +696,6 @@ int Imposition::NumPages(int npages)
 {
 	numpages=npages;
 	numpapers=GetPapersNeeded(numpages);
-	numspreads=GetSpreadsNeeded(numpages);
 	return numpages;
 }
 
