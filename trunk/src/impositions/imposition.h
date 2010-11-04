@@ -89,7 +89,6 @@ class Imposition : public Style
 {
   public:
 	int numpapers; 
-	int numspreads;
 	int numpages;
 	Document *doc;
 	PaperGroup *papergroup;
@@ -125,7 +124,6 @@ class Imposition : public Style
 	//----*** ^^ this will ultimately replace these vv
 	virtual int NumPapers() { return numpapers; } 
 	virtual int NumPapers(int npapers);
-	virtual int NumSpreads() { return numspreads; }
 	virtual int NumPages() { return numpages; }
 	virtual int NumPages(int npages);
 

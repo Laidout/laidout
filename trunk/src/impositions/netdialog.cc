@@ -289,7 +289,7 @@ int NetDialog::sendNewImposition()
 
 	double s=scaling->GetDouble();
 	if (s<=0) s=1;
-	imp->scalefromnet=s;
+	imp->scalefromnet*=s;
 
 	RefCountedEventData *data=new RefCountedEventData(imp);
 	imp->dec_count();

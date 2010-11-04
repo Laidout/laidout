@@ -786,18 +786,17 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 /*! For instance, for a cube, if the document only has 3 pages,
  * 6 pages will still be returned.
  */
-int NetImposition::NumPages()
+int NetImposition::NumPageSpreads()
 {
-	int n=numActiveFaces();
-	if (!n) return 0;
-
-	return (numpages/n+1) *n;
+	return GetPapersNeeded(Imposition::NumPages());
 }
 
+//! Set the known number of pages to npages.
 int NetImposition::NumPages(int npages)
 {
 	numpages=npages;
-	return NumPages();
+	numpapers=GetPapersNeeded(npages);
+	return numpages;
 }
 
 //! Redefined to also return for SINGLES_WITH_ADJACENT_LAYOUT.
@@ -806,6 +805,7 @@ int NetImposition::NumPages(int npages)
 int NetImposition::NumSpreads(int layout)
 {
 	if (layout==SINGLES_WITH_ADJACENT_LAYOUT) return NumSpreads(SINGLELAYOUT);
+	if (layout==PAGELAYOUT || layout==LITTLESPREADLAYOUT) return NumPageSpreads();
 	return Imposition::NumSpreads(layout);
 }
 
@@ -852,7 +852,7 @@ int NetImposition::GetPapersNeeded(int npages)
 		DBG cerr <<"*****warning: no active faces in net!!"<<endl;
 		return 0;
 	}
-	return (npages-1)/numActiveFaces()+1;
+	return (npages-1)/n+1;
 }
 
 //! Same as GetPapersNeeded().
@@ -1017,6 +1017,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 	if (!att) return;
 	char *name,*value;
 	Net *tempnet=NULL;
+	int foundscaling=0;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -1033,12 +1034,15 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 				SetNet(value);
 			} else {
 				tempnet=new Net();
+				if (foundscaling) tempnet->info|=NETIMP_AlreadyScaled;
 				tempnet->dump_in_atts(att->attributes.e[c],flag,context);
 				SetNet(tempnet);
 				tempnet->dec_count();
 			}
 		} else if (!strcmp(name,"scalingfromnet")) {
 			DoubleAttribute(value,&scalefromnet);
+			if (scalefromnet<=0) scalefromnet=1;
+			else foundscaling=1;
 
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);
@@ -1069,6 +1073,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 	}
 	if (numActiveFaces()==0 && abstractnet) {
 		Net *n=new Net;
+		if (foundscaling) n->info|=NETIMP_AlreadyScaled;
 		n->Basenet(abstractnet);
 		n->TotalUnwrap();
 		n->active=1;

@@ -66,7 +66,7 @@ class NetImposition : public Imposition
 	virtual Spread *PaperLayout(int whichpaper);
 
 	virtual int NumSpreads(int layout); 
-	virtual int NumPages();
+	virtual int NumPageSpreads();
 	virtual int NumPages(int npages);
 	virtual int PaperFromPage(int pagenumber);
 	virtual int SpreadFromPage(int pagenumber);
