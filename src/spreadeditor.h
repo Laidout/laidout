@@ -67,6 +67,7 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 //	//virtual int UseThis(Laxkit::anObject *newdata,unsigned int); // assumes not use local
 //	//virtual void deletedata();
 	virtual int UseThisDoc(Document *ndoc);
+	virtual int SwitchView(int i);
 	virtual int InterfaceOn();
 //	//virtual int InterfaceOff();
 	virtual const char *whattype() { return "SpreadInterface"; }

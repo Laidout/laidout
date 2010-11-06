@@ -139,6 +139,8 @@ void LittleSpread::mapConnection()
 		connection=NULL;
 		return;
 	}
+
+	if (!spread) return;
 	
 	if (connection) { delete connection; }
 	connection=new PathsData;
@@ -187,7 +189,7 @@ void LittleSpread::mapConnection()
  */
 
 
-SpreadView::SpreadView()
+SpreadView::SpreadView(const char *newname)
   : viewname(NULL),
 	doc_id(0),
 	default_marker(0),
@@ -197,6 +199,7 @@ SpreadView::SpreadView()
 	drawthumbnails(1),
 	lastmodtime(0)
 {
+	makestr(viewname,newname);
 	transform_identity(matrix);
 }
 
@@ -226,9 +229,6 @@ void SpreadView::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%scenterlabels bottom #center, bottom, left, top, right\n",spc);
 		fprintf(f,"%sdrawthumbnails      #whether to use page thumbnails rather than a blank page outline\n",spc);
 		fprintf(f,"%sarrangetype 0       #*** this is in flux, check back later\n",spc);
-
-		cerr <<"*** work out a good way to keep track of autoarranging in SpreadInterface" <<endl;
-
 		return;
 	}
 
@@ -315,7 +315,7 @@ void SpreadView::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 			else if (!strcmp(value,"left"))   centerlabels=LAX_LEFT;
 			else if (!strcmp(value,"right"))  centerlabels=LAX_RIGHT;
 			else if (IntAttribute(value,&centerlabels)==0) centerlabels=LAX_CENTER;
-			if (centerlabels<0 || centerlabels>4) centerlabels=0;
+			else centerlabels=LAX_CENTER;
 
 		} else if (!strcmp(name,"drawthumbnails")) {
 			drawthumbnails=BooleanAttribute(value);
@@ -355,7 +355,7 @@ void SpreadView::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 
 		} else if (!strcmp(name,"spread")) {
 			 //read in the next chunk of the main chain
-			spreads.push(new LittleSpread(NULL, spreads.n?spreads.e[c-1]:NULL),1);
+			spreads.push(new LittleSpread(NULL, spreads.n?spreads.e[spreads.n-1]:NULL),1);
 			s=spreads.n-1;
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				name= att->attributes.e[c]->attributes.e[c2]->name;
@@ -678,21 +678,31 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 	winh=dp->Maxy-dp->Miny;
 	if (towhat==ArrangeAutoAlways || towhat==ArrangeAutoTillMod) {
 		 // could be row or column
-		if (winw>winh) {
+		if (winw>3*winh) { //row
 			if (arrangestate==ArrangeTempRow || arrangestate==Arrange1Row) {
 				arrangestate=ArrangeTempRow;
 				return;
 			}
 			towhat=Arrange1Row;
 			arrangestate=ArrangeTempRow;
-		} else {
+
+		} else if (winh>3*winw) { //column
 			if (arrangestate==ArrangeTempColumn || arrangestate==Arrange1Column) {
 				arrangestate=ArrangeTempColumn;
 				return;
 			}
 			towhat=Arrange1Column;
 			arrangestate=ArrangeTempColumn;
+
+		} else { //autogrid
+			if (arrangestate==ArrangeTempGrid || arrangestate==ArrangeGrid) {
+				arrangestate=ArrangeTempGrid;
+				return;
+			}
+			towhat=ArrangeGrid;
+			arrangestate=ArrangeTempGrid;
 		}
+
 	} else if (towhat==ArrangeCustom) {
 		towhat=ArrangeGrid;
 		arrangestate=ArrangeCustom;
@@ -764,6 +774,7 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 	maxx=X+W;
 	maxy=Y+H;
 
+	DBG cerr <<"spreadview bounds: p1:"<<X<<','<<Y<<" p2:"<<X+W<<','<<Y+H<<endl;
 //	if (dp) {
 //		dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
 //		dp->Center(X,X+W,Y,Y+H);

@@ -30,15 +30,16 @@
 #define ArrangeNeedsArranging -1
 #define ArrangeTempRow         1
 #define ArrangeTempColumn      2
+#define ArrangeTempGrid        3
 
-#define  ArrangetypeMin        3
-#define ArrangeAutoAlways      3
-#define ArrangeAutoTillMod     4
-#define Arrange1Row            5
-#define Arrange1Column         6
-#define ArrangeGrid            7
-#define ArrangeCustom          8
-#define  ArrangetypeMax        8
+#define  ArrangetypeMin        4
+#define ArrangeAutoAlways      4
+#define ArrangeAutoTillMod     5
+#define Arrange1Row            6
+#define Arrange1Column         7
+#define ArrangeGrid            8
+#define ArrangeCustom          9
+#define  ArrangetypeMax        9
 
 
 const char *arrangetypestring(int a);
@@ -88,7 +89,7 @@ class SpreadView : public Laxkit::anObject,
 	Laxkit::NumStack<int> temppagemap;
 	//Laxkit::PtrStack<TextBlock> notes;
 
-	SpreadView();
+	SpreadView(const char *newname=NULL);
 	virtual ~SpreadView();
 	virtual const char *whattype() { return "SpreadView"; }
 

@@ -8,25 +8,22 @@ with a date that it was done and by who.
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 project mechanics: either disable or make sure it is consistent enough
+  menu options and startup tab
 
 imagepatch once again frelled, not showing image AT ALL!!!!
-changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
- need infrastructure to propagate and save tool settings
-
-print to svg files ignoring '##' mark!
-svg to coord incomplete
-memory hole in svg in? test svg import, svg path import must be done
 
 print by command doesn't seem to work... fails noiselessly
 
-refcounting error with nets upon edit current document settings
-
-gradient rendering to buffer memory hole?? gets very slow, then crashes
+refcounting crashing error with nets upon edit current document settings
 
 debug spread editor
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
+gradient rendering to buffer memory hole?? gets very slow, then crashes.. having trouble reproducing...
+
+svg to coord incomplete
+memory hole in svg in? test svg import, svg path import must be done
 
 net extra scaling non-functional
 
@@ -79,11 +76,11 @@ DISABLE NEW PROJECT!! too unstable and probably pretty useless at this point may
 check laidout.1 when time to release
 update examples to 0.091
 update docs, removing absolute paths!
-update translations
 
 
 sig editor:
-command line func parser for sigs
+scribus plugin to access graphical signature editor
+needs testing: command line func parser for sigs
 DONE animated fold controls
 DONE trim, margin, inset, gap, fold, tile handles
 DONE finish implement sigimposition
@@ -98,6 +95,11 @@ DONE Generic fold and trim imposition
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
+update translations
+
+changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
+ need infrastructure to propagate and save tool settings
+
 implement cut marks and other custom printer marks!!!
 
 sigeditor:  detect non staplable binding edge, show red rather than green
@@ -612,4 +614,8 @@ DONE control-drag mouse on object tool does not scale from mouse down point!!!! 
 DONE image import: implement scale up and down
 
 DONE ./laidout -n 'box 1 2 3'  -->  doesn't work
+
+DONE print to svg files ignoring '##' mark!
+
+DONE scribus export should accurately set page number and page count text vars
 
