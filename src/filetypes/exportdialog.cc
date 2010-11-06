@@ -783,21 +783,29 @@ int ExportDialog::send()
 			//mesbar->Refresh();
 			//XSync(app->dpy,False);
 
-			char *error;
-			if (filter->Out(tmp,config,&error)==1) {
+			char *error=NULL;
+			if (filter->Out(tmp,config,&error)==0) {
 				appendstr(cm,tmp);
 
 				 //now do the actual command
 				int c=system(cm); //-1 for error, else the return value of the call
 				if (c!=0) {
 					DBG cerr <<"there was an error printing...."<<endl;
+					SimpleMessage *mes=new SimpleMessage(_("Error with command"), 0,0,0,0,"statusMessage");
+					app->SendMessage(mes,win_owner,"statusMessage",object_id);
+				} else {
+					SimpleMessage *mes=new SimpleMessage(_("Printed."), 0,0,0,0,"statusMessage");
+					app->SendMessage(mes,win_owner,"statusMessage",object_id);
 				}
-				//*** have to delete (unlink) tmp!
+				//***maybe should have to delete (unlink) tmp, but only after actually done printing?
+				//does cups keep file in place, or copy when queueing?
 				
-				//mesbar->SetText(_("Document sent to print."));
 			} else {
-				//there was an error during filter export
+				 //there was an error during filter export
+				SimpleMessage *mes=new SimpleMessage(error?error:_("Error printing"), 0,0,0,0,"statusMessage");
+				app->SendMessage(mes,win_owner,"statusMessage",object_id);
 			}
+			if (error) delete[] error;
 		}
 		//---------
 		app->destroywindow(this);
