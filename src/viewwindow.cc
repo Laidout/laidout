@@ -3453,13 +3453,14 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		}
 
 		 //---- Project menu
-		menu->AddSep();
-		menu->AddItem(_("Project"));
-		menu->SubMenu(_("Project"));
-		menu->AddItem(_("Save project..."),ACTION_SaveProject);
-		menu->AddItem(_("New project..."),ACTION_NewProject);
-		menu->AddItem(laidout->IsProject()?_("Do not save as a project"):_("Save as a project..."), ACTION_ToggleSaveAsProject);
-		menu->EndSubMenu();
+		//****
+		//menu->AddSep();
+		//menu->AddItem(_("Project"));
+		//menu->SubMenu(_("Project"));
+		//menu->AddItem(_("Save project..."),ACTION_SaveProject);
+		//menu->AddItem(_("New project..."),ACTION_NewProject);
+		//menu->AddItem(laidout->IsProject()?_("Do not save as a project"):_("Save as a project..."), ACTION_ToggleSaveAsProject);
+		//menu->EndSubMenu();
 
 //						 laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
 
@@ -3882,7 +3883,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 						//const char *newlabel,const char *newtext,unsigned int ntstyle,
 						//int nlew,int nleh,int npadx,int npady,int npadlx,int npadly) // all after and inc newtext==0
 						
-			char *where=newstr(isblank(sdoc->Saveas())?sdoc->Saveas():NULL);
+			char *where=newstr(isblank(sdoc->Saveas())?NULL:sdoc->Saveas());
 			if (!where && !isblank(laidout->project->filename)) where=lax_dirname(laidout->project->filename,0);
 
 			app->rundialog(new FileDialog(NULL,NULL,_("Save As..."),
