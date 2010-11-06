@@ -1,6 +1,10 @@
-#Laidout 0.08.1 Document
-saveas /home/tom/p/sourceforge/laidout/examples/colorgradients.doc
+#Laidout 0.09.1 Document
+saveas colorgradients.doc
 imposition Singles
+  marginl 0
+  marginr 0
+  margint 0
+  marginb 0
   insetl 0
   insetr 0
   insett 0
@@ -21,6 +25,7 @@ imposition Singles
       matrix 1 0 0 1 0 0
       outlinecolor 65535 0 65535
       name letter
+      units in
       width 8.5
       height 11
       dpi 300
@@ -262,31 +267,31 @@ page 0
         t 1
         rgba 65535 0 0 65280
     object 4 GradientData
-      matrix 4.489689821e-11 -1 1 4.489689821e-11 4.204472477 9.879816514
-      p1 0
-      p2 0.8334862385
-      r1 1
+      matrix -0.01933286008 0.9998131028 -0.9998131028 -0.01933286008 4.344079542 10.35722744
+      p1 -1.204927737
+      p2 -0.845345038
+      r1 0.8721946988
       r2 0
       radial
       spot #0
         t 0
-        rgba 61423 65535 65535 0
+        rgba 65535 0 0 0
       spot #1
         t 1
-        rgba 61423 0 1 0
+        rgba 65535 600 0 65535
 limbo Limbo 1
   matrix 1 0 0 1 0 0
   id Limbo 1
 window
-  xywh 390 272 500 500
+  xywh 390 288 500 500
   pane
     xyxy 0 0 500 500
     window ViewWindow
-      document /home/tom/p/sourceforge/laidout/examples/colorgradients.doc
+      document colorgradients.doc
       layout Pages
       spread 0
       page 0
-      matrix 34.21487603 0 0 -34.21487603 84.85552756 334.300589
+      matrix 29.4214876 0 0 -29.4214876 100.8555276 340.300589
       xbounds 0 8.5
       ybounds 0 11
       limbo Limbo 1

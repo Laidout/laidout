@@ -7,9 +7,6 @@ with a date that it was done and by who.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-project mechanics: either disable or make sure it is consistent enough
-  menu options and startup tab
-
 imagepatch once again frelled, not showing image AT ALL!!!!
 
 refcounting crashing error with nets upon edit current document settings
@@ -67,14 +64,8 @@ need to change GroupInterface to determine contexts, then recompute bounds
 
 
 ----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
-DISABLE PATHINTERFACE in stable release
-DISABLE NEW PROJECT!! too unstable and probably pretty useless at this point maybe
-        -> new doc dialog, and menu items in viewer corner button
-
 check laidout.1 when time to release
-update examples to 0.091
-update docs, removing absolute paths!
-
+update docs
 
 sig editor:
 scribus plugin to access graphical signature editor
@@ -618,4 +609,10 @@ DONE print to svg files ignoring '##' mark!
 DONE scribus export should accurately set page number and page count text vars
 
 DONE print by command doesn't seem to work... fails noiselessly
+
+DONE putting a DBG in front of it: DISABLE PATHINTERFACE in stable release
+DONE DISABLE CHANGE TO PROJECT!! too unstable and probably pretty useless at this point maybe
+        -> new doc dialog, and menu items in viewer corner button
+
+DONE update examples to 0.091, removing absolute paths!
 
