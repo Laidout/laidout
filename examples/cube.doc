@@ -1,77 +1,78 @@
-#Laidout 0.08.1 Document
-imposition Net
+#Laidout 0.09.1 Document
+saveas cube.doc
+imposition NetImposition
   numpages 6
-  defaultpaperstyle
-    name Letter
-    width 8.5
-    height 11
-    dpi 360
-    portrait
-  abstractnet Polyhedron   
-    name Laid out Cube
-    vertices \
-      1 1 1
-      -1 1 1
-      -1 -1 1
-      1 -1 1
-      -1 1 -1
-      1 1 -1
-      1 -1 -1
-      -1 -1 -1
-    face 0 1 2 3
-    face 1 0 5 4
-    face 2 1 4 7
-    face 0 3 6 5
-    face 3 2 7 6
-    face 4 5 6 7
-    set 0 1
-    set 2 3
-    set 4 5
+  printnet
+  net Cube(1)
 page 0
+  labeltype -1
   pagestyle PageStyle
-    width 11.44122806
-    height 0.8221181412
-    pageclips
+    width 0
+    height 0
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
 page 1
+  labeltype -1
   pagestyle PageStyle
-    width 11.44122806
-    height 0.8221181412
-    pageclips
+    width 0
+    height 0
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
 page 2
+  labeltype -1
   pagestyle PageStyle
-    width 11.44122806
-    height 0.8221181412
-    pageclips
+    width 0
+    height 0
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
 page 3
+  labeltype -1
   pagestyle PageStyle
-    width 11.44122806
-    height 0.8221181412
-    pageclips
+    width 0
+    height 0
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
 page 4
+  labeltype -1
   pagestyle PageStyle
-    width 11.44122806
-    height 0.8221181412
-    pageclips
+    width 0
+    height 0
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
 page 5
+  labeltype -1
   pagestyle PageStyle
-    width 11.44122806
-    height 0.8221181412
-    pageclips
+    width 0
+    height 0
   layer 0
+    matrix 1 0 0 1 0 0
     visible
     prints
+limbo Limbo 1
+  matrix 1 0 0 1 0 0
+  id Limbo 1
+  visible
+  prints
+window
+  xywh 0 16 500 500
+  pane
+    xyxy 0 0 500 500
+    window ViewWindow
+      document cube.doc
+      layout Pages
+      spread 0
+      page 0
+      matrix 40.45454545 0 0 -40.45454545 55 400
+      xbounds -8.5 17
+      ybounds -5.5 16.5
+      limbo Limbo 1
