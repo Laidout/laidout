@@ -112,7 +112,7 @@ using namespace std;
  * If newnet is not NULL, then its count is incremented (in SetNet()).
  */
 NetImposition::NetImposition(Net *newnet)
-	: Imposition(_("Net"))
+	: Imposition(_("NetImposition"))
 { 
 	briefdesc=NULL;
 	scalefromnet=1;
@@ -255,7 +255,7 @@ int NetImposition::SetNet(const char *nettype)
 		makestr(briefdesc,newnet->basenet->NetName());
 		return c;	
 
-	} else if (!strcasecmp(nettype,"cube")) {
+	} else if (strcasestr(nettype,"cube")==nettype) {
 		Net *newnet=makeBox(nettype,1,1,1);
 		int c=SetNet(newnet); //adds a count
 		newnet->info|=NETIMP_Internal;
