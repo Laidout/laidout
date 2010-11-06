@@ -272,11 +272,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
 		return 1;
 	}
-	
+
 	Attribute *scribushints=NULL;
 	if (doc) scribushints=doc->iohints.find("Scribus");
 	else scribushints=laidout->project->iohints.find("Scribus");
-	
+
 	 //we must be able to open the export file location...
 	FILE *f=NULL;
 	char *file=NULL;
@@ -489,6 +489,11 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		//*************DocItemAttributes not 1.2
 		//************TablesOfContents   not 1.2
 		//************Sections  not 1.2
+		//Not quite sure when Sections were introduced. Section blocks determine page number format:
+		//<Sections>
+		//  <Section Number="0" Name="string" From="0" To="10" Type="..." Start="1" Reversed="0" Active="1"/>
+		//</Sections>
+		//  Type can be: Type_A_B_C, Type_a_b_c, Type_1_2_3, Type_I_II_III, Type_i_ii_iii, Type_None
 		
 		//------------PageSets  not 1.2
 		//This sets up so there is one column of pages, with CANVAS_GAP units between them.
@@ -1096,6 +1101,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 	fprintf(f,"  <PAGEOBJECT \n");
 	int content=-1;
+	const char *pfile=(ptype==PTYPE_Image?img->filename:NULL);
 	if (mysteryatts) {
 		char *name,*value;
 		for (int c=0; c<mysteryatts->attributes.n; c++) {
@@ -1104,7 +1110,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			if (!strcmp(name,"OwnPage")) continue;
 			if (!strcmp(name,"LOCALSCX")) continue;
 			if (!strcmp(name,"LOCALSCY")) continue;
-			if (!strcmp(name,"PFILE")) continue;
+			if (!strcmp(name,"PFILE")) { if (ptype!=PTYPE_Image) pfile=value; continue; }
 			if (!strcmp(name,"ROT")) continue;
 			if (!strcmp(name,"XPOS")) continue;
 			if (!strcmp(name,"YPOS")) continue;
@@ -1242,7 +1248,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	fprintf(f,    "    LOCALSCX=\"%g\" \n"      //image scaling in x direction
 				  "    LOCALSCY=\"%g\" \n"      //image scaling in y direction
 				  "    PFILE=\"%s\" \n",	    //file of image
-				localscx,localscy,ptype==PTYPE_Image?img->filename:"");
+				localscx,localscy,pfile);
 
 		//-------------general object tags:
 	 // fix ptype to be more accurate
@@ -1439,6 +1445,11 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	if (in->inend<0 || in->inend>=numpages) end=numpages-1; 
 		else end=in->inend;
 
+	 //find first page number, for offset page numbering
+	int firstpagenum=0;
+	a=scribusdoc->find("FIRSTPAGENUM");
+	if (a) IntAttribute(a->value,&firstpagenum);
+
 	SomeData pagebounds[end-start+1]; //max/min are the bounds in the Scribus canvas space,
 									 //and m() is optional whole page transform to fit doc pages
 
@@ -1615,7 +1626,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				mdata=new MysteryData("Scribus"); //note, this is untranslated "Scribus"
 				mdata->nativeid=pageobjectcount;
 
-				if (ptype==4) makestr(mdata->name,"Text Frame");
+				if (ptype==2) makestr(mdata->name,"Image");
+				else if (ptype==4) makestr(mdata->name,"Text Frame");
 				else if (ptype==5) makestr(mdata->name,"Line");
 				else if (ptype==6) makestr(mdata->name,"Polygon");
 				else if (ptype==7) makestr(mdata->name,"Polyline");
@@ -1635,6 +1647,39 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 					transform_mult(mt,mdata->m(),pagebounds[pagenum].m());
 					mdata->m(mt);
 				}
+
+				 //--scour mdata->attributes for <var name="pgco|pgno"/>
+				 //mdata->attributes:
+				 //  content:
+				 //    ITEXT
+				 //      CH blah
+				 //    var
+				 //      name pgco
+				 //    var
+				 //      name pgno
+				tmp=mdata->attributes->find("content:");
+				if (tmp) {
+					Attribute *sub;
+					int num=-1;
+					char scratch[50];
+					for (int c=0; c<tmp->attributes.n; c++) {
+						sub=tmp->attributes.e[c];
+						if (strcmp(sub->name,"var")) continue;
+						if (!strcmp(sub->attributes.e[0]->value,"pgno")) {
+							num=firstpagenum+pagenum+1;
+						} else if (!strcmp(sub->attributes.e[0]->value,"pgco")) {
+							num=numpages;
+						}
+						if (num<0) continue;
+
+						makestr(sub->name,"ITEXT");
+						makestr(sub->attributes.e[0]->name,"CH");
+						sprintf(scratch,"%d",num);
+						makestr(sub->attributes.e[0]->value,scratch);
+									
+					}
+				}
+
 				group->push(mdata);
 				mdata->dec_count();
 

@@ -9,7 +9,7 @@ VERSION 0.091
 ------------
        Debug enough to not be too embarrassing
 (done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
-       Images should maintain their aspect ratio by default when scaling
+(done) Images should maintain their aspect ratio by default when scaling
 (done) Scribus import must make sure linked text and linked table mystery data behave properly on export
 (done) Export PLAN files for podofoimpose
 (done) Generic fold and trim imposition
@@ -17,8 +17,7 @@ VERSION 0.091
 (done) Import images as flow/centered within page margins, not within page outline
 (done) Import images with alignment per page type into the page margin region
        SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
-       SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
-       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
+(done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
@@ -27,6 +26,7 @@ VERSION 0.091
 
 VERSION 0.092
 -------------
+       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        Signature editor: detect non staplable binding edge, show red rather than green
        At bare minimum, path interface use should not cause a seg fault
        Fix page bleeding for signatures and nets
@@ -95,7 +95,6 @@ VERSION 0.1
        Provide some kind of visual feedback while doing lengthy operations
        Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo and splash image, and generate icons from a laidout doc
-       have an image in the little pan popups
        Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
        Object and page templates, aka master pages

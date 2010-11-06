@@ -19,8 +19,9 @@
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/menubutton.h>
-#include <lax/menuselector.h>
+#include <lax/popupmenu.h>
 #include <lax/mouseshapes.h>
+#include <lax/lineinput.h>
 
 #include <lax/lists.cc>
 
@@ -133,8 +134,9 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *con
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	
 	if (what==-1) {
-		fprintf(f,"%sdocument blah   #the name of the document currently viewed\n",spc);
-		fprintf(f,"%sview viewname   #the name of the view belonging to the document\n",spc);
+		fprintf(f,"%sdocument blah      #the name of the document currently viewed\n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0 #view area transform\n",spc);
+		fprintf(f,"%sview viewname      #the name of the view belonging to the document\n",spc);
 		fprintf(f,"\n%s  #If the view is a temporary view, then its format is as follows\n",spc);
 		fprintf(f,"%sview\n",spc);
 		view->dump_out(f,indent+2,-1,NULL);
@@ -143,6 +145,10 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *con
 	}
 	
 	fprintf(f,"%sdocument %s\n",spc,doc->saveas);
+
+	const double *m=dp->Getctm();
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+				spc,m[0],m[1],m[2],m[3],m[4],m[5]);
 
 	transform_copy(view->matrix,dp->Getctm());
 	if (view->doc_id && view->Name()) fprintf(f,"%sview %s\n",spc,view->Name());
@@ -175,12 +181,19 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 			if (view) { view->dec_count(); view=NULL; }
 			if (isblank(value)) {
 				 //no view name given, so assume is temporary view
-				view=new SpreadView();
+				view=new SpreadView(_("new view"));
 				view->dump_in_atts(att->attributes.e[c], flag,context);
 			} else viewname=value;
 
 		} else if (!strcmp(name,"drawthumbnails")) {
 			drawthumbnails=BooleanAttribute(value);
+
+		} else if (!strcmp(name,"matrix")) {
+			double matrix[6];
+			int n=DoubleListAttribute(value,matrix,6);
+			if (n!=6) transform_identity(matrix);
+			dp->NewTransform(matrix);
+
 		}
 	}
 	
@@ -203,6 +216,22 @@ void SpreadInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 int SpreadInterface::InterfaceOn()
 {
 	if (doc) for (int c=0; c<doc->pages.n; c++) doc->pages.e[c]->modtime=times(NULL);
+	return 0;
+}
+
+//! Use another of the current document's views.
+/*! If i is not in doc->spreadviews, then nothing is done and 1 is returned. Else 0 is returned.
+ */
+int SpreadInterface::SwitchView(int i)
+{
+	if (i<0 || i>=doc->spreadviews.n) return 1;
+
+	if (view==doc->spreadviews.e[i]) return 0;
+
+	view->dec_count();
+	view=doc->spreadviews.e[i];
+	view->Update(doc);
+	needtodraw=1;
 	return 0;
 }
 
@@ -259,10 +288,15 @@ void SpreadInterface::GetSpreads()
 
 	if (!doc || !doc->imposition || !doc->pages.n) {
 		if (view) { view->dec_count(); view=NULL; }
+		needtodraw=1;
 		return;
 	}
+	
+	if (!view && doc->spreadviews.n) {
+		view=doc->spreadviews.e[0];
+		view->inc_count();
+	} else if (!view) view=new SpreadView(_("new view"));
 
-	if (!view) view=new SpreadView;
 	view->Update(doc);
 }
 
@@ -412,6 +446,8 @@ int SpreadInterface::Refresh()
 				dp->PushAndNewTransform(outline->m());
 
 				int centerlabels=view->centerlabels;
+				DBG cerr <<"centerlabels:"<<centerlabels<<endl;
+
 				if (centerlabels==LAX_CENTER)
 					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
 				else if (centerlabels==LAX_BOTTOM)
@@ -464,7 +500,7 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("Spread Editor"));
 
-	menu->AddItem(_("Page Labels..."),SE_PageLabels);
+	//menu->AddItem(_("Page Labels..."),SE_PageLabels);
 	menu->AddItem(_("Insert Page"),SE_InsertPage);
 	menu->AddItem(_("Insert Dummy Page"),SE_InsertDummyPage);
 
@@ -511,20 +547,45 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 	if (i==SE_PageLabels) {
 	} else if (i==SE_InsertPage) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
 	} else if (i==SE_InsertDummyPage) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
 	} else if (i==SE_DetachPages) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
 	} else if (i==SE_DeletePages) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
 	} else if (i==SE_ExportPages) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
 	} else if (i==SE_NewView) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+		view->dec_count();
+		view=new SpreadView("new view");
+		view->doc_id=doc->object_id;
+		doc->spreadviews.push(view);
+		GetSpreads();
+		needtodraw=1;
+		return 0;
+
 	} else if (i==SE_SaveView) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+		if (view->doc_id!=0) return 0;
+		doc->spreadviews.push(view);
+		view->doc_id=doc->object_id;
+		return 0;
+
 	} else if (i==SE_DeleteView) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+		int ii=doc->spreadviews.findindex(view);
+		if (ii>=0) {
+			doc->spreadviews.remove(ii);
+		}
+		view->dec_count();
+		view=NULL;
+		GetSpreads();
+		needtodraw=1;
+		return 0;
+
 	} else if (i==SE_RenameView) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
 	}
@@ -1055,7 +1116,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		else if (view->centerlabels==LAX_TOP) view->centerlabels=LAX_RIGHT;
 		else if (view->centerlabels==LAX_RIGHT) view->centerlabels=LAX_BOTTOM;
 		else if (view->centerlabels==LAX_BOTTOM) view->centerlabels=LAX_LEFT;
-		else if (view->centerlabels==LAX_LEFT) view->centerlabels=LAX_CENTER;
+		else view->centerlabels=LAX_CENTER;
 		needtodraw=1;
 		return 0;
 
@@ -1173,6 +1234,8 @@ int SpreadEditor::init()
 	anXWindow *last=NULL;
 	Button *tbut;
 
+	AddNull(); // makes the status bar fill whole line
+
 	MenuButton *menub;
 	 //add a menu button thingy in corner between rulers
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
@@ -1187,11 +1250,18 @@ int SpreadEditor::init()
 										 NULL,laidout->icons.GetIcon("Laidout")
 										);
 	menub->tooltip(_("Document list"));
-	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, wholelist.n-1);//add before status bar
+	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
 	//AddWin(menub,menub->win_w,0,50,50, menub->win_h,0,50,50, -1);//add before status bar
 
 	//wholelist.e[wholelist.n-1]->pw(100);
 	//AddNull(); // makes the status bar fill whole line
+
+	SpreadInterface *interf=(SpreadInterface*)tools.e[0];
+	LineEdit *linp=new LineEdit(this,"name",NULL, 0, 0,0,0,0,1, NULL,object_id,"newname",
+								  interf->view->viewname,0);
+	linp->tooltip(_("Name of the current view"));
+	AddWin(linp,1, linp->win_w,0,2000,50,0, linp->win_h,0,50,50,0, -1);
+
 
 	last=tbut=new Button(this,"applybutton",NULL, 0, 0,0,0,0,1, NULL,object_id,"applybutton",0,_("Apply"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
@@ -1264,27 +1334,42 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 		 //---add document list, numbers start at 0
 		int c,pos;
+
 		menu->AddSep("Documents");
 		for (c=0; c<laidout->project->docs.n; c++) {
-			pos=menu->AddItem(laidout->project->docs.e[c]->doc->Name(1),c)-1;
+			pos=menu->AddItem(laidout->project->docs.e[c]->doc->Name(1), 500+c)-1;
 			menu->menuitems.e[pos]->state|=LAX_ISTOGGLE;
 			if (laidout->project->docs.e[c]->doc==doc) {
 				menu->menuitems.e[pos]->state|=LAX_CHECKED;
 			}
 		}
 
+		menu->AddSep();
+		menu->AddItem(_("New view"),SE_NewView);
+		SpreadInterface *interf=(SpreadInterface*)tools.e[0];
+		if (!interf->view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
+		else {
+			menu->AddItem(_("Delete current view"),SE_DeleteView);
+		}
+
+		 //new ones not explicitly added to document will be saved only if there are active windows using it
+		//if (doc && doc->spreadviews.n>1) menu->AddItem(_("Delete current arrangement"), 202);
+
+		 //add spread arrangement list
+		if (doc->spreadviews.n) {
+			menu->AddSep("Views");
+			for (int c=0; c<doc->spreadviews.n; c++) {
+				menu->AddItem(doc->spreadviews.e[c]->Name(), c, 
+							  LAX_ISTOGGLE | (doc->spreadviews.e[c]==interf->view?LAX_CHECKED:0) );
+			}
+		}
+
 		 //create the actual popup menu...
-		MenuSelector *popup;
-		popup=new MenuSelector(NULL,"Documents",_("Documents"), ANXWIN_BARE|ANXWIN_HOVER_FOCUS,
+		PopupMenu *popup;
+		popup=new PopupMenu(NULL,_("Documents"), MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
 						0,0,0,0, 1, 
-						NULL,object_id,"rulercornermenu", 
-						MENUSEL_ZERO_OR_ONE
-						 | MENUSEL_CURSSELECTS
-						 //| MENUSEL_SEND_STRINGS
-						 | MENUSEL_FOLLOW_MOUSE|MENUSEL_SEND_ON_UP
-						 | MENUSEL_GRAB_ON_MAP|MENUSEL_OUT_CLICK_DESTROYS
-						 | MENUSEL_CLICK_UP_DESTROYS|MENUSEL_DESTROY_ON_FOCUS_OFF
-						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
+						object_id,"rulercornermenu", 
+						0,
 						menu,1);
 //		popup=new PopupMenu(_("Documents"), MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT,
 //						0,0,0,0, 1, 
@@ -1299,13 +1384,17 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 	} else if (!strcmp(mes,"rulercornermenu")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
 
+		SpreadInterface *interf=(SpreadInterface*)tools.e[0];
 		int i=s->info2;
 		DBG cerr <<"rulercornermenu:"<<i<<endl;
 
 		 //0-999 was document things
-		if (i>=0 && i<laidout->project->docs.n) {
+		if (i-500>=0 && i-500<laidout->project->docs.n) {
 			UseThisDoc(laidout->project->docs.e[i]->doc);
 			return 0;
+
+		} else if (i>=0 && i<doc->spreadviews.n) {
+			interf->SwitchView(i);
 		}
 	}
 	return 1;

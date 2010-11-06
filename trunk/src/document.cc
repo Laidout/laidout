@@ -842,6 +842,12 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			if (metadata.attributes.n) metadata.clear();
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
 				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+
+		} else if (!strcmp(nme,"view")) {
+			SpreadView *v=new SpreadView;
+			v->dump_in_atts(att->attributes.e[c],flag,context);
+			v->doc_id=object_id;
+			spreadviews.push(v);
 		}
 	}
 	
@@ -873,7 +879,6 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			}
 		}
 	}
-
 }
 
 //! Dumps imposition, pages, pageranges, plus various project attributes if not in project mode.
@@ -925,6 +930,14 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			p.dump_out(f,indent+2,-1,NULL);
 		}
 
+		 //views
+		fprintf(f,"\n\n%sview     #There can be 0 or more spread editor views\n",spc);
+		if (spreadviews.n) spreadviews.e[0]->dump_out(f,indent+2,-1,NULL);
+		else {
+			SpreadView v;
+			v.dump_out(f,indent+2,-1,NULL);
+		}
+
 		 //iohints
 		fprintf(f,"\n\n%siohints    #When files are imported, sometimes data that is not recognized by laidout\n"
 				      "%s  ....     #can still be remembered in case you export to the same format. iohints\n"
@@ -958,6 +971,14 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	for (int c=0; c<pages.n; c++) {
 		fprintf(f,"%spage %d\n",spc,c);
 		pages.e[c]->dump_out(f,indent+2,0,context);
+	}
+
+	 // dump views
+	if (spreadviews.n) {
+		for (int c=0; c<spreadviews.n; c++) {
+			fprintf(f,"%sview #%d\n",spc,c);
+			spreadviews.e[c]->dump_out(f,indent+2,0,context);
+		}
 	}
 
 	 // dump notes/meta data

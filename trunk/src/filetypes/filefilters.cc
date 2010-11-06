@@ -1084,7 +1084,9 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 
 		config->target=0;
 		PaperGroup *pg;
-		char *filebase=LaxFiles::make_filename_base(config->filename);//###.ext -> %03d.ext
+		char *filebase=NULL;
+		if (config->tofiles) filebase=LaxFiles::make_filename_base(config->tofiles);//###.ext -> %03d.ext
+		else filebase=LaxFiles::make_filename_base(config->filename);//###.ext -> %03d.ext
 		if (papergroup->papers.n>1) {
 			 // basically make base###.ps --> base(spread number)-(paper number).ps
 			char *pos=strchr(filebase,'%'); //pos will never be 0
