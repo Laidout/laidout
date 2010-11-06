@@ -65,7 +65,7 @@ need to change GroupInterface to determine contexts, then recompute bounds
 
 ----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
 check laidout.1 when time to release
-update docs
+update docs to have new release number
 
 sig editor:
 scribus plugin to access graphical signature editor
@@ -85,6 +85,8 @@ DONE Generic fold and trim imposition
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
 update translations
+check laidout.1 when time to release
+update docs to have new release number
 
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
  need infrastructure to propagate and save tool settings

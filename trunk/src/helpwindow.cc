@@ -147,6 +147,32 @@ int HelpWindow::init()
 			"\n"
 			"\n"));
 	appendstr(help,_(
+			"Signature Editor:\n"
+			"  'h'/'H' Increase or decrease the number of horizontal folds\n"
+			"  'v'/'V' Increase or decrease the number of vertical folds\n"
+			"  'm'/'M' Increase or decrease page margin values\n"
+			"  ^'m'    Switch which margin value is changed by keyboard controls\n"
+			"  't'/'T' Increase or decrease page trim values\n"
+			"  ^'t'    Switch which trim value is changed by keyboard controls\n"
+			"  'i'/'I' Increase or decrease paper inset values\n"
+			"  ^'i'    Switch which inset value is changed by keyboard controls\n"
+			"  'x'/'X' Increase or decrease the number of tiles horizontally\n"
+			"  'y'/'Y' Increase or decrease the number of tiles vertically\n"
+			"  'g'/'G' Increase or decrease the size of the gap between tiles\n"
+			"  'b'/'B' Move the binding edge\n"));
+	appendstr(help,_(
+			"SpreadEditor:\n"
+			"   ' '    Center with all little spreads in view\n"
+			"   'c'    toggle where the page labels go\n"
+			"   'm'    toggle mark of current page\n"
+			"   'M'    reverse toggle mark of current page\n"
+			"   't'    toggle drawing of thumbnails\n"
+			"   'A'    toggle how to arrange the spreads\n"
+			"  ^'A'    force arranging the spreads using current arrange style\n"
+			"   'p'    *** for debugging thumbs\n"
+			"\n"
+			"\n"));
+	appendstr(help,_(
 			"ObjectInterface:\n"
 			"  'c'          toggle if drag resizes from center or opposite edge\n"
 			"  'd'          toggle the showing of decorations\n"
@@ -158,18 +184,6 @@ int HelpWindow::init()
 			"  \n"
 			"  plain click on a center, rotation handle, or shear handle, then press control\n"
 			"    to move the point, rather than modify the object\n"
-			"\n"
-			"\n"));
-	appendstr(help,_(
-			"SpreadEditor:\n"
-			"   ' '    Center with all little spreads in view\n"
-			"   'c'    toggle where the page labels go\n"
-			"   'm'    toggle mark of current page\n"
-			"   'M'    reverse toggle mark of current page\n"
-			"   't'    toggle drawing of thumbnails\n"
-			"   'A'    toggle how to arrange the spreads\n"
-			"  ^'A'    force arranging the spreads using current arrange style\n"
-			"   'p'    *** for debugging thumbs\n"
 			"\n"
 			"\n"));
 	appendstr(help,_(
