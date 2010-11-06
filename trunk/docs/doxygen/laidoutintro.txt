@@ -11,7 +11,7 @@
 /*! \mainpage
 
 \section     Laidout  
--- Version 0.08.1 --\n
+-- Version 0.09.1 --\n
 Currently in the "A bit of a hack, but mostly works on my machine" stage of development.
 
 If you want to hack away at Laidout, you've come to the right place. Please be
@@ -104,7 +104,7 @@ long as you credit things appropriately), it takes resources to devote to develo
 to pay my bills, the lead developer is employed in part as a janitor. Therefore, 
 if you think this program is worth the drive space, please, please send donations of money, fresh 
 fruit (fresh upon the recipient receiving it intact in person), hardware, ski resort reservations,
-etc to the developers (just 1 right now!) found on http://www.laidout.org .
+etc to the developers found on http://www.laidout.org .
 
 
 \section wishing Feature Wishlist
