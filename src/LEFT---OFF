@@ -12,8 +12,6 @@ project mechanics: either disable or make sure it is consistent enough
 
 imagepatch once again frelled, not showing image AT ALL!!!!
 
-print by command doesn't seem to work... fails noiselessly
-
 refcounting crashing error with nets upon edit current document settings
 
 debug spread editor
@@ -618,4 +616,6 @@ DONE ./laidout -n 'box 1 2 3'  -->  doesn't work
 DONE print to svg files ignoring '##' mark!
 
 DONE scribus export should accurately set page number and page count text vars
+
+DONE print by command doesn't seem to work... fails noiselessly
 
