@@ -51,6 +51,21 @@ In a viewer:
    +^end     ***layer to bottom
   
 
+Signature Editor:
+  'h'/'H' Increase or decrease the number of horizontal folds
+  'v'/'V' Increase or decrease the number of vertical folds
+  'm'/'M' Increase or decrease page margin values
+  ^'m'    Switch which margin value is changed by keyboard controls
+  't'/'T' Increase or decrease page trim values
+  ^'t'    Switch which trim value is changed by keyboard controls
+  'i'/'I' Increase or decrease paper inset values
+  ^'i'    Switch which inset value is changed by keyboard controls
+  'x'/'X' Increase or decrease the number of tiles horizontally
+  'y'/'Y' Increase or decrease the number of tiles vertically
+  'g'/'G' Increase or decrease the size of the gap between tiles
+  'b'/'B' Move the binding edge
+
+
 SpreadEditor:
    ' '    Center with all little spreads in view
    'c'    toggle where the page labels go

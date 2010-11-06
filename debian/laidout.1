@@ -1,4 +1,4 @@
-.TH LAIDOUT 1 "February 27, 2010"
+.TH LAIDOUT 1 "November 7, 2010"
 .SH NAME
 Laidout \- Version 0.09.1, for laying out books
 .SH SYNOPSIS
@@ -14,7 +14,7 @@ Anectotal studies among the developers have shown that people who use
 Laidout have more friends and their documents get laid out much more quickly 
 than with many other programs.
 
-Please be advised that this is a very early version of Laidout. There is a mailing
+Please be advised that Laidout is still quite rough. There is a mailing
 list and a page describing various bugs and deficiencies at the Laidout website.
 Only you can help stop bugs.
 
@@ -112,6 +112,32 @@ In a viewer:
    end       drop selection to bottom within layer
   
 
+Signature Editor:
+  'h'/'H' Increase or decrease the number of horizontal folds
+  'v'/'V' Increase or decrease the number of vertical folds
+  'm'/'M' Increase or decrease page margin values
+  ^'m'    Switch which margin value is changed by keyboard controls
+  't'/'T' Increase or decrease page trim values
+  ^'t'    Switch which trim value is changed by keyboard controls
+  'i'/'I' Increase or decrease paper inset values
+  ^'i'    Switch which inset value is changed by keyboard controls
+  'x'/'X' Increase or decrease the number of tiles horizontally
+  'y'/'Y' Increase or decrease the number of tiles vertically
+  'g'/'G' Increase or decrease the size of the gap between tiles
+  'b'/'B' Move the binding edge
+
+
+SpreadEditor:
+   ' '    Center with all little spreads in view
+   'c'    toggle where the page labels go
+   'm'    toggle mark of current page
+   'M'    reverse toggle mark of current page
+   't'    toggle drawing of thumbnails
+   'A'    toggle how to arrange the spreads
+  ^'A'    force arranging the spreads using current arrange style
+   'p'    *** for debugging thumbs
+
+
 ObjectInterface:
   'c'          toggle if drag resizes from center or opposite edge
   'd'          toggle the showing of decorations
@@ -124,17 +150,6 @@ ObjectInterface:
   plain click on a center, rotation handle, or shear handle, then press control
     to move the point, rather than modify the object
   
-
-SpreadEditor:
-   ' '    Center with all little spreads in view
-   'c'    toggle where the page labels go
-   'm'    toggle mark of current page
-   'M'    reverse toggle mark of current page
-   't'    toggle drawing of thumbnails
-   'A'    toggle how to arrange the spreads
-  ^'A'    force arranging the spreads using current arrange style
-   'p'    *** for debugging thumbs
-
 
 ImageInterface:
   'n'           normalize, that is, make norm(xaxis)==norm(yaxis) and y=transpose(x)

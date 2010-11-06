@@ -31,8 +31,7 @@ of the program is only half in place right now. Be advised that you can,
 after great hassle, construct paths on screen, but path printing
 (to the printer) is badly implemented currently.
 
-Laidout and the Laxkit (http://laxkit.sourceforge.net) each share
-some of the burden of the 'meat' of the program, but anyway...
+Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
 
 
 COMPILING
@@ -91,20 +90,21 @@ clobbering or corrupting files from other versions.
 HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
 things that were installed to those directories outside of "make install". 
 Right now, everything in prefix/share/laidout will be removed on uninstall
-(but not anything in ~/.laidout).
-
-Also, though you can have different versions coexist, there is not currently an
-automatic way to convert resources from older laidout versions to newer ones.
+(but not anything in ~/.laidout). If this is causing you difficulty, please
+let me know, and I'll try to finally fix this.
 
 In any case, if you can, it's really safer to build the deb package, which 
 automatically keeps track of such things.
+
+Also, though you can have different versions coexist, there is not currently an
+automatic way to convert resources from older laidout versions to newer ones.
 
 
 COMPILING FROM SVN
 ------------------
 For the Laidout development version, you will need the Laxkit development 
-version from the same date. Here is a fast and easy way to get Laidout up
-and running from svn:
+version from the same date, give or take 10 minutes or so.
+Here is a fast and easy way to get Laidout up and running from svn:
 
 
 1. Grab Laidout svn:
@@ -142,11 +142,11 @@ generated. This requires Inkscape (http://www.inkscape.org)
 to generate icons from src/icons/icons.svg, and python to run
 the script that calls Inkscape. But, Laidout will work fine without
 the icons. Ultimately, the icons will themselves be stored in a Laidout
-file, and Laidout itself will generate the icons.
+file, and Laidout itself will generate the icons (maybe!).
 See src/icons/makeimages.py for more.
 
-Running Laidout might spit out copious amounts of debugging
-info if you run from a terminal. If this is the case, you can turn this 
+Running Laidout might spit out copious amounts of debugging info to stderr
+if you run from a terminal. If this is the case, you can turn this 
 off with 'make hidegarbage' before doing 'make' (the same goes for the 
 Laxkit). Be advised that this requires Perl to be installed. Or, you 
 can just run Laidout like this:
@@ -177,6 +177,9 @@ Then from the docs directory, run 'doxygen Doxyfile-with-laxkit', which
 will generate a clickable source tree accessible from your favorite web 
 browser.
 
+Also check out the dev page on the Laidout website:
+http://www.laidout.org/dev.html
+
 
 Compiling on Mac OS X
 --------- -- --- ----
@@ -188,4 +191,10 @@ based machine, but it shouldn't be too hard to make Laidout work on them.
 There are a few places where I use GNU-only functions, like getline(),
 which shouldn't be very difficult to replace or define similar functions.
 
+
+Compiling on Windows
+--------------------
+Sorry, you're out of luck at the moment. If this is important to you,
+and you don't want to figure it out yourself, feel free to subsidize
+a windows port with copious amounts of money.
 
