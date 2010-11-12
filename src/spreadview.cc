@@ -775,10 +775,20 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 	maxy=Y+H;
 
 	DBG cerr <<"spreadview bounds: p1:"<<X<<','<<Y<<" p2:"<<X+W<<','<<Y+H<<endl;
-//	if (dp) {
-//		dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
-//		dp->Center(X,X+W,Y,Y+H);
-//	}
+}
+
+//! For an already arranged view, set bounds properly.
+void SpreadView::FindBBox()
+{
+	DoubleBBox::clear();
+
+	for (int c=0; c<spreads.n; c++) {
+		addtobounds(spreads.e[c]->m(),spreads.e[c]);
+	}
+
+	for (int c=0; c<threads.n; c++) {
+		addtobounds(threads.e[c]->m(),threads.e[c]);
+	}
 }
 
 //! Return the spread that contains the given document page index, and what thread it is in.
