@@ -23,6 +23,8 @@
 #include "signatures.h"
 
 
+class SignatureEditor;
+
 //------------------------------------- ActionArea ---------------------------
 class ActionArea : public Laxkit::DoubleBBox
 {
@@ -55,6 +57,7 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 {
  protected:
 	int showdecs;
+	int showsplash;
 	Laxkit::PtrStack<ActionArea> controls;
 
 	unsigned long color_inset, color_margin, color_trim, color_binding;
@@ -132,6 +135,8 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 
 	virtual int UseThisImposition(SignatureImposition *sigimp);
 	virtual int UseThisSignature(Signature *sig);
+
+	friend class SignatureEditor;
 };
 
 
@@ -141,10 +146,11 @@ class SignatureEditor : public LaxInterfaces::ViewerWindow
 {
  protected:
 	SignatureInterface *tool;
+	char *imposeout, *imposeformat;
  public:
 	SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 						Laxkit::anXWindow *nowner, const char *mes,
-						SignatureImposition *sigimp, PaperStyle *p);
+						SignatureImposition *sigimp, PaperStyle *p,const char *imposearg=NULL);
 	virtual ~SignatureEditor();
 	virtual int init();
 	virtual const char *whattype() { return "SignatureEditor"; }
