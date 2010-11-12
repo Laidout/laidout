@@ -57,11 +57,19 @@ class TreeChangeEvent : public Laxkit::EventData
 	TreeChangeEvent(const TreeChangeEvent &te);
 };
 
+enum RunModeType {
+		RUNMODE_Normal,
+		RUNMODE_Commands,
+		RUNMODE_Impose_Only
+	};
+
 class LaidoutApp : public Laxkit::anXApp
 {
  protected:
 	void dumpOutResources();
  public:
+	RunModeType runmode;
+
 	char *config_dir;
 	Project *project;
 	Document *curdoc;

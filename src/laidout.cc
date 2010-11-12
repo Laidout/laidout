@@ -40,6 +40,7 @@
 #include "viewwindow.h"
 #include "impositions/singles.h"
 #include "impositions/netimposition.h"
+#include "impositions/signatureinterface.h"
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"
@@ -240,6 +241,8 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
  */
 LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 {	
+	runmode=RUNMODE_Normal;
+
 	config_dir=newstr(getenv("HOME"));
 	appendstr(config_dir,"/.laidout/");
 	appendstr(config_dir,LAIDOUT_VERSION);
@@ -468,18 +471,20 @@ int LaidoutApp::init(int argc,char **argv)
 	 // Define default project if necessary, and Pop something up if there hasn't been anything yet
 	if (!project) project=new Project();
 
-	 //*** set up main control window
-	//maincontrolpanel=new ControlPanel(***);
-	
-	 //try to load the default template if no windows are up
-	if (topwindows.n==0 && default_template) {
-		LoadTemplate(default_template,NULL);
+	if (runmode==RUNMODE_Normal) {
+		 //try to load the default template if no windows are up
+		if (topwindows.n==0 && default_template) {
+			LoadTemplate(default_template,NULL);
+		}
+		
+		 // if no other windows have been launched yet, then launch newdoc window
+		if (topwindows.n==0)
+			//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
+			addwindow(BrandNew());
+
+	} else if (runmode==RUNMODE_Impose_Only) {
+		//***
 	}
-	
-	 // if no other windows have been launched yet, then launch newdoc window
-	if (topwindows.n==0)
-		//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
-		addwindow(BrandNew());
 
 	DBG cerr <<"---done with init"<<endl;
 	
@@ -737,6 +742,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			{ "list-export-options", 1, 0, 'O' },
 			{ "export-formats",      0, 0, 'X' },
 			{ "file-format",         0, 0, 'F' },
+			{ "impose-only",         1, 0, 'I' },
 			{ "new",                 1, 0, 'n' },
 			{ "load-dir",            1, 0, 'l' },
 			{ "template",            1, 0, 't' },
@@ -748,8 +754,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		};
 	int c,index;
 	char *exprt=NULL;
+
 	while (1) {
-		c=getopt_long(argc,argv,":Nt:n:vhc:s:",long_options,&index);
+		c=getopt_long(argc,argv,":Nt:I:n:vhc:s:",long_options,&index);
 		if (c==-1) break;
 		switch(c) {
 			case ':': cerr <<_("Missing parameter...")<<endl; exit(1); // missing parameter
@@ -765,6 +772,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 's': { // --script
 					donotusex=1;
+					runmode=RUNMODE_Commands;
 					int size=file_size(optarg,1,NULL);
 					if (size<=0) {
 						cerr <<_("No input script!")<<endl;
@@ -784,6 +792,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'c': { // --command
 					donotusex=1;
+					runmode=RUNMODE_Commands;
 					char *str=calculator->In(optarg);
 					if (str) cout <<str<<endl;
 					exit(0);//***this should exit(1) on error?
@@ -832,6 +841,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					exit(0);
 				} break;
 
+			case 'I': { // impose-only
+					runmode=RUNMODE_Impose_Only;
+					SignatureEditor *sig=new SignatureEditor(NULL,"editor",_("Impose..."),NULL,NULL,NULL,NULL,optarg);
+					addwindow(sig);
+				} break;
+
 			case 'u': { // default units
 					 // *** THIS IS TEMPORARY!!!!
 					makestr(unitname,optarg);
@@ -856,6 +871,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	 //export doc if found, then exit
 	if (exprt) {
 		//*** this should probably be moved to its own function so command line pane can call it
+		//*** is this obsoleted by --command?
 
 		 //parse the config string into a config
 		DocumentExportConfig config;
@@ -904,7 +920,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			cout <<_("Exported.")<<endl;
 		}
 		exit(0);
-	}
+	} //if exprt
 
 	 // options are now basically parsed, must handle any resulting commands like export
 	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
@@ -923,7 +939,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		if (Load(argv[c],NULL)==0) doc=curdoc;
 		if (topwindows.n==index) {
 			if (!doc && project->docs.n) doc=project->docs.e[0]->doc;
-			if (doc) addwindow(newHeadWindow(doc));
+			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
 		}
 	}
 	

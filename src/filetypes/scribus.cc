@@ -50,6 +50,65 @@ using namespace LaxInterfaces;
 #define CANVAS_GAP      40.
 
 
+//------------------------ Scribus in/reimpose/out helpers -------------------------------------
+
+//! Creates a Laidout Document from a Scribus file, and adds to laidout->project.
+/*! Return 0 for success or nonzero for error.
+ */
+int addScribusDocument(const char *file)
+{
+	FILE *f=fopen(file,"r");
+	if (!f) return 1;
+	char chunk[2000];
+	size_t c=fread(chunk,1,1999,f);
+	chunk[c]='\0';
+	fclose(f);
+
+	 //find default page width and height
+	double w,h;
+	const char *ptr=strstr(chunk,"PAGEWIDTH");
+	if (!ptr) return 2;
+	ptr+=11;
+	w=strtod(ptr,NULL);
+	if (w==0) return 3;
+
+	ptr=strstr(chunk,"PAGEHEIGHT");
+	if (!ptr) return 4;
+	ptr+=12;
+	h=strtod(ptr,NULL);
+	if (h==0) return 5;
+
+	PaperStyle paper("custom",w,h,0,300,"pt");
+	
+	Singles *imp=new Singles;
+	imp->SetPaperSize(&paper);
+	imp->NumPages(1);
+
+	Document *newdoc=new Document(imp,file);
+	imp->dec_count();
+	laidout->project->Push(newdoc);
+
+	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
+	ScribusImportFilter filter;
+	char *error=NULL;
+	filter.In(file,&config,&error);
+
+	if (error) delete[] error;
+	newdoc->dec_count();
+
+	return 0;
+}
+
+int exportImposedScribus(Document *doc,const char *imposeout)
+{
+	DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,doc->imposition->papergroup);
+	ScribusExportFilter filter;
+	char *error=NULL;
+	int err=filter.Out(imposeout,&config,&error);
+	if (error) delete[] error;
+	return err;
+}
+
 //--------------------------------- install Scribus filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -1371,7 +1430,7 @@ StyleDef *ScribusImportFilter::GetStyleDef()
  *   scribusPageHint #store original page information just in case
  * </pre>
  *
- * \todo COLOR, master pages
+ * \todo COLOR, master pages, ensure text sizes ok upon scaling, scale to fit existing pages
  */
 int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
 {
@@ -1390,7 +1449,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		if (error_ret) appendline(*error_ret,_("Could not read file!"));
 		return 2;
 	}
-	
+
 	int c;
 	Attribute *scribusdoc=att->find("SCRIBUSUTF8NEW"),
 			  *version;
@@ -1400,7 +1459,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	if (!scribusdoc) { delete att; return 4; }
 	scribusdoc=scribusdoc->find("DOCUMENT");
 	if (!scribusdoc) { delete att; return 4; }
-	
+
 	 //create repository for hints if necessary
 	Attribute *scribushints=NULL;
 	if (in->keepmystery) {

@@ -35,6 +35,7 @@ int laidout_version_check(const char *version, const char *minversion, const cha
 const char *IdentifyFile(const char *file, char **version1, char **version2);
 int isOffFile(const char *file);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
+int isScribusFile(const char *file);
 int is_bitmap_image(const char *file);
 
 #endif

@@ -202,6 +202,7 @@ PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,d
 
 	if (!strcmp(defaultunits,"mm")) { width/=25.4; height/=25.4; }
 	else if (!strcmp(defaultunits,"cm")) { width/=2.54; height/=2.54; }
+	else if (!strcmp(defaultunits,"pt")) { width/=72; height/=72; }
 
 	DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
 }
@@ -231,8 +232,8 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
 		fprintf(f,"%sname Letter     #the name of the paper\n",spc);
-		fprintf(f,"%swidth 8.5       #in inches\n",spc); 
-		fprintf(f,"%sheight 11       #in inches\n",spc);
+		fprintf(f,"%swidth 8.5       #in the default units\n",spc); 
+		fprintf(f,"%sheight 11       #in the default units\n",spc);
 		fprintf(f,"%sdpi 360         #default dpi for the paper\n",spc);
 		fprintf(f,"%slandscape       #could be portrait (the default) instead\n",spc);
 		fprintf(f,"%sunits in        #(optional) When reading in, width and height are converted from this\n",spc);
@@ -244,6 +245,7 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%sunits %s\n",spc,defaultunits);
 		if (!strcmp(defaultunits,"mm")) scale=25.4;
 		else if (!strcmp(defaultunits,"cm")) scale=2.54;
+		else if (!strcmp(defaultunits,"pt")) scale=72;
 	}
 	fprintf(f,"%swidth %.10g\n",spc,width*scale); 
 	fprintf(f,"%sheight %.10g\n",spc,height*scale);
@@ -282,7 +284,8 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 		 // *** someday automate this adequately
 		makestr(defaultunits,convertunits);
 		if (!strcasecmp(convertunits,"cm")) { width/=2.54; height/=2.54; }
-		if (!strcasecmp(convertunits,"mm")) { width/=25.4; height/=25.4; }
+		else if (!strcasecmp(convertunits,"mm")) { width/=25.4; height/=25.4; }
+		else if (!strcasecmp(convertunits,"pt")) { width/=72; height/=72; }
 		//nothing special done for in or px
 	}
 }
