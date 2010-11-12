@@ -673,7 +673,11 @@ int Document::Load(const char *file,char **error_ret)
 	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",error_ret);
-	if (!f) return 0;
+	if (!f) {
+		//if (!isScribusFile(file)) return 0;
+		//***
+		return 0;
+	}
 	
 	clear();
 	setlocale(LC_ALL,"C");
@@ -868,7 +872,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 	
 	 // search for windows to create after reading in all pages
 	 // only if not in project mode
-	if (!laidout->donotusex && isblank(laidout->project->filename)) {
+	if (laidout->runmode==RUNMODE_Normal && !laidout->donotusex && isblank(laidout->project->filename)) {
 		HeadWindow *head;
 		for (int c=0; c<att->attributes.n; c++) {
 			nme= att->attributes.e[c]->name;

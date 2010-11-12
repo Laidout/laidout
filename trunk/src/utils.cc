@@ -49,7 +49,7 @@ char *make_id(const char *base)
 {
 	if (!base) base="id";
 	char *str=new char[strlen(base)+30];
-	sprintf(str,"%s%d",base,getUniqueNumber());
+	sprintf(str,"%s%ld",base,getUniqueNumber());
 	return str;
 }
 
@@ -466,6 +466,37 @@ const char *IdentifyFile(const char *file, char **version1, char **version2)
 	if (isOffFile(file)) return "OFF";
 	if (laidout_file_type(file, NULL, NULL, version1, NULL, version2)) return "Laidout";
 	return NULL;
+}
+
+//! Return whether file is a Scribus document.
+int isScribusFile(const char *file)
+{
+	FILE *f=fopen(file,"r");
+	if (!f) return 0;
+
+	char first100[101];
+	int c=fread(first100,1,100,f);
+	first100[c]='\0';
+	c=-1;
+
+	 //check for the various OFF starts
+	 //should have something like <SCRIBUSUTF8NEW Version="..."
+	const char *p=strstr(first100,"SCRIBUSUTF8NEW");
+	int foundscribus=0;
+	if (p) { //extract version...
+		foundscribus=1;
+		//p=strstr(first100,"Version");
+		//if (p) {
+		//	while (*p && *p!="\"") p++;
+		//	if (*p) {
+		//		const char *v=p;
+		//		while (*p && *p!="\"") p++;
+		//	}
+		//}
+	}
+
+	fclose(f);
+	return foundscribus;
 }
 
 //! Return whether file is an OFF file or not.

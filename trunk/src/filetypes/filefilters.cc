@@ -401,6 +401,15 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
  * 0 is convert nothing. 1 is convert as possible. 2 is do not convert, all
  * objects become mystery data.
  */
+/*! \var int ImportConfig::instart
+ * \brief The first page of the document to be imported. 0 is the first in the document.
+ */
+/*! \var int ImportConfig::inend
+ * \brief The last page of the document to be imported. -1 mean import until the end.
+ */
+/*! \var int ImportConfig::topage
+ * \brief The first page of the Laidout Document to import onto.
+ */
 /*! \var int ImportConfig::scaletopage
  * \brief How to scale imported things that don't fit the page.
  *

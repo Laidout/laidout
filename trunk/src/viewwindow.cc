@@ -382,6 +382,8 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	} else {
 		dp->SetSpace(-8.5,17,-11,22);
 	}
+
+	fakepointer=0; //***for lack of screen record for multipointer
 }
 
 //! Delete spread, doc and page are assumed non-local.
@@ -1460,13 +1462,21 @@ void LaidoutViewport::transformToContext(double *m,FieldPlace &place, int invert
 				if (!pl->page) {
 					if (pl->index>=0 && pl->index<doc->pages.n) pl->page=doc->pages.e[pl->index];
 					DBG else cerr <<"*-*-* bad index in pl, but requesting a transform!!"<<endl;
+				} else {
+					if (pl->index<0 || pl->index>=doc->pages.n) pl->page=NULL; //page is no longer valid
 				}
-				transform_copy(m,pl->outline->m());
-				ObjectContainer *o;
-				if (pl->page) o=dynamic_cast<ObjectContainer *>(pl->page->object_e(place.e(2)));
-				  else o=NULL;
-				if (o) g=dynamic_cast<Group *>(o->object_e(place.e(3)));
-				i=4;
+				if (pl->page) {
+					transform_copy(m,pl->outline->m());
+					ObjectContainer *o;
+					if (pl->page) o=dynamic_cast<ObjectContainer *>(pl->page->object_e(place.e(2)));
+					  else o=NULL;
+					if (o) g=dynamic_cast<Group *>(o->object_e(place.e(3)));
+					i=4;
+				} else {
+					 //page was no longer valid, so revert to limbo
+					i=0;
+					g=NULL;
+				}
 			}
 		}
 	} else {}
@@ -1741,6 +1751,11 @@ int LaidoutViewport::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 //! *** for debugging, show which page mouse is over..
 int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
+	//**** for screencasting, do a fake mouse pointer for my second mouse
+	//cerr <<"xid:"<<mouse->xid<<endl;
+	if (mouse->xid==15) { needtodraw=1; fakepointer=1; fakepos=flatpoint(x,y); }
+
+
 	if (viewportmode==VIEW_GRAB_COLOR) {
 		//***on focus off, reset mode to normal
 			//click down starts grabbing color
@@ -2284,6 +2299,15 @@ void LaidoutViewport::Refresh()
 		}
 		dp->PopAxes(); // remove curpage transform
 	//}
+
+	//***for lack of screen record for multipointer
+	if (fakepointer) {
+		fakepointer=0;
+		dp->DrawScreen();
+		flatpoint v(-5,-10);
+		dp->drawarrow(fakepos-v,v,0,1,2);
+		dp->DrawReal();
+	}
 
 	dp->Updates(1);
 
