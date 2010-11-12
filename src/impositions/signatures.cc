@@ -456,8 +456,8 @@ void Signature::applyFold(FoldedPageInfo **finfo, char folddir, int index, int u
 		 //swap old and new positions
 		if (under) {
 			while(finfo[r][c].pages.n) {
-				tc=finfo[r][c].pages.pop(0);
 				tr=finfo[r][c].pages.pop(0);
+				tc=finfo[r][c].pages.pop(0);
 				finfo[newr][newc].pages.push(tc,0);
 				finfo[newr][newc].pages.push(tr,0);
 
@@ -763,8 +763,6 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 
 		}
 	}
-	numhfolds=numhf; //note: overrides that stored in atts
-	numvfolds=numvf;
 
 	reallocateFoldinfo();
 	applyFold(NULL,-1);
@@ -852,8 +850,8 @@ Laxkit::DoubleBBox *Signature::PageBounds(int part, Laxkit::DoubleBBox *bbox)
 	} else if (part==1) { //margin box
 		bbox->minx=marginleft-trimleft;
 		bbox->miny=marginbottom-trimbottom;
-		bbox->maxx=PageWidth(1)  - marginright;
-		bbox->maxy=PageHeight(1) - margintop;
+		bbox->maxx=PageWidth(0)  - marginright - trimleft;
+		bbox->maxy=PageHeight(0) - margintop - trimbottom;
 
 	} else { //page cell box
 		bbox->minx=-trimleft;
@@ -1851,11 +1849,11 @@ LaxInterfaces::SomeData *SignatureImposition::GetPageMarginOutline(int pagenum,i
 {
 	int oddpage=pagenum%2;
 	DoubleBBox box;
-	signature->PageBounds(1,&box);
-	double w=box.maxx-box.minx,
-		   h=box.maxy-box.miny,
-		   pw=signature->PageWidth(1),
-		   ph=signature->PageHeight(1);
+	signature->PageBounds(1,&box); //margin box
+	double w=box.maxx-box.minx, //margin box width
+		   h=box.maxy-box.miny, //margin box height
+		   pw=signature->PageWidth(1), //trim box width
+		   ph=signature->PageHeight(1);//trim box height
 	PathsData *newpath=new PathsData();//count==1
 
 	if (signature->binding=='l') {

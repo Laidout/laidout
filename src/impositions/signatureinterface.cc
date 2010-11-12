@@ -21,6 +21,7 @@
 #include "../headwindow.h"
 #include "../utils.h"
 #include "../version.h"
+#include "../filetypes/scribus.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -30,6 +31,7 @@
 #include <lax/lists.cc>
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -215,6 +217,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	papersize=NULL;
 	insetmask=15; trimmask=15; marginmask=15;
 	firsttime=1;
+	showsplash=0;
 
 	if (sig) {
 		signature=sig->duplicate();
@@ -791,6 +794,7 @@ int SignatureInterface::Refresh()
 	int facedown=0;
 	int hasface;
 	int rrr,ccc;
+	int ff,tt;
 	double xx,yy;
 	int xflip, yflip;
 
@@ -841,13 +845,19 @@ int SignatureInterface::Refresh()
 					dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
 					fp=dp->realtoscreen(pts[0]);
 
-					//if (facedown) sprintf(str,"%d/%d",foldinfo[rrr][ccc].finalindexback,foldinfo[rrr][ccc].finalindexfront);
-					//else sprintf(str,"%d/%d",foldinfo[rrr][ccc].finalindexfront,foldinfo[rrr][ccc].finalindexback);
-					//dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
-					//-------------
-					sprintf(str,"%d/%d",foldinfo[rrr][ccc].finalindexfront,foldinfo[rrr][ccc].finalindexback);
-					//if (facedown) sprintf(str,"(%d)",foldinfo[rrr][ccc].finalindexback);
-					//	sprintf(str,"%d",foldinfo[rrr][ccc].finalindexfront);
+					 //show range of pages at this position
+					ff=foldinfo[rrr][ccc].finalindexfront;
+					tt=foldinfo[rrr][ccc].finalindexback;
+					if (!signature->autoaddsheets) {
+						if (ff>tt) {
+							tt*=signature->sheetspersignature;
+							ff=tt+2*signature->sheetspersignature-1;
+						} else {
+							ff*=signature->sheetspersignature;
+							tt=ff+2*signature->sheetspersignature-1;
+						}
+					}
+					sprintf(str,"%d-%d",ff,tt);
 					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
 				}
 			}
@@ -1082,6 +1092,15 @@ int SignatureInterface::Refresh()
 	}
 	dp->DrawReal();
 
+	if (showsplash) {
+		dp->DrawScreen();
+		dp->NewFG(0,0,0);
+		dp->textout(viewport->win_w/2,viewport->win_h/2,
+				_("Laidout (impose only)\nBy Tom Lechner"), //***should probably show version number
+				-1,LAX_CENTER);
+		dp->DrawReal();
+	}
+
 	return 0;
 }
 
@@ -1260,6 +1279,8 @@ int SignatureInterface::scan(int x,int y,int *row,int *col,double *ex,double *ey
 //! Respond to spinning controls.
 int SignatureInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
+	if (showsplash) { showsplash=0; needtodraw=1; }
+
 	flatpoint fp=screentoreal(x,y);
 
 	if (state&LAX_STATE_MASK) return 1;
@@ -1273,6 +1294,8 @@ int SignatureInterface::WheelDown(int x,int y,unsigned int state,int count,const
 //! Respond to spinning controls.
 int SignatureInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
+	if (showsplash) { showsplash=0; needtodraw=1; }
+
 	flatpoint fp=screentoreal(x,y);
 
 	if (state&LAX_STATE_MASK) return 1;
@@ -1379,6 +1402,8 @@ int SignatureInterface::adjustControl(int handle, int dir)
 
 int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
+	if (showsplash) { showsplash=0; needtodraw=1; }
+
 	int row,col,tilerow,tilecol;
 	int over=scan(x,y, &row,&col, NULL,NULL, &tilerow,&tilecol);
 	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
@@ -1398,7 +1423,11 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 		return 0;
 	}
 	onoverlay=scanHandle(x,y);
-	if (onoverlay!=SP_None) return 0;
+	if (onoverlay!=SP_None) {
+		ActionArea *a=control(onoverlay);
+		if (a->type==AREA_Handle) return 0;
+		onoverlay=SP_None;
+	}
 
 	 //check for on something to fold
 	if (row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds
@@ -1445,6 +1474,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			}
 
 			folddirection=0;
+			remapHandles();
 			needtodraw=1;
 		}
 		
@@ -1845,6 +1875,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 				signature->applyFold(NULL,(int)curdist);
 				remapAffectedCells((int)curdist);
 				foldprogress=curdist-floor(curdist);
+				remapHandles();
 				needtodraw=1;
 				return 0;
 
@@ -1856,6 +1887,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 				applyFold(signature->folds.e[(int)curdist-1]);
 				remapAffectedCells((int)curdist);
 				foldprogress=curdist-floor(curdist);
+				remapHandles();
 				needtodraw=1;
 				return 0;
 			}
@@ -1865,7 +1897,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 
 	if (lbdown_row<0 || lbdown_col<0) return 0;
-	if ((hasfinal && foldlevel==signature->folds.n-1)
+	if ((hasfinal && foldlevel==signature->folds.n)
 			|| row<0 || row>signature->numhfolds || col<0 || col>signature->numvfolds) {
 		if (folddirection!=0) {
 			folddirection=0;
@@ -2342,7 +2374,7 @@ int SignatureInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::L
  */
 SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 						Laxkit::anXWindow *nowner, const char *mes,
-						SignatureImposition *sigimp, PaperStyle *p)
+						SignatureImposition *sigimp, PaperStyle *p,const char *imposearg)
 	: ViewerWindow(parnt,nname,ntitle,
 				   ANXWIN_REMEMBER
 					|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_NO_SCROLLERS|VIEWPORT_NO_RULERS, 
@@ -2366,12 +2398,57 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 
 	needtodraw=1;
 	tool=new SignatureInterface(1,viewport->dp,(sigimp?sigimp->signature:NULL),p);
+	if (imposearg) tool->showsplash=1;
+
 	AddTool(tool,1,1); // local, and select it
 	// *** add signature and paper if any...
+	
+
+	 //**** this is a hack! Should instead be parsed into an export config with extra fields for additional
+	 // 		imposing
+	imposeout=NULL;
+	imposeformat=NULL;
+	if (imposearg) {
+		//need to load a new document, which may be a non-laidout document.
+		//If non-laidout, then create new singles, and import
+		//add extra field for impose out
+
+		Attribute att;
+		NameValueToAttribute(&att,imposearg,'=',',');
+		const char *name,*value;
+		for (int c=0; c<att.attributes.n; c++) {
+			name =att.attributes.e[c]->name;
+			value=att.attributes.e[c]->value;
+			if (!strcmp(name,"in")) {
+				if (isScribusFile(value)) {
+					if (addScribusDocument(value)==0) {
+						//yikes!
+						tool->signature->SetPaper(laidout->project->docs.e[0]->doc->imposition->papergroup->papers.e[0]->box->paperstyle);
+					}
+				}
+				//***
+				//file can be:
+				//  laidout: load normally
+				//  scribus: create singles with widthxheight pages, import
+				//  pdf: if you know number of pages, create singles with that many pages,
+				//     export temp podofo plan, call podofoimpose
+			} else if (!strcmp(name,"out")) {
+				makestr(imposeout,value);
+			} else if (!strcmp(name,"width")) {
+				DoubleAttribute(value,&tool->signature->totalwidth,NULL);
+			} else if (!strcmp(name,"height")) {
+				DoubleAttribute(value,&tool->signature->totalheight,NULL);
+			}
+		}
+	}
+
 }
 
 SignatureEditor::~SignatureEditor()
-{ }
+{ 
+	if (imposeout) delete[] imposeout;
+	if (imposeformat) delete[] imposeformat;
+}
 
 //! Passes off to SignatureInterface::dump_out().
 void SignatureEditor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -2401,6 +2478,19 @@ int SignatureEditor::init()
 	last=tbut=new Button(this,"cancel",NULL, 0, 0,0,0,0,1, last,object_id,"cancel",0,_("Cancel"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
+	if (imposeout) {
+		AddNull();
+		LineInput *linp;
+		last=linp=new LineInput(NULL,"imp",_("Impose..."),0,
+									  0,0,0,0,0,
+									  last,object_id,"out",
+									  _("Out:"),imposeout,0,
+									  0,0, 5,3, 5,3);
+		linp->tooltip(_("The file to output the imposed file to"));
+		//AddWin(linp,1, 50,0,2000,50,0, 50,0,50,50,0, -1);
+		AddWin(linp,1, 50,0,2000,50,0, linp->win_h,0,0,0,0, -1);
+	}
+
 	Sync(1);	
 
 	int h=tool->signature->totalheight;
@@ -2416,6 +2506,15 @@ void SignatureEditor::send()
 	SignatureImposition *sigimp=new SignatureImposition(tool->signature);
 	sigimp->SetPaperSize(sigimp->signature->paperbox);
 	RefCountedEventData *data=new RefCountedEventData(sigimp);
+
+	if (imposeout) {
+		//for impose-only mode
+		//if imposeformat==scribus, continue...
+		Document *doc=laidout->project->docs.e[0]->doc;
+		doc->ReImpose(sigimp,0);
+		exportImposedScribus(doc,imposeout);
+	}
+
 	sigimp->dec_count();
 
 	app->SendMessage(data, win_owner, win_sendthis, object_id);
