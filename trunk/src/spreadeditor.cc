@@ -230,7 +230,14 @@ int SpreadInterface::SwitchView(int i)
 
 	view->dec_count();
 	view=doc->spreadviews.e[i];
+	view->inc_count();
 	view->Update(doc);
+
+	SpreadEditor *se=dynamic_cast<SpreadEditor*>(viewport->win_parent);
+	if (se) {
+		LineEdit *edit=(LineEdit*)se->findChildWindowByName("name");
+		edit->SetText(view->Name());
+	}
 	needtodraw=1;
 	return 0;
 }
@@ -330,6 +337,7 @@ void SpreadInterface::ArrangeSpreads(int how)//how==-1
 	view->ArrangeSpreads(dp,how);
 
 	if (dp) {
+		view->FindBBox();
 		double X=view->minx,
 			   Y=view->miny,
 			   W=view->maxx-view->minx,
@@ -347,6 +355,7 @@ int SpreadInterface::Refresh()
 	if (firsttime) {
 		firsttime=0;
 		ArrangeSpreads();
+		if (view) view->FindBBox();
 		Center(1);
 		//((ViewportWindow *)curwindow)->syncrulers();
 	}
@@ -500,23 +509,23 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("Spread Editor"));
 
-	//menu->AddItem(_("Page Labels..."),SE_PageLabels);
-	menu->AddItem(_("Insert Page"),SE_InsertPage);
-	menu->AddItem(_("Insert Dummy Page"),SE_InsertDummyPage);
-
-	if (curpages.n) {
-		menu->AddSep(_("Current pages"));
-		menu->AddItem(_("Detach"),SE_DetachPages);//create a limbo page string
-		menu->AddItem(curpages.n>1?_("Delete Pages..."):_("Delete Page"),SE_DeletePages);
-		menu->AddItem(_("Export to new document..."),SE_ExportPages);
-	}
-
-	menu->AddSep();
+//	//menu->AddItem(_("Page Labels..."),SE_PageLabels);
+//	menu->AddItem(_("Insert Page"),SE_InsertPage);
+//	menu->AddItem(_("Insert Dummy Page"),SE_InsertDummyPage);
+//
+//	if (curpages.n) {
+//		menu->AddSep(_("Current pages"));
+//		menu->AddItem(_("Detach"),SE_DetachPages);//create a limbo page string
+//		menu->AddItem(curpages.n>1?_("Delete Pages..."):_("Delete Page"),SE_DeletePages);
+//		menu->AddItem(_("Export to new document..."),SE_ExportPages);
+//	}
+//
+//	menu->AddSep();
 	menu->AddItem(_("New view"),SE_NewView);
 	if (!view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
 	else {
 		menu->AddItem(_("Delete current view"),SE_DeleteView);
-		menu->AddItem(_("Rename current view"),SE_RenameView);
+		//menu->AddItem(_("Rename current view"),SE_RenameView);
 	}
 
 	 //new ones not explicitly added to document will be saved only if there are active windows using it
@@ -544,7 +553,14 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 
 	int i=s->info2;
 	
-	if (i==SE_PageLabels) {
+	if (i>=0 && i<doc->spreadviews.n) {
+		 //select new view
+		SwitchView(i);
+		return 0;
+
+	} else if (i==SE_PageLabels) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
 	} else if (i==SE_InsertPage) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
 
@@ -566,6 +582,13 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		view->doc_id=doc->object_id;
 		doc->spreadviews.push(view);
 		GetSpreads();
+		ArrangeSpreads();
+
+		SpreadEditor *se=dynamic_cast<SpreadEditor*>(viewport->win_parent);
+		if (se) {
+			LineEdit *edit=(LineEdit*)se->findChildWindowByName("name");
+			edit->SetText(view->Name());
+		}
 		needtodraw=1;
 		return 0;
 
@@ -583,6 +606,7 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		view->dec_count();
 		view=NULL;
 		GetSpreads();
+		ArrangeSpreads();
 		needtodraw=1;
 		return 0;
 
@@ -927,6 +951,7 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 			if (s->next) s->next->mapConnection();
 		}
 		view->arrangetype=view->arrangestate=ArrangeCustom;
+		view->FindBBox();
 		mx=x; my=y;
 		needtodraw=1;
 
@@ -999,7 +1024,7 @@ void SpreadInterface::Center(int w)
 		   W=view->maxx-view->minx,
 		   H=view->maxy-view->miny;
 	dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
-	dp->Center(X,X+W,Y,Y+H);
+	dp->Center(X-W*.05,X+W*1.05,Y-H*.05,Y+H*1.05);
 
 	needtodraw=1;
 }
@@ -1123,6 +1148,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
 		view->arrangestate=ArrangeNeedsArranging;
 		ArrangeSpreads();
+		Center(1);
 		needtodraw=1;
 		return 0;
 
@@ -1134,6 +1160,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		else app->postmessage(arrangetypestring(view->arrangetype));
 
 		ArrangeSpreads();
+		Center(1);
 		needtodraw=1;
 		return 0;
 	}
@@ -1259,6 +1286,7 @@ int SpreadEditor::init()
 	SpreadInterface *interf=(SpreadInterface*)tools.e[0];
 	LineEdit *linp=new LineEdit(this,"name",NULL, 0, 0,0,0,0,1, NULL,object_id,"newname",
 								  interf->view->viewname,0);
+	linp->setWinStyle(LINEEDIT_SEND_ANY_CHANGE,1);
 	linp->tooltip(_("Name of the current view"));
 	AddWin(linp,1, linp->win_w,0,2000,50,0, linp->win_h,0,50,50,0, -1);
 
@@ -1307,6 +1335,16 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 		
 		return 0;
 
+	} else if (!strcmp("newname",mes)) {
+		SpreadInterface *interf=(SpreadInterface*)tools.e[0];
+		if (!interf->view->doc_id) {
+			interf->view->doc_id=doc->object_id;
+			doc->spreadviews.push(interf->view);
+		}
+		LineEdit *edit=(LineEdit*)findChildWindowByName("name");
+		makestr(interf->view->viewname,edit->GetCText());
+		return 0;
+
 	} else if (!strcmp("resetbutton",mes)) {
 		//cout <<"SpreadEditor got resetbutton message"<<endl;
 		SpreadInterface *s=dynamic_cast<SpreadInterface *>(curtool);
@@ -1344,13 +1382,13 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 			}
 		}
 
-		menu->AddSep();
-		menu->AddItem(_("New view"),SE_NewView);
+//		menu->AddSep();
+//		menu->AddItem(_("New view"),SE_NewView);
 		SpreadInterface *interf=(SpreadInterface*)tools.e[0];
-		if (!interf->view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
-		else {
-			menu->AddItem(_("Delete current view"),SE_DeleteView);
-		}
+//		if (!interf->view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
+//		else {
+//			menu->AddItem(_("Delete current view"),SE_DeleteView);
+//		}
 
 		 //new ones not explicitly added to document will be saved only if there are active windows using it
 		//if (doc && doc->spreadviews.n>1) menu->AddItem(_("Delete current arrangement"), 202);
@@ -1360,7 +1398,7 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 			menu->AddSep("Views");
 			for (int c=0; c<doc->spreadviews.n; c++) {
 				menu->AddItem(doc->spreadviews.e[c]->Name(), c, 
-							  LAX_ISTOGGLE | (doc->spreadviews.e[c]==interf->view?LAX_CHECKED:0) );
+							  LAX_OFF | LAX_ISTOGGLE | (doc->spreadviews.e[c]==interf->view?LAX_CHECKED:0) );
 			}
 		}
 

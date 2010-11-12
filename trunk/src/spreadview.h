@@ -107,6 +107,7 @@ class SpreadView : public Laxkit::anObject,
 	virtual LittleSpread *SpreadOfPage(int page, int *thread,int skipmain=0);
 	virtual int RemoveFromThread(int pageindex, int thread);
 	virtual int MoveToThread(int pageindex,int thread, int threadplace);
+	virtual void FindBBox();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
