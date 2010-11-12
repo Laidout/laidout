@@ -2,19 +2,37 @@ This file is for random notes and specific coding tasks that need to be done
 to meet various goals. This includes Roadmap items as well as fixing bugs.
 List bug tracker number if any.
 
-When an item is satisfied, put it in the DONE section at bottom of file,
-with a date that it was done and by who.
-
+When an item is satisfied, put it in the DONE section at bottom of file.
+Those are purged with each release.
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-imagepatch once again frelled, not showing image AT ALL!!!!
+finish scribus plugin to access graphical signature editor
 
-refcounting crashing error with nets upon edit current document settings
 
-debug spread editor
+----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
+update docs to have new release number
+
+  sig editor:
+needs testing: command line func parser for sigs
+DONE animated fold controls
+DONE trim, margin, inset, gap, fold, tile handles
+DONE finish implement sigimposition
+DONE edit document settings: need special menu item for "Current"
+DONE respond to menu controls for paper size
+DONE Generic fold and trim imposition
+		1. initial margin trim
+		2. section trim
+		3. folding per section
+		4. specify stitching fold
+		5. trim lines for other folds as desired
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
+
+fold indicator foldprogress at crossover points incorrectly indicating affected folds
+
+refcounting crashing error with nets upon edit current document settings
+
 gradient rendering to buffer memory hole?? gets very slow, then crashes.. having trouble reproducing...
 
 svg to coord incomplete
@@ -63,30 +81,19 @@ moving objects does screwy things with rectdata when crossing page boundaries
 need to change GroupInterface to determine contexts, then recompute bounds
 
 
-----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
-check laidout.1 when time to release
-update docs to have new release number
-
-sig editor:
-scribus plugin to access graphical signature editor
-needs testing: command line func parser for sigs
-DONE animated fold controls
-DONE trim, margin, inset, gap, fold, tile handles
-DONE finish implement sigimposition
-DONE edit document settings: need special menu item for "Current"
-DONE respond to menu controls for paper size
-DONE Generic fold and trim imposition
-		1. initial margin trim
-		2. section trim
-		3. folding per section
-		4. specify stitching fold
-		5. trim lines for other folds as desired
-
-
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
 update translations
 check laidout.1 when time to release
 update docs to have new release number
+
+
+SpreadEditor: insert blanks, delete pages, the other right click menu options
+		Insert page before
+		Insert page after
+		Insert pages...  <- on screen indicator for number of pages to add before or after
+	   
+move impose-only attributes to newdoc/export dialog somehow to give access to all imposition stuff
+	feed it an ExportConfig
 
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
  need infrastructure to propagate and save tool settings
@@ -617,4 +624,18 @@ DONE DISABLE CHANGE TO PROJECT!! too unstable and probably pretty useless at thi
         -> new doc dialog, and menu items in viewer corner button
 
 DONE update examples to 0.091, removing absolute paths!
+
+DONE check laidout.1 when time to release
+
+DONE deleting page crashes.. just booklet problem? not resyncing pages and viewport
+
+DONE imagepatch once again frelled, not showing image AT ALL!!!!
+
+DONE using the fold indicator controls doesn't remapHandles
+
+DONE occassional problem folding, leaves partial final!!! not sure what triggers it
+
+DONE debug spread editor auto layout
+
+DONE debug spread editor load save, update name field
 
