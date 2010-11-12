@@ -16,7 +16,7 @@ VERSION 0.091
 (done) Be able to load imposition instances, a form of resource
 (done) Import images as flow/centered within page margins, not within page outline
 (done) Import images with alignment per page type into the page margin region
-       SpreadEditor: improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
+(done) SpreadEditor: improvements: re-re-fix auto layout
 (done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
@@ -26,6 +26,7 @@ VERSION 0.091
 
 VERSION 0.092
 -------------
+       SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        Signature editor: detect non staplable binding edge, show red rather than green
        At bare minimum, path interface use should not cause a seg fault

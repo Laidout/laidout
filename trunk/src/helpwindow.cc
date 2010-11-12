@@ -90,7 +90,7 @@ int HelpWindow::init()
 			"Press escape to get rid of this window.\n"
 			"Right click drag scrolls this help.\n"
 			"Right click drag with shift or control scrolls faster.\n"
-			"The keys with a '***' next to them are not implemented yet.\n"
+			DBG "The keys with a '***' next to them are not implemented yet.\n"
 			"\n"
 			" + means Shift and ^ means control\n"
 			"\n"
@@ -138,12 +138,12 @@ int HelpWindow::init()
 			"   pgdown    lower selection by 1 within layer\n"
 			"   home      bring selection to top within layer\n"
 			"   end       drop selection to bottom within layer\n"
-			"   +pgup     ***move selection up a layer\n"
-			"   +pgdown   ***move selection down a layer\n"
-			"   +^pgup    ***raise layer 1\n"
-			"   +^pgdown  ***lower layer 1\n"
-			"   +^home    ***layer to top\n"
-			"   +^end     ***layer to bottom\n"
+			DBG "   +pgup     ***move selection up a layer\n"
+			DBG "   +pgdown   ***move selection down a layer\n"
+			DBG "   +^pgup    ***raise layer 1\n"
+			DBG "   +^pgdown  ***lower layer 1\n"
+			DBG "   +^home    ***layer to top\n"
+			DBG "   +^end     ***layer to bottom\n"
 			"\n"
 			"\n"));
 	appendstr(help,_(
@@ -159,7 +159,9 @@ int HelpWindow::init()
 			"  'x'/'X' Increase or decrease the number of tiles horizontally\n"
 			"  'y'/'Y' Increase or decrease the number of tiles vertically\n"
 			"  'g'/'G' Increase or decrease the size of the gap between tiles\n"
-			"  'b'/'B' Move the binding edge\n"));
+			"  'b'/'B' Move the binding edge\n"
+			"\n"
+			"\n"));
 	appendstr(help,_(
 			"SpreadEditor:\n"
 			"   ' '    Center with all little spreads in view\n"
