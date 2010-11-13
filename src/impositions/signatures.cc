@@ -949,10 +949,10 @@ int Signature::locatePaperFromPage(int pagenumber, int *row, int *col)
 	  if (cc!=numvfolds+1) break;
 	}  //rr
 
-	DBG if (rr==numhfolds+1) { 
-	DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
-	DBG 	exit(0);
-	DBG }
+	//DBG if (rr==numhfolds+1) { 
+	//DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
+	//DBG 	exit(0);
+	//DBG }
 
 	 //now rr,cc is the cell that contains sigindex.
 	 //We must figure out how it maps to pieces of paper
@@ -2130,7 +2130,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	int rangeofpages=signature->sheetspersignature*2;
 	int pageindex;
 
-	DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
+	//DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
 
 	 //for each tile:
 	x=(front?signature->insetleft:signature->insetright);
@@ -2146,7 +2146,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			xflip=signature->foldinfo[rr][cc].finalxflip;
 			yflip=signature->foldinfo[rr][cc].finalyflip;
 
-			DBG cerr <<signature->foldinfo[rr][cc].finalindexfront<<"/"<<signature->foldinfo[rr][cc].finalindexback<<"  ";
+			//DBG cerr <<signature->foldinfo[rr][cc].finalindexfront<<"/"<<signature->foldinfo[rr][cc].finalindexback<<"  ";
 
 			xx=x+cc*ew;
 			yy=y+rr*eh; //coordinates of corner of page cell
@@ -2187,7 +2187,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		}  //rr
 
 		y+=patternheight+signature->tilegapy;
-		DBG cerr <<endl;
+		//DBG cerr <<endl;
 	  } //tx
 	  x+=patternwidth+signature->tilegapx;
 	} //ty

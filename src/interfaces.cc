@@ -115,7 +115,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	
 	 //------Paths
 	 // **** this is not ready for prime time yet, so enable only in debugging mode
-	DBG existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
+	//DBG existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
 	
 	 //------EPS
 	EpsInterface *eps=new EpsInterface(id++,NULL);

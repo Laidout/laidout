@@ -105,7 +105,7 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 PaperInterface::~PaperInterface()
 {
-	DBG cerr <<"PaperInterface destructor.."<<endl;
+	//DBG cerr <<"PaperInterface destructor.."<<endl;
 
 	if (maybebox) maybebox->dec_count();
 	if (papergroup) papergroup->dec_count();
@@ -267,7 +267,7 @@ anInterface *PaperInterface::duplicate(anInterface *dup)//dup=NULL
 
 int PaperInterface::InterfaceOn()
 {
-	DBG cerr <<"paperinterfaceOn()"<<endl;
+	//DBG cerr <<"paperinterfaceOn()"<<endl;
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 	if (lvp) lvp->UseThisPaperGroup(papergroup);
 	showdecs=2;
@@ -284,7 +284,7 @@ int PaperInterface::InterfaceOff()
 	if (lvp) lvp->UseThisPaperGroup(NULL);
 
 	needtodraw=1;
-	DBG cerr <<"imageinterfaceOff()"<<endl;
+	//DBG cerr <<"imageinterfaceOff()"<<endl;
 	return 0;
 }
 
@@ -612,7 +612,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 {
 	int over=scan(x,y);
 
-	DBG cerr <<"over box: "<<over<<endl;
+	//DBG cerr <<"over box: "<<over<<endl;
 
 	buttondown.move(mouse->id,x,y);
 	if (!buttondown.any()) {
@@ -682,7 +682,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			}
 		}
 		//oo=data->origin() + leftp.x*data->xaxis() + leftp.y*data->yaxis(); // where the point clicked down on is now
-		////DBG cerr <<"  oo="<<oo.x<<','<<oo.y<<endl;
+		//////DBG cerr <<"  oo="<<oo.x<<','<<oo.y<<endl;
 		//d=lp-oo;
 		//data->origin(data->origin()+d);
 		needtodraw=1;
@@ -722,7 +722,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
  */
 int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	if (ch==LAX_Shift) {
 		if (maybebox) return 0;
 		int x,y;

@@ -83,7 +83,7 @@ TreeChangeEvent::TreeChangeEvent(const TreeChangeEvent &te)
  */
 void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e)
 {
-	DBG cerr<<"notifyDocTreeChanged sending.."<<endl;
+	//DBG cerr<<"notifyDocTreeChanged sending.."<<endl;
 	HeadWindow *h;
 	PlainWinBox *pwb;
 	ViewWindow *view;
@@ -120,14 +120,14 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 
 				app->SendMessage(edata,w->object_id,"docTreeChange");
 
-				DBG cerr <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
-				DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
+				//DBG cerr <<"---(notifyDocTreeChanged) sending docTreeChange to "<<
+				//DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
 				yes=0;
 			}
 		}
 	}
 	delete te; //delete template object
-	DBG cerr <<"eo notifyDocTreeChanged"<<endl;
+	//DBG cerr <<"eo notifyDocTreeChanged"<<endl;
 	return;
 }
 

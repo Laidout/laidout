@@ -87,21 +87,21 @@ int ObjectContainer::nextObject(FieldPlace &place,
 								Laxkit::anObject **d)//d=NULL
 {
 	//debugging:
-	DBG cerr <<"oc.nextObject, curlevel="<<curlevel<<", n="<<n()<<endl;
-	DBG place.out("  place");
-	DBG first.out("  first");
+	//DBG cerr <<"oc.nextObject, curlevel="<<curlevel<<", n="<<n()<<endl;
+	//DBG place.out("  place");
+	//DBG first.out("  first");
 	
 	
 	if (!n() || curlevel<0) {
 		 //does *this contain no objects or is *this beyond the curlevel? then:
 		if (d) *d=NULL;
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject=0: no objs or this>curlevel"<<endl;
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=0: no objs or this>curlevel"<<endl;
 		return curlevel<0 ? Next_Error : Next_NoSubObjects;
 	}
 	if (place.n()-1<curlevel) {
 		 //place is corrupted, does not have enough elements
 		if (d) *d=NULL;
-		DBG cerr <<"corrupt place, not enough elements, end("<<curlevel<<")"<<endl;
+		//DBG cerr <<"corrupt place, not enough elements, end("<<curlevel<<")"<<endl;
 		return Next_Error; //error! bad place
 	}
 	
@@ -122,7 +122,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		i=place.e(curlevel);
 		if (i<0) {
 			if (d) *d=NULL;
-			DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
+			//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
 			return Next_Error; // invalid place.e(curlevel)
 		}
 		//***if (dec) {...} else {inc...}
@@ -141,7 +141,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			 // all done with this bunch, but not at first obj.. 
 			place.pop();
 			if (d) *d=NULL;
-			DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-2"<<endl;
+			//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-2"<<endl;
 			return Next_DoneWithLevel;
 		}
 		if (i<0) i=n()-1; // we are at the level of first, so continue searching from top
@@ -151,7 +151,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			 // make place have position of parent object
 			place.pop();
 			if (d) *d=NULL;
-			DBG cerr <<"end("<<curlevel<<")  oc.nextObject=0"<<endl;
+			//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=0"<<endl;
 			return Next_AtFirstObj;
 		} // else is ok to be at this object, so continue.
 		
@@ -167,8 +167,8 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			g=dynamic_cast<ObjectContainer *>(gg);
 		}
 		if (d) *d=gg;
-		DBG place.out("  next is");
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
+		//DBG place.out("  next is");
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
 		return Next_Success; 
 	}
 
@@ -180,47 +180,47 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		 // truncate place to this level
 		while (curlevel!=place.n()-1) place.pop();
 		if (d) *d=NULL;
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-1"<<endl;
 		return Next_Error;
 	}
 	ObjectContainer *g=dynamic_cast<ObjectContainer *>(object_e(i));
 	if (!g) { //was invalid spec, expected an ObjectContainer
 		while (curlevel!=place.n()-1) place.pop();
 		if (d) *d=NULL;
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject-1"<<endl;
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject-1"<<endl;
 		return Next_Error;
 	}
 	
 	i=g->nextObject(place, first, curlevel+1, d);
-	DBG cerr <<" curlevel="<<curlevel<<"  "; place.out("  stepped to");//debugging
-	DBG if (*d) cerr <<"  curplaceobj:"<<(*d)->object_id<<","<<(*d)->whattype()<<endl;
-	DBG    else cerr <<"  curplaceobj=NULL"<<endl;
+	//DBG cerr <<" curlevel="<<curlevel<<"  "; place.out("  stepped to");//debugging
+	//DBG if (*d) cerr <<"  curplaceobj:"<<(*d)->object_id<<","<<(*d)->whattype()<<endl;
+	//DBG    else cerr <<"  curplaceobj=NULL"<<endl;
 	if (i==Next_DoneWithLevel) { 
 		 // was all done with sublevels, so must inc at this level
 		 // group function calling itself is perhaps a silly way to do it,
 		 // should rework this function so the 'if (curlevel==place.n()-1)' block
 		 // comes second?
 		 //***
-		DBG cerr <<"  i==-2"<<endl;
+		//DBG cerr <<"  i==-2"<<endl;
 		i=nextObject(place,first,curlevel,d);
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
 		return i;
 	}
 	if (i==Next_AtFirstObj) {
 		 // first obj reached in sublevel, so start iterating at curlevel,
 		 // using *this as the nextObject
-		DBG cerr <<"  i==0"<<endl;
+		//DBG cerr <<"  i==0"<<endl;
 		//i=nextObject(place,first,curlevel,d);
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject="<<i<<endl;
 		if (d && curlevel==place.n()-1) *d=this;
 		return Next_AtFirstObj;
 	}
 	if (i==Next_Success){
-		DBG cerr <<"  success"<<endl;
-		DBG cerr <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
+		//DBG cerr <<"  success"<<endl;
+		//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=1"<<endl;
 		return Next_Success; //successful incrementing
 	}
-	DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-1(final)"<<endl;
+	//DBG cerr <<"end("<<curlevel<<")  oc.nextObject=-1(final)"<<endl;
 	return Next_Error; //must be error to be here, so return, do nothing more
 }
 
@@ -249,7 +249,7 @@ int ObjectContainer::nextObject2(FieldPlace &place,
 								unsigned int flags,
 								Laxkit::anObject **d)//d=NULL
 {
-	DBG place.out("ObjectContainer::nextObject2 start: ");
+	//DBG place.out("ObjectContainer::nextObject2 start: ");
 
 	anObject *anobj=NULL;
 	ObjectContainer *oc=NULL;
@@ -269,7 +269,7 @@ int ObjectContainer::nextObject2(FieldPlace &place,
 			place.push(oc->n()-1);
 			if (d) *d=oc->object_e(oc->n()-1);
 		}
-		DBG place.out("ObjectContainer::nextObject2 found: ");
+		//DBG place.out("ObjectContainer::nextObject2 found: ");
 		return Next_Success;
 	}
 
@@ -298,7 +298,7 @@ int ObjectContainer::nextObject2(FieldPlace &place,
 		if (i>=0 && i<oc->n()) {
 			if (d) *d=oc->object_e(i);
 			place.push(i);
-			DBG place.out("ObjectContainer::nextObject2 found: ");
+			//DBG place.out("ObjectContainer::nextObject2 found: ");
 			return Next_Success;
 		}
 	} while (1);
@@ -306,7 +306,7 @@ int ObjectContainer::nextObject2(FieldPlace &place,
 	//to be here, place.n()==0, and we are at the top node (*this), so just return this
 
 	if (d) *d=this;
-	DBG place.out("ObjectContainer::nextObject2 found: ");
+	//DBG place.out("ObjectContainer::nextObject2 found: ");
 	return Next_Success;
 }
 
