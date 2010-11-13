@@ -2467,7 +2467,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 			name =att.attributes.e[c]->name;
 			value=att.attributes.e[c]->value;
 			if (!strcmp(name,"in")) {
-				in=value;
+				//DBG in=value;
 				if (isScribusFile(value)) {
 					if (addScribusDocument(value)==0) {
 						//yikes!
@@ -2482,7 +2482,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 				//     export temp podofo plan, call podofoimpose
 			} else if (!strcmp(name,"out")) {
 				makestr(imposeout,value);
-				out=value;
+				//DBG out=value;
 			} else if (!strcmp(name,"prefer")) {
 				prefer=value;
 			} else if (!strcmp(name,"width")) {
