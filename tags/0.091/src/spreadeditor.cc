@@ -97,7 +97,7 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 SpreadInterface::~SpreadInterface()
 {
 	 //for debugging:
-	DBG cerr<<"SpreadInterface destructor"<<endl;
+	//DBG cerr<<"SpreadInterface destructor"<<endl;
 
 	if (view) view->dec_count();
 	if (doc) doc->dec_count();
@@ -412,7 +412,7 @@ int SpreadInterface::Refresh()
 					if (pg>=0 && pg<doc->pages.n) thumb=doc->pages.e[pg]->Thumbnail();
 				}
 				if (thumb) {
-					DBG cerr <<"drawing thumbnail for "<<pg<<endl;
+					//DBG cerr <<"drawing thumbnail for "<<pg<<endl;
 					dp->PushAndNewTransform(view->spreads.e[c]->spread->pagestack.e[c2]->outline->m());
 					
 					 // always setup clipping region to be the page
@@ -455,7 +455,7 @@ int SpreadInterface::Refresh()
 				dp->PushAndNewTransform(outline->m());
 
 				int centerlabels=view->centerlabels;
-				DBG cerr <<"centerlabels:"<<centerlabels<<endl;
+				//DBG cerr <<"centerlabels:"<<centerlabels<<endl;
 
 				if (centerlabels==LAX_CENTER)
 					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
@@ -716,7 +716,7 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxk
 	LittleSpread *spread=findSpread(x,y,&psi,&thread);
 	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
 
-	DBG cerr <<"SpreadInterface lbdown found page "<<page<<" in thread "<<thread<<endl;
+	//DBG cerr <<"SpreadInterface lbdown found page "<<page<<" in thread "<<thread<<endl;
 	if (page<0) {
 		// start a selection rectangle. note: could be click down inside an empty page
 		lbdown=lastmove=flatpoint(x,y);
@@ -781,7 +781,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 	int psi,thread,page;
 	LittleSpread *spread=findSpread(x,y,&psi,&thread);
 	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
-	DBG cerr <<"SpreadInterface lbup found page "<<psi<<" in thread "<<thread<<endl;
+	//DBG cerr <<"SpreadInterface lbup found page "<<psi<<" in thread "<<thread<<endl;
 
 	 //If mouse up outside window, maybe call up that page in a view window
 	if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
@@ -794,7 +794,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 			vp->UseThisDoc(doc);
 			vp->SelectPage(dragpage);
 			
-			DBG cerr <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
+			//DBG cerr <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
 		}
 		dragpage=-1;
 		needtodraw=1;
@@ -803,7 +803,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 	//***finish imp here!!!
 	
 	 // swap dragpage and page
-	DBG cerr <<"*** drag "<<dragpage<<" to "<<(spread?"swap":"make thread")<<endl;
+	//DBG cerr <<"*** drag "<<dragpage<<" to "<<(spread?"swap":"make thread")<<endl;
 
 	if (!spread) {
 		//*** transfer all the curpages to a thread
@@ -866,7 +866,7 @@ void SpreadInterface::SwapPages(int previouspos, int newpos)
  */
 void SpreadInterface::ApplyChanges()
 {
-	DBG cerr<<"ApplyChanges:"<<endl;
+	//DBG cerr<<"ApplyChanges:"<<endl;
 
 	if (view->threads.n) {
 		if (viewport) viewport->postmessage(_("Cannot apply when there are unconnected threads"));
@@ -1115,24 +1115,24 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		return 0;
 
 	} else if (ch=='p') { //*** for debugging thumbnails....
-		DBG if (curpage<0) return 0;
-		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
-		DBG cerr <<"'P' image dump:"<<endl;
-		DBG thumb->dump_out(stderr,2,0,NULL);
-		DBG if (thumb) {
-		DBG 	dp->StartDrawing(curwindow);
-		DBG 	//double i[6];
-		DBG 	//transform_invert(i,thumb->m());
-		DBG 	//dp->PushAndNewTransform(i);
-		DBG 	::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
-		DBG 	//dp->PopAxes();
-		DBG 	dp->EndDrawing();
-		DBG }
-		DBG return 0;
+		//DBG if (curpage<0) return 0;
+		//DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
+		//DBG cerr <<"'P' image dump:"<<endl;
+		//DBG thumb->dump_out(stderr,2,0,NULL);
+		//DBG if (thumb) {
+		//DBG 	dp->StartDrawing(curwindow);
+		//DBG 	//double i[6];
+		//DBG 	//transform_invert(i,thumb->m());
+		//DBG 	//dp->PushAndNewTransform(i);
+		//DBG 	::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
+		//DBG 	//dp->PopAxes();
+		//DBG 	dp->EndDrawing();
+		//DBG }
+		//DBG return 0;
 
 	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
 		drawthumbnails=!drawthumbnails;
-		DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
+		//DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
 		needtodraw=1;
 		return 0;
 
@@ -1313,7 +1313,7 @@ int SpreadEditor::init()
  */
 int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"SpreadEditor got message: "<<(mes?mes:"?")<<endl;
+	//DBG cerr <<"SpreadEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"docTreeChange")) {
 		const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
@@ -1324,7 +1324,7 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 				te->changetype==TreeObjectDiffPage ||
 				te->changetype==TreeObjectDeleted ||
 				te->changetype==TreeObjectAdded) {
-			DBG cerr <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
+			//DBG cerr <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
 		} else if (te->changetype==TreePagesAdded ||
 				te->changetype==TreePagesDeleted ||
 				te->changetype==TreePagesMoved) {
@@ -1424,7 +1424,7 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 		SpreadInterface *interf=(SpreadInterface*)tools.e[0];
 		int i=s->info2;
-		DBG cerr <<"rulercornermenu:"<<i<<endl;
+		//DBG cerr <<"rulercornermenu:"<<i<<endl;
 
 		 //0-999 was document things
 		if (i-500>=0 && i-500<laidout->project->docs.n) {

@@ -41,7 +41,7 @@ IconNode::IconNode(const char *nname, int nid, LaxImage *img)
 
 IconNode::~IconNode()
 {
-	DBG cerr <<"IconNode destructor"<<endl;
+	//DBG cerr <<"IconNode destructor"<<endl;
 	if (image) image->dec_count();
 	if (name) delete[] name;
 }

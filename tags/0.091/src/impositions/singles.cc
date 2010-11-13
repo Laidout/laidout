@@ -72,13 +72,13 @@ Singles::Singles() : Imposition(_("Singles"))
 		 // 1 count, and the stylemanager should remove the other
 	}
 	
-	DBG cerr <<"imposition singles init"<<endl;
+	//DBG cerr <<"imposition singles init"<<endl;
 }
 
 //! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
-	DBG cerr <<"--Singles destructor"<<endl;
+	//DBG cerr <<"--Singles destructor"<<endl;
 	pagestyle->dec_count();
 }
 

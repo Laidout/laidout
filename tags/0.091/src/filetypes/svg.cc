@@ -322,7 +322,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			      for (cc=0; cc<numdiv; cc++) {
 					s=(c+(float)cc/numdiv)/(patch->xsize/3);
 					t=(r+(float)rr/numdiv)/(patch->ysize/3);
-					DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
+					//DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
 
 				     //get color for point (r+rr,c+cc)
 					tt=t/(1-dt);
@@ -559,7 +559,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 2;
@@ -570,7 +570,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}

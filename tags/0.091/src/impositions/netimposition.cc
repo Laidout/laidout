@@ -129,7 +129,7 @@ NetImposition::NetImposition(Net *newnet)
 	Imposition::SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 
-	DBG cerr <<"   net 1"<<endl;
+	//DBG cerr <<"   net 1"<<endl;
 	
 	
 	//***can styledef exist already? possible made by a superclass?
@@ -151,7 +151,7 @@ NetImposition::NetImposition(Net *newnet)
 //	}
 
 	
-	DBG cerr <<"imposition netimposition init"<<endl;
+	//DBG cerr <<"imposition netimposition init"<<endl;
 }
  
 NetImposition::~NetImposition()
@@ -320,19 +320,19 @@ void NetImposition::setPage()
 		nets.e[c]->FitToData(&page,page.maxx*.05, 1);
 		scalefromnet=norm(nets.e[c]->xaxis());
 
-		DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
+		//DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
 
-		DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->matrix[0]<<", "
-		DBG 	<<nets.e[c]->matrix[1]<<", "
-		DBG 	<<nets.e[c]->matrix[2]<<", "
-		DBG 	<<nets.e[c]->matrix[3]<<", "
-		DBG 	<<nets.e[c]->matrix[4]<<", "
-		DBG 	<<nets.e[c]->matrix[5]<<endl;
-		DBG cerr <<"net "<<c<<" bounds xx-yy: "
-		DBG 	<<nets.e[c]->minx<<", "
-		DBG 	<<nets.e[c]->maxx<<", "
-		DBG 	<<nets.e[c]->miny<<", "
-		DBG 	<<nets.e[c]->maxy<<endl;
+		//DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->matrix[0]<<", "
+		//DBG 	<<nets.e[c]->matrix[1]<<", "
+		//DBG 	<<nets.e[c]->matrix[2]<<", "
+		//DBG 	<<nets.e[c]->matrix[3]<<", "
+		//DBG 	<<nets.e[c]->matrix[4]<<", "
+		//DBG 	<<nets.e[c]->matrix[5]<<endl;
+		//DBG cerr <<"net "<<c<<" bounds xx-yy: "
+		//DBG 	<<nets.e[c]->minx<<", "
+		//DBG 	<<nets.e[c]->maxx<<", "
+		//DBG 	<<nets.e[c]->miny<<", "
+		//DBG 	<<nets.e[c]->maxy<<endl;
 	}
 }
 
@@ -526,7 +526,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 				netfacei-=nets.e[neti]->faces.n;
 			}
 		}
-		DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
+		//DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
 
 		face=new NetFace;
 		*face=*nets.e[neti]->faces.e[netfacei];
@@ -629,14 +629,14 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
  */
 Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 {
-	DBG cerr <<"-- NetImposition::GenerateSpread--"<<endl;
+	//DBG cerr <<"-- NetImposition::GenerateSpread--"<<endl;
 
 	if (!spread) spread=new Spread();
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 	 // fill pagestack
 	PathsData *spreadpath=dynamic_cast<PathsData *>(spread->path);
-	DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
+	//DBG if (!spreadpath && spread->path) cerr <<"**** error!!! wrong type for net spread path!"<<endl;
 	if (!spreadpath) { 
 		spreadpath=new PathsData;
 		spread->path=spreadpath;
@@ -849,7 +849,7 @@ int NetImposition::GetPapersNeeded(int npages)
 {
 	int n=numActiveFaces();
 	if (n==0) {
-		DBG cerr <<"*****warning: no active faces in net!!"<<endl;
+		//DBG cerr <<"*****warning: no active faces in net!!"<<endl;
 		return 0;
 	}
 	return (npages-1)/n+1;

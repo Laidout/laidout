@@ -171,11 +171,11 @@ PdfObjInfo::PdfObjInfo()
 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(NULL), data(NULL), len(0)
 {
 	i=o++; 
-	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
+	//DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
 }
 PdfObjInfo::~PdfObjInfo()
 {
-	DBG cerr<<"delete PdfObjInfo i="<<i<<", number="<<number<<"..."<<endl;
+	//DBG cerr<<"delete PdfObjInfo i="<<i<<", number="<<number<<"..."<<endl;
 	if (next) delete next; 
 
 }
@@ -197,7 +197,7 @@ class PdfPageInfo : public PdfObjInfo
 
 PdfPageInfo::~PdfPageInfo()
 {
-	DBG cerr<<"   delete PdfPageInfo i="<<i<<", number="<<number<<"..."<<endl;
+	//DBG cerr<<"   delete PdfPageInfo i="<<i<<", number="<<number<<"..."<<endl;
 	if (pagelabel) delete[] pagelabel; 
 }
 
@@ -403,7 +403,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	char *file=NULL;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			if (error_ret) appendstr(*error_ret,_("Cannot save without a filename."));
 			return 2;
@@ -414,7 +414,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}
@@ -422,8 +422,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	setlocale(LC_ALL,"C");
 	
-	DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<", papers:"
-	DBG      <<papergroup->papers.n<<" ====================\n";
+	//DBG cerr <<"=================== start pdf out "<<start<<" to "<<end<<", papers:"
+	//DBG      <<papergroup->papers.n<<" ====================\n";
 
 	 // initialize outside accessible ctm
 	psCtmInit();
@@ -562,7 +562,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 					psConcat(m);
 
 					 // set clipping region
-					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+					//DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 					if (page->pagestyle->flags&PAGE_CLIPS) {
 						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0);
 					} 
@@ -773,13 +773,13 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	//fprintf(f,"  /Trapped /False\n");
 	fprintf(f,">>\nendobj\n");
 	
-	DBG cerr <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
+	//DBG cerr <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
 	
 	 //write xref table
 	long xrefpos=ftell(f);
 	int count=0;
 	for (obj=objs; obj; obj=obj->next) count++; //should be same as objcount
-	DBG cerr <<"objcount:"<<objcount<<"  should == count:"<<count<<endl;
+	//DBG cerr <<"objcount:"<<objcount<<"  should == count:"<<count<<endl;
 
 	fprintf(f,"xref\n%d %d\n",0,count);
 	for (obj=objs; obj; obj=obj->next) {
@@ -805,16 +805,16 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 
 	 //clean up
-	DBG cerr <<"done writing pdf, cleaning up.."<<endl;
+	//DBG cerr <<"done writing pdf, cleaning up.."<<endl;
 	obj=objs;
 	while (obj) {
-		DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
+		//DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
 		obj=obj->next;
 	}
 	 //*** double check that this is all that needs cleanup:
 	if (objs) delete objs;
 
-	DBG cerr <<"=================== end pdf out ========================\n";
+	//DBG cerr <<"=================== end pdf out ========================\n";
 
 	return 0;
 }
@@ -1216,10 +1216,10 @@ static void pdfImagePatch(FILE *f,
 			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
 			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
 			  lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
-	//DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
-	//DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
-	//DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
-	//DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
+	////DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
+	////DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
+	////DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
+	////DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
 
 	width= (int)(sqrt((ul-ur)*(ul-ur))/72*psDpi());
 	height=(int)(sqrt((ul-ll)*(ul-ll))/72*psDpi());

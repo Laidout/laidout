@@ -180,7 +180,7 @@ PaperStyle::PaperStyle()
 	flags=0;
 	defaultunits=newstr("in");
 
-	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
+	//DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
 }
 
 //! Simple constructor, sets name, w, h, flags, dpi.
@@ -204,7 +204,7 @@ PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,d
 	else if (!strcmp(defaultunits,"cm")) { width/=2.54; height/=2.54; }
 	else if (!strcmp(defaultunits,"pt")) { width/=72; height/=72; }
 
-	DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperStyle created, obj "<<object_id<<endl;
 }
 
 PaperStyle::~PaperStyle()
@@ -212,7 +212,7 @@ PaperStyle::~PaperStyle()
 	if (name) delete[] name;
 	if (defaultunits) delete[] defaultunits;
 
-	DBG cerr <<"PaperStyle destroyed, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperStyle destroyed, obj "<<object_id<<endl;
 }
 
 
@@ -479,7 +479,7 @@ PaperBox::PaperBox(PaperStyle *paper)
 		media.maxx=paper->w(); //takes into account paper orientation
 		media.maxy=paper->h();
 	}
-	DBG cerr <<"PaperBox created, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperBox created, obj "<<object_id<<endl;
 }
 
 /*! Decs count of paper.
@@ -487,7 +487,7 @@ PaperBox::PaperBox(PaperStyle *paper)
 PaperBox::~PaperBox()
 {
 	if (paperstyle) paperstyle->dec_count();
-	DBG cerr <<"PaperBox destroyed, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperBox destroyed, obj "<<object_id<<endl;
 }
 
 //! Replace the current paper with the given paper.
@@ -557,7 +557,7 @@ PaperGroup::PaperGroup()
 	name=Name=NULL;
 	owner=NULL;
 
-	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }
 
 //! Create a PaperGroup with one paper based on paperstyle, with only media box defined.
@@ -575,7 +575,7 @@ PaperGroup::PaperGroup(PaperStyle *paperstyle)
 	papers.push(data);
 	data->dec_count();
 
-	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }
 
 //! Create a PaperGroup with one paper based on boxdata.
@@ -589,7 +589,7 @@ PaperGroup::PaperGroup(PaperBoxData *boxdata)
 
 	papers.push(boxdata);
 
-	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }
 
 PaperGroup::~PaperGroup()
@@ -597,7 +597,7 @@ PaperGroup::~PaperGroup()
 	if (name) delete[] name;
 	if (Name) delete[] Name;
 
-	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
+	//DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
 }
 
 /*!
