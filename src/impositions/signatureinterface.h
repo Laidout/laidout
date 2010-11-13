@@ -122,9 +122,9 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
-	//virtual int MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	//virtual int MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
-	//virtual int RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	//virtual int RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);

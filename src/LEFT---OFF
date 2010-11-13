@@ -5,26 +5,13 @@ List bug tracker number if any.
 When an item is satisfied, put it in the DONE section at bottom of file.
 Those are purged with each release.
 
+
+
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-finish scribus plugin to access graphical signature editor
 
 
 ----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
 update docs to have new release number
-
-  sig editor:
-needs testing: command line func parser for sigs
-DONE animated fold controls
-DONE trim, margin, inset, gap, fold, tile handles
-DONE finish implement sigimposition
-DONE edit document settings: need special menu item for "Current"
-DONE respond to menu controls for paper size
-DONE Generic fold and trim imposition
-		1. initial margin trim
-		2. section trim
-		3. folding per section
-		4. specify stitching fold
-		5. trim lines for other folds as desired
 
 
 -----bugs maybe ok to postpone dealing with till after .091 release:
@@ -86,6 +73,14 @@ update translations
 check laidout.1 when time to release
 update docs to have new release number
 
+
+  sig editor:
+needs testing: command line func parser for sigs
+
+papersizes are not translated
+
+you should be able to visuall adjust the paper size in sigeditor graphically, by automatically
+  selecting larger papers, or adjusting the paper edges
 
 SpreadEditor: insert blanks, delete pages, the other right click menu options
 		Insert page before
@@ -639,3 +634,17 @@ DONE debug spread editor auto layout
 
 DONE debug spread editor load save, update name field
 
+  sig editor:
+DONE animated fold controls
+DONE trim, margin, inset, gap, fold, tile handles
+DONE finish implement sigimposition
+DONE edit document settings: need special menu item for "Current"
+DONE respond to menu controls for paper size
+DONE Generic fold and trim imposition
+		1. initial margin trim
+		2. section trim
+		3. folding per section
+		4. specify stitching fold
+		5. trim lines for other folds as desired
+
+DONE finish scribus plugin to access graphical signature editor

@@ -3,6 +3,8 @@
 
 
 """ 
+ This script is designed to be called from Scribus.
+
  This will create a new document called reimposed-from-laidout.sla.
  As this is, your Scribus document is a Letter size paper, and it gets
  imposed onto tabloid sized papers. Really the page sizes don't matter.

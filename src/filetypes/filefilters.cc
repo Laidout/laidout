@@ -398,7 +398,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 /*! \var int ImportConfig::keepmystery
  * \brief How to deal with data Laidout doesn't understand.
  *
- * 0 is convert nothing. 1 is convert as possible. 2 is do not convert, all
+ * 0 is convert nothing and no mystery data is stored. 1 is convert as possible. 2 is do not convert, all
  * objects become mystery data.
  */
 /*! \var int ImportConfig::instart
@@ -572,6 +572,9 @@ int import_document(ImportConfig *config,char **error_ret)
  * On complete success, return 0.
  * If there are non-fatal warnings they are appended to error_ret, and -1 is returned.
  * On failure, return 1, and append error messages to error_ret.
+ *
+ * You should not call Out directly, unless you are sure to set and perform all the things
+ * that export_document() does. Normally, you should use that function instead.
  */
 	
 

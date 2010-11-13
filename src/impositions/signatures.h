@@ -111,6 +111,7 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	virtual int PagesPerPattern();
 	virtual int PagesPerSignature();
 
+	virtual int SetPaperFromFinalSize(double w,double h);
 	virtual int SetPaper(PaperStyle *p);
 	virtual int locatePaperFromPage(int pagenumber, int *row, int *col);
 
@@ -147,6 +148,7 @@ class SignatureImposition : public Imposition
 	virtual const char *BriefDescription();
 	virtual void GetDimensions(int paperorpage, double *x, double *y);
 	virtual Style *duplicate(Style *s=NULL);
+	virtual int SetPaperFromFinalSize(double w,double h);
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
