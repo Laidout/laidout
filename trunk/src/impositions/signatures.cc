@@ -558,6 +558,25 @@ int Signature::checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalco
 	return hasfinal;
 }
 
+//! With the final trimmed page size, set the paper size to the proper size to just contain it.
+int Signature::SetPaperFromFinalSize(double w,double h)
+{
+	 //find cell dims
+	w+=trimleft+trimright;
+	h+=trimtop +trimbottom;
+
+	 //find pattern dims
+	w*=(numvfolds+1);
+	h*=(numhfolds+1);
+
+	 //find whole dims
+	w+=(tilex-1)*tilegapx + insetleft+insetright;
+	h+=(tiley-1)*tilegapy + insettop +insetbottom;
+
+	PaperStyle p("Custom",w,h,0,300,"in");
+	return SetPaper(&p);
+}
+
 //! Set the size of the signature to this paper.
 /*! This will duplicate p. The count of p will not change.
  */
@@ -1624,6 +1643,16 @@ int *SignatureImposition::PrintingPapers(int frompage,int topage)
 }
 
 
+//! With the final trimmed page size, set the paper size to the proper size to just contain it.
+int SignatureImposition::SetPaperFromFinalSize(double w,double h)
+{
+	signature->SetPaperFromFinalSize(w,h);
+	if (papersize) papersize->dec_count();
+	papersize=(PaperStyle*)signature->paperbox->duplicate();
+	return 0;
+}
+
+//! This will duplicate npaper.
 int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 {
 	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup

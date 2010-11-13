@@ -3,7 +3,9 @@
 
 
 """ 
- This launches "laidout --impose-only ..." to let you use Laidout's
+ This script is designed to be called from Scribus.
+
+ It launches "laidout --impose-only ..." to let you use Laidout's
  signature editor to reimpose a Scribus document.
 
  Written by Tom Lechner, tomlechner.com, 2010.
@@ -83,9 +85,9 @@ def main(argv):
     #scribus.closeDoc() #closes the "original" document, which has been rename to infile upon saveDocAs()
     scribus.openDoc(reimposed) #open the brand spanking new reimposed document
 
-    #if (os.path.isfile(reimposed)): os.remove(reimposed) <-- keep this around
+    #if (os.path.isfile(reimposed)): os.remove(reimposed) <-- might cause problems, but keep around for research
     print "Removing temporary file ",infile,"..."
-    #os.remove(infile)
+    os.remove(infile)
 
 
 

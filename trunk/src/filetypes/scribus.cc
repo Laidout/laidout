@@ -88,8 +88,10 @@ int addScribusDocument(const char *file)
 	imp->dec_count();
 	laidout->project->Push(newdoc);
 
-	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
 	ScribusImportFilter filter;
+	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
+	config.keepmystery=2;
+	config.filter=&filter;
 	char *error=NULL;
 	filter.In(file,&config,&error);
 
@@ -101,10 +103,11 @@ int addScribusDocument(const char *file)
 
 int exportImposedScribus(Document *doc,const char *imposeout)
 {
-	DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,doc->imposition->papergroup);
 	ScribusExportFilter filter;
+	DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,doc->imposition->papergroup);
+	config.filter=&filter;
 	char *error=NULL;
-	int err=filter.Out(imposeout,&config,&error);
+	int err=export_document(&config,&error);
 	if (error) delete[] error;
 	return err;
 }
@@ -595,7 +598,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	double pageypos=CANVAS_MARGIN_Y;
 	int pagec;
 
-	 //find object to pageobject mapping
+	 //find object to pageobject link mapping
 	PtrStack<PageObject> pageobjects; //we need to keep track of pageobject correspondence, as scribus docs
 									 //object id is the order they appear in the file, so for linked objects,
 									 //we need to know the order that they will appear!
@@ -1055,7 +1058,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	vy=transform_vector(ctm,flatpoint(0,1));
 	rot=atan2(vx.y, vx.x)/M_PI*180; //rotation in degrees
 	//p=transform_point(ctm,flatpoint(0,0));
-	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy));
+	p=transform_point(ctm,flatpoint(obj->minx,obj->maxy)); //scribus origin is upper left
 	x=p.x;
 	y=p.y;
 
@@ -1341,13 +1344,18 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	for (int c=0; c<groups.n; c++) fprintf(f,"%d ",groups.e[c]);
 
 	 //object metrics
+	if (mysteryatts) {
+		 //*** WARNING! THis is a hack, not sure how or why, but seems to work in many cases...
+		y-=height;
+		if (fabs(rot)>90) y+=2*height;
+	}
 	fprintf(f,"\" \n"			
 				  "    ROT=\"%g\" \n"         //rotation of object
 				  "    XPOS=\"%g\" \n"        //x of object
 				  "    YPOS=\"%g\" \n"        //y of object
 				  "    WIDTH=\"%g\" \n"       //width of object
 				  "    HEIGHT=\"%g\" \n",     //height of object
-								 rot,x,(mysteryatts?y-height:y),width,height);
+								 rot,x,y,width,height);
 
 	 //close the tag
 	fprintf(f,">\n"); //close PAGEOBJECT opening tag

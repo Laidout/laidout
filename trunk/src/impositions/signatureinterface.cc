@@ -356,6 +356,8 @@ int SignatureInterface::checkFoldLevel(int update)
 #define SIGM_Portrait        2000
 #define SIGM_Landscape       2001
 #define SIGM_SaveAsResource  2002
+#define SIGM_FinalFromPaper  2003
+#define SIGM_CustomPaper     2004
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -373,15 +375,22 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 
 	menu->AddItem(_("Portrait"),  SIGM_Portrait,  LAX_ISTOGGLE|(landscape?0:LAX_CHECKED));
 	menu->AddItem(_("Landscape"), SIGM_Landscape, LAX_ISTOGGLE|(landscape?LAX_CHECKED:0));
-	menu->AddSep();	
+	menu->AddSep(_("Paper"));
+
 	menu->AddItem(_("Paper Size"),999);
 	menu->SubMenu(_("Paper Size"));
 	for (int c=0; c<laidout->papersizes.n; c++) {
+		if (!strcmp(laidout->papersizes.e[c]->name,"Custom")) continue; // *** 
+		if (!strcmp(laidout->papersizes.e[c]->name,"Whatever")) continue;
+
 		menu->AddItem(laidout->papersizes.e[c]->name,c,
 				LAX_ISTOGGLE
 				| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
 	}
 	menu->EndSubMenu();
+	//***menu->AddItem(_("Custom..."),SIGM_CustomPaper);
+	menu->AddItem(_("Paper Size from Final Size"),SIGM_FinalFromPaper);
+
 	if (hasfinal) {
 		menu->AddSep();
 		menu->AddItem(_("Save as resource..."),SIGM_SaveAsResource);
@@ -405,6 +414,17 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 						FILES_FILES_ONLY|FILES_SAVE_AS,
 						NULL,impdir));
 			delete[] impdir;
+			return 0;
+
+		} else if (i==SIGM_FinalFromPaper) {
+			signature->SetPaperFromFinalSize(signature->paperbox->w(),signature->paperbox->h());
+			remapHandles();
+			needtodraw=1;
+
+			return 0;
+
+		} else if (i==SIGM_CustomPaper) {
+			cerr <<" *** need to implement edit custom paper size!!"<<endl;
 			return 0;
 
 		} else if (i==SIGM_Landscape) {
@@ -432,6 +452,10 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (i<999) {
 			 //selecting new paper size
 			if (i>=0 && i<laidout->papersizes.n) {
+				if (!strcmp(laidout->papersizes.e[i]->name,"Custom")) {
+					cerr <<" *** need to implement edit custom paper size!!"<<endl;
+					return 0;
+				}
 				signature->SetPaper(laidout->papersizes.e[i]);
 				remapHandles();
 				needtodraw=1;
@@ -701,10 +725,22 @@ void SignatureInterface::remapHandles(int which)
 	}
 }
 
+/*! Return 1 for cannot use it.
+ * Otherwise, the imposition is duplicated.
+ */
 int SignatureInterface::UseThisImposition(SignatureImposition *sigimp)
 {
-	// ***
-	return 1;
+	if (!sigimp || !sigimp->signature) return 1;
+
+	if (signature) signature->dec_count();
+	signature=sigimp->signature->duplicate();
+	foldlevel=0; //how many of the folds are active in display. must be <= sig->folds.n
+	hasfinal=0;
+	foldinfo=signature->foldinfo;
+	checkFoldLevel(1);
+	signature->resetFoldinfo(NULL);
+
+	return 0;
 }
 
 int SignatureInterface::UseThisSignature(Signature *sig)
@@ -1769,10 +1805,17 @@ int SignatureInterface::offsetHandle(int which, flatpoint d)
 	return 1;
 }
 
-//int SignatureInterface::MBDown(int x,int y,unsigned int state,int count)
-//int SignatureInterface::MBUp(int x,int y,unsigned int state)
-//int SignatureInterface::RBDown(int x,int y,unsigned int state,int count)
-//int SignatureInterface::RBUp(int x,int y,unsigned int state)
+int SignatureInterface::MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	if (showsplash) { showsplash=0; needtodraw=1; }
+	return anInterface::RBDown(x,y,state,count,d);
+}
+
+int SignatureInterface::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	if (showsplash) { showsplash=0; needtodraw=1; }
+	return anInterface::RBDown(x,y,state,count,d);
+}
 
 int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
@@ -2175,6 +2218,8 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 {
 	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
+	if (showsplash) { showsplash=0; needtodraw=1; }
+
 	if (ch=='d' && (state&LAX_STATE_MASK)==0) {
 		showdecs++;
 		if (showdecs>2) showdecs=0;
@@ -2414,12 +2459,15 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 		//add extra field for impose out
 
 		Attribute att;
+		DBG const char *in="",*out="";
+		const char *prefer=NULL;
 		NameValueToAttribute(&att,imposearg,'=',',');
 		const char *name,*value;
 		for (int c=0; c<att.attributes.n; c++) {
 			name =att.attributes.e[c]->name;
 			value=att.attributes.e[c]->value;
 			if (!strcmp(name,"in")) {
+				in=value;
 				if (isScribusFile(value)) {
 					if (addScribusDocument(value)==0) {
 						//yikes!
@@ -2434,12 +2482,39 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 				//     export temp podofo plan, call podofoimpose
 			} else if (!strcmp(name,"out")) {
 				makestr(imposeout,value);
+				out=value;
+			} else if (!strcmp(name,"prefer")) {
+				prefer=value;
 			} else if (!strcmp(name,"width")) {
 				DoubleAttribute(value,&tool->signature->totalwidth,NULL);
 			} else if (!strcmp(name,"height")) {
 				DoubleAttribute(value,&tool->signature->totalheight,NULL);
 			}
 		}
+
+		if (prefer) {
+			int c;
+			for (c=0; c<laidout->impositionpool.n; c++) {
+				if (!strcasecmp(laidout->impositionpool.e[c]->name,prefer)) break;
+			}
+			if (c<laidout->impositionpool.n) {
+				Imposition *imp=laidout->impositionpool.e[c]->Create();
+				SignatureImposition *simp=dynamic_cast<SignatureImposition*>(imp);
+				if (simp) {
+					PaperStyle *p;
+					p=(PaperStyle*)laidout->project->docs.e[0]->doc->imposition->papergroup->papers.e[0]->box->paperstyle->duplicate();
+					//simp->SetPaper(paper);
+					simp->SetPaperFromFinalSize(p->w(),p->h());
+					tool->UseThisImposition(simp);
+					simp->dec_count();
+					p->dec_count();
+				} else {
+					delete imp;
+				}
+			}
+		}
+
+		DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
 	}
 
 }
@@ -2478,18 +2553,18 @@ int SignatureEditor::init()
 	last=tbut=new Button(this,"cancel",NULL, 0, 0,0,0,0,1, last,object_id,"cancel",0,_("Cancel"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
-	if (imposeout) {
-		AddNull();
-		LineInput *linp;
-		last=linp=new LineInput(NULL,"imp",_("Impose..."),0,
-									  0,0,0,0,0,
-									  last,object_id,"out",
-									  _("Out:"),imposeout,0,
-									  0,0, 5,3, 5,3);
-		linp->tooltip(_("The file to output the imposed file to"));
-		//AddWin(linp,1, 50,0,2000,50,0, 50,0,50,50,0, -1);
-		AddWin(linp,1, 50,0,2000,50,0, linp->win_h,0,0,0,0, -1);
-	}
+//	if (imposeout) {
+//		AddNull();
+//		LineInput *linp;
+//		last=linp=new LineInput(NULL,"imp",_("Impose..."),0,
+//									  0,0,0,0,0,
+//									  last,object_id,"out",
+//									  _("Out:"),imposeout,0,
+//									  0,0, 5,3, 5,3);
+//		linp->tooltip(_("The file to output the imposed file to"));
+//		//AddWin(linp,1, 50,0,2000,50,0, 50,0,50,50,0, -1);
+//		AddWin(linp,1, 50,0,2000,50,0, linp->win_h,0,0,0,0, -1);
+//	}
 
 	Sync(1);	
 

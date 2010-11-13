@@ -7,7 +7,8 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.091
 ------------
-       Debug enough to not be too embarrassing
+(done) Well, maybe done: Debug enough to not be too embarrassing
+(done) impose-only mode, so as to allow easy plugin in access, to for instance do booklets inside scribus
 (done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
 (done) Images should maintain their aspect ratio by default when scaling
 (done) Scribus import must make sure linked text and linked table mystery data behave properly on export
@@ -20,8 +21,6 @@ VERSION 0.091
 (done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
 (done) SpreadEditor: editor should allow changing working document
 (done) SpreadEditor: be able to change marks of many pages at once
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.092
@@ -55,6 +54,9 @@ VERSION 0.092
        DumpImages within Arrangements, sort of a template of positions (2-d guides)
        Clean up patch controls
        Fix multi-object selection move when crossing page boundaries
+       impose-only mode should allow access to all imposition types
+       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
+       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.1 
@@ -105,6 +107,7 @@ VERSION 0.1
        Color channel density control, to not overdo CMYK mix, for instance
        Align and distribute tool
        Allow accessing scribus image cache, or try to spin off a non project specific general image cache
+       Paper sizes should be translated strings
 
 
 VERSION 0.2
@@ -129,7 +132,6 @@ auto track chapter/section
 Automatic, yet overrideable hyphenation
 layout inside anything that provides an 'area' and runaround facility.
 Finally decide on a real rendering backend: cairo? antigrain? antigrain/freetype/pango? graphite?
-Basically full SVG print support, once svg print stabilizes
 GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
   Imlib chokes on really big image files, whereas this would not
 Would be nice to have tex/latex text and equation reader
