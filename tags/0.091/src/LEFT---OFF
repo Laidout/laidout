@@ -1,0 +1,650 @@
+This file is for random notes and specific coding tasks that need to be done
+to meet various goals. This includes Roadmap items as well as fixing bugs.
+List bug tracker number if any.
+
+When an item is satisfied, put it in the DONE section at bottom of file.
+Those are purged with each release.
+
+
+
+--------------bugs: things that do not work like they are already allegedly designed to---------------------
+
+
+----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
+update docs to have new release number
+
+
+-----bugs maybe ok to postpone dealing with till after .091 release:
+
+fold indicator foldprogress at crossover points incorrectly indicating affected folds
+
+refcounting crashing error with nets upon edit current document settings
+
+gradient rendering to buffer memory hole?? gets very slow, then crashes.. having trouble reproducing...
+
+svg to coord incomplete
+memory hole in svg in? test svg import, svg path import must be done
+
+net extra scaling non-functional
+
+object move to diff page makes object tool handles jump to improper location.. not updating context transform?
+
+need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
+from parameters for all filters....
+
+make sure all imposition types are available in interpreter
+
+make file. save as to other dir. export. dir is wrong! 
+
+select default papergroup, does not reinstall default papergroup!!
+
+import/export styledefs should use the extendsdef mechanism!!!
+
+resource impositions not showing description when selected
+
+object deleting funky, import svg images, select one, hit delete, doesn't delete!!
+place 3 images, object select, must press delete twice...!?!?!?!
+
+add blank image, change description, do not change filename, makes width/height zap back to 0...
+
+GradientInterface problem rendering radial when two circles separated by large distance
+
+in tiled, can no longer select objects in the other tiles, wtf!!!
+
+Laxkit::MultiLineEdit needs some serious debugging
+
+headwindow swapping is now REALLY messed up
+pane swapping/dropto on maximized, swapping in general...
+
+WATCH OUT for when preview file is OLDER that original file!!
+
+Transfer groups to limbo does something funky
+
+select region by intersect, not by corner inclusion...
+
+bounding box on move still messed up..
+
+moving objects does screwy things with rectdata when crossing page boundaries
+need to change GroupInterface to determine contexts, then recompute bounds
+
+
+----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
+update translations
+check laidout.1 when time to release
+update docs to have new release number
+
+
+  sig editor:
+needs testing: command line func parser for sigs
+
+papersizes are not translated
+
+you should be able to visuall adjust the paper size in sigeditor graphically, by automatically
+  selecting larger papers, or adjusting the paper edges
+
+SpreadEditor: insert blanks, delete pages, the other right click menu options
+		Insert page before
+		Insert page after
+		Insert pages...  <- on screen indicator for number of pages to add before or after
+	   
+move impose-only attributes to newdoc/export dialog somehow to give access to all imposition stuff
+	feed it an ExportConfig
+
+changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
+ need infrastructure to propagate and save tool settings
+
+implement cut marks and other custom printer marks!!!
+
+sigeditor:  detect non staplable binding edge, show red rather than green
+
+Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
+will likely be very different
+
+must have custom printer marks
+
+bleeding mechanism should be functional
+
+PathInterface should not segfault
+
+need to rediscover pathinterface
+
+background preview rendering for spreadeditor
+
+>show
+Laidout:
+ ImportFilters:
+  SvgImport
+  PdfImport
+ ExportFilters:
+  SvgExport
+  PdfExport
+ Impositions:
+  Net
+   Dodecahedron
+   Box
+  Singles
+  DoubleSidedSingles
+  Booklet
+ Papersizes:
+  Letter
+  Legal
+
+how best to integrate Styles and Values??? style types:
+ Laidout
+ Project
+ Document
+ Page
+ Group
+  draw objects: Image, ImagePatch, Paths, Path, LinearGradient, RadialGradient, PatchGradient
+ PaperGroup
+ PaperType
+ Imposition: Singles, DSS, Booklet, Signature, Net:Box, Dod, etc...
+ ImageImportFilter
+ ImportFilter:svg,ppt,sla,ps,eps,odraw
+ ExportFilter
+-->Styles are Values that can be cascaded from other Styles
+   Values cannot be cascaded
+
+
+Finish implementing project based setup, particularly being able to save a project, not just load one   
+    need option to choose midstream to save as project, or individual documents
+    DONE separate project->filename from project directory, in case you just want a
+            convenient project file floating around without the whole mess of a project directory..
+            either that, or zip up the project directory inside the "project file"..
+    //collect for out type of option
+    //finish generic style edit window for quick dialog creation
+    //need to puzzle out decent way to build dialogs, maybe have dialog building hints embedded in the styledefs
+    (temp) iron out what happens on ^s and ^+s, and where docs get saved: with project or otherwise
+     New Proj:
+       DONE  must create Project Directory...
+       DONE  new documents should default to saving in that directory
+       TEST if file is in project dir, then path is saved relative, else is absolute
+       saving not saving windows properly
+       //Always copy outside files to project directory
+       //[help] ---> pop up brief explanation of what a project entails
+     Load/Save: (mixed documents and projects)
+       DONE  open as copy button (just like templates)
+       DONE  [Open][Open as a Copy]
+       //preview laidout Doc and Project files: show some info about them...
+       //  Project: Some_Project.laidout, 1 day old
+       //  Project: Someotherproject,     5 days old
+       //  Document: Some Doc
+       //  Document: Some other doc
+       //remember this many recent: __20__
+
+
+import config generic things like enum keepmystery should be parsed when no import config given!!
+
+need laidout import
+
+need to implement more options for polyhedron connections, to allow mobius strips...
+
+NetImposition needs import/export net,
+    DONE  import 3-d models such as from OFF files
+    DONE gui for above -> select file in creation dialog
+    //import/export cff2
+    //export svg
+    //export vrml? pdf 1.6?
+    //convert to/from laidout elements
+    //import obj files
+
+
+should have easy way to save as a template
+
+when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
+
+saving when net is internal is not proper.. does not distinguish between diff. nets and whole
+
+> laidout blah.laidout...     <-- if starting like this, if blah.laidout does not exist, then abort
+> laidout 1.laidout 2.laidout <-- if starting like this, if either exist, then start up, but have 
+                                    warning message that one document failed to load?
+
+textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
+either that, or do away with whole project/document difference, and use only 
+projects with their own directory, and projects without their own directory
+                                    
+text window controls have difficulties
+
+When importing from an image list file, should be able to say if and when to auto-make previews
+    new option in file, should be easy
+
+finish implementing all options for reimpose function
+
+overwrite should return to file dialog if no
+
+more bash like features for command pane
+
+finish import images review tab
+
+Fix multi-object selection move when crossing page boundaries
+    sets
+
+scribus in/out: master pages, font sizes, stroke widths
+
+Vertical ruler still sucks. make it not suck!!
+
+page should have a basic group base, not the layers thing, which adds unnecessary complication
+
+Tools should remember their settings
+    figure out which settings need to be remembered, and install as resource.. what happens when diff
+     windows are using diff tools? which settings are remembered? have tool styles that are saved, as
+     well as the running tool use settings
+
+Net imposition interactive unwrapper and build net interface figure out bleeding and connectivity infrastructure
+    figure out more efficient clipping of Imlib images
+
+dynamic objects (generated images, dynamic images, rendered images)
+    eps objects to pdf: export as image, plant in PDF as image
+    group objects with laidout elements, updateable with script
+    image objects using ImageImportFilters
+    perhaps add TEX_BIN, LATEX_BIN, and text editor to quickly add stuff like that!!
+    external commands:
+      website to recommend learn more
+      needs what type of file
+      needs how many files
+      needs what other info
+In image properties dialog, have the popup list of potential previews
+    preview style needs debugging and testing so as not to fry the freedesktop ones
+if you change an eps to a non eps with the insert file, it still thinks it is an eps..
+ image objects should auto change between the available image formats:
+  bitmap--eps--embedded svg--dynamic
+  Dynamic Content:
+    displayed as images, or displayed as group of laidout objects
+    possibly multiple images or objects in linked list:
+      one source creates multipage ps, for instance, each page gets its own object
+    controller source object:
+      generator command + context
+   examples:
+    ps/tex/pdf/etc to eps files, import the eps files
+    broken down equirect panorama to net
+Image import chain:
+  1. eps|EPS: Laidout builtin
+  2. svg|SVG: inkscape command line export
+  3. other external renderer: asymptote, structure synth, sunflow, pov-ray, lilypond, latex, graphviz, gnuplot
+  3. * images: graphicsmagick
+  4. jpg, png, gif, tiff: Imlib2
+
+
+mystery data: import as placeholder objects: if convertible to laidout elements, do not actually
+                expose them as such. Keep source in external location, current laidout only rearranges.
+                  ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
+                  ---> this is useful to have a standard object indicator built from laidout objects, but
+                         do not let them be editable
+
+global resources:
+  current frame/time
+  current language, for conditional text
+
+external tools:
+  to image renderers
+  to object renderers
+  Image editor (gimp, krita)
+  plain text editor (gvim, console vim, command, etc)
+  associate (object type) <-> (external editor)
+
+PathInterface must be drastically improved, and bez part should have segment move like inkscape
+    finish new path/pathoperator/pathsubinterface/pathinterface structure
+
+filters:
+  svg out: radial:transparent inner circle, patch
+             patch edges
+  remember last export
+
+Spread editor: load and save spread editor arrangements
+    property of Document
+
+Masking
+    pathinterface conversion must be done
+    true object tree with all lax data objects subclassed to hold children, and reference parent
+
+Clean up patch controls
+
+perhaps split radial and linear gradients to different tools? makes more sense
+
+DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
+    would also implement the dump into Limbo
+	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
+
+scribus out doesn't do gradients
+
+all at once imposition... this would allow mapping of scribus layout without fuss. that
+  could be a special case of n-up, where you specify n to be infinity, with m number of
+  columns, not necessarily aligned, as scribus does.
+
+double click on group should change selection area to group contents?
+    need to clarify how grouping operates. Perhaps implement sets at same time
+    clearCurobj() with skim to group for group->double click?
+
+
+ImageImport dialog:
+ DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
+ Choose/Review tabbed window
+ horizontal stack frame between choose/review and preview window
+ fancier path selector
+ for preview field, show green or something and change tooltip if preview will get generated
+ click on file to preview file, preview to preview preview
+ generate image previews progress box...
+ autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
+ importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
+
+
+Load, save, add, delete paper groups
+    work out scheme for resource ownership: they can be owned by:
+      1.DONE  Document: if no project, save with document by default
+      2.DONE  Project:  save in project file
+      3.or Global resource: save in ~/.laidout/version/papergroups
+          class FileRef 
+        papergroup->owner=Document, Project, or FileRef
+    DONE  menu options for paper groups, via the right click in paper tiler interface
+    paperinterface:
+     no doc, define papergroup, convert papergroup to singles pages?
+     DONE  arrow to indicate paper top direction
+     orient viewport to paper
+     snap other papers to various boxes
+     double click to edit paper details
+     DONE  create new
+     in spread editor <--better to combine spread editor and view window?
+     DONE  save/load
+     more versatile size control per paper
+     DONE  delete old
+     edit window?
+        Name:  default single letter
+        Paper: Letter, 8.5/11, landscape
+        Box: Media [v]   Box: Clip [v]
+                            [ ] None
+           0 0 8.5 11       X: 0   Y: 0
+                          W: 8.5 H: 11
+        [delete paper type][new paper type]
+
+
+optimize pdf especially... too much duplication!!
+
+Soup up the color box so one can recall previous colors, and/or integration with palette window
+    -->delay until proper color implementation in place
+
+plain text edit window specify interpreter to process the text with
+
+Gui for modifying Page Labels
+    integration with spreadeditor, select pages, pop up the dialog
+
+Selected region out to image(s), regions optionally remembered
+    rectangle or path?
+
+Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
+    insert page or spread after/before
+    delete page or spread
+
+from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+    ocus off a dialog, then refocus, must manually set control focus. should store which subwindow
+     gets the focus when autofocused.
+
+from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
+	focusin/out enter/leave event handling is even more messed up after laxkit overhaul
+
+
+===================Anything below here probably needs discussion before implementing================
+---------------------------------- other enhancements ----------------------------------
+how to keep track of class hierarchy? impositions are now listed by resource instance, what is
+  best way of keeping track of base imposition classes? this is needed for file format description output
+
+for translations, there is a difference between locale translations and language translations!
+  not sure if it is worth paying attention to... need to investigate if locale as it affects keyboard input
+  is separate from what locale we read in translations from. If it is distinguishable, that is fabulous, in that
+  we can maintain the current locale key input, but change the language translation at will...
+
+investigate pdfcreator as method to reduce file size
+
+align and distribute tool
+
+repeater tool on path: could be adapted to help animation tweening
+
+gradient resources
+  owner: file/user global/system global
+  name
+  tags
+  color strip: stops
+    position
+    color
+
+measure tool.. configure measurements to be:
+ displayer units
+ object units
+ units mapped to either type of units, so can use light years for units that are actually inch physical paper units
+have arrows, and write on screen what the size is...
+
+impositions:
+  for printing/exporting non-paper layouts, should have option to specify what sort of paper
+   or paper net is proper to hold the layout... means:
+   paperstyle=imposition->Paper(layout);
+   imposition return a spread with flag for if papergroup is for printing or printing and viewing
+
+importimages: remember last settings
+
+Laidout file preview: give a few relevant info bits, by parsing only part of the file
+
+object selection:
+ shift on a selected object should remove that object from selection
+ rect-dragout follows page matrix, which could be confusing...
+ would be nice to show what would be selected during rect-dragout
+change object that is part of group object does not force remap of bbox of group
+
+make Document all reference counted
+
+clean up and test:
+--export-options format  List all the options for the given format
+--print  'from=3; to=32; layout=pages; printer=epson-usb/matte360'
+  same as:
+--export 'filter="Postscript LL3"  from=3  to=32  layout=pages  command="lp -d epson-usb/matte360"'
+
+pdf export:
+ page labels
+ paths
+
+Import image list: default previews
+
+
+export with limbo, and no doc or papergroup, means use bounding box for limbo?
+
+
+when importing, have MysteryData, which has special attributes "@file-pos" which says
+ where in the original file the attribute starts:
+ MysteryData
+   transform/bounds
+   title (showed in screen)
+   description
+   file format the data is from
+   attribute style listing of the object? or straight from file
+ in: convert file to attributes, or provide method to tailor to an output format (eps, pdf objs, raster image),
+         and provide a preview image or object to stand in for the file..
+
+
+limbo transform should be obeyed. It can be moved, scaled, etc,
+page layers should be simplified, each layer behaves according to its transform, and more controls inserted to handle layer maneuvering
+
+modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+
+impositions:
+ Name                  Abbr.       Folds     Leaves    Pages
+ Folio                  fo, f        1         2         4
+ Quarto                 4to          2         4         8
+ Sexto, Sixmo           6to, 6mo     3         6        12
+ Octavo                 8vo          3         8        16
+ Duodecimo, Twelvemo    12mo         4        12        24
+ Sextodecimo, Sixteenmo 16mo         4        16        32
+
+Net:
+ save different setups: papertile AND net layout
+ load save nets from: 1.net files or 2.OFF files(done)
+
+LaxFiles::ColorAttribute()
+default: make list of as many as there are in segment, if name has 'f' then assume float,
+ if lettersNumber, then number is num of bits UNLESS it is 100
+general: rgb     65535 0 0
+         rgb_8   255   0 0
+         rgb_100 100.0 0 0
+         rgba_8  255   0 0 255
+         rgb_16  65535 0 0
+         rgba_f  1.0 0 0 1.0
+         gray    65535
+         graya_f 1.0 1.0
+         cmy
+         cmyk
+         cmykaf
+         hex    ffff0000ffff
+         hex8   ffffff
+         rgbx   0xffffff
+
+need conversions: gradient->color patch
+                  image -> imagepatch
+                  imagepatch -> image
+                  colorpatch -> image?
+
+remember tool settings: double click on tool icon? right click...
+remember tool settings
+
+configurable command buttons to automate certain things with minimal window clutter....
+
+int SomeData::Compatible(const char *withwhat)
+NO!!!!! compatibility should be determined by object type managers, not individual objects
+return if object is currently compatible with some standard, 
+like "PS LL3", "EPS 3.0", "SVG 1.2", "PDF 1.3", "PDF 1.4" "HTML/CSS2"
+1==yes, straight out
+2==yes, but needs rasterizing
+this would simplify preflight checking
+
+dump OUT an image list? Scribus has "review images" feature.. can jump to location, edit print/view, etc
+
+Saving: multiple documents open, save only the headwindows that refer only to that doc,
+OR save no window configs (saved with project), OR save custom configs
+
+directory reorganization?
+ windows/
+ core/ <-- implies isolating core functions
+
+
+put all in Laidout namespace?
+
+
+
+paper tiler: for custom pages, drag out a paper size
+
+'?' then 'o' for instance should give message of what pressing 'o' maps to
+ ---delayed for full shortcut implementation
+
+intl support: ready for pango?
+
+template/master pages: 
+ have objects be tagged with ref object, so you can create a page with a master page
+  that has a "text frame" for instance, but different children per page
+
+rulercornerbutton:
+  Insert v
+    Pagetemplate1
+    template2
+
+a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
+ as optionally into Arrangements
+
+figure out Scribus' PS importer!! how the hell does it do it, and why does it not do everything?
+
+
+
+
+
+======================================DONE=================================================
+When releasing new version, combine these with the ROADMAP item for release notes.
+These can then be purged after each release...
+===========================================================================================
+
+
+DONE laxkit: tab to next control should automatically select all text in edit
+
+DONE rudimentary dialog for new net:
+  from polyhedron file, with scaling
+  dodecahedron
+  box width,height,depth: [_1,2,3______________________]
+   Ok  Cancel
+
+DONE a and b paper sizes are not precise enough, need def from mm, not approximate inches
+
+DONE anobject memory hole: "> laidout" leaves 51, not sure where
+
+DONE file format dump not outputting Polyhedron
+
+DONE Image and Color patches, gradients, etc should allow transparent colors
+    Each processed object have representation as a (possibly temp disc cached) Imlib image
+    requires working out an efficient Imlib based clipping scheme
+
+DONE laxkit: keypad not issuing key presses!!!!
+
+DONE import images frelled!!!!! but how?!?!?!?
+
+DONE SinglesEditor should work
+DONE work out new doc singles settings
+
+DONE topwindow/destroywindow/destroyqueued/dialogs ref counting messed up
+DONE SplitWindow::Add not doing ref counting correctly,
+DONE SplitWindow menu, split, join, etc. frelled
+
+DONE palette window unsightly rect edge marks!!!
+
+DONE anything that uses WinFrameBox (all dialogs under RowFrame), ref counting snafus...
+
+DONE Document::dump_out(-1) needs to dump out imposition TYPES, not resource instance names, which it's doing now
+
+DONE memory hole in imposition init, laidout -n letter, 63 left un deleted, objs 123-135 for instance
+
+DONE edit imposition for sigs does not have selectable folds in editor!!!
+
+DONE make podofoimposeplan be an ExportFilter
+	NOTE: podofoimpose is limited to a single size of paper. You cannot impose to both letter and legal
+	in same plan, for instance.
+
+DONE use cups-config in src/Makefile
+
+DONE control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
+
+DONE image import: implement scale up and down
+
+DONE ./laidout -n 'box 1 2 3'  -->  doesn't work
+
+DONE print to svg files ignoring '##' mark!
+
+DONE scribus export should accurately set page number and page count text vars
+
+DONE print by command doesn't seem to work... fails noiselessly
+
+DONE putting a DBG in front of it: DISABLE PATHINTERFACE in stable release
+DONE DISABLE CHANGE TO PROJECT!! too unstable and probably pretty useless at this point maybe
+        -> new doc dialog, and menu items in viewer corner button
+
+DONE update examples to 0.091, removing absolute paths!
+
+DONE check laidout.1 when time to release
+
+DONE deleting page crashes.. just booklet problem? not resyncing pages and viewport
+
+DONE imagepatch once again frelled, not showing image AT ALL!!!!
+
+DONE using the fold indicator controls doesn't remapHandles
+
+DONE occassional problem folding, leaves partial final!!! not sure what triggers it
+
+DONE debug spread editor auto layout
+
+DONE debug spread editor load save, update name field
+
+  sig editor:
+DONE animated fold controls
+DONE trim, margin, inset, gap, fold, tile handles
+DONE finish implement sigimposition
+DONE edit document settings: need special menu item for "Current"
+DONE respond to menu controls for paper size
+DONE Generic fold and trim imposition
+		1. initial margin trim
+		2. section trim
+		3. folding per section
+		4. specify stitching fold
+		5. trim lines for other folds as desired
+
+DONE finish scribus plugin to access graphical signature editor

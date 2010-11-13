@@ -1,0 +1,20 @@
+/* $Id$ */
+
+/*! \defgroup extras Extras
+ * Extraneous addon type of things are documented here. These are functions and such
+ * that are not considered core functionality, but are still hella useful.
+ *
+ * Currently:
+ * 
+ * dumpInImages() plops down a whole lot of images into the document. Specify the start page,
+ * how many per page, and either a list of image files, a directory that contains the images,
+ * or a list of ImageData objects.
+ *
+ * Another extra planned but not implemented yet is applyPageNumbers, which automatically inserts
+ * particular images representing the page numbers down in the corner on each page. You would specify
+ * the directory that contains the images, and the code does the rest..
+ *
+ * \todo *** must figure out how to integrate extras into menus, and incorporate callbacks?
+ *   Have a class Extra that holds everything about it?
+ * \todo Still must work out good mechanism for being able to add on any extras via plugins...
+ */

@@ -1,0 +1,17 @@
+LAIDOUT TODO
+
+See src/TODO and the doxygen produced todo list in docs/html/todo.html
+
+
+
+
+
+
+//-----------------------------------------------
+Note to self: When Compiling and packaging, REMEMBER:
+install in different dirs for different versions
+the binary should be laidout-version, with a link from 'laidout' to it.
+Any supporting files /usr/local/share/laidout/* (of which there are none currently)
+should go in /usr/local/share/laidout/version/*?
+
+
