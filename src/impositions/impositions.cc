@@ -39,6 +39,7 @@
 #include "signatures.h"
 
 #include <lax/fileutils.h>
+#include <lax/lists.cc>
 #include <dirent.h>
 
 using namespace Laxkit;
