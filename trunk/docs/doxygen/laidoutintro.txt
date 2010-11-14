@@ -39,7 +39,7 @@ So, why, really, should any one use Laidout rather than Inkscape, Scribus, or ev
 Well, you shouldn't!! Right now, Laidout is still very experimental, and no printing house anywhere
 supports its files, or has even heard of it. If you need something with a proven history, then go for
 Scribus. It apparently produces very clean files that printing houses will probably not hate you for.
-The major deficiency of Scribus (as of June 2010) is the lack of impositioning features.
+The major deficiency of Scribus (as of November 2010) is the lack of impositioning features.
 
 When I started to program Laidout, I was a somewhat inexperienced programmer, so I figured
 I would learn the most writing both the program and the windowing toolkit from scratch (or at least from Xlib). 

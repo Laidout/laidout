@@ -14,6 +14,7 @@
 // correspondence about this software.
 //
 
+#include <X11/Xlib.h>
 #include <lax/transformmath.h>
 #include <lax/laximages-imlib.h>
 #include "psout.h"

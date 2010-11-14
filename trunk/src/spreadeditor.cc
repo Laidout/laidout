@@ -139,7 +139,12 @@ void SpreadInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *con
 		fprintf(f,"%sview viewname      #the name of the view belonging to the document\n",spc);
 		fprintf(f,"\n%s  #If the view is a temporary view, then its format is as follows\n",spc);
 		fprintf(f,"%sview\n",spc);
-		view->dump_out(f,indent+2,-1,NULL);
+		if (view) {
+			view->dump_out(f,indent+2,-1,NULL);
+		} else {
+			SpreadView v;
+			v.dump_out(f,indent+2,-1,NULL);
+		}
 		
 		return;
 	}
