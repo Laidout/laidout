@@ -57,6 +57,9 @@ all: laidout
 laidout: lax laxinterface $(dirs) $(objs)
 	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
 
+icons:
+	cd src/icons && $(MAKE)
+									 
 api:
 	cd api && $(MAKE)
 

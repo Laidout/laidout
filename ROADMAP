@@ -5,24 +5,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.091
-------------
-(done) Well, maybe done: Debug enough to not be too embarrassing
-(done) impose-only mode, so as to allow easy plugin in access, to for instance do booklets inside scribus
-(done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
-(done) Images should maintain their aspect ratio by default when scaling
-(done) Scribus import must make sure linked text and linked table mystery data behave properly on export
-(done) Export PLAN files for podofoimpose
-(done) Generic fold and trim imposition
-(done) Be able to load imposition instances, a form of resource
-(done) Import images as flow/centered within page margins, not within page outline
-(done) Import images with alignment per page type into the page margin region
-(done) SpreadEditor: improvements: re-re-fix auto layout
-(done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
-(done) SpreadEditor: editor should allow changing working document
-(done) SpreadEditor: be able to change marks of many pages at once
-
-
 VERSION 0.092
 -------------
        SpreadEditor: insert blanks, delete pages, the other right click menu options
@@ -78,7 +60,6 @@ VERSION 0.1
        All the pdf 1.4 group combine properties, like most importantly transparency
        Configurable icon panel/menu system, make the button box actually function
        Linear (including curvilinear) guides
-       for laxkit: SplitWindow: tabbed panes
        Seriously optimize the whole ColorPatch/ImagePatchData stuff
        Have imagepatch be a transform you can apply to any object
        Allow objects to have any number of various kinds of transforms applied to it
@@ -96,7 +77,6 @@ VERSION 0.1
        PDF in?
        support for the svg filters?
        Provide some kind of visual feedback while doing lengthy operations
-       Finish implementing booklet/double sided vertical, and BasicBookImposition
        Improve and/or make new logo and splash image, and generate icons from a laidout doc
        Somehow combine the ViewWindow and SpreadEditor to optionally allow the sort of 'infinite scroll'
        Be able to interact with patches in a way reminiscent of Inkscape's node sculpting
@@ -172,6 +152,24 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.091  --  released 13 November 2010!
+------------
+(done) Well, maybe done: Debug enough to not be too embarrassing
+(done) impose-only mode, so as to allow easy plugin in access, to for instance do booklets inside scribus
+(done) Do a poor man's multi-contact touch screen interface with 2 mice and Xinput2: object tool only, so far
+(done) Images should maintain their aspect ratio by default when scaling
+(done) Scribus import must make sure linked text and linked table mystery data behave properly on export
+(done) Export PLAN files for podofoimpose
+(done) Generic fold and trim imposition
+(done) Be able to load imposition instances, a form of resource
+(done) Import images as flow/centered within page margins, not within page outline
+(done) Import images with alignment per page type into the page margin region
+(done) SpreadEditor: improvements: re-re-fix auto layout
+(done) SpreadEditor: load/ save many spread editor views with doc (including marker placement, other settings)
+(done) SpreadEditor: editor should allow changing working document
+(done) SpreadEditor: be able to change marks of many pages at once
+
 
 VERSION 0.09  --  released 21 February 2010!
 ------------

@@ -14,6 +14,7 @@
 // Copyright (C) 2004-2010 by Tom Lechner
 //
 
+#include <X11/Xlib.h>
 #include <lax/fileutils.h>
 #include <lax/strmanip.h>
 #include <lax/laximages-imlib.h>
