@@ -148,7 +148,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		
 		} else {
 			flatpoint fp;
-			fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)));
+			fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)/2));
 			dp->DrawScreen();
 			dp->textout((int)fp.x,(int)fp.y,_("unknown"),-1);
 			dp->DrawReal();

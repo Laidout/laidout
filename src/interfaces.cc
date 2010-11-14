@@ -114,8 +114,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	existingpool->push(new LColorPatchInterface(id++,NULL),1);
 	
 	 //------Paths
-	 // **** this is not ready for prime time yet, so enable only in debugging mode
-	DBG existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
+	existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
 	
 	 //------EPS
 	EpsInterface *eps=new EpsInterface(id++,NULL);
