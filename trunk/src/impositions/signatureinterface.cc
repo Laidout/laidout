@@ -1441,7 +1441,8 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 	if (showsplash) { showsplash=0; needtodraw=1; }
 
 	int row,col,tilerow,tilecol;
-	int over=scan(x,y, &row,&col, NULL,NULL, &tilerow,&tilecol);
+	DBG int over=
+	scan(x,y, &row,&col, NULL,NULL, &tilerow,&tilecol);
 	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
 
 	if (buttondown.any()) return 0;
@@ -2460,6 +2461,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 
 		Attribute att;
 		DBG const char *in="",*out="";
+
 		const char *prefer=NULL;
 		NameValueToAttribute(&att,imposearg,'=',',');
 		const char *name,*value;
@@ -2467,7 +2469,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 			name =att.attributes.e[c]->name;
 			value=att.attributes.e[c]->value;
 			if (!strcmp(name,"in")) {
-				in=value;
+				DBG in=value;
 				if (isScribusFile(value)) {
 					if (addScribusDocument(value)==0) {
 						//yikes!
@@ -2482,7 +2484,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 				//     export temp podofo plan, call podofoimpose
 			} else if (!strcmp(name,"out")) {
 				makestr(imposeout,value);
-				out=value;
+				DBG out=value;
 			} else if (!strcmp(name,"prefer")) {
 				prefer=value;
 			} else if (!strcmp(name,"width")) {

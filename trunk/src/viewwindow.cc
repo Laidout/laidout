@@ -2856,6 +2856,9 @@ void ViewWindow::setup()
 
 	//***this should be making dups of interfaces stack? or set current tool, etc...
 	for (int c=0; c<laidout->interfacepool.n; c++) {
+		 //path interface not ready for prime time, so disable except in debugging mode
+		DBG if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PathInterface")) continue;
+
 		AddTool(laidout->interfacepool.e[c]->duplicate(),1,0);
 	}
 	SelectTool(0);

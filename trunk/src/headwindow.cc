@@ -628,6 +628,8 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 		Document *d;
 		char *error=NULL;
 		for (int c=0; c<s->n; c++) {
+			if (!s->strs[c]) continue;
+
 			nw=laidout->numTopWindows();
 			d=NULL;
 			if (laidout->Load(s->strs[c],&error)==0) d=laidout->curdoc;
