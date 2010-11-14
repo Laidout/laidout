@@ -5,7 +5,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.091
+VERSION 0.091  --  released 13 November 2010!
 ------------
 (done) Well, maybe done: Debug enough to not be too embarrassing
 (done) impose-only mode, so as to allow easy plugin in access, to for instance do booklets inside scribus
