@@ -35,7 +35,6 @@ def main(argv):
         sys.exit(1)
 
     laidoutexecutable="laidout"  # <---Change this to be where the laidout program is located!!
-    laidoutexecutable="/home/tom/p/sourceforge/laidout/src/laidout"
 
     thecommand=""
     infile=os.getcwd()+"/this-is-a-temporary-file.sla"  #note this saves to a very random area usually!!
@@ -63,6 +62,8 @@ def main(argv):
                          +"'in=\""+infile+"\" " \
                          +" out=\""+reimposed+"\" " \
                          +" prefer=\"booklet\"" \
+						 +" width=\""+str(width)+"\"" \
+						 +" height=\""+str(height)+"\"" \
                          +"'"
     #print "command:\n", thecommand
 
