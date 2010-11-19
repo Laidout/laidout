@@ -4,7 +4,10 @@
 # --prefix=/blah/blah
 
 
-LAIDOUTVERSION=0.09.1
+LAIDOUTVERSION=0.091.1
+
+ # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
+FINALPREFIX=""
 PREFIX="/usr/local"
 LAXDIR="/usr/local/include/lax"
 GS="/usr/bin/gs"
@@ -45,6 +48,14 @@ while true ; do
 		echo "                                themselves then get put in prefix/share/locale/*."
         echo ""
 		exit 1 ;;
+    --finalprefix)  
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		FINALPREFIX="$optarg"
+        #echo prefix $optarg ;
+        shift ;;
     -p | --prefix)  
         if [ -z $optarg ] ; then 
           optarg=$2
@@ -89,6 +100,7 @@ while true ; do
   esac
 done
 
+if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
 
 
 # do check for required libraries:
@@ -166,12 +178,12 @@ echo " // ----          BY ../configure             -----" >> src/configured.h
 echo "#ifndef CONFIGURED_H" >> src/configured.h
 echo "#define CONFIGURED_H" >> src/configured.h
 echo "" >> src/configured.h
-echo "#define INSTALL_PREFIX   \"$PREFIX\"" >> src/configured.h
-echo "#define BIN_DIRECTORY    \"$PREFIX/bin\"" >> src/configured.h
-echo "#define BIN_PATH         \"$PREFIX/bin/laidout\"" >> src/configured.h
-echo "#define SHARED_DIRECTORY \"$PREFIX/share/laidout/$LAIDOUTVERSION/\"" >> src/configured.h
-echo "#define ICON_DIRECTORY   \"$PREFIX/share/laidout/$LAIDOUTVERSION/icons\"" >> src/configured.h
-echo "#define LANGUAGE_PATH    \"$PREFIX/$LANGUAGE_PATH\"" >> src/configured.h
+echo "#define INSTALL_PREFIX   \"$FINALPREFIX\"" >> src/configured.h
+echo "#define BIN_DIRECTORY    \"$FINALPREFIX/bin\"" >> src/configured.h
+echo "#define BIN_PATH         \"$FINALPREFIX/bin/laidout\"" >> src/configured.h
+echo "#define SHARED_DIRECTORY \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/\"" >> src/configured.h
+echo "#define ICON_DIRECTORY   \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/icons\"" >> src/configured.h
+echo "#define LANGUAGE_PATH    \"$FINALPREFIX/$LANGUAGE_PATH\"" >> src/configured.h
 echo "#define GHOSTSCRIPT_BIN  \"$GS\"" >> src/configured.h 
 echo "" >> src/configured.h
 echo "#endif" >> src/configured.h

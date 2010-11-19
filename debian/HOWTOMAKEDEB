@@ -1,17 +1,24 @@
 note to self: 
+ Most of these notes are to help the developer(s) package Laidout for releases.
+ If you just want to make a deb package yourself, skip down to "build the package".
+
+
                NEW RELEASES
 MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 ----------------------
 (if anyone has a better way of doing this, let me know, I'm new at this)
 
+
 1. Double check that these are current:
   debian/laidout.1
   the laidoutrc description dump out in laidout.cc
+
 
 2. ----Copy trunk to a new tag------
  svn copy https://laidout.svn.sourceforge.net/svnroot/laidout/trunk \
           https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whatever version)
  make sure the Makefile does not try to compile lax
+
 
 3. ----modify source---
  check out the branch: svn co https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(version)
@@ -37,12 +44,14 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
  
  make sure all the examples work, and have the correct version number
 
+
 4. ---hide the debugging garbage and commit---
  make hidegarbage 
  (make sure same is done for laxkit, as Laidout currently statically
   links against laxkit, which also uses the same system to hide debugging code)
  svn ci -m'Last minute touchups to this tag'
- 
+
+
 5. Export a copy of the new tag and make a tarball. 
  svn export https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whichever) laidout-(version)
   If Laxkit is to be included, you should export that to the top laidout dir: 
@@ -59,15 +68,14 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
     tar cjv (the dir) > laidout-version.tar.bz2 
    this should be the distributed tarball, unpack in some other dir and do a test compile.
 
-6. --Prepare for deb packaging--
- make sure configure makes ICON_DIRECTORY in src/configured.h to be /usr/share/laidout/VERSION/icons,
-   and NOT the default $(DESTDIR)/... Otherwise, you will have no icons once you install the deb package.
-    
 
-7. ---build the package---
+6. ---build the package---
 dpkg-buildpackage -rfakeroot in top laidout directory
+This often will expose otherwise unknown errors, I think because making the deb packages uses lots more
+compile flags. You can do "fakeroot debian/rules binary" to not have to recompile everything after fixing.
 
-8. After file release is uploaded, don't forget to:
+
+7. After file release is uploaded, don't forget to:
      - update the help and screenshots sections on the website, and the website in general
      - update the laidout rss feed
      - send announcement to at least the laidout mailing list

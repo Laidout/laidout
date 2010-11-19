@@ -10,11 +10,7 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 
-----------------0.091 ROADMAP ITEMS: features and enhancements------------------------
-update docs to have new release number
-
-
------bugs maybe ok to postpone dealing with till after .091 release:
+About page is huge, and unescapable!!!!! serious break!
 
 fold indicator foldprogress at crossover points incorrectly indicating affected folds
 
@@ -72,7 +68,12 @@ need to change GroupInterface to determine contexts, then recompute bounds
 update translations
 check laidout.1 when time to release
 update docs to have new release number
+test each window type to avoid crashy hangups, like about window from .091!!!!
 
+
+Add proper .desktop and application icons installation
+  means installing main Laidout icons into /usr/share/icons/hicolor
+  and laidout.desktop to /usr/share/applications
 
   sig editor:
 needs testing: command line func parser for sigs
