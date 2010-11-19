@@ -21,6 +21,8 @@
 #include <lax/laximages.h>
 #include <lax/misc.h>
 
+#include <lax/lists.cc>
+
 #include <cctype>
 #include <cstdlib>
 

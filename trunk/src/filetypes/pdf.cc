@@ -23,6 +23,8 @@
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
+#include <lax/lists.cc>
+
 #include "../language.h"
 #include "../laidout.h"
 #include "../stylemanager.h"

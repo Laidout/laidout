@@ -22,6 +22,8 @@
 #include "../stylemanager.h"
 #include "../headwindow.h"
 
+#include <lax/refptrstack.cc>
+
 using namespace Laxkit;
 using namespace LaxFiles;
 

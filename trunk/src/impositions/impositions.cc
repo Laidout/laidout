@@ -42,6 +42,8 @@
 #include <lax/lists.cc>
 #include <dirent.h>
 
+#include <lax/lists.cc>
+
 using namespace Laxkit;
 using namespace LaxFiles;
 
