@@ -35,6 +35,7 @@ VERSION 0.092
        Tools should remember their settings
        DumpImages within Arrangements, sort of a template of positions (2-d guides)
        Clean up patch controls
+       Add proper .desktop and application icons installation
        Fix multi-object selection move when crossing page boundaries
        impose-only mode should allow access to all imposition types
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
