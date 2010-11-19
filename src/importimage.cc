@@ -24,6 +24,7 @@
 #include <lax/transformmath.h>
 #include <dirent.h>
 
+#include <lax/lists.cc>
 
 
 #include <iostream>

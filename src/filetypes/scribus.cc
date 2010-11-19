@@ -453,8 +453,8 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				  "    FIRSTPAGENUM=\"%d\" \n", start); //***check this is right
 		fprintf(f,"    KEYWORDS=\"\" \n"
 				  "    ORIENTATION=\"%d\" \n",landscape);
-		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",paperheight);
-		fprintf(f,"    PAGEWIDTH=\"%f\" \n",paperwidth);//***default page width and height
+		fprintf(f,"    PAGEHEIGHT=\"%f\" \n",72*paperheight);
+		fprintf(f,"    PAGEWIDTH=\"%f\" \n",72*paperwidth);//***default page width and height
 		fprintf(f,"    TITLE=\"\" \n"
 				  "    VHOCH=\"33\" \n"      //Percentage for Superscript
 				  "    VHOCHSC=\"100\" \n"  // Percentage for scaling of the Glyphs in Superscript
@@ -1302,7 +1302,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    RATIO=\"1\" \n"          //(opt) 1 if image scaling should respect aspect
 				  "    ImageClip=\"\" \n"       //not 1.2 ??????
 				  "    ImageRes=\"1\" \n"       //not 1.2 ??????
-				  "    SCALETYPE=\"1\" \n"      //(opt) how image can scale,0=free, 1=bound to frame
+				  "    SCALETYPE=\"0\" \n"      //(opt) how image can scale,0=free, 1=bound to frame
 				  "    PICART=\"1\" \n"         //1 if image should be shown
 				  "    LOCALX=\"0\" \n"         //xpos of image in frame
 				  "    LOCALY=\"0\" \n");       //ypos of image in frame

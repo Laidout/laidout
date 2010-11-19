@@ -38,6 +38,7 @@
 #include "pspathsdata.h"
 #include "pseps.h"
 
+#include <lax/lists.cc>
 
 #include <iostream>
 using namespace std;

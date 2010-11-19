@@ -21,6 +21,8 @@
 #include <lax/strmanip.h>
 #include <lax/transformmath.h>
 
+#include <lax/refptrstack.cc>
+
 using namespace LaxFiles;
 using namespace Laxkit;
 
