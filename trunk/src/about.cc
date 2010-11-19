@@ -39,6 +39,7 @@ using namespace Laxkit;
 AboutWindow::AboutWindow()
 	: MessageBox(NULL,"About",_("About"),ANXWIN_CENTER, 0,0,500,600,0, NULL,0,NULL, NULL)
 {
+	win_style|=ANXWIN_ESCAPABLE;
 }
 
 /*! The default MessageBox::init() sets m[1]=m[7]=BOX_SHOULD_WRAP, which is supposed 
@@ -51,11 +52,11 @@ int AboutWindow::preinit()
 	//Screen *screen=DefaultScreenOfDisplay(app->dpy);
 	
 	//m[1]=screen->width/2;
-	m[1]=BOX_SHOULD_WRAP;
-	m[7]=BOX_SHOULD_WRAP; //<-- this triggers a wrap in rowcol-figureDims
+	w(BOX_SHOULD_WRAP);
+	h(BOX_SHOULD_WRAP); //<-- this triggers a wrap in rowcol-figureDims
 
 	char *about=newstr(_(
-			"[insert splash logo here!]\n"
+			"[pretend there is a splash logo here!]\n"
 			"\n"
 			"Laidout Version "));
 	appendstr(about,LAIDOUT_VERSION);
@@ -79,8 +80,8 @@ int AboutWindow::preinit()
 	
 	//WrapToExtent: 
 	arrangeBoxes(1);
-	win_w=m[1];
-	win_h=m[7];
+	win_w=w();
+	win_h=h();
 
 //	int redo=0;
 //	if (win_h>(int)(.9*screen->height)) { 
