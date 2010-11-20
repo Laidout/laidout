@@ -13,9 +13,10 @@ VERSION 0.092
        At bare minimum, path interface use should not cause a seg fault
        Fix page bleeding for signatures and nets
        Scribus import must support master pages
+       Scribus import/export should support PageRange <-> Section conversion
+       Gui for modifying Page Labels
        SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
-       Gui for modifying Page Labels
        Net imposition interactive unwrapper and build net interface
        need partial Laidout import and export
        When importing from an image list file, should be able to say if and when to auto-make previews
@@ -26,18 +27,17 @@ VERSION 0.092
        Object and resource tags
        Masking, clip paths and/or softmask
        Externally rendered objects, similar to Scribus render frames
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
        Clean up project load/save internals and dialogs
        Collect for out
        double click on group should change selection area to group contents?
        update french and spanish translations, if possible
        Tools should remember their settings
-       DumpImages within Arrangements, sort of a template of positions (2-d guides)
        Clean up patch controls
-       Add proper .desktop and application icons installation
+(done) Add proper .desktop and application icons installation
        Fix multi-object selection move when crossing page boundaries
        impose-only mode should allow access to all imposition types
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
        from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
@@ -46,7 +46,7 @@ VERSION 0.1
 -----------
        First and foremost, need copious testing by people who are not me.
        Implement poor man's multi-contact interface for all appropriate interfaces
-       undo/redo, with saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
+       undo/redo
        Full internationalization support in window controls for input and output, including left, right. pango?
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
@@ -138,6 +138,7 @@ Perhaps have animation support/mode, 1 page=1 frame or separate time slider and 
 Akin to animation mode, have movie/sound objects available to html export, for instance?
 a FlexibleImposition for html/streamed output target?
 JDF support?
+Saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
 
 
 VERSION 1.0
