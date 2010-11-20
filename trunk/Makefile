@@ -43,6 +43,12 @@ install:
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/examples examples/*
 	$(INSTALLDIR) $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons
 	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/icons src/icons/*.png
+	$(INSTALLDIR) $(SHAREDIR)/applications
+	$(INSTALL) -m644 debian/laidout.desktop $(SHAREDIR)/applications
+	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/48x48/apps
+	$(INSTALL) -m644 src/icons/laidout-48x48.png $(SHAREDIR)/icons/hicolor/48x48/apps/laidout.png
+	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/scalable/apps
+	$(INSTALL) -m644 src/icons/laidout.svg $(SHAREDIR)/icons/hicolor/scalable/apps/laidout.svg
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
 	cd src/po && $(MAKE) install

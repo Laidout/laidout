@@ -103,8 +103,18 @@ for name in names :
 
     command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
         str(bitmapw)+" -h "+str(bitmapw)+" -e "+name+".png icons.svg"
+
     print command
     #print commands.getoutput(command)
     #print commands.getstatus(command)
     print commands.getstatusoutput(command)
    
+     #do something special for main Laidout icon, create a 48x48, 
+     #which gets placed in /usr/share/icons/hicolor/48x48/apps/laidout.png
+    if (name=="LaidoutIcon"):
+        command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w 48 -h 48 -e laidout-48x48.png icons.svg"
+
+        print command
+        #print commands.getoutput(command)
+        #print commands.getstatus(command)
+        print commands.getstatusoutput(command)
