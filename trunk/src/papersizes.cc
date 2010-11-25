@@ -417,11 +417,13 @@ StyleDef *makePaperStyleDef()
 			NULL, //def value
 			0,
 			NULL);
-	sd->push("orientation",
+	sd->pushEnum("orientation",
 			_("Orientation"),
 			_("Either portrait (0) or landscape (1)"),
-			Element_Enum, NULL,"portrait",
-			0,
+			"portrait",//defval
+			NULL,NULL,//new funcs
+			"portrait",_("Portrait"),_("Width and height are as normal"),
+			"landscape",_("Landscape"),_("Width and height are swapped"),
 			NULL);
 	sd->push("width",
 			_("Width"),
