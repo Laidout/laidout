@@ -3678,18 +3678,27 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		PaperGroup *pg=((LaidoutViewport *)viewport)->papergroup;
 		Group *l;
 		if (!pg || !pg->papers.n) l=NULL; else l=((LaidoutViewport *)viewport)->limbo;
+		char *file=NULL;
+		if (doc) {
+			file=lax_dirname(doc->Saveas(),1);
+			convert_to_full_path(file,NULL);
+			appendstr(file,"exported-file.huh");
+		} else {
+			file=full_path_for_file("exported-file.huh",NULL);
+		}
 		ExportDialog *d=new ExportDialog(0,object_id,"export config", 
 										 doc,
 										 l,
 										 pg,
 										 NULL,//***should be last filter...
-										 "exported-file.huh",//****this should be more adaptive
+										 file,
 										 PAPERLAYOUT,
 										 0,
 										 doc?doc->imposition->NumPapers()-1:0,
 										 doc?doc->imposition->PaperFromPage(
 											((LaidoutViewport *)viewport)->curobjPage()):0);
 		app->rundialog(d);
+		delete[] file;
 		return 0;
 
 	} else if (!strcmp(mes,"openDoc")) { 
