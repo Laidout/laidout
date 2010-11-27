@@ -10,8 +10,6 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 
-About page is huge, and unescapable!!!!! serious break!
-
 fold indicator foldprogress at crossover points incorrectly indicating affected folds
 
 refcounting crashing error with nets upon edit current document settings
@@ -21,6 +19,10 @@ gradient rendering to buffer memory hole?? gets very slow, then crashes.. having
 svg to coord incomplete
 memory hole in svg in? test svg import, svg path import must be done
 
+file previewer not updating preview when using mouse keys
+
+click open or save, dialog comes up, but buttons permanently dark gray now, no matter how mouse hovering
+
 net extra scaling non-functional
 
 object move to diff page makes object tool handles jump to improper location.. not updating context transform?
@@ -29,8 +31,6 @@ need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentCo
 from parameters for all filters....
 
 make sure all imposition types are available in interpreter
-
-make file. save as to other dir. export. dir is wrong! 
 
 select default papergroup, does not reinstall default papergroup!!
 
@@ -52,7 +52,7 @@ Laxkit::MultiLineEdit needs some serious debugging
 headwindow swapping is now REALLY messed up
 pane swapping/dropto on maximized, swapping in general...
 
-WATCH OUT for when preview file is OLDER that original file!!
+WATCH OUT for when preview file is OLDER than original file!!
 
 Transfer groups to limbo does something funky
 
@@ -71,24 +71,23 @@ update docs to have new release number
 test each window type to avoid crashy hangups, like about window from .091!!!!
 
 
-Add proper .desktop and application icons installation
-  means installing main Laidout icons into /usr/share/icons/hicolor
-  and laidout.desktop to /usr/share/applications
-
   sig editor:
 needs testing: command line func parser for sigs
 
-papersizes are not translated
+papersizes are not translated. Should they be??
 
-you should be able to visuall adjust the paper size in sigeditor graphically, by automatically
+you should be able to visually adjust the paper size in sigeditor graphically, by automatically
   selecting larger papers, or adjusting the paper edges
 
-SpreadEditor: insert blanks, delete pages, the other right click menu options
+Spread Editor:
+	    insert blanks
+		delete pages, the other right click menu options
 		Insert page before
 		Insert page after
 		Insert pages...  <- on screen indicator for number of pages to add before or after
-	   
-move impose-only attributes to newdoc/export dialog somehow to give access to all imposition stuff
+		modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+
+move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
 	feed it an ExportConfig
 
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
@@ -130,7 +129,7 @@ Laidout:
   Letter
   Legal
 
-how best to integrate Styles and Values??? style types:
+how best to integrate Styles, Attributes, and Values??? style types:
  Laidout
  Project
  Document
@@ -152,26 +151,26 @@ Finish implementing project based setup, particularly being able to save a proje
     DONE separate project->filename from project directory, in case you just want a
             convenient project file floating around without the whole mess of a project directory..
             either that, or zip up the project directory inside the "project file"..
-    //collect for out type of option
-    //finish generic style edit window for quick dialog creation
-    //need to puzzle out decent way to build dialogs, maybe have dialog building hints embedded in the styledefs
+    collect for out type of option
+    finish generic style edit window for quick dialog creation
+    need to puzzle out decent way to build dialogs, maybe have dialog building hints embedded in the styledefs
     (temp) iron out what happens on ^s and ^+s, and where docs get saved: with project or otherwise
      New Proj:
        DONE  must create Project Directory...
        DONE  new documents should default to saving in that directory
        TEST if file is in project dir, then path is saved relative, else is absolute
        saving not saving windows properly
-       //Always copy outside files to project directory
-       //[help] ---> pop up brief explanation of what a project entails
+       Always copy outside files to project directory
+       [help] ---> pop up brief explanation of what a project entails
      Load/Save: (mixed documents and projects)
        DONE  open as copy button (just like templates)
        DONE  [Open][Open as a Copy]
-       //preview laidout Doc and Project files: show some info about them...
-       //  Project: Some_Project.laidout, 1 day old
-       //  Project: Someotherproject,     5 days old
-       //  Document: Some Doc
-       //  Document: Some other doc
-       //remember this many recent: __20__
+       preview laidout Doc and Project files: show some info about them...
+         Project: Some_Project.laidout, 1 day old
+         Project: Someotherproject,     5 days old
+         Document: Some Doc
+         Document: Some other doc
+       remember this many recent: __20__
 
 
 import config generic things like enum keepmystery should be parsed when no import config given!!
@@ -266,7 +265,7 @@ Image import chain:
   4. jpg, png, gif, tiff: Imlib2
 
 
-mystery data: import as placeholder objects: if convertible to laidout elements, do not actually
+mystery data enhancement: import as placeholder objects: if convertible to laidout elements, do not actually
                 expose them as such. Keep source in external location, current laidout only rearranges.
                   ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
                   ---> this is useful to have a standard object indicator built from laidout objects, but
@@ -291,9 +290,6 @@ filters:
              patch edges
   remember last export
 
-Spread editor: load and save spread editor arrangements
-    property of Document
-
 Masking
     pathinterface conversion must be done
     true object tree with all lax data objects subclassed to hold children, and reference parent
@@ -301,10 +297,6 @@ Masking
 Clean up patch controls
 
 perhaps split radial and linear gradients to different tools? makes more sense
-
-DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
-    would also implement the dump into Limbo
-	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
 
 scribus out doesn't do gradients
 
@@ -371,10 +363,6 @@ Gui for modifying Page Labels
 Selected region out to image(s), regions optionally remembered
     rectangle or path?
 
-Spread editor improvements: re-re-fix auto layout, insert blanks, delete pages, etc.
-    insert page or spread after/before
-    delete page or spread
-
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
     ocus off a dialog, then refocus, must manually set control focus. should store which subwindow
      gets the focus when autofocused.
@@ -398,6 +386,10 @@ investigate pdfcreator as method to reduce file size
 align and distribute tool
 
 repeater tool on path: could be adapted to help animation tweening
+
+DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
+    would also implement the dump into Limbo
+	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
 
 gradient resources
   owner: file/user global/system global
@@ -461,8 +453,6 @@ when importing, have MysteryData, which has special attributes "@file-pos" which
 
 limbo transform should be obeyed. It can be moved, scaled, etc,
 page layers should be simplified, each layer behaves according to its transform, and more controls inserted to handle layer maneuvering
-
-modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
 
 impositions:
  Name                  Abbr.       Folds     Leaves    Pages
@@ -558,94 +548,11 @@ These can then be purged after each release...
 ===========================================================================================
 
 
-DONE laxkit: tab to next control should automatically select all text in edit
+DONE Add proper .desktop and application icons installation
+  means installing main Laidout icons into /usr/share/icons/hicolor
+  and laidout.desktop to /usr/share/applications
 
-DONE rudimentary dialog for new net:
-  from polyhedron file, with scaling
-  dodecahedron
-  box width,height,depth: [_1,2,3______________________]
-   Ok  Cancel
+DONE About page is huge, and unescapable!!!!! serious break!
 
-DONE a and b paper sizes are not precise enough, need def from mm, not approximate inches
+DONE make file. save as to other dir. export. dir is wrong! 
 
-DONE anobject memory hole: "> laidout" leaves 51, not sure where
-
-DONE file format dump not outputting Polyhedron
-
-DONE Image and Color patches, gradients, etc should allow transparent colors
-    Each processed object have representation as a (possibly temp disc cached) Imlib image
-    requires working out an efficient Imlib based clipping scheme
-
-DONE laxkit: keypad not issuing key presses!!!!
-
-DONE import images frelled!!!!! but how?!?!?!?
-
-DONE SinglesEditor should work
-DONE work out new doc singles settings
-
-DONE topwindow/destroywindow/destroyqueued/dialogs ref counting messed up
-DONE SplitWindow::Add not doing ref counting correctly,
-DONE SplitWindow menu, split, join, etc. frelled
-
-DONE palette window unsightly rect edge marks!!!
-
-DONE anything that uses WinFrameBox (all dialogs under RowFrame), ref counting snafus...
-
-DONE Document::dump_out(-1) needs to dump out imposition TYPES, not resource instance names, which it's doing now
-
-DONE memory hole in imposition init, laidout -n letter, 63 left un deleted, objs 123-135 for instance
-
-DONE edit imposition for sigs does not have selectable folds in editor!!!
-
-DONE make podofoimposeplan be an ExportFilter
-	NOTE: podofoimpose is limited to a single size of paper. You cannot impose to both letter and legal
-	in same plan, for instance.
-
-DONE use cups-config in src/Makefile
-
-DONE control-drag mouse on object tool does not scale from mouse down point!!!! gggerrrrragaaahhh!
-
-DONE image import: implement scale up and down
-
-DONE ./laidout -n 'box 1 2 3'  -->  doesn't work
-
-DONE print to svg files ignoring '##' mark!
-
-DONE scribus export should accurately set page number and page count text vars
-
-DONE print by command doesn't seem to work... fails noiselessly
-
-DONE putting a DBG in front of it: DISABLE PATHINTERFACE in stable release
-DONE DISABLE CHANGE TO PROJECT!! too unstable and probably pretty useless at this point maybe
-        -> new doc dialog, and menu items in viewer corner button
-
-DONE update examples to 0.091, removing absolute paths!
-
-DONE check laidout.1 when time to release
-
-DONE deleting page crashes.. just booklet problem? not resyncing pages and viewport
-
-DONE imagepatch once again frelled, not showing image AT ALL!!!!
-
-DONE using the fold indicator controls doesn't remapHandles
-
-DONE occassional problem folding, leaves partial final!!! not sure what triggers it
-
-DONE debug spread editor auto layout
-
-DONE debug spread editor load save, update name field
-
-  sig editor:
-DONE animated fold controls
-DONE trim, margin, inset, gap, fold, tile handles
-DONE finish implement sigimposition
-DONE edit document settings: need special menu item for "Current"
-DONE respond to menu controls for paper size
-DONE Generic fold and trim imposition
-		1. initial margin trim
-		2. section trim
-		3. folding per section
-		4. specify stitching fold
-		5. trim lines for other folds as desired
-
-DONE finish scribus plugin to access graphical signature editor
