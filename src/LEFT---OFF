@@ -71,21 +71,29 @@ update docs to have new release number
 test each window type to avoid crashy hangups, like about window from .091!!!!
 
 
-  sig editor:
-needs testing: command line func parser for sigs
+Scribus import:
+  import must support master pages
+  import should support PageRange <-> Section conversion
+  import should try to apply the Scribus layout correctly, at least for 2 page spreads
+  import should do something meaningful with original Scribus page bleed values
+
+sig editor:
+  needs testing: command line func parser for sigs
+  you should be able to visually adjust the paper size in sigeditor graphically, by automatically
+    selecting larger papers, or adjusting the paper edges
+  detect non staplable binding edge, show red rather than green
 
 papersizes are not translated. Should they be??
 
-you should be able to visually adjust the paper size in sigeditor graphically, by automatically
-  selecting larger papers, or adjusting the paper edges
-
 Spread Editor:
-	    insert blanks
-		delete pages, the other right click menu options
-		Insert page before
-		Insert page after
-		Insert pages...  <- on screen indicator for number of pages to add before or after
-		modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+  insert blanks
+  delete pages, the other right click menu options
+  Insert page before
+  Insert page after
+  Insert pages...  <- on screen indicator for number of pages to add before or after
+  modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+  background preview rendering for spreadeditor
+
 
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
 	feed it an ExportConfig
@@ -95,20 +103,12 @@ changing recurse and rendermode in patch controls doesn't change that setting in
 
 implement cut marks and other custom printer marks!!!
 
-sigeditor:  detect non staplable binding edge, show red rather than green
-
 Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
 will likely be very different
 
-must have custom printer marks
-
 bleeding mechanism should be functional
 
-PathInterface should not segfault
-
-need to rediscover pathinterface
-
-background preview rendering for spreadeditor
+need to rediscover pathinterface, PathInterface should not segfault
 
 >show
 Laidout:
@@ -214,8 +214,6 @@ overwrite should return to file dialog if no
 
 more bash like features for command pane
 
-finish import images review tab
-
 Fix multi-object selection move when crossing page boundaries
     sets
 
@@ -310,15 +308,15 @@ double click on group should change selection area to group contents?
 
 
 ImageImport dialog:
- DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
- Choose/Review tabbed window
- horizontal stack frame between choose/review and preview window
- fancier path selector
- for preview field, show green or something and change tooltip if preview will get generated
- click on file to preview file, preview to preview preview
- generate image previews progress box...
- autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
- importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
+  DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
+  Choose/Review tabbed window
+  horizontal stack frame between choose/review and preview window
+  fancier path selector
+  for preview field, show green or something and change tooltip if preview will get generated
+  click on file to preview file, preview to preview preview
+  generate image previews progress box...
+  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
+  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
 
 
 Load, save, add, delete paper groups

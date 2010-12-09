@@ -25,7 +25,7 @@
 //----------------------------- DrawableObject ---------------------------------
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public Laxkit::SomeData,
-						virtual public Laxkit::tagged
+						virtual public Laxkit::Tagged
 {
  protected:
  public:
@@ -35,11 +35,11 @@ class DrawableObject :  virtual public ObjectContainer,
 	PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
 
-	DrawableObject *next, *prev; //for linked objects
+	Laxkit::RefPtrStack<DrawObjectChain> chains; //for linked objects
 	DrawableObject *parent;
 	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
 
-	//RefPtrStack<RefCounted *> refs;
+	//RefPtrStack<RefCounted *> refs; //what other resources this objects depends on?
 
 	ObjectStream *path_stream;
 	ObjectStream *area_stream;
@@ -68,6 +68,14 @@ class DrawableObject :  virtual public ObjectContainer,
 };
 
 
+//---------------------------------- DrawObjectChain ---------------------------------
+class DrawObjectChain : public Laxkit::anObject, public Laxkit::RefCounted, protected Laxkit::PtrStack<DrawableObject>
+{
+  public:
+	char *id;
+	DrawObjectChain();
+	virtual ~DrawObjectChain();
+};
 
 #endif
 

@@ -40,6 +40,30 @@ using namespace std;
 #define DBG 
 
 
+//------------------------------- PageLableType enum --------------------------------
+/*! \enum PageLabelType
+ * \brief Enum for PageRange types.
+ *
+ * See also pageLabelTypeName().
+ */
+
+/*! \ingroup lmisc
+ * \todo put me somewhere
+ */
+const char *pageLabelTypeName(PageLabelType t)
+{
+	switch (t) {
+		case Numbers_Default:       return "default";
+		case Numbers_Arabic:        return "arabic";
+		case Numbers_Roman:         return "roman";
+		case Numbers_Roman_cap:     return "roman_capitals";
+		case Numbers_abc:           return "abc";
+		case Numbers_ABC:           return "ABC";
+		case Numbers_None:          return "none";
+		default: return NULL;
+	}
+}
+
 
 //---------------------------- PageRange ---------------------------------------
 /*! \class PageRange
@@ -47,33 +71,23 @@ using namespace std;
  *
  * Labels are 1,2,3... or i,ii,iii...
  * 
- * In the future, might implement which imposition should lay it out, allowing more than
- * one imposition to work on same doc, might still make a CompositeImposition...
- *
  * \todo *** this might be better off as a doubly linked list
+ */
+/*! \var char *PageRange::name
+ * \brief An id for this range.
  */
 /*! \var char *PageRange::labelbase
  * \brief The template for creation of page labels.
  *
  * Any instance of '#' is replaced by the number. Multiple '#' like "##" makes
- * a zero padded number, padded on right, but only for Numbers_Arabic and Numbers_Arabic_dec only.
+ * a zero padded number, padded on right, but only for Numbers_Arabic only.
  * 
  * "#" translates to "1", "12", etc.\n
  * "###" is "001", "012","123","1234", etc. \n
  * "A-#" is "A-1", "A-23", etc.
  */
-/*! \var int PageRange::offset
- * \brief Page label indices start with this number an go to offset+(end-start).
- */
-/*! \var int PageRange::impositiongroup
- * \brief ***sticking to 1 imposition per doc for the time being..this var is ignored
- *
- * The object_id of the imposition that handles this range of pages.
- *
- * Multiple non-continuous page ranges can be processed by the same imposition. The idea
- * is to allow easy [sic] insertion of foldouts and such, which would be processed by
- * a seperate imposition on a different paper size, then later inserted into the other
- * printed material.
+/*! \var int PageRange::first
+ * \brief The first number of the range. Page label indices start with this number and go to first+(end-start).
  */
 /*! \var int PageRange::start
  * \brief The index in doc->pages that this page range starts at.
@@ -81,86 +95,41 @@ using namespace std;
 /*! \var int PageRange::end
  * \brief The index in doc->pages that this page range ends at.
  *
+ * end will always be greater than or equal to start.
  * This variable should be set by Document, which maintains a stack of PageRange 
  * objects. It is not written or read from a file. After a dump_in, its value is -1.
  */
 /*! \var int PageRange::labeltype
  * \brief The style of letter, like 1,2,3 or i,ii,iii...
  *
- * Currently uses the enum PageLabelType:
- * <pre>
- *  Numbers_Default	
- *  Numbers_Arabic        1,2,3...
- *  Numbers_Arabic_dec    9,8,7...
- *  Numbers_Roman         i,ii,iii,iv,v,...
- *  Numbers_Roman_dec     v,iv,iii,...
- *  Numbers_Roman_cap     I,II,III,IV,V,...
- *  Numbers_Roman_cap_dec V,IV,III,...
- *  Numbers_abc           a,b,c,...
- *  Numbers_ABC           A,B,C,...
- * </pre>
+ * Currently uses the enum PageLabelType, which covers arabic numerals, roman numerals, and letters.
+ */
+/*! \var int PageRange::decreasing
+ * \brief Whether the page numbers should decrease from start to end, or decrease.
  */
 
 
-StyleDef *PageRangeStyleDef()
-{
-	StyleDef *sd=new StyleDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
-			Element_Fields, NULL,NULL);
-
-	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
-	sd->newfunc=NULL; 
-	sd->push("startindex",
-			_("Start"),
-			_("The page index at which this range starts."),
-			Element_Int, "0,context.doc.pages.n","0",
-			0,
-			NULL);
-	sd->push("offset",
-			_("Index offset"),
-			_("Offset to add to the index before making an actual label"),
-			Element_Int, NULL,"0",
-			0,
-			NULL);
-	sd->push("labelbase",
-			_("Page label template"),
-			_("Page label template"),
-			Element_String, NULL,"0",
-			0,
-			NULL);
-	StyleDef *e=new StyleDef(NULL,
-			"labeltype",
-			_("Number style"),
-			_("Number style"),
-			Element_Enum, NULL,"Arabic",
-			NULL,0,NULL);
-	e->push("arabic", _("Arabic"), _("Arabic: 1,2,3..."), 
-			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("roman", _("Lower case roman numerals"), _("Roman: i,ii,iii..."),  
-			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("roman_cap", _("Upper case roman numerals"), _("Roman: I,II,III..."),  
-			Element_EnumVal, NULL,NULL,0,NULL);
-	e->push("abc", _("Letter numbering"), _("a,b,c,..,aa,ab,..."),  
-			Element_EnumVal, NULL,NULL,0,NULL);
-	sd->push(e);
-	sd->push("reverse",
-			_("Reverse order"),
-			_("Whether the range goes 1,2,3.. or ..3,2,1."),
-			Element_Boolean, NULL,"1",
-			0,
-			NULL);
-	
-	return sd;
-}
-
-PageRange::PageRange(const char *newbase,int ltype)
+PageRange::PageRange()
+	: color(65535,65535,65535,65535)
 {
 	name=NULL;
-	impositiongroup=0;
-	start=offset=0;
+	start=first=0;
 	end=-1;
-	labelbase=newstr(newbase);
-	labeltype=ltype;
+	labelbase=NULL;
+	labeltype=Numbers_Default;
 	decreasing=0;
+}
+
+PageRange::PageRange(const char *nm, const char *base, int type, int s, int e, int f, int dec)
+	: color(65535,65535,65535,65535)
+{
+	name=newstr(nm);
+	labelbase=newstr(base);
+	labeltype=type;
+	start=s;
+	end=e;
+	first=f;
+	decreasing=dec;
 }
 
 PageRange::~PageRange()
@@ -170,106 +139,87 @@ PageRange::~PageRange()
 }
 
 
-//! Convert things like "A-###" to "A-%s" and puts the number of '#' chars in len.
-/*! \ingroup lmisc
- * Assumes there is only one block of '#' chars.
- * 
- * NULL -> NULL, len==0\n
- * "" -> "", len==0\n
- * "blah" -> "blah", len==0\n
- * "#" -> "%s", len==1\n
- * "###" -> "%s", len==3\n
- *
- * Returns a new char[].
- */
-char *make_labelbase_for_printf(const char *f,int *len)
+StyleDef *PageRangeStyleDef()
 {
-	if (!f) {
-		if (len) *len=0;
-		return NULL;
-	}
-	char *newf;
-	const char *p;
-	int n=0;
-	p=strchr(f,'#');
-	if (!p) {
-		if (len) *len=0;
-		return newstr(f);
-	}
-	
-	while (*p=='#') { p++; n++; }
-	newf=new char[strlen(f)-n+6];
-	if (n>20) n=20;
-	if (p-f-n) strncpy(newf,f,p-f-n);
-	if (n) sprintf(newf+(p-f)-n,"%%s");
+	StyleDef *sd=new StyleDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
+			Element_Fields, NULL,NULL);
 
-	if (*p) strcat(newf,p);
-	if (len) *len=n;
+	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
+	sd->newfunc=NULL; 
 
-	return newf;
+	sd->push("end",
+			_("End"),
+			_("The document page index at which this range ends."),
+			Element_Int,
+			"0,context.doc.pages.n", //range
+			"0",                    //default value
+			0,
+			NULL);
+
+	sd->push("start",
+			_("Start"),
+			_("The document page index at which this range starts."),
+			Element_Int,
+			"0,context.doc.pages.n", //range
+			"0",                    //default value
+			0,
+			NULL);
+
+	sd->push("first",
+			_("First page number of the range"),
+			_("First page number of the range"),
+			Element_Int, NULL,"0",
+			0,
+			NULL);
+
+	sd->push("labelbase",
+			_("Page label template"),
+			_("Page label template"),
+			Element_String, NULL,"0",
+			0,
+			NULL);
+
+	sd->pushEnum("labeltype",_("Page number style"),_("Page number style"),"Arabic",NULL,NULL,
+				  "arabic", _("Arabic"), _("Arabic: 1,2,3..."),
+				  "roman", _("Lower case roman numerals"), _("Roman: i,ii,iii..."),
+				  "roman_cap", _("Upper case roman numerals"), _("Roman: I,II,III..."),
+				  "abc", _("Letter numbering"), _("a,b,c,..,aa,ab,..."),
+				  "ABC", _("Capital letter numbering"), _("A,B,C,..,AA,AB,..."),
+				  "none", _("Don't show any labels for this range"), _("Don't show any labels for this range"),
+				  NULL);
+
+	sd->push("reverse",
+			_("Reverse order"),
+			_("Whether the range goes 1,2,3.. or ..3,2,1."),
+			Element_Boolean, NULL,"1",
+			0,
+			NULL);
+
+	return sd;
 }
 
-//! Turn 26 into "z" or 27 into "za", etc. Optionally capitalize.
-/*! \ingroup lmisc
- *  Returns a new'd char[].
- */
-char *letter_numeral(int i,char cap)
-{
-	char *n=NULL;
-
-	char d[2];
-	d[1]='\0';
-	while (i>0) { 
-		d[0]=i%26+'a'; 
-		prependstr(n,d);
-		i/=26; 
-	}
-
-	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
-	return n;
-}
-
-//! Make a roman numeral from i, optionally capitalized.
-/*! \ingroup lmisc
- *
- * This makes numbers using ascii i,v,x,l,c,d,m, or I,V,X,L,C,D,M, not the unicode roman numerals U+2150-U+218F.
- * Also, M is the largest chunk of number dealt with, so 5000 translates to "mmmmm" for instance.
- */
-char *roman_numeral(int i,char cap)
-{
-	char *n=NULL;
-
-	while (i>=1000) { appendstr(n,"m"); i-=1000; }
-	if (i>=900) { appendstr(n,"cm"); i-=900; }
-	if (i>=500) { appendstr(n,"d"); i-=500; }
-	if (i>=400) { appendstr(n,"cd"); i-=400; }
-	while (i>=100) { appendstr(n,"c"); i-=100; }
-	if (i>=90) { appendstr(n,"xc"); i-=90; }
-	if (i>=50) { appendstr(n,"l"); i-=50; }
-	if (i>=40) { appendstr(n,"xl"); i-=40; }
-	while (i>=10) { appendstr(n,"x"); i-=10; }
-	if (i>=9) { appendstr(n,"ix"); i-=9; }
-	if (i>=5) { appendstr(n,"v"); i-=5; }
-	if (i>=4) { appendstr(n,"iv"); i-=4; }
-	while (i>=1) { appendstr(n,"i"); i--; }
-
-	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
-	return n;
-}
 
 //! Return a label that correctly corresponds to labelbase and page number i.
 /*! i is index in doc->pages, so number used is (i-start+offset).
  * If index is not in the range, then NULL is returned, else a new'd char[].
+ *
+ * If labeltype is Numbers_None, then "" is always returned, whatever the base is.
+ * If labelbase is NULL or "", then "" is returned.
+ *
+ * \todo maybe have decreasing_to_first and decreasing_from_first
  */
-char *PageRange::GetLabel(int i)
+char *PageRange::GetLabel(int i,int altfirst)
 {
 	if (i<start || i>end) return NULL;
-	if (!labelbase || *labelbase=='\0') return newstr("");
+	if (!labelbase || *labelbase=='\0' || labeltype==Numbers_None) return newstr("");
+	if (altfirst<0) altfirst=first;
 
 	char *label=NULL,*lb,*n;
 	
-	if (decreasing) i=end-(i-start)+offset;
-	else i=i-start+offset;
+	//if (decreasing) i=end-(i-start)+altfirst; //<-- this is for altfirst==lowest in range
+	//else i=i-start+altfirst;
+	if (decreasing) i=altfirst-(i-start); //<--this is for altfirst is start of range, maybe not lowest
+	else i=altfirst+(i-start);
 	
 	int len;
 	lb=make_labelbase_for_printf(labelbase,&len);
@@ -278,28 +228,22 @@ char *PageRange::GetLabel(int i)
 	else if (labeltype==Numbers_abc) letter_numeral(i,0);
 	else if (labeltype==Numbers_ABC) letter_numeral(i,1);
 	else n=numtostr(i+1);
-		
-	label=new char[strlen(lb)+strlen(n)+1];
+
+	int lenn=strlen(n);
+	if (lenn<len && labeltype==Numbers_Arabic){ //need to pad when using decimal
+		char *tt=new char[len-lenn+1];
+		memset(tt,'0',len-lenn);
+		tt[len-lenn]='\0';
+		prependstr(n,tt);
+		delete[] tt;
+		lenn=len;
+	}
+
+	label=new char[strlen(lb)+lenn+1];
 	sprintf(label,lb,n);
 	delete[] n;
 	delete[] lb;
 	return label;
-}
-
-/*! \ingroup lmisc
- * \todo put me somewhere
- */
-const char *labeltypename(PageLabelType t)
-{
-	switch (t) {
-		case Numbers_Default:       return "default";
-		case Numbers_Arabic:        return "arabic";
-		case Numbers_Roman:         return "roman";
-		case Numbers_Roman_cap:     return "roman_capitals";
-		case Numbers_abc:           return "abc";
-		case Numbers_ABC:           return "ABC";
-		default: return NULL;
-	}
 }
 
 /*! \todo make labeltype be the enum names.. this ultimately means PageRange
@@ -315,9 +259,8 @@ void PageRange::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	if (what==-1) {
 		fprintf(f,"%sname Blah          #optional name of the range\n",spc);
-		fprintf(f,"%simpositiongroup 0  #(unimplemented)\n",spc);
 		fprintf(f,"%sstart 0            #the starting page index for the range\n",spc);
-		fprintf(f,"%soffset 2           #amount to add to the index of each page\n",spc);
+		fprintf(f,"%sfirst 2            #amount to add to the index of each page\n",spc);
 		fprintf(f,"%s#labelbase is a template used to construct labels:\n",spc);
 		fprintf(f,"%slabelbase \"#\"      #(default) would make normal numbers: 0,1,2,3,...\n",spc);
 		fprintf(f,"%s#labelbase \"###\"   #would make labels with 0 padding: 000,001,...100,...999,1000,...\n",spc);
@@ -329,19 +272,20 @@ void PageRange::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s                   # roman_capitals      ->  I,II,III,...\n",spc);
 		fprintf(f,"%s                   # abc                 ->  a,b,c,...\n",spc);
 		fprintf(f,"%s                   # ABC                 ->  A,B,C,...\n",spc);
+		fprintf(f,"%s                   # none                ->  (do not show anything for the label)\n",spc);
 		return;
 	}
 
-	//int impositiongroup;
 	//int start,end,offset;
 	//char *labelbase;
 	//int labeltype;
 	
 	if (name) fprintf(f,"%sname %s\n",spc,name);
-	fprintf(f,"%simpositiongroup %d\n",spc,impositiongroup);
 	fprintf(f,"%sstart %d\n",spc,start);
-	fprintf(f,"%soffset %d\n",spc,offset);
-	fprintf(f,"%slabeltype %s\n",spc,labeltypename((PageLabelType)labeltype));
+	fprintf(f,"%sfirst %d\n",spc,first);
+	fprintf(f,"%slabeltype %s\n",spc,pageLabelTypeName((PageLabelType)labeltype));
+	if (decreasing) fprintf(f,"%sdecreasing",spc);
+
 	fprintf(f,"%slabelbase ",spc);
 	dump_out_escaped(f,labelbase,-1);
 	fprintf(f,"\n");
@@ -358,25 +302,31 @@ void PageRange::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"name")) {
 			makestr(this->name,value);
-		} else if (!strcmp(name,"impositiongroup")) {
-			IntAttribute(value,&impositiongroup);
+
 		} else if (!strcmp(name,"start")) {
 			IntAttribute(value,&start);
+
 		} else if (!strcmp(name,"end")) {
 			IntAttribute(value,&end);
-		} else if (!strcmp(name,"offset")) {
-			IntAttribute(value,&offset);
+
+		} else if (!strcmp(name,"first")) {
+			IntAttribute(value,&first);
+
 		} else if (!strcmp(name,"labeltype")) {
 			if (!strcmp(value,"arabic")) labeltype=Numbers_Arabic;
 			else if (!strcmp(value,"roman")) labeltype=Numbers_Roman;
 			else if (!strcmp(value,"roman_capitals")) labeltype=Numbers_Roman_cap;
 			else if (!strcmp(value,"abc")) labeltype=Numbers_abc;
 			else if (!strcmp(value,"ABC")) labeltype=Numbers_ABC;
+			else if (!strcmp(value,"none")) labeltype=Numbers_None;
 			else labeltype=Numbers_Default;
+
 		} else if (!strcmp(name,"decreasing")) {
 			decreasing=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"increasing")) {
 			decreasing=!BooleanAttribute(value);
+
 		} else if (!strcmp(name,"labelbase")) {
 			makestr(labelbase,value);
 		}
@@ -539,16 +489,146 @@ int Document::NewPages(int starting,int np)
 
 	if (np<=0) return 0;
 	Page *p;
+
+	 //create the pages
 	if (starting<0) starting=pages.n;
 	for (int c=0; c<np; c++) {
 		p=new Page(NULL);
 		pages.push(p,1,starting);
 	}
-	if (pageranges.n) pageranges.e[pageranges.n-1]->end=pages.n-1;
+
+	 //adjust pageranges if necessary
+	if (pageranges.n) {
+		int c;
+		for (c=0; c<pageranges.n; c++)
+			if (starting>=pageranges.e[c]->start && starting<=pageranges.e[c]->end) break;
+		if (c==pageranges.n) c=pageranges.n-1; //if adding to end, extend final pagerange
+
+		for (int c2=c; c2<pageranges.n; c2++) {
+			if (c2!=c) pageranges.e[c2]->start+=np;
+			pageranges.e[c2]->end+=np;
+		}
+	}
+
+	 //sync up with the imposition
 	imposition->NumPages(pages.n);
 	SyncPages(starting,-1);
+
 	laidout->notifyDocTreeChanged(NULL,TreePagesAdded, starting,-1);
 	return np;
+}
+
+/*! Return 0 for range applied ok. 1 for improper range, not applied.
+ *
+ * If end<0, then make the range go until the end of the document.
+ * If end is otherwise less than start, then it is an error, and 1 is returned.
+ */
+int Document::ApplyPageRange(const char *name, int type, const char *base, int start, int end, int first, int dec)
+{
+	if (start<0 || start>=pages.n) return 1;
+	if (end<0) end=pages.n-1;
+	if (end<start) return 1;
+	if (end>=pages.n) end=pages.n-1;
+	
+	PageRange *newrange=new PageRange(name,base,type,start,end,first,dec);
+	if (!pageranges.n) {
+		 //no previous ranges, so just add the fresh one!
+		pageranges.push(newrange,1);
+
+	} else {
+		 //there are existing page ranges, we need to overwrite the relevant portions.
+		int c=-1;
+		if (start<pageranges.e[0]->start) {
+			 //new range goes in front of earliest range, but might extend into a later range
+			pageranges.push(newrange,1,0);
+			c=1; //range to deal with next
+
+		} else if (start>pageranges.e[pageranges.n-1]->end) {
+			 //range goes cleanly at the end, no need to cut up anything
+			pageranges.push(newrange,1,-1);
+			c=-1; //no range to deal with next
+
+		} else {
+			 //range will cut into an existing range maybe
+			for (c=0; c<pageranges.n; c++) {
+				if (start>=pageranges.e[c]->start && start<=pageranges.e[c]->end) break;
+			}
+
+			 //the new range cuts into range c.
+
+			if (start==pageranges.e[c]->start) {
+				 //new range starts at beginning of range c
+				pageranges.push(newrange,1,c);
+				c++;
+
+				if (end==pageranges.e[c]->end) {
+					 //range completely replaces old
+					pageranges.remove(c);
+					c=-1;
+				} else if (end<pageranges.e[c]->end) {
+					 //new replaces only beginning part of old
+					//c=c; <--check range c down below
+				} else {
+					 //new totally covers old, and extends into further ranges
+					pageranges.remove(c);
+					//c=c; <--check range c down below
+				}
+
+			} else {
+				 //new range starts somewhere inside range c, but not at beginning
+				pageranges.push(newrange,1,c+1);
+				pageranges.e[c]->end=start-1;
+
+				if (end>pageranges.e[c]->end) {
+					 //new range ends in a later range
+					c+=2;
+				} else if (end==pageranges.e[c]->end) {
+					 //new range covers the rest of range c
+					c=-1;
+				} else {
+					 //new range ends within range c, so we need to add another range after newrange
+					char *newname=newstr(pageranges.e[c]->name);
+					appendstr(newname,"(2)");
+					int first;
+					if (pageranges.e[c]->decreasing) first=pageranges.e[c]->first-(end-pageranges.e[c]->start+1);
+					else pageranges.e[c]->first=pageranges.e[c]->first+(end-pageranges.e[c]->start+1);
+					pageranges.push(new PageRange(newname,
+												  pageranges.e[c]->labelbase,
+												  pageranges.e[c]->labeltype,
+												  end+1,                 //start
+												  pageranges.e[c]->end, //end
+												  first,               //first
+												  pageranges.e[c]->decreasing),1,c+2);
+					delete[] newname;
+					c=-1;
+				}
+
+			}
+
+			if (c>=0) {
+				 //the end of the new range cuts into some range >=c
+				while (c<pageranges.n && end>pageranges.e[c]->end) pageranges.remove(c);
+
+				 //now c either is pageranges.n, or it is the range that the new range ends in
+
+				if (c<pageranges.n) {
+					if (pageranges.e[c]->decreasing) pageranges.e[c]->first-=end-start+1;
+					else pageranges.e[c]->first+=end-start+1;
+					pageranges.e[c]->start=end+1;
+				}
+			}
+		}
+	}
+
+	 //now remap page labels
+	char *label;
+	for (int c=start; c<=end; c++) {
+		label=newrange->GetLabel(c);
+		if (pages.e[c]->label) delete[] pages.e[c]->label;
+		pages.e[c]->label=label;
+	}
+
+	return 0;
 }
 
 //! Remove pages [start,start+n-1].
@@ -727,12 +807,12 @@ int Document::SyncPages(int start,int n)
 	if (imposition) imposition->SyncPageStyles(this,start,n);
 	
 	char *label;
-	int range=0;
 	for (int c=start; c<start+n; c++) {
-		if (pageranges.n==0) {
+		if (pageranges.n==0 || c<pageranges.e[0]->start || c>pageranges.e[pageranges.n-1]->end) {
 			label=new char[12];
 			sprintf(label,"%d",c);
 		} else {
+			int range=0;
 			while (range<pageranges.n && c>pageranges.e[range]->end) range++;
 			label=pageranges.e[range]->GetLabel(c);
 		}
@@ -856,11 +936,20 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 	}
 	
 	 //validate pagerange ends==-1 to scale properly
+	int laststart=-1;
 	for (c=0; c<pageranges.n; c++) {
+		if (pageranges.e[c]->start<=laststart) {
+			 //invalid start index! supposed to be greater than the last start
+			pageranges.remove(c);
+			c--;
+			continue;
+		}
 		if (c<pageranges.n-1) pageranges.e[c]->end=pageranges.e[c+1]->start-1;
 		else pageranges.e[c]->end=pages.n-1;
+
+		laststart=pageranges.e[c]->start;
 	}
-	
+
 	//****** finish this:
 	if (imposition) imposition->NumPages(pages.n);
 	else {
@@ -955,7 +1044,6 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 
 	if (name) fprintf(f,"%sname %s\n",spc,name);
-	 //*** shouldn't have this? it is just the filename, file knows that already
 	if (saveas) fprintf(f,"%ssaveas %s\n",spc,saveas);
 
 	 // dump imposition

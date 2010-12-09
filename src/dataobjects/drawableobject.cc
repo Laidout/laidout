@@ -22,13 +22,13 @@
  *
  * This could be blur, contrast, saturation, etc. 
  *
- * This could also be a adapeted to be a dynamic
+ * This could also be a adapted to be a dynamic
  * filter that depends on some resource, such as a global integer resource
  * representing the current frame, that might
  * adjust an object's matrix based on keyframes, for instance.
  *
  * Every object can have any number of filters applied to it. Filters behave in
- * a manner similar to svg filters. They can specify the input source, and output target,
+ * a manner similar to svg filters. They can specify the input source(s), and output target,
  * which can then be the input of another filter.
  *
  * \todo it would be nice to support all the built in svg filters, and additionally
@@ -38,19 +38,29 @@ class ObjectFilter : public Laxkit::anObject
 {
  public:
 	char *filtername;
-	char *inputname;
-	char *outputname;
 
-	ObjectFilter *inputs;
+	PtrStack<ObjectFilter> inputs;
 	ObjectFilter *output;
 
 	RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
-	int RequiresRasterization(); //whether object contents readonly while filter is on
-	double *FilterTransform(); //additional affine transform to apply to object's transform
+	virtual int RequiresRasterization() = 0; //whether object contents readonly while filter is on
+	virtual double *FilterTransform() = 0; //additional affine transform to apply to object's transform
+	virtual LaxInterfaces::InterfaceWithDp *Interface() = 0; //optional editing interface
 
 	ObjectFilter();
 	virtual ~ObjectFilter();
 }
+
+ObjectFilter::ObjectFilter()
+{
+	filtername=NULL;
+}
+
+ObjectFilter::~ObjectFilter()
+{
+	if (filtername) delete[] filtername;
+}
+
 
 //----------------------------- DrawableObject ---------------------------------
 /*! \class DrawableObject
@@ -148,6 +158,38 @@ Laxkit::anObject *DrawableObject::object_e(int i)
 	if (i>=0 && i<subobjects.n) return subobjects.e[c];
 	return NULL;
 }
+
+
+
+//---------------------------------- DrawObjectChain ---------------------------------
+/*! \class DrawObjectChain
+ * \brief Class to link objects together.
+ *
+ * Chains can be used in various ways. The most common is linking text frames. Also,
+ * they can be used to link imported images into a single chain. Say you import pages of a multipage pdf.
+ * A chain can preserve the order of imported pages, and if you reimport later, you can
+ * automatically replace that chain with the new one. This can be useful for updating externally defined content.
+ *
+ * Further food for thought is using chains to define connector networks, but that might be overkill.
+ * More food for thought would be using chains for special filter application, or for skeleton manipulation.
+ *
+ * Please note that DrawableObjects increment and decrement DrawObjectChains, but NOT the other way around.
+ * The chain only has a plain pointer to the objects. Thus the objects are really parents, and the chain is a child.
+ */
+
+
+DrawObjectChain::DrawObjectChain()
+{
+	id=NULL;
+}
+
+DrawObjectChain::~DrawObjectChain()
+{
+	if (id) delete[] id;
+}
+
+
+
 
 
 

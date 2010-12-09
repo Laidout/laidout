@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2007,2010 by Tom Lechner
 //
 #ifndef OBJECTCONTAINER_H
 #define OBJECTCONTAINER_H
@@ -43,10 +43,11 @@ class ObjectContainer : virtual public Laxkit::anObject
 	unsigned int obj_flags;
 	//virtual unsigned int flags();
 	
-	ObjectContainer() { id=NULL; }
-	virtual ~ObjectContainer() { if (id) delete[] id; }
-	virtual int n()=0;
-	virtual Laxkit::anObject *object_e(int i)=0;
+	ObjectContainer();
+	virtual ~ObjectContainer();
+	virtual int n() = 0;
+	virtual Laxkit::anObject *object_e(int i) = 0;
+
 	virtual int contains(Laxkit::anObject *d,FieldPlace &place);
 	virtual Laxkit::anObject *getanObject(FieldPlace &place,int offset=0,int nn=-1);
 	virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, Laxkit::anObject **d=NULL);

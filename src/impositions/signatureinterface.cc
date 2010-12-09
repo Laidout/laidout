@@ -389,7 +389,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 	}
 	menu->EndSubMenu();
 	//***menu->AddItem(_("Custom..."),SIGM_CustomPaper);
-	menu->AddItem(_("Paper Size from Final Size"),SIGM_FinalFromPaper);
+	menu->AddItem(_("Paper Size to Final Size"),SIGM_FinalFromPaper);
 
 	if (hasfinal) {
 		menu->AddSep();
@@ -1131,8 +1131,10 @@ int SignatureInterface::Refresh()
 	if (showsplash) {
 		dp->DrawScreen();
 		dp->NewFG(0,0,0);
+		char scratch[200];
+		sprintf(scratch,_("Laidout %s\n(impose only)\nBy Tom Lechner"),LAIDOUT_VERSION);
 		dp->textout(viewport->win_w/2,viewport->win_h/2,
-				_("Laidout (impose only)\nBy Tom Lechner"), //***should probably show version number
+				scratch, 
 				-1,LAX_CENTER);
 		dp->DrawReal();
 	}
