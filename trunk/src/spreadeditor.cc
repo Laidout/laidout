@@ -33,6 +33,7 @@
 #include "headwindow.h"
 #include "helpwindow.h"
 #include "viewwindow.h"
+#include "interfaces/pagerangeinterface.h"
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -1102,6 +1103,8 @@ int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxK
  */
 int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
+	DBG cerr <<"SpreadInterface::CharInput: "<<ch<<" as char: '"<<(char)(ch>20 && ch<127?ch:(int)'?')<<","<<endl;
+
 	if (ch==LAX_Shift && dragpage>=0 && curpages.n==1) {
 		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
 		return 0;
@@ -1213,10 +1216,16 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
 									0,0,0,0,0,NULL);
 	win_colors->bg=rgbcolor(200,200,200);
+	viewport->win_colors->bg=rgbcolor(255,255,255);
 	viewport->dp->NewBG(255,255,255);
 
 	needtodraw=1;
-	AddTool(new SpreadInterface(viewport->dp,project,doc),1,1); // local, and select it
+
+	SpreadInterface *interf=new SpreadInterface(viewport->dp,project,doc);
+	//viewport->Push(interf,1); // local, and select it
+	AddTool(interf,1,1); //***
+
+	//AddTool(new PageRangeInterface(1,viewport->dp, doc),1,0); // local, and select it
 }
 
 SpreadEditor::~SpreadEditor()
@@ -1445,6 +1454,8 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
+	DBG cerr <<"SpreadEditor::CharInput: "<<ch<<" as char: '"<<(char)(ch>20 && ch<127?ch:(int)'?')<<","<<endl;
+
 	if (ch==LAX_Esc) {
 		if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
 		app->destroywindow(this);
@@ -1454,7 +1465,7 @@ int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned 
 		app->addwindow(new HelpWindow());
 		return 0;
 	}
-	return 1;
+	return ViewerWindow::CharInput(ch,buffer,len,state,d);
 }
 
 //! Trigger an ArrangeSpreads if arrangetype is auto.

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007,2010 by Tom Lechner
 //
 
 #include "language.h"
@@ -39,6 +39,8 @@ using namespace Laxkit;
 using namespace std;
 
 
+
+//----------------------------------- unique name functions ------------------------------
 
 //! Return a roughly unique id. Uniqueness is not guaranteed!
 /*! Say base=="blah" then something like "blah12" will be returned.
@@ -70,7 +72,102 @@ const char *Untitled_name()
 	return name;
 }
 
-	
+
+//--------------------------------- number range naming helpers --------------------------
+
+//! Convert things like "A-###" to "A-%s" and puts the number of '#' chars in len.
+/*! \ingroup lmisc
+ * Assumes there is only one block of '#' chars.
+ * 
+ * NULL -> NULL, len==0\n
+ * "" -> "", len==0\n
+ * "blah" -> "blah", len==0\n
+ * "#" -> "%s", len==1\n
+ * "###" -> "%s", len==3\n
+ *
+ * Note that this sets up for string, and does not create something like '%03s' areas. The calling code
+ * must deal with len itself.
+ *
+ * Returns a new char[].
+ */
+char *make_labelbase_for_printf(const char *f,int *len)
+{
+	if (!f) {
+		if (len) *len=0;
+		return NULL;
+	}
+	char *newf;
+	const char *p;
+	int n=0;
+	p=strchr(f,'#');
+	if (!p) {
+		if (len) *len=0;
+		return newstr(f);
+	}
+
+	while (*p=='#') { p++; n++; }
+	newf=new char[strlen(f)-n+6];
+	if (n>20) n=20;
+	if (p-f-n) strncpy(newf,f,p-f-n);
+	if (n) sprintf(newf+(p-f)-n,"%%s");
+
+	if (*p) strcat(newf,p);
+	if (len) *len=n;
+
+	return newf;
+}
+
+//! Turn 26 into "z" or 27 into "za", etc. Optionally capitalize.
+/*! \ingroup lmisc
+ *  Returns a new'd char[].
+ */
+char *letter_numeral(int i,char cap)
+{
+	char *n=NULL;
+
+	char d[2];
+	d[1]='\0';
+	while (i>0) { 
+		d[0]=i%26+'a'; 
+		prependstr(n,d);
+		i/=26; 
+	}
+
+	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
+	return n;
+}
+
+//! Make a roman numeral from i, optionally capitalized.
+/*! \ingroup lmisc
+ *
+ * This makes numbers using ascii i,v,x,l,c,d,m, or I,V,X,L,C,D,M, not the unicode roman numerals U+2150-U+218F.
+ * Also, M is the largest chunk of number dealt with, so 5000 translates to "mmmmm" for instance.
+ */
+char *roman_numeral(int i,char cap)
+{
+	char *n=NULL;
+
+	while (i>=1000) { appendstr(n,"m"); i-=1000; }
+	if (i>=900) { appendstr(n,"cm"); i-=900; }
+	if (i>=500) { appendstr(n,"d"); i-=500; }
+	if (i>=400) { appendstr(n,"cd"); i-=400; }
+	while (i>=100) { appendstr(n,"c"); i-=100; }
+	if (i>=90) { appendstr(n,"xc"); i-=90; }
+	if (i>=50) { appendstr(n,"l"); i-=50; }
+	if (i>=40) { appendstr(n,"xl"); i-=40; }
+	while (i>=10) { appendstr(n,"x"); i-=10; }
+	if (i>=9) { appendstr(n,"ix"); i-=9; }
+	if (i>=5) { appendstr(n,"v"); i-=5; }
+	if (i>=4) { appendstr(n,"iv"); i-=4; }
+	while (i>=1) { appendstr(n,"i"); i--; }
+
+	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
+	return n;
+}
+
+
+//----------------------------------- File i/o helpers ---------------------------------------------
+
 //! Simplify opening any sort of file for writing, does basic error checking, such as for existence, and writability.
 /*! \ingroup misc
  *

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007,2010 by Tom Lechner
 //
 
 
@@ -411,12 +411,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
 	paperwidth= papergroup->papers.e[0]->box->paperstyle->width;
 	paperheight=papergroup->papers.e[0]->box->paperstyle->height;
+
+	int totalnumpages=(end-start+1)*papergroup->papers.n;
 	
 	 //------------ write out document attributes
 	 //****** all the scribushints.slahead blocks are output as DOCUMENT attributes
 	 //		  EXCEPT: ANZPAGES, PAGEHEIGHT, PAGEWIDTH, ORIENTATION
 	fprintf(f,"  <DOCUMENT \n"
-			  "    ANZPAGES=\"%d\" \n",end-start+1); //number of pages
+			  "    ANZPAGES=\"%d\" \n",totalnumpages); //number of pages
 	int dodefaultdoc=1;
 	if (scribushints) {
 		Attribute *slahead=scribushints->find("slahead");
@@ -550,14 +552,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		
 		//*************DocItemAttributes not 1.2
 		//************TablesOfContents   not 1.2
-		//************Sections  not 1.2
+
 		//Not quite sure when Sections were introduced. Section blocks determine page number format:
 		//<Sections>
 		//  <Section Number="0" Name="string" From="0" To="10" Type="..." Start="1" Reversed="0" Active="1"/>
 		//</Sections>
 		//  Type can be: Type_A_B_C, Type_a_b_c, Type_1_2_3, Type_I_II_III, Type_i_ii_iii, Type_None
 		
-		//------------PageSets  not 1.2
+		//------------PageSets  (not in 1.2)
 		//This sets up so there is one column of pages, with CANVAS_GAP units between them.
 		fprintf(f,"    <PageSets>\n"
 				  "      <Set Columns=\"1\" GapBelow=\"%g\" Rows=\"1\" FirstPage=\"0\" GapHorizontal=\"0\"\n"
@@ -567,6 +569,19 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		//************MASTERPAGE not separate entity in 1.2
 	} //if !scribushints for non PAGE and PAGEOBJECT elements of DOCUMENT
 			
+	 //Sections are always output fresh. Sections are analogous to PageRanges, BUT they do not track
+	 //when the layout is anything other than single, consecutive pages on a single sheet of paper.
+	fprintf(f,"    <Sections>\n");
+	fprintf(f,"      <Section Name=\"0\"\n"
+			  "               Active=\"1\"\n"
+			  "               Number=\"0\"\n"
+			  "               Type=\"Type_1_2_3\"\n"
+			  "               From=\"0\"\n"
+			  "               To=\"%d\"\n"
+			  "               Start=\"1\"\n"
+			  "               Reversed=\"0\"\n"
+			  "      </Section>\n", totalnumpages-1);
+	fprintf(f,"    </Sections>\n");
 
 
 	//------------PAGE and PAGEOBJECTS
@@ -1507,7 +1522,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	a=scribusdoc->find("ANZPAGES");
 	int numpages=-1;
 	if (a) IntAttribute(a->value,&numpages);//***should error check here!
-	int start,end;
+	int start,end; //page indices in Scribus file
 	if (in->instart<0) start=0; else start=in->instart;
 	if (in->inend<0 || in->inend>=numpages) end=numpages-1; 
 		else end=in->inend;
@@ -1557,6 +1572,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	char scratch[50];
 	MysteryData *mdata=NULL;
 	char *name, *value;
+	PtrStack<Page> masterpages;
 
 
 	 //changedir to directory of file to correctly parse relative links
@@ -1571,11 +1587,13 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	for (c=0; c<scribusdoc->attributes.n; c++) {
 		name=scribusdoc->attributes.e[c]->name;
 		value=scribusdoc->attributes.e[c]->value;
+
 		if (!strcmp(name,"PAGE")) {
 			page=scribusdoc->attributes.e[c];
 			a=page->find("NUM");
 			IntAttribute(a->value,&pagenum); //*** could use some error checking here so corrupt files dont crash laidout!!
 			if (pagenum<start || pagenum>end) continue; //only store pages that'll really be imported
+
 			DoubleAttribute(page->find("PAGEXPOS")->value,&pagebounds[pagenum].minx);
 			DoubleAttribute(page->find("PAGEYPOS")->value,&pagebounds[pagenum].miny);
 			DoubleAttribute(page->find("PAGEWIDTH")->value,&pagebounds[pagenum].maxx);
@@ -1618,32 +1636,64 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				}
 			}
 			continue;
+
+		} else if (!strcmp(name,"MASTERPAGE")) {
+			 //MASTERPAGE objects are just like PAGE, but they hold MASTEROBJECTS instead.
+			 //Each PAGE has MNAM which is the name of the master page to apply to it.
+			 //Master page objects appear to be applied underneath all actual page objects.
+			 //MASTEROBJECTs have an OnMasterPage attribute which is the name of the MASTERPAGE it belongs to.
+
+			Page *mpage=new Page;
+			page=scribusdoc->attributes.e[c];
+			a=page->find("NAM");
+			makestr(mpage->label,a->value);
+
+			//ignore other MASTERPAGE attributes, they are mainly just hints
+
+			masterpages.push(mpage,1);
 		}
 	}
+
 	 //now scan for everything other than PAGE
 	int pageobjectcount=-1;
+	int onmasterpage,masterpageindex=-1;
+	Attribute *tmp=NULL;
 
 	for (c=0; c<scribusdoc->attributes.n; c++) {
 		name=scribusdoc->attributes.e[c]->name;
 		value=scribusdoc->attributes.e[c]->value;
 
-		if (!strcmp(name,"PAGE")) {
+		if (!strcmp(name,"PAGE") || !strcmp(name,"MASTERPAGE")) {
 			continue;
 
-		} else if (!strcmp(name,"PAGEOBJECT")) {
+		} else if (!strcmp(name,"PAGEOBJECT") || !strcmp(name,"MASTEROBJECT")) {
 			object=scribusdoc->attributes.e[c];
-			pageobjectcount++;
+			pageobjectcount++; //***should this increment for masterobjects too?
+
+			onmasterpage=0;
+			masterpageindex=-1;
+			if (!strcmp(name,"MASTEROBJECT")) {
+				onmasterpage=1;
+				tmp=object->find("OnMasterPage");
+				for (masterpageindex=0; masterpageindex<masterpages.n; masterpageindex++) {
+					if (!strcmp(tmp->value,masterpages.e[c]->label)) break;
+				}
+				if (masterpageindex==masterpages.n) masterpageindex=-1; //master page not found!
+			}
 
 			 //figure out what page it is supposed to be on..
 			 // ***need some way to compensate for bleeding!!!
-			Attribute *tmp=object->find("OwnPage");
+			tmp=object->find("OwnPage");
 			if (tmp) IntAttribute(tmp->value,&pagenum);
-			if (pagenum<start || pagenum>end) continue; //***watch out for object bleeding!!
-			if (doc) {
+			if (masterpageindex==-1 && (pagenum<start || pagenum>end)) continue; //***what about when object bleeding!!
+			if (masterpageindex==-1 && doc) {
 				 //update group to point to the document page's group
 				curdocpage=docpagenum+(pagenum-start);
 				group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
+			} else if (masterpageindex>=0) {
+				group=dynamic_cast<Group *>(masterpages.e[masterpageindex]->layers.e(0));
 			}
+
 			double x,y,rot,w,h;
 			double matrix[6];
 			DoubleAttribute(object->find("XPOS")->value  ,&x);//***this could be att->doubleValue("XPOS",&x) for safety
@@ -1651,9 +1701,14 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			DoubleAttribute(object->find("ROT")->value   ,&rot); //rotation is in degrees
 			DoubleAttribute(object->find("WIDTH")->value ,&w);
 			DoubleAttribute(object->find("HEIGHT")->value,&h);
-			x-=pagebounds[pagenum].minx;
-			y-=pagebounds[pagenum].miny;
-			y=(pagebounds[pagenum].maxy-pagebounds[pagenum].miny)-y; //pageheight-y, needed to flip y around
+
+			if (masterpageindex==-1) { //pagebounds are only for document pages
+				x-=pagebounds[pagenum].minx;
+				y-=pagebounds[pagenum].miny;
+				y=(pagebounds[pagenum].maxy-pagebounds[pagenum].miny)-y; //pageheight-y, needed to flip y around
+			}
+
+			 //find out what type of Scribus object this is
 			int ptype=atoi(object->find("PTYPE")->value); //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
 			rot*=-M_PI/180;
 
@@ -1666,6 +1721,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 			if (ptype==2 && in->keepmystery!=2) {
 				 //we found an image so convert it to native Laidout object
+
 				Attribute *pfile=object->find("PFILE");
 				ImageData *image=static_cast<ImageData *>(newObject("ImageData"));
 				char *fullfile=full_path_for_file(pfile->value,NULL);
@@ -1677,7 +1733,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				image->m(2,image->m(2)*h/image->maxy/72.);
 				image->m(3,image->m(3)*h/image->maxy/72.);
 				image->Flip(0);
-				if (in->scaletopage!=0) {
+				if (masterpageindex==-1 && in->scaletopage!=0) { //*** might have to scale for master pages too!!
 					 //apply extra page transform to fit document page
 					double mt[6];
 					//transform_mult(mt,pagebounds[pagenum].m(),image->m());
@@ -1707,7 +1763,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				//if (mdata->attributes->find("PFILE",&i)) {
 				//	mdata->attributes.remove(i);
 				//}
-				if (in->scaletopage!=0) {
+				if (masterpageindex==-1 && in->scaletopage!=0) { //*** might have to scale for master pages too!!
 					 //apply extra page transform to fit document page
 					double mt[6];
 					//transform_mult(mt,pagebounds[pagenum].m(),mdata->m());
@@ -1724,7 +1780,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				 //      name pgco
 				 //    var
 				 //      name pgno
-				tmp=mdata->attributes->find("content:");
+				if (masterpageindex==-1) tmp=mdata->attributes->find("content:"); else tmp=NULL; //don't convert for mp's yet
 				if (tmp) {
 					Attribute *sub;
 					int num=-1;
@@ -1759,6 +1815,32 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			 // Spot "0"
 			 // Register "0"
 			//***** finish me!
+//			Palette *palette=new Palette;
+//			char *cname=NULL;
+//			Color *color=NULL;
+//			int isspot=0, isreg=0;
+//			for (int c2=0; c2<scribusdoc->attributes.e[c]->attributes.n; c2++) {
+//				name=scribusdoc->attributes.e[c]->attributes.e[c2]->name;
+//				value=scribusdoc->attributes.e[c]->attributes.e[c2]->value;
+//				
+//				if (!strcmp(name,"NAME")) {
+//					cname=value;
+//				} else if (!strcmp(name,"CMYK")) {
+//					color=new CMYKColor(value);
+//				} else if (!strcmp(name,"RGB")) {
+//					color=new RGBColor(value);
+//				} else if (!strcmp(name,"Spot")) {
+//					isspot=BooleanValue(value);
+//				} else if (!strcmp(name,"Register")) {
+//					isreg=BooleanValue(value);
+//				}
+//			}
+//			if (color) {
+//				if (cname) color->Name(cname);
+//				palette->push(color,1);
+//			}
+//			//*** further down the line, must do something akin to: project->pushResource(RES_Palette, palette);
+//			continue;
 
 		} else if (scribushints) {
 			 //push any other blocks into scribushints.. we can usually safely ignore them
@@ -1768,7 +1850,26 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			continue;
 		}
 	}
-	
+
+	 //Apply any master pages by duplicating new objects on the relevant pages
+	if (masterpages.n) {
+		 //pages in range [start,end] from the Scribus file get imported into
+		 //the Laidout document in range [docpagenum, docpagenum+start-end]
+		Page *master;
+		SomeData *obj;
+		MysteryData *mobj;
+		for (int c=docpagenum; c<=docpagenum+start-end; c++) {
+			 //find which master page to use
+			//***
+			master=NULL;
+		
+			 //apply the objects at beginning of stack. Master page objects occure under all other objects.
+			for (int c2=0; c2<masterpages.e[c-docpagenum]->layers.n(); c2++) {
+				obj=masterpages.e[c-docpagenum]->layers.e(c2);
+				mobj=dynamic_cast<MysteryData*>(obj);
+			}
+		}
+	}
 
 	 //install global hints if they exist
 	if (scribushints) {

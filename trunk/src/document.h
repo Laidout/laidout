@@ -25,16 +25,6 @@ class Document;
 
 class SpreadView;
 
-enum PageLabelType {
-	Numbers_Default,
-	Numbers_Arabic,
-	Numbers_Roman,
-	Numbers_Roman_cap,
-	Numbers_abc,
-	Numbers_ABC,
-	Numbers_max
-};
-
 enum  LaidoutSaveFormat {
 	Save_Normal,
 	Save_PPT,
@@ -50,17 +40,33 @@ enum  LaidoutSaveFormat {
 
 //---------------------------- PageRange ---------------------------------------
 
+enum PageLabelType {
+	Numbers_Default,
+	Numbers_None, //sometimes you want some pages with no page numbers
+	Numbers_Arabic,
+	Numbers_Roman,
+	Numbers_Roman_cap,
+	Numbers_abc,
+	Numbers_ABC,
+	Numbers_MAX
+};
+
+const char *pageLabelTypeName(PageLabelType t);
+
 class PageRange : public LaxFiles::DumpUtility
 {
  public:
 	char *name;
-	int impositiongroup;
-	int start,end,offset;
+	int start,end, first;
 	char *labelbase;
-	int labeltype,decreasing;
-	PageRange(const char *newbase="#",int ltype=Numbers_Default);
+	int labeltype;
+	int decreasing;
+	Laxkit::ScreenColor color; //default display color for page range editor
+
+	PageRange();
+	PageRange(const char *nm, const char *base, int type, int s, int e, int f, int dec);
 	virtual ~PageRange();
-	char *GetLabel(int i);
+	char *GetLabel(int i,int altfirst=-1);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
@@ -106,6 +112,8 @@ class Document : public ObjectContainer, public Style
 	virtual int SyncPages(int start,int n);
 	virtual int ReImpose(Imposition *newimp,int scale_page_contents_to_fit);
 	virtual Spread *GetLayout(int type, int index);
+
+	virtual int ApplyPageRange(const char *name, int type, const char *base, int start, int end, int first, int dec);
 	
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

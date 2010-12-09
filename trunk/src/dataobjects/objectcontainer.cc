@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2007,2010 by Tom Lechner
 //
 
 
@@ -26,10 +26,10 @@ using namespace std;
 //------------------------------ ObjectContainer ----------------------------------
 
 /*! \class ObjectContainer
- * \brief Class to simplify object tree searching.
+ * \brief Abstract base class to simplify object tree searching.
  *
  * Used by Group, LaidoutViewport, Spread, and others to be a generic object 
- * container.
+ * container. No actual data list is defined here, only access methods.
  *
  * Three functions are built in: getanObject(), contains(), and nextObject(). Derived
  * classes must define their own n() and object_e().
@@ -45,6 +45,18 @@ using namespace std;
  * \brief  Return pointer to object with index i.
  */
 
+
+ObjectContainer::ObjectContainer()
+{
+	parent=NULL;
+	obj_flags=0;
+	id=NULL;
+}
+
+ObjectContainer::~ObjectContainer()
+{
+	if (id) delete[] id;
+}
 
 //! Step to next obect in group tree, and modify place to point to that next obj.
 /*! Please note that this function calls itself and also calls somesubobject->nextObject().
