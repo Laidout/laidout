@@ -9,13 +9,16 @@ VERSION 0.092
 -------------
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
+       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
+       Gui for modifying Page Labels
+       Fix object bleeding across pages for signatures and nets
+       Scribus import must support master pages
+       Scribus import/export should support PageRange <-> Section conversion on import
+       Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
+       Scribus import should do something meaningful with original Scribus page bleed values
+       impose-only mode should allow access to all imposition types
        Signature editor: detect non staplable binding edge, show red rather than green
        At bare minimum, path interface use should not cause a seg fault
-       Fix page bleeding for signatures and nets
-       Scribus import must support master pages
-       Scribus import/export should support PageRange <-> Section conversion
-       Gui for modifying Page Labels
-       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Net imposition interactive unwrapper and build net interface
        need partial Laidout import and export
@@ -30,12 +33,10 @@ VERSION 0.092
        Clean up project load/save internals and dialogs
        Collect for out
        double click on group should change selection area to group contents?
-       update french and spanish translations, if possible
        Tools should remember their settings
        Clean up patch controls
 (done) Add proper .desktop and application icons installation
        Fix multi-object selection move when crossing page boundaries
-       impose-only mode should allow access to all imposition types
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
        from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
@@ -88,6 +89,8 @@ VERSION 0.1
        Color channel density control, to not overdo CMYK mix, for instance
        Align and distribute tool
        Allow accessing scribus image cache, or try to spin off a non project specific general image cache
+       Backwards compatibility with previous Laidout versions, without extra utilities, starting with 0.1
+       update french and spanish translations, if possible
        Paper sizes should be translated strings
 
 
