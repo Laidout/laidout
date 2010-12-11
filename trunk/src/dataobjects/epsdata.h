@@ -39,6 +39,8 @@ class EpsInterface : public LaxInterfaces::ImageInterface
  public:
 	EpsInterface(int nid,Laxkit::Displayer *ndp);
 	LaxInterfaces::anInterface *duplicate(anInterface *dup);
+	virtual const char *IconId() { return "Eps"; }
+	virtual const char *Name();
 	virtual const char *whattype() { return "EpsInterface"; }
 	virtual const char *whatdatatype() { return "EpsData"; }
 	virtual int draws(const char *what);

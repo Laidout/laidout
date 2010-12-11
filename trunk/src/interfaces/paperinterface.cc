@@ -112,6 +112,9 @@ PaperInterface::~PaperInterface()
 	if (doc) doc->dec_count();
 }
 
+const char *PaperInterface::Name()
+{ return _("Paper Group Tool"); }
+
 #define PAPERM_PaperSize        1
 #define PAPERM_Landscape        2 
 #define PAPERM_Portrait         3 

@@ -91,6 +91,9 @@ PageRangeInterface::~PageRangeInterface()
 	if (doc) doc->dec_count();
 }
 
+const char *PageRangeInterface::Name()
+{ return _("Page Range Organizer"); }
+
 //! Return something like "1,2,3,..." or "iv,iii,ii,..."
 /*! If range<0, then use currange. If first<0, use default for that range.
  */

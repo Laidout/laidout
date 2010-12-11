@@ -42,6 +42,9 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp
 	PageRangeInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~PageRangeInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+
+	virtual const char *IconId() { return "PageRange"; }
+	virtual const char *Name();
 	virtual const char *whattype() { return "PageRangeInterface"; }
 	virtual const char *whatdatatype() { return NULL; }
 	virtual int draws(const char *atype);
