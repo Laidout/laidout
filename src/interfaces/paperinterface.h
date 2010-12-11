@@ -46,6 +46,9 @@ class PaperInterface : public LaxInterfaces::InterfaceWithDp
 	PaperInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~PaperInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+
+	virtual const char *IconId() { return "Paper"; }
+	virtual const char *Name();
 	virtual const char *whattype() { return "PaperInterface"; }
 	virtual const char *whatdatatype() { return "PaperGroup"; }
 	virtual int draws(const char *atype);

@@ -21,6 +21,32 @@
    sodipodi:modified="true">
   <defs
      id="defs4">
+    <marker
+       inkscape:stockid="EmptyTriangleOutM"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="EmptyTriangleOutM"
+       style="overflow:visible">
+      <path
+         id="path4619"
+         d="M 5.77,0.0 L -2.88,5.0 L -2.88,-5.0 L 5.77,0.0 z "
+         style="fill-rule:evenodd;fill:#FFFFFF;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(0.4) translate(-4.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="EmptyDiamondM"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="EmptyDiamondM"
+       style="overflow:visible">
+      <path
+         id="path4565"
+         d="M 0,-7.0710768 L -7.0710894,0 L 0,7.0710589 L 7.0710462,0 L 0,-7.0710768 z "
+         style="fill-rule:evenodd;fill:#FFFFFF;stroke:#000000;stroke-width:1.0pt;marker-start:none"
+         transform="scale(0.4)" />
+    </marker>
     <linearGradient
        inkscape:collect="always"
        id="linearGradient4348">
@@ -750,6 +776,27 @@
        y1="827.42804"
        x2="51.996372"
        y2="861.27655" />
+    <inkscape:perspective
+       id="perspective3588"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3619"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3652"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -758,9 +805,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.870576"
-     inkscape:cx="101.10668"
-     inkscape:cy="134.23915"
+     inkscape:zoom="4"
+     inkscape:cx="569.87858"
+     inkscape:cy="526.96417"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1278"
@@ -4902,6 +4949,120 @@
            id="rect4382"
            style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.11497545;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
            transform="matrix(-0.72432648,0.68945714,0,1,0,0)" />
+      </g>
+    </g>
+    <g
+       id="PageRange"
+       inkscape:export-filename="/home/tom/p/sourceforge/laidout/src/icons/test.png"
+       inkscape:export-xdpi="68.07"
+       inkscape:export-ydpi="68.07"
+       style="display:inline"
+       transform="translate(359.33746,361.08964)">
+      <rect
+         ry="0.025807062"
+         rx="0.025489556"
+         y="98.994316"
+         x="186.46652"
+         height="25.614914"
+         width="15.995511"
+         id="rect2380-4"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999995;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+      <rect
+         ry="0.025489558"
+         rx="0.025489556"
+         y="99.005539"
+         x="202.08435"
+         height="25.603451"
+         width="16.154551"
+         id="rect2382-5"
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999995;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+      <text
+         xml:space="preserve"
+         style="font-size:15.50993538px;font-style:normal;font-weight:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+         x="189.70888"
+         y="117.83784"
+         id="text3640"
+         sodipodi:linespacing="100%"><tspan
+           sodipodi:role="line"
+           id="tspan3642"
+           x="189.70888"
+           y="117.83784">1 2</tspan></text>
+    </g>
+    <text
+       sodipodi:linespacing="100%"
+       id="text5274"
+       y="476.29752"
+       x="465.72107"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         id="tspan5276"
+         y="476.29752"
+         x="465.72107"
+         sodipodi:role="line">PageRange</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Bitstream Vera Sans"
+       x="483.86581"
+       y="521.65942"
+       id="text1679-0"
+       sodipodi:linespacing="100%"><tspan
+         sodipodi:role="line"
+         x="483.86581"
+         y="521.65942"
+         id="tspan5278">Spread</tspan></text>
+    <g
+       id="Spread">
+      <g
+         style="display:inline"
+         inkscape:export-ydpi="68.07"
+         inkscape:export-xdpi="68.07"
+         inkscape:export-filename="/home/tom/p/sourceforge/laidout/src/icons/test.png"
+         id="g3672"
+         transform="matrix(0.66016853,0,0,0.66016853,450.77782,436.92477)">
+        <rect
+           style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.72657657;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           id="rect3674"
+           width="20.726601"
+           height="29.870689"
+           x="149.04865"
+           y="100.22476"
+           rx="0.025489558"
+           ry="0.025489558" />
+        <rect
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.72657657;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+           id="rect3676"
+           width="21.336206"
+           height="30.480295"
+           x="146.30542"
+           y="96.567116"
+           rx="0.025489558"
+           ry="0.025489558" />
+      </g>
+      <g
+         transform="matrix(0.66016853,0,0,0.66016853,465.11459,448.87487)"
+         id="SinglePageView-6"
+         inkscape:export-filename="/home/tom/p/sourceforge/laidout/src/icons/test.png"
+         inkscape:export-xdpi="68.07"
+         inkscape:export-ydpi="68.07"
+         style="display:inline">
+        <rect
+           ry="0.025489558"
+           rx="0.025489558"
+           y="100.22476"
+           x="149.04865"
+           height="29.870689"
+           width="20.726601"
+           id="rect2273-1"
+           style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:2.72657657;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+        <rect
+           ry="0.025489558"
+           rx="0.025489558"
+           y="96.567116"
+           x="146.30542"
+           height="30.480295"
+           width="21.336206"
+           id="rect2275-0"
+           style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:2.72657657;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
       </g>
     </g>
   </g>

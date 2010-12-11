@@ -21,6 +21,7 @@
 #include "epsdata.h"
 #include "../printing/epsutils.h"
 #include "../configured.h"
+#include "../language.h"
 
 #include <iostream>
 using namespace std;
@@ -250,6 +251,9 @@ EpsInterface::EpsInterface(int nid,Laxkit::Displayer *ndp)
 	: ImageInterface(nid,ndp)
 {
 }
+
+const char *EpsInterface::Name()
+{ return _("EPS Tool"); }
 
 //! Return whether this interface can draw the given type of object.
 /*! \todo should redo this to be more easily expandable for other

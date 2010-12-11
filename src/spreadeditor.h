@@ -51,6 +51,11 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 
 	SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum);
 	virtual ~SpreadInterface();
+	virtual const char *IconId() { return "Spread"; }
+	virtual const char *Name();
+	virtual const char *whattype() { return "SpreadInterface"; }
+	virtual const char *whatdatatype() { return "LittleSpread"; }
+
 	virtual int rLBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int rMBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
@@ -70,8 +75,6 @@ class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::
 	virtual int SwitchView(int i);
 	virtual int InterfaceOn();
 //	//virtual int InterfaceOff();
-	virtual const char *whattype() { return "SpreadInterface"; }
-	virtual const char *whatdatatype() { return "LittleSpread"; }
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
@@ -106,6 +109,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	Document *doc;
 	Project *project;
 	Laxkit::anXWindow *rulercornerbutton;
+	SpreadInterface *spreadtool;
 	SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 						int xx, int yy, int ww, int hh, int brder,
 						Project *project, Document *ndoc);

@@ -34,6 +34,7 @@
 #include "helpwindow.h"
 #include "viewwindow.h"
 #include "interfaces/pagerangeinterface.h"
+#include "interfaces/paperinterface.h"
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -103,6 +104,9 @@ SpreadInterface::~SpreadInterface()
 	if (view) view->dec_count();
 	if (doc) doc->dec_count();
 }
+
+const char *SpreadInterface::Name()
+{ return _("Spread Tool"); }
 
 /*! Doesn't do anything..
  */
@@ -1221,11 +1225,13 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 
 	needtodraw=1;
 
-	SpreadInterface *interf=new SpreadInterface(viewport->dp,project,doc);
-	//viewport->Push(interf,1); // local, and select it
-	AddTool(interf,1,1); //***
+	spreadtool=new SpreadInterface(viewport->dp,project,doc);
+	//viewport->Push(spreadtool,1); // local, and select it
+	AddTool(spreadtool,1,1); //***
 
-	//AddTool(new PageRangeInterface(1,viewport->dp, doc),1,0); // local, and select it
+	AddTool(new PageRangeInterface(1,viewport->dp, doc),1,0);
+	AddTool(new PaperInterface(1,viewport->dp),1,0);
+	//AddTool(new NupInterface(1,viewport->dp),1,0);
 }
 
 SpreadEditor::~SpreadEditor()
@@ -1236,13 +1242,13 @@ SpreadEditor::~SpreadEditor()
 //! Passes off to SpreadInterface::dump_out().
 void SpreadEditor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
-	((SpreadInterface *)curtool)->dump_out(f,indent,what,context);
+	spreadtool->dump_out(f,indent,what,context);
 }
 
 //! Passes off to SpreadInterface::dump_in_atts().
 void SpreadEditor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
-	((SpreadInterface *)curtool)->dump_in_atts(att,flag,context);
+	spreadtool->dump_in_atts(att,flag,context);
 }
 
 /*! Return 0 for success, nonzero error.
@@ -1253,8 +1259,7 @@ int SpreadEditor::UseThisDoc(Document *ndoc)
 	doc=ndoc;
 	if (doc) doc->inc_count();
 
-	SpreadInterface *s=((SpreadInterface *)curtool);
-	s->UseThisDoc(doc);
+	spreadtool->UseThisDoc(doc);
 	return 0;
 }
 
@@ -1277,6 +1282,7 @@ int SpreadEditor::init()
 
 	AddNull(); // makes the status bar fill whole line
 
+	 //-----document/view list
 	MenuButton *menub;
 	 //add a menu button thingy in corner between rulers
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
@@ -1296,6 +1302,45 @@ int SpreadEditor::init()
 
 	//wholelist.e[wholelist.n-1]->pw(100);
 	//AddNull(); // makes the status bar fill whole line
+
+
+	 //---- tool section
+	 //*** clean me! sampling diff methods of tool selector
+	SliderPopup *toolselector;
+	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,0, 0,0,0,0,1, 
+			NULL,object_id,"toolselector",
+			NULL,0);
+	toolselector->tooltip(_("The current tool"));
+	const char *str; //the whattype: "BlahInterface"
+	LaxImage *img;
+	int obji=0;
+	int c;
+	for (c=0; c<tools.n; c++) {
+		 // ***this should be standardized a little to have the icon stored with
+		 // the interface.
+		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
+		str=tools.e[c]->IconId();
+		//if (!strcmp(str,"MysteryInterface")) continue; //*** for now, don't let users use this! (no icon)
+		if (!strcmp(str,"Spread")) obji=tools.e[c]->id;
+		
+		img=laidout->icons.GetIcon(str);
+		//last=ibut=new Button(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"viewtoolselector",
+		//		tools.e[c]->id,nstr,tstr);
+		
+		//ibut->tooltip(tstr);
+		//ibut->SetIcon(img); //does not call inc_count()
+		//ibut->WrapToExtent(3);
+		//AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);	
+		
+		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
+		//if (img) img->dec_count();
+	}
+	toolselector->WrapToExtent();
+	SelectTool(obji);
+	AddWin(toolselector,1,-1);
+
+
+
 
 	SpreadInterface *interf=(SpreadInterface*)tools.e[0];
 	LineEdit *linp=new LineEdit(this,"name",NULL, 0, 0,0,0,0,1, NULL,object_id,"newname",
@@ -1342,7 +1387,7 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (te->changetype==TreePagesAdded ||
 				te->changetype==TreePagesDeleted ||
 				te->changetype==TreePagesMoved) {
-			((SpreadInterface *)curtool)->CheckSpreads(te->start,te->end);
+			spreadtool->CheckSpreads(te->start,te->end);
 		} else if (te->changetype==TreeDocGone) {
 			cout <<" ***need to imp SpreadEditor::DataEvent -> TreeDocGone"<<endl;
 		}
@@ -1361,14 +1406,12 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp("resetbutton",mes)) {
 		//cout <<"SpreadEditor got resetbutton message"<<endl;
-		SpreadInterface *s=dynamic_cast<SpreadInterface *>(curtool);
-		if (s) s->Reset();
+		spreadtool->Reset();
 		return 0;
 
 	} else if (!strcmp("applybutton",mes)) {
 		//cout <<"SpreadEditor got applybutton message"<<endl;
-		SpreadInterface *s=dynamic_cast<SpreadInterface *>(curtool);
-		if (s) s->ApplyChanges();
+		spreadtool->ApplyChanges();
 		return 0;
 
 	} else if (!strcmp("updatethumbs",mes)) {
@@ -1472,9 +1515,9 @@ int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned 
 int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 {
 	int c=ViewerWindow::MoveResize(nx,ny,nw,nh);
-	if (((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoTillMod ||
-			((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoAlways) 
-		((SpreadInterface *)curtool)->ArrangeSpreads();
+	if (spreadtool->view->arrangetype==ArrangeAutoTillMod ||
+			spreadtool->view->arrangetype==ArrangeAutoAlways) 
+		spreadtool->ArrangeSpreads();
 	return c;
 }
 
@@ -1482,9 +1525,9 @@ int SpreadEditor::MoveResize(int nx,int ny,int nw,int nh)
 int SpreadEditor::Resize(int nw,int nh)
 {
 	int c=ViewerWindow::Resize(nw,nh);
-	if (((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoTillMod ||
-			((SpreadInterface *)curtool)->view->arrangetype==ArrangeAutoAlways) 
-		((SpreadInterface *)curtool)->ArrangeSpreads();
+	if (spreadtool->view->arrangetype==ArrangeAutoTillMod ||
+			spreadtool->view->arrangetype==ArrangeAutoAlways) 
+		spreadtool->ArrangeSpreads();
 	return c;
 }
 
