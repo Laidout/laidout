@@ -372,11 +372,8 @@ int SpreadInterface::Refresh()
 
 	needtodraw=0;
 
-	dp->Updates(0);	
 	
-	dp->NewBG(200,200,200);
-	dp->ClearWindow();
-	if (!view) { dp->Updates(1); return 1; }
+	if (!view) { return 1; }
 
 	int c,c2;
 	
@@ -499,7 +496,6 @@ int SpreadInterface::Refresh()
 		dp->DrawReal();
 	}
 	
-	dp->Updates(1);	
 	return 1;
 }
 
@@ -1179,6 +1175,42 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 	return 1;
 }
 
+//----------------------- SpreadEditorViewport --------------------------------------
+
+/*! \class SpreadEditorViewport
+ * \brief Redefine ViewportWindow to handle custom refreshing.
+ */
+class SpreadEditorViewport : public ViewportWindow
+{
+  public:
+	SpreadInterface *spreadtool;
+	SpreadEditorViewport(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
+						 int xx,int yy,int ww,int hh,int brder, Laxkit::Displayer *ndp,SpreadInterface *s);
+	virtual ~SpreadEditorViewport() {}
+	virtual void RefreshUnder();
+};
+
+SpreadEditorViewport::SpreadEditorViewport(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
+						 int xx,int yy,int ww,int hh,int brder, Laxkit::Displayer *ndp,
+						 SpreadInterface *s)
+  : ViewportWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,ndp)
+{
+	spreadtool=s;
+}
+
+/*! Always draw the spreads no matter what other interface is present.
+ */
+void SpreadEditorViewport::RefreshUnder()
+{
+	DBG cerr <<"SpreadEditorViewport::RefreshUnder()..."<<interfaces.n<<" "<<interfaces.findindex(spreadtool)<<endl;
+	
+	if (interfaces.findindex(spreadtool)<0) {
+		spreadtool->needtodraw=1;
+		spreadtool->Refresh();
+	}
+}
+
+
 //----------------------- SpreadEditor --------------------------------------
 
 /*! \class SpreadEditor
@@ -1216,21 +1248,26 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 			if (project->docs.n) { doc=project->docs.e[0]->doc; doc->inc_count(); }
 		}
 	} 
-	if (!viewport) viewport=new ViewportWindow(this,"spread-editor-viewport","spread-editor-viewport",
+
+	SpreadEditorViewport *sed=new SpreadEditorViewport(this,"spread-editor-viewport","spread-editor-viewport",
 									ANXWIN_HOVER_FOCUS|VIEWPORT_RIGHT_HANDED|VIEWPORT_BACK_BUFFER|VIEWPORT_ROTATABLE,
-									0,0,0,0,0,NULL);
+									0,0,0,0,0,NULL,spreadtool);
+	DBG if (viewport) cerr <<"*** there shouldn't be a viewport here, SpreadEditor::SpreadEditor()!!!"<<endl;
+
+	viewport=sed;
 	win_colors->bg=rgbcolor(200,200,200);
-	viewport->win_colors->bg=rgbcolor(255,255,255);
+	viewport->win_colors->bg=rgbcolor(200,200,200);
 	viewport->dp->NewBG(255,255,255);
 
 	needtodraw=1;
 
-	spreadtool=new SpreadInterface(viewport->dp,project,doc);
 	//viewport->Push(spreadtool,1); // local, and select it
-	AddTool(spreadtool,1,1); //***
+	spreadtool=new SpreadInterface(viewport->dp,project,doc);
+	sed->spreadtool=spreadtool;
+	AddTool(spreadtool,1,1);
 
 	AddTool(new PageRangeInterface(1,viewport->dp, doc),1,0);
-	AddTool(new PaperInterface(1,viewport->dp),1,0);
+	AddTool(new PaperInterface(2,viewport->dp),1,0);
 	//AddTool(new NupInterface(1,viewport->dp),1,0);
 }
 
@@ -1305,7 +1342,6 @@ int SpreadEditor::init()
 
 
 	 //---- tool section
-	 //*** clean me! sampling diff methods of tool selector
 	SliderPopup *toolselector;
 	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,0, 0,0,0,0,1, 
 			NULL,object_id,"toolselector",
@@ -1316,21 +1352,10 @@ int SpreadEditor::init()
 	int obji=0;
 	int c;
 	for (c=0; c<tools.n; c++) {
-		 // ***this should be standardized a little to have the icon stored with
-		 // the interface.
-		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
 		str=tools.e[c]->IconId();
-		//if (!strcmp(str,"MysteryInterface")) continue; //*** for now, don't let users use this! (no icon)
 		if (!strcmp(str,"Spread")) obji=tools.e[c]->id;
 		
 		img=laidout->icons.GetIcon(str);
-		//last=ibut=new Button(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"viewtoolselector",
-		//		tools.e[c]->id,nstr,tstr);
-		
-		//ibut->tooltip(tstr);
-		//ibut->SetIcon(img); //does not call inc_count()
-		//ibut->WrapToExtent(3);
-		//AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);	
 		
 		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
@@ -1491,6 +1516,13 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 		} else if (i>=0 && i<doc->spreadviews.n) {
 			interf->SwitchView(i);
 		}
+
+	} else if (!strcmp(mes,"toolselector")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
+		int newtool=s->info1;
+		SelectTool(newtool);
+		viewport->Needtodraw(1);
+		return 0;
 	}
 	return 1;
 }

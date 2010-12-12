@@ -113,7 +113,8 @@ PageRange::PageRange()
 	: color(65535,65535,65535,65535)
 {
 	name=NULL;
-	start=first=0;
+	first=1;
+	start=0;
 	end=-1;
 	labelbase=NULL;
 	labeltype=Numbers_Default;
@@ -198,22 +199,33 @@ StyleDef *PageRangeStyleDef()
 	return sd;
 }
 
-
 //! Return a label that correctly corresponds to labelbase and page number i.
+/*! This just returns GetLabel(i,first,labeltype).
+ */
+char *PageRange::GetLabel(int i)
+{
+	return GetLabel(i,first,Numbers_Default);
+}
+
+//! Return a label that correctly corresponds to labelbase and page number i, with overrideable type and first.
 /*! i is index in doc->pages, so number used is (i-start+offset).
  * If index is not in the range, then NULL is returned, else a new'd char[].
  *
  * If labeltype is Numbers_None, then "" is always returned, whatever the base is.
  * If labelbase is NULL or "", then "" is returned.
  *
+ * If alttype==Numbers_Default, then use the labeltype for this range.
+ *
  * \todo maybe have decreasing_to_first and decreasing_from_first
  */
-char *PageRange::GetLabel(int i,int altfirst)
+char *PageRange::GetLabel(int i,int altfirst,int alttype)
 {
 	if (i<start || i>end) return NULL;
 	if (!labelbase || *labelbase=='\0' || labeltype==Numbers_None) return newstr("");
 	if (altfirst<0) altfirst=first;
 
+	int type=alttype;
+	if (type==Numbers_Default) type=labeltype;
 	char *label=NULL,*lb,*n;
 	
 	//if (decreasing) i=end-(i-start)+altfirst; //<-- this is for altfirst==lowest in range
@@ -223,14 +235,14 @@ char *PageRange::GetLabel(int i,int altfirst)
 	
 	int len;
 	lb=make_labelbase_for_printf(labelbase,&len);
-	if (labeltype==Numbers_Roman) n=roman_numeral(i,0);
-	else if (labeltype==Numbers_Roman_cap) n=roman_numeral(i,1);
-	else if (labeltype==Numbers_abc) letter_numeral(i,0);
-	else if (labeltype==Numbers_ABC) letter_numeral(i,1);
-	else n=numtostr(i+1);
+	if (type==Numbers_Roman) n=roman_numeral(i,0);
+	else if (type==Numbers_Roman_cap) n=roman_numeral(i,1);
+	else if (type==Numbers_abc) n=letter_numeral(i,0);
+	else if (type==Numbers_ABC) n=letter_numeral(i,1);
+	else n=numtostr(i);
 
 	int lenn=strlen(n);
-	if (lenn<len && labeltype==Numbers_Arabic){ //need to pad when using decimal
+	if (lenn<len && type==Numbers_Arabic){ //need to pad when using decimal
 		char *tt=new char[len-lenn+1];
 		memset(tt,'0',len-lenn);
 		tt[len-lenn]='\0';

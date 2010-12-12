@@ -604,13 +604,6 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	return 0;
 }
 
-//int PaperInterface::MBDown(int x,int y,unsigned int state,int count)
-//int PaperInterface::MBUp(int x,int y,unsigned int state)
-//int PaperInterface::RBDown(int x,int y,unsigned int state,int count)
-//int PaperInterface::RBUp(int x,int y,unsigned int state)
-//int PaperInterface::But4(int x,int y,unsigned int state);
-//int PaperInterface::But5(int x,int y,unsigned int state);
-
 int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 	int over=scan(x,y);

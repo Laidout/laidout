@@ -2857,7 +2857,7 @@ void ViewWindow::setup()
 	//***this should be making dups of interfaces stack? or set current tool, etc...
 	for (int c=0; c<laidout->interfacepool.n; c++) {
 		 //path interface not ready for prime time, so disable except in debugging mode
-		DBG if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PathInterface")) continue;
+		//DBG if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PathInterface")) continue;
 
 		AddTool(laidout->interfacepool.e[c]->duplicate(),1,0);
 	}
@@ -2988,9 +2988,6 @@ int ViewWindow::init()
 			NULL,object_id,"viewtoolselector",
 			NULL,0);
 	toolselector->tooltip(_("The current tool"));
-	const char *str; //the whattype: "BlahInterface"
-	char *nstr,     // the base name: "Blah" then later "Blah Tool"
-		 *tstr;    // temp pointer
 	LaxImage *img;
 	int obji=0;
 	int c;
@@ -2998,28 +2995,13 @@ int ViewWindow::init()
 		 // ***this should be standardized a little to have the icon stored with
 		 // the interface.
 		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
-		str=tools.e[c]->whattype();
 		//if (!strcmp(str,"MysteryInterface")) continue; //*** for now, don't let users use this! (no icon)
-		if (!strcmp(str,"ObjectInterface")) obji=tools.e[c]->id;
-		else if (!strcmp(str,"SignatureInterface")) str="FoldingInterface";
-		nstr=newstr(str);
-		tstr=strstr(nstr,"Interface");
-		if (tstr) *tstr='\0';
+		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji=tools.e[c]->id;
 		
-		img=laidout->icons.GetIcon(nstr);
-		//last=ibut=new Button(this,tstr,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"viewtoolselector",
-		//		tools.e[c]->id,nstr,tstr);
-		appendstr(nstr," Tool");
+		img=laidout->icons.GetIcon(tools.e[c]->IconId());
 		
-		//ibut->tooltip(tstr);
-		//ibut->SetIcon(img); //does not call inc_count()
-		//ibut->WrapToExtent(3);
-		//AddWin(ibut,ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0);	
-		
-		toolselector->AddItem(nstr,img,tools.e[c]->id); //does not call inc_count()
+		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
-		
-		delete[] nstr;
 	}
 	toolselector->WrapToExtent();
 	SelectTool(obji);
