@@ -31,11 +31,12 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp
 	Laxkit::NumStack<double> positions;
 	double xscale,yscale;
 	flatpoint offset;
-	char *LabelPreview(int range,int first);
+	char *LabelPreview(int range,int first,int labeltype);
 
 	int currange;
 
 	int showdecs;
+	int firsttime;
 	virtual int scan(int x,int y,int *range);
   public:
 	PageRangeInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
