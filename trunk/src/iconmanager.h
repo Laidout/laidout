@@ -42,8 +42,10 @@ class IconManager : public Laxkit::PtrStack<IconNode>
 	IconManager();
 	int InstallIcon(const char *nname, int nid, const char *file);
 	int InstallIcon(const char *nname, int nid, Laxkit::LaxImage *img);
+	Laxkit::LaxImage *GetIconByIndex(int index);
 	Laxkit::LaxImage *GetIcon(int id);
 	Laxkit::LaxImage *GetIcon(const char *name);
+	int HowMany();
 	void addpath(const char *newpath);
 };
 

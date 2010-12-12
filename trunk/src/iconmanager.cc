@@ -59,45 +59,11 @@ IconNode::~IconNode()
  */
 
 
-//! Installs default icons.
+/*! Icons are added only when needed by GetIcon(), which uses findicon().
+ */
 IconManager::IconManager()
 	: icon_path(2)
-{
-	
-	//InstallIcon("AddPage",        1,"AddPage.png");
-	//InstallIcon("CloseDocument",  2,"CloseDocument.png");
-	//InstallIcon("ColorPatch",     3,"ColorPatch.png");
-	//InstallIcon("DeletePage",     4,"DeletePage.png");
-	//InstallIcon("DumpInImages",   5,"DumpInImages2.png");
-	//InstallIcon("DumpInImages",   6,"DumpInImages.png");
-	//InstallIcon("Gradient",       7,"Gradient.png");
-	//InstallIcon("Help",           8,"Help.png");
-	//InstallIcon("ImagePatch",     9,"ImagePatch.png");
-	//InstallIcon("Image",         10,"Image.png");
-	//InstallIcon("ImportImage",   11,"ImportImage.png");
-	//InstallIcon("InsertImage",   12,"InsertImage.png");
-	//InstallIcon("NewDocument",   13,"NewDocument.png");
-	//InstallIcon("NewProject",    14,"NewProject.png");
-	//InstallIcon("NextSpread",    15,"NextSpread.png");
-	//InstallIcon("Object",        16,"Object.png");
-	//InstallIcon("Open",          17,"Open.png");
-	//InstallIcon("PageClips",     18,"PageClips.png");
-	//InstallIcon("PageView",      19,"PageView.png");
-	//InstallIcon("PaperView",     20,"PaperView.png");
-	//InstallIcon("Path",          21,"Path.png");
-	//InstallIcon("PreviousSpread",22,"PreviousSpread.png");
-	//InstallIcon("Print",         23,"Print.png");
-	//InstallIcon("Quit",          24,"Quit.png");
-	//InstallIcon("Redo",          25,"Redo.png");
-	//InstallIcon("SaveAll",       26,"SaveAll.png");
-	//InstallIcon("SaveAs",        27,"SaveAs.png");
-	//InstallIcon("Save",          28,"Save.png");
-	//InstallIcon("SinglePageView",29,"SinglePageView.png");
-	//InstallIcon("Text",          30,"Text.png");
-	//InstallIcon("Undo",          31,"Undo.png");
-	//InstallIcon("UpdateThumbs",  32,"UpdateThumbs.png");
-	//InstallIcon("Zoom",          33,"Zoom.png");
-}
+{}
 
 //! Return -1 for fail to load file.
 int IconManager::InstallIcon(const char *nname, int nid, const char *file)
@@ -148,6 +114,21 @@ LaxImage *IconManager::findicon(const char *name)
 		img->inc_count();
 	}
 	return img;
+}
+
+//! Return how many icons are currently installed.
+int IconManager::HowMany()
+{
+	return PtrStack<IconNode>::n;
+}
+
+//! Returns the icon. The icon's count is incremented.
+Laxkit::LaxImage *IconManager::GetIconByIndex(int index)
+{
+	if (index<0 || index>=PtrStack<IconNode>::n) return NULL;
+
+	PtrStack<IconNode>::e[index]->image->inc_count();
+	return PtrStack<IconNode>::e[index]->image;
 }
 
 //! Returns the icon. The icon's count is incremented.
