@@ -108,6 +108,8 @@ class SignatureInterface : public LaxInterfaces::InterfaceWithDp
 	SignatureInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~SignatureInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual const char *Name();
+	virtual const char *IconId() { return "Folding"; }
 	virtual const char *whattype() { return "SignatureInterface"; }
 	virtual const char *whatdatatype() { return "Signature"; }
 	virtual int draws(const char *atype);

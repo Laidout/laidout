@@ -286,6 +286,9 @@ SignatureInterface::~SignatureInterface()
 	if (papersize) papersize->dec_count();
 }
 
+const char *SignatureInterface::Name()
+{ return _("Signature Folder"); }
+
 //! Reallocate foldinfo, usually after adding fold lines.
 /*! this will flush any folds stored in the signature.
  */
