@@ -22,6 +22,13 @@
 using namespace Laxkit;
 using namespace std;
 
+
+//------------------------------------ ButtonBox -----------------------------------------
+/*! \class ButtonBox
+ * \brief Window pane class to hold a bundle of icon based pushbuttons.
+ */
+
+
 ButtonBox::ButtonBox(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder)
 	: TabFrame(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,NULL)
@@ -58,10 +65,17 @@ ButtonBox::ButtonBox(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 	AddBox(NULL,laidout->icons.GetIcon("Undo"),0);
 	AddBox(NULL,laidout->icons.GetIcon("Redo"),0);
 	AddBox(NULL,laidout->icons.GetIcon("Help"),0);
+	AddBox(NULL,laidout->icons.GetIcon("Spread"),0);
+	AddBox(NULL,laidout->icons.GetIcon("PageRange"),0);
 }
 
 ButtonBox::~ButtonBox()
 {
+}
+
+const char *ButtonBox::tooltip(int mouseid)
+{
+	return "Sorry, this doesn't work yet!! Lazy developers!";
 }
 
 int ButtonBox::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
