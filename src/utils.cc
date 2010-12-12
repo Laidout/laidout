@@ -125,13 +125,17 @@ char *letter_numeral(int i,char cap)
 {
 	char *n=NULL;
 
+	if (i==0) return newstr("0");
+	if (i<0) { appendstr(n,"-"); i=-i; }
+
 	char d[2];
 	d[1]='\0';
-	while (i>0) { 
+	i--;
+	do {
 		d[0]=i%26+'a'; 
 		prependstr(n,d);
 		i/=26; 
-	}
+	} while (i>0);
 
 	if (cap) for (unsigned int c=0; c<strlen(n); c++) n[c]+='A'-'a';
 	return n;
@@ -146,6 +150,9 @@ char *letter_numeral(int i,char cap)
 char *roman_numeral(int i,char cap)
 {
 	char *n=NULL;
+
+	if (i==0) return newstr("0");
+	if (i<0) { appendstr(n,"-"); i=-i; }
 
 	while (i>=1000) { appendstr(n,"m"); i-=1000; }
 	if (i>=900) { appendstr(n,"cm"); i-=900; }
