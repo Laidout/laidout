@@ -19,7 +19,7 @@ gradient rendering to buffer memory hole?? gets very slow, then crashes.. having
 svg to coord incomplete
 memory hole in svg in? test svg import, svg path import must be done
 
-file previewer not updating preview when using mouse keys
+file previewer not updating preview when using arrow keys
 
 click open or save, dialog comes up, but buttons permanently dark gray now, no matter how mouse hovering
 
@@ -33,8 +33,6 @@ from parameters for all filters....
 make sure all imposition types are available in interpreter
 
 select default papergroup, does not reinstall default papergroup!!
-
-import/export styledefs should use the extendsdef mechanism!!!
 
 resource impositions not showing description when selected
 
@@ -182,11 +180,9 @@ need to implement more options for polyhedron connections, to allow mobius strip
 NetImposition needs import/export net,
     DONE  import 3-d models such as from OFF files
     DONE gui for above -> select file in creation dialog
-    //import/export cff2
-    //export svg
-    //export vrml? pdf 1.6?
-    //convert to/from laidout elements
-    //import obj files
+    export svg
+    convert to/from laidout elements
+    import obj files
 
 
 should have easy way to save as a template
@@ -219,9 +215,9 @@ Fix multi-object selection move when crossing page boundaries
 
 scribus in/out: master pages, font sizes, stroke widths
 
-Vertical ruler still sucks. make it not suck!!
+Vertical ruler still sucks. make it not suck!! Horizontal kind of sucks too.
 
-page should have a basic group base, not the layers thing, which adds unnecessary complication
+maybe page should have a basic group base, not the layers thing, which adds unnecessary complication
 
 Tools should remember their settings
     figure out which settings need to be remembered, and install as resource.. what happens when diff
@@ -320,25 +316,21 @@ ImageImport dialog:
 
 
 Load, save, add, delete paper groups
+   papergroups:
     work out scheme for resource ownership: they can be owned by:
       1.DONE  Document: if no project, save with document by default
       2.DONE  Project:  save in project file
       3.or Global resource: save in ~/.laidout/version/papergroups
           class FileRef 
         papergroup->owner=Document, Project, or FileRef
-    DONE  menu options for paper groups, via the right click in paper tiler interface
-    paperinterface:
+   paperinterface:
      no doc, define papergroup, convert papergroup to singles pages?
-     DONE  arrow to indicate paper top direction
      orient viewport to paper
      snap other papers to various boxes
      double click to edit paper details
-     DONE  create new
      in spread editor <--better to combine spread editor and view window?
-     DONE  save/load
      more versatile size control per paper
-     DONE  delete old
-     edit window?
+     edit window? should be edit on screen....
         Name:  default single letter
         Paper: Letter, 8.5/11, landscape
         Box: Media [v]   Box: Clip [v]
@@ -346,6 +338,11 @@ Load, save, add, delete paper groups
            0 0 8.5 11       X: 0   Y: 0
                           W: 8.5 H: 11
         [delete paper type][new paper type]
+     DONE  arrow to indicate paper top direction
+     DONE  create new
+     DONE  save/load
+     DONE  delete old
+     DONE  menu options for paper groups, via the right click in paper tiler interface
 
 
 optimize pdf especially... too much duplication!!
@@ -360,6 +357,8 @@ Gui for modifying Page Labels
 
 Selected region out to image(s), regions optionally remembered
     rectangle or path?
+
+import/export styledefs should use the extendsdef mechanism!!!
 
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
     ocus off a dialog, then refocus, must manually set control focus. should store which subwindow
@@ -382,6 +381,8 @@ for translations, there is a difference between locale translations and language
 investigate pdfcreator as method to reduce file size
 
 align and distribute tool
+
+n-up tool
 
 repeater tool on path: could be adapted to help animation tweening
 
@@ -418,8 +419,6 @@ object selection:
  rect-dragout follows page matrix, which could be confusing...
  would be nice to show what would be selected during rect-dragout
 change object that is part of group object does not force remap of bbox of group
-
-make Document all reference counted
 
 clean up and test:
 --export-options format  List all the options for the given format
@@ -536,6 +535,9 @@ a "Place" tool like indesign?? preview images and place by dragging out one by o
 
 figure out Scribus' PS importer!! how the hell does it do it, and why does it not do everything?
 
+NetImposition:
+    import/export cff2?
+    export vrml? pdf 1.6?
 
 
 
@@ -553,4 +555,6 @@ DONE Add proper .desktop and application icons installation
 DONE About page is huge, and unescapable!!!!! serious break!
 
 DONE make file. save as to other dir. export. dir is wrong! 
+
+DONE make Document all reference counted
 
