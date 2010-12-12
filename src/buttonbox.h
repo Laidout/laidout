@@ -20,6 +20,7 @@
 #include <lax/tabframe.h>
 
 
+//------------------------------------ ButtonBox -----------------------------------------
 class ButtonBox : public Laxkit::TabFrame
 {
  public:
@@ -28,6 +29,7 @@ class ButtonBox : public Laxkit::TabFrame
  		int xx,int yy,int ww,int hh,int brder);
 	virtual ~ButtonBox();
 	virtual const char *whattype() { return "ButtonBox"; }
+	virtual const char *tooltip(int mouseid=0);
 	virtual int RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 };
