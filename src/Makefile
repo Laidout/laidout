@@ -55,7 +55,7 @@ objs= \
 all: laidout
 
 laidout: lax laxinterface $(dirs) $(objs)
-	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit -lssl -o $@
+	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit  -lcrypto -o $@
 
 icons:
 	cd src/icons && $(MAKE)
