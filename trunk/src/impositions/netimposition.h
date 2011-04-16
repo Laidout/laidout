@@ -17,8 +17,8 @@
 #define NETIMPOSITION_H
 
 #include "imposition.h"
-#include "nets.h"
-#include "poly.h"
+#include "polyptych/nets.h"
+#include "polyptych/poly.h"
 
 #define SINGLES_WITH_ADJACENT_LAYOUT 3
 
