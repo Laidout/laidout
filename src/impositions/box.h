@@ -14,7 +14,7 @@
 #ifndef IMPOSITION_BOX_H
 #define IMPOSITION_BOX_H
 
-#include "nets.h"
+#include "polyptych/nets.h"
 
 
 Net *makeBox(const char *str,double x,double y,double z);

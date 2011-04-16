@@ -16,7 +16,7 @@
 
 
 #include "box.h"
-#include "poly.h"
+#include "polyptych/poly.h"
 #include <lax/strmanip.h>
 
 using namespace Laxkit;

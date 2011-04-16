@@ -19,8 +19,6 @@ objs= \
 	impositions.o \
 	dodecahedron.o \
 	box.o \
-	poly.o \
-	nets.o \
 	netimposition.o \
 	simplenet.o \
 	signatures.o \
@@ -28,9 +26,11 @@ objs= \
 	netdialog.o \
 	singleseditor.o
 
+frompolyptych= poly.o nets.o
 
 
 impositions: $(objs)
+	for NAME in $(frompolyptych); do $(MAKE) -C polyptych $$NAME; cp polyptych/$$NAME .; done
 
 depends:
 	makedepend -fmakedepend -I.. -I$(LAXDIR)/.. -Y *.cc
