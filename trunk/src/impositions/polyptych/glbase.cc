@@ -45,11 +45,11 @@ void dumpMatrix4(GLfloat *m,const char *str)
 /*! If trans, then transform the point by extra_basis.
  * Each texture coordinate maps to a point in an equirectangular sphere image.
  */
-void addGLSphereTexpt(float x,float y,float z,int trans)
+void addGLSphereTexpt(float x,float y,float z, basis *extra_basis)
 {
-	if (trans) {
+	if (extra_basis) {
 		spacepoint p(x,y,z);
-		transform(p,extra_basis);
+		transform(p,*extra_basis);
 		x=p.x;
 		y=p.y;
 		z=p.z;
@@ -69,7 +69,11 @@ void addGLSphereTexpt(float x,float y,float z,int trans)
 
 //-------------------- Basic cylinder ------------------------
 GLuint THECYLINDER=0;
-GLuint cylinderCallList() { return THECYLINDER; }
+GLuint cylinderCallList()
+{
+	if (THECYLINDER==0) makecylinder();
+	return THECYLINDER;
+}
 
 //! Define a gl call list for a basic cylinder that fits in a unit cube.
 void makecylinder(void)
@@ -92,10 +96,10 @@ void makecylinder(void)
 }
 
 //! Draw a basic cylinder whose flat sides are at p1 and p2.
-void drawCylinder(spacepoint p1, spacepoint p2, double scalew=-1)
+void drawCylinder(spacepoint p1, spacepoint p2, double scalew,GLfloat *extram)
 {
 	glPushMatrix();
-	glMultMatrixf(hedron->m);
+	if (extram) glMultMatrixf(extram);
 
 	 //we can use any old "up" vector
 	spacepoint v=p2-p1;
@@ -132,7 +136,14 @@ void drawCylinder(spacepoint p1, spacepoint p2, double scalew=-1)
 }
 
 //-------------------- Basic sphere ------------------------
-GLuint THESPHERE;
+GLuint THESPHERE=0;
+GLuint sphereCallList()
+{
+	if (THESPHERE==0) makesphere();
+	return THESPHERE;
+}
+
+
 //! Define a gl call list for a basic sphere.
 void makesphere(void)
 {
@@ -151,7 +162,13 @@ void makesphere(void)
 
 //-------------------- Basic open ended cube ------------------------
 
-GLuint THECUBE;
+GLuint THECUBE=0;
+GLuint cubeCallList()
+{
+	if (THECUBE==0) makecube();
+	return THECUBE;
+}
+
 //! Define a gl call list for an open ended cube.
 void makecube(void)
 {
@@ -192,7 +209,7 @@ void makecube(void)
 //------------------------- FTGL helper functions ----------------------------
 
 //! Allocate and return a new FTGLPixmapFont at the given size, based on the given file.
-FTGLPixmapFont *setupfont(const char *fontfile, double facesize)
+FTFont *setupfont(const char *fontfile, double facesize)
 {
 	FTFont *font=new FTGLPixmapFont(fontfile);
 	//consolefont=new FTGLPolygonFont(consolefontfile);

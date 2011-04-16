@@ -21,6 +21,7 @@
 //#include <GL/glx.h>
 #include <GL/glu.h>
 #include <GL/gl.h>
+#include <FTGL/ftgl.h>
 //#include <unistd.h>
 //#include <cstdlib>
 //#include <cstdio>
@@ -32,7 +33,37 @@
 #define NULL 0
 #endif
 
+
+//-------------------------- Lower level gl utils -----------------------------
+
 void dumpMatrix4(GLfloat *m,const char *str);
+
+void addGLSphereTexpt(float x,float y,float z, basis *extra_basis);
+
+void makecylinder(void);
+void drawCylinder(spacepoint p1, spacepoint p2, double scalew=-1,GLfloat *extram=NULL);
+
+void makesphere(void);
+GLuint sphereCallList();
+
+void makecube(void);
+GLuint cubeCallList();
+
+//------------------------- FTGL helper functions ----------------------------
+FTFont *setupfont(const char *fontfile, double facesize);
+
+
+//--------------------- GlData ------------------------
+class GlData
+{
+ public:
+	GLfloat matrix[16];
+
+	GlData();
+	virtual ~GlData() {}
+	virtual int isDrawable()=0;
+
+};
 
 /*--------------------- Light ------------------------*/
 
@@ -104,26 +135,6 @@ class Material
 void SetMaterial(Material *mat,int colortoo);
 void setmaterial(GLfloat r,GLfloat g,GLfloat b);
 
-
-//-------------------------- Lower level gl utils -----------------------------
-
-void addGLSphereTexpt(float x,float y,float z,int trans=0);
-
-//------------------------- FTGL helper functions ----------------------------
-FTGLPixmapFont *setupfont(const char *fontfile, double facesize);
-
-
-//--------------------- GlData ------------------------
-class GlData
-{
- public:
-	GLfloat matrix[16];
-
-	GlData();
-	virtual ~GlData() {}
-	virtual int isDrawable()=0;
-
-};
 
 //-------------------- eyetype, from Displayer3d -------------------------
 class EyeType

@@ -24,22 +24,18 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
-#include <FTGL/ftgl.h>
 #include <Imlib2.h>
 
 #include <getopt.h>
 #include <lax/anxapp.h>
 #include <lax/laximlib.h>
 #include <lax/vectors.h>
-#include <lax/transformmath.h>
 #include <lax/strmanip.h>
-#include <lax/laxutils.h>
 #include <lax/fileutils.h>
-#include <lax/filedialog.h>
 #include <lax/freedesktop.h>
 
-#include <lax/lists.cc>
-#include <lax/refptrstack.cc>
+//#include <lax/lists.cc>
+//#include <lax/refptrstack.cc>
 
 
 #include <iostream>
@@ -47,7 +43,7 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
 
-#include "language.h"
+#include "../../language.h"
 #include "glbase.h"
 #include "gloverlay.h"
 #include "poly.h"
@@ -85,7 +81,7 @@ int spheremap_width,
 	spheremap_height;
 
 //const char *consolefontfile="/home/tom/fonts/arial.ttf";
-const char *consolefontfile="/var/lib/defoma/gs.d/dirs/fonts/FreeSans.ttf";
+const char *consolefontfile="/usr/share/fonts/truetype/freefont/FreeSans.ttf";
 
 
 
@@ -379,75 +375,20 @@ int main(int argc, char **argv)
 	 //determine sphere image
 	if (spherefile) {
 
-		Imlib_Image image,
-					image_scaled;
+		 //test for loadability only, hedron window does actual loading
+		Imlib_Image image;
 		image=imlib_load_image(spherefile);
 		if (!image) {
 			cerr <<"Could not load "<<spherefile<<"!"<<endl;
 			exit(1);
 		}
 		
-		int width,height;
-		imlib_context_set_image(image);
-		width=imlib_image_get_width();
-		height=imlib_image_get_height();
-
-		 //gl texture dimensions must be powers of 2
-		if (width>2048) { spheremap_width=2048; spheremap_height=1024; }
-		else if (width>1024) { spheremap_width=1024; spheremap_height=512; }
-		else if (width>512) { spheremap_width=512; spheremap_height=256; }
-		else { spheremap_width=256; spheremap_height=128; }
-		spheremap_data=new unsigned char[spheremap_width*spheremap_height*3];
-
-		imlib_context_set_image(image);
-		image_scaled=imlib_create_cropped_scaled_image(0,0,width,height,spheremap_width,spheremap_height);
-		imlib_context_set_image(image_scaled);
-		unsigned char *data=(unsigned char *)imlib_image_get_data_for_reading_only();
-		int i=0,i2=0;
-		for (int c=0; c<spheremap_width; c++) {
-		  for (int c2=0; c2<spheremap_height; c2++) {
-			spheremap_data[i++]=data[i2++];
-			spheremap_data[i++]=data[i2++];
-			spheremap_data[i++]=data[i2++];
-			i2++;
-		  }
-		}
-		imlib_free_image();
 		imlib_context_set_image(image);
 		imlib_free_image();
 
-
-		cerr <<"\n"
-			 <<"Using sphere file:"<<spherefile<<endl
-			 <<" scaled width: "<<spheremap_width<<endl
-			 <<"       height: "<<spheremap_height<<endl;
 	} else {
 		 //generate globe latitude+longitude image
 		cerr <<"No sphere image given, using generic lines..."<<endl;
-
-		spheremap_width=512;
-		spheremap_height=256;
-		spheremap_data=new unsigned char[spheremap_width*spheremap_height*3];
-		memset(spheremap_data,0, spheremap_width*spheremap_height*3);
-
-		int r=100, g=100, b=200;
-
-		 //draw longitude
-		for (int x=0; x<spheremap_width; x+=(int)((double)spheremap_width/36)) {
-			for (int y=0; y<spheremap_height; y++) {
-				spheremap_data[3*(x+y*spheremap_width)  ]=b;
-				spheremap_data[3*(x+y*spheremap_width)+1]=g;
-				spheremap_data[3*(x+y*spheremap_width)+2]=r;
-			}
-		}
-		 //draw latitude
-		for (int y=0; y<spheremap_height; y+=(int)((double)spheremap_height/18)) {
-			for (int x=0; x<spheremap_width; x++) {
-				spheremap_data[3*(x+y*spheremap_width)  ]=b;
-				spheremap_data[3*(x+y*spheremap_width)+1]=g;
-				spheremap_data[3*(x+y*spheremap_width)+2]=r;
-			}
-		}
 	}
 
 
@@ -455,11 +396,30 @@ int main(int argc, char **argv)
 
 
 
-	app.addglwindow(new Polyptych::HedronWindow(NULL,
+	 //Create and configure the new window
+	Polyptych::HedronWindow *w=new Polyptych::HedronWindow(NULL,
 									 polyptychfile?polyptychfile:"unwrapper",
 									 polyptychfile?polyptychfile:"unwrapper",
-									 0, 0,0,SCREENWIDTH,SCREENHEIGHT, 0));
+									 0, 0,0,SCREENWIDTH,SCREENHEIGHT, 0,
+									 &poly);
+	 //set ui stuff
+	w->FontAndSize(consolefontfile,global_fontsize);
 
+	 //copy over nets
+	if (nets.n) {
+		for (int c=0; c<nets.n; c++) {
+			w->nets.push(nets.e[c]);
+		}
+	}
+
+	 //set up initial image
+	if (spherefile) w->installImage(spherefile);
+	else w->UseGenericImageData();
+	w->extra_basis=extra_basis;
+
+
+	 //Add window and Run!
+	app.addglwindow(w);
 	app.run();
 			
 	XAutoRepeatOn(app.dpy);
