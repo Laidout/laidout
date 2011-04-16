@@ -17,6 +17,18 @@
 
 
 #include "hedronwindow.h"
+#include "../../language.h"
+
+#include <Imlib2.h>
+#include <lax/strmanip.h>
+#include <lax/freedesktop.h>
+#include <lax/transformmath.h>
+#include <lax/laxutils.h>
+#include <lax/fileutils.h>
+#include <lax/filedialog.h>
+
+#include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 
 #include <iostream>
@@ -33,6 +45,24 @@ using namespace SphereMap;
 namespace Polyptych {
 
 
+//----------gl setup----------------------
+
+// *** these really need to be integrated somehow into the laxkit
+static int  attributeListDouble[]  =  {
+		GLX_RGBA,		
+		GLX_DOUBLEBUFFER,		
+		GLX_RED_SIZE,	1,	
+		GLX_GREEN_SIZE,	1,
+		GLX_BLUE_SIZE,  1,
+		GLX_DEPTH_SIZE, 1,
+		None 
+	};
+
+GLXContext glcontext=0;
+XVisualInfo *glvisual=NULL;
+
+
+//--------------------------------- HedronWindow modes -------------------------------
 
 enum Mode {
 	MODE_Net,
@@ -123,10 +153,18 @@ const char *modename(int mode)
  * for that net.
  */
 
+/*! If newpoly, then inc it's count. It does NOT create a copy from it current, so watch out.
+ */
 HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
-		int xx,int yy,int ww,int hh,int brder)
+		int xx,int yy,int ww,int hh,int brder,
+		Polyhedron *newpoly)
  	: anXWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,0), rendermode(0)
 {
+	poly=newpoly;
+	if (poly) poly->inc_count();
+	hedron=NULL;
+
+	draw_texture=1;
 	draw_axes=1;
 	draw_info=1;
 	draw_overlays=1;
@@ -140,11 +178,21 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	cylinderscale=.02;
 	edgeScaleFromBox();
 
-	fontsize=global_fontsize;
+	fontsize=20;
 	pad=20;
+
+	polyptychfile         =NULL;
+	polyhedronfile        =NULL;
+	spherefile            =NULL;
+	spheremap_data        =NULL;
+	spheremap_data_rotated=NULL;
+	spheremap_width =0;
+	spheremap_height=0;
 
 	currentmessage=lastmessage=NULL;
 
+	consolefontfile=NULL;
+	consolefont=NULL;
 	movestep=.5;
 	autorepeat=1;
 	curobj=0;
@@ -157,12 +205,33 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	unwrapangle=1.0;
 
 	fovy=50*M_PI/180;
-
+	current_camera=-1;
 }
 
 HedronWindow::~HedronWindow()
 {
 	if (currentnet) currentnet->dec_count();
+	if (poly) poly->dec_count();
+	if (spheremap_data) delete[] spheremap_data;
+	if (spheremap_data_rotated) delete[] spheremap_data_rotated;
+
+	if (spherefile) delete[] spherefile;
+	if (polyhedronfile) delete[] polyhedronfile;
+	if (polyptychfile) delete[] polyptychfile;
+	if (consolefontfile) delete[] consolefontfile;
+}
+
+//! Set the font size, if newfontsize>0.
+/*! If fontfile!=NULL, then load a new font based on that file.
+ * 
+ * Returns the old font size, whether or not newfontsize>0.
+ */
+double HedronWindow::FontAndSize(const char *fontfile, double newfontsize)
+{
+	double f=fontsize;
+	if (newfontsize>0) fontsize=newfontsize;
+	if (fontfile) makestr(consolefontfile,fontfile);
+	return f;
 }
 
 void HedronWindow::newMessage(const char *str)
@@ -175,19 +244,19 @@ void HedronWindow::newMessage(const char *str)
 //! Compute a reasonable edge width to use based on the sizo of the polyhedron bounding box.
 void HedronWindow::edgeScaleFromBox()
 {
-	if (poly.vertices.n==0) { cylinderscale=.02; return; }
+	if (poly->vertices.n==0) { cylinderscale=.02; return; }
 
 	spacepoint p1,p2;
-	p1=p2=poly.vertices.e[0];
-	for (int c=1; c<poly.vertices.n; c++) {
-		if (poly.vertices.e[c].x<p1.x) p1.x=poly.vertices.e[c].x;
-		else if (poly.vertices.e[c].x>p2.x) p2.x=poly.vertices.e[c].x;
+	p1=p2=poly->vertices.e[0];
+	for (int c=1; c<poly->vertices.n; c++) {
+		if (poly->vertices.e[c].x<p1.x) p1.x=poly->vertices.e[c].x;
+		else if (poly->vertices.e[c].x>p2.x) p2.x=poly->vertices.e[c].x;
 
-		if (poly.vertices.e[c].y<p1.y) p1.y=poly.vertices.e[c].y;
-		else if (poly.vertices.e[c].y>p2.y) p2.y=poly.vertices.e[c].y;
+		if (poly->vertices.e[c].y<p1.y) p1.y=poly->vertices.e[c].y;
+		else if (poly->vertices.e[c].y>p2.y) p2.y=poly->vertices.e[c].y;
 
-		if (poly.vertices.e[c].z<p1.z) p1.z=poly.vertices.e[c].z;
-		else if (poly.vertices.e[c].z>p2.z) p2.z=poly.vertices.e[c].z;
+		if (poly->vertices.e[c].z<p1.z) p1.z=poly->vertices.e[c].z;
+		else if (poly->vertices.e[c].z>p2.z) p2.z=poly->vertices.e[c].z;
 	}
 	
 	cylinderscale=.005*norm(p1-p2);
@@ -287,16 +356,16 @@ void HedronWindow::triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 		glBegin(GL_TRIANGLE_STRIP);
 		  for (int c2=0; c2<=m; c2++) {
 			//normal=row[a][c2]/norm(row[a][c2]);
-			addGLSphereTexpt(rowO[a][c2].x, rowO[a][c2].y, rowO[a][c2].z, 1);
+			addGLSphereTexpt(rowO[a][c2].x, rowO[a][c2].y, rowO[a][c2].z, &extra_basis);
 			glNormal3f(normal.x, normal.y, normal.z);
 			glVertex3f(row[a][c2].x, row[a][c2].y, row[a][c2].z);
 			
 			//normal=row[b][c2]/norm(row[b][c2]);
-			addGLSphereTexpt(rowO[b][c2].x, rowO[b][c2].y, rowO[b][c2].z, 1);
+			addGLSphereTexpt(rowO[b][c2].x, rowO[b][c2].y, rowO[b][c2].z, &extra_basis);
 			glNormal3f(normal.x, normal.y, normal.z);
 			glVertex3f(row[b][c2].x, row[b][c2].y, row[b][c2].z);
 	 	  }
-		  addGLSphereTexpt(rowO[a][m+1].x, rowO[a][m+1].y, rowO[a][m+1].z, 1);
+		  addGLSphereTexpt(rowO[a][m+1].x, rowO[a][m+1].y, rowO[a][m+1].z, &extra_basis);
 		  glNormal3f(row[a][m+1].x, row[a][m+1].y, row[a][m+1].z);
 		  glVertex3f(row[a][m+1].x, row[a][m+1].y, row[a][m+1].z);
 		glEnd();
@@ -306,7 +375,7 @@ void HedronWindow::triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 }
 
 //! Update the gl hedron with the current texture.
-void HedronWindow::mapPolyhedronTexture(Thing *thing, Polyhedron *poly)
+void HedronWindow::mapPolyhedronTexture(Thing *thing)
 {
 	//DBG cerr <<"mapping hedron texture..."<<endl;
 	spacepoint center,centero,normal,point;
@@ -364,16 +433,16 @@ void HedronWindow::mapPolyhedronTexture(Thing *thing, Polyhedron *poly)
 //	if (polygon==NULL) return; // not enough memory
 //
 //	int r,g,b;
-//	for (c=0; c<poly.faces.n; c++) {
-//		if (poly.faces.e[c]->pn) {
+//	for (c=0; c<poly->faces.n; c++) {
+//		if (poly->faces.e[c]->pn) {
 //
 //			*** to keep using vectors, would have to make an array here with all the points in *GLdouble format
 //			gluTessBeginPolygon(polygon);
 //			gluTessBeginContour(polygon);
-//				for(c2=0; c2<poly.faces.e[c]->pn; c2++) {
-//					 gluTessVertex(polygon,poly.vertices.e[poly.faces.e[c]->p[c2]],poly.vertices.e[poly.faces.e[c]->p[c2]]);
+//				for(c2=0; c2<poly->faces.e[c]->pn; c2++) {
+//					 gluTessVertex(polygon,poly->vertices.e[poly->faces.e[c]->p[c2]],poly->vertices.e[poly->faces.e[c]->p[c2]]);
 //						 *** this uses double[3] for coordinates, not vector
-//							 ***poly.f[c].p[c2].x,poly.f[c].p[c2].y,poly.f[c].p[c2].y);
+//							 ***poly->f[c].p[c2].x,poly->f[c].p[c2].y,poly->f[c].p[c2].y);
 //				}
 //			gluTessEndContour(polygon);
 //			gluTessEndPolygon(polygon);
@@ -387,7 +456,7 @@ void HedronWindow::mapPolyhedronTexture(Thing *thing, Polyhedron *poly)
 }
 
 //! Create a gl object with texture, based on poly.
-Thing *HedronWindow::makePolyhedron(Polyhedron *poly)
+Thing *HedronWindow::makeGLPolyhedron()
 {
 	if (!poly) return NULL;
 	
@@ -400,7 +469,7 @@ Thing *HedronWindow::makePolyhedron(Polyhedron *poly)
 	thing->SetPos(0,0,0);
 	//DBG dumpMatrix4(thing->m,"hedron after2");
 
-	mapPolyhedronTexture(thing,poly);
+	mapPolyhedronTexture(thing);
 	return thing;
 }
 
@@ -532,6 +601,10 @@ void HedronWindow::setlighting(void)
 
 int HedronWindow::init()
 {
+	 // *** these two are static variables that really should be elsewhere
+	if (!glvisual)  glvisual = glXChooseVisual(app->dpy, DefaultScreen(app->dpy), attributeListDouble);
+	if (!glcontext) glcontext= glXCreateContext(app->dpy, glvisual, 0, GL_TRUE);
+
 	anXWindow::init();
 
 	 //texture initialization
@@ -690,7 +763,7 @@ void HedronWindow::reshape (int w, int h)
 void HedronWindow::Refresh()
 {
 	if (!win_on) return;
-	if (glXGetCurrentDrawable()!=xlib_window) glXMakeCurrent(app->dpy, xlib_window, ((anXXApp *)app)->cx);
+	if (glXGetCurrentDrawable()!=xlib_window) glXMakeCurrent(app->dpy, xlib_window, glcontext);
 
 	needtodraw=0;
 
@@ -935,11 +1008,11 @@ void HedronWindow::drawbg()
 
 		glLineWidth(3);
 		glBegin(GL_LINES);
-		for (int c2=0; c2<poly.edges.n; c2++) {
-			if (poly.edges.e[c2]->p1<0 || poly.edges.e[c2]->p2<0) continue;
+		for (int c2=0; c2<poly->edges.n; c2++) {
+			if (poly->edges.e[c2]->p1<0 || poly->edges.e[c2]->p2<0) continue;
 
-			p1=poly.vertices[poly.edges.e[c2]->p1];
-			p2=poly.vertices[poly.edges.e[c2]->p2];
+			p1=poly->vertices[poly->edges.e[c2]->p1];
+			p2=poly->vertices[poly->edges.e[c2]->p2];
 			v=p1-p2;
 			h=norm(v);
 			a=v/spacepoint(0,0,1);
@@ -967,12 +1040,12 @@ void HedronWindow::drawbg()
 //				glPopMatrix();
 		}
 		 //draw lines around any faces up in nets
-		for (int c2=0; c2<poly.faces.n; c2++) {
-			if (poly.faces.e[c2]->cache->facemode>=0) continue;
-			for (int c3=0; c3<poly.faces.e[c2]->pn; c3++) {
-				p1=poly.faces.e[c2]->cache->points3d[c3];
-				p2=(c3==0?poly.faces.e[c2]->cache->points3d[poly.faces.e[c2]->pn-1]
-						:poly.faces.e[c2]->cache->points3d[c3-1]);
+		for (int c2=0; c2<poly->faces.n; c2++) {
+			if (poly->faces.e[c2]->cache->facemode>=0) continue;
+			for (int c3=0; c3<poly->faces.e[c2]->pn; c3++) {
+				p1=poly->faces.e[c2]->cache->points3d[c3];
+				p2=(c3==0?poly->faces.e[c2]->cache->points3d[poly->faces.e[c2]->pn-1]
+						:poly->faces.e[c2]->cache->points3d[c3-1]);
 				v=p1-p2;
 				h=norm(v);
 				a=v/spacepoint(0,0,1);
@@ -995,7 +1068,7 @@ void HedronWindow::drawbg()
 	 //------draw red cylinders on seam edges--
 	if ((draw_seams&1) && nets.n && (mode==MODE_Net || mode==MODE_Solid)) {
 		int face;
-		//basis bas=poly.basisOfFace(face);
+		//basis bas=poly->basisOfFace(face);
 		spacepoint p;
 		flatpoint v;
 		NetFaceEdge *edge;
@@ -1013,8 +1086,8 @@ void HedronWindow::drawbg()
 
 				//------------------------
 				face=nets.e[n]->faces.e[c]->original;
-				p1=poly.VertexOfFace(face,c2,(mode==MODE_Net?1:0));
-				p2=poly.VertexOfFace(face,(c2+1)%poly.faces.e[face]->pn,(mode==MODE_Net?1:0));
+				p1=poly->VertexOfFace(face,c2,(mode==MODE_Net?1:0));
+				p2=poly->VertexOfFace(face,(c2+1)%poly->faces.e[face]->pn,(mode==MODE_Net?1:0));
 				//------------------------
 				//v=transform_point(nets.e[n]->faces.e[c]->matrix, edge->points->p());
 				//p1=bas.p + v.x*bas.x + v.y*bas.y;
@@ -1033,7 +1106,7 @@ void HedronWindow::drawbg()
 	 //------draw green cylinders between faces--
 	if ((draw_seams&2) && nets.n && (mode==MODE_Solid)) {
 		int face;
-		//basis bas=poly.basisOfFace(face);
+		//basis bas=poly->basisOfFace(face);
 		spacepoint p;
 		flatpoint v;
 		NetFaceEdge *edge;
@@ -1052,9 +1125,9 @@ void HedronWindow::drawbg()
 
 				 //perhaps replace with c1 + v||(c2-c1) + v||((c2-c1)/(p2-p1)), v=p1-c1
 				face=nets.e[n]->faces.e[c]->original;
-				p1=poly.CenterOfFace(face,(mode==MODE_Net?1:0));
-				p2= (poly.VertexOfFace(face,c2,(mode==MODE_Net?1:0))
-					+poly.VertexOfFace(face,(c2+1)%poly.faces.e[face]->pn,(mode==MODE_Net?1:0)))/2;
+				p1=poly->CenterOfFace(face,(mode==MODE_Net?1:0));
+				p2= (poly->VertexOfFace(face,c2,(mode==MODE_Net?1:0))
+					+poly->VertexOfFace(face,(c2+1)%poly->faces.e[face]->pn,(mode==MODE_Net?1:0)))/2;
 
 				setmaterial(.3,1,.3);
 				drawCylinder(p1,p2,cylinderscale);
@@ -1067,14 +1140,14 @@ void HedronWindow::drawbg()
 	 //---- draw dotted face outlines for each potential face of currentnet
 	if (currentnet && mode==MODE_Net) {
 		int face=currentnet->info; //the seed face for the net
-		basis bas=poly.basisOfFace(face);
+		basis bas=poly->basisOfFace(face);
 		spacepoint p;
 		flatpoint v;
 
 		for (int c=0; c<currentnet->faces.n; c++) {
 
 			if (currentnet->faces.e[c]->tag!=FACE_Potential) continue;
-			if (poly.faces.e[currentnet->faces.e[c]->original]->cache->facemode!=0) continue;
+			if (poly->faces.e[currentnet->faces.e[c]->original]->cache->facemode!=0) continue;
 
 			glPushMatrix();
 			glMultMatrixf(hedron->m);
@@ -1135,7 +1208,7 @@ void HedronWindow::drawbg()
 	for (c=0; c<lights.n; c++) {
 		glPushMatrix();
 		glTranslatef(lights.e[c]->position[0],lights.e[c]->position[1],lights.e[c]->position[2]);
-		glCallList(THECUBE);
+		glCallList(cubeCallList());
 		glPopMatrix();
 	}
 
@@ -1252,7 +1325,7 @@ void HedronWindow::drawRect(DoubleBBox &box,
 //! Draw face as a colored transparent overlay (not textured).
 void HedronWindow::transparentFace(int face, double r, double g, double b, double a)
 {
-	if (face<0 || face>=poly.faces.n) return;
+	if (face<0 || face>=poly->faces.n) return;
 	glPushMatrix();
 	glMultMatrixf(hedron->m);
 
@@ -1261,15 +1334,15 @@ void HedronWindow::transparentFace(int face, double r, double g, double b, doubl
 	glColor4f(r,g,b,a);
 
 	glBegin(GL_TRIANGLE_FAN);
-	spacepoint center=1.001*poly.CenterOfFace(face,1);
+	spacepoint center=1.001*poly->CenterOfFace(face,1);
 	spacepoint normal=center/norm(center);
 	spacepoint point;
 
 	glNormal3f(normal.x,normal.y,normal.z);
 	glVertex3f(center.x,center.y,center.z);
-	for (int c2=0; c2<=poly.faces.e[face]->pn; c2++) {
-		if (c2==poly.faces.e[face]->pn) point=poly.VertexOfFace(face,0,1);
-		else point=poly.VertexOfFace(face, c2, 1);
+	for (int c2=0; c2<=poly->faces.e[face]->pn; c2++) {
+		if (c2==poly->faces.e[face]->pn) point=poly->VertexOfFace(face,0,1);
+		else point=poly->VertexOfFace(face, c2, 1);
 		//DBG cerr <<"point: "<<point.x<<","<<point.y<<","<<point.z<<endl;
 		point=1.001*point;
 		normal=point/norm(point);
@@ -1293,7 +1366,7 @@ void HedronWindow::drawPotential(Net *net, int netface)
 	glMultMatrixf(hedron->m);
 
 	int face=net->info; //the seed face for the net
-	basis bas=poly.basisOfFace(face);
+	basis bas=poly->basisOfFace(face);
 
 	double r,g,b,a;
 	r=1;
@@ -1343,7 +1416,7 @@ void HedronWindow::drawPotential(Net *net, int netface)
 int HedronWindow::event(XEvent *e)
 {
 	if (e->type==MapNotify) {
-		glXMakeCurrent(app->dpy, xlib_window, ((anXXApp *)app)->cx);
+		glXMakeCurrent(app->dpy, xlib_window, glcontext);
 		
 		 // set viewport transform
 		reshape(win_w,win_h);	// this is only gl commands
@@ -1351,7 +1424,7 @@ int HedronWindow::event(XEvent *e)
 		if (firsttime) {
 			firsttime=0;
 
-			consolsefont=setupfont(consolefontfile, fontsize);
+			consolefont=setupfont(consolefontfile, fontsize);
 			installOverlays();
 			setlighting();
 
@@ -1361,7 +1434,7 @@ int HedronWindow::event(XEvent *e)
 			makesphere();
 			makecylinder();
 			//makeshape();
-			hedron=makePolyhedron(&poly);
+			hedron=makeGLPolyhedron();
 			things.push(hedron);
 			remapCache();
 
@@ -1452,18 +1525,20 @@ int HedronWindow::RBDown(int x,int y,unsigned int state,int count,const LaxMouse
 	return 0;
 }
 
-//! Remap poly.faces.cache for faces in range [start,end] so that the unfolded sides are oriented correctly.
+//! Remap poly->faces.cache for faces in range [start,end] so that the unfolded sides are oriented correctly.
 /*! This assumes that the face->cache->facemode is accurate. cache->points3d and cache->axis
  * will be remapped.
  *
- * If start<0 then start at 0, and if end<0 then end at poly.faces.n-1.
+ * If start<0 then start at 0, and if end<0 then end at poly->faces.n-1.
  *
  * \todo The faces will be tilted at the angle unwrapangle*(its normal dihedral angle).
  */
 void HedronWindow::remapCache(int start, int end)
 {
+	if (!poly) return; //do not attempt if called too early!
+
 	if (start<0) start=0;
-	if (end<0) end=poly.faces.n-1;
+	if (end<0) end=poly->faces.n-1;
 
 	Net *net;
 	ExtraFace *cache=NULL;
@@ -1474,7 +1549,7 @@ void HedronWindow::remapCache(int start, int end)
 			net=nets.e[c];
 			int face=net->info; //the seed face for the net
 			
-			basis bas=poly.basisOfFace(face); //basis of the seed face
+			basis bas=poly->basisOfFace(face); //basis of the seed face
 			spacepoint p;
 			flatpoint v;
 
@@ -1482,7 +1557,7 @@ void HedronWindow::remapCache(int start, int end)
 			for (int c=0; c<net->faces.n; c++) {
 				if (net->faces.e[c]->tag!=FACE_Actual) continue;
 				if (net->faces.e[c]->original<start || net->faces.e[c]->original>end) continue;
-				cache=poly.faces.e[net->faces.e[c]->original]->cache;
+				cache=poly->faces.e[net->faces.e[c]->original]->cache;
 				cache->axis=bas;
 				cache->center=spacepoint();
 
@@ -1497,7 +1572,7 @@ void HedronWindow::remapCache(int start, int end)
 				}
 				cache->center/=net->faces.e[c]->edges.n;
 				 //remap face basis
-				//poly.faces.e[net->faces.e[c]->original]->cache->axis=bas;
+				//poly->faces.e[net->faces.e[c]->original]->cache->axis=bas;
 			}
 		}
 	  } else {
@@ -1509,10 +1584,10 @@ void HedronWindow::remapCache(int start, int end)
 				nets.e[c]->resetTick(0);
 
 				 //remap seed
-				cache=poly.faces.e[c]->cache;
-				cache->axis=poly.basisOfFace(original);
-				for (int c2=0; c2<poly.faces.e[original]->pn; c2++) {
-					cache->points3d[c2]=poly.VertexOfFace(original,c2,0);
+				cache=poly->faces.e[c]->cache;
+				cache->axis=poly->basisOfFace(original);
+				for (int c2=0; c2<poly->faces.e[original]->pn; c2++) {
+					cache->points3d[c2]=poly->VertexOfFace(original,c2,0);
 					cache->points2d[c2]=flatten(cache->points3d[c2],cache->axis);
 				}
 
@@ -1526,17 +1601,17 @@ void HedronWindow::remapCache(int start, int end)
 
 	for (int c=start; c<=end; c++) {
 		 //each facemode==0 reset to normal
-		cache=poly.faces.e[c]->cache;
+		cache=poly->faces.e[c]->cache;
 		if (mode==MODE_Net && cache->facemode!=0) continue;
 		//****
-		cache->axis=poly.basisOfFace(c);
-		for (int c2=0; c2<poly.faces.e[c]->pn; c2++) {
-			cache->points3d[c2]=poly.VertexOfFace(c,c2,0);
+		cache->axis=poly->basisOfFace(c);
+		for (int c2=0; c2<poly->faces.e[c]->pn; c2++) {
+			cache->points3d[c2]=poly->VertexOfFace(c,c2,0);
 			cache->points2d[c2]=flatten(cache->points3d[c2],cache->axis);
 		}
 	}
 
-	mapPolyhedronTexture(hedron, &poly);
+	mapPolyhedronTexture(hedron);
 }
 
 /*! Unwrap each connected face with tick==0.
@@ -1560,9 +1635,9 @@ Net *HedronWindow::establishNet(int original)
 	DBG cerr <<"create net around original "<<original<<endl;
 	Net *net=new Net;
 	net->_config=1;
-	net->Basenet(&poly);
+	net->Basenet(poly);
 	net->Unwrap(-1,original);
-	poly.faces.e[original]->cache->facemode=-net->object_id;
+	poly->faces.e[original]->cache->facemode=-net->object_id;
 	net->info=original;
 	nets.push(net);
 
@@ -1576,23 +1651,23 @@ Net *HedronWindow::establishNet(int original)
  */
 int HedronWindow::Reseed(int original)
 {
-	if (original<0 || original>=poly.faces.n) return 1;
+	if (original<0 || original>=poly->faces.n) return 1;
 
 	
-	if (poly.faces.e[original]->cache->facemode==0) return 2; //not in a net
-	if (poly.faces.e[original]->cache->facemode<0) return 0; // is already a seed
+	if (poly->faces.e[original]->cache->facemode==0) return 2; //not in a net
+	if (poly->faces.e[original]->cache->facemode<0) return 0; // is already a seed
 
 	 //reseed net 
-	Net *net=findNet(poly.faces.e[original]->cache->facemode);
+	Net *net=findNet(poly->faces.e[original]->cache->facemode);
 
 	DBG if (!net) {
-	DBG 	cerr <<"******** null net for facemode "<<poly.faces.e[currentface]->cache->facemode<<"!!"<<endl;
+	DBG 	cerr <<"******** null net for facemode "<<poly->faces.e[currentface]->cache->facemode<<"!!"<<endl;
 	DBG 	exit(1);
 	DBG }
 
 	 //update poly<->net crosslinks
-	poly.faces.e[net->info]->cache->facemode=net->object_id;
-	poly.faces.e[original]->cache->facemode=-net->object_id;
+	poly->faces.e[net->info]->cache->facemode=net->object_id;
+	poly->faces.e[original]->cache->facemode=-net->object_id;
 	net->info=original;
 
 	double m[6],m2[6];
@@ -1640,7 +1715,7 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 	if (currentpotential>=0) {
 		 //right click on a potential drops it down
 		int orig=currentnet->faces.e[currentpotential]->original;
-		poly.faces.e[orig]->cache->facemode=currentnet->object_id;
+		poly->faces.e[orig]->cache->facemode=currentnet->object_id;
 		currentnet->Drop(currentpotential);
 
 		//remapCache();
@@ -1654,7 +1729,7 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 		DBG cerr <<"...right click down and up on same face"<<endl;
 		 
 		 //if face is on hedron, not a seed, then create a new net with that face
-		if (poly.faces.e[currentface]->cache->facemode==0) {
+		if (poly->faces.e[currentface]->cache->facemode==0) {
 			DBG cerr <<"...establish a net on currentface"<<endl;
 
 			 //unwrap as a seed when face is on polyhedron, not in net
@@ -1670,11 +1745,11 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 			rbdown=currentface=-1;
 			return 0;
 
-		} else if (poly.faces.e[currentface]->cache->facemode!=0) {
+		} else if (poly->faces.e[currentface]->cache->facemode!=0) {
 			DBG cerr <<"...make net of currentface the current net"<<endl;
 
 			 //make current net the net of currentface
-			Net *net=findNet(poly.faces.e[currentface]->cache->facemode);
+			Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
 			if (currentnet!=net) {
 				if (currentnet && currentnet->numActual()==1) removeNet(currentnet);
 				if (currentnet) currentnet->dec_count();
@@ -1688,7 +1763,7 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 				int i=-1;
 				net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
 				net->PickUp(i,-1);
-				poly.faces.e[currentface]->cache->facemode=0;
+				poly->faces.e[currentface]->cache->facemode=0;
 				remapCache(currentface,currentface);
 				needtodraw=1;
 			}
@@ -1729,7 +1804,7 @@ int HedronWindow::removeNet(int netindex)
 	for (int c=0; c<net->faces.n; c++) {
 		if (net->faces.e[c]->tag!=FACE_Actual) continue;
 		DBG n++;
-		poly.faces.e[net->faces.e[c]->original]->cache->facemode=0;
+		poly->faces.e[net->faces.e[c]->original]->cache->facemode=0;
 	}
 	DBG cerr <<"removeNet() reset "<<n<<" faces"<<endl;
 	nets.remove(netindex);
@@ -1767,7 +1842,7 @@ int HedronWindow::findCurrentPotential()
 	hedron->updateBasis();
 	line=pointer;
 	transform(line,hedron->bas);
-	basis nbasis=poly.basisOfFace(currentnet->info);
+	basis nbasis=poly->basisOfFace(currentnet->info);
 
 	p=intersection(line,plane(nbasis.p,nbasis.z),err);
 	if (err!=0) return -1;
@@ -1778,7 +1853,7 @@ int HedronWindow::findCurrentPotential()
 
 	if (index<0) return -1;
 	if (currentnet->faces.e[index]->tag!=FACE_Potential) return -1;
-	if (poly.faces.e[currentnet->faces.e[index]->original]->cache->facemode!=0) return -1;
+	if (poly->faces.e[currentnet->faces.e[index]->original]->cache->facemode!=0) return -1;
 
 	return index;
 }
@@ -1801,12 +1876,12 @@ int HedronWindow::findCurrentFace()
 	line=pointer;
 	transform(line,hedron->bas);
 
-	for (int c=0; c<poly.faces.n; c++) {
+	for (int c=0; c<poly->faces.n; c++) {
 		 //intersect with the face's cached axis, against its cached 2-d points
-		p=intersection(line,plane(poly.faces.e[c]->cache->axis.p,poly.faces.e[c]->cache->axis.z),err);
-		fp=flatten(p, poly.faces.e[c]->cache->axis);
+		p=intersection(line,plane(poly->faces.e[c]->cache->axis.p,poly->faces.e[c]->cache->axis.z),err);
+		fp=flatten(p, poly->faces.e[c]->cache->axis);
 		if (err!=0) continue;
-		if (point_is_in(fp, poly.faces.e[c]->cache->points2d,poly.faces.e[c]->pn)) {
+		if (point_is_in(fp, poly->faces.e[c]->cache->points2d,poly->faces.e[c]->pn)) {
 			d=(p-line.p)*(p-line.p);
 			//DBG cerr <<"point in "<<c<<", dist: "<<d<<endl;
 			if (d<dist) { index=c; dist=d; }
@@ -1875,7 +1950,7 @@ int HedronWindow::recurseUnwrap(Net *netf, int fromneti, Net *nett, int toneti)
 		cerr <<"****AARG! cannot find original "<<netf->faces.e[fromneti]->original<<", this should not happen, fix me!!"<<endl;
 		return 0;
 	}
-	poly.faces.e[nett->faces.e[toneti]->original]->cache->facemode=nett->object_id;
+	poly->faces.e[nett->faces.e[toneti]->original]->cache->facemode=nett->object_id;
 	// now fromneti and toneti are the same face..
 
 
@@ -1902,20 +1977,20 @@ int HedronWindow::unwrapTo(int from,int to)
 	if (from<0 || to<0) return 1;
 	int reseed=-1;	
 
-	int modef=poly.faces.e[from]->cache->facemode;
-	int modet=poly.faces.e[ to ]->cache->facemode;
+	int modef=poly->faces.e[from]->cache->facemode;
+	int modet=poly->faces.e[ to ]->cache->facemode;
 
 	 //we are mostly acting on seed to seed, so we need nets to begin with:
 	if (modef==0) {
 		 //from was an ordinary face, make from into a net
 		Net *net=establishNet(from);
-		modef=poly.faces.e[from]->cache->facemode=-net->object_id;
+		modef=poly->faces.e[from]->cache->facemode=-net->object_id;
 		net->dec_count();
 	}
 	if (modet==0) {
 		 //to was an ordinary face, make to into a net
 		Net *net=establishNet(to);
-		modet=poly.faces.e[to]->cache->facemode=-net->object_id;
+		modet=poly->faces.e[to]->cache->facemode=-net->object_id;
 		net->dec_count();
 	}
 
@@ -1978,8 +2053,8 @@ int HedronWindow::unwrapTo(int from,int to)
 		for (int c=0; c<nett->faces.n; c++) {
 			if (nett->faces.e[c]->tag!=FACE_Actual) continue;
 			if (nett->faces.e[c]->original==to) //the seed face
-				poly.faces.e[nett->faces.e[c]->original]->cache->facemode=-nett->object_id;
-			else poly.faces.e[nett->faces.e[c]->original]->cache->facemode=nett->object_id;
+				poly->faces.e[nett->faces.e[c]->original]->cache->facemode=-nett->object_id;
+			else poly->faces.e[nett->faces.e[c]->original]->cache->facemode=nett->object_id;
 		}
 		if (reseed>=0) Reseed(reseed);
 		remapCache();
@@ -2064,8 +2139,8 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 		DBG cerr<<"MouseMove findCurrentFace original: "<<c;
 		DBG if (c>=0) {
-		DBG		cerr <<" facemode:"<<poly.faces.e[c]->cache->facemode<<endl;
-		DBG 	Net *net=findNet(poly.faces.e[c]->cache->facemode);
+		DBG		cerr <<" facemode:"<<poly->faces.e[c]->cache->facemode<<endl;
+		DBG 	Net *net=findNet(poly->faces.e[c]->cache->facemode);
 		DBG 	int i=-1;
 		DBG 	if (net) {
 		DBG			cerr <<"net found "<<nets.findindex(net)<<"..."<<endl;
@@ -2080,10 +2155,10 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 			currentface=c;
 			if (currentface>=0) {
 				currentfacestatus=0;
-				//DBG cerr <<"face "<<currentface<<" facemode "<<poly.faces.e[currentface]->cache->facemode<<endl;
-				if (poly.faces.e[currentface]->cache->facemode>0) {
+				//DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
+				if (poly->faces.e[currentface]->cache->facemode>0) {
 					 //face is in a net. If it is a leaf in currentnet, color it green, rather then red
-					Net *net=findNet(poly.faces.e[currentface]->cache->facemode);
+					Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
 					if (net && net==currentnet) {
 						int i=-1;
 						net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
@@ -2095,7 +2170,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 							currentfacestatus=1;
 						}
 					}
-				} else if (poly.faces.e[currentface]->cache->facemode<0) currentfacestatus=2; //for seeds
+				} else if (poly->faces.e[currentface]->cache->facemode<0) currentfacestatus=2; //for seeds
 			}
 		}
 		return 0;
@@ -2137,13 +2212,13 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		int cc;
 
 		//DBG cerr <<"faces attached to "<<rbdown<<": ";
-		for (cc=0; cc<poly.faces.e[rbdown]->pn; cc++) {
-			//DBG cerr<<poly.faces.e[rbdown]->f[cc]<<" ";
+		for (cc=0; cc<poly->faces.e[rbdown]->pn; cc++) {
+			//DBG cerr<<poly->faces.e[rbdown]->f[cc]<<" ";
 
-			if (poly.faces.e[rbdown]->f[cc]==c) break;
+			if (poly->faces.e[rbdown]->f[cc]==c) break;
 		}
 		//DBG cerr <<endl;
-		if (cc==poly.faces.e[rbdown]->pn) { 
+		if (cc==poly->faces.e[rbdown]->pn) { 
 			 //c is not attached to any edge of rbdown
 			if (currentface!=-1) needtodraw=1;
 			currentface=-1;
@@ -2239,7 +2314,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 			rotate(extra_basis,axis,norm(d)/5/180*M_PI);
 			needtodraw=1;
 			leftb=p;
-			mapPolyhedronTexture(hedron, &poly);
+			mapPolyhedronTexture(hedron);
 		}
 
 		// control-drag -- shift texture
@@ -2253,7 +2328,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		transform(axis,things.e[curobj]->bas);
 		rotate(extra_basis,axis,norm(d)/5/180*M_PI);
 
-		mapPolyhedronTexture(hedron, &poly);
+		mapPolyhedronTexture(hedron);
 		needtodraw=1;
 		leftb=p;
 	}
@@ -2268,7 +2343,7 @@ int HedronWindow::installPolyhedron(const char *file)
 	DBG cerr <<"...installPolyhedron("<<file<<")"<<endl;
 
 	char *error=NULL;
-	if (poly.dumpInFile(file,&error)) { //file not polyhedron
+	if (poly->dumpInFile(file,&error)) { //file not polyhedron
 		char message[200];
 		sprintf(message,"Could not load polyhedron: %s",file);
 		newMessage(message);
@@ -2279,8 +2354,8 @@ int HedronWindow::installPolyhedron(const char *file)
 	sprintf(str,"Loaded new polyhedron: %s",lax_basename(file));
 	newMessage(str);
 
-	poly.makeedges();
-	poly.BuildExtra();
+	poly->makeedges();
+	poly->BuildExtra();
 	
 	nets.flush();
 	if (currentnet) currentnet->dec_count();
@@ -2356,6 +2431,56 @@ int HedronWindow::installImage(const char *file)
 	return error?1:0;
 }
 
+//! Zap the image to be a generic lattitude and longitude
+/*! Pass in a number outside of [0..1] to use default for that color.
+ */
+void HedronWindow::UseGenericImageData(double fg_r, double fg_g, double fg_b,  double bg_r, double bg_g, double bg_b)
+{
+	cerr <<"Generating generic latitude and longitude lines..."<<endl;
+
+	int fr=(fg_r*255+.5),
+		fg=(fg_g*255+.5),
+		fb=(fg_b*255+.5);
+	int br=(bg_r*255+.5),
+		bg=(bg_g*255+.5),
+		bb=(bg_b*255+.5);
+	
+	if (fr<0 || fr>255) { fr=100; fg=100; fb=200; }
+	if (br<0 || br>255) { br=0; bg=0; bb=0; }
+
+
+	spheremap_width=512;
+	spheremap_height=256;
+	spheremap_data=new unsigned char[spheremap_width*spheremap_height*3];
+
+	 //set background color
+	//memset(spheremap_data,0, spheremap_width*spheremap_height*3);
+	for (int y=0; y<spheremap_height; y++) {
+		for (int x=0; x<spheremap_width; x++) {
+			spheremap_data[3*(x+y*spheremap_width)  ]=bb;
+			spheremap_data[3*(x+y*spheremap_width)+1]=bg;
+			spheremap_data[3*(x+y*spheremap_width)+2]=br;
+		}
+	}
+
+	 //draw longitude
+	for (int x=0; x<spheremap_width; x+=(int)((double)spheremap_width/36)) {
+		for (int y=0; y<spheremap_height; y++) {
+			spheremap_data[3*(x+y*spheremap_width)  ]=fb;
+			spheremap_data[3*(x+y*spheremap_width)+1]=fg;
+			spheremap_data[3*(x+y*spheremap_width)+2]=fr;
+		}
+	}
+	 //draw latitude
+	for (int y=0; y<spheremap_height; y+=(int)((double)spheremap_height/18)) {
+		for (int x=0; x<spheremap_width; x++) {
+			spheremap_data[3*(x+y*spheremap_width)  ]=fb;
+			spheremap_data[3*(x+y*spheremap_width)+1]=fg;
+			spheremap_data[3*(x+y*spheremap_width)+2]=fr;
+		}
+	}
+}
+
 int HedronWindow::Event(const EventData *data,const char *mes)
 {
 	if (!strcmp(mes,"new poly")) {
@@ -2398,7 +2523,7 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		if (!currentnet) { delete data; return 0; }
 		DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
 		int status=SphereToPoly(spherefile,
-				 &poly,
+				 poly,
 				 currentnet, 
 				 500,      // Render images no more than this many pixels wide
 				 NULL, // Say filebase="blah", files will be blah000.png, ...this creates default filebase name
@@ -2571,7 +2696,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		if (!currentnet) return 0;
 		for (int c=0; c<currentnet->faces.n; c++) {
 			if (currentnet->faces.e[c]->tag!=FACE_Actual) continue;
-			poly.faces.e[currentnet->faces.e[c]->original]->cache->facemode=0;
+			poly->faces.e[currentnet->faces.e[c]->original]->cache->facemode=0;
 		}
 		removeNet(currentnet);
 		remapCache();
@@ -2651,18 +2776,18 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 			if (nets.n==0) {
 				Net *net=new Net;
 				net->_config=1;
-				net->Basenet(&poly);
+				net->Basenet(poly);
 				net->Unwrap(-1,0);
-				poly.faces.e[0]->cache->facemode=-net->object_id;
+				poly->faces.e[0]->cache->facemode=-net->object_id;
 				net->info=0;
 
 				nets.push(net);
 				net->dec_count();
 			}
 			nets.e[0]->TotalUnwrap();
-			for (int c=0; c<poly.faces.n; c++) {
-				if (c==nets.e[0]->info) poly.faces.e[c]->cache->facemode=-nets.e[0]->object_id;
-				poly.faces.e[c]->cache->facemode=nets.e[0]->object_id;
+			for (int c=0; c<poly->faces.n; c++) {
+				if (c==nets.e[0]->info) poly->faces.e[c]->cache->facemode=-nets.e[0]->object_id;
+				poly->faces.e[c]->cache->facemode=nets.e[0]->object_id;
 			}
 			remapCache();
 			needtodraw=1;
@@ -2807,13 +2932,13 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 			
 	} else if (ch=='w') {
 		currentface++;
-		if (currentface>=poly.faces.n) currentface=0;
+		if (currentface>=poly->faces.n) currentface=0;
 		needtodraw=1;
 		return 0;
 
 	} else if (ch=='v') {
 		currentface--;
-		if (currentface<0) currentface=poly.faces.n-1;
+		if (currentface<0) currentface=poly->faces.n-1;
 		needtodraw=1;
 		return 0;
 

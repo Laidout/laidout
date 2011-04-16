@@ -23,7 +23,7 @@
 #include <GL/gl.h>
 #include <FTGL/ftgl.h>
 
-#include <lax/anxwindow.h>
+#include <lax/anxapp.h>
 #include <lax/buttondowninfo.h>
 
 #include "glbase.h"
@@ -37,7 +37,7 @@ namespace Polyptych {
 //--------------------------- HedronWindow -------------------------------
 
 
-class HedronWindow : public anXWindow
+class HedronWindow : public Laxkit::anXWindow
 {
  public:
 	GLfloat movestep;
@@ -53,15 +53,26 @@ class HedronWindow : public anXWindow
 	double fontsize;
 	double pad;
 
-	RefPtrStack<Net> nets;
-
-	ButtonDownInfo buttondown;
+	char *polyptychfile;
+	char *polyhedronfile;
+	char *spherefile;
+	unsigned char *spheremap_data;
+	unsigned char *spheremap_data_rotated;
+	int spheremap_width;
+	int spheremap_height;
+	Polyhedron *poly;
+	Thing *hedron;
+	Laxkit::RefPtrStack<Net> nets;
+	basis extra_basis;
+	char *consolefontfile;
+	FTFont *consolefont;
 
 	char *currentmessage, *lastmessage;
 	int messagetick;
 
 	int firsttime;
 	int rbdown,mbdown;
+	Laxkit::ButtonDownInfo buttondown;
 
 	Net *currentnet;
 	double unwrapangle;
@@ -75,25 +86,27 @@ class HedronWindow : public anXWindow
 
 	int draw_axes;
 	int draw_info;
+	int draw_texture;
 	int draw_overlays;
 	int mouseover_overlay; //which overlay mouse is currently over
 	int grab_overlay;     //if lbdown on an overlay, all input corresponds to that one
 	ActionType active_action; //determined by current overlay, affects behavior of left mouse button
-	PtrStack<Overlay> overlays;
+	Laxkit::PtrStack<Overlay> overlays;
 
 	 //gl objects, cameras, and lights
-	PtrStack<Thing> things;
+	Laxkit::PtrStack<Thing> things;
 	Thing camera_shape;
-	PtrStack<EyeType> cameras;
-	int current_camera=-1;
-	PtrStack<Light> lights;
+	Laxkit::PtrStack<EyeType> cameras;
+	int current_camera;
+	Laxkit::PtrStack<Light> lights;
 	struct Material lightmaterial;
 	void setlighting(void);
 
 
 	HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
-		 		 int xx,int yy,int ww,int hh,int brder);
-	~HedronWindow();
+		 		 int xx,int yy,int ww,int hh,int brder,
+				 Polyhedron *newpoly);
+	virtual ~HedronWindow();
 	virtual int MoveResize(int x,int y,int w,int h);
 	virtual int Resize(int w,int h);
 	virtual int event(XEvent *e);
@@ -102,33 +115,34 @@ class HedronWindow : public anXWindow
 	virtual void placeOverlays();
 
 	virtual void Refresh();
-	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const LaxKeyboard *kb);
-	virtual int LBDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse);
-	virtual int LBUp(int x,int y,unsigned int state,const LaxMouse *mouse);
-	virtual int MBDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse);
-	virtual int MBUp(int x,int y,unsigned int state,const LaxMouse *mouse);
-	virtual int RBDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse);
-	virtual int RBUp(int x,int y,unsigned int state,const LaxMouse *mouse);
-	virtual int WheelUp(int x,int y,unsigned int state,int count,const LaxMouse *mouse);
-	virtual int WheelDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse);
-	virtual int MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse);
-	virtual int Event(const EventData *data,const char *mes);
-	void newMessage(const char *str);
+	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *kb);
+	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
+	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
+	virtual int MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
+	virtual int RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
+	virtual int WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
+	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int Event(const Laxkit::EventData *data,const char *mes);
+	virtual void newMessage(const char *str);
+	virtual double FontAndSize(const char *fontfile, double newfontsize);
 
 
 	 //hedron gl mapping
 	void triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 							 spacepoint p1o,spacepoint p2o,spacepoint p3o,
 							 int n);
-	void mapPolyhedronTexture(Thing *thing, Polyhedron *poly);
-	Thing *makePolyhedron(Polyhedron *poly);
+	void mapPolyhedronTexture(Thing *thing);
+	Thing *makeGLPolyhedron();
 
 	void makecameras(void);
 
 	 //drawing
 	void reshape (int w, int h);
 	void transparentFace(int face, double r, double g, double b, double a);
-	void drawRect(DoubleBBox &box, 
+	void drawRect(Laxkit::DoubleBBox &box, 
 							double bg_r, double bg_g, double bg_b,
 							double line_r, double line_g, double line_b,
 							double alpha);
@@ -152,6 +166,7 @@ class HedronWindow : public anXWindow
 
 	 //input/output
 	virtual int Save(const char *saveto);
+	virtual void UseGenericImageData(double fg_r=-1, double fg_g=-1, double fg_b=-1,  double bg_r=-1, double bg_g=-1, double bg_b=-1);
 	virtual int installImage(const char *file);
 	virtual int installPolyhedron(const char *file);
 };
