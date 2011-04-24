@@ -68,7 +68,6 @@ char *polyptychfile=NULL;
 char *polyhedronfile=NULL,
 	 *spherefile=NULL;
 Polyhedron poly;
-Thing *hedron=NULL;
 int draw_texture=1;
 basis extra_basis;
 double global_fontsize=20;
@@ -80,7 +79,6 @@ unsigned char *spheremap_data=NULL,
 int spheremap_width,
 	spheremap_height;
 
-//const char *consolefontfile="/home/tom/fonts/arial.ttf";
 const char *consolefontfile="/usr/share/fonts/truetype/freefont/FreeSans.ttf";
 
 
@@ -221,7 +219,8 @@ void version()
 
 int main(int argc, char **argv) 
 {
-	anXXApp app;
+	//anXXApp app;
+	anXApp app;
 	makestr(app.app_profile,"Dark");
 	app.init(argc,argv);
 	InitLaxImlib();
@@ -419,7 +418,8 @@ int main(int argc, char **argv)
 
 
 	 //Add window and Run!
-	app.addglwindow(w);
+	//app.addglwindow(w);
+	app.addwindow(w);
 	app.run();
 			
 	XAutoRepeatOn(app.dpy);

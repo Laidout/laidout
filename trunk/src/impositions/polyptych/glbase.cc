@@ -23,6 +23,9 @@ using namespace std;
 #define DBG
 
 
+/*! \defgroup gl Opengl helpers
+ * @{
+ */ 
 
 void dumpMatrix4(GLfloat *m,const char *str)
 {
@@ -203,6 +206,32 @@ void makecube(void)
 	glEndList();
 }
 
+
+//! Draw x (red), y (green), and z (blue) axes in gl.
+void drawaxes(double scale)
+{
+	 //----  Draw Weird Line
+	glPushMatrix();
+	setmaterial(1,0,0);
+	glBegin (GL_LINES);
+		 //x
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(scale, 0, 0);
+	glEnd();
+	setmaterial(0,1,0);
+	glBegin (GL_LINES);
+		 //y
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(0, scale, 0);
+	glEnd();
+	setmaterial(0,0,1);
+	glBegin (GL_LINES);
+		 //z
+		glVertex3f(0.0, 0.0, 0.0);
+		glVertex3f(0,0,scale);
+	glEnd();
+	glPopMatrix();
+}
 
 
 
@@ -566,5 +595,9 @@ void Thing::updateBasis()
 	bas.p.y=m[13];
 	bas.p.z=m[14];
 }
+
+//doxygen group gl
+//@}
+
 
 

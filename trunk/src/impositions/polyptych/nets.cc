@@ -858,17 +858,27 @@ void BasicNet::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
  *  3  tabs on all edges (all or yes)
  * </pre>
  */
+/*! \var int Net::whichpaper
+ * \brief Index of a paper number to associate with this net.
+ * 
+ * Typically, all nets with this paper number will be shown on the same piece of paper.
+ * Nets would be mapped onto the paper itself with mtopaper, if net->m() didn't suffice.
+ */
+
 
 
 //! Init.
 Net::Net()
 {
-	_config=0;
+	_config=0; // *** document this better!! seems to be internal tag for when to regenerate lines
 	active=1;
 	info=0;
 	tabs=0;
 	netname=newstr("Net");
 	basenet=NULL;
+
+	whichpaper=-1; //-1 means not assigned
+	transform_identity(mtopaper); //transform from paper origin of whichpaper
 }
 
 //! Delete points,lines,faces,pointmap,netname.
