@@ -39,15 +39,15 @@
 void dumpMatrix4(GLfloat *m,const char *str);
 
 void addGLSphereTexpt(float x,float y,float z, basis *extra_basis);
-
 void makecylinder(void);
 void drawCylinder(spacepoint p1, spacepoint p2, double scalew=-1,GLfloat *extram=NULL);
-
 void makesphere(void);
 GLuint sphereCallList();
-
 void makecube(void);
 GLuint cubeCallList();
+
+void drawaxes(double scale);
+
 
 //------------------------- FTGL helper functions ----------------------------
 FTFont *setupfont(const char *fontfile, double facesize);

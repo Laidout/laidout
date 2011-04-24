@@ -134,6 +134,8 @@ class Net : public LaxInterfaces::SomeData
 	char *netname;
 	int tabs;
 	int info,active;
+	int whichpaper;
+	double mtopaper[6];
 	LaxInterfaces::SomeData paper;
 
 	AbstractNet *basenet;

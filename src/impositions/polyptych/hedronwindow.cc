@@ -152,6 +152,14 @@ const char *modename(int mode)
  * Each net->info is the index of the original face that acts as the seed
  * for that net.
  */
+/*! \var Thing *HedronWindow::hedron
+ * \brief Holds the gl information associated with poly.
+ *
+ * Reminder that the gl info needs to wait until the proper current gl window is in place,
+ * so no gl information should be initialized in init(), and boy did it take a damn long
+ * time to figure that out.
+ */
+
 
 /*! If newpoly, then inc it's count. It does NOT create a copy from it current, so watch out.
  */
@@ -175,8 +183,7 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	oldmode=mode=MODE_Net;
 	draw_edges=1;
 	draw_seams=3;
-	cylinderscale=.02;
-	edgeScaleFromBox();
+	cylinderscale=edgeScaleFromBox();
 
 	fontsize=20;
 	pad=20;
@@ -186,12 +193,14 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	spherefile            =NULL;
 	spheremap_data        =NULL;
 	spheremap_data_rotated=NULL;
-	spheremap_width =0;
-	spheremap_height=0;
+	spheremap_width       =0;
+	spheremap_height      =0;
+	spheretexture=flattexture=0; //gl texture ids
 
 	currentmessage=lastmessage=NULL;
 
 	consolefontfile=NULL;
+	makestr(consolefontfile,"/usr/share/fonts/truetype/freefont/FreeSans.ttf"); // ***
 	consolefont=NULL;
 	movestep=.5;
 	autorepeat=1;
@@ -241,12 +250,12 @@ void HedronWindow::newMessage(const char *str)
 	needtodraw=1;
 }
 
-//! Compute a reasonable edge width to use based on the sizo of the polyhedron bounding box.
-void HedronWindow::edgeScaleFromBox()
+//! Return a reasonable edge width to use based on the size of the polyhedron bounding box.
+double HedronWindow::edgeScaleFromBox()
 {
-	if (poly->vertices.n==0) { cylinderscale=.02; return; }
+	if (!poly || poly->vertices.n==0) { return .02; }
 
-	spacepoint p1,p2;
+	spacepoint p1,p2; //p1==min point, p2==max point
 	p1=p2=poly->vertices.e[0];
 	for (int c=1; c<poly->vertices.n; c++) {
 		if (poly->vertices.e[c].x<p1.x) p1.x=poly->vertices.e[c].x;
@@ -259,7 +268,7 @@ void HedronWindow::edgeScaleFromBox()
 		else if (poly->vertices.e[c].z>p2.z) p2.z=poly->vertices.e[c].z;
 	}
 	
-	cylinderscale=.005*norm(p1-p2);
+	return .005*norm(p1-p2);
 }
 
 //! Save a Polyptych file
@@ -374,13 +383,16 @@ void HedronWindow::triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 	}
 }
 
-//! Update the gl hedron with the current texture.
+//! Update the gl hedron (referenced by thing) with the current texture.
+/*! This uses the coordinates of poly, but thing can be anything.
+ */
 void HedronWindow::mapPolyhedronTexture(Thing *thing)
 {
 	//DBG cerr <<"mapping hedron texture..."<<endl;
 	spacepoint center,centero,normal,point;
 	spacepoint p1,p2, p1o,p2o;
 	int c,c2;
+
 	glNewList(thing->id,GL_COMPILE);
 	for (c=0; c<poly->faces.n; c++) {
 		//DBG if (c!=poly->faces.n-3) continue;
@@ -455,21 +467,24 @@ void HedronWindow::mapPolyhedronTexture(Thing *thing)
 	glEndList();
 }
 
-//! Create a gl object with texture, based on poly.
+//! Create a new Thing with a new gl call list id.
+/*! This is independent of any texture, or polyhedron coordinates.
+ */
 Thing *HedronWindow::makeGLPolyhedron()
 {
 	if (!poly) return NULL;
 	
 	GLuint hedronlist=glGenLists(1);
 	Thing *thing=new Thing(hedronlist);
-	//DBG dumpMatrix4(thing->m,"hedron before");
+
 	thing->SetScale(5.,5.,5.);
 	thing->SetColor(1., 1., 1., 1.0);
-	//DBG dumpMatrix4(thing->m,"hedron after");
 	thing->SetPos(0,0,0);
-	//DBG dumpMatrix4(thing->m,"hedron after2");
 
-	mapPolyhedronTexture(thing);
+	//mapPolyhedronTexture(thing);
+
+	//DBG cerr <<"New hedron call list id = "<<hedronlist<<endl;
+	//DBG dumpMatrix4(thing->m,"hedron initial matrix");
 	return thing;
 }
 
@@ -598,19 +613,85 @@ void HedronWindow::setlighting(void)
 		
 }
 
+//! Make a Polyhedron cube, with sides length 2, centered at origin.
+Polyhedron *HedronWindow::defineCube()
+{
+	Polyhedron *newpoly=new Polyhedron;
+	makestr(newpoly->name,"Cube");
+
+	newpoly->vertices.push(spacepoint(1,1,1));
+	newpoly->vertices.push(spacepoint(-1,1,1));
+	newpoly->vertices.push(spacepoint(-1,-1,1));
+	newpoly->vertices.push(spacepoint(1,-1,1));
+	newpoly->vertices.push(spacepoint(-1,1,-1));
+	newpoly->vertices.push(spacepoint(1,1,-1));
+	newpoly->vertices.push(spacepoint(1,-1,-1));
+	newpoly->vertices.push(spacepoint(-1,-1,-1));
+
+	newpoly->faces.push(new Face("0 1 2 3",""));
+	newpoly->faces.push(new Face("1 0 5 4",""));
+	newpoly->faces.push(new Face("2 1 4 7",""));
+	newpoly->faces.push(new Face("0 3 6 5",""));
+	newpoly->faces.push(new Face("3 2 7 6",""));
+	newpoly->faces.push(new Face("4 5 6 7",""));
+	newpoly->connectFaces();
+	newpoly->makeedges();
+	//DBG newpoly->dump_out(stdout, 0, 0, NULL);
+	newpoly->BuildExtra();
+
+	return newpoly;
+}
 
 int HedronWindow::init()
 {
+	//---------------Polyhedron coordinate and texture final setup
+
 	 // *** these two are static variables that really should be elsewhere
 	if (!glvisual)  glvisual = glXChooseVisual(app->dpy, DefaultScreen(app->dpy), attributeListDouble);
 	if (!glcontext) glcontext= glXCreateContext(app->dpy, glvisual, 0, GL_TRUE);
 
+	if (!poly) {
+		poly=defineCube();
+		cylinderscale=edgeScaleFromBox();
+		nets.flush();
+		if (currentnet) currentnet->dec_count();
+		currentnet=NULL;
+		makestr(polyhedronfile,NULL);
+		currentface=currentpotential=-1;
+		needtodraw=1;
+	}
+
+	if (!spheremap_data) {
+		UseGenericImageData();
+	}
+
+// ***** gl definition stuff, might make to wait for an x window to be in current??
+//	if (!hedron) {
+//		hedron=makeGLPolyhedron();
+//		things.push(hedron);
+//		//hedron->SetScale(5,5,5);
+//	}
+//	remapCache();
+//	mapPolyhedronTexture(hedron);
+
+
+	 //-----------------Base window initialization
 	anXWindow::init();
 
-	 //texture initialization
+
+	//installSpheremapTexture(1);
+
+	return 0;
+}
+
+//! Enable GL_TEXTURE_2D, define spheretexture id (if definetid), and load in spheremapdata.
+void HedronWindow::installSpheremapTexture(int definetid)
+{
+	 //--------------------texture initialization
 	glEnable(GL_TEXTURE_2D);
 
-	glGenTextures(1,&spheretexture); //can generate several texture ids
+	 //generate a gl texture id (it is put in spheretexture)
+	if (definetid) glGenTextures(1,&spheretexture); //can generate several texture ids
 	//floor_texture=spheretexture;
 	//glGenTextures(1,&flattexture);
 
@@ -637,17 +718,8 @@ int HedronWindow::init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 
-	 //read in texture
-	//spheremap_data=readPPM(spheremap,&width,&height);
-	//spheremap_width=width;
-	//spheremap_height=height;
-	if (spheremap_data == NULL ) { 
-		cout <<"Error reading texture!"<<endl;
-		exit(1);
-	}
-
 	 //****** this does not appear to be stuck to spheretexture!!
-	 //			have to reload on each redraw for it to work!! HOW COME!!!!!
+	 //			have to reload on each redraw for it to work!! HOW COME??!?!?!?
 	glTexImage2D(GL_TEXTURE_2D,   //target
 				 0,               //mipmap level
 				 GL_RGB,          //number of color components per pixel
@@ -660,15 +732,11 @@ int HedronWindow::init()
 	//gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, infoheader.data);
 
 
-	//delete[] data;
-
 	 //check if texture is resident
 	DBG GLint yes;
 	DBG glGetTexParameteriv(spheretexture,GL_TEXTURE_RESIDENT,&yes);
 	DBG if (yes) cerr <<"----------------texture is resident"<<endl;
 	DBG else cerr <<"----------------texture is NOT resident"<<endl;
-
-	return 0;
 }
 
 void HedronWindow::installOverlays()
@@ -706,7 +774,7 @@ void HedronWindow::installOverlays()
 	placeOverlays();
 }
 
-//! Assuming bounds already set, line up overlays centered on left.
+//! Assuming bounds already set, line up overlays centered on left of screen.
 void HedronWindow::placeOverlays()
 {
 	int totalheight=0;
@@ -740,6 +808,8 @@ int HedronWindow::Resize(int w,int h)
 }
 
 //! Setup camera based on new window dimensions, and placeOverlays().
+/*! This is called when the window size is changed.
+ */
 void HedronWindow::reshape (int w, int h)
 {
 	placeOverlays();
@@ -782,20 +852,22 @@ void HedronWindow::drawHelp()
 	cout <<"net "<<MODE_Net<<" old:"<<oldmode<<endl;
 
 	if (oldmode==MODE_Solid || oldmode==MODE_Net) 
-		helptext="h    show this help\n"
-				 "`    toggle between net and solid mode\n"
-			     "l    show or not show polyhedron edges\n"
-				 "n    show or not show cut lines\n"
-				 "[    decrease size of cut lines\n"
-				 "]    increase size of cut lines\n"
-				 "t    use or not draw the image\n"
-				 "m    change render mode\n"
+		helptext="h    Show this help\n"
+				 "`    Toggle between net and solid mode\n"
+			     "l    Show or not show polyhedron edges\n"
+				 "n    Show or not show cut lines\n"
+				 "[    Decrease size of cut lines\n"
+				 "]    Increase size of cut lines\n"
+				 "t    Use or not draw the image\n"
+				 "m    Change render mode\n"
+				 "D    Drop all nets back onto the hedron\n"
+				 "c    Switch to next camera view\n"
 				 "\n"
-				 "^s   save to a polyptych file\n"
-				 "^+s  save as to a polyptych file\n"
-				 "^i   load a new image for the shape\n"
-				 "^p   load a new shape\n"
-				 "^r   render\n"
+				 "^s   Save to a polyptych file\n"
+				 "^+s  Save as to a polyptych file\n"
+				 "^i   Load a new image for the shape\n"
+				 "^p   Load a new shape\n"
+				 "^r   Render\n"
 			     "\n"
 				 "left mouse button  rolls shape\n"
 				 "shift-l button  rotates along axis pointing at viewer\n"
@@ -856,31 +928,6 @@ void HedronWindow::drawHelp()
 		}
 	}
 
-}
-
-void drawaxes(double scale)
-{
-	 //----  Draw Weird Line
-	glPushMatrix();
-	setmaterial(1,0,0);
-	glBegin (GL_LINES);
-		 //x
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(scale, 0, 0);
-	glEnd();
-	setmaterial(0,1,0);
-	glBegin (GL_LINES);
-		 //y
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(0, scale, 0);
-	glEnd();
-	setmaterial(0,0,1);
-	glBegin (GL_LINES);
-		 //z
-		glVertex3f(0.0, 0.0, 0.0);
-		glVertex3f(0,0,scale);
-	glEnd();
-	glPopMatrix();
 }
 
 //! Draw all the stuff in the scene
@@ -970,24 +1017,31 @@ void HedronWindow::drawbg()
 
 	 //---- draw things *** SHOULD NOT HAVE TO RELOAD DATA EACH REFRESH!!!
 	if (draw_texture) {
+		DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
+		
+		//DBG mapPolyhedronTexture(hedron);
+		//glPushMatrix();
+		//glMultMatrixf(hedron->m);
+
 		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, spheretexture);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexImage2D(GL_TEXTURE_2D,   //target
-					 0,               //mipmap level
-					 GL_RGB,          //number of color components per pixel
-					 spheremap_width, //width
-					 spheremap_height,//height
-					 0,               //border with, must be 0 or 1
-					 //GL_RGB,          //order of data
-					 GL_BGR,          //order of data
-					 GL_UNSIGNED_BYTE,//type of data
-					 spheremap_data); //pixel data
+//		glBindTexture(GL_TEXTURE_2D, spheretexture);
+//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+//		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//		glTexImage2D(GL_TEXTURE_2D,   //target
+//					 0,               //mipmap level
+//					 GL_RGB,          //number of color components per pixel
+//					 spheremap_width, //width
+//					 spheremap_height,//height
+//					 0,               //border with, must be 0 or 1
+//					 //GL_RGB,          //order of data
+//					 GL_BGR,          //order of data
+//					 GL_UNSIGNED_BYTE,//type of data
+//					 spheremap_data); //pixel data
+		//glPopMatrix();
 	}
 
 	for (c=0; c<things.n; c++) {
@@ -1097,7 +1151,7 @@ void HedronWindow::drawbg()
 				//------------------------
 
 				setmaterial(1,.3,.3);
-				drawCylinder(p1,p2,cylinderscale);
+				drawCylinder(p1,p2,cylinderscale,hedron->m);
 			}
 		  }
 		}
@@ -1130,7 +1184,7 @@ void HedronWindow::drawbg()
 					+poly->VertexOfFace(face,(c2+1)%poly->faces.e[face]->pn,(mode==MODE_Net?1:0)))/2;
 
 				setmaterial(.3,1,.3);
-				drawCylinder(p1,p2,cylinderscale);
+				drawCylinder(p1,p2,cylinderscale,hedron->m);
 			}
 		  }
 		}
@@ -1276,7 +1330,7 @@ void HedronWindow::drawRect(DoubleBBox &box,
 							double line_r, double line_g, double line_b,
 							double alpha)
 {
-	DBG cerr << "draw box ("<<box.minx<<','<<box.miny<<") -> ("<<box.maxx<<","<<box.maxy<<")"<<endl;
+	//DBG cerr << "draw box ("<<box.minx<<','<<box.miny<<") -> ("<<box.maxx<<","<<box.maxy<<")"<<endl;
 
 
 	glMatrixMode (GL_MODELVIEW);
@@ -1434,8 +1488,10 @@ int HedronWindow::event(XEvent *e)
 			makesphere();
 			makecylinder();
 			//makeshape();
-			hedron=makeGLPolyhedron();
-			things.push(hedron);
+			if (!hedron) {
+				hedron=makeGLPolyhedron();
+				things.push(hedron);
+			}
 			remapCache();
 
 			 //set cameras
@@ -1449,6 +1505,9 @@ int HedronWindow::event(XEvent *e)
 			//gluLookAt(50,50,50, 0,0,0, 0,0,1);
 			//glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
 			//glPopMatrix();
+			
+			 //define texture
+			installSpheremapTexture(1);
 		}
 
 	}
@@ -2336,6 +2395,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 	return 0;
 }
 
+//! Install a polyhedron contained in file.
 /*! Return 0 for success, 1 for failure.
  */
 int HedronWindow::installPolyhedron(const char *file)
@@ -2421,7 +2481,7 @@ int HedronWindow::installImage(const char *file)
 	else sprintf(e,_("Loaded image %s"),file);
 			
 	if (error) app->postmessage(e);
-	else remapCache();
+	//else remapCache();
 
 	DBG cerr <<"\n"
 	DBG	 <<"Using sphere file:"<<spherefile<<endl
@@ -2433,6 +2493,9 @@ int HedronWindow::installImage(const char *file)
 
 //! Zap the image to be a generic lattitude and longitude
 /*! Pass in a number outside of [0..1] to use default for that color.
+ *
+ * This updates spheremap_data, spheremap_width, and spheremap_height.
+ * It does not reapply the image to the GL texture area.
  */
 void HedronWindow::UseGenericImageData(double fg_r, double fg_g, double fg_b,  double bg_r, double bg_g, double bg_b)
 {
@@ -2451,6 +2514,7 @@ void HedronWindow::UseGenericImageData(double fg_r, double fg_g, double fg_b,  d
 
 	spheremap_width=512;
 	spheremap_height=256;
+	if (spheremap_data) delete[] spheremap_data;
 	spheremap_data=new unsigned char[spheremap_width*spheremap_height*3];
 
 	 //set background color
@@ -2487,7 +2551,6 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		const StrEventData *s=dynamic_cast<const StrEventData*>(data);
 		if (!s) return 1;
 		installPolyhedron(s->str);
-		delete data;
 		return 0;
 	}
 
@@ -2495,7 +2558,6 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		const StrEventData *s=dynamic_cast<const StrEventData*>(data);
 		if (!s) return 1;
 		installImage(s->str);
-		delete data;
 		return 0;
 	}
 
@@ -2513,14 +2575,13 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		else sprintf(ss,"Error saving %s, not saved!",s->str);
 		newMessage(ss);
 
-		delete data;
 		return 0;
 	}
 
 	if (!strcmp(mes,"renderto")) {
 		cout <<"**** must implement background rendering, and multinet output!!"<<endl;
 
-		if (!currentnet) { delete data; return 0; }
+		if (!currentnet) { return 0; }
 		DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
 		int status=SphereToPoly(spherefile,
 				 poly,
@@ -2533,7 +2594,6 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 				 &extra_basis
 				);
 		DBG cerr <<"result of render call: "<<status<<endl;
-		delete data;
 		return 0;
 	}
 
@@ -2978,6 +3038,17 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 				else things.e[curobj]->Translate(0., 0., movestep);
 				needtodraw=1;
 			
+	//-----------------------DBG---------------------
+	} else if (ch=='0') { // scale up hedron
+			hedron->SetScale(1.2,1.2,1.2);
+			needtodraw=1;
+			return 0; 
+
+	} else if (ch=='9') { // scale down hedron
+			hedron->SetScale(.8,.8,.8);
+			needtodraw=1;
+			return 0; 
+
 
 	} else return anXWindow::CharInput(ch,buffer,len,state,kb);
 	return 0;

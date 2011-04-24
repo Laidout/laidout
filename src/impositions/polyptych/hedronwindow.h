@@ -107,6 +107,7 @@ class HedronWindow : public Laxkit::anXWindow
 		 		 int xx,int yy,int ww,int hh,int brder,
 				 Polyhedron *newpoly);
 	virtual ~HedronWindow();
+	virtual const char *whattype() { return "HedronWindow"; }
 	virtual int MoveResize(int x,int y,int w,int h);
 	virtual int Resize(int w,int h);
 	virtual int event(XEvent *e);
@@ -131,6 +132,7 @@ class HedronWindow : public Laxkit::anXWindow
 
 
 	 //hedron gl mapping
+	void installSpheremapTexture(int definetid);
 	void triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 							 spacepoint p1o,spacepoint p2o,spacepoint p3o,
 							 int n);
@@ -151,7 +153,7 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual void drawHelp();
 
 	 //net building
-	void edgeScaleFromBox();
+	double edgeScaleFromBox();
 	int Reseed(int original);
 	int recurseUnwrap(Net *netf, int fromneti, Net *nett, int toneti);
 	void recurseCache(Net *net,int neti);
@@ -169,6 +171,7 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual void UseGenericImageData(double fg_r=-1, double fg_g=-1, double fg_b=-1,  double bg_r=-1, double bg_g=-1, double bg_b=-1);
 	virtual int installImage(const char *file);
 	virtual int installPolyhedron(const char *file);
+	virtual Polyhedron *defineCube();
 };
 
 } //namespace Polyptych
