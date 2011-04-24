@@ -26,7 +26,7 @@ objs= \
 	netdialog.o \
 	singleseditor.o
 
-frompolyptych= poly.o nets.o
+frompolyptych= glbase.o  gloverlay.o  hedronwindow.o  nets.o  poly.o  polyrender.o
 
 
 impositions: $(objs)
