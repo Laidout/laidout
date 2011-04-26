@@ -34,6 +34,9 @@
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
 
+#include </usr/include/GraphicsMagick/Magick++.h>
+
+
 //#include <lax/lists.cc>
 //#include <lax/refptrstack.cc>
 
@@ -224,6 +227,7 @@ int main(int argc, char **argv)
 	makestr(app.app_profile,"Dark");
 	app.init(argc,argv);
 	InitLaxImlib();
+	Magick::InitializeMagick(*argv);
 
 
 	//if (argc==1) { help(); }
@@ -349,8 +353,8 @@ int main(int argc, char **argv)
 
 		poly.BuildExtra();
 
-		DBG cerr<<"poly dump after read in:"<<endl;
-		DBG poly.dump_out(stdout,0,0,NULL);
+		//DBG cerr<<"poly dump after read in:"<<endl;
+		//DBG poly.dump_out(stdout,0,0,NULL);
 		if (nets.n) {
 			 //continued initialization from loading in net above
 			 //make sure facemode for all the faces are correct!

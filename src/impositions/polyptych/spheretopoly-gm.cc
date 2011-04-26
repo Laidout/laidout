@@ -114,7 +114,8 @@ int Net2::SaveSvgWithImages(const char *filename, const char *filebase, flatpoin
 		bbox.minx=0;
 		bbox.maxy=maxy-miny;
 		bbox.miny=0;
-		transform_copy(bbox.m(),m()); //map same as the net
+		bbox.m(m());
+		//transform_copy(bbox.m(),m()); //map same as the net
 		bbox.origin(flatpoint(minx,miny));      //...except for the origin
 	}
 
