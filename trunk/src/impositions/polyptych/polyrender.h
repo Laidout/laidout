@@ -58,29 +58,31 @@ int SaveSvgWithImages(Net *net,
 					  const char *filebase,
 					  flatpoint *imagedims,
 					  flatpoint *imageoffset,
-					  double pixPerUnit,  //!< How many image pixels per unit in net space
+					  double pixPerUnit,
 					  char **error_ret);
 
 int SphereToPoly(const char *spherefile,
 				 Polyhedron *poly,
 				 Net *net, 
-				 int maxwidth,      //!< Render images no more than this many pixels wide
-				 const char *filebase, //!< Say filebase="blah", files will be blah000.png, ...
-				 int output,          //!< Output format
-				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
-				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
-				 basis *extra_basis
+				 int maxwidth,
+				 const char *filebase,
+				 int output,
+				 int oversample,
+				 int generate_images,
+				 basis *extra_basis,
+				 char **error_ret
 				);
 
 int SphereToPoly(Magick::Image spheremap,
 				 Polyhedron *poly,
 				 Net *net, 
-				 int maxwidth,      //!< Render images no more than this many pixels wide
-				 const char *filebase, //!< Say filebase="blah", files will be blah000.png, ...
-				 int output,          //!< Output format
-				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
-				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
-				 basis *extra_basis
+				 int maxwidth,
+				 const char *filebase,
+				 int output,
+				 int oversample,
+				 int generate_images,
+				 basis *extra_basis,
+				 char **error_ret 
 				);
 
 } //namespace SphereMap

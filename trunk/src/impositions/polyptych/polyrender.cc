@@ -18,6 +18,7 @@
 
 
 #include <lax/strmanip.h>
+#include <lax/fileutils.h>
 #include <lax/interfaces/coordinate.h>
 #include <lax/interfaces/svgcoord.h>
 #include <lax/transformmath.h>
@@ -240,16 +241,20 @@ int SaveSvgWithImages(Net *net,
 //------------------------------------ SphereToPoly() -----------------------------------
 
 /*! Return 0 for success, nonzero for error.
+ *
+ * If there is an error, then return some description of it in error_ret. Anything previously
+ * in error_ret is written over, with a new char[], which must be delete[]'d.
  */
 int SphereToPoly(const char *spherefile,
 				 Polyhedron *poly,
 				 Net *net, 
-				 int maxwidth,      //!< Render images no more than this many pixels wide
+				 int maxwidth,          //!< Render images no more than this many pixels wide
 				 const char *filebase, //!< Say filebase="blah", files will be blah000.png, ...
 				 int output,          //!< Output format
-				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
+				 int oversample,      //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
-				 basis *extra_basis
+				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
 				)
 {
 	Image sphere;
@@ -257,7 +262,17 @@ int SphereToPoly(const char *spherefile,
 	if (generate_images) try {
 		sphere.read(spherefile);
 	} catch (Exception &error_ ) {
-		cout <<"Error loading "<<spherefile<<endl;
+
+		char errormes[300];
+		errormes[0]=0;
+		sprintf(errormes,"Error loading %s.",spherefile?spherefile:"(no file given");
+
+		cerr <<errormes<<endl;
+
+		if (error_ret) {
+			*error_ret=NULL;
+			makestr(*error_ret,errormes);
+		}
 		return 1;
 	}
 
@@ -274,7 +289,7 @@ int SphereToPoly(const char *spherefile,
 		if (ptr!=NULL && ptr!=fbase) *ptr='\0';
 	}
 
-	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, extra_basis);
+	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, extra_basis, error_ret);
 	if (fbase!=filebase) delete[] fbase;
 
 	return status;
@@ -282,6 +297,9 @@ int SphereToPoly(const char *spherefile,
 
 //! Create several small images, 1 per face of a polyhedron from a sphere map.
 /*! Note that OUT_NONE renders the individual images, but does not create a final single file.
+ *
+ * If filebase is something like "blah####", then the '#' will be replaced by the image number.
+ * The default is 3 characters for the number.
  *
  * \todo maxwidth is currently used here as the width of the first face image,
  *     not the actual max width of face images
@@ -294,7 +312,8 @@ int SphereToPoly(Image spheremap,
 				 int output,          //!< Output format
 				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
-				 basis *extra_basis
+				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
 				)
 {
 	if (!poly || (output!=OUT_NONE && !net)) return 1;
@@ -302,6 +321,15 @@ int SphereToPoly(Image spheremap,
 	int AA=oversample;
 	int spherewidth=spheremap.columns(),
 		sphereheight=spheremap.rows();
+
+	char *fnumbase=make_filename_base(filebase);
+	string filenumbase=fnumbase;
+	delete[] fnumbase;
+
+	 // *** truncates at first '#' for filenamebase. This could be more intelligent
+	string filenamebase=filebase;
+	size_t pos=filenamebase.find("#");
+	if (pos!=string::npos) filenamebase=filenamebase.substr(0,pos);
 
 	//figure out an orientation for the face in 3d.
 	//
@@ -337,9 +365,11 @@ int SphereToPoly(Image spheremap,
 	flatpoint netp,netx;
 	flatpoint imagedims[poly->faces.n],imageoffset[poly->faces.n];
 	char filename[300],scratch[500];
+	int neti;
 	
 	for (c=0; c<poly->faces.n; c++) { //for each face...
-	//for (c=0; c<1; c++) { //for each face...
+		 //only render faces in the current net
+		if (!net->findOriginalFace(c,1,0,&neti)) continue;
 		
 		 //find transform and bounding box for face in polyhedron
 		 // b is basis of face:
@@ -382,7 +412,7 @@ int SphereToPoly(Image spheremap,
 		}
 
 		 //scale points so that they are in face image space
-		for (int c2=0; c2<poly->faces.e[c]->pn; c2++) {
+		for (int c2=0; c2<pgon->pn; c2++) {
 			pgon->p[c2]=(pgon->p[c2]-flatpoint(bbox.minx,bbox.miny))/width*pixelwidth;
 		}
 		pgons.push(pgon,1); //add to list of pgons
@@ -458,7 +488,7 @@ int SphereToPoly(Image spheremap,
 			color.blue(bq);
 
 			//if (color2.alpha()!=1.) { //this is checked for above...
-				color.alpha(0);
+				color.alpha(0); //fully opaque
 				faceimage.pixelColor(x,y,color);
 			//}
 		  }
@@ -468,7 +498,7 @@ int SphereToPoly(Image spheremap,
 
 		 //save the image somewhere..
 		if (generate_images) {
-			sprintf(filename,"%s%03d.png",filebase,c);
+			sprintf(filename,filenumbase.c_str(),c);
 			cout <<"writing "<<filename<<"..."<<endl;
 			faceimage.write(filename);
 		}
@@ -484,7 +514,7 @@ int SphereToPoly(Image spheremap,
 	double m[6];
 
 	if (output==OUT_LAIDOUT) {
-		sprintf(filename,"%s.laidout",filebase);
+		sprintf(filename,"%s.laidout",filenamebase.c_str());
 		FILE *f=fopen(filename,"w");
 		if (!f) {
 			cerr <<"Could not open "<<filename<<"for writing."<<endl;
@@ -499,7 +529,7 @@ int SphereToPoly(Image spheremap,
 
 		for (int c=0; c<net->faces.n; c++) {
 			facei=c; //***what if net has fewer faces than the poly??
-			sprintf(filename,"%s%03d.png",filebase,facei);
+			sprintf(filename,filenumbase.c_str(),facei);
 			//faceimage.read(filename);
 		
 
@@ -535,23 +565,26 @@ int SphereToPoly(Image spheremap,
 
 	} else if (output==OUT_SVG) {
 		cout <<"outputting svg...."<<endl;
-		sprintf(filename,"%s.svg",filebase);
-		return SaveSvgWithImages(net, filename,filebase,imagedims,imageoffset,pixperunit,NULL);
+		sprintf(filename,"%s.svg",filenamebase.c_str());
+		return SaveSvgWithImages(net, filename,filenamebase.c_str(),imagedims,imageoffset,pixperunit,NULL);
 
 	} else if (output==OUT_IMAGE) {
-		sprintf(filename,"%s.tif",filebase);
+		sprintf(filename,"%s.tif",filenamebase.c_str());
 		//FILE *f=fopen(filename,"w");
 		cout <<"*** still need to implement image out!!"<<endl;
 		//fclose(f);
 		return 0;
+
 	} else if (output==OUT_QTVR) {
-		sprintf(filename,"%s.mov",filebase);
+		sprintf(filename,"%s.mov",filenamebase.c_str());
 		cout <<"*** still need to implement qtvr out!!"<<endl;
 		return 0;
+
 	} else if (output==OUT_QTVR_FACES) { 
 		cout <<"*** still need to implement qtvrfaces out!!"<<endl;
-		sprintf(filename,"%s.jpg",filebase);
+		sprintf(filename,"%s.jpg",filenamebase.c_str());
 		return 0;
+
 	} else {
 		cout <<"*** outputting nothing!"<<endl;
 	}

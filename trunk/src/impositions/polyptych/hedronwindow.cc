@@ -243,6 +243,7 @@ double HedronWindow::FontAndSize(const char *fontfile, double newfontsize)
 	return f;
 }
 
+//! Update the current message displayed in the window to str.
 void HedronWindow::newMessage(const char *str)
 {
 	messagetick=0;
@@ -867,7 +868,7 @@ void HedronWindow::drawHelp()
 				 "^+s  Save as to a polyptych file\n"
 				 "^i   Load a new image for the shape\n"
 				 "^p   Load a new shape\n"
-				 "^r   Render\n"
+				 "^r   Render current net\n"
 			     "\n"
 				 "left mouse button  rolls shape\n"
 				 "shift-l button  rotates along axis pointing at viewer\n"
@@ -1289,9 +1290,13 @@ void HedronWindow::drawbg()
 			sprintf(str,"face:%d  ",currentface);
 			ftpoint=consolefont->Render(str,-1,ftpoint);
 		}
-		if (currentnet) {
-			DBG cerr <<"(on net) face "<<currentface<<endl;
-			consolefont->Render("(on net)",-1,ftpoint);
+		if (currentnet) { //show on net indicator
+			int i=nets.findindex(currentnet);
+			if (nets.e[i]->whatshape()) sprintf(str,"net %d: %s",i, nets.e[i]->whatshape());
+			else sprintf(str,"net %d",i);
+
+			DBG cerr <<str<<" face "<<currentface<<endl;
+			consolefont->Render(str,-1,FTPoint(0,fontsize));
 		}
 
 		 //write at top of screen:  write currentmessage
@@ -2581,18 +2586,29 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 	if (!strcmp(mes,"renderto")) {
 		cout <<"**** must implement background rendering, and multinet output!!"<<endl;
 
+		const StrEventData *s=dynamic_cast<const StrEventData*>(data);
+		if (!s || !s->str || !*s->str) return 1;
+
 		if (!currentnet) { return 0; }
 		DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
+		char *error=NULL;
+		currentnet->rebuildLines();
 		int status=SphereToPoly(spherefile,
 				 poly,
 				 currentnet, 
 				 500,      // Render images no more than this many pixels wide
-				 NULL, // Say filebase="blah", files will be blah000.png, ...this creates default filebase name
+				 s->str, // Say filebase="blah", files will be blah000.png, ...this creates default filebase name
 				 OUT_SVG,          // Output format
 				 3, // oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 1, // Whether to actually render images, or just output new svg, for intance.
-				 &extra_basis
+				 &extra_basis,
+				 &error
 				);
+		
+		if (error) newMessage(error);
+		else if (status!=0) newMessage("Unknown error encountered during rendering. The developers need to account for this!!!");
+		else newMessage(_("Rendered."));
+
 		DBG cerr <<"result of render call: "<<status<<endl;
 		return 0;
 	}
@@ -2600,26 +2616,6 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 	return anXWindow::Event(data,mes);
 }
 
-/*! 
- * <pre>
- *  ---hedron navigation---
- *  'n' rotate hedron so we are looking directly into currentnet (or currentface if no net)
- *
- *  ----CAMERA CONTROLS-----
- *    (x,y,z relative to eye)
- *  q w e <--> y z y   w/s move z         rotate around x
- *  a s d <--> x z x   q/e move y   cntl: rotate around z
- *                     a/d move x         rotate around y
- * 
- *  ---SPACE CONTROLS----
- *    (x,y,z global)
- *  x,y,z, X,Y,Z and cntl
- * 
- *  ---CAR CONTROLS----
- *  u i o
- *  j k l
- *  </pre>
- */
 int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const LaxKeyboard *kb)
 {
 	if (!win_on) return 0;
@@ -2791,6 +2787,10 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 	} else if (ch=='n') {
 		draw_seams++;
 		if (draw_seams>3) draw_seams=0;
+		if (draw_seams==0) newMessage(_("Do not draw net edges or unwrap path."));
+		else if (draw_seams==1) newMessage(_("Draw net edges, but not unwrap path."));
+		else if (draw_seams==2) newMessage(_("Draw unwrap path, but not net edges."));
+		else if (draw_seams==3) newMessage(_("Draw both net edges, and unwrap path."));
 		needtodraw=1;
 		return 0;
 
