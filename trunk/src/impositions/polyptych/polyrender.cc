@@ -302,7 +302,7 @@ int SphereToPoly(const char *spherefile,
  * The default is 3 characters for the number.
  *
  * \todo maxwidth is currently used here as the width of the first face image,
- *     not the actual max width of face images
+ *     not the actual max width of face images should probably do a max pixel area of image or something
  */
 int SphereToPoly(Image spheremap,
 				 Polyhedron *poly,
@@ -499,7 +499,7 @@ int SphereToPoly(Image spheremap,
 		 //save the image somewhere..
 		if (generate_images) {
 			sprintf(filename,filenumbase.c_str(),c);
-			cout <<"writing "<<filename<<"..."<<endl;
+			cout <<"writing "<<filename<<" ("<<pixelwidth<<"x"<<pixelheight<<")..."<<endl;
 			faceimage.write(filename);
 		}
 

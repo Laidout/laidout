@@ -267,7 +267,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 {
 	int num_expr_parsed=0;
 
-	if (in==NULL) { calcerr(_("Blank expression")); return NULL; }
+	if (in==NULL) { calcerr(_("Blank expression")); return 1; }
 	clearerror();
 
 	Value *answer=NULL;

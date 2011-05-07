@@ -2596,7 +2596,7 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		int status=SphereToPoly(spherefile,
 				 poly,
 				 currentnet, 
-				 500,      // Render images no more than this many pixels wide
+				 2300,      // Render images no more than this many pixels wide
 				 s->str, // Say filebase="blah", files will be blah000.png, ...this creates default filebase name
 				 OUT_SVG,          // Output format
 				 3, // oversample*oversample per image pixel. 3 seems pretty good in practice.
