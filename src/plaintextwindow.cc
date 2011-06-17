@@ -132,7 +132,7 @@ int PlainTextWindow::Event(const Laxkit::EventData *data,const char *mes)
 		FileDialog *fd=new FileDialog(NULL,NULL,_("Open text file..."),
 					ANXWIN_REMEMBER|FILES_FILES_ONLY|FILES_OPEN_ONE|FILES_PREVIEW,
 					0,0,0,0,0, object_id,"openPopup",
-					NULL);
+					0,NULL);
 		fd->OkButton(_("Open as text"),NULL);
 		app->rundialog(fd);
 		return 0;

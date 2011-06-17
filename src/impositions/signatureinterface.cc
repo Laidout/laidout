@@ -104,6 +104,16 @@ enum ActionAreaType {
 /*! \class ActionArea
  * \brief This can define areas on screen for various purposes.
  */
+/*! \var int ActionArea::offset
+ * \brief The outline is at location offset+(the points in outline).
+ */
+/*! \var int ActionArea::hotspot
+ * \brief Defines a point of focus of the area.
+ *
+ * Say an area defines an arrow, the hotspot would be the point of the arrow.
+ * When you call Position(double,double,int) to set the area's position, you are
+ * actually setting the position of the hotspot.
+ */
 
 
 ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntip,int r,int v,unsigned long col,int cat)
@@ -130,6 +140,9 @@ ActionArea::~ActionArea()
 
 //! Change the position of the area, where pos==offset+hotspot.
 /*! If which&1, adjust x. If which&2, adjust y.
+ *
+ * To be clear, this will make the x and/or y coordinate of the area's hotspot be
+ * at the given (x,y).
  */
 void ActionArea::Position(double x,double y,int which)
 {

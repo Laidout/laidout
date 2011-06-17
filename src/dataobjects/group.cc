@@ -282,11 +282,11 @@ LaxInterfaces::SomeData *Group::findobj(LaxInterfaces::SomeData *d,int *n)
 	for (c=0; c<objs.n; c++) {
 		g=dynamic_cast<Group *>(objs.e[c]);
 		if (!g) continue;
-		if (n) *n++;
+		if (n) (*n)++;
 		if (g->findobj(d,n)) {
 			return d;
 		}
-		if (n) *n--;
+		if (n) (*n)--;
 	}
 	return NULL;
 }
