@@ -93,7 +93,7 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	if (!filter && laidout->exportfilters.n) {
 		for (int c=0; c<laidout->exportfilters.n; c++) {
 			if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) {
-				filter=filter=laidout->exportfilters.e[c];
+				filter=laidout->exportfilters.e[c];
 				break;
 			}
 		}

@@ -224,7 +224,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	
 	const char *gspath=laidout->binary("gs");
 	if (!gspath) {
-		if (error_ret) *appendline(*error_ret,_("Currently need Ghostscript to output to image files."));
+		if (error_ret) appendline(*error_ret,_("Currently need Ghostscript to output to image files."));
 		return 2;
 	} 
 
