@@ -27,7 +27,7 @@
 #include "language.h"
 
 // if gl:
-#include "impositions/polyptych/hedronwindow.h"
+//#include "polyptych/hedronwindow.h"
 
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
@@ -52,11 +52,11 @@ using namespace LaxFiles;
 /*! \ingroup mainwindows
  * \brief HedronWindow window generator for use in HeadWindow.
  */
-anXWindow *newHedronWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
-{
-	Polyptych::HedronWindow *text=new Polyptych::HedronWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
-	return text;
-}
+//anXWindow *newHedronWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+//{
+//	Polyptych::HedronWindow *text=new Polyptych::HedronWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
+//	return text;
+//}
 
 ////---------------------- newPlainTextWindowFunc
 /*! \ingroup mainwindows
@@ -267,7 +267,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 			newButtonBoxFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
-	AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
+	//AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
 }
 
 //! Empty virtual destructor.

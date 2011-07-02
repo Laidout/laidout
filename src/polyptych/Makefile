@@ -5,7 +5,7 @@
 #################################################
 
 
-include ../../../Makefile-toinclude
+include ../../Makefile-toinclude
 
 LD=g++
 CPPFLAGS= -Wall -g -I. -I.. -I$(LAXDIR)/.. -I$(LAXIDIR) -I/usr/include/freetype2
@@ -42,4 +42,4 @@ glbase.o:
 
 .PHONY: clean lax laxinterface
 clean:
-	rm xgl xgll *.o
+	rm -f polyptych spheretopoly spheretocube *.o
