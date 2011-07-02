@@ -37,7 +37,7 @@ using namespace std;
 #define fudge 5.0
 
 
-// 0               4             6              doc.n-1
+// 0:4             4:1           6:1              doc.n-1
 // |iv,iii,ii...---|1,2,3...-----|A-1 ... A-10--|
 // ^pos
 //

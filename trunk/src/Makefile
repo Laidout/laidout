@@ -22,7 +22,8 @@ dirs= \
 	impositions \
 	interfaces \
 	filetypes \
-	printing 
+	printing \
+	polyptych
 
 objs= \
 	utils.o \
@@ -60,6 +61,10 @@ laidout: lax laxinterface $(dirs) $(objs)
 icons:
 	cd src/icons && $(MAKE)
 									 
+polyptych:
+	cd polyptych && $(MAKE) poly.o
+	cd polyptych && $(MAKE) nets.o
+
 api:
 	cd api && $(MAKE)
 
