@@ -244,7 +244,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	runmode=RUNMODE_Normal;
 
 	config_dir=newstr(getenv("HOME"));
-	appendstr(config_dir,"/.laidout/");
+	appendstr(config_dir,"/.config/laidout/");
 	appendstr(config_dir,LAIDOUT_VERSION);
 	appendstr(config_dir,"/");
 
@@ -532,9 +532,9 @@ int LaidoutApp::IsProject()
  */
 int LaidoutApp::createlaidoutrc()
 {
-	DBG cerr <<"-------------Creating $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	DBG cerr <<"-------------Creating $HOME/.config/laidout/(version)/laidoutrc----------"<<endl;
 
-	 // ensure that ~/.ladiout/(version) exists
+	 // ensure that ~/.config/ladiout/(version) exists
 	 //   if not, create, and put in a README explaining what's what:
 	 //   	laidoutrc
 	 //   	icons/
@@ -549,7 +549,7 @@ int LaidoutApp::createlaidoutrc()
 	
 	int t=check_dirs(config_dir,1);
 	if (t==-1) { // dirs were ok
-		 // create "~/.laidout/(version)/laidoutrc"
+		 // create "~/.config/laidout/(version)/laidoutrc"
 		char path[strlen(config_dir)+20];
 		sprintf(path,"%s/laidoutrc",config_dir);
 		setlocale(LC_ALL,"C");

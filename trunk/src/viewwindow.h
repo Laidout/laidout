@@ -56,8 +56,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 {
 	char lfirsttime;
  protected:
-	int fakepointer;   //***for lack of screen record for multipointer
-	flatpoint fakepos; //***for lack of screen record for multipointer
+	int fakepointer;   //***for lack of screencast recorder for multipointer
+	flatpoint fakepos; //***for lack of screencast recorder for multipointer
 
 	unsigned int drawflags;
 	int viewportmode;
