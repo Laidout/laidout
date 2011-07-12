@@ -120,7 +120,8 @@ const char *PaperInterface::Name()
 #define PAPERM_Portrait         3 
 #define PAPERM_NewPaperGroup    4 
 #define PAPERM_RenamePaperGroup 5
-#define PAPERM_Print            6 
+#define PAPERM_DeletePaperGroup 6 
+#define PAPERM_Print            7 
 
 #define PAPERM_first_pagesize   1000
 #define PAPERM_first_papergroup 2000
@@ -165,6 +166,7 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
 	}
 	menu->AddItem(_("New paper group..."),PAPERM_NewPaperGroup);
 	if (papergroup) menu->AddItem(_("Rename current paper group..."),PAPERM_RenamePaperGroup);
+	if (papergroup) menu->AddItem(_("Delete current paper group..."),PAPERM_DeletePaperGroup);
 
 	return menu;
 }
@@ -285,6 +287,8 @@ int PaperInterface::InterfaceOff()
 
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 	if (lvp) lvp->UseThisPaperGroup(NULL);
+
+	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
 
 	needtodraw=1;
 	DBG cerr <<"imageinterfaceOff()"<<endl;
