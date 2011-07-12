@@ -1296,7 +1296,12 @@ int SpreadEditor::UseThisDoc(Document *ndoc)
 	doc=ndoc;
 	if (doc) doc->inc_count();
 
-	spreadtool->UseThisDoc(doc);
+	DocumentUser *d;
+	for (int c=0; c<viewport->interfaces.n; c++) {
+		d=dynamic_cast<DocumentUser*>(viewport->interfaces.e[c]);
+		if (d) d->UseThisDocument(doc);
+	}
+	//spreadtool->UseThisDoc(doc);
 	return 0;
 }
 

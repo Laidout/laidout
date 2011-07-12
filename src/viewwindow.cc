@@ -54,6 +54,7 @@
 #include "filetypes/importdialog.h"
 #include "filetypes/exportdialog.h"
 #include "interfaces/paperinterface.h"
+#include "interfaces/documentuser.h"
 
 #include <iostream>
 using namespace std;
@@ -432,6 +433,12 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 	}
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent);
 	if (viewer) viewer->setCurdoc(doc);
+
+	DocumentUser *d;
+	for (int c=0; c<interfaces.n; c++) {
+		d=dynamic_cast<DocumentUser*>(interfaces.e[c]);
+		if (d) d->UseThisDocument(doc);
+	}
 
 	setupthings();
 	ClearSearch();
@@ -2992,10 +2999,6 @@ int ViewWindow::init()
 	int obji=0;
 	int c;
 	for (c=0; c<tools.n; c++) {
-		 // ***this should be standardized a little to have the icon stored with
-		 // the interface.
-		 // currently: BlahInterface  -->  Blah  -->  /.../Blah.png
-		//if (!strcmp(str,"MysteryInterface")) continue; //*** for now, don't let users use this! (no icon)
 		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji=tools.e[c]->id;
 		
 		img=laidout->icons.GetIcon(tools.e[c]->IconId());
@@ -3856,6 +3859,11 @@ int ViewWindow::SelectTool(int id)
 {
 	int c=ViewerWindow::SelectTool(id);
 	if (toolselector) toolselector->Select(curtool->id);
+	DocumentUser *d;
+	for (int c2=0; c2<viewport->interfaces.n; c2++) {
+		d=dynamic_cast<DocumentUser*>(viewport->interfaces.e[c2]);
+		if (d) d->UseThisDocument(doc);
+	}
 	return c;
 }
 

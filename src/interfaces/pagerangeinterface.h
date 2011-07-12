@@ -18,12 +18,13 @@
 
 #include <lax/interfaces/aninterface.h>
 
+#include "documentuser.h"
 #include "../laidout.h"
 
 
 //------------------------------------- PageRangeInterface --------------------------------------
 
-class PageRangeInterface : public LaxInterfaces::InterfaceWithDp
+class PageRangeInterface : public LaxInterfaces::InterfaceWithDp, public DocumentUser
 {
   protected:
 	Document *doc;
@@ -32,12 +33,21 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp
 	double xscale,yscale;
 	flatpoint offset;
 	char *LabelPreview(int range,int first,int labeltype);
+	int InstallDefaultRange();
+	void MapPositions();
+
+	unsigned long defaultfg,defaultbg;
 
 	int currange;
+	int hover_part;
+	int hover_range;
+	int hover_position;
+	int hover_index;
+	PageRange *temp_range;
 
 	int showdecs;
 	int firsttime;
-	virtual int scan(int x,int y,int *range);
+	virtual int scan(int x,int y,int *range,int *part, int *index);
   public:
 	PageRangeInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
 	PageRangeInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
@@ -61,6 +71,8 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();

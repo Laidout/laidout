@@ -589,12 +589,13 @@ int Document::ApplyPageRange(const char *name, int type, const char *base, int s
 			} else {
 				 //new range starts somewhere inside range c, but not at beginning
 				pageranges.push(newrange,1,c+1);
+				int oldend=pageranges.e[c]->end;
 				pageranges.e[c]->end=start-1;
 
-				if (end>pageranges.e[c]->end) {
+				if (end>oldend) {
 					 //new range ends in a later range
 					c+=2;
-				} else if (end==pageranges.e[c]->end) {
+				} else if (end==oldend) {
 					 //new range covers the rest of range c
 					c=-1;
 				} else {
@@ -608,7 +609,7 @@ int Document::ApplyPageRange(const char *name, int type, const char *base, int s
 												  pageranges.e[c]->labelbase,
 												  pageranges.e[c]->labeltype,
 												  end+1,                 //start
-												  pageranges.e[c]->end, //end
+												  oldend,               //end
 												  first,               //first
 												  pageranges.e[c]->decreasing),1,c+2);
 					delete[] newname;

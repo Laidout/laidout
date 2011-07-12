@@ -14,6 +14,7 @@
 // Copyright (C) 2005-2010 by Tom Lechner
 //
 
+#include "interfaces/pagerangeinterface.h"
 
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
@@ -89,6 +90,9 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 
 	int id=1;
 
+	// *************** testing:
+	existingpool->push(new PageRangeInterface(id++,NULL,NULL));
+	// *************** end testing
 
 	 //------Group
 	existingpool->push(new GroupInterface(id++,NULL),1);
