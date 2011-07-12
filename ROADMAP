@@ -9,38 +9,43 @@ VERSION 0.092
 -------------
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
-       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        Gui for modifying Page Labels
-       Fix object bleeding across pages for signatures and nets
        Scribus import must support master pages
        Scribus import/export should support PageRange <-> Section conversion on import
-       Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
-       Scribus import should do something meaningful with original Scribus page bleed values
+       Units, especially Allow changing units in rulers
+(done) Add proper .desktop and application icons installation
+(done) Use ~/.config/laidout, instead of ~/.laidout
+(done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)
+(done) from laxkit: clean up pop up menus which currently REALLY SUCK -> now deletes menus when clicking outside them
+
+
+VERSION 0.093
+-------------
+       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        impose-only mode should allow access to all imposition types
+       Masking, clip paths and/or softmask
+       Examine and improve ease of use of import images dialog, particularly for previewing
+       In image properties dialog, have the popup list of potential previews
+       Externally rendered objects, similar to Scribus render frames
+       Fix object bleeding across pages for signatures and nets
        Signature editor: detect non staplable binding edge, show red rather than green
        At bare minimum, path interface use should not cause a seg fault
        PathInterface must be drastically improved, and bez part should have segment move like inkscape
        Net imposition interactive unwrapper and build net interface
        need partial Laidout import and export
+       Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
+       Scribus import should do something meaningful with original Scribus page bleed values
        When importing from an image list file, should be able to say if and when to auto-make previews
-       Units, especially Allow changing units in rulers: metric/standard, also physical/object
-       In image properties dialog, have the popup list of potential previews
-       Examine and improve ease of use of import images dialog, particularly for previewing
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        Object and resource tags
-       Masking, clip paths and/or softmask
-       Externally rendered objects, similar to Scribus render frames
        Clean up project load/save internals and dialogs
        Collect for out
        double click on group should change selection area to group contents?
        Tools should remember their settings
        Clean up patch controls
-(done) Add proper .desktop and application icons installation
        Fix multi-object selection move when crossing page boundaries
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
-       from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up
-       from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
 
 
 VERSION 0.1 
