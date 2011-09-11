@@ -78,7 +78,8 @@ PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
 	hover_range=-1;
 	hover_position=-1;
 	hover_index=-1;
-	temp_range=NULL;
+	temp_range_l=NULL;
+	temp_range_r=NULL;
 
 	showdecs=0;
 	firsttime=1;
@@ -100,7 +101,8 @@ PageRangeInterface::PageRangeInterface(anInterface *nowner,int nid,Displayer *nd
 	hover_range=-1;
 	hover_position=-1;
 	hover_index=-1;
-	temp_range=NULL;
+	temp_range_l=NULL;
+	temp_range_r=NULL;
 
 	showdecs=0;
 	firsttime=1;
@@ -125,28 +127,24 @@ const char *PageRangeInterface::Name()
  */
 char *PageRangeInterface::LabelPreview(int range,int first,int labeltype)
 {
-	if (range<0) range=currange;
+	if (currange>=0 && currange<doc->pageranges.n) {
+		if (!doc->pageranges.n) InstallDefaultRange();
+		return LabelPreview(doc->pageranges.e[currange],first,labeltype);
+	}
+	return newstr("?");
+}
 
+//! Return something like "1,2,3,..." or "iv,iii,ii,..."
+/*! If range==NULL, then use currange. If first<0, use default start for that range.
+ */
+char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labeltype)
+{
 	char *str=NULL;
 	int f,l; //first, length of range
-	PageRange *rangeobj=NULL;
-	char del=0;
 
-	if (doc->pageranges.n) {
-		if (range>=doc->pageranges.n) range=doc->pageranges.n-1;
-		rangeobj=doc->pageranges.e[range];
-
-		if (first<0) f=rangeobj->first; 
-		else f=first;
-		l=rangeobj->end-rangeobj->start+1;
-	} else {
-		rangeobj=new PageRange(NULL,"#",Numbers_Arabic,0,doc->pages.n-1,1,0);
-		del=1;
-
-		if (range>0) range=0;
-		l=doc->pages.n;
-		f=1;
-	}
+	if (first<0) f=rangeobj->first; 
+	else f=first;
+	l=rangeobj->end-rangeobj->start+1;
 
 	if (rangeobj->labeltype==Numbers_None) {
 		str=newstr(_("(no numbers)"));
@@ -167,7 +165,6 @@ char *PageRangeInterface::LabelPreview(int range,int first,int labeltype)
 		}
 	}
 
-	if (del) delete rangeobj;
 	return str;
 }
 
@@ -339,6 +336,7 @@ int PageRangeInterface::Refresh()
 {
 	if (!needtodraw) return 0;
 	needtodraw=0;
+	if (!doc) return 0;
 
 	if (firsttime) {
 		firsttime=0;
@@ -351,62 +349,29 @@ int PageRangeInterface::Refresh()
 
 	dp->DrawScreen();
 
-	double w,h=yscale;
+	double h=yscale;
 	flatpoint o;
 	o-=offset;
 	o.y-=h;
 
 	 //draw blocks
-	char *str=NULL;
-	char sstr[30];
-	int s,f, th=dp->textheight();
 	for (int c=0; c<positions.n-1; c++) {
-		w=xscale*(positions.e[c+1]-positions.e[c]);
-
-		DBG cerr<<"PageRange interface drawing rect "<<o.x<<','<<o.y<<" "<<w<<"x"<<h<<"  offset:"<<offset.x<<','<<offset.y<<endl;
-
-		 //draw background color
-		if (doc->pageranges.n) dp->NewFG(&doc->pageranges.e[c]->color);
-		else dp->NewFG(defaultbg);
-		dp->drawrectangle(o.x,o.y, w,h, 1);
-		
-		 //draw hover indicator for background
-		if (c==hover_range && (hover_part==PART_LabelStart || hover_part==PART_DocPageStart || hover_part==PART_Label)) {
-			dp->NewFG(coloravg(defaultfg, defaultbg, .9));
-
-			if (hover_part==PART_LabelStart) {
-				dp->drawrectangle(o.x+w/2,o.y, w/2,h/2, 1);
-			} else if (hover_part==PART_DocPageStart) {
-				dp->drawrectangle(o.x,o.y, w/2,h/2, 1);
-			} else if (hover_part==PART_Label) {
-				dp->drawrectangle(o.x,o.y+h/2, w,h/2, 1);
-			}
+		if (doc->pageranges.n) drawBox(doc->pageranges.e[c],1);
+		else {
+			PageRange r(NULL,"#",Numbers_Arabic,0,doc->pages.n-1,1,0);
+			drawBox(&r,(hover_range==c?1:0));
 		}
-
-		 //draw black outline around area
-		dp->NewFG((unsigned long)0);
-		dp->drawrectangle(o.x,o.y, w,h, 0);
-
-		str=LabelPreview(c,-1,Numbers_Default);
-		dp->textout(o.x,o.y+h*3/4, str,-1, LAX_LEFT|LAX_VCENTER);
-		delete[] str;
-
-		if (doc->pageranges.n) { s=doc->pageranges.e[c]->start; f=doc->pageranges.e[c]->first; }
-		else { s=0; f=1; }
-
-		sprintf(sstr,"%d",s);
-		dp->textout(o.x+w/2-th/2,o.y+h/4, sstr,-1, LAX_RIGHT|LAX_VCENTER);
-		sprintf(sstr,":");
-		dp->textout(o.x+w/2,o.y+h/4, sstr,-1, LAX_HCENTER|LAX_VCENTER);
-		sprintf(sstr,"%d",f);
-		dp->textout(o.x+w/2+th/2,o.y+h/4, sstr,-1, LAX_LEFT|LAX_VCENTER);
-
-		o.x+=w;
 	}
-	
+
 	if (hover_part==PART_Position) {
+		double pos;
+		if (buttondown.isdown(0,LEFTBUTTON)) {
+			if (temp_range_l) { drawBox(temp_range_l,0); pos=temp_range_l->end/(double)doc->pages.n; }
+			if (temp_range_r) { drawBox(temp_range_r,0); pos=temp_range_r->start/(double)doc->pages.n; }
+		} else pos=positions.e[hover_position];
+
 		dp->NewFG(0.,1.,0.);
-		o.x=-offset.x + xscale*positions.e[hover_position];
+		o.x=-offset.x + xscale*pos;
 		o.y=-offset.y-h;
 		dp->drawrectangle(o.x-FUDGE/2,o.y, FUDGE,h, 1);
 	}
@@ -424,6 +389,62 @@ int PageRangeInterface::Refresh()
 	return 1;
 }
 
+
+void PageRangeInterface::drawBox(PageRange *r, int includehover)
+{
+	if (!r) return;
+	double w,h=yscale;
+	flatpoint o;
+	o-=offset;
+	o.y-=h;
+
+	 //draw blocks
+	char *str=NULL;
+	char sstr[30];
+	int s,e,f, th=dp->textheight();
+
+	w=xscale*(double)(r->end-r->start+1)/doc->pages.n;
+	if (w==0 || r->end<r->start) return;
+	o.x+=xscale*(double)r->start/doc->pages.n;
+
+	DBG cerr<<"PageRange interface drawing rect "<<o.x<<','<<o.y<<" "<<w<<"x"<<h<<"  offset:"<<offset.x<<','<<offset.y<<endl;
+
+	 //draw background color
+	dp->NewFG(&r->color);
+	dp->drawrectangle(o.x,o.y, w,h, 1);
+	
+	 //draw hover indicator for background
+	if (includehover) {
+		dp->NewFG(coloravg(defaultfg, defaultbg, .9));
+
+		if (hover_part==PART_LabelStart) {
+			dp->drawrectangle(o.x+w/2,o.y, w/2,h/2, 1);
+		} else if (hover_part==PART_DocPageStart) {
+			dp->drawrectangle(o.x,o.y, w/2,h/2, 1);
+		} else if (hover_part==PART_Label) {
+			dp->drawrectangle(o.x,o.y+h/2, w,h/2, 1);
+		}
+	}
+
+	 //draw black outline around area
+	dp->NewFG((unsigned long)0);
+	dp->drawrectangle(o.x,o.y, w,h, 0);
+
+	str=LabelPreview(r,-1,Numbers_Default);
+	dp->textout(o.x,o.y+h*3/4, str,-1, LAX_LEFT|LAX_VCENTER);
+	delete[] str;
+
+	s=r->start;
+	e=r->end;
+	f=r->first;
+
+	if (s-e==0) sprintf(sstr,"%d",s); else sprintf(sstr,"%d-%d",s,e);
+	dp->textout(o.x+w/2-th/2,o.y+h/4, sstr,-1, LAX_RIGHT|LAX_VCENTER);
+	sprintf(sstr,":");
+	dp->textout(o.x+w/2,o.y+h/4, sstr,-1, LAX_HCENTER|LAX_VCENTER);
+	sprintf(sstr,"%d",f);
+	dp->textout(o.x+w/2+th/2,o.y+h/4, sstr,-1, LAX_LEFT|LAX_VCENTER);
+}
 
 //! Return which position (if over a dividing line) and range (the page range chunk) mouse is over, or -1 for none.
 /*! Also returns which part of the range the mouse is over.
@@ -478,6 +499,21 @@ int PageRangeInterface::LBDown(int x,int y,unsigned int state,int count,const La
 
 	if (part==PART_Position) {
 		if (pos>=0) {
+			hover_part=PART_Position;
+
+			if (!doc->pageranges.n) InstallDefaultRange();
+
+			 //set up left side range
+			PageRange *r;
+			int i;
+			if (hover_position>0) { r=doc->pageranges.e[hover_position-1]; i=r->end; }
+			else { r=doc->pageranges.e[hover_position]; i=-1; }
+			temp_range_l=new PageRange(r->name,r->labelbase,r->labeltype,r->start,i,r->first,r->decreasing);
+
+			 //set up right side range
+			if (hover_position<doc->pageranges.n) { r=doc->pageranges.e[hover_position]; i=r->start; }
+			else { r=doc->pageranges.e[hover_position-1]; i=doc->pages.n; }
+			temp_range_r=new PageRange(r->name,r->labelbase,r->labeltype,i,r->end,r->first,r->decreasing);
 		}
 		return 0;
 	}
@@ -495,7 +531,32 @@ int PageRangeInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	int dragged=buttondown.up(d->id,LEFTBUTTON);
 
 	int range=-1, index=-1, part=0;
-	int pos=scan(x,y, &range, &part, &index);
+	scan(x,y, &range, &part, &index);
+
+	if (hover_part==PART_Position) {
+		if (temp_range_l && temp_range_l->end>doc->pageranges.e[hover_position]->start) 
+			doc->ApplyPageRange(temp_range_l->name,
+								temp_range_l->labeltype,
+								temp_range_l->labelbase,
+								temp_range_l->start,
+								temp_range_l->end,
+								temp_range_l->first,
+								temp_range_l->decreasing);
+		else if (temp_range_r && temp_range_r->start<doc->pageranges.e[hover_position]->end)
+			doc->ApplyPageRange(temp_range_r->name,
+								temp_range_r->labeltype,
+								temp_range_r->labelbase,
+								temp_range_r->start,
+								temp_range_r->end,
+								temp_range_r->first,
+								temp_range_r->decreasing);
+
+		if (temp_range_l) { delete temp_range_l; temp_range_l=NULL; }
+		if (temp_range_r) { delete temp_range_r; temp_range_r=NULL; }
+		MapPositions();
+		hover_part=0;
+		return 0;
+	}
 
 	if (!dragged) {
 		if ((state&LAX_STATE_MASK)==ControlMask) {
@@ -611,7 +672,7 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 			}
 		}
 		if (hover_part!=part || hover_range!=range || hover_position!=over) {
-			hover_part=part;
+			if (!buttondown.isdown(mouse->id,LEFTBUTTON)) hover_part=part;
 			hover_range=range;
 			hover_position=over;
 			hover_index=index;
@@ -623,6 +684,27 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 	DBG cerr <<"pr last m:"<<lx<<','<<ly<<endl;
+
+	if (buttondown.isdown(mouse->id,LEFTBUTTON)) {
+		if (hover_part==PART_Position) {
+			if (index==hover_index) return 0;
+			hover_index=index;
+			hover_range=range;
+			if (x>lx) { //moved to the right
+				temp_range_l->end++;
+				if (temp_range_l->end>doc->pages.n) temp_range_l->end=doc->pages.n;
+				temp_range_r->start++;
+				if (temp_range_r->start>doc->pages.n) temp_range_r->start=doc->pages.n;
+			} else { //moved to the left
+				temp_range_l->end--;
+				if (temp_range_l->end<-1) temp_range_l->end=-1;
+				temp_range_r->start--;
+				if (temp_range_r->start<0) temp_range_r->start=0;
+			}
+			needtodraw=1;
+			return 0;
+		}
+	}
 
 	if ((state&LAX_STATE_MASK)==0) {
 		offset.x-=x-lx;

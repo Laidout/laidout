@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2011 by Tom Lechner
 //
 #ifndef INTERFACES_PAGERANGE_H
 #define INTERFACES_PAGERANGE_H
@@ -32,9 +32,10 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp, public Documen
 	Laxkit::NumStack<double> positions;
 	double xscale,yscale;
 	flatpoint offset;
-	char *LabelPreview(int range,int first,int labeltype);
 	int InstallDefaultRange();
 	void MapPositions();
+	char *LabelPreview(int range,int first,int labeltype);
+	char *LabelPreview(PageRange *rangeobj,int first,int labeltype);
 
 	unsigned long defaultfg,defaultbg;
 
@@ -43,11 +44,12 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp, public Documen
 	int hover_range;
 	int hover_position;
 	int hover_index;
-	PageRange *temp_range;
+	PageRange *temp_range_l, *temp_range_r;
 
 	int showdecs;
 	int firsttime;
 	virtual int scan(int x,int y,int *range,int *part, int *index);
+	virtual void drawBox(PageRange *r, int includehover);
   public:
 	PageRangeInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
 	PageRangeInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);

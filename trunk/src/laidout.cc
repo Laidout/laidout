@@ -31,7 +31,7 @@
 #include <lax/fileutils.h>
 #include <lax/laximlib.h>
 #include <lax/laximages-imlib.h>
-#include <getopt.h>
+#include <lax/laxoptions.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
@@ -80,7 +80,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2010\n"
+						  "by Tom Lechner, sometime between 2006 and 2011\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -88,29 +88,6 @@ const char *LaidoutVersion()
 	}
 	return version_str; 
 }
-
-/*! \ingroup lmisc
- * Print usage and exit.
- */
-void print_usage()
-{
-	cout <<LaidoutVersion()<<endl<<
-		_("\n laidout [options] [file1] [file2] ...\n\n"
-		"Options:\n"
-		"  --export-formats                 List all the available export formats\n"
-		"  --list-export-options format     List all the options for the given format\n"
-		"  --export \"format=EPS start=3\"    Export a document based on the given options\n"
-		"  -t --template templatename       Start laidout from this template in ~/.laidout/(version)/templates\n"
-		"  -N --no-template                 Do not use a default template\n"
-		"  -n --new \"letter,portrait,3pgs\"  Create new document\n"
-		"  --file-format                    Print out a pseudocode mockup of the file format, then exit\n"
-		"  --command \"newdoc net\"           Run one or more commands without the gui, then exit\n"
-		"  --script /some/file              Like --command, but the commands are in the given file\n"
-		"  -v --version                     Print out version info, then exit.\n"
-		"  -h --help                        Show this summary and exit.\n");
-	exit(0);
-}
-
 
 //----------------------------------- misc -----------------------------------
 /*! \defgroup lmisc Misc Random Clean Me
@@ -728,60 +705,79 @@ void LaidoutApp::setupdefaultcolors()
 	app_profile=oldpf;
 }
 
+LaxOptions options;
+
+//! Initialize a LaxOptions object to contain Laidout's command line option summary.
+/*! \ingroup lmisc
+ */
+void InitOptions()
+{
+	options.HelpHeader(LaidoutVersion());
+	options.UsageLine("laidout [options] [file1] [file2] ...");
+	options.Add("export-formats",     'e', 0, "List all the available export formats",       0, NULL);
+	options.Add("list-export-options",'O', 1, "List all the options for the given format",   0, "format");
+	options.Add("export"             ,'e', 1, "Export a document based on the given options",0, "\"format=EPS start=3\"");
+	options.Add("template",           't', 1, "Start laidout from this template in ~/.laidout/(version)/templates",0,"templatename");
+	options.Add("no-template",        'N', 0, "Do not use a default template",               0, NULL);
+	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
+	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
+	options.Add("command",            'c', 1, "Run one or more commands without the gui, then exit",        0, "\"newdoc net\"");
+	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
+	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
+	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
+	options.Add("impose-only",        'I', 0, "Run only as a file imposer, not full Laidout",0, NULL);
+	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
+	options.Add("help",               'h', 0, "Show this summary and exit.",                 0, NULL);
+
+}
+
 //! Parse command line options, and load up initial documents or projects.
 /*! 
  */
 void LaidoutApp::parseargs(int argc,char **argv)
 {
 	DBG cerr <<"---------start options"<<endl;
-	 // parse args -- option={ "long-name", hasArg, int *vartosetifoptionfound, returnChar }
-	static struct option long_options[] = {
-			{ "command",             1, 0, 'c' },
-			{ "script",              1, 0, 's' },
-			{ "export",              1, 0, 'e' },
-			{ "list-export-options", 1, 0, 'O' },
-			{ "export-formats",      0, 0, 'X' },
-			{ "file-format",         0, 0, 'F' },
-			{ "impose-only",         1, 0, 'I' },
-			{ "new",                 1, 0, 'n' },
-			{ "load-dir",            1, 0, 'l' },
-			{ "template",            1, 0, 't' },
-			{ "no-template",         1, 0, 'N' },
-			{ "default-units",       1, 0, 'u' },
-			{ "version",             0, 0, 'v' },
-			{ "help",                0, 0, 'h' },
-			{ 0,0,0,0 }
-		};
+	//InitOptions(); <- this is done in main()
+	
 	int c,index;
 	char *exprt=NULL;
 
-	while (1) {
-		c=getopt_long(argc,argv,":Nt:I:n:vhc:s:",long_options,&index);
-		if (c==-1) break;
-		switch(c) {
-			case ':': cerr <<_("Missing parameter...")<<endl; exit(1); // missing parameter
-			case '?': cerr <<_("Unknown option")<<endl; exit(1);  // unknown option
-			case 'h': print_usage(); // Show usage summary, then exit
+	c=options.Parse(argc,argv, &index);
+	if (c==-2) {
+		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+	if (c==-1) {
+		cerr <<"Unknown option "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+
+	LaxOption *o;
+	for (o=options.start(); o; o=options.next()) {
+		switch(o->chr()) {
+			case 'h': // Show usage summary, then exit
+				options.Help(stdout);
+				exit(0);
 			case 'v':  // Show version info, then exit
 				cout <<LaidoutVersion()<<endl;
 				exit(0);
 
 			case 't': { // load in template
-					LoadTemplate(optarg,NULL);
+					LoadTemplate(o->arg(),NULL);
 				} break;
 
 			case 's': { // --script
 					donotusex=1;
 					runmode=RUNMODE_Commands;
-					int size=file_size(optarg,1,NULL);
+					int size=file_size(o->arg(),1,NULL);
 					if (size<=0) {
 						cerr <<_("No input script!")<<endl;
 						exit(1);
 					}
 					char *instr=new char[size];
-					FILE *f=fopen(optarg,"r");
+					FILE *f=fopen(o->arg(),"r");
 					if (!f) {
-						cerr <<_("Could not open ")<<optarg<<endl;
+						cerr <<_("Could not open ")<<o->arg()<<endl;
 						exit(1);
 					}
 					fread(instr,1,size,f);
@@ -793,13 +789,13 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'c': { // --command
 					donotusex=1;
 					runmode=RUNMODE_Commands;
-					char *str=calculator->In(optarg);
+					char *str=calculator->In(o->arg());
 					if (str) cout <<str<<endl;
 					exit(0);//***this should exit(1) on error?
 				} break;
 
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
-					if (NewDocument(optarg)==0) {
+					if (NewDocument(o->arg())==0) {
 						if (curdoc) curdoc->dec_count();
 						curdoc=project->docs.e[project->docs.n-1]->doc;
 						if (curdoc) curdoc->inc_count();
@@ -807,7 +803,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'l': { // load dir
-					makestr(load_dir,optarg);
+					makestr(load_dir,o->arg());
 				} break;
 
 			case 'N': { // do not use a default template
@@ -820,7 +816,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'e': { // export
-					exprt=newstr(optarg);
+					exprt=newstr(o->arg());
 				} break;
 
 			case 'O': { // list export options for a given format
@@ -849,7 +845,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'u': { // default units
 					 // *** THIS IS TEMPORARY!!!!
-					makestr(unitname,optarg);
+					makestr(unitname,o->arg());
 					if (!strcasecmp(unitname,"inches"))      unitmultiplier=1;
 					else if (!strcasecmp(unitname,"in"))     unitmultiplier=1;
 					else if (!strcasecmp(unitname,"cm"))     unitmultiplier=2.54;
@@ -859,13 +855,14 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					else if (!strcasecmp(unitname,"feet"))   unitmultiplier=1./12;
 					else if (!strcasecmp(unitname,"yards"))  unitmultiplier=1./36;
 				} break;
-		}
+		} //switch
 	}
-	int readin=0;
-	if (optind<argc && argv[optind][0]=='-' && argv[optind][0]=='\0') { 
-		cout << "**** must implement read in doc from stdin\n";
-		readin=1;
-	}
+
+//	int readin=0;
+//	if (optind<argc && argv[optind][0]=='-' && argv[optind][0]=='\0') { 
+//		cout << "**** must implement read in doc from stdin\n";
+//		readin=1;
+//	}
 
 
 	 //export doc if found, then exit
@@ -880,7 +877,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 		 //figure out where to export to
 		const char *filename=NULL;
-		if (optind<argc) filename=argv[optind];
+		o=options.remaining();
+		if (o) filename=o->arg();
 		config.dump_in_atts(&att,0,NULL);
 		 
 		 //-------export
@@ -923,20 +921,23 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	} //if exprt
 
 	 // options are now basically parsed, must handle any resulting commands like export
-	DBG if (optind<argc) cerr << "First non-option argv[optind]="<<argv[optind] << endl;
-	DBG cerr <<"Read in these files:"<<endl;
-	DBG for (c=optind; c<argc; c++) 
-	DBG 	cerr <<"  "<<c-optind+1<<"/"<<argc-optind<<":  "<<argv[c]<<endl;
+	DBG o=options.remaining();
+	DBG if (o) {
+	DBG 	cerr <<"Read in these files:"<<endl;
+	DBG     int num=options.more()+1;
+	DBG 	for (int c=1 ; o; o=options.next(), c++) 
+	DBG 		cerr <<"  "<<c<<"/"<<num<<":  "<<o->arg()<<endl;
+	DBG }
 
 
 	 // load in any projects or documents after the args
 	Document *doc=NULL;
 	index=topwindows.n;
 	if (!project) project=new Project;
-	for (c=optind; c<argc; c++) {
-		DBG cerr <<"----Read in:  "<<argv[c]<<endl;
+	for (o=options.remaining(); o; o=options.next()) {
+		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
 		doc=NULL;
-		if (Load(argv[c],NULL)==0) doc=curdoc;
+		if (Load(o->arg(),NULL)==0) doc=curdoc;
 		if (topwindows.n==index) {
 			if (!doc && project->docs.n) doc=project->docs.e[0]->doc;
 			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
@@ -1407,13 +1408,16 @@ int main(int argc,char **argv)
 	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
 	DBG cerr<<"--------------------------------"<<endl;
 
+	InitOptions();
 
 	//this is rather a hacky way to do this, but:
 	//process help and version before anything else happens,
 	//since laxkit spews out debugging stuff straight away
 	if (argc>1) {
-		if (!strcmp(argv[1],"-h") || !strcmp(argv[1],"--help"))
-			print_usage(); // Show usage summary, then exit
+		if (!strcmp(argv[1],"-h") || !strcmp(argv[1],"--help")) {
+			options.Help(stdout); // Show usage summary
+			exit(0);
+		}
 		if (!strcmp(argv[1],"-v") || !strcmp(argv[1],"--version")) {
 			 // Show version info, then exit
 			cout <<LaidoutVersion()<<endl;

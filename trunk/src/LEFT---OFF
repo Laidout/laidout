@@ -9,6 +9,8 @@ Those are purged with each release.
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
+spread flipper tabloid tiled not paging paper layouts properly
+
 paper group tool seems messed up, especially in spread editor
 
 fold indicator foldprogress at crossover points incorrectly indicating affected folds
