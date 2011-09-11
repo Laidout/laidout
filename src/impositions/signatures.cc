@@ -1730,7 +1730,8 @@ int SignatureImposition::NumPages(int npages)
 	if (signature->numhfolds+signature->numvfolds==0 && numdocpages<=2) return 2;
 
 	if (signature->autoaddsheets) {
-		signature->sheetspersignature=1+(npages-1)/(signature->PagesPerPattern()*signature->tilex*signature->tiley);
+		//***signature->sheetspersignature=1+(npages-1)/(signature->PagesPerPattern()*signature->tilex*signature->tiley);
+		signature->sheetspersignature=1+(npages-1)/(signature->PagesPerPattern());
 		numsignatures=1;
 		numpapers=2*signature->sheetspersignature;
 		numpages=signature->PagesPerSignature();

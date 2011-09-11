@@ -220,7 +220,7 @@ char *PageRange::GetLabel(int i)
  */
 char *PageRange::GetLabel(int i,int altfirst,int alttype)
 {
-	if (i<start || i>end) return NULL;
+	if (i<start || (end>=0 && i>end)) return NULL; //end>=0 exception is to smooth out temp ranges in PageRangeInterface
 	if (!labelbase || *labelbase=='\0' || labeltype==Numbers_None) return newstr("");
 	if (altfirst<0) altfirst=first;
 
