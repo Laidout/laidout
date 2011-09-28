@@ -109,6 +109,14 @@ const char *pageLabelTypeName(PageLabelType t)
  */
 
 
+void pagerangedump(Document *d)
+{
+	cerr <<"----------#ranges:"<<d->pageranges.n<<endl;
+	for (int c=0; c<d->pageranges.n; c++) {
+		cerr <<c<<"  start:"<<d->pageranges.e[c]->start<<"  end:"<<d->pageranges.e[c]->end<<endl;
+	}
+}
+
 PageRange::PageRange()
 	: color(65535,65535,65535,65535)
 {
@@ -620,13 +628,19 @@ int Document::ApplyPageRange(const char *name, int type, const char *base, int s
 
 			if (c>=0) {
 				 //the end of the new range cuts into some range >=c
-				while (c<pageranges.n && end>pageranges.e[c]->end) pageranges.remove(c);
+				int cut=1;
+				while (c<pageranges.n && end>=pageranges.e[c]->end) {
+					if (end==pageranges.e[c]->end) cut=0; else cut=1; //don't trim numbers if covers whole range
+					pageranges.remove(c);
+				}
 
 				 //now c either is pageranges.n, or it is the range that the new range ends in
 
 				if (c<pageranges.n) {
-					if (pageranges.e[c]->decreasing) pageranges.e[c]->first-=end-start+1;
-					else pageranges.e[c]->first+=end-start+1;
+					if (cut) {
+						if (pageranges.e[c]->decreasing) pageranges.e[c]->first-=end-start+1;
+						else pageranges.e[c]->first+=end-start+1;
+					}
 					pageranges.e[c]->start=end+1;
 				}
 			}
