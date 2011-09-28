@@ -29,13 +29,12 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp, public Documen
   protected:
 	Document *doc;
 	Laxkit::ButtonDownInfo buttondown;
-	Laxkit::NumStack<double> positions;
 	double xscale,yscale;
 	flatpoint offset;
 	int InstallDefaultRange();
-	void MapPositions();
 	char *LabelPreview(int range,int first,int labeltype);
 	char *LabelPreview(PageRange *rangeobj,int first,int labeltype);
+	PageRange *findRangeWith(int i);
 
 	unsigned long defaultfg,defaultbg;
 
@@ -48,7 +47,8 @@ class PageRangeInterface : public LaxInterfaces::InterfaceWithDp, public Documen
 
 	int showdecs;
 	int firsttime;
-	virtual int scan(int x,int y,int *range,int *part, int *index);
+	virtual int scan(int x,int y, int *position, int *range, int *part, int *index);
+	virtual double position(int pagenumber);
 	virtual void drawBox(PageRange *r, int includehover);
   public:
 	PageRangeInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);

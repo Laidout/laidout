@@ -9,7 +9,7 @@ VERSION 0.092
 -------------
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
-       Gui for modifying Page Labels
+(done) Gui for modifying Page Labels
        Scribus import must support master pages
        Scribus import/export should support PageRange <-> Section conversion on import
        Units, especially Allow changing units in rulers

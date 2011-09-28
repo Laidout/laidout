@@ -364,11 +364,8 @@ Selected region out to image(s), regions optionally remembered
 import/export styledefs should use the extendsdef mechanism!!!
 
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-    ocus off a dialog, then refocus, must manually set control focus. should store which subwindow
+    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
      gets the focus when autofocused.
-
-from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-	focusin/out enter/leave event handling is even more messed up after laxkit overhaul
 
 
 ===================Anything below here probably needs discussion before implementing================
@@ -560,4 +557,10 @@ DONE About page is huge, and unescapable!!!!! serious break!
 DONE make file. save as to other dir. export. dir is wrong! 
 
 DONE make Document all reference counted
+
+DONE from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
+	focusin/out enter/leave event handling is even more messed up after laxkit overhaul
+	--> menus now delete when clicking elsewhere
+
+DONE debug pagerangeinterface shifting ranges
 
