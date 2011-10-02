@@ -2172,7 +2172,7 @@ void LaidoutViewport::Refresh()
 			if (!pgrp && !(papergroup && papergroup->papers.n)) {
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
-				dp->ShiftScreen(5,5);
+				dp->ShiftScreen(laidout->pagedropshadow,laidout->pagedropshadow);
 				DrawData(dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
 				dp->PopAxes();
 			}
@@ -2991,7 +2991,7 @@ int ViewWindow::init()
 	
 	 // tool section
 	 //*** clean me! sampling diff methods of tool selector
-	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,0, 0,0,0,0,1, 
+	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT, 0,0,0,0,1, 
 			NULL,object_id,"viewtoolselector",
 			NULL,0);
 	toolselector->tooltip(_("The current tool"));
@@ -3028,12 +3028,6 @@ int ViewWindow::init()
 	ibut->tooltip(_("Next spread"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,
-							  _("Page Clips"),NULL,laidout->icons.GetIcon("PageClips"),buttongap);
-	pageclips->tooltip(_("Whether pages clips its contents"));
-	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
-	updateContext(1);
-
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 //								NULL,object_id,"newLayerNumber",
 //								"Layer: ",1,1,1); //*** get cur page, use those layers....
@@ -3064,6 +3058,12 @@ int ViewWindow::init()
 							   LAX_COLOR_RGB,65535,0,0,65535);
 	AddWin(colorbox,1, 50,0,50,50,0, p->win_h,0,50,50,0, -1);
 		
+	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,
+							  _("Page Clips"),NULL,laidout->icons.GetIcon("PageClips"),buttongap);
+	pageclips->tooltip(_("Whether pages clips its contents"));
+	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
+	updateContext(1);
+
 	last=ibut=new Button(this,"add page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"addPage",-1,
 						 _("Add Page"),NULL,laidout->icons.GetIcon("AddPage"),buttongap);
 	ibut->tooltip(_("Add 1 page after this one"));
