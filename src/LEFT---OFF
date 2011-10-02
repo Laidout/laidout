@@ -9,6 +9,8 @@ Those are purged with each release.
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
+pagerangeinterface: button downs shouldn't do anything when not clicked down outside bar
+
 spread flipper tabloid tiled not paging paper layouts properly
 
 paper group tool seems messed up, especially in spread editor
@@ -70,7 +72,6 @@ update translations
 check laidout.1 when time to release
 update docs to have new release number
 test each window type to avoid crashy hangups, like about window from .091!!!!
-
 
 Scribus import:
   import must support master pages
@@ -370,6 +371,9 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
 
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
+pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow to have not
+				    just tools but overlays. Any number of overlays can be active, but only one tool
+
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
   best way of keeping track of base imposition classes? this is needed for file format description output
 
@@ -547,6 +551,8 @@ When releasing new version, combine these with the ROADMAP item for release note
 These can then be purged after each release...
 ===========================================================================================
 
+
+DONE viewer drop shadow distance should be customizable
 
 DONE Add proper .desktop and application icons installation
   means installing main Laidout icons into /usr/share/icons/hicolor

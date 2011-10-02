@@ -454,7 +454,7 @@ void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arro
 	if (shadow) {
 		for (int c=0; c<group->papers.n; c++) {
 			dp->PushAndNewTransform(group->papers.e[c]->m());
-			DrawPaper(group->papers.e[c],MediaBox, fill,5,0);
+			DrawPaper(group->papers.e[c],MediaBox, fill,laidout->pagedropshadow,0);
 			dp->PopAxes(); 
 		}
 	}

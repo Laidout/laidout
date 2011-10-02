@@ -80,6 +80,7 @@ class LaidoutApp : public Laxkit::anXApp
 	char *unitname;
 
 	unsigned long curcolor;
+	int pagedropshadow;
 	
 	char preview_transient;
 	int preview_over_this_size;

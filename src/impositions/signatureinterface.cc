@@ -601,38 +601,38 @@ void SignatureInterface::remapHandles(int which)
 		p[0]=flatpoint(ww,0);  p[1]=flatpoint(ww,hh); p[2]=flatpoint(ww*1.1,hh*1.1); p[3]=flatpoint(ww*1.1,-hh*.1);
 
 		area=control(SP_Tile_Gap_X);
-		p=draw_thing_coordinates(THING_Double_Arrow_Horizontal, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Double_Arrow_Horizontal, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,arrowscale/2);
 		area->Position(0,0,3);
 
 		area=control(SP_Tile_Gap_Y);
-		p=draw_thing_coordinates(THING_Double_Arrow_Vertical, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Double_Arrow_Vertical, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,arrowscale/2);
 		area->Position(0,0,3);
 
 		 //------inset
 		area=control(SP_Inset_Top);
-		p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Down, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,0);
 		area->offset=flatpoint(ww/2-arrowscale/2,hh-signature->insettop);
 
 		area=control(SP_Inset_Bottom);
-		p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Up, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,arrowscale);
 		area->offset=flatpoint(ww/2-arrowscale/2,signature->insetbottom-arrowscale);
 
 		area=control(SP_Inset_Left);
-		p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Right, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale,arrowscale/2);
 		area->offset=flatpoint(signature->insetleft-arrowscale,hh/2-arrowscale/2);
 
 		area=control(SP_Inset_Right);
-		p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Left, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(0,arrowscale/2);
 		area->offset=flatpoint(ww-signature->insetright,hh/2-arrowscale/2);
@@ -660,28 +660,28 @@ void SignatureInterface::remapHandles(int which)
 	if (which==0 || which&4) { //final page area specific
 		 //----trim
 		area=control(SP_Trim_Top);
-		p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Down, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,0);
 		area->offset=flatpoint(w/3-arrowscale/2,h-signature->trimtop);
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
 		area=control(SP_Trim_Bottom);
-		p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Up, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,arrowscale);
 		area->offset=flatpoint(w/3-arrowscale/2,signature->trimbottom-arrowscale);
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
 		area=control(SP_Trim_Left);
-		p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Right, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale,arrowscale/2);
 		area->offset=flatpoint(signature->trimleft-arrowscale,h/3-arrowscale/2);
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
 		area=control(SP_Trim_Right);
-		p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Left, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(0,arrowscale/2);
 		area->offset=flatpoint(w-signature->trimright,h/3-arrowscale/2);
@@ -689,28 +689,28 @@ void SignatureInterface::remapHandles(int which)
 
 		 //------margins
 		area=control(SP_Margin_Top);
-		p=draw_thing_coordinates(THING_Arrow_Down, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Down, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,0);
 		area->offset=flatpoint(w*2/3-arrowscale/2,h-signature->margintop);
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
 		area=control(SP_Margin_Bottom);
-		p=draw_thing_coordinates(THING_Arrow_Up, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Up, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale/2,arrowscale);
 		area->offset=flatpoint(w*2/3-arrowscale/2,signature->marginbottom-arrowscale);
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
 		area=control(SP_Margin_Left);
-		p=draw_thing_coordinates(THING_Arrow_Right, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Right, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(arrowscale,arrowscale/2);
 		area->offset=flatpoint(signature->marginleft-arrowscale,h*2/3-arrowscale/2);
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 
 		area=control(SP_Margin_Right);
-		p=draw_thing_coordinates(THING_Arrow_Left, NULL,0, &n, arrowscale);
+		p=draw_thing_coordinates(THING_Arrow_Left, NULL,-1, &n, arrowscale);
 		area->Points(p,n,1);
 		area->hotspot=flatpoint(0,arrowscale/2);
 		area->offset=flatpoint(w-signature->marginright,h*2/3-arrowscale/2);
@@ -1050,7 +1050,7 @@ int SignatureInterface::Refresh()
 	 //draw fold indicator overlays on left side of screen
 	dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
 
-	int thing;
+	DrawThingTypes thing;
 	for (int c=signature->folds.n-1; c>=-1; c--) {
 		if (c==-1) thing=THING_Circle;
 		else if (c==signature->folds.n-1 && hasfinal) thing=THING_Square;

@@ -650,7 +650,7 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 	unsigned long outlinecolor=0;
 	if (outlinestatus==0) outlinecolor=rgbcolor(255,0,0);
 
-	int t=THING_None;
+	DrawThingTypes t=THING_None;
 	switch (page->labeltype) {
 		case 0: fcolor=rgbcolor(255,255,255);
 				t=THING_Circle;

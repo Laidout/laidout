@@ -229,6 +229,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	
 	curcolor=0;
 	lastview=NULL;
+	pagedropshadow=5;
 	
 	project=new Project;
 	curdoc=NULL;
@@ -567,6 +568,9 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 					  "\n# The maximum width or height for preview images\n"
 					  "#maxPreviewLength 200\n"
+					  "\n"
+					  "# Customize how some things get dispalyed:\n"
+					  "#pagedropshadow 5  #how much to offset drop shadows around papers and pages \n"
 					  //" # Alternately, you can specify the maximum width and height separately:\n"
 					  //"#maxPreviewWidth 200\n"
 					  //"#maxPreviewHeight 200\n"
@@ -684,6 +688,11 @@ int LaidoutApp::readinLaidoutDefaults()
 		
 		} else if (!strcmp(name,"maxPreviewLength")) {
 			IntAttribute(value,&max_preview_length);
+
+		 //--------------other options:
+		} else if (!strcmp(name,"pagedropshadow")) {
+			IntAttribute(value,&pagedropshadow);
+		
 		}
 	}
 	
