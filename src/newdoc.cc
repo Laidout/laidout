@@ -18,6 +18,7 @@
 #include <lax/filedialog.h>
 #include <lax/fileutils.h>
 #include <lax/tabframe.h>
+#include <lax/units.h>
 
 #include "language.h"
 #include "newdoc.h"
@@ -267,8 +268,9 @@ int NewDocWindow::init()
 	o=papertype->landscape();
 	curorientation=o;
 	 // -----Paper Size X
-	sprintf(blah,"%.10g", papertype->w());
-	sprintf(blah2,"%.10g",papertype->h());
+	SimpleUnit *units=GetUnitManager();
+	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->default_units,NULL));
+	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->default_units,NULL));
 	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
 						last,object_id,"paper x",
 			            _("Paper Size  x:"),(o&1?blah2:blah),0,
@@ -281,10 +283,25 @@ int NewDocWindow::init()
 			            _("y:"),(o&1?blah:blah2),0,
 			           100,0,1,1,3,3);
 	AddWin(papery,1, papery->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+
+	 // -----Default Units
+    SliderPopup *popup;
+	last=popup=new SliderPopup(this,"units",NULL,0, 0,0, 0,0, 1, last,object_id,"units");
+	char *tmp;
+	c2=0;
+	int uniti=-1,tid;
+	units->UnitInfo(laidout->unitname,&uniti,NULL,NULL,NULL,NULL);
+	for (int c=0; c<units->NumberOfUnits(); c++) {
+		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp);
+		if (uniti==tid) c2=c;
+		popup->AddItem(tmp,c);
+	}
+	if (c2>=0) popup->Select(c2);
+	AddWin(popup,1, 200,100,50,50,0, linpheight,0,0,50,0, -1);
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
 
+	
 	 // -----Paper Name
-    SliderPopup *popup;
 	last=popup=new SliderPopup(this,"paperName",NULL,0, 0,0, 0,0, 1, last,object_id,"paper name");
 	for (int c=0; c<papersizes->n; c++) {
 		if (!strcmp(papersizes->e[c]->name,papertype->name)) c2=c;
@@ -334,14 +351,6 @@ int NewDocWindow::init()
 
 // ******* uncomment when implemented!!
 //
-//	 // ------- default unit: __inch___
-//	last=linp=new LineInput(this,"unit",LINP_ONLEFT, 5,250,0,0, 0, 
-//						last,object_id,"unit",
-//			            _("Default Units:"),"inch",0,
-//			            0,0,1,1,3,3);
-//	AddWin(linp, linp->win_w,0,50,50,0, linpheight,0,0,50,0);
-//	AddWin(NULL, 2000,2000,0,50,0, 0,0,0,0,0);//*** forced linebreak
-//	
 //	 // ------- color mode:		black and white, grayscale, rgb, cmyk, other
 //	last=popup=new SliderPopup(this,"colormode",0, 0,0, 0,0, 1, popup,object_id,"colormode");
 //	popup->AddItem(_("RGB"),0);
@@ -562,9 +571,10 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (!strcmp(papertype->name,"custom")) return 0;
 		papertype->landscape(curorientation);
 		char num[30];
-		numtostr(num,30,papertype->w(),0);
+		SimpleUnit *units=GetUnitManager();
+		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->default_units,NULL),0);
 		paperx->SetText(num);
-		numtostr(num,30,papertype->h(),0);
+		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->default_units,NULL),0);
 		papery->SetText(num);
 		UpdatePaper(1);
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
@@ -664,6 +674,20 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"dpi")) {
 		//****
+
+	} else if (!strcmp(mes,"units")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+
+		int i=s->info1;
+		SimpleUnit *units=GetUnitManager();
+		int id;
+		char *name;
+		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
+		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->default_units,id,NULL));
+		papery->SetText(units->Convert(papery->GetDouble(), laidout->default_units,id,NULL));
+		laidout->default_units=id;
+		makestr(laidout->unitname,name);
+		return 0;
 
 	} else if (!strcmp(mes,"saveas")) { // from doc save as "..." control button
 		app->rundialog(new FileDialog(NULL,NULL,_("Save As"),

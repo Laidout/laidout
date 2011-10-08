@@ -12,7 +12,7 @@ VERSION 0.092
 (done) Gui for modifying Page Labels
        Scribus import must support master pages
        Scribus import/export should support PageRange <-> Section conversion on import
-       Units, especially Allow changing units in rulers
+(done) Units, especially Allow changing units in rulers
 (done) Add proper .desktop and application icons installation
 (done) Use ~/.config/laidout, instead of ~/.laidout
 (done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)

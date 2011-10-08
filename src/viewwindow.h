@@ -97,6 +97,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
+	virtual int UseTheseRulers(Laxkit::RulerWindow *x,Laxkit::RulerWindow *y);
 
 	virtual int UseThisDoc(Document *ndoc);
 	virtual int UseThisPaperGroup(PaperGroup *group);

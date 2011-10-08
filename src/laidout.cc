@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 
 
@@ -32,6 +32,7 @@
 #include <lax/laximlib.h>
 #include <lax/laximages-imlib.h>
 #include <lax/laxoptions.h>
+#include <lax/units.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
@@ -250,36 +251,11 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
 
 	calculator=NULL;
-	unitmultiplier=1; //transform from inches. ie, for cm this would be 2.54 (2.54 cm == 1 inch)
-	unitname=newstr("inches"); // *** later this should be part of a units manager, integrated with rulers
+	default_units=UNITS_Inches;
+	unitname=newstr("inches");
+	GetUnitManager()->DefaultUnits(unitname);
+	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
 
-//	MenuInfo *menu=new MenuInfo("Main Menu");
-//	 menu->AddItem("File",1);
-//	 menu->SubMenu("File");
-//	  menu->AddItem("Open");
-//	  menu->AddItem("Open Project");
-//	  menu->AddItem("Save");
-//	  menu->AddItem("Save As...");
-//	  menu->AddItem("Save All");
-//	  menu->AddItem("Quit");
-//	  menu->AddSep();
-//	  menu->AddItem("Print...");
-//	 menu->EndSubMenu();
-//	 menu->AddItem("Viewer");
-//	 menu->SubMenu("Viewer");
-//	  menu->AddItem("Object Tool");
-//	  menu->AddItem("Path Tool");
-//	  menu->AddItem("Image Tool");
-//	  menu->AddItem("Image Patch Tool");
-//	  menu->AddItem("Gradient Tool");
-//	  menu->AddItem("Text Tool");
-//	  menu->AddItem("Magnify Tool");
-//	  menu->AddSep();
-//	 menu->EndSubMenu();
-//	 menu->AddSep();
-//	 menu->AddItem("About");
-//	 menu->AddItem("Help");
-//	dumpmenu(menu);
 }
 
 //! Destructor, only have to delete project!
@@ -569,8 +545,9 @@ int LaidoutApp::createlaidoutrc()
 					  "\n# The maximum width or height for preview images\n"
 					  "#maxPreviewLength 200\n"
 					  "\n"
-					  "# Customize how some things get dispalyed:\n"
-					  "#pagedropshadow 5  #how much to offset drop shadows around papers and pages \n"
+					  "# Customize how some things get dispalyed or entered:\n"
+					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
+					  "#defaultunits inches #the default units to use in controls. In files, it is always inches.\n"
 					  //" # Alternately, you can specify the maximum width and height separately:\n"
 					  //"#maxPreviewWidth 200\n"
 					  //"#maxPreviewHeight 200\n"
@@ -693,6 +670,17 @@ int LaidoutApp::readinLaidoutDefaults()
 		} else if (!strcmp(name,"pagedropshadow")) {
 			IntAttribute(value,&pagedropshadow);
 		
+		} else if (!strcmp(name,"defaultunits")) {
+			if (value) {
+				int id=0;
+				SimpleUnit *units=GetUnitManager();
+				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL)==0) {
+					makestr(unitname,value);
+					default_units=id;
+					units->DefaultUnits(value);
+					notifyPrefsChanged(NULL,PrefsDefaultUnits);
+				}
+			}
 		}
 	}
 	
@@ -853,16 +841,16 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'u': { // default units
-					 // *** THIS IS TEMPORARY!!!!
-					makestr(unitname,o->arg());
-					if (!strcasecmp(unitname,"inches"))      unitmultiplier=1;
-					else if (!strcasecmp(unitname,"in"))     unitmultiplier=1;
-					else if (!strcasecmp(unitname,"cm"))     unitmultiplier=2.54;
-					else if (!strcasecmp(unitname,"mm"))     unitmultiplier=25.4;
-					else if (!strcasecmp(unitname,"m"))      unitmultiplier=.0254;
-					else if (!strcasecmp(unitname,"ft"))     unitmultiplier=1./12;
-					else if (!strcasecmp(unitname,"feet"))   unitmultiplier=1./12;
-					else if (!strcasecmp(unitname,"yards"))  unitmultiplier=1./36;
+					SimpleUnit *units=GetUnitManager();
+					int id=0;
+					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL)==0) {
+						makestr(unitname,o->arg());
+						default_units=id;
+						units->DefaultUnits(unitname);
+						notifyPrefsChanged(NULL,PrefsDefaultUnits);
+						DBG cerr <<"laidout:units->DefaultUnits:"<<default_units<<"  from um:"<<units->DefaultUnits(unitname)<<endl;
+					}
+
 				} break;
 		} //switch
 	}
