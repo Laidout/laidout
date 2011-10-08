@@ -11,11 +11,12 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 
 
-// This file is for LaidoutApp functions that are not stack dependent, so doesn't need lax/lists.cc
+// This file is for LaidoutApp functions that are not really involved in basic application functioning,
+// or initial window creation.
 
 #include "laidout.h"
 #include "viewwindow.h"
@@ -130,6 +131,46 @@ void LaidoutApp::notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType
 	DBG cerr <<"eo notifyDocTreeChanged"<<endl;
 	return;
 }
+
+//! Make sure various windows respond to a change in global preferences, like default units change.
+void LaidoutApp::notifyPrefsChanged(Laxkit::anXWindow *callfrom,int what)
+{
+	DBG cerr<<"notifyPrefsChanged sending.."<<endl;
+	HeadWindow *h;
+	PlainWinBox *pwb;
+	anXWindow *w;
+
+	SimpleMessage *edata;
+
+	int c2,yes=1;
+	for (int c=0; c<topwindows.n; c++) {
+		if (callfrom==topwindows.e[c]) continue;
+		h=dynamic_cast<HeadWindow *>(topwindows.e[c]);
+		if (!h) continue;
+		
+		for (c2=0; c2<h->numwindows(); c2++) {
+			pwb=h->windowe(c2);
+			w=pwb->win();
+			if (!w || callfrom==w) continue;
+
+			 //construct events for the panes
+			if (yes){
+				edata=new SimpleMessage();
+				edata->send_message=newstr("prefsChange");
+				edata->info1=what;
+				edata->to=w->object_id;
+
+				app->SendMessage(edata,w->object_id,"prefsChange");
+
+				DBG cerr <<"---(notifyPrefsChanged) sending prefsChange to "<<
+				DBG 	(w->WindowTitle())<< "("<<w->whattype()<<")"<<endl;
+			}
+		}
+	}
+	DBG cerr <<"eo notifyPrefsChanged"<<endl;
+	return;
+}
+
 
 //! Dump out a pseudocode mockup of everything that can appear in a Laidout document.
 /*! 

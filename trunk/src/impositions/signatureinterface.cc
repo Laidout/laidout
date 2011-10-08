@@ -27,6 +27,7 @@
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
 #include <lax/filedialog.h>
+#include <lax/units.h>
 
 #include <lax/lists.cc>
 
@@ -1068,10 +1069,11 @@ int SignatureInterface::Refresh()
 
 	 //write out final page dimensions
 	dp->NewFG(0.,0.,0.);
+	SimpleUnit *units=GetUnitManager();
 	sprintf(str,_("%d pages per pattern, Final size: %g x %g %s"),
 				signature->PagesPerPattern(),
-				signature->PageWidth(1)*laidout->unitmultiplier,
-				signature->PageHeight(1)*laidout->unitmultiplier,
+				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->default_units,NULL),
+				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->default_units,NULL),
 				laidout->unitname);
 	dp->textout(0,0, str,-1, LAX_LEFT|LAX_TOP);
 

@@ -28,6 +28,7 @@
 #include <lax/popupmenu.h>
 #include <lax/colors.h>
 #include <lax/mouseshapes.h>
+#include <lax/units.h>
 
 #include <cstdarg>
 #include <cups/cups.h>
@@ -563,6 +564,17 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 				}
 			}	
 		}
+		
+		return 0;
+
+	} else if (!strcmp(mes,"prefsChange")) {
+		 //Maybe the default units changed or something display related
+		DBG cerr << "viewwindow got prefsChange"<<endl;
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		if (!s) return 1;
+		if (s->info1!=PrefsDefaultUnits) return 1;
+		if (xruler) xruler->SetCurrentUnits(laidout->default_units);
+		if (yruler) yruler->SetCurrentUnits(laidout->default_units);
 		
 		return 0;
 
@@ -2068,7 +2080,7 @@ void LaidoutViewport::Center(int w)
 	}
 }
 
-/*! currently, just sets window background to white..
+/*! Establish a new limbo if don't have one yet.
  */
 int LaidoutViewport::init()
 {
@@ -2079,7 +2091,24 @@ int LaidoutViewport::init()
 		makestr(limbo->id,txt);
 		laidout->project->limbos.push(limbo);//adds 1 count
 	}
-	
+
+	int e=ViewportWindow::init();
+	dp->NewBG(255,255,255);
+	return e;
+}
+
+//! Make sure that new rulers have the proper units.
+int LaidoutViewport::UseTheseRulers(RulerWindow *x,RulerWindow *y)
+{
+	ViewportWindow::UseTheseRulers(x,y);
+	if (xruler) {
+		xruler->SetBaseUnits(UNITS_Inches);
+		xruler->SetCurrentUnits(laidout->default_units);
+	}
+	if (yruler) {
+		yruler->SetBaseUnits(UNITS_Inches);
+		yruler->SetCurrentUnits(laidout->default_units);
+	}
 	return 0;
 }
 
@@ -3167,6 +3196,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		int c=viewport->Event(data,mes);
 		updateContext(0);
 		return c;
+
+	} else if (!strcmp(mes,"prefsChange")) { // doc tree was changed somehow
+		return viewport->Event(data,mes);
 
 	} else if (!strcmp(mes,"import new image")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);

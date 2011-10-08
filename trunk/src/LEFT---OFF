@@ -9,6 +9,8 @@ Those are purged with each release.
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
+pixels units should be set as per document dpi
+
 pagerangeinterface: button downs shouldn't do anything when not clicked down outside bar
 
 spread flipper tabloid tiled not paging paper layouts properly

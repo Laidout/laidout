@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 #ifndef LAIDOUT_H
 #define LAIDOUT_H
@@ -29,6 +29,7 @@
 
 const char *LaidoutVersion();
 
+//------------------------------------ TreeChangeEvent ----------------------------------
 enum TreeChangeType {
 		TreeDocGone,
 		TreePagesAdded,
@@ -57,6 +58,13 @@ class TreeChangeEvent : public Laxkit::EventData
 	TreeChangeEvent(const TreeChangeEvent &te);
 };
 
+enum GlobalPrefsNotify {
+	PrefsDefaultUnits,
+	PrefsDisplayDetails
+};
+
+//------------------------------------ LaidoutApp ----------------------------------
+
 enum RunModeType {
 		RUNMODE_Normal,
 		RUNMODE_Commands,
@@ -76,11 +84,14 @@ class LaidoutApp : public Laxkit::anXApp
 	Laxkit::anXWindow *lastview;
 
 	LaidoutCalculator *calculator;
-	double unitmultiplier;
+
+	 //global prefs
+	int default_units;
 	char *unitname;
+	int pagedropshadow;
+
 
 	unsigned long curcolor;
-	int pagedropshadow;
 	
 	char preview_transient;
 	int preview_over_this_size;
@@ -90,7 +101,6 @@ class LaidoutApp : public Laxkit::anXApp
 	char *ghostscript_binary;
 
 	char *default_template;
-	
 	char *defaultpaper;
 	char *palette_dir;
 	char *icon_dir;
@@ -131,6 +141,7 @@ class LaidoutApp : public Laxkit::anXApp
 
 	 //data manipulation peacekeeper
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);
+	void notifyPrefsChanged(Laxkit::anXWindow *callfrom,int what);
 
 	 //resource and external executable management
 	char *full_path_for_resource(const char *name,const char *dir=NULL);
