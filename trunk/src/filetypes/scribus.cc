@@ -553,12 +553,6 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		//*************DocItemAttributes not 1.2
 		//************TablesOfContents   not 1.2
 
-		//Not quite sure when Sections were introduced. Section blocks determine page number format:
-		//<Sections>
-		//  <Section Number="0" Name="string" From="0" To="10" Type="..." Start="1" Reversed="0" Active="1"/>
-		//</Sections>
-		//  Type can be: Type_A_B_C, Type_a_b_c, Type_1_2_3, Type_I_II_III, Type_i_ii_iii, Type_None
-		
 		//------------PageSets  (not in 1.2)
 		//This sets up so there is one column of pages, with CANVAS_GAP units between them.
 		fprintf(f,"    <PageSets>\n"
@@ -569,6 +563,12 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		//************MASTERPAGE not separate entity in 1.2
 	} //if !scribushints for non PAGE and PAGEOBJECT elements of DOCUMENT
 			
+	 //Not quite sure when Sections were introduced. Section blocks determine page number format:
+	 //<Sections>
+	 //  <Section Number="0" Name="string" From="0" To="10" Type="..." Start="1" Reversed="0" Active="1"/>
+	 //</Sections>
+	 //  Type can be: Type_A_B_C, Type_a_b_c, Type_1_2_3, Type_I_II_III, Type_i_ii_iii, Type_None
+
 	 //Sections are always output fresh. Sections are analogous to PageRanges, BUT they do not track
 	 //when the layout is anything other than single, consecutive pages on a single sheet of paper.
 	fprintf(f,"    <Sections>\n");
@@ -1552,7 +1552,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 
 	 //now scribusdoc's subattributes should be many things. We are primarily interested in
-	 //"PAGE", "PAGEOBJECT", and "COLOR" fields, and maybe "PageSets"
+	 //"PAGE", "PAGEOBJECT", "Sections", and "COLOR" fields, and maybe "PageSets"
 	 //all the others we can safely ignore, and let pass into iohints
 
 	 //create the document if necessary
@@ -1658,6 +1658,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	int pageobjectcount=-1;
 	int onmasterpage,masterpageindex=-1;
 	Attribute *tmp=NULL;
+	PtrStack<PageRange> newranges;
 
 	for (c=0; c<scribusdoc->attributes.n; c++) {
 		name=scribusdoc->attributes.e[c]->name;
@@ -1808,6 +1809,53 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 			}
 
+		} else if (!strcmp(name,"Sections")) {
+			 //<Sections>
+			 //  <Section Number="0" Name="string" From="0" To="10" Type="..." Start="1" Reversed="0" Active="1"/>
+			 //</Sections>
+			 //  Type can be: Type_A_B_C, Type_a_b_c, Type_1_2_3, Type_I_II_III, Type_i_ii_iii, Type_None
+			Attribute *sub=scribusdoc->attributes.e[c]->find("content:");
+			if (sub) {
+				int num=-1, from=-1, to=-1, type=0, start=1, reversed=0, active=1;
+				char *Name=NULL;
+				for (int c2=0; c2<sub->attributes.n; c2++) {
+					name =sub->attributes.e[c2]->name;
+					value=sub->attributes.e[c2]->value;
+
+					if (!strcmp(name,"Section")) {
+						for (int c3=0; c3<sub->attributes.e[c2]->attributes.n; c3++) {
+							name =sub->attributes.e[c2]->attributes.e[c3]->name;
+							value=sub->attributes.e[c2]->attributes.e[c3]->value;
+
+							if (!strcmp(name,"Number")) {
+								IntAttribute(value,&num);
+							} else if (!strcmp(name,"Name")) {
+								Name=value;
+							} else if (!strcmp(name,"From")) {
+								IntAttribute(value,&from);
+							} else if (!strcmp(name,"To")) {
+								IntAttribute(value,&to);
+							} else if (!strcmp(name,"Type")) {
+								if (!strcmp(value,"Type_A_B_C")) type=Numbers_abc;
+								else if (!strcmp(value,"Type_a_b_c")) type=Numbers_ABC;
+								else if (!strcmp(value,"Type_1_2_3")) type=Numbers_Arabic;
+								else if (!strcmp(value,"Type_I_II_III")) type=Numbers_Roman_cap;
+								else if (!strcmp(value,"Type_i_ii_iii")) type=Numbers_Roman;
+								else if (!strcmp(value,"Type_None")) type=Numbers_None;
+								else type=Numbers_Arabic;
+							} else if (!strcmp(name,"Start")) {
+								IntAttribute(value,&start);
+							} else if (!strcmp(name,"Reversed")) {
+								reversed=BooleanAttribute(value);
+							} else if (!strcmp(name,"Active")) {
+								active=BooleanAttribute(value);
+							}
+						}
+						newranges.push(new PageRange(Name,"#",type,from+docpagenum,to+docpagenum,start+docpagenum,reversed));
+					}
+				}
+			}
+
 		//} else if (!strcmp(scribusdoc->attributes.e[c]->name,"COLOR")) {
 			 //this will be something like:
 			 // NAME "White"
@@ -1881,6 +1929,15 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		}
 		iohints->push(scribushints,-1);
 		//remember, do not delete scribushints here! they become part of the doc/project
+	}
+	
+	 //Apply the ranges
+	if (doc && newranges.n) {
+		PageRange *r;
+		for (int c=0; c<newranges.n; c++) {
+			r=newranges.e[c];
+			doc->ApplyPageRange(r->name,r->labeltype,r->labelbase,r->start,r->end,r->first,r->decreasing);
+		}
 	}
 
 	 //if doc is new, push into the project

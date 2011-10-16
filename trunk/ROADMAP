@@ -11,7 +11,7 @@ VERSION 0.092
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
 (done) Gui for modifying Page Labels
        Scribus import must support master pages
-       Scribus import/export should support PageRange <-> Section conversion on import
+(done) Scribus import/export should support PageRange <-> Section conversion on import
 (done) Units, especially Allow changing units in rulers
 (done) Add proper .desktop and application icons installation
 (done) Use ~/.config/laidout, instead of ~/.laidout
