@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010-2011 by Tom Lechner
 //
 #ifndef INTERFACES_SIGNATUREINTERFACE_H
 #define INTERFACES_SIGNATUREINTERFACE_H
@@ -53,7 +53,7 @@ class ActionArea : public Laxkit::DoubleBBox
 
 //------------------------------------- SignatureInterface --------------------------------------
 
-class SignatureInterface : public LaxInterfaces::InterfaceWithDp
+class SignatureInterface : public LaxInterfaces::anInterface
 {
  protected:
 	int showdecs;

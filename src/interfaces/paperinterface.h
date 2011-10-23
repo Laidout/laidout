@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2007,2011 by Tom Lechner
 //
 #ifndef INTERFACES_PAPERTILE_H
 #define INTERFACES_PAPERTILE_H
@@ -27,7 +27,7 @@ char *new_paper_group_name();
 
 #define PAPERTILE_ONE_ONLY   (1<<0)
 
-class PaperInterface : public LaxInterfaces::InterfaceWithDp
+class PaperInterface : public LaxInterfaces::anInterface
 {
  protected:
 	int showdecs;

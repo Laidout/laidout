@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009 by Tom Lechner
+// Copyright (C) 2011 by Tom Lechner
 //
 
 
@@ -55,7 +55,7 @@ class PluginBase
 	ImageImportFilter **ImageImportFilters();
 	ImportFilter      **ImportFilters();
 	ExportFilter      **ExportFilters();
-	InterfaceWithDp   **Tools();
+	anInterface       **Tools();
 	Imposition        **Impositions();
 	Resource          **ResourceInstances();
 	DrawableObject    **ObjectInstances();

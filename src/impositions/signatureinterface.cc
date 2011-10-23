@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010-2011 by Tom Lechner
 //
 
 
@@ -225,7 +225,7 @@ void ActionArea::FindBBox()
  */
 
 SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, PaperStyle *p)
-	: InterfaceWithDp(nid,ndp) 
+	: anInterface(nid,ndp) 
 {
 	showdecs=0;
 	papersize=NULL;
@@ -269,7 +269,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 }
 
 SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *ndp)
-	: InterfaceWithDp(nowner,nid,ndp) 
+	: anInterface(nowner,nid,ndp) 
 {
 	showdecs=0;
 	signature=new Signature;

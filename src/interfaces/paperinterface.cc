@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2007,2011 by Tom Lechner
 //
 
 
@@ -68,7 +68,7 @@ char *new_paper_group_name()
  */
 
 PaperInterface::PaperInterface(int nid,Displayer *ndp)
-	: InterfaceWithDp(nid,ndp) 
+	: anInterface(nid,ndp) 
 {
 	snapto=MediaBox;
 	editwhat=MediaBox;
@@ -80,13 +80,10 @@ PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	doc=NULL;
 
 	papergroup=NULL;
-
-	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
-	buttonmask=Button1Mask;
 }
 
 PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
-	: InterfaceWithDp(nowner,nid,ndp) 
+	: anInterface(nowner,nid,ndp) 
 {
 	snapto=MediaBox;
 	editwhat=MediaBox;
@@ -98,9 +95,6 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	doc=NULL;
 
 	papergroup=NULL;
-
-	mask=ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask|KeyReleaseMask;
-	buttonmask=Button1Mask;
 }
 
 PaperInterface::~PaperInterface()

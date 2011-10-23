@@ -67,7 +67,7 @@ using namespace std;
 
 
 PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
-	: InterfaceWithDp(nid,ndp) 
+	: anInterface(nid,ndp) 
 {
 	xscale=1;
 	yscale=1;
@@ -90,7 +90,7 @@ PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
 }
 
 PageRangeInterface::PageRangeInterface(anInterface *nowner,int nid,Displayer *ndp)
-	: InterfaceWithDp(nowner,nid,ndp) 
+	: anInterface(nowner,nid,ndp) 
 {
 	xscale=1;
 	yscale=1;

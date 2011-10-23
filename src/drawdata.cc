@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2010 Tom Lechner
+// Copyright (c) 2004-2011 Tom Lechner
 //
 
 
@@ -104,10 +104,8 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		}
 	}
 	if (interf) {
-		 // draw it, *** this is a little clunky, perhaps have only InterfaceWithDps?
-		InterfaceWithDp *idp=dynamic_cast<InterfaceWithDp *>(interf);
-		if (idp) idp->DrawDataDp(dp,data,a1,a2);
-		else laidout->interfacepool.e[c]->DrawData(data,a1,a2);
+		 // draw it
+		interf->DrawDataDp(dp,data,a1,a2);
 		
 	} else {
 		 //mystery data! might be actual MysteryData, or might be some data for which

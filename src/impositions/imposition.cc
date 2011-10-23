@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 
 
@@ -512,7 +512,7 @@ Imposition::~Imposition()
 //! Return an imposition specific tool for use with the given layout type
 /*! Default is to return NULL.
  */
-LaxInterfaces::InterfaceWithDp *Imposition::Interface(int layouttype)
+LaxInterfaces::anInterface *Imposition::Interface(int layouttype)
 {
 	return NULL;
 }
