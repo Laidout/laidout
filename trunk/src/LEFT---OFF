@@ -8,6 +8,7 @@ Those are purged with each release.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
+object tool click on page/paper/limbo should immediately reflect new zone
 
 pixels units should be set as per document dpi
 

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 #ifndef SPREADEDITOR_H
 #define SPREADEDITOR_H
@@ -26,7 +26,7 @@
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
 
-class SpreadInterface : public LaxInterfaces::InterfaceWithDp, public LaxFiles::DumpUtility
+class SpreadInterface : public LaxInterfaces::anInterface, public LaxFiles::DumpUtility
 {
  protected:
 	int maxmarkertype;

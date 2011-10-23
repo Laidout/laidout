@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 #ifndef IMPOSITION_H
 #define IMPOSITION_H
@@ -139,7 +139,7 @@ class Imposition : public Style
 	virtual int PageType(int page) = 0;
 	virtual int SpreadType(int spread) = 0;
 
-	virtual LaxInterfaces::InterfaceWithDp *Interface(int layouttype);
+	virtual LaxInterfaces::anInterface *Interface(int layouttype);
 };
 
 

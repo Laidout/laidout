@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 
 
@@ -75,7 +75,7 @@ using namespace std;
 /*! Incs count of docum.
  */
 SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *docum)
-	: InterfaceWithDp(0,ndp),
+	: anInterface(0,ndp),
 	  curspreads(0)
 {
 	firsttime=1;

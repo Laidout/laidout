@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2010 Tom Lechner
+// Copyright (c) 2004-2011 Tom Lechner
 //
 
 #include <lax/numslider.h>
@@ -1063,10 +1063,8 @@ int LaidoutViewport::DeleteObject()
 	}
 	
 	 // clear d from interfaces and check in 
-	InterfaceWithDp *i;
 	for (int c=0; c<interfaces.n; c++) {
-		if (i=dynamic_cast<InterfaceWithDp *>(interfaces.e[c]), i) i->Clear(d);
-		else interfaces.e[c]->Clear();
+		interfaces.e[c]->Clear(d);
 	}
 	clearCurobj(); //this calls dec_count() on the object
 	laidout->notifyDocTreeChanged(this,TreeObjectDeleted, curobjPage(), -1);
@@ -2322,11 +2320,9 @@ void LaidoutViewport::Refresh()
 		for (int c=0; c<interfaces.n; c++) {
 			//if (interfaces.e[c]->Needtodraw()) { // assume always needs to draw??
 				//DBG cerr <<" \ndrawing "<<interfaces.e[c]->whattype()<<" "<<c<<endl;
-				if (dynamic_cast<InterfaceWithDp *>(interfaces.e[c]))
-					dd=((InterfaceWithDp *)interfaces.e[c])->Curdata();
-					else dd=NULL;
+				dd=interfaces.e[c]->Curdata();
 				if (dd) dp->PushAndNewTransform(dd->m());
-				interfaces.e[c]->needtodraw=2; // should draw decs? *** when interf draws must be worked out..
+				interfaces.e[c]->needtodraw|=2; // should draw decs? *** when interf draws must be worked out..
 				interfaces.e[c]->Refresh();
 				if (dd) dp->PopAxes();
 			//}
@@ -2391,10 +2387,6 @@ void LaidoutViewport::Refresh()
  */
 int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG if (ch=='m') {
-	DBG 	cerr << ".....mark...."<<endl;
-	DBG }
-	
 
 	 // check these first, before asking interfaces
 	if (ch==' ') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
@@ -2452,6 +2444,20 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		if (curobj.obj) {
 			cout<<"**** move object to another page: imp me!"<<endl;
 			//if (CirculateObject(9,i,0)) needtodraw=1;
+
+			//Move to:
+			//  ---limbo:----
+			//  Limbo name
+			//  ---papergroup---
+			//  Papergroup proper
+			//  Paper 1  
+			//  Paper 2
+			//  ---page---
+			//  page 1 of spread
+			//* page 2 of spread
+			//  Some other page...
+			//  ------
+			//  Spread
 			return 0;
 		}
 
@@ -2508,10 +2514,8 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		
 		 // clear curobj from interfaces and check in 
 		SomeData *d=curobj.obj;
-		InterfaceWithDp *i;
 		for (int c=0; c<interfaces.n; c++) {
-			if (i=dynamic_cast<InterfaceWithDp *>(interfaces.e[c]), i) i->Clear(d);
-			else interfaces.e[c]->Clear();
+			interfaces.e[c]->Clear(d);
 		}
 		clearCurobj(); //this calls dec_count() on the object
 		needtodraw=1;
@@ -2573,6 +2577,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		//DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
+
 	} else if (dir==1) { // lower in layer
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
@@ -2586,6 +2591,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		//DBG curobj.context.out("lower by 1");
 		needtodraw=1;
 		return 1;
+
 	} else if (dir==2) { // raise to top
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
@@ -2599,6 +2605,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		//DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
+
 	} else if (dir==3) { // lower to bottom
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
@@ -2612,6 +2619,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		//DBG curobj.context.out("raise by 1");
 		needtodraw=1;
 		return 1;
+
 	} else if (dir==4) { // move to place i in current context
 		cout <<"***move to place i in current context not implemented!"<<endl;
 	} else if (dir==5) { // move to layer above
@@ -2627,6 +2635,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 	} else if (dir==9) { // move to page number i
 		cout <<"***move to page number i not implemented!"<<endl;
 	}
+
 	return 0;
 }
 
@@ -3001,7 +3010,7 @@ int ViewWindow::init()
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
 	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",NULL,
-						 MENUBUTTON_CLICK_CALLS_OWNER,
+						 MENUBUTTON_CLICK_CALLS_OWNER|IBUT_ICON_ONLY,
 						 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
 						 0,0,0,0,0,
 						 NULL,object_id,"rulercornerbutton",
@@ -3852,9 +3861,15 @@ void ViewWindow::updateContext(int messagetoo)
 	if (messagetoo) {
 		LaidoutViewport *v=((LaidoutViewport *)viewport);
 		char blah[v->curobj.context.n()*10+50];
-		strcpy(blah,"viewer");
+		strcpy(blah,"view");
 		for (int c=0; c<v->curobj.context.n(); c++) {
-			sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
+			if (c==0) {
+				if (v->curobj.context.e(c)==0) sprintf(blah+strlen(blah),".limbo");
+				else sprintf(blah+strlen(blah),".spread(%d)",v->curobj.context.e(c)-1);
+			} else if (c==1) {
+				if (v->curobj.spread()>0) sprintf(blah+strlen(blah),".page(%d)",v->curobj.context.e(c));
+				else sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
+			} else sprintf(blah+strlen(blah),".%d",v->curobj.context.e(c));
 		}
 		strcat(blah,":");
 		if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());

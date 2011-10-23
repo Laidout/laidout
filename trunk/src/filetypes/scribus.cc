@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007,2010 by Tom Lechner
+// Copyright (C) 2007,2010-2011 by Tom Lechner
 //
 
 
@@ -1592,7 +1592,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			page=scribusdoc->attributes.e[c];
 			a=page->find("NUM");
 			IntAttribute(a->value,&pagenum); //*** could use some error checking here so corrupt files dont crash laidout!!
-			if (pagenum<start || pagenum>end) continue; //only store pages that'll really be imported
+			if (pagenum<start || pagenum>end) continue; //only store pages that'll really be imported *** but what about object bleeds??
 
 			DoubleAttribute(page->find("PAGEXPOS")->value,&pagebounds[pagenum].minx);
 			DoubleAttribute(page->find("PAGEYPOS")->value,&pagebounds[pagenum].miny);
@@ -1600,6 +1600,11 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			DoubleAttribute(page->find("PAGEHEIGHT")->value,&pagebounds[pagenum].maxy);
 			pagebounds[pagenum].maxx+=pagebounds[pagenum].minx;
 			pagebounds[pagenum].maxy+=pagebounds[pagenum].miny;
+
+			a=page->find("MNAM"); //the name of the master page to use for this page
+			if (a && !isblank(a->value)) {
+				makestr(pagebounds[pagenum].nameid,a->value);
+			}
 
 			 //remaining stuff is iohint 
 			if (scribushints) {
@@ -1677,7 +1682,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				onmasterpage=1;
 				tmp=object->find("OnMasterPage");
 				for (masterpageindex=0; masterpageindex<masterpages.n; masterpageindex++) {
-					if (!strcmp(tmp->value,masterpages.e[c]->label)) break;
+					if (!strcmp(tmp->value,masterpages.e[masterpageindex]->label)) break;
 				}
 				if (masterpageindex==masterpages.n) masterpageindex=-1; //master page not found!
 			}
@@ -1695,7 +1700,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				group=dynamic_cast<Group *>(masterpages.e[masterpageindex]->layers.e(0));
 			}
 
-			double x,y,rot,w,h;
+			double x=0,y=0,rot=0,w=0,h=0;
 			double matrix[6];
 			DoubleAttribute(object->find("XPOS")->value  ,&x);//***this could be att->doubleValue("XPOS",&x) for safety
 			DoubleAttribute(object->find("YPOS")->value  ,&y);
@@ -1788,6 +1793,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 					char scratch[50];
 					for (int c=0; c<tmp->attributes.n; c++) {
 						sub=tmp->attributes.e[c];
+						num=-1;
 						if (strcmp(sub->name,"var")) continue;
 						if (!strcmp(sub->attributes.e[0]->value,"pgno")) {
 							num=firstpagenum+pagenum+1;
@@ -1903,18 +1909,58 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	if (masterpages.n) {
 		 //pages in range [start,end] from the Scribus file get imported into
 		 //the Laidout document in range [docpagenum, docpagenum+start-end]
-		Page *master;
-		SomeData *obj;
+		Page *master, *docpage;
+		SomeData *obj, *newobj;
 		MysteryData *mobj;
 		for (int c=docpagenum; c<=docpagenum+start-end; c++) {
 			 //find which master page to use
-			//***
+			if (!pagebounds[c-docpagenum].nameid) continue; //no master page for this page
 			master=NULL;
+			for (int i=0; i<masterpages.n; i++) {
+				if (!strcmp(pagebounds[c-docpagenum].nameid,masterpages.e[i]->label)) {
+					master=masterpages.e[i];
+					break;
+				}
+			}
+			if (!master) continue; //master page not found, uh oh!
 		
-			 //apply the objects at beginning of stack. Master page objects occure under all other objects.
+			 //apply the objects at beginning of stack. Master page objects occur under all other objects.
+			docpage=doc->pages.e[c];
 			for (int c2=0; c2<masterpages.e[c-docpagenum]->layers.n(); c2++) {
 				obj=masterpages.e[c-docpagenum]->layers.e(c2);
-				mobj=dynamic_cast<MysteryData*>(obj);
+				newobj=obj->duplicate();
+
+				//*** duplicate object and push 
+
+				
+				mobj=dynamic_cast<MysteryData*>(newobj);
+				if (mobj && (!strcmp(mobj->name,"Text Frame") || !strcmp(mobj->name,"Text on path"))) {
+					 //now convert variable text
+					tmp=mobj->attributes->find("content:");
+					if (tmp) {
+						Attribute *sub;
+						int num=-1;
+						char scratch[50];
+						for (int c=0; c<tmp->attributes.n; c++) {
+							sub=tmp->attributes.e[c];
+							num=-1;
+							if (strcmp(sub->name,"var")) continue;
+							if (!strcmp(sub->attributes.e[0]->value,"pgno")) {
+								num=firstpagenum+pagenum+1;
+							} else if (!strcmp(sub->attributes.e[0]->value,"pgco")) {
+								num=numpages;
+							}
+							if (num<0) continue;
+
+							makestr(sub->name,"ITEXT");
+							makestr(sub->attributes.e[0]->name,"CH");
+							sprintf(scratch,"%d",num);
+							makestr(sub->attributes.e[0]->value,scratch);
+										
+						}
+					}
+				}
+
 			}
 		}
 	}

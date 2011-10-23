@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010-2011 by Tom Lechner
 //
 
 
@@ -45,7 +45,7 @@ class ObjectFilter : public Laxkit::anObject
 	RefPtrStack<Laxkit::anObject> dependencies; //other resources, not filters in filter tree
 	virtual int RequiresRasterization() = 0; //whether object contents readonly while filter is on
 	virtual double *FilterTransform() = 0; //additional affine transform to apply to object's transform
-	virtual LaxInterfaces::InterfaceWithDp *Interface() = 0; //optional editing interface
+	virtual LaxInterfaces::anInterface *Interface() = 0; //optional editing interface
 
 	ObjectFilter();
 	virtual ~ObjectFilter();

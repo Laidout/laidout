@@ -24,7 +24,7 @@
 
 //------------------------------------- PageRangeInterface --------------------------------------
 
-class PageRangeInterface : public LaxInterfaces::InterfaceWithDp, public DocumentUser
+class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUser
 {
   protected:
 	Document *doc;
