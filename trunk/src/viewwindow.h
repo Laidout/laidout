@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2010 Tom Lechner
+// Copyright (c) 2004-2011 Tom Lechner
 //
 #ifndef VIEWWINDOW_H
 #define VIEWWINDOW_H
@@ -31,31 +31,34 @@
 //------------------------------- VObjContext ---------------------------
 class VObjContext : public LaxInterfaces::ObjectContext
 {
- public:
+  public:
 	FieldPlace context;
-	VObjContext() { obj=NULL; context.push(0); }
+	VObjContext() { obj=NULL; }
 	virtual ~VObjContext();
 	virtual int isequal(const ObjectContext *oc);
 	virtual int operator==(const ObjectContext &oc) { return isequal(&oc); }
 	virtual VObjContext &operator=(const VObjContext &oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear();
+	virtual LaxInterfaces::ObjectContext *duplicate();
+
 	virtual void push(int i,int where=-1);
 	virtual int pop(int where=-1);
 	
 	virtual int spread() { return context.e(0); }
-	virtual int spreadpage() { if (context.n()>1 && context.e(0)!=0) return context.e(1); else return -1; }
-	virtual int layer() { if (context.n()>2 && context.e(0)!=0) return context.e(2); else return -1; }
-	virtual int layeri() { if (context.n()>3 && context.e(0)!=0) return context.e(3); else return -1; }
+	virtual int spreadpage() { if (context.e(0)==1 && context.e(1)==0) return context.e(2); else return -1; }
+	virtual int layer()  { if (context.n()>3 && context.e(0)==1 && context.e(1)==0) return context.e(3); else return -1; }
+	virtual int layeri() { if (context.n()>4 && context.e(0)==1) return context.e(4); else return -1; }
 	virtual int limboi() { if (context.n()>1 && context.e(0)==0) return context.e(1); else return -1; }
-	virtual int level() { if (obj) return context.n()-2; else return context.n()-1; }
+	virtual int paperi() { if (context.n()>1 && context.e(0)==2) return context.e(1); else return -1; }
+	virtual int level()  { if (obj) return context.n()-2; else return context.n()-1; }
 };
 
 //------------------------------- LaidoutViewport ---------------------------
 class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public ObjectContainer
 {
 	char lfirsttime;
- protected:
+  protected:
 	int fakepointer;   //***for lack of screencast recorder for multipointer
 	flatpoint fakepos; //***for lack of screencast recorder for multipointer
 
@@ -72,7 +75,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual void setCurobj(VObjContext *voc);
 	virtual void findAny();
 	virtual int nextObject(VObjContext *oc,int inc=0);
-	virtual void transformToContext(double *m,FieldPlace &place,int invert=1);
+	virtual void transformToContext(double *m,FieldPlace &place,int invert, int depth);
  public:
 	 //*** maybe these should be protected?
 	char *pageviewlabel;
@@ -98,6 +101,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 	virtual int UseTheseRulers(Laxkit::RulerWindow *x,Laxkit::RulerWindow *y);
+	virtual double *transformToContext(double *m,LaxInterfaces::ObjectContext *oc,int invert,int full);
 
 	virtual int UseThisDoc(Document *ndoc);
 	virtual int UseThisPaperGroup(PaperGroup *group);
@@ -111,13 +115,12 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 
 	virtual const char *Pageviewlabel();
 	virtual void Center(int w=0);
-	virtual int NewData(LaxInterfaces::SomeData *d);
-	virtual int NewCurobj(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc=NULL);
+	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc);
 	virtual int SelectPage(int i);
 	virtual int NextSpread();
 	virtual int PreviousSpread();
 	
-	virtual int ChangeObject(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext *oc);
+	virtual int ChangeObject(LaxInterfaces::ObjectContext *oc,int switchtool);
 	virtual int SelectObject(int i);
 	virtual int FindObject(int x,int y, const char *dtype, 
 					LaxInterfaces::SomeData *exclude, int start,
@@ -133,14 +136,18 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int PlopData(LaxInterfaces::SomeData *ndata,char nearmouse=0);
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
-	virtual int ObjectMove(LaxInterfaces::SomeData *d);
+	virtual LaxInterfaces::ObjectContext *ObjectMove(LaxInterfaces::ObjectContext *oc, int modifyoc);
 	virtual int CirculateObject(int dir, int i,int objOrSelection);
 	virtual int validContext(VObjContext *oc);
 	virtual void clearCurobj();
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
-	virtual int n() { if (spread) return 2; return 1; }
+	virtual int n();
 	virtual Laxkit::anObject *object_e(int i);
+	virtual const char *object_e_name(int i);
+	virtual const double *object_transform(int i);
+	virtual int object_e_info(int i, const char **name, const char **Name, int *isarray);
 	virtual int curobjPage();
+	virtual int isDefaultPapergroup();
 
 	friend class ViewWindow;
 	friend class GroupInterface;
@@ -149,7 +156,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 //------------------------------- ViewWindow ---------------------------
 class ViewWindow : public LaxInterfaces::ViewerWindow
 {
- protected:
+  protected:
 	void setup();
 	Laxkit::NumInputSlider *pagenumber;
 	Laxkit::NumInputSlider *var1, *var2, *var3;
@@ -157,7 +164,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
- public:
+  public:
 	Project *project;
 	Document *doc;
 

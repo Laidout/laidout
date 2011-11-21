@@ -631,7 +631,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				}
 
 				 // for each page in spread layout..
-				for (c2=0; c2<spread->pagestack.n; c2++) {
+				for (c2=0; c2<spread->pagestack.n(); c2++) {
 					pg=spread->pagestack.e[c2]->index;
 					if (pg<0 || pg>=doc->pages.n) continue;
 
@@ -812,7 +812,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 				}
 
 				 // for each page in spread layout..
-				for (c2=0; c2<spread->pagestack.n; c2++) {
+				for (c2=0; c2<spread->pagestack.n(); c2++) {
 					psPushCtm();
 					pg=spread->pagestack.e[c2]->index;
 					if (pg<0 || pg>=doc->pages.n) continue;
@@ -1928,10 +1928,10 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			docpage=doc->pages.e[c];
 			for (int c2=0; c2<masterpages.e[c-docpagenum]->layers.n(); c2++) {
 				obj=masterpages.e[c-docpagenum]->layers.e(c2);
+
 				newobj=obj->duplicate();
-
-				//*** duplicate object and push 
-
+				docpage->layers.push(newobj);
+				dynamic_cast<Group *>(docpage->layers.e(0))->push(newobj);
 				
 				mobj=dynamic_cast<MysteryData*>(newobj);
 				if (mobj && (!strcmp(mobj->name,"Text Frame") || !strcmp(mobj->name,"Text on path"))) {
@@ -1960,7 +1960,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 						}
 					}
 				}
-
+				newobj->dec_count();
 			}
 		}
 	}

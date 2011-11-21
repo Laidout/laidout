@@ -248,7 +248,11 @@ Signature::Signature()
 	reallocateFoldinfo();
 	foldinfo[0][0].finalindexfront=0;
 	foldinfo[0][0].finalindexback=1;
+
+	linestyle=NULL;
+	automarks=0;
 }
+
 
 Signature::~Signature()
 {
@@ -258,6 +262,8 @@ Signature::~Signature()
 		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
 		delete[] foldinfo;
 	}
+
+	if (linestyle) linestyle->dec_count();
 }
 
 const Signature &Signature::operator=(const Signature &sig)

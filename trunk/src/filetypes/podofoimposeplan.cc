@@ -222,7 +222,7 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 			} else {				
 				 // for each page in spread..
-				for (c2=0; c2<spread->pagestack.n; c2++) {
+				for (c2=0; c2<spread->pagestack.n(); c2++) {
 					pg=spread->pagestack.e[c2]->index;
 					if (pg>=doc->pages.n) continue;
 					

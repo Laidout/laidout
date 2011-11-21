@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 
 
@@ -706,7 +706,7 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 
 
 	 // define max/min points
-	if (spread->pagestack.n) newpath=dynamic_cast<PathsData *>(spread->pagestack.e[0]->outline);
+	if (spread->pagestack.n()) newpath=dynamic_cast<PathsData *>(spread->pagestack.e[0]->outline);
 		else newpath=dynamic_cast<PathsData *>(spread->path);
 	spread->minimum=transform_point(newpath->m(),
 			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
@@ -773,7 +773,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 		flatpoint center2((spread->path->maxx+spread->path->minx)/2, (spread->path->maxy+spread->path->miny)/2);
 		spread->path->origin(spread->path->origin() + center1 - center2);
 
-		for (int c=0; c<spread->pagestack.n; c++) {
+		for (int c=0; c<spread->pagestack.n(); c++) {
 			if (!spread->pagestack.e[c]->outline) continue;
 			spread->pagestack.e[c]->outline->origin(spread->pagestack.e[c]->outline->origin()+ center1 - center2);
 		}

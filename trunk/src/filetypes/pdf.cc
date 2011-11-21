@@ -547,7 +547,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 				}
 				
 				 // for each paper in paper layout..
-				for (c2=0; c2<spread->pagestack.n; c2++) {
+				for (c2=0; c2<spread->pagestack.n(); c2++) {
 					psDpi(doc->imposition->paper->paperstyle->dpi);
 					
 					pgindex=spread->pagestack.e[c2]->index;

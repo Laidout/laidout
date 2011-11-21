@@ -602,6 +602,27 @@ PaperGroup::~PaperGroup()
 	DBG cerr <<"PaperGroup destroyed, obj "<<object_id<<endl;
 }
 
+//! The number of extra objects in the group.
+int PaperGroup::n()
+{ return objs.n(); }
+
+Laxkit::anObject *PaperGroup::object_e(int i)
+{
+	if (i>=0 && i<objs.n()) return objs.e(i);
+	return NULL;
+}
+
+//! Objects have no special names, so return NULL.
+const char *PaperGroup::object_e_name(int i)
+{ return NULL; }
+
+const double *PaperGroup::object_transform(int i)
+{
+	if (i>=0 && i<objs.n()) return objs.e(i)->m();
+	return NULL;
+}
+
+
 /*!
  * <pre>
  *   name somename
@@ -624,6 +645,8 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		//if (owner) ***;
 		fprintf(f,"%spaper                 #there can be 0 or more paper sections\n",spc);
 		fprintf(f,"%s  matrix 1 0 0 1 0 0  #transform for the paper to limbo space\n",spc);
+		fprintf(f,"%smarks                 #any optional printer marks for the group\n",spc);
+		fprintf(f,"%s  ...",spc);
 		//fprintf(f,"%s  outlinecolor 65535 0 0 #color of the outline of a paper in the interface\n",spc);
 		PaperStyle paperstyle(NULL,0,0,0,0,"in");
 		paperstyle.dump_out(f,indent+2,-1,NULL);
@@ -646,6 +669,10 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s  outlinecolor %d %d %d\n",
 			spc, papers.e[c]->red, papers.e[c]->green, papers.e[c]->blue);
 		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
+		if (objs.n()) {
+			fprintf(f,"%smarks\n",spc);
+			objs.dump_out(f,indent+2,0,context);
+		}	
 	}
 }
 
@@ -661,6 +688,8 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			makestr(name,value);
 		} else if (!strcmp(nme,"Name")) {
 			makestr(Name,value);
+		} else if (!strcmp(nme,"marks")) {
+			objs.dump_in_atts(att->attributes.e[c],flag,context);
 		} else if (!strcmp(nme,"paper")) {
 			int foundcolor=0;
 			PaperStyle *paperstyle=new PaperStyle(NULL,0,0,0,0,"in");

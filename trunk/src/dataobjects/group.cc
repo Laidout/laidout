@@ -85,6 +85,7 @@ void Group::FindBBox()
 int Group::pointin(flatpoint pp,int pin)
 { 
 	if (!objs.n) return 0;
+	if (!selectable) return 0;
 	flatpoint p(((pp-origin())*xaxis())/(xaxis()*xaxis()), 
 		        ((pp-origin())*yaxis())/(yaxis()*yaxis()));
 	for (int c=0; c<objs.n; c++) {
@@ -164,6 +165,12 @@ LaxInterfaces::SomeData *Group::e(int i)
 {
 	if (i<0 || i>=objs.n) return NULL;
 	return objs.e[i];
+}
+
+const double *Group::object_transform(int i)
+{
+	if (i<0 || i>=objs.n) return NULL;
+	return objs.e[i]->m();
 }
 
 /*! Recognizes locked, visible, prints, then tries to parse elements...

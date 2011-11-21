@@ -285,6 +285,7 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 		} else if (!strcmp(name,"limbo")) {
 			Group *g=new Group;  //count=1
 			g->dump_in_atts(att->attributes.e[c],flag,context);
+			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
 			if (isblank(g->id) && !isblank(value)) makestr(g->id,value);
 			limbos.push(g); // incs count
 			g->dec_count();   //remove extra first count

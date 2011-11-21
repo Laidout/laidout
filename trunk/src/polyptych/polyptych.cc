@@ -46,7 +46,7 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
 
-#include "../../language.h"
+#include "../language.h"
 #include "glbase.h"
 #include "gloverlay.h"
 #include "poly.h"

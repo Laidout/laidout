@@ -20,6 +20,7 @@
 //#include <lax/dump.h>
 //#include <lax/refcounted.h>
 #include "imposition.h"
+#include <lax/interfaces/linestyle.h>
 
 
 //------------------------------------- Fold --------------------------------------
@@ -83,6 +84,9 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	char binding;    //direction to place binding 'l|r|t|b'
 	char positivex;  //direction of the positive x axis: 'l|r|t|b'
 	char positivey;  //direction of the positive y axis: 'l|r|t|b'
+
+	int automarks;
+	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
 
 	 //for easy storing of final arrangement:
 	FoldedPageInfo **foldinfo;

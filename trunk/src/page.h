@@ -125,6 +125,8 @@ class Page : public ObjectContainer
 	virtual int n() { return layers.n(); }
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }
 	virtual Laxkit::anObject *object_e(int i) { return layers.object_e(i); }
+	virtual const double *object_transform(int i) { return NULL; }
+	virtual const char *object_e_name(int i) { return NULL; }
 };
 
 

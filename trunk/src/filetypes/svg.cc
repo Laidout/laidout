@@ -617,7 +617,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (spread->marks) svgdumpdef(f,m,spread->marks,error_ret,warning);
 
 		 // for each page in spread..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
+		for (c2=0; c2<spread->pagestack.n(); c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
 			 // for each layer on the page..
@@ -655,7 +655,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (spread->marks) svgdumpobj(f,m,spread->marks,error_ret,warning,4);
 
 		 // for each page in spread..
-		for (c2=0; c2<spread->pagestack.n; c2++) {
+		for (c2=0; c2<spread->pagestack.n(); c2++) {
 			pg=spread->pagestack.e[c2]->index;
 			if (pg<0 || pg>=doc->pages.n) continue;
 			 // for each layer on the page..

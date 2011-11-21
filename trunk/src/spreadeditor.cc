@@ -405,7 +405,7 @@ int SpreadInterface::Refresh()
 		 //draw the spread's path
 		::DrawData(dp,view->spreads.e[c]->spread->path,NULL,&fs);
 
-		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n; c2++) {
+		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
 			 // draw thumbnails
 			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
 			thumb=NULL;
@@ -455,7 +455,7 @@ int SpreadInterface::Refresh()
 		}
 
 		 // draw page labels
-		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n; c2++) {
+		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
 			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
 			if (pg>=0 && pg<doc->pages.n) {
 				outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;

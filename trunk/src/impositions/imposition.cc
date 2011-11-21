@@ -178,6 +178,31 @@ Spread::~Spread()
 	pagestack.flush();
 }
 
+int Spread::n()
+{ return 2; }
+
+Laxkit::anObject *Spread::object_e(int i)
+{
+	if (i==0) return &pagestack;
+	if (i==1) return marks;
+	return NULL;
+}
+
+const char *Spread::object_e_name(int i)
+{
+	if (i==0) return "page";
+	if (i==1) return "marks";
+	return NULL;
+}
+
+const double *Spread::object_transform(int i)
+{
+	if (i==0) return NULL;
+	if (i==1 && marks) return marks->m();
+	return NULL;
+}
+
+
 //! Return a new char[] string like "2-4,6-8" corresponding to what pages are in the spread.
 /*! This retrieves the Page::label from the pages in doc.
  * The returned string is used, for instance, when printing to postscript as the
@@ -221,7 +246,7 @@ int *Spread::pagesFromSpread()
 {
 	int c,c2,i;
 	NumStack<int> list,list2;
-	for (c=0; c<pagestack.n; c++) {
+	for (c=0; c<pagestack.n(); c++) {
 		i=pagestack.e[c]->index;
 		if (!list.n) list.push(i);
 		else {
@@ -260,7 +285,7 @@ int *Spread::pagesFromSpread()
  */
 int Spread::PagestackIndex(int docpage)
 {
-	for (int c=0; c<pagestack.n; c++) {
+	for (int c=0; c<pagestack.n(); c++) {
 		if (pagestack.e[c]->index==docpage) return c;
 	}
 	return -1;

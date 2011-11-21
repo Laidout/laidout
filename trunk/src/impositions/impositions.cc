@@ -191,6 +191,7 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 	int numadded=0;
 	do {
 		errorcode=readdir_r(dir,&entry,&result);
+		if (errorcode!=0) break; //fail!
 		if (!strcmp(entry.d_name,".") || !strcmp(entry.d_name,"..")) continue;
 		if (result) {
 			if (str) delete[] str;

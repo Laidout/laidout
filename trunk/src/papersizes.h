@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007,2010 by Tom Lechner
+// Copyright (C) 2004-2007,2010-2011 by Tom Lechner
 //
 #ifndef PAPERSIZES_H
 #define PAPERSIZES_H
@@ -20,6 +20,8 @@
 #include <lax/refptrstack.h>
 
 #include "styles.h"
+#include "dataobjects/objectcontainer.h"
+#include "dataobjects/group.h"
 #include <lax/interfaces/somedata.h>
 
 
@@ -96,7 +98,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 
 
 //------------------------------------- PaperGroup --------------------------------------
-class PaperGroup : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class PaperGroup : public ObjectContainer, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
  public:
 	char *name;
@@ -105,12 +107,19 @@ class PaperGroup : public Laxkit::anObject, public Laxkit::RefCounted, public La
 	Laxkit::RefPtrStack<PaperBoxData> papers;
 	Laxkit::anObject *owner;
 
+	Group objs;
+
 	PaperGroup();
 	PaperGroup(PaperBoxData *boxdata);
 	PaperGroup(PaperStyle *paperstyle);
 	virtual ~PaperGroup();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+
+	virtual int n();
+	virtual Laxkit::anObject *object_e(int i);
+	virtual const char *object_e_name(int i);
+	virtual const double *object_transform(int i);
 };
 
 
