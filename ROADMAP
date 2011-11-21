@@ -7,6 +7,8 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.092
 -------------
+       Ability to add custom printer marks
+       Fix multi-object selection move when crossing page boundaries
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
 (done) Gui for modifying Page Labels
@@ -43,7 +45,6 @@ VERSION 0.093
        double click on group should change selection area to group contents?
        Tools should remember their settings
        Clean up patch controls
-       Fix multi-object selection move when crossing page boundaries
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
