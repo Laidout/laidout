@@ -51,6 +51,8 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
 	virtual LaxInterfaces::SomeData *e(int i);
 	virtual int n() { return objs.n; }
 	virtual Laxkit::anObject *object_e(int i) { return e(i); }
+	virtual const char *object_e_name(int i) { return NULL; }
+	virtual const double *object_transform(int i);
 	virtual int GroupObjs(int n, int *which);
 	virtual int UnGroup(int which);
 	virtual int UnGroup(int n,const int *which);

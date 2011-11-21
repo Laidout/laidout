@@ -535,9 +535,12 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
 	 // initialize page contents to 1 empty layer.
 	Group *g=new Group;
 	g->selectable=0;
+	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
 	layers.push(g); //incs count
 	g->dec_count();
 	layers.selectable=0;
+	layers.obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return layers
+	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
 }
 
 //! Destructor, destroys the thumbnail, and pagestyle according to psislocal.
@@ -603,6 +606,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 			ps->dec_count();
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
+			g->obj_flags|=OBJ_Unselectable|OBJ_Zone;
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			layers.push(g);
 			g->dec_count();

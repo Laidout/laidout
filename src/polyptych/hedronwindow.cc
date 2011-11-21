@@ -17,7 +17,7 @@
 
 
 #include "hedronwindow.h"
-#include "../../language.h"
+#include "../language.h"
 
 #include <Imlib2.h>
 #include <lax/strmanip.h>

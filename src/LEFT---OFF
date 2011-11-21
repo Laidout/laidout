@@ -8,7 +8,7 @@ Those are purged with each release.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-object tool click on page/paper/limbo should immediately reflect new zone
+fix memory holes
 
 pixels units should be set as per document dpi
 
@@ -82,14 +82,6 @@ Scribus import:
   import should try to apply the Scribus layout correctly, at least for 2 page spreads
   import should do something meaningful with original Scribus page bleed values
 
-sig editor:
-  needs testing: command line func parser for sigs
-  you should be able to visually adjust the paper size in sigeditor graphically, by automatically
-    selecting larger papers, or adjusting the paper edges
-  detect non staplable binding edge, show red rather than green
-
-papersizes are not translated. Should they be??
-
 Spread Editor:
   insert blanks
   delete pages, the other right click menu options
@@ -99,6 +91,13 @@ Spread Editor:
   modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
   background preview rendering for spreadeditor
 
+sig editor:
+  needs testing: command line func parser for sigs
+  you should be able to visually adjust the paper size in sigeditor graphically, by automatically
+    selecting larger papers, or adjusting the paper edges
+  detect non staplable binding edge, show red rather than green
+
+impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
 
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
 	feed it an ExportConfig
@@ -111,9 +110,137 @@ implement cut marks and other custom printer marks!!!
 Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
 will likely be very different
 
-bleeding mechanism should be functional
-
 need to rediscover pathinterface, PathInterface should not segfault
+
+import config generic things like enum keepmystery should be parsed when no import config given!!
+
+should have easy way to save as a template
+
+when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
+
+saving when net is internal is not proper.. does not distinguish between diff. nets and whole
+
+Fix multi-object selection move when crossing page boundaries
+    sets
+
+scribus in/out: master pages, font sizes, stroke widths
+
+PathInterface must be drastically improved, and bez part should have segment move like inkscape
+    finish new path/pathoperator/pathsubinterface/pathinterface structure
+
+double click on group should change selection area to group contents?
+    need to clarify how grouping operates. Perhaps implement sets at same time
+    clearCurobj() with skim to group for group->double click?
+
+
+Load, save, add, delete paper groups
+   papergroups:
+    work out scheme for resource ownership: they can be owned by:
+      1.DONE  Document: if no project, save with document by default
+      2.DONE  Project:  save in project file
+      3.or Global resource: save in ~/.laidout/version/papergroups
+          class FileRef 
+        papergroup->owner=Document, Project, or FileRef
+   paperinterface:
+     no doc, define papergroup, convert papergroup to singles pages?
+     orient viewport to paper
+     snap other papers to various boxes
+     double click to edit paper details
+     in spread editor <--better to combine spread editor and view window?
+     more versatile size control per paper
+     edit window? should be edit on screen....
+        Name:  default single letter
+        Paper: Letter, 8.5/11, landscape
+        Box: Media [v]   Box: Clip [v]
+                            [ ] None
+           0 0 8.5 11       X: 0   Y: 0
+                          W: 8.5 H: 11
+        [delete paper type][new paper type]
+     DONE  arrow to indicate paper top direction
+     DONE  create new
+     DONE  save/load
+     DONE  delete old
+     DONE  menu options for paper groups, via the right click in paper tiler interface
+
+
+from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
+     gets the focus when autofocused.
+
+
+----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
+
+text window controls have difficulties
+
+finish implementing all options for reimpose function
+
+overwrite should return to file dialog if no
+
+Finish implementing project based setup, particularly being able to save a project, not just load one   
+    need option to choose midstream to save as project, or individual documents
+    DONE separate project->filename from project directory, in case you just want a
+            convenient project file floating around without the whole mess of a project directory..
+            either that, or zip up the project directory inside the "project file"..
+    collect for out type of option
+    finish generic style edit window for quick dialog creation
+    need to puzzle out decent way to build dialogs, maybe have dialog building hints embedded in the styledefs
+    (temp) iron out what happens on ^s and ^+s, and where docs get saved: with project or otherwise
+     New Proj:
+       DONE  must create Project Directory...
+       DONE  new documents should default to saving in that directory
+       TEST if file is in project dir, then path is saved relative, else is absolute
+       saving not saving windows properly
+       Always copy outside files to project directory
+       [help] ---> pop up brief explanation of what a project entails
+     Load/Save: (mixed documents and projects)
+       DONE  open as copy button (just like templates)
+       DONE  [Open][Open as a Copy]
+       preview laidout Doc and Project files: show some info about them...
+         Project: Some_Project.laidout, 1 day old
+         Project: Someotherproject,     5 days old
+         Document: Some Doc
+         Document: Some other doc
+       remember this many recent: __20__
+
+
+When importing from an image list file, should be able to say if and when to auto-make previews
+    new option in file, should be easy
+
+mystery data enhancement: import as placeholder objects: if convertible to laidout elements, do not actually
+                expose them as such. Keep source in external location, current laidout only rearranges.
+                  ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
+                  ---> this is useful to have a standard object indicator built from laidout objects, but
+                         do not let them be editable
+
+need laidout import
+
+need to implement more options for polyhedron connections, to allow mobius strips...
+
+NetImposition needs import/export net,
+    DONE  import 3-d models such as from OFF files
+    DONE gui for above -> select file in creation dialog
+    export svg
+    convert to/from laidout elements
+    import obj files
+
+ImageImport dialog: (actually, needs a total redesign)
+  DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
+  Choose/Review tabbed window
+  horizontal stack frame between choose/review and preview window
+  fancier path selector
+  for preview field, show green or something and change tooltip if preview will get generated
+  click on file to preview file, preview to preview preview
+  generate image previews progress box...
+  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
+  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
+
+
+really should have option to separate or merge resources when multiple documents open, rather than
+always merge?
+
+papersizes are not translated. Should they be??
+
+bleeding mechanism should be functional
 
 >show
 Laidout:
@@ -150,81 +277,6 @@ how best to integrate Styles, Attributes, and Values??? style types:
 -->Styles are Values that can be cascaded from other Styles
    Values cannot be cascaded
 
-
-Finish implementing project based setup, particularly being able to save a project, not just load one   
-    need option to choose midstream to save as project, or individual documents
-    DONE separate project->filename from project directory, in case you just want a
-            convenient project file floating around without the whole mess of a project directory..
-            either that, or zip up the project directory inside the "project file"..
-    collect for out type of option
-    finish generic style edit window for quick dialog creation
-    need to puzzle out decent way to build dialogs, maybe have dialog building hints embedded in the styledefs
-    (temp) iron out what happens on ^s and ^+s, and where docs get saved: with project or otherwise
-     New Proj:
-       DONE  must create Project Directory...
-       DONE  new documents should default to saving in that directory
-       TEST if file is in project dir, then path is saved relative, else is absolute
-       saving not saving windows properly
-       Always copy outside files to project directory
-       [help] ---> pop up brief explanation of what a project entails
-     Load/Save: (mixed documents and projects)
-       DONE  open as copy button (just like templates)
-       DONE  [Open][Open as a Copy]
-       preview laidout Doc and Project files: show some info about them...
-         Project: Some_Project.laidout, 1 day old
-         Project: Someotherproject,     5 days old
-         Document: Some Doc
-         Document: Some other doc
-       remember this many recent: __20__
-
-
-import config generic things like enum keepmystery should be parsed when no import config given!!
-
-need laidout import
-
-need to implement more options for polyhedron connections, to allow mobius strips...
-
-NetImposition needs import/export net,
-    DONE  import 3-d models such as from OFF files
-    DONE gui for above -> select file in creation dialog
-    export svg
-    convert to/from laidout elements
-    import obj files
-
-
-should have easy way to save as a template
-
-when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
-
-saving when net is internal is not proper.. does not distinguish between diff. nets and whole
-
-> laidout blah.laidout...     <-- if starting like this, if blah.laidout does not exist, then abort
-> laidout 1.laidout 2.laidout <-- if starting like this, if either exist, then start up, but have 
-                                    warning message that one document failed to load?
-
-textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
-either that, or do away with whole project/document difference, and use only 
-projects with their own directory, and projects without their own directory
-                                    
-text window controls have difficulties
-
-When importing from an image list file, should be able to say if and when to auto-make previews
-    new option in file, should be easy
-
-finish implementing all options for reimpose function
-
-overwrite should return to file dialog if no
-
-more bash like features for command pane
-
-Fix multi-object selection move when crossing page boundaries
-    sets
-
-scribus in/out: master pages, font sizes, stroke widths
-
-Vertical ruler still sucks. make it not suck!! Horizontal kind of sucks too.
-
-maybe page should have a basic group base, not the layers thing, which adds unnecessary complication
 
 Tools should remember their settings
     figure out which settings need to be remembered, and install as resource.. what happens when diff
@@ -266,12 +318,6 @@ Image import chain:
   4. jpg, png, gif, tiff: Imlib2
 
 
-mystery data enhancement: import as placeholder objects: if convertible to laidout elements, do not actually
-                expose them as such. Keep source in external location, current laidout only rearranges.
-                  ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
-                  ---> this is useful to have a standard object indicator built from laidout objects, but
-                         do not let them be editable
-
 global resources:
   current frame/time
   current language, for conditional text
@@ -283,8 +329,30 @@ external tools:
   plain text editor (gvim, console vim, command, etc)
   associate (object type) <-> (external editor)
 
-PathInterface must be drastically improved, and bez part should have segment move like inkscape
-    finish new path/pathoperator/pathsubinterface/pathinterface structure
+> laidout blah.laidout...     <-- if starting like this, if blah.laidout does not exist, then abort
+> laidout 1.laidout 2.laidout <-- if starting like this, if either exist, then start up, but have 
+                                    warning message that one document failed to load?
+	-> could have a cosumable interface? show a message until the box is clicked on, then it removes itself?
+
+textobjects,limbos,papergroups should maybe be able to be stored per document, not just file, project, or temp
+either that, or do away with whole project/document difference, and use only 
+projects with their own directory, and projects without their own directory
+                                    
+more bash like features for command pane
+
+integration of page label gui with spreadeditor, select pages, pop up the dialog?
+
+Selected region out to image(s), regions optionally remembered
+    rectangle or path?
+
+import/export styledefs should use the extendsdef mechanism!!!
+
+optimize pdf especially... too much duplication!!
+
+Soup up the color box so one can recall previous colors, and/or integration with palette window
+    -->delay until proper color implementation in place
+
+plain text edit window specify interpreter to process the text with
 
 filters:
   svg out: radial:transparent inner circle, patch
@@ -305,71 +373,7 @@ all at once imposition... this would allow mapping of scribus layout without fus
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
 
-double click on group should change selection area to group contents?
-    need to clarify how grouping operates. Perhaps implement sets at same time
-    clearCurobj() with skim to group for group->double click?
 
-
-ImageImport dialog:
-  DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
-  Choose/Review tabbed window
-  horizontal stack frame between choose/review and preview window
-  fancier path selector
-  for preview field, show green or something and change tooltip if preview will get generated
-  click on file to preview file, preview to preview preview
-  generate image previews progress box...
-  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
-  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
-
-
-Load, save, add, delete paper groups
-   papergroups:
-    work out scheme for resource ownership: they can be owned by:
-      1.DONE  Document: if no project, save with document by default
-      2.DONE  Project:  save in project file
-      3.or Global resource: save in ~/.laidout/version/papergroups
-          class FileRef 
-        papergroup->owner=Document, Project, or FileRef
-   paperinterface:
-     no doc, define papergroup, convert papergroup to singles pages?
-     orient viewport to paper
-     snap other papers to various boxes
-     double click to edit paper details
-     in spread editor <--better to combine spread editor and view window?
-     more versatile size control per paper
-     edit window? should be edit on screen....
-        Name:  default single letter
-        Paper: Letter, 8.5/11, landscape
-        Box: Media [v]   Box: Clip [v]
-                            [ ] None
-           0 0 8.5 11       X: 0   Y: 0
-                          W: 8.5 H: 11
-        [delete paper type][new paper type]
-     DONE  arrow to indicate paper top direction
-     DONE  create new
-     DONE  save/load
-     DONE  delete old
-     DONE  menu options for paper groups, via the right click in paper tiler interface
-
-
-optimize pdf especially... too much duplication!!
-
-Soup up the color box so one can recall previous colors, and/or integration with palette window
-    -->delay until proper color implementation in place
-
-plain text edit window specify interpreter to process the text with
-
-Gui for modifying Page Labels
-    integration with spreadeditor, select pages, pop up the dialog
-
-Selected region out to image(s), regions optionally remembered
-    rectangle or path?
-
-import/export styledefs should use the extendsdef mechanism!!!
-
-from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
-     gets the focus when autofocused.
 
 
 ===================Anything below here probably needs discussion before implementing================
@@ -423,7 +427,6 @@ Laidout file preview: give a few relevant info bits, by parsing only part of the
 
 object selection:
  shift on a selected object should remove that object from selection
- rect-dragout follows page matrix, which could be confusing...
  would be nice to show what would be selected during rect-dragout
 change object that is part of group object does not force remap of bbox of group
 
@@ -572,4 +575,10 @@ DONE from laxkit: related to focus handling: clean up pop up menus which current
 	--> menus now delete when clicking elsewhere
 
 DONE debug pagerangeinterface shifting ranges
+
+DONE object tool click on page/paper/limbo should immediately reflect new zone
+
+DONE Gui for modifying Page Labels
+
+DONE (sort of, via small text) Vertical ruler still sucks. make it not suck!! Horizontal kind of sucks too.
 

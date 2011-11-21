@@ -115,7 +115,7 @@ int LittleSpread::pointin(flatpoint pp,int pin)
 		pp=transform_point(i,pp); //makes point in littlespread coords
 		c=spread->path->pointin(pp,1);
 		if (pin==1 || c==0) return c;
-		for (c=0; c<spread->pagestack.n; c++) {
+		for (c=0; c<spread->pagestack.n(); c++) {
 			if (spread->pagestack.e[c]->outline->pointin(pp,1)) 
 				return c+1;
 		}
@@ -637,7 +637,7 @@ int SpreadView::Update(Document *doc)
 	Spread *spread;
 	for (c=0; c<spreads.n; c++) {
 		spread=spreads.e[c]->spread;
-		for (int c2=0; c2<spread->pagestack.n; c2++) {
+		for (int c2=0; c2<spread->pagestack.n(); c2++) {
 			if (SpreadOfPage(spread->pagestack.e[c2]->index,NULL,1)) { 
 				//page is in a thread
 				spread->pagestack.e[c2]->index=-1;

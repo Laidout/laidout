@@ -85,8 +85,10 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 {
 	DBG cerr <<"GroupInterface::LBDown..."<<endl;
 	int c=ObjectInterface::LBDown(x,y,state,count,mouse);
-	if (count==2 && selection.n==1 && strcmp(selection.e[0]->whattype(),"Group")) {
-		if (viewport) viewport->ChangeObject(selection.e[0],NULL);
+
+	if (count==2 && selection.n==1 && strcmp(selection.e[0]->obj->whattype(),"Group")) {
+		 //double click to switch to more specific tool
+		if (viewport) viewport->ChangeObject(selection.e[0],1);
 	}
 	return c;
 }
@@ -112,7 +114,7 @@ int GroupInterface::ToggleGroup()
 	int error=0;
 	Group *base=NULL;
 	FieldPlace place;
-	if (!((LaidoutViewport *)viewport)->locateObject(selection.e[0],place)) {
+	if (!((LaidoutViewport *)viewport)->locateObject(selection.e[0]->obj,place)) {
 		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
 		return 0;
 	} 
@@ -143,7 +145,7 @@ int GroupInterface::ToggleGroup()
 		 // a single Group is selected, ungroup its objects...
 		 // or there is a single object that is not a Group, should have option to
 		 // force a group of one object maybe..
-		if (strcmp(selection.e[0]->whattype(),"Group")) {
+		if (strcmp(selection.e[0]->obj->whattype(),"Group")) {
 			viewport->postmessage("Cannot group single objects like that.");
 			return 1;
 		}
@@ -185,7 +187,7 @@ int GroupInterface::ToggleGroup()
 	LaidoutViewport *vp=((LaidoutViewport *)viewport);
 	list.push(place.pop()); //remove top index from place, which was selection[0]
 	for (int c=1; c<selection.n; c++) {
-		vp->locateObject(selection.e[c],place1);
+		vp->locateObject(selection.e[c]->obj,place1);
 		list.pushnodup(place1.pop());
 		if (!(place1==place)) {
 			viewport->postmessage("Items must all be at same level to group.");

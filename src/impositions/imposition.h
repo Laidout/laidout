@@ -58,6 +58,17 @@ class PageLocation
 #define SPREAD_MAXIMUM          (1<<9)
 #define SPREAD_PAGES            (1<<10)
 
+class PageLocationStack : public Laxkit::PtrStack<PageLocation>, public ObjectContainer
+{
+  public:
+	PageLocationStack() {}
+	virtual ~PageLocationStack() {}
+	virtual int n() { return Laxkit::PtrStack<PageLocation>::n; }
+	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<Laxkit::PtrStack<PageLocation>::n) return e[i]->page; return NULL; }
+	virtual const char *object_e_name(int i) { return NULL; }
+	virtual const double *object_transform(int i) {  if (i>=0 && i<Laxkit::PtrStack<PageLocation>::n) return e[i]->outline->m(); return NULL; }
+};
+
 class Spread : public ObjectContainer
 {
  public:
@@ -66,20 +77,24 @@ class Spread : public ObjectContainer
 	int spreadtype;
 
 	PaperGroup *papergroup;
-	LaxInterfaces::SomeData *path;
-	LaxInterfaces::SomeData *marks;
+
 	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor
+	LaxInterfaces::SomeData *path;
+	LaxInterfaces::SomeData *marks; //automatic objects for the spread
+	//Group spreadobjects; // for custom objects not on a page, or other imposition specific objects
 	
-	Laxkit::PtrStack<PageLocation> pagestack;
-	//Group spreadobjects; *** for paper objects not on a page, or other imposition specific objects
+	PageLocationStack pagestack;
 
 	Spread();
 	virtual ~Spread();
 	virtual int *pagesFromSpread();
 	virtual char *pagesFromSpreadDesc(Document *doc);
-	virtual int n() { return pagestack.n; }
-	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<pagestack.n) return pagestack.e[i]->page; return NULL; }
 	virtual int PagestackIndex(int docpage);
+
+	virtual int n();
+	virtual Laxkit::anObject *object_e(int i);
+	virtual const char *object_e_name(int i);
+	virtual const double *object_transform(int i);
 };
 
 
@@ -93,7 +108,7 @@ class Imposition : public Style
 	Document *doc;
 	PaperGroup *papergroup;
 	PaperBox *paper;
-	
+
 	Imposition(const char *nsname);
 	virtual ~Imposition();
 	virtual Style *duplicate(Style *s=NULL);
