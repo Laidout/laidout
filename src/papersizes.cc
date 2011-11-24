@@ -558,6 +558,7 @@ PaperGroup::PaperGroup()
 	locked=0;
 	name=Name=NULL;
 	owner=NULL;
+	obj_flags|=OBJ_Zone|OBJ_Unselectable;
 
 	DBG cerr <<"PaperGroup created, obj "<<object_id<<endl;
 }
@@ -570,6 +571,7 @@ PaperGroup::PaperGroup(PaperStyle *paperstyle)
 	locked=0;
 	name=Name=NULL;
 	owner=NULL;
+	obj_flags|=OBJ_Zone|OBJ_Unselectable;
 
 	PaperBox *box=new PaperBox(paperstyle);
 	PaperBoxData *data=new PaperBoxData(box);
@@ -588,6 +590,7 @@ PaperGroup::PaperGroup(PaperBoxData *boxdata)
 	locked=0;
 	name=Name=NULL;
 	owner=NULL;
+	obj_flags|=OBJ_Zone|OBJ_Unselectable;
 
 	papers.push(boxdata);
 

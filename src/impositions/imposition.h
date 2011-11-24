@@ -61,7 +61,7 @@ class PageLocation
 class PageLocationStack : public Laxkit::PtrStack<PageLocation>, public ObjectContainer
 {
   public:
-	PageLocationStack() {}
+	PageLocationStack() { obj_flags|=OBJ_Unselectable|OBJ_Zone; }
 	virtual ~PageLocationStack() {}
 	virtual int n() { return Laxkit::PtrStack<PageLocation>::n; }
 	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<Laxkit::PtrStack<PageLocation>::n) return e[i]->page; return NULL; }

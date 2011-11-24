@@ -167,6 +167,7 @@ Spread::Spread()
 	spreadtype=0;
 	style=0;
 	path=marks=NULL;
+	obj_flags|=OBJ_Unselectable|OBJ_Zone;
 }
 
 //! Dec count of path and marks.
