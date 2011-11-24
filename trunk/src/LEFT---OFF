@@ -8,6 +8,13 @@ Those are purged with each release.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
+default papergroup should be red, and should not be part of spread->path
+scale invariant point not working... always using origin
+DONE area select not working
+control-lbdown near edge selects the resize, not put new point
+
+shrink image lets you go immeasurably small
+
 fix memory holes
 
 pixels units should be set as per document dpi
@@ -18,7 +25,7 @@ spread flipper tabloid tiled not paging paper layouts properly
 
 paper group tool seems messed up, especially in spread editor
 
-fold indicator foldprogress at crossover points incorrectly indicating affected folds
+fold indicator foldprogress just at crossover points incorrectly indicating affected folds
 
 refcounting crashing error with nets upon edit current document settings
 
@@ -32,8 +39,6 @@ file previewer not updating preview when using arrow keys
 click open or save, dialog comes up, but buttons permanently dark gray now, no matter how mouse hovering
 
 net extra scaling non-functional
-
-object move to diff page makes object tool handles jump to improper location.. not updating context transform?
 
 need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
 from parameters for all filters....
@@ -60,36 +65,19 @@ pane swapping/dropto on maximized, swapping in general...
 
 WATCH OUT for when preview file is OLDER than original file!!
 
-Transfer groups to limbo does something funky
-
 select region by intersect, not by corner inclusion...
-
-bounding box on move still messed up..
-
-moving objects does screwy things with rectdata when crossing page boundaries
-need to change GroupInterface to determine contexts, then recompute bounds
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
-update translations
 check laidout.1 when time to release
 update docs to have new release number
 test each window type to avoid crashy hangups, like about window from .091!!!!
 
 Scribus import:
   import must support master pages
-  import should support PageRange <-> Section conversion
+  DONE import should support PageRange <-> Section conversion
   import should try to apply the Scribus layout correctly, at least for 2 page spreads
   import should do something meaningful with original Scribus page bleed values
-
-Spread Editor:
-  insert blanks
-  delete pages, the other right click menu options
-  Insert page before
-  Insert page after
-  Insert pages...  <- on screen indicator for number of pages to add before or after
-  modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
-  background preview rendering for spreadeditor
 
 sig editor:
   needs testing: command line func parser for sigs
@@ -102,10 +90,8 @@ impose-only needs setting page number so as to export and possibly spawn podofoi
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
 	feed it an ExportConfig
 
-changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
- need infrastructure to propagate and save tool settings
-
-implement cut marks and other custom printer marks!!!
+implement auto cut marks
+implement custom printer marks exporting!!
 
 Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
 will likely be very different
@@ -116,8 +102,6 @@ import config generic things like enum keepmystery should be parsed when no impo
 
 should have easy way to save as a template
 
-when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
-
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
 Fix multi-object selection move when crossing page boundaries
@@ -127,10 +111,6 @@ scribus in/out: master pages, font sizes, stroke widths
 
 PathInterface must be drastically improved, and bez part should have segment move like inkscape
     finish new path/pathoperator/pathsubinterface/pathinterface structure
-
-double click on group should change selection area to group contents?
-    need to clarify how grouping operates. Perhaps implement sets at same time
-    clearCurobj() with skim to group for group->double click?
 
 
 Load, save, add, delete paper groups
@@ -169,12 +149,31 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
+update translations
+
+Spread Editor:
+  insert blanks
+  delete pages, the other right click menu options
+  Insert page before
+  Insert page after
+  Insert pages...  <- on screen indicator for number of pages to add before or after
+  modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+  background preview rendering for spreadeditor
+
+when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
+
+changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
+ need infrastructure to propagate and save tool settings
 
 text window controls have difficulties
 
 finish implementing all options for reimpose function
 
 overwrite should return to file dialog if no
+
+double click on group should change selection area to group contents?
+    need to clarify how grouping operates. Perhaps implement sets at same time
+    clearCurobj() with skim to group for group->double click?
 
 Finish implementing project based setup, particularly being able to save a project, not just load one   
     need option to choose midstream to save as project, or individual documents
@@ -553,7 +552,7 @@ NetImposition:
 
 
 ======================================DONE=================================================
-When releasing new version, combine these with the ROADMAP item for release notes.
+When releasing new version, combine these with ROADMAP items for release notes.
 These can then be purged after each release...
 ===========================================================================================
 
@@ -581,4 +580,9 @@ DONE object tool click on page/paper/limbo should immediately reflect new zone
 DONE Gui for modifying Page Labels
 
 DONE (sort of, via small text) Vertical ruler still sucks. make it not suck!! Horizontal kind of sucks too.
+
+DONE moving objects does screwy things with rectdata when crossing page boundaries
+     need to change GroupInterface to determine contexts, then recompute bounds
+
+DONE bounding box on move still messed up..
 

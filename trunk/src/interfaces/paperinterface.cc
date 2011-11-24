@@ -17,7 +17,8 @@
 
 #include "../language.h"
 #include "paperinterface.h"
-#include "viewwindow.h"
+#include "../viewwindow.h"
+#include "../drawdata.h"
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
@@ -457,6 +458,12 @@ void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arro
 		DrawPaper(group->papers.e[c],drawwhat, fill,0,arrow);
 		dp->PopAxes(); 
 	}
+
+	if (group->objs.n()) {
+		for (int c=0; c<group->objs.n(); c++) {
+			::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+		}
+	}
 }
 
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
@@ -557,7 +564,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
 	mx=x; my=y;
-	flatpoint fp=dp->screentoreal(x,y);
+	//flatpoint fp=dp->screentoreal(x,y);
 	int over=scan(x,y);
 	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
 		//add a new box

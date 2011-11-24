@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2007 by Tom Lechner
+// Copyright (C) 2005-2007,2009-2011 by Tom Lechner
 //
 #ifndef GROUPINTERFACE_H
 #define GROUPINTERFACE_H
@@ -28,6 +28,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 {
   protected:
   public:
+	void TransformSelection(const double *N);// *****
+
 	GroupInterface(int nid,Laxkit::Displayer *ndp);
 	virtual ~GroupInterface();
 	//virtual const char *whattype() { return "ObjectInterface"; }
@@ -37,9 +39,6 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual int draws(const char *atype);
 
 	virtual int LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse);
-	//virtual int DrawData(anObject *ndata,anObject *a1,anObject *a2,int);
-	//virtual int AddToSelection(ObjectContext *oc);
-	//virtual int FreeSelection();
 	virtual int GrabSelection(unsigned int state);
 	virtual int ToggleGroup();
 };

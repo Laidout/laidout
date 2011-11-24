@@ -813,18 +813,38 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"moveto")) {
-		DBG cerr << " *** need to imp moveto!!!"<<endl;
-
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
-		int i=s->info2;
+		 //Move current object to a different context
+		int i=s->info2, i2=s->info4;
 
+		VObjContext dest;
 		if (i==MOVETO_Limbo) {
+
 		} else if (i==MOVETO_Spread) {
+			dest.push(0);
+
 		} else if (i==MOVETO_Page) {
+			if (spread && spread->pagestack.n()>i2 && i2>=0) {
+				dest.push(1);  //spread
+				dest.push(0);  //pages
+				dest.push(i2); //page
+				dest.push(0);  //layer
+			}
+
         } else if (i==MOVETO_PaperGroup) {
+			if (papergroup) {
+				dest.push(2);
+			}
         } else if (i==MOVETO_OtherPage) {
+			//Move object to document page index i2, centered on page.
+			//Then change view to that page?
 		}
+		if (!dest.context.n()) return 0;
+
+		// ***int new_context_index=MoveObject(&curobj, &dest, 1);
+		// clear current interfaces or send object tree change message
+		// laidout->notifyDocTreeChanged(NULL,TreeObjectDiffPage,0,0);
 
 		return 0;
 	}
@@ -1342,6 +1362,8 @@ int LaidoutViewport::FindObject(int x,int y,
 /*! Return value is the number of objects found. If none, then date_ret and c_ret 
  * are set to NULL.
  *
+ * The returned object contexts must be delete'd.
+ *
  * \todo *** this needs more thought, as does FindObject(), need to implement checking
  *   of permissions for selecting objects, zones, and rect touching/inside. Also, would
  *   be nice to have a lasso selector.
@@ -1379,13 +1401,14 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 	PtrStack<VObjContext> objects;
 	do {
 		 //find transform from nextindex coords
-		transformToContext(m,nextindex.context,1,-1);
-		transform_mult(mm,m,nextindex.obj->m());
+		transformToContext(mm,nextindex.context,0,-1);
 
 		DBG cerr <<"lov.FindObject oc: "; nextindex.context.out("");
 		DBG	if (nextindex.obj) cerr <<nextindex.obj->object_id<<" ("<<nextindex.obj->whattype()<<") "<<endl;
 
 		if (box->intersect(mm,nextindex.obj,1,0)) {
+			// *** 1st approximation of intersection! maybe now check for actual touching?
+
 			 // matching object found! add to list that gets returned
 			DBG cerr <<" -- found"<<endl;
 			if (!foundobj.obj) foundobj=nextindex;
@@ -1399,8 +1422,8 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 		}
 		nob=nextObject(&nextindex);
 	} while (nob);
-	 
-	int n;
+
+	int n=0;
 	if (c_ret) *c_ret=(ObjectContext **)objects.extractArrays(NULL,&n);
 	if (data_ret) *data_ret=NULL;
 	
@@ -1855,9 +1878,9 @@ int LaidoutViewport::isDefaultPapergroup()
  *   then check internals some how.. means intersection arbitrary non-convex polygons... something
  *   of the kind will be necessary eventually anyway to compute runaround.
  */
-LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMove(LaxInterfaces::ObjectContext *oc, int modifyoc)
+LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::ObjectContext *oc, int modifyoc)
 {
-	DBG cerr <<"ObjectMove "<<oc->obj->object_id<<": ";
+	DBG cerr <<"ObjectMoved "<<oc->obj->object_id<<": ";
 	DBG curobj.context.out(NULL);
 	
 	if (!oc || !oc->obj) return NULL;
@@ -1899,12 +1922,16 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMove(LaxInterfaces::ObjectC
 	DoubleBBox bbox,bbox2;
 	SomeData *outline;
 	int i=-1;
+	double m[6],mm[6],mmm[6];
+
+	 // If is on a page, check whether page still contains curobj
 	if (curobj.spreadpage()>=0) { // is on a page layer
-		 // check whether containing page still contains curobj
 		i=curobj.spreadpage();
 		outline=spread->pagestack.e[i]->outline;
-		bbox.setbounds(outline);
-		bbox2.addtobounds(curobj.obj->m(),curobj.obj);
+		bbox.addtobounds(outline->m(),outline);
+
+		transformToContext(m,curobj.context,0,-1);
+		bbox2.addtobounds(m,curobj.obj);
 		if (bbox.intersect(&bbox2)) {
 			DBG cerr <<"  still on page"<<endl;
 			return NULL; //still on page
@@ -1916,7 +1943,6 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMove(LaxInterfaces::ObjectC
 	VObjContext destcontext;
 	 
 	 //First, search for some page for the object to be in
-	double m[6],mm[6],mmm[6];
 	if (spread) {
 		for (int c=0; c<spread->pagestack.n(); c++) {
 			if (c==i) continue; // don't check current page again!
@@ -1924,8 +1950,9 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMove(LaxInterfaces::ObjectC
 			outline=spread->pagestack.e[c]->outline;
 			bbox.clear();
 			bbox.addtobounds(outline->m(),outline);
-			transformToContext(m,curobj.context,0,curobj.context.n()-1);
-			transform_mult(mm,curobj.obj->m(),m);
+			transformToContext(mm,curobj.context,0,-1);
+			//transformToContext(m,curobj.context,0,curobj.context.n()-1);
+			//transform_mult(mm,curobj.obj->m(),m);
 			bbox2.clear();
 			bbox2.addtobounds(mm,curobj.obj);
 			if (bbox.intersect(&bbox2)) {
@@ -1967,17 +1994,24 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMove(LaxInterfaces::ObjectC
 	
 	 // pop from old place 
 	Group *orig=dynamic_cast<Group*>(getanObject(curobj.context,0,curobj.context.n()-1));
-	if (!orig || orig==destgroup) return NULL; //just in case
+	if (orig==destgroup) return NULL; //just in case
+	if (!orig && curobj.spread()==2) orig=&papergroup->objs;
+	if (!orig) return NULL;
+
+	transformToContext(mm,curobj.context,0,-1); //full transform from old object to base view
 
 	orig->popp(d);
 	i=destgroup->push(d);
 	d->dec_count();
 
-	transformToContext(mm,curobj.context,0,-1); //full transform from old context to base view
 	transformToContext(mmm,destcontext.context,1,-1); //trans from view to new curobj place
-	transform_mult(m,mm,mmm);
+	transform_mult(m,mm,mmm); //compute new object transform
+	//transform_mult(m,mmm,mm);
 	d->m(m);
+
+	DBG cerr <<"=========NEW MATRIX: "; dumpctm(d->m());
 	destcontext.push(i);
+	destcontext.SetObject(d);
 
 	setCurobj(&destcontext);
 
@@ -1986,9 +2020,16 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMove(LaxInterfaces::ObjectC
 	needtodraw=1;
 
 	if (!modifyoc) return new VObjContext(destcontext);
-
-	*oc=destcontext;
+	
+	VObjContext *noc=dynamic_cast<VObjContext*>(oc);
+	*noc=destcontext;
 	return oc;
+}
+
+LaxInterfaces::ObjectContext *LaidoutViewport::MoveObject(LaxInterfaces::ObjectContext *from,
+														  LaxInterfaces::ObjectContext *to, int modifyoc)
+{
+	return NULL;
 }
 
 //! Zoom and center various things on the screen
@@ -2117,13 +2158,14 @@ void LaidoutViewport::Refresh()
 	if (drawflags&DRAW_AXES) dp->drawaxes();
 	int c,c2;
 
-	 // draw page outline..
-	 //*** different modes: 
-	 //		pagelayout <-- only does this now
-	 //		paperlayout <-- this has other printer marks...
-	 //		single page
-	 //		whatever <-- doesn't draw page outline.. is just big whiteboard
+
 	dp->Updates(0);
+
+	 // draw limbo objects
+	DBG cerr <<"drawing limbo objects.."<<endl;
+	for (c=0; c<limbo->n(); c++) {
+		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
+	}
 
 	 //draw papergroup
 	DBG cerr <<"drawing viewport->papergroup.."<<endl;
@@ -2133,16 +2175,10 @@ void LaidoutViewport::Refresh()
 		if (pi) pi->DrawGroup(papergroup,1,1,0);
 	}
 	
-	 // draw limbo objects
-	DBG cerr <<"drawing limbo objects.."<<endl;
-	for (c=0; c<limbo->n(); c++) {
-		DrawData(dp,limbo->e(c),NULL,NULL,drawflags);
-	}
-	
 	DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
 		dp->BlendMode(GXcopy);
-		
+
 //		 //draw the spread's papergroup *** done above
 //		PaperGroup *pgrp=NULL;
 //		if (!pgrp) pgrp=spread->papergroup;
@@ -2221,13 +2257,13 @@ void LaidoutViewport::Refresh()
 			}
 			
 			 //*** debuggging: draw X over whole page...
-	//		dp->NewFG(255,0,0);
-	//		dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->miny));
-	//		dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->maxx,sd->maxy));
-	//		dp->drawrline(flatpoint(sd->maxx,sd->maxy), flatpoint(sd->minx,sd->maxy));
-	//		dp->drawrline(flatpoint(sd->minx,sd->maxy), flatpoint(sd->minx,sd->miny));
-	//		dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->maxy));
-	//		dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->minx,sd->maxy));
+	//		DBG dp->NewFG(255,0,0);
+	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->miny));
+	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->maxx,sd->maxy));
+	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->maxy), flatpoint(sd->minx,sd->maxy));
+	//		DBG dp->drawrline(flatpoint(sd->minx,sd->maxy), flatpoint(sd->minx,sd->miny));
+	//		DBG dp->drawrline(flatpoint(sd->minx,sd->miny), flatpoint(sd->maxx,sd->maxy));
+	//		DBG dp->drawrline(flatpoint(sd->maxx,sd->miny), flatpoint(sd->minx,sd->maxy));
 	
 			 // write page number near the page..
 			 // mostly for debugging at the moment, might be useful to have
@@ -4062,6 +4098,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 				SelectTool(tools.e[c]->id);
 				((ObjectInterface*)tools.e[c])->AddToSelection(&((LaidoutViewport*)viewport)->curobj);
 				updateContext(1);
+				break;
 			}
 		}
 		return 0;

@@ -62,7 +62,7 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2010\n"
+			"2004-2011\n"
 			"\n"
 			"so far coded entirely\n"
 			"by Tom Lechner,\n"

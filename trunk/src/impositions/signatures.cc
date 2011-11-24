@@ -680,6 +680,7 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%sup %s\n",spc,CtoStr(up));
 	if (positivex) fprintf(f,"%spositivex %s\n",spc,CtoStr(positivex));
 	if (positivey) fprintf(f,"%spositivey %s\n",spc,CtoStr(positivey));
+
 }
 
 void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
@@ -959,6 +960,7 @@ int Signature::locatePaperFromPage(int pagenumber, int *row, int *col)
 	DBG 	cerr << " *** could not find place "<<sigindex<<" in rr,cc"<<endl;
 	DBG 	exit(0);
 	DBG }
+	DBG cerr <<"front:"<<front<<endl;
 
 	 //now rr,cc is the cell that contains sigindex.
 	 //We must figure out how it maps to pieces of paper
@@ -1530,6 +1532,8 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
 			Signature sig;
 			sig.dump_out(f,indent,-1,NULL);
 		}
+		fprintf(f,"%smarks              #(optional) Custom printer marks (any drawing object) for the default paper group\n",spc);
+		fprintf(f,"%s  ...\n",spc);
 		return;
 	}
 
@@ -1537,6 +1541,12 @@ void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject 
 	papersize->dump_out(f,indent+2,what,context);
 	fprintf(f,"%sshowwholecover %s\n",spc,showwholecover?"yes":"no");
 	signature->dump_out(f,indent,what,context);
+
+	 //dump out printer marks
+	if (papergroup && papergroup->objs.n()) {
+		fprintf(f,"%smarks\n",spc);
+		papergroup->objs.dump_out(f,indent+2,0,context);
+	}
 }
 
 void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
@@ -1544,6 +1554,7 @@ void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit:
 	if (!signature) signature=new Signature;
 	char *name,*value;
 	PaperStyle ps;
+
 
 	for (int c=0; c<att->attributes.n; c++) {
 		name=att->attributes.e[c]->name;
@@ -1559,6 +1570,16 @@ void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit:
 	}
 	signature->dump_in_atts(att,flag,context);
 	SetPaperSize(&ps); //duplicates paper
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"marks")) {
+			papergroup->objs.dump_in_atts(att->attributes.e[c],flag,context);
+
+		}
+	}
 }
 
 
@@ -2114,8 +2135,8 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	
 	 //--- make the paper outline
 	PathsData *newpath=new PathsData();
-	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
-	newpath->FindBBox();
+	//newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
+	//newpath->FindBBox();
 	spread->path=(SomeData *)newpath;
 
 

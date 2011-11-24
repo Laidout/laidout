@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2007 by Tom Lechner
+// Copyright (C) 2005-2007,2009-2011 by Tom Lechner
 //
 
 #include <lax/transformmath.h>
@@ -32,6 +32,14 @@ using namespace Laxkit;
  * \brief Interface for selecting multiple things, grouping, and ungrouping.
  */
 
+
+void GroupInterface::TransformSelection(const double *N) 
+{
+	for (int c=0; c<selection.n; c++) {
+		DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection.e[c])->context.out(":");
+	}
+	ObjectInterface::TransformSelection(N);
+}
 
 
 GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
@@ -89,6 +97,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 	if (count==2 && selection.n==1 && strcmp(selection.e[0]->obj->whattype(),"Group")) {
 		 //double click to switch to more specific tool
 		if (viewport) viewport->ChangeObject(selection.e[0],1);
+		buttondown.clear();
 	}
 	return c;
 }
@@ -227,14 +236,13 @@ int GroupInterface::GrabSelection(unsigned int state)
 	if (!data) return 1;
 
 	DoubleBBox bbox;
-	bbox.addtobounds(transform_point(data->m(),data->minx,data->miny));
-	bbox.addtobounds(transform_point(data->m(),data->maxx,data->maxy));
+	bbox.addtobounds(data->m(),data);
 	
 	DBG cerr <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
 	DBG cerr <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
 	
-	int n;
-	VObjContext **objs;
+	int n=0;
+	VObjContext **objs=NULL;
 	n=viewport->FindObjects(&bbox,0,0,NULL,(ObjectContext ***)(&objs));
 
 	DBG if (n && !objs) cerr <<"*******ERROR! says found objects, but no objects returned."<<endl;
@@ -249,6 +257,7 @@ int GroupInterface::GrabSelection(unsigned int state)
 		DBG if (objs[c]) objs[c]->context.out("");
 
 		AddToSelection(objs[c]);
+		delete objs[c];
 	}
 	if (n==0) {
 		deletedata();
