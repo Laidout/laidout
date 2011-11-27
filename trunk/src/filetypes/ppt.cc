@@ -280,13 +280,15 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	const char *papersize=NULL, *landscape=NULL;
 	int c;
 	const char **tmp;
-	double paperwidth; //,paperheight;
+	//double paperwidth; //,paperheight;
+
 	 // note this is orientation for only the first paper in papergroup.
 	 // If there are more than one papers, this may not work as expected...
 	 // The ps Orientation comment determines how onscreen viewers will show 
 	 // pages. This can be overridden by the %%PageOrientation: comment
 	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?"true":"false";
-	paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+	//paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
+
 	 //match the first paper name with a passepartout paper name
 	for (c=0, tmp=pptpaper; *tmp; c++, tmp++) {
 		if (!strcmp(papergroup->papers.e[0]->box->paperstyle->name,*tmp)) break;
@@ -355,14 +357,18 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 				pptdumpobj(f,NULL,limbo,4);
 			}
 
+			if (papergroup->objs.n()) {
+				pptdumpobj(f,NULL,papergroup->objs.e(c3),6);
+			}
+
 			if (spread) {
-				// // print out printer marks
-				//if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
-				//	//fprintf(f," .01 setlinewidth\n");
-				//	//DBG cerr <<"marks data:\n";
-				//	//DBG spread->marks->dump_out(stderr,2,0);
-				//	pptdumpobj(f,m,spread->marks,4);
-				//}
+				 // print out printer marks
+				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
+					//fprintf(f," .01 setlinewidth\n");
+					//DBG cerr <<"marks data:\n";
+					//DBG spread->marks->dump_out(stderr,2,0);
+					pptdumpobj(f,m,spread->marks,4);
+				}
 				
 				 // for each page in spread..
 				for (c2=0; c2<spread->pagestack.n(); c2++) {
