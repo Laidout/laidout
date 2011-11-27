@@ -541,6 +541,11 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 				//	if (***inbounds) psdumpobj(f,limbo->e(l));
 				//}
 			}
+
+			if (papergroup && papergroup->objs.n()) {
+				psdumpobj(f,&papergroup->objs);
+			}
+
 			
 			if (spread) {
 				 // print out printer marks
@@ -755,6 +760,10 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		//}
 	}
 			
+	if (papergroup && papergroup->objs.n()) {
+		psdumpobj(f,&papergroup->objs);
+	}
+
 	if (spread) {
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
