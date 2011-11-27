@@ -621,6 +621,10 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
 					
+			if (papergroup->objs.n()) {
+				appendobjfordumping(pageobjects,&papergroup->objs);
+			}
+
 			if (limbo && limbo->n()) {
 				appendobjfordumping(pageobjects,limbo);
 			}
@@ -1661,7 +1665,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 	 //now scan for everything other than PAGE
 	int pageobjectcount=-1;
-	int onmasterpage,masterpageindex=-1;
+	int masterpageindex=-1;
 	Attribute *tmp=NULL;
 	PtrStack<PageRange> newranges;
 
@@ -1676,10 +1680,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			object=scribusdoc->attributes.e[c];
 			pageobjectcount++; //***should this increment for masterobjects too?
 
-			onmasterpage=0;
 			masterpageindex=-1;
 			if (!strcmp(name,"MASTEROBJECT")) {
-				onmasterpage=1;
 				tmp=object->find("OnMasterPage");
 				for (masterpageindex=0; masterpageindex<masterpages.n; masterpageindex++) {
 					if (!strcmp(tmp->value,masterpages.e[masterpageindex]->label)) break;
@@ -1822,7 +1824,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			 //  Type can be: Type_A_B_C, Type_a_b_c, Type_1_2_3, Type_I_II_III, Type_i_ii_iii, Type_None
 			Attribute *sub=scribusdoc->attributes.e[c]->find("content:");
 			if (sub) {
-				int num=-1, from=-1, to=-1, type=0, start=1, reversed=0, active=1;
+				int num=-1, from=-1, to=-1, type=0, start=1, reversed=0; //, active=1;
 				char *Name=NULL;
 				for (int c2=0; c2<sub->attributes.n; c2++) {
 					name =sub->attributes.e[c2]->name;
@@ -1854,7 +1856,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 							} else if (!strcmp(name,"Reversed")) {
 								reversed=BooleanAttribute(value);
 							} else if (!strcmp(name,"Active")) {
-								active=BooleanAttribute(value);
+								//active=BooleanAttribute(value);
 							}
 						}
 						newranges.push(new PageRange(Name,"#",type,from+docpagenum,to+docpagenum,start+docpagenum,reversed));

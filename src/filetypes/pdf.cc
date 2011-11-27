@@ -539,10 +539,15 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,limbo,*error_ret,warning);
 			}
 
+			 //write out any papergroup objects
+			if (papergroup->objs.n()) {
+				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,&papergroup->objs,*error_ret,warning);
+			}
+
 			if (spread) {
 				 // print out printer marks
 				 // *** later this will be more like pdf printer mark annotations
-				if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
+				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
 					pdfdumpobj(f,obj,stream,objcount,pageobj->resources,spread->marks,*error_ret,warning);
 				}
 				
@@ -941,10 +946,10 @@ static void pdfColorPatch(FILE *f,
 {
 	//---------generate shading source stream
 	int r,c,          // row and column of a patch, not of the coords, which are *3
-		rows,columns, // the number of patches
-		xs,ys;        //g->xsize and ysize
-	xs=g->xsize;
-	ys=g->ysize;
+		rows,columns; // the number of patches
+	//	xs,ys;        //g->xsize and ysize
+	//xs=g->xsize;
+	//ys=g->ysize;
 	rows=g->ysize/3;
 	columns=g->xsize/3;
 	r=0;
@@ -1216,8 +1221,8 @@ static void pdfImagePatch(FILE *f,
 
 	flatpoint ul=transform_point(psCTM(),flatpoint(i->minx,i->miny)),
 			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
-			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
-			  lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
+			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy));
+			  //lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
 	//DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
 	//DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
 	//DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;

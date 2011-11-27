@@ -613,6 +613,11 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		svgdumpdef(f,m,limbo,error_ret,warning);
 	}
 
+	if (papergroup->objs.n()) {
+		svgdumpdef(f,m,&papergroup->objs,error_ret,warning);
+	}
+
+
 	if (spread) {
 		if (spread->marks) svgdumpdef(f,m,spread->marks,error_ret,warning);
 
@@ -843,10 +848,10 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 		if (docpagenum<0) docpagenum=0;
 
 		 //preliminary start and end pages for the svg
-		int start,end;
-		if (in->instart<0) start=0; else start=in->instart;
-		if (in->inend<0) end=10000000; 
-			else end=in->inend;
+//		int start,end;
+//		if (in->instart<0) start=0; else start=in->instart;
+//		if (in->inend<0) end=10000000; 
+//			else end=in->inend;
 
 
 
