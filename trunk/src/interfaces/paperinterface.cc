@@ -74,13 +74,13 @@ PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	snapto=MediaBox;
 	editwhat=MediaBox;
 	drawwhat=MediaBox;
-	curbox=maybebox=NULL;
-	papergroup=NULL;
-	paperboxdata=NULL;
 	showdecs=0;
-	doc=NULL;
+
+	curbox=maybebox=NULL;
 
 	papergroup=NULL;
+	paperboxdata=NULL;
+	doc=NULL;
 }
 
 PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -89,13 +89,13 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	snapto=MediaBox;
 	editwhat=MediaBox;
 	drawwhat=MediaBox;
-	curbox=maybebox=NULL;
-	papergroup=NULL;
-	paperboxdata=NULL;
 	showdecs=0;
-	doc=NULL;
+
+	curbox=maybebox=NULL;
 
 	papergroup=NULL;
+	paperboxdata=NULL;
+	doc=NULL;
 }
 
 PaperInterface::~PaperInterface()
@@ -269,7 +269,7 @@ int PaperInterface::InterfaceOn()
 {
 	DBG cerr <<"paperinterfaceOn()"<<endl;
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
-	if (lvp) lvp->UseThisPaperGroup(papergroup);
+	if (lvp && papergroup) lvp->UseThisPaperGroup(papergroup);
 	showdecs=2;
 	needtodraw=1;
 	return 0;
@@ -316,17 +316,6 @@ void PaperInterface::Clear(SomeData *d)
 }
 
 	
-//----This interface, like Spread Editor, keeps everything to itself, so doesn't need:
-//int PaperInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask=0)
-//{
-//	return 0;
-//}
-//
-//int PaperInterface::DrawData(Laxkit::anObject *ndata,
-//			Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=0)
-//{***
-//}
-
 /*! This will be called by viewports, and the papers will be displayed opaque with
  * drop shadow.
  */
@@ -358,6 +347,7 @@ int PaperInterface::DrawDataDp(Laxkit::Displayer *tdp,SomeData *tdata,
 void PaperInterface::DrawPaper(PaperBoxData *data,int what,char fill,int shadow,char arrow)
 {
 	if (!data) return;
+
 	int w=1;
 	if (data==curbox || curboxes.findindex(data)>=0) w=2;
 	dp->LineAttributes(w,LineSolid,CapButt,JoinMiter);
@@ -478,9 +468,6 @@ int PaperInterface::Refresh()
 	// 1 draw with fill
 	// 2 draw without fill
 	if (showdecs) {
-		double m[6];
-		transform_copy(m,dp->m());
-		dp->PopAxes(); //remove transform to viewport context
 		PaperBox *box;
 		flatpoint p[4];
 		if (maybebox) {
@@ -498,8 +485,6 @@ int PaperInterface::Refresh()
 		if (!papergroup || !papergroup->papers.n) return 0;
 
 		DrawGroup(papergroup,0,showdecs==1?1:0,showdecs==2?1:0);
-
-		dp->PushAndNewTransform(m); //reinstall transform to viewport context
 	}
 
 	return 1;
@@ -564,26 +549,43 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
 	mx=x; my=y;
-	//flatpoint fp=dp->screentoreal(x,y);
+	DBG flatpoint fp;
+	DBG fp=dp->screentoreal(x,y);
+	DBG cerr <<"1 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+
 	int over=scan(x,y);
+
+	DBG fp=dp->screentoreal(x,y);
+	DBG cerr <<"2 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
 		//add a new box
 		if (!maybebox) createMaybebox(dp->screentoreal(x,y));
+
+		DBG fp=dp->screentoreal(x,y);
+		DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		if (!papergroup) {
 			papergroup=new PaperGroup;
 			papergroup->Name=new_paper_group_name();
 			laidout->project->papergroups.push(papergroup);
 			
+			DBG fp=dp->screentoreal(x,y);
+			DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 			if (lvp) lvp->UseThisPaperGroup(papergroup);
+
+			DBG fp=dp->screentoreal(x,y);
+			DBG cerr <<"5 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		}
 		over=papergroup->papers.push(maybebox);
+
 		maybebox->dec_count();
 		maybebox=NULL;
 		needtodraw=1;
 		//return 0; -- do not return, continue to let box be added..
 	}
 
+	DBG fp=dp->screentoreal(x,y);
+	DBG cerr <<"6 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if (over>=0) {
 		if (curbox) curbox->dec_count();
 		curbox=papergroup->papers.e[over];
@@ -592,7 +594,12 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		curboxes.pushnodup(curbox,0);
 		needtodraw=1;
 	}
+	DBG fp=dp->screentoreal(x,y);
+	DBG cerr <<"7 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+
 	lbdown=dp->screentoreal(x,y);
+	DBG fp=dp->screentoreal(x,y);
+	DBG cerr <<"8 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	return 0;
 }
@@ -601,6 +608,9 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 {
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 	buttondown.up(d->id,LEFTBUTTON);
+
+	DBG flatpoint fp=dp->screentoreal(x,y);
+	DBG cerr <<"9 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	//***
 	//if (curbox) { curbox->dec_count(); curbox=NULL; }
@@ -611,6 +621,9 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
+	DBG flatpoint fpp=dp->screentoreal(x,y);
+	DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
+
 	int over=scan(x,y);
 
 	DBG cerr <<"over box: "<<over<<endl;
@@ -724,6 +737,14 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	
+//	if (ch==' ') {
+//		if (!papergroup) papergroup=new PaperGroup;
+//		papergroup->AddPaper(8.5,11,-1,-1);
+//		needtodraw=1;
+//		return 0;
+//	}
+
 	if (ch==LAX_Shift) {
 		if (maybebox) return 0;
 		int x,y;
