@@ -7,10 +7,9 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.092
 -------------
-       Ability to add custom printer marks
-       Fix multi-object selection move when crossing page boundaries
-       SpreadEditor: insert blanks, delete pages, the other right click menu options
-       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
+(done) Fix broken paper tiling interface
+(done) Ability to add custom printer marks
+(done) Fix multi-object selection move when crossing page boundaries
 (done) Gui for modifying Page Labels
        Scribus import must support master pages
 (done) Scribus import/export should support PageRange <-> Section conversion on import
@@ -23,6 +22,8 @@ VERSION 0.092
 
 VERSION 0.093
 -------------
+       SpreadEditor: insert blanks, delete pages, the other right click menu options
+       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
        impose-only mode should allow access to all imposition types
        Masking, clip paths and/or softmask
