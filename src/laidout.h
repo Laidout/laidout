@@ -89,6 +89,7 @@ class LaidoutApp : public Laxkit::anXApp
 	int default_units;
 	char *unitname;
 	int pagedropshadow;
+	char *splash_image_file;
 
 
 	unsigned long curcolor;

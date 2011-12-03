@@ -256,6 +256,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	GetUnitManager()->DefaultUnits(unitname);
 	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
 
+	splash_image_file=NULL;
 }
 
 //! Destructor, only have to delete project!
@@ -621,6 +622,9 @@ int LaidoutApp::readinLaidoutDefaults()
 				delete[] fullname;
 			}
 			//default to config_dir/templates/default?
+
+		} else if (!strcmp(name,"splashimage")) {
+			makestr(splash_image_file,value);
 
 		} else if (!strcmp(name,"defaultpapersize")) {
 			makestr(defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc

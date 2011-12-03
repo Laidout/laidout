@@ -17,15 +17,18 @@
 #define ABOUT_H
 
 #include <lax/messagebox.h>
+#include <lax/laximages.h>
 
 class AboutWindow : public Laxkit::MessageBox
 {
  public:
+	Laxkit::LaxImage *splash;
  	AboutWindow();
-	virtual ~AboutWindow() {}
+	virtual ~AboutWindow();
  	virtual const char *whattype() { return "AboutWindow"; }
 	virtual int preinit();
 	virtual int init();
+	virtual void Refresh();
 	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
 
