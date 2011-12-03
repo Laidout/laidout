@@ -18,6 +18,7 @@
 #include <lax/button.h>
 #include <lax/version.h>
 
+#include "laidout.h"
 #include "about.h"
 #include "headwindow.h"
 #include "version.h"
@@ -40,6 +41,14 @@ AboutWindow::AboutWindow()
 	: MessageBox(NULL,"About",_("About"),ANXWIN_CENTER, 0,0,500,600,0, NULL,0,NULL, NULL)
 {
 	win_style|=ANXWIN_ESCAPABLE;
+
+	if (laidout->splash_image_file) splash=load_image(laidout->splash_image_file);
+	else splash=NULL;
+}
+
+AboutWindow::~AboutWindow()
+{
+	if (splash) splash->dec_count();
 }
 
 /*! The default MessageBox::init() sets m[1]=m[7]=BOX_SHOULD_WRAP, which is supposed 
@@ -55,10 +64,19 @@ int AboutWindow::preinit()
 	w(BOX_SHOULD_WRAP);
 	h(BOX_SHOULD_WRAP); //<-- this triggers a wrap in rowcol-figureDims
 
-	char *about=newstr(_(
-			"[pretend there is a splash logo here!]\n"
-			"\n"
-			"Laidout Version "));
+
+	if (splash) {
+		AddWin(NULL,0,
+				splash->w(),0,0,50,0,
+				splash->h(),0,0,50,0,
+				0);
+		AddNull(1);
+	}
+
+	char *about=NULL;
+	if (!splash) about=newstr(_("[pretend there is a splash logo here!]\n"));
+	appendstr(about,"\n");
+	appendstr(about,_("Laidout Version "));
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
@@ -122,6 +140,14 @@ int AboutWindow::init()
 	MessageBox::init();
 
 	return 0;
+}
+
+void AboutWindow::Refresh()
+{
+	if (splash) {
+		image_out(splash,this, wholelist.e[0]->x(),wholelist.e[0]->y()); // *** needs to scale
+	}
+	needtodraw=0;
 }
 
 /*! Esc  dismiss the window.
