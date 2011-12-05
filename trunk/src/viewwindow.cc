@@ -1392,7 +1392,7 @@ int LaidoutViewport::FindObjects(Laxkit::DoubleBBox *box, char real, char ascuro
 
 	 // nextindex now points to the first object to consider.
 	 
-	double m[6],mm[6];
+	double mm[6];
 	//DoubleBBox obox;
 	DBG firstobj.context.out("firstobj");
 	
@@ -1614,6 +1614,13 @@ int LaidoutViewport::validContext(VObjContext *oc)
 {
 	anObject *anobj=getanObject(oc->context,0,-1);
 	return anobj==oc->obj;
+}
+
+//! Set curobj to limbo, which is always valid. This is done after page removal, for instance, to prevent crashing.
+int LaidoutViewport::wipeContext()
+{
+	curobj.set(NULL,1, 0); //default just setting to limbo, since limbo is always valid.
+	return 1;
 }
 
 //! Clear firstobj,foundobj,foundobjtype.
@@ -1850,6 +1857,7 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	return 1;
 }
 
+//! Return whether LaidoutViewport::papergroup is the default papergroup of the current spread.
 int LaidoutViewport::isDefaultPapergroup()
 { return papergroup && spread && spread->papergroup==papergroup; }
 
@@ -2043,10 +2051,11 @@ LaxInterfaces::ObjectContext *LaidoutViewport::MoveObject(LaxInterfaces::ObjectC
  */
 void LaidoutViewport::Center(int w)
 {
-	if (!spread || dp->Minx>=dp->Maxx) return;
+	if (dp->Minx>=dp->Maxx) return;
 
 	if (w==0) { // center page
 		 //find the bounding box in dp real units of the page in question...
+		if (!spread) return;
 		int c=curobj.spreadpage();
 		if (c<0) return;
 		DoubleBBox bbox;
@@ -2064,10 +2073,27 @@ void LaidoutViewport::Center(int w)
 		needtodraw=1;
 
 	} else if (w==1) { // center spread
-		double w=spread->path->maxx-spread->path->minx,
-		       h=spread->path->maxy-spread->path->miny;
-		dp->Center(spread->path->minx-.05*w,spread->path->maxx+.05*w, 
-				spread->path->miny-.05*h,spread->path->maxy+.05*h);
+		DoubleBBox box,box2;
+		if (spread && spread->path) {
+			double w=spread->path->maxx-spread->path->minx,
+		       	   h=spread->path->maxy-spread->path->miny;
+			box2.addtobounds(spread->path->minx-.05*w, spread->path->miny-.05*h);
+			box2.addtobounds(spread->path->maxx+.05*w, spread->path->maxy+.05*h);
+			box.addtobounds(spread->path->m(),&box2);
+		}
+		if (papergroup) {
+			double w,h;
+			for (int c=0; c<papergroup->papers.n; c++) {
+				box2.clear();
+				w=papergroup->papers.e[c]->maxx-papergroup->papers.e[c]->minx;
+		       	h=papergroup->papers.e[c]->maxy-papergroup->papers.e[c]->miny;
+				box2.addtobounds(papergroup->papers.e[c]->minx-.05*w, papergroup->papers.e[c]->miny-.05*h);
+				box2.addtobounds(papergroup->papers.e[c]->maxx+.05*w, papergroup->papers.e[c]->maxy+.05*h);
+				box.addtobounds(papergroup->papers.e[c]->m(),&box2);
+			}
+		}
+			
+		dp->Center(&box);
 		syncrulers();
 		needtodraw=1;
 
@@ -2150,6 +2176,10 @@ void LaidoutViewport::Refresh()
 	}
 	DBG cerr <<"======= Refreshing LaidoutViewport..";
 	
+	//DBG flatpoint fp;
+	//DBG fp=dp->screentoreal(fp);
+	//DBG cerr <<"viewport *****ARG***** "<<fp.x<<','<<fp.y<<endl;
+
 	dp->StartDrawing(this);
 
 	 // draw the scratchboard, just blank out screen..
@@ -2397,7 +2427,15 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 			Center(0);
 			return 0;
 		} 
+	} else if (ch=='4') { //like inkscape zoom to drawing
+		Center(1);
+		return 0;
+	} else if (ch=='5') { //like inkscape zoom to page
+		Center(0);
+		return 0;
 	}
+
+
 	 // ask interfaces, and default viewport stuff
 	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
 
@@ -2712,7 +2750,7 @@ int LaidoutViewport::SelectPage(int i)
 	if (i==curobjPage()) return -2;
 	
 	 //setupthings(): clears search, clears any interfacedata... curinterface->Clear()
-	setupthings(-1,i); //***this always deletes and new's spread
+	setupthings(-1,i); //this always deletes and new's spread
 	Center(1);
 	DBG cerr <<" SelectPage made page=="<<curobjPage()<<endl;
 
@@ -3647,6 +3685,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			char scratch[100];
 			sprintf(scratch,_("Page %d deleted. %d remaining."),curpage,doc->pages.n);
 			PostMessage(scratch);
+			
+			if (curpage>=doc->pages.n) {
+				curpage=doc->pages.n-1;
+				((LaidoutViewport *)viewport)->wipeContext();
+			}
 			
 			((LaidoutViewport *)viewport)->SelectPage(curpage);
 			updateContext(0);

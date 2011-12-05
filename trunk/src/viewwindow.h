@@ -141,6 +141,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 													 LaxInterfaces::ObjectContext *to, int modifyoc);
 	virtual int CirculateObject(int dir, int i,int objOrSelection);
 	virtual int validContext(VObjContext *oc);
+	virtual int wipeContext();
 	virtual void clearCurobj();
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
 	virtual int n();
