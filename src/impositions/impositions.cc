@@ -155,19 +155,19 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 		rr=Singles::getDefaultResources();
 		if (rr) {
 			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
-			delete rr;
+			delete[] rr;
 		}
 
 		rr=SignatureImposition::getDefaultResources();
 		if (rr) {
 			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
-			delete rr;
+			delete[] rr;
 		}
 
 		rr=NetImposition::getDefaultResources();
 		if (rr) {
 			for (int c=0; rr[c]; c++) existingpool->push(rr[c],1);
-			delete rr;
+			delete[] rr;
 		}
 	//}
 

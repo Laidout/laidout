@@ -654,9 +654,6 @@ Spread *Singles::PaperLayout(int whichpaper)
 	PathsData *newpath=new PathsData();
 	spread->path=(SomeData *)newpath;
 	
-	 // make the paper outline
-	newpath->appendRect(0,0,paper->media.maxx,paper->media.maxy);
-	
 	 // make the outline around the inset, then lines to demarcate the tiles
 	 // there are tilex*tiley pages, all pointing to the same page data
 	newpath->pushEmpty(); // later could have a certain linestyle
@@ -695,6 +692,7 @@ Spread *Singles::PaperLayout(int whichpaper)
 	if (insetright>0 || insetleft>0 || insettop>0 || insetbottom>0) {
 		spread->mask|=SPREAD_PRINTERMARKS;
 		PathsData *marks=new PathsData();
+		marks->flags|=SOMEDATA_LOCK_CONTENTS;
 		if (insetleft>0) {
 			marks->pushEmpty();
 			marks->append(0,        paper->media.maxy-insettop);

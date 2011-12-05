@@ -40,6 +40,7 @@ class PaperInterface : public LaxInterfaces::anInterface
 	virtual void createMaybebox(flatpoint p);
 	Document *doc;
 	int mx,my;
+	int rx,ry;
 	flatpoint lbdown;
  public:
 	PaperInterface(int nid=0,Laxkit::Displayer *ndp=NULL);

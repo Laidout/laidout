@@ -113,8 +113,12 @@ class PaperGroup : public ObjectContainer, public Laxkit::RefCounted, public Lax
 	PaperGroup(PaperBoxData *boxdata);
 	PaperGroup(PaperStyle *paperstyle);
 	virtual ~PaperGroup();
+	virtual const char *whattype() { return "PaperGroup"; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+
+	virtual int AddPaper(double w,double h,double offsetx,double offsety);
+	virtual int OutlineColor(int r,int g,int b);
 
 	virtual int n();
 	virtual Laxkit::anObject *object_e(int i);

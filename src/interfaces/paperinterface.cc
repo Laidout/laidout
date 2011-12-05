@@ -19,9 +19,12 @@
 #include "paperinterface.h"
 #include "../viewwindow.h"
 #include "../drawdata.h"
+#include "../dataobjects/printermarks.h"
+#include <lax/inputdialog.h>
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
+#include <lax/colors.h>
 
 #include <lax/lists.cc>
 
@@ -117,6 +120,9 @@ const char *PaperInterface::Name()
 #define PAPERM_RenamePaperGroup 5
 #define PAPERM_DeletePaperGroup 6 
 #define PAPERM_Print            7 
+#define PAPERM_RegistrationMark 8
+#define PAPERM_GrayBars         9 
+#define PAPERM_CutMarks         10 
 
 #define PAPERM_first_pagesize   1000
 #define PAPERM_first_papergroup 2000
@@ -126,7 +132,15 @@ const char *PaperInterface::Name()
  */
 Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
 {
+	rx=x,ry=y;
 	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
+
+	if (papergroup) {
+		menu->AddItem(_("Add Registration Mark"),PAPERM_RegistrationMark);
+		menu->AddItem(_("Add Gray Bars"),PAPERM_GrayBars);
+		menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
+		menu->AddSep();
+	}
 	if (papergroup && curboxes.n) {
 
 		menu->AddItem(_("Paper Size"),PAPERM_PaperSize);
@@ -170,7 +184,16 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
  */
 int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
-	if (!strcmp(mes,"menuevent")) {
+	if (!strcmp(mes,"newname")) {
+		if (!papergroup) return 0;
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		if (isblank(s->str)) return 0;
+		if (papergroup->name) makestr(papergroup->name,s->str);
+		else if (papergroup->Name) makestr(papergroup->Name,s->str);
+
+		return 0;
+
+	} else if (!strcmp(mes,"menuevent")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		int i=s->info2; //id of menu item
 		if (i==PAPERM_Portrait) {
@@ -216,7 +239,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 			 //New paper group...
 			if (papergroup) papergroup->dec_count();
 			papergroup=new PaperGroup;
-			papergroup->Name=new_paper_group_name();
+			papergroup->name=new_paper_group_name();
 			laidout->project->papergroups.push(papergroup);
 			
 			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
@@ -226,6 +249,31 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else if (i==PAPERM_RenamePaperGroup) {
 			//***Rename paper group...
+			if (!papergroup) return 0;
+			InputDialog *i=new InputDialog(NULL,_("New paper group name"),_("New paper group name"),ANXWIN_CENTER,
+									 0,0,0,0,0,
+									 NULL,object_id,"newname",
+									 papergroup->name?papergroup->name:papergroup->Name, _("Name:"),
+									 _("Ok"),BUTTON_OK,
+									 _("Cancel"),BUTTON_CANCEL);
+			app->rundialog(i);
+			return 0;
+
+		} else if (i==PAPERM_RegistrationMark) {
+			if (!papergroup) return 0;
+			SomeData *obj= RegistrationMark(18,1);
+			flatpoint fp=dp->screentoreal(rx,ry);
+			obj->origin(fp);
+			papergroup->objs.push(obj);
+			return 0;
+
+		} else if (i==PAPERM_GrayBars) {
+			if (!papergroup) return 0;
+			SomeData *obj= BWColorBars(18,LAX_COLOR_GRAY);
+			flatpoint fp=dp->screentoreal(rx,ry);
+			obj->origin(fp);
+			papergroup->objs.push(obj);
+			return 0;
 		}
 		return 0;
 	}
@@ -536,8 +584,8 @@ void PaperInterface::createMaybebox(flatpoint p)
 		maybebox->xaxis(boxdata->xaxis());
 		maybebox->yaxis(boxdata->yaxis());
 	}
-	maybebox->origin(p-flatpoint(norm(maybebox->xaxis())*(maybebox->maxx-maybebox->minx)/2,
-								 norm(maybebox->yaxis())*(maybebox->maxy-maybebox->miny)/2));
+	maybebox->origin(flatpoint(0,0));
+	maybebox->origin(p-transform_point(maybebox->m(),(maybebox->maxx+maybebox->minx)/2, norm(maybebox->yaxis())*(maybebox->maxy+maybebox->miny)/2));
 	if (del) box->dec_count();
 }
 
