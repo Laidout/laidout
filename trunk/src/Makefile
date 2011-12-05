@@ -107,6 +107,9 @@ lax:
 laxinterface:
 	cd $(LAXIDIR) && $(MAKE)
 
+test2: lax laxinterface interfaces test2.o papersizes.o
+	$(LD) $(LDFLAGS) test2.o styles.o dataobjects/group.o dataobjects/objectcontainer.o papersizes.o interfaces/paperinterface.o -llaxinterfaces -llaxkit -o $@
+
 test: lax laxinterface stylewindow.o  styles.o stylemanager.o test.o
 	$(LD) $(LDFLAGS) test.o stylewindow.o styles.o stylemanager.o -llaxinterfaces -llaxkit -o $@
 

@@ -525,7 +525,7 @@ int PaperBox::Set(PaperStyle *paper)
  */
 PaperBoxData::PaperBoxData(PaperBox *paper)
 {
-	red=green=0;
+	red=green=0; //color of the outline, default is blue
 	blue=65535;
 
 	box=paper;
@@ -625,6 +625,17 @@ const double *PaperGroup::object_transform(int i)
 	return NULL;
 }
 
+//! Make the outline this color. Range [0..65535].
+int PaperGroup::OutlineColor(int r,int g,int b)
+{
+	for (int c=0; c<papers.n; c++) {
+		papers.e[c]->red=r;
+		papers.e[c]->green=g;
+		papers.e[c]->blue=b;
+	}
+	return papers.n;
+}
+
 
 /*!
  * <pre>
@@ -672,11 +683,11 @@ void PaperGroup::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%s  outlinecolor %d %d %d\n",
 			spc, papers.e[c]->red, papers.e[c]->green, papers.e[c]->blue);
 		papers.e[c]->box->paperstyle->dump_out(f,indent+2,0,context);
-		if (objs.n()) {
-			fprintf(f,"%smarks\n",spc);
-			objs.dump_out(f,indent+2,0,context);
-		}	
 	}
+	if (objs.n()) {
+		fprintf(f,"%smarks\n",spc);
+		objs.dump_out(f,indent+2,0,context);
+	}	
 }
 
 void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
@@ -711,5 +722,20 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			boxdata->dec_count();
 		}
 	}
+}
+
+// **** FOR DEBUGGING
+int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
+{
+	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,NULL);
+	PaperBox *box=new PaperBox(paperstyle);
+	paperstyle->dec_count();
+
+	PaperBoxData *boxdata=new PaperBoxData(box);
+	box->dec_count();
+	boxdata->origin(flatpoint(offsetx,offsety));
+
+	papers.push(boxdata);
+	return 0;
 }
 

@@ -1267,7 +1267,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 	AddTool(spreadtool,1,1);
 
 	AddTool(new PageRangeInterface(1,viewport->dp, doc),1,0);
-	AddTool(new PaperInterface(2,viewport->dp),1,0);
+	DBG AddTool(new PaperInterface(2,viewport->dp),1,0); // ***** 
 	//AddTool(new NupInterface(1,viewport->dp),1,0);
 }
 
@@ -1348,7 +1348,7 @@ int SpreadEditor::init()
 
 	 //---- tool section
 	SliderPopup *toolselector;
-	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,0, 0,0,0,0,1, 
+	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT, 0,0,0,0,1, 
 			NULL,object_id,"toolselector",
 			NULL,0);
 	toolselector->tooltip(_("The current tool"));

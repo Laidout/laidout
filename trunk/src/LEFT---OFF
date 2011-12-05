@@ -8,35 +8,39 @@ Those are purged with each release.
 
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
-default papergroup should be red, and should not be part of spread->path
-scale invariant point not working... always using origin
-DONE area select not working
-control-lbdown near edge selects the resize, not put new point
 
-shrink image lets you go immeasurably small
+---- bugs to fix right now:
+viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
 
 fix memory holes
 
-pixels units should be set as per document dpi
-
-pagerangeinterface: button downs shouldn't do anything when not clicked down outside bar
-
 spread flipper tabloid tiled not paging paper layouts properly
 
-paper group tool seems messed up, especially in spread editor
+finish implementing 'm'
 
-fold indicator foldprogress just at crossover points incorrectly indicating affected folds
+in tiled, can no longer select objects in the other tiles, wtf!!!
 
 refcounting crashing error with nets upon edit current document settings
 
-gradient rendering to buffer memory hole?? gets very slow, then crashes.. having trouble reproducing...
+object deleting funky, import svg images, select one, hit delete, doesn't delete!!
+place 3 images, object select, must press delete twice...!?!?!?!
+
+
+---- less urgent bugs:
+file previewer not updating preview when using arrow keys
+
+create new window, defaults to no doc. should select doc of last pane
+
+add blank image, change description, do not change filename, makes width/height zap back to 0...
+
+shrink image lets you go immeasurably small
+
+fold indicator foldprogress just at crossover points incorrectly indicating affected folds
+
+pixels units should be set as per document dpi
 
 svg to coord incomplete
 memory hole in svg in? test svg import, svg path import must be done
-
-file previewer not updating preview when using arrow keys
-
-click open or save, dialog comes up, but buttons permanently dark gray now, no matter how mouse hovering
 
 net extra scaling non-functional
 
@@ -45,18 +49,9 @@ from parameters for all filters....
 
 make sure all imposition types are available in interpreter
 
-select default papergroup, does not reinstall default papergroup!!
-
 resource impositions not showing description when selected
 
-object deleting funky, import svg images, select one, hit delete, doesn't delete!!
-place 3 images, object select, must press delete twice...!?!?!?!
-
-add blank image, change description, do not change filename, makes width/height zap back to 0...
-
 GradientInterface problem rendering radial when two circles separated by large distance
-
-in tiled, can no longer select objects in the other tiles, wtf!!!
 
 Laxkit::MultiLineEdit needs some serious debugging
 
@@ -65,82 +60,45 @@ pane swapping/dropto on maximized, swapping in general...
 
 WATCH OUT for when preview file is OLDER than original file!!
 
-select region by intersect, not by corner inclusion...
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
 check laidout.1 when time to release
 update docs to have new release number
-test each window type to avoid crashy hangups, like about window from .091!!!!
+test:
+  each window type to avoid crashy hangups, like about window from .091!!!!
+  each export filter
+  make some test scripts for command line testing
+
+should be able to drop printer marks onto default papergroup without resorting to paper tool
 
 Scribus import:
   import must support master pages
   DONE import should support PageRange <-> Section conversion
   import should try to apply the Scribus layout correctly, at least for 2 page spreads
-  import should do something meaningful with original Scribus page bleed values
+  //import should do something meaningful with original Scribus page bleed values
+  scribus in/out: font sizes, stroke widths
 
-sig editor:
-  needs testing: command line func parser for sigs
-  you should be able to visually adjust the paper size in sigeditor graphically, by automatically
-    selecting larger papers, or adjusting the paper edges
-  detect non staplable binding edge, show red rather than green
+sig editor: needs testing: command line func parser for sigs
 
-impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
+For objects that appear very small, the drag handles should not be operable.. shift only
 
-move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-	feed it an ExportConfig
-
-implement auto cut marks
-implement custom printer marks exporting!!
-
-Singles::gapx,y should work, BUT by .092, singles will be worked up a bit, and paper partitioning
-will likely be very different
+implement auto marks:
+  cut marks
+  gray bars
+  registration marks
+  //bleed marks
+  //color bars
+  //spread info: spread type, current date and time, creator, spread number/total number of spreads
 
 need to rediscover pathinterface, PathInterface should not segfault
 
 import config generic things like enum keepmystery should be parsed when no import config given!!
 
-should have easy way to save as a template
-
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
-
-Fix multi-object selection move when crossing page boundaries
-    sets
-
-scribus in/out: master pages, font sizes, stroke widths
 
 PathInterface must be drastically improved, and bez part should have segment move like inkscape
     finish new path/pathoperator/pathsubinterface/pathinterface structure
-
-
-Load, save, add, delete paper groups
-   papergroups:
-    work out scheme for resource ownership: they can be owned by:
-      1.DONE  Document: if no project, save with document by default
-      2.DONE  Project:  save in project file
-      3.or Global resource: save in ~/.laidout/version/papergroups
-          class FileRef 
-        papergroup->owner=Document, Project, or FileRef
-   paperinterface:
-     no doc, define papergroup, convert papergroup to singles pages?
-     orient viewport to paper
-     snap other papers to various boxes
-     double click to edit paper details
-     in spread editor <--better to combine spread editor and view window?
-     more versatile size control per paper
-     edit window? should be edit on screen....
-        Name:  default single letter
-        Paper: Letter, 8.5/11, landscape
-        Box: Media [v]   Box: Clip [v]
-                            [ ] None
-           0 0 8.5 11       X: 0   Y: 0
-                          W: 8.5 H: 11
-        [delete paper type][new paper type]
-     DONE  arrow to indicate paper top direction
-     DONE  create new
-     DONE  save/load
-     DONE  delete old
-     DONE  menu options for paper groups, via the right click in paper tiler interface
 
 
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
@@ -150,6 +108,26 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 update translations
+
+Singles::gapx,y should work, BUT by .093, singles will be worked up a bit, and paper partitioning
+will likely be very different
+
+impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
+
+move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
+	feed it an ExportConfig
+
+paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
+
+sig editor:
+  you should be able to visually adjust the paper size in sigeditor graphically, by automatically
+    selecting larger papers, or adjusting the paper edges
+  detect non staplable binding edge, show red rather than green
+
+messages to the status line should have priorities, so once mouse over messages are cleared, it would revert
+  back to a lower priority message
+
+should have easy way to save as a template
 
 Spread Editor:
   insert blanks
@@ -161,6 +139,8 @@ Spread Editor:
   background preview rendering for spreadeditor
 
 when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
+
+select region by intersect, not by corner inclusion...
 
 changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
  need infrastructure to propagate and save tool settings
@@ -238,6 +218,30 @@ really should have option to separate or merge resources when multiple documents
 always merge?
 
 papersizes are not translated. Should they be??
+
+Load, save, add, delete paper groups
+   papergroups:
+    work out scheme for resource ownership: they can be owned by:
+      1.DONE  Document: if no project, save with document by default
+      2.DONE  Project:  save in project file
+      3.or Global resource: save in ~/.laidout/version/papergroups
+          class FileRef 
+        papergroup->owner=Document, Project, or FileRef
+   paperinterface:
+     no doc, define papergroup, convert papergroup to singles pages?
+     orient viewport to paper
+     snap other papers to various boxes
+     double click to edit paper details
+     in spread editor (done), and able to print it out
+     more versatile size control per paper
+     edit window? should be edit on screen....
+        Name:  default single letter
+        Paper: Letter, 8.5/11, landscape
+        Box: Media [v]   Box: Clip [v]
+                            [ ] None
+           0 0 8.5 11       X: 0   Y: 0
+                          W: 8.5 H: 11
+        [delete paper type][new paper type]
 
 bleeding mechanism should be functional
 
@@ -372,14 +376,16 @@ all at once imposition... this would allow mapping of scribus layout without fus
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
 
+pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow to have not
+				    just tools but overlays. Any number of overlays can be active, but only one tool
+  edit base in place
+  should not be able to shift overlay offscreen entirely.. maybe if dragging offscreen, minimize on corner?
+
 
 
 
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
-pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow to have not
-				    just tools but overlays. Any number of overlays can be active, but only one tool
-
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
   best way of keeping track of base imposition classes? this is needed for file format description output
 
@@ -585,4 +591,37 @@ DONE moving objects does screwy things with rectdata when crossing page boundari
      need to change GroupInterface to determine contexts, then recompute bounds
 
 DONE bounding box on move still messed up..
+
+DONE scale invariant point not working... always using origin
+DONE area select not working
+DONE control-lbdown near edge selects the resize, not put new point
+
+DONE implement custom printer marks exporting!!
+DONE export papergroup objects
+DONE export spread objects (same as printer marks, already implemented!)
+
+DONE pagerangeinterface: button downs shouldn't do anything when not clicked down outside bar
+
+DONE paper group tool seems messed up, after button down, before next refresh rev 491 works in main, NOT in spread editor
+
+DONE click open or save, dialog comes up, but buttons permanently dark gray now, no matter how mouse hovering
+
+   paperinterface:
+DONE  arrow to indicate paper top direction
+DONE  create new
+DONE  save/load
+DONE  delete old
+DONE  menu options for paper groups, via the right click in paper tiler interface
+
+DONE default papergroup should be red, and should not be part of spread->path
+DONE viewport center on ' ' not working again
+
+DONE delete final page crashes
+
+DONE ???? gradient rendering to buffer memory hole?? gets very slow, then crashes.. --> having trouble reproducing...
+
+DONE select default papergroup, does not reinstall default papergroup!!
+DONE rotate a paper with paper tool, now maybe box does not center over mouse
+DONE rename papergroup
+
 

@@ -27,6 +27,7 @@
 class GroupInterface : public LaxInterfaces::ObjectInterface
 {
   protected:
+	int rx,ry;
   public:
 	void TransformSelection(const double *N);// *****
 
@@ -35,6 +36,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	//virtual const char *whattype() { return "ObjectInterface"; }
 	virtual const char *whatdatatype() { return "Group"; }
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
+	virtual int Event(const Laxkit::EventData *e,const char *mes);
 	virtual int UseThis(anObject *newdata,unsigned int);
 	virtual int draws(const char *atype);
 

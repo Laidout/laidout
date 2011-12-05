@@ -15,11 +15,12 @@ DEBUGFLAGS= -g
 
 objs= \
 	group.o \
+	objectcontainer.o \
 	groupinterface.o \
 	epsdata.o \
 	limagepatch.o \
 	mysterydata.o \
-	objectcontainer.o
+	printermarks.o 
 
 
 

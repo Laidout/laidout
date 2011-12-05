@@ -21,6 +21,7 @@
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
+#include <lax/inputdialog.h>
 
 #include <lax/lists.cc>
 
@@ -126,9 +127,10 @@ const char *PageRangeInterface::Name()
  */
 char *PageRangeInterface::LabelPreview(int range,int first,int labeltype)
 {
-	if (currange>=0 && currange<doc->pageranges.n) {
+	if (!doc->pageranges.n) InstallDefaultRange();
+	if (range>=0 && range<doc->pageranges.n) {
 		if (!doc->pageranges.n) InstallDefaultRange();
-		return LabelPreview(doc->pageranges.e[currange],first,labeltype);
+		return LabelPreview(doc->pageranges.e[range],first,labeltype);
 	}
 	return newstr("?");
 }
@@ -170,6 +172,8 @@ char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labelty
 #define RANGE_Custom_Base   10000
 #define RANGE_Reverse       10001
 #define RANGE_Delete        10002
+#define RANGE_NumberType    10003
+
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -182,7 +186,7 @@ Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid)
 	menu->AddItem(_("Reverse"),RANGE_Reverse);
 	menu->AddSep();
 	if (doc && doc->pageranges.n>1) {
-		menu->AddItem(_("Delete range"),RANGE_Delete);
+		//menu->AddItem(_("Delete range"),RANGE_Delete);
 		menu->AddSep();
 	}
 
@@ -194,7 +198,7 @@ Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid)
 		else {
 			 //add first, first++, first+++, ...  in number format
 			str=LabelPreview(currange,-1,c);
-			menu->AddItem(str,c);
+			menu->AddItem(str,RANGE_NumberType,LAX_OFF,c);
 			delete[] str;
 		}
 	}
@@ -210,9 +214,20 @@ int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		int i=s->info2; //id of menu item
 		if (i==RANGE_Custom_Base) {
+			if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
+
+			// ***** THIS IS TEMPORARY!! should be edit in place
+			InputDialog *i=new InputDialog(NULL,_("New page label base"),_("New page label base"),ANXWIN_CENTER,
+									 0,0,0,0,0,
+									 NULL,object_id,"newbase",
+									 doc->pageranges.e[hover_range]->labelbase, _("Label:"),
+									 _("Ok"),BUTTON_OK,
+									 _("Cancel"),BUTTON_CANCEL);
+			app->rundialog(i);
 			return 0;
 
 		} else if (i==RANGE_Delete) {
+			// *** imp
 			return 0;
 
 		} else if (i==RANGE_Reverse) {
@@ -228,10 +243,28 @@ int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 			}
 			needtodraw=1;
 			return 0;
+
+		} else if (i==RANGE_NumberType) {
+			if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
+			int num=s->info4;
+			doc->pageranges.e[currange]->labeltype=num;
+			needtodraw=1;
+			return 0;
 		}
 
 		return 0;
+
+	} else if (!strcmp(mes,"newbase")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		if (!s) return 0;
+
+		if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
+		makestr(doc->pageranges.e[hover_range]->labelbase,s->str);
+		needtodraw=1;
+
+		return 0;
 	}
+
 	return 1;
 }
 
@@ -327,6 +360,7 @@ int PageRangeInterface::Refresh()
 	DBG cerr <<"PageRangeInterface::Refresh()..."<<doc->pageranges.n<<endl;
 
 	dp->DrawScreen();
+	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 
 	double h=yscale;
 	flatpoint o;
@@ -455,6 +489,8 @@ void PageRangeInterface::drawBox(PageRange *r, int includehover)
  * If index!=NULL, then return also the document page index that the position corresponds to.
  *
  * If any of position, range, part, index are found, return 1, else return 0.
+ *
+ * The actual return value of the function is 1 if there was something meaningful at x,y, else 
  */
 int PageRangeInterface::scan(int x,int y, int *position, int *range, int *part, int *index)
 {
@@ -469,7 +505,8 @@ int PageRangeInterface::scan(int x,int y, int *position, int *range, int *part, 
 
 	if (fp.y<0 || fp.y>1) return 0;
 
-	int r=-1, pos=-1;
+	int r=-1;   //which pagerange
+	int pos=-1; //which page index
 	double pp=0, ppd=1./doc->pages.n;
 	if (!doc->pageranges.n) {
 		 //if document has no defined ranges, it has 1 implied range
@@ -523,7 +560,7 @@ int PageRangeInterface::LBDown(int x,int y,unsigned int state,int count,const La
 
 	int range=-1, index=-1, part=0;
 	int pos=-1;
-	scan(x,y, &pos, &range, &part, &index);
+	int s=scan(x,y, &pos, &range, &part, &index);
 
 
 	if (part==PART_Position) {
@@ -547,6 +584,8 @@ int PageRangeInterface::LBDown(int x,int y,unsigned int state,int count,const La
 		}
 		return 0;
 	}
+
+	if (!s) hover_part=0;
 
 	//if (count==2) { // ***
 	//}
@@ -739,6 +778,10 @@ int PageRangeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 		return 0;
 	}
+
+	//so to be here, there is a button down
+
+	if (!hover_part) return 0;
 
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 	DBG cerr <<"pr last m:"<<lx<<','<<ly<<endl;

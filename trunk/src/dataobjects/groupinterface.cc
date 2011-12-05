@@ -15,9 +15,12 @@
 //
 
 #include <lax/transformmath.h>
+#include <lax/colors.h>
 #include "groupinterface.h"
+#include "printermarks.h"
 #include "../project.h"
 #include "../viewwindow.h"
+#include "../language.h"
 
 #include <iostream>
 using namespace std;
@@ -86,6 +89,58 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 	((LaidoutViewport *)viewport)->locateObject(d,oc.context);
 	AddToSelection(&oc);
 	needtodraw=1;
+	return 1;
+}
+
+#define GROUP_RegistrationMark 8
+#define GROUP_GrayBars         9 
+#define GROUP_CutMarks         10 
+
+Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid)
+{
+	rx=x,ry=y;
+
+	MenuInfo *menu=NULL;
+	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
+	if (lvp->papergroup) {
+		menu=new MenuInfo(_("Group Interface"));
+		menu->AddItem(_("Add Registration Mark"),GROUP_RegistrationMark);
+		menu->AddItem(_("Add Gray Bars"),GROUP_GrayBars);
+		//menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
+		//menu->AddSep();
+	}
+
+	return menu;
+}
+
+int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
+{
+	if (!strcmp(mes,"menuevent")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		int i=s->info2; //id of menu item
+
+		LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
+		if (!lvp->papergroup) return 0;
+
+		if (i==GROUP_RegistrationMark) {
+			if (!lvp->papergroup) return 0;
+			SomeData *obj= RegistrationMark(18,1);
+			flatpoint fp=dp->screentoreal(rx,ry);
+			obj->origin(fp);
+			lvp->papergroup->objs.push(obj);
+			needtodraw=1;
+			return 0;
+
+		} else if (i==GROUP_GrayBars) {
+			if (!lvp->papergroup) return 0;
+			SomeData *obj= BWColorBars(18,LAX_COLOR_GRAY);
+			flatpoint fp=dp->screentoreal(rx,ry);
+			obj->origin(fp);
+			lvp->papergroup->objs.push(obj);
+			needtodraw=1;
+			return 0;
+		}
+	}
 	return 1;
 }
 

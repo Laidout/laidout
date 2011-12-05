@@ -844,12 +844,13 @@ int SignatureInterface::Refresh()
 	h=patternheight;
 
 	flatpoint pts[4],fp;
-	int facedown=0;
+	//int facedown=0;
 	int hasface;
 	int rrr,ccc;
 	int ff,tt;
 	double xx,yy;
-	int xflip, yflip;
+	//int xflip;
+	int yflip;
 
 	x=signature->insetleft;
 	for (int tx=0; tx<signature->tilex; tx++) {
@@ -882,14 +883,14 @@ int SignatureInterface::Refresh()
 					 //there are faces in this spot, draw arrow and page number
 					dp->NewFG(.75,.75,.75);
 					if (hasfinal) {
-						xflip=foldinfo[rrr][ccc].x_flipped^foldinfo[rrr][ccc].finalxflip;
+						//xflip=foldinfo[rrr][ccc].x_flipped^foldinfo[rrr][ccc].finalxflip;
 						yflip=foldinfo[rrr][ccc].y_flipped^foldinfo[rrr][ccc].finalyflip;
 					} else {
-						xflip=foldinfo[rrr][ccc].x_flipped;
+						//xflip=foldinfo[rrr][ccc].x_flipped;
 						yflip=foldinfo[rrr][ccc].y_flipped;
 					}
-					facedown=((xflip && !yflip) || (!xflip && yflip));
 
+					//facedown=((xflip && !yflip) || (!xflip && yflip));
 					//if (facedown) dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
 					//else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
@@ -1337,7 +1338,7 @@ int SignatureInterface::WheelDown(int x,int y,unsigned int state,int count,const
 {
 	if (showsplash) { showsplash=0; needtodraw=1; }
 
-	flatpoint fp=screentoreal(x,y);
+	//flatpoint fp=screentoreal(x,y);
 
 	if (state&LAX_STATE_MASK) return 1;
 
@@ -1352,7 +1353,7 @@ int SignatureInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 {
 	if (showsplash) { showsplash=0; needtodraw=1; }
 
-	flatpoint fp=screentoreal(x,y);
+	//flatpoint fp=screentoreal(x,y);
 
 	if (state&LAX_STATE_MASK) return 1;
 

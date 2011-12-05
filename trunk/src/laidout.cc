@@ -256,7 +256,8 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	GetUnitManager()->DefaultUnits(unitname);
 	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
 
-	splash_image_file=NULL;
+	splash_image_file=newstr(ICON_DIRECTORY);
+	appendstr(splash_image_file,"/laidout-splash.png");
 }
 
 //! Destructor, only have to delete project!
@@ -513,6 +514,9 @@ int LaidoutApp::createlaidoutrc()
 			fprintf(f,"#Laidout %s laidoutrc\n",LAIDOUT_VERSION);
 			fprintf(f,"\n"
 					  "# Laidout global configuration options go in here.\n"
+					  "\n"
+					  "# If you want to use a custom splash image:\n"
+					  "#splashimage /path/to/it\n"
 					  "\n"
 					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
 					  " #the automatic creation of a smaller preview image file.\n"
