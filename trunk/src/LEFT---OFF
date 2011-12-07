@@ -15,8 +15,7 @@ viewwindow, change to spreadview, change back to view.. Horizontal ruler origin 
 fix memory holes
 
 spread flipper tabloid tiled not paging paper layouts properly
-
-finish implementing 'm'
+spread flipper right side not advancing!
 
 in tiled, can no longer select objects in the other tiles, wtf!!!
 
@@ -81,8 +80,6 @@ Scribus import:
 
 sig editor: needs testing: command line func parser for sigs
 
-For objects that appear very small, the drag handles should not be operable.. shift only
-
 implement auto marks:
   cut marks
   gray bars
@@ -91,23 +88,23 @@ implement auto marks:
   //color bars
   //spread info: spread type, current date and time, creator, spread number/total number of spreads
 
-need to rediscover pathinterface, PathInterface should not segfault
-
 import config generic things like enum keepmystery should be parsed when no import config given!!
 
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
-PathInterface must be drastically improved, and bez part should have segment move like inkscape
-    finish new path/pathoperator/pathsubinterface/pathinterface structure
-
-
-from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
-     gets the focus when autofocused.
+PathInterface should be in a small way usable
+need to rediscover pathinterface, PathInterface should not segfault
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 update translations
+
+'m' should be able to move whole groups, means must be in object tool?
+
+PathInterface must be drastically improved, and bez part should have segment move like inkscape
+    finish new path/pathoperator/pathsubinterface/pathinterface structure
+
+For objects that appear very small, the drag handles should not be operable.. shift only
 
 Singles::gapx,y should work, BUT by .093, singles will be worked up a bit, and paper partitioning
 will likely be very different
@@ -381,6 +378,11 @@ pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow
   edit base in place
   should not be able to shift overlay offscreen entirely.. maybe if dragging offscreen, minimize on corner?
 
+from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
+     gets the focus when autofocused.
+
+
 
 
 
@@ -623,5 +625,9 @@ DONE ???? gradient rendering to buffer memory hole?? gets very slow, then crashe
 DONE select default papergroup, does not reinstall default papergroup!!
 DONE rotate a paper with paper tool, now maybe box does not center over mouse
 DONE rename papergroup
+
+DONE move a papergroup object to a pagestack blank page: segfault!
+
+DONE finish implementing 'm'
 
 

@@ -585,12 +585,18 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 				te->changetype==TreePagesMoved) {
 			 //***
 			int pg=curobjPage();
+			if (pg<0 && spread) {
+				for (int c=0; c<spread->pagestack.n(); c++) {
+					pg=spread->pagestack.e[c]->index;
+					if (pg>=0) break;
+				}
+			}
 			curobj.set(NULL, 1, 0); //setting to Limbo
 			clearCurobj();
 			delete spread;
 			spread=NULL;
-			spreadi=-1;
-			setupthings(-1,pg);
+			//spreadi=-1;
+			setupthings(spreadi,-1);
 			needtodraw=1;
 
 		} else if (te->changetype==TreeDocGone) {
@@ -820,9 +826,11 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
 		VObjContext dest;
 		if (i==MOVETO_Limbo) {
+			dest.push(0);
 
 		} else if (i==MOVETO_Spread) {
-			dest.push(0);
+			//dest.push(1);  //spread
+			//dest.push(1);  //objects
 
 		} else if (i==MOVETO_Page) {
 			if (spread && spread->pagestack.n()>i2 && i2>=0) {
@@ -842,9 +850,18 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		}
 		if (!dest.context.n()) return 0;
 
-		// ***int new_context_index=MoveObject(&curobj, &dest, 1);
-		// clear current interfaces or send object tree change message
-		// laidout->notifyDocTreeChanged(NULL,TreeObjectDiffPage,0,0);
+		int new_context_index=MoveObject(&curobj, &dest);
+		if (new_context_index>=0) {
+			dest.push(new_context_index);
+			dest.SetObject(curobj.obj);
+			setCurobj(&dest);
+
+			//clear current interfaces or send object tree change message
+			laidout->notifyDocTreeChanged(NULL,TreeObjectDiffPage,0,0);
+			postmessage(_("Object moved."));
+		} else {
+			postmessage(_("Failed to move object"));
+		}
 
 		return 0;
 	}
@@ -1954,6 +1971,8 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	if (spread) {
 		for (int c=0; c<spread->pagestack.n(); c++) {
 			if (c==i) continue; // don't check current page again!
+			if (!spread->pagestack.e[c]->page) continue; //can't move to blank page!
+
 			 //*** this is rather poor, but fast and good enough for now:
 			outline=spread->pagestack.e[c]->outline;
 			bbox.clear();
@@ -2034,10 +2053,44 @@ LaxInterfaces::ObjectContext *LaidoutViewport::ObjectMoved(LaxInterfaces::Object
 	return oc;
 }
 
-LaxInterfaces::ObjectContext *LaidoutViewport::MoveObject(LaxInterfaces::ObjectContext *from,
-														  LaxInterfaces::ObjectContext *to, int modifyoc)
+//! Move the object from points to, into context to.
+/*! Return index of object in the destination context, or -1 if there was a problem putting object there.
+ */
+int LaidoutViewport::MoveObject(LaxInterfaces::ObjectContext *fromoc, LaxInterfaces::ObjectContext *tooc)
 {
-	return NULL;
+	VObjContext *from=dynamic_cast<VObjContext*>(fromoc);
+	VObjContext *to  =dynamic_cast<VObjContext*>(tooc);
+	if (!from || !to) return -1;
+
+	 // pop from old place 
+	Group *orig=dynamic_cast<Group*>(getanObject(from->context,0,from->context.n()-1));
+	Group *destgroup=dynamic_cast<Group*>(getanObject(to->context,0,to->context.n()));
+	SomeData *d=from->obj;
+
+	 //not all contexts are Groups!
+	if (!orig && from->spread()==2) orig=&papergroup->objs;
+	if (!destgroup && to->spread()==2) destgroup=&papergroup->objs;
+	if (!orig || !destgroup)  return -1;
+	if (orig==destgroup) return -1; //just in case
+
+	double m[6],mm[6],mmm[6];
+	transformToContext(mm,from->context,0,-1); //full transform from old object to base view
+
+	orig->popp(d);
+	int i=destgroup->push(d);
+	d->dec_count();
+
+	transformToContext(mmm,to->context,1,-1); //trans from view to new place
+	transform_mult(m,mm,mmm); //compute new object transform
+	//transform_mult(m,mmm,mm);
+	d->m(m);
+
+	DBG cerr <<"=========NEW MATRIX: "; dumpctm(d->m());
+
+	DBG cerr <<"  moved "<<d->object_id<<" to: ";
+	DBG to->context.out(NULL);
+	needtodraw=1;
+	return i;
 }
 
 //! Zoom and center various things on the screen
@@ -2479,6 +2532,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 
 	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) {
 		if (!spread && !papergroup) return 0; //the only context is limbo!
+		if (!curobj.obj) return 0; //only move objects!
 
 		DBG cerr<<"**** move object to another page: imp me!"<<endl;
 		//if (CirculateObject(9,i,0)) needtodraw=1;
@@ -2512,15 +2566,19 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		menu->AddItem(buffer,MOVETO_Limbo,LAX_OFF|LAX_ISTOGGLE|(curobj.spread()==0?LAX_CHECKED:0));
 
 		if (spread) {
-			menu->AddItem(_("Spread"),MOVETO_Spread,LAX_OFF|LAX_ISTOGGLE); //*****how to check
+			//menu->AddItem(_("Spread"),MOVETO_Spread,LAX_OFF|LAX_ISTOGGLE); //*****how to check
 			for (int c=0; c<spread->pagestack.n(); c++) {
 				buffer[0]='\0';
 				if (spread->pagestack.e[c]->page) {
 					str=spread->pagestack.e[c]->page->label;
 					if (!isblank(str)) sprintf(buffer,_("Page %s"),str);
 				}
-				if (buffer[0]=='\0') sprintf(buffer,_("Page #%d"),c);
-				menu->AddItem(buffer,MOVETO_Page,LAX_OFF|LAX_ISTOGGLE|(curobj.spreadpage()>=0?LAX_CHECKED:0),c);
+				//if (buffer[0]=='\0') sprintf(buffer,_("Page #%d"),c);
+				if (buffer[0]!='\0') menu->AddItem(buffer,MOVETO_Page,
+									LAX_OFF
+									  | LAX_ISTOGGLE
+									  | ((curobj.spreadpage()==c)?LAX_CHECKED:0),
+									c);
 			}
 			menu->AddItem(_("Some other page.."),MOVETO_OtherPage,LAX_OFF|LAX_ISTOGGLE);
 		}
@@ -2533,7 +2591,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 						object_id,"moveto", 
 						d->paired_mouse?d->paired_mouse->id:0, //mouse to position near?
 						menu,1, NULL,
-						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT);
+						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
 		popup->pad=5;
 		popup->WrapToMouse(None);
 		app->rundialog(popup);
