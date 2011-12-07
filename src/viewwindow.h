@@ -137,8 +137,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual void postmessage(const char *mes);
 	virtual int DeleteObject();
 	virtual LaxInterfaces::ObjectContext *ObjectMoved(LaxInterfaces::ObjectContext *oc, int modifyoc);
-	virtual LaxInterfaces::ObjectContext *MoveObject(LaxInterfaces::ObjectContext *from,
-													 LaxInterfaces::ObjectContext *to, int modifyoc);
+	virtual int MoveObject(LaxInterfaces::ObjectContext *from, LaxInterfaces::ObjectContext *to);
 	virtual int CirculateObject(int dir, int i,int objOrSelection);
 	virtual int validContext(VObjContext *oc);
 	virtual int wipeContext();
