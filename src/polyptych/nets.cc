@@ -710,6 +710,9 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 //			IntListAttribute(val,&points,&np);
 		}
 	}
+	if (error) {
+		DBG cerr <<"There was some kind of error in NetFace::dumpInAtts()"<<endl;
+	}
 }
 
 
@@ -1196,7 +1199,7 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 	char *name,*value;
 	int c;
 	clear();
-	const char *baseref=NULL;
+	//const char *baseref=NULL;
 	for (c=0; c<att->attributes.n; c++) {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
@@ -1232,8 +1235,8 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 						makestr(basenet->name,value);
 					}
 				}
-			} else if (!strncmp(value,"ref:",4)) {
-				baseref=value+4;
+			//} else if (!strncmp(value,"ref:",4)) {
+			//	baseref=value+4;
 			} else if (!strncmp(value,"file:",4)) {
 				basenet=loadBaseNet(value+5,NULL);//***ignores error string return
 			}

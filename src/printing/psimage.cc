@@ -75,11 +75,11 @@ void psImage(FILE *f,LaxInterfaces::ImageData *img)
 	 //*** for some reason if I just do uchar rgbbuf[len], it will crash for large images
 	unsigned char *rgbbuf=new unsigned char[len]; //***this could be redone to not need new huge array like this
 	unsigned char r,g,b;
-	DATA32 bt;
+	//DATA32 bt;
 	//DBG cerr <<"rgbbug"<<rgbbuf[0]<<endl;//***
 	for (int x=0; x<width; x++) {
 		for (int y=0; y<height; y++) {
-			bt=buf[y*width+x];
+			//bt=buf[y*width+x];
 			r=(buf[y*width+x]&((unsigned long)255<<16))>>16;
 			g=(buf[y*width+x]&((unsigned long)255<<8))>>8;
 			b=(buf[y*width+x]&(unsigned long)255);
