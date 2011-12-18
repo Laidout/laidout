@@ -23,7 +23,7 @@
 #include <lax/refptrstack.cc>
 
 #include "document.h"
-#include "filetypes/ppt.h"
+#include "filetypes/scribus.h"
 #include "printing/psout.h"
 #include "version.h"
 #include "laidout.h"
@@ -781,11 +781,14 @@ int Document::Load(const char *file,char **error_ret)
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",error_ret);
 	if (!f) {
-		//if (!isScribusFile(file)) return 0;
-		//***
+		if (!isScribusFile(file)) return 0;
+		int c=addScribusDocument(file,this); //0 success, 1 failure
+		if (c==0) return 1;
 		return 0;
 	}
 	
+	 //so now, assume ok to load attribute styled Document file
+
 	clear();
 	setlocale(LC_ALL,"C");
 	dump_in(f,0,0,NULL,NULL);

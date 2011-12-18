@@ -13,17 +13,11 @@ Those are purged with each release.
 
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
-laidout->Load() should be able to load scribus files
-
-open a scribus file directly, it seems to create 2 document listings
-
 fix memory holes
 
 refcounting crashing error with nets upon edit current document settings -> apply
 
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
-
-change signature settings, apply, back to view, does not remove the papergroup from the view!
 
 ---- less urgent bugs:
 select none, select doc, viewport jumps around... it should stay the same area
@@ -34,8 +28,6 @@ object deleting funky, import svg images, select one, hit delete, doesn't delete
 place 3 images, object select, must press delete twice...!?!?!?!
 
 paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
-
-somehow still able to sneak up on auto marks and move them around, should not be able to do this!!
 
 should not be able to group select an object and another object nested within
 
@@ -84,14 +76,15 @@ test:
   each export filter
   make some test scripts for command line testing
 
-Scribus import: import must support master pages
-
 sig editor: needs testing: command line func parser for sigs
 
+disable scale pages to new imposition in newdoc, as it's not implemented yet
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 update translations
+
+need to implement scale pages to new imposition when reimposing
 
 Scribus:
   import/export color meshes, for recent versions of Scribus
@@ -687,4 +680,13 @@ DONE have to implement exporting paths, grrr! thought I had already!!
   DONE svg
   DONE pdf
   DONE scribus
+
+DONE laidout->Load() should be able to load scribus files
+DONE open a scribus file directly, it seems to create 2 document listings
+
+DONE somehow still able to sneak up on auto marks and move them around, should not be able to do this!!
+
+DONE Scribus import: import must support master pages
+
+DONE change signature settings, apply, back to view, does not remove the papergroup from the view!
 

@@ -147,9 +147,6 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 
 LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
 {
-	cerr <<" ****** imp mysteredata::duplicate()!"<<endl;
-	return NULL;
-
 	MysteryData *mdata=dynamic_cast<MysteryData*>(dup);
 	if (!mdata && dup) return NULL;
 
@@ -182,6 +179,7 @@ LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
 
 	 //somedata elements:
 	dup->bboxstyle=bboxstyle;
+	dup->setbounds(this);
 	for (int c=0; c<6; c++) dup->matrix[c]=matrix[c];
 	return dup;
 }

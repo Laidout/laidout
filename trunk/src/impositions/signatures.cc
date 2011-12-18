@@ -584,7 +584,7 @@ int Signature::checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalco
 	return hasfinal;
 }
 
-//! With the final trimmed page size, set the paper size to the proper size to just contain it.
+//! With the final trimmed page size (w,h), set the paper size to the proper size to just contain it.
 int Signature::SetPaperFromFinalSize(double w,double h)
 {
 	 //find cell dims
@@ -596,8 +596,8 @@ int Signature::SetPaperFromFinalSize(double w,double h)
 	h*=(numhfolds+1);
 
 	 //find whole dims
-	w+=(tilex-1)*tilegapx + insetleft+insetright;
-	h+=(tiley-1)*tilegapy + insettop +insetbottom;
+	w=w*tilex + (tilex-1)*tilegapx + insetleft + insetright;
+	h=h*tiley + (tiley-1)*tilegapy + insettop  + insetbottom;
 
 	PaperStyle p("Custom",w,h,0,300,"in");
 	return SetPaper(&p);
