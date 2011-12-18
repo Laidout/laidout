@@ -595,6 +595,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			clearCurobj();
 			delete spread;
 			spread=NULL;
+			if (papergroup && !isDefaultPapergroup(1)) { papergroup->dec_count(); papergroup=NULL; }
 			//spreadi=-1;
 			setupthings(spreadi,-1);
 			needtodraw=1;
@@ -1020,8 +1021,8 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 
 	 // should always delete and re-new the spread, even if page is in current spread.
 	 // since page might be in spread, but in old viewmode...
-	if (isDefaultPapergroup()) {
-		papergroup->dec_count();
+	if (isDefaultPapergroup(1)) {
+		if (papergroup) papergroup->dec_count();
 		papergroup=NULL;
 	}
 
@@ -1878,9 +1879,18 @@ int LaidoutViewport::ChangeContext(int x,int y,LaxInterfaces::ObjectContext **oc
 	return 1;
 }
 
-//! Return whether LaidoutViewport::papergroup is the default papergroup of the current spread.
-int LaidoutViewport::isDefaultPapergroup()
-{ return papergroup && spread && spread->papergroup==papergroup; }
+//! Return whether LaidoutViewport::papergroup is the default papergroup of the current spread, or optionally if known by the current project.
+int LaidoutViewport::isDefaultPapergroup(int yes_if_in_project)
+{
+	if (!papergroup) return 0;
+	if (papergroup && spread && spread->papergroup==papergroup) return 1;
+	if (!yes_if_in_project) return 0;
+
+	for (int c=0; c<laidout->project->papergroups.n; c++) {
+		if (laidout->project->papergroups.e[c]==papergroup) return 1;
+	}
+	return 0;
+}
 
 
 /*! Called when moving objects around, this ensures that a move can
@@ -3257,14 +3267,14 @@ int ViewWindow::init()
 	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
 	updateContext(1);
 
-	last=ibut=new Button(this,"add page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"addPage",-1,
-						 _("Add Page"),NULL,laidout->icons.GetIcon("AddPage"),buttongap);
-	ibut->tooltip(_("Add 1 page after this one"));
-	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
-
 	last=ibut=new Button(this,"delete page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"deletePage",-1,
 						 _("Delete Page"),NULL,laidout->icons.GetIcon("DeletePage"),buttongap);
 	ibut->tooltip(_("Delete the current page"));
+	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+
+	last=ibut=new Button(this,"add page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"addPage",-1,
+						 _("Add Page"),NULL,laidout->icons.GetIcon("AddPage"),buttongap);
+	ibut->tooltip(_("Add 1 page after this one"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"import image",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"importImage",-1,
@@ -3632,7 +3642,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		int defaultoption;
 		c=0;
 		menu->AddSep(_("Paper Groups"));
-		defaultoption=menu->AddItem(_("default"),2000,LAX_ISTOGGLE|LAX_OFF|(((LaidoutViewport *)viewport)->isDefaultPapergroup()?LAX_CHECKED:0))-1;
+		defaultoption=menu->AddItem(_("default"),2000,LAX_ISTOGGLE|LAX_OFF|(((LaidoutViewport *)viewport)->isDefaultPapergroup(0)?LAX_CHECKED:0))-1;
 
 		for (c=0; c<laidout->project->papergroups.n; c++) {
 			pg=dynamic_cast<PaperGroup *>(laidout->project->papergroups.e[c]);
@@ -3778,12 +3788,18 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"prevSpread")) {
-		((LaidoutViewport *)viewport)->PreviousSpread();
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		if (s->info4==-1) ((LaidoutViewport *)viewport)->PreviousSpread();
+		else if (s->info4==1) ((LaidoutViewport *)viewport)->NextSpread();
+		else ((LaidoutViewport *)viewport)->PreviousSpread();
 		updateContext(0);
 		return 0;
 
 	} else if (!strcmp(mes,"nextSpread")) {
-		((LaidoutViewport *)viewport)->NextSpread();
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		if (s->info4==-1) ((LaidoutViewport *)viewport)->PreviousSpread();
+		else if (s->info4==1) ((LaidoutViewport *)viewport)->NextSpread();
+		else ((LaidoutViewport *)viewport)->NextSpread();
 		updateContext(0);
 		return 0;
 
