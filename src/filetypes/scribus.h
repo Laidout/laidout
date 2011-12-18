@@ -26,7 +26,7 @@
 void installScribusFilter();
 
 //------------------------ Scribus in/reimpose/out helpers -------------------------------------
-int addScribusDocument(const char *file);
+int addScribusDocument(const char *file, Document *existingdoc=NULL);
 int exportImposedScribus(Document *doc,const char *imposeout);
 
 //------------------------------------ ScribusExportFilter ----------------------------------

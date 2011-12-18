@@ -56,8 +56,12 @@ using namespace LaxInterfaces;
 
 //! Creates a Laidout Document from a Scribus file, and adds to laidout->project.
 /*! Return 0 for success or nonzero for error.
+ *
+ * If existingdoc!=NULL, then insert the file to that Document. In this case, it is not
+ * pushed onto the project, as it is assumed it is elsewhere. Note that this will
+ * basically wipe the existing document, and replace with the Scribus document.
  */
-int addScribusDocument(const char *file)
+int addScribusDocument(const char *file, Document *existingdoc)
 {
 	FILE *f=fopen(file,"r");
 	if (!f) return 1;
@@ -86,11 +90,22 @@ int addScribusDocument(const char *file)
 	imp->SetPaperSize(&paper);
 	imp->NumPages(1);
 
-	Document *newdoc=new Document(imp,NULL);//null file name to force rename on save
+	Document *newdoc=existingdoc;
+	if (newdoc) {
+		makestr(newdoc->saveas,NULL); //force rename later
+		if (newdoc->imposition) newdoc->imposition->dec_count();
+		newdoc->imposition=imp;
+		imp->inc_count();
+	} else {
+		newdoc=new Document(imp,NULL);//null file name to force rename on save
+	}
+
 	makestr(newdoc->name,"From ");
 	appendstr(newdoc->name,file);
 	imp->dec_count();
-	laidout->project->Push(newdoc);
+
+	if (!existingdoc) laidout->project->Push(newdoc);
+	else newdoc->inc_count();
 
 	ScribusImportFilter filter;
 	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
@@ -933,8 +948,8 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 
 	//GradientData *grad=NULL;
 	int ptype=PTYPE_None; //>0 is translatable to scribus object.
-				  //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
-	              //-1 is not handled, -2 is laidout gradient, -3 is MysteryData
+				  		 //2=img, 4=text, 5=line, 6=polygon, 7=polyline, 8=text on path
+	             		//-1 is not handled, -2 is laidout gradient, -3 is MysteryData
 
 	int l=-1,r=-1,t=-1,b=-1, next=-1,prev=-1;
 	int nativeid=-1;
@@ -1476,7 +1491,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    PWIDTH=\"1\" \n"         //line width of object
 				  "    SHADE2=\"100\" \n"       //shading for stroke
 				  "    TransValueS=\"0\" \n"    //(opt) Transparency value for stroke
-				  "    PCOLOR2=\"Black\" \n");  //color of stroke
+				  "    PCOLOR2=\"None\" \n");  //color of stroke
 		} else {
 			fprintf(f,
 				  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
@@ -1816,6 +1831,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 	MysteryData *mdata=NULL;
 	char *name, *value;
 	PtrStack<Page> masterpages;
+	RefPtrStack<SomeData> masterpagebounds;
 
 
 	 //changedir to directory of file to correctly parse relative links
@@ -1896,9 +1912,18 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 			a=page->find("NAM");
 			makestr(mpage->label,a->value);
 
-			//ignore other MASTERPAGE attributes, they are mainly just hints
-
 			masterpages.push(mpage,1);
+
+			SomeData *pagebound=new SomeData;
+			masterpagebounds.push(pagebound); pagebound->dec_count();
+			DoubleAttribute(page->find("PAGEXPOS")->value,  &pagebound->minx);
+			DoubleAttribute(page->find("PAGEYPOS")->value,  &pagebound->miny);
+			DoubleAttribute(page->find("PAGEWIDTH")->value, &pagebound->maxx);
+			DoubleAttribute(page->find("PAGEHEIGHT")->value,&pagebound->maxy);
+			pagebound->maxx+=pagebound->minx;
+			pagebound->maxy+=pagebound->miny;
+
+			//ignore other MASTERPAGE attributes, they are mainly just hints
 		}
 	}
 
@@ -1953,6 +1978,10 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				x-=pagebounds[pagenum].minx;
 				y-=pagebounds[pagenum].miny;
 				y=(pagebounds[pagenum].maxy-pagebounds[pagenum].miny)-y; //pageheight-y, needed to flip y around
+			} else {
+				x-=masterpagebounds.e[masterpageindex]->minx;
+				y-=masterpagebounds.e[masterpageindex]->miny;
+				y=(masterpagebounds.e[masterpageindex]->maxy-masterpagebounds.e[masterpageindex]->miny)-y; //pageheight-y, needed to flip y around
 			}
 
 			 //find out what type of Scribus object this is
@@ -2030,7 +2059,8 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				 //      name pgco
 				 //    var
 				 //      name pgno
-				if (masterpageindex==-1) tmp=mdata->attributes->find("content:"); else tmp=NULL; //don't convert for mp's yet
+				if (masterpageindex==-1) tmp=mdata->attributes->find("content:");
+				else tmp=NULL; //don't convert for mp's yet
 				if (tmp) {
 					Attribute *sub;
 					int num=-1;
@@ -2124,9 +2154,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 //				if (!strcmp(name,"NAME")) {
 //					cname=value;
 //				} else if (!strcmp(name,"CMYK")) {
-//					color=new CMYKColor(value);
+//					color=newCMYKColor(value);
 //				} else if (!strcmp(name,"RGB")) {
-//					color=new RGBColor(value);
+//					color=newRGBColor(value);
 //				} else if (!strcmp(name,"Spot")) {
 //					isspot=BooleanValue(value);
 //				} else if (!strcmp(name,"Register")) {
@@ -2171,9 +2201,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		
 			 //apply the objects at beginning of stack. Master page objects occur under all other objects.
 			docpage=doc->pages.e[c];
-			for (int c2=0; c2<master->layers.n(); c2++) {
+			for (int c2=0; c2<master->layers.n(); c2++) {//for each layer on master page
 			  layer=dynamic_cast<Group*>(master->layers.e(c2));//this is a layer
-			  for (int c3=0; c3<layer->n(); c3++) {
+			  for (int c3=0; c3<layer->n(); c3++) {//for each object in c2 layer of master page
 				obj=layer->e(c3);
 				DBG cerr<<"scribus master page object: "<<obj->whattype()<<endl;
 
@@ -2182,7 +2212,6 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 					DBG cerr<<" *** could not duplicate "<<obj->whattype()<<endl;
 					continue;
 				}
-				docpage->layers.push(newobj);
 				dynamic_cast<Group *>(docpage->layers.e(0))->push(newobj);
 
 				mobj=dynamic_cast<MysteryData*>(newobj);
@@ -2193,12 +2222,12 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 						Attribute *sub;
 						int num=-1;
 						char scratch[50];
-						for (int c=0; c<tmp->attributes.n; c++) {
-							sub=tmp->attributes.e[c];
+						for (int c4=0; c4<tmp->attributes.n; c4++) {
+							sub=tmp->attributes.e[c4];
 							num=-1;
 							if (strcmp(sub->name,"var")) continue;
 							if (!strcmp(sub->attributes.e[0]->value,"pgno")) {
-								num=firstpagenum+pagenum+1;
+								num=start+(c-docpagenum)+1;
 							} else if (!strcmp(sub->attributes.e[0]->value,"pgco")) {
 								num=numpages;
 							}
@@ -2208,7 +2237,6 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 							makestr(sub->attributes.e[0]->name,"CH");
 							sprintf(scratch,"%d",num);
 							makestr(sub->attributes.e[0]->value,scratch);
-										
 						}
 					}
 				}

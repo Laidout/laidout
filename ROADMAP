@@ -14,7 +14,7 @@ VERSION 0.092
 (done) Ability to add custom printer marks
 (done) Fix multi-object selection move when crossing page boundaries
 (done) Gui for modifying Page Labels
-       Scribus import must support master pages
+(done) Scribus import must support master pages
 (done) Scribus import/export should support PageRange <-> Section conversion on import
 (done) Units, especially Allow changing units in rulers
 (done) Add proper .desktop and application icons installation
@@ -50,6 +50,7 @@ VERSION 0.093
        double click on group should change selection area to group contents?
        Tools should remember their settings
        Clean up patch controls
+       implement scale pages to new imposition when reimposing
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
