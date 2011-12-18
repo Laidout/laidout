@@ -65,14 +65,11 @@ int HelpWindow::preinit()
 	win_w=m[1];
 	win_h=m[7];
 
-	int redo=0;
 	if (win_h>(int)(.9*screen->height)) { 
 		win_h=(int)(.9*screen->height);
-		redo=1;
 	}
 	if (win_w>(int)(.9*screen->width)) { 
 		win_w=(int)(.9*screen->width);
-		redo=1;
 	}
 	return 0;
 }

@@ -332,7 +332,7 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 	else if (startpage>=doc->pages.n) startpage=doc->pages.n-1;
 	if (defaultdpi<1) defaultdpi=150;
 	int curpage=startpage;
-	int onedirperpage;
+	//int onedirperpage;
 	int scaleflags=0;
 	char error=0;
 	char *preview=NULL,*desc=NULL,*path=NULL;
@@ -386,8 +386,8 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 			flush=1;
 			jumptopage=-1;
 
-		} else if (!strcmp(name,"oneDirPerPage")) {
-			onedirperpage=BooleanAttribute(value);
+		//} else if (!strcmp(name,"oneDirPerPage")) {
+		//	onedirperpage=BooleanAttribute(value);
 
 		} else if (!strcmp(name,"path")) {
 			if (value) makestr(path,value);

@@ -732,8 +732,9 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 	x=y=w=h=X=Y=W=H=0;
 
 	 // Find how many pixels make 1 inch, basescaling=inches/pixel
-	double scaling;
-	double basescaling=double(XDisplayWidthMM(anXApp::app->dpy,0))/25.4/XDisplayWidth(anXApp::app->dpy,0);
+	 // this is difficult, as X does not return reliable values
+	//double scaling;
+	//double basescaling=double(XDisplayWidthMM(anXApp::app->dpy,0))/25.4/XDisplayWidth(anXApp::app->dpy,0);
 	
 	 // Position the LittleSpreads...
 	DoubleBBox bb;
@@ -742,7 +743,7 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 	for (int c=0; c<spreads.n; c++) {
 		w=spreads.e[c]->maxx-spreads.e[c]->minx;
 		h=spreads.e[c]->maxy-spreads.e[c]->miny;
-		if (c==0) { scaling=1./(basescaling*w); }
+		//if (c==0) { scaling=1./(basescaling*w); }
 		spreads.e[c]->origin(flatpoint(x-spreads.e[c]->minx,y-spreads.e[c]->miny));
 		x+=w+gap;
 		rw+=w+gap;
