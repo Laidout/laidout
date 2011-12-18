@@ -124,6 +124,26 @@ int Project::Push(Document *doc)
 	return 0;
 }
 
+//! Return the document object corresponding to name.
+/*! if howmatch==0, match filename exactly.
+ * howmatch==1, match any part of filename.
+ * howmatch==10, match name exactly.
+ * howmatch==11, match any part of name.
+ */
+Document *Project::Find(const char *name, int howmatch)
+{
+	if (!name) return NULL;
+	for (int c=0; c<docs.n; c++) {
+		if (howmatch==0 && docs.e[c]->filename && !strcmp(docs.e[c]->filename,name)) return docs.e[c]->doc;
+		if (howmatch==1 && docs.e[c]->filename && strstr(docs.e[c]->filename,name)) return docs.e[c]->doc;
+
+		if (howmatch==10 && docs.e[c]->name && !strcmp(docs.e[c]->name,name)) return docs.e[c]->doc;
+		if (howmatch==11 && docs.e[c]->name && strstr(docs.e[c]->name,name)) return docs.e[c]->doc;
+	}
+	return NULL;
+}
+
+
 /*! Return 0 for document removed, or 1 for not found or otherwise not removed.
  * The doc's count will be decremented.
  *

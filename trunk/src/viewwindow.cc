@@ -1139,6 +1139,8 @@ int LaidoutViewport::DeleteObject()
 
 	 // remove d from wherever it's at:
 	Group *o=dynamic_cast<Group*>(getanObject(curobj.context,0,curobj.context.n()-1));
+	if (!o && curobj.spread()==2) o=&papergroup->objs; // *** must find way to automate this!!
+	if (!o) return -1; //parent object not found!
 	o->remove(curobj.context.e(curobj.context.n()-1));
 	
 	 // clear d from interfaces and check in 
@@ -1195,6 +1197,7 @@ int LaidoutViewport::SelectObject(int i)
 		findAny();
 		if (firstobj.obj) setCurobj(&firstobj);
 		else return 0;
+
 	} else if (i==-2 || i==-1) { //prev or next
 		VObjContext o;
 		o=curobj;
@@ -1211,6 +1214,7 @@ int LaidoutViewport::SelectObject(int i)
 			if (nextObject(&o,i==-2?0:1)!=1) { searchmode=Search_None; return 0; }
 		}
 		setCurobj(&o);
+
 	} else return 0;
 	
 	ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
@@ -1520,7 +1524,7 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 	do {
 		DBG cerr <<"LaidoutViewport->nextObject count="<<cn++<<endl;
 
-		c=ObjectContainer::nextObject(oc->context,0,inc?Next_Increment:Next_Decrement,&d);
+		c=ObjectContainer::nextObject(oc->context,0,Next_SkipLockedKids|(inc?Next_Increment:Next_Decrement),&d);
 		oc->SetObject(dynamic_cast<SomeData *>(d));
 		if (c==Next_Error) return 0; //error finding a next
 
@@ -2290,6 +2294,8 @@ void LaidoutViewport::Refresh()
 			//DrawData(dp,spread->path->m(),spread->path,NULL,&fs,drawflags);
 			DrawData(dp,spread->path,NULL,&fs,drawflags);
 		}
+
+		if (spread->marks) DrawData(dp,spread->marks,NULL,NULL,drawflags);
 		 
 		 // draw the pages
 		Page *page=NULL;
@@ -2318,6 +2324,7 @@ void LaidoutViewport::Refresh()
 				flatpoint center=flatpoint((paths->minx+paths->maxx)/2,(paths->miny+paths->maxy)/2);
 				p=p->firstPoint(1);
 				Coordinate *tp=p;
+				dp->LineAttributes(0,LineSolid, CapButt, JoinMiter);
 				dp->NewFG(0,0,0);
 				do {
 					if (tp->flags&POINT_VERTEX) 
@@ -2364,7 +2371,7 @@ void LaidoutViewport::Refresh()
 				DBG cerr <<"********outline bounds ll:"<<marginoutline->minx<<','<<marginoutline->miny
 				DBG      <<"  ur:"<<marginoutline->maxx<<','<<marginoutline->maxy<<endl;
 				// ***DrawData(dp,marginoutline,&margin_linestyle,NULL,drawflags);
-				LineStyle ls(0xa000,0xa000,0xa000,0xffff, 1,CapButt,JoinBevel,~0,GXcopy);
+				LineStyle ls(0xa000,0xa000,0xa000,0xffff, 0,CapButt,JoinBevel,0,GXcopy);
 				DrawData(dp,marginoutline,&ls,NULL,drawflags);
 				marginoutline->dec_count();
 			}
@@ -2460,15 +2467,15 @@ void LaidoutViewport::Refresh()
  */
 int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG if (ch=='f') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
-	DBG 	ObjectContext *oc=NULL;
-	DBG		int x,y;
-	DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
-	DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
-	DBG 	cerr <<"============mouse move found:"<<cc;
-	DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
-	DBG 	return 0;
-	DBG }
+	//DBG if (ch=='f') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
+	//DBG 	ObjectContext *oc=NULL;
+	//DBG		int x,y;
+	//DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
+	//DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
+	//DBG 	cerr <<"============mouse move found:"<<cc;
+	//DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
+	//DBG 	return 0;
+	//DBG }
 
 	 // check these first, before asking interfaces
 	if (ch==' ') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
@@ -3197,11 +3204,12 @@ int ViewWindow::init()
 	
 
 	 //----- Page Flipper
-	last=pagenumber=new PageFlipper(doc,this,"page number", 
-									last,object_id,"newPageNumber",
-									_("Page: "));
-	pagenumber->tooltip(_("The current page"));
-	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
+	pagenumber=NULL;
+//	last=pagenumber=new PageFlipper(doc,this,"page number", 
+//									last,object_id,"newPageNumber",
+//									_("Page: "));
+//	pagenumber->tooltip(_("The current page"));
+//	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
 	
 	last=ibut=new Button(this,"prev spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"prevSpread",-1,
 						 "<",NULL,laidout->icons.GetIcon("PreviousSpread"),buttongap);
@@ -3539,24 +3547,18 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		
 		return 0;
 
-//	} else if (!strcmp(mes,"make curcolor")) {
-//		 //change color box color to what's in the event
-//		 //(sent from interfaces)
-//		float max=s->info1;
-//		unsigned int red,green,blue,alpha;
-//		red=  (unsigned short) (s->info2/max*65535);
-//		green=(unsigned short) (e->data.l[2]/max*65535);
-//		blue= (unsigned short) (e->data.l[3]/max*65535);
-//		alpha=(unsigned short) (e->data.l[4]/max*65535);
-//		colorbox->Set(red,green,blue,alpha);
-//		char blah[100];
-//		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
-//				(float) red   / 65535,
-//				(float) green / 65535,
-//				(float) blue  / 65535,
-//				(float) alpha / 65535);
-//		mesbar->SetText(blah);
-//		return 0;
+	} else if (!strcmp(mes,"make curcolor")) {
+		ViewerWindow::Event(data,mes);
+
+		 //update status message
+		char blah[100];
+		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
+				(float) colorbox->Red()   / 65535,
+				(float) colorbox->Green() / 65535,
+				(float) colorbox->Blue()  / 65535,
+				(float) colorbox->Alpha() / 65535);
+		mesbar->SetText(blah);
+		return 0;
 
 	} else if (!strcmp(mes,"rulercornerbutton")) {
 		 //pop up a list of available documents and limbos
@@ -3766,10 +3768,10 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		int p=s->info1;
 		if (p>doc->pages.n) {
 			p=0;
-			pagenumber->Select(p);
+			if (pagenumber) pagenumber->Select(p);
 		} else if (p<0) {
 			p=doc->pages.n-1;
-			pagenumber->Select(p);
+			if (pagenumber) pagenumber->Select(p);
 		}
 		((LaidoutViewport *)viewport)->SelectPage(p);
 		updateContext(0);
@@ -3801,7 +3803,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		 // must update labels have Spread [2-3]: 2
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		int v=s->info1;
-		pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(v,-1));
+		//pagenumber->Label(((LaidoutViewport *)viewport)->SetViewMode(v,-1));
+		((LaidoutViewport *)viewport)->SetViewMode(v,-1);
 		return 0;
 
 	} else if (!strcmp(mes,"importImage")) {
@@ -3968,7 +3971,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 	}
 	
-	return anXWindow::Event(data,mes);
+	return ViewerWindow::Event(data,mes);
 }
 
 
@@ -4057,6 +4060,23 @@ int ViewWindow::FocusOn(const Laxkit::FocusChangeData *e)
 	//if (doc) laidout->curdoc=doc;
 	laidout->lastview=this;
 	return anXWindow::FocusOn(e);
+}
+
+//! Override to use ObjectInterface when object's contents are locked.
+int ViewWindow::SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext *oc)
+{
+	if (oc->obj && (oc->obj->flags&SOMEDATA_LOCK_CONTENTS)) {
+		for (int c=0; c<tools.n; c++) {
+			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+				SelectTool(tools.e[c]->id);
+				((ObjectInterface*)tools.e[c])->AddToSelection(oc);
+				updateContext(1);
+				break;
+			}
+		}
+		return 0;
+	}
+	return ViewerWindow::SelectToolFor(datatype,oc);
 }
 
 int ViewWindow::SelectTool(int id)

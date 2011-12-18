@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007-2011 by Tom Lechner
 //
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
@@ -55,7 +55,7 @@ void installPdfFilter()
 	
 	PdfExportFilter *pdfout=new PdfExportFilter(4);
 	pdfout->GetStyleDef();
-	laidout->exportfilters.push(pdfout);
+	laidout->PushExportFilter(pdfout);
 	
 	//PdfInputFilter *pdfin=new PdfInputFilter;
 	//laidout->importfilters(pdfin);
@@ -165,6 +165,7 @@ class PdfObjInfo
 	PdfObjInfo *next;
 	char *data;//optional for writing out
 	long len; //length of data, just in case data has bytes with 0 value
+	unsigned long lo_object_id;
 	PdfObjInfo();
 	virtual ~PdfObjInfo();
 };
@@ -173,6 +174,7 @@ PdfObjInfo::PdfObjInfo()
 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(NULL), data(NULL), len(0)
 {
 	i=o++; 
+	lo_object_id=0;
 	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
 }
 PdfObjInfo::~PdfObjInfo()
@@ -213,6 +215,8 @@ static void pdfImagePatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectc
 					 LaxInterfaces::ImagePatchData *img, char *&error_ret,int &warning);
 static void pdfGradient(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 						LaxInterfaces::GradientData *g, char *&error_ret,int &warning);
+static void pdfPaths(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+						LaxInterfaces::PathsData *g, char *&error_ret,int &warning);
 
 
 //-------------------------------- pdfdumpobj
@@ -253,25 +257,24 @@ void pdfdumpobj(FILE *f,
 		Group *g=dynamic_cast<Group *>(object);
 		for (int c=0; c<g->n(); c++) 
 			pdfdumpobj(f,obj,stream,objectcount,resources,g->e(c),error_ret,warning);
-		
-//	} else if (!strcmp(object->whattype(),"PathsData")) {
-//		PathsData *path=dynamic_cast<PathsData *>(object);
-//		if (path) {
-//		}
-//
+
+	} else if (!strcmp(object->whattype(),"PathsData")) {
+		pdfPaths(f,obj,stream,objectcount,resources,
+				dynamic_cast<PathsData *>(object), error_ret,warning);
+
 	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
 		pdfImagePatch(f,obj,stream,objectcount,resources,
 				dynamic_cast<ImagePatchData *>(object), error_ret,warning);
-		
+
 	} else if (!strcmp(object->whattype(),"ImageData")) {
 		pdfImage(f,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), error_ret,warning);
-		
+
 	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
 		pdfColorPatch(f,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object));
-		
+
 	} else if (!strcmp(object->whattype(),"GradientData")) {
 		pdfGradient(f,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), error_ret,warning);
-		
+
 	} else {
 		setlocale(LC_ALL,"");
 		sprintf(scratch,_("Warning: Cannot export %s to Pdf"),object->whattype());
@@ -1087,6 +1090,11 @@ static void pdfImage(FILE *f,
 	
 	if (!img || !img->image) return;
 
+	// *** search current PDfObjInfos for occurance of this image.
+	//     if found, add reference to that, rather than add duplicate.
+	//     WARNING! must be careful to include the found existing object
+	//     in resources! resources is fresh for each page.
+
 	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
 	if (!imlibimg) return;
 	
@@ -1140,6 +1148,7 @@ static void pdfImage(FILE *f,
 	obj=obj->next;
 	obj->byteoffset=ftell(f);
 	obj->number=objectcount++;
+	obj->lo_object_id=img->object_id;
 	int imagexobj=obj->number;
 	fprintf(f,"%ld 0 obj\n",obj->number);
 	fprintf(f,"<<\n"
@@ -1416,6 +1425,144 @@ static void pdfGradient(FILE *f,
 	} else {
 		resources.push("/Shading",scratch);
 	}
+}
+
+
+//--------------------------------------- pdfPaths() ----------------------------------------
+
+static int pdfaddpath(FILE *f,Coordinate *path, char *&stream);
+
+//! Output pdf for a PathsData. 
+static void pdfPaths(FILE *f,
+					 PdfObjInfo *&obj,
+					 char *&stream,
+					 int &objectcount,
+					 Attribute &resources,
+					 LaxInterfaces::PathsData *pdata,
+					 char *&error_ret,int &warning)
+{
+	if (!pdata) return;
+
+	Coordinate *p,*start;
+	flatpoint pp;
+	int n=0;
+	LineStyle *lstyle;
+	FillStyle *fstyle;
+	char buffer[255];
+
+	for (int c=0; c<pdata->paths.n; c++) {
+		p=start=pdata->paths.e[c]->path;
+		if (!p) continue;
+
+		lstyle=pdata->paths.e[c]->linestyle;
+		if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
+
+		fstyle=pdata->fillstyle;//default for all data paths
+
+		n=pdfaddpath(f,p,stream);
+		
+		if (n && fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
+			sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
+						fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
+			appendstr(stream,buffer);
+		}
+
+		if (n && lstyle && lstyle->hasStroke()) {
+			 //linecap
+			if (lstyle->capstyle==CapButt) appendstr(stream,"0 J\n");
+			else if (lstyle->capstyle==CapRound) appendstr(stream,"1 J\n");
+			else if (lstyle->capstyle==CapProjecting) appendstr(stream,"2 J\n");
+
+			 //linejoin
+			if (lstyle->joinstyle==JoinMiter) appendstr(stream,"0 j\n");
+			else if (lstyle->joinstyle==JoinRound) appendstr(stream,"1 j\n");
+			else if (lstyle->joinstyle==JoinBevel) appendstr(stream,"2 j\n");
+
+			//setmiterlimit
+			//setstrokeadjust
+
+			 //line width
+			sprintf(buffer," %.10g w\n",lstyle->width);
+			appendstr(stream,buffer);
+
+			 //dash pattern
+			if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+				appendstr(stream," [] 0 d\n"); //clear dash array
+			else {
+				sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array
+				appendstr(stream,buffer);
+			}
+
+			 //set stroke color
+			sprintf(buffer,"%.10g %.10g %.10g RG\n",
+						lstyle->color.red/65535.,lstyle->color.green/65535.,lstyle->color.blue/65535.);
+			appendstr(stream,buffer);
+		}
+
+		 //fill and/or stroke
+		if (fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
+			if (fstyle->fillrule==EvenOddRule) appendstr(stream,"B*\n"); //fill and stroke
+			else appendstr(stream,"B\n"); //fill and stroke
+		} else if (fstyle && fstyle->hasFill()) {
+			if (fstyle->fillrule==EvenOddRule) appendstr(stream,"f*\n"); //fill and stroke
+			else appendstr(stream,"f\n"); //fill only
+		} else if (lstyle && lstyle->hasStroke()) {
+			appendstr(stream,"S\n"); //stroke only
+		}
+	}
+}
+
+static int pdfaddpath(FILE *f,Coordinate *path, char *&stream)
+{
+	Coordinate *p,*p2,*start;
+	p=start=path->firstPoint(1);
+	if (!p) return 0;
+
+	 //build the path to draw
+	flatpoint c1,c2;
+	int n=1; //number of points seen
+	char buffer[255];
+
+	sprintf(buffer,"%.10f %.10f m ",start->p().x,start->p().y);
+	appendstr(stream,buffer);
+	do { //one loop per vertex point
+		p2=p->next; //p points to a vertex
+		if (!p2) break;
+
+		n++;
+
+		//p2 now points to first Coordinate after the first vertex
+		if (p2->flags&(POINT_TOPREV|POINT_TONEXT)) {
+			 //we do have control points
+			if (p2->flags&POINT_TOPREV) {
+				c1=p2->p();
+				p2=p2->next;
+			} else c1=p->p();
+			if (!p2) break;
+
+			if (p2->flags&POINT_TONEXT) {
+				c2=p2->p();
+				p2=p2->next;
+			} else { //otherwise, should be a vertex
+				//p2=p2->next;
+				c2=p2->p();
+			}
+
+			sprintf(buffer,"%.10f %.10f %.10f %.10f %.10f %.10f c\n",
+					c1.x,c1.y,
+					c2.x,c2.y,
+					p2->p().x,p2->p().y);
+			appendstr(stream,buffer);
+		} else {
+			 //we do not have control points, so is just a straight line segment
+			sprintf(buffer,"%.10f %.10f l\n", p2->p().x,p2->p().y);
+			appendstr(stream,buffer);
+		}
+		p=p2;
+	} while (p && p->next && p!=start);
+	if (p==start) appendstr(stream,"h ");
+
+	return n;
 }
 
 

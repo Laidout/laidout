@@ -40,7 +40,7 @@ void installPodofoFilter()
 {
 	PodofooutFilter *podofoout=new PodofooutFilter;
 	podofoout->GetStyleDef();
-	laidout->exportfilters.push(podofoout);
+	laidout->PushExportFilter(podofoout);
 }
 
 

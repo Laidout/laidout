@@ -27,11 +27,11 @@
 //! Just call each installWhatever() for the filters defined in other files.
 void installFilters()
 {
-	installPostscriptFilters();
-	installSvgFilter();
 	installImageFilter();
 	installPptFilter();
-	installScribusFilter();
 	installPdfFilter();
 	installPodofoFilter();
+	installPostscriptFilters();
+	installScribusFilter();
+	installSvgFilter();
 }

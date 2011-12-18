@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2011 by Tom Lechner
 //
 
 
@@ -28,6 +28,8 @@
 #include "impositions/netdialog.h"
 #include "impositions/singleseditor.h"
 #include "utils.h"
+#include "filetypes/scribus.h"
+#include "headwindow.h"
 	
 #include <iostream>
 using namespace std;
@@ -122,13 +124,32 @@ int LaidoutOpenWindow::Event(const EventData *data,const char *mes)
 				app->destroywindow(this);
 				return 0;
 			}
+
 			if (laidout_file_type(strs->strs[c],NULL,NULL,NULL,"Document",NULL)==0) {
 				 //file is document
 				n++;
 				openingdocs=1;
 				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
 				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c],NULL);
+				continue;
 			}
+
+			if (isScribusFile(strs->strs[c])) {
+				if (addScribusDocument(strs->strs[c])==0) {
+					n++;
+					openingdocs=1;
+					
+					 //create a view window
+					Document *doc=laidout->project->docs.e[laidout->project->docs.n-1]->doc;
+					if (doc) app->addwindow(newHeadWindow(doc,"ViewWindow"));
+				} else {
+					//add to error log for failure to open!
+				}
+				continue;
+			}
+
+			 //else:
+			//add to error log for failure to open!
 		}
 
 		if (n) app->destroywindow(this);

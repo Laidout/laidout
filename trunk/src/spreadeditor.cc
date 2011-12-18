@@ -394,7 +394,7 @@ int SpreadInterface::Refresh()
 	
 	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy);
 	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy);
-	LineStyle ls(0,0,0xffff,0xffff, 4,CapButt,JoinMiter,~0,GXcopy);
+	LineStyle ls(0,0,0xffff,0xffff, 4/dp->Getmag(),CapButt,JoinMiter,~0,GXcopy);
 	//Page *page;
 	ImageData *thumb=NULL;
 	dp->ClearClip();

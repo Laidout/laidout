@@ -1119,6 +1119,9 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 				else sprintf(filename,filebase,c,p);
 
 				pg=new PaperGroup(papergroup->papers.e[p]);
+				if (papergroup->objs.n()) {
+					for (int o=0; o<papergroup->objs.n(); o++) pg->objs.push(papergroup->objs.e(o));
+				}
 				config->papergroup=pg;
 
 				err=config->filter->Out(filename,config,error_ret);

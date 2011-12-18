@@ -35,13 +35,14 @@ SomeData *RegistrationMark(double pointsize, double linewidthinpoints)
 {
 	double d=pointsize/72/2;
 	PathsData *paths=new PathsData;
+	paths->flags|=SOMEDATA_LOCK_CONTENTS;
 	ScreenColor color(0,0,0,65535);
 	paths->line(d/10,CapButt,JoinRound,&color);
 
 	 //make circle
 	flatpoint *pts=bez_circle(4, 0,0,d/2);
 	for (int c=0; c<12; c++) {
-		paths->append(pts[c], (c%3==0) ? POINT_TONEXT: (c%3==1?POINT_VERTEX:POINT_TOPREV) );
+		paths->append(pts[c], (c%3==0) ? POINT_TONEXT: (c%3==1?(POINT_VERTEX|POINT_REALLYSMOOTH):POINT_TOPREV) );
 	}
 	delete[] pts;
 	paths->close();
@@ -68,6 +69,8 @@ SomeData *BWColorBars(double pointsize, int colorsystem)
 	double s=pointsize/72;
 
 	Group *g=new Group;
+	g->flags|=SOMEDATA_LOCK_KIDS|SOMEDATA_KEEP_ASPECT;
+	g->obj_flags|=OBJ_IgnoreKids;
 	PathsData *b;
 
 	 //add fills
@@ -78,14 +81,21 @@ SomeData *BWColorBars(double pointsize, int colorsystem)
 		if (colorsystem==LAX_COLOR_GRAY) { color.grayf((10-c)/10.); b->fill(&color); }
 		else if (colorsystem==LAX_COLOR_RGB) { color.rgbf((10-c)/10.,(10-c)/10.,(10-c)/10.);  b->fill(&color); }
 		else if (colorsystem==LAX_COLOR_CMYK) { color.cmykf(0.,0.,0.,(10-c)/10.);  b->fill(&color); }
+
+		color.rgbf(0,0,0);//black outline
+		b->line(s/72,CapButt,JoinMiter,&color);
+		b->FindBBox();
 		g->push(b);
 		b->dec_count();
 	}
 
-	 //create outline
+	 //create outline of whole
 	b=new PathsData;
+	color.rgbf(0,0,0);//black outline
+	b->line(s/72,CapButt,JoinMiter,&color);
 	b->appendRect(0,0,11*s,s);
 	for (int c=1; c<=10; c++) { b->pushEmpty(); b->append(c*s,0); b->append(c*s,s); }
+	b->FindBBox();
 	g->push(b);
 	b->dec_count();
 

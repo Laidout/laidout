@@ -48,11 +48,11 @@ void psContinueColorPatch(FILE *f,LaxInterfaces::ColorPatchData *g,int flag,int 
  */
 void psColorPatch(FILE *f,ColorPatchData *g)
 {
-	int r,c,          // row and column of a patch, not of the coords, which are *3
-		rows,columns, // the number of patches
-		xs,ys;        //g->xsize and ysize
-	xs=g->xsize;
-	ys=g->ysize;
+	int r,c;          // row and column of a patch, not of the coords, which are *3
+	int rows,columns; // the number of patches
+	//int xs,ys;        //g->xsize and ysize
+	//xs=g->xsize;
+	//ys=g->ysize;
 	rows=g->ysize/3;
 	columns=g->xsize/3;
 	r=0;
@@ -133,6 +133,7 @@ void psColorPatch(FILE *f,ColorPatchData *g)
 			">> shfill\n\n");
 }
 
+//mappings for continuation of patches in the postscript way
 char ro[][16]={{3,2,1,0,0,0,0,1,2,3,3,3,2,1,1,2},
 			  {0,0,0,0,1,2,3,3,3,3,2,1,1,1,2,2},
 			  {0,1,2,3,3,3,3,2,1,0,0,0,1,2,2,1},
