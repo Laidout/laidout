@@ -1368,6 +1368,32 @@ int LaidoutApp::NewProject(Project *proj,char **error_ret)
 	return 0;
 }
 
+//! Push onto exportfilters, in alphabetical order.
+void LaidoutApp::PushExportFilter(ExportFilter *filter)
+{
+	if (!filter) return;
+	for (int c=0; c<exportfilters.n; c++) {
+		if (strcmp(filter->VersionName(),exportfilters.e[c]->VersionName())<0) {
+			exportfilters.push(filter,-1,c);
+			return;
+		}
+	}
+	exportfilters.push(filter);
+}
+
+//! Push onto importfilters, in alphabetical order.
+void LaidoutApp::PushImportFilter(ImportFilter *filter)
+{
+	if (!filter) return;
+	for (int c=0; c<importfilters.n; c++) {
+		if (strcmp(filter->VersionName(),importfilters.e[c]->VersionName())<0) {
+			importfilters.push(filter,-1,c);
+			return;
+		}
+	}
+	importfilters.push(filter);
+}
+
 //! Call dump_out() on all HeadWindow objects in topwindows.
 /*! This writes out:
  * <pre>

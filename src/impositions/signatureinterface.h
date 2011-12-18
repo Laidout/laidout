@@ -43,7 +43,8 @@ class ActionArea : public Laxkit::DoubleBBox
 	int type; //basic type this overlay is: handle (movable), slider, button, display only, pan, menu trigger
 	int PointIn(double x,double y);
 
-	ActionArea(int what,int ntype,const char *txt,const char *ntip,int r,int v,unsigned long col,int cat);
+	ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
+			   int isreal,int isvisible,unsigned long ncolor,int ncategory);
 	virtual ~ActionArea();
 	virtual flatpoint *Points(flatpoint *pts, int n, int takethem);
 	virtual void FindBBox();
@@ -80,7 +81,6 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	int onoverlay,overoverlay; //nonzero if mouse clicked down on and is over an overlay
 	double arrowscale;
 	ActionArea *control(int what);
-	int adjustControl(int handle, int dir);
 
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
@@ -96,6 +96,7 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	void remapHandles(int which=0);
 	void createHandles();
 	int offsetHandle(int which, flatpoint d);
+	int adjustControl(int handle, int dir);
 	void remapAffectedCells(int whichfold);
 	void drawHandle(ActionArea *area, flatpoint offset);
 

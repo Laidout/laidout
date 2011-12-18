@@ -33,6 +33,7 @@ class MysteryData : public LaxInterfaces::SomeData
 	MysteryData(const char *gen=NULL);
 	virtual ~MysteryData();
 	virtual const char *whattype() { return "MysteryData"; }
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
 	virtual int installAtts(LaxFiles::Attribute *att);
 	
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

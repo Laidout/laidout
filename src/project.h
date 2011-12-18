@@ -62,6 +62,7 @@ class Project : public LaxFiles::DumpUtility
 	virtual int clear();
 	virtual int Push(Document *doc);
 	virtual int Pop(Document *doc);
+	virtual Document *Find(const char *name, int howmatch);
 	virtual int valid();
 };
 

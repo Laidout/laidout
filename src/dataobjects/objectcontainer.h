@@ -35,10 +35,12 @@
 #define Next_PlaceLevelAndSubsOnly  (1<<4)
 #define Next_SkipUnselectable       (1<<5)
 #define Next_SkipZones              (1<<6)
+#define Next_SkipLockedKids         (1<<7)
 
 #define OBJ_Unselectable  (1<<0)
 #define OBJ_Zone          (1<<1)
 #define OBJ_ZoneTip       (1<<2)
+#define OBJ_IgnoreKids    (1<<3)
 
 class ObjectContainer : virtual public Laxkit::anObject
 {

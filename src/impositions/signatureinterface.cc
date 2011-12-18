@@ -80,14 +80,16 @@ using namespace std;
 #define SP_Num_Pages         25
 #define SP_Num_Sigs          26
 
+#define SP_Automarks         27
+
  //these three currently ignored for the most part:
-#define SP_Up                27
-#define SP_X                 28
-#define SP_Y                 29
+#define SP_Up                29
+#define SP_X                 30
+#define SP_Y                 31
 
 #define SP_FOLDS             100
 
-// *************************************
+
 //------------------------------------- ActionArea --------------------------------------
 //typedef void RenderActionAreaFunc(Laxkit::Displayer *disp,ActionArea *overlay);
 
@@ -117,19 +119,20 @@ enum ActionAreaType {
  */
 
 
-ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntip,int r,int v,unsigned long col,int cat)
+ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
+					   int isreal,int isvisible,unsigned long ncolor,int ncategory)
 {
 	text=newstr(txt);
-	tip=newstr(ntip);
+	tip=newstr(ntooltip);
 	outline=NULL;
 	npoints=0;
-	visible=v;
-	real=r;
-	color=col;
+	visible=isvisible;
+	real=isreal;
+	color=ncolor;
 	action=what;
 	type=ntype;
 	hidden=0;
-	category=cat;
+	category=ncategory;
 }
 
 ActionArea::~ActionArea()
@@ -207,7 +210,7 @@ void ActionArea::FindBBox()
 	for (int c=0; c<npoints; c++) addtobounds(outline[c]);
 }
 
-// *************************************
+
 
 //------------------------------------- SignatureInterface --------------------------------------
 	
@@ -511,6 +514,8 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 	return 1;
 }
 
+/*! This only allocates the controls, does not position or anything else.
+ */
 void SignatureInterface::createHandles()
 {
 	unsigned long c;
@@ -558,9 +563,10 @@ void SignatureInterface::createHandles()
 	controls.push(new ActionArea(SP_V_Folds_bottom   , AREA_Slider, NULL, _("Number of vertical folds"),1,0,c,1));
 
 	controls.push(new ActionArea(SP_Sheets_Per_Sig   , AREA_Slider, NULL, _("Wheel or drag changes"),1,0,0,0));
-	controls.push(new ActionArea(SP_Num_Pages        , AREA_Slider, NULL, _("Wheel or drag changes"),1,0,0,0));
-	controls.push(new ActionArea(SP_Num_Sigs         , AREA_Slider, NULL, _("Wheel or drag changes"),1,0,0,0));
+	controls.push(new ActionArea(SP_Num_Pages        , AREA_Slider, "Pages ??",  _("Wheel or drag changes number of pages"),1,0,0,0));
+	controls.push(new ActionArea(SP_Num_Sigs         , AREA_Slider, "Sigs ??",   _("Number of signatures needed"),1,0,0,0));
 
+	controls.push(new ActionArea(SP_Automarks        , AREA_Slider, "Automarks", _("Wheel or click to select auto printer marks"),1,0,0,0));
 }
 
 ActionArea *SignatureInterface::control(int what)
@@ -569,7 +575,11 @@ ActionArea *SignatureInterface::control(int what)
 	return NULL;
 }
 
-/*! which==0 means do all. which&1 do singletons, which&2 pattern area (category 1), which&4 page area (category 2)
+//! Position the handles to be where they should.
+/*! which==0 means do all.
+ *  which&1 do singletons,
+ *  which&2 pattern area (category 1),
+ *  which&4 page area (category 2)
  */
 void SignatureInterface::remapHandles(int which)
 {
@@ -584,7 +594,49 @@ void SignatureInterface::remapHandles(int which)
 
 	arrowscale=2*INDICATOR_SIZE/dp->Getmag();
 
+
+	 //----- sheets and pages, and other general settings
 	if (which==0 || which&1) {
+		//     sheets per signature
+		//
+		// Num pages   --   Num sigs
+		//
+		// automarks
+
+		 //place just under the folding area
+		area=control(SP_Sheets_Per_Sig);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,-hh*.1);  p[1]=flatpoint(ww,-hh*.1); p[2]=flatpoint(ww,-hh*.2); p[3]=flatpoint(0,-hh*.2);
+		area->FindBBox();
+
+		 //just under the sheets per sig
+		area=control(SP_Num_Pages);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,-hh*.2);  p[1]=flatpoint(ww/2,-hh*.2); p[2]=flatpoint(ww/2,-hh*.3); p[3]=flatpoint(0,-hh*.3);
+		area->FindBBox();
+		char buffer[100];
+		sprintf(buffer,_("%d pages"),signature->hint_numpages);
+		makestr(area->text,buffer);
+
+		area=control(SP_Num_Sigs);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(ww/2,-hh*.2);  p[1]=flatpoint(ww,-hh*.2); p[2]=flatpoint(ww,-hh*.3); p[3]=flatpoint(ww/2,-hh*.3);
+		area->FindBBox();
+		sprintf(buffer,_("%d sigs"),signature->hint_numsigs);
+		makestr(area->text,buffer);
+
+		area=control(SP_Automarks);
+		p=area->Points(NULL,4,0);
+		p[0]=flatpoint(0,-hh*.3);  p[1]=flatpoint(ww,-hh*.3); p[2]=flatpoint(ww,-hh*.4); p[3]=flatpoint(0,-hh*.4);
+		area->FindBBox();
+		if (signature->automarks==0) makestr(area->text,"No automarks");
+		else if (signature->automarks==AUTOMARK_Margins) makestr(area->text,"Automarks outside");
+		else if (signature->automarks==AUTOMARK_InnerDot) makestr(area->text,"Automarks inside");
+		else if (signature->automarks==(AUTOMARK_InnerDot|AUTOMARK_Margins)) makestr(area->text,"Automarks inside and outside");
+	}
+
+
+	if (which==0 || which&1) { //paper specific
 		area=control(SP_Tile_X_top); //trapezoidal area above paper
 		p=area->Points(NULL,4,0);
 		p[0]=flatpoint(0,hh);  p[1]=flatpoint(ww,hh); p[2]=flatpoint(ww*1.1,hh*1.1); p[3]=flatpoint(-ww*.1,hh*1.1);
@@ -639,6 +691,7 @@ void SignatureInterface::remapHandles(int which)
 		area->offset=flatpoint(ww-signature->insetright,hh/2-arrowscale/2);
 	} //which&1
 
+
 	if (which==0 || which&2) { //pattern area specific
 		 //-----folds
 		area=control(SP_H_Folds_left);
@@ -657,6 +710,7 @@ void SignatureInterface::remapHandles(int which)
 		p=area->Points(NULL,4,0);
 		p[0]=flatpoint(0,0);  p[1]=flatpoint(www,0); p[2]=flatpoint(www*.9,hhh*.1); p[3]=flatpoint(www*.1,hhh*.1);
 	}
+
 
 	if (which==0 || which&4) { //final page area specific
 		 //----trim
@@ -722,24 +776,6 @@ void SignatureInterface::remapHandles(int which)
 		//area->Points(NULL,4,1); //doesn't actually need points, it is checked for very manually
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 	} //page area items
-
-	 //----- sheets and pages
-	if (which==0 || which&1) {
-		area=control(SP_Sheets_Per_Sig);
-		p=area->Points(NULL,4,0);
-		p[0]=flatpoint(0,-hh*.1);  p[1]=flatpoint(ww,-hh*.1); p[2]=flatpoint(ww,-hh*.2); p[3]=flatpoint(0,-hh*.2);
-		area->FindBBox();
-
-		area=control(SP_Num_Pages);
-		p=area->Points(NULL,4,0);
-		p[0]=flatpoint(0,-hh*.2);  p[1]=flatpoint(ww/2,-hh*.2); p[2]=flatpoint(ww/2,-hh*.3); p[3]=flatpoint(0,-hh*.3);
-		area->FindBBox();
-
-		area=control(SP_Num_Sigs);
-		p=area->Points(NULL,4,0);
-		p[0]=flatpoint(ww/2,-hh*.2);  p[1]=flatpoint(ww,-hh*.2); p[2]=flatpoint(ww,-hh*.3); p[3]=flatpoint(ww/2,-hh*.3);
-		area->FindBBox();
-	}
 }
 
 /*! Return 1 for cannot use it.
@@ -1106,6 +1142,13 @@ int SignatureInterface::Refresh()
 			pts[0]=dp->realtoscreen(signature->totalwidth/2,y);
 			dp->textout(pts[0].x,pts[0].y, str,-1, LAX_HCENTER|LAX_TOP);
 
+		} else if (area->action==SP_Automarks || area->action==SP_Num_Sigs || area->action==SP_Num_Pages) {
+			if (!area->hidden) {
+				dp->NewFG(.5,0.,0.); //dark red for inset
+				dv=dp->realtoscreen((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
+				dp->textout(dv.x,dv.y,area->text,-1,LAX_CENTER);
+			}
+
 		} else {
 			if (area->outline && area->visible) {
 				dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
@@ -1450,6 +1493,66 @@ int SignatureInterface::adjustControl(int handle, int dir)
 			}
 		}
 		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (handle==SP_Automarks) {
+		if (dir==1) {
+			if (signature->automarks==0) signature->automarks=AUTOMARK_Margins;
+			else if (signature->automarks==AUTOMARK_Margins) signature->automarks=AUTOMARK_InnerDot;
+			else if (signature->automarks==AUTOMARK_InnerDot) signature->automarks=AUTOMARK_InnerDot|AUTOMARK_Margins;
+			else signature->automarks=0;
+		} else {
+			if (signature->automarks==0) signature->automarks=AUTOMARK_InnerDot|AUTOMARK_Margins;
+			else if (signature->automarks==(AUTOMARK_InnerDot|AUTOMARK_Margins)) signature->automarks=AUTOMARK_InnerDot;
+			else if (signature->automarks==AUTOMARK_InnerDot) signature->automarks=AUTOMARK_Margins;
+			else signature->automarks=0;
+		}
+		ActionArea *area=control(SP_Automarks);
+		if (signature->automarks==0) makestr(area->text,"No automarks");
+		else if (signature->automarks==AUTOMARK_Margins) makestr(area->text,"Automarks outside");
+		else if (signature->automarks==AUTOMARK_InnerDot) makestr(area->text,"Automarks inside");
+		else if (signature->automarks==(AUTOMARK_InnerDot|AUTOMARK_Margins)) makestr(area->text,"Automarks inside and outside");
+		needtodraw=1;
+		return 0;
+		
+	} else if (handle==SP_Num_Pages) {
+		if (dir==1) {
+			signature->hint_numpages++;
+		} else {
+			signature->hint_numpages--;
+			if (signature->hint_numpages<1) signature->hint_numpages=1;
+		}
+		signature->hint_numsigs=1+(signature->hint_numpages-1)/signature->PagesPerSignature();
+
+		ActionArea *area=control(SP_Num_Pages);
+		char buffer[100];
+		sprintf(buffer,_("%d pages"),signature->hint_numpages);
+		makestr(area->text,buffer);
+
+		area=control(SP_Num_Sigs);
+		sprintf(buffer,_("%d sigs"),signature->hint_numsigs);
+		makestr(area->text,buffer);
+		needtodraw=1;
+		return 0;
+
+	} else if (handle==SP_Num_Sigs) {
+		if (dir==1) {
+			signature->hint_numsigs++;
+		} else {
+			signature->hint_numsigs--;
+			if (signature->hint_numsigs<1) signature->hint_numsigs=1;
+		}
+		signature->hint_numpages=signature->PagesPerSignature()*signature->hint_numsigs;
+
+		ActionArea *area=control(SP_Num_Sigs);
+		char buffer[100];
+		sprintf(buffer,_("%d sigs"),signature->hint_numsigs);
+		makestr(area->text,buffer);
+
+		area=control(SP_Num_Pages);
+		sprintf(buffer,_("%d pages"),signature->hint_numpages);
+		makestr(area->text,buffer);
 		needtodraw=1;
 		return 0;
 	}

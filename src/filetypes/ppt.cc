@@ -48,11 +48,11 @@ void installPptFilter()
 {
 	PptoutFilter *pptout=new PptoutFilter;
 	pptout->GetStyleDef();
-	laidout->exportfilters.push(pptout);
+	laidout->PushExportFilter(pptout);
 	
 	PptinFilter *pptin=new PptinFilter;
 	pptin->GetStyleDef();
-	laidout->importfilters.push(pptin);
+	laidout->PushImportFilter(pptin);
 }
 
 
@@ -202,6 +202,14 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 		fprintf(f,"/>\n");
 	
 		return;
+
+	} else {
+		//setlocale(LC_ALL,"");
+		//char buffer[strlen(_("Cannot export %s objects to passepartout."))+strlen(obj->whattype())+1];
+		//sprintf(buffer,_("Cannot export %s objects to passepartout."),obj->whattype());
+		//appendline(*error_ret,buffer);
+		//setlocale(LC_ALL,"C");
+		//warning++;
 	}
 }
 

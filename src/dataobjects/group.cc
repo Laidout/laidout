@@ -167,6 +167,13 @@ LaxInterfaces::SomeData *Group::e(int i)
 	return objs.e[i];
 }
 
+//! Normally return objs.n, but return 0 if the object has locked kids.
+int Group::n()
+{
+	//if (SomeData::flags&(SOMEDATA_LOCK_KIDS|SOMEDATA_LOCK_CONTENTS)) return 0;
+	return objs.n;
+}
+
 const double *Group::object_transform(int i)
 {
 	if (i<0 || i>=objs.n) return NULL;

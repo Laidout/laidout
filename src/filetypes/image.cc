@@ -49,7 +49,7 @@ void installImageFilter()
 {
 	ImageExportFilter *imageout=new ImageExportFilter;
 	imageout->GetStyleDef();
-	laidout->exportfilters.push(imageout);
+	laidout->PushExportFilter(imageout);
 }
 
 

@@ -14,10 +14,11 @@ LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lm -lpng -lcrypto -lGraphicsMagick++ `im
 
 pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o hedronwindow.o
 
-
 polyptych: lax $(pobjs) polyptych.o
 	g++  $(CPPFLAGS) $(LDFLAGS) $(pobjs) polyptych.o  -llaxkit -llaxinterfaces -lGL -lGLU -o polyptych
 	
+forlaidout: nets.o poly.o
+
 all: polyptych spheretopoly spheretocube
 
 spheretopoly: lax spheretopoly-gm.o nets.o poly.o 

@@ -62,8 +62,7 @@ icons:
 	cd src/icons && $(MAKE)
 									 
 polyptych:
-	cd polyptych && $(MAKE) poly.o
-	cd polyptych && $(MAKE) nets.o
+	cd polyptych && $(MAKE) forlaidout
 
 api:
 	cd api && $(MAKE)

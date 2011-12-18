@@ -44,11 +44,11 @@ void installPostscriptFilters()
 	 //--------export
 	PsOutFilter *psout=new PsOutFilter;
 	psout->GetStyleDef();
-	laidout->exportfilters.push(psout);
+	laidout->PushExportFilter(psout);
 	
 	EpsOutFilter *epsout=new EpsOutFilter;
 	epsout->GetStyleDef();
-	laidout->exportfilters.push(epsout);
+	laidout->PushExportFilter(epsout);
 	
 	
 	 //--------import

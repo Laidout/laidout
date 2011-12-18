@@ -19,6 +19,11 @@
 #include <lax/strmanip.h>
 #include "mysterydata.h"
 
+
+#define DBG
+#include <iostream>
+using namespace std;
+
 using namespace LaxFiles;
 
 //namespace Laidout {
@@ -139,6 +144,48 @@ void MysteryData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context
 	maxx=x2;
 	maxy=y2;
 }
+
+LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	cerr <<" ****** imp mysteredata::duplicate()!"<<endl;
+	return NULL;
+
+	MysteryData *mdata=dynamic_cast<MysteryData*>(dup);
+	if (!mdata && dup) return NULL;
+
+	char set=1;
+//	if (!dup && somedatafactory) {
+//		dup=somedatafactory->newObject(LAIDOUT_MYSTERYDATA,this);
+//		if (dup) {
+//			dup->setbounds(minx,maxx,miny,maxy);
+//			set=0;
+//		}
+//		i=dynamic_cast<ImageData*>(dup);
+//	} 
+	if (!mdata) {
+		mdata=new MysteryData();
+		dup=mdata;
+	}
+	if (set) {
+		makestr(mdata->importer,importer);
+		makestr(mdata->name,name);
+		mdata->numpoints=numpoints;
+		if (numpoints) {
+			mdata->outline=new flatpoint[numpoints];
+			memcpy(mdata->outline,outline,numpoints*sizeof(flatpoint));
+		} else {
+			if (mdata->outline) delete[] mdata->outline;
+			mdata->outline=NULL;
+		}
+		mdata->attributes=attributes->duplicate();
+	}
+
+	 //somedata elements:
+	dup->bboxstyle=bboxstyle;
+	for (int c=0; c<6; c++) dup->matrix[c]=matrix[c];
+	return dup;
+}
+
 
 //-------------------------------- MysteryInterface ----------------------------------
 /*! \class MysteryInterface

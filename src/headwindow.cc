@@ -258,16 +258,15 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 
 	// add the window generator funcs
 	AddWindowType("ViewWindow","View Window",0,newViewWindowFunc,1);
-	//AddWindowType("ViewWindow","View Window",0,newViewWindowFunc,1);
 	AddWindowType("SpreadEditor","Spread Editor",0,newSpreadEditorFunc,0);
 	AddWindowType("HelpWindow","Help Window",0,newHelpWindowFunc,0);
 	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
-	AddWindowType("ButtonBox","Buttons",
-			BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
-			newButtonBoxFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
 	//AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
+	//AddWindowType("ButtonBox","Buttons",
+	//		BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
+	//		newButtonBoxFunc,0);
 }
 
 //! Empty virtual destructor.

@@ -94,7 +94,7 @@ int ObjectContainer::nextObject(FieldPlace &place,
 
 	anObject *anobj=NULL;
 	ObjectContainer *oc=NULL;
-	int i;
+	int i,nn;
 	
 //	if (place.n()==0 ) {
 //		if (d) *d=this;
@@ -112,7 +112,11 @@ int ObjectContainer::nextObject(FieldPlace &place,
 //	}
 
 	if (flags&Next_Increment) {
-		if (oc && oc->n()) {
+		if (oc) { //find number of kids to consider
+			if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+			else nn=oc->n();
+		} else nn=0;
+		if (oc && nn) {
 			 //object has kids, return the first kid
 			place.push(0);
 			if (d) *d=oc->object_e(0);
@@ -131,9 +135,13 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			i=place.pop(); //old child index
 			anobj=getanObject(place,offset); //retrieve the object pointed to by place
 			oc=dynamic_cast<ObjectContainer *>(anobj);
+			if (oc) { //find number of kids to consider
+				if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+				else nn=oc->n();
+			} else nn=0;
 
 			i++;
-			if (i<oc->n()) {
+			if (i<nn) {
 				 //we are able to switch to next sibling
 				place.push(i);
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
@@ -158,10 +166,18 @@ int ObjectContainer::nextObject(FieldPlace &place,
 			place.push(i-1);
 			anobj=getanObject(place,offset); //retrieve the object pointed to by place
 			oc=dynamic_cast<ObjectContainer *>(anobj);
-			while (oc && oc->n()) {
-				place.push(oc->n()-1);
+			if (oc) { //find number of kids to consider
+				if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+				else nn=oc->n();
+			} else nn=0;
+			while (oc && nn) {
+				place.push(nn-1);
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
 				oc=dynamic_cast<ObjectContainer *>(anobj);
+				if (oc) { //find number of kids to consider
+					if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+					else nn=oc->n();
+				} else nn=0;
 			}
 
 			if (d) *d=anobj;
@@ -170,10 +186,18 @@ int ObjectContainer::nextObject(FieldPlace &place,
 		}
 		if (oc && place.n()==offset) {
 			 //If at root, switch to right most leaf
-			while (oc && oc->n()) {
-				place.push(oc->n()-1);
+			if (oc) { //find number of kids to consider
+				if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+				else nn=oc->n();
+			} else nn=0;
+			while (oc && nn) {
+				place.push(nn-1);
 				anobj=getanObject(place,offset); //retrieve the object pointed to by place
 				oc=dynamic_cast<ObjectContainer *>(anobj);
+				if (oc) { //find number of kids to consider
+					if ((flags&Next_SkipLockedKids) && (oc->object_flags()&OBJ_IgnoreKids)) nn=0;
+					else nn=oc->n();
+				} else nn=0;
 			}
 			if (d) *d=anobj;
 			DBG place.out("ObjectContainer::nextObject found: ");

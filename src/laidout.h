@@ -139,6 +139,8 @@ class LaidoutApp : public Laxkit::anXApp
 	int NewDocument(Imposition *imposition, const char *filename);
 	int NewDocument(const char *spec);
 	int NewProject(Project *proj,char **error_ret);
+	void PushExportFilter(ExportFilter *filter);
+	void PushImportFilter(ImportFilter *filter);
 
 	 //data manipulation peacekeeper
 	void notifyDocTreeChanged(Laxkit::anXWindow *callfrom,TreeChangeType change,int s,int e);

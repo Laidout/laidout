@@ -550,7 +550,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 			if (spread) {
 				 // print out printer marks
 				if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
-					fprintf(f," .01 setlinewidth\n");
+					//fprintf(f," .01 setlinewidth\n");
 					//DBG cerr <<"marks data:\n";
 					//DBG spread->marks->dump_out(stderr,2,0);
 					psdumpobj(f,spread->marks);

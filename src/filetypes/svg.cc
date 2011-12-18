@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2009 by Tom Lechner
+// Copyright (C) 2007-2009,2011 by Tom Lechner
 //
 
 
@@ -48,10 +48,10 @@ using namespace LaxInterfaces;
 void installSvgFilter()
 {
 	SvgOutputFilter *svgout=new SvgOutputFilter;
-	laidout->exportfilters.push(svgout);
+	laidout->PushExportFilter(svgout);
 	
 	SvgImportFilter *svgin=new SvgImportFilter;
-	laidout->importfilters.push(svgin);
+	laidout->PushImportFilter(svgin);
 }
 
 
@@ -123,6 +123,56 @@ StyleDef *SvgOutputFilter::GetStyleDef()
 	styledef->dec_count();
 
 	return styledef;
+}
+
+static int svgaddpath(FILE *f,Coordinate *path)
+{
+	Coordinate *p,*p2,*start;
+	p=start=path->firstPoint(1);
+	if (!p) return 0;
+
+	 //build the path to draw
+	flatpoint c1,c2;
+	start=p;
+	int n=1; //number of points seen
+
+	fprintf(f,"M %.10g %.10g ",start->p().x,start->p().y);
+	do { //one loop per vertex point
+		p2=p->next; //p points to a vertex
+		if (!p2) break;
+
+		n++;
+
+		//p2 now points to first Coordinate after the first vertex
+		if (p2->flags&(POINT_TOPREV|POINT_TONEXT)) {
+			 //we do have control points
+			if (p2->flags&POINT_TOPREV) {
+				c1=p2->p();
+				p2=p2->next;
+			} else c1=p->p();
+			if (!p2) break;
+
+			if (p2->flags&POINT_TONEXT) {
+				c2=p2->p();
+				p2=p2->next;
+			} else { //otherwise, should be a vertex
+				//p2=p2->next;
+				c2=p2->p();
+			}
+
+			fprintf(f,"C %.10g %.10g %.10g %.10g %.10g %.10g ",
+					c1.x,c1.y,
+					c2.x,c2.y,
+					p2->p().x,p2->p().y);
+		} else {
+			 //we do not have control points, so is just a straight line segment
+			fprintf(f,"L %.10g %.10g ", p2->p().x,p2->p().y);
+		}
+		p=p2;
+	} while (p && p->next && p!=start);
+	if (p==start) fprintf(f,"z ");
+
+	return n;
 }
 
 //! Function to dump out obj as svg.
@@ -353,12 +403,89 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 			fprintf(f,"%s</g>\n",spc);
 		}
 		
-	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
-		//***if (config->collect_for_out) { rasterize, and put image in out directory }
+
+	} else if (!strcmp(obj->whattype(),"PathsData")) {
+		PathsData *pdata=dynamic_cast<PathsData*>(obj);
+
+		fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+				     spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+
+		 //write path
+		fprintf(f,"%s       d=\"",spc);
+		LineStyle *lstyle=pdata->linestyle;
+		FillStyle *fstyle=pdata->fillstyle;
+		Coordinate *p,*start;
+		int hasstroke=0;
+		for (int c=0; c<pdata->paths.n; c++) {
+			p=start=pdata->paths.e[c]->path;
+			if (!p) continue;
+
+			lstyle=pdata->paths.e[c]->linestyle;
+			if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
+			hasstroke=lstyle ? (lstyle->hasStroke()) : 0;
+
+			fstyle=pdata->fillstyle;//default for all data paths
+
+			svgaddpath(f,p);
+		}
+		fprintf(f,"\"\n");//end of "d"
+
+		 //---style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
+		fprintf(f,"%s       style=\"",spc);
+
+		if (lstyle) {
+			if (lstyle->capstyle==CapButt) fprintf(f,"stroke-linecap:butt; ");
+			else if (lstyle->capstyle==CapRound) fprintf(f,"stroke-linecap:round; ");
+			else if (lstyle->capstyle==CapProjecting) fprintf(f,"stroke-linecap:square; ");
+
+			if (lstyle->joinstyle==JoinMiter) fprintf(f,"stroke-linejoin:miter; ");
+			else if (lstyle->joinstyle==JoinRound) fprintf(f,"stroke-linejoin:round; ");
+			else if (lstyle->joinstyle==JoinBevel) fprintf(f,"stroke-linejoin:bevel; ");
+
+			if (lstyle->width==0) fprintf(f,"stroke-width:.01; ");//hairline width not supported in svg
+			else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
+
+			 //dash or not
+			if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+				fprintf(f,"stroke-dasharray:none; ");
+			else fprintf(f,"stroke-dasharray:%.10g,%.10g; ",lstyle->width,2*lstyle->width);
+		}
+
+		 //fill
+		if (fstyle && fstyle->fillstyle!=FillNone) {
+			fprintf(f,"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
+						fstyle->color.red>>8, fstyle->color.green>>8, fstyle->color.blue>>8,
+						fstyle->color.alpha/65535.);
+		} else fprintf(f,"fill:none; ");
+
+		 //stroke
+		if (hasstroke) fprintf(f,"stroke:#%02x%02x%02x; stroke-opacity:%.10g; ",
+			  					lstyle->color.red>>8, lstyle->color.green>>8, lstyle->color.blue>>8,
+								lstyle->color.alpha/65535.);
+		else fprintf(f,"stroke:none; ");
+
+		//"stroke-miterlimit:4;"
+		fprintf(f,"\"\n");//end of "style"
+
+
+		fprintf(f,"%s />\n",spc);//end of PathsData!
+
+//	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
+//		//***if (config->collect_for_out) { rasterize, and put image in out directory }
+//		setlocale(LC_ALL,"");
+//		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
+//		setlocale(LC_ALL,"C");
+//		warning++;
+
+	} else {
 		setlocale(LC_ALL,"");
-		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
+		char buffer[strlen(_("Cannot export %s objects into svg."))+strlen(obj->whattype())+1];
+		sprintf(buffer,_("Cannot export %s objects into svg."),obj->whattype());
+		appendline(*error_ret,buffer);
 		setlocale(LC_ALL,"C");
 		warning++;
+		//----------------
+		//errorlog->Add(buffer,ERROR_Warn, obj->id,obj->object_id);
 	}
 	return 0;
 }
@@ -588,9 +715,13 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	if (doc) spread=doc->imposition->Layout(layout,start);
 	
 	 // write out header
-	double height;
-	if (spread) height=spread->path->maxy-spread->path->miny;
-	else height=papergroup->papers.e[0]->box->paperstyle->h();
+	double height=0,width=0;
+	if (spread) {
+		height=spread->path->maxy-spread->path->miny;
+		width =spread->path->maxx-spread->path->minx;
+	}
+	if (height==0) height=papergroup->papers.e[0]->box->paperstyle->h();
+	if (width==0)  width =papergroup->papers.e[0]->box->paperstyle->w();
 
 	fprintf(f,"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
 	fprintf(f,"<!-- Created with Laidout, http://www.laidout.org -->\n");
@@ -599,7 +730,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			  "     xmlns=\"http://www.w3.org/2000/svg\"\n"
 			  "     xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
 			  "     version=\"1.0\"\n");
-	fprintf(f,"     width=\"%fin\"\n", spread->path->maxx-spread->path->minx); //***inches by default?
+	fprintf(f,"     width=\"%fin\"\n", width); //***inches by default?
 	fprintf(f,"     height=\"%fin\"\n", height);
 	fprintf(f,"   >\n");
 			
@@ -652,6 +783,12 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		transform_set(m,1,0,0,1,0,0);
 		svgdumpobj(f,m,limbo,error_ret,warning,4);
 	}
+
+	if (papergroup->objs.n()) {
+		transform_set(m,1,0,0,1,0,0);
+		svgdumpobj(f,m,&papergroup->objs,error_ret,warning,4);
+	}
+
 
 
 	if (spread) {

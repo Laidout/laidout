@@ -21,6 +21,8 @@
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
+#include <lax/palette.h>
+#include <lax/colors.h>
 
 #include <lax/lists.cc>
 
@@ -84,7 +86,9 @@ int addScribusDocument(const char *file)
 	imp->SetPaperSize(&paper);
 	imp->NumPages(1);
 
-	Document *newdoc=new Document(imp,file);
+	Document *newdoc=new Document(imp,NULL);//null file name to force rename on save
+	makestr(newdoc->name,"From ");
+	appendstr(newdoc->name,file);
 	imp->dec_count();
 	laidout->project->Push(newdoc);
 
@@ -119,11 +123,11 @@ void installScribusFilter()
 {
 	ScribusExportFilter *scribusout=new ScribusExportFilter;
 	scribusout->GetStyleDef();
-	laidout->exportfilters.push(scribusout);
+	laidout->PushExportFilter(scribusout);
 	
 	ScribusImportFilter *scribusin=new ScribusImportFilter;
 	scribusin->GetStyleDef();
-	laidout->importfilters.push(scribusin);
+	laidout->PushImportFilter(scribusin);
 }
 
 
@@ -165,7 +169,7 @@ PageObject::~PageObject()
 
 
 static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj);
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj);
 static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what);
 static int findobjnumber(Attribute *att, const char *what);
 
@@ -366,6 +370,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	int warning=0;
 	Spread *spread=NULL;
 	Group *g=NULL;
+	Palette palette;
 	int c,c2,l,pg,c3;
 
 	
@@ -488,7 +493,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	} else {
 		 //write out default elements of DOCUMENT
 
-		//****write out <COLOR> sections
+		//****write out default <COLOR> sections?
 			
 		
 		 //----------Write layers, assuming just background. Everything else is grouping
@@ -579,7 +584,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 			  "               From=\"0\"\n"
 			  "               To=\"%d\"\n"
 			  "               Start=\"1\"\n"
-			  "               Reversed=\"0\"\n"
+			  "               Reversed=\"0\">\n"
 			  "      </Section>\n", totalnumpages-1);
 	fprintf(f,"    </Sections>\n");
 
@@ -622,16 +627,16 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
 					
 			if (papergroup->objs.n()) {
-				appendobjfordumping(pageobjects,&papergroup->objs);
+				appendobjfordumping(pageobjects,palette,&papergroup->objs);
 			}
 
 			if (limbo && limbo->n()) {
-				appendobjfordumping(pageobjects,limbo);
+				appendobjfordumping(pageobjects,palette,limbo);
 			}
 
 			if (spread) {
 				if (spread->marks) {
-					appendobjfordumping(pageobjects,spread->marks);
+					appendobjfordumping(pageobjects,palette,spread->marks);
 				}
 
 				 // for each page in spread layout..
@@ -644,7 +649,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							appendobjfordumping(pageobjects,g->e(c3));
+							appendobjfordumping(pageobjects,palette,g->e(c3));
 						}
 					}
 				}
@@ -744,10 +749,51 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		}
 	}
 
+	 //--------output COLOR sections gleened above
+	if (palette.colors.n) {
+		PaletteEntry *color;
+		for (int c=0; c<palette.colors.n; c++) {
+			color=palette.colors.e[c];
+			if (color->color_space==LAX_COLOR_RGB) {
+				fprintf(f,"    <COLOR NAME=\"%d,%d,%d\" RGB=\"#%02x%02x%02x\" Spot=\"0\" Register=\"0\" />\n",
+					palette.colors.e[c]->channels[0],  //r
+					palette.colors.e[c]->channels[1],  //g
+					palette.colors.e[c]->channels[2],  //b
+
+					palette.colors.e[c]->channels[0]>>8,  //r hex
+					palette.colors.e[c]->channels[1]>>8,  //g
+					palette.colors.e[c]->channels[2]>>8); //b
+
+			} else if (color->color_space==LAX_COLOR_CMYK) {
+				fprintf(f,"    <COLOR NAME=\"%d,%d,%d,%d\" CMYK=\"#%02x%02x%02x%02x\" Spot=\"0\" Register=\"0\" />\n",
+					palette.colors.e[c]->channels[0],  //c
+					palette.colors.e[c]->channels[1],  //m
+					palette.colors.e[c]->channels[2],  //y
+					palette.colors.e[c]->channels[3],  //k
+
+					palette.colors.e[c]->channels[0]>>8,  //c hex
+					palette.colors.e[c]->channels[1]>>8,  //m
+					palette.colors.e[c]->channels[2]>>8,  //y
+					palette.colors.e[c]->channels[3]>>8); //k
+
+			} else if (color->color_space==LAX_COLOR_GRAY) {
+				fprintf(f,"    <COLOR NAME=\"%d,%d,%d\" RGB=\"#%02x%02x%02x\" Spot=\"0\" Register=\"0\" />\n",
+					palette.colors.e[c]->channels[0],  //r
+					palette.colors.e[c]->channels[0],  //g
+					palette.colors.e[c]->channels[0],  //b
+
+					palette.colors.e[c]->channels[0]>>8,  //r hex
+					palette.colors.e[c]->channels[0]>>8,  //g
+					palette.colors.e[c]->channels[0]>>8); //b
+			}
+		}
+	}
+		 
+
 
 	int curobj=0;
 
-	 //now dump everything out to the file
+	 //------now dump pages and objects to the file
 	for (c=start; c<=end; c++) { //for each spread
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
@@ -805,10 +851,15 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 					  "    VerticalGuides=\"\" \n"
 					  "    NumVGuides=\"0\" \n"
 					  "   />\n", plandscape);
-					
+
 			if (limbo && limbo->n()) {
 				scribusdumpobj(f,curobj,pageobjects,NULL,limbo,error_ret,warning);
 			}
+
+			if (papergroup->objs.n()) {
+				scribusdumpobj(f,curobj,pageobjects,NULL,&papergroup->objs,error_ret,warning);
+			}
+
 
 			if (spread) {
 				if (spread->marks) {
@@ -856,13 +907,27 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	return 0;
 }
 
+//! Add colors (without transparency) to palette, creating palette if palette==NULL.
+/*! Return 0 for exists already, 1 for added.
+ *
+ * \todo *** really need to implement better color management, right now ONLY using screen colors rgb!!
+ */
+int addColor(Palette &palette, ScreenColor *color)
+{
+	 //search for existing color
+	char name[100];
+	sprintf(name,"%d,%d,%d", color->red, color->green, color->blue);
+	for (int c=0; c<palette.colors.n; c++) {
+		if (!strcmp(palette.colors.e[c]->name,name)) return 0;
+	}
+	palette.AddRGB(name, color->red, color->green, color->blue, 65535);
+	return 1;
+}
 
 //! Internal function to find object to pageobject mapping.
 /*! This adds one entry per object that will actually be dumped out is scribusdumpobj().
- *
- * \todo *** this doesn't work for tiled impositions, anything with multi ref objects!!
  */
-static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj)
+static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj)
 {
 	//WARNING! This function must mirror scribusdumpobj() for what objects actually get output..
 
@@ -879,10 +944,27 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj)
 		if (!img || !img->filename) return;
 		ptype=PTYPE_Image;
 
+	} else if (!strcmp(obj->whattype(),"PathsData")) {
+		PathsData *paths=dynamic_cast<PathsData *>(obj);
+		ptype=PTYPE_Polygon; // *** could be polygon, polyline, or line!!!
+
+		if (paths->linestyle) addColor(palette,&paths->linestyle->color);
+		if (paths->fillstyle) addColor(palette,&paths->fillstyle->color);
+		for (int c=0; c<paths->paths.n; c++) {
+			if (paths->paths.e[c]->linestyle) addColor(palette,&paths->paths.e[c]->linestyle->color);
+		}
+
 	//} else if (!strcmp(obj->whattype(),"GradientData")) {
 	//	grad=dynamic_cast<GradientData *>(obj);
 	//	if (!grad) return;
 	//	ptype=PTYPE_Laidout_Gradient;
+	//	*** attach colors
+
+	//} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
+	//	grad=dynamic_cast<ColorPatchData *>(obj);
+	//	if (!grad) return;
+	//	ptype=PTYPE_Laidout_Gradient;
+	//	*** attach colors, create mesh shading
 	
 	} else if (!strcmp(obj->whattype(),"Group")) {
 		 //must propogate transform...
@@ -896,7 +978,7 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects,SomeData *obj)
 		 // global var groupc is a counter for how many distinct groups have been found,
 		 // which has been found already
 
-		for (int c=0; c<g->n(); c++) appendobjfordumping(pageobjects,g->e(c));
+		for (int c=0; c<g->n(); c++) appendobjfordumping(pageobjects,palette,g->e(c));
 		return;
 
 	} else if (!strcmp(obj->whattype(),"MysteryData")) {
@@ -973,6 +1055,66 @@ static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what)
 	return -1;
 }
 
+static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
+{
+	Coordinate *p,*p2,*start;
+	p=start=path->firstPoint(1);
+	if (!p) return 0;
+
+	 //build the path to draw
+	double *ctm=psCTM(); //(scratch space coords)=(object coords)*(object->m())*ctm
+	flatpoint c1,c2;
+	start=p;
+	int n=1; //number of points seen
+
+	//pts.push(transform_point(ctm,start->p())); <-- points are all added below!!
+
+	do { //one loop per vertex point
+		p2=p->next; //p points to a vertex
+		if (!p2) break;
+
+		n++;
+
+		//p2 now points to first Coordinate after the first vertex
+		if (p2->flags&(POINT_TOPREV|POINT_TONEXT)) {
+			 //we do have control points
+			if (p2->flags&POINT_TOPREV) {
+				c1=p2->p();
+				p2=p2->next;
+			} else c1=p->p();
+			if (!p2) break;
+
+			if (p2->flags&POINT_TONEXT) {
+				c2=p2->p();
+				p2=p2->next;
+			} else { //otherwise, should be a vertex
+				//p2=p2->next;
+				c2=p2->p();
+			}
+
+			//Coordinates of the object shape, a list of groups of four points, ordered
+            //vertex point - previous bezier control point - vertex point - next bezier control point.
+            //However, the list starts with a vertex point - next control, so after those 2 points, the
+            //the next 4 relate to the second vertex.
+			pts.push(transform_point(ctm,p->p()));
+			pts.push(transform_point(ctm,c1));
+			pts.push(transform_point(ctm,p2->p()));
+			pts.push(transform_point(ctm,c2));
+		} else {
+			 //we do not have control points, so is just a straight line segment
+			pts.push(transform_point(ctm,p->p())); //vertex
+			pts.push(transform_point(ctm,p->p())); //toprev control
+			pts.push(transform_point(ctm,p2->p())); //vertex2
+			pts.push(transform_point(ctm,p2->p())); //tonext control
+		}
+		p=p2;
+	} while (p && p->next && p!=start);
+
+	//if (p==start) fprintf(f,"z "); *** how to close paths? same point begin and end maybe??
+
+	return n;
+}
+
 //! Internal function to dump out the obj.
 /*! Can be Group, ImageData, or GradientData.
  *
@@ -998,6 +1140,11 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	Attribute *mysteryatts=NULL;
 	int leftlink=-1, rightlink=-1, toplink=-1, bottomlink=-1; //for table grids
 	int nextitem=-1, backitem=-1; //for text object chains
+	int        numpo=0,      numco=0;
+	flatpoint *pocoor=NULL, *cocoor=NULL;
+	LineStyle *lstyle=NULL;
+	FillStyle *fstyle=NULL;
+	int createrect=1;
 
 	if (!strcmp(obj->whattype(),"ImageData") || !strcmp(obj->whattype(),"EpsData")) {
 		img=dynamic_cast<ImageData *>(obj);
@@ -1008,6 +1155,40 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	//	grad=dynamic_cast<GradientData *>(obj);
 	//	if (!grad) return;
 	//	ptype=PTYPE_Laidout_Gradient;
+	
+	} else if (!strcmp(obj->whattype(),"PathsData")) {
+		PathsData *pdata=dynamic_cast<PathsData *>(obj);
+		if (!pdata) return;
+		createrect=0;
+		ptype=PTYPE_Polygon;
+
+		 //build path
+		NumStack<flatpoint> pts;
+		lstyle=pdata->linestyle;
+		fstyle=pdata->fillstyle;
+		Coordinate *p;
+		int n=0;
+
+		for (int c=0; c<pdata->paths.n; c++) {
+			p=pdata->paths.e[c]->path;
+			if (!p) continue;
+
+			n+=scribusaddpath(pts,p);
+
+			//p=transform_point(ctm,p);
+			//pts.push(p);
+
+			if (c!=pdata->paths.n-1) {
+				for (int c2=0; c2<4; c2++) pts.push(flatpoint(999999,999999));//path delimiter!
+			}
+		}
+		if (!n) return; //no points to output!!
+
+		numpo=numco=pts.n;
+		pocoor=pts.extractArray();
+		cocoor=new flatpoint[numco];
+		memcpy(cocoor,pocoor,sizeof(flatpoint)*numpo);
+
 	
 	} else if (!strcmp(obj->whattype(),"Group")) {
 		 //must propogate transform...
@@ -1081,10 +1262,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	x=p.x;
 	y=p.y;
 
-	 //create pocoor outline
-	int        numpo=0,      numco=0;
-	flatpoint *pocoor=NULL, *cocoor=NULL;
-	int createrect=1;
+	 //create pocoor outline if necessary
 	if (mysteryatts) {
 		 //map old pocoor coordinates based on potentially new position of the mystery data
 		Attribute *pocooratt=mysteryatts->find("POCOOR");
@@ -1134,6 +1312,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	 //find bounds of pocoor which by now should be in canvas coordinates
 	flatpoint min=pocoor[0], max=pocoor[0];
 	for (int c=1; c<numpo; c++) {
+		if (pocoor[c].x==999999) continue;
 		if (pocoor[c].x<min.x) min.x=pocoor[c].x;
 		else if (pocoor[c].x>max.x) max.x=pocoor[c].x;
 		if (pocoor[c].y<min.y) min.y=pocoor[c].y;
@@ -1149,7 +1328,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	double m[6],mmm[6];
 	vx=vx/norm(vx);
 	vy=vy/norm(vy);
-	p=transform_point(ctm,flatpoint(0,0));
+	p=transform_point(ctm,flatpoint(obj->minx,obj->miny));
 	transform_from_basis(mmm,p,vx,vy);
 	transform_invert(m,mmm);
 	DBG cerr<<"transform back to object:"; dumpctm(m);
@@ -1158,14 +1337,14 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 	 //make pocoor and cocoor coords relative to the object origin, not the canvas
 	for (int c=0; c<numpo; c++) {
 		DBG cerr <<"pocoor: "<<pocoor[c].x<<','<<pocoor[c].y;
-		pocoor[c]=transform_point(m,pocoor[c]);
+		if (pocoor[c].x!=999999) pocoor[c]=transform_point(m,pocoor[c]);
 		if (fabs(pocoor[c].x)<1e-10) pocoor[c].x=0;
 		if (fabs(pocoor[c].y)<1e-10) pocoor[c].y=0;
 		DBG cerr <<" -->  "<<pocoor[c].x<<','<<pocoor[c].y<<endl;
 	}
 	for (int c=0; c<numco; c++) {
 		DBG cerr <<"cocoor: "<<cocoor[c].x<<','<<cocoor[c].y;
-		cocoor[c]=transform_point(m,cocoor[c]);
+		if (pocoor[c].x!=999999) cocoor[c]=transform_point(m,cocoor[c]);
 		if (fabs(cocoor[c].x)<1e-10) cocoor[c].x=0;
 		if (fabs(cocoor[c].y)<1e-10) cocoor[c].y=0;
 		DBG cerr <<" -->  "<<cocoor[c].x<<','<<cocoor[c].y<<endl;
@@ -1188,6 +1367,8 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		for (int c=0; c<mysteryatts->attributes.n; c++) {
 			name=mysteryatts->attributes.e[c]->name;
 			value=mysteryatts->attributes.e[c]->value;
+
+			 //these are overwritten for all objects, even mystery objects
 			if (!strcmp(name,"OwnPage")) continue;
 			if (!strcmp(name,"LOCALSCX")) continue;
 			if (!strcmp(name,"LOCALSCY")) continue;
@@ -1210,6 +1391,8 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 			if (!strcmp(name,"TopLINK")) continue;
 			if (!strcmp(name,"BottomLINK")) continue;
 			if (!strcmp(name,"content:")) { content=c; continue; }
+
+			 //otherwise, output the item!
 			fprintf(f,"    %s=\"%s\"\n", name, value?value:"");
 		}
 	} 
@@ -1223,7 +1406,6 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 
 				  //"    CLIPEDIT=\"1\" \n"     //1 if shape was editted (opt)
 				  "    doOverprint=\"0\" \n"    //not 1.2
-				  "    fillRule=\"1\" \n"       //not 1.2
 				  "    gHeight=\"0\" \n"        //not 1.2
 				  "    gWidth=\"0\" \n"         //not 1.2
 				  "    gXpos=\"0\" \n"          //not 1.2
@@ -1243,6 +1425,8 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    BottomLINK=\"%d\" \n",   //object number in table layout
 				  		backitem,nextitem,
 				  		leftlink,rightlink,toplink,bottomlink);
+
+	  //various such as stroke, fill, text options
 	if (!mysteryatts) {
 		fprintf(f,"    AUTOTEXT=\"0\" \n");     //1 if object is auto text frame
 
@@ -1274,25 +1458,79 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    textPathFlipped=\"0\" \n" //not 1.2
 				  "    textPathType=\"0\" \n"    //not 1.2
 				  "    REVERS=\"0\" \n"         //(opt) text is rendered reverse
-				  "    REXTRA=\"0\" \n"         //(opt) Distance of text from the right edge of the frame
+				  "    REXTRA=\"0\" \n");       //(opt) Distance of text from the right edge of the frame
 			//---------eps tags:
-				  //"    BBOXH=\"0\" \n"      //height of eps object (opt)
+		//fprintf(f,"    BBOXH=\"0\" \n"      //height of eps object (opt)
 				  //"    BBOXX=\"0\" \n"      //width of eps object (opt)
+
 			//---------path tags, fill/stroke
+		if (!(lstyle && lstyle->hasStroke())) {
+			fprintf(f,
 				  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
-				  //"    DASHOFF=\"0\" \n"     //(opt) offset for first dash
-				  "    DASHS=\"\" \n"          //List of dash values, see the postscript manual for details
+				  "    DASHOFF=\"0\" \n"        //(opt) offset for first dash
+				  "    DASHS=\"\" \n"           //List of dash values, see the postscript manual for details
 				  "    NUMDASH=\"0\" \n"        //number of entries in dash
 				  "    PLINEART=\"1\" \n"       //how line is dashed, 1=solid, 2=- - -, 3=..., 4=-.-.-, 5=-..-..-
 				  "    PLINEEND=\"0\" \n"       //(opt) linecap 0 flatcap, 16 square, 32 round
 				  "    PLINEJOIN=\"0\" \n"      //(opt) line join, 0 miter, 64 bevel, 128 round
 				  "    PWIDTH=\"1\" \n"         //line width of object
-				  "    SHADE=\"100\" \n"         //shading for fill
-				  "    SHADE2=\"100\" \n"        //shading for stroke
-				  "    TransValue=\"0\" \n"      //(opt) transparency value for fill
-				  "    TransValueS=\"0\" \n"     //(opt) Transparency value for stroke
-				  "    PCOLOR2=\"Black\" \n"    //color of stroke
-				  "    PCOLOR=\"None\" \n");    //color of fill
+				  "    SHADE2=\"100\" \n"       //shading for stroke
+				  "    TransValueS=\"0\" \n"    //(opt) Transparency value for stroke
+				  "    PCOLOR2=\"Black\" \n");  //color of stroke
+		} else {
+			fprintf(f,
+				  "    NAMEDLST=\"\" \n"        //(opt) name of the custom line style
+				  "    SHADE2=\"100\" \n"       //shading for stroke
+				  "    DASHOFF=\"0\" \n");        //(opt) offset for first dash
+
+			if (lstyle->dotdash) {
+				fprintf(f,
+					  "    DASHS=\"\" \n"           //List of dash values, see the postscript manual for details
+					  "    NUMDASH=\"0\" \n"        //number of entries in dash
+					  "    PLINEART=\"3\" \n");     //how line is dashed, 1=solid, 2=- - -, 3=..., 4=-.-.-, 5=-..-..-
+			} else {
+				fprintf(f,
+					  "    DASHS=\"\" \n"           //List of dash values, see the postscript manual for details
+					  "    NUMDASH=\"0\" \n"        //number of entries in dash
+					  "    PLINEART=\"1\" \n");     //how line is dashed, 1=solid, 2=- - -, 3=..., 4=-.-.-, 5=-..-..-
+			}
+
+
+			 //stroke
+			if (lstyle->capstyle==CapButt) fprintf(f,"    PLINEEND=\"0\"\n");
+			else if (lstyle->capstyle==CapRound) fprintf(f,"    PLINEEND=\"32\"\n");
+			else if (lstyle->capstyle==CapProjecting) fprintf(f,"    PLINEEND=\"16\"\n");
+
+			if (lstyle->joinstyle==JoinMiter) fprintf(f,"    PLINEJOIN=\"0\"\n");
+			else if (lstyle->joinstyle==JoinRound) fprintf(f,"    PLINEJOIN=\"128\"\n");
+			else if (lstyle->joinstyle==JoinBevel) fprintf(f,"    PLINEJOIN=\"64\"\n");
+
+			double w=norm(transform_point(ctm,flatpoint(0,0))-transform_point(ctm,flatpoint(0,lstyle->width)));
+			fprintf(f,"    PWIDTH=\"%.10g\"\n",w);
+
+			fprintf(f,"    TransValueS=\"%.10g\" \n"  //(opt) Transparency value for stroke
+				      "    PCOLOR2=\"%d,%d,%d\" \n",      //color name of stroke
+							1.-lstyle->color.alpha/65535.,
+							lstyle->color.red, lstyle->color.green, lstyle->color.blue);
+					     
+		} //if lstyle->hasStroke
+
+		 //fill
+		if (fstyle && fstyle->hasFill()) {
+			fprintf(f,"    PCOLOR=\"%d,%d,%d\"\n"   //name of color in palette we dumped out before
+					  "    TransValue=\"%.10g\"\n"  //transparency value
+				  	  "    SHADE=\"100\" \n"        //shading for fill
+				  	  "    fillRule=\"%d\" \n",     //0 for Non zero winding rule, 1 for Even-Odd winding rule
+						fstyle->color.red, fstyle->color.green, fstyle->color.blue,
+						1-fstyle->color.alpha/65535.,
+						fstyle->fillrule==EvenOddRule ? 1 : 0);
+		} else {
+			fprintf(f,"    PCOLOR=\"None\"\n"
+				  	  "    SHADE=\"100\" \n"        //shading for fill
+				  	  "    fillRule=\"1\" \n"       //0 for Non zero winding rule, 1 for Even-Odd winding rule
+					  "    TransValue=\"0\"\n");
+		}
+
 			//---------gradient tags:
 		if (ptype==PTYPE_Laidout_Gradient) { //is a gradient
 			fprintf(f,"    GRTYP=\"%d\" \n",          // 	Type of the gradient fill
@@ -1325,11 +1563,12 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  "    PICART=\"1\" \n"         //1 if image should be shown
 				  "    LOCALX=\"0\" \n"         //xpos of image in frame
 				  "    LOCALY=\"0\" \n");       //ypos of image in frame
-	} //if mysteryatts
+	} //if !mysteryatts
+
 	fprintf(f,    "    LOCALSCX=\"%g\" \n"      //image scaling in x direction
 				  "    LOCALSCY=\"%g\" \n"      //image scaling in y direction
 				  "    PFILE=\"%s\" \n",	    //file of image
-				localscx,localscy,pfile);
+				localscx,localscy,pfile?pfile:"");
 
 		//-------------general object tags:
 	 // fix ptype to be more accurate
@@ -1751,6 +1990,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				group->push(image);
 				image->dec_count();
 
+			//} else if (ptype==5 && in->keepmystery!=2) { //line
+			//} else if (ptype==6 && in->keepmystery!=2) { //line
+			//} else if (ptype==7 && in->keepmystery!=2) { //line
 			} else if (scribushints) { 
 				 //undealt with object, push as MysteryData if in->keepmystery
 
@@ -1913,8 +2155,9 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		 //the Laidout document in range [docpagenum, docpagenum+start-end]
 		Page *master, *docpage;
 		SomeData *obj, *newobj;
+		Group *layer;
 		MysteryData *mobj;
-		for (int c=docpagenum; c<=docpagenum+start-end; c++) {
+		for (int c=docpagenum; c<=docpagenum+end-start; c++) {
 			 //find which master page to use
 			if (!pagebounds[c-docpagenum].nameid) continue; //no master page for this page
 			master=NULL;
@@ -1928,13 +2171,20 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 		
 			 //apply the objects at beginning of stack. Master page objects occur under all other objects.
 			docpage=doc->pages.e[c];
-			for (int c2=0; c2<masterpages.e[c-docpagenum]->layers.n(); c2++) {
-				obj=masterpages.e[c-docpagenum]->layers.e(c2);
+			for (int c2=0; c2<master->layers.n(); c2++) {
+			  layer=dynamic_cast<Group*>(master->layers.e(c2));//this is a layer
+			  for (int c3=0; c3<layer->n(); c3++) {
+				obj=layer->e(c3);
+				DBG cerr<<"scribus master page object: "<<obj->whattype()<<endl;
 
 				newobj=obj->duplicate();
+				if (!newobj) {
+					DBG cerr<<" *** could not duplicate "<<obj->whattype()<<endl;
+					continue;
+				}
 				docpage->layers.push(newobj);
 				dynamic_cast<Group *>(docpage->layers.e(0))->push(newobj);
-				
+
 				mobj=dynamic_cast<MysteryData*>(newobj);
 				if (mobj && (!strcmp(mobj->name,"Text Frame") || !strcmp(mobj->name,"Text on path"))) {
 					 //now convert variable text
@@ -1964,6 +2214,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 				}
 				newobj->dec_count();
 			}
+		  }
 		}
 	}
 

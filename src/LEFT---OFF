@@ -10,22 +10,37 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 ---- bugs to fix right now:
-viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
+
+test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
+
+laidout->Load() should be able to load scribus files
+
+open a scribus file directly, it seems to create 2 document listings
 
 fix memory holes
 
-spread flipper tabloid tiled not paging paper layouts properly
-spread flipper right side not advancing!
+refcounting crashing error with nets upon edit current document settings -> apply
+
+viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
+
+change signature settings, apply, back to view, does not remove the papergroup from the view!
+
+---- less urgent bugs:
+select none, select doc, viewport jumps around... it should stay the same area
 
 in tiled, can no longer select objects in the other tiles, wtf!!!
-
-refcounting crashing error with nets upon edit current document settings
 
 object deleting funky, import svg images, select one, hit delete, doesn't delete!!
 place 3 images, object select, must press delete twice...!?!?!?!
 
+paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
 
----- less urgent bugs:
+somehow still able to sneak up on auto marks and move them around, should not be able to do this!!
+
+should not be able to group select an object and another object nested within
+
+transparency in paths does not work on screen
+
 file previewer not updating preview when using arrow keys
 
 create new window, defaults to no doc. should select doc of last pane
@@ -69,37 +84,40 @@ test:
   each export filter
   make some test scripts for command line testing
 
-should be able to drop printer marks onto default papergroup without resorting to paper tool
-
-Scribus import:
-  import must support master pages
-  DONE import should support PageRange <-> Section conversion
-  import should try to apply the Scribus layout correctly, at least for 2 page spreads
-  //import should do something meaningful with original Scribus page bleed values
-  scribus in/out: font sizes, stroke widths
+Scribus import: import must support master pages
 
 sig editor: needs testing: command line func parser for sigs
 
-implement auto marks:
-  cut marks
-  gray bars
-  registration marks
-  //bleed marks
-  //color bars
-  //spread info: spread type, current date and time, creator, spread number/total number of spreads
-
-import config generic things like enum keepmystery should be parsed when no import config given!!
-
-saving when net is internal is not proper.. does not distinguish between diff. nets and whole
-
-PathInterface should be in a small way usable
-need to rediscover pathinterface, PathInterface should not segfault
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 update translations
 
+Scribus:
+  import/export color meshes, for recent versions of Scribus
+  import/export linear and radial gradients
+  scribus in/out: font sizes, stroke widths
+  import should try to apply the Scribus layout correctly, at least for 2 page spreads
+  import should do something meaningful with original Scribus page bleed values
+
+PathInterface:
+  shift click starts a new subpath
+  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
+
+saving when net is internal is not proper.. does not distinguish between diff. nets and whole
+
+import config generic things like enum keepmystery should be parsed when no import config given!!
+
+alphabatize filter name list?
+
+implement marks:
+  bleed marks
+  color bars from a palette
+  spread info: spread type, current date and time, creator, spread number/total number of spreads
+
 'm' should be able to move whole groups, means must be in object tool?
+
+need to rediscover pathinterface
 
 PathInterface must be drastically improved, and bez part should have segment move like inkscape
     finish new path/pathoperator/pathsubinterface/pathinterface structure
@@ -108,6 +126,11 @@ For objects that appear very small, the drag handles should not be operable.. sh
 
 Singles::gapx,y should work, BUT by .093, singles will be worked up a bit, and paper partitioning
 will likely be very different
+
+When there are errors or warnings in exporting, should be able to have the error log such that
+  you can just jump to the offending bit easily. This would also be used for preflight verifiers,
+  and maybe also mass edit things, like edit all images..
+  - have ViewWindow::JumpToObject(&place, objectid);	
 
 impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
 
@@ -630,4 +653,38 @@ DONE move a papergroup object to a pagestack blank page: segfault!
 
 DONE finish implementing 'm'
 
+DONE (well, by disabling!) spread flipper tabloid tiled not paging paper layouts properly
+DONE (well, by disabling!) spread flipper right side not advancing!
+
+DONE maybe? PathInterface should not segfault
+
+DONE should be able to drop printer marks onto default papergroup without resorting to paper tool
+
+DONE PathInterface should be in a small way usable
+DONE PathInterface:
+  DONE click and move in bounds with object but nothing selected cause an object shift?
+  DONE Single point selected, click down not on a point, add new point to path
+  DONE arrow not pointing where it should
+
+DONE double check color picker, doesn't work in lax interfs...
+
+DONE Does not appear to be selecting objects when click on them, have to click twice
+
+DONE implement marks:
+  DONE auto cut marks
+  DONE gray bars
+  DONE registration marks
+  DONE automarks selector in signature interface
+
+DONE svg export malfunction, not outputting correct page areas
+
+DONE crash: try to delete a gray bars group in test-tiled-custommarks.laidout, when a papergroup or limbo object!
+
+Scribus import: DONE import should support PageRange <-> Section conversion
+
+DONE have to implement exporting paths, grrr! thought I had already!!
+  DONE ps
+  DONE svg
+  DONE pdf
+  DONE scribus
 

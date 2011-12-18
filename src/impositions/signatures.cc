@@ -30,6 +30,11 @@ using namespace LaxFiles;
 
 #define DBG 
 
+
+//for automarks: gap is 1/8 inch, mwidth is about 1/72.. at some point these will be customizable
+#define GAP .0625
+#define MWIDTH  .014
+
 //----------------------------- naming helper functions -----------------------------
 
 //! Return the name of the fold direction.
@@ -217,6 +222,12 @@ FoldedPageInfo::FoldedPageInfo()
  * If nonzero, then any increase will only use more stacked sheets per signature. Otherwise, 
  * more signatures are used, and it is assumed that these will be bound back to back.
  */
+/*! \var int Signature::hint_numpages
+ * \brief Used by impose-only mode to have custom behavior for number of pages and signatures.
+ */
+/*! \var int Signature::hint_numsigs;
+ * \brief Used by impose-only mode to have custom behavior for number of pages and signatures.
+ */
 
 Signature::Signature()
 {
@@ -250,9 +261,14 @@ Signature::Signature()
 	foldinfo[0][0].finalindexback=1;
 
 	linestyle=NULL;
-	automarks=0;
-}
 
+	//automarks=AUTOMARK_Margins|AUTOMARK_InnerDot; //1.margin marks, 2.interior dotted line, 4.interior dots
+	//automarks=AUTOMARK_Margins|AUTOMARK_InnerDottedLines; //1.margin marks, 2.interior dotted line, 4.interior dots
+	automarks=0; //1.margin marks, 2.interior dotted line, 4.interior dots
+
+	hint_numpages=1;
+	hint_numsigs=1;
+}
 
 Signature::~Signature()
 {
@@ -312,6 +328,10 @@ const Signature &Signature::operator=(const Signature &sig)
 	binding=sig.binding;
 	positivex=sig.positivex;
 	positivey=sig.positivey;
+
+	automarks=sig.automarks;
+	hint_numpages=sig.hint_numpages;
+	hint_numsigs=sig.hint_numsigs;
 
 	reallocateFoldinfo();
 	applyFold(NULL,-1);
@@ -641,6 +661,8 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		fprintf(f,"%sup top             #When displaying pages, this direction should be toward the top of the screen\n",spc);
 		fprintf(f,"%spositivex right    #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
 		fprintf(f,"%spositivey top      #(optional) Default to the same direction as up\n",spc);
+		fprintf(f,"%sautomarks outer,innerdot  #(optional) Cut marks. Default is \"outer\"\n",spc);
+		//fprintf(f,"%sautomarks outer,innerdot  #(optional) Default is \"outer\". you may use innerdotlines instead of innerdot\n",spc);
 		return;
 	}
 	fprintf(f,"%ssheetspersignature %d\n",spc,sheetspersignature);
@@ -681,6 +703,13 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (positivex) fprintf(f,"%spositivex %s\n",spc,CtoStr(positivex));
 	if (positivey) fprintf(f,"%spositivey %s\n",spc,CtoStr(positivey));
 
+	if (automarks) {
+		fprintf(f,"%sautomarks ",spc);
+		if (automarks&AUTOMARK_Margins) fprintf(f,"outer ");
+		if (automarks&AUTOMARK_InnerDot) fprintf(f,"innerdot ");
+		//if (automarks&AUTOMARK_InnerDottedLines) fprintf(f,"innerdotlines ");
+		fprintf(f,"\n");
+	}
 }
 
 void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
@@ -694,6 +723,12 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 
 		if (!strcmp(name,"sheetspersignature")) {
 			IntAttribute(value,&sheetspersignature);
+
+		} else if (!strcmp(name,"automarks")) {
+			automarks=0;
+			if (strstr(value,"outer")) automarks|=AUTOMARK_Margins;
+			if (strstr(value,"innerdot")) automarks|=AUTOMARK_InnerDot;
+			//else if (strstr(value,"innerdotlines")) automarks|=AUTOMARK_InnerDottedLines;
 
 		} else if (!strcmp(name,"autoaddsheets")) {
 			autoaddsheets=BooleanAttribute(value);
@@ -811,7 +846,7 @@ unsigned int Signature::Validity()
 }
 
 //! Return height of a folding section.
-/*! This is the total height minus insettop and bottom, divided by the number of vertical tiles.
+/*! This is the total height minus insettop and bottom, minus gaps, divided by the number of vertical tiles.
  */
 double Signature::PatternHeight()
 {
@@ -823,7 +858,7 @@ double Signature::PatternHeight()
 }
 
 //! Return width of a folding section.
-/*! This is the total width minus insetleft and right, divided by the number of horizontal tiles.
+/*! This is the total width minus insetleft and right, minus gaps, divided by the number of horizontal tiles.
  */
 double Signature::PatternWidth()
 {
@@ -2219,6 +2254,220 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	  } //tx
 	  x+=patternwidth+signature->tilegapx;
 	} //ty
+
+
+	 //------Apply any automatic cut and fold marks
+	if (signature->automarks) {
+
+		 //In the inset areas, draw solid lines for cut marks, dotted lines for fold lines
+
+		PathsData *cut=NULL, *fold=NULL, *dots=NULL;
+
+
+		 //loop along the left and right
+		double y,y2;
+		for (int c=0; c<signature->tiley+1; c++) {
+			y=signature->insetbottom+c*(signature->PatternHeight()+signature->tilegapy);
+			y2=-1;
+			if (c>0 && c<signature->tiley && signature->tilegapy) {
+				y2=y-signature->tilegapy;
+			} else if (c==signature->tiley) y-=signature->tilegapy;
+
+			if (signature->automarks&AUTOMARK_Margins) { //cut marks in inset region
+				if (!cut) cut=new PathsData;
+				if (signature->insetleft>2*GAP || signature->insetright>2*GAP)  {
+					if (signature->insetleft) {
+						cut->pushEmpty();
+						cut->append(GAP, y);
+						cut->append(signature->insetleft-GAP,y);
+					}
+					if (signature->insetright) {
+						cut->pushEmpty();
+						cut->append(signature->totalwidth-signature->insetright+GAP,y);
+						cut->append(signature->totalwidth-GAP,y);
+					}
+					if (y2>0) {
+						if (signature->insetleft) {
+							cut->pushEmpty();
+							cut->append(GAP, y2);
+							cut->append(signature->insetleft-GAP,y2);
+						}
+						if (signature->insetright) {
+							cut->pushEmpty();
+							cut->append(signature->totalwidth-signature->insetright+GAP,y2);
+							cut->append(signature->totalwidth-GAP,y2);
+						}
+					}
+
+					 //dotted fold lines in inset area
+					if (signature->numhfolds && c<signature->tiley) {
+						if (!fold) fold=new PathsData;
+						double yf;
+						for (int f=1; f<=signature->numhfolds; f++) {
+							yf=y+f*signature->PageHeight(0);
+
+							if (signature->insetleft) {
+								fold->pushEmpty();
+								fold->append(GAP,yf);
+								fold->append(signature->insetleft-GAP,yf);
+							}
+							if (signature->insetright) {
+								fold->pushEmpty();
+								fold->append(signature->totalwidth-signature->insetright+GAP,yf);
+								fold->append(signature->totalwidth-GAP,yf);
+							}
+						}
+					}
+				}
+			}//cut marks in inset region
+
+			if (signature->automarks&AUTOMARK_InnerDot) {
+				if (!dots) dots=new PathsData;
+
+				 //dots on left
+				dots->pushEmpty();
+				dots->append(signature->insetleft+GAP,y);
+				dots->append(signature->insetleft+GAP*1.001,y);
+				 //dots on right
+				dots->pushEmpty();
+				dots->append(signature->totalwidth-signature->insetright-GAP,y);
+				dots->append(signature->totalwidth-signature->insetright-GAP*1.001,y);
+				
+				if (y2>0) {
+					if (signature->insetleft) {
+						dots->pushEmpty();
+						dots->append(signature->insetleft+GAP,y2);
+						dots->append(signature->insetleft+GAP*1.001,y2);
+					}
+					if (signature->insetright) {
+						dots->pushEmpty();
+						dots->append(signature->totalwidth-signature->insetright-GAP,y2);
+						dots->append(signature->totalwidth-signature->insetright-GAP*1.001,y2);
+					}
+				}
+			}
+
+			//if (signature->automarks&AUTOMARK_InnerDottedLines) {}
+		} //loop
+
+		 //Loop along top and bottom
+		if (!cut) cut=new PathsData;
+		double x,x2;
+		for (int c=0; c<signature->tilex+1; c++) {
+			x=signature->insetleft+c*(signature->PatternWidth()+signature->tilegapx);
+			x2=-1;
+			if (c>0 && c<signature->tilex && signature->tilegapx) {
+				x2=x-signature->tilegapx;
+			} else if (c==signature->tilex) x-=signature->tilegapx;
+
+			if ((signature->automarks & AUTOMARK_Margins)
+				  && (signature->insettop>2*GAP || signature->insetbottom>2*GAP))  {
+				if (!cut) cut=new PathsData;
+
+				 //cut marks in inset region
+				if (signature->insetbottom) {
+					cut->pushEmpty();
+					cut->append(x,GAP);
+					cut->append(x,signature->insetbottom-GAP);
+				}
+				if (signature->insettop) {
+					cut->pushEmpty();
+					cut->append(x,signature->totalheight-signature->insettop+GAP);
+					cut->append(x,signature->totalheight-GAP);
+				}
+				if (x2>0) {
+					if (signature->insetbottom) {
+						cut->pushEmpty();
+						cut->append(x2,GAP);
+						cut->append(x2,signature->insetbottom-GAP);
+					}
+					if (signature->insettop) {
+						cut->pushEmpty();
+						cut->append(x2,signature->totalheight-signature->insettop+GAP);
+						cut->append(x2,signature->totalheight-GAP);
+					}
+				}
+
+				 //dotted fold lines in inset area
+				if (signature->numvfolds && c<signature->tilex) {
+					if (!fold) fold=new PathsData;
+					double xf;
+					for (int f=1; f<=signature->numvfolds; f++) {
+						xf=x+f*signature->PageWidth(0);
+
+						if (signature->insetbottom) {
+							fold->pushEmpty();
+							fold->append(xf,GAP);
+							fold->append(xf,signature->insetbottom-GAP);
+						}
+						if (signature->insettop) {
+							fold->pushEmpty();
+							fold->append(xf,signature->totalheight-signature->insettop+GAP);
+							fold->append(xf,signature->totalheight-GAP);
+						}
+					}
+				}
+			} //cut marks outside
+
+			if (signature->automarks & AUTOMARK_InnerDot) {
+				if (!dots) dots=new PathsData;
+
+				 //dots on bottom
+				dots->pushEmpty();
+				dots->append(x,signature->insetbottom+GAP);
+				dots->append(x,signature->insetbottom+GAP*1.001);
+				 //dots on top
+				dots->pushEmpty();
+				dots->append(x,signature->totalheight-signature->insettop-GAP);
+				dots->append(x,signature->totalheight-signature->insettop-GAP*1.001);
+				
+				if (x2>0) {
+					if (signature->insetbottom) {
+						dots->pushEmpty();
+						dots->append(x2,signature->insetbottom+GAP);
+						dots->append(x2,signature->insetbottom+GAP*1.001);
+					}
+					if (signature->insettop) {
+						dots->pushEmpty();
+						dots->append(x2,signature->totalheight-signature->insettop-GAP);
+						dots->append(x2,signature->totalheight-signature->insettop-GAP*1.001);
+					}
+				}
+			}
+
+			//if (signature->automarks&AUTOMARK_InnerDottedLines) {}
+		}//loop
+
+		Group *g=NULL;
+		if (cut || fold || dots) spread->marks=g=new Group;
+		if (g) g->obj_flags|=OBJ_Unselectable;
+		if (cut) {
+			cut->flags|=SOMEDATA_LOCK_CONTENTS|SOMEDATA_UNSELECTABLE;
+			ScreenColor color(0,0,0,0xffff);
+			cut->line(MWIDTH,-1,-1,&color);
+			g->push(cut);
+			cut->dec_count();
+			cut->FindBBox();
+		}
+		if (fold) {
+			fold->flags|=SOMEDATA_LOCK_CONTENTS|SOMEDATA_UNSELECTABLE;
+			ScreenColor color(0,0,0,0xffff);
+			fold->line(MWIDTH,CapButt,JoinMiter,&color);
+			fold->linestyle->dotdash=715827882;
+			g->push(fold);
+			fold->dec_count();
+			fold->FindBBox();
+		}
+		if (dots) {
+			dots->flags|=SOMEDATA_LOCK_CONTENTS|SOMEDATA_UNSELECTABLE;
+			ScreenColor color(0,0,0,0xffff);
+			dots->line(MWIDTH,CapRound,JoinRound,&color);
+			g->push(dots);
+			dots->dec_count();
+			dots->FindBBox();
+		}
+		if (spread->marks) spread->mask|=SPREAD_PRINTERMARKS;
+	} //automarks
 
 
 	return spread;

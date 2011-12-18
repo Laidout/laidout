@@ -31,6 +31,7 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
 	Group();
 	virtual ~Group();
 	virtual const char *whattype() { return "Group"; }
+
 	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
 	virtual int findindex(LaxInterfaces::SomeData *d) { return objs.findindex(d); }
 	virtual int push(LaxInterfaces::SomeData *obj);
@@ -41,6 +42,7 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
 	virtual void flush();
 	virtual void swap(int i1,int i2) { objs.swap(i1,i2); }
 	virtual int slide(int i1,int i2);
+
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual int pointin(flatpoint pp,int pin=1);
@@ -53,7 +55,7 @@ class Group : public ObjectContainer, virtual public LaxInterfaces::SomeData
 	virtual int UnGroup(int which);
 	virtual int UnGroup(int n,const int *which);
 
-	virtual int n() { return objs.n; }
+	virtual int n();
 	virtual Laxkit::anObject *object_e(int i) { return e(i); }
 	virtual const char *object_e_name(int i) { return NULL; }
 	virtual const double *object_transform(int i);

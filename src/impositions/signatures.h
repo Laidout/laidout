@@ -23,6 +23,10 @@
 #include <lax/interfaces/linestyle.h>
 
 
+#define AUTOMARK_Margins           1
+#define AUTOMARK_InnerDot          2
+#define AUTOMARK_InnerDottedLines  4
+
 //------------------------------------- Fold --------------------------------------
 
 const char *FoldDirectionName(char dir, int under, int translate=1);
@@ -87,6 +91,9 @@ class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 
 	int automarks;
 	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
+
+	int hint_numpages;  //used by impose-only mode to have custom behavior for number of pages and signatures
+	int hint_numsigs;
 
 	 //for easy storing of final arrangement:
 	FoldedPageInfo **foldinfo;
