@@ -149,7 +149,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual const double *object_transform(int i);
 	virtual int object_e_info(int i, const char **name, const char **Name, int *isarray);
 	virtual int curobjPage();
-	virtual int isDefaultPapergroup();
+	virtual int isDefaultPapergroup(int yes_if_in_project);
 
 	friend class ViewWindow;
 	friend class GroupInterface;
