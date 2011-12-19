@@ -36,8 +36,14 @@ Any po files you make MUST be encoded as UTF-8 characters.
 2. Combine with Laxkit strings, if you did not do so above.
    The Laxkit also has a few translatable strings. These can be found
    in its laxkit.pot file. Those strings may have been translated to the desired
-   language already. If so, then copy those msgid/msgstr pairs from the laxkit po file
-   over to your working laidout po file. 
+   language already. If so, you can add those to your new one with the "msgcat" command:
+
+     msgcat es-laidout.po es-laxkit.po -o es-merged.po
+
+   The file es-merged.po might have a bunch of lines around characters like "#-#-#-#"
+   This means you must choose one section, and delete the other, including 
+   the "#-#-#-#" parts.
+
 
 3. Now make the necessary changes to that pot file, and save to the correct language
    name in this directory. For instance, canadian english would be en_CA.po. You might
@@ -69,6 +75,8 @@ Any po files you make MUST be encoded as UTF-8 characters.
    Now the your_updated_po_file.po file will contain all the currently needed strings, 
    preserving all the old translations, as long as they are still needed. Now just translate
    the new strings, and put it in place of your_old_po_file.po.
+   There might be a few extra strings in the Laxkit po files, so you might also try the step
+   in part 2. of Making New Translations above.
 
 
 
