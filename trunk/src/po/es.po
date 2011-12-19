@@ -1,22 +1,21 @@
+# translation of es.po to
 # LAIDOUT SPANISH TRANSLATION
 # Copyright (C) 2011
 # This file is distributed under the same license as Laidout.
-#
 # Tom Lechner <tomlechner@users.sourceforge.net>, 2007,2011.
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-12-18 18:07-0800\n"
-"PO-Revision-Date: 2007-10-07 19:54-0700\n"
-"Last-Translator: Tom Lechner <tomlechner@users.sourceforge.net>\n"
-"Language-Team: Spanish <tomlechner@users.sourceforge.net>\n"
+"PO-Revision-Date: 2011-12-18 18:36-0800\n"
+"Last-Translator:  <tom@tomlechner.com>\n"
+"Language-Team: \n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.2\n"
+"X-Generator: KBabel 1.11.4\n"
 
 #: ../document.cc:153
 msgid "Page Label for Range"
@@ -156,7 +155,6 @@ msgstr ""
 
 #: ../papersizes.cc:402 ../impositions/signatureinterface.cc:398
 #: ../api/openandnew.cc:61
-#, fuzzy
 msgid "Paper"
 msgstr "Papeles"
 
@@ -251,8 +249,7 @@ msgstr "Comenzar la página:"
 
 #: ../importimages.cc:299
 #, fuzzy
-msgid ""
-"The starting document page index to drop images onto. 0 is the first page."
+msgid "The starting document page index to drop images onto. 0 is the first page."
 msgstr "El comenzar de índice de páginas de la gama."
 
 #: ../importimages.cc:307
@@ -2629,8 +2626,7 @@ msgstr "El formato del archivo a exportar en"
 #: ../simpleprint.cc:105
 #, fuzzy
 msgid "By Command: "
-msgstr ""
-"Por orden"
+msgstr "Por orden"
 
 #: ../filetypes/exportdialog.cc:228 ../filetypes/exportdialog.cc:236
 msgid "Run this command on a single exported file"
@@ -2640,8 +2636,7 @@ msgstr "Funcionar este comando en un solo archivo exportado"
 #: ../simpleprint.cc:86
 #, fuzzy
 msgid "To File: "
-msgstr ""
-"En el archivo:"
+msgstr "En el archivo:"
 
 #: ../filetypes/exportdialog.cc:247 ../filetypes/exportdialog.cc:259
 #: ../filetypes/exportdialog.cc:673
@@ -2770,8 +2765,7 @@ msgstr ""
 
 #: ../filetypes/image.cc:227
 msgid "Currently need Ghostscript to output to image files."
-msgstr ""
-"Necesitar actualmente Ghostscript hacer salir a los archivos de la imagen."
+msgstr "Necesitar actualmente Ghostscript hacer salir a los archivos de la imagen."
 
 #: ../filetypes/image.cc:248 ../filetypes/image.cc:253
 msgid "Error exporting to image."
@@ -3021,8 +3015,7 @@ msgid "Layout"
 msgstr "Disposición de página"
 
 #: ../filetypes/filefilters.cc:218
-msgid ""
-"Type of layout in which to count the spread index. Depends on the imposition."
+msgid "Type of layout in which to count the spread index. Depends on the imposition."
 msgstr ""
 
 #: ../filetypes/filefilters.cc:224 ../filetypes/filefilters.cc:622
@@ -3075,8 +3068,7 @@ msgid "Filename"
 msgstr "Un nombre del archivo para usar"
 
 #: ../filetypes/filefilters.cc:606 ../api/importexport.cc:197
-msgid ""
-"Path of exported file. For multiple files, use \"file##.svg\", for instance."
+msgid "Path of exported file. For multiple files, use \"file##.svg\", for instance."
 msgstr ""
 
 #: ../filetypes/filefilters.cc:614
@@ -3117,8 +3109,7 @@ msgid "Ending index of a document spread to export"
 msgstr "El tipo de extensiones a exportar"
 
 #: ../filetypes/filefilters.cc:647
-msgid ""
-"Type of spread layout to export as. Possibilities defined by the imposition."
+msgid "Type of spread layout to export as. Possibilities defined by the imposition."
 msgstr ""
 
 #: ../filetypes/filefilters.cc:655
@@ -3691,8 +3682,7 @@ msgstr "Imprimir"
 #: ../../laxkit/lax/simpleprint.cc:127 ../simpleprint.cc:127
 #, fuzzy
 msgid "Print All"
-msgstr ""
-"Imprimir todo"
+msgstr "Imprimir todo"
 
 #: ../simpleprint.cc:135
 msgid "Print Current"
@@ -3701,8 +3691,7 @@ msgstr "Imprimir actual"
 #: ../../laxkit/lax/simpleprint.cc:143 ../simpleprint.cc:143
 #, fuzzy
 msgid "Print From:"
-msgstr ""
-"Imprimir de"
+msgstr "Imprimir de"
 
 #: ../dateutils.cc:80
 msgid "Sunday"
