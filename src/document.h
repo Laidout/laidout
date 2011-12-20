@@ -115,6 +115,7 @@ class Document : public ObjectContainer, public Style
 	virtual Spread *GetLayout(int type, int index);
 
 	virtual int ApplyPageRange(const char *name, int type, const char *base, int start, int end, int first, int dec);
+	virtual void UpdateLabels(int whichrange);
 	
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
