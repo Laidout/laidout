@@ -248,6 +248,7 @@ int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 			if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
 			int num=s->info4;
 			doc->pageranges.e[currange]->labeltype=num;
+			doc->UpdateLabels(currange);
 			needtodraw=1;
 			return 0;
 		}
@@ -260,6 +261,7 @@ int PageRangeInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		if (!doc || hover_range<0 || hover_range>=doc->pageranges.n) return 0;
 		makestr(doc->pageranges.e[hover_range]->labelbase,s->str);
+		doc->UpdateLabels(hover_range);
 		needtodraw=1;
 
 		return 0;
@@ -337,9 +339,9 @@ int PageRangeInterface::InterfaceOff()
 
 void PageRangeInterface::Clear(SomeData *d)
 {
-	yscale=50;
-	xscale=dp->Maxx-dp->Minx-2*PAD;
-	offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
+	//yscale=50;
+	//xscale=dp->Maxx-dp->Minx-2*PAD;
+	//offset=-flatpoint(dp->Minx+PAD,dp->Maxy-PAD);
 }
 
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
@@ -684,6 +686,7 @@ int PageRangeInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 			if (doc->pageranges.e[currange]->labeltype>=Numbers_MAX)
 				doc->pageranges.e[currange]->labeltype=Numbers_None;
 		}
+		doc->UpdateLabels(currange);
 		needtodraw=1;
 		return 0;
 	}
@@ -692,6 +695,7 @@ int PageRangeInterface::WheelUp(int x,int y,unsigned int state,int count,const L
 		if (!doc->pageranges.n) InstallDefaultRange();
 		currange=hover_range;
 		if (currange>=0 && currange<doc->pageranges.n) doc->pageranges.e[currange]->first++;
+		doc->UpdateLabels(currange);
 		needtodraw=1;
 		return 0;
 	}
@@ -721,6 +725,7 @@ int PageRangeInterface::WheelDown(int x,int y,unsigned int state,int count,const
 			if (doc->pageranges.e[currange]->labeltype==Numbers_Default)
 				doc->pageranges.e[currange]->labeltype=Numbers_MAX-1;
 		}
+		doc->UpdateLabels(currange);
 		needtodraw=1;
 		return 0;
 	}
@@ -729,6 +734,7 @@ int PageRangeInterface::WheelDown(int x,int y,unsigned int state,int count,const
 		if (!doc->pageranges.n) InstallDefaultRange();
 		currange=hover_range;
 		if (currange>=0 && currange<doc->pageranges.n) doc->pageranges.e[currange]->first--;
+		doc->UpdateLabels(currange);
 		needtodraw=1;
 		return 0;
 	}
