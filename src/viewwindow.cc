@@ -4031,10 +4031,18 @@ void ViewWindow::updateContext(int messagetoo)
 
 	if (messagetoo) {
 		LaidoutViewport *v=((LaidoutViewport *)viewport);
-		char blah[v->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
 		const char *f;
 		int i;
-		strcpy(blah,"view");
+		int cplen=20,curpageindex=((LaidoutViewport *)viewport)->curobjPage();
+
+		char blah[cplen+v->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
+		blah[0]='\0';
+
+		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) {
+			sprintf(blah,_("(page %s)"),doc->pages.e[curpageindex]->label);
+		}
+		strcat(blah," view");
+
 		ObjectContainer *o=dynamic_cast<ObjectContainer*>(viewport);
 		for (int c=0; o && c<v->curobj.context.n(); c++) {
 			strcat(blah,".");
