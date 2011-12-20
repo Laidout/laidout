@@ -10,6 +10,7 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 ---- bugs to fix right now:
+spread editor unreliable!!!! not applying in a good way
 
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
@@ -17,9 +18,11 @@ fix memory holes
 
 refcounting crashing error with nets upon edit current document settings -> apply
 
+---- less urgent bugs:
+recent files do not appear to be most recent file opened
+
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
 
----- less urgent bugs:
 select none, select doc, viewport jumps around... it should stay the same area
 
 in tiled, can no longer select objects in the other tiles, wtf!!!
@@ -74,7 +77,7 @@ update docs to have new release number
 test:
   each window type to avoid crashy hangups, like about window from .091!!!!
   each export filter
-  make some test scripts for command line testing
+  scribus plugin
 
 sig editor: needs testing: command line func parser for sigs
 
@@ -82,7 +85,13 @@ disable scale pages to new imposition in newdoc, as it's not implemented yet
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
+check laidout.1 when time to release
+update docs to have new release number
 update translations
+test:
+  each window type, include help and about
+  each export filter
+  make some test scripts for command line testing
 
 need to implement scale pages to new imposition when reimposing
 
@@ -133,6 +142,8 @@ move impose-only attributes to newdoc/export dialog or otherwise somehow give ac
 paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
 
 sig editor:
+  be able to enter numbers
+  mouse over and drag show numbers on canvas
   you should be able to visually adjust the paper size in sigeditor graphically, by automatically
     selecting larger papers, or adjusting the paper edges
   detect non staplable binding edge, show red rather than green
@@ -393,6 +404,9 @@ pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow
 				    just tools but overlays. Any number of overlays can be active, but only one tool
   edit base in place
   should not be able to shift overlay offscreen entirely.. maybe if dragging offscreen, minimize on corner?
+
+For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
+  part.. should have minimum drag areas?
 
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
     focus off a dialog, then refocus, must manually set control focus. should store which subwindow
@@ -689,4 +703,6 @@ DONE somehow still able to sneak up on auto marks and move them around, should n
 DONE Scribus import: import must support master pages
 
 DONE change signature settings, apply, back to view, does not remove the papergroup from the view!
+
+DONE ARRRR!!!!! page labels not applying!!!
 

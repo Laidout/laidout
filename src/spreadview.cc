@@ -372,7 +372,8 @@ void SpreadView::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 }
 
 //! Return the reverse map from temppagemap[].
-/*!
+/*! Returns index of temppagemap.
+ *
  * temppagemap elements say what doc->page index is temporarily stored in
  * littlespread->spread->pagestack->index. For instance,
  * if temppagemap=={0,1,2,3,4}, after swapping 4 and 1, temppagemap=={0,4,2,3,1}. Then say
@@ -638,7 +639,7 @@ int SpreadView::Update(Document *doc)
 	for (c=0; c<spreads.n; c++) {
 		spread=spreads.e[c]->spread;
 		for (int c2=0; c2<spread->pagestack.n(); c2++) {
-			if (SpreadOfPage(spread->pagestack.e[c2]->index,NULL,1)) { 
+			if (SpreadOfPage(spread->pagestack.e[c2]->index,NULL,NULL,NULL,1)) { 
 				//page is in a thread
 				spread->pagestack.e[c2]->index=-1;
 				spread->pagestack.e[c2]->page=NULL;
@@ -794,29 +795,44 @@ void SpreadView::FindBBox()
 
 //! Return the spread that contains the given document page index, and what thread it is in.
 /*! Main thread is 0, otherwise it is 1+(index of thread in thread stack).
+ *
+ * Also optionally return the spread number in the thread, and the spread's page stack index
+ * containing the page.
  */
-LittleSpread *SpreadView::SpreadOfPage(int page, int *thread, int skipmain)
+LittleSpread *SpreadView::SpreadOfPage(int page, int *thread, int *spreadi, int *psi, int skipmain)
 {
 	LittleSpread *s;
 	for (int c=0; c<threads.n; c++) {
 		s=threads.e[c];
+		int i=0, psindex;
 		while (s) {
-			if (s->spread->PagestackIndex(page)>=0) {
+			psindex=s->spread->PagestackIndex(page);
+			if (psindex>=0) {
 				if (thread) *thread=c+1;
+				if (spreadi) *spreadi=i;
+				if (psi) *psi=psindex;
 				return s;
 			}
 			s=s->next;
+			i++;
 		}
 	}
 	if (!skipmain) {
-		for (int c=0; c<spreads.n; c++) {
-			if (spreads.e[c]->spread->PagestackIndex(page)>=0) {
+		int c=0, psindex;
+		for (c=0; c<spreads.n; c++) {
+			psindex=spreads.e[c]->spread->PagestackIndex(page);
+			if (psindex>=0) {
 				if (thread) *thread=0;
+				if (spreadi) *spreadi=c;
+				if (psi) *psi=psindex;
 				return spreads.e[c];
 			}
 		}
 	}
 	if (thread) *thread=-1;
+	if (spreadi) *spreadi=-1;
+	if (psi) *psi=-1;
+
 	return NULL;
 }
 
@@ -876,8 +892,8 @@ int SpreadView::SwapPages(int previouspos, int newpos)
 	int page2=map(newpos);
 	if (page1<0 || page2<0) return 3;
 
-	s1=SpreadOfPage(page1,&thread1);
-	s2=SpreadOfPage(page2,&thread2);
+	s1=SpreadOfPage(page1,&thread1,NULL,NULL,0);
+	s2=SpreadOfPage(page2,&thread2,NULL,NULL,0);
 	if (!s1 || !s2) return 1;
 
 	ps1=s1->spread->PagestackIndex(page1);
@@ -931,14 +947,36 @@ int SpreadView::ApplyChanges()
 	newlocal=new char[n];
 	
 	int pg;
+	LittleSpread *s1;
+	int thread=-1, spreadi=-1, psi=-1;
 	for (int c=0; c<n; c++) {
+		pg=temppagemap[c]; //doc page index
 		DBG cerr <<" --move page "<<pg<<" to page "<<c<<endl;
-		pg=temppagemap[c];
+		
+		 //map Document pages
 		newpages[c]=oldpages[pg];
 		newlocal[c]=oldlocal[pg];
 
-		temppagemap[c]=c;
+		 //map links in spreads
+//		if (temppagemap[c]!=c) {
+//			SwapPages(reversemap(c),reversemap(temppagemap[c]));
+//			s1=SpreadOfPage(pg,&thread,&spreadi,&psi,0);
+//			s1->spread->pagestack.e[psi]->index=c;
+//			temppagemap[c]=c;
+//		}
+//		temppagemap[c]=c;
 	}
+
+	for (int c=0; c<spreads.n; c++) {
+		for (int c2=0; c2<spreads.e[c]->spread->pagestack.n(); c2++) {
+			pg=spreads.e[c]->spread->pagestack.e[c2]->index;
+			if (pg<0) continue;
+			spreads.e[c]->spread->pagestack.e[c2]->index=reversemap(pg);
+		}
+	}
+
+	for (int c=0; c<n; c++) temppagemap[c]=c;
+
 	doc->pages.insertArrays(newpages,newlocal,n);
 	delete[] oldlocal;
 	delete[] oldpages;

@@ -477,6 +477,8 @@ int SpreadInterface::Refresh()
 				x=(int)p.x; // figure out where bottom tip of bbox is
 				y=(int)p.y;
 				drawLabel(x,y,doc->pages.e[pg], pg==view->temppagemap[pg]);
+				DBG cerr <<"page "<<pg<<" at map pos "<<view->reversemap(pg)
+				DBG      <<" in spread "<<c<<",psi "<<c2<<" has label "<<doc->pages.e[pg]->label<<endl;
 
 				dp->PopAxes();
 			}
@@ -503,13 +505,15 @@ int SpreadInterface::Refresh()
 #define SE_PageLabels       1000
 #define SE_InsertPage       1001
 #define SE_InsertDummyPage  1002
-#define SE_DetachPages      1003
-#define SE_DeletePages      1004
-#define SE_ExportPages      1005
-#define SE_NewView          1006
-#define SE_SaveView         1007
-#define SE_DeleteView       1008
-#define SE_RenameView       1009
+#define SE_AddPageBefore    1003
+#define SE_AddPageAfter     1004
+#define SE_DetachPages      1005
+#define SE_DeletePages      1006
+#define SE_ExportPages      1007
+#define SE_NewView          1008
+#define SE_SaveView         1009
+#define SE_DeleteView       1009
+#define SE_RenameView       1010
 
 Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 {
@@ -546,6 +550,14 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 		}
 	}
 
+//	int psi=-1, thread=-1;
+//	LittleSpread *spread=findSpread(x,y,&psi,&thread);
+//	if (spread && psi>=0) {
+//		menu->AddSep();
+//		menu->AddItem(_("Add page after"),SE_AddPageAfter,LAX_OFF,spread->pagestack.e[psi]->index);
+//		menu->AddItem(_("Add page before"),SE_AddPageBefore,LAX_OFF,spread->pagestack.e[psi]->index);
+//	}
+
 	return menu;
 }
 
@@ -565,6 +577,12 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (i==SE_PageLabels) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (i==SE_AddPageAfter) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (i==SE_AddPageBefore) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
 
 	} else if (i==SE_InsertPage) {
@@ -873,13 +891,19 @@ void SpreadInterface::SwapPages(int previouspos, int newpos)
 void SpreadInterface::ApplyChanges()
 {
 	DBG cerr<<"ApplyChanges:"<<endl;
+	if (!view) return;
 
 	if (view->threads.n) {
 		if (viewport) viewport->postmessage(_("Cannot apply when there are unconnected threads"));
 		return;
 	}
 
+	int olddocid=view->doc_id; //preserve unsaved state.. doc_id only supposed to exist in saved views
+	if (!view->doc_id) view->doc_id=doc->object_id;
 	view->ApplyChanges();
+	view->doc_id=olddocid;
+	doc->UpdateLabels(-1);
+
 	laidout->notifyDocTreeChanged(curwindow->win_parent,TreePagesMoved,0,-1);
 	needtodraw=1;
 }
@@ -893,6 +917,7 @@ void SpreadInterface::Reset()
 {
 	if (!view) return;
 	view->Reset();
+	needtodraw=1;
 }
 
 //! Selects spreads.
@@ -920,7 +945,7 @@ int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count,const Laxk
 		 //push all pages between curpage and new curpage
 		for (int c=(curpage<page?curpage:page); c<=(curpage>page?curpage:page); c++) {
 			curpages.pushnodup(c);
-			curspreads.pushnodup(view->SpreadOfPage(c,NULL),0);
+			curspreads.pushnodup(view->SpreadOfPage(c,NULL,NULL,NULL,0),0);
 		}
 	}
 	curpage=page;
@@ -983,8 +1008,10 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 			} else {
 				if ((state&LAX_STATE_MASK)==0) 
 					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_To_E);
-				else 
+				else if ((state&LAX_STATE_MASK)==ShiftMask)
 					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
+				else
+					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
 			}
 		}
 
@@ -1073,12 +1100,12 @@ int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxK
 		LittleSpread *spread=findSpread(x,y,&psi,&thread);
 		if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
 		if (curpages.findindex(page)>=0) {
-			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Cancel); //swap
 		} else if (!spread) {
-			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
+			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Boxes); //float
 		} else {
 			//if ((state&LAX_STATE_MASK)==0) 
-				const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_To_E);
+				const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_To_E); //slide
 			//else 
 				//const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
 		}
@@ -1096,7 +1123,7 @@ int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxK
  *   't'    toggle drawing of thumbnails
  *   'A'    toggle how to arrange the spreads
  *  +'A'    force arranging the spreads using current arrange style
- *   'p'    *** for debugging thumbs
+ *   'i'    *** for debugging thumbs
  * </pre>
  *
  * \todo *** space should arrange if auto arrange
@@ -1106,7 +1133,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 	DBG cerr <<"SpreadInterface::CharInput: "<<ch<<" as char: '"<<(char)(ch>20 && ch<127?ch:(int)'?')<<","<<endl;
 
 	if (ch==LAX_Shift && dragpage>=0 && curpages.n==1) {
-		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
+		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange); //swap
 		return 0;
 
 	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
@@ -1122,7 +1149,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		if (ChangeMarks(-2)>=0) needtodraw=1;
 		return 0;
 
-	} else if (ch=='p') { //*** for debugging thumbnails....
+	DBG } else if (ch=='i') { //*** for debugging thumbnails....
 		DBG if (curpage<0) return 0;
 		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
 		DBG cerr <<"'P' image dump:"<<endl;
@@ -1138,7 +1165,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		DBG }
 		DBG return 0;
 
-	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
+	} else if (ch=='p' && (state&LAX_STATE_MASK)==0) {
 		drawthumbnails=!drawthumbnails;
 		DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
 		needtodraw=1;
