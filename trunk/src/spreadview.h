@@ -104,7 +104,7 @@ class SpreadView : public Laxkit::anObject,
 	virtual int ApplyChanges();
 	virtual void Reset();
 	virtual LittleSpread *findSpread(int x,int y, int *pagestacki, int *thread);
-	virtual LittleSpread *SpreadOfPage(int page, int *thread,int skipmain=0);
+	virtual LittleSpread *SpreadOfPage(int page, int *thread, int *spreadi, int *psi, int skipmain);
 	virtual int RemoveFromThread(int pageindex, int thread);
 	virtual int MoveToThread(int pageindex,int thread, int threadplace);
 	virtual void FindBBox();
