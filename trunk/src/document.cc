@@ -538,6 +538,23 @@ int Document::NewPages(int starting,int np)
 	return np;
 }
 
+//! Update page labels, usually after a change to the given range, or all if whichrange<0.
+void Document::UpdateLabels(int whichrange)
+{
+	if (whichrange<0 || whichrange>=pageranges.n) {
+		for (int c=0; c<pageranges.n; c++) UpdateLabels(c);
+		return;
+	}
+
+	char *label;
+	PageRange *r=pageranges.e[whichrange];
+	for (int c=r->start; c<=r->end; c++) {
+		label=r->GetLabel(c);
+		if (pages.e[c]->label) delete[] pages.e[c]->label;
+		pages.e[c]->label=label;
+	}
+}
+
 /*! Return 0 for range applied ok. 1 for improper range, not applied.
  *
  * If end<0, then make the range go until the end of the document.
