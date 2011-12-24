@@ -34,6 +34,8 @@ all: laidout docs
 docs:
 	cd docs && doxygen
 	
+alldocs:
+	cd docs && doxygen Doxyfile-with-laxkit
 
 #install: laidout <-- don't want to link twice, so assume 'make install' called separate
 install: 
@@ -83,6 +85,7 @@ touchdepends:
 	touch src/interfaces/makedepend
 	touch src/printing/makedepend
 	touch src/api/makedepend
+	touch src/polyptych/makedepend
 
 .PHONY: all laidout clean docs install uninstall hidegarbage unhidegarbage depends touchdepends
 clean:
