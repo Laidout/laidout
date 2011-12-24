@@ -23,13 +23,8 @@ and gradients (linear, radial, and bezier patches). Also,
 you can make a type of image that can be stretched around. The very 
 basics to get my cartoon books done, in other words. Many more features
 are planned, like such non-essentials (to me anyway) as text! Who needs 
-text when a picture is worth a thousand words? Oh, and you can import
-EPS files from other programs as a way to fake having text.
-
-Many of the features are only partially implemented, and the real meat
-of the program is only half in place right now. Be advised that you can,
-after great hassle, construct paths on screen, but path printing
-(to the printer) is badly implemented currently.
+text when a picture is worth a thousand words? You can import
+EPS or image files from other programs as a way to fake having text.
 
 Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
 
@@ -75,17 +70,31 @@ symbolic link /usr/local/bin/laidout point to it.
 After successfully making, the program 'laidout' in the src
 directory is the thing you want. It does not really depend on any other
 files currently (except icons, but they are not needed to actually run),
-thus it can be run from wherever it is located.
+thus it can be run from wherever it is located, but you might need to
+set an alternate icon directory, since Laidout will expect icons in
+the install destination.
+
+You can do that or perhaps try out other icon sets (if you have any) by modifying
+the file ~/.config/laidout/(version)/laidoutrc. This will have been created
+the first time you run Laidout. Open this file, and if the magic worked, simply
+uncomment the line for icon_dir and set to the directory you want. For the 
+uninstalled icons, this would be (this directory)/src/icons.
 
 
 INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
 ----------------------------------------------
 
 It is quite ok to install different versions of Laidout at the same time.
-The ~/.laidout/ directory keeps all the config information in subdirectories
+The ~/.config/laidout/ directory keeps all the config information in subdirectories
 based on the version. The same applies for installed binaries and other
 resources that get put in prefix/share/laidout. This way, you do not risk
 clobbering or corrupting files from other versions. 
+
+You can change the version number manually by specifying it when you run
+./configure with somelike:
+  ./configure --version=0.092-different
+You should try to preserve the main version number (which is 0.092 in this
+example), or it might confuse Laidout at some point.
 
 HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
 things that were installed to those directories outside of "make install". 
@@ -98,6 +107,7 @@ automatically keeps track of such things.
 
 Also, though you can have different versions coexist, there is not currently an
 automatic way to convert resources from older laidout versions to newer ones.
+Again, if this is a problem, let me know!
 
 
 COMPILING FROM SVN
@@ -126,26 +136,29 @@ cd ..
 make depends
 make
 
-
-4. Steps 1-3 have (ideally) compiled everything, but have not made the icons. 
-See below for that. You can run Laidout (at src/laidout) without icons and also
-without installing it anywhere.
-
-
-The Makefiles in the svn code are for the development source, which
+Note that the Makefiles in the svn code are for the development source, which
 also tries to do 'make' of the Laxkit, since Laxkit and Laidout are 
 being developed basically side by side. Just remove those parts of the Makefiles
 if you want to compile only Laidout.
 
-Note about icons: when downloaded through svn, the icons need to be 
-generated. This requires Inkscape (http://www.inkscape.org)
-to generate icons from src/icons/icons.svg, and python to run
-the script that calls Inkscape. But, Laidout will work fine without
-the icons. Ultimately, the icons will themselves be stored in a Laidout
-file, and Laidout itself will generate the icons (maybe!).
-See src/icons/makeimages.py for more.
 
-Running Laidout might spit out copious amounts of debugging info to stderr
+4. Steps 1-3 have (ideally) compiled everything. You can run Laidout (at src/laidout)
+without icons and also without installing it anywhere.
+
+When downloaded through svn, the icons have not yet been generated. Making the icons
+requires Inkscape (http://www.inkscape.org) to generate icons from src/icons/icons.svg,
+and python to run the script that calls Inkscape. cd to src/icons and run "make".
+
+Some day, the icons will themselves be stored in a Laidout
+file, and Laidout itself will generate the icons (maybe!).
+
+You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
+like. The master icon file is src/icons.svg. Each top level object in that directory
+with ids that start with a capital letter will have an icon generated of the same
+name by running makeimages.py ThatName.
+
+
+5. Running Laidout might spit out copious amounts of debugging info to stderr
 if you run from a terminal. If this is the case, you can turn this 
 off with 'make hidegarbage' before doing 'make' (the same goes for the 
 Laxkit). Be advised that this requires Perl to be installed. Or, you 
@@ -159,9 +172,15 @@ SOURCE DOCUMENTATION and CONTRIBUTING
 
 There is a lot of source documentation available via doxygen, just type:
 
-make docs
+  make docs
 
-and it dumps it all out to docs/html. In particular, you will have a 
+or if you want all documentation for the Laxkit and Laidout in one place, then
+make sure you have a link to the Laxkit source in the top Laidout directory,
+and do:
+
+  make alldocs
+ 
+This will dump it all out to docs/html. In particular, you will have a 
 rapidly expanding todo list. If you want to contribute, that is a good
 place to start. That and the Laxkit todo list.
 
@@ -173,9 +192,9 @@ to say YES rather than NO:
 SOURCE_BROWSER         = YES
 EXTRACT_ALL            = YES
 
-Then from the docs directory, run 'doxygen Doxyfile-with-laxkit', which
-will generate a clickable source tree accessible from your favorite web 
-browser.
+Then from the docs directory, run 'doxygen Doxyfile-with-laxkit'
+(or do make alldocs from top directory), which will generate a clickable source
+tree accessible from your favorite web browser.
 
 Also check out the dev page on the Laidout website:
 http://www.laidout.org/dev.html
@@ -197,4 +216,5 @@ Compiling on Windows
 Sorry, you're out of luck at the moment. If this is important to you,
 and you don't want to figure it out yourself, feel free to subsidize
 a windows port with copious amounts of money.
+
 
