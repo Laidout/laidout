@@ -339,6 +339,8 @@ void VObjContext::clear()
 LaidoutViewport::LaidoutViewport(Document *newdoc)
 	: ViewportWindow(NULL,"laidoutviewport",NULL,ANXWIN_HOVER_FOCUS|ANXWIN_DOUBLEBUFFER|VIEWPORT_ROTATABLE,0,0,0,0,0)
 {
+	DBG cerr <<"in LaidoutViewport constructor, obj "<<object_id<<endl;
+
 	dp->style|=DISPLAYER_NO_SHEAR;
 	papergroup=NULL;
 	win_colors->bg=rgbcolor(255,255,255);
@@ -386,7 +388,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
  */
 LaidoutViewport::~LaidoutViewport()
 {
-	DBG cerr <<"in LaidoutViewport destructor"<<endl;
+	DBG cerr <<"in LaidoutViewport destructor, obj "<<object_id<<endl;
 
 	if (spread) delete spread;
 	if (papergroup) papergroup->dec_count();
@@ -1032,7 +1034,7 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 		spreadi=-1;
 	} 
 
-	DBG cerr <<"Viewwindow::setupthings:  viewmode="<<viewmode<<"  tospread="<<tospread<<endl;
+	DBG cerr <<"LaidoutViewport::setupthings:  viewmode="<<viewmode<<"  tospread="<<tospread<<endl;
 	 // retrieve the proper spread according to viewmode
 	if (!spread && tospread>=0 && doc && doc->imposition) {
 		spread=doc->imposition->Layout(viewmode,tospread);
@@ -2880,6 +2882,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 						Document *newdoc)
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
+	viewport->dec_count(); //remove extra creation count
 	project=NULL;
 	var1=var2=var3=NULL;
 	toolselector=NULL;

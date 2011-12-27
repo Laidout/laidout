@@ -498,6 +498,7 @@ void HeadWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 					if (c3>2) box->x2=i[2];
 					if (c3>3) box->y2=i[3];
 				} else if (!strcmp(name,"window")) {
+					DBG cerr <<"HeadWindow add new "<<value<<endl;
 					win=NewWindow(value);
 					if (win) {
 						wind=dynamic_cast<DumpUtility *>(win);
