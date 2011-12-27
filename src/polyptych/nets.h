@@ -33,6 +33,7 @@ class NetLine
 	LaxInterfaces::LineStyle *linestyle;
 
 	NetLine(const char *list=NULL);
+	NetLine(const NetLine &l);
 	virtual ~NetLine();
 	const NetLine &operator=(const NetLine &l);
 	virtual int Set(const char *d,LaxInterfaces::LineStyle *ls);
@@ -62,6 +63,7 @@ class NetFaceEdge
 	//double *basis_adjustment; ***not useful?
 	
 	NetFaceEdge();
+	NetFaceEdge(const NetFaceEdge &e);
 	virtual ~NetFaceEdge();
 	const NetFaceEdge &operator=(const NetFaceEdge &line);
 };
@@ -78,6 +80,7 @@ class NetFace
 	double *matrix;
 
 	NetFace();
+	NetFace(const NetFace &f);
 	virtual ~NetFace();
 	const NetFace &operator=(const NetFace &face);
 	virtual void clear();

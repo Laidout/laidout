@@ -80,6 +80,15 @@ NetLine::~NetLine()
 	if (linestyle) linestyle->dec_count();
 }
 
+NetLine::NetLine(const NetLine &l)
+{
+	lineinfo=0;
+	tag=0;
+	linestyle=NULL;
+	points=NULL;
+	*this=l;
+}
+
 /*! Copies over all. Warning: does a linestyle=line.linestyle.
  */
 const NetLine &NetLine::operator=(const NetLine &l)
@@ -276,6 +285,17 @@ NetFaceEdge::~NetFaceEdge()
 	if (points) delete points; //remember Coordinate delete knows if it is in a loop
 }
 
+NetFaceEdge::NetFaceEdge(const NetFaceEdge &e)
+{
+	tooriginal=id=toface=tofaceedge=-1;
+	flipflag=0;
+	tag=FACE_Undefined;
+	svalue=0;
+	points=NULL;
+
+	*this=e;
+}
+
 //! Assignment operator, straightforward copy all.
 const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
 {
@@ -346,6 +366,17 @@ NetFace::~NetFace()
 { 
 	if (matrix) delete[] matrix;
 	//edges.flush();
+}
+
+NetFace::NetFace(const NetFace &f)
+{
+	tick=0;
+	tag=FACE_None;
+	matrix=NULL;
+	isfront=1;
+	original=-1;
+
+	*this=f;
 }
 
 //! Delete matrix, set isfront=1, original=-1, flush edges.
