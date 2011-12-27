@@ -464,11 +464,11 @@ int NewDocWindow::init()
 
 	 //------- scale pages to fit
 	if (doc) {
-		CheckBox *box=NULL;
-		last=box=new CheckBox(this,"scalepages",NULL,CHECK_LEFT, 0,0,0,0,1, 
-				last,object_id,"scalepages", _("Scale pages to fit new imposition"),5,5);
-		box->tooltip(_("Scale each page up or down to fit the page sizes in a new imposition"));
-		AddWin(box,1, box->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
+//		CheckBox *box=NULL;
+//		last=box=new CheckBox(this,"scalepages",NULL,CHECK_LEFT, 0,0,0,0,1, 
+//				last,object_id,"scalepages", _("Scale pages to fit new imposition"),5,5);
+//		box->tooltip(_("Scale each page up or down to fit the page sizes in a new imposition"));
+//		AddWin(box,1, box->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 
 		AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
 	}

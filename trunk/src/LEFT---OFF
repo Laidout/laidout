@@ -10,13 +10,7 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 ---- bugs to fix right now:
-spread editor unreliable!!!! not applying in a good way
-
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
-
-fix memory holes
-
-refcounting crashing error with nets upon edit current document settings -> apply
 
 ---- less urgent bugs:
 recent files do not appear to be most recent file opened
@@ -81,7 +75,6 @@ test:
 
 sig editor: needs testing: command line func parser for sigs
 
-disable scale pages to new imposition in newdoc, as it's not implemented yet
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
@@ -93,7 +86,7 @@ test:
   each export filter
   make some test scripts for command line testing
 
-need to implement scale pages to new imposition when reimposing
+need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 Scribus:
   import/export color meshes, for recent versions of Scribus
@@ -705,4 +698,15 @@ DONE Scribus import: import must support master pages
 DONE change signature settings, apply, back to view, does not remove the papergroup from the view!
 
 DONE ARRRR!!!!! page labels not applying!!!
+
+DONE spread editor unreliable!!!! not applying in a good way
+
+DONE disable scale pages to new imposition in newdoc, as it's not implemented yet
+
+DONE refcounting crashing error with nets upon edit current document settings -> apply
+
+DONE (hopefully) fix memory holes
+   DONE paperstyle in sigs not deleting
+   DONE -> test-blank.laidout -> LaidoutViewport obj 330 not deleting!!
+
 

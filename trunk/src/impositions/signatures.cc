@@ -1053,6 +1053,9 @@ SignatureImposition::~SignatureImposition()
 	if (papersize) papersize->dec_count();
 	if (signature) signature->dec_count();
 	//if (partition) partition->dec_count();
+
+	if (pagestyle) pagestyle->dec_count();
+	if (pagestyleodd) pagestyleodd->dec_count();
 }
 
 //! Static imposition resource creation function.

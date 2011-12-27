@@ -263,7 +263,7 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 //! Destructor, only have to delete project!
 LaidoutApp::~LaidoutApp() 
 {
-	DBG cerr <<"Laidout destructor.."<<endl;
+	DBG cerr <<"LaidoutApp destructor.."<<endl;
 	 //these flush automatically, but are listed here for occasional debugging purposes...
 //	papersizes.flush(); 
 //	impositionpool.flush();
@@ -1097,10 +1097,10 @@ Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
 	
 	 //must push before Load to not screw up setting up windows and other controls
 	project->Push(doc);
-	//doc->dec_count();
+	doc->dec_count();//so now has 1 count for project
 	if (doc->Load(fullname,error_ret)==0) { // load failed
 		project->Pop(NULL);
-		doc->dec_count();
+		//doc->dec_count();
 		return NULL;
 	}
 	
@@ -1155,19 +1155,19 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	doc=new Document(NULL,fullname);
 	if (!project) project=new Project;
 	project->Push(doc); //important: this must be before doc->Load()
-	//doc->dec_count();
+	doc->dec_count();
 	
 	if (doc->Load(fullname, error_ret)==0) {
 		 //load failed
 		project->Pop(NULL);
-		doc->dec_count();
+		//doc->dec_count();
 		doc=NULL;
 	}
 	delete[] fullname;
 	if (doc) { 
 		if (curdoc) curdoc->dec_count();
 		curdoc=doc; 
-		//doc->dec_count(); <-- count kept for curdoc link
+		doc->inc_count(); //count for curdoc link
 		return 0; 
 	}
 	return -1;
