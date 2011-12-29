@@ -730,7 +730,7 @@ void InitOptions()
 	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
-	options.Add("impose-only",        'I', 0, "Run only as a file imposer, not full Laidout",0, NULL);
+	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
 	options.Add("help",               'h', 0, "Show this summary and exit.",                 0, NULL);
 
@@ -844,7 +844,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'I': { // impose-only
 					runmode=RUNMODE_Impose_Only;
-					SignatureEditor *sig=new SignatureEditor(NULL,"editor",_("Impose..."),NULL,NULL,NULL,NULL,optarg);
+					SignatureEditor *sig=new SignatureEditor(NULL,"editor",_("Impose..."),NULL,NULL,NULL,NULL,o->arg());
 					addwindow(sig);
 				} break;
 
