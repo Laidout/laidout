@@ -14,12 +14,15 @@ LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lm -lpng -lcrypto -lGraphicsMagick++ `im
 
 pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o hedronwindow.o
 
+forlaidout: nets.o poly.o
+
+all: polyptych spheretopoly spheretocube convertahedron
+
 polyptych: lax $(pobjs) polyptych.o
 	g++  $(CPPFLAGS) $(LDFLAGS) $(pobjs) polyptych.o  -llaxkit -llaxinterfaces -lGL -lGLU -o polyptych
 	
-forlaidout: nets.o poly.o
-
-all: polyptych spheretopoly spheretocube
+convertahedron: poly.o nets.o convertahedron.cc
+	g++  $(CPPFLAGS) $(LDFLAGS) convertahedron.cc  poly.o nets.o -llaxkit -llaxinterfaces -o $@
 
 spheretopoly: lax spheretopoly-gm.o nets.o poly.o 
 	$(LD) $(LDFLAGS) -lGraphicsMagick++ spheretopoly-gm.o nets.o poly.o -llaxinterfaces -llaxkit -o $@
@@ -45,4 +48,4 @@ glbase.o:
 
 .PHONY: clean lax laxinterface
 clean:
-	rm -f polyptych spheretopoly spheretocube *.o
+	rm -f polyptych convertahedron spheretopoly spheretocube *.o
