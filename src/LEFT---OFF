@@ -10,9 +10,10 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 ---- bugs to fix right now:
-test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
 ---- less urgent bugs:
+test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
+
 recent files do not appear to be most recent file opened
 
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
@@ -66,15 +67,6 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 
 ----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
-check laidout.1 when time to release
-update docs to have new release number
-test:
-  each window type to avoid crashy hangups, like about window from .091!!!!
-  each export filter
-  scribus plugin
-
-sig editor: needs testing: command line func parser for sigs
-
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
@@ -708,5 +700,15 @@ DONE refcounting crashing error with nets upon edit current document settings ->
 DONE (hopefully) fix memory holes
    DONE paperstyle in sigs not deleting
    DONE -> test-blank.laidout -> LaidoutViewport obj 330 not deleting!!
+
+DONE implement obj file format for polyhedra
+
+DONE sig editor: needs testing: command line func parser for sigs (done for scribus plugin, good enough for now)
+
+DONE check laidout.1 when time to release
+DONE test:
+  DONE each window type to avoid crashy hangups, like about window from .091!!!!
+  DONE each export filter
+  DONE scribus plugin
 
 

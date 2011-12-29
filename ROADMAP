@@ -7,7 +7,7 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.092
 -------------
-       Debug enough to hopefully not be too embarrassing
+(done) Debug enough to hopefully not be too embarrassing
 (done) Actually implement path exporting. Make that path icon mean something this time!
 (done) At bare minimum, path interface use should not cause a seg fault
 (done) Fix broken paper tiling interface
@@ -19,6 +19,7 @@ VERSION 0.092
 (done) Units, especially Allow changing units in rulers
 (done) Add proper .desktop and application icons installation
 (done) Use ~/.config/laidout, instead of ~/.laidout
+(done) Implement wavefront obj file format in/out for polyhedra
 (done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)
 (done) from laxkit: clean up pop up menus which currently REALLY SUCK -> now deletes menus when clicking outside them
 
