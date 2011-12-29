@@ -171,10 +171,12 @@ class Polyhedron :
 	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 
+	virtual const char *InFileFormats();
 	virtual int dumpInFile(const char *file, char **error_ret);
 	virtual int dumpInOFF(FILE *f,char **error_ret);
 	virtual int dumpInObj(FILE *f,char **error_ret);
 
+	virtual const char *OutFileFormats();
 	virtual int dumpOutFile(const char *file, const char *format,char **error_ret);
 	virtual int dumpOutOFF(FILE *f,char **error_ret);
 	virtual int dumpOutObj(FILE *f,char **error_ret);
