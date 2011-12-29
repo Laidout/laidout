@@ -1538,6 +1538,16 @@ int Polyhedron::dumpOutFile(const char *outfile, const char *outformat,char **er
 	return status;
 }
 
+//! Return a space delimited list of formats than can be read in with dumpInFile().
+const char *Polyhedron::InFileFormats()
+{ return "idat off obj"; }
+
+//! Return a space delimited list of formats than can be output in with dumpOutFile().
+/*! Each can be used as the file format parameter in dumpOutFile().
+ */
+const char *Polyhedron::OutFileFormats()
+{ return "idat off obj vrml"; }
+
 //! Try to read in the file.
 /*! The file can be an OFF file (see dumpInOFF()), or obj (dumpInObj(), or so-called Polyp file, which is the
  * native indented file format for this class.

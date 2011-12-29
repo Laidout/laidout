@@ -26,15 +26,18 @@ using namespace Laxkit;
 
 void usage()
 {
+	Polyhedron poly;
+
 	cerr <<"convertahedron -h"<<endl;
-	cerr <<"convertahedron [-i informat] in [-o outformat] [-c] out"<<endl;
+	cerr <<"convertahedron [-i informat] infilename [-o outformat] [-c] outfilename"<<endl;
 
 	cerr <<"\nThe \"-h\" option displays this help."<<endl;
+	cerr <<"Current input formats are:  "<<poly.InFileFormats()<<endl;
+	cerr <<"Current output formats are: "<<poly.OutFileFormats()<<endl;
 	cerr <<"\nFor the second run format, options must be given in specified order."<<endl;
-	cerr <<"The format for in is hopefully found automatically, but can be specified by -i,"<<endl;
-	cerr <<"either off, obj, or idat. Format for out is determined by the extension,"<<endl;
-	cerr <<"either .off, .obj, .vrml, or .idat. in and out are filenames, and if out exists, it will"<<endl;
-	cerr <<"not be clobbered, unless -c is specified."<<endl;
+	cerr <<"The format for infilename is hopefully found automatically, but can be specified by -i."<<endl;
+	cerr <<"Format for out is determined by the extension, or can be explicitly specified with -o."<<endl;
+	cerr <<"If outfilename exists, it will not be clobbered, unless -c is specified."<<endl;
 }
 
 void Arrg()
