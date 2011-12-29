@@ -174,8 +174,11 @@ class Polyhedron :
 	virtual int dumpInFile(const char *file, char **error_ret);
 	virtual int dumpInOFF(FILE *f,char **error_ret);
 	virtual int dumpInObj(FILE *f,char **error_ret);
+
+	virtual int dumpOutFile(const char *file, const char *format,char **error_ret);
 	virtual int dumpOutOFF(FILE *f,char **error_ret);
-	virtual int dumpOutVrml(const char *filename);
+	virtual int dumpOutObj(FILE *f,char **error_ret);
+	virtual int dumpOutVrml(FILE *f,char **error_ret);
 
 	 //Abstract net functions
 	virtual NetFace *GetFace(int i,double scaling);

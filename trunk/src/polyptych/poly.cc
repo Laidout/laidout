@@ -1205,19 +1205,18 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 }
 
 //! Saves a VRML 2.0 model of the polyhedron to filename.
-/*! Outputs a wireframe model.
+/*! Outputs a wireframe model, using only data in edges.
+ *
+ * Return 0 for success, or nonzero for error.
  */
-int Polyhedron::dumpOutVrml(const char *filename) // does edges
+int Polyhedron::dumpOutVrml(FILE *ff,char **error_ret) // does edges
 {
-	if (edges.n==0) return 0;
-	if (!filename) return 0;
-	DBG cerr << "\nSaving vrml:" << filename <<'.';
-
-	FILE *ff=fopen(filename,"r");
-	if (!ff) {
-		DBG cerr << "Bad filename.";
+	if (edges.n==0) {
+		if (error_ret) appendline(*error_ret,"Need edges to output to vrml");
 		return 1;
 	}
+	DBG cerr << "\nSaving vrml:" << filename <<'.';
+
 	fprintf(ff,"#VRML V2.0 utf8\n\n");
 
 	/* with points a,b */
@@ -1254,8 +1253,6 @@ int Polyhedron::dumpOutVrml(const char *filename) // does edges
 		fprintf(ff, "}\n\n");   
 	}
 
-	fclose(ff);
-	
 	DBG cerr << "..done vrmlsave\n";
 	return 0;
 }
@@ -1276,6 +1273,29 @@ int Polyhedron::dumpOutOFF(FILE *f,char **error_ret)
 		fprintf(f,"%d ",faces.e[c]->pn);
 		for (int c2=0; c2<faces.e[c]->pn; c2++) {
 			fprintf(f,"%d ",faces.e[c]->p[c2]);
+		}
+		fprintf(f,"\n");
+	}
+	return 0;
+}
+
+//! Output an Obj file. Return 0 for things output, else nonzero.
+/*! See dumpInObj for format
+ */
+int Polyhedron::dumpOutObj(FILE *f,char **error_ret)
+{
+	if (!faces.n || !vertices.n) return 1;
+
+	fprintf(f,"# Polyptych outputting Obj\n");
+	if (name) fprintf(f,"o %s\n",name);
+
+	for (int c=0; c<vertices.n; c++) {
+		fprintf(f,"v %.15g %.15g %.15g\n",vertices.e[c].x,vertices.e[c].y,vertices.e[c].z);
+	}
+	for (int c=0; c<faces.n; c++) {
+		fprintf(f,"f ");
+		for (int c2=0; c2<faces.e[c]->pn; c2++) {
+			fprintf(f,"%d ",faces.e[c]->p[c2]+1);
 		}
 		fprintf(f,"\n");
 	}
@@ -1418,6 +1438,8 @@ int Polyhedron::dumpInOFF(FILE *f,char **error_ret)
  *   f ...
  * </pre>
  * 
+ * More on the format here: http://en.wikipedia.org/wiki/Wavefront_.obj_file
+ *
  * Texture vertices start with "vt", normals "vn", curving surface points "vp". We only care about 
  * simple "v" points, and the "f" face definitions.
  *
@@ -1452,8 +1474,12 @@ int Polyhedron::dumpInObj(FILE *f,char **error_ret)
 
 			vertices.push(spacepoint(d));
 
+		} else if (*ptr=='o' && ptr[1]==' ') {
+			makestr(name,ptr);
+
 		} else if (*ptr=='f' && ptr[1]==' ') {
 			 //found face
+			ptr++;
 			while (*ptr && isspace(*ptr)) ptr++;
 			e=ptr;
 
@@ -1493,8 +1519,27 @@ int Polyhedron::dumpInObj(FILE *f,char **error_ret)
 	return error;
 }
 
+int Polyhedron::dumpOutFile(const char *outfile, const char *outformat,char **error_ret)
+{
+	if (isblank(outfile)) return 1;
+
+	int status=0;
+	FILE *f=fopen(outfile,"w");
+	if (!strcasecmp(outformat,"idat")) {
+		fprintf(f,"#Polyp\n");
+		status=0;
+		dump_out(f,2,0,NULL);
+	} else if (!strcasecmp(outformat,"off")) status=dumpOutOFF(f,error_ret);
+	else if (!strcasecmp(outformat,"obj"))   status=dumpOutObj(f,error_ret);
+	else if (!strcasecmp(outformat,"vrml"))  status=dumpOutVrml(f,error_ret);
+	else status=2;
+	fclose(f);
+
+	return status;
+}
+
 //! Try to read in the file.
-/*! The file can be an OFF file (see dumpInOFF()), or a so-called Polyp file, which is the
+/*! The file can be an OFF file (see dumpInOFF()), or obj (dumpInObj(), or so-called Polyp file, which is the
  * native indented file format for this class.
  *
  * Return 0 for success, nonzero for error.
@@ -1504,38 +1549,54 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 	FILE *f=fopen(file,"r");
 	if (!f) return 1;
 
-	char first100[101];
-	int c=fread(first100,1,100,f);
-	first100[c]='\0';
+	int filefound=0;
+	char first1000[1001];
+	int c=fread(first1000,1,1000,f);
+	first1000[c]='\0';
 	rewind(f);
 	c=-1;
 
-	 //check for the various OFF starts
-	int p=0,foundoff=0;
-	while (p<100 && isalpha(first100[p])) p++;
-	if (p) p--;
-	if (p>=2 && p<10) {
-		if (first100[p-2]=='O' && first100[p-1]=='F' && first100[p]=='F') {
-			//***this could be more thorough...
-			foundoff=1;
-		}
-	}
-
-	if (foundoff) {
-		clear();
-		c=dumpInOFF(f,error_ret);
-
-	} else if (!strncmp("#Polyp",first100,6) && isspace(first100[6])) {
+	 //first check for default format
+	if (!strncmp("#Polyp",first1000,6) && isspace(first1000[6])) {
 		Attribute att;
 		att.dump_in(f,0,NULL);
 		dump_in_atts(&att,0,NULL);
-		c=0;
+		filefound=1;
+	}
 
-	} else c=1; 
+	 //check if is OFF file
+	if (!filefound) {
+		 //check for the various OFF starts
+		int p=0,foundoff=0;
+		while (p<100 && isalpha(first1000[p])) p++;
+		if (p) p--;
+		if (p>=2 && p<10) {
+			if (first1000[p-2]=='O' && first1000[p-1]=='F' && first1000[p]=='F') {
+				//***this could be more thorough...
+				foundoff=1;
+			}
+		}
+
+		if (foundoff) {
+			clear();
+			c=dumpInOFF(f,error_ret);
+			filefound=2;
+		}
+	}
+
+	 //check if is Obj file
+	if (!filefound) {
+		if (strstr(first1000,"\nv ") || strstr(first1000,"\r\nv ")
+		 	   || strstr(first1000,"\nf ") || strstr(first1000,"\r\nf ")) {
+			clear();
+			c=dumpInObj(f,error_ret);
+			filefound=3;
+		}
+	}
 
 	fclose(f);
-	if (c==0) makestr(filename,file);
-	return c;
+	if (filefound==0) makestr(filename,file);
+	return c | !filefound;
 }
 
 //--------------AbstractNet methods:

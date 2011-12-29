@@ -1059,7 +1059,8 @@ void HedronWindow::drawbg()
 		glMultMatrixf(hedron->m);
 		//glScalef(hedron->scale[0],hedron->scale[1],hedron->scale[2]);
 		spacepoint p1,p2,a,v;
-		double h,ang;
+		//double h;
+		//double ang;
 
 		glLineWidth(3);
 		glBegin(GL_LINES);
@@ -1069,10 +1070,10 @@ void HedronWindow::drawbg()
 			p1=poly->vertices[poly->edges.e[c2]->p1];
 			p2=poly->vertices[poly->edges.e[c2]->p2];
 			v=p1-p2;
-			h=norm(v);
 			a=v/spacepoint(0,0,1);
+			//h=norm(v);
 			//a=spacepoint(0,0,1)/v;
-			ang=acos(v.z/h)/M_PI*180;
+			//ang=acos(v.z/h)/M_PI*180;
 
 			glVertex3f(p1.x,p1.y,p1.z);
 			glVertex3f(p2.x,p2.y,p2.z);
@@ -1102,10 +1103,10 @@ void HedronWindow::drawbg()
 				p2=(c3==0?poly->faces.e[c2]->cache->points3d[poly->faces.e[c2]->pn-1]
 						:poly->faces.e[c2]->cache->points3d[c3-1]);
 				v=p1-p2;
-				h=norm(v);
 				a=v/spacepoint(0,0,1);
+				//h=norm(v);
 				//a=spacepoint(0,0,1)/v;
-				ang=acos(v.z/h)/M_PI*180;
+				//ang=acos(v.z/h)/M_PI*180;
 
 				glVertex3f(p1.x,p1.y,p1.z);
 				glVertex3f(p2.x,p2.y,p2.z);
@@ -1683,11 +1684,11 @@ void HedronWindow::remapCache(int start, int end)
 void HedronWindow::recurseCache(Net *net,int neti)
 {
 	NetFace *face=net->faces.e[neti];
-	int o;
+	//int o;
 	for (int c=0; c<face->edges.n; c++) {
 		if (face->edges.e[c]->tag!=FACE_Actual) continue;
 		if (net->faces.e[face->edges.e[c]->toface]->tick==1) continue;
-		o=face->edges.e[c]->tooriginal;
+		//o=face->edges.e[c]->tooriginal;
 		//***build face and transform to rotated position
 	}
 }
