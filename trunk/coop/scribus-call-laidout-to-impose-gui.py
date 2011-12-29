@@ -34,7 +34,29 @@ def main(argv):
     if not scribus.haveDoc():
         sys.exit(1)
 
-    laidoutexecutable="laidout"  # <---Change this to be where the laidout program is located!!
+     ####
+     ####  If you have a different location of your laidout program change it here:
+     ####
+    laidoutexecutable="/usr/bin/laidout"
+    
+    if os.path.exists(laidoutexecutable)==False:
+        laidoutexecutable="/usr/local/bin/laidout"
+    if os.path.exists(laidoutexecutable)==False:
+        print "Could not find Laidout!"
+        print "Please change scribus-call-laidout-to-impose-gui.py to have a correct path!"
+        #scribus.messageBox("Could not find Laidout!",
+        #                   "Please change line 37 in scribus-call-laidout-to-impose-gui.py to have a correct path!")
+        #laidoutexecutable=scribus.valueDialog("Laidout path","You do not appear to have Laidout installed! Please enter a valid path for running Laidout","/usr/bin/laidout")
+        laidoutexecutable=scribus.fileDialog('Please locate Laidout executable!!', defaultname='/usr/bin/laidout', issave=False)
+        print "New laidout executable path: "+laidoutexecutable
+
+     #fail if still not found
+    if os.path.exists(laidoutexecutable)==False:
+        scribus.messageBox("Could not find Laidout!",
+                           "Please either change line for \'laidoutexecutable=\"/usr/bin/laidout\"\' in scribus-call-laidout-to-impose-gui.py"
+                           " to have a correct path, or enter a valid path.")
+        sys.exit(1)
+        
 
     thecommand=""
     infile=os.getcwd()+"/this-is-a-temporary-file.sla"  #note this saves to a very random area usually!!
@@ -47,6 +69,8 @@ def main(argv):
     units=scribus.getUnit()
     width=0
     height=0
+    print "size "+str(size[0])+","+str(size[1])
+    print "units "+str(units)
     if (units==scribus.UNIT_MILLIMETERS):
         width=size[0]/10/2.54
         height=size[1]/10/2.54
@@ -56,14 +80,21 @@ def main(argv):
     elif (units==scribus.UNIT_POINTS):
         width=size[0]/72
         height=size[1]/72
+    elif (units==scribus.UNIT_INCHES):
+        width=size[0]
+        height=size[1]
+    else:
+        print "unknown units!!!"
+        scribus.messageBox("Unknown units!","For some reason, scribus.getUnit() did not return units known to this script!"
+                                            "This is probably a bug with the script.")
 
     #thecommand="/bin/ls"
     thecommand=laidoutexecutable+" --impose-only " \
                          +"'in=\""+infile+"\" " \
                          +" out=\""+reimposed+"\" " \
                          +" prefer=\"booklet\"" \
-						 +" width=\""+str(width)+"\"" \
-						 +" height=\""+str(height)+"\"" \
+                         +" width=\""+str(width)+"\"" \
+                         +" height=\""+str(height)+"\"" \
                          +"'"
     #print "command:\n", thecommand
 
@@ -83,12 +114,17 @@ def main(argv):
         print "An error occured trying to run the system command:\n",thecommand
         sys.exit(1)
 
+    if os.path.exists(reimposed)==False:
+        print "Reimposed file was not generated!"
+        sys.exit(1)
+
     #scribus.closeDoc() #closes the "original" document, which has been rename to infile upon saveDocAs()
     scribus.openDoc(reimposed) #open the brand spanking new reimposed document
 
     #if (os.path.isfile(reimposed)): os.remove(reimposed) <-- might cause problems, but keep around for research
     print "Removing temporary file ",infile,"..."
     os.remove(infile)
+    print "All done!"
 
 
 
