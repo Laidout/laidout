@@ -266,7 +266,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			////DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 2;
@@ -277,7 +277,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 
 	f=open_file_for_writing(file,0,error_ret);//appends any error string
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		////DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}
@@ -373,8 +373,8 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 				 // print out printer marks
 				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
 					//fprintf(f," .01 setlinewidth\n");
-					//DBG cerr <<"marks data:\n";
-					//DBG spread->marks->dump_out(stderr,2,0);
+					//////DBG cerr <<"marks data:\n";
+					//////DBG spread->marks->dump_out(stderr,2,0);
 					pptdumpobj(f,m,spread->marks,4);
 				}
 				

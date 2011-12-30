@@ -83,12 +83,12 @@ ExtraFace::~ExtraFace()
  */
 
 
-DBG void dumpface(Face *face,int facenum)
-DBG {
-DBG	cerr <<"face "<<facenum<<", pn="<<face->pn<<":  ";
-DBG	for (int c=0; c<face->pn; c++) cerr <<face->p[c]<<" ";
-DBG	cerr <<endl;
-DBG }
+//DBG void dumpface(Face *face,int facenum)
+//DBG {
+//DBG	cerr <<"face "<<facenum<<", pn="<<face->pn<<":  ";
+//DBG	for (int c=0; c<face->pn; c++) cerr <<face->p[c]<<" ";
+//DBG	cerr <<endl;
+//DBG }
 
 //! Create empty face.
 Face::Face()
@@ -542,25 +542,25 @@ double Polyhedron::pdistance(int a, int b)
 int Polyhedron::validate()
 {
 	int c,c2;
-	DBG cerr << "Validating..";
+	//DBG cerr << "Validating..";
 	for (c=0; c<edges.n; c++)
 		if (    edges.e[c]->p1<0 || edges.e[c]->p1>=vertices.n ||
 				edges.e[c]->p2<0 || edges.e[c]->p2>=vertices.n) {
-			DBG cerr << "\nBad edge "<<c<<"."; 
+			//DBG cerr << "\nBad edge "<<c<<"."; 
 			return 0; 
 		}
 	for (c=0; c<faces.n; c++) {
 		if (faces.e[c]->pn==0) {
-			DBG cerr << "\nEmpty face "<<c<<"."; 
+			//DBG cerr << "\nEmpty face "<<c<<"."; 
 			return 0; 
 		}
 		for (c2=0; c2<faces.e[c]->pn; c2++)
 			if (faces.e[c]->p[c2]<0 || faces.e[c]->p[c2]>=vertices.n)	{
-				DBG cerr << "\nBad face "<<c<<' '<<c2<<".\n";
+				//DBG cerr << "\nBad face "<<c<<' '<<c2<<".\n";
 				return 0; 
 			}
 	}
-	DBG cerr <<"..done validating\n";
+	//DBG cerr <<"..done validating\n";
 	return 1;
 }
 
@@ -667,7 +667,7 @@ int Polyhedron::makeplanes()
  */
 int Polyhedron::makeedges()
 {
-	DBG cerr <<"making edges..."<<endl;
+	//DBG cerr <<"making edges..."<<endl;
 	if (faces.n==0 || vertices.n==0) return 0;
 	
 	int c,c2,c3,emax=0,p1,p2;
@@ -676,7 +676,7 @@ int Polyhedron::makeedges()
 	for (c=0; c<faces.n; c++) emax+=faces.e[c]->pn;
 	if (emax<=0) return 0;
 	
-	DBG cerr <<"makeedges emax:"<<emax;
+	//DBG cerr <<"makeedges emax:"<<emax;
 	
 	 //for each edge of each face, see if it matches any edge in any other face.
 	for (c=0; c<faces.n; c++) {              //for each face in polyhedron
@@ -713,12 +713,12 @@ int Polyhedron::makeedges()
 		}
 	}
 
-	DBG cerr <<"...total edges="<<edges.n<<'\n';
-	DBG for (c=0; c<faces.n; c++) {
-	DBG 	cerr <<"face "<<c<<": ";
-	DBG 	for (c2=0; c2<faces.e[c]->pn; c2++) cerr <<faces.e[c]->f[c2]<<" ";
-	DBG 	cerr <<endl;
-	DBG }
+	//DBG cerr <<"...total edges="<<edges.n<<'\n';
+	//DBG for (c=0; c<faces.n; c++) {
+	//DBG 	cerr <<"face "<<c<<": ";
+	//DBG 	for (c2=0; c2<faces.e[c]->pn; c2++) cerr <<faces.e[c]->f[c2]<<" ";
+	//DBG 	cerr <<endl;
+	//DBG }
 
 	return 1;
 }
@@ -981,7 +981,7 @@ int Polyhedron::AddFace(const char *str)
  */
 void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context)
 {
-	DBG cerr << "\ndump_out Polyhedron... "<<endl;
+	//DBG cerr << "\ndump_out Polyhedron... "<<endl;
 	if (!ff) return;
 
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -1075,7 +1075,7 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context
 		}
 	}
 	
-	DBG cerr <<"...done saving\n";
+	//DBG cerr <<"...done saving\n";
 }
 
 //! Read in a polyhedron from an Attribute.
@@ -1187,21 +1187,21 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 	}
 
 	if (error) { 
-		DBG cerr << "ERROR";
+		//DBG cerr << "ERROR";
 		clear();
 		return; 
 	}
 	
 	makeedges();
 	applysets();
-	DBG cerr << "...Done Polyhedron::dump_in_atts() "<<endl;
+	//DBG cerr << "...Done Polyhedron::dump_in_atts() "<<endl;
 	
 	if (!validate()) { 
 		clear(); 
-		DBG cerr << "Validation failed\n";
+		//DBG cerr << "Validation failed\n";
 		return; 
 	}
-	DBG cerr << "Validation succeeded\n"; 
+	//DBG cerr << "Validation succeeded\n"; 
 }
 
 //! Saves a VRML 2.0 model of the polyhedron to filename.
@@ -1215,7 +1215,7 @@ int Polyhedron::dumpOutVrml(FILE *ff,char **error_ret) // does edges
 		if (error_ret) appendline(*error_ret,"Need edges to output to vrml");
 		return 1;
 	}
-	DBG cerr << "\nSaving vrml:" << filename <<'.';
+	//DBG cerr << "\nSaving vrml:" << filename <<'.';
 
 	fprintf(ff,"#VRML V2.0 utf8\n\n");
 
@@ -1253,7 +1253,7 @@ int Polyhedron::dumpOutVrml(FILE *ff,char **error_ret) // does edges
 		fprintf(ff, "}\n\n");   
 	}
 
-	DBG cerr << "..done vrmlsave\n";
+	//DBG cerr << "..done vrmlsave\n";
 	return 0;
 }
 

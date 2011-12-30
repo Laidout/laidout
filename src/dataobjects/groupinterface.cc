@@ -39,7 +39,7 @@ using namespace Laxkit;
 void GroupInterface::TransformSelection(const double *N) 
 {
 	for (int c=0; c<selection.n; c++) {
-		DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection.e[c])->context.out(":");
+		////DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection.e[c])->context.out(":");
 	}
 	ObjectInterface::TransformSelection(N);
 }
@@ -52,7 +52,7 @@ GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 
 GroupInterface::~GroupInterface()
 {
-	DBG cerr <<"---- in GroupInterface destructor"<<endl;
+	////DBG cerr <<"---- in GroupInterface destructor"<<endl;
 }
 
 anInterface *GroupInterface::duplicate(anInterface *dup)
@@ -146,7 +146,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse)
 {
-	DBG cerr <<"GroupInterface::LBDown..."<<endl;
+	////DBG cerr <<"GroupInterface::LBDown..."<<endl;
 	int c=ObjectInterface::LBDown(x,y,state,count,mouse);
 
 	if (count==2 && selection.n==1 && strcmp(selection.e[0]->obj->whattype(),"Group")) {
@@ -160,7 +160,7 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 //! Return 1 if change, else 0.
 int GroupInterface::ToggleGroup()
 {
-	DBG cerr <<"*******GroupInterface.ToggleGroup"<<endl;
+	////DBG cerr <<"*******GroupInterface.ToggleGroup"<<endl;
 
 	if (selection.n==0) {
 		viewport->postmessage("No objects selected.");
@@ -183,7 +183,7 @@ int GroupInterface::ToggleGroup()
 		return 0;
 	} 
 
-	DBG place.out("toggle this group: ");
+	////DBG place.out("toggle this group: ");
 
 	 // find the base group which contains the group to ungroup, or which contains the
 	 // first selected object to group with others..
@@ -293,23 +293,23 @@ int GroupInterface::GrabSelection(unsigned int state)
 	DoubleBBox bbox;
 	bbox.addtobounds(data->m(),data);
 	
-	DBG cerr <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
-	DBG cerr <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
+	////DBG cerr <<"grab from: "<<bbox.minx<<','<<bbox.miny<<endl;
+	////DBG cerr <<"grab to:   "<<bbox.maxx<<','<<bbox.maxy<<endl;
 	
 	int n=0;
 	VObjContext **objs=NULL;
 	n=viewport->FindObjects(&bbox,0,0,NULL,(ObjectContext ***)(&objs));
 
-	DBG if (n && !objs) cerr <<"*******ERROR! says found objects, but no objects returned."<<endl;
-	DBG else {
-	DBG 	cerr <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
-	DBG 	cerr <<"Found objects: "<<n<<endl;
-	DBG }
+	////DBG if (n && !objs) cerr <<"*******ERROR! says found objects, but no objects returned."<<endl;
+	////DBG else {
+	////DBG 	cerr <<"find in box: "<<data->minx<<","<<data->miny<<" -> "<<data->maxx<<","<<data->maxy<<endl;
+	////DBG 	cerr <<"Found objects: "<<n<<endl;
+	////DBG }
 
 	 //add
 	for (int c=0; c<n; c++) {
-		DBG cerr << "  ";
-		DBG if (objs[c]) objs[c]->context.out("");
+		////DBG cerr << "  ";
+		////DBG if (objs[c]) objs[c]->context.out("");
 
 		AddToSelection(objs[c]);
 		delete objs[c];

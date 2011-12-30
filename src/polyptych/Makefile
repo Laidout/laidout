@@ -42,6 +42,11 @@ depends:
 
 include makedepend
 
+hidegarbage:
+	../hidegarbage *.cc
+
+unhidegarbage:
+	../hidegarbage -0 *.cc
 
 glbase.o:
 

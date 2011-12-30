@@ -1,4 +1,4 @@
-#Laidout 0.09.1 Document
+#Laidout 0.092 Document
 saveas ./tabloid-tiled.doc
 imposition SignatureImposition
   paper

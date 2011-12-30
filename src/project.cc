@@ -283,7 +283,7 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 				else {
 					delete doc;
 					doc=NULL;
-					DBG cerr <<"error loading project:"<<(error?error:"(unknown error)")<<endl;
+					////DBG cerr <<"error loading project:"<<(error?error:"(unknown error)")<<endl;
 				}
 				if (file) delete[] file;
 				if (error) delete[] error;
@@ -369,18 +369,18 @@ int Project::Save(char **error_ret)
 {
 	if (isblank(filename)) {
 		if (error_ret) appendline(*error_ret,_("Cannot save to blank file name."));
-		DBG cerr <<"**** cannot save, filename is null."<<endl;
+		////DBG cerr <<"**** cannot save, filename is null."<<endl;
 		return 2;
 	}
 	FILE *f=NULL;
 	f=fopen(filename,"w");
 	if (!f) {
 		if (error_ret) 	appendline(*error_ret,_("Cannot open file for writing"));
-		DBG cerr <<"**** cannot save project, file \""<<filename<<"\" cannot be opened for writing."<<endl;
+		////DBG cerr <<"**** cannot save project, file \""<<filename<<"\" cannot be opened for writing."<<endl;
 		return 3;
 	}
 
-	DBG cerr <<"....Saving project to "<<filename<<endl;
+	////DBG cerr <<"....Saving project to "<<filename<<endl;
 	setlocale(LC_ALL,"C");
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);

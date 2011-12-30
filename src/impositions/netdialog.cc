@@ -174,7 +174,7 @@ int NetDialog::init()
 
 int NetDialog::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	////DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"checkfile")) {
 		checkdod->State(LAX_OFF);

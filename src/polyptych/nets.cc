@@ -742,7 +742,7 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 		}
 	}
 	if (error) {
-		DBG cerr <<"There was some kind of error in NetFace::dumpInAtts()"<<endl;
+		//DBG cerr <<"There was some kind of error in NetFace::dumpInAtts()"<<endl;
 	}
 }
 
@@ -1207,7 +1207,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 	if (faces.n) {
 		for (int c=0; c<faces.n; c++) {
-			//DBG cerr <<"dump out face "<<c<<endl;
+			////DBG cerr <<"dump out face "<<c<<endl;
 			fprintf(f,"%sface #%d\n",spc,c);
 			faces.e[c]->dumpOut(f,indent+2,0);
 		}
@@ -1285,9 +1285,9 @@ void  Net::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 	//***sanity check on all point references..
 	FindBBox();
 
-	DBG cerr <<"----------------this was set in Net:-------------"<<endl;
-	DBG dump_out(stderr,0,0,NULL);
-	DBG cerr <<"----------------end Net dump:-------------"<<endl;
+	//DBG cerr <<"----------------this was set in Net:-------------"<<endl;
+	//DBG dump_out(stderr,0,0,NULL);
+	//DBG cerr <<"----------------end Net dump:-------------"<<endl;
 }
 
 //! Clear the net, and install newbasenet to basenet.
@@ -1462,7 +1462,7 @@ int Net::SaveSvg(const char *file,char **error_ret)
 	 //In SVG, 1in = 90px = 72pt
 	double linewidth=.01; //inches, where 1 inch == 1 paper unit
 	double scaling=1/sqrt(M[0]*M[0]+M[1]*M[1]); //supposed to scale to within the M group
-	DBG cerr <<"******--- Scaling="<<scaling<<endl;
+	//DBG cerr <<"******--- Scaling="<<scaling<<endl;
 
 	 //define some repeating header stuff
 	char pathheader[400];
@@ -1632,7 +1632,7 @@ int Net::clearPotentials(int original)
 		 //now need to decrement by one links to faces >= c
 		for (int c2=0; c2<faces.n; c2++) {
 			for (int c3=0; c3<faces.e[c2]->edges.n; c3++) {
-				DBG if (faces.e[c2]->edges.e[c3]->toface==c) cerr <<"***WARNING! Still had ref to deleted potential!"<<endl;
+				//DBG if (faces.e[c2]->edges.e[c3]->toface==c) cerr <<"***WARNING! Still had ref to deleted potential!"<<endl;
 
 				if (faces.e[c2]->edges.e[c3]->toface>c) //hopefully no more are == c
 					faces.e[c2]->edges.e[c3]->toface--;
@@ -1849,7 +1849,7 @@ int Net::findOriginalFace(int i,int status,int startsearchhere, int *index_ret)
 int Net::Unwrap(int netfacei,int atedge)
 {
 	if (!basenet) return 1;
-	DBG cerr <<"Net::Unwrap netfacei:"<<netfacei<<"  atedge:"<<atedge<<endl;
+	//DBG cerr <<"Net::Unwrap netfacei:"<<netfacei<<"  atedge:"<<atedge<<endl;
 	if (netfacei<0) {
 		 //unwrap all or drop a new seed face
 
@@ -1864,11 +1864,11 @@ int Net::Unwrap(int netfacei,int atedge)
 		faces.push(face,1);
 		addPotentialsToFace(faces.n-1);
 
-		//DBG cerr <<"------------------unwrap first--"<<endl;
-		//DBG dump_out(stderr,0,0,NULL);
-		//DBG cerr <<"--------------------------------"<<endl;
+		////DBG cerr <<"------------------unwrap first--"<<endl;
+		////DBG dump_out(stderr,0,0,NULL);
+		////DBG cerr <<"--------------------------------"<<endl;
 
-		DBG cerr <<"...done unwrap 1"<<endl;
+		//DBG cerr <<"...done unwrap 1"<<endl;
 		return 0;
 	}
 	if (netfacei>=faces.n) return 3;
@@ -1885,7 +1885,7 @@ int Net::Unwrap(int netfacei,int atedge)
 	for (int c=s; c<e+1; c++) { //for each edge, drop a face that is potential
 		atedge=c;
 		if (f1->edges.e[c]->tag!=FACE_Potential) {
-			DBG cerr <<"skipping edge "<<c<<", tag=="<<tagname[f1->edges.e[c]->tag]<<endl;
+			//DBG cerr <<"skipping edge "<<c<<", tag=="<<tagname[f1->edges.e[c]->tag]<<endl;
 			continue;
 		}
 
@@ -1901,18 +1901,18 @@ int Net::Unwrap(int netfacei,int atedge)
 	if (changed && !(_config&1)) rebuildLines();
 
 	//--------------------
-	DBG if (!f2) {
-	DBG 	DBG cerr <<"WARNING!! missing a dropped face!!!"<<endl;
-	DBG } else {
-	DBG   for (int c=0; c<f2->edges.n; c++) {
-	DBG 	cerr <<"Net::Unwrap a face, edge "<<c<<": tag="<<tagname[f2->edges.e[c]->tag]
-	DBG 		<<"  toface:"<<f2->edges.e[c]->toface
-	DBG 		<<"  tooriginal:"<<f2->edges.e[c]->tooriginal<<endl;
-	DBG   }
-	DBG }
+	//DBG if (!f2) {
+	//DBG 	DBG cerr <<"WARNING!! missing a dropped face!!!"<<endl;
+	//DBG } else {
+	//DBG   for (int c=0; c<f2->edges.n; c++) {
+	//DBG 	cerr <<"Net::Unwrap a face, edge "<<c<<": tag="<<tagname[f2->edges.e[c]->tag]
+	//DBG 		<<"  toface:"<<f2->edges.e[c]->toface
+	//DBG 		<<"  tooriginal:"<<f2->edges.e[c]->tooriginal<<endl;
+	//DBG   }
+	//DBG }
 	//--------------------
 
-	DBG cerr <<"...done unwrap 2"<<endl;
+	//DBG cerr <<"...done unwrap 2"<<endl;
 	return 0;
 }
 
@@ -1992,7 +1992,7 @@ int Net::PickUp(int netfacei,int cutatedge)
 			if (netf->edges.e[c]->tag==FACE_Actual) n++;
 		}
 	}
-	DBG cerr <<"face "<<netfacei<<" connected to "<<n<<" actual faces, to "<<total<<" total faces"<<endl;
+	//DBG cerr <<"face "<<netfacei<<" connected to "<<n<<" actual faces, to "<<total<<" total faces"<<endl;
 	if (n>1) return 2;
 
 	if (n==0) {
@@ -2049,7 +2049,7 @@ int Net::PickUp(int netfacei,int cutatedge)
 int Net::deleteFace(int netfacei)
 {
 	if (netfacei<0 || netfacei>=faces.n) return 1;
-	DBG cerr <<"-----deleteFace("<<netfacei<<")"<<endl;
+	//DBG cerr <<"-----deleteFace("<<netfacei<<")"<<endl;
 
 	faces.remove(netfacei);
 
@@ -2059,12 +2059,12 @@ int Net::deleteFace(int netfacei)
 			if (faces.e[c2]->edges.e[c3]->toface>netfacei) { //hopefully no more are == c
 				faces.e[c2]->edges.e[c3]->toface--;
 			} else if (faces.e[c2]->edges.e[c3]->toface==netfacei) {
-				//DBG cerr <<"**** warning! face("<<c2<<")->edge("<<c3<<") == face being deleted!!"<<endl;
+				////DBG cerr <<"**** warning! face("<<c2<<")->edge("<<c3<<") == face being deleted!!"<<endl;
 				faces.e[c2]->edges.e[c3]->toface=-1;
 			}
 		}
 	}
-	DBG cerr <<"-----deleteFace done"<<endl;
+	//DBG cerr <<"-----deleteFace done"<<endl;
 	return 0;
 }
 
