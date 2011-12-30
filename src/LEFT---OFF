@@ -389,6 +389,7 @@ pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow
 				    just tools but overlays. Any number of overlays can be active, but only one tool
   edit base in place
   should not be able to shift overlay offscreen entirely.. maybe if dragging offscreen, minimize on corner?
+  should remember old label format strings, to easily select back to them
 
 For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
   part.. should have minimum drag areas?
