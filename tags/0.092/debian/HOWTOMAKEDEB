@@ -1,0 +1,82 @@
+note to self: 
+ Most of these notes are to help the developer(s) package Laidout for releases.
+ If you just want to make a deb package yourself, skip down to "build the package".
+
+
+               NEW RELEASES
+MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
+----------------------
+(if anyone has a better way of doing this, let me know, I'm new at this)
+
+
+1. Double check that these are current:
+  debian/laidout.1
+  the laidoutrc description dump out in laidout.cc
+
+
+2. ----Copy trunk to a new tag------
+ svn copy https://laidout.svn.sourceforge.net/svnroot/laidout/trunk \
+          https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whatever version)
+ make sure the Makefile does not try to compile lax
+
+
+3. ----modify source---
+ check out the branch: svn co https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(version)
+ make sure any references to the current date are accurate, currently:
+   debian/control
+   debian/laidout.1
+ make sure version number is correct in any source files that refer to it, currently:
+   debian/changelog
+   debian/laidout.1              :Version ****, for laying out books
+   docs/doxygen/laidoutintro.txt :-- Version ***** --\n
+   docs/Doxyfile                 :PROJECT_NUMBER         = *****
+   docs/Doxyfile-with-laxkit     :PROJECT_NUMBER         = *****
+   configure
+   README                        :LAIDOUT Version *****
+   all the example docs
+ make sure the Quick Key References are accurate. There are separate versions
+   of it in ./QUICKREF, debian/laidout.1, and src/helpwindow.cc
+ touch Makefile-toinclude; make touchdepends;
+ 
+ make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball
+ make sure 'make' does not try to make lax or laxinterfaces unless laxkit has been 
+   downloaded into the source tree...
+ 
+ make sure all the examples work, and have the correct version number
+
+
+4. ---hide the debugging garbage and commit---
+ make hidegarbage 
+ (make sure same is done for laxkit, as Laidout currently statically
+  links against laxkit, which also uses the same system to hide debugging code)
+ svn ci -m'Last minute touchups to this tag'
+
+
+5. Export a copy of the new tag and make a tarball. 
+ svn export https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whichever) laidout-(version)
+  If Laxkit is to be included, you should export that to the top laidout dir: 
+ svn export https://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
+ Do './configure' in the laxkit directory, and for the laidout configure, make sure it always
+   configures to the installed laxkit dir. Configure laidout temporarily to get Makefile-toinclude,
+   which lets you do 'make depends'. then 'make clean'.
+   -to do this in laidout/src: vi `find . -name makedepend`, then something like :%s/\/home\/..../..\/
+ make sure all the makedepend files have RELATIVE references, seems to prefer absolute a lot of the time
+ make hidegarbage if you haven't already, in src AND in laxkit
+ in laidout top dir: rm src/configured.h Makefile-toinclude config.log
+ make icons  (for convenience, in case people don't have inkscape installed)
+ cd to dir above laidout, and do:
+    tar cjv (the dir) > laidout-version.tar.bz2 
+   this should be the distributed tarball, unpack in some other dir and do a test compile.
+
+
+6. ---build the package---
+dpkg-buildpackage -rfakeroot in top laidout directory
+This often will expose otherwise unknown errors, I think because making the deb packages uses lots more
+compile flags. You can do "fakeroot debian/rules binary" to not have to recompile everything after fixing.
+
+
+7. After file release is uploaded, don't forget to:
+     - update the help and screenshots sections on the website, and the website in general
+     - update the laidout rss feed
+     - send announcement to at least the laidout mailing list
+

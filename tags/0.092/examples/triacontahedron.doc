@@ -1,0 +1,315 @@
+#Laidout 0.09.1 Document
+
+imposition NetImposition
+  defaultpaperstyle
+    name Letter
+    width 8.5
+    height 11
+    dpi 360
+    portrait
+  abstractnet Polyhedron
+    name Rhombic Triacontahedron
+    #32 verts
+    vertices \
+        0.309017 0.190983 0.9510565     #0
+        -0.309017 0.5 0.9510565         #1
+        -0.309017 -0.190983 0.9510565   #2
+        0.309017 -0.5 0.9510565         #3
+        0.809017 -0.190983 0.5877853    #4
+        0.809017 0.5 0.5877853          #5
+        0.190983 0.809017 0.5877853     #6
+        -0.809017 0.190983 0.5877853    #7
+        -0.809017 -0.5 0.5877853        #8
+        -0.190983 -0.809017 0.5877853   #9
+        1. -0.5 0                       #10
+        1. 0.190983 0                   #11
+        0.5 -0.809017 0.3632713         #12
+        0 1.118034 0                    #13
+        -0.5 0.809017 0.3632713         #14
+        0.618034 0.809017 0             #15
+        -1. 0.5 0                       #16
+        -1. -0.190983 0                 #17
+        0 -1.118034 0                   #18
+        -0.618034 -0.809017 0           #19
+        0.809017 -0.190983 -0.5877853   #20
+        0.809017 0.5 -0.5877853         #21
+        0.5 -0.809017 -0.3632713        #22
+        -0.5 0.809017 -0.3632713        #23
+        0.190983 0.809017 -0.5877853    #24
+        -0.809017 0.190983 -0.5877853   #25
+        -0.809017 -0.5 -0.5877853       #26
+        -0.190983 -0.809017 -0.5877853  #27
+        0.309017 -0.5 -0.9510565        #28
+        0.309017 0.190983 -0.9510565    #29
+        -0.309017 0.5 -0.9510565        #30
+        -0.309017 -0.190983 -0.9510565  #31
+
+    # 30 faces
+    face  3 0 1 2 
+    face  3 4 5 0 
+    face  0 5 6 1 
+    face  1 7 8 2 
+    face  2 8 9 3 
+    face  5 4 10 11 
+    face  4 3 12 10 
+    face  1 6 13 14 
+    face  6 5 15 13 
+    face  8 7 16 17 
+    face  7 1 14 16 
+    face  3 9 18 12 
+    face  9 8 19 18 
+    face  10 20 21 11 
+    face  11 21 15 5 
+    face  12 18 22 10 
+    face  13 23 16 14 
+    face  15 21 24 13 
+    face  16 25 26 17 
+    face  17 26 19 8 
+    face  19 26 27 18 
+    face  21 20 28 29 
+    face  20 10 22 28 
+    face  22 18 27 28 
+    face  16 23 30 25 
+    face  23 13 24 30 
+    face  24 21 29 30 
+    face  26 25 30 31 
+    face  27 26 31 28 
+    face  28 31 30 29 
+page 0
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 1
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+  layer 0
+    visible
+    prints
+page 2
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 3
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+  layer 0
+    visible
+    prints
+page 4
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 5
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 6
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 7
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 8
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 9
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 10
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 11
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 12
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 13
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 14
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 15
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 16
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 17
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 18
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 19
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 20
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 21
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 22
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 23
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 24
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 25
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 26
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 27
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 28
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
+page 29
+  pagestyle PageStyle
+    width 2.011859078
+    height 1.913391686
+    pageclips
+  layer 0
+    visible
+    prints
