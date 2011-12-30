@@ -129,7 +129,7 @@ int SaveSvgWithImages(Net *net,
 	 //In SVG, 1in = 90px = 72pt
 	double linewidth=.01; //inches, where 1 inch == 1 paper unit
 	double scaling=1/sqrt(M[0]*M[0]+M[1]*M[1]); //supposed to scale to within the M group
-	DBG cout <<"******--- Scaling="<<scaling<<endl;
+	//DBG cout <<"******--- Scaling="<<scaling<<endl;
 
 	 //define some repeating header stuff
 	char pathheader[400];
@@ -163,7 +163,7 @@ int SaveSvgWithImages(Net *net,
 			svg << pathheader << "d=\"";
 			char *d=CoordinateToSvg(line->points);
 
-			//DBG cerr <<"--output line: "<<d<<endl;
+			////DBG cerr <<"--output line: "<<d<<endl;
 
 			if (d) {
 				svg <<d<<"\""<< pathclose <<endl;
@@ -276,11 +276,11 @@ int SphereToPoly(const char *spherefile,
 		return 1;
 	}
 
-	DBG cerr <<"\n"
-	DBG 	 <<"Using sphere file:"<<spherefile<<endl
-	DBG      <<"  filesize: "<<sphere.fileSize()/1024<<" kb"<<endl
-	DBG 	 <<"     width: "<<sphere.baseColumns()<<endl
-	DBG 	 <<"    height: "<<sphere.baseRows()<<endl;
+	//DBG cerr <<"\n"
+	//DBG 	 <<"Using sphere file:"<<spherefile<<endl
+	//DBG      <<"  filesize: "<<sphere.fileSize()/1024<<" kb"<<endl
+	//DBG 	 <<"     width: "<<sphere.baseColumns()<<endl
+	//DBG 	 <<"    height: "<<sphere.baseRows()<<endl;
 
 	char *fbase=newstr(filebase);
 	if (!fbase) {
@@ -492,7 +492,7 @@ int SphereToPoly(Image spheremap,
 				faceimage.pixelColor(x,y,color);
 			//}
 		  }
-		  //DBG cout <<"\\\n";
+		  ////DBG cout <<"\\\n";
 		}
 
 

@@ -297,7 +297,7 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 
 SignatureInterface::~SignatureInterface()
 {
-	DBG cerr <<"SignatureInterface destructor.."<<endl;
+	////DBG cerr <<"SignatureInterface destructor.."<<endl;
 
 	if (signature) signature->dec_count();
 	if (papersize) papersize->dec_count();
@@ -1016,12 +1016,12 @@ int SignatureInterface::Refresh()
 
 	 //draw in progress folding
 	int device=0;
-	DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
+	////DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
 	if (buttondown.any(0,LEFTBUTTON,&device) && folddirection && folddirection!='x') {
 		 //this will draw a light gray tilting region across foldindex, in folddirection, with foldunder.
 		 //it will correspond to foldr1,foldr2, and foldc1,foldc2.
 
-		DBG cerr <<"--------------------------------showing dir"<<endl;
+		////DBG cerr <<"--------------------------------showing dir"<<endl;
 		//int mx,my;
 		//buttondown.getinitial(device,LEFTBUTTON,&mx,&my);
 
@@ -1345,7 +1345,7 @@ int SignatureInterface::scanHandle(int x,int y)
 int SignatureInterface::scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col)
 {
 	flatpoint fp=screentoreal(x,y);
-	DBG cerr <<"fp:"<<fp.x<<','<<fp.y<<endl;
+	////DBG cerr <<"fp:"<<fp.x<<','<<fp.y<<endl;
 
 	fp.x-=signature->insetleft;
 	fp.y-=signature->insetbottom;
@@ -1364,7 +1364,7 @@ int SignatureInterface::scan(int x,int y,int *row,int *col,double *ex,double *ey
 	fp.x-=tilex*(patternwidth +signature->tilegapx);
 	fp.y-=tiley*(patternheight+signature->tilegapy);
 
-	DBG cerr <<"tilex,y: "<<tilex<<","<<tiley<<endl;
+	////DBG cerr <<"tilex,y: "<<tilex<<","<<tiley<<endl;
 
 	*row=floorl(fp.y/elementheight);
 	*col=floorl(fp.x/elementwidth);
@@ -1565,9 +1565,9 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 	if (showsplash) { showsplash=0; needtodraw=1; }
 
 	int row,col,tilerow,tilecol;
-	DBG int over=
+	////DBG int over=
 	scan(x,y, &row,&col, NULL,NULL, &tilerow,&tilecol);
-	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
+	////DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
 
 	if (buttondown.any()) return 0;
 
@@ -1949,16 +1949,16 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	int over=scan(x,y, &row,&col, &mm.x,&mm.y, &tilerow,&tilecol);
 	//fp now holds coordinates relative to the element cell
 
-	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
-	DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
-	DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped
-	DBG         <<"  pages:"<<foldinfo[row][col].pages.n<<endl;
+	////DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
+	////DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
+	////DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped
+	////DBG         <<"  pages:"<<foldinfo[row][col].pages.n<<endl;
 
 	int mx,my;
 	int lx,ly;
 	if (!buttondown.any()) {
 		int handle=scanHandle(x,y);
-		DBG cerr <<"found handle "<<handle<<endl;
+		////DBG cerr <<"found handle "<<handle<<endl;
 		if (overoverlay!=handle) needtodraw=1;
 		if (handle==SP_None) {
 			overoverlay=0;
@@ -2012,7 +2012,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 			 //curdist is 0 for very start, totally unfolded paper. Each fold adds 1 to curdist
 
-			DBG cerr <<"curdist:"<<curdist<<"  lastdist:"<<lastdist<<endl;
+			////DBG cerr <<"curdist:"<<curdist<<"  lastdist:"<<lastdist<<endl;
 
 			if (foldprogress==-1) {
 				 //we have not moved before, so we must do an initial map of affected cells
@@ -2243,7 +2243,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		needtodraw=1;
 	}
 
-	DBG cerr <<"folding progress: "<<foldprogress<<",  om="<<om.x<<','<<om.y<<"  mm="<<mm.x<<','<<mm.y<<endl;
+	////DBG cerr <<"folding progress: "<<foldprogress<<",  om="<<om.x<<','<<om.y<<"  mm="<<mm.x<<','<<mm.y<<endl;
 
 
 	return 0;
@@ -2341,7 +2341,7 @@ static const char *masktostr(int m)
 
 int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	////DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (showsplash) { showsplash=0; needtodraw=1; }
 
@@ -2584,7 +2584,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 		//add extra field for impose out
 
 		Attribute att;
-		DBG const char *in="",*out="";
+		////DBG const char *in="",*out="";
 
 		const char *prefer=NULL;
 		NameValueToAttribute(&att,imposearg,'=',',');
@@ -2593,7 +2593,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 			name =att.attributes.e[c]->name;
 			value=att.attributes.e[c]->value;
 			if (!strcmp(name,"in")) {
-				DBG in=value;
+				////DBG in=value;
 				if (isScribusFile(value)) {
 					if (addScribusDocument(value)==0) {
 						//yikes!
@@ -2608,7 +2608,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 				//     export temp podofo plan, call podofoimpose
 			} else if (!strcmp(name,"out")) {
 				makestr(imposeout,value);
-				DBG out=value;
+				////DBG out=value;
 			} else if (!strcmp(name,"prefer")) {
 				prefer=value;
 			} else if (!strcmp(name,"width")) {
@@ -2640,7 +2640,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 			}
 		}
 
-		DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
+		////DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
 	}
 
 }
@@ -2726,7 +2726,7 @@ void SignatureEditor::send()
  */
 int SignatureEditor::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"SignatureEditor got message: "<<(mes?mes:"?")<<endl;
+	////DBG cerr <<"SignatureEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"ok")) {
 		send();

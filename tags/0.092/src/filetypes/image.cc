@@ -231,7 +231,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	char *filetemplate=NULL;
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
-			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
+			////DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
 			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
 			return 3;
 		}
@@ -242,7 +242,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	 //write out the document to a temporary postscript file
 	char tmp[256];
 	cupsTempFile2(tmp,sizeof(tmp));
-	DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
+	////DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
 	FILE *f=fopen(tmp,"w");
 	if (!f) {
 		if (error_ret) appendline(*error_ret,_("Error exporting to image."));
@@ -287,9 +287,9 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	arglist[7]=tmp; //input file
 	arglist[8]=NULL;
 		 
-	DBG cerr <<"Exporting images via:    "<<gspath<<' ';
-	DBG for (int c=1; c<8; c++) cerr <<arglist[c]<<' ';
-	DBG cerr <<endl;
+	////DBG cerr <<"Exporting images via:    "<<gspath<<' ';
+	////DBG for (int c=1; c<8; c++) cerr <<arglist[c]<<' ';
+	////DBG cerr <<endl;
 	
 	char *error=NULL;
 	pid_t child=fork();
@@ -305,10 +305,10 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	int status;
 	waitpid(child,&status,0);
 	if (!WIFEXITED(status)) {
-		DBG cerr <<"*** error in child process, not returned normally!"<<endl;
+		////DBG cerr <<"*** error in child process, not returned normally!"<<endl;
 		error=newstr(_("Ghostscript interrupted from making image."));
 	} else if (WEXITSTATUS(status)!=0) {
-		DBG cerr <<"*** ghostscript returned error while trying to make preview"<<endl;
+		////DBG cerr <<"*** ghostscript returned error while trying to make preview"<<endl;
 		error=newstr(_("Ghostscript had error while making image."));
 	}
 

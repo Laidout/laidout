@@ -217,10 +217,10 @@ void Group::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *con
 				}
 				deletestrs(strs,n);
 			} else {
-				DBG cerr <<"*** readin blank object for Group..."<<endl;
+				////DBG cerr <<"*** readin blank object for Group..."<<endl;
 			}
 		} else { 
-			DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
+			////DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
 		}
 	}
 	FindBBox();

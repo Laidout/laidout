@@ -389,18 +389,18 @@ void HedronWindow::triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
  */
 void HedronWindow::mapPolyhedronTexture(Thing *thing)
 {
-	//DBG cerr <<"mapping hedron texture..."<<endl;
+	////DBG cerr <<"mapping hedron texture..."<<endl;
 	spacepoint center,centero,normal,point;
 	spacepoint p1,p2, p1o,p2o;
 	int c,c2;
 
 	glNewList(thing->id,GL_COMPILE);
 	for (c=0; c<poly->faces.n; c++) {
-		//DBG if (c!=poly->faces.n-3) continue;
+		////DBG if (c!=poly->faces.n-3) continue;
 		if (poly->faces.e[c]->pn) {
 			center =poly->CenterOfFace(c,1);
 			centero=poly->CenterOfFace(c,0);
-			//DBG cerr <<"--center: "<<center.x<<","<<center.y<<","<<center.z<<endl;
+			////DBG cerr <<"--center: "<<center.x<<","<<center.y<<","<<center.z<<endl;
 
 			//-----------------------------
 			for (c2=0; c2<=poly->faces.e[c]->pn; c2++) {
@@ -409,10 +409,10 @@ void HedronWindow::mapPolyhedronTexture(Thing *thing)
 				p2 =poly->VertexOfFace(c, c2%poly->faces.e[c]->pn, 1);
 				p2o=poly->VertexOfFace(c, c2%poly->faces.e[c]->pn, 0);
 
-				//DBG cerr <<"--p1: "<<p1.x<<","<<p1.y<<","<<p1.z<<endl;
-				//DBG cerr <<"--p2: "<<p2.x<<","<<p2.y<<","<<p2.z<<endl;
-				//DBG cerr <<"--p1o: "<<p1o.x<<","<<p1o.y<<","<<p1o.z<<endl;
-				//DBG cerr <<"--p2o: "<<p2o.x<<","<<p2o.y<<","<<p2o.z<<endl;
+				////DBG cerr <<"--p1: "<<p1.x<<","<<p1.y<<","<<p1.z<<endl;
+				////DBG cerr <<"--p2: "<<p2.x<<","<<p2.y<<","<<p2.z<<endl;
+				////DBG cerr <<"--p1o: "<<p1o.x<<","<<p1o.y<<","<<p1o.z<<endl;
+				////DBG cerr <<"--p2o: "<<p2o.x<<","<<p2o.y<<","<<p2o.z<<endl;
 
 				triangulate(center ,p1, p2,
 							centero,p1o,p2o,
@@ -484,8 +484,8 @@ Thing *HedronWindow::makeGLPolyhedron()
 
 	//mapPolyhedronTexture(thing);
 
-	//DBG cerr <<"New hedron call list id = "<<hedronlist<<endl;
-	//DBG dumpMatrix4(thing->m,"hedron initial matrix");
+	////DBG cerr <<"New hedron call list id = "<<hedronlist<<endl;
+	////DBG dumpMatrix4(thing->m,"hedron initial matrix");
 	return thing;
 }
 
@@ -637,7 +637,7 @@ Polyhedron *HedronWindow::defineCube()
 	newpoly->faces.push(new Face("4 5 6 7",""));
 	newpoly->connectFaces();
 	newpoly->makeedges();
-	//DBG newpoly->dump_out(stdout, 0, 0, NULL);
+	////DBG newpoly->dump_out(stdout, 0, 0, NULL);
 	newpoly->BuildExtra();
 
 	return newpoly;
@@ -734,10 +734,10 @@ void HedronWindow::installSpheremapTexture(int definetid)
 
 
 	 //check if texture is resident
-	DBG GLint yes;
-	DBG glGetTexParameteriv(spheretexture,GL_TEXTURE_RESIDENT,&yes);
-	DBG if (yes) cerr <<"----------------texture is resident"<<endl;
-	DBG else cerr <<"----------------texture is NOT resident"<<endl;
+	//DBG GLint yes;
+	//DBG glGetTexParameteriv(spheretexture,GL_TEXTURE_RESIDENT,&yes);
+	//DBG if (yes) cerr <<"----------------texture is resident"<<endl;
+	//DBG else cerr <<"----------------texture is NOT resident"<<endl;
 }
 
 void HedronWindow::installOverlays()
@@ -1018,9 +1018,9 @@ void HedronWindow::drawbg()
 
 	 //---- draw things *** SHOULD NOT HAVE TO RELOAD DATA EACH REFRESH!!!
 	if (draw_texture) {
-		DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
+		//DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
 		
-		//DBG mapPolyhedronTexture(hedron);
+		////DBG mapPolyhedronTexture(hedron);
 		//glPushMatrix();
 		//glMultMatrixf(hedron->m);
 
@@ -1046,7 +1046,7 @@ void HedronWindow::drawbg()
 	}
 
 	for (c=0; c<things.n; c++) {
-		//DBG cerr <<"drawing thing number "<<c<<endl;
+		////DBG cerr <<"drawing thing number "<<c<<endl;
 		things.e[c]->Draw();
 	}
 
@@ -1078,7 +1078,7 @@ void HedronWindow::drawbg()
 			glVertex3f(p1.x,p1.y,p1.z);
 			glVertex3f(p2.x,p2.y,p2.z);
 
-			//DBG cerr <<"edge: "<<p1.x<<','<<p1.y<<','<<p1.z<<" to "<<p2.x<<','<<p2.y<<','<<p2.z<<endl;
+			////DBG cerr <<"edge: "<<p1.x<<','<<p1.y<<','<<p1.z<<" to "<<p2.x<<','<<p2.y<<','<<p2.z<<endl;
 //				glPushMatrix();
 //				q=gluNewQuadric();
 //				glTranslatef(p1.x,p1.y,p1.z);
@@ -1296,7 +1296,7 @@ void HedronWindow::drawbg()
 			if (nets.e[i]->whatshape()) sprintf(str,"net %d: %s",i, nets.e[i]->whatshape());
 			else sprintf(str,"net %d",i);
 
-			DBG cerr <<str<<" face "<<currentface<<endl;
+			//DBG cerr <<str<<" face "<<currentface<<endl;
 			consolefont->Render(str,-1,FTPoint(0,fontsize));
 		}
 
@@ -1336,7 +1336,7 @@ void HedronWindow::drawRect(DoubleBBox &box,
 							double line_r, double line_g, double line_b,
 							double alpha)
 {
-	//DBG cerr << "draw box ("<<box.minx<<','<<box.miny<<") -> ("<<box.maxx<<","<<box.maxy<<")"<<endl;
+	////DBG cerr << "draw box ("<<box.minx<<','<<box.miny<<") -> ("<<box.maxx<<","<<box.maxy<<")"<<endl;
 
 
 	glMatrixMode (GL_MODELVIEW);
@@ -1403,7 +1403,7 @@ void HedronWindow::transparentFace(int face, double r, double g, double b, doubl
 	for (int c2=0; c2<=poly->faces.e[face]->pn; c2++) {
 		if (c2==poly->faces.e[face]->pn) point=poly->VertexOfFace(face,0,1);
 		else point=poly->VertexOfFace(face, c2, 1);
-		//DBG cerr <<"point: "<<point.x<<","<<point.y<<","<<point.z<<endl;
+		////DBG cerr <<"point: "<<point.x<<","<<point.y<<","<<point.z<<endl;
 		point=1.001*point;
 		normal=point/norm(point);
 		glNormal3f(normal.x,normal.y,normal.z);
@@ -1419,7 +1419,7 @@ void HedronWindow::transparentFace(int face, double r, double g, double b, doubl
 //! Currently draw face as a colored transparent overlay (not textured).
 void HedronWindow::drawPotential(Net *net, int netface)
 {
-	DBG cerr <<"--drawing potential "<<netface<<endl;
+	//DBG cerr <<"--drawing potential "<<netface<<endl;
 	if (!net || netface<0 || netface>=net->faces.n) return;
 
 	glPushMatrix();
@@ -1697,7 +1697,7 @@ void HedronWindow::recurseCache(Net *net,int neti)
  */
 Net *HedronWindow::establishNet(int original)
 {
-	DBG cerr <<"create net around original "<<original<<endl;
+	//DBG cerr <<"create net around original "<<original<<endl;
 	Net *net=new Net;
 	net->_config=1;
 	net->Basenet(poly);
@@ -1725,10 +1725,10 @@ int HedronWindow::Reseed(int original)
 	 //reseed net 
 	Net *net=findNet(poly->faces.e[original]->cache->facemode);
 
-	DBG if (!net) {
-	DBG 	cerr <<"******** null net for facemode "<<poly->faces.e[currentface]->cache->facemode<<"!!"<<endl;
-	DBG 	exit(1);
-	DBG }
+	//DBG if (!net) {
+	//DBG 	cerr <<"******** null net for facemode "<<poly->faces.e[currentface]->cache->facemode<<"!!"<<endl;
+	//DBG 	exit(1);
+	//DBG }
 
 	 //update poly<->net crosslinks
 	poly->faces.e[net->info]->cache->facemode=net->object_id;
@@ -1738,10 +1738,10 @@ int HedronWindow::Reseed(int original)
 	double m[6],m2[6];
 	int neti;
 	net->findOriginalFace(original,1,0,&neti);
-	DBG cerr <<"--reseed: original:"<<currentface<<" to neti:"<<neti<<endl;
+	//DBG cerr <<"--reseed: original:"<<currentface<<" to neti:"<<neti<<endl;
 
 	if (neti<0) {
-		DBG cerr <<"************WARNING!!!!! negative neti, this should NEVER happen!!"<<endl;
+		//DBG cerr <<"************WARNING!!!!! negative neti, this should NEVER happen!!"<<endl;
 		return 0;
 	}
 
@@ -1758,7 +1758,7 @@ int HedronWindow::Reseed(int original)
 
 int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 {
-	DBG cerr <<"HedronWindow::RBUp: rbdown=="<<rbdown<<"  currentface=="<<currentface<<endl;
+	//DBG cerr <<"HedronWindow::RBUp: rbdown=="<<rbdown<<"  currentface=="<<currentface<<endl;
 
 	if (active_action!=ACTION_Unwrap && active_action!=ACTION_Reseed && !(buttondown.isdown(mouse->id,RIGHTBUTTON))) return 0;
 	buttondown.up(mouse->id,RIGHTBUTTON);
@@ -1791,11 +1791,11 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 
 	} else if (rbdown!=-1 && rbdown==currentface) {
 		 //right click down and up on same face...
-		DBG cerr <<"...right click down and up on same face"<<endl;
+		//DBG cerr <<"...right click down and up on same face"<<endl;
 		 
 		 //if face is on hedron, not a seed, then create a new net with that face
 		if (poly->faces.e[currentface]->cache->facemode==0) {
-			DBG cerr <<"...establish a net on currentface"<<endl;
+			//DBG cerr <<"...establish a net on currentface"<<endl;
 
 			 //unwrap as a seed when face is on polyhedron, not in net
 			Net *net=establishNet(currentface);
@@ -1811,7 +1811,7 @@ int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 			return 0;
 
 		} else if (poly->faces.e[currentface]->cache->facemode!=0) {
-			DBG cerr <<"...make net of currentface the current net"<<endl;
+			//DBG cerr <<"...make net of currentface the current net"<<endl;
 
 			 //make current net the net of currentface
 			Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
@@ -1865,13 +1865,13 @@ int HedronWindow::removeNet(int netindex)
 		currentnet=NULL;
 	}
 	 //reset all faces in net to normal
-	DBG int n=0;
+	//DBG int n=0;
 	for (int c=0; c<net->faces.n; c++) {
 		if (net->faces.e[c]->tag!=FACE_Actual) continue;
-		DBG n++;
+		//DBG n++;
 		poly->faces.e[net->faces.e[c]->original]->cache->facemode=0;
 	}
-	DBG cerr <<"removeNet() reset "<<n<<" faces"<<endl;
+	//DBG cerr <<"removeNet() reset "<<n<<" faces"<<endl;
 	nets.remove(netindex);
 	return 0;
 }
@@ -1948,11 +1948,11 @@ int HedronWindow::findCurrentFace()
 		if (err!=0) continue;
 		if (point_is_in(fp, poly->faces.e[c]->cache->points2d,poly->faces.e[c]->pn)) {
 			d=(p-line.p)*(p-line.p);
-			//DBG cerr <<"point in "<<c<<", dist: "<<d<<endl;
+			////DBG cerr <<"point in "<<c<<", dist: "<<d<<endl;
 			if (d<dist) { index=c; dist=d; }
 		}
 	}
-	//DBG cerr <<dist<<"  ";
+	////DBG cerr <<dist<<"  ";
 	return index;
 }
 
@@ -1985,28 +1985,28 @@ int HedronWindow::recurseUnwrap(Net *netf, int fromneti, Net *nett, int toneti)
 		if (netf->faces.e[fromneti]->original==nett->faces.e[toneti]->edges.e[c]->tooriginal) break;
 	}
 	if (c==nett->faces.e[toneti]->edges.n) {
-		DBG cerr <<"Warning: recurseUnwrap() from and to are not adjacent"<<endl;
+		//DBG cerr <<"Warning: recurseUnwrap() from and to are not adjacent"<<endl;
 		return 1; //faces not adjacent
 	}
-	DBG cerr <<"recurseUnwrap: fromneti="<<fromneti<<" (orig="<<netf->faces.e[fromneti]->original
-	DBG 	<<")  toneti="<<toneti<<" (orig="<<nett->faces.e[toneti]->original<<")"<<endl;
+	//DBG cerr <<"recurseUnwrap: fromneti="<<fromneti<<" (orig="<<netf->faces.e[fromneti]->original
+	//DBG 	<<")  toneti="<<toneti<<" (orig="<<nett->faces.e[toneti]->original<<")"<<endl;
 
 	nett->Unwrap(toneti,c); //attach face fromneti in netf
-	DBG cerr <<"nett->toneti->toface:"<<nett->faces.e[toneti]->edges.e[c]->toface<<endl;
-	DBG cerr <<"nett->toneti->tag:"<<nett->faces.e[toneti]->edges.e[c]->tag<<endl;
+	//DBG cerr <<"nett->toneti->toface:"<<nett->faces.e[toneti]->edges.e[c]->toface<<endl;
+	//DBG cerr <<"nett->toneti->tag:"<<nett->faces.e[toneti]->edges.e[c]->tag<<endl;
 	int i=nett->findOriginalFace(netf->faces.e[fromneti]->original,1,0, &toneti);
-	DBG cerr <<"recurseUnwrap newly laid face: find orig "<<netf->faces.e[fromneti]->original<<":neti="<<toneti<<", status="<<i<<endl;
+	//DBG cerr <<"recurseUnwrap newly laid face: find orig "<<netf->faces.e[fromneti]->original<<":neti="<<toneti<<", status="<<i<<endl;
 
 	//-------------------------
-	DBG for (int c=0; c<nett->faces.n; c++) {
-	DBG 	if (nett->faces.e[c]->tag!=FACE_Actual) continue;
-	DBG 	for (int c2=0; c2<nett->faces.e[c]->edges.n; c2++) {
-	DBG 		if (nett->faces.e[c]->edges.e[c2]->tag==FACE_None) {
-	DBG 			cerr <<"recurse:AAAAAAARRG! edge points to -1:"<<endl;
-	DBG 			cerr <<"  net->face("<<c<<")->edge("<<c2<<")->tag="<<nett->faces.e[c]->edges.e[c2]->tag<<endl;
-	DBG 		}
-	DBG 	}
-	DBG }
+	//DBG for (int c=0; c<nett->faces.n; c++) {
+	//DBG 	if (nett->faces.e[c]->tag!=FACE_Actual) continue;
+	//DBG 	for (int c2=0; c2<nett->faces.e[c]->edges.n; c2++) {
+	//DBG 		if (nett->faces.e[c]->edges.e[c2]->tag==FACE_None) {
+	//DBG 			cerr <<"recurse:AAAAAAARRG! edge points to -1:"<<endl;
+	//DBG 			cerr <<"  net->face("<<c<<")->edge("<<c2<<")->tag="<<nett->faces.e[c]->edges.e[c2]->tag<<endl;
+	//DBG 		}
+	//DBG 	}
+	//DBG }
 	//-------------------------
 
 
@@ -2092,25 +2092,25 @@ int HedronWindow::unwrapTo(int from,int to)
 
 		int fromi,toi;
 		int status=netf->findOriginalFace(from,1,0,&fromi);
-		DBG cerr <<"from: find orig "<<from<<":"<<fromi<<", status="<<status<<endl;
+		//DBG cerr <<"from: find orig "<<from<<":"<<fromi<<", status="<<status<<endl;
 		status=nett->findOriginalFace(to,1,0,&toi);
-		DBG cerr <<"  to: find orig "<<to<<":"<<toi<<", status="<<status<<endl;
+		//DBG cerr <<"  to: find orig "<<to<<":"<<toi<<", status="<<status<<endl;
 
 		netf->resetTick(0);
 		recurseUnwrap(netf,fromi, nett,toi);
 
-		DBG //------------------------
-		DBG for (int c=0; c<nett->faces.n; c++) {
-		DBG 	if (nett->faces.e[c]->tag!=FACE_Actual) continue;
-		DBG 	for (int c2=0; c2<nett->faces.e[c]->edges.n; c2++) {
-		DBG 		if (nett->faces.e[c]->edges.e[c2]->tag==FACE_None) {
-		DBG 			cerr <<"AAAAAAARRG! edge points to null face:"<<endl;
-		DBG 			cerr <<"  net->face("<<c<<")->edge("<<c2<<")"<<endl;
-		DBG 			exit(1);
-		DBG 		}
-		DBG 	}
-		DBG }
-		DBG //------------------------
+		//DBG //------------------------
+		//DBG for (int c=0; c<nett->faces.n; c++) {
+		//DBG 	if (nett->faces.e[c]->tag!=FACE_Actual) continue;
+		//DBG 	for (int c2=0; c2<nett->faces.e[c]->edges.n; c2++) {
+		//DBG 		if (nett->faces.e[c]->edges.e[c2]->tag==FACE_None) {
+		//DBG 			cerr <<"AAAAAAARRG! edge points to null face:"<<endl;
+		//DBG 			cerr <<"  net->face("<<c<<")->edge("<<c2<<")"<<endl;
+		//DBG 			exit(1);
+		//DBG 		}
+		//DBG 	}
+		//DBG }
+		//DBG //------------------------
 
 		removeNet(netf);
 
@@ -2182,14 +2182,14 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		int c=-1;
 		if (currentnet) {
 			c=findCurrentPotential();
-			DBG cerr <<"MouseMove found potential: "<<c<<endl;
+			//DBG cerr <<"MouseMove found potential: "<<c<<endl;
 			if (c>=0) {
 				if (currentface!=-1) { 	currentface=-1; needtodraw=1; }
 				if (c!=currentpotential) {
 					currentpotential=c;
 					needtodraw=1;
 				}
-				DBG cerr <<"current potential original: "<<currentpotential<<endl;
+				//DBG cerr <<"current potential original: "<<currentpotential<<endl;
 
 				return 0;
 			} else {
@@ -2202,25 +2202,25 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 		c=findCurrentFace();
 
-		DBG cerr<<"MouseMove findCurrentFace original: "<<c;
-		DBG if (c>=0) {
-		DBG		cerr <<" facemode:"<<poly->faces.e[c]->cache->facemode<<endl;
-		DBG 	Net *net=findNet(poly->faces.e[c]->cache->facemode);
-		DBG 	int i=-1;
-		DBG 	if (net) {
-		DBG			cerr <<"net found "<<nets.findindex(net)<<"..."<<endl;
-		DBG			int status=net->findOriginalFace(c,1,0,&i); //it is assumed the face is actually there
-		DBG			cerr <<" links: status:"<<status<<" on neti:"<<i<<"  links:"<<net->actualLink(i,-1)<<"   ";
-		DBG		} else cerr <<"(not in a net) ";
-		DBG		cerr <<"net face: "<<i<<endl;
-		DBG } else cerr <<endl;
+		//DBG cerr<<"MouseMove findCurrentFace original: "<<c;
+		//DBG if (c>=0) {
+		//DBG		cerr <<" facemode:"<<poly->faces.e[c]->cache->facemode<<endl;
+		//DBG 	Net *net=findNet(poly->faces.e[c]->cache->facemode);
+		//DBG 	int i=-1;
+		//DBG 	if (net) {
+		//DBG			cerr <<"net found "<<nets.findindex(net)<<"..."<<endl;
+		//DBG			int status=net->findOriginalFace(c,1,0,&i); //it is assumed the face is actually there
+		//DBG			cerr <<" links: status:"<<status<<" on neti:"<<i<<"  links:"<<net->actualLink(i,-1)<<"   ";
+		//DBG		} else cerr <<"(not in a net) ";
+		//DBG		cerr <<"net face: "<<i<<endl;
+		//DBG } else cerr <<endl;
 
 		if (c!=currentface) {
 			needtodraw=1;
 			currentface=c;
 			if (currentface>=0) {
 				currentfacestatus=0;
-				//DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
+				////DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
 				if (poly->faces.e[currentface]->cache->facemode>0) {
 					 //face is in a net. If it is a leaf in currentnet, color it green, rather then red
 					Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
@@ -2228,7 +2228,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 						int i=-1;
 						net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
 
-						DBG cerr <<"find original neti:"<<i<<" actual links:"<<net->actualLink(i,-1)<<endl;
+						//DBG cerr <<"find original neti:"<<i<<" actual links:"<<net->actualLink(i,-1)<<endl;
 
 						if (net->actualLink(i,-1)==1) {
 							 //only touches 1 actual face
@@ -2270,19 +2270,19 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 	 //right button
 	if (current_action==ACTION_Unwrap && rbdown>=0 && (mode==MODE_Net || mode==MODE_Solid)) {
 		int c=findCurrentFace();
-		DBG cerr <<"rb move: "<<c<<endl;
+		//DBG cerr <<"rb move: "<<c<<endl;
 		if (c==rbdown) { currentface=rbdown; return 0; }
 
 		 //if c is attached to rbdown then we have a winner maybe
 		int cc;
 
-		//DBG cerr <<"faces attached to "<<rbdown<<": ";
+		////DBG cerr <<"faces attached to "<<rbdown<<": ";
 		for (cc=0; cc<poly->faces.e[rbdown]->pn; cc++) {
-			//DBG cerr<<poly->faces.e[rbdown]->f[cc]<<" ";
+			////DBG cerr<<poly->faces.e[rbdown]->f[cc]<<" ";
 
 			if (poly->faces.e[rbdown]->f[cc]==c) break;
 		}
-		//DBG cerr <<endl;
+		////DBG cerr <<endl;
 		if (cc==poly->faces.e[rbdown]->pn) { 
 			 //c is not attached to any edge of rbdown
 			if (currentface!=-1) needtodraw=1;
@@ -2292,13 +2292,13 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 			currentface=c;
 		}
 
-		DBG cerr<<" rb-unwrap from "<<rbdown<<" to: "<<currentface<<endl;
+		//DBG cerr<<" rb-unwrap from "<<rbdown<<" to: "<<currentface<<endl;
 		if (rbdown!=currentface && currentface>=0 && unwrapTo(rbdown,currentface)==0) {
 			rbdown=currentface;
 			currentface=-1;
 			needtodraw=1;
 		}
-		DBG cerr<<" ..rb-unwrap done"<<endl;
+		//DBG cerr<<" ..rb-unwrap done"<<endl;
 
 		return 0;
 	}
@@ -2406,7 +2406,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
  */
 int HedronWindow::installPolyhedron(const char *file)
 {
-	DBG cerr <<"...installPolyhedron("<<file<<")"<<endl;
+	//DBG cerr <<"...installPolyhedron("<<file<<")"<<endl;
 
 	char *error=NULL;
 	if (poly->dumpInFile(file,&error)) { //file not polyhedron
@@ -2437,7 +2437,7 @@ int HedronWindow::installPolyhedron(const char *file)
  */
 int HedronWindow::installImage(const char *file)
 {
-	DBG cerr <<"attempting to install image at "<<file<<endl;
+	//DBG cerr <<"attempting to install image at "<<file<<endl;
 
 	const char *error=NULL;
 	Imlib_Image image,
@@ -2489,10 +2489,10 @@ int HedronWindow::installImage(const char *file)
 	if (error) app->postmessage(e);
 	//else remapCache();
 
-	DBG cerr <<"\n"
-	DBG	 <<"Using sphere file:"<<spherefile<<endl
-	DBG	 <<" scaled width: "<<spheremap_width<<endl
-	DBG	 <<"       height: "<<spheremap_height<<endl;
+	//DBG cerr <<"\n"
+	//DBG	 <<"Using sphere file:"<<spherefile<<endl
+	//DBG	 <<" scaled width: "<<spheremap_width<<endl
+	//DBG	 <<"       height: "<<spheremap_height<<endl;
 
 	return error?1:0;
 }
@@ -2591,7 +2591,7 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		if (!s || !s->str || !*s->str) return 1;
 
 		if (!currentnet) { return 0; }
-		DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
+		//DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
 		char *error=NULL;
 		currentnet->rebuildLines();
 		int status=SphereToPoly(spherefile,
@@ -2610,7 +2610,7 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		else if (status!=0) newMessage("Unknown error encountered during rendering. The developers need to account for this!!!");
 		else newMessage(_("Rendered."));
 
-		DBG cerr <<"result of render call: "<<status<<endl;
+		//DBG cerr <<"result of render call: "<<status<<endl;
 		return 0;
 	}
 
@@ -2642,7 +2642,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		oldmode=mode;
 		mode=MODE_Help;
 		needtodraw=1;
-		DBG cerr <<"--switching to help mode"<<endl;
+		//DBG cerr <<"--switching to help mode"<<endl;
 		return 0;
 	}
 
@@ -2740,7 +2740,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 							file));
 		} else {
 			 //normal save
-			DBG cerr<<"Saving to "<<file<<endl;
+			//DBG cerr<<"Saving to "<<file<<endl;
 			if (Save(file)==0) textout(this,"...Saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
 			else textout(this,"...ERROR!!! Not saved",-1,0,2*app->defaultlaxfont->textheight(),LAX_LEFT|LAX_TOP);
 		}
@@ -2818,7 +2818,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 	} else if (ch=='c') { // change camera
 		current_camera++;
 		if (current_camera>=cameras.n) current_camera=0;
-		DBG cerr<<"----new camera: "<<current_camera<<endl;
+		//DBG cerr<<"----new camera: "<<current_camera<<endl;
 		//eyem=cameras.e[current_camera]->model;
 		needtodraw=1;
 		return 0;

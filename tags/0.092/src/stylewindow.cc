@@ -254,7 +254,7 @@ int GenericStyleDialog::Event(EventData *e,const char *mes)
 
 int GenericStyleDialog::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr <<"******************************************"<<endl;
+	////DBG cerr <<"******************************************"<<endl;
 	if (ch==LAX_Esc) app->destroywindow(this);
 	return 0;
 }

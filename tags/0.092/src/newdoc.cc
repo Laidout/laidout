@@ -528,7 +528,7 @@ const char *NewDocWindow::pagesDescription(int updatetoo)
 
 int NewDocWindow::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	////DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"save as")) {
 		 //comes after a file select dialog for document save as
@@ -585,7 +585,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
 		int i=s->info1;
-		DBG cerr <<"new paper size:"<<i<<endl;
+		////DBG cerr <<"new paper size:"<<i<<endl;
 		if (i<0 || i>=papersizes->n) return 0;
 		delete papertype;
 		papertype=(PaperStyle *)papersizes->e[i]->duplicate();
@@ -604,7 +604,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 	} else if (!strcmp(mes,"orientation")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 		int l=s->info1;
-		DBG cerr <<"New orientation:"<<l<<endl;
+		////DBG cerr <<"New orientation:"<<l<<endl;
 		if (l!=curorientation) {
 			char *txt=paperx->GetText(),
 				*txt2=papery->GetText();
@@ -804,7 +804,7 @@ int NewDocWindow::UseThisImposition(Imposition *newimp)
 //! Update imposition settings based on a changed imposition file
 void NewDocWindow::impositionFromFile(const char *file)
 {
-	DBG cerr<<"----------attempting to impositionFromFile()-------"<<endl;
+	////DBG cerr<<"----------attempting to impositionFromFile()-------"<<endl;
 
 	 //we load the off file here rather than sendNewDoc() 
 	 //to check to see if it is possible to do so... maybe not so important...
@@ -827,11 +827,11 @@ void NewDocWindow::impositionFromFile(const char *file)
 			}
 		}
 
-		DBG cerr<<"   installed polyhedron file..."<<endl;
+		////DBG cerr<<"   installed polyhedron file..."<<endl;
 		return;
 
 	} else {
-		DBG cerr <<"*** Failure to read polyhedron file: "<<(file?file:"")<<endl;
+		////DBG cerr <<"*** Failure to read polyhedron file: "<<(file?file:"")<<endl;
 		delete poly;
 	}
 
@@ -842,7 +842,7 @@ void NewDocWindow::impositionFromFile(const char *file)
 
 	if (impfromfile) impfromfile->GetLineEdit()->Valid(0);
 
-	DBG cerr<<"   impositionFromFile() FAILED..."<<endl;
+	////DBG cerr<<"   impositionFromFile() FAILED..."<<endl;
 }
 
 //! Create and fill a Document, and tell laidout to install the new document
@@ -858,7 +858,7 @@ void NewDocWindow::sendNewDoc()
 		}
 		if (c==laidout->impositionpool.n) imposition=new Singles();
 		else {
-			DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->name)<<endl;
+			////DBG cerr <<"****attempting to clone "<<(laidout->impositionpool.e[c]->name)<<endl;
 			imposition=laidout->impositionpool.e[c]->Create();
 		}
 	}
@@ -1068,7 +1068,7 @@ NewProjectWindow::~NewProjectWindow()
 
 int NewProjectWindow::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newprojmessage: "<<(mes?mes:"none")<<endl;
+	////DBG cerr <<"newprojmessage: "<<(mes?mes:"none")<<endl;
 
 	if (!strcmp(mes,"savedir")) {
 		 //new directory to save project in
