@@ -71,7 +71,7 @@ SpreadEditor:
    'c'    toggle where the page labels go
    'm'    toggle mark of current page
    'M'    reverse toggle mark of current page
-   't'    toggle drawing of thumbnails
+   'p'    toggle drawing of thumbnails
    'A'    toggle how to arrange the spreads
   ^'A'    force arranging the spreads using current arrange style
 
