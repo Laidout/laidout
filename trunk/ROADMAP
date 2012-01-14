@@ -5,25 +5,6 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.092
--------------
-(done) Debug enough to hopefully not be too embarrassing
-(done) Actually implement path exporting. Make that path icon mean something this time!
-(done) At bare minimum, path interface use should not cause a seg fault
-(done) Fix broken paper tiling interface
-(done) Ability to add custom printer marks
-(done) Fix multi-object selection move when crossing page boundaries
-(done) Gui for modifying Page Labels
-(done) Scribus import must support master pages
-(done) Scribus import/export should support PageRange <-> Section conversion on import
-(done) Units, especially Allow changing units in rulers
-(done) Add proper .desktop and application icons installation
-(done) Use ~/.config/laidout, instead of ~/.laidout
-(done) Implement wavefront obj file format in/out for polyhedra
-(done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)
-(done) from laxkit: clean up pop up menus which currently REALLY SUCK -> now deletes menus when clicking outside them
-
-
 VERSION 0.093
 -------------
        SpreadEditor: insert blanks, delete pages, the other right click menu options
@@ -48,6 +29,7 @@ VERSION 0.093
        Object and resource tags
        Clean up project load/save internals and dialogs
        Collect for out
+       Optimize pdf export to not duplicate large images, rescale to target dpi, and compress image data
        double click on group should change selection area to group contents?
        Tools should remember their settings
        Clean up patch controls
@@ -171,6 +153,25 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.092  --  released 30 December 2011!
+-------------
+(done) Debug enough to hopefully not be too embarrassing
+(done) Actually implement path exporting. Make that path icon mean something this time!
+(done) At bare minimum, path interface use should not cause a seg fault
+(done) Fix broken paper tiling interface
+(done) Ability to add custom printer marks
+(done) Fix multi-object selection move when crossing page boundaries
+(done) Gui for modifying Page Labels
+(done) Scribus import must support master pages
+(done) Scribus import/export should support PageRange <-> Section conversion on import
+(done) Units, especially Allow changing units in rulers
+(done) Add proper .desktop and application icons installation
+(done) Use ~/.config/laidout, instead of ~/.laidout
+(done) Implement wavefront obj file format in/out for polyhedra
+(done) from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs or menus are up (maybe done)
+(done) from laxkit: clean up pop up menus which currently REALLY SUCK -> now deletes menus when clicking outside them
+
 
 VERSION 0.091  --  released 13 November 2010!
 ------------
