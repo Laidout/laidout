@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
@@ -120,8 +120,8 @@ class Document : public ObjectContainer, public Style
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	virtual int Load(const char *file,char **error_ret);
-	virtual int Save(int includelimbos,int includewindows,char **error_ret);
+	virtual int Load(const char *file,ErrorLog &log);
+	virtual int Save(int includelimbos,int includewindows,ErrorLog &log);
 	
 	
 	 //object content

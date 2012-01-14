@@ -25,7 +25,7 @@ StyleDef *makeReimposeStyleDef();
 int ReImposeFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret);
+					 ErrorLog &log);
 
 
 #endif 

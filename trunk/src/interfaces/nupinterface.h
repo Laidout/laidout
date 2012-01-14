@@ -13,12 +13,14 @@
 //
 // Copyright (C) 2011 by Tom Lechner
 //
-#ifndef INTERFACES_PAGERANGE_H
-#define INTERFACES_PAGERANGE_H
+#ifndef INTERFACES_NUPINTERFACE_H
+#define INTERFACES_NUPINTERFACE_H
 
 #include <lax/interfaces/aninterface.h>
+#include <lax/refptrstack.h>
 
 #include "../laidout.h"
+#include "../interfaces/actionarea.h"
 
 #define NUP_None       0
 #define NUP_Grid       1
@@ -32,8 +34,9 @@
 class NUpInfo : public Laxkit::DoubleBBox
 {
   public:
+	char *name;
 	int direction; //lrtb, lrbt, rltb, rlbt, ...
-	int cellstyle; //whether allow variable sizes of cells, or each row/col same size
+	int flowtype; //whether allow variable sizes of cells, or each row/col same size, or flow as will fit
 	double rowcenter, colcenter; //how to center within rows and columns
 	int rows, cols; //number of rows and columns in one n-up block, -1==infinity, 0==as many as will flow in
 
@@ -54,22 +57,23 @@ class NUpInterface : public LaxInterfaces::anInterface
   protected:
 	Laxkit::ButtonDownInfo buttondown;
 
+	ActionArea *major, *minor;
+	ActionArea *majornum, *minornum;
+	ActionArea *okcontrol, *typecontrol;
+
 	NUpInfo *nupinfo;
+	int tempdir;
 	Laxkit::PtrStack<ActionArea> controls;
 
-	RefPtrStack<SomeData> objects;
-	SomeData *bounds;
+	Laxkit::RefPtrStack<LaxInterfaces::SomeData> objects;
 
 	int showdecs;
 	int firsttime;
 
-	DoubleBBox mainarrow,  minorarrow;
-	DoubleBBox mainnumber, minornumber;
-
 	virtual int scan(int x,int y);
 	virtual void createControls();
   public:
-	NUpInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
+	NUpInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
 	NUpInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~NUpInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
@@ -96,7 +100,7 @@ class NUpInterface : public LaxInterfaces::anInterface
 	virtual int Refresh();
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
-	virtual int UseThisDocument(Document *doc);
+	//virtual int UseThisDocument(Document *doc);
 };
 
 

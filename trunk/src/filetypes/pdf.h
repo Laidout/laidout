@@ -41,7 +41,7 @@ class PdfExportFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual StyleDef *GetStyleDef();
 
-	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker

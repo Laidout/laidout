@@ -40,7 +40,7 @@ class PptoutFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual StyleDef *GetStyleDef();
 	
-	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };
 
 
@@ -61,7 +61,7 @@ class PptinFilter : public ImportFilter
 	virtual StyleDef *GetStyleDef();
 	
 	virtual const char *FileType(const char *first100bytes);
-	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
+	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log);
 };
 
 

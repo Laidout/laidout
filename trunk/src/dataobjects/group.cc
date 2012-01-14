@@ -15,8 +15,8 @@
 //
 
 
-#include "laidout.h"
 #include "group.h"
+#include "laidout.h"
 #include "drawdata.h"
 #include <lax/strmanip.h>
 #include <lax/transformmath.h>

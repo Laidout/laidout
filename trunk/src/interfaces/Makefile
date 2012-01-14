@@ -14,6 +14,7 @@ DEBUGFLAGS= -g
 
 
 objs= \
+	actionarea.o \
 	pagerangeinterface.o \
 	paperinterface.o
 

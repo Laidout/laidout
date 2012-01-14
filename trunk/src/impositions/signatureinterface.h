@@ -20,37 +20,11 @@
 #include <lax/interfaces/aninterface.h>
 
 #include "../laidout.h"
+#include "../interfaces/actionarea.h"
 #include "signatures.h"
 
 
 class SignatureEditor;
-
-//------------------------------------- ActionArea ---------------------------
-class ActionArea : public Laxkit::DoubleBBox
-{
-  public:
-	char *tip;
-	char *text;
-	flatpoint *outline, offset, hotspot;
-	int npoints;
-	int visible; //1 for yes and filled, 2 for selectable, but not drawn,3 for outline only
-	int hidden; //skip checks for this one
-	unsigned long color;
-
-	int real; //use real coordinates, not screen coordinates
-	int action; //id for the action this overlay corresponds to
-	int category; //extra identifier
-	int type; //basic type this overlay is: handle (movable), slider, button, display only, pan, menu trigger
-	int PointIn(double x,double y);
-
-	ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
-			   int isreal,int isvisible,unsigned long ncolor,int ncategory);
-	virtual ~ActionArea();
-	virtual flatpoint *Points(flatpoint *pts, int n, int takethem);
-	virtual void FindBBox();
-	virtual flatpoint Position() { return offset+hotspot; }
-	virtual void Position(double x,double y,int which=3);
-};
 
 //------------------------------------- SignatureInterface --------------------------------------
 

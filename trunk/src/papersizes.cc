@@ -318,11 +318,11 @@ StyleDef *PaperStyle::makeStyleDef()
  * \todo if making a copy of a system known paper size, should restrict the w and h
  *   to the actual values for paper, or auto change the paper name for consistency
  */
-int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_ret, char **error_ret)
+int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
 {
 	if (!parameters) {
 		if (value_ret) *value_ret=NULL;
-		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		log.AddMessage(_("Easy for you to say!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -380,7 +380,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 
 
 	} catch (const char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		if (paper) { paper->dec_count(); paper=NULL; }
 		err=1;
 	}

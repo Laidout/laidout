@@ -391,12 +391,11 @@ int ImportFileDialog::send(int id)
 
 
 
-	char *error=NULL;
-	int err=import_document(config,&error);
+	ErrorLog log;
+	int err=import_document(config,log);
 
-	if (error) {
-		cerr << "ImportFile error return: "<<error<<endl;
-		delete[] error;
+	if (log.Total()) {
+		dumperrorlog("ImportFile error return:",log);
 	}
 
 	if (err>0) {

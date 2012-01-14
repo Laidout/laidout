@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 
 
@@ -101,9 +101,9 @@ const char *PsOutFilter::VersionName()
 }
 
 //! Save the document as a Postscript file.
-int PsOutFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int PsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	return psout(filename,context,error_ret);
+	return psout(filename,context,log);
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -141,9 +141,9 @@ const char *EpsOutFilter::VersionName()
 //! Save the document as an EPS file.
 /*!
  */
-int EpsOutFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int EpsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	return epsout(filename,context,error_ret);
+	return epsout(filename,context,log);
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -167,24 +167,6 @@ StyleDef *EpsOutFilter::GetStyleDef()
 	return styledef;
 }
 
-//////------------------------------------- EpsInFilter -----------------------------------
-///*! \class EpsInFilter 
-// * \brief EPS input filter.
-// *
-// * would have config to import as image or break apart into components
-// */
-//
-//
-//const char *EpsInFilter::FileType(const char *first100bytes)
-//{ ***
-//}
-//
-////! Import an EPS file.
-///*! If doc!=NULL, then import the pptout files to Document starting at page startpage.
-// */
-//int EpsInFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
-//{***
-//}
 
 
 

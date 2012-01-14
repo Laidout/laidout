@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010,2011 by Tom Lechner
 //
 #ifndef PODOFOIMPOSEPLAN_H
 #define PODOFOIMPOSEPLAN_H
@@ -39,7 +39,7 @@ class PodofooutFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual StyleDef *GetStyleDef();
 	
-	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };
 #endif
 

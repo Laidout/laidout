@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2009 by Tom Lechner
+// Copyright (C) 2007-2009,2012 by Tom Lechner
 //
 
 #include <lax/strmanip.h>
@@ -125,7 +125,7 @@ FileFilter::FileFilter()
 /*! \fn const char *ImportFilter::FileType(const char *first100bytes)
  * \brief Return the version of the filter's format that the file seems to be, or NULL if not recognized.
  */
-/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+/*! \fn int ImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
  * \brief The function that outputs the stuff.
  *
  * If file!=NULL, then output to that single file, and ignore the files in context.
@@ -134,8 +134,8 @@ FileFilter::FileFilter()
  * might be a DocumentExportConfig object, or perhaps a parameter list from the scripter.
  *
  * On complete success, return 0.
- * If there are non-fatal warnings they are appended to error_ret, and -1 is returned.
- * On failure, return 1, and append error messages to error_ret.
+ * If there are non-fatal warnings they are appended to log, and -1 is returned.
+ * On failure, return 1, and append error messages to log.
  */
 
 //! Return a new StyleDef object with default import filter options.
@@ -246,11 +246,11 @@ StyleDef *makeImportConfigDef()
  * It just fills what's given.
  */
 int createImportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, char **message_ret)
+					   Value **value_ret, ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -364,7 +364,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 
 
 	} catch (const char *str) {
-		if (message_ret) appendline(*message_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 	}
 	//if (error) delete[] error;
@@ -541,13 +541,13 @@ Style* ImportConfig::duplicate(Style*)
 //! Import a vector based file based on config.
 /*! Return 0 for success, greater than zero for fatal error, less than zero for success with warnings.
  */
-int import_document(ImportConfig *config,char **error_ret)
+int import_document(ImportConfig *config, ErrorLog &log)
 {
 	if (!config || !config->filename || !config->filter || !(config->doc || config->toobj)) {
-		if (error_ret) appendline(*error_ret,_("Bad import configuration"));
+		log.AddMessage(_("Bad import configuration"),ERROR_Fail);
 		return 1;
 	}
-	return config->filter->In(config->filename,config,error_ret);
+	return config->filter->In(config->filename,config,log);
 }
 
 
@@ -563,15 +563,15 @@ int import_document(ImportConfig *config,char **error_ret)
  * \todo Ideally, this function should return some sort of set of objects that cannot be transfered
  *   in the given format, without losing information, maybe with hints for corrections
  */
-/*! \fn int ExportFilter::Out(const char *file, Laxkit::anObject *context, char **error_ret)
+/*! \fn int ExportFilter::Out(const char *file, Laxkit::anObject *context, ErrorLog &log)
  * \brief The function that outputs the stuff.
  *
  * context must be a configuration object that the filter understands. For instance, this
  * might be a DocumentExportConfig object.
  *
  * On complete success, return 0.
- * If there are non-fatal warnings they are appended to error_ret, and -1 is returned.
- * On failure, return 1, and append error messages to error_ret.
+ * If there are non-fatal warnings they are appended to log, and -1 is returned.
+ * On failure, return 1, and append error messages to log.
  *
  * You should not call Out directly, unless you are sure to set and perform all the things
  * that export_document() does. Normally, you should use that function instead.
@@ -697,11 +697,11 @@ StyleDef *makeExportConfigDef()
  * "group" parameter.
  */
 int createExportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, char **message_ret)
+					   Value **value_ret, ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -818,7 +818,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		}
 
 	} catch (const char *str) {
-		if (message_ret) appendline(*message_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 	}
 	//if (error) delete[] error;
@@ -1023,7 +1023,7 @@ Style* DocumentExportConfig::duplicate(Style*)
 
 //! Export a document from a file or a live Document.
 /*! Return 0 for export successful. -1 is returned If there are non-fatal errors, in which case
- * the warning messages get appended to error_ret. If there are fatal errors, then error_ret
+ * the warning messages get appended to log. If there are fatal errors, then log
  * gets appended with a message, and 1 is returned.
  *
  * If the filter cannot support multiple file output, but there are multiple files to be output,
@@ -1038,13 +1038,13 @@ Style* DocumentExportConfig::duplicate(Style*)
  *
  * \todo perhaps command facility should be here... currently it sits in ExportDialog.
  */
-int export_document(DocumentExportConfig *config,char **error_ret)
+int export_document(DocumentExportConfig *config, ErrorLog &log)
 {
 	if (!config || !config->filter) {
-		if (error_ret) appendline(*error_ret,_("Missing export filter!"));
+		log.AddMessage(_("Missing export filter!"),ERROR_Fail);
 		return 1;
 	} else if (!(config->doc || config->limbo)) {
-		if (error_ret) appendline(*error_ret,_("Missing export source!"));
+		log.AddMessage(_("Missing export source!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -1086,7 +1086,7 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 
 	int n=(config->end-config->start+1)*papergroup->papers.n;
 	if (n>1 && config->target==0 && !(config->filter->flags&FILTER_MULTIPAGE)) {
-		if (error_ret) appendline(*error_ret,_("Filter cannot export more than one page to a single file."));
+		log.AddMessage(_("Filter cannot export more than one page to a single file."),ERROR_Fail);
 		return 1;
 	}
 
@@ -1124,7 +1124,7 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 				}
 				config->papergroup=pg;
 
-				err=config->filter->Out(filename,config,error_ret);
+				err=config->filter->Out(filename,config,log);
 				pg->dec_count();
 				if (err>0) { left=papergroup->papers.n-p; break; }
 			}
@@ -1135,20 +1135,19 @@ int export_document(DocumentExportConfig *config,char **error_ret)
 		config->end=end;
 		delete[] filebase;
 
-		if (error_ret && left) {
+		if (left) {
 			char scratch[strlen(_("Export failed at file %d out of %d"))+20];
 			sprintf(scratch,_("Export failed at file %d out of %d"),n-left,n);
-			appendline(*error_ret,scratch);
+			log.AddMessage(scratch,ERROR_Fail);
 		}
-	} else err=config->filter->Out(NULL,config,error_ret);
+	} else err=config->filter->Out(NULL,config,log);
 	
 	DBG cerr << "export_document end."<<endl;
 
 	if (err>0) {
-		if (error_ret) appendline(*error_ret,_("Export failed."));
+		log.AddMessage(_("Export failed."),ERROR_Fail);
 		return 1;
 	} 
-	//if (error_ret) appendline(*error_ret,_("Exported."));
 	return 0;
 }
 

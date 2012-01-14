@@ -640,23 +640,17 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 		//**** this is really hacky if doc already open...
 		int nw;
 		Document *d;
-		char *error=NULL;
+		ErrorLog log;
 		for (int c=0; c<s->n; c++) {
 			if (!s->strs[c]) continue;
 
 			nw=laidout->numTopWindows();
 			d=NULL;
-			if (laidout->Load(s->strs[c],&error)==0) d=laidout->curdoc;
+			if (laidout->Load(s->strs[c],log)==0) d=laidout->curdoc;
 			if (!d) {
-				if (error) {
-					DBG cerr <<"*** imp pop up error message headwindow open document"<<endl;
-					delete[] error; error=NULL;
-				}
+				 //load fail
 			} else {
-				if (error) {
-					DBG cerr <<"*** imp pop up warning message headwindow open document"<<endl;
-					delete[] error; error=NULL;
-				}
+				 //load succeeded, maybe errors
 				if (nw==laidout->numTopWindows()) {
 					app->addwindow(newHeadWindow(d));
 				}

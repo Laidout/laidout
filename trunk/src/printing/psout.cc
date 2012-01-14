@@ -290,8 +290,6 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * Does not open or close f. This sets up the ctm as accessible through psCTM(),
  * and flushes the ctm stack.
  *
- * error_ret is appended to if possible.
- *
  * Return 0 for no errors, nonzero for errors.
  * 
  * \todo *** this does not currently handle pages that bleed their contents
@@ -306,7 +304,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo DocumentMedia comment must be enhanced. Types of media are according to each paper
  *   in papergroup
  */
-int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
+int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -321,7 +319,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 
 	 //we must have something to export...
 	if (!doc && !limbo) {
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -333,14 +331,14 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".ps");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,error_ret);//appends any error string
+	f=open_file_for_writing(file,0,&log);
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
@@ -625,8 +623,6 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
  * This sets up the ctm as accessible through psCTM(),
  * and flushes the ctm stack.
  *
- * error_ret is appended to if possible.
- *
  * Return 0 for no errors, nonzero for error. 
  * 
  * \todo *** this does not currently handle pages that bleed their contents
@@ -636,7 +632,7 @@ int psout(const char *filename, Laxkit::anObject *context, char **error_ret)
  *   things, thus reduce ps file size substantially..
  * \todo *** bounding box should more accurately reflect the drawn extent.. just does paper bounds here
  */
-int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
+int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -663,7 +659,7 @@ int epsout(const char *filename, Laxkit::anObject *context, char **error_ret)
 	Page *page;
 	FILE *f;
 
-	f=open_file_for_writing(filename,0,error_ret);//appends an error string
+	f=open_file_for_writing(filename,0,&log);
 	if (!f) return 1;
 	
 	setlocale(LC_ALL,"C");

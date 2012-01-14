@@ -17,7 +17,7 @@
 #define ERRORLOG_H
 
 
-#include "styles.h"
+#include "fieldplace.h"
 #include <lax/lists.h>
 
 //---------------------------------- ErrorLog -----------------------------
@@ -67,12 +67,14 @@ class ErrorLog
 	virtual const char *Message(int i,int *severity,int *info);
 	virtual int Total() { return messages.n; }
 	virtual ErrorLogNode *Message(int i);
+	virtual const char *MessageStr(int i);
 	virtual int Warnings();
 	virtual int Errors();
 	virtual int Oks();
+	virtual void Clear();
 };
 
-int dumperrorlog(const char *mes,ErrorLog &log);
+void dumperrorlog(const char *mes,ErrorLog &log);
 
 
 #endif

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2009 by Tom Lechner
+// Copyright (C) 2007-2009,2012 by Tom Lechner
 //
 #ifndef FILEFILTERS_H
 #define FILEFILTERS_H
@@ -21,6 +21,7 @@
 #include <lax/dump.h>
 #include "../document.h"
 #include "../styles.h"
+#include "../errorlog.h"
 
 
 class Document;
@@ -58,7 +59,7 @@ class ImportFilter : public FileFilter
  public:
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
-	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
+	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log) = 0;
 	virtual StyleDef *makeStyleDef();
 };
 
@@ -68,7 +69,7 @@ class ExportFilter : public FileFilter
 {
  public:
 	virtual const char *whattype() { return "FileOutputFilter"; }
-	virtual int Out(const char *file, Laxkit::anObject *context, char **error_ret) = 0;
+	virtual int Out(const char *file, Laxkit::anObject *context,  ErrorLog &log) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
 	virtual StyleDef *makeStyleDef();
 };
@@ -83,7 +84,7 @@ enum CollectForOutValues {
 
 StyleDef *makeExportConfigDef();
 int createExportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, char **message_ret);
+					   Value **value_ret, ErrorLog &log);
 
 class DocumentExportConfig : public Style
 {
@@ -112,12 +113,12 @@ class DocumentExportConfig : public Style
 
 //------------------------------- export_document() ----------------------------------
 
-int export_document(DocumentExportConfig *config,char **error_ret);
+int export_document(DocumentExportConfig *config, ErrorLog &log);
 
 //------------------------------ ImportConfig ----------------------------
 StyleDef *makeImportConfigDef();
 int createImportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, char **message_ret);
+					   Value **value_ret, ErrorLog &log);
 
 class ImportConfig : public Style
 {
@@ -145,7 +146,7 @@ class ImportConfig : public Style
 
 //------------------------------- import_document() ----------------------------------
 
-int import_document(ImportConfig *config,char **error_ret);
+int import_document(ImportConfig *config, ErrorLog &log);
 
 
 #endif

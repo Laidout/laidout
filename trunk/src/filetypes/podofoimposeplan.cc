@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010-2011 by Tom Lechner
 //
 
 
@@ -117,11 +117,9 @@ static void podofodumppage(FILE *f,const double *mm,int source,int target)
 /*! No actual objects are exported, only page positions. podofoimpose acts on external pdf files, and
  * arranges according to the PLAN.
  *
- * error_ret is appended to if possible.
- *    
  * \todo Need to implement something for printer marks
  */
-int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -138,7 +136,7 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -149,17 +147,17 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".plan");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,error_ret);//appends any error string
+	f=open_file_for_writing(file,0,&log);
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
-		if (error_ret) appendline(*error_ret,_("Cannot open file for writing."));
+		log.AddMessage(_("Cannot open file for writing."),ERROR_Fail);
 		delete[] file;
 		return 3;
 	}

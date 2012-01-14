@@ -128,7 +128,7 @@ Style *newImageExportConfig(StyleDef*)
 
 /*! \todo *** this needs a going over for safety's sake!! track down ref counting
  */
-int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,char **error_ret)
+int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,ErrorLog &log)
 {
 	ImageExportConfig *d=new ImageExportConfig;
 
@@ -139,7 +139,7 @@ int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_r
 	vv=new ObjectValue(d);
 	pp->push("exportconfig",vv);
 
-	int status=createExportConfig(context,pp,&v,error_ret);
+	int status=createExportConfig(context,pp,&v,log);
 	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<ImageExportConfig *>(((ObjectValue *)v)->object);
 
 	if (d) for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -202,7 +202,7 @@ StyleDef *ImageExportFilter::GetStyleDef()
  * \todo output file names messed up when papergroup has more than one paper, plus starting number
  *   not accurate...
  */
-int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	//ImageExportConfig *iout=dynamic_cast<ImageExportConfig *>(context);
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
@@ -218,13 +218,13 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	 //we must have something to export...
 	if (!doc && !out->limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 	
 	const char *gspath=laidout->binary("gs");
 	if (!gspath) {
-		if (error_ret) appendline(*error_ret,_("Currently need Ghostscript to output to image files."));
+		log.AddMessage(_("Currently need Ghostscript to output to image files."),ERROR_Fail);
 		return 2;
 	} 
 
@@ -232,7 +232,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	if (!filename) {
 		if (!doc || isblank(doc->saveas)) {
 			DBG cerr <<"**** cannot save, doc->saveas is null."<<endl;
-			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 3;
 		}
 		filetemplate=newstr(doc->saveas);
@@ -245,12 +245,12 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
 	FILE *f=fopen(tmp,"w");
 	if (!f) {
-		if (error_ret) appendline(*error_ret,_("Error exporting to image."));
+		log.AddMessage(_("Error exporting to image."),ERROR_Fail);
 		return 4;
 	}
 	fclose(f);
-	if (psout(tmp,context,error_ret)) {
-		if (error_ret) appendline(*error_ret,_("Error exporting to image."));
+	if (psout(tmp,context,log)) {
+		log.AddMessage(_("Error exporting to image."),ERROR_Fail);
 		return 5;
 	}
 
@@ -316,7 +316,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, char
 	unlink(tmp);
 
 	if (error) {
-		if (error_ret) appendline(*error_ret,error);
+		log.AddMessage(error,ERROR_Fail);
 		delete[] error;
 		return -3;
 	}

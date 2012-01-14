@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007 by Tom Lechner
+// Copyright (C) 2004-2009,2012 by Tom Lechner
 //
 #ifndef FILETYPES_EPS_H
 #define FILETYPES_EPS_H
@@ -25,7 +25,7 @@
 
 void installPostscriptFilters();
 
-//------------------------------------- PptoutFilter -----------------------------------
+//------------------------------------- EpsOutFilter -----------------------------------
 class EpsOutFilter : public ExportFilter
 {
  protected:
@@ -40,7 +40,7 @@ class EpsOutFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual StyleDef *GetStyleDef();
 	
-	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };
 
 
@@ -60,26 +60,10 @@ class PsOutFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual StyleDef *GetStyleDef();
 	
-	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };
 
 
-////------------------------------------- PptinFilter -----------------------------------
-//class EpsInFilter : public ImportFilter
-//{
-// public:
-//	virtual const char *Author() { return "Laidout"; }
-//	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
-//	
-//	virtual const char *Format() { return "EPS"; }
-//	virtual const char *DefaultExtension() { return "eps"; }
-//	virtual const char *Version() { return "3.0"; }
-//	virtual const char *VersionName();
-//	virtual const char *FilterClass() { return "document"; }
-//	
-//	virtual const char *FileType(const char *first100bytes);
-//	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
-//};
 
 
 

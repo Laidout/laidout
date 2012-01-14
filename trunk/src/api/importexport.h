@@ -17,12 +17,13 @@
 #define IMPORTEXPORTFUNC_H
 
 #include "../styles.h"
+#include "../errorlog.h"
 
 StyleDef *makeImportStyleDef();
 int ImportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret);
+					 ErrorLog &log);
 
 
 
@@ -30,7 +31,7 @@ StyleDef *makeExportStyleDef();
 int ExportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret);
+					 ErrorLog &log);
 
 
 #endif 

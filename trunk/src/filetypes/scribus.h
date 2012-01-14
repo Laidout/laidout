@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007,2010 by Tom Lechner
+// Copyright (C) 2007,2010-2012 by Tom Lechner
 //
 #ifndef FILETYPES_SCRIBUS_H
 #define FILETYPES_SCRIBUS_H
@@ -46,7 +46,7 @@ class ScribusExportFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual StyleDef *GetStyleDef();
 
-	virtual int Out(const char *filename, Laxkit::anObject *context, char **error_ret);
+	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker
@@ -72,7 +72,7 @@ class ScribusImportFilter : public ImportFilter
 	
 	
 	virtual const char *FileType(const char *first100bytes);
-	virtual int In(const char *file, Laxkit::anObject *context, char **error_ret);
+	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log);
 };
 
 #endif

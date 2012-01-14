@@ -96,11 +96,11 @@ StyleDef *makeNewDocumentStyleDef()
 int NewDocumentFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret)
+					 ErrorLog &log)
 {
 	if (!parameters) {
 		if (value_ret) *value_ret=NULL;
-		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		log.AddMessage(_("Easy for you to say!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -204,12 +204,12 @@ int NewDocumentFunction(ValueHash *context,
 		paper->dec_count();
 
 	} catch (const char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		if (imp) { imp->dec_count(); imp=NULL; }
 		if (paper) { paper->dec_count(); paper=NULL; }
 		err=1;
 	} catch (char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		delete[] str;
 		if (imp) { imp->dec_count(); imp=NULL; }
 		if (paper) { paper->dec_count(); paper=NULL; }
@@ -225,10 +225,8 @@ int NewDocumentFunction(ValueHash *context,
 	if (doc) doc->dec_count();
 
 	//laidout->NewDocument(tmp)
-	if (error_ret) {
-		if (err==0) appendline(*error_ret,_("Document added."));
-		else appendline(*error_ret,_("Error adding document. Not added"));
-	}
+	if (err==0) log.AddMessage(_("Document added."),ERROR_Ok);
+	else log.AddMessage(_("Error adding document. Not added"),ERROR_Fail);
 
 	return err;
 }
@@ -275,16 +273,15 @@ StyleDef *makeOpenStyleDef()
 int OpenFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret)
+					 ErrorLog &log)
 {
 	if (!parameters) {
 		if (value_ret) *value_ret=NULL;
-		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		log.AddMessage(_("Easy for you to say!"),ERROR_Fail);
 		return 1;
 	}
 
 	int astemplate=parameters->findInt("astemplate");
-	char *error=NULL;
 	int err=0;
 
 	char *filename=NULL;
@@ -320,16 +317,14 @@ int OpenFunction(ValueHash *context,
 		int n=laidout->numTopWindows();
 		Document *doc=NULL;
 		int loadstatus=0;
-		if (astemplate) doc=laidout->LoadTemplate(filename,&error);
-		else loadstatus=laidout->Load(filename,&error);
+		if (astemplate) doc=laidout->LoadTemplate(filename,log);
+		else loadstatus=laidout->Load(filename,log);
 		if (loadstatus>=0 && !doc) {
 			 //on a successful load, laidout->curdoc is the document just loaded.
 			doc=laidout->curdoc;
 		}
 		if (!doc) {
-			prependstr(error,_("Errors loading:\n"));
-			appendstr(error,_("Not loaded."));
-			throw error;
+			throw _("Errors loading. Not loaded.");
 		}
 
 		 // create new window only if LoadDocument() didn't create new windows
@@ -339,25 +334,21 @@ int OpenFunction(ValueHash *context,
 			Laxkit::anXWindow *win=newHeadWindow(doc,"ViewWindow");
 			if (win) laidout->addwindow(win);
 		}
-		if (!error) {
-			if (error_ret) appendline(*error_ret,_("Opened."));
+		if (!log.Warnings()) {
+			log.AddMessage(_("Opened."),ERROR_Ok);
 		} else {
-			prependstr(error,_("Warnings encountered while loading:\n"));
-			appendstr(error,_("Loaded anyway."));
-			if (error_ret) appendline(*error_ret,error);
-			delete[] error;
+			log.AddMessage(_("Warnings encountered while loading. Loaded anyway."),ERROR_Warning);
 			err=-1;
 		}
 
 	} catch (const char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 	} catch (char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		delete[] str;
 		err=1;
 	}
-	if (error) delete[] error;
 
 	if (filename) delete[] filename;
 
