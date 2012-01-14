@@ -79,11 +79,11 @@ StyleDef *makeImportStyleDef()
 int ImportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret)
+					 ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		log.AddMessage(_("Easy for you to say!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -149,22 +149,19 @@ int ImportFunction(ValueHash *context,
 		StyleDef *def=filter->GetStyleDef();
 		ImportConfig *config=NULL;
 		Value *value=NULL;
-		char *error=NULL;
 
-		if (def->stylefunc) err=(def->stylefunc)(context,parameters,&value,&error);
-		if (err!=0 && error && error_ret) appendline(*error_ret,error);
+		if (def->stylefunc) err=(def->stylefunc)(context,parameters,&value,log);
 		if (err==0 && value->type()==VALUE_Object) config=dynamic_cast<ImportConfig*>(((ObjectValue*)value)->object);
 
 		 //run the filter
-		if (config) err=filter->In(filename,config,error_ret);
+		if (config) err=filter->In(filename,config,log);
 		if (value) value->dec_count();
-		if (error) delete[] error;
 
 	} catch (const char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 //	} catch (char *str) {
-//		if (error_ret) appendline(*error_ret,str);
+//		log.AddMessage(str,ERROR_Fail);
 //		delete[] str;
 //		err=1;
 	}
@@ -242,11 +239,11 @@ StyleDef *makeExportStyleDef()
 int ExportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret)
+					 ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (error_ret) appendline(*error_ret,_("Easy for you to say!"));
+		log.AddMessage(_("Easy for you to say!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -320,10 +317,10 @@ int ExportFunction(ValueHash *context,
 			if (config->doc) config->doc->inc_count();
 		}
 
-		err=export_document(config,error_ret);
+		err=export_document(config,log);
 
 	} catch (const char *str) {
-		if (error_ret) appendline(*error_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 //	} catch (char *str) {
 //		if (error_ret) appendline(*error_ret,str);

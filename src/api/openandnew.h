@@ -22,7 +22,7 @@ StyleDef *makeNewDocumentStyleDef();
 int NewDocumentFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret);
+					 ErrorLog &log);
 
 
 
@@ -30,7 +30,7 @@ StyleDef *makeOpenStyleDef();
 int OpenFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret);
+					 ErrorLog &log);
 
 
 #endif 

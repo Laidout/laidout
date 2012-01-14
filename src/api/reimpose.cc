@@ -97,15 +97,13 @@ StyleDef *makeReimposeStyleDef()
  * parameters MUST have the exact order of available parameters as specified in the
  * StyleDef for this function. This is normally done in Calculator::parseParameters().
  *
- * error_ret is appended to if error_ret!=NULL.
- *
  * \todo *** this is major hack stage, needs to be automated more, with automatic parsing
  *    based on StyleDef objects
  */
 int ReImposeFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 char **error_ret)
+					 ErrorLog &log)
 {
 	 //grab document from context, and call doc->reimpose() using parameters from the styledef;
 	int scalepages=1, createnew=0;
@@ -233,7 +231,7 @@ int ReImposeFunction(ValueHash *context,
 
 
 	} catch (const char *error) {
-		if (error_ret) appendline(*error_ret,error);
+		log.AddMessage(error,ERROR_Fail);
 		if (value_ret) *value_ret=NULL;
 		return 1;
 	}

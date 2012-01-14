@@ -210,13 +210,13 @@ PdfPageInfo::~PdfPageInfo()
 static void pdfColorPatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount,
 				  Attribute &resources, ColorPatchData *g);
 static void pdfImage(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-					 LaxInterfaces::ImageData *img, char *&error_ret,int &warning);
+					 LaxInterfaces::ImageData *img, ErrorLog &log,int &warning);
 static void pdfImagePatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-					 LaxInterfaces::ImagePatchData *img, char *&error_ret,int &warning);
+					 LaxInterfaces::ImagePatchData *img, ErrorLog &log,int &warning);
 static void pdfGradient(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-						LaxInterfaces::GradientData *g, char *&error_ret,int &warning);
+						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning);
 static void pdfPaths(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-						LaxInterfaces::PathsData *g, char *&error_ret,int &warning);
+						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning);
 
 
 //-------------------------------- pdfdumpobj
@@ -239,7 +239,7 @@ void pdfdumpobj(FILE *f,
 				int &objectcount,
 				Attribute &resources,
 				LaxInterfaces::SomeData *object,
-				char *&error_ret,
+				ErrorLog &log,
 				int &warning)
 {
 	if (!obj) return;
@@ -256,29 +256,29 @@ void pdfdumpobj(FILE *f,
 	if (!strcmp(object->whattype(),"Group")) {
 		Group *g=dynamic_cast<Group *>(object);
 		for (int c=0; c<g->n(); c++) 
-			pdfdumpobj(f,obj,stream,objectcount,resources,g->e(c),error_ret,warning);
+			pdfdumpobj(f,obj,stream,objectcount,resources,g->e(c),log,warning);
 
 	} else if (!strcmp(object->whattype(),"PathsData")) {
 		pdfPaths(f,obj,stream,objectcount,resources,
-				dynamic_cast<PathsData *>(object), error_ret,warning);
+				dynamic_cast<PathsData *>(object), log,warning);
 
 	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
 		pdfImagePatch(f,obj,stream,objectcount,resources,
-				dynamic_cast<ImagePatchData *>(object), error_ret,warning);
+				dynamic_cast<ImagePatchData *>(object), log,warning);
 
 	} else if (!strcmp(object->whattype(),"ImageData")) {
-		pdfImage(f,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), error_ret,warning);
+		pdfImage(f,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning);
 
 	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
 		pdfColorPatch(f,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object));
 
 	} else if (!strcmp(object->whattype(),"GradientData")) {
-		pdfGradient(f,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), error_ret,warning);
+		pdfGradient(f,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning);
 
 	} else {
 		setlocale(LC_ALL,"");
 		sprintf(scratch,_("Warning: Cannot export %s to Pdf"),object->whattype());
-		appendline(error_ret,scratch);
+		log.AddMessage(scratch,ERROR_Fail);
 		setlocale(LC_ALL,"C");
 		warning++;
 
@@ -380,10 +380,8 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
  *
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
- *
- * error_ret is appended to if possible.
  */
-int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -399,7 +397,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 	
@@ -410,14 +408,14 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (!doc || isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) appendstr(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".ps");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,error_ret);//appends any error string
+	f=open_file_for_writing(file,0,&log);
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
@@ -539,19 +537,19 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 			
 			 //write out limbo object if any
 			if (limbo && limbo->n()) {
-				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,limbo,*error_ret,warning);
+				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,limbo,log,warning);
 			}
 
 			 //write out any papergroup objects
 			if (papergroup->objs.n()) {
-				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,&papergroup->objs,*error_ret,warning);
+				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning);
 			}
 
 			if (spread) {
 				 // print out printer marks
 				 // *** later this will be more like pdf printer mark annotations
 				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
-					pdfdumpobj(f,obj,stream,objcount,pageobj->resources,spread->marks,*error_ret,warning);
+					pdfdumpobj(f,obj,stream,objcount,pageobj->resources,spread->marks,log,warning);
 				}
 				
 				 // for each paper in paper layout..
@@ -579,7 +577,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, char *
 						
 					 // for each layer on the page..
 					for (l=0; l<page->layers.n(); l++) {
-						pdfdumpobj(f,obj,stream,objcount,pageobj->resources,page->layers.e(l),*error_ret,warning);
+						pdfdumpobj(f,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning);
 					}
 
 					appendstr(stream,"Q\n"); //pop ctm
@@ -1082,7 +1080,7 @@ static void pdfImage(FILE *f,
 					 int &objectcount,
 					 Attribute &resources,
 					 LaxInterfaces::ImageData *img,
-					 char *&error_ret,int &warning)
+					 ErrorLog &log,int &warning)
 {
 	 // the image gets put in a postscript box with sides 1x1, and the matrix
 	 // in the image is ??? so must set
@@ -1221,7 +1219,7 @@ static void pdfImagePatch(FILE *f,
 						  int &objectcount,
 						  Attribute &resources,
 						  LaxInterfaces::ImagePatchData *i,
-						  char *&error_ret,int &warning)
+						  ErrorLog &log,int &warning)
 {
 	 // make an ImageData covering the bounding box
 
@@ -1281,7 +1279,7 @@ static void pdfImagePatch(FILE *f,
 				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
 	appendstr(stream,scratch);
 	
-	pdfImage(f,obj,stream,objectcount,resources,&img, error_ret,warning);
+	pdfImage(f,obj,stream,objectcount,resources,&img, log,warning);
 
 	 // pop axes
 	appendstr(stream,"Q\n");
@@ -1297,7 +1295,7 @@ static void pdfGradient(FILE *f,
 						int &objectcount,
 						Attribute &resources,
 						LaxInterfaces::GradientData *g,
-						char *&error_ret,int &warning)
+						ErrorLog &log,int &warning)
 {
 	if (!g) return;
 
@@ -1439,7 +1437,7 @@ static void pdfPaths(FILE *f,
 					 int &objectcount,
 					 Attribute &resources,
 					 LaxInterfaces::PathsData *pdata,
-					 char *&error_ret,int &warning)
+					 ErrorLog &log,int &warning)
 {
 	if (!pdata) return;
 

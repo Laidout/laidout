@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007,2010-2011 by Tom Lechner
+// Copyright (C) 2007,2010-2012 by Tom Lechner
 //
 
 
@@ -111,10 +111,9 @@ int addScribusDocument(const char *file, Document *existingdoc)
 	ImportConfig config(file,300, 0,-1, 0,-1,-1, newdoc,NULL);
 	config.keepmystery=2;
 	config.filter=&filter;
-	char *error=NULL;
-	filter.In(file,&config,&error);
+	ErrorLog log;
+	filter.In(file,&config,log);
 
-	if (error) delete[] error;
 	newdoc->dec_count();
 
 	return 0;
@@ -125,9 +124,8 @@ int exportImposedScribus(Document *doc,const char *imposeout)
 	ScribusExportFilter filter;
 	DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,doc->imposition->papergroup);
 	config.filter=&filter;
-	char *error=NULL;
-	int err=export_document(&config,&error);
-	if (error) delete[] error;
+	ErrorLog log;
+	int err=export_document(&config,log);
 	return err;
 }
 
@@ -183,7 +181,7 @@ PageObject::~PageObject()
 }
 
 
-static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,char **error_ret,int &warning);
+static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,ErrorLog &log,int &warning);
 static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &palette, SomeData *obj);
 static int findobj(PtrStack<PageObject> &pageobjects, int nativeid, int what);
 static int findobjnumber(Attribute *att, const char *what);
@@ -203,11 +201,11 @@ Style *newScribusExportConfig(StyleDef*)
 }
 
 //! For now, just returns createExportConfig(), with filter forced to Scribus.
-int createScribusExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,char **error_ret)
+int createScribusExportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,ErrorLog &log)
 {
 	DocumentExportConfig *d=NULL;
 	Value *v=NULL;
-	int status=createExportConfig(context,parameters,&v,error_ret);
+	int status=createExportConfig(context,parameters,&v,log);
 	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<DocumentExportConfig *>(((ObjectValue *)v)->object);
 
 	if (d) for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -235,11 +233,11 @@ Style *newScribusImportConfig(StyleDef*)
 }
 
 //! For now, just returns createImportConfig(), with filter forced to Scribus.
-int createScribusImportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,char **error_ret)
+int createScribusImportConfig(ValueHash *context,ValueHash *parameters,Value **v_ret,ErrorLog &log)
 {
 	ImportConfig *d=NULL;
 	Value *v=NULL;
-	int status=createImportConfig(context,parameters,&v,error_ret);
+	int status=createImportConfig(context,parameters,&v,log);
 	if (status==0 && v && v->type()==VALUE_Object) d=dynamic_cast<ImportConfig *>(((ObjectValue *)v)->object);
 
 	if (d) for (int c=0; c<laidout->importfilters.n; c++) {
@@ -330,9 +328,7 @@ static int countGroups(Group *g)
 
 
 //! Export the document as a Scribus file.
-/*! error_ret is appended to if possible.
- */
-int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DBG cerr <<"-----Scribus export start-------"<<endl;
 
@@ -350,7 +346,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -365,14 +361,14 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".sla");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,error_ret);//appends any error string
+	f=open_file_for_writing(file,0,&log);
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
@@ -868,17 +864,17 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 					  "   />\n", plandscape);
 
 			if (limbo && limbo->n()) {
-				scribusdumpobj(f,curobj,pageobjects,NULL,limbo,error_ret,warning);
+				scribusdumpobj(f,curobj,pageobjects,NULL,limbo,log,warning);
 			}
 
 			if (papergroup->objs.n()) {
-				scribusdumpobj(f,curobj,pageobjects,NULL,&papergroup->objs,error_ret,warning);
+				scribusdumpobj(f,curobj,pageobjects,NULL,&papergroup->objs,log,warning);
 			}
 
 
 			if (spread) {
 				if (spread->marks) {
-					scribusdumpobj(f,curobj,pageobjects,NULL,spread->marks,error_ret,warning);
+					scribusdumpobj(f,curobj,pageobjects,NULL,spread->marks,log,warning);
 				}
 
 				 // for each page in spread layout..
@@ -894,7 +890,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ch
 						 // for each object in layer
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
-							scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c3),error_ret,warning);
+							scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c3),log,warning);
 						}
 					}
 					psPopCtm();
@@ -1137,7 +1133,7 @@ static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
  *   rasterized, and a new dir with all relevant files is created.
  */
 static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects,double *mm,SomeData *obj,
-							char **error_ret,int &warning)
+							ErrorLog &log,int &warning)
 {
 	//possibly set: ANNAME NUMGROUP GROUPS NUMPO POCOOR PTYPE ROT WIDTH HEIGHT XPOS YPOS
 	//	gradients: GRTYP GRSTARTX GRENDX GRSTARTY GRENDY
@@ -1220,7 +1216,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		ongroup++;
 		groups.push(ongroup);
 		for (int c=0; c<g->n(); c++) 
-			scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c),error_ret,warning);
+			scribusdumpobj(f,curobj,pageobjects,NULL,g->e(c),log,warning);
 		groups.pop();
 		psPopCtm();
 		return;
@@ -1238,7 +1234,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 		setlocale(LC_ALL,"");
 		char *tmp=new char[strlen(_("Warning: Cannot export %s to Scribus.\n"))+strlen(obj->whattype())+1];
 		sprintf(tmp,_("Warning: Cannot export %s to Scribus.\n"),obj->whattype());
-		appendstr(*error_ret,tmp);
+		log.AddMessage(tmp,ERROR_Warning);
 		setlocale(LC_ALL,"C");
 		warning++;
 		delete[] tmp;
@@ -1713,13 +1709,13 @@ StyleDef *ScribusImportFilter::GetStyleDef()
  *
  * \todo COLOR, master pages, ensure text sizes ok upon scaling, scale to fit existing pages
  */
-int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
 {
 	DBG cerr <<"-----Scribus import start-------"<<endl;
 
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) {
-		if (error_ret) appendline(*error_ret,_("Missing config!"));
+		log.AddMessage(_("Missing config!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -1727,7 +1723,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, char **
 
 	Attribute *att=XMLFileToAttribute(NULL,file,NULL);
 	if (!att) {
-		if (error_ret) appendline(*error_ret,_("Could not read file!"));
+		log.AddMessage(_("Could not read file!"),ERROR_Fail);
 		return 2;
 	}
 

@@ -181,29 +181,28 @@ char *roman_numeral(int i,char cap)
  * If nooverwrite, then do not overwrite existing files.
  *
  * Returns the opened file, or NULL if file cannot be opened for writing,
- * and error_ret gets set to a proper error message if *error_ret was NULL,
- * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
- * with a blank error, then remember to set it to NULL before calling this function!
+ * and errorlog gets an error added to it.
  *
  * This assumes that the normal locale is in effect.
  */
-FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret)
+FILE *open_file_for_writing(const char *file,int nooverwrite,ErrorLog *log)
 {
 	int exists=file_exists(file,1,NULL);
 	if (exists && exists!=S_IFREG) {
-		if (error_ret) {
+		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
 			sprintf(scratch, _("Cannot write to %s."), file);
-			appendstr(*error_ret,scratch);
+
+			log->AddMessage(scratch,ERROR_Fail);
 		}
 		return NULL;
 	}
 	
 	if (exists && nooverwrite) {
-		if (error_ret) {
+		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
 			sprintf(scratch, _("Cannot overwrite %s."), file);
-			appendstr(*error_ret,scratch);
+			log->AddMessage(scratch,ERROR_Fail);
 		}
 		return NULL;
 	}
@@ -213,10 +212,10 @@ FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret)
 	if (!f) {
 		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for writing."<<endl;
 
-		if (error_ret) {
+		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
 			sprintf(scratch, _("Cannot write to %s."), file);
-			appendstr(*error_ret,scratch);
+			log->AddMessage(scratch,ERROR_Fail);
 		}
 		return NULL;
 	}
@@ -228,19 +227,17 @@ FILE *open_file_for_writing(const char *file,int nooverwrite,char **error_ret)
 /*! \ingroup misc
  *
  * Returns the opened file, or NULL if file cannot be opened for reading,
- * and error_ret gets set to a proper error message if *error_ret was NULL,
- * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
- * with a blank error, then remember to set it to NULL before calling this function!
+ * and log gets a proper error message if *log was not NULL,
  *
  * This assumes that the normal locale is in effect.
  */
-FILE *open_file_for_reading(const char *file,char **error_ret)
+FILE *open_file_for_reading(const char *file,ErrorLog *log)
 {
 	if (file_exists(file,1,NULL)!=S_IFREG) {
-		if (error_ret) {
+		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
 			sprintf(scratch, _("Cannot read the file %s. Wrong type."), file);
-			appendstr(*error_ret,scratch);
+			log->AddMessage(scratch,ERROR_Fail);
 		}
 		return NULL;
 	}
@@ -250,10 +247,10 @@ FILE *open_file_for_reading(const char *file,char **error_ret)
 	if (!f) {
 		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
 
-		if (error_ret) {
+		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
 			sprintf(scratch, _("Cannot read file %s."), file);
-			appendstr(*error_ret,scratch);
+			log->AddMessage(scratch,ERROR_Fail);
 		}
 		return NULL;
 	}
@@ -267,17 +264,15 @@ FILE *open_file_for_reading(const char *file,char **error_ret)
  *
  * what is the type of file, for instance "Project" or "Document".	
  * Returns the opened file, or NULL if file cannot be opened for reading,
- * and error_ret gets set to a proper error message if *error_ret was NULL,
- * or appended to error_ret if *error_ret!=NULL. Beware of this!! If you start
- * with a blank error, then remember to set it to NULL before calling this function!
+ * and log gets set to a proper error message if *log was not NULL,
  *
  * This assumes that the normal locale is in effect.
  *
  * The file pointer will point to the very beginning of the file on return.
  */
-FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_ret)
+FILE *open_laidout_file_to_read(const char *file,const char *what,ErrorLog *log)
 {
-	FILE *f=open_file_for_reading(file,error_ret);
+	FILE *f=open_file_for_reading(file,log);
 	if (!f) return NULL;
 
 	 // make sure it is a laidout file!!
@@ -296,9 +291,10 @@ FILE *open_laidout_file_to_read(const char *file,const char *what,char **error_r
 		if (!strncmp(version+c3,what,strlen(what)) && isspace(version[c3+strlen(what)])) err=0;
 	}
 	if (err) {
-		if (error_ret) {
-			*error_ret=new char[strlen(file)+strlen(what)+100];//****this definite 100 might cause problems!!
-			sprintf(*error_ret, _("%s does not appear to be a Laidout %s file."), file, what);
+		if (log) {
+			char scratch[strlen(file)+strlen(what)+100];//****this definite 100 might cause problems!!
+			sprintf(scratch, _("%s does not appear to be a Laidout %s file."), file, what);
+			log->AddMessage(scratch,ERROR_Fail);
 		}
 		fclose(f);
 		return NULL;

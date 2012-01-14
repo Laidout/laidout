@@ -18,6 +18,7 @@
 
 #include <lax/anxapp.h>
 
+#include "errorlog.h"
 #include "papersizes.h"
 #include "document.h"
 #include "project.h"
@@ -134,11 +135,11 @@ class LaidoutApp : public Laxkit::anXApp
 	 //commands
 	Document *findDocumentById(unsigned long id);
 	Document *findDocument(const char *saveas);
-	int Load(const char *filename, char **error_ret);
-	Document *LoadTemplate(const char *filename, char **error_ret);
+	int Load(const char *filename, ErrorLog &log);
+	Document *LoadTemplate(const char *filename, ErrorLog &log);
 	int NewDocument(Imposition *imposition, const char *filename);
 	int NewDocument(const char *spec);
-	int NewProject(Project *proj,char **error_ret);
+	int NewProject(Project *proj, ErrorLog &log);
 	void PushExportFilter(ExportFilter *filter);
 	void PushImportFilter(ImportFilter *filter);
 

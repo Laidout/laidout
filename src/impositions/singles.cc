@@ -363,11 +363,11 @@ Style *NewSingles(StyleDef *def)
  * It just fills what's given.
  */
 int createSingles(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, char **message_ret)
+					   Value **value_ret, ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -441,7 +441,7 @@ int createSingles(ValueHash *context, ValueHash *parameters,
 
 
 	} catch (const char *str) {
-		if (message_ret) appendline(*message_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 	}
 

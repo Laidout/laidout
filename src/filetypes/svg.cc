@@ -179,8 +179,9 @@ static int svgaddpath(FILE *f,Coordinate *path)
 /*! Return nonzero for fatal errors encountered, else 0.
  *
  * \todo put in indentation
+ * \todo add warning when invalid radial gradient: one circle not totally contained in another
  */
-int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, int indent)
+int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorLog &log)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0'; 
 
@@ -189,7 +190,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 					spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5)); 
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
-			svgdumpobj(f,NULL,g->e(c),error_ret,warning,indent+2); 
+			svgdumpobj(f,NULL,g->e(c),warning,indent+2,log); 
 		fprintf(f,"    </g>\n");
 
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
@@ -218,7 +219,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 
 	} else if (!strcmp(obj->whattype(),"EpsData")) {
 		setlocale(LC_ALL,"");
-		appendstr(*error_ret,_("Cannot export Eps objects into svg.\n"));
+		log.AddMessage(_("Cannot export Eps objects into svg.\n"),ERROR_Warning);
 		setlocale(LC_ALL,"C");
 		warning++;
 		
@@ -241,7 +242,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		setlocale(LC_ALL,"");
-		appendstr(*error_ret,_("Warning: interpolating a color patch object\n"));
+		log.AddMessage(obj->object_id,NULL,NULL,_("Warning: interpolating a color patch object\n"),ERROR_Warning);
 		setlocale(LC_ALL,"C");
 		warning++;
 		//---------
@@ -473,7 +474,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 //	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
 //		//***if (config->collect_for_out) { rasterize, and put image in out directory }
 //		setlocale(LC_ALL,"");
-//		appendstr(*error_ret,_("Cannot export Image Patch objects into svg.\n"));
+//		log.AddMessage(_("Cannot export Image Patch objects into svg."),ERROR_Warning);
 //		setlocale(LC_ALL,"C");
 //		warning++;
 
@@ -481,11 +482,9 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
 		setlocale(LC_ALL,"");
 		char buffer[strlen(_("Cannot export %s objects into svg."))+strlen(obj->whattype())+1];
 		sprintf(buffer,_("Cannot export %s objects into svg."),obj->whattype());
-		appendline(*error_ret,buffer);
+		log.AddMessage(obj->object_id,obj->nameid,NULL, buffer,ERROR_Warning);
 		setlocale(LC_ALL,"C");
 		warning++;
-		//----------------
-		//errorlog->Add(buffer,ERROR_Warn, obj->id,obj->object_id);
 	}
 	return 0;
 }
@@ -495,13 +494,13 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning, i
  *
  * \todo fix radial gradient output for inner circle empty
  */
-int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
+int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log)
 {
 
 	if (!strcmp(obj->whattype(),"Group")) {
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
-			svgdumpdef(f,NULL,g->e(c),error_ret,warning); 
+			svgdumpdef(f,NULL,g->e(c),warning,log); 
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		GradientData *grad;
 		grad=dynamic_cast<GradientData *>(obj);
@@ -656,12 +655,10 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,char **error_ret,int &warning)
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
  *
- * error_ret is appended to if possible.
- * 
  * \todo *** should have option of rasterizing or approximating the things not supported in svg, such 
  *    as patch gradients
  */
-int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -677,7 +674,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 	
@@ -688,14 +685,14 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".svg");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,error_ret);//appends any error string
+	f=open_file_for_writing(file,0,&log);//appends any error string
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
@@ -741,16 +738,16 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 
 	 //dump out defs for limbo objects if any
 	if (limbo && limbo->n()) {
-		svgdumpdef(f,m,limbo,error_ret,warning);
+		svgdumpdef(f,m,limbo,warning,log);
 	}
 
 	if (papergroup->objs.n()) {
-		svgdumpdef(f,m,&papergroup->objs,error_ret,warning);
+		svgdumpdef(f,m,&papergroup->objs,warning,log);
 	}
 
 
 	if (spread) {
-		if (spread->marks) svgdumpdef(f,m,spread->marks,error_ret,warning);
+		if (spread->marks) svgdumpdef(f,m,spread->marks,warning,log);
 
 		 // for each page in spread..
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
@@ -762,7 +759,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 				g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 				for (c3=0; c3<g->n(); c3++) {
 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-					svgdumpdef(f,m,g->e(c3),error_ret,warning);
+					svgdumpdef(f,m,g->e(c3),warning,log);
 				}
 			}
 		}
@@ -781,12 +778,12 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	 //dump out limbo objects if any
 	if (limbo && limbo->n()) {
 		transform_set(m,1,0,0,1,0,0);
-		svgdumpobj(f,m,limbo,error_ret,warning,4);
+		svgdumpobj(f,m,limbo,warning,4,log);
 	}
 
 	if (papergroup->objs.n()) {
 		transform_set(m,1,0,0,1,0,0);
-		svgdumpobj(f,m,&papergroup->objs,error_ret,warning,4);
+		svgdumpobj(f,m,&papergroup->objs,warning,4,log);
 	}
 
 
@@ -794,7 +791,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 	if (spread) {
 		 //write out printer marks
 		transform_set(m,1,0,0,1,0,0);
-		if (spread->marks) svgdumpobj(f,m,spread->marks,error_ret,warning,4);
+		if (spread->marks) svgdumpobj(f,m,spread->marks,warning,4,log);
 
 		 // for each page in spread..
 		for (c2=0; c2<spread->pagestack.n(); c2++) {
@@ -808,7 +805,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, char *
 				fprintf(f,"    <g transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\">\n ",
 					mm[0], mm[1], mm[2], mm[3], mm[4], mm[5]); 
 				for (c3=0; c3<g->n(); c3++) {
-					svgdumpobj(f,NULL,g->e(c3),error_ret,warning,6);
+					svgdumpobj(f,NULL,g->e(c3),warning,6,log);
 				}
 				fprintf(f,"    </g>\n ");
 			}
@@ -905,9 +902,9 @@ StyleDef *SvgImportFilter::GetStyleDef()
 
 
 //forward declaration:
-int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret);
+int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log);
 
-int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;
@@ -1046,7 +1043,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 //
 			} 
 			
-			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],error_ret)) continue;
+			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],log)) continue;
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
@@ -1087,7 +1084,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, char **erro
 /*! If top!=0, then top is the height of the document. We need to flip elements up,
  * since down is positive y in svg. We also need to scale by .8/72 to convert svg units to Laidout units.
  */
-int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
+int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log)
 {
 	char *name,*value;
 	if (!strcmp(element->name,"g")) {
@@ -1106,7 +1103,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, char **error_ret)
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
-					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],error_ret);
+					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],log);
 			}
 		}
 		if (top) {

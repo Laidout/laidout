@@ -430,7 +430,8 @@ int LaidoutApp::init(int argc,char **argv)
 	if (runmode==RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
 		if (topwindows.n==0 && default_template) {
-			LoadTemplate(default_template,NULL);
+			ErrorLog log;
+			LoadTemplate(default_template,log);
 		}
 		
 		 // if no other windows have been launched yet, then launch newdoc window
@@ -768,7 +769,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				exit(0);
 
 			case 't': { // load in template
-					LoadTemplate(o->arg(),NULL);
+					ErrorLog log;
+					LoadTemplate(o->arg(),log);
 				} break;
 
 			case 's': { // --script
@@ -891,34 +893,28 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			cout <<_("Bad export configuration")<<endl;
 			exit(1);
 		}
-		char *error=NULL;
+		ErrorLog error;
 		 
 		 //load in document to pass with config
 		Document *doc=NULL;
-		if (Load(filename,&error)==0) doc=curdoc;
-		if (error) {
+		if (Load(filename,error)==0) doc=curdoc;
+		if (error.Total()) {
 			if (!doc) {
-				cout << _("Fatal errors loading document:") << endl 
-					 << error <<endl;
+				dumperrorlog(_("Fatal errors loading document:"),error);
 				exit(1);
 			}
-			cout << _("Warnings encountered while loading document:") << endl 
-				 << error <<endl;
-			delete[] error; error=NULL;
+			dumperrorlog(_("Warnings encountered while loading document:"),error);
 		}
 
 		config.doc=doc;
 		config.doc->inc_count();
 		config.dump_in_atts(&att,0,NULL);//second time with doc!
-		int err=export_document(&config,&error);
+		int err=export_document(&config,error);
 		if (err>0) {
-			cout <<error;
-			cout <<_("Export failed.")<<endl;
+			dumperrorlog(_("Export failed."),error);
 			exit(1);
 		} else if (err<0) {
-			cout <<_("Export finished with warnings:")<<endl;
-			cout <<error<<endl;
-			delete[] error; error=NULL;
+			dumperrorlog(_("Export finished with warnings:"),error);
 		} else {
 			cout <<_("Exported.")<<endl;
 		}
@@ -939,10 +935,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 	Document *doc=NULL;
 	index=topwindows.n;
 	if (!project) project=new Project;
+	ErrorLog log;
 	for (o=options.remaining(); o; o=options.next()) {
 		DBG cerr <<"----Read in:  "<<o->arg()<<endl;
 		doc=NULL;
-		if (Load(o->arg(),NULL)==0) doc=curdoc;
+		if (Load(o->arg(),log)==0) doc=curdoc;
 		if (topwindows.n==index) {
 			if (!doc && project->docs.n) doc=project->docs.e[0]->doc;
 			if (doc && runmode==RUNMODE_Normal) addwindow(newHeadWindow(doc));
@@ -1088,7 +1085,7 @@ char *LaidoutApp::default_path_for_resource(const char *resource)
  *
  * \todo deal with returned error when load failed
  */
-Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
+Document *LaidoutApp::LoadTemplate(const char *name, ErrorLog &log)
 {
 	 // find absolute path to a file
 	char *fullname=full_path_for_resource(name,"templates");
@@ -1098,7 +1095,7 @@ Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
 	 //must push before Load to not screw up setting up windows and other controls
 	project->Push(doc);
 	doc->dec_count();//so now has 1 count for project
-	if (doc->Load(fullname,error_ret)==0) { // load failed
+	if (doc->Load(fullname,log)==0) { // load failed
 		project->Pop(NULL);
 		//doc->dec_count();
 		return NULL;
@@ -1123,7 +1120,7 @@ Document *LaidoutApp::LoadTemplate(const char *name,char **error_ret)
  * 1 for project loaded, or a negative number for fatal error
  * encountered.
  */
-int LaidoutApp::Load(const char *filename, char **error_ret)
+int LaidoutApp::Load(const char *filename, ErrorLog &log)
 {
 	if (!strncmp(filename,"file://",7)) filename+=7;
 	char *fullname=newstr(filename);
@@ -1137,13 +1134,11 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 		return 0;
 	}
 	
-	char *error=NULL;
-	FILE *f=open_laidout_file_to_read(fullname,"Project",&error);
-	if (error) { delete[] error; error=NULL; }
+	FILE *f=open_laidout_file_to_read(fullname,"Project",&log);
 	if (f) {
 		fclose(f);
 		if (project) project->clear();
-		if (project->Load(fullname,error_ret)==0) {
+		if (project->Load(fullname,log)==0) {
 			delete[] fullname;
 			return 1;
 		} 
@@ -1157,7 +1152,7 @@ int LaidoutApp::Load(const char *filename, char **error_ret)
 	project->Push(doc); //important: this must be before doc->Load()
 	doc->dec_count();
 	
-	if (doc->Load(fullname, error_ret)==0) {
+	if (doc->Load(fullname, log)==0) {
 		 //load failed
 		project->Pop(NULL);
 		//doc->dec_count();
@@ -1346,7 +1341,7 @@ int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 
 /*! Return 0 for success or nonzero for error.
  */
-int LaidoutApp::NewProject(Project *proj,char **error_ret)
+int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
 {
 	if (!proj) return 1;
 	if (proj==project) return 0;
@@ -1363,7 +1358,7 @@ int LaidoutApp::NewProject(Project *proj,char **error_ret)
 	if (!laidout->donotusex && !n) addwindow(newHeadWindow(NULL,"ViewWindow"));
 
 	project->initDirs();
-	project->Save(error_ret);
+	project->Save(log);
 
 	return 0;
 }

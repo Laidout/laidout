@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -783,8 +783,8 @@ int ExportDialog::send()
 			//mesbar->Refresh();
 			//XSync(app->dpy,False);
 
-			char *error=NULL;
-			if (filter->Out(tmp,config,&error)==0) {
+			ErrorLog log;
+			if (filter->Out(tmp,config,log)==0) {
 				appendstr(cm,tmp);
 
 				 //now do the actual command
@@ -802,10 +802,10 @@ int ExportDialog::send()
 				
 			} else {
 				 //there was an error during filter export
+				const char *error=log.MessageStr(log.Total()-1);
 				SimpleMessage *mes=new SimpleMessage(error?error:_("Error printing"), 0,0,0,0,"statusMessage");
 				app->SendMessage(mes,win_owner,"statusMessage",object_id);
 			}
-			if (error) delete[] error;
 		}
 		//---------
 		app->destroywindow(this);

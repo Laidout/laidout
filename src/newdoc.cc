@@ -117,10 +117,11 @@ int LaidoutOpenWindow::Event(const EventData *data,const char *mes)
 		char openingdocs=-1;
 
 		int n=0;
+		ErrorLog log;
 		for (int c=0; c<strs->n; c++) {
 			if (openingdocs==-1 && laidout_file_type(strs->strs[c],NULL,NULL,NULL,"Project",NULL)==0) {
 				 //file is project. open and return.
-				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
+				if (strs->info==1) laidout->Load(strs->strs[c],log);
 				app->destroywindow(this);
 				return 0;
 			}
@@ -129,8 +130,8 @@ int LaidoutOpenWindow::Event(const EventData *data,const char *mes)
 				 //file is document
 				n++;
 				openingdocs=1;
-				if (strs->info==1) laidout->Load(strs->strs[c],NULL);
-				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c],NULL);
+				if (strs->info==1) laidout->Load(strs->strs[c],log);
+				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c],log);
 				continue;
 			}
 
@@ -1202,7 +1203,8 @@ int NewProjectWindow::sendNewProject()
 	const char *newname=((LineInput *)findWindow("name"))->GetCText();
 	makestr(proj->name,isblank(newname)?_("New Project"):newname);
 
-	if (laidout->NewProject(proj,NULL)) { delete proj; return 2; }
+	ErrorLog log;
+	if (laidout->NewProject(proj,log)) { delete proj; return 2; }
 	
 	return 0;
 }

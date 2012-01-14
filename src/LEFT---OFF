@@ -11,7 +11,6 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
----- less urgent bugs:
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
 recent files do not appear to be most recent file opened
@@ -66,9 +65,6 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 
 
-----------------0.092 ROADMAP ITEMS: features and enhancements------------------------
-
-
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 check laidout.1 when time to release
 update docs to have new release number
@@ -77,6 +73,10 @@ test:
   each window type, include help and about
   each export filter
   make some test scripts for command line testing
+
+searchable menus
+
+include scribus plugin in install
 
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
@@ -580,136 +580,5 @@ When releasing new version, combine these with ROADMAP items for release notes.
 These can then be purged after each release...
 ===========================================================================================
 
-
-DONE viewer drop shadow distance should be customizable
-
-DONE Add proper .desktop and application icons installation
-  means installing main Laidout icons into /usr/share/icons/hicolor
-  and laidout.desktop to /usr/share/applications
-
-DONE About page is huge, and unescapable!!!!! serious break!
-
-DONE make file. save as to other dir. export. dir is wrong! 
-
-DONE make Document all reference counted
-
-DONE from laxkit: related to focus handling: clean up pop up menus which currently REALLY SUCK
-	focusin/out enter/leave event handling is even more messed up after laxkit overhaul
-	--> menus now delete when clicking elsewhere
-
-DONE debug pagerangeinterface shifting ranges
-
-DONE object tool click on page/paper/limbo should immediately reflect new zone
-
-DONE Gui for modifying Page Labels
-
-DONE (sort of, via small text) Vertical ruler still sucks. make it not suck!! Horizontal kind of sucks too.
-
-DONE moving objects does screwy things with rectdata when crossing page boundaries
-     need to change GroupInterface to determine contexts, then recompute bounds
-
-DONE bounding box on move still messed up..
-
-DONE scale invariant point not working... always using origin
-DONE area select not working
-DONE control-lbdown near edge selects the resize, not put new point
-
-DONE implement custom printer marks exporting!!
-DONE export papergroup objects
-DONE export spread objects (same as printer marks, already implemented!)
-
-DONE pagerangeinterface: button downs shouldn't do anything when not clicked down outside bar
-
-DONE paper group tool seems messed up, after button down, before next refresh rev 491 works in main, NOT in spread editor
-
-DONE click open or save, dialog comes up, but buttons permanently dark gray now, no matter how mouse hovering
-
-   paperinterface:
-DONE  arrow to indicate paper top direction
-DONE  create new
-DONE  save/load
-DONE  delete old
-DONE  menu options for paper groups, via the right click in paper tiler interface
-
-DONE default papergroup should be red, and should not be part of spread->path
-DONE viewport center on ' ' not working again
-
-DONE delete final page crashes
-
-DONE ???? gradient rendering to buffer memory hole?? gets very slow, then crashes.. --> having trouble reproducing...
-
-DONE select default papergroup, does not reinstall default papergroup!!
-DONE rotate a paper with paper tool, now maybe box does not center over mouse
-DONE rename papergroup
-
-DONE move a papergroup object to a pagestack blank page: segfault!
-
-DONE finish implementing 'm'
-
-DONE (well, by disabling!) spread flipper tabloid tiled not paging paper layouts properly
-DONE (well, by disabling!) spread flipper right side not advancing!
-
-DONE maybe? PathInterface should not segfault
-
-DONE should be able to drop printer marks onto default papergroup without resorting to paper tool
-
-DONE PathInterface should be in a small way usable
-DONE PathInterface:
-  DONE click and move in bounds with object but nothing selected cause an object shift?
-  DONE Single point selected, click down not on a point, add new point to path
-  DONE arrow not pointing where it should
-
-DONE double check color picker, doesn't work in lax interfs...
-
-DONE Does not appear to be selecting objects when click on them, have to click twice
-
-DONE implement marks:
-  DONE auto cut marks
-  DONE gray bars
-  DONE registration marks
-  DONE automarks selector in signature interface
-
-DONE svg export malfunction, not outputting correct page areas
-
-DONE crash: try to delete a gray bars group in test-tiled-custommarks.laidout, when a papergroup or limbo object!
-
-Scribus import: DONE import should support PageRange <-> Section conversion
-
-DONE have to implement exporting paths, grrr! thought I had already!!
-  DONE ps
-  DONE svg
-  DONE pdf
-  DONE scribus
-
-DONE laidout->Load() should be able to load scribus files
-DONE open a scribus file directly, it seems to create 2 document listings
-
-DONE somehow still able to sneak up on auto marks and move them around, should not be able to do this!!
-
-DONE Scribus import: import must support master pages
-
-DONE change signature settings, apply, back to view, does not remove the papergroup from the view!
-
-DONE ARRRR!!!!! page labels not applying!!!
-
-DONE spread editor unreliable!!!! not applying in a good way
-
-DONE disable scale pages to new imposition in newdoc, as it's not implemented yet
-
-DONE refcounting crashing error with nets upon edit current document settings -> apply
-
-DONE (hopefully) fix memory holes
-   DONE paperstyle in sigs not deleting
-   DONE -> test-blank.laidout -> LaidoutViewport obj 330 not deleting!!
-
-DONE implement obj file format for polyhedra
-
-DONE sig editor: needs testing: command line func parser for sigs (done for scribus plugin, good enough for now)
-
-DONE check laidout.1 when time to release
-DONE test:
-  DONE each window type to avoid crashy hangups, like about window from .091!!!!
-  DONE each export filter
-  DONE scribus plugin
 
 

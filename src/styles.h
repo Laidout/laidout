@@ -11,63 +11,21 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 #ifndef STYLES_H
 #define STYLES_H
 
 #include <lax/anobject.h>
 #include <lax/lists.h>
-#include <lax/strmanip.h>
 #include <cstdio>
 #include <lax/dump.h>
 #include <lax/refcounted.h>
+
+#include "fieldplace.h"
+#include "errorlog.h"
 #include "calculator/values.h"
 
-//------------------------------ FieldMask -------------------------------------------
-
-class FieldPlace : protected Laxkit::NumStack<int>
-{
- public:
-	FieldPlace() {}
-	FieldPlace(const FieldPlace &place);
-	virtual ~FieldPlace() {}
-	virtual int n() const { return Laxkit::NumStack<int>::n; }
-	virtual int e(int i) const { if (i>=0 && i<Laxkit::NumStack<int>::n) 
-		return Laxkit::NumStack<int>::e[i];  return -1; }
-	virtual int e(int i,int val) { if (i>=0 && i<Laxkit::NumStack<int>::n) 
-		{ return Laxkit::NumStack<int>::e[i]=val; }  return -1; }
-	virtual int operator==(const FieldPlace &place) const;
-	virtual FieldPlace &operator=(const FieldPlace &place);
-	virtual int push(int nd,int where=-1) { return Laxkit::NumStack<int>::push(nd,where); }
-	virtual int pop(int which=-1) { return Laxkit::NumStack<int>::pop(which); }
-	virtual void flush() { Laxkit::NumStack<int>::flush(); }
-	virtual const int *list() { return (const int *)Laxkit::NumStack<int>::e; }
-	virtual void out(const char *str);//for debugging
-};
-
-//------------------------------ FieldMask -------------------------------------------
-
-class FieldMask : public Laxkit::PtrStack<FieldPlace>
-{
- protected:
-	int *chartoint(const char *ext,const char **next_ret);
- public:
-	FieldMask();
-	FieldMask(const char *ext);
-	FieldMask(const FieldMask &mask);
-	FieldMask &operator=(FieldMask &mask);
-	FieldMask &operator=(FieldPlace &place);
-	virtual int operator==(int what);
-	virtual int operator==(const FieldMask &mask);
-	virtual FieldMask &operator=(int f); // shorthand for single level fields
-	//virtual int push(FieldMask &f);
-	virtual int push(int where,int n, ...);
-	virtual int push(int n,int *list,int where=-1);
-	virtual int has(const char *ext,int *index=NULL); // does ext correspond to any in mask?
-	virtual int value(int f,int where);
-	virtual int value(int f,int where,int newval);
-};
 
 
 //------------------------------ StyleDef --------------------------------------------
@@ -103,7 +61,7 @@ class StyleDef;
 class Style;
 typedef Style *(*NewStyleFunc)(StyleDef *def);
 typedef int (*StyleFunc)(ValueHash *context, ValueHash *parameters,
-							 Value **value_ret, char **message_ret);
+							 Value **value_ret, ErrorLog &log);
  
 class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
 {
@@ -237,7 +195,7 @@ class Style : virtual public Laxkit::anObject,
 	virtual StyleDef *makeStyleDef() = 0;
 	virtual StyleDef *GetStyleDef() { return styledef; }
 	virtual const char *Stylename() { return stylename; }
-	virtual int Stylename(const char *nname) { makestr(stylename,nname); return 1; }
+	virtual int Stylename(const char *nname);
 	virtual int getNumFields();
 	virtual Style *duplicate(Style *s=NULL)=0;
 

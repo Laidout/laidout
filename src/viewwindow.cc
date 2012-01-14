@@ -3401,16 +3401,15 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		if (!sdoc) sdoc=laidout->curdoc;
 		if (sdoc && sdoc->Saveas(s->str)) SetParentTitle(sdoc->Name(1));
 		
-		char *error=NULL;
-		if (sdoc && sdoc->Save(1,1,&error)==0) {
+		ErrorLog log;
+		if (sdoc && sdoc->Save(1,1,log)==0) {
 			char blah[strlen(sdoc->Saveas())+15];
 			sprintf(blah,_("Saved to %s."),sdoc->Saveas());
 			PostMessage(blah);
-			if (!isblank(laidout->project->filename)) laidout->project->Save(NULL);//***collect error msg
+			if (!isblank(laidout->project->filename)) laidout->project->Save(log);
 		} else {
-			if (error) {
-				PostMessage(error);
-				delete[] error;
+			if (log.Total()) {
+				PostMessage(log.MessageStr(log.Total()-1));
 			} else PostMessage(_("Problem saving. Not saved."));
 		}
 
@@ -3486,15 +3485,14 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						sdoc->Saveas(file);
 					}
 					
-					char *error=NULL;
-					if (sdoc && sdoc->Save(1,1,&error)==0) {
+					ErrorLog log;
+					if (sdoc && sdoc->Save(1,1,log)==0) {
 						char blah[strlen(sdoc->Saveas())+15];
 						sprintf(blah,_("Saved to %s."),sdoc->Saveas());
 						PostMessage(blah);
 					} else {
-						if (error) {
-							PostMessage(error);
-							delete[] error;
+						if (log.Total()) {
+							PostMessage(log.MessageStr(log.Total()-1));
 						} else PostMessage(_("Problem saving. Not saved."));
 					}
 				}
@@ -3513,16 +3511,33 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"export config")) {
 		 //sent from ExportDialog
+		 //*** Replace this with log link window
 		const ConfigEventData *d=dynamic_cast<const ConfigEventData *>(data);
 		if (!d || !d->config->filter) return 1;
-		char *error=NULL;
+		ErrorLog log;
 		mesbar->SetText(_("Exporting..."));
 		mesbar->Refresh();
 		//XSync(app->dpy,False);
-		int err=export_document(d->config,&error);
+		int err=export_document(d->config,log);
 		if (err==0) mesbar->SetText(_("Exported."));
 		else mesbar->SetText(_("Error exporting."));
-		if (error) {
+		if (log.Total()) {
+			char *error=NULL;
+			char scratch[100];
+			ErrorLogNode *e;
+			for (int c=0; c<log.Total(); c++) {
+				e=log.Message(c);
+				if (e->severity==ERROR_Ok) ;
+				else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
+				else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
+			
+				if (e->objectstr_id) {
+					sprintf(scratch,"id:%s, ",e->objectstr_id);
+					appendstr(error,scratch);
+				}
+				appendstr(error,e->description);
+				appendstr(error,"\n");
+			}
 			MessageBox *mbox=new MessageBox(NULL,NULL,err?_("Error exporting."):_("Warning!"),ANXWIN_CENTER, 0,0,0,0,0,
 										NULL,0,NULL, error);
 			mbox->AddButton(BUTTON_OK);
@@ -3927,15 +3942,14 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						FILES_FILES_ONLY|FILES_SAVE_AS,
 						doc->Saveas()));
 		} else {
-			char *error=NULL;
-			if (doc->Save(1,1,&error)==0) {
+			ErrorLog log;
+			if (doc->Save(1,1,log)==0) {
 				char blah[strlen(doc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",doc->Saveas());
 				PostMessage(blah);
 			} else {
-				if (error) {
-					PostMessage(error);
-					delete[] error;
+				if (log.Total()) {
+					PostMessage(log.MessageStr(log.Total()-1));
 				} else PostMessage(_("Problem saving. Not saved."));
 			}
 		}
@@ -4144,7 +4158,8 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			if (!isblank(laidout->project->filename)) {
 				//***need to collect error msg
 				
-				if (laidout->project->Save(NULL)==0) {
+				ErrorLog log;
+				if (laidout->project->Save(log)==0) {
 					PostMessage(_("Project saved."));
 					return 0;
 				}
@@ -4173,16 +4188,15 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 						where));
 			if (where) delete[] where;
 		} else {
-			char *error=NULL;
-			if (sdoc->Save(1,1,&error)==0) {
+			ErrorLog log;
+			if (sdoc->Save(1,1,log)==0) {
 				char blah[strlen(sdoc->Saveas())+15];
 				sprintf(blah,"Saved to %s.",sdoc->Saveas());
 				PostMessage(blah);
-				if (!isblank(laidout->project->filename)) laidout->project->Save(NULL);//***need to collect error msg
+				if (!isblank(laidout->project->filename)) laidout->project->Save(log);
 			} else {
-				if (error) {
-					PostMessage(error);
-					delete[] error;
+				if (log.Total()) {
+					PostMessage(log.MessageStr(log.Total()-1));
 				} else PostMessage(_("Problem saving. Not saved."));
 			}
 		}

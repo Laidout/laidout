@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 
 #include <lax/strmanip.h>
@@ -397,7 +397,8 @@ Document::Document(const char *filename)
 	modtime=times(NULL);
 	curpage=-1;
 	
-	Load(filename,NULL);
+	ErrorLog log;
+	Load(filename,log);
 }
 
 //! Construct from an Imposition.
@@ -709,22 +710,20 @@ int Document::RemovePages(int start,int n)
  *
  * \todo *** only checks for saveas existence, does no sanity checking on it...
  * \todo  need to work out saving Specific project/no proj but many docs/single doc
- * \todo implement error message return
  * \todo *** implement dump context
  */
-int Document::Save(int includelimbos,int includewindows,char **error_ret)
+int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 {
-	if (error_ret) *error_ret=NULL;
 	FILE *f=NULL;
 	if (isblank(saveas)) {
 		DBG cerr <<"**** cannot save, saveas is null."<<endl;
-		if (error_ret) makestr(*error_ret,_("Need a file name to save to!"));
+		log.AddMessage(_("Need a file name to save to!"),ERROR_Fail);
 		return 2;
 	}
 	f=fopen(saveas,"w");
 	if (!f) {
 		DBG cerr <<"**** cannot save, file \""<<saveas<<"\" cannot be opened for writing."<<endl;
-		if (error_ret) makestr(*error_ret,_("File cannot be opened for writing"));
+		log.AddMessage(_("File cannot be opened for writing"),ERROR_Fail);
 		return 3;
 	}
 
@@ -792,11 +791,11 @@ int Document::Save(int includelimbos,int includewindows,char **error_ret)
  *   dump_in_atts(), and it shouldn't be there....
  * \todo *** implement dump context
  */
-int Document::Load(const char *file,char **error_ret)
+int Document::Load(const char *file,ErrorLog &log)
 {
 	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
 	
-	FILE *f=open_laidout_file_to_read(file,"Document",error_ret);
+	FILE *f=open_laidout_file_to_read(file,"Document",&log);
 	if (!f) {
 		if (!isScribusFile(file)) return 0;
 		int c=addScribusDocument(file,this); //0 success, 1 failure

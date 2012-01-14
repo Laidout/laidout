@@ -14,15 +14,23 @@
 // Copyright (C) 2012 by Tom Lechner
 //
 
+#include <lax/strmanip.h>
 #include "errorlog.h"
+
+
 #include <lax/lists.cc>
 
+using namespace Laxkit;
+
+#include <iostream>
+using namespace std;
+#define DBG
 
 //---------------------------------- ErrorLog -----------------------------
 
 
 //! Dump to cout.
-int dumperrorlog(const char *mes,ErrorLog &log)
+void dumperrorlog(const char *mes,ErrorLog &log)
 {
 	if (mes) cout <<mes<<"("<<log.Total()<<")"<<endl;
 	ErrorLogNode *e;
@@ -33,7 +41,7 @@ int dumperrorlog(const char *mes,ErrorLog &log)
 		else if (e->severity==ERROR_Fail) cout <<"Error! ";
 
 		cout <<e->description<<", id:"<<e->object_id<<","<<(e->objectstr_id?e->objectstr_id:"(no str)")<<" ";
-		if (place.n()) place.out(NULL);
+		if (e->place.n()) e->place.out(NULL);
 		cout <<endl;
 
 	}
@@ -69,6 +77,9 @@ ErrorLogNode::~ErrorLogNode()
  * It allows one to quickly locate problems.
  */
 
+void ErrorLog::Clear()
+{ messages.flush(); }
+
 const char *ErrorLog::Message(int i,int *severity,int *info)
 {
 	if (i<0 || i>=messages.n) {
@@ -84,7 +95,7 @@ const char *ErrorLog::Message(int i,int *severity,int *info)
 
 int ErrorLog::AddMessage(const char *desc, int severity, int ninfo)
 {
-	return AddMessage(0,NULL,NULL,desc,severity,ninfo)
+	return AddMessage(0,NULL,NULL,desc,severity,ninfo);
 }
 
 /*! Returns number of messages including this one.
@@ -93,6 +104,12 @@ int ErrorLog::AddMessage(unsigned int objid, const char *objidstr, FieldPlace *p
 {
 	messages.push(new ErrorLogNode(objid,objidstr,place, desc,severity,ninfo));
 	return messages.n;
+}
+
+const char *ErrorLog::MessageStr(int i)
+{
+	if (i>=0 && i<messages.n) return messages.e[i]->description;
+	return NULL;
 }
 
 ErrorLogNode *ErrorLog::Message(int i)

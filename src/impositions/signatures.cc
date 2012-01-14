@@ -1149,11 +1149,11 @@ Style *SignatureImposition::duplicate(Style *s)
 /*! 
  */
 int createFold(ValueHash *context, ValueHash *parameters,
-			   Value **value_ret, char **message_ret)
+			   Value **value_ret, ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -1191,7 +1191,7 @@ int createFold(ValueHash *context, ValueHash *parameters,
 
 
 	} catch (const char *str) {
-		if (message_ret) appendline(*message_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 	}
 
@@ -1204,7 +1204,7 @@ int createFold(ValueHash *context, ValueHash *parameters,
 			fold->dec_count();
 
 		} else {
-			if (message_ret) appendline(*message_ret,_("Incomplete Fold definition!"));
+			log.AddMessage(_("Incomplete Fold definition!"),ERROR_Fail);
 			err=1;
 		}
 		
@@ -1218,11 +1218,11 @@ int createFold(ValueHash *context, ValueHash *parameters,
  * It just fills what's given.
  */
 int createSignature(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, char **message_ret)
+					   Value **value_ret, ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
-		if (message_ret) appendline(*message_ret,_("Missing parameters!"));
+		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
 		return 1;
 	}
 
@@ -1360,14 +1360,14 @@ int createSignature(ValueHash *context, ValueHash *parameters,
 
 
 	} catch (const char *str) {
-		if (message_ret) appendline(*message_ret,str);
+		log.AddMessage(str,ERROR_Fail);
 		err=1;
 	}
 
 	if (value_ret && err==0) {
 		if (imp->signature->Validity()==0) *value_ret=new ObjectValue(imp);
 		else {
-			if (message_ret) appendline(*message_ret,_("Imposition has invalid configuration!"));
+			log.AddMessage(_("Imposition has invalid configuration!"),ERROR_Fail);
 			err=1;
 			*value_ret=NULL;
 		}

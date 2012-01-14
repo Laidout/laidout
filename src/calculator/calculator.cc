@@ -821,11 +821,11 @@ Value *LaidoutCalculator::evalname()
 		ValueHash *pp=parseParameters(function); //build parameter hash in order of styledef
 
 		 //call the actual function
-		char *message=NULL;
+		ErrorLog log;
 		Value *value=NULL;
 		int status=0;
 		if (!calcerror) {
-			if (function->stylefunc) status=function->stylefunc(context,pp, &value,&message);
+			if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
 			else if (function->newfunc) {
 				Style *s=function->newfunc(function);
 				if (s) {
@@ -835,8 +835,26 @@ Value *LaidoutCalculator::evalname()
 			}
 
 			 //report default success or failure
-			if (message) messageOut(message);
-			else {
+			if (log.Total()) {
+				char *error=NULL;
+				char scratch[100];
+				ErrorLogNode *e;
+				for (int c=0; c<log.Total(); c++) {                 
+					e=log.Message(c);
+					if (e->severity==ERROR_Ok) ;
+					else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
+					else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
+				
+					if (e->objectstr_id) {
+						sprintf(scratch,"id:%s, ",e->objectstr_id);
+						appendstr(error,scratch);
+					}
+					appendstr(error,e->description);
+					appendstr(error,"\n");
+				}
+				messageOut(error);
+				delete[] error;
+			} else {
 				if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
 				else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
 			}

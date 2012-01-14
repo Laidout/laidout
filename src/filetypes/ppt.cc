@@ -123,7 +123,7 @@ StyleDef *PptoutFilter::GetStyleDef()
 /*! \todo deal with SomeDataRef
  * \todo *** test EpsData out
  */
-static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
+static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent,ErrorLog &log)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
@@ -139,7 +139,7 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 		fprintf(f,"%s<frame type=\"group\" transform=\"%.10g %.10g %.10g %.10g %.10g %.10g\" >\n",
 				spc, m[0], m[1], m[2], m[3], m[4], m[5]);
 		transform_identity(m);
-		for (int c=0; c<g->n(); c++) pptdumpobj(f,m,g->e(c),indent+2);
+		for (int c=0; c<g->n(); c++) pptdumpobj(f,m,g->e(c),indent+2,log);
 
 		fprintf(f,"%s</frame>\n",spc);
 		return;
@@ -204,12 +204,11 @@ static void pptdumpobj(FILE *f,double *mm,SomeData *obj,int indent)
 		return;
 
 	} else {
-		//setlocale(LC_ALL,"");
-		//char buffer[strlen(_("Cannot export %s objects to passepartout."))+strlen(obj->whattype())+1];
-		//sprintf(buffer,_("Cannot export %s objects to passepartout."),obj->whattype());
-		//appendline(*error_ret,buffer);
-		//setlocale(LC_ALL,"C");
-		//warning++;
+		setlocale(LC_ALL,"");
+		char buffer[strlen(_("Cannot export %s objects to passepartout."))+strlen(obj->whattype())+1];
+		sprintf(buffer,_("Cannot export %s objects to passepartout."),obj->whattype());
+		log.AddMessage(obj->object_id,NULL,NULL,buffer,ERROR_Warning);
+		setlocale(LC_ALL,"C");
 	}
 }
 
@@ -235,13 +234,11 @@ static const char *pptpaper[12]= {
  * A0-A6, Executive (7.25 x 10.5in), Legal, Letter, and Tabloid/Ledger, then
  * Letter is used.
  *
- * error_ret is appended to if possible.
- *    
  * \todo if unknown paper, should really use some default paper size, if it is valid, 
  *   and then otherwise "Letter", or choose a size that is big enough to hold the spreads
  * \todo for singles, should figure out what paper size to export as..
  */
-int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **error_ret)
+int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -257,7 +254,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 	 //we must have something to export...
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
-		if (error_ret) appendline(*error_ret,_("Nothing to export!"));
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
 		return 1;
 	}
 	
@@ -268,14 +265,14 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 		if (isblank(doc->saveas)) {
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
-			if (error_ret) appendline(*error_ret,_("Cannot save without a filename."));
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
 		}
 		file=newstr(doc->saveas);
 		appendstr(file,".ppt");
 	} else file=newstr(filename);
 
-	f=open_file_for_writing(file,0,error_ret);//appends any error string
+	f=open_file_for_writing(file,0,&log);//appends any error string
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
@@ -362,11 +359,11 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 
 			if (limbo && limbo->n()) {
 				//*** if limbo bbox inside paper bbox? could loop in limbo objs for more specific check
-				pptdumpobj(f,NULL,limbo,4);
+				pptdumpobj(f,NULL,limbo,4,log);
 			}
 
 			if (papergroup->objs.n()) {
-				pptdumpobj(f,NULL,papergroup->objs.e(c3),6);
+				pptdumpobj(f,NULL,papergroup->objs.e(c3),6,log);
 			}
 
 			if (spread) {
@@ -375,7 +372,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 					//fprintf(f," .01 setlinewidth\n");
 					//DBG cerr <<"marks data:\n";
 					//DBG spread->marks->dump_out(stderr,2,0);
-					pptdumpobj(f,m,spread->marks,4);
+					pptdumpobj(f,m,spread->marks,4,log);
 				}
 				
 				 // for each page in spread..
@@ -390,7 +387,7 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, char **er
 						g=dynamic_cast<Group *>(doc->pages[pg]->layers.e(l));
 						for (c3=0; c3<g->n(); c3++) {
 							transform_copy(mmm,spread->pagestack.e[c2]->outline->m());
-							pptdumpobj(f,mmm,g->e(c3),6);
+							pptdumpobj(f,mmm,g->e(c3),6,log);
 						}
 					}
 				}
@@ -493,7 +490,7 @@ StyleDef *PptinFilter::GetStyleDef()
  * \todo *** if first_page_num exists, then must set up page labels
  * \todo *** implement dump into group, rather than doc
  */
-int PptinFilter::In(const char *file, Laxkit::anObject *context, char **error_ret)
+int PptinFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
 {
 	ImportConfig *in=dynamic_cast<ImportConfig *>(context);
 	if (!in) return 1;
