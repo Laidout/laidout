@@ -4,7 +4,7 @@
 # --prefix=/blah/blah
 
 
-LAIDOUTVERSION=0.091.1
+LAIDOUTVERSION=0.092.1
 
  # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
 FINALPREFIX=""
@@ -132,7 +132,12 @@ done
  ## cups doesn't seem to have a pkg-config entry, so do this hackier check
  ## TODO cups now seems to have a cups-config program that lists dependencies, this needs to be used!
 echo -n Checking for cups......;
-if [ ! -e /usr/lib/libcups.so -a ! -e /usr/local/lib/libcups.so  -a ! -e /usr/lib64/libcups.so -a ! -e /usr/local/lib64/libcups.so -a ! -e /usr/lib/x86_64-linux-gnu/libcups.so ] ; then 
+if [ ! -e /usr/lib/libcups.so -a \
+	 ! -e /usr/local/lib/libcups.so -a \
+	 ! -e /usr/lib64/libcups.so -a \
+	 ! -e /usr/local/lib64/libcups.so -a \
+	 ! -e /usr/lib/i386-linux-gnu/libcups.so -a \
+	 ! -e /usr/lib/x86_64-linux-gnu/libcups.so ] ; then 
     echo "You need to install the development package of Cups."; 
     NUM="";
 else echo "ok"; 
