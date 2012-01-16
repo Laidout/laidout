@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2012 by Tom Lechner
 //
 #ifndef INTERFACES_NUPINTERFACE_H
 #define INTERFACES_NUPINTERFACE_H
@@ -22,16 +22,31 @@
 #include "../laidout.h"
 #include "../interfaces/actionarea.h"
 
-#define NUP_None       0
-#define NUP_Grid       1
-#define NUP_SizedGrid  2
-#define NUP_Flowed     3
-#define NUP_Random     4
-#define NUP_Unclump    5
-#define NUP_Unoverlap  6
+
+#define NUP_None         0
+#define NUP_Major_Arrow  1
+#define NUP_Minor_Arrow  2
+#define NUP_Major_Number 3
+#define NUP_Minor_Number 4
+#define NUP_Major_Tip    5
+#define NUP_Minor_Tip    6
+#define NUP_Type         7
+#define NUP_Ok           8
+#define NUP_Panel        9
+
+#define NUP_Grid         100
+#define NUP_Sized_Grid   101
+#define NUP_Flowed       102
+#define NUP_Random       103
+#define NUP_Unclump      104
+#define NUP_Unoverlap    105
+
+#define NUP_Has_Ok   (1<<0)
+#define NUP_Has_Type (1<<1)
+
 
 //---------------------------------- NUpInfo -----------------------------------------
-class NUpInfo : public Laxkit::DoubleBBox
+class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted
 {
   public:
 	char *name;
@@ -40,10 +55,8 @@ class NUpInfo : public Laxkit::DoubleBBox
 	double rowcenter, colcenter; //how to center within rows and columns
 	int rows, cols; //number of rows and columns in one n-up block, -1==infinity, 0==as many as will flow in
 
-	DoubleBBox final_grid_bounds;
-	double final_grid_offset[6];
-
-	double ui_offset[6]; //transform for where the arrows are, works on screen space?
+	double scale; //transform for where the arrows are, works on screen space?
+	flatpoint uioffset;
 	
 	NUpInfo();
 	virtual ~NUpInfo();
@@ -57,6 +70,8 @@ class NUpInterface : public LaxInterfaces::anInterface
   protected:
 	Laxkit::ButtonDownInfo buttondown;
 
+	unsigned long color_arrow, color_num;
+
 	ActionArea *major, *minor;
 	ActionArea *majornum, *minornum;
 	ActionArea *okcontrol, *typecontrol;
@@ -69,10 +84,14 @@ class NUpInterface : public LaxInterfaces::anInterface
 
 	int showdecs;
 	int firsttime;
+	int overoverlay;
 
 	virtual int scan(int x,int y);
 	virtual void createControls();
+	virtual void remapControls();
   public:
+	unsigned long nup_style;//options for interface
+
 	NUpInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
 	NUpInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~NUpInterface();
@@ -98,9 +117,9 @@ class NUpInterface : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
+	virtual void drawHandle(ActionArea *area, flatpoint offset);
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
-	//virtual int UseThisDocument(Document *doc);
 };
 
 

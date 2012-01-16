@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2012 by Tom Lechner
 //
 
 
@@ -55,21 +55,6 @@ using namespace std;
 //double ui_offset[6];
 
 
-#define NUP_Major_Arrow  1
-#define NUP_Minor_Arrow  2
-#define NUP_Major_Number 3
-#define NUP_Minor_Number 4
-#define NUP_Major_Tip    5
-#define NUP_Minor_Tip    6
-#define NUP_Type         7
-#define NUP_Ok           8
-
-#define NUP_Grid         100
-#define NUP_Sized_Grid   101
-#define NUP_Flowed       102
-#define NUP_Random       103
-#define NUP_Unclump      104
-#define NUP_Unoverlap    105
 
 
 //------------------------------------- NUpInfo --------------------------------------
@@ -85,13 +70,16 @@ using namespace std;
 NUpInfo::NUpInfo()
 {
 	direction=LAX_LRTB;
-	rows=cols=1;
+	rows=1;
+	cols=2;
 	rowcenter=colcenter=50;
 	flowtype=0;
 	name=NULL;
 
-	transform_identity(final_grid_offset);
-	transform_identity(ui_offset);
+	scale=1;
+
+	minx=0; maxx=100;
+	miny=0; maxy=100;
 }
 
 NUpInfo::~NUpInfo()
@@ -113,10 +101,16 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 {
 	tempdir=0;
 
-	showdecs=0;
+	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
-	//doc=NULL;
-	//UseThisDocument(ndoc);
+	showdecs=0;
+	color_arrow=rgbcolor(60,60,60);
+	color_num=rgbcolor(0,0,0);
+	overoverlay=-1;
+
+	nupinfo=new NUpInfo;
+	nupinfo->uioffset=flatpoint(50,50);
+	createControls();
 }
 
 NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -124,15 +118,23 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 {
 	tempdir=0;
 
-	showdecs=0;
+	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
-	//doc=NULL;
-	//UseThisDocument(ndoc);
+	showdecs=0;
+	color_arrow=rgbcolor(60,60,60);
+	color_num=rgbcolor(0,0,0);
+	overoverlay=-1;
+
+	nupinfo=new NUpInfo;
+	nupinfo->uioffset=flatpoint(50,50);
+	createControls();
 }
 
 NUpInterface::~NUpInterface()
 {
 	DBG cerr <<"NUpInterface destructor.."<<endl;
+
+	if (nupinfo) nupinfo->dec_count();
 
 	//if (doc) doc->dec_count();
 }
@@ -181,23 +183,39 @@ flatpoint *arrow_coordinates(int dir, flatpoint *p, double x, double y,double w,
 	return p;
 }
 
-////! Define an arrow from to to, with tail with w. Puts 7 points in p. p must be allocated for at least that many.
-//flatpoint *arrow_coordinates2(flatpoint *p, flatpoint from, flatpoint to, double w)
-//{
-//
-//	***
-//	return p;
-//}
+//! Define an arrow from to to, with tail width w. Puts 7 points in p. p must be allocated for at least that many.
+/*! Arrow height will be 3*w.
+ */
+flatpoint *arrow_coordinates(flatpoint *p, flatpoint from, flatpoint to, double w)
+{
+	flatpoint x,y;
+	x=to-from;
+	double d=norm(x);
+	x/=d;
+	y=transpose(x);
+
+	double a=w*2;
+
+	p[0]=from +     0*x + -w/2*y;
+	p[1]=from + (d-a)*x + -w/2*y;
+	p[2]=from + (d-a)*x +   -2*w*y;
+	p[3]=from +     d*x +    0*y;
+	p[4]=from + (d-a)*x +    2*w*y;
+	p[5]=from + (d-a)*x +  w/2*y;
+	p[6]=from +     0*x +  w/2*y;
+
+	return p;
+}
 
 void NUpInterface::createControls()
 {
-	controls.push(new ActionArea(NUP_Major_Arrow        , AREA_Handle, NULL, _("Drag to adjust"),1,1,color_arrows,0));
-	controls.push(new ActionArea(NUP_Minor_Arrow        , AREA_Handle, NULL, _("Drag to adjust"),1,1,color_arrows,0));
-	controls.push(new ActionArea(NUP_Major_Number       , AREA_Handle, NULL, _("Wheel to change"),1,1,color_num,0));
-	controls.push(new ActionArea(NUP_Minor_Number       , AREA_Handle, NULL, _("Wheel to change"),1,1,color_num,0));
+	controls.push(new ActionArea(NUP_Major_Arrow        , AREA_Handle, NULL, _("Drag to adjust"),0,1,color_arrow,0));
+	controls.push(new ActionArea(NUP_Minor_Arrow        , AREA_Handle, NULL, _("Drag to adjust"),0,1,color_arrow,0));
+	controls.push(new ActionArea(NUP_Major_Number       , AREA_Handle, NULL, _("Wheel to change"),0,1,color_num,0));
+	controls.push(new ActionArea(NUP_Minor_Number       , AREA_Handle, NULL, _("Wheel to change"),0,1,color_num,0));
 
-	controls.push(new ActionArea(NUP_Ok                 , AREA_Handle, NULL, _("Wheel to change"),1,1,color_num,0));
-	controls.push(new ActionArea(NUP_Type               , AREA_Handle, NULL, _("Wheel to change"),1,1,color_num,0));
+	controls.push(new ActionArea(NUP_Ok                 , AREA_Handle, NULL, _("Wheel to change"),0,1,color_num,0));
+	controls.push(new ActionArea(NUP_Type               , AREA_Handle, NULL, _("Wheel to change"),0,1,color_num,0));
 
 	major      =controls.e[0];
 	minor      =controls.e[1];
@@ -209,55 +227,72 @@ void NUpInterface::createControls()
 
 void NUpInterface::remapControls()
 {
-	double ww, hh;
+	double x,y;
 	double ww4, hh4;
-	double major_w=100;
-	double minor_w=75;
+	//double major_w=100;
+	//double minor_w=75;
+	flatpoint *p;
+
+	double totalh=nupinfo->maxy-nupinfo->miny;
+	double totalw=nupinfo->maxx-nupinfo->minx;
+	ww4=totalw/4;
+	hh4=totalh/4;
+
+	int dir=nupinfo->direction;
+	double majthick=ww4/4;
+	double minthick=ww4/8;
 
 	 //define major arrow
-	if (dir=LAX_LRTB || dir==LAX_LRBT || dir=LAX_RLTB || dir==LAX_RLBT) {
+	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 		 //major arrow is horizontal, adjust position downward if at bottom
-		if (dir==LAX_LRTB || dir==LAX_RLTB) y=totalh*3/4; else y=0;
 		p=major->Points(NULL,7,0);
-		arrow_coordinates(dir,p, ww4, y+ww4*3/4,  hh4/4, ww4,hh4/3);
+		if (dir==LAX_LRTB || dir==LAX_RLTB) y=hh4/2; else y=hh4*3.5;
+		if (dir==LAX_LRTB || dir==LAX_LRBT) 
+			 arrow_coordinates(p, flatpoint(ww4,y), flatpoint(4*ww4,y), majthick);
+		else arrow_coordinates(p, flatpoint(3*ww4,y), flatpoint(0,y), majthick);
 		major->FindBBox();
 
 		p=majornum->Points(NULL,4,0);
-		if (dir==LAX_LRTB || dir==LAX_LRBT) rect_coordinates(p, 0,y,ww4,hh4);
-		else rect_coordinates(p, 3*ww4,y,ww4,hh4);
+		if (dir==LAX_LRTB || dir==LAX_LRBT) rect_coordinates(p, 0,y-hh4/2,ww4,hh4);
+		else rect_coordinates(p, 3*ww4,y-hh4/2,ww4,hh4);
 		majornum->FindBBox();
 
 	} else {
 		 //major arrow is vertical
-		if (dir==LAX_TBRL || dir==LAX_BTRL) x=totalw*3/4; else x=0;
+		y=0;
 		p=major->Points(NULL,7,0);
-		arrow_coordinates(dir,p, x+1.5*ww4, y+ww4*3/4,  hh4/4, ww4,hh4/3);
-		area->FindBBox();
+		if (dir==LAX_TBRL || dir==LAX_BTRL) x=ww4*3.5; else x=ww4/2;
+		if (dir==LAX_TBRL || dir==LAX_TBLR)
+			 arrow_coordinates(p, flatpoint(x,hh4), flatpoint(x,4*hh4), majthick);
+		else arrow_coordinates(p, flatpoint(x,3*hh4), flatpoint(x,0), majthick);
+		major->FindBBox();
 
 		p=majornum->Points(NULL,4,0);
-		if (dir==LAX_BTLR || dir==LAX_BTRL) rect_coordinates(p, x,0,ww4,hh4);
-		else rect_coordinates(p, x,y+3*hh4, ww4,hh4);
+		if (dir==LAX_BTLR || dir==LAX_BTRL) rect_coordinates(p, x-ww4/2,y+3*hh4, ww4,hh4);
+		else rect_coordinates(p, x-ww4/2,0,ww4,hh4);
 		majornum->FindBBox();
 	}
 
 	 //define minor arrow
-	if (dir=LAX_LRTB || dir==LAX_LRBT || dir=LAX_RLTB || dir==LAX_RLBT) {
+	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 		 //minor arrow is vertical, adjust position downward if at bottom
-		if (dir==LAX_LRTB || dir==LAX_RLTB) y=0; else y=totalh*2/4;
 		p=minor->Points(NULL,7,0);
-		arrow_coordinates(dir,p, x+1.5*ww4,y,  ww4,2*hh4, hh4/2,hh4/6);
-		major->FindBBox();
+		if (dir==LAX_LRTB || dir==LAX_RLTB)
+			 arrow_coordinates(p, flatpoint(2*ww4,2*hh4), flatpoint(2*ww4,4*hh4), minthick);
+		else arrow_coordinates(p, flatpoint(2*ww4,2*hh4), flatpoint(2*ww4,0), minthick);
+		minor->FindBBox();
 
 		p=minornum->Points(NULL,4,0);
 		if (dir==LAX_LRTB || dir==LAX_RLTB) rect_coordinates(p, 1.5*ww4,hh4, ww4,hh4);
 		else rect_coordinates(p, 1.5*ww4,2*hh4, ww4,hh4);
-		majornum->FindBBox();
+		minornum->FindBBox();
 
 	} else {
 		 //minor arrow is horizontal
-		if (dir==LAX_TBRL || dir==LAX_BTRL) x=0; else x=totalw*2/4;
 		p=minor->Points(NULL,7,0);
-		arrow_coordinates(dir,p, x,y+ww4*3/2,  2*ww4,hh4, ww4/2,hh4/6);
+		if (dir==LAX_TBRL || dir==LAX_BTRL) 
+			 arrow_coordinates(p, flatpoint(2*ww4,2*hh4), flatpoint(0,2*hh4), minthick);
+		else arrow_coordinates(p, flatpoint(2*ww4,2*hh4), flatpoint(4*ww4,2*hh4), minthick);
 		minor->FindBBox();
 
 		p=minornum->Points(NULL,4,0);
@@ -270,6 +305,7 @@ void NUpInterface::remapControls()
 	p=typecontrol->Points(NULL,4,0);
 	rect_coordinates(p, ww4,5*hh4, 2*ww4,hh4);
 	typecontrol->FindBBox();
+	if (!(nup_style&NUP_Has_Type)) typecontrol->hidden=1;
 
 	 //optional ok button
 	if (nup_style&NUP_Has_Ok) {
@@ -286,6 +322,19 @@ const char *NUpInterface::Name()
 { return _("N-up"); }
 
 
+const char *dirname(int dir)
+{
+	if (dir==LAX_LRTB) return _("Left to right, top to bottom");
+	if (dir==LAX_LRBT) return _("Left to right, bottom to top");
+	if (dir==LAX_RLTB) return _("Right to left, top to bottom");
+	if (dir==LAX_RLBT) return _("Right to left, bottom to top");
+	if (dir==LAX_TBLR) return _("Top to bottom, left to right");
+	if (dir==LAX_BTLR) return _("Bottom to top, left to right");
+	if (dir==LAX_TBRL) return _("Top to bottom, right to left");
+	if (dir==LAX_BTRL) return _("Bottom to top, right to left");
+	return NULL;
+}
+
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
@@ -293,14 +342,14 @@ Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("N-up Interface"));
 
-	menu->AddItem(_("Left to right, top to bottom"),LAX_LRTB,LAX_OFF,1);
-	menu->AddItem(_("Left to right, bottom to top"),LAX_LRBT,LAX_OFF,1);
-	menu->AddItem(_("Right to left, top to bottom"),LAX_RLTB,LAX_OFF,1);
-	menu->AddItem(_("Right to left, bottom to top"),LAX_RLBT,LAX_OFF,1);
-	menu->AddItem(_("Top to bottom, left to right"),LAX_TBLR,LAX_OFF,1);
-	menu->AddItem(_("Bottom to top, left to right"),LAX_BTLR,LAX_OFF,1);
-	menu->AddItem(_("Top to bottom, right to left"),LAX_TBRL,LAX_OFF,1);
-	menu->AddItem(_("Bottom to top, right to left"),LAX_BTRL,LAX_OFF,1);
+	menu->AddItem(_("Left to right, top to bottom"),LAX_LRTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Left to right, bottom to top"),LAX_LRBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Right to left, top to bottom"),LAX_RLTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Right to left, bottom to top"),LAX_RLBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Top to bottom, left to right"),LAX_TBLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Bottom to top, left to right"),LAX_BTLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Top to bottom, right to left"),LAX_TBRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(_("Bottom to top, right to left"),LAX_BTRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF,1);
 
 	menu->AddSep();
 
@@ -343,19 +392,6 @@ int NUpInterface::Event(const Laxkit::EventData *e,const char *mes)
 	return 1;
 }
 
-/*! incs count of ndoc if ndoc is not already the current document.
- *
- * Return 0 for success, nonzero for fail.
- */
-int NUpInterface::UseThisDocument(Document *ndoc)
-{
-//	if (ndoc==doc) return 0;
-//	if (doc) doc->dec_count();
-//	doc=ndoc;
-//	if (ndoc) ndoc->inc_count();
-
-	return 0;
-}
 
 //! Use a Document.
 int NUpInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
@@ -417,25 +453,70 @@ int NUpInterface::Refresh()
 
 	if (firsttime) {
 		firsttime=0;
-		yscale=50;
-		xscale=dp->Maxx-dp->Minx-10;
+		remapControls();
 	}
 
-	DBG cerr <<"NUpInterface::Refresh()..."<<positions.n<<endl;
+	DBG cerr <<"NUpInterface::Refresh()..."<<endl;
 
 	dp->DrawScreen();
 
-	***
+	int x=nupinfo->uioffset.x;
+	int y=nupinfo->uioffset.y;
+
+	flatpoint p;
+	char buffer[30];
+
+	 //draw ui outline
+	dp->NewFG(rgbcolor(128,128,128));
+	dp->DrawScreen();
+	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
+	dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy));
+	dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->maxy));
+	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
+
+	 //draw major arrow number
+	p=flatpoint(x+(majornum->minx+majornum->maxx)/2,y+(majornum->miny+majornum->maxy)/2);
+	sprintf(buffer,"%d",nupinfo->rows); //*** only if rows is major!!!
+	dp->textout(p.x,p.y, buffer,-1);
+
+	 //draw minor arrow number
+	p=flatpoint(x+(minornum->minx+minornum->maxx)/2,y+(minornum->miny+minornum->maxy)/2);
+	sprintf(buffer,"%d",nupinfo->cols); //*** only if cols is minor!!!
+	dp->textout(p.x,p.y, buffer,-1);
+
+	 //draw arrows
+	drawHandle(major,nupinfo->uioffset);
+	drawHandle(minor,nupinfo->uioffset);
+
+	 //draw ok
+	if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,nupinfo->uioffset);
+
+	 //draw type
+	if (nup_style&NUP_Has_Type) drawHandle(typecontrol,nupinfo->uioffset);
+	
+
 
 	dp->DrawReal();
 
 	return 1;
 }
 
+void NUpInterface::drawHandle(ActionArea *area, flatpoint offset)
+{
+	if (area->real) dp->DrawReal(); else dp->DrawScreen();
+	dp->NewFG(area->color);
+
+	flatpoint p[10];
+	memcpy(p,area->outline,7*sizeof(flatpoint));
+	for (int c=0; c<area->npoints; c++) p[c]+=nupinfo->uioffset;
+
+	dp->drawlines(p,area->npoints,1,area->action==overoverlay);
+}
+
 //! Return which position and range mouse is over
 int NUpInterface::scan(int x,int y)
 {
-	flatpoint fp=screentoreal(x,y);
+	//flatpoint fp=screentoreal(x,y);
 	int action, dir=nupinfo->direction;
 	double w,h;
 	for (int c=0; c<controls.n; c++) {
@@ -472,7 +553,11 @@ int NUpInterface::scan(int x,int y)
 		}
 	}
 
-	return 0;
+	x-=nupinfo->uioffset.x;
+	y-=nupinfo->uioffset.y;
+	if (x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy) return NUP_Panel;
+
+	return NUP_None;
 }
 
 int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
@@ -490,13 +575,20 @@ int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::
 //	if (count==2) { // ***
 //	}
 
-	return 0;
+	int action=scan(x,y);
+	if (action!=NUP_None) {
+		buttondown.down(d->id,LEFTBUTTON,x,y,action);
+		return 0;
+	}
+
+	return 1;
 }
 
 int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 { //***
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 	int dragged=buttondown.up(d->id,LEFTBUTTON);
+	DBG cerr <<"NUpInterface::LBUp() dragged="<<dragged<<endl;
 
 //	if (!dragged) {
 //		if ((state&LAX_STATE_MASK)==ControlMask) {
@@ -518,25 +610,24 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 
 int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 { //***
-	int r=-1;
-	int over=scan(x,y,&r);
+	int over=scan(x,y);
 
-	DBG cerr <<"over pos,range: "<<over<<","<<r<<endl;
+	DBG cerr <<"over: "<<over<<endl;
 
-//	int lx,ly;
-//
-//	if (!buttondown.any()) return 0;
-//
-//	buttondown.move(mouse->id,x,y, &lx,&ly);
-//	DBG cerr <<"pr last m:"<<lx<<','<<ly<<endl;
-//
-//	if ((state&LAX_STATE_MASK)==0) {
-//		offset.x-=x-lx;
-//		offset.y-=y-ly;
-//		needtodraw=1;
-//		return 0;
-//	}
-//
+	int oldx,oldy;
+	buttondown.move(mouse->id,x,y,&oldx,&oldy);
+	flatpoint d=flatpoint(x-oldx,y-oldy);
+	
+	int action=NUP_None;
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action);
+
+
+	if (action==NUP_Panel) {
+		nupinfo->uioffset+=d;
+		needtodraw=1;
+		return 0;
+	}
+
 //	 //^ scales
 //	if ((state&LAX_STATE_MASK)==ControlMask) {
 //	}
@@ -561,6 +652,23 @@ int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (ch==LAX_Esc) {
+
+	} else if (ch==LAX_Left) {
+		nupinfo->direction++;
+		if (nupinfo->direction>7) nupinfo->direction=0;
+		remapControls();
+		viewport->postmessage(dirname(nupinfo->direction));
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Right) {
+		nupinfo->direction--;
+		if (nupinfo->direction<0) nupinfo->direction=7;
+		remapControls();
+		viewport->postmessage(dirname(nupinfo->direction));
+		needtodraw=1;
+		return 0;
+
 
 	} else if (ch==LAX_Shift) {
 	} else if ((ch==LAX_Del || ch==LAX_Bksp) && (state&LAX_STATE_MASK)==0) {
