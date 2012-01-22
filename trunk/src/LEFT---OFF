@@ -11,6 +11,8 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+make "make uninstall" work
+
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
 recent files do not appear to be most recent file opened
@@ -80,6 +82,8 @@ include scribus plugin in install
 
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
+Svg: in/out of meshes
+
 Scribus:
   import/export color meshes, for recent versions of Scribus
   import/export linear and radial gradients
@@ -94,8 +98,6 @@ PathInterface:
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
 import config generic things like enum keepmystery should be parsed when no import config given!!
-
-alphabatize filter name list?
 
 implement marks:
   bleed marks
@@ -473,7 +475,7 @@ when importing, have MysteryData, which has special attributes "@file-pos" which
  where in the original file the attribute starts:
  MysteryData
    transform/bounds
-   title (showed in screen)
+   title (shown in screen)
    description
    file format the data is from
    attribute style listing of the object? or straight from file
@@ -539,7 +541,7 @@ Saving: multiple documents open, save only the headwindows that refer only to th
 OR save no window configs (saved with project), OR save custom configs
 
 directory reorganization?
- windows/
+ windows/ <-- purely ui elements
  core/ <-- implies isolating core functions
 
 

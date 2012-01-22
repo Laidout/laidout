@@ -14,7 +14,7 @@
 #ifndef DODECAHEDRON_H
 #define DODECAHEDRON_H
 
-#include "polyptych/nets.h"
+#include "polyptych/src/nets.h"
 
 
 Net *makeDodecahedronNet(double ww,double hh);

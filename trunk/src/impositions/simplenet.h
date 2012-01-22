@@ -20,7 +20,7 @@
 #include <lax/interfaces/linestyle.h>
 #include <lax/displayer.h>
 
-#include "polyptych/nets.h"
+#include "polyptych/src/nets.h"
 
 //----------------------------------- SimpleNetLine -----------------------------------
 class SimpleNetLine
