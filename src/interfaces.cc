@@ -14,6 +14,7 @@
 // Copyright (C) 2005-2010 by Tom Lechner
 //
 
+#include "interfaces/nupinterface.h"
 #include "interfaces/pagerangeinterface.h"
 
 #include <lax/interfaces/gradientinterface.h>
@@ -91,7 +92,8 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	int id=1;
 
 	// *************** testing:
-	existingpool->push(new PageRangeInterface(id++,NULL,NULL));
+	 //------Nup
+	existingpool->push(new NUpInterface(id++,NULL),1);
 	// *************** end testing
 
 	 //------Group
@@ -133,6 +135,8 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 	 //------Paper
 	existingpool->push(new PaperInterface(id++,NULL),1);
 
+	 //------PageRangeInterface
+	existingpool->push(new PageRangeInterface(id++,NULL,NULL));
 
 
 	//...

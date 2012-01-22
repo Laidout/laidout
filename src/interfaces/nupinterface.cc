@@ -462,6 +462,8 @@ int NUpInterface::Refresh()
 
 	int x=nupinfo->uioffset.x;
 	int y=nupinfo->uioffset.y;
+	int dir=nupinfo->direction;
+	int majorn, minorn;
 
 	flatpoint p;
 	char buffer[30];
@@ -476,12 +478,22 @@ int NUpInterface::Refresh()
 
 	 //draw major arrow number
 	p=flatpoint(x+(majornum->minx+majornum->maxx)/2,y+(majornum->miny+majornum->maxy)/2);
-	sprintf(buffer,"%d",nupinfo->rows); //*** only if rows is major!!!
+	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+		majorn=nupinfo->rows;
+		minorn=nupinfo->cols;
+	} else {
+		majorn=nupinfo->cols;
+		minorn=nupinfo->rows;
+	}
+
+	if (majorn>=1) sprintf(buffer,"%d",majorn);
+	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
 	 //draw minor arrow number
 	p=flatpoint(x+(minornum->minx+minornum->maxx)/2,y+(minornum->miny+minornum->maxy)/2);
-	sprintf(buffer,"%d",nupinfo->cols); //*** only if cols is minor!!!
+	if (minorn>=1) sprintf(buffer,"%d",minorn);
+	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
 	 //draw arrows
@@ -517,45 +529,88 @@ void NUpInterface::drawHandle(ActionArea *area, flatpoint offset)
 int NUpInterface::scan(int x,int y)
 {
 	//flatpoint fp=screentoreal(x,y);
-	int action, dir=nupinfo->direction;
+	int action=NUP_None, dir=nupinfo->direction;
 	double w,h;
+
+
+	x-=nupinfo->uioffset.x;
+	y-=nupinfo->uioffset.y;
+
+	if (x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy) {
+		action=NUP_None;
+
+		w=nupinfo->maxx-nupinfo->minx;
+		h=nupinfo->maxy-nupinfo->miny;
+
+		double xx,yy;
+		xx=(x-nupinfo->minx)/w*4;
+		yy=(y-nupinfo->miny)/h*4;
+		cerr <<"  over:"<<xx<<','<<yy<<endl;
+
+		 //check against major arrow places
+		if ((xx<1 && (dir==LAX_BTLR || dir==LAX_TBLR)) || (xx>=3 && (dir==LAX_BTRL || dir==LAX_TBRL))) {
+			//major arrow is vertical..
+
+			if (yy<1) {
+				if (dir==LAX_BTLR || dir==LAX_BTRL) action=NUP_Major_Tip;
+				else action=NUP_Major_Number;
+			} else if (yy>=3) {
+				if (dir==LAX_BTLR || dir==LAX_BTRL) action=NUP_Major_Number;
+				else action=NUP_Major_Tip;
+			} else action=NUP_Major_Arrow;
+
+		} else if ((yy<1 && (dir==LAX_LRTB || dir==LAX_RLTB)) || (yy>=3 && (dir==LAX_RLBT || dir==LAX_LRBT))) {
+			//major arrow is horizontal..
+
+			if (xx<1) {
+				if (dir==LAX_LRTB || dir==LAX_LRBT) action=NUP_Major_Number;
+				else action=NUP_Major_Tip;
+			} else if (yy>=3) {
+				if (dir==LAX_LRTB || dir==LAX_LRBT) action=NUP_Major_Tip;
+				else action=NUP_Major_Number;
+			} else action=NUP_Major_Arrow;
+
+		 //check against minor arrow places
+		} else if (dir==LAX_BTLR || dir==LAX_TBLR) {
+			if (yy>=1.5 && yy<2.5) {
+				if (xx>=1 && xx<2) action=NUP_Minor_Number;
+				else if (xx>=2) action=NUP_Minor_Arrow;
+			}
+		} else if (dir==LAX_BTRL || dir==LAX_TBRL) {
+			if (yy>=1.5 && yy<2.5) {
+				if (xx>=2 && xx<3) action=NUP_Minor_Number;
+				else if (xx<2) action=NUP_Minor_Arrow;
+			}
+		} else if (dir==LAX_LRBT || dir==LAX_RLBT) {
+			if (xx>=1.5 && xx<2.5) {
+				if (yy>=2 && yy<3) action=NUP_Minor_Number;
+				else if (yy<2) action=NUP_Minor_Arrow;
+			}
+		} else if (dir==LAX_LRTB || dir==LAX_RLTB) {
+			if (xx>=1.5 && xx<2.5) {
+				if (yy>=1 && yy<2) action=NUP_Minor_Number;
+				else if (yy>=2) action=NUP_Minor_Arrow;
+			}
+		}
+
+		if (action==NUP_None) action=NUP_Panel;
+		return action;
+	}
+
+	x+=nupinfo->uioffset.x;
+	y+=nupinfo->uioffset.y;
+
+	 //search for other controls
 	for (int c=0; c<controls.n; c++) {
 		if (controls.e[c]->hidden) continue;
 
 		if (controls.e[c]->category==0) {
 			 //normal, single instance handles
 			if (!controls.e[c]->real && controls.e[c]->PointIn(x,y)) {
-				w=controls.e[c]->maxx-controls.e[c]->minx;
-				h=controls.e[c]->maxy-controls.e[c]->miny;
-				action=controls.e[c]->action;
-				if (action==NUP_Major_Arrow) {
-					if ((dir==LAX_LRTB || dir==LAX_LRBT) && x>(controls.e[c]->minx+.75*w))
-						action=NUP_Major_Tip;
-					else if ((dir==LAX_RLTB || dir==LAX_RLBT) && x<(controls.e[c]->minx+.25*w))
-						action=NUP_Major_Tip;
-					else if ((dir==LAX_TBLR || dir==LAX_TBRL) && y<(controls.e[c]->miny+.25*h))
-						action=NUP_Major_Tip;
-					else if ((dir==LAX_BTLR || dir==LAX_BTRL) && y>(controls.e[c]->miny+.75*h))
-						action=NUP_Major_Tip;
-
-				} else if (action==NUP_Minor_Arrow) {
-					if ((dir==LAX_LRTB || dir==LAX_RLTB) && y>(controls.e[c]->miny+.6*h))
-						action=NUP_Minor_Tip;
-					else if ((dir==LAX_RLBT || dir==LAX_LRBT) && y<(controls.e[c]->miny+.3*h))
-						action=NUP_Minor_Tip;
-					else if ((dir==LAX_TBLR || dir==LAX_BTLR) && x>(controls.e[c]->minx+.6*w))
-						action=NUP_Minor_Tip;
-					else if ((dir==LAX_TBRL || dir==LAX_BTRL) && x<(controls.e[c]->minx+.3*w))
-						action=NUP_Minor_Tip;
-				}
 				return action;
 			}
 		}
 	}
-
-	x-=nupinfo->uioffset.x;
-	y-=nupinfo->uioffset.y;
-	if (x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy) return NUP_Panel;
 
 	return NUP_None;
 }
@@ -605,13 +660,75 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 //int NUpInterface::MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 //int NUpInterface::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 //int NUpInterface::RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-//int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
-//int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+
+int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	int action=scan(x,y);
+	int dir=nupinfo->direction;
+	if (action==NUP_Major_Number || action==NUP_Major_Arrow) {
+		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+			if (nupinfo->rows<0) nupinfo->rows=1; else nupinfo->rows++;
+		} else {
+			if (nupinfo->cols<0) nupinfo->cols=1; else nupinfo->cols++;
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow) {
+		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+			if (nupinfo->cols<0) nupinfo->cols=1; else nupinfo->cols++;
+		} else {
+			if (nupinfo->rows<0) nupinfo->rows=1; else nupinfo->rows++;
+		}
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action!=NUP_None) return 0;
+	return 1;
+}
+
+int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	int action=scan(x,y);
+	int dir=nupinfo->direction;
+	if (action==NUP_Major_Number || action==NUP_Major_Arrow) {
+		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+			nupinfo->rows--;
+			if (nupinfo->rows<=0) nupinfo->rows=-1;
+		} else {
+			nupinfo->cols--;
+			if (nupinfo->cols<=0) nupinfo->cols=-1;
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow) {
+		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+			nupinfo->cols--;
+			if (nupinfo->cols<=0) nupinfo->cols=-1;
+		} else {
+			nupinfo->rows--;
+			if (nupinfo->rows<=0) nupinfo->rows=-1;
+		}
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action!=NUP_None) return 0;
+	return 1;
+}
+
+
+
+DBG int lastx,lasty;
 
 int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 { //***
+
 	int over=scan(x,y);
 
+	DBG lastx=x; lasty=y;
 	DBG cerr <<"over: "<<over<<endl;
 
 	int oldx,oldy;
@@ -652,6 +769,12 @@ int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (ch==LAX_Esc) {
+
+	} else if (ch=='o') {
+		cerr <<"--------------------------";
+		DBG int action=scan(lastx,lasty);
+		DBG cerr << " x,y:"<<lastx<<','<<lasty<<"  action:"<<action<<endl;
+		return 0;
 
 	} else if (ch==LAX_Left) {
 		nupinfo->direction++;
