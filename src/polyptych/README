@@ -13,7 +13,7 @@ image to polyedron renderers. This comprises these things:
 At some point, the things here will most likely be separated from Laidout
 into its own project, and Laidout will use libraries from that project.
 
-Polyptych depends on the Laxkit, Opengl, and FTGL.
+Polyptych depends on Graphicsmagick++, Laxkit, Opengl, and FTGL.
 Spheretopoly depends on Graphicsmagick++, and the Laxkit.
 Spheretocube depends on Graphicsmagick++, and only vectors.o from the Laxkit.
 Convertahedron depends on only the Laxkit.
