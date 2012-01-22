@@ -16,7 +16,7 @@
 
 
 #include "dodecahedron.h"
-#include "polyptych/poly.h"
+#include "polyptych/src/poly.h"
 #include <lax/strmanip.h>
 
 using namespace Laxkit;

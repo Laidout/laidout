@@ -5,7 +5,7 @@
 #################################################
 
 
-include ../../Makefile-toinclude
+include ../../../Makefile-toinclude
 
 LD=g++
 CPPFLAGS= -Wall -g -I. -I.. -I$(LAXDIR)/.. -I$(LAXIDIR) -I/usr/include/freetype2 -I/usr/include/GraphicsMagick/

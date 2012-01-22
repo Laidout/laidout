@@ -11,10 +11,11 @@ LAXIDIR=$(LAXDIR)/interfaces
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lXi -lX11 -lm -lpng `imlib2-config --libs` \
 		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
-CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2
+CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
 DEBUGFLAGS= -g -DDEBUG
 #POLYPTYCHLIBS= -lGraphicsMagick++ -lGL -lGLU -lftgl 
 POLYPTYCHLIBS= 
+POLYPTYCHOBJS=polyptych/src/nets.o polyptych/src/poly.o
 
 
 dirs= \
@@ -24,8 +25,7 @@ dirs= \
 	impositions \
 	interfaces \
 	filetypes \
-	printing \
-	polyptych
+	printing
 
 objs= \
 	utils.o \
@@ -59,14 +59,14 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(dirs) $(objs)
-	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o -llaxinterfaces -llaxkit  -lcrypto $(POLYPTYCHLIBS) -o $@
+laidout: lax laxinterface $(dirs) $(objs) polyptych
+	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit  -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd src/icons && $(MAKE)
 									 
 polyptych:
-	cd polyptych && $(MAKE) forlaidout
+	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) forlaidout
 
 api:
 	cd api && $(MAKE)
@@ -125,11 +125,12 @@ alldocs:
 depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
 	for NAME in $(dirs); do $(MAKE) -C $$NAME depends; done
+	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) depends
 
 include makedepend
 
 
-.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage
+.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage polyptych
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done
