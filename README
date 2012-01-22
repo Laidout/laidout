@@ -17,9 +17,9 @@ WHAT IT CAN DO RIGHT NOW
 Laidout is currently in the 'Kind of a hack, but mostly works
 on my machine' stage of development.
 
-Laidout currently can arrange pages into a couple different impositions,
+Laidout currently can arrange pages into various impositions,
 such as a booklet, or even a dodecahedron. You can manipulate images
-and gradients (linear, radial, and bezier patches). Also, 
+and gradients (linear, radial, and mesh). Also, 
 you can make a type of image that can be stretched around. The very 
 basics to get my cartoon books done, in other words. Many more features
 are planned, like such non-essentials (to me anyway) as text! Who needs 
@@ -34,12 +34,18 @@ COMPILING
 
 You will need a few extra development libraries on your computer in order
 to compile Laidout. Running ./configure does a simple check for these,
-but the check is so simple, that it may miss them. You will need the
-header files for Imlib2, freetype2, fontconfig, x11, xft, ssl, and cups.
+but the check is so simple, that it may miss them or otherwise get confused.
+You will need the header files for Imlib2, freetype2, fontconfig, x11, xft,
+ssl, and cups.
+
+If you are on a debian based system, you can probably install these with this command:
+
+apt-get install g++ libpng12-dev libx11-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
+
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
-available. If you have downloaded a release, then the Laxkit should
-have been included.
+available. If you have downloaded a release, then the Laxkit 
+is included.
 
 Here are the current "./configure" options. They are all optional:
  --help                       Show the options you can pass to ./configure
@@ -81,6 +87,18 @@ uncomment the line for icon_dir and set to the directory you want. For the
 uninstalled icons, this would be (this directory)/src/icons.
 
 
+MAKING A DEB PACKAGE
+--------------------
+If you want to create a deb package of Laidout, make sure you have the fakeroot 
+package installed, and have all the other packages listed from the COMPILING section
+above, and do this from the top laidout directory:
+
+dpkg-buildpackage -rfakeroot
+
+If the magic works, you will find installable packages in the directory directly
+above the Laidout directory. If it does not work, please let me know so I can fix it!
+
+
 INSTALLING DIFFERENT VERSIONS AT THE SAME TIME
 ----------------------------------------------
 
@@ -103,7 +121,8 @@ Right now, everything in prefix/share/laidout will be removed on uninstall
 let me know, and I'll try to finally fix this.
 
 In any case, if you can, it's really safer to build the deb package, which 
-automatically keeps track of such things.
+automatically keeps track of such things, though with deb packages, you currently
+can have only one at a time, without tinkering with debian/control.
 
 Also, though you can have different versions coexist, there is not currently an
 automatic way to convert resources from older laidout versions to newer ones.
@@ -113,17 +132,19 @@ Again, if this is a problem, let me know!
 COMPILING FROM SVN
 ------------------
 For the Laidout development version, you will need the Laxkit development 
-version from the same date, give or take 10 minutes or so.
+version from the same date, give or take 10 minutes or so. Be advised that
+the dev version may be rather buggy compared to "stable" versions!
+
 Here is a fast and easy way to get Laidout up and running from svn:
 
-
-1. Grab Laidout svn:
+1. Grab Laidout svn (make sure the subversion package is installed):
 svn co http://laidout.svn.sourceforge.net/svnroot/laidout/trunk laidout-svn
 
 
 2. Grab Laxkit svn:
-Cd to laidout-svn and get the Laxkit svn:
+Enter the laidout-svn directory and get the Laxkit svn:
 
+cd laidout-svn
 svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
 
 
