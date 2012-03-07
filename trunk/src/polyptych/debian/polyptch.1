@@ -1,0 +1,63 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH POLYPTYCH 1 "March  3, 2012"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+polyptych \- a Polyhedron unwrapper
+.SH SYNOPSIS
+.B polyptych
+.RI [ options ]  " [polyptychfile]"
+.br
+.SH DESCRIPTION
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invode bold face and italics,
+.\" respectively.
+\fBpolyptych\fP is a program that lets you easily unwrap 3-D polyhedra on screen
+and project equirectangular panoramas onto them.
+
+
+.SH OPTIONS
+These programs follow the usual GNU command line syntax, with long
+options starting with two dashes (`-').
+A summary of options is included below.
+
+.TP
+.B polyptychfile
+A Polyptych file
+
+.TP
+.B \-i, \-\-image file
+An equirectangular sphere image
+
+.TP
+.B \-p, \-\-polyhedron file
+An OFF, Obj, or Polyp polyhedron file
+
+.TP
+.B \-t, \-\-touch
+Run in touch mode, where input is all single click
+
+.TP
+.B \-\-fontsize 20
+Default console font size, in pixels
+
+.TP
+.B \-v, \-\-version
+Print out version of the program and exit
+
+.TP
+.B \-h, \-\-help
+Show summary of options.
+
+.SH SEE ALSO
+.BR spheretocube (1),
+.BR spheretopoly (1).
+.BR convertahedron (1).
+.br
+.SH AUTHOR
+polyptych was written by Tom Lechner <tom@tomlechner.com>.
+.PP

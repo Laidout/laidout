@@ -1,0 +1,15 @@
+Source: polyptych
+Section: graphics
+Priority: extra
+Maintainer: Tom Lechner <tom@tomlechner.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://www.laidout.org/polyptych
+
+Package: polyptych
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Polyhedron unwrapper and panorama projector
+ Polyptych lets you easily unwrap OFF, OBJ, or poylp formatted polyhedron files
+ by simply peeling off the sides of the polyhedron on screen. You may also project
+ equirectangular images onto this polyhedron, and render flat nets.
