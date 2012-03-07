@@ -33,6 +33,7 @@
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
 #include <lax/freedesktop.h>
+#include <lax/laxoptions.h>
 
 #include </usr/include/GraphicsMagick/Magick++.h>
 
@@ -57,6 +58,14 @@ using namespace LaxFiles;
 
 using namespace SphereMap;
 using namespace Polyptych;
+
+
+//-------------------------- version() -------------------------------------
+const char *version()
+{
+	return "Polyptych version 0.1\n"
+		   "written by Tom Lechner, tomlechner.com";
+}
 
 //------------------------- Init attributes -----------------------------------
 
@@ -191,32 +200,24 @@ void defineCube()
 
 //--------------------------------- main(), help(), version() ----------------------------
 
-void help()
+LaxOptions options;
+
+//! Initialize a LaxOptions object to contain Laidout's command line option summary.
+/*! \ingroup lmisc
+ */
+void InitOptions()
 {
-	cout << "\npolyptych  [options] [polyhedronfile]"<<endl
-		 << "\n"
-		 << "Project an equirectangular sphere map onto a polyhedron."<<endl
-		 << "Output parameters for spheretopoly to generate faces."<<endl
-		 << "\n"
-		 << "  polyptychfile          A Polyptych file"<<endl
-		 << "  --image, -i file       An equirectangular sphere image"<<endl
-		 << "  --polyhedron, -p file  An OFF or Polyp polyhedron file"<<endl
-		 << "  --touch, -t            Run in touch mode, where input is all single click"<<endl
-		 << "  --fontsize 20          Default console font size, in pixels"<<endl
-		 << "  --version, -v          Print out version of the program and exit"<<endl
-		 << "  --help, -h             Print out this help and exit"<<endl
-		;
+	options.HelpHeader(version());
+//	options.HelpHeader("\nProject an equirectangular sphere map onto a polyhedron.\n"
+//					   "Output parameters for spheretopoly to generate faces.");
+	options.UsageLine("polyptych [options] [polyptychfile]");
 
-
-	exit(0);
-
-}
-
-void version()
-{
-	cout <<"Polyptych version 0.1"<<endl
-		 <<"written by Tom Lechner, tomlechner.com"<<endl;
-	exit(0);
+	options.Add("image",     'i', 0, "An equirectangular sphere image",           0, "file");
+	options.Add("polyhedron",'p', 1, "An OFF, Obj, or Polyp polyhedron file",     0, "file");
+	options.Add("fontsize",  'f', 1, "Default console font size, in pixels",      0, "20");
+	options.Add("touch",     't', 0, "Run in touch mode, where input is all single click",   0, "");
+	options.Add("version",   'v', 0, "Print out version of the program and exit", 0, NULL);
+	options.Add("help",      'h', 0, "Print out this help and exit",              0, NULL);
 }
 
 
@@ -230,51 +231,58 @@ int main(int argc, char **argv)
 	Magick::InitializeMagick(*argv);
 
 
-	//if (argc==1) { help(); }
-
-
 	 // parse options
-	static struct option long_options[] = {
-			{ "polyhedron",          1, 0, 'p' },
-			{ "image",               1, 0, 'i' },
-			{ "touch",               0, 0, 't' },
-			{ "fontsize",            1, 0, 'f' },
-			{ "version",             0, 0, 'v' },
-			{ "help",                0, 0, 'h' },
-			{ 0,0,0,0 }
-		};
 	int c,index, t;
 	int touchmode=0;
 
-	while (1) {
-		c=getopt_long(argc,argv,":p:i:tvh",long_options,&index);
-		if (c==-1) break;
-		switch(c) {
-			case ':': cerr <<"Missing parameter..."<<endl; exit(1); // missing parameter
-			case '?': cerr <<"Unknown option"<<endl; exit(1);  // unknown option
-			case 'h': help();    // Show usage summary, then exit
-			case 'v': version(); // Show version info, then exit
+	InitOptions();
+	c=options.Parse(argc,argv, &index);
+	if (c==-2) {
+		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+	if (c==-1) {
+		cerr <<"Unknown option "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+
+	LaxOption *o;
+	for (o=options.start(); o; o=options.next()) {
+		switch(o->chr()) {
+			case 'h':    // Show usage summary, then exit
+				options.Help(stdout);
+				exit(0);
+			case 'v':   // Show version info, then exit
+				cout <<version()<<endl;
+				exit(0);
 
 			case 'f': {
-				t=strtod(optarg,NULL);
+				t=strtod(o->arg(),NULL);
 				if (t>0) global_fontsize=t;
 				break; 
 			  }
 			case 't': { touchmode=1; break; }
 
 			case 'p': { //polyhedron
-				makestr(polyhedronfile,optarg);
+				makestr(polyhedronfile,o->arg());
 				convert_to_full_path(polyhedronfile,NULL);
 			  } break;
 					  
 			case 'i': { //image
-				makestr(spherefile,optarg);
+				makestr(spherefile,o->arg());
 				convert_to_full_path(spherefile,NULL);
 			  } break;
 		}
 	}
 
-	if (!polyptychfile && optind<argc) polyptychfile=newstr(argv[optind]); 
+
+	for (o=options.remaining(); o; o=options.next()) {
+		if (!polyptychfile) {
+			polyptychfile=newstr(o->arg());
+			break;
+		}
+	}
+
 	convert_to_full_path(polyptychfile,NULL);
 
 	if (polyhedronfile) {
@@ -405,6 +413,7 @@ int main(int argc, char **argv)
 									 polyptychfile?polyptychfile:"unwrapper",
 									 0, 0,0,SCREENWIDTH,SCREENHEIGHT, 0,
 									 &poly);
+	w->touchmode=touchmode;
 	 //set ui stuff
 	w->FontAndSize(consolefontfile,global_fontsize);
 
