@@ -225,7 +225,8 @@ Face &Face::operator=(const Face &fce)
 //! Create blank Pgon.
 Pgon::Pgon()
 {
-	color=0; pn=0; id=-1;
+	id=-1;
+	pn=0;
 	p=NULL;
 	vlabel=elabel=flabel=NULL;
 	dihedral=NULL;
@@ -260,7 +261,6 @@ void Pgon::setup(int c,int newid)
  */
 Pgon::Pgon(const Face &f)
 {
-	color=0;
 	id=-1;
 	pn=f.pn;
 	p=new flatpoint[pn];
@@ -283,7 +283,6 @@ Pgon::Pgon(const Face &f)
 Pgon::Pgon(int n,double r,int w) // r=radius=1,w 1 on+x,-1 on-x
 {
 	if (w!=-1) w=1;
-	color=0;
 	id=-1;
 	vlabel=elabel=flabel=NULL;
 	dihedral=NULL;
@@ -320,7 +319,7 @@ void Pgon::clear()
 	delete[] elabel;	 elabel=NULL;
 	delete[] flabel;	 flabel=NULL;
 	delete[] dihedral; dihedral=NULL;
-	color=0; pn=0; id=-1;
+	pn=0; id=-1;
 }
 
 //! Pgon equals operator.
@@ -444,6 +443,12 @@ Polyhedron::Polyhedron(const Polyhedron &nphed)
 	*this=nphed;
 }
 
+//! Return a new blank ExtraFace object to attach to a face, usually via BuildExtra().
+ExtraFace *Polyhedron::newExtraFace()
+{
+	return new ExtraFace;
+}
+
 //! Create extra data pertaining to each polyhedron face.
 /*! Will delete any face cache data that already exists.
  *
@@ -464,7 +469,7 @@ void Polyhedron::BuildExtra()
 		face=faces.e[c];
 		n=face->pn;
 		if (face->cache) delete face->cache;
-		cache=face->cache=new ExtraFace;
+		cache=face->cache=newExtraFace();
 		cache->numsides=face->pn;
 		cache->points3d=new spacevector[n];
 		cache->points2d=new flatvector[n];
@@ -838,7 +843,7 @@ spacevector Polyhedron::VertexOfFace(int fce, int pt, int cache)
 Pgon Polyhedron::FaceToPgon(int n, char useplanes)
 {
 	Pgon npgon(*faces.e[n]);
-	if (faces.e[n]->setid==-1) npgon.color=((255)*256+255)*256+255;
+	if (faces.e[n]->setid==-1) npgon.color.rgbf(1.,1.,1.,1.);
 	   else npgon.color=sets.e[faces.e[n]->setid]->color;
 	npgon.dihedral=new double[npgon.pn];
 	basis bas;
@@ -1053,10 +1058,10 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context
 			fprintf(ff,"%sset %s\n",spc,sets.e[c]->name);
 			fprintf(ff,"%s  %s\n",spc,sets.e[c]->on?"on":"off");
 			fprintf(ff,"%s  color %d %d %d %d\n",spc,
-						(int)sets.e[c]->color&0xff,
-						int((sets.e[c]->color&0xff00)>>8),
-						int((sets.e[c]->color&0xff0000)>>16),
-						int((sets.e[c]->color&0xff000000)>>12));
+						(int)sets.e[c]->color.red,
+						(int)sets.e[c]->color.green,
+						(int)sets.e[c]->color.blue,
+						(int)sets.e[c]->color.alpha);
 			if (sets.e[c]->ne) {
 				fprintf(ff,"%s  faces ",spc);
 				for (int c2=0; c2<sets.e[c]->ne; c2++) fprintf(ff,"%d ",sets.e[c]->e[c2]);
@@ -1086,7 +1091,7 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 	//Sets:
 	//char *name;
 	//unsigned char on;
-	//unsigned long color;
+	//ScreenColor color;
 	//int ne,*e;
 	
 	char *nme,*value, *ee,*tt;
@@ -1095,8 +1100,10 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 	for (int c=0; c<att->attributes.n; c++) {
 		nme=  att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(nme,"name")) {
 			makestr(name,value);
+
 		} else if (!strcmp(nme,"vertices")) {
 			 // parse arbitrarily long list of 3-d points
 			 //   1.2 1.5 -1.8 \n ...
@@ -1111,10 +1118,12 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 				tt=*ee?ee+1:NULL;
 				vertices.push(spacepoint(p3[0],p3[1],p3[2]));
 			}
+
 		} else if (!strcmp(nme,"edge")) {
 			int i[2];
 			n=IntListAttribute(value,i,2);
 			if (n==2) edges.push(new Edge(i[0],i[1]));
+
 		} else if (!strcmp(nme,"face")) {
 			Face *newface=new Face();
 			IntListAttribute(value,&newface->p,&newface->pn);
@@ -1139,6 +1148,7 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 				for (int c2=0; c2<newface->pn; c2++) newface->v[c2]=-1;
 			}
 			faces.push(newface);
+
 		} else if (!strcmp(nme,"set")) {
 			Settype *set=new Settype;
 			makestr(set->name,value);
@@ -1158,10 +1168,11 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 					if (n<3) i[2]=0;
 					if (n<2) i[1]=0;
 					if (n<1) i[0]=255;
-					set->color=i[3]<<24 | i[0]<<16 | i[1]<<8 | i[2];
+					set->color.rgb(i[0],i[1],i[2],i[3]);
 				}
 			}
 			sets.push(set);
+
 		} else if (!strcmp(nme,"plane")) {
 			basis bas;
 			double p3[3];
@@ -1572,6 +1583,7 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 		att.dump_in(f,0,NULL);
 		dump_in_atts(&att,0,NULL);
 		filefound=1;
+		c=0;
 	}
 
 	 //check if is OFF file
@@ -1605,7 +1617,7 @@ int Polyhedron::dumpInFile(const char *file, char **error_ret)
 	}
 
 	fclose(f);
-	if (filefound==0) makestr(filename,file);
+	if (filefound) makestr(filename,file);
 	return c | !filefound;
 }
 

@@ -22,6 +22,7 @@
 #include <lax/lists.h>
 #include <lax/vectors.h>
 #include <lax/attributes.h>
+#include <lax/screencolor.h>
 
 #include "nets.h"
 
@@ -87,7 +88,7 @@ class Face
 class Pgon
 {
  public:
-	unsigned long color;
+	Laxkit::ScreenColor color;
 	int pn,id;
 	flatpoint *p;
 	int *vlabel,*elabel,*flabel;
@@ -110,7 +111,7 @@ class Settype
  public:
 	char *name;
 	unsigned char on;
-	unsigned long color;
+	Laxkit::ScreenColor color;
 	int ne,*e;
 	Settype() { name=NULL; ne=0; e=NULL; }
 	~Settype() { delete[] name; delete[] e; }
@@ -147,7 +148,6 @@ class Polyhedron :
 	int makeplanes();
 	int makeedges();
 	void applysets();
-//	void planeson(unsigned long *&,unsigned char *&);
 
 	 //informational functions
 	spacepoint CenterOfFace(int,int cache=0);
@@ -165,8 +165,9 @@ class Polyhedron :
 	virtual int AddPoint(spacepoint p);
 	virtual int AddPoint(double x,double y,double z);
 	virtual int AddFace(const char *str);
-	void BuildExtra(); //create face cache
-	void collapseVertices(double zero, int vstart=-1, int vend=-1);
+	virtual void BuildExtra(); //create face cache
+	virtual ExtraFace *newExtraFace();
+	virtual void collapseVertices(double zero, int vstart=-1, int vend=-1);
 
 	virtual void dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
