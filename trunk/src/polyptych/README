@@ -21,7 +21,7 @@ Convertahedron depends on only the Laxkit.
 For a recent debian system, these extra dependencies can be installed (as root) with:
   > apt-get install libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
 
-To make the standalone versions:
+To make the standalone versions (first "cd src"):
   > make polyptych
   > make spheretocube
   > make spheretopoly

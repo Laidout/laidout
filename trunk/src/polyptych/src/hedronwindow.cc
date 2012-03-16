@@ -179,6 +179,7 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	mouseover_overlay=-1;
 	grab_overlay=-1;
 	active_action=ACTION_None;
+	touchmode=0;
 
 	oldmode=mode=MODE_Net;
 	draw_edges=1;
