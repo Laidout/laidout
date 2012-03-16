@@ -107,9 +107,11 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 	color_arrow=rgbcolor(60,60,60);
 	color_num=rgbcolor(0,0,0);
 	overoverlay=-1;
+	tempdir=-1;
+	temparrowdir=-1;
 
 	nupinfo=new NUpInfo;
-	nupinfo->uioffset=flatpoint(50,50);
+	nupinfo->uioffset=flatpoint(150,150);
 	createControls();
 }
 
@@ -124,9 +126,11 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 	color_arrow=rgbcolor(60,60,60);
 	color_num=rgbcolor(0,0,0);
 	overoverlay=-1;
+	tempdir=-1;
+	temparrowdir=-1;
 
 	nupinfo=new NUpInfo;
-	nupinfo->uioffset=flatpoint(50,50);
+	nupinfo->uioffset=flatpoint(150,150);
 	createControls();
 }
 
@@ -148,43 +152,9 @@ flatpoint *rect_coordinates(flatpoint *p, double x, double y,double w,double h)
 	return p;
 }
 
-//! Get coordinates for straight arrows of various lengths, pointing left, right, up or down.
-/*! Total height is h, height of tail is t, arrow head width is a.
- * Coordinates start with one point on tail, and end on the other.
- * Returns a new array with 7 points.
- */
-flatpoint *arrow_coordinates(int dir, flatpoint *p, double x, double y,double w,double h, double a, double t)
-{
-	if (!p) p=new flatpoint[7];
-
-	double tt;
-	if (dir==LAX_TBLR || dir==LAX_TBRL || dir==LAX_BTLR || dir==LAX_BTRL) { tt=w; w=h; h=tt; }
-	
-	p[0]=flatpoint(x+0,   y+h/2+t/2);
-	p[1]=flatpoint(x+w-a, y+h/2+t/2);
-	p[2]=flatpoint(x+w-a, y+h/2+h/2);
-	p[3]=flatpoint(x+w,   y+h/2+0);
-	p[4]=flatpoint(x+w-a, y+h/2+-h/2);
-	p[5]=flatpoint(x+w-a, y+h/2+-t/2);
-	p[6]=flatpoint(x+0,   y+h/2+-t/2);
-
-	if (dir==LAX_RLTB || dir==LAX_RLBT || dir==LAX_TBLR || dir==LAX_TBRL) {
-		 //reverse direction of arrow
-		for (int c=0; c<7; c++) { p[c].x=w-p[c].x; }
-	}
-
-	 //position and flip as necessary
-	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-		for (int c=0; c<7; c++) { p[c].x+=x; p[c].y+=y; }
-	} else {
-		for (int c=0; c<7; c++) { tt=p[c].x; p[c].x=y; p[c].y=tt; p[c].x+=x; p[c].y+=y; }
-	}
-
-	return p;
-}
-
 //! Define an arrow from to to, with tail width w. Puts 7 points in p. p must be allocated for at least that many.
 /*! Arrow height will be 3*w.
+ * Returns p.
  */
 flatpoint *arrow_coordinates(flatpoint *p, flatpoint from, flatpoint to, double w)
 {
@@ -225,7 +195,7 @@ void NUpInterface::createControls()
 	typecontrol=controls.e[5];
 }
 
-void NUpInterface::remapControls()
+void NUpInterface::remapControls(int tempdir)
 {
 	double x,y;
 	double ww4, hh4;
@@ -238,7 +208,7 @@ void NUpInterface::remapControls()
 	ww4=totalw/4;
 	hh4=totalh/4;
 
-	int dir=nupinfo->direction;
+	int dir=(tempdir>=0?tempdir:nupinfo->direction);
 	double majthick=ww4/4;
 	double minthick=ww4/8;
 
@@ -342,14 +312,14 @@ Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("N-up Interface"));
 
-	menu->AddItem(_("Left to right, top to bottom"),LAX_LRTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Left to right, bottom to top"),LAX_LRBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Right to left, top to bottom"),LAX_RLTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Right to left, bottom to top"),LAX_RLBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Top to bottom, left to right"),LAX_TBLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Bottom to top, left to right"),LAX_BTLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Top to bottom, right to left"),LAX_TBRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(_("Bottom to top, right to left"),LAX_BTRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_LRTB),LAX_LRTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_LRBT),LAX_LRBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_RLTB),LAX_RLTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_RLBT),LAX_RLBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_TBLR),LAX_TBLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_BTLR),LAX_BTLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_TBRL),LAX_TBRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_BTRL),LAX_BTRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF,1);
 
 	menu->AddSep();
 
@@ -464,6 +434,13 @@ int NUpInterface::Refresh()
 	int y=nupinfo->uioffset.y;
 	int dir=nupinfo->direction;
 	int majorn, minorn;
+	unsigned int arrowcolor=rgbcolor(128,128,128);
+
+	if (tempdir>=0) {
+		arrowcolor=rgbcolor(0,200,0);
+		dir=tempdir;
+		remapControls(tempdir);
+	}
 
 	flatpoint p;
 	char buffer[30];
@@ -497,26 +474,30 @@ int NUpInterface::Refresh()
 	dp->textout(p.x,p.y, buffer,-1);
 
 	 //draw arrows
-	drawHandle(major,nupinfo->uioffset);
-	drawHandle(minor,nupinfo->uioffset);
+	drawHandle(major,arrowcolor,nupinfo->uioffset);
+	drawHandle(minor,arrowcolor,nupinfo->uioffset);
 
 	 //draw ok
-	if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,nupinfo->uioffset);
+	if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,okcontrol->color,nupinfo->uioffset);
 
 	 //draw type
-	if (nup_style&NUP_Has_Type) drawHandle(typecontrol,nupinfo->uioffset);
+	if (nup_style&NUP_Has_Type) drawHandle(typecontrol,typecontrol->color,nupinfo->uioffset);
 	
 
 
 	dp->DrawReal();
 
+	if (tempdir>=0) {
+		remapControls(nupinfo->direction);
+	}
+
 	return 1;
 }
 
-void NUpInterface::drawHandle(ActionArea *area, flatpoint offset)
+void NUpInterface::drawHandle(ActionArea *area, unsigned int color, flatpoint offset)
 {
 	if (area->real) dp->DrawReal(); else dp->DrawScreen();
-	dp->NewFG(area->color);
+	dp->NewFG(color);
 
 	flatpoint p[10];
 	memcpy(p,area->outline,7*sizeof(flatpoint));
@@ -524,6 +505,87 @@ void NUpInterface::drawHandle(ActionArea *area, flatpoint offset)
 
 	dp->drawlines(p,area->npoints,1,area->action==overoverlay);
 }
+
+//! Return a new flow direction, or -1 if not in the panel.
+int NUpInterface::vscan(int x,int y)
+{
+	//flatpoint fp=screentoreal(x,y);
+	int dir=nupinfo->direction;
+	double w,h;
+
+
+	x-=nupinfo->uioffset.x;
+	y-=nupinfo->uioffset.y;
+
+	if (!(x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy)) return -1;
+
+	w=nupinfo->maxx-nupinfo->minx;
+	h=nupinfo->maxy-nupinfo->miny;
+
+	double xx,yy;
+	xx=(x-nupinfo->minx)/w*4;
+	yy=(y-nupinfo->miny)/h*4;
+
+	int newdir=-1;
+	int oldh=-1;
+	if (dir==LAX_LRBT || dir==LAX_LRTB || dir==LAX_TBLR || dir==LAX_BTLR) oldh=NUP_LtoR; else oldh=NUP_RtoL;
+
+	if (xx<1) {
+		if (yy<2) newdir=LAX_BTLR;
+		if (yy>=2) newdir=LAX_TBLR;
+	}
+	if (xx>3) {
+		if (yy<2) newdir=LAX_BTRL;
+		if (yy>=2) newdir=LAX_TBRL;
+	}
+	if (xx>=1 && xx<=3) {
+		if (yy<2)  { if (oldh==NUP_LtoR) newdir=LAX_LRBT; else newdir=LAX_RLBT; }
+		if (yy>=2) { if (oldh==NUP_LtoR) newdir=LAX_LRTB; else newdir=LAX_RLTB; }
+	}
+
+	return newdir;
+}
+
+//! Return a new flow direction, or -1 if not in the panel.
+int NUpInterface::hscan(int x,int y)
+{
+	//flatpoint fp=screentoreal(x,y);
+	int dir=nupinfo->direction;
+	double w,h;
+
+
+	x-=nupinfo->uioffset.x;
+	y-=nupinfo->uioffset.y;
+
+	if (!(x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy)) return -1;
+
+	w=nupinfo->maxx-nupinfo->minx;
+	h=nupinfo->maxy-nupinfo->miny;
+
+	double xx,yy;
+	xx=(x-nupinfo->minx)/w*4;
+	yy=(y-nupinfo->miny)/h*4;
+
+	int newdir=-1;
+	int oldv=-1;
+	if (dir==LAX_LRBT || dir==LAX_RLBT || dir==LAX_BTLR || dir==LAX_BTRL) oldv=NUP_BtoT; else oldv=NUP_TtoB;
+
+	if (yy<1) {
+		if (xx<2) newdir=LAX_RLTB;
+		if (xx>=2) newdir=LAX_LRTB;
+	}
+	if (yy>3) {
+		if (xx<2) newdir=LAX_RLBT;
+		if (xx>=2) newdir=LAX_LRBT;
+	}
+	if (yy>=1 && yy<=3) {
+		if (xx<2)  { if (oldv==NUP_BtoT) newdir=LAX_BTRL; else newdir=LAX_TBRL; }
+		if (xx>=2) { if (oldv==NUP_BtoT) newdir=LAX_BTLR; else newdir=LAX_TBLR; }
+	}
+
+	return newdir;
+}
+
 
 //! Return which position and range mouse is over
 int NUpInterface::scan(int x,int y)
@@ -616,23 +678,25 @@ int NUpInterface::scan(int x,int y)
 }
 
 int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-{ //***
-//	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
-//	buttondown.down(d->id,LEFTBUTTON,x,y,state);
-//
-//	int r=-1;
-//	int over=scan(x,y,&r);
-//	flatpoint fp=dp->screentoreal(x,y);
-//
-//	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
-//	}
-//
-//	if (count==2) { // ***
-//	}
+{
+	if (buttondown.any(0,LEFTBUTTON)) return 0; //only allow one button at a time
 
 	int action=scan(x,y);
 	if (action!=NUP_None) {
 		buttondown.down(d->id,LEFTBUTTON,x,y,action);
+		int dir=nupinfo->direction;
+		if (action==NUP_Major_Arrow || action==NUP_Major_Tip) {
+			if (dir==LAX_LRTB || dir==LAX_LRBT) temparrowdir=NUP_LtoR;
+			else if (dir==LAX_RLTB || dir==LAX_RLBT) temparrowdir=NUP_RtoL;
+			else if (dir==LAX_TBLR || dir==LAX_TBRL) temparrowdir=NUP_TtoB;
+			else if (dir==LAX_BTRL || dir==LAX_BTLR) temparrowdir=NUP_BtoT;
+		} else if (action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
+			if (dir==LAX_LRTB || dir==LAX_RLTB) temparrowdir=NUP_TtoB;
+			else if (dir==LAX_RLBT || dir==LAX_LRBT) temparrowdir=NUP_BtoT;
+			else if (dir==LAX_TBLR || dir==LAX_BTLR) temparrowdir=NUP_LtoR;
+			else if (dir==LAX_BTRL || dir==LAX_TBRL) temparrowdir=NUP_RtoL;
+		}
+		if (action!=NUP_Panel) tempdir=dir;
 		return 0;
 	}
 
@@ -643,6 +707,14 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 { //***
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 	int dragged=buttondown.up(d->id,LEFTBUTTON);
+
+	if (tempdir>=0 && tempdir!=nupinfo->direction) {
+		nupinfo->direction=tempdir;
+		remapControls();
+	}
+	tempdir=-1;
+	temparrowdir=0;
+	needtodraw=1;
 	DBG cerr <<"NUpInterface::LBUp() dragged="<<dragged<<endl;
 
 //	if (!dragged) {
@@ -656,16 +728,20 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 	return 0;
 }
 
-//int NUpInterface::MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-//int NUpInterface::MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-//int NUpInterface::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-//int NUpInterface::RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-
 int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	int action=scan(x,y);
 	int dir=nupinfo->direction;
-	if (action==NUP_Major_Number || action==NUP_Major_Arrow) {
+
+	if (action!=NUP_None && (state&ControlMask)) {
+		nupinfo->maxx*=1.05;
+		nupinfo->maxy*=1.05;
+		remapControls();
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action==NUP_Major_Number || action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 			if (nupinfo->rows<0) nupinfo->rows=1; else nupinfo->rows++;
 		} else {
@@ -674,7 +750,7 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 		needtodraw=1;
 		return 0;
 
-	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow) {
+	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 			if (nupinfo->cols<0) nupinfo->cols=1; else nupinfo->cols++;
 		} else {
@@ -692,24 +768,45 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 {
 	int action=scan(x,y);
 	int dir=nupinfo->direction;
-	if (action==NUP_Major_Number || action==NUP_Major_Arrow) {
+
+	if (action!=NUP_None && (state&ControlMask)) {
+		nupinfo->maxx*=.95;
+		nupinfo->maxy*=.95;
+		remapControls();
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action==NUP_Major_Number || action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 			nupinfo->rows--;
-			if (nupinfo->rows<=0) nupinfo->rows=-1;
+			if (nupinfo->rows<=0) {
+				if (nupinfo->cols<=0) nupinfo->rows=1; 
+				else nupinfo->rows=-1;
+			}
 		} else {
 			nupinfo->cols--;
-			if (nupinfo->cols<=0) nupinfo->cols=-1;
+			if (nupinfo->cols<=0) {
+				if (nupinfo->rows<=0) nupinfo->cols=1; 
+				else nupinfo->cols=-1;
+			}
 		}
 		needtodraw=1;
 		return 0;
 
-	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow) {
+	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 			nupinfo->cols--;
-			if (nupinfo->cols<=0) nupinfo->cols=-1;
+			if (nupinfo->cols<=0) {
+				if (nupinfo->rows<=0) nupinfo->cols=1; 
+				else nupinfo->cols=-1;
+			}
 		} else {
 			nupinfo->rows--;
-			if (nupinfo->rows<=0) nupinfo->rows=-1;
+			if (nupinfo->rows<=0) {
+				if (nupinfo->cols<=0) nupinfo->rows=1; 
+				else nupinfo->rows=-1;
+			}
 		}
 		needtodraw=1;
 		return 0;
@@ -743,6 +840,21 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 		nupinfo->uioffset+=d;
 		needtodraw=1;
 		return 0;
+
+	} else if (action!=NUP_None) {
+		if (temparrowdir>=0) {
+			int d=-1;
+			if (temparrowdir==NUP_LtoR || temparrowdir==NUP_RtoL) {
+				d=hscan(x,y);
+			} else if (temparrowdir==NUP_TtoB || temparrowdir==NUP_BtoT) {
+				d=vscan(x,y);
+			}
+			if (d!=tempdir) {
+				needtodraw=1;
+				tempdir=d;
+			}
+			return 0;
+		}
 	}
 
 //	 //^ scales

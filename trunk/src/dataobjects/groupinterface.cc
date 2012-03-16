@@ -17,6 +17,7 @@
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 #include "groupinterface.h"
+#include "../interfaces/aligninterface.h"
 #include "printermarks.h"
 #include "../project.h"
 #include "../viewwindow.h"
@@ -36,12 +37,12 @@ using namespace Laxkit;
  */
 
 
-void GroupInterface::TransformSelection(const double *N) 
+void GroupInterface::TransformSelection(const double *N, int s, int e) 
 {
 	for (int c=0; c<selection.n; c++) {
 		DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection.e[c])->context.out(":");
 	}
-	ObjectInterface::TransformSelection(N);
+	ObjectInterface::TransformSelection(N,s,e);
 }
 
 
@@ -323,5 +324,30 @@ int GroupInterface::GrabSelection(unsigned int state)
 }
 
 
+int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	if (ch=='a') {
+		//change to align interface with the objects
+		AlignInterface *align=new AlignInterface(NULL,10000,dp);
+		align->AddToSelection(selection);
+		align->owner=this;
+		child=align;
+		viewport->Push(align,1,-1);
+		//viewport->Pop(this);
+		FreeSelection();
+		return 0;
+
+	} else if (ch=='d') {
+		//change to align interface with the objects
+//		nup=new NupInterface(***);
+//		nup->addObjects(selection);
+//		viewport->Push(nup,1,0);
+//		viewport->Pop(this);
+//		FreeSelection();
+		return 0;
+	}
+
+	return ObjectInterface::CharInput(ch,buffer,len,state,d);
+}
 
 

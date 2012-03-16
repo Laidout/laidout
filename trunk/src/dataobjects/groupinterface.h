@@ -29,7 +29,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
   protected:
 	int rx,ry;
   public:
-	void TransformSelection(const double *N);// *****
+	void TransformSelection(const double *N, int s=-1, int e=-1);// *****
 
 	GroupInterface(int nid,Laxkit::Displayer *ndp);
 	virtual ~GroupInterface();
@@ -40,6 +40,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
 	virtual int UseThis(anObject *newdata,unsigned int);
 	virtual int draws(const char *atype);
+	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 
 	virtual int LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse);
 	virtual int GrabSelection(unsigned int state);

@@ -9,7 +9,17 @@ Those are purged with each release.
 
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
+
 ---- bugs to fix right now:
+
+'c' then 'c' on path crashes
+
+
+---- bugs:
+
+possible modifier-pairing error with multiple mice...
+
+do laidout -n letter, split a window, then quit. undeleted Objects remain!
 
 make "make uninstall" work
 
@@ -68,6 +78,33 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
+
+plugin for easy antiprism import
+
+align tool:
+  align to slant not quite working
+  visual vs aligned bounding box snapping
+  path editing
+  final layout options
+    on/off
+	random
+	grid
+	gaps
+  snap on/off
+
+PathEditor:
+  toggleclosed: breaks connected bez controls
+  drag point over other point to connect if both are endpoints
+  draggable direction indicator for adding points
+  direction indicator clickable to adjust if adding points to current path or making new path
+  how to distinguish making new path in current paths, or new paths totally
+
+in number edit boxes, wheel should allow changing numbers
+
+animated beacons for anchor points to make them visible
+
+nup: scale panel should allow mpx and control zoom around point
+
 check laidout.1 when time to release
 update docs to have new release number
 update translations
@@ -403,7 +440,6 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
 
 
 
-
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
@@ -416,7 +452,7 @@ for translations, there is a difference between locale translations and language
 
 investigate pdfcreator as method to reduce file size
 
-align and distribute tool
+distribute tool
 
 n-up tool
 
