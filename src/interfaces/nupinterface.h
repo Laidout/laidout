@@ -44,6 +44,10 @@
 #define NUP_Has_Ok   (1<<0)
 #define NUP_Has_Type (1<<1)
 
+#define NUP_LtoR  1
+#define NUP_RtoL  2
+#define NUP_BtoT  3
+#define NUP_TtoB  4
 
 //---------------------------------- NUpInfo -----------------------------------------
 class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted
@@ -78,17 +82,21 @@ class NUpInterface : public LaxInterfaces::anInterface
 
 	NUpInfo *nupinfo;
 	int tempdir;
+	int temparrowdir;
 	Laxkit::PtrStack<ActionArea> controls;
 
 	Laxkit::RefPtrStack<LaxInterfaces::SomeData> objects;
+	Laxkit::RefPtrStack<LaxInterfaces::SomeData> groupareas;
 
 	int showdecs;
 	int firsttime;
 	int overoverlay;
 
 	virtual int scan(int x,int y);
+	virtual int hscan(int x,int y);
+	virtual int vscan(int x,int y);
 	virtual void createControls();
-	virtual void remapControls();
+	virtual void remapControls(int tempdir=-1);
   public:
 	unsigned long nup_style;//options for interface
 
@@ -119,7 +127,7 @@ class NUpInterface : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
-	virtual void drawHandle(ActionArea *area, flatpoint offset);
+	virtual void drawHandle(ActionArea *area, unsigned int color, flatpoint offset);
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 };

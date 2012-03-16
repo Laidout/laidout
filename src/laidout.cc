@@ -81,7 +81,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2011\n"
+						  "by Tom Lechner, sometime between 2006 and 2012\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -1440,6 +1440,11 @@ int main(int argc,char **argv)
 	//process help and version before anything else happens,
 	//since laxkit spews out debugging stuff straight away
 	if (argc>1) {
+		if (!strcmp(argv[1],"--helpman")) {
+			options.HelpMan(stdout);
+			exit(0);
+		}
+
 		if (!strcmp(argv[1],"-h") || !strcmp(argv[1],"--help")) {
 			options.Help(stdout); // Show usage summary
 			exit(0);

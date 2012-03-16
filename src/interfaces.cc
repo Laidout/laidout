@@ -11,9 +11,10 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2010 by Tom Lechner
+// Copyright (C) 2005-2012 by Tom Lechner
 //
 
+#include "interfaces/aligninterface.h"
 #include "interfaces/nupinterface.h"
 #include "interfaces/pagerangeinterface.h"
 
@@ -93,6 +94,7 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 
 	// *************** testing:
 	 //------Nup
+	existingpool->push(new AlignInterface(id++,NULL),1);
 	existingpool->push(new NUpInterface(id++,NULL),1);
 	// *************** end testing
 

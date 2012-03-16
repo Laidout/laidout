@@ -16,6 +16,7 @@ DEBUGFLAGS= -g
 objs= \
 	actionarea.o \
 	nupinterface.o \
+	aligninterface.o \
 	pagerangeinterface.o \
 	paperinterface.o
 
