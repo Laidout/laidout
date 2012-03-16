@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright 2008 Tom Lechner
+// Copyright 2008-2012 Tom Lechner
 //
 
 #include <fstream>
@@ -401,16 +401,11 @@ void Settype::newname(const char *n)
 Settype &Settype::operator=(const Settype &nset)
 {
 	delete[] name;
-	delete[] e;
 	name=new char[strlen(nset.name)+1];
 	strcpy(name,nset.name);
-	ne=nset.ne;
+	faces=nset.faces;
 	on=nset.on;
 	color=nset.color;
-	if (ne) {
-		e=new int[ne];
-		for (int c=0; c<ne; c++) e[c]=nset.e[c];
-	} else e=NULL;
 	return *this;
 }
 
@@ -609,36 +604,38 @@ void Polyhedron::connectFaces()
 	}
 }
 
-//! From the sets list, tag the faces with the proper set id.
-/*! \todo if a face has some previous set id, and the face is no longer
- *    in any set, then the previous set id is kept, and it shouldn't be..
+//! Add a face to a set.
+/*! If set>=0 and set<sets.n, then add to that set. Otherwise, create a new
+ * set with the given name. If not creating a new set, newsetname is ignored.
  */
+int Polyhedron::AddToSet(int face, int set, const char *newsetname)
+{
+	if (set>=0 && set<sets.n) {
+		sets.e[set]->faces.pushnodup(face);
+		return 0;
+	}
+
+	Settype *newset=new Settype();
+	newset->newname(newsetname);
+	newset->faces.push(face);
+
+	return 0;
+}
+
+//! From the sets list, tag the faces with the proper set id.
 void Polyhedron::applysets()
 {
 	if (sets.n==0) return;
 	int a,c2;
-	for (int c=0; c<sets.n; c++) 
-		for (c2=0; c2<sets.e[c]->ne; c2++) {
-			if (a=sets.e[c]->e[c2],a>=faces.n) continue;
+	for (int c=0; c<faces.n; c++) faces.e[c]->setid=-1;
+	for (int c=0; c<sets.n; c++) {
+		for (c2=0; c2<sets.e[c]->faces.n; c2++) {
+			a=sets.e[c]->faces.e[c2];
+			if (a>=faces.n) continue;
 			faces.e[a]->setid=c;
-		}		
+		}
+	}
 }
-
-////! Return lists of color and whether the face is on.
-//void Polyhedron::faceson(unsigned long *&colors,BYTE *&pon)
-//{***
-//	pon=new BYTE[npl];
-//	colors=new unsigned long[npl];
-//	int a,b,c;
-//	for (c=0; c<npl; c++) { pon[c]=1; colors[c]=255<<16; }
-//	if (sn==0) return;
-//	for (c=0; c<fn; c++) {
-//		if (a=f[c].setid,a<0 || a>=sn) continue;
-//		if (b=f[c].planeid,b<0 || b>=npl) continue;
-//		pon[b]=sets[a].on;
-//		colors[b]=sets[a].color;
-//	}
-//}
 
 //! From the faces list, construct the planes list.
 int Polyhedron::makeplanes()
@@ -1062,9 +1059,9 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context
 						(int)sets.e[c]->color.green,
 						(int)sets.e[c]->color.blue,
 						(int)sets.e[c]->color.alpha);
-			if (sets.e[c]->ne) {
+			if (sets.e[c]->faces.n) {
 				fprintf(ff,"%s  faces ",spc);
-				for (int c2=0; c2<sets.e[c]->ne; c2++) fprintf(ff,"%d ",sets.e[c]->e[c2]);
+				for (int c2=0; c2<sets.e[c]->faces.n; c2++) fprintf(ff,"%d ",sets.e[c]->faces.e[c2]);
 				fprintf(ff,"\n");
 			}
 		}
@@ -1160,7 +1157,9 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 				} else if (!strcmp(nme,"off")) {
 					set->on=0;
 				} else if (!strcmp(nme,"faces")) {
-					IntListAttribute(value,&set->e,&set->ne);
+					int *ii,nn;
+					IntListAttribute(value,&ii,&nn);
+					set->faces.insertArray(ii,nn);
 				} else if (!strcmp(nme,"color")) {
 					int i[4];
 					n=IntListAttribute(value,i,4);

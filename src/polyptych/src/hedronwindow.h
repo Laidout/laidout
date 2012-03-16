@@ -52,6 +52,7 @@ class HedronWindow : public Laxkit::anXWindow
 	double cylinderscale;
 	double fontsize;
 	double pad;
+	int touchmode;
 
 	char *polyptychfile;
 	char *polyhedronfile;

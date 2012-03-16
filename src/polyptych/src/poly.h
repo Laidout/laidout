@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright 2008 Tom Lechner
+// Copyright 2008-2012 Tom Lechner
 //
 #ifndef POLY_H
 #define POLY_H
@@ -111,12 +111,13 @@ class Settype
  public:
 	char *name;
 	unsigned char on;
+	int info;
 	Laxkit::ScreenColor color;
-	int ne,*e;
-	Settype() { name=NULL; ne=0; e=NULL; }
-	~Settype() { delete[] name; delete[] e; }
-	Settype(const Settype &nset) { name=NULL; e=NULL; *this=nset; }
+	Laxkit::NumStack<int> faces;
+	Settype() { name=NULL; on=1; info=0; }
+	Settype(const Settype &nset) { name=NULL; on=1; info=0; *this=nset; }
 	Settype &operator=(const Settype &);
+	~Settype() { delete[] name; }
 	void newname(const char *n);
 };
 
@@ -148,6 +149,7 @@ class Polyhedron :
 	int makeplanes();
 	int makeedges();
 	void applysets();
+	virtual int AddToSet(int face, int set, const char *newsetname);
 
 	 //informational functions
 	spacepoint CenterOfFace(int,int cache=0);
