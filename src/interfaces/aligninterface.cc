@@ -618,6 +618,18 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 		return 0;
 	}
 
+	if (over==ALIGN_MoveSnapAlign) {
+		int t=aligninfo->snap_align_type;
+		if (t==FALIGN_None) t=FALIGN_Align;
+		else if (t==FALIGN_Align) t=FALIGN_Proportional;
+		else if (t==FALIGN_Proportional) t=FALIGN_None;
+
+		aligninfo->snap_align_type=t;
+		if (active) ApplyAlignment(0);
+		needtodraw=1;
+		return 0;
+	}
+
 	if (over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) {
 		int t=aligninfo->final_layout_type;
 		if (t==FALIGN_None) t=FALIGN_Align;
@@ -643,6 +655,18 @@ int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 	if (over<=ALIGN_None) return 1;
 	if ((state&LAX_STATE_MASK)==ControlMask) {
 		aligninfo->uiscale*=.95;
+		needtodraw=1;
+		return 0;
+	}
+
+	if (over==ALIGN_MoveSnapAlign) {
+		int t=aligninfo->snap_align_type;
+		if (t==FALIGN_None) t=FALIGN_Proportional;
+		else if (t==FALIGN_Proportional) t=FALIGN_Align;
+		else if (t==FALIGN_Align) t=FALIGN_None;
+
+		aligninfo->snap_align_type=t;
+		if (active) ApplyAlignment(0);
 		needtodraw=1;
 		return 0;
 	}
@@ -1033,7 +1057,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 				 //apply snap alignment
 				d+=p-cc;
-				if (aligninfo->snap_align_type==FALIGN_Proportional) d-=(aligninfo->finalalignment/100)*(p-cc);
+				if (aligninfo->final_layout_type==FALIGN_Proportional) d-=(aligninfo->finalalignment/100)*(p-cc);
 				else d-=v/norm(v)*(max-min)*(aligninfo->finalalignment-50)/100;
 			}
 
