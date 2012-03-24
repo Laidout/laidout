@@ -62,7 +62,9 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	int flags;//align matrix, or shift only
 	flatvector center;
 	double uiscale; //width of main alignment bar
-	LaxInterfaces::PathsData *line; //custom alignment path
+
+	LaxInterfaces::PathsData *path; //custom alignment path
+	double centert; //line parameter t corresponding to center on path
 
 	AlignInfo();
 	virtual ~AlignInfo();
@@ -88,13 +90,17 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int showdecs;
 	int firsttime;
 	int active; //whether to continuously apply changes
+	int needtoresetlayout;
 
 	unsigned int controlcolor;
+	int hover, hoverindex;
 
-	virtual int scan(int x,int y);
+	virtual int scan(int x,int y, int &index, unsigned int state);
 	virtual int onPath(int x,int y);
-	//virtual void createControls();
-	//virtual void remapControls();
+	virtual int scanForLineControl(int x,int y, int &index);
+	virtual void postHoverMessage();
+	virtual void DrawAlignBox(flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
+
   public:
 	int snapto_lrc_amount;
 
@@ -125,7 +131,6 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
-	virtual void DrawAlignBox(flatpoint dir, double amount, int with_arrows, int with_rotation_handles);
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	virtual int FreeSelection();
@@ -136,6 +141,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int ResetAlignment();
 	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal);
 	virtual int PointToPath(flatpoint p, flatpoint &ip);
+	virtual int PointAlongPath(double dist, flatpoint &point, flatpoint *tangent);
+	virtual flatpoint ClosestPoint(flatpoint p, double *d);
 };
 
 

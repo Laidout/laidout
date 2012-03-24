@@ -79,18 +79,33 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
+object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
+
 plugin for easy antiprism import
 
 align tool:
-  align to slant not quite working
-  visual vs aligned bounding box snapping
+  alignment on real points? panning window messes up things
   path editing
   final layout options
-    on/off
-	random
-	grid
+    DONE on/off
+	DONE random
+	DONE grid
 	gaps
-  snap on/off
+	unoverlap
+  esc to switch back to object tool
+  number box while dragging, goes away after a second, or click on it to edit
+  default presets: inkscape crossover
+  mouseovers for bars, they get lost otherwise
+  reorder on layouts?
+  maybe grid drag control to reorder
+  visual vs aligned bounding box snapping
+
+  DONE align on layout line, or proportional to original position
+  DONE for no snap align, need to do something with the rotate handles, or draw dotted outline, maybe just line?
+  DONE snap on/off
+  DONE slow drag with modifiers
+  DONE align to slant not quite working
+
 
 PathEditor:
   toggleclosed: breaks connected bez controls
