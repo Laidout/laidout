@@ -88,12 +88,12 @@ AlignInfo::AlignInfo()
 	center=flatpoint(100,100);
 	uiscale=10; //width of main alignment bar
 
-	line=NULL; //custom alignment path
+	path=NULL; //custom alignment path
 }
 
 AlignInfo::~AlignInfo()
 {
-	if (line) line->dec_count();
+	if (path) path->dec_count();
 }
 
 void AlignInfo::dump_out(FILE*, int, int, Laxkit::anObject*)
@@ -118,10 +118,15 @@ AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 {
 	controlcolor=rgbcolor(128,128,128);
 
+	style|=RECT_HIDE_CONTROLS;
 	showdecs=0;
 	firsttime=1;
 	active=0;
 	snapto_lrc_amount=0; //pixel distance to snap to the standard left/top, center, or right/bottom points, 0 for none
+
+	hover=-1;
+	hoverindex=-1;
+	needtoresetlayout=1;
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
@@ -132,6 +137,7 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 {
 	controlcolor=rgbcolor(128,128,128);
 
+	style|=RECT_HIDE_CONTROLS;
 	showdecs=0;
 	firsttime=1;
 	active=0;
@@ -148,7 +154,7 @@ AlignInterface::~AlignInterface()
 	if (aligninfo) aligninfo->dec_count();
 }
 
-
+//scan/hover ids
 #define ALIGN_None                1000
 #define ALIGN_Move                1001
 #define ALIGN_RotateSnapDir       1002
@@ -162,6 +168,8 @@ AlignInterface::~AlignInterface()
 #define ALIGN_MoveRightBound      1010
 #define ALIGN_LayoutType          1011
 #define ALIGN_Path                1012
+#define ALIGN_Randomize           1013
+#define ALIGN_LineControl         1014
 
 
 //void AlignInterface::createControls()
@@ -217,8 +225,21 @@ const char *AlignInterface::Name()
 { return _("Align"); }
 
 
-#define ALIGN_Save  1
-#define ALIGN_Load  2
+//Context menu ids, MUST NOT CONFLICT with the ALIGN_* for scan()
+#define ALIGN_Save                   1
+#define ALIGN_Load                   2
+
+#define ALIGN_Aligned                3
+#define ALIGN_AlignedProportional    4
+#define ALIGN_Grid                   5
+#define ALIGN_Gaps                   6
+#define ALIGN_Random                 7
+#define ALIGN_Unoverlap              8
+#define ALIGN_Final_None             9
+
+#define ALIGN_Snap_None              10
+#define ALIGN_Snap_Align             11
+#define ALIGN_Snap_AlignProportional 12
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -231,17 +252,24 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 	menu->AddItem(_("Load"),ALIGN_Load);
 	//presets...
 	//menu->AddSep(_("Presets"));
-	//
-	//menu->AddSep(_("Final"));
-	//menu->AddItem(_("Aligned"),ALIGN_Aligned);
-	//menu->AddItem(_("Grid"),ALIGN_Grid);
-	//menu->AddItem(_("Gaps"),ALIGN_Sized_Grid);
-	//menu->AddItem(_("Random"),ALIGN_Random);
-	//menu->AddItem(_("Unoverlap"),ALIGN_Unoverlap);
-	//
+
+	menu->AddSep(_("Snap"));
+	menu->AddItem(_("None"),ALIGN_Snap_None, LAX_ISTOGGLE|(aligninfo->snap_align_type==FALIGN_None?LAX_CHECKED:0));
+	menu->AddItem(_("Aligned"),ALIGN_Snap_Align, LAX_ISTOGGLE|(aligninfo->snap_align_type==FALIGN_Align?LAX_CHECKED:0));
+	menu->AddItem(_("Aligned proportionally"),ALIGN_Snap_AlignProportional, LAX_ISTOGGLE|(aligninfo->snap_align_type==FALIGN_Proportional?LAX_CHECKED:0));
+
+	menu->AddSep(_("Final"));
+	menu->AddItem(_("None"),ALIGN_Final_None, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_None?LAX_CHECKED:0));
+	menu->AddItem(_("Aligned"),ALIGN_Aligned, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Align?LAX_CHECKED:0));
+	menu->AddItem(_("Aligned proportionally"), ALIGN_AlignedProportional, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Proportional?LAX_CHECKED:0));
+	menu->AddItem(_("Grid"), ALIGN_Grid, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Gap?LAX_CHECKED:0));
+	menu->AddItem(_("Gaps"), ALIGN_Gaps, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Grid?LAX_CHECKED:0));
+	menu->AddItem(_("Random"), ALIGN_Random, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Random?LAX_CHECKED:0));
+	menu->AddItem(_("Unoverlap"), ALIGN_Unoverlap, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Unoverlap?LAX_CHECKED:0));
+
 	//Visual align, or rotate so object axes are in line with path, or rotate visually only as path bends
 	//
-	//menu->AddSep(_("Finishing"));
+	//menu->AddSep(_("Finishing")); <- *** make this an overlay panel?
 	//menu->AddDouble(_("Rotation"),0);
 	//menu->AddDouble(_("X shift"),0);
 	//menu->AddDouble(_("Y shift"),0);
@@ -324,12 +352,15 @@ void AlignInterface::Clear(SomeData *d)
 }
 
 //! Draw an alignment slider rectangle along line through aligninfo->center in dir direction.
-/*! \todo not draw rect when in the circle?
+/*! Draw thick lines for hover.
+ *
+ * \todo not draw rect when in the circle?
  */
 void AlignInterface::DrawAlignBox(flatpoint dir,
 								  double amount,
-								  int with_arrows, //!< If to draw arrows at tips to indicate proportional alignment
-								  int with_rotation_handles //!< Whether to add little boxes at ends of rectangle
+								  int aligntype, //!< If to draw arrows at tips to indicate proportional alignment, or thin rect for none
+								  int with_rotation_handles, //!< Whether to add little boxes at ends of rectangle
+								  int hover //!< 0 for none, 1 for bar, 2 for rotation handle
 								 )
 {
 	double w=aligninfo->uiscale;
@@ -342,17 +373,46 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 	flatpoint p4=p3+vt*w;
 
 	 //draw rectangle
-	//if (with_arrows) {
-		// ***
-	//} else {
+	if (aligntype==FALIGN_None) {
+		dp->drawline(p1+.4*w*vt,p2-.4*w*vt);
+		dp->drawline(p2-.4*w*vt,p4-.4*w*vt);
+		dp->drawline(p4-.4*w*vt,p3+.4*w*vt);
+		dp->drawline(p3+.4*w*vt,p1+.4*w*vt);
+
+	} else if (aligntype==FALIGN_Proportional) {
+		if (hover==1) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+
+		flatpoint p[12];
+		p[ 0]=(with_rotation_handles ? p1 : p1-w/2*v+w/2*vt);
+		p[ 1]=p1 +w*v -w*vt;
+		p[ 2]=p1 +w*v      ;
+		p[ 3]=p3 -w*v      ;
+		p[ 4]=p3 -w*v -w*vt;
+		p[ 5]=(with_rotation_handles ? p3 : p3+w/2*v+w/2*vt);
+		p[ 6]=(with_rotation_handles ? p4 : p3+w/2*v+w/2*vt);
+		p[ 7]=p4 -w*v +w*vt;
+		p[ 8]=p4 -w*v      ;
+		p[ 9]=p2 +w*v      ;
+		p[10]=p2 +w*v +w*vt;
+		p[11]=(with_rotation_handles ? p2 : p1-w/2*v+w/2*vt);
+		dp->drawlines(p,12,1,0);
+
+	} else {//FALIGN_Align
+		if (hover==1) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+
 		dp->drawline(p1,p2);
 		dp->drawline(p2,p4);
 		dp->drawline(p4,p3);
 		dp->drawline(p3,p1);
-	//}
+	}
 
 	 //draw rotate handles on ends of bar
 	if (with_rotation_handles) {
+		if (hover==2) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+
 		dp->drawline(p1,p1-v*w); //the one
 		dp->drawline(p1-v*w,p1-v*w+w*vt);
 		dp->drawline(p1-v*w+w*vt,p2);
@@ -360,6 +420,8 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 		dp->drawline(p3+v*w,p3+v*w+w*vt);
 		dp->drawline(p3+v*w+w*vt,p4);
 	}
+
+	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 }
 
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
@@ -381,20 +443,28 @@ int AlignInterface::Refresh()
 	dp->NewFG(controlcolor);
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
+
 	 //draw snap to path
-	dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction,
-				 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
+	if (!aligninfo->path) {
+		if (hover==ALIGN_Path) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+		dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction,
+					 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
+		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	}
 
 	 //draw snap direction rectangle
-	DrawAlignBox(aligninfo->snap_direction, aligninfo->snapalignment,aligninfo->snap_align_type==FALIGN_Proportional,1);
+	DrawAlignBox(aligninfo->snap_direction, aligninfo->snapalignment,aligninfo->snap_align_type,1,
+					hover==ALIGN_MoveSnapAlign?1:(hover==ALIGN_RotateSnapAndAlign?2:0));
 
 
 	 //draw layout direction rectangle, or other final layout items
 	if (aligninfo->final_layout_type==FALIGN_Align ||aligninfo->final_layout_type==FALIGN_Proportional) { 
-		DrawAlignBox(aligninfo->layout_direction, aligninfo->finalalignment,aligninfo->final_layout_type==FALIGN_Proportional,0);
+		 //rect
+		DrawAlignBox(aligninfo->layout_direction, aligninfo->finalalignment,aligninfo->final_layout_type,0,
+					hover==ALIGN_MoveFinalAlign?1:0);
 
-	//} else if (aligninfo->final_layout_type!=FALIGN_None) {
 	} else {
+		 //other layout types selector
 		double w=aligninfo->uiscale;
 		double x1=1/sqrt(2)*w*RADIUS;
 		double x2=(aligninfo->final_layout_type==FALIGN_None?1.5:2)*w*RADIUS;
@@ -405,13 +475,17 @@ int AlignInterface::Refresh()
 		//flatpoint p1(x1,yy), p2(x2,yy);
 		flatpoint cc(aligninfo->center);
 
+
+		 //left side
+		if (hover==ALIGN_LayoutType) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
 		dp->drawline(cc + x1*v + yy*vt,  cc + x2*v + yy*vt);
 		dp->drawline(cc + x2*v + yy*vt,  cc + x2*v - yy*vt);
 		dp->drawline(cc + x2*v - yy*vt,  cc + x1*v - yy*vt);
-
+		 //right side
 		dp->drawline(cc - x1*v + yy*vt,  cc - x2*v + yy*vt);
 		dp->drawline(cc - x2*v + yy*vt,  cc - x2*v - yy*vt);
 		dp->drawline(cc - x2*v - yy*vt,  cc - x1*v - yy*vt);
+		if (hover==ALIGN_LayoutType) dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
 		const char *buf;
 		if (aligninfo->final_layout_type==FALIGN_Gap) {
@@ -424,6 +498,7 @@ int AlignInterface::Refresh()
 			buf="oO";
 		} else buf="";
 
+		dp->NewFG(controlcolor);
 		cc=aligninfo->center+(1.5*w*RADIUS*v);
 		dp->textout(cc.x,cc.y, buf,-1, LAX_CENTER);
 		cc=aligninfo->center-(1.5*w*RADIUS*v);
@@ -439,11 +514,12 @@ int AlignInterface::Refresh()
 					0,2*M_PI,
 					0);
 
+
 	 //draw left and right bounds
 	dp->NewFG(controlcolor);
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-	dp->drawpoint(aligninfo->center+aligninfo->leftbound *aligninfo->layout_direction,5,0);
-	dp->drawpoint(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction,5,0);
+	dp->drawpoint(aligninfo->center+aligninfo->leftbound *aligninfo->layout_direction,5,hover==ALIGN_MoveLeftBound);
+	dp->drawpoint(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction,5,hover==ALIGN_MoveRightBound);
 
 
 	 //draw indicator from original position to current position
@@ -452,15 +528,46 @@ int AlignInterface::Refresh()
 	DBG 	dp->drawpoint(dp->realtoscreen(pp2.e[c]),5,0);
 	DBG }
 
+
+	 //draw extra controls
+	for (int c=0; c<controls.n; c++) {
+		if (aligninfo->final_layout_type==FALIGN_Random) {
+			if (hover==ALIGN_Randomize && hoverindex==c) {
+				dp->NewFG(coloravg(dp->BG(),dp->FG(), .5));
+				dp->drawpoint(controls.e[c], dp->textheight()/2,1);
+			}
+			dp->NewFG(controlcolor);
+			dp->textout(controls.e[c].x,controls.e[c].y, "?",1, LAX_CENTER);
+
+		} else if (aligninfo->final_layout_type==FALIGN_Grid) {
+			if (hover==ALIGN_MoveGrid && hoverindex==c) {
+				dp->NewFG(coloravg(dp->BG(),dp->FG(), .5));
+				dp->drawpoint(controls.e[c], dp->textheight()/2,1);
+			}
+			dp->NewFG(controlcolor);
+			dp->textout(controls.e[c].x,controls.e[c].y, "#",1, LAX_CENTER);
+		}
+	}
+
+
 	dp->DrawReal();
 
 	return 1;
 }
 
 //! Return which alignment handle mouse is over
-int AlignInterface::scan(int x,int y)
+/*! If state&ControlMask, then search for line controls first.
+ */
+int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 {
 	flatpoint fp(x,y);
+
+
+	 //optionally scan for extra line controls first off, since these should be accessible on top of everything
+	if (state&ControlMask) {
+		int a=scanForLineControl(x,y,index);
+		if (a!=ALIGN_None) return a;
+	}
 
 	fp-=aligninfo->center;
 	if (norm(fp)<aligninfo->uiscale*RADIUS) return ALIGN_Move; //align move circle
@@ -475,6 +582,8 @@ int AlignInterface::scan(int x,int y)
 	double xx,yy;
 	xx=vt*fp;
 	yy=v*fp;
+
+
 
 	 //scan for controls along snap direction
 	if (xx>=-w/2 && xx<=w/2) {
@@ -533,15 +642,43 @@ int AlignInterface::scan(int x,int y)
 		return ALIGN_MoveRightBound;
 	}
 
+	 //if not search for line controls first, search for them now
+	if (!(state&ControlMask)) {
+		int a=scanForLineControl(x,y,index);
+		if (a!=ALIGN_None) return a;
+	}
+
 	 //scan for path
 	if (onPath(x,y)) return ALIGN_Path;
 
 	return RectInterface::scan(x,y);
 }
 
+int AlignInterface::scanForLineControl(int x,int y, int &index)
+{
+	flatpoint fp(x,y);
+	for (int c=0; c<controls.n; c++) {
+		if (norm(controls.e[c]-fp)<PAD) {
+			index=c;
+			if (aligninfo->final_layout_type==FALIGN_Random) return ALIGN_Randomize;
+			if (aligninfo->final_layout_type==FALIGN_Grid) return ALIGN_MoveGrid;
+			return ALIGN_LineControl;
+		}
+	}
+	return ALIGN_None;
+}
+
 int AlignInterface::onPath(int x,int y)
 {
-	// ***
+	if (!aligninfo->path) {
+		int dist=distance(flatpoint(x,y),
+						  aligninfo->center+aligninfo->leftbound *aligninfo->layout_direction,
+						  aligninfo->center+aligninfo->rightbound *aligninfo->layout_direction);
+		if (dist<PAD) return 1;
+	}
+
+	// ***else check for point on PathsData
+	
 	return 0;
 }
 
@@ -553,7 +690,8 @@ int AlignInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
     //dragmode=DRAG_NONE;
     
 	
-	int over=scan(x,y);
+	int index=-1;
+	int over=scan(x,y, index,state);
 	if (over==RP_None) over=ALIGN_None;
 	if (over<ALIGN_None && data) {
 		 //there is already a selection
@@ -565,9 +703,18 @@ int AlignInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		if (curpoint!=RP_None && !(curpoint==RP_Move && !PointInSelection(x,y))) return 0;
 	}
 
+	if (over==ALIGN_Move && (!active) && count==2) {
+		DBG pp1.flush();
+		DBG pp2.flush();
+
+		active=1;
+		ApplyAlignment(1);
+		needtodraw=1;
+		return 0;
+	}
 
 
-	buttondown.down(d->id,LEFTBUTTON,x,y,over,state);
+	buttondown.down(d->id,LEFTBUTTON,x,y,over,index);
 	//flatpoint fp=dp->screentoreal(x,y);
 
 	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
@@ -594,7 +741,14 @@ int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			else ResetAlignment();
 			needtodraw=1;
 			return 0;
+
+		} else if (action==ALIGN_Randomize) {
+			needtoresetlayout=1;
+			ApplyAlignment(0);
+			needtodraw=1;
+			return 0;
 		}
+
 		if ((state&LAX_STATE_MASK)==ControlMask) {
 		} else {
 		}
@@ -609,7 +763,8 @@ int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int over=scan(x,y);
+	int index=-1;
+	int over=scan(x,y, index, state);
 	if (over<=ALIGN_None) return 1;
 
 	if ((state&LAX_STATE_MASK)==ControlMask) {
@@ -641,6 +796,7 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 		else if (t==FALIGN_Unoverlap) t=FALIGN_None;
 
 		aligninfo->final_layout_type=t;
+		needtoresetlayout=1;
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
 		return 0;
@@ -651,8 +807,10 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 
 int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int over=scan(x,y);
+	int index=-1;
+	int over=scan(x,y, index, state);
 	if (over<=ALIGN_None) return 1;
+
 	if ((state&LAX_STATE_MASK)==ControlMask) {
 		aligninfo->uiscale*=.95;
 		needtodraw=1;
@@ -682,6 +840,7 @@ int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 		else if (t==FALIGN_Unoverlap) t=FALIGN_Random;
 
 		aligninfo->final_layout_type=t;
+		needtoresetlayout=1;
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
 		return 0;
@@ -690,16 +849,47 @@ int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 	return 0;
 }
 
+void AlignInterface::postHoverMessage()
+{
+	const char *m;
+	switch (hover) {
+		case ALIGN_None	: m=NULL; break;
+		case ALIGN_Move:  m=_("Move alignment controller"); break;
+		case ALIGN_RotateSnapDir: m=_("Rotate snap direction"); break;
+		case ALIGN_RotateAlignDir: m=_("Rotate layout direction"); break;
+		case ALIGN_RotateSnapAndAlign: m=_("Rotate"); break;
+		case ALIGN_MoveSnapAlign: m=_("Move snap alignment"); break;
+		case ALIGN_MoveFinalAlign: m=_("Move final alignment"); break;
+		case ALIGN_MoveGap: m=_("Drag to adjust gap"); break;
+		case ALIGN_MoveGrid: m=_("Drag to change grid size"); break;
+		case ALIGN_MoveLeftBound: m=_("Move boundary"); break;
+		case ALIGN_MoveRightBound: m=_("Move boundary"); break;
+		case ALIGN_LayoutType: m=_("Wheel to change layout type"); break;
+		case ALIGN_Path: m=_("Click to edit path"); break;
+		case ALIGN_Randomize: m=_("Click to shuffle"); break;
+		case ALIGN_LineControl: m=_(" *** line control ***"); break;
+		default: m=NULL; break;
+	}
+	viewport->postmessage(m?m:"");
+}
 
 int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 	//int over=scan(x,y);
 
-	int action=-1;
-	DBG action=scan(x,y);
-	DBG cerr <<"Align move: "<<action<<endl;
+	int action=-1, index=-1;
+	DBG action=scan(x,y,index, state);
+	DBG cerr <<"Align move: "<<action<<','<<index<<endl;
 
-	if (!buttondown.any()) return 0;
+	if (!buttondown.any()) {
+		if (action!=hover) {
+			hover=action;
+			hoverindex=index;
+			postHoverMessage();
+			needtodraw=1;
+		}
+		return 0;
+	}
 
 	int lx,ly;
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON,&action,NULL);
@@ -709,6 +899,28 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	if ((state&LAX_STATE_MASK)==0 && action==ALIGN_Move) {
 		aligninfo->center+=flatpoint(x-lx,y-ly);
+		if (active) ApplyAlignment(0);
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action==ALIGN_MoveLeftBound) {
+		flatpoint p;
+		PointAlongPath(aligninfo->leftbound, p, NULL);
+		p+=flatpoint(x-lx,y-ly);
+		ClosestPoint(p,&aligninfo->leftbound);
+
+		if (active) ApplyAlignment(0);
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action==ALIGN_MoveRightBound) {
+		flatpoint p;
+		PointAlongPath(aligninfo->rightbound, p, NULL);
+		p+=flatpoint(x-lx,y-ly);
+		ClosestPoint(p,&aligninfo->rightbound);
+
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
 		return 0;
@@ -797,25 +1009,65 @@ int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		}
 		return 0;
 
-	} else if (ch==LAX_Right) {
-		aligninfo->snapalignment+=10;
-		if (aligninfo->snapalignment>100) aligninfo->snapalignment=0;
+	} else if (ch==LAX_Up && (aligninfo->final_layout_type==FALIGN_Align || aligninfo->final_layout_type==FALIGN_Proportional)) {
+		double adjust=1;
+		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
+		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
+		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
+
+		aligninfo->finalalignment+=10*adjust;
+		if (active) ApplyAlignment(0);
 
 		char buffer[100];
-		sprintf(buffer,"snapalign %f",aligninfo->snapalignment);
+		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
 		viewport->postmessage(buffer);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Down && (aligninfo->final_layout_type==FALIGN_Align || aligninfo->final_layout_type==FALIGN_Proportional)) {
+		double adjust=1;
+		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
+		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
+		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
+
+		aligninfo->finalalignment-=10*adjust;
 		if (active) ApplyAlignment(0);
+
+		char buffer[100];
+		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
+		viewport->postmessage(buffer);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Right) {
+		double adjust=1;
+		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
+		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
+		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
+
+		aligninfo->snapalignment+=10*adjust;
+		if (active) ApplyAlignment(0);
+
+		char buffer[100];
+		sprintf(buffer,_("Snap align %f"),aligninfo->snapalignment);
+		viewport->postmessage(buffer);
 
 		needtodraw=1;
 		return 0;
 
 	} else if (ch==LAX_Left) {
-		aligninfo->snapalignment-=10;
-		if (aligninfo->snapalignment<0) aligninfo->snapalignment=100;
+		double adjust=1;
+		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
+		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
+		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
+
+		aligninfo->snapalignment-=10*adjust;
 		if (active) ApplyAlignment(0);
 
 		char buffer[100];
-		sprintf(buffer,"snapalign %f",aligninfo->snapalignment);
+		sprintf(buffer,_("snapalign %f"),aligninfo->snapalignment);
 		viewport->postmessage(buffer);
 
 		needtodraw=1;
@@ -985,9 +1237,11 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 	DBG while (pp1.n<selection.n) { pp1.push(flatpoint()); pp2.push(flatpoint()); }
 
+	if (needtoresetlayout) controls.flush();
 	if (aligninfo->final_layout_type==FALIGN_Align
 			|| aligninfo->final_layout_type==FALIGN_Proportional
 			|| aligninfo->final_layout_type==FALIGN_None) {
+
 		//We don't need to mess with the path when final is just align. We need only
 		//snap and align when appropriate to snap_direction and layout_direction
 		for (int c=0; c<selection.n; c++) {
@@ -1034,11 +1288,11 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			}
 
 			if (aligninfo->final_layout_type==FALIGN_Align || aligninfo->final_layout_type==FALIGN_Proportional) {
-				 //find min and max along snap direction
 				v=aligninfo->layout_direction;
 				v=transform_vector(dp->Getictm(),v);
 				p=aligninfo->center;
 
+				 //find min and max along snap direction
 				ac=dp->screentoreal(aligninfo->center);
 				dul=distparallel((ac-ul),v);
 				min=max=dul;
@@ -1065,12 +1319,99 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			mm[5]=d.y;
 			TransformSelection(mm,c,c);
 		}
-	}
+	} //if final align is align, align proportional, or none
+
 
 	//the rest of the layout types require positioning on the path
 
+	int numcontrols=(needtoresetlayout?0:controls.n);
+	if (       aligninfo->final_layout_type==FALIGN_Random
+			|| aligninfo->final_layout_type==FALIGN_Grid) {
+
+		flatpoint point,tangent;
+
+		for (int c=0; c<selection.n; c++) {
+			o=selection.e[c]->obj;
+			if (viewport) viewport->transformToContext(m,selection.e[c],0,1);
+			else transform_copy(m,o->m());
+
+			ul=transform_point(m,o->minx,o->maxy);
+			ur=transform_point(m,o->maxx,o->maxy);
+			ll=transform_point(m,o->minx,o->miny);
+			lr=transform_point(m,o->maxx,o->miny);
+			cc=(ul+lr)/2;
+
+			d.x=d.y=0;
+
+			point=dp->realtoscreen(cc);
+			double lbound=aligninfo->leftbound, rbound=aligninfo->rightbound;
+
+			if (aligninfo->final_layout_type==FALIGN_Random) {
+				 // establish random control point
+				double dist;
+				if (needtoresetlayout) dist=lbound+((double)random()/RAND_MAX)*(rbound-lbound);
+				else dist=controlamount.e[c];
+				PointAlongPath(dist, point,&tangent);
+
+				if (c>=controls.n) {
+					controls.push(flatpoint());
+					controlamount.push(0);
+				}
+				controls.e[c]=point;
+				controlamount.e[c]=dist; //remember so if we adust simple things, remember where we randomized to!
+				numcontrols++;
+
+			} else if (aligninfo->final_layout_type==FALIGN_Grid) {
+				 // establish grid control point
+				PointAlongPath(lbound+((double)c/(selection.n>1?selection.n-1:1))*(rbound-lbound), point,&tangent);
+				if (c>=controls.n) {
+					controls.push(flatpoint());
+					controlamount.push(0);
+				}
+				controls.e[c]=point;
+				numcontrols++;
+			}
+
+
+			if (aligninfo->snap_align_type==FALIGN_Align || aligninfo->snap_align_type==FALIGN_Proportional) {
+				 //find min and max along snap direction
+				v=aligninfo->snap_direction;
+				v=transform_vector(dp->Getictm(),v);
+				p=aligninfo->center;
+
+				ac=dp->screentoreal(aligninfo->center);
+				dul=distparallel((ac-ul),v);
+				min=max=dul;
+				dur=distparallel((ac-ur),v);
+				if (dur<min) min=dur; else if (dur>max) max=dur;
+				dll=distparallel((ac-ll),v);
+				if (dll<min) min=dll; else if (dll>max) max=dll;
+				dlr=distparallel((ac-lr),v);
+				if (dlr<min) min=dlr; else if (dlr>max) max=dlr;
+
+				p=dp->screentoreal(point); //the snapped destination
+
+				DBG pp1.e[c]=p;  //center snapped to path
+				DBG pp2.e[c]=cc; //original center
+
+				 //apply snap alignment
+				d+=p-cc;
+				if (aligninfo->final_layout_type==FALIGN_Proportional) d-=(aligninfo->finalalignment/100)*(p-cc);
+				else d-=transpose(tangent)/norm(transpose(tangent))*(max-min)*(aligninfo->snapalignment-50)/100;
+			}
+
+			if (d.x!=0 || d.y!=0) { //finally apply the shift
+				mm[4]=d.x;
+				mm[5]=d.y;
+				TransformSelection(mm,c,c);
+			}
+		} //foreach selection.e
+		needtoresetlayout=0;
+	} //if final random or grid
 
 	// ***
+	//FALIGN_Gap,
+	//FALIGN_Unoverlap
 
 
 
@@ -1084,6 +1425,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 	return 0;
 }
 
+//! Snap screen point p to the path, and put that point in ip. Return 0 for does not intersect path.
 int AlignInterface::PointToPath(flatpoint p, flatpoint &ip)
 { // ***
 	return PointToLine(p,ip,0);
@@ -1099,6 +1441,40 @@ int AlignInterface::PointToLine(flatpoint p, flatpoint &ip, int isfinal)
 	double t1,t2;
 	if (intersection(l1,l2,&ip,&t1,&t2)!=0) return 0; //lines do not intersect
 	return 1;
+}
+
+//! Find screen point along path dist from the alignment center. Put found point in ip.
+/*! dist is the screen distance along the path from aligninfo->center.
+ *
+ * If the path is not defined long enough for dist, then return 0. Else return 1.
+ */
+int AlignInterface::PointAlongPath(double dist, flatpoint &point, flatpoint *tangent)
+{
+	if (!aligninfo->path) {
+		point=aligninfo->center + dist*aligninfo->layout_direction;
+		if (tangent) *tangent=aligninfo->layout_direction;
+		return 0;
+	}
+	return 1;
+}
+
+//! Find the point on the layout path closest to screenpoint p.
+/*! If d!=NULL, then make *d the distance along the line from the alignment center,
+ * which is suitable for left and right bounds.
+ *
+ * This is kind of the reverse of PointAlongPath().
+ *
+ * Returns that closest point to the path.
+ */
+flatpoint AlignInterface::ClosestPoint(flatpoint p, double *d)
+{
+	if (!aligninfo->path) {
+		double dist=distparallel(p-aligninfo->center,aligninfo->layout_direction);
+		if (d) *d=dist;
+		return aligninfo->center+dist*aligninfo->layout_direction;
+	}
+
+	return aligninfo->center; // ***
 }
 
 
