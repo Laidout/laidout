@@ -17,6 +17,8 @@ Those are purged with each release.
 
 ---- bugs:
 
+switch to None document, and units change to unreasonable
+
 possible modifier-pairing error with multiple mice...
 
 do laidout -n letter, split a window, then quit. undeleted Objects remain!
@@ -84,22 +86,22 @@ object select, 'a' toggle select or not, select all in current selection area (i
 plugin for easy antiprism import
 
 align tool:
-  alignment on real points? panning window messes up things
-  path editing
   final layout options
     DONE on/off
 	DONE random
 	DONE grid
 	gaps
 	unoverlap
-  esc to switch back to object tool
-  number box while dragging, goes away after a second, or click on it to edit
-  default presets: inkscape crossover
-  mouseovers for bars, they get lost otherwise
-  reorder on layouts?
+  reorder on layouts? -> how to handle reorder in gap and unoverlap?
   maybe grid drag control to reorder
   visual vs aligned bounding box snapping
+  number box while dragging, goes away after a second, or click on it to edit
+  default presets: inkscape crossover
 
+  DONE alignment on real points? panning window messes up things
+  DONE path editing
+  DONE mouseovers for bars, they get lost otherwise
+  DONE esc to switch back to object tool
   DONE align on layout line, or proportional to original position
   DONE for no snap align, need to do something with the rotate handles, or draw dotted outline, maybe just line?
   DONE snap on/off
@@ -108,11 +110,14 @@ align tool:
 
 
 PathEditor:
-  toggleclosed: breaks connected bez controls
+  DONE toggleclosed: breaks connected bez controls
   drag point over other point to connect if both are endpoints
-  draggable direction indicator for adding points
-  direction indicator clickable to adjust if adding points to current path or making new path
+  draggable/clickable direction indicator for adding points
+  direction indicator drag off path to adjust if adding points to current path or making new path
   how to distinguish making new path in current paths, or new paths totally
+  shift click on empty space starts a new subpath?
+  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
+
 
 in number edit boxes, wheel should allow changing numbers
 
@@ -128,8 +133,6 @@ test:
   each export filter
   make some test scripts for command line testing
 
-searchable menus
-
 include scribus plugin in install
 
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
@@ -142,10 +145,6 @@ Scribus:
   scribus in/out: font sizes, stroke widths
   import should try to apply the Scribus layout correctly, at least for 2 page spreads
   import should do something meaningful with original Scribus page bleed values
-
-PathInterface:
-  shift click starts a new subpath
-  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
 
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
@@ -451,6 +450,8 @@ For objects that are really skinny, it is not practical to have the handles be a
 from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
     focus off a dialog, then refocus, must manually set control focus. should store which subwindow
      gets the focus when autofocused.
+
+searchable menus
 
 
 

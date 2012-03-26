@@ -18,7 +18,6 @@
 
 #include <lax/interfaces/objectinterface.h>
 #include <lax/refptrstack.h>
-#include "actionarea.h"
 
 #include "../laidout.h"
 
@@ -31,7 +30,10 @@ enum AlignFinalLayout {
 	FALIGN_Gap,
 	FALIGN_Grid,
 	FALIGN_Random,
-	FALIGN_Unoverlap
+	FALIGN_Unoverlap,
+	FALIGN_Visual,
+	FALIGN_VisualRotate,
+	FALIGN_ObjectRotate
 };
 
 class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
@@ -47,6 +49,7 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	LaxInterfaces::SomeData *custom_icon;
 
 	int snap_align_type;//can be FALIGN_None, FALIGN_Align, or FALIGN_Proportional
+	int visual_align;  //how to rotate objects to lay on lines
 	flatvector snap_direction;
 	double snapalignment;
 
@@ -59,7 +62,6 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	double defaultgap; //apply initially, but user can adjust per gap after
 	int gaptype; //whether custom for whole list (weighted or absolute), or single value gap, or function gap
 
-	int flags;//align matrix, or shift only
 	flatvector center;
 	double uiscale; //width of main alignment bar
 
@@ -92,7 +94,6 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int active; //whether to continuously apply changes
 	int needtoresetlayout;
 
-	unsigned int controlcolor;
 	int hover, hoverindex;
 
 	virtual int scan(int x,int y, int &index, unsigned int state);
@@ -100,9 +101,13 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int scanForLineControl(int x,int y, int &index);
 	virtual void postHoverMessage();
 	virtual void DrawAlignBox(flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
+	virtual int createPath();
 
   public:
-	int snapto_lrc_amount;
+	int snapto_lrc_amount;//pixel snap distance for common l/r/c points
+	double boundstep;
+	Laxkit::ScreenColor controlcolor;
+	Laxkit::ScreenColor patheditcolor;
 
 	AlignInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
 	AlignInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
@@ -120,6 +125,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual int RemoveChild();
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
@@ -141,8 +147,11 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int ResetAlignment();
 	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal);
 	virtual int PointToPath(flatpoint p, flatpoint &ip);
-	virtual int PointAlongPath(double dist, flatpoint &point, flatpoint *tangent);
+	virtual int PointAlongPath(double t,int tisdistance, flatpoint &point, flatpoint *tangent);
 	virtual flatpoint ClosestPoint(flatpoint p, double *d);
+	virtual int ClampBoundaries(int fill);
+
+	virtual int UpdateFromPath();
 };
 
 
