@@ -78,6 +78,7 @@ DBG NumStack<flatpoint> pp1,pp2;
 
 AlignInfo::AlignInfo()
 {
+	name=NULL;
 	custom_icon=NULL;
 
 	snap_align_type=FALIGN_Align;
@@ -104,6 +105,7 @@ AlignInfo::AlignInfo()
 AlignInfo::~AlignInfo()
 {
 	if (path) path->dec_count();
+	if (name) delete[] name;
 }
 
 void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -121,8 +123,8 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
         fprintf(f,"%slayout align       #Type of final layout. Can be align, proportional, none, gaps, grid, random, unoverlap\n",spc);
         fprintf(f,"%slayoutdir 0,1      #default vector of the layout direction\n",spc);
         fprintf(f,"%slayoutamount 50    #Usually in 0..100, for full left to full right, for instance\n",spc);
-        fprintf(f,"%sleftbound          #One bound as a distance along the path for layout\n",spc);
-        fprintf(f,"%srightbound         #Another bound as a distance along the path for layout\n",spc);
+        fprintf(f,"%sleftbound 0        #One bound as a distance along the path for layout\n",spc);
+        fprintf(f,"%srightbound 1       #Another bound as a distance along the path for layout\n",spc);
         fprintf(f,"%scenter 0,0         #Hint for position of control panel\n",spc);
         fprintf(f,"%suiscale 10         #How big to make the panel, the pixel width of an alignment bar\n",spc);
         fprintf(f,"%sdefaultgap 5       #\n",spc);
@@ -137,6 +139,40 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
     //fprintf(f,"%slabelbase ",spc);
     //dump_out_escaped(f,labelbase,-1);
     //fprintf(f,"\n");
+
+	if (name) fprintf(f,"%sname %s\n",spc,name);
+
+	if (snap_align_type==FALIGN_Align) fprintf(f,"%ssnap align\n",spc);
+	else if (snap_align_type==FALIGN_Proportional) fprintf(f,"%ssnap proportional\n",spc);
+	else if (snap_align_type==FALIGN_None) fprintf(f,"%ssnap none\n",spc);
+	fprintf(f,"%ssnapdir %.10g,%.10g\n",spc,snap_direction.x,snap_direction.y);
+	fprintf(f,"%ssnapamount %.10g\n",spc,snapalignment);
+	fprintf(f,"%svisualalign shift\n",spc); //*** shift, rotate, or box
+
+	if (snap_align_type==FALIGN_Align) fprintf(f,"%slayout align\n",spc);
+	else if (snap_align_type==FALIGN_Proportional) fprintf(f,"%slayout proportional\n",spc);
+	else if (snap_align_type==FALIGN_None) fprintf(f,"%slayout none\n",spc);
+	else if (snap_align_type==FALIGN_Random) fprintf(f,"%slayout random\n",spc);
+	else if (snap_align_type==FALIGN_Gap) fprintf(f,"%slayout gaps\n",spc);
+	else if (snap_align_type==FALIGN_Grid) fprintf(f,"%slayout grid\n",spc);
+	else if (snap_align_type==FALIGN_Unoverlap) fprintf(f,"%slayout unoverlap\n",spc);
+	fprintf(f,"%slayoutdir %.10g,%.10g\n",spc,layout_direction.x,layout_direction.y);
+	fprintf(f,"%slayoutamount %.10g\n",spc,finalalignment);
+
+	fprintf(f,"%sleftbound %.10g\n",spc,leftbound);
+	fprintf(f,"%srightbound %.10g\n",spc,rightbound);
+	fprintf(f,"%scenter %.10g,%.10g\n",spc,center.x,center.y);
+	fprintf(f,"%suiscale %.10g\n",spc,uiscale);
+
+	fprintf(f,"%sdefaultgap %.10g\n",spc,defaultgap);
+	//fprintf(f,"%sgaptype ???        #\n",spc);
+	if (gaps) {
+		//fprintf(f,"%sgaps 4 5 6 7       #List of current gaps between objects\n",spc);
+	}
+	if (path) {
+		fprintf(f,"%spath\n",spc);
+		path->dump_out(f,indent+2,0,context);
+	}
 
 }
 
@@ -339,6 +375,8 @@ int AlignInterface::UpdateFromPath()
 	//flatpoint p=ClosestPoint(aligninfo->center,&d);
 	//aligninfo->center=p;
 	//needtodraw=1;
+
+	if (active) ApplyAlignment(0);
 
 	return 0;
 }
@@ -616,9 +654,9 @@ int AlignInterface::Refresh()
 
 
 		 //draw indicator from original position to current position
-		DBG if (aligninfo->final_layout_type==FALIGN_None && pp1.n>=selection.n) for (int c=0; c<selection.n; c++) {
-		DBG 	dp->drawline(dp->realtoscreen(pp1.e[c]),dp->realtoscreen(pp2.e[c]));
-		DBG 	dp->drawpoint(dp->realtoscreen(pp2.e[c]),5,0);
+		DBG if (pp1.n>=selection.n) for (int c=0; c<selection.n; c++) {
+		DBG 	if (aligninfo->final_layout_type==FALIGN_None) dp->drawline(dp->realtoscreen(pp1.e[c]),dp->realtoscreen(pp2.e[c]));
+		DBG 	dp->drawpoint(dp->realtoscreen(pp2.e[c]),3,0);
 		DBG }
 
 
@@ -1078,9 +1116,9 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 
 	flatpoint dd=dp->screentoreal(x,y)-dp->screentoreal(lx,ly);
-	if ((state&LAX_STATE_MASK)==0 && action==ALIGN_Move) {
+	if (action==ALIGN_Move) {
 		aligninfo->center+=dd;
-		if (aligninfo->path) {
+		if (aligninfo->path && (state&LAX_STATE_MASK)==0) {
 			aligninfo->path->origin(aligninfo->path->origin() + dd);
 		}
 		if (active) ApplyAlignment(0);
@@ -1360,6 +1398,11 @@ int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		viewport->postmessage(buffer);
 		return 0;
 
+	} else if (ch=='0') {
+		ClampBoundaries(1);
+		needtodraw=1;
+		return 0;
+
 	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
 		//override default
 		return 0;
@@ -1415,6 +1458,7 @@ int AlignInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 
 	//***
 	original_transforms.flush();
+	original_centers.flush();
 	SomeData *t;
 	for (int c=0; c<selection.n; c++) {
 		t=new SomeData;
@@ -1430,6 +1474,7 @@ int AlignInterface::FreeSelection()
 {
 	ObjectInterface::FreeSelection();
 	original_transforms.flush();
+	original_centers.flush();
 	return 0;
 }
 

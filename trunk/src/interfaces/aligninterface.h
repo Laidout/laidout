@@ -88,6 +88,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	Laxkit::NumStack<double> controlamount;
 
 	Laxkit::RefPtrStack<LaxInterfaces::SomeData> original_transforms;
+	NumStack<flatpoint> original_centers;
 
 	int showdecs;
 	int firsttime;

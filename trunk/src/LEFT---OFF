@@ -12,10 +12,10 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
-'c' then 'c' on path crashes
-
 
 ---- bugs:
+
+hold down control in object tool. desktop left then back. Now external handles are supressed because lo thinks control is still pressed down!
 
 switch to None document, and units change to unreasonable
 
@@ -86,6 +86,8 @@ object select, 'a' toggle select or not, select all in current selection area (i
 plugin for easy antiprism import
 
 align tool:
+  moving boundaries broken
+  '0' for grid align on closed paths should distribute more nicely
   final layout options
     DONE on/off
 	DONE random
@@ -635,4 +637,6 @@ These can then be purged after each release...
 ===========================================================================================
 
 
+
+DONE 'c' then 'c' on path crashes
 
