@@ -5,6 +5,9 @@
 #################################################
 
 
+
+BINDIR=$(PREFIX)/bin
+
 include ../../../Makefile-toinclude
 
 LD=g++
@@ -36,6 +39,7 @@ lax:
 
 laxinterface:
 	cd $(LAXDIR)/interfaces && $(MAKE)
+
 
 depends:
 	makedepend -fmakedepend -I$(LAXDIR)/.. -Y *.cc
