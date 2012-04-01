@@ -293,14 +293,14 @@ int NewDocWindow::init()
 	SimpleUnit *units=GetUnitManager();
 	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->default_units,NULL));
 	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->default_units,NULL));
-	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
 						last,object_id,"paper x",
 			            _("Paper Size  x:"),(o&1?blah2:blah),0,
 			            100,0,1,1,3,3);
 	AddWin(paperx,1, paperx->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 	
 	 // -----Paper Size Y
-	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT, 0,0,0,0, 0, 
+	last=papery=new LineInput(this,"paper y",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
 						last,object_id,"paper y",
 			            _("y:"),(o&1?blah:blah2),0,
 			           100,0,1,1,3,3);
