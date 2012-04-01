@@ -59,6 +59,7 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	double leftbound, rightbound; //line parameter for path, dist between vertices is 1
 
 	double *gaps; //if all custom, final gap is weighted to fit in left/rightbounds?
+	int numgaps;
 	double defaultgap; //apply initially, but user can adjust per gap after
 	int gaptype; //whether custom for whole list (weighted or absolute), or single value gap, or function gap
 
@@ -88,7 +89,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	Laxkit::NumStack<double> controlamount;
 
 	Laxkit::RefPtrStack<LaxInterfaces::SomeData> original_transforms;
-	NumStack<flatpoint> original_centers;
+	Laxkit::NumStack<flatpoint> original_centers;
 
 	int showdecs;
 	int firsttime;

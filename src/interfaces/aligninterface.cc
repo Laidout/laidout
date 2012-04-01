@@ -30,6 +30,7 @@
 #include <lax/lists.cc>
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -38,6 +39,7 @@ using namespace std;
 #define DBG 
 
 
+//pixel click hit distance
 #define PAD 5
 #define fudge 5.0
 
@@ -93,6 +95,7 @@ AlignInfo::AlignInfo()
 	finalalignment=50;//for when not flow and gap based
 
 	gaps=NULL; //if all custom, final gap is weighted to fit in left/rightbounds?
+	numgaps=0;
 	defaultgap=0;
 	gaptype=0; //whether custom for whole list (weighted or absolute), or single value gap, or function gap
 
@@ -167,7 +170,9 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%sdefaultgap %.10g\n",spc,defaultgap);
 	//fprintf(f,"%sgaptype ???        #\n",spc);
 	if (gaps) {
-		//fprintf(f,"%sgaps 4 5 6 7       #List of current gaps between objects\n",spc);
+		fprintf(f,"%sgaps",spc);
+		for (int c=0; c<numgaps; c++) fprintf(f," %.10g",gaps[c]);
+		fprintf(f,"\n");
 	}
 	if (path) {
 		fprintf(f,"%spath\n",spc);
@@ -176,8 +181,91 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 }
 
-void AlignInfo::dump_in_atts(LaxFiles::Attribute*, int, Laxkit::anObject*)
+//! Parse and return a flatpoint, found from 2 real numbers separated by a space or a comma.
+/*! Return 1 for success, or 0 for no success at p not changed.
+ */
+int FlatpointAttribute(const char *v, flatpoint *p, char **endptr)
 {
+	double d[2];
+	if (DoubleListAttribute(v,d,2,endptr)==2) {
+		(*p).x=d[0];
+		(*p).y=d[1];
+		return 1;
+	}
+	return 0;
+}
+
+void AlignInfo::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObject*context)
+{
+    if (!att) return;
+    char *name,*value;
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(name,"name")) {
+            makestr(this->name,value);
+
+        } else if (!strcmp(name,"snap")) {
+			if (!strcasecmp(value,"align")) snap_align_type=FALIGN_Align;
+			else if (!strcasecmp(value,"proportional")) snap_align_type=FALIGN_Proportional;
+			else if (!strcasecmp(value,"none")) snap_align_type=FALIGN_None;
+
+        } else if (!strcmp(name,"snapdir")) {
+			FlatpointAttribute(value,&snap_direction,NULL);
+
+        } else if (!strcmp(name,"snapamount")) {
+            DoubleAttribute(value,&snapalignment);
+
+        } else if (!strcmp(name,"visualalign")) {
+			if (!strcasecmp(value,"shift")) visual_align=0; // ***
+			else if (!strcasecmp(value,"rotate")) visual_align=1;
+			else if (!strcasecmp(value,"box")) visual_align=2;
+
+        } else if (!strcmp(name,"layout")) {
+			if (!strcasecmp(value,"align")) final_layout_type=FALIGN_Align;
+			else if (!strcasecmp(value,"proportional")) final_layout_type=FALIGN_Proportional;
+			else if (!strcasecmp(value,"random")) final_layout_type=FALIGN_Random;
+			else if (!strcasecmp(value,"gaps")) final_layout_type=FALIGN_Gap;
+			else if (!strcasecmp(value,"grid")) final_layout_type=FALIGN_Grid;
+			else if (!strcasecmp(value,"unoverlap")) final_layout_type=FALIGN_Unoverlap;
+
+        } else if (!strcmp(name,"layoutdir")) {
+			FlatpointAttribute(value,&snap_direction,NULL);
+
+        } else if (!strcmp(name,"layoutamount")) {
+            DoubleAttribute(value,&finalalignment);
+
+        } else if (!strcmp(name,"leftbound")) {
+            DoubleAttribute(value,&leftbound);
+
+        } else if (!strcmp(name,"rightbound")) {
+            DoubleAttribute(value,&rightbound);
+
+        } else if (!strcmp(name,"center")) {
+			FlatpointAttribute(value,&snap_direction,NULL);
+
+        } else if (!strcmp(name,"uiscale")) {
+            DoubleAttribute(value,&uiscale);
+
+        } else if (!strcmp(name,"defaultgap")) {
+            DoubleAttribute(value,&defaultgap);
+
+        } else if (!strcmp(name,"gaps")) {
+			double *d=NULL;
+			int n=0;
+			DoubleListAttribute(value, &d,&n);
+			if (n>0) {
+				numgaps=n;
+				if (gaps) delete[] gaps;
+				gaps=d;
+			}
+
+        } else if (!strcmp(name,"path")) {
+			if (!path) path=new PathsData;
+			path->dump_in_atts(att->attributes.e[c],flag,context);
+		}
+	}
 }
 
 
