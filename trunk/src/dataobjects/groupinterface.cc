@@ -328,11 +328,13 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 {
 	if (ch=='a') {
 		//change to align interface with the objects
+		if (selection.n<=1) return 0;
 		AlignInterface *align=new AlignInterface(NULL,10000,dp);
 		align->AddToSelection(selection);
 		align->owner=this;
 		child=align;
 		viewport->Push(align,1,-1);
+		viewport->postmessage(_("Align"));
 		//viewport->Pop(this);
 		FreeSelection();
 		return 0;
