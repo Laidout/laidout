@@ -94,7 +94,6 @@ PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool)
 
 	// *************** testing:
 	 //------Nup
-	existingpool->push(new AlignInterface(id++,NULL),1);
 	existingpool->push(new NUpInterface(id++,NULL),1);
 	// *************** end testing
 
