@@ -7,33 +7,41 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.093
 -------------
+(done) On canvas flip controls
+       PathInterface must be improved
+       Align tool
+       Examine and improve ease of use of import images dialog, particularly for previewing
+       Fix object bleeding across pages for signatures and nets
+       Net imposition interactive unwrapper and build net interface
+       need partial Laidout import and export
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
-       impose-only mode should allow access to all imposition types
        Moving selected things in group contents does not update group bounds
        should not be able to select both group and group contents at same time
-       Masking, clip paths and/or softmask
-       Examine and improve ease of use of import images dialog, particularly for previewing
        In image properties dialog, have the popup list of potential previews
-       Externally rendered objects, similar to Scribus render frames
-       Fix object bleeding across pages for signatures and nets
-       Signature editor: detect non staplable binding edge, show red rather than green
-       PathInterface must be drastically improved, and bez part should have segment move like inkscape
-       Net imposition interactive unwrapper and build net interface
-       need partial Laidout import and export
-       Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
-       Scribus import should do something meaningful with original Scribus page bleed values
-       When importing from an image list file, should be able to say if and when to auto-make previews
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        Object and resource tags
-       Clean up project load/save internals and dialogs
+       Masking, clip paths and/or softmask
        Collect for out
-       Optimize pdf export to not duplicate large images, rescale to target dpi, and compress image data
-       double click on group should change selection area to group contents?
-       Tools should remember their settings
-       Clean up patch controls
        implement scale pages to new imposition when reimposing
+       Distribute tool
+
+
+VERSION 0.094
+-------------
+       impose-only mode should allow access to all imposition types
+       Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
+       Scribus import should do something meaningful with original Scribus page bleed values
+       Signature editor: detect non staplable binding edge, show red rather than green
+       Externally rendered objects, similar to Scribus render frames
+       When importing from an image list file, should be able to say if and when to auto-make previews
+       Tools should remember their settings
+       double click on group should change selection area to group contents?
+       Optimize pdf export to not duplicate large images, rescale to target dpi, and compress image data
+       Clean up project load/save internals and dialogs
+       Clean up patch controls
+       Cloning
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
@@ -82,7 +90,6 @@ VERSION 0.1
        Optional Midi controller usage
        Able to select and transform nodes from different objects at the same time
        Color channel density control, to not overdo CMYK mix, for instance
-       Align and distribute tool
        Allow accessing scribus image cache, or try to spin off a non project specific general image cache
        Backwards compatibility with previous Laidout versions, without extra utilities, starting with 0.1
        update french and spanish translations, if possible
@@ -97,8 +104,9 @@ Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
 Freehand drawing with tablet support
+Maybe bez part of path interface should have segment move like inkscape
 Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
-fancy arranging to align along any path, and use any path as a kind of tab stop
+use any path as a kind of tab stop
 Text for god's sake!! This means at least a basic line breaker,
 Numbered lists
 Mixed left/right text in text streams
@@ -126,6 +134,7 @@ Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from n
 Work and turn/work and tumble
 openoffice files import
 Uniconverter support
+Super import place tool, including recursive placement
 fore edge printing
 fore edge sculpting
 Vx support?
@@ -136,7 +145,7 @@ Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) p
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
 Akin to animation mode, have movie/sound objects available to html export, for instance?
 a FlexibleImposition for html/streamed output target?
-JDF support?
+JDF,JTAPI support?
 Saveable undo stack(?) (see http://people.csail.mit.edu/sarasu/history/ for inspiration)
 
 
