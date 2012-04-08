@@ -36,7 +36,8 @@ while true ; do
         echo " --prefix=/where/to/install   Default /usr/local"
         echo " --gs=/path/to/gs             Where is your ghostscript executable? This is quite"
         echo "                                optional, and is currently used only to generate"
-        echo "                                previews of EPS files."
+        echo "                                previews of EPS files, and to render files it understands"
+        echo "                                to image files that Laidout understands."
         echo " --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit"
         echo "                                is currently included in release downloads"
 		echo " --version=OtherVersionNum    You may force Laidout to compile with a different"
@@ -130,11 +131,19 @@ done
 
 
  ## cups doesn't seem to have a pkg-config entry, so do this hackier check
- ## TODO cups now seems to have a cups-config program that lists dependencies, this needs to be used!
 echo -n Checking for cups......;
-if [ ! -d /usr/include/cups ] ; then 
+#---attempt 3, check for existence of cups-config program:
+if [ ! `builtin type -p cups-config` ] ; then 
     echo "You need to install the development package of Cups."; 
     NUM="";
+
+#---attempt 2:
+#if [ ! -d /usr/include/cups \
+#	 -a ! -d /usr/local/include/cups ] ; then 
+#    echo "You need to install the development package of Cups."; 
+#    NUM="";
+
+#---attempt 1:
 #if [ ! -e /usr/lib/libcups.so -a \
 #	 ! -e /usr/local/lib/libcups.so -a \
 #	 ! -e /usr/lib64/libcups.so -a \
@@ -143,6 +152,7 @@ if [ ! -d /usr/include/cups ] ; then
 #	 ! -e /usr/lib/x86_64-linux-gnu/libcups.so ] ; then 
 #    echo "You need to install the development package of Cups."; 
 #    NUM="";
+
 else echo "ok"; 
 fi
 
