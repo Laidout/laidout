@@ -22,7 +22,7 @@
 #include "../laidout.h"
 
 
-//---------------------------------- NUpInfo -----------------------------------------
+//---------------------------------- AlignInfo -----------------------------------------
 enum AlignFinalLayout {
 	FALIGN_None,
 	FALIGN_Align,
@@ -102,6 +102,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int onPath(int x,int y);
 	virtual int scanForLineControl(int x,int y, int &index);
 	virtual void postHoverMessage();
+	virtual void postAlignMessage(int a);
 	virtual void DrawAlignBox(flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
 	virtual int createPath();
 
