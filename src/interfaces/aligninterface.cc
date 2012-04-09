@@ -150,7 +150,10 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	else if (snap_align_type==FALIGN_None) fprintf(f,"%ssnap none\n",spc);
 	fprintf(f,"%ssnapdir %.10g,%.10g\n",spc,snap_direction.x,snap_direction.y);
 	fprintf(f,"%ssnapamount %.10g\n",spc,snapalignment);
-	fprintf(f,"%svisualalign shift\n",spc); //*** shift, rotate, or box
+
+	if (visual_align==FALIGN_Visual) fprintf(f,"%svisualalign shift\n",spc);
+	else if (visual_align==FALIGN_VisualRotate) fprintf(f,"%svisualalign rotate\n",spc);
+	else if (visual_align==FALIGN_ObjectRotate) fprintf(f,"%svisualalign box\n",spc);
 
 	if (snap_align_type==FALIGN_Align) fprintf(f,"%slayout align\n",spc);
 	else if (snap_align_type==FALIGN_Proportional) fprintf(f,"%slayout proportional\n",spc);
@@ -218,9 +221,9 @@ void AlignInfo::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObjec
             DoubleAttribute(value,&snapalignment);
 
         } else if (!strcmp(name,"visualalign")) {
-			if (!strcasecmp(value,"shift")) visual_align=0; // ***
-			else if (!strcasecmp(value,"rotate")) visual_align=1;
-			else if (!strcasecmp(value,"box")) visual_align=2;
+			if (!strcasecmp(value,"shift")) visual_align=FALIGN_Visual;
+			else if (!strcasecmp(value,"rotate")) visual_align=FALIGN_VisualRotate;
+			else if (!strcasecmp(value,"box")) visual_align=FALIGN_ObjectRotate;
 
         } else if (!strcmp(name,"layout")) {
 			if (!strcasecmp(value,"align")) final_layout_type=FALIGN_Align;
@@ -338,56 +341,9 @@ AlignInterface::~AlignInterface()
 #define ALIGN_Path                1012
 #define ALIGN_Randomize           1013
 #define ALIGN_LineControl         1014
+#define ALIGN_VisualShift         1015
 
 
-//void AlignInterface::createControls()
-//{
-//	controls.push(new ActionArea(ALIGN_Move              , AREA_Handle, NULL, _("Drag to move alignment tool"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_RotateSnapDir     , AREA_Handle, NULL, _("Drag to rotate alignment"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_RotateAlignDir    , AREA_Handle, NULL, _("Drag to rotate layout direction"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_RotateSnapAndAlign, AREA_Handle, NULL, _("Drag to rotate alignment"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_MoveSnapAlign     , AREA_Handle, NULL, _("Drag to move snap alignment"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_MoveFinalAlign    , AREA_Handle, NULL, _("Drag to move layout alignment"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_MoveGap           , AREA_Handle, NULL, _("Drag to resize gap"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_MoveGrid          , AREA_Handle, NULL, _("Drag to resize positions"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_MoveLeftBound     , AREA_Handle, NULL, _("Drag to move boundary"),0,1,controlcolor,0));
-//	controls.push(new ActionArea(ALIGN_MoveRightBound    , AREA_Handle, NULL, _("Drag to move boundary"),0,1,controlcolor,0));
-//
-//
-//}
-//
-//void AlignInterface::remapControls()
-//{
-////	 //draw snap to path
-////	dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction,
-////				 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
-//
-//	 //snap direction rectangle
-//	double w=aligninfo->uiscale;
-//
-//	flatpoint v=aligninfo->snap_direction;
-//	flatpoint vt=transpose(aligninfo->snap_direction);
-//	flatpoint p1=aligninfo->center - w/2*vt - w*RADIUS*v - w*(aligninfo->snapalignment/100*(BAR-2*RADIUS))*v;
-//	flatpoint p2=p1+vt*w;
-//	flatpoint p3=p1+w*BAR*aligninfo->snap_direction;
-//	flatpoint p4=p3+vt*w;
-//		
-//	dp->drawline(p1,p2);
-//	dp->drawline(p2,p4);
-//	dp->drawline(p4,p3);
-//	dp->drawline(p3,p1);
-//
-//	 //draw rotate handles on ends of bar
-//	dp->drawline(p1,p1-v*w); //the one
-//	dp->drawline(p1-v*w,p1-v*w+w*vt);
-//	dp->drawline(p1-v*w+w*vt,p2);
-//
-//	dp->drawline(p3,p3+v*w); //and the other
-//	dp->drawline(p3+v*w,p3+v*w+w*vt);
-//	dp->drawline(p3+v*w+w*vt,p4);
-//
-//	***
-//}
 
 const char *AlignInterface::Name()
 { return _("Align"); }
@@ -417,6 +373,7 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 	MenuInfo *menu=new MenuInfo(_("Align Interface"));
 
 	//menu->AddItem(_("Save"),ALIGN_Save); // *** save to <laidout->config_dir>/tools/AlignInterface/*
+	//   date string: "%Y-%m-%d-%H:%M:%S"
 	//menu->AddItem(_("Load"),ALIGN_Load);
 	//presets...
 	//menu->AddSep(_("Presets"));
@@ -434,22 +391,6 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 	menu->AddItem(_("Gaps"), ALIGN_Gaps, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Grid?LAX_CHECKED:0));
 	menu->AddItem(_("Random"), ALIGN_Random, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Random?LAX_CHECKED:0));
 	menu->AddItem(_("Unoverlap"), ALIGN_Unoverlap, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Unoverlap?LAX_CHECKED:0));
-
-	//Visual align, or rotate so object axes are in line with path, or rotate visually only as path bends
-	//
-	//menu->AddSep(_("Finishing")); <- *** make this an overlay panel?
-	//menu->AddDouble(_("Rotation"),0);
-	//menu->AddDouble(_("X shift"),0);
-	//menu->AddDouble(_("Y shift"),0);
-	//menu->AddDouble(_("X scale"),1);
-	//menu->AddDouble(_("Y scale"),1);
-	//menu->AddDouble(_("Shear"),0);
-	//menu->AddItem(_("Random Rotation"),0); //...or random within range
-	//menu->AddItem(_("Random X shift"),0);
-	//menu->AddItem(_("Random Y shift"),0);
-	//menu->AddItem(_("Random X scale"),1);
-	//menu->AddItem(_("Random Y scale"),1);
-	//menu->AddItem(_("Random Shear"),0);
 
 	return menu;
 }
@@ -700,6 +641,7 @@ int AlignInterface::Refresh()
 			dp->drawline(cc - x2*v - yy*vt,  cc - x1*v - yy*vt);
 			if (hover==ALIGN_LayoutType) dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
+			 //final layout type
 			const char *buf;
 			if (aligninfo->final_layout_type==FALIGN_Gap) {
 				buf="|-|";
@@ -712,9 +654,15 @@ int AlignInterface::Refresh()
 			} else buf="";
 
 			dp->NewFG(&controlcolor);
-			cc2=cc+(1.5*w*RADIUS*v);
-			dp->textout(cc2.x,cc2.y, buf,-1, LAX_CENTER);
 			cc2=cc-(1.5*w*RADIUS*v);
+			dp->textout(cc2.x,cc2.y, buf,-1, LAX_CENTER);
+
+			 //visual shift type
+			if (aligninfo->visual_align==FALIGN_Visual) buf="-";
+			else if (aligninfo->visual_align==FALIGN_VisualRotate) buf="+";
+			else if (aligninfo->visual_align==FALIGN_ObjectRotate) buf="/";
+			
+			cc2=cc+(1.5*w*RADIUS*v);
 			dp->textout(cc2.x,cc2.y, buf,-1, LAX_CENTER);
 		}
 
@@ -843,8 +791,10 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 		}
 	} else {
 		 //scan for layout type 
-		if (yy<w*RADIUS && yy>-w*RADIUS && ((xx>-2*w*RADIUS && xx<-w*RADIUS) || (xx<2*w*RADIUS && xx>w*RADIUS)))
-			return ALIGN_LayoutType;
+		if (yy<w*RADIUS && yy>-w*RADIUS) {
+			if (xx>-2*w*RADIUS && xx<-w*RADIUS) return ALIGN_LayoutType;
+			if (xx<2*w*RADIUS && xx>w*RADIUS) return ALIGN_VisualShift;
+		}
 	}
 
 	 // *** scan for particular controls of final layout type, like gaps, grid points, random bits
@@ -925,7 +875,7 @@ int AlignInterface::RemoveChild()
 	flatpoint p=ClosestPoint(aligninfo->center,&d);
 	aligninfo->center=p;
 	ClampBoundaries(0);
-	ApplyAlignment(0);
+	if (active) ApplyAlignment(0);
 	needtodraw=1;
 
 	viewport->postmessage("");
@@ -1100,7 +1050,21 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 		else if (t==FALIGN_Unoverlap) t=FALIGN_None;
 
 		aligninfo->final_layout_type=t;
+		postAlignMessage(t);
 		needtoresetlayout=1;
+		if (active) ApplyAlignment(0);
+		needtodraw=1;
+		return 0;
+	}
+
+	if (over==ALIGN_VisualShift) {
+		int t=aligninfo->visual_align;
+		if (t==FALIGN_Visual) t=FALIGN_VisualRotate;
+		else if (t==FALIGN_VisualRotate) t=FALIGN_ObjectRotate;
+		else if (t==FALIGN_ObjectRotate) t=FALIGN_Visual;
+
+		aligninfo->visual_align=t;
+		postAlignMessage(t);
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
 		return 0;
@@ -1144,13 +1108,46 @@ int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 		else if (t==FALIGN_Unoverlap) t=FALIGN_Random;
 
 		aligninfo->final_layout_type=t;
+		postAlignMessage(t);
 		needtoresetlayout=1;
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
 		return 0;
 	}
 
+	if (over==ALIGN_VisualShift) {
+		int t=aligninfo->visual_align;
+		if (t==FALIGN_Visual) t=FALIGN_ObjectRotate;
+		else if (t==FALIGN_VisualRotate) t=FALIGN_Visual;
+		else if (t==FALIGN_ObjectRotate) t=FALIGN_VisualRotate;
+
+		aligninfo->visual_align=t;
+		postAlignMessage(t);
+		if (active) ApplyAlignment(0);
+		needtodraw=1;
+		return 0;
+	}
+
 	return 0;
+}
+
+void AlignInterface::postAlignMessage(int a)
+{
+	const char *m=NULL;
+	switch (a) {
+		case FALIGN_None: m=_("None"); break;
+		case FALIGN_Align: m=_("Align"); break;
+		case FALIGN_Proportional: m=_("Align proportionally"); break;
+		case FALIGN_Gap: m=_("Lay out by gaps"); break;
+		case FALIGN_Grid: m=_("Lay out evenly"); break;
+		case FALIGN_Random: m=_("Lay out randomly"); break;
+		case FALIGN_Unoverlap: m=_("Unoverlap"); break;
+		case FALIGN_Visual: m=_("Visual shift"); break;
+		case FALIGN_VisualRotate: m=_("Visual shift, rotate to path"); break;
+		case FALIGN_ObjectRotate: m=_("Align transform to path");
+		default: m=NULL; break;
+	}
+	viewport->postmessage(m?m:"");
 }
 
 void AlignInterface::postHoverMessage()
@@ -1171,6 +1168,8 @@ void AlignInterface::postHoverMessage()
 		case ALIGN_LayoutType: m=_("Wheel to change layout type"); break;
 		case ALIGN_Path: m=_("Click to edit path"); break;
 		case ALIGN_Randomize: m=_("Click to shuffle"); break;
+		case ALIGN_VisualShift: m=_("Wheel to change visual align type"); break;
+
 		case ALIGN_LineControl: m=_(" *** line control ***"); break;
 		default: m=NULL; break;
 	}
@@ -1650,7 +1649,10 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 				if (aligninfo->final_layout_type==FALIGN_None) {
 					 //normally use only layout_direction, but for none makes more sense to use path
-					if (!PointToPath(cc,p)) continue;
+					if (!PointToPath(cc,p)) {
+						DBG pp1.e[c]=cc;
+						continue;
+					}
 				} else if (!PointToLine(cc,p,0)) continue; //makes p the point on layout line that cc snaps to
 
 				DBG pp1.e[c]=p;  //center snapped to path
@@ -1819,9 +1821,11 @@ int AlignInterface::PointToPath(flatpoint p, flatpoint &ip)
 
 	 //else intersect snap line with path
 	flatpoint pt;
-	int num=aligninfo->path->Intersect(0,p,p+aligninfo->snap_direction,1, 0,&pt,1, NULL,0);
+	int num=aligninfo->path->Intersect(0,transform_point_inverse(aligninfo->path->m(),p),
+										 transform_point_inverse(aligninfo->path->m(),p+aligninfo->snap_direction),
+										 1, 0,&pt,1, NULL,0);
 	if (num==0) return 0;
-	ip=pt;
+	ip=transform_point(aligninfo->path->m(),pt);
 	return 1;
 }
 
