@@ -1065,7 +1065,7 @@ SignatureImposition::~SignatureImposition()
  */
 ImpositionResource **SignatureImposition::getDefaultResources()
 {
-	ImpositionResource **r=new ImpositionResource*[2];
+	ImpositionResource **r=new ImpositionResource*[3];
 
 	Attribute *att=new Attribute;
 	att->push("binding","left");
