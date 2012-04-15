@@ -33,13 +33,18 @@
 #define NUP_Type         7
 #define NUP_Ok           8
 #define NUP_Panel        9
+#define NUP_Activate     10
 
-#define NUP_Grid         100
-#define NUP_Sized_Grid   101
-#define NUP_Flowed       102
-#define NUP_Random       103
-#define NUP_Unclump      104
-#define NUP_Unoverlap    105
+enum NUpFlowType {
+	NUP_Noflow=100,
+	NUP_Grid,
+	NUP_Sized_Grid,
+	NUP_Flowed,
+	NUP_Random,
+	NUP_Unclump,
+	NUP_Unoverlap,
+	NUP_MAX
+};
 
 #define NUP_Has_Ok   (1<<0)
 #define NUP_Has_Type (1<<1)
@@ -91,12 +96,16 @@ class NUpInterface : public LaxInterfaces::anInterface
 	int showdecs;
 	int firsttime;
 	int overoverlay;
+	int active;
 
 	virtual int scan(int x,int y);
 	virtual int hscan(int x,int y);
 	virtual int vscan(int x,int y);
 	virtual void createControls();
 	virtual void remapControls(int tempdir=-1);
+	virtual const char *controlTooltip(int action);
+	virtual const char *flowtypeMessage(int set);
+	virtual int Apply();
   public:
 	unsigned long nup_style;//options for interface
 
@@ -130,6 +139,7 @@ class NUpInterface : public LaxInterfaces::anInterface
 	virtual void drawHandle(ActionArea *area, unsigned int color, flatpoint offset);
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
+	virtual int validateInfo();
 };
 
 

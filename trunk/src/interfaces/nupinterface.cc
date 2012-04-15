@@ -70,10 +70,10 @@ using namespace std;
 NUpInfo::NUpInfo()
 {
 	direction=LAX_LRTB;
-	rows=1;
-	cols=2;
+	rows=3;
+	cols=3;
 	rowcenter=colcenter=50;
-	flowtype=0;
+	flowtype=NUP_Grid;
 	name=NULL;
 
 	scale=1;
@@ -109,6 +109,7 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 	overoverlay=-1;
 	tempdir=-1;
 	temparrowdir=-1;
+	active=0;
 
 	nupinfo=new NUpInfo;
 	nupinfo->uioffset=flatpoint(150,150);
@@ -128,6 +129,7 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 	overoverlay=-1;
 	tempdir=-1;
 	temparrowdir=-1;
+	active=0;
 
 	nupinfo=new NUpInfo;
 	nupinfo->uioffset=flatpoint(150,150);
@@ -175,6 +177,13 @@ flatpoint *arrow_coordinates(flatpoint *p, flatpoint from, flatpoint to, double 
 	p[6]=from +     0*x +  w/2*y;
 
 	return p;
+}
+
+const char *NUpInterface::controlTooltip(int action)
+{
+	for (int c=0; c<controls.n; c++) 
+		if (controls.e[c]->action==action) return controls.e[c]->tip;
+	return " ";
 }
 
 void NUpInterface::createControls()
@@ -273,7 +282,7 @@ void NUpInterface::remapControls(int tempdir)
 
 	 //type of flow
 	p=typecontrol->Points(NULL,4,0);
-	rect_coordinates(p, ww4,5*hh4, 2*ww4,hh4);
+	rect_coordinates(p, ww4*4/3,4*hh4, ww4*4/3,hh4*4/3);
 	typecontrol->FindBBox();
 	if (!(nup_style&NUP_Has_Type)) typecontrol->hidden=1;
 
@@ -291,6 +300,20 @@ void NUpInterface::remapControls(int tempdir)
 const char *NUpInterface::Name()
 { return _("N-up"); }
 
+//! Return and optionally set a flowtype status message.
+const char *NUpInterface::flowtypeMessage(int set)
+{
+	const char *mes=NULL;
+	int i=nupinfo->flowtype;
+	if (i==NUP_Grid)            mes=_("Grid");
+	else if (i==NUP_Sized_Grid) mes=_("Sized grid");
+	else if (i==NUP_Flowed)     mes=_("Flowed");
+	else if (i==NUP_Random)     mes=_("Randomize");
+	else if (i==NUP_Unclump)    mes=_("Unclump");
+	else if (i==NUP_Unoverlap)  mes=_("Unoverlap");
+	if (set && mes) viewport->postmessage(mes);
+	return mes;
+}
 
 const char *dirname(int dir)
 {
@@ -414,8 +437,6 @@ void NUpInterface::Clear(SomeData *d)
 {
 }
 
-/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
- */
 int NUpInterface::Refresh()
 {
 	if (!needtodraw) return 0;
@@ -448,10 +469,38 @@ int NUpInterface::Refresh()
 	 //draw ui outline
 	dp->NewFG(rgbcolor(128,128,128));
 	dp->DrawScreen();
+	//--square:
+	//dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
+	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy));
+	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->maxy));
+	//dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
+	 //--rect:
+	double width =nupinfo->maxx-nupinfo->minx;
+	double height=nupinfo->maxy-nupinfo->miny;
 	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
-	dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy));
-	dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->maxy));
-	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
+	dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
+	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
+	dp->drawline(flatpoint(x+nupinfo->maxx-width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
+	dp->drawline(flatpoint(x+nupinfo->minx+width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4));
+	 //with activator button:
+	if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
+	dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+	flatpoint cc=flatpoint(x+nupinfo->maxx-width/2,y+nupinfo->maxy+height/4);
+	dp->drawellipse(cc.x,cc.y,
+					width/6,width/6,
+					0,2*M_PI,
+					0);
+	dp->NewFG(rgbcolor(128,128,128));
+	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	if (nupinfo->flowtype==NUP_Grid)            sprintf(buffer,"#");
+	else if (nupinfo->flowtype==NUP_Sized_Grid) sprintf(buffer,"+");
+	else if (nupinfo->flowtype==NUP_Flowed)     sprintf(buffer,"=");
+	else if (nupinfo->flowtype==NUP_Random)     sprintf(buffer,"?");
+	else if (nupinfo->flowtype==NUP_Unclump)    sprintf(buffer,"o O");
+	else if (nupinfo->flowtype==NUP_Unoverlap)  sprintf(buffer,"oO");
+	else sprintf(buffer," ");
+	dp->textout(cc.x,cc.y, buffer,-1,LAX_CENTER);
+
 
 	 //draw major arrow number
 	p=flatpoint(x+(majornum->minx+majornum->maxx)/2,y+(majornum->miny+majornum->maxy)/2);
@@ -464,12 +513,14 @@ int NUpInterface::Refresh()
 	}
 
 	if (majorn>=1) sprintf(buffer,"%d",majorn);
+	else if (majorn==0) sprintf(buffer,"n");
 	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
 	 //draw minor arrow number
 	p=flatpoint(x+(minornum->minx+minornum->maxx)/2,y+(minornum->miny+minornum->maxy)/2);
 	if (minorn>=1) sprintf(buffer,"%d",minorn);
+	else if (minorn==0) sprintf(buffer,"n");
 	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
@@ -593,21 +644,25 @@ int NUpInterface::scan(int x,int y)
 	//flatpoint fp=screentoreal(x,y);
 	int action=NUP_None, dir=nupinfo->direction;
 	double w,h;
+	w=nupinfo->maxx-nupinfo->minx;
+	h=nupinfo->maxy-nupinfo->miny;
 
 
 	x-=nupinfo->uioffset.x;
 	y-=nupinfo->uioffset.y;
 
-	if (x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy) {
+	double xx,yy;
+	xx=(x-nupinfo->minx)/w*4;
+	yy=(y-nupinfo->miny)/h*4;
+	cerr <<"  over:"<<xx<<','<<yy<<endl;
+
+	 //check activate button
+	if (norm(flatpoint(nupinfo->minx+w/2,nupinfo->maxy+h/4)-flatpoint(x,y))<w/6) return NUP_Activate;
+
+
+	 //check for position inside the panel
+	if (x>=nupinfo->minx && x<=nupinfo->maxx && y>=nupinfo->miny && y<=nupinfo->maxy+h/4) {
 		action=NUP_None;
-
-		w=nupinfo->maxx-nupinfo->minx;
-		h=nupinfo->maxy-nupinfo->miny;
-
-		double xx,yy;
-		xx=(x-nupinfo->minx)/w*4;
-		yy=(y-nupinfo->miny)/h*4;
-		cerr <<"  over:"<<xx<<','<<yy<<endl;
 
 		 //check against major arrow places
 		if ((xx<1 && (dir==LAX_BTLR || dir==LAX_TBLR)) || (xx>=3 && (dir==LAX_BTRL || dir==LAX_TBRL))) {
@@ -627,7 +682,7 @@ int NUpInterface::scan(int x,int y)
 			if (xx<1) {
 				if (dir==LAX_LRTB || dir==LAX_LRBT) action=NUP_Major_Number;
 				else action=NUP_Major_Tip;
-			} else if (yy>=3) {
+			} else if (xx>=3) {
 				if (dir==LAX_LRTB || dir==LAX_LRBT) action=NUP_Major_Tip;
 				else action=NUP_Major_Number;
 			} else action=NUP_Major_Arrow;
@@ -654,6 +709,7 @@ int NUpInterface::scan(int x,int y)
 				else if (yy>=2) action=NUP_Minor_Arrow;
 			}
 		}
+
 
 		if (action==NUP_None) action=NUP_Panel;
 		return action;
@@ -704,27 +760,44 @@ int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::
 }
 
 int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-{ //***
+{
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
-	int dragged=buttondown.up(d->id,LEFTBUTTON);
+
+	int action;
+	int dragged=buttondown.up(d->id,LEFTBUTTON, &action);
 
 	if (tempdir>=0 && tempdir!=nupinfo->direction) {
 		nupinfo->direction=tempdir;
 		remapControls();
+		validateInfo();
 	}
 	tempdir=-1;
 	temparrowdir=0;
 	needtodraw=1;
 	DBG cerr <<"NUpInterface::LBUp() dragged="<<dragged<<endl;
 
-//	if (!dragged) {
-//		if ((state&LAX_STATE_MASK)==ControlMask) {
-//			// *** edit base
-//		} else {
-//			// *** edit first
-//		}
-//	}
+	if (action==NUP_Activate && !dragged) {
+		active=!active;
+		if (active) Apply();
+		needtodraw=1;
+		return 0;
+	}
 
+	return 0;
+}
+
+int NUpInterface::validateInfo()
+{
+	int dir=nupinfo->direction;
+
+	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+		 //horizontal major axis
+		if (nupinfo->rows<0) nupinfo->rows=0;
+	} else {
+		 //vertical major axis
+		if (nupinfo->cols<0) nupinfo->cols=0;
+	}
+	needtodraw=1;
 	return 0;
 }
 
@@ -741,20 +814,28 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 		return 0;
 	}
 
+	if (action==NUP_Activate) {
+		nupinfo->flowtype++;
+		if (nupinfo->flowtype>=NUP_MAX) nupinfo->flowtype=NUP_Grid;
+		flowtypeMessage(1);
+		needtodraw=1;
+		return 0;
+	}
+
 	if (action==NUP_Major_Number || action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-			if (nupinfo->rows<0) nupinfo->rows=1; else nupinfo->rows++;
+			if (nupinfo->rows<0) nupinfo->rows=0; else nupinfo->rows++;
 		} else {
-			if (nupinfo->cols<0) nupinfo->cols=1; else nupinfo->cols++;
+			if (nupinfo->cols<0) nupinfo->cols=0; else nupinfo->cols++;
 		}
 		needtodraw=1;
 		return 0;
 
 	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-			if (nupinfo->cols<0) nupinfo->cols=1; else nupinfo->cols++;
+			if (nupinfo->cols<0) nupinfo->cols=0; else nupinfo->cols++;
 		} else {
-			if (nupinfo->rows<0) nupinfo->rows=1; else nupinfo->rows++;
+			if (nupinfo->rows<0) nupinfo->rows=0; else nupinfo->rows++;
 		}
 		needtodraw=1;
 		return 0;
@@ -777,19 +858,25 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 		return 0;
 	}
 
+	if (action==NUP_Activate) {
+		nupinfo->flowtype--;
+		if (nupinfo->flowtype<=NUP_Noflow) nupinfo->flowtype=NUP_MAX-1;
+		flowtypeMessage(1);
+		needtodraw=1;
+		return 0;
+	}
+
+
+	 //the major axis cannot have infinity
 	if (action==NUP_Major_Number || action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
+			 //horizontal major axis
 			nupinfo->rows--;
-			if (nupinfo->rows<=0) {
-				if (nupinfo->cols<=0) nupinfo->rows=1; 
-				else nupinfo->rows=-1;
-			}
+			if (nupinfo->rows<0) nupinfo->rows=0;
 		} else {
+			 //vertical major axis
 			nupinfo->cols--;
-			if (nupinfo->cols<=0) {
-				if (nupinfo->rows<=0) nupinfo->cols=1; 
-				else nupinfo->cols=-1;
-			}
+			if (nupinfo->cols<0) nupinfo->cols=0;
 		}
 		needtodraw=1;
 		return 0;
@@ -797,16 +884,10 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 			nupinfo->cols--;
-			if (nupinfo->cols<=0) {
-				if (nupinfo->rows<=0) nupinfo->cols=1; 
-				else nupinfo->cols=-1;
-			}
+			if (nupinfo->cols<0) nupinfo->cols=-1;
 		} else {
 			nupinfo->rows--;
-			if (nupinfo->rows<=0) {
-				if (nupinfo->cols<=0) nupinfo->rows=1; 
-				else nupinfo->rows=-1;
-			}
+			if (nupinfo->rows<0) nupinfo->rows=-1;
 		}
 		needtodraw=1;
 		return 0;
@@ -828,15 +909,29 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 	DBG lastx=x; lasty=y;
 	DBG cerr <<"over: "<<over<<endl;
 
+	if (!buttondown.any()) {
+		if (overoverlay!=over) {
+			overoverlay=over;
+			needtodraw=1;
+			const char *mes=controlTooltip(over);
+			if (mes) viewport->postmessage(mes);
+		}
+		return 0;
+	}
+
+	//so here the button must be down
+
+	overoverlay=NUP_None;
+
 	int oldx,oldy;
 	buttondown.move(mouse->id,x,y,&oldx,&oldy);
 	flatpoint d=flatpoint(x-oldx,y-oldy);
 	
 	int action=NUP_None;
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action);
+	if (action==NUP_None) return 0;
 
-
-	if (action==NUP_Panel) {
+	if (action==NUP_Panel || (state&LAX_STATE_MASK)!=0) {
 		nupinfo->uioffset+=d;
 		needtodraw=1;
 		return 0;
@@ -920,6 +1015,13 @@ int NUpInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyb
 	return 1;
 }
 
+/*! Return 0 for success or 1 for unable to apply for some reason.
+ */
+int NUpInterface::Apply()
+{
+	// ***
+	return 1;
+}
 
 //} // namespace Laidout
 
