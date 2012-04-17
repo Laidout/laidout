@@ -40,7 +40,7 @@ SomeData *RegistrationMark(double pointsize, double linewidthinpoints)
 	paths->line(d/10,CapButt,JoinRound,&color);
 
 	 //make circle
-	flatpoint *pts=bez_circle(4, 0,0,d/2);
+	flatpoint *pts=bez_circle(NULL,4, 0,0,d/2);
 	for (int c=0; c<12; c++) {
 		paths->append(pts[c], (c%3==0) ? POINT_TONEXT: (c%3==1?(POINT_VERTEX|POINT_REALLYSMOOTH):POINT_TOPREV) );
 	}
