@@ -58,7 +58,7 @@ class ExtraFace
 	int facemode; //is face still in normal position, or maybe stage of animation to other position
 	double a;    //can be used for a temporary angle face is tilted at
 	double *dihedral;
-	void *extra;
+	Laxkit::RefCounted *extra;
 	clock_t timestamp;
 
 	ExtraFace();

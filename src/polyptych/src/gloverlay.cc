@@ -17,21 +17,29 @@
 
 #include "gloverlay.h"
 
+#include <lax/misc.h>
+
+using namespace Laxkit;
 
 
+namespace Polyptych {
 
 /*! \class Overlay
  *  \brief Simple box to contain a clickable area meant for a gl based display.
  */
 
 
-Overlay::Overlay(const char *str, ActionType a)
+Overlay::Overlay(const char *str, ActionType a,int otype,int oindex)
 {
+	id=getUniqueNumber();
 	text=str;
 	action=a;
-	id=0;
-	type=OVERLAY_Mode;
+	group=-1;
+	index=oindex;
+	call_id=0;
+	type=otype;
 	info=0;
+	info1=info2=0;
 }
 
 Overlay::~Overlay()
@@ -40,7 +48,7 @@ Overlay::~Overlay()
 
 void Overlay::Draw(int state)
 {
-	if (id==0 && text.length()) {
+	if (call_id==0 && text.length()) {
 		//***
 	}
 }
@@ -63,4 +71,6 @@ const char *Overlay::Text()
 int Overlay::PointIn(int x,int y)
 { return x>=minx && x<=maxx && y>=miny && y<=maxy; }
 
+
+} //namespace Polyptych
 

@@ -34,8 +34,88 @@
 
 namespace Polyptych {
 
-//--------------------------- HedronWindow -------------------------------
 
+//--------------------------- PaperBound -------------------------------
+class PaperBound
+{
+  public:
+	char *name;
+	char *units;
+	double width,height;
+	double r,g,b;
+	PaperBound(const char *nname,double w,double h,const char *unit);
+	~PaperBound();
+};
+
+//--------------------------- FaceData -------------------------------
+
+enum FaceDataType {
+	FACE_Color,
+	FACE_Image,
+	FACE_Panorama
+};
+
+class FaceDataObj
+{
+  public:
+	FaceDataType type;
+	FaceDataObj(FaceDataType datatype);
+	virtual ~FaceDataObj() {}
+	virtual const char *Str()=0;
+};
+
+class FaceData : public Laxkit::RefCounted, public Laxkit::PtrStack<FaceDataObj>
+{
+  public:
+	FaceData();
+	virtual ~FaceData() {}
+};
+
+//--------------------------- ColorFace -------------------------------
+class ColorFace : public FaceDataObj
+{
+  public:
+	double red,green,blue,alpha;
+	ColorFace(double r,double g, double b,double a);
+};
+
+
+//--------------------------- ImageFace -------------------------------
+class ImageFace : public FaceDataObj
+{
+  public:
+	char *filename;
+	double matrix[6];
+	double width,height;
+	ImageFace(const char *file);
+};
+
+
+//--------------------------- PanoramaInfo -------------------------------
+class PanoramaInfo : public Laxkit::RefCounted
+{
+  public:
+	char *filename;
+
+	unsigned char *spheremap_data;
+	unsigned char *spheremap_data_rotated;
+	int spheremap_width;
+	int spheremap_height;
+	basis extra_basis;
+
+	PanoramaInfo(const char *file);
+};
+
+//--------------------------- PanoramaFace -------------------------------
+class PanoramaFace : public FaceDataObj
+{
+  public:
+	PanoramaInfo *panorama;
+	PanoramaFace(PanoramaInfo *pano);
+};
+
+
+//--------------------------- HedronWindow -------------------------------
 
 class HedronWindow : public Laxkit::anXWindow
 {
@@ -47,12 +127,18 @@ class HedronWindow : public Laxkit::anXWindow
 	flatpoint leftb;
 	double fovy;
 	int view;
-	int draw_edges;
-	int draw_seams;
 	double cylinderscale;
 	double fontsize;
 	double pad;
 	int touchmode;
+
+	int draw_edges;
+	int draw_seams;
+	int draw_axes;
+	int draw_info;
+	int draw_texture;
+	int draw_overlays;
+	int draw_papers;
 
 	char *polyptychfile;
 	char *polyhedronfile;
@@ -64,6 +150,8 @@ class HedronWindow : public Laxkit::anXWindow
 	Polyhedron *poly;
 	Thing *hedron;
 	Laxkit::RefPtrStack<Net> nets;
+	Laxkit::PtrStack<PaperBound> papers;
+	int currentpaper;
 	basis extra_basis;
 	char *consolefontfile;
 	FTFont *consolefont;
@@ -85,14 +173,13 @@ class HedronWindow : public Laxkit::anXWindow
 	int currentface;   //index in Polyhedron of current face, or -1
 	int currentfacestatus;
 
-	int draw_axes;
-	int draw_info;
-	int draw_texture;
-	int draw_overlays;
 	int mouseover_overlay; //which overlay mouse is currently over
+	int mouseover_index;
+	int mouseover_group;  //which section mouseover_overlay is index in
 	int grab_overlay;     //if lbdown on an overlay, all input corresponds to that one
 	ActionType active_action; //determined by current overlay, affects behavior of left mouse button
 	Laxkit::PtrStack<Overlay> overlays;
+	Laxkit::PtrStack<Overlay> paperoverlays;
 
 	 //gl objects, cameras, and lights
 	Laxkit::PtrStack<Thing> things;
@@ -114,7 +201,10 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual int event(XEvent *e);
 	virtual int init();
 	virtual void installOverlays();
+	virtual void remapPaperOverlays();
 	virtual void placeOverlays();
+	virtual Overlay *scanOverlays(int x,int y, int *action,int *index,int *group);
+	virtual double getExtent(const char *str,int len, double *width,double *height);
 
 	virtual void Refresh();
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *kb);
@@ -133,37 +223,37 @@ class HedronWindow : public Laxkit::anXWindow
 
 
 	 //hedron gl mapping
-	void installSpheremapTexture(int definetid);
-	void triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
+	virtual void installSpheremapTexture(int definetid);
+	virtual void triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 							 spacepoint p1o,spacepoint p2o,spacepoint p3o,
 							 int n);
-	void mapPolyhedronTexture(Thing *thing);
-	Thing *makeGLPolyhedron();
+	virtual void mapPolyhedronTexture(Thing *thing);
+	virtual Thing *makeGLPolyhedron();
 
-	void makecameras(void);
+	virtual void makecameras(void);
 
 	 //drawing
-	void reshape (int w, int h);
-	void transparentFace(int face, double r, double g, double b, double a);
-	void drawRect(Laxkit::DoubleBBox &box, 
+	virtual void reshape (int w, int h);
+	virtual void transparentFace(int face, double r, double g, double b, double a);
+	virtual void drawRect(Laxkit::DoubleBBox &box, 
 							double bg_r, double bg_g, double bg_b,
 							double line_r, double line_g, double line_b,
 							double alpha);
-	void drawPotential(Net *net, int face);
+	virtual void drawPotential(Net *net, int face);
 	virtual void drawbg();
 	virtual void drawHelp();
 
 	 //net building
-	double edgeScaleFromBox();
-	int Reseed(int original);
-	int recurseUnwrap(Net *netf, int fromneti, Net *nett, int toneti);
-	void recurseCache(Net *net,int neti);
-	int unwrapTo(int from,int to);
-	Net *establishNet(int original);
-	int removeNet(int netindex);
-	int removeNet(Net *net);
-	Net *findNet(int id);
-	int findCurrentPotential();
+	virtual double edgeScaleFromBox();
+	virtual int Reseed(int original);
+	virtual int recurseUnwrap(Net *netf, int fromneti, Net *nett, int toneti);
+	virtual void recurseCache(Net *net,int neti);
+	virtual int unwrapTo(int from,int to);
+	virtual Net *establishNet(int original);
+	virtual int removeNet(int netindex);
+	virtual int removeNet(Net *net);
+	virtual Net *findNet(int id);
+	virtual int findCurrentPotential();
 	virtual int findCurrentFace();
 	virtual void remapCache(int start=-1, int end=-1);
 
