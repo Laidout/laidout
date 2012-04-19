@@ -37,9 +37,9 @@ using namespace Laxkit;
 
 //-------------------------------- GetBuiltinPaperSizes ------------------
 
-//       PAPERSIZE    X inches   Y inches   Units
-//       ----------------------------------------
-const char *BuiltinPaperSizes[58*4]=
+//      PAPERSIZE   Width  Height  Units
+//      ----------------------------------------
+const char *BuiltinPaperSizes[60*4]=
 	{
 		"Letter"   ,"8.5" ,"11"  ,"in",
 		"Legal"    ,"8.5" ,"14"  ,"in",
@@ -96,6 +96,8 @@ const char *BuiltinPaperSizes[58*4]=
 		"1024x768"  ,"1024","768","px",
 		"1280x1024" ,"1280","1024","px",
 		"1600x1200" ,"1600","1200","px",
+		"1920x1080" ,"1920","1080","px",
+		"1920x1200" ,"1920","1200","px",
 		"Custom"    ,"8.5","11"   ,"in",
 		"Whatever"  ,"8.5","11"   ,"in",
 		NULL,NULL,NULL,NULL
