@@ -45,6 +45,9 @@ using namespace Laxkit;
 //-------------------------------- Face --------------------------------------
 /*! \class ExtraFace
  * \brief class to hold extra cache data for a Polyhedron's Face objects.
+ *
+ * You may add arbitrary data in ExtraFace::extra. This will be dec_count()'d
+ * in ~ExtraFace().
  */
 
 ExtraFace::ExtraFace()
@@ -66,6 +69,7 @@ ExtraFace::~ExtraFace()
 	if (dihedral) delete[] dihedral;
 	if (connectionedge) delete[] connectionedge;
 	if (connectionstate) delete[] connectionstate;
+	if (extra) extra->dec_count();
 }
 //------------------------------ Face -------------------------------------
 

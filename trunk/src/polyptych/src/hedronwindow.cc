@@ -89,6 +89,71 @@ const char *modename(int mode)
 }
 
 
+//--------------------------- PaperBound -------------------------------
+/*! \class PaperBound
+ * \brief Simple class to hold info about laying out on papers.
+ */
+
+PaperBound::PaperBound(const char *nname,double w,double h,const char *unit)
+{
+	name=newstr(nname);
+	width=w;
+	height=h;
+	units=newstr(unit);
+}
+
+PaperBound::~PaperBound()
+{
+	if (name) delete[] name;
+	if (units) delete[] units;
+}
+
+
+//--------------------------- FaceData -------------------------------
+
+/*! \class FaceData
+ * \brief Stack of FaceDataObj for use in ExtraFace::extra.
+ */
+
+/*! \class FaceDataObj
+ * \brief Base class for face textures.
+ */
+
+FaceDataObj::FaceDataObj(FaceDataType datatype)
+{
+	type=datatype;
+}
+
+//--------------------------- ColorFace -------------------------------
+/*! \class ColorFace
+ */
+
+ColorFace::ColorFace(double r,double g, double b,double a)
+  : FaceDataObj(FACE_Color), red(r), green(g), blue(b), alpha(a)
+{}
+
+
+//--------------------------- ImageFace -------------------------------
+/*! \class ImageFace
+ */
+
+ImageFace::ImageFace(const char *file)
+  : FaceDataObj(FACE_Image)
+{}
+
+
+//--------------------------- PanoramaFace -------------------------------
+/*! \class PanoramaFace
+ */
+
+PanoramaFace::PanoramaFace(PanoramaInfo *pano)
+  : FaceDataObj(FACE_Panorama)
+{
+	panorama=pano;
+	if (pano) pano->inc_count();
+}
+
+
 
 //--------------------------- HedronWindow -------------------------------
 
@@ -163,7 +228,7 @@ const char *modename(int mode)
 
 /*! If newpoly, then inc it's count. It does NOT create a copy from it current, so watch out.
  */
-HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
+	HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder,
 		Polyhedron *newpoly)
  	: anXWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,0), rendermode(0)
@@ -172,18 +237,22 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	if (poly) poly->inc_count();
 	hedron=NULL;
 
+	draw_papers=1;
 	draw_texture=1;
 	draw_axes=1;
 	draw_info=1;
 	draw_overlays=1;
+	draw_edges=1;
+	draw_seams=3;
+
 	mouseover_overlay=-1;
-	grab_overlay=-1;
+	mouseover_index=-1;
+	mouseover_group=-1;
+	grab_overlay=-1; //mouse down on this overlay
 	active_action=ACTION_None;
 	touchmode=0;
 
 	oldmode=mode=MODE_Net;
-	draw_edges=1;
-	draw_seams=3;
 	cylinderscale=edgeScaleFromBox();
 
 	fontsize=20;
@@ -211,6 +280,7 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	currentface=-1;
 	currentpotential=-1;
 	currentnet=NULL;
+	currentpaper=-1;
 
 	unwrapangle=1.0;
 
@@ -774,6 +844,63 @@ void HedronWindow::installOverlays()
 		overlays.e[c]->setbounds(0,w, 0,h);
 	}
 	placeOverlays();
+
+
+	remapPaperOverlays();
+}
+
+void HedronWindow::remapPaperOverlays()
+{
+	static char str[300];
+
+	paperoverlays.flush();
+	paperoverlays.push(new Overlay("Papers",ACTION_None,OVERLAY_Just_Display,-1));
+	
+	if (currentpaper>=0) {
+		sprintf(str,"%s, %gx%g %s", papers.e[currentpaper]->name,
+									papers.e[currentpaper]->width,
+									papers.e[currentpaper]->height,
+									papers.e[currentpaper]->units);
+		paperoverlays.push(new Overlay(str,ACTION_None,OVERLAY_Just_Display,-1));
+	}
+	for (int c=0; c<papers.n; c++) {
+		sprintf(str,"%d",c+1);
+		paperoverlays.push(new Overlay(str,ACTION_Paper,OVERLAY_Button,c));
+	}
+	paperoverlays.push(new Overlay("+",ACTION_AddPaper,OVERLAY_Button,-1));
+
+
+	int y=fontsize;
+	double w,h;
+	for (int c=0; c<paperoverlays.n; c++) {
+		w=getExtent(paperoverlays.e[c]->Text(),-1, NULL,&h);
+		//w+=pad;
+		//h+=pad;
+		paperoverlays.e[c]->setbounds(win_w-w,win_w, y,y+h);
+		y+=h;
+	}
+}
+
+//! Determine bounding box of the string with consolefont.
+/*! Return value is the width, the same as what width variable gets set to.
+ */
+double HedronWindow::getExtent(const char *str,int len, double *width,double *height)
+{
+	double w=0,h=0;
+	FTBBox bbox;
+	FTPoint p1,p2;
+
+	if (!isblank(str)) {
+
+		bbox=consolefont->BBox(str,len);
+		p1=bbox.Upper();
+		p2=bbox.Lower();
+		w=p1.X()-p2.X() + pad;
+		h=p1.Y()-p2.Y() + pad;
+	}
+	if (width) *width=w;
+	if (height) *height=h;
+	return w;
 }
 
 //! Assuming bounds already set, line up overlays centered on left of screen.
@@ -956,13 +1083,6 @@ void HedronWindow::drawbg()
 			  b->m.y.x, b->m.y.y, b->m.y.z);
 	
 	
-	 //----  Draw Floor
-	//glPushMatrix();
-	//glScalef(10,10,2);
-	//setmaterial(.4, .4, 1.0);
-	//glCallList(THEFLOOR);
-	//glPopMatrix();
-	
 	if (draw_axes) drawaxes(10);
 	
 	glColor3f (0, 1.0, 0);
@@ -1017,7 +1137,7 @@ void HedronWindow::drawbg()
 //	glPopMatrix();
 
 
-	 //---- draw things *** SHOULD NOT HAVE TO RELOAD DATA EACH REFRESH!!!
+	 //---- draw things
 	if (draw_texture) {
 		DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
 		
@@ -1310,6 +1430,25 @@ void HedronWindow::drawbg()
 		}
 	}
 
+	 //draw paper control overlays
+	glFlush();
+	if (mode==MODE_Net && draw_papers) {
+		const char *text=NULL;
+		Overlay *o=NULL;
+		for (int c=0; c<paperoverlays.n; c++) {
+			o=paperoverlays.e[c];
+			text=o->Text();
+			if (isblank(text)) continue;
+
+			if (mouseover_group==1 
+					&& mouseover_overlay==paperoverlays.e[c]->action
+					&& mouseover_index==paperoverlays.e[c]->index) drawRect(*o, .4,.4,.4, .5,.5,.5, .5);
+			else if (currentpaper>=0 && currentpaper==o->index) drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
+			else drawRect(*o, .2,.2,.2, .2,.2,.2, .5);
+
+			consolefont->Render(text,-1, FTPoint(o->minx+pad/2, win_h-o->maxy+pad/2));
+		}
+	}
 
 	 //draw overlay helpers
 	glFlush();
@@ -1321,7 +1460,8 @@ void HedronWindow::drawbg()
 			text=o->Text();
 			if (isblank(text)) continue;
 
-			if (mouseover_overlay==c || active_action==overlays.e[c]->action) drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
+			if (mouseover_group==0 && mouseover_overlay==o->action) drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
+			else if (active_action==overlays.e[c]->action)  drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
 			else drawRect(*o, .2,.2,.2, .6,.6,.6, .5);
 			//else drawRect(*o, 1,1,1, 1,1,1, .5);
 
@@ -1529,30 +1669,42 @@ int HedronWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMouse
 		return 0;
 	}
 
-	buttondown.down(mouse->id,LEFTBUTTON,x,y);
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,NULL);
 	leftb=flatpoint(x,y);
 	mbdown=x;
 	if (active_action==ACTION_Unwrap_Angle) mbdown=x;
 	if (active_action==ACTION_Unwrap) rbdown=currentface;
 	if (active_action==ACTION_Reseed) rbdown=currentface;
 
-	if (mouseover_overlay>=0) {
-		grab_overlay=mouseover_overlay;
-	}
+	buttondown.down(mouse->id,LEFTBUTTON,x,y, (overlay?overlay->id:-1));
 
 	return 0;
 }
 
 int HedronWindow::LBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 {
-	buttondown.up(mouse->id,LEFTBUTTON);
-	if (grab_overlay>=0 && grab_overlay==mouseover_overlay) {
-		if (active_action==overlays.e[grab_overlay]->action) {
-			active_action=ACTION_None;
-		} else active_action=overlays.e[grab_overlay]->action;
-		grab_overlay=-1;
-		needtodraw=1;
+	int overlayid;
+	//int dragged=
+	buttondown.up(mouse->id,LEFTBUTTON, &overlayid);
+	int group=-1;
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	if (overlayid>0) {
+		if (overlay && overlay->id==overlayid) {
+			if (group==0) {
+				 //changing active_action
+				if (active_action==overlay->action) {
+					active_action=ACTION_None;
+				} else active_action=overlay->action;
+				needtodraw=1;
+				return 0;
+			} else if (group==1) {
+				 //paper management
+			} else if (group==2) {
+				 //image stack management
+			}
+		}
 	}
+
 	if (active_action==ACTION_Unwrap) RBUp(x,y,0,mouse);
 	else if (active_action==ACTION_Reseed) RBUp(x,y,ControlMask,mouse);
 	return 0;
@@ -1710,8 +1862,10 @@ Net *HedronWindow::establishNet(int original)
 	return net;
 }
 
-//! Reseed the net containing original face.
-/*! Return 0 for reseeded, or no reseeding necessary. Nonzero for error.
+//! Reseed the net containing original face, an index in poly->faces.
+/*! Reseeding means to orient the net to appear stuck to the hedron at face original.
+ *
+ * Return 0 for reseeded, or no reseeding necessary. Nonzero for error.
  *
  * NOTE: remapCache() is NOT called here.
  */
@@ -2136,29 +2290,56 @@ int HedronWindow::unwrapTo(int from,int to)
 	return 1;
 }
 
-int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse)
+/*! Return 1 for in an overlay
+ */
+Overlay *HedronWindow::scanOverlays(int x,int y, int *action,int *index,int *group)
 {
-	 //first off, check if mouse in any overlays
 	if (draw_overlays && overlays.n) {
 		int c=0;
 		for (c=0; c<overlays.n; c++) if (overlays.e[c]->PointIn(x,y)) break;
 		if (c!=overlays.n) {
 			 //mouse is in an overlay
-			cerr <<"mouse in overlay "<<c<<endl;
-
-			if (mouseover_overlay!=c) needtodraw=1;
-			mouseover_overlay=c;
-			return 0; //mouse over overlay, do nothing else
-
-		} else {
-			cerr <<"mouse not in overlay "<<endl;
-			if (mouseover_overlay!=-1) {
-				mouseover_overlay=-1;
-				needtodraw=1;
-			}
-			//continue below if not over an overlay
+			if (action) *action=overlays.e[c]->action;
+			if (index) *index=overlays.e[c]->index;
+			if (group) *group=0;
+			return overlays.e[c]; //mouse over overlay, do nothing else
 		}
 	}
+
+	if (draw_overlays && paperoverlays.n) {
+		int c=0;
+		for (c=0; c<paperoverlays.n; c++) if (paperoverlays.e[c]->PointIn(x,y)) break;
+		if (c!=paperoverlays.n) {
+			 //mouse is in an overlay
+			if (action) *action=paperoverlays.e[c]->action;
+			if (index) *index=paperoverlays.e[c]->index;
+			if (group) *group=1;
+			return paperoverlays.e[c]; //mouse over overlay, do nothing else
+		}
+	}
+	if (action) *action=0;
+	if (index)  *index=-1;
+	if (group)  *group=-1;
+
+	return NULL;
+}
+
+int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse)
+{
+	 //first off, check if mouse in any overlays
+	int action=0,index=-1,group=-1;
+	Overlay *in;
+	in=scanOverlays(x,y, &action,&index,&group);
+	if (mouseover_group!=group || mouseover_overlay!=action || mouseover_index!=index) {
+		mouseover_group=group;
+		mouseover_overlay=action;
+		mouseover_index=index;
+		DBG cerr <<"move group:"<<group<<" action:"<<action<<" index:"<<index<<endl;
+		needtodraw=1;
+	}
+	if (in) return 0;
+
+
 	if (grab_overlay>=0) return 0;
 
 	 //map pointer to 3 space
@@ -2241,6 +2422,10 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		}
 		return 0;
 	}
+
+	int lx,ly;
+	buttondown.move(mouse->id, x,y, &lx,&ly);
+	leftb=flatpoint(lx,ly);
 
 	ActionType current_action=active_action;
 	if (buttondown.isdown(0,MIDDLEBUTTON)) current_action=ACTION_Unwrap_Angle;
@@ -2655,6 +2840,11 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 			currentnet=NULL;
 			needtodraw=1;
 		}
+		return 0;
+
+	} else if (ch=='p') {
+		draw_papers=!draw_papers;
+		needtodraw=1;
 		return 0;
 
 	} else if (ch=='p' && (state&LAX_STATE_MASK)==ControlMask) {

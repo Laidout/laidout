@@ -27,6 +27,8 @@
 #include <lax/doublebbox.h>
 
 
+namespace Polyptych {
+
 enum ActionType {
 	ACTION_None,
 	ACTION_Roll,
@@ -38,7 +40,9 @@ enum ActionType {
 	ACTION_Rotate_Texture,
 	ACTION_Unwrap_Angle,
 	ACTION_Unwrap,
-	ACTION_Reseed
+	ACTION_Reseed,
+	ACTION_Paper,
+	ACTION_AddPaper
 };
 
 enum OverlayType {
@@ -54,6 +58,7 @@ enum OverlayType {
 class Overlay : public Laxkit::DoubleBBox
 {
  public:
+	int id;
 	int type; //see OverlayType
 	int gravity_group; // 123
 					   // 456  each group is piled up together and put on that edge. 
@@ -61,12 +66,14 @@ class Overlay : public Laxkit::DoubleBBox
 	double info1, info2;
 
 	ActionType action;
+	int index;
+	int group;
 
 	double info; //for sliders
-	GLuint id; // the calllist, if any
+	GLuint call_id; // the calllist, if any
 	std::string text;
 
-	Overlay(const char *str, ActionType a);
+	Overlay(const char *str, ActionType a,int otype=OVERLAY_Button,int oindex=-1);
 	virtual ~Overlay();
 
 	virtual void Draw(int state);
@@ -78,6 +85,7 @@ class Overlay : public Laxkit::DoubleBBox
 };
 
 
+} //namespace Polyptych
 
 #endif
 
