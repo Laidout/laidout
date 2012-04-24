@@ -12,6 +12,8 @@ PREFIX="/usr/local"
 LAXDIR="/usr/local/include/lax"
 GS="/usr/bin/gs"
 
+LAIDOUT_NOGL=""
+USINGGL="yes"
 
  ##
  ## Parse options
@@ -96,6 +98,15 @@ while true ; do
           shift
         fi
 		LANGUAGE_PATH="$optarg"
+		echo language path $optarg; 
+		shift ;;
+    --nogl)
+        if [ -z $optarg ] ; then 
+          optarg=$2
+          shift
+        fi
+		LAIDOUT_NOGL="#define LAIDOUT_NOGL"
+		USINGGL="no"
 		echo language path $optarg; 
 		shift ;;
     *) echo "Unrecognized option $option $optarg" ; break ;;
@@ -204,6 +215,7 @@ echo "#define SHARED_DIRECTORY \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/\"" 
 echo "#define ICON_DIRECTORY   \"$FINALPREFIX/share/laidout/$LAIDOUTVERSION/icons\"" >> src/configured.h
 echo "#define LANGUAGE_PATH    \"$FINALPREFIX/$LANGUAGE_PATH\"" >> src/configured.h
 echo "#define GHOSTSCRIPT_BIN  \"$GS\"" >> src/configured.h 
+echo $LAIDOUT_NOGL >> src/configured.h
 echo "" >> src/configured.h
 echo "#endif" >> src/configured.h
 echo "" >> src/configured.h
@@ -239,6 +251,7 @@ echo "    Install here:  $PREFIX"                 >> config.log
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"  >> config.log
 echo "  Laxkit headers:  $LAXDIR"                 >> config.log
 echo "     Ghostscript:  $GS"                     >> config.log
+echo "       Enable GL:  $USINGGL"                >> config.log
 
 
 echo 
@@ -249,5 +262,6 @@ echo "    Install here:  $PREFIX"
 echo "   Language Path:  $PREFIX/$LANGUAGE_PATH"
 echo "  Laxkit headers:  $LAXDIR"
 echo "     Ghostscript:  $GS"
+echo "       Enable GL:  $USINGGL"
 echo
 echo "Now type make to build.";
