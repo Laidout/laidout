@@ -1000,11 +1000,13 @@ int Net::pathOfFace(int i, int *n, flatpoint **p, int convert)
 }
 
 //! Return the index of the first net face that contains pp, or -1.
-int Net::pointinface(flatpoint pp)
+int Net::pointinface(flatpoint pp, int innetcoords)
 {
-	double i[6];
-	transform_invert(i,m());
-	pp=transform_point(i,pp);
+	if (!innetcoords) {
+		double i[6];
+		transform_invert(i,m());
+		pp=transform_point(i,pp);
+	}
 	int c,t,n;
 	flatpoint *pts=NULL;
 	for (c=0; c<faces.n; c++) {

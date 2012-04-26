@@ -62,7 +62,18 @@ GLXContext glcontext=0;
 XVisualInfo *glvisual=NULL;
 
 
-//--------------------------------- HedronWindow modes -------------------------------
+//--------------------------------- HedronWindow modes and other things -------------------------------
+
+//hovering indicators
+#define OGROUP_None          0
+//overlays:
+#define OGROUP_TouchHelpers  1
+#define OGROUP_Papers        2
+#define OGROUP_ImageStack    3
+//3-d things:
+#define OGROUP_Face          4
+#define OGROUP_Potential     5
+#define OGROUP_Paper         6
 
 enum Mode {
 	MODE_Net,
@@ -102,12 +113,28 @@ PaperBound::PaperBound(const char *nname,double w,double h,const char *unit)
 	units=newstr(unit);
 }
 
+PaperBound::PaperBound(const PaperBound &p)
+{
+	name=newstr(p.name);
+	width=p.width;
+	height=p.height;
+	units=newstr(p.units);
+}
+
 PaperBound::~PaperBound()
 {
 	if (name) delete[] name;
 	if (units) delete[] units;
 }
 
+PaperBound &PaperBound::operator=(PaperBound &p)
+{
+	makestr(name,p.name);
+	width=p.width;
+	height=p.height;
+	makestr(units,p.units);
+	return p;
+}
 
 //--------------------------- FaceData -------------------------------
 
@@ -228,13 +255,17 @@ PanoramaFace::PanoramaFace(PanoramaInfo *pano)
 
 /*! If newpoly, then inc it's count. It does NOT create a copy from it current, so watch out.
  */
-	HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
+HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder,
 		Polyhedron *newpoly)
- 	: anXWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,0), rendermode(0)
+ 	: anXWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,NULL,0,0), rendermode(0),
+	  default_paper("Letter",8.5,11,"in")
 {
 	poly=newpoly;
-	if (poly) poly->inc_count();
+	if (poly) {
+		poly->inc_count();
+		poly->BuildExtra();
+	}
 	hedron=NULL;
 
 	draw_papers=1;
@@ -247,7 +278,8 @@ PanoramaFace::PanoramaFace(PanoramaInfo *pano)
 
 	mouseover_overlay=-1;
 	mouseover_index=-1;
-	mouseover_group=-1;
+	mouseover_group=OGROUP_None;
+	mouseover_paper=-1;
 	grab_overlay=-1; //mouse down on this overlay
 	active_action=ACTION_None;
 	touchmode=0;
@@ -856,15 +888,19 @@ void HedronWindow::remapPaperOverlays()
 	paperoverlays.flush();
 	paperoverlays.push(new Overlay("Papers",ACTION_None,OVERLAY_Just_Display,-1));
 	
-	if (currentpaper>=0) {
-		sprintf(str,"%s, %gx%g %s", papers.e[currentpaper]->name,
-									papers.e[currentpaper]->width,
-									papers.e[currentpaper]->height,
-									papers.e[currentpaper]->units);
-		paperoverlays.push(new Overlay(str,ACTION_None,OVERLAY_Just_Display,-1));
-	}
+//	if (currentpaper>=0) {
+//		sprintf(str,"%s, %gx%g %s", papers.e[currentpaper]->name,
+//									papers.e[currentpaper]->width,
+//									papers.e[currentpaper]->height,
+//									papers.e[currentpaper]->units);
+//		paperoverlays.push(new Overlay(str,ACTION_None,OVERLAY_Just_Display,-1));
+//	}
 	for (int c=0; c<papers.n; c++) {
-		sprintf(str,"%d",c+1);
+		sprintf(str,"%d. %s, %gx%g %s", c+1,
+									papers.e[c]->name,
+									papers.e[c]->width,
+									papers.e[c]->height,
+									papers.e[c]->units);
 		paperoverlays.push(new Overlay(str,ACTION_Paper,OVERLAY_Button,c));
 	}
 	paperoverlays.push(new Overlay("+",ACTION_AddPaper,OVERLAY_Button,-1));
@@ -890,7 +926,7 @@ double HedronWindow::getExtent(const char *str,int len, double *width,double *he
 	FTBBox bbox;
 	FTPoint p1,p2;
 
-	if (!isblank(str)) {
+	if (!isblank(str) && consolefont) {
 
 		bbox=consolefont->BBox(str,len);
 		p1=bbox.Upper();
@@ -906,6 +942,7 @@ double HedronWindow::getExtent(const char *str,int len, double *width,double *he
 //! Assuming bounds already set, line up overlays centered on left of screen.
 void HedronWindow::placeOverlays()
 {
+	 //Touch helper overlays:
 	int totalheight=0;
 	for (int c=0; c<overlays.n; c++) {
 		totalheight+=overlays.e[c]->maxy-overlays.e[c]->miny+1;
@@ -920,6 +957,9 @@ void HedronWindow::placeOverlays()
 
 		y+=h+1;
 	}
+
+	 //Paper overlays:
+	remapPaperOverlays();
 }
 
 int HedronWindow::MoveResize(int x,int y,int w,int h)
@@ -1349,6 +1389,41 @@ void HedronWindow::drawbg()
 			 //draw textured polygon if hovering over a potential in current net
 			drawPotential(currentnet,currentpotential);
 		}
+
+		if (currentnet->whichpaper>=0) {
+			double w=papers.e[currentnet->whichpaper]->width;
+			double h=papers.e[currentnet->whichpaper]->height;
+			double mi[6];
+			transform_invert(mi,currentnet->m());
+			glPushMatrix();
+			glMultMatrixf(hedron->m);
+			setmaterial(1,1,1);
+			glBegin (GL_LINE_LOOP);
+
+			// *** really need to figure out transforms, and use gl matrices instead
+
+			v=transform_point(mi,0,0);
+			p=bas.p + v.x*bas.x + v.y*bas.y;
+			glVertex3f(p.x, p.y, p.z);
+
+			v=transform_point(mi,w,0);
+			p=bas.p + v.x*bas.x + v.y*bas.y;
+			glVertex3f(p.x, p.y, p.z);
+
+			v=transform_point(mi,w,h);
+			p=bas.p + v.x*bas.x + v.y*bas.y;
+			glVertex3f(p.x, p.y, p.z);
+
+			v=transform_point(mi,0,h);
+			p=bas.p + v.x*bas.x + v.y*bas.y;
+			glVertex3f(p.x, p.y, p.z);
+
+			glEnd();
+			glPopMatrix();
+			glDisable(GL_LINE_STIPPLE);
+		}
+
+		// *** need to draw outlines of other nets that share the current net's paper
 	}
 
 
@@ -1440,7 +1515,7 @@ void HedronWindow::drawbg()
 			text=o->Text();
 			if (isblank(text)) continue;
 
-			if (mouseover_group==1 
+			if (mouseover_group==OGROUP_Papers 
 					&& mouseover_overlay==paperoverlays.e[c]->action
 					&& mouseover_index==paperoverlays.e[c]->index) drawRect(*o, .4,.4,.4, .5,.5,.5, .5);
 			else if (currentpaper>=0 && currentpaper==o->index) drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
@@ -1460,7 +1535,7 @@ void HedronWindow::drawbg()
 			text=o->Text();
 			if (isblank(text)) continue;
 
-			if (mouseover_group==0 && mouseover_overlay==o->action) drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
+			if (mouseover_group==OGROUP_TouchHelpers && mouseover_overlay==o->action) drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
 			else if (active_action==overlays.e[c]->action)  drawRect(*o, .5,.5,.5, .6,.6,.6, .5);
 			else drawRect(*o, .2,.2,.2, .6,.6,.6, .5);
 			//else drawRect(*o, 1,1,1, 1,1,1, .5);
@@ -1669,38 +1744,58 @@ int HedronWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMouse
 		return 0;
 	}
 
-	Overlay *overlay=scanOverlays(x,y, NULL,NULL,NULL);
+	int group=OGROUP_None;
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	if (group==OGROUP_None) {
+		int c=findCurrentPotential();
+		if (c==-2) group=OGROUP_Paper;
+	}
 	leftb=flatpoint(x,y);
 	mbdown=x;
 	if (active_action==ACTION_Unwrap_Angle) mbdown=x;
 	if (active_action==ACTION_Unwrap) rbdown=currentface;
 	if (active_action==ACTION_Reseed) rbdown=currentface;
 
-	buttondown.down(mouse->id,LEFTBUTTON,x,y, (overlay?overlay->id:-1));
+	buttondown.down(mouse->id,LEFTBUTTON,x,y, group,(overlay?overlay->id:-1));
 
 	return 0;
 }
 
 int HedronWindow::LBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 {
-	int overlayid;
+	int overlayid=-1;
+	int group=OGROUP_None, orig_group=OGROUP_None;
 	//int dragged=
-	buttondown.up(mouse->id,LEFTBUTTON, &overlayid);
-	int group=-1;
+	buttondown.up(mouse->id,LEFTBUTTON, &orig_group,&overlayid);
 	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
-	if (overlayid>0) {
+	if ((orig_group==OGROUP_TouchHelpers || orig_group==OGROUP_Papers) && overlayid>0) {
 		if (overlay && overlay->id==overlayid) {
-			if (group==0) {
+			if (group==OGROUP_TouchHelpers) {
 				 //changing active_action
 				if (active_action==overlay->action) {
 					active_action=ACTION_None;
 				} else active_action=overlay->action;
 				needtodraw=1;
 				return 0;
-			} else if (group==1) {
+
+			} else if (group==OGROUP_Papers) {
 				 //paper management
-			} else if (group==2) {
+				if (overlay->action==ACTION_AddPaper) {
+					papers.push(new PaperBound(default_paper),1);
+					remapPaperOverlays();
+					return 0;
+				}
+				if (overlay->action==ACTION_Paper && overlay->index>=0) {
+					if (currentnet) {
+						currentnet->whichpaper=overlay->index;
+						needtodraw=1;
+						return 0;
+					}
+				}
+
+			} else if (group==OGROUP_ImageStack) {
 				 //image stack management
+				// ***
 			}
 		}
 	}
@@ -1864,6 +1959,8 @@ Net *HedronWindow::establishNet(int original)
 
 //! Reseed the net containing original face, an index in poly->faces.
 /*! Reseeding means to orient the net to appear stuck to the hedron at face original.
+ * The origin of the net will be the origin of the seed face. The matrices of all the
+ * faces will be changed accordingly.
  *
  * Return 0 for reseeded, or no reseeding necessary. Nonzero for error.
  *
@@ -1906,6 +2003,16 @@ int HedronWindow::Reseed(int original)
 		transform_mult(m2,net->faces.e[c]->matrix,m);
 		transform_copy(net->faces.e[c]->matrix,m2);
 	}
+
+	 //adjust paper transform, if any paper
+	if (net->whichpaper>=-1) {
+		double m3[6];
+		transform_invert(m3,net->m());
+		transform_mult(m2,m3,m);
+		transform_invert(m3,m2);
+		net->m(m3);
+	}
+
 	needtodraw=1;
 
 	return 0;
@@ -2033,6 +2140,18 @@ int HedronWindow::removeNet(int netindex)
 
 int HedronWindow::WheelUp(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
 {
+	int group=OGROUP_None;
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	
+	if (overlay && group==OGROUP_Papers) {
+		if (overlay->action==ACTION_Paper) {
+			 //change paper type of overlay->index
+			if (overlay->index>=0) changePaper(-2,overlay->index);
+		}
+		return 0;
+	}
+
+
 	cameras.e[current_camera]->m.p+=5*cameras.e[current_camera]->m.z;
 	cameras.e[current_camera]->transformTo();
 
@@ -2042,6 +2161,17 @@ int HedronWindow::WheelUp(int x,int y,unsigned int state,int count,const LaxMous
 
 int HedronWindow::WheelDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
 {
+	int group=OGROUP_None;
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	
+	if (overlay && group==OGROUP_Papers) {
+		if (overlay->action==ACTION_Paper) {
+			 //change paper type of overlay->index
+			if (overlay->index>=0) changePaper(-1,overlay->index);
+		}
+		return 0;
+	}
+
 	cameras.e[current_camera]->m.p-=5*cameras.e[current_camera]->m.z;
 	cameras.e[current_camera]->transformTo();
 
@@ -2049,6 +2179,54 @@ int HedronWindow::WheelDown(int x,int y,unsigned int state,int count,const LaxMo
 	return 0;
 }
 
+//! Change paper index to a different type of paper.
+/*! towhich==-2 for previous paper, -1 for next, or >=0 for absolute paper num
+ *
+ * Return 1 for successful change. 0 for no change.
+ */
+int HedronWindow::changePaper(int towhich,int index)
+{
+	//default does nothing
+	return 0;
+}
+
+//! Find the point in currentnet coordinates laying on screen point x,y.
+flatpoint HedronWindow::pointInNetPlane(int x,int y)
+{
+	if (!currentnet) return flatpoint();
+
+	spacevector spacev;
+	spaceline line;
+	spacepoint p;
+	int err=0;
+	//map mouse point to a point in space 50 units out
+	double d=win_h/2/tan(fovy/2);
+	double sz=50;
+	double sx=(x-win_w/2.)*sz/d;
+	double sy=(y-win_h/2.)*sz/d;
+	hedron->updateBasis();
+
+	spacev=cameras.e[current_camera]->m.p
+		+ sx*cameras.e[current_camera]->m.x
+		- sy*cameras.e[current_camera]->m.y
+		- sz*cameras.e[current_camera]->m.z;
+
+	line.p=cameras.e[current_camera]->m.p;
+	line.v=spacev-line.p;
+
+	flatpoint fp;
+	transform(line,hedron->bas);
+	basis nbasis=poly->basisOfFace(currentnet->info); //basis of seed face on polyhedron
+
+	p=intersection(line,plane(nbasis.p,nbasis.z),err);
+	if (err!=0) return flatpoint();
+	fp=flatten(p,nbasis);
+
+	return fp;
+}
+
+/*! Return index in currentnet->faces, or -2 over paper (if any) or -1 for not over anything.
+ */
 int HedronWindow::findCurrentPotential()
 {
 	if (!currentnet) return -1;
@@ -2062,16 +2240,24 @@ int HedronWindow::findCurrentPotential()
 	hedron->updateBasis();
 	line=pointer;
 	transform(line,hedron->bas);
-	basis nbasis=poly->basisOfFace(currentnet->info);
+	basis nbasis=poly->basisOfFace(currentnet->info); //basis of seed face on polyhedron
 
 	p=intersection(line,plane(nbasis.p,nbasis.z),err);
 	if (err!=0) return -1;
 	fp=flatten(p,nbasis);
+	DBG cerr <<" ---- "<<fp.x<<","<<fp.y<<endl;
 
 	 //intersect with the net face's shape
-	index=currentnet->pointinface(fp);
+	index=currentnet->pointinface(fp,1);
 
-	if (index<0) return -1;
+	if (index<0) {
+		if (currentnet->whichpaper>=0) {
+			fp=transform_point_inverse(currentnet->m(),fp);
+			if (fp.x>=0 && fp.y>=0 && fp.x<papers.e[currentnet->whichpaper]->width && fp.y<papers.e[currentnet->whichpaper]->height)
+				return -2; //mouse over paper
+		}
+		return -1;
+	}
 	if (currentnet->faces.e[index]->tag!=FACE_Potential) return -1;
 	if (poly->faces.e[currentnet->faces.e[index]->original]->cache->facemode!=0) return -1;
 
@@ -2301,7 +2487,7 @@ Overlay *HedronWindow::scanOverlays(int x,int y, int *action,int *index,int *gro
 			 //mouse is in an overlay
 			if (action) *action=overlays.e[c]->action;
 			if (index) *index=overlays.e[c]->index;
-			if (group) *group=0;
+			if (group) *group=OGROUP_TouchHelpers;
 			return overlays.e[c]; //mouse over overlay, do nothing else
 		}
 	}
@@ -2313,13 +2499,13 @@ Overlay *HedronWindow::scanOverlays(int x,int y, int *action,int *index,int *gro
 			 //mouse is in an overlay
 			if (action) *action=paperoverlays.e[c]->action;
 			if (index) *index=paperoverlays.e[c]->index;
-			if (group) *group=1;
+			if (group) *group=OGROUP_Papers;
 			return paperoverlays.e[c]; //mouse over overlay, do nothing else
 		}
 	}
 	if (action) *action=0;
 	if (index)  *index=-1;
-	if (group)  *group=-1;
+	if (group)  *group=OGROUP_None;
 
 	return NULL;
 }
@@ -2327,7 +2513,7 @@ Overlay *HedronWindow::scanOverlays(int x,int y, int *action,int *index,int *gro
 int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse)
 {
 	 //first off, check if mouse in any overlays
-	int action=0,index=-1,group=-1;
+	int action=0,index=-1,group=OGROUP_None;
 	Overlay *in;
 	in=scanOverlays(x,y, &action,&index,&group);
 	if (mouseover_group!=group || mouseover_overlay!=action || mouseover_index!=index) {
@@ -2361,9 +2547,11 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 	 //no buttons pressed
 	if (!buttondown.any()) {
+		//search for mouse overs
+
 		int c=-1;
 		if (currentnet) {
-			c=findCurrentPotential();
+			c=findCurrentPotential(); //-1 for none, -2 for over paper
 			DBG cerr <<"MouseMove found potential: "<<c<<endl;
 			if (c>=0) {
 				if (currentface!=-1) { 	currentface=-1; needtodraw=1; }
@@ -2374,12 +2562,16 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 				DBG cerr <<"current potential original: "<<currentpotential<<endl;
 
 				return 0;
+			} else if (c==-2) {
+				mouseover_paper=0;
 			} else {
 				if (currentpotential!=-1) {
 					currentpotential=-1;
 					needtodraw=1;
 				}
 			}
+		} else {
+			mouseover_paper=-1;
 		}
 
 		c=findCurrentFace();
@@ -2423,9 +2615,22 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		return 0;
 	}
 
+	//so below is for when button is down
+
 	int lx,ly;
+	int bgroup=OGROUP_None,bindex=-1;
 	buttondown.move(mouse->id, x,y, &lx,&ly);
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &bgroup,&bindex);
 	leftb=flatpoint(lx,ly);
+
+	if (bgroup==OGROUP_Paper && currentnet) {
+		flatpoint fp,fpn;
+		fpn=pointInNetPlane(x,y);
+		fp =pointInNetPlane(lx,ly);
+		currentnet->origin(currentnet->origin()+fpn-fp);
+		needtodraw=1;
+		return 0;
+	}
 
 	ActionType current_action=active_action;
 	if (buttondown.isdown(0,MIDDLEBUTTON)) current_action=ACTION_Unwrap_Angle;
@@ -2809,7 +3014,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 
 
 	 //----chars available during all modes
-	if (ch=='q') app->quit(); 
+	if (ch=='q' && (state&LAX_STATE_MASK)==ControlMask) app->quit(); 
 
 	 //-----help mode 
 	if (mode==MODE_Help) {

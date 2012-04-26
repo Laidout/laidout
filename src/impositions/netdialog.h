@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010,2012 by Tom Lechner
 //
 #ifndef NEDIALOG_H
 #define NEDIALOG_H
@@ -21,6 +21,7 @@
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>
 #include "../papersizes.h"
+#include "netimposition.h"
 
 class NetDialog : public Laxkit::RowFrame
 {
@@ -38,6 +39,7 @@ class NetDialog : public Laxkit::RowFrame
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	int sendNewImposition();
+	NetImposition *getImposition();
 };
 
 

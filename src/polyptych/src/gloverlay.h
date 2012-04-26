@@ -42,7 +42,9 @@ enum ActionType {
 	ACTION_Unwrap,
 	ACTION_Reseed,
 	ACTION_Paper,
-	ACTION_AddPaper
+	ACTION_AddPaper,
+	ACTION_RemovePaper,
+	ACTION_ToggleShowPaper
 };
 
 enum OverlayType {

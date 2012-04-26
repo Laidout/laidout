@@ -13,8 +13,23 @@ LDFLAGS= -L/usr/X11R6/lib -lXi -lX11 -lm -lpng `imlib2-config --libs` \
 		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
 CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
 DEBUGFLAGS= -g -DDEBUG
-#POLYPTYCHLIBS= -lGraphicsMagick++ -lGL -lGLU -lftgl 
+
+
+#---polyptych related:
+ifeq ($(LAIDOUT_USING_GL), yes)
+#---if gl:
+POLYPTYCHLIBS= -lGraphicsMagick++ -lGL -lGLU -lftgl 
+POLYPTYCH_GL_OBJS=polyptych/src/hedronwindow.o  polyptych/src/glbase.o  polyptych/src/gloverlay.o  polyptych/src/polyrender.o
+POLYPTYCHFORLAIDOUT=polyptychgl
+
+else
+#---if no gl:
 POLYPTYCHLIBS= 
+POLYPTYCH_GL_OBJS= 
+POLYPTYCHFORLAIDOUT=polyptych
+endif
+
+#---either
 POLYPTYCHOBJS=polyptych/src/nets.o polyptych/src/poly.o
 
 
@@ -59,14 +74,17 @@ objs= \
 
 all: laidout
 
-laidout: lax laxinterface $(dirs) $(objs) polyptych
-	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit  -lcrypto $(POLYPTYCHLIBS) -o $@
+laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
+	$(LD) $(LDFLAGS) $(objs) [a-z]*/*.o $(POLYPTYCH_GL_OBJS) $(POLYPTYCHOBJS) -llaxinterfaces -llaxkit  -lcrypto $(POLYPTYCHLIBS) -o $@
 
 icons:
 	cd src/icons && $(MAKE)
 									 
 polyptych:
 	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) forlaidout
+
+polyptychgl:
+	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) forlaidoutgl
 
 api:
 	cd api && $(MAKE)
@@ -130,7 +148,7 @@ depends:
 include makedepend
 
 
-.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage polyptych
+.PHONY: clean lax docs $(dirs) hidegarbage unhidegarbage polyptych polyptychgl
 clean:
 	rm -f laidout *.o
 	for NAME in $(dirs); do $(MAKE) -C $$NAME clean; done

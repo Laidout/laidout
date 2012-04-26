@@ -161,7 +161,7 @@ class Net : public LaxInterfaces::SomeData
 
 	 //informational functions
 	virtual int pathOfFace(int i, int *n, flatpoint **p, int convert);
-	virtual int pointinface(flatpoint pp);
+	virtual int pointinface(flatpoint pp, int innetcoords);
 	virtual int actualLink(int facei, int edgei);
 	virtual int numActual();
 	virtual void resetTick(int t);

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010,2012 by Tom Lechner
 //
 
 #include <lax/filedialog.h>
@@ -21,8 +21,10 @@
 #include "../language.h"
 #include "../headwindow.h"
 #include "netdialog.h"
-#include "impositions/netimposition.h"
+#include "netimposition.h"
+#include "polyptychwindow.h"
 #include "utils.h"
+#include "polyptych/src/poly.h"
 	
 #include <iostream>
 using namespace std;
@@ -129,8 +131,20 @@ int NetDialog::init()
 			    	        	100,0,1,1,3,3);
 	boxdims->GetLineEdit()->setWinStyle(LINEEDIT_SEND_FOCUS_ON,1);
 	AddWin(boxdims,1, boxdims->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 3000,2990,0,50,0, 20,0,0,50,0, -1); //force left justify and line break
 
 
+	//------------------------------ Polyptych editor -----------------------------
+#ifndef LAIDOUT_NOGL
+	last=tbut=new Button(this,"Edit with Polyptych",NULL,0, 0,0,0,0,1, last,object_id,"polyptych",
+						 BUTTON_OK,
+						 //doc?_("Apply settings"):_("Create Document"),
+						 _("Edit with Polyptych"),
+						 NULL,NULL);
+	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
+
+#endif
 
 
 	//------------------------------ extra scaling -------------------------------------------------------
@@ -179,15 +193,29 @@ int NetDialog::Event(const EventData *data,const char *mes)
 	if (!strcmp(mes,"checkfile")) {
 		checkdod->State(LAX_OFF);
 		checkbox->State(LAX_OFF);
+		return 0;
 
 	} else if (!strcmp(mes,"checkdod")) {
 		checkfile->State(LAX_OFF);
 		checkbox->State(LAX_OFF);
+		return 0;
 
 	} else if (!strcmp(mes,"checkbox")) {
 		checkfile->State(LAX_OFF);
 		checkdod->State(LAX_OFF);
+		return 0;
 
+#ifndef LAIDOUT_NOGL
+	} else if (!strcmp(mes,"polyptych")) {
+		NetImposition *imp=getImposition();
+		if (imp && imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet)) {
+			 //ok from PolyptychWindow sends NetImposition to win_owner
+			PolyptychWindow *pw=new PolyptychWindow(imp, NULL,win_owner,win_sendthis);
+			app->rundialog(pw);
+			app->destroywindow(this);
+		}
+		return 0;
+#endif
 
 	} else if (!strcmp(mes,"impfile")) {
 		 //comes after a file select dialog for polyhedron file
@@ -260,14 +288,9 @@ int NetDialog::Event(const EventData *data,const char *mes)
 	return RowFrame::Event(data,mes);
 }
 
-
-//! Create and fill a Document, and tell laidout to install the new document
-/*! Return 0 for success, 1 for failure and nothing sent.
- */
-int NetDialog::sendNewImposition()
+NetImposition *NetDialog::getImposition()
 {
 	NetImposition *imp=NULL;
-
 	if (checkdod->State()==LAX_ON) {
 		imp=new NetImposition;
 		imp->SetNet("dodecahedron");
@@ -276,7 +299,7 @@ int NetDialog::sendNewImposition()
 		imp=new NetImposition;
 		if (imp->SetNetFromFile(impfromfile->GetCText())!=0) {
 			delete imp;
-			return 1;
+			return NULL;
 		}
 
 	} else { //is box
@@ -290,6 +313,17 @@ int NetDialog::sendNewImposition()
 	double s=scaling->GetDouble();
 	if (s<=0) s=1;
 	imp->scalefromnet*=s;
+
+	return imp;
+}
+
+//! Create and fill a Document, and tell laidout to install the new document
+/*! Return 0 for success, 1 for failure and nothing sent.
+ */
+int NetDialog::sendNewImposition()
+{
+	NetImposition *imp=getImposition();
+	if (!imp) return 1;
 
 	RefCountedEventData *data=new RefCountedEventData(imp);
 	imp->dec_count();
