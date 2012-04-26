@@ -28,6 +28,46 @@ using namespace std;
  * \brief Window pane class to hold a bundle of icon based pushbuttons.
  */
 
+#define LO_ACTION_ImageTool
+#define LO_ACTION_ColorPatchTool
+#define LO_ACTION_LinearGradientTool
+#define LO_ACTION_RadialGradientTool
+#define LO_ACTION_ImagePatchTool
+#define LO_ACTION_PathTool
+#define LO_ACTION_TextTool
+#define LO_ACTION_Zoom
+#define LO_ACTION_DeletePage
+#define LO_ACTION_AddPage
+#define LO_ACTION_PreviousSpread
+#define LO_ACTION_NextSpread
+#define LO_ACTION_ImportImages
+#define LO_ACTION_InsertImage
+#define LO_ACTION_TogglePageClips
+#define LO_ACTION_NewDocumentDialog
+#define LO_ACTION_NewProjectDialog
+#define LO_ACTION_Open
+
+#define LO_ACTION_Print
+#define LO_ACTION_CloseDocument
+#define LO_ACTION_Save
+#define LO_ACTION_SaveAll
+#define LO_ACTION_SaveAs
+#define LO_ACTION_Undo
+#define LO_ACTION_Redo
+#define LO_ACTION_Help
+#define LO_ACTION_SpreadEditor
+#define LO_ACTION_PageRangeOverlay
+
+#define LO_ACTION_SinglePageView
+#define LO_ACTION_PageView
+#define LO_ACTION_PaperView
+
+
+#define LO_ACTION_Quit
+
+
+
+
 
 ButtonBox::ButtonBox(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder)
