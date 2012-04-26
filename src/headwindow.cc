@@ -49,9 +49,9 @@ using namespace LaxFiles;
  */
 
 ////---------------------- newHedronWindowFunc
-/*! \ingroup mainwindows
- * \brief HedronWindow window generator for use in HeadWindow.
- */
+///*! \ingroup mainwindows
+// * \brief HedronWindow window generator for use in HeadWindow.
+// */
 //anXWindow *newHedronWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
 //{
 //	Polyptych::HedronWindow *text=new Polyptych::HedronWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
