@@ -40,27 +40,29 @@
 
 class PluginBase
 {
- public:
-	const char *PluginName() = 0;
-	const char *Version() = 0;
-	const char *Description() = 0;
-	const char *Author() = 0;
-	const char *ReleaseDate() = 0;
-	const char *License() = 0;
+  public:
+	virtual const char *PluginName()  = 0;
+	virtual const char *Version()     = 0;
+	virtual const char *Description() = 0;
+	virtual const char *Author()      = 0;
+	virtual const char *ReleaseDate() = 0;
+	virtual const char *License()     = 0;
 
-	unsigned long WhatYouGot();
+	virtual unsigned long WhatYouGot();
 
-	LaidoutDialog     **WindowPanes();
-	LaidoutAction     **Actions();
-	ImageImportFilter **ImageImportFilters();
-	ImportFilter      **ImportFilters();
-	ExportFilter      **ExportFilters();
-	anInterface       **Tools();
-	Imposition        **Impositions();
-	Resource          **ResourceInstances();
-	DrawableObject    **ObjectInstances();
-	Config            **Configs();
-	Interpreter       **Interpreters();
+	 //return NULL terminated list
+	virtual LaidoutDialog     **WindowPanes() { return NULL; }
+	virtual ImageImportFilter **ImageImportFilters() { return NULL; }
+	virtual ImportFilter      **ImportFilters() { return NULL; }
+	virtual ExportFilter      **ExportFilters() { return NULL; }
+	virtual anInterface       **Tools() { return NULL; }
+	virtual Resource          **ResourceInstances() { return NULL; }
+
+	virtual LaidoutAction     **Actions() { return NULL; }
+	virtual Imposition        **Impositions() { return NULL; }
+	virtual Config            **Configs() { return NULL; } //tool settings and global Laidout config
+	virtual DrawableObject    **ObjectInstances() { return NULL; } //like scrapbook items
+	virtual Interpreter       **Interpreters() { return NULL; }
 	
 	PluginBase();
 	virtual ~PluginBase();
