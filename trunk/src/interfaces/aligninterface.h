@@ -85,11 +85,23 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	Laxkit::ButtonDownInfo buttondown;
 
 	AlignInfo *aligninfo;
-	Laxkit::NumStack<flatpoint> controls;
-	Laxkit::NumStack<double> controlamount;
 
-	Laxkit::RefPtrStack<LaxInterfaces::SomeData> original_transforms;
-	Laxkit::NumStack<flatpoint> original_centers;
+	class ControlInfo //one per object
+	{
+	  public:
+		flatpoint p;
+		flatpoint v;
+		double amount;
+		flatpoint snapto;
+		int flags;
+		flatpoint original_center;
+		LaxInterfaces::SomeData *original_transform;
+
+		ControlInfo();
+		~ControlInfo();
+		void SetOriginal(LaxInterfaces::SomeData *o);
+	};
+	Laxkit::PtrStack<ControlInfo> controls;
 
 	int showdecs;
 	int firsttime;
