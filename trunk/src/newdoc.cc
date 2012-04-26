@@ -413,7 +413,7 @@ int NewDocWindow::init()
 	
 	mesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_MOVE, 0,0, 0,0, 0, _("Imposition:"));
 	AddWin(mesbar,1, mesbar->win_w,0,0,50,0, mesbar->win_h,0,0,50,0, -1);
-	last=impsel=new SliderPopup(this,"Imposition",NULL,0, 0,0,0,0, 1, 
+	last=impsel=new SliderPopup(this,"Imposition",NULL,SLIDER_LEFT, 0,0,0,0, 1, 
 						last,object_id,"imposition");
 	int whichimp=-1,singles=-1;
 	if (doc) {
