@@ -62,8 +62,11 @@ install:
 # $(BINDIR)/$(LAIDOUTNAME)
 uninstall: 
 	echo 'Uninstalling laidout.'
+	echo '  Removing $(BINDIR)/laidout'
 	rm -f  $(BINDIR)/laidout
+	echo '  Removing $(SHAREDIR)/laidout/$(LAIDOUTVERSION)'
 	rm -fr $(SHAREDIR)/laidout/$(LAIDOUTVERSION)
+	echo '  Removing $(BINDIR)/$(LAIDOUTNAME)'
 	rm -f  $(BINDIR)/$(LAIDOUTNAME)
 	cd src/po && $(MAKE) uninstall
 

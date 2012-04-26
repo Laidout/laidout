@@ -15,6 +15,12 @@ Those are purged with each release.
 
 ---- bugs:
 
+hedron edit goes to netdialog, should have "current" option...
+
+object tool shift-control for rotate does not allow positioning on drag bars
+
+'g' for color sample changes cursor to cancel now, and changes on border cross!!!
+
 hold down control in object tool. desktop left then back. Now external handles are supressed because lo thinks control is still pressed down!
 
 switch to None document, and units change to unreasonable
@@ -81,25 +87,31 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
+add --experimental option to activate any crash prone features not otherwise available
+
 object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
 
 plugin for easy antiprism import
 
 align tool:
-  moving boundaries broken
+  shift to move control moves whole when path not defined!
+  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
   '0' for grid align on closed paths should distribute more nicely
   final layout options
     DONE on/off
 	DONE random
 	DONE grid
 	gaps
-	unoverlap
+	unoverlap -> possibly snap to path, then spread out on path to not overlap
   reorder on layouts? -> how to handle reorder in gap and unoverlap?
   maybe grid drag control to reorder
   visual vs aligned bounding box snapping
   number box while dragging, goes away after a second, or click on it to edit
+    if inc/dec arrows, have it inc or dec the decimal place cursor is on
   default presets: inkscape crossover
 
+  DONE moving boundaries broken
+  DONE snap to path not transforming to transformed path
   DONE alignment on real points? panning window messes up things
   DONE path editing
   DONE mouseovers for bars, they get lost otherwise
@@ -111,17 +123,47 @@ align tool:
   DONE align to slant not quite working
 
 
-PathEditor:
-  DONE toggleclosed: breaks connected bez controls
-  drag point over other point to connect if both are endpoints
+Object tool:
+  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
+  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
+
+
+PathEditor: 
+  add point should obey addmode!
+  maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
+    control while dragging handle will temporarily switch to vertex?
+  shift click down then up on a point selects then deselects
+  delete point not setting curvertex right
+  drag point over other point to connect if both are endpoints, maybe dotted connection if only both end points selected, click connection to close?
+    --> then click, segfault!
   draggable/clickable direction indicator for adding points
   direction indicator drag off path to adjust if adding points to current path or making new path
   how to distinguish making new path in current paths, or new paths totally
-  shift click on empty space starts a new subpath?
+  no curvertex: shift click on empty space starts a new subpath? normal click starts new object?
   not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
+  wheel to change point type?
+  make straight bez
+  make straight line
+  cut segment
+  align nodes
+  transform handles for nodes, including flip
+  subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
+  makerect()
+
+  toggle for add point mode / select point mode
+  finish new path/pathoperator/pathsubinterface/pathinterface structure
+
+  DONE point mouseovers
+  DONE if add direction reverse, then should auto select prev vertex, not next
+  DONE Click no move on vertex, toggle point type
+  DONE control, then control click on other control point makes segfault
+  DONE maybe have 'h'/'H' toggle between c-v-c, instead of shift and control, which causes too much trouble currently
+  DONE add new point, click down, then up with no drag should create polypoint, not bez point
+  DONE toggleclosed: breaks connected bez controls
 
 
-in number edit boxes, wheel should allow changing numbers
+in number edit boxes, wheel should allow changing numbers, change on digit mouse is over!
+  is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
 
 animated beacons for anchor points to make them visible
 
@@ -158,11 +200,6 @@ implement marks:
   spread info: spread type, current date and time, creator, spread number/total number of spreads
 
 'm' should be able to move whole groups, means must be in object tool?
-
-need to rediscover pathinterface
-
-PathInterface must be drastically improved, and bez part should have segment move like inkscape
-    finish new path/pathoperator/pathsubinterface/pathinterface structure
 
 For objects that appear very small, the drag handles should not be operable.. shift only
 
@@ -260,11 +297,11 @@ need laidout import
 need to implement more options for polyhedron connections, to allow mobius strips...
 
 NetImposition needs import/export net,
-    DONE  import 3-d models such as from OFF files
-    DONE gui for above -> select file in creation dialog
     export svg
     convert to/from laidout elements
-    import obj files
+    DONE import obj files
+    DONE  import 3-d models such as from OFF files
+    DONE gui for above -> select file in creation dialog
 
 ImageImport dialog: (actually, needs a total redesign)
   DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template

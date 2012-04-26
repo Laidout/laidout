@@ -44,7 +44,9 @@ class PaperBound
 	double width,height;
 	double r,g,b;
 	PaperBound(const char *nname,double w,double h,const char *unit);
+	PaperBound(const PaperBound &p);
 	~PaperBound();
+	PaperBound &operator=(PaperBound &p);
 };
 
 //--------------------------- FaceData -------------------------------
@@ -151,6 +153,7 @@ class HedronWindow : public Laxkit::anXWindow
 	Thing *hedron;
 	Laxkit::RefPtrStack<Net> nets;
 	Laxkit::PtrStack<PaperBound> papers;
+	PaperBound default_paper;
 	int currentpaper;
 	basis extra_basis;
 	char *consolefontfile;
@@ -176,6 +179,7 @@ class HedronWindow : public Laxkit::anXWindow
 	int mouseover_overlay; //which overlay mouse is currently over
 	int mouseover_index;
 	int mouseover_group;  //which section mouseover_overlay is index in
+	int mouseover_paper;
 	int grab_overlay;     //if lbdown on an overlay, all input corresponds to that one
 	ActionType active_action; //determined by current overlay, affects behavior of left mouse button
 	Laxkit::PtrStack<Overlay> overlays;
@@ -255,7 +259,11 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual Net *findNet(int id);
 	virtual int findCurrentPotential();
 	virtual int findCurrentFace();
+	virtual flatpoint pointInNetPlane(int x,int y);
 	virtual void remapCache(int start=-1, int end=-1);
+
+	 //misc
+	int changePaper(int towhich,int index);
 
 	 //input/output
 	virtual int Save(const char *saveto);

@@ -236,6 +236,7 @@ echo "LAXDIR=$LAXDIR"                 >> Makefile-toinclude
 echo "LAXIDIR=$LAXDIR/interfaces"     >> Makefile-toinclude
 echo "LANGUAGE_PATH=$PREFIX/$LANGUAGE_PATH"   >> Makefile-toinclude
 echo "POLYPTYCHBASEDIR="`pwd`"/src"     >> Makefile-toinclude
+echo "LAIDOUT_USING_GL=$USINGGL"        >> Makefile-toinclude
 echo "" >> Makefile-toinclude
 
 

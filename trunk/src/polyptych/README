@@ -18,11 +18,15 @@ Spheretopoly depends on Graphicsmagick++, and the Laxkit.
 Spheretocube depends on Graphicsmagick++, and only vectors.o from the Laxkit.
 Convertahedron depends on only the Laxkit.
 
-For a recent debian system, these extra dependencies can be installed (as root) with:
-  > apt-get install libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
+For a recent debian system, these extra dependencies can be installed (as root) with the
+following, for ubuntu, do "sudo apt-get" instead:
+  apt-get install libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
 
 To make the standalone versions (first "cd src"):
-  > make polyptych
-  > make spheretocube
-  > make spheretopoly
-  > make convertahedron
+  make polyptych
+  make spheretocube
+  make spheretopoly
+  make convertahedron
+
+Alternately, you can create a deb style package from the top directory with this:
+  dpkg-buildpackage -rfakeroot
