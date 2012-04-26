@@ -8,11 +8,11 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.093
 -------------
 (done) On canvas flip controls
-       PathInterface must be improved
        Align tool
-       Examine and improve ease of use of import images dialog, particularly for previewing
-       Fix object bleeding across pages for signatures and nets
+       PathInterface must be improved
        Net imposition interactive unwrapper and build net interface
+       Fix object bleeding across pages for signatures and nets
+       Examine and improve ease of use of import images dialog, particularly for previewing
        need partial Laidout import and export
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
