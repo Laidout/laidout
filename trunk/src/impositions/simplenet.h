@@ -87,7 +87,7 @@ class SimpleNet : public AbstractNet,
 	virtual void FitToData(Laxkit::DoubleBBox *data,double margin);
 	virtual void ApplyTransform(const double *mm=NULL);
 	virtual void Center();
-	virtual int pointinface(flatpoint pp);
+	virtual int pointinface(flatpoint pp,int innetcoord);
 	virtual int rotateface(int f,int alignxonly=0);
 	virtual void pushline(SimpleNetLine &l,int where=-1);
 	virtual void pushface(SimpleNetFace &f);

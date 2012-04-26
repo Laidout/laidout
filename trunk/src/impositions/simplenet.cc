@@ -828,11 +828,13 @@ int SimpleNet::rotateface(int f,int alignxonly)//alignxonly=0
 }
 
 //! Return the index of the first face that contains points, or -1.
-int SimpleNet::pointinface(flatpoint pp)
+int SimpleNet::pointinface(flatpoint pp,int innetcoords)
 {
-	double i[6];
-	transform_invert(i,m());
-	pp=transform_point(i,pp);
+	if (!innetcoords) {
+		double i[6];
+		transform_invert(i,m());
+		pp=transform_point(i,pp);
+	}
 	int c,c2;
 	for (c=0; c<nf; c++) {
 		flatpoint pnts[faces[c].np];
