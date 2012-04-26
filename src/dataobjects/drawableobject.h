@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010,2012 by Tom Lechner
 //
 #ifndef DRAWABLEOBJECT_H
 #define DRAWABLEOBJECT_H
@@ -34,15 +34,18 @@ class DrawableObject :  virtual public ObjectContainer,
 	PathsData *wrap_path;
 	PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
+	int wraptype;
 
 	Laxkit::RefPtrStack<DrawObjectChain> chains; //for linked objects
 	DrawableObject *parent;
 	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
 
 	//RefPtrStack<RefCounted *> refs; //what other resources this objects depends on?
+	DrawObjectChainLink *chainlinks;
 
-	ObjectStream *path_stream;
-	ObjectStream *area_stream;
+	RefPtrStack<ObjectStream> path_streams; //applied to areapath outline
+	RefPtrStack<ObjectStream> area_streams; //applied into areapath area
+
 	RefPtrStack<ObjectFilter> filters;
 	RefPtrStack<DrawableObject> subobjects;
 	double alpha; //object alpha applied to anything drawn by this and kids
@@ -62,17 +65,20 @@ class DrawableObject :  virtual public ObjectContainer,
 	PathsData *GetAreaPath();
 	PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
 	PathsData *GetWrapPath(); //path inside which external streams can't go
-	
+
+	 //from SomeData.DumpUtility
 	virtual void dump_out(FILE *f,int indent,int what);
 	virtual void dump_in_atts(LaxFiles::Attribute *att);
 };
 
 
 //---------------------------------- DrawObjectChain ---------------------------------
-class DrawObjectChain : public Laxkit::anObject, public Laxkit::RefCounted, protected Laxkit::PtrStack<DrawableObject>
+class DrawObjectChainLink
 {
   public:
-	char *id;
+	DrawObjectChainLink *linkstacknext;
+	DrawObjectChainLink *next, *prev;
+
 	DrawObjectChain();
 	virtual ~DrawObjectChain();
 };

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2011 by Tom Lechner
+// Copyright (C) 2010-2012 by Tom Lechner
 //
 
 
@@ -178,14 +178,14 @@ Laxkit::anObject *DrawableObject::object_e(int i)
  */
 
 
-DrawObjectChain::DrawObjectChain()
+DrawObjectChainLink::DrawObjectChainLink()
 {
-	id=NULL;
+	linkstacknext=NULL;
+	next=prev=NULL;
 }
 
-DrawObjectChain::~DrawObjectChain()
+DrawObjectChainLink::~DrawObjectChainLink()
 {
-	if (id) delete[] id;
 }
 
 
