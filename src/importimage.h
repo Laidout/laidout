@@ -50,7 +50,7 @@ class ImportImageSettings : public Laxkit::RefCounted, public LaxFiles::DumpUtil
 
 	int perpage; //number per page, or as will fit (-1), or all in 1 page (-2)
 
-	//PtrStack<ImageAlternateInfo*> alternatesettings; //overrides laidout default settings
+	//PtrStack<ImageAlternateSpec> alternatesettings; //overrides laidout default settings
 
 	int startpage; //which page (or area) to start dumping images into
 	int destination;
