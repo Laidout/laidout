@@ -42,9 +42,45 @@ using namespace Magick;
 
 
 
-namespace SphereMap {
+namespace Polyptych {
 
 
+
+//--------------------------- PaperBound -------------------------------
+/*! \class PaperBound
+ * \brief Simple class to hold info about laying out on papers.
+ */
+
+PaperBound::PaperBound(const char *nname,double w,double h,const char *unit)
+{
+	name=newstr(nname);
+	width=w;
+	height=h;
+	units=newstr(unit);
+}
+
+PaperBound::PaperBound(const PaperBound &p)
+{
+	name=newstr(p.name);
+	width=p.width;
+	height=p.height;
+	units=newstr(p.units);
+}
+
+PaperBound::~PaperBound()
+{
+	if (name) delete[] name;
+	if (units) delete[] units;
+}
+
+PaperBound &PaperBound::operator=(PaperBound &p)
+{
+	makestr(name,p.name);
+	width=p.width;
+	height=p.height;
+	makestr(units,p.units);
+	return p;
+}
 
 //------------------------ RenderConfig -------------------------------
 /*! \class RenderConfig
@@ -84,6 +120,8 @@ int SaveSvgWithImages(Net *net,
 					  flatpoint *imagedims,
 					  flatpoint *imageoffset,
 					  double pixPerUnit,  //!< How many image pixels per unit in net space
+					  int num_papers,     //!< Number of predefined papers
+					  PaperBound **papers, //!< net->whichpaper points to papers in this stack
 					  char **error_ret)
 {
 	if (!net || !net->lines.n) return 1;
@@ -254,6 +292,8 @@ int SphereToPoly(const char *spherefile,
 				 int oversample,      //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
 				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 int num_papers,     //!< Number of predefined papers
+				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
 				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
 				)
 {
@@ -289,7 +329,10 @@ int SphereToPoly(const char *spherefile,
 		if (ptr!=NULL && ptr!=fbase) *ptr='\0';
 	}
 
-	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, extra_basis, error_ret);
+	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, extra_basis,
+							num_papers,
+							papers,
+							error_ret);
 	if (fbase!=filebase) delete[] fbase;
 
 	return status;
@@ -313,6 +356,8 @@ int SphereToPoly(Image spheremap,
 				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
 				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 int num_papers,     //!< Number of predefined papers
+				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
 				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
 				)
 {
@@ -566,7 +611,7 @@ int SphereToPoly(Image spheremap,
 	} else if (output==OUT_SVG) {
 		cout <<"outputting svg...."<<endl;
 		sprintf(filename,"%s.svg",filenamebase.c_str());
-		return SaveSvgWithImages(net, filename,filenamebase.c_str(),imagedims,imageoffset,pixperunit,NULL);
+		return SaveSvgWithImages(net, filename,filenamebase.c_str(),imagedims,imageoffset,pixperunit,num_papers,papers,NULL);
 
 	} else if (output==OUT_IMAGE) {
 		sprintf(filename,"%s.tif",filenamebase.c_str());
@@ -593,6 +638,6 @@ int SphereToPoly(Image spheremap,
 	return 0;
 }
 
-} //namespace SphereMap
+} //namespace Polyptych
 
 

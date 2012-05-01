@@ -38,8 +38,6 @@ using namespace LaxFiles;
 
 #define DBG
 
-using namespace SphereMap;
-
 
 
 namespace Polyptych {
@@ -60,6 +58,17 @@ static int  attributeListDouble[]  =  {
 
 GLXContext glcontext=0;
 XVisualInfo *glvisual=NULL;
+
+
+//---------------------------- misc ----------------------
+enum PaperPart {
+	PAPER_None=0,
+	PAPER_Left,
+	PAPER_Right,
+	PAPER_Top,
+	PAPER_Bottom,
+	PAPER_Inside
+};
 
 
 //--------------------------------- HedronWindow modes and other things -------------------------------
@@ -86,6 +95,7 @@ enum Mode {
 	MODE_Last
 };
 
+
 //! Return a string corresponding to the given Polyptych::Mode.
 const char *modename(int mode)
 {
@@ -99,42 +109,6 @@ const char *modename(int mode)
 	return " ";
 }
 
-
-//--------------------------- PaperBound -------------------------------
-/*! \class PaperBound
- * \brief Simple class to hold info about laying out on papers.
- */
-
-PaperBound::PaperBound(const char *nname,double w,double h,const char *unit)
-{
-	name=newstr(nname);
-	width=w;
-	height=h;
-	units=newstr(unit);
-}
-
-PaperBound::PaperBound(const PaperBound &p)
-{
-	name=newstr(p.name);
-	width=p.width;
-	height=p.height;
-	units=newstr(p.units);
-}
-
-PaperBound::~PaperBound()
-{
-	if (name) delete[] name;
-	if (units) delete[] units;
-}
-
-PaperBound &PaperBound::operator=(PaperBound &p)
-{
-	makestr(name,p.name);
-	width=p.width;
-	height=p.height;
-	makestr(units,p.units);
-	return p;
-}
 
 //--------------------------- FaceData -------------------------------
 
@@ -886,7 +860,8 @@ void HedronWindow::remapPaperOverlays()
 	static char str[300];
 
 	paperoverlays.flush();
-	paperoverlays.push(new Overlay("Papers",ACTION_None,OVERLAY_Just_Display,-1));
+	//paperoverlays.push(new Overlay("Papers",ACTION_Paper,OVERLAY_Just_Display,-1));
+	paperoverlays.push(new Overlay("Papers",ACTION_Paper,OVERLAY_Button,-1));
 	
 //	if (currentpaper>=0) {
 //		sprintf(str,"%s, %gx%g %s", papers.e[currentpaper]->name,
@@ -1007,7 +982,7 @@ void HedronWindow::Refresh()
 	needtodraw=0;
 
 	if (mode==MODE_Help) drawHelp();
-	else drawbg();
+	else Refresh3d();
 
 	 //--all done drawing, now swap buffers
 	glFlush();
@@ -1100,7 +1075,7 @@ void HedronWindow::drawHelp()
 }
 
 //! Draw all the stuff in the scene
-void HedronWindow::drawbg()
+void HedronWindow::Refresh3d()
 {
 	int c;
 	glClearColor(0,0,0,1);
@@ -1390,11 +1365,11 @@ void HedronWindow::drawbg()
 			drawPotential(currentnet,currentpotential);
 		}
 
-		if (currentnet->whichpaper>=0) {
+		if (draw_papers && currentnet->whichpaper>=0) {
 			double w=papers.e[currentnet->whichpaper]->width;
 			double h=papers.e[currentnet->whichpaper]->height;
-			double mi[6];
-			transform_invert(mi,currentnet->m());
+			double netmi[6];
+			transform_invert(netmi,currentnet->m());
 			glPushMatrix();
 			glMultMatrixf(hedron->m);
 			setmaterial(1,1,1);
@@ -1402,23 +1377,23 @@ void HedronWindow::drawbg()
 
 			// *** really need to figure out transforms, and use gl matrices instead
 
-			v=transform_point(mi,0,0);
+			v=transform_point(netmi,0,0);
 			p=bas.p + v.x*bas.x + v.y*bas.y;
 			glVertex3f(p.x, p.y, p.z);
 
-			v=transform_point(mi,w,0);
+			v=transform_point(netmi,w,0);
 			p=bas.p + v.x*bas.x + v.y*bas.y;
 			glVertex3f(p.x, p.y, p.z);
 
-			v=transform_point(mi,w,h);
+			v=transform_point(netmi,w,h);
 			p=bas.p + v.x*bas.x + v.y*bas.y;
 			glVertex3f(p.x, p.y, p.z);
 
-			v=transform_point(mi,0,h);
+			v=transform_point(netmi,0,h);
 			p=bas.p + v.x*bas.x + v.y*bas.y;
 			glVertex3f(p.x, p.y, p.z);
 
-			glEnd();
+			glEnd(); //GL_LINE_LOOP
 			glPopMatrix();
 			glDisable(GL_LINE_STIPPLE);
 		}
@@ -1746,17 +1721,28 @@ int HedronWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMouse
 
 	int group=OGROUP_None;
 	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	int index=(overlay?overlay->id:-1);
+
 	if (group==OGROUP_None) {
 		int c=findCurrentPotential();
-		if (c==-2) group=OGROUP_Paper;
+		if (c>=0) group=OGROUP_Potential;
 	}
+
+	if (group==OGROUP_None && draw_papers) {
+		int c=scanPaper(x,y);
+		if (c!=PAPER_None) {
+			group=OGROUP_Paper;
+			index=c;
+		}
+	}
+
 	leftb=flatpoint(x,y);
 	mbdown=x;
 	if (active_action==ACTION_Unwrap_Angle) mbdown=x;
 	if (active_action==ACTION_Unwrap) rbdown=currentface;
 	if (active_action==ACTION_Reseed) rbdown=currentface;
 
-	buttondown.down(mouse->id,LEFTBUTTON,x,y, group,(overlay?overlay->id:-1));
+	buttondown.down(mouse->id,LEFTBUTTON,x,y, group,index);
 
 	return 0;
 }
@@ -1767,6 +1753,7 @@ int HedronWindow::LBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 	int group=OGROUP_None, orig_group=OGROUP_None;
 	//int dragged=
 	buttondown.up(mouse->id,LEFTBUTTON, &orig_group,&overlayid);
+
 	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
 	if ((orig_group==OGROUP_TouchHelpers || orig_group==OGROUP_Papers) && overlayid>0) {
 		if (overlay && overlay->id==overlayid) {
@@ -1785,12 +1772,17 @@ int HedronWindow::LBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 					remapPaperOverlays();
 					return 0;
 				}
+
 				if (overlay->action==ACTION_Paper && overlay->index>=0) {
 					if (currentnet) {
 						currentnet->whichpaper=overlay->index;
 						needtodraw=1;
 						return 0;
 					}
+				} else if (overlay->action==ACTION_Paper && overlay->index<0) {
+					draw_papers=0; //turn off showing of papers
+					needtodraw=1;
+					return 0;
 				}
 
 			} else if (group==OGROUP_ImageStack) {
@@ -2225,6 +2217,39 @@ flatpoint HedronWindow::pointInNetPlane(int x,int y)
 	return fp;
 }
 
+int HedronWindow::scanPaper(int x,int y)
+{
+	if (!currentnet || currentnet->whichpaper<0) return PAPER_None;
+
+	flatpoint fp=pointInNetPlane(x,y);
+	DBG cerr <<" ---- scanPaper from pointInNetPlane: netface:"<<currentnet->info<<"  "<<fp.x<<","<<fp.y<<endl;
+
+	double pw=papers.e[currentnet->whichpaper]->width;
+	double ph=papers.e[currentnet->whichpaper]->height;
+
+	fp=transform_point(currentnet->m(),fp);
+	DBG cerr <<" ---- scanPaper from pointInNetPlane: transf to paper: "<<fp.x<<","<<fp.y<<endl;
+	DBG const double *nm=currentnet->m();
+	DBG cerr <<" ----   netm: "<<nm[0]<<", "<<nm[1]<<", "<<nm[2]<<", "<<nm[3]<<", "<<nm[4]<<", "<<nm[5]<<", "<<endl;
+
+	if (fp.x>0 && fp.x<pw*.1 && fp.y>=0 && fp.y<ph)
+		return PAPER_Left;
+
+	if (fp.x>pw+-pw*.1 && fp.x<pw && fp.y>=0 && fp.y<ph)
+		return PAPER_Right;
+
+	if (fp.y>0 && fp.y<ph*.1 && fp.x>=0 && fp.x<pw)
+		return PAPER_Bottom;
+
+	if (fp.y>ph+-ph*.1 && fp.y<ph && fp.x>=0 && fp.x<pw)
+		return PAPER_Top;
+
+	if (fp.x>=0 && fp.y>=0 && fp.x<pw && fp.y<ph)
+		return PAPER_Inside;
+
+	return PAPER_None;
+}
+
 /*! Return index in currentnet->faces, or -2 over paper (if any) or -1 for not over anything.
  */
 int HedronWindow::findCurrentPotential()
@@ -2245,19 +2270,15 @@ int HedronWindow::findCurrentPotential()
 	p=intersection(line,plane(nbasis.p,nbasis.z),err);
 	if (err!=0) return -1;
 	fp=flatten(p,nbasis);
-	DBG cerr <<" ---- "<<fp.x<<","<<fp.y<<endl;
 
 	 //intersect with the net face's shape
 	index=currentnet->pointinface(fp,1);
 
 	if (index<0) {
-		if (currentnet->whichpaper>=0) {
-			fp=transform_point_inverse(currentnet->m(),fp);
-			if (fp.x>=0 && fp.y>=0 && fp.x<papers.e[currentnet->whichpaper]->width && fp.y<papers.e[currentnet->whichpaper]->height)
-				return -2; //mouse over paper
-		}
+		//not inside any potential face!
 		return -1;
 	}
+
 	if (currentnet->faces.e[index]->tag!=FACE_Potential) return -1;
 	if (poly->faces.e[currentnet->faces.e[index]->original]->cache->facemode!=0) return -1;
 
@@ -2551,6 +2572,16 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 		int c=-1;
 		if (currentnet) {
+			if (draw_papers) c=scanPaper(x,y);
+			if (c>=0 && c!=PAPER_None) {
+				mouseover_paper=currentnet->whichpaper;
+				mouseover_group=OGROUP_Paper;
+				mouseover_index=c;
+				DBG cerr <<"   ==== scanned as over paper:"<<c<<endl;
+				return 0;
+			} else mouseover_paper=-1;
+			 
+			 //scan for mouse over potential faces
 			c=findCurrentPotential(); //-1 for none, -2 for over paper
 			DBG cerr <<"MouseMove found potential: "<<c<<endl;
 			if (c>=0) {
@@ -2562,18 +2593,24 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 				DBG cerr <<"current potential original: "<<currentpotential<<endl;
 
 				return 0;
+
 			} else if (c==-2) {
-				mouseover_paper=0;
+				 //mouse is over paper
+				mouseover_paper=currentnet->whichpaper;
+				currentpotential=-1;
+
 			} else {
 				if (currentpotential!=-1) {
 					currentpotential=-1;
 					needtodraw=1;
 				}
 			}
+
 		} else {
 			mouseover_paper=-1;
 		}
 
+		 //scan for mouse over actual faces
 		c=findCurrentFace();
 
 		DBG cerr<<"MouseMove findCurrentFace original: "<<c;
@@ -2627,7 +2664,17 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		flatpoint fp,fpn;
 		fpn=pointInNetPlane(x,y);
 		fp =pointInNetPlane(lx,ly);
-		currentnet->origin(currentnet->origin()+fpn-fp);
+
+		if (bindex==PAPER_Inside) {
+			currentnet->origin(currentnet->origin()-fpn+fp);
+		} else {
+			double s=1;
+			if (x>lx) s=.98;
+			else s=1.02;
+			for (int c=0; c<6; c++) {
+				currentnet->m(c, currentnet->m(c)*s);
+			}
+		}
 		needtodraw=1;
 		return 0;
 	}
@@ -2994,6 +3041,8 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 				 3, // oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 1, // Whether to actually render images, or just output new svg, for intance.
 				 &extra_basis,
+				 papers.n,
+				 papers.e,
 				 &error
 				);
 		
@@ -3047,7 +3096,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		}
 		return 0;
 
-	} else if (ch=='p') {
+	} else if (ch=='p' && (state&LAX_STATE_MASK)==0) {
 		draw_papers=!draw_papers;
 		needtodraw=1;
 		return 0;
