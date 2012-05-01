@@ -1000,6 +1000,9 @@ int Net::pathOfFace(int i, int *n, flatpoint **p, int convert)
 }
 
 //! Return the index of the first net face that contains pp, or -1.
+/*! If innetcoords, then pp is assumed to be in net coordinates already. Else it is transformed
+ * with the inverse of this->m().
+ */
 int Net::pointinface(flatpoint pp, int innetcoords)
 {
 	if (!innetcoords) {

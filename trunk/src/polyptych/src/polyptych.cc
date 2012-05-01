@@ -56,7 +56,6 @@ using namespace LaxFiles;
 
 #define DBG
 
-using namespace SphereMap;
 using namespace Polyptych;
 
 

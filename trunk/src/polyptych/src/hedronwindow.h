@@ -35,20 +35,6 @@
 namespace Polyptych {
 
 
-//--------------------------- PaperBound -------------------------------
-class PaperBound
-{
-  public:
-	char *name;
-	char *units;
-	double width,height;
-	double r,g,b;
-	PaperBound(const char *nname,double w,double h,const char *unit);
-	PaperBound(const PaperBound &p);
-	~PaperBound();
-	PaperBound &operator=(PaperBound &p);
-};
-
 //--------------------------- FaceData -------------------------------
 
 enum FaceDataType {
@@ -204,6 +190,7 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual int Resize(int w,int h);
 	virtual int event(XEvent *e);
 	virtual int init();
+
 	virtual void installOverlays();
 	virtual void remapPaperOverlays();
 	virtual void placeOverlays();
@@ -244,7 +231,7 @@ class HedronWindow : public Laxkit::anXWindow
 							double line_r, double line_g, double line_b,
 							double alpha);
 	virtual void drawPotential(Net *net, int face);
-	virtual void drawbg();
+	virtual void Refresh3d();
 	virtual void drawHelp();
 
 	 //net building
@@ -257,10 +244,13 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual int removeNet(int netindex);
 	virtual int removeNet(Net *net);
 	virtual Net *findNet(int id);
+	virtual void remapCache(int start=-1, int end=-1);
+
+	 //mouse position
 	virtual int findCurrentPotential();
 	virtual int findCurrentFace();
+	virtual int scanPaper(int x,int y);
 	virtual flatpoint pointInNetPlane(int x,int y);
-	virtual void remapCache(int start=-1, int end=-1);
 
 	 //misc
 	int changePaper(int towhich,int index);

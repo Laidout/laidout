@@ -21,7 +21,7 @@
 
 #include </usr/include/GraphicsMagick/Magick++.h>
 
-namespace SphereMap {
+namespace Polyptych {
 
 //------------------------ Enums -------------------------------
 enum OutFormat {
@@ -31,6 +31,20 @@ enum OutFormat {
 	OUT_QTVR,
 	OUT_QTVR_FACES,
 	OUT_IMAGE
+};
+
+//--------------------------- PaperBound -------------------------------
+class PaperBound
+{
+  public:
+	char *name;
+	char *units;
+	double width,height;
+	double r,g,b;
+	PaperBound(const char *nname,double w,double h,const char *unit);
+	PaperBound(const PaperBound &p);
+	~PaperBound();
+	PaperBound &operator=(PaperBound &p);
 };
 
 //------------------------ RenderConfig -------------------------------
@@ -47,6 +61,7 @@ class RenderConfig
 	int oversample;
 	int generate_images;
 	basis extra_basis;
+	Laxkit::PtrStack<PaperBound> papers;
 
 	RenderConfig();
 	virtual ~RenderConfig();
@@ -59,6 +74,8 @@ int SaveSvgWithImages(Net *net,
 					  flatpoint *imagedims,
 					  flatpoint *imageoffset,
 					  double pixPerUnit,
+					  int num_papers,
+					  PaperBound **papers,
 					  char **error_ret);
 
 int SphereToPoly(const char *spherefile,
@@ -70,6 +87,8 @@ int SphereToPoly(const char *spherefile,
 				 int oversample,
 				 int generate_images,
 				 basis *extra_basis,
+				 int num_papers,
+				 PaperBound **papers,
 				 char **error_ret
 				);
 
@@ -82,10 +101,12 @@ int SphereToPoly(Magick::Image spheremap,
 				 int oversample,
 				 int generate_images,
 				 basis *extra_basis,
+				 int num_papers,
+				 PaperBound **papers,
 				 char **error_ret 
 				);
 
-} //namespace SphereMap
+} //namespace Polyptych
 
 
 
