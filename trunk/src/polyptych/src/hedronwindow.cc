@@ -3039,7 +3039,8 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 				 s->str, // Say filebase="blah", files will be blah000.png, ...this creates default filebase name
 				 OUT_SVG,          // Output format
 				 3, // oversample*oversample per image pixel. 3 seems pretty good in practice.
-				 1, // Whether to actually render images, or just output new svg, for intance.
+				 draw_texture, // Whether to actually render images, or just output new svg, for intance.
+				 !draw_texture, // Whether to only draw lines, or include file names too
 				 &extra_basis,
 				 papers.n,
 				 papers.e,
