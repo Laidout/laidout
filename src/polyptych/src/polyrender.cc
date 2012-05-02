@@ -120,6 +120,7 @@ int SaveSvgWithImages(Net *net,
 					  flatpoint *imagedims,
 					  flatpoint *imageoffset,
 					  double pixPerUnit,  //!< How many image pixels per unit in net space
+				 	  int net_only,
 					  int num_papers,     //!< Number of predefined papers
 					  PaperBound **papers, //!< net->whichpaper points to papers in this stack
 					  char **error_ret)
@@ -145,7 +146,11 @@ int SaveSvgWithImages(Net *net,
 	 // So the transform from net to paper space is net.m()*paper.m()^-1
 	double M[6]; 
 	SomeData bbox;
-	if (net->paper.validbounds()) {
+	if (net->whichpaper>=0 && num_papers>0) {
+		bbox.maxx=papers[net->whichpaper]->width;
+		bbox.maxy=papers[net->whichpaper]->height;
+		bbox.minx=bbox.miny=0;
+	} else if (net->paper.validbounds()) {
 		bbox.maxx=net->paper.maxx;
 		bbox.minx=net->paper.minx;
 		bbox.maxy=net->paper.maxy;
@@ -212,56 +217,58 @@ int SaveSvgWithImages(Net *net,
 	svg <<"</g>"<<endl;
 
 	 //-----------draw images
-	 //coordinate system is net coordinates at this point
-	char file[500];
-	flatpoint xaxis, yaxis, point, p1, p2, p3, po;
-	//double I[6];
-	//transform_identity(I);
-	int orig;
-	for (c=0; c<net->faces.n; c++) {
-		if (net->faces.e[c]->original<0) continue;
-		orig=net->faces.e[c]->original;
-	
-		sprintf(file,"%s%03d.png",filebase,orig);
+	if (!net_only) {
+		 //coordinate system is net coordinates at this point
+		char file[500];
+		flatpoint xaxis, yaxis, point, p1, p2, p3, po;
+		//double I[6];
+		//transform_identity(I);
+		int orig;
+		for (c=0; c<net->faces.n; c++) {
+			if (net->faces.e[c]->original<0) continue;
+			orig=net->faces.e[c]->original;
+		
+			sprintf(file,"%s%03d.png",filebase,orig);
 
-		p1=net->faces.e[c]->edges.e[0]->points->p();
-		p2=net->faces.e[c]->edges.e[1]->points->p();
-		p3=net->faces.e[c]->edges.e[2]->points->p();
-		po=p1-=imageoffset[orig];
-		//p3=faces.e[c]->edges.e[faces.e[c]->edges.n-1]->points->p();
-		if (net->faces.e[c]->matrix) {
-			p1=transform_point(net->faces.e[c]->matrix,p1);
-			p2=transform_point(net->faces.e[c]->matrix,p2);
-			p3=transform_point(net->faces.e[c]->matrix,p3);
-			po=transform_point(net->faces.e[c]->matrix,po);
+			p1=net->faces.e[c]->edges.e[0]->points->p();
+			p2=net->faces.e[c]->edges.e[1]->points->p();
+			p3=net->faces.e[c]->edges.e[2]->points->p();
+			po=p1-=imageoffset[orig];
+			//p3=faces.e[c]->edges.e[faces.e[c]->edges.n-1]->points->p();
+			if (net->faces.e[c]->matrix) {
+				p1=transform_point(net->faces.e[c]->matrix,p1);
+				p2=transform_point(net->faces.e[c]->matrix,p2);
+				p3=transform_point(net->faces.e[c]->matrix,p3);
+				po=transform_point(net->faces.e[c]->matrix,po);
+			}
+
+			point =p1;
+			xaxis =p2 - point;
+			xaxis/=norm(xaxis);
+			yaxis =(p3 - point) |= xaxis;
+			yaxis/=norm(yaxis);
+			//cout <<"*** face "<<c<<", angle x to y: "<<acos(xaxis*yaxis)*180/M_PI<<endl;
+
+			xaxis/=pixPerUnit;
+			yaxis/=pixPerUnit;
+
+			//cout <<"in svg: imagedims["<<c<<"]= "<<imagedims[c].x<<" x "<<imagedims[c].y<<endl;
+
+			//cout <<"writing "<<file<<"..."<<endl;
+			svg <<"<image"<<endl
+				<<"    xlink:href=\""<<file<<"\""<<endl
+				<<"    y=\"0\""<<endl
+				<<"    x=\"0\""<<endl
+				<<"    width=\""<<imagedims[orig].x<<"\""<<endl
+				<<"    height=\""<<imagedims[orig].y<<"\""<<endl
+				<<"    transform=\"matrix("<<xaxis.x<<","
+										   <<xaxis.y<<","
+										   <<yaxis.x<<","
+										   <<yaxis.y<<","
+										   <<po.x<<","
+										   <<po.y<<")\""<<endl
+				<<"  />"<<endl;
 		}
-
-		point =p1;
-		xaxis =p2 - point;
-		xaxis/=norm(xaxis);
-		yaxis =(p3 - point) |= xaxis;
-		yaxis/=norm(yaxis);
-		//cout <<"*** face "<<c<<", angle x to y: "<<acos(xaxis*yaxis)*180/M_PI<<endl;
-
-		xaxis/=pixPerUnit;
-		yaxis/=pixPerUnit;
-
-		//cout <<"in svg: imagedims["<<c<<"]= "<<imagedims[c].x<<" x "<<imagedims[c].y<<endl;
-
-		//cout <<"writing "<<file<<"..."<<endl;
-		svg <<"<image"<<endl
-			<<"    xlink:href=\""<<file<<"\""<<endl
-			<<"    y=\"0\""<<endl
-			<<"    x=\"0\""<<endl
-			<<"    width=\""<<imagedims[orig].x<<"\""<<endl
-			<<"    height=\""<<imagedims[orig].y<<"\""<<endl
-			<<"    transform=\"matrix("<<xaxis.x<<","
-									   <<xaxis.y<<","
-									   <<yaxis.x<<","
-									   <<yaxis.y<<","
-									   <<po.x<<","
-									   <<po.y<<")\""<<endl
-			<<"  />"<<endl;
 	}
 
 	 // Close the net grouping
@@ -282,6 +289,7 @@ int SaveSvgWithImages(Net *net,
  *
  * If there is an error, then return some description of it in error_ret. Anything previously
  * in error_ret is written over, with a new char[], which must be delete[]'d.
+ *
  */
 int SphereToPoly(const char *spherefile,
 				 Polyhedron *poly,
@@ -291,6 +299,7 @@ int SphereToPoly(const char *spherefile,
 				 int output,          //!< Output format
 				 int oversample,      //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
+				 int net_only,       //!< Whether to just draw the lines, or include file names
 				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
 				 int num_papers,     //!< Number of predefined papers
 				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
@@ -298,6 +307,7 @@ int SphereToPoly(const char *spherefile,
 				)
 {
 	Image sphere;
+	if (!spherefile) generate_images=0;
 
 	if (generate_images) try {
 		sphere.read(spherefile);
@@ -329,7 +339,7 @@ int SphereToPoly(const char *spherefile,
 		if (ptr!=NULL && ptr!=fbase) *ptr='\0';
 	}
 
-	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, extra_basis,
+	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, net_only, extra_basis,
 							num_papers,
 							papers,
 							error_ret);
@@ -355,6 +365,7 @@ int SphereToPoly(Image spheremap,
 				 int output,          //!< Output format
 				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
+				 int net_only,       //!< Whether to just draw the lines, or include file names
 				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
 				 int num_papers,     //!< Number of predefined papers
 				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
@@ -611,7 +622,8 @@ int SphereToPoly(Image spheremap,
 	} else if (output==OUT_SVG) {
 		cout <<"outputting svg...."<<endl;
 		sprintf(filename,"%s.svg",filenamebase.c_str());
-		return SaveSvgWithImages(net, filename,filenamebase.c_str(),imagedims,imageoffset,pixperunit,num_papers,papers,NULL);
+
+		return SaveSvgWithImages(net, filename,filenamebase.c_str(),imagedims,imageoffset,pixperunit,net_only,num_papers,papers,NULL);
 
 	} else if (output==OUT_IMAGE) {
 		sprintf(filename,"%s.tif",filenamebase.c_str());
