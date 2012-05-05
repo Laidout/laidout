@@ -765,6 +765,7 @@ int HedronWindow::init()
 //! Enable GL_TEXTURE_2D, define spheretexture id (if definetid), and load in spheremapdata.
 void HedronWindow::installSpheremapTexture(int definetid)
 {
+
 	 //--------------------texture initialization
 	glEnable(GL_TEXTURE_2D);
 
@@ -2668,11 +2669,19 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 		if (bindex==PAPER_Inside) {
 			currentnet->origin(currentnet->origin()-fpn+fp);
 		} else {
-			double s=1;
-			if (x>lx) s=.98;
-			else s=1.02;
-			for (int c=0; c<6; c++) {
-				currentnet->m(c, currentnet->m(c)*s);
+			if ((state&LAX_STATE_MASK)==0) {
+				double s=1;
+				if (x>lx) s=.98;
+				else s=1.02;
+				for (int c=0; c<6; c++) {
+					currentnet->m(c, currentnet->m(c)*s);
+				}
+			} else {
+				double s=0;
+				if (x>lx) s=1./180*M_PI;
+				else s=-1./180*M_PI;
+				currentnet->xaxis(rotate(currentnet->xaxis(),s));
+				currentnet->yaxis(rotate(currentnet->yaxis(),s));
 			}
 		}
 		needtodraw=1;
@@ -2922,7 +2931,10 @@ int HedronWindow::installImage(const char *file)
 
 	char e[400];
 	if (error) sprintf(e,_("Error with %s: %s"),error,file);
-	else sprintf(e,_("Loaded image %s"),file);
+	else {
+		installSpheremapTexture(0);
+		sprintf(e,_("Loaded image %s"),file);
+	}
 			
 	if (error) app->postmessage(e);
 	//else remapCache();
