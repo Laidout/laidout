@@ -24,13 +24,13 @@ forlaidout: nets.o poly.o
 forlaidoutgl: nets.o poly.o glbase.o gloverlay.o polyrender.o hedronwindow.o
 
 polyptych: lax $(pobjs) polyptych.o
-	g++  $(CPPFLAGS) $(LDFLAGS) $(pobjs) polyptych.o  -llaxkit -llaxinterfaces -lGL -lGLU -o polyptych
+	g++ $(pobjs) polyptych.o -llaxinterfaces -llaxkit $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o polyptych
 	
 convertahedron: poly.o nets.o convertahedron.cc
-	g++  $(CPPFLAGS) $(LDFLAGS) convertahedron.cc  poly.o nets.o -llaxkit -llaxinterfaces -o $@
+	g++ convertahedron.cc  poly.o nets.o -llaxinterfaces -llaxkit $(LDFLAGS)  $(CPPFLAGS) -o $@
 
 spheretopoly: lax spheretopoly-gm.o nets.o poly.o 
-	$(LD) $(LDFLAGS) -lGraphicsMagick++ spheretopoly-gm.o nets.o poly.o -llaxinterfaces -llaxkit -o $@
+	$(LD) spheretopoly-gm.o nets.o poly.o -llaxinterfaces -llaxkit $(LDFLAGS) -lGraphicsMagick++ -o $@
 
 spheretocube: spheretocube.o
 	$(LD) -lGraphicsMagick++ spheretocube.o $(LAXDIR)/vectors.o -o $@
