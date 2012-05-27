@@ -718,6 +718,7 @@ LaxOptions options;
  */
 void InitOptions()
 {
+	 //command line options are somewhat low level, so NOT localized (for now)
 	options.HelpHeader(LaidoutVersion());
 	options.UsageLine("laidout [options] [file1] [file2] ...");
 	options.Add("export-formats",     'e', 0, "List all the available export formats",       0, NULL);
@@ -727,6 +728,7 @@ void InitOptions()
 	options.Add("no-template",        'N', 0, "Do not use a default template",               0, NULL);
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
+	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui, then exit",        0, "\"newdoc net\"");
 	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
@@ -819,6 +821,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'F': { // dump out file format
 					if (dump_out_file_format("-",0)) exit(1);
+					exit(0);
+				} break;
+
+			case 'S': { // dump out shortcuts
+					cerr << " *** Sorry, this is not quite implemented yet!"<<endl;
 					exit(0);
 				} break;
 
