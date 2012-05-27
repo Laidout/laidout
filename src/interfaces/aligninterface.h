@@ -18,6 +18,7 @@
 
 #include <lax/interfaces/objectinterface.h>
 #include <lax/refptrstack.h>
+#include <lax/shortcuts.h>
 
 #include "../laidout.h"
 
@@ -83,6 +84,11 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 {
   protected:
 	Laxkit::ButtonDownInfo buttondown;
+
+	Laxkit::ShortcutHandler sc;
+	virtual void CreateShortcuts();
+	virtual int PerformAction(int action);
+
 
 	AlignInfo *aligninfo;
 
@@ -165,6 +171,10 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int PointAlongPath(double t,int tisdistance, flatpoint &point, flatpoint *tangent);
 	virtual flatpoint ClosestPoint(flatpoint p, double *d);
 	virtual int ClampBoundaries(int fill);
+
+	virtual int ToggleFinal(int dir);
+	virtual int ToggleAlign(int dir);
+	virtual int ToggleShift(int dir);
 
 	virtual int UpdateFromPath();
 };
