@@ -302,6 +302,8 @@ AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
+
+	CreateShortcuts();
 }
 
 AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -319,6 +321,8 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
+
+	CreateShortcuts();
 }
 
 AlignInterface::~AlignInterface()
@@ -358,48 +362,92 @@ void AlignInterface::ControlInfo::SetOriginal(SomeData *o)
 }
 
 
+enum AlignInterfaceActions {
+	//scan/hover ids
+	ALIGN_None,
+	ALIGN_Move,
+	ALIGN_RotateSnapDir,
+	ALIGN_RotateAlignDir,
+	ALIGN_RotateSnapAndAlign,
+	ALIGN_MoveSnapAlign,
+	ALIGN_MoveFinalAlign,
+	ALIGN_MoveGap,
+	ALIGN_MoveGrid,
+	ALIGN_MoveLeftBound,
+	ALIGN_MoveRightBound,
+	ALIGN_LayoutType,
+	ALIGN_Path,
+	ALIGN_Randomize,
+	ALIGN_LineControl,
+	ALIGN_VisualShift,
 
-//scan/hover ids
-#define ALIGN_None                1000
-#define ALIGN_Move                1001
-#define ALIGN_RotateSnapDir       1002
-#define ALIGN_RotateAlignDir      1003
-#define ALIGN_RotateSnapAndAlign  1004
-#define ALIGN_MoveSnapAlign       1005
-#define ALIGN_MoveFinalAlign      1006
-#define ALIGN_MoveGap             1007
-#define ALIGN_MoveGrid            1008
-#define ALIGN_MoveLeftBound       1009
-#define ALIGN_MoveRightBound      1010
-#define ALIGN_LayoutType          1011
-#define ALIGN_Path                1012
-#define ALIGN_Randomize           1013
-#define ALIGN_LineControl         1014
-#define ALIGN_VisualShift         1015
+	 //window actions
+	ALIGN_ToggleApply,
+	ALIGN_Save,
+	ALIGN_Open,
+	ALIGN_ClampBoundaries,
+	ALIGN_LeftBoundLess,
+	ALIGN_LeftBoundMore,
+	ALIGN_RightBoundLess,
+	ALIGN_RightBoundMore,
+	ALIGN_CenterV,   
+	ALIGN_CenterH,   
+	ALIGN_MakeX,     
+	ALIGN_MakeY,     
+	ALIGN_MakeRight, 
+	ALIGN_MakeLeft,  
+	ALIGN_MakeTop,   
+	ALIGN_MakeBottom,
+	ALIGN_LessStep,
+	ALIGN_MoreStep,
+	ALIGN_EditPath,
+	ALIGN_FinalUp10,
+	ALIGN_FinalUp1,
+	ALIGN_FinalUp_1,
+	ALIGN_FinalUp_01,
+	ALIGN_FinalDown10,
+	ALIGN_FinalDown1,
+	ALIGN_FinalDown_1,
+	ALIGN_FinalDown_01,
+	ALIGN_AlignUp10,
+	ALIGN_AlignUp1,
+	ALIGN_AlignUp_1,
+	ALIGN_AlignUp_01,
+	ALIGN_AlignDown10,
+	ALIGN_AlignDown1,
+	ALIGN_AlignDown_1,
+	ALIGN_AlignDown_01,
+	ALIGN_ToggleFinal,
+	ALIGN_ToggleFinalR,
+	ALIGN_ToggleAlign,
+	ALIGN_ToggleAlignR,
+	ALIGN_ToggleShift,
+	ALIGN_ToggleShiftR,
+
+	 //Context menu ids, MUST NOT CONFLICT with the ALIGN_* for scan()
+	ALIGN_Aligned,
+	ALIGN_AlignedProportional,
+	ALIGN_Grid,
+	ALIGN_Gaps,
+	ALIGN_Random,
+	ALIGN_Unoverlap,
+	ALIGN_Final_None,
+
+	ALIGN_Snap_None,
+	ALIGN_Snap_Align,
+	ALIGN_Snap_AlignProportional,
+
+	ALIGN_ResetPath,
+
+
+	ALIGN_MAX
+};
 
 
 
 const char *AlignInterface::Name()
 { return _("Align"); }
 
-
-//Context menu ids, MUST NOT CONFLICT with the ALIGN_* for scan()
-#define ALIGN_Save                   1
-#define ALIGN_Load                   2
-
-#define ALIGN_Aligned                3
-#define ALIGN_AlignedProportional    4
-#define ALIGN_Grid                   5
-#define ALIGN_Gaps                   6
-#define ALIGN_Random                 7
-#define ALIGN_Unoverlap              8
-#define ALIGN_Final_None             9
-
-#define ALIGN_Snap_None              10
-#define ALIGN_Snap_Align             11
-#define ALIGN_Snap_AlignProportional 12
-
-#define ALIGN_ResetPath              13
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -1090,6 +1138,77 @@ int AlignInterface::createPath()
 	return 0;
 }
 
+//! Change the final layout type, going to next (dir==1) or previous (dir!=1).
+int AlignInterface::ToggleFinal(int dir)
+{
+	int t=aligninfo->final_layout_type;
+	if (dir>0) {
+		if (t==FALIGN_None) t=FALIGN_Align;
+		else if (t==FALIGN_Align) t=FALIGN_Proportional;
+		else if (t==FALIGN_Proportional) t=FALIGN_Gap;
+		else if (t==FALIGN_Gap) t=FALIGN_Grid;
+		else if (t==FALIGN_Grid) t=FALIGN_Random;
+		else if (t==FALIGN_Random) t=FALIGN_None;
+		//else if (t==FALIGN_Random) t=FALIGN_Unoverlap;
+		//else if (t==FALIGN_Unoverlap) t=FALIGN_None;
+	} else {
+		//if (t==FALIGN_None) t=FALIGN_Unoverlap;
+		if (t==FALIGN_None) t=FALIGN_Random;
+		else if (t==FALIGN_Align) t=FALIGN_None;
+		else if (t==FALIGN_Proportional) t=FALIGN_Align;
+		else if (t==FALIGN_Gap) t=FALIGN_Proportional;
+		else if (t==FALIGN_Grid) t=FALIGN_Gap;
+		else if (t==FALIGN_Random) t=FALIGN_Grid;
+		//else if (t==FALIGN_Unoverlap) t=FALIGN_Random;
+	}
+
+	aligninfo->final_layout_type=t;
+	postAlignMessage(t);
+	needtoresetlayout=1;
+	if (active) ApplyAlignment(0);
+	needtodraw=1;
+	return 0;
+}
+
+int AlignInterface::ToggleAlign(int dir)
+{
+	int t=aligninfo->snap_align_type;
+	if (dir==1) {
+		if (t==FALIGN_None) t=FALIGN_Align;
+		else if (t==FALIGN_Align) t=FALIGN_Proportional;
+		else if (t==FALIGN_Proportional) t=FALIGN_None;
+	} else {
+		if (t==FALIGN_None) t=FALIGN_Proportional;
+		else if (t==FALIGN_Proportional) t=FALIGN_Align;
+		else if (t==FALIGN_Align) t=FALIGN_None;
+	}
+
+	aligninfo->snap_align_type=t;
+	if (active) ApplyAlignment(0);
+	needtodraw=1;
+	return 0;
+}
+
+int AlignInterface::ToggleShift(int dir)
+{
+	int t=aligninfo->visual_align;
+	if (dir==1) {
+		if (t==FALIGN_Visual) t=FALIGN_VisualRotate;
+		else if (t==FALIGN_VisualRotate) t=FALIGN_ObjectRotate;
+		else if (t==FALIGN_ObjectRotate) t=FALIGN_Visual;
+	} else {
+		if (t==FALIGN_Visual) t=FALIGN_ObjectRotate;
+		else if (t==FALIGN_VisualRotate) t=FALIGN_Visual;
+		else if (t==FALIGN_ObjectRotate) t=FALIGN_VisualRotate;
+	}
+
+	aligninfo->visual_align=t;
+	postAlignMessage(t);
+	if (active) ApplyAlignment(0);
+	needtodraw=1;
+	return 0;
+}
+
 int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	int index=-1;
@@ -1103,46 +1222,17 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 	}
 
 	if (over==ALIGN_MoveSnapAlign) {
-		int t=aligninfo->snap_align_type;
-		if (t==FALIGN_None) t=FALIGN_Align;
-		else if (t==FALIGN_Align) t=FALIGN_Proportional;
-		else if (t==FALIGN_Proportional) t=FALIGN_None;
-
-		aligninfo->snap_align_type=t;
-		if (active) ApplyAlignment(0);
-		needtodraw=1;
+		ToggleAlign(1);
 		return 0;
 	}
 
 	if (over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) {
-		int t=aligninfo->final_layout_type;
-		if (t==FALIGN_None) t=FALIGN_Align;
-		else if (t==FALIGN_Align) t=FALIGN_Proportional;
-		else if (t==FALIGN_Proportional) t=FALIGN_Gap;
-		else if (t==FALIGN_Gap) t=FALIGN_Grid;
-		else if (t==FALIGN_Grid) t=FALIGN_Random;
-		else if (t==FALIGN_Random) t=FALIGN_None;
-		//else if (t==FALIGN_Random) t=FALIGN_Unoverlap;
-		//else if (t==FALIGN_Unoverlap) t=FALIGN_None;
-
-		aligninfo->final_layout_type=t;
-		postAlignMessage(t);
-		needtoresetlayout=1;
-		if (active) ApplyAlignment(0);
-		needtodraw=1;
+		ToggleFinal(1);
 		return 0;
 	}
 
 	if (over==ALIGN_VisualShift) {
-		int t=aligninfo->visual_align;
-		if (t==FALIGN_Visual) t=FALIGN_VisualRotate;
-		else if (t==FALIGN_VisualRotate) t=FALIGN_ObjectRotate;
-		else if (t==FALIGN_ObjectRotate) t=FALIGN_Visual;
-
-		aligninfo->visual_align=t;
-		postAlignMessage(t);
-		if (active) ApplyAlignment(0);
-		needtodraw=1;
+		ToggleShift(1);
 		return 0;
 	}
 
@@ -1162,46 +1252,17 @@ int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 	}
 
 	if (over==ALIGN_MoveSnapAlign) {
-		int t=aligninfo->snap_align_type;
-		if (t==FALIGN_None) t=FALIGN_Proportional;
-		else if (t==FALIGN_Proportional) t=FALIGN_Align;
-		else if (t==FALIGN_Align) t=FALIGN_None;
-
-		aligninfo->snap_align_type=t;
-		if (active) ApplyAlignment(0);
-		needtodraw=1;
+		ToggleAlign(-1);
 		return 0;
 	}
 
 	if (over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) {
-		int t=aligninfo->final_layout_type;
-		//if (t==FALIGN_None) t=FALIGN_Unoverlap;
-		if (t==FALIGN_None) t=FALIGN_Random;
-		else if (t==FALIGN_Align) t=FALIGN_None;
-		else if (t==FALIGN_Proportional) t=FALIGN_Align;
-		else if (t==FALIGN_Gap) t=FALIGN_Proportional;
-		else if (t==FALIGN_Grid) t=FALIGN_Gap;
-		else if (t==FALIGN_Random) t=FALIGN_Grid;
-		//else if (t==FALIGN_Unoverlap) t=FALIGN_Random;
-
-		aligninfo->final_layout_type=t;
-		postAlignMessage(t);
-		needtoresetlayout=1;
-		if (active) ApplyAlignment(0);
-		needtodraw=1;
+		ToggleFinal(-1);
 		return 0;
 	}
 
 	if (over==ALIGN_VisualShift) {
-		int t=aligninfo->visual_align;
-		if (t==FALIGN_Visual) t=FALIGN_ObjectRotate;
-		else if (t==FALIGN_VisualRotate) t=FALIGN_Visual;
-		else if (t==FALIGN_ObjectRotate) t=FALIGN_VisualRotate;
-
-		aligninfo->visual_align=t;
-		postAlignMessage(t);
-		if (active) ApplyAlignment(0);
-		needtodraw=1;
+		ToggleShift(-1);
 		return 0;
 	}
 
@@ -1414,11 +1475,276 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	return 0;
 }
 
-/*!
+
+void AlignInterface::CreateShortcuts()
+{
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
+
+	sc.Add(ALIGN_ToggleApply, LAX_Enter,0,0,     _("ToggleApply"), _("Toggle applying alignment"),NULL,0);
+
+	sc.Add(ALIGN_CenterV,     'C',ShiftMask,0,   _("CenterV"),  _("Align centers vertically"),NULL,0);
+	sc.Add(ALIGN_CenterH,     'c',0,0,           _("CenterH"),  _("Align centers horizontally"),NULL,0);
+	sc.Add(ALIGN_MakeX,       'x',0,0,           _("VSnap"), _("Make snap vertical, layout horizontal"),NULL,0);
+	sc.Add(ALIGN_MakeY,       'y',0,0,           _("HSnap"), _("Make snap horizontal, layout vertical"),NULL,0);
+	sc.Add(ALIGN_MakeRight,   'r',0,0,           _("Right"), _("Align right edges horizontally"),NULL,0);
+	sc.Add(ALIGN_MakeLeft,    'l',0,0,           _("Left"),  _("Align left edges horizontally"),NULL,0);
+	sc.Add(ALIGN_MakeTop,     't',0,0,           _("Top"),   _("Align top edges vertically"),NULL,0);
+	sc.Add(ALIGN_MakeBottom,  'b',0,0,           _("Bottom"),_("Align bottom edges vertically"),NULL,0);
+
+	sc.Add(ALIGN_ClampBoundaries,'0',0,0,           _("ClampBoundaries"),_("Clamp boundaries to fill path"),NULL,0);
+	sc.Add(ALIGN_LeftBoundLess,  '[',0,0,           _("LeftBoundLess"),  _("Move left bound left"), NULL,0);
+	sc.Add(ALIGN_LeftBoundMore,  '[',ControlMask,0, _("LeftBoundMore"),  _("Move left bound right"),NULL,0);
+	sc.Add(ALIGN_RightBoundLess, ']',0,0,           _("RightBoundLess"),_("Move right bound left"), NULL,0);
+	sc.Add(ALIGN_RightBoundMore, ']',ControlMask,0, _("RightBoundMore"),_("Move right bound right"),NULL,0);
+	sc.Add(ALIGN_LessStep,       '{',0,0,           _("LessStep"),_("Scale down the key step"), NULL,0);
+	sc.Add(ALIGN_MoreStep,       '}',0,0,           _("MoreStep"),_("Scale up the key step"),NULL,0);
+	sc.Add(ALIGN_EditPath,       'p',0,0,           _("EditPath"),_("Edit the path"),NULL,0);
+
+	sc.Add(ALIGN_FinalUp10,  LAX_Up,0,0,                 _("FinalUp10"),_("Shift final alignment by 10"),NULL,0);
+	sc.Add(ALIGN_FinalUp1,   LAX_Up,ShiftMask,0,          _("FinalUp1"),_("Shift final alignment by 1"),NULL,0);
+	sc.Add(ALIGN_FinalUp_1,  LAX_Up,ControlMask,0,         _("FinalUp_1"),_("Shift final alignment by .1"),NULL,0);
+	sc.Add(ALIGN_FinalUp_01, LAX_Up,ControlMask|ShiftMask,0,_("FinalUp_01"),_("Shift final alignment by .01"),NULL,0);
+
+	sc.Add(ALIGN_FinalDown10, LAX_Down,0,0,                 _("FinalDown10"),_("Shift final alignment by -10"),NULL,0);
+	sc.Add(ALIGN_FinalDown1,  LAX_Down,ShiftMask,0,          _("FinalDown1"),_("Shift final alignment by -1"),NULL,0);
+	sc.Add(ALIGN_FinalDown_1, LAX_Down,ControlMask,0,         _("FinalDown_1"),_("Shift final alignment by -.1"),NULL,0);
+	sc.Add(ALIGN_FinalDown_01,LAX_Down,ControlMask|ShiftMask,0,_("FinalDown_01"),_("Shift final alignment by -.01"),NULL,0);
+
+	sc.Add(ALIGN_AlignUp10,  LAX_Right,0,0,                 _("AlignUp10"),_("Shift snap alignment by 10"),NULL,0);
+	sc.Add(ALIGN_AlignUp1,   LAX_Right,ShiftMask,0,          _("AlignUp1"),_("Shift snap alignment by 1"),NULL,0);
+	sc.Add(ALIGN_AlignUp_1,  LAX_Right,ControlMask,0,         _("AlignUp_1"),_("Shift snap alignment by .1"),NULL,0);
+	sc.Add(ALIGN_AlignUp_01, LAX_Right,ControlMask|ShiftMask,0,_("AlignUp_01"),_("Shift snap alignment by .01"),NULL,0);
+
+	sc.Add(ALIGN_AlignDown10,  LAX_Left,0,0,                  _("AlignDown10"),_("Shift snap alignment by -10"),NULL,0);
+	sc.Add(ALIGN_AlignDown1,   LAX_Left,ShiftMask,0,           _("AlignDown1"),_("Shift snap alignment by -1"),NULL,0);
+	sc.Add(ALIGN_AlignDown_1,  LAX_Left,ControlMask,0,          _("AlignDown_1"),_("Shift snap alignment by -.1"),NULL,0);
+	sc.Add(ALIGN_AlignDown_01, LAX_Left,ControlMask|ShiftMask,0, _("AlignDown_01"),_("Shift snap alignment by -.01"),NULL,0);
+
+	sc.Add(ALIGN_ToggleFinal, 'f',0,0,        _("ToggleFinal"), _("Change the final layout type"),NULL,0);
+	sc.Add(ALIGN_ToggleFinalR,'F',ShiftMask,0,_("ToggleFinalR"),_("Change the final layout type"),NULL,0);
+	sc.Add(ALIGN_ToggleAlign, 'a',0,0,        _("ToggleAlign"), _("Change the snap layout type"),NULL,0);
+	sc.Add(ALIGN_ToggleAlignR,'A',ShiftMask,0,_("ToggleAlignR"),_("Change the snap layout type"),NULL,0);
+	sc.Add(ALIGN_ToggleShift, 'm',0,0,        _("ToggleShift"), _("Change the shift type"),NULL,0);
+	sc.Add(ALIGN_ToggleShiftR,'M',ShiftMask,0,_("ToggleShiftR"),_("Change the shift type"),NULL,0);
+
+	sc.Add(ALIGN_Save, 's',ControlMask,0,   _("Save"),_("Save settings"),NULL,0);
+	sc.Add(ALIGN_Open, 'o',ControlMask,0,   _("Open"),_("Open settings"),NULL,0);
+
+}
+
+/*! Return 0 for action performed, else 1.
  */
+int AlignInterface::PerformAction(int action)
+{
+	if (action==ALIGN_ClampBoundaries) {
+		ClampBoundaries(1);
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_ToggleApply) {
+		active=!active;
+		if (active) ApplyAlignment(0);
+		else ResetAlignment();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_LessStep || action==ALIGN_MoreStep) {
+		boundstep*=(action==ALIGN_LessStep?.9:1.1);
+		char buffer[100];
+		sprintf(buffer,_("bound step %f"),boundstep);
+		viewport->postmessage(buffer);
+		return 0;
+
+	} else if (action==ALIGN_LeftBoundLess || action==ALIGN_LeftBoundMore) {
+		 //adjust leftbound
+		aligninfo->leftbound-=(action==ALIGN_LeftBoundLess?-boundstep:boundstep);
+		ClampBoundaries(0);
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_RightBoundLess || action==ALIGN_RightBoundMore) {
+		 //adjust rightbound
+		aligninfo->rightbound-=(action==ALIGN_RightBoundLess?boundstep:-boundstep);
+		ClampBoundaries(0);
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_FinalUp10 || action==ALIGN_FinalUp1 || action==ALIGN_FinalUp_1 || action==ALIGN_FinalUp_01) {
+		 //move final align bar
+		double adjust=10;
+		if (action==ALIGN_FinalUp1) adjust=1;
+		if (action==ALIGN_FinalUp_1) adjust=.1;
+		if (action==ALIGN_FinalUp_01) adjust=.01;
+
+		aligninfo->finalalignment+=adjust;
+		if (active) ApplyAlignment(0);
+
+		char buffer[100];
+		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
+		viewport->postmessage(buffer);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_FinalDown10 || action==ALIGN_FinalDown1 || action==ALIGN_FinalDown_1 || action==ALIGN_FinalDown_01) {
+		 //move final align bar
+		double adjust=10;
+		if (action==ALIGN_FinalDown1) adjust=1;
+		if (action==ALIGN_FinalDown_1) adjust=.1;
+		if (action==ALIGN_FinalDown_01) adjust=.01;
+
+		aligninfo->finalalignment-=adjust;
+		if (active) ApplyAlignment(0);
+
+		char buffer[100];
+		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
+		viewport->postmessage(buffer);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_AlignUp10 || action==ALIGN_AlignUp1 || action==ALIGN_AlignUp_1 || action==ALIGN_AlignUp_01) {
+		 //move snap align bar
+		double adjust=10;
+		if (action==ALIGN_AlignUp1) adjust=1;
+		if (action==ALIGN_AlignUp_1) adjust=.1;
+		if (action==ALIGN_AlignUp_01) adjust=.01;
+
+		aligninfo->snapalignment+=adjust;
+		if (active) ApplyAlignment(0);
+
+		char buffer[100];
+		sprintf(buffer,_("Snap align %f"),aligninfo->snapalignment);
+		viewport->postmessage(buffer);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_AlignDown10 || action==ALIGN_AlignDown1 || action==ALIGN_AlignDown_1 || action==ALIGN_AlignDown_01) {
+		 //move snap align bar
+		double adjust=10;
+		if (action==ALIGN_AlignDown1) adjust=1;
+		if (action==ALIGN_AlignDown_1) adjust=.1;
+		if (action==ALIGN_AlignDown_01) adjust=.01;
+
+		aligninfo->snapalignment-=adjust;
+		if (active) ApplyAlignment(0);
+
+		char buffer[100];
+		sprintf(buffer,_("snapalign %f"),aligninfo->snapalignment);
+		viewport->postmessage(buffer);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_MakeX) {
+		 //make snap direction vertical, layout direction horizontal
+		aligninfo->snap_direction=flatpoint(0,1);
+		aligninfo->layout_direction=flatpoint(1,0);
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_MakeY) {
+		 //make snap direction horizontal, layout direction vertical
+		aligninfo->snap_direction=flatpoint(1,0);
+		aligninfo->layout_direction=flatpoint(0,1);
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_MakeRight) {
+		 //align right edges, snap=lr, layout=tb
+		aligninfo->snap_direction=flatpoint(1,0);
+		aligninfo->layout_direction=flatpoint(0,1);
+		aligninfo->snapalignment=100;
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_MakeLeft) {
+		 //align left edges, snap=lr, layout=tb
+		aligninfo->snap_direction=flatpoint(1,0);
+		aligninfo->layout_direction=flatpoint(0,1);
+		aligninfo->snapalignment=0;
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_MakeTop) {
+		 //align top edges, snap=tb, layout=lr
+		aligninfo->snap_direction=flatpoint(0,1);
+		aligninfo->layout_direction=flatpoint(1,0);
+		aligninfo->snapalignment=0;
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_MakeBottom) {
+		 //align bottom edges, snap=tb, layout=lr
+		aligninfo->snap_direction=flatpoint(0,1);
+		aligninfo->layout_direction=flatpoint(1,0);
+		aligninfo->snapalignment=100;
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_CenterV) {
+		 //align centers vertically, snap=lr, layout=tb
+		aligninfo->snap_direction=flatpoint(1,0);
+		aligninfo->layout_direction=flatpoint(0,1);
+		aligninfo->snapalignment=50;
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_CenterH) {
+		 //align centers horizontally, snap=tb, layout=lr
+		aligninfo->snap_direction=flatpoint(0,1);
+		aligninfo->layout_direction=flatpoint(1,0);
+		aligninfo->snapalignment=50;
+		if (active) ApplyAlignment(0);
+
+		needtodraw=1;
+		return 0;
+
+	} else if (action==ALIGN_ToggleFinal || action==ALIGN_ToggleFinalR) {
+		ToggleFinal(action==ALIGN_ToggleFinal?1:-1);
+		return 0;
+
+	} else if (action==ALIGN_ToggleAlign || action==ALIGN_ToggleAlignR) {
+		ToggleAlign(action==ALIGN_ToggleAlign?1:-1);
+		return 0;
+
+	} else if (action==ALIGN_ToggleShift || action==ALIGN_ToggleShiftR) {
+		ToggleShift(action==ALIGN_ToggleShift?1:-1);
+		return 0;
+
+	//} else if (action==ALIGN_Open) {
+	//} else if (action==ALIGN_Save) {
+	//} else if (action==ALIGN_EditPath) {
+	} else {
+		DBG cerr <<" warning! unimplemented action "<<action<<" in AlignInterface!"<<endl;
+	}
+
+	return 1;
+}
+
 int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr<<" aligninterface got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+
+	int action=sc.FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>0) {
+		return PerformAction(action);
+	}
 
 	if (ch==LAX_Esc) {
 		if (!strcmp(owner->whattype(),"ObjectInterface")) {
@@ -1429,178 +1755,6 @@ int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		}
 		return 0;
 
-	} else if (ch==LAX_Up && (aligninfo->final_layout_type==FALIGN_Align || aligninfo->final_layout_type==FALIGN_Proportional)) {
-		 //move final align bar
-		double adjust=1;
-		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
-		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
-		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
-
-		aligninfo->finalalignment+=10*adjust;
-		if (active) ApplyAlignment(0);
-
-		char buffer[100];
-		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
-		viewport->postmessage(buffer);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch==LAX_Down && (aligninfo->final_layout_type==FALIGN_Align || aligninfo->final_layout_type==FALIGN_Proportional)) {
-		 //move final align bar
-		double adjust=1;
-		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
-		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
-		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
-
-		aligninfo->finalalignment-=10*adjust;
-		if (active) ApplyAlignment(0);
-
-		char buffer[100];
-		sprintf(buffer,_("Final align %f"),aligninfo->finalalignment);
-		viewport->postmessage(buffer);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch==LAX_Right) {
-		 //move snap align bar
-		double adjust=1;
-		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
-		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
-		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
-
-		aligninfo->snapalignment+=10*adjust;
-		if (active) ApplyAlignment(0);
-
-		char buffer[100];
-		sprintf(buffer,_("Snap align %f"),aligninfo->snapalignment);
-		viewport->postmessage(buffer);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch==LAX_Left) {
-		 //move snap align bar
-		double adjust=1;
-		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.1;
-		if ((state&LAX_STATE_MASK)==ControlMask) adjust=.01;
-		if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) adjust=.001;
-
-		aligninfo->snapalignment-=10*adjust;
-		if (active) ApplyAlignment(0);
-
-		char buffer[100];
-		sprintf(buffer,_("snapalign %f"),aligninfo->snapalignment);
-		viewport->postmessage(buffer);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='x') {
-		 //make snap direction vertical, layout direction horizontal
-		aligninfo->snap_direction=flatpoint(0,1);
-		aligninfo->layout_direction=flatpoint(1,0);
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='y') {
-		 //make snap direction horizontal, layout direction vertical
-		aligninfo->snap_direction=flatpoint(1,0);
-		aligninfo->layout_direction=flatpoint(0,1);
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='r' && (state&LAX_STATE_MASK)==0) {
-		 //align right edges, snap=lr, layout=tb
-		aligninfo->snap_direction=flatpoint(1,0);
-		aligninfo->layout_direction=flatpoint(0,1);
-		aligninfo->snapalignment=100;
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='l' && (state&LAX_STATE_MASK)==0) {
-		 //align left edges, snap=lr, layout=tb
-		aligninfo->snap_direction=flatpoint(1,0);
-		aligninfo->layout_direction=flatpoint(0,1);
-		aligninfo->snapalignment=0;
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='c' && (state&LAX_STATE_MASK)==0) {
-		 //align centers vertically, snap=lr, layout=tb
-		aligninfo->snap_direction=flatpoint(1,0);
-		aligninfo->layout_direction=flatpoint(0,1);
-		aligninfo->snapalignment=50;
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-
-	} else if (ch=='t' && (state&LAX_STATE_MASK)==0) {
-		 //align top edges, snap=tb, layout=lr
-		aligninfo->snap_direction=flatpoint(0,1);
-		aligninfo->layout_direction=flatpoint(1,0);
-		aligninfo->snapalignment=0;
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='b' && (state&LAX_STATE_MASK)==0) {
-		 //align bottom edges, snap=tb, layout=lr
-		aligninfo->snap_direction=flatpoint(0,1);
-		aligninfo->layout_direction=flatpoint(1,0);
-		aligninfo->snapalignment=100;
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='C' && (state&LAX_STATE_MASK)==ShiftMask) {
-		 //align centers horizontally, snap=tb, layout=lr
-		aligninfo->snap_direction=flatpoint(0,1);
-		aligninfo->layout_direction=flatpoint(1,0);
-		aligninfo->snapalignment=50;
-		if (active) ApplyAlignment(0);
-
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='[' && ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ControlMask)) {
-		 //adjust leftbound
-		aligninfo->leftbound-=(state&LAX_STATE_MASK)==0?-boundstep:boundstep;
-		ClampBoundaries(0);
-		needtodraw=1;
-		return 0;
-
-	} else if (ch==']' && ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ControlMask)) {
-		 //adjust rightbound
-		aligninfo->rightbound-=(state&LAX_STATE_MASK)==0?boundstep:-boundstep;
-		ClampBoundaries(0);
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='{' || ch=='}') {
-		boundstep*=(ch=='{'?.9:1.1);
-		char buffer[100];
-		sprintf(buffer,_("bound step %f"),boundstep);
-		viewport->postmessage(buffer);
-		return 0;
-
-	} else if (ch=='0') {
-		ClampBoundaries(1);
-		needtodraw=1;
-		return 0;
 
 	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
 		//override default
