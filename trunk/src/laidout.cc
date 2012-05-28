@@ -825,7 +825,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'S': { // dump out shortcuts
-					cerr << " *** Sorry, this is not quite implemented yet!"<<endl;
+					dump_out_shortcuts(stdout,0);
 					exit(0);
 				} break;
 
@@ -1478,6 +1478,7 @@ int main(int argc,char **argv)
 
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
 	laidout->close();
+	Laxkit::InstallShortcutManager(NULL);
 	delete laidout;
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;

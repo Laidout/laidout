@@ -37,15 +37,6 @@ using namespace Laxkit;
  */
 
 
-void GroupInterface::TransformSelection(const double *N, int s, int e) 
-{
-	for (int c=0; c<selection.n; c++) {
-		DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection.e[c])->context.out(":");
-	}
-	ObjectInterface::TransformSelection(N,s,e);
-}
-
-
 GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 	: ObjectInterface(nid,ndp)
 {
@@ -65,6 +56,25 @@ anInterface *GroupInterface::duplicate(anInterface *dup)
 	}
 	return ObjectInterface::duplicate(g);
 }
+
+Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
+{
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	if (!manager->FindHandler("AlignInterface")) {
+		AlignInterface align(0);
+	}
+
+	return NULL;
+}
+
+void GroupInterface::TransformSelection(const double *N, int s, int e) 
+{
+	for (int c=0; c<selection.n; c++) {
+		DBG cerr<<"-------ObjectInterfaceTransformSelection on "; ((VObjContext *)selection.e[c])->context.out(":");
+	}
+	ObjectInterface::TransformSelection(N,s,e);
+}
+
 
 int GroupInterface::draws(const char *atype)
 {

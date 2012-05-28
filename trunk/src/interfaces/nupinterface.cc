@@ -529,10 +529,10 @@ int NUpInterface::Refresh()
 	drawHandle(minor,arrowcolor,nupinfo->uioffset);
 
 	 //draw ok
-	if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,okcontrol->color,nupinfo->uioffset);
+	//if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,okcontrol->color,nupinfo->uioffset);
 
 	 //draw type
-	if (nup_style&NUP_Has_Type) drawHandle(typecontrol,typecontrol->color,nupinfo->uioffset);
+	//if (nup_style&NUP_Has_Type) drawHandle(typecontrol,typecontrol->color,nupinfo->uioffset);
 	
 
 

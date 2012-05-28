@@ -303,6 +303,7 @@ AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
 
+	sc=NULL;
 	CreateShortcuts();
 }
 
@@ -322,6 +323,7 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
 
+	sc=NULL;
 	CreateShortcuts();
 }
 
@@ -1475,61 +1477,75 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	return 0;
 }
 
+Laxkit::ShortcutHandler *AlignInterface::GetShortcuts()
+{
+	CreateShortcuts();
+	return sc;
+}
+
 
 void AlignInterface::CreateShortcuts()
 {
+	if (sc) return;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("AlignInterface");
+	if (sc) return;
+
 	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
 
-	sc.Add(ALIGN_ToggleApply, LAX_Enter,0,0,     _("ToggleApply"), _("Toggle applying alignment"),NULL,0);
+	sc=new ShortcutHandler("AlignInterface");
 
-	sc.Add(ALIGN_CenterV,     'C',ShiftMask,0,   _("CenterV"),  _("Align centers vertically"),NULL,0);
-	sc.Add(ALIGN_CenterH,     'c',0,0,           _("CenterH"),  _("Align centers horizontally"),NULL,0);
-	sc.Add(ALIGN_MakeX,       'x',0,0,           _("VSnap"), _("Make snap vertical, layout horizontal"),NULL,0);
-	sc.Add(ALIGN_MakeY,       'y',0,0,           _("HSnap"), _("Make snap horizontal, layout vertical"),NULL,0);
-	sc.Add(ALIGN_MakeRight,   'r',0,0,           _("Right"), _("Align right edges horizontally"),NULL,0);
-	sc.Add(ALIGN_MakeLeft,    'l',0,0,           _("Left"),  _("Align left edges horizontally"),NULL,0);
-	sc.Add(ALIGN_MakeTop,     't',0,0,           _("Top"),   _("Align top edges vertically"),NULL,0);
-	sc.Add(ALIGN_MakeBottom,  'b',0,0,           _("Bottom"),_("Align bottom edges vertically"),NULL,0);
+	sc->Add(ALIGN_ToggleApply, LAX_Enter,0,0,     _("ToggleApply"), _("Toggle applying alignment"),NULL,0);
 
-	sc.Add(ALIGN_ClampBoundaries,'0',0,0,           _("ClampBoundaries"),_("Clamp boundaries to fill path"),NULL,0);
-	sc.Add(ALIGN_LeftBoundLess,  '[',0,0,           _("LeftBoundLess"),  _("Move left bound left"), NULL,0);
-	sc.Add(ALIGN_LeftBoundMore,  '[',ControlMask,0, _("LeftBoundMore"),  _("Move left bound right"),NULL,0);
-	sc.Add(ALIGN_RightBoundLess, ']',0,0,           _("RightBoundLess"),_("Move right bound left"), NULL,0);
-	sc.Add(ALIGN_RightBoundMore, ']',ControlMask,0, _("RightBoundMore"),_("Move right bound right"),NULL,0);
-	sc.Add(ALIGN_LessStep,       '{',0,0,           _("LessStep"),_("Scale down the key step"), NULL,0);
-	sc.Add(ALIGN_MoreStep,       '}',0,0,           _("MoreStep"),_("Scale up the key step"),NULL,0);
-	sc.Add(ALIGN_EditPath,       'p',0,0,           _("EditPath"),_("Edit the path"),NULL,0);
+	sc->Add(ALIGN_CenterV,     'C',ShiftMask,0,   _("CenterV"),  _("Align centers vertically"),NULL,0);
+	sc->Add(ALIGN_CenterH,     'c',0,0,           _("CenterH"),  _("Align centers horizontally"),NULL,0);
+	sc->Add(ALIGN_MakeX,       'x',0,0,           _("VSnap"), _("Make snap vertical, layout horizontal"),NULL,0);
+	sc->Add(ALIGN_MakeY,       'y',0,0,           _("HSnap"), _("Make snap horizontal, layout vertical"),NULL,0);
+	sc->Add(ALIGN_MakeRight,   'r',0,0,           _("Right"), _("Align right edges horizontally"),NULL,0);
+	sc->Add(ALIGN_MakeLeft,    'l',0,0,           _("Left"),  _("Align left edges horizontally"),NULL,0);
+	sc->Add(ALIGN_MakeTop,     't',0,0,           _("Top"),   _("Align top edges vertically"),NULL,0);
+	sc->Add(ALIGN_MakeBottom,  'b',0,0,           _("Bottom"),_("Align bottom edges vertically"),NULL,0);
 
-	sc.Add(ALIGN_FinalUp10,  LAX_Up,0,0,                 _("FinalUp10"),_("Shift final alignment by 10"),NULL,0);
-	sc.Add(ALIGN_FinalUp1,   LAX_Up,ShiftMask,0,          _("FinalUp1"),_("Shift final alignment by 1"),NULL,0);
-	sc.Add(ALIGN_FinalUp_1,  LAX_Up,ControlMask,0,         _("FinalUp_1"),_("Shift final alignment by .1"),NULL,0);
-	sc.Add(ALIGN_FinalUp_01, LAX_Up,ControlMask|ShiftMask,0,_("FinalUp_01"),_("Shift final alignment by .01"),NULL,0);
+	sc->Add(ALIGN_ClampBoundaries,'0',0,0,           _("ClampBoundaries"),_("Clamp boundaries to fill path"),NULL,0);
+	sc->Add(ALIGN_LeftBoundLess,  '[',0,0,           _("LeftBoundLess"),  _("Move left bound left"), NULL,0);
+	sc->Add(ALIGN_LeftBoundMore,  '[',ControlMask,0, _("LeftBoundMore"),  _("Move left bound right"),NULL,0);
+	sc->Add(ALIGN_RightBoundLess, ']',0,0,           _("RightBoundLess"),_("Move right bound left"), NULL,0);
+	sc->Add(ALIGN_RightBoundMore, ']',ControlMask,0, _("RightBoundMore"),_("Move right bound right"),NULL,0);
+	sc->Add(ALIGN_LessStep,       '{',0,0,           _("LessStep"),_("Scale down the key step"), NULL,0);
+	sc->Add(ALIGN_MoreStep,       '}',0,0,           _("MoreStep"),_("Scale up the key step"),NULL,0);
+	sc->Add(ALIGN_EditPath,       'p',0,0,           _("EditPath"),_("Edit the path"),NULL,0);
 
-	sc.Add(ALIGN_FinalDown10, LAX_Down,0,0,                 _("FinalDown10"),_("Shift final alignment by -10"),NULL,0);
-	sc.Add(ALIGN_FinalDown1,  LAX_Down,ShiftMask,0,          _("FinalDown1"),_("Shift final alignment by -1"),NULL,0);
-	sc.Add(ALIGN_FinalDown_1, LAX_Down,ControlMask,0,         _("FinalDown_1"),_("Shift final alignment by -.1"),NULL,0);
-	sc.Add(ALIGN_FinalDown_01,LAX_Down,ControlMask|ShiftMask,0,_("FinalDown_01"),_("Shift final alignment by -.01"),NULL,0);
+	sc->Add(ALIGN_FinalUp10,  LAX_Up,0,0,                 _("FinalUp10"),_("Shift final alignment by 10"),NULL,0);
+	sc->Add(ALIGN_FinalUp1,   LAX_Up,ShiftMask,0,          _("FinalUp1"),_("Shift final alignment by 1"),NULL,0);
+	sc->Add(ALIGN_FinalUp_1,  LAX_Up,ControlMask,0,         _("FinalUp_1"),_("Shift final alignment by .1"),NULL,0);
+	sc->Add(ALIGN_FinalUp_01, LAX_Up,ControlMask|ShiftMask,0,_("FinalUp_01"),_("Shift final alignment by .01"),NULL,0);
 
-	sc.Add(ALIGN_AlignUp10,  LAX_Right,0,0,                 _("AlignUp10"),_("Shift snap alignment by 10"),NULL,0);
-	sc.Add(ALIGN_AlignUp1,   LAX_Right,ShiftMask,0,          _("AlignUp1"),_("Shift snap alignment by 1"),NULL,0);
-	sc.Add(ALIGN_AlignUp_1,  LAX_Right,ControlMask,0,         _("AlignUp_1"),_("Shift snap alignment by .1"),NULL,0);
-	sc.Add(ALIGN_AlignUp_01, LAX_Right,ControlMask|ShiftMask,0,_("AlignUp_01"),_("Shift snap alignment by .01"),NULL,0);
+	sc->Add(ALIGN_FinalDown10, LAX_Down,0,0,                 _("FinalDown10"),_("Shift final alignment by -10"),NULL,0);
+	sc->Add(ALIGN_FinalDown1,  LAX_Down,ShiftMask,0,          _("FinalDown1"),_("Shift final alignment by -1"),NULL,0);
+	sc->Add(ALIGN_FinalDown_1, LAX_Down,ControlMask,0,         _("FinalDown_1"),_("Shift final alignment by -.1"),NULL,0);
+	sc->Add(ALIGN_FinalDown_01,LAX_Down,ControlMask|ShiftMask,0,_("FinalDown_01"),_("Shift final alignment by -.01"),NULL,0);
 
-	sc.Add(ALIGN_AlignDown10,  LAX_Left,0,0,                  _("AlignDown10"),_("Shift snap alignment by -10"),NULL,0);
-	sc.Add(ALIGN_AlignDown1,   LAX_Left,ShiftMask,0,           _("AlignDown1"),_("Shift snap alignment by -1"),NULL,0);
-	sc.Add(ALIGN_AlignDown_1,  LAX_Left,ControlMask,0,          _("AlignDown_1"),_("Shift snap alignment by -.1"),NULL,0);
-	sc.Add(ALIGN_AlignDown_01, LAX_Left,ControlMask|ShiftMask,0, _("AlignDown_01"),_("Shift snap alignment by -.01"),NULL,0);
+	sc->Add(ALIGN_AlignUp10,  LAX_Right,0,0,                 _("AlignUp10"),_("Shift snap alignment by 10"),NULL,0);
+	sc->Add(ALIGN_AlignUp1,   LAX_Right,ShiftMask,0,          _("AlignUp1"),_("Shift snap alignment by 1"),NULL,0);
+	sc->Add(ALIGN_AlignUp_1,  LAX_Right,ControlMask,0,         _("AlignUp_1"),_("Shift snap alignment by .1"),NULL,0);
+	sc->Add(ALIGN_AlignUp_01, LAX_Right,ControlMask|ShiftMask,0,_("AlignUp_01"),_("Shift snap alignment by .01"),NULL,0);
 
-	sc.Add(ALIGN_ToggleFinal, 'f',0,0,        _("ToggleFinal"), _("Change the final layout type"),NULL,0);
-	sc.Add(ALIGN_ToggleFinalR,'F',ShiftMask,0,_("ToggleFinalR"),_("Change the final layout type"),NULL,0);
-	sc.Add(ALIGN_ToggleAlign, 'a',0,0,        _("ToggleAlign"), _("Change the snap layout type"),NULL,0);
-	sc.Add(ALIGN_ToggleAlignR,'A',ShiftMask,0,_("ToggleAlignR"),_("Change the snap layout type"),NULL,0);
-	sc.Add(ALIGN_ToggleShift, 'm',0,0,        _("ToggleShift"), _("Change the shift type"),NULL,0);
-	sc.Add(ALIGN_ToggleShiftR,'M',ShiftMask,0,_("ToggleShiftR"),_("Change the shift type"),NULL,0);
+	sc->Add(ALIGN_AlignDown10,  LAX_Left,0,0,                  _("AlignDown10"),_("Shift snap alignment by -10"),NULL,0);
+	sc->Add(ALIGN_AlignDown1,   LAX_Left,ShiftMask,0,           _("AlignDown1"),_("Shift snap alignment by -1"),NULL,0);
+	sc->Add(ALIGN_AlignDown_1,  LAX_Left,ControlMask,0,          _("AlignDown_1"),_("Shift snap alignment by -.1"),NULL,0);
+	sc->Add(ALIGN_AlignDown_01, LAX_Left,ControlMask|ShiftMask,0, _("AlignDown_01"),_("Shift snap alignment by -.01"),NULL,0);
 
-	sc.Add(ALIGN_Save, 's',ControlMask,0,   _("Save"),_("Save settings"),NULL,0);
-	sc.Add(ALIGN_Open, 'o',ControlMask,0,   _("Open"),_("Open settings"),NULL,0);
+	sc->Add(ALIGN_ToggleFinal, 'f',0,0,        _("ToggleFinal"), _("Change the final layout type"),NULL,0);
+	sc->Add(ALIGN_ToggleFinalR,'F',ShiftMask,0,_("ToggleFinalR"),_("Change the final layout type"),NULL,0);
+	sc->Add(ALIGN_ToggleAlign, 'a',0,0,        _("ToggleAlign"), _("Change the snap layout type"),NULL,0);
+	sc->Add(ALIGN_ToggleAlignR,'A',ShiftMask,0,_("ToggleAlignR"),_("Change the snap layout type"),NULL,0);
+	sc->Add(ALIGN_ToggleShift, 'm',0,0,        _("ToggleShift"), _("Change the shift type"),NULL,0);
+	sc->Add(ALIGN_ToggleShiftR,'M',ShiftMask,0,_("ToggleShiftR"),_("Change the shift type"),NULL,0);
 
+	sc->Add(ALIGN_Save, 's',0,0,   _("Save"),_("Save settings"),NULL,0);
+	sc->Add(ALIGN_Open, 'o',0,0,   _("Open"),_("Open settings"),NULL,0);
+
+	manager->AddArea("AlignInterface",sc);
 }
 
 /*! Return 0 for action performed, else 1.
@@ -1741,7 +1757,7 @@ int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 {
 	DBG cerr<<" aligninterface got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
-	int action=sc.FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
 	if (action>0) {
 		return PerformAction(action);
 	}

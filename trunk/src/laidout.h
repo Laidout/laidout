@@ -129,6 +129,7 @@ class LaidoutApp : public Laxkit::anXApp
 	int numTopWindows() { return topwindows.n; }
 
 	int dump_out_file_format(const char *file, int nooverwrite);
+	int dump_out_shortcuts(FILE *f, int indent);
 	int DumpWindows(FILE *f,int indent,Document *doc);
 	int IsProject();
 

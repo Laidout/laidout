@@ -270,3 +270,32 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 
 	return 0;
 }
+
+//! Dump the list of known bound shortcuts to f with indentation.
+int LaidoutApp::dump_out_shortcuts(FILE *f, int indent)
+{
+	if (!f) return 1;
+
+	//Strategy is to ensure all areas are defined within ShortcutManager
+	//then use ShortcutManager->dump_out()
+
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	fprintf(f,"%s#\n",spc);
+	fprintf(f,"%s# Laidout %s Shortcuts\n",spc,LAIDOUT_VERSION);
+	fprintf(f,"%s#\n",spc);
+
+
+	 //for each head window pane
+	//HeadWindow h(NULL,"","",0, 0,0,0,0,0);
+	//h.GetShortcuts();
+
+	 //for each interface
+	for (int c=0; c<interfacepool.n; c++) {
+		interfacepool.e[c]->GetShortcuts(); //this will install in shortcutmanager if it is not already there
+	}
+
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	manager->dump_out(f,indent,0,NULL);
+	return 0;
+}
+
