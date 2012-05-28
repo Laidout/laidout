@@ -85,7 +85,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
   protected:
 	Laxkit::ButtonDownInfo buttondown;
 
-	Laxkit::ShortcutHandler sc;
+	Laxkit::ShortcutHandler *sc;
 	virtual void CreateShortcuts();
 	virtual int PerformAction(int action);
 
@@ -134,6 +134,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	AlignInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~AlignInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Align"; }
 	virtual const char *Name();
