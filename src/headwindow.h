@@ -29,12 +29,17 @@ class HeadWindow : public Laxkit::SplitWindow
 	static Laxkit::PlainWinBox *markedpane;
 	static HeadWindow *markedhead;
 	virtual int splitthewindow(anXWindow *fillwindow=NULL);
+
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
  public:
 	Laxkit::anXWindow *lastview, *lastedit;
  	HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
  		int xx,int yy,int ww,int hh,int brder);
  	virtual const char *whattype() { return "HeadWindow"; }
 	virtual ~HeadWindow();
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
+	virtual void InitializeShortcuts();
 	virtual int init();
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d); 

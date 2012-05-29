@@ -1747,6 +1747,7 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 	//cerr <<"xid:"<<mouse->xid<<endl;
 	//if (mouse->xid==15) { needtodraw=1; fakepointer=1; fakepos=flatpoint(x,y); }
 
+	last_mouse=mouse->id;
 
 	if (viewportmode==VIEW_GRAB_COLOR) {
 		//***on focus off, reset mode to normal
@@ -2441,115 +2442,92 @@ void LaidoutViewport::Refresh()
 	DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
 }
 
+enum LaidoutViewportActions {
+	LOV_DeselectAll=VIEWPORT_MAX,
+	LOV_CenterDrawing,
+	LOV_ZoomToPage,
+	LOV_GrabColor,
+	LOV_ToggleShowState,
+	LOV_MoveObjects,
+	LOV_ObjUp,
+	LOV_ObjDown,
+	LOV_ObjFirst,
+	LOV_ObjLast,
+	LOV_ToggleDrawFlags,
+	LOV_MAX
+};
 
-//! Key presses...
-/*! **** how to notify all the idicator widgets? like curtool palettes, curpage indicator, mouse location
- * indicator, etc...
- *
- * <pre>
- * arrow keys reserved for interface use...
- * 
- * ^+'a'     deselect currently selected objects
- * 'D'       toggle drawing of axes for each object
- * 'l'       toggle showing of the spread (shows only limbo)
- * 'm'       move current selection to another page, pops up a dialog
- * ' '       Center(), *** need center obj, page, spread, center+fit obj,page,spread,objcomponent
- * 'o'       clear angle of viewport
- * 'O'       set middle of viewport to the real origin
- *  // these are like inkscape
- * pgup      ***raise selection by 1 within layer
- * pgdown    ***lower selection by 1 within layer
- * home      ***bring selection to top within layer
- * end       ***drop selection to bottom within layer
- * +pgup     ***move selection up a layer
- * +pgdown   ***move selection down a layer
- * +^pgup    ***raise layer 1
- * +^pgdown  ***lower layer 1
- * +^home    ***layer to top
- * +^end     ***layer to bottom
- *
- *  // These are implemented in the other classes indicated
- * left      previous tool <-- done in viewwindow
- * right     next tool     <-- done in viewwindow
- * ','       previous object <-- done in ViewportWindow, which calls SelectObject
- * '.'       next object     <-- done in ViewportWindow, which calls SelectObject
- * '<'       previous page   <-- done in ViewWindow
- * '>'       next page       <-- done in ViewWindow
- * </pre>
- */
-int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 {
-	//DBG if (ch=='f') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
-	//DBG 	ObjectContext *oc=NULL;
-	//DBG		int x,y;
-	//DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
-	//DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
-	//DBG 	cerr <<"============mouse move found:"<<cc;
-	//DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
-	//DBG 	return 0;
-	//DBG }
+	if (sc) return sc;
 
-	 // check these first, before asking interfaces
-	if (ch==' ') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
-		if ((state&LAX_STATE_MASK)==0) {
-			Center(1);
-			return 0;
-		} 
-		if ((state&LAX_STATE_MASK)==ShiftMask) {
-			Center(0);
-			return 0;
-		} 
-	} else if (ch=='4') { //like inkscape zoom to drawing
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("LaidoutViewport");
+	if (sc) return sc;
+
+	ViewportWindow::GetShortcuts();
+
+	sc->Add(LOV_DeselectAll,    'A',ShiftMask|ControlMask,0, _("DeselectAll"), _("Deselect all"),NULL,0);
+	sc->Add(LOV_CenterDrawing,  '4',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
+	sc->AddShortcut(' ',0,0, LOV_CenterDrawing);
+	sc->Add(LOV_ZoomToPage,     '5',0,0,        _("ZoomToPage"),     _("Zoom to the current page"),NULL,0);
+	sc->AddShortcut(' ',ShiftMask,0, LOV_ZoomToPage);
+	sc->Add(LOV_GrabColor,      'g',0,0,        _("GrabColor"),      _("Grab color"),NULL,0);
+	sc->Add(LOV_ToggleShowState,'l',0,0,        _("ToggleShow"),     _("Toggle show state"),NULL,0);
+	sc->Add(LOV_MoveObjects,    'm',0,0,        _("MoveObjs"),       _("Move objects"),NULL,0);
+	sc->Add(LOV_ObjUp,          LAX_Pgup,0,0,   _("MoveObjUp"),      _("Move object up within layer"),NULL,0);
+	sc->Add(LOV_ObjDown,        LAX_Pgdown,0,0, _("MoveObjDown"),    _("Move object down within layer"),NULL,0);
+	sc->Add(LOV_ObjFirst,       LAX_Home,0,0,   _("MoveObjFirst"),   _("Move object to first in layer"),NULL,0);
+	sc->Add(LOV_ObjLast,        LAX_End,0,0,    _("MoveObjLast"),    _("Move object to last in layer"),NULL,0);
+	sc->Add(LOV_ToggleDrawFlags,'D',ShiftMask,0,_("ToggleDrawFlags"),_("Toggle drawing flags"),NULL,0);
+
+	return sc;
+}
+
+int LaidoutViewport::PerformAction(int action)
+{
+	// *****
+	if (action==LOV_DeselectAll) {
+		if (!curobj.obj) return 0;
+		
+		 // clear curobj from interfaces and check in 
+		SomeData *d=curobj.obj;
+		for (int c=0; c<interfaces.n; c++) {
+			interfaces.e[c]->Clear(d);
+		}
+		clearCurobj(); //this calls dec_count() on the object
+		needtodraw=1;
+		return 0;
+
+	} else if (action==LOV_CenterDrawing) {
 		Center(1);
 		return 0;
-	} else if (ch=='5') { //like inkscape zoom to page
+
+	} else if (action==LOV_ZoomToPage) {
 		Center(0);
 		return 0;
-	}
 
+	} else if (action==LOV_GrabColor) {
+		if (viewportmode!=VIEW_GRAB_COLOR) { 
+			viewportmode=VIEW_GRAB_COLOR;
+			DBG cerr <<"***********************viewport:CURSOR***********************"<<endl;
+			LaxMouse *mouse=app->devicemanager->findMouse(last_mouse);
+			if (mouse) mouse->setMouseShape(this,LAX_MOUSE_Circle);
 
-	 // ask interfaces, and default viewport stuff
-	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
-
-	 // deal with all other LaidoutViewport specific stuff
-	if (ch=='g' && viewportmode!=VIEW_GRAB_COLOR &&  (state&LAX_STATE_MASK)==0) {
-		
-		viewportmode=VIEW_GRAB_COLOR;
-		DBG cerr <<"***********************viewport:CURSOR***********************"<<endl;
-		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(this,LAX_MOUSE_Circle);
-
-	} else if (viewportmode==VIEW_GRAB_COLOR && (ch=='g' || ch==LAX_Esc) && (state&LAX_STATE_MASK)==0) {
-		if (viewportmode==VIEW_GRAB_COLOR) {
+		} else if (viewportmode==VIEW_GRAB_COLOR) {
 			viewportmode=VIEW_NORMAL;
-			const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(this,0);
-			return 0;
+			LaxMouse *mouse=app->devicemanager->findMouse(last_mouse);
+			if (mouse) mouse->setMouseShape(this,0);
 		}
-
-	} else if (ch=='o' &&  (state&LAX_STATE_MASK)==0) {
-		return ViewportWindow::CharInput(' ',NULL,0,ShiftMask,d);
-
-	} else if (ch=='O' &&  (state&LAX_STATE_MASK)==ShiftMask) {
-		return ViewportWindow::CharInput(' ',NULL,0,0,d);
-
-	} else if (ch=='0' &&  (state&LAX_STATE_MASK)==0) {
-		//*** activate GroupInterface?
-
-	} else if (ch=='x' &&  (state&LAX_STATE_MASK)==0) {
-		if (!DeleteObject()) return 1;
 		return 0;
 
-	} else if (ch=='l' && (state&LAX_STATE_MASK)==0) {
+	} else if (action==LOV_ToggleShowState) {
 		if (showstate==0) showstate=1;
 		else showstate=0;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='M' && (state&LAX_STATE_MASK)==(ShiftMask|Mod1Mask)) {
-		DBG  //for debugging to make a delineation in the cerr stuff
-		DBG cerr<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
-		return 0;
-
-	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) {
+	} else if (action==LOV_MoveObjects) {
 		if (!spread && !papergroup) return 0; //the only context is limbo!
 		if (!curobj.obj) return 0; //only move objects!
 
@@ -2608,7 +2586,7 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		PopupMenu *popup=new PopupMenu(NULL,_("Move"), 0,
 						0,0,0,0, 1, 
 						object_id,"moveto", 
-						d->paired_mouse?d->paired_mouse->id:0, //mouse to position near?
+						last_mouse, //mouse to position near?
 						menu,1, NULL,
 						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT|MENUSEL_DESTROY_ON_LEAVE);
 		popup->pad=5;
@@ -2616,45 +2594,53 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		app->rundialog(popup);
 		return 0;
 
-	} else if (ch==LAX_Pgup) { //pgup
-		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state,d);
-		if ((state&LAX_STATE_MASK)==0) { //raise selection within layer
-			if (CirculateObject(0,0,0)) needtodraw=1;
-			return 0;
-		} else if ((state&LAX_STATE_MASK)==ShiftMask) { //move sel up a layer
-			if (CirculateObject(5,0,0)) needtodraw=1;
-			return 0;
-		} else if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) { //layer up 1
-			if (CirculateObject(20,0,0)) needtodraw=1;
-			return 0;
-		}
+	} else if (action==LOV_ObjUp) {
+		if (!curobj.obj) return 0;
 
-	} else if (ch==LAX_Pgdown) { //pgdown
-		if (!curobj.obj) return ViewportWindow::CharInput(ch,buffer,len,state,d);
-		if ((state&LAX_STATE_MASK)==0) { //lower selection within layer
-			if (CirculateObject(1,0,0)) needtodraw=1;
-			return 0;
-		} else if ((state&LAX_STATE_MASK)==ShiftMask) { //move sel down a layer
-			if (CirculateObject(6,0,0)) needtodraw=1;
-			return 0;
-		} else if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) { //layer down 1
-			if (CirculateObject(21,0,0)) needtodraw=1;
-			return 0;
-		}
+		 //raise selection within layer
+		if (CirculateInLayer(1,0,0)) needtodraw=1;
+		return 0;
 
-	} else if (ch==LAX_Home) { //home
-		if (curobj.obj && (state&LAX_STATE_MASK)==0) {	//raise selection to top
-			if (CirculateObject(2,0,0)) needtodraw=1;
-			return 0;
-		}
+//	} else if (action==LOV_ObjUpLayer) {
+//		 //move sel up a layer
+//		if (CirculateObject(5,0,0)) needtodraw=1;
+//		return 0;
+//
+//	} else if (action==LOV_LayerUp) {
+//		 //layer up 1
+//		if (CirculateObject(20,0,0)) needtodraw=1;
+//		return 0;
 
-	} else if (ch==LAX_End) { //end
-		if (curobj.obj && (state&LAX_STATE_MASK)==0) {	//lower selection to bottom
-			if (CirculateObject(3,0,0)) needtodraw=1;
-			return 0;
-		}
+	} else if (action==LOV_ObjDown) {
+		if (!curobj.obj) return 0;
 
-	} else if (ch=='D' && (state&LAX_STATE_MASK)==ShiftMask) {
+		 //lower selection within layer
+		if (CirculateInLayer(-1,0,0)) needtodraw=1;
+		return 0;
+
+//	} else if (action==LOV_ObjDownLayer) {
+//		 //move sel down a layer
+//		if (CirculateObject(6,0,0)) needtodraw=1;
+//		return 0;
+//
+//	} else if (action==LOV_LayerDown) {
+//		 //move whole layer down 1
+//		if (CirculateObject(21,0,0)) needtodraw=1;
+//		return 0;
+
+	} else if (action==LOV_ObjFirst) {
+		if (curobj.obj) {	//raise selection to top
+			if (CirculateInLayer(2,0,0)) needtodraw=1;
+		}
+		return 0;
+
+	} else if (action==LOV_ObjLast) {
+		if (curobj.obj) { //lower selection to bottom
+			if (CirculateInLayer(-2,0,0)) needtodraw=1;
+		}
+		return 0;
+
+	} else if (action==LOV_ToggleDrawFlags) {
 		DBG cerr << "----drawflags: "<<drawflags;
 		if (drawflags==DRAW_AXES) drawflags=DRAW_BOX;
 		else if (drawflags==DRAW_BOX) drawflags=DRAW_BOX|DRAW_AXES;
@@ -2663,39 +2649,66 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 		DBG cerr << " --> "<<drawflags<<endl;
 		needtodraw=1;
 		return 0;
+	}
 
-	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
-		if (!curobj.obj) return 0;
-		
-		 // clear curobj from interfaces and check in 
-		SomeData *d=curobj.obj;
-		for (int c=0; c<interfaces.n; c++) {
-			interfaces.e[c]->Clear(d);
-		}
-		clearCurobj(); //this calls dec_count() on the object
-		needtodraw=1;
+	return ViewportWindow::PerformAction(action);
+}
+
+//! Key presses...
+/*! 
+ * \todo **** how best to notify all the indicator widgets? like curtool palettes, curpage indicator, mouse location
+ *   indicator, etc...
+ *
+ * Arrow keys reserved for interface use...
+ */
+int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	//DBG  //show object mouse is over:
+	//DBG if (ch=='f') { //note that these preempt the Laxkit::ViewportWindow reset view. these are dealt separately below
+	//DBG 	ObjectContext *oc=NULL;
+	//DBG		int x,y;
+	//DBG 	d->paired_mouse->getInfo(this,NULL,NULL,&x,&y, NULL,NULL,NULL,NULL);
+	//DBG 	int cc=FindObject(x,y,NULL,NULL,1,&oc);
+	//DBG 	cerr <<"============mouse move found:"<<cc;
+	//DBG 	if (oc) dynamic_cast<VObjContext*>(oc)->context.out("  "); else cerr <<endl;
+	//DBG 	return 0;
+	//DBG }
+
+
+	if (ch==LAX_Esc && (state&LAX_STATE_MASK)==0 && viewportmode==VIEW_GRAB_COLOR) {
+		 //escape out of grabbing color
+		viewportmode=VIEW_NORMAL;
+		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(this,0);
 		return 0;
+	}
+
+	 // ask interfaces, and default viewport stuff, which queries all action based activity.
+	if (ViewportWindow::CharInput(ch,buffer,len,state,d)==0) return 0;
+
+
+
+	if (ch=='M' && (state&LAX_STATE_MASK)==(ShiftMask|AltMask)) {
+		DBG  //for debugging to make a delineation in the cerr stuff
+		DBG cerr<<"----------------=========<<<<<<<<< *** >>>>>>>>========--------------"<<endl;
+		return 0;
+
 	}
 
 	return 1;
 }
 
 //! Move curobj object or selection in various ways.
-/*! \todo ***imp me!
- * 
- * *** currently ignores objOrSelection until I figure out what i wanted
- * it for anyway...
- *
+/*! 
+ * \todo *** currently ignores objOrSelection until I figure out what i wanted it for anyway...
  * \todo *** most of these things ought to be functions of Document!!
- * 
  * \todo *** need an option to move past all overlapping objects! if no overlapping
- * objs, then just move as normal
+ *   objs, then just move as normal
  *
  * <pre>
- *  0   Raise in layer
- *  1   Lower in layer
+ *  1   Raise in layer
+ *  -1   Lower in layer
  *  2   Raise to top
- *  3   Lower to bottom
+ *  -2   Lower to bottom
  *  4   To index in layer *** imp me!
  *  5   To next layer up *** imp me!
  *  6   To next layer down *** imp me!
@@ -2715,11 +2728,12 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
  *
  * Returns 1 if object moved, else 0.
  */
-int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
+int LaidoutViewport::CirculateInLayer(int dir, int i,int objOrSelection)
 {
 	DBG cerr <<"Circulate: dir="<<dir<<"  i="<<i<<endl;
 	if (!curobj.obj) return 0;
-	if (dir==0) { // raise in layer
+
+	if (dir==1) { // raise in layer
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==g->n()-1) { 
@@ -2733,7 +2747,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		needtodraw=1;
 		return 1;
 
-	} else if (dir==1) { // lower in layer
+	} else if (dir==-1) { // lower in layer
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==0) { 
@@ -2761,7 +2775,7 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		needtodraw=1;
 		return 1;
 
-	} else if (dir==3) { // lower to bottom
+	} else if (dir==-2) { // lower to bottom
 		int curpos=curobj.pop();
 		Group *g=dynamic_cast<Group *>(getanObject(curobj.context,0));
 		if (!g || curpos==0) { 
@@ -2775,20 +2789,20 @@ int LaidoutViewport::CirculateObject(int dir, int i,int objOrSelection)
 		needtodraw=1;
 		return 1;
 
-	} else if (dir==4) { // move to place i in current context
-		cout <<"***move to place i in current context not implemented!"<<endl;
-	} else if (dir==5) { // move to layer above
-		//***move to bottom of next upper layer
-		cout <<"*** move to layer above not implemented!"<<endl;
-	} else if (dir==6) { // move to layer below
-		//***put on top of lower layer
-		cout <<"***move to layer below not implemented!"<<endl;
-	} else if (dir==7) { // move to previous page
-		cout <<"***move to previous page not implemented!"<<endl;
-	} else if (dir==8) { // move to next page
-		cout <<"***move to next page not implemented!"<<endl;
-	} else if (dir==9) { // move to page number i
-		cout <<"***move to page number i not implemented!"<<endl;
+//	} else if (dir==4) { // move to place i in current context
+//		cout <<"***move to place i in current context not implemented!"<<endl;
+//	} else if (dir==5) { // move to layer above
+//		//***move to bottom of next upper layer
+//		cout <<"*** move to layer above not implemented!"<<endl;
+//	} else if (dir==6) { // move to layer below
+//		//***put on top of lower layer
+//		cout <<"***move to layer below not implemented!"<<endl;
+//	} else if (dir==7) { // move to previous page
+//		cout <<"***move to previous page not implemented!"<<endl;
+//	} else if (dir==8) { // move to next page
+//		cout <<"***move to next page not implemented!"<<endl;
+//	} else if (dir==9) { // move to page number i
+//		cout <<"***move to page number i not implemented!"<<endl;
 	}
 
 	return 0;
@@ -2883,6 +2897,7 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 	: ViewerWindow(parnt,nname,ntitle,nstyle,xx,yy,ww,hh,brder,new LaidoutViewport(newdoc))
 {
 	viewport->dec_count(); //remove extra creation count
+	viewport->GetShortcuts();
 	project=NULL;
 	var1=var2=var3=NULL;
 	toolselector=NULL;
@@ -4132,25 +4147,68 @@ int ViewWindow::SelectTool(int id)
 	return c;
 }
 
-/*! <pre>
- * left    prev tool, 
- * right   next tool. *** maybe this should be in ViewerWindow??
- * '<'     previous page 
- * '>'     next page
- * ^'s'    save file
- * ^+'s'   save as
- * F5      popup new spread editor window
- *
- * 'r'     ---for debugging, does system call: "more /proc/(pid)/status"
- * </pre>
- */
-int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+enum ViewActions {
+	VIEW_Save,
+	VIEW_SaveAs,
+	VIEW_NewDocument,
+	VIEW_NextTool,
+	VIEW_PreviousTool,
+	VIEW_NextPage,
+	VIEW_PreviousPage,
+	VIEW_ObjectTool,
+
+	VIEW_Help,
+	VIEW_About,
+	VIEW_SpreadEditor,
+
+	VIEW_MAX
+};
+
+Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 {
-	DBG if (ch==LAX_F8) dumpctm(viewport->dp->m());
+	//parent class LaxInterfaces::ViewerWindow only defines shortcuts for next tool and previous tool.
+	//we are loosing nothing by totally ignoring it here.
 
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("ViewWindow");
+	if (sc) return sc;
 
-	if ((ch=='S' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) 
-		  || (ch=='s' && (state&LAX_STATE_MASK)==ControlMask)) { 
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
+
+	sc=new ShortcutHandler("ViewWindow");
+
+	sc->Add(VIEW_ObjectTool,    LAX_Esc,0,0,      _("ObjectTool"),   _("Switch to object tool"),NULL,0);
+	sc->Add(VIEW_Save,         's',ControlMask,0, _("Save"),         _("Save document"),NULL,0);
+	sc->Add(VIEW_SaveAs,       's',ShiftMask|ControlMask,0,_("SaveAs"), _("Save as"),NULL,0);
+	sc->Add(VIEW_NewDocument,  'n',ControlMask,0, _("NewDoc"),       _("New document"),NULL,0);
+	sc->Add(VIEW_NextTool,     't',0,0,           _("NextTool"),     _("Next tool"),NULL,0);
+	sc->Add(VIEW_PreviousTool, 'T',ShiftMask,0,   _("PreviousTool"), _("Previous tool"),NULL,0);
+	sc->Add(VIEW_NextPage,     '>',ShiftMask,0,   _("NextPage"),     _("Next page"),NULL,0);
+	sc->Add(VIEW_PreviousPage, '<',ShiftMask,0,   _("PreviousPage"), _("Previous page"),NULL,0);
+	sc->Add(VIEW_Help,         LAX_F1,0,0,        _("Help"),         _("Help"),NULL,0);
+	sc->Add(VIEW_About,        LAX_F2,0,0,        _("About"),        _("About Laidout"),NULL,0);
+	sc->Add(VIEW_SpreadEditor, LAX_F5,0,0,        _("SpreadEditor"), _("Popup a spread editor"),NULL,0);
+
+	manager->AddArea("ViewWindow",sc);
+	return sc;
+}
+
+int ViewWindow::PerformAction(int action)
+{
+	if (action==VIEW_ObjectTool) {
+		 //change to object tool
+		for (int c=0; c<tools.n; c++) {
+			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
+				SelectTool(tools.e[c]->id);
+				((ObjectInterface*)tools.e[c])->AddToSelection(&((LaidoutViewport*)viewport)->curobj);
+				updateContext(1);
+				break;
+			}
+		}
+		return 0;
+
+	} else if (action==VIEW_Save || action==VIEW_SaveAs) {
 		 // save file
 		Document *sdoc=doc;
 		if (!sdoc) sdoc=laidout->curdoc;
@@ -4170,7 +4228,7 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		DBG cerr <<"....viewwindow says save.."<<endl;
 		if (isblank(sdoc->Saveas()) 
 				|| strstr(sdoc->Saveas(),_("untitled"))
-				|| (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
+				|| action==VIEW_SaveAs) {
 			 // launch saveas!!
 			//LineInput::LineInput(anXWindow *parnt,const char *ntitle,unsigned int nstyle,
 						//int xx,int yy,int ww,int hh,int brder,
@@ -4202,16 +4260,28 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		}
 		return 0;
 
-	} else if (ch==LAX_Left || ch=='T') {  // left, prev tool
-		SelectTool(-2);
+	} else if (action==VIEW_NewDocument) {
+		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
 		return 0;
 
-	} else if (ch==LAX_Right || ch=='t') { //right, next tool
+	} else if (action==VIEW_NextTool) {
 		SelectTool(-1);
 		return 0;
 
-	} else if (ch=='<') { //prev page
-		DBG cerr <<"'<'  should be prev page"<<endl;
+	} else if (action==VIEW_PreviousTool) {
+		SelectTool(-2);
+		return 0;
+
+	} else if (action==VIEW_NextPage) {
+		int pg=((LaidoutViewport *)viewport)->SelectPage(-1);
+		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
+			((NumSlider *)_kids.e[c])->Select(pg+1);
+			break;
+		}
+		updateContext(0);
+		return 0;
+
+	} else if (action==VIEW_PreviousPage) {
 		int pg=((LaidoutViewport *)viewport)->SelectPage(-2);
 		curtool->Clear();
 		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
@@ -4221,57 +4291,44 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		updateContext(0);
 		return 0;
 
-	} else if (ch=='>') { //next page
-		DBG cerr <<"'>' should be prev page"<<endl;
-		int pg=((LaidoutViewport *)viewport)->SelectPage(-1);
-		for (int c=0; c<_kids.n; c++) if (!strcmp(_kids.e[c]->win_title,"page number")) {
-			((NumSlider *)_kids.e[c])->Select(pg+1);
-			break;
-		}
-		updateContext(0);
-		return 0;
-
-	} else if (ch=='r') {
-		//**** for debugging:
-		pid_t pid=getpid();
-		char blah[100];
-		sprintf(blah,"more /proc/%d/status",pid);
-		system(blah);
-		return 0;
-
-	} else if (ch=='n' && (state&LAX_STATE_MASK)==ControlMask) {
-		app->rundialog(new NewDocWindow(NULL,NULL,"New Document",0,0,0,0,0, 0));
-		return 0;
-
-	} else if (ch=='n' && (state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) { //reset document
-		//***
-	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
+	} else if (action==VIEW_Help) {
 		app->addwindow(new HelpWindow());
 		return 0;
 
-	} else if (ch==LAX_F2 && (state&LAX_STATE_MASK)==0) {
+	} else if (action==VIEW_About) {
 		app->rundialog(new AboutWindow());
 		return 0;
 
-	} else if ((ch=='s' || ch==LAX_Esc) && (state&LAX_STATE_MASK)==0) {
-		 //change to object tool
-		for (int c=0; c<tools.n; c++) {
-			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
-				SelectTool(tools.e[c]->id);
-				((ObjectInterface*)tools.e[c])->AddToSelection(&((LaidoutViewport*)viewport)->curobj);
-				updateContext(1);
-				break;
-			}
-		}
-		return 0;
-
-	} else if (ch==LAX_F5 && (state&LAX_STATE_MASK)==0) {
-		//*** popup a SpreadEditor
+	} else if (action==VIEW_SpreadEditor) {
+		 //popup a SpreadEditor
 		char blah[30+strlen(doc->Name(1))+1];
 		sprintf(blah,"Spread Editor for %s",doc->Name(0));
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
 		return 0;
 	}
+
+	return 1;
+}
+
+int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	DBG if (ch==LAX_F8) dumpctm(viewport->dp->m());
+	DBG if (ch=='r') {
+	DBG 	//**** for debugging:
+	DBG 	pid_t pid=getpid();
+	DBG 	char blah[100];
+	DBG 	sprintf(blah,"more /proc/%d/status",pid);
+	DBG 	system(blah);
+	DBG 	return 0;
+	DBG }
+
+
+	if (!sc) GetShortcuts();
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+		return PerformAction(action);
+	}
+
 
 	return ViewerWindow::CharInput(ch,buffer,len,state,d);
 }

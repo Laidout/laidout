@@ -43,6 +43,9 @@ class SpreadInterface : public LaxInterfaces::anInterface, public LaxFiles::Dump
 	Laxkit::PtrStack<LittleSpread> curspreads;
 	LittleSpread *curspread;
 
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
+
  public:
 	Document *doc;
 	Project *project;
@@ -55,6 +58,7 @@ class SpreadInterface : public LaxInterfaces::anInterface, public LaxFiles::Dump
 	virtual const char *Name();
 	virtual const char *whattype() { return "SpreadInterface"; }
 	virtual const char *whatdatatype() { return "LittleSpread"; }
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual int rLBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
