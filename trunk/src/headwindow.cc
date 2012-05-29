@@ -267,12 +267,36 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	//AddWindowType("ButtonBox","Buttons",
 	//		BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
 	//		newButtonBoxFunc,0);
+
+	sc=NULL;
 }
 
 //! Empty virtual destructor.
 HeadWindow::~HeadWindow()
 {
 	DBG cerr <<"in HeadWindow destructor"<<endl;
+	if (sc) sc->dec_count();
+}
+
+//! Initialize the shortcuts for HeadWindow, and all possible subwindows.
+/*! For the purpose of editing or listing all shortcuts, they must first be initialized
+ * in the shortcutmanager. This means each window type must be instantiated, and shortcuts output.
+ */
+void HeadWindow::InitializeShortcuts()
+{
+	 //initialize head's shortcuts
+	GetShortcuts();
+
+	 //initialize window panes' shortcuts
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	anXWindow *win;
+	for (int c=0; c<winfuncs.n; c++) {
+		if (manager->FindHandler(winfuncs.e[c]->name)) continue;
+
+		win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style);
+		win->GetShortcuts();
+		delete win;
+	}
 }
 
 //! Redefined to use a global mark, rather than per SplitWindow.
@@ -854,12 +878,61 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 	return 0;
 }
 
+enum HeadActions {
+	HEAD_Quit=1,
+	HEAD_OpenDoc,
+	HEAD_MAX
+};
+
+Laxkit::ShortcutHandler *HeadWindow::GetShortcuts()
+{
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("HeadWindow");
+	if (sc) return sc;
+
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
+
+	sc=new ShortcutHandler("HeadWindow");
+
+	sc->Add(HEAD_Quit,    'q',ControlMask,0,     _("Quit"), _("Quit Laidout"),NULL,0);
+	sc->Add(HEAD_OpenDoc, 'o',ControlMask,0,     _("OpenDoc"), _("Open a document"),NULL,0);
+
+	manager->AddArea("HeadWindow",sc);
+	return sc;
+}
+
+int HeadWindow::PerformAction(int action)
+{
+	if (action==HEAD_OpenDoc) {
+		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
+					ANXWIN_REMEMBER,
+					0,0,0,0,0, object_id,"open document",
+					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
+					NULL,NULL,NULL,"Laidout"));
+		return 0;
+		
+	} else if (action==HEAD_Quit) {
+		app->quit();
+		cout <<"Quit!\n";
+		return 0; 
+	}
+
+	return 1;
+}
+
 /*! Intercept Esc to revert anything to NORMAL mode.\n
  * 'o'  open new document\n
  * 'q'  quit
 */
 int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
+	if (!sc) GetShortcuts();
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+		return PerformAction(action);
+	}
+
 	if (ch==LAX_Esc) {
 		DBG cerr <<"***************changing mode to NORMAL"<<endl;
 		mode=NORMAL;
@@ -868,18 +941,6 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='o' && (state&LAX_STATE_MASK)==ControlMask) {
-		app->rundialog(new FileDialog(NULL,NULL,_("Open Document"),
-					ANXWIN_REMEMBER,
-					0,0,0,0,0, object_id,"open document",
-					FILES_FILES_ONLY|FILES_OPEN_MANY|FILES_PREVIEW,
-					NULL,NULL,NULL,"Laidout"));
-		return 0;
-		
-	} else if (ch=='q' && (state&LAX_STATE_MASK)==ControlMask) { 
-		app->quit();
-		cout <<"Quit!\n";
-		return 0; 
 	}
 
 	return SplitWindow::CharInput(ch,buffer,len,state,d);

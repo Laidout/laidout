@@ -14,7 +14,6 @@ Those are purged with each release.
 
 
 ---- bugs:
-test #, ', and " for shortcut dump
 
 hedron edit goes to netdialog, should have "current" option...
 
@@ -87,6 +86,29 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
+
+test #, ', and " for shortcut dump
+numberpadmask?
+shortcut edit dialog
+shortcut loading and saving to resource dir
+for keys with no distinct upper and lower, special handling of shift mask?
+adding key+action, rebind key if necessary
+Install shortcut definitions for:
+	DONE align
+	nup
+	group
+	image
+	path
+	image patch
+	color patch
+	gradient
+	paper group
+	DONE head window
+	DONE spread editor
+	DONE LaidoutViewport
+	DONE viewportwindow
+	DONE viewwindow
+	DONE viewerwindow
 
 add --experimental option to activate any crash prone features not otherwise available
 
@@ -642,9 +664,6 @@ put all in Laidout namespace?
 
 
 paper tiler: for custom pages, drag out a paper size
-
-'?' then 'o' for instance should give message of what pressing 'o' maps to
- ---delayed for full shortcut implementation
 
 intl support: ready for pango?
 

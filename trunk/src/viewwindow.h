@@ -76,6 +76,8 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual void findAny();
 	virtual int nextObject(VObjContext *oc,int inc=0);
 	virtual void transformToContext(double *m,FieldPlace &place,int invert, int depth);
+
+	virtual int PerformAction(int action);
  public:
 	 //*** maybe these should be protected?
 	char *pageviewlabel;
@@ -92,6 +94,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	LaidoutViewport(Document *newdoc);
 	virtual ~LaidoutViewport();
 	virtual const char *whattype() { return "LaidoutViewport"; }
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual void Refresh();
 	virtual int init();
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
@@ -138,7 +141,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int DeleteObject();
 	virtual LaxInterfaces::ObjectContext *ObjectMoved(LaxInterfaces::ObjectContext *oc, int modifyoc);
 	virtual int MoveObject(LaxInterfaces::ObjectContext *from, LaxInterfaces::ObjectContext *to);
-	virtual int CirculateObject(int dir, int i,int objOrSelection);
+	virtual int CirculateInLayer(int dir, int i,int objOrSelection);
 	virtual int validContext(VObjContext *oc);
 	virtual int wipeContext();
 	virtual void clearCurobj();
@@ -166,6 +169,8 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
+
+	virtual int PerformAction(int action);
   public:
 	Project *project;
 	Document *doc;
@@ -176,6 +181,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 						Document *newdoc);
 	virtual ~ViewWindow();
 	virtual const char *whattype() { return "ViewWindow"; }
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual int init();
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Event(const Laxkit::EventData *data,const char *mes);

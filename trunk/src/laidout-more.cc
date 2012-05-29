@@ -286,8 +286,8 @@ int LaidoutApp::dump_out_shortcuts(FILE *f, int indent)
 
 
 	 //for each head window pane
-	//HeadWindow h(NULL,"","",0, 0,0,0,0,0);
-	//h.GetShortcuts();
+	HeadWindow h(NULL,"","",0, 0,0,0,0,0);
+	h.InitializeShortcuts();
 
 	 //for each interface
 	for (int c=0; c<interfacepool.n; c++) {

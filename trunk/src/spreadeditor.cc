@@ -93,6 +93,8 @@ SpreadInterface::SpreadInterface(Laxkit::Displayer *ndp,Project *proj,Document *
 
 	view=NULL;
 	GetSpreads();
+
+	sc=NULL;
 }
 
 /*! Dec count of doc. */
@@ -1113,65 +1115,46 @@ int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxK
 	return 1;
 }
 
-//! Key presses.
-/*!
- * <pre>
- *   ' '    Center with all little spreads in view
- *   'c'    toggle where the page labels go
- *   'm'    toggle mark of current page
- *   'M'    reverse toggle mark of current page
- *   't'    toggle drawing of thumbnails
- *   'A'    toggle how to arrange the spreads
- *  +'A'    force arranging the spreads using current arrange style
- *   'i'    *** for debugging thumbs
- * </pre>
- *
- * \todo *** space should arrange if auto arrange
- */
-int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+enum SpreadInterfaceActions {
+	SIA_Center,
+	SIA_LabelPos,
+	SIA_ToggleMark,
+	SIA_ToggleMarkR,
+	SIA_Thumbnails,
+	SIA_ToggleArrange,
+	SIA_RefreshArrange,
+	SIA_MAX
+};
+
+Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 {
-	DBG cerr <<"SpreadInterface::CharInput: "<<ch<<" as char: '"<<(char)(ch>20 && ch<127?ch:(int)'?')<<","<<endl;
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("SpreadInterface");
+	if (sc) return sc;
 
-	if (ch==LAX_Shift && dragpage>=0 && curpages.n==1) {
-		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange); //swap
-		return 0;
+	sc=new ShortcutHandler("SpreadInterface");
 
-	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
+	sc->Add(SIA_Center,         ' ',0,0,         _("Center"),         _("Center"),NULL,0);
+	sc->Add(SIA_LabelPos,       'c',0,0,         _("LabelPos"),       _("Move label position"),NULL,0);
+	sc->Add(SIA_ToggleMark,     'm',0,0,         _("ToggleMark"),     _("Toggle mark type"),NULL,0);
+	sc->Add(SIA_ToggleMarkR,    'M',ShiftMask,0, _("ToggleMarkR"),    _("Toggle mark type"),NULL,0);
+	sc->Add(SIA_Thumbnails,     't',0,0,         _("Thumbs"),         _("Toggle showing thumbnails"),NULL,0);
+	sc->Add(SIA_ToggleArrange,  'A',ShiftMask,0, _("Arrange"),        _("Toggle arrangement type"),NULL,0);
+	sc->Add(SIA_RefreshArrange, 'A',ShiftMask|ControlMask,0, _("RefreshArrange"), _("Refresh with current arrangement type"),NULL,0);
+
+	manager->AddArea("SpreadInterface",sc);
+	return sc;
+}
+
+int SpreadInterface::PerformAction(int action)
+{
+	if (action==SIA_Center) {
 		Center(1);
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='m' && (state&LAX_STATE_MASK)==0) { // toggle mark
-		if (ChangeMarks(-1)>=0) needtodraw=1;
-		return 0;
-
-	} else if (ch=='M' && (state&LAX_STATE_MASK)==ShiftMask) { // toggle mark
-		if (ChangeMarks(-2)>=0) needtodraw=1;
-		return 0;
-
-	DBG } else if (ch=='i') { //*** for debugging thumbnails....
-		DBG if (curpage<0) return 0;
-		DBG ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
-		DBG cerr <<"'P' image dump:"<<endl;
-		DBG thumb->dump_out(stderr,2,0,NULL);
-		DBG if (thumb) {
-		DBG 	dp->StartDrawing(curwindow);
-		DBG 	//double i[6];
-		DBG 	//transform_invert(i,thumb->m());
-		DBG 	//dp->PushAndNewTransform(i);
-		DBG 	::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
-		DBG 	//dp->PopAxes();
-		DBG 	dp->EndDrawing();
-		DBG }
-		DBG return 0;
-
-	} else if (ch=='p' && (state&LAX_STATE_MASK)==0) {
-		drawthumbnails=!drawthumbnails;
-		DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='c' && (state&LAX_STATE_MASK)==0) {
+	} else if (action==SIA_LabelPos) {
 		if (view->centerlabels==LAX_CENTER) view->centerlabels=LAX_TOP;
 		else if (view->centerlabels==LAX_TOP) view->centerlabels=LAX_RIGHT;
 		else if (view->centerlabels==LAX_RIGHT) view->centerlabels=LAX_BOTTOM;
@@ -1180,14 +1163,21 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='A' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
-		view->arrangestate=ArrangeNeedsArranging;
-		ArrangeSpreads();
-		Center(1);
+	} else if (action==SIA_ToggleMark) {
+		if (ChangeMarks(-1)>=0) needtodraw=1;
+		return 0;
+
+	} else if (action==SIA_ToggleMarkR) {
+		if (ChangeMarks(-2)>=0) needtodraw=1;
+		return 0;
+
+	} else if (action==SIA_Thumbnails) {
+		drawthumbnails=!drawthumbnails;
+		DBG cerr <<"-- drawthumbnails: "<<drawthumbnails<<endl;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='A' && (state&LAX_STATE_MASK)==ShiftMask) {
+	} else if (action==SIA_ToggleArrange) {
 		view->arrangetype++;
 		if (view->arrangetype==ArrangetypeMax+1) view->arrangetype=ArrangetypeMin;
 
@@ -1198,6 +1188,52 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 		Center(1);
 		needtodraw=1;
 		return 0;
+
+	} else if (action==SIA_RefreshArrange) {
+		view->arrangestate=ArrangeNeedsArranging;
+		ArrangeSpreads();
+		Center(1);
+		needtodraw=1;
+		return 0;
+	}
+
+	return 1;
+}
+
+//! Key presses.
+/*!
+ * \todo *** space should arrange if auto arrange
+ */
+int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	DBG cerr <<"SpreadInterface::CharInput: "<<ch<<" as char: '"<<(char)(ch>20 && ch<127?ch:(int)'?')<<","<<endl;
+
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+	    return PerformAction(action);
+	}
+
+
+	if (ch==LAX_Shift && dragpage>=0 && curpages.n==1) {
+		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange); //swap
+		return 0;
+
+	DBG } else if (ch=='i') { //*** for debugging thumbnails....
+	DBG 	if (curpage<0) return 0;
+	DBG 	ImageData *thumb=doc->pages.e[curpage]->Thumbnail();
+	DBG 	cerr <<"'P' image dump:"<<endl;
+	DBG 	thumb->dump_out(stderr,2,0,NULL);
+	DBG 	if (thumb) {
+	DBG 		dp->StartDrawing(curwindow);
+	DBG 		//double i[6];
+	DBG 		//transform_invert(i,thumb->m());
+	DBG 		//dp->PushAndNewTransform(i);
+	DBG 		::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
+	DBG 		//dp->PopAxes();
+	DBG 		dp->EndDrawing();
+	DBG 	}
+	DBG 	return 0;
+
 	}
 	return 1;
 }
@@ -1290,6 +1326,7 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 
 	//viewport->Push(spreadtool,1); // local, and select it
 	spreadtool=new SpreadInterface(viewport->dp,project,doc);
+	spreadtool->GetShortcuts();
 	sed->spreadtool=spreadtool;
 	AddTool(spreadtool,1,1);
 
