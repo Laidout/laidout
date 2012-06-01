@@ -42,11 +42,15 @@ class PaperInterface : public LaxInterfaces::anInterface
 	int mx,my;
 	int rx,ry;
 	flatpoint lbdown;
+
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
  public:
 	PaperInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
 	PaperInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~PaperInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual const char *IconId() { return "Paper"; }
 	virtual const char *Name();

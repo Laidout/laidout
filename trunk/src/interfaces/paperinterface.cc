@@ -84,6 +84,8 @@ PaperInterface::PaperInterface(int nid,Displayer *ndp)
 	papergroup=NULL;
 	paperboxdata=NULL;
 	doc=NULL;
+
+	sc=NULL;
 }
 
 PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -99,6 +101,8 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	papergroup=NULL;
 	paperboxdata=NULL;
 	doc=NULL;
+
+	sc=NULL;
 }
 
 PaperInterface::~PaperInterface()
@@ -108,6 +112,7 @@ PaperInterface::~PaperInterface()
 	if (maybebox) maybebox->dec_count();
 	if (papergroup) papergroup->dec_count();
 	if (doc) doc->dec_count();
+	if (sc) sc->dec_count();
 }
 
 const char *PaperInterface::Name()
@@ -774,6 +779,127 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	return 0;
 }
 
+enum PaperInterfaceActions {
+	PAPERI_Select,
+	PAPERI_Decorations,
+	PAPERI_Delete,
+	PAPERI_Rectify,
+	PAPERI_Rotate,
+	PAPERI_RotateCC,
+	PAPERI_MAX
+};
+
+Laxkit::ShortcutHandler *PaperInterface::GetShortcuts()
+{
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("PaperInterface");
+	if (sc) return sc;
+
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
+
+	sc=new ShortcutHandler("PaperInterface");
+
+	sc->Add(PAPERI_Select,      'a',0,0,         "Select",  _("Select or deselect all"),NULL,0);
+	sc->Add(PAPERI_Decorations, 'd',0,0,         "Decs",    _("Toggle decorations"),NULL,0);
+	sc->Add(PAPERI_Delete,      LAX_Bksp,0,0,    "Delete",  _("Delete selected"),NULL,0);
+	sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
+	sc->Add(PAPERI_Rectify,     'o',0,0,         "Rectify", _("Make the axes horizontal and vertical"),NULL,0);
+	sc->Add(PAPERI_Rotate,      'r',0,0,         "Rotate",  _("Rotate selected by 90 degrees"),NULL,0);
+	sc->Add(PAPERI_RotateCC,    'R',ShiftMask,0, "RotateCC",_("Rotate selected by 90 degrees in the other direction"),NULL,0);
+
+
+	manager->AddArea("PaperInterface",sc);
+	return sc;
+}
+
+int PaperInterface::PerformAction(int action)
+{
+	if (action==PAPERI_Select) {
+		if (!papergroup) return 1;
+		needtodraw=1;
+		int n=curboxes.n;
+		curboxes.flush();
+		if (curbox) { curbox->dec_count(); curbox=NULL; }
+		if (n) return 0;
+		for (int c=0; c<papergroup->papers.n; c++) 
+			curboxes.push(papergroup->papers.e[c],0);
+		return 0;
+
+	} else if (action==PAPERI_Decorations) {
+		showdecs++;
+		if (showdecs>2) showdecs=0;
+		needtodraw=1;
+		return 0;
+
+	} else if (action==PAPERI_Delete) {
+		if (!curboxes.n || !papergroup) return 0;
+		int c2;
+		for (int c=0; c<curboxes.n; c++) {
+			c2=papergroup->papers.findindex(curboxes.e[c]);
+			if (c2<0) continue;
+			papergroup->papers.remove(c2);
+		}
+		curboxes.flush();
+		if (curbox) { curbox->dec_count(); curbox=NULL; }
+		needtodraw=1;
+		return 0;
+
+	} else if (action==PAPERI_Rectify) {
+		if (papergroup && papergroup->papers.n) {
+			flatpoint p;
+			for (int c=0; c<papergroup->papers.n; c++) {
+				papergroup->papers.e[c]->m(0,1);
+				papergroup->papers.e[c]->m(1,0);
+				papergroup->papers.e[c]->m(2,0);
+				papergroup->papers.e[c]->m(3,1);
+			}
+			needtodraw=1;
+			return 0;
+		}
+
+	} else if (action==PAPERI_Rotate) {
+		 //rotate by 90 degree increments
+		if (!curboxes.n) return 0;
+		double x,y;
+		for (int c=0; c<curboxes.n; c++) {
+			 //rotate x axis
+			x=curboxes.e[c]->m(0);
+			y=curboxes.e[c]->m(1);
+			curboxes.e[c]->m(0,-y);
+			curboxes.e[c]->m(1,x);
+			 //rotate y axis
+			x=curboxes.e[c]->m(2);
+			y=curboxes.e[c]->m(3);
+			curboxes.e[c]->m(2,-y);
+			curboxes.e[c]->m(3,x);
+		}
+		needtodraw=1;
+		return 0;
+
+	} else if (action==PAPERI_RotateCC) {
+		 //rotate by 90 degree increments
+		if (!curboxes.n) return 0;
+		double x,y;
+		for (int c=0; c<curboxes.n; c++) {
+			 //rotate x axis
+			x=curboxes.e[c]->m(0);
+			y=curboxes.e[c]->m(1);
+			curboxes.e[c]->m(0,y);
+			curboxes.e[c]->m(1,-x);
+			 //rotate y axis
+			x=curboxes.e[c]->m(2);
+			y=curboxes.e[c]->m(3);
+			curboxes.e[c]->m(2,y);
+			curboxes.e[c]->m(3,-x);
+		}
+		needtodraw=1;
+		return 0;
+	}
+
+	return 1;
+}
+
 /*!
  * 'a'          select all, or if some are selected, deselect all
  * del or bksp  delete currently selected papers
@@ -793,6 +919,12 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 //		return 0;
 //	}
 
+	if (!sc) GetShortcuts();
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+		return PerformAction(action);
+	}
+
 	if (ch==LAX_Shift) {
 		if (maybebox) return 0;
 		int x,y;
@@ -803,77 +935,6 @@ int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		needtodraw=1;
 		return 0;
 
-//*** these interfere with select next tool keys:
-//	} else if (ch==LAX_Left && (state&LAX_STATE_MASK)==0) {
-//		//*** select previous paper
-//		return 0;
-//
-//	} else if (ch==LAX_Right && (state&LAX_STATE_MASK)==0) {
-//		//*** select next paper
-//		return 0;
-
-	} else if ((ch==LAX_Del || ch==LAX_Bksp) && (state&LAX_STATE_MASK)==0) {
-		if (!curboxes.n || !papergroup) return 0;
-		int c2;
-		for (int c=0; c<curboxes.n; c++) {
-			c2=papergroup->papers.findindex(curboxes.e[c]);
-			if (c2<0) continue;
-			papergroup->papers.remove(c2);
-		}
-		curboxes.flush();
-		if (curbox) { curbox->dec_count(); curbox=NULL; }
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='a' && (state&LAX_STATE_MASK)==0) {
-		if (!papergroup) return 1;
-		needtodraw=1;
-		int n=curboxes.n;
-		curboxes.flush();
-		if (curbox) { curbox->dec_count(); curbox=NULL; }
-		if (n) return 0;
-		for (int c=0; c<papergroup->papers.n; c++) 
-			curboxes.push(papergroup->papers.e[c],0);
-		return 0;
-
-	} else if (ch=='r' && (state&LAX_STATE_MASK)==0) {
-		if (papergroup && papergroup->papers.n) {
-			flatpoint p;
-			for (int c=0; c<papergroup->papers.n; c++) {
-				papergroup->papers.e[c]->m(0,1);
-				papergroup->papers.e[c]->m(1,0);
-				papergroup->papers.e[c]->m(2,0);
-				papergroup->papers.e[c]->m(3,1);
-			}
-			needtodraw=1;
-			return 0;
-		}
-
-	} else if (ch=='d' && (state&LAX_STATE_MASK)==0) {
-		showdecs++;
-		if (showdecs>2) showdecs=0;
-		needtodraw=1;
-		return 0;
-
-	} else if (ch=='9' && (state&LAX_STATE_MASK)==0) {
-		 //rotate by 90 degree increments
-		if (curboxes.n) {
-			double x,y;
-			for (int c=0; c<curboxes.n; c++) {
-				 //rotate x axis
-				x=curboxes.e[c]->m(0);
-				y=curboxes.e[c]->m(1);
-				curboxes.e[c]->m(0,-y);
-				curboxes.e[c]->m(1,x);
-				 //rotate y axis
-				x=curboxes.e[c]->m(2);
-				y=curboxes.e[c]->m(3);
-				curboxes.e[c]->m(2,-y);
-				curboxes.e[c]->m(3,x);
-			}
-			needtodraw=1;
-			return 0;
-		}
 	}
 	return 1;
 }
