@@ -106,12 +106,16 @@ class NUpInterface : public LaxInterfaces::anInterface
 	virtual const char *controlTooltip(int action);
 	virtual const char *flowtypeMessage(int set);
 	virtual int Apply();
+
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
   public:
 	unsigned long nup_style;//options for interface
 
 	NUpInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
 	NUpInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~NUpInterface();
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 
 	virtual const char *IconId() { return "NUp"; }

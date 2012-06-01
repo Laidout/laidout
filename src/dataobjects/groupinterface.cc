@@ -57,16 +57,6 @@ anInterface *GroupInterface::duplicate(anInterface *dup)
 	return ObjectInterface::duplicate(g);
 }
 
-Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
-{
-	ShortcutManager *manager=GetDefaultShortcutManager();
-	if (!manager->FindHandler("AlignInterface")) {
-		AlignInterface align(0);
-	}
-
-	return NULL;
-}
-
 void GroupInterface::TransformSelection(const double *N, int s, int e) 
 {
 	for (int c=0; c<selection.n; c++) {
@@ -333,11 +323,33 @@ int GroupInterface::GrabSelection(unsigned int state)
 	return n;
 }
 
+enum GroupInterfaceActions {
+	GIA_Align = OIA_MAX,
+	GIA_Distribute,
+	GIA_MAX
+};
 
-int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 {
-	if (ch=='a') {
-		//change to align interface with the objects
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler(whattype());
+	if (sc) return sc;
+
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
+
+	sc=ObjectInterface::GetShortcuts();
+
+	sc->Add(GIA_Align,     'a',0,0,    "Align",     _("Align selected objects"),NULL,0);
+	//sc->Add(GIA_Distribute,'d',0,0,    "Distribute",_("Distribute selected objects"),NULL,0);
+
+	return sc;
+}
+
+int GroupInterface::PerformAction(int action)
+{
+	if (action==GIA_Align) {
+		 //change to align interface with the objects
 		if (selection.n<=1) return 0;
 		AlignInterface *align=new AlignInterface(NULL,10000,dp);
 		align->AddToSelection(selection);
@@ -349,8 +361,8 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		FreeSelection();
 		return 0;
 
-	} else if (ch=='d') {
-		//change to align interface with the objects
+	} else if (action==GIA_Distribute) {
+		 //change to align interface with the objects
 //		nup=new NupInterface(***);
 //		nup->addObjects(selection);
 //		viewport->Push(nup,1,0);
@@ -359,6 +371,12 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		return 0;
 	}
 
+	return ObjectInterface::PerformAction(action);
+}
+
+
+int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
 	return ObjectInterface::CharInput(ch,buffer,len,state,d);
 }
 

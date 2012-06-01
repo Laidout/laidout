@@ -114,6 +114,8 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 	nupinfo=new NUpInfo;
 	nupinfo->uioffset=flatpoint(150,150);
 	createControls();
+
+	sc=NULL;
 }
 
 NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -134,6 +136,8 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 	nupinfo=new NUpInfo;
 	nupinfo->uioffset=flatpoint(150,150);
 	createControls();
+
+	sc=NULL;
 }
 
 NUpInterface::~NUpInterface()
@@ -141,6 +145,7 @@ NUpInterface::~NUpInterface()
 	DBG cerr <<"NUpInterface destructor.."<<endl;
 
 	if (nupinfo) nupinfo->dec_count();
+	if (sc) sc->dec_count();
 
 	//if (doc) doc->dec_count();
 }
@@ -963,14 +968,54 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 	return 0;
 }
 
-/*!
- * 'a'          select all, or if some are selected, deselect all
- * del or bksp  delete currently selected papers
- *
- * \todo auto tile spread contents
- * \todo revert to other group
- * \todo edit another group
+enum NupInterfaceActions {
+	NUPA_NextDir,
+	NUPA_PrevDir,
+	NUPA_MAX
+};
+
+Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
+{
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("NupInterface");
+	if (sc) return sc;
+
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
+
+	sc=new ShortcutHandler("NupInterface");
+
+	sc->Add(NUPA_NextDir, LAX_Left,0,0,     _("NextDir"), _("Next direction type"),NULL,0);
+	sc->Add(NUPA_PrevDir, LAX_Right,0,0,    _("PrevDir"), _("Previous direction type"),NULL,0);
+
+	manager->AddArea("NupInterface",sc);
+	return sc;
+}
+
+/*! Return 0 for action performed, else 1.
  */
+int NUpInterface::PerformAction(int action)
+{
+	if (action==NUPA_NextDir) {
+		nupinfo->direction++;
+		if (nupinfo->direction>7) nupinfo->direction=0;
+		remapControls();
+		viewport->postmessage(dirname(nupinfo->direction));
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NUPA_PrevDir) {
+		nupinfo->direction--;
+		if (nupinfo->direction<0) nupinfo->direction=7;
+		remapControls();
+		viewport->postmessage(dirname(nupinfo->direction));
+		needtodraw=1;
+		return 0;
+	}
+
+	return 1;
+}
+
 int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 { //***
 	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
@@ -981,22 +1026,6 @@ int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		cerr <<"--------------------------";
 		DBG int action=scan(lastx,lasty);
 		DBG cerr << " x,y:"<<lastx<<','<<lasty<<"  action:"<<action<<endl;
-		return 0;
-
-	} else if (ch==LAX_Left) {
-		nupinfo->direction++;
-		if (nupinfo->direction>7) nupinfo->direction=0;
-		remapControls();
-		viewport->postmessage(dirname(nupinfo->direction));
-		needtodraw=1;
-		return 0;
-
-	} else if (ch==LAX_Right) {
-		nupinfo->direction--;
-		if (nupinfo->direction<0) nupinfo->direction=7;
-		remapControls();
-		viewport->postmessage(dirname(nupinfo->direction));
-		needtodraw=1;
 		return 0;
 
 

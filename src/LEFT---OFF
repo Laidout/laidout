@@ -93,22 +93,7 @@ shortcut edit dialog
 shortcut loading and saving to resource dir
 for keys with no distinct upper and lower, special handling of shift mask?
 adding key+action, rebind key if necessary
-Install shortcut definitions for:
-	DONE align
-	nup
-	group
-	image
-	path
-	image patch
-	color patch
-	gradient
-	paper group
-	DONE head window
-	DONE spread editor
-	DONE LaidoutViewport
-	DONE viewportwindow
-	DONE viewwindow
-	DONE viewerwindow
+DONE Install shortcut definitions for each window and interface
 
 add --experimental option to activate any crash prone features not otherwise available
 
