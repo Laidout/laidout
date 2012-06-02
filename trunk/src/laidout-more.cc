@@ -25,6 +25,11 @@
 #include "version.h"
 #include "importimage.h"
 
+#ifndef LAIDOUT_NOGL
+#include "impositions/polyptychwindow.h"
+#endif
+#include "impositions/signatureinterface.h"
+
 #include <lax/fileutils.h>
 
 #include <iostream>
@@ -271,6 +276,32 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
 	return 0;
 }
 
+/*! By default, shortcuts per area only get defined when the are actually needed. This function
+ * causes all the areas to initialize shortcuts.
+ */
+void LaidoutApp::InitializeShortcuts()
+{
+	 //for each head window pane
+	HeadWindow h(NULL,"","",0, 0,0,0,0,0);
+	h.InitializeShortcuts();
+
+
+	 //for each resource helper dialogs
+	SignatureEditor e(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+	e.GetShortcuts();
+
+#ifndef LAIDOUT_NOGL
+	PolyptychWindow w(NULL,NULL,0,NULL);
+	w.GetShortcuts();
+#endif
+
+
+	 //for each interface
+	for (int c=0; c<interfacepool.n; c++) {
+		interfacepool.e[c]->GetShortcuts(); //this will install in shortcutmanager if it is not already there
+	}
+}
+
 //! Dump the list of known bound shortcuts to f with indentation.
 int LaidoutApp::dump_out_shortcuts(FILE *f, int indent)
 {
@@ -284,15 +315,7 @@ int LaidoutApp::dump_out_shortcuts(FILE *f, int indent)
 	fprintf(f,"%s# Laidout %s Shortcuts\n",spc,LAIDOUT_VERSION);
 	fprintf(f,"%s#\n",spc);
 
-
-	 //for each head window pane
-	HeadWindow h(NULL,"","",0, 0,0,0,0,0);
-	h.InitializeShortcuts();
-
-	 //for each interface
-	for (int c=0; c<interfacepool.n; c++) {
-		interfacepool.e[c]->GetShortcuts(); //this will install in shortcutmanager if it is not already there
-	}
+	InitializeShortcuts();
 
 	ShortcutManager *manager=GetDefaultShortcutManager();
 	manager->dump_out(f,indent,0,NULL);

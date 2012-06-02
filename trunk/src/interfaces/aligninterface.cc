@@ -1757,6 +1757,7 @@ int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 {
 	DBG cerr<<" aligninterface got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
+	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
 	if (action>=0) {
 		return PerformAction(action);

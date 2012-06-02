@@ -42,6 +42,7 @@ PolyptychWindow::PolyptychWindow(NetImposition *imp, anXWindow *parnt,unsigned l
 	HedronWindow *hw=new Polyptych::HedronWindow(this, "Hedron","Hedron",0,
 												 0,0,0,0,0,
 												 imp?dynamic_cast<Polyhedron*>(imp->abstractnet):NULL);
+	hw->GetShortcuts();
 	AddWin(hw,1, 1,0,3000,50,0, 1,0,3000,50,0, -1);
 }
 
