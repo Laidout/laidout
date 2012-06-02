@@ -47,6 +47,24 @@ class PdfExportFilter : public ExportFilter
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker
 };
 
+//------------------------------------- PdfinFilter -----------------------------------
+class PdfImportFilter : public ImportFilter
+{
+ protected:
+ public:
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+	
+	virtual const char *Format() { return "Pdf"; }
+	virtual const char *DefaultExtension() { return "pdf"; }
+	virtual const char *Version() { return "*"; }
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+	virtual StyleDef *GetStyleDef();
+	
+	virtual const char *FileType(const char *first100bytes);
+	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log);
+};
 
 #endif
 

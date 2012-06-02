@@ -42,8 +42,50 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 /*! \file 
- * Pdf export code.
+ * Pdf import and export code.
  */
+
+//------------------------- PdfImportFilter -----------------------------
+
+/*! \class PdfImportFilter
+ *
+ * Use MysteryData, with nativeid == page number, and preview as the page preview, generated
+ * by ghostscript.
+ */
+const char *PdfImportFilter::VersionName()
+{
+	return _("Pdf *");
+}
+
+StyleDef *PdfImportFilter::GetStyleDef()
+{
+	return NULL; // ***
+}
+
+const char *PdfImportFilter::FileType(const char *first100bytes)
+{
+	if (strncmp(first100bytes,"%PDF-",5)) return NULL;
+	if (strncmp(first100bytes+5,"1.0",3)) return "1.0";
+	if (strncmp(first100bytes+5,"1.1",3)) return "1.1";
+	if (strncmp(first100bytes+5,"1.2",3)) return "1.2";
+	if (strncmp(first100bytes+5,"1.3",3)) return "1.3";
+	if (strncmp(first100bytes+5,"1.4",3)) return "1.4";
+	if (strncmp(first100bytes+5,"1.5",3)) return "1.5";
+	if (strncmp(first100bytes+5,"1.6",3)) return "1.6";
+	if (strncmp(first100bytes+5,"1.7",3)) return "1.7";
+	if (strncmp(first100bytes+5,"1.8",3)) return "1.8";
+	if (strncmp(first100bytes+5,"1.9",3)) return "1.9";
+	return NULL;
+}
+
+int PdfImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
+{
+	// ***
+	// find number of pages
+	// generate previews for pages via ghostscript, install with MysteryData
+	return 1;
+}
+
 
 //--------------------------------- install PDF filter
 
