@@ -107,7 +107,10 @@ class PanoramaFace : public FaceDataObj
 
 class HedronWindow : public Laxkit::anXWindow
 {
- public:
+  protected:
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
+  public:
 	GLfloat movestep;
 	GLuint spheretexture, flattexture;
 	int rendermode, mode, oldmode;
@@ -185,6 +188,7 @@ class HedronWindow : public Laxkit::anXWindow
 		 		 int xx,int yy,int ww,int hh,int brder,
 				 Polyhedron *newpoly);
 	virtual ~HedronWindow();
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual const char *whattype() { return "HedronWindow"; }
 	virtual int MoveResize(int x,int y,int w,int h);
 	virtual int Resize(int w,int h);
