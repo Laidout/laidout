@@ -292,6 +292,8 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 
 	fovy=50*M_PI/180;
 	current_camera=-1;
+	
+	sc=NULL;
 }
 
 HedronWindow::~HedronWindow()
@@ -305,6 +307,8 @@ HedronWindow::~HedronWindow()
 	if (polyhedronfile) delete[] polyhedronfile;
 	if (polyptychfile) delete[] polyptychfile;
 	if (consolefontfile) delete[] consolefontfile;
+
+	if (sc) sc->dec_count();
 }
 
 //! Set the font size, if newfontsize>0.
@@ -3070,51 +3074,138 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 	return anXWindow::Event(data,mes);
 }
 
-int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const LaxKeyboard *kb)
+enum HedronWindowAction {
+	HEDA_Help,
+	HEDA_Papers,
+	HEDA_LoadPolyhedron,
+	HEDA_LoadImage,
+	HEDA_ToggleMode,
+	HEDA_Render,
+	HEDA_Save,
+	HEDA_SaveAs,
+	HEDA_ResetNets,
+	HEDA_TotalUnwrap,
+	HEDA_ThickenCylinder,
+	HEDA_ThinCylinder,
+	HEDA_DrawSeams,
+	HEDA_ToggleTexture,
+	HEDA_DrawEdges,
+	HEDA_RenderMode,
+	HEDA_Camera,
+	HEDA_PanLeft,
+	HEDA_PanRight,
+	HEDA_PanUp,
+	HEDA_PanDown,
+	HEDA_CameraLeft,
+	HEDA_CameraRight,
+	HEDA_CameraUp,
+	HEDA_CameraDown,
+	HEDA_CameraForward,
+	HEDA_CameraBack,
+	HEDA_CameraRotate,
+	HEDA_CameraRotateCC,
+	HEDA_NextFace,
+	HEDA_PrevFace,
+	HEDA_NextObject,
+	HEDA_ObjectPlusX,
+	HEDA_ObjectMinusX,
+	HEDA_ObjectPlusY,
+	HEDA_ObjectMinusY,
+	HEDA_ObjectPlusZ,
+	HEDA_ObjectMinusZ,
+	HEDA_ObjectRotateX,
+	HEDA_ObjectRotateXr,
+	HEDA_ObjectRotateY,
+	HEDA_ObjectRotateYr,
+	HEDA_ObjectRotateZ,
+	HEDA_ObjectRotateZr,
+	HEDA_ScaleUp,
+	HEDA_ScaleDown,
+	HEDA_ResetView,
+	HEDA_MAX
+};
+
+Laxkit::ShortcutHandler *HedronWindow::GetShortcuts()
 {
-	if (!win_on) return 0;
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler(whattype());
+	if (sc) return sc;
 
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
 
-	 //----chars available during all modes
-	if (ch=='q' && (state&LAX_STATE_MASK)==ControlMask) app->quit(); 
+	sc=new ShortcutHandler(whattype());
 
-	 //-----help mode 
-	if (mode==MODE_Help) {
-		//if (ch==LAX_Esc) { 
-			mode=oldmode;
-			needtodraw=1;
-			return 0;
-		//}
-		return 0;
-	}
+	sc->Add(HEDA_Help,           'h',0,0,           _("Help"),        _("Display help"),NULL,0);
+	sc->AddShortcut(LAX_F1,0,0, HEDA_Help);
+	sc->Add(HEDA_Papers,         'p',0,0,           _("TogglePapers"),_("Toggle paper overlay"),NULL,0);
+	sc->Add(HEDA_LoadPolyhedron, 'p',ControlMask,0, _("Hedron"),      _("Load new polyhedron"),NULL,0);
+	sc->Add(HEDA_LoadImage,      'i',ControlMask,0, _("Image"),       _("Load image"),NULL,0);
+	sc->Add(HEDA_ToggleMode,     '`',0,0,           _("Toggle mode"), _("Toggle between net and solid modes"),NULL,0);
+	sc->Add(HEDA_Render,         'r',ControlMask,0, _("Render"),      _("Render"),NULL,0);
+	sc->Add(HEDA_Save,           's',ControlMask,0, _("Save"),        _("Save"),NULL,0);
+	sc->Add(HEDA_SaveAs,         'S',ControlMask|ShiftMask,0, _("SaveAs"), _("Save as"),NULL,0);
+	sc->Add(HEDA_ResetNets,      'D',ShiftMask,0,   _("ResetNets"),    _("Delete all defined nets"),NULL,0);
+	sc->Add(HEDA_TotalUnwrap,    'A',ShiftMask,0,   _("TotalUnwrap"),  _("Totally unwrap"),NULL,0);
+	sc->Add(HEDA_ThickenCylinder,'[',0,0,           _("ThickenLines"), _("Thicken seam and path indicators"),NULL,0);
+	sc->Add(HEDA_ThinCylinder,   ']',0,0,           _("ThinLines"),    _("Thin seam and path indicators"),NULL,0);
+	sc->Add(HEDA_DrawSeams,      'n',0,0,           _("DrawSeams"),    _("Toggle drawing seams"),NULL,0);
+	sc->Add(HEDA_ToggleTexture,  't',0,0,           _("ToggleTexture"),_("Toggle using texture"),NULL,0);
+	sc->Add(HEDA_DrawEdges,      'l',0,0,           _("DrawEdges"),    _("Toggle drawing edges"),NULL,0);
+	sc->Add(HEDA_RenderMode,     'm',0,0,           _("RenderMode"),   _("Toggle render mode"),NULL,0);
+	sc->Add(HEDA_Camera,         'c',0,0,           _("Camera"),       _("Select next camera"),NULL,0);
+	sc->Add(HEDA_PanLeft,        LAX_Left,0,0,      _("PanLeft"),      _("Pan camera left"),NULL,0);
+	sc->Add(HEDA_PanRight,       LAX_Right,0,0,     _("PanRight"),     _("Pan camera right"),NULL,0);
+	sc->Add(HEDA_PanUp,          LAX_Up,0,0,        _("PanUp"),        _("Pan camera up"),NULL,0);
+	sc->Add(HEDA_PanDown,        LAX_Down,0,0,      _("PanDown"),      _("Pan camera down"),NULL,0);
+	sc->Add(HEDA_CameraLeft,     LAX_Left,ControlMask,0,            _("CameraLeft"),    _("Move camera left"),NULL,0);
+	sc->Add(HEDA_CameraRight,    LAX_Right,ControlMask,0,           _("CameraRight"),   _("Move camera right"),NULL,0);
+	sc->Add(HEDA_CameraUp,       LAX_Up,ControlMask|ShiftMask,0,    _("CameraUp"),      _("Move camera up"),NULL,0);
+	sc->Add(HEDA_CameraDown,     LAX_Down,ControlMask|ShiftMask,0,  _("CameraDown"),    _("Move camera down"),NULL,0);
+	sc->Add(HEDA_CameraForward,  LAX_Up,ControlMask,0,              _("CameraForward"), _("Move camera forward"),NULL,0);
+	sc->Add(HEDA_CameraBack,     LAX_Down,ControlMask,0,            _("CameraBack"),    _("Move camera back"),NULL,0);
+	sc->Add(HEDA_CameraRotate,   LAX_Left,ControlMask|ShiftMask,0,  _("CameraRotate"),  _("Rotate camera clockwise"),NULL,0);
+	sc->Add(HEDA_CameraRotateCC, LAX_Right,ControlMask|ShiftMask,0, _("CameraRotateCC"),_("Rotate camera counterclockwise"),NULL,0);
+	sc->Add(HEDA_NextFace,       'w',0,0,        _("NextFace"),    _("Select next face"),NULL,0);
+	sc->Add(HEDA_PrevFace,       'v',0,0,        _("PrevFace"),    _("Select previous face"),NULL,0);
+	sc->Add(HEDA_NextObject,     '=',0,0,        _("NextObject"),  _("Select next object"),NULL,0);
+	sc->Add(HEDA_ObjectPlusX,    'x',0,0,        _("ObjectPlusX"), _("Move object in its positive x direction"),NULL,0);
+	sc->Add(HEDA_ObjectMinusX,   'X',ShiftMask,0,_("ObjectMinusX"),_("Move object in its negative x direction"),NULL,0);
+	sc->Add(HEDA_ObjectPlusY,    'y',0,0,        _("ObjectPlusY"), _("Move object in its positive y direction"),NULL,0);
+	sc->Add(HEDA_ObjectMinusY,   'Y',ShiftMask,0,_("ObjectMinusY"),_("Move object in its negative y direction"),NULL,0);
+	sc->Add(HEDA_ObjectPlusZ,    'z',0,0,        _("ObjectPlusZ"), _("Move object in its positive z direction"),NULL,0);
+	sc->Add(HEDA_ObjectMinusZ,   'Z',ShiftMask,0,_("ObjectMinusZ"),_("Move object in its negative z direction"),NULL,0);
+	sc->Add(HEDA_ObjectRotateX,  'x',ControlMask,0,          _("ObjectRotateX"), _("Rotate object around x axis"),NULL,0);
+	sc->Add(HEDA_ObjectRotateXr, 'X',ControlMask|ShiftMask,0,_("ObjectRotateXr"),_("Rotate object around x axis the other way"),NULL,0);
+	sc->Add(HEDA_ObjectRotateY,  'y',ControlMask,0,          _("ObjectRotateY"), _("Rotate object around y axis"),NULL,0);
+	sc->Add(HEDA_ObjectRotateYr, 'Y',ControlMask|ShiftMask,0,_("ObjectRotateYr"),_("Rotate object around y axis the other way"),NULL,0);
+	sc->Add(HEDA_ObjectRotateZ,  'z',ControlMask,0,          _("ObjectRotateZ"), _("Rotate object around z axis"),NULL,0);
+	sc->Add(HEDA_ObjectRotateZr, 'Z',ControlMask|ShiftMask,0,_("ObjectRotateZr"),_("Rotate object around z axis the other way"),NULL,0);
+	sc->Add(HEDA_ScaleUp,        '0',0,0,        _("ScaleUp"),     _("Scale object up"),NULL,0);
+	sc->Add(HEDA_ScaleDown,      '9',0,0,        _("ScaleDown"),   _("Scale object down"),NULL,0);
+	sc->Add(HEDA_ResetView,      ' ',0,0,        _("ResetView"),   _("Make camera point at object from a reasonable distance"),NULL,0);
 
+	manager->AddArea(whattype(),sc);
+	return sc;
+}
 
-	 //------ net, solid, faceset   modes
-
-	if (ch=='h' || ch=='?' || ch==LAX_F1) {
+/*! Return 0 for action performed, else 1.
+ */
+int HedronWindow::PerformAction(int action)
+{
+	if (action==HEDA_Help) {
 		oldmode=mode;
 		mode=MODE_Help;
 		needtodraw=1;
 		DBG cerr <<"--switching to help mode"<<endl;
 		return 0;
-	}
 
-	if (ch==LAX_Esc) { 
-		if (mode==MODE_Net && currentnet) {
-			 //deactivate current net
-			if (currentnet->numActual()==1) removeNet(currentnet);
-			if (currentnet) currentnet->dec_count();
-			currentnet=NULL;
-			needtodraw=1;
-		}
-		return 0;
-
-	} else if (ch=='p' && (state&LAX_STATE_MASK)==0) {
+	} else if (action==HEDA_Papers) {
 		draw_papers=!draw_papers;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='p' && (state&LAX_STATE_MASK)==ControlMask) {
+	} else if (action==HEDA_LoadPolyhedron) {
 		 //change polyhedron
 		FileDialog *f= new FileDialog(NULL,
 									_("New Polyhedron"),_("New Polyhedron"),
@@ -3127,7 +3218,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		app->rundialog(f);
 		return 0;
 
-	} else if (ch=='i' && (state&LAX_STATE_MASK)==ControlMask) {
+	} else if (action==HEDA_LoadImage) {
 		 //change image
 		app->rundialog(new FileDialog(NULL,_("New Image"),_("New Image"),
 									ANXWIN_REMEMBER,
@@ -3136,8 +3227,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 									));
 		return 0;
 
-
-	} else if (ch=='`') {
+	} else if (action==HEDA_ToggleMode) {
 		 //toggle view solid mode
 		if (mode==MODE_Net) { 
 			mode=MODE_Solid; 
@@ -3149,7 +3239,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		} else if (mode==MODE_Solid) { mode=MODE_Net; remapCache(); needtodraw=1; }
 		return 0;
 
-	} else if (ch=='r' && (state&LAX_STATE_MASK)==ControlMask) {
+	} else if (action==HEDA_Render) {
 		 //render with spheretopoly
 		app->rundialog(new FileDialog(NULL, _("Select render directory"),_("Select render directory"),
 									ANXWIN_REMEMBER,
@@ -3158,10 +3248,10 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 									"render###.png",polyptychfile));
 		return 0;
 
-	} else if (ch=='s' || (ch=='S' && (state&LAX_STATE_MASK)==(ShiftMask|ControlMask))) {
+	} else if (action==HEDA_Save || action==HEDA_SaveAs) {
 		 //save to a polyptych file
 		char *file=NULL;
-		int saveas=state&ControlMask;
+		int saveas=(action==HEDA_SaveAs);
 
 		if (!polyptychfile) {
 			saveas=1;
@@ -3206,7 +3296,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		delete[] file;
 		return 0;
 
-	} else if (ch=='D') {
+	} else if (action==HEDA_ResetNets) {
 		 //remove the current net, reverting all faces to no net
 		if (!currentnet) return 0;
 		for (int c=0; c<currentnet->faces.n; c++) {
@@ -3218,32 +3308,43 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		needtodraw=1;
 		return 0;
 
+	} else if (action==HEDA_TotalUnwrap) {
+		 //total unwrap
+		while (nets.n>1) nets.remove(nets.n-1);
+		if (nets.n==0) {
+			Net *net=new Net;
+			net->_config=1;
+			net->Basenet(poly);
+			net->Unwrap(-1,0);
+			poly->faces.e[0]->cache->facemode=-net->object_id;
+			net->info=0;
 
-	} else if (ch=='N') {
-		 //stare right into currentnet or currentface
-		if (currentnet) {
-			cout <<"**** implement stare at currentnet!!"<<endl;
-			needtodraw=1;
-		} else if (currentface>=0) {
-			cout <<"**** implement stare at currentface!!"<<endl;
-			needtodraw=1;
+			nets.push(net);
+			net->dec_count();
 		}
+		nets.e[0]->TotalUnwrap();
+		for (int c=0; c<poly->faces.n; c++) {
+			if (c==nets.e[0]->info) poly->faces.e[c]->cache->facemode=-nets.e[0]->object_id;
+			poly->faces.e[c]->cache->facemode=nets.e[0]->object_id;
+		}
+		remapCache();
+		needtodraw=1;
 		return 0;
 
-	} else if (ch=='[') {
+	} else if (action==HEDA_ThickenCylinder) {
 		 //resize cylinder width
 		cylinderscale*=.9;
 		if (cylinderscale<=.001) cylinderscale=.001;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch==']') {
+	} else if (action==HEDA_ThinCylinder) {
 		 //resize cylinder width
 		cylinderscale*=1.1;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='n') {
+	} else if (action==HEDA_DrawSeams) {
 		draw_seams++;
 		if (draw_seams>3) draw_seams=0;
 		if (draw_seams==0) newMessage(_("Do not draw net edges or unwrap path."));
@@ -3253,17 +3354,17 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='t') {
+	} else if (action==HEDA_ToggleTexture) {
 		draw_texture=!draw_texture;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='l') {
+	} else if (action==HEDA_DrawEdges) {
 		draw_edges=!draw_edges;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='m' && (state&LAX_STATE_MASK)==ControlMask) {
+	} else if (action==HEDA_RenderMode) {
 		 //low level render mode
 		if (rendermode==0) rendermode=1;
 		else if (rendermode==1) rendermode=2;
@@ -3272,8 +3373,10 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		if (rendermode==1) glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 		if (rendermode==2) glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 		needtodraw=1;
+		return 0;
 			
-	} else if (ch=='c') { // change camera
+	} else if (action==HEDA_Camera) {
+		 // change camera
 		current_camera++;
 		if (current_camera>=cameras.n) current_camera=0;
 		DBG cerr<<"----new camera: "<<current_camera<<endl;
@@ -3281,64 +3384,26 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		needtodraw=1;
 		return 0;
 
+	} else if (action==HEDA_PanLeft) {
+		cameras.e[current_camera]->Rotate(-5./180*M_PI,'y');
+		cameras.e[current_camera]->transformTo();
+		//--------------
+		//		rotate(cameras.e[current_camera]->m,    //basis
+		//			   cameras.e[current_camera]->m.y,  //axis
+		//			   5./180*M_PI); //angle
+		//		cameras.e[current_camera]->transformTo();
 
-	} else if (ch=='\\') {
-		//***not used
-		view++;
-		if (view==3) view=0;
-		needtodraw=1;
+		//		glPushMatrix();
+		//		glLoadIdentity();
+		//		glRotatef(-5,0,1,0);
+		//		glMultMatrixf(eyem);
+		//		glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
+		//		glPopMatrix();
 
-	} else if (ch=='a') { // rotates camera left
-		if ((state&LAX_STATE_MASK)==ControlMask) {
-			 //total unwrap
-			while (nets.n>1) nets.remove(nets.n-1);
-			if (nets.n==0) {
-				Net *net=new Net;
-				net->_config=1;
-				net->Basenet(poly);
-				net->Unwrap(-1,0);
-				poly->faces.e[0]->cache->facemode=-net->object_id;
-				net->info=0;
-
-				nets.push(net);
-				net->dec_count();
-			}
-			nets.e[0]->TotalUnwrap();
-			for (int c=0; c<poly->faces.n; c++) {
-				if (c==nets.e[0]->info) poly->faces.e[c]->cache->facemode=-nets.e[0]->object_id;
-				poly->faces.e[c]->cache->facemode=nets.e[0]->object_id;
-			}
-			remapCache();
-			needtodraw=1;
-
-		} else {
-			cameras.e[current_camera]->Rotate(-5./180*M_PI,'y');
-			cameras.e[current_camera]->transformTo();
-			//--------------
-			//		rotate(cameras.e[current_camera]->m,    //basis
-			//			   cameras.e[current_camera]->m.y,  //axis
-			//			   5./180*M_PI); //angle
-			//		cameras.e[current_camera]->transformTo();
-
-			//		glPushMatrix();
-			//		glLoadIdentity();
-			//		glRotatef(-5,0,1,0);
-			//		glMultMatrixf(eyem);
-			//		glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
-			//		glPopMatrix();
-
-			needtodraw=1; 
-		}
+		needtodraw=1; 
 		return 0;
 
-	} else if (ch== 'A') {// move camera left
-		//eyem[11]-=1; // the x translation part
-		cameras.e[current_camera]->m.p+=cameras.e[current_camera]->m.x; // the x translation part
-		cameras.e[current_camera]->transformTo();
-		needtodraw=1;
-				
-
-	} else if (ch=='e') { // rotates right
+	} else if (action==HEDA_PanRight) {
 		cameras.e[current_camera]->Rotate(5./180*M_PI,'y');
 		cameras.e[current_camera]->transformTo();
 		//--------------
@@ -3355,14 +3420,26 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		//glPopMatrix();
 
 		needtodraw=1; 
-	} else if (ch=='E') {		 // move camera right
-		//eyem[12]-=1; // the x translation part
-		cameras.e[current_camera]->m.p-=cameras.e[current_camera]->m.x; // the x translation part
-		cameras.e[current_camera]->transformTo();
-		needtodraw=1;
-				
+		return 0;
 
-	} else if (ch==',') { // rotates down
+	} else if (action==HEDA_PanUp) {
+		cameras.e[current_camera]->Rotate(5./180*M_PI,'x');
+		cameras.e[current_camera]->transformTo();
+		//--------------
+//		rotate(cameras.e[current_camera]->m,    //basis
+//			   cameras.e[current_camera]->m.x,  //axis
+//			   5./180*M_PI); //angle
+//		cameras.e[current_camera]->transformTo();
+		//glPushMatrix();
+		//glLoadIdentity();
+		//glRotatef(5,1,0,0);
+		//glMultMatrixf(eyem);
+		//glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
+		//glPopMatrix();
+		needtodraw=1; 
+		return 0;
+
+	} else if (action==HEDA_PanDown) {
 		cameras.e[current_camera]->Rotate(-5./180*M_PI,'x');
 		cameras.e[current_camera]->transformTo();
 		//--------------
@@ -3378,36 +3455,51 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		//glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
 		//glPopMatrix();
 		needtodraw=1; 
-	} else if (ch=='<') { // move camera forward
+		return 0;
+
+	} else if (action==HEDA_CameraLeft) {
+		//eyem[11]-=1; // the x translation part
+		cameras.e[current_camera]->m.p+=cameras.e[current_camera]->m.x; // the x translation part
+		cameras.e[current_camera]->transformTo();
+		needtodraw=1;
+		return 0;
+				
+	} else if (action==HEDA_CameraRight) {
+		//eyem[12]-=1; // the x translation part
+		cameras.e[current_camera]->m.p-=cameras.e[current_camera]->m.x; // the x translation part
+		cameras.e[current_camera]->transformTo();
+		needtodraw=1;
+		return 0;		
+
+	} else if (action==HEDA_CameraUp) {
+		//eyem[13]+=1; // the y translation part
+		cameras.e[current_camera]->m.p+=cameras.e[current_camera]->m.y; // the x translation part
+		cameras.e[current_camera]->transformTo();
+		needtodraw=1;
+		return 0;	
+				
+	} else if (action==HEDA_CameraDown) {
+		//eyem[13]-=1; // the y translation part
+		cameras.e[current_camera]->m.p-=cameras.e[current_camera]->m.y; // the x translation part
+		cameras.e[current_camera]->transformTo();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==HEDA_CameraForward) {
 		//eyem[14]+=1; // the z translation part
 		cameras.e[current_camera]->m.p-=cameras.e[current_camera]->m.z; // the x translation part
 		cameras.e[current_camera]->transformTo();
 		needtodraw=1;
+		return 0;
 				
-
-	} else if (ch=='o') { // rotates up
-		cameras.e[current_camera]->Rotate(5./180*M_PI,'x');
-		cameras.e[current_camera]->transformTo();
-		//--------------
-//		rotate(cameras.e[current_camera]->m,    //basis
-//			   cameras.e[current_camera]->m.x,  //axis
-//			   5./180*M_PI); //angle
-//		cameras.e[current_camera]->transformTo();
-		//glPushMatrix();
-		//glLoadIdentity();
-		//glRotatef(5,1,0,0);
-		//glMultMatrixf(eyem);
-		//glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
-		//glPopMatrix();
-		needtodraw=1; 
-	} else if (ch=='O') { // move camera backward
+	} else if (action==HEDA_CameraBack) {
 		//eyem[14]-=1; // the z translation part
 		cameras.e[current_camera]->m.p+=cameras.e[current_camera]->m.z; // the x translation part
 		cameras.e[current_camera]->transformTo();
 		needtodraw=1;
-				
+		return 0;	
 
-	} else if (ch=='\'') { // rotates clockwise
+	} else if (action==HEDA_CameraRotate) {
 		rotate(cameras.e[current_camera]->m,    //basis
 			   cameras.e[current_camera]->m.z,  //axis
 			   -5./180*M_PI); //angle
@@ -3419,14 +3511,9 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		//glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
 		//glPopMatrix();
 		needtodraw=1; 
-	} else if (ch=='"') {  // move camera down
-		//eyem[13]+=1; // the y translation part
-		cameras.e[current_camera]->m.p+=cameras.e[current_camera]->m.y; // the x translation part
-		cameras.e[current_camera]->transformTo();
-		needtodraw=1;
-				
+		return 0;
 
-	} else if (ch=='.') { // cntl rotates clockwise
+	} else if (action==HEDA_CameraRotateCC) {
 		rotate(cameras.e[current_camera]->m,    //basis
 			   cameras.e[current_camera]->m.z,  //axis
 			   5./180*M_PI); //angle
@@ -3438,79 +3525,164 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		//glGetFloatv(GL_MODELVIEW_MATRIX,eyem);
 		//glPopMatrix();
 		needtodraw=1; 
-	} else if (ch=='>') { // move camera down
-		//eyem[13]-=1; // the y translation part
-		cameras.e[current_camera]->m.p-=cameras.e[current_camera]->m.y; // the x translation part
-		cameras.e[current_camera]->transformTo();
-		needtodraw=1;
+		return 0;
 
-				
-	} else if (ch==' ') { //force refresh
-			needtodraw=1;
-
-			
-	} else if (ch=='w') {
+	} else if (action==HEDA_NextFace) {
 		currentface++;
 		if (currentface>=poly->faces.n) currentface=0;
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='v') {
+	} else if (action==HEDA_PrevFace) {
 		currentface--;
 		if (currentface<0) currentface=poly->faces.n-1;
 		needtodraw=1;
 		return 0;
 
+	} else if (action==HEDA_NextObject) {
+		if (++curobj>=things.n) curobj=0;
+		DBG cerr <<"curobj="<<curobj<<" id="<<things.e[curobj]->id<<endl;
+		return 0;
 
-	} else if (ch=='=') { // select next object
-					  if (++curobj>=things.n) curobj=0;
-					  cout <<"curobj="<<curobj<<" id="<<things.e[curobj]->id<<endl;
+	} else if (action==HEDA_ObjectPlusX) {
+		things.e[curobj]->Translate(movestep, 0., 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectMinusX) {
+		things.e[curobj]->Translate(-movestep,0., 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectPlusY) {
+		things.e[curobj]->Translate(0., movestep, 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectMinusY) {
+		things.e[curobj]->Translate(0.,-movestep, 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectPlusZ) {
+		things.e[curobj]->Translate(0., 0., movestep);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectMinusZ) {
+		things.e[curobj]->Translate(0., 0., -movestep);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectRotateX) {
+		things.e[curobj]->Rotate(5., 0., 1., 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectRotateXr) {
+		things.e[curobj]->Rotate(-5., 0., 1., 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectRotateY) {
+		things.e[curobj]->Rotate(5., 0., 0., 1.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectRotateYr) {
+		things.e[curobj]->Rotate(-5., 0., 0., 1.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectRotateZ) {
+		things.e[curobj]->Rotate(-5., 1., 0., 0.);
+		needtodraw=1;
+		return 0;
+			
+	} else if (action==HEDA_ObjectRotateZr) {
+		things.e[curobj]->Rotate(5., 1., 0., 0.);
+		needtodraw=1;
+		return 0;
 
-		 //---------- Object Movement Controls ------------
-	} else if (ch==LAX_Up) { // +x
-				if (state&ControlMask) things.e[curobj]->Rotate(5., 0., 1., 0.);
-				else things.e[curobj]->Translate(movestep, 0., 0.);
-				needtodraw=1;
-			
-	} else if (ch==LAX_Left) {  // -y
-				if (state&ControlMask) things.e[curobj]->Rotate(-5., 0., 0., 1.);
-				else things.e[curobj]->Translate(0.,-movestep, 0.);
-				needtodraw=1;
-			
-	} else if (ch==LAX_Down) { // -x
-				if (state&ControlMask) things.e[curobj]->Rotate(-5., 0., 1., 0.);
-				else things.e[curobj]->Translate(-movestep,0., 0.);
-				needtodraw=1;
-			
-	} else if (ch==LAX_Right) { // +y
-				if (state&ControlMask) things.e[curobj]->Rotate(5., 0., 0., 1.);
-				else things.e[curobj]->Translate(0., movestep, 0.);
-				needtodraw=1;
-			
-	} else if (ch==LAX_Pgdown) { // -z
-				if (state&ControlMask) things.e[curobj]->Rotate(5., 1., 0., 0.);
-				else things.e[curobj]->Translate(0., 0., -movestep);
-				needtodraw=1;
-			
-	} else if (ch==LAX_Pgup) { // +z
-				if (state&ControlMask) things.e[curobj]->Rotate(-5., 1., 0., 0.);
-				else things.e[curobj]->Translate(0., 0., movestep);
-				needtodraw=1;
-			
-	//-----------------------DBG---------------------
-	} else if (ch=='0') { // scale up hedron
-			hedron->SetScale(1.2,1.2,1.2);
+
+	} else if (action==HEDA_ScaleUp) {
+		hedron->SetScale(1.2,1.2,1.2);
+		needtodraw=1;
+		return 0; 
+
+	} else if (action==HEDA_ScaleDown) {
+		hedron->SetScale(.8,.8,.8);
+		needtodraw=1;
+		return 0; 
+
+	} else if (action==HEDA_ResetView) {
+		//***
+		needtodraw=1;
+		return 0;
+	}
+
+
+//	} else if (ch=='N') {
+//		 //stare right into currentnet or currentface
+//		if (currentnet) {
+//			cout <<"**** implement stare at currentnet!!"<<endl;
+//			needtodraw=1;
+//		} else if (currentface>=0) {
+//			cout <<"**** implement stare at currentface!!"<<endl;
+//			needtodraw=1;
+//		}
+//		return 0;
+//	}
+
+//	} else if (ch=='\\') {
+//		//***not used
+//		view++;
+//		if (view==3) view=0;
+//		needtodraw=1;
+
+
+
+	return 1;
+}
+
+int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const LaxKeyboard *kb)
+{
+	if (!win_on) return 0;
+
+	 //-----help mode, consumes any key press
+	if (mode==MODE_Help) {
+		//if (ch==LAX_Esc) { 
+			mode=oldmode;
 			needtodraw=1;
-			return 0; 
+			return 0;
+		//}
+		return 0;
 
-	} else if (ch=='9') { // scale down hedron
-			hedron->SetScale(.8,.8,.8);
+	} else 	if (ch==LAX_Esc) { 
+		if (mode==MODE_Net && currentnet) {
+			 //deactivate current net
+			if (currentnet->numActual()==1) removeNet(currentnet);
+			if (currentnet) currentnet->dec_count();
+			currentnet=NULL;
 			needtodraw=1;
-			return 0; 
+		}
+		return 0;
+	}
 
 
-	} else return anXWindow::CharInput(ch,buffer,len,state,kb);
-	return 0;
+	if (!sc) GetShortcuts();
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+		return PerformAction(action);
+	}
+
+
+	 //----chars available during all modes
+	if (ch=='q' && (state&LAX_STATE_MASK)==ControlMask) { app->quit(); return 0; }
+
+
+
+	return anXWindow::CharInput(ch,buffer,len,state,kb);
 }
 
 
