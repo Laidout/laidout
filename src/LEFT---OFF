@@ -87,6 +87,10 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
+document laxconfig/appcolors in laidoutrc
+
+for help, need some standardized way to list mouse actions!!
+
 test #, ', and " for shortcut dump
 numberpadmask?
 shortcut edit dialog

@@ -75,6 +75,9 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	void drawHandle(ActionArea *area, flatpoint offset);
 
 	void dumpFoldinfo();//for debugging
+
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
  public:
 	Signature *signature;
 	PaperStyle *papersize;
@@ -83,6 +86,7 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	SignatureInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~SignatureInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual const char *Name();
 	virtual const char *IconId() { return "Folding"; }
 	virtual const char *whattype() { return "SignatureInterface"; }

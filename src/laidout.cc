@@ -516,9 +516,45 @@ int LaidoutApp::createlaidoutrc()
 			fprintf(f,"\n"
 					  "# Laidout global configuration options go in here.\n"
 					  "\n"
-					  "# If you want to use a custom splash image:\n"
+
+					   //shortcuts
+					  " #By default when you modify shortcuts in Laidout, they are saved in ./shortcuts.\n"
+					  " #Listing another file here will load keys from that file first, THEN the ./shortcuts will\n"
+					  " #load on top of that.\n"
+					  "#shortcuts shortcutsfile\n"
+					  "\n"
+
+					   //splash image
+					  " #If you want to use a custom splash image:\n"
 					  "#splashimage /path/to/it\n"
 					  "\n"
+
+					   //drop shadow
+					  "# Customize how some things get dispalyed or entered:\n"
+					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
+					  "#defaultunits inches #the default units to use in controls. In files, it is always inches.\n"
+					  //" # Alternately, you can specify the maximum width and height separately:\n"
+					  //"#maxPreviewWidth 200\n"
+					  //"#maxPreviewHeight 200\n"
+					  "\n"
+
+					   //default template
+					  " #if the following is commented out, then running \"laidout\" will\n"
+					  " #always bring up the new document dialog. If it is uncommented, then the\n"
+					  " #specified file is loaded with the filename removed so that trying to save will\n"
+					  " #force entering a new name and location. If the file is not an absolute path,\n"
+					  " #then it is assumed to be relative to ~/.laidout/(version)/templates.\n"
+					  "#default_template default\n"
+					  "\n"
+
+					   //resource directories
+					  " # Some assorted directories:\n");
+			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
+			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
+					  "\n"
+
+					   //preview generation
+					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
 					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
 					  " #the automatic creation of a smaller preview image file.\n"
 					  "#previewThreshhold 200kb\n"
@@ -550,25 +586,6 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 					  "\n# The maximum width or height for preview images\n"
 					  "#maxPreviewLength 200\n"
-					  "\n"
-					  "# Customize how some things get dispalyed or entered:\n"
-					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
-					  "#defaultunits inches #the default units to use in controls. In files, it is always inches.\n"
-					  //" # Alternately, you can specify the maximum width and height separately:\n"
-					  //"#maxPreviewWidth 200\n"
-					  //"#maxPreviewHeight 200\n"
-					  "\n"
-
-					  " #if the following is commented out, then running \"laidout\" will\n"
-					  " #always bring up the new document dialog. If it is uncommented, then the\n"
-					  " #specified file is loaded with the filename removed so that trying to save will\n"
-					  " #force entering a new name and location. If the file is not an absolute path,\n"
-					  " #then it is assumed to be relative to ~/.laidout/(version)/templates.\n"
-					  "#default_template default\n"
-					  "\n"
-					  " # Some assorted directories:\n");
-			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
-			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
 					  "\n"
 					  "\n");
 			fclose(f);
@@ -618,6 +635,11 @@ int LaidoutApp::readinLaidoutDefaults()
 			//*** this, or force use of laxconfig?
 			dump_in_colors(att.attributes.e[c]);
 			
+		} else if (!strcmp(name,"shortcuts")) {
+			InitializeShortcuts();
+			ShortcutManager *m=GetDefaultShortcutManager();
+			m->Load(value);
+
 		} else if (!strcmp(name,"default_template")) {
 			if (file_exists(value,1,NULL)==S_IFREG) makestr(default_template,value);
 			else {

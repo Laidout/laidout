@@ -17,6 +17,7 @@
 #define LAIDOUT_H
 
 #include <lax/anxapp.h>
+#include <lax/iconmanager.h>
 
 #include "errorlog.h"
 #include "papersizes.h"
@@ -25,7 +26,6 @@
 #include "interfaces.h"
 #include "calculator/calculator.h"
 #include "impositions/imposition.h"
-#include "iconmanager.h"
 #include "filetypes/filefilters.h"
 
 const char *LaidoutVersion();
@@ -108,7 +108,7 @@ class LaidoutApp : public Laxkit::anXApp
 	char *icon_dir;
 	char *temp_dir;
 
-	IconManager icons;
+	Laxkit::IconManager icons;
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
@@ -130,6 +130,7 @@ class LaidoutApp : public Laxkit::anXApp
 
 	int dump_out_file_format(const char *file, int nooverwrite);
 	int dump_out_shortcuts(FILE *f, int indent);
+	void InitializeShortcuts();
 	int DumpWindows(FILE *f,int indent,Document *doc);
 	int IsProject();
 

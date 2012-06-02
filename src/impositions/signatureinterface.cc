@@ -148,6 +148,8 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	arrowscale=1;
 	activetilex=activetiley=0;
 	//remapHandles();
+
+	sc=NULL;
 }
 
 SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -172,6 +174,8 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 
 	reallocateFoldinfo();
 	checkFoldLevel(1);
+
+	sc=NULL;
 }
 
 SignatureInterface::~SignatureInterface()
@@ -180,6 +184,7 @@ SignatureInterface::~SignatureInterface()
 
 	if (signature) signature->dec_count();
 	if (papersize) papersize->dec_count();
+	if (sc) sc->dec_count();
 }
 
 const char *SignatureInterface::Name()
@@ -2218,25 +2223,84 @@ static const char *masktostr(int m)
 	return "?";
 }
 
-int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+enum SignatureInterfaceActions {
+	SIA_Decorations,
+	SIA_Center,
+	SIA_InsetMask,
+	SIA_InsetInc,
+	SIA_InsetDec,
+	SIA_GapInc,
+	SIA_GapDec,
+	SIA_TileXInc,
+	SIA_TileXDec,
+	SIA_TileYInc,
+	SIA_TileYDec,
+	SIA_NumFoldsVInc,
+	SIA_NumFoldsVDec,
+	SIA_NumFoldsHInc,
+	SIA_NumFoldsHDec,
+	SIA_BindingEdge,
+	SIA_BindingEdgeR,
+	SIA_PageOrientation,
+	SIA_TrimMask,
+	SIA_TrimInc,
+	SIA_TrimDec,
+	SIA_MarginMask,
+	SIA_MarginInc,
+	SIA_MarginDec,
+	SIA_MAX
+};
+
+Laxkit::ShortcutHandler *SignatureInterface::GetShortcuts()
 {
-	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	if (sc) return sc;
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	sc=manager->NewHandler("SignatureInterface");
+	if (sc) return sc;
 
-	if (showsplash) { showsplash=0; needtodraw=1; }
+	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
 
-	if (ch=='d' && (state&LAX_STATE_MASK)==0) {
+	sc=new ShortcutHandler("SignatureInterface");
+
+	sc->Add(SIA_Decorations,     'd',0,0,          "Decorations",    _("Toggle decorations"),NULL,0);
+	sc->Add(SIA_Center,          ' ',0,0,          "Center",         _("Center view"),NULL,0);
+	sc->Add(SIA_InsetMask,       'i',ControlMask,0,"InsetMask",      _("Toggle which inset to change"),NULL,0);
+	sc->Add(SIA_InsetInc,        'i',0,0,          "InsetInc",       _("Increment inset"),NULL,0);
+	sc->Add(SIA_InsetDec,        'I',ShiftMask,0,  "InsetDec",       _("Decrement inset"),NULL,0);
+	sc->Add(SIA_GapInc,          'g',0,0,          "GapInc",         _("Increment gap"),NULL,0);
+	sc->Add(SIA_GapDec,          'G',ShiftMask,0,  "GapDec",         _("Decrement gap"),NULL,0);
+	sc->Add(SIA_TileXInc,        'x',0,0,          "TileXInc",       _("Increase number of tiles horizontally"),NULL,0);
+	sc->Add(SIA_TileXDec,        'X',ShiftMask,0,  "TileXDec",       _("Decrease number of tiles horizontally"),NULL,0);
+	sc->Add(SIA_TileYInc,        'y',0,0,          "TileYInc",       _("Increase number of tiles vertically"),NULL,0);
+	sc->Add(SIA_TileYDec,        'Y',ShiftMask,0,  "TileYDec",       _("Decrease number of tiles vertically"),NULL,0);
+	sc->Add(SIA_NumFoldsVInc,    'v',0,0,          "NumFoldsVInc",   _("Increase number of vertical folds"),NULL,0);
+	sc->Add(SIA_NumFoldsVDec,    'V',ShiftMask,0,  "NumFoldsVDec",   _("Decrease number of vertical folds"),NULL,0);
+	sc->Add(SIA_NumFoldsHInc,    'h',0,0,          "NumFoldsHInc",   _("Increase number of horizontal folds"),NULL,0);
+	sc->Add(SIA_NumFoldsHDec,    'H',ShiftMask,0,  "NumFoldsHDec",   _("Decrease number of horizontal folds"),NULL,0);
+	sc->Add(SIA_BindingEdge,     'b',0,0,          "BindingEdge",    _("Next binding edge"),NULL,0);
+	sc->Add(SIA_BindingEdgeR,    'B',ShiftMask,0,  "BindingEdgeR",   _("Previous binding edge"),NULL,0);
+	sc->Add(SIA_PageOrientation, 'u',0,0,          "PageOrientation",_("Change page orientation"),NULL,0);
+	sc->Add(SIA_TrimMask,        't',ControlMask,0,"TrimMask",       _("Toggle which trim to change"),NULL,0);
+	sc->Add(SIA_TrimInc,         't',0,0,          "TrimInc",        _("Increase trim value"),NULL,0);
+	sc->Add(SIA_TrimDec,         'T',ShiftMask,0,  "TrimDec",        _("Decrease trim value"),NULL,0);
+	sc->Add(SIA_MarginMask,      'm',ControlMask,0,"MarginMask",     _("Toggle which margin to change"),NULL,0);
+	sc->Add(SIA_MarginInc,       'm',0,0,          "MarginInc",      _("Increase margin value"),NULL,0);
+	sc->Add(SIA_MarginDec,       'M',ShiftMask,0,  "MarginDec",      _("Decrease margin value"),NULL,0);
+
+	manager->AddArea("SignatureInterface",sc);
+	return sc;
+}
+
+int SignatureInterface::PerformAction(int action)
+{
+	if (action==SIA_Decorations) {
 		showdecs++;
 		if (showdecs>2) showdecs=0;
 		remapHandles();
 		needtodraw=1;
 		return 0;
 
-		//--------------select how many folds to display
-	} else if (ch>='0' && ch <='9') {
-		// ***
-		return 0;
-
-	} else if (ch==' ' && (state&LAX_STATE_MASK)==0) {
+	} else if (action==SIA_Center) {
 		int h=signature->totalheight;
 		int w=signature->totalwidth;
 		viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
@@ -2244,16 +2308,15 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 		
-		//--------------change inset
-	} else if (ch=='i') {
-		if ((state&LAX_STATE_MASK)==ControlMask) {
-			if (insetmask==15) insetmask=1;
-			else { insetmask<<=1; if (insetmask>15) insetmask=15; }
-			char str[100];
-			sprintf(str,_("Sets %s inset"),masktostr(insetmask));
-			viewport->postmessage(str);
-			return 0;
-		}
+	} else if (action==SIA_InsetMask) {
+		if (insetmask==15) insetmask=1;
+		else { insetmask<<=1; if (insetmask>15) insetmask=15; }
+		char str[100];
+		sprintf(str,_("Sets %s inset"),masktostr(insetmask));
+		viewport->postmessage(str);
+		return 0;
+
+	} else if (action==SIA_InsetInc) {
 		double step=signature->totalheight*.01;
 		if (insetmask&1) offsetHandle(SP_Inset_Top,    flatpoint(0,-step));
 		if (insetmask&4) offsetHandle(SP_Inset_Bottom, flatpoint(0,step));
@@ -2262,7 +2325,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='I') {
+	} else if (action==SIA_InsetDec) {
 		double step=signature->totalheight*.01;
 		if (insetmask&1) offsetHandle(SP_Inset_Top,    flatpoint(0,step));
 		if (insetmask&4) offsetHandle(SP_Inset_Bottom, flatpoint(0,-step));
@@ -2271,56 +2334,52 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
-		//--------------change tile gap
-	} else if (ch=='g') {
+	} else if (action==SIA_GapInc) {
 		double step=signature->totalheight*.01;
 		offsetHandle(SP_Tile_Gap_X, flatpoint(step,0));
 		offsetHandle(SP_Tile_Gap_Y, flatpoint(0,step));
 		return 0;
 
-	} else if (ch=='G') {
+	} else if (action==SIA_GapDec) {
 		double step=-signature->totalheight*.01;
 		offsetHandle(SP_Tile_Gap_X, flatpoint(step,0));
 		offsetHandle(SP_Tile_Gap_Y, flatpoint(0,step));
 		needtodraw=1;
 		return 0;
 
-		//-------------tilex and tiley
-	} else if (ch=='x') {
+	} else if (action==SIA_TileXInc) {
 		adjustControl(SP_Tile_X_top, 1);
 		return 0;
 
-	} else if (ch=='X') {
+	} else if (action==SIA_TileXDec) {
 		adjustControl(SP_Tile_X_top, -1);
 		return 0;
 
-	} else if (ch=='y') {
+	} else if (action==SIA_TileYInc) {
 		adjustControl(SP_Tile_Y_left, 1);
 		return 0;
 
-	} else if (ch=='Y') {
+	} else if (action==SIA_TileYDec) {
 		adjustControl(SP_Tile_Y_left, -1);
 		return 0;
 
-		//-----------numhfolds and numvfolds
-	} else if (ch=='v') {
+	} else if (action==SIA_NumFoldsVInc) {
 		adjustControl(SP_V_Folds_top, 1);
 		return 0;
 
-	} else if (ch=='V') {
+	} else if (action==SIA_NumFoldsVDec) {
 		adjustControl(SP_V_Folds_top, -1);
 		return 0;
 
-	} else if (ch=='h') {
+	} else if (action==SIA_NumFoldsHInc) {
 		adjustControl(SP_H_Folds_left, 1);
 		return 0;
 
-	} else if (ch=='H') {
+	} else if (action==SIA_NumFoldsHDec) {
 		adjustControl(SP_H_Folds_left, -1);
 		return 0;
 
-		//---------------move binding edge
-	} else if (ch=='b') {
+	} else if (action==SIA_BindingEdge) {
 		if (signature->binding=='l') signature->binding='t';
 		else if (signature->binding=='t') signature->binding='r';
 		else if (signature->binding=='r') signature->binding='b';
@@ -2328,7 +2387,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
-	} else if (ch=='B') {
+	} else if (action==SIA_BindingEdgeR) {
 		if (signature->binding=='l') signature->binding='b';
 		else if (signature->binding=='b') signature->binding='r';
 		else if (signature->binding=='r') signature->binding='t';
@@ -2336,8 +2395,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
-		//---------------page orientation
-	} else if (ch=='u') { //up direction
+	} else if (action==SIA_PageOrientation) {
 		if (signature->up=='l') signature->up='t';
 		else if (signature->up=='t') signature->up='r';
 		else if (signature->up=='r') signature->up='b';
@@ -2345,16 +2403,15 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		needtodraw=1;
 		return 0;
 
-		//--------------change page trim
-	} else if (ch=='t') {
-		if ((state&LAX_STATE_MASK)==ControlMask) {
-			if (trimmask==15) trimmask=1;
-			else { trimmask<<=1; if (trimmask>15) trimmask=15; }
-			char str[100];
-			sprintf(str,_("Set %s trim"),masktostr(trimmask));
-			viewport->postmessage(str);
-			return 0;
-		}
+	} else if (action==SIA_TrimMask) {
+		if (trimmask==15) trimmask=1;
+		else { trimmask<<=1; if (trimmask>15) trimmask=15; }
+		char str[100];
+		sprintf(str,_("Set %s trim"),masktostr(trimmask));
+		viewport->postmessage(str);
+		return 0;
+
+	} else if (action==SIA_TrimInc) {
 		double step=signature->PageHeight()*.01;
 		if (trimmask&1) offsetHandle(SP_Trim_Top,    flatpoint(0,-step));
 		if (trimmask&4) offsetHandle(SP_Trim_Bottom, flatpoint(0,step));
@@ -2362,7 +2419,7 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (trimmask&2) offsetHandle(SP_Trim_Right,  flatpoint(-step,0));
 		return 0;
 
-	} else if (ch=='T') {
+	} else if (action==SIA_TrimDec) {
 		double step=-signature->PageHeight()*.01;
 		if (trimmask&1) offsetHandle(SP_Trim_Top,    flatpoint(0,-step));
 		if (trimmask&4) offsetHandle(SP_Trim_Bottom, flatpoint(0,step));
@@ -2370,16 +2427,15 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (trimmask&2) offsetHandle(SP_Trim_Right,  flatpoint(-step,0));
 		return 0;
 
-		//--------------change page margin
-	} else if (ch=='m') {
-		if ((state&LAX_STATE_MASK)==ControlMask) {
-			if (marginmask==15) marginmask=1;
-			else { marginmask<<=1; if (marginmask>15) marginmask=15; }
-			char str[100];
-			sprintf(str,_("Set %s margin"),masktostr(marginmask));
-			viewport->postmessage(str);
-			return 0;
-		}
+	} else if (action==SIA_MarginMask) {
+		if (marginmask==15) marginmask=1;
+		else { marginmask<<=1; if (marginmask>15) marginmask=15; }
+		char str[100];
+		sprintf(str,_("Set %s margin"),masktostr(marginmask));
+		viewport->postmessage(str);
+		return 0;
+
+	} else if (action==SIA_MarginInc) {
 		double step=signature->PageHeight()*.01;
 		if (marginmask&1) offsetHandle(SP_Margin_Top,    flatpoint(0,-step));
 		if (marginmask&4) offsetHandle(SP_Margin_Bottom, flatpoint(0,step));
@@ -2387,14 +2443,28 @@ int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,un
 		if (marginmask&2) offsetHandle(SP_Margin_Right,  flatpoint(-step,0));
 		return 0;
 
-	} else if (ch=='M') {
+	} else if (action==SIA_MarginDec) {
 		double step=-signature->PageHeight()*.01;
 		if (marginmask&1) offsetHandle(SP_Margin_Top,    flatpoint(0,-step));
 		if (marginmask&4) offsetHandle(SP_Margin_Bottom, flatpoint(0,step));
 		if (marginmask&8) offsetHandle(SP_Margin_Left,   flatpoint(step,0));
 		if (marginmask&2) offsetHandle(SP_Margin_Right,  flatpoint(-step,0));
 		return 0;
+	}
 
+	return 1;
+}
+
+int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+{
+	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+
+	if (showsplash) { showsplash=0; needtodraw=1; }
+
+	if (!sc) GetShortcuts();
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+		return PerformAction(action);
 	}
 
 	return 1;
@@ -2447,6 +2517,7 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 
 	needtodraw=1;
 	tool=new SignatureInterface(1,viewport->dp,(sigimp?sigimp->signature:NULL),p);
+	tool->GetShortcuts();
 	if (imposearg) tool->showsplash=1;
 
 	AddTool(tool,1,1); // local, and select it
