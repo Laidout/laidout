@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2004-2007,2010 by Tom Lechner
 //
 
 #ifndef ICONMANAGER_H
@@ -36,9 +36,10 @@ class IconNode
 
 class IconManager : public Laxkit::PtrStack<IconNode>
 {
+  protected:
 	Laxkit::PtrStack<char> icon_path;
 	Laxkit::LaxImage *findicon(const char *name);
- public:
+  public:
 	IconManager();
 	int InstallIcon(const char *nname, int nid, const char *file);
 	int InstallIcon(const char *nname, int nid, Laxkit::LaxImage *img);
