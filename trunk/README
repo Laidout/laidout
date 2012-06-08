@@ -40,7 +40,7 @@ ssl, and cups.
 
 If you are on a debian based system, you can probably install these with this command:
 
-apt-get install g++ libpng12-dev libx11-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
+apt-get install g++ pkg-config libpng12-dev libx11-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
 
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
