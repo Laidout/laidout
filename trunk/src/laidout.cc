@@ -484,9 +484,8 @@ int LaidoutApp::IsProject()
  *
  * See also dump_out_file_format().
  *
- * \todo should separate the laidoutrc writing functions to allow easy dumping to any
- *   stream like stdout.
- * \todo how best to internationalize?
+ * \todo should separate the laidoutrc writing functions to allow easy dumping to any stream like stdout.
+ * \todo maybe be able to preserve user comments in a laidoutrc?
  */
 int LaidoutApp::createlaidoutrc()
 {
@@ -516,6 +515,9 @@ int LaidoutApp::createlaidoutrc()
 			fprintf(f,"#Laidout %s laidoutrc\n",LAIDOUT_VERSION);
 			fprintf(f,"\n"
 					  "# Laidout global configuration options go in here.\n"
+					  "# If you modify settings from within Laidout, this file will be overwritten,\n"
+					  "# and you'll lose any comments or formatting you have inserted.\n"
+					  "\n"
 					  "\n"
 
 					   //shortcuts
@@ -533,10 +535,14 @@ int LaidoutApp::createlaidoutrc()
 					   //drop shadow
 					  "# Customize how some things get dispalyed or entered:\n"
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
-					  "#defaultunits inches #the default units to use in controls. In files, it is always inches.\n"
-					  //" # Alternately, you can specify the maximum width and height separately:\n"
-					  //"#maxPreviewWidth 200\n"
-					  //"#maxPreviewHeight 200\n"
+					   //units
+					  "#defaultunits inches #the default units presented to the user. In files, it is always inches.\n"
+					  "\n"
+
+					   //colors
+					  "#colors\n"
+					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate active/inactive. Redefine here.\n"
+					  "#  deactivate rgbf  1 .39 .39\n"
 					  "\n"
 
 					   //default template
@@ -552,9 +558,31 @@ int LaidoutApp::createlaidoutrc()
 					  " # Some assorted directories:\n");
 			fprintf(f,"#icon_dir %s/icons\n",SHARED_DIRECTORY);
 			fprintf(f,"#palette_dir /usr/share/gimp/2.0/palettes\n"
+					  "\n");
+
+
+			fprintf(f,"laxprofile Light #Default built in profiles are Dark and Light. You can define others in the laxconfig section.\n");
+			fprintf(f,"laxconfig-sample #Remove the \"-sample\" part to redefine various default window behaviour settingss\n");
+			dump_out_rc(f,NULL,2,-1);
+			fprintf(f,"\n"
+					  "#laxcolors  #To set only the colors of laxconfig, use this\n"
+					  "#  panel\n"
+					  "#    ...\n"
+					  "#  menu\n"
+					  "#    ...\n"
+					  "#  edits\n"
+					  "#    ...\n"
+					  "#  buttons\n"
+					  "#    ...\n");
+
+			fprintf(f,"\n"
+					  "\n"
 					  "\n"
 
 					   //preview generation
+					  //" # Alternately, you can specify the maximum width and height separately:\n"
+					  //"#maxPreviewWidth 200\n"
+					  //"#maxPreviewHeight 200\n"
 					  "#*** note, the following preview stuff is maybe not so accurate, code is in flux:\n"
 					  " #The size a file (unless specified, default is kilobytes) must be to trigger\n"
 					  " #the automatic creation of a smaller preview image file.\n"
@@ -607,8 +635,6 @@ int LaidoutApp::createlaidoutrc()
 /*! 
  * Return 0 if laidoutrc doesn't exist, 1 if ok.
  * The default location is $HOME/.laidout/(version)/laidoutrc.
- *
- * \todo document appcolors, laxconfig attribute
  */
 int LaidoutApp::readinLaidoutDefaults()
 {
@@ -628,11 +654,16 @@ int LaidoutApp::readinLaidoutDefaults()
 		value=att.attributes.e[c]->value;
 		if (!name) continue;
 
-		DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
+		//DBG cerr <<(name?name:"(no name)")<<": "<<(value?value:"(no value)")<<endl;
+
 		if (!strcmp(name,"laxconfig")) {
 			dump_in_rc(att.attributes.e[c],NULL);
+
+		} else if (!strcmp(name,"laxprofile")) {
+			makestr(app_profile,value);
+			if (!strcmp(value,"Dark")) setupdefaultcolors();
 			
-		} else if (!strcmp(name,"appcolors")) {
+		} else if (!strcmp(name,"laxcolors")) {
 			//*** this, or force use of laxconfig?
 			dump_in_colors(att.attributes.e[c]);
 			
@@ -728,10 +759,10 @@ int LaidoutApp::readinLaidoutDefaults()
  */
 void LaidoutApp::setupdefaultcolors()
 {
-	char *oldpf=app_profile;
-	app_profile=NULL; //force it to light colors
+	//char *oldpf=app_profile;
+	//app_profile=NULL; //force it to light colors
 	anXApp::setupdefaultcolors();
-	app_profile=oldpf;
+	//app_profile=oldpf;
 }
 
 LaxOptions options;
