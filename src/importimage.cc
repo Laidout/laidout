@@ -23,6 +23,7 @@
 #include <lax/fileutils.h>
 #include <lax/transformmath.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #include <lax/lists.cc>
 

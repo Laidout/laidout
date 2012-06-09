@@ -23,6 +23,8 @@
 #include "../papersizes.h"
 
 #include <lax/fileutils.h>
+#include <unistd.h>
+
 using namespace LaxFiles;
 
 //------------------------------- Newdoc --------------------------------
@@ -298,7 +300,8 @@ int OpenFunction(ValueHash *context,
 			char *dir=context?newstr(context->findString("current_directory")):NULL;
 			char *temp;
 			if (!dir) {
-				temp=get_current_dir_name();
+				//temp=get_current_dir_name(); <- GNU only, breaks mac build!
+				temp=getcwd(NULL,0);
 				dir=newstr(temp);
 				free (temp);
 			}

@@ -14,6 +14,7 @@
 // Copyright (C) 2007,2010-2012 by Tom Lechner
 //
 
+#include <unistd.h>
 
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>

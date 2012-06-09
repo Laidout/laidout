@@ -326,7 +326,8 @@ int LaidoutApp::init(int argc,char **argv)
 	 //could use /proc/(pid)/exe, which is link to actual executable
 	char *curexecpath=NULL;
 	if (argv[0][0]!='/') {
-		char *d=get_current_dir_name();
+		//char *d=get_current_dir_name();
+		char *d=getcwd(NULL,0);
 		curexecpath=newstr(d);
 		free(d);
 		appendstr(curexecpath,"/");
