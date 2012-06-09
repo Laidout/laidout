@@ -15,6 +15,8 @@ Those are purged with each release.
 
 ---- bugs:
 
+copy paste not working again
+
 hedron edit goes to netdialog, should have "current" option...
 
 object tool shift-control for rotate does not allow positioning on drag bars
@@ -87,16 +89,16 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
-document laxconfig/appcolors in laidoutrc
+option to use different go/don't go colors
 
 for help, need some standardized way to list mouse actions!!
 
 test #, ', and " for shortcut dump
 numberpadmask?
 shortcut edit dialog
-shortcut loading and saving to resource dir
 for keys with no distinct upper and lower, special handling of shift mask?
 adding key+action, rebind key if necessary
+DONE shortcut loading and saving to resource dir
 DONE Install shortcut definitions for each window and interface
 
 add --experimental option to activate any crash prone features not otherwise available
@@ -685,4 +687,6 @@ These can then be purged after each release...
 
 
 DONE 'c' then 'c' on path crashes
+
+DONE document laxconfig/appcolors in laidoutrc
 
