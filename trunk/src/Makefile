@@ -55,7 +55,6 @@ objs= \
 	document.o \
 	project.o \
 	interfaces.o \
-	iconmanager.o \
 	about.o \
 	buttonbox.o \
 	commandwindow.o \
