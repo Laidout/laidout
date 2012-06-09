@@ -262,7 +262,8 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	cylinderscale=edgeScaleFromBox();
 
 	fontsize=20;
-	pad=20;
+	pad=20; 
+	helpoffset=10000;
 
 	polyptychfile         =NULL;
 	polyhedronfile        =NULL;
@@ -961,6 +962,7 @@ int HedronWindow::Resize(int w,int h)
  */
 void HedronWindow::reshape (int w, int h)
 {
+	helpoffset=10000;
 	placeOverlays();
 
 	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
@@ -996,34 +998,41 @@ void HedronWindow::Refresh()
 
 void HedronWindow::drawHelp()
 {
-	const char *helptext=NULL;
+	char *helptext=NULL;
 
-	cout <<"net "<<MODE_Net<<" old:"<<oldmode<<endl;
+	DBG cerr <<"net "<<MODE_Net<<" old:"<<oldmode<<endl;
 
-	if (oldmode==MODE_Solid || oldmode==MODE_Net) 
-		helptext="h    Show this help\n"
-				 "`    Toggle between net and solid mode\n"
-			     "l    Show or not show polyhedron edges\n"
-				 "n    Show or not show cut lines\n"
-				 "[    Decrease size of cut lines\n"
-				 "]    Increase size of cut lines\n"
-				 "t    Use or not draw the image\n"
-				 "m    Change render mode\n"
-				 "D    Drop all nets back onto the hedron\n"
-				 "c    Switch to next camera view\n"
-				 "\n"
-				 "^s   Save to a polyptych file\n"
-				 "^+s  Save as to a polyptych file\n"
-				 "^i   Load a new image for the shape\n"
-				 "^p   Load a new shape\n"
-				 "^r   Render current net\n"
-			     "\n"
-				 "left mouse button  rolls shape\n"
-				 "shift-l button  rotates along axis pointing at viewer\n"
-				 "control-l button  shifts texture\n"
-				 "control-shift-l button  rotates texture\n"
-				 "right button  handles unwrapping\n"
-				 "middle button  changes angle of unwrap\n";
+	if (!sc) GetShortcuts();
+
+	ShortcutDefs *s;
+	WindowActions *a;
+	WindowAction *aa;
+	ShortcutManager *m=GetDefaultShortcutManager();
+	char buffer[100],str[400];
+	s=sc->Shortcuts();
+	a=sc->Actions();
+
+	 //output all bound keys
+	helptext=newstr("left mouse button  rolls shape\n"
+			 "shift-l button  rotates along axis pointing at viewer\n"
+			 "control-l button  shifts texture\n"
+			 "control-shift-l button  rotates texture\n"
+			 "right button  handles unwrapping\n"
+			 "middle button  changes angle of unwrap\n"
+			 "\n");
+	if (s) {
+		for (int c2=0; c2<s->n; c2++) {
+			sprintf(str,"  %-15s ",m->ShortcutString(s->e[c2], buffer));
+			if (a) aa=a->FindAction(s->e[c2]->action); else aa=NULL;
+			if (aa) {
+				 //print out string id and commented out description
+				//sprintf(str+strlen(str),"%-20s",aa->name);
+				if (!isblank(aa->description)) sprintf(str+strlen(str),"%s",aa->description);
+				sprintf(str+strlen(str),"\n");
+			} else sprintf(str+strlen(str),"%d\n",s->e[c2]->action); //print out number only
+			appendstr(helptext,str);
+		}
+	}
 
 	if (helptext) {
 		int width=0, w;
@@ -1043,7 +1052,8 @@ void HedronWindow::drawHelp()
 			str=(eol?eol+1:NULL);
 		}
 		str=helptext;
-		int y=0, offset=0;
+		int y=helpoffset, offset=0;
+		if (y==10000) y=win_h-fontsize;
 
 		glClearColor(0,0,0,1);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -1059,7 +1069,7 @@ void HedronWindow::drawHelp()
 		glLoadIdentity();
 
 		//y=win_h/2 + numlines*consolefont->LineHeight()/2;
-		y=win_h/2 + numlines*fontsize/2;
+		//y=win_h/2 + numlines*fontsize/2;
 		offset=win_w/2-width/2;
 		for (int c=0; str && c<numlines; c++) {
 			eol=strchr(str,'\n');
@@ -1075,6 +1085,8 @@ void HedronWindow::drawHelp()
 			str= (eol?eol+1:NULL);
 			//*** or pop up a messagebar window, that would be easy
 		}
+
+		delete[] helptext;
 	}
 
 }
@@ -2137,6 +2149,13 @@ int HedronWindow::removeNet(int netindex)
 
 int HedronWindow::WheelUp(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
 {
+	if (mode==MODE_Help) {
+		if (helpoffset==10000) helpoffset=win_h-fontsize;
+		else helpoffset+=fontsize;
+		needtodraw=1;
+		return 0;
+	}
+
 	int group=OGROUP_None;
 	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
 	
@@ -2158,6 +2177,13 @@ int HedronWindow::WheelUp(int x,int y,unsigned int state,int count,const LaxMous
 
 int HedronWindow::WheelDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
 {
+	if (mode==MODE_Help) {
+		if (helpoffset==10000) helpoffset=win_h-fontsize;
+		else helpoffset-=fontsize;
+		needtodraw=1;
+		return 0;
+	}
+
 	int group=OGROUP_None;
 	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
 	

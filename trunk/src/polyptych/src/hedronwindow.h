@@ -122,6 +122,7 @@ class HedronWindow : public Laxkit::anXWindow
 	double fontsize;
 	double pad;
 	int touchmode;
+	int helpoffset;
 
 	int draw_edges;
 	int draw_seams;
