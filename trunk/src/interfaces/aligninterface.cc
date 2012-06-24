@@ -732,17 +732,33 @@ int AlignInterface::Refresh()
 
 
 			 //left side
-			if (hover==ALIGN_VisualShift) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
-			else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-			dp->drawline(cc + x1*v + yy*vt,  cc + x2*v + yy*vt);
-			dp->drawline(cc + x2*v + yy*vt,  cc + x2*v - yy*vt);
-			dp->drawline(cc + x2*v - yy*vt,  cc + x1*v - yy*vt);
+			flatpoint pts[4];
+			pts[0]=cc + x1*v + yy*vt;
+			pts[1]=cc + x2*v + yy*vt;
+			pts[2]=cc + x2*v - yy*vt;
+			pts[3]=cc + x1*v - yy*vt;
+			if (hover==ALIGN_VisualShift) {
+				 //blank out background, so we can see what we are changing
+				dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+				dp->NewFG(1.,1.,1.);
+				dp->drawlines(pts,4,1,1);
+				dp->NewFG(&controlcolor);
+			} else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			dp->drawlines(pts,4,0,0);
+
 			 //right side
-			if (hover==ALIGN_LayoutType) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
-			else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-			dp->drawline(cc - x1*v + yy*vt,  cc - x2*v + yy*vt);
-			dp->drawline(cc - x2*v + yy*vt,  cc - x2*v - yy*vt);
-			dp->drawline(cc - x2*v - yy*vt,  cc - x1*v - yy*vt);
+			pts[0]=cc - x1*v + yy*vt;
+			pts[1]=cc - x2*v + yy*vt;
+			pts[2]=cc - x2*v - yy*vt;
+			pts[3]=cc - x1*v - yy*vt;
+			if (hover==ALIGN_LayoutType) {
+				 //blank out background, so we can see what we are changing
+				dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+				dp->NewFG(1.,1.,1.);
+				dp->drawlines(pts,4,1,1);
+				dp->NewFG(&controlcolor);
+			} else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			dp->drawlines(pts,4,0,0);
 			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
 			 //final layout type
@@ -758,7 +774,7 @@ int AlignInterface::Refresh()
 			} else buf="";
 
 			dp->NewFG(&controlcolor);
-			cc2=cc-(1.5*w*RADIUS*v);
+			cc2=cc-(x1+x2)/2*v;
 			dp->textout(cc2.x,cc2.y, buf,-1, LAX_CENTER);
 
 			 //visual shift type
@@ -766,7 +782,7 @@ int AlignInterface::Refresh()
 			else if (aligninfo->visual_align==FALIGN_VisualRotate) buf="+";
 			else if (aligninfo->visual_align==FALIGN_ObjectRotate) buf="/";
 			
-			cc2=cc+(1.5*w*RADIUS*v);
+			cc2=cc+(x1+x2)/2*v;
 			dp->textout(cc2.x,cc2.y, buf,-1, LAX_CENTER);
 		}
 
@@ -1223,22 +1239,22 @@ int AlignInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxki
 		return 0;
 	}
 
-	if (over==ALIGN_MoveSnapAlign) {
+	if (over==ALIGN_MoveSnapAlign && (state&LAX_STATE_MASK)==0) {
 		ToggleAlign(1);
 		return 0;
 	}
 
-	if (over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) {
+	if ((over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) && (state&LAX_STATE_MASK)==0) {
 		ToggleFinal(1);
 		return 0;
 	}
 
-	if (over==ALIGN_VisualShift) {
+	if (over==ALIGN_VisualShift && (state&LAX_STATE_MASK)==0) {
 		ToggleShift(1);
 		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
@@ -1253,22 +1269,22 @@ int AlignInterface::WheelDown(int x,int y,unsigned int state,int count,const Lax
 		return 0;
 	}
 
-	if (over==ALIGN_MoveSnapAlign) {
+	if (over==ALIGN_MoveSnapAlign && (state&LAX_STATE_MASK)==0) {
 		ToggleAlign(-1);
 		return 0;
 	}
 
-	if (over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) {
+	if ((over==ALIGN_LayoutType || over==ALIGN_MoveFinalAlign) && (state&LAX_STATE_MASK)==0) {
 		ToggleFinal(-1);
 		return 0;
 	}
 
-	if (over==ALIGN_VisualShift) {
+	if (over==ALIGN_VisualShift && (state&LAX_STATE_MASK)==0) {
 		ToggleShift(-1);
 		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 void AlignInterface::postAlignMessage(int a)
@@ -2066,8 +2082,9 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				else controls.e[c]->flags&=~CONTROLS_Skip;
 			}
 
-			//so now point is the base repositioned center of the object
+			//so now point is the base repositioned center of the object on the path, and tangent is at that point on path
 
+			 //find shifting due to snap alignment
 			if (aligninfo->snap_align_type==FALIGN_Align || aligninfo->snap_align_type==FALIGN_Proportional) {
 				 //find min and max along snap direction
 				//v=aligninfo->snap_direction;
@@ -2096,8 +2113,34 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			}
 
 			if (d.x!=0 || d.y!=0) { //finally apply the shift
-				mm[4]=d.x;
-				mm[5]=d.y;
+				transform_identity(mm);
+				if (aligninfo->visual_align==FALIGN_VisualRotate) {
+					normalize(tangent);
+
+					mm[4]-=cc.x;
+					mm[5]-=cc.y;
+					double angle=atan2(tangent.x,tangent.y);
+					double r[6],s[6];
+					r[4]=r[5]=0;
+					r[0]=cos(angle);
+					r[1]=-sin(angle);
+					r[2]=sin(angle);
+					r[3]=cos(angle);
+					transform_mult(s,mm,r);
+					transform_copy(mm,s);
+					mm[4]+=point.x;
+					mm[5]+=point.y;
+
+					 //finally, apply alignment shift
+					mm[4]+=d.x;
+					mm[5]+=d.y;
+				} else if (aligninfo->visual_align==FALIGN_ObjectRotate) {
+					mm[4]=d.x;
+					mm[5]=d.y;
+				} else { //plain shift
+					mm[4]=d.x;
+					mm[5]=d.y;
+				}
 				TransformSelection(mm,c,c);
 			}
 
