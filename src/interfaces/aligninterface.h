@@ -115,6 +115,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int needtoresetlayout;
 
 	int hover, hoverindex;
+	int explodemode;
 
 	virtual int scan(int x,int y, int &index, unsigned int state);
 	virtual int onPath(int x,int y);
@@ -167,8 +168,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 
 	virtual int ApplyAlignment(int updateorig);
 	virtual int ResetAlignment();
-	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal);
-	virtual int PointToPath(flatpoint p, flatpoint &ip);
+	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal, flatpoint *tangent);
+	virtual int PointToPath(flatpoint p, flatpoint &ip, flatpoint *tangent);
 	virtual int PointAlongPath(double t,int tisdistance, flatpoint &point, flatpoint *tangent);
 	virtual flatpoint ClosestPoint(flatpoint p, double *d);
 	virtual int ClampBoundaries(int fill);
