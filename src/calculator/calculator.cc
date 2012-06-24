@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009 by Tom Lechner
+// Copyright (C) 2009-2012 by Tom Lechner
 //
 
 
@@ -608,22 +608,8 @@ Value *LaidoutCalculator::number()
 		else if (!nextchar('+')) break;
 	};
 	 
-	if (nextchar('(')) {
+	if (nextchar('(') || nextchar('{')) {
 		 // handle stuff in parenthesis: (2-3-5)-2342
-		snum=eval();
-		if (calcerror) return NULL;
-		if (!snum) { 
-			calcerr(_("Number exepected."));
-			return NULL;
-		}
-		//*** if nextchar(",") then we are reading in some kind of set
-		if (!nextchar(')')) { 
-			calcerr(_("')' expected.")); 
-			delete snum;
-			return NULL;
-		}
-
-	} else if (nextchar('{')) {
 		from--;
 		snum=getset();
 		if (calcerror) return NULL;
@@ -678,9 +664,10 @@ Value *LaidoutCalculator::number()
 }
 
 //! Read in values for a set.
-/*! It is assumed that we are starting at a '(' or a '{'. Otherwise return NULL.
+/*! Next char must be '(' or '{'. Otherwise return NULL.
+ * If '(', then ApplyDefaultSets() is used to convert something like (2,3) to a flatvector.
  */
-SetValue *LaidoutCalculator::getset()
+Value *LaidoutCalculator::getset()
 {
 	char setchar=0;
 	if (nextchar('{')) setchar='}';
@@ -699,12 +686,44 @@ SetValue *LaidoutCalculator::getset()
 	} while (nextchar(','));
 
 	if (!nextchar(setchar)) {
-		calcerr("Improperly closed set.");
+		if (setchar==')') calcerr("Expecting ')'.");
+		else calcerr("Expecting '}'.");
+		delete set;
+		return NULL;
+	}
+
+	Value *defaulted = (setchar==')'?ApplyDefaultSets(set):NULL); //always a set when '{'
+	if (defaulted) { set->dec_count(); return defaulted; }
+	else if (setchar==')' && set->values.n==0) {
+		calcerr("Expecting a number!");
 		delete set;
 		return NULL;
 	}
 
 	return set;
+}
+
+/*! Currently, create flatvector or spacevector if has 2 or 3 real or int elements.
+ * Sets of single elements are taken out of the set.
+ *
+ * Returns a fresh object upon conversion, set is left unmodified.
+ */
+Value *LaidoutCalculator::ApplyDefaultSets(SetValue *set)
+{
+	if (set->values.n==1) {
+		Value *v=set->values.e[0]->duplicate();
+		return v;
+	}
+
+	if (set->values.n!=2 && set->values.n!=3) return NULL;
+	double v[3];
+	for (int c=0; c<set->values.n; c++) {
+		if (set->values.e[c]->type()==VALUE_Int) v[c]=((IntValue*)set->values.e[c])->i;
+		else if (set->values.e[c]->type()==VALUE_Int) v[c]=((DoubleValue*)set->values.e[c])->d;
+		else return NULL;
+	}
+	if (set->values.n==2) return new FlatvectorValue(flatvector(v[0],v[1]));
+	return new SpacevectorValue(spacevector(v[0],v[1],v[2]));
 }
 
 //! Read in a double.
@@ -1008,19 +1027,30 @@ int LaidoutCalculator::add(Value *&num1,Value *&num2)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i+i
 		((IntValue *) num1)->i+=((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
+
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) { //d+i
 		((DoubleValue *) num1)->d+=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
+
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) { //i+d
 		((DoubleValue *) num2)->d+=(double)((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
+
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) { //d+d
 		((DoubleValue *) num1)->d+=((DoubleValue*)num2)->d;
+
+	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //fv+fv
+		((FlatvectorValue *) num1)->v+=((FlatvectorValue*)num2)->v;
+
+	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //sv+sv
+		((SpacevectorValue *) num1)->v+=((SpacevectorValue*)num2)->v;
+
 	} else if (num1->type()==VALUE_String && num2->type()==VALUE_String) {
 		appendstr(((StringValue *)num1)->str,((StringValue *)num2)->str);
+
 	} else throw _("Cannot add those types");
 
 	num2->dec_count(); num2=NULL;
@@ -1038,17 +1068,27 @@ int LaidoutCalculator::subtract(Value *&num1,Value *&num2)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i-i
 		((IntValue *) num1)->i-=((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
+
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) { //d-i
 		((DoubleValue *) num1)->d-=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
+
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) { //i-d
 		((DoubleValue *) num2)->d=(double)((IntValue*)num1)->i - ((DoubleValue *) num2)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
+
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) { //d-d
 		((DoubleValue *) num1)->d-=((DoubleValue*)num2)->d;
+
+	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //fv-fv
+		((FlatvectorValue *) num1)->v-=((FlatvectorValue*)num2)->v;
+
+	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //sv-sv
+		((SpacevectorValue *) num1)->v-=((SpacevectorValue*)num2)->v;
+
 	} else throw _("Cannot subtract those types");
 
 	num2->dec_count(); num2=NULL;
@@ -1066,17 +1106,72 @@ int LaidoutCalculator::multiply(Value *&num1,Value *&num2)
 //		if one has units, but the other doesn't, then assume same units
 //	}
 
-	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) {
+	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i*i
 		((IntValue *) num1)->i*=((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
+
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) { //d*i
 		((DoubleValue *) num1)->d*=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
+
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) { //i*d
 		((DoubleValue *) num2)->d*=(double)((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
+
+	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) { //d*d
 		((DoubleValue *) num1)->d*=((DoubleValue*)num2)->d;
+
+	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //i*v
+		((FlatvectorValue *) num2)->v*=((IntValue*)num1)->i;
+		Value *t=num2;
+		num2=num1;
+		num1=t;
+
+	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //d*v
+		((FlatvectorValue *) num2)->v*=((DoubleValue*)num1)->d;
+		Value *t=num2;
+		num2=num1;
+		num1=t;
+
+	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //i*v (3d)
+		((SpacevectorValue *) num2)->v*=((IntValue*)num1)->i;
+		Value *t=num2;
+		num2=num1;
+		num1=t;
+
+	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //d*v (3d)
+		((SpacevectorValue *) num2)->v*=((DoubleValue*)num1)->d;
+		Value *t=num2;
+		num2=num1;
+		num1=t;
+
+	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*i
+		((FlatvectorValue *) num1)->v*=((IntValue*)num2)->i;
+
+	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*d
+		((FlatvectorValue *) num1)->v*=((DoubleValue*)num2)->d;
+
+	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*i (3d)
+		((SpacevectorValue *) num1)->v*=((IntValue*)num2)->i;
+
+	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*d (3d)
+		((SpacevectorValue *) num1)->v*=((DoubleValue*)num2)->d;
+
+	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //v*v 2-d
+		 //dot product
+		DoubleValue *d=new DoubleValue(((FlatvectorValue *) num1)->v*((FlatvectorValue*)num2)->v);
+		num1->dec_count();
+		num1=d;
+
+	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) { //v*v 3-d
+		 //dot product
+		DoubleValue *d=new DoubleValue(((SpacevectorValue *) num1)->v*((SpacevectorValue*)num2)->v);
+		num1->dec_count();
+		num1=d;
+
+	} else if (num1->type()==VALUE_Spacevector && num2->type()==VALUE_Spacevector) {
+		((SpacevectorValue *) num1)->v-=((SpacevectorValue*)num2)->v;
+
 	} else throw _("Cannot multiply those types");
 
 	num2->dec_count(); num2=NULL;

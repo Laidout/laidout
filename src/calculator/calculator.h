@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009 by Tom Lechner
+// Copyright (C) 2009-2012 by Tom Lechner
 //
 
 #ifndef CALCULATOR_H
@@ -54,9 +54,10 @@ class LaidoutCalculator : public Laxkit::RefCounted
 	long intnumber();
 	double realnumber();
 	Value *getstring();
-	SetValue *getset();
+	Value *getset();
 	Value *evalname();
 	Value *evalInnate(const char *word, int len);
+	Value *ApplyDefaultSets(SetValue *set);
 	void messageOut(const char *str);
 	int add(Value *&num1,Value *&num2);
 	int subtract(Value *&num1,Value *&num2);
