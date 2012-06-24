@@ -344,6 +344,13 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc->Add(GIA_Align,     'a',0,0,    "Align",     _("Align selected objects"),NULL,0);
 	sc->Add(GIA_Distribute,'f',0,0,    "Distribute",_("Distribute selected objects in rows and columns"),NULL,0);
 
+
+	// *** initialize nup and align shortcuts.. there should be a better way to do this!!
+	NUpInterface nup((int)0);
+	nup.GetShortcuts();
+	AlignInterface align((int)0);
+	align.GetShortcuts();
+
 	return sc;
 }
 
