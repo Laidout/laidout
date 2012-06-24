@@ -81,8 +81,8 @@ using namespace LaxFiles;
  *
  * \todo **** implement me!!!!!
  *
- * These can currently be "document", "object", "image" (a raster image),
- * or resources such as "gradient", "palette", or "net".
+ * These can currently be "document", "object", "bitmap" (a raster image),
+ * or resources such as "gradient", "palette", or "net", "imposition".
  *
  * The "document" type is for importing page based documents, and breaking down the page
  * components into Laidout elements as possible. This might be svg (with or without pageSets),
