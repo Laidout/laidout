@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009 by Tom Lechner
+// Copyright (C) 2009-2012 by Tom Lechner
 //
 
 
@@ -262,12 +262,26 @@ Value::Value()
 	: tempstr(NULL),
 	  units(0)
 {
+	modified=1;
 }
 
 Value::~Value()
 {
 	if (tempstr) delete[] tempstr;
 }
+
+//! Return the cached string value.
+const char *Value::CChar()
+{
+	if (!tempstr || modified) return toCChar();
+	return tempstr;
+}
+/*! \fn const char *Value::toCChar()
+ *
+ * Regenerate tempstr to be a cached string representation of the value.
+ * When done, set modified to 0.
+ */
+
 
 //----------------------------- SetValue ----------------------------------
 /*! \class SetValue
@@ -291,7 +305,22 @@ const char *SetValue::toCChar()
 		if (c!=values.n-1) appendstr(tempstr,",");
 	}
 	appendstr(tempstr,"}");
+	modified=0;
 	return tempstr;
+}
+
+/*! Returns set with each element duplicate()'d.
+ */
+Value *SetValue::duplicate()
+{
+	SetValue *s=new SetValue;
+	Value *v;
+	for (int c=0; c<values.n; c++) {
+		v=values.e[c]->duplicate();
+		s->Push(v);
+		v->dec_count();
+	}
+	return s;
 }
 
 
@@ -300,16 +329,48 @@ const char *IntValue::toCChar()
 {
 	if (!tempstr) tempstr=new char[20];
 	sprintf(tempstr,"%ld",i);
+	modified=0;
 	return tempstr;
 }
+
+Value *IntValue::duplicate()
+{ return new IntValue(i); }
 
 //--------------------------------- DoubleValue -----------------------------
 const char *DoubleValue::toCChar()
 {
 	if (!tempstr) tempstr=new char[30];
 	sprintf(tempstr,"%g",d);
+	modified=0;
 	return tempstr;
 }
+
+Value *DoubleValue::duplicate()
+{ return new DoubleValue(d); }
+
+//--------------------------------- FlatvectorValue -----------------------------
+const char *FlatvectorValue::toCChar()
+{
+	if (!tempstr) tempstr=new char[40];
+	sprintf(tempstr,"(%g,%g)",v.x,v.y);
+	modified=0;
+	return tempstr;
+}
+
+Value *FlatvectorValue::duplicate()
+{ return new FlatvectorValue(v); }
+
+//--------------------------------- SpacevectorValue -----------------------------
+const char *SpacevectorValue::toCChar()
+{
+	if (!tempstr) tempstr=new char[60];
+	sprintf(tempstr,"(%g,%g,%g)", v.x, v.y, v.z);
+	modified=0;
+	return tempstr;
+}
+
+Value *SpacevectorValue::duplicate()
+{ return new SpacevectorValue(v); }
 
 //--------------------------------- StringValue -----------------------------
 //! Create a string value with the first len characters of s.
@@ -320,8 +381,12 @@ StringValue::StringValue(const char *s, int len)
 
 const char *StringValue::toCChar()
 {
+	modified=0;
 	return str;
 }
+
+Value *StringValue::duplicate()
+{ return new StringValue(str); }
 
 
 //--------------------------------- ObjectValue -----------------------------
@@ -350,7 +415,10 @@ const char *ObjectValue::toCChar()
 		if (s->Stylename()) return s->Stylename();
 		return s->whattype();
 	}
+	modified=0;
 	return "object(TODO!!)";
 }
 
+Value *ObjectValue::duplicate()
+{ return new ObjectValue(object); }
 
