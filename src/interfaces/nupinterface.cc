@@ -96,10 +96,21 @@ NUpInfo::~NUpInfo()
  */
 
 
+enum NupInterfaceActions {
+	NUPA_Apply,
+	NUPA_NextLayoutType,
+	NUPA_PrevLayoutType,
+	NUPA_NextDir,
+	NUPA_PrevDir,
+	NUPA_MAX
+};
+
+
 NUpInterface::NUpInterface(int nid,Displayer *ndp)
-	: anInterface(nid,ndp) 
+	: ObjectInterface(nid,ndp) 
 {
 	tempdir=0;
+	style|=RECT_HIDE_CONTROLS;
 
 	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
@@ -110,18 +121,20 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 	tempdir=-1;
 	temparrowdir=-1;
 	active=0;
+	needtoresetlayout=1;
 
 	nupinfo=new NUpInfo;
-	nupinfo->uioffset=flatpoint(150,150);
+	nupinfo->uioffset=flatpoint(50,50);
 	createControls();
 
 	sc=NULL;
 }
 
 NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
-	: anInterface(nowner,nid,ndp) 
+	: ObjectInterface(nid,ndp) 
 {
 	tempdir=0;
+	style|=RECT_HIDE_CONTROLS;
 
 	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
@@ -132,9 +145,10 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 	tempdir=-1;
 	temparrowdir=-1;
 	active=0;
+	needtoresetlayout=1;
 
 	nupinfo=new NUpInfo;
-	nupinfo->uioffset=flatpoint(150,150);
+	nupinfo->uioffset=flatpoint(50,50);
 	createControls();
 
 	sc=NULL;
@@ -340,23 +354,23 @@ Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("N-up Interface"));
 
-	menu->AddItem(dirname(LAX_LRTB),LAX_LRTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_LRBT),LAX_LRBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_RLTB),LAX_RLTB,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_RLBT),LAX_RLBT,LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_TBLR),LAX_TBLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_BTLR),LAX_BTLR,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_TBRL),LAX_TBRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF,1);
-	menu->AddItem(dirname(LAX_BTRL),LAX_BTRL,LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF,1);
+	menu->AddItem(dirname(LAX_LRTB), LAX_LRTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_LRBT), LAX_LRBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_RLTB), LAX_RLTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_RLBT), LAX_RLBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_TBLR), LAX_TBLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_BTLR), LAX_BTLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_TBRL), LAX_TBRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_BTRL), LAX_BTRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF, 1);
 
 	menu->AddSep();
 
-	menu->AddItem(_("Grid"),NUP_Grid);
+	menu->AddItem(_("Grid"),      NUP_Grid      );
 	menu->AddItem(_("Sized Grid"),NUP_Sized_Grid);
-	menu->AddItem(_("Flowed"),NUP_Flowed);
-	menu->AddItem(_("Random"),NUP_Random);
-	menu->AddItem(_("Unclump"),NUP_Unclump);
-	menu->AddItem(_("Unoverlap"),NUP_Unoverlap);
+	menu->AddItem(_("Flowed"),    NUP_Flowed    );
+	menu->AddItem(_("Random"),    NUP_Random    );
+	menu->AddItem(_("Unclump"),   NUP_Unclump   );
+	menu->AddItem(_("Unoverlap"), NUP_Unoverlap );
 
 	return menu;
 }
@@ -367,22 +381,29 @@ int NUpInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
 	if (!strcmp(mes,"menuevent")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
-		int i =s->info2; //id of menu item
+		int i =s->info2; //id of menu item, 1 for direction, 0 for other 
 		int ii=s->info4; //extra id, 1 for direction
-		if (ii==0) {
-			cerr <<"change direction to "<<i<<endl;
-			return 0;
 
-		} else {
-			if (i==NUP_Grid) {
-			} else if (i==NUP_Sized_Grid) {
-			} else if (i==NUP_Flowed) {
-			} else if (i==NUP_Random) {
-			} else if (i==NUP_Unclump) {
-			} else if (i==NUP_Unoverlap) {
+		if (ii==1) {
+			DBG cerr <<"change direction to "<<i<<endl;
+
+			if (i!=nupinfo->direction) {
+				nupinfo->direction=i;
+				remapControls();
+				validateInfo();
+				needtodraw=1;
 			}
 			return 0;
 
+		} else {
+			if (i!=nupinfo->flowtype) {
+				nupinfo->flowtype=i;
+				flowtypeMessage(1);
+				needtoresetlayout=1;
+				if (active) Apply(0);
+				needtodraw=1;
+			}
+			return 0;
 		}
 
 		return 0;
@@ -445,12 +466,14 @@ void NUpInterface::Clear(SomeData *d)
 int NUpInterface::Refresh()
 {
 	if (!needtodraw) return 0;
-	needtodraw=0;
 
 	if (firsttime) {
 		firsttime=0;
 		remapControls();
 	}
+
+	RectInterface::Refresh();
+	needtodraw=0;
 
 	DBG cerr <<"NUpInterface::Refresh()..."<<endl;
 
@@ -740,6 +763,7 @@ int NUpInterface::scan(int x,int y)
 
 int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
+	DBG cerr <<"nup lbdown"<<endl;
 	if (buttondown.any(0,LEFTBUTTON)) return 0; //only allow one button at a time
 
 	int action=scan(x,y);
@@ -766,6 +790,7 @@ int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::
 
 int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
+	DBG cerr <<"nup up"<<endl;
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 
 	int action;
@@ -775,6 +800,7 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 		nupinfo->direction=tempdir;
 		remapControls();
 		validateInfo();
+		if (active) Apply(0);
 	}
 	tempdir=-1;
 	temparrowdir=0;
@@ -783,11 +809,27 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 
 	if (action==NUP_Activate && !dragged) {
 		active=!active;
-		if (active) Apply();
+		if (active) Apply(0);
+		else Reset();
 		needtodraw=1;
 		return 0;
 	}
 
+	return 0;
+}
+
+//! Copy back original transforms from original transforms to the selection.
+int NUpInterface::Reset()
+{
+	if (!data || !selection.n) return 1;
+
+	 //first reset positions to original state
+	for (int c=0; c<selection.n; c++) {
+		selection.e[c]->obj->m(objcontrols.e[c]->original_transform->m());
+	}
+
+	RemapBounds();
+	needtodraw=1;
 	return 0;
 }
 
@@ -820,9 +862,7 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 	}
 
 	if (action==NUP_Activate) {
-		nupinfo->flowtype++;
-		if (nupinfo->flowtype>=NUP_MAX) nupinfo->flowtype=NUP_Grid;
-		flowtypeMessage(1);
+		PerformAction(NUPA_NextLayoutType);
 		needtodraw=1;
 		return 0;
 	}
@@ -833,6 +873,7 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 		} else {
 			if (nupinfo->cols<0) nupinfo->cols=0; else nupinfo->cols++;
 		}
+		if (active) Apply(0);
 		needtodraw=1;
 		return 0;
 
@@ -842,6 +883,7 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 		} else {
 			if (nupinfo->rows<0) nupinfo->rows=0; else nupinfo->rows++;
 		}
+		if (active) Apply(0);
 		needtodraw=1;
 		return 0;
 	}
@@ -864,9 +906,7 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 	}
 
 	if (action==NUP_Activate) {
-		nupinfo->flowtype--;
-		if (nupinfo->flowtype<=NUP_Noflow) nupinfo->flowtype=NUP_MAX-1;
-		flowtypeMessage(1);
+		PerformAction(NUPA_PrevLayoutType);
 		needtodraw=1;
 		return 0;
 	}
@@ -883,6 +923,7 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 			nupinfo->cols--;
 			if (nupinfo->cols<0) nupinfo->cols=0;
 		}
+		if (active) Apply(0);
 		needtodraw=1;
 		return 0;
 
@@ -894,6 +935,7 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 			nupinfo->rows--;
 			if (nupinfo->rows<0) nupinfo->rows=-1;
 		}
+		if (active) Apply(0);
 		needtodraw=1;
 		return 0;
 	}
@@ -909,6 +951,7 @@ DBG int lastx,lasty;
 int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 { //***
 
+	DBG cerr <<"nup move"<<endl;
 	int over=scan(x,y);
 
 	DBG lastx=x; lasty=y;
@@ -968,11 +1011,61 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 	return 0;
 }
 
-enum NupInterfaceActions {
-	NUPA_NextDir,
-	NUPA_PrevDir,
-	NUPA_MAX
-};
+/*! \class AlignInterface::ControlInfo
+ *
+ * Info about control points in AlignInterface. One per object.
+ */
+
+NUpInterface::ControlInfo::~ControlInfo()
+{
+	if (original_transform) original_transform->dec_count();
+}
+
+
+NUpInterface::ControlInfo::ControlInfo()
+{
+	amountx=amounty=0;
+	flags=0;
+	original_transform=NULL;
+}
+
+void NUpInterface::ControlInfo::SetOriginal(SomeData *o)
+{
+	if (original_transform) original_transform->dec_count();
+	original_transform=o;
+	if (original_transform) original_transform->inc_count();
+}
+
+
+//! Add objects to selection, then map default left and right bound.
+int NUpInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
+{
+	int n=ObjectInterface::AddToSelection(objs);
+	if (!n) return 0;
+	//aligninfo->center=flatpoint((data->minx+data->maxx)/2,(data->miny+data->maxy)/2);
+	//aligninfo->leftbound =-norm(flatpoint(data->minx,(data->miny+data->maxy)/2)-aligninfo->center);
+	//aligninfo->rightbound= norm(flatpoint(data->maxx,(data->miny+data->maxy)/2)-aligninfo->center);
+
+	objcontrols.flush();
+	SomeData *t;
+	for (int c=0; c<selection.n; c++) {
+		objcontrols.push(new ControlInfo(),1);
+
+		t=new SomeData;
+		t->m(selection.e[c]->obj->m());
+		objcontrols.e[c]->SetOriginal(t);
+		t->dec_count();
+	}
+
+	return n;
+}
+
+int NUpInterface::FreeSelection()
+{
+	ObjectInterface::FreeSelection();
+	controls.flush();
+	return 0;
+}
 
 Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 {
@@ -985,8 +1078,11 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("NupInterface");
 
-	sc->Add(NUPA_NextDir, LAX_Left,0,0,     _("NextDir"), _("Next direction type"),NULL,0);
-	sc->Add(NUPA_PrevDir, LAX_Right,0,0,    _("PrevDir"), _("Previous direction type"),NULL,0);
+	sc->Add(NUPA_Apply,          LAX_Enter,0,0,    _("ToggleApply"),   _("Toggle apply"),NULL,0);
+	sc->Add(NUPA_NextLayoutType, LAX_Left,0,0,     _("NextLayoutType"),_("Next layout type"),NULL,0);
+	sc->Add(NUPA_PrevLayoutType, LAX_Right,0,0,    _("PrevLayoutType"),_("Previous layout type"),NULL,0);
+	sc->Add(NUPA_NextDir,        LAX_Left,0,0,     _("NextDir"),       _("Next direction type"),NULL,0);
+	sc->Add(NUPA_PrevDir,        LAX_Right,0,0,    _("PrevDir"),       _("Previous direction type"),NULL,0);
 
 	manager->AddArea("NupInterface",sc);
 	return sc;
@@ -996,11 +1092,38 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
  */
 int NUpInterface::PerformAction(int action)
 {
-	if (action==NUPA_NextDir) {
+	if (action==NUPA_Apply) {
+		active=!active;
+		if (active) Apply(0);
+		else Reset();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NUPA_NextLayoutType) {
+		nupinfo->flowtype++;
+		if (nupinfo->flowtype>=NUP_MAX) nupinfo->flowtype=NUP_Grid;
+		flowtypeMessage(1);
+		needtoresetlayout=1;
+		if (active) Apply(0);
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NUPA_PrevLayoutType) {
+		nupinfo->flowtype--;
+		if (nupinfo->flowtype<=NUP_Noflow) nupinfo->flowtype=NUP_MAX-1;
+		flowtypeMessage(1);
+		needtoresetlayout=1;
+		if (active) Apply(0);
+		needtodraw=1;
+		return 0;
+
+	} else if (action==NUPA_NextDir) {
 		nupinfo->direction++;
 		if (nupinfo->direction>7) nupinfo->direction=0;
 		remapControls();
 		viewport->postmessage(dirname(nupinfo->direction));
+		needtoresetlayout=1;
+		if (active) Apply(0);
 		needtodraw=1;
 		return 0;
 
@@ -1009,6 +1132,8 @@ int NUpInterface::PerformAction(int action)
 		if (nupinfo->direction<0) nupinfo->direction=7;
 		remapControls();
 		viewport->postmessage(dirname(nupinfo->direction));
+		needtoresetlayout=1;
+		if (active) Apply(0);
 		needtodraw=1;
 		return 0;
 	}
@@ -1017,13 +1142,27 @@ int NUpInterface::PerformAction(int action)
 }
 
 int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
-{ //***
+{
 	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
+	if (!sc) GetShortcuts();
+	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
+	if (action>=0) {
+		return PerformAction(action);
+	}
+
 	if (ch==LAX_Esc) {
+		if (!strcmp(owner->whattype(),"ObjectInterface")) {
+			 //revert control to owner
+			ObjectInterface *gi=dynamic_cast<ObjectInterface*>(owner);
+			gi->AddToSelection(selection);
+			gi->RemoveChild();
+		}
+		return 0;
+
 
 	} else if (ch=='o') {
-		cerr <<"--------------------------";
+		DBG cerr <<"--------------------------";
 		DBG int action=scan(lastx,lasty);
 		DBG cerr << " x,y:"<<lastx<<','<<lasty<<"  action:"<<action<<endl;
 		return 0;
@@ -1044,12 +1183,189 @@ int NUpInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyb
 	return 1;
 }
 
+void NUpInterface::WidthHeight(LaxInterfaces::ObjectContext *oc,flatvector x,flatvector y, double *width, double *height, flatpoint *cc)
+{
+	SomeData *o=oc->obj;
+	flatpoint ul,ur,ll,lr;
+	double min,max;
+	double m[6];
+
+	if (viewport) viewport->transformToContext(m,oc,0,1);
+	else transform_copy(m,o->m());
+
+	ul=transform_point(m,o->minx,o->maxy);
+	ur=transform_point(m,o->maxx,o->maxy);
+	ll=transform_point(m,o->minx,o->miny);
+	lr=transform_point(m,o->maxx,o->miny);
+	*cc=(ll+ur)/2;
+
+
+	double dd=distparallel(ul,x);
+	min=max=dd;
+	dd=distparallel(ur,x);
+	if (dd<min) min=dd; else if (dd>max) max=dd;
+	dd=distparallel(ll,x);
+	if (dd<min) min=dd; else if (dd>max) max=dd;
+	dd=distparallel(lr,x);
+	if (dd<min) min=dd; else if (dd>max) max=dd;
+	*width=max-min;
+
+	dd=distparallel(ul,y);
+	min=max=dd;
+	dd=distparallel(ur,y);
+	if (dd<min) min=dd; else if (dd>max) max=dd;
+	dd=distparallel(ll,y);
+	if (dd<min) min=dd; else if (dd>max) max=dd;
+	dd=distparallel(lr,y);
+	if (dd<min) min=dd; else if (dd>max) max=dd;
+	*height=max-min;
+}
+
 /*! Return 0 for success or 1 for unable to apply for some reason.
  */
-int NUpInterface::Apply()
+int NUpInterface::Apply(int updateorig)
 {
-	// ***
-	return 1;
+	if (!data || !selection.n) return 1;
+
+	double m[6],mm[6];
+	transform_identity(m);
+	transform_identity(mm);
+	//data->m(m);
+
+
+	 //first reset positions to original state
+	for (int c=0; c<selection.n; c++) {
+		selection.e[c]->obj->m(objcontrols.e[c]->original_transform->m());
+	}
+
+
+	 //then find and set new transforms
+	flatpoint cc, ul,ur,ll,lr;
+	flatpoint v,p, d,ac;
+	double w,h;
+
+	double wholew=data->maxx-data->minx;
+	double wholeh=data->maxy-data->miny;
+	double rh=wholeh;
+	double cw=wholew;
+	if (nupinfo->rows>=1) rh=wholeh/nupinfo->rows;
+	if (nupinfo->cols>=1) cw=wholew/nupinfo->cols;
+
+	if (nupinfo->flowtype==NUP_Noflow) {
+		//a no-op, nothing to do!
+
+	} else if (nupinfo->flowtype==NUP_Grid) {
+		int i=0;
+		int dir=nupinfo->direction;
+
+		if (dir==LAX_TBLR || dir==LAX_BTLR || dir==LAX_TBRL || dir==LAX_BTRL) {
+			 //major direction vertical:
+			i=0;
+			for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
+				for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
+					WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+
+					if (dir==LAX_TBLR || dir==LAX_TBRL) {
+						p.y=data->maxy-rh/2-r*rh;
+					} else {
+						p.y=data->miny+rh/2+r*rh;
+					}
+					if (dir==LAX_TBLR || dir==LAX_BTLR) {
+						p.x=data->minx+cw/2+c*cw;
+					} else {
+						p.x=data->maxx-cw/2-c*cw;
+					}
+
+					p=transform_point(data->m(),p);
+					d=p-cc;
+					mm[4]=d.x;
+					mm[5]=d.y;
+					TransformSelection(mm,i,i);
+					DBG cerr <<"TRANSFORM "<<i<<" offset:"<<d.x<<','<<d.y<<endl;
+
+					i++;
+				}
+			}
+
+		} else {
+			 //major direction horizontal:
+			i=0;
+			for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
+				for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
+					WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+
+					if (dir==LAX_LRTB || dir==LAX_RLTB) {
+						p.y=data->maxy-rh/2-r*rh;
+					} else {
+						p.y=data->miny+rh/2+r*rh;
+					}
+					if (dir==LAX_LRTB || dir==LAX_LRBT) {
+						p.x=data->minx+cw/2+c*cw;
+					} else {
+						p.x=data->maxx-cw/2-c*cw;
+					}
+
+					p=transform_point(data->m(),p);
+					d=p-cc;
+					mm[4]=d.x;
+					mm[5]=d.y;
+					TransformSelection(mm,i,i);
+					DBG cerr <<"TRANSFORM "<<i<<" offset:"<<d.x<<','<<d.y<<"    to p:"<<p.x<<','<<p.y<<endl;
+
+					i++;
+				}
+			}
+		}
+
+
+	} else if (nupinfo->flowtype==NUP_Sized_Grid) {
+		// ***
+
+	} else if (nupinfo->flowtype==NUP_Flowed) {
+		// ***
+
+	} else if (nupinfo->flowtype==NUP_Random) {
+		double randomx, randomy;
+		for (int c=0; c<selection.n; c++) {
+			WidthHeight(selection.e[c], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+			objcontrols.e[c]->original_center=cc;
+			d.x=d.y=0;
+
+			if (needtoresetlayout) {
+				 //refresh object placement values
+				randomx=((double)random()/RAND_MAX);
+				randomy=((double)random()/RAND_MAX);
+			} else {
+				randomx=objcontrols.e[c]->amountx;
+				randomy=objcontrols.e[c]->amounty;
+			}
+
+			p=data->origin() + (w/2+randomx*(wholew-w)+data->minx)*data->xaxis()
+							 + (h/2+randomy*(wholeh-h)+data->miny)*data->yaxis();
+			d=p-cc;
+			objcontrols.e[c]->amountx=randomx;
+			objcontrols.e[c]->amounty=randomy;
+
+			mm[4]=d.x;
+			mm[5]=d.y;
+			TransformSelection(mm,c,c);
+		}
+
+	} else if (nupinfo->flowtype==NUP_Unclump) {
+		// *** spread out evenly
+	
+	} else if (nupinfo->flowtype==NUP_Unoverlap) {
+		// *** move just enough to unobscure
+	}
+
+
+	if (updateorig)	for (int c=0; c<selection.n; c++) {
+		objcontrols.e[c]->original_transform->m(selection.e[c]->obj->m());
+	}
+
+	RemapBounds();
+	needtodraw=1;
+	return 0;
 }
 
 //} // namespace Laidout
