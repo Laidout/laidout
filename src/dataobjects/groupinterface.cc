@@ -18,6 +18,7 @@
 #include <lax/colors.h>
 #include "groupinterface.h"
 #include "../interfaces/aligninterface.h"
+#include "../interfaces/nupinterface.h"
 #include "printermarks.h"
 #include "../project.h"
 #include "../viewwindow.h"
@@ -341,7 +342,7 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc=ObjectInterface::GetShortcuts();
 
 	sc->Add(GIA_Align,     'a',0,0,    "Align",     _("Align selected objects"),NULL,0);
-	//sc->Add(GIA_Distribute,'d',0,0,    "Distribute",_("Distribute selected objects"),NULL,0);
+	sc->Add(GIA_Distribute,'f',0,0,    "Distribute",_("Distribute selected objects in rows and columns"),NULL,0);
 
 	return sc;
 }
@@ -362,12 +363,15 @@ int GroupInterface::PerformAction(int action)
 		return 0;
 
 	} else if (action==GIA_Distribute) {
-		 //change to align interface with the objects
-//		nup=new NupInterface(***);
-//		nup->addObjects(selection);
-//		viewport->Push(nup,1,0);
-//		viewport->Pop(this);
-//		FreeSelection();
+		 //change to nup interface with the objects
+		if (selection.n<=1) return 0;
+		NUpInterface *nup=new NUpInterface(NULL,10001,dp);
+		nup->AddToSelection(selection);
+		nup->owner=this;
+		child=nup;
+		viewport->Push(nup,1,-1);
+		viewport->postmessage(_("Flow objects"));
+		FreeSelection();
 		return 0;
 	}
 
