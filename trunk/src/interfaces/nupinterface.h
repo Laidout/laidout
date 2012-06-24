@@ -16,7 +16,7 @@
 #ifndef INTERFACES_NUPINTERFACE_H
 #define INTERFACES_NUPINTERFACE_H
 
-#include <lax/interfaces/aninterface.h>
+#include <lax/interfaces/objectinterface.h>
 #include <lax/refptrstack.h>
 
 #include "../laidout.h"
@@ -74,7 +74,7 @@ class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted
 
 //------------------------------------- NUpInterface --------------------------------------
 
-class NUpInterface : public LaxInterfaces::anInterface
+class NUpInterface : public LaxInterfaces::ObjectInterface
 {
   protected:
 	Laxkit::ButtonDownInfo buttondown;
@@ -84,6 +84,24 @@ class NUpInterface : public LaxInterfaces::anInterface
 	ActionArea *major, *minor;
 	ActionArea *majornum, *minornum;
 	ActionArea *okcontrol, *typecontrol;
+
+	class ControlInfo //one per object
+	{
+	  public:
+		flatpoint p;
+		flatpoint v;
+		double amountx,amounty;
+		flatpoint snapto;
+		int flags;
+		flatpoint original_center;
+		LaxInterfaces::SomeData *original_transform;
+
+		ControlInfo();
+		~ControlInfo();
+		void SetOriginal(LaxInterfaces::SomeData *o);
+	};
+	Laxkit::PtrStack<ControlInfo> objcontrols;
+	int needtoresetlayout;
 
 	NUpInfo *nupinfo;
 	int tempdir;
@@ -105,10 +123,13 @@ class NUpInterface : public LaxInterfaces::anInterface
 	virtual void remapControls(int tempdir=-1);
 	virtual const char *controlTooltip(int action);
 	virtual const char *flowtypeMessage(int set);
-	virtual int Apply();
+	virtual int Apply(int updateorig);
+	virtual int Reset();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
+
+	virtual void WidthHeight(LaxInterfaces::ObjectContext *oc,flatvector x,flatvector y, double *width, double *height, flatpoint *cc);
   public:
 	unsigned long nup_style;//options for interface
 
@@ -144,6 +165,9 @@ class NUpInterface : public LaxInterfaces::anInterface
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	virtual int validateInfo();
+
+	virtual int FreeSelection();
+	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &objs);
 };
 
 
