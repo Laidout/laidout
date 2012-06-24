@@ -75,9 +75,7 @@ int HelpWindow::preinit()
 	return 0;
 }
 
-/*! Pops up a box with the QUICKREF and an ok button.
- *
- * \todo when shortcuts are fully implemented, the text here will be basically automatic.
+/*! Pops up a box with the list of shortcuts and an ok button.
  */
 int HelpWindow::init()
 {
@@ -126,7 +124,18 @@ int HelpWindow::init()
 				appendstr(help,str);
 	        }
 	    }
+
+		 //output any unbound actions
+		if (a) {
+			int c2=0;
+			for (c2=0; c2<a->n; c2++) {
+				if (s && s->FindShortcutFromAction(a->e[c2]->id,0)) continue; //action is bound!
+				sprintf(str,"none          %s\n",a->e[c2]->description);
+				appendstr(help,str);
+			}
+		}
 		appendstr(help,"\n");
+
 	}
 
 

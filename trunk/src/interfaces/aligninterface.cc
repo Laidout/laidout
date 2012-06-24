@@ -334,6 +334,7 @@ AlignInterface::~AlignInterface()
 	DBG cerr <<"AlignInterface destructor.."<<endl;
 
 	if (aligninfo) aligninfo->dec_count();
+	if (sc) sc->dec_count();
 }
 
 
