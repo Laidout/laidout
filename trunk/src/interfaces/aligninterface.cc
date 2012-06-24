@@ -295,6 +295,7 @@ AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 	active=0;
 	snapto_lrc_amount=0; //pixel distance to snap to the standard left/top, center, or right/bottom points, 0 for none
 	boundstep=.1;
+	explodemode=0;
 
 	hover=-1;
 	hoverindex=-1;
@@ -319,6 +320,7 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 	active=0;
 	snapto_lrc_amount=0; //pixel distance to snap to the standard left/top, center, or right/bottom points, 0 for none
 	boundstep=.1;
+	explodemode=0;
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
@@ -1060,6 +1062,12 @@ int AlignInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		return 0;
 	}
 
+	if ((state&LAX_STATE_MASK)!=0
+			&& (over==ALIGN_MoveSnapAlign || over==ALIGN_MoveFinalAlign)
+			&& aligninfo->snap_align_type==FALIGN_Proportional
+			&& aligninfo->final_layout_type==FALIGN_Proportional) {
+		explodemode=1;
+	}
 
 	buttondown.down(d->id,LEFTBUTTON,x,y,over,index);
 	//flatpoint fp=dp->screentoreal(x,y);
@@ -1075,6 +1083,7 @@ int AlignInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 
 int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
+	explodemode=0;
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 	int action=-1,i2=-1;
 	int dragged=buttondown.up(d->id,LEFTBUTTON,&action,&i2);
@@ -1426,7 +1435,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		return 0;
 	}
 
-	if (action==ALIGN_MoveSnapAlign) {
+	if (action==ALIGN_MoveSnapAlign || (explodemode && action==ALIGN_MoveFinalAlign)) {
 		 //move snap align
 		double adjust=1;
 		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.25;
@@ -1443,10 +1452,10 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		viewport->postmessage(buffer);
 
 		needtodraw=1;
-		return 0;
+		if (!explodemode) return 0;
 	}
 
-	if (action==ALIGN_MoveFinalAlign) {
+	if (action==ALIGN_MoveFinalAlign || (explodemode && action==ALIGN_MoveSnapAlign)) {
 		 //move final align
 		double adjust=1;
 		if ((state&LAX_STATE_MASK)==ShiftMask) adjust=.25;
@@ -1882,8 +1891,8 @@ int AlignInterface::ResetAlignment()
 	return 0;
 }
 
-/*! From original transforms, apply alignment by first copying back original to actual object,
- * then figuring out new placement, then take that new placement and put in original transform.
+/*! Apply alignment by first copying back original transform to actual object,
+ * then figuring out new placement, then take that new placement and put in object.
  *
  * Return 0 for success or 1 for unable to apply for some reason.
  */
@@ -1901,7 +1910,8 @@ int AlignInterface::ApplyAlignment(int updateorig)
 		selection.e[c]->obj->m(controls.e[c]->original_transform->m());
 	}
 
-	 //then find and set new transforms
+	 //then find and set new transforms...
+
 	flatpoint cc, ul,ur,ll,lr;
 	flatpoint v,p, d,ac;
 	double dul,dur,dll,dlr;
@@ -1909,18 +1919,19 @@ int AlignInterface::ApplyAlignment(int updateorig)
 	SomeData *o;
 
 
-	if (aligninfo->final_layout_type==FALIGN_Align
-			|| aligninfo->final_layout_type==FALIGN_Proportional
-			|| aligninfo->final_layout_type==FALIGN_None) {
+	if (   aligninfo->final_layout_type==FALIGN_Align
+		|| aligninfo->final_layout_type==FALIGN_Proportional) {
 
-		//We don't need to mess with the path when final is just align or none. We need only
+		//We don't need to mess with the path when final is aligning. We need only
 		//snap and align when appropriate to snap_direction and layout_direction
 
+		flatpoint point,tangent;
 		for (int c=0; c<selection.n; c++) {
 			o=selection.e[c]->obj;
 			if (viewport) viewport->transformToContext(m,selection.e[c],0,1);
 			else transform_copy(m,o->m());
 
+			 //compute corners of bounding box of untransformed object, in real coordinates
 			ul=transform_point(m,o->minx,o->maxy);
 			ur=transform_point(m,o->maxx,o->maxy);
 			ll=transform_point(m,o->minx,o->miny);
@@ -1949,13 +1960,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				if (dlr<min) min=dlr; else if (dlr>max) max=dlr;
 
 				controls.e[c]->snapto=cc;
-				if (aligninfo->final_layout_type==FALIGN_None) {
-					 //normally use only layout_direction, but for none makes more sense to use path
-					if (!PointToPath(cc,p)) {
-						controls.e[c]->flags|=CONTROLS_SkipSnap;
-						continue;
-					}
-				} else if (!PointToLine(cc,p,0)) { //makes p the point on layout line that cc snaps to
+				if (!PointToLine(cc,p,0,NULL)) { //makes p the point on layout line that cc snaps to
 					controls.e[c]->flags|=CONTROLS_SkipSnap;
 					continue;
 				}
@@ -1970,47 +1975,45 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			}
 
 			 //then snap in layout_direction
-			if (aligninfo->final_layout_type==FALIGN_Align || aligninfo->final_layout_type==FALIGN_Proportional) {
-				v=aligninfo->layout_direction;
-				//v=transform_vector(dp->Getictm(),v);
-				p=aligninfo->center;
+			v=aligninfo->layout_direction;
+			//v=transform_vector(dp->Getictm(),v);
+			p=aligninfo->center;
 
-				 //find min and max along snap direction
-				//ac=dp->screentoreal(aligninfo->center);
-				ac=aligninfo->center;
-				dul=distparallel((ac-ul),v);
-				min=max=dul;
-				dur=distparallel((ac-ur),v);
-				if (dur<min) min=dur; else if (dur>max) max=dur;
-				dll=distparallel((ac-ll),v);
-				if (dll<min) min=dll; else if (dll>max) max=dll;
-				dlr=distparallel((ac-lr),v);
-				if (dlr<min) min=dlr; else if (dlr>max) max=dlr;
+			 //find min and max along snap direction
+			//ac=dp->screentoreal(aligninfo->center);
+			ac=aligninfo->center;
+			dul=distparallel((ac-ul),v);
+			min=max=dul;
+			dur=distparallel((ac-ur),v);
+			if (dur<min) min=dur; else if (dur>max) max=dur;
+			dll=distparallel((ac-ll),v);
+			if (dll<min) min=dll; else if (dll>max) max=dll;
+			dlr=distparallel((ac-lr),v);
+			if (dlr<min) min=dlr; else if (dlr>max) max=dlr;
 
-				if (!PointToLine(cc,p,1)) { //makes p the screen point on snap line that cc snaps to
-					controls.e[c]->flags|=CONTROLS_SkipSnap;
-					continue;
-				}
-
-				controls.e[c]->flags&=~CONTROLS_SkipSnap;
-				controls.e[c]->snapto=p;  //center snapped to path
-
-				 //apply snap alignment
-				d+=p-cc;
-				if (aligninfo->final_layout_type==FALIGN_Proportional) d-=(aligninfo->finalalignment/100)*(p-cc);
-				else d-=v/norm(v)*(max-min)*(aligninfo->finalalignment-50)/100;
+			if (!PointToLine(cc,p,1,NULL)) { //makes p the screen point on snap line that cc snaps to
+				controls.e[c]->flags|=CONTROLS_SkipSnap;
+				continue;
 			}
+
+			controls.e[c]->flags&=~CONTROLS_SkipSnap;
+			controls.e[c]->snapto=p;  //center snapped to path
+
+			 //apply snap alignment
+			d+=p-cc;
+			if (aligninfo->final_layout_type==FALIGN_Proportional) d-=(aligninfo->finalalignment/100)*(p-cc);
+			else d-=v/norm(v)*(max-min)*(aligninfo->finalalignment-50)/100;
 
 			mm[4]=d.x;
 			mm[5]=d.y;
 			TransformSelection(mm,c,c);
 		}
-	} //if final align is align, align proportional, or none
+	} //endif final align is align, align proportional
+	 //the rest of the layout types require positioning on the path
 
 
-	//the rest of the layout types require positioning on the path
-
-	if (       aligninfo->final_layout_type==FALIGN_Random
+	else if (  aligninfo->final_layout_type==FALIGN_None
+			|| aligninfo->final_layout_type==FALIGN_Random
 			|| aligninfo->final_layout_type==FALIGN_Gap
 			|| aligninfo->final_layout_type==FALIGN_Grid) {
 
@@ -2023,6 +2026,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			if (viewport) viewport->transformToContext(m,selection.e[c],0,1);
 			else transform_copy(m,o->m());
 
+			 //compute corners of bounding box of untransformed object, in real coordinates
 			ul=transform_point(m,o->minx,o->maxy);
 			ur=transform_point(m,o->maxx,o->maxy);
 			ll=transform_point(m,o->minx,o->miny);
@@ -2036,7 +2040,16 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			point=cc;
 			double lbound=aligninfo->leftbound, rbound=aligninfo->rightbound;
 
-			if (aligninfo->final_layout_type==FALIGN_Random) {
+			 // 1. Find the point on the path where object center initially snaps to
+			if (aligninfo->final_layout_type==FALIGN_None) {
+				 //snap directly onto path
+				if (!PointToPath(cc,point,&tangent)) {
+					controls.e[c]->flags|=CONTROLS_SkipSnap;
+					continue;
+				}
+				controls.e[c]->p=point;
+
+			} else if (aligninfo->final_layout_type==FALIGN_Random) {
 				 // establish random control point
 				double dist;
 				if (needtoresetlayout) dist=lbound+((double)random()/RAND_MAX)*(rbound-lbound);
@@ -2056,6 +2069,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				if (!onp) continue;
 				v=tangent;
 
+				 //find (very) approximate bounds in tangent direction
 				dul=distparallel((-ul),v);
 				min=max=dul;
 				dur=distparallel((-ur),v);
@@ -2084,7 +2098,28 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 			//so now point is the base repositioned center of the object on the path, and tangent is at that point on path
 
-			 //find shifting due to snap alignment
+			 //2. find rotating due to visual shift type
+			transform_identity(mm);
+			if (aligninfo->visual_align!=FALIGN_Visual) {
+				// for FALIGN_VisualRotate, and for now also FALIGN_ObjectRotate...
+				normalize(tangent);
+				mm[4]-=cc.x;
+				mm[5]-=cc.y;
+				double angle=-atan2(tangent.y,tangent.x);
+				double r[6],s[6];
+				r[4]=r[5]=0;
+				r[0]=cos(angle);
+				r[1]=-sin(angle);
+				r[2]=sin(angle);
+				r[3]=cos(angle);
+				transform_mult(s,mm,r);
+				transform_copy(mm,s);
+				mm[4]+=cc.x;
+				mm[5]+=cc.y;
+			}
+
+
+			 //3. find shifting due to snap alignment
 			if (aligninfo->snap_align_type==FALIGN_Align || aligninfo->snap_align_type==FALIGN_Proportional) {
 				 //find min and max along snap direction
 				//v=aligninfo->snap_direction;
@@ -2092,13 +2127,13 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				p=aligninfo->center;
 
 				ac=aligninfo->center;
-				dul=distparallel((ac-ul),v);
+				dul=distparallel((ac-transform_point(mm,ul)),v);
 				min=max=dul;
-				dur=distparallel((ac-ur),v);
+				dur=distparallel((ac-transform_point(mm,ur)),v);
 				if (dur<min) min=dur; else if (dur>max) max=dur;
-				dll=distparallel((ac-ll),v);
+				dll=distparallel((ac-transform_point(mm,ll)),v);
 				if (dll<min) min=dll; else if (dll>max) max=dll;
-				dlr=distparallel((ac-lr),v);
+				dlr=distparallel((ac-transform_point(mm,lr)),v);
 				if (dlr<min) min=dlr; else if (dlr>max) max=dlr;
 
 				p=point; //the snapped destination
@@ -2107,91 +2142,66 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				controls.e[c]->flags&=~CONTROLS_SkipSnap;
 
 				 //apply snap alignment
-				d+=p-cc;
+				d=p-cc;
 				if (aligninfo->final_layout_type==FALIGN_Proportional) d-=(aligninfo->finalalignment/100)*(p-cc);
 				else d-=transpose(tangent)/norm(transpose(tangent))*(max-min)*(aligninfo->snapalignment-50)/100;
 			}
 
-			if (d.x!=0 || d.y!=0) { //finally apply the shift
-				transform_identity(mm);
-				if (aligninfo->visual_align==FALIGN_VisualRotate) {
-					normalize(tangent);
 
-					mm[4]-=cc.x;
-					mm[5]-=cc.y;
-					double angle=atan2(tangent.x,tangent.y);
-					double r[6],s[6];
-					r[4]=r[5]=0;
-					r[0]=cos(angle);
-					r[1]=-sin(angle);
-					r[2]=sin(angle);
-					r[3]=cos(angle);
-					transform_mult(s,mm,r);
-					transform_copy(mm,s);
-					mm[4]+=point.x;
-					mm[5]+=point.y;
-
-					 //finally, apply alignment shift
-					mm[4]+=d.x;
-					mm[5]+=d.y;
-				} else if (aligninfo->visual_align==FALIGN_ObjectRotate) {
-					mm[4]=d.x;
-					mm[5]=d.y;
-				} else { //plain shift
-					mm[4]=d.x;
-					mm[5]=d.y;
-				}
-				TransformSelection(mm,c,c);
-			}
-
+			mm[4]+=d.x;
+			mm[5]+=d.y;
+			TransformSelection(mm,c,c);
 
 		} //foreach selection.e
 		needtoresetlayout=0;
-	} //if final: random, grid, gap
+	} //if final: random, grid, gap, none
 
-	// ***
-	//FALIGN_Unoverlap
-
+	//else if (final==FALIGN_Unoverlap) ...
 
 
+	 //optionally set new transforms to be the base to work from
 	if (updateorig)	for (int c=0; c<selection.n; c++) {
 		controls.e[c]->original_transform->m(selection.e[c]->obj->m());
 	}
 
-	RemapBounds();
+	RemapBounds(); //find new bounding box of objects in transformed state
 
 	needtodraw=1;
 	return 0;
 }
-
 
 //! The point lying on either snap_direction, or layout_direction found by snapping real point p to it.
 /*! If isfinal!=0, then swap layout_direction and snap_direction.
  *
  * Return 0 for directions do not intersect, or 1 for point found.
  */
-int AlignInterface::PointToLine(flatpoint p, flatpoint &ip, int isfinal)
+int AlignInterface::PointToLine(flatpoint p, flatpoint &ip, int isfinal, flatpoint *tangent)
 {
 	flatline l1(p, p+(isfinal?aligninfo->layout_direction:aligninfo->snap_direction));
 	flatline l2(aligninfo->center, aligninfo->center+(isfinal?aligninfo->snap_direction:aligninfo->layout_direction));
 
 	double t1,t2;
 	if (intersection(l1,l2,&ip,&t1,&t2)!=0) return 0; //lines do not intersect
+	if (tangent) *tangent=(isfinal?aligninfo->snap_direction:aligninfo->layout_direction);
 	return 1;
 }
 
 //! Snap real point p to the path along snap_direction, and put that point in ip. Return 0 for does not intersect path.
-int AlignInterface::PointToPath(flatpoint p, flatpoint &ip)
+int AlignInterface::PointToPath(flatpoint p, flatpoint &ip, flatpoint *tangent)
 {
-	if (!aligninfo->path) return PointToLine(p,ip,0);
+	if (!aligninfo->path) return PointToLine(p,ip,0,tangent);
 
 	 //else intersect snap line with path
 	flatpoint pt;
+	double t;
 	int num=aligninfo->path->Intersect(0,transform_point_inverse(aligninfo->path->m(),p),
 										 transform_point_inverse(aligninfo->path->m(),p+aligninfo->snap_direction),
-										 1, 0,&pt,1, NULL,0);
+										 1, 0,&pt,1, &t,1);
 	if (num==0) return 0;
 	ip=transform_point(aligninfo->path->m(),pt);
+	if (tangent) {
+		aligninfo->path->PointAlongPath(0,t,0, NULL,tangent);
+	}
 	return 1;
 }
 
