@@ -157,7 +157,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 		}
 	}
 	 // if filename is given, and old file is NULL, or is different...
-	if (fname && (!filename || (filename && strcmp(fname,filename)))) 
+	if (fname && (!filename || (filename && strcmp(fname,filename)))) {
 		//if (pname) previewflag|=1;
 		 // load an image with existing preview, do not destroy that preview when
 		 // image is destroyed:
@@ -168,6 +168,7 @@ void EpsData::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 			maxx=x2;
 			maxy=y2;
 		}
+	}
 }
 
 /*! Return 0 for success, nonzero error.
