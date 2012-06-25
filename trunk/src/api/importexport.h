@@ -16,8 +16,9 @@
 #ifndef IMPORTEXPORTFUNC_H
 #define IMPORTEXPORTFUNC_H
 
+#include <lax/errorlog.h>
+
 #include "../styles.h"
-#include "../errorlog.h"
 
 StyleDef *makeImportStyleDef();
 int ImportFunction(ValueHash *context, 
