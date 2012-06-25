@@ -52,6 +52,15 @@ void dumperrorlog(const char *mes,ErrorLog &log)
  * \brief Stack node for ErrorLog class.
  */
 
+ErrorLogNode::ErrorLogNode()
+{
+	objectstr_id=NULL;
+	object_id=0;
+	description=NULL;
+	severity=0;
+	info=0;
+}
+
 ErrorLogNode::ErrorLogNode(unsigned int objid, const char *objidstr, FieldPlace *nplace, const char *desc, int nseverity, int ninfo)
 {
 	if (nplace) place=*nplace;
@@ -68,6 +77,15 @@ ErrorLogNode::~ErrorLogNode()
 	if (objectstr_id) delete[] objectstr_id;
 }
 
+void ErrorLogNode::Set(unsigned int objid, const char *objidstr, FieldPlace *nplace, const char *desc, int nseverity, int ninfo)
+{
+	if (nplace) place=*nplace;
+	makestr(description,desc);
+	severity=nseverity;
+	object_id=objid;
+	makestr(objectstr_id,objidstr);
+	info=ninfo;
+}
 
 //---------------------------------- ErrorLog
 /*! \class ErrorLog
@@ -79,6 +97,11 @@ ErrorLogNode::~ErrorLogNode()
 
 void ErrorLog::Clear()
 { messages.flush(); }
+
+
+//! Override if subclassed error logs require extra info in a log message.
+ErrorLogNode *ErrorLog::newErrorLogNode()
+{ return new ErrorLogNode(); }
 
 const char *ErrorLog::Message(int i,int *severity,int *info)
 {
@@ -102,7 +125,9 @@ int ErrorLog::AddMessage(const char *desc, int severity, int ninfo)
  */
 int ErrorLog::AddMessage(unsigned int objid, const char *objidstr, FieldPlace *place, const char *desc, int severity, int ninfo)
 {
-	messages.push(new ErrorLogNode(objid,objidstr,place, desc,severity,ninfo));
+	ErrorLogNode *node=newErrorLogNode();
+	node->Set(objid,objidstr,place, desc,severity,ninfo);
+	messages.push(node);
 	return messages.n;
 }
 
