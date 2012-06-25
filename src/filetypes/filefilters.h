@@ -16,12 +16,12 @@
 #ifndef FILEFILTERS_H
 #define FILEFILTERS_H
 
+#include <lax/errorlog.h>
 #include <lax/anxapp.h>
 #include <lax/refcounted.h>
 #include <lax/dump.h>
 #include "../document.h"
 #include "../styles.h"
-#include "../errorlog.h"
 
 
 class Document;

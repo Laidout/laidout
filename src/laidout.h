@@ -18,8 +18,8 @@
 
 #include <lax/anxapp.h>
 #include <lax/iconmanager.h>
+#include <lax/errorlog.h>
 
-#include "errorlog.h"
 #include "papersizes.h"
 #include "document.h"
 #include "project.h"

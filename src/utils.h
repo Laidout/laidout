@@ -17,9 +17,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <cstdio>
+#include <lax/errorlog.h>
 #include <lax/attributes.h>
-#include "errorlog.h"
 
 //----------------------------------- unique name functions ------------------------------
 char *make_id(const char *base);

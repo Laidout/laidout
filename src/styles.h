@@ -21,9 +21,9 @@
 #include <cstdio>
 #include <lax/dump.h>
 #include <lax/refcounted.h>
+#include <lax/errorlog.h>
 
 #include "fieldplace.h"
-#include "errorlog.h"
 #include "calculator/values.h"
 
 
@@ -71,6 +71,7 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	NewStyleFunc newfunc;
 	StyleFunc stylefunc;
 	Style *newStyle(StyleDef *def) { if (newfunc) return newfunc(this); return NULL; }
+
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
 	char *description; // description
