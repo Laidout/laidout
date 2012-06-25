@@ -51,12 +51,16 @@ class ErrorLogNode
 	char *description;
 	int severity; //"ok", "warning", "fail", "version fail"
 	int info; //extra info
+	ErrorLogNode();
 	ErrorLogNode(unsigned int objid, const char *objidstr, FieldPlace *nplace, const char *desc, int nseverity,int ninfo);
-	~ErrorLogNode();
+	virtual ~ErrorLogNode();
+	virtual void Set(unsigned int objid, const char *objidstr, FieldPlace *nplace, const char *desc, int nseverity,int ninfo);
 };
 
 class ErrorLog
 {
+  protected:
+	virtual ErrorLogNode *newErrorLogNode();
   public:
 	Laxkit::PtrStack<ErrorLogNode> messages;
 
