@@ -108,6 +108,8 @@ class PanoramaFace : public FaceDataObj
 class HedronWindow : public Laxkit::anXWindow
 {
   protected:
+	int mbdown,rbdown;
+
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
   public:
@@ -115,7 +117,6 @@ class HedronWindow : public Laxkit::anXWindow
 	GLuint spheretexture, flattexture;
 	int rendermode, mode, oldmode;
 	int autorepeat, curobj;
-	flatpoint leftb;
 	double fovy;
 	int view;
 	double cylinderscale;
@@ -153,7 +154,6 @@ class HedronWindow : public Laxkit::anXWindow
 	int messagetick;
 
 	int firsttime;
-	int rbdown,mbdown;
 	Laxkit::ButtonDownInfo buttondown;
 
 	Net *currentnet;
