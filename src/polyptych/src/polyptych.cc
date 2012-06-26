@@ -37,6 +37,11 @@
 
 #include </usr/include/GraphicsMagick/Magick++.h>
 
+//#define POLYPTYCH_TUIO
+#ifdef POLYPTYCH_TUIO
+#include <lax/laxtuio.h>
+#include <lax/laxtuio.cc> //it's not in laxkit proper yet
+#endif
 
 //#include <lax/lists.cc>
 //#include <lax/refptrstack.cc>
@@ -215,6 +220,7 @@ void InitOptions()
 	options.Add("polyhedron",'p', 1, "An OFF, Obj, or Polyp polyhedron file",     0, "file");
 	options.Add("fontsize",  'f', 1, "Default console font size, in pixels",      0, "20");
 	options.Add("touch",     't', 0, "Run in touch mode, where input is all single click",   0, "");
+	options.Add("tuio",      'T', 1, "Set up a tuio listener on the specified port (such as 3333)");
 	options.Add("version",   'v', 0, "Print out version of the program and exit", 0, NULL);
 	options.Add("help",      'h', 0, "Print out this help and exit",              0, NULL);
 }
@@ -228,7 +234,7 @@ int main(int argc, char **argv)
 	app.init(argc,argv);
 	InitLaxImlib();
 	Magick::InitializeMagick(*argv);
-
+	const char *tuio=NULL;
 
 	 // parse options
 	int c,index, t;
@@ -267,6 +273,8 @@ int main(int argc, char **argv)
 				convert_to_full_path(polyhedronfile,NULL);
 			  } break;
 					  
+			case 'T': tuio=o->arg(); break;
+
 			case 'i': { //image
 				makestr(spherefile,o->arg());
 				convert_to_full_path(spherefile,NULL);
@@ -404,6 +412,12 @@ int main(int argc, char **argv)
 
 
 
+#ifdef POLYPTYCH_TUIO
+	if (tuio) {
+		SetupTUIOListener(tuio);
+		app.SetMaxTimeout(50000);
+	}
+#endif
 
 
 	 //Create and configure the new window

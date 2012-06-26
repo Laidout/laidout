@@ -5,6 +5,10 @@
 #################################################
 
 
+##Comment the next 2 lines out if you don't want to include tuio capability
+POLYPTYCH_TUIO=-DPOLYPTYCH_TUIO
+TUIOLIBS=-llo
+
 
 BINDIR=$(PREFIX)/bin
 
@@ -24,8 +28,11 @@ forlaidout: nets.o poly.o
 forlaidoutgl: nets.o poly.o glbase.o gloverlay.o polyrender.o hedronwindow.o
 
 polyptych: lax $(pobjs) polyptych.o
-	g++ $(pobjs) polyptych.o -llaxinterfaces -llaxkit $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o polyptych
+	g++ $(pobjs) polyptych.o -llaxinterfaces -llaxkit $(TUIOLIBS) $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o polyptych
 	
+polyptych.o: polyptych.cc
+	g++ -c $(POLYPTYCH_TUIO)  $(CPPFLAGS) polyptych.cc -o polyptych.o
+
 convertahedron: poly.o nets.o convertahedron.cc
 	g++ convertahedron.cc  poly.o nets.o -llaxinterfaces -llaxkit $(LDFLAGS)  $(CPPFLAGS) -o $@
 

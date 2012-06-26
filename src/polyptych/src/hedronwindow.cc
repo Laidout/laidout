@@ -1753,7 +1753,6 @@ int HedronWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMouse
 		}
 	}
 
-	leftb=flatpoint(x,y);
 	mbdown=x;
 	if (active_action==ACTION_Unwrap_Angle) mbdown=x;
 	if (active_action==ACTION_Unwrap) rbdown=currentface;
@@ -1823,7 +1822,6 @@ int HedronWindow::MBDown(int x,int y,unsigned int state,int count,const LaxMouse
 	}
 
 	buttondown.down(mouse->id,MIDDLEBUTTON,x,y);
-	mbdown=x;
 	return 0;
 }
 
@@ -1841,7 +1839,7 @@ int HedronWindow::RBDown(int x,int y,unsigned int state,int count,const LaxMouse
 		return 0;
 	}
 
-	rbdown=currentface;
+	//rbdown=currentface;
 	//currentface=-1;
 	buttondown.down(mouse->id,RIGHTBUTTON,x,y);
 	return 0;
@@ -2685,11 +2683,72 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 	//so below is for when button is down
 
+
+
 	int lx,ly;
 	int bgroup=OGROUP_None,bindex=-1;
 	buttondown.move(mouse->id, x,y, &lx,&ly);
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &bgroup,&bindex);
-	leftb=flatpoint(lx,ly);
+	flatpoint leftb=flatpoint(lx,ly);
+
+
+	 //deal with 2 finger zoom first
+	if (buttondown.isdown(0,LEFTBUTTON)==2 && buttondown.isdown(mouse->id,LEFTBUTTON)) {
+		 //double move
+		int xp1,yp1, xp2,yp2;
+		int xc1,yc1, xc2,yc2;
+		int device1=buttondown.whichdown(0,LEFTBUTTON);
+		int device2=buttondown.whichdown(device1,LEFTBUTTON);
+		buttondown.getinfo(device1,LEFTBUTTON, NULL,NULL, &xp1,&yp1, &xc1,&yc1);
+		buttondown.getinfo(device2,LEFTBUTTON, NULL,NULL, &xp2,&yp2, &xc2,&yc2);
+
+		double oldd=norm(flatpoint(xp1,yp1)-flatpoint(xp2,yp2));
+		double newd=norm(flatpoint(xc1,yc1)-flatpoint(xc2,yc2));
+		double zoom=newd/oldd;
+		if (zoom==0) return 0;
+
+		 //apply zoom
+		double amount=10;
+		//DBG cerr <<" ZZZZZZOOM d1:"<<device1<<" d2:"<<device2<<"    "<<amount<<"  z:"<<zoom<<endl;
+		if (zoom>1) amount=-amount*(zoom-1);
+		else amount=amount*(1/zoom-1);
+
+		cameras.e[current_camera]->m.p+=amount*cameras.e[current_camera]->m.z;
+		cameras.e[current_camera]->transformTo();
+
+		 //apply rotation
+//		flatvector v1=flatpoint(xc1,yc1)-flatpoint(xp1,yp1);
+//		flatvector v2=flatpoint(xc2,yc2)-flatpoint(xp2,yp2);
+//		double angle=0;
+//		double epsilon=1e-10;
+//		DBG cerr <<"   NNNNNORM  a:"<<norm(v1)<<"  b:"<<norm(v2)<<endl;
+//		if (norm(v1)>epsilon) {
+//			 //point 1 moved
+//			v1=flatpoint(xc1,yc1)-flatpoint(xp2,yp2);
+//			v2=flatpoint(xp1,yp1)-flatpoint(xp2,yp2);
+//			angle=atan2(v2.y,v2.x)-atan2(v1.y,v1.x);
+//		} else if (norm(v2)>epsilon) {
+//			 //point 2 moved
+//			v1=flatpoint(xc2,yc2)-flatpoint(xp1,yp1);
+//			v2=flatpoint(xp2,yp2)-flatpoint(xp1,yp1);
+//			angle=atan2(v2.y,v2.x)-atan2(v1.y,v1.x);
+//		}
+//		DBG  cerr <<" RRRRROTATE "<<angle<< "  deg:"<<angle*180/M_PI<<endl;
+//
+//		if (angle) {
+//			spacepoint axis;
+//			axis=cameras.e[current_camera]->m.z;
+//			things.e[curobj]->RotateAbs(angle*180/M_PI, axis.x,axis.y,axis.z);
+//		}
+
+		needtodraw=1;
+		return 0;
+	}
+
+
+
+	if (!buttondown.isdown(mouse->id,LEFTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON))
+		return 0;
 
 	if (bgroup==OGROUP_Paper && currentnet) {
 		flatpoint fp,fpn;
@@ -2723,6 +2782,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 	else if (buttondown.isdown(0,RIGHTBUTTON)) current_action=ACTION_Unwrap;
 
 	if (current_action==ACTION_Zoom) {
+		 //zoom
 		if (x-mbdown>10) { WheelUp(x,y,0,0,mouse); mbdown=x; }
 		else if (mbdown-x>10) { WheelDown(x,y,0,0,mouse); mbdown=x; }
 
@@ -2746,6 +2806,7 @@ int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 	 //right button
 	if (current_action==ACTION_Unwrap && rbdown>=0 && (mode==MODE_Net || mode==MODE_Solid)) {
+		 //Unwrap
 		int c=findCurrentFace();
 		DBG cerr <<"rb move: "<<c<<endl;
 		if (c==rbdown) { currentface=rbdown; return 0; }
@@ -3702,6 +3763,7 @@ int HedronWindow::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 		return PerformAction(action);
 	}
 
+	//cout <<"*** po ch:"<<ch<<"  action:"<<action<<endl;
 
 	 //----chars available during all modes
 	if (ch=='q' && (state&LAX_STATE_MASK)==ControlMask) { app->quit(); return 0; }
