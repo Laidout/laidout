@@ -447,14 +447,15 @@ int main(int argc, char **argv)
 	//app.addglwindow(w);
 	app.addwindow(w);
 	app.run();
-			
-	XAutoRepeatOn(app.dpy);
-	XSync(app.dpy,True); // must sync so the autorepeat takes effect!!
+
+	//XAutoRepeatOn(app.dpy);
+	//XSync(app.dpy,True); // must sync so the autorepeat takes effect!!
 	app.close();
 
 	DBG cerr <<"-----------------program done, cleanup follows--------------------"<<endl;
 	DBG cerr <<"delete "<<nets.n<<" nets..."<<endl;
 	DBG nets.flush();
+	DBG FinalizeShortcutManager();
 	DBG cerr <<"done deleting nets."<<endl;
 
 	//DBG cerr << "extra_basis:"<<endl

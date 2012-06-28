@@ -29,14 +29,14 @@ using namespace std;
 
 void dumpMatrix4(GLfloat *m,const char *str)
 {
-	DBG cout <<(str?str:"matrix")<<":"<<endl;
+	DBG cerr <<(str?str:"matrix")<<":"<<endl;
 	int i,j;
 	for (i=0; i<4; i++) {
-	  cout <<"  ";
+	  cerr <<"  ";
 	  for (j=0; j<4; j++) {
-		cout <<m[i*4+j]<<"  ";
+		cerr <<m[i*4+j]<<"  ";
 	  }
-	  cout <<endl;
+	  cerr <<endl;
 	}
 }
 
