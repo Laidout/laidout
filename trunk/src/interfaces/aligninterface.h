@@ -68,7 +68,7 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	double uiscale; //width of main alignment bar
 
 	LaxInterfaces::PathsData *path; //custom alignment path
-	double centert; //line parameter t corresponding to center on path
+	flatpoint centeroffset; //used only when path==NULL
 
 	AlignInfo();
 	virtual ~AlignInfo();
