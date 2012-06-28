@@ -122,8 +122,8 @@ nup:
 
 align tool:
   memory hole
+  if panel slightly away from path, zaps to zero upon escape from path edit
   transform axes visual shift option
-  shift to move control moves whole when path not defined!
   distance along is hideously inaccurate
   '0' for grid align on closed paths should distribute more nicely
   --future:
@@ -136,6 +136,7 @@ align tool:
     if inc/dec arrows, have it inc or dec the decimal place cursor is on
   default presets: inkscape crossover
 
+  DONE shift to move control moves whole when path not defined!
   DONE final layout options
     DONE on/off
 	DONE random

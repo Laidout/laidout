@@ -129,8 +129,8 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
         fprintf(f,"%slayout align       #Type of final layout. Can be align, proportional, none, gaps, grid, random, unoverlap\n",spc);
         fprintf(f,"%slayoutdir 0,1      #default vector of the layout direction\n",spc);
         fprintf(f,"%slayoutamount 50    #Usually in 0..100, for full left to full right, for instance\n",spc);
-        fprintf(f,"%sleftbound 0        #One bound as a distance along the path for layout\n",spc);
-        fprintf(f,"%srightbound 1       #Another bound as a distance along the path for layout\n",spc);
+        fprintf(f,"%sleftbound 0        #One bound as a line parameter along the path, 1 is the 'distance' between vertices\n",spc);
+        fprintf(f,"%srightbound 1       #Another bound as a line parameter along the path for layout\n",spc);
         fprintf(f,"%scenter 0,0         #Hint for position of control panel\n",spc);
         fprintf(f,"%suiscale 10         #How big to make the panel, the pixel width of an alignment bar\n",spc);
         fprintf(f,"%sdefaultgap 5       #\n",spc);
@@ -608,7 +608,7 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 
 	flatpoint v=transform_vector(dp->Getctm(),dir);  v/=norm(v);
 	flatpoint vt=transpose(v);
-	flatpoint p1=dp->realtoscreen(aligninfo->center) - w/2*vt - w*RADIUS*v - w*(amount/100*(BAR-2*RADIUS))*v;
+	flatpoint p1=dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)) - w/2*vt - w*RADIUS*v - w*(amount/100*(BAR-2*RADIUS))*v;
 	flatpoint p2=p1+vt*w;
 	flatpoint p3=p1+w*BAR*v;
 	flatpoint p4=p3+vt*w;
@@ -731,7 +731,7 @@ int AlignInterface::Refresh()
 			v/=norm(v);
 			flatpoint vt=transpose(v);
 			//flatpoint p1(x1,yy), p2(x2,yy);
-			flatpoint cc2,cc(dp->realtoscreen(aligninfo->center));
+			flatpoint cc2,cc(dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)));
 
 
 			 //left side
@@ -791,7 +791,7 @@ int AlignInterface::Refresh()
 
 
 		 //draw control circle
-		flatpoint cc(dp->realtoscreen(aligninfo->center));
+		flatpoint cc(dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)));
 		if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
 		dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
 		dp->drawellipse(cc.x,cc.y,
@@ -884,7 +884,8 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 		if (a!=ALIGN_None) return a;
 	}
 
-	fp-=dp->realtoscreen(aligninfo->center);
+	if (aligninfo->path) fp-=dp->realtoscreen(aligninfo->center);
+	else fp-=dp->realtoscreen(aligninfo->center+aligninfo->centeroffset);
 	if (norm(fp)<aligninfo->uiscale*RADIUS) return ALIGN_Move; //align move circle
 
 
@@ -1151,8 +1152,11 @@ int AlignInterface::createPath()
 
 	PathsData *path=new PathsData;
 
-	path->append(aligninfo-> leftbound*aligninfo->layout_direction + aligninfo->center);
-	path->append(aligninfo->rightbound*aligninfo->layout_direction + aligninfo->center);
+	flatpoint cc=aligninfo->center;
+	aligninfo->center+=aligninfo->centeroffset;
+	aligninfo->centeroffset=flatpoint();
+	path->append(aligninfo-> leftbound*aligninfo->layout_direction + cc);
+	path->append(aligninfo->rightbound*aligninfo->layout_direction + cc);
 	path->FindBBox();
 
 	double d=aligninfo->rightbound-aligninfo->leftbound;
@@ -1378,9 +1382,15 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	flatpoint dd=dp->screentoreal(x,y)-dp->screentoreal(lx,ly);
 	if (action==ALIGN_Move) {
-		aligninfo->center+=dd;
-		if (aligninfo->path && (state&LAX_STATE_MASK)==0) {
-			aligninfo->path->origin(aligninfo->path->origin() + dd);
+		if (aligninfo->path) {
+			aligninfo->center+=dd;
+			if ((state&LAX_STATE_MASK)==0) {
+				aligninfo->path->origin(aligninfo->path->origin() + dd);
+			}
+		} else {
+			if ((state&LAX_STATE_MASK)!=0) {
+				aligninfo->centeroffset+=dd;
+			} else aligninfo->center+=dd;
 		}
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
@@ -1478,8 +1488,9 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	if ((state&LAX_STATE_MASK)==0 && action==ALIGN_RotateSnapAndAlign) {
 		//double angle=(x-lx)/180.;
-		double angle=angle2(dp->screentoreal(flatpoint(lx,ly))-aligninfo->center,
-							dp->screentoreal(flatpoint(x,y))-aligninfo->center);
+		flatpoint cc=aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset);
+		double angle=angle2(dp->screentoreal(flatpoint(lx,ly))-cc,
+							dp->screentoreal(flatpoint(x,y))-cc);
 		aligninfo->snap_direction=rotate(aligninfo->snap_direction,angle);
 		aligninfo->layout_direction=rotate(aligninfo->layout_direction,angle);
 		if (active) ApplyAlignment(0);
