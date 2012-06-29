@@ -2110,10 +2110,14 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 			//so now point is the base repositioned center of the object on the path, and tangent is at that point on path
 
-			 //2. find rotating due to visual shift type
+			 //2. find rotating due to visual shift type. This is a transform applied after object centers
+			 //   are snapped to path, but before shifting to alignment perpendicular to path
 			transform_identity(mm);
-			if (aligninfo->visual_align!=FALIGN_Visual) {
-				// for FALIGN_VisualRotate, and for now also FALIGN_ObjectRotate...
+			if (aligninfo->visual_align==FALIGN_Visual) {
+				 //nothing special needed
+
+			} else if (aligninfo->visual_align==FALIGN_VisualRotate) {
+				 // for FALIGN_VisualRotate, and for now also FALIGN_ObjectRotate...
 				normalize(tangent);
 				mm[4]-=cc.x;
 				mm[5]-=cc.y;
@@ -2128,6 +2132,27 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				transform_copy(mm,s);
 				mm[4]+=cc.x;
 				mm[5]+=cc.y;
+
+			} else if (aligninfo->visual_align==FALIGN_ObjectRotate) {
+				flatpoint xaxis=transform_point(m, flatpoint(1,0))-transform_point(m, flatpoint(0,0));
+				mm[4]-=cc.x;
+				mm[5]-=cc.y;
+				double angle =-atan2(tangent.y,tangent.x);
+				double angle2=-atan2(xaxis.y,xaxis.x);
+				angle-=angle2;
+				double r[6],s[6];
+				r[4]=r[5]=0;
+				r[0]=cos(angle);
+				r[1]=-sin(angle);
+				r[2]=sin(angle);
+				r[3]=cos(angle);
+				transform_mult(s,mm,r);
+				transform_copy(mm,s);
+				mm[4]+=cc.x;
+				mm[5]+=cc.y;
+
+	
+	
 			}
 
 
