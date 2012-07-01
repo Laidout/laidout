@@ -171,8 +171,9 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal, flatpoint *tangent);
 	virtual int PointToPath(flatpoint p, flatpoint &ip, flatpoint *tangent);
 	virtual int PointAlongPath(double t,int tisdistance, flatpoint &point, flatpoint *tangent);
-	virtual flatpoint ClosestPoint(flatpoint p, double *d);
+	virtual flatpoint ClosestPoint(flatpoint p, double *d, double *t);
 	virtual int ClampBoundaries(int fill);
+	virtual double DFromT(double t);
 
 	virtual int ToggleFinal(int dir);
 	virtual int ToggleAlign(int dir);
