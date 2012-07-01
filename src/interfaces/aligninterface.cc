@@ -805,9 +805,9 @@ int AlignInterface::Refresh()
 		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 		flatpoint p;
 		if (!child) {
-			PointAlongPath(aligninfo->leftbound,1, p, NULL);
+			PointAlongPath(aligninfo->leftbound,0, p, NULL);
 			dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveLeftBound);
-			PointAlongPath(aligninfo->rightbound,1, p, NULL);
+			PointAlongPath(aligninfo->rightbound,0, p, NULL);
 			dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveRightBound);
 		}
 
@@ -952,13 +952,13 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 
 	 //scan for left boundary
 	flatpoint p;
-	PointAlongPath(aligninfo->leftbound,1, p, NULL);
+	PointAlongPath(aligninfo->leftbound,0, p, NULL);
 	if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
 		return ALIGN_MoveLeftBound;
 	}
 
 	 //scan for right boundary
-	PointAlongPath(aligninfo->rightbound,1, p, NULL);
+	PointAlongPath(aligninfo->rightbound,0, p, NULL);
 	if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
 		return ALIGN_MoveRightBound;
 	}
@@ -990,6 +990,7 @@ int AlignInterface::scanForLineControl(int x,int y, int &index)
 	return ALIGN_None;
 }
 
+//! Return 1 if screen point is near the path, or 0.
 int AlignInterface::onPath(int x,int y)
 {
 	if (!aligninfo->path) {
@@ -1003,7 +1004,7 @@ int AlignInterface::onPath(int x,int y)
 
 	 //else check for point on PathsData
 	flatpoint fp(x,y);
-	flatpoint closest=ClosestPoint(dp->screentoreal(fp),NULL);
+	flatpoint closest=ClosestPoint(dp->screentoreal(fp),NULL,NULL);
 	if (norm(fp-dp->realtoscreen(closest))<PAD) return 1;
 	
 	return 0;
@@ -1019,9 +1020,8 @@ int AlignInterface::RemoveChild()
 	aligninfo->path->line(-1,-1,-1,&controlcolor); //draw path in the boring color again, not the edit color
 
 	 //update panel position
-	double d=0;
-	flatpoint p=ClosestPoint(aligninfo->center,&d);
-	aligninfo->center=p;
+	flatpoint p=ClosestPoint(aligninfo->center,NULL,NULL);
+	if (p.x!=0 || p.y!=0) aligninfo->center=p;
 	ClampBoundaries(0);
 	if (active) ApplyAlignment(0);
 	needtodraw=1;
@@ -1357,7 +1357,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	DBG cerr <<"Align move: "<<action<<','<<index<<endl;
 	
 	DBG flatpoint pp=dp->screentoreal(x,y);
-	DBG closestpoint=ClosestPoint(pp,&closestdistance);
+	DBG closestpoint=ClosestPoint(pp,&closestdistance,NULL);
 	DBG PointAlongPath(closestdistance,1, closestpoint2,NULL);
 	DBG needtodraw=1;
 
@@ -1399,9 +1399,9 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	if (action==ALIGN_MoveLeftBound) {
 		flatpoint p=dp->screentoreal(x,y);
-		//PointAlongPath(aligninfo->leftbound,1, p, NULL);
+		//PointAlongPath(aligninfo->leftbound,0, p, NULL);
 		//p+=dd;
-		ClosestPoint(p,&aligninfo->leftbound);
+		ClosestPoint(p,NULL,&aligninfo->leftbound);
 		DBG cerr <<" **** leftbound: "<<aligninfo->leftbound<<endl;
 
 		if (active) ApplyAlignment(0);
@@ -1414,7 +1414,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		//flatpoint p;
 		//PointAlongPath(aligninfo->rightbound,1, p, NULL);
 		//p+=dd;
-		ClosestPoint(p,&aligninfo->rightbound);
+		ClosestPoint(p,NULL,&aligninfo->rightbound);
 
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
@@ -1828,12 +1828,13 @@ int AlignInterface::ClampBoundaries(int fill)
 	if (fill) {
 		 //fill to whole path
 		aligninfo->leftbound=0;
-		double e;
-		if (aligninfo->path->paths.e[0]->path->isClosed()) e=0; else e=1;
-		if (e) aligninfo->rightbound=aligninfo->path->paths.e[0]->path->NumPoints(1);
-		else {
-			double len=aligninfo->path->paths.e[0]->Length(0,-1);
-			aligninfo->rightbound=aligninfo->path->paths.e[0]->distance_to_t(len-len/selection.n);
+		double closed=aligninfo->path->paths.e[0]->path->isClosed();
+
+		if (closed) {
+			double len=aligninfo->rightbound=aligninfo->path->paths.e[0]->path->NumPoints(1);
+			aligninfo->rightbound=(len-len/selection.n);
+		}else {
+			aligninfo->rightbound=aligninfo->path->paths.e[0]->path->NumPoints(1);
 		}
 
 	} else {
@@ -2051,6 +2052,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 			point=cc;
 			double lbound=aligninfo->leftbound, rbound=aligninfo->rightbound;
+			double lboundd=0,rboundd=0;
 
 			 // 1. Find the point on the path where object center initially snaps to
 			if (aligninfo->final_layout_type==FALIGN_None) {
@@ -2066,19 +2068,33 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				double dist;
 				if (needtoresetlayout) dist=lbound+((double)random()/RAND_MAX)*(rbound-lbound);
 				else dist=controls.e[c]->amount;
-				PointAlongPath(dist,1, point,&tangent);
+				if (!PointAlongPath(dist,0, point,&tangent)) {
+					controls.e[c]->flags|=CONTROLS_SkipSnap;
+					continue;
+				}
 
 				controls.e[c]->p=point;
 				controls.e[c]->amount=dist; //remember so if we adust simple things, remember where we randomized to!
 
 			} else if (aligninfo->final_layout_type==FALIGN_Grid) {
 				 // establish grid control point
-				PointAlongPath(lbound+((double)c/(selection.n>1?selection.n-1:1))*(rbound-lbound), 1, point,&tangent);
+				if (lboundd==0 && rboundd==0) {
+					flatpoint tp;
+					lboundd=DFromT(lbound);
+					rboundd=DFromT(rbound);
+				}
+				if (!PointAlongPath(lboundd+((double)c/(selection.n>1?selection.n-1:1))*(rboundd-lboundd), 1, point,&tangent)) {
+					controls.e[c]->flags|=CONTROLS_SkipSnap;
+					continue;
+				}
 				controls.e[c]->p=point;
 
 			} else if (aligninfo->final_layout_type==FALIGN_Gap) {
 				int onp=PointAlongPath(lbound+runningdistance, 1, point,&tangent);
-				if (!onp) continue;
+				if (!onp) {
+					controls.e[c]->flags|=CONTROLS_SkipSnap;
+					continue;
+				}
 				v=tangent;
 
 				 //find (very) approximate bounds in tangent direction
@@ -2150,9 +2166,6 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				transform_copy(mm,s);
 				mm[4]+=cc.x;
 				mm[5]+=cc.y;
-
-	
-	
 			}
 
 
@@ -2242,6 +2255,17 @@ int AlignInterface::PointToPath(flatpoint p, flatpoint &ip, flatpoint *tangent)
 	return 1;
 }
 
+double AlignInterface::DFromT(double t)
+{
+	if (aligninfo->path) {
+		double d=aligninfo->path->paths.e[0]->t_to_distance(t,NULL);
+		return d;
+	}
+
+	 //else on the straight line
+	return t; //no t to d conversion
+}
+
 //! Find real point along path at distance t. Put found point in point.
 /*! t is either the t path parameter, or it tisdistance!=0, then it is the distance along the path.
  *
@@ -2266,23 +2290,24 @@ int AlignInterface::PointAlongPath(double t,int tisdistance, flatpoint &point, f
 }
 
 //! Find the point on the layout path closest to real point p.
-/*! If d!=NULL, then make *d the t parameter of that point such as is suitable for left and right bounds.
+/*! If d!=NULL, then make *d and t the distance and t parameter of that point. t is suitable for left and right bounds.
  *
  * This is kind of the reverse of PointAlongPath().
  *
  * Returns the real point closest to the path.
  */
-flatpoint AlignInterface::ClosestPoint(flatpoint p, double *d)
+flatpoint AlignInterface::ClosestPoint(flatpoint p, double *d, double *t)
 {
 	if (!aligninfo->path) {
 		double dist=distparallel(p-aligninfo->center,aligninfo->layout_direction);
 		if (d) *d=dist;
+		if (t) *t=dist;
 		return aligninfo->center+dist*aligninfo->layout_direction;
 	}
 
 	 //else find along PathsData
 	p=transform_point_inverse(aligninfo->path->m(),p);
-	flatpoint found=aligninfo->path->ClosestPoint(p,NULL,d,NULL,NULL);
+	flatpoint found=aligninfo->path->ClosestPoint(p,NULL,d,t,NULL);
 	DBG cerr <<" ***** closest point distance along: "<<(d?*d:1000000)<<endl;
 	return transform_point(aligninfo->path->m(),found);
 }
