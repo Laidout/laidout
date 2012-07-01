@@ -97,14 +97,9 @@ test #, ', and " for shortcut dump
 char names for wacky xf86 codes.. accept 0x*
 numberpadmask?
 shortcut edit dialog
-for keys with no distinct upper and lower, special handling of shift mask?
 DONE adding key+action, rebind key if necessary
 DONE shortcut loading and saving to resource dir
 DONE Install shortcut definitions for each window and interface
-
-add --experimental option to activate any crash prone features not otherwise available
-
-object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
 
 plugin for easy antiprism import
 
@@ -122,8 +117,6 @@ nup:
 
 align tool:
   memory hole
-  if panel slightly away from path, zaps to zero upon escape from path edit
-  transform axes visual shift option
   distance along is hideously inaccurate
   '0' for grid align on closed paths should distribute more nicely
   --future:
@@ -131,11 +124,15 @@ align tool:
   final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
   extra custom finishing per object? at least 180 flip
   reorder on layouts? -> how to handle reorder in gap and unoverlap?
+  drag out path, order of intersection is new object order?
   maybe grid drag control to reorder
+  snapping to 0/50/100
   number box while dragging, goes away after a second, or click on it to edit
     if inc/dec arrows, have it inc or dec the decimal place cursor is on
   default presets: inkscape crossover
 
+  DONE if panel slightly away from path, zaps to zero upon escape from path edit
+  DONE transform axes visual shift option
   DONE shift to move control moves whole when path not defined!
   DONE final layout options
     DONE on/off
@@ -157,39 +154,33 @@ align tool:
   DONE align to slant not quite working
 
 
-Object tool:
-  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
-  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
-
-
-action/shortcut selector overlay
-
-
 PathEditor: 
-  add point should obey addmode!
-  maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
-    control while dragging handle will temporarily switch to vertex?
+  debug subpaths
+  wheel to change point type?
+  cut segment
   shift click down then up on a point selects then deselects
   delete point not setting curvertex right
-  drag point over other point to connect if both are endpoints, maybe dotted connection if only both end points selected, click connection to close?
+  drag point over other point to connect if both are endpoints, 
     --> then click, segfault!
-  draggable/clickable direction indicator for adding points
   direction indicator drag off path to adjust if adding points to current path or making new path
-  how to distinguish making new path in current paths, or new paths totally
-  no curvertex: shift click on empty space starts a new subpath? normal click starts new object?
-  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
-  wheel to change point type?
+    force choose between two icons, one for new subpath, one for new object
+    no curvertex: shift click on empty space starts a new subpath? normal click starts new object?
+  ----future:
+  maybe dotted connection if only both end points selected, click connection to close?
+  maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
+    control while dragging handle will temporarily switch to vertex?
   make straight bez
   make straight line
-  cut segment
+  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
   align nodes -> create temp set of data to pass to AlignInterface?
   transform handles for nodes, including flip
   subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
-  makerect()
-
-  toggle for add point mode / select point mode
+  toggle between add points / select points?
   finish new path/pathoperator/pathsubinterface/pathinterface structure
 
+  DONE makerect()
+  DONE clickable direction indicator for adding points
+  DONE hover over point. move off, move on, not highlighted anymore!!
   DONE point mouseovers
   DONE if add direction reverse, then should auto select prev vertex, not next
   DONE Click no move on vertex, toggle point type
@@ -202,8 +193,6 @@ PathEditor:
 in number edit boxes, wheel should allow changing numbers, change on digit mouse is over!
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
 
-animated beacons for anchor points to make them visible
-
 check laidout.1 when time to release
 update docs to have new release number
 update translations
@@ -215,8 +204,6 @@ test:
 include scribus plugin in install
 
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
-
-Svg: in/out of meshes
 
 Scribus:
   import/export color meshes, for recent versions of Scribus
@@ -234,6 +221,63 @@ implement marks:
   color bars from a palette
   spread info: spread type, current date and time, creator, spread number/total number of spreads
 
+impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
+
+move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
+	feed it an ExportConfig
+
+finish implementing all options for reimpose function
+
+overwrite should return to file dialog if no
+
+need laidout import
+
+paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
+Load, save, add, delete paper groups
+   papergroups:
+    work out scheme for resource ownership: they can be owned by:
+      1.DONE  Document: if no project, save with document by default
+      2.DONE  Project:  save in project file
+      3.or Global resource: save in ~/.laidout/version/papergroups
+          class FileRef 
+        papergroup->owner=Document, Project, or FileRef
+   paperinterface:
+     no doc, define papergroup, convert papergroup to singles pages?
+     orient viewport to paper
+     snap other papers to various boxes
+     double click to edit paper details
+     in spread editor (done), and able to print it out
+     more versatile size control per paper
+     edit window? should be edit on screen....
+        Name:  default single letter
+        Paper: Letter, 8.5/11, landscape
+        Box: Media [v]   Box: Clip [v]
+                            [ ] None
+           0 0 8.5 11       X: 0   Y: 0
+                          W: 8.5 H: 11
+        [delete paper type][new paper type]
+
+bleeding mechanism should be functional
+
+optimize pdf especially... too much duplication!!
+
+scribus out doesn't do gradients
+
+
+----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
+
+animated beacons for anchor points to make them visible
+
+double click on group should change selection area to group contents?
+    need to clarify how grouping operates. Perhaps implement sets at same time
+    clearCurobj() with skim to group for group->double click?
+
+Svg: in/out of meshes
+
+add --experimental option to activate any crash prone features not otherwise available
+
+object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
+
 'm' should be able to move whole groups, means must be in object tool?
 
 For objects that appear very small, the drag handles should not be operable.. shift only
@@ -245,13 +289,6 @@ When there are errors or warnings in exporting, should be able to have the error
   you can just jump to the offending bit easily. This would also be used for preflight verifiers,
   and maybe also mass edit things, like edit all images..
   - have ViewWindow::JumpToObject(&place, objectid);	
-
-impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
-
-move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-	feed it an ExportConfig
-
-paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
 
 sig editor:
   be able to enter numbers
@@ -283,13 +320,63 @@ changing recurse and rendermode in patch controls doesn't change that setting in
 
 text window controls have difficulties
 
-finish implementing all options for reimpose function
+Object tool:
+  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
+  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
 
-overwrite should return to file dialog if no
 
-double click on group should change selection area to group contents?
-    need to clarify how grouping operates. Perhaps implement sets at same time
-    clearCurobj() with skim to group for group->double click?
+action/shortcut selector overlay
+
+
+NetImposition needs import/export net,
+    export svg
+    convert to/from laidout elements
+    DONE import obj files
+    DONE  import 3-d models such as from OFF files
+    DONE gui for above -> select file in creation dialog
+
+ImageImport dialog: (actually, needs a total redesign)
+  DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
+  Choose/Review tabbed window
+  horizontal stack frame between choose/review and preview window
+  fancier path selector
+  for preview field, show green or something and change tooltip if preview will get generated
+  click on file to preview file, preview to preview preview
+  generate image previews progress box...
+  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
+  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
+
+
+dynamic objects (generated images, dynamic images, rendered images)
+    eps objects to pdf: export as image, plant in PDF as image
+    group objects with laidout elements, updateable with script
+    image objects using ImageImportFilters
+    perhaps add TEX_BIN, LATEX_BIN, and text editor to quickly add stuff like that!!
+    external commands:
+      website to recommend learn more
+      needs what type of file
+      needs how many files
+      needs what other info
+In image properties dialog, have the popup list of potential previews
+    preview style needs debugging and testing so as not to fry the freedesktop ones
+if you change an eps to a non eps with the insert file, it still thinks it is an eps..
+ image objects should auto change between the available image formats:
+  bitmap--eps--embedded svg--dynamic
+  Dynamic Content:
+    displayed as images, or displayed as group of laidout objects
+    possibly multiple images or objects in linked list:
+      one source creates multipage ps, for instance, each page gets its own object
+    controller source object:
+      generator command + context
+   examples:
+    ps/tex/pdf/etc to eps files, import the eps files
+    broken down equirect panorama to net
+Image import chain:
+  1. eps|EPS: Laidout builtin
+  2. svg|SVG: inkscape command line export
+  3. other external renderer: asymptote, structure synth, sunflow, pov-ray, lilypond, latex, graphviz, gnuplot
+  3. * images: graphicsmagick
+  4. jpg, png, gif, tiff: Imlib2
 
 Finish implementing project based setup, particularly being able to save a project, not just load one   
     need option to choose midstream to save as project, or individual documents
@@ -327,59 +414,13 @@ mystery data enhancement: import as placeholder objects: if convertible to laido
                   ---> this is useful to have a standard object indicator built from laidout objects, but
                          do not let them be editable
 
-need laidout import
-
 need to implement more options for polyhedron connections, to allow mobius strips...
-
-NetImposition needs import/export net,
-    export svg
-    convert to/from laidout elements
-    DONE import obj files
-    DONE  import 3-d models such as from OFF files
-    DONE gui for above -> select file in creation dialog
-
-ImageImport dialog: (actually, needs a total redesign)
-  DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
-  Choose/Review tabbed window
-  horizontal stack frame between choose/review and preview window
-  fancier path selector
-  for preview field, show green or something and change tooltip if preview will get generated
-  click on file to preview file, preview to preview preview
-  generate image previews progress box...
-  autogenerate should do special check for ~/.thumbnails to conform to freedesktop spec size and type...
-  importimages-> eps --> they are fit into boxes!! they should maybe be inserted into a stream..
-
 
 really should have option to separate or merge resources when multiple documents open, rather than
 always merge?
 
 papersizes are not translated. Should they be??
 
-Load, save, add, delete paper groups
-   papergroups:
-    work out scheme for resource ownership: they can be owned by:
-      1.DONE  Document: if no project, save with document by default
-      2.DONE  Project:  save in project file
-      3.or Global resource: save in ~/.laidout/version/papergroups
-          class FileRef 
-        papergroup->owner=Document, Project, or FileRef
-   paperinterface:
-     no doc, define papergroup, convert papergroup to singles pages?
-     orient viewport to paper
-     snap other papers to various boxes
-     double click to edit paper details
-     in spread editor (done), and able to print it out
-     more versatile size control per paper
-     edit window? should be edit on screen....
-        Name:  default single letter
-        Paper: Letter, 8.5/11, landscape
-        Box: Media [v]   Box: Clip [v]
-                            [ ] None
-           0 0 8.5 11       X: 0   Y: 0
-                          W: 8.5 H: 11
-        [delete paper type][new paper type]
-
-bleeding mechanism should be functional
 
 >show
 Laidout:
@@ -430,38 +471,6 @@ Tools should remember their settings
 Net imposition interactive unwrapper and build net interface figure out bleeding and connectivity infrastructure
     figure out more efficient clipping of Imlib images
 
-dynamic objects (generated images, dynamic images, rendered images)
-    eps objects to pdf: export as image, plant in PDF as image
-    group objects with laidout elements, updateable with script
-    image objects using ImageImportFilters
-    perhaps add TEX_BIN, LATEX_BIN, and text editor to quickly add stuff like that!!
-    external commands:
-      website to recommend learn more
-      needs what type of file
-      needs how many files
-      needs what other info
-In image properties dialog, have the popup list of potential previews
-    preview style needs debugging and testing so as not to fry the freedesktop ones
-if you change an eps to a non eps with the insert file, it still thinks it is an eps..
- image objects should auto change between the available image formats:
-  bitmap--eps--embedded svg--dynamic
-  Dynamic Content:
-    displayed as images, or displayed as group of laidout objects
-    possibly multiple images or objects in linked list:
-      one source creates multipage ps, for instance, each page gets its own object
-    controller source object:
-      generator command + context
-   examples:
-    ps/tex/pdf/etc to eps files, import the eps files
-    broken down equirect panorama to net
-Image import chain:
-  1. eps|EPS: Laidout builtin
-  2. svg|SVG: inkscape command line export
-  3. other external renderer: asymptote, structure synth, sunflow, pov-ray, lilypond, latex, graphviz, gnuplot
-  3. * images: graphicsmagick
-  4. jpg, png, gif, tiff: Imlib2
-
-
 global resources:
   current frame/time
   current language, for conditional text
@@ -491,8 +500,6 @@ Selected region out to image(s), regions optionally remembered
 
 import/export styledefs should use the extendsdef mechanism!!!
 
-optimize pdf especially... too much duplication!!
-
 Soup up the color box so one can recall previous colors, and/or integration with palette window
     -->delay until proper color implementation in place
 
@@ -510,8 +517,6 @@ Masking
 Clean up patch controls
 
 perhaps split radial and linear gradients to different tools? makes more sense
-
-scribus out doesn't do gradients
 
 all at once imposition... this would allow mapping of scribus layout without fuss. that
   could be a special case of n-up, where you specify n to be infinity, with m number of
@@ -531,8 +536,6 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
      gets the focus when autofocused.
 
 searchable menus
-
-
 
 
 ===================Anything below here probably needs discussion before implementing================
