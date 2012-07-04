@@ -540,7 +540,7 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 
 					   //colors
-					  "#colors\n"
+					  "#colors (***TODO)\n"
 					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate active/inactive. Redefine here.\n"
 					  "#  deactivate rgbf  1 .39 .39\n"
 					  "\n"
