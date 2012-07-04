@@ -363,7 +363,7 @@ int GroupInterface::PerformAction(int action)
 		align->AddToSelection(selection);
 		align->owner=this;
 		child=align;
-		viewport->Push(align,1,-1);
+		viewport->Push(align,-1,0);
 		viewport->postmessage(_("Align"));
 		//viewport->Pop(this);
 		FreeSelection();
@@ -376,7 +376,7 @@ int GroupInterface::PerformAction(int action)
 		nup->AddToSelection(selection);
 		nup->owner=this;
 		child=nup;
-		viewport->Push(nup,1,-1);
+		viewport->Push(nup,-1,0);
 		viewport->postmessage(_("Flow objects"));
 		FreeSelection();
 		return 0;

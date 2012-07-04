@@ -164,7 +164,7 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
  * \todo would be nice for debugging to be able to restart laidout in any language,
  *   whatever the current locale actually is (?)
  */
-/*! \var Laxkit::PtrStack<Laxkit::anInterface> LaidoutApp::interfacepool
+/*! \var Laxkit::RefPtrStack<Laxkit::anInterface> LaidoutApp::interfacepool
  * \ingroup pools
  * \brief Stack of available interfaces for ViewWindow objects.
  */

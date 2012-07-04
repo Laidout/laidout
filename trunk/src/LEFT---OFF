@@ -109,45 +109,6 @@ nup:
   DONE random
 
 
-align tool:
-  memory hole
-  distance along is hideously inaccurate
-  '0' for grid align on closed paths should distribute more nicely
-  --future:
-  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
-  final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
-  extra custom finishing per object? at least 180 flip
-  reorder on layouts? -> how to handle reorder in gap and unoverlap?
-  drag out path, order of intersection is new object order?
-  maybe grid drag control to reorder
-  snapping to 0/50/100
-  number box while dragging, goes away after a second, or click on it to edit
-    if inc/dec arrows, have it inc or dec the decimal place cursor is on
-  default presets: inkscape crossover
-
-  DONE if panel slightly away from path, zaps to zero upon escape from path edit
-  DONE transform axes visual shift option
-  DONE shift to move control moves whole when path not defined!
-  DONE final layout options
-    DONE on/off
-	DONE random
-	DONE grid
-	DONE gaps
-  DONE explode mode
-  DONE visual vs aligned bounding box snapping
-  DONE moving boundaries broken
-  DONE snap to path not transforming to transformed path
-  DONE alignment on real points? panning window messes up things
-  DONE path editing
-  DONE mouseovers for bars, they get lost otherwise
-  DONE esc to switch back to object tool
-  DONE align on layout line, or proportional to original position
-  DONE for no snap align, need to do something with the rotate handles, or draw dotted outline, maybe just line?
-  DONE snap on/off
-  DONE slow drag with modifiers
-  DONE align to slant not quite working
-
-
 PathEditor: 
   debug subpaths
   cut segment
@@ -168,6 +129,7 @@ PathEditor:
   toggle between add points / select points?
   finish new path/pathoperator/pathsubinterface/pathinterface structure
 
+  DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
   DONE shortcut to reverse current subpath
   DONE direction indicator drag off path to adjust if adding points to current path or making new path
     force choose between two icons, one for new subpath, one for new object
@@ -254,6 +216,20 @@ scribus out doesn't do gradients
 
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
+
+align tool:
+  gap looks ugly.. have indicator highlight path itself, drag that around
+  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
+  final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
+  extra custom finishing per object? at least 180 flip
+  reorder on layouts? -> how to handle reorder in gap and unoverlap?
+    trace out order path... show with numbers
+  drag out path, order of intersection is new object order?
+  maybe grid drag control to reorder
+  snapping to 0/50/100
+  number box while dragging, goes away after a second, or click on it to edit
+    if inc/dec arrows, have it inc or dec the decimal place cursor is on
+  default presets: inkscape crossover
 
 option to use different go/don't go colors
 
@@ -720,4 +696,31 @@ DONE 'c' then 'c' on path crashes
 DONE document laxconfig/appcolors in laidoutrc
 
 DONE add bookmark adds it twice.. is it adding to gtk AND to lo/bm?
+
+DONE align tool:
+  DONE memory hole: obj -> align -> obj leaves obs..
+  DONE bug: distance along is hideously inaccurate
+  DONE '0' for grid align on closed paths should distribute more nicely
+  DONE if panel slightly away from path, zaps to zero upon escape from path edit
+  DONE transform axes visual shift option
+  DONE shift to move control moves whole when path not defined!
+  DONE final layout options
+    DONE on/off
+	DONE random
+	DONE grid
+	DONE gaps
+  DONE explode mode
+  DONE visual vs aligned bounding box snapping
+  DONE moving boundaries broken
+  DONE snap to path not transforming to transformed path
+  DONE alignment on real points? panning window messes up things
+  DONE path editing
+  DONE mouseovers for bars, they get lost otherwise
+  DONE esc to switch back to object tool
+  DONE align on layout line, or proportional to original position
+  DONE for no snap align, need to do something with the rotate handles, or draw dotted outline, maybe just line?
+  DONE snap on/off
+  DONE slow drag with modifiers
+  DONE align to slant not quite working
+
 

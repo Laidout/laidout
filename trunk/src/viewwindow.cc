@@ -3075,7 +3075,7 @@ void ViewWindow::setup()
 		 //path interface not ready for prime time, so disable except in debugging mode
 		//DBG if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PathInterface")) continue;
 
-		AddTool(laidout->interfacepool.e[c]->duplicate(),1,0);
+		AddTool(laidout->interfacepool.e[c]->duplicate(),0,1);
 	}
 	SelectTool(0);
 	//AddWin(new LayerChooser);...
