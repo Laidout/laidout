@@ -14,6 +14,7 @@ GS="/usr/bin/gs"
 
 LAIDOUT_NOGL=""
 USINGGL="yes"
+ONAMAC="no"
 
  ##
  ## Parse options
@@ -101,13 +102,11 @@ while true ; do
 		echo language path $optarg; 
 		shift ;;
     --nogl)
-        if [ -z $optarg ] ; then 
-          optarg=$2
-          shift
-        fi
 		LAIDOUT_NOGL="#define LAIDOUT_NOGL"
 		USINGGL="no"
-		echo language path $optarg; 
+		shift ;;
+    --onamac)
+		ONAMAC="yes"
 		shift ;;
     *) echo "Unrecognized option $option $optarg" ; break ;;
   esac
