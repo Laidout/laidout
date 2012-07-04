@@ -89,10 +89,6 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
-option to use different go/don't go colors
-
-for help, need some standardized way to list mouse actions!!
-
 test #, ', and " for shortcut dump
 char names for wacky xf86 codes.. accept 0x*
 numberpadmask?
@@ -100,8 +96,6 @@ shortcut edit dialog
 DONE adding key+action, rebind key if necessary
 DONE shortcut loading and saving to resource dir
 DONE Install shortcut definitions for each window and interface
-
-plugin for easy antiprism import
 
 nup:
   hover over tips not working
@@ -156,15 +150,11 @@ align tool:
 
 PathEditor: 
   debug subpaths
-  wheel to change point type?
   cut segment
   shift click down then up on a point selects then deselects
   delete point not setting curvertex right
   drag point over other point to connect if both are endpoints, 
     --> then click, segfault!
-  direction indicator drag off path to adjust if adding points to current path or making new path
-    force choose between two icons, one for new subpath, one for new object
-    no curvertex: shift click on empty space starts a new subpath? normal click starts new object?
   ----future:
   maybe dotted connection if only both end points selected, click connection to close?
   maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
@@ -178,6 +168,10 @@ PathEditor:
   toggle between add points / select points?
   finish new path/pathoperator/pathsubinterface/pathinterface structure
 
+  DONE shortcut to reverse current subpath
+  DONE direction indicator drag off path to adjust if adding points to current path or making new path
+    force choose between two icons, one for new subpath, one for new object
+  DONE wheel to change point type?
   DONE makerect()
   DONE clickable direction indicator for adding points
   DONE hover over point. move off, move on, not highlighted anymore!!
@@ -215,11 +209,6 @@ Scribus:
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
 import config generic things like enum keepmystery should be parsed when no import config given!!
-
-implement marks:
-  bleed marks
-  color bars from a palette
-  spread info: spread type, current date and time, creator, spread number/total number of spreads
 
 impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
 
@@ -265,6 +254,17 @@ scribus out doesn't do gradients
 
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
+
+option to use different go/don't go colors
+
+for help, need some standardized way to list mouse actions!!
+
+plugin for easy antiprism import
+
+implement marks:
+  bleed marks
+  color bars from a palette
+  spread info: spread type, current date and time, creator, spread number/total number of spreads
 
 animated beacons for anchor points to make them visible
 
