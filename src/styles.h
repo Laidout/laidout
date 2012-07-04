@@ -42,16 +42,16 @@ enum ElementType {
 	Element_Boolean,
 	Element_Date,
 	Element_File,
-	Element_3bit,
 	Element_Flag,
 	Element_Enum, //if the def has a function, then it is a dynamic enum
 	Element_EnumVal,
 	Element_Color,
 	Element_Set, //for sets, the range value in the StyleDef restricts the set to that type
 	Element_Function,
+
 	Element_MaxBuiltinFormatValue
 };
-extern const char *element_TypeNames[17];
+extern const char *element_TypeNames[16];
 		
 
 #define STYLEDEF_DUPLICATE 1

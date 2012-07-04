@@ -143,7 +143,6 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 		//Element_Fields, 
 		//Element_Boolean,
 		//Element_Date,
-		//Element_3bit,
 		//Element_Enum,
 		//Element_DynamicEnum,
 		//Element_EnumVal,
@@ -178,11 +177,6 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 		 // ??? 3 field checkbox menuselector?
 		case Element_Date: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: Date"));
-				//***
-			} break;
-							
-		case Element_3bit: {
-				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: 3bit"));
 				//***
 			} break;
 							

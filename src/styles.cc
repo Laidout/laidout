@@ -76,7 +76,7 @@ using namespace LaxFiles;
 /*! \ingroup stylesandstyledefs
  * Names for the ElementType enum.
  */
-const char *element_TypeNames[17]={
+const char *element_TypeNames[16]={
 	 	"any",
 		"none",
 		"int",
@@ -86,7 +86,6 @@ const char *element_TypeNames[17]={
 		"boolean",
 		"date",
 		"file",
-		"3bit",
 		"flag",
 		"enum",
 		"enumval",
@@ -611,7 +610,7 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
  * 
  * This class is used to wrap which fields a given Style instance has in the
  * form of a union with the typical formats unsigned int, enum (stored as int), int, 
- * bit (stored as int), 3bit (stored as int),
+ * bit (stored as int),
  * double, string, fields, Style *, Value * ***include Value yes or no, or other (void *).
  * Any "other" formats must be deciphered some other way.
  *
@@ -661,7 +660,7 @@ int StyleDef::findfield(char *fname,char **next) // next=NULL
 //	unsigned int flags; *** thisislocal flag
 //	union { 
 //		unsigned int f;    // format=0, for (non-exclusive) flags***** must settle on defines for standard formats
-//		int i;             // format=1,2 for enums, bit, 3bit, ints
+//		int i;             // format=1,2 for enums, bit, ints
 //		double d;          // format=3
 //		char *str;         // format=4
 //		FieldNode *fields; // format=5
