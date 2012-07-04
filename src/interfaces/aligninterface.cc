@@ -1579,8 +1579,8 @@ void AlignInterface::CreateShortcuts()
 	sc->Add(ALIGN_ToggleShift, 'm',0,0,        _("ToggleShift"), _("Change the shift type"),NULL,0);
 	sc->Add(ALIGN_ToggleShiftR,'M',ShiftMask,0,_("ToggleShiftR"),_("Change the shift type"),NULL,0);
 
-	sc->Add(ALIGN_Save, 's',0,0,   _("Save"),_("Save settings"),NULL,0);
-	sc->Add(ALIGN_Open, 'o',0,0,   _("Open"),_("Open settings"),NULL,0);
+	//sc->Add(ALIGN_Save, 's',0,0,   _("Save"),_("Save settings"),NULL,0);
+	//sc->Add(ALIGN_Open, 'o',0,0,   _("Open"),_("Open settings"),NULL,0);
 
 	manager->AddArea("AlignInterface",sc);
 }
@@ -1877,6 +1877,7 @@ int AlignInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 		t->m(selection.e[c]->obj->m());
 		controls.e[c]->SetOriginal(t);
 		t->dec_count();
+		DBG cerr <<" ---- pushed control data number "<<t->object_id<<endl;
 	}
 
 	return n;
@@ -2033,6 +2034,8 @@ int AlignInterface::ApplyAlignment(int updateorig)
 		flatpoint point,tangent;
 		double runningdistance=0;
 		double width;
+		double lbound=aligninfo->leftbound, rbound=aligninfo->rightbound;
+		double lboundd=0,rboundd=0;
 
 		for (int c=0; c<selection.n; c++) {
 			o=selection.e[c]->obj;
@@ -2051,8 +2054,6 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			d.x=d.y=0;
 
 			point=cc;
-			double lbound=aligninfo->leftbound, rbound=aligninfo->rightbound;
-			double lboundd=0,rboundd=0;
 
 			 // 1. Find the point on the path where object center initially snaps to
 			if (aligninfo->final_layout_type==FALIGN_None) {
@@ -2083,7 +2084,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 					lboundd=DFromT(lbound);
 					rboundd=DFromT(rbound);
 				}
-				if (!PointAlongPath(lboundd+((double)c/(selection.n>1?selection.n-1:1))*(rboundd-lboundd), 1, point,&tangent)) {
+				if (!PointAlongPath(lboundd+(((double)c)/(selection.n>1?selection.n-1:1))*(rboundd-lboundd), 1, point,&tangent)) {
 					controls.e[c]->flags|=CONTROLS_SkipSnap;
 					continue;
 				}

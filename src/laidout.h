@@ -112,7 +112,7 @@ class LaidoutApp : public Laxkit::anXApp
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;
-	Laxkit::PtrStack<LaxInterfaces::anInterface> interfacepool;
+	Laxkit::RefPtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<ImpositionResource> impositionpool;
 	Laxkit::PtrStack<PaperStyle> papersizes;
 	Laxkit::PtrStack<ExportFilter> exportfilters;

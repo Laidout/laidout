@@ -84,64 +84,84 @@ void PushBuiltinPathops()
  *
  * \todo combine with EpsInterface with ImageInterface somehow to make easily expandable..
  */
-PtrStack<anInterface> *GetBuiltinInterfaces(PtrStack<anInterface> *existingpool) //existingpool=NULL
+RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existingpool) //existingpool=NULL
 {
 	if (!existingpool) { // create new pool if you are not appending to an existing one.
-		existingpool=new PtrStack<anInterface>;
+		existingpool=new RefPtrStack<anInterface>;
 	}
 
 	int id=1;
+	anInterface *i;
 
 	// *************** testing:
 	 //------Nup
-	existingpool->push(new NUpInterface(id++,NULL),1);
+	i=new NUpInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 	// *************** end testing
 
 	 //------Group
-	existingpool->push(new GroupInterface(id++,NULL),1);
+	i=new GroupInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 	
 	 //------Images
 	ImageInterface *imagei=new ImageInterface(id++,NULL);
 	imagei->style=1;
-	existingpool->push(imagei,1);
+	existingpool->push(imagei);
+	imagei->dec_count();
 	
 	 //------Gradients
 	GradientInterface *gi=new GradientInterface(id++,NULL);
 	gi->createv=flatpoint(1,0);
 	gi->creater1=gi->creater2=1;
-	existingpool->push(gi,1);
+	existingpool->push(gi);
+	gi->dec_count();
 	
 	 //------Image Patch
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	ip->style=IMGPATCHI_POPUP_INFO;
 	ip->recurse=2;
-	existingpool->push(ip,1);
+	existingpool->push(ip);
+	ip->dec_count();
 	
 	 //------Color Patch
-	existingpool->push(new LColorPatchInterface(id++,NULL),1);
+	i=new LColorPatchInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 	
 	 //------Paths
-	existingpool->push(new PathInterface(id++,NULL),1); //2nd null is pathop pool
+	i=new PathInterface(id++,NULL);
+	existingpool->push(i); //2nd null is pathop pool
+	i->dec_count();
 	
 	 //------EPS
 	EpsInterface *eps=new EpsInterface(id++,NULL);
 	eps->style=1;
-	existingpool->push(eps,1);//*** combine with Image somehow?
+	existingpool->push(eps);//*** combine with Image somehow?
+	eps->dec_count();
 
 //	 //------MysteryData
 //	MysteryInterface *mdata=new MysteryInterface(id++,NULL);
 //	mdata->style=1;
-//	existingpool->push(mdata,1);//*** combine with Image somehow?
+//	existingpool->push(mdata);//*** combine with Image somehow?
+//	mdata->dec_count();
 
 	 //------Paper
-	existingpool->push(new PaperInterface(id++,NULL),1);
+	i=new PaperInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 
 	 //------PageRangeInterface
-	existingpool->push(new PageRangeInterface(id++,NULL,NULL));
+	i=new PageRangeInterface(id++,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
 
 
 	//...
-	//existingpool->push(new Interface(*****),1);
+	//i=new Interface(*****);
+	//existingpool->push(i);
+	//i->dec_count();
 	
 	return existingpool;
 }
