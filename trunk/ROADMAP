@@ -8,19 +8,22 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.093
 -------------
 (done) On canvas flip controls
-       Align tool
+(done) Align tool
        Distribute tool
 (done) Fully configurable shortcuts (editable through config file)
-       PathInterface must be improved
+(done) PathInterface must be improved
        Net imposition interactive unwrapper, via optional opengl Polyptych
-       Net imposition build net interface
-       Fix object bleeding across pages for signatures and nets
-       need partial Laidout import and export
+       need partial Laidout import
 
 
 VERSION 0.094
 -------------
+       fix object transform handles for really small objects (handles should still be accessible)
+       PathInterface subpaths for hole making should work
+       Net imposition build net interface
+       Fix object bleeding across pages for signatures and nets
        Shortcuts editor dialog
+       Merge EpsData with normal images
        impose-only mode should allow access to all imposition types
        Examine and improve ease of use of import images dialog, particularly for previewing
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
@@ -101,6 +104,7 @@ VERSION 0.1
 VERSION 0.2
 -----------
 Full multi-contact, blob and pressure sensitive touch with tuio,touchlib(?). See www.nuigroup.com/touchlib for diy surfaces
+partial Laidout export
 Figure out best way to expose laidout functions to other program's scripters (ie inkscape and scribus)
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
