@@ -788,6 +788,7 @@ void InitOptions()
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
+	options.Add("helphtml",           'H', 0, "Output an html fragment of help.",            0, NULL);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
 	options.Add("help",               'h', 0, "Show this summary and exit.",                 0, NULL);
 
@@ -879,7 +880,12 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'S': { // dump out shortcuts
-					dump_out_shortcuts(stdout,0);
+					dump_out_shortcuts(stdout,0,0);
+					exit(0);
+				} break;
+
+			case 'H': { // dump out shortcuts
+					dump_out_shortcuts(stdout,0,1);
 					exit(0);
 				} break;
 
