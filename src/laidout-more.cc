@@ -303,7 +303,7 @@ void LaidoutApp::InitializeShortcuts()
 }
 
 //! Dump the list of known bound shortcuts to f with indentation.
-int LaidoutApp::dump_out_shortcuts(FILE *f, int indent)
+int LaidoutApp::dump_out_shortcuts(FILE *f, int indent, int how)
 {
 	if (!f) return 1;
 
@@ -311,14 +311,18 @@ int LaidoutApp::dump_out_shortcuts(FILE *f, int indent)
 	//then use ShortcutManager->dump_out()
 
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	fprintf(f,"%s#\n",spc);
-	fprintf(f,"%s# Laidout %s Shortcuts\n",spc,LAIDOUT_VERSION);
-	fprintf(f,"%s#\n",spc);
+
+	if (how==0) {
+		fprintf(f,"%s#\n",spc);
+		fprintf(f,"%s# Laidout %s Shortcuts\n",spc,LAIDOUT_VERSION);
+		fprintf(f,"%s#\n",spc);
+	}
 
 	InitializeShortcuts();
 
 	ShortcutManager *manager=GetDefaultShortcutManager();
-	manager->dump_out(f,indent,0,NULL);
+	if (how==0) manager->dump_out(f,indent,0,NULL);
+	else manager->SaveHTML("-");
 	return 0;
 }
 
