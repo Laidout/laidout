@@ -12,90 +12,20 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+in tiled, can no longer select objects in the other tiles, wtf!!!
 
----- bugs:
-
-copy paste not working again
-
-hedron edit goes to netdialog, should have "current" option...
-
-object tool shift-control for rotate does not allow positioning on drag bars
-
-'g' for color sample changes cursor to cancel now, and changes on border cross!!!
-
-hold down control in object tool. desktop left then back. Now external handles are supressed because lo thinks control is still pressed down!
+tooltips have stopped working
 
 switch to None document, and units change to unreasonable
 
-possible modifier-pairing error with multiple mice...
-
-do laidout -n letter, split a window, then quit. undeleted Objects remain!
-
-make "make uninstall" work
-
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
-
-recent files do not appear to be most recent file opened
 
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
 
 select none, select doc, viewport jumps around... it should stay the same area
 
-in tiled, can no longer select objects in the other tiles, wtf!!!
-
-object deleting funky, import svg images, select one, hit delete, doesn't delete!!
-place 3 images, object select, must press delete twice...!?!?!?!
-
-paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
-
-should not be able to group select an object and another object nested within
-
-transparency in paths does not work on screen
-
-file previewer not updating preview when using arrow keys
-
-create new window, defaults to no doc. should select doc of last pane
-
-add blank image, change description, do not change filename, makes width/height zap back to 0...
-
-shrink image lets you go immeasurably small
-
-fold indicator foldprogress just at crossover points incorrectly indicating affected folds
-
-pixels units should be set as per document dpi
-
-svg to coord incomplete
-memory hole in svg in? test svg import, svg path import must be done
-
-net extra scaling non-functional
-
-need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
-from parameters for all filters....
-
-make sure all imposition types are available in interpreter
-
-resource impositions not showing description when selected
-
-GradientInterface problem rendering radial when two circles separated by large distance
-
-Laxkit::MultiLineEdit needs some serious debugging
-
-headwindow swapping is now REALLY messed up
-pane swapping/dropto on maximized, swapping in general...
-
-WATCH OUT for when preview file is OLDER than original file!!
-
-
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
-
-test #, ', and " for shortcut dump
-char names for wacky xf86 codes.. accept 0x*
-numberpadmask?
-shortcut edit dialog
-DONE adding key+action, rebind key if necessary
-DONE shortcut loading and saving to resource dir
-DONE Install shortcut definitions for each window and interface
 
 nup:
   hover over tips not working
@@ -132,7 +62,7 @@ PathEditor:
   DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
   DONE shortcut to reverse current subpath
   DONE direction indicator drag off path to adjust if adding points to current path or making new path
-    force choose between two icons, one for new subpath, one for new object
+  DONE   force choose between two icons, one for new subpath, one for new object
   DONE wheel to change point type?
   DONE makerect()
   DONE clickable direction indicator for adding points
@@ -157,8 +87,6 @@ test:
   each export filter
   make some test scripts for command line testing
 
-include scribus plugin in install
-
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 Scribus:
@@ -173,13 +101,6 @@ saving when net is internal is not proper.. does not distinguish between diff. n
 import config generic things like enum keepmystery should be parsed when no import config given!!
 
 impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
-
-move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-	feed it an ExportConfig
-
-finish implementing all options for reimpose function
-
-overwrite should return to file dialog if no
 
 need laidout import
 
@@ -208,14 +129,92 @@ Load, save, add, delete paper groups
                           W: 8.5 H: 11
         [delete paper type][new paper type]
 
-bleeding mechanism should be functional
-
 optimize pdf especially... too much duplication!!
-
-scribus out doesn't do gradients
 
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
+
+---- bugs:
+
+copy paste not working again
+
+hedron edit goes to netdialog, should have "current" option...
+
+object tool shift-control for rotate does not allow positioning on drag bars
+
+'g' for color sample changes cursor to cancel now, and changes on border cross!!!
+
+possible modifier-pairing error with multiple mice...
+
+do laidout -n letter, split a window, then quit. undeleted Objects remain!
+
+recent files do not appear to be most recent file opened
+
+object deleting funky, import svg images, select one, hit delete, doesn't delete!!
+place 3 images, object select, must press delete twice...!?!?!?!
+
+paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
+
+should not be able to group select an object and another object nested within
+
+transparency in paths does not work on screen
+
+file previewer not updating preview when using arrow keys
+
+create new window, defaults to no doc. should select doc of last pane
+
+add blank image, change description, do not change filename, makes width/height zap back to 0...
+
+shrink image lets you go immeasurably small
+
+fold indicator foldprogress just at crossover points incorrectly indicating affected folds
+
+pixels units should be set as per document dpi
+
+svg to coord incomplete
+memory hole in svg in? test svg import, svg path import must be done
+
+net extra scaling non-functional
+
+make sure all imposition types are available in interpreter
+
+resource impositions not showing description when selected
+
+GradientInterface problem rendering radial when two circles separated by large distance
+
+Laxkit::MultiLineEdit needs some serious debugging
+
+headwindow swapping is now REALLY messed up
+pane swapping/dropto on maximized, swapping in general...
+
+WATCH OUT for when preview file is OLDER than original file!!
+
+
+---enhancements:
+
+in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
+reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
+
+shortcuts:
+  char names for wacky xf86 codes.. accept 0x*
+  numberpadmask?
+  shortcut edit dialog
+
+need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
+from parameters for all filters....
+
+make "make uninstall" work, and remove coop 
+
+move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
+	feed it an ExportConfig
+
+finish implementing all options for reimpose function
+
+overwrite should return to file dialog if no
+
+scribus out doesn't do gradients
+
+bleeding mechanism should be functional
 
 align tool:
   gap looks ugly.. have indicator highlight path itself, drag that around
@@ -723,4 +722,13 @@ DONE align tool:
   DONE slow drag with modifiers
   DONE align to slant not quite working
 
+
+DONE include scribus plugin in install
+
+DONE hold down control in object tool. desktop left then back. Now external handles are supressed because lo thinks control is still pressed down!
+
+DONE test #, ', and " for shortcut dump
+DONE adding key+action, rebind key if necessary
+DONE shortcut loading and saving to resource dir
+DONE Install shortcut definitions for each window and interface
 
