@@ -46,7 +46,6 @@ objs= \
 	utils.o \
 	fieldplace.o \
 	styles.o \
-	errorlog.o \
 	stylemanager.o \
 	papersizes.o \
 	plaintext.o \
