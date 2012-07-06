@@ -1486,69 +1486,75 @@ static void pdfPaths(FILE *f,
 	Coordinate *p,*start;
 	flatpoint pp;
 	int n=0;
-	LineStyle *lstyle;
-	FillStyle *fstyle;
+	LineStyle *lstyle=NULL;
+	FillStyle *fstyle=NULL;
 	char buffer[255];
 
+	 //build path
 	for (int c=0; c<pdata->paths.n; c++) {
 		p=start=pdata->paths.e[c]->path;
 		if (!p) continue;
-
-		lstyle=pdata->paths.e[c]->linestyle;
-		if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
-
-		fstyle=pdata->fillstyle;//default for all data paths
-
 		n=pdfaddpath(f,p,stream);
-		
-		if (n && fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
-			sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
-						fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
+	}
+
+
+	 //stroke and/or fill path
+	//lstyle=pdata->paths.e[c]->linestyle;
+	//if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
+	lstyle=pdata->linestyle;//default for all data paths
+
+	fstyle=pdata->fillstyle;//default for all data paths
+
+	
+	if (n && fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
+		sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
+					fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
+		appendstr(stream,buffer);
+	}
+
+	if (n && lstyle && lstyle->hasStroke()) {
+		 //linecap
+		if (lstyle->capstyle==CapButt) appendstr(stream,"0 J\n");
+		else if (lstyle->capstyle==CapRound) appendstr(stream,"1 J\n");
+		else if (lstyle->capstyle==CapProjecting) appendstr(stream,"2 J\n");
+
+		 //linejoin
+		if (lstyle->joinstyle==JoinMiter) appendstr(stream,"0 j\n");
+		else if (lstyle->joinstyle==JoinRound) appendstr(stream,"1 j\n");
+		else if (lstyle->joinstyle==JoinBevel) appendstr(stream,"2 j\n");
+
+		//setmiterlimit
+		//setstrokeadjust
+
+		 //line width
+		sprintf(buffer," %.10g w\n",lstyle->width);
+		appendstr(stream,buffer);
+
+		 //dash pattern
+		if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+			appendstr(stream," [] 0 d\n"); //clear dash array
+		else {
+			sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array
 			appendstr(stream,buffer);
 		}
 
-		if (n && lstyle && lstyle->hasStroke()) {
-			 //linecap
-			if (lstyle->capstyle==CapButt) appendstr(stream,"0 J\n");
-			else if (lstyle->capstyle==CapRound) appendstr(stream,"1 J\n");
-			else if (lstyle->capstyle==CapProjecting) appendstr(stream,"2 J\n");
+		 //set stroke color
+		sprintf(buffer,"%.10g %.10g %.10g RG\n",
+					lstyle->color.red/65535.,lstyle->color.green/65535.,lstyle->color.blue/65535.);
+		appendstr(stream,buffer);
+	}
 
-			 //linejoin
-			if (lstyle->joinstyle==JoinMiter) appendstr(stream,"0 j\n");
-			else if (lstyle->joinstyle==JoinRound) appendstr(stream,"1 j\n");
-			else if (lstyle->joinstyle==JoinBevel) appendstr(stream,"2 j\n");
+	 //fill and/or stroke
+	if (fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
+		if (fstyle->fillrule==EvenOddRule) appendstr(stream,"B*\n"); //fill and stroke
+		else appendstr(stream,"B\n"); //fill and stroke
 
-			//setmiterlimit
-			//setstrokeadjust
+	} else if (fstyle && fstyle->hasFill()) {
+		if (fstyle->fillrule==EvenOddRule) appendstr(stream,"f*\n"); //fill and stroke
+		else appendstr(stream,"f\n"); //fill only
 
-			 //line width
-			sprintf(buffer," %.10g w\n",lstyle->width);
-			appendstr(stream,buffer);
-
-			 //dash pattern
-			if (lstyle->dotdash==0 || lstyle->dotdash==~0)
-				appendstr(stream," [] 0 d\n"); //clear dash array
-			else {
-				sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array
-				appendstr(stream,buffer);
-			}
-
-			 //set stroke color
-			sprintf(buffer,"%.10g %.10g %.10g RG\n",
-						lstyle->color.red/65535.,lstyle->color.green/65535.,lstyle->color.blue/65535.);
-			appendstr(stream,buffer);
-		}
-
-		 //fill and/or stroke
-		if (fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
-			if (fstyle->fillrule==EvenOddRule) appendstr(stream,"B*\n"); //fill and stroke
-			else appendstr(stream,"B\n"); //fill and stroke
-		} else if (fstyle && fstyle->hasFill()) {
-			if (fstyle->fillrule==EvenOddRule) appendstr(stream,"f*\n"); //fill and stroke
-			else appendstr(stream,"f\n"); //fill only
-		} else if (lstyle && lstyle->hasStroke()) {
-			appendstr(stream,"S\n"); //stroke only
-		}
+	} else if (lstyle && lstyle->hasStroke()) {
+		appendstr(stream,"S\n"); //stroke only
 	}
 }
 

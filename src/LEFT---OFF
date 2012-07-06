@@ -40,16 +40,14 @@ nup:
 
 
 PathEditor: 
-  debug subpaths
   cut segment
+  direction indicator not higihlighting/scanning correctly
   shift click down then up on a point selects then deselects
-  delete point not setting curvertex right
-  drag point over other point to connect if both are endpoints, 
-    --> then click, segfault!
+  drag point over other point to connect if both are endpoints, --> then click, segfault!
+  control while dragging handle will temporarily switch to vertex?
   ----future:
   maybe dotted connection if only both end points selected, click connection to close?
   maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
-    control while dragging handle will temporarily switch to vertex?
   make straight bez
   make straight line
   not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
@@ -59,6 +57,8 @@ PathEditor:
   toggle between add points / select points?
   finish new path/pathoperator/pathsubinterface/pathinterface structure
 
+  DONE debug subpaths
+  DONE delete point not setting curvertex right
   DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
   DONE shortcut to reverse current subpath
   DONE direction indicator drag off path to adjust if adding points to current path or making new path
@@ -96,45 +96,17 @@ Scribus:
   import should try to apply the Scribus layout correctly, at least for 2 page spreads
   import should do something meaningful with original Scribus page bleed values
 
-saving when net is internal is not proper.. does not distinguish between diff. nets and whole
-
-import config generic things like enum keepmystery should be parsed when no import config given!!
-
-impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
-
 need laidout import
 
 paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-Load, save, add, delete paper groups
-   papergroups:
-    work out scheme for resource ownership: they can be owned by:
-      1.DONE  Document: if no project, save with document by default
-      2.DONE  Project:  save in project file
-      3.or Global resource: save in ~/.laidout/version/papergroups
-          class FileRef 
-        papergroup->owner=Document, Project, or FileRef
-   paperinterface:
-     no doc, define papergroup, convert papergroup to singles pages?
-     orient viewport to paper
-     snap other papers to various boxes
-     double click to edit paper details
-     in spread editor (done), and able to print it out
-     more versatile size control per paper
-     edit window? should be edit on screen....
-        Name:  default single letter
-        Paper: Letter, 8.5/11, landscape
-        Box: Media [v]   Box: Clip [v]
-                            [ ] None
-           0 0 8.5 11       X: 0   Y: 0
-                          W: 8.5 H: 11
-        [delete paper type][new paper type]
-
 optimize pdf especially... too much duplication!!
 
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
 ---- bugs:
+
+spiltwindow cursors existing in subwindows
 
 copy paste not working again
 
@@ -191,6 +163,37 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 
 ---enhancements:
+
+paperinterface:
+   Load, save, add, delete paper groups
+   papergroups:
+    work out scheme for resource ownership: they can be owned by:
+      1.DONE  Document: if no project, save with document by default
+      2.DONE  Project:  save in project file
+      3.or Global resource: save in ~/.laidout/version/papergroups
+          class FileRef 
+        papergroup->owner=Document, Project, or FileRef
+   paperinterface:
+     no doc, define papergroup, convert papergroup to singles pages?
+     orient viewport to paper
+     snap other papers to various boxes
+     double click to edit paper details
+     in spread editor (done), and able to print it out
+     more versatile size control per paper
+     edit window? should be edit on screen....
+        Name:  default single letter
+        Paper: Letter, 8.5/11, landscape
+        Box: Media [v]   Box: Clip [v]
+                            [ ] None
+           0 0 8.5 11       X: 0   Y: 0
+                          W: 8.5 H: 11
+        [delete paper type][new paper type]
+
+saving when net is internal is not proper.. does not distinguish between diff. nets and whole
+
+import config generic things like enum keepmystery should be parsed when no import config given!!
+
+impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
 
 in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
 reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
@@ -731,4 +734,6 @@ DONE test #, ', and " for shortcut dump
 DONE adding key+action, rebind key if necessary
 DONE shortcut loading and saving to resource dir
 DONE Install shortcut definitions for each window and interface
+
+DONE disable splitwindow cursors, there is annoying not switch error, problem due to lack of overiding x pointer shapes
 
