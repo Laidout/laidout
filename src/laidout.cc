@@ -1170,9 +1170,11 @@ Document *LaidoutApp::LoadTemplate(const char *name, ErrorLog &log)
 	
 	makestr(doc->saveas,NULL); // this forces a change of name, must be done after Load
 	delete[] fullname;
-	if (curdoc) curdoc->dec_count();
-	curdoc=doc;
-	//doc->dec_count(); <--count is kept for "curdoc" link
+	if (curdoc && curdoc!=doc) {
+		curdoc->dec_count();
+		curdoc=doc;
+		curdoc->inc_count();
+	}
 	return doc;
 }
 
