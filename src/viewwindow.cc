@@ -1759,7 +1759,7 @@ int LaidoutViewport::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 			colorrgb(pix,&r,&g,&b);
 			DBG cerr << "grab color:"<<r<<','<<g<<','<<b<<endl;
 
-			SimpleColorEventData *e=new SimpleColorEventData(255,r,g,b,255);
+			SimpleColorEventData *e=new SimpleColorEventData(255,r,g,b,255, 0);
 			app->SendMessage(e,win_parent->object_id,"curcolor",object_id);
 		}
 		return 0;
@@ -4180,7 +4180,7 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 
 	sc->Add(VIEW_ObjectTool,    LAX_Esc,0,0,      _("ObjectTool"),   _("Switch to object tool"),NULL,0);
 	sc->Add(VIEW_Save,         's',ControlMask,0, _("Save"),         _("Save document"),NULL,0);
-	sc->Add(VIEW_SaveAs,       's',ShiftMask|ControlMask,0,_("SaveAs"), _("Save as"),NULL,0);
+	sc->Add(VIEW_SaveAs,       'S',ShiftMask|ControlMask,0,_("SaveAs"), _("Save as"),NULL,0);
 	sc->Add(VIEW_NewDocument,  'n',ControlMask,0, _("NewDoc"),       _("New document"),NULL,0);
 	sc->Add(VIEW_NextTool,     't',0,0,           _("NextTool"),     _("Next tool"),NULL,0);
 	sc->Add(VIEW_PreviousTool, 'T',ShiftMask,0,   _("PreviousTool"), _("Previous tool"),NULL,0);
