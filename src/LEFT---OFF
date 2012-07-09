@@ -14,7 +14,7 @@ Those are purged with each release.
 
 in tiled, can no longer select objects in the other tiles, wtf!!!
 
-tooltips have stopped working
+tooltips work intermittently
 
 switch to None document, and units change to unreasonable
 
@@ -29,23 +29,25 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 nup:
   hover over tips not working
-  grid -- row/col flipped??!!
   sized_grid
   flowed
   unclump
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
-  nup: scale panel should allow mpx and control zoom around point
   object reorder
+  nup: scale panel should allow mpx and control zoom around point
+  DONE grid -- row/col flipped??!!
   DONE random
 
 
 PathEditor: 
-  cut segment
-  direction indicator not higihlighting/scanning correctly
+  delete point sometimes crashes
+  direction indicator not highlighting/scanning correctly
   shift click down then up on a point selects then deselects
   drag point over other point to connect if both are endpoints, --> then click, segfault!
-  control while dragging handle will temporarily switch to vertex?
+  control while dragging handle should temporarily switch to vertex?
   ----future:
+  copy and paste
+  cut segment
   maybe dotted connection if only both end points selected, click connection to close?
   maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
   make straight bez
@@ -57,6 +59,9 @@ PathEditor:
   toggle between add points / select points?
   finish new path/pathoperator/pathsubinterface/pathinterface structure
 
+  DONE shift click on nothing - drag out rect -> add points to selection
+  DONE control click on nothing - drag out rect -> remove points from selection
+  DONE select/deselect points with dragged rect
   DONE debug subpaths
   DONE delete point not setting curvertex right
   DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
@@ -124,8 +129,6 @@ recent files do not appear to be most recent file opened
 
 object deleting funky, import svg images, select one, hit delete, doesn't delete!!
 place 3 images, object select, must press delete twice...!?!?!?!
-
-paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
 
 should not be able to group select an object and another object nested within
 
@@ -220,10 +223,11 @@ scribus out doesn't do gradients
 bleeding mechanism should be functional
 
 align tool:
+  need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
   gap looks ugly.. have indicator highlight path itself, drag that around
   would be VERY handy to be able to recall previous arrangements, so you can partially redo 
   final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
-  extra custom finishing per object? at least 180 flip
+  extra custom finishing per object?
   reorder on layouts? -> how to handle reorder in gap and unoverlap?
     trace out order path... show with numbers
   drag out path, order of intersection is new object order?
@@ -575,7 +579,6 @@ clean up and test:
 
 pdf export:
  page labels
- paths
 
 Import image list: default previews
 
@@ -700,6 +703,7 @@ DONE document laxconfig/appcolors in laidoutrc
 DONE add bookmark adds it twice.. is it adding to gtk AND to lo/bm?
 
 DONE align tool:
+  DONE adjust final rotation
   DONE memory hole: obj -> align -> obj leaves obs..
   DONE bug: distance along is hideously inaccurate
   DONE '0' for grid align on closed paths should distribute more nicely
@@ -736,4 +740,12 @@ DONE shortcut loading and saving to resource dir
 DONE Install shortcut definitions for each window and interface
 
 DONE disable splitwindow cursors, there is annoying not switch error, problem due to lack of overiding x pointer shapes
+
+DONE paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
+
+DONE loading default template segfaults on quit
+
+DONE imagepatch 'm' tries to draw preview super high? ... no, its render recursive mode
+
+DONE mesh delete cross lines segfaults
 
