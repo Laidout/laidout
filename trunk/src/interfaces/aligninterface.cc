@@ -49,6 +49,7 @@ DBG double closestdistance;
 
 //align circle control is RADIUS*uiscale
 #define RADIUS 2
+#define ROTRADIUS 1.5
 //align drag bar lengths are BAR*uiscale
 #define BAR    12
 
@@ -96,6 +97,7 @@ AlignInfo::AlignInfo()
 	leftbound=-100;
 	rightbound=100; //line parameter for path, dist between vertices is 1
 	finalalignment=50;//for when not flow and gap based
+	extrarotation=0;
 
 	gaps=NULL; //if all custom, final gap is weighted to fit in left/rightbounds?
 	numgaps=0;
@@ -133,6 +135,7 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
         fprintf(f,"%srightbound 1       #Another bound as a line parameter along the path for layout\n",spc);
         fprintf(f,"%scenter 0,0         #Hint for position of control panel\n",spc);
         fprintf(f,"%suiscale 10         #How big to make the panel, the pixel width of an alignment bar\n",spc);
+        fprintf(f,"%srotation 0         #Extra finishing rotation\n",spc);
         fprintf(f,"%sdefaultgap 5       #\n",spc);
         //fprintf(f,"%sgaptype ???        #\n",spc);
         fprintf(f,"%sgaps 4 5 6 7       #List of current gaps between objects\n",spc);
@@ -172,6 +175,7 @@ void AlignInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%srightbound %.10g\n",spc,rightbound);
 	fprintf(f,"%scenter %.10g,%.10g\n",spc,center.x,center.y);
 	fprintf(f,"%suiscale %.10g\n",spc,uiscale);
+	if (extrarotation) fprintf(f,"%srotation %.10g\n",spc,extrarotation);
 
 	fprintf(f,"%sdefaultgap %.10g\n",spc,defaultgap);
 	//fprintf(f,"%sgaptype ???        #\n",spc);
@@ -296,6 +300,9 @@ AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 	snapto_lrc_amount=0; //pixel distance to snap to the standard left/top, center, or right/bottom points, 0 for none
 	boundstep=.1;
 	explodemode=0;
+	snapmovement=0;
+	showextra=0;
+	showrotation=1;
 
 	hover=-1;
 	hoverindex=-1;
@@ -321,6 +328,9 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 	snapto_lrc_amount=0; //pixel distance to snap to the standard left/top, center, or right/bottom points, 0 for none
 	boundstep=.1;
 	explodemode=0;
+	snapmovement=0;
+	showextra=0;
+	showrotation=1;
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
@@ -385,6 +395,7 @@ enum AlignInterfaceActions {
 	ALIGN_Randomize,
 	ALIGN_LineControl,
 	ALIGN_VisualShift,
+	ALIGN_Rotation,
 
 	 //window actions
 	ALIGN_ToggleApply,
@@ -443,6 +454,10 @@ enum AlignInterfaceActions {
 	ALIGN_Snap_AlignProportional,
 
 	ALIGN_ResetPath,
+	ALIGN_ShowExtra,
+	ALIGN_ShowRotation,
+	ALIGN_Load,
+	ALIGN_Lave,
 
 
 	ALIGN_MAX
@@ -461,12 +476,6 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("Align Interface"));
 
-	//menu->AddItem(_("Save"),ALIGN_Save); // *** save to <laidout->config_dir>/tools/AlignInterface/*
-	//   date string: "%Y-%m-%d-%H:%M:%S"
-	//menu->AddItem(_("Load"),ALIGN_Load);
-	//presets...
-	//menu->AddSep(_("Presets"));
-
 	menu->AddSep(_("Snap"));
 	menu->AddItem(_("None"),ALIGN_Snap_None, LAX_ISTOGGLE|(aligninfo->snap_align_type==FALIGN_None?LAX_CHECKED:0));
 	menu->AddItem(_("Aligned"),ALIGN_Snap_Align, LAX_ISTOGGLE|(aligninfo->snap_align_type==FALIGN_Align?LAX_CHECKED:0));
@@ -483,22 +492,24 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 
 	menu->AddSep();
 	menu->AddItem(_("Reset path"), ALIGN_ResetPath);
+	if (showextra) menu->AddItem(_("Show extra"), ALIGN_ShowExtra);
+	else menu->AddItem(_("Hide extra"), ALIGN_ShowExtra);
+	if (showrotation) menu->AddItem(_("Show rotation"), ALIGN_ShowRotation);
+	else menu->AddItem(_("Hide rotation"), ALIGN_ShowRotation);
+
+	//menu->AddItem(_("Save"),ALIGN_Save); // *** save to <laidout->config_dir>/tools/AlignInterface/*
+	//   date string: "%Y-%m-%d-%H:%M:%S"
+	//menu->AddItem(_("Load"),ALIGN_Load);
+	//presets...
+	//menu->AddSep(_("Presets"));
+
 
 	return menu;
 }
 
 int AlignInterface::UpdateFromPath()
 {
-	DBG cerr <<" ** ** ** ** align path modified!!!"<<endl;
-
-	 //update control position
-	//double d=0;
-	//flatpoint p=ClosestPoint(aligninfo->center,&d);
-	//aligninfo->center=p;
-	//needtodraw=1;
-
 	if (active) ApplyAlignment(0);
-
 	return 0;
 }
 
@@ -522,6 +533,11 @@ int AlignInterface::Event(const Laxkit::EventData *e,const char *mes)
 				if (active) ApplyAlignment(0);
 				needtodraw=1;
 			}
+			return 0;
+
+		} else if (i==ALIGN_ShowExtra) {
+			showextra=!showextra;
+			needtodraw=1;
 			return 0;
 		}
 
@@ -615,6 +631,7 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 
 	 //draw rectangle
 	if (aligntype==FALIGN_None) {
+		 //draw super thin
 		dp->drawline(p1+.4*w*vt,p2-.4*w*vt);
 		dp->drawline(p2-.4*w*vt,p4-.4*w*vt);
 		dp->drawline(p4-.4*w*vt,p3+.4*w*vt);
@@ -637,16 +654,18 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 		p[ 9]=p2 +w*v      ;
 		p[10]=p2 +w*v +w*vt;
 		p[11]=(with_rotation_handles ? p2 : p1-w/2*v+w/2*vt);
-		dp->drawlines(p,12,1,0);
+		dp->drawlines(p,12,1,hover==1?2:0);
 
 	} else {//FALIGN_Align
 		if (hover==1) dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
 		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-		dp->drawline(p1,p2);
-		dp->drawline(p2,p4);
-		dp->drawline(p4,p3);
-		dp->drawline(p3,p1);
+		flatpoint p[4];
+		p[0]=p1;
+		p[1]=p2;
+		p[2]=p4;
+		p[3]=p3;
+		dp->drawlines(p,4,1,hover==1?2:0);
 	}
 
 	 //draw rotate handles on ends of bar
@@ -654,15 +673,37 @@ void AlignInterface::DrawAlignBox(flatpoint dir,
 		if (hover==2) dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
 		else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-		dp->drawline(p1,p1-v*w); //the one
-		dp->drawline(p1-v*w,p1-v*w+w*vt);
-		dp->drawline(p1-v*w+w*vt,p2);
-		dp->drawline(p3,p3+v*w); //and the other
-		dp->drawline(p3+v*w,p3+v*w+w*vt);
-		dp->drawline(p3+v*w+w*vt,p4);
+		flatpoint p[4];
+		p[0]=p1;
+		p[1]=p1-v*w;
+		p[2]=p1-v*w+w*vt;
+		p[3]=p2;
+		dp->drawlines(p,4,1,hover==2?2:0);
+		p[0]=p3;
+		p[1]=p3+v*w;
+		p[2]=p3+v*w+w*vt;
+		p[3]=p4;
+		dp->drawlines(p,4,1,hover==2?2:0);
 	}
 
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+}
+
+//! Fill points with 6 points describing a wub.
+void WubPoints(flatpoint *points, flatpoint o,double r1,double r2,double start,double end)
+{
+	points[1]=flatpoint(r1*cos(start), r1*sin(start));
+	points[4]=flatpoint(r1*cos(end), r1*sin(end));
+
+	double a=.75*start+.25*end;
+	points[0]=flatpoint(r1*cos(a), r1*sin(a));
+	points[2]=flatpoint(r2*cos(a), r2*sin(a));
+
+	a=.25*start+.75*end;
+	points[3]=flatpoint(r2*cos(a), r2*sin(a));
+	points[5]=flatpoint(r1*cos(a), r1*sin(a));
+
+	for (int c=0; c<6; c++) points[c]+=o;
 }
 
 /*! Draws maybebox if any, then DrawGroup() with the current papergroup.
@@ -684,8 +725,8 @@ int AlignInterface::Refresh()
 	dp->NewFG(&controlcolor);
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-	DBG dp->drawpoint(dp->realtoscreen(closestpoint),5,0);
-	DBG dp->drawpoint(dp->realtoscreen(closestpoint2),8,0);
+	//DBG dp->drawpoint(dp->realtoscreen(closestpoint),5,0);
+	//DBG dp->drawpoint(dp->realtoscreen(closestpoint2),8,0);
 
 	if (!child) {
 		//only draw the controls when not editing path
@@ -710,6 +751,18 @@ int AlignInterface::Refresh()
 			}
 		}
 
+		dp->NewBG(1.,1.,1.);
+		if (showrotation) {
+			flatpoint cc(dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset)));
+			double r=aligninfo->uiscale*RADIUS*ROTRADIUS;
+			flatpoint wub[6];
+			if (hover==ALIGN_Rotation) dp->LineAttributes(2,LineSolid, CapButt, JoinRound);
+			else dp->LineAttributes(1,LineSolid, CapButt, JoinRound);
+			WubPoints(wub, cc, r,r*1.2, M_PI/2+M_PI/4+aligninfo->extrarotation,M_PI/2+-M_PI/4+aligninfo->extrarotation);
+			dp->drawbez(wub,2,1,15,hover==ALIGN_Rotation?2:0);
+			dp->LineAttributes(1,LineSolid, CapButt, JoinRound);
+		}
+
 		 //draw snap direction rectangle
 		DrawAlignBox(aligninfo->snap_direction, aligninfo->snapalignment,aligninfo->snap_align_type,1,
 						hover==ALIGN_MoveSnapAlign?1:(hover==ALIGN_RotateSnapAndAlign?2:0));
@@ -725,7 +778,8 @@ int AlignInterface::Refresh()
 			 //other layout types selector
 			double w=aligninfo->uiscale;
 			double x1=1/sqrt(2)*w*RADIUS;
-			double x2=(aligninfo->final_layout_type==FALIGN_None?1.5:2)*w*RADIUS;
+			//double x2=(aligninfo->final_layout_type==FALIGN_None?1.5:2)*w*RADIUS;
+			double x2=2*w*RADIUS;
 			double yy=x1;
 			flatpoint v=transform_vector(dp->Getctm(),aligninfo->layout_direction);
 			v/=norm(v);
@@ -820,8 +874,7 @@ int AlignInterface::Refresh()
 			dp->drawpoint(dp->realtoscreen(controls.e[c]->original_center),3,0);
 		}
 
-
-		 //draw extra controls
+		 //draw extra per object controls
 		for (int c=0; c<controls.n; c++) {
 			if (controls.e[c]->flags&CONTROLS_Skip) continue;
 
@@ -884,10 +937,10 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 		if (a!=ALIGN_None) return a;
 	}
 
-	if (aligninfo->path) fp-=dp->realtoscreen(aligninfo->center);
-	else fp-=dp->realtoscreen(aligninfo->center+aligninfo->centeroffset);
-	if (norm(fp)<aligninfo->uiscale*RADIUS) return ALIGN_Move; //align move circle
-
+	flatpoint cc=dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset));
+	fp-=cc;
+	double d=norm(fp);
+	if (d<aligninfo->uiscale*RADIUS) return ALIGN_Move; //align move circle
 
 	 //transform in snap direction 
 	double w=aligninfo->uiscale;
@@ -941,6 +994,15 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 		if (yy<w*RADIUS && yy>-w*RADIUS) {
 			if (xx>-2*w*RADIUS && xx<-w*RADIUS) return ALIGN_LayoutType;
 			if (xx<2*w*RADIUS && xx>w*RADIUS) return ALIGN_VisualShift;
+		}
+	}
+
+	if (showrotation) {
+		if (d<aligninfo->uiscale*RADIUS*ROTRADIUS+PAD && d>aligninfo->uiscale*RADIUS*ROTRADIUS-PAD) {
+			double cura=atan2(fp.y,fp.x);
+			DBG cerr <<"angle: "<<cura<<endl;
+			//M_PI/2+aligninfo->extrarotation
+			return ALIGN_Rotation;
 		}
 	}
 
@@ -1122,7 +1184,7 @@ int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 			child=pathi;
 			pathi->owner=this;
-			viewport->Push(pathi,1,-1);
+			viewport->Push(pathi,-1,0);
 			hover=0;
 			needtodraw=1;
 
@@ -1339,6 +1401,7 @@ void AlignInterface::postHoverMessage()
 		case ALIGN_Path: m=_("Click to edit path"); break;
 		case ALIGN_Randomize: m=_("Click to shuffle"); break;
 		case ALIGN_VisualShift: m=_("Wheel to change visual align type"); break;
+		case ALIGN_Rotation: m=_("Drag to change extra rotation"); break;
 
 		case ALIGN_LineControl: m=_(" *** line control ***"); break;
 		default: m=NULL; break;
@@ -1393,6 +1456,16 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			} else aligninfo->center+=dd;
 		}
 		if (active) ApplyAlignment(0);
+		needtodraw=1;
+		return 0;
+	}
+
+	if (action==ALIGN_Rotation) {
+		flatpoint cc=dp->realtoscreen(aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset));
+		double aold=atan2(ly-cc.y, lx-cc.x);
+		double anew=atan2( y-cc.y,  x-cc.x);
+		if (active) ApplyAlignment(0);
+		aligninfo->extrarotation+=anew-aold;
 		needtodraw=1;
 		return 0;
 	}
@@ -2131,14 +2204,29 @@ int AlignInterface::ApplyAlignment(int updateorig)
 			 //   are snapped to path, but before shifting to alignment perpendicular to path
 			transform_identity(mm);
 			if (aligninfo->visual_align==FALIGN_Visual) {
-				 //nothing special needed
+				 //nothing special needed, except when extra rotation
+				if (aligninfo->extrarotation) {
+					mm[4]-=cc.x;
+					mm[5]-=cc.y;
+					double angle =aligninfo->extrarotation;
+					double r[6],s[6];
+					r[4]=r[5]=0;
+					r[0]=cos(angle);
+					r[1]=-sin(angle);
+					r[2]=sin(angle);
+					r[3]=cos(angle);
+					transform_mult(s,mm,r);
+					transform_copy(mm,s);
+					mm[4]+=cc.x;
+					mm[5]+=cc.y;
+				}
 
 			} else if (aligninfo->visual_align==FALIGN_VisualRotate) {
 				 // for FALIGN_VisualRotate, and for now also FALIGN_ObjectRotate...
 				normalize(tangent);
 				mm[4]-=cc.x;
 				mm[5]-=cc.y;
-				double angle=-atan2(tangent.y,tangent.x);
+				double angle=-atan2(tangent.y,tangent.x)+aligninfo->extrarotation;
 				double r[6],s[6];
 				r[4]=r[5]=0;
 				r[0]=cos(angle);
@@ -2157,6 +2245,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				double angle =-atan2(tangent.y,tangent.x);
 				double angle2=-atan2(xaxis.y,xaxis.x);
 				angle-=angle2;
+				angle+=aligninfo->extrarotation;
 				double r[6],s[6];
 				r[4]=r[5]=0;
 				r[0]=cos(angle);

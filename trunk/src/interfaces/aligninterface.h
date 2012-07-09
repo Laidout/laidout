@@ -58,17 +58,17 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 	flatvector layout_direction;
 	double finalalignment;//for when not flow and gap based
 	double leftbound, rightbound; //line parameter for path, dist between vertices is 1
+	double extrarotation;
 
 	double *gaps; //if all custom, final gap is weighted to fit in left/rightbounds?
 	int numgaps;
 	double defaultgap; //apply initially, but user can adjust per gap after
 	int gaptype; //whether custom for whole list (weighted or absolute), or single value gap, or function gap
 
-	flatvector center;
 	double uiscale; //width of main alignment bar
-
-	LaxInterfaces::PathsData *path; //custom alignment path
+	flatpoint center;
 	flatpoint centeroffset; //used only when path==NULL
+	LaxInterfaces::PathsData *path; //custom alignment path
 
 	AlignInfo();
 	virtual ~AlignInfo();
@@ -116,6 +116,9 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 
 	int hover, hoverindex;
 	int explodemode;
+	int snapmovement;
+	int showextra;
+	int showrotation;
 
 	virtual int scan(int x,int y, int &index, unsigned int state);
 	virtual int onPath(int x,int y);
