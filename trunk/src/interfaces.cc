@@ -94,10 +94,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	anInterface *i;
 
 	// *************** testing:
-	 //------Nup
-	i=new NUpInterface(id++,NULL);
-	existingpool->push(i);
-	i->dec_count();
 	// *************** end testing
 
 	 //------Group

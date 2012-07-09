@@ -77,8 +77,6 @@ class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted
 class NUpInterface : public LaxInterfaces::ObjectInterface
 {
   protected:
-	Laxkit::ButtonDownInfo buttondown;
-
 	unsigned long color_arrow, color_num;
 
 	ActionArea *major, *minor;
@@ -91,8 +89,8 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 		flatpoint p;
 		flatpoint v;
 		double amountx,amounty;
-		flatpoint snapto;
 		int flags;
+		flatpoint new_center;
 		flatpoint original_center;
 		LaxInterfaces::SomeData *original_transform;
 
@@ -116,7 +114,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	int overoverlay;
 	int active;
 
-	virtual int scan(int x,int y);
+	virtual int scanNup(int x,int y);
 	virtual int hscan(int x,int y);
 	virtual int vscan(int x,int y);
 	virtual void createControls();
@@ -124,6 +122,8 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	virtual const char *controlTooltip(int action);
 	virtual const char *flowtypeMessage(int set);
 	virtual int Apply(int updateorig);
+	virtual void ApplyGrid();
+	virtual void ApplyRandom();
 	virtual int Reset();
 
 	Laxkit::ShortcutHandler *sc;

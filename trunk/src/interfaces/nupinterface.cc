@@ -37,6 +37,7 @@ using namespace std;
 #define PAD 5
 #define fudge 5.0
 
+#define CONTROL_Skip 1
 
 
 //  ^     3--->   ^          5
@@ -61,7 +62,8 @@ using namespace std;
 /*! \class NUpInfo
  * \brief Info about how to arrange in an n-up style.
  *
- * Set flow direction, number of rows and columns.
+ * Set flow direction, number of rows and columns. If rows or cols is -1 as a
+ * minor direction, then add as many as possible.
  *
  * See also NUpInterface.
  */
@@ -97,7 +99,7 @@ NUpInfo::~NUpInfo()
 
 
 enum NupInterfaceActions {
-	NUPA_Apply,
+	NUPA_Apply=OIA_MAX,
 	NUPA_NextLayoutType,
 	NUPA_PrevLayoutType,
 	NUPA_NextDir,
@@ -110,7 +112,8 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 	: ObjectInterface(nid,ndp) 
 {
 	tempdir=0;
-	style|=RECT_HIDE_CONTROLS;
+	//style|=RECT_HIDE_CONTROLS;
+	style=style&~RECT_FLIP_AT_SIDES;
 
 	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
@@ -134,7 +137,8 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: ObjectInterface(nid,ndp) 
 {
 	tempdir=0;
-	style|=RECT_HIDE_CONTROLS;
+	//style|=RECT_HIDE_CONTROLS;
+	style=style&~RECT_FLIP_AT_SIDES;
 
 	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
@@ -533,11 +537,11 @@ int NUpInterface::Refresh()
 	 //draw major arrow number
 	p=flatpoint(x+(majornum->minx+majornum->maxx)/2,y+(majornum->miny+majornum->maxy)/2);
 	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-		majorn=nupinfo->rows;
-		minorn=nupinfo->cols;
-	} else {
 		majorn=nupinfo->cols;
 		minorn=nupinfo->rows;
+	} else {
+		majorn=nupinfo->rows;
+		minorn=nupinfo->cols;
 	}
 
 	if (majorn>=1) sprintf(buffer,"%d",majorn);
@@ -584,6 +588,25 @@ void NUpInterface::drawHandle(ActionArea *area, unsigned int color, flatpoint of
 
 	dp->drawlines(p,area->npoints,1,area->action==overoverlay);
 }
+
+//void NUpInterface::ShowOrder()
+//{
+//	flatpoint last;
+//	int i=-1;
+//	char buffer[20];
+//	for (int c=0; c<selection.n; c++) {
+//		if (objcontrols.e[c]->flags&CONTROL_Skip) continue;
+//		if (i>=0) {
+//			dp->drawline(last,objcontrols.e[c]->new_center); //black line
+//			dp->drawline(last,objcontrols.e[c]->new_center); //white line
+//			sprintf(buffer,"%d",i);
+//			*** circle
+//			dp->drawellipse(***);
+//			dp->textout(buffer,-1, last.x,last.y, LAX_CENTER);
+//		}
+//		i=c;
+//	}
+//}
 
 //! Return a new flow direction, or -1 if not in the panel.
 int NUpInterface::vscan(int x,int y)
@@ -667,7 +690,7 @@ int NUpInterface::hscan(int x,int y)
 
 
 //! Return which position and range mouse is over
-int NUpInterface::scan(int x,int y)
+int NUpInterface::scanNup(int x,int y)
 {
 	//flatpoint fp=screentoreal(x,y);
 	int action=NUP_None, dir=nupinfo->direction;
@@ -766,9 +789,9 @@ int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::
 	DBG cerr <<"nup lbdown"<<endl;
 	if (buttondown.any(0,LEFTBUTTON)) return 0; //only allow one button at a time
 
-	int action=scan(x,y);
+	int action=scanNup(x,y);
 	if (action!=NUP_None) {
-		buttondown.down(d->id,LEFTBUTTON,x,y,action);
+		buttondown.down(d->id,LEFTBUTTON,x,y,0,action);
 		int dir=nupinfo->direction;
 		if (action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 			if (dir==LAX_LRTB || dir==LAX_LRBT) temparrowdir=NUP_LtoR;
@@ -785,7 +808,8 @@ int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::
 		return 0;
 	}
 
-	return 1;
+	style|=RECT_OBJECT_SHUNT;
+	return RectInterface::LBDown(x,y,state,count,d);
 }
 
 int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
@@ -794,7 +818,7 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 
 	int action;
-	int dragged=buttondown.up(d->id,LEFTBUTTON, &action);
+	int dragged=buttondown.up(d->id,LEFTBUTTON, NULL,&action);
 
 	if (tempdir>=0 && tempdir!=nupinfo->direction) {
 		nupinfo->direction=tempdir;
@@ -815,7 +839,7 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 		return 0;
 	}
 
-	return 0;
+	return RectInterface::LBUp(x,y,state,d);
 }
 
 //! Copy back original transforms from original transforms to the selection.
@@ -850,7 +874,7 @@ int NUpInterface::validateInfo()
 
 int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int action=scan(x,y);
+	int action=scanNup(x,y);
 	int dir=nupinfo->direction;
 
 	if (action!=NUP_None && (state&ControlMask)) {
@@ -869,9 +893,9 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 
 	if (action==NUP_Major_Number || action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-			if (nupinfo->rows<0) nupinfo->rows=0; else nupinfo->rows++;
-		} else {
 			if (nupinfo->cols<0) nupinfo->cols=0; else nupinfo->cols++;
+		} else {
+			if (nupinfo->rows<0) nupinfo->rows=0; else nupinfo->rows++;
 		}
 		if (active) Apply(0);
 		needtodraw=1;
@@ -879,9 +903,9 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 
 	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-			if (nupinfo->cols<0) nupinfo->cols=0; else nupinfo->cols++;
-		} else {
 			if (nupinfo->rows<0) nupinfo->rows=0; else nupinfo->rows++;
+		} else {
+			if (nupinfo->cols<0) nupinfo->cols=0; else nupinfo->cols++;
 		}
 		if (active) Apply(0);
 		needtodraw=1;
@@ -894,7 +918,7 @@ int NUpInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit:
 
 int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int action=scan(x,y);
+	int action=scanNup(x,y);
 	int dir=nupinfo->direction;
 
 	if (action!=NUP_None && (state&ControlMask)) {
@@ -916,12 +940,12 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 	if (action==NUP_Major_Number || action==NUP_Major_Arrow || action==NUP_Major_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 			 //horizontal major axis
-			nupinfo->rows--;
-			if (nupinfo->rows<0) nupinfo->rows=0;
-		} else {
-			 //vertical major axis
 			nupinfo->cols--;
 			if (nupinfo->cols<0) nupinfo->cols=0;
+		} else {
+			 //vertical major axis
+			nupinfo->rows--;
+			if (nupinfo->rows<0) nupinfo->rows=0;
 		}
 		if (active) Apply(0);
 		needtodraw=1;
@@ -929,11 +953,11 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 
 	} else if (action==NUP_Minor_Number || action==NUP_Minor_Arrow || action==NUP_Minor_Tip) {
 		if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
-			nupinfo->cols--;
-			if (nupinfo->cols<0) nupinfo->cols=-1;
-		} else {
 			nupinfo->rows--;
 			if (nupinfo->rows<0) nupinfo->rows=-1;
+		} else {
+			nupinfo->cols--;
+			if (nupinfo->cols<0) nupinfo->cols=-1;
 		}
 		if (active) Apply(0);
 		needtodraw=1;
@@ -949,10 +973,10 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 DBG int lastx,lasty;
 
 int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
-{ //***
+{
 
 	DBG cerr <<"nup move"<<endl;
-	int over=scan(x,y);
+	int over=scanNup(x,y);
 
 	DBG lastx=x; lasty=y;
 	DBG cerr <<"over: "<<over<<endl;
@@ -972,11 +996,17 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 	overoverlay=NUP_None;
 
 	int oldx,oldy;
+	int action=NUP_None;
+	int rectaction=0;
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &rectaction,&action);
+	if (rectaction>0) {
+		RectInterface::MouseMove(x,y,state,mouse);
+		if (active) Apply(0);
+		return 0;
+	}
 	buttondown.move(mouse->id,x,y,&oldx,&oldy);
 	flatpoint d=flatpoint(x-oldx,y-oldy);
 	
-	int action=NUP_None;
-	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &action);
 	if (action==NUP_None) return 0;
 
 	if (action==NUP_Panel || (state&LAX_STATE_MASK)!=0) {
@@ -1008,7 +1038,7 @@ int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMous
 //	if ((state&LAX_STATE_MASK)==(ControlMask|ShiftMask)) {
 //	}
 
-	return 0;
+	return RectInterface::MouseMove(x,y,state,mouse);
 }
 
 /*! \class AlignInterface::ControlInfo
@@ -1056,6 +1086,8 @@ int NUpInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 		objcontrols.e[c]->SetOriginal(t);
 		t->dec_count();
 	}
+
+	if (somedata) somedata->flags=somedata->flags&~(SOMEDATA_KEEP_ASPECT|SOMEDATA_KEEP_1_TO_1);
 
 	return n;
 }
@@ -1163,7 +1195,7 @@ int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 
 	} else if (ch=='o') {
 		DBG cerr <<"--------------------------";
-		DBG int action=scan(lastx,lasty);
+		DBG int action=scanNup(lastx,lasty);
 		DBG cerr << " x,y:"<<lastx<<','<<lasty<<"  action:"<<action<<endl;
 		return 0;
 
@@ -1240,83 +1272,12 @@ int NUpInterface::Apply(int updateorig)
 
 
 	 //then find and set new transforms
-	flatpoint cc, ul,ur,ll,lr;
-	flatpoint v,p, d,ac;
-	double w,h;
-
-	double wholew=data->maxx-data->minx;
-	double wholeh=data->maxy-data->miny;
-	double rh=wholeh;
-	double cw=wholew;
-	if (nupinfo->rows>=1) rh=wholeh/nupinfo->rows;
-	if (nupinfo->cols>=1) cw=wholew/nupinfo->cols;
 
 	if (nupinfo->flowtype==NUP_Noflow) {
 		//a no-op, nothing to do!
 
 	} else if (nupinfo->flowtype==NUP_Grid) {
-		int i=0;
-		int dir=nupinfo->direction;
-
-		if (dir==LAX_TBLR || dir==LAX_BTLR || dir==LAX_TBRL || dir==LAX_BTRL) {
-			 //major direction vertical:
-			i=0;
-			for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
-				for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
-					WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
-
-					if (dir==LAX_TBLR || dir==LAX_TBRL) {
-						p.y=data->maxy-rh/2-r*rh;
-					} else {
-						p.y=data->miny+rh/2+r*rh;
-					}
-					if (dir==LAX_TBLR || dir==LAX_BTLR) {
-						p.x=data->minx+cw/2+c*cw;
-					} else {
-						p.x=data->maxx-cw/2-c*cw;
-					}
-
-					p=transform_point(data->m(),p);
-					d=p-cc;
-					mm[4]=d.x;
-					mm[5]=d.y;
-					TransformSelection(mm,i,i);
-					DBG cerr <<"TRANSFORM "<<i<<" offset:"<<d.x<<','<<d.y<<endl;
-
-					i++;
-				}
-			}
-
-		} else {
-			 //major direction horizontal:
-			i=0;
-			for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
-				for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
-					WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
-
-					if (dir==LAX_LRTB || dir==LAX_RLTB) {
-						p.y=data->maxy-rh/2-r*rh;
-					} else {
-						p.y=data->miny+rh/2+r*rh;
-					}
-					if (dir==LAX_LRTB || dir==LAX_LRBT) {
-						p.x=data->minx+cw/2+c*cw;
-					} else {
-						p.x=data->maxx-cw/2-c*cw;
-					}
-
-					p=transform_point(data->m(),p);
-					d=p-cc;
-					mm[4]=d.x;
-					mm[5]=d.y;
-					TransformSelection(mm,i,i);
-					DBG cerr <<"TRANSFORM "<<i<<" offset:"<<d.x<<','<<d.y<<"    to p:"<<p.x<<','<<p.y<<endl;
-
-					i++;
-				}
-			}
-		}
-
+		ApplyGrid();
 
 	} else if (nupinfo->flowtype==NUP_Sized_Grid) {
 		// ***
@@ -1325,31 +1286,7 @@ int NUpInterface::Apply(int updateorig)
 		// ***
 
 	} else if (nupinfo->flowtype==NUP_Random) {
-		double randomx, randomy;
-		for (int c=0; c<selection.n; c++) {
-			WidthHeight(selection.e[c], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
-			objcontrols.e[c]->original_center=cc;
-			d.x=d.y=0;
-
-			if (needtoresetlayout) {
-				 //refresh object placement values
-				randomx=((double)random()/RAND_MAX);
-				randomy=((double)random()/RAND_MAX);
-			} else {
-				randomx=objcontrols.e[c]->amountx;
-				randomy=objcontrols.e[c]->amounty;
-			}
-
-			p=data->origin() + (w/2+randomx*(wholew-w)+data->minx)*data->xaxis()
-							 + (h/2+randomy*(wholeh-h)+data->miny)*data->yaxis();
-			d=p-cc;
-			objcontrols.e[c]->amountx=randomx;
-			objcontrols.e[c]->amounty=randomy;
-
-			mm[4]=d.x;
-			mm[5]=d.y;
-			TransformSelection(mm,c,c);
-		}
+		ApplyRandom();
 
 	} else if (nupinfo->flowtype==NUP_Unclump) {
 		// *** spread out evenly
@@ -1363,9 +1300,135 @@ int NUpInterface::Apply(int updateorig)
 		objcontrols.e[c]->original_transform->m(selection.e[c]->obj->m());
 	}
 
-	RemapBounds();
+	//RemapBounds();
 	needtodraw=1;
 	return 0;
+}
+
+void NUpInterface::ApplyGrid()
+{
+	double wholew=data->maxx-data->minx;
+	double wholeh=data->maxy-data->miny;
+	double rh=wholeh;
+	double cw=wholew;
+	if (nupinfo->rows>=1) rh=wholeh/nupinfo->rows;
+	if (nupinfo->cols>=1) cw=wholew/nupinfo->cols;
+
+	flatpoint cc;
+	flatpoint p, d;
+	double w,h;
+	double mm[6];
+	transform_identity(mm);
+
+	int i=0;
+	int dir=nupinfo->direction;
+
+	if (dir==LAX_TBLR || dir==LAX_BTLR || dir==LAX_TBRL || dir==LAX_BTRL) {
+		 //major direction vertical:
+		i=0;
+		for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
+			for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
+				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+
+				if (dir==LAX_TBLR || dir==LAX_TBRL) {
+					p.y=data->maxy-rh/2-r*rh;
+				} else {
+					p.y=data->miny+rh/2+r*rh;
+				}
+				if (dir==LAX_TBLR || dir==LAX_BTLR) {
+					p.x=data->minx+cw/2+c*cw;
+				} else {
+					p.x=data->maxx-cw/2-c*cw;
+				}
+
+				p=transform_point(data->m(),p);
+				d=p-cc;
+				mm[4]=d.x;
+				mm[5]=d.y;
+				TransformSelection(mm,i,i);
+				DBG cerr <<"TRANSFORM major V  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+
+				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
+				objcontrols.e[i]->new_center=cc+d;
+				i++;
+			}
+		}
+		for ( ; i<selection.n; i++) {
+			objcontrols.e[i]->flags|=CONTROL_Skip;
+		}
+
+	} else {
+		 //major direction horizontal:
+		i=0;
+		for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
+			for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
+				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+
+				if (dir==LAX_LRTB || dir==LAX_RLTB) {
+					p.y=data->maxy-rh/2-r*rh;
+				} else {
+					p.y=data->miny+rh/2+r*rh;
+				}
+				if (dir==LAX_LRTB || dir==LAX_LRBT) {
+					p.x=data->minx+cw/2+c*cw;
+				} else {
+					p.x=data->maxx-cw/2-c*cw;
+				}
+
+				p=transform_point(data->m(),p);
+				d=p-cc;
+				mm[4]=d.x;
+				mm[5]=d.y;
+				TransformSelection(mm,i,i);
+				DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+
+				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
+				objcontrols.e[i]->new_center=cc+d;
+				i++;
+			}
+		}
+		for ( ; i<selection.n; i++) {
+			objcontrols.e[i]->flags|=CONTROL_Skip;
+		}
+	}
+
+}
+
+void NUpInterface::ApplyRandom()
+{
+	flatpoint cc;
+	flatpoint p, d;
+	double w,h;
+	double mm[6];
+	transform_identity(mm);
+	double wholew=data->maxx-data->minx;
+	double wholeh=data->maxy-data->miny;
+
+	double randomx, randomy;
+	for (int c=0; c<selection.n; c++) {
+		WidthHeight(selection.e[c], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+		objcontrols.e[c]->original_center=cc;
+		d.x=d.y=0;
+
+		if (needtoresetlayout) {
+			 //refresh object placement values
+			randomx=((double)random()/RAND_MAX);
+			randomy=((double)random()/RAND_MAX);
+		} else {
+			randomx=objcontrols.e[c]->amountx;
+			randomy=objcontrols.e[c]->amounty;
+		}
+
+		p=data->origin() + (w/2+randomx*(wholew-w)+data->minx)*data->xaxis()
+						 + (h/2+randomy*(wholeh-h)+data->miny)*data->yaxis();
+		d=p-cc;
+		objcontrols.e[c]->amountx=randomx;
+		objcontrols.e[c]->amounty=randomy;
+
+		mm[4]=d.x;
+		mm[5]=d.y;
+		TransformSelection(mm,c,c);
+	}
 }
 
 //} // namespace Laidout
