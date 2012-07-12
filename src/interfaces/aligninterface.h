@@ -80,6 +80,28 @@ class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public Lax
 
 //------------------------------------- AlignInterface --------------------------------------
 
+enum AlignPresetType {
+	ALIGN_PRESET_RightBottom,
+	ALIGN_PRESET_CenterBottom,
+	ALIGN_PRESET_LeftBottom,
+	ALIGN_PRESET_Bottom,
+
+	ALIGN_PRESET_RightCenter,
+	ALIGN_PRESET_Center,
+	ALIGN_PRESET_LeftCenter,
+	ALIGN_PRESET_VCenter,
+
+	ALIGN_PRESET_RightTop,
+	ALIGN_PRESET_CenterTop,
+	ALIGN_PRESET_LeftTop,
+	ALIGN_PRESET_Top,
+
+	ALIGN_PRESET_Right,
+	ALIGN_PRESET_HCenter,
+	ALIGN_PRESET_Left,
+	ALIGN_PRESET_Circle
+};
+
 class AlignInterface : public LaxInterfaces::ObjectInterface
 {
   protected:
@@ -115,6 +137,10 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int needtoresetlayout;
 
 	int hover, hoverindex;
+	flatpoint hoverpoint;
+	flatpoint *presetpoints;
+	LaxInterfaces::PathsData *presetdata;
+	int presetpointsn;
 	int explodemode;
 	int snapmovement;
 	int showextra;
@@ -126,6 +152,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual void postHoverMessage();
 	virtual void postAlignMessage(int a);
 	virtual void DrawAlignBox(flatpoint dir, double amount, int aligntype, int with_rotation_handles, int hover);
+	virtual void showPresets();
+	virtual void setPreset(int which);
 	virtual int createPath();
 
   public:
@@ -169,8 +197,10 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &objs);
 	//virtual int AddToSelection(Laxkit::PtrStack<ObjectContext> &objs);
 
+	virtual void ApplyPreset(int type);
 	virtual int ApplyAlignment(int updateorig);
 	virtual int ResetAlignment();
+	virtual void ResetPath();
 	virtual int PointToLine(flatpoint p, flatpoint &ip, int isfinal, flatpoint *tangent);
 	virtual int PointToPath(flatpoint p, flatpoint &ip, flatpoint *tangent);
 	virtual int PointAlongPath(double t,int tisdistance, flatpoint &point, flatpoint *tangent);

@@ -24,6 +24,7 @@
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
+#include <lax/bezutils.h>
 #include <lax/interfaces/rectpointdefs.h>
 
 #include <lax/refptrstack.cc>
@@ -50,6 +51,8 @@ DBG double closestdistance;
 //align circle control is RADIUS*uiscale
 #define RADIUS 2
 #define ROTRADIUS 1.5
+#define PRESETSPANEL (RADIUS*2*4)
+
 //align drag bar lengths are BAR*uiscale
 #define BAR    12
 
@@ -306,6 +309,10 @@ AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 
 	hover=-1;
 	hoverindex=-1;
+	presetpointsn=0;
+	presetpoints=NULL;
+	presetdata=NULL;
+
 	needtoresetlayout=1;
 
 	aligninfo=new AlignInfo;
@@ -331,6 +338,9 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 	snapmovement=0;
 	showextra=0;
 	showrotation=1;
+	presetpointsn=0;
+	presetpoints=NULL;
+	presetdata=NULL;
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
@@ -345,6 +355,7 @@ AlignInterface::~AlignInterface()
 
 	if (aligninfo) aligninfo->dec_count();
 	if (sc) sc->dec_count();
+	if (presetdata) presetdata->dec_count();
 }
 
 
@@ -379,7 +390,7 @@ void AlignInterface::ControlInfo::SetOriginal(SomeData *o)
 
 enum AlignInterfaceActions {
 	//scan/hover ids
-	ALIGN_None,
+	ALIGN_None=OIA_MAX,
 	ALIGN_Move,
 	ALIGN_RotateSnapDir,
 	ALIGN_RotateAlignDir,
@@ -396,6 +407,8 @@ enum AlignInterfaceActions {
 	ALIGN_LineControl,
 	ALIGN_VisualShift,
 	ALIGN_Rotation,
+	ALIGN_MaybePresets,
+	ALIGN_Presets,
 
 	 //window actions
 	ALIGN_ToggleApply,
@@ -474,6 +487,7 @@ const char *AlignInterface::Name()
  */
 Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 {
+	if (child) return NULL;
 	MenuInfo *menu=new MenuInfo(_("Align Interface"));
 
 	menu->AddSep(_("Snap"));
@@ -492,10 +506,13 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 
 	menu->AddSep();
 	menu->AddItem(_("Reset path"), ALIGN_ResetPath);
-	if (showextra) menu->AddItem(_("Show extra"), ALIGN_ShowExtra);
-	else menu->AddItem(_("Hide extra"), ALIGN_ShowExtra);
-	if (showrotation) menu->AddItem(_("Show rotation"), ALIGN_ShowRotation);
-	else menu->AddItem(_("Hide rotation"), ALIGN_ShowRotation);
+
+	//if (showextra) menu->AddItem(_("Hide extra"), ALIGN_ShowExtra);
+	//else menu->AddItem(_("Show extra"), ALIGN_ShowExtra);
+
+	if (showrotation) menu->AddItem(_("Hide rotation"), ALIGN_ShowRotation);
+	else menu->AddItem(_("Show rotation"), ALIGN_ShowRotation);
+
 
 	//menu->AddItem(_("Save"),ALIGN_Save); // *** save to <laidout->config_dir>/tools/AlignInterface/*
 	//   date string: "%Y-%m-%d-%H:%M:%S"
@@ -513,6 +530,16 @@ int AlignInterface::UpdateFromPath()
 	return 0;
 }
 
+void AlignInterface::ResetPath()
+{
+	if (aligninfo->path) {
+		aligninfo->path->dec_count();
+		aligninfo->path=NULL;
+		if (active) ApplyAlignment(0);
+		needtodraw=1;
+	}
+}
+
 /*! Return 0 for menu item processed, 1 for nothing done.
  */
 int AlignInterface::Event(const Laxkit::EventData *e,const char *mes)
@@ -527,16 +554,16 @@ int AlignInterface::Event(const Laxkit::EventData *e,const char *mes)
 		int i=s->info2; //id of menu item
 
 		if (i==ALIGN_ResetPath) {
-			if (aligninfo->path) {
-				aligninfo->path->dec_count();
-				aligninfo->path=NULL;
-				if (active) ApplyAlignment(0);
-				needtodraw=1;
-			}
+			ResetPath();
 			return 0;
 
 		} else if (i==ALIGN_ShowExtra) {
 			showextra=!showextra;
+			needtodraw=1;
+			return 0;
+
+		} else if (i==ALIGN_ShowRotation) {
+			showrotation=!showrotation;
 			needtodraw=1;
 			return 0;
 		}
@@ -740,15 +767,13 @@ int AlignInterface::Refresh()
 						 dp->realtoscreen(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction));
 			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 		} else {
-			 // *** draw the PathsData
-			if (!child) {
-				LineStyle ls(*aligninfo->path->linestyle);
-				ls.width=(hover==ALIGN_Path?3:1);
-				::DrawData(dp,aligninfo->path,&ls,NULL,0);
-				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-				dp->NewFG(&controlcolor);
-				dp->DrawScreen();
-			}
+			 // draw the PathsData
+			LineStyle ls(*aligninfo->path->linestyle);
+			ls.width=(hover==ALIGN_Path?3:1);
+			::DrawData(dp,aligninfo->path,&ls,NULL,0);
+			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			dp->NewFG(&controlcolor);
+			dp->DrawScreen();
 		}
 
 		dp->NewBG(1.,1.,1.);
@@ -915,12 +940,251 @@ int AlignInterface::Refresh()
 				//}
 			}
 		}
+
+		if (hover==ALIGN_Presets) {
+			showPresets();
+		}
 	} //if to draw any controls
 
 
 	dp->DrawReal();
 
 	return 1;
+}
+
+void AlignInterface::setPreset(int which)
+{
+}
+
+void AlignInterface::showPresets()
+{
+	// br  bc bl  *b
+	// rc  c  lc  *vc
+	// tl  tc tr  *t
+	// *r *hc *l   O
+	if (!presetdata) {
+		 //from icons/alignment.svg
+		const char *d="m 130.99396,977.61545 0,20.20305 29.16815,0 0,-20.20305 z m -8.14435,20.32931 0,21.08694 45.45686,0 0,-21.08694 z m 10.54346,21.46574 0,17.2989 24.36993,0 0,-17.2989 z m -67.86966,-0.4132 0,17.2989 24.37,0 0,-17.2989 z m -21.0869,-21.46575 0,21.08695 45.4569,0 0,-21.08695 z m 16.2887,-20.32931 0,20.20305 29.1682,0 0,-20.20305 z m 163.64472,41.66876 0,17.2989 -24.36993,0 0,-17.2989 z m 21.08692,-21.46572 0,21.08692 -45.45686,0 0,-21.08692 z m -16.2887,-20.32931 0,20.20305 -29.16815,0 0,-20.20305 z m -83.71639,60.90683 0,14.4758 m 0,-89.99999 0,16.30401 m -55.55835,-16.30401 0,89.99999 M 200,962.45861 l 0,89.99999 m 115.15684,-231.10569 20.20305,0 0,-29.16815 -20.20305,0 z m 20.32931,8.14435 21.08694,0 0,-45.45686 -21.08694,0 z m 21.46573,-10.54346 17.29886,0 0,-24.36993 -17.29886,0 z m -0.41321,67.86963 17.29886,0 0,-24.36993 -17.29886,0 z m -21.46573,21.08692 21.08694,0 0,-45.45686 -21.08694,0 z m -20.32931,-16.2887 20.20305,0 0,-29.16815 -20.20305,0 z m 41.66877,-163.64471 17.29886,0 0,24.36993 -17.29886,0 z m -21.46573,-21.08692 21.08694,0 0,45.45686 -21.08694,0 z m -20.32931,16.2887 20.20305,0 0,29.16815 -20.20305,0 z M 200,862.45349 l 36.36549,0 0,35.86042 -36.36549,0 z m -73.73093,0 36.36549,0 0,35.86042 -36.36549,0 z m -72.634556,0 36.36549,0 0,35.86042 -36.36549,0 z m -8e-6,-73.48865 36.36549,0 0,35.86042 -36.36549,0 z m 72.634564,0.25257 36.36549,0 0,35.86041 -36.36549,0 z M 200,788.83862 l 36.36549,0 0,35.86042 -36.36549,0 z m 0,-72.35217 36.36549,0 0,35.86042 -36.36549,0 z m -74.36227,0 36.36549,0 0,35.86042 -36.36549,0 z m -72.099644,0 36.36549,0 0,35.86042 -36.36549,0 z m 236.442564,90.40862 -54.26815,0 m -35.63543,-44.4518 0,90 M 290,862.4535 l -90,0 0,90.67387 m 90,-200.7805 -90,0 0,-90.26074 m 175.52421,144.80898 14.47579,0 m -90,0 16.30401,0 M 300,862.4535 l 90,0 m -90,-110.10663 90,0 m -8.08121,254.63953 c 0,19.5711 -15.86545,35.4365 -35.43646,35.4365 -19.57102,0 -35.43646,-15.8654 -35.43646,-35.4365 0,-19.57097 15.86544,-35.43642 35.43646,-35.43642 19.57101,0 35.43646,15.86545 35.43646,35.43642 z m -255.78953,-200.09129 -26.12926,0 m 62.78973,0.0632 L 190,806.89511 m -45.54819,18.18275 0,28.28427 m 0,-90.91373 0,27.13612 m 0,163.78271 0.0939,-53.79062 M 100,862.4535 l 90,0 m -191.010148,-55.55839 54.268149,0 M 90,762.4433 l 0,90 m 54.45181,-190 0,53.03301 M 100,752.34687 l 90,0 M 1.91878,862.4535 l 88.08122,0 0,91.92387 M 1.9187796,752.34687 90,752.34687 90,662.4433";
+
+
+
+		presetdata=SvgToPathsData(NULL, d, NULL);
+
+//		DoubleBBox box;
+//		for (int c=0; c<presetpointsn; c++) {
+//			box.addtobounds(presetpoints[c]);
+//		}
+//		double panelwidth=aligninfo->uiscale*PRESETSPANEL;
+//		double ss=panelwidth/(box.maxx-box.minx);
+//		for (int c=0; c<presetpointsn; c++) {
+//			presetpoints[c]=ss*(presetpoints[c]-flatpoint(box.minx,box.miny));
+//		}
+
+		ScreenColor color(1.,1.,1.,1.);
+		presetdata->line(1,CapButt,JoinMiter,&controlcolor);
+		presetdata->linestyle->widthtype=0;
+		presetdata->fill(&color);
+
+		double panelwidth=aligninfo->uiscale*PRESETSPANEL;
+		double scale;
+		if (presetdata->maxx-presetdata->minx>presetdata->maxy-presetdata->miny) {
+			scale=panelwidth/(presetdata->maxx-presetdata->minx);
+		} else scale=panelwidth/(presetdata->maxy-presetdata->miny);
+
+		presetdata->xaxis(scale*presetdata->xaxis());
+		presetdata->yaxis(scale*presetdata->yaxis());
+	}
+
+
+	double panelwidth=aligninfo->uiscale*PRESETSPANEL;
+	double w4=panelwidth/4;
+
+	 //blank out panel area
+	dp->NewFG(&controlcolor);
+	dp->NewBG(1.,1.,1.);
+	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->drawrectangle(hoverpoint.x,hoverpoint.y, panelwidth,panelwidth, 2);
+
+	 //highlight current
+	if (hoverindex>=0) {
+		int r=hoverindex/4;
+		int c=hoverindex%4;
+		dp->NewFG(.9,.9,.9);
+		dp->drawrectangle(hoverpoint.x+c*w4,hoverpoint.y+r*w4, w4,w4, 1);
+	}
+
+	 //draw all the little icons
+	dp->NewFG(&controlcolor);
+
+	//LineStyle ls(*presetdata->linestyle);
+	//ls.width=1;
+	dp->PushAxes();
+	dp->NewTransform(1,0,0,1,0,0);
+	presetdata->origin(flatpoint(0,0));
+	presetdata->origin(hoverpoint - transform_point(presetdata->m(),flatpoint(presetdata->minx,presetdata->miny)));
+	::DrawData(dp,presetdata,NULL,NULL,0);
+	dp->PopAxes();
+
+	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+	dp->NewFG(&controlcolor);
+//	--------------
+//
+//	double gap=w4*.1,  //inset
+//		   ww=w4-2*gap;//drawing area inside each cell
+//	//double rr=1./3;
+//	flatpoint o;
+//
+//	//DBG dp->drawline(hoverpoint,hoverpoint+4*flatpoint(w4,w4));
+//	//DBG dp->drawline(hoverpoint+flatpoint(4*w4,0),hoverpoint+flatpoint(0,4*w4));
+//	//DBG dp->drawpoint(hoverpoint+flatpoint(w4*2,w4*2), 10,0);
+//
+//	 //br
+//	o=hoverpoint+flatpoint(gap+ww/2,gap+ww/2);
+//	dp->textout(o.x,o.y, "_o|",-1, LAX_CENTER);
+//
+//	 //bc
+//	o=hoverpoint+flatpoint(w4+gap+ww/2,gap+ww/2);
+//	dp->textout(o.x,o.y, "_o_",-1, LAX_CENTER);
+//
+//	 //bl
+//	o=hoverpoint+flatpoint(2*w4+gap+ww/2,gap+ww/2);
+//	dp->textout(o.x,o.y, "|o_",-1, LAX_CENTER);
+//
+//	 //*b
+//	o=hoverpoint+flatpoint(3*w4+gap+ww/2,gap+ww/2);
+//	dp->textout(o.x,o.y, "_oOo_",-1, LAX_CENTER);
+//
+//	 //rc
+//	o=hoverpoint+flatpoint(gap+ww/2,w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "-o|",-1, LAX_CENTER);
+//
+//	 //c
+//	o=hoverpoint+flatpoint(w4+gap+ww/2,w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "c",-1, LAX_CENTER);
+//
+//	 //lr
+//	o=hoverpoint+flatpoint(2*w4+gap+ww/2,w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "|o-",-1, LAX_CENTER);
+//
+//	 //*vc
+//	o=hoverpoint+flatpoint(3*w4+gap+ww/2,w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "-oOo-",-1, LAX_CENTER);
+//
+//	 //tl
+//	o=hoverpoint+flatpoint(gap+ww/2,2*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "^o|",-1, LAX_CENTER);
+//
+//	 //tc
+//	o=hoverpoint+flatpoint(w4+gap+ww/2,2*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "^o^",-1, LAX_CENTER);
+//
+//	 //tr
+//	o=hoverpoint+flatpoint(2*w4+gap+ww/2,2*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "|o^",-1, LAX_CENTER);
+//
+//	 // *t
+//	o=hoverpoint+flatpoint(3*w4+gap+ww/2,2*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "^oOo^",-1, LAX_CENTER);
+//
+//	 //*r
+//	o=hoverpoint+flatpoint(gap+ww/2,3*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "8|",-1, LAX_CENTER);
+//
+//	 //*hc
+//	o=hoverpoint+flatpoint(w4+gap+ww/2,3*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "8",-1, LAX_CENTER);
+//
+//	 //*l
+//	o=hoverpoint+flatpoint(2*w4+gap+ww/2,3*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "|8",-1, LAX_CENTER);
+//
+//	 //O
+//	o=hoverpoint+flatpoint(3*w4+gap+ww/2,3*w4+gap+ww/2);
+//	dp->textout(o.x,o.y, "O",-1, LAX_CENTER);
+}
+
+
+//presets
+// {isvertical, snapalign, finalalign
+
+struct PresetStruct {
+	int vertical;
+	int snaptype,finaltype;
+	double snapalign,finalalign;
+};
+
+const PresetStruct presets[]={
+					{ 0, FALIGN_Align, FALIGN_Align, 0, 100}, //ALIGN_PRESET_RightBottom
+					{ 0, FALIGN_Align, FALIGN_Align, 0, 50}, //ALIGN_PRESET_CenterBottom
+					{ 0, FALIGN_Align, FALIGN_Align, 0, 0}, //ALIGN_PRESET_LeftBottom
+					{ 0, FALIGN_Align, FALIGN_None,  0, 50}, //ALIGN_PRESET_Bottom
+
+					{ 1, FALIGN_Align, FALIGN_Align, 100, 50}, //ALIGN_PRESET_RightCenter
+					{ 0, FALIGN_Align, FALIGN_Align, 50, 50}, //ALIGN_PRESET_Center
+					{ 1, FALIGN_Align, FALIGN_Align, 0, 50}, //ALIGN_PRESET_LeftCenter
+					{ 0, FALIGN_Align, FALIGN_None,  50, 50}, //ALIGN_PRESET_VCenter
+
+					{ 0, FALIGN_Align, FALIGN_Align, 100, 100}, //ALIGN_PRESET_RightTop
+					{ 0, FALIGN_Align, FALIGN_Align, 100, 50}, //ALIGN_PRESET_CenterTop
+					{ 0, FALIGN_Align, FALIGN_Align, 100, 0}, //ALIGN_PRESET_LeftTop
+					{ 0, FALIGN_Align, FALIGN_None,  100, 50}, //ALIGN_PRESET_Top
+
+					{ 1, FALIGN_Align, FALIGN_None, 0, 50}, //ALIGN_PRESET_Right
+					{ 1, FALIGN_Align, FALIGN_None, 50, 50}, //ALIGN_PRESET_HCenter
+					{ 1, FALIGN_Align, FALIGN_None, 100, 50}, //ALIGN_PRESET_Left
+				};
+
+/*! type must be [0..15].
+ */
+void AlignInterface::ApplyPreset(int type)
+{
+	int i=(int)type;
+	if (i<0 || i>15) return;
+
+	if (i==15) {
+		 //circle
+		flatpoint points[12];
+		double r;
+		r=(data->maxx-data->minx)/2;
+		if ((data->maxy-data->miny)/2<r) r=(data->maxy-data->miny)/2;
+
+		bez_circle(points,4, (data->minx+data->maxx)/2,(data->miny+data->maxy)/2, r);
+		if (aligninfo->path) aligninfo->path->dec_count();
+		aligninfo->path=new PathsData();
+		for (int c=0; c<12; c++) {
+			if (c%3==0) aligninfo->path->append(points[c], POINT_TONEXT,NULL);
+			else if (c%3==1) aligninfo->path->append(points[c], POINT_VERTEX,NULL);
+			else aligninfo->path->append(points[c], POINT_TOPREV,NULL);
+		}
+		aligninfo->path->close();
+		aligninfo->path->fixpath(-1);
+		aligninfo->path->line(1,CapButt,JoinMiter,&patheditcolor);
+		aligninfo->path->linestyle->widthtype=0;
+		aligninfo->final_layout_type=FALIGN_Grid;
+		aligninfo->snapalignment    =50;
+		aligninfo->finalalignment   =50;
+		aligninfo->snap_direction  =flatpoint(0,1);
+		aligninfo->layout_direction=flatpoint(1,0);;
+		ClampBoundaries(1);
+	} else {
+		ResetPath();
+
+		const PresetStruct *a=&presets[i];
+		aligninfo->snap_align_type  =a->snaptype;
+		aligninfo->final_layout_type=a->finaltype;
+		aligninfo->snapalignment    =a->snapalign;
+		aligninfo->finalalignment   =a->finalalign;
+		if (a->vertical) {
+			aligninfo->snap_direction  =flatpoint(1,0);
+			aligninfo->layout_direction=flatpoint(0,1);;
+		} else {
+			aligninfo->snap_direction  =flatpoint(0,1);
+			aligninfo->layout_direction=flatpoint(1,0);;
+		}
+	}
+	needtodraw=1;
+	active=1;
+	ApplyAlignment(0);
 }
 
 //! Return which alignment handle mouse is over
@@ -930,6 +1194,24 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 {
 	flatpoint fp(x,y);
 
+
+	if (hover==ALIGN_Presets) {
+		double panelwidth=aligninfo->uiscale*PRESETSPANEL;
+		double cc=panelwidth/4;
+		fp-=hoverpoint;
+		int r=floor(fp.y/cc);
+		int c=floor(fp.x/cc);
+
+		DBG cerr <<"ALIGN_Presets screen: cc:"<<cc<<"  fp:"<<fp.x<<","<<fp.y<<"  i:"<<index<<" r,c:"<<r<<','<<c<<endl;
+
+		if (r<0 || r>3 || c<0 || c>3) {
+			index=-1;
+			//DBG cerr <<"ALIGN_Presets screen:"<<fp.x<<","<<fp.y<<"  i:"<<index<<endl;
+			return ALIGN_None;
+		}
+		index=r*4+c;
+		return ALIGN_Presets;
+	}
 
 	 //optionally scan for extra line controls first off, since these should be accessible on top of everything
 	if (state&ControlMask) {
@@ -1034,7 +1316,8 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 	 //scan for path
 	if (!child && onPath(x,y)) return ALIGN_Path;
 
-	return RectInterface::scan(x,y);
+	return ALIGN_None;
+	//return RectInterface::scan(x,y);
 }
 
 int AlignInterface::scanForLineControl(int x,int y, int &index)
@@ -1097,13 +1380,19 @@ int AlignInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 {
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
 
-    buttondown.down(d->id,LEFTBUTTON,x,y);
+	buttondown.down(d->id,LEFTBUTTON,x,y);
     //dragmode=DRAG_NONE;
     
 	
 	int index=-1;
 	int over=scan(x,y, index,state);
 	if (over==RP_None) over=ALIGN_None;
+
+	if (over==ALIGN_None && (state&LAX_STATE_MASK)==ControlMask) {
+		buttondown.moveinfo(d->id,LEFTBUTTON, ALIGN_MaybePresets,-1);
+		return 0;
+	}
+
 
 	if (over<ALIGN_None && data) { //unobscured click on a rect control
 		 //there is already a selection
@@ -1196,6 +1485,13 @@ int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 		if ((state&LAX_STATE_MASK)==ControlMask) {
 		} else {
 		}
+	}
+
+	if (action==ALIGN_Presets) {
+		if (i2>=0) ApplyPreset(i2);
+		hover=0;
+		needtodraw=1;
+		return 0;
 	}
 
 	//***
@@ -1416,16 +1712,18 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	if (child) return 0;
 
 	int action=-1, index=-1;
+
 	DBG action=scan(x,y,index, state);
 	DBG cerr <<"Align move: "<<action<<','<<index<<endl;
 	
-	DBG flatpoint pp=dp->screentoreal(x,y);
-	DBG closestpoint=ClosestPoint(pp,&closestdistance,NULL);
-	DBG PointAlongPath(closestdistance,1, closestpoint2,NULL);
-	DBG needtodraw=1;
+	//DBG flatpoint pp=dp->screentoreal(x,y);
+	//DBG closestpoint=ClosestPoint(pp,&closestdistance,NULL);
+	//DBG PointAlongPath(closestdistance,1, closestpoint2,NULL);
+	//DBG needtodraw=1;
 
 
 	if (!buttondown.any()) {
+		action=scan(x,y,index, state);
 		if (action!=hover) {
 			hover=action;
 			hoverindex=index;
@@ -1442,6 +1740,50 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	if (action<ALIGN_None) return RectInterface::MouseMove(x,y,state,mouse);
 
 	buttondown.move(mouse->id,x,y, &lx,&ly);
+
+
+	if (action==ALIGN_MaybePresets) {
+         //if distance far enough away from down spot, pop up presets selector
+        int firstx,firsty;
+        buttondown.getinitial(mouse->id,LEFTBUTTON, &firstx,&firsty);
+        flatpoint first(firstx,firsty);
+        flatpoint v=flatpoint(x,y)-first;
+        flatpoint pp;
+        if (norm2(v)>200) { //10 pixels off
+			 //find spot down field from mouse movement direction
+            buttondown.moveinfo(mouse->id,LEFTBUTTON, ALIGN_Presets,-1);
+
+			double panelwidth=aligninfo->uiscale*PRESETSPANEL;
+			double rr=aligninfo->uiscale*RADIUS + panelwidth/2;
+			double angle=atan2(v.y,v.x);
+			if (angle>=-M_PI/4 && angle<M_PI/4) {
+				pp=first+flatpoint(rr,rr*tan(angle));
+			} else if (angle>=M_PI*.75 || angle<-M_PI*.75) {
+				pp=first+flatpoint(-rr,-rr*tan(angle));
+
+			} else if (angle>=M_PI/4 && angle<M_PI*.75) {
+				pp=first+flatpoint(rr*tan(M_PI/2-angle),rr);
+			} else {
+				pp=first+flatpoint(-rr*tan(M_PI/2-angle),-rr);
+			}
+
+            hoverpoint=pp-flatpoint(panelwidth/2,panelwidth/2);
+            hover=ALIGN_Presets;
+			hoverindex=-1;
+            needtodraw=1;
+        }
+        return 0;
+
+	} else if (action==ALIGN_Presets) {
+		scan(x,y,index, state);
+		if (index!=hoverindex) {
+            buttondown.moveinfo(mouse->id,LEFTBUTTON, ALIGN_Presets,index);
+			hoverindex=index;
+			needtodraw=1;
+		}
+		return 0;
+	}
+
 
 	flatpoint dd=dp->screentoreal(x,y)-dp->screentoreal(lx,ly);
 	if (action==ALIGN_Move) {
@@ -1467,6 +1809,10 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		if (active) ApplyAlignment(0);
 		aligninfo->extrarotation+=anew-aold;
 		needtodraw=1;
+
+		char buffer[100];
+		sprintf(buffer,_("Rotation %.10g degrees"),aligninfo->extrarotation*180/M_PI);
+		viewport->postmessage(buffer);
 		return 0;
 	}
 
