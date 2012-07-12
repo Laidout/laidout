@@ -26,6 +26,7 @@
 #include <lax/refptrstack.cc>
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -74,9 +75,10 @@ NUpInfo::NUpInfo()
 	direction=LAX_LRTB;
 	rows=3;
 	cols=3;
-	rowcenter=colcenter=50;
+	valign=halign=50;
 	flowtype=NUP_Grid;
 	name=NULL;
+	defaultgap=0;
 
 	scale=1;
 
@@ -87,6 +89,124 @@ NUpInfo::NUpInfo()
 NUpInfo::~NUpInfo()
 {
 	if (name) delete[] name;
+}
+
+void NUpInfo::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+    if (what==-1) {
+        fprintf(f,"%sname Blah          #optional human readable name\n",spc);
+        fprintf(f,"%srows 3             #number of rows, positive number, n, or ...\n",spc);
+        fprintf(f,"%scolumns 3          #number of columns\n",spc);
+        fprintf(f,"%sdirection lrtb     #flow direction, left to right, then top to bottom, or other combos\n",spc);
+		fprintf(f,"%sflowtype grid      #how to arrange in target area. grid,sizedgrid,flowed,random,unclump\n",spc);
+        fprintf(f,"%svalign 50          #alignment vertically in cells\n",spc);
+        fprintf(f,"%shalign 50          #alignment horizontally in cells\n",spc);
+        fprintf(f,"%sdefaultgap         #default gap around objects when laying out\n",spc);
+        fprintf(f,"%sscale              #scale of the ui panel\n",spc);
+		return;
+	}
+
+	if (name) fprintf(f,"%sname %s\n",spc,name);
+
+	if (rows==0) fprintf(f,"%srows n\n",spc);
+	else if (rows<0) fprintf(f,"%srows ...\n",spc);
+	else fprintf(f,"%srows %d\n",spc,rows);
+
+	if (cols==0) fprintf(f,"%scols n\n",spc);
+	else if (cols<0) fprintf(f,"%scols ...\n",spc);
+	else fprintf(f,"%scols %d\n",spc,cols);
+
+	const char *s=NULL;
+	if      (direction==LAX_LRTB) s="lrtb";
+	else if (direction==LAX_RLTB) s="rltb";
+	else if (direction==LAX_LRBT) s="lrbt";
+	else if (direction==LAX_RLBT) s="rlbt";
+	else if (direction==LAX_TBRL) s="tbrl";
+	else if (direction==LAX_TBLR) s="tblr";
+	else if (direction==LAX_BTRL) s="btrl";
+	else if (direction==LAX_BTLR) s="btlr";
+	fprintf(f,"%sdirection %s\n",spc,s);
+
+	if      (flowtype==NUP_Noflow)     s="noflow";
+	else if (flowtype==NUP_Grid)       s="grid";
+	else if (flowtype==NUP_Sized_Grid) s="sizedgrid";
+	else if (flowtype==NUP_Flowed)     s="flowed";
+	else if (flowtype==NUP_Random)     s="random";
+	else if (flowtype==NUP_Unclump)    s="unclump";
+	else if (flowtype==NUP_Unoverlap)  s="unoverlap";
+	fprintf(f,"%sflowtype %s\n",spc,s);
+
+	fprintf(f,"%svalign %.10g\n",spc,valign);
+	fprintf(f,"%shalign %.10g\n",spc,halign);
+	fprintf(f,"%sdefaultgap %.10g\n",spc,defaultgap);
+	fprintf(f,"%sscale     %.10g\n",spc,scale);
+}
+
+int AlignmentAttribute(const char *value,double *a)
+{
+	if (!value) return 0;
+	if (isalpha(*value)) {
+		if (!strcasecmp(value,"left"))   { *a=0;   return 1; }
+		if (!strcasecmp(value,"bottom")) { *a=0;   return 1; }
+		if (!strcasecmp(value,"center")) { *a=50;  return 1; }
+		if (!strcasecmp(value,"top"))    { *a=100; return 1; }
+		if (!strcasecmp(value,"right"))  { *a=100; return 1; }
+	}
+	return DoubleAttribute(value,a,NULL);
+}
+
+void NUpInfo::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
+{
+    if (!att) return;
+    char *name,*value;
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(name,"name")) {
+            makestr(this->name,value);
+
+        } else if (!strcmp(name,"rows")) {
+            IntAttribute(value,&rows);
+
+        } else if (!strcmp(name,"cols")) {
+            IntAttribute(value,&cols);
+
+        } else if (!strcmp(name,"direction")) {
+			if      (!strcasecmp(value,"lrtb")) direction=LAX_LRTB;
+			else if (!strcasecmp(value,"rltb")) direction=LAX_RLTB;
+			else if (!strcasecmp(value,"lrbt")) direction=LAX_LRBT;
+			else if (!strcasecmp(value,"rlbt")) direction=LAX_RLBT;
+			else if (!strcasecmp(value,"tbrl")) direction=LAX_TBRL;
+			else if (!strcasecmp(value,"tblr")) direction=LAX_TBLR;
+			else if (!strcasecmp(value,"btrl")) direction=LAX_BTRL;
+			else if (!strcasecmp(value,"btlr")) direction=LAX_BTLR;
+
+        } else if (!strcmp(name,"flowtype")) {
+			if      (!strcasecmp(value,"noflow"   )) flowtype=NUP_Noflow;
+			else if (!strcasecmp(value,"grid"     )) flowtype=NUP_Grid;
+			else if (!strcasecmp(value,"sizedgrid")) flowtype=NUP_Sized_Grid;
+			else if (!strcasecmp(value,"flowed"   )) flowtype=NUP_Flowed;
+			else if (!strcasecmp(value,"random"   )) flowtype=NUP_Random;
+			else if (!strcasecmp(value,"unclump"  )) flowtype=NUP_Unclump;
+			else if (!strcasecmp(value,"unoverlap")) flowtype=NUP_Unoverlap;
+
+        } else if (!strcmp(name,"valign")) {
+            AlignmentAttribute(value,&valign);
+
+        } else if (!strcmp(name,"halign")) {
+            AlignmentAttribute(value,&halign);
+
+        } else if (!strcmp(name,"defaultgap")) {
+            DoubleAttribute(value,&defaultgap);
+
+        } else if (!strcmp(name,"scale")) {
+            DoubleAttribute(value,&scale);
+
+		}
+	}
 }
 
 
@@ -441,7 +561,7 @@ anInterface *NUpInterface::duplicate(anInterface *dup)//dup=NULL
 {
 	if (dup==NULL) dup=new NUpInterface(id,NULL);
 	else if (!dynamic_cast<NUpInterface *>(dup)) return NULL;
-	
+
 	return anInterface::duplicate(dup);
 }
 
@@ -498,7 +618,7 @@ int NUpInterface::Refresh()
 	flatpoint p;
 	char buffer[30];
 
-	 //draw ui outline
+	//draw ui outline
 	dp->NewFG(rgbcolor(128,128,128));
 	dp->DrawScreen();
 	//--square:
@@ -506,7 +626,7 @@ int NUpInterface::Refresh()
 	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy));
 	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->maxy));
 	//dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
-	 //--rect:
+	//--rect:
 	double width =nupinfo->maxx-nupinfo->minx;
 	double height=nupinfo->maxy-nupinfo->miny;
 	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
@@ -514,14 +634,14 @@ int NUpInterface::Refresh()
 	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
 	dp->drawline(flatpoint(x+nupinfo->maxx-width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
 	dp->drawline(flatpoint(x+nupinfo->minx+width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4));
-	 //with activator button:
+	//with activator button:
 	if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
 	dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
 	flatpoint cc=flatpoint(x+nupinfo->maxx-width/2,y+nupinfo->maxy+height/4);
 	dp->drawellipse(cc.x,cc.y,
-					width/6,width/6,
-					0,2*M_PI,
-					0);
+			width/6,width/6,
+			0,2*M_PI,
+			0);
 	dp->NewFG(rgbcolor(128,128,128));
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 	if (nupinfo->flowtype==NUP_Grid)            sprintf(buffer,"#");
@@ -534,7 +654,7 @@ int NUpInterface::Refresh()
 	dp->textout(cc.x,cc.y, buffer,-1,LAX_CENTER);
 
 
-	 //draw major arrow number
+	//draw major arrow number
 	p=flatpoint(x+(majornum->minx+majornum->maxx)/2,y+(majornum->miny+majornum->maxy)/2);
 	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 		majorn=nupinfo->cols;
@@ -549,23 +669,23 @@ int NUpInterface::Refresh()
 	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
-	 //draw minor arrow number
+	//draw minor arrow number
 	p=flatpoint(x+(minornum->minx+minornum->maxx)/2,y+(minornum->miny+minornum->maxy)/2);
 	if (minorn>=1) sprintf(buffer,"%d",minorn);
 	else if (minorn==0) sprintf(buffer,"n");
 	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
-	 //draw arrows
+	//draw arrows
 	drawHandle(major,arrowcolor,nupinfo->uioffset);
 	drawHandle(minor,arrowcolor,nupinfo->uioffset);
 
-	 //draw ok
+	//draw ok
 	//if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,okcontrol->color,nupinfo->uioffset);
 
-	 //draw type
+	//draw type
 	//if (nup_style&NUP_Has_Type) drawHandle(typecontrol,typecontrol->color,nupinfo->uioffset);
-	
+
 
 
 	dp->DrawReal();
@@ -1280,7 +1400,7 @@ int NUpInterface::Apply(int updateorig)
 		ApplyGrid();
 
 	} else if (nupinfo->flowtype==NUP_Sized_Grid) {
-		// ***
+		ApplySizedGrid();
 
 	} else if (nupinfo->flowtype==NUP_Flowed) {
 		// ***
@@ -1303,6 +1423,98 @@ int NUpInterface::Apply(int updateorig)
 	//RemapBounds();
 	needtodraw=1;
 	return 0;
+}
+
+void NUpInterface::ApplySizedGrid()
+{
+	double wholew=data->maxx-data->minx;
+	double wholeh=data->maxy-data->miny;
+	double rh=wholeh;
+	double cw=wholew;
+	if (nupinfo->rows>=1) rh=wholeh/nupinfo->rows;
+	if (nupinfo->cols>=1) cw=wholew/nupinfo->cols;
+
+	rowpos.flush();
+	colpos.flush();
+
+	flatpoint cc;
+	flatpoint p, d;
+	double w,h;
+	double mm[6];
+	transform_identity(mm);
+
+	int i=0;
+	int dir=nupinfo->direction;
+
+	if (dir==LAX_TBLR || dir==LAX_BTLR || dir==LAX_TBRL || dir==LAX_BTRL) {
+		 //major direction vertical:
+		i=0;
+		for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
+			for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
+				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+
+				if (dir==LAX_TBLR || dir==LAX_TBRL) {
+					p.y=data->maxy-rh/2-r*rh;
+				} else {
+					p.y=data->miny+rh/2+r*rh;
+				}
+				if (dir==LAX_TBLR || dir==LAX_BTLR) {
+					p.x=data->minx+cw/2+c*cw;
+				} else {
+					p.x=data->maxx-cw/2-c*cw;
+				}
+
+				p=transform_point(data->m(),p);
+				d=p-cc;
+				mm[4]=d.x;
+				mm[5]=d.y;
+				TransformSelection(mm,i,i);
+				DBG cerr <<"TRANSFORM major V  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+
+				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
+				objcontrols.e[i]->new_center=cc+d;
+				i++;
+			}
+		}
+		for ( ; i<selection.n; i++) {
+			objcontrols.e[i]->flags|=CONTROL_Skip;
+		}
+
+	} else {
+		 //major direction horizontal:
+		i=0;
+		for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
+			for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
+				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+
+				if (dir==LAX_LRTB || dir==LAX_RLTB) {
+					p.y=data->maxy-rh/2-r*rh;
+				} else {
+					p.y=data->miny+rh/2+r*rh;
+				}
+				if (dir==LAX_LRTB || dir==LAX_LRBT) {
+					p.x=data->minx+cw/2+c*cw;
+				} else {
+					p.x=data->maxx-cw/2-c*cw;
+				}
+
+				p=transform_point(data->m(),p);
+				d=p-cc;
+				mm[4]=d.x;
+				mm[5]=d.y;
+				TransformSelection(mm,i,i);
+				DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+
+				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
+				objcontrols.e[i]->new_center=cc+d;
+				i++;
+			}
+		}
+		for ( ; i<selection.n; i++) {
+			objcontrols.e[i]->flags|=CONTROL_Skip;
+		}
+	}
+
 }
 
 void NUpInterface::ApplyGrid()
