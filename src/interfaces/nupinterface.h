@@ -55,20 +55,24 @@ enum NUpFlowType {
 #define NUP_TtoB  4
 
 //---------------------------------- NUpInfo -----------------------------------------
-class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted
+class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted, public LaxFiles::DumpUtility
 {
   public:
 	char *name;
 	int direction; //lrtb, lrbt, rltb, rlbt, ...
 	int flowtype; //whether allow variable sizes of cells, or each row/col same size, or flow as will fit
-	double rowcenter, colcenter; //how to center within rows and columns
+	double valign,halign; //how to center within rows and columns
 	int rows, cols; //number of rows and columns in one n-up block, -1==infinity, 0==as many as will flow in
+	double defaultgap;
 
 	double scale; //transform for where the arrows are, works on screen space?
 	flatpoint uioffset;
 	
 	NUpInfo();
 	virtual ~NUpInfo();
+
+	virtual void dump_out(FILE*, int, int, Laxkit::anObject*);
+	virtual void dump_in_atts(LaxFiles::Attribute*, int, Laxkit::anObject*);
 };
 
 
@@ -106,7 +110,8 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	int temparrowdir;
 	Laxkit::PtrStack<ActionArea> controls;
 
-	Laxkit::RefPtrStack<LaxInterfaces::SomeData> objects;
+	Laxkit::NumStack<double> rowpos;
+	Laxkit::NumStack<double> colpos;
 	Laxkit::RefPtrStack<LaxInterfaces::SomeData> groupareas;
 
 	int showdecs;
@@ -123,6 +128,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	virtual const char *flowtypeMessage(int set);
 	virtual int Apply(int updateorig);
 	virtual void ApplyGrid();
+	virtual void ApplySizedGrid();
 	virtual void ApplyRandom();
 	virtual int Reset();
 
