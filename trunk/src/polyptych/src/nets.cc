@@ -129,7 +129,7 @@ int NetLine::Set(const char *d,LineStyle *ls)
 	if (linestyle && ls) linestyle->dec_count();
 	if (ls) { ls->inc_count(); linestyle=ls; }
 	if (points) delete points;
-	points=SvgToCoordinate(d,0,NULL);
+	points=SvgToCoordinate(d,0,NULL,NULL);
 	return points?0:1;
 }
 
@@ -194,7 +194,7 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 	int c;
 	if (val) {
 		if (points) delete points;
-		points=SvgToCoordinate(val,0,NULL);
+		points=SvgToCoordinate(val,0,NULL,NULL);
 	}
 	char *name,*value;
 	for (c=0; c<att->attributes.n; c++) {
@@ -202,7 +202,7 @@ void NetLine::dumpInAtts(LaxFiles::Attribute *att, const char *val,int flag)
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"points")) {
 			if (points) delete points;
-			points=SvgToCoordinate(value,4,NULL);
+			points=SvgToCoordinate(value,4,NULL,NULL);
 			//cout <<"**** rewrite to watch for LOOP_TERMINATOR stuff!!"<<endl;
 		} else if (!strcmp(name,"linestyle")) {
 			if (!linestyle) {
@@ -717,7 +717,7 @@ void NetFace::dumpInAtts(LaxFiles::Attribute *att)
 						if (ee==e) { error=1; break; }
 					}
 				} else if (!strcmp(name,"d")) {
-					edge->points=SvgToCoordinate(value,0,NULL);
+					edge->points=SvgToCoordinate(value,0,NULL,NULL);
 				} else if (!strcmp(name,"potential")) {
 					edge->tag=FACE_Potential;
 				} else if (!strcmp(name,"undefined")) {

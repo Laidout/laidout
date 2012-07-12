@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+path linestyle should not directly use GX*
+
+svg coord numpoints==0????
+
 in tiled, can no longer select objects in the other tiles, wtf!!!
 
 tooltips work intermittently
@@ -40,6 +44,8 @@ nup:
 
 
 PathEditor: 
+  test-path3.laidout
+  'a', delete crashes!!
   delete point sometimes crashes
   direction indicator not highlighting/scanning correctly
   shift click down then up on a point selects then deselects
@@ -748,4 +754,8 @@ DONE loading default template segfaults on quit
 DONE imagepatch 'm' tries to draw preview super high? ... no, its render recursive mode
 
 DONE mesh delete cross lines segfaults
+
+DONE fills open paths!?!?! thought that was fixed!!!
+
+DONE CoordinateToSvg ignoring terminators
 

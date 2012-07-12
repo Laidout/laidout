@@ -341,8 +341,9 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 
 	sc=ObjectInterface::GetShortcuts();
 
-	sc->Add(GIA_Align,     'a',0,0,    "Align",     _("Align selected objects"),NULL,0);
-	sc->Add(GIA_Distribute,'f',0,0,    "Distribute",_("Distribute selected objects in rows and columns"),NULL,0);
+	sc->Add(GIA_Align,     'a',0,0,    "Align", _("Align selected objects"),NULL,0);
+	sc->Add(GIA_Distribute,'n',0,0,    "Nup",   _("Distribute selected objects in rows and columns"),NULL,0);
+	//...go to path, image, image warp, mesh, gradient tools...?
 
 
 	// *** initialize nup and align shortcuts.. there should be a better way to do this!!
