@@ -143,6 +143,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	int presetpointsn;
 	int explodemode;
 	int snapmovement;
+	double snapped;
 	int showextra;
 	int showrotation;
 
