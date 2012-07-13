@@ -469,6 +469,7 @@ enum AlignInterfaceActions {
 	ALIGN_ResetPath,
 	ALIGN_ShowExtra,
 	ALIGN_ShowRotation,
+	ALIGN_ToggleSnap,
 	ALIGN_Load,
 	ALIGN_Lave,
 
@@ -505,13 +506,18 @@ Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
 	//menu->AddItem(_("Unoverlap"), ALIGN_Unoverlap, LAX_ISTOGGLE|(aligninfo->final_layout_type==FALIGN_Unoverlap?LAX_CHECKED:0));
 
 	menu->AddSep();
-	menu->AddItem(_("Reset path"), ALIGN_ResetPath);
-
 	//if (showextra) menu->AddItem(_("Hide extra"), ALIGN_ShowExtra);
 	//else menu->AddItem(_("Show extra"), ALIGN_ShowExtra);
 
+	if (snapmovement) menu->AddItem(_("Don't snap movement"), ALIGN_ToggleSnap);
+	else menu->AddItem(_("Snap movement"), ALIGN_ToggleSnap);
+
 	if (showrotation) menu->AddItem(_("Hide rotation"), ALIGN_ShowRotation);
 	else menu->AddItem(_("Show rotation"), ALIGN_ShowRotation);
+
+	menu->AddSep();
+	menu->AddItem(_("Reset path"), ALIGN_ResetPath);
+
 
 
 	//menu->AddItem(_("Save"),ALIGN_Save); // *** save to <laidout->config_dir>/tools/AlignInterface/*
@@ -532,12 +538,15 @@ int AlignInterface::UpdateFromPath()
 
 void AlignInterface::ResetPath()
 {
+	aligninfo->extrarotation=0;
+	aligninfo->snapalignment=50;
+	aligninfo->finalalignment=50;
 	if (aligninfo->path) {
 		aligninfo->path->dec_count();
 		aligninfo->path=NULL;
 		if (active) ApplyAlignment(0);
-		needtodraw=1;
 	}
+	needtodraw=1;
 }
 
 /*! Return 0 for menu item processed, 1 for nothing done.
@@ -564,6 +573,11 @@ int AlignInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else if (i==ALIGN_ShowRotation) {
 			showrotation=!showrotation;
+			needtodraw=1;
+			return 0;
+
+		} else if (i==ALIGN_ToggleSnap) {
+			snapmovement=!snapmovement;
 			needtodraw=1;
 			return 0;
 		}
@@ -1705,6 +1719,49 @@ void AlignInterface::postHoverMessage()
 	viewport->postmessage(m?m:"");
 }
 
+/*! snapto is a list of n doubles in range [0..360).
+ */
+double SnapRotation(double angle, double threshhold, int n,const double *snapto)
+{
+	DBG cerr <<"snap "<<angle<<" to ";
+	static const double defaultsnap[]={0.,90.,180.,270.};
+	if (snapto==NULL) { snapto=defaultsnap; n=4; }
+	if (threshhold<0) threshhold=5; //default to 5 degrees
+
+	if (angle<0 || angle>360) angle-=360*floor(angle/360);
+	for (int c=0; c<n; c++) {
+		if (fabs(snapto[c]-angle)<threshhold) {
+			DBG cerr <<snapto[c]<<endl;
+			return snapto[c];
+		}
+		if (snapto[c]==0 && fabs(snapto[c]-360)<threshhold) {
+			DBG cerr <<"0"<<endl;
+			return 0;
+		}
+	}
+	DBG cerr <<angle<<endl;
+	return angle;
+}
+
+static const double LCR[]={0.,50.,100.};
+
+double SnapDistance(double d, double threshhold, int n,const double *snapto, int clamp)
+{
+	if (!n) return d;
+
+	if (clamp) {
+		if (d<=snapto[0]) return snapto[0];
+		else if (d>=snapto[n-1]) return snapto[n-1];
+	}
+
+	if (threshhold<0) threshhold=5; //default to 5 degrees
+
+	for (int c=0; c<n; c++) {
+		if (fabs(snapto[c]-d)<threshhold) return snapto[c];
+	}
+	return d;
+}
+
 int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 	//int over=scan(x,y);
@@ -1808,11 +1865,16 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		double anew=atan2( y-cc.y,  x-cc.x);
 		if (active) ApplyAlignment(0);
 		aligninfo->extrarotation+=anew-aold;
-		needtodraw=1;
+
+		if ((snapmovement && (state&LAX_STATE_MASK)==0) || (!snapmovement && (state&LAX_STATE_MASK)!=0)) {
+			aligninfo->extrarotation=M_PI/180*SnapRotation(180/M_PI*aligninfo->extrarotation,3,0,NULL);
+			//buttondown.move(mouse->id, lx,ly); //pretend most recent move didn't happen
+		}
 
 		char buffer[100];
 		sprintf(buffer,_("Rotation %.10g degrees"),aligninfo->extrarotation*180/M_PI);
 		viewport->postmessage(buffer);
+		needtodraw=1;
 		return 0;
 	}
 
@@ -1875,6 +1937,9 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		flatpoint v=transform_vector(dp->Getctm(),aligninfo->snap_direction);
 		v/=norm(v);
 		aligninfo->snapalignment-=v*(flatpoint(x,y)-flatpoint(lx,ly))*adjust/(BAR-2*RADIUS)/aligninfo->uiscale*100;
+
+		if ((snapmovement && (state&LAX_STATE_MASK)==0) || (!snapmovement && (state&LAX_STATE_MASK)!=0))
+			aligninfo->snapalignment=SnapDistance(aligninfo->snapalignment,2,3,LCR,0);
 		if (active) ApplyAlignment(0);
 
 		char buffer[100];
@@ -1895,6 +1960,8 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		flatpoint v=transform_vector(dp->Getctm(),aligninfo->layout_direction);
 		v/=norm(v);
 		aligninfo->finalalignment-=v*(flatpoint(x,y)-flatpoint(lx,ly))*adjust/(BAR-2*RADIUS)/aligninfo->uiscale*100;
+		if ((snapmovement && (state&LAX_STATE_MASK)==0) || (!snapmovement && (state&LAX_STATE_MASK)!=0))
+			aligninfo->finalalignment=SnapDistance(aligninfo->finalalignment,2,3,LCR,0);
 		if (active) ApplyAlignment(0);
 
 		char buffer[100];
@@ -1905,7 +1972,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		return 0;
 	}
 
-	if ((state&LAX_STATE_MASK)==0 && action==ALIGN_RotateSnapAndAlign) {
+	if (action==ALIGN_RotateSnapAndAlign) {
 		//double angle=(x-lx)/180.;
 		flatpoint cc=aligninfo->center+(aligninfo->path?flatpoint():aligninfo->centeroffset);
 		double angle=angle2(dp->screentoreal(flatpoint(lx,ly))-cc,
@@ -1913,6 +1980,15 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		aligninfo->snap_direction=rotate(aligninfo->snap_direction,angle);
 		aligninfo->layout_direction=rotate(aligninfo->layout_direction,angle);
 		if (active) ApplyAlignment(0);
+
+		if ((snapmovement && (state&LAX_STATE_MASK)==0) || (!snapmovement && (state&LAX_STATE_MASK)!=0)) {
+			angle=atan2(aligninfo->snap_direction.y,aligninfo->snap_direction.x);
+			double na=M_PI/180*SnapRotation(180/M_PI*angle,3,0,NULL);
+			if (na!=angle) {
+				aligninfo->snap_direction=flatpoint(cos(na),sin(na));
+				aligninfo->layout_direction=transpose(aligninfo->snap_direction);
+			}
+		}
 
 		char buffer[100];
 		sprintf(buffer,"rotate %f degrees",angle*180/M_PI);
