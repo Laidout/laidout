@@ -248,9 +248,8 @@ NUpInterface::NUpInterface(int nid,Displayer *ndp)
 
 	nupinfo=new NUpInfo;
 	nupinfo->uioffset=flatpoint(50,50);
+	valignblock=halignblock=NULL;
 	createControls();
-
-	sc=NULL;
 }
 
 NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
@@ -273,9 +272,8 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 	nupinfo=new NUpInfo;
 	nupinfo->uioffset=flatpoint(50,50);
+	valignblock=halignblock=NULL;
 	createControls();
-
-	sc=NULL;
 }
 
 NUpInterface::~NUpInterface()
@@ -283,7 +281,6 @@ NUpInterface::~NUpInterface()
 	DBG cerr <<"NUpInterface destructor.."<<endl;
 
 	if (nupinfo) nupinfo->dec_count();
-	if (sc) sc->dec_count();
 
 	//if (doc) doc->dec_count();
 }
@@ -339,12 +336,17 @@ void NUpInterface::createControls()
 	controls.push(new ActionArea(NUP_Ok                 , AREA_Handle, NULL, _("Wheel to change"),0,1,color_num,0));
 	controls.push(new ActionArea(NUP_Type               , AREA_Handle, NULL, _("Wheel to change"),0,1,color_num,0));
 
+	controls.push(new ActionArea(NUP_VAlign             , AREA_Handle, NULL, _("Drag to change"),0,1,color_arrow,0));
+	controls.push(new ActionArea(NUP_HAlign             , AREA_Handle, NULL, _("Drag to change"),0,1,color_arrow,0));
+
 	major      =controls.e[0];
 	minor      =controls.e[1];
 	majornum   =controls.e[2];
 	minornum   =controls.e[3];
 	okcontrol  =controls.e[4];
 	typecontrol=controls.e[5];
+	valignblock=controls.e[6];
+	halignblock=controls.e[7];
 }
 
 void NUpInterface::remapControls(int tempdir)
@@ -422,6 +424,9 @@ void NUpInterface::remapControls(int tempdir)
 		else rect_coordinates(p, 2*ww4,1.5*hh4, ww4,hh4);
 		minornum->FindBBox();
 	}
+
+	 //define alignment handles
+	// ***
 
 	 //type of flow
 	p=typecontrol->Points(NULL,4,0);
@@ -627,6 +632,8 @@ int NUpInterface::Refresh()
 	//dp->drawline(flatpoint(x+nupinfo->maxx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->maxy));
 	//dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
 	//--rect:
+
+	 //the control box is drawn in the rectangle bounds of nupinfo
 	double width =nupinfo->maxx-nupinfo->minx;
 	double height=nupinfo->maxy-nupinfo->miny;
 	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->miny),flatpoint(x+nupinfo->maxx,y+nupinfo->miny));
@@ -634,7 +641,8 @@ int NUpInterface::Refresh()
 	dp->drawline(flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->miny));
 	dp->drawline(flatpoint(x+nupinfo->maxx-width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->maxx,y+nupinfo->maxy+height/4));
 	dp->drawline(flatpoint(x+nupinfo->minx+width/3,y+nupinfo->maxy+height/4),flatpoint(x+nupinfo->minx,y+nupinfo->maxy+height/4));
-	//with activator button:
+
+	 //with activator button, 1/6 of the total box width:
 	if (active) dp->NewFG(0,200,0); else dp->NewFG(255,100,100);
 	dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
 	flatpoint cc=flatpoint(x+nupinfo->maxx-width/2,y+nupinfo->maxy+height/4);
@@ -654,7 +662,7 @@ int NUpInterface::Refresh()
 	dp->textout(cc.x,cc.y, buffer,-1,LAX_CENTER);
 
 
-	//draw major arrow number
+	 //draw major arrow number
 	p=flatpoint(x+(majornum->minx+majornum->maxx)/2,y+(majornum->miny+majornum->maxy)/2);
 	if (dir==LAX_LRTB || dir==LAX_LRBT || dir==LAX_RLTB || dir==LAX_RLBT) {
 		majorn=nupinfo->cols;
@@ -669,16 +677,22 @@ int NUpInterface::Refresh()
 	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
-	//draw minor arrow number
+	 //draw minor arrow number
 	p=flatpoint(x+(minornum->minx+minornum->maxx)/2,y+(minornum->miny+minornum->maxy)/2);
 	if (minorn>=1) sprintf(buffer,"%d",minorn);
 	else if (minorn==0) sprintf(buffer,"n");
 	else sprintf(buffer,"...");
 	dp->textout(p.x,p.y, buffer,-1);
 
-	//draw arrows
+	 //draw arrows
 	drawHandle(major,arrowcolor,nupinfo->uioffset);
 	drawHandle(minor,arrowcolor,nupinfo->uioffset);
+
+	 //draw alignment handles
+	if (!(nup_style&NUP_No_Align)) {
+		//if (valignblock) drawHandle(valignblock,arrowcolor,nupinfo->uioffset);
+		//if (halignblock) drawHandle(halignblock,arrowcolor,nupinfo->uioffset);
+	}
 
 	//draw ok
 	//if (nup_style&NUP_Has_Ok) drawHandle(okcontrol,okcontrol->color,nupinfo->uioffset);
@@ -706,7 +720,9 @@ void NUpInterface::drawHandle(ActionArea *area, unsigned int color, flatpoint of
 	memcpy(p,area->outline,7*sizeof(flatpoint));
 	for (int c=0; c<area->npoints; c++) p[c]+=nupinfo->uioffset;
 
-	dp->drawlines(p,area->npoints,1,area->action==overoverlay);
+	int fill= area->action==overoverlay;
+	if (area->action==NUP_Major_Arrow && overoverlay==NUP_Major_Tip) fill=1;
+	dp->drawlines(p,area->npoints,1,fill);
 }
 
 //void NUpInterface::ShowOrder()
@@ -1228,7 +1244,7 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 
 	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
 
-	sc=new ShortcutHandler("NupInterface");
+	sc=RectInterface::GetShortcuts();
 
 	sc->Add(NUPA_Apply,          LAX_Enter,0,0,    _("ToggleApply"),   _("Toggle apply"),NULL,0);
 	sc->Add(NUPA_NextLayoutType, LAX_Left,0,0,     _("NextLayoutType"),_("Next layout type"),NULL,0);
@@ -1290,7 +1306,9 @@ int NUpInterface::PerformAction(int action)
 		return 0;
 	}
 
-	return 1;
+	int c=RectInterface::PerformAction(action);
+	if (c==0 && active) Apply(0);
+	return c;
 }
 
 int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
@@ -1409,7 +1427,8 @@ int NUpInterface::Apply(int updateorig)
 		ApplyRandom();
 
 	} else if (nupinfo->flowtype==NUP_Unclump) {
-		// *** spread out evenly
+		 // spread out evenly
+		//ApplyUnclump();
 	
 	} else if (nupinfo->flowtype==NUP_Unoverlap) {
 		// *** move just enough to unobscure
@@ -1427,12 +1446,14 @@ int NUpInterface::Apply(int updateorig)
 
 void NUpInterface::ApplySizedGrid()
 {
-	double wholew=data->maxx-data->minx;
-	double wholeh=data->maxy-data->miny;
-	double rh=wholeh;
-	double cw=wholew;
-	if (nupinfo->rows>=1) rh=wholeh/nupinfo->rows;
-	if (nupinfo->cols>=1) cw=wholew/nupinfo->cols;
+	 //strategy:
+	 //1. Find how big each row and column must be, recording row/col divider lines for possible manual adjustment
+	 //2. find position of object centers
+	 //3. apply alignment within that cell
+
+
+	//double wholew=data->maxx-data->minx;
+	//double wholeh=data->maxy-data->miny;
 
 	rowpos.flush();
 	colpos.flush();
@@ -1445,76 +1466,179 @@ void NUpInterface::ApplySizedGrid()
 
 	int i=0;
 	int dir=nupinfo->direction;
+	double rowheights[nupinfo->rows];
+	for (int c=0; c<nupinfo->rows; c++) rowheights[c]=0;
+	double colwidths [nupinfo->cols];
+	for (int c=0; c<nupinfo->cols; c++) colwidths[c]=0;
+	flatpoint dims[selection.n];
+	flatpoint centers[selection.n];
 
-	if (dir==LAX_TBLR || dir==LAX_BTLR || dir==LAX_TBRL || dir==LAX_BTRL) {
-		 //major direction vertical:
-		i=0;
-		for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
-			for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
-				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+	int ci,ri, r,c;
+	int i1n, i2n;
+	if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_LRBT || dir==LAX_RLBT) {
+		i1n=nupinfo->rows; i2n=nupinfo->cols; //major dir horizontal
+	} else { i2n=nupinfo->rows; i1n=nupinfo->cols; } //major dir vertical
 
-				if (dir==LAX_TBLR || dir==LAX_TBRL) {
-					p.y=data->maxy-rh/2-r*rh;
-				} else {
-					p.y=data->miny+rh/2+r*rh;
-				}
-				if (dir==LAX_TBLR || dir==LAX_BTLR) {
-					p.x=data->minx+cw/2+c*cw;
-				} else {
-					p.x=data->maxx-cw/2-c*cw;
-				}
+	i=0;
+	for (int i1=0; i<selection.n && i1<i1n; i1++) {
+		for (int i2=0; i<selection.n && i2<i2n; i2++) {
+			if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_LRBT || dir==LAX_RLBT) {
+				r=i1; c=i2;
+			} else { r=i2; c=i1; }
 
-				p=transform_point(data->m(),p);
-				d=p-cc;
-				mm[4]=d.x;
-				mm[5]=d.y;
-				TransformSelection(mm,i,i);
-				DBG cerr <<"TRANSFORM major V  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+			WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+			centers[i]=cc;
+			dims[i].x=w;
+			dims[i].y=h;
+			ci=c;
+			ri=r;
 
-				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
-				objcontrols.e[i]->new_center=cc+d;
-				i++;
-			}
-		}
-		for ( ; i<selection.n; i++) {
-			objcontrols.e[i]->flags|=CONTROL_Skip;
-		}
+			if (dir==LAX_RLBT || dir==LAX_RLTB || dir==LAX_BTRL || dir==LAX_TBRL) ci=nupinfo->cols-ci-1;
+			if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_TBLR || dir==LAX_TBRL) ri=nupinfo->rows-ri-1;
 
-	} else {
-		 //major direction horizontal:
-		i=0;
-		for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
-			for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
-				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+			if (w>colwidths[ci])  colwidths[ci] =w;
+			if (h>rowheights[ri]) rowheights[ri]=h;
 
-				if (dir==LAX_LRTB || dir==LAX_RLTB) {
-					p.y=data->maxy-rh/2-r*rh;
-				} else {
-					p.y=data->miny+rh/2+r*rh;
-				}
-				if (dir==LAX_LRTB || dir==LAX_LRBT) {
-					p.x=data->minx+cw/2+c*cw;
-				} else {
-					p.x=data->maxx-cw/2-c*cw;
-				}
-
-				p=transform_point(data->m(),p);
-				d=p-cc;
-				mm[4]=d.x;
-				mm[5]=d.y;
-				TransformSelection(mm,i,i);
-				DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
-
-				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
-				objcontrols.e[i]->new_center=cc+d;
-				i++;
-			}
-		}
-		for ( ; i<selection.n; i++) {
-			objcontrols.e[i]->flags|=CONTROL_Skip;
+			i++;
 		}
 	}
 
+	 //figure out the gaps to make fit in rectangle
+	flatpoint xv=data->xaxis(), yv=data->yaxis();
+	double hscale, vscale;
+	hscale=norm(xv);
+	xv/=hscale;
+	vscale=norm(yv);
+	yv/=vscale;
+	double hgap,vgap;
+	double sum=0;
+	for (int c=0; c<nupinfo->rows; c++) sum+=rowheights[c];
+	vgap=(vscale*(data->maxy-data->miny)-sum)/nupinfo->rows;
+	sum=0;
+	for (int c=0; c<nupinfo->cols; c++) sum+=colwidths[c];
+	hgap=(hscale*(data->maxx-data->minx)-sum)/nupinfo->cols;
+
+	i=0;
+	for (int i1=0; i<selection.n && i1<i1n; i1++) {
+		for (int i2=0; i<selection.n && i2<i2n; i2++) {
+			if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_LRBT || dir==LAX_RLBT) {
+				r=i1; c=i2;
+			} else { r=i2; c=i1; }
+
+			ci=c; ri=r; 
+			if (dir==LAX_RLBT || dir==LAX_RLTB || dir==LAX_BTRL || dir==LAX_TBRL) ci=nupinfo->cols-ci-1;
+			if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_TBLR || dir==LAX_TBRL) ri=nupinfo->rows-ri-1;
+
+			cc=centers[i];
+			w=dims[i].x;
+			h=dims[i].y;
+
+			p=transform_point(data->m(),data->minx,data->miny);
+			for (int pp=0; pp<ci; pp++) p+=(hgap+colwidths[pp])*xv;
+			for (int pp=0; pp<ri; pp++) p+=(vgap+rowheights[pp])*yv;
+			p+=((hgap+colwidths[ci])/2)*xv + ((vgap+rowheights[ri])/2)*yv;
+
+			//now p is the real position of the center of the cell at ri,ci
+			
+			 //apply cell alignment
+			//p+= (colwidths[ci]-w)/2*(nupinfo->halign-50)/100*xv + (rowheights[ri]-h)/2*(nupinfo->valign-50)/100*yv;
+
+			//p=transform_point(data->m(),p);
+			d=p-cc;
+			mm[4]=d.x;
+			mm[5]=d.y;
+			TransformSelection(mm,i,i);
+			DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+
+			objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
+			objcontrols.e[i]->new_center=cc+d;
+
+			i++;
+		}
+	}
+
+	for ( ; i<selection.n; i++) {
+		objcontrols.e[i]->flags|=CONTROL_Skip;
+	}
+}
+
+/*! For a rectangle centered at cc, with width w and height h, return the distance 
+ * from the center to the rectangle edge, along direction v.
+ */
+double rect_radius(flatpoint cc,double w,double h,flatpoint v)
+{
+	// ****
+	return 0;
+}
+
+void NUpInterface::ApplyUnclump()
+{
+	int maxiterations=100;
+
+	flatpoint p1,p2, dist, force;
+	double dd;
+
+	double damp=10;
+	double ff=25;
+	double wholew=data->maxx-data->minx;
+	double wholeh=data->maxy-data->miny;
+	double mindist=sqrt(wholew*wholeh/selection.n);
+	flatpoint pts[4];
+	pts[0]=transform_point(data->m(),data->minx,data->miny);
+	pts[1]=transform_point(data->m(),data->maxx,data->miny);
+	pts[2]=transform_point(data->m(),data->maxx,data->maxy);
+	pts[3]=transform_point(data->m(),data->minx,data->maxy);
+	flatpoint datac=(pts[0]+pts[2])/2;
+
+	flatpoint cc, cc1,cc2;
+	flatpoint d,v;
+	double w,h, w2,h2;
+	flatpoint dims[selection.n];
+	flatpoint centers[selection.n];
+	double distbtwn;
+
+	for (int c=0; c<selection.n; c++) {
+		WidthHeight(selection.e[c], flatpoint(1,0),flatpoint(0,1), &dims[c].x,&dims[c].y, &cc);
+		objcontrols.e[c]->original_center=cc;
+		centers[c]=cc;
+	}
+	
+	for (int iterations=0; iterations<maxiterations; iterations++) {
+		for (int c=0; c<selection.n; c++) {
+			d=flatpoint(0,0);
+
+			cc1=centers[c];
+			w=dims[c].x;
+			h=dims[c].y;
+			d.x=d.y=0;
+
+			force=flatpoint(0,0);
+			p1=cc1-flatpoint(w/2,h/2);
+			p2=cc1+flatpoint(w/2,h/2);
+
+			 //go toward screen
+			if (!point_is_in(cc1, pts,4)) {
+				v=cc1-datac;
+				force+=v/norm(v)*damp;
+			}
+
+			for (int c2=0; c2<selection.n; c2++) {
+				if (c==c2) continue;
+
+				WidthHeight(selection.e[c2], flatpoint(1,0),flatpoint(0,1), &w2,&h2, &cc2);
+				dist=cc2-cc1;
+				dd=norm(dist);
+				distbtwn=rect_radius(cc1,w,h,dist)+rect_radius(cc2,w2,h2,dist);
+				if (dd<2*(mindist + distbtwn)) force-=ff * dist/(dd*dd);
+				if (dd<(mindist + distbtwn)) force-=3*(ff * dist/(dd*dd));
+			}
+
+			//forces.e[c]=force;
+
+			cc1+=force;
+			centers[c]=cc1;
+		}
+	}
 }
 
 void NUpInterface::ApplyGrid()
