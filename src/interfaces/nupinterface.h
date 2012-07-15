@@ -23,19 +23,22 @@
 #include "../interfaces/actionarea.h"
 
 
-#define NUP_None         0
-#define NUP_Major_Arrow  1
-#define NUP_Minor_Arrow  2
-#define NUP_Major_Number 3
-#define NUP_Minor_Number 4
-#define NUP_Major_Tip    5
-#define NUP_Minor_Tip    6
-#define NUP_Type         7
-#define NUP_Ok           8
-#define NUP_Panel        9
-#define NUP_Activate     10
+enum NUpControlType {
+	NUP_None=0,
+	NUP_Major_Arrow,
+	NUP_Minor_Arrow,
+	NUP_Major_Number,
+	NUP_Minor_Number,
+	NUP_Major_Tip,
+	NUP_Minor_Tip,
+	NUP_VAlign,
+	NUP_HAlign,
+	NUP_Type,
+	NUP_Ok,
+	NUP_Panel,
+	NUP_Activate,
 
-enum NUpFlowType {
+	 //menu ids
 	NUP_Noflow=100,
 	NUP_Grid,
 	NUP_Sized_Grid,
@@ -43,11 +46,13 @@ enum NUpFlowType {
 	NUP_Random,
 	NUP_Unclump,
 	NUP_Unoverlap,
+
 	NUP_MAX
 };
 
 #define NUP_Has_Ok   (1<<0)
 #define NUP_Has_Type (1<<1)
+#define NUP_No_Align (1<<2)
 
 #define NUP_LtoR  1
 #define NUP_RtoL  2
@@ -85,6 +90,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 
 	ActionArea *major, *minor;
 	ActionArea *majornum, *minornum;
+	ActionArea *valignblock, *halignblock;
 	ActionArea *okcontrol, *typecontrol;
 
 	class ControlInfo //one per object
@@ -127,12 +133,12 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 	virtual const char *controlTooltip(int action);
 	virtual const char *flowtypeMessage(int set);
 	virtual int Apply(int updateorig);
+	virtual void ApplyUnclump();
 	virtual void ApplyGrid();
 	virtual void ApplySizedGrid();
 	virtual void ApplyRandom();
 	virtual int Reset();
 
-	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
 
 	virtual void WidthHeight(LaxInterfaces::ObjectContext *oc,flatvector x,flatvector y, double *width, double *height, flatpoint *cc);

@@ -12,10 +12,6 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
-path linestyle should not directly use GX*
-
-svg coord numpoints==0????
-
 in tiled, can no longer select objects in the other tiles, wtf!!!
 
 tooltips work intermittently
@@ -32,90 +28,41 @@ select none, select doc, viewport jumps around... it should stay the same area
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
 nup:
-  hover over tips not working
   sized_grid
-  flowed
-  unclump
-  unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
-  object reorder
-  nup: scale panel should allow mpx and control zoom around point
+
   DONE grid -- row/col flipped??!!
   DONE random
+  DONE hover over tips not working
 
 
-PathEditor: 
-  test-path3.laidout
-  'a', delete crashes!!
-  delete point sometimes crashes
-  direction indicator not highlighting/scanning correctly
-  shift click down then up on a point selects then deselects
-  drag point over other point to connect if both are endpoints, --> then click, segfault!
-  control while dragging handle should temporarily switch to vertex?
-  ----future:
-  copy and paste
-  cut segment
-  maybe dotted connection if only both end points selected, click connection to close?
-  maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
-  make straight bez
-  make straight line
-  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
-  align nodes -> create temp set of data to pass to AlignInterface?
-  transform handles for nodes, including flip
-  subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
-  toggle between add points / select points?
-  finish new path/pathoperator/pathsubinterface/pathinterface structure
-
-  DONE shift click on nothing - drag out rect -> add points to selection
-  DONE control click on nothing - drag out rect -> remove points from selection
-  DONE select/deselect points with dragged rect
-  DONE debug subpaths
-  DONE delete point not setting curvertex right
-  DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
-  DONE shortcut to reverse current subpath
-  DONE direction indicator drag off path to adjust if adding points to current path or making new path
-  DONE   force choose between two icons, one for new subpath, one for new object
-  DONE wheel to change point type?
-  DONE makerect()
-  DONE clickable direction indicator for adding points
-  DONE hover over point. move off, move on, not highlighted anymore!!
-  DONE point mouseovers
-  DONE if add direction reverse, then should auto select prev vertex, not next
-  DONE Click no move on vertex, toggle point type
-  DONE control, then control click on other control point makes segfault
-  DONE maybe have 'h'/'H' toggle between c-v-c, instead of shift and control, which causes too much trouble currently
-  DONE add new point, click down, then up with no drag should create polypoint, not bez point
-  DONE toggleclosed: breaks connected bez controls
-
-
-in number edit boxes, wheel should allow changing numbers, change on digit mouse is over!
-  is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
-
-check laidout.1 when time to release
+update fileformat.txt
+polyptych site?
 update docs to have new release number
-update translations
 test:
   each window type, include help and about
   each export filter
   make some test scripts for command line testing
+DONE check laidout.1 when time to release
+DONE update features.html
+DONE update help
+DONE help:QUICKREF
 
-need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
-
-Scribus:
-  import/export color meshes, for recent versions of Scribus
-  import/export linear and radial gradients
-  scribus in/out: font sizes, stroke widths
-  import should try to apply the Scribus layout correctly, at least for 2 page spreads
-  import should do something meaningful with original Scribus page bleed values
-
-need laidout import
-
-paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-optimize pdf especially... too much duplication!!
+polyptych must send nets+papergroup
 
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
 ---- bugs:
+
+control select around test-imagesmany.laidout, on button up, my kb no work anymore!! resets on press from other kb
+
+html dump must convert chars to entities
+
+need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
+
+path linestyle should not directly use GX*
+
+svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 
 spiltwindow cursors existing in subwindows
 
@@ -173,6 +120,56 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ---enhancements:
 
+check laidout.1 when time to release
+update docs to have new release number
+update translations
+update screenshots
+test:
+  each window type, include help and about
+  each export filter
+  make some test scripts for command line testing
+
+nup:
+  flowed
+  unclump
+  unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
+  object reorder
+  scale panel should allow mpx and control zoom around point
+
+make a Change imposition, versus Edit imposition, to allow jumping straight to default editor for imposition type
+
+need laidout import
+
+paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
+optimize pdf especially... too much duplication!!
+
+PathEditor: 
+  shift click down then up on a point selects then deselects
+  draggable width changer
+  copy and paste
+  cut segment
+  maybe dotted connection if only both end points selected, click connection to close?
+  maybe control when on vertex will create whichever handle does not exist, control nearest drag point determines which is created
+  make straight bez
+  make straight line
+  not show every single handle. only ones associated with active vertices, show unactive vertices with small circles
+  align nodes -> create temp set of data to pass to AlignInterface?
+  transform handles for nodes, including flip
+  subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
+  toggle between add points / select points?
+  finish new path/pathoperator/pathsubinterface/pathinterface structure
+
+
+Scribus:
+  import/export color meshes, for recent versions of Scribus
+  import/export linear and radial gradients
+  scribus in/out: font sizes, stroke widths
+  import should try to apply the Scribus layout correctly, at least for 2 page spreads
+  import should do something meaningful with original Scribus page bleed values
+
+in number edit boxes, wheel should allow changing numbers, change on digit mouse is over!
+  is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
+
 paperinterface:
    Load, save, add, delete paper groups
    papergroups:
@@ -229,6 +226,7 @@ scribus out doesn't do gradients
 bleeding mechanism should be functional
 
 align tool:
+  should be able to scale and rotate a non-line path when not in path mode
   need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
   gap looks ugly.. have indicator highlight path itself, drag that around
   would be VERY handy to be able to recall previous arrangements, so you can partially redo 
@@ -758,4 +756,33 @@ DONE mesh delete cross lines segfaults
 DONE fills open paths!?!?! thought that was fixed!!!
 
 DONE CoordinateToSvg ignoring terminators
+
+DONE PathEditor: 
+  DONE delete point sometimes crashes
+  DONE drag point over other point to connect if both are endpoints, --> then click, segfault!
+  DONE 'a', delete crashes!! <- can't duplicate
+  DONE curpoint does not display correct shape for point type
+  DONE control while dragging handle should temporarily switch to vertex?
+  DONE direction indicator not highlighting/scanning correctly
+  DONE shift click on nothing - drag out rect -> add points to selection
+  DONE control click on nothing - drag out rect -> remove points from selection
+  DONE select/deselect points with dragged rect
+  DONE debug subpaths
+  DONE delete point not setting curvertex right
+  DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
+  DONE shortcut to reverse current subpath
+  DONE direction indicator drag off path to adjust if adding points to current path or making new path
+  DONE   force choose between two icons, one for new subpath, one for new object
+  DONE wheel to change point type?
+  DONE makerect()
+  DONE clickable direction indicator for adding points
+  DONE hover over point. move off, move on, not highlighted anymore!!
+  DONE point mouseovers
+  DONE if add direction reverse, then should auto select prev vertex, not next
+  DONE Click no move on vertex, toggle point type
+  DONE control, then control click on other control point makes segfault
+  DONE maybe have 'h'/'H' toggle between c-v-c, instead of shift and control, which causes too much trouble currently
+  DONE add new point, click down, then up with no drag should create polypoint, not bez point
+  DONE toggleclosed: breaks connected bez controls
+
 
