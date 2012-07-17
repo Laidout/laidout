@@ -39,7 +39,7 @@ ValueHash::ValueHash()
 
 ValueHash::~ValueHash()
 {
-	DBG values.flush(); //this should happen automatically anyway
+	//DBG values.flush(); //this should happen automatically anyway
 }
 
 int ValueHash::push(const char *name,int i)
@@ -394,7 +394,7 @@ Value *StringValue::duplicate()
  */
 ObjectValue::ObjectValue(RefCounted *obj)
 {
-	DBG cerr <<"ObjectValue creation.."<<endl;
+	//DBG cerr <<"ObjectValue creation.."<<endl;
 	object=obj; 
 	if (object) object->inc_count();
 }
@@ -403,7 +403,7 @@ ObjectValue::ObjectValue(RefCounted *obj)
  */
 ObjectValue::~ObjectValue()
 {
-	DBG cerr <<"ObjectValue destructor.."<<endl;
+	//DBG cerr <<"ObjectValue destructor.."<<endl;
 	if (object) object->dec_count();
 }
 

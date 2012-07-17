@@ -283,8 +283,8 @@ void Project::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 				else {
 					delete doc;
 					doc=NULL;
-					DBG if (log.Total()) cerr <<"error loading project:"<<log.Message(log.Total()-1,NULL,NULL)<<endl;
-					DBG else cerr << "error loading project"<<endl;
+					//DBG if (log.Total()) cerr <<"error loading project:"<<log.Message(log.Total()-1,NULL,NULL)<<endl;
+					//DBG else cerr << "error loading project"<<endl;
 				}
 				if (file) delete[] file;
 			} else {
@@ -369,18 +369,18 @@ int Project::Save(ErrorLog &log)
 {
 	if (isblank(filename)) {
 		log.AddMessage(_("Cannot save to blank file name."),ERROR_Fail);
-		DBG cerr <<"**** cannot save, filename is null."<<endl;
+		//DBG cerr <<"**** cannot save, filename is null."<<endl;
 		return 2;
 	}
 	FILE *f=NULL;
 	f=fopen(filename,"w");
 	if (!f) {
 		log.AddMessage(_("Cannot open file for writing"),ERROR_Fail);
-		DBG cerr <<"**** cannot save project, file \""<<filename<<"\" cannot be opened for writing."<<endl;
+		//DBG cerr <<"**** cannot save project, file \""<<filename<<"\" cannot be opened for writing."<<endl;
 		return 3;
 	}
 
-	DBG cerr <<"....Saving project to "<<filename<<endl;
+	//DBG cerr <<"....Saving project to "<<filename<<endl;
 	setlocale(LC_ALL,"C");
 //	f=stdout;//***
 	fprintf(f,"#Laidout %s Project\n",LAIDOUT_VERSION);

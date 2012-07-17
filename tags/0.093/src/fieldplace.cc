@@ -55,9 +55,9 @@ FieldPlace::FieldPlace(const FieldPlace &place)
 //! For debugging, dumps to stdout.
 void FieldPlace::out(const char *str)
 {
-	DBG if (str) cerr <<str<<": "; else cerr <<"FieldPlace: ";
-	DBG for (int c=0; c<NumStack<int>::n; c++) cerr <<NumStack<int>::e[c]<<", ";
-	DBG cerr <<endl;
+	//DBG if (str) cerr <<str<<": "; else cerr <<"FieldPlace: ";
+	//DBG for (int c=0; c<NumStack<int>::n; c++) cerr <<NumStack<int>::e[c]<<", ";
+	//DBG cerr <<endl;
 }
 
 //! Return whether place specifies the same location as this.
@@ -116,7 +116,7 @@ FieldMask::FieldMask(const char *ext)
 		fp=new FieldPlace;
 		fe=chartoint(start,&end);
 		if (*end!=',' && *end!='\0') {
-			DBG cerr << "ext had invalid characters!"<<endl;
+			//DBG cerr << "ext had invalid characters!"<<endl;
 			if (fe) delete[] fe;
 			if (fp) delete fp;
 			return;

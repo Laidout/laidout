@@ -210,7 +210,7 @@ FILE *open_file_for_writing(const char *file,int nooverwrite,ErrorLog *log)
 	FILE *f=fopen(file,"w");
 
 	if (!f) {
-		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for writing."<<endl;
 
 		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
@@ -245,7 +245,7 @@ FILE *open_file_for_reading(const char *file,ErrorLog *log)
 	FILE *f=fopen(file,"r");
 
 	if (!f) {
-		DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
+		//DBG cerr <<"**** cannot load, "<<(file?file:"(nofile)")<<" cannot be opened for reading."<<endl;
 
 		if (log) {
 			char scratch[strlen(file)+60];//****this 60 is likely to cause problems!!
@@ -653,7 +653,7 @@ int isEpsFile(const char *file,float *psversion, float *epsversion)
 				float ps,eps;
 				n=sscanf(data,"%%!PS-Adobe-%f EPSF-%f",&ps,&eps);
 				if (n==2) {
-					DBG cerr <<"--found EPS, ps:"<<ps<<", eps:"<<eps<<endl;
+					//DBG cerr <<"--found EPS, ps:"<<ps<<", eps:"<<eps<<endl;
 
 					if (psversion)  *psversion =ps;
 					if (epsversion) *epsversion=eps;

@@ -70,7 +70,7 @@ LaidoutCalculator::LaidoutCalculator()
 	last_answer=NULL;
 
 
-	DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
+	//DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
 
 	//***set up stylemanager.functions and stylemanager.styledefs here?
 }
@@ -1006,7 +1006,7 @@ Value *LaidoutCalculator::evalInnate(const char *word, int len)
  */
 void LaidoutCalculator::messageOut(const char *str)
 {//***
-	DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
+	//DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
 
 	appendline(messagebuffer,str);
 }
@@ -1333,10 +1333,10 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 					}
 					StyleDef *ev=NULL;
 					if (ename) ev=def->getField(enumcheck);
-					DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
+					//DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
 					
 					 //*** warning, assumes no extended enum, or dynamic enum!!! maybe bad....
-					DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
+					//DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
 					if (ev && ev->fields) for (int c=0; c<ev->fields->n; c++) {
 						if (strcmp(ev->fields->e[c]->name,ename)==0) {
 							skipwscomment();

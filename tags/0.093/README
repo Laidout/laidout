@@ -1,4 +1,4 @@
-LAIDOUT Version 0.092.1
+LAIDOUT Version 0.093
 --------------------
 http://laidout.org
 
@@ -41,7 +41,7 @@ ssl, and cups.
 If you are on a debian based system, you can probably install these with this command:
   apt-get install g++ pkg-config libpng12-dev libx11-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
 
-If you want to use the optional Opengl based unwrapper, you should also do this:
+If you want to use the optional Opengl based unwrapper (currently not working so very well in 0.093), you should also do this:
   apt-get install libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev
 
 Ensure that you have the Laxkit (http://laxkit.sourceforge.net)
