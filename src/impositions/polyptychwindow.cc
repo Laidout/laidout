@@ -18,7 +18,10 @@
 #include "../headwindow.h"
 #include "polyptychwindow.h"
 #include "polyptych/src/hedronwindow.h"
+#include "../laidout.h"
+
 #include <lax/button.h>
+#include <lax/units.h>
 
 #ifndef LAIDOUT_NOGL
 
@@ -30,6 +33,62 @@ using namespace std;
 #define DBG
 
 
+//----------------------------------------- PolyhedronWindow --------------------------------------
+class PolyhedronWindow : public HedronWindow
+{
+  public:
+	PolyhedronWindow(anXWindow *parent);
+	int changePaper(int towhich,int index);
+};
+
+PolyhedronWindow::PolyhedronWindow(anXWindow *parent)
+  : HedronWindow(parent, "Hedron","Hedron",0, 0,0,0,0,0, NULL)
+{
+	int i=0;
+	PaperStyle *p=laidout->papersizes.e[i];
+
+	default_paper.id=i;
+	default_paper.width =p->width;
+	default_paper.height=p->height;
+	makestr(default_paper.name,p->name);
+	makestr(default_paper.units,"in");
+	//makestr(default_paper.units,p->defaultunits);
+}
+
+//! Change paper index to a different type of paper.
+/*! towhich==-2 for previous paper, -1 for next, or >=0 for absolute paper num
+ *
+ * Return 1 for successful change. 0 for no change.
+ */
+int PolyhedronWindow::changePaper(int towhich,int index)
+{
+	DBG cerr << "change paper"<<endl;
+	if (index<0 || index>=papers.n) return 0;
+
+	int i=papers.e[index]->id;
+	if (towhich==-2) i--;
+	else if (towhich==-1) i++;
+	if (i<0) i=laidout->papersizes.n-1;
+	else if (i>laidout->papersizes.n-1) i=0;
+
+	PaperStyle *p=laidout->papersizes.e[i];
+
+	UnitManager *unitm=GetUnitManager();
+
+	papers.e[index]->id=i;
+	papers.e[index]->width =unitm->Convert(p->width, "in",p->defaultunits,NULL);
+	papers.e[index]->height=unitm->Convert(p->height,"in",p->defaultunits,NULL);
+	makestr(papers.e[index]->name,p->name);
+	makestr(papers.e[index]->units,p->defaultunits);
+	remapPaperOverlays();
+
+	needtodraw=1;
+	return 1;
+}
+
+
+//----------------------------------------- PolyptychWindow --------------------------------------
+
 /*! \class PolyptychWindow
  * \brief Class to help edit polyhedra with Polyptych.
  */
@@ -39,11 +98,12 @@ PolyptychWindow::PolyptychWindow(NetImposition *imp, anXWindow *parnt,unsigned l
 	         0,0,500,500,0, NULL,owner,sendmes,
 	         10)
 {
-	HedronWindow *hw=new Polyptych::HedronWindow(this, "Hedron","Hedron",0,
-												 0,0,0,0,0,
-												 imp?dynamic_cast<Polyhedron*>(imp->abstractnet):NULL);
+	PolyhedronWindow *hw=new PolyhedronWindow(this);
+	hwindow=hw;
 	hw->GetShortcuts();
 	AddWin(hw,1, 1,0,3000,50,0, 1,0,3000,50,0, -1);
+
+	if (imp) setImposition(imp);
 }
 
 PolyptychWindow::~PolyptychWindow()
@@ -98,10 +158,77 @@ int PolyptychWindow::Event(const EventData *data,const char *mes)
 	return RowFrame::Event(data,mes);
 }
 
+/*! Return 0 for success, nonzero for error.
+ */
+int PolyptychWindow::setImposition(NetImposition *imp)
+{
+	if (!imp) return 1;
+
+	if (!(imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet))) return 2;
+	
+	HedronWindow *hw=dynamic_cast<HedronWindow*>(hwindow);
+	//DBG if (!hw) cerr<<" ***** no child window Hedron"<<endl;
+
+	 //install hedron
+	hw->installPolyhedron(dynamic_cast<Polyhedron*>(imp->abstractnet));
+
+	 //add papers
+	if (imp->papergroup) {
+		PaperBound paper;
+		for (int c=0; c<imp->papergroup->papers.n; c++) {
+			paper.width=imp->papergroup->papers.e[c]->box->paperstyle->w();
+			paper.height=imp->papergroup->papers.e[c]->box->paperstyle->h();
+			paper.matrix.m(imp->papergroup->papers.e[c]->m());
+			makestr(paper.name, imp->papergroup->papers.e[c]->box->paperstyle->name);
+			hw->AddPaper(&paper);
+		}
+	}
+
+	 //add nets
+	for (int c=0; c<imp->nets.n; c++) {
+		if (!imp->nets.e[c]->active) continue;
+		hw->AddNet(imp->nets.e[c]);
+	}
+
+	return 0;
+}
+
 NetImposition *PolyptychWindow::getImposition()
 {
-	return NULL;
-	//***
+	NetImposition *imp=new NetImposition;
+	PaperGroup *papers=new PaperGroup;
+
+	HedronWindow *hw=dynamic_cast<HedronWindow*>(findChildWindowByName("Hedron"));
+	DBG if (!hw) cerr<<" ***** no child window Hedron"<<endl;
+
+	 //install hedron
+	imp->abstractnet=hw->poly;
+	imp->abstractnet->inc_count();
+
+	 //add papers
+	if (hw->papers.n) {
+		for (int c=0; c<hw->papers.n; c++) {
+			papers->AddPaper(hw->papers.e[c]->name,
+					hw->papers.e[c]->width,hw->papers.e[c]->height,
+					hw->papers.e[c]->matrix.m()
+					);
+		}
+	}
+
+	 //add nets
+	Net *net;
+	for (int c=0; c<hw->nets.n; c++) {
+		net=hw->nets.e[c]->duplicate();
+		imp->nets.push(net);
+		net->dec_count();
+	}
+
+	if (!imp->numActiveNets()) {
+		delete imp;
+		return NULL;
+	}
+	
+	return imp;	
 }
 
 int PolyptychWindow::sendNewImposition()

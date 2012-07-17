@@ -38,7 +38,7 @@ class NetImposition : public Imposition
 	int printnet;
 	int netisbuiltin;
 
-	Polyhedron *polyhedron;
+	//Polyhedron *polyhedron;
 
 	NetImposition(Net *newnet=NULL);
 	virtual ~NetImposition();

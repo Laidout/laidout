@@ -553,7 +553,8 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		if (!strcmp(imp->whattype(),"NetImposition")) {
 			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
-							this->object_id,"newimposition",papertype));
+							this->object_id,"newimposition",papertype,
+							dynamic_cast<NetImposition*>(imp)));
 			return 0;
 
 		} else if (!strcmp(imp->whattype(),"SignatureImposition")) {
@@ -635,7 +636,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		} else if (s->info1==IMP_NEW_NET) {
 			oldimp=impsel->GetCurrentItemN();
 			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
-							this->object_id,"newimposition",papertype));
+							this->object_id,"newimposition",papertype,NULL));
 			return 0;
 
 		} else if (s->info1==IMP_FROM_FILE) {

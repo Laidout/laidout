@@ -51,8 +51,17 @@ namespace Polyptych {
  * \brief Simple class to hold info about laying out on papers.
  */
 
+PaperBound::PaperBound()
+{
+	id=-1;
+	name=NULL;
+	width=height=0;
+	units=NULL;
+}
+
 PaperBound::PaperBound(const char *nname,double w,double h,const char *unit)
 {
+	id=-1;
 	name=newstr(nname);
 	width=w;
 	height=h;
@@ -61,6 +70,7 @@ PaperBound::PaperBound(const char *nname,double w,double h,const char *unit)
 
 PaperBound::PaperBound(const PaperBound &p)
 {
+	id=p.id;
 	name=newstr(p.name);
 	width=p.width;
 	height=p.height;
@@ -75,6 +85,7 @@ PaperBound::~PaperBound()
 
 PaperBound &PaperBound::operator=(PaperBound &p)
 {
+	id=p.id;
 	makestr(name,p.name);
 	width=p.width;
 	height=p.height;

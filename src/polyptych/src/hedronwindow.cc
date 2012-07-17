@@ -74,15 +74,21 @@ enum PaperPart {
 //--------------------------------- HedronWindow modes and other things -------------------------------
 
 //hovering indicators
-#define OGROUP_None          0
-//overlays:
-#define OGROUP_TouchHelpers  1
-#define OGROUP_Papers        2
-#define OGROUP_ImageStack    3
-//3-d things:
-#define OGROUP_Face          4
-#define OGROUP_Potential     5
-#define OGROUP_Paper         6
+enum HedronWindowHoverPart {
+	OGROUP_None=0,
+
+	 //overlays:
+	OGROUP_TouchHelpers,
+	OGROUP_Papers,
+	OGROUP_ImageStack,
+
+	 //3-d things:
+	OGROUP_Face,
+	OGROUP_Potential,
+	OGROUP_Paper,
+	 
+	OGROUP_MAX
+};
 
 enum Mode {
 	MODE_Net,
@@ -972,7 +978,7 @@ void HedronWindow::reshape (int w, int h)
 	gluPerspective(fovy/M_PI*180, //field of view vertically in degrees (fovy)
 				   ((double)w)/h, //ratio width to height
 				   1.0,           //distance to near clipping plane
-				   200.0);        //distance to far clipping plane
+				   300.0);        //distance to far clipping plane
 	
 	//x field of view == 2*atan(tan(fovy/2)*w/h)
 	//d "distance" to viewing plane is y/2/tan(fovy/2)
@@ -1248,6 +1254,7 @@ void HedronWindow::Refresh3d()
 //				gluDeleteQuadric(q);
 //				glPopMatrix();
 		}
+
 		 //draw lines around any faces up in nets
 		for (int c2=0; c2<poly->faces.n; c2++) {
 			if (poly->faces.e[c2]->cache->facemode>=0) continue;
@@ -1382,37 +1389,41 @@ void HedronWindow::Refresh3d()
 			drawPotential(currentnet,currentpotential);
 		}
 
-		if (draw_papers && currentnet->whichpaper>=0) {
-			double w=papers.e[currentnet->whichpaper]->width;
-			double h=papers.e[currentnet->whichpaper]->height;
+		if (draw_papers) {
+			double w,h;
 			double netmi[6];
-			transform_invert(netmi,currentnet->m());
-			glPushMatrix();
-			glMultMatrixf(hedron->m);
-			setmaterial(1,1,1);
-			glBegin (GL_LINE_LOOP);
+			for (int c=0; c<papers.n; c++) {
+				w=papers.e[c]->width;
+				h=papers.e[c]->height;
 
-			// *** really need to figure out transforms, and use gl matrices instead
+				transform_invert(netmi,currentnet->m());
+				glPushMatrix();
+				glMultMatrixf(hedron->m);
+				setmaterial(1,1,1);
+				glBegin (GL_LINE_LOOP);
 
-			v=transform_point(netmi,0,0);
-			p=bas.p + v.x*bas.x + v.y*bas.y;
-			glVertex3f(p.x, p.y, p.z);
+				// *** really need to figure out transforms, and use gl matrices instead
 
-			v=transform_point(netmi,w,0);
-			p=bas.p + v.x*bas.x + v.y*bas.y;
-			glVertex3f(p.x, p.y, p.z);
+				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(0,0)));
+				p=bas.p + v.x*bas.x + v.y*bas.y;
+				glVertex3f(p.x, p.y, p.z);
 
-			v=transform_point(netmi,w,h);
-			p=bas.p + v.x*bas.x + v.y*bas.y;
-			glVertex3f(p.x, p.y, p.z);
+				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(w,0)));
+				p=bas.p + v.x*bas.x + v.y*bas.y;
+				glVertex3f(p.x, p.y, p.z);
 
-			v=transform_point(netmi,0,h);
-			p=bas.p + v.x*bas.x + v.y*bas.y;
-			glVertex3f(p.x, p.y, p.z);
+				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(w,h)));
+				p=bas.p + v.x*bas.x + v.y*bas.y;
+				glVertex3f(p.x, p.y, p.z);
 
-			glEnd(); //GL_LINE_LOOP
-			glPopMatrix();
-			glDisable(GL_LINE_STIPPLE);
+				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(0,h)));
+				p=bas.p + v.x*bas.x + v.y*bas.y;
+				glVertex3f(p.x, p.y, p.z);
+
+				glEnd(); //GL_LINE_LOOP
+				glPopMatrix();
+				glDisable(GL_LINE_STIPPLE);
+			}
 		}
 
 		// *** need to draw outlines of other nets that share the current net's paper
@@ -1746,10 +1757,11 @@ int HedronWindow::LBDown(int x,int y,unsigned int state,int count,const LaxMouse
 	}
 
 	if (group==OGROUP_None && draw_papers) {
-		int c=scanPaper(x,y);
+		int c=scanPaper(x,y, index);
+		DBG cerr <<"scan paper lbd: "<<c<<endl;
 		if (c!=PAPER_None) {
 			group=OGROUP_Paper;
-			index=c;
+			mouseover_index=c;
 		}
 	}
 
@@ -1782,10 +1794,11 @@ int HedronWindow::LBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 				return 0;
 
 			} else if (group==OGROUP_Papers) {
-				 //paper management
+				 //paper management buttons
 				if (overlay->action==ACTION_AddPaper) {
 					papers.push(new PaperBound(default_paper),1);
 					remapPaperOverlays();
+					needtodraw=1;
 					return 0;
 				}
 
@@ -1839,9 +1852,553 @@ int HedronWindow::RBDown(int x,int y,unsigned int state,int count,const LaxMouse
 		return 0;
 	}
 
-	//rbdown=currentface;
+	rbdown=currentface;
 	//currentface=-1;
-	buttondown.down(mouse->id,RIGHTBUTTON,x,y);
+	buttondown.down(mouse->id,RIGHTBUTTON,x,y,currentface);
+	return 0;
+}
+
+int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
+{
+	DBG cerr <<"HedronWindow::RBUp: rbdown=="<<rbdown<<"  currentface=="<<currentface<<endl;
+
+	if (!(buttondown.isdown(mouse->id,RIGHTBUTTON))) return 0;
+
+	int rbdown;
+	buttondown.up(mouse->id,RIGHTBUTTON, &rbdown);
+	//if (active_action!=ACTION_Unwrap && active_action!=ACTION_Reseed) return 0;
+
+	if ((state&LAX_STATE_MASK)==ControlMask) {
+		 //reseed net of currentface, if any
+		if (rbdown==-1 || rbdown!=currentface) return 0;
+		Reseed(currentface);
+		remapCache();
+		needtodraw=1;
+		return 0;
+	}
+
+	if (mode!=MODE_Net) {
+		rbdown=currentface=-1;
+		return 0;
+	}
+
+	if (currentpotential>=0) {
+		 //right click on a potential drops it down
+		int orig=currentnet->faces.e[currentpotential]->original;
+		poly->faces.e[orig]->cache->facemode=currentnet->object_id;
+		currentnet->Drop(currentpotential);
+
+		//remapCache();
+		remapCache(orig,orig);
+		needtodraw=1;
+		rbdown=currentface=currentpotential=-1;
+		return 0;
+
+	} else if (rbdown!=-1 && rbdown==currentface) {
+		 //right click down and up on same face...
+		DBG cerr <<"...right click down and up on same face"<<endl;
+		 
+		 //if face is on hedron, not a seed, then create a new net with that face
+		if (poly->faces.e[currentface]->cache->facemode==0) {
+			DBG cerr <<"...establish a net on currentface"<<endl;
+
+			 //unwrap as a seed when face is on polyhedron, not in net
+			Net *net=establishNet(currentface);
+			if (currentnet) {
+				if (currentnet->numActual()==1) removeNet(currentnet);
+				if (currentnet) currentnet->dec_count();
+			}
+
+			currentnet=net;//using count from above
+			//remapCache(); //no remapping necessary since face stays on hedron
+			needtodraw=1;
+			rbdown=currentface=-1;
+			return 0;
+
+		} else if (poly->faces.e[currentface]->cache->facemode!=0) {
+			DBG cerr <<"...make net of currentface the current net"<<endl;
+
+			 //make current net the net of currentface
+			Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
+			if (currentnet!=net) {
+				if (currentnet && currentnet->numActual()==1) removeNet(currentnet);
+				if (currentnet) currentnet->dec_count();
+				currentnet=net;
+				if (currentnet) currentnet->inc_count();
+				needtodraw=1;
+			}
+
+			if (currentfacestatus==1) {
+				 //face is a leaf. pick it up
+				int i=-1;
+				net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
+				net->PickUp(i,-1);
+				poly->faces.e[currentface]->cache->facemode=0;
+				remapCache(currentface,currentface);
+				needtodraw=1;
+			}
+			rbdown=currentface=-1;
+			return 0;
+
+		}
+
+	} else if (rbdown==-1 && currentface==-1) {
+		if (currentnet) {
+			 //If the net only has the seed face, and we are selecting off, then remove that net
+			if (currentnet->numActual()==1) removeNet(currentnet);
+			if (currentnet) { currentnet->dec_count(); currentnet=NULL; }
+			needtodraw=1;
+		}
+	}
+	rbdown=currentface=-1;
+	return 0;
+}
+
+int HedronWindow::WheelUp(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
+{
+	if (mode==MODE_Help) {
+		if (helpoffset==10000) helpoffset=win_h-fontsize;
+		else helpoffset+=fontsize;
+		needtodraw=1;
+		return 0;
+	}
+
+	int group=OGROUP_None;
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	
+	if (overlay && group==OGROUP_Papers) {
+		if (overlay->action==ACTION_Paper) {
+			 //change paper type of overlay->index
+			if (overlay->index>=0) changePaper(-2,overlay->index);
+		}
+		return 0;
+	}
+
+
+	cameras.e[current_camera]->m.p+=5*cameras.e[current_camera]->m.z;
+	cameras.e[current_camera]->transformTo();
+
+	needtodraw=1;
+	return 0;
+}
+
+int HedronWindow::WheelDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
+{
+	if (mode==MODE_Help) {
+		if (helpoffset==10000) helpoffset=win_h-fontsize;
+		else helpoffset-=fontsize;
+		needtodraw=1;
+		return 0;
+	}
+
+	int group=OGROUP_None;
+	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
+	
+	if (overlay && group==OGROUP_Papers) {
+		if (overlay->action==ACTION_Paper) {
+			 //change paper type of overlay->index
+			if (overlay->index>=0) changePaper(-1,overlay->index);
+		}
+		return 0;
+	}
+
+	cameras.e[current_camera]->m.p-=5*cameras.e[current_camera]->m.z;
+	cameras.e[current_camera]->transformTo();
+
+	needtodraw=1;
+	return 0;
+}
+
+int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse)
+{
+	 //first off, check if mouse in any overlays
+	int action=0,index=-1,group=OGROUP_None;
+	Overlay *in;
+	in=scanOverlays(x,y, &action,&index,&group);
+
+	if (mouseover_group!=group || mouseover_overlay!=action || mouseover_index!=index) {
+		mouseover_group=group;
+		mouseover_overlay=action;
+		mouseover_index=index;
+		DBG cerr <<"move group:"<<group<<" action:"<<action<<" index:"<<index<<endl;
+		needtodraw=1;
+	}
+	if (in) return 0;
+
+
+	if (grab_overlay>=0) return 0;
+
+	 //map pointer to 3 space
+	double d=win_h/2/tan(fovy/2);
+	double sx,sy,sz;
+	//map mouse point to a point in space 50 units out
+	sz=50;
+	sx=(x-win_w/2.)*sz/d;
+	sy=(y-win_h/2.)*sz/d;
+
+	tracker=cameras.e[current_camera]->m.p
+		+ sx*cameras.e[current_camera]->m.x
+		- sy*cameras.e[current_camera]->m.y
+		- sz*cameras.e[current_camera]->m.z;
+
+	pointer.p=cameras.e[current_camera]->m.p;
+	pointer.v=tracker-pointer.p;
+	
+
+	 //no buttons pressed
+	if (!buttondown.any()) {
+		//search for mouse overs
+
+		int c=-1;
+		int index=-1;
+		if (currentnet) {
+			if (draw_papers) c=scanPaper(x,y, index);
+			if (c>=0 && c!=PAPER_None) {
+				mouseover_paper=currentnet->whichpaper;
+				mouseover_group=OGROUP_Paper;
+				mouseover_index=c;
+				DBG cerr <<"   ==== scanned as over paper:"<<c<<endl;
+				return 0;
+			} else mouseover_paper=-1;
+			 
+			 //scan for mouse over potential faces
+			c=findCurrentPotential(); //-1 for none, -2 for over paper
+			DBG cerr <<"MouseMove found potential: "<<c<<endl;
+			if (c>=0) {
+				if (currentface!=-1) { 	currentface=-1; needtodraw=1; }
+				if (c!=currentpotential) {
+					currentpotential=c;
+					needtodraw=1;
+				}
+				DBG cerr <<"current potential original: "<<currentpotential<<endl;
+
+				return 0;
+
+			} else if (c==-2) {
+				 //mouse is over paper
+				mouseover_paper=currentnet->whichpaper;
+				currentpotential=-1;
+
+			} else {
+				if (currentpotential!=-1) {
+					currentpotential=-1;
+					needtodraw=1;
+				}
+			}
+
+		} else {
+			mouseover_paper=-1;
+		}
+
+		 //scan for mouse over actual faces
+		c=findCurrentFace();
+
+		DBG cerr<<"MouseMove findCurrentFace original: "<<c;
+		DBG if (c>=0) {
+		DBG		cerr <<" facemode:"<<poly->faces.e[c]->cache->facemode<<endl;
+		DBG 	Net *net=findNet(poly->faces.e[c]->cache->facemode);
+		DBG 	int i=-1;
+		DBG 	if (net) {
+		DBG			cerr <<"net found "<<nets.findindex(net)<<"..."<<endl;
+		DBG			int status=net->findOriginalFace(c,1,0,&i); //it is assumed the face is actually there
+		DBG			cerr <<" links: status:"<<status<<" on neti:"<<i<<"  links:"<<net->actualLink(i,-1)<<"   ";
+		DBG		} else cerr <<"(not in a net) ";
+		DBG		cerr <<"net face: "<<i<<endl;
+		DBG } else cerr <<endl;
+
+		if (c!=currentface) {
+			needtodraw=1;
+			currentface=c;
+			if (currentface>=0) {
+				currentfacestatus=0;
+				//DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
+				if (poly->faces.e[currentface]->cache->facemode>0) {
+					 //face is in a net. If it is a leaf in currentnet, color it green, rather then red
+					Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
+					if (net && net==currentnet) {
+						int i=-1;
+						net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
+
+						DBG cerr <<"find original neti:"<<i<<" actual links:"<<net->actualLink(i,-1)<<endl;
+
+						if (net->actualLink(i,-1)==1) {
+							 //only touches 1 actual face
+							currentfacestatus=1;
+						}
+					}
+				} else if (poly->faces.e[currentface]->cache->facemode<0) currentfacestatus=2; //for seeds
+			}
+		}
+		return 0;
+	}
+
+	//so below is for when button is down
+
+
+
+	int lx,ly;
+	int bgroup=OGROUP_None,bindex=-1;
+	buttondown.move(mouse->id, x,y, &lx,&ly);
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &bgroup,&bindex);
+	flatpoint leftb=flatpoint(lx,ly);
+
+
+	 //deal with 2 finger zoom first
+	if (buttondown.isdown(0,LEFTBUTTON)==2 && buttondown.isdown(mouse->id,LEFTBUTTON)) {
+		 //double move
+		int xp1,yp1, xp2,yp2;
+		int xc1,yc1, xc2,yc2;
+		int device1=buttondown.whichdown(0,LEFTBUTTON);
+		int device2=buttondown.whichdown(device1,LEFTBUTTON);
+		buttondown.getinfo(device1,LEFTBUTTON, NULL,NULL, &xp1,&yp1, &xc1,&yc1);
+		buttondown.getinfo(device2,LEFTBUTTON, NULL,NULL, &xp2,&yp2, &xc2,&yc2);
+
+		double oldd=norm(flatpoint(xp1,yp1)-flatpoint(xp2,yp2));
+		double newd=norm(flatpoint(xc1,yc1)-flatpoint(xc2,yc2));
+		double zoom=newd/oldd;
+		if (zoom==0) return 0;
+
+		 //apply zoom
+		double amount=10;
+		//DBG cerr <<" ZZZZZZOOM d1:"<<device1<<" d2:"<<device2<<"    "<<amount<<"  z:"<<zoom<<endl;
+		if (zoom>1) amount=-amount*(zoom-1);
+		else amount=amount*(1/zoom-1);
+
+		cameras.e[current_camera]->m.p+=amount*cameras.e[current_camera]->m.z;
+		cameras.e[current_camera]->transformTo();
+
+		 //apply rotation
+//		flatvector v1=flatpoint(xc1,yc1)-flatpoint(xp1,yp1);
+//		flatvector v2=flatpoint(xc2,yc2)-flatpoint(xp2,yp2);
+//		double angle=0;
+//		double epsilon=1e-10;
+//		DBG cerr <<"   NNNNNORM  a:"<<norm(v1)<<"  b:"<<norm(v2)<<endl;
+//		if (norm(v1)>epsilon) {
+//			 //point 1 moved
+//			v1=flatpoint(xc1,yc1)-flatpoint(xp2,yp2);
+//			v2=flatpoint(xp1,yp1)-flatpoint(xp2,yp2);
+//			angle=atan2(v2.y,v2.x)-atan2(v1.y,v1.x);
+//		} else if (norm(v2)>epsilon) {
+//			 //point 2 moved
+//			v1=flatpoint(xc2,yc2)-flatpoint(xp1,yp1);
+//			v2=flatpoint(xp2,yp2)-flatpoint(xp1,yp1);
+//			angle=atan2(v2.y,v2.x)-atan2(v1.y,v1.x);
+//		}
+//		DBG  cerr <<" RRRRROTATE "<<angle<< "  deg:"<<angle*180/M_PI<<endl;
+//
+//		if (angle) {
+//			spacepoint axis;
+//			axis=cameras.e[current_camera]->m.z;
+//			things.e[curobj]->RotateAbs(angle*180/M_PI, axis.x,axis.y,axis.z);
+//		}
+
+		needtodraw=1;
+		return 0;
+	}
+
+
+
+	if (!buttondown.isdown(mouse->id,LEFTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON))
+		return 0;
+
+	if (bgroup==OGROUP_Paper && currentnet) {
+		flatpoint fp,fpn;
+		fpn=pointInNetPlane(x,y);
+		fp =pointInNetPlane(lx,ly);
+
+		PaperBound *paper=papers.e[bindex];
+		if ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ShiftMask) {
+			 //shift papers
+			if ((state&LAX_STATE_MASK)==ShiftMask) {
+				 //move net relative to papers
+				currentnet->origin(currentnet->origin()-fpn+fp);
+			} else {
+				 //move paper relative to other papers
+				flatpoint d=transform_point(currentnet->m(),fpn)-transform_point(currentnet->m(),fp);
+				paper->matrix.Translate(d);
+			}
+
+		} else if ((state&LAX_STATE_MASK)==ControlMask) {
+			 //scale papers
+			double s=1;
+			if (x>lx) s=.98;
+			else s=1.02;
+			for (int c=0; c<6; c++) {
+				currentnet->m(c, currentnet->m(c)*s);
+			}
+
+		} else {
+			 //rotate papers
+			double s=0;
+			if (x>lx) s=1./180*M_PI;
+			else s=-1./180*M_PI;
+			currentnet->xaxis(rotate(currentnet->xaxis(),s));
+			currentnet->yaxis(rotate(currentnet->yaxis(),s));
+		}
+
+		needtodraw=1;
+		return 0;
+	}
+
+	ActionType current_action=active_action;
+	if (buttondown.isdown(0,MIDDLEBUTTON)) current_action=ACTION_Unwrap_Angle;
+	else if (buttondown.isdown(0,RIGHTBUTTON)) current_action=ACTION_Unwrap;
+
+	if (current_action==ACTION_Zoom) {
+		 //zoom
+		if (x-mbdown>10) { WheelUp(x,y,0,0,mouse); mbdown=x; }
+		else if (mbdown-x>10) { WheelDown(x,y,0,0,mouse); mbdown=x; }
+
+	}
+
+
+	 //middle button: change unwrapangle
+	if (current_action==ACTION_Unwrap_Angle) {
+		cout <<" *** need to implement unwrap angle change!"<<endl;
+		//if (nets.faces.n==0 || x==mbdown) return 0;
+
+		unwrapangle+=(x-mbdown)*.1;
+		if (unwrapangle<0) unwrapangle=0;
+		else if (unwrapangle>1) unwrapangle=1;
+		//remapCache(-1,-1);
+
+		mbdown=x;
+		return 0;
+	}
+
+
+	 //right button
+	if (current_action==ACTION_Unwrap && rbdown>=0 && (mode==MODE_Net || mode==MODE_Solid)) {
+		 //Unwrap
+		int c=findCurrentFace();
+		DBG cerr <<"rb move: "<<c<<endl;
+		if (c==rbdown) { currentface=rbdown; return 0; }
+
+		 //if c is attached to rbdown then we have a winner maybe
+		int cc;
+
+		//DBG cerr <<"faces attached to "<<rbdown<<": ";
+		for (cc=0; cc<poly->faces.e[rbdown]->pn; cc++) {
+			//DBG cerr<<poly->faces.e[rbdown]->f[cc]<<" ";
+
+			if (poly->faces.e[rbdown]->f[cc]==c) break;
+		}
+		//DBG cerr <<endl;
+		if (cc==poly->faces.e[rbdown]->pn) { 
+			 //c is not attached to any edge of rbdown
+			if (currentface!=-1) needtodraw=1;
+			currentface=-1;
+		} else {
+			if (currentface!=c) needtodraw=1;
+			currentface=c;
+		}
+
+		DBG cerr<<" rb-unwrap from "<<rbdown<<" to: "<<currentface<<endl;
+		if (rbdown!=currentface && currentface>=0 && unwrapTo(rbdown,currentface)==0) {
+			rbdown=currentface;
+			currentface=-1;
+			needtodraw=1;
+		}
+		DBG cerr<<" ..rb-unwrap done"<<endl;
+
+		return 0;
+	}
+
+	if (current_action==ACTION_None) {
+		if       ((state&LAX_STATE_MASK)== 0)                      current_action=ACTION_Roll;
+		else if  ((state&LAX_STATE_MASK)== ShiftMask)              current_action=ACTION_Rotate;
+		else if  ((state&LAX_STATE_MASK)== ControlMask)            current_action=ACTION_Shift_Texture;
+		else if  ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) current_action=ACTION_Rotate_Texture;
+	}
+
+	currentface=-1;
+
+	 //shift-drag -- rotates camera around axis through viewer
+	if (current_action==ACTION_Rotate) {
+		flatpoint d,p=flatpoint(x,y);
+		d=p-leftb;
+
+		//-----------rotate camera
+		//			if (d.y) {
+		//				rotate(cameras.e[current_camera]->m,    //basis
+		//					   cameras.e[current_camera]->m.x,  //axis
+		//					   d.y/5/180*M_PI); //angle
+		//				cameras.e[current_camera]->transformTo();
+		//				needtodraw=1;
+		//			}
+		//			if (d.x) {
+		//				rotate(cameras.e[current_camera]->m,    //basis
+		//					   cameras.e[current_camera]->m.y,  //axis
+		//					   d.x/5/180*M_PI); //angle
+		//				cameras.e[current_camera]->transformTo();
+		//				needtodraw=1;
+		//			}
+		if (d.x) { //rotate thing around camera z
+			spacepoint axis;
+			axis=d.x*cameras.e[current_camera]->m.z;
+			things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
+			needtodraw=1;
+		}
+		leftb=p;
+
+		//plain drag -- rolls shape
+	} else if (current_action==ACTION_Roll) { //rotate current thing
+		flatpoint d,p=flatpoint(x,y);
+		d=p-leftb;
+
+		spacepoint axis;
+		axis=d.y*cameras.e[current_camera]->m.x + d.x*cameras.e[current_camera]->m.y;
+		needtodraw=1;
+
+		//-------------------------
+		things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
+		//things.e[curobj]->Rotate(norm(d)/5, axis.x,axis.y,axis.z);
+
+		//-------------------------
+		//			if (d.y) {
+		//				things.e[curobj]->Rotate(d.y/5, 0,0,1);
+		//				needtodraw=1;
+		//			}
+		//			if (d.x) {
+		//				things.e[curobj]->Rotate(d.x/5, 0,1,0);
+		//				needtodraw=1;
+		//			}
+		//-------------------------
+		leftb=p;
+
+
+		//shift-control-drag -- rotates texture around z
+	} else if (current_action==ACTION_Rotate_Texture) { //rotate texture around z
+		flatpoint d,p=flatpoint(x,y);
+		d=p-leftb;
+
+		if (d.x) {
+			spacepoint axis;
+			axis=d.x*cameras.e[current_camera]->m.z;
+			things.e[curobj]->updateBasis();
+			transform(axis,things.e[curobj]->bas);
+			rotate(extra_basis,axis,norm(d)/5/180*M_PI);
+			needtodraw=1;
+			leftb=p;
+			mapPolyhedronTexture(hedron);
+		}
+
+		// control-drag -- shift texture
+	} else if (current_action==ACTION_Shift_Texture) { //rotate texture
+		flatpoint d,p=flatpoint(x,y);
+		d=p-leftb;
+
+		spacepoint axis;
+		axis=d.y*cameras.e[current_camera]->m.x + d.x*cameras.e[current_camera]->m.y;
+		things.e[curobj]->updateBasis();
+		transform(axis,things.e[curobj]->bas);
+		rotate(extra_basis,axis,norm(d)/5/180*M_PI);
+
+		mapPolyhedronTexture(hedron);
+		needtodraw=1;
+		leftb=p;
+	}
+
 	return 0;
 }
 
@@ -1931,7 +2488,7 @@ void HedronWindow::remapCache(int start, int end)
 		}
 	}
 
-	mapPolyhedronTexture(hedron);
+	if (hedron) mapPolyhedronTexture(hedron);
 }
 
 /*! Unwrap each connected face with tick==0.
@@ -2025,99 +2582,6 @@ int HedronWindow::Reseed(int original)
 	return 0;
 }
 
-int HedronWindow::RBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
-{
-	DBG cerr <<"HedronWindow::RBUp: rbdown=="<<rbdown<<"  currentface=="<<currentface<<endl;
-
-	if (active_action!=ACTION_Unwrap && active_action!=ACTION_Reseed && !(buttondown.isdown(mouse->id,RIGHTBUTTON))) return 0;
-	buttondown.up(mouse->id,RIGHTBUTTON);
-
-	if ((state&LAX_STATE_MASK)==ControlMask) {
-		 //reseed net of currentface, if any
-		if (rbdown==-1 || rbdown!=currentface) return 0;
-		Reseed(currentface);
-		remapCache();
-		needtodraw=1;
-		return 0;
-	}
-
-	if (mode!=MODE_Net) {
-		rbdown=currentface=-1;
-		return 0;
-	}
-
-	if (currentpotential>=0) {
-		 //right click on a potential drops it down
-		int orig=currentnet->faces.e[currentpotential]->original;
-		poly->faces.e[orig]->cache->facemode=currentnet->object_id;
-		currentnet->Drop(currentpotential);
-
-		//remapCache();
-		remapCache(orig,orig);
-		needtodraw=1;
-		rbdown=currentface=currentpotential=-1;
-		return 0;
-
-	} else if (rbdown!=-1 && rbdown==currentface) {
-		 //right click down and up on same face...
-		DBG cerr <<"...right click down and up on same face"<<endl;
-		 
-		 //if face is on hedron, not a seed, then create a new net with that face
-		if (poly->faces.e[currentface]->cache->facemode==0) {
-			DBG cerr <<"...establish a net on currentface"<<endl;
-
-			 //unwrap as a seed when face is on polyhedron, not in net
-			Net *net=establishNet(currentface);
-			if (currentnet) {
-				if (currentnet->numActual()==1) removeNet(currentnet);
-				if (currentnet) currentnet->dec_count();
-			}
-
-			currentnet=net;//using count from above
-			//remapCache(); //no remapping necessary since face stays on hedron
-			needtodraw=1;
-			rbdown=currentface=-1;
-			return 0;
-
-		} else if (poly->faces.e[currentface]->cache->facemode!=0) {
-			DBG cerr <<"...make net of currentface the current net"<<endl;
-
-			 //make current net the net of currentface
-			Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
-			if (currentnet!=net) {
-				if (currentnet && currentnet->numActual()==1) removeNet(currentnet);
-				if (currentnet) currentnet->dec_count();
-				currentnet=net;
-				if (currentnet) currentnet->inc_count();
-				needtodraw=1;
-			}
-
-			if (currentfacestatus==1) {
-				 //face is a leaf. pick it up
-				int i=-1;
-				net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
-				net->PickUp(i,-1);
-				poly->faces.e[currentface]->cache->facemode=0;
-				remapCache(currentface,currentface);
-				needtodraw=1;
-			}
-			rbdown=currentface=-1;
-			return 0;
-
-		}
-
-	} else if (rbdown==-1 && currentface==-1) {
-		if (currentnet) {
-			 //If the net only has the seed face, and we are selecting off, then remove that net
-			if (currentnet->numActual()==1) removeNet(currentnet);
-			if (currentnet) { currentnet->dec_count(); currentnet=NULL; }
-			needtodraw=1;
-		}
-	}
-	rbdown=currentface=-1;
-	return 0;
-}
-
 //! Return 0 for net removed, or nonzero for not removed.
 int HedronWindow::removeNet(Net *net)
 {
@@ -2142,61 +2606,6 @@ int HedronWindow::removeNet(int netindex)
 	}
 	DBG cerr <<"removeNet() reset "<<n<<" faces"<<endl;
 	nets.remove(netindex);
-	return 0;
-}
-
-int HedronWindow::WheelUp(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
-{
-	if (mode==MODE_Help) {
-		if (helpoffset==10000) helpoffset=win_h-fontsize;
-		else helpoffset+=fontsize;
-		needtodraw=1;
-		return 0;
-	}
-
-	int group=OGROUP_None;
-	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
-	
-	if (overlay && group==OGROUP_Papers) {
-		if (overlay->action==ACTION_Paper) {
-			 //change paper type of overlay->index
-			if (overlay->index>=0) changePaper(-2,overlay->index);
-		}
-		return 0;
-	}
-
-
-	cameras.e[current_camera]->m.p+=5*cameras.e[current_camera]->m.z;
-	cameras.e[current_camera]->transformTo();
-
-	needtodraw=1;
-	return 0;
-}
-
-int HedronWindow::WheelDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
-{
-	if (mode==MODE_Help) {
-		if (helpoffset==10000) helpoffset=win_h-fontsize;
-		else helpoffset-=fontsize;
-		needtodraw=1;
-		return 0;
-	}
-
-	int group=OGROUP_None;
-	Overlay *overlay=scanOverlays(x,y, NULL,NULL,&group);
-	
-	if (overlay && group==OGROUP_Papers) {
-		if (overlay->action==ACTION_Paper) {
-			 //change paper type of overlay->index
-			if (overlay->index>=0) changePaper(-1,overlay->index);
-		}
-		return 0;
-	}
-
-	cameras.e[current_camera]->m.p-=5*cameras.e[current_camera]->m.z;
-	cameras.e[current_camera]->transformTo();
-
-	needtodraw=1;
 	return 0;
 }
 
@@ -2246,35 +2655,43 @@ flatpoint HedronWindow::pointInNetPlane(int x,int y)
 	return fp;
 }
 
-int HedronWindow::scanPaper(int x,int y)
+int HedronWindow::scanPaper(int x,int y, int &index)
 {
-	if (!currentnet || currentnet->whichpaper<0) return PAPER_None;
+	if (!currentnet || !papers.n) return PAPER_None;
 
 	flatpoint fp=pointInNetPlane(x,y);
+	flatpoint fpp;
 	DBG cerr <<" ---- scanPaper from pointInNetPlane: netface:"<<currentnet->info<<"  "<<fp.x<<","<<fp.y<<endl;
 
-	double pw=papers.e[currentnet->whichpaper]->width;
-	double ph=papers.e[currentnet->whichpaper]->height;
+	double pw,ph;
+	for (index=0; index<papers.n; index++) {
+		pw=papers.e[index]->width;
+		ph=papers.e[index]->height;
 
-	fp=transform_point(currentnet->m(),fp);
-	DBG cerr <<" ---- scanPaper from pointInNetPlane: transf to paper: "<<fp.x<<","<<fp.y<<endl;
-	DBG const double *nm=currentnet->m();
-	DBG cerr <<" ----   netm: "<<nm[0]<<", "<<nm[1]<<", "<<nm[2]<<", "<<nm[3]<<", "<<nm[4]<<", "<<nm[5]<<", "<<endl;
+		fpp=transform_point(currentnet->m(),fp);
+		fpp=papers.e[index]->matrix.transformPointInverse(fpp);
 
-	if (fp.x>0 && fp.x<pw*.1 && fp.y>=0 && fp.y<ph)
-		return PAPER_Left;
+		DBG cerr <<" ---- scanPaper "<<index<<" from pointInNetPlane: transf to paper: "<<fpp.x<<","<<fpp.y<<endl;
+		DBG const double *nm=currentnet->m();
+		DBG cerr <<" ----   netm: "<<nm[0]<<", "<<nm[1]<<", "<<nm[2]<<", "<<nm[3]<<", "<<nm[4]<<", "<<nm[5]<<", "<<endl;
+		DBG nm=papers.e[index]->matrix.m();
+		DBG cerr <<" ---- paperm: "<<nm[0]<<", "<<nm[1]<<", "<<nm[2]<<", "<<nm[3]<<", "<<nm[4]<<", "<<nm[5]<<", "<<endl;
 
-	if (fp.x>pw+-pw*.1 && fp.x<pw && fp.y>=0 && fp.y<ph)
-		return PAPER_Right;
+		if (fpp.x>0 && fpp.x<pw*.1 && fpp.y>=0 && fpp.y<ph)
+			return PAPER_Left;
 
-	if (fp.y>0 && fp.y<ph*.1 && fp.x>=0 && fp.x<pw)
-		return PAPER_Bottom;
+		if (fpp.x>pw+-pw*.1 && fpp.x<pw && fpp.y>=0 && fpp.y<ph)
+			return PAPER_Right;
 
-	if (fp.y>ph+-ph*.1 && fp.y<ph && fp.x>=0 && fp.x<pw)
-		return PAPER_Top;
+		if (fpp.y>0 && fpp.y<ph*.1 && fpp.x>=0 && fpp.x<pw)
+			return PAPER_Bottom;
 
-	if (fp.x>=0 && fp.y>=0 && fp.x<pw && fp.y<ph)
-		return PAPER_Inside;
+		if (fpp.y>ph+-ph*.1 && fpp.y<ph && fpp.x>=0 && fpp.x<pw)
+			return PAPER_Top;
+
+		if (fpp.x>=0 && fpp.y>=0 && fpp.x<pw && fpp.y<ph)
+			return PAPER_Inside;
+	}
 
 	return PAPER_None;
 }
@@ -2560,382 +2977,47 @@ Overlay *HedronWindow::scanOverlays(int x,int y, int *action,int *index,int *gro
 	return NULL;
 }
 
-int HedronWindow::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse)
+/*! Adds a duplicate.
+ */
+int HedronWindow::AddNet(Net *net)
 {
-	 //first off, check if mouse in any overlays
-	int action=0,index=-1,group=OGROUP_None;
-	Overlay *in;
-	in=scanOverlays(x,y, &action,&index,&group);
-	if (mouseover_group!=group || mouseover_overlay!=action || mouseover_index!=index) {
-		mouseover_group=group;
-		mouseover_overlay=action;
-		mouseover_index=index;
-		DBG cerr <<"move group:"<<group<<" action:"<<action<<" index:"<<index<<endl;
-		needtodraw=1;
-	}
-	if (in) return 0;
+	Net *newnet=net->duplicate();
+	nets.push(newnet);
+	newnet->dec_count();
+	needtodraw=1;
+	return 1;
+}
 
+/*! Copies paper. Return 0 for success, 1 for error.
+ */
+int HedronWindow::AddPaper(PaperBound *paper)
+{
+	if (!paper) return 1;
+	papers.push(new PaperBound(*paper),1);
+	remapPaperOverlays();
+	needtodraw=1;
+	return 1;
+}
 
-	if (grab_overlay>=0) return 0;
+/*! Uses ph, does not duplicate.
+ */
+int HedronWindow::installPolyhedron(Polyhedron *ph)
+{
+	if (!ph) return 1;
+	if (poly) poly->dec_count();
+	poly=ph;
+	ph->inc_count();
 
-	 //map pointer to 3 space
-	double d=win_h/2/tan(fovy/2);
-	double sx,sy,sz;
-	//map mouse point to a point in space 50 units out
-	sz=50;
-	sx=(x-win_w/2.)*sz/d;
-	sy=(y-win_h/2.)*sz/d;
-
-	tracker=cameras.e[current_camera]->m.p
-		+ sx*cameras.e[current_camera]->m.x
-		- sy*cameras.e[current_camera]->m.y
-		- sz*cameras.e[current_camera]->m.z;
-
-	pointer.p=cameras.e[current_camera]->m.p;
-	pointer.v=tracker-pointer.p;
+	poly->makeedges();
+	poly->BuildExtra();
 	
+	nets.flush();
+	if (currentnet) currentnet->dec_count();
+	currentnet=NULL;
+	remapCache();
 
-	 //no buttons pressed
-	if (!buttondown.any()) {
-		//search for mouse overs
-
-		int c=-1;
-		if (currentnet) {
-			if (draw_papers) c=scanPaper(x,y);
-			if (c>=0 && c!=PAPER_None) {
-				mouseover_paper=currentnet->whichpaper;
-				mouseover_group=OGROUP_Paper;
-				mouseover_index=c;
-				DBG cerr <<"   ==== scanned as over paper:"<<c<<endl;
-				return 0;
-			} else mouseover_paper=-1;
-			 
-			 //scan for mouse over potential faces
-			c=findCurrentPotential(); //-1 for none, -2 for over paper
-			DBG cerr <<"MouseMove found potential: "<<c<<endl;
-			if (c>=0) {
-				if (currentface!=-1) { 	currentface=-1; needtodraw=1; }
-				if (c!=currentpotential) {
-					currentpotential=c;
-					needtodraw=1;
-				}
-				DBG cerr <<"current potential original: "<<currentpotential<<endl;
-
-				return 0;
-
-			} else if (c==-2) {
-				 //mouse is over paper
-				mouseover_paper=currentnet->whichpaper;
-				currentpotential=-1;
-
-			} else {
-				if (currentpotential!=-1) {
-					currentpotential=-1;
-					needtodraw=1;
-				}
-			}
-
-		} else {
-			mouseover_paper=-1;
-		}
-
-		 //scan for mouse over actual faces
-		c=findCurrentFace();
-
-		DBG cerr<<"MouseMove findCurrentFace original: "<<c;
-		DBG if (c>=0) {
-		DBG		cerr <<" facemode:"<<poly->faces.e[c]->cache->facemode<<endl;
-		DBG 	Net *net=findNet(poly->faces.e[c]->cache->facemode);
-		DBG 	int i=-1;
-		DBG 	if (net) {
-		DBG			cerr <<"net found "<<nets.findindex(net)<<"..."<<endl;
-		DBG			int status=net->findOriginalFace(c,1,0,&i); //it is assumed the face is actually there
-		DBG			cerr <<" links: status:"<<status<<" on neti:"<<i<<"  links:"<<net->actualLink(i,-1)<<"   ";
-		DBG		} else cerr <<"(not in a net) ";
-		DBG		cerr <<"net face: "<<i<<endl;
-		DBG } else cerr <<endl;
-
-		if (c!=currentface) {
-			needtodraw=1;
-			currentface=c;
-			if (currentface>=0) {
-				currentfacestatus=0;
-				//DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
-				if (poly->faces.e[currentface]->cache->facemode>0) {
-					 //face is in a net. If it is a leaf in currentnet, color it green, rather then red
-					Net *net=findNet(poly->faces.e[currentface]->cache->facemode);
-					if (net && net==currentnet) {
-						int i=-1;
-						net->findOriginalFace(currentface,1,0,&i); //it is assumed the face is actually there
-
-						DBG cerr <<"find original neti:"<<i<<" actual links:"<<net->actualLink(i,-1)<<endl;
-
-						if (net->actualLink(i,-1)==1) {
-							 //only touches 1 actual face
-							currentfacestatus=1;
-						}
-					}
-				} else if (poly->faces.e[currentface]->cache->facemode<0) currentfacestatus=2; //for seeds
-			}
-		}
-		return 0;
-	}
-
-	//so below is for when button is down
-
-
-
-	int lx,ly;
-	int bgroup=OGROUP_None,bindex=-1;
-	buttondown.move(mouse->id, x,y, &lx,&ly);
-	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &bgroup,&bindex);
-	flatpoint leftb=flatpoint(lx,ly);
-
-
-	 //deal with 2 finger zoom first
-	if (buttondown.isdown(0,LEFTBUTTON)==2 && buttondown.isdown(mouse->id,LEFTBUTTON)) {
-		 //double move
-		int xp1,yp1, xp2,yp2;
-		int xc1,yc1, xc2,yc2;
-		int device1=buttondown.whichdown(0,LEFTBUTTON);
-		int device2=buttondown.whichdown(device1,LEFTBUTTON);
-		buttondown.getinfo(device1,LEFTBUTTON, NULL,NULL, &xp1,&yp1, &xc1,&yc1);
-		buttondown.getinfo(device2,LEFTBUTTON, NULL,NULL, &xp2,&yp2, &xc2,&yc2);
-
-		double oldd=norm(flatpoint(xp1,yp1)-flatpoint(xp2,yp2));
-		double newd=norm(flatpoint(xc1,yc1)-flatpoint(xc2,yc2));
-		double zoom=newd/oldd;
-		if (zoom==0) return 0;
-
-		 //apply zoom
-		double amount=10;
-		//DBG cerr <<" ZZZZZZOOM d1:"<<device1<<" d2:"<<device2<<"    "<<amount<<"  z:"<<zoom<<endl;
-		if (zoom>1) amount=-amount*(zoom-1);
-		else amount=amount*(1/zoom-1);
-
-		cameras.e[current_camera]->m.p+=amount*cameras.e[current_camera]->m.z;
-		cameras.e[current_camera]->transformTo();
-
-		 //apply rotation
-//		flatvector v1=flatpoint(xc1,yc1)-flatpoint(xp1,yp1);
-//		flatvector v2=flatpoint(xc2,yc2)-flatpoint(xp2,yp2);
-//		double angle=0;
-//		double epsilon=1e-10;
-//		DBG cerr <<"   NNNNNORM  a:"<<norm(v1)<<"  b:"<<norm(v2)<<endl;
-//		if (norm(v1)>epsilon) {
-//			 //point 1 moved
-//			v1=flatpoint(xc1,yc1)-flatpoint(xp2,yp2);
-//			v2=flatpoint(xp1,yp1)-flatpoint(xp2,yp2);
-//			angle=atan2(v2.y,v2.x)-atan2(v1.y,v1.x);
-//		} else if (norm(v2)>epsilon) {
-//			 //point 2 moved
-//			v1=flatpoint(xc2,yc2)-flatpoint(xp1,yp1);
-//			v2=flatpoint(xp2,yp2)-flatpoint(xp1,yp1);
-//			angle=atan2(v2.y,v2.x)-atan2(v1.y,v1.x);
-//		}
-//		DBG  cerr <<" RRRRROTATE "<<angle<< "  deg:"<<angle*180/M_PI<<endl;
-//
-//		if (angle) {
-//			spacepoint axis;
-//			axis=cameras.e[current_camera]->m.z;
-//			things.e[curobj]->RotateAbs(angle*180/M_PI, axis.x,axis.y,axis.z);
-//		}
-
-		needtodraw=1;
-		return 0;
-	}
-
-
-
-	if (!buttondown.isdown(mouse->id,LEFTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON) && !buttondown.isdown(mouse->id,RIGHTBUTTON))
-		return 0;
-
-	if (bgroup==OGROUP_Paper && currentnet) {
-		flatpoint fp,fpn;
-		fpn=pointInNetPlane(x,y);
-		fp =pointInNetPlane(lx,ly);
-
-		if (bindex==PAPER_Inside) {
-			currentnet->origin(currentnet->origin()-fpn+fp);
-		} else {
-			if ((state&LAX_STATE_MASK)==0) {
-				double s=1;
-				if (x>lx) s=.98;
-				else s=1.02;
-				for (int c=0; c<6; c++) {
-					currentnet->m(c, currentnet->m(c)*s);
-				}
-			} else {
-				double s=0;
-				if (x>lx) s=1./180*M_PI;
-				else s=-1./180*M_PI;
-				currentnet->xaxis(rotate(currentnet->xaxis(),s));
-				currentnet->yaxis(rotate(currentnet->yaxis(),s));
-			}
-		}
-		needtodraw=1;
-		return 0;
-	}
-
-	ActionType current_action=active_action;
-	if (buttondown.isdown(0,MIDDLEBUTTON)) current_action=ACTION_Unwrap_Angle;
-	else if (buttondown.isdown(0,RIGHTBUTTON)) current_action=ACTION_Unwrap;
-
-	if (current_action==ACTION_Zoom) {
-		 //zoom
-		if (x-mbdown>10) { WheelUp(x,y,0,0,mouse); mbdown=x; }
-		else if (mbdown-x>10) { WheelDown(x,y,0,0,mouse); mbdown=x; }
-
-	}
-
-
-	 //middle button: change unwrapangle
-	if (current_action==ACTION_Unwrap_Angle) {
-		cout <<" *** need to implement unwrap angle change!"<<endl;
-		//if (nets.faces.n==0 || x==mbdown) return 0;
-
-		unwrapangle+=(x-mbdown)*.1;
-		if (unwrapangle<0) unwrapangle=0;
-		else if (unwrapangle>1) unwrapangle=1;
-		//remapCache(-1,-1);
-
-		mbdown=x;
-		return 0;
-	}
-
-
-	 //right button
-	if (current_action==ACTION_Unwrap && rbdown>=0 && (mode==MODE_Net || mode==MODE_Solid)) {
-		 //Unwrap
-		int c=findCurrentFace();
-		DBG cerr <<"rb move: "<<c<<endl;
-		if (c==rbdown) { currentface=rbdown; return 0; }
-
-		 //if c is attached to rbdown then we have a winner maybe
-		int cc;
-
-		//DBG cerr <<"faces attached to "<<rbdown<<": ";
-		for (cc=0; cc<poly->faces.e[rbdown]->pn; cc++) {
-			//DBG cerr<<poly->faces.e[rbdown]->f[cc]<<" ";
-
-			if (poly->faces.e[rbdown]->f[cc]==c) break;
-		}
-		//DBG cerr <<endl;
-		if (cc==poly->faces.e[rbdown]->pn) { 
-			 //c is not attached to any edge of rbdown
-			if (currentface!=-1) needtodraw=1;
-			currentface=-1;
-		} else {
-			if (currentface!=c) needtodraw=1;
-			currentface=c;
-		}
-
-		DBG cerr<<" rb-unwrap from "<<rbdown<<" to: "<<currentface<<endl;
-		if (rbdown!=currentface && currentface>=0 && unwrapTo(rbdown,currentface)==0) {
-			rbdown=currentface;
-			currentface=-1;
-			needtodraw=1;
-		}
-		DBG cerr<<" ..rb-unwrap done"<<endl;
-
-		return 0;
-	}
-
-	if (current_action==ACTION_None) {
-		if       ((state&LAX_STATE_MASK)== 0)                      current_action=ACTION_Roll;
-		else if  ((state&LAX_STATE_MASK)== ShiftMask)              current_action=ACTION_Rotate;
-		else if  ((state&LAX_STATE_MASK)== ControlMask)            current_action=ACTION_Shift_Texture;
-		else if  ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) current_action=ACTION_Rotate_Texture;
-	}
-
-	currentface=-1;
-
-	 //shift-drag -- rotates camera around axis through viewer
-	if (current_action==ACTION_Rotate) {
-		flatpoint d,p=flatpoint(x,y);
-		d=p-leftb;
-
-		//-----------rotate camera
-		//			if (d.y) {
-		//				rotate(cameras.e[current_camera]->m,    //basis
-		//					   cameras.e[current_camera]->m.x,  //axis
-		//					   d.y/5/180*M_PI); //angle
-		//				cameras.e[current_camera]->transformTo();
-		//				needtodraw=1;
-		//			}
-		//			if (d.x) {
-		//				rotate(cameras.e[current_camera]->m,    //basis
-		//					   cameras.e[current_camera]->m.y,  //axis
-		//					   d.x/5/180*M_PI); //angle
-		//				cameras.e[current_camera]->transformTo();
-		//				needtodraw=1;
-		//			}
-		if (d.x) { //rotate thing around camera z
-			spacepoint axis;
-			axis=d.x*cameras.e[current_camera]->m.z;
-			things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
-			needtodraw=1;
-		}
-		leftb=p;
-
-		//plain drag -- rolls shape
-	} else if (current_action==ACTION_Roll) { //rotate current thing
-		flatpoint d,p=flatpoint(x,y);
-		d=p-leftb;
-
-		spacepoint axis;
-		axis=d.y*cameras.e[current_camera]->m.x + d.x*cameras.e[current_camera]->m.y;
-		needtodraw=1;
-
-		//-------------------------
-		things.e[curobj]->RotateAbs(norm(d)/5, axis.x,axis.y,axis.z);
-		//things.e[curobj]->Rotate(norm(d)/5, axis.x,axis.y,axis.z);
-
-		//-------------------------
-		//			if (d.y) {
-		//				things.e[curobj]->Rotate(d.y/5, 0,0,1);
-		//				needtodraw=1;
-		//			}
-		//			if (d.x) {
-		//				things.e[curobj]->Rotate(d.x/5, 0,1,0);
-		//				needtodraw=1;
-		//			}
-		//-------------------------
-		leftb=p;
-
-
-		//shift-control-drag -- rotates texture around z
-	} else if (current_action==ACTION_Rotate_Texture) { //rotate texture around z
-		flatpoint d,p=flatpoint(x,y);
-		d=p-leftb;
-
-		if (d.x) {
-			spacepoint axis;
-			axis=d.x*cameras.e[current_camera]->m.z;
-			things.e[curobj]->updateBasis();
-			transform(axis,things.e[curobj]->bas);
-			rotate(extra_basis,axis,norm(d)/5/180*M_PI);
-			needtodraw=1;
-			leftb=p;
-			mapPolyhedronTexture(hedron);
-		}
-
-		// control-drag -- shift texture
-	} else if (current_action==ACTION_Shift_Texture) { //rotate texture
-		flatpoint d,p=flatpoint(x,y);
-		d=p-leftb;
-
-		spacepoint axis;
-		axis=d.y*cameras.e[current_camera]->m.x + d.x*cameras.e[current_camera]->m.y;
-		things.e[curobj]->updateBasis();
-		transform(axis,things.e[curobj]->bas);
-		rotate(extra_basis,axis,norm(d)/5/180*M_PI);
-
-		mapPolyhedronTexture(hedron);
-		needtodraw=1;
-		leftb=p;
-	}
-
+	currentface=currentpotential=-1;
+	needtodraw=1;
 	return 0;
 }
 

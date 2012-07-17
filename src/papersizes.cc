@@ -726,7 +726,20 @@ void PaperGroup::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	}
 }
 
-// **** FOR DEBUGGING
+int PaperGroup::AddPaper(const char *nme,double w,double h,const double *m)
+{
+	PaperStyle *paperstyle=new PaperStyle(nme,w,h,0,72,NULL);
+	PaperBox *box=new PaperBox(paperstyle);
+	paperstyle->dec_count();
+
+	PaperBoxData *boxdata=new PaperBoxData(box);
+	box->dec_count();
+	boxdata->m(m);
+
+	papers.push(boxdata);
+	return 0;
+}
+
 int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
 {
 	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,NULL);
