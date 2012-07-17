@@ -1,0 +1,69 @@
+/*! \page NOTES Random Notes
+\section notes cryptic dtp related notes of mine i wrote down somehwere along the line
+
+<pre>
+
+letter in postscript units is: 612 x 792
+
+1 cicero =4.5 mm as of 1973
+1 pica==12 points==.1656" (1886)
+
+EPS files are typically all processed, whether or not in printing area??
+and tiffs are cropped during processing? meaning faster?? is this at all true? just windows?
+
+petroleum inks 25-40% voc
+veg 2-4% voc
+
+h2o2 bleaching much better than Cl bleaching, which leads to dioxin
+
+bond 500 sheets=17x22 at 20lbs so bond is 20#
+text 25x38 60-100#
+
+total grays= (dpi/lpi)^2+1
+
+Typical lpis
+85 lpi newspaper web fed
+133
+150
+175
+200
+
+typical trapping=1/2 of a halftone dot
+
+       PAPERSIZE    X inches   Y inches   X cm      Y cm
+       -----------------------------------------------------
+       a0           33.0556    46.7778    83.9611   118.816
+       a1           23.3889    33.0556    59.4078   83.9611
+       a2           16.5278    23.3889    41.9806   59.4078
+       a3           11.6944    16.5278    29.7039   41.9806
+       a4           8.26389    11.6944    20.9903   29.7039
+       a5           5.84722    8.26389    14.8519   20.9903
+       a6           4.125      5.84722    10.4775   14.8519
+       a7           2.91667    4.125      7.40833   10.4775
+       a8           2.05556    2.91667    5.22111   7.40833
+       a9           1.45833    2.05556    3.70417   5.22111
+       a10          1.02778    1.45833    2.61056   3.70417
+       b0           39.3889    55.6667    100.048   141.393
+       b1           27.8333    39.3889    70.6967   100.048
+       b2           19.6944    27.8333    50.0239   70.6967
+       b3           13.9167    19.6944    35.3483   50.0239
+       b4           9.84722    13.9167    25.0119   35.3483
+       b5           6.95833    9.84722    17.6742   25.0119
+       archA        9          12         22.86     30.48
+       archB        12         18         30.48     45.72
+       archC        18         24         45.72     60.96
+       archD        24         36         60.96     91.44
+       archE        36         48         91.44     121.92
+       flsa         8.5        13         21.59     33.02
+       flse         8.5        13         21.59     33.02
+       halfletter   5.5        8.5        13.97     21.59
+       note         7.5        10         19.05     25.4
+       letter       8.5        11         21.59     27.94
+       legal        8.5        14         21.59     35.56
+       11x17        11         17         27.94     43.18
+       ledger       17         11         43.18     27.94
+
+	
+</pre>
+
+*/

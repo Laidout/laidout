@@ -1,0 +1,134 @@
+/*! \namespace Laxkit
+ *  \brief Stuff defined in the Laxkit.
+ */
+/*! \namespace LaxInterfaces
+ *  \brief Interfaces defined in the Laxkit.
+ */
+/*! \namespace LaxFiles
+ *  \brief File manipulation and Attribute stuff defined in the Laxkit.
+ */
+
+/*! \mainpage
+
+\section     Laidout  
+-- Version 0.092.1 --\n
+Currently in the "A bit of a hack, but mostly works on my machine" stage of development.
+
+If you want to hack away at Laidout, you've come to the right place. Please be
+advised that any part of Laidout code may completely change without notice.
+
+This is my sprawling desktop publishing software that I've been making on and off for the last
+several years, which is many years longer than I really expected to want to be doing.
+Most of that wasted excess time has been spent developing the 
+<a href="http://laxkit.sourceforge.net">Laxkit</a>, my brand new 
+X window toolkit. Only late November of 2005, 3.5 years in, was I able to get something
+onto the screen!
+
+Something that will eventually be found in this program, and not in any other desktop publishing software in the world
+that I am aware of, open source or not, is the ability to create and manipulate lines
+that are composed of different kinds of segments, but still be continuous. Often you can have
+circles OR bezier lines OR polygon lines OR nurbs lines, but here you can have ALL of them all
+at the same time and preserve the idiosyncracies of each type of segment! (well, nurbs will
+have to wait until I figure out what a nurb is anyway, *** and well, actually, path editing 
+is not really implemented yet!!! I wrote this when I thought it was just around the corner) The SVG specification
+and Postscript allows for such lines (except no nurbs), but I do not know of programs 
+(except Laidout) that intend to allow easy construction and editing of those lines.
+Eh yo Inkscape! Where are ya? (of course, this assumes I'm not missing bits of the manual)
+
+So, why, really, should any one use Laidout rather than Inkscape, Scribus, or even InDesign?
+Well, you shouldn't!! Right now, Laidout is still very experimental, and no printing house anywhere
+supports its files, or has even heard of it. If you need something with a proven history, then go for
+Scribus. It apparently produces very clean files that printing houses will probably not hate you for.
+The major deficiency of Scribus (as of November 2010) is the lack of impositioning features.
+
+When I started to program Laidout, I was a somewhat inexperienced programmer, so I figured
+I would learn the most writing both the program and the windowing toolkit from scratch (or at least from Xlib). 
+Which is true, however as
+an artist, in retrospect I really need the desktop publishing program far more than the brand new window
+toolkit, and thus in hindsight, fltk2.0 or gtkmm are (or should have been) looking pretty good! 
+
+
+\section saga The Saga of Desktop Publishing under Linux
+
+The Story So Far...
+
+One thing I love to do is make various little books of my artwork, and sometimes t-shirts or 
+other silkscreening. It is relatively inexpensive to make small runs of books that can 
+often pass for high quality 
+printing with careful photocopying, and perfect binding. I looked and looked for some program 
+that filled my needs, and didn't cost thousands of dollars like Quark, Photoshop, or InDesign 
+running on a Mac. That left me with Linux on a cheap computer. While searching for some 
+bookmaking software, I encountered several possibilities such as Scribus, Passepartout, Inkscape,
+Lyx, Latex/TeX, and Openoffice, which were all unsuitable for
+one reason or another. 
+
+
+I wanted a program with these characteristics (they are not all yet implemented!!):
+
+<ul>
+
+<li> Layout capabilities for little pamphlets as well as books of several hundred graphics heavy pages, books 
+  with signatures, foldings, etc. For instance, from an 11x17 paper, you can cut and fold 
+  to produce 3 little squarish books (see Bike Propaganda). None of the above (free) programs are
+  designed for such pagesetting features. In the era of photocopiers and zines, that is unfortunate.
+<li> WYSIWYG font and image layout, taking into account paper color, and basic ink interaction, particularly
+  useful for such projects as screen printing on colored t-shirts
+<li> Scripting 
+<li> Minimal windows and icons yet robust interfaces. Making full use of 3 button mice with a 
+  wheel, and keyboard shortcuts sure cuts 
+  down on screen clutter, while still being versatile and efficient. For reference, I am a 
+  fan of vi, Blender, and the Openbox window manager (flame on!). 
+<li> robust text wrapping, text on a line, kerning, minor leading adjustments...
+<li> robust transformation and arrangement tools
+<li> Plugin architecture to make it potentially adaptable to do basic cad things, like 
+  room layouts, or perhaps even tv/movie animation schemes where 1 page is 1 frame, make nets 
+  for fold up polyhedron, for
+  instance a calendar printed on the 12-sided dodecahedron, etc.
+</ul>
+
+
+Some things not so very vital to me, but which would be a neat feature would be:
+- dot screening with different ink systems, like printing with various combinations of, say, 
+  black-blue-orange, rather than the old standby of CMYK
+- automatic trapping based on what inks used in what order...
+
+
+Hopefully some day Laidout will do all of these things!
+
+
+
+\section donate Donate!
+
+While this program is released under the GPL, free for you to use and modify any way you want (as 
+long as you credit things appropriately), it takes resources to devote to development. For instance,
+to pay my bills, the lead developer is employed in part as a janitor. Therefore, 
+if you think this program is worth the drive space, please, please send donations of money, fresh 
+fruit (fresh upon the recipient receiving it intact in person), hardware, ski resort reservations,
+etc to the developers found on http://www.laidout.org .
+
+
+\section wishing Feature Wishlist
+
+See  http://laidout.org/dtpcompare.html for something resembling a feature wishlist.
+
+*/
+
+
+
+
+/*! \page todo TODO
+ *
+ * \section longterm Long Term Todo
+ 
+ Ultimately, Laidout should be able to export and import files from such others programs as Scribus,
+ Inkscape, Passepartout, and TeX. Most likely no one program will
+ do all things for everyone, so such interoperability is important.
+
+ 
+ * \section needtodo Stuff that needs doing:
+ */
+
+
+ 
+ 
+ 
