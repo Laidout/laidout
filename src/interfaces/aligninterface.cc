@@ -40,9 +40,9 @@ using namespace std;
 #define DBG 
 
 
-DBG flatpoint closestpoint;
-DBG flatpoint closestpoint2;
-DBG double closestdistance;
+//DBG flatpoint closestpoint;
+//DBG flatpoint closestpoint2;
+//DBG double closestdistance;
 
 //pixel click hit distance
 #define PAD 5
@@ -351,7 +351,7 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 AlignInterface::~AlignInterface()
 {
-	DBG cerr <<"AlignInterface destructor.."<<endl;
+	//DBG cerr <<"AlignInterface destructor.."<<endl;
 
 	if (aligninfo) aligninfo->dec_count();
 	if (sc) sc->dec_count();
@@ -630,7 +630,7 @@ anInterface *AlignInterface::duplicate(anInterface *dup)//dup=NULL
 
 int AlignInterface::InterfaceOn()
 {
-	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
+	//DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
 	showdecs=2;
 	needtodraw=1;
@@ -760,14 +760,14 @@ int AlignInterface::Refresh()
 		firsttime=0;
 	}
 
-	DBG cerr <<"AlignInterface::Refresh()..."<<endl;
+	//DBG cerr <<"AlignInterface::Refresh()..."<<endl;
 
 	dp->DrawScreen();
 	dp->NewFG(&controlcolor);
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-	//DBG dp->drawpoint(dp->realtoscreen(closestpoint),5,0);
-	//DBG dp->drawpoint(dp->realtoscreen(closestpoint2),8,0);
+	////DBG dp->drawpoint(dp->realtoscreen(closestpoint),5,0);
+	////DBG dp->drawpoint(dp->realtoscreen(closestpoint2),8,0);
 
 	if (!child) {
 		//only draw the controls when not editing path
@@ -1216,11 +1216,11 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 		int r=floor(fp.y/cc);
 		int c=floor(fp.x/cc);
 
-		DBG cerr <<"ALIGN_Presets screen: cc:"<<cc<<"  fp:"<<fp.x<<","<<fp.y<<"  i:"<<index<<" r,c:"<<r<<','<<c<<endl;
+		//DBG cerr <<"ALIGN_Presets screen: cc:"<<cc<<"  fp:"<<fp.x<<","<<fp.y<<"  i:"<<index<<" r,c:"<<r<<','<<c<<endl;
 
 		if (r<0 || r>3 || c<0 || c>3) {
 			index=-1;
-			//DBG cerr <<"ALIGN_Presets screen:"<<fp.x<<","<<fp.y<<"  i:"<<index<<endl;
+			////DBG cerr <<"ALIGN_Presets screen:"<<fp.x<<","<<fp.y<<"  i:"<<index<<endl;
 			return ALIGN_None;
 		}
 		index=r*4+c;
@@ -1296,7 +1296,7 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 	if (showrotation) {
 		if (d<aligninfo->uiscale*RADIUS*ROTRADIUS+PAD && d>aligninfo->uiscale*RADIUS*ROTRADIUS-PAD) {
 			double cura=atan2(fp.y,fp.x);
-			DBG cerr <<"angle: "<<cura<<endl;
+			//DBG cerr <<"angle: "<<cura<<endl;
 			//M_PI/2+aligninfo->extrarotation
 			return ALIGN_Rotation;
 		}
@@ -1723,7 +1723,7 @@ void AlignInterface::postHoverMessage()
  */
 double SnapRotation(double angle, double threshhold, int n,const double *snapto)
 {
-	DBG cerr <<"snap "<<angle<<" to ";
+	//DBG cerr <<"snap "<<angle<<" to ";
 	static const double defaultsnap[]={0.,90.,180.,270.};
 	if (snapto==NULL) { snapto=defaultsnap; n=4; }
 	if (threshhold<0) threshhold=5; //default to 5 degrees
@@ -1731,15 +1731,15 @@ double SnapRotation(double angle, double threshhold, int n,const double *snapto)
 	if (angle<0 || angle>360) angle-=360*floor(angle/360);
 	for (int c=0; c<n; c++) {
 		if (fabs(snapto[c]-angle)<threshhold) {
-			DBG cerr <<snapto[c]<<endl;
+			//DBG cerr <<snapto[c]<<endl;
 			return snapto[c];
 		}
 		if (snapto[c]==0 && fabs(snapto[c]-360)<threshhold) {
-			DBG cerr <<"0"<<endl;
+			//DBG cerr <<"0"<<endl;
 			return 0;
 		}
 	}
-	DBG cerr <<angle<<endl;
+	//DBG cerr <<angle<<endl;
 	return angle;
 }
 
@@ -1770,13 +1770,13 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	int action=-1, index=-1;
 
-	DBG action=scan(x,y,index, state);
-	DBG cerr <<"Align move: "<<action<<','<<index<<endl;
+	//DBG action=scan(x,y,index, state);
+	//DBG cerr <<"Align move: "<<action<<','<<index<<endl;
 	
-	//DBG flatpoint pp=dp->screentoreal(x,y);
-	//DBG closestpoint=ClosestPoint(pp,&closestdistance,NULL);
-	//DBG PointAlongPath(closestdistance,1, closestpoint2,NULL);
-	//DBG needtodraw=1;
+	////DBG flatpoint pp=dp->screentoreal(x,y);
+	////DBG closestpoint=ClosestPoint(pp,&closestdistance,NULL);
+	////DBG PointAlongPath(closestdistance,1, closestpoint2,NULL);
+	////DBG needtodraw=1;
 
 
 	if (!buttondown.any()) {
@@ -1883,7 +1883,7 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		//PointAlongPath(aligninfo->leftbound,0, p, NULL);
 		//p+=dd;
 		ClosestPoint(p,NULL,&aligninfo->leftbound);
-		DBG cerr <<" **** leftbound: "<<aligninfo->leftbound<<endl;
+		//DBG cerr <<" **** leftbound: "<<aligninfo->leftbound<<endl;
 
 		if (active) ApplyAlignment(0);
 		needtodraw=1;
@@ -2279,7 +2279,7 @@ int AlignInterface::PerformAction(int action)
 	//} else if (action==ALIGN_Save) {
 	//} else if (action==ALIGN_EditPath) {
 	} else {
-		DBG cerr <<" warning! unimplemented action "<<action<<" in AlignInterface!"<<endl;
+		//DBG cerr <<" warning! unimplemented action "<<action<<" in AlignInterface!"<<endl;
 	}
 
 	return 1;
@@ -2287,7 +2287,7 @@ int AlignInterface::PerformAction(int action)
 
 int AlignInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" aligninterface got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" aligninterface got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
@@ -2372,7 +2372,7 @@ int AlignInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 		t->m(selection.e[c]->obj->m());
 		controls.e[c]->SetOriginal(t);
 		t->dec_count();
-		DBG cerr <<" ---- pushed control data number "<<t->object_id<<endl;
+		//DBG cerr <<" ---- pushed control data number "<<t->object_id<<endl;
 	}
 
 	return n;
@@ -2820,7 +2820,7 @@ flatpoint AlignInterface::ClosestPoint(flatpoint p, double *d, double *t)
 	 //else find along PathsData
 	p=transform_point_inverse(aligninfo->path->m(),p);
 	flatpoint found=aligninfo->path->ClosestPoint(p,NULL,d,t,NULL);
-	DBG cerr <<" ***** closest point distance along: "<<(d?*d:1000000)<<endl;
+	//DBG cerr <<" ***** closest point distance along: "<<(d?*d:1000000)<<endl;
 	return transform_point(aligninfo->path->m(),found);
 }
 

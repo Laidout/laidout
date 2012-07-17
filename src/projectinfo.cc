@@ -242,7 +242,7 @@ ProjectInfoWindow::~ProjectInfoWindow()
 	char **files;
 int ProjectInfoWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 {//***
-	DBG cerr <<"NewDocMessage: "<<mes<<endl;
+	//DBG cerr <<"NewDocMessage: "<<mes<<endl;
 	if (!strcmp(mes,"project name")) {
 	} else if (!strcmp(mes,"projectname")) { 
 	} else if (!strcmp(mes,"project dir")) {

@@ -218,7 +218,7 @@ int EpsData::LoadImage(const char *fname, const char *npreview, int maxpw, int m
 						 fname, width, height,
 						 npreview, maxpw, maxph,
 						 &error);
-		DBG if (error) cerr <<"EPS gs preview generation returned with error: "<<error<<endl;
+		//DBG if (error) cerr <<"EPS gs preview generation returned with error: "<<error<<endl;
 		if (c) {
 			if (error) delete[] error;
 			return -3;

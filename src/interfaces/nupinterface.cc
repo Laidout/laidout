@@ -278,7 +278,7 @@ NUpInterface::NUpInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 NUpInterface::~NUpInterface()
 {
-	DBG cerr <<"NUpInterface destructor.."<<endl;
+	//DBG cerr <<"NUpInterface destructor.."<<endl;
 
 	if (nupinfo) nupinfo->dec_count();
 
@@ -514,7 +514,7 @@ int NUpInterface::Event(const Laxkit::EventData *e,const char *mes)
 		int ii=s->info4; //extra id, 1 for direction
 
 		if (ii==1) {
-			DBG cerr <<"change direction to "<<i<<endl;
+			//DBG cerr <<"change direction to "<<i<<endl;
 
 			if (i!=nupinfo->direction) {
 				nupinfo->direction=i;
@@ -573,7 +573,7 @@ anInterface *NUpInterface::duplicate(anInterface *dup)//dup=NULL
 
 int NUpInterface::InterfaceOn()
 {
-	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
+	//DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
 	showdecs=2;
 	needtodraw=1;
@@ -604,7 +604,7 @@ int NUpInterface::Refresh()
 	RectInterface::Refresh();
 	needtodraw=0;
 
-	DBG cerr <<"NUpInterface::Refresh()..."<<endl;
+	//DBG cerr <<"NUpInterface::Refresh()..."<<endl;
 
 	dp->DrawScreen();
 
@@ -922,7 +922,7 @@ int NUpInterface::scanNup(int x,int y)
 
 int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	DBG cerr <<"nup lbdown"<<endl;
+	//DBG cerr <<"nup lbdown"<<endl;
 	if (buttondown.any(0,LEFTBUTTON)) return 0; //only allow one button at a time
 
 	int action=scanNup(x,y);
@@ -950,7 +950,7 @@ int NUpInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::
 
 int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
-	DBG cerr <<"nup up"<<endl;
+	//DBG cerr <<"nup up"<<endl;
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 
 	int action;
@@ -965,7 +965,7 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 	tempdir=-1;
 	temparrowdir=0;
 	needtodraw=1;
-	DBG cerr <<"NUpInterface::LBUp() dragged="<<dragged<<endl;
+	//DBG cerr <<"NUpInterface::LBUp() dragged="<<dragged<<endl;
 
 	if (action==NUP_Activate && !dragged) {
 		active=!active;
@@ -1106,16 +1106,16 @@ int NUpInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxki
 
 
 
-DBG int lastx,lasty;
+//DBG int lastx,lasty;
 
 int NUpInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 
-	DBG cerr <<"nup move"<<endl;
+	//DBG cerr <<"nup move"<<endl;
 	int over=scanNup(x,y);
 
-	DBG lastx=x; lasty=y;
-	DBG cerr <<"over: "<<over<<endl;
+	//DBG lastx=x; lasty=y;
+	//DBG cerr <<"over: "<<over<<endl;
 
 	if (!buttondown.any()) {
 		if (overoverlay!=over) {
@@ -1313,7 +1313,7 @@ int NUpInterface::PerformAction(int action)
 
 int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (!sc) GetShortcuts();
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
@@ -1332,9 +1332,9 @@ int NUpInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned
 
 
 	} else if (ch=='o') {
-		DBG cerr <<"--------------------------";
-		DBG int action=scanNup(lastx,lasty);
-		DBG cerr << " x,y:"<<lastx<<','<<lasty<<"  action:"<<action<<endl;
+		//DBG cerr <<"--------------------------";
+		//DBG int action=scanNup(lastx,lasty);
+		//DBG cerr << " x,y:"<<lastx<<','<<lasty<<"  action:"<<action<<endl;
 		return 0;
 
 
@@ -1548,7 +1548,7 @@ void NUpInterface::ApplySizedGrid()
 			mm[4]=d.x;
 			mm[5]=d.y;
 			TransformSelection(mm,i,i);
-			DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+			//DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
 
 			objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
 			objcontrols.e[i]->new_center=cc+d;
@@ -1682,7 +1682,7 @@ void NUpInterface::ApplyGrid()
 				mm[4]=d.x;
 				mm[5]=d.y;
 				TransformSelection(mm,i,i);
-				DBG cerr <<"TRANSFORM major V  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+				//DBG cerr <<"TRANSFORM major V  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
 
 				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
 				objcontrols.e[i]->new_center=cc+d;
@@ -1716,7 +1716,7 @@ void NUpInterface::ApplyGrid()
 				mm[4]=d.x;
 				mm[5]=d.y;
 				TransformSelection(mm,i,i);
-				DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
+				//DBG cerr <<"TRANSFORM major H  "<<i<<" at r,c: "<<r<<','<<c<<"  offset:"<<d.x<<','<<d.y<<endl;
 
 				objcontrols.e[i]->flags=objcontrols.e[i]->flags&~CONTROL_Skip;
 				objcontrols.e[i]->new_center=cc+d;

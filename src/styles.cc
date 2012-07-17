@@ -223,7 +223,7 @@ StyleDef::StyleDef(const char *nextends, //!< Which StyleDef does this one exten
 //! Delete the various strings, and styledef->dec_count().
 StyleDef::~StyleDef()
 {
-	DBG cerr <<"StyleDef \""<<name<<"\" destructor"<<endl;
+	//DBG cerr <<"StyleDef \""<<name<<"\" destructor"<<endl;
 	
 	if (extends)      delete[] extends;
 	if (name)         delete[] name;
@@ -233,19 +233,19 @@ StyleDef::~StyleDef()
 	if (defaultvalue) delete[] defaultvalue;
 	
 	if (extendsdef) {
-		DBG cerr <<" extended: "<<extendsdef->name<<endl;
+		//DBG cerr <<" extended: "<<extendsdef->name<<endl;
 		extendsdef->dec_count();
 	} else {
-		DBG cerr <<"------------no extends"<<endl;
+		//DBG cerr <<"------------no extends"<<endl;
 	}
 
 	if (fields) {
-		DBG cerr <<"---deleting styledef fields:"<<endl;
+		//DBG cerr <<"---deleting styledef fields:"<<endl;
 		for (int c=0; c<fields->n; c++) {
-			DBG cerr <<"----f number "<<c<<endl;
+			//DBG cerr <<"----f number "<<c<<endl;
 			fields->e[c]->dec_count();
 		}
-		DBG cerr <<"---Delete fields stack"<<endl;
+		//DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
 		fields=NULL;
 	}
@@ -810,7 +810,7 @@ Style::Style(StyleDef *sdef,Style *bsdon,const char *nstn)
  */
 Style::~Style()
 {
-	//DBG cerr <<"Style \""<<stylename<<"\" destructor"<<endl;
+	////DBG cerr <<"Style \""<<stylename<<"\" destructor"<<endl;
 	if (stylename) delete[] stylename;
 	if (styledef) styledef->dec_count();
 }

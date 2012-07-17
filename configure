@@ -4,7 +4,7 @@
 # --prefix=/blah/blah
 
 
-LAIDOUTVERSION=0.092.1
+LAIDOUTVERSION=0.093
 
  # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
 FINALPREFIX=""
@@ -51,6 +51,7 @@ while true ; do
 		echo "                                This will normally be 'share/locale', and the files"
 		echo "                                themselves then get put in prefix/share/locale/*."
 		echo " --nogl                       Do not compile with gl based features"
+		echo " --yesgl                      Do compile with gl based features"
         echo ""
 		exit 1 ;;
     --finalprefix)  
@@ -104,6 +105,10 @@ while true ; do
     --nogl)
 		LAIDOUT_NOGL="#define LAIDOUT_NOGL"
 		USINGGL="no"
+		shift ;;
+    --yesgl)
+		LAIDOUT_NOGL=""
+		USINGGL="yes"
 		shift ;;
     --onamac)
 		ONAMAC="yes"

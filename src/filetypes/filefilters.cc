@@ -1048,7 +1048,7 @@ int export_document(DocumentExportConfig *config, ErrorLog &log)
 		return 1;
 	}
 
-	DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
+	//DBG cerr << "export_document begin to \""<<config->filter->VersionName()<<"\"......."<<endl;
 
 	 //figure out what paper arrangement to print out on
 	PaperGroup *papergroup=config->papergroup;
@@ -1142,7 +1142,7 @@ int export_document(DocumentExportConfig *config, ErrorLog &log)
 		}
 	} else err=config->filter->Out(NULL,config,log);
 	
-	DBG cerr << "export_document end."<<endl;
+	//DBG cerr << "export_document end."<<endl;
 
 	if (err>0) {
 		log.AddMessage(_("Export failed."),ERROR_Fail);
