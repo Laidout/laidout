@@ -26,15 +26,18 @@
 class PolyptychWindow : public Laxkit::RowFrame
 {
   public:
+	Laxkit::anXWindow *hwindow;
+  public:
 	PolyptychWindow(NetImposition *imp, Laxkit::anXWindow *parnt,unsigned long owner,const char *sendmes);
-	~PolyptychWindow();
+	virtual ~PolyptychWindow();
 
 	virtual const char *whattype() { return "PolyptychWindow"; }
 	virtual int init();
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	NetImposition *getImposition();
-	int sendNewImposition();
+	virtual int setImposition(NetImposition *imp);
+	virtual int sendNewImposition();
 };
 
 #endif

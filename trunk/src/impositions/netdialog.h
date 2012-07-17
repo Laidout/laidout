@@ -25,14 +25,16 @@
 
 class NetDialog : public Laxkit::RowFrame
 {
- public:
+  protected:
+	NetImposition *current;
+  public:
 	PaperStyle *paperstyle;
-	Laxkit::CheckBox *checkbox,*checkdod,*checkfile;
+	Laxkit::CheckBox *checkcurrent,*checkbox,*checkdod,*checkfile;
 	Laxkit::LineInput *boxdims,*impfromfile,*scaling;
 
 	NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 					 unsigned int owner, const char *mes,
-					 PaperStyle *paper);
+					 PaperStyle *paper,NetImposition *cur);
 	virtual ~NetDialog();
 	virtual const char *whattype() { return "NetDialog"; }
 	virtual int init();

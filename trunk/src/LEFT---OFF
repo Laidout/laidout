@@ -27,14 +27,6 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 ----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
 
-nup:
-  sized_grid
-
-  DONE grid -- row/col flipped??!!
-  DONE random
-  DONE hover over tips not working
-
-
 update fileformat.txt
 polyptych site?
 update docs to have new release number
@@ -48,6 +40,8 @@ DONE update help
 DONE help:QUICKREF
 
 polyptych must send nets+papergroup
+  send imp
+  receive imp
 
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
@@ -120,6 +114,12 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ---enhancements:
 
+hedron window:
+  need to draw other nets in outline (at least) in paper view
+  need to preview sides on hedron
+  memory hole in polyptych
+  DONE proper units for papers
+
 check laidout.1 when time to release
 update docs to have new release number
 update translations
@@ -128,6 +128,23 @@ test:
   each window type, include help and about
   each export filter
   make some test scripts for command line testing
+
+align tool:
+  explode in normal align
+  should be able to scale and rotate a non-line path when not in path mode
+  need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
+  gap looks ugly.. have indicator highlight path itself, drag that around
+  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
+  final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
+  extra custom finishing per object?
+  reorder on layouts? -> how to handle reorder in gap and unoverlap?
+    trace out order path... show with numbers
+  drag out path, order of intersection is new object order?
+  maybe grid drag control to reorder
+  snapping to 0/50/100
+  number box while dragging, goes away after a second, or click on it to edit
+    if inc/dec arrows, have it inc or dec the decimal place cursor is on
+  default presets: inkscape crossover
 
 nup:
   flowed
@@ -224,22 +241,6 @@ overwrite should return to file dialog if no
 scribus out doesn't do gradients
 
 bleeding mechanism should be functional
-
-align tool:
-  should be able to scale and rotate a non-line path when not in path mode
-  need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
-  gap looks ugly.. have indicator highlight path itself, drag that around
-  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
-  final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
-  extra custom finishing per object?
-  reorder on layouts? -> how to handle reorder in gap and unoverlap?
-    trace out order path... show with numbers
-  drag out path, order of intersection is new object order?
-  maybe grid drag control to reorder
-  snapping to 0/50/100
-  number box while dragging, goes away after a second, or click on it to edit
-    if inc/dec arrows, have it inc or dec the decimal place cursor is on
-  default presets: inkscape crossover
 
 option to use different go/don't go colors
 
@@ -784,5 +785,12 @@ DONE PathEditor:
   DONE maybe have 'h'/'H' toggle between c-v-c, instead of shift and control, which causes too much trouble currently
   DONE add new point, click down, then up with no drag should create polypoint, not bez point
   DONE toggleclosed: breaks connected bez controls
+
+DONE nup:
+  DONE sized_grid
+  DONE grid -- row/col flipped??!!
+  DONE random
+  DONE hover over tips not working
+
 
 

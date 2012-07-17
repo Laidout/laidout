@@ -20,6 +20,7 @@
 
 
 #include </usr/include/GraphicsMagick/Magick++.h>
+#include <lax/transformmath.h>
 
 namespace Polyptych {
 
@@ -37,10 +38,13 @@ enum OutFormat {
 class PaperBound
 {
   public:
+	int id;
 	char *name;
 	char *units;
 	double width,height;
+	Laxkit::Affine matrix;
 	double r,g,b;
+	PaperBound();
 	PaperBound(const char *nname,double w,double h,const char *unit);
 	PaperBound(const PaperBound &p);
 	~PaperBound();

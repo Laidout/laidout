@@ -47,7 +47,7 @@ using namespace LaxFiles;
  */
 NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
 					 unsigned int owner, const char *mes,
-					 PaperStyle *paper)
+					 PaperStyle *paper,NetImposition *cur)
 		: RowFrame(parnt,nname,ntitle,ROWFRAME_HORIZONTAL|ROWFRAME_CENTER|ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
 					0,0,500,500,0, NULL,owner,mes,
 					10)
@@ -63,11 +63,14 @@ NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 	boxdims=NULL;
 	impfromfile=NULL;
 	checkbox=checkdod=checkfile=NULL;
+	current=cur;
+	if (current) current->inc_count();
 }
 
 NetDialog::~NetDialog()
 {
 	if (paperstyle) paperstyle->dec_count();
+	if (current) current->dec_count();
 }
 
 
@@ -87,11 +90,22 @@ int NetDialog::init()
 	// --- box: ___w,h,d_______
 
 
+	//------------------------------ Current -------------------------------------------------------
+	if (current) {
+		last=checkcurrent=new CheckBox(this,_("Select Current"),"selectcurrent",CHECK_LEFT, 0,0,0,0,1, 
+								last,object_id,"checkcurrent",
+								_("Use current"), 5,5);
+		checkcurrent->State(LAX_ON);
+		AddWin(checkcurrent,1, checkcurrent->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
+		AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1); //basically force line break, left justify
+	} else checkcurrent=NULL;
+
+
 	//------------------------------ Dodecahedron -------------------------------------------------------
 	last=checkdod=new CheckBox(this,_("Select Dodecahedron"),"selectdodecahedron",CHECK_LEFT, 0,0,0,0,1, 
 							last,object_id,"checkdod",
 							_("Dodecahedron"), 5,5);
-	checkdod->State(LAX_ON);
+	if (!checkcurrent) checkdod->State(LAX_ON);
 	AddWin(checkdod,1, checkdod->win_w,0,0,50,0, linpheight,0,0,50,0, -1);
 	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1); //basically force line break, left justify
 	
@@ -193,22 +207,33 @@ int NetDialog::Event(const EventData *data,const char *mes)
 	if (!strcmp(mes,"checkfile")) {
 		checkdod->State(LAX_OFF);
 		checkbox->State(LAX_OFF);
+		if (checkcurrent) checkcurrent->State(LAX_OFF);
+		return 0;
+
+	} else if (!strcmp(mes,"checkcurrent")) {
+		checkdod->State(LAX_OFF);
+		checkbox->State(LAX_OFF);
+		checkfile->State(LAX_OFF);
 		return 0;
 
 	} else if (!strcmp(mes,"checkdod")) {
 		checkfile->State(LAX_OFF);
 		checkbox->State(LAX_OFF);
+		if (checkcurrent) checkcurrent->State(LAX_OFF);
 		return 0;
 
 	} else if (!strcmp(mes,"checkbox")) {
 		checkfile->State(LAX_OFF);
 		checkdod->State(LAX_OFF);
+		if (checkcurrent) checkcurrent->State(LAX_OFF);
 		return 0;
 
 #ifndef LAIDOUT_NOGL
 	} else if (!strcmp(mes,"polyptych")) {
 		NetImposition *imp=getImposition();
+		DBG cerr <<" ...editing with polyptych maybe..."<<endl;
 		if (imp && imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet)) {
+			DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
 			 //ok from PolyptychWindow sends NetImposition to win_owner
 			PolyptychWindow *pw=new PolyptychWindow(imp, NULL,win_owner,win_sendthis);
 			app->rundialog(pw);
@@ -302,12 +327,17 @@ NetImposition *NetDialog::getImposition()
 			return NULL;
 		}
 
-	} else { //is box
+	} else if (checkcurrent->State()==LAX_ON && current) {
+		imp=current;
+		imp->inc_count();
+
+	} else { //if (checkbox->State()==LAX_ON) { //is box
 		char *str=boxdims->GetText();
-		prependstr(str,"box ");
+		prependstr(str,"box "); //plain box makes cube
 		imp=new NetImposition;
 		imp->SetNet(str);
 		delete[] str;
+
 	}
 
 	double s=scaling->GetDouble();

@@ -254,17 +254,20 @@ class HedronWindow : public Laxkit::anXWindow
 	 //mouse position
 	virtual int findCurrentPotential();
 	virtual int findCurrentFace();
-	virtual int scanPaper(int x,int y);
+	virtual int scanPaper(int x,int y, int &index);
 	virtual flatpoint pointInNetPlane(int x,int y);
 
 	 //misc
-	int changePaper(int towhich,int index);
+	virtual int changePaper(int towhich,int index);
 
 	 //input/output
 	virtual int Save(const char *saveto);
 	virtual void UseGenericImageData(double fg_r=-1, double fg_g=-1, double fg_b=-1,  double bg_r=-1, double bg_g=-1, double bg_b=-1);
 	virtual int installImage(const char *file);
 	virtual int installPolyhedron(const char *file);
+	virtual int installPolyhedron(Polyhedron *ph);
+	virtual int AddNet(Net *net);
+	virtual int AddPaper(PaperBound *paper);
 	virtual Polyhedron *defineCube();
 };
 

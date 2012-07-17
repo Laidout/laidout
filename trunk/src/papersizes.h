@@ -118,6 +118,7 @@ class PaperGroup : public ObjectContainer, public Laxkit::RefCounted, public Lax
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
+	virtual int AddPaper(const char *nme,double w,double h,const double *m);
 	virtual int OutlineColor(int r,int g,int b);
 
 	virtual int n();
