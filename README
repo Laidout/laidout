@@ -1,4 +1,4 @@
-LAIDOUT Version 0.092.1
+LAIDOUT Version 0.093.1
 --------------------
 http://laidout.org
 
@@ -117,7 +117,7 @@ example), or it might confuse Laidout at some point.
 
 HOWEVER, (todo) work needs to be done on "make uninstall" to not remove 
 things that were installed to those directories outside of "make install". 
-Right now, everything in prefix/share/laidout will be removed on uninstall
+Right now, everything in prefix/share/laidout/version will be removed on uninstall
 (but not anything in ~/.laidout). If this is causing you difficulty, please
 let me know, and I'll try to finally fix this.
 

@@ -34,8 +34,8 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
    configure
    README                        :LAIDOUT Version *****
    all the example docs
- make sure the Quick Key References are accurate. There are separate versions
-   of it in ./QUICKREF, debian/laidout.1, and src/helpwindow.cc
+   --> vi debian/changelog debian/laidout.1 docs/doxygen/laidoutintro.txt docs/Doxyfile docs/Doxyfile-with-laxkit configure README
+ make sure the Quick Key References in QUICKREF.html are current.
  touch Makefile-toinclude; make touchdepends;
  
  make sure configure defaults to 'prefix=/usr/local/'. This is what should be in a source tarball

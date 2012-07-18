@@ -130,8 +130,21 @@ int LaidoutOpenWindow::Event(const EventData *data,const char *mes)
 				 //file is document
 				n++;
 				openingdocs=1;
-				if (strs->info==1) laidout->Load(strs->strs[c],log);
-				else if (strs->info==2) laidout->LoadTemplate(strs->strs[c],log);
+				int numwindows=laidout->numTopWindows();
+				if (strs->info==1) {
+					int ret=laidout->Load(strs->strs[c],log);
+					if (ret!=0) n--; //load failed
+					else {
+						if (numwindows==laidout->numTopWindows()) {
+							 //loading did not create new window, so add one
+							Document *doc=laidout->findDocument(strs->strs[c]);
+							//if (doc) app->addwindow(newHeadWindow(doc,"ViewWindow"));
+							if (doc) app->addwindow(newHeadWindow(doc));
+						}
+					}
+				} else if (strs->info==2) {
+					if (!laidout->LoadTemplate(strs->strs[c],log)) n--;
+				}
 				continue;
 			}
 
