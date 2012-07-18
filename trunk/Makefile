@@ -37,7 +37,6 @@ docs:
 alldocs:
 	cd docs && doxygen Doxyfile-with-laxkit
 
-#install: laidout <-- don't want to link twice, so assume 'make install' called separate
 install: 
 	echo 'Installing to $(BINDIR)/laidout which points to $(BINDIR)/$(LAIDOUTNAME)'
 	$(INSTALL) -m755 src/laidout $(BINDIR)/$(LAIDOUTNAME)
@@ -51,6 +50,8 @@ install:
 	$(INSTALL) -m644 src/icons/laidout-48x48.png $(SHAREDIR)/icons/hicolor/48x48/apps/laidout.png
 	$(INSTALLDIR) $(SHAREDIR)/icons/hicolor/scalable/apps
 	$(INSTALL) -m644 src/icons/laidout.svg $(SHAREDIR)/icons/hicolor/scalable/apps/laidout.svg
+	$(INSTALLDIR)       $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop
+	$(INSTALL) -m644 -t $(SHAREDIR)/laidout/$(LAIDOUTVERSION)/coop coop/*py
 	rm -f $(BINDIR)/laidout
 	ln -s $(LAIDOUTNAME) $(BINDIR)/laidout
 	cd src/po && $(MAKE) install

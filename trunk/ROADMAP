@@ -9,15 +9,15 @@ VERSION 0.093
 -------------
 (done) On canvas flip controls
 (done) Align tool
-       Distribute tool
+       Nup tool
 (done) Fully configurable shortcuts (editable through config file)
 (done) PathInterface must be improved
        Net imposition interactive unwrapper, via optional opengl Polyptych
-       need partial Laidout import
 
 
 VERSION 0.094
 -------------
+       need partial Laidout import
        fix object transform handles for really small objects (handles should still be accessible)
        PathInterface subpaths for hole making should work
        Net imposition build net interface
