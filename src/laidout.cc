@@ -53,6 +53,7 @@
 #include "newdoc.h"
 
 #include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 #include <sys/stat.h>
 #include <cstdio>

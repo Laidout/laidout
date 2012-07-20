@@ -26,6 +26,7 @@
 #include <lax/colors.h>
 
 #include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 #include "../language.h"
 #include "scribus.h"
