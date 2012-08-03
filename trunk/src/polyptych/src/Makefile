@@ -19,19 +19,30 @@ CPPFLAGS= -Wall -g -I. -I.. -I$(LAXDIR)/.. -I$(LAXIDIR) -I/usr/include/freetype2
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lm -lpng -lcrypto -lGraphicsMagick++ `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR) -lXft -lXi
 
 
-pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o hedronwindow.o
+pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o
 
-all: polyptych spheretopoly spheretocube convertahedron
+panolyptych: lax $(pobjs) panoviewwindow.o panolyptych.o
+	g++ $(pobjs) panolyptych.o panoviewwindow.o -llaxinterfaces -llaxkit $(TUIOLIBS) $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o $@
+
+panolyptych.o: panolyptych.cc
+	g++ -c $(POLYPTYCH_TUIO)  $(CPPFLAGS) panolyptych.cc -o $@
+
+
+
+
+all: polyptych spheretopoly spheretocube convertahedron panolyptych
 
 forlaidout: nets.o poly.o
 
 forlaidoutgl: nets.o poly.o glbase.o gloverlay.o polyrender.o hedronwindow.o
 
-polyptych: lax $(pobjs) polyptych.o
-	g++ $(pobjs) polyptych.o -llaxinterfaces -llaxkit $(TUIOLIBS) $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o polyptych
+
+polyptych: lax $(pobjs) hedronwindow.o polyptych.o
+	g++ $(pobjs) polyptych.o hedronwindow.o -llaxinterfaces -llaxkit $(TUIOLIBS) $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o polyptych
 	
 polyptych.o: polyptych.cc
 	g++ -c $(POLYPTYCH_TUIO)  $(CPPFLAGS) polyptych.cc -o polyptych.o
+
 
 convertahedron: poly.o nets.o convertahedron.cc
 	g++ convertahedron.cc  poly.o nets.o -llaxinterfaces -llaxkit $(LDFLAGS)  $(CPPFLAGS) -o $@
