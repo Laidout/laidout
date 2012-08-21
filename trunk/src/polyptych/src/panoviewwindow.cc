@@ -486,6 +486,41 @@ void PanoViewWindow::mapPolyhedronTexture2(Thing *thing)
 	glEndList();
 }
 
+void PanoViewWindow::mapStereographicPlane(Thing *thing)
+{
+	glNewList(thing->id,GL_COMPILE);
+
+     //generate hedron
+    double theta,gamma;
+    spacepoint p,p2,p3;
+
+    for (int c=0; c<NUMLONG; c++) {
+      for (int c2=0; c2<NUMLAT; c2++) {
+		if (c2==0) {
+			glBegin(GL_TRIANGLE_STRIP);
+
+			p=PolarToRect(c,c2,theta,gamma);
+			addSpherePoint(p,theta,gamma);
+
+			p=PolarToRect(c+1,c2, theta,gamma);
+			addSpherePoint(p,theta,gamma);
+		}
+
+		p=PolarToRect(c,c2+1, theta,gamma);
+		addSpherePoint(p,theta,gamma);
+
+		p=PolarToRect(c+1,c2+1, theta,gamma);
+		addSpherePoint(p,theta,gamma);
+
+		if (c2==NUMLAT-1) glEnd();
+      }
+    }
+
+	glEnd();
+
+	glEndList();
+}
+
 //! Create a new Thing with a new gl call list id.
 /*! This is independent of any texture, or polyhedron coordinates.
  */

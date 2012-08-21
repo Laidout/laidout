@@ -25,27 +25,6 @@ viewwindow, change to spreadview, change back to view.. Horizontal ruler origin 
 select none, select doc, viewport jumps around... it should stay the same area
 
 
-----------------0.093 ROADMAP ITEMS: features and enhancements------------------------
-
-update fileformat.txt
-polyptych site?
-update docs to have new release number
-test:
-  each window type, include help and about
-  each export filter
-  make some test scripts for command line testing
-DONE check laidout.1 when time to release
-DONE update features.html
-DONE update help
-DONE help:QUICKREF
-
-polyptych must send nets+papergroup
-  send imp
-  receive imp
-
-
-----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
-
 ---- bugs:
 
 control select around test-imagesmany.laidout, on button up, my kb no work anymore!! resets on press from other kb
@@ -112,14 +91,18 @@ pane swapping/dropto on maximized, swapping in general...
 WATCH OUT for when preview file is OLDER than original file!!
 
 
----enhancements:
+----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
 hedron window:
+  send imp
+  receive imp
   need to draw other nets in outline (at least) in paper view
   need to preview sides on hedron
   memory hole in polyptych
   DONE proper units for papers
 
+update fileformat.txt
+polyptych site?
 check laidout.1 when time to release
 update docs to have new release number
 update translations
@@ -698,99 +681,6 @@ NetImposition:
 When releasing new version, combine these with ROADMAP items for release notes.
 These can then be purged after each release...
 ===========================================================================================
-
-
-
-DONE 'c' then 'c' on path crashes
-
-DONE document laxconfig/appcolors in laidoutrc
-
-DONE add bookmark adds it twice.. is it adding to gtk AND to lo/bm?
-
-DONE align tool:
-  DONE adjust final rotation
-  DONE memory hole: obj -> align -> obj leaves obs..
-  DONE bug: distance along is hideously inaccurate
-  DONE '0' for grid align on closed paths should distribute more nicely
-  DONE if panel slightly away from path, zaps to zero upon escape from path edit
-  DONE transform axes visual shift option
-  DONE shift to move control moves whole when path not defined!
-  DONE final layout options
-    DONE on/off
-	DONE random
-	DONE grid
-	DONE gaps
-  DONE explode mode
-  DONE visual vs aligned bounding box snapping
-  DONE moving boundaries broken
-  DONE snap to path not transforming to transformed path
-  DONE alignment on real points? panning window messes up things
-  DONE path editing
-  DONE mouseovers for bars, they get lost otherwise
-  DONE esc to switch back to object tool
-  DONE align on layout line, or proportional to original position
-  DONE for no snap align, need to do something with the rotate handles, or draw dotted outline, maybe just line?
-  DONE snap on/off
-  DONE slow drag with modifiers
-  DONE align to slant not quite working
-
-
-DONE include scribus plugin in install
-
-DONE hold down control in object tool. desktop left then back. Now external handles are supressed because lo thinks control is still pressed down!
-
-DONE test #, ', and " for shortcut dump
-DONE adding key+action, rebind key if necessary
-DONE shortcut loading and saving to resource dir
-DONE Install shortcut definitions for each window and interface
-
-DONE disable splitwindow cursors, there is annoying not switch error, problem due to lack of overiding x pointer shapes
-
-DONE paths: ambiguous state when subpaths have their own linestyles.. screws with outlines with holes in it....
-
-DONE loading default template segfaults on quit
-
-DONE imagepatch 'm' tries to draw preview super high? ... no, its render recursive mode
-
-DONE mesh delete cross lines segfaults
-
-DONE fills open paths!?!?! thought that was fixed!!!
-
-DONE CoordinateToSvg ignoring terminators
-
-DONE PathEditor: 
-  DONE delete point sometimes crashes
-  DONE drag point over other point to connect if both are endpoints, --> then click, segfault!
-  DONE 'a', delete crashes!! <- can't duplicate
-  DONE curpoint does not display correct shape for point type
-  DONE control while dragging handle should temporarily switch to vertex?
-  DONE direction indicator not highlighting/scanning correctly
-  DONE shift click on nothing - drag out rect -> add points to selection
-  DONE control click on nothing - drag out rect -> remove points from selection
-  DONE select/deselect points with dragged rect
-  DONE debug subpaths
-  DONE delete point not setting curvertex right
-  DONE bez_t_to_distance fails next t=1 points when t is greater than dt but before end
-  DONE shortcut to reverse current subpath
-  DONE direction indicator drag off path to adjust if adding points to current path or making new path
-  DONE   force choose between two icons, one for new subpath, one for new object
-  DONE wheel to change point type?
-  DONE makerect()
-  DONE clickable direction indicator for adding points
-  DONE hover over point. move off, move on, not highlighted anymore!!
-  DONE point mouseovers
-  DONE if add direction reverse, then should auto select prev vertex, not next
-  DONE Click no move on vertex, toggle point type
-  DONE control, then control click on other control point makes segfault
-  DONE maybe have 'h'/'H' toggle between c-v-c, instead of shift and control, which causes too much trouble currently
-  DONE add new point, click down, then up with no drag should create polypoint, not bez point
-  DONE toggleclosed: breaks connected bez controls
-
-DONE nup:
-  DONE sized_grid
-  DONE grid -- row/col flipped??!!
-  DONE random
-  DONE hover over tips not working
 
 
 

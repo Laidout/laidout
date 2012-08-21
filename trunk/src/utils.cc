@@ -665,6 +665,21 @@ int isEpsFile(const char *file,float *psversion, float *epsversion)
 	return 0;
 }
 
+
+int isJpg(const char *file)
+{
+	if (isblank(file)) return 0;
+	char first100[100];
+	FILE *f=fopen(file,"r");
+	if (!f) return 0;
+
+	int n=fread(first100,1,100,f);
+	if (n) {
+	}
+
+	fclose(f);
+}
+
 //! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
 /*! \ingroup misc
  *

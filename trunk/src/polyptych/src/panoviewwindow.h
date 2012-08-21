@@ -149,6 +149,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 							 int n);
 	virtual void mapPolyhedronTexture(Thing *thing);
 	virtual void mapPolyhedronTexture2(Thing *thing);
+	virtual void mapStereographicPlane(Thing *thing);
 	virtual Thing *makeGLPolyhedron();
 
 	virtual void makecameras(void);
