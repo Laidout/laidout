@@ -48,6 +48,7 @@ const char *IdentifyFile(const char *file, char **version1, char **version2);
 int isOffFile(const char *file);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
 int isScribusFile(const char *file);
+int isJpg(const char *file);
 int is_bitmap_image(const char *file);
 
 #endif

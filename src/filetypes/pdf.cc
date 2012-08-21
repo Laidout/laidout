@@ -65,16 +65,16 @@ StyleDef *PdfImportFilter::GetStyleDef()
 const char *PdfImportFilter::FileType(const char *first100bytes)
 {
 	if (strncmp(first100bytes,"%PDF-",5)) return NULL;
-	if (strncmp(first100bytes+5,"1.0",3)) return "1.0";
-	if (strncmp(first100bytes+5,"1.1",3)) return "1.1";
-	if (strncmp(first100bytes+5,"1.2",3)) return "1.2";
-	if (strncmp(first100bytes+5,"1.3",3)) return "1.3";
-	if (strncmp(first100bytes+5,"1.4",3)) return "1.4";
-	if (strncmp(first100bytes+5,"1.5",3)) return "1.5";
-	if (strncmp(first100bytes+5,"1.6",3)) return "1.6";
-	if (strncmp(first100bytes+5,"1.7",3)) return "1.7";
-	if (strncmp(first100bytes+5,"1.8",3)) return "1.8";
-	if (strncmp(first100bytes+5,"1.9",3)) return "1.9";
+	if (!strncmp(first100bytes+5,"1.0",3)) return "1.0";
+	if (!strncmp(first100bytes+5,"1.1",3)) return "1.1";
+	if (!strncmp(first100bytes+5,"1.2",3)) return "1.2";
+	if (!strncmp(first100bytes+5,"1.3",3)) return "1.3";
+	if (!strncmp(first100bytes+5,"1.4",3)) return "1.4";
+	if (!strncmp(first100bytes+5,"1.5",3)) return "1.5";
+	if (!strncmp(first100bytes+5,"1.6",3)) return "1.6";
+	if (!strncmp(first100bytes+5,"1.7",3)) return "1.7";
+	if (!strncmp(first100bytes+5,"1.8",3)) return "1.8";
+	if (!strncmp(first100bytes+5,"1.9",3)) return "1.9";
 	return NULL;
 }
 
@@ -106,6 +106,10 @@ void installPdfFilter()
 //------------------------------------ PdfExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
+/*! \todo Options:
+ * 		compression rating
+ *		compression type for image data, lossy (dctdecode) or lessless (zip?)
+ */
 Style *newPdfExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
@@ -836,7 +840,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		fprintf(f,"%010lu %05d %c \n",obj->byteoffset,obj->generation,obj->inuse);
 	}
 
-	
+
 	 //write trailer dict, startxref, and EOF
 	fprintf(f,"trailer\n<< /Size %d\n",count);
 	fprintf(f,"    /Root %ld 0 R\n", doccatalog);
@@ -1115,6 +1119,7 @@ static void pdfColorPatch(FILE *f,
  *   instance, which also potentially increases size a lot
  * \todo *** this still assumes a LaxImlibImage.
  * \todo image alternates?
+ * \todo DCTDecode for jpgs
  */
 static void pdfImage(FILE *f,
 					 PdfObjInfo *&obj,

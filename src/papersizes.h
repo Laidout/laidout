@@ -43,7 +43,6 @@ enum BoxTypes {
 class PaperStyle : public Style
 {
  public:
-	int color_red,color_green,color_blue;
 	char *name;
 	double width,height;
 	double dpi;
