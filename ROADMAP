@@ -5,18 +5,9 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 
 
-VERSION 0.093
--------------
-(done) On canvas flip controls
-(done) Align tool
-       Nup tool
-(done) Fully configurable shortcuts (editable through config file)
-(done) PathInterface must be improved
-       Net imposition interactive unwrapper, via optional opengl Polyptych
-
-
 VERSION 0.094
 -------------
+       Net imposition interactive unwrapper, via optional opengl Polyptych
        need partial Laidout import
        fix object transform handles for really small objects (handles should still be accessible)
        PathInterface subpaths for hole making should work
@@ -74,7 +65,7 @@ VERSION 0.1
        Seriously optimize the whole ColorPatch/ImagePatchData stuff
        Have imagepatch be a transform you can apply to any object
        Allow objects to have any number of various kinds of transforms applied to it
-       Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins
+       Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins. Swig?
        Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
        Full color management implemented, with up to at least 16 bit per channel color
@@ -169,6 +160,15 @@ While i'm at it, I'd like a pony.
             ---------------- 
 ------------- OLD RELEASES -----------------
             ----------------
+
+VERSION 0.093  --  released 17 July 2012!
+-------------
+(done) On canvas flip controls
+(done) Align tool
+(done) Nup tool
+(done) Fully configurable shortcuts (editable through config file)
+(done) PathInterface must be improved
+
 
 VERSION 0.092  --  released 30 December 2011!
 -------------

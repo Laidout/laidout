@@ -17,6 +17,7 @@
 
 
 #include <lax/transformmath.h>
+#include <lax/laxutils.h>
 #include <lax/lists.cc>
 
 #include "page.h"
@@ -676,45 +677,45 @@ ImageData *Page::Thumbnail()
 	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
 	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
 	
-	Displayer dp;
-	dp.CreateSurface((int)w,(int)h);
+	Displayer *dp=newDisplayer(NULL);
+	dp->CreateSurface((int)w,(int)h);
 	
 	 // setup dp to have proper scaling...
-	dp.NewTransform(1.,0.,0.,-1.,0.,0.);
-	//dp.NewTransform(1.,0.,0.,1.,0.,0.);
-	dp.SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
-	dp.Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+	dp->NewTransform(1.,0.,0.,-1.,0.,0.);
+	//dp->NewTransform(1.,0.,0.,1.,0.,0.);
+	dp->SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+	dp->Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
 		
-	dp.NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
-	dp.NewFG(0,0,0,255);
-	//dp.m()[4]=0;
-	//dp.m()[5]=2*h;
-	//dp.Newmag(w/(bbox.maxx-bbox.minx));
-	dp.ClearWindow();
+	dp->NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
+	dp->NewFG(0,0,0,255);
+	//dp->m()[4]=0;
+	//dp->m()[5]=2*h;
+	//dp->Newmag(w/(bbox.maxx-bbox.minx));
+	dp->ClearWindow();
 
 	//DBG flatpoint p;
-	//DBG p=dp.realtoscreen(1,1);
-	//DBG dp.textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(1,-1);
-	//DBG dp.textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(-1,1);
-	//DBG dp.textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
-	//DBG p=dp.realtoscreen(-1,-1);
-	//DBG dp.textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
-	//DBG XDrawLine(dp.GetDpy(),pix,dp.GetGC(), 0,0, w,h);
+	//DBG p=dp->realtoscreen(1,1);
+	//DBG dp->textout((int)p.x,(int)p.y,"++",2,LAX_CENTER);
+	//DBG p=dp->realtoscreen(1,-1);
+	//DBG dp->textout((int)p.x,(int)p.y,"+-",2,LAX_CENTER);
+	//DBG p=dp->realtoscreen(-1,1);
+	//DBG dp->textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
+	//DBG p=dp->realtoscreen(-1,-1);
+	//DBG dp->textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
+	//DBG XDrawLine(dp->GetDpy(),pix,dp.GetGC(), 0,0, w,h);
 
 	for (int c=0; c<layers.n(); c++) {
-		//dp.PushAndNewTransform(layers.e[c]->m());
-		DrawData(&dp,layers.e(c));
-		//dp.PopAxes();
+		//dp->PushAndNewTransform(layers.e[c]->m());
+		DrawData(dp,layers.e(c));
+		//dp->PopAxes();
 	}
-	dp.EndDrawing();
+	dp->EndDrawing();
 	 
 //	//***test output to thumb...
 //	imlib_context_set_image(tnail);
 //	imlib_blend_image_onto_image(thumbnail->imlibimage,0,0,0,100,100,0,0,100,100);
 		
-	LaxImage *img=dp.GetSurface();
+	LaxImage *img=dp->GetSurface();
 	if (img) {
 		thumbnail->SetImage(img); //*** must implement using diff size image than is in maxx,y
 		//thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
@@ -731,6 +732,8 @@ ImageData *Page::Thumbnail()
 
 	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
 	thumbmodtime=times(NULL);
+	dp->dec_count();
+
 	return thumbnail;
 }
 

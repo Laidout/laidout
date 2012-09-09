@@ -426,7 +426,7 @@ int SpreadInterface::Refresh()
 					
 					 // always setup clipping region to be the page
 					dp->PushClip(1);
-					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->m());
+					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->Getctm());
 					
 					::DrawData(dp,thumb,NULL,NULL);
 					
@@ -705,9 +705,9 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 				break;
 	}
 	
-	draw_thing(dp->GetXw(),x,y,w,h,t, outlinecolor,fcolor, (outlinestatus==0?4:1));
-	foreground_color(color);
-	textout(dp->GetXw(),page->label,-1,x,y,LAX_CENTER);
+	dp->drawthing(x,y,w,h, t, outlinecolor,fcolor, (outlinestatus==0?4:1));
+	dp->NewFG(color);
+	dp->textout(x,y, page->label,-1, LAX_CENTER);
 }
 
 //! Relays left button event to rLBDown or rMBDown depending on reversebuttons.

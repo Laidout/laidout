@@ -11,6 +11,7 @@ Those are purged with each release.
 
 
 ---- bugs to fix right now:
+drawing partial arcs broken
 
 in tiled, can no longer select objects in the other tiles, wtf!!!
 

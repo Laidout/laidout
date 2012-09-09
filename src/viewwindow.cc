@@ -341,7 +341,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 {
 	DBG cerr <<"in LaidoutViewport constructor, obj "<<object_id<<endl;
 
-	dp->style|=DISPLAYER_NO_SHEAR;
+	dp->displayer_style|=DISPLAYER_NO_SHEAR;
 	papergroup=NULL;
 	win_colors->bg=rgbcolor(255,255,255);
 
@@ -2277,7 +2277,7 @@ void LaidoutViewport::Refresh()
 	
 	DBG cerr <<"drawing spread objects.."<<endl;
 	if (spread && showstate==1) {
-		dp->BlendMode(GXcopy);
+		dp->BlendMode(LAXOP_Source);
 
 //		 //draw the spread's papergroup *** done above
 //		PaperGroup *pgrp=NULL;
@@ -2356,7 +2356,7 @@ void LaidoutViewport::Refresh()
 			if (page->pagestyle->flags&PAGE_CLIPS) {
 				 // setup clipping region to be the page
 				dp->PushClip(1);
-				SetClipFromPaths(dp,sd,dp->m());
+				SetClipFromPaths(dp,sd,dp->Getctm());
 			}
 			
 			 //*** debuggging: draw X over whole page...
@@ -4312,7 +4312,7 @@ int ViewWindow::PerformAction(int action)
 
 int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG if (ch==LAX_F8) dumpctm(viewport->dp->m());
+	DBG if (ch==LAX_F8) dumpctm(viewport->dp->Getctm());
 	DBG if (ch=='r') {
 	DBG 	//**** for debugging:
 	DBG 	pid_t pid=getpid();
