@@ -798,7 +798,7 @@ int AlignInterface::Refresh()
 			if (hover==ALIGN_Rotation) dp->LineAttributes(2,LineSolid, CapButt, JoinRound);
 			else dp->LineAttributes(1,LineSolid, CapButt, JoinRound);
 			WubPoints(wub, cc, r,r*1.2, M_PI/2+M_PI/4+aligninfo->extrarotation,M_PI/2+-M_PI/4+aligninfo->extrarotation);
-			dp->drawbez(wub,2,1,15,hover==ALIGN_Rotation?2:0);
+			dp->drawbez(wub,2,1, hover==ALIGN_Rotation?2:0);
 			dp->LineAttributes(1,LineSolid, CapButt, JoinRound);
 		}
 
