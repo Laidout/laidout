@@ -94,6 +94,8 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+make pdf default output format for sending to lp
+
 hedron window:
   send imp
   receive imp
@@ -172,6 +174,7 @@ in number edit boxes, wheel should allow changing numbers, change on digit mouse
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
 
 paperinterface:
+   options to show order of papers, print all of one size paper first? auto sort order by size? auto wrap image?
    Load, save, add, delete paper groups
    papergroups:
     work out scheme for resource ownership: they can be owned by:
