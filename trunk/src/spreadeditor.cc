@@ -659,7 +659,7 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 {
 	 // *** if (plabel->labeltype==circle, filledcircle, etc...) ...
 	 // *** write text
-	int w,h;
+	double w,h;
 	getextent(page->label,-1,&w,&h);
 	w/=2;
 	h/=2;
