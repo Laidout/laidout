@@ -69,6 +69,7 @@ enum GlobalPrefsNotify {
 enum RunModeType {
 		RUNMODE_Normal,
 		RUNMODE_Commands,
+		RUNMODE_Shell,
 		RUNMODE_Impose_Only
 	};
 
@@ -122,6 +123,7 @@ class LaidoutApp : public Laxkit::anXApp
 	virtual ~LaidoutApp();
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
+	StyleDef *makeStyleDef();
 	void parseargs(int argc,char **argv);
 	int readinLaidoutDefaults();
 	int createlaidoutrc();

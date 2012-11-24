@@ -26,21 +26,28 @@ class LaidoutCalculator : public Laxkit::RefCounted
  private:
 	 //context state
 	char *dir;
+	ValueHash *build_context();
 
 	 //evaluation stuff
 	Value *last_answer;
 	char *messagebuffer;
-	int from,calcerror;
+	int from;
+	int curline;
 	char *curexprs;
 	int curexprslen;
-	char *calcmes;
 	char decimal;
 
-	ValueHash *parse_parameters(StyleDef *def, const char *in, int len, char **error_pos_ret);
-	ValueHash *build_context();
+	ValueHash uservars;
+	Value *checkAssignments();
+	Value *evalUservar(const char *word);
+
+	ErrorLog *temp_errorlog;
+	int calcerror;
+	char *calcmes;
 
 	void calcerr(const char *error,const char *where=NULL,int w=0, int surround=40);
 	char *getnamestring(int *n);
+	int getnamestringlen();
 	void skipwscomment();
 	int nextchar(char ch);
 	int nextword(const char *word);
@@ -64,7 +71,9 @@ class LaidoutCalculator : public Laxkit::RefCounted
 	int multiply(Value *&num1,Value *&num2);
 	int divide(Value *&num1,Value *&num2);
 	int power(Value *&num1,Value *&num2);
+
 	ValueHash *parseParameters(StyleDef *def);
+
  protected:
  public:
 	LaidoutCalculator();
@@ -75,6 +84,8 @@ class LaidoutCalculator : public Laxkit::RefCounted
 
 	virtual void clearerror();
 	const char *Message();
+
+	virtual int RunShell();
 };
 
 //------------------------------- parsing helpers ------------------------------------

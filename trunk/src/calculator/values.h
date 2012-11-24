@@ -34,13 +34,14 @@ enum ValueTypes {
 	VALUE_Flatvector,
 	VALUE_Spacevector,
 	VALUE_File, // *** unimplemented!
-	VALUE_Flag, // *** unimplemented!
+	VALUE_Flags, // *** unimplemented!
 	VALUE_Enum, // *** unimplemented!
 	VALUE_EnumVal, // *** unimplemented!
 	VALUE_Color, // *** unimplemented!
 	VALUE_Date, // *** unimplemented!
 	VALUE_Time, // *** unimplemented!
 	VALUE_Boolean, // *** unimplemented!
+	VALUE_Complex, // *** unimplemented!
 	VALUE_Function, // *** unimplemented!
 
 	VALUE_MaxBuiltIn
@@ -146,7 +147,7 @@ class ObjectValue : public Value
 };
 
 //----------------------------- ValueHash ----------------------------------
-class ValueHash : public Laxkit::anObject
+class ValueHash : public Laxkit::anObject, public Laxkit::RefCounted
 {
 	Laxkit::PtrStack<char> keys;
 	Laxkit::RefPtrStack<Value> values;
@@ -155,25 +156,29 @@ class ValueHash : public Laxkit::anObject
 	ValueHash();
 	~ValueHash();
 
+	const char *key(int i);
+	Value *value(int i);
 	int push(const char *name,int i);
 	int push(const char *name,double d);
 	int push(const char *name,const char *string);
 	int pushObject(const char *name,Laxkit::RefCounted *obj);
 	int push(const char *name,Value *v);
 	void swap(int i1, int i2);
+
 	void renameKey(int i,const char *newname);
-	const char *key(int i);
-	Value *value(int i);
+	int set(const char *key, Value *newv);
+	int set(int which, Value *newv);
 
 	int n();
 	Value *e(int i);
 	Value *find(const char *name);
-	int findIndex(const char *name);
+	int findIndex(const char *name,int len=-1);
 	long findInt(const char *name, int which=-1, int *error_ret=NULL);
 	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
 	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
 	Laxkit::RefCounted *findObject(const char *name, int which=-1, int *error_ret=NULL);
+
 };
 
 

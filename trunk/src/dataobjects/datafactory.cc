@@ -11,74 +11,88 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009 by Tom Lechner
+// Copyright (C) 2012 by Tom Lechner
 //
 
+#include "datafactory.h"
+#include "drawableobject.h"
+#include "mysterydata.h"
+#include "limagedata.h"
+#include "lpathsdata.h"
+#include "lgradientdata.h"
+#include "limagepatch.h"
+
+#include <lax/lists.cc>
+
+#include <iostream>
+#define DBG
+using namespace std;
+
+using namespace Laxkit;
+using namespace LaxInterfaces;
 
 
+//---------------------------- Group --------------------------------
 
-
-
-
-
-
-
-//---------------------------- LImagePatchData --------------------------------
-/*! \class LImagePatchData 
- * \brief Subclassing LaxInterfaces::ImagePatchData
- */
-
-class LImagePatchData : virtual public LaxInterfaces::ImagePatchData, 
-						virtual public DrawableObject
+//! For somedatafactory.
+LaxInterfaces::SomeData *createGroup(LaxInterfaces::SomeData *refobj)
 {
- public:
-	LImagePatchData() {}
-	virtual ~LImagePatchData() {}
-}:
-
-LaxInterfaces::SomeData *createLImagePatchData()
-{
-	return new LImagePatchData();
+	return new DrawableObject(refobj);
 }
 
-//---------------------------- LImageData --------------------------------
-/*! \class LImageData 
- * \brief Subclassing LaxInterfaces::ImageData
- */
 
-LaxInterfaces::SomeData *createLImageData()
+//---------------------------- MysteryData --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createMysteryData(LaxInterfaces::SomeData *refobj)
+{
+	return new MysteryData();
+}
+
+
+//---------------------------- LImageData --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLImageData(LaxInterfaces::SomeData *refobj)
 {
 	return new LImageData();
 }
 
-//---------------------------- LColorPatchData --------------------------------
-/*! \class LColorPatchData 
- * \brief Subclassing LaxInterfaces::ColorPatchData
- */
 
-LaxInterfaces::SomeData *createLColorPatchData()
+//---------------------------- LPathsData --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLPathsData(LaxInterfaces::SomeData *refobj)
+{
+	return new LPathsData();
+}
+
+
+////---------------------------- LGradientData --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLGradientData(LaxInterfaces::SomeData *refobj)
+{
+	return new LGradientData();
+}
+
+
+
+//---------------------------- LImagePatchData --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLImagePatchData(LaxInterfaces::SomeData *refobj)
+{
+	return new LImagePatchData();
+}
+
+
+//---------------------------- LColorPatchData --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLColorPatchData(LaxInterfaces::SomeData *refobj)
 {
 	return new LColorPatchData();
-}
-
-//---------------------------- LGradientData --------------------------------
-/*! \class LGradientData 
- * \brief Subclassing LaxInterfaces::GradientData
- */
-
-LaxInterfaces::SomeData *createLGradientData()
-{
-	return new LGradientData();
-}
-
-//---------------------------- LGradientData --------------------------------
-/*! \class LGradientData 
- * \brief Subclassing LaxInterfaces::GradientData
- */
-
-LaxInterfaces::SomeData *createLGradientData()
-{
-	return new LGradientData();
 }
 
 
@@ -90,12 +104,14 @@ SomeDataFactory lobjectfactory;
 
 void InitializeDataFactory()
 {
-	LaxInterfaces::somedatafatory=&lobjectfactory;
+	LaxInterfaces::somedatafactory=&lobjectfactory;
 
-	lobjectfactory->DefineNewObject(LAX_IMAGEDATA,"ImageData",createLImageData,NULL);
-	lobjectfactory->DefineNewObject(LAX_PATHSDATA,"PathsData",createLPathsData,NULL);
-	lobjectfactory->DefineNewObject(LAX_IMAGEPATCHDATA,"ImagePatchData",createLImagePatchData,NULL);
-	lobjectfactory->DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
-	lobjectfactory->DefineNewObject(LAX_GRADIENTDATA,"GradientData",createLGradientData,NULL);
+	lobjectfactory.DefineNewObject(LO_GROUP,          "Group",         createGroup,NULL);
+	lobjectfactory.DefineNewObject(LO_MYSTERYDATA,    "MysteryData",   createMysteryData,NULL);
+	lobjectfactory.DefineNewObject(LAX_IMAGEDATA,     "ImageData",     createLImageData,NULL);
+	lobjectfactory.DefineNewObject(LAX_PATHSDATA,     "PathsData",     createLPathsData,NULL);
+	lobjectfactory.DefineNewObject(LAX_GRADIENTDATA,  "GradientData",  createLGradientData,NULL);
+	lobjectfactory.DefineNewObject(LAX_IMAGEPATCHDATA,"ImagePatchData",createLImagePatchData,NULL);
+	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
 }
 

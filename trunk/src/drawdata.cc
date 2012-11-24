@@ -33,10 +33,10 @@
 
 #include <lax/interfaces/somedataref.h>
 #include "drawdata.h"
-#include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "laidout.h"
 #include "language.h"
+#include "dataobjects/datafactory.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -194,16 +194,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
  */
 SomeData *newObject(const char *thetype)
 {
-	if (!strcmp(thetype,"SomeData")) return new SomeData();
-	if (!strcmp(thetype,"Group")) return new Group();
-	if (!strcmp(thetype,"ImageData")) return new ImageData();
-	if (!strcmp(thetype,"ImagePatchData")) return new ImagePatchData();
-	if (!strcmp(thetype,"PathsData")) return new PathsData();
-	if (!strcmp(thetype,"GradientData")) return new GradientData();
-	if (!strcmp(thetype,"ColorPatchData")) return new ColorPatchData();
-	if (!strcmp(thetype,"EpsData")) return new EpsData();
-	if (!strcmp(thetype,"MysteryData")) return new MysteryData();
-	return NULL;
+	return somedatafactory->newObject(thetype);
 }
 
 //! Return whether all corners of bbox have nonzero winding numbers for points.

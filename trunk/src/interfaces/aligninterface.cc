@@ -2824,6 +2824,14 @@ flatpoint AlignInterface::ClosestPoint(flatpoint p, double *d, double *t)
 	return transform_point(aligninfo->path->m(),found);
 }
 
+void AlignInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+{ //***
+}
+
+void AlignInterface::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *loadcontext)
+{ //***
+}
+
 
 //} // namespace Laidout
 

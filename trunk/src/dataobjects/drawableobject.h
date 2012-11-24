@@ -17,71 +17,111 @@
 #define DRAWABLEOBJECT_H
 
 
+#include <lax/tagged.h>
+#include <lax/refptrstack.h>
 #include <lax/interfaces/somedata.h>
+#include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
-#include "objectfilter.h"
+//#include "objectfilter.h"
+
+
+
+class DrawableObject;
+
+
+//---------------------------------- DrawObjectChain ---------------------------------
+class DrawObjectChain
+{
+  public:
+	int chain_id;
+	DrawableObject *object;
+	DrawObjectChain *next, *prev;
+
+	DrawObjectChain(int id=0);
+	virtual ~DrawObjectChain();
+};
 
 
 //----------------------------- DrawableObject ---------------------------------
 class DrawableObject :  virtual public ObjectContainer,
-						virtual public Laxkit::SomeData,
+						virtual public LaxInterfaces::SomeData,
 						virtual public Laxkit::Tagged
 {
  protected:
  public:
+	char *id;
+	DrawableObject *parent;
+	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
+	char locked, visible, prints, selectable;
 
 	SomeData *clip; //If not a PathsData, then is an object for a softmask
-	PathsData *wrap_path;
-	PathsData *inset_path;
+	LaxInterfaces::PathsData *wrap_path;
+	LaxInterfaces::PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
 	int wraptype;
 
 	Laxkit::RefPtrStack<DrawObjectChain> chains; //for linked objects
-	DrawableObject *parent;
-	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
 
-	//RefPtrStack<RefCounted *> refs; //what other resources this objects depends on?
-	DrawObjectChainLink *chainlinks;
+	//Laxkit::RefPtrStack<ObjectStream> path_streams; //applied to areapath outline
+	//Laxkit::RefPtrStack<ObjectStream> area_streams; //applied into areapath area
 
-	RefPtrStack<ObjectStream> path_streams; //applied to areapath outline
-	RefPtrStack<ObjectStream> area_streams; //applied into areapath area
-
-	RefPtrStack<ObjectFilter> filters;
-	RefPtrStack<DrawableObject> subobjects;
+	//Laxkit::RefPtrStack<ObjectFilter> filters;
 	double alpha; //object alpha applied to anything drawn by this and kids
 	double blur; //one built in filter?
+
+	//Laxkit::RefPtrStack<RefCounted *> refs; //what other resources this objects depends on?
 
 	LaxFiles::Attribute metadata;
 	LaxFiles::Attribute iohints;
 
-	DrawableObject();
-	virtual ~DrawableObject();
 
-	 //from ObjectContainer
-	virtual int n();
-	virtual Laxkit::anObject *object_e(int i);
+	DrawableObject(LaxInterfaces::SomeData *refobj=NULL);
+	virtual ~DrawableObject();
+	virtual const char *whattype() { return "Group"; }
 
 	 //new functions for DrawableObject
-	PathsData *GetAreaPath();
-	PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
-	PathsData *GetWrapPath(); //path inside which external streams can't go
+	LaxInterfaces::PathsData *GetAreaPath();
+	LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
+	LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
 
-	 //from SomeData.DumpUtility
-	virtual void dump_out(FILE *f,int indent,int what);
-	virtual void dump_in_atts(LaxFiles::Attribute *att);
+
+	 //Group specific functions:
+	Laxkit::RefPtrStack<LaxInterfaces::SomeData> kids;
+	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
+	virtual int findindex(LaxInterfaces::SomeData *d) { return kids.findindex(d); }
+	virtual int push(LaxInterfaces::SomeData *obj);
+	virtual int pushnodup(LaxInterfaces::SomeData *obj);
+	virtual int remove(int i);
+	virtual LaxInterfaces::SomeData *pop(int which);
+	virtual int popp(LaxInterfaces::SomeData *d);
+	virtual void flush();
+	virtual void swap(int i1,int i2) { kids.swap(i1,i2); }
+	virtual int slide(int i1,int i2);
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	
+	virtual int pointin(flatpoint pp,int pin=1);
+	virtual void FindBBox();
+	//virtual int contains(SomeData *d,FieldPlace &place);
+	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
+	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);
+
+	virtual int GroupObjs(int n, int *which);
+	virtual int UnGroup(int which);
+	virtual int UnGroup(int n,const int *which);
+	
+	 //for ObjectContainer
+	virtual int n();
+	virtual LaxInterfaces::SomeData *e(int i);
+	virtual Laxkit::anObject *object_e(int i);
+	virtual const char *object_e_name(int i);
+	virtual const double *object_transform(int i);
 };
 
 
-//---------------------------------- DrawObjectChain ---------------------------------
-class DrawObjectChainLink
-{
-  public:
-	DrawObjectChainLink *linkstacknext;
-	DrawObjectChainLink *next, *prev;
-
-	DrawObjectChain();
-	virtual ~DrawObjectChain();
-};
 
 #endif
 

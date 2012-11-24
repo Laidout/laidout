@@ -17,7 +17,9 @@
 
 #include "printermarks.h"
 #include "group.h"
-#include <lax/interfaces/pathinterface.h>
+#include "lpathsdata.h"
+#include "datafactory.h"
+
 #include <lax/bezutils.h>
 #include <lax/colors.h>
 
@@ -31,10 +33,12 @@ using namespace Laxkit;
 
 
 //! Return a registration mark centered at the origin, and pointsize along the edge.
-SomeData *RegistrationMark(double pointsize, double linewidthinpoints)
+DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints)
 {
 	double d=pointsize/72/2;
-	PathsData *paths=new PathsData;
+
+	LPathsData *paths=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
+
 	paths->flags|=SOMEDATA_LOCK_CONTENTS;
 	ScreenColor color(0,0,0,65535);
 	paths->line(d/10,CapButt,JoinRound,&color);
@@ -64,19 +68,19 @@ SomeData *RegistrationMark(double pointsize, double linewidthinpoints)
  *
  * colorsystem can be grayscale, rgb, or cmyk.
  */
-SomeData *BWColorBars(double pointsize, int colorsystem)
+DrawableObject *BWColorBars(double pointsize, int colorsystem)
 {
 	double s=pointsize/72;
 
 	Group *g=new Group;
 	g->flags|=SOMEDATA_LOCK_KIDS|SOMEDATA_KEEP_ASPECT;
 	g->obj_flags|=OBJ_IgnoreKids;
-	PathsData *b;
+	LPathsData *b;
 
 	 //add fills
 	ScreenColor color;
 	for (int c=0; c<11; c++) {
-		b=new PathsData;
+		b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
 		b->appendRect(c*s,0,s,s);
 		if (colorsystem==LAX_COLOR_GRAY) { color.grayf((10-c)/10.); b->fill(&color); }
 		else if (colorsystem==LAX_COLOR_RGB) { color.rgbf((10-c)/10.,(10-c)/10.,(10-c)/10.);  b->fill(&color); }
@@ -90,7 +94,7 @@ SomeData *BWColorBars(double pointsize, int colorsystem)
 	}
 
 	 //create outline of whole
-	b=new PathsData;
+	b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
 	color.rgbf(0,0,0);//black outline
 	b->line(s/72,CapButt,JoinMiter,&color);
 	b->appendRect(0,0,11*s,s);
@@ -104,7 +108,7 @@ SomeData *BWColorBars(double pointsize, int colorsystem)
 }
 
 //! Return color bar for palette where each color is in a square of edge length pointsize.
-SomeData *ColorBars(double pointsize, Palette *palette, int numrows, int numcols)
+DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int numcols)
 {
 	if (!palette) return NULL;
 
@@ -116,7 +120,7 @@ SomeData *ColorBars(double pointsize, Palette *palette, int numrows, int numcols
 	double s=pointsize/72;
 
 	Group *g=new Group;
-	PathsData *b=new PathsData;
+	LPathsData *b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
 
 	 //create outline
 	b->appendRect(0,0,numcols*s,numrows*s);
@@ -129,7 +133,7 @@ SomeData *ColorBars(double pointsize, Palette *palette, int numrows, int numcols
 	ScreenColor color;
 	for (int c=0; c<numcols; c++) {
 		for (int r=0; r<numrows; r++) {
-			b=new PathsData;
+			b=dynamic_cast<LPathsData*>(somedatafactory->newObject(LAX_PATHSDATA));
 			b->appendRect(c*s,r*s,s,s);
 			color.rgb(palette->colors.e[c]->channels[0],
 					  palette->colors.e[c]->channels[1],

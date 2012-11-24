@@ -192,17 +192,19 @@ int LaidoutOutFilter::Out(const char *filename, Laxkit::anObject *context, Error
  * \brief Laidout input filter.
  */
 
-
+/*! Unrecognized version numbers assume the latest format.
+ */
 const char *LaidoutInFilter::FileType(const char *first100bytes)
 {
 	if (!strncmp(first100bytes,"#Laidout ",9) && strstr(first100bytes,"Document"));
 	const char *version=first100bytes+9;
+	if (!strncmp(version,"0.092",5)) return "0.092";
+	if (!strncmp(version,"0.091",5)) return "0.091";
 	if (!strncmp(version,"0.07", 4)) return "0.07";
 	if (!strncmp(version,"0.08", 4)) return "0.08";
 	if (!strncmp(version,"0.09", 4)) return "0.09";
-	if (!strncmp(version,"0.091",5)) return "0.091";
-	if (!strncmp(version,"0.092",5)) return "0.092";
-	return NULL;
+
+	return LAIDOUT_VERSION;
 }
 
 const char *LaidoutInFilter::VersionName()

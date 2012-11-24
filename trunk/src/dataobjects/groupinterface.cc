@@ -126,7 +126,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		if (i==GROUP_RegistrationMark) {
 			if (!lvp->papergroup) return 0;
-			SomeData *obj= RegistrationMark(18,1);
+			DrawableObject *obj= RegistrationMark(18,1);
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			lvp->papergroup->objs.push(obj);
@@ -135,7 +135,7 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else if (i==GROUP_GrayBars) {
 			if (!lvp->papergroup) return 0;
-			SomeData *obj= BWColorBars(18,LAX_COLOR_GRAY);
+			DrawableObject *obj= BWColorBars(18,LAX_COLOR_GRAY);
 			flatpoint fp=dp->screentoreal(rx,ry);
 			obj->origin(fp);
 			lvp->papergroup->objs.push(obj);

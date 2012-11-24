@@ -11,7 +11,9 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-/********** guides.cc ****************/
+
+#include "guides.h"
+
 
 /*! \class Guide
  * \brief Things snap to guides.
@@ -37,8 +39,86 @@
  *  (1<<6) attract objects perpendicularly
  * </pre>
  */
-class Guide : public LaxInterfaces::SomeData
+class Guide : public LaxInterfaces::SomeData, public LaxFiles::DumpUtility
 {
  public:
 	unsigned int guidetype;
+	LaxInterfaces *guide;
+	unsigned long color, hcolor;
+
+	Guide();
+	virtual ~Guide();
+	virtual const char *whattype() { return "Guide"; }
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
+
+Guide::Guide()
+{
+	guidetype=0;
+	guide=NULL;
+	color=rgbcolor(0.,0.,1.);
+	hcolor=rgbcolor(1.,0.,0.);
+}
+
+Guide::~Guide()
+{
+	if (guide) guide->dec_count();
+}
+
+void Guide::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{ ***
+}
+
+void Guide::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{ ***
+}
+
+//------------------------------------- Grid -----------------------------------------------------
+//
+
+
+class Grid : public LaxFiles::DumpUtility
+{
+  public:
+	int gridtype; //0=rect, 1=triangles, 2=hex?, others?
+	char enabled, visible;
+	flatpoint offset;
+	flatvector majordir, minordir;
+	int spacingunits;
+	double xspacing, yspacing;
+	unsigned long color, majorcolor;
+	int majorinterval; //draw thick every this number
+
+	Grid();
+	virtual ~Grid();
+	virtual const char *whattype() { return "Grid"; }
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+}
+
+Grid::Grid()
+  : majordir(1,0), minordir(0,1);
+{
+	gridtype=0;
+	enabled=visible=1;
+	xspacing=yspacing=.5;
+	spacingunits=UNITS_Inches;
+
+	color=rgbcolor(0.,0.,1.);
+	majorcolor=rgbcolor(0.,0.,.8);
+	majorinterval=5;
+}
+
+Grid::~Grid()
+{}
+
+
+void Grid::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{ ***
+}
+
+void Grid::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{ ***
+}
+

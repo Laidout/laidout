@@ -26,7 +26,7 @@
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
 
-class SpreadInterface : public LaxInterfaces::anInterface, public LaxFiles::DumpUtility
+class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFiles::DumpUtility
 {
  protected:
 	int maxmarkertype;
