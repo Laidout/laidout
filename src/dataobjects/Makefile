@@ -16,9 +16,14 @@ DEBUGFLAGS= -g
 objs= \
 	group.o \
 	objectcontainer.o \
+	drawableobject.o \
+	datafactory.o \
 	groupinterface.o \
 	epsdata.o \
 	limagepatch.o \
+	limagedata.o \
+	lgradientdata.o \
+	lpathsdata.o \
 	mysterydata.o \
 	printermarks.o 
 

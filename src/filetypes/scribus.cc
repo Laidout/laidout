@@ -1997,7 +1997,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				 //we found an image so convert it to native Laidout object
 
 				Attribute *pfile=object->find("PFILE");
-				ImageData *image=static_cast<ImageData *>(newObject("ImageData"));
+				ImageData *image=dynamic_cast<ImageData *>(newObject("ImageData"));
 				char *fullfile=full_path_for_file(pfile->value,NULL);
 				image->LoadImage(fullfile); //this will set maxx, maxy to dimensions of the image
 				delete[] fullfile;

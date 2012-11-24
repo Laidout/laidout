@@ -16,13 +16,13 @@
 #ifndef PRINTERMARKS_H
 #define PRINTERMARKS_H
 
-#include <lax/interfaces/somedata.h>
+#include "drawableobject.h"
 #include <lax/palette.h>
 
 
-LaxInterfaces::SomeData *RegistrationMark(double pointsize, double linewidthinpoints);
-LaxInterfaces::SomeData *BWColorBars(double pointsize, int colorsystem);
-LaxInterfaces::SomeData *ColorBars(double pointsize, Laxkit::Palette *palette, int numrows, int numcols);
+DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints);
+DrawableObject *BWColorBars(double pointsize, int colorsystem);
+DrawableObject *ColorBars(double pointsize, Laxkit::Palette *palette, int numrows, int numcols);
 //LaxInterfaces::SomeData *SpreadInfoMark(const char *format, const char *dateformat, const char *timeformat);
 
 

@@ -19,6 +19,7 @@
 #include <lax/interfaces/objectinterface.h>
 #include <lax/refptrstack.h>
 #include <lax/shortcuts.h>
+#include <lax/attributes.h>
 
 #include "../laidout.h"
 
@@ -214,6 +215,9 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int ToggleShift(int dir);
 
 	virtual int UpdateFromPath();
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *loadcontext);
 };
 
 

@@ -284,6 +284,43 @@ LaidoutApp::~LaidoutApp()
 	if (calculator)		    calculator->dec_count();
 }
 
+StyleDef *LaidoutApp::makeStyleDef()
+{
+	StyleDef *sd=new StyleDef(NULL,
+						  "Laidout",
+						  _("Laidout"),
+						  _("Main Laidout container"),
+						  Element_Fields,
+						  NULL,NULL);
+	sd->push("documents",
+			_("Documents"),
+			_("List of available documents."),
+			Element_Set, "Document", NULL,
+			0,NULL);
+	sd->push("limbos",
+			_("Limbos"),
+			_("List of available limbo areas."),
+			Element_Set, "Group", NULL,
+			0,NULL);
+	sd->push("resources",
+			_("Resources"),
+			_("List of available resources."),
+			Element_Set, "Resource", NULL,
+			0,NULL);
+	sd->push("windows",
+			_("Windows"),
+			_("List of current top level windows."),
+			Element_Set, "HeadWindow", NULL,
+			0,NULL);
+	sd->push("settings",
+			_("Settings"),
+			_("List of various settings. These get loaded and saved in a laidoutrc file."),
+			Element_Fields, NULL, NULL,
+			0,NULL);
+
+	return sd;
+}
+
 //! Init pools, parse args, create a main control window.
 /*! Pools must be initialized after the constructor completes, because some of the initialization
  * requires that laidout point to something meaningful.
@@ -443,6 +480,10 @@ int LaidoutApp::init(int argc,char **argv)
 
 	} else if (runmode==RUNMODE_Impose_Only) {
 		//***
+
+	} else if (runmode==RUNMODE_Shell) {
+		calculator->RunShell();
+		return 0;
 	}
 
 	DBG cerr <<"---done with init"<<endl;
@@ -524,7 +565,8 @@ int LaidoutApp::createlaidoutrc()
 					   //shortcuts
 					  " #By default when you modify shortcuts in Laidout, they are saved in ./shortcuts.\n"
 					  " #Listing another file here will load keys from that file first, THEN the ./shortcuts will\n"
-					  " #load on top of that.\n"
+					  " #load on top of that. For the file format, you may do a dump of current keys by\n"
+					  " #running \"laidout -S\".\n"
 					  "#shortcuts shortcutsfile\n"
 					  "\n"
 
@@ -542,8 +584,8 @@ int LaidoutApp::createlaidoutrc()
 
 					   //colors
 					  "#colors (***TODO)\n"
-					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate active/inactive. Redefine here.\n"
-					  "#  deactivate rgbf  1 .39 .39\n"
+					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
+					  "#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
 					  "\n"
 
 					   //default template
@@ -786,6 +828,7 @@ void InitOptions()
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui, then exit",        0, "\"newdoc net\"");
 	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
+	options.Add("shell",              'P', 0, "Enter a command line shell.",                 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
@@ -829,6 +872,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 't': { // load in template
 					ErrorLog log;
 					LoadTemplate(o->arg(),log);
+				} break;
+
+			case 'P': { // --shell
+					donotusex=2;
+					runmode=RUNMODE_Shell;
 				} break;
 
 			case 's': { // --script

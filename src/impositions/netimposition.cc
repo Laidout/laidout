@@ -754,7 +754,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	Spread *spread=PageLayout(whichpaper);
 	spread->style=SPREAD_PAPER;
 
-	PathsData *path=static_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
+	PathsData *path=dynamic_cast<PathsData *>(spread->path);//this was a non-local PathsData obj
 
 	 // put a reference to the outline in marks if printnet
 	if (printnet) {

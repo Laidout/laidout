@@ -146,6 +146,8 @@ class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public L
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
+typedef StyleDef ObjectDef;
+
 //------------------------------------- FieldNode -------------------------------------------
 class Style;
 

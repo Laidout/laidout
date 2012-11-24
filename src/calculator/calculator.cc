@@ -21,6 +21,7 @@
 #include "../laidout.h"
 #include "../stylemanager.h"
 #include "../headwindow.h"
+#include "../version.h"
 
 #include <lax/refptrstack.cc>
 
@@ -62,11 +63,13 @@ LaidoutCalculator::LaidoutCalculator()
 	
 	decimal=1;
 	from=0;
+	curline=0;
 	curexprs=NULL;
 	curexprslen=0;
 	calcerror=0;
 	calcmes=NULL;
 	messagebuffer=NULL;
+	temp_errorlog=NULL;
 	last_answer=NULL;
 
 
@@ -84,6 +87,49 @@ LaidoutCalculator::~LaidoutCalculator()
 	if (last_answer) last_answer->dec_count();
 }
 
+
+int LaidoutCalculator::RunShell()
+{
+	int numl=0;
+	char *temp=NULL;
+	char prompt[50];
+	string input;
+
+	cout << "Laidout "<<LAIDOUT_VERSION<<" shell. Type \"quit\" to quit."<<endl;
+
+	while (1) {
+		numl++;
+		
+		strcpy(prompt,"\n\nInput(");
+		char *temp2=itoa(numl,prompt+strlen(prompt));
+		if (temp2) temp2[0]='\0';
+		strcat(prompt,"): ");
+	
+		cout << prompt;
+		cin >> input;
+		if (input=="quit") return 0;
+
+//---------readline variant--------------
+//		tempexprs=readline(temp);
+//
+//		if (tempexprs==NULL) continue;
+//		//DBG cout<<"\nreadline:"<<tempexprs;
+//		delete[] temp; temp=NULL;
+//		if (strlen(tempexprs)==0) { free(tempexprs); continue; }
+//		add_history(tempexprs);
+//
+//		strncpy(exprs,tempexprs,BUFLEN-1);
+//		if (strlen(tempexprs)>BUFLEN-1) exprs[BUFLEN-1]='\0';
+//---------end readline variant--------------
+
+		temp=In(input.c_str());
+
+		cout << temp;
+		delete[] temp;
+	}
+
+	return 0;
+}
 
 
 //*********begin transplant******************************
@@ -143,6 +189,15 @@ void LaidoutCalculator::calcerr(const char *error,const char *where,int w, int s
 		appendnstr(calcmes,curexprs+pos,after-pos);
 		if (aaa) appendstr(calcmes,"...");
 	}
+
+	if (curline>0) {
+		appendstr(calcmes,"  line: ");
+		char ll[20];
+		sprintf(ll,"%d",curline);
+		appendstr(calcmes,ll);
+	}
+
+	if (temp_errorlog) temp_errorlog->AddMessage(calcmes,ERROR_Fail, 0, from,curline);
 }
 
 //------------- String parse helper functions
@@ -152,7 +207,7 @@ void LaidoutCalculator::calcerr(const char *error,const char *where,int w, int s
  * continues until the first character that is not a letter, number,
  * or an underscore.
  *
- * curexprs[from] must be a letter or a '_'. Otherwise NULL is returned.
+ * curexprs[from] must be a letter (as returned by isalpha()), or a '_'. Otherwise NULL is returned.
  * The length of the word is put in *n if n!=NULL.
  * The from variable is not advanced.
  *
@@ -174,19 +229,35 @@ char *LaidoutCalculator::getnamestring(int *n)  //  alphanumeric or _
 	return tname;
 }
 
+//! Return length of a name string, starting at from.
+/*! If there is no name beginning at from, then return 0.
+ *
+ * Does not advance from.
+ */
+int LaidoutCalculator::getnamestringlen()  //  alphanumeric or _ 
+{
+	if (!isalpha(curexprs[from]) && curexprs[from]!='_') return 0;
+
+	int c=0;
+	while (from+c<curexprslen && (isalnum(curexprs[from+c]) || curexprs[from+c]=='_')) c++;
+	return c;
+}
+
+
 //! Skip whitespace and "#...\n" based comments.
 /*! This will not advance past curexprslen, the length of the current expression.
- *
- * \todo should have something that keeps track of passing newlines, to make it easier
- *   go to line number of offending code
  */
 void LaidoutCalculator::skipwscomment()
 {
-	while (isspace(curexprs[from]) && from<curexprslen) from++;
-	if (curexprs[from]=='#') {
-		while (curexprs[from++]!='\n' && from<curexprslen); 
-		skipwscomment();
-	}
+	do {
+		while (isspace(curexprs[from]) && from<curexprslen) {
+			if (curexprs[from]=='\n') curline++;
+			from++;
+		}
+		if (curexprs[from]=='#') {
+			while (curexprs[from++]!='\n' && from<curexprslen); 
+		}
+	} while (isspace(curexprs[from]) || curexprs[from]=='#');
 }
 
 /*! Skip whitespace and skip final comments in the form "#....\n".
@@ -195,6 +266,9 @@ void LaidoutCalculator::skipwscomment()
  *
  * NOTE: since this skips ANYTHING after a '#' until a newline, you should
  * not use this while parsing strings.
+ *
+ * \todo currently NOT utf8 ok. So far this is ok, as nextchar() is only used to 
+ *   scan for ascii punctuation
  */
 int LaidoutCalculator::nextchar(char ch)
 {
@@ -230,7 +304,7 @@ int LaidoutCalculator::nextword(const char *word)
 
 
 //! Process a command or script. Returns a new char[] with the result.
-/*! Do not forget to delete the returned array!
+/*! Do not forget to delete[] the returned array!
  * 
  * \todo it almost goes without saying this needs automation
  * \todo it also almost goes without saying this is in major hack stage of development
@@ -277,6 +351,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 	skipwscomment();
 
 	int tfrom=-1;
+
 	while(!calcerror && tfrom!=from && from<curexprslen) { 
 		tfrom=from;
 		if (answer) { answer->dec_count(); answer=NULL; }
@@ -289,7 +364,12 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		}
 
 		if (calcerror) break;
-		answer=eval();
+
+		 //check for variable assignments, simple a=b usage, no (a,b)=(1,2) yet....
+		answer=checkAssignments();
+		if (calcerror) break;
+		else answer=eval();
+
 		if (calcerror) break;
 
 		//updatehistory(answer,outexprs);
@@ -309,12 +389,59 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 	return calcerror>0 ? 1 : 0;
 }
 
+/*! \todo need much more sophisticated assignments like flatvector v; v.x=3;
+ *     and (a,b)=(1,2)
+ *
+ *  Return 0 for no assignments.
+ */
+Value *LaidoutCalculator::checkAssignments()
+{
+	int namelen=getnamestringlen();
+	if (!namelen) return NULL;
+
+	int ttfrom=from;
+	from+=namelen;
+	skipwscomment();
+
+	if (!nextchar('=')) {
+		from=ttfrom;
+		return NULL;
+	}
+
+	 //we will be assigning something to a variable
+	int assign=uservars.findIndex(curexprs+ttfrom, namelen);
+
+	Value *v=eval();
+	if (calcerror) return NULL;
+
+	if (!v) { calcerr(_("Expected a value!")); return NULL; }
+
+	if (assign<0) {
+		char *assignname=NULL;
+		assignname=newnstr(curexprs+ttfrom, namelen);
+		uservars.push(assignname, v);
+		delete[] assignname;
+	} else {
+		uservars.set(assign, v);
+	}
+
+	return v;
+}
+
+Value *LaidoutCalculator::evalUservar(const char *word)
+{
+	Value *v=uservars.find(word);
+	if (v) v=v->duplicate();
+	return v;
+}
+
 //! Replace curexprs with newex, and set from=0.
 void LaidoutCalculator::newcurexprs(const char *newex,int len)
 {
 	makenstr(curexprs,newex,len);
 	curexprslen=strlen(curexprs);
 	from=0;
+	curline=0;
 }
 
 //! Parse any commands that change internal calculator settings like radians versus decimal.
@@ -607,7 +734,7 @@ Value *LaidoutCalculator::number()
 		if (nextchar('-')) sgn*=-1;
 		else if (!nextchar('+')) break;
 	};
-	 
+
 	if (nextchar('(') || nextchar('{')) {
 		 // handle stuff in parenthesis: (2-3-5)-2342
 		from--;
@@ -838,6 +965,11 @@ Value *LaidoutCalculator::evalname()
 		//int error_pos=0;
 		ValueHash *context=build_context(); //build calculator context
 		ValueHash *pp=parseParameters(function); //build parameter hash in order of styledef
+		if (calcerror) {
+			delete context;
+			delete[] word;
+			return NULL;
+		}
 
 		 //call the actual function
 		ErrorLog log;
@@ -881,16 +1013,25 @@ Value *LaidoutCalculator::evalname()
 		if (pp) delete pp;
 		if (context) delete context;
 		if (calcerror) { if (value) value->dec_count(); value=NULL; }
+		delete[] word;
 		return value;
 	}
 
-	 //search for user variables
-	//***
-
 	 //search for innate functions
 	Value *num=evalInnate(word,n);
-	if (num) return num;
+	if (calcerror || num) {
+		delete[] word;
+		return num;
+	}
 	
+	 //search for user variables
+	num=evalUservar(word);
+	if (calcerror || num) {
+		delete[] word;
+		return num;
+	}
+
+	delete[] word;
 	calcerr(_("Unknown name!"));
 	return NULL;
 }
@@ -910,7 +1051,7 @@ Value *LaidoutCalculator::evalInnate(const char *word, int len)
 	int tfrom=from;
 	from+=len;
 	ValueHash *pp=parseParameters(NULL);
-	if (!pp) return NULL;
+	if (!pp || calcerror) return NULL;
 	Value *v=NULL;
 
 	try {
@@ -1353,12 +1494,19 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 				}
 				if (ename) { delete[] ename; ename=NULL; }
 			}
+			if (ename) {
+				delete[] ename;
+				from=tfrom;
+			}
 			if (enumcheck<0) v=eval(); //either enum check failed, or was not an enum
 
 			if (v && !calcerror) {
 				pp->push(pname,v);
 				v->dec_count();
 				v=NULL;
+			} else if (calcerror) {
+				if (pname) { delete[] pname; pname=NULL; }
+				break;
 			}
 			if (pname) { delete[] pname; pname=NULL; }
 
@@ -1369,6 +1517,9 @@ ValueHash *LaidoutCalculator::parseParameters(StyleDef *def)
 				delete pp;
 				pp=NULL;
 			}
+		} else {//calcerror
+			if (pp) delete pp;
+			return NULL;
 		}
 	} 
 

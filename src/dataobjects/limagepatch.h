@@ -16,10 +16,38 @@
 #ifndef LIMAGEPATCH_H
 #define LIMAGEPATCH_H
 
+#include "drawableobject.h"
 #include <lax/interfaces/imagepatchinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 
 
+//------------------------------- LImagePatchData ---------------------------------------
+class LImagePatchData : public DrawableObject, public LaxInterfaces::ImagePatchData
+{
+  public:
+	LImagePatchData(LaxInterfaces::SomeData *refobj=NULL);
+	virtual ~LImagePatchData();
+	virtual const char *whattype() { return "ImagePatchData"; }
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void FindBBox();
+};
+
+
+//------------------------------- LColorPatchData ---------------------------------------
+class LColorPatchData : public DrawableObject, public LaxInterfaces::ColorPatchData
+{
+  public:
+	LColorPatchData(LaxInterfaces::SomeData *refobj=NULL);
+	virtual ~LColorPatchData();
+	virtual const char *whattype() { return "ColorPatchData"; }
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void FindBBox();
+};
+
+
+//------------------------------- LImagePatchInterface ---------------------------------------
 class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface
 {
  public:
@@ -28,6 +56,8 @@ class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 };
 
+
+//------------------------------- LColorPatchInterface ---------------------------------------
 class LColorPatchInterface : public LaxInterfaces::ColorPatchInterface
 {
  public:

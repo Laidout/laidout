@@ -1825,8 +1825,8 @@ void SignatureImposition::setPageStyles()
 
 	pagestyle=new RectPageStyle((signature->IsVertical()?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
 	pagestyle->pagetype=(signature->IsVertical()?2:1);
-	pagestyle->outline=(PathsData*)GetPageOutline(0,1);
-	pagestyle->margin =(PathsData*)GetPageMarginOutline(0,1);
+	pagestyle->outline=dynamic_cast<PathsData*>(GetPageOutline(0,1));
+	pagestyle->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(0,1));
 	pagestyle->ml=pagestyle->margin->minx;
 	pagestyle->mr=pagestyle->outline->maxx-pagestyle->margin->maxx;
 	pagestyle->mt=pagestyle->outline->maxy-pagestyle->margin->maxy;
@@ -1837,8 +1837,8 @@ void SignatureImposition::setPageStyles()
 
 	pagestyleodd=new RectPageStyle((signature->IsVertical()?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
 	pagestyleodd->pagetype=(signature->IsVertical()?3:0);
-	pagestyleodd->outline=(PathsData*)GetPageOutline(1,1);
-	pagestyleodd->margin =(PathsData*)GetPageMarginOutline(1,1);
+	pagestyleodd->outline=dynamic_cast<PathsData*>(GetPageOutline(1,1));
+	pagestyleodd->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(1,1));
 	pagestyleodd->ml=pagestyleodd->margin->minx;
 	pagestyleodd->mr=pagestyleodd->outline->maxx-pagestyleodd->margin->maxx;
 	pagestyleodd->mt=pagestyleodd->outline->maxy-pagestyleodd->margin->maxy;

@@ -23,6 +23,103 @@ using namespace std;
 
 using namespace LaxInterfaces;
 
+
+//------------------------------- LImagePatchData ---------------------------------------
+/*! \class LImagePatchData 
+ * \brief Subclassing LaxInterfaces::ImagePatchData
+ */
+
+
+LImagePatchData::LImagePatchData(LaxInterfaces::SomeData *refobj)
+{
+}
+
+LImagePatchData::~LImagePatchData()
+{
+}
+
+void LImagePatchData::FindBBox()
+{
+	ImagePatchData::FindBBox();
+}
+
+void LImagePatchData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		DrawableObject::dump_out(f,indent,what,context);
+		fprintf(f,"%sconfig\n",spc);
+		ImagePatchData::dump_out(f,indent+2,what,context);
+		return;
+	}
+
+	DrawableObject::dump_out(f,indent,what,context);
+	fprintf(f,"%sconfig\n",spc);
+	ImagePatchData::dump_out(f,indent+2,what,context);
+}
+
+void LImagePatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	DrawableObject::dump_in_atts(att,flag,context);
+	int foundconfig=0;
+	for (int c=0; c<att->attributes.n; c++) {
+		if (!strcmp(att->attributes.e[c]->name,"config")) {
+			foundconfig=1;
+			ImagePatchData::dump_in_atts(att,flag,context);
+		}
+	}
+	if (!foundconfig) ImagePatchData::dump_in_atts(att,flag,context);
+}
+
+
+//------------------------------- LColorPatchData ---------------------------------------
+/*! \class LColorPatchData 
+ * \brief Subclassing LaxInterfaces::ColorPatchData
+ */
+
+
+LColorPatchData::LColorPatchData(LaxInterfaces::SomeData *refobj)
+{
+}
+
+LColorPatchData::~LColorPatchData()
+{
+}
+
+void LColorPatchData::FindBBox()
+{
+	ColorPatchData::FindBBox();
+}
+
+void LColorPatchData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		DrawableObject::dump_out(f,indent,what,context);
+		fprintf(f,"%sconfig\n",spc);
+		ColorPatchData::dump_out(f,indent+2,what,context);
+		return;
+	}
+
+	DrawableObject::dump_out(f,indent,what,context);
+	fprintf(f,"%sconfig\n",spc);
+	ColorPatchData::dump_out(f,indent+2,what,context);
+}
+
+void LColorPatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	DrawableObject::dump_in_atts(att,flag,context);
+	int foundconfig=0;
+	for (int c=0; c<att->attributes.n; c++) {
+		if (!strcmp(att->attributes.e[c]->name,"config")) {
+			foundconfig=1;
+			ColorPatchData::dump_in_atts(att,flag,context);
+		}
+	}
+	if (!foundconfig) ColorPatchData::dump_in_atts(att,flag,context);
+}
+
+
 //------------------------------------- LImagePatchInterface -------------------------
 /*! \class LImagePatchInterface
  * 

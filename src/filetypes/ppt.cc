@@ -652,7 +652,7 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 			//***for eps objects
 
 		} else if (!strcmp(t->value,"text")) {
-			MysteryData *d=(MysteryData *)newObject("MysteryData");
+			MysteryData *d=dynamic_cast<MysteryData *>(newObject("MysteryData"));
 			d->importer=newstr(VersionName());
 			if (n) d->name=newstr(n->value);
 			 //<frame name="Text stream1"

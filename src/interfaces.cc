@@ -28,6 +28,7 @@
 #include "laidout.h"
 #include "dataobjects/limagepatch.h"
 
+#include "dataobjects/datafactory.h"
 #include "dataobjects/groupinterface.h"
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
@@ -90,6 +91,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool=new RefPtrStack<anInterface>;
 	}
 
+
+	InitializeDataFactory();
+
+
 	int id=1;
 	anInterface *i;
 
@@ -130,12 +135,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i=new PathInterface(id++,NULL);
 	existingpool->push(i); //2nd null is pathop pool
 	i->dec_count();
-	
-	 //------EPS
-	EpsInterface *eps=new EpsInterface(id++,NULL);
-	eps->style=1;
-	existingpool->push(eps);//*** combine with Image somehow?
-	eps->dec_count();
 
 //	 //------MysteryData
 //	MysteryInterface *mdata=new MysteryInterface(id++,NULL);

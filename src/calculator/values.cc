@@ -125,11 +125,34 @@ void ValueHash::renameKey(int i,const char *newname)
 	makestr(keys.e[i],newname);
 }
 
+/*! Return 0 for success, or nonzero for error.
+ * Increments count of newv.
+ */
+int ValueHash::set(const char *key, Value *newv)
+{
+	int i=findIndex(key);
+	return set(i,newv);
+}
+
+//! Set the value of an existing key to newv.
+/*! Return 0 for success, or nonzero for error.
+ * Increments count of newv.
+ */
+int ValueHash::set(int which, Value *newv)
+{
+	if (which<0 || which>=keys.n) return 1;
+	values.e[which]->dec_count();
+	newv->inc_count();
+	values.e[which]=newv;
+	return 0;
+}
+
 //! Return the index corresponding to name, or -1 if not found.
-int ValueHash::findIndex(const char *name)
+int ValueHash::findIndex(const char *name,int len)
 {
 	for (int c=0; c<keys.n; c++) {
-		if (!strcmp(name,keys.e[c])) return c;
+		if (len<0 && !strcmp(name,keys.e[c])) return c;
+		if (len>0 && !strncmp(name,keys.e[c],len)) return c;
 	}
 	return -1;
 }

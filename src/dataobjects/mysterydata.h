@@ -16,12 +16,13 @@
 #ifndef MYSTERYDATA_H
 #define MYSTERYDATA_H
 
+#include "drawableobject.h"
 #include <lax/interfaces/rectinterface.h>
 #include <lax/attributes.h>
 
 
 //--------------------------------------- MysteryData ---------------------------------
-class MysteryData : public LaxInterfaces::SomeData
+class MysteryData : virtual public DrawableObject, virtual public LaxInterfaces::SomeData
 {
  public:
 	char *importer;
