@@ -50,7 +50,7 @@ using namespace LaxInterfaces;
  * \todo it would be nice to support all the built in svg filters, and additionally
  *   image warping as a filter.
  */
-class ObjectFilter : virtual public Laxkit::anObject, virtual public Laxkit::RefCounted
+class ObjectFilter : virtual public Laxkit::anObject
 {
  public:
 	char *filtername;

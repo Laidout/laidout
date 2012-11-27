@@ -353,7 +353,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 		}
 
 		 //---group
-		Laxkit::RefCounted *r=parameters->findObject("group",-1,&e);
+		Laxkit::anObject *r=parameters->findObject("group",-1,&e);
 		if (e==0) {
 			if (dynamic_cast<Group *>(r)) {
 				if (config->toobj) config->toobj->dec_count();
@@ -752,7 +752,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"end"); throw error; }
 
 		 //---group
-		Laxkit::RefCounted *r=parameters->findObject("group",-1,&e);
+		Laxkit::anObject *r=parameters->findObject("group",-1,&e);
 		if (e==0) {
 			if (dynamic_cast<Group *>(r)) {
 				if (config->limbo) config->limbo->dec_count();

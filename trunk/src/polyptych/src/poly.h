@@ -17,7 +17,6 @@
 #define POLY_H
 
 #include <lax/anobject.h>
-#include <lax/refcounted.h>
 #include <lax/dump.h>
 #include <lax/lists.h>
 #include <lax/vectors.h>
@@ -58,7 +57,7 @@ class ExtraFace
 	int facemode; //is face still in normal position, or maybe stage of animation to other position
 	double a;    //can be used for a temporary angle face is tilted at
 	double *dihedral;
-	Laxkit::RefCounted *extra;
+	Laxkit::anObject *extra;
 	clock_t timestamp;
 
 	ExtraFace();
@@ -124,7 +123,6 @@ class Settype
 //-------------------------------- Polyhedron --------------------------------------
 class Polyhedron : 
 	virtual public Laxkit::anObject,
-	virtual public Laxkit::RefCounted,
 	virtual public LaxFiles::DumpUtility,
 	virtual public AbstractNet
 {

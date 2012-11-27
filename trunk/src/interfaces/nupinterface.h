@@ -60,7 +60,7 @@ enum NUpControlType {
 #define NUP_TtoB  4
 
 //---------------------------------- NUpInfo -----------------------------------------
-class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class NUpInfo : public Laxkit::DoubleBBox, public Laxkit::anObject, public LaxFiles::DumpUtility
 {
   public:
 	char *name;

@@ -711,7 +711,7 @@ void deleteFieldNode(FieldNode *fn)
  * \ingroup stylesandstyledefs
  * \brief Abstract base class for styles.
  * 
- *  class Style : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted 
+ *  class Style : public Laxkit::anObject, public LaxFiles::DumpUtility 
  * 
  *  Styles hold the actual values of a style definition found in a StyleDef.
  *  Many styles are specialized enough to have their own derived Style classes,

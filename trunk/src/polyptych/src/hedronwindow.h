@@ -52,7 +52,7 @@ class FaceDataObj
 	virtual const char *Str()=0;
 };
 
-class FaceData : public Laxkit::RefCounted, public Laxkit::PtrStack<FaceDataObj>
+class FaceData : public Laxkit::anObject, public Laxkit::PtrStack<FaceDataObj>
 {
   public:
 	FaceData();
@@ -80,7 +80,7 @@ class ImageFace : public FaceDataObj
 
 
 //--------------------------- PanoramaInfo -------------------------------
-class PanoramaInfo : public Laxkit::RefCounted
+class PanoramaInfo : public Laxkit::anObject
 {
   public:
 	char *filename;

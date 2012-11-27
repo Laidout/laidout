@@ -31,7 +31,7 @@
 
 const char *FoldDirectionName(char dir, int under, int translate=1);
 
-class Fold : public Laxkit::RefCounted
+class Fold : public Laxkit::anObject
 {
  public:
 	char direction; //l,r,t, or b
@@ -58,7 +58,7 @@ class FoldedPageInfo
 //------------------------------------ Signature -----------------------------------------
 StyleDef *makeSignatureImpositionStyleDef();
 
-class Signature : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
 	PaperStyle *paperbox; //optional

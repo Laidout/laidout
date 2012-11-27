@@ -71,7 +71,7 @@ int ValueHash::push(const char *name,const char *value)
 
 //! Create an ObjectValue with obj, and push.
 /*! Increments obj count. */
-int ValueHash::pushObject(const char *name,Laxkit::RefCounted *obj)
+int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
 {
 	keys.push(newstr(name));
 	Value *v=new ObjectValue(obj);
@@ -259,7 +259,7 @@ const char *ValueHash::findString(const char *name, int which, int *error_ret)
  * If the value exists, but is not an ObjectValue, then sets *error_ret=2.
  * Otherwise set to 0.
  */
-Laxkit::RefCounted *ValueHash::findObject(const char *name, int which, int *error_ret)
+Laxkit::anObject *ValueHash::findObject(const char *name, int which, int *error_ret)
 {
 	if (which<0) which=findIndex(name);
 	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
@@ -415,7 +415,7 @@ Value *StringValue::duplicate()
 //--------------------------------- ObjectValue -----------------------------
 /*! Will inc count of obj.
  */
-ObjectValue::ObjectValue(RefCounted *obj)
+ObjectValue::ObjectValue(anObject *obj)
 {
 	DBG cerr <<"ObjectValue creation.."<<endl;
 	object=obj; 

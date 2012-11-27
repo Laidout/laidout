@@ -94,10 +94,6 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
-DONE input base in no "config" in objects
-DONE drawable groups should be able to have non L objects
-DONE need to merge Group and DrawableObject
-
 make pdf default output format for sending to lp
 
 hedron window:
@@ -691,4 +687,8 @@ These can then be purged after each release...
 ===========================================================================================
 
 
+
+DONE input base in no "config" in objects
+DONE drawable groups should be able to have non L objects
+DONE need to merge Group and DrawableObject
 
