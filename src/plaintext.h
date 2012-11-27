@@ -19,13 +19,12 @@
 
 
 #include <lax/anobject.h>
-#include <lax/refcounted.h>
 #include <lax/dump.h>
 
 #include <cstdlib>
 
 //------------------------------ FileRef -------------------------------
-class FileRef : public Laxkit::anObject, public Laxkit::RefCounted
+class FileRef : public Laxkit::anObject
 {
  public:
 	char *filename;
@@ -43,7 +42,7 @@ enum PlainTextType {
 	TEXT_Temporary
 };
 
-class PlainText : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class PlainText : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
 	Laxkit::anObject *owner;

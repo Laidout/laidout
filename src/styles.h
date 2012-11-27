@@ -20,7 +20,6 @@
 #include <lax/lists.h>
 #include <cstdio>
 #include <lax/dump.h>
-#include <lax/refcounted.h>
 #include <lax/errorlog.h>
 
 #include "fieldplace.h"
@@ -63,7 +62,7 @@ typedef Style *(*NewStyleFunc)(StyleDef *def);
 typedef int (*StyleFunc)(ValueHash *context, ValueHash *parameters,
 							 Value **value_ret, ErrorLog &log);
  
-class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
+class StyleDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
 	char *extends;
@@ -179,8 +178,7 @@ void deleteFieldNode(FieldNode *fn);
 #define STYLE_NO_EDIT
 
 class Style : virtual public Laxkit::anObject, 
-			  virtual public LaxFiles::DumpUtility,
-			  virtual public Laxkit::RefCounted
+			  virtual public LaxFiles::DumpUtility
 {
  protected:
 	unsigned long style;

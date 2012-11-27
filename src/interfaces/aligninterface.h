@@ -38,7 +38,7 @@ enum AlignFinalLayout {
 	FALIGN_ObjectRotate
 };
 
-class AlignInfo : public Laxkit::anObject, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class AlignInfo : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
 	//mask for what to apply from a preset:
 	// snap_dir/alignment

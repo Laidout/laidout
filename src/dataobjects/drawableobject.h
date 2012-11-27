@@ -69,7 +69,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	double alpha; //object alpha applied to anything drawn by this and kids
 	double blur; //one built in filter?
 
-	//Laxkit::RefPtrStack<RefCounted *> refs; //what other resources this objects depends on?
+	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
 	LaxFiles::Attribute metadata;
 	LaxFiles::Attribute iohints;

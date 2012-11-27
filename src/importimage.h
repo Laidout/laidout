@@ -40,7 +40,7 @@ class ImagePlopInfo
 
 
 //------------------------------------- ImportImageSettings ------------------------------------
-class ImportImageSettings : public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class ImportImageSettings : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
 	char *settingsname, *filename;
@@ -54,7 +54,7 @@ class ImportImageSettings : public Laxkit::RefCounted, public LaxFiles::DumpUtil
 
 	int startpage; //which page (or area) to start dumping images into
 	int destination;
-	Laxkit::RefCounted *destobject;
+	Laxkit::anObject *destobject;
 //	Arrangement *arrangement;
 
 	ImportImageSettings();

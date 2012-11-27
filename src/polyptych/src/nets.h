@@ -95,7 +95,6 @@ class NetFace
 //----------------------------------- AbstractNet -----------------------------------
 class AbstractNet : 
 	virtual public Laxkit::anObject,
-	virtual public Laxkit::RefCounted,
 	virtual public LaxFiles::DumpUtility
 {
  public:

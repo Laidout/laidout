@@ -21,7 +21,7 @@
 #include "values.h"
 
 //----------------------------- LaidoutCalculator -------------------------------------
-class LaidoutCalculator : public Laxkit::RefCounted
+class LaidoutCalculator : public Laxkit::anObject
 {
  private:
 	 //context state

@@ -31,7 +31,7 @@ static struct tms tmptimestruct;
 //------------------------------ FileRef -------------------------------
 /*! \class FileRef 
  * \ingroup misc
- * \brief RefCounted pointer to an external file.
+ * \brief Reference counted pointer to an external file.
  *
  * At some point, this class may become the basis for an external link manager.
  * Then again, it might not.
@@ -84,8 +84,7 @@ PlainText::~PlainText()
 	if (thetext) delete[] thetext;
 	if (filename) delete[] filename;
 	if (name) delete[] name;
-	if (owner && dynamic_cast<RefCounted *>(owner))
-		dynamic_cast<RefCounted *>(owner)->dec_count();
+	if (owner) owner->dec_count();
 }
 
 const char *PlainText::Filename()

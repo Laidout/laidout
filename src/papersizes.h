@@ -70,7 +70,7 @@ Laxkit::PtrStack<PaperStyle> *GetBuiltinPaperSizes(Laxkit::PtrStack<PaperStyle> 
 
 
 //------------------------------------- PaperBox --------------------------------------
-class PaperBox :  public Laxkit::anObject, public Laxkit::RefCounted
+class PaperBox :  public Laxkit::anObject
 {
  public:
 	int which;
@@ -97,7 +97,7 @@ class PaperBoxData : public LaxInterfaces::SomeData
 
 
 //------------------------------------- PaperGroup --------------------------------------
-class PaperGroup : public ObjectContainer, public Laxkit::RefCounted, public LaxFiles::DumpUtility
+class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
 {
  public:
 	char *name;

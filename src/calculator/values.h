@@ -18,7 +18,6 @@
 
 #include <lax/anobject.h>
 #include <lax/refptrstack.h>
-#include <lax/refcounted.h>
 #include <lax/vectors.h>
 
 
@@ -48,7 +47,7 @@ enum ValueTypes {
 };
 
 //----------------------------- Value ----------------------------------
-class Value : public Laxkit::RefCounted
+class Value : public Laxkit::anObject
 {
  protected:
 	char *tempstr; //cached string representation
@@ -138,8 +137,8 @@ class StringValue : public Value
 class ObjectValue : public Value
 {
  public:
-	Laxkit::RefCounted *object;
-	ObjectValue(RefCounted *obj=NULL);
+	Laxkit::anObject *object;
+	ObjectValue(anObject *obj=NULL);
 	virtual ~ObjectValue();
 	virtual const char *toCChar();
 	virtual Value *duplicate();
@@ -147,7 +146,7 @@ class ObjectValue : public Value
 };
 
 //----------------------------- ValueHash ----------------------------------
-class ValueHash : public Laxkit::anObject, public Laxkit::RefCounted
+class ValueHash : public Laxkit::anObject
 {
 	Laxkit::PtrStack<char> keys;
 	Laxkit::RefPtrStack<Value> values;
@@ -161,7 +160,7 @@ class ValueHash : public Laxkit::anObject, public Laxkit::RefCounted
 	int push(const char *name,int i);
 	int push(const char *name,double d);
 	int push(const char *name,const char *string);
-	int pushObject(const char *name,Laxkit::RefCounted *obj);
+	int pushObject(const char *name,Laxkit::anObject *obj);
 	int push(const char *name,Value *v);
 	void swap(int i1, int i2);
 
@@ -177,7 +176,7 @@ class ValueHash : public Laxkit::anObject, public Laxkit::RefCounted
 	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
 	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
-	Laxkit::RefCounted *findObject(const char *name, int which=-1, int *error_ret=NULL);
+	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
 };
 

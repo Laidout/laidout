@@ -171,7 +171,7 @@ int ReImposeFunction(ValueHash *context,
 			if (c2==laidout->impositionpool.n) _("Imposition not found!"); //no imposition to use!
 			imp=laidout->impositionpool.e[c2]->Create();
 		} else {
-			RefCounted *obj=parameters->findObject("imposition",ii,&i);
+			anObject *obj=parameters->findObject("imposition",ii,&i);
 			Imposition *impmaybe=dynamic_cast<Imposition*>(obj);
 			if (!impmaybe) throw _("Wrong format for imposition!");
 

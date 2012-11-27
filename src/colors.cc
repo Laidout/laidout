@@ -186,7 +186,7 @@ class ColorInstance
  *
  * This can be used for palettes, for instance.
  */
-class ColorSet : public Laxkit::anObject, public LaxFiles::DumpUtility, public Laxkit::RefCounted
+class ColorSet : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
 	char *name;

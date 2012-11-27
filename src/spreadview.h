@@ -17,7 +17,6 @@
 #define SPREADVIEW_H
 
 #include <lax/anobject.h>
-#include <lax/refcounted.h>
 #include <lax/dump.h>
 #include <lax/interfaces/somedata.h>
 
@@ -68,7 +67,6 @@ class LittleSpread : public LaxInterfaces::SomeData, virtual public Laxkit::Tagg
 
 //----------------------- SpreadView --------------------------------------
 class SpreadView : public Laxkit::anObject,
-				   public Laxkit::RefCounted,
 				   public LaxFiles::DumpUtility,
 				   public Laxkit::DoubleBBox
 {
