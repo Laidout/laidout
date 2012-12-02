@@ -31,14 +31,14 @@
  * impositions
  * resources, like page sizes, palettes, imposition instance templates, etc
  * icons/menu items
- *  particular templates/types of data, master pages for instance
- * interpreters (python, yacas, octave, tex/latex?)
+ * particular templates/types of data, master pages for instance
+ * interpreters (python, yacas, octave, tex/latex?  -> investigate swig)
  * 
  * 
  */
 
 
-class PluginBase
+class Module
 {
   public:
 	virtual const char *PluginName()  = 0;

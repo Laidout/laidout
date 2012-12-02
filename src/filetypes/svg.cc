@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2009,2011 by Tom Lechner
+// Copyright (C) 2007-2009,2011-2012 by Tom Lechner
 //
 
 
@@ -903,6 +903,7 @@ StyleDef *SvgImportFilter::GetStyleDef()
 
 //forward declaration:
 int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log);
+GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
 {
@@ -1010,6 +1011,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 			group=dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0)); //pick layer 0 of the page
 		}
 
+		RefPtrStack<anObject> gradients;
 		for (c=0; c<svgdoc->attributes.n; c++) {
 			name =svgdoc->attributes.e[c]->name;
 			value=svgdoc->attributes.e[c]->value;
@@ -1026,21 +1028,47 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			} else if (!strcmp(name,"defs")) {
 				 //need to read in gradient and filter data...
-				//***
+				Attribute *defsatt=svgdoc->find("content:");
+				Attribute *def;
+				if (!defsatt || !defsatt->attributes.n) continue;
+
+				for (int c2=0; c2<defsatt->attributes.n; c2++) {
+					def=defsatt->attributes.e[c2];
+					name =def->name;
+					value=def->value;
+
+					if (!strcmp(name,"linearGradient")) {
+						GradientData *gradient=svgDumpInGradientDef(def, defsatt, GRADIENT_LINEAR, NULL);
+						gradients.push(gradient);
+						gradient->dec_count();
+
+					} else if (!strcmp(name,"radialGradient")) {
+						GradientData *gradient=svgDumpInGradientDef(def, defsatt, GRADIENT_RADIAL, NULL);
+						gradients.push(gradient);
+						gradient->dec_count();
+
+					} else if (!strcmp(name,"mask")) {
+					} else if (!strcmp(name,"filter")) {
+					//} else if (!strcmp(name,"font")) {
+					//} else if (!strcmp(name,"font-face")) {
+					//} else if (!strcmp(name,"image")) {
+					//} else if (!strcmp(name,"pattern")) {
+					//} else if (!strcmp(name,"text")) {
+					//} else if (!strcmp(name,"a")) {
+					//} else if (!strcmp(name,"altGlyphDef")) {
+					//} else if (!strcmp(name,"clipPath")) {
+					//} else if (!strcmp(name,"color-profile")) {
+					//} else if (!strcmp(name,"cursor")) {
+					//} else if (!strcmp(name,"foreignObject")) {
+					//} else if (!strcmp(name,"marker")) {
+					//} else if (!strcmp(name,"script")) {
+					//} else if (!strcmp(name,"style")) {
+					//} else if (!strcmp(name,"switch")) {
+					//} else if (!strcmp(name,"view")) {
+					}
+				}
 				continue;
 
-//****************svg 1.2 has been abandonded
-//			} else if (!strcmp(name,"masterPage")) {
-//				 //in Svg 1.2, masterPages are printed on any page that (somehow!) refers to them...
-//				//***not sure how to use these!!
-//				//contains g elements...
-//				continue;
-//
-//			} else if (!strcmp(name,"pageSet")) {
-//				 //in Svg 1.2, "pageSet"s contain "page" elements in "content:"
-//				//***
-//				continue;
-//
 			} 
 			
 			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],log)) continue;
@@ -1078,6 +1106,137 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		return 1;
 	}
 	return 0;
+}
+
+GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, GradientData *gradient)
+{
+	if (!gradient) gradient=dynamic_cast<GradientData *>(newObject("GradientData"));
+
+	double cx,cy,fx,fy,r;
+	flatpoint p1,p2;
+	int foundf=0;
+	if (!def) return NULL;
+	char *name, *value;
+	int units=0;//0 is user space, 1 is bounding box
+	double gm[6];
+	transform_identity(gm);
+
+	for (int c3=0; c3<def->attributes.n; c3++) {
+		name =def->attributes.e[c3]->name;
+		value=def->attributes.e[c3]->value;
+
+		if (!strcmp(name,"xlink:href")) {
+			 // might be color spots, need to scan in the ref
+			if (!value || value[0]!='#') continue;
+			char *xlinkid=value+1;
+			Attribute *xlink=NULL;
+			for (int c=0; c<defs->attributes.n; c++) {
+				name =def->attributes.e[c]->name;
+				value=def->attributes.e[c]->value;
+				if (!strcmp(name,"linearGradient") || !strcmp(name,"radialGradient")) {
+					Attribute *g=def->attributes.e[c]->find("id");
+					if (!strcmp(g->value,xlinkid)) {
+						xlink=def->attributes.e[c];
+						break;
+					}
+				}
+			}
+			if (xlink) svgDumpInGradientDef(xlink, defs, type, gradient);
+
+		} else if (!strcmp(name,"id")) {
+			makestr(gradient->nameid,value);
+
+		} else if (!strcmp(name,"gradientUnits")) {
+			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
+			if (!strcmp(value,"userSpaceOnUse")) units=0;
+			else if (!strcmp(value,"objectBoundingBox")) units=1;
+
+		} else if (!strcmp(name,"gradientTransform")) {
+			svgtransform(value,gm);
+
+		} else if (!strcmp(name,"cx")) {
+			DoubleAttribute(value,&cx,NULL);
+
+		} else if (!strcmp(name,"cy")) {
+			DoubleAttribute(value,&cy,NULL);
+
+		} else if (!strcmp(name,"fx")) {
+			DoubleAttribute(value,&fx,NULL);
+			foundf=1;
+
+		} else if (!strcmp(name,"fy")) {
+			DoubleAttribute(value,&fy,NULL);
+			foundf=1;
+
+		} else if (!strcmp(name,"r")) {
+			DoubleAttribute(value,&r,NULL);
+
+		} else if (!strcmp(name,"x1")) {
+			DoubleAttribute(value,&p1.x,NULL);
+
+		} else if (!strcmp(name,"y1")) {
+			DoubleAttribute(value,&p1.y,NULL);
+
+		} else if (!strcmp(name,"x2")) {
+			DoubleAttribute(value,&p2.x,NULL);
+
+		} else if (!strcmp(name,"y2")) {
+			DoubleAttribute(value,&p2.y,NULL);
+
+		} else if (!strcmp(name,"content:")) {
+			Attribute *spot=def->attributes.e[c3];
+			double offset=0,alpha=0;
+			ScreenColor color;
+			for (int c4=0; c4<spot->attributes.n; c4++) {
+				name =spot->attributes.e[c4]->name;
+				value=spot->attributes.e[c4]->value;
+
+				if (!strcmp(name,"stop")) {
+					for (int c5=0; c5<spot->attributes.e[c4]->attributes.n; c5++) {
+						name =spot->attributes.e[c4]->attributes.e[c5]->name;
+						value=spot->attributes.e[c4]->attributes.e[c5]->value;
+
+						if (!strcmp(name,"style")) {
+							 //style="stop-color:#ffffff;stop-opacity:1;"
+							char *str=strstr(value,"stop-color:");
+							if (str) {
+								str+=11;
+								HexColorAttributeRGB(str,&color,NULL);
+							}
+							str=strstr(value,"stop-opacity:");
+							if (str) {
+								str+=13;
+								DoubleAttribute(str,&alpha,NULL);
+							}
+
+						} else if (!strcmp(name,"offset")) {
+							DoubleAttribute(value,&offset,NULL);
+
+						} else if (!strcmp(name,"stop-color")) {
+							HexColorAttributeRGB(value,&color,NULL);
+
+						} else if (!strcmp(name,"stop-opacity")) {
+							DoubleAttribute(value,&alpha,NULL);
+
+						} else if (!strcmp(name,"id")) {
+							//ignore
+						}
+					}
+					gradient->AddColor(offset,&color);
+				}
+			}
+		}
+	}
+
+	if (type==GRADIENT_RADIAL) {
+		p1=transform_point(gm,flatpoint(cx,cy));
+		p2=(foundf ? transform_point(gm,flatpoint(fx,fy)) : p1);
+		gradient->Set(p1,p2, r,0, NULL,NULL, GRADIENT_RADIAL);
+	} else {
+		gradient->Set(p1,p2, 1,-1, NULL,NULL, GRADIENT_LINEAR);
+	}
+	
+	return gradient;
 }
 
 //! Return 1 for attribute used, else 0.
