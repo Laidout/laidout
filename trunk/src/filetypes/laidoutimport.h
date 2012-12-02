@@ -22,7 +22,7 @@
 #include "filefilters.h"
 
 
-void installPptFilter();
+void installLaidoutFilter();
 
 //------------------------------------- LaidoutOutFilter -----------------------------------
 class LaidoutOutFilter : public ExportFilter

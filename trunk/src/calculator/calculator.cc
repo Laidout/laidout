@@ -106,7 +106,7 @@ int LaidoutCalculator::RunShell()
 		strcat(prompt,"): ");
 	
 		cout << prompt;
-		cin >> input;
+		if (!getline(cin, input)) break;
 		if (input=="quit") return 0;
 
 //---------readline variant--------------
@@ -368,7 +368,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		 //check for variable assignments, simple a=b usage, no (a,b)=(1,2) yet....
 		answer=checkAssignments();
 		if (calcerror) break;
-		else answer=eval();
+		else if (!answer) answer=eval();
 
 		if (calcerror) break;
 
@@ -505,7 +505,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 					}
 
 					if (!strcmp(sd->name,showwhat)) {
-						appendstr(temp,element_TypeNames[sd->format]);
+						appendstr(temp,element_TypeNames(sd->format));
 						appendstr(temp," ");
 						appendstr(temp,sd->name);
 						//appendstr(temp,": ");
@@ -526,7 +526,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 								appendstr(temp,"  ");
 								appendstr(temp,nm);
 								appendstr(temp,": (");
-								appendstr(temp,element_TypeNames[fmt]);
+								appendstr(temp,element_TypeNames(fmt));
 								if (fmt==Element_Set) {
 									if (!isblank(rng)) {
 										appendstr(temp," of ");
@@ -1058,14 +1058,14 @@ Value *LaidoutCalculator::evalInnate(const char *word, int len)
 		v=pp->value(0);
 		double d;
 		if (v->type()==VALUE_Int) d=((IntValue*)v)->i;
-		else if (v->type()==VALUE_Double) d=((DoubleValue*)v)->d;
+		else if (v->type()==VALUE_Real) d=((DoubleValue*)v)->d;
 		else throw 1;
 
 		if (pp->n()==2) {
 			double d2;
 			v=pp->value(1);
 			if (v->type()==VALUE_Int) d2=((IntValue*)v)->i;
-			else if (v->type()==VALUE_Double) d2=((DoubleValue*)v)->d;
+			else if (v->type()==VALUE_Real) d2=((DoubleValue*)v)->d;
 			else { v=NULL; throw 1; }
 
 			if (!strcmp(word,"atan2")) { d=atan2(d,d2); if (decimal) d*=180/M_PI; v=new DoubleValue(d); }
@@ -1171,16 +1171,16 @@ int LaidoutCalculator::add(Value *&num1,Value *&num2)
 	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i+i
 		((IntValue *) num1)->i+=((IntValue*)num2)->i;
 
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) { //d+i
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) { //d+i
 		((DoubleValue *) num1)->d+=(double)((IntValue*)num2)->i;
 
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) { //i+d
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { //i+d
 		((DoubleValue *) num2)->d+=(double)((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) { //d+d
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { //d+d
 		((DoubleValue *) num1)->d+=((DoubleValue*)num2)->d;
 
 	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //fv+fv
@@ -1212,16 +1212,16 @@ int LaidoutCalculator::subtract(Value *&num1,Value *&num2)
 	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i-i
 		((IntValue *) num1)->i-=((IntValue*)num2)->i;
 
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) { //d-i
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) { //d-i
 		((DoubleValue *) num1)->d-=(double)((IntValue*)num2)->i;
 
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) { //i-d
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { //i-d
 		((DoubleValue *) num2)->d=(double)((IntValue*)num1)->i - ((DoubleValue *) num2)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) { //d-d
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { //d-d
 		((DoubleValue *) num1)->d-=((DoubleValue*)num2)->d;
 
 	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //fv-fv
@@ -1250,52 +1250,52 @@ int LaidoutCalculator::multiply(Value *&num1,Value *&num2)
 	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { //i*i
 		((IntValue *) num1)->i*=((IntValue*)num2)->i;
 
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) { //d*i
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) { //d*i
 		((DoubleValue *) num1)->d*=(double)((IntValue*)num2)->i;
 
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) { //i*d
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { //i*d
 		((DoubleValue *) num2)->d*=(double)((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) { //d*d
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { //d*d
 		((DoubleValue *) num1)->d*=((DoubleValue*)num2)->d;
 
-	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //i*v
+	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //i*v
 		((FlatvectorValue *) num2)->v*=((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //d*v
+	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Flatvector) { //d*v
 		((FlatvectorValue *) num2)->v*=((DoubleValue*)num1)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //i*v (3d)
+	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //i*v (3d)
 		((SpacevectorValue *) num2)->v*=((IntValue*)num1)->i;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if ((num1->type()==VALUE_Double || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //d*v (3d)
+	} else if ((num1->type()==VALUE_Real || num1->type()==VALUE_Int) && num2->type()==VALUE_Spacevector) { //d*v (3d)
 		((SpacevectorValue *) num2)->v*=((DoubleValue*)num1)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
 
-	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*i
+	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*i
 		((FlatvectorValue *) num1)->v*=((IntValue*)num2)->i;
 
-	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*d
+	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Flatvector) { //v*d
 		((FlatvectorValue *) num1)->v*=((DoubleValue*)num2)->d;
 
-	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*i (3d)
+	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*i (3d)
 		((SpacevectorValue *) num1)->v*=((IntValue*)num2)->i;
 
-	} else if ((num2->type()==VALUE_Double || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*d (3d)
+	} else if ((num2->type()==VALUE_Real || num2->type()==VALUE_Int) && num1->type()==VALUE_Spacevector) { //v*d (3d)
 		((SpacevectorValue *) num1)->v*=((DoubleValue*)num2)->d;
 
 	} else if (num1->type()==VALUE_Flatvector && num2->type()==VALUE_Flatvector) { //v*v 2-d
@@ -1332,7 +1332,7 @@ int LaidoutCalculator::divide(Value *&num1,Value *&num2)
 
 	double divisor;
 	if (num2->type()==VALUE_Int) divisor=((IntValue*)num2)->i;
-	else if (num2->type()==VALUE_Double) divisor=((DoubleValue*)num2)->d;
+	else if (num2->type()==VALUE_Real) divisor=((DoubleValue*)num2)->d;
 	else throw _("Cannot divide with that type");
 
 	if (divisor==0) throw _("Division by zero");
@@ -1345,14 +1345,14 @@ int LaidoutCalculator::divide(Value *&num1,Value *&num2)
 			num1->dec_count();
 			num1=v;
 		}
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Int) {
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Int) {
 		((DoubleValue *) num1)->d/=(double)((IntValue*)num2)->i;
-	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) {
 		((DoubleValue *) num2)->d=(double)((IntValue*)num1)->i / ((DoubleValue *) num2)->d;
 		Value *t=num2;
 		num2=num1;
 		num1=t;
-	} else if (num1->type()==VALUE_Double && num2->type()==VALUE_Double) {
+	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) {
 		((DoubleValue *) num1)->d/=((DoubleValue*)num2)->d;
 	} else throw _("Cannot divide those types");
 
@@ -1370,11 +1370,11 @@ int LaidoutCalculator::power(Value *&num1,Value *&num2)
 	double base, expon;
 
 	if (num1->type()==VALUE_Int) base=(double)((IntValue*)num1)->i;
-	else if (num1->type()==VALUE_Double) base=((DoubleValue*)num1)->d;
+	else if (num1->type()==VALUE_Real) base=((DoubleValue*)num1)->d;
 	else throw _("Cannot raise powers with those types");
 
 	if (num2->type()==VALUE_Int) expon=((IntValue*)num2)->i;
-	else if (num2->type()==VALUE_Double) expon=((DoubleValue*)num2)->d;
+	else if (num2->type()==VALUE_Real) expon=((DoubleValue*)num2)->d;
 	else throw _("Cannot raise powers with those types");
 
 	if (base==0) throw _("Cannot compute 0^x");
