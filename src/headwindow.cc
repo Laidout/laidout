@@ -941,7 +941,13 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 		needtodraw=1;
 		return 0;
 
+	} if (ch=='w' && (state&LAX_STATE_MASK)==ControlMask) {
+		if (laidout->numTopWindows()>1) {
+			app->destroywindow(this);
+		}
+		return 0;
 	}
+
 
 	return SplitWindow::CharInput(ch,buffer,len,state,d);
 }
