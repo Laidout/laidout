@@ -396,6 +396,7 @@ Document::Document(const char *filename)
 	makestr(saveas,filename);
 	modtime=times(NULL);
 	curpage=-1;
+	imposition=NULL;
 	
 	ErrorLog log;
 	Load(filename,log);
@@ -408,7 +409,7 @@ Document::Document(const char *filename)
  * Imposition::CreatePages() creates the pages, and they are
  * put in the pages stack.
  *
- * The filename is put in saveas, but the file is not loaded or saved.
+ * The filename is put in saveas, but the file is NOT loaded or saved.
  */
 Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 { 
