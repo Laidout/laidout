@@ -28,6 +28,10 @@ using namespace std;
 
 using namespace LaxFiles;
 
+
+
+namespace Laidout {
+
 //------------------------------------- FileFilter -----------------------------------
 /*! \class FileFilter
  * \brief Abstract base class of input and output file filters.
@@ -1157,4 +1161,6 @@ int export_document(DocumentExportConfig *config, ErrorLog &log)
 	return 0;
 }
 
+
+} // namespace Laidout
 

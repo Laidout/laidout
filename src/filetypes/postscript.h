@@ -23,6 +23,10 @@
 #include "../printing/psout.h"
 
 
+
+namespace Laidout {
+
+
 void installPostscriptFilters();
 
 //------------------------------------- EpsOutFilter -----------------------------------
@@ -66,6 +70,7 @@ class PsOutFilter : public ExportFilter
 
 
 
+} // namespace Laidout
 
 #endif
 	

@@ -17,8 +17,13 @@
 #include "polyptych/src/nets.h"
 
 
+
+namespace Laidout {
+
+
 Net *makeDodecahedronNet(double ww,double hh);
 
+} // namespace Laidout
 
 #endif
 

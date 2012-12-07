@@ -64,6 +64,14 @@ using namespace std;
 #define DBG 
 
 
+using namespace Laxkit;
+using namespace LaxFiles;
+using namespace LaxInterfaces;
+
+
+namespace Laidout {
+
+
 
 //---------------------------
  //***standard action ids for corner button menu
@@ -96,10 +104,6 @@ using namespace std;
 
 //---------------------------
 
-
-using namespace Laxkit;
-using namespace LaxFiles;
-using namespace LaxInterfaces;
 
 
 //------------debugging helper-----------------
@@ -4333,4 +4337,6 @@ int ViewWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 	return ViewerWindow::CharInput(ch,buffer,len,state,d);
 }
 
+
+} // namespace Laidout
 

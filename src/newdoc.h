@@ -29,6 +29,10 @@
 #include "laidout.h"
 #include "papersizes.h"
 
+
+namespace Laidout {
+
+
 #define NEWDOC_EDIT
 
 class NewDocWindow : public Laxkit::RowFrame
@@ -83,6 +87,8 @@ class NewProjectWindow : public Laxkit::RowFrame
 };
 
 Laxkit::anXWindow *BrandNew(int which=0);
+
+} //namespace Laidout
 
 #endif
 

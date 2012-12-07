@@ -41,6 +41,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- install Laidout filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -330,4 +334,5 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	return 0;
 }
 
+} // namespace Laidout
 

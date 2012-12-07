@@ -39,6 +39,10 @@ using namespace std;
 
 
 
+
+namespace Laidout {
+
+
 //----------------------------- NetImposition --------------------------
 
  //convenience defines for net->info
@@ -1128,4 +1132,6 @@ int NetImposition::SetNetFromFile(const char *file)
 
 	return 1;
 }
+
+} // namespace Laidout
 

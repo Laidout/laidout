@@ -27,6 +27,10 @@
 
 
 
+
+namespace Laidout {
+
+
 //------------------------------------- Style -------------------------------------------
 
 #define STYLE_READONLY
@@ -91,6 +95,7 @@ class EnumStyle : public Style
 
 
 
+} // namespace Laidout
 
 #endif
 

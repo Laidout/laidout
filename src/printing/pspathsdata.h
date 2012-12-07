@@ -19,8 +19,13 @@
 
 #include <lax/interfaces/pathinterface.h>
 
+namespace Laidout {
+
+
 void psPathsData(FILE *f,LaxInterfaces::PathsData *path);
 
+
+} // namespace Laidout
 
 #endif
 

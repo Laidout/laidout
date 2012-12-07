@@ -39,6 +39,10 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- LaidoutOpenWindow ------------------------------------
 
 /* \class LaidoutOpenWindow
@@ -1248,4 +1252,7 @@ int NewProjectWindow::UpdateOkToCreate()
 	if (ok) box->Grayed(0); else box->Grayed(1);
 	return ok;
 }
+
+
+} // namespace Laidout
 

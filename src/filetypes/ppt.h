@@ -22,6 +22,10 @@
 #include "filefilters.h"
 
 
+
+namespace Laidout {
+
+
 void installPptFilter();
 
 //------------------------------------- PptoutFilter -----------------------------------
@@ -65,6 +69,8 @@ class PptinFilter : public ImportFilter
 };
 
 
+
+} // namespace Laidout
 
 #endif
 	

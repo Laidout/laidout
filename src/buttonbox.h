@@ -20,6 +20,10 @@
 #include <lax/tabframe.h>
 
 
+namespace Laidout {
+
+
+
 //------------------------------------ ButtonBox -----------------------------------------
 class ButtonBox : public Laxkit::TabFrame
 {
@@ -34,6 +38,8 @@ class ButtonBox : public Laxkit::TabFrame
 	virtual int RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 };
 
+
+} // namespace Laidout
 
 #endif
 

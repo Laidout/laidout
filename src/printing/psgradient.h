@@ -19,8 +19,14 @@
 
 #include <lax/interfaces/gradientinterface.h>
 
+
+namespace Laidout {
+
+
 void psGradient(FILE *f,LaxInterfaces::GradientData *g);
 
+
+} // namespace Laidout
 
 #endif
 

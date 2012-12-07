@@ -31,6 +31,10 @@ using namespace std;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //-------------------------- makeBox ---------------------------------------------
 
 //! Return a net of a rectangular box with the given dimenions. 
@@ -95,4 +99,6 @@ Net *makeBox(const char *str,double x,double y,double z)
 
 	return net;
 }
+
+} // namespace Laidout
 

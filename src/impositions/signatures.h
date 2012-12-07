@@ -23,6 +23,10 @@
 #include <lax/interfaces/linestyle.h>
 
 
+
+namespace Laidout {
+
+
 #define AUTOMARK_Margins           1
 #define AUTOMARK_InnerDot          2
 #define AUTOMARK_InnerDottedLines  4
@@ -200,6 +204,7 @@ class SignatureImposition : public Imposition
 };
 
 
+} // namespace Laidout
 
 #endif
 

@@ -23,6 +23,10 @@
 #include "../papersizes.h"
 #include "netimposition.h"
 
+
+namespace Laidout {
+
+
 class NetDialog : public Laxkit::RowFrame
 {
   protected:
@@ -45,6 +49,7 @@ class NetDialog : public Laxkit::RowFrame
 };
 
 
+} // namespace Laidout
 
 #endif
 

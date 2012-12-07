@@ -31,6 +31,10 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
+
+namespace Laidout {
+
+
 //! Output postscript for an ImagePatchData. 
 /*! \ingroup postscript
  * \todo *** this is in the serious hack stage
@@ -101,4 +105,6 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 	fprintf(f,"grestore\n\n");
 	psPopCtm();
 }
+
+} // namespace Laidout
 

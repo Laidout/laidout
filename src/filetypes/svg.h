@@ -21,6 +21,10 @@
 #include "filefilters.h"
 
 
+namespace Laidout {
+
+
+
 
 void installSvgFilter();
 
@@ -72,6 +76,8 @@ class SvgImportFilter : public ImportFilter
 	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log);
 };
 
+
+} // namespace Laidout
 	
 #endif
 

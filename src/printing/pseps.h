@@ -19,8 +19,13 @@
 
 #include "../dataobjects/epsdata.h"
 
+
+namespace Laidout {
+
+
 void psEps(FILE *f,EpsData *epsdata);
 
+} // namespace Laidout
 
 #endif
 

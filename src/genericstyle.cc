@@ -18,6 +18,10 @@
 
 
 
+
+namespace Laidout {
+
+
 /*! \class GenericStyle
  * \ingroup stylesandstyledefs
  * \brief A style that has no very special internals.
@@ -127,3 +131,6 @@ void *GenericStyle::dereference(const char *extstr,int copy)
 	if (v) if (copy) return v.duplicate(); else return v;
 	
 }
+
+} // namespace Laidout
+

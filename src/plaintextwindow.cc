@@ -33,6 +33,10 @@ using namespace std;
 
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 #define TEXT_Select_Temp       -1
 #define TEXT_Add_New           -2
 #define TEXT_Delete_Current    -3
@@ -445,4 +449,6 @@ int PlainTextWindow::UseThis(PlainText *txt)
 
 	return 0;
 }
+
+} //namespace Laidout
 

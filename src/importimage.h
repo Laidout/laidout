@@ -19,6 +19,10 @@
 #include "laidout.h"
 #include <lax/interfaces/imageinterface.h>
 
+
+namespace Laidout {
+
+
 //------------------------------------- ImagePlopInfo ------------------------------------
 class ImagePlopInfo
 {
@@ -75,6 +79,9 @@ int dumpInImages(ImportImageSettings *settings, Document *doc,
 				 const char **imagefiles, const char **previewfiles, int nimages);
 
 int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *images, int startpage);
+
+
+} // namespace Laidout
 
 #endif
 

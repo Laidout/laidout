@@ -42,6 +42,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- install SVG filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -1513,4 +1517,6 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log)
 
 	return 0;
 }
+
+} // namespace Laidout
 

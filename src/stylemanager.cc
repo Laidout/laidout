@@ -25,6 +25,10 @@ using namespace std;
 using namespace Laxkit;
 
 
+namespace Laidout {
+
+
+
 //from laxkit in RefCounted: typedef int (*DeleteRefCountedFunc)(RefCounted *obj);
 
 ////! Func to be called from destructor of obj.
@@ -170,4 +174,7 @@ Style *StyleManager::newStyle(Style *baseonthis)
 	cout << "*** imp StyleManager::newStyle(Style *baseonthis)!!"<<endl;
 	return NULL;
 }
+
+
+} //namespace Laidout
 

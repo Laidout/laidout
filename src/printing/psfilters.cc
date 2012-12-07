@@ -31,6 +31,10 @@
 
 #include "psfilters.h"
 
+
+namespace Laidout {
+
+
 //--------------------------- Ascii85 encoding --------------------------------
 
 /*! \ingroup postscript
@@ -141,3 +145,7 @@ int Ascii85_chars(unsigned char *in,unsigned char *out)
 	
 	return 5;
 }
+
+
+} // namespace Laidout
+

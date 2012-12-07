@@ -23,6 +23,9 @@
 #include "plaintext.h"
 #include <lax/rowframe.h>
 
+
+namespace Laidout {
+
 //------------------------------ PlainTextWindow -------------------------------
 
 class PlainTextWindow : public Laxkit::RowFrame
@@ -43,6 +46,8 @@ class PlainTextWindow : public Laxkit::RowFrame
 	virtual void updateControls();
 	virtual void callSaveAs();
 };
+
+} // namespace Laidout
 
 #endif
 

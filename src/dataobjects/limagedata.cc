@@ -18,6 +18,10 @@
 #include "datafactory.h"
 
 
+
+namespace Laidout {
+
+
 //------------------------------- LImageData ---------------------------------------
 /*! \class LImageData
  * \brief Redefined LaxInterfaces::ImageData.
@@ -75,4 +79,7 @@ LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
 	DrawableObject::duplicate(dup);
 	return dup;
 }
+
+
+} //namespace Laidout
 

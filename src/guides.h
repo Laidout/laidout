@@ -17,5 +17,10 @@
 
 
 
+namespace Laidout {
+
+
+} // namespace Laidout
+
 #endif
 

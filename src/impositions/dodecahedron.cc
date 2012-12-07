@@ -31,6 +31,10 @@ using namespace std;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //-------------------------- Dodecahedron ---------------------------------------------
 
 //! Return a totally uwrapped net based on a dodecahedron abstract net.
@@ -96,4 +100,5 @@ Net *makeDodecahedronNet(double ww,double hh)
 }
 
 
+} // namespace Laidout
 

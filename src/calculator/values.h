@@ -23,6 +23,10 @@
 #include <lax/errorlog.h>
 
 
+
+namespace Laidout {
+
+
 typedef int Unit;
 
 enum ValueTypes {
@@ -344,6 +348,8 @@ class ValueHash : public Laxkit::anObject
 
 };
 
+
+} // namespace Laidout
 
 #endif
 

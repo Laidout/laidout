@@ -24,6 +24,10 @@
 #include "signatures.h"
 
 
+
+namespace Laidout {
+
+
 class SignatureEditor;
 
 //------------------------------------- SignatureInterface --------------------------------------
@@ -143,6 +147,8 @@ class SignatureEditor : public LaxInterfaces::ViewerWindow
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
+
+} // namespace Laidout
 
 #endif
 

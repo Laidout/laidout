@@ -41,6 +41,10 @@ using namespace LaxInterfaces;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //! Push any necessary PathOperator instances onto PathInterface::basepathops
 void PushBuiltinPathops()
 {
@@ -160,3 +164,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	
 	return existingpool;
 }
+
+
+} // namespace Laidout
+

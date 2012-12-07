@@ -25,6 +25,10 @@ using namespace std;
 
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 void psImage_masked2(FILE *f,LaxInterfaces::ImageData *img);
 	
 //! Output postscript for a Laxkit::ImageData. 
@@ -408,3 +412,7 @@ void psImage_103(FILE *f,LaxInterfaces::ImageData *img)
 	fprintf(f,"~>\n");
 	
 }
+
+
+} // namespace Laidout
+

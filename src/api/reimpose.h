@@ -20,6 +20,10 @@
 #include "../calculator/values.h"
 #include "../styles.h"
 
+
+namespace Laidout {
+
+
 StyleDef *makeReimposeStyleDef();
 
 int ReImposeFunction(ValueHash *context, 
@@ -27,6 +31,8 @@ int ReImposeFunction(ValueHash *context,
 					 Value **value_ret,
 					 ErrorLog &log);
 
+
+} // namespace Laidout
 
 #endif 
 

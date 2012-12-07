@@ -29,6 +29,10 @@ using namespace std;
 using namespace Laxkit;
 
 
+
+namespace Laidout {
+
+
 //------------------------ HelpWindow -------------------------
 //
 /*! \class HelpWindow
@@ -187,4 +191,7 @@ int HelpWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard *
 	}
 	return 1;
 }
+
+
+} // namespace Laidout
 

@@ -26,6 +26,10 @@
 
 
 
+namespace Laidout {
+
+
+
 class DrawableObject;
 
 
@@ -123,6 +127,8 @@ class DrawableObject :  virtual public ObjectContainer,
 };
 
 
+
+} //namespace Laidout
 
 #endif
 

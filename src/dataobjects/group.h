@@ -18,10 +18,16 @@
 
 #include "drawableobject.h"
 
+
+namespace Laidout {
+
+
 //------------------------------ Group ----------------------------
 
 typedef DrawableObject Group;
 
+
+} //namespace Laidout
 
 #endif
 

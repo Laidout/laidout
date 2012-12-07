@@ -18,6 +18,10 @@
 
 #include <lax/interfaces/imageinterface.h>
 
+
+namespace Laidout {
+
+
 //-------------------------------- EpsData ----------------------------------
 class EpsData : public LaxInterfaces::ImageData
 {
@@ -47,6 +51,8 @@ class EpsInterface : public LaxInterfaces::ImageInterface
 	virtual LaxInterfaces::ImageData *newData();
 	virtual int Refresh();
 };
+
+} //namespace Laidout
 
 #endif
 

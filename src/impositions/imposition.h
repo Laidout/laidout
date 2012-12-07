@@ -24,9 +24,16 @@
 #include "../papersizes.h"
 #include "../dataobjects/objectcontainer.h"
 
+#include "../document.h"
+
+
+
+namespace Laidout {
+
+
+class Document;
 class Imposition;
 class Spread;
-#include "../document.h"
 
 //------------------------- PageLocation --------------------------------------
 
@@ -184,6 +191,10 @@ int AddToImpositionPool(Laxkit::PtrStack<ImpositionResource> *existingpool, cons
 Imposition *newImpositionByResource(const char *impos);
 Imposition *newImpositionByType(const char *impos);
 void dumpOutImpositionTypes(FILE *f,int indent);
+
+
+} // namespace Laidout
+
 
 #endif
 

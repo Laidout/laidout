@@ -21,6 +21,10 @@
 #include "netimposition.h"
 
 
+
+namespace Laidout {
+
+
 #ifndef LAIDOUT_NOGL
 
 class PolyptychWindow : public Laxkit::RowFrame
@@ -42,6 +46,7 @@ class PolyptychWindow : public Laxkit::RowFrame
 
 #endif
 
+} // namespace Laidout
 
 #endif
 

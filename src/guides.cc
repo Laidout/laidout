@@ -15,6 +15,10 @@
 #include "guides.h"
 
 
+namespace Laidout {
+
+
+
 /*! \class Guide
  * \brief Things snap to guides.
  *
@@ -121,4 +125,7 @@ void Grid::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 void Grid::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 { ***
 }
+
+
+} // namespace Laidout
 

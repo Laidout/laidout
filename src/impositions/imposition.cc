@@ -31,6 +31,10 @@ using namespace std;
 
 
 
+namespace Laidout {
+
+
+
 //------------------------- PageLocation --------------------------------------
 
 /*! \class PageLocation
@@ -878,4 +882,6 @@ Imposition *ImpositionResource::Create()
 	if (config && imp) imp->dump_in_atts(config,0,NULL);
 	return imp;
 }
+
+} // namespace Laidout
 

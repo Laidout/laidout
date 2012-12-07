@@ -20,6 +20,10 @@
 #include <lcms.h>
 
 
+
+namespace Laidout {
+
+
 /*! \defgroup colors Color Management
  *
  * These are functions and classes related to color management...
@@ -225,4 +229,6 @@ class ColorManager
 	
 };
 
+
+} // namespace Laidout
 

@@ -32,6 +32,10 @@ using namespace Laxkit;
 using namespace LaxInterfaces;
 
 
+namespace Laidout {
+
+
+
 //---------------------------- Group --------------------------------
 
 //! For somedatafactory.
@@ -114,4 +118,7 @@ void InitializeDataFactory()
 	lobjectfactory.DefineNewObject(LAX_IMAGEPATCHDATA,"ImagePatchData",createLImagePatchData,NULL);
 	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
 }
+
+
+} //namespace Laidout
 

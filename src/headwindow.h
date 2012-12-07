@@ -21,6 +21,10 @@
 #include "document.h"
 
 
+
+namespace Laidout {
+
+
 //------------------------------- HeadWindow ---------------------------------------
 
 class HeadWindow : public Laxkit::SplitWindow
@@ -67,6 +71,9 @@ class HeadWindow : public Laxkit::SplitWindow
 
 Laxkit::anXWindow *newHeadWindow(Document *doc=NULL,const char *which=NULL);
 Laxkit::anXWindow *newHeadWindow(LaxFiles::Attribute *att);
+
+
+} // namespace Laidout
 
 #endif
 

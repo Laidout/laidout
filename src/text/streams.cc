@@ -18,6 +18,10 @@
 #include "../language.h"
 
 
+
+namespace Laidout {
+
+
 //----------------------------------- StreamStyle -----------------------------------
 class StreamStyle
 {
@@ -133,4 +137,6 @@ class Stream
 	Stream();
 	virtual ~Stream();
 };
+
+} // namespace Laidout
 

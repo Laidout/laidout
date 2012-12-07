@@ -18,6 +18,10 @@
 
 #include <lax/palette.h>
 
+
+
+namespace Laidout {
+
 class PalettePane : public Laxkit::PaletteWindow
 {
  public:
@@ -28,6 +32,7 @@ class PalettePane : public Laxkit::PaletteWindow
 	virtual const char *PaletteDir();
 };
 
+} // namespace Laidout
 
 #endif
 

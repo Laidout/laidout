@@ -17,7 +17,13 @@
 #define FILTERS_H
 
 
+
+namespace Laidout {
+
+
 void installFilters();
 
+
+} // namespace Laidout
 
 #endif

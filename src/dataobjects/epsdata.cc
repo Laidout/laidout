@@ -30,6 +30,10 @@ using namespace std;
 using namespace LaxFiles;
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 //-------------------------------- EpsData ----------------------------------
 /*! \class EpsData
  * \brief Class to hold, of all things, EPS files.
@@ -294,4 +298,6 @@ int EpsInterface::Refresh()
 	}
 	return 0;
 }
+
+} //namespace Laidout
 

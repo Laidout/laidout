@@ -19,6 +19,10 @@
 #include <lax/messagebox.h>
 #include <lax/laximages.h>
 
+
+namespace Laidout {
+
+
 class AboutWindow : public Laxkit::MessageBox
 {
  public:
@@ -31,6 +35,9 @@ class AboutWindow : public Laxkit::MessageBox
 	virtual void Refresh();
 	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
+
+
+} // namespace Laidout
 
 #endif
 

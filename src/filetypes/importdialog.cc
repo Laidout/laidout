@@ -32,6 +32,10 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 
+
+namespace Laidout {
+
+
 /*! \class ImportFileDialog
  * \brief Dialog for importing a single, primarily vector based file.
  *
@@ -436,4 +440,7 @@ int ImportFileDialog::send(int id)
 
 	return 1;
 }
+
+
+} // namespace Laidout
 

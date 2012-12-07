@@ -26,6 +26,10 @@
 #include "styles.h"
 
 
+
+namespace Laidout {
+
+
 //---------------------------- PageBleed ---------------------------------
 
 class PageBleed
@@ -129,6 +133,7 @@ class Page : public ObjectContainer
 	virtual const char *object_e_name(int i) { return NULL; }
 };
 
+} // namespace Laidout
 
 #endif
 

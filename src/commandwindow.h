@@ -20,6 +20,10 @@
 #include <lax/promptedit.h>
 #include "calculator/calculator.h"
 
+
+namespace Laidout {
+
+
 class CommandWindow : public Laxkit::PromptEdit
 {
  protected:
@@ -31,6 +35,9 @@ class CommandWindow : public Laxkit::PromptEdit
  	virtual const char *whattype() { return "CommandWindow"; }
 	virtual ~CommandWindow();
 };
+
+
+} // namespace Laidout
 
 #endif
 

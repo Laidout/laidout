@@ -31,6 +31,10 @@ using namespace LaxFiles;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //for automarks: gap is 1/8 inch, mwidth is about 1/72.. at some point these will be customizable
 #define GAP .0625
 #define MWIDTH  .014
@@ -2481,4 +2485,5 @@ Spread *SignatureImposition::GetLittleSpread(int whichspread)
 	return PageLayout(whichspread);
 }
 
+} // namespace Laidout
 

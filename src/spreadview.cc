@@ -32,6 +32,10 @@ using namespace LaxInterfaces;
 #include <iostream>
 using namespace std;
 
+
+
+namespace Laidout {
+
 //------------------------------- arrangetype --------------------------------
 
 const char *arrangetypestring(int a)
@@ -996,4 +1000,7 @@ void SpreadView::Reset()
 		SwapPages(c,c2);
 	}
 }
+
+
+} // namespace Laidout
 

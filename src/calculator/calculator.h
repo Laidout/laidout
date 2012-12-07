@@ -20,6 +20,10 @@
 #include "../styles.h"
 #include "values.h"
 
+
+namespace Laidout {
+
+
 //----------------------------- LaidoutCalculator -------------------------------------
 class LaidoutCalculator : public Laxkit::anObject
 {
@@ -91,6 +95,8 @@ class LaidoutCalculator : public Laxkit::anObject
 //------------------------------- parsing helpers ------------------------------------
 ValueHash *MapParameters(StyleDef *def,ValueHash *rawparams);
 
+
+} // namespace Laidout
 
 #endif
 

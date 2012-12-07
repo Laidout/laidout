@@ -22,6 +22,10 @@
 #include "../document.h"
 #include <lax/messagebar.h>
 
+
+namespace Laidout {
+
+
 class PrintingDialog : public ExportDialog
 {
  protected:
@@ -39,6 +43,7 @@ class PrintingDialog : public ExportDialog
 };
 
 
+} // namespace Laidout
 
 #endif
 

@@ -45,6 +45,9 @@ using namespace LaxInterfaces;
 using namespace std;
 #define DBG 
 
+
+namespace Laidout {
+
 //! Push axes and transform by m, draw data, pop axes.
 /*! \ingroup objects
  * *** uh, this is unnecessary? the other one does this already....
@@ -417,3 +420,9 @@ int SetClipFromPaths(Laxkit::Displayer *dp,LaxInterfaces::SomeData *outline, con
 //	if (n && !iscontinuing) fprintf(f,"clip\n");
 //	return n;
 //}
+
+
+} // namespace Laidout
+
+
+

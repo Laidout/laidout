@@ -20,6 +20,9 @@
 #include <lax/rowframe.h>
 
 
+namespace Laidout {
+
+
 class GenericStyleDialog : public Laxkit::RowFrame
 {
  protected:
@@ -38,6 +41,8 @@ class GenericStyleDialog : public Laxkit::RowFrame
 };
 
 
+
+} // namespace Laidout
 
 #endif
 

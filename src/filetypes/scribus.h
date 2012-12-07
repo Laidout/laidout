@@ -23,6 +23,10 @@
 
 
 
+
+namespace Laidout {
+
+
 void installScribusFilter();
 
 //------------------------ Scribus in/reimpose/out helpers -------------------------------------
@@ -74,6 +78,9 @@ class ScribusImportFilter : public ImportFilter
 	virtual const char *FileType(const char *first100bytes);
 	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log);
 };
+
+
+} // namespace Laidout
 
 #endif
 

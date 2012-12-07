@@ -19,6 +19,10 @@
 
 
 
+namespace Laidout {
+
+
+
 
 /*! \class LGradientData 
  * \brief Subclassing LaxInterfaces::GradientData
@@ -83,4 +87,7 @@ LaxInterfaces::SomeData *LGradientData::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+
+
+} //namespace Laidout
 

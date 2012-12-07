@@ -35,6 +35,10 @@ using namespace std;
 using namespace LaxFiles;
 
 
+
+namespace Laidout {
+
+
 //NOTES:
 // definetype polyhedron { v=set of vector, f=set of set of int, e=set of array[2]int }
 // names: v={vector},f={dummy1},e={array[2]int},  dummy1=set of int 
@@ -1079,4 +1083,7 @@ const char *ObjectValue::toCChar()
 
 Value *ObjectValue::duplicate()
 { return new ObjectValue(object); }
+
+
+} // namespace Laidout
 

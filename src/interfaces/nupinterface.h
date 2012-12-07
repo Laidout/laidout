@@ -23,6 +23,10 @@
 #include "../interfaces/actionarea.h"
 
 
+namespace Laidout {
+
+
+
 enum NUpControlType {
 	NUP_None=0,
 	NUP_Major_Arrow,
@@ -183,6 +187,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 };
 
 
+} //namespace Laidout
 
 #endif
 

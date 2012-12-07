@@ -23,6 +23,10 @@
 using namespace std;
 #define DBG 
 
+
+namespace Laidout {
+
+
 //------------------------------ ObjectContainer ----------------------------------
 
 /*! \class ObjectContainer
@@ -280,4 +284,8 @@ int ObjectContainer::contains(Laxkit::anObject *d,FieldPlace &place)
 	}
 	return 0;
 }
+
+
+
+} //namespace Laidout
 

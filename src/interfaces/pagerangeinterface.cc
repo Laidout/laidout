@@ -34,6 +34,10 @@ using namespace std;
 #define DBG 
 
 
+namespace Laidout {
+
+
+
 #define PAD 5
 #define FUDGE 5.0
 
@@ -886,5 +890,5 @@ int PageRangeInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::L
 }
 
 
-//} // namespace Laidout
+} // namespace Laidout
 

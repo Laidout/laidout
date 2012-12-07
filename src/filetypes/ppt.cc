@@ -41,6 +41,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- install Passepartout filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -697,4 +701,6 @@ int PptinFilter::pptDumpInGroup(Attribute *att, Group *group)
 	return numobjs;
 }
 
+
+} // namespace Laidout
 

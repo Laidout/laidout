@@ -22,6 +22,10 @@
 #include "../laidout.h"
 
 
+namespace Laidout {
+
+
+
 //------------------------------------- PageRangeInterface --------------------------------------
 
 class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUser
@@ -84,6 +88,8 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 };
 
 
+
+} //namespace Laidout
 
 #endif
 

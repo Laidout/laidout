@@ -18,6 +18,10 @@
 
 #include "../styles.h"
 
+
+namespace Laidout {
+
+
 StyleDef *makeNewDocumentStyleDef();
 int NewDocumentFunction(ValueHash *context, 
 					 ValueHash *parameters,
@@ -32,6 +36,8 @@ int OpenFunction(ValueHash *context,
 					 Value **value_ret,
 					 ErrorLog &log);
 
+
+} // namespace Laidout
 
 #endif 
 

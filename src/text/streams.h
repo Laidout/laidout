@@ -16,6 +16,11 @@
 #ifndef STREAMS_H
 #define STREAMS_H
 
+
+
+namespace Laidout {
+
+
 class TextEffect
 {
   public:
@@ -145,6 +150,8 @@ class ParagraphStyle : public Style
 	virtual ~ParagraphStyle();
 };
 
+
+} // namespace Laidout
 
 #endif
 

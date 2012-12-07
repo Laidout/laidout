@@ -40,6 +40,11 @@ using namespace LaxInterfaces;
 using namespace std;
 #define DBG 
 
+
+
+namespace Laidout {
+
+
 //size of the fold indicators on left of screen
 #define INDICATOR_SIZE 10
 
@@ -2712,5 +2717,5 @@ int SignatureEditor::CharInput(unsigned int ch,const char *buffer,int len,unsign
 
 
 
-//} // namespace Laidout
+} // namespace Laidout
 

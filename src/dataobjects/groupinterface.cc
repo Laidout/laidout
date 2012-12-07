@@ -31,6 +31,10 @@ using namespace std;
 using namespace LaxInterfaces;
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 //----------------------------- GroupInterface -----------------------
 
 /*! \class GroupInterface
@@ -392,4 +396,6 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 	return ObjectInterface::CharInput(ch,buffer,len,state,d);
 }
 
+
+} //namespace Laidout
 

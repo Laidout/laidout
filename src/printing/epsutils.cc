@@ -31,6 +31,10 @@ using namespace std;
 using namespace Laxkit;
 
 
+
+namespace Laidout {
+
+
 //! From the open file f, get the bounding box, and the preview, title and creation date (if present).
 /*!
  * Turns preview to a new'd char[], with same depth and data as the preview if any. 
@@ -415,5 +419,8 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 	}
 	return 0;
 }
+
+
+} // namespace Laidout
 
 
