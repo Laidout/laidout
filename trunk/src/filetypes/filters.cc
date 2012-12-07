@@ -23,6 +23,7 @@
 #include "scribus.h"
 #include "pdf.h"
 #include "podofoimposeplan.h"
+#include "laidoutimport.h"
 
 //! Just call each installWhatever() for the filters defined in other files.
 void installFilters()
@@ -34,4 +35,5 @@ void installFilters()
 	installPostscriptFilters();
 	installScribusFilter();
 	installSvgFilter();
+	installLaidoutFilter();
 }
