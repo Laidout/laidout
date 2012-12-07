@@ -19,9 +19,16 @@
 #include <lax/interfaces/imageinterface.h>
 #include <cstdio>
 
+
+namespace Laidout {
+
+
 void psImage(FILE *f,LaxInterfaces::ImageData *i);
 void psImage_masked_interleave1(FILE *f,LaxInterfaces::ImageData *img);
 void psImage_masked_interleave2(FILE *f,LaxInterfaces::ImageData *img);
 void psImage_103(FILE *f,LaxInterfaces::ImageData *img);
 
+
+} // namespace Laidout
 #endif
+

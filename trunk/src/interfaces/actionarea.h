@@ -19,6 +19,10 @@
 
 #include <lax/doublebbox.h>
 
+
+namespace Laidout {
+
+
 //------------------------------------- ActionArea ---------------------------
 
 enum ActionAreaType {
@@ -58,6 +62,8 @@ class ActionArea : public Laxkit::DoubleBBox
 	virtual void Position(double x,double y,int which=3);
 };
 
+
+} //namespace Laidout
 
 #endif
 

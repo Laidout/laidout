@@ -39,6 +39,10 @@ using namespace std;
 using namespace Laxkit;
 using namespace LaxFiles;
 
+
+namespace Laidout {
+
+
 /*! \enum TreeChangeType
  * \ingroup misc
  * \brief Type for what in the doc tree has changed. See TreeChangeEvent.
@@ -325,4 +329,7 @@ int LaidoutApp::dump_out_shortcuts(FILE *f, int indent, int how)
 	else manager->SaveHTML("-");
 	return 0;
 }
+
+
+} // namespace Laidout
 

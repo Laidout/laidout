@@ -20,11 +20,17 @@
 #include <lax/palette.h>
 
 
+namespace Laidout {
+
+
+
 DrawableObject *RegistrationMark(double pointsize, double linewidthinpoints);
 DrawableObject *BWColorBars(double pointsize, int colorsystem);
 DrawableObject *ColorBars(double pointsize, Laxkit::Palette *palette, int numrows, int numcols);
 //LaxInterfaces::SomeData *SpreadInfoMark(const char *format, const char *dateformat, const char *timeformat);
 
+
+} // namespace Laidout
 
 #endif
 

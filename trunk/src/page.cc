@@ -33,6 +33,10 @@ using namespace Laxkit;
 using namespace std;
 #define DBG 
 
+
+namespace Laidout {
+
+
 //----------------------------------- PageBleed ----------------------------------------
 /*! \class PageBleed
  * \brief Simple class to keep track of how pages bleed onto each other.
@@ -738,4 +742,5 @@ ImageData *Page::Thumbnail()
 }
 
 
+} // namespace Laidout
 

@@ -46,6 +46,9 @@ using namespace std;
 
 
 
+namespace Laidout {
+
+
 //----------------------- SpreadInterface --------------------------------------
 
 /*! \class SpreadInterface
@@ -384,7 +387,7 @@ int SpreadInterface::Refresh()
 	 //*** this needs little bubble at back of arrows, and little arrow at front
 	for (c=0; c<view->spreads.n; c++) {
 		if (view->spreads.e[c]->prev) {
-			::DrawData(dp,view->spreads.e[c]->connection,NULL,NULL);
+			Laidout::DrawData(dp,view->spreads.e[c]->connection,NULL,NULL);
 		}
 	}
 	 
@@ -405,7 +408,7 @@ int SpreadInterface::Refresh()
 		dp->PushAndNewTransform(view->spreads.e[c]->m());
 		
 		 //draw the spread's path
-		::DrawData(dp,view->spreads.e[c]->spread->path,NULL,&fs);
+		Laidout::DrawData(dp,view->spreads.e[c]->spread->path,NULL,&fs);
 
 		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
 			 // draw thumbnails
@@ -414,7 +417,7 @@ int SpreadInterface::Refresh()
 
 			if (pg<0) {
 				 //no page index means this place is an empty page, for a page in a thread
-				::DrawData(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,&efs);
+				Laidout::DrawData(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,&efs);
 
 			} else if (drawthumbnails) {
 				if (pg>=0 && pg<doc->pages.n) {
@@ -428,7 +431,7 @@ int SpreadInterface::Refresh()
 					dp->PushClip(1);
 					SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->Getctm());
 					
-					::DrawData(dp,thumb,NULL,NULL);
+					Laidout::DrawData(dp,thumb,NULL,NULL);
 					
 					 //remove clipping region
 					dp->PopClip();
@@ -440,7 +443,7 @@ int SpreadInterface::Refresh()
 		}	
 		
 		 // draw path again over whatever was drawn, but don't fill...
-		::DrawData(dp,view->spreads.e[c]->spread->path,NULL,NULL);
+		Laidout::DrawData(dp,view->spreads.e[c]->spread->path,NULL,NULL);
 
 		 // draw currently selected pages with thick line
 		for (int cc=0; cc<curpages.n; cc++) {
@@ -451,7 +454,7 @@ int SpreadInterface::Refresh()
 				unsigned long oldfg=dp->FG();
 				dp->NewFG(0,0,255);
 				dp->LineAttributes(3,LineSolid,CapButt,JoinMiter);
-				::DrawData(dp,outline, &ls,NULL);
+				Laidout::DrawData(dp,outline, &ls,NULL);
 				dp->NewFG(oldfg);
 			}
 		}
@@ -1228,7 +1231,7 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 	DBG 		//double i[6];
 	DBG 		//transform_invert(i,thumb->m());
 	DBG 		//dp->PushAndNewTransform(i);
-	DBG 		::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
+	DBG 		Laidout::DrawData(dp,thumb,NULL,NULL,DRAW_AXES|DRAW_BOX);
 	DBG 		//dp->PopAxes();
 	DBG 		dp->EndDrawing();
 	DBG 	}
@@ -1631,4 +1634,6 @@ int SpreadEditor::Resize(int nw,int nh)
 		spreadtool->ArrangeSpreads();
 	return c;
 }
+
+} // namespace Laidout
 

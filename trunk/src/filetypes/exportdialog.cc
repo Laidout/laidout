@@ -37,6 +37,10 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 
+
+namespace Laidout {
+
+
 //---------------------------- ConfigEventData -------------------------
 /*! \class ConfigEventData
  * \brief Class to transport a DocumentExportConfig.
@@ -831,4 +835,6 @@ int ExportDialog::CharInput(unsigned int ch, unsigned int state,const LaxKeyboar
 	return 1;
 }
 
+
+} // namespace Laidout
 

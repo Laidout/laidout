@@ -42,6 +42,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- install Image filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -324,4 +328,7 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	return 0;
 	
 }
+
+
+} // namespace Laidout
 

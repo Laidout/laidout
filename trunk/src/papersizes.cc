@@ -35,6 +35,9 @@ using namespace LaxFiles;
 using namespace Laxkit;
 
 
+
+namespace Laidout {
+
 //-------------------------------- GetBuiltinPaperSizes ------------------
 
 //      PAPERSIZE   Width  Height  Units
@@ -754,3 +757,4 @@ int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
 	return 0;
 }
 
+} // namespace Laidout

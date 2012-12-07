@@ -19,6 +19,10 @@
 #include <lax/refptrstack.h>
 #include "styles.h"
 
+
+namespace Laidout {
+
+
 class StyleManager
 {
  protected:
@@ -47,6 +51,9 @@ class StyleManager
 #ifndef LAIDOUT_CC
 extern StyleManager stylemanager;
 #endif
+
+
+} // namespace Laidout
 
 #endif
 

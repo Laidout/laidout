@@ -25,6 +25,10 @@
 
 
 #define EXPORT_COMMAND (1<<16)
+
+
+namespace Laidout {
+
 	
 //---------------------------- ConfigEventData -------------------------
 class ConfigEventData : public Laxkit::EventData
@@ -80,6 +84,7 @@ class ExportDialog : public Laxkit::RowFrame
 };
 
 
+} // namespace Laidout
 
 #endif
 

@@ -33,6 +33,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- install Podofoimpose filter
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -331,4 +335,8 @@ int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 //
 //	return 0;
 //}
+
+
+
+} // namespace Laidout
 

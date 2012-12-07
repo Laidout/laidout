@@ -36,6 +36,10 @@ using namespace std;
 
 
 
+
+namespace Laidout {
+
+
 //--------------------------------------- SimpleNetLine -------------------------------------------
 /*! \class SimpleNetLine
  * \brief Class to hold extra lines for use in SimpleNet.
@@ -995,4 +999,5 @@ int SimpleNet::dumpOutNet(FILE *f,int indent,int what)
 }
 
 
+} // namespace Laidout
 

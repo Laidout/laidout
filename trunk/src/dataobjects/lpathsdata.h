@@ -21,6 +21,10 @@
 
 
 
+
+namespace Laidout {
+
+
 //------------------------------- LPathsData ---------------------------------------
 
 class LPathsData : public DrawableObject, public LaxInterfaces::PathsData
@@ -36,6 +40,8 @@ class LPathsData : public DrawableObject, public LaxInterfaces::PathsData
 };
 
 
+
+} //namespace Laidout
 
 #endif
 

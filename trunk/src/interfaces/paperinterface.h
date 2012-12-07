@@ -20,6 +20,10 @@
 
 #include "../laidout.h"
 
+
+namespace Laidout {
+
+
 //-------------------------- misc PaperGroup utils --------------------------
 char *new_paper_group_name();
 
@@ -87,6 +91,8 @@ class PaperInterface : public LaxInterfaces::anInterface
 	virtual int UseThisDocument(Document *doc);
 };
 
+
+} //namespace Laidout
 
 
 #endif

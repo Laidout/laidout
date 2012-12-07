@@ -20,6 +20,10 @@
 #include <lax/anobject.h>
 #include "styles.h"
 
+
+namespace Laidout {
+
+
 //------------------------------ ObjectContainer ----------------------------------
 
 #define Next_Success        1
@@ -68,6 +72,7 @@ class ObjectContainer : virtual public Laxkit::anObject
 
 
 
+} //namespace Laidout
 
 #endif
 

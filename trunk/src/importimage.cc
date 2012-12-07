@@ -40,6 +40,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 //------------------------------------- ImportImageSettings ------------------------------------
 /*! \class ImportImageSettings
  * \brief Class to hold info about how to import mass quantities of images.
@@ -930,4 +934,6 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 //int applyPageNumberImages(Document *doc,const char *pathtonums,double dpi)
 //{
 //}
+
+} // namespace Laidout
 

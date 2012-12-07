@@ -25,6 +25,10 @@
 #include "podofoimposeplan.h"
 #include "laidoutimport.h"
 
+
+namespace Laidout {
+
+
 //! Just call each installWhatever() for the filters defined in other files.
 void installFilters()
 {
@@ -37,3 +41,7 @@ void installFilters()
 	installSvgFilter();
 	installLaidoutFilter();
 }
+
+
+} // namespace Laidout
+

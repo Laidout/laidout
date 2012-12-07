@@ -22,6 +22,10 @@
 #include "filefilters.h"
 
 
+
+namespace Laidout {
+
+
 void installLaidoutFilter();
 
 //------------------------------------- LaidoutOutFilter -----------------------------------
@@ -64,6 +68,7 @@ class LaidoutInFilter : public ImportFilter
 };
 
 
+} // namespace Laidout
 
 #endif
 	

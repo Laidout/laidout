@@ -35,6 +35,10 @@ using namespace std;
 #define DBG 
 
 
+namespace Laidout {
+
+
+
 #define PAD 5
 #define fudge 5.0
 
@@ -1767,5 +1771,5 @@ void NUpInterface::ApplyRandom()
 	}
 }
 
-//} // namespace Laidout
+} // namespace Laidout
 

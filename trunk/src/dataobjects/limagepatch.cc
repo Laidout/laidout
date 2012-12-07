@@ -25,6 +25,10 @@ using namespace std;
 using namespace LaxInterfaces;
 
 
+namespace Laidout {
+
+
+
 //------------------------------- LImagePatchData ---------------------------------------
 /*! \class LImagePatchData 
  * \brief Subclassing LaxInterfaces::ImagePatchData
@@ -216,3 +220,7 @@ int LColorPatchInterface::CharInput(unsigned int ch,const char *buffer,int len,u
 	if (cc==1) return 1;
 	return cc;
 }
+
+
+} //namespace Laidout
+

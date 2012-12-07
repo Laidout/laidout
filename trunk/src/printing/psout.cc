@@ -50,6 +50,10 @@ using namespace LaxInterfaces;
 
 
 
+namespace Laidout {
+
+
+
 
 /*! \defgroup postscript Postscript
  *
@@ -826,4 +830,5 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	return 0;
 }
 
+} // namespace Laidout
 

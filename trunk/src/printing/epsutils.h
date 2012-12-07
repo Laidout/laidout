@@ -19,6 +19,10 @@
 #include <lax/doublebbox.h>
 
 
+
+namespace Laidout {
+
+
 int scaninEPS(FILE *f, Laxkit::DoubleBBox *bbox, char **title, char **date, 
 		char **preview, int *depth, int *width, int *height);
 unsigned char *EpsPreviewToARGB(unsigned char *dest, const char *preview, int width, int height, int depth);
@@ -27,5 +31,7 @@ int WriteEpsPreviewAsPng(const char *fullgspath,
 						 const char *previewfile, int maxw, int maxh,
 						 char **error_ret);
 
+
+} // namespace Laidout
 #endif
 

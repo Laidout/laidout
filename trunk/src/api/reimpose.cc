@@ -20,6 +20,10 @@
 
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 /*! \ingroup api */
 StyleDef *makeReimposeStyleDef()
 {
@@ -249,4 +253,5 @@ int ReImposeFunction(ValueHash *context,
 }
 
 
+} // namespace Laidout
 

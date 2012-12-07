@@ -20,6 +20,10 @@
 
 #include "../styles.h"
 
+
+namespace Laidout {
+
+
 StyleDef *makeImportStyleDef();
 int ImportFunction(ValueHash *context, 
 					 ValueHash *parameters,
@@ -34,6 +38,8 @@ int ExportFunction(ValueHash *context,
 					 Value **value_ret,
 					 ErrorLog &log);
 
+
+} // namespace Laidout
 
 #endif 
 

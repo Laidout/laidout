@@ -23,7 +23,13 @@ class Document;
 #include "spreadview.h"
 
 
+namespace Laidout {
+
+
+
+class Spread;
 class SpreadView;
+class Imposition;
 
 enum  LaidoutSaveFormat {
 	Save_Normal,
@@ -138,6 +144,8 @@ class Document : public ObjectContainer, public Style
 //	int Print();
 };
 
+
+} //namespace Laidout
 
 #endif
 

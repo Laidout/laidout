@@ -17,6 +17,10 @@
 #define INTERFACES_DOCUMENTUSER_H
 
 
+
+namespace Laidout {
+
+
 class Document;
 
 /*! \class DocumentUser
@@ -28,6 +32,8 @@ class DocumentUser
 	DocumentUser() {}
 	virtual int UseThisDocument(Document *doc) = 0;
 };
+
+} //namespace Laidout
 
 #endif
 

@@ -27,6 +27,10 @@ using namespace Laxkit;
 #define DBG
 
 
+
+namespace Laidout {
+
+
 //--------------------------------- SinglesEditor ------------------------------------
 /*! \class SinglesEditor
  * \brief Editor for Singles imposition objects.
@@ -442,4 +446,6 @@ void SinglesEditor::UpdatePaper(int dialogtoimp)
 		papery->SetText(num);
 	}
 }
+
+} // namespace Laidout
 

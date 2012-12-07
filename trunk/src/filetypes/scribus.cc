@@ -48,6 +48,10 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
+
+namespace Laidout {
+
+
 //1.5 inches and 1/4 inch
 #define CANVAS_MARGIN_X 100.
 #define CANVAS_MARGIN_Y 20.
@@ -2280,4 +2284,5 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 
 
 
+} // namespace Laidout
 

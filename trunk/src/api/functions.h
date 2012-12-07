@@ -18,10 +18,16 @@
 
 
 
+
+namespace Laidout {
+
+
 int InitFunctions();
 int InitObjectDefinitions();
 
 
+
+} // namespace Laidout
 
 #endif
 

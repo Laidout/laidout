@@ -18,6 +18,10 @@
 
 #include "styles.h"
 
+
+namespace Laidout {
+
+
 class GenericStyle : public Style
 {
  protected:
@@ -50,5 +54,7 @@ class GenericStyle : public Style
 	virtual char *getstring(const char *ext);
 };
 
+
+} // namespace Laidout
 #endif
 

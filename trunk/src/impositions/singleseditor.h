@@ -20,6 +20,10 @@
 #include <lax/lineinput.h>
 #include "singles.h"
 
+
+namespace Laidout {
+
+
 class SinglesEditor : public Laxkit::RowFrame
 {
 	virtual void send();
@@ -48,6 +52,7 @@ class SinglesEditor : public Laxkit::RowFrame
 	void UpdatePaper(int dialogtoimp);
 };
 
+} // namespace Laidout
 
 #endif
 

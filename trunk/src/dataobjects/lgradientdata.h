@@ -21,6 +21,10 @@
 
 
 
+namespace Laidout {
+
+
+
 //------------------------------- LGradientData ---------------------------------------
 
 class LGradientData : public DrawableObject, public LaxInterfaces::GradientData
@@ -37,6 +41,8 @@ class LGradientData : public DrawableObject, public LaxInterfaces::GradientData
 };
 
 
+
+} //namespace Laidout
 
 #endif
 

@@ -3,6 +3,9 @@
 
 
 
+namespace Laidout {
+
+
 
 
 int Document::FunctionCall(const char *function_name,
@@ -41,4 +44,6 @@ class Scriptable
 
 ......
 class Document : ...., virtual public Scriptable {};
+
+} // namespace Laidout
 

@@ -27,6 +27,10 @@
 using namespace LaxInterfaces;
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 /*! \file
  * This file defines various common objects people may want.
  */
@@ -209,4 +213,7 @@ DrawableObject *ColorBars(double pointsize, Palette *palette, int numrows, int n
 
 	return info;
 } */
+
+} //namespace Laidout
+
 

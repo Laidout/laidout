@@ -22,6 +22,10 @@
 
 
 
+namespace Laidout {
+
+
+
 //----------------------------- GroupInterface -----------------------
 
 class GroupInterface : public LaxInterfaces::ObjectInterface
@@ -49,6 +53,8 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual int ToggleGroup();
 };
 
+
+} //namespace Laidout
 
 #endif
 

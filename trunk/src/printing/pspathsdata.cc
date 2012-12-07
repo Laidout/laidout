@@ -20,6 +20,10 @@ using namespace Laxkit;
 using namespace LaxInterfaces;
 
 
+
+namespace Laidout {
+
+
 static int addpath(FILE *f,Coordinate *path)
 {
 	Coordinate *p,*p2,*start;
@@ -127,4 +131,7 @@ void psPathsData(FILE *f,PathsData *pdata)
 		}
 	}
 }
+
+
+} // namespace Laidout
 

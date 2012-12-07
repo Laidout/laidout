@@ -24,6 +24,10 @@
 #include "../laidout.h"
 
 
+namespace Laidout {
+
+
+
 //---------------------------------- AlignInfo -----------------------------------------
 enum AlignFinalLayout {
 	FALIGN_None,
@@ -221,6 +225,8 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 };
 
 
+
+} //namespace Laidout
 
 #endif
 

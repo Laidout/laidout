@@ -23,6 +23,10 @@
 
 #include <cstdlib>
 
+
+namespace Laidout {
+
+
 //------------------------------ FileRef -------------------------------
 class FileRef : public Laxkit::anObject
 {
@@ -67,6 +71,8 @@ class PlainText : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
+
+} //namespace Laidout
 
 #endif
 

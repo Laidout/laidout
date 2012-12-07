@@ -25,6 +25,10 @@ using namespace Laxkit;
 using namespace std;
 #define DBG 
 
+
+
+namespace Laidout {
+
 //---------------------------- PrintingDialog ----------------------------------
 
 /*! \class PrintingDialog
@@ -74,4 +78,5 @@ int PrintingDialog::init()
 }
 
 
+} // namespace Laidout
 

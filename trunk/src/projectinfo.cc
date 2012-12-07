@@ -59,6 +59,10 @@ using namespace std;
 #define DBG 
 
 
+
+
+namespace Laidout {
+
 class ProjectInfo
 {	
 	char *projectname;
@@ -264,4 +268,7 @@ int ProjectInfoWindow::ClientEvent(XClientMessageEvent *e,const char *mes)
 	}
 	return 0;
 }
+
+
+} // namespace Laidout
 

@@ -19,8 +19,14 @@
 
 #include <lax/interfaces/colorpatchinterface.h>
 
+
+
+namespace Laidout {
+
 void psColorPatch(FILE *f,LaxInterfaces::ColorPatchData *g);
 
+
+} // namespace Laidout
 
 #endif
 

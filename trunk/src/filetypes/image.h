@@ -22,6 +22,10 @@
 
 
 
+
+namespace Laidout {
+
+
 void installImageFilter();
 
 
@@ -48,6 +52,8 @@ class ImageExportFilter : public ExportFilter
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker
 };
 
+
+} // namespace Laidout
 
 #endif
 	

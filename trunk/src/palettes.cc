@@ -26,6 +26,10 @@ using namespace std;
 
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 PalettePane::PalettePane(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
 		int xx,int yy,int ww,int hh,int brder,
 		anXWindow *prev,unsigned long nowner,const char *nsend)
@@ -64,4 +68,6 @@ int PalettePane::send()
 	app->SendMessage(e,owner,win_sendthis,object_id);
 	return 1;
 }
+
+} // namespace Laidout
 

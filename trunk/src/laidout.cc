@@ -58,8 +58,6 @@
 #include <sys/stat.h>
 #include <cstdio>
 
-StyleManager stylemanager;
-
 
 using namespace Laxkit;
 using namespace LaxFiles;
@@ -67,6 +65,12 @@ using namespace LaxFiles;
 #include <iostream>
 using namespace std;
 #define DBG 
+
+
+//! The mother of all Laidout classes.
+namespace Laidout {
+
+StyleManager stylemanager;
 
 
 
@@ -1536,6 +1540,12 @@ int LaidoutApp::DumpWindows(FILE *f,int indent,Document *doc)
 	return n;
 }
 
+
+} // namespace Laidout
+
+
+using namespace Laidout;
+
 //---------------------------------------- main() ----------------------- This is where it all begins!
 int main(int argc,char **argv)
 {
@@ -1602,6 +1612,7 @@ int main(int argc,char **argv)
 
 	return 0;
 }
+
 
 
 

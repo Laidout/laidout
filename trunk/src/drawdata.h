@@ -22,6 +22,10 @@
 #define DRAW_AXES (1<<0)
 #define DRAW_BOX  (1<<1)
 
+
+namespace Laidout {
+
+
 void DrawData(Laxkit::Displayer *dp,double *m,LaxInterfaces::SomeData *data,
 				Laxkit::anObject *a1,Laxkit::anObject *a2,unsigned int flags=0);
 void DrawData(Laxkit::Displayer *dp,LaxInterfaces::SomeData *data,
@@ -30,6 +34,9 @@ LaxInterfaces::SomeData *newObject(const char *thetype);
 int boxisin(flatpoint *points, int n,Laxkit::DoubleBBox *bbox);
 
 int SetClipFromPaths(Laxkit::Displayer *dp,LaxInterfaces::SomeData *outline, const double *extra_m);
+
+
+} // namespace Laidout
 
 #endif
 

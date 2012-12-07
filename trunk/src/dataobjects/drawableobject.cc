@@ -32,6 +32,10 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
+
+namespace Laidout {
+
+
 //----------------------------- ObjectFilter ---------------------------------
 /*! \class ObjectFilter
  * \brief Class that modifies any DrawableObject somehow.
@@ -634,4 +638,6 @@ int DrawableObject::UnGroup(int n,const int *which)
 }
 
 
+
+} //namespace Laidout
 

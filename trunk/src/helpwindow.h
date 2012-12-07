@@ -18,6 +18,10 @@
 
 #include <lax/messagebox.h>
 
+
+namespace Laidout {
+
+
 class HelpWindow : public Laxkit::MessageBox
 {
 	int s;
@@ -30,6 +34,8 @@ class HelpWindow : public Laxkit::MessageBox
 	virtual int init();
 	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
+
+} //namespace Laidout
 
 #endif
 

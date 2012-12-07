@@ -22,6 +22,13 @@
 
 #include "impositions/imposition.h"
 
+
+
+namespace Laidout {
+
+
+class Spread;
+
 //------------------------------- arrangetype --------------------------------
 
  // values for arrangestate
@@ -113,6 +120,7 @@ class SpreadView : public Laxkit::anObject,
 
 
 
+} // namespace Laidout
 
 #endif
 

@@ -40,6 +40,10 @@ using namespace std;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //------------------------------- PageLableType enum --------------------------------
 /*! \enum PageLabelType
  * \brief Enum for PageRange types.
@@ -1223,4 +1227,6 @@ int Document::UnGroup(FieldPlace which)
 	//locate object which and if it is a group, do ungroup with parent group
 	return 0;
 }
+
+} // namespace Laidout
 

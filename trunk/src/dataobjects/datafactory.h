@@ -20,6 +20,10 @@
 #include <lax/interfaces/somedatafactory.h>
 
 
+namespace Laidout {
+
+
+
 const int LO_GROUP       =LAX_DATA_MAX;
 const int LO_MYSTERYDATA =LAX_DATA_MAX+1;
 
@@ -28,6 +32,7 @@ void InitializeDataFactory();
 
 
 
+} //namespace Laidout
 
 #endif
 

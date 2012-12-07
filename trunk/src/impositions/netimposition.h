@@ -23,6 +23,10 @@
 #define SINGLES_WITH_ADJACENT_LAYOUT 3
 
 
+
+namespace Laidout {
+
+
 //----------------------------------- NetImposition ---------------------------------
 StyleDef *makeNetImpositionStyleDef();
 
@@ -94,6 +98,8 @@ class NetImposition : public Imposition
 	virtual int numActiveFaces();
 	virtual int numActiveNets();
 };
+
+} // namespace Laidout
 
 #endif
 

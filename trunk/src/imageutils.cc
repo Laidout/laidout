@@ -29,6 +29,10 @@ using namespace LaxInterfaces;
 ***
 
 
+
+namespace Laidout {
+
+
 class PreviewCacheNode 
 {
  public:
@@ -107,5 +111,8 @@ char *make_temp_file(const char *dir,const char *format,const char *file)
 {
 	tmpfile mkstemp
 }
+*/
 
+
+} // namespace Laidout
 

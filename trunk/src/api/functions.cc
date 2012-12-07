@@ -23,6 +23,10 @@
 
 #include "../papersizes.h"
 
+
+namespace Laidout {
+
+
 //! Initialize available functions in stylemanager.
 /*! Return the number of functions added.
  */
@@ -44,4 +48,5 @@ int InitObjectDefinitions()
 	return stylemanager.styledefs.n;
 }
 
+} // namespace Laidout
 

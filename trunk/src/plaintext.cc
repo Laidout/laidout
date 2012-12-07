@@ -24,6 +24,10 @@
 using namespace LaxFiles;
 
 
+namespace Laidout {
+
+
+
 //to ward off segfaults in calls to times()
 static struct tms tmptimestruct;
 
@@ -232,4 +236,6 @@ void PlainText::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 		}
 	}
 }
+
+} //namespace Laidout
 

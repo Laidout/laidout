@@ -18,6 +18,10 @@
 
 #include "imposition.h"
 
+
+
+namespace Laidout {
+
 //------------------------ Singles ---------------------------
 
 StyleDef *makeSinglesStyleDef();
@@ -69,6 +73,7 @@ class Singles : public Imposition
 
 
 
+} // namespace Laidout
 
 #endif
 

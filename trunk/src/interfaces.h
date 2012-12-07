@@ -19,10 +19,16 @@
 #include <lax/lists.h>
 #include <lax/interfaces/aninterface.h>
 
+
+namespace Laidout {
+
+
 void PushBuiltinPathops();
 
 Laxkit::RefPtrStack<LaxInterfaces::anInterface> *
 GetBuiltinInterfaces(Laxkit::RefPtrStack<LaxInterfaces::anInterface> *existingpool); //existingpool=NULL
+
+} //namespace Laidout
 
 #endif
 	

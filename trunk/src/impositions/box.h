@@ -16,9 +16,11 @@
 
 #include "polyptych/src/nets.h"
 
+namespace Laidout {
 
 Net *makeBox(const char *str,double x,double y,double z);
 
+} // namespace Laidout
 
 #endif
 

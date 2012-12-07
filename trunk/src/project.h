@@ -21,6 +21,10 @@
 #include "papersizes.h"
 #include "plaintext.h"
 
+
+namespace Laidout {
+
+
 //------------------------- ProjDocument ------------------------------------
 class ProjDocument
 {
@@ -67,6 +71,9 @@ class Project : public LaxFiles::DumpUtility
 	virtual Document *Find(const char *name, int howmatch);
 	virtual int valid();
 };
+
+
+} // namespace Laidout
 
 #endif
 

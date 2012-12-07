@@ -27,6 +27,9 @@
 
 using namespace LaxFiles;
 
+
+namespace Laidout {
+
 //------------------------------- Newdoc --------------------------------
 /*! \ingroup api */
 StyleDef *makeNewDocumentStyleDef()
@@ -360,4 +363,6 @@ int OpenFunction(ValueHash *context,
 }
 
 
+
+} // namespace Laidout
 

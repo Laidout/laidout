@@ -41,6 +41,10 @@ using namespace Laxkit;
 using namespace LaxFiles;
 using namespace LaxInterfaces;
 
+
+namespace Laidout {
+
+
 /*! \file 
  * Pdf import and export code.
  */
@@ -1616,4 +1620,5 @@ static int pdfaddpath(FILE *f,Coordinate *path, char *&stream)
 	return n;
 }
 
+} // namespace Laidout
 

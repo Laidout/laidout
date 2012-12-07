@@ -35,6 +35,10 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 
+namespace Laidout {
+
+
+
 /*! \class ImportImagesDialog
  * \brief Dialog for importing many images all at once.
  */
@@ -1006,4 +1010,7 @@ char *ImportImagesDialog::getPreviewFileName(const char *full)
 
 	return prev;
 }
+
+
+} // namespace Laidout
 

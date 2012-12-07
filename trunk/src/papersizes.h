@@ -25,6 +25,10 @@
 #include <lax/interfaces/somedata.h>
 
 
+
+namespace Laidout {
+
+
 //--------------------------------- BoxTypesEnum --------------------------------
 enum BoxTypes {
 	NoBox        =0,
@@ -127,6 +131,7 @@ class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
 };
 
 
+} // namespace Laidout
 
 #endif
 

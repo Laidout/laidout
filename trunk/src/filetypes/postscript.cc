@@ -36,6 +36,10 @@ using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
+
+namespace Laidout {
+
+
 //--------------------------------- install postscript filters
 
 //! Tells the Laidout application that there's a new filter in town.
@@ -169,4 +173,5 @@ StyleDef *EpsOutFilter::GetStyleDef()
 
 
 
+} // namespace Laidout
 

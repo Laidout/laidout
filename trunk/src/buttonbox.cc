@@ -23,6 +23,10 @@ using namespace Laxkit;
 using namespace std;
 
 
+
+namespace Laidout {
+
+
 //------------------------------------ ButtonBox -----------------------------------------
 /*! \class ButtonBox
  * \brief Window pane class to hold a bundle of icon based pushbuttons.
@@ -127,4 +131,6 @@ int ButtonBox::RBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	return 0;
 }
+
+} // namespace Laidout
 

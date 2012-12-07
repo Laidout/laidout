@@ -18,8 +18,14 @@
 
 #include <cstdio>
 
+
+
+namespace Laidout {
+
 int Ascii85_out(std::FILE *f,unsigned char *in,int len,int puteod,int linewidth,int *curwidth=NULL);
 int Ascii85_chars(unsigned char *in,unsigned char *out);
+
+} // namespace Laidout
 
 #endif
 

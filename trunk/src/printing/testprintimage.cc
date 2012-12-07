@@ -31,6 +31,10 @@ using namespace std;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //-------------------------------- Imlib_Image to ps ------------------------------------
 
 //! Output an Imlib_Image as postscript with Ascii85 encoding.
@@ -171,4 +175,6 @@ void ps_Imlib_Image_out(Imlib_Image image)
 	fclose(f);
 	setlocale(LC_ALL,"");
 }
+
+} // namespace Laidout
 

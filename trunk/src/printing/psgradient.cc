@@ -24,6 +24,10 @@ using namespace std;
 #define DBG 
 
 
+
+namespace Laidout {
+
+
 //! Output postscript for a GradientData. 
 /*! \ingroup postscript
  */
@@ -90,3 +94,7 @@ void psGradient(FILE *f,GradientData *g)
 			">> shfill\n"
 		);
 }
+
+
+} // namespace Laidout
+

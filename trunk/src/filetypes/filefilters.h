@@ -23,6 +23,10 @@
 #include "../styles.h"
 
 
+namespace Laidout {
+
+
+
 class Document;
 
 //------------------------------------- FileFilter -----------------------------------
@@ -147,6 +151,8 @@ class ImportConfig : public Style
 
 int import_document(ImportConfig *config, ErrorLog &log);
 
+
+} // namespace Laidout
 
 #endif
 

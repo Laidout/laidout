@@ -25,6 +25,9 @@ using namespace LaxFiles;
 
 
 
+namespace Laidout {
+
+
 
 
 //------------------------------- Import --------------------------------
@@ -332,4 +335,5 @@ int ExportFunction(ValueHash *context,
 	return err;
 }
 
+} // namespace Laidout
 

@@ -21,6 +21,10 @@
 #include "../version.h"
 
 
+
+namespace Laidout {
+
+
 void installPodofoFilter();
 
 //------------------------------------- PodofooutFilter -----------------------------------
@@ -41,5 +45,9 @@ class PodofooutFilter : public ExportFilter
 	
 	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };
+
+
+} // namespace Laidout
+
 #endif
 

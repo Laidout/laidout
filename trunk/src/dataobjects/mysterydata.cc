@@ -26,7 +26,7 @@ using namespace std;
 
 using namespace LaxFiles;
 
-//namespace Laidout {
+namespace Laidout {
 
 /*! \class MysteryData
  * \brief Holds fragments of objects of an imported file.
@@ -265,5 +265,5 @@ int MysteryInterface::Refresh()
 	return 0;
 }
 
-//} //namespace Laidout
+} //namespace Laidout
 

@@ -31,6 +31,10 @@ using namespace std;
 using namespace Laxkit;
 
 
+
+namespace Laidout {
+
+
 //------------------------ AboutWindow -------------------------
 //
 /*! \class AboutWindow
@@ -161,4 +165,6 @@ int AboutWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard 
 	}
 	return 1;
 }
+
+} // namespace Laidout
 

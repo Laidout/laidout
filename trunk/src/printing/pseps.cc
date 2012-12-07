@@ -15,6 +15,10 @@
 
 #include "pseps.h"
 
+
+namespace Laidout {
+
+
 //! Prepare and include an EPS in the postscript file f.
 /*! \todo *** must strip out the preview if any while inserting to f
  */
@@ -48,3 +52,6 @@ void psEps(FILE *f,EpsData *epsdata)
 	fprintf(f,"%%EndDocument\n");
 	fprintf(f,"EndEPS\n"); //<- a function always written out in psout()
 }
+
+} // namespace Laidout
+

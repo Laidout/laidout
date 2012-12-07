@@ -22,6 +22,10 @@
 
 #include "polyptych/src/nets.h"
 
+
+namespace Laidout {
+
+
 //----------------------------------- SimpleNetLine -----------------------------------
 class SimpleNetLine
 {
@@ -111,6 +115,7 @@ class SimpleNet : public AbstractNet,
 };
 
 
+} // namespace Laidout
 
 #endif
 

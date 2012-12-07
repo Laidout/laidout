@@ -28,6 +28,9 @@
 #include "impositions/imposition.h"
 #include "filetypes/filefilters.h"
 
+
+namespace Laidout {
+
 const char *LaidoutVersion();
 
 //------------------------------------ TreeChangeEvent ----------------------------------
@@ -165,5 +168,8 @@ extern
 LaidoutApp *laidout;
 
 
+} // namespace Laidout
+
 #endif
+
 

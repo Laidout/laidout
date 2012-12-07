@@ -20,6 +20,12 @@
 #include <lax/interfaces/imagepatchinterface.h>
 #include <cstdio>
 
+
+namespace Laidout {
+
+
 void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i);
+
+} // namespace Laidout
 
 #endif

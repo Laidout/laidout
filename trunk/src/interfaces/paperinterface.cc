@@ -37,6 +37,10 @@ using namespace std;
 #define DBG 
 
 
+namespace Laidout {
+
+
+
 //------------------------------------ Local functions ---------------------------------
 
 //! Return a new char[] with a name like "Paper Group 3". The number is incremented with each call.
@@ -504,7 +508,7 @@ void PaperInterface::DrawGroup(PaperGroup *group,char shadow,char fill,char arro
 
 	if (group->objs.n()) {
 		for (int c=0; c<group->objs.n(); c++) {
-			::DrawData(dp,group->objs.e(c),NULL,NULL,0);
+			Laidout::DrawData(dp,group->objs.e(c),NULL,NULL,0);
 		}
 	}
 }
@@ -952,5 +956,5 @@ int PaperInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKe
 }
 
 
-//} // namespace Laidout
+} // namespace Laidout
 

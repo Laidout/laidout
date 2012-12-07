@@ -24,6 +24,11 @@ using namespace LaxInterfaces;
 //using namespace std;
 //#define DBG 
 
+
+
+namespace Laidout {
+
+
 #define LBLT 0
 #define LTRT 1
 #define RTRB 2
@@ -262,3 +267,7 @@ void psContinueColorPatch(FILE *f,ColorPatchData *g,
 				g->colors[c4].red/65535.0, g->colors[c4].green/65535.0, g->colors[c4].blue/65535.0);
 	}
 }
+
+
+} // namespace Laidout
+

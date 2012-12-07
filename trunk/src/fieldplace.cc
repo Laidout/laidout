@@ -28,6 +28,10 @@ using namespace std;
 #define DBG
 
 
+
+namespace Laidout {
+
+
 //----------------------------- FieldPlace -----------------------------
 /*! \class FieldPlace
  * \brief Stack of field places. So "3.2.7" would translate into a stack with elements 3, 2, and 7.
@@ -402,4 +406,5 @@ int FieldMask::push(int n,int *list,int where)//where=-1
 }
 
 
+} // namespace Laidout
 

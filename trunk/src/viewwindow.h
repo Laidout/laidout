@@ -28,6 +28,10 @@
 
 
 
+
+namespace Laidout {
+
+
 //------------------------------- VObjContext ---------------------------
 class VObjContext : public LaxInterfaces::ObjectContext
 {
@@ -197,6 +201,9 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
+
+
+} // namespace Laidout
 
 #endif
 

@@ -19,6 +19,10 @@
 
 
 
+namespace Laidout {
+
+
+
 
 /*! \class LPathsData 
  * \brief Subclassing LaxInterfaces::PathsData
@@ -76,4 +80,6 @@ LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
 	return dup;
 }
 
+
+} //namespace Laidout
 

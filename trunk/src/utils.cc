@@ -40,6 +40,10 @@ using namespace std;
 
 
 
+namespace Laidout {
+
+
+
 //----------------------------------- unique name functions ------------------------------
 
 //! Return a roughly unique id. Uniqueness is not guaranteed!
@@ -678,6 +682,9 @@ int isJpg(const char *file)
 	}
 
 	fclose(f);
+
+	cerr <<" *** PLEASE implement isJpg()!!!!"<<endl;
+	return 0;
 }
 
 //! Return whether it is an EPS (returns 2) , or can be opened by Imlib2 (returns 1).
@@ -697,4 +704,6 @@ int is_bitmap_image(const char *file)
 	return 1;
 }
 
+
+} // namespace Laidout
 

@@ -35,6 +35,10 @@ using namespace LaxFiles;
 
 
 
+namespace Laidout {
+
+
+
 //--------------------------------- NetDialog ------------------------------------
 /*! \class NetDialog
  *
@@ -362,4 +366,6 @@ int NetDialog::sendNewImposition()
 
 	return 0;
 }
+
+} // namespace Laidout
 

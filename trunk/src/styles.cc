@@ -36,6 +36,10 @@ using namespace LaxFiles;
 
 
 
+namespace Laidout {
+
+
+
 /*! \defgroup stylesandstyledefs Styles and StyleDefs
  * 
  * -------- Styles and StyleDefs -----------
@@ -285,5 +289,7 @@ int EnumStyle::id(const char *Name)
 	}
 	return -1;
 }
+
+} // namespace Laidout
 
 

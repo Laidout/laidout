@@ -41,6 +41,9 @@ using namespace Laxkit;
 using namespace LaxFiles;
 
 
+namespace Laidout {
+
+
 //---------------------------- HeadWindow Pane Generators -----------------------
 
 /*! \defgroup mainwindows Main Pane Windows For HeadWindows
@@ -1036,4 +1039,5 @@ int HeadWindow::HasOnlyThis(Document *doc)
 	return 1;
 }
 
+} // namespace Laidout
 

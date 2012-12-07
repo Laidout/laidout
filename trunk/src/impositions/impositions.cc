@@ -47,6 +47,10 @@
 using namespace Laxkit;
 using namespace LaxFiles;
 
+
+namespace Laidout {
+
+
 //! Return a new Imposition instance that is like the imposition resource named impos.
 /*! \ingroup objects
  * Searches laidout->impositionpool.
@@ -229,4 +233,6 @@ int AddToImpositionPool(PtrStack<ImpositionResource> *existingpool, const char *
 
 	return numadded;
 }
+
+} // namespace Laidout
 

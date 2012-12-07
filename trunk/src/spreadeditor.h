@@ -23,6 +23,10 @@
 #include "drawdata.h"
 #include "spreadview.h"
 
+
+namespace Laidout {
+
+
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
 
@@ -129,6 +133,9 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
+
+
+} // namespace Laidout
 
 #endif
 

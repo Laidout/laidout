@@ -7,20 +7,22 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.094
 -------------
+       Merge EpsData with normal images
+       Externally rendered objects, similar to Scribus render frames
+       Examine and improve ease of use of import images dialog, particularly for previewing
        Net imposition interactive unwrapper, via optional opengl Polyptych
-       need partial Laidout import
-       fix object transform handles for really small objects (handles should still be accessible)
+(done) need partial Laidout import
+(done) should probably put laidout stuff in its own namespace, just to be polite
        PathInterface subpaths for hole making should work
        Net imposition build net interface
        Fix object bleeding across pages for signatures and nets
        Shortcuts editor dialog
-       Merge EpsData with normal images
        impose-only mode should allow access to all imposition types
-       Examine and improve ease of use of import images dialog, particularly for previewing
+       fix object transform handles for really small objects (handles should still be accessible)
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
        Scribus import should do something meaningful with original Scribus page bleed values
+	   Signature editor needs option to preview pages while folding
        Signature editor: detect non staplable binding edge, show red rather than green
-       Externally rendered objects, similar to Scribus render frames
        When importing from an image list file, should be able to say if and when to auto-make previews
        Tools should remember their settings
        double click on group should change selection area to group contents?
@@ -53,7 +55,6 @@ VERSION 0.1
        Must be Stable, not merely "Stable"
        Creep management controls
        Construct an adequate command core, so that no X connection necessary for batch processing
-       should probably put laidout stuff in its own namespace, just to be polite
        Improve open from template to be able to use names (defined in a file), not just filenames
        perhaps have image open window pane for main split window? drag and drop in images? that would be AWESOME
        Change cursor or otherwise indicate what will happen as mouse moves around

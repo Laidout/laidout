@@ -32,6 +32,10 @@ using namespace LaxFiles;
 
 
 
+namespace Laidout {
+
+
+
 //------------------------------------ LaidoutCalculator -----------------------------
 /*! \class LaidoutCalculator
  * \brief Command processing backbone.
@@ -1632,4 +1636,5 @@ ValueHash *MapParameters(StyleDef *def,ValueHash *rawparams)
 }
 
 
+} // namespace Laidout
 

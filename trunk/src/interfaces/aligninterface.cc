@@ -40,6 +40,10 @@ using namespace std;
 #define DBG 
 
 
+namespace Laidout {
+
+
+
 DBG flatpoint closestpoint;
 DBG flatpoint closestpoint2;
 DBG double closestdistance;
@@ -784,7 +788,7 @@ int AlignInterface::Refresh()
 			 // draw the PathsData
 			LineStyle ls(*aligninfo->path->linestyle);
 			ls.width=(hover==ALIGN_Path?3:1);
-			::DrawData(dp,aligninfo->path,&ls,NULL,0);
+			Laidout::DrawData(dp,aligninfo->path,&ls,NULL,0);
 			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 			dp->NewFG(&controlcolor);
 			dp->DrawScreen();
@@ -1036,7 +1040,7 @@ void AlignInterface::showPresets()
 	dp->NewTransform(1,0,0,1,0,0);
 	presetdata->origin(flatpoint(0,0));
 	presetdata->origin(hoverpoint - transform_point(presetdata->m(),flatpoint(presetdata->minx,presetdata->miny)));
-	::DrawData(dp,presetdata,NULL,NULL,0);
+	Laidout::DrawData(dp,presetdata,NULL,NULL,0);
 	dp->PopAxes();
 
 	dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
@@ -2833,5 +2837,5 @@ void AlignInterface::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *load
 }
 
 
-//} // namespace Laidout
+} // namespace Laidout
 

@@ -19,6 +19,10 @@
 
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 //------------------------------------- ActionArea --------------------------------------
 //typedef void RenderActionAreaFunc(Laxkit::Displayer *disp,ActionArea *overlay);
 
@@ -129,4 +133,6 @@ void ActionArea::FindBBox()
 	for (int c=0; c<npoints; c++) addtobounds(outline[c]);
 }
 
+
+} //namespace Laidout
 

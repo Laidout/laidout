@@ -27,6 +27,10 @@
 using namespace LaxFiles;
 
 
+
+namespace Laidout {
+
+
 /*! \class CommandWindow
  * \brief Command line input. Future home of interactive interpreter.
  */
@@ -60,4 +64,6 @@ char *CommandWindow::process(const char *in)
 	char *str=calculator->In(in);
 	return str?str:newstr(_("You are surrounded by twisty passages, all alike."));
 }
+
+} // namespace Laidout
 

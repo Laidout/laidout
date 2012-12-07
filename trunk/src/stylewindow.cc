@@ -31,6 +31,10 @@ using namespace std;
 
 using namespace Laxkit;
 
+
+namespace Laidout {
+
+
 //*** --stylename---     <-- instance name
 // 	  -- styledef Name-- <-- type name
 // 	   field 1
@@ -269,4 +273,6 @@ int GenericStyleDialog::CharInput(unsigned int ch,const char *buffer,int len,uns
 //	if (!style || !style->GetStyleDef()) return NULL;
 //	return new GenericStyleDialog(style,owner);
 //}
+
+} //namespace Laidout
 

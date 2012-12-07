@@ -25,6 +25,10 @@
 #include "document.h"
 
 
+
+namespace Laidout {
+
+
 class ImportImagesDialog : public Laxkit::FileDialog
 {
  protected:
@@ -59,6 +63,8 @@ class ImportImagesDialog : public Laxkit::FileDialog
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
+
+} // namespace Laidout
 
 #endif
 

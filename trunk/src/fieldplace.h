@@ -18,6 +18,10 @@
 
 #include <lax/lists.h>
 
+
+
+namespace Laidout {
+
 //------------------------------ FieldMask -------------------------------------------
 
 class FieldPlace : protected Laxkit::NumStack<int>
@@ -66,5 +70,6 @@ class FieldMask : public Laxkit::PtrStack<FieldPlace>
 
 
 
+} // namespace Laidout
 #endif
 

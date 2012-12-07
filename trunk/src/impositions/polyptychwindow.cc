@@ -33,6 +33,10 @@ using namespace std;
 #define DBG
 
 
+
+namespace Laidout {
+
+
 //----------------------------------------- PolyhedronWindow --------------------------------------
 class PolyhedronWindow : public HedronWindow
 {
@@ -248,4 +252,5 @@ int PolyptychWindow::sendNewImposition()
 #endif //LAIDOUT_NOGL
 
 
+} // namespace Laidout
 

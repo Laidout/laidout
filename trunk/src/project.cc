@@ -34,6 +34,10 @@ using namespace LaxInterfaces;
 using namespace Laxkit;
 using namespace LaxFiles;
 
+
+namespace Laidout {
+
+
 //---------------------------- ProjDocument ---------------------------------------
 /*! \class ProjDocument
  * \brief Node for document stack in Project.
@@ -412,4 +416,6 @@ int Project::initDirs()
 	delete[] dir;
 	return 0;
 }
+
+} // namespace Laidout
 

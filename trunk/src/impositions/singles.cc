@@ -32,6 +32,10 @@ using namespace std;
 
 
 
+namespace Laidout {
+
+
+
 //-------------------------- Singles ---------------------------------------------
 
 /*! \class Singles
@@ -788,4 +792,6 @@ int Singles::PageType(int page)
 int Singles::SpreadType(int spread)
 { return 0; }
 
+
+} // namespace Laidout
 

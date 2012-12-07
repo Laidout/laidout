@@ -21,6 +21,10 @@
 
 //------------------------------- LImageData ---------------------------------------
 
+
+namespace Laidout {
+
+
 class LImageData : public DrawableObject, public LaxInterfaces::ImageData
 {
   public:
@@ -37,6 +41,8 @@ class LImageData : public DrawableObject, public LaxInterfaces::ImageData
 };
 
 
+
+} //namespace Laidout
 
 #endif
 

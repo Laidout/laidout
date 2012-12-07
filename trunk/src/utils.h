@@ -20,6 +20,10 @@
 #include <lax/errorlog.h>
 #include <lax/attributes.h>
 
+
+namespace Laidout {
+
+
 //----------------------------------- unique name functions ------------------------------
 char *make_id(const char *base);
 const char *Untitled_name();
@@ -50,6 +54,9 @@ int isEpsFile(const char *file,float *psversion, float *epsversion);
 int isScribusFile(const char *file);
 int isJpg(const char *file);
 int is_bitmap_image(const char *file);
+
+
+} // namespace Laidout
 
 #endif
 

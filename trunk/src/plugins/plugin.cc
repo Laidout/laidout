@@ -17,6 +17,10 @@
 
 ********this file is not active yet!!!*****************
 
+
+
+namespace Laidout {
+
 /*! \ingroup plugins
  *
  * Plugins can provide:
@@ -69,4 +73,5 @@ class Module
 };
 
 
+} // namespace Laidout
 

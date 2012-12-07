@@ -21,6 +21,10 @@
 #include <lax/interfaces/colorpatchinterface.h>
 
 
+namespace Laidout {
+
+
+
 //------------------------------- LImagePatchData ---------------------------------------
 class LImagePatchData : public DrawableObject, public LaxInterfaces::ImagePatchData
 {
@@ -68,6 +72,8 @@ class LColorPatchInterface : public LaxInterfaces::ColorPatchInterface
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 };
 
+
+} //namespace Laidout
 
 #endif
 
