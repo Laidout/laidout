@@ -31,6 +31,7 @@ class LImagePatchData : public DrawableObject, public LaxInterfaces::ImagePatchD
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual void FindBBox();
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
 };
 
 
@@ -44,6 +45,7 @@ class LColorPatchData : public DrawableObject, public LaxInterfaces::ColorPatchD
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual void FindBBox();
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
 };
 
 

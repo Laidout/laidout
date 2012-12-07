@@ -16,6 +16,7 @@
 
 #include "limagepatch.h"
 #include "../laidout.h"
+#include "datafactory.h"
 
 #include <iostream>
 using namespace std;
@@ -71,6 +72,15 @@ void LImagePatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 	if (!foundconfig) ImagePatchData::dump_in_atts(att,flag,context);
 }
 
+LaxInterfaces::SomeData *LImagePatchData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	if (dup && !dynamic_cast<LImagePatchData*>(dup)) return NULL; //wrong type for referencc object!
+	if (!dup) dup=somedatafactory->newObject("ImagePatchData");
+	ImagePatchData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dup;
+}
+
 
 //------------------------------- LColorPatchData ---------------------------------------
 /*! \class LColorPatchData 
@@ -117,6 +127,15 @@ void LColorPatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 		}
 	}
 	if (!foundconfig) ColorPatchData::dump_in_atts(att,flag,context);
+}
+
+LaxInterfaces::SomeData *LColorPatchData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	if (dup && !dynamic_cast<LColorPatchData*>(dup)) return NULL; //wrong type for referencc object!
+	if (!dup) dup=somedatafactory->newObject("ColorPatchData");
+	ColorPatchData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dup;
 }
 
 
