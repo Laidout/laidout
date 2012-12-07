@@ -50,9 +50,6 @@ enum ValueTypes {
 };
 
 //------------------------------ ObjectDef --------------------------------------------
-#define OBJECTDEF_CAPPED    1
-#define OBJECTDEF_DUPLICATE 2
-#define OBJECTDEF_ORPHAN    4
 
  // for ObjectDef::format
 enum ElementType {
@@ -90,6 +87,11 @@ typedef Style *(*NewStyleFunc)(ObjectDef *def);
 typedef int (*StyleFunc)(ValueHash *context, ValueHash *parameters,
 							 Value **value_ret, ErrorLog &log);
  
+
+#define OBJECTDEF_CAPPED    1
+#define OBJECTDEF_DUPLICATE 2
+#define OBJECTDEF_ORPHAN    4
+
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
@@ -179,7 +181,6 @@ typedef ObjectDef StyleDef;
 
 
 //----------------------------- Value ----------------------------------
-class ObjectDef;
 
 class Value : virtual public Laxkit::anObject
 {

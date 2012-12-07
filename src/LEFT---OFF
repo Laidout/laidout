@@ -11,6 +11,10 @@ Those are purged with each release.
 
 
 ---- bugs to fix right now:
+laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
+
+selecting fails!!! Grrrr!
+
 drawing partial arcs broken
 
 in tiled, can no longer select objects in the other tiles, wtf!!!
@@ -138,6 +142,8 @@ nup:
   unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
   object reorder
   scale panel should allow mpx and control zoom around point
+
+for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
 make a Change imposition, versus Edit imposition, to allow jumping straight to default editor for imposition type
 

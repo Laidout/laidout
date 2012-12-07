@@ -15,6 +15,7 @@
 //
 
 #include "lgradientdata.h"
+#include "datafactory.h"
 
 
 
@@ -71,6 +72,15 @@ void LGradientData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 		}
 	}
 	if (!foundconfig) GradientData::dump_in_atts(att,flag,context);
+}
+
+LaxInterfaces::SomeData *LGradientData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	if (dup && !dynamic_cast<LGradientData*>(dup)) return NULL; //wrong type for referencc object!
+	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("GradientData");
+	GradientData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dup;
 }
 
 

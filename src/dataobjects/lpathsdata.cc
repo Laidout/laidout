@@ -15,6 +15,7 @@
 //
 
 #include "lpathsdata.h"
+#include "datafactory.h"
 
 
 
@@ -64,6 +65,15 @@ void LPathsData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 		}
 	}
 	if (!foundconfig) PathsData::dump_in_atts(att,flag,context);
+}
+
+LaxInterfaces::SomeData *LPathsData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	if (dup && !dynamic_cast<LPathsData*>(dup)) return NULL; //wrong type for referencc object!
+	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("PathsData");
+	PathsData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dup;
 }
 
 

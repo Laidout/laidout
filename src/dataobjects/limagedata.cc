@@ -15,6 +15,7 @@
 //
 
 #include "limagedata.h"
+#include "datafactory.h"
 
 
 //------------------------------- LImageData ---------------------------------------
@@ -64,5 +65,14 @@ void LImageData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 		}
 	}
 	if (!foundconfig) ImageData::dump_in_atts(att,flag,context);
+}
+
+LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
+{
+	if (dup && !dynamic_cast<LImageData*>(dup)) return NULL; //wrong type for referencc object!
+	if (!dup) dup=LaxInterfaces::somedatafactory->newObject("ImageData");
+	ImageData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dup;
 }
 

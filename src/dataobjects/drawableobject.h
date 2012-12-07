@@ -78,6 +78,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	DrawableObject(LaxInterfaces::SomeData *refobj=NULL);
 	virtual ~DrawableObject();
 	virtual const char *whattype() { return "Group"; }
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
 
 	 //new functions for DrawableObject
 	LaxInterfaces::PathsData *GetAreaPath();

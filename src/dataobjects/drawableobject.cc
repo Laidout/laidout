@@ -145,6 +145,42 @@ DrawableObject::~DrawableObject()
 	if (chains.n) chains.flush();
 }
 
+LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
+{
+	DrawableObject *d=dynamic_cast<DrawableObject*>(dup);
+	if (dup && !d) return NULL; //not a drawableobject!
+	if (!dup) {
+		dup=newObject("Group");
+		d=dynamic_cast<DrawableObject*>(dup);
+	}
+
+	//assign new id
+	//parent??
+	//clip
+	//wrap
+	//inset
+	//ignore chains
+	//meta? and tags
+	//iohints
+
+	 //filters
+	d->alpha=alpha;
+	d->blur=blur;
+
+	 //kids
+	SomeData *obj;
+	DrawableObject *dobj;
+	for (int c=0; c<kids.n; c++) {
+		obj=kids.e[c]->duplicate();
+		dobj=dynamic_cast<DrawableObject*>(obj);
+		d->push(obj);
+		dobj->parent=d;
+		obj->dec_count();
+	}
+
+	return dup;
+}
+
 //! Dump out iohints and metadata, if any.
 void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
