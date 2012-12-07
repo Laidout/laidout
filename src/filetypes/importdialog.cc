@@ -175,6 +175,7 @@ int ImportFileDialog::init()
 	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+4;
 	char *str=NULL;
+	const char *cstr=NULL;
 	
 	anXWindow *last=NULL;
 	LineInput *linp=NULL;
@@ -206,13 +207,26 @@ int ImportFileDialog::init()
 	
 
 	 //---------------------- import to document or object ---------------------------
-	str=numtostr(config->topage,0);
+	str=numtostr((config->topage>=0?config->topage:0),0);
 	last=linp=new LineInput(this,"StartIndex",NULL,0, 0,0,0,0,0, 
 						last,object_id,"startindex",
 						_("Start Index:"),str,0,
 						0,0,2,2,2,2);
 	delete[] str; str=NULL;
 	linp->tooltip(_("The document page to start importing into"));
+	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
+	AddNull();
+
+
+	 //---------------------- scale to page ---------------------------
+	if (config->scaletopage==0) cstr=_("no");
+	else if (config->scaletopage==1) cstr=_("down");
+	else if (config->scaletopage==2) cstr=_("yes");
+	last=linp=new LineInput(this,"ScaleToPage",NULL,0, 0,0,0,0,0, 
+						last,object_id,"scaletopage",
+						_("Scale to page:"),cstr,0,
+						0,0,2,2,2,2);
+	linp->tooltip(_("yes, no, or down (scale down to fit, but not up)"));
 	AddWin(linp,1, 200,100,1000,50,0, linp->win_h,0,0,50,0, -1);
 	AddNull();
 
@@ -374,12 +388,14 @@ int ImportFileDialog::send(int id)
 	} else {
 		char *tmp;
 		int s,e;
-		s=strtol(range,&tmp,10);
+		s=strtol(range,&tmp,10); //read in first number
 		if (tmp==range) {
 			s=0;
 			e=-1;
 		} else {
 			range=tmp;
+			while (isspace(*range)) range++;
+			if (*range=='-') range++; //skip over '-' when something like (3-5)
 			e=strtol(range,&tmp,10);
 			if (tmp==range) {
 				e=s;
@@ -389,6 +405,15 @@ int ImportFileDialog::send(int id)
 		config->inend=e;
 	}
 
+	LineInput *linp=dynamic_cast<LineInput*>(findChildWindowByName("StartIndex"));
+	config->topage=linp->GetLong();
+	if (config->topage<0) config->topage=0;
+
+	linp=dynamic_cast<LineInput*>(findChildWindowByName("ScaleToPage"));
+	config->scaletopage=2;
+	if (!strcasecmp(linp->GetCText(),"no")) config->scaletopage=0;
+	else if (!strcasecmp(linp->GetCText(),"down")) config->scaletopage=1;
+	else config->scaletopage=2;
 
 
 	ErrorLog log;

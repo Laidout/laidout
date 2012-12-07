@@ -124,12 +124,7 @@ StyleDef *LaidoutOutFilter::GetStyleDef()
 
 
 //! Save the document as a Laidout file.
-/*! This only saves groups and images, and the page size and orientation.
- *
- * If the paper name is not recognized as a Laidout paper name, which are
- * A0-A6, Executive (7.25 x 10.5in), Legal, Letter, and Tabloid/Ledger, then
- * Letter is used.
- *
+/*!
  * \todo if unknown paper, should really use some default paper size, if it is valid, 
  *   and then otherwise "Letter", or choose a size that is big enough to hold the spreads
  * \todo for singles, should figure out what paper size to export as..
@@ -238,7 +233,7 @@ StyleDef *LaidoutInFilter::GetStyleDef()
 
 //! Import a Laidout file.
 /*! If doc!=NULL, then import the file to Document starting at page startpage.
- * If doc==NULL, create a brand new Singles based document.
+ * If doc==NULL, create a brand new document copied from the loaded document, with blank pages for any out of range.
  *
  * Does no check on the file to ensure that it is in fact a Laidout file.
  *
@@ -254,44 +249,82 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 	Document *doc=in->doc;
 
-	Document fdoc;
-	int status=fdoc.Load(file,log);
-	if (status==0) return 1; //load fail!
+	Document *fdoc=new Document(NULL, file);
+	int status=fdoc->Load(file,log);
+	if (status==0) {
+		delete fdoc;
+		return 1; //load fail!
+	}
 
+	if (in->inend<0) in->inend=fdoc->pages.n-1;
 
-//	 //create the document
-//	if (!doc && !in->toobj) {
-//		Imposition *imp=new Singles;
-//		PaperStyle *paper=new PaperStyle;
-//		paper->flags=((paper->flags)&~1)|(landscape?1:0);
-//		imp->SetPaperSize(paper);
-//		doc=new Document(imp,Untitled_name());
-//		imp->dec_count();
-//	}
+	 //create the document
+	//if (!doc && !in->toobj) {
+	if (!doc) {
+		 //read in chosen pages to a new document
+		doc=fdoc;
+		for (int c=in->inend+1; c<doc->pages.n; ) doc->pages.remove(c);
+		for (int c=in->instart; c>0; c++) doc->pages.remove(c);
+		if (in->topage>0) doc->NewPages(0,in->topage);
 
-	//Import pages [in->instart..in->inend] to in->topage.
+		laidout->project->Push(doc);
+		laidout->app->addwindow(newHeadWindow(doc));
+		doc->dec_count();
+		return 0;
+	}
+
+	//Import pages [in->instart..in->inend] to in->topage
 	int curpage=in->topage;
+	if (curpage<0) curpage=0;
 	SomeData *contents=NULL;
+	SomeData origpagedims, newpagedims;
+	DrawableObject *obj;
+	SomeData *sdata, *kid;
+	double tt[6];
 	for (int c=in->instart; c<=in->inend; c++) {
 		while (doc->pages.n<=curpage) doc->NewPages(doc->pages.n,1);
+		newpagedims.m_clear();
+		newpagedims.setbounds(0,doc->pages.e[curpage]->pagestyle->w(), 0,doc->pages.e[curpage]->pagestyle->h());
+		origpagedims.m_clear();
+		origpagedims.setbounds(0,fdoc->pages.e[c]->pagestyle->w(), 0,fdoc->pages.e[c]->pagestyle->h());
 
-		for (int c2=0; c2<fdoc.pages.e[c]->layers.n(); c2++) {
-			contents=fdoc.pages.e[c]->layers.e(c2);
-			doc->pages.e[curpage]->layers.push(contents->duplicate());//dup forces new ids to current doc
+		if (in->scaletopage) {
+			 //center and scale
+			origpagedims.fitto(NULL,&newpagedims, 50,50, in->scaletopage);
+		} else {
+			 //only center
+			origpagedims.origin(origpagedims.origin()
+					+(flatpoint(doc->pages.e[curpage]->pagestyle->w(),doc->pages.e[curpage]->pagestyle->h())
+						- flatpoint(origpagedims.maxx,origpagedims.maxy))/2);
+		}
+
+		 //copy page contents
+		for (int c2=0; c2<fdoc->pages.e[c]->layers.n(); c2++) {
+			contents=fdoc->pages.e[c]->layers.e(c2);
+			sdata=contents->duplicate();
+			obj=dynamic_cast<DrawableObject*>(sdata);
+			if (obj) {
+				//apply any shift to layer contents, not the layer itself
+				for (int c3=0; c3<obj->n(); c3++) {
+					kid=obj->e(c3);
+					transform_mult(tt, kid->m(),origpagedims.m());
+					kid->m(tt);
+				}
+			}
+
+			doc->pages.e[curpage]->layers.push(sdata);//dup forces new ids to current doc
 			// *** tag with some meta to say where imported from?
 
-			 // *** optionally scale/center to fit?
-			if (in->scaletopage) {
-			}
 		}
 		curpage++;
 	}
 	
+	fdoc->dec_count();
 
 	 //if doc is new, push into the project
 	if (doc && doc!=in->doc) {
 		laidout->project->Push(doc);
-		laidout->app->addwindow(newHeadWindow(doc));
+		//laidout->app->addwindow(newHeadWindow(doc));
 	}
 	
 	return 0;

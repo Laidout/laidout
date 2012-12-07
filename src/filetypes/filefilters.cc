@@ -421,7 +421,7 @@ int createImportConfig(ValueHash *context, ValueHash *parameters,
 
 ImportConfig::ImportConfig()
 {
-	scaletopage=0;
+	scaletopage=2;
 	filename=NULL;
 	keepmystery=0;
 	instart=inend=-1;
@@ -440,7 +440,7 @@ ImportConfig::ImportConfig(const char *file, double ndpi, int ins, int ine, int 
 				 Document *ndoc, Group *nobj)
 {
 	filename=newstr(file);
-	scaletopage=0;
+	scaletopage=2;
 	keepmystery=0;
 	instart=ins;
 	inend=ine;
@@ -471,9 +471,13 @@ void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *contex
 	if (what==-1) {
 		fprintf(f,"%sfromfile /file/to/import/from \n",spc);
 		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to attempt import from\n",spc);
+		fprintf(f,"%sscaletopage yes        #yes, no, or down. down does not scale up if smaller than page\n",spc);
 		return;
 	}
-	fprintf(f,"%sscaletopage %d\n",spc,scaletopage);//***
+	if (scaletopage==0) fprintf(f,"%sscaletopage no\n",spc);
+	else if (scaletopage==1) fprintf(f,"%sscaletopage down\n",spc);
+	else fprintf(f,"%sscaletopage yes\n",spc);
+
 	if (keepmystery) fprintf(f,"%skeepmystery\n",spc);
 	if (filter) fprintf(f,"%sformat  \"%s\"\n",spc,filter->VersionName());
 	//fprintf(f,"%sstart %d\n",spc,start);
@@ -493,7 +497,9 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *contex
 		if (!strcmp(name,"keepmystery")) {
 			keepmystery=BooleanAttribute(value);
 		} else if (!strcmp(name,"scaletopage")) {
-			IntAttribute(value,&scaletopage);
+			if (!strcasecmp(value,"no") || !strcmp(value,"0")) scaletopage=0;
+			else if (!strcasecmp(value,"down")) scaletopage=1;
+			else scaletopage=2;
 		} else if (!strcmp(name,"format")) {
 			filter=NULL;
 			 //search for exact format match first
