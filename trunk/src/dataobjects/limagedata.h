@@ -35,6 +35,7 @@ class LImageData : public DrawableObject, public LaxInterfaces::ImageData
 	LImageData(LaxInterfaces::SomeData *refobj=NULL);
 	virtual ~LImageData();
 	virtual const char *whattype() { return "ImageData"; }
+	virtual void FindBBox();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);

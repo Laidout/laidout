@@ -40,6 +40,11 @@ LImageData::~LImageData()
 }
 
 	
+void LImageData::FindBBox()
+{
+	ImageData::FindBBox();
+}
+
 
 void LImageData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {

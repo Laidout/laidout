@@ -98,6 +98,12 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+customizable object child relationships to parent, rather than simple transform
+  transform relative to parent origin
+  transform relative to alignment point of parent (50,50) for center, for instance
+  transform relative to absolute point other than origin, as a function of parent?
+  	 --> like parent->getanchor(id), getbasisanchor(id)
+
 make pdf default output format for sending to lp
 
 hedron window:
