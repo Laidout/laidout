@@ -487,14 +487,14 @@ Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("N-up Interface"));
 
-	menu->AddItem(dirname(LAX_LRTB), LAX_LRTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_LRBT), LAX_LRBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_RLTB), LAX_RLTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_RLBT), LAX_RLBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_TBLR), LAX_TBLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_BTLR), LAX_BTLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_TBRL), LAX_TBRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF, 1);
-	menu->AddItem(dirname(LAX_BTRL), LAX_BTRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_LRTB), NULL, LAX_LRTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_LRBT), NULL, LAX_LRBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_RLTB), NULL, LAX_RLTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLTB?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_RLBT), NULL, LAX_RLBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_RLBT?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_TBLR), NULL, LAX_TBLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBLR?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_BTLR), NULL, LAX_BTLR, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTLR?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_TBRL), NULL, LAX_TBRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_TBRL?LAX_CHECKED:0)|LAX_OFF, 1);
+	menu->AddItem(dirname(LAX_BTRL), NULL, LAX_BTRL, LAX_ISTOGGLE|(nupinfo->direction==LAX_BTRL?LAX_CHECKED:0)|LAX_OFF, 1);
 
 	menu->AddSep();
 

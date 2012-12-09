@@ -32,6 +32,7 @@
 #include <lax/laxutils.h>
 #include <lax/filedialog.h>
 #include <lax/mouseshapes.h>
+#include <lax/shortcutwindow.h>
 
 #include <iostream>
 using namespace std;
@@ -884,6 +885,7 @@ int HeadWindow::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 enum HeadActions {
 	HEAD_Quit=1,
 	HEAD_OpenDoc,
+	HEAD_OpenKeys,
 	HEAD_MAX
 };
 
@@ -898,8 +900,9 @@ Laxkit::ShortcutHandler *HeadWindow::GetShortcuts()
 
 	sc=new ShortcutHandler("HeadWindow");
 
-	sc->Add(HEAD_Quit,    'q',ControlMask,0,     _("Quit"), _("Quit Laidout"),NULL,0);
-	sc->Add(HEAD_OpenDoc, 'o',ControlMask,0,     _("OpenDoc"), _("Open a document"),NULL,0);
+	sc->Add(HEAD_Quit,     'q',ControlMask,0,           _("Quit"), _("Quit Laidout"),NULL,0);
+	sc->Add(HEAD_OpenDoc,  'o',ControlMask,0,           _("OpenDoc"), _("Open a document"),NULL,0);
+	sc->Add(HEAD_OpenKeys, 'K',ShiftMask|ControlMask,0, _("OpenKeys"), _("Open shortcut key editor"),NULL,0);
 
 	manager->AddArea("HeadWindow",sc);
 	return sc;
@@ -915,6 +918,13 @@ int HeadWindow::PerformAction(int action)
 					NULL,NULL,NULL,"Laidout"));
 		return 0;
 		
+	} else if (action==HEAD_OpenKeys) {
+		laidout->InitializeShortcuts();
+		ShortcutWindow *win=new ShortcutWindow(NULL,"cuts",_("Shortcuts"),ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
+											   0,0,300,300,0);
+		app->addwindow(win);
+		return 0;
+
 	} else if (action==HEAD_Quit) {
 		app->quit();
 		cout <<"Quit!\n";
@@ -949,6 +959,7 @@ int HeadWindow::CharInput(unsigned int ch,const char *buffer,int len,unsigned in
 			app->destroywindow(this);
 		}
 		return 0;
+
 	}
 
 
