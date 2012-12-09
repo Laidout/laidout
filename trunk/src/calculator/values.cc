@@ -622,6 +622,15 @@ int ValueHash::push(const char *name,Value *v)
 	return values.push(v);
 }
 
+/*! Return 0 for success, nonzero for no can do. */
+int ValueHash::remove(int i)
+{
+	if (i<0 || i>=keys.n) return 1;
+	keys.remove(i);
+	values.remove(i);
+	return 0;
+}
+
 int ValueHash::n()
 { return keys.n; }
 

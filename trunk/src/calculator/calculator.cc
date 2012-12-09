@@ -454,17 +454,34 @@ void LaidoutCalculator::newcurexprs(const char *newex,int len)
 int LaidoutCalculator::sessioncommand() //  done before eval
 {
 	if (nextword("radians"))
-	    { decimal=0; return 1; }
+	    { decimal=0; from+=7; return 1; }
 	
 	if (nextword("rad"))
-	    { decimal=0; return 1; }
+	    { decimal=0; from+=3; return 1; }
 	
 	if (nextword("degrees"))
-	    { decimal=1; return 1; }
+	    { decimal=1; from+=7; return 1; }
 	
 	if (nextword("deg"))
-	    { decimal=1; return 1; }
+	    { decimal=1; from+=3; return 1; }
 
+	if (nextword("unset")) {
+		from+=5;
+		skipwscomment();
+		int namelen=getnamestringlen();
+		if (!namelen) {
+    		calcerr(_("Expecting name!"));
+			return 1;
+		}
+		int assign=uservars.findIndex(curexprs+from, namelen);
+		if (assign<0) {
+    		calcerr(_("Unknown name!"));
+			return 1;
+		}
+		uservars.remove(assign);
+		from+=namelen;
+		return 1;
+	}
 
 	if (nextword("quit")) {
 		laidout->quit();

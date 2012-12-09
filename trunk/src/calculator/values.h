@@ -330,6 +330,7 @@ class ValueHash : public Laxkit::anObject
 	int push(const char *name,const char *string);
 	int pushObject(const char *name,Laxkit::anObject *obj);
 	int push(const char *name,Value *v);
+	int remove(int i);
 	void swap(int i1, int i2);
 
 	void renameKey(int i,const char *newname);
