@@ -11,21 +11,26 @@ VERSION 0.094
        Externally rendered objects, similar to Scribus render frames
        Examine and improve ease of use of import images dialog, particularly for previewing
        Net imposition interactive unwrapper, via optional opengl Polyptych
+       In image properties dialog, have the popup list of potential previews
 (done) need partial Laidout import
 (done) should probably put laidout stuff in its own namespace, just to be polite
        PathInterface subpaths for hole making should work
        Net imposition build net interface
-       Fix object bleeding across pages for signatures and nets
        Shortcuts editor dialog
-       impose-only mode should allow access to all imposition types
+       Fix object bleeding across pages for signatures and nets
        fix object transform handles for really small objects (handles should still be accessible)
+       double click on group should change selection area to group contents?
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       Object and resource tags
+       Masking, clip paths and/or softmask
+       impose-only mode should allow access to all imposition types
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
        Scribus import should do something meaningful with original Scribus page bleed values
-	   Signature editor needs option to preview pages while folding
+       Signature editor needs option to preview pages while folding
        Signature editor: detect non staplable binding edge, show red rather than green
        When importing from an image list file, should be able to say if and when to auto-make previews
        Tools should remember their settings
-       double click on group should change selection area to group contents?
        Optimize pdf export to not duplicate large images, rescale to target dpi, and compress image data
        Clean up project load/save internals and dialogs
        Clean up patch controls
@@ -33,12 +38,7 @@ VERSION 0.094
        SpreadEditor: insert blanks, delete pages, the other right click menu options
        SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
        SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       In image properties dialog, have the popup list of potential previews
        Soup up the color box so one can recall previous colors, and/or integration with palette window
-       Object and resource tags
-       Masking, clip paths and/or softmask
        Collect for out
        implement scale pages to new imposition when reimposing
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
@@ -70,8 +70,8 @@ VERSION 0.1
        Plugin infrastructure should be in place: add objects, panes, commands, interfaces, resources, command-line-options?
        allow for easy method for runaround area determination
        Full color management implemented, with up to at least 16 bit per channel color
-       a real PrintDialog that can configure itself based on ppds
-       Generic style edit window
+       Resource manager/style edit window
+       a real PrintDialog that can configure itself based on printer info
        non-hacky new document box that can retrieve printer capabilities, and adjust accordingly (ie grok ppds)
        all things must define their styledefs
        Low level tree editor, akin to the xml editor in inkscape
