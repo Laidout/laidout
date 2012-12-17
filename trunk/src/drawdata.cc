@@ -60,20 +60,9 @@ void DrawData(Displayer *dp,double *m,SomeData *data,anObject *a1,anObject *a2,u
 	dp->PopAxes();
 }
 
-//! Draw data using the transform of the data....
-/*! \ingroup objects
- * Assumes dp.Updates(0) has already been called, and the transform
- * has been set appropriately. This steps through any groups, and looks
- * up an appropriate interface from laidout->interfacepool to draw the data.
- *
- * Note that for groups, a1 and a2 are passed along to all the group members..
- *
- * \todo currently this looks up which interface to draw an object with in LaidoutApp,
- *   but it should first check for suitable one in the relevant viewport.
- */
-void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
+//! Just like DrawData(), but don't push data matrix.
+void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
 {
-	dp->PushAndNewTransform(data->m()); // insert transform first
 	if (flags&DRAW_AXES) dp->drawaxes();
 	if (flags&DRAW_BOX && data->validbounds()) {
 		dp->NewFG(128,128,128);
@@ -86,12 +75,16 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 	if (!strcmp(data->whattype(),"Group")) { // Is a layer or a group
 		Group *g=dynamic_cast<Group *>(data);
 		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
-		dp->PopAxes();
 		return;
+
 	} else if (!strcmp(data->whattype(),"SomeDataRef")) {
-		data=((SomeDataRef *)data)->thedata;
-		if (data) DrawData(dp,data,a1,a2,flags);
-		dp->PopAxes();
+		SomeDataRef *ref=((SomeDataRef *)data);
+		data=ref->thedata;
+		if (data) {
+			//dp->PushAndNewTransform(ref->m()); // insert transform first
+			DrawDataStraight(dp,data,a1,a2,flags);
+			//dp->PopAxes();
+		}
 		return;
 	} 
 
@@ -170,7 +163,23 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 		dp->drawline(ll,ul);
 		dp->DrawReal();
 	}
+}
 
+//! Draw data using the transform of the data....
+/*! \ingroup objects
+ * Assumes dp.Updates(0) has already been called, and the transform
+ * has been set appropriately. This steps through any groups, and looks
+ * up an appropriate interface from laidout->interfacepool to draw the data.
+ *
+ * Note that for groups, a1 and a2 are passed along to all the group members..
+ *
+ * \todo currently this looks up which interface to draw an object with in LaidoutApp,
+ *   but it should first check for suitable one in the relevant viewport.
+ */
+void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned int flags)
+{
+	dp->PushAndNewTransform(data->m()); // insert transform first
+	DrawDataStraight(dp,data,a1,a2,flags);
 	dp->PopAxes();
 }
 

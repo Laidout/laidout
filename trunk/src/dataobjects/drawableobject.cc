@@ -19,6 +19,7 @@
 #include "drawableobject.h"
 #include "../laidout.h"
 #include "../drawdata.h"
+#include "../language.h"
 
 #include <lax/refptrstack.cc>
 
@@ -113,6 +114,25 @@ DrawObjectChain::~DrawObjectChain()
 }
 
 
+//----------------------------------- DrawableParentLink ---------------------------
+/*! \class DrawableParentLink
+ * \brief Define a particular relationship to a parent object.
+ *
+ * This might be a straight affine matrix, or alignment to the parent's bounding box,
+ * or alignment to a parent anchor point, or code.
+ */
+
+DrawableParentLink::DrawableParentLink()
+{
+	type=PARENTLINK_Matrix;
+	parent_anchor_id=0;
+	code_id=0;
+}
+
+DrawableParentLink::~DrawableParentLink()
+{}
+
+
 //----------------------------- DrawableObject ---------------------------------
 /*! \class DrawableObject
  * \brief base of all drawable Laidout objects.
@@ -132,7 +152,9 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 	wrap_path=inset_path=NULL;
 	autowrap=autoinset=0;
 	locks=0;
-	id=NULL;
+
+	parent=NULL;
+	parent_link=NULL;
 }
 
 /*! Will detach this object from any object chain. It is assumed that other objects in
@@ -140,13 +162,13 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
  */
 DrawableObject::~DrawableObject()
 {
-	if (id) delete[] id;
-
 	if (clip) clip->dec_count();
 	if (wrap_path) wrap_path->dec_count();
 	if (inset_path) inset_path->dec_count();
 
 	if (chains.n) chains.flush();
+
+	if (parent_link) delete parent_link; //don't delete parent itself.. that is a one way reference
 }
 
 LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
@@ -183,100 +205,6 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	}
 
 	return dup;
-}
-
-//! Dump out iohints and metadata, if any.
-void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	
-	if (what==-1) {
-		fprintf(f,"%sid nameofobject\n",spc);
-		fprintf(f,"%siohints ...       #object level i/o leftovers from importing\n",spc);
-		fprintf(f,"%smetadata ...      #object level metadata\n",spc);
-		fprintf(f,"%stags tag1 \"tag 2\" #list of string tags\n",spc);
-		fprintf(f,"%sfilters           #list of filters\n",spc);
-		fprintf(f,"%s  ...\n",spc);
-		fprintf(f,"%skids          #child object list\n",spc);
-		fprintf(f,"%s  object ImageData #...or any other drawable object\n",spc);
-		fprintf(f,"%s    ...\n",spc);
-		return;
-	}
-
-	if (!isblank(id)) fprintf(f,"%sid %s\n",spc,id);
-
-	 // dump notes/meta data
-	if (metadata.attributes.n) {
-		fprintf(f,"%smetadata\n",spc);
-		metadata.dump_out(f,indent+2);
-	}
-	
-	 // dump iohints if any
-	if (iohints.attributes.n) {
-		fprintf(f,"%siohints\n",spc);
-		iohints.dump_out(f,indent+2);
-	}
-
-	if (NumberOfTags()) {
-		char *str=GetAllTags();
-		fprintf(f,"%stags %s\n",spc, str);
-		delete[] str;
-	}
-
-//	if (filters.n) {
-//		fprintf(f,"%sfilters\n",spc);
-//		for (int c=0; c<filters.n; c++) {
-//			fprintf(f,"%s  filter\n",spc);
-//			filters.e[c]->dump_out(f,indent+4,what,context);
-//		}
-//	}
-
-	if (kids.n) {
-		fprintf(f,"%skids\n",spc);
-		dump_out_group(f,indent+2,what,context);
-	}
-}
-
-//! Read in iohints and metadata, if any.
-void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{
-	char *name,*value;
-	int foundconfig=0;
-	if (!strcmp(whattype(),"Group")) foundconfig=-1;
-
-	for (int c=0; c<att->attributes.n; c++) {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-
-		if (!strcmp(name,"id")) {
-			makestr(id,value);
-
-		} else if (!strcmp(name,"iohints")) {
-			if (iohints.attributes.n) iohints.clear();
-			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
-
-		} else if (!strcmp(name,"metadata")) {
-			if (metadata.attributes.n) metadata.clear();
-			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
-				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
-
-		//} else if (!strcmp(name,"filters")) {
-
-		} else if (!strcmp(name,"tags")) {
-			InsertTags(value,0);
-
-		} else if (!strcmp(name,"kids")) {
-			dump_in_group_atts(att->attributes.e[c], flag,context);
-
-		} else if (foundconfig==0 && !strcmp(name,"config")) {
-			foundconfig=1;
-
-		}
-	}
-
-	 //is old school group
-	if (foundconfig==-1) dump_in_group_atts(att, flag,context);
 }
 
 //! Push obj onto the stack. (new objects only!)
@@ -394,116 +322,13 @@ Laxkit::anObject *DrawableObject::object_e(int i)
 
 const char *DrawableObject::object_e_name(int i)
 {
-	return id;
+	return Id();
 }
 
 const double *DrawableObject::object_transform(int i)
 {
 	if (i<0 || i>=kids.n) return NULL;
 	return kids.e[i]->m();
-}
-
-/*! Recognizes locked, visible, prints, then tries to parse elements...
- * Discards all else.
- * The kids should have been flushed before coming here.
- */
-void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{
-	int nlocked=-1, nvisible=-1, nprints=-1;
-	char *name,*value;
-	for (int c=0; c<att->attributes.n; c++)  {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-
-		if (!strcmp(name,"locked")) {
-			locked=BooleanAttribute(value);
-		} else if (!strcmp(name,"visible")) {
-			visible=BooleanAttribute(value);
-		} else if (!strcmp(name,"prints")) {
-			prints=BooleanAttribute(value);
-		} else if (!strcmp(name,"matrix")) {
-			double mm[6];
-			if (DoubleListAttribute(value,mm,6)==6) m(mm);
-		} else if (!strcmp(name,"object")) {
-			int n;
-			char **strs=splitspace(value,&n);
-			if (strs) {
-				// could use the number as some sort of object id?
-				// currently out put was like: "object 2 ImageData"
-				//***strs[0]==that id
-				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
-				if (data) {
-					data->dump_in_atts(att->attributes[c],flag,context);
-					push(data);
-					DBG if (!dynamic_cast<DrawableObject*>(data)) cerr <<" --- WARNING! newObject returned a non-DrawableObject"<<endl;
-					data->dec_count();
-				}
-				deletestrs(strs,n);
-			} else {
-				DBG cerr <<"*** readin blank object for Group..."<<endl;
-			}
-		} else { 
-			DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
-		}
-	}
-	if (nlocked>0)  locked=nlocked;
-	if (nvisible>0) visible=nvisible;
-	if (nprints>0)  prints=nprints;
-
-	FindBBox();
-}
-
-//! Write out the objects.
-/*! If what==-1, dump out pseudocode of file format for a group.
- *
- * \todo automate object management, necessary here for what==-1
- */
-void DrawableObject::dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context)
-{
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%sid      #the name of a group. There can be no whitespace in the id\n",spc);
-		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
-		fprintf(f,"%svisible #no indicates that this group cannot be seen on screen nor printed out\n",spc);
-		fprintf(f,"%sprints  #no indicates that this group can be seen on screen, but cannot be printed\n",spc);
-		fprintf(f,"%smatrix 1 0 0 1 0 0  #affine transform to apply to the whole group\n",spc);
-		fprintf(f,"\n%s#Groups contain any number of drawable objects. Here are all the possible such\n",spc);
-		fprintf(f,"%s#objects currently installed:\n",spc);
-		fprintf(f,"\n%sobject 1 Group\n%s  #...a subgroup...\n",spc,spc);
-		SomeData *obj;
-		
-		//*** hack until auto obj. type insertion done
-		const char *objecttypelist[]={
-				"Group",
-				"ImageData",
-				"ImagePatchData",
-				"PathsData",
-				"GradientData",
-				"ColorPatchData",
-				"EpsData",
-				"MysteryData",
-				NULL
-			};
-
-		for (int c=0; objecttypelist[c]; c++) {
-			if (!strcmp(objecttypelist[c],"Group")) continue;
-			fprintf(f,"\n%sobject %s\n",spc,objecttypelist[c]);
-			obj=newObject(objecttypelist[c]);
-			obj->dump_out(f,indent+2,-1,NULL);
-			delete obj;
-		}
-		return;
-	}
-	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
-				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
-	if (id) fprintf(f,"%sid %s\n",spc,id);
-	if (locked) fprintf(f,"%slocked\n",spc);
-	if (visible) fprintf(f,"%svisible\n",spc);
-	if (prints) fprintf(f,"%sprints\n",spc);
-	for (int c=0; c<kids.n; c++) {
-		fprintf(f,"%sobject %d %s\n",spc,c,kids.e[c]->whattype());
-		kids.e[c]->dump_out(f,indent+2,0,context);
-	}
 }
 
 //! Find d somewhere within this (it can be kids also). Searches in kids too.
@@ -637,6 +462,306 @@ int DrawableObject::UnGroup(int n,const int *which)
 	return 0;
 }
 
+
+//! Dump out iohints and metadata, if any.
+void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	if (what==-1) {
+		fprintf(f,"%sid nameofobject\n",spc);
+		fprintf(f,"%siohints ...       #object level i/o leftovers from importing\n",spc);
+		fprintf(f,"%smetadata ...      #object level metadata\n",spc);
+		fprintf(f,"%stags tag1 \"tag 2\" #list of string tags\n",spc);
+		fprintf(f,"%sfilters           #list of filters\n",spc);
+		fprintf(f,"%sparentLink align (a1x,a1y) (a2x,a2y)  #if different than simple matrix\n",spc);
+		fprintf(f,"%s  ...\n",spc);
+		fprintf(f,"%skids          #child object list\n",spc);
+		fprintf(f,"%s  object ImageData #...or any other drawable object\n",spc);
+		fprintf(f,"%s    ...\n",spc);
+		return;
+	}
+
+	fprintf(f,"%sid %s\n",spc,Id());
+
+	 // dump notes/meta data
+	if (metadata.attributes.n) {
+		fprintf(f,"%smetadata\n",spc);
+		metadata.dump_out(f,indent+2);
+	}
+	
+	 // dump iohints if any
+	if (iohints.attributes.n) {
+		fprintf(f,"%siohints\n",spc);
+		iohints.dump_out(f,indent+2);
+	}
+
+	if (NumberOfTags()) {
+		char *str=GetAllTags();
+		fprintf(f,"%stags %s\n",spc, str);
+		delete[] str;
+	}
+
+//	if (filters.n) {
+//		fprintf(f,"%sfilters\n",spc);
+//		for (int c=0; c<filters.n; c++) {
+//			fprintf(f,"%s  filter\n",spc);
+//			filters.e[c]->dump_out(f,indent+4,what,context);
+//		}
+//	}
+
+	if (parent_link && parent_link->type!=PARENTLINK_Matrix) {
+		if (parent_link->type==PARENTLINK_Align) {
+			fprintf(f,"%sparentLink align (%.10g,%.10g) (%.10g,%.10g)\n", spc,
+					parent_link->anchor1.x, parent_link->anchor1.y,
+					parent_link->anchor2.x, parent_link->anchor2.y);
+		}
+	}
+
+	if (kids.n) {
+		fprintf(f,"%skids\n",spc);
+		dump_out_group(f,indent+2,what,context);
+	}
+}
+
+//! Read in iohints and metadata, if any.
+void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	char *name,*value;
+	int foundconfig=0;
+	if (!strcmp(whattype(),"Group")) foundconfig=-1;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"id")) {
+			Id(value);
+
+		} else if (!strcmp(name,"iohints")) {
+			if (iohints.attributes.n) iohints.clear();
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
+				iohints.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+
+		} else if (!strcmp(name,"metadata")) {
+			if (metadata.attributes.n) metadata.clear();
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) 
+				metadata.push(att->attributes.e[c]->attributes.e[c2]->duplicate(),-1);
+
+		} else if (!strcmp(name,"parentLink")) {
+			if (parent_link) delete parent_link;
+			if (!strncmp(value,"matrix",6)) continue; //we assume matrix anyway
+			if (!strncmp(value,"align",5)) {
+				flatvector a1,a2;
+				char *end;
+				if (FlatvectorAttribute(value,&a1,&end)==0) continue; //was error in reading!
+				value=end;
+				if (FlatvectorAttribute(value,&a2,&end)==0) continue; //was error in reading!
+				parent_link=new DrawableParentLink;
+				parent_link->type=PARENTLINK_Align;
+				parent_link->anchor1=a1;
+				parent_link->anchor2=a2;
+			}
+			continue;
+
+		} else if (!strcmp(name,"tags")) {
+			InsertTags(value,0);
+
+		} else if (!strcmp(name,"kids")) {
+			dump_in_group_atts(att->attributes.e[c], flag,context);
+
+		} else if (foundconfig==0 && !strcmp(name,"config")) {
+			foundconfig=1;
+
+		//} else if (!strcmp(name,"filters")) {
+		}
+	}
+
+	 //is old school group
+	if (foundconfig==-1) dump_in_group_atts(att, flag,context);
+}
+
+
+/*! Recognizes locked, visible, prints, then tries to parse elements...
+ * Discards all else.
+ * The kids should have been flushed before coming here.
+ */
+void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	int nlocked=-1, nvisible=-1, nprints=-1;
+	char *name,*value;
+	for (int c=0; c<att->attributes.n; c++)  {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"locked")) {
+			locked=BooleanAttribute(value);
+		} else if (!strcmp(name,"visible")) {
+			visible=BooleanAttribute(value);
+		} else if (!strcmp(name,"prints")) {
+			prints=BooleanAttribute(value);
+		} else if (!strcmp(name,"matrix")) {
+			double mm[6];
+			if (DoubleListAttribute(value,mm,6)==6) m(mm);
+		} else if (!strcmp(name,"object")) {
+			int n;
+			char **strs=splitspace(value,&n);
+			if (strs) {
+				// could use the number as some sort of object id?
+				// currently out put was like: "object 2 ImageData"
+				//***strs[0]==that id
+				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
+				if (data) {
+					data->dump_in_atts(att->attributes[c],flag,context);
+					push(data);
+					DBG if (!dynamic_cast<DrawableObject*>(data)) cerr <<" --- WARNING! newObject returned a non-DrawableObject"<<endl;
+					data->dec_count();
+				}
+				deletestrs(strs,n);
+			} else {
+				DBG cerr <<"*** readin blank object for Group..."<<endl;
+			}
+		} else { 
+			DBG cerr <<"Group dump_in:*** unknown attribute!!"<<endl;
+		}
+	}
+	if (nlocked>0)  locked=nlocked;
+	if (nvisible>0) visible=nvisible;
+	if (nprints>0)  prints=nprints;
+
+	FindBBox();
+}
+
+//! Write out the objects.
+/*! If what==-1, dump out pseudocode of file format for a group.
+ *
+ * \todo automate object management, necessary here for what==-1
+ */
+void DrawableObject::dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sid      #the name of a group. There can be no whitespace in the id\n",spc);
+		fprintf(f,"%slocked  #indicates that this group cannot be modified\n",spc);
+		fprintf(f,"%svisible #no indicates that this group cannot be seen on screen nor printed out\n",spc);
+		fprintf(f,"%sprints  #no indicates that this group can be seen on screen, but cannot be printed\n",spc);
+		fprintf(f,"%smatrix 1 0 0 1 0 0  #affine transform to apply to the whole group\n",spc);
+		fprintf(f,"\n%s#Groups contain any number of drawable objects. Here are all the possible such\n",spc);
+		fprintf(f,"%s#objects currently installed:\n",spc);
+		fprintf(f,"\n%sobject 1 Group\n%s  #...a subgroup...\n",spc,spc);
+		SomeData *obj;
+		
+		//*** hack until auto obj. type insertion done
+		const char *objecttypelist[]={
+				"Group",
+				"ImageData",
+				"ImagePatchData",
+				"PathsData",
+				"GradientData",
+				"ColorPatchData",
+				"EpsData",
+				"MysteryData",
+				NULL
+			};
+
+		for (int c=0; objecttypelist[c]; c++) {
+			if (!strcmp(objecttypelist[c],"Group")) continue;
+			fprintf(f,"\n%sobject %s\n",spc,objecttypelist[c]);
+			obj=newObject(objecttypelist[c]);
+			obj->dump_out(f,indent+2,-1,NULL);
+			delete obj;
+		}
+		return;
+	}
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
+				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+	fprintf(f,"%sid %s\n",spc,Id());
+	if (locked) fprintf(f,"%slocked\n",spc);
+	if (visible) fprintf(f,"%svisible\n",spc);
+	if (prints) fprintf(f,"%sprints\n",spc);
+	for (int c=0; c<kids.n; c++) {
+		fprintf(f,"%sobject %d %s\n",spc,c,kids.e[c]->whattype());
+		kids.e[c]->dump_out(f,indent+2,0,context);
+	}
+}
+
+
+//-------------- Value functions:
+
+Value *NewDrawableObject(ObjectDef *)
+{ return NULL; }
+//{ return new DrawableObject; }
+
+//! Return an ObjectDef for a "Group" object.
+ObjectDef *DrawableObject::makeObjectDef()
+{
+	ObjectDef *sd=new ObjectDef(NULL,"Group",
+			_("Group"),
+			_("Group of drawable objects, and base of all drawable objects"),
+			Element_Fields,
+			NULL,NULL);
+	//sd->newfunc=NewDrawableObject;
+
+
+	sd->push("rotate",
+			_("Rotate"),
+			_("Rotate the object, optionally aronud a point"),
+			Element_Function, NULL,"0",
+			0,
+			NULL);
+	sd->pushParameter("angle",_("Angle"),_("The angle to rotate"),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("point",_("Point"),_("The point around which to rotate. Default is the origin."),Element_Flatvector, NULL,"(0,0)");
+
+
+	sd->push("scalerotate",
+			_("ScaleRotate"),
+			_("Rotate and scale the object, keeping one point fixed"),
+			Element_Function, NULL,"0",
+			0,
+			NULL);
+	sd->pushParameter("p1",_("P1"),_("A constant point"),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p2",_("P2"),_("The point to move."),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p3",_("P3"),_("The new position of p2."),Element_Flatvector, NULL,NULL);
+
+
+	sd->push("anchorshear",
+			_("Anchor Shear"),
+			_("Transform so that p1 and p2 stay fixed, but p3 is shifted to newp3."),
+			Element_Function, NULL,"0",
+			0,
+			NULL);
+	sd->pushParameter("p1",_("P1"),_("A constant point"),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p2",_("P2"),_("Another constant point"),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p3",_("P3"),_("The point to move."),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p3",_("P3"),_("The new position of p3."),Element_Flatvector, NULL,NULL);
+
+
+	sd->push("flip",
+			_("Flip"),
+			_("Flip around an axis defined by two points."),
+			Element_Function, NULL,"0",
+			0,
+			NULL);
+	sd->pushParameter("p1",_("P1"),_("A constant point"),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p2",_("P2"),_("Another constant point"),Element_Flatvector, NULL,NULL);
+
+
+	sd->push("settransform",
+			_("Set Transform"),
+			_("Set the object's affine transform, with a set of 6 real numbers: a,b,c,d,x,y."),
+			Element_Function, NULL,"0",
+			0,
+			NULL);
+	sd->pushParameter("a",_("A"),_("A"),Element_Real, NULL,NULL);
+	sd->pushParameter("b",_("B"),_("B"),Element_Real, NULL,NULL);
+	sd->pushParameter("c",_("C"),_("C"),Element_Real, NULL,NULL);
+	sd->pushParameter("d",_("D"),_("D"),Element_Real, NULL,NULL);
+	sd->pushParameter("x",_("X"),_("X"),Element_Real, NULL,NULL);
+	sd->pushParameter("y",_("Y"),_("Y"),Element_Real, NULL,NULL);
+
+
+	return sd;
+}
 
 
 } //namespace Laidout

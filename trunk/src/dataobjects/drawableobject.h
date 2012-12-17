@@ -45,6 +45,30 @@ class DrawObjectChain
 	virtual ~DrawObjectChain();
 };
 
+//----------------------------------- DrawableParentLink ---------------------------
+
+//! Types for how a child DrawableObject fits in a parent. See DrawableParentLink.
+enum ParentLinkTypes
+{
+	PARENTLINK_Matrix,
+	PARENTLINK_Align,
+	PARENTLINK_Anchor,
+	PARENTLINK_Code,
+	PARENTLINK_MAX
+};
+
+class DrawableParentLink
+{
+  public:
+	int type; //straight matrix, align points, align by parent anchor, code
+	flatpoint anchor1,anchor2;
+	int parent_anchor_id;
+	int code_id;
+
+	DrawableParentLink();
+	virtual ~DrawableParentLink();
+};
+
 
 //----------------------------- DrawableObject ---------------------------------
 class DrawableObject :  virtual public ObjectContainer,
@@ -53,8 +77,8 @@ class DrawableObject :  virtual public ObjectContainer,
 {
  protected:
  public:
-	char *id;
 	DrawableObject *parent;
+	DrawableParentLink *parent_link;
 	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
 	char locked, visible, prints, selectable;
 
@@ -84,6 +108,16 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual const char *whattype() { return "Group"; }
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
 
+	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
+	 //default is point to things particular to Groups.
+	virtual int pointin(flatpoint pp,int pin=1);
+	virtual void FindBBox();
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	
 	 //new functions for DrawableObject
 	LaxInterfaces::PathsData *GetAreaPath();
 	LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
@@ -103,13 +137,6 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual void swap(int i1,int i2) { kids.swap(i1,i2); }
 	virtual int slide(int i1,int i2);
 
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	
-	virtual int pointin(flatpoint pp,int pin=1);
-	virtual void FindBBox();
 	//virtual int contains(SomeData *d,FieldPlace &place);
 	//virtual LaxInterfaces::SomeData *getObject(FieldPlace &place,int offset=0);
 	//virtual int nextObject(FieldPlace &place, FieldPlace &first, int curlevel, LaxInterfaces::SomeData **d=NULL);
@@ -124,6 +151,9 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual Laxkit::anObject *object_e(int i);
 	virtual const char *object_e_name(int i);
 	virtual const double *object_transform(int i);
+
+	 //for Value
+	virtual ObjectDef *makeObjectDef();
 };
 
 

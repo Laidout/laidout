@@ -25,7 +25,6 @@ namespace Laidout {
 
 
 //----------------------------------- unique name functions ------------------------------
-char *make_id(const char *base);
 const char *Untitled_name();
 
 

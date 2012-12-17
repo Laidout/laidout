@@ -47,6 +47,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual int UseThis(anObject *newdata,unsigned int);
 	virtual int draws(const char *atype);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
+	virtual int Refresh();
 
 	virtual int LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse);
 	virtual int GrabSelection(unsigned int state);

@@ -11,6 +11,8 @@ Those are purged with each release.
 
 
 ---- bugs to fix right now:
+update webpage with current svn repo
+
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
 
 selecting fails!!! Grrrr!

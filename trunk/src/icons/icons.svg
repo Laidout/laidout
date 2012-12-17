@@ -1073,10 +1073,10 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.6650501"
-     inkscape:cx="780.1119"
-     inkscape:cy="566.03905"
+     inkscape:cx="910.80402"
+     inkscape:cy="464.72667"
      inkscape:document-units="px"
-     inkscape:current-layer="layer2"
+     inkscape:current-layer="layer1"
      inkscape:window-width="1918"
      inkscape:window-height="1153"
      inkscape:window-x="1"
@@ -1086,8 +1086,9 @@
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:window-maximized="1"
-     inkscape:snap-global="false"
-     inkscape:snap-nodes="false">
+     inkscape:snap-global="true"
+     inkscape:snap-nodes="true"
+     inkscape:snap-grids="false">
     <inkscape:grid
        id="GridFromPre046Settings"
        type="xygrid"
@@ -7468,6 +7469,18 @@
          id="path3781"
          d="m 153.40709,303.69236 c -7.13019,0.64819 -5.29681,0.43213 -5.29681,0.43213"
          style="fill:none;stroke:#000000;stroke-width:1.04858768px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1" />
+    </g>
+    <g
+       transform="translate(444.4106,-0.41115901)"
+       style="display:inline"
+       id="Chains-8"
+       inkscape:label="#g4910">
+      <path
+         style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79999983;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+         d="m 791.77058,380.45454 c -2.19011,0 -4.59538,0 -7.19953,0 l -0.2548,-6.99805 -7.0313,10.09375 7.125,10 0.036,-6.75 c 2.56626,0 5.01601,0 7.32463,0 z m 2.9239,6.3457 c 2.37021,0 4.65589,0 7.16607,0 l 0.036,6.75 7.125,-10 -7.0313,-10.09375 -0.2546,6.99805 c -2.62418,0 -4.82221,0 -7.04117,0 z"
+         id="path4912-6"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="cccccccccccccccc" />
     </g>
   </g>
 </svg>

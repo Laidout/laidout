@@ -547,7 +547,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		if (spread) { delete spread; spread=NULL; }
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		if (spread) desc=spread->pagesFromSpreadDesc(doc);
-		else desc=limbo->id?newstr(limbo->id):NULL;
+		else desc=limbo->Id()?newstr(limbo->Id()):NULL;
 
 		for (p=0; p<papergroup->papers.n; p++) {
 			if (!pageobjs) {
