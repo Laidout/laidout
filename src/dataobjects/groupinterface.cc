@@ -14,6 +14,7 @@
 // Copyright (C) 2005-2007,2009-2011 by Tom Lechner
 //
 
+#include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
 #include <lax/colors.h>
 #include "groupinterface.h"
@@ -393,7 +394,54 @@ int GroupInterface::PerformAction(int action)
 
 int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
+	DBG cerr <<" ****************GroupInterface::CharInput"<<endl;
+	if (ch==' ' && selection.n && buttondown.any(0,LEFTBUTTON)) {
+		SomeData *obj;
+		for (int c=0; c<selection.n; c++) {
+			obj=NULL;
+			if (state&ControlMask) {
+				 // duplicate selection as clones
+				obj=new SomeDataRef(selection.e[c]->obj);
+				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+			} else {
+				 //duplicate selection
+				obj=selection.e[c]->obj->duplicate();
+				obj->FindBBox();
+				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+			}
+			if (!obj) continue;
+			viewport->ChangeContext(selection.e[c]);
+			viewport->NewData(obj,NULL);
+			obj->dec_count();
+		}
+		return 0;
+	}
 	return ObjectInterface::CharInput(ch,buffer,len,state,d);
+}
+
+int GroupInterface::Refresh()
+{
+	if (!needtodraw) return 0;
+
+
+
+	ObjectInterface::Refresh();
+
+	if (selection.n!=1) return 0;
+
+	 //if we are moving only one object, then put various do dads around it.
+	SomeData *obj=selection.e[0]->obj;
+	double m[6];
+	if (!strcmp(obj->whattype(),"SomeDataRef")) {
+		 //is link
+		viewport->transformToContext(m,selection.e[0],0,1);
+		flatpoint p=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->miny))/2);
+		dp->drawpoint(p, 10,0);
+		//dp->PushAndNewTransform(m);
+		//dp->PopAxes();
+	}
+
+	return 0;
 }
 
 

@@ -45,6 +45,13 @@ void LImageData::FindBBox()
 	ImageData::FindBBox();
 }
 
+/*! Provide final pointin() definition.
+ */
+int LImageData::pointin(flatpoint pp,int pin)
+{
+	return ImageData::pointin(pp,pin);
+}
+
 
 void LImageData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {

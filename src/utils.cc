@@ -46,20 +46,6 @@ namespace Laidout {
 
 //----------------------------------- unique name functions ------------------------------
 
-//! Return a roughly unique id. Uniqueness is not guaranteed!
-/*! Say base=="blah" then something like "blah12" will be returned.
- *
- * This currently uses Laxkit::getUniqueNumber(), and simply appends it to base.
- * Please note that if you load in something, either a laidout document or a resource,
- * it is possible to have name collision.
- */
-char *make_id(const char *base)
-{
-	if (!base) base="id";
-	char *str=new char[strlen(base)+30];
-	sprintf(str,"%s%ld",base,getUniqueNumber());
-	return str;
-}
 
 //! Return a pointer to a char[] akin to "untitled 1", "untitled 2", etc.
 /*! The number is based on a static int stored in the function.

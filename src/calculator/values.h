@@ -33,6 +33,7 @@ enum ValueTypes {
 	VALUE_None,
 	VALUE_Set,
 	VALUE_Object,
+	VALUE_Fields,
 	VALUE_Int,
 	VALUE_Real,
 	VALUE_String,
@@ -167,6 +168,8 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 					 Laxkit::RefPtrStack<ObjectDef> *nfields,unsigned int fflags,
 					 NewStyleFunc nnewfunc,
 					 StyleFunc nstylefunc=NULL);
+	virtual int pushParameter(const char *nname,const char *nName,const char *ndesc,
+					ElementType fformat,const char *nrange, const char *newdefval);
 	virtual int push(ObjectDef *newfield);
 	virtual int pop(int fieldindex);
 

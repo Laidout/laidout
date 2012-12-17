@@ -26,8 +26,10 @@
 namespace Laidout {
 
 
-void DrawData(Laxkit::Displayer *dp,double *m,LaxInterfaces::SomeData *data,
-				Laxkit::anObject *a1,Laxkit::anObject *a2,unsigned int flags=0);
+//void DrawData(Laxkit::Displayer *dp,double *m,LaxInterfaces::SomeData *data,
+				//Laxkit::anObject *a1,Laxkit::anObject *a2,unsigned int flags=0);
+void DrawDataStraight(Laxkit::Displayer *dp,LaxInterfaces::SomeData *data,
+				Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,unsigned int flags=0);
 void DrawData(Laxkit::Displayer *dp,LaxInterfaces::SomeData *data,
 				Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,unsigned int flags=0);
 LaxInterfaces::SomeData *newObject(const char *thetype);

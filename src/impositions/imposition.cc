@@ -11,13 +11,15 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 
 
 #include "../language.h"
 #include "imposition.h"
-#include "../utils.h"
+#include "utils.h"
+
+#include <lax/misc.h>
 #include <lax/lists.cc>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/transformmath.h>

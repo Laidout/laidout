@@ -367,6 +367,26 @@ int ObjectDef::push(ObjectDef *newfield)
 	return fields->push(newfield);
 }
 
+//! Convenience function to push a parameter field to previously added def.
+/*! So, this will push a field onto fields->e[fields->n-1].
+ * Aids in easier creation of function definitions.
+ *
+ * If there is no last item in fields, then create a new fields object. Note that
+ * future pushParameter() calls in this case will add to that one, not to *this.
+ */
+int ObjectDef::pushParameter(const char *nname,const char *nName,const char *ndesc,
+			ElementType fformat,const char *nrange, const char *newdefval)
+{
+	ObjectDef *newdef=new ObjectDef(NULL,nname,nName,
+								  ndesc,fformat,nrange,newdefval,
+								  NULL,0,NULL);
+	int c;
+	if (!fields || !fields->n) c=push(newdef);
+	else c=fields->e[fields->n-1]->push(newdef);
+	newdef->dec_count();
+	return c;
+}
+
 //! The element is popped off the fields stack, then thatelement->dec_count() is called.
 /*! Returns 1 if item is removed, else 0.
  */
