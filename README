@@ -139,14 +139,13 @@ the dev version may be rather buggy compared to "stable" versions!
 Here is a fast and easy way to get Laidout up and running from svn:
 
 1. Grab Laidout svn (make sure the subversion package is installed):
-svn co http://laidout.svn.sourceforge.net/svnroot/laidout/trunk laidout-svn
-
+svn co svn://svn.code.sf.net/p/laidout/code/trunk laidout-svn
 
 2. Grab Laxkit svn:
 Enter the laidout-svn directory and get the Laxkit svn:
 
 cd laidout-svn
-svn co http://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
+svn co svn://svn.code.sf.net/p/laxkit/code/laxkit/trunk laxkit
 
 
 3. Compile the goods, by doing this:
