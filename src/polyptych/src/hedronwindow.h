@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2011-2012 by Tom Lechner
 //
 
 #ifndef POLYPTYCH_HEDRONWINDOW_H
@@ -266,6 +266,7 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual int installImage(const char *file);
 	virtual int installPolyhedron(const char *file);
 	virtual int installPolyhedron(Polyhedron *ph);
+	virtual int SetFiles(const char *hedron, const char *image, const char *project);
 	virtual int AddNet(Net *net);
 	virtual int AddPaper(PaperBound *paper);
 	virtual Polyhedron *defineCube();

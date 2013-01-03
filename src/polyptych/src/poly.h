@@ -28,6 +28,9 @@
 #include <cstdlib>
 #include <cstdio>
 
+
+namespace Polyptych {
+
 //-------------------------------- Edge --------------------------------------
 class Edge
 {
@@ -72,6 +75,7 @@ class Face
 	int *f,*v;  // Face, vert labels (not edges yet)
 	double *dihedral;
 	int planeid,setid;
+	int facegroupid;
 	ExtraFace *cache;
 
 	Face();
@@ -190,6 +194,8 @@ class Polyhedron :
 	virtual const char *NetName() { return name; }
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 };
+
+} //namespace Polyptych
 
 #endif
 

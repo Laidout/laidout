@@ -20,6 +20,7 @@
 #include "../laidout.h"
 #include "../drawdata.h"
 #include "../language.h"
+#include "../stylemanager.h"
 
 #include <lax/refptrstack.cc>
 
@@ -695,10 +696,101 @@ Value *NewDrawableObject(ObjectDef *)
 //! Return an ObjectDef for a "Group" object.
 ObjectDef *DrawableObject::makeObjectDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,"Group",
-			_("Group"),
-			_("Group of drawable objects, and base of all drawable objects"),
-			Element_Fields,
+	ObjectDef *sd=makeAffineObjectDef();
+
+	makestr(sd->name,"Group");
+	makestr(sd->Name,_("Group"));
+	makestr(sd->description,_("Group of drawable objects, and base of all drawable objects"));
+
+	return sd;
+}
+
+//--------------------------------------- AffineValue ---------------------------------------
+
+class AffineValue : virtual public Value, virtual public Laxkit::Affine
+{
+  public:
+	AffineValue(const double *m);
+	virtual ObjectDef *makeObjectDef();
+	virtual const char *toCChar();
+	virtual Value *duplicate();
+	virtual int type() { return GetObjectDef()->fieldsformat; }
+	virtual int evaluate(const char *function, ValueHash *parameters, Value **value_ret, ErrorLog &log);
+};
+
+AffineValue::AffineValue(const double *m)
+  : Affine(m)
+{}
+
+const char *AffineValue::toCChar()
+{
+	modified=0;
+	if (tempstr) delete[] tempstr;
+	tempstr=new char[120];
+	sprintf(tempstr,"(%.10g,%.10g,%.10g,%.10g,%.10g,%.10g)",m(0),m(1),m(2),m(3),m(4),m(5));
+	return tempstr;
+}
+
+Value *AffineValue::duplicate()
+{
+	AffineValue *dup=new AffineValue(m());
+	return dup;
+}
+
+ObjectDef *AffineValue::makeObjectDef()
+{
+	objectdef=stylemanager.FindDef("Affine");
+	if (objectdef) objectdef->inc_count();
+	else {
+		objectdef=makeAffineObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+	return objectdef;
+}
+
+int AffineValue::evaluate(const char *function, ValueHash *parameters, Value **value_ret, ErrorLog &log)
+{
+	if (!strcmp(function,"rotate")) {
+		int err=0;
+		double angle;
+		flatpoint p;
+		try {
+			angle=parameters->findIntOrDouble("angle",-1,&err);
+			if (err) throw _("Missing angle.");
+			err=0;
+
+			FlatvectorValue *fpv=dynamic_cast<FlatvectorValue*>(parameters->find("point"));
+			if (fpv) p=fpv->v;
+
+			Rotate(angle,p);
+
+		} catch (const char *str) {
+			log.AddMessage(str,ERROR_Fail);
+			err=1;
+		}
+		 
+		if (value_ret) *value_ret=NULL;
+		return err;
+
+	} else if (!strcmp(function,"scalerotate")) {
+		cerr <<" *** need to implement AffineValue scalerotate"<<endl;
+	} else if (!strcmp(function,"anchorshear")) {
+		cerr <<" *** need to implement AffineValue anchorshear"<<endl;
+	} else if (!strcmp(function,"flip")) {
+		cerr <<" *** need to implement AffineValue flip"<<endl;
+	} else if (!strcmp(function,"settransform")) {
+		cerr <<" *** need to implement AffineValue settransform"<<endl;
+	}
+
+	return 1;
+}
+
+ObjectDef *makeAffineObjectDef()
+{
+	ObjectDef *sd=new ObjectDef(NULL,"Affine",
+			_("Affine"),
+			_("Affine transform defined by 6 real numbers."),
+			VALUE_Fields,
 			NULL,NULL);
 	//sd->newfunc=NewDrawableObject;
 
@@ -706,58 +798,58 @@ ObjectDef *DrawableObject::makeObjectDef()
 	sd->push("rotate",
 			_("Rotate"),
 			_("Rotate the object, optionally aronud a point"),
-			Element_Function, NULL,"0",
+			VALUE_Function, NULL,"0",
 			0,
 			NULL);
-	sd->pushParameter("angle",_("Angle"),_("The angle to rotate"),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("point",_("Point"),_("The point around which to rotate. Default is the origin."),Element_Flatvector, NULL,"(0,0)");
+	sd->pushParameter("angle",_("Angle"),_("The angle to rotate"),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("point",_("Point"),_("The point around which to rotate. Default is the origin."),VALUE_Flatvector, NULL,"(0,0)");
 
 
 	sd->push("scalerotate",
 			_("ScaleRotate"),
 			_("Rotate and scale the object, keeping one point fixed"),
-			Element_Function, NULL,"0",
+			VALUE_Function, NULL,"0",
 			0,
 			NULL);
-	sd->pushParameter("p1",_("P1"),_("A constant point"),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("p2",_("P2"),_("The point to move."),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("p3",_("P3"),_("The new position of p2."),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("p2",_("P2"),_("The point to move."),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("p3",_("P3"),_("The new position of p2."),VALUE_Flatvector, NULL,NULL);
 
 
 	sd->push("anchorshear",
 			_("Anchor Shear"),
 			_("Transform so that p1 and p2 stay fixed, but p3 is shifted to newp3."),
-			Element_Function, NULL,"0",
+			VALUE_Function, NULL,"0",
 			0,
 			NULL);
-	sd->pushParameter("p1",_("P1"),_("A constant point"),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("p2",_("P2"),_("Another constant point"),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("p3",_("P3"),_("The point to move."),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("p3",_("P3"),_("The new position of p3."),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("p3",_("P3"),_("The point to move."),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("p3",_("P3"),_("The new position of p3."),VALUE_Flatvector, NULL,NULL);
 
 
 	sd->push("flip",
 			_("Flip"),
 			_("Flip around an axis defined by two points."),
-			Element_Function, NULL,"0",
+			VALUE_Function, NULL,"0",
 			0,
 			NULL);
-	sd->pushParameter("p1",_("P1"),_("A constant point"),Element_Flatvector, NULL,NULL);
-	sd->pushParameter("p2",_("P2"),_("Another constant point"),Element_Flatvector, NULL,NULL);
+	sd->pushParameter("p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL);
+	sd->pushParameter("p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL);
 
 
 	sd->push("settransform",
 			_("Set Transform"),
 			_("Set the object's affine transform, with a set of 6 real numbers: a,b,c,d,x,y."),
-			Element_Function, NULL,"0",
+			VALUE_Function, NULL,"0",
 			0,
 			NULL);
-	sd->pushParameter("a",_("A"),_("A"),Element_Real, NULL,NULL);
-	sd->pushParameter("b",_("B"),_("B"),Element_Real, NULL,NULL);
-	sd->pushParameter("c",_("C"),_("C"),Element_Real, NULL,NULL);
-	sd->pushParameter("d",_("D"),_("D"),Element_Real, NULL,NULL);
-	sd->pushParameter("x",_("X"),_("X"),Element_Real, NULL,NULL);
-	sd->pushParameter("y",_("Y"),_("Y"),Element_Real, NULL,NULL);
+	sd->pushParameter("a",_("A"),_("A"),VALUE_Real, NULL,NULL);
+	sd->pushParameter("b",_("B"),_("B"),VALUE_Real, NULL,NULL);
+	sd->pushParameter("c",_("C"),_("C"),VALUE_Real, NULL,NULL);
+	sd->pushParameter("d",_("D"),_("D"),VALUE_Real, NULL,NULL);
+	sd->pushParameter("x",_("X"),_("X"),VALUE_Real, NULL,NULL);
+	sd->pushParameter("y",_("Y"),_("Y"),VALUE_Real, NULL,NULL);
 
 
 	return sd;

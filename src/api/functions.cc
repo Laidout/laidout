@@ -32,20 +32,20 @@ namespace Laidout {
  */
 int InitFunctions()
 {
-	stylemanager.AddStyleDef(makeReimposeStyleDef(),1);
-	stylemanager.AddStyleDef(makeOpenStyleDef(),1);
-	stylemanager.AddStyleDef(makeNewDocumentStyleDef(),1);
-	stylemanager.AddStyleDef(makeImportStyleDef(),1);
-	stylemanager.AddStyleDef(makeExportStyleDef(),1);
+	stylemanager.AddObjectDef(makeReimposeStyleDef(),1);
+	stylemanager.AddObjectDef(makeOpenStyleDef(),1);
+	stylemanager.AddObjectDef(makeNewDocumentStyleDef(),1);
+	stylemanager.AddObjectDef(makeImportStyleDef(),1);
+	stylemanager.AddObjectDef(makeExportStyleDef(),1);
 	
-	return stylemanager.functions.n;
+	return stylemanager.getNumFields();
 }
 
 int InitObjectDefinitions()
 {
-	stylemanager.AddStyleDef(makePaperStyleDef(),1);
+	stylemanager.AddObjectDef(makePaperStyleDef(),1);
 
-	return stylemanager.styledefs.n;
+	return stylemanager.getNumFields();
 }
 
 } // namespace Laidout

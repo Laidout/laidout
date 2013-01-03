@@ -11,11 +11,11 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2012 by Tom Lechner
 //
 
-#ifndef POLYPTYCH_HEDRONWINDOW_H
-#define POLYPTYCH_HEDRONWINDOW_H
+#ifndef POLYPTYCH_PANOVIEWWINDOW_H
+#define POLYPTYCH_PANOVIEWWINDOW_H
 
 
 #include <GL/glx.h>

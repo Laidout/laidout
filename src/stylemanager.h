@@ -2,7 +2,7 @@
 // $Id$
 //	
 // Laidout, for laying out
-// Copyright (C) 2004-2006 by Tom Lechner
+// Copyright (C) 2012 by Tom Lechner
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public
@@ -16,40 +16,15 @@
 #ifndef STYLEMANAGER_H
 #define STYLEMANAGER_H
 
-#include <lax/refptrstack.h>
-#include "styles.h"
+#include "calculator/calculator.h"
 
 
 namespace Laidout {
 
 
-class StyleManager
-{
- protected:
-	int firstuserdef;
- public:
-	Laxkit::RefPtrStack<StyleDef> functions;
-	Laxkit::RefPtrStack<StyleDef> styledefs;
-
-	//Laxkit::RefPtrStack<Style> styles;
-
-	StyleManager();
-	~StyleManager();
-	void flush();
-
-	int AddStyleDef(StyleDef *def,int absorb=0);
-	StyleDef *FindDef(const char *styledef, int which=3);
-
-	//void deleteStyle(Style *style);
-	Style *newStyle(const char *styledef);
-	Style *newStyle(Style *baseonthis);// <--create a generic?
-	Style *FindStyle(const char *style);
-
-	void dump(FILE *f,int w=1);
-};
 
 #ifndef LAIDOUT_CC
-extern StyleManager stylemanager;
+extern ObjectDef stylemanager;
 #endif
 
 

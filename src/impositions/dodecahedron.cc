@@ -21,6 +21,7 @@
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
+using namespace Polyptych;
 
 #include <iostream>
 using namespace std;

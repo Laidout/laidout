@@ -65,8 +65,8 @@ class SimpleNetFace
 };
 
 //----------------------------------- SimpleNet -----------------------------------
-class SimpleNet : public AbstractNet, 
-				  public Laxkit::PtrStack<NetFace>,
+class SimpleNet : public Polyptych::AbstractNet, 
+				  public Laxkit::PtrStack<Polyptych::NetFace>,
 				  public LaxInterfaces::SomeData
 {
  public:
@@ -109,7 +109,7 @@ class SimpleNet : public AbstractNet,
 	virtual int Modified();
 
 	virtual int NumFaces() { return nf; }
-	virtual NetFace *GetFace(int i,double scaling);
+	virtual Polyptych::NetFace *GetFace(int i,double scaling);
 
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 };

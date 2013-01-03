@@ -63,27 +63,31 @@ void installPptFilter()
 //------------------------------------ PptExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newPptExportConfig(StyleDef*)
+Value *newPptExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Passepartout"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 //------------------------------------ PptImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newPptImportConfig(StyleDef*)
+Value *newPptImportConfig(StyleDef*)
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
 		if (!strcmp(laidout->importfilters.e[c]->Format(),"Passepartout"))
 			d->filter=laidout->importfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 
@@ -117,7 +121,7 @@ StyleDef *PptoutFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to a Passepartout file."));
 	styledef->newfunc=newPptExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;
@@ -448,7 +452,7 @@ StyleDef *PptinFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to import a Passepartout file."));
 	styledef->newfunc=newPptImportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

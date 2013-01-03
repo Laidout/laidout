@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2011-2012 by Tom Lechner
 
 
 #include <lax/fileutils.h>
@@ -21,6 +21,7 @@
 
 using namespace LaxFiles;
 using namespace Laxkit;
+using namespace Polyptych;
 
 //Right now, convert between "idat", obj, and off
 

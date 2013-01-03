@@ -211,8 +211,13 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 }
 
 //! The newfunc for PageStyle instances.
-Style *NewPageStyle(StyleDef *def)
-{ return new PageStyle; }
+Value *NewPageStyle(StyleDef *def)
+{
+	PageStyle *d=new PageStyle;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
+}
 
  //! Return a pointer to a new local StyleDef class with the PageStyle description.
 StyleDef *PageStyle::makeStyleDef()
@@ -221,7 +226,7 @@ StyleDef *PageStyle::makeStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"PageStyle",
 			_("Generic Page"),
 			_("A page"),
-			Element_Fields,
+			VALUE_Fields,
 			NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
@@ -229,19 +234,19 @@ StyleDef *PageStyle::makeStyleDef()
 	sd->push("marginsclip",
 			_("Margins Clip"),
 			_("Whether a page's margins clip the contents"),
-			Element_Boolean, NULL,"0",
+			VALUE_Boolean, NULL,"0",
 			0,
 			NULL);
 	sd->push("pageclips",
 			_("Page Clips"),
 			_("Whether a page's outline clips the contents"),
-			Element_Boolean, NULL,"0",
+			VALUE_Boolean, NULL,"0",
 			0,
 			NULL);
 	sd->push("facingpagesbleed",
 			_("Facing Pages Bleed"),
 			_("Whether nearby pages are allowed to bleed onto this page"),
-			Element_Boolean, NULL,"0",
+			VALUE_Boolean, NULL,"0",
 			0,
 			NULL);
 	return sd;
@@ -381,8 +386,13 @@ Style *RectPageStyle::duplicate(Style *s)//s=NULL
 //! The newfunc for PageStyle instances.
 /*! \ingroup stylesandstyledefs
  */
-Style *NewRectPageStyle(StyleDef *def)
-{ return new RectPageStyle; }
+Value *NewRectPageStyle(StyleDef *def)
+{
+	RectPageStyle *d=new RectPageStyle;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
+}
 
 /*! \todo **** the newfunc is not quite right...
  */
@@ -398,19 +408,19 @@ StyleDef *RectPageStyle::makeStyleDef()
 		sd=new StyleDef("PageStyle","facingrectstyle",
 						_("Rectangular Facing Page"),
 						_("Rectangular Facing Page"),
-						Element_Fields,NULL,NULL,
+						VALUE_Fields,NULL,NULL,
 						NULL,
 						0,
 						NewRectPageStyle);
 	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
 						_("Rectangular Top Facing Page"),
 						_("Rectangular Top Facing Page"),
-						Element_Fields,NULL,NULL,
+						VALUE_Fields,NULL,NULL,
 						NULL,0,NewRectPageStyle);
 	else sd=new StyleDef("PageStyle","RectPageStyle",
 					_("Rectangular Page"),
 					_("Rectangular Page"),
-					Element_Fields,NULL,NULL,
+					VALUE_Fields,NULL,NULL,
 					NULL,0,
 					NewRectPageStyle);
 	
@@ -419,14 +429,14 @@ StyleDef *RectPageStyle::makeStyleDef()
 		sd->push("insidemargin",
 			_("Inside Margin"),
 			_("How much space to put on the inside of facing pages."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("leftmargin",
 			_("Left Margin"),
 			_("How much space to put in the left margin."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
@@ -436,14 +446,14 @@ StyleDef *RectPageStyle::makeStyleDef()
 		sd->push("outsidemargin",
 			_("Outside Margin"),
 			_("How much space to put on the outside of facing pages."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("rightmargin",
 			_("Right Margin"),
 			_("How much space to put in the right margin."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
@@ -453,14 +463,14 @@ StyleDef *RectPageStyle::makeStyleDef()
 		sd->push("insidemargin",
 			_("Inside Margin"),
 			_("How much space to put on the inside of facing pages."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("topmargin",
 			_("Top Margin"),
 			_("How much space to put in the top margin."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
@@ -470,14 +480,14 @@ StyleDef *RectPageStyle::makeStyleDef()
 		sd->push("outsidemargin",
 			_("Outside Margin"),
 			_("How much space to put on the outside of facing pages."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("bottommargin",
 			_("Bottom Margin"),
 			_("How much space to put in the bottom margin."),
-			Element_Real,
+			VALUE_Real,
 			NULL,NULL,
 			0,
 			NULL);
@@ -597,12 +607,23 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 		value=att->attributes.e[c]->value;
 		if (!strcmp(name,"pagestyle")) {
 			PageStyle *ps=NULL;
-			if (value) {
-				if (strcmp(value,"default")) {
-					 //if it does NOT equal default
-					ps=(PageStyle *)stylemanager.newStyle(value);
+
+			const char *which=value;
+			if (!which || !strcmp(value,"default")) which="PageStyle";
+			if (!isblank(which)) {
+				ObjectDef *def=stylemanager.FindDef(which);
+				if (def) {
+					Value *v=def->newObject(def);
+					ps=dynamic_cast<PageStyle *>(v);
+					if (!ps) {
+						 //maybe it was embedded in an object value
+						ObjectValue *vv=dynamic_cast<ObjectValue*>(v);
+						if (vv) ps=dynamic_cast<PageStyle *>(vv->object);
+						v->dec_count();
+					}
 				}
-			} else ps=(PageStyle *)stylemanager.newStyle("PageStyle");
+			}
+
 			if (ps) {
 				ps->dump_in_atts(att->attributes.e[c],flag,context);
 				ps->flags|=PAGESTYLE_AUTONOMOUS;

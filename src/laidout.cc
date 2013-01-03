@@ -70,7 +70,7 @@ using namespace std;
 //! The mother of all Laidout classes.
 namespace Laidout {
 
-StyleManager stylemanager;
+ObjectDef stylemanager;
 
 
 
@@ -294,32 +294,32 @@ StyleDef *LaidoutApp::makeStyleDef()
 						  "Laidout",
 						  _("Laidout"),
 						  _("Main Laidout container"),
-						  Element_Fields,
+						  VALUE_Fields,
 						  NULL,NULL);
 	sd->push("documents",
 			_("Documents"),
 			_("List of available documents."),
-			Element_Set, "Document", NULL,
+			VALUE_Set, "Document", NULL,
 			0,NULL);
 	sd->push("limbos",
 			_("Limbos"),
 			_("List of available limbo areas."),
-			Element_Set, "Group", NULL,
+			VALUE_Set, "Group", NULL,
 			0,NULL);
 	sd->push("resources",
 			_("Resources"),
 			_("List of available resources."),
-			Element_Set, "Resource", NULL,
+			VALUE_Set, "Resource", NULL,
 			0,NULL);
 	sd->push("windows",
 			_("Windows"),
 			_("List of current top level windows."),
-			Element_Set, "HeadWindow", NULL,
+			VALUE_Set, "HeadWindow", NULL,
 			0,NULL);
 	sd->push("settings",
 			_("Settings"),
 			_("List of various settings. These get loaded and saved in a laidoutrc file."),
-			Element_Fields, NULL, NULL,
+			VALUE_Fields, NULL, NULL,
 			0,NULL);
 
 	return sd;
@@ -416,11 +416,11 @@ int LaidoutApp::init(int argc,char **argv)
 	DBG cerr <<"---manually adding a couple of pagestyles"<<endl;
 	PageStyle *ps=new PageStyle;
 	StyleDef *sd=ps->makeStyleDef();
-	stylemanager.AddStyleDef(sd,1);
+	stylemanager.AddObjectDef(sd,1);
 	delete ps;
 	ps=new RectPageStyle(RECTPAGE_LRTB);
 	sd=ps->makeStyleDef();
-	stylemanager.AddStyleDef(sd,1);
+	stylemanager.AddObjectDef(sd,1);
 	delete ps;
 
 	 //read in laidoutrc
@@ -822,7 +822,7 @@ void InitOptions()
 	 //command line options are somewhat low level, so NOT localized (for now)
 	options.HelpHeader(LaidoutVersion());
 	options.UsageLine("laidout [options] [file1] [file2] ...");
-	options.Add("export-formats",     'e', 0, "List all the available export formats",       0, NULL);
+	options.Add("export-formats",     'X', 0, "List all the available export formats",       0, NULL);
 	options.Add("list-export-options",'O', 1, "List all the options for the given format",   0, "format");
 	options.Add("export"             ,'e', 1, "Export a document based on the given options",0, "\"format=EPS start=3\"");
 	options.Add("template",           't', 1, "Start laidout from this template in ~/.laidout/(version)/templates",0,"templatename");
@@ -1603,9 +1603,9 @@ int main(int argc,char **argv)
 	delete laidout;
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;
-	DBG cerr <<"  stylemanager.styledefs.n="<<(stylemanager.styledefs.n)<<endl;
+	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
 	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
-	stylemanager.flush();
+	if (stylemanager.fields) { delete stylemanager.fields; stylemanager.fields=NULL; }
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;
 	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;

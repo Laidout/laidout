@@ -429,6 +429,7 @@ int main(int argc, char **argv)
 	w->touchmode=touchmode;
 	 //set ui stuff
 	w->FontAndSize(consolefontfile,global_fontsize);
+	w->SetFiles(polyhedronfile,spherefile,polyptychfile);
 
 	 //copy over nets
 	if (nets.n) {

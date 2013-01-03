@@ -18,7 +18,7 @@
 
 namespace Laidout {
 
-Net *makeBox(const char *str,double x,double y,double z);
+Polyptych::Net *makeBox(const char *str,double x,double y,double z);
 
 } // namespace Laidout
 

@@ -62,27 +62,31 @@ void installSvgFilter()
 //------------------------------------ SvgExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newSvgExportConfig(StyleDef*)
+Value *newSvgExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Svg"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 //------------------------------------ SvgImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newSvgImportConfig(StyleDef*)
+Value *newSvgImportConfig(StyleDef*)
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
 		if (!strcmp(laidout->importfilters.e[c]->Format(),"Svg"))
 			d->filter=laidout->importfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 //------------------------------------ SvgOutputFilter ----------------------------------
@@ -123,7 +127,7 @@ StyleDef *SvgOutputFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to an svg file."));
 	styledef->newfunc=newSvgExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;
@@ -897,7 +901,7 @@ StyleDef *SvgImportFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to import a Svg file."));
 	styledef->newfunc=newSvgImportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2008 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 
 
@@ -37,6 +37,8 @@ using namespace LaxInterfaces;
 using namespace std;
 #define DBG 
 
+
+namespace Polyptych {
 
 const char *tagname[5]={
 	"FACE_Undefined",
@@ -2072,4 +2074,6 @@ int Net::deleteFace(int netfacei)
 	DBG cerr <<"-----deleteFace done"<<endl;
 	return 0;
 }
+
+} // namespace Polyptych
 

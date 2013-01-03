@@ -63,27 +63,31 @@ void installLaidoutFilter()
 //------------------------------------ LaidoutExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newLaidoutExportConfig(StyleDef*)
+Value *newLaidoutExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Laidout"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 //------------------------------------ LaidoutImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newLaidoutImportConfig(StyleDef*)
+Value *newLaidoutImportConfig(StyleDef*)
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
 		if (!strcmp(laidout->importfilters.e[c]->Format(),"Laidout"))
 			d->filter=laidout->importfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 
@@ -120,7 +124,7 @@ StyleDef *LaidoutOutFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to a Laidout file."));
 	styledef->newfunc=newLaidoutExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;
@@ -229,7 +233,7 @@ StyleDef *LaidoutInFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to import a Laidout file."));
 	styledef->newfunc=newLaidoutImportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

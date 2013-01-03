@@ -124,17 +124,17 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 	def=stylemanager.FindDef("Singles");
 	if (!def) {
 		def=makeSinglesStyleDef();
-		stylemanager.AddStyleDef(def,1);
+		stylemanager.AddObjectDef(def,1);
 	}
 	def=stylemanager.FindDef("Signature");
 	if (!def) {
 		def=makeSignatureImpositionStyleDef();
-		stylemanager.AddStyleDef(def,1);
+		stylemanager.AddObjectDef(def,1);
 	}
 	def=stylemanager.FindDef("NetImposition");
 	if (!def) {
 		def=makeNetImpositionStyleDef();
-		stylemanager.AddStyleDef(def,1);
+		stylemanager.AddObjectDef(def,1);
 	}
 
 	 //read in imposition resources from specified directory, and add to stack

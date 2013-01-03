@@ -21,7 +21,7 @@
 namespace Laidout {
 
 
-Net *makeDodecahedronNet(double ww,double hh);
+Polyptych::Net *makeDodecahedronNet(double ww,double hh);
 
 } // namespace Laidout
 
