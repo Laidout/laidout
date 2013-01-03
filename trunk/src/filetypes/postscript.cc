@@ -64,28 +64,32 @@ void installPostscriptFilters()
 //------------------------------------ PsExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newPsExportConfig(StyleDef*)
+Value *newPsExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Postscript"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 
 //------------------------------------ EpsExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newEpsExportConfig(StyleDef*)
+Value *newEpsExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"EPS"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 
@@ -125,7 +129,7 @@ StyleDef *PsOutFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to a postscript file."));
 	styledef->newfunc=newPsExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;
@@ -165,7 +169,7 @@ StyleDef *EpsOutFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to an EPS file."));
 	styledef->newfunc=newEpsExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

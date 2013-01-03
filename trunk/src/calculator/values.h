@@ -29,67 +29,54 @@ namespace Laidout {
 
 typedef int Unit;
 
+/*! For Value and ObjectDef objects */
 enum ValueTypes {
-	VALUE_None,
-	VALUE_Set,
-	VALUE_Object,
-	VALUE_Fields,
-	VALUE_Int,
-	VALUE_Real,
-	VALUE_String,
-	VALUE_Flatvector,
-	VALUE_Spacevector,
-	VALUE_Array, // *** unimplemented!
-	VALUE_File, // *** unimplemented!
-	VALUE_Flags, // *** unimplemented!
-	VALUE_Enum, // *** unimplemented!
-	VALUE_EnumVal, // *** unimplemented!
-	VALUE_Color, // *** unimplemented!
-	VALUE_Date, // *** unimplemented!
-	VALUE_Time, // *** unimplemented!
-	VALUE_Boolean, // *** unimplemented!
-	VALUE_Complex, // *** unimplemented!
-	VALUE_Function, // *** unimplemented!
+	VALUE_Any,        //!< as tag for function parameters
+	VALUE_None,       //!< as return value for type checking
+
+	VALUE_Set,        //!< zero or more of various objects
+	VALUE_Object,     //!< opaque object for passing around non-Value objects
+	VALUE_Int,        //!< integers
+	VALUE_Real,       //!< real numbers (doubles)
+	VALUE_String,     //!< strings, utf8 based
+	VALUE_Fields,     //!< collection of subfields 
+	VALUE_Flatvector, //!< two dimensional vector
+	VALUE_Spacevector,//!< three dimensional vector
+	VALUE_File,       //!< string like object refering to a file on disk
+	VALUE_Enum,       //!< One of a list of string like labels, with associated integer value
+	VALUE_EnumVal,    //!< these do not exist independently of a VALUE_Enum's ObjectDef
+	VALUE_Boolean,    //!< Translatable as 1 for true, or 0 for false
+	VALUE_Flags,      //!< *** unimplemented!
+	VALUE_Color,      //!< *** unimplemented!
+	VALUE_Date,       //!< *** unimplemented!
+	VALUE_Time,       //!< *** unimplemented!
+	VALUE_Complex,    //!< *** unimplemented!
+	VALUE_Array,      //!< Mathematical matrices, or sets of fixed sizes
+	VALUE_Hash,       //!< *** unimplemented!
+
+	VALUE_Variable,   //!< for use in an ObjectDef
+	VALUE_Operator,   //!< for use in an ObjectDef
+	VALUE_Class,      //!< for use in an ObjectDef
+	VALUE_Function,   //!< for use in an ObjectDef
+	VALUE_Namespace,  //!< for use in an ObjectDef
+
+	VALUE_LValue,     //!< A name value that you can assign things to.
 
 	VALUE_MaxBuiltIn
 };
 
-//------------------------------ ObjectDef --------------------------------------------
-
- // for ObjectDef::format
-enum ElementType {
-	Element_Any,
-	Element_None,
-	Element_Set, //for sets, the range value in the ObjectDef restricts the set to that type
-	Element_Object,
-	Element_Int,
-	Element_Real,
-	Element_String,
-	Element_Fields, 
-	Element_Flatvector, 
-	Element_Spacevector, 
-	Element_File,
-	Element_Flag,
-	Element_Enum, //if the def has a function, then it is a dynamic enum
-	Element_EnumVal,
-	Element_Color,
-	Element_Date,
-	Element_Time,
-	Element_Boolean,
-	Element_Complex,
-	Element_Function,
-
-	Element_MaxBuiltinFormatValue
-};
 const char *element_TypeNames(int type);
-		
+
+
+//------------------------------ ObjectDef --------------------------------------------
 
 class ObjectDef;
 class Style;
 class Value;
 class ValueHash;
-typedef Style *(*NewStyleFunc)(ObjectDef *def);
-typedef int (*StyleFunc)(ValueHash *context, ValueHash *parameters,
+class FunctionEvaluator;
+typedef Value *(*NewObjectFunc)(ObjectDef *def);
+typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters,
 							 Value **value_ret, ErrorLog &log);
  
 
@@ -100,39 +87,54 @@ typedef int (*StyleFunc)(ValueHash *context, ValueHash *parameters,
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
- public:
-	char *extends;
-	ObjectDef *extendsdef;
-	NewStyleFunc newfunc;
-	StyleFunc stylefunc;
-	Style *newStyle(ObjectDef *def) { if (newfunc) return newfunc(this); return NULL; }
+  public:
+	ObjectDef *source_module;
+
+	Laxkit::RefPtrStack<ObjectDef> extendsdefs;
+
+	NewObjectFunc newfunc;
+	ObjectFunc stylefunc;
+	Value *newObject(ObjectDef *def) { if (newfunc) return newfunc(this); return NULL; }
 
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
 	char *description; // description
 	char *range;
-	char *defaultvalue;
 	Laxkit::PtrStack<char> suggestions;
-	
+	char *defaultvalue;
+	Value *defaultValue; //this has more overhead than just a string, but can be more convenient in some cases.
+
 	 // OBJECTDEF_ORIGINAL
 	 // OBJECTDEF_DUPLICATE
 	 // OBJECTDEF_ORPHAN  =  is a representation of a composite style, not stored in any manager, and only 1 reference to it exists
 	 // OBJECTDEF_CAPPED = cannot push/pop fields
 	 // OBJECTDEF_READONLY = cannot modify parts of the styledef
+	 // OBJECTDEF_OPTIONAL
+	 // OBJECTDEF_FORCE_NUM_PARAMS
+	 // OBJECTDEF_FORCE_TYPES
 	unsigned int flags;
 
-	ElementType format; // int,real,string,fields,...
+	ValueTypes format; // int,real,string,fields,...
 	int fieldsformat;  //dynamically assigned to new object types
-	Laxkit::RefPtrStack<ObjectDef> *fields; //might be NULL, any fields are assumed to not be local to the stack.
+	Laxkit::RefPtrStack<ObjectDef> *fields;
 	
 	ObjectDef();
+	ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval);
 	ObjectDef(const char *nextends,const char *nname,const char *nName, const char *ndesc,
-			ElementType fmt,const char *nrange, const char *newdefval,
+			ValueTypes fmt,const char *nrange, const char *newdefval,
 			Laxkit::RefPtrStack<ObjectDef>  *nfields=NULL,unsigned int fflags=OBJECTDEF_CAPPED,
-			NewStyleFunc nnewfunc=0,StyleFunc nstylefunc=0);
+			NewObjectFunc nnewfunc=0,ObjectFunc nstylefunc=0);
 	virtual ~ObjectDef();
 	virtual const char *whattype() { return "ObjectDef"; }
 
+
+	 // namespace helpers
+	virtual Value *newValue(const char *objectdef);
+	virtual ObjectDef *FindDef(const char *objectdef, int len=-1, int which=7);
+	virtual int AddObjectDef(ObjectDef *def, int absorb);
+	virtual int SetVariable(const char *name,Value *v,int absorb);
+	virtual int pushVariable(const char *name,const char *nName, const char *ndesc, Value *v,int absorb);
+	
 	 // helpers to locate fields by name, "blah.3.x"
 	virtual int getNumFields();
 	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
@@ -144,42 +146,42 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 						const char **desc=NULL,
 						const char **rng=NULL,
 						const char **defv=NULL,
-						ElementType *fmt=NULL,
+						ValueTypes *fmt=NULL,
 						int *objtype=NULL,
 						ObjectDef **def_ret=NULL);
- 	//int *getfields(const char *extstr); // returns 0 terminated list of indices: "1.4.23+ -> { 1,4,23,0 }
+
 
 	 //-------- ObjectDef creation helper functions ------
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
-	virtual int pushEnumValue(const char *str, const char *Str, const char *dsc);
+	virtual int pop(int fieldindex);
+	virtual int push(ObjectDef *newfield, int absorb=1);
+	virtual int push(const char *nname,const char *nName,const char *ndesc,
+					 ValueTypes fformat,const char *nrange, const char *newdefval,
+					 unsigned int fflags,
+					 NewObjectFunc nnewfunc,
+					 ObjectFunc nstylefunc=NULL);
+	virtual int push(const char *nname,const char *nName,const char *ndesc,
+					 ValueTypes fformat,const char *nrange, const char *newdefval,
+					 Laxkit::RefPtrStack<ObjectDef> *nfields,unsigned int fflags,
+					 NewObjectFunc nnewfunc,
+					 ObjectFunc nstylefunc=NULL);
 	virtual int pushEnum(const char *nname,const char *nName,const char *ndesc,
 					 const char *newdefval,
-					 NewStyleFunc nnewfunc,
-					 StyleFunc nstylefunc,
+					 NewObjectFunc nnewfunc,
+					 ObjectFunc nstylefunc,
 					 ...);
-	virtual int push(const char *nname,const char *nName,const char *ndesc,
-					 ElementType fformat,const char *nrange, const char *newdefval,
-					 unsigned int fflags,
-					 NewStyleFunc nnewfunc,
-					 StyleFunc nstylefunc=NULL);
-	virtual int push(const char *nname,const char *nName,const char *ndesc,
-					 ElementType fformat,const char *nrange, const char *newdefval,
-					 Laxkit::RefPtrStack<ObjectDef> *nfields,unsigned int fflags,
-					 NewStyleFunc nnewfunc,
-					 StyleFunc nstylefunc=NULL);
+	virtual int pushEnumValue(const char *str, const char *Str, const char *dsc, int id=-10000000);
+	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
+					 ObjectFunc nstylefunc,
+					 ...);
 	virtual int pushParameter(const char *nname,const char *nName,const char *ndesc,
-					ElementType fformat,const char *nrange, const char *newdefval);
-	virtual int push(ObjectDef *newfield);
-	virtual int pop(int fieldindex);
+					ValueTypes fformat,const char *nrange, const char *newdefval);
 
 //	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
-//							 Value **value_ret, char **message_ret);
+//							 Value **value_ret, CalcSettings *settings, ErrorLog *log);
 
-	 // cap prevents accidental further adding/removing fields to a styledef
-	 // that is being constructed
-	virtual void cap(int y=1) { if (y) flags|=OBJECTDEF_CAPPED; else flags&=~OBJECTDEF_CAPPED; }
-	
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
@@ -191,11 +193,11 @@ typedef ObjectDef StyleDef;
 
 class Value : virtual public Laxkit::anObject
 {
- protected:
+  protected:
 	char *tempstr; //cached string representation
 	int modified; //whether tempstr needs to be updated
 	ObjectDef *objectdef;
- public:
+  public:
 	Value();
 	virtual ~Value();
 	virtual const char *whattype() { return "Value"; }
@@ -216,13 +218,18 @@ class Value : virtual public Laxkit::anObject
     virtual int getNumFields();
     virtual  ObjectDef *FieldInfo(int i);
     virtual const char *FieldName(int i);
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
 //----------------------------- SetValue ----------------------------------
 class SetValue : public Value
 {
- public:
+  public:
 	Laxkit::RefPtrStack<Value> values;
+
+	//SetValue();
 	virtual int Push(Value *v);
 	virtual const char *toCChar();
 	virtual Value *duplicate();
@@ -234,10 +241,40 @@ class SetValue : public Value
     virtual const char *FieldName(int i);
 };
 
+//----------------------------- ArrayValue ----------------------------------
+class ArrayValue : public SetValue
+{
+  public:
+	int fixed_size;
+	char *element_type;
+
+	ArrayValue(const char *elementtype=NULL, int size=0);
+	virtual ~ArrayValue();
+	virtual const char *toCChar();
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Array; }
+
+ 	virtual ObjectDef *makeObjectDef();
+
+	virtual int Dimensions();
+};
+
+//----------------------------- BooleanValue ----------------------------------
+class BooleanValue : public Value
+{
+  public:
+	int i;
+	BooleanValue(int ii) { i=ii; }
+	virtual const char *toCChar();
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Boolean; }
+ 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+};
+
 //----------------------------- IntValue ----------------------------------
 class IntValue : public Value
 {
- public:
+  public:
 	Unit units;
 	long i;
 	IntValue(long ii=0) { i=ii; }
@@ -250,7 +287,7 @@ class IntValue : public Value
 //----------------------------- DoubleValue ----------------------------------
 class DoubleValue : public Value
 {
- public:
+  public:
 	Unit units;
 	double d;
 	DoubleValue(double dd=0) { d=dd; }
@@ -263,7 +300,7 @@ class DoubleValue : public Value
 //----------------------------- FlatvectorValue ----------------------------------
 class FlatvectorValue : public Value
 {
- public:
+  public:
 	Unit units;
 	flatvector v;
 	FlatvectorValue() { }
@@ -278,7 +315,7 @@ class FlatvectorValue : public Value
 //----------------------------- SpacevectorValue ----------------------------------
 class SpacevectorValue : public Value
 {
- public:
+  public:
 	Unit units;
 	spacevector v;
 	SpacevectorValue() { }
@@ -293,7 +330,7 @@ class SpacevectorValue : public Value
 //----------------------------- StringValue ----------------------------------
 class StringValue : public Value
 {
- public:
+  public:
 	char *str;
 	StringValue(const char *s=NULL, int len=-1);
 	virtual ~StringValue() { if (str) delete[] str; }
@@ -306,7 +343,7 @@ class StringValue : public Value
 //----------------------------- ObjectValue ----------------------------------
 class ObjectValue : public Value
 {
- public:
+  public:
 	Laxkit::anObject *object;
 	ObjectValue(anObject *obj=NULL);
 	virtual ~ObjectValue();
@@ -316,15 +353,62 @@ class ObjectValue : public Value
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
 };
 
+//----------------------------- FileValue ----------------------------------
+class FileValue : public Value
+{
+  public:
+	char *filename;
+	FileValue(const char *f=NULL,int len=-1);
+	virtual ~FileValue();
+	virtual const char *toCChar();
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_File; }
+ 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+
+	virtual int fileType(); //file link, dir link, file, dir, block
+	virtual int isLink();
+	virtual int Exists();
+};
+
+//----------------------------- EnumValue ----------------------------------
+class EnumValue : public Value
+{
+  public:
+	int value;
+	ObjectDef *enumdef;
+	EnumValue(ObjectDef *baseenum, int which);
+	virtual ~EnumValue();
+	virtual const char *toCChar();
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Enum; }
+ 	virtual ObjectDef *makeObjectDef();
+};
+
+//----------------------------- FunctionValue ----------------------------------
+class FunctionValue : public Value
+{
+  public:
+	char *code;
+	FunctionEvaluator *function;
+
+	FunctionValue(const char *code, int len);
+	virtual ~FunctionValue();
+	virtual const char *toCChar();
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Function; }
+ 	virtual ObjectDef *makeObjectDef();
+};
+
 //----------------------------- ValueHash ----------------------------------
 class ValueHash : public Laxkit::anObject
 {
 	Laxkit::PtrStack<char> keys;
 	Laxkit::RefPtrStack<Value> values;
 
- public:
+  public:
 	ValueHash();
 	~ValueHash();
+	int sorted;
 
 	const char *key(int i);
 	Value *value(int i);

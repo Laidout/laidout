@@ -141,23 +141,23 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 	 //*** use Name, tooltip
 	switch (sd->format) {
 		 // Possible types:
-		//Element_Int,
-		//Element_Real,
-		//Element_String,
-		//Element_Fields, 
-		//Element_Boolean,
-		//Element_Date,
-		//Element_Enum,
-		//Element_DynamicEnum,
-		//Element_EnumVal,
-		//Element_Function,
-		//Element_Color,
-		case Element_Int:
-		case Element_Real:
-		case Element_String: {
+		//VALUE_Int,
+		//VALUE_Real,
+		//VALUE_String,
+		//VALUE_Fields, 
+		//VALUE_Boolean,
+		//VALUE_Date,
+		//VALUE_Enum,
+		//VALUE_DynamicEnum,
+		//VALUE_EnumVal,
+		//VALUE_Function,
+		//VALUE_Color,
+		case VALUE_Int:
+		case VALUE_Real:
+		case VALUE_String: {
 				char *blah=NULL;
-				//if (sd->format==Element_Int) blah=numtostr(style->getint(startext));
-				//else if (sd->format==Element_Real) blah=numtostr(style->getdouble(startext));
+				//if (sd->format==VALUE_Int) blah=numtostr(style->getint(startext));
+				//else if (sd->format==VALUE_Real) blah=numtostr(style->getdouble(startext));
 				//else makestr(blah,style->getstring(startext));
 
 				LineInput *linp;
@@ -170,7 +170,7 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 			} break;
 							  
 		 // checkbox:
-		case Element_Boolean: {
+		case VALUE_Boolean: {
 				CheckBox *box;
 				last=box=new CheckBox(this,NULL,startext,CHECK_LEFT, 0,0,0,0,1, 
 						last,object_id,"control",sd->Name);
@@ -179,33 +179,33 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 			} break;
 
 		 // ??? 3 field checkbox menuselector?
-		case Element_Date: {
+		case VALUE_Date: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: Date"));
 				//***
 			} break;
 							
 		 // one only checkbox menuselector
-		case Element_Enum: {
+		case VALUE_Enum: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enum"));
 				//***add sliderpopup with the field's enum names
 			} break;
-		case Element_EnumVal: { 
+		case VALUE_EnumVal: { 
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enumval"));
 				cout << "***shouldn't have ENUM_VAL here!"<<endl; 
 			} break;
-		case Element_DynamicEnum: { 
+		case VALUE_DynamicEnum: { 
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: dynamic enum"));
 				cout << "***implement dynamice enum here!"<<endl; 
 				//***add sliderinputpopup with the field's enum names
 			} break;
 								
 		 // ???
-//		case Element_Value: {
+//		case VALUE_Value: {
 //				AddWin(new MessageBar(this,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: value"));
 //				***
 //			} break;
 
-		case Element_Fields: {
+		case VALUE_Fields: {
 				if (sd->fields) {
 					 //*** --Name----
 					 //	 [sub 1]
@@ -225,10 +225,10 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 					cout << "***GenericStyleDialog::MakeControls should be fields here!!"<<endl;
 				}
 			} break;
-		case Element_Color: {
+		case VALUE_Color: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: color"));
 			} break;
-		case Element_Function: {
+		case VALUE_Function: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: function"));
 				//nothing doing here.. could have option for this to be listed...
 			} break;

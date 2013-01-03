@@ -150,7 +150,6 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  *  Directory Window? FileOpener? ImageFileOpener->to drag n drop images? ***not imp
  *  PlainTextEditor ***not imp
  *  StoryEditor *** not imp
- *  StyleManager ***not imp
  *  ObjectTreeEditor ***not imp
  * </pre>
  *
@@ -243,7 +242,6 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	//  Buttons
 	//  FileDialog?
 	//  ArrangementEditor
-	//  StyleManager
 	//  ObjectTreeEditor
 
 	WindowColors *newcolors=new WindowColors(*win_colors);

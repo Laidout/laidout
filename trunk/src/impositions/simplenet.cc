@@ -28,6 +28,7 @@
 using namespace LaxFiles;
 using namespace Laxkit;
 using namespace LaxInterfaces;
+using namespace Polyptych;
 
 
 #include <iostream>

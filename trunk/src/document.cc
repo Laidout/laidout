@@ -155,7 +155,7 @@ PageRange::~PageRange()
 StyleDef *PageRangeStyleDef()
 {
 	StyleDef *sd=new StyleDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
-			Element_Fields, NULL,NULL);
+			VALUE_Fields, NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NULL; 
@@ -163,7 +163,7 @@ StyleDef *PageRangeStyleDef()
 	sd->push("end",
 			_("End"),
 			_("The document page index at which this range ends."),
-			Element_Int,
+			VALUE_Int,
 			"0,context.doc.pages.n", //range
 			"0",                    //default value
 			0,
@@ -172,7 +172,7 @@ StyleDef *PageRangeStyleDef()
 	sd->push("start",
 			_("Start"),
 			_("The document page index at which this range starts."),
-			Element_Int,
+			VALUE_Int,
 			"0,context.doc.pages.n", //range
 			"0",                    //default value
 			0,
@@ -181,14 +181,14 @@ StyleDef *PageRangeStyleDef()
 	sd->push("first",
 			_("First page number of the range"),
 			_("First page number of the range"),
-			Element_Int, NULL,"0",
+			VALUE_Int, NULL,"0",
 			0,
 			NULL);
 
 	sd->push("labelbase",
 			_("Page label template"),
 			_("Page label template"),
-			Element_String, NULL,"0",
+			VALUE_String, NULL,"0",
 			0,
 			NULL);
 
@@ -204,7 +204,7 @@ StyleDef *PageRangeStyleDef()
 	sd->push("reverse",
 			_("Reverse order"),
 			_("Whether the range goes 1,2,3.. or ..3,2,1."),
-			Element_Boolean, NULL,"1",
+			VALUE_Boolean, NULL,"1",
 			0,
 			NULL);
 

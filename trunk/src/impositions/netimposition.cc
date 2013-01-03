@@ -32,6 +32,7 @@
 using namespace Laxkit;
 using namespace LaxInterfaces;
 using namespace LaxFiles;
+using namespace Polyptych;
  
 #include <iostream>
 using namespace std;
@@ -127,7 +128,7 @@ NetImposition::NetImposition(Net *newnet)
 	printnet=1;
 
 	 // setup default paperstyle
-	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
+	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
 	Imposition::SetPaperSize(paperstyle);
@@ -141,7 +142,7 @@ NetImposition::NetImposition(Net *newnet)
 	if (styledef) styledef->inc_count(); 
 	else {
 		styledef=makeStyleDef();
-		if (styledef) stylemanager.AddStyleDef(styledef);
+		if (styledef) stylemanager.AddObjectDef(styledef,0);
 	}
 
 //	if (!newnet) {
@@ -341,11 +342,13 @@ void NetImposition::setPage()
 }
 
 //! The newfunc for NetImposition instances.
-Style *NewNetImposition(StyleDef *def)
+Value *NewNetImposition(StyleDef *def)
 { 
 	NetImposition *n=new NetImposition;
 	n->styledef=def;
-	return n;
+	ObjectValue *v=new ObjectValue(n);
+	n->dec_count();
+	return v;
 }
 
 //! Return a new EnumStyle instance that has Dodecahedron listed.
@@ -368,24 +371,22 @@ StyleDef *makeNetImpositionStyleDef()
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
-			Element_Fields,
+			VALUE_Fields,
 			NULL,NULL,
 			NULL,
 			0, //new flags
 			NewNetImposition);
 
-	sd->push("printnet",
-			_("Print Net"),
-			_("Whether to show the net outline when printing out a document."),
-			Element_Boolean,
+	sd->push("printnet", _("Print Net"), _("Whether to show the net outline when printing out a document."),
+			VALUE_Boolean,
 			NULL, "1",
 			0,0);
-	sd->push("net",
-			_("Net"),
-			_("What kind of net is the imposition using"),
-			Element_Enum,
+
+	sd->push("net", _("Net"),  _("What kind of net is the imposition using"),
+			VALUE_Enum,
 			NULL, "0",
-			0,0,CreateNetListEnum);
+			0,NULL); // *** 0,0,CreateNetListEnum);
+	cerr << " *** need to make enum list work again in makeNetImpositionStyleDef()"<<endl;
 	return sd;
 }
 

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2011-2012 by Tom Lechner
 //
 
 
@@ -39,7 +39,7 @@ using namespace LaxFiles;
 #define DBG
 
 
-
+//! Namespace for various polyhedron 3-d stuff.
 namespace Polyptych {
 
 
@@ -2997,6 +2997,16 @@ int HedronWindow::AddPaper(PaperBound *paper)
 	remapPaperOverlays();
 	needtodraw=1;
 	return 1;
+}
+
+//! If non-null, only SETS files, does no loading of any kind.
+int HedronWindow::SetFiles(const char *hedron, const char *image, const char *project)
+{
+	int n=0;
+	if (hedron)  { n++; makestr(polyhedronfile,hedron); }
+	if (image)   { n++; makestr(spherefile,image); }
+	if (project) { n++; makestr(polyptychfile,project); }
+	return n;
 }
 
 /*! Uses ph, does not duplicate.

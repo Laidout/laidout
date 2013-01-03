@@ -40,7 +40,7 @@ StyleDef *makeImportStyleDef()
 			_("Import a vector file to an existing document or a group. Each filter may have "
 			  "additional options you can pass in. Usually the file format will be detected "
 			  "automatically, but you may also force a specific filter to be used."),
-			Element_Function,
+			VALUE_Function,
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -60,7 +60,7 @@ StyleDef *makeImportStyleDef()
 	sd->push("filename",
 			_("Filename"),
 			_("Path to file to import"),
-			Element_Int,
+			VALUE_Int,
 			NULL, //range
 			"1",  //defvalue
 			0,    //flags
@@ -68,7 +68,7 @@ StyleDef *makeImportStyleDef()
 	sd->push("filter",
 			_("Filter"),
 			_("The import filter to use to import"),
-			Element_Any,
+			VALUE_Any,
 			NULL,
 			NULL,
 			0,NULL);
@@ -183,7 +183,7 @@ StyleDef *makeExportStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"Export",
 			_("Export"),
 			_("Export a document or a group with the specified export filter to the specified file or files."),
-			Element_Function,
+			VALUE_Function,
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -195,7 +195,7 @@ StyleDef *makeExportStyleDef()
 	sd->push("filename",
 			_("Filename"),
 			_("Path of exported file. For multiple files, use \"file##.svg\", for instance."),
-			Element_String,
+			VALUE_String,
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -203,7 +203,7 @@ StyleDef *makeExportStyleDef()
 //	sd->push("target",
 //			_("Output target"),
 //			_("Whether to try to save to a single file (0), or multiple files (1)."),
-//			Element_Int,
+//			VALUE_Int,
 //			NULL, //range
 //			NULL,  //defvalue
 //			0,    //flags
@@ -211,7 +211,7 @@ StyleDef *makeExportStyleDef()
 	sd->push("filter",
 			_("Filter"),
 			_("The filter to export with."),
-			Element_Any,
+			VALUE_Any,
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -219,7 +219,7 @@ StyleDef *makeExportStyleDef()
 //	sd->push("doc",
 //			_("Document"),
 //			_("The document to export, if not exporting a group."),
-//			Element_Any,
+//			VALUE_Any,
 //			NULL, //range
 //			NULL,  //defvalue
 //			0,    //flags
@@ -227,7 +227,7 @@ StyleDef *makeExportStyleDef()
 //	sd->push("group",
 //			_("Group"),
 //			_("Group to export, if not exporting a document."),
-//			Element_Any,
+//			VALUE_Any,
 //			NULL, //range
 //			NULL,  //defvalue
 //			0,    //flags

@@ -36,6 +36,7 @@
 #include <lax/interfaces/svgcoord.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
+#include <lax/laxoptions.h>
 #include "poly.h"
 #include "nets.h"
 #include <lax/lists.cc>
@@ -67,6 +68,15 @@ int AA=3; //***should be able to autocompute suitable value?
 double pixPerUnit;
 int generate_images=1;
 basis *extra_basis=NULL;
+
+
+
+//-------------------------- Version ----------------------------------------
+const char *version()
+{
+	return "spheretopoly version 0.1\n"
+		   "written by Tom Lechner, tomlechner.com";
+}
 
 
 //--------------------------------- Net2 ----------------------------
@@ -523,60 +533,55 @@ int SphereToPoly(Image spheremap,
 
 //--------------------------------- main(), help(), version() ----------------------------
 
-void help()
+LaxOptions options;
+
+//! Initialize a LaxOptions object to contain Laidout's command line option summary.
+/*! \ingroup lmisc
+ */
+void InitOptions()
 {
-	cout << "\nspheretopoly  [options] spherefile.tiff"<<endl
-		 << "\n"
-		 << "Project an equirectangular sphere map onto a polyhedron."<<endl
-		 << "Makes one png file for each face of the polyhedron, with the outline"<<endl
-		 << "of each face acting as an alpha mask in the png. Also"<<endl
-		 << "assembles these images into a file that can be printed out and built."<<endl
-		 << "\n"
-		 << "For the rotation and basis options below, the positive z axis points up in a\n"
-		 << "sphere photo, positive x points to the middle of the left edge of the photo,\n"
-		 << "positive y points to the point (w/4,h/2) where w and h are width and height\n"
-		 << "of the photo, etc.\n"
-		 << "\n"
-		 << "  spherefile.tiff        An equirectangular sphere image"<<endl
-		 << "  --rotate-X, -X 10      Rotate the sphere image around the X axis by this many degrees"<<endl
-		 << "  --rotate-Y, -Y 10      Rotate the sphere image around the Y axis by this many degrees"<<endl
-		 << "  --rotate-Z, -Z 10      Rotate the sphere image around the Z axis by this many degrees"<<endl
-		 << "  --point-at-ang 1,2,3,4 In place of 1 and 2, put the lattitude and longitude in the"<<endl
-		 << "              -L           sphere that should appear in the middle of the face listed in"<<endl
-		 << "                           the 3rd spot. If 4 is provided, then add that rotation about that point."<<endl
-		 //<< "                            If 5 is provided, then move the projection point toward the face by"<<endl
-		 //<< "                            this percentage of the original distance to the face."<<endl
-		 << "  --point-at-pix 1,2,3,4 Just like --point-at-ang, but use pixels of the sphere photo, not degrees."<<endl
-		 << "              -P           The 4th number if any should be in degrees."<<endl
-		 << "  --basis '(12 numbers)' 4 3-d coordinates for a basis for the sphere map: point, x,y,z"<<endl
-		 << "  --fileprefix, -f name  Prefix for output png files, will be name01.png, etc."<<endl
-		 << "                           Default is basename of sphere file'"<<endl
-		 << "  --maxwidth, -w         The maximum pixel width for any face image. default is "<<MAXWIDTH<<"."<<endl
-		 << "                           For image output, maxwidth is width of final image, not the"<<endl
-		 << "                           individual faces."<<endl
-		 << "  --output, -o           Format of assembled net. Currently, \"image\", \"svg\", \"laidout\","<<endl
-		 << "                           or \"none\". Default is svg."<<endl
-		 << "  --range, -r 1-4,10     When generating faces, which to generate. Default is all faces."<<endl
-		 << "  --polyptych, -l file   Polyptych file containing info about net, polyhedron, image, orientation."<<endl
-		 << "  --polyhedron, -p file  File containing a polyhedron. Default is a cube. The file"<<endl
-		 << "                           format can be an OFF file, or a Laidout Polyhedron file."<<endl
-		 << "  --net, -n file         File containing a net for the polyhedron"<<endl
-		 << "  --no-generate, -N      Do not (re)generate images. Assume they exist already"<<endl
-		 << "  --oversample, -s 2     This number squared is how many subpixels to compute for each actual pixel."<<endl
-		 << "  --version, -v          Print out version of the program and exit"<<endl
-		 << "  --help, -h             Print out this help and exit"<<endl
-		;
+	options.HelpHeader(version());
+//	options.HelpHeader("\nProject an equirectangular sphere map onto a polyhedron.\n"
+//					   "Output parameters for spheretopoly to generate faces.");
+	options.UsageLine("spheretopoly [options] spherefile.tiff");
+	options.OptionsHeader(
+		  "Project an equirectangular sphere map onto a polyhedron. "
+		  "Makes one png file for each face of the polyhedron, with the outline "
+		  "of each face acting as an alpha mask in the png. Also "
+		  "assembles these images into a file that can be printed out and built."
+		  "\n"
+		  "For the rotation and basis options below, the positive z axis points up in a\n"
+		  "sphere photo, positive x points to the middle of the left edge of the photo,\n"
+		  "positive y points to the point (w/4,h/2) where w and h are width and height\n"
+		  "of the photo, etc.\n"
+		  "\n"
+		  "  spherefile.tiff        An equirectangular sphere image"
+		 );
 
-
-	exit(0);
-
-}
-
-void version()
-{
-	cout <<"spheretopoly version 0.1"<<endl
-		 <<"written by Tom Lechner, tomlechner.com"<<endl;
-	exit(0);
+	char buffer[300];
+	options.Add("basis",        'b',       1, "Four 3-d coordinates for a basis for the sphere map: point, x,y,z", 0, "'(12 numbers)'" );
+	options.Add("fileprefix",   'f',       1, "Prefix for output png files, will be name01.png, etc. Default is basename of sphere file", 0, "name" );
+	options.Add("image",        'i',       1, "File containing an equirectangular image.", 0, "file" );
+	sprintf(buffer,"The maximum pixel width for any face image. default is %d. "
+				   "For image output, maxwidth is width of final image, not the individual faces.",MAXWIDTH);
+	options.Add("maxwidth",     'w',       1, buffer, 0, "" );
+	options.Add("net",          'n',       1, "File containing a net for the polyhedron", 0, "file" );
+	options.Add("no-generate",  'N',       0, "Do not (re)generate images. Assume they exist already", 0, "" );
+	options.Add("output",       'o',       1, "Format of assembled net. Currently, \"image\", \"svg\", \"laidout\", or \"none\". Default is svg.", 0, "" );
+	options.Add("oversample",   's',       1, "This number squared is how many subpixels to compute for each actual pixel.", 0, "2" );
+	options.Add("polyhedron",   'p',       1, "Polyptych file containing info about net, polyhedron, image, orientation.", 0, "file" );
+	options.Add("polyptych",    'l',       1, "Polyptych file containing info about net, polyhedron, image, orientation.", 0, "file" );
+	options.Add("point-at-ang", 'L',       1, "In place of 1 and 2, put the lattitude and longitude in the "
+											 "sphere that should appear in the middle of the face listed in "
+											 "the 3rd spot. If 4 is provided, then add that rotation about that point.", 0, "1,2,3,4" );
+	options.Add("point-at-pix", 'P',       1, "Just like --point-at-ang, but use pixels of the sphere photo, not degrees. "
+											 "The 4th number if any should be in degrees.", 0, "1,2,3,4" );
+	options.Add("range",        'r',       1, "When generating faces, which to generate. Default is all faces.", 0, "1-4,10" );
+	options.Add("rotate-x",     'X',       1, "Rotate the sphere image around the X axis by this many degrees", 0, "15" );
+	options.Add("rotate-y",     'Y',       1, "Rotate the sphere image around the Y axis by this many degrees", 0, "15" );
+	options.Add("rotate-z",     'Z',       1, "Rotate the sphere image around the Z axis by this many degrees", 0, "15" );
+	options.Add("version",      'v',       0, "Print out version of the program and exit", 0, "" );
+	options.Add("help",         'h',       0, "Print out this help and exit", 0, "" );
 }
 
 //! Read in a Polyptych file, and set variables accordingly.
@@ -632,105 +637,94 @@ int main(int argc,char **argv)
 	//int out=OUT_IMAGE;
 	int maxwidth=MAXWIDTH;
 	Net2 net;
-
-	if (argc==1) { help(); }
-
-	 // parse options
-	static struct option long_options[] = {
-			{ "basis",               1, 0, 'b' },
-			{ "fileprefix",          1, 0, 'f' },
-			{ "image",               1, 0, 'i' },
-			{ "maxwidth",            1, 0, 'w' },
-			{ "net",                 1, 0, 'n' },
-			{ "no-generate",         0, 0, 'N' },
-			{ "output",              1, 0, 'o' },
-			{ "oversample",          1, 0, 's' },
-			{ "polyhedron",          1, 0, 'p' },
-			{ "polyptych",           1, 0, 'l' },
-			{ "point-at-ang",        1, 0, 'L' },
-			{ "point-at-pix",        1, 0, 'P' },
-			{ "range",               1, 0, 'r' },
-			{ "rotate-x",            1, 0, 'X' },
-			{ "rotate-y",            1, 0, 'Y' },
-			{ "rotate-z",            1, 0, 'Z' },
-			{ "version",             0, 0, 'v' },
-			{ "help",                0, 0, 'h' },
-			{ 0,0,0,0 }
-		};
-	int c,index;
-
 	int       figure_pointat=0, 
 		      pointat_face;
 	flatpoint pointat;
 	double    pointat_rotation;
 
-	while (1) {
-		c=getopt_long(argc,argv,":P:L:r:X:Y:Z:i:l:b:f:w:o:p:n:s:Nvh",long_options,&index);
-		if (c==-1) break;
-		switch(c) {
-			case ':': cerr <<"Missing parameter..."<<endl; exit(1); // missing parameter
-			case '?': cerr <<"Unknown option"<<endl; exit(1);  // unknown option
-			case 'h': help();    // Show usage summary, then exit
-			case 'v': version(); // Show version info, then exit
+
+
+	InitOptions();
+	if (argc==1) {
+		options.Help(stdout);
+		exit(0);
+	}
+	int index;
+	int c=options.Parse(argc,argv, &index);
+	if (c==-2) {
+		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+	if (c==-1) {
+		cerr <<"Unknown option "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+
+
+
+	LaxOption *o;
+	for (o=options.start(); o; o=options.next()) {
+		switch(o->chr()) {
+			case 'h': options.Help(stdout);
+			case 'v': cout <<version(); // Show version info, then exit
+					  exit(0);
 
 			case 'f':
-				makestr(filebase,optarg);
+				makestr(filebase,o->arg());
 				break;
 			case 'N': //no-generate
 				generate_images=0;
 				break;
 			case 'w': 
-				maxwidth=strtol(optarg,NULL,10);
+				maxwidth=strtol(o->arg(),NULL,10);
 				break;
 			case 'o':
-				if (!strcasecmp(optarg,"laidout")) out=OUT_LAIDOUT;
-				else if (!strcasecmp(optarg,"image")) out=OUT_IMAGE;
-				else if (!strcasecmp(optarg,"svg")) out=OUT_SVG;
-				else if (!strcasecmp(optarg,"none")) out=OUT_NONE;
-				else if (!strcasecmp(optarg,"qtvr")) out=OUT_QTVR;
-				else if (!strcasecmp(optarg,"qtvrfaces")) out=OUT_QTVR_FACES;
+				if (!strcasecmp(o->arg(),"laidout")) out=OUT_LAIDOUT;
+				else if (!strcasecmp(o->arg(),"image")) out=OUT_IMAGE;
+				else if (!strcasecmp(o->arg(),"svg")) out=OUT_SVG;
+				else if (!strcasecmp(o->arg(),"none")) out=OUT_NONE;
+				else if (!strcasecmp(o->arg(),"qtvr")) out=OUT_QTVR;
+				else if (!strcasecmp(o->arg(),"qtvrfaces")) out=OUT_QTVR_FACES;
 				else {
-					cerr<<"Unknown output format "<<optarg<<"!"<<endl;
+					cerr<<"Unknown output format "<<o->arg()<<"!"<<endl;
 					exit(1);
 				}
 				break;
 			case 'l':
 				if (!extra_basis) extra_basis=new basis;
-				setFromPolyptych(optarg, filename, polyhedronfile, netfile, &net, extra_basis);
+				setFromPolyptych(o->arg(), filename, polyhedronfile, netfile, &net, extra_basis);
 				break;
 			case 'i':
-				makestr(filename,optarg);
+				makestr(filename,o->arg());
 				break;
 			case 'p':
-				makestr(polyhedronfile,optarg);
+				makestr(polyhedronfile,o->arg());
 				break;
 			case 'n':
-				makestr(netfile,optarg);
+				makestr(netfile,o->arg());
 				break;
 			case 's': 
-				AA=strtol(optarg,NULL,10);
+				AA=strtol(o->arg(),NULL,10);
 				if (AA<0) AA=2;
 			    break;
 			case 'X': { //rotate around X
 				if (!extra_basis) extra_basis=new basis;
-				double angle=strtod(optarg,NULL);
+				double angle=strtod(o->arg(),NULL);
 				if (angle!=0) rotate(*extra_basis,'x',angle,1.);
 			  } break;
 			case 'Y': { //rotate around Y
 				if (!extra_basis) extra_basis=new basis;
-				double angle=strtod(optarg,NULL);
+				double angle=strtod(o->arg(),NULL);
 				if (angle!=0) rotate(*extra_basis,'y',angle,1.);
 			  } break;
 			case 'Z': { //rotate around Z
 				if (!extra_basis) extra_basis=new basis;
-				double angle=strtod(optarg,NULL);
+				double angle=strtod(o->arg(),NULL);
 				if (angle!=0) rotate(*extra_basis,'z',angle,1.);
 			  } break;
 			case 'b': { //has basis of form "p,x,y,z"=="x,y,z, x,y,z, x,y,z, x,y,z"
 				double l[12];
-				char *p=optarg;
-				while (p && *p) { if (*p==',') *p=' '; p++; }
-				int c=LaxFiles::DoubleListAttribute(optarg,l,12,NULL);
+				int c=LaxFiles::DoubleListAttribute(o->arg(),l,12,NULL);
 				if (c!=12) {
 					cerr<<"Not enough numbers for basis option! You need to supply 12 numbers,"<<endl
 						<<"4 vectors with x, y, and z components. The order is the point,"<<endl
@@ -745,12 +739,9 @@ int main(int argc,char **argv)
 			  } break;
 			case 'P': //point-at      "x,y, face, 
 			case 'L': { //point-at-pix
-				char *p=optarg;
-				while (p && *p) { if (*p==',') *p=' '; p++; }
-
 				figure_pointat=(c=='P'?2:1);
 				double d[4];
-				int n=LaxFiles::DoubleListAttribute(optarg,d,4,NULL);
+				int n=LaxFiles::DoubleListAttribute(o->arg(),d,4,NULL);
 				if (n<3) {
 					cerr <<"Need more numbers for point-at:\n  x,y, (face number), (optional rotation)"<<endl;
 					exit(1);
@@ -761,10 +752,10 @@ int main(int argc,char **argv)
 				if (n>=4) pointat_rotation=d[3]/180*M_PI; else pointat_rotation=0;
 			  } break;
 			case 'r': { //range
-//				char *p=optarg;
+//				char *p=o->arg();
 //				char *endp;
 //				while (p && *p) { if (*p==',') *p=' '; p++; }
-//				p=optarg;
+//				p=o->arg();
 //
 //				int start,end;
 //				int error=0;
@@ -793,8 +784,8 @@ int main(int argc,char **argv)
 		}
 	}
 
-	if (optind<argc && !filename) {
-		filename=newstr(argv[optind]);
+	if (options.remaining() && !filename) {
+		filename=newstr(options.remaining()->arg());
 		//cout <<"found sphere file name "<<filename<<endl;
 	}
 

@@ -11,12 +11,8 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2013 by Tom Lechner
 //
-
-
-
-namespace Laidout {
 
 
 
@@ -48,6 +44,13 @@ namespace Laidout {
 // tiling along a circle
 // wallpaper
 
+#include "cloneinterface.h"
+
+
+namespace Laidout {
+
+
+
 
 /*! \class TilingOp
  * \brief Take one shape, and transform it to other places. See also Tiling.
@@ -65,14 +68,22 @@ class TilingOp
 	virtual int RecurseInfo(int which, int *numtimes, double *minsize, double *maxsize);
 };
 
+class TileCloneInfo
+{
+  public:
+	int cloneid;
+	int x,y, i;
+};
+
 /*! \class Tiling
  * \brief Repeat any number of base shapes into a pattern.
  */
-class Tiling
+class Tiling : public Laxkit::anObject, public Laxkit::DumpUtility
 {
   public:
 	PtrStack<TilingOp> basecells; //typically basecells must share same coordinate system
 	//PtrStack<CellCombineRules> cell_combine_rules; //for penrose
+	PtrStack<TileCloneInfo> activeclones;
 
 	virtual int isRepeatable();
 	virtual flatpoint repeatXDir(); //length is distance to translate
@@ -80,6 +91,33 @@ class Tiling
 
 	virtual const double *finalTransform(); //transform applied after tiling to entire pattern, to squish around
 };
+
+
+void Tiling::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{ ***
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+    if (what==-1) {
+        fprintf(f,"%sname Blah          #optional human readable name\n",spc);
+	}
+
+}
+
+void Tiling::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
+{ ***
+    if (!att) return;
+    char *name,*value;
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(name,"name")) {
+            makestr(this->object_idstr,value);
+
+        } else if (!strcmp(name,"")) {
+		}
+	}
+}
 
 
 } //namespace Laidout

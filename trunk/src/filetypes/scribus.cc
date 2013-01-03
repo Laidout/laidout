@@ -196,14 +196,16 @@ static int findobjnumber(Attribute *att, const char *what);
 //------------------------------------ ScribusExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newScribusExportConfig(StyleDef*)
+Value *newScribusExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Scribus"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 //! For now, just returns createExportConfig(), with filter forced to Scribus.
@@ -228,14 +230,16 @@ int createScribusExportConfig(ValueHash *context,ValueHash *parameters,Value **v
 //------------------------------------ ScribusImportConfig ----------------------------------
 
 //! For now, just returns a new ImportConfig.
-Style *newScribusImportConfig(StyleDef*)
+Value *newScribusImportConfig(StyleDef*)
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
 		if (!strcmp(laidout->importfilters.e[c]->Format(),"Scribus"))
 			d->filter=laidout->importfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 //! For now, just returns createImportConfig(), with filter forced to Scribus.
@@ -306,7 +310,7 @@ StyleDef *ScribusExportFilter::GetStyleDef()
 	styledef->newfunc=newScribusExportConfig;
 	styledef->stylefunc=createScribusExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;
@@ -1693,7 +1697,7 @@ StyleDef *ScribusImportFilter::GetStyleDef()
 	styledef->newfunc=newScribusImportConfig;
 	styledef->stylefunc=createScribusImportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

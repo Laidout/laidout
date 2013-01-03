@@ -33,6 +33,8 @@ using namespace LaxFiles;
 using namespace Laxkit;
 
 
+namespace Polyptych {
+
 //------------------------------ Edge -------------------------------------
 
 /*! \class Edge
@@ -99,6 +101,7 @@ Face::Face()
 {
 	cache=NULL;
 	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
+	facegroupid=-1;
 	dihedral=NULL;
 }
 
@@ -110,6 +113,7 @@ Face::Face(int numof,int *ps)
 	cache=NULL;
 	p=NULL; f=NULL; v=NULL;
 	planeid=setid=-1;
+	facegroupid=-1;
 	if (numof<3) { pn=0; return; }
 	pn=numof;
 	v=new int[pn];
@@ -128,6 +132,7 @@ Face::Face(int p1,int p2,int p3, int p4, int p5) /* p4=-1, p5=-1 */
 {
 	cache=NULL;
 	planeid=setid=-1;
+	facegroupid=-1;
 	if (p4==-1) pn=3;
 	else if (p5==-1) pn=4;
 	else pn=5;
@@ -149,6 +154,7 @@ Face::Face(const char *pointlist,const char *linklist)
 {
 	cache=NULL;
 	planeid=setid=-1; pn=0; v=NULL; f=NULL; p=NULL;
+	facegroupid=-1;
 	dihedral=NULL;
 
 	IntListAttribute(pointlist,&p,&pn,NULL);
@@ -202,6 +208,7 @@ Face &Face::operator=(const Face &fce)
 	} else {pn=0; p=NULL; f=NULL; p=NULL; }
 	planeid=fce.planeid;
 	setid=fce.setid;
+	facegroupid=fce.facegroupid;
 	return *this;
 }
 
@@ -1049,8 +1056,9 @@ void Polyhedron::dump_out(FILE *ff,int indent,int what,Laxkit::anObject *context
 				}
 			}
 
-			if (faces.e[c]->planeid>=0) fprintf(ff,"%s  planeid %d\n",spc,faces.e[c]->planeid);
-			if (faces.e[c]->setid>=0)   fprintf(ff,"%s  setid %d\n",  spc,faces[c]->setid);
+			if (faces.e[c]->planeid>=0)     fprintf(ff,"%s  planeid %d\n",     spc,faces.e[c]->planeid);
+			if (faces.e[c]->setid>=0)       fprintf(ff,"%s  setid %d\n",       spc,faces[c]->setid);
+			if (faces.e[c]->facegroupid>=0) fprintf(ff,"%s  facegroupid %d\n", spc,faces[c]->facegroupid);
 		}
 	}
 	if (sets.n) { 
@@ -1133,6 +1141,8 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 				value=att->attributes.e[c2]->value;
 				if (!strcmp(nme,"planeid")) {
 					IntAttribute(value,&newface->planeid);
+				} else if (!strcmp(nme,"facegroupid")) {
+					IntAttribute(value,&newface->facegroupid);
 				} else if (!strcmp(nme,"setid")) {
 					IntAttribute(value,&newface->setid);
 				} else if (!strcmp(nme,"facelink")) {
@@ -1674,4 +1684,6 @@ NetFace *Polyhedron::GetFace(int i,double scaling)
 	return f;
 }
 
+
+} //namespace Polyptych
 

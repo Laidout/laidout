@@ -51,14 +51,16 @@ void installPodofoFilter()
 //------------------------------------ PodofoExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Style *newPodofoExportConfig(StyleDef*)
+Value *newPodofoExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Podofoimpose PLAN"))
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 
@@ -92,7 +94,7 @@ StyleDef *PodofooutFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to a Podofoimpose PLAN file for external impositioning."));
 	styledef->newfunc=newPodofoExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

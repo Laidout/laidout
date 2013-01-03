@@ -35,16 +35,16 @@ class NetImposition : public Imposition
 	char *briefdesc;
  public:
 	PageStyle *pagestyle;
-	AbstractNet *abstractnet;
+	Polyptych::AbstractNet *abstractnet;
 	double scalefromnet;
-	Laxkit::RefPtrStack<Net> nets;
+	Laxkit::RefPtrStack<Polyptych::Net> nets;
 	int maptoabstractnet;
 	int printnet;
 	int netisbuiltin;
 
 	//Polyhedron *polyhedron;
 
-	NetImposition(Net *newnet=NULL);
+	NetImposition(Polyptych::Net *newnet=NULL);
 	virtual ~NetImposition();
 	virtual const char *whattype() { return "NetImposition"; }
 	static ImpositionResource **getDefaultResources();
@@ -62,7 +62,7 @@ class NetImposition : public Imposition
 	virtual Spread *Layout(int layout,int which); 
 	virtual int NumLayouts();
 	virtual const char *LayoutName(int layout); 
-	virtual Spread *GenerateSpread(Spread *spread, Net *net, int pageoffset);
+	virtual Spread *GenerateSpread(Spread *spread, Polyptych::Net *net, int pageoffset);
 	//----------
 	virtual Spread *SingleLayout(int whichpage); 
 	virtual Spread *SingleLayoutWithAdjacent(int whichpage); 
@@ -89,10 +89,10 @@ class NetImposition : public Imposition
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	
 	 //new for this class:
-	virtual AbstractNet *AbstractNetFromFile(const char *filename);
+	virtual Polyptych::AbstractNet *AbstractNetFromFile(const char *filename);
 	virtual int SetNetFromFile(const char *file);
 	virtual int SetNet(const char *nettype);
-	virtual int SetNet(Net *newnet);
+	virtual int SetNet(Polyptych::Net *newnet);
 	virtual const char *NetImpositionName();
 	virtual void setPage();
 	virtual int numActiveFaces();

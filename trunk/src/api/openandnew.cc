@@ -38,7 +38,7 @@ StyleDef *makeNewDocumentStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"NewDocument",
 			_("New Document"),
 			_("Create a document and install in the project"),
-			Element_Function,
+			VALUE_Function,
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -49,7 +49,7 @@ StyleDef *makeNewDocumentStyleDef()
 	sd->push("pages",
 			_("Pages"),
 			_("The number of pages"),
-			Element_Int,
+			VALUE_Int,
 			NULL, //range
 			"1",  //defvalue
 			0,    //flags
@@ -57,7 +57,7 @@ StyleDef *makeNewDocumentStyleDef()
 	sd->push("imposition",
 			_("New Imposition"),
 			_("The new imposition to use"),
-			Element_Any, //major hack shortcut
+			VALUE_Any, //major hack shortcut
 			NULL, //range
 			"Singles",  //defvalue
 			0,    //flags
@@ -65,7 +65,7 @@ StyleDef *makeNewDocumentStyleDef()
 	sd->push("paper",
 			_("Paper"),
 			_("Type of paper to use"),
-			Element_Any,
+			VALUE_Any,
 			NULL,
 			"0",
 			0,NULL);
@@ -81,7 +81,7 @@ StyleDef *makeNewDocumentStyleDef()
 	sd->push("saveas",
 			_("Save as"),
 			_("The path to save the document to, if any. It is not saved immediately."),
-			Element_String,
+			VALUE_String,
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -244,7 +244,7 @@ StyleDef *makeOpenStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"Open",
 			_("Open"),
 			_("Open a document"),
-			Element_Function,
+			VALUE_Function,
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -255,7 +255,7 @@ StyleDef *makeOpenStyleDef()
 	sd->push("file",
 			_("File"),
 			_("Path to the file to open"),
-			Element_File,
+			VALUE_File,
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -263,7 +263,7 @@ StyleDef *makeOpenStyleDef()
 	sd->push("astemplate",
 			_("Open from template"),
 			_("Open a copy of the specified file"),
-			Element_Boolean,
+			VALUE_Boolean,
 			NULL, //range
 			"no",  //defvalue
 			0,    //flags

@@ -11,6 +11,8 @@ Those are purged with each release.
 
 
 ---- bugs to fix right now:
+file format dump is not showing dump of object types
+
 update webpage with current svn repo
 
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
@@ -107,6 +109,10 @@ customizable object child relationships to parent, rather than simple transform
   	 --> like parent->getanchor(id), getbasisanchor(id)
 
 make pdf default output format for sending to lp
+
+custom tools:
+  scripted
+  normal tools, but jump to special settings for those tools..
 
 hedron window:
   send imp

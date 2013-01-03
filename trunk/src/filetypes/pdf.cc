@@ -114,14 +114,16 @@ void installPdfFilter()
  * 		compression rating
  *		compression type for image data, lossy (dctdecode) or lessless (zip?)
  */
-Style *newPdfExportConfig(StyleDef*)
+Value *newPdfExportConfig(StyleDef*)
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) 
 			d->filter=laidout->exportfilters.e[c];
 	}
-	return d;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
 }
 
 
@@ -175,7 +177,7 @@ StyleDef *PdfExportFilter::GetStyleDef()
 	makestr(styledef->description,_("Configuration to export a document to a pdf."));
 	styledef->newfunc=newPdfExportConfig;
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2011 by Tom Lechner
+// Copyright (C) 2012 by Tom Lechner
 //
 
 
@@ -42,7 +42,7 @@ namespace Laidout {
  */
 
 
-class Module
+class PluginBase : public Laxkit::anObject
 {
   public:
 	virtual const char *PluginName()  = 0;
@@ -59,14 +59,16 @@ class Module
 	virtual ImageImportFilter **ImageImportFilters() { return NULL; }
 	virtual ImportFilter      **ImportFilters() { return NULL; }
 	virtual ExportFilter      **ExportFilters() { return NULL; }
-	virtual anInterface       **Tools() { return NULL; }
-	virtual Resource          **ResourceInstances() { return NULL; }
+	virtual anInterface       **Tools() { return NULL; } //must specify what window types they should appear in
+	virtual LaidoutAction     **Actions() { return NULL; }//maybe scripted code actions to be available for key bindings in windows
+	virtual Interpreter       **Interpreters() { return NULL; } //like python. selecting "Run" of a PlainTextObject uses these
 
-	virtual LaidoutAction     **Actions() { return NULL; }
+	virtual Resource          **ResourceInstances() { return NULL; }
 	virtual Imposition        **Impositions() { return NULL; }
 	virtual Config            **Configs() { return NULL; } //tool settings and global Laidout config
 	virtual DrawableObject    **ObjectInstances() { return NULL; } //like scrapbook items
-	virtual Interpreter       **Interpreters() { return NULL; }
+
+	virtual CalculatorModule  **CalculatorModules() { return NULL; }
 	
 	PluginBase();
 	virtual ~PluginBase();

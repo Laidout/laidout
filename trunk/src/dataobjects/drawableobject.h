@@ -156,6 +156,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual ObjectDef *makeObjectDef();
 };
 
+ObjectDef *makeAffineObjectDef();
 
 
 } //namespace Laidout

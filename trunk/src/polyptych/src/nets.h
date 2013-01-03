@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2008 by Tom Lechner
+// Copyright (C) 2004-2012 by Tom Lechner
 //
 #ifndef NETS_H
 #define NETS_H
@@ -22,6 +22,9 @@
 #include <lax/displayer.h>
 #include <lax/dump.h>
 #include <lax/lists.h>
+
+
+namespace Polyptych {
 
 //----------------------------------- NetLine -----------------------------------
 class NetLine
@@ -196,6 +199,7 @@ class Net : public LaxInterfaces::SomeData
 };
 
 
+} //namespace Polyptych
 
 #endif
 

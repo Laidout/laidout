@@ -125,9 +125,12 @@ const char *ImageExportFilter::VersionName()
 }
 
 
-Style *newImageExportConfig(StyleDef*)
+Value *newImageExportConfig(StyleDef*)
 {
-	return new ImageExportConfig;
+	ImageExportConfig *o=new ImageExportConfig;
+	ObjectValue *v=new ObjectValue(o);
+	o->dec_count();
+	return v;
 }
 
 /*! \todo *** this needs a going over for safety's sake!! track down ref counting
@@ -181,7 +184,7 @@ StyleDef *ImageExportFilter::GetStyleDef()
 	// *** image format
 	// *** background color
 
-	stylemanager.AddStyleDef(styledef);
+	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
 
 	return styledef;

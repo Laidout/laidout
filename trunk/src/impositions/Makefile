@@ -31,7 +31,6 @@ objs= \
 
 
 impositions: $(objs)
-	#for NAME in $(frompolyptych); do $(MAKE) -C polyptych $$NAME; cp polyptych/$$NAME .; done
 
 #nets.o:
 #	g++ $(CPPFLAGS) -c ../polyptych/nets.cc -o nets.o

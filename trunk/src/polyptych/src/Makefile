@@ -21,16 +21,16 @@ LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lm -lpng -lcrypto -lGraphicsMagick++ `im
 
 pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o
 
+
+all: polyptych spheretopoly spheretocube convertahedron panolyptych
+
+
 panolyptych: lax $(pobjs) panoviewwindow.o panolyptych.o
 	g++ $(pobjs) panolyptych.o panoviewwindow.o -llaxinterfaces -llaxkit $(TUIOLIBS) $(LDFLAGS) -lGL -lGLU $(CPPFLAGS) -o $@
 
 panolyptych.o: panolyptych.cc
 	g++ -c $(POLYPTYCH_TUIO)  $(CPPFLAGS) panolyptych.cc -o $@
 
-
-
-
-all: polyptych spheretopoly spheretocube convertahedron panolyptych
 
 forlaidout: nets.o poly.o
 

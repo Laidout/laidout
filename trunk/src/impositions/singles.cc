@@ -58,7 +58,7 @@ Singles::Singles() : Imposition(_("Singles"))
 	gapx=gapy=0;
 	pagestyle=NULL;
 
-	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindStyle("defaultpapersize"));
+	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
 	SetPaperSize(paperstyle);
@@ -71,7 +71,7 @@ Singles::Singles() : Imposition(_("Singles"))
 	if (styledef) styledef->inc_count(); 
 	else {
 		styledef=makeStyleDef();
-		if (styledef) stylemanager.AddStyleDef(styledef);
+		if (styledef) stylemanager.AddObjectDef(styledef,1);
 		 // so this new styledef should have a count of 2. The Style destructor removes
 		 // 1 count, and the stylemanager should remove the other
 	}
@@ -355,11 +355,13 @@ Style *Singles::duplicate(Style *s)//s=NULL
 }
 
 //! The newfunc for Singles instances.
-Style *NewSingles(StyleDef *def)
+Value *NewSingles(StyleDef *def)
 { 
 	Singles *s=new Singles;
+	ObjectValue *v=new ObjectValue(s);
 	s->styledef=def;
-	return s;
+	s->dec_count();
+	return v;
 }
 
 //! Return a ValueObject with a SignatureImposition.
@@ -475,7 +477,7 @@ StyleDef *makeSinglesStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"Singles",
 			_("Singles"),
 			_("Imposition of single pages"),
-			Element_Fields,
+			VALUE_Fields,
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -485,7 +487,7 @@ StyleDef *makeSinglesStyleDef()
 	sd->push("insetleft",
 			_("Left Inset"),
 			_("How much a page is inset in a paper on the left"),
-			Element_Real,
+			VALUE_Real,
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
@@ -493,56 +495,56 @@ StyleDef *makeSinglesStyleDef()
 	sd->push("insetright",
 			_("Right Inset"),
 			_("How much a page is inset in a paper on the right"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,NULL);
 	sd->push("insettop",
 			_("Top Inset"),
 			_("How much a page is inset in a paper from the top"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("insetbottom",
 			_("Bottom Inset"),
 			_("How much a page is inset in a paper from the bottom"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("tilex",
 			_("Tile X"),
 			_("How many to tile horizontally"),
-			Element_Int,
+			VALUE_Int,
 			NULL,
 			"1",
 			0,0);
 	sd->push("tiley",
 			_("Tile Y"),
 			_("How many to tile vertically"),
-			Element_Int,
+			VALUE_Int,
 			NULL,
 			"1",
 			0,0);
 	sd->push("gapx",
 			_("Horizontal gap"),
 			_("Gap between tiles horizontally"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("gapy",
 			_("Vertical gap"),
 			_("Gap between tiles vertically"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("marginleft",
 			_("Left Margin"),
 			_("Default left page margin"),
-			Element_Real,
+			VALUE_Real,
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
@@ -550,21 +552,21 @@ StyleDef *makeSinglesStyleDef()
 	sd->push("marginright",
 			_("Right Margin"),
 			_("Default right page margin"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,NULL);
 	sd->push("margintop",
 			_("Top Margin"),
 			_("Default top page margin"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,0);
 	sd->push("marginbottom",
 			_("Bottom Margin"),
 			_("Default bottom page margin"),
-			Element_Real,
+			VALUE_Real,
 			NULL,
 			"0",
 			0,0);

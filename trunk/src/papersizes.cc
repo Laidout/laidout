@@ -311,8 +311,13 @@ Style *PaperStyle::duplicate(Style *s)//s==NULL
 	return s;
 }
 
-Style *NewPaperStyle(StyleDef *def)
-{ return new PaperStyle; }
+Value *NewPaperStyle(StyleDef *def)
+{
+	PaperStyle *d=new PaperStyle;
+	ObjectValue *v=new ObjectValue(d);
+	d->dec_count();
+	return v;
+}
 
 StyleDef *PaperStyle::makeStyleDef()
 { return makePaperStyleDef(); }
@@ -406,7 +411,7 @@ StyleDef *makePaperStyleDef()
 							  "Paper",
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
-							  Element_Fields,
+							  VALUE_Fields,
 							  NULL, //range
 							  NULL, //defval
 							  NULL,0, //fields, flags
@@ -417,7 +422,7 @@ StyleDef *makePaperStyleDef()
 	sd->push("name",
 			_("Name"),
 			_("Name of the paper, like A4 or Letter"),
-			Element_String,
+			VALUE_String,
 			NULL, //range
 			NULL, //def value
 			0,
@@ -433,19 +438,19 @@ StyleDef *makePaperStyleDef()
 	sd->push("width",
 			_("Width"),
 			_("Width of the paper, after orientation is applied"),
-			Element_Real, NULL,NULL,
+			VALUE_Real, NULL,NULL,
 			0,
 			NULL);
 	sd->push("height",
 			_("Height"),
 			_("Height of the paper, after orientation is applied"),
-			Element_Real, NULL,NULL,
+			VALUE_Real, NULL,NULL,
 			0,
 			NULL);
 	sd->push("dpi",
 			_("Dpi"),
 			_("Default dots per inch of the paper"),
-			Element_Real, 
+			VALUE_Real, 
 			NULL,
 			NULL,
 			0,
