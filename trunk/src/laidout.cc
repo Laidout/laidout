@@ -70,7 +70,7 @@ using namespace std;
 //! The mother of all Laidout classes.
 namespace Laidout {
 
-ObjectDef stylemanager;
+ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace"),VALUE_Namespace,NULL,NULL);
 
 
 

@@ -402,7 +402,7 @@ int NewDocWindow::init()
 //
 //	AddWin(new MessageBar(this,"colormes",MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
 //	ColorBox *cbox;
-//	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", 255,255,255);
+//	last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", LAX_COLORS_RGB,255,1, 255,255,255);
 //	AddWin(cbox, 40,0,50,50,0, linpheight,0,0,50,0);
 
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//*** forced linebreak
@@ -1041,7 +1041,7 @@ int NewProjectWindow::init()
 
 	//AddWin(new MessageBar(this,"colormes",MB_MOVE, 0,0,0,0,0, _("Paper Color:")));
 	//ColorBox *cbox;
-	//last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", 255,255,255);
+	//last=cbox=new ColorBox(this,"paper color",COLORBOX_DRAW_NUMBER, 0,0,0,0, 1, last,object_id,"paper color", LAX_COLORS_RGB,255,1, 255,255,255);
 	//AddWin(cbox, 40,0,50,50,0, linpheight,0,0,50,0);
 
 	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);//forced linebreak

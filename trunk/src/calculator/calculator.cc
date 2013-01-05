@@ -160,7 +160,7 @@ int OperatorLevel::pushOp(const char *op, OperatorFunction *opfunc)
 
 Entry::Entry(const char *newname, int modid)
 {
-	makestr(name,newname);
+	name=newstr(newname);
 	module_id=modid;
 }
 
@@ -186,13 +186,14 @@ class NamespaceEntry : public Entry, public ValueHash
 {
   public:
 	CalculatorModule *module;
-	NamespaceEntry(const char *newname, int modid, CalculatorModule *mod);
+	NamespaceEntry(CalculatorModule *mod, const char *newname, int modid);
 	virtual ~NamespaceEntry();
+	int type() { return VALUE_Namespace; }
 
 	virtual const char *GetName() { if (module) return module->name; return NULL; }
 };
 
-NamespaceEntry::NamespaceEntry(const char *newname, int modid, CalculatorModule *mod)
+NamespaceEntry::NamespaceEntry(CalculatorModule *mod, const char *newname, int modid)
   : Entry(newname,modid)
 {
 	module=mod;
@@ -204,6 +205,8 @@ NamespaceEntry::~NamespaceEntry()
 {
 	if (module) module->dec_count();
 }
+
+typedef NamespaceEntry ObjectDefEntry;
 
 //--------------------------- FunctionEntry
 /*! \class FunctionEntry
@@ -219,6 +222,7 @@ class FunctionEntry : public Entry
 	FunctionEvaluator *function;
 	FunctionEntry(const char *newname, int modid, const char *newcode,FunctionEvaluator *func, ObjectDef *newdef);
 	virtual ~FunctionEntry();
+	int type() { return VALUE_Function; }
 
 	//virtual int Evaluate(const char *name,ValueHash *context,ValueHash *parameters,Value **value_ret, CalcSettings *settings, ErrorLog *log);
 };
@@ -248,6 +252,7 @@ class ValueEntry : public Entry
 {
   public:
 	ValueEntry(const char *newname, int modid);
+	int type() { return VALUE_Variable; }
 };
 
 ValueEntry::ValueEntry(const char *newname, int modid)
@@ -264,6 +269,7 @@ class OperatorEntry : public Entry
   public:
 	int optype; //ltor, rtol, l, r
 	Laxkit::RefPtrStack<FunctionEntry> functions; //overloading for op
+	int type() { return VALUE_Operator; }
 
 	OperatorEntry(const char *newname, int modid);
 	//virtual int AddFunction(FunctionEntry *func);
@@ -273,6 +279,31 @@ OperatorEntry::OperatorEntry(const char *newname, int modid)
   : Entry(newname,modid)
 {}
 
+
+//--------------------------- AliasEntry
+/*! \class AliasEntry
+ * \brief Used to alias names to other names (not operators).
+ */
+class AliasEntry : public Entry
+{
+  public:
+	ObjectDef *aliasto;
+	AliasEntry(ObjectDef *thing_to_alias, const char *newname, int modid);
+	int type() { return VALUE_Alias; }
+	virtual ~AliasEntry();
+};
+
+AliasEntry::AliasEntry(ObjectDef *thing_to_alias, const char *newname, int modid)
+  : Entry(newname,modid)
+{
+	aliasto=thing_to_alias;
+	if (aliasto) aliasto->inc_count();
+}
+
+AliasEntry::~AliasEntry()
+{
+	if (aliasto) aliasto->dec_count();
+}
 
 //------------------------------- BlockInfo ---------------------------------------
 /*! \class BlockInfo
@@ -290,12 +321,14 @@ BlockInfo::BlockInfo()
 	max=0;
 	word=NULL;
 	list=NULL;
+	parentscope=NULL;
 }
 
 BlockInfo::BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int condition_start, char *var, Value *v)
 {
 	current=0;
 
+	parentscope=NULL;
 	scope_namespace=mod;
 	if (mod) mod->inc_count();
 	else scope_namespace=new CalculatorModule;
@@ -323,6 +356,50 @@ const char *BlockInfo::BlockType()
 	if (type==BLOCK_while) return "while";
 	if (type==BLOCK_namespace) return "namespace";
 	return "(unnamed block)";
+}
+
+//! Add item, which is assumed to be in mod somewhere, to the scope's dictionary.
+/*! Return 0 for added. -1 for name already there and nothing added. 1 for error and not added.
+ *
+ * \todo add name overloading
+ */
+int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
+{
+	if (!item) return 1;
+	const char *name=item->name;
+
+	 //find position in stack
+	int pos=-1, found=0;
+	int s=0,e=dict.n-1,m, cmp;
+
+	if (s<=e) {
+		if (!strcmp(dict.e[s]->name,name)) { found=1; pos=s; }
+		else if (!strcmp(dict.e[e]->name,name)) { found=1; pos=e; }
+		
+		while (pos<0 && s<e) {
+			m=(s+e)/2;
+			cmp=strcmp(dict.e[m]->name,name);
+			if (!cmp) { found=1; pos=m; break; }
+			if (cmp<0) e=m-1;
+			else s=m+1;
+		}
+	}
+	if (found) return -1;
+
+	Entry *entry=NULL;
+	if (item->format==VALUE_Operator) {
+		//cannot add operators to dict
+	} else if (item->format==VALUE_Variable
+			|| item->format==VALUE_Class
+			|| item->format==VALUE_Function
+			|| item->format==VALUE_Namespace
+			|| item->format==VALUE_Alias) {   
+		entry=new ObjectDefEntry(item, name,mod->object_id);
+	}
+
+	if (!entry) return 1; //cannot add this item!
+	dict.push(entry,pos,1);
+	return 0;
 }
 
 
@@ -405,6 +482,7 @@ LaidoutCalculator::~LaidoutCalculator()
 int LaidoutCalculator::InstallModule(CalculatorModule *module, int autoimport)
 {
 	modules.push(module);
+	global_scope.AddName(module,module);
 	if (autoimport) importAllNames(module);
 	importOperators(module);
 	return 0;
@@ -497,8 +575,11 @@ char *LaidoutCalculator::In(const char *in)
 	int errorpos=0;
 	evaluate(in,-1, &v, &errorpos, NULL);
 
+	char *buffer=NULL;
+	int len=0;
 	if (v) {
-		appendstr(messagebuffer,v->toCChar());
+		v->getValueStr(&buffer,&len,1);
+		appendstr(messagebuffer,buffer);
 		v->dec_count();
 	} else if (!messagebuffer && calcerror) makestr(messagebuffer,calcmes);
 	if (messagebuffer) return newstr(messagebuffer);
@@ -616,11 +697,12 @@ int LaidoutCalculator::importAllNames(CalculatorModule *module)
 	return n;
 }
 
-/*! def is an ObjectDef in module.
+/*! Assume def is an ObjectDef in module.
  */
 int LaidoutCalculator::importName(CalculatorModule *module, ObjectDef *def)
-{ // ***
+{
 	cerr << " *** need to implement importName!"<<endl;
+	currentLevel()->AddName(module,def);
 	return 0;
 }
 
@@ -1545,6 +1627,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 					appendstr(temp,_("\nVariables:\n"));
 
 					ObjectDef *deff=NULL;
+					char *buffer=NULL;
+					int blen=0;
 					for (int c=0; c<def->getNumFields(); c++) {
 						def->findActualDef(c,&deff);
 						if (!deff || (deff->format!=VALUE_Variable)) continue;
@@ -1553,7 +1637,10 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 						appendstr(temp,deff->name);
 						appendstr(temp," = ");
 						if (deff->defaultvalue) appendstr(temp,deff->defaultvalue);
-						else if (deff->defaultValue) appendstr(temp,deff->defaultValue->CChar());
+						else if (deff->defaultValue) {
+							deff->defaultValue->getValueStr(&buffer,&blen,1);
+							appendstr(temp,buffer);
+						}
 						appendstr(temp,"\n");
 					}
 				}

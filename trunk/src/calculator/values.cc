@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009-2012 by Tom Lechner
+// Copyright (C) 2009-2013 by Tom Lechner
 //
 
 
@@ -138,14 +138,10 @@ const char *valueEnumCodeName(int format)
  * \ingroup stylesandstyledefs
  * \brief The definition of the elements of a Value.
  *
- * \todo *** haven't worked on this code in quite a while, perhaps it could be somehow
- * combined with the Laxkit::Attribute type of thing? but for that, still need to reason
- * out a consistent Attribute definition standard...
- * 
- * These things are used to automatically create edit dialogs for any data. It also aids in
- * defining names and what they are for an interpreter. Ideally there should be only one instance
- * of a ObjectDef per type of style held in a style manager. The actual styles will have pointer
- * references to it.
+ * These things are used to provide documentation and scripting facility for various kinds
+ * of data. They can be used to automatically create edit dialogs, for instance.
+ * Ideally there should be only one instance of an ObjectDef per type of data held in a namespace.
+ * Individual data will have pointers back to these ObjectDef objects.
  *
  * \todo have dialog format hints
  * \todo should have dynamic default values...
@@ -163,16 +159,16 @@ const char *valueEnumCodeName(int format)
  * 
  *   The name would be used in some command line interpreter.
  *   The Name would be used as shown in an edit dialog.
- *   The description would be used in some sort of help system
+ *   The description would be used in some sort of help system.
  *  </pre>
  *
  */
 /*! \var ValueTypes ObjectDef::format
  * \brief What is the nature of *this.
  * 
- *   The format of the value of this ObjectDef. It can be any id that is defined in the stylemanager.
- *   These formats other than VALUE_Fields imply that *this is a single unit.
- *   VALUE_Fields implies that there are further subcomponents.
+ *   The format of the value of this ObjectDef. This is for any built in objects, with VALUE_Fields
+ *   meaning it is some compound object, with fieldsformat being a unique identifier for that
+ *   compound format.
  */
 /*! \var char *ObjectDef::name
  *  \brief Basically a class name, meant to be seen in the interpreter.
@@ -187,6 +183,8 @@ const char *valueEnumCodeName(int format)
  *  
  *	These are pointers to defs. ObjectDef looks up extends in
  *	the global or scope namespace to get the appropriate reference during the constructor.
+ *	In c++ terms, all members inherited are public. There is no facility to make them private or protected.
+ *  Fields can be overloaded by just having the same name as an element of a parent class.
  */
 /*! \var NewObjectFunc ObjectDef::newfunc
  * \brief Default constructor when the ObjectDef represents an object.
@@ -204,6 +202,8 @@ const char *valueEnumCodeName(int format)
 
 
 //! Constructor.
+/*! Takes possession of fields, and will delete in destructor.
+ */
 ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what this class extends.
 			const char *nname, //!< The name that would be used in the interpreter
 			const char *nName, //!< A basic title, most likely an input label
@@ -389,6 +389,40 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 	} else if (what==DEFOUT_HumanSummary) {
 	} else if (what==DEFOUT_CPP) {
 		//append c++ code snippet to att->value
+
+		char *str=NULL;
+		appendstr(str, "ObjectDef *def=new ObjectDef(");
+		if (extendsdefs.n) {
+			 //output list of classes extended
+			appendstr(str,"\"");
+			for (int c=0; c<extendsdefs.n; c++) {
+				appendstr(str,extendsdefs.e[c]->name);
+				if (c!=extendsdefs.n-1) appendstr(str,", ");
+			}
+			appendstr(str,"\"");
+		} else appendstr(str,"NULL, ");
+		if (name) { appendstr(str,"\""); appendstr(str,name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
+		if (Name) { appendstr(str,"\""); appendstr(str,Name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
+		if (description) { appendstr(str,"\""); appendstr(str,description); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
+		appendstr(str,"\""); appendstr(str,valueEnumCodeName(format)); appendstr(str,"\""); 
+		// *** defaultval
+		// *** defaultValue
+		// *** range
+		// *** flags
+		appendstr(str,");\n");
+
+		ObjectDef *ff;
+		if (fields) for (int c=0; c<fields->n; c++) {
+			ff=fields->e[c];
+			appendstr(str, "def->push(");
+			if (ff->name) { appendstr(str,"\""); appendstr(str,ff->name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
+			if (ff->Name) { appendstr(str,"\""); appendstr(str,ff->Name); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
+			if (ff->description) { appendstr(str,"\""); appendstr(str,ff->description); appendstr(str,"\", "); } else appendstr(str,"NULL, ");
+			appendstr(str,"\""); appendstr(str,valueEnumCodeName(ff->format)); appendstr(str,"\""); 
+			// *** flags
+			appendstr(str,");\n");
+		}
+		cerr <<" *** finish implementing ObjectDef code out!"<<endl;
 	}
 
 	return NULL;
@@ -1200,32 +1234,49 @@ Laxkit::anObject *ValueHash::findObject(const char *name, int which, int *error_
  * Used in LaidoutCalculator.
  */
 
-/*! \fn const char *Value::toCChar()
- *
- * Regenerate tempstr to be a cached string representation of the value.
- * When done, set modified to 0.
- */
-
 Value::Value()
-	: tempstr(NULL)
 {
 	modified=1;
 }
 
 Value::~Value()
-{
-	if (tempstr) delete[] tempstr;
-}
+{ }
 
 //! Return a Value's string id, if any. NULL might be returned for unnamed values.
+/*! Default is to return this->object_idstr.
+ */
 const char *Value::Id()
-{ return NULL; }
+{ return object_idstr; }
 
-//! Return the cached string value.
-const char *Value::CChar()
+//! Output to buffer, do NOT reallocate buffer, assume it has enough space. If len is not enough, return how much is needed.
+/*! Generally, subclasses should redefine this, and not the other getValueStr().
+ */
+int Value::getValueStr(char *buffer,int len)
 {
-	if (!tempstr || modified) return toCChar();
-	return tempstr;
+	if (!buffer || len<(int)strlen(whattype()+1)) return strlen(whattype())+1;
+
+	sprintf(buffer,"%s",whattype());
+	return -1;
+}
+
+/*! Generally, subclasses should NOT redefine this. Redefine the other one.
+ * This one handles reallocation, then calls the other one.
+ *
+ *  If oktoreallocate, then change buffer and len to be big enough to contain a string
+ * representation, and return 0. If !oktoreallocate, return the necessary size of buffer, and render nothing.
+ *
+ * Return -1 if unable to render (the default, unless subclasses redefine), and it returns whattype().
+ */
+int Value::getValueStr(char **buffer,int *len, int oktoreallocate)
+{
+	int needed=getValueStr(NULL,0);
+	if (*len<needed) {
+		if (!oktoreallocate) return needed;
+		if (*buffer) delete[] *buffer;
+		*buffer=newnstr(NULL,needed);
+		*len=needed;
+	}
+	return getValueStr(*buffer,*len);
 }
 
 //! Return objectdef, calling makeObjectDef() if necessary.
@@ -1278,7 +1329,9 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (what==-1) {
 		 //dump out object def
     	ObjectDef *def=GetObjectDef();
-		def->dump_out(f,indent,-1,context);
+		if (!def) {
+			DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
+		} else def->dump_out(f,indent,-1,context);
 		return;
 	}
 
@@ -1286,11 +1339,14 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	ObjectDef *def;
 	const char *str;
+	char *buffer=NULL;
+	int len=0;
 	for (int c=0; c<getNumFields(); c++) {
 		fprintf(f,"%s%s",spc,FieldName(c));
 		def=FieldInfo(c); //this is the object def of a field. If it exists, then this element has subfields.
 		if (!def) {
-			str=CChar();
+			getValueStr(&buffer,&len, 1);
+			str=buffer;
 			if (str) {
 				fprintf(f," %s\n",str);
 			}
@@ -1319,16 +1375,24 @@ int SetValue::Push(Value *v)
 	return 1;
 }
 
-const char *SetValue::toCChar()
+int SetValue::getValueStr(char *buffer,int len)
 {
-	makestr(tempstr,"{");
+	int needed=3;//"{}\n"
 	for (int c=0; c<values.n; c++) {
-		appendstr(tempstr,values.e[c]->toCChar());
-		if (c!=values.n-1) appendstr(tempstr,",");
+		needed+= 1 + values.e[c]->getValueStr(NULL,0,0);
 	}
-	appendstr(tempstr,"}");
+	if (!buffer || len<needed) return needed;
+
+	int pos=1;
+	sprintf(buffer,"{");
+	for (int c=0; c<values.n; c++) {
+		values.e[c]->getValueStr(buffer+pos,len);
+		if (c!=values.n-1) strcat(buffer+pos,",");
+		pos+=strlen(buffer+pos);
+	}
+	strcat(buffer+pos,"}");
 	modified=0;
-	return tempstr;
+	return 0;
 }
 
 /*! Returns set with each element duplicate()'d.
@@ -1394,16 +1458,24 @@ ObjectDef *ArrayValue::makeObjectDef()
 	return NULL;
 }
 
-const char *ArrayValue::toCChar()
+int ArrayValue::getValueStr(char *buffer,int len)
 {
-	makestr(tempstr,"[");
+	int needed=3;//"[]\n"
 	for (int c=0; c<values.n; c++) {
-		appendstr(tempstr,values.e[c]->toCChar());
-		if (c!=values.n-1) appendstr(tempstr,",");
+		needed+= 1 + values.e[c]->getValueStr(NULL,0,0);
 	}
-	appendstr(tempstr,"]");
+	if (!buffer || len<needed) return needed;
+
+	int pos=1;
+	sprintf(buffer,"[");
+	for (int c=0; c<values.n; c++) {
+		values.e[c]->getValueStr(buffer+pos,len);
+		if (c!=values.n-1) strcat(buffer+pos,",");
+		pos+=strlen(buffer+pos);
+	}
+	strcat(buffer+pos,"]");
 	modified=0;
-	return tempstr;
+	return 0;
 }
 
 /*! Returns set with each element duplicate()'d.
@@ -1431,49 +1503,53 @@ int ArrayValue::Dimensions()
 
 
 //--------------------------------- BooleanValue -----------------------------
-const char *BooleanValue::toCChar()
+int BooleanValue::getValueStr(char *buffer,int len)
 {
-	if (!tempstr) tempstr=new char[20];
-	if (i) sprintf(tempstr,"true");
-	else sprintf(tempstr,"false");
-	modified=0;
-	return tempstr;
+	if (!buffer || len<6) return 6;
+	if (i) sprintf(buffer,"true");
+	else sprintf(buffer,"false");
+	return 0;
 }
 
 Value *BooleanValue::duplicate()
 { return new BooleanValue(i); }
 
 //--------------------------------- IntValue -----------------------------
-const char *IntValue::toCChar()
+int IntValue::getValueStr(char *buffer,int len)
 {
-	if (!tempstr) tempstr=new char[20];
-	sprintf(tempstr,"%ld",i);
+	if (!buffer || len<20) return 20;
+
+	sprintf(buffer,"%ld",i);
 	modified=0;
-	return tempstr;
+	return 0;
 }
 
 Value *IntValue::duplicate()
 { return new IntValue(i); }
 
 //--------------------------------- DoubleValue -----------------------------
-const char *DoubleValue::toCChar()
+int DoubleValue::getValueStr(char *buffer,int len)
 {
-	if (!tempstr) tempstr=new char[30];
-	sprintf(tempstr,"%g",d);
+	int needed=30;
+	if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"%g",d);
 	modified=0;
-	return tempstr;
+	return 0;
 }
 
 Value *DoubleValue::duplicate()
 { return new DoubleValue(d); }
 
 //--------------------------------- FlatvectorValue -----------------------------
-const char *FlatvectorValue::toCChar()
+int FlatvectorValue::getValueStr(char *buffer,int len)
 {
-	if (!tempstr) tempstr=new char[40];
-	sprintf(tempstr,"(%g,%g)",v.x,v.y);
+	int needed=60;
+	if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"(%g,%g)",v.x,v.y);
 	modified=0;
-	return tempstr;
+	return 0;
 }
 
 Value *FlatvectorValue::duplicate()
@@ -1505,12 +1581,14 @@ Value *FlatvectorValue::dereference(const char *extstring)
 }
 
 //--------------------------------- SpacevectorValue -----------------------------
-const char *SpacevectorValue::toCChar()
+int SpacevectorValue::getValueStr(char *buffer,int len)
 {
-	if (!tempstr) tempstr=new char[60];
-	sprintf(tempstr,"(%g,%g,%g)", v.x, v.y, v.z);
+	int needed=90;
+	if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"(%g,%g,%g)", v.x, v.y, v.z);
 	modified=0;
-	return tempstr;
+	return 0;
 }
 
 Value *SpacevectorValue::duplicate()
@@ -1531,10 +1609,14 @@ Value *SpacevectorValue::dereference(const char *extstring)
 StringValue::StringValue(const char *s, int len)
 { str=newnstr(s,len); }
 
-const char *StringValue::toCChar()
+int StringValue::getValueStr(char *buffer,int len)
 {
+	int needed=strlen(str)+1;
+	if (!buffer || len<needed) return needed;
+
+	strcpy(buffer,str);
 	modified=0;
-	return str;
+	return 0;
 }
 
 Value *StringValue::duplicate()
@@ -1550,11 +1632,16 @@ FileValue::~FileValue()
 	if (filename) delete[] filename;
 }
 
-const char *FileValue::toCChar()
+int FileValue::getValueStr(char *buffer,int len)
 {
+	int needed=strlen(filename)+1;
+	if (!buffer || len<needed) return needed;
+
+	strcpy(buffer,filename);
 	modified=0;
-	return filename;
+	return 0;
 }
+
 
 Value *FileValue::duplicate()
 { return new FileValue(filename); }
@@ -1601,13 +1688,19 @@ EnumValue::~EnumValue()
 	if (objectdef) objectdef->dec_count();
 }
 
-const char *EnumValue::toCChar()
+int EnumValue::getValueStr(char *buffer,int len)
 {
-	modified=0;
-	if (!objectdef) return NULL;
+	if (!objectdef) return Value::getValueStr(buffer,len);
 	const char *str=NULL;
 	objectdef->getInfo(value,&str);
-	return str;
+
+	int needed=strlen(str)+1;
+	if (!buffer || len<needed) return needed;
+
+	strcpy(buffer,str);
+
+	modified=0;
+	return 0;
 }
 
 Value *EnumValue::duplicate()
@@ -1639,16 +1732,20 @@ ObjectValue::~ObjectValue()
 	if (object) object->dec_count();
 }
 
-const char *ObjectValue::toCChar()
+int ObjectValue::getValueStr(char *buffer,int len)
 {
-	if (!object) return NULL;
-	if (dynamic_cast<Style*>(object)) {
-		Style *s=dynamic_cast<Style*>(object);
-		if (s->Stylename()) return s->Stylename();
-		return s->whattype();
-	}
+	if (!object) return Value::getValueStr(buffer,len);
+	const char *str=NULL;
+	if (dynamic_cast<Style*>(object)) str=dynamic_cast<Style*>(object)->Stylename();
+	if (!str) str=object->whattype();
+	if (!str) str="object(TODO!!)";
+
+	int needed=strlen(str)+1;
+	if (!buffer || len<needed) return needed;
+
+	strcpy(buffer,str);
 	modified=0;
-	return "object(TODO!!)";
+	return 0;
 }
 
 Value *ObjectValue::duplicate()

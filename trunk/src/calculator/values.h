@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009-2012 by Tom Lechner
+// Copyright (C) 2009-2013 by Tom Lechner
 //
 #ifndef VALUES_H
 #define VALUES_H
@@ -59,6 +59,7 @@ enum ValueTypes {
 	VALUE_Class,      //!< for use in an ObjectDef
 	VALUE_Function,   //!< for use in an ObjectDef
 	VALUE_Namespace,  //!< for use in an ObjectDef
+	VALUE_Alias,      //!< For BlockInfo, tag to use a name in place of another
 
 	VALUE_LValue,     //!< A name value that you can assign things to.
 
@@ -76,8 +77,7 @@ class Value;
 class ValueHash;
 class FunctionEvaluator;
 typedef Value *(*NewObjectFunc)(ObjectDef *def);
-typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters,
-							 Value **value_ret, ErrorLog &log);
+typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
  
 
 #define OBJECTDEF_CAPPED    1
@@ -194,18 +194,17 @@ typedef ObjectDef StyleDef;
 class Value : virtual public Laxkit::anObject
 {
   protected:
-	char *tempstr; //cached string representation
 	int modified; //whether tempstr needs to be updated
 	ObjectDef *objectdef;
   public:
 	Value();
 	virtual ~Value();
 	virtual const char *whattype() { return "Value"; }
-	virtual const char *CChar();
 
-	virtual const char *toCChar() = 0;
-	virtual Value *duplicate() = 0;
 	virtual int type() = 0;
+	virtual Value *duplicate() = 0;
+	virtual int getValueStr(char **buffer,int *len, int oktoreallocate);//subclasses should NOT redefine this
+	virtual int getValueStr(char *buffer,int len);//subclasses SHOULD redefine this
 	virtual const char *Id();
 
 	//virtual int isValidExt(const char *extstring, FieldPlace *place_ret) = 0; //for assignment checking
@@ -231,7 +230,7 @@ class SetValue : public Value
 
 	//SetValue();
 	virtual int Push(Value *v);
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Set; }
 
@@ -250,7 +249,7 @@ class ArrayValue : public SetValue
 
 	ArrayValue(const char *elementtype=NULL, int size=0);
 	virtual ~ArrayValue();
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Array; }
 
@@ -265,7 +264,7 @@ class BooleanValue : public Value
   public:
 	int i;
 	BooleanValue(int ii) { i=ii; }
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Boolean; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
@@ -278,7 +277,7 @@ class IntValue : public Value
 	Unit units;
 	long i;
 	IntValue(long ii=0) { i=ii; }
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Int; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
@@ -291,7 +290,7 @@ class DoubleValue : public Value
 	Unit units;
 	double d;
 	DoubleValue(double dd=0) { d=dd; }
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Real; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
@@ -305,7 +304,7 @@ class FlatvectorValue : public Value
 	flatvector v;
 	FlatvectorValue() { }
 	FlatvectorValue(flatvector vv) { v=vv; }
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Flatvector; }
 	virtual Value *dereference(const char *extstring);
@@ -320,7 +319,7 @@ class SpacevectorValue : public Value
 	spacevector v;
 	SpacevectorValue() { }
 	SpacevectorValue(spacevector vv) { v=vv; }
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Spacevector; }
 	virtual Value *dereference(const char *extstring);
@@ -334,7 +333,7 @@ class StringValue : public Value
 	char *str;
 	StringValue(const char *s=NULL, int len=-1);
 	virtual ~StringValue() { if (str) delete[] str; }
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
@@ -347,7 +346,7 @@ class ObjectValue : public Value
 	Laxkit::anObject *object;
 	ObjectValue(anObject *obj=NULL);
 	virtual ~ObjectValue();
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
@@ -360,7 +359,7 @@ class FileValue : public Value
 	char *filename;
 	FileValue(const char *f=NULL,int len=-1);
 	virtual ~FileValue();
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_File; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
@@ -378,7 +377,7 @@ class EnumValue : public Value
 	ObjectDef *enumdef;
 	EnumValue(ObjectDef *baseenum, int which);
 	virtual ~EnumValue();
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Enum; }
  	virtual ObjectDef *makeObjectDef();
@@ -393,7 +392,7 @@ class FunctionValue : public Value
 
 	FunctionValue(const char *code, int len);
 	virtual ~FunctionValue();
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Function; }
  	virtual ObjectDef *makeObjectDef();

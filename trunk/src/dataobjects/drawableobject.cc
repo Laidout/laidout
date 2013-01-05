@@ -712,7 +712,7 @@ class AffineValue : virtual public Value, virtual public Laxkit::Affine
   public:
 	AffineValue(const double *m);
 	virtual ObjectDef *makeObjectDef();
-	virtual const char *toCChar();
+	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return GetObjectDef()->fieldsformat; }
 	virtual int evaluate(const char *function, ValueHash *parameters, Value **value_ret, ErrorLog &log);
@@ -722,13 +722,14 @@ AffineValue::AffineValue(const double *m)
   : Affine(m)
 {}
 
-const char *AffineValue::toCChar()
+int AffineValue::getValueStr(char *buffer,int len)
 {
-	modified=0;
-	if (tempstr) delete[] tempstr;
-	tempstr=new char[120];
-	sprintf(tempstr,"(%.10g,%.10g,%.10g,%.10g,%.10g,%.10g)",m(0),m(1),m(2),m(3),m(4),m(5));
-	return tempstr;
+    int needed=6*30;
+    if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"(%.10g,%.10g,%.10g,%.10g,%.10g,%.10g)",m(0),m(1),m(2),m(3),m(4),m(5));
+    modified=0;
+    return 0;
 }
 
 Value *AffineValue::duplicate()
