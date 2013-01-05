@@ -3276,8 +3276,10 @@ int ViewWindow::init()
 	p->WrapToExtent();
 	AddWin(p,1, p->win_w,0,50,50,0, p->win_h,0,50,50,0, -1);
 
-	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",65535,150,
-							   LAX_COLOR_RGB,65535,0,0,65535);
+	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",
+							   LAX_COLOR_RGB,
+							   65535,150,
+							   65535,0,0,65535);
 	AddWin(colorbox,1, 50,0,50,50,0, p->win_h,0,50,50,0, -1);
 		
 	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,

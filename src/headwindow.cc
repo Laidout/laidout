@@ -66,7 +66,7 @@ namespace Laidout {
 /*! \ingroup mainwindows
  * \brief PlainTextWindow window generator for use in HeadWindow.
  */
-anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	PlainTextWindow *text=new PlainTextWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
 	return text;
@@ -76,7 +76,7 @@ anXWindow *newPlainTextWindowFunc(anXWindow *parnt,const char *ntitle,unsigned l
 /*! \ingroup mainwindows
  * \brief ButtonBox window generator for use in HeadWindow.
  */
-anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	unsigned long owner=0;
 	if (laidout->lastview) owner=laidout->lastview->object_id;
@@ -88,7 +88,7 @@ anXWindow *newPaletteWindowFunc(anXWindow *parnt,const char *ntitle,unsigned lon
 /*! \ingroup mainwindows
  * \brief ButtonBox window generator for use in HeadWindow.
  */
-anXWindow *newButtonBoxFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newButtonBoxFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	ButtonBox *buttons=new ButtonBox(parnt,ntitle,ntitle,style, 0,0,0,0,1);
 	return buttons;
@@ -98,7 +98,7 @@ anXWindow *newButtonBoxFunc(anXWindow *parnt,const char *ntitle,unsigned long st
 /*! \ingroup mainwindows
  * \brief CommandWindow window generator for use in HeadWindow.
  */
-anXWindow *newCommandWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newCommandWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	CommandWindow *command=new CommandWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1);
 	return command;
@@ -108,7 +108,7 @@ anXWindow *newCommandWindowFunc(anXWindow *parnt,const char *ntitle,unsigned lon
 /*! \ingroup mainwindows
  * \brief ViewWindow window generator for use in HeadWindow.
  */
-anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	return new ViewWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
 }
@@ -117,7 +117,7 @@ anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
 /*! \ingroup mainwindows
  * \brief SpreadEditro window generator for use in HeadWindow.
  */
-anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	return new SpreadEditor(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL,NULL);
 }
@@ -126,7 +126,7 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
 /*! \ingroup mainwindows
  * \brief SpreadEditor window generator for use in HeadWindow.
  */
-anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style)
+anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	HelpWindow *help=new HelpWindow(1);
 	help->win_parent=parnt;
@@ -295,7 +295,7 @@ void HeadWindow::InitializeShortcuts()
 	for (int c=0; c<winfuncs.n; c++) {
 		if (manager->FindHandler(winfuncs.e[c]->name)) continue;
 
-		win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style);
+		win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style,NULL);
 		win->GetShortcuts();
 		delete win;
 	}
@@ -462,7 +462,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			fprintf(f,"\n%spane\n",spc);
 			fprintf(f,"%s  xyxy 0 0 500 500  #xmin,ymin, and xmax,ymax of the pane\n",spc);
 
-			win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style);
+			win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style,NULL);
 			fprintf(f,"%s  window %s\n",spc,win->whattype());
 			dump=dynamic_cast<DumpUtility *>(win);
 			if (dump) dump->dump_out(f,indent+4,-1,NULL);
@@ -1001,7 +1001,7 @@ anXWindow *HeadWindow::NewWindow(const char *wtype,anXWindow *likethis)
 	sprintf(blah,"SplitPane%lu",getUniqueNumber());
 	for (int c=0; c<winfuncs.n; c++) {
 		if (!strcmp(winfuncs.e[c]->name,wtype)) {
-			win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style);
+			win=winfuncs.e[c]->function(this,blah,winfuncs.e[c]->style,NULL);
 			if (!win || !likethis) return win;
 
 			DBG cerr <<"*** need to repair HeadWindow::NewWindow"<<endl;

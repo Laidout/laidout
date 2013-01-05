@@ -102,6 +102,10 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+calculator
+  change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
+  allow // or /* */ comments?
+
 customizable object child relationships to parent, rather than simple transform
   transform relative to parent origin
   transform relative to alignment point of parent (50,50) for center, for instance

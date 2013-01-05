@@ -35,8 +35,6 @@ class CalcSettings
 	LaidoutCalculator *calculator; //assuming calculator will outlive this CalcSettings
 
      //parse state
-    //const char *curexprs; *** <- store this with recursive mechanism??
-	//long curexprslen;
     long from;
 	long curline;
     int EvalLevel;
@@ -108,6 +106,17 @@ class FunctionEvaluator
 //----------------------------- LaidoutCalculator -------------------------------------
 typedef ObjectDef CalculatorModule;
 
+//---------------------------Entry
+class Entry
+{
+  public:
+	char *name;
+	unsigned int module_id;
+	Entry(const char *newname, int modid);
+	virtual int type() = 0;
+	virtual ~Entry();
+};
+
 //---------------------------BlockInfo
 enum BlockTypes {
 	BLOCK_if,
@@ -122,8 +131,9 @@ enum BlockTypes {
 class BlockInfo
 {
   public:
+	BlockInfo *parentscope;
 	CalculatorModule *scope_namespace;
-	// *** Dictionary *dict; //stores potentially overloaded names, and imported names
+	Laxkit::RefPtrStack<Entry> dict; //stores potentially overloaded names, and imported names
 
 	int type;
 	int start_of_condition;//while
@@ -140,16 +150,7 @@ class BlockInfo
 	BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int condition_start, char *var, Value *v);
 	virtual ~BlockInfo();
 	virtual const char *BlockType();
-};
-
-//---------------------------Entry
-class Entry
-{
-  public:
-	char *name;
-	unsigned int module_id;
-	Entry(const char *newname, int modid);
-	virtual ~Entry();
+	virtual int AddName(CalculatorModule *mod, ObjectDef *item);
 };
 
 //---------------------------LaidoutCalculator
@@ -176,6 +177,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 	Laxkit::PtrStack<BlockInfo> scopes;
 	Laxkit::PtrStack<OperatorLevel> oplevels;
 	OperatorLevel leftops, rightops;
+	BlockInfo *currentLevel() { return scopes.e[scopes.n-1]; }
 
 	ErrorLog *temp_errorlog;
 	int calcerror;
