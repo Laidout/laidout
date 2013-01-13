@@ -52,21 +52,6 @@ class CalcSettings
 
 
 //---------------------------------- OperatorLevel/OperatorFunction ------------------------------------------
-enum OperatorDirectionType
-{
-	OPS_None,
-	OPS_LtoR,
-	OPS_RtoL,
-	OPS_Left,
-	OPS_Right,
-	OPS_MAX
-};
-
-class OpFuncEvaluator
-{
-  public:
-	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret) = 0;
-};
 
 class OperatorFunction
 {
@@ -92,14 +77,6 @@ class OperatorLevel
 	int pushOp(const char *op, OperatorFunction *opfunc);
 	virtual OperatorFunction *hasOp(const char *anop,int n, int dir);
 	virtual ~OperatorLevel() {}
-};
-
-class FunctionEvaluator
-{
-  public:
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret,
-						 ErrorLog *log) = 0;
 };
 
 
@@ -133,13 +110,13 @@ class BlockInfo
   public:
 	BlockInfo *parentscope;
 	CalculatorModule *scope_namespace;
+	Value *scope_object;
 	Laxkit::RefPtrStack<Entry> dict; //stores potentially overloaded names, and imported names
 
-	int type;
-	int start_of_condition;//while
-	int start_of_loop; //while, foreach, for
-	int start_of_advance;
-//	int start_of_advance; //for
+	int type; //one of BlockTypes
+	int start_of_condition; //while
+	int start_of_loop;     //while, foreach, for
+	int start_of_advance; //for
 
 	 //foreach:
 	char *word;
@@ -151,10 +128,13 @@ class BlockInfo
 	virtual ~BlockInfo();
 	virtual const char *BlockType();
 	virtual int AddName(CalculatorModule *mod, ObjectDef *item);
+	virtual Entry *FindName(const char *name,int len);
+	virtual Entry *createNewEntry(ObjectDef *item, CalculatorModule *module);
+	virtual int isSameEntry(ObjectDef *item, Entry *entry);
 };
 
 //---------------------------LaidoutCalculator
-class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
+class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, public FunctionEvaluator
 {
  private:
 	 //context state
@@ -190,7 +170,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 	int importOperators(CalculatorModule *module);
 	int removeOperators(int module_id);
 	int addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc);
-	void installInnate();
+	void InstallInnate();
 
 	void calcerr(const char *error,const char *where=NULL,int w=0, int surround=40);
 	char *getnamestring(int *n);
@@ -203,6 +183,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 	int nextchar(char ch);
 	int nextword(const char *word);
 	void newcurexprs(const char *newex,int len);
+	void atNextCommandStep() {}
 	int sessioncommand();
 	ObjectDef *CreateSessionCommandObjectDef();
 	void pushScope(int scopetype, int loop_start=0, int condition_start=0, char *var=NULL, Value *v=NULL, ObjectDef *module=NULL);
@@ -213,7 +194,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 	Value *evalLevel(int level);
 	int evalcondition();
 	Value *checkAssignments();
-	int checkBlock();
+	int checkBlock(Value **value_ret);
 	Value *number();
 	long intnumber();
 	double realnumber();
@@ -221,14 +202,19 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 	Value *getset();
 	Value *getarray();
 	Value *evalname();
-	Entry *findNameEntry(const char *word,int len, int *scope, int *module);
+	Value *dereference(Value *val,ObjectDef *def);
+	Entry *findNameEntry(const char *word,int len, int *scope, int *module, int *index);
 	Value *evalInnate(const char *word, int len);
-	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret);
+	int functionCall(const char *word,int n, Value **v, ObjectDef *function,ValueHash *context,ValueHash *pp);
 	int add(Value *num1,Value *num2, Value **ret);
 	int subtract(Value *num1,Value *num2, Value **ret);
 	int multiply(Value *num1,Value *num2, Value **ret);
 	int divide(Value *num1,Value *num2, Value **ret);
 	int power(Value *num1,Value *num2, Value **ret);
+
+	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret, ErrorLog *log);
 
 	Value *evalUservar(const char *word);
 	Value *ApplyDefaultSets(SetValue *set);
@@ -243,7 +229,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 
 	virtual int InstallModule(CalculatorModule *module, int autoimport);
 	virtual int RemoveModule(const char *modulename);
-	virtual int ImportModule(const char *name);
+	virtual int ImportModule(const char *name, int allnames);
 
 	virtual char *In(const char *in);
 	virtual int evaluate(const char *in, int len, Value **value_ret, int *error_pos, char **error_ret);
@@ -253,9 +239,6 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator
 
 	virtual int RunShell();
 };
-
-//------------------------------- parsing helpers ------------------------------------
-ValueHash *MapParameters(StyleDef *def,ValueHash *rawparams);
 
 
 } // namespace Laidout
