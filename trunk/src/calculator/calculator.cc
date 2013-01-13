@@ -63,25 +63,6 @@ CalcSettings::~CalcSettings()
 
 
 
-//---------------------------------- FunctionEvaluator ------------------------------------------
-/*! \class FunctionEvaluator
- * \brief Class to aid evaluating functions in a LaidoutCalculator.
- */
-
-/*! \function int FunctionEvaluator::Evaluate(const char *func,int len, ValueHash *context,
- * 						 ValueHash *parameters, CalcSettings *settings,
- *						 Value **value_ret,
- *						 ErrorLog *log)
- *	\brief Calculate a function.
- *
- * Return
- *  0 for success, value returned.
- * -1 for no value returned due to incompatible parameters, which aids in function overloading.
- *  1 for parameters ok, but there was somehow an error, so no value returned.
- */
-
-
-
 //---------------------------------- OperatorFunction ------------------------------------------
 /*! \class OperatorFunction
  * \brief Class for easy access to one or two parameter operators. Stack of these in CalculatorModule.
@@ -89,14 +70,6 @@ CalcSettings::~CalcSettings()
  * Operators are strings of non-whitespace, non-letters, non-numbers, that do not contain ';',
  * or container characters such as "'(){}[].
  *
- */
-
-/*! \class OpFuncEvaluator
- * \brief Evaluates operators for LaidoutCalculator
- *
- * The Op() function returns 0 for number returned. -1 for no number returned due to not being
- * able to handle the provided parameters. Return 1 for parameters right type, but there
- * is an error with them somehow, and no number returned.
  */
 
 
@@ -179,6 +152,28 @@ class Dictionary
 };
 
 
+//--------------------------- OverloadedEntry
+/*! For entries that are overloaded, push them into a special stack
+ */
+class OverloadedEntry : public Entry
+{
+  public:
+	Laxkit::RefPtrStack<Entry> entries; //stores overloaded names
+
+	OverloadedEntry(const char *newname, int modid);
+	virtual ~OverloadedEntry();
+	int type() { return VALUE_Overloaded; }
+};
+
+OverloadedEntry::OverloadedEntry(const char *newname, int modid)
+  : Entry(newname,modid)
+{
+}
+
+OverloadedEntry::~OverloadedEntry()
+{
+}
+
 //--------------------------- NamespaceEntry
 /*! Namespaces are stored in LaidoutCalculator::modules and individual scopes.
  */
@@ -186,16 +181,18 @@ class NamespaceEntry : public Entry, public ValueHash
 {
   public:
 	CalculatorModule *module;
-	NamespaceEntry(CalculatorModule *mod, const char *newname, int modid);
+	int isobject;
+	NamespaceEntry(CalculatorModule *mod, const char *newname, int modid, int is_object);
 	virtual ~NamespaceEntry();
-	int type() { return VALUE_Namespace; }
+	int type() { return (isobject ? VALUE_Class : VALUE_Namespace); }
 
 	virtual const char *GetName() { if (module) return module->name; return NULL; }
 };
 
-NamespaceEntry::NamespaceEntry(CalculatorModule *mod, const char *newname, int modid)
+NamespaceEntry::NamespaceEntry(CalculatorModule *mod, const char *newname, int modid, int is_object)
   : Entry(newname,modid)
 {
+	isobject=is_object;
 	module=mod;
 	if (mod) mod->inc_count();
 	sorted=1;
@@ -212,7 +209,7 @@ typedef NamespaceEntry ObjectDefEntry;
 /*! \class FunctionEntry
  * \brief Used for functions that are not part of an object.
  *
- * Object classes and functions are stored in the BlockInfo::scope_namespace elements.
+ * Object classes and functions are stored in the BlockInfo::scope_namespace elements. (???)
  */
 class FunctionEntry : public Entry
 {
@@ -247,17 +244,39 @@ FunctionEntry::~FunctionEntry()
 //--------------------------- ValueEntry
 /*! \class ValueEntry
  * \brief Used for variables.
+ *
+ * Usually, the containing_object will be the scope's namespace.
  */
 class ValueEntry : public Entry
 {
   public:
-	ValueEntry(const char *newname, int modid);
+	Value *value;
+	ObjectDef *containing_object;
+	ObjectDef *item;
+	ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container);
+	virtual ~ValueEntry();
 	int type() { return VALUE_Variable; }
 };
 
-ValueEntry::ValueEntry(const char *newname, int modid)
+ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container)
   : Entry(newname,modid)
-{}
+{
+	containing_object=container;
+	if (container) container->inc_count();
+
+	item=ns_element;
+	if (item) item->inc_count();
+
+	value=NULL;
+	if (value) value->inc_count();
+}
+
+ValueEntry::~ValueEntry()
+{
+	if (value) value->dec_count();
+	if (containing_object) containing_object->dec_count();
+	if (item) item->dec_count();
+}
 
 
 //--------------------------- OperatorEntry
@@ -272,7 +291,6 @@ class OperatorEntry : public Entry
 	int type() { return VALUE_Operator; }
 
 	OperatorEntry(const char *newname, int modid);
-	//virtual int AddFunction(FunctionEntry *func);
 };
 
 OperatorEntry::OperatorEntry(const char *newname, int modid)
@@ -313,6 +331,7 @@ AliasEntry::~AliasEntry()
 BlockInfo::BlockInfo()
 {
 	scope_namespace=NULL;
+	scope_object=NULL;
 	type=0;
 	start_of_condition=0;
 	start_of_loop=0;
@@ -329,6 +348,7 @@ BlockInfo::BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int c
 	current=0;
 
 	parentscope=NULL;
+	scope_object=NULL;
 	scope_namespace=mod;
 	if (mod) mod->inc_count();
 	else scope_namespace=new CalculatorModule;
@@ -359,9 +379,10 @@ const char *BlockInfo::BlockType()
 }
 
 //! Add item, which is assumed to be in mod somewhere, to the scope's dictionary.
-/*! Return 0 for added. -1 for name already there and nothing added. 1 for error and not added.
- *
- * \todo add name overloading
+/*! Return 0 for added.
+ * -1 for name there, but added overloaded.
+ * -2 for item already there, so nothing done.
+ * 1 for error and not added.
  */
 int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
 {
@@ -384,22 +405,115 @@ int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
 			else s=m+1;
 		}
 	}
-	if (found) return -1;
+	if (found) {
+		OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(dict.e[pos]);
+		if (oo) {
+			for (int c=0; c<oo->entries.n; c++) {
+				if (isSameEntry(item,oo->entries.e[c])) return -2;
+			}
+			//item not found, so add to top of overloads
 
-	Entry *entry=NULL;
-	if (item->format==VALUE_Operator) {
-		//cannot add operators to dict
-	} else if (item->format==VALUE_Variable
-			|| item->format==VALUE_Class
-			|| item->format==VALUE_Function
-			|| item->format==VALUE_Namespace
-			|| item->format==VALUE_Alias) {   
-		entry=new ObjectDefEntry(item, name,mod->object_id);
+		} else {
+			 //need to overload name maybe
+			if (isSameEntry(item,dict.e[pos])) return -2; //already there!
+			Entry *entry=dict.pop(pos);
+			oo=new OverloadedEntry(item->name,0);
+			oo->entries.push(entry);
+			dict.push(oo,1,pos); //replace old entry with overloaded entry
+		}
+		Entry *newentry=createNewEntry(item,mod);
+		oo->entries.push(newentry,1,-1);
+		return -1;
 	}
 
+	 //entry not found, so add!
+	Entry *entry=createNewEntry(item,mod);
 	if (!entry) return 1; //cannot add this item!
 	dict.push(entry,pos,1);
 	return 0;
+}
+
+Entry *BlockInfo::createNewEntry(ObjectDef *item, CalculatorModule *module)
+{
+	if (item->format==VALUE_Operator) {
+		return NULL;
+
+	} else if (item->format==VALUE_Variable) {
+		return new ValueEntry(item->name,module->object_id, item, module);
+
+	} else if (item->format==VALUE_Class) {
+		return new NamespaceEntry(item, item->name, module->object_id, 1);
+
+	} else if (item->format==VALUE_Function) {
+		//FunctionEntry(const char *newname, int modid, const char *newcode,FunctionEvaluator *func, ObjectDef *newdef);
+		return new FunctionEntry(item->name,module->object_id, NULL,NULL,item);
+
+	} else if (item->format==VALUE_Namespace) {
+		return new NamespaceEntry(item, item->name, module->object_id, 0);
+
+	//} else if (item->format==VALUE_Alias) {   
+	}
+
+	return NULL;
+}
+
+int BlockInfo::isSameEntry(ObjectDef *item, Entry *entry)
+{
+	switch (entry->type()) {
+		case VALUE_Variable : {
+			ValueEntry *vv=dynamic_cast<ValueEntry*>(entry);
+			return vv->item==item;
+		  }
+
+		case VALUE_Class    :
+		case VALUE_Namespace: {
+			NamespaceEntry *vv=dynamic_cast<NamespaceEntry*>(entry);
+			return vv->module==item;
+		  }
+
+		case VALUE_Function : {
+			FunctionEntry *vv=dynamic_cast<FunctionEntry*>(entry);
+			return vv->def==item;
+		  }
+
+		//case VALUE_Operator :
+		//case VALUE_Alias    :
+	};
+	return 0;
+}
+
+Entry *BlockInfo::FindName(const char *name,int len)
+{
+	int s=0,e=dict.n-1,m;
+
+	if (s<=e) {
+		int cmp=strncmp(dict.e[s]->name,name,len);
+		if (cmp==0) {
+			if ((int)strlen(dict.e[s]->name)==len) return dict.e[s];
+			cmp=1;
+		}
+		if (cmp<0) return NULL; //it is less that lowest element
+		
+		cmp=strncmp(dict.e[e]->name,name,len);
+		if (cmp==0) {
+			if ((int)strlen(dict.e[e]->name)==len) return dict.e[e];
+			cmp=1;
+		}
+		if (cmp>0) return NULL; //it is greater than greatest element
+		
+		while (s<e) {
+			m=(s+e)/2;
+			cmp=strcmp(dict.e[m]->name,name);
+			if (cmp==0) {
+				if ((int)strlen(dict.e[m]->name)==len) return dict.e[m];
+				cmp=1; //else item is greater than name
+			}
+
+			if (cmp<0) e=m-1;
+			else s=m+1;
+		}
+	}
+	return NULL;
 }
 
 
@@ -460,8 +574,11 @@ LaidoutCalculator::LaidoutCalculator()
 	DBG cerr <<" ~~~~~~~ New Calculator created."<<endl;
 
 
+	 //initialize base modules
+	InstallInnate();
+
 	 //things specific to Laidout:
-	InstallModule(&stylemanager,1); //autoimport
+	InstallModule(&stylemanager,1); //autoimport name only
 }
 
 LaidoutCalculator::~LaidoutCalculator()
@@ -474,7 +591,9 @@ LaidoutCalculator::~LaidoutCalculator()
 }
 
 //! Add module to list of available modules.
-/*! If autoimport, then automatically import all names in module to the global namespace.
+/*! If autoimport==0, then only make available, do not actually make names available.
+ * If autoimport==1, then make the module name accessible in the current namespace.
+ * If autoimport==2, tehn automatically import all names in module to the current namespace.
  * Please note that operators are always made available in the global namespace.
  *
  * Return 0 for installed, or 1 for not able to install for some reason.
@@ -482,23 +601,54 @@ LaidoutCalculator::~LaidoutCalculator()
 int LaidoutCalculator::InstallModule(CalculatorModule *module, int autoimport)
 {
 	modules.push(module);
-	global_scope.AddName(module,module);
-	if (autoimport) importAllNames(module);
+	//global_scope.AddName(module,module);
+	if (autoimport) currentLevel()->AddName(module,module);
+	if (autoimport==2) importAllNames(module);
 	importOperators(module);
 	return 0;
 }
 
-//! Import names from an existing available module. It is assumed operaters are already "imported".
-/*! Return 1 for module not found, else 0.
+//! Make module accessible from current scope, and install its operators.
+/*! module is in this->modules list. Return 1 for module not found, else 0.
+ *
+ * If module is already accessible from current scope, then it is not added
+ * to the current scope, but names are.
  */
-int LaidoutCalculator::ImportModule(const char *name)
+int LaidoutCalculator::ImportModule(const char *name, int allnames)
 {
 	CalculatorModule *module=NULL;
 	for (int c=0; c<modules.n; c++) {
 		if (!strcmp(modules.e[c]->name,name)) { module=modules.e[c]; break; }
 	}
 	if (!module) return 1;
-	importAllNames(module);
+
+	 //see if module already accessible
+	Entry *entry=NULL;
+	BlockInfo *scope=currentLevel();
+	int n=strlen(name);
+	while (scope) {
+		entry=scope->FindName(name,n);
+		if (entry) {
+			if (entry->type()==VALUE_Overloaded) {
+				OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(entry);
+
+				if (oo->entries.n) {
+					entry=oo->entries.e[oo->entries.n-1]; //note it only checks top of overloaded, this might be wrong way to do it
+				}
+			}
+		}
+		if (entry->type()==VALUE_Namespace && module==dynamic_cast<NamespaceEntry*>(entry)->module) 
+			break;
+		entry=NULL;
+		scope=scope->parentscope;
+	}
+	if (!entry) {
+		 //module is not accessible at any scope, so add it to current
+		currentLevel()->AddName(module,module);
+		importOperators(module);
+	}
+
+	if (allnames) importAllNames(module);
 	return 0;
 }
 
@@ -628,14 +778,14 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		if (calcerror) break;
 
 		skipwscomment();
-		if (checkBlock()) continue;
+		if (checkBlock(&answer)) continue;
 		if (scopes.n>1 && (nextchar('}') || nextword("break"))) {
 			popScope();
 			continue;
 		}
 
 		 ////check for variable assignments, simple a=b usage, no (a,b)=(1,2) yet....
-		//answer=checkAssignments(); not necessary now that '=' is an operator
+		answer=checkAssignments(); //eventually will go away when '=' is an operator
 		if (calcerror) break;
 		else if (!answer) answer=evalLevel(0);
 
@@ -643,6 +793,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 
 		//updatehistory(answer,outexprs);
 		num_expr_parsed++;
+		atNextCommandStep(); //for future debugging purposes?
 
 		if (nextchar(';')) ; //advance past a ;
 	} 
@@ -681,6 +832,8 @@ const char *LaidoutCalculator::Message()
 
 //! Import all non-operators into the current namespace, which is the topmost scope.
 /*! Return number of names imported.
+ *
+ * For operators, use importOperators().
  */
 int LaidoutCalculator::importAllNames(CalculatorModule *module)
 {
@@ -697,7 +850,7 @@ int LaidoutCalculator::importAllNames(CalculatorModule *module)
 	return n;
 }
 
-/*! Assume def is an ObjectDef in module.
+/*! Assume def is an ObjectDef in module. Insert name into current scope.
  */
 int LaidoutCalculator::importName(CalculatorModule *module, ObjectDef *def)
 {
@@ -706,10 +859,31 @@ int LaidoutCalculator::importName(CalculatorModule *module, ObjectDef *def)
 	return 0;
 }
 
+/*! Return number of operators added.
+ */
 int LaidoutCalculator::importOperators(CalculatorModule *module)
-{ // ***
-	cerr << " *** need to implement importOperators!"<<endl;
-	return 0;
+{
+	int n=0;
+
+	ObjectDef *def;
+	int dir,priority;
+	const char *rr;
+	for (int c=0; c<module->getNumFields(); c++) {
+		def=module->getField(c);
+		if (def->format!=VALUE_Operator) continue;
+
+		rr=def->range;
+		if      (*rr=='l') dir=OPS_Left ;
+		else if (*rr=='r') dir=OPS_Right;
+		else if (*rr=='>') dir=OPS_LtoR ;
+		else if (*rr=='<') dir=OPS_RtoL ;
+
+		priority=strtol(def->defaultvalue,NULL,10);
+		addOperator(def->name,dir,priority, module->object_id, def->opevaluator);
+		n++;
+	}
+
+	return n;
 }
 
 //! Set calcmes to a 2 line error message, 1 line for error, 1 line to show position of error.
@@ -899,6 +1073,7 @@ int LaidoutCalculator::nextword(const char *word)
 void LaidoutCalculator::pushScope(int scopetype, int loop_start, int condition_start, char *var, Value *v, CalculatorModule *module)
 {
 	BlockInfo *block=new BlockInfo(module, scopetype,loop_start,condition_start,var,v);
+	block->parentscope=scopes.e[scopes.n-1];
 	scopes.push(block);
 }
 
@@ -1060,15 +1235,38 @@ void LaidoutCalculator::skipstring()
 	return;
 }
 
-int LaidoutCalculator::checkBlock()
+/*! If we were in a function, and "return" is encountered, then we might be returning a value.
+ */
+int LaidoutCalculator::checkBlock(Value **value_ret)
 {
+	*value_ret=NULL;
+	if (scopes.n>1) {
+		if (nextchar('}')) {
+			popScope();
+			return 1;
+		}
+	}
+
 	if (!isalpha(curexprs[from])) return 0;
 
 	int n=0;
 	const char *word=getnamestringc(&n);
 	if (!word) return 0;
 
-	if (!strncmp(word,"if",2)) {
+
+	if (n==5 && !strncmp(word,"break",5)) {
+		popScope(); // *** must pop all through nearest loop block
+		return 1;
+
+	} else if (n==6 && !strncmp(word,"return",6)) {
+		from+=6;
+		skipwscomment();
+		*value_ret=evalLevel(0);
+		if (calcerror) return 1;
+		popScope(); // *** must pop all through nearest function block
+		return 1;
+
+	} else if (!strncmp(word,"if",2)) {
 		 //if (condition) { ... } else if { ... }
 		from+=5;
 		skipwscomment();
@@ -1092,7 +1290,7 @@ int LaidoutCalculator::checkBlock()
 				from+=4;
 				n=getnamestringlen();
 				word=curexprs+from;
-				if (!strncmp(word,"if",2)) return checkBlock();
+				if (!strncmp(word,"if",2)) return checkBlock(value_ret);
 				if (!nextchar('{')) { calcerr(_("Expected '{'!")); return 1; }
 				pushScope(BLOCK_if);
 				return 1; //start over from the else
@@ -1231,17 +1429,19 @@ class LValue : public Value
 	Value *basevalue;
 	FieldPlace extension;
 
-	LValue(const char *newname,Value *v, FieldPlace &p);
+	LValue(const char *newname,int len, Value *v, ValueEntry *ve, FieldPlace *p);
 	virtual ~LValue();
 	virtual int type() { return VALUE_LValue; }
+ 	virtual ObjectDef *makeObjectDef() { return NULL; }
+	virtual Value *duplicate();
 };
 
-LValue::LValue(const char *newname,Value *v, FieldPlace &p)
+LValue::LValue(const char *newname,int len, Value *v, ValueEntry *ve, FieldPlace *p)
 {
+	name=newnstr(newname,len);
 	basevalue=v;
 	v->inc_count();
-	extension=p;
-	name=newstr(newname);
+	extension=*p;
 }
 
 LValue::~LValue()
@@ -1250,6 +1450,8 @@ LValue::~LValue()
 	if (name) delete[] name;
 }
 
+Value *LValue::duplicate()
+{ return NULL; }
 //--------------------------- end LValue
 
 /*! \todo need much more sophisticated assignments like flatvector v; v.x=3;
@@ -1258,39 +1460,57 @@ LValue::~LValue()
  *  Return 0 for no assignments.
  */
 Value *LaidoutCalculator::checkAssignments()
-{ // ***
-	return NULL;
+{ // *** this needs reworking to use '=' as an operator and LValues
 
-//	int namelen=getnamestringlen();
-//	if (!namelen) return NULL;
-//
-//	int ttfrom=from;
-//	from+=namelen;
-//	skipwscomment();
-//
-//	if (!nextchar('=')) {
-//		from=ttfrom;
-//		return NULL;
-//	}
-//
-//	 //we will be assigning something to a variable
-//	int assign=uservars.findIndex(curexprs+ttfrom, namelen);
-//
-//	Value *v=evalLevel(0);
-//	if (calcerror) return NULL;
-//
-//	if (!v) { calcerr(_("Expected a value!")); return NULL; }
-//
-//	if (assign<0) {
-//		char *assignname=NULL;
-//		assignname=newnstr(curexprs+ttfrom, namelen);
-//		uservars.push(assignname, v);
-//		delete[] assignname;
-//	} else {
-//		uservars.set(assign, v);
-//	}
-//
-//	return v;
+	int namelen=0;
+	const char *word=getnamestringc(&namelen);
+	if (!word) return NULL;
+
+	int ttfrom=from;
+	from+=namelen;
+	skipwscomment();
+
+	if (!nextchar('=')) {
+		 //is not a simple assignment
+		from=ttfrom;
+		return NULL;
+	}
+
+	 //we will be assigning something to a variable
+	int scope=-1,module=-1,index=-1;
+	Entry *entry=findNameEntry(word,namelen, &scope,&module,&index);
+
+	Value *v=evalLevel(0);
+	if (calcerror) return NULL;
+	if (!v) { calcerr(_("Expected a value!")); return NULL; }
+
+	char *assignname=newnstr(curexprs+ttfrom, namelen);
+	if (!entry) {
+		 //name wasn't found, so add a new ValueEntry to current scope
+		if (currentLevel()->scope_namespace->format!=VALUE_Namespace) {
+			 //if the namespace is actually an object, do not let extraneous garbage get
+			 //inserted into its ObjectDef.
+			calcerr(_("Can only add variables to namespaces"));
+			v->dec_count();
+			return NULL;
+		}
+		currentLevel()->scope_namespace->pushVariable(assignname,assignname,NULL, v,0);
+		currentLevel()->AddName(currentLevel()->scope_namespace->last(), currentLevel()->scope_namespace);
+
+	} else {
+		 //name was found, try to assign to it if possible
+		if (entry->type()!=VALUE_Variable) {
+			calcerr(_("Cannot assign to that!"));
+			v->dec_count();
+			return NULL;
+		}
+		ValueEntry *ventry=dynamic_cast<ValueEntry*>(entry);
+		ventry->item->SetVariable(assignname, v, 0);
+	}
+
+	delete[] assignname;
+
+	return v;
 }
 
 Value *LaidoutCalculator::evalUservar(const char *word)
@@ -1364,7 +1584,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	//if (nextword("function")) ***
 	//if (nextword("var")) ***
 	//if (nextword("operator")) ***
-	//if (nextword("var")) ***
+	//if (nextword("class")) ***
 	//if (nextword("namespace")) ***
 
 	if (nextword("radians"))
@@ -1374,17 +1594,34 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	    { calcsettings.decimal=1; from+=7; return 1; }
 
 	if (nextword("import")) {
-		 //take names from another namespace and make them immediately accessible in the current scope
-		 //use unset to remove imported names from current scope
+		 //import an available module into the current scope
 		from+=6;
 		int n=0;
-		const char *name=getnamestringc(&n);
-		if (isblank(name)) { calcerr(_("Expecting name!")); return 1; }
+		char *name=getnamestring(&n);
+		if (n==0) { calcerr(_("Expecting name!")); return 1; }
 		from+=n;
 		skipwscomment();
-		ImportModule(name);
+		ImportModule(name,0);
+		delete[] name;
 		return 1;
 	}
+		 
+	if (nextword("using")) {
+		 //take names from another namespace and make them immediately accessible in the current scope
+		 //use unset to remove imported names from current scope
+		from+=5;
+		int n=0;
+		char *name=getnamestring(&n);
+		if (n==0) { calcerr(_("Expecting name!")); return 1; }
+		from+=n;
+		skipwscomment();
+		ImportModule(name,1);
+		delete[] name;
+		return 1;
+	}
+
+	//if (nextword("alias")) {
+	//	 ***
 
 	if (nextword("unset")) {
 //		***
@@ -1811,6 +2048,18 @@ Value *LaidoutCalculator::number()
 		if (!snum) return NULL; 
 	}
 
+	if (nextchar('.')) {
+		 //there is dereferencing to be done
+		Value *snum2=dereference(snum,NULL);
+		if (calcerror) {
+			if (snum) delete snum;
+			return NULL;
+		}
+
+		delete snum;
+		snum=snum2;
+	}
+
 //	 // get units;
 //	Unit *units=getUnits();
 //	if (unitstr) {
@@ -1818,7 +2067,22 @@ Value *LaidoutCalculator::number()
 //		
 //		if (snum->ApplyUnits(units)!=0) *** cannot apply units! already exist maybe;
 //	}
+
 	return snum;
+}
+
+/*! Assume that we are just past initial '.' for dereferencing. We either have a Value
+ * that we need to zero in on, or we have a namespace that we need to access part of.
+ *
+ * Returns a new Value.
+ */
+Value *LaidoutCalculator::dereference(Value *val,ObjectDef *def)
+{
+	cerr << " *** dereference broken!"<<endl;
+	//if (val) def=val->GetObjectDef();
+	//***
+	//Value *v
+	return NULL;
 }
 
 //! Read in values for a set.
@@ -2000,9 +2264,25 @@ Value *LaidoutCalculator::getstring()
 	return str;
 }
 
-Entry *LaidoutCalculator::findNameEntry(const char *word,int len, int *scope, int *module)
+//! Return the nearest Entry object corresponding to word.
+/*! scope is index in scopes.
+ *  module is module id of that scope's namespace.
+ *  index is index in name dict of that scope.
+ */
+Entry *LaidoutCalculator::findNameEntry(const char *word,int len, int *scope, int *module, int *index)
 {
-	 // ***
+	Entry *entry=NULL;
+	int i=-1; //index in scope->entries.. for overloading?
+	for (int c=scopes.n-1; c>=0; c--) {
+		//entry=scopes.e[c]->FindName(word,len, &i);
+		entry=scopes.e[c]->FindName(word,len);
+		if (entry) {
+			*scope=c;
+			*module=scopes.e[c]->scope_namespace->object_id;
+			*index=i;
+			return entry;
+		}
+	}
 	return NULL;
 }
 
@@ -2010,26 +2290,29 @@ Entry *LaidoutCalculator::findNameEntry(const char *word,int len, int *scope, in
  * If name not found, then from will still point to beginning of word.
  */
 Value *LaidoutCalculator::evalname()
-{ // ***
-	 //search for function name
+{
 	int n=0;
 	const char *word=getnamestringc(&n);
 	if (!word) return NULL;
 
-	// ***todo? if a function takes one string input, then send everything from [in..end) as the string
-	//    this lets you have "command aeuaoe aoeu aou;" where the function does its own parsing.
-	//    In this case, the function parameters will have 1 parameter: "commanddata",value=[in..end).
-	//    otherwise, assume nested parsing like "function (x,y)", "function x,y"
 
-	 //search for function in stylemanager
+	 //search for name
 	int scope=-1;
 	int module=-1;
-	Entry *entry=findNameEntry(word,n, &scope, &module);
+	Entry *entry=findNameEntry(word,n, &scope, &module, NULL);
+	OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(entry);
+	int ooi=-1;
 	if (!entry) return NULL;
-
+	if (oo) {
+		if (!oo->entries.n) return NULL; //should remove the overloaded thing, since none use it
+		ooi=oo->entries.n-1;
+		entry=oo->entries.e[oo->entries.n-1];
+		//now any function calls that return -1 can step through available name resolution in oo
+	}
 
 	if (dynamic_cast<FunctionEntry*>(entry)) {
 		ObjectDef *function=dynamic_cast<FunctionEntry*>(entry)->def;
+		Value *v=NULL;
 
 		 //we found a function!
 		from+=n;
@@ -2041,68 +2324,142 @@ Value *LaidoutCalculator::evalname()
 		ValueHash *pp=parseParameters(function); //build parameter hash in order of styledef
 		if (calcerror) {
 			delete context;
+			if (pp) delete pp;
 			return NULL;
 		}
 
-		 //call the actual function
-		ErrorLog log;
-		Value *value=NULL;
-		int status=0;
-		if (!calcerror) {
-			if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
-			else if (function->newfunc) {
-				Value *s=function->newfunc(function);
-				if (s) {
-					status=0;
-					value=new ObjectValue(s);
-				} else status=1;
-			}
-
-			 //report default success or failure
-			if (log.Total()) {
-				char *error=NULL;
-				char scratch[100];
-				ErrorLogNode *e;
-				for (int c=0; c<log.Total(); c++) {                 
-					e=log.Message(c);
-					if (e->severity==ERROR_Ok) ;
-					else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
-					else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
-				
-					if (e->objectstr_id) {
-						sprintf(scratch,"id:%s, ",e->objectstr_id);
-						appendstr(error,scratch);
-					}
-					appendstr(error,e->description);
-					appendstr(error,"\n");
+		int status=-1;
+		do {
+			if (function) {
+				status=functionCall(word,n, &v, function,context,pp);
+				if (calcerror) {
+					delete context;
+					if (pp) delete pp;
+					return NULL;
 				}
-				messageOut(error);
-				delete[] error;
-			} else {
-				if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
-				else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
 			}
+			if (status==-1) ooi--;
+			if (ooi>=0) {
+				entry=oo->entries.e[ooi];
+				if (entry->type()==VALUE_Function) function=dynamic_cast<FunctionEntry*>(entry)->def;
+				else if (entry->type()==VALUE_Class) function=dynamic_cast<ObjectDefEntry*>(entry)->module;
+				else function=NULL;
+
+			} else entry=NULL;
+		} while (status==-1 && ooi>=0);
+
+		if (status==-1) {
+			char *error=newstr(_("Cannot compute with given values."));
+			//appendstr(error,_("Choices are:\n"));
+			//if (oo) {
+			//	for (int c=oo->entries.n-1; c>=0; c--) {
+			//		***append description
+			//	}
+			//} else 
+			calcerr(error);
+			delete[] error;
+			delete context;
+			if (pp) delete pp;
+			return NULL;
 		}
+
+		delete context;
 		if (pp) delete pp;
-		if (context) delete context;
-		if (calcerror) { if (value) value->dec_count(); value=NULL; }
-		return value;
+		return v;
+
+	} else if (entry->type()==VALUE_Namespace) {
+		 //use namespace as a scope ONLY while parsing extensions
+		ObjectDef *ns=dynamic_cast<NamespaceEntry*>(entry)->module;
+		from+=n;
+		Value *v=dereference(NULL,ns);
+		if (calcerror && v) { v->dec_count(); v=NULL; }
+		return v;
+
+	} else if (entry->type()==VALUE_Class) {
+		//just like NamespaceEntry, but you cannot make new objects from a namespace
+		//object [+ other]-> create new instances of object
+		//object(blah,blah) -> create new instances of object
+		//object.blah() -> 1. run a "static" function, or get something else from within object
+		//				   2. if in subclass space of object, run object's function with appropriate this
+		from+=n;
+		Value *v=NULL;
+		if (nextchar('(')) {
+			from--;
+			functionCall(word,n, &v, dynamic_cast<NamespaceEntry*>(entry)->module, NULL,NULL); //**** context,parameters
+			return v;
+		}
+		return v;
+
+//	} else if (dynamic_cast<AliasEntry*>(entry)) {
+//		// *** should be able to do something like this: alias blah.(5+3).func() aliasname
+//		//replace entry with new entry found via name in the alias, then repeat the found entry (if any)
+//		AliasEntry *alias=dynamic_cast<AliasEntry*>(entry);
+//		from+=n-strlen(alias->aliasto); //hack to trick evalname to using the alias
+//		Value *v=evalname(alias->aliasto,strlen(alias->aliasto));
+//		return v;
+
+	} else if (dynamic_cast<ValueEntry*>(entry)) {
+		ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
+		LValue *val=new LValue(word,n, NULL,ve,NULL);
+		Value *v=dereference(val,NULL);
+		if (calcerror && v) { v->dec_count(); v=NULL; }
+		return v; 
+
+	//} else if (dynamic_cast<OperatorEntry*>(entry)) {
+		//currently, operators are searched for differently and must not have letters, see eval()
 	}
 
-	 //search for innate functions
-	Value *num=evalInnate(word,n);
-	if (calcerror || num) {
-		return num;
-	}
-	
-	 //search for user variables
-	num=evalUservar(word);
-	if (calcerror || num) {
-		return num;
-	}
 
-	calcerr(_("Unknown name!"));
 	return NULL;
+}
+
+//! Convenience function to call functions, and do error handling
+int LaidoutCalculator::functionCall(const char *word,int n, Value **v, ObjectDef *function,ValueHash *context,ValueHash *pp)
+{
+	 //call the actual function
+	ErrorLog log;
+	Value *value=NULL;
+	int status=1;
+	if (!calcerror) {
+		CalcSettings settings=calcsettings;
+		settings.calculator=this;
+		if (function->evaluator) status=function->evaluator->Evaluate(word,n, context,pp,&settings, &value,&log);
+		else if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
+		else if (function->newfunc) {
+			Value *s=function->newfunc(function);
+			if (s) {
+				status=0;
+				value=new ObjectValue(s);
+			} else status=1;
+		}
+
+		 //report default success or failure
+		if (log.Total()) {
+			char *error=NULL;
+			char scratch[100];
+			ErrorLogNode *e;
+			for (int c=0; c<log.Total(); c++) {                 
+				e=log.Message(c);
+				if (e->severity==ERROR_Ok) ;
+				else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
+				else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
+			
+				if (e->objectstr_id) {
+					sprintf(scratch,"id:%s, ",e->objectstr_id);
+					appendstr(error,scratch);
+				}
+				appendstr(error,e->description);
+				appendstr(error,"\n");
+			}
+			messageOut(error);
+			delete[] error;
+		} else {
+			if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
+			else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
+		}
+	}
+	if (calcerror) { if (value) value->dec_count(); value=NULL; }
+	return status;
 }
 
 /*! Return number of OperatorFunction instances removed.
@@ -2158,59 +2515,191 @@ int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int modu
 	return 0;
 }
 
-//--------------------- ***
-class InnateFunctions : public ObjectDef, public OpFuncEvaluator, public FunctionEvaluator
-{
-  public:
-	InnateFunctions() {}
-	virtual ~InnateFunctions() {}
-	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret);
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret,
-						 ErrorLog *log);
-};
+//! This will be for status messages during the execution of a script.
+/*! \todo *** implement this!!
+ *
+ * This function exists to aid in providing incremental messages to another thread. This is
+ * so you can run a script basically in the backgroud, and give status reports to the user,
+ * who might want to halt the script based on what's happening.
+ */
+void LaidoutCalculator::messageOut(const char *str)
+{//***
+	DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
 
-int InnateFunctions::Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret)
-{ //***
-	return 1;
-}
-
-int InnateFunctions::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret,
-						 ErrorLog *log)
-{ // ***
-	return 1;
+	appendline(messagebuffer,str);
 }
 
 
-void LaidoutCalculator::installInnate()
+//! Create an object with the context of this calculator.
+/*! This includes a default document, default window, current directory.
+ *
+ * \todo shouldn't have to build this all the time
+ */
+ValueHash *LaidoutCalculator::build_context()
 {
-	InnateFunctions *innates=new InnateFunctions;
+	ValueHash *pp=new ValueHash();
+	pp->push("current_directory", dir);
+	//if (laidout->project->docs.n) pp->push("document", laidout->project->docs.e[0]->doc->Saveas());//***
+	if (laidout->project->docs.n) pp->pushObject("document", laidout->project->docs.e[0]->doc);
+	//pp.push("window", NULL); ***default to first view window pane in same headwindow?
+	return pp;
+}
+
+//! Parse into function parameters.
+/*! If def!=NULL, then call MapParameters() to get the parameters to match the fields of the ObjectDef.
+ */
+ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
+{
+	ValueHash *pp=NULL;
+
+// ***	 //check for when the styledef has 1 string parameter, and you have a large in string.
+//	 //all of in maps to that one string. This allows functions to act like command line strings.
+//	 //They would then call some other function to parse the string or parse it internally.
+//	if (def->getNumFields()==1 ) {
+//		ValueTypes fmt=VALUE_None;
+//		const char *nm=NULL;
+//		def->getInfo(0,&nm,NULL,NULL,NULL,NULL,&fmt);
+//		if (fmt==VALUE_String) {
+//			pp->push(nm,str);
+//			delete[] str;
+//			return pp;
+//		}
+//	}
+
+	if (nextchar('(')) {
+		pp=new ValueHash;
+		int tfrom;
+		char *pname=NULL, *ename=NULL;
+		int namel;
+		Value *v=NULL;
+		int pnum=0;
+		int enumcheck;
+		if (nextchar(')')) { from--; }
+		else do {
+			enumcheck=-1;//default field number to check for enum values in
+			pnum++; //starts at 1
+
+			 //check for parameter name given
+			skipwscomment();
+			tfrom=from;
+			pname=getnamestring(&namel);
+			if (pname) {
+				from+=namel;
+				if (nextchar('=')) {
+					//it is a parameter name (hopefully) so nothing special to do here
+					if (def) enumcheck=def->findfield(pname,NULL);
+					tfrom=from; //update from to just after '=', might have to reset after enum check
+				} else {
+					 //name was not in the form of parameter assignment
+					ename=pname;
+					pname=NULL; //ename will be deleted below
+					if (def) enumcheck=pnum; //pname might be an enum value for styledef.field[pnum]
+				}
+			}
+
+			 //do special check for enum values, and convert to an IntValue, holding
+			 //the index of the corresponding enum value
+			if (def && enumcheck>=0) {
+				 //If the field is known to not be an enum, then do not check for enum values
+				ValueTypes t;
+				if (def->getInfo(enumcheck, NULL,NULL,NULL,NULL,NULL,&t,NULL)==0 && t==VALUE_Enum) {
+					if (!ename) {
+						skipwscomment();
+						int len;
+						ename=getnamestring(&len);
+						if (ename) from+=len;
+					}
+					ObjectDef *ev=NULL;
+					if (ename) ev=def->getField(enumcheck);
+					DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
+					
+					 //*** warning, assumes no extended enum, or dynamic enum!!! maybe bad....
+					DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
+					if (ev && ev->fields) for (int c=0; c<ev->fields->n; c++) {
+						if (strcmp(ev->fields->e[c]->name,ename)==0) {
+							skipwscomment();
+							if (curexprs[from]!=',' && curexprs[from]!=')') {
+								calcerr(_("Problem parsing enumeration value"));
+							} else v=new IntValue(c);
+							break;
+						}
+					}
+					if (!v) enumcheck=-1; //force scan for value 
+				} else {
+					enumcheck=-1; //either info check failed, or field is not an enum, so still must parse value
+					from=tfrom;
+				}
+				if (ename) { delete[] ename; ename=NULL; }
+			}
+			if (ename) {
+				delete[] ename;
+				from=tfrom;
+			}
+			if (enumcheck<0) v=evalLevel(0); //either enum check failed, or was not an enum
+
+			if (v && !calcerror) {
+				pp->push(pname,v);
+				v->dec_count();
+				v=NULL;
+			} else if (calcerror) {
+				if (pname) { delete[] pname; pname=NULL; }
+				break;
+			}
+			if (pname) { delete[] pname; pname=NULL; }
+
+		} while (!calcerror && from!=tfrom && nextchar(',')); //do foreach parameter
+		if (!calcerror) {
+			if (!nextchar(')')) {
+				calcerr(_("Expected closing ')'"));
+				delete pp;
+				pp=NULL;
+			}
+		} else {//calcerror
+			if (pp) delete pp;
+			return NULL;
+		}
+	} 
+
+	if (pp && def) MapParameters(def,pp);
+	return pp;
+}
+
+
+//---------------------built in ops:
+
+
+//! Create and install various built in operators and math functions.
+void LaidoutCalculator::InstallInnate()
+{
+	ObjectDef *innates=new ObjectDef(NULL,"Builtin",_("Builtin"),_("Things that are built in to the calculator."),
+										   VALUE_Namespace,NULL,NULL);
 
 	 //operators
-	addOperator("||",OPS_LtoR,100, 0,innates);
+	innates->pushOperator("||",OPS_LtoR,100, _("Condition or"), this);
 
-	addOperator("&&",OPS_LtoR,200, 0,innates);
+	innates->pushOperator("&&",OPS_LtoR,200, _("Condition and"), this);
 
-	addOperator("<=",OPS_LtoR,300, 0,innates);
-	addOperator("<", OPS_LtoR,300, 0,innates);
-	addOperator(">=",OPS_LtoR,300, 0,innates);
-	addOperator(">", OPS_LtoR,300, 0,innates);
-	addOperator("==",OPS_LtoR,300, 0,innates);
-	addOperator("!=",OPS_LtoR,300, 0,innates);
+	innates->pushOperator("<=",OPS_LtoR,300, _("Less than or equal"), this);
+	innates->pushOperator("<", OPS_LtoR,300, _("Less than"), this);
+	innates->pushOperator(">=",OPS_LtoR,300, _("Greater than or equal"), this);
+	innates->pushOperator(">", OPS_LtoR,300, _("Greater than"), this);
+	innates->pushOperator("==",OPS_LtoR,300, _("Is equal to"), this);
+	innates->pushOperator("!=",OPS_LtoR,300, _("Is not equal to"), this);
 
-	addOperator("+", OPS_LtoR,400, 0,innates);
-	addOperator("-", OPS_LtoR,400, 0,innates);
+	innates->pushOperator("+", OPS_LtoR,400, _("Add"), this);
+	innates->pushOperator("-", OPS_LtoR,400, _("Subtract"), this);
 
-	addOperator("*", OPS_LtoR,500, 0,innates);
-	addOperator("/", OPS_LtoR,500, 0,innates);
+	innates->pushOperator("*", OPS_LtoR,500, _("Multiply"), this);
+	innates->pushOperator("/", OPS_LtoR,500, _("Divide"), this);
 
-	addOperator("^", OPS_RtoL,600, 0,innates);
+	innates->pushOperator("^", OPS_RtoL,600, _("Raise to the power of"), this);
 
-	addOperator("+", OPS_Left,0,   0,innates);
-	addOperator("-", OPS_Left,0,   0,innates);
+	innates->pushOperator("+", OPS_Left,0,   _("Unary positive"), this);
+	innates->pushOperator("-", OPS_Left,0,   _("Unary negative"), this);
 
 
+//	ObjectDef *innates=new ObjectDef(NULL,"Math",_("Math"),_("Basic math functions and numbers."),
+//										   VALUE_Namespace,NULL,NULL);
 	 //variables
     innates->pushVariable("pi", "pi",      _("pi"),                        new DoubleValue(M_PI),1);
     innates->pushVariable("tau","tau",     _("golden section"),            new DoubleValue((1+sqrt(5))/2),1);
@@ -2219,109 +2708,122 @@ void LaidoutCalculator::installInnate()
 
 
 	 //functions
-    innates->pushFunction("atan2",    NULL,_("arctangent2"),                            NULL,NULL); //innates, NULL); // "x:int|real,y:int|real");
-    innates->pushFunction("sin",      NULL,_("sine"),                                   NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("asin",     NULL,_("arcsine"),                                NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("cos",      NULL,_("cosine"),                                 NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("acos",     NULL,_("arccosine"),                              NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("tan",      NULL,_("tangent"),                                NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("atan",     NULL,_("arctangent"),                             NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("abs",      NULL,_("absolute value"),                         NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("sqrt",     NULL,_("square root"),                            NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("log",      NULL,_("base 10 logarithm"),                      NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("ln",       NULL,_("natural logarithm"),                      NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("exp",      NULL,_("exponential"),                            NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("cosh",     NULL,_("hyperbolic cosine"),                      NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("sinh",     NULL,_("hyperbolic sine"),                        NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("tanh",     NULL,_("hyperbolic tangent"),                     NULL,NULL); //innates, NULL); // "int|real|complex");
-    innates->pushFunction("sgn",      NULL,_("pos,neg,or 0"),                           NULL,NULL); //innates, NULL); // "int|real");
-    innates->pushFunction("int",      NULL,_("integer of"),                             NULL,NULL); //innates, NULL); // "int|real");
-    innates->pushFunction("gint",     NULL,_("greatest integer less than"),             NULL,NULL); //innates, NULL); // "int|real");
-    innates->pushFunction("lint",     NULL,_("least integer greater than"),             NULL,NULL); //innates, NULL); // "int|real");
-    innates->pushFunction("factor",   NULL,_("set of factors of an integer"),           NULL,NULL); //innates, NULL); // "int");
-    innates->pushFunction("det",      NULL,_("determinant of a square array"),          NULL,NULL); //innates, NULL); // "array");
-    innates->pushFunction("transpose",NULL,_("transpose of an array"),                  NULL,NULL); //innates, NULL); // "array");
-    innates->pushFunction("inverse",  NULL,_("inverse of square array"),                NULL,NULL); //innates, NULL); // "array");
-    innates->pushFunction("random",   NULL,_("Return a random number from 0 to 1"),     NULL,NULL); //innates, NULL);
-    innates->pushFunction("randomint",NULL,_("Return a random integer from min to max"),NULL,NULL); //innates, NULL); // "min:int, max:int");
+    innates->pushFunction("atan2",    NULL,_("arctangent2"),                            this, NULL); // "x:int|real,y:int|real");
+    innates->pushFunction("sin",      NULL,_("sine"),                                   this, NULL); // "int|real|complex");
+    innates->pushFunction("asin",     NULL,_("arcsine"),                                this, NULL); // "int|real|complex");
+    innates->pushFunction("cos",      NULL,_("cosine"),                                 this, NULL); // "int|real|complex");
+    innates->pushFunction("acos",     NULL,_("arccosine"),                              this, NULL); // "int|real|complex");
+    innates->pushFunction("tan",      NULL,_("tangent"),                                this, NULL); // "int|real|complex");
+    innates->pushFunction("atan",     NULL,_("arctangent"),                             this, NULL); // "int|real|complex");
+    innates->pushFunction("abs",      NULL,_("absolute value"),                         this, NULL); // "int|real|complex");
+    innates->pushFunction("sqrt",     NULL,_("square root"),                            this, NULL); // "int|real|complex");
+    innates->pushFunction("log",      NULL,_("base 10 logarithm"),                      this, NULL); // "int|real|complex");
+    innates->pushFunction("ln",       NULL,_("natural logarithm"),                      this, NULL); // "int|real|complex");
+    innates->pushFunction("exp",      NULL,_("exponential"),                            this, NULL); // "int|real|complex");
+    innates->pushFunction("cosh",     NULL,_("hyperbolic cosine"),                      this, NULL); // "int|real|complex");
+    innates->pushFunction("sinh",     NULL,_("hyperbolic sine"),                        this, NULL); // "int|real|complex");
+    innates->pushFunction("tanh",     NULL,_("hyperbolic tangent"),                     this, NULL); // "int|real|complex");
+    innates->pushFunction("sgn",      NULL,_("pos,neg,or 0"),                           this, NULL); // "int|real");
+    innates->pushFunction("int",      NULL,_("integer of"),                             this, NULL); // "int|real");
+    innates->pushFunction("gint",     NULL,_("greatest integer less than"),             this, NULL); // "int|real");
+    innates->pushFunction("lint",     NULL,_("least integer greater than"),             this, NULL); // "int|real");
+    innates->pushFunction("factor",   NULL,_("set of factors of an integer"),           this, NULL); // "int");
+    innates->pushFunction("det",      NULL,_("determinant of a square array"),          this, NULL); // "array");
+    innates->pushFunction("transpose",NULL,_("transpose of an array"),                  this, NULL); // "array");
+    innates->pushFunction("inverse",  NULL,_("inverse of square array"),                this, NULL); // "array");
+    innates->pushFunction("random",   NULL,_("Return a random number from 0 to 1"),     this, NULL);
+    innates->pushFunction("randomint",NULL,_("Return a random integer from min to max"),this, NULL); // "min:int, max:int");
 
+	InstallModule(innates,1);
+	innates->dec_count();
 }
 
-//! parse and compute standard math functions like sqrt(x), sin(x), etc.
-/*! Also a couple math numbers like e, pi, and tau (golden ratio).
+//! Compute various built in functions, such as from the built in Math module.
+/*! parse and compute standard math functions like sqrt(x), sin(x), etc.
+ * Also a couple math numbers like e, pi, and tau (golden ratio).
  *
  * Another function is factor(i) which returns a string with the factors of i.
+ * 
+ * Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
  */
-Value *LaidoutCalculator::evalInnate(const char *word, int len)
+int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *Log)
 {
+	ValueHash *pp=parameters;
+	if (calcerror) return 1;
+
 	 //math constants
-	if (!strcmp(word,"pi")) { from+=len; return new DoubleValue(M_PI); }
-	if (!strcmp(word,"e")) { from+=len; return new DoubleValue(exp(1)); }
-	if (!strcmp(word,"tau")) { from+=len; return new DoubleValue((1+sqrt(5))/2); }
+	if (len==2 && !strncmp(word,"pi",2))  { *value_ret=new DoubleValue(M_PI);          return 0; }
+	if (len==1 && !strncmp(word,"e",1))   { *value_ret=new DoubleValue(exp(1));        return 0; }
+	if (len==3 && !strncmp(word,"tau",3)) { *value_ret=new DoubleValue((1+sqrt(5))/2); return 0; }
 
-	if (!strcmp(word,"random")) { from+=len; return new DoubleValue(random()/(double)RAND_MAX); }
+	if (pp==NULL || pp->n()==0) {
+		if (len==6 && !strncmp(word,"random",6)) { *value_ret=new DoubleValue(random()/(double)RAND_MAX); return 0; }
+		return -1;
+	}
 
-	int tfrom=from;
-	from+=len;
-	ValueHash *pp=parseParameters(NULL);
-	if (!pp || calcerror) return NULL;
-	Value *v=NULL;
+	Value *v=NULL, *vv=NULL;
+	int status=0;
+	int isnum;
 
 	try {
-		v=pp->value(0);
-		double d;
-		if (v->type()==VALUE_Int) d=((IntValue*)v)->i;
-		else if (v->type()==VALUE_Real) d=((DoubleValue*)v)->d;
-		else throw 1;
+		 //need at least one parameter
+		vv=pp->value(0);
+		isnum=0;
+		double d=getNumberValue(vv,&isnum);
+		if (!isnum) throw 1;
 
+		 //two parameter functions
 		if (pp->n()==2) {
-			double d2;
-			v=pp->value(1);
-			if (v->type()==VALUE_Int) d2=((IntValue*)v)->i;
-			else if (v->type()==VALUE_Real) d2=((DoubleValue*)v)->d;
-			else { v=NULL; throw 1; }
+			vv=pp->value(1);
+			double d2=getNumberValue(vv,&isnum);
+			if (!isnum) throw 1;
 
-			if (!strcmp(word,"atan2")) {
+			if (len==5 && !strncmp(word,"atan2",5)) {
 				d=atan2(d,d2);
 				if (calcsettings.decimal) d*=180/M_PI;
 				v=new DoubleValue(d);
 
-			} else if (!strcmp(word,"randomint")) {
+			} else if (len==9 && !strncmp(word,"randomint",9)) {
 				int min=int(d);
 				int max=int(d2);
-				return new IntValue(min+(max-min)*random()/(double)RAND_MAX);
-			}
-			else { v=NULL; throw -1; }
+				v=new IntValue(min+(max-min)*random()/(double)RAND_MAX);
+
+			} else { v=NULL; throw -1; }
 
 		} else if (pp->n()==1) {
-			if (!strcmp(word,"sin"))  { if (calcsettings.decimal) d*=M_PI/180; v=new DoubleValue(sin(d)); }
-			else if (!strcmp(word,"asin")) { if (d<-1. || d>1.) throw 3; d=asin(d); if (calcsettings.decimal) d*=180/M_PI; v=new DoubleValue(d); }
-			else if (!strcmp(word,"cos"))  { if (calcsettings.decimal) d*=M_PI/180; v=new DoubleValue(cos(d)); }
-			else if (!strcmp(word,"acos")) { if (d<-1. || d>1.) throw 3; d=acos(d); if (calcsettings.decimal) d*=180/M_PI; v=new DoubleValue(d); }
-			else if (!strcmp(word,"tan"))  { if (calcsettings.decimal) d*=M_PI/180; v=new DoubleValue(tan(d)); }
-			else if (!strcmp(word,"atan")) { v=new DoubleValue(atan(d)); }
+			if (len==3 && !strncmp(word,"sin",3))  { if (calcsettings.decimal) d*=M_PI/180; v=new DoubleValue(sin(d)); }
+			else if (len==4 && !strncmp(word,"asin",4)) { if (d<-1. || d>1.) throw 3; d=asin(d); if (calcsettings.decimal) d*=180/M_PI; v=new DoubleValue(d); }
+			else if (len==3 && !strncmp(word,"cos",3))  { if (calcsettings.decimal) d*=M_PI/180; v=new DoubleValue(cos(d)); }
+			else if (len==4 && !strncmp(word,"acos",4)) { if (d<-1. || d>1.) throw 3; d=acos(d); if (calcsettings.decimal) d*=180/M_PI; v=new DoubleValue(d); }
+			else if (len==3 && !strncmp(word,"tan",3))  { if (calcsettings.decimal) d*=M_PI/180; v=new DoubleValue(tan(d)); }
+			else if (len==4 && !strncmp(word,"atan",4)) { v=new DoubleValue(atan(d)); }
 
-			else if (!strcmp(word,"abs"))  { 
+			else if (len==3 && !strncmp(word,"abs",3))  { 
 				if (v->type()==VALUE_Int) v=new IntValue(abs(((IntValue*)v)->i));
 				else v=new DoubleValue(fabs(d)); 
 			}
-			else if (!strcmp(word,"sgn"))  { v=new IntValue(d>0?1:(d<0?-1:0)); }
-			else if (!strcmp(word,"int"))  { v=new IntValue(int(d)); }
-			else if (!strcmp(word,"gint")) { v=new IntValue(floor(d)); }
-			else if (!strcmp(word,"floor")) { v=new IntValue(floor(d)); }
-			else if (!strcmp(word,"lint")) { v=new IntValue(ceil(d)); }
-			else if (!strcmp(word,"ceiling")) { v=new IntValue(ceil(d)); }
-			else if (!strcmp(word,"exp"))  { v=new DoubleValue(exp(d)); }
-			else if (!strcmp(word,"cosh")) { v=new DoubleValue(cosh(d)); }
-			else if (!strcmp(word,"sinh")) { v=new DoubleValue(sinh(d)); }
-			else if (!strcmp(word,"tanh")) { v=new DoubleValue(tanh(d)); }
+			else if (len==3 && !strncmp(word,"sgn",3))     { v=new IntValue(d>0?1:(d<0?-1:0)); }
+			else if (len==3 && !strncmp(word,"int",3))     { v=new IntValue(int(d)); }
+			else if (len==4 && !strncmp(word,"gint",4))    { v=new IntValue(floor(d)); }
+			else if (len==5 && !strncmp(word,"floor",5))   { v=new IntValue(floor(d)); }
+			else if (len==4 && !strncmp(word,"lint",4))    { v=new IntValue(ceil(d)); }
+			else if (len==7 && !strncmp(word,"ceiling",7)) { v=new IntValue(ceil(d)); }
+			else if (len==3 && !strncmp(word,"exp",3))     { v=new DoubleValue(exp(d)); }
+			else if (len==4 && !strncmp(word,"cosh",4))    { v=new DoubleValue(cosh(d)); }
+			else if (len==4 && !strncmp(word,"sinh",4))    { v=new DoubleValue(sinh(d)); }
+			else if (len==4 && !strncmp(word,"tanh",4))    { v=new DoubleValue(tanh(d)); }
 
-			else if (!strcmp(word,"sqrt")) { if (d<0) throw 2; v=new DoubleValue(sqrt(d)); }
+			else if (len==4 && !strncmp(word,"sqrt",4)) { if (d<0) throw 2; v=new DoubleValue(sqrt(d)); }
 
-			else if (!strcmp(word,"log"))  { if (d<=0) throw 4; v=new DoubleValue(log(d)/log(10)); }
-			else if (!strcmp(word,"ln"))   { if (d<=0) throw 4; v=new DoubleValue(log(d)); } // d must be >0
+			else if (len==3 && !strncmp(word,"log",3))  { if (d<=0) throw 4; v=new DoubleValue(log(d)/log(10)); }
+			else if (len==4 && !strncmp(word,"ln",2))   { if (d<=0) throw 4; v=new DoubleValue(log(d)); } // d must be >0
 
-			else if (!strcmp(word,"factor")) {
+			else if (len==6 && !strncmp(word,"factor",6)) {
 				if (v->type()!=VALUE_Int) throw 1;
 				long n=((IntValue*)v)->i;
 				char *str=NULL, temp[20];
@@ -2346,58 +2848,36 @@ Value *LaidoutCalculator::evalInnate(const char *word, int len)
 			} else throw -1;
 
 		} else { v=NULL; throw -1; }
+
 	} catch (int e) {
-		if (e==-1) from=tfrom;
-		else if (e==1) calcerr(_("Cannot compute with that type"));
-		else if (e==2) calcerr(_("Parameter must be greater than or equal to 0"));
-		else if (e==3) calcerr(_("Parameter must be in range [-1,1]"));
-		else if (e==4) calcerr(_("Parameter must be greater than 0"));
-		else calcerr(_("Can't do that math"));
-		v=NULL;
+		if (e==-1) status=-1; //wrong number of parameters or name not found
+		else if (e==1) { status=-1; } //not actually auto fail anymore: calcerr(_("Cannot compute with that type")); }
+		else if (e==2) { status=1;  calcerr(_("Parameter must be greater than or equal to 0")); }
+		else if (e==3) { status=1;  calcerr(_("Parameter must be in range [-1,1]")); }
+		else if (e==4) { status=1;  calcerr(_("Parameter must be greater than 0")); }
+		else { status=-1; calcerr(_("Can't do that math")); } //note that supposed this line should never be reached
+		//v=NULL; //v should already be null here
 	}
 
-	if (pp) delete pp;
-	return v;
+	*value_ret=v;
+	return status;
 }
 
-//! This will be for status messages during the execution of a script.
-/*! \todo *** implement this!!
- *
- * This function exists to aid in providing incremental messages to another thread. This is
- * so you can run a script basically in the backgroud, and give status reports to the user,
- * who might want to halt the script based on what's happening.
- */
-void LaidoutCalculator::messageOut(const char *str)
-{//***
-	DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
-
-	appendline(messagebuffer,str);
-}
-
-
-//---------------------built in ops:
-
-double getNumberValue(Value *v, int *isnum)
-{
-	if (v->type()==VALUE_Real) {
-		*isnum=1;
-		return dynamic_cast<DoubleValue*>(v)->d;
-	} else if (v->type()==VALUE_Int) {
-		*isnum=1;
-		return dynamic_cast<IntValue*>(v)->i;
-	} else if (v->type()==VALUE_Boolean) {
-		*isnum=1;
-		return dynamic_cast<BooleanValue*>(v)->i;
-	}
-	*isnum=0;
-	return 0;
-}
 
 //! Figure out and evaluate built in operators
 int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret)
 {
-	if (len==1 && !strncmp(the_op,"+",1)) {
-		return add(num1,num2, value_ret);
+	if (len==1 && *the_op=='=') {
+		//*** is an assignment, needs num1 to be an LValue, num2 if an LValue, is converted to a Value. Returns an LValue
+		cerr <<" *** implement '='!!!"<<endl;
+		return 1;
+	}
+
+	if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"+",1)) { return add(num1,num2, value_ret);
+	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"-",1)) { return subtract(num1,num2, value_ret);
+	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"*",1)) { return multiply(num1,num2, value_ret);
+	} else if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"/",1)) { return divide(num1,num2, value_ret);
+	} else if (dir==OPS_RtoL && len==1 && !strncmp(the_op,"^",1)) { return power(num1,num2, value_ret);
 	}
 
 	int isnum=0;
@@ -2442,10 +2922,6 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 
 	if (len==2 && !strncmp(the_op,"&&",2)) { *value_ret=new BooleanValue(v1 && v2); return 0; }
 	if (len==2 && !strncmp(the_op,"||",2)) { *value_ret=new BooleanValue(v1 || v2); return 0; }
-
-	if (len==1 && *the_op=='=') {
-		//*** is an assignment, needs num1 to be an LValue, num2 cannot be an LValue. Returns an LValue
-	}
 
 	return 1;
 }
@@ -2675,243 +3151,8 @@ int LaidoutCalculator::power(Value *num1,Value *num2, Value **ret)
 }
 
 
-//! Create an object with the context of this calculator.
-/*! This includes a default document, default window, current directory.
- *
- * \todo shouldn't have to build this all the time
- */
-ValueHash *LaidoutCalculator::build_context()
-{
-	ValueHash *pp=new ValueHash();
-	pp->push("current_directory", dir);
-	//if (laidout->project->docs.n) pp->push("document", laidout->project->docs.e[0]->doc->Saveas());//***
-	if (laidout->project->docs.n) pp->pushObject("document", laidout->project->docs.e[0]->doc);
-	//pp.push("window", NULL); ***default to first view window pane in same headwindow?
-	return pp;
-}
-
-//! Parse into function parameters.
-/*! If def!=NULL, then call MapParameters() to get the parameters to match the fields of the ObjectDef.
- */
-ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
-{
-	ValueHash *pp=NULL;
-
-// ***	 //check for when the styledef has 1 string parameter, and you have a large in string.
-//	 //all of in maps to that one string. This allows functions to act like command line strings.
-//	 //They would then call some other function to parse the string or parse it internally.
-//	if (def->getNumFields()==1 ) {
-//		ValueTypes fmt=VALUE_None;
-//		const char *nm=NULL;
-//		def->getInfo(0,&nm,NULL,NULL,NULL,NULL,&fmt);
-//		if (fmt==VALUE_String) {
-//			pp->push(nm,str);
-//			delete[] str;
-//			return pp;
-//		}
-//	}
-
-	if (nextchar('(')) {
-		pp=new ValueHash;
-		int tfrom;
-		char *pname=NULL, *ename=NULL;
-		int namel;
-		Value *v=NULL;
-		int pnum=0;
-		int enumcheck;
-		if (nextchar(')')) { from--; }
-		else do {
-			enumcheck=-1;//default field number to check for enum values in
-			pnum++; //starts at 1
-
-			 //check for parameter name given
-			skipwscomment();
-			tfrom=from;
-			pname=getnamestring(&namel);
-			if (pname) {
-				from+=namel;
-				if (nextchar('=')) {
-					//it is a parameter name (hopefully) so nothing special to do here
-					if (def) enumcheck=def->findfield(pname,NULL);
-					tfrom=from; //update from to just after '=', might have to reset after enum check
-				} else {
-					 //name was not in the form of parameter assignment
-					ename=pname;
-					pname=NULL; //ename will be deleted below
-					if (def) enumcheck=pnum; //pname might be an enum value for styledef.field[pnum]
-				}
-			}
-
-			 //do special check for enum values, and convert to an IntValue, holding
-			 //the index of the corresponding enum value
-			if (def && enumcheck>=0) {
-				 //If the field is known to not be an enum, then do not check for enum values
-				ValueTypes t;
-				if (def->getInfo(enumcheck, NULL,NULL,NULL,NULL,NULL,&t,NULL)==0 && t==VALUE_Enum) {
-					if (!ename) {
-						skipwscomment();
-						int len;
-						ename=getnamestring(&len);
-						if (ename) from+=len;
-					}
-					ObjectDef *ev=NULL;
-					if (ename) ev=def->getField(enumcheck);
-					DBG if (!ev) { cerr <<" ***** Missing fields in expected enum!!!"<<endl;  }
-					
-					 //*** warning, assumes no extended enum, or dynamic enum!!! maybe bad....
-					DBG cerr <<"*** enum value scan must search for dynamic enums eventually..."<<endl;
-					if (ev && ev->fields) for (int c=0; c<ev->fields->n; c++) {
-						if (strcmp(ev->fields->e[c]->name,ename)==0) {
-							skipwscomment();
-							if (curexprs[from]!=',' && curexprs[from]!=')') {
-								calcerr(_("Problem parsing enumeration value"));
-							} else v=new IntValue(c);
-							break;
-						}
-					}
-					if (!v) enumcheck=-1; //force scan for value 
-				} else {
-					enumcheck=-1; //either info check failed, or field is not an enum, so still must parse value
-					from=tfrom;
-				}
-				if (ename) { delete[] ename; ename=NULL; }
-			}
-			if (ename) {
-				delete[] ename;
-				from=tfrom;
-			}
-			if (enumcheck<0) v=evalLevel(0); //either enum check failed, or was not an enum
-
-			if (v && !calcerror) {
-				pp->push(pname,v);
-				v->dec_count();
-				v=NULL;
-			} else if (calcerror) {
-				if (pname) { delete[] pname; pname=NULL; }
-				break;
-			}
-			if (pname) { delete[] pname; pname=NULL; }
-
-		} while (!calcerror && from!=tfrom && nextchar(',')); //do foreach parameter
-		if (!calcerror) {
-			if (!nextchar(')')) {
-				calcerr(_("Expected closing ')'"));
-				delete pp;
-				pp=NULL;
-			}
-		} else {//calcerror
-			if (pp) delete pp;
-			return NULL;
-		}
-	} 
-
-	if (pp && def) MapParameters(def,pp);
-	return pp;
-}
 
 
-
-
-
-//----------------------------- ObjectDef utils ------------------------------------------
-
-//! Map a ValueHash to a function ObjectDef.
-/*! \ingroup stylesandstyledefs
- *
- * This is useful for function calls or object creating from a basic script,
- * and makes it easier to map parameters to actual object methods.
- *
- * Note that this modifies the contents of rawparams. It does not create a duplicate.
- *
- * On success, it will return the value of rawparams, or NULL if there is any error.
- *
- * Something like "paper=letter,imposition.net.box(width=5,3,6), 3 pages" will be parsed 
- * by parse_fields into an attribute like this:
- * <pre>
- *  paper letter
- *  - imposition
- *  - 3 pages
- * </pre>
- *
- * Now say we have a ObjectDef something like:
- * <pre>
- *  field 
- *    name numpages
- *    format int
- *  field
- *    name paper
- *    format PaperType
- *  field
- *    name imposition
- *    format Imposition
- * </pre>
- *
- * Now paper is the only named parameter. It will be moved to position 1 to match
- * the position in the styledef. The other 2 are not named, so we try to guess. If
- * there is an enum field in the styledef, then the value of the parameter, "imposition" 
- * for instance, is searched for in the enum values. If found, it is moved to the proper
- * position, and labeled accordingly. Any remaining unclaimed parameters are mapped
- * in order to the unused styledef fields.
- *
- * So the mapping of the above will result in rawparams having:
- * <pre>
- *  numpages 3 pages
- *  paper letter
- *  imposition imposition
- * </pre>
- *
- * \todo enum searching is not currently implemented
- */
-ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams)
-{
-	if (!rawparams || !def) return NULL;
-	int n=def->getNumFields();
-	int c2;
-	const char *name;
-	const char *k;
-
-	 //now there are the same number of elements in rawparams and the styledef
-	 //we go through from 0, and swap as needed
-	for (int c=0; c<n; c++) { //for each styledef field
-		def->getInfo(c,&name,NULL,NULL);
-		if (c>=rawparams->n()) rawparams->push(name,(Value*)NULL);
-
-		//if (format==VALUE_DynamicEnum || format==VALUE_Enum) {
-		//	 //rawparam att name could be any one of the enum names
-		//}
-
-		for (c2=c; c2<rawparams->n(); c2++) { //find the parameter named already
-			k=rawparams->key(c2);
-			if (!k) continue; //skip unnamed
-			if (!strcmp(k,name)) {
-				 //found field name match between a parameter and the styledef
-				if (c2!=c) {
-					 //parameter in the wrong place, so swap with the right place
-					rawparams->swap(c2,c);
-				} // else param was in right place
-				break;
-			}
-		}
-		if (c2==rawparams->n()) {
-			 // did not find a matching name, so grab the 1st NULL named parameter
-			for (c2=c; c2<rawparams->n(); c2++) {
-				k=rawparams->key(c2);
-				if (k) continue;
-				if (c2!=c) {
-					 //parameter in the wrong place, so swap with the right place
-					rawparams->swap(c2,c);
-				} // else param was in right place
-				rawparams->renameKey(c,name); //name the parameter correctly
-			}
-			if (c2==rawparams->n()) {
-				 //there were extra parameters that were not known to the styledef
-				 //this breaks the transfer, return NULL for error
-				return NULL;
-			}
-		}
-	}
-	return rawparams;
-}
 
 
 } // namespace Laidout

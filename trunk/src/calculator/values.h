@@ -60,6 +60,7 @@ enum ValueTypes {
 	VALUE_Function,   //!< for use in an ObjectDef
 	VALUE_Namespace,  //!< for use in an ObjectDef
 	VALUE_Alias,      //!< For BlockInfo, tag to use a name in place of another
+	VALUE_Overloaded, //!< For Entry, stores names that happen to be overloaded
 
 	VALUE_LValue,     //!< A name value that you can assign things to.
 
@@ -68,21 +69,49 @@ enum ValueTypes {
 
 const char *element_TypeNames(int type);
 
+class ObjectDef;
+class Value;
+class ValueHash;
+class CalcSettings;
+
+//--------------------------- OpFuncEvaluator ------------------------------------
+enum OperatorDirectionType
+{
+	OPS_None,
+	OPS_LtoR,
+	OPS_RtoL,
+	OPS_Left,
+	OPS_Right,
+	OPS_MAX
+};
+
+class OpFuncEvaluator
+{
+  public:
+	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret) = 0;
+};
+
+
+//--------------------------- FunctionEvaluator ------------------------------------
+class FunctionEvaluator
+{
+  public:
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log) = 0;
+};
+
 
 //------------------------------ ObjectDef --------------------------------------------
 
-class ObjectDef;
-class Style;
-class Value;
-class ValueHash;
-class FunctionEvaluator;
+
 typedef Value *(*NewObjectFunc)(ObjectDef *def);
 typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
  
 
-#define OBJECTDEF_CAPPED    1
-#define OBJECTDEF_DUPLICATE 2
-#define OBJECTDEF_ORPHAN    4
+#define OBJECTDEF_CAPPED    (1<<0)
+#define OBJECTDEF_DUPLICATE (1<<1)
+#define OBJECTDEF_ORPHAN    (1<<2)
 
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
@@ -94,7 +123,9 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 	NewObjectFunc newfunc;
 	ObjectFunc stylefunc;
-	Value *newObject(ObjectDef *def) { if (newfunc) return newfunc(this); return NULL; }
+	FunctionEvaluator *evaluator;
+	OpFuncEvaluator *opevaluator;
+	Value *newObject(ObjectDef *def);
 
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
@@ -117,7 +148,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	ValueTypes format; // int,real,string,fields,...
 	int fieldsformat;  //dynamically assigned to new object types
 	Laxkit::RefPtrStack<ObjectDef> *fields;
-	
+
 	ObjectDef();
 	ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval);
 	ObjectDef(const char *nextends,const char *nname,const char *nName, const char *ndesc,
@@ -136,10 +167,12 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int pushVariable(const char *name,const char *nName, const char *ndesc, Value *v,int absorb);
 	
 	 // helpers to locate fields by name, "blah.3.x"
+	virtual int getNumFieldsOfThis();
+	virtual ObjectDef *getFieldOfThis(int index);
 	virtual int getNumFields();
+	virtual ObjectDef *getField(int index);
 	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findActualDef(int index,ObjectDef **def);
-	virtual ObjectDef *getField(int index);
 	virtual int getInfo(int index,
 						const char **nm=NULL,
 						const char **Nm=NULL,
@@ -154,6 +187,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	 //-------- ObjectDef creation helper functions ------
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
+	virtual ObjectDef *last();
 	virtual int pop(int fieldindex);
 	virtual int push(ObjectDef *newfield, int absorb=1);
 	virtual int push(const char *nname,const char *nName,const char *ndesc,
@@ -165,7 +199,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 					 ValueTypes fformat,const char *nrange, const char *newdefval,
 					 Laxkit::RefPtrStack<ObjectDef> *nfields,unsigned int fflags,
 					 NewObjectFunc nnewfunc,
-					 ObjectFunc nstylefunc=NULL);
+					 ObjectFunc nstylefunc);
 	virtual int pushEnum(const char *nname,const char *nName,const char *ndesc,
 					 const char *newdefval,
 					 NewObjectFunc nnewfunc,
@@ -173,8 +207,9 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 					 ...);
 	virtual int pushEnumValue(const char *str, const char *Str, const char *dsc, int id=-10000000);
 	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
-					 ObjectFunc nstylefunc,
+					 FunctionEvaluator *nfunc,
 					 ...);
+	virtual int pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator);
 	virtual int pushParameter(const char *nname,const char *nName,const char *ndesc,
 					ValueTypes fformat,const char *nrange, const char *newdefval);
 
@@ -390,7 +425,7 @@ class FunctionValue : public Value
 	char *code;
 	FunctionEvaluator *function;
 
-	FunctionValue(const char *code, int len);
+	FunctionValue(const char *ncode, int len);
 	virtual ~FunctionValue();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
@@ -434,6 +469,10 @@ class ValueHash : public Laxkit::anObject
 	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
 };
+
+//------------------------------- parsing helpers ------------------------------------
+ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
+double getNumberValue(Value *v, int *isnum);
 
 
 } // namespace Laidout

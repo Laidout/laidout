@@ -127,6 +127,36 @@ const char *valueEnumCodeName(int format)
 	return "";
 }
 
+
+//---------------------------------- OpFuncEvaluator ------------------------------------------
+/*! \class OpFuncEvaluator
+ * \brief Evaluates operators for LaidoutCalculator
+ *
+ * The Op() function returns 0 for number returned. -1 for no number returned due to not being
+ * able to handle the provided parameters. Return 1 for parameters right type, but there
+ * is an error with them somehow, and no number returned.
+ */
+
+
+//---------------------------------- FunctionEvaluator ------------------------------------------
+/*! \class FunctionEvaluator
+ * \brief Class to aid evaluating functions in a LaidoutCalculator.
+ */
+
+/*! \function int FunctionEvaluator::Evaluate(const char *func,int len, ValueHash *context,
+ * 						 ValueHash *parameters, CalcSettings *settings,
+ *						 Value **value_ret,
+ *						 ErrorLog *log)
+ *	\brief Calculate a function.
+ *
+ * Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+
+
+
 //------------------------------ ObjectDef --------------------------------------------
 
 /*! \enum ValueTypes 
@@ -183,7 +213,7 @@ const char *valueEnumCodeName(int format)
  *  
  *	These are pointers to defs. ObjectDef looks up extends in
  *	the global or scope namespace to get the appropriate reference during the constructor.
- *	In c++ terms, all members inherited are public. There is no facility to make them private or protected.
+ *	In c++ terms, all members inherited are virtual public. There is no facility to make them private or protected.
  *  Fields can be overloaded by just having the same name as an element of a parent class.
  */
 /*! \var NewObjectFunc ObjectDef::newfunc
@@ -221,6 +251,8 @@ ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what thi
 
 	newfunc=nnewfunc;
 	stylefunc=nstylefunc;
+	opevaluator=NULL;
+	evaluator=NULL;
 	range=defaultvalue=name=Name=description=NULL;
 	defaultValue=NULL;
 
@@ -255,6 +287,8 @@ ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Val
 	source_module=NULL;
 	newfunc=NULL;
 	stylefunc=NULL;
+	opevaluator=NULL;
+	evaluator=NULL;
 	range=defaultvalue=NULL;
 	defaultValue=newval;
 	if (defaultValue) defaultValue->inc_count();
@@ -270,6 +304,9 @@ ObjectDef::ObjectDef()
 	source_module=NULL;
 	newfunc=NULL;
 	stylefunc=NULL;
+	opevaluator=NULL;
+	evaluator=NULL;
+
 	range=defaultvalue=NULL;
 	defaultValue=NULL;
 	flags=0;
@@ -387,6 +424,28 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 		}
 
 	} else if (what==DEFOUT_HumanSummary) {
+		//append human readable summary pseudocode to att->value
+		char *str=NULL;
+
+		appendstr(str,element_TypeNames(format));
+		appendstr(str,name);
+
+		ObjectDef *ff;
+		if (fields) {
+		  appendstr(str,"(");
+		  for (int c=0; c<fields->n; c++) {
+			ff=fields->e[c];
+			appendstr(str,valueEnumCodeName(ff->format)); appendstr(str," "); appendstr(str,ff->name);
+			if (c<fields->n-1) appendstr(str,", ");
+		  }
+		  appendstr(str,")");
+		}
+
+		appendstr(att->value,str);
+		delete[] str;
+
+		return att;
+
 	} else if (what==DEFOUT_CPP) {
 		//append c++ code snippet to att->value
 
@@ -423,6 +482,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 			appendstr(str,");\n");
 		}
 		cerr <<" *** finish implementing ObjectDef code out!"<<endl;
+		return att;
 	}
 
 	return NULL;
@@ -494,6 +554,28 @@ void ObjectDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 	}
 }
 
+Value *ObjectDef::newObject(ObjectDef *def)
+{
+	if (newfunc) return newfunc(this);
+	if (evaluator) {
+		Value *v=NULL;
+
+		//	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+		//						 Value **value_ret,ErrorLog *log) = 0;
+		evaluator->Evaluate(name,strlen(name), NULL,NULL,NULL, &v, NULL);
+		return v;
+	}
+	return NULL;
+}
+
+
+//! Return the object def of the last pushed, meaning the one currently on the top of the stack.
+ObjectDef *ObjectDef::last()
+{
+	if (!fields || !fields->n) return NULL;
+	return fields->e[fields->n-1];
+}
+
 //! Push an VALUE_EnumVal on an VALUE_enum.
 /*! Return 0 for value pushed or nonzero for error. It is an error to push an
  * enum value on anything but an enum, and that *this must be the enum, not the last pushed.
@@ -548,6 +630,31 @@ int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
 	return c;
 }
 
+//! Add an operator with description and op function.
+/*! dir gets put in range such that range has one character corresponding to:
+ *  'l' -> OPS_Left,
+ *  'r' -> OPS_Right,
+ *  '>' -> OPS_LtoR,
+ *  '<' -> OPS_RtoL,
+ * and priority gets written to defaultvalue.
+ */
+int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator)
+{
+	char rr[2];
+	if (dir==OPS_Left) *rr='l';
+	else if (dir==OPS_Right) *rr='r';
+	else if (dir==OPS_LtoR) *rr='>';
+	else if (dir==OPS_RtoL) *rr='<';
+	rr[1]='\0';
+
+	char pp[20];
+	sprintf(pp,"%d",priority);
+
+	ObjectDef *def=new ObjectDef(NULL, op,op,desc, VALUE_Operator, rr, pp,  NULL,0);
+	def->opevaluator=evaluator;
+	return push(def,1);
+}
+
 //! Create a function and pass in all parameter values here.
 /*! The '...' are all const char *, in groups of 6, with a single NULL after the last
  * description.
@@ -563,16 +670,17 @@ int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
  * by a single NULL, or all hell will break loose.
  */
 int ObjectDef::pushFunction(const char *nname,const char *nName,const char *ndesc,
-					 ObjectFunc nobjectfunc,
+					 FunctionEvaluator *nfunc,
 					 ...)
 {
 	push(nname,nName,ndesc,
 		 VALUE_Function, NULL, NULL, 0,
-		 NULL, nobjectfunc);
+		 NULL, NULL);
 	ObjectDef *f=fields->e[fields->n-1];
+	f->evaluator=nfunc;
 
 	va_list ap;
-	va_start(ap, nobjectfunc);
+	va_start(ap, nfunc);
 	const char *v1,*v2,*v3, *v5,*v6;
 	int f4;
 	while (1) {
@@ -642,14 +750,14 @@ int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndes
 	return 1;
 }
 
-//! Set the variable, adding a bare one if it does not exist.
+//! Set the variable, adding a bare one if it does not exist. If name==NULL, then set in *this.
 /*! 0 for set and added. -1 for set and was already there. 1 for unable to set.
  *
  * v's count is incremented.
  */
 int ObjectDef::SetVariable(const char *name,Value *v, int absorb)
 {
-	ObjectDef *def=FindDef(name);
+	ObjectDef *def=(name ? FindDef(name): this);
 	if (!def) {
 		def=new ObjectDef(name,name,NULL, v);
 		if (absorb) v->dec_count();
@@ -740,6 +848,20 @@ int ObjectDef::pop(int fieldindex)
 	return 1;
 }
 
+//! Return the number of fields ONLY of this def, not in extendsdefs.
+int ObjectDef::getNumFieldsOfThis()
+{
+	if (!fields) return 0;
+	return fields->n;
+}
+
+//! Return the fields at index of *this, NOT one that's in extendsdefs. NULL if not found.
+ObjectDef *ObjectDef::getFieldOfThis(int index)
+{
+	if (!fields) return NULL;
+	if (index<0 || index>=fields->n) return NULL;
+	return fields->e[index];
+}
 
  //! Returns the number of upper most fields that this styledef contains.
  /*! If this styledef is an extension of another, then the number returned is
@@ -1751,6 +1873,131 @@ int ObjectValue::getValueStr(char *buffer,int len)
 Value *ObjectValue::duplicate()
 { return new ObjectValue(object); }
 
+
+//--------------------------------- FunctionValue -----------------------------
+
+//----------------------------- ObjectDef utils ------------------------------------------
+
+//! Map a ValueHash to a function ObjectDef.
+/*! \ingroup stylesandstyledefs
+ *
+ * This is useful for function calls or object creating from a basic script,
+ * and makes it easier to map parameters to actual object methods.
+ *
+ * Note that this modifies the contents of rawparams. It does not create a duplicate.
+ *
+ * On success, it will return the value of rawparams, or NULL if there is any error.
+ *
+ * Something like "paper=letter,imposition.net.box(width=5,3,6), 3 pages" will be parsed 
+ * by parse_fields into an attribute like this:
+ * <pre>
+ *  paper letter
+ *  - imposition
+ *  - 3 pages
+ * </pre>
+ *
+ * Now say we have a ObjectDef something like:
+ * <pre>
+ *  field 
+ *    name numpages
+ *    format int
+ *  field
+ *    name paper
+ *    format PaperType
+ *  field
+ *    name imposition
+ *    format Imposition
+ * </pre>
+ *
+ * Now paper is the only named parameter. It will be moved to position 1 to match
+ * the position in the styledef. The other 2 are not named, so we try to guess. If
+ * there is an enum field in the styledef, then the value of the parameter, "imposition" 
+ * for instance, is searched for in the enum values. If found, it is moved to the proper
+ * position, and labeled accordingly. Any remaining unclaimed parameters are mapped
+ * in order to the unused styledef fields.
+ *
+ * So the mapping of the above will result in rawparams having:
+ * <pre>
+ *  numpages 3 pages
+ *  paper letter
+ *  imposition imposition
+ * </pre>
+ *
+ * \todo enum searching is not currently implemented
+ */
+ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams)
+{
+	if (!rawparams || !def) return NULL;
+	int n=def->getNumFields();
+	int c2;
+	const char *name;
+	const char *k;
+
+	 //now there are the same number of elements in rawparams and the styledef
+	 //we go through from 0, and swap as needed
+	for (int c=0; c<n; c++) { //for each styledef field
+		def->getInfo(c,&name,NULL,NULL);
+		if (c>=rawparams->n()) rawparams->push(name,(Value*)NULL);
+
+		//if (format==VALUE_DynamicEnum || format==VALUE_Enum) {
+		//	 //rawparam att name could be any one of the enum names
+		//}
+
+		for (c2=c; c2<rawparams->n(); c2++) { //find the parameter named already
+			k=rawparams->key(c2);
+			if (!k) continue; //skip unnamed
+			if (!strcmp(k,name)) {
+				 //found field name match between a parameter and the styledef
+				if (c2!=c) {
+					 //parameter in the wrong place, so swap with the right place
+					rawparams->swap(c2,c);
+				} // else param was in right place
+				break;
+			}
+		}
+		if (c2==rawparams->n()) {
+			 // did not find a matching name, so grab the 1st NULL named parameter
+			for (c2=c; c2<rawparams->n(); c2++) {
+				k=rawparams->key(c2);
+				if (k) continue;
+				if (c2!=c) {
+					 //parameter in the wrong place, so swap with the right place
+					rawparams->swap(c2,c);
+				} // else param was in right place
+				rawparams->renameKey(c,name); //name the parameter correctly
+			}
+			if (c2==rawparams->n()) {
+				 //there were extra parameters that were not known to the styledef
+				 //this breaks the transfer, return NULL for error
+				return NULL;
+			}
+		}
+	}
+	return rawparams;
+}
+
+//! Return a number from a real, integer, or boolean.
+/*! Booleans are always 1 or 0.
+ * Reals set isnum=1.
+ * Ints set isnum=2.
+ * Booleans set isnum=3.
+ * Otherwise isnum=0.
+ */
+double getNumberValue(Value *v, int *isnum)
+{
+	if (v->type()==VALUE_Real) {
+		*isnum=1;
+		return dynamic_cast<DoubleValue*>(v)->d;
+	} else if (v->type()==VALUE_Int) {
+		*isnum=2;
+		return dynamic_cast<IntValue*>(v)->i;
+	} else if (v->type()==VALUE_Boolean) {
+		*isnum=3;
+		return dynamic_cast<BooleanValue*>(v)->i;
+	}
+	*isnum=0;
+	return 0;
+}
 
 } // namespace Laidout
 
