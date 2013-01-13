@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 #ifndef LAIDOUT_H
 #define LAIDOUT_H
