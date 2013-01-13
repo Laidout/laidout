@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 
@@ -86,7 +86,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2012\n"
+						  "by Tom Lechner, sometime between 2006 and 2013\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
