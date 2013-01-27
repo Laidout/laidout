@@ -158,7 +158,7 @@ StyleDef *makeImportConfigDef()
 	StyleDef *sd=new StyleDef(NULL,"Import",
 			_("Import"),
 			_("A filter that imports a vector file to an existing document or a group."),
-			VALUE_Fields,
+			VALUE_Class,
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -603,7 +603,7 @@ StyleDef *makeExportConfigDef()
 	StyleDef *sd=new StyleDef(NULL,"ExportConfig",
 			_("Export Configuration"),
 			_("Settings for a filter that exports a document to one or more files of various formats."),
-			VALUE_Fields,
+			VALUE_Class,
 			NULL,NULL,
 			NULL,
 			0, //new flags

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009-2012 by Tom Lechner
+// Copyright (C) 2009-2013 by Tom Lechner
 //
 
 #ifndef CALCULATOR_H
@@ -58,10 +58,11 @@ class OperatorFunction
   public:
 	char *op;
 	int direction;
-	int module_id;
+	int module_id; //id of source ObjectDef (parent of def)
+	ObjectDef *def; //def of this op
 	OpFuncEvaluator *function;
 
-	OperatorFunction(const char *newop, int dir, int mod_id, OpFuncEvaluator *func);
+	OperatorFunction(const char *newop, int dir, int mod_id, OpFuncEvaluator *func,ObjectDef *opdef);
 	virtual ~OperatorFunction();
 	virtual int isop(const char *opstr,int len);
 };
@@ -74,8 +75,8 @@ class OperatorLevel
 	Laxkit::PtrStack<OperatorFunction> ops;
 
 	OperatorLevel(int dir,int rank);
-	int pushOp(const char *op, OperatorFunction *opfunc);
-	virtual OperatorFunction *hasOp(const char *anop,int n, int dir);
+	int pushOp(const char *op,int dir, OpFuncEvaluator *opfunc,ObjectDef *def, int module_id);
+	virtual OperatorFunction *hasOp(const char *anop,int n, int dir, int *index, int afterthis);
 	virtual ~OperatorLevel() {}
 };
 
@@ -92,6 +93,7 @@ class Entry
 	Entry(const char *newname, int modid);
 	virtual int type() = 0;
 	virtual ~Entry();
+	virtual ObjectDef *GetDef();
 };
 
 //---------------------------BlockInfo
@@ -169,7 +171,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	int importName(CalculatorModule *module, ObjectDef *def);
 	int importOperators(CalculatorModule *module);
 	int removeOperators(int module_id);
-	int addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc);
+	int addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc,ObjectDef *def);
 	void InstallInnate();
 
 	void calcerr(const char *error,const char *where=NULL,int w=0, int surround=40);
@@ -185,6 +187,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	void newcurexprs(const char *newex,int len);
 	void atNextCommandStep() {}
 	int sessioncommand();
+	void showDef(char *&temp, ObjectDef *sd);
 	ObjectDef *CreateSessionCommandObjectDef();
 	void pushScope(int scopetype, int loop_start=0, int condition_start=0, char *var=NULL, Value *v=NULL, ObjectDef *module=NULL);
 	void popScope();
@@ -202,21 +205,21 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	Value *getset();
 	Value *getarray();
 	Value *evalname();
-	Value *dereference(Value *val,ObjectDef *def);
+	Value *dereference(Value *val);
 	Entry *findNameEntry(const char *word,int len, int *scope, int *module, int *index);
 	Value *evalInnate(const char *word, int len);
-	int functionCall(const char *word,int n, Value **v, ObjectDef *function,ValueHash *context,ValueHash *pp);
+	Value *opCall(const char *op,int n,int dir, Value *num, Value *num2, OperatorLevel *level, int lastindex);
+	int functionCall(const char *word,int n, Value **v_ret, Value *containingvalue, ObjectDef *function,ValueHash *context,ValueHash *pp);
 	int add(Value *num1,Value *num2, Value **ret);
 	int subtract(Value *num1,Value *num2, Value **ret);
 	int multiply(Value *num1,Value *num2, Value **ret);
 	int divide(Value *num1,Value *num2, Value **ret);
 	int power(Value *num1,Value *num2, Value **ret);
 
-	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret);
+	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret, ErrorLog *log);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret, ErrorLog *log);
 
-	Value *evalUservar(const char *word);
 	Value *ApplyDefaultSets(SetValue *set);
 	void messageOut(const char *str);
 

@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009-2012 by Tom Lechner
+// Copyright (C) 2009-2013 by Tom Lechner
 //
 
 
@@ -30,6 +30,27 @@ using namespace LaxFiles;
 
 #define DBG 
 
+const char *reserved_words=
+							"show    "
+							"unset   "
+							"var     "
+							"function"
+							"class   "
+							"operator"
+							"alias   "
+							"null    "
+							"true    "
+							"false   "
+							"import  "
+							"using   "
+							"if      "
+							"while   "
+							"for     "
+							"foreach "
+							"break   "
+							"return  "
+							"this    "
+							;
 
 
 namespace Laidout {
@@ -54,7 +75,7 @@ CalcSettings::CalcSettings(long pos,long line,int level, int base,char dec,char 
     decimal=dec;
     allow_complex=comp;
     allow_null_set_answers=nullset;
-    zero_threshhold=1e-30;
+    zero_threshhold=1e-15;
 }
 
 CalcSettings::~CalcSettings()
@@ -74,16 +95,18 @@ CalcSettings::~CalcSettings()
 
 
 
-OperatorFunction::OperatorFunction(const char *newop, int dir, int mod_id, OpFuncEvaluator *func)
+OperatorFunction::OperatorFunction(const char *newop, int dir, int mod_id, OpFuncEvaluator *func,ObjectDef *opdef)
 {
 	op=newstr(newop);
 	direction=dir;
 	module_id=mod_id;
 	function=func;
+	def=opdef; if (def) def->inc_count();
 }
 
 OperatorFunction::~OperatorFunction()
 {
+	if (def) def->dec_count();
 	if (op) delete[] op;
 }
 
@@ -106,24 +129,45 @@ OperatorLevel::OperatorLevel(int dir,int rank)
 	priority=rank;
 }
 
-/*! Progressively search for anop. If none found, check progressively shorter for ops.
+/*! 
+ * \todo maybe have progressively search for anop here?
  */
-OperatorFunction *OperatorLevel::hasOp(const char *anop,int n, int dir)
+OperatorFunction *OperatorLevel::hasOp(const char *anop,int n, int dir, int *index, int afterthis)
 {
-	while (n) {
-		for (int c=0; c<ops.n; c++) {
-			if (!strncmp(anop,ops.e[c]->op,n) && n==(int)strlen(ops.e[c]->op)) return ops.e[c];
+	if (afterthis<0) afterthis=-1;
+	for (int c=afterthis+1; c<ops.n; c++) {
+		if (dir==ops.e[c]->direction && !strncmp(anop,ops.e[c]->op,n) && n==(int)strlen(ops.e[c]->op)) {
+			if (index) *index=c;
+			return ops.e[c];
 		}
-		n--;
 	}
+	*index=-1;
 	return NULL;
+//	--------
+//	while (n) {
+//		for (int c=0; c<ops.n; c++) {
+//			if (!strncmp(anop,ops.e[c]->op,n) && n==(int)strlen(ops.e[c]->op)) {
+//				*index=c;
+//				return ops.e[c];
+//			}
+//		}
+//		n--;
+//	}
+//	*index=-1;
+//	return NULL;
 }
 
-/*! *** currently ignores op... not quite sure why it's there! just adds opfunc.
+/*! Return 0 for added, or -1 for the op with specified direction and OpFuncEvaluator.
  */
-int OperatorLevel::pushOp(const char *op, OperatorFunction *opfunc)
+int OperatorLevel::pushOp(const char *op,int dir, OpFuncEvaluator *opfunc,ObjectDef *def, int module_id)
 {
-	return ops.push(opfunc);
+	for (int c=0; c<ops.n; c++) {
+		if (!strcmp(op,ops.e[c]->op) && dir==ops.e[c]->direction && opfunc==ops.e[c]->function) return -1;
+	}
+
+	OperatorFunction *func=new OperatorFunction(op,dir,module_id,opfunc,def);
+	ops.push(func);
+	return 0;
 }
 
 //--------------------------- Entry/Dictionary ------------------------------------------
@@ -142,15 +186,19 @@ Entry::~Entry()
 	if (name) delete[] name;
 }
 
-//-------------------------- Dictionary
-class Dictionary
-{
-  public:
-	PtrStack<Entry> entries; //one entry for each available name
-	Dictionary();
-	~Dictionary() {}
-};
+//! Return an objectDef associated with this entry. Default is return NULL.
+ObjectDef *Entry::GetDef()
+{ return NULL; }
 
+//-------------------------- Dictionary
+//class Dictionary
+//{
+//  public:
+//	PtrStack<Entry> entries; //one entry for each available name
+//	Dictionary();
+//	~Dictionary() {}
+//};
+//
 
 //--------------------------- OverloadedEntry
 /*! For entries that are overloaded, push them into a special stack
@@ -176,6 +224,7 @@ OverloadedEntry::~OverloadedEntry()
 
 //--------------------------- NamespaceEntry
 /*! Namespaces are stored in LaidoutCalculator::modules and individual scopes.
+ * These can double as ClassEntry.
  */
 class NamespaceEntry : public Entry, public ValueHash
 {
@@ -187,6 +236,7 @@ class NamespaceEntry : public Entry, public ValueHash
 	int type() { return (isobject ? VALUE_Class : VALUE_Namespace); }
 
 	virtual const char *GetName() { if (module) return module->name; return NULL; }
+	virtual ObjectDef *GetDef();
 };
 
 NamespaceEntry::NamespaceEntry(CalculatorModule *mod, const char *newname, int modid, int is_object)
@@ -201,6 +251,11 @@ NamespaceEntry::NamespaceEntry(CalculatorModule *mod, const char *newname, int m
 NamespaceEntry::~NamespaceEntry()
 {
 	if (module) module->dec_count();
+}
+
+ObjectDef *NamespaceEntry::GetDef()
+{
+	return module;
 }
 
 typedef NamespaceEntry ObjectDefEntry;
@@ -220,6 +275,7 @@ class FunctionEntry : public Entry
 	FunctionEntry(const char *newname, int modid, const char *newcode,FunctionEvaluator *func, ObjectDef *newdef);
 	virtual ~FunctionEntry();
 	int type() { return VALUE_Function; }
+	virtual ObjectDef *GetDef();
 
 	//virtual int Evaluate(const char *name,ValueHash *context,ValueHash *parameters,Value **value_ret, CalcSettings *settings, ErrorLog *log);
 };
@@ -240,6 +296,9 @@ FunctionEntry::~FunctionEntry()
 	// *** if (function) function->dec_count();
 }
 
+ObjectDef *FunctionEntry::GetDef()
+{ return def; }
+
 
 //--------------------------- ValueEntry
 /*! \class ValueEntry
@@ -256,6 +315,9 @@ class ValueEntry : public Entry
 	ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container);
 	virtual ~ValueEntry();
 	int type() { return VALUE_Variable; }
+	virtual ObjectDef *GetDef();
+	virtual Value *GetValue();
+	virtual int SetVariable(const char *name,Value *v,int absorb);
 };
 
 ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container)
@@ -268,6 +330,7 @@ ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, Ob
 	if (item) item->inc_count();
 
 	value=NULL;
+	if (ns_element) value=ns_element->defaultValue;
 	if (value) value->inc_count();
 }
 
@@ -276,6 +339,34 @@ ValueEntry::~ValueEntry()
 	if (value) value->dec_count();
 	if (containing_object) containing_object->dec_count();
 	if (item) item->dec_count();
+}
+
+ObjectDef *ValueEntry::GetDef()
+{ return value->GetObjectDef(); }
+
+Value *ValueEntry::GetValue()
+{
+	if (value) return value;
+	if (item) return item->defaultValue;
+	return NULL;
+}
+
+int ValueEntry::SetVariable(const char *name,Value *v,int absorb)
+{
+	if (!name) return 1;
+
+	if (value!=v) {
+		if (value) value->dec_count();
+		value=v;
+		if (v) v->inc_count();
+	}
+
+	if (containing_object) {
+		containing_object->SetVariable(name,v,absorb);
+		return 0;
+	}
+	if (v && absorb) v->dec_count();
+	return 0;
 }
 
 
@@ -390,21 +481,44 @@ int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
 	const char *name=item->name;
 
 	 //find position in stack
-	int pos=-1, found=0;
+	int pos=-1;
+	int found=-1;
 	int s=0,e=dict.n-1,m, cmp;
 
 	if (s<=e) {
-		if (!strcmp(dict.e[s]->name,name)) { found=1; pos=s; }
-		else if (!strcmp(dict.e[e]->name,name)) { found=1; pos=e; }
+		cmp=strcmp(name,dict.e[s]->name);
+		if (cmp==0) { found=1; pos=s; }
+		else if (cmp<0) { found=0; pos=s; } //was before lowest
 		
-		while (pos<0 && s<e) {
-			m=(s+e)/2;
-			cmp=strcmp(dict.e[m]->name,name);
-			if (!cmp) { found=1; pos=m; break; }
-			if (cmp<0) e=m-1;
-			else s=m+1;
+		if (found<0) {
+			cmp=strcmp(name,dict.e[e]->name);
+			if (cmp==0) { found=1; pos=e; }
+			else if (cmp>0) { found=0; pos=e+1; }
+		}
+		
+		if (found<0) {
+			found=0;
+			while (pos<0 && s<e) {
+				m=(s+e)/2;
+				cmp=strcmp(name,dict.e[m]->name);
+				if (cmp==0) { found=1; pos=m; break; }
+				if (cmp<0) {
+					e=m-1;
+					cmp=strcmp(name,dict.e[e]->name);
+					if (cmp==0) { found=1; pos=e; break; }
+					if (cmp>0) { pos=m; break; } //between m-1 and m
+				} else {
+					s=m+1;
+					cmp=strcmp(name,dict.e[s]->name);
+					if (cmp==0) { found=1; pos=s; break; }
+					if (cmp<0) { pos=s; break; } //between m-1 and m
+				}
+			}
+			if (!found && pos<0) pos=s;
 		}
 	}
+	if (found<0) found=0;
+
 	if (found) {
 		OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(dict.e[pos]);
 		if (oo) {
@@ -429,7 +543,8 @@ int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
 	 //entry not found, so add!
 	Entry *entry=createNewEntry(item,mod);
 	if (!entry) return 1; //cannot add this item!
-	dict.push(entry,pos,1);
+	dict.push(entry,1,pos);
+
 	return 0;
 }
 
@@ -484,17 +599,18 @@ int BlockInfo::isSameEntry(ObjectDef *item, Entry *entry)
 
 Entry *BlockInfo::FindName(const char *name,int len)
 {
-	int s=0,e=dict.n-1,m;
+	int s=0,e=dict.n-1,m=0;
+	int nlen;
 
 	if (s<=e) {
-		int cmp=strncmp(dict.e[s]->name,name,len);
+		int cmp=strncmp(name,dict.e[s]->name,len);
 		if (cmp==0) {
 			if ((int)strlen(dict.e[s]->name)==len) return dict.e[s];
 			cmp=1;
 		}
-		if (cmp<0) return NULL; //it is less that lowest element
+		if (cmp<0) return NULL; //it is less than lowest element
 		
-		cmp=strncmp(dict.e[e]->name,name,len);
+		cmp=strncmp(name,dict.e[e]->name,len);
 		if (cmp==0) {
 			if ((int)strlen(dict.e[e]->name)==len) return dict.e[e];
 			cmp=1;
@@ -503,14 +619,30 @@ Entry *BlockInfo::FindName(const char *name,int len)
 		
 		while (s<e) {
 			m=(s+e)/2;
-			cmp=strcmp(dict.e[m]->name,name);
-			if (cmp==0) {
-				if ((int)strlen(dict.e[m]->name)==len) return dict.e[m];
-				cmp=1; //else item is greater than name
-			}
+			cmp=strncmp(name,dict.e[m]->name,len);
+			nlen=strlen(dict.e[m]->name);
+			if (cmp==0 && len<nlen) cmp=-1;
+			if (cmp==0) return dict.e[m];
 
-			if (cmp<0) e=m-1;
-			else s=m+1;
+			if (cmp<0) {
+				e=m-1;
+
+				nlen=strlen(dict.e[e]->name);
+				cmp=strncmp(name,dict.e[e]->name,len);
+				if (cmp==0 && len<nlen) cmp=-1;
+				if (cmp==0) return dict.e[e];
+
+				if (cmp>0) return NULL; //between m-1 and m, not in list
+			} else {
+				s=m+1;
+
+				nlen=strlen(dict.e[s]->name);
+				cmp=strncmp(name,dict.e[s]->name,len);
+				if (cmp==0 && len<nlen) cmp=-1;
+				if (cmp==0) return dict.e[s];
+
+				if (cmp<0) return NULL; //between m-1 and m, not in list
+			}
 		}
 	}
 	return NULL;
@@ -768,6 +900,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		if (answer) { answer->dec_count(); answer=NULL; }
 
 		if (sessioncommand()) { //  checks for session commands 
+			if (calcerror) break;
 			if (!messagebuffer) messageOut(_("Ok."));
 			skipwscomment();
 			if (from>=curexprslen) break;
@@ -854,7 +987,6 @@ int LaidoutCalculator::importAllNames(CalculatorModule *module)
  */
 int LaidoutCalculator::importName(CalculatorModule *module, ObjectDef *def)
 {
-	cerr << " *** need to implement importName!"<<endl;
 	currentLevel()->AddName(module,def);
 	return 0;
 }
@@ -879,7 +1011,7 @@ int LaidoutCalculator::importOperators(CalculatorModule *module)
 		else if (*rr=='<') dir=OPS_RtoL ;
 
 		priority=strtol(def->defaultvalue,NULL,10);
-		addOperator(def->name,dir,priority, module->object_id, def->opevaluator);
+		addOperator(def->name,dir,priority, module->object_id, def->opevaluator, def);
 		n++;
 	}
 
@@ -968,7 +1100,8 @@ char *LaidoutCalculator::getnamestring(int *n)  //  alphanumeric or _
 const char *LaidoutCalculator::getnamestringc(int *n)  //  alphanumeric or _ 
 {
 	*n=getnamestringlen();
-	return curexprs+from;
+	if (*n>0) return curexprs+from;
+	return NULL;
 }
 
 //! Return length of a name string, starting at from.
@@ -994,8 +1127,12 @@ const char *LaidoutCalculator::getopstring(int *n)
 {
 	skipwscomment();
 	char ch=curexprs[from];
+	int pos=from;
 	*n=0;
-	while (!isalnum(ch)
+
+	 //note: this leaves:  :\|<>?+-/!@$%^&*~`=
+	while (pos<curexprslen 
+			&& !isalnum(ch)
 			&& ch!='#'
 			&& ch!=';'
 			&& ch!='"'
@@ -1005,26 +1142,58 @@ const char *LaidoutCalculator::getopstring(int *n)
 			&& ch!='[' && ch!=']'
 			&& ch!='{' && ch!='}') {
 		(*n)++;
+		pos++;
+		ch=curexprs[pos];
 	}
 	if (*n) return curexprs+from;
 	return NULL;
 }
 
 
-//! Skip whitespace and "#...\n" based comments.
+//! Assuming we are either on whitespace, or the start of a comment, skip whitespace and "#...\n" based comments.
 /*! This will not advance past curexprslen, the length of the current expression.
  */
 void LaidoutCalculator::skipwscomment()
 {
+	//-------------- only "#....\n" comments
+//	do {
+//		while (isspace(curexprs[from]) && from<curexprslen) {
+//			if (curexprs[from]=='\n') curline++;
+//			from++;
+//		}
+//		if (curexprs[from]=='#') {
+//			while (curexprs[from++]!='\n' && from<curexprslen); 
+//		}
+//	} while (isspace(curexprs[from]) || curexprs[from]=='#');
+
+	//----------------for //comments  and /* comments */
 	do {
+		 //skip actual whitespace
 		while (isspace(curexprs[from]) && from<curexprslen) {
 			if (curexprs[from]=='\n') curline++;
 			from++;
 		}
+
 		if (curexprs[from]=='#') {
 			while (curexprs[from++]!='\n' && from<curexprslen); 
+			
+		} else if (curexprs[from]=='/' && curexprs[from+1]=='/') {
+			while (from<curexprslen && curexprs[from++]!='\n'); 
+
+		} else if (curexprs[from]=='/' && curexprs[from+1]=='*') {
+			 //skip until "*/" is encountered...
+			while ((curexprs[from]!='*' || curexprs[from+1]!='/') && from<curexprslen) {
+				if (curexprs[from]=='\n') curline++;
+				from++;
+			}
+			if (from<curexprslen && curexprs[from]=='*' && curexprs[from+1]=='/') from+=2;
 		}
-	} while (isspace(curexprs[from]) || curexprs[from]=='#');
+	} while (from<curexprslen && (
+				  isspace(curexprs[from])
+			   || curexprs[from]=='#'
+			   || (curexprs[from]=='/' && curexprs[from+1]=='*')
+			   || (curexprs[from]=='/' && curexprs[from+1]=='/')
+			   ));
 }
 
 /*! Skip whitespace and skip final comments in the form "#....\n".
@@ -1418,40 +1587,128 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 	return 0;
 }
 
+//--------------------------- NamespaceValue
+/*! \class NamespaceValue
+ *  Hold a namespace, for the purpose of easing dereferencing.
+ */
+class NamespaceValue : public Value
+{
+  public:
+	NamespaceValue(ObjectDef *ns);
+	virtual ~NamespaceValue();
+	virtual int type();
+ 	virtual ObjectDef *makeObjectDef() { return NULL; }
+	virtual Value *duplicate() { return NULL; }
+	virtual Value *dereference(const char *extstring, int len);
+	//virtual int getValueStr(char *buffer,int len);
+};
+
+//typedef NamespaceValue FunctionValue; <-- see values.h
+//typedef NamespaceValue ClassValue;
+
+NamespaceValue::NamespaceValue(ObjectDef *ns)
+{
+	objectdef=ns;
+	if (objectdef) objectdef->inc_count();
+}
+
+NamespaceValue::~NamespaceValue()
+{
+}
+
+/*! NamespaceValue objects may be namespaces, object classes, or functions.
+ * This just returns objectdef->format.
+ */
+int NamespaceValue::type()
+{
+	if (!objectdef) return 0; //shouldn't happen, but just in case
+	//return objectdef->format==VALUE_Namespace ? VALUE_Namespace : VALUE_Class;
+	return objectdef->format;
+}
+
+Value *NamespaceValue::dereference(const char *extstring, int len)
+{
+	ObjectDef *def=objectdef->FindDef(extstring,len);
+	if (!def) return NULL;
+
+	if (def->format==VALUE_Variable) {
+		if (!def->defaultValue) return NULL; //what if there is a scripted or Evaluator value?
+		def->defaultValue->inc_count();
+		return def->defaultValue;
+	}
+	
+	if (def->format==VALUE_Function) {
+		Value *v=new NamespaceValue(def);
+		return v;
+	}
+
+	if (def->format==VALUE_Class) {
+		Value *v=new NamespaceValue(def);
+		return v;
+	}
+
+	if (def->format==VALUE_Namespace) {
+		Value *v=new NamespaceValue(def);
+		return v;
+	}
+
+	if (def->format==VALUE_Operator) {
+	}
+
+	return NULL;
+}
+
+
 //--------------------------- LValue
 /*! \class LValue
- * Hold something that can take an assignment if necessary.
+ * Hold something that can take an assignment if necessary. This is only used internally
+ * during the parsing of expressions. They should not be passed around externally.
  */
 class LValue : public Value
 {
   public:
 	char *name;
+	Entry *entry; //entry the base is found in, might just be an alias to base
 	Value *basevalue;
+	ObjectDef *basedef; //if basevalue==NULL, then assume extension is from namespace basedef
 	FieldPlace extension;
 
-	LValue(const char *newname,int len, Value *v, ValueEntry *ve, FieldPlace *p);
+	LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldPlace *p);
 	virtual ~LValue();
 	virtual int type() { return VALUE_LValue; }
  	virtual ObjectDef *makeObjectDef() { return NULL; }
 	virtual Value *duplicate();
+	virtual Value *Resolve(); //remove lvalue state, returns new instance (or inc counted)
 };
 
-LValue::LValue(const char *newname,int len, Value *v, ValueEntry *ve, FieldPlace *p)
+LValue::LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldPlace *p)
 {
 	name=newnstr(newname,len);
-	basevalue=v;
-	v->inc_count();
-	extension=*p;
+	basevalue=v; if (v) v->inc_count();
+	basedef=def; if (def) def->inc_count();
+	entry=ve;
+
+	if (p) extension=*p;
 }
 
 LValue::~LValue()
 {
+	if (basedef) basedef->dec_count();
 	if (basevalue) basevalue->dec_count();
 	if (name) delete[] name;
 }
 
 Value *LValue::duplicate()
 { return NULL; }
+
+//! Remove lvalue state, returns new instance (or inc counted)
+Value *LValue::Resolve()
+{ // ***
+	cerr <<" *** INCOMPLETE CODING LValue::Resolve()"<<endl;
+	return NULL;
+}
+
+
 //--------------------------- end LValue
 
 /*! \todo need much more sophisticated assignments like flatvector v; v.x=3;
@@ -1495,7 +1752,7 @@ Value *LaidoutCalculator::checkAssignments()
 			return NULL;
 		}
 		currentLevel()->scope_namespace->pushVariable(assignname,assignname,NULL, v,0);
-		currentLevel()->AddName(currentLevel()->scope_namespace->last(), currentLevel()->scope_namespace);
+		currentLevel()->AddName(currentLevel()->scope_namespace, currentLevel()->scope_namespace->last());
 
 	} else {
 		 //name was found, try to assign to it if possible
@@ -1505,21 +1762,12 @@ Value *LaidoutCalculator::checkAssignments()
 			return NULL;
 		}
 		ValueEntry *ventry=dynamic_cast<ValueEntry*>(entry);
-		ventry->item->SetVariable(assignname, v, 0);
+		ventry->SetVariable(assignname, v, 0);
 	}
 
 	delete[] assignname;
 
 	return v;
-}
-
-Value *LaidoutCalculator::evalUservar(const char *word)
-{ // ***
-	return NULL;
-
-	//Value *v=uservars.find(word);
-	//if (v) v=v->duplicate();
-	//return v;
 }
 
 //! Replace curexprs with newex, and set from=0.
@@ -1546,8 +1794,94 @@ ObjectDef *LaidoutCalculator::CreateSessionCommandObjectDef()
 	return def;
 }
 
+void LaidoutCalculator::showDef(char *&temp, ObjectDef *sd)
+{
+	//*** maybe do this: it's easier
+	//Attribute att
+	//sd->dump_out_atts(&att, DEFOUT_HumanSummary,NULL);
+	//appendstr(temp,att.value);
+
+	appendstr(temp,element_TypeNames(sd->format));
+	appendstr(temp," ");
+	appendstr(temp,sd->name);
+	//appendstr(temp,": ");
+	//appendstr(temp,sd->Name);
+	appendstr(temp,",   ");
+	appendstr(temp,sd->description);
+	if ((sd->format==VALUE_Class || sd->format==VALUE_Fields) && sd->extendsdefs.n) {
+		appendstr(temp,", extends: ");
+		for (int c2=0; c2<sd->extendsdefs.n; c2++) {
+			appendstr(temp,sd->extendsdefs.e[c2]->name);
+		}
+	}
+
+	if ((sd->format==VALUE_Namespace || sd->format==VALUE_Class || sd->format==VALUE_Fields || sd->format==VALUE_Function) && sd->getNumFields()) {
+		const char *nm,*Nm,*desc,*rng;
+		ValueTypes fmt;
+		ObjectDef *subdef=NULL;
+		appendstr(temp,"\n");
+		for (int c2=0; c2<sd->getNumFields(); c2++) {
+			sd->getInfo(c2,&nm,&Nm,&desc,&rng,NULL,&fmt,NULL,&subdef);
+			appendstr(temp,"  ");
+
+			if (fmt==VALUE_Function) {
+				//appendstr(temp,"function ");
+				appendstr(temp,nm);
+				appendstr(temp," (");
+				if (subdef && subdef->fields) for (int c3=0; c3<subdef->fields->n; c3++) {
+					subdef->getInfo(c3,&nm,NULL,NULL,NULL,NULL,&fmt);
+					if (fmt!=VALUE_Any) { appendstr(temp,element_TypeNames(fmt)); appendstr(temp," "); }
+					appendstr(temp,nm);
+					if (c3!=subdef->fields->n-1) appendstr(temp,", ");
+				}
+				appendstr(temp,")");
+				appendstr(temp,", ");
+				appendstr(temp,desc);
+				appendstr(temp,"\n");
+
+			} else {
+				 //namespace or class
+				appendstr(temp,nm);
+				appendstr(temp,": (");
+				appendstr(temp,element_TypeNames(fmt));
+				if (fmt==VALUE_Set) {
+					if (!isblank(rng)) {
+						appendstr(temp," of ");
+						appendstr(temp,rng);
+					}
+				}
+				appendstr(temp,")   ");
+				appendstr(temp,Nm);
+				appendstr(temp,", ");
+				appendstr(temp,desc);
+				appendstr(temp,"\n");
+				if (fmt==VALUE_Enum && subdef && subdef->fields) {
+					appendstr(temp,"    ");
+					appendstr(temp,_("Possible values:\n"));
+					for (int c3=0; c3<subdef->fields->n; c3++) {
+						subdef->getInfo(c3,&nm,&Nm,&desc);
+						appendstr(temp,"      ");
+						appendstr(temp,nm);
+						appendstr(temp,": ");
+						appendstr(temp,Nm);
+						appendstr(temp,",   ");
+						appendstr(temp,desc);
+						appendstr(temp,"\n");
+					}
+				}
+			}
+		}
+	} //if fields or function
+}
+
+//int LaidoutCalculator::scanInFunction()
+//{
+//}
+
 //! Parse any commands that change internal calculator settings like radians versus decimal.
 /*! Set decimal==1 if 'degrees', set to 0 if 'radians'
+ *
+ * Return 
  */
 int LaidoutCalculator::sessioncommand() //  done before eval
 {
@@ -1579,14 +1913,6 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		return 1;
 	}
 
-	 //these things define ObjectDef objects, and have special meta read in modes.
-	 //It might be nice to be able to add meta to any object
-	//if (nextword("function")) ***
-	//if (nextword("var")) ***
-	//if (nextword("operator")) ***
-	//if (nextword("class")) ***
-	//if (nextword("namespace")) ***
-
 	if (nextword("radians"))
 	    { calcsettings.decimal=0; from+=7; return 1; }
 	
@@ -1595,7 +1921,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 
 	if (nextword("import")) {
 		 //import an available module into the current scope
-		from+=6;
+		skipwscomment();
 		int n=0;
 		char *name=getnamestring(&n);
 		if (n==0) { calcerr(_("Expecting name!")); return 1; }
@@ -1605,11 +1931,11 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		delete[] name;
 		return 1;
 	}
-		 
+
 	if (nextword("using")) {
 		 //take names from another namespace and make them immediately accessible in the current scope
 		 //use unset to remove imported names from current scope
-		from+=5;
+		skipwscomment();
 		int n=0;
 		char *name=getnamestring(&n);
 		if (n==0) { calcerr(_("Expecting name!")); return 1; }
@@ -1620,8 +1946,121 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		return 1;
 	}
 
+	 //these things define ObjectDef objects, and have special meta read in modes.
+	 //It might be nice to be able to add meta to any object
+
 	//if (nextword("alias")) {
 	//	 ***
+
+	if (nextword("var")) {
+		 //add a variable to the current scope's namespace
+		 // *** todo: Name and description
+		skipwscomment();
+		int n=0;
+		char *name=getnamestring(&n);
+		if (!name) { calcerr(_("Expected name!")); return 1; }
+		ObjectDef *def=currentLevel()->scope_namespace;
+		if (def->format!=VALUE_Namespace) { calcerr(_("Cannot add variables to current scope!")); return 1; }
+
+		Value *value=NULL;
+		if (nextchar('=')) {
+			value=evalLevel(0);
+			if (calcerror) return 1;
+		}
+
+		def->pushVariable(name,name,NULL, value,1);
+		currentLevel()->AddName(def,def->fields->e[def->fields->n-1]);
+
+		return 1;
+	}
+
+	if (nextword("function")) {
+		 //function funcname : "description" (type parameter_name=default_value : "description", ...) { ...code... }
+
+		skipwscomment();
+		ObjectDef *def;
+		Value *v;
+		int nn;
+		int n=0;
+		char *name=getnamestring(&n);
+		if (!n) { calcerr(_("Expected name!")); return 1; }
+
+		def=new ObjectDef(NULL, name,name,NULL, VALUE_Function,NULL,NULL);
+		delete[] name; name=NULL;
+
+		 //scan in parameters
+		if (nextchar('(')) {
+			do {
+				skipwscomment();
+				name=getnamestring(&nn);
+				if (!name) break;
+				
+				//str is either a type name, or a parameter name
+				// *** for now, ignore typename and meta, just use parameter name and value
+				from+=nn;
+				if (nextchar('=')) {
+					v=evalLevel(0);
+					if (calcerror) {
+						delete[] name;
+						delete def;
+						return 1;
+					}
+				} else v=NULL;
+
+				def->pushParameter(name,name,NULL, VALUE_Any,NULL,NULL, v);
+				delete[] name; name=NULL;
+				v->dec_count();				
+			} while (nextchar(','));
+
+			if (!nextchar(')')) {
+				calcerr(_("Expected ')'!"));
+				delete def;
+				return 1;
+			}
+		} //if nextchar('(')
+
+		 //scan in code
+		if (nextchar('{')) {
+			int tfrom=from;
+			skipBlock('}');
+			if (calcerror) {
+				delete def;
+				return 1;
+			}
+			char *code=newnstr(curexprs+tfrom, from-tfrom);
+			def->defaultvalue=code;
+
+		} else {
+			skipwscomment();
+			if (curexprs[from]!='\0' && curexprs[from]!=';') {
+				calcerr(_("Badly formed function"));
+				delete def;
+				return 1;
+			}
+			//we encountered no defined code
+		}
+
+		 //add to current scope
+		currentLevel()->scope_namespace->push(def,1);
+		currentLevel()->AddName(currentLevel()->scope_namespace, def);
+
+		return 1;
+	}
+
+	if (nextword("class")) {
+		calcerr("INCOMPLETE CODING for class");
+		return 1;
+	}
+
+	if (nextword("operator")) {
+		calcerr("INCOMPLETE CODING for operator");
+		return 1;
+	}
+
+//	if (nextword("namespace")) {
+//		//this is checked in checkBlock()
+//		return 1;
+//	}
 
 	if (nextword("unset")) {
 //		***
@@ -1649,94 +2088,51 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 
 
 		 //find specific name to show if any
+		 //***** this must adapt to
+		 //  show Laidout.project
+		 //  show Laidout.docs.3
 		skipwscomment();
-		int ch=0;
-		while (!isspace(curexprs[ch]) && curexprs[ch]!=';' && curexprs[ch]!='#') ch++;
-		char *showwhat=newnstr(curexprs+from,ch);
+		//while (ch<curexprslen && !isspace(curexprs[ch]) && curexprs[ch]!=';' && curexprs[ch]!='#') ch++;
+		int n=0;
+		const char *showwhat=getnamestringc(&n);
 		char *temp=NULL;
-		
+
 		ObjectDef *sd=NULL;
 		if (showwhat) { //show a particular item
-			int numfound=0;
-			for (int c=scopes.n-1; c>=0; c++) {
-				if (scopes.e[c]->scope_namespace) sd=scopes.e[c]->scope_namespace->FindDef(showwhat);
-				if (!sd) continue;
-				numfound++;
+			int scope,module,index;
+			Entry *entry=findNameEntry(showwhat,n, &scope, &module, &index);
+			if (entry) {
+				//Overloaded, function, value, namespace, alias, class, operator
+				sd=entry->GetDef();
+				from+=n;
+				skipwscomment();
+			}
 
-				//*** maybe do this: it's easier
-				//Attribute att
-				//sd->dump_out_atts(&att, DEFOUT_HumanSummary,NULL);
-				//appendstr(temp,att.value);
-	
-				appendstr(temp,element_TypeNames(sd->format));
-				appendstr(temp," ");
-				appendstr(temp,sd->name);
-				//appendstr(temp,": ");
-				//appendstr(temp,sd->Name);
-				appendstr(temp,", ");
-				appendstr(temp,sd->description);
-				if ((sd->format==VALUE_Class || sd->format==VALUE_Fields) && sd->extendsdefs.n) {
-					appendstr(temp,", extends: ");
-					for (int c2=0; c2<sd->extendsdefs.n; c2++) {
-						appendstr(temp,sd->extendsdefs.e[c2]->name);
-					}
-				}
+			while (sd && nextchar('.')) { //for "show Math.sin", for instance
+				showwhat=getnamestringc(&n);
+				ObjectDef *ssd=sd->FindDef(showwhat,n);
+				if (!ssd) break;
+				from+=n;
+				sd=ssd;
+			} //if foreach dereference
 
-				if ((sd->format==VALUE_Fields || sd->format==VALUE_Function) && sd->getNumFields()) {
-					const char *nm,*Nm,*desc,*rng;
-					ValueTypes fmt;
-					ObjectDef *subdef=NULL;
-					appendstr(temp,"\n");
-					for (int c2=0; c2<sd->getNumFields(); c2++) {
-						sd->getInfo(c2,&nm,&Nm,&desc,&rng,NULL,&fmt,NULL,&subdef);
-						appendstr(temp,"  ");
-						appendstr(temp,nm);
-						appendstr(temp,": (");
-						appendstr(temp,element_TypeNames(fmt));
-						if (fmt==VALUE_Set) {
-							if (!isblank(rng)) {
-								appendstr(temp," of ");
-								appendstr(temp,rng);
-							}
-						}
-						appendstr(temp,") ");
-						appendstr(temp,Nm);
-						appendstr(temp,", ");
-						appendstr(temp,desc);
-						appendstr(temp,"\n");
-						if (fmt==VALUE_Enum && subdef && subdef->fields) {
-							appendstr(temp,"    ");
-							appendstr(temp,_("Possible values:\n"));
-							for (int c3=0; c3<subdef->fields->n; c3++) {
-								subdef->getInfo(c3,&nm,&Nm,&desc);
-								appendstr(temp,"      ");
-								appendstr(temp,nm);
-								appendstr(temp,": ");
-								appendstr(temp,Nm);
-								appendstr(temp,", ");
-								appendstr(temp,desc);
-								appendstr(temp,"\n");
-							}
-						}
-					}
-				} //if fields or function
-			} //if foreach scope
-
-			if (!numfound) {
+			if (sd) showDef(temp, sd);
+			else {
 				 //check for match of module names, just in case
 				for (int c=0; c<modules.n; c++) {
+					sd=modules.e[c];
 					if (!strcmp(modules.e[c]->name, showwhat)) {
 						appendstr(temp,"module ");
 						appendstr(temp,showwhat);
-						numfound++;
+						appendstr(temp,"\n");
+						showDef(temp,modules.e[c]);
 					}
 				}
 			}
 
-			if (!numfound) { appendline(temp,_("Unknown name!")); }
+			if (!sd) { appendline(temp,_("Unknown name!")); }
 
-			from+=strlen(showwhat);
-			delete[] showwhat; showwhat=NULL;
+			showwhat=NULL;
 
 		} else { //show all
 			 
@@ -1781,6 +2177,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 				else appendstr(temp,_("unknown"));
 				appendstr(temp,"\n");
 			}
+			appendstr(temp,"\n");
 			 //^^^^^^ *** this will be removed once module installation working....
 		
 
@@ -1793,16 +2190,56 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 					appendstr(temp,"\n");
 				}
 			}
+			appendstr(temp,"\n");
 
 
 			 //operator dump
 			// ***
-			appendstr(temp,"Operators: ...need to implement operator dump\n");
+			appendstr(temp,"Operators:\n");
+			appendstr(temp," Levels:\n");
+			char buffer[20];
+			for (int c=0; c<oplevels.n; c++) {
+				OperatorLevel *l=oplevels.e[c];
+				appendstr(temp,"  priority:");
+				sprintf(buffer,"%d",l->priority);
+				appendstr(temp,buffer);
+				appendstr(temp,", ");
+				if (l->direction==OPS_LtoR) appendstr(temp,"left to right:  ");
+				else if (l->direction==OPS_RtoL) appendstr(temp,"right to left:  ");
+				for (int c2=0; c2<l->ops.n; c2++) {
+					appendstr(temp,l->ops.e[c2]->op);
+					appendstr(temp,"  ");
+				}
+				appendstr(temp,"\n");
+			}
+			appendstr(temp," Left:\n");
+			for (int c=0; c<leftops.ops.n; c++) {
+				appendstr(temp,"  ");
+				appendstr(temp,leftops.ops.e[c]->op);
+				if (leftops.ops.e[c]->def) {
+					appendstr(temp,"(val)");
+					//appendstr(temp,element_TypeNames(leftops.ops.e[c]->def->format));
+					//appendstr(temp,")");
+				} else appendstr(temp,"(any)");
+				appendstr(temp,"\n");
+			}
+			appendstr(temp," Right:\n");
+			for (int c=0; c<rightops.ops.n; c++) {
+				appendstr(temp,"  ");
+				appendstr(temp,rightops.ops.e[c]->op);
+				if (rightops.ops.e[c]->def) {
+					appendstr(temp,"(val)");
+					//***need to have op parameter hints for: appendstr(temp,element_TypeNames(rightops.ops.e[c]->def->format));
+					//appendstr(temp,")");
+				} else appendstr(temp,"(any)");
+				appendstr(temp,"\n");
+			}
+			appendstr(temp,"\n");
 
 
 			 //scope dump
+			appendstr(temp, "Scopes:\n");
 			if (scopes.n>1) {
-				appendstr(temp, "Scopes:\n");
 				for (int c=1; c<scopes.n; c++) {
 					for (int c2=0; c2<c; c2++) appendstr(temp,"  ");
 					appendstr(temp, scopes.e[c]->BlockType());
@@ -1818,19 +2255,29 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 					appendstr(temp,"\n");
 				}
 
+				 //entry dump
+				for (int c2=0; c2<scopes.e[c]->dict.n; c2++) {
+					appendstr(temp,"  ");
+					appendstr(temp,element_TypeNames(scopes.e[c]->dict.e[c2]->type()));
+					appendstr(temp," ");
+					appendstr(temp,scopes.e[c]->dict.e[c2]->name);
+					appendstr(temp,"\n");
+				}
+
+
 				ObjectDef *def=scopes.e[c]->scope_namespace;
 
 				 //Show object definitions in scope
 				if (def->getNumFields()) {
 					appendstr(temp,_("\nObject Definitions:\n"));
 
-					ObjectDef *def=NULL;
+					ObjectDef *ddef=NULL;
 					for (int c=0; c<def->getNumFields(); c++) {
-						def->findActualDef(c,&def);
-						if (!def || (def->format!=VALUE_Class && def->format!=VALUE_Fields)) continue;
+						def->findActualDef(c,&ddef);
+						if (!ddef || (ddef->format!=VALUE_Class && ddef->format!=VALUE_Fields)) continue;
 
 						appendstr(temp,"  ");
-						appendstr(temp,def->name);
+						appendstr(temp,ddef->name);
 						appendstr(temp,"\n");
 					}
 				}
@@ -1927,12 +2374,13 @@ Value *LaidoutCalculator::evalLevel(int level)
 	int n=0;
 	const char *op;
 	OperatorFunction *opfunc=NULL;
-	Value *num=NULL, *num2=NULL, *num_ret;
+	Value *num=NULL, *num2=NULL, *num_ret=NULL;
+	int index=-1;
 	if (level>=oplevels.n) {
 		 //all done with 2 number ops, now check left ops, read number, right ops
 		op=getopstring(&n);
 		if (n) { //found an op string
-			opfunc=leftops.hasOp(op,n,OPS_Left);
+			opfunc=leftops.hasOp(op,n,OPS_Left, &index,-1);
 			if (!opfunc) {
 				 //if left hand op.. if not, is error
 				calcerr(_("Unexpected characters!"));
@@ -1941,8 +2389,16 @@ Value *LaidoutCalculator::evalLevel(int level)
 
 			from+=n;
 			num=evalLevel(level); //will plow through any other left hand ops
-			// *** still need to apply the op
+
+			 //still need to apply the op
+			int status=opfunc->function->Op(op,n,OPS_Left, num,NULL, &calcsettings, &num_ret, NULL);
+			if (status==-1) num_ret=opCall(op,n,OPS_Left, num,NULL, &leftops, index); //need to try overloaded
 			if (calcerror) { if (num) num->dec_count(); return NULL; }
+
+			if (num_ret) {
+				num->dec_count();
+				num=num_ret;
+			}
 
 		} else {
 			num=number(); //get a plain number
@@ -1953,20 +2409,24 @@ Value *LaidoutCalculator::evalLevel(int level)
 		op=getopstring(&n);
 		while (n) {
 			 //found an op string
-			opfunc=rightops.hasOp(op,n,OPS_Right);
-			if (!opfunc) return num; //no right ops, so done!
+			opfunc=rightops.hasOp(op,n,OPS_Right, &index,-1);
+			if (opfunc) {
 
-			Value *num_ret=NULL;
-			CalcSettings settings=calcsettings;
-			settings.calculator=this;
-			int status=opfunc->function->Op(op,n,OPS_Right, num,NULL, &settings, &num_ret);
-			if (status==-1) {
-				// *** need to do operator overloading
+				Value *num_ret=NULL;
+				int status=opfunc->function->Op(op,n,OPS_Right, num,NULL, &calcsettings, &num_ret, NULL);
+				if (status==-1) num_ret=opCall(op,n,OPS_Right, num,NULL, &rightops, index); //need to try overloaded
+				if (calcerror) { if (num) num->dec_count(); return NULL; }
+				if (num_ret) {
+					num->dec_count();
+					num=num_ret;
+					break;
+				}
+
+				from+=n;
+				op=getopstring(&n);
+			} else {
+				return num; //no right ops, so done!
 			}
-			if (calcerror) { if (num) num->dec_count(); return NULL; }
-
-			from+=n;
-			op=getopstring(&n);
 		}
 		return num;
 	}
@@ -1977,27 +2437,31 @@ Value *LaidoutCalculator::evalLevel(int level)
 	if (calcerror) return NULL;
 
 	op=getopstring(&n);
-	while (n) {
-		opfunc=oplevels.e[level]->hasOp(op,n,dir);
+	while (n) { 
+		opfunc=oplevels.e[level]->hasOp(op,n,dir, &index,-1);
 		if (!opfunc) break;
 
+		from+=n;
 		if (dir==OPS_LtoR) num2=evalLevel(level+1);
 		else num2=evalLevel(level);
 		if (calcerror) { num->dec_count(); return NULL; }
 
-		CalcSettings settings=calcsettings;
-		settings.calculator=this;
-		int status=opfunc->function->Op(op,n,dir, num,num2, &settings, &num_ret);
-		if (status==-1) {
-			 // *** need to implement overloading!!!
-		}
-		num->dec_count();  num=NULL;
-		num2->dec_count(); num2=NULL;
-		if (calcerror) {
+		if (!num2) {
+			calcerr(_("Expected number!"));
+			num->dec_count();
 			return NULL;
 		}
-
+		int status=opfunc->function->Op(op,n,dir, num,num2, &calcsettings, &num_ret, NULL);
+		if (status==-1) {
+			 //overloading...
+			num_ret=opCall(op,n,dir, num,num2, oplevels.e[level],index);
+		}
+		if (!calcerror && !num_ret) calcerr(_("Cannot compute with given values."));
+		num->dec_count();  num=NULL;
+		num2->dec_count(); num2=NULL;
+		if (calcerror) { return NULL; }
 		num=num_ret;
+		
 		op=getopstring(&n);
 	}
 
@@ -2048,15 +2512,15 @@ Value *LaidoutCalculator::number()
 		if (!snum) return NULL; 
 	}
 
-	if (nextchar('.')) {
+	while (nextchar('.') || curexprs[from]=='[') {
 		 //there is dereferencing to be done
-		Value *snum2=dereference(snum,NULL);
+		Value *snum2=dereference(snum);
 		if (calcerror) {
-			if (snum) delete snum;
+			if (snum) snum->dec_count();
 			return NULL;
 		}
 
-		delete snum;
+		snum->dec_count();
 		snum=snum2;
 	}
 
@@ -2071,18 +2535,137 @@ Value *LaidoutCalculator::number()
 	return snum;
 }
 
+//! Perform one round of dereferencing. So "Foo.Bar.La" will parse "Foo", leaving from pointing to ".Bar.La".
 /*! Assume that we are just past initial '.' for dereferencing. We either have a Value
  * that we need to zero in on, or we have a namespace that we need to access part of.
  *
+ * The result can be a namespace, class name, function, variable, or component of an object.
+ *
+ * blah[5] is the same as blah.5 or blah.(3+2)
+ *
  * Returns a new Value.
  */
-Value *LaidoutCalculator::dereference(Value *val,ObjectDef *def)
+Value *LaidoutCalculator::dereference(Value *val)
 {
-	cerr << " *** dereference broken!"<<endl;
-	//if (val) def=val->GetObjectDef();
-	//***
-	//Value *v
-	return NULL;
+	DBG if (val->GetObjectDef()) cerr <<" --- trying to deref "<<val->GetObjectDef()->name<<endl;
+	const char *name=NULL;
+	int index=-1;
+	int n=0;
+
+	skipwscomment();
+	name=getnamestringc(&n);
+	Value *value=NULL;
+	Value *usethis=NULL;
+	ObjectDef *def=NULL;
+
+	if (n) {
+		 //we have a name
+		from+=n;
+		value=val->dereference(name,n); //if a simple value can be returned, we are in luck!
+		if (!value) {
+			 //if val is a normal Value, if deref comes back NULL, then we can look in
+			 //the ObjectDef. If name is defined, and object can be cast to a FunctionEvaluator,
+			 //then call that object's Evaluate() with parameters.
+
+			def=val->GetObjectDef();
+			if (def) def=def->FindDef(name,n);
+			//if (def) then so def is the definition of the member function
+			usethis=val;
+		}
+
+	} else if (curexprs[from]=='(' || curexprs[from]=='[') {
+		char ch=(curexprs[from]=='(' ? ')' : ']');
+		from++;
+
+		 //something like set.(2+6-3), or set[3*2] so we need to evaluate
+		Value *v=evalLevel(0);
+		if (calcerror) return NULL;
+		if (v->type()!=VALUE_Int) {
+			calcerr(_("You may only dereference with integers"));
+			v->dec_count();
+			return NULL;
+		}
+		if (!nextchar(ch)) {
+			if (ch==')') calcerr(_("Expected closing ')'"));
+			else calcerr(_("Expected closing ']'"));
+			v->dec_count();
+			return NULL;
+		}
+		index=dynamic_cast<IntValue*>(v)->i;
+		v->dec_count();
+
+		value=val->dereference(index);
+		if (!value) {
+			calcerr(_("Bad index!"));
+			return NULL;
+		}
+
+	} else if (isdigit(curexprs[from])) {
+		long index=intnumber();
+		if (calcerror) return NULL;
+
+		value=val->dereference(index);
+		if (!value) {
+			calcerr(_("Bad index!"));
+			return NULL;
+		}
+
+
+	} else {
+		calcerr(_("Expected dereferencing!"));
+		return NULL;
+	}
+
+	 //if value is a function object or namespace like object, do something appropriate
+	if (def!=NULL || (value && (value->type()==VALUE_Function || value->type()==VALUE_Class))) {
+		 //if def!=NULL, then we are calling an object method on val
+		if (!def) def=dynamic_cast<NamespaceValue*>(value)->GetObjectDef();
+		skipwscomment();
+
+		 //build context and find parameters
+		//int error_pos=0;
+		ValueHash *context=build_context(); //build calculator context
+		ValueHash *pp=parseParameters(def); //build parameter hash in order of styledef
+		if (calcerror) {
+			context->dec_count();
+			if (pp) delete pp;
+			if (value) value->dec_count();
+			return NULL;
+		}
+
+		if (usethis) {
+			 //add as "this" to pp
+			int i=pp->findIndex("this",4);
+			if (i>=0) pp->set(i,usethis);
+			else pp->push("this",usethis);
+
+		} else usethis=val;
+
+		 //call the function
+		int status=-1;
+		Value *fvalue=NULL;
+		status=functionCall(name,n, &fvalue, usethis,def,context,pp);
+		context->dec_count();
+		if (pp) delete pp;
+
+		if (status==1 || calcerror) {
+			if (fvalue) fvalue->dec_count();
+			if (value) value->dec_count();
+			return NULL;
+		}
+
+		if (value) value->dec_count();
+		return fvalue;
+
+
+	} else if (value->type()==VALUE_Operator) {
+		// *** can't actually do anything with this, but may be called for informational purposes
+
+	} else if (value->type()==VALUE_Namespace) {
+		//return as is for further dereferencing!
+	}
+
+	return value;
 }
 
 //! Read in values for a set.
@@ -2102,8 +2685,7 @@ Value *LaidoutCalculator::getset()
 		if (calcerror) {
 			return NULL;
 		}
-		set->Push(num);
-		num->dec_count();
+		set->Push(num,1);
 		
 	} while (nextchar(','));
 
@@ -2135,8 +2717,7 @@ Value *LaidoutCalculator::getarray()
 		if (calcerror) {
 			return NULL;
 		}
-		array->Push(num);
-		num->dec_count();
+		array->Push(num,1);
 		
 	} while (nextchar(','));
 
@@ -2279,7 +2860,7 @@ Entry *LaidoutCalculator::findNameEntry(const char *word,int len, int *scope, in
 		if (entry) {
 			*scope=c;
 			*module=scopes.e[c]->scope_namespace->object_id;
-			*index=i;
+			if (index) *index=i;
 			return entry;
 		}
 	}
@@ -2302,7 +2883,11 @@ Value *LaidoutCalculator::evalname()
 	Entry *entry=findNameEntry(word,n, &scope, &module, NULL);
 	OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(entry);
 	int ooi=-1;
-	if (!entry) return NULL;
+	if (!entry) {
+		calcerr(_("Unknown name!"));
+		return NULL;
+	}
+
 	if (oo) {
 		if (!oo->entries.n) return NULL; //should remove the overloaded thing, since none use it
 		ooi=oo->entries.n-1;
@@ -2323,7 +2908,7 @@ Value *LaidoutCalculator::evalname()
 		ValueHash *context=build_context(); //build calculator context
 		ValueHash *pp=parseParameters(function); //build parameter hash in order of styledef
 		if (calcerror) {
-			delete context;
+			context->dec_count();
 			if (pp) delete pp;
 			return NULL;
 		}
@@ -2331,9 +2916,9 @@ Value *LaidoutCalculator::evalname()
 		int status=-1;
 		do {
 			if (function) {
-				status=functionCall(word,n, &v, function,context,pp);
+				status=functionCall(word,n, &v, NULL,function,context,pp);
 				if (calcerror) {
-					delete context;
+					context->dec_count();
 					if (pp) delete pp;
 					return NULL;
 				}
@@ -2358,12 +2943,12 @@ Value *LaidoutCalculator::evalname()
 			//} else 
 			calcerr(error);
 			delete[] error;
-			delete context;
+			context->dec_count();
 			if (pp) delete pp;
 			return NULL;
 		}
 
-		delete context;
+		context->dec_count();
 		if (pp) delete pp;
 		return v;
 
@@ -2371,8 +2956,7 @@ Value *LaidoutCalculator::evalname()
 		 //use namespace as a scope ONLY while parsing extensions
 		ObjectDef *ns=dynamic_cast<NamespaceEntry*>(entry)->module;
 		from+=n;
-		Value *v=dereference(NULL,ns);
-		if (calcerror && v) { v->dec_count(); v=NULL; }
+		Value *v=new NamespaceValue(ns);
 		return v;
 
 	} else if (entry->type()==VALUE_Class) {
@@ -2383,9 +2967,16 @@ Value *LaidoutCalculator::evalname()
 		//				   2. if in subclass space of object, run object's function with appropriate this
 		from+=n;
 		Value *v=NULL;
+		if (nextchar('.')) {
+			 //trying to access object member. If this is defined, and it inherites from this object class,
+			 //then call that class's member..? todo
+			cerr <<" *** cannot access class member, INCOMPLETE CODING!!"<<endl;
+			calcerr("INCOMPLETE CODING");
+			return NULL;
+		}
 		if (nextchar('(')) {
 			from--;
-			functionCall(word,n, &v, dynamic_cast<NamespaceEntry*>(entry)->module, NULL,NULL); //**** context,parameters
+			functionCall(word,n, &v, NULL, dynamic_cast<NamespaceEntry*>(entry)->module, NULL,NULL); //**** context,parameters
 			return v;
 		}
 		return v;
@@ -2399,11 +2990,14 @@ Value *LaidoutCalculator::evalname()
 //		return v;
 
 	} else if (dynamic_cast<ValueEntry*>(entry)) {
-		ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
-		LValue *val=new LValue(word,n, NULL,ve,NULL);
-		Value *v=dereference(val,NULL);
-		if (calcerror && v) { v->dec_count(); v=NULL; }
-		return v; 
+		Value *v=dynamic_cast<ValueEntry*>(entry)->GetValue();
+		if (v) v->inc_count();
+		from+=n;
+		return v;
+		// *** todo for future: lvalue based assignment operator
+		//ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
+		//LValue *val=new LValue(word,n, NULL,ve,NULL,NULL);
+		//return val; 
 
 	//} else if (dynamic_cast<OperatorEntry*>(entry)) {
 		//currently, operators are searched for differently and must not have letters, see eval()
@@ -2413,17 +3007,53 @@ Value *LaidoutCalculator::evalname()
 	return NULL;
 }
 
-//! Convenience function to call functions, and do error handling
-int LaidoutCalculator::functionCall(const char *word,int n, Value **v, ObjectDef *function,ValueHash *context,ValueHash *pp)
+//! Perform operator overloading, using a particular operator level.
+/*! Assume level and index were the last one checked, and it couldn't be used.
+ */
+Value *LaidoutCalculator::opCall(const char *op,int n,int dir, Value *num, Value *num2, OperatorLevel *level, int lastindex)
 {
+	if (lastindex<0) lastindex=-1;
+	OperatorFunction *opfunc=NULL;
+	int index=-1;
+	int status=0;
+	Value *num_ret=NULL;
+	for (int c=lastindex+1; c<level->ops.n; c++) {
+		opfunc=level->hasOp(op,n,dir, &index,lastindex);
+		if (!opfunc) return NULL;
+
+		status=opfunc->function->Op(op,n,dir, num,num2, &calcsettings, &num_ret, NULL);
+		if (status==0) return num_ret;
+		if (status==-1) { lastindex=c; continue; }
+		if (calcerror) break;
+	}
+	return NULL;
+}
+
+//! Convenience function to call functions, and do error handling
+int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret, 
+									Value *containingvalue, ObjectDef *function,ValueHash *context,ValueHash *pp)
+{
+	if (calcerror) return 1;
+
 	 //call the actual function
 	ErrorLog log;
 	Value *value=NULL;
-	int status=1;
-	if (!calcerror) {
-		CalcSettings settings=calcsettings;
-		settings.calculator=this;
-		if (function->evaluator) status=function->evaluator->Evaluate(word,n, context,pp,&settings, &value,&log);
+	int status=-2;
+
+	if (containingvalue) {
+		FunctionEvaluator *f=dynamic_cast<FunctionEvaluator*>(containingvalue);
+		if (f) {
+			status=f->Evaluate(word,n, context,pp,&calcsettings, &value,&log);
+		} else {
+			if (!pp) pp=new ValueHash;
+			int i=pp->findIndex("this");
+			if (i>=0) pp->set(i,containingvalue);
+			else pp->push("this",containingvalue);
+		}
+	}
+
+	if (!value && status==-2) {
+		if (function->evaluator) status=function->evaluator->Evaluate(word,n, context,pp,&calcsettings, &value,&log);
 		else if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
 		else if (function->newfunc) {
 			Value *s=function->newfunc(function);
@@ -2432,33 +3062,38 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v, ObjectDef
 				value=new ObjectValue(s);
 			} else status=1;
 		}
-
-		 //report default success or failure
-		if (log.Total()) {
-			char *error=NULL;
-			char scratch[100];
-			ErrorLogNode *e;
-			for (int c=0; c<log.Total(); c++) {                 
-				e=log.Message(c);
-				if (e->severity==ERROR_Ok) ;
-				else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
-				else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
-			
-				if (e->objectstr_id) {
-					sprintf(scratch,"id:%s, ",e->objectstr_id);
-					appendstr(error,scratch);
-				}
-				appendstr(error,e->description);
-				appendstr(error,"\n");
-			}
-			messageOut(error);
-			delete[] error;
-		} else {
-			if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
-			else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
-		}
 	}
+
+	 //report default success or failure
+	if (log.Total()) {
+		char *error=NULL;
+		char scratch[100];
+		ErrorLogNode *e;
+		for (int c=0; c<log.Total(); c++) {                 
+			e=log.Message(c);
+			if (e->severity==ERROR_Ok) ;
+			else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
+			else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
+		
+			if (e->objectstr_id) {
+				sprintf(scratch,"id:%s, ",e->objectstr_id);
+				appendstr(error,scratch);
+			}
+			appendstr(error,e->description);
+			appendstr(error,"\n");
+		}
+		messageOut(error);
+		delete[] error;
+
+	} else if (status==-2) {
+		calcerr(_("Could not call function! Poor programming!"));
+	} else {
+		if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
+		else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
+	}
+
 	if (calcerror) { if (value) value->dec_count(); value=NULL; }
+	*v_ret=value;
 	return status;
 }
 
@@ -2486,23 +3121,21 @@ int LaidoutCalculator::removeOperators(int module_id)
 	return n;
 }
 
-int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc)
+int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc,ObjectDef *def)
 {
-	OperatorFunction *opf=new OperatorFunction(op,dir, module_id, opfunc);
-
-	if (dir==OPS_Left) leftops.pushOp(op, opf);
-	else if (dir==OPS_Right) rightops.pushOp(op, opf);
+	if (dir==OPS_Left) leftops.pushOp(op, dir, opfunc, def, module_id);
+	else if (dir==OPS_Right) rightops.pushOp(op, dir, opfunc, def, module_id);
 	else {
 		int c;
 		for (c=0; c<oplevels.n; c++) {
 			if (priority<oplevels.e[c]->priority) {
 				OperatorLevel *level=new OperatorLevel(dir,priority);
 				oplevels.push(level,1,c); //insert new level before this level
-				level->pushOp(op,opf);
+				level->pushOp(op, dir, opfunc, def, module_id);
 				break;
 			}
 			if (priority==oplevels.e[c]->priority && oplevels.e[c]->direction==dir) {
-				oplevels.e[c]->ops.push(opf);
+				oplevels.e[c]->pushOp(op, dir, opfunc, def, module_id);
 				break; //found an existing level
 			}
 		}
@@ -2510,6 +3143,7 @@ int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int modu
 			 //adding level at end
 			OperatorLevel *level=new OperatorLevel(dir,priority);
 			oplevels.push(level,1,c); //insert new level before this level
+			level->pushOp(op, dir, opfunc, def, module_id);
 		}
 	}
 	return 0;
@@ -2524,7 +3158,8 @@ int LaidoutCalculator::addOperator(const char *op,int dir,int priority, int modu
  */
 void LaidoutCalculator::messageOut(const char *str)
 {//***
-	DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<str<<endl;
+	//DBG cerr <<"*** must implement LaidoutCalculator::messageOut() properly! "<<endl;
+	//DBG if (laidout->runmode!=RUNMODE_Shell) cerr <<str<<endl;
 
 	appendline(messagebuffer,str);
 }
@@ -2671,7 +3306,10 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 //! Create and install various built in operators and math functions.
 void LaidoutCalculator::InstallInnate()
 {
-	ObjectDef *innates=new ObjectDef(NULL,"Builtin",_("Builtin"),_("Things that are built in to the calculator."),
+//	ObjectDef *innates=new ObjectDef(NULL,"Builtin",_("Builtin"),_("Things that are built in to the calculator."),
+//										   VALUE_Namespace,NULL,NULL);
+
+	ObjectDef *innates=new ObjectDef(NULL,"Math",_("Math"),_("Mathematical functions, plus pi, tau, and e."),
 										   VALUE_Namespace,NULL,NULL);
 
 	 //operators
@@ -2708,31 +3346,37 @@ void LaidoutCalculator::InstallInnate()
 
 
 	 //functions
-    innates->pushFunction("atan2",    NULL,_("arctangent2"),                            this, NULL); // "x:int|real,y:int|real");
-    innates->pushFunction("sin",      NULL,_("sine"),                                   this, NULL); // "int|real|complex");
-    innates->pushFunction("asin",     NULL,_("arcsine"),                                this, NULL); // "int|real|complex");
-    innates->pushFunction("cos",      NULL,_("cosine"),                                 this, NULL); // "int|real|complex");
-    innates->pushFunction("acos",     NULL,_("arccosine"),                              this, NULL); // "int|real|complex");
-    innates->pushFunction("tan",      NULL,_("tangent"),                                this, NULL); // "int|real|complex");
-    innates->pushFunction("atan",     NULL,_("arctangent"),                             this, NULL); // "int|real|complex");
-    innates->pushFunction("abs",      NULL,_("absolute value"),                         this, NULL); // "int|real|complex");
-    innates->pushFunction("sqrt",     NULL,_("square root"),                            this, NULL); // "int|real|complex");
-    innates->pushFunction("log",      NULL,_("base 10 logarithm"),                      this, NULL); // "int|real|complex");
-    innates->pushFunction("ln",       NULL,_("natural logarithm"),                      this, NULL); // "int|real|complex");
-    innates->pushFunction("exp",      NULL,_("exponential"),                            this, NULL); // "int|real|complex");
-    innates->pushFunction("cosh",     NULL,_("hyperbolic cosine"),                      this, NULL); // "int|real|complex");
-    innates->pushFunction("sinh",     NULL,_("hyperbolic sine"),                        this, NULL); // "int|real|complex");
-    innates->pushFunction("tanh",     NULL,_("hyperbolic tangent"),                     this, NULL); // "int|real|complex");
-    innates->pushFunction("sgn",      NULL,_("pos,neg,or 0"),                           this, NULL); // "int|real");
-    innates->pushFunction("int",      NULL,_("integer of"),                             this, NULL); // "int|real");
-    innates->pushFunction("gint",     NULL,_("greatest integer less than"),             this, NULL); // "int|real");
-    innates->pushFunction("lint",     NULL,_("least integer greater than"),             this, NULL); // "int|real");
-    innates->pushFunction("factor",   NULL,_("set of factors of an integer"),           this, NULL); // "int");
-    innates->pushFunction("det",      NULL,_("determinant of a square array"),          this, NULL); // "array");
-    innates->pushFunction("transpose",NULL,_("transpose of an array"),                  this, NULL); // "array");
-    innates->pushFunction("inverse",  NULL,_("inverse of square array"),                this, NULL); // "array");
-    innates->pushFunction("random",   NULL,_("Return a random number from 0 to 1"),     this, NULL);
-    innates->pushFunction("randomint",NULL,_("Return a random integer from min to max"),this, NULL); // "min:int, max:int");
+    innates->pushFunction("atan2",    NULL,_("Arctangent, returning values in range [-pi,pi]."),this, 
+									   "y",NULL,NULL,0,NULL,NULL,
+									   "x",NULL,NULL,0,NULL,NULL,
+									   NULL); // "x:int|real,y:int|real");
+    innates->pushFunction("sin",      NULL,_("sine"),                                   this, "r",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("asin",     NULL,_("arcsine"),                                this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("cos",      NULL,_("cosine"),                                 this, "r",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("acos",     NULL,_("arccosine"),                              this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("tan",      NULL,_("tangent"),                                this, "r",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("atan",     NULL,_("arctangent"),                             this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("abs",      NULL,_("absolute value"),                         this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("sqrt",     NULL,_("square root"),                            this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("log",      NULL,_("base 10 logarithm"),                      this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("ln",       NULL,_("natural logarithm"),                      this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("exp",      NULL,_("exponential"),                            this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("cosh",     NULL,_("hyperbolic cosine"),                      this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("sinh",     NULL,_("hyperbolic sine"),                        this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("tanh",     NULL,_("hyperbolic tangent"),                     this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real|complex");
+    innates->pushFunction("sgn",      NULL,_("pos,neg,or 0"),                           this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("int",      NULL,_("integer of"),                             this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("gint",     NULL,_("greatest integer less than"),             this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("lint",     NULL,_("least integer greater than"),             this, "x",NULL,NULL,0,NULL,NULL, NULL); // "int|real");
+    innates->pushFunction("factor",   NULL,_("set of factors of an integer"),           this, "i",NULL,NULL,VALUE_Int,NULL,NULL, NULL); // "int");
+    innates->pushFunction("det",      NULL,_("determinant of a square array"),          this, "a",NULL,NULL,0,NULL,NULL, NULL); // "array");
+    innates->pushFunction("transpose",NULL,_("transpose of an array"),                  this, "a",NULL,NULL,0,NULL,NULL, NULL); // "array");
+    innates->pushFunction("inverse",  NULL,_("inverse of square array"),                this, "x",NULL,NULL,0,NULL,NULL, NULL); // "array");
+    innates->pushFunction("random",   NULL,_("Return a random number from 0 to 1"),     this, "x",NULL,NULL,0,NULL,NULL, NULL);
+    innates->pushFunction("randomint",NULL,_("Return a random integer from min to max"),this, // "min:int, max:int");
+									   "min",NULL,NULL,VALUE_Int,NULL,NULL,
+									   "max",NULL,NULL,VALUE_Int,NULL,NULL,
+									   NULL); // "x:int|real,y:int|real");
 
 	InstallModule(innates,1);
 	innates->dec_count();
@@ -2804,7 +3448,7 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 			else if (len==4 && !strncmp(word,"atan",4)) { v=new DoubleValue(atan(d)); }
 
 			else if (len==3 && !strncmp(word,"abs",3))  { 
-				if (v->type()==VALUE_Int) v=new IntValue(abs(((IntValue*)v)->i));
+				if (vv->type()==VALUE_Int) v=new IntValue(abs(((IntValue*)vv)->i));
 				else v=new DoubleValue(fabs(d)); 
 			}
 			else if (len==3 && !strncmp(word,"sgn",3))     { v=new IntValue(d>0?1:(d<0?-1:0)); }
@@ -2865,7 +3509,8 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 
 
 //! Figure out and evaluate built in operators
-int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret)
+int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings,
+						  Value **value_ret, ErrorLog *log)
 {
 	if (len==1 && *the_op=='=') {
 		//*** is an assignment, needs num1 to be an LValue, num2 if an LValue, is converted to a Value. Returns an LValue
@@ -2885,17 +3530,35 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 	//num*num, fv*fv, v*v, matrix*matrix
 
 
-	if (num2==NULL) { //is left hand op
-		if (num2==NULL && len==1 && *the_op=='+') ; //***return num1;
-		if (num2==NULL && len==1 && *the_op=='-') ; //***return -num1;
-		calcerr("INCOMPLETE CODING!!");
+	if (dir==OPS_Left) { //is left hand op
+		if (len==1 && *the_op=='+') {
+			 //return unary positive
+			*value_ret=NULL;
+			if (     num1->type()==VALUE_Int        || num1->type()==VALUE_Real
+				  || num1->type()==VALUE_Flatvector || num1->type()==VALUE_Spacevector) {
+				*value_ret=num1->duplicate();
+				return 0;
+			}
+			return -1; //can't positive that type
+		}
+		if (len==1 && *the_op=='-') {
+			 //return -num1;
+			*value_ret=NULL;
+			if (num1->type()==VALUE_Int) *value_ret= new IntValue(-dynamic_cast<IntValue*>(num1)->i);
+			else if (num1->type()==VALUE_Real) *value_ret= new DoubleValue(-dynamic_cast<DoubleValue*>(num1)->d);
+			else if (num1->type()==VALUE_Flatvector) *value_ret= new FlatvectorValue(-dynamic_cast<FlatvectorValue*>(num1)->v);
+			else if (num1->type()==VALUE_Spacevector) *value_ret= new SpacevectorValue(-dynamic_cast<SpacevectorValue*>(num1)->v);
+			if (value_ret) return 0;
+			return -1; //can't negative that type
+		}
+
 		return 0;
 	}
 
-	if (num1==NULL) { //is right hand op
-		if (num2==NULL && len==2 && !strncmp(the_op,"++",2)) ; //***return num1++;
-		if (num2==NULL && len==2 && !strncmp(the_op,"--",2)) ; //***return num1--;
-		calcerr("INCOMPLETE CODING!!");
+	if (dir==OPS_Right) { //is right hand op
+		if (len==2 && !strncmp(the_op,"++",2)) ; //***return num1++;
+		if (len==2 && !strncmp(the_op,"--",2)) ; //***return num1--;
+		calcerr("INCOMPLETE CODING for right op!!");
 		return 0;
 	}
 
@@ -2993,7 +3656,7 @@ int LaidoutCalculator::subtract(Value *num1,Value *num2, Value **ret)
 		*ret=new DoubleValue(((DoubleValue *) num1)->d-(double)((IntValue*)num2)->i);
 
 	} else if (num1->type()==VALUE_Int && num2->type()==VALUE_Real) { //i+d
-		*ret=new DoubleValue(((DoubleValue *) num2)->d-(double)((IntValue*)num1)->i);
+		*ret=new DoubleValue((double)(((IntValue *) num1)->i)-((DoubleValue*)num2)->d);
 
 	} else if (num1->type()==VALUE_Real && num2->type()==VALUE_Real) { //d+d
 		*ret=new DoubleValue(((DoubleValue *) num1)->d-((DoubleValue*)num2)->d);

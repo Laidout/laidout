@@ -17,6 +17,7 @@
 
 #include "values.h"
 #include "../styles.h"
+#include "../language.h"
 #include "stylemanager.h"
 
 #include <lax/strmanip.h>
@@ -40,19 +41,6 @@ using namespace LaxFiles;
 namespace Laidout {
 
 
-//NOTES:
-// definetype polyhedron { v=set of vector, f=set of set of int, e=set of array[2]int }
-// names: v={vector},f={dummy1},e={array[2]int},  dummy1=set of int 
-//
-// paragraph:
-// 	first indent
-// 	before lead
-// 	after lead
-// 	middle lead
-// 	left indent
-// 	right indent
-//  
-
 
 
 
@@ -74,11 +62,12 @@ const char *element_TypeNames(int type)
 	if (type==VALUE_Object) return "object";
 	if (type==VALUE_Int) return "int";
 	if (type==VALUE_Real) return "real";
+	if (type==VALUE_Number) return "number";
 	if (type==VALUE_String) return "string";
 	if (type==VALUE_Fields) return "fields";
 	if (type==VALUE_Flatvector) return "flatvector";
 	if (type==VALUE_Spacevector) return "spacevector";
-	if (type==VALUE_File) return "file";
+	if (type==VALUE_File) return "File"; //this one is capitalized, as it is a bit specialized
 	if (type==VALUE_Flags) return "flags";
 	if (type==VALUE_Enum) return "enum";
 	if (type==VALUE_EnumVal) return "enumval";
@@ -107,6 +96,7 @@ const char *valueEnumCodeName(int format)
 	if (format==VALUE_Object)      return "VALUE_Object";
 	if (format==VALUE_Int)         return "VALUE_Int";
 	if (format==VALUE_Real)        return "VALUE_Real";
+	if (format==VALUE_Number)      return "VALUE_Number";
 	if (format==VALUE_String)      return "VALUE_String";
 	if (format==VALUE_Fields)      return "VALUE_Fields";
 	if (format==VALUE_Flatvector)  return "VALUE_Flatvector";
@@ -154,6 +144,28 @@ const char *valueEnumCodeName(int format)
  * -1 for no value returned due to incompatible parameters, which aids in function overloading.
  *  1 for parameters ok, but there was somehow an error, so no value returned.
  */
+
+
+SimpleFunctionEvaluator::SimpleFunctionEvaluator(ObjectFunc func)
+{
+	newfunc=NULL;
+	function=func;
+}
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int SimpleFunctionEvaluator::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (!function) return 1;
+
+	//typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
+	return function(context, parameters, value_ret, *log);
+}
 
 
 
@@ -253,8 +265,15 @@ ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what thi
 	stylefunc=nstylefunc;
 	opevaluator=NULL;
 	evaluator=NULL;
-	range=defaultvalue=name=Name=description=NULL;
 	defaultValue=NULL;
+	range=defaultvalue=name=Name=description=NULL;
+
+	makestr(name,nname);
+	makestr(Name,nName);
+	makestr(description,ndesc);
+	makestr(range,nrange);
+	makestr(defaultvalue,newdefval);
+	
 
 	if (nextends) {
 		ObjectDef *extendsdef;
@@ -270,13 +289,8 @@ ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what thi
 		}
 	}
 	
-	makestr(name,nname);
-	makestr(Name,nName);
-	makestr(description,ndesc);
-	makestr(range,nrange);
-	makestr(defaultvalue,newdefval);
-	
 	fields=nfields;
+	fieldsformat=0;
 	format=fmt;
 	flags=fflags;
 }
@@ -284,6 +298,10 @@ ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what thi
 //! Create a new VALUE_Variable object def.
 ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval)
 {
+	name=newstr(nname);
+	Name=newstr(nName);
+	description=newstr(ndesc);
+
 	source_module=NULL;
 	newfunc=NULL;
 	stylefunc=NULL;
@@ -301,6 +319,10 @@ ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Val
 //! Null creation assumes namespace.
 ObjectDef::ObjectDef()
 {
+	name=NULL;
+	Name=NULL;
+	description=NULL;
+
 	source_module=NULL;
 	newfunc=NULL;
 	stylefunc=NULL;
@@ -583,7 +605,7 @@ ObjectDef *ObjectDef::last()
 int ObjectDef::pushEnumValue(const char *str, const char *Str, const char *dsc, int id)
 {
 	if (format!=VALUE_Enum) return 1;
-	if (id==-10000000) id=getNumFields();
+	if (id==-10000000) id=(fields?fields->n:0); //use number of enum values
 	char idstr[30];
 	sprintf(idstr,"%d",id);
 	return push(str,Str,dsc, 
@@ -626,7 +648,6 @@ int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
 	va_end(ap);
 
 	int c=push(e);
-	if (c<0) delete e;
 	return c;
 }
 
@@ -666,7 +687,7 @@ int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *des
  * - range (string)
  * - default value (string) 
  *
- * For instance, if you are adding 2 parameters, you must supply 6 const char * values, followed
+ * For instance, if you are adding 2 parameters, you must supply 12 const char * values, followed
  * by a single NULL, or all hell will break loose.
  */
 int ObjectDef::pushFunction(const char *nname,const char *nName,const char *ndesc,
@@ -733,21 +754,23 @@ int ObjectDef::push(const char *nname,const char *nName,const char *ndesc,
 int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndesc, Value *v, int absorb)
 {
 	ObjectDef *def=FindDef(name);
-	if (!def) {
-		def=new ObjectDef(name,nName,ndesc, v);
-		if (absorb) v->dec_count();
-		return 0;
-	} else {
+
+	if (def) {
+		 //name found, overwrite with new stuff
 		makestr(def->Name,nName);
 		makestr(def->description,ndesc);
 		if (v) v->inc_count();
 		if (def->defaultValue) def->defaultValue->dec_count();
 		def->defaultValue=v;
-		if (absorb) v->dec_count();
+		if (v && absorb) v->dec_count();
 		return -1;
 	}
-	if (absorb) v->dec_count();
-	return 1;
+	
+	//else name didn't exist, so ok to push
+	def=new ObjectDef(name,nName,ndesc, v);
+	push(def,1);
+	if (v && absorb) v->dec_count();
+	return 0;
 }
 
 //! Set the variable, adding a bare one if it does not exist. If name==NULL, then set in *this.
@@ -825,14 +848,16 @@ int ObjectDef::push(ObjectDef *newfield, int absorb)
  * future pushParameter() calls in this case will add to that one, not to *this.
  */
 int ObjectDef::pushParameter(const char *nname,const char *nName,const char *ndesc,
-			ValueTypes fformat,const char *nrange, const char *newdefval)
+			ValueTypes fformat,const char *nrange, const char *newdefval, Value *defvalue)
 {
 	ObjectDef *newdef=new ObjectDef(NULL,nname,nName,
 								  ndesc,fformat,nrange,newdefval,
 								  NULL,0,NULL);
+	if (defvalue) { newdef->defaultValue=defvalue; defvalue->inc_count(); }
+
 	int c;
 	if (!fields || !fields->n) c=push(newdef);//absorbs
-	else c=fields->e[fields->n-1]->push(newdef);
+	else c=fields->push(newdef);
 	return c;
 }
 
@@ -915,11 +940,14 @@ Value *ObjectDef::newValue(const char *objectdef)
  * If which&4 then only look in variables.
  * Default is to look in all. The returned def MUST be a function, class, or variable.
  *
+ * If len<0, then use strlen(objectdef).
+ *
  * \todo Should probably optimize this for searching.. have list of sorted field names?
  */
 ObjectDef *ObjectDef::FindDef(const char *objectdef, int len, int which)
 {   
 	if (!fields) return NULL;
+	if (len<0) len=strlen(objectdef);
 	for (int c=0; c<fields->n; c++) {
 		if (!strncmp(objectdef,fields->e[c]->name,len) && strlen(fields->e[c]->name)==(unsigned int)len) {
 			if ((which&1) && fields->e[c]->format==VALUE_Function) return fields->e[c];
@@ -1031,65 +1059,86 @@ int ObjectDef::findActualDef(int index,ObjectDef **def_ret)
 	return index;
 }
 
-//! Find the index of the field named fname. Doesn't look in subfields.
-/*! Compares the chars in fname up to the first '.'. It assumes that fname
- *  does not contain whitespace or start with a '.'. 
- *  Updates next to point to char after the first '.', unless field is not found
- *  in which case next is set to fname, and -1 is returned.
+//! Find the index of the field named in fname.
+/*! Assumes fname is composed of letters, numbers, or underscores.
+ *  "a.b" will find a, and next will point to "b". If there is only "a", then next
+ *  will be set to NULL.
+ *
  *  On success, the field index is returned (field index starting at 0). 
  *  If the field string is a number (ie "34.2...") the number is parsed
  *  and returned without bounds checking (though it must be non-negative). This 
  *  number passing is to accommodate sets with variable numbers of
  *  elements, where the number of elements is held in Object, not ObjectDef.
  *
- *  If fname has something like "34ddfdsa.33" then -1 is returned and 
- *  next is set to fname changed. Field names must be all digits, or [a-zA-Z0-9-_] and
- *  start with a letter.
+ *  This returned index takes in to account all inherited defs, which add
+ *  before. So say class A inherits from class B, and B has 3 members, if
+ *  we find the first member defined by A, index will be 3, the number of
+ *  members of B, plus the immediate index in A.
  */
-int ObjectDef::findfield(char *fname,char **next) // next=NULL
+int ObjectDef::findfield(const char *fname,char **next) // next=NULL
 {
-	int n;
+	int index=0;
+	int nn;
 	if (extendsdefs.n) {
 		ObjectDef *extendsdef;
 		for (int c=0; c<extendsdefs.n; c++) {
 			extendsdef=extendsdefs.e[c];
-			n=extendsdef->findfield(fname,next);
-			if (n>=0) return n;
+			nn=extendsdef->findfield(fname,next);
+			if (nn>=0) return nn+index;
+			index+=extendsdef->getNumFieldsOfThis();
 		}
 	}
-		
-	char *nxt;
+	nn=findFieldOfThis(fname,next);
+	if (nn>=0) return nn+index;
+	if (next) *next=NULL;
+	return -1;
+}
+
+//! Like findfield(), but only return index of this class, without adding or searching from inherited classes.
+/*! So, returned index is in this->fields.
+ */
+int ObjectDef::findFieldOfThis(const char *fname,char **next) // next=NULL
+{
 	 // make n the index of the first '.' or end of string
-	n=strchrnul(fname,'.')-fname;
-	if (n==0) n=strlen(fname);
+	unsigned int n=0; //length of string to check in fname
+	while (isalnum(fname[n]) || fname[n]=='_') n++;
+	if (n==0) {
+		if (next) *next=NULL;
+		return -1;
+	}
 
 	 // check for number first: "34.blah.blah"
 	if (isdigit(fname[0])) {
+		char *nxt=NULL;
 		int nn=strtol(fname,&nxt,10); 
-		if (nxt!=fname) {
-			if (nxt-fname!=n) { if (next) *next=fname; return -1; } // was "34asdfasd" or some such bad input
-			if (next) *next=fname + n + (fname[n]=='.'?1:0);
-			if (nn>0) return nn;
-		}
-	} else if (fields) { // else check for field: "blah.3.blah..."
-		for (int c=0; c<fields->n; c++) {
-			if (!strncmp(fname,fields->e[c]->name,n) && strlen(fields->e[c]->name)==strlen(fname)) {
-				if (next) *next=fname + n + (fname[n]=='.'?1:0);
-				int cc=c;
-				if (extendsdefs.n) {
-					cc+=extendsdefs.e[c]->getNumFields();
-				}
-				return cc;
+		if (nxt-fname==n) {
+			 //found valid number
+			if (nn>=0) {
+				if (next) *next=const_cast<char*>(fname) + n + (fname[n]=='.'?1:0);
+				return nn;
 			}
 		}
 	}
+	
+	if (!fields) {
+		if (next) *next=NULL;
+		return -1;
+	}
+
+	for (int c=0; c<fields->n; c++) {
+		if (!strncmp(fname,fields->e[c]->name,n) && strlen(fields->e[c]->name)==n) {
+			if (next) *next=const_cast<char*>(fname) + n + (fname[n]=='.'?1:0);
+			return c;
+		}
+	}
+
 	return -1;
 }
 
 
 
 
-//---------------------------------------- Values --------------------------------------
+//---------------------------------------- ValueHash --------------------------------------
 /*! \class ValueHash
  * \brief Class to aid parsing of functions.
  *
@@ -1106,6 +1155,272 @@ ValueHash::ValueHash()
 ValueHash::~ValueHash()
 {
 	DBG values.flush(); //this should happen automatically anyway
+}
+
+int ValueHash::type()
+{ return VALUE_Hash; }
+
+/*! Currently copies references, does not create new instances of value objects.
+ */
+Value *ValueHash::duplicate()
+{
+	ValueHash *v=new ValueHash;
+	Value *vv;
+	for (int c=0; c<keys.n; c++) {
+		vv=values.e[c]->duplicate();
+		vv->inc_count();
+		v->push(keys.e[c],vv);
+	}
+	return v;
+}
+
+/*! Something like:
+ * <pre>
+ *  { name: 3,
+ *    name2: "string",
+ *    othername: (3,5)
+ *  } 
+ * </pre>
+ */
+int ValueHash::getValueStr(char *buffer,int len)
+{
+	int needed=3;//"{}\n"
+	for (int c=0; c<values.n; c++) {
+		needed+= 1 + values.e[c]->getValueStr(NULL,0,0) + strlen(keys.e[c])+3;
+	}
+	if (!buffer || len<needed) return needed;
+
+	int pos=1;
+	sprintf(buffer,"{");
+	for (int c=0; c<values.n; c++) {
+		 //add key name
+		sprintf(buffer+pos," %s: ",keys[c]);
+		pos+=strlen(buffer+pos);
+
+		 //add value
+		values.e[c]->getValueStr(buffer+pos,len);
+		if (c!=values.n-1) strcat(buffer+pos,",");
+		pos+=strlen(buffer+pos);
+	}
+	strcat(buffer+pos,"}");
+	modified=0;
+	return 0;
+}
+
+//! Return a set with the index'th {name,value}. value is a ref to original value, not a duplicate.
+Value *ValueHash::dereference(int index)
+{
+	if (index<0 || index>=values.n) return NULL;
+	SetValue *set=new SetValue();
+	set->Push(new StringValue(keys.e[index]),1);
+	set->Push(values.e[index],0);
+	return set;
+}
+
+ObjectDef defaultValueHashObjectDef(NULL,"hash",_("Hash"),_("Set of name-value pairs"),
+							 VALUE_Class, NULL, "{ : }", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *ValueHash::makeObjectDef()
+{
+	ObjectDef *def=&defaultValueHashObjectDef;
+	if (def->fields) return def;
+
+//	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
+//					 FunctionEvaluator *nfunc,
+//					 ...);
+// * - the parameter name,
+// * - the parameter name translated, human readable name
+// * - the description of the parameter
+// * - format (integer)
+// * - range (string)
+// * - default value (string) 
+
+	def->pushFunction("n",_("Number of elements"),_("Number of elements"),
+					  NULL);
+
+	def->pushFunction("keys",_("Keys"),_("Return set of key names"),
+					  NULL);
+
+	def->pushFunction("values",_("Values"),_("Return set of values"),
+					  NULL);
+
+	def->pushFunction("push",_("Push"),_("Add a new name-value pair"),
+					  NULL,
+					  "key",_("Key"),_("Key"), VALUE_String,NULL,NULL,
+					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
+					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1");
+
+	def->pushFunction("pop",_("Pop"),_("Remove a name-value pair"),
+					  NULL,
+					  "key",_("Key"),_("Which to pop (int or name). Returns {name,value}."), VALUE_Any,NULL,"-1");
+
+	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
+					  NULL,
+					  "pos",_("Position 1"),_("Position to swap."), VALUE_Int,NULL,NULL,
+					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL);
+
+	def->pushFunction("slide",_("Slide"),_("Same as push(pop(p1),p2)"),
+					  NULL,
+					  "pos",_("Position 1"),_("Position to take."), VALUE_Int,NULL,NULL,
+					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL);
+
+	def->pushFunction("key",_("Key"),_("Return string of the key"),
+					  NULL,
+					  "pos",_("Index"),_("Index"), VALUE_Int,NULL,NULL);
+
+	def->pushFunction("value",_("Value"),_("Return value associated with key"),
+					  NULL,
+					  "key",_("Key"),_("Either an integer index, or string key"), VALUE_Any,NULL,NULL);
+
+	return def;
+}
+
+/*! \ingroup misc
+ * Return len==strlen(str) && !strncmp(longstr,str,len).
+ */
+int isName(const char *longstr,int len, const char *str)
+{ return len==(int)strlen(str) && !strncmp(longstr,str,len); }
+
+int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (len==1 && *func=='n') { *value_ret=new IntValue(keys.n); return 0; }
+
+	if (isName(func,len,"keys")) {
+		SetValue *set=new SetValue;
+		for (int c=0; c<keys.n; c++) set->Push(new StringValue(keys.e[c]),1);
+		*value_ret=set;
+		return 0;
+	}
+
+	if (isName(func,len,"values")) {
+		SetValue *set=new SetValue;
+		for (int c=0; c<values.n; c++) set->Push(values.e[c],0);
+		*value_ret=set;
+		return 0;
+	}
+
+
+	try {
+
+		if (isName(func,len,"value")) {
+			Value *v=parameters->find("key");
+			if (!v) throw 1; //missing parameter!
+			int pos=-1;
+			if (v->type()==VALUE_Int) pos=dynamic_cast<IntValue*>(v)->i;
+			else if (v->type()==VALUE_String) {
+				pos=findIndex(dynamic_cast<StringValue*>(v)->str);
+			}
+			if (pos<0 || pos>=keys.n) throw 2; //index out of range!
+			*value_ret=values.e[pos];
+			values.e[pos]->inc_count();
+			return 0;
+		}
+
+		if (isName(func,len,"key")) {
+			int success;
+			int pos=parameters->findInt("pos",-1,&success);
+			if (success!=0) throw -1; //wrong parameters
+			if (pos<0 || pos>=keys.n) throw 2; //index out of range!
+			*value_ret=new StringValue(keys.e[pos]);
+			return 0;
+		}
+		
+
+		if (isName(func,len,"push")) {
+			int success;
+			int pos=parameters->findInt("pos",-1,&success);
+			if (success!=0) pos=keys.n; //pos not found, use top
+			if (pos<0) pos=keys.n;
+
+			const char *key=parameters->findString("key",-1,&success);
+			if (success!=0) throw -1;
+
+			Value *v=parameters->find("value");
+			if (!v) throw -1;
+
+			push(key,v);
+			*value_ret=NULL;
+			return 0;
+		}
+		
+		if (isName(func,len,"pop")) {
+			Value *v=parameters->find("key");
+			if (!v) throw 1; //missing parameter!
+			int pos=-1;
+			if (v->type()==VALUE_Int) pos=dynamic_cast<IntValue*>(v)->i;
+			else if (v->type()==VALUE_String) {
+				pos=findIndex(dynamic_cast<StringValue*>(v)->str);
+			}
+			if (pos<0 || pos>=keys.n) throw 2; //index out of range!
+
+			SetValue *set=new SetValue();
+			set->Push(new StringValue(keys.e[pos]),1);
+			keys.remove(pos);
+			set->Push(values.e[pos],0);
+			values.remove(pos);
+			*value_ret=set;
+			return 0;
+		}
+		
+		if (isName(func,len,"swap")) {
+			int success;
+			int pos=parameters->findInt("pos",-1,&success);
+			if (success!=0) throw -1; //wrong parameters
+			int pos2=parameters->findInt("pos2",-1,&success);
+			if (pos<0  || pos>=keys.n)  throw 2; //index out of range!
+			if (pos2<0 || pos2>=keys.n) throw 2; //index out of range!
+			swap(pos,pos2);
+			return 0;
+		}
+		
+		if (isName(func,len,"slide")) {
+			int success;
+			int pos=parameters->findInt("pos",-1,&success);
+			if (success!=0) throw -1; //wrong parameters
+			int pos2=parameters->findInt("pos2",-1,&success);
+			if (pos<0  || pos>=keys.n)  throw 2; //index out of range!
+			if (pos2<0 || pos2>=keys.n) throw 2; //index out of range!
+
+			 //push(pop(p1),p2)
+			char *key=keys.pop(pos);
+			Value *value=values.pop(pos);
+			push(key,value);
+			value->dec_count();
+		}
+	} catch (int e) {
+		if (log) {
+			if (e==-1) return -1; //can't use parameters!
+			if (e==1) log->AddMessage(_("Missing parameter!"),ERROR_Fail);
+			else if (e==2) log->AddMessage(_("Index out of range!"),ERROR_Fail);
+		}
+		return 1;
+	}
+	
+
+	if (log) log->AddMessage(_("Unknown name!"),ERROR_Fail);
+	return 1;
+}
+
+int ValueHash::getNumFields()
+{
+	return values.n;
+}
+
+ObjectDef *ValueHash::FieldInfo(int i)
+{
+	if (i<0 || i>=values.n) return NULL;
+	return values.e[i]->GetObjectDef();
+}
+
+//! Returns object name, or NULL.
+const char *ValueHash::FieldName(int i)
+{
+	if (i<0 || i>=values.n) return NULL;
+	return values.e[i]->Id();
 }
 
 int ValueHash::push(const char *name,int i)
@@ -1331,6 +1646,23 @@ const char *ValueHash::findString(const char *name, int which, int *error_ret)
 	return s->str;
 }
 
+/*! If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not a FlatvectorValue, then sets *error_ret=2.
+ * Otherwise set to 0.
+ */
+flatvector ValueHash::findFlatvector(const char *name, int which, int *error_ret)
+{
+	if (which<0) which=findIndex(name);
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
+	FlatvectorValue *v=dynamic_cast<FlatvectorValue*>(values.e[which]);
+	if (!v) { if (error_ret) *error_ret=2; return 0; }
+	if (error_ret) *error_ret=0;
+	return v->v;
+}
+
 /*! Does not increment count of the object.
  *  If which>=0 then interpret that Value and ignore name.
  * Otherwise find it with findIndex().
@@ -1359,10 +1691,13 @@ Laxkit::anObject *ValueHash::findObject(const char *name, int which, int *error_
 Value::Value()
 {
 	modified=1;
+	objectdef=NULL;
 }
 
 Value::~Value()
-{ }
+{
+	if (objectdef) objectdef->dec_count();
+}
 
 //! Return a Value's string id, if any. NULL might be returned for unnamed values.
 /*! Default is to return this->object_idstr.
@@ -1370,14 +1705,46 @@ Value::~Value()
 const char *Value::Id()
 { return object_idstr; }
 
+
+//! Retrieve values from members. Note this is for Values only, not functions, classes, namespaces, etc.
+/*! len is the lengthe of extstring to consider.
+ * Dereference once. extstring could be something like "a.21.c", then len should be 1,
+ * and we dereference "a", leaving to ".21.c" to be dealt with elsewhere. For the number, dereference(int) is used, which is
+ * optional for subclasses to define. 
+ *
+ * Returns a reference if possible, or new. Calling code MUST decrement count.
+ *
+ * Default returns NULL.
+ */
+Value *Value::dereference(const char *extstring, int len)
+{ return NULL; }
+
+
+//! Returns a reference if possible, or new if necessary. Calling code MUST decrement count.
+/*! Default is to return NULL. Subclasses may decide for themselves if they implement number
+ * indexing.
+ */
+Value *Value::dereference(int index)
+{ return NULL; }
+
+
+
+
+
 //! Output to buffer, do NOT reallocate buffer, assume it has enough space. If len is not enough, return how much is needed.
 /*! Generally, subclasses should redefine this, and not the other getValueStr().
+ *
+ * Return 0 for successfully written, or the length necessary if len is not enough.
  */
 int Value::getValueStr(char *buffer,int len)
 {
-	if (!buffer || len<(int)strlen(whattype()+1)) return strlen(whattype())+1;
+	ObjectDef *def=GetObjectDef();
+	const char *defname=(def?def->name:whattype());
 
-	sprintf(buffer,"%s",whattype());
+	if (!buffer || len<(int)strlen(whattype()+1)) return strlen(defname)+1;
+
+
+	sprintf(buffer,"%s",defname);
 	return -1;
 }
 
@@ -1444,6 +1811,13 @@ const char *Value::FieldName(int i)
     return def->name;
 }
 
+int Value::FieldIndex(const char *name)
+{
+    ObjectDef *def=GetObjectDef();
+    if (!def) return -1;
+	return def->findfield(name,NULL);
+}
+
 /*! Default will not output the Value's id string. The object calling this class should be doing that.
  */
 void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -1483,18 +1857,43 @@ void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *con
 }
 
 
+//----------------------------- CodedValue ----------------------------------
+
+/*! \class CodedValue
+ */
+class CodedValue : public Value, public FunctionEvaluator
+{
+  public:
+	CodedValue();
+	virtual ~CodedValue();
+};
+
 //----------------------------- SetValue ----------------------------------
 /*! \class SetValue
  */
 
-//! Push val, which increments its count.
+SetValue::SetValue(const char *restricted)
+{
+	restrictto=newstr(restricted);
+}
+
+SetValue::~SetValue()
+{
+	if (restrictto) delete[] restrictto;
+}
+
+
+//! Push v, which increments its count if !absorb.
 /*! Return 0 for success or nonzero for error.
  */
-int SetValue::Push(Value *v)
+int SetValue::Push(Value *v,int absorb)
 {
 	if (!v) return 1;
-	if (values.push(v)>=0) return 0;
-	return 1;
+	if (values.push(v)>=0) {
+		if (absorb) v->dec_count();
+		return 0; //success
+	}
+	return 1; //fail
 }
 
 int SetValue::getValueStr(char *buffer,int len)
@@ -1525,10 +1924,53 @@ Value *SetValue::duplicate()
 	Value *v;
 	for (int c=0; c<values.n; c++) {
 		v=values.e[c]->duplicate();
-		s->Push(v);
-		v->dec_count();
+		s->Push(v,1);
 	}
 	return s;
+}
+
+//! Return the index'th element.
+Value *SetValue::dereference(int index)
+{
+	if (index<0 || index>=values.n) return NULL;
+	if (values.e[index]) values.e[index]->inc_count();
+	return values.e[index];
+}
+
+
+ObjectDef default_SetValue_ObjectDef(NULL,"set",_("Set"),_("Set of values"),
+							 VALUE_Class, NULL, "{}", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *SetValue::makeObjectDef()
+{
+	ObjectDef *def=&default_SetValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("n",_("Number of elements"),_("Number of elements"),
+					  NULL);
+
+	def->pushFunction("push",_("Push"),_("Add a new value"),
+					  NULL,
+					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
+					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1");
+
+	def->pushFunction("pop",_("Pop"),_("Remove a value"),
+					  NULL,
+					  "pos",_("Position"),_("Which to pop."), VALUE_Any,NULL,"-1");
+
+	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
+					  NULL,
+					  "pos",_("Position 1"),_("Position to swap."), VALUE_Int,NULL,NULL,
+					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL);
+
+	def->pushFunction("slide",_("Slide"),_("Same as push(pop(p1),p2)"),
+					  NULL,
+					  "pos",_("Position 1"),_("Position to take."), VALUE_Int,NULL,NULL,
+					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL);
+
+	return def;
 }
 
 int SetValue::getNumFields()
@@ -1549,16 +1991,6 @@ const char *SetValue::FieldName(int i)
 	return values.e[i]->Id();
 }
 
-ObjectDef *SetValue::makeObjectDef()
-{
-	return NULL;
-
-	//push(value, position)
-	//pop(position)
-	//swap(p1,p2)
-	//slide(p1,p2)  same as push(pop(p1),p2)
-	//n
-}
 
 //----------------------------- ArrayValue ----------------------------------
 /*! \class ArrayValue
@@ -1577,7 +2009,7 @@ ArrayValue::~ArrayValue()
 
 ObjectDef *ArrayValue::makeObjectDef()
 {
-	return NULL;
+	return NULL; // ***
 }
 
 int ArrayValue::getValueStr(char *buffer,int len)
@@ -1608,8 +2040,7 @@ Value *ArrayValue::duplicate()
 	Value *v;
 	for (int c=0; c<values.n; c++) {
 		v=values.e[c]->duplicate();
-		s->Push(v);
-		v->dec_count();
+		s->Push(v,1);
 	}
 	return s;
 }
@@ -1679,12 +2110,15 @@ Value *FlatvectorValue::duplicate()
 
 
 //! Compare nonwhitespace until period with field, return 1 for yes, 0 for no.
-/*! Return pointer to just after extension.
- */
-int extequal(const char *str, const char *field, char **next_ret=NULL)
+/*! Return pointer to just after extension. If no match, next_ret gets NULL.
+ * str can be "a.b.c.", and only "a" is checked, but field string must be "a",
+ * it cannot have extra characters.
+ * */
+int extequal(const char *str, int len, const char *field, char **next_ret=NULL)
 {
-	unsigned int n=0;
-	while (isalnum(str[n]) || str[n]=='_') n++;
+	unsigned int n=len;
+	if (len<=0) while (isalnum(str[n]) || str[n]=='_') n++;
+
 	if (n!=strlen(field) || strncmp(str,field,n)!=0) {
 		if (next_ret) *next_ret=NULL;
 		return 0;
@@ -1695,10 +2129,10 @@ int extequal(const char *str, const char *field, char **next_ret=NULL)
 	return 1;
 }
 
-Value *FlatvectorValue::dereference(const char *extstring)
+Value *FlatvectorValue::dereference(const char *extstring, int len)
 {
-	if (extequal(extstring, "x")) return new DoubleValue(v.x);
-	if (extequal(extstring, "y")) return new DoubleValue(v.y);
+	if (extequal(extstring,len, "x")) return new DoubleValue(v.x);
+	if (extequal(extstring,len, "y")) return new DoubleValue(v.y);
 	return NULL;
 }
 
@@ -1716,11 +2150,11 @@ int SpacevectorValue::getValueStr(char *buffer,int len)
 Value *SpacevectorValue::duplicate()
 { return new SpacevectorValue(v); }
 
-Value *SpacevectorValue::dereference(const char *extstring)
+Value *SpacevectorValue::dereference(const char *extstring, int len)
 {
-	if (extequal(extstring, "x")) return new DoubleValue(v.x);
-	if (extequal(extstring, "y")) return new DoubleValue(v.y);
-	if (extequal(extstring, "z")) return new DoubleValue(v.z);
+	if (extequal(extstring,len, "x")) return new DoubleValue(v.x);
+	if (extequal(extstring,len, "y")) return new DoubleValue(v.y);
+	if (extequal(extstring,len, "z")) return new DoubleValue(v.z);
 	return NULL;
 }
 
@@ -1874,6 +2308,41 @@ Value *ObjectValue::duplicate()
 { return new ObjectValue(object); }
 
 
+//--------------------------------- ColorValue -----------------------------
+/*! Set from a hex string.
+ */
+ColorValue::ColorValue(const char *str)
+  : color(LAX_COLOR_RGB,65535,0,0,0,65535)
+{
+	color.SetHexValue(str);
+	DBG cerr <<"ColorValue creation.."<<endl;
+}
+
+/*! Objects gets count decremented.
+ */
+ColorValue::~ColorValue()
+{
+	DBG cerr <<"ColorValue destructor.."<<endl;
+}
+
+int ColorValue::getValueStr(char *buffer,int len)
+{
+	int needed=11;
+	if (!buffer || len<needed) return needed;
+
+	color.HexValue(buffer);
+	modified=0;
+	return 0;
+}
+
+Value *ColorValue::duplicate()
+{
+	char buffer[12];
+	color.HexValue(buffer);
+	return new ColorValue(buffer);
+}
+
+
 //--------------------------------- FunctionValue -----------------------------
 
 //----------------------------- ObjectDef utils ------------------------------------------
@@ -1888,12 +2357,12 @@ Value *ObjectValue::duplicate()
  *
  * On success, it will return the value of rawparams, or NULL if there is any error.
  *
- * Something like "paper=letter,imposition.net.box(width=5,3,6), 3 pages" will be parsed 
+ * Something like "paper=letter,imposition, 3" will be parsed 
  * by parse_fields into an attribute like this:
  * <pre>
  *  paper letter
  *  - imposition
- *  - 3 pages
+ *  - 3 
  * </pre>
  *
  * Now say we have a ObjectDef something like:
@@ -1910,11 +2379,11 @@ Value *ObjectValue::duplicate()
  * </pre>
  *
  * Now paper is the only named parameter. It will be moved to position 1 to match
- * the position in the styledef. The other 2 are not named, so we try to guess. If
+ * the position in the styledef. The other 2 are not named, so we try to guess. (todo:) If
  * there is an enum field in the styledef, then the value of the parameter, "imposition" 
  * for instance, is searched for in the enum values. If found, it is moved to the proper
  * position, and labeled accordingly. Any remaining unclaimed parameters are mapped
- * in order to the unused styledef fields.
+ * in order to the unused styledef fields. Extra or unknown values are placed at the end.
  *
  * So the mapping of the above will result in rawparams having:
  * <pre>

@@ -36,13 +36,9 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 ---- bugs:
 
-control select around test-imagesmany.laidout, on button up, my kb no work anymore!! resets on press from other kb
-
 html dump must convert chars to entities
 
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
-
-path linestyle should not directly use GX*
 
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 
@@ -102,9 +98,33 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+debug multi head? seems to crash when showing with projectors plugged in
+	screen info should return x,y,w,h, with flag saying it is part of a whole.
+	if only one screen, then x,y is 0
+
 calculator
-  change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
-  allow // or /* */ comments?
+  assignment still off, need to be able to do a.x=3;
+  debug using and import... remove using, use import Math.* instead
+  debug function definitions
+  debug class definitions
+  how best to allow created object defs to be referenced as parameter, variable, or set types
+  skipBlock does not obey // and /**/ commenting
+  DONE a=(1,2); a.x crashes
+  DONE show Laidout.Affine should show all fields
+  DONE debug name lookup, assignment, etc
+  DONE debug things like "show Math.sin"  --> is looking in scope namespace, rather than entries
+  DONE allow // or /*comments*/ ?
+  DONE AddName seems to work unevenly
+  DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
+
+Spread Editor:
+  insert blanks
+  delete pages, the other right click menu options
+  Insert page before
+  Insert page after
+  Insert pages...  <- on screen indicator for number of pages to add before or after
+  modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+  background preview rendering for spreadeditor
 
 customizable object child relationships to parent, rather than simple transform
   transform relative to parent origin
@@ -299,15 +319,6 @@ messages to the status line should have priorities, so once mouse over messages 
   back to a lower priority message
 
 should have easy way to save as a template
-
-Spread Editor:
-  insert blanks
-  delete pages, the other right click menu options
-  Insert page before
-  Insert page after
-  Insert pages...  <- on screen indicator for number of pages to add before or after
-  modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
-  background preview rendering for spreadeditor
 
 when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
 
@@ -715,4 +726,6 @@ These can then be purged after each release...
 DONE input base in no "config" in objects
 DONE drawable groups should be able to have non L objects
 DONE need to merge Group and DrawableObject
+DONE path linestyle should not directly use GX*
+
 

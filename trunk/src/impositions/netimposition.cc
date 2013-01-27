@@ -371,7 +371,7 @@ StyleDef *makeNetImpositionStyleDef()
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
-			VALUE_Fields,
+			VALUE_Class,
 			NULL,NULL,
 			NULL,
 			0, //new flags

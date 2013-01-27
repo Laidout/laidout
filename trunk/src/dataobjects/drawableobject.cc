@@ -707,27 +707,39 @@ ObjectDef *DrawableObject::makeObjectDef()
 
 //--------------------------------------- AffineValue ---------------------------------------
 
-class AffineValue : virtual public Value, virtual public Laxkit::Affine
+class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual public FunctionEvaluator
 {
   public:
+	AffineValue();
 	AffineValue(const double *m);
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return GetObjectDef()->fieldsformat; }
-	virtual int evaluate(const char *function, ValueHash *parameters, Value **value_ret, ErrorLog &log);
+	virtual Value *dereference(int index);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log);
 };
+
+AffineValue::AffineValue()
+{}
 
 AffineValue::AffineValue(const double *m)
   : Affine(m)
 {}
+
+Value *AffineValue::dereference(int index)
+{
+	if (index<0 || index>=6) return NULL;
+	return new DoubleValue(m(index));
+}
 
 int AffineValue::getValueStr(char *buffer,int len)
 {
     int needed=6*30;
     if (!buffer || len<needed) return needed;
 
-	sprintf(buffer,"(%.10g,%.10g,%.10g,%.10g,%.10g,%.10g)",m(0),m(1),m(2),m(3),m(4),m(5));
+	sprintf(buffer,"[%.10g,%.10g,%.10g,%.10g,%.10g,%.10g]",m(0),m(1),m(2),m(3),m(4),m(5));
     modified=0;
     return 0;
 }
@@ -749,108 +761,190 @@ ObjectDef *AffineValue::makeObjectDef()
 	return objectdef;
 }
 
-int AffineValue::evaluate(const char *function, ValueHash *parameters, Value **value_ret, ErrorLog &log)
+int AffineValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log)
 {
-	if (!strcmp(function,"rotate")) {
+	if (len==6 && !strncmp(function,"rotate",6)) {
 		int err=0;
 		double angle;
 		flatpoint p;
 		try {
-			angle=parameters->findIntOrDouble("angle",-1,&err);
+			angle=pp->findIntOrDouble("angle",-1,&err);
 			if (err) throw _("Missing angle.");
 			err=0;
 
-			FlatvectorValue *fpv=dynamic_cast<FlatvectorValue*>(parameters->find("point"));
+			FlatvectorValue *fpv=dynamic_cast<FlatvectorValue*>(pp->find("point"));
 			if (fpv) p=fpv->v;
 
 			Rotate(angle,p);
 
 		} catch (const char *str) {
-			log.AddMessage(str,ERROR_Fail);
+			if (log) log->AddMessage(str,ERROR_Fail);
 			err=1;
 		}
 		 
 		if (value_ret) *value_ret=NULL;
 		return err;
 
-	} else if (!strcmp(function,"scalerotate")) {
-		cerr <<" *** need to implement AffineValue scalerotate"<<endl;
-	} else if (!strcmp(function,"anchorshear")) {
-		cerr <<" *** need to implement AffineValue anchorshear"<<endl;
-	} else if (!strcmp(function,"flip")) {
-		cerr <<" *** need to implement AffineValue flip"<<endl;
-	} else if (!strcmp(function,"settransform")) {
-		cerr <<" *** need to implement AffineValue settransform"<<endl;
+	} else if (len==9 && !strncmp(function,"translate",6)) {
+		int err=0;
+		flatpoint p;
+		p.x=pp->findDouble("x",-1,&err); 
+		p.y=pp->findDouble("y",-1,&err);
+		int i=pp->findIndex("p",1);
+		if (i>=0 && dynamic_cast<FlatvectorValue*>(pp->e(i))) p=dynamic_cast<FlatvectorValue*>(pp->e(i))->v;
+		origin(p);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+
+	} else if (len==11 && !strncmp(function,"scalerotate",11)) {
+		int err=0;
+		flatpoint p1,p2,p3;
+		p1=pp->findFlatvector("p1",-1,&err);
+		p2=pp->findFlatvector("p2",-1,&err);
+		p3=pp->findFlatvector("p3",-1,&err);
+
+		if (p1==p2) {
+			if (log) log->AddMessage(_("p1 and p2 must be different points"),ERROR_Fail);
+			return 1;
+		}
+
+		RotateScale(p1,p2,p3);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+
+	} else if (len==11 && !strncmp(function,"anchorshear",11)) {
+		int err=0;
+		flatpoint p1,p2,p3,p4;
+		p1=pp->findFlatvector("p1",-1,&err);
+		p2=pp->findFlatvector("p2",-1,&err);
+		p3=pp->findFlatvector("p3",-1,&err);
+		p4=pp->findFlatvector("p4",-1,&err);
+
+		if (p1==p2) {
+			if (log) log->AddMessage(_("p1 and p2 must be different points"),ERROR_Fail);
+			return 1;
+		}
+
+		AnchorShear(p1,p2,p3,p4);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+
+	} else if (len==4 &&  !strncmp(function,"flip",4)) {
+		int err=0;
+		flatpoint p1,p2;
+		p1=pp->findFlatvector("p1",-1,&err);
+		p2=pp->findFlatvector("p2",-1,&err);
+
+		if (p1==p2) {
+			if (log) log->AddMessage(_("p1 and p2 must be different points"),ERROR_Fail);
+			return 1;
+		}
+
+		Flip(p1,p2);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+
+
+	} else if (len==12 && !strncmp(function,"settransform",12)) {
+		int err=0;
+		double mm[6];
+		mm[0]=pp->findDouble("a",-1,&err);
+		mm[1]=pp->findDouble("b",-1,&err);
+		mm[2]=pp->findDouble("c",-1,&err);
+		mm[3]=pp->findDouble("d",-1,&err);
+		mm[4]=pp->findDouble("x",-1,&err);
+		mm[5]=pp->findDouble("y",-1,&err);
+
+		if (is_degenerate_transform(mm)) {
+			if (log) log->AddMessage(_("Bad matrix!"),ERROR_Fail);
+			return 1;
+		}
+
+		m(mm);
+		if (value_ret) *value_ret=NULL;
+		return 0;
 	}
 
 	return 1;
 }
 
+//! Contructor for AffineValue objects.
+int NewAffineObject(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
+{
+	Value *v=new AffineValue();
+	*value_ret=v;
+
+	if (!parameters || !parameters->n()) return 0;
+
+//	Value *matrix=parameters->find("matrix");
+//	if (matrix) {
+//		SetValue *set=dynamic_cast<SetValue*>(matrix);
+//		if (set && set->GetNumFields()==6) {
+//		}
+//	}
+
+	return 0;
+}
+
+//! Create a new ObjectDef with Affine characteristics.
 ObjectDef *makeAffineObjectDef()
 {
 	ObjectDef *sd=new ObjectDef(NULL,"Affine",
 			_("Affine"),
 			_("Affine transform defined by 6 real numbers."),
-			VALUE_Fields,
-			NULL,NULL);
-	//sd->newfunc=NewDrawableObject;
+			VALUE_Class,
+			NULL,NULL, //range, default value
+			NULL,0, //fields, flags
+			NULL,NewAffineObject);
 
 
-	sd->push("rotate",
-			_("Rotate"),
-			_("Rotate the object, optionally aronud a point"),
-			VALUE_Function, NULL,"0",
-			0,
-			NULL);
-	sd->pushParameter("angle",_("Angle"),_("The angle to rotate"),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("point",_("Point"),_("The point around which to rotate. Default is the origin."),VALUE_Flatvector, NULL,"(0,0)");
+	sd->pushFunction("translate", _("Translate"), _("Move by a certain amount"),
+					 NULL, //evaluator
+					 "x",_("X"),_("The amount to move in the x direction"),VALUE_Number, NULL,NULL,
+					 "y",_("Y"),_("The amount to move in the y direction"),VALUE_Number, NULL,NULL,
+					 NULL);
+
+	sd->pushFunction("rotate", _("Rotate"), _("Rotate the object, optionally aronud a point"),
+					 NULL, //evaluator
+					 "angle",_("Angle"),_("The angle to rotate"),VALUE_Number, NULL,NULL,
+					 "point",_("Point"),_("The point around which to rotate. Default is the origin."),VALUE_Flatvector, NULL,"(0,0)",
+					 NULL);
 
 
-	sd->push("scalerotate",
-			_("ScaleRotate"),
-			_("Rotate and scale the object, keeping one point fixed"),
-			VALUE_Function, NULL,"0",
-			0,
-			NULL);
-	sd->pushParameter("p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("p2",_("P2"),_("The point to move."),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("p3",_("P3"),_("The new position of p2."),VALUE_Flatvector, NULL,NULL);
+	sd->pushFunction("scalerotate", _("ScaleRotate"), _("Rotate and scale the object, keeping one point fixed"),
+					 NULL,
+					 "p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL,
+					 "p2",_("P2"),_("The point to move."),VALUE_Flatvector, NULL,NULL,
+					 "p3",_("P3"),_("The new position of p2."),VALUE_Flatvector, NULL,NULL,
+					 NULL);
 
 
-	sd->push("anchorshear",
-			_("Anchor Shear"),
-			_("Transform so that p1 and p2 stay fixed, but p3 is shifted to newp3."),
-			VALUE_Function, NULL,"0",
-			0,
-			NULL);
-	sd->pushParameter("p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("p3",_("P3"),_("The point to move."),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("p3",_("P3"),_("The new position of p3."),VALUE_Flatvector, NULL,NULL);
+	sd->pushFunction("anchorshear", _("Anchor Shear"), _("Transform so that p1 and p2 stay fixed, but p3 is shifted to newp3."),
+					 NULL,
+					 "p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL,
+					 "p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL,
+					 "p3",_("P3"),_("The point to move."),VALUE_Flatvector, NULL,NULL,
+					 "p4",_("P4"),_("The new position of p3."),VALUE_Flatvector, NULL,NULL,
+					 NULL);
 
 
-	sd->push("flip",
-			_("Flip"),
-			_("Flip around an axis defined by two points."),
-			VALUE_Function, NULL,"0",
-			0,
-			NULL);
-	sd->pushParameter("p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL);
-	sd->pushParameter("p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL);
+	sd->pushFunction("flip", _("Flip"), _("Flip around an axis defined by two points."),
+					 NULL,
+					 "p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL,
+					 "p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL,
+					 NULL);
 
 
-	sd->push("settransform",
-			_("Set Transform"),
-			_("Set the object's affine transform, with a set of 6 real numbers: a,b,c,d,x,y."),
-			VALUE_Function, NULL,"0",
-			0,
-			NULL);
-	sd->pushParameter("a",_("A"),_("A"),VALUE_Real, NULL,NULL);
-	sd->pushParameter("b",_("B"),_("B"),VALUE_Real, NULL,NULL);
-	sd->pushParameter("c",_("C"),_("C"),VALUE_Real, NULL,NULL);
-	sd->pushParameter("d",_("D"),_("D"),VALUE_Real, NULL,NULL);
-	sd->pushParameter("x",_("X"),_("X"),VALUE_Real, NULL,NULL);
-	sd->pushParameter("y",_("Y"),_("Y"),VALUE_Real, NULL,NULL);
+	sd->pushFunction("settransform", _("Set Transform"), _("Set the object's affine transform, with a set of 6 real numbers: a,b,c,d,x,y."),
+					 NULL,
+					 "a",_("A"),_("A"),VALUE_Real, NULL,NULL,
+					 "b",_("B"),_("B"),VALUE_Real, NULL,NULL,
+					 "c",_("C"),_("C"),VALUE_Real, NULL,NULL,
+					 "d",_("D"),_("D"),VALUE_Real, NULL,NULL,
+					 "x",_("X"),_("X"),VALUE_Real, NULL,NULL,
+					 "y",_("Y"),_("Y"),VALUE_Real, NULL,NULL,
+					 NULL);
 
 
 	return sd;

@@ -37,7 +37,7 @@ class PluginBase : public Laxkit::anObject
 	virtual const char *License()     = 0;
 	virtual LaxFiles::Attribute *OtherMeta() = 0;
 
-	virtual unsigned long WhatYouGot();
+	virtual unsigned long WhatYouGot() = 0;
 
 	 //return NULL terminated list
 	virtual Laxkit::NewWindowObject    **WindowPanes() { return NULL; }
@@ -57,6 +57,7 @@ class PluginBase : public Laxkit::anObject
 	
 	PluginBase();
 	virtual ~PluginBase();
+	virtual const char *whattype() { return "PluginBase"; }
 };
 
 

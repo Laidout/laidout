@@ -155,7 +155,7 @@ PageRange::~PageRange()
 StyleDef *PageRangeStyleDef()
 {
 	StyleDef *sd=new StyleDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
-			VALUE_Fields, NULL,NULL);
+			VALUE_Class, NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NULL; 
