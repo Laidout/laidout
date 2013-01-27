@@ -21,6 +21,7 @@
 #include <lax/vectors.h>
 #include <lax/dump.h>
 #include <lax/errorlog.h>
+#include <lax/colorbase.h>
 
 
 
@@ -38,6 +39,7 @@ enum ValueTypes {
 	VALUE_Object,     //!< opaque object for passing around non-Value objects
 	VALUE_Int,        //!< integers
 	VALUE_Real,       //!< real numbers (doubles)
+	VALUE_Number,     //!< Special tag meaning allow int or real.
 	VALUE_String,     //!< strings, utf8 based
 	VALUE_Fields,     //!< collection of subfields 
 	VALUE_Flatvector, //!< two dimensional vector
@@ -47,18 +49,19 @@ enum ValueTypes {
 	VALUE_EnumVal,    //!< these do not exist independently of a VALUE_Enum's ObjectDef
 	VALUE_Boolean,    //!< Translatable as 1 for true, or 0 for false
 	VALUE_Flags,      //!< *** unimplemented!
-	VALUE_Color,      //!< *** unimplemented!
+	VALUE_Color,      //!< A Color
 	VALUE_Date,       //!< *** unimplemented!
 	VALUE_Time,       //!< *** unimplemented!
 	VALUE_Complex,    //!< *** unimplemented!
 	VALUE_Array,      //!< Mathematical matrices, or sets of fixed sizes
-	VALUE_Hash,       //!< *** unimplemented!
+	VALUE_Hash,       //!< Basically a set with named values
 
 	VALUE_Variable,   //!< for use in an ObjectDef
 	VALUE_Operator,   //!< for use in an ObjectDef
 	VALUE_Class,      //!< for use in an ObjectDef
 	VALUE_Function,   //!< for use in an ObjectDef
 	VALUE_Namespace,  //!< for use in an ObjectDef
+
 	VALUE_Alias,      //!< For BlockInfo, tag to use a name in place of another
 	VALUE_Overloaded, //!< For Entry, stores names that happen to be overloaded
 
@@ -74,6 +77,11 @@ class Value;
 class ValueHash;
 class CalcSettings;
 
+typedef Value *(*NewObjectFunc)(ObjectDef *def);
+typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
+//typedef int (*ObjectFunc)(const char *func,int len, ValueHash *context, ValueHash *parameters,  CalcSettings *settings,
+//						  Value **value_ret, ErrorLog *log);
+
 //--------------------------- OpFuncEvaluator ------------------------------------
 enum OperatorDirectionType
 {
@@ -88,7 +96,8 @@ enum OperatorDirectionType
 class OpFuncEvaluator
 {
   public:
-	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret) = 0;
+	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings,
+				   Value **value_ret, ErrorLog *log) = 0;
 };
 
 
@@ -101,14 +110,22 @@ class FunctionEvaluator
 						 ErrorLog *log) = 0;
 };
 
+class SimpleFunctionEvaluator : public FunctionEvaluator
+{
+  public:
+	NewObjectFunc newfunc;
+	ObjectFunc function;
+	SimpleFunctionEvaluator(ObjectFunc func);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
+};
 
 //------------------------------ ObjectDef --------------------------------------------
 
 
-typedef Value *(*NewObjectFunc)(ObjectDef *def);
-typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
  
-
+//ObjectDef::flags:
 #define OBJECTDEF_CAPPED    (1<<0)
 #define OBJECTDEF_DUPLICATE (1<<1)
 #define OBJECTDEF_ORPHAN    (1<<2)
@@ -118,15 +135,17 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
   public:
 	ObjectDef *source_module;
-
 	Laxkit::RefPtrStack<ObjectDef> extendsdefs;
 
+	 //Default callers
 	NewObjectFunc newfunc;
 	ObjectFunc stylefunc;
 	FunctionEvaluator *evaluator;
 	OpFuncEvaluator *opevaluator;
 	Value *newObject(ObjectDef *def);
 
+
+	 //descriptive elements
 	char *name; //name for interpreter (basically class name)
 	char *Name; // Name for dialog label
 	char *description; // description
@@ -139,7 +158,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	 // OBJECTDEF_DUPLICATE
 	 // OBJECTDEF_ORPHAN  =  is a representation of a composite style, not stored in any manager, and only 1 reference to it exists
 	 // OBJECTDEF_CAPPED = cannot push/pop fields
-	 // OBJECTDEF_READONLY = cannot modify parts of the styledef
+	 // OBJECTDEF_READONLY = cannot modify parts
 	 // OBJECTDEF_OPTIONAL
 	 // OBJECTDEF_FORCE_NUM_PARAMS
 	 // OBJECTDEF_FORCE_TYPES
@@ -169,9 +188,10 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	 // helpers to locate fields by name, "blah.3.x"
 	virtual int getNumFieldsOfThis();
 	virtual ObjectDef *getFieldOfThis(int index);
+	virtual int findFieldOfThis(const char *fname,char **next);
 	virtual int getNumFields();
 	virtual ObjectDef *getField(int index);
-	virtual int findfield(char *fname,char **next); // return index value of fname. assumed top level field
+	virtual int findfield(const char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findActualDef(int index,ObjectDef **def);
 	virtual int getInfo(int index,
 						const char **nm=NULL,
@@ -211,7 +231,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 					 ...);
 	virtual int pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator);
 	virtual int pushParameter(const char *nname,const char *nName,const char *ndesc,
-					ValueTypes fformat,const char *nrange, const char *newdefval);
+					ValueTypes fformat,const char *nrange, const char *newdefval, Value *defvalue=NULL);
 
 //	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
 //							 Value **value_ret, CalcSettings *settings, ErrorLog *log);
@@ -229,7 +249,7 @@ typedef ObjectDef StyleDef;
 class Value : virtual public Laxkit::anObject
 {
   protected:
-	int modified; //whether tempstr needs to be updated
+	int modified;
 	ObjectDef *objectdef;
   public:
 	Value();
@@ -245,13 +265,17 @@ class Value : virtual public Laxkit::anObject
 	//virtual int isValidExt(const char *extstring, FieldPlace *place_ret) = 0; //for assignment checking
 	//virtual int assign(const char *extstring,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 	//virtual int assign(FieldPlace &ext,Value *v) = 0; //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
-	//virtual Value *dereference(const char *extstring) = 0; // returns a reference if possible, or new. Calling code MUST decrement count.
+
+	//virtual Value *dereference(const FieldPlace &ext) = 0; // returns a reference if possible, or new. Calling code MUST decrement count.
+	virtual Value *dereference(const char *extstring, int len);
+	virtual Value *dereference(int index);
 
  	virtual ObjectDef *makeObjectDef() = 0;
     virtual ObjectDef *GetObjectDef();
     virtual int getNumFields();
     virtual  ObjectDef *FieldInfo(int i);
     virtual const char *FieldName(int i);
+    virtual int FieldIndex(const char *name);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
@@ -261,10 +285,12 @@ class Value : virtual public Laxkit::anObject
 class SetValue : public Value
 {
   public:
+	char *restrictto;
 	Laxkit::RefPtrStack<Value> values;
 
-	//SetValue();
-	virtual int Push(Value *v);
+	SetValue(const char *restricted=NULL);
+	virtual ~SetValue();
+	virtual int Push(Value *v,int absorb);
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Set; }
@@ -273,6 +299,7 @@ class SetValue : public Value
     virtual int getNumFields();
     virtual  ObjectDef *FieldInfo(int i);
     virtual const char *FieldName(int i);
+	virtual Value *dereference(int index);
 };
 
 //----------------------------- ArrayValue ----------------------------------
@@ -342,7 +369,7 @@ class FlatvectorValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Flatvector; }
-	virtual Value *dereference(const char *extstring);
+	virtual Value *dereference(const char *extstring, int len);
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
 };
 
@@ -357,7 +384,7 @@ class SpacevectorValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Spacevector; }
-	virtual Value *dereference(const char *extstring);
+	virtual Value *dereference(const char *extstring, int len);
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
 };
 
@@ -387,21 +414,18 @@ class ObjectValue : public Value
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
 };
 
-//----------------------------- FileValue ----------------------------------
-class FileValue : public Value
+//----------------------------- ColorValue ----------------------------------
+class ColorValue : public Value
 {
   public:
-	char *filename;
-	FileValue(const char *f=NULL,int len=-1);
-	virtual ~FileValue();
+	Laxkit::ColorBase color;
+	ColorValue(const char *color);
+	//ColorValue(Laxkit::ColorBase &color);
+	virtual ~ColorValue();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
-	virtual int type() { return VALUE_File; }
+	virtual int type() { return VALUE_Color; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
-
-	virtual int fileType(); //file link, dir link, file, dir, block
-	virtual int isLink();
-	virtual int Exists();
 };
 
 //----------------------------- EnumValue ----------------------------------
@@ -433,8 +457,25 @@ class FunctionValue : public Value
  	virtual ObjectDef *makeObjectDef();
 };
 
+//----------------------------- FileValue ----------------------------------
+class FileValue : public Value
+{
+  public:
+	char *filename;
+	FileValue(const char *f=NULL,int len=-1);
+	virtual ~FileValue();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_File; }
+ 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+
+	virtual int fileType(); //file link, dir link, file, dir, block
+	virtual int isLink();
+	virtual int Exists();
+};
+
 //----------------------------- ValueHash ----------------------------------
-class ValueHash : public Laxkit::anObject
+class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual public FunctionEvaluator
 {
 	Laxkit::PtrStack<char> keys;
 	Laxkit::RefPtrStack<Value> values;
@@ -466,8 +507,22 @@ class ValueHash : public Laxkit::anObject
 	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
 	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
+	flatvector findFlatvector(const char *name, int which, int *error_ret=NULL);
 	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
+	 //from Value:
+	virtual int type();
+	virtual Value *duplicate();
+	virtual int getValueStr(char *buffer,int len);
+ 	virtual ObjectDef *makeObjectDef();
+	Value *dereference(int index);
+    virtual int getNumFields();
+    virtual  ObjectDef *FieldInfo(int i);
+    virtual const char *FieldName(int i);
+
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
 };
 
 //------------------------------- parsing helpers ------------------------------------

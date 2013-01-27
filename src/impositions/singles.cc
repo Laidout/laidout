@@ -477,7 +477,7 @@ StyleDef *makeSinglesStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"Singles",
 			_("Singles"),
 			_("Imposition of single pages"),
-			VALUE_Fields,
+			VALUE_Class,
 			NULL,NULL,
 			NULL,
 			0, //new flags

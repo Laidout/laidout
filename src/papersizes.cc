@@ -411,7 +411,7 @@ StyleDef *makePaperStyleDef()
 							  "Paper",
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
-							  VALUE_Fields,
+							  VALUE_Class,
 							  NULL, //range
 							  NULL, //defval
 							  NULL,0, //fields, flags

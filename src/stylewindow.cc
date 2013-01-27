@@ -144,7 +144,7 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 		//VALUE_Int,
 		//VALUE_Real,
 		//VALUE_String,
-		//VALUE_Fields, 
+		//VALUE_Object, 
 		//VALUE_Boolean,
 		//VALUE_Date,
 		//VALUE_Enum,
@@ -205,7 +205,7 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 //				***
 //			} break;
 
-		case VALUE_Fields: {
+		case VALUE_Object: {
 				if (sd->fields) {
 					 //*** --Name----
 					 //	 [sub 1]

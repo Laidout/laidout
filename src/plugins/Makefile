@@ -14,7 +14,7 @@ DEBUGFLAGS= -g
 
 
 objs= \
-	plugin.o 
+	#plugin.o 
 	#antiprism.o
 
 

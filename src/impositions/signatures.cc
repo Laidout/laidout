@@ -1396,7 +1396,7 @@ StyleDef *makeSignatureImpositionStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"SignatureImposition",
 			_("Signature"),
 			_("Imposition based on signatures"),
-			VALUE_Fields,
+			VALUE_Class,
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
@@ -1463,13 +1463,13 @@ StyleDef *makeSignatureImpositionStyleDef()
 	sd->push("numvfolds", _("Vertical Folds"), _("The number of vertical fold lines of a folding pattern"),
 			VALUE_Int, "[0..", "0", 0, NULL);
 
-	 //make Fold StyleDef
+	 //------make Fold StyleDef if necessary
 	StyleDef *foldd=stylemanager.FindDef("Fold");
 	if (!foldd) {
 		foldd=new StyleDef(NULL,"Fold",
 				_("Fold"),
 				_("Info about a fold in a signature"),
-				VALUE_Fields,
+				VALUE_Class,
 				NULL,NULL, //range, default value
 				NULL, //fields
 				0, //new flags
@@ -1493,7 +1493,7 @@ StyleDef *makeSignatureImpositionStyleDef()
 					);
 		stylemanager.AddObjectDef(foldd,0);
 		foldd->dec_count();
-	}
+	} //-----end Fold declaration
 
 	sd->push("folds", _("Folds"), _("Set of the folds making the signature"),
 			VALUE_Set, "Fold", NULL, 0, NULL);

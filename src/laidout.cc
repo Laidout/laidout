@@ -294,7 +294,7 @@ StyleDef *LaidoutApp::makeStyleDef()
 						  "Laidout",
 						  _("Laidout"),
 						  _("Main Laidout container"),
-						  VALUE_Fields,
+						  VALUE_Namespace,
 						  NULL,NULL);
 	sd->push("documents",
 			_("Documents"),
@@ -319,7 +319,7 @@ StyleDef *LaidoutApp::makeStyleDef()
 	sd->push("settings",
 			_("Settings"),
 			_("List of various settings. These get loaded and saved in a laidoutrc file."),
-			VALUE_Fields, NULL, NULL,
+			VALUE_Variable, "LaidoutPreferences", NULL,
 			0,NULL);
 
 	return sd;
@@ -410,18 +410,6 @@ int LaidoutApp::init(int argc,char **argv)
 	PushBuiltinPathops(); // this must be called before getinterfaces because of pathops...
 	GetBuiltinInterfaces(&interfacepool);
 
-	
-	 // manually adding a couple of pagestyles
-	 // *** why?
-	DBG cerr <<"---manually adding a couple of pagestyles"<<endl;
-	PageStyle *ps=new PageStyle;
-	StyleDef *sd=ps->makeStyleDef();
-	stylemanager.AddObjectDef(sd,1);
-	delete ps;
-	ps=new RectPageStyle(RECTPAGE_LRTB);
-	sd=ps->makeStyleDef();
-	stylemanager.AddObjectDef(sd,1);
-	delete ps;
 
 	 //read in laidoutrc
 	if (!readinLaidoutDefaults()) {
@@ -582,6 +570,7 @@ int LaidoutApp::createlaidoutrc()
 					   //drop shadow
 					  "# Customize how some things get dispalyed or entered:\n"
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
+
 					   //units
 					  "#defaultunits inches #the default units presented to the user. In files, it is always inches.\n"
 					  "\n"

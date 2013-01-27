@@ -226,7 +226,7 @@ StyleDef *PageStyle::makeStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"PageStyle",
 			_("Generic Page"),
 			_("A page"),
-			VALUE_Fields,
+			VALUE_Class,
 			NULL,NULL);
 
 	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
@@ -408,19 +408,19 @@ StyleDef *RectPageStyle::makeStyleDef()
 		sd=new StyleDef("PageStyle","facingrectstyle",
 						_("Rectangular Facing Page"),
 						_("Rectangular Facing Page"),
-						VALUE_Fields,NULL,NULL,
+						VALUE_Class,NULL,NULL,
 						NULL,
 						0,
 						NewRectPageStyle);
 	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
 						_("Rectangular Top Facing Page"),
 						_("Rectangular Top Facing Page"),
-						VALUE_Fields,NULL,NULL,
+						VALUE_Class,NULL,NULL,
 						NULL,0,NewRectPageStyle);
 	else sd=new StyleDef("PageStyle","RectPageStyle",
 					_("Rectangular Page"),
 					_("Rectangular Page"),
-					VALUE_Fields,NULL,NULL,
+					VALUE_Class,NULL,NULL,
 					NULL,0,
 					NewRectPageStyle);
 	
