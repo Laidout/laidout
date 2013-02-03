@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2010 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 
@@ -590,7 +590,7 @@ void SimpleNet::dump_out(FILE *f,int indent,int what,Laxkit::anObject *saveconte
 	int c;
 	fprintf(f,"%sname %s\n",spc,whatshape());
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
-			spc,matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+			spc,m(0),m(1),m(2),m(3),m(4),m(5));
 	
 	if (tabs==0) fprintf(f,"%stabs no\n",spc);
 	else if (tabs==1) fprintf(f,"%stabs even\n",spc);
@@ -883,7 +883,7 @@ void SimpleNet::ApplyTransform(const double *mm)//mm=NULL
 		points[c]=transform_point(mm,points[c]);
 		addtobounds(points[c]);
 	}
-	m_clear();
+	setIdentity();
 }
 
 //! Make *this fit inside bounding box of data (inset by margin).

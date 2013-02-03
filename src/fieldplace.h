@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2012 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 #ifndef FIELDPLACE_H
 #define FIELDPLACE_H
@@ -22,7 +22,39 @@
 
 namespace Laidout {
 
-//------------------------------ FieldMask -------------------------------------------
+//------------------------------ FieldExtPlace -------------------------------------------
+
+class FieldExtPlace : protected Laxkit::PtrStack<char>
+{
+	class ExtNode {
+	  public:
+		char *ext;
+		int exti;
+		ExtNode(const char *str, int i);
+		~ExtNode();
+	};
+	Laxkit::PtrStack<ExtNode> ext;
+ public:
+	FieldExtPlace() {}
+	FieldExtPlace(const char *str,int len=-1);
+	FieldExtPlace(const FieldExtPlace &place);
+	virtual ~FieldExtPlace() {}
+	int Set(const char *str, int len, const char **next);
+	virtual int n() const { return ext.n; }
+	virtual char *e(int i, int *ei=NULL) const;
+	virtual int e(int i,const char *val, int ei);
+	virtual int operator==(const FieldExtPlace &place) const;
+	virtual FieldExtPlace &operator=(const FieldExtPlace &place);
+	virtual int push(const char *nd,int where=-1);
+	virtual int push(int i,int where=-1);
+	virtual char *pop(int *i, int which=-1);
+	virtual int remove(int which=-1);
+	virtual void flush() { ext.flush(); }
+	virtual void out(const char *str);//for debugging
+};
+
+
+//------------------------------ FieldPlace -------------------------------------------
 
 class FieldPlace : protected Laxkit::NumStack<int>
 {

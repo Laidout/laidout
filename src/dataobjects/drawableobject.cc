@@ -675,7 +675,7 @@ void DrawableObject::dump_out_group(FILE *f,int indent,int what,Laxkit::anObject
 		return;
 	}
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
-				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+				m(0),m(1),m(2),m(3),m(4),m(5));
 	fprintf(f,"%sid %s\n",spc,Id());
 	if (locked) fprintf(f,"%slocked\n",spc);
 	if (visible) fprintf(f,"%svisible\n",spc);

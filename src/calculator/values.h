@@ -24,6 +24,7 @@
 #include <lax/colorbase.h>
 
 
+#include "../fieldplace.h"
 
 namespace Laidout {
 
@@ -91,6 +92,10 @@ enum OperatorDirectionType
 	OPS_Left,
 	OPS_Right,
 	OPS_MAX
+};
+enum OperatorFlags
+{
+	OPS_Assignment=(1<<0)
 };
 
 class OpFuncEvaluator
@@ -207,6 +212,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	 //-------- ObjectDef creation helper functions ------
 	 // The following (push/pop/cap) are convenience functions 
 	 // to construct a styledef on the fly
+	virtual int Extend(ObjectDef *def);
 	virtual ObjectDef *last();
 	virtual int pop(int fieldindex);
 	virtual int push(ObjectDef *newfield, int absorb=1);
@@ -229,7 +235,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
 					 FunctionEvaluator *nfunc,
 					 ...);
-	virtual int pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator);
+	virtual int pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator, int nflags=0);
 	virtual int pushParameter(const char *nname,const char *nName,const char *ndesc,
 					ValueTypes fformat,const char *nrange, const char *newdefval, Value *defvalue=NULL);
 
@@ -264,7 +270,7 @@ class Value : virtual public Laxkit::anObject
 
 	//virtual int isValidExt(const char *extstring, FieldPlace *place_ret) = 0; //for assignment checking
 	//virtual int assign(const char *extstring,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
-	//virtual int assign(FieldPlace &ext,Value *v) = 0; //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
 
 	//virtual Value *dereference(const FieldPlace &ext) = 0; // returns a reference if possible, or new. Calling code MUST decrement count.
 	virtual Value *dereference(const char *extstring, int len);
@@ -330,6 +336,7 @@ class BooleanValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Boolean; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+	virtual int assign(FieldExtPlace *ext,Value *v);
 };
 
 //----------------------------- IntValue ----------------------------------
@@ -343,6 +350,7 @@ class IntValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Int; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+	virtual int assign(FieldExtPlace *ext,Value *v);
 };
 
 //----------------------------- DoubleValue ----------------------------------
@@ -356,6 +364,7 @@ class DoubleValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Real; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+	virtual int assign(FieldExtPlace *ext,Value *v);
 };
 
 //----------------------------- FlatvectorValue ----------------------------------
@@ -370,6 +379,7 @@ class FlatvectorValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Flatvector; }
 	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
 };
 
@@ -385,6 +395,7 @@ class SpacevectorValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Spacevector; }
 	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
 };
 
@@ -528,6 +539,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 //------------------------------- parsing helpers ------------------------------------
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
+int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
 
 
 } // namespace Laidout

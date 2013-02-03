@@ -115,7 +115,7 @@ void EpsData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%smaxx %.10g\n",spc,maxx);
 	fprintf(f,"%smaxy %.10g\n",spc,maxy);
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
-				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+				m(0),m(1),m(2),m(3),m(4),m(5));
 	if (description) {
 		fprintf(f,"%sdescription",spc);
 		dump_out_value(f,indent+2,description);

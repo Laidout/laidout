@@ -22,6 +22,9 @@
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
+#include <lax/shortcuts.h>
+#include <lax/interfaces/aninterface.h>
+
 #include <lax/refptrstack.cc>
 
 #include <cctype>
@@ -34,7 +37,9 @@
 using namespace std;
 
 
+using namespace Laxkit;
 using namespace LaxFiles;
+using namespace LaxInterfaces;
 
 
 
@@ -359,6 +364,13 @@ ObjectDef::~ObjectDef()
 	}
 }
 
+//! Add def to extendsdefs.
+int ObjectDef::Extend(ObjectDef *def)
+{
+	extendsdefs.push(def);
+	return 0;
+}
+
 char *appendescaped(char *&dest, const char *src, char quote)
 {
 	if (!src) return dest;
@@ -659,7 +671,7 @@ int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
  *  '<' -> OPS_RtoL,
  * and priority gets written to defaultvalue.
  */
-int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator)
+int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *desc, OpFuncEvaluator *evaluator, int nflags)
 {
 	char rr[2];
 	if (dir==OPS_Left) *rr='l';
@@ -671,7 +683,7 @@ int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *des
 	char pp[20];
 	sprintf(pp,"%d",priority);
 
-	ObjectDef *def=new ObjectDef(NULL, op,op,desc, VALUE_Operator, rr, pp,  NULL,0);
+	ObjectDef *def=new ObjectDef(NULL, op,op,desc, VALUE_Operator, rr, pp,  NULL,nflags);
 	def->opevaluator=evaluator;
 	return push(def,1);
 }
@@ -1706,11 +1718,11 @@ const char *Value::Id()
 { return object_idstr; }
 
 
-//! Retrieve values from members. Note this is for Values only, not functions, classes, namespaces, etc.
-/*! len is the lengthe of extstring to consider.
- * Dereference once. extstring could be something like "a.21.c", then len should be 1,
+//! Dereference once, retrieving values from members. Note this is for Values only, not functions, classes, namespaces, etc.
+/*! len is the length of extstring to consider.
+ * extstring could be something like "a.21.c", then len should be 1,
  * and we dereference "a", leaving to ".21.c" to be dealt with elsewhere. For the number, dereference(int) is used, which is
- * optional for subclasses to define. 
+ * optional for subclasses to define, but the number is usually parsed by the calculator, not here, though you can if you want.
  *
  * Returns a reference if possible, or new. Calling code MUST decrement count.
  *
@@ -1728,6 +1740,18 @@ Value *Value::dereference(int index)
 { return NULL; }
 
 
+/*! If ext==NULL, then assign v to replace what exists in this.
+ * Otherwise assign v to the value at the end of the extension.
+ *
+ * Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ *
+ *  Default is return 0;
+ */
+int Value::assign(FieldExtPlace *ext,Value *v)
+{ return 0; }
 
 
 
@@ -2067,6 +2091,17 @@ int BooleanValue::getValueStr(char *buffer,int len)
 Value *BooleanValue::duplicate()
 { return new BooleanValue(i); }
 
+int BooleanValue::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext && ext->n()) return 0;
+	int isnum=0;
+	int d=getNumberValue(v,&isnum);
+	if (!isnum) return 0;
+
+	if (d) i=1; else i=0;
+	return 1;
+}
+
 //--------------------------------- IntValue -----------------------------
 int IntValue::getValueStr(char *buffer,int len)
 {
@@ -2079,6 +2114,17 @@ int IntValue::getValueStr(char *buffer,int len)
 
 Value *IntValue::duplicate()
 { return new IntValue(i); }
+
+int IntValue::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext && ext->n()) return 0;
+	int isnum=0;
+	int d=getNumberValue(v,&isnum);
+	if (!isnum) return 0;
+
+	i=d;
+	return 1;
+}
 
 //--------------------------------- DoubleValue -----------------------------
 int DoubleValue::getValueStr(char *buffer,int len)
@@ -2093,6 +2139,17 @@ int DoubleValue::getValueStr(char *buffer,int len)
 
 Value *DoubleValue::duplicate()
 { return new DoubleValue(d); }
+
+int DoubleValue::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext && ext->n()) return 0;
+	int isnum=0;
+	double dd=getNumberValue(v,&isnum);
+	if (!isnum) return 0;
+
+	d=dd;
+	return 1;
+}
 
 //--------------------------------- FlatvectorValue -----------------------------
 int FlatvectorValue::getValueStr(char *buffer,int len)
@@ -2109,31 +2166,33 @@ Value *FlatvectorValue::duplicate()
 { return new FlatvectorValue(v); }
 
 
-//! Compare nonwhitespace until period with field, return 1 for yes, 0 for no.
-/*! Return pointer to just after extension. If no match, next_ret gets NULL.
- * str can be "a.b.c.", and only "a" is checked, but field string must be "a",
- * it cannot have extra characters.
- * */
-int extequal(const char *str, int len, const char *field, char **next_ret=NULL)
-{
-	unsigned int n=len;
-	if (len<=0) while (isalnum(str[n]) || str[n]=='_') n++;
-
-	if (n!=strlen(field) || strncmp(str,field,n)!=0) {
-		if (next_ret) *next_ret=NULL;
-		return 0;
-	}
-
-	str+=n;
-	if (next_ret) *next_ret=const_cast<char*>(str);
-	return 1;
-}
-
 Value *FlatvectorValue::dereference(const char *extstring, int len)
 {
 	if (extequal(extstring,len, "x")) return new DoubleValue(v.x);
 	if (extequal(extstring,len, "y")) return new DoubleValue(v.y);
 	return NULL;
+}
+
+int FlatvectorValue::assign(FieldExtPlace *ext,Value *vv)
+{
+	if (!ext || !ext->n()) {
+		if (vv->type()!=VALUE_Flatvector) return 0;
+		v=dynamic_cast<FlatvectorValue*>(vv)->v;
+		return 1;
+	}
+
+	if (ext->n()!=1) return -1;
+
+	int isnum=0;
+	double d=getNumberValue(vv,&isnum);
+	if (!isnum) return 0;
+
+	const char *str=ext->e(0);
+	if (!strcmp(str,"x")) v.x=d;
+	else if (!strcmp(str,"y")) v.y=d;
+	else return -1;
+
+	return 1;
 }
 
 //--------------------------------- SpacevectorValue -----------------------------
@@ -2156,6 +2215,29 @@ Value *SpacevectorValue::dereference(const char *extstring, int len)
 	if (extequal(extstring,len, "y")) return new DoubleValue(v.y);
 	if (extequal(extstring,len, "z")) return new DoubleValue(v.z);
 	return NULL;
+}
+
+int SpacevectorValue::assign(FieldExtPlace *ext,Value *vv)
+{
+	if (!ext || !ext->n()) {
+		if (vv->type()!=VALUE_Spacevector) return 0;
+		v=dynamic_cast<SpacevectorValue*>(vv)->v;
+		return 1;
+	}
+
+	if (ext->n()!=1) return -1;
+
+	int isnum=0;
+	double d=getNumberValue(vv,&isnum);
+	if (!isnum) return 0;
+
+	const char *str=ext->e(0);
+	if (!strcmp(str,"x")) v.x=d;
+	else if (!strcmp(str,"y")) v.y=d;
+	else if (!strcmp(str,"z")) v.z=d;
+	else return -1;
+
+	return 1;
 }
 
 //--------------------------------- StringValue -----------------------------
@@ -2434,6 +2516,7 @@ ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams)
 					rawparams->swap(c2,c);
 				} // else param was in right place
 				rawparams->renameKey(c,name); //name the parameter correctly
+				break;
 			}
 			if (c2==rawparams->n()) {
 				 //there were extra parameters that were not known to the styledef
@@ -2467,6 +2550,112 @@ double getNumberValue(Value *v, int *isnum)
 	*isnum=0;
 	return 0;
 }
+
+//! Compare nonwhitespace until period with field, return 1 for yes, 0 for no.
+/*! Return pointer to just after extension. If no match, next_ret gets NULL.
+ * str can be "a.b.c.", and only "a" is checked, but field string must be "a",
+ * it cannot have extra characters.
+ * */
+int extequal(const char *str, int len, const char *field, char **next_ret)
+{
+	unsigned int n=len;
+	if (len<=0) while (isalnum(str[n]) || str[n]=='_') n++;
+
+	if (n!=strlen(field) || strncmp(str,field,n)!=0) {
+		if (next_ret) *next_ret=NULL;
+		return 0;
+	}
+
+	str+=n;
+	if (next_ret) *next_ret=const_cast<char*>(str);
+	return 1;
+}
+
+//------------------------------------ ShortcutEvaluator -----------------------------------------
+/*! \class ShortcutEvaluator
+ * \brief Class to simplify automatically including key shortcut actions as zero parameter functions for scripting.
+ */
+class ShortcutEvaluator : public FunctionEvaluator
+{
+  public:
+	ShortcutEvaluator() {}
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
+};
+
+/*! "this" must be defined in context.
+ */
+int ShortcutEvaluator::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	Value *obj=context->find("this");
+	if (!obj) return -1;
+
+	ShortcutHandler *sc=NULL;
+	anXWindow *window=dynamic_cast<anXWindow*>(obj);
+	if (window) {
+		sc=window->GetShortcuts();
+	    int action=sc->FindActionNumber(func,len);
+	    if (action>=0) {
+			if (window->PerformAction(action)) return -1;
+			return 0;
+	    }
+
+		return -1;
+	}
+
+	anInterface *interface=dynamic_cast<anInterface*>(obj);
+	if (interface) {
+		sc=interface->GetShortcuts();
+	    int action=sc->FindActionNumber(func,len);
+	    if (action>=0) {
+			if (interface->PerformAction(action)) return -1;
+			return 0;
+	    }
+
+		return -1;
+	}
+
+	return -1;
+}
+
+ShortcutEvaluator shortcutevaluator;
+
+
+//! Convert Laxkit shortcut actions in sc into functions that take no parameters.
+/*! def and sc must both exist already. Null is returned if not.
+ *
+ * It is assumed that at some point, the functions created here will be called as
+ * member functions of an object of type def. Thus we do not have to give these
+ * function definitions evaluators.
+ *
+ * The object must be derived from FunctionEvaluator, and is responsible for
+ * using its shortcuthandler->FindActionNumber() with the given function name.
+ *
+ */
+ObjectDef *ShortcutsToObjectDef(Laxkit::ShortcutHandler *sc, ObjectDef *def)
+{
+	//basically, you want behavior like:
+	//
+	//viewport.save()
+	// --> viewport->PerformAction( viewport->sc->FindActionNumber("save") )
+
+
+	if (!sc || !def) return NULL;
+
+	WindowAction *action;
+	for (int c=0; c<sc->NumActions(); c++) {
+		action=sc->Action(c);
+
+		def->pushFunction(action->name,action->name,action->description, &shortcutevaluator);
+	}
+
+	return def;
+}
+
+
 
 } // namespace Laidout
 

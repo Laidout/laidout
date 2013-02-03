@@ -103,12 +103,17 @@ debug multi head? seems to crash when showing with projectors plugged in
 	if only one screen, then x,y is 0
 
 calculator
-  assignment still off, need to be able to do a.x=3;
-  debug using and import... remove using, use import Math.* instead
-  debug function definitions
+  show overloaded entries
   debug class definitions
+  debug operator definitions
+  debug if/while/etc
   how best to allow created object defs to be referenced as parameter, variable, or set types
-  skipBlock does not obey // and /**/ commenting
+  debug using and import... remove using, use import Math.* instead
+  if {a=2, b=3} or {a:2, b:3} or {a:2; b:3}, then scan in hash instead of set
+ 
+  DONE assignment still off, need to be able to do a.x=3;
+  DONE debug function definitions
+  DONE skipBlock does not obey // and /**/ commenting
   DONE a=(1,2); a.x crashes
   DONE show Laidout.Affine should show all fields
   DONE debug name lookup, assignment, etc

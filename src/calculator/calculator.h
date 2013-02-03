@@ -103,6 +103,8 @@ enum BlockTypes {
 	BLOCK_foreach,
 	BLOCK_while,
 	BLOCK_namespace,
+	BLOCK_class,
+	BLOCK_function,
 	BLOCK_object,   //!< When calling an object method, the object class instance becomes a namespace 
 	BLOCK_MAX
 };
@@ -129,6 +131,7 @@ class BlockInfo
 	BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int condition_start, char *var, Value *v);
 	virtual ~BlockInfo();
 	virtual const char *BlockType();
+	virtual int AddValue(const char *name, Value *v);
 	virtual int AddName(CalculatorModule *mod, ObjectDef *item);
 	virtual Entry *FindName(const char *name,int len);
 	virtual Entry *createNewEntry(ObjectDef *item, CalculatorModule *module);
@@ -161,7 +164,8 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	OperatorLevel leftops, rightops;
 	BlockInfo *currentLevel() { return scopes.e[scopes.n-1]; }
 
-	ErrorLog *temp_errorlog;
+	ErrorLog default_errorlog;
+	ErrorLog *errorlog;
 	int calcerror;
 	char *calcmes;
 	Value *last_answer;
@@ -182,6 +186,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	void skipwscomment();
 	void skipstring();
 	void skipBlock(char ch);
+	void skipExpression();
 	int nextchar(char ch);
 	int nextword(const char *word);
 	void newcurexprs(const char *newex,int len);
@@ -197,6 +202,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	Value *evalLevel(int level);
 	int evalcondition();
 	Value *checkAssignments();
+	int Assignment(Value *num1, Value *num2, Value **value_ret, ErrorLog *log);
 	int checkBlock(Value **value_ret);
 	Value *number();
 	long intnumber();
@@ -206,10 +212,12 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	Value *getarray();
 	Value *evalname();
 	Value *dereference(Value *val);
+	ObjectDef *getClass();
 	Entry *findNameEntry(const char *word,int len, int *scope, int *module, int *index);
-	Value *evalInnate(const char *word, int len);
 	Value *opCall(const char *op,int n,int dir, Value *num, Value *num2, OperatorLevel *level, int lastindex);
 	int functionCall(const char *word,int n, Value **v_ret, Value *containingvalue, ObjectDef *function,ValueHash *context,ValueHash *pp);
+	int evaluate(const char *in, int len, ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog *log);
+
 	int add(Value *num1,Value *num2, Value **ret);
 	int subtract(Value *num1,Value *num2, Value **ret);
 	int multiply(Value *num1,Value *num2, Value **ret);
@@ -235,7 +243,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	virtual int ImportModule(const char *name, int allnames);
 
 	virtual char *In(const char *in);
-	virtual int evaluate(const char *in, int len, Value **value_ret, int *error_pos, char **error_ret);
+	virtual int evaluate(const char *in, int len, Value **value_ret, ErrorLog *log);
 
 	virtual void clearerror();
 	const char *Message();

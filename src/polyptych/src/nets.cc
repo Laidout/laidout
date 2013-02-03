@@ -1121,7 +1121,7 @@ void Net::FitToData(Laxkit::DoubleBBox *data,double margin,int setpaper)
 	fitto(NULL,&box,50,50);
 
 	if (setpaper) {
-		paper.m_clear();
+		paper.setIdentity();
 		paper.origin(flatpoint(data->minx,data->miny));
 		paper.minx=paper.maxx=0;
 		paper.maxx=data->maxx-data->minx;

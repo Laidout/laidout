@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2011 Tom Lechner
+// Copyright (c) 2004-2013 Tom Lechner
 //
 #ifndef VIEWWINDOW_H
 #define VIEWWINDOW_H
@@ -157,6 +157,9 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int object_e_info(int i, const char **name, const char **Name, int *isarray);
 	virtual int curobjPage();
 	virtual int isDefaultPapergroup(int yes_if_in_project);
+
+	 //for scripting:
+	virtual ValueHash *build_context();
 
 	friend class ViewWindow;
 	friend class GroupInterface;
