@@ -84,6 +84,7 @@ CalcSettings::~CalcSettings()
 
 
 
+
 //---------------------------------- OperatorFunction ------------------------------------------
 /*! \class OperatorFunction
  * \brief Class for easy access to one or two parameter operators. Stack of these in CalculatorModule.
@@ -312,7 +313,7 @@ class ValueEntry : public Entry
 	Value *value;
 	ObjectDef *containing_object;
 	ObjectDef *item;
-	ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container);
+	ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container, Value *v);
 	virtual ~ValueEntry();
 	int type() { return VALUE_Variable; }
 	virtual ObjectDef *GetDef();
@@ -320,7 +321,7 @@ class ValueEntry : public Entry
 	virtual int SetVariable(const char *name,Value *v,int absorb);
 };
 
-ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container)
+ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container, Value *v)
   : Entry(newname,modid)
 {
 	containing_object=container;
@@ -329,8 +330,8 @@ ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, Ob
 	item=ns_element;
 	if (item) item->inc_count();
 
-	value=NULL;
-	if (ns_element) value=ns_element->defaultValue;
+	value=v;
+	if (!value && ns_element) value=ns_element->defaultValue;
 	if (value) value->inc_count();
 }
 
@@ -466,7 +467,83 @@ const char *BlockInfo::BlockType()
 	if (type==BLOCK_foreach) return "foreach";
 	if (type==BLOCK_while) return "while";
 	if (type==BLOCK_namespace) return "namespace";
+	if (type==BLOCK_function) return "function";
 	return "(unnamed block)";
+}
+
+/*! Add to entry list a bare value, unassociated with a namespace.
+ * Does not check for preexistence of the value, it will add overloaded.
+ *
+ * This is used for coded function value, passing in context and parameters.
+ */
+int BlockInfo::AddValue(const char *name, Value *v)
+{
+	 //find position in stack
+	int pos=-1;
+	int found=-1;
+	int s=0,e=dict.n-1,m, cmp;
+
+	if (s<=e) {
+		cmp=strcmp(name,dict.e[s]->name);
+		if (cmp==0) { found=1; pos=s; }
+		else if (cmp<0) { found=0; pos=s; } //was before lowest
+		
+		if (found<0) {
+			cmp=strcmp(name,dict.e[e]->name);
+			if (cmp==0) { found=1; pos=e; }
+			else if (cmp>0) { found=0; pos=e+1; }
+		}
+		
+		if (found<0) {
+			found=0;
+			while (pos<0 && s<e) {
+				m=(s+e)/2;
+				cmp=strcmp(name,dict.e[m]->name);
+				if (cmp==0) { found=1; pos=m; break; }
+				if (cmp<0) {
+					e=m-1;
+					cmp=strcmp(name,dict.e[e]->name);
+					if (cmp==0) { found=1; pos=e; break; }
+					if (cmp>0) { pos=m; break; } //between m-1 and m
+				} else {
+					s=m+1;
+					cmp=strcmp(name,dict.e[s]->name);
+					if (cmp==0) { found=1; pos=s; break; }
+					if (cmp<0) { pos=s; break; } //between m-1 and m
+				}
+			}
+			if (!found && pos<0) pos=s;
+		}
+	}
+	if (found<0) found=0;
+
+	if (found) {
+		OverloadedEntry *oo=dynamic_cast<OverloadedEntry*>(dict.e[pos]);
+		if (oo) {
+			//for (int c=0; c<oo->entries.n; c++) {
+			//	if (***isSameEntry(item,oo->entries.e[c])) return -2;
+			//}
+			//item not found, so add to top of overloads
+
+		} else {
+			 //need to overload name maybe
+			//if (***isSameEntry(item,dict.e[pos])) return -2; //already there!
+			Entry *entry=dict.pop(pos);
+			oo=new OverloadedEntry(name,0);
+			oo->entries.push(entry);
+			dict.push(oo,1,pos); //replace old entry with overloaded entry
+		}
+		Entry *newentry=new ValueEntry(name, 0,NULL,NULL, v);
+
+		oo->entries.push(newentry,1,-1);
+		return -1;
+	}
+
+	 //entry not found, so add!
+	Entry *entry=new ValueEntry(name, 0,NULL,NULL, v);
+	dict.push(entry,1,pos);
+
+	return 0;
 }
 
 //! Add item, which is assumed to be in mod somewhere, to the scope's dictionary.
@@ -554,7 +631,7 @@ Entry *BlockInfo::createNewEntry(ObjectDef *item, CalculatorModule *module)
 		return NULL;
 
 	} else if (item->format==VALUE_Variable) {
-		return new ValueEntry(item->name,module->object_id, item, module);
+		return new ValueEntry(item->name,module->object_id, item, module, NULL);
 
 	} else if (item->format==VALUE_Class) {
 		return new NamespaceEntry(item, item->name, module->object_id, 1);
@@ -649,6 +726,272 @@ Entry *BlockInfo::FindName(const char *name,int len)
 }
 
 
+//--------------------------------------- NamespaceValue ------------------------------------
+/*! \class NamespaceValue
+ *  Hold a namespace, for the purpose of easing dereferencing.
+ */
+class NamespaceValue : public Value
+{
+  public:
+	Value *usethis;
+	NamespaceValue(ObjectDef *ns, Value *fromthis=NULL);
+	virtual ~NamespaceValue();
+	virtual int type();
+ 	virtual ObjectDef *makeObjectDef() { return NULL; }
+	virtual Value *duplicate() { return NULL; }
+	virtual Value *dereference(const char *extstring, int len);
+	//virtual int getValueStr(char *buffer,int len);
+};
+
+//typedef NamespaceValue FunctionValue; <-- see values.h
+//typedef NamespaceValue ClassValue;
+
+NamespaceValue::NamespaceValue(ObjectDef *ns, Value *fromthis)
+{
+	usethis=fromthis;
+	if (usethis) usethis->inc_count();
+
+	objectdef=ns;
+	if (objectdef) objectdef->inc_count();
+}
+
+NamespaceValue::~NamespaceValue()
+{
+	if (usethis) usethis->dec_count();
+	if (objectdef) objectdef->dec_count();
+}
+
+/*! NamespaceValue objects may be namespaces, object classes, or functions.
+ * This just returns objectdef->format.
+ */
+int NamespaceValue::type()
+{
+	if (!objectdef) return 0; //shouldn't happen, but just in case
+	//return objectdef->format==VALUE_Namespace ? VALUE_Namespace : VALUE_Class;
+	return objectdef->format;
+}
+
+Value *NamespaceValue::dereference(const char *extstring, int len)
+{
+	ObjectDef *def=objectdef->FindDef(extstring,len);
+	if (!def) return NULL;
+
+	if (def->format==VALUE_Variable) {
+		if (!def->defaultValue) return NULL; //what if there is a scripted or Evaluator value?
+		def->defaultValue->inc_count();
+		return def->defaultValue;
+	}
+	
+	if (def->format==VALUE_Function) {
+		Value *v=new NamespaceValue(def);
+		return v;
+	}
+
+	if (def->format==VALUE_Class) {
+		Value *v=new NamespaceValue(def);
+		return v;
+	}
+
+	if (def->format==VALUE_Namespace) {
+		Value *v=new NamespaceValue(def);
+		return v;
+	}
+
+	if (def->format==VALUE_Operator) {
+	}
+
+	return NULL;
+}
+
+
+//-------------------------------------- LValue -------------------------------------------
+/*! \class LValue
+ * Hold something that can take an assignment if necessary. This is only used internally
+ * during the parsing of expressions. They should not be passed around externally.
+ */
+class ValueEntry;
+
+class LValue : public Value
+{
+  public:
+	char *name;
+
+	ValueEntry *entry; //entry the base is found in, might just be an alias to base
+	Value *basevalue; //assumed to NOT be an LValue
+	ObjectDef *basedef; //if basevalue==NULL, then assume extension is from namespace basedef
+	FieldExtPlace extension;
+
+	LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldExtPlace *p);
+	virtual ~LValue();
+	virtual int type() { return VALUE_LValue; }
+ 	virtual ObjectDef *makeObjectDef() { return NULL; }
+	virtual Value *duplicate();
+	virtual Value *Resolve(); //remove lvalue state, returns new instance (or inc counted)
+	virtual Value *dereference(const char *extstring, int len);
+	virtual Value *dereference(int index);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+};
+
+LValue::LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldExtPlace *p)
+{
+	name=newnstr(newname,len);
+	basevalue=v; if (v) v->inc_count();
+	basedef=def; if (def) def->inc_count();
+	entry=ve;
+
+	if (p) extension=*p;
+}
+
+LValue::~LValue()
+{
+	if (basedef) basedef->dec_count();
+	if (basevalue) basevalue->dec_count();
+	if (name) delete[] name;
+}
+
+Value *LValue::duplicate()
+{ return NULL; }
+
+int LValue::assign(FieldExtPlace *ext,Value *v)
+{
+	int oldn=extension.n();
+
+	char *str;
+	int i;
+
+	if (ext && ext->n()) {
+		for (int c=0; c<ext->n(); c++) {
+			str=ext->e(c,&i);
+			if (str) extension.push(str);
+			else extension.push(i);
+		}
+	}
+
+	str=NULL;
+	i=-1;
+	if (extension.n()) {
+		str=extension.pop(&i);
+	}
+
+	Value *vv=Resolve();
+	FieldExtPlace fext;
+	if (str) fext.push(str);
+	else if (i>=0) fext.push(i);
+
+	if (fext.n()) {
+		int status=vv->assign(&fext,v);
+		vv->dec_count();
+		while (extension.n()>oldn) extension.remove();
+		return status;
+	}
+
+	if (entry) {
+		 //replace old value totally with new value
+		entry->SetVariable(entry->name, v, 0);
+		while (extension.n()>oldn) extension.remove();
+		v->inc_count();
+		if (basevalue) basevalue->dec_count();
+		basevalue=v;
+		return 1;
+	}
+	
+	//else assign value to existing value
+	int status=vv->assign(NULL,v);
+	vv->dec_count();
+	while (extension.n()>oldn) extension.remove();
+	v->inc_count();
+	if (basevalue) basevalue->dec_count();
+	basevalue=v;
+	return status;
+}
+
+Value *LValue::dereference(const char *extstring, int len)
+{
+	if (!basevalue) return NULL;
+
+	Value *v=Resolve();
+	if (!v) return NULL;
+
+	char ext[len+1];
+	strncpy(ext,extstring,len);
+	ext[len]='\0';
+
+	ObjectDef *def=v->GetObjectDef();
+	if (def) def=def->FindDef(extstring,len);
+	if (def) {
+		//if (def->format==VALUE_Variable)  ... just add the extension
+		
+		if (def->format==VALUE_Function) {
+			Value *fv=new NamespaceValue(def,v);
+			v->dec_count();
+			return fv;
+		}
+
+		if (def->format==VALUE_Class) {
+			Value *v=new NamespaceValue(def);
+			return v;
+		}
+
+		if (def->format==VALUE_Namespace) {
+			Value *v=new NamespaceValue(def);
+			return v;
+		}
+	}
+
+	extension.push(ext);
+	inc_count();
+	return this;
+}
+
+/*! Resolve old value, then push the index to extension.
+ */
+Value *LValue::dereference(int index)
+{
+	if (!basevalue) return NULL;
+
+	Value *v;
+	if (extension.n()) v=Resolve();
+	basevalue->dec_count();
+	basevalue=v;
+	entry=NULL;
+	extension.push(index);
+	inc_count();
+	return this;
+}
+
+//! Remove lvalue state, returns new instance (or inc counted)
+/*! Returns NULL, if unable to dereference.
+ */
+Value *LValue::Resolve()
+{
+	Value *v=basevalue, *v2;
+	if (v) v->inc_count();
+	else {
+		cerr << " Warning: missing LValue::basevalue"<<endl;
+		return NULL;
+	}
+	char *str;
+	int i;
+
+	while (extension.n()) {
+		str=extension.pop(&i, 0);
+		if (str) {
+			v2=v->dereference(str,strlen(str));
+		} else {
+			v2=v->dereference(i);
+		}
+		if (!v2) {
+			 //unable to dereference!
+			v->dec_count();
+			return NULL; 
+		}
+
+		v->dec_count();
+		v=v2;
+	}
+	return v;
+}
+
 
 //------------------------------------ LaidoutCalculator -----------------------------
 /*! \class LaidoutCalculator
@@ -697,7 +1040,7 @@ LaidoutCalculator::LaidoutCalculator()
 	calcerror=0;
 	calcmes=NULL;
 	messagebuffer=NULL;
-	temp_errorlog=NULL;
+	errorlog=&default_errorlog;
 	last_answer=NULL;
 
 	global_scope.scope_namespace=new ObjectDef(NULL, "Global", _("Global"), _("Global namespace"),VALUE_Namespace,NULL,NULL);
@@ -854,8 +1197,8 @@ char *LaidoutCalculator::In(const char *in)
 	makestr(messagebuffer,NULL);
 
 	Value *v=NULL;
-	int errorpos=0;
-	evaluate(in,-1, &v, &errorpos, NULL);
+	errorlog=&default_errorlog;
+	evaluate(in,-1, &v, errorlog);
 
 	char *buffer=NULL;
 	int len=0;
@@ -880,12 +1223,13 @@ char *LaidoutCalculator::In(const char *in)
  *
  *  This function is called as necessary called by In().
  */
-int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int *error_pos, char **error_ret)
+int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
 {
 	int num_expr_parsed=0;
+	clearerror();
+	errorlog=log;
 
 	if (in==NULL) { calcerr(_("Blank expression")); return 1; }
-	clearerror();
 
 	Value *answer=NULL;
 	if (len<0) len=strlen(in);
@@ -918,11 +1262,18 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		}
 
 		 ////check for variable assignments, simple a=b usage, no (a,b)=(1,2) yet....
-		answer=checkAssignments(); //eventually will go away when '=' is an operator
+		//answer=checkAssignments(); //eventually will go away when '=' is an operator
+		//if (calcerror) break;
+		//else if (!answer) answer=evalLevel(0);
+		//----------
+		answer=evalLevel(0);
 		if (calcerror) break;
-		else if (!answer) answer=evalLevel(0);
 
-		if (calcerror) break;
+		if (answer->type()==VALUE_LValue) {
+			Value *v=dynamic_cast<LValue*>(answer)->Resolve();
+			answer->dec_count();
+			answer=v;
+		}
 
 		//updatehistory(answer,outexprs);
 		num_expr_parsed++;
@@ -931,10 +1282,6 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 		if (nextchar(';')) ; //advance past a ;
 	} 
 
-	if (calcerror) { 
-		if (error_pos) *error_pos=calcerror;
-	} 
-	if (error_ret && calcmes) appendline(*error_ret,calcmes); 
 	if (value_ret) { *value_ret=answer; if (answer) answer->inc_count(); }
 	if (last_answer) last_answer->dec_count();
 	last_answer=answer; //last_answer takes the reference
@@ -942,6 +1289,36 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, int 
 	return calcerror>0 ? 1 : 0;
 }
 
+/*! Called for scripted functions, establish a scope containing "context", and parameters.
+ */
+int LaidoutCalculator::evaluate(const char *in, int len, ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog *log)
+{
+	ErrorLog *old_errorlog=errorlog;
+	errorlog=log;
+
+	if (context || parameters) {
+		pushScope(BLOCK_function, 0,0,NULL,NULL,NULL);
+		BlockInfo *evalscope=currentLevel();
+	
+		if (context) {
+			evalscope->AddValue("context",context);
+		}
+
+		if (parameters && parameters->n()) {
+			for (int c=0; c<parameters->n(); c++) {
+				if (!parameters->key(c)) continue; //skip unnamed parameters
+				evalscope->AddValue(parameters->key(c),parameters->value(c));
+			}
+		}
+	}
+
+	int status=evaluate(in,len, value_ret,log);
+
+	if (context || parameters) popScope();
+
+	errorlog=old_errorlog;
+	return status;
+}
 
 //-------------Error parsing functions
 
@@ -1065,7 +1442,7 @@ void LaidoutCalculator::calcerr(const char *error,const char *where,int w, int s
 		appendstr(calcmes,ll);
 	}
 
-	if (temp_errorlog) temp_errorlog->AddMessage(calcmes,ERROR_Fail, 0, from,curline);
+	if (errorlog) errorlog->AddMessage(calcmes,ERROR_Fail, 0, from,curline);
 }
 
 //------------- String parse helper functions
@@ -1132,6 +1509,7 @@ const char *LaidoutCalculator::getopstring(int *n)
 
 	 //note: this leaves:  :\|<>?+-/!@$%^&*~`=
 	while (pos<curexprslen 
+			&& !isspace(ch)
 			&& !isalnum(ch)
 			&& ch!='#'
 			&& ch!=';'
@@ -1269,8 +1647,8 @@ void LaidoutCalculator::popScope()
 			if (!nextchar('{')) { calcerr(_("Expected '{'!")); return; }
 			skipBlock('}');
 		}
-		
-	} else if (scope->type==BLOCK_namespace) {
+
+	} else if (scope->type==BLOCK_namespace || scope->type==BLOCK_function || scope->type==BLOCK_class) {
 		 //close out namespace addition
 		 //nothing special to do
 
@@ -1344,6 +1722,8 @@ void LaidoutCalculator::skipBlock(char ch)
 	char *str;
 	int tfrom=-1;
 	while (from!=tfrom && from<curexprslen) {
+		if (tfrom<0) tfrom=from;
+
 		str=strpbrk(curexprs+from, "\"'({[]})#"); //first occurence of any of these
 		if (!str) calcerr(_("Missing end!"));
 
@@ -1355,6 +1735,8 @@ void LaidoutCalculator::skipBlock(char ch)
 		}
 
 		if (*str=='#') { from=str-curexprs; skipwscomment(); continue; }
+		if (*str=='/' && str[1]=='/') { from=str-curexprs; skipwscomment(); continue; }
+		if (*str=='/' && str[1]=='*') { from=str-curexprs; skipwscomment(); continue; }
 		if (*str=='(') { skipBlock(')'); continue; }
 		if (*str=='[') { skipBlock(']'); continue; }
 		if (*str=='{') { skipBlock('}'); continue; }
@@ -1366,6 +1748,35 @@ void LaidoutCalculator::skipBlock(char ch)
 		}
 	}
 }
+
+//! Skip until a ';' or eof.
+void LaidoutCalculator::skipExpression()
+{
+	char *str;
+	int tfrom=-1;
+	while (from!=tfrom && from<curexprslen && !calcerror) {
+		if (tfrom<0) tfrom=from;
+
+		str=strpbrk(curexprs+from, ";\"'({[]})#"); //first occurence of any of these
+		if (!str) { str=curexprs+curexprslen; from=curexprslen; }
+
+		if (*str==';') { from=str-curexprs+1; return; } //found the end!!
+
+		if (*str=='#') { from=str-curexprs; skipwscomment(); continue; }
+		if (*str=='/' && str[1]=='/') { from=str-curexprs; skipwscomment(); continue; }
+		if (*str=='/' && str[1]=='*') { from=str-curexprs; skipwscomment(); continue; }
+		if (*str=='(') { skipBlock(')'); continue; }
+		if (*str=='[') { skipBlock(']'); continue; }
+		if (*str=='{') { skipBlock('}'); continue; }
+
+		if (*str=='"' || *str=='\'') {
+			from=str-curexprs;
+			skipstring();
+			continue;
+		}
+	}
+}
+
 
 void LaidoutCalculator::skipstring()
 {
@@ -1424,15 +1835,31 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 
 
 	if (n==5 && !strncmp(word,"break",5)) {
-		popScope(); // *** must pop all through nearest loop block
+		 // must pop all through nearest loop block
+		from+=5;
+		while (currentLevel()->type==BLOCK_if) popScope();
+		if (currentLevel()->type!=BLOCK_for && currentLevel()->type!=BLOCK_foreach && currentLevel()->type!=BLOCK_while) {
+			calcerr(_("Cannot break from there!"));
+			return 1;
+		}
+		popScope();
+		cerr << "*** incomplete 'break', need to skip unused portions of blocks" <<endl;
 		return 1;
 
 	} else if (n==6 && !strncmp(word,"return",6)) {
+		 //must pop all through nearest function block
 		from+=6;
 		skipwscomment();
 		*value_ret=evalLevel(0);
 		if (calcerror) return 1;
-		popScope(); // *** must pop all through nearest function block
+		int c;
+		for (c=scopes.n; c>0; c--) if (scopes.e[c]->type==BLOCK_function) break;
+		if (c==0) {
+			calcerr(_("Cannot return!"));
+			return 1;
+		}
+		while (scopes.n!=c) popScope();
+		from=curexprslen; //we were in a function expression, this jumps us out
 		return 1;
 
 	} else if (!strncmp(word,"if",2)) {
@@ -1587,129 +2014,6 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 	return 0;
 }
 
-//--------------------------- NamespaceValue
-/*! \class NamespaceValue
- *  Hold a namespace, for the purpose of easing dereferencing.
- */
-class NamespaceValue : public Value
-{
-  public:
-	NamespaceValue(ObjectDef *ns);
-	virtual ~NamespaceValue();
-	virtual int type();
- 	virtual ObjectDef *makeObjectDef() { return NULL; }
-	virtual Value *duplicate() { return NULL; }
-	virtual Value *dereference(const char *extstring, int len);
-	//virtual int getValueStr(char *buffer,int len);
-};
-
-//typedef NamespaceValue FunctionValue; <-- see values.h
-//typedef NamespaceValue ClassValue;
-
-NamespaceValue::NamespaceValue(ObjectDef *ns)
-{
-	objectdef=ns;
-	if (objectdef) objectdef->inc_count();
-}
-
-NamespaceValue::~NamespaceValue()
-{
-}
-
-/*! NamespaceValue objects may be namespaces, object classes, or functions.
- * This just returns objectdef->format.
- */
-int NamespaceValue::type()
-{
-	if (!objectdef) return 0; //shouldn't happen, but just in case
-	//return objectdef->format==VALUE_Namespace ? VALUE_Namespace : VALUE_Class;
-	return objectdef->format;
-}
-
-Value *NamespaceValue::dereference(const char *extstring, int len)
-{
-	ObjectDef *def=objectdef->FindDef(extstring,len);
-	if (!def) return NULL;
-
-	if (def->format==VALUE_Variable) {
-		if (!def->defaultValue) return NULL; //what if there is a scripted or Evaluator value?
-		def->defaultValue->inc_count();
-		return def->defaultValue;
-	}
-	
-	if (def->format==VALUE_Function) {
-		Value *v=new NamespaceValue(def);
-		return v;
-	}
-
-	if (def->format==VALUE_Class) {
-		Value *v=new NamespaceValue(def);
-		return v;
-	}
-
-	if (def->format==VALUE_Namespace) {
-		Value *v=new NamespaceValue(def);
-		return v;
-	}
-
-	if (def->format==VALUE_Operator) {
-	}
-
-	return NULL;
-}
-
-
-//--------------------------- LValue
-/*! \class LValue
- * Hold something that can take an assignment if necessary. This is only used internally
- * during the parsing of expressions. They should not be passed around externally.
- */
-class LValue : public Value
-{
-  public:
-	char *name;
-	Entry *entry; //entry the base is found in, might just be an alias to base
-	Value *basevalue;
-	ObjectDef *basedef; //if basevalue==NULL, then assume extension is from namespace basedef
-	FieldPlace extension;
-
-	LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldPlace *p);
-	virtual ~LValue();
-	virtual int type() { return VALUE_LValue; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; }
-	virtual Value *duplicate();
-	virtual Value *Resolve(); //remove lvalue state, returns new instance (or inc counted)
-};
-
-LValue::LValue(const char *newname,int len, Value *v, ValueEntry *ve, ObjectDef *def, FieldPlace *p)
-{
-	name=newnstr(newname,len);
-	basevalue=v; if (v) v->inc_count();
-	basedef=def; if (def) def->inc_count();
-	entry=ve;
-
-	if (p) extension=*p;
-}
-
-LValue::~LValue()
-{
-	if (basedef) basedef->dec_count();
-	if (basevalue) basevalue->dec_count();
-	if (name) delete[] name;
-}
-
-Value *LValue::duplicate()
-{ return NULL; }
-
-//! Remove lvalue state, returns new instance (or inc counted)
-Value *LValue::Resolve()
-{ // ***
-	cerr <<" *** INCOMPLETE CODING LValue::Resolve()"<<endl;
-	return NULL;
-}
-
-
-//--------------------------- end LValue
 
 /*! \todo need much more sophisticated assignments like flatvector v; v.x=3;
  *     and (a,b)=(1,2)
@@ -1726,6 +2030,10 @@ Value *LaidoutCalculator::checkAssignments()
 	int ttfrom=from;
 	from+=namelen;
 	skipwscomment();
+
+	if (nextchar('.')) {
+
+	}
 
 	if (!nextchar('=')) {
 		 //is not a simple assignment
@@ -1962,6 +2270,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		ObjectDef *def=currentLevel()->scope_namespace;
 		if (def->format!=VALUE_Namespace) { calcerr(_("Cannot add variables to current scope!")); return 1; }
 
+		from+=n;
 		Value *value=NULL;
 		if (nextchar('=')) {
 			value=evalLevel(0);
@@ -1988,6 +2297,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		def=new ObjectDef(NULL, name,name,NULL, VALUE_Function,NULL,NULL);
 		delete[] name; name=NULL;
 
+		from+=n;
+
 		 //scan in parameters
 		if (nextchar('(')) {
 			do {
@@ -2009,7 +2320,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 
 				def->pushParameter(name,name,NULL, VALUE_Any,NULL,NULL, v);
 				delete[] name; name=NULL;
-				v->dec_count();				
+				if (v) v->dec_count();				
 			} while (nextchar(','));
 
 			if (!nextchar(')')) {
@@ -2027,6 +2338,12 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 				delete def;
 				return 1;
 			}
+			char *code=newnstr(curexprs+tfrom, from-tfrom-1);
+			def->defaultvalue=code;
+
+		} else if (nextchar('=')) {
+			int tfrom=from;
+			skipExpression();
 			char *code=newnstr(curexprs+tfrom, from-tfrom);
 			def->defaultvalue=code;
 
@@ -2048,11 +2365,63 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	}
 
 	if (nextword("class")) {
-		calcerr("INCOMPLETE CODING for class");
+		 //class name extends Class1,Class2 : "doc string"
+		 //{ var one=1;
+		 //  var two="two";
+		 //  var three; //initialized as null object
+		 //  random_code(12); //run once only when doing initial parse of class def
+		 //  function f(x,y)=x+y;
+		 //  operator * (num1,num2) { num3.x=num1.x+num2.x; num3.y=num1.y+num2.y; return num3; }
+		 //}
+		from+=5;
+		skipwscomment();
+		int n=0;
+		char *classname=getnamestring(&n);
+		ObjectDef *def=new ObjectDef(NULL, classname,classname,NULL,VALUE_Class,NULL,NULL);
+		delete[] classname;
+		ObjectDef *edef;
+
+		if (nextword("extends")) {
+			skipwscomment();
+			do {
+				edef=getClass();
+				if (!edef) {
+					calcerr(_("Could not find class"));
+					def->dec_count();
+					return 1;
+				}
+				def->Extend(edef);
+			} while (nextchar(','));
+		}
+
+		if (!nextchar('{')) {
+			calcerr(_("Expected class definition!"));
+			def->dec_count();
+			return 1;
+		}
+		currentLevel()->scope_namespace->push(def,1);
+		pushScope(BLOCK_class, 0, 0, NULL, NULL, def);
+
 		return 1;
 	}
 
 	if (nextword("operator")) {
+		 //operator * (x,y) { x*y }
+		 //operator right ++ (o) { o=o+1; }
+		 //operator x * y { x^2+y }
+		 //operator o++ { o=o+1; }
+		from+=8;
+		skipwscomment();
+		int n=0;
+		const char *op=getopstring(&n);
+		if (!op) { calcerr(_("Expected operator!")); return 1; }
+		if (nextchar('(')) {
+			 //read in 2 parameter names
+			if (!nextchar(')')) {
+				calcerr(_("Expected closing ')'"));
+			}
+		}
+
 		calcerr("INCOMPLETE CODING for operator");
 		return 1;
 	}
@@ -2344,7 +2713,6 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 	return 0;
 }
 
-
 //! Establish the new exprs, and valuate a single expression.
 /*! This will typically be called by a function in the middle of parsing another expression.
  */
@@ -2389,19 +2757,29 @@ Value *LaidoutCalculator::evalLevel(int level)
 
 			from+=n;
 			num=evalLevel(level); //will plow through any other left hand ops
+			if (num->type()==VALUE_LValue) {
+				if (opfunc->def && (opfunc->def->flags&OPS_Assignment)) {
+					//keep as lvalue
+				} else {
+					 //op is not assignment related, so remove any lvalue status
+					num2=dynamic_cast<LValue*>(num)->Resolve();
+				}
+			}
 
 			 //still need to apply the op
-			int status=opfunc->function->Op(op,n,OPS_Left, num,NULL, &calcsettings, &num_ret, NULL);
-			if (status==-1) num_ret=opCall(op,n,OPS_Left, num,NULL, &leftops, index); //need to try overloaded
-			if (calcerror) { if (num) num->dec_count(); return NULL; }
+			int status=opfunc->function->Op(op,n,OPS_Left, (num2?num2:num),NULL, &calcsettings, &num_ret, NULL);
+			if (status==-1) num_ret=opCall(op,n,OPS_Left, (num2?num2:num),NULL, &leftops, index); //need to try overloaded
+			if (calcerror) { if (num) num->dec_count(); if (num2) num2->dec_count(); return NULL; }
 
+			if (num2) num2->dec_count();
 			if (num_ret) {
 				num->dec_count();
 				num=num_ret;
 			}
 
 		} else {
-			num=number(); //get a plain number
+			 //did not find an op string, so we retrieve a plain number
+			num=number();
 		}
 		if (!num) return NULL; //did not find a number
 		 
@@ -2412,10 +2790,21 @@ Value *LaidoutCalculator::evalLevel(int level)
 			opfunc=rightops.hasOp(op,n,OPS_Right, &index,-1);
 			if (opfunc) {
 
+				if (num->type()==VALUE_LValue) {
+					if (opfunc->def && (opfunc->def->flags&OPS_Assignment)) {
+						//keep as lvalue
+					} else {
+						 //op is not assignment related, so remove any lvalue status
+						num2=dynamic_cast<LValue*>(num)->Resolve();
+					}
+				}
+
 				Value *num_ret=NULL;
-				int status=opfunc->function->Op(op,n,OPS_Right, num,NULL, &calcsettings, &num_ret, NULL);
-				if (status==-1) num_ret=opCall(op,n,OPS_Right, num,NULL, &rightops, index); //need to try overloaded
-				if (calcerror) { if (num) num->dec_count(); return NULL; }
+				int status=opfunc->function->Op(op,n,OPS_Right, (num2?num2:num),NULL, &calcsettings, &num_ret, NULL);
+				if (status==-1) num_ret=opCall(op,n,OPS_Right, (num2?num2:num),NULL, &rightops, index); //need to try overloaded
+				if (calcerror) { if (num) num->dec_count(); if (num2) num2->dec_count(); return NULL; }
+				if (num2) num2->dec_count();
+
 				if (num_ret) {
 					num->dec_count();
 					num=num_ret;
@@ -2433,13 +2822,20 @@ Value *LaidoutCalculator::evalLevel(int level)
 
 	//left and right ops out of the way, now for 2 number ops
 	int dir=oplevels.e[level]->direction;
+	int uselvalue;
+	int status;
+	Value *num1v=NULL, *num2v=NULL;
+
 	num=evalLevel(level+1);
 	if (calcerror) return NULL;
 
 	op=getopstring(&n);
 	while (n) { 
 		opfunc=oplevels.e[level]->hasOp(op,n,dir, &index,-1);
-		if (!opfunc) break;
+		if (!opfunc) {
+			n--; //search for smaller ops
+			break;
+		}
 
 		from+=n;
 		if (dir==OPS_LtoR) num2=evalLevel(level+1);
@@ -2451,7 +2847,18 @@ Value *LaidoutCalculator::evalLevel(int level)
 			num->dec_count();
 			return NULL;
 		}
-		int status=opfunc->function->Op(op,n,dir, num,num2, &calcsettings, &num_ret, NULL);
+
+		uselvalue=(opfunc->def && (opfunc->def->flags&OPS_Assignment));
+		if (uselvalue) {
+			 //operator is potentially an assignment
+			status=opfunc->function->Op(op,n,dir, num,  num2,  &calcsettings, &num_ret, NULL);
+		} else {
+			 //need to resolve any LValue states, operator is NOT as assignment
+			if (!num1v && num->type()==VALUE_LValue)  num1v=dynamic_cast<LValue*>(num )->Resolve(); else { num1v=num;  num1v->inc_count(); }
+			if (!num2v && num2->type()==VALUE_LValue) num2v=dynamic_cast<LValue*>(num2)->Resolve(); else { num2v=num2; num2v->inc_count(); }
+			status=opfunc->function->Op(op,n,dir, num1v,num2v, &calcsettings, &num_ret, NULL);
+		}
+
 		if (status==-1) {
 			 //overloading...
 			num_ret=opCall(op,n,dir, num,num2, oplevels.e[level],index);
@@ -2459,12 +2866,18 @@ Value *LaidoutCalculator::evalLevel(int level)
 		if (!calcerror && !num_ret) calcerr(_("Cannot compute with given values."));
 		num->dec_count();  num=NULL;
 		num2->dec_count(); num2=NULL;
-		if (calcerror) { return NULL; }
+		if (calcerror) {
+			if (num1v) num1v->dec_count();
+			if (num2v) num2v->dec_count();
+			return NULL;
+		}
 		num=num_ret;
 		
 		op=getopstring(&n);
 	}
 
+	if (num1v) num1v->dec_count();
+	if (num2v) num2v->dec_count();
 	return num;
 }
 
@@ -2616,6 +3029,11 @@ Value *LaidoutCalculator::dereference(Value *val)
 		return NULL;
 	}
 
+	if (value && value->type()==VALUE_Function) {
+		NamespaceValue *v=dynamic_cast<NamespaceValue*>(value);
+		if (v && v->usethis) usethis=v->usethis;
+	}
+
 	 //if value is a function object or namespace like object, do something appropriate
 	if (def!=NULL || (value && (value->type()==VALUE_Function || value->type()==VALUE_Class))) {
 		 //if def!=NULL, then we are calling an object method on val
@@ -2658,10 +3076,10 @@ Value *LaidoutCalculator::dereference(Value *val)
 		return fvalue;
 
 
-	} else if (value->type()==VALUE_Operator) {
+	} else if (value && value->type()==VALUE_Operator) {
 		// *** can't actually do anything with this, but may be called for informational purposes
 
-	} else if (value->type()==VALUE_Namespace) {
+	} else if (value && value->type()==VALUE_Namespace) {
 		//return as is for further dereferencing!
 	}
 
@@ -2671,6 +3089,8 @@ Value *LaidoutCalculator::dereference(Value *val)
 //! Read in values for a set.
 /*! Next char must be '(' or '{'. Otherwise return NULL.
  * If '(', then ApplyDefaultSets() is used to convert something like (2,3) to a flatvector.
+ *
+ * Will automatically convert LValue objects to normal values.
  */
 Value *LaidoutCalculator::getset()
 {
@@ -2685,7 +3105,10 @@ Value *LaidoutCalculator::getset()
 		if (calcerror) {
 			return NULL;
 		}
-		set->Push(num,1);
+		if (num->type()==VALUE_LValue) {
+			set->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
+			num->dec_count();
+		} else set->Push(num,1);
 		
 	} while (nextchar(','));
 
@@ -2707,6 +3130,8 @@ Value *LaidoutCalculator::getset()
 	return set;
 }
 
+/*! Will automatically convert LValue objects to normal values.
+ */
 Value *LaidoutCalculator::getarray()
 {
 	if (!nextchar('[')) return NULL;
@@ -2717,7 +3142,10 @@ Value *LaidoutCalculator::getarray()
 		if (calcerror) {
 			return NULL;
 		}
-		array->Push(num,1);
+		if (num->type()==VALUE_LValue) {
+			array->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
+			num->dec_count();
+		} else array->Push(num,1);
 		
 	} while (nextchar(','));
 
@@ -2976,10 +3404,23 @@ Value *LaidoutCalculator::evalname()
 		}
 		if (nextchar('(')) {
 			from--;
+			cerr <<" *** object(...) not parsing parameters, INCOMPLETE CODING!!"<<endl;
 			functionCall(word,n, &v, NULL, dynamic_cast<NamespaceEntry*>(entry)->module, NULL,NULL); //**** context,parameters
 			return v;
 		}
 		return v;
+
+	} else if (dynamic_cast<ValueEntry*>(entry)) {
+		//Value *v=dynamic_cast<ValueEntry*>(entry)->GetValue();
+		//if (v) v->inc_count();
+		//from+=n;
+		//return v;
+
+		 //prep for possible lvalue based assignment operator
+		ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
+		LValue *val=new LValue(word,n, ve->GetValue(),ve,NULL,NULL);
+		from+=n;
+		return val; 
 
 //	} else if (dynamic_cast<AliasEntry*>(entry)) {
 //		// *** should be able to do something like this: alias blah.(5+3).func() aliasname
@@ -2989,22 +3430,44 @@ Value *LaidoutCalculator::evalname()
 //		Value *v=evalname(alias->aliasto,strlen(alias->aliasto));
 //		return v;
 
-	} else if (dynamic_cast<ValueEntry*>(entry)) {
-		Value *v=dynamic_cast<ValueEntry*>(entry)->GetValue();
-		if (v) v->inc_count();
-		from+=n;
-		return v;
-		// *** todo for future: lvalue based assignment operator
-		//ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
-		//LValue *val=new LValue(word,n, NULL,ve,NULL,NULL);
-		//return val; 
-
 	//} else if (dynamic_cast<OperatorEntry*>(entry)) {
 		//currently, operators are searched for differently and must not have letters, see eval()
 	}
 
 
 	return NULL;
+}
+
+/*! Parse out a name of an existing class, for use in the "extends" part of a class definition.
+ */
+ObjectDef *LaidoutCalculator::getClass()
+{
+	int tfrom=from;
+	ObjectDef *def=NULL;
+
+	Value *v=evalname();
+
+	if (calcerror) { if (v) v->dec_count(); return NULL; }
+	if (!v) { from=tfrom; return NULL; }
+
+	while (nextchar('.') || curexprs[from]=='[') {
+		 //there is dereferencing to be done
+		Value *v2=dereference(v);
+		if (calcerror) {
+			if (v) v->dec_count();
+			return NULL;
+		}
+
+		v->dec_count();
+		v=v2;
+	}
+
+	if (v->type()!=VALUE_Class) { v->dec_count(); from=tfrom; return NULL; }
+
+	def=v->GetObjectDef();
+	def->inc_count();
+	v->dec_count();
+	return def;
 }
 
 //! Perform operator overloading, using a particular operator level.
@@ -3017,15 +3480,39 @@ Value *LaidoutCalculator::opCall(const char *op,int n,int dir, Value *num, Value
 	int index=-1;
 	int status=0;
 	Value *num_ret=NULL;
+	Value *num1v=NULL, *num2v=NULL;
+	int uselvalue=0;
+
 	for (int c=lastindex+1; c<level->ops.n; c++) {
 		opfunc=level->hasOp(op,n,dir, &index,lastindex);
-		if (!opfunc) return NULL;
+		if (!opfunc) {
+			if (num1v) num1v->dec_count();
+			if (num2v) num2v->dec_count();
+			return NULL;
+		}
 
-		status=opfunc->function->Op(op,n,dir, num,num2, &calcsettings, &num_ret, NULL);
-		if (status==0) return num_ret;
+		uselvalue=(opfunc->def && (opfunc->def->flags&OPS_Assignment));
+		if (uselvalue) {
+			 //operator is potentially an assignment
+			status=opfunc->function->Op(op,n,dir, num,  num2,  &calcsettings, &num_ret, NULL);
+		} else {
+			 //need to resolve any LValue states, operator is NOT as assignment
+			if (!num1v && num  && num->type() ==VALUE_LValue) num1v=dynamic_cast<LValue*>(num) ->Resolve();
+			if (!num2v && num2 && num2->type()==VALUE_LValue) num2v=dynamic_cast<LValue*>(num2)->Resolve();
+			status=opfunc->function->Op(op,n,dir, num1v,num2v, &calcsettings, &num_ret, NULL);
+		}
+
+		if (status==0) {
+			if (num1v) num1v->dec_count();
+			if (num2v) num2v->dec_count();
+			return num_ret;
+		}
 		if (status==-1) { lastindex=c; continue; }
 		if (calcerror) break;
 	}
+
+	if (num1v) num1v->dec_count();
+	if (num2v) num2v->dec_count();
 	return NULL;
 }
 
@@ -3061,6 +3548,11 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 				status=0;
 				value=new ObjectValue(s);
 			} else status=1;
+		} else if (function->defaultvalue) {
+			 //execute code
+			 // *** set up a scope, and call function
+			status=evaluate(function->defaultvalue,-1, context,pp, &value,&log); 
+			if (status==-1) status=0;//warnings, but success
 		}
 	}
 
@@ -3069,11 +3561,17 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 		char *error=NULL;
 		char scratch[100];
 		ErrorLogNode *e;
+		int fail=0;
 		for (int c=0; c<log.Total(); c++) {                 
 			e=log.Message(c);
 			if (e->severity==ERROR_Ok) ;
 			else if (e->severity==ERROR_Warning) appendstr(error,"Warning: ");
-			else if (e->severity==ERROR_Fail) appendstr(error,"Error! ");
+			else if (e->severity==ERROR_Fail) { fail++; appendstr(error,"Error! "); }
+
+			if (e->line>=0) {
+				sprintf(scratch," line %d, ",e->line);
+				appendstr(error,scratch);
+			}
 		
 			if (e->objectstr_id) {
 				sprintf(scratch,"id:%s, ",e->objectstr_id);
@@ -3082,6 +3580,8 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 			appendstr(error,e->description);
 			appendstr(error,"\n");
 		}
+		
+		if (fail) calcerr(error);
 		messageOut(error);
 		delete[] error;
 
@@ -3089,7 +3589,6 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 		calcerr(_("Could not call function! Poor programming!"));
 	} else {
 		if (status>0) calcerr(_("Command failed, tell the devs to properly document failure!!"));
-		else if (status<0) messageOut(_("Command succeeded with warnings, tell the devs to properly document warnings!!"));
 	}
 
 	if (calcerror) { if (value) value->dec_count(); value=NULL; }
@@ -3272,6 +3771,13 @@ ValueHash *LaidoutCalculator::parseParameters(ObjectDef *def)
 			}
 			if (enumcheck<0) v=evalLevel(0); //either enum check failed, or was not an enum
 
+			if (v && v->type()==VALUE_LValue) {
+				 //functions can't use LValue objects, only operators can do that, so remove any LValue status
+				Value *v2=dynamic_cast<LValue*>(v)->Resolve();
+				v->dec_count();
+				v=v2;
+			}
+
 			if (v && !calcerror) {
 				pp->push(pname,v);
 				v->dec_count();
@@ -3313,6 +3819,14 @@ void LaidoutCalculator::InstallInnate()
 										   VALUE_Namespace,NULL,NULL);
 
 	 //operators
+	innates->pushOperator("=",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+	//innates->pushOperator("+=",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+	//innates->pushOperator("-=",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+	//innates->pushOperator("*=",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+	//innates->pushOperator("/=",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+	//innates->pushOperator("++",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+	//innates->pushOperator("--",OPS_RtoL,50, _("Assignment"), this, OPS_Assignment);
+
 	innates->pushOperator("||",OPS_LtoR,100, _("Condition or"), this);
 
 	innates->pushOperator("&&",OPS_LtoR,200, _("Condition and"), this);
@@ -3341,7 +3855,7 @@ void LaidoutCalculator::InstallInnate()
 	 //variables
     innates->pushVariable("pi", "pi",      _("pi"),                        new DoubleValue(M_PI),1);
     innates->pushVariable("tau","tau",     _("golden section"),            new DoubleValue((1+sqrt(5))/2),1);
-    innates->pushVariable("e",  "e",       _("base of natural logarithm"), new DoubleValue(exp(1)),1);
+    innates->pushVariable("E",  "E",       _("base of natural logarithm"), new DoubleValue(exp(1)),1);
     //innates->define("i",  "sqrt(-1)",_("imaginary number"),          0);
 
 
@@ -3507,15 +4021,38 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 	return status;
 }
 
+//! Tries to assign num2 to num1, and return an LValue.
+/*! num1 has to be assignable. Currently, this means num1 must be an LValue.
+ *
+ * \todo A future goal is maybe to have python like assignments (a,b)={1,2}.
+ */
+int LaidoutCalculator::Assignment(Value *num1, Value *num2, Value **value_ret, ErrorLog *log)
+{
+	DBG cerr <<" *** assignment"<<endl;
+
+	if (num1->type()!=VALUE_LValue) {
+		calcerr(_("Cannot assign to that!"));
+		//if (log) log->AddMessage(..., ERROR_Fail, 0, from,curline);
+		return 1;
+	}
+
+	int status=num1->assign(NULL,num2);
+	if (status<=0) {
+		calcerr(_("Cannot assign to that!"));
+		return 1;
+	}
+
+	num1->inc_count();
+	*value_ret=num1;
+	return 0;
+}
 
 //! Figure out and evaluate built in operators
 int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings,
 						  Value **value_ret, ErrorLog *log)
 {
 	if (len==1 && *the_op=='=') {
-		//*** is an assignment, needs num1 to be an LValue, num2 if an LValue, is converted to a Value. Returns an LValue
-		cerr <<" *** implement '='!!!"<<endl;
-		return 1;
+		return Assignment(num1,num2, value_ret,log);
 	}
 
 	if (dir==OPS_LtoR && len==1 && !strncmp(the_op,"+",1)) { return add(num1,num2, value_ret);

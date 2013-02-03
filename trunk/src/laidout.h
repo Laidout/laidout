@@ -95,7 +95,11 @@ class LaidoutApp : public Laxkit::anXApp
 	char *unitname;
 	int pagedropshadow;
 	char *splash_image_file;
-
+	char *default_template;
+	char *defaultpaper;
+	char *palette_dir;
+	char *icon_dir;
+	char *temp_dir;
 
 	unsigned long curcolor;
 	
@@ -105,12 +109,6 @@ class LaidoutApp : public Laxkit::anXApp
 	int max_preview_length, max_preview_width, max_preview_height;
 
 	char *ghostscript_binary;
-
-	char *default_template;
-	char *defaultpaper;
-	char *palette_dir;
-	char *icon_dir;
-	char *temp_dir;
 
 	Laxkit::IconManager icons;
 	
@@ -126,7 +124,7 @@ class LaidoutApp : public Laxkit::anXApp
 	virtual ~LaidoutApp();
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
-	StyleDef *makeStyleDef();
+	ObjectDef *makeObjectDef();
 	void parseargs(int argc,char **argv);
 	int readinLaidoutDefaults();
 	int createlaidoutrc();

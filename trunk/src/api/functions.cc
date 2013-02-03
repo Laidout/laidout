@@ -43,7 +43,7 @@ int InitFunctions()
 
 int InitObjectDefinitions()
 {
-	stylemanager.AddObjectDef(makePaperStyleDef(),1);
+	stylemanager.AddObjectDef(makePaperObjectDef(),1);
 
 	PageStyle *ps=new PageStyle;
 	StyleDef *sd=ps->makeStyleDef();

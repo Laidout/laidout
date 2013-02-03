@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (c) 2004-2011 Tom Lechner
+// Copyright (c) 2004-2013 Tom Lechner
 //
 
 #include <lax/numslider.h>
@@ -2858,8 +2858,24 @@ int LaidoutViewport::ApplyThis(Laxkit::anObject *thing,unsigned long mask)
 }
 
 
+//! For scripting function calls, build the context we are calling from..
+ValueHash *LaidoutViewport::build_context()
+{
+	return NULL;
+//	-----
+//	ValueHash *context=new ValueHash;
+//
+//	context->push("viewport", this);
+//	context->push("object", curobj***)//current object
+//	context->push("selection", ***);//current selection
+//	context->push("tools",***); //stack of active tools
+//	context->push("parent",win_parent); //parent context
+//
+//	return context;
+}
 
-//------------------------------- ViewWindow ---------------------------
+
+//-------------------------------------------- ViewWindow -----------------------------------------------
 /*! \class ViewWindow
  * \brief Basic view window, for looking at pages, spreads, etc.
  *
@@ -4163,6 +4179,7 @@ enum ViewActions {
 	VIEW_NextPage,
 	VIEW_PreviousPage,
 	VIEW_ObjectTool,
+	VIEW_CommandPrompt,
 
 	VIEW_Help,
 	VIEW_About,
@@ -4196,6 +4213,7 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 	sc->Add(VIEW_Help,         LAX_F1,0,0,        _("Help"),         _("Help"),NULL,0);
 	sc->Add(VIEW_About,        LAX_F2,0,0,        _("About"),        _("About Laidout"),NULL,0);
 	sc->Add(VIEW_SpreadEditor, LAX_F5,0,0,        _("SpreadEditor"), _("Popup a spread editor"),NULL,0);
+	sc->Add(VIEW_CommandPrompt,'/',0,0,           _("Prompt"),       _("Popup a the graphical shell"),NULL,0);
 
 	manager->AddArea("ViewWindow",sc);
 	return sc;
@@ -4214,6 +4232,10 @@ int ViewWindow::PerformAction(int action)
 			}
 		}
 		return 0;
+
+	} else if (action==VIEW_CommandPrompt) {
+		DBG cerr <<" *** Need to implement graphical shell!!"<<endl;
+		return 0; 
 
 	} else if (action==VIEW_Save || action==VIEW_SaveAs) {
 		 // save file

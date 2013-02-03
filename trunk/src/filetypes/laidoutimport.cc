@@ -291,9 +291,9 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 	double tt[6];
 	for (int c=in->instart; c<=in->inend; c++) {
 		while (doc->pages.n<=curpage) doc->NewPages(doc->pages.n,1);
-		newpagedims.m_clear();
+		newpagedims.setIdentity();
 		newpagedims.setbounds(0,doc->pages.e[curpage]->pagestyle->w(), 0,doc->pages.e[curpage]->pagestyle->h());
-		origpagedims.m_clear();
+		origpagedims.setIdentity();
 		origpagedims.setbounds(0,fdoc->pages.e[c]->pagestyle->w(), 0,fdoc->pages.e[c]->pagestyle->h());
 
 		if (in->scaletopage) {

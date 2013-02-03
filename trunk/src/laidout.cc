@@ -288,9 +288,9 @@ LaidoutApp::~LaidoutApp()
 	if (calculator)		    calculator->dec_count();
 }
 
-StyleDef *LaidoutApp::makeStyleDef()
+ObjectDef *LaidoutApp::makeObjectDef()
 {
-	StyleDef *sd=new StyleDef(NULL,
+	ObjectDef *sd=new ObjectDef(NULL,
 						  "Laidout",
 						  _("Laidout"),
 						  _("Main Laidout container"),
@@ -580,6 +580,9 @@ int LaidoutApp::createlaidoutrc()
 					  "#  activate   rgbf  0 .78  0    #Some controls have green/red to indicate go/no-go. Redefine here\n"
 					  "#  deactivate rgbf  1 .39 .39   # for instance, to compensate for red/green color blindness.\n"
 					  "\n"
+
+					   //default paper
+					  "#defaultpapersize letter #Name of default paper to use\n"
 
 					   //default template
 					  " #if the following is commented out, then running \"laidout\" will\n"

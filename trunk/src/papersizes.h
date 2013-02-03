@@ -19,7 +19,7 @@
 
 #include <lax/refptrstack.h>
 
-#include "styles.h"
+#include "calculator/values.h"
 #include "dataobjects/objectcontainer.h"
 #include "dataobjects/group.h"
 #include <lax/interfaces/somedata.h>
@@ -44,7 +44,7 @@ enum BoxTypes {
 //------------------------------------- PaperStyle --------------------------------------
 #define PAPERSTYLE_Landscape  1
 
-class PaperStyle : public Style
+class PaperStyle : public Value
 {
  public:
 	char *name;
@@ -60,13 +60,18 @@ class PaperStyle : public Style
 	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
 	virtual int landscape(int l)
 		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }
-	virtual Style *duplicate(Style *s=NULL);
-	virtual StyleDef *makeStyleDef();
+
+	//from Value:
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual int type();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *dereference(const char *extstring, int len);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
-StyleDef *makePaperStyleDef();
+StyleDef *makePaperObjectDef();
 
 
 //----------------------------- GetBuiltInPaperSizes() --------------------------------------

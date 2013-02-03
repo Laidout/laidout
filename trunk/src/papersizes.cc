@@ -295,32 +295,71 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 	}
 }
 
-//! Copy over name, width, height, dpi.
-Style *PaperStyle::duplicate(Style *s)//s==NULL
+int PaperStyle::type()
 {
-	if (s==NULL) s=(Style *)new PaperStyle();
+	ObjectDef *def=GetObjectDef();
+	return def->fieldsformat;
+}
 
-	if (!dynamic_cast<PaperStyle *>(s)) return NULL;
-	PaperStyle *ps=dynamic_cast<PaperStyle *>(s);
-	if (!ps) return NULL;
+//! Copy over name, width, height, dpi.
+Value *PaperStyle::duplicate()
+{
+	PaperStyle *ps=new PaperStyle();
+
 	makestr(ps->name,name);
 	ps->width=width;
 	ps->height=height;
 	makestr(ps->defaultunits,defaultunits);
 	ps->landscape(landscape());
-	return s;
+
+	return ps;
 }
 
-Value *NewPaperStyle(StyleDef *def)
+int PaperStyle::getValueStr(char *buffer,int len)
+{
+	//"PaperStyle(width=8.4, height=11, orientation=portrait, dpi=360)"
+	int needed=55+15+15+15+15+(name?strlen(name):0);
+	if (len<needed) return needed;
+
+	if (name) sprintf(buffer,"Paper(name=\"%s\", width=%.10g, height=%.10g, orientation=%s, dpi=%.10g)",
+					name, width,height,landscape()?"landscape":"portrait",dpi);
+	else sprintf(buffer,"Paper(width=%.10g, height=%.10g, orientation=%s, dpi=%.10g)",
+					width,height,landscape()?"landscape":"portrait",dpi);
+	return 0;
+}
+
+Value *PaperStyle::dereference(const char *extstring, int len)
+{
+	if (extequal(extstring,len, "name")) {
+		return new StringValue(name);
+
+	} else if (extequal(extstring,len, "width")) {
+		return new DoubleValue(width);
+
+	} else if (extequal(extstring,len, "height")) {
+		return new DoubleValue(height);
+
+	} else if (extequal(extstring,len, "dpi")) {
+		return new DoubleValue(dpi);
+
+	} else if (extequal(extstring,len, "orientation")) {
+		return new StringValue(landscape()?"landscape":"portrait");
+
+	} else if (extequal(extstring,len, "units")) {
+		return new StringValue(defaultunits);
+	}
+
+	return NULL;
+}
+
+Value *NewPaperStyle(ObjectDef *def)
 {
 	PaperStyle *d=new PaperStyle;
-	ObjectValue *v=new ObjectValue(d);
-	d->dec_count();
-	return v;
+	return d;
 }
 
-StyleDef *PaperStyle::makeStyleDef()
-{ return makePaperStyleDef(); }
+ObjectDef *PaperStyle::makeObjectDef()
+{ return makePaperObjectDef(); }
 
 /*! If the paper name is in laidout->papersizes, then grab a duplicate of that,
  * and overwrite any differing settings.
@@ -344,19 +383,22 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 
 		 //---name
 		Value *v=parameters->find("paper");
+		const char *str=NULL;
 		if (v) {
 			if (v->type()==VALUE_String) {
 				const char *str=(const char *)dynamic_cast<StringValue*>(v)->str;
 				if (!str) throw _("Invalid name for paper!");
-				for (int c=0; c<laidout->papersizes.n; c++) {
-					if (strcasecmp(str,laidout->papersizes.e[c]->name)==0) {
-						paper=(PaperStyle*)laidout->papersizes.e[c]->duplicate();
-						break;
-					}
-				}
-				if (!paper) paper=new PaperStyle(str,0,0,0,0,"in");
 			} else throw  _("Invalid object for paper!");
 		}
+		if (!str) str=laidout->defaultpaper;
+		if (!str) str="letter";
+		for (int c=0; c<laidout->papersizes.n; c++) {
+			if (strcasecmp(str,laidout->papersizes.e[c]->name)==0) {
+				paper=(PaperStyle*)laidout->papersizes.e[c]->duplicate();
+				break;
+			}
+		}
+		if (!paper) paper=new PaperStyle("Letter",8.5,11,0,360,"in");
 
 
 		 //----orientation
@@ -396,18 +438,19 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 	}
 
 
-	if (err==0 && value_ret) {
-		if (paper) *value_ret=new ObjectValue(paper);
-		else *value_ret=NULL;
+	if (err==0) {
+		if (value_ret) {
+			if (paper) *value_ret=paper;
+			else *value_ret=NULL;
+		}
 	}
-	if (paper) paper->dec_count();
 
 	return err;
 }
 
-StyleDef *makePaperStyleDef()
+ObjectDef *makePaperObjectDef()
 {
-	StyleDef *sd=new StyleDef(NULL,
+	ObjectDef *sd=new ObjectDef(NULL,
 							  "Paper",
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
@@ -418,7 +461,6 @@ StyleDef *makePaperStyleDef()
 							  NewPaperStyle,
 							  createPaperStyle);
 
-	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc,stylefunc);
 	sd->push("name",
 			_("Name"),
 			_("Name of the paper, like A4 or Letter"),
@@ -432,9 +474,9 @@ StyleDef *makePaperStyleDef()
 			_("Either portrait (0) or landscape (1)"),
 			"portrait",//defval
 			NULL,NULL,//new funcs
-			"portrait",_("Portrait"),_("Width and height are as normal"),
-			"landscape",_("Landscape"),_("Width and height are swapped"),
-			NULL);
+			  "portrait",_("Portrait"),_("Width and height are as normal"),
+			  "landscape",_("Landscape"),_("Width and height are swapped"),
+			  NULL);
 	sd->push("width",
 			_("Width"),
 			_("Width of the paper, after orientation is applied"),

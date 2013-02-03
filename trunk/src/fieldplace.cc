@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2012 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 //#include <cctype>
@@ -19,6 +19,7 @@
 #include <cstdarg>
 #include "fieldplace.h"
 
+#include <lax/strmanip.h>
 #include <lax/lists.cc>
 
 using namespace Laxkit;
@@ -28,8 +29,180 @@ using namespace std;
 #define DBG
 
 
+using namespace Laxkit;
 
 namespace Laidout {
+
+
+//----------------------------- FieldExtPlace -----------------------------
+/*! \class FieldExtPlace
+ * \brief Stack of field places. So "blah.2.7" would translate into a stack with elements blah, 2, and 7,
+ * 
+ * You may push strings or integers. Integers are assumed to be indices, so <0 means index not used,
+ * and you are supposed to use the string instead.
+ */
+
+FieldExtPlace::ExtNode::ExtNode(const char *str, int i)
+{
+	ext=newstr(str);
+	exti=i;
+}
+
+
+FieldExtPlace::ExtNode::~ExtNode()
+{
+	if (ext) delete[] ext;
+}
+
+//! Parse a simple string. No function calls, must be plain strings and numbers. No whitespace.
+FieldExtPlace::FieldExtPlace(const char *str, int len)
+{
+	Set(str,len,NULL);
+}
+
+//! Append extensions. Returns number of fields added.
+int FieldExtPlace::Set(const char *str, int len, const char **next)
+{
+	if (len<0) len=strlen(str);
+
+	int nf=0;
+	unsigned int n=0; //length of string to check in str
+	char *ss;
+
+	while (len>0 && str && *str) {
+		while (isalnum(str[n]) || str[n]=='_') n++;
+		if (n==0) break;
+
+		 // check for number first: "34.blah.blah"
+		if (isdigit(str[0])) {
+			char *nxt=NULL;
+			int nn=strtol(str,&nxt,10); 
+			if (nxt-str==n) {
+				 //found valid number
+				if (nn>=0) {
+					push(nn); nf++;
+					str+=n;
+					len-=n;
+					if (*str=='.') str++;
+					continue;
+				}
+			}
+		}
+
+		ss=newnstr(str,n);
+		push(ss); nf++;
+		delete[] ss;
+
+		str+=n;
+		len-=n;
+		if (*str=='.') str++;
+	}
+
+	if (next) *next=str;
+	return nf;
+}
+
+FieldExtPlace::FieldExtPlace(const FieldExtPlace &place)
+{
+	int i;
+	char *str;
+	for (int c=0; c<place.n(); c++) {
+		str=place.e(c,&i);
+		if (str) push(str);
+		else push(i);
+	}
+}
+	
+//! Assignment operator. Flushes, and copies over place's stuff.
+FieldExtPlace &FieldExtPlace::operator=(const FieldExtPlace &place)
+{
+	flush();
+	int i;
+	char *str;
+	for (int c=0; c<place.n(); c++) {
+		str=place.e(c,&i);
+		if (str) push(str);
+		else push(i);
+	}
+	return *this;
+}
+
+//! Return whether place specifies the same location as this.
+int FieldExtPlace::operator==(const FieldExtPlace &place) const
+{
+	if (n()!=place.n()) return 0;
+	int i;
+	char *str;
+	for (int c=0; c<ext.n; c++) {
+		str=place.e(c, &i);
+		if (i!=ext.e[c]->exti || strcmp(ext.e[c]->ext,str)) return 0;
+	}
+	return 1;
+}
+
+//! Return the string and integer of element i (if ei!=NULL).
+char *FieldExtPlace::e(int i, int *ei) const
+{
+	if (i<0 && i>=ext.n) { if (ei) *ei=-1; return NULL; }
+	if (ei) *ei=ext.e[i]->exti;
+	return ext.e[i]->ext;
+}
+
+//! Set field i. Returns 0 for success, or -1 for out of range.
+/*! Return for success, or -1 for out of bounds.
+ */
+int FieldExtPlace::e(int i,const char *val, int ei)
+{
+	if (i<0 || i>=ext.n) return -1;
+
+	makestr(ext.e[i]->ext,val);
+	ext.e[i]->exti=ei;
+	return 0;
+}
+
+int FieldExtPlace::push(const char *nd,int where)
+{
+	return ext.push(new ExtNode(nd,-1), 1, where);
+}
+
+int FieldExtPlace::push(int i,int where)
+{
+	return ext.push(new ExtNode(NULL,i), 1, where);
+}
+
+/*! Remember the returned string must be delete[]'d.
+ */
+char *FieldExtPlace::pop(int *i, int which)
+{
+	ExtNode *node=ext.pop(which);
+	if (!node) { if (i) *i=-1; return NULL; }
+
+	if (i) *i=node->exti;
+	char *str=node->ext;
+	node->ext=NULL;
+	return str;
+}
+
+//! Remove element which. Return 0 for succes, or -1 for which out of bounds. A negative which means remove the top element.
+int FieldExtPlace::remove(int which)
+{
+	if (which<0) which=ext.n;
+	if (which>=ext.n) return -1;
+	ext.remove(which);
+	return 0;
+}
+
+//! For debugging, dumps to stdout.
+void FieldExtPlace::out(const char *str)
+{
+	DBG if (str) cerr <<str<<": "; else cerr <<"FieldExtPlace: ";
+	DBG for (int c=0; c<ext.n; c++) {
+	DBG 	if (ext.e[c]->ext) cerr <<ext.e[c]->ext;
+	DBG 	else cerr <<ext.e[c]->exti;
+	DBG 	cerr<<".";
+	DBG }
+	DBG cerr <<endl;
+}
 
 
 //----------------------------- FieldPlace -----------------------------

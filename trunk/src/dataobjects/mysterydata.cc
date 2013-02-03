@@ -96,7 +96,7 @@ void MysteryData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context
 	fprintf(f,"%smaxx %.10g\n",spc,maxx);
 	fprintf(f,"%smaxy %.10g\n",spc,maxy);
 	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
-				matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5]);
+				m(0),m(1),m(2),m(3),m(4),m(5));
 	fprintf(f,"%snativeid %ld\n",spc,nativeid);
 	if (attributes) {
 		fprintf(f,"%sattributes\n",spc);
@@ -180,7 +180,7 @@ LaxInterfaces::SomeData *MysteryData::duplicate(LaxInterfaces::SomeData *dup)
 	 //somedata elements:
 	dup->bboxstyle=bboxstyle;
 	dup->setbounds(this);
-	for (int c=0; c<6; c++) dup->matrix[c]=matrix[c];
+	dup->m(m());
 	return dup;
 }
 

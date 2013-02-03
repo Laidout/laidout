@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 
@@ -327,12 +327,12 @@ void NetImposition::setPage()
 
 		DBG cerr <<"new scalefromnet: "<<scalefromnet<<endl;
 
-		DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->matrix[0]<<", "
-		DBG 	<<nets.e[c]->matrix[1]<<", "
-		DBG 	<<nets.e[c]->matrix[2]<<", "
-		DBG 	<<nets.e[c]->matrix[3]<<", "
-		DBG 	<<nets.e[c]->matrix[4]<<", "
-		DBG 	<<nets.e[c]->matrix[5]<<endl;
+		DBG cerr <<"net "<<c<<" matrix: "<<nets.e[c]->m(0)<<", "
+		DBG 	<<nets.e[c]->m(1)<<", "
+		DBG 	<<nets.e[c]->m(2)<<", "
+		DBG 	<<nets.e[c]->m(3)<<", "
+		DBG 	<<nets.e[c]->m(4)<<", "
+		DBG 	<<nets.e[c]->m(5)<<endl;
 		DBG cerr <<"net "<<c<<" bounds xx-yy: "
 		DBG 	<<nets.e[c]->minx<<", "
 		DBG 	<<nets.e[c]->maxx<<", "
