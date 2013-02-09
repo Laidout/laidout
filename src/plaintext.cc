@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 #include "plaintext.h"
@@ -81,6 +81,11 @@ PlainText::PlainText()
 	texttype=TEXT_Temporary;
 	textsubtype=-1;
 	lastmodtime=lastfiletime=0;
+}
+
+PlainText::PlainText(const char *newtext)
+{
+	SetText(newtext);
 }
 
 PlainText::~PlainText()

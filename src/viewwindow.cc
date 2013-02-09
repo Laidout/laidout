@@ -53,10 +53,12 @@
 #include "helpwindow.h"
 #include "configured.h"
 #include "importimages.h"
+#include "stylemanager.h"
 #include "filetypes/importdialog.h"
 #include "filetypes/exportdialog.h"
 #include "interfaces/paperinterface.h"
 #include "interfaces/documentuser.h"
+#include "calculator/shortcuttodef.h"
 
 #include <iostream>
 using namespace std;
@@ -2441,6 +2443,42 @@ void LaidoutViewport::Refresh()
 	SwapBuffers();
 
 	DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
+}
+
+ObjectDef *LaidoutViewport::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("Viewport");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd=new ObjectDef(NULL,"Viewport",
+            _("Viewport"),
+            _("Document and spread view"),
+            VALUE_Class,
+            NULL,NULL);
+
+	if (!sc) sc=GetShortcuts();
+	ShortcutsToObjectDef(sc, sd);
+
+	sd->pushFunction("SelectTool",_("Select Tool"),_("Select Tool"),
+					 NULL,
+			 		 "tool",NULL,_("Tool to use"),VALUE_String, NULL, "Object",
+					 NULL);
+
+	sd->pushFunction("PlopData",_("Plop Data"),_("Plop Data"),
+					 NULL,
+			 		 "data",NULL,_("Data to drop into the viewer"),VALUE_Any, NULL, NULL,
+					 NULL);
+
+//
+//  "NextSpread"
+//  "PreviousSpread"
+//
+//
+	return sd;
 }
 
 enum LaidoutViewportActions {

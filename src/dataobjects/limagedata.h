@@ -25,7 +25,7 @@
 namespace Laidout {
 
 
-class LImageData : public DrawableObject, public LaxInterfaces::ImageData
+class LImageData : public DrawableObject, public LaxInterfaces::ImageData, public FunctionEvaluator
 {
   public:
 	//ImageImportFilter *importer;
@@ -40,6 +40,13 @@ class LImageData : public DrawableObject, public LaxInterfaces::ImageData
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
+
+
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log);
 };
 
 

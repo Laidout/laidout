@@ -696,30 +696,26 @@ Value *NewDrawableObject(ObjectDef *)
 //! Return an ObjectDef for a "Group" object.
 ObjectDef *DrawableObject::makeObjectDef()
 {
-	ObjectDef *sd=makeAffineObjectDef();
-
-	makestr(sd->name,"Group");
-	makestr(sd->Name,_("Group"));
-	makestr(sd->description,_("Group of drawable objects, and base of all drawable objects"));
-
-	return sd;
+	// *** objectdef is in Value...
+	ObjectDef *objectdef=stylemanager.FindDef("Group");
+	if (objectdef) objectdef->inc_count();
+	else {
+		objectdef=makeAffineObjectDef();
+		makestr(objectdef->name,"Group");
+		makestr(objectdef->Name,_("Group"));
+		makestr(objectdef->description,_("Group of drawable objects, and base of all drawable objects"));
+		
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+	return objectdef;
 }
 
 //--------------------------------------- AffineValue ---------------------------------------
 
-class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual public FunctionEvaluator
-{
-  public:
-	AffineValue();
-	AffineValue(const double *m);
-	virtual ObjectDef *makeObjectDef();
-	virtual int getValueStr(char *buffer,int len);
-	virtual Value *duplicate();
-	virtual int type() { return GetObjectDef()->fieldsformat; }
-	virtual Value *dereference(int index);
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			             Value **value_ret, ErrorLog *log);
-};
+
+/* \class AffineValue
+ * \brief Adds scripting functions for a Laxkit::Affine object.
+ */
 
 AffineValue::AffineValue()
 {}
@@ -887,7 +883,7 @@ int NewAffineObject(ValueHash *context, ValueHash *parameters, Value **value_ret
 	return 0;
 }
 
-//! Create a new ObjectDef with Affine characteristics.
+//! Create a new ObjectDef with Affine characteristics. Always creates new one, does not search for Affine globally.
 ObjectDef *makeAffineObjectDef()
 {
 	ObjectDef *sd=new ObjectDef(NULL,"Affine",

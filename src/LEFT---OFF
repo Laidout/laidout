@@ -104,13 +104,19 @@ debug multi head? seems to crash when showing with projectors plugged in
 
 calculator
   show overloaded entries
+  show (variable) should show the objectdef for that variable
   debug class definitions
   debug operator definitions
   debug if/while/etc
   how best to allow created object defs to be referenced as parameter, variable, or set types
   debug using and import... remove using, use import Math.* instead
-  if {a=2, b=3} or {a:2, b:3} or {a:2; b:3}, then scan in hash instead of set
+  need "print" function
+  debug number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
+  var a if a already exists should fail
+  error reporting up function calls doesn't say pos/line for each expression
  
+  DONE debug if {a=2, b=3} or {a:2, b:3} or {a:2; b:3}, then scan in hash instead of set
+  DONE 1/0 crashes
   DONE assignment still off, need to be able to do a.x=3;
   DONE debug function definitions
   DONE skipBlock does not obey // and /**/ commenting

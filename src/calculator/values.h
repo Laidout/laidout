@@ -23,6 +23,7 @@
 #include <lax/errorlog.h>
 #include <lax/colorbase.h>
 
+#include <lax/shortcuts.h>
 
 #include "../fieldplace.h"
 
@@ -139,7 +140,7 @@ class SimpleFunctionEvaluator : public FunctionEvaluator
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
   public:
-	ObjectDef *source_module;
+	ObjectDef *parent_namespace;
 	Laxkit::RefPtrStack<ObjectDef> extendsdefs;
 
 	 //Default callers
@@ -175,12 +176,13 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 
 	ObjectDef();
 	ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval);
-	ObjectDef(const char *nextends,const char *nname,const char *nName, const char *ndesc,
+	ObjectDef(ObjectDef *nextends,const char *nname,const char *nName, const char *ndesc,
 			ValueTypes fmt,const char *nrange, const char *newdefval,
 			Laxkit::RefPtrStack<ObjectDef>  *nfields=NULL,unsigned int fflags=OBJECTDEF_CAPPED,
 			NewObjectFunc nnewfunc=0,ObjectFunc nstylefunc=0);
 	virtual ~ObjectDef();
 	virtual const char *whattype() { return "ObjectDef"; }
+	virtual void Clear(int which=~0);
 
 
 	 // namespace helpers
@@ -288,7 +290,7 @@ class Value : virtual public Laxkit::anObject
 };
 
 //----------------------------- SetValue ----------------------------------
-class SetValue : public Value
+class SetValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	char *restrictto;
@@ -296,7 +298,7 @@ class SetValue : public Value
 
 	SetValue(const char *restricted=NULL);
 	virtual ~SetValue();
-	virtual int Push(Value *v,int absorb);
+	virtual int Push(Value *v,int absorb, int where=-1);
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Set; }
@@ -306,6 +308,10 @@ class SetValue : public Value
     virtual  ObjectDef *FieldInfo(int i);
     virtual const char *FieldName(int i);
 	virtual Value *dereference(int index);
+
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
 };
 
 //----------------------------- ArrayValue ----------------------------------
@@ -503,6 +509,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	int push(const char *name,const char *string);
 	int pushObject(const char *name,Laxkit::anObject *obj);
 	int push(const char *name,Value *v);
+	int push(const char *name,int len,Value *v);
 	int remove(int i);
 	void swap(int i1, int i2);
 
@@ -522,13 +529,13 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
 
 	 //from Value:
-	virtual int type();
-	virtual Value *duplicate();
-	virtual int getValueStr(char *buffer,int len);
+	virtual int     type();
+	virtual Value    *duplicate();
+	virtual int       getValueStr(char *buffer,int len);
  	virtual ObjectDef *makeObjectDef();
-	Value *dereference(int index);
-    virtual int getNumFields();
-    virtual  ObjectDef *FieldInfo(int i);
+	virtual Value     *dereference(int index);
+    virtual int        getNumFields();
+    virtual ObjectDef  *FieldInfo(int i);
     virtual const char *FieldName(int i);
 
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,

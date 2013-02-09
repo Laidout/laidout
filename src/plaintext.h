@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 #ifndef PLAINTEXT_H
@@ -58,6 +58,7 @@ class PlainText : public Laxkit::anObject, public LaxFiles::DumpUtility
 	char *filename;
 
 	PlainText();
+	PlainText(const char *newtext);
 	virtual ~PlainText();
 	virtual const char *whattype() { return "PlainText"; }
 	virtual const char *Filename();

@@ -22,8 +22,6 @@
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
-#include <lax/shortcuts.h>
-#include <lax/interfaces/aninterface.h>
 
 #include <lax/refptrstack.cc>
 
@@ -39,7 +37,6 @@ using namespace std;
 
 using namespace Laxkit;
 using namespace LaxFiles;
-using namespace LaxInterfaces;
 
 
 
@@ -251,7 +248,7 @@ int SimpleFunctionEvaluator::Evaluate(const char *func,int len, ValueHash *conte
 //! Constructor.
 /*! Takes possession of fields, and will delete in destructor.
  */
-ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what this class extends.
+ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive from
 			const char *nname, //!< The name that would be used in the interpreter
 			const char *nName, //!< A basic title, most likely an input label
 			const char *ndesc,  //!< Description, newlines ok.
@@ -264,7 +261,7 @@ ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what thi
 			ObjectFunc    nstylefunc)  //!< Full Function 
   : suggestions(2)
 {
-	source_module=NULL;
+	parent_namespace=NULL;
 
 	newfunc=nnewfunc;
 	stylefunc=nstylefunc;
@@ -280,24 +277,28 @@ ObjectDef::ObjectDef(const char *nextends, //!< Comma separated list of what thi
 	makestr(defaultvalue,newdefval);
 	
 
-	if (nextends) {
-		ObjectDef *extendsdef;
-		int n=0;
-		char **strs=split(nextends,',',&n);
-		char *extends;
-		for (int c=0; c<n; c++) {
-			extends=strs[c];
-			while (isspace(*extends)) extends++;
-			while (strlen(extends) && isspace(extends[strlen(extends)-1])) extends[strlen(extends)-1]='\0';
-			extendsdef=stylemanager.FindDef(extends); // must look up extends and inc_count()
-			if (extendsdef) extendsdefs.pushnodup(extendsdef);
-		}
-	}
-	
 	fields=nfields;
 	fieldsformat=0;
 	format=fmt;
 	flags=fflags;
+
+	if (nextends) {
+		Extend(nextends);
+
+		//-----vv this depends on stylemanager, which is specific to Laidout.. trying to isolate that..
+//		ObjectDef *extendsdef;
+//		int n=0;
+//		char **strs=split(nextends,',',&n);
+//		char *extends;
+//		for (int c=0; c<n; c++) {
+//			extends=strs[c];
+//			while (isspace(*extends)) extends++;
+//			while (strlen(extends) && isspace(extends[strlen(extends)-1])) extends[strlen(extends)-1]='\0';
+//			extendsdef=stylemanager.FindDef(extends); // must look up extends and inc_count()
+//			if (extendsdef) extendsdefs.pushnodup(extendsdef);
+//		}
+	}
+	
 }
 
 //! Create a new VALUE_Variable object def.
@@ -307,7 +308,7 @@ ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Val
 	Name=newstr(nName);
 	description=newstr(ndesc);
 
-	source_module=NULL;
+	parent_namespace=NULL;
 	newfunc=NULL;
 	stylefunc=NULL;
 	opevaluator=NULL;
@@ -328,7 +329,7 @@ ObjectDef::ObjectDef()
 	Name=NULL;
 	description=NULL;
 
-	source_module=NULL;
+	parent_namespace=NULL;
 	newfunc=NULL;
 	stylefunc=NULL;
 	opevaluator=NULL;
@@ -345,7 +346,7 @@ ObjectDef::ObjectDef()
 //! Delete the various strings, and styledef->dec_count().
 ObjectDef::~ObjectDef()
 {
-	//source_module->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
+	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
 	DBG cerr <<"ObjectDef \""<<name<<"\" destructor"<<endl;
 	
@@ -361,6 +362,32 @@ ObjectDef::~ObjectDef()
 		DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
 		fields=NULL;
+	}
+}
+
+/*! If which&1, remove fields.
+ *  If which&2, remove range, defaultvalues.
+ *  if which&4, remove evaluators.
+ *  If which&8, remove name,Name,description.
+ */
+void ObjectDef::Clear(int which)
+{
+	if (which&1) if (fields) delete fields;
+	if (which&2) {
+		makestr(range,NULL);
+		makestr(defaultvalue,NULL);
+		if (defaultValue) defaultValue->dec_count();
+	}
+	if (which&4) {
+		newfunc=NULL;
+		stylefunc=NULL;
+		opevaluator=NULL;
+		evaluator=NULL;
+	}
+	if (which&8) {
+		makestr(name,NULL);
+		makestr(Name,NULL);
+		makestr(description,NULL);
 	}
 }
 
@@ -1004,6 +1031,8 @@ int ObjectDef::getInfo(int index,
 		if (def_ret) *def_ret=def;
 		return 0;
 	}
+
+	if (!fields) return 1;
 	if (nm) *nm=def->fields->e[index]->name;
 	if (Nm) *Nm=def->fields->e[index]->Name;
 	if (desc) *desc=def->fields->e[index]->description;
@@ -1196,14 +1225,15 @@ Value *ValueHash::duplicate()
  */
 int ValueHash::getValueStr(char *buffer,int len)
 {
-	int needed=3;//"{}\n"
+	int needed=3;//"{:}"
 	for (int c=0; c<values.n; c++) {
-		needed+= 1 + values.e[c]->getValueStr(NULL,0,0) + strlen(keys.e[c])+3;
+		needed+= 1 + values.e[c]->getValueStr(NULL,0) + strlen(keys.e[c])+3;
 	}
 	if (!buffer || len<needed) return needed;
 
 	int pos=1;
 	sprintf(buffer,"{");
+	if (!values.n) { sprintf(buffer+1,":"); pos++; }
 	for (int c=0; c<values.n; c++) {
 		 //add key name
 		sprintf(buffer+pos," %s: ",keys[c]);
@@ -1229,7 +1259,7 @@ Value *ValueHash::dereference(int index)
 	return set;
 }
 
-ObjectDef defaultValueHashObjectDef(NULL,"hash",_("Hash"),_("Set of name-value pairs"),
+ObjectDef defaultValueHashObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value pairs"),
 							 VALUE_Class, NULL, "{ : }", 
 							 NULL, 0,
 							 NULL, NULL);
@@ -1249,42 +1279,48 @@ ObjectDef *ValueHash::makeObjectDef()
 // * - range (string)
 // * - default value (string) 
 
-	def->pushFunction("n",_("Number of elements"),_("Number of elements"),
+	def->pushFunction("n",_("Number of elements"),_("Number of elements"), NULL,
 					  NULL);
 
-	def->pushFunction("keys",_("Keys"),_("Return set of key names"),
+	def->pushFunction("keys",_("Keys"),_("Return set of key names"), NULL,
 					  NULL);
 
-	def->pushFunction("values",_("Values"),_("Return set of values"),
+	def->pushFunction("values",_("Values"),_("Return set of values"), NULL,
 					  NULL);
 
 	def->pushFunction("push",_("Push"),_("Add a new name-value pair"),
 					  NULL,
 					  "key",_("Key"),_("Key"), VALUE_String,NULL,NULL,
 					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
-					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1");
+					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1",
+					  NULL);
 
 	def->pushFunction("pop",_("Pop"),_("Remove a name-value pair"),
 					  NULL,
-					  "key",_("Key"),_("Which to pop (int or name). Returns {name,value}."), VALUE_Any,NULL,"-1");
+					  "key",_("Key"),_("Which to pop (int or name). Returns {name,value}."), VALUE_Any,NULL,"-1",
+					  NULL);
 
 	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
 					  NULL,
 					  "pos",_("Position 1"),_("Position to swap."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL);
+					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL,
+					  NULL);
 
 	def->pushFunction("slide",_("Slide"),_("Same as push(pop(p1),p2)"),
 					  NULL,
 					  "pos",_("Position 1"),_("Position to take."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL);
+					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL,
+					  NULL);
 
 	def->pushFunction("key",_("Key"),_("Return string of the key"),
 					  NULL,
-					  "pos",_("Index"),_("Index"), VALUE_Int,NULL,NULL);
+					  "pos",_("Index"),_("Index"), VALUE_Int,NULL,NULL,
+					  NULL);
 
 	def->pushFunction("value",_("Value"),_("Return value associated with key"),
 					  NULL,
-					  "key",_("Key"),_("Either an integer index, or string key"), VALUE_Any,NULL,NULL);
+					  "key",_("Key"),_("Either an integer index, or string key"), VALUE_Any,NULL,NULL,
+					  NULL);
 
 	return def;
 }
@@ -1301,6 +1337,7 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 {
 	if (len==1 && *func=='n') { *value_ret=new IntValue(keys.n); return 0; }
 
+	 //no parameter ones:
 	if (isName(func,len,"keys")) {
 		SetValue *set=new SetValue;
 		for (int c=0; c<keys.n; c++) set->Push(new StringValue(keys.e[c]),1);
@@ -1315,7 +1352,8 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 		return 0;
 	}
 
-
+	 //with parameters:
+	if (!parameters) return -1;
 	try {
 
 		if (isName(func,len,"value")) {
@@ -1482,6 +1520,24 @@ int ValueHash::push(const char *name,Value *v)
 		}
 	}
 	keys.push(newstr(name),-1,place);
+	return values.push(v,-1,place);
+}
+
+/*! Increments count on v.
+ * len is how much of name to use. -1 means use all of name. */
+int ValueHash::push(const char *name,int len, Value *v)
+{
+	int place=keys.n;
+	char *nname=newnstr(name,len);
+
+	if (sorted) {
+		for (place=0; place<keys.n; place++) {
+			if (strcmp(nname,keys.e[place])>=0) {
+				break;
+			}
+		}
+	}
+	keys.push(nname,-1,place);
 	return values.push(v,-1,place);
 }
 
@@ -1910,10 +1966,10 @@ SetValue::~SetValue()
 //! Push v, which increments its count if !absorb.
 /*! Return 0 for success or nonzero for error.
  */
-int SetValue::Push(Value *v,int absorb)
+int SetValue::Push(Value *v,int absorb, int where)
 {
 	if (!v) return 1;
-	if (values.push(v)>=0) {
+	if (values.push(v,-1,where)>=0) {
 		if (absorb) v->dec_count();
 		return 0; //success
 	}
@@ -1924,7 +1980,7 @@ int SetValue::getValueStr(char *buffer,int len)
 {
 	int needed=3;//"{}\n"
 	for (int c=0; c<values.n; c++) {
-		needed+= 1 + values.e[c]->getValueStr(NULL,0,0);
+		needed+= 1 + values.e[c]->getValueStr(NULL,0);
 	}
 	if (!buffer || len<needed) return needed;
 
@@ -1972,29 +2028,108 @@ ObjectDef *SetValue::makeObjectDef()
 	ObjectDef *def=&default_SetValue_ObjectDef;
 	if (def->fields) return def;
 
-	def->pushFunction("n",_("Number of elements"),_("Number of elements"),
+	def->pushFunction("n",_("Number of elements"),_("Number of elements"), NULL,
 					  NULL);
 
 	def->pushFunction("push",_("Push"),_("Add a new value"),
 					  NULL,
 					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
-					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1");
+					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1",
+					  NULL);
 
 	def->pushFunction("pop",_("Pop"),_("Remove a value"),
 					  NULL,
-					  "pos",_("Position"),_("Which to pop."), VALUE_Any,NULL,"-1");
+					  "pos",_("Position"),_("Which to pop."), VALUE_Any,NULL,"-1",
+					  NULL);
 
 	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
 					  NULL,
 					  "pos",_("Position 1"),_("Position to swap."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL);
+					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL,
+					  NULL);
 
 	def->pushFunction("slide",_("Slide"),_("Same as push(pop(p1),p2)"),
 					  NULL,
 					  "pos",_("Position 1"),_("Position to take."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL);
+					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL,
+					  NULL);
 
 	return def;
+}
+
+int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (len==1 && *func=='n') { *value_ret=new IntValue(values.n); return 0; }
+
+	 //with parameters:
+	try {
+		if (isName(func,len,"push")) {
+			int success=1;
+			int pos=parameters ? parameters->findInt("pos",-1,&success) : -1;
+			if (success!=0) pos=values.n; //pos not found, use top
+			if (pos<0) pos=values.n;
+
+			Value *v=parameters ? parameters->find("value") : NULL;
+			if (!v) throw -1;
+
+			Push(v,0, pos);
+			*value_ret=NULL;
+			return 0;
+		}
+		
+		if (isName(func,len,"pop")) {
+			int success=1;
+			int pos=parameters ? parameters->findInt("pos",-1,&success) : -1;
+			if (success!=0) pos=-1;
+			if (pos<0) pos=values.n-1;
+
+			if (pos<0 || pos>=values.n) throw 2; //index out of range!
+
+			values.e[pos]->inc_count();
+			*value_ret=values.e[pos];
+			return 0;
+		}
+		
+		if (isName(func,len,"swap")) {
+			int success;
+			int pos=parameters->findInt("pos",-1,&success);
+			if (success!=0) throw -1; //wrong parameters
+			int pos2=parameters->findInt("pos2",-1,&success);
+			if (pos<0  || pos>=values.n)  throw 2; //index out of range!
+			if (pos2<0 || pos2>=values.n) throw 2; //index out of range!
+			values.swap(pos,pos2);
+			return 0;
+		}
+		
+		if (isName(func,len,"slide")) {
+			int success;
+			int pos=parameters->findInt("pos",-1,&success);
+			if (success!=0) throw -1; //wrong parameters
+			int pos2=parameters->findInt("pos2",-1,&success);
+			if (pos<0  || pos >=values.n)  throw 2; //index out of range!
+			if (pos2<0 || pos2>=values.n) throw 2; //index out of range!
+
+			 //push(pop(p1),p2)
+			Value *value=values.pop(pos);
+			values.push(value,-1,pos);
+			value->dec_count();
+			return 0;
+		}
+
+	} catch (int e) {
+		if (log) {
+			if (e==-1) return -1; //can't use parameters!
+			if (e==1) log->AddMessage(_("Missing parameter!"),ERROR_Fail);
+			else if (e==2) log->AddMessage(_("Index out of range!"),ERROR_Fail);
+		}
+		return 1;
+	}
+	
+
+	if (log) log->AddMessage(_("Unknown name!"),ERROR_Fail);
+	return 1;
 }
 
 int SetValue::getNumFields()
@@ -2040,7 +2175,7 @@ int ArrayValue::getValueStr(char *buffer,int len)
 {
 	int needed=3;//"[]\n"
 	for (int c=0; c<values.n; c++) {
-		needed+= 1 + values.e[c]->getValueStr(NULL,0,0);
+		needed+= 1 + values.e[c]->getValueStr(NULL,0);
 	}
 	if (!buffer || len<needed) return needed;
 
@@ -2249,10 +2384,21 @@ StringValue::StringValue(const char *s, int len)
 
 int StringValue::getValueStr(char *buffer,int len)
 {
-	int needed=strlen(str)+1;
+	 //need to escape and put quotes around the string..
+
+	int needed=strlen(str)+3;
+	for (int c=0; c<needed-3; c++) { if (str[c]=='\n' || str[c]=='\t') needed++; }
 	if (!buffer || len<needed) return needed;
 
-	strcpy(buffer,str);
+	buffer[0]='"';
+	int pos=1, l=strlen(str);
+	for (int c=0; c<l; c++) {
+		if (str[c]=='\t') { buffer[pos++]='\\'; buffer[pos++]='t'; }
+		else if (str[c]=='\n') { buffer[pos++]='\\'; buffer[pos++]='n'; }
+		else buffer[pos++]=str[c];
+	}
+	buffer[pos++]='"';
+	buffer[pos]='\0';
 	modified=0;
 	return 0;
 }
@@ -2487,7 +2633,7 @@ ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams)
 	 //now there are the same number of elements in rawparams and the styledef
 	 //we go through from 0, and swap as needed
 	for (int c=0; c<n; c++) { //for each styledef field
-		def->getInfo(c,&name,NULL,NULL);
+		if (def->getInfo(c,&name,NULL,NULL)==1) continue;
 		if (c>=rawparams->n()) rawparams->push(name,(Value*)NULL);
 
 		//if (format==VALUE_DynamicEnum || format==VALUE_Enum) {
@@ -2537,6 +2683,10 @@ ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams)
  */
 double getNumberValue(Value *v, int *isnum)
 {
+	if (!v) {
+		*isnum=0; //it is a null!
+		return 0;
+	}
 	if (v->type()==VALUE_Real) {
 		*isnum=1;
 		return dynamic_cast<DoubleValue*>(v)->d;
@@ -2569,90 +2719,6 @@ int extequal(const char *str, int len, const char *field, char **next_ret)
 	str+=n;
 	if (next_ret) *next_ret=const_cast<char*>(str);
 	return 1;
-}
-
-//------------------------------------ ShortcutEvaluator -----------------------------------------
-/*! \class ShortcutEvaluator
- * \brief Class to simplify automatically including key shortcut actions as zero parameter functions for scripting.
- */
-class ShortcutEvaluator : public FunctionEvaluator
-{
-  public:
-	ShortcutEvaluator() {}
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret,
-						 ErrorLog *log);
-};
-
-/*! "this" must be defined in context.
- */
-int ShortcutEvaluator::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret,
-						 ErrorLog *log)
-{
-	Value *obj=context->find("this");
-	if (!obj) return -1;
-
-	ShortcutHandler *sc=NULL;
-	anXWindow *window=dynamic_cast<anXWindow*>(obj);
-	if (window) {
-		sc=window->GetShortcuts();
-	    int action=sc->FindActionNumber(func,len);
-	    if (action>=0) {
-			if (window->PerformAction(action)) return -1;
-			return 0;
-	    }
-
-		return -1;
-	}
-
-	anInterface *interface=dynamic_cast<anInterface*>(obj);
-	if (interface) {
-		sc=interface->GetShortcuts();
-	    int action=sc->FindActionNumber(func,len);
-	    if (action>=0) {
-			if (interface->PerformAction(action)) return -1;
-			return 0;
-	    }
-
-		return -1;
-	}
-
-	return -1;
-}
-
-ShortcutEvaluator shortcutevaluator;
-
-
-//! Convert Laxkit shortcut actions in sc into functions that take no parameters.
-/*! def and sc must both exist already. Null is returned if not.
- *
- * It is assumed that at some point, the functions created here will be called as
- * member functions of an object of type def. Thus we do not have to give these
- * function definitions evaluators.
- *
- * The object must be derived from FunctionEvaluator, and is responsible for
- * using its shortcuthandler->FindActionNumber() with the given function name.
- *
- */
-ObjectDef *ShortcutsToObjectDef(Laxkit::ShortcutHandler *sc, ObjectDef *def)
-{
-	//basically, you want behavior like:
-	//
-	//viewport.save()
-	// --> viewport->PerformAction( viewport->sc->FindActionNumber("save") )
-
-
-	if (!sc || !def) return NULL;
-
-	WindowAction *action;
-	for (int c=0; c<sc->NumActions(); c++) {
-		action=sc->Action(c);
-
-		def->pushFunction(action->name,action->name,action->description, &shortcutevaluator);
-	}
-
-	return def;
 }
 
 
