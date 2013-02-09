@@ -529,7 +529,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		LineInput *x=dynamic_cast<LineInput *>(findWindow("alignx"));
 		LineInput *y=dynamic_cast<LineInput *>(findWindow("aligny"));
 
-		int current=p->GetCurrentItemN();
+		int current=p->GetCurrentItemIndex();
 		if (settings->alignment.e[current].x==0) x->SetText(_("left"));
 		else if (settings->alignment.e[current].x==50) x->SetText(_("center"));
 		else if (settings->alignment.e[current].x==100) x->SetText(_("right"));
@@ -553,7 +553,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 		int current=0;
 		SliderPopup *p=dynamic_cast<SliderPopup *>(findWindow("pageTypes"));
-		if (p) current=p->GetCurrentItemN();
+		if (p) current=p->GetCurrentItemIndex();
 		settings->alignment.e[current].x=a;
 
 		return 0;
@@ -568,7 +568,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 
 		int current=0;
 		SliderPopup *p=dynamic_cast<SliderPopup *>(findWindow("pageTypes"));
-		if (p) current=p->GetCurrentItemN();
+		if (p) current=p->GetCurrentItemIndex();
 		settings->alignment.e[current].y=a;
 
 		return 0;

@@ -85,6 +85,7 @@ PageRangeInterface::PageRangeInterface(int nid,Displayer *ndp,Document *ndoc)
 	temp_range_l=NULL;
 	temp_range_r=NULL;
 
+	interface_type=INTERFACE_Overlay;
 	showdecs=0;
 	firsttime=1;
 	doc=NULL;
@@ -108,6 +109,7 @@ PageRangeInterface::PageRangeInterface(anInterface *nowner,int nid,Displayer *nd
 	temp_range_l=NULL;
 	temp_range_r=NULL;
 
+	interface_type=INTERFACE_Overlay;
 	showdecs=0;
 	firsttime=1;
 	doc=NULL;
