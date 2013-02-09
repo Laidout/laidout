@@ -36,6 +36,8 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 ---- bugs:
 
+patch moving things frelled, load monkey.doc and try to move things
+
 html dump must convert chars to entities
 
 need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)

@@ -405,7 +405,7 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
 			} else {
 				 //duplicate selection
-				obj=selection.e[c]->obj->duplicate();
+				obj=selection.e[c]->obj->duplicate(NULL);
 				obj->FindBBox();
 				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
 			}

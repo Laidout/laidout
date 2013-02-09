@@ -38,7 +38,7 @@ class MysteryData : virtual public DrawableObject, virtual public LaxInterfaces:
 	MysteryData(const char *gen=NULL);
 	virtual ~MysteryData();
 	virtual const char *whattype() { return "MysteryData"; }
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual int installAtts(LaxFiles::Attribute *att);
 	
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

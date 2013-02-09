@@ -198,7 +198,7 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	SomeData *obj;
 	DrawableObject *dobj;
 	for (int c=0; c<kids.n; c++) {
-		obj=kids.e[c]->duplicate();
+		obj=kids.e[c]->duplicate(NULL);
 		dobj=dynamic_cast<DrawableObject*>(obj);
 		d->push(obj);
 		dobj->parent=d;
