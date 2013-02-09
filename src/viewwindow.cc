@@ -3273,7 +3273,13 @@ int ViewWindow::init()
 	LaxImage *img;
 	int obji=0;
 	int c;
+	int numoverlays=0;
+
 	for (c=0; c<tools.n; c++) {
+		if (tools.e[c]->interface_type==INTERFACE_Overlay) {
+			numoverlays++;
+			continue;
+		}
 		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji=tools.e[c]->id;
 		
 		img=laidout->icons.GetIcon(tools.e[c]->IconId());
@@ -3281,10 +3287,21 @@ int ViewWindow::init()
 		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
 	}
+	if (numoverlays) {
+		toolselector->AddSep(_("Overlays"));
+		for (c=0; c<tools.n; c++) {
+			if (tools.e[c]->interface_type!=INTERFACE_Overlay) continue;
+			img=laidout->icons.GetIcon(tools.e[c]->IconId());
+			toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
+			toolselector->SetState(-1,MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
+		}
+	}
+
 	toolselector->WrapToExtent();
 	SelectTool(obji);
 	AddWin(toolselector,1,-1);
 	
+
 
 	 //----- Page Flipper
 	pagenumber=NULL;
@@ -4199,7 +4216,16 @@ int ViewWindow::SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext 
 int ViewWindow::SelectTool(int id)
 {
 	int c=ViewerWindow::SelectTool(id);
-	if (toolselector) toolselector->Select(curtool->id);
+	if (toolselector) {
+		if (c==0) toolselector->Select(curtool->id);
+		else if (c==-1) {
+			 //overlay toggled, update check mark
+			int oi=toolselector->GetItemIndex(id);
+			if (oi>=0) {
+				toolselector->SetState(oi, MENU_CHECKED, -1);
+			}
+		}
+	}
 	DocumentUser *d;
 	for (int c2=0; c2<viewport->interfaces.n; c2++) {
 		d=dynamic_cast<DocumentUser*>(viewport->interfaces.e[c2]);

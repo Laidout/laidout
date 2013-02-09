@@ -563,7 +563,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 	} else if (!strcmp(mes,"impedit")) {
 		if (!imp) {
 			 //find which resource is selected, create then edit
-			int which=impsel->GetCurrentItemN();
+			int which=impsel->GetCurrentItemIndex();
 			if (which<0 || which>=laidout->impositionpool.n) return 0;
 			imp=laidout->impositionpool.e[which]->Create();
 		}
@@ -645,20 +645,20 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		 //when new imposition type selected from popup menu
 		if (s->info1==IMP_NEW_SIGNATURE) {
-			oldimp=impsel->GetCurrentItemN();
+			oldimp=impsel->GetCurrentItemIndex();
 			app->rundialog(new SignatureEditor(NULL,"sigeditor",_("Signature Editor"),
 						   this,"newimposition",
 						   NULL,papertype));
 			return 0;
 
 		} else if (s->info1==IMP_NEW_NET) {
-			oldimp=impsel->GetCurrentItemN();
+			oldimp=impsel->GetCurrentItemIndex();
 			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
 							this->object_id,"newimposition",papertype,NULL));
 			return 0;
 
 		} else if (s->info1==IMP_FROM_FILE) {
-			oldimp=impsel->GetCurrentItemN();
+			oldimp=impsel->GetCurrentItemIndex();
 			app->rundialog(new FileDialog(NULL,NULL,_("Imposition from file"),
 					ANXWIN_REMEMBER, 0,0, 0,0,0,
 					object_id, "impfile",
