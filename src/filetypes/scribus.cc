@@ -2213,7 +2213,7 @@ int ScribusImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLo
 				obj=layer->e(c3);
 				DBG cerr<<"scribus master page object: "<<obj->whattype()<<endl;
 
-				newobj=obj->duplicate();
+				newobj=obj->duplicate(NULL);
 				if (!newobj) {
 					DBG cerr<<" *** could not duplicate "<<obj->whattype()<<endl;
 					continue;

@@ -309,7 +309,7 @@ int LaidoutInFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		 //copy page contents
 		for (int c2=0; c2<fdoc->pages.e[c]->layers.n(); c2++) {
 			contents=fdoc->pages.e[c]->layers.e(c2);
-			sdata=contents->duplicate();
+			sdata=contents->duplicate(NULL);
 			obj=dynamic_cast<DrawableObject*>(sdata);
 			if (obj) {
 				//apply any shift to layer contents, not the layer itself

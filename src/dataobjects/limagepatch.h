@@ -35,7 +35,7 @@ class LImagePatchData : public DrawableObject, public LaxInterfaces::ImagePatchD
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual void FindBBox();
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 };
 
 
@@ -49,7 +49,7 @@ class LColorPatchData : public DrawableObject, public LaxInterfaces::ColorPatchD
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual void FindBBox();
-	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup=NULL);
+	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 };
 
 
@@ -58,7 +58,7 @@ class LImagePatchInterface : public LaxInterfaces::ImagePatchInterface
 {
  public:
 	LImagePatchInterface(int nid,Laxkit::Displayer *ndp);
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicate(anInterface *dup);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 };
 
@@ -68,7 +68,7 @@ class LColorPatchInterface : public LaxInterfaces::ColorPatchInterface
 {
  public:
 	LColorPatchInterface(int nid,Laxkit::Displayer *ndp);
-	virtual anInterface *duplicate(anInterface *dup=NULL);
+	virtual anInterface *duplicate(anInterface *dup);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *k);
 };
 
