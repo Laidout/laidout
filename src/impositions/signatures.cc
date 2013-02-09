@@ -1867,7 +1867,7 @@ Page **SignatureImposition::CreatePages(int npages)
 	Page **newpages=new Page*[numdocpages+1];
 	int c;
 	for (c=0; c<numdocpages; c++) {
-		newpages[c]=new Page(((c%2)?pagestyleodd:pagestyle),0,c); // this incs count of pagestyle
+		newpages[c]=new Page(((c%2)?pagestyleodd:pagestyle),c); // this incs count of pagestyle
 
 		 //add bleed information
 		fixPageBleeds(c,newpages[c]);
@@ -1881,7 +1881,7 @@ Page **SignatureImposition::CreatePages(int npages)
 void SignatureImposition::fixPageBleeds(int index,Page *page)
 {
 	 //fix pagestyle
-	page->InstallPageStyle((index%2)?pagestyleodd:pagestyle, 0);
+	page->InstallPageStyle((index%2)?pagestyleodd:pagestyle);
 	page->pagebleeds.flush();
 
 	 //fix page bleed info

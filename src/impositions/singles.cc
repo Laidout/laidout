@@ -589,7 +589,7 @@ Page **Singles::CreatePages(int npages)
 		ps=GetPageStyle(c,0);
 		 // pagestyle is passed to Page, not duplicated.
 		 // There its count is inc'd.
-		pages[c]=new Page(ps,0,c); 
+		pages[c]=new Page(ps,c); 
 		ps->dec_count(); //remove extra count
 	}
 	pages[c]=NULL;

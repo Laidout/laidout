@@ -940,7 +940,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 		} else if (!strcmp(nme,"page")) {
 			PageStyle *ps=NULL;
 			//***necessary?:if (imposition) ps=imposition->GetPageStyle(pages.n,0);?
-			page=new Page(ps,0);
+			page=new Page(ps);
 			if (ps) ps->dec_count();
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c],flag,context);

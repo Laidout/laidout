@@ -481,7 +481,7 @@ Page **NetImposition::CreatePages(int npages)
 	for (c=0; c<numpages; c++) {
 		 // pagestyle is passed to Page where its count is inc'd..
 		ps=GetPageStyle(c,0); //count of 1
-		pages[c]=new Page(ps,0,c);//adds count to ps
+		pages[c]=new Page(ps,c);//adds count to ps
 		ps->dec_count(); //remove extra count
 	}
 
