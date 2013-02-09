@@ -288,7 +288,6 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 	movestep=.5;
 	autorepeat=1;
 	curobj=0;
-	view=0;
 	firsttime=1;
 	currentface=-1;
 	currentpotential=-1;
@@ -3813,11 +3812,6 @@ int HedronWindow::PerformAction(int action)
 //		return 0;
 //	}
 
-//	} else if (ch=='\\') {
-//		//***not used
-//		view++;
-//		if (view==3) view=0;
-//		needtodraw=1;
 
 
 

@@ -109,22 +109,26 @@ class HedronWindow : public Laxkit::anXWindow
 {
   protected:
 	int mbdown,rbdown;
+	int firsttime;
+	Laxkit::ButtonDownInfo buttondown;
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
+
   public:
-	GLfloat movestep;
-	GLuint spheretexture, flattexture;
-	int rendermode, mode, oldmode;
-	int autorepeat, curobj;
-	double fovy;
-	int view;
+	int rendermode; //point, line, fill
+	int mode, oldmode; //window mode, net,solid,etc
 	double cylinderscale;
-	double fontsize;
-	double pad;
+	GLfloat movestep;
 	int touchmode;
+	int autorepeat;
 	int helpoffset;
 
+	double fontsize;
+	char *consolefontfile;
+	FTFont *consolefont;
+
+	 //viewable things
 	int draw_edges;
 	int draw_seams;
 	int draw_axes;
@@ -133,6 +137,8 @@ class HedronWindow : public Laxkit::anXWindow
 	int draw_overlays;
 	int draw_papers;
 
+	 //hedron specifics
+	GLuint spheretexture, flattexture;
 	char *polyptychfile;
 	char *polyhedronfile;
 	char *spherefile;
@@ -147,25 +153,20 @@ class HedronWindow : public Laxkit::anXWindow
 	PaperBound default_paper;
 	int currentpaper;
 	basis extra_basis;
-	char *consolefontfile;
-	FTFont *consolefont;
-
-	char *currentmessage, *lastmessage;
-	int messagetick;
-
-	int firsttime;
-	Laxkit::ButtonDownInfo buttondown;
-
 	Net *currentnet;
 	double unwrapangle;
-
-	spacevector tracker;
-	spaceline pointer; //points where mouse points
 
 	int currentpotential;   //index in currentnet->faces, or -1
 	int currentface;   //index in Polyhedron of current face, or -1
 	int currentfacestatus;
 
+
+
+	 //messages and overlays
+	char *currentmessage, *lastmessage;
+	int messagetick;
+
+	double pad; //for overlay text
 	int mouseover_overlay; //which overlay mouse is currently over
 	int mouseover_index;
 	int mouseover_group;  //which section mouseover_overlay is index in
@@ -175,11 +176,19 @@ class HedronWindow : public Laxkit::anXWindow
 	Laxkit::PtrStack<Overlay> overlays;
 	Laxkit::PtrStack<Overlay> paperoverlays;
 
-	 //gl objects, cameras, and lights
-	Laxkit::PtrStack<Thing> things;
+
+	 //camera views
+	double fovy;
+	spacevector tracker;
+	spaceline pointer; //points where mouse points
 	Thing camera_shape;
 	Laxkit::PtrStack<EyeType> cameras;
 	int current_camera;
+
+
+	 //gl objects, and lights
+	int curobj;
+	Laxkit::PtrStack<Thing> things;
 	Laxkit::PtrStack<Light> lights;
 	struct Material lightmaterial;
 	void setlighting(void);
