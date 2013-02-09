@@ -630,7 +630,7 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n)
 				}
 			}
 		}
-		doc->pages.e[c]->InstallPageStyle(temppagestyle,0);//adds 1 count
+		doc->pages.e[c]->InstallPageStyle(temppagestyle);//adds 1 count
 		temppagestyle->dec_count();
 	}
 	return 0;

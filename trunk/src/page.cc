@@ -106,9 +106,7 @@ PageStyle::~PageStyle()
 }
 
 //! Toggle a flag (-1) or set on (1) or off (0).
-/*! \todo ***this must check for if the style is local...
- *
- * Return the flag if it is set afterwards.*** beware int vs. uint
+/*! Return the flag if it is set afterwards.*** beware int vs. uint
  */
 int PageStyle::set(const char *flag, int newstate)
 {
@@ -549,16 +547,13 @@ ObjectDef *RectPageStyle::makeStyleDef()
  *
  * Pushes 1 new Group onto layers stack.
  */
-Page::Page(PageStyle *npagestyle,int pslocal,int num)
+Page::Page(PageStyle *npagestyle,int num)
 {
 	label=NULL;
 	thumbmodtime=0;
 	modtime=times(NULL);
 	pagestyle=npagestyle;
-	psislocal=pslocal;
-	if (psislocal==0 && pagestyle) {
-		pagestyle->inc_count();
-	}
+	if (pagestyle) pagestyle->inc_count();
 	labeltype=-1;
 	thumbnail=0;
 	pagenumber=num;
@@ -574,17 +569,13 @@ Page::Page(PageStyle *npagestyle,int pslocal,int num)
 	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
 }
 
-//! Destructor, destroys the thumbnail, and pagestyle according to psislocal.
-/*! If psislocal==1 then delete pagestyle. If psislocal=0, then pagestyle->dec_count().
- * Otherwise, don't touch pagestyle.
- */
+//! Destructor, destroys the thumbnail, and dec_counts pagestyle.
 Page::~Page()
 {
 	DBG cerr <<"  Page destructor"<<endl;
 	if (label) delete[] label;
 	if (thumbnail) delete thumbnail;
-	if (psislocal==1) delete pagestyle;
-	else if (psislocal==0) pagestyle->dec_count();
+	if (pagestyle) pagestyle->dec_count();
 	layers.flush();
 }
 
@@ -596,17 +587,13 @@ Page::~Page()
  *
  * \todo if there is any custom margin information, it should be transferred...
  */
-int Page::InstallPageStyle(PageStyle *pstyle,int islocal)
+int Page::InstallPageStyle(PageStyle *pstyle)
 {
 	if (!pstyle) return 1;
 	//unsigned int oldflags=0;
-	if (pagestyle) {
-		if (psislocal==1) delete pagestyle;
-		else if (psislocal==0) pagestyle->dec_count();
-	}
-	psislocal=islocal;
+	if (pagestyle) pagestyle->dec_count();
 	pagestyle=pstyle;
-	if (psislocal==0 && pagestyle) pagestyle->inc_count();
+	if (pagestyle) pagestyle->inc_count();
 	return 0;
 }
 
@@ -634,9 +621,12 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 					if (!ps) {
 						 //maybe it was embedded in an object value
 						ObjectValue *vv=dynamic_cast<ObjectValue*>(v);
-						if (vv) ps=dynamic_cast<PageStyle *>(vv->object);
-						v->dec_count();
+						if (vv) {
+							ps=dynamic_cast<PageStyle *>(vv->object);
+							if (ps) ps->inc_count();
+						}
 					}
+					v->dec_count();
 				}
 			}
 
@@ -644,7 +634,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 				ps->dump_in_atts(att->attributes.e[c],flag,context);
 				ps->flags|=PAGESTYLE_AUTONOMOUS;
 			}
-			InstallPageStyle(ps,0);
+			InstallPageStyle(ps);
 			ps->dec_count();
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;

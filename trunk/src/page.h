@@ -108,7 +108,6 @@ class Page : public ObjectContainer
 	char *label;
 	int pagenumber;
 	PageStyle *pagestyle;
-	int psislocal;
 
 	 //page preview thumbnail
 	LaxInterfaces::ImageData *thumbnail;
@@ -118,13 +117,13 @@ class Page : public ObjectContainer
 	Group layers;
 	Laxkit::PtrStack<PageBleed> pagebleeds;
 
-	Page(PageStyle *npagestyle=NULL,int pslocal=1,int num=-1); 
+	Page(PageStyle *npagestyle=NULL,int num=-1); 
 	virtual ~Page(); 
 	virtual const char *whattype() { return "Page"; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual LaxInterfaces::ImageData *Thumbnail();
-	virtual int InstallPageStyle(PageStyle *pstyle,int islocal=1);
+	virtual int InstallPageStyle(PageStyle *pstyle);
 
 	virtual int n() { return layers.n(); }
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }

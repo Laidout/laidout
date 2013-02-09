@@ -3828,7 +3828,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			PageStyle *ps=doc->pages.e[c]->pagestyle;
 			if (!(ps->flags&PAGESTYLE_AUTONOMOUS)) {
 				ps=(PageStyle *)ps->duplicate();
-				doc->pages.e[c]->InstallPageStyle(ps,0);
+				doc->pages.e[c]->InstallPageStyle(ps);
 			}
 			doc->pages.e[c]->pagestyle->set("pageclips",-1);
 			pageclips->State(doc->pages.e[c]->pagestyle->flags&PAGE_CLIPS?LAX_ON:LAX_OFF);
