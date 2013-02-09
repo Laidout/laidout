@@ -52,6 +52,7 @@ using namespace Laxkit;
 using namespace LaxFiles;
 using namespace LaxInterfaces;
 using namespace Magick;
+using namespace Polyptych;
 
 
 #define MAXWIDTH    500
