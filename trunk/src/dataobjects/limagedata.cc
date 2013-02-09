@@ -16,6 +16,8 @@
 
 #include "limagedata.h"
 #include "datafactory.h"
+#include "../stylemanager.h"
+#include "../language.h"
 
 
 
@@ -90,6 +92,95 @@ LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
 	ImageData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
+}
+
+ObjectDef *LImageData::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("ImageData");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	ObjectDef *affinedef=stylemanager.FindDef("Affine");
+	sd=new ObjectDef(affinedef,
+			"ImageData",
+            _("ImageData"),
+            _("An image"),
+            VALUE_Class,
+            NULL,NULL);
+
+	sd->pushFunction("LoadFile",_("Load File"),_("Load an image file"),
+					 NULL,
+			 		 "file",NULL,_("File name to load"),VALUE_String, NULL, NULL,
+					 NULL);
+
+	sd->pushVariable("file", _("File"), _("File name"), NULL,0);
+	sd->pushVariable("width", _("Width"), _("Pixel width"), NULL,0);
+	sd->pushVariable("height",_("Height"),_("Pixel height"), NULL,0);
+
+	return sd;
+}
+
+Value *LImageData::dereference(const char *extstring, int len)
+{
+	if (extequal(extstring,len, "file")) {
+		return new StringValue(image ? image->filename : "");
+	}
+
+	if (extequal(extstring,len, "width")) {
+		return new DoubleValue(maxx);
+	}
+
+	if (extequal(extstring,len, "height")) {
+		return new DoubleValue(maxy);
+	}
+
+	return NULL;
+}
+
+int LImageData::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext && ext->n()==1) {
+		const char *str=ext->e(0);
+		if (str) {
+			if (!strcmp(str,"file")) {
+				LoadImage(str,NULL);
+				return 0;
+
+			//} else if (!strcmp(str,"width")) { <-- these are read only
+			//} else if (!strcmp(str,"height")) {
+			}
+		}
+	}
+
+	AffineValue affine(m());
+	int status=affine.assign(ext,v);
+	if (status==1) {
+		m(affine.m());
+		return 1;
+	}
+	return 0;
+}
+
+int LImageData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log)
+{
+	if (len==8 && !strncmp(func,"LoadFile",8)) {
+		if (!parameters) return -1;
+		int status=0;
+		const char *s=parameters->findString("file",-1,&status);
+		if (status!=0) return -1;
+		if (isblank(s)) {
+			log->AddMessage(_("Cannot load null file"),ERROR_Fail);
+			return 1;
+		}
+		LoadImage(s,NULL);
+		return 0;
+	}
+
+	return -1;
 }
 
 

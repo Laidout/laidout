@@ -156,7 +156,21 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual ObjectDef *makeObjectDef();
 };
 
+//------------------------------------ AffineValue ------------------------------------------------
 ObjectDef *makeAffineObjectDef();
+class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual public FunctionEvaluator
+{
+  public:
+	AffineValue();
+	AffineValue(const double *m);
+	virtual ObjectDef *makeObjectDef();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual int type() { return GetObjectDef()->fieldsformat; }
+	virtual Value *dereference(int index);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log);
+};
 
 
 } //namespace Laidout

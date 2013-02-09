@@ -207,9 +207,11 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	Value *number();
 	long intnumber();
 	double realnumber();
+	int getunits();
 	Value *getstring();
 	Value *getset();
 	Value *getarray();
+	ValueHash *getValueHash();
 	Value *evalname();
 	Value *dereference(Value *val);
 	ObjectDef *getClass();
@@ -242,7 +244,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	virtual int RemoveModule(const char *modulename);
 	virtual int ImportModule(const char *name, int allnames);
 
-	virtual char *In(const char *in);
+	virtual char *In(const char *in, int *return_type=NULL);
 	virtual int evaluate(const char *in, int len, Value **value_ret, ErrorLog *log);
 
 	virtual void clearerror();

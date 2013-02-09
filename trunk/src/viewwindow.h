@@ -99,6 +99,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual ~LaidoutViewport();
 	virtual const char *whattype() { return "LaidoutViewport"; }
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
+	virtual ObjectDef *makeObjectDef();
 	virtual void Refresh();
 	virtual int init();
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);

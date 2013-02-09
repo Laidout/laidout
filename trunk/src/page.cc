@@ -211,7 +211,7 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 }
 
 //! The newfunc for PageStyle instances.
-Value *NewPageStyle(StyleDef *def)
+Value *NewPageStyle(ObjectDef *def)
 {
 	PageStyle *d=new PageStyle;
 	ObjectValue *v=new ObjectValue(d);
@@ -219,17 +219,24 @@ Value *NewPageStyle(StyleDef *def)
 	return v;
 }
 
- //! Return a pointer to a new local StyleDef class with the PageStyle description.
-StyleDef *PageStyle::makeStyleDef()
+ //! Return a pointer to a new local ObjectDef class with the PageStyle description.
+ObjectDef *PageStyle::makeStyleDef()
 {
-	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-	StyleDef *sd=new StyleDef(NULL,"PageStyle",
+
+	ObjectDef *sd=stylemanager.FindDef("PageStyle");
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
+
+	//ObjectDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
+	sd=new ObjectDef(NULL,"PageStyle",
 			_("Generic Page"),
 			_("A page"),
 			VALUE_Class,
 			NULL,NULL);
 
-	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
+	//int ObjectDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NewPageStyle;
 	sd->push("marginsclip",
 			_("Margins Clip"),
@@ -386,7 +393,7 @@ Style *RectPageStyle::duplicate(Style *s)//s=NULL
 //! The newfunc for PageStyle instances.
 /*! \ingroup stylesandstyledefs
  */
-Value *NewRectPageStyle(StyleDef *def)
+Value *NewRectPageStyle(ObjectDef *def)
 {
 	RectPageStyle *d=new RectPageStyle;
 	ObjectValue *v=new ObjectValue(d);
@@ -396,28 +403,37 @@ Value *NewRectPageStyle(StyleDef *def)
 
 /*! \todo **** the newfunc is not quite right...
  */
-StyleDef *RectPageStyle::makeStyleDef() 
+ObjectDef *RectPageStyle::makeStyleDef() 
 {
-	StyleDef *sd;
+	ObjectDef *psd=PageStyle::makeStyleDef();
 	
-//	StyleDef(const char *nextends,const char *nname,const char *nName,const char *ttip,
-//			const char *ndesc,ElementType fmt,const char *nrange, const char *newdefval,
-//			Laxkit::PtrStack<StyleDef>  *nfields=NULL,unsigned int fflags=STYLEDEF_CAPPED,
-//			NewStyleFunc nnewfunc=0);
+	const char *rpstype;
+	if (recttype&RECTPAGE_IOTB)  rpstype="FacingRectPageStyle";
+	else if (recttype&RECTPAGE_LRIO) rpstype="TopFacingRectPageStyle";
+	else rpstype="RectPageStyle";
+
+	ObjectDef *sd=stylemanager.FindDef(rpstype);
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
+
+	//else not found already, so create
 	if (recttype&RECTPAGE_IOTB) 
-		sd=new StyleDef("PageStyle","facingrectstyle",
+		sd=new ObjectDef(psd,rpstype,
 						_("Rectangular Facing Page"),
 						_("Rectangular Facing Page"),
 						VALUE_Class,NULL,NULL,
 						NULL,
 						0,
 						NewRectPageStyle);
-	else if (recttype&RECTPAGE_LRIO) sd=new StyleDef("pagestyle","topfacingrectstyle",
+	else if (recttype&RECTPAGE_LRIO)
+		sd=new ObjectDef(psd,rpstype,
 						_("Rectangular Top Facing Page"),
 						_("Rectangular Top Facing Page"),
 						VALUE_Class,NULL,NULL,
 						NULL,0,NewRectPageStyle);
-	else sd=new StyleDef("PageStyle","RectPageStyle",
+	else sd=new ObjectDef(psd,rpstype,
 					_("Rectangular Page"),
 					_("Rectangular Page"),
 					VALUE_Class,NULL,NULL,

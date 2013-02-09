@@ -16,12 +16,16 @@
 
 
 #include <lax/fileutils.h>
+#include <lax/units.h>
 #include "calculator.h"
 #include "../language.h"
 #include "../laidout.h"
 #include "../stylemanager.h"
 #include "../headwindow.h"
 #include "../version.h"
+
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <lax/refptrstack.cc>
 
@@ -949,10 +953,12 @@ Value *LValue::dereference(int index)
 {
 	if (!basevalue) return NULL;
 
-	Value *v;
+	Value *v=NULL;
 	if (extension.n()) v=Resolve();
-	basevalue->dec_count();
-	basevalue=v;
+	if (v) {
+		basevalue->dec_count();
+		basevalue=v;
+	}
 	entry=NULL;
 	extension.push(index);
 	inc_count();
@@ -1144,12 +1150,40 @@ int LaidoutCalculator::RemoveModule(const char *modulename)
 
 int LaidoutCalculator::RunShell()
 {
+	cout << "Laidout "<<LAIDOUT_VERSION<<" shell. Type \"quit\" to quit."<<endl;
+
+//----------non-readline variant--------------------------
+//	int numl=0;
+//	char *temp=NULL;
+//	char prompt[50];
+//	string input;
+//
+//	while (1) {
+//		numl++;
+//		
+//		strcpy(prompt,"\n\nInput(");
+//		char *temp2=itoa(numl,prompt+strlen(prompt));
+//		if (temp2) temp2[0]='\0';
+//		strcat(prompt,"): ");
+//	
+//		cout << prompt;
+//		if (!getline(cin, input)) break;
+//		if (input=="quit") return 0;
+//
+//		temp=In(input.c_str());
+//		cout << temp;
+//
+//		delete[] temp;
+//	}
+//----------end non-readline variant--------------------------
+
+
+//---------readline variant--------------(rough draft: needs debugging to work properly)
 	int numl=0;
 	char *temp=NULL;
+	char *input=0;
 	char prompt[50];
-	string input;
-
-	cout << "Laidout "<<LAIDOUT_VERSION<<" shell. Type \"quit\" to quit."<<endl;
+	int status;
 
 	while (1) {
 		numl++;
@@ -1159,28 +1193,28 @@ int LaidoutCalculator::RunShell()
 		if (temp2) temp2[0]='\0';
 		strcat(prompt,"): ");
 	
-		cout << prompt;
-		if (!getline(cin, input)) break;
-		if (input=="quit") return 0;
+		input=readline(prompt); //tempexprs is malloc based
 
-//---------readline variant--------------
-//		tempexprs=readline(temp);
-//
-//		if (tempexprs==NULL) continue;
-//		//DBG cout<<"\nreadline:"<<tempexprs;
-//		delete[] temp; temp=NULL;
-//		if (strlen(tempexprs)==0) { free(tempexprs); continue; }
-//		add_history(tempexprs);
-//
-//		strncpy(exprs,tempexprs,BUFLEN-1);
-//		if (strlen(tempexprs)>BUFLEN-1) exprs[BUFLEN-1]='\0';
-//---------end readline variant--------------
+		if (input==NULL) continue;
+		//DBG cout<<"\nreadline:"<<input;
 
-		temp=In(input.c_str());
+		if (strlen(input)>0) {
+			if (!strcmp(input,"quit")) return 0;
+			add_history(input); //readline takes it, don't free here (i think)
+		} else numl--; //don't count blank line
 
+		temp=In(input,&status);
 		cout << temp;
+
+		if (!isblank(temp) && status==1) {
+			input=(char*)malloc(strlen(temp)+1);
+			strcpy(input,temp);
+			add_history(input);
+		}
+
 		delete[] temp;
 	}
+//---------end readline variant--------------
 
 	return 0;
 }
@@ -1189,10 +1223,13 @@ int LaidoutCalculator::RunShell()
 //! Process a command or script. Returns a new char[] with the result.
 /*! Do not forget to delete[] the returned array!
  * 
- * \todo it almost goes without saying this needs automation
- * \todo it also almost goes without saying this is in major hack stage of development
+ * If in results in a value, then 1 is returned.
+ * If in results in something done, but no value, then 2 is returned.
+ * If in results in an error, then 0 is returned.
+ * If in results in twisty passages, then -1 is returned.
+ *
  */
-char *LaidoutCalculator::In(const char *in)
+char *LaidoutCalculator::In(const char *in, int *return_type)
 {
 	makestr(messagebuffer,NULL);
 
@@ -1206,10 +1243,17 @@ char *LaidoutCalculator::In(const char *in)
 		v->getValueStr(&buffer,&len,1);
 		appendstr(messagebuffer,buffer);
 		v->dec_count();
+		if (return_type) *return_type=1;
 	} else if (!messagebuffer && calcerror) makestr(messagebuffer,calcmes);
+	if (calcerror && return_type) *return_type=0;
 	if (messagebuffer) return newstr(messagebuffer);
 
-	if (from!=0) return newstr(_("Ok."));
+	if (from!=0) {
+		if (return_type) *return_type=2;
+		return newstr(_("Ok."));
+	}
+
+	if (return_type) *return_type=-1;
 	return newstr(_("You are surrounded by twisty passages, all alike."));
 }
 
@@ -2916,6 +2960,11 @@ Value *LaidoutCalculator::number()
 			if (snum) delete snum;
 			snum=new DoubleValue(realnumber());
 		}
+		int units=getunits();
+		if (units) {
+			if (dynamic_cast<IntValue*>(snum)) dynamic_cast<IntValue*>(snum)->units=units;
+			else if (dynamic_cast<DoubleValue*>(snum)) dynamic_cast<DoubleValue*>(snum)->units=units;
+		}
 
 	} else if (isalpha(curexprs[from]) || curexprs[from]=='_') {
 		 //  is not a simple number, maybe function, objectdef, cast, variable, namespace
@@ -3053,9 +3102,12 @@ Value *LaidoutCalculator::dereference(Value *val)
 
 		if (usethis) {
 			 //add as "this" to pp
-			int i=pp->findIndex("this",4);
+			int i=(pp?pp->findIndex("this",4):-1);
 			if (i>=0) pp->set(i,usethis);
-			else pp->push("this",usethis);
+			else {
+				if (!pp) pp=new ValueHash;
+				pp->push("this",usethis);
+			}
 
 		} else usethis=val;
 
@@ -3086,6 +3138,74 @@ Value *LaidoutCalculator::dereference(Value *val)
 	return value;
 }
 
+
+ValueHash *LaidoutCalculator::getValueHash()
+{
+	int tfrom=from;
+	if (!nextchar('{')) return NULL;
+
+	int n;
+	const char *key;
+	ValueHash *hash=NULL;
+	Value *s=NULL;
+	Value *num=NULL;
+
+	do {
+		key=NULL;
+		n=0;
+
+		if (nextchar('"')) {
+			 //read in quoted thing, can be a hash key
+			from--;
+			Value *s=getstring();
+
+			if (!s || s->type()!=VALUE_String) {
+				if (s) s->dec_count();
+				from=tfrom;
+				return NULL;
+			}
+
+			key=dynamic_cast<StringValue*>(s)->str;
+			n=strlen(key);
+		} else {
+			 //read in name string
+			key=getnamestringc(&n);
+			from+=n;
+		}
+
+		//if (nextchar(':')) {
+		if (nextchar(':') || nextchar('=')) {
+			if (!hash) hash=new ValueHash;
+		} else {
+			 //is not hash entry, so force reading as set
+			if (hash) hash->dec_count();
+			if (s) s->dec_count();
+			from=tfrom;
+			return NULL;
+		}
+
+		num=evalLevel(0);
+		if (calcerror) {
+			if (hash) hash->dec_count();
+			if (s) s->dec_count();
+			return NULL;
+		}
+
+		if (key && num) hash->push(key,n, num);
+		// *** note that if either but not both is NULL, then it is skipped... what to do!!
+		if (num) num->dec_count();
+
+		if (s) { s->dec_count(); s=NULL; }
+	} while (nextchar(',') || nextchar(';')); //hash entries are separated by ',' or ';', to be nice to css
+
+	if (!nextchar('}')) {
+		calcerr("Expecting '}'.");
+		hash->dec_count();
+		return NULL;
+	}
+	return hash;
+}
+
 //! Read in values for a set.
 /*! Next char must be '(' or '{'. Otherwise return NULL.
  * If '(', then ApplyDefaultSets() is used to convert something like (2,3) to a flatvector.
@@ -3095,14 +3215,20 @@ Value *LaidoutCalculator::dereference(Value *val)
 Value *LaidoutCalculator::getset()
 {
 	char setchar=0;
-	if (nextchar('{')) setchar='}';
-	else if (nextchar('(')) setchar=')';
+	if (nextchar('{')) {
+		from--;
+		Value *v=getValueHash();
+		if (v) return v;
+		from++;
+		setchar='}';
+	} else if (nextchar('(')) setchar=')';
 	else return NULL;
 
 	SetValue *set=new SetValue;
 	do {
 		Value *num=evalLevel(0);
 		if (calcerror) {
+			delete set;
 			return NULL;
 		}
 		if (num->type()==VALUE_LValue) {
@@ -3214,6 +3340,21 @@ long LaidoutCalculator::intnumber()
 	return c;
 }
 
+/*! \todo *** this needs to be more robust.. right now just reads in a single unit.
+ * 
+ * Uses Laxkit::GetUnitManager().
+ */
+int LaidoutCalculator::getunits()
+{
+	skipwscomment();
+	int n=0;
+	const char *str=getnamestringc(&n);
+	if (!n) return 0;
+
+	UnitManager *u=GetUnitManager();
+	return u->UnitId(str,n);
+}
+
 //! Read in a string enclosed in either single or double quote characters. Quotes are mandatory.
 /*! If a string is not there, then NULL is returned.
  *
@@ -3304,6 +3445,10 @@ Value *LaidoutCalculator::evalname()
 	const char *word=getnamestringc(&n);
 	if (!word) return NULL;
 
+	 //check for reserved words
+	if (n==4 && !strncmp(word,"true",4)) return new BooleanValue(1);
+	if (n==5 && !strncmp(word,"false",5)) return new BooleanValue(0);
+	//if (n==4 && !strncmp(word,"null",4)) return new NullValue(1);
 
 	 //search for name
 	int scope=-1;
@@ -3886,7 +4031,7 @@ void LaidoutCalculator::InstallInnate()
     innates->pushFunction("det",      NULL,_("determinant of a square array"),          this, "a",NULL,NULL,0,NULL,NULL, NULL); // "array");
     innates->pushFunction("transpose",NULL,_("transpose of an array"),                  this, "a",NULL,NULL,0,NULL,NULL, NULL); // "array");
     innates->pushFunction("inverse",  NULL,_("inverse of square array"),                this, "x",NULL,NULL,0,NULL,NULL, NULL); // "array");
-    innates->pushFunction("random",   NULL,_("Return a random number from 0 to 1"),     this, "x",NULL,NULL,0,NULL,NULL, NULL);
+    innates->pushFunction("random",   NULL,_("Return a random number from 0 to 1"),     this, NULL);
     innates->pushFunction("randomint",NULL,_("Return a random integer from min to max"),this, // "min:int, max:int");
 									   "min",NULL,NULL,VALUE_Int,NULL,NULL,
 									   "max",NULL,NULL,VALUE_Int,NULL,NULL,
@@ -3982,27 +4127,24 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 			else if (len==4 && !strncmp(word,"ln",2))   { if (d<=0) throw 4; v=new DoubleValue(log(d)); } // d must be >0
 
 			else if (len==6 && !strncmp(word,"factor",6)) {
-				if (v->type()!=VALUE_Int) throw 1;
-				long n=((IntValue*)v)->i;
-				char *str=NULL, temp[20];
+				if (vv->type()!=VALUE_Int) throw 1;
+				long n=((IntValue*)vv)->i;
 				
 				double c=2;
-				if (n==0) appendstr(str,"0");
+				SetValue *set=new SetValue;
+				if (n==0) set->Push(new IntValue(0),1);
 				else if (n<0) {
 					n=-n;
-					appendstr(str,"-1");
+					set->Push(new IntValue(-1),1);
 				} 
 				while (n>1) {
 					if (n-c*(int(n/c))==0) {
-						if (str) appendstr(str,",");
-						sprintf(temp,"%d",int(c));
-						appendstr(str,temp);
+						set->Push(new IntValue(c),1);
 						n/=c;
 						c=2;
 					} else c++;
 				}
-				v=new StringValue(str);
-				delete[] str;
+				v=set;
 			} else throw -1;
 
 		} else { v=NULL; throw -1; }
@@ -4107,6 +4249,19 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 	
 
 	 //check for relatively simple comparisons
+	if (num1->type()==VALUE_String && num2->type()==VALUE_String) {
+		const char *s1=dynamic_cast<StringValue*>(num1)->str;
+		const char *s2=dynamic_cast<StringValue*>(num2)->str;
+		if (len==2 && !strncmp(the_op,"<=",2)) { *value_ret=new BooleanValue(strcmp(s1,s2) <= 0); return 0; }
+		if (len==2 && !strncmp(the_op,">=",2)) { *value_ret=new BooleanValue(strcmp(s1,s2) >= 0); return 0; }
+		if (len==2 && !strncmp(the_op,"==",2)) { *value_ret=new BooleanValue(strcmp(s1,s2) == 0); return 0; }
+		if (len==2 && !strncmp(the_op,"!=",2)) { *value_ret=new BooleanValue(strcmp(s1,s2) != 0); return 0; }
+		if (len==1 && *the_op=='<')            { *value_ret=new BooleanValue(strcmp(s1,s2) < 0 ); return 0; }
+		if (len==1 && *the_op=='>')            { *value_ret=new BooleanValue(strcmp(s1,s2) > 0 ); return 0; }
+
+		return 1;
+	}
+
 	v1=getNumberValue(num1, &isnum);
 	if (isnum) v2=getNumberValue(num2, &isnum);
 	if (!isnum) { *value_ret=NULL; return -1; } //unable to use the given arguments
@@ -4291,7 +4446,10 @@ int LaidoutCalculator::divide(Value *num1,Value *num2, Value **ret)
 	else if (num2->type()==VALUE_Real) divisor=((DoubleValue*)num2)->d;
 	else return -1; //throw _("Cannot divide with that type");
 
-	if (divisor==0) throw _("Division by zero");
+	if (divisor==0) {
+		calcerr(_("Division by zero!"));
+		return 1;
+	}
 
 	if (num1->type()==VALUE_Int && num2->type()==VALUE_Int) { // i/i
 		if (((IntValue *) num1)->i % ((IntValue*)num2)->i == 0) {
