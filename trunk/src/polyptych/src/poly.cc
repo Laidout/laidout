@@ -517,7 +517,7 @@ Polyhedron &Polyhedron::operator=(const Polyhedron &nphed)
 		for (c=0; c<nphed.faces.n; c++) faces.push(new Face(*nphed.faces.e[c]));
 	} 
 	if (nphed.planes.n) {
-		for (c=0; c<nphed.planes.n; c++) planes.push(basis(nphed.planes.e[c]));
+		for (c=0; c<nphed.planes.n; c++) planes.push(Basis(nphed.planes.e[c]));
 	} 
 	if (nphed.sets.n) {
 		for (c=0; c<nphed.sets.n; c++) sets.push(new Settype(*nphed.sets.e[c]));
@@ -653,7 +653,7 @@ int Polyhedron::makeplanes()
 {
 	if (planes.n>0) return 0;
 	if (faces.n==0) return 0;
-	plane pl;
+	Plane pl;
 	int c2;
 	for (int c=0; c<faces.n; c++) {
 		pl=planeOfFace(c);
@@ -666,7 +666,7 @@ int Polyhedron::makeplanes()
 		}
 		if (c2==planes.n) {
 			faces.e[c]->planeid=planes.n;
-			planes.push(basis(pl.p, pl.p+pl.n, pl.p+vertices[faces.e[c]->p[1]]-vertices[faces.e[c]->p[0]]));
+			planes.push(Basis(pl.p, pl.p+pl.n, pl.p+vertices[faces.e[c]->p[1]]-vertices[faces.e[c]->p[0]]));
 		}
 	}
 	return planes.n;
@@ -854,12 +854,12 @@ Pgon Polyhedron::FaceToPgon(int n, char useplanes)
 	if (faces.e[n]->setid==-1) npgon.color.rgbf(1.,1.,1.,1.);
 	   else npgon.color=sets.e[faces.e[n]->setid]->color;
 	npgon.dihedral=new double[npgon.pn];
-	basis bas;
+	Basis bas;
 	if (useplanes && faces.e[n]->planeid>=0) bas=planes.e[faces.e[n]->planeid];
 	else {
 		if (faces.e[n]->p[0]==-1) { npgon.clear(); return npgon; }
-		plane pl=planeOfFace(n,0);
-		bas=basis(pl.p, pl.p+pl.n, pl.p+vertices.e[faces.e[n]->p[1]]-vertices[faces.e[n]->p[0]]);
+		Plane pl=planeOfFace(n,0);
+		bas=Basis(pl.p, pl.p+pl.n, pl.p+vertices.e[faces.e[n]->p[1]]-vertices[faces.e[n]->p[0]]);
 	}
 	for (int c=0; c<npgon.pn; c++) {	
 		npgon.p[c]=flatten(VertexOfFace(n,c,0),bas);
@@ -877,11 +877,11 @@ Pgon Polyhedron::FaceToPgon(int n, char useplanes)
  *
  * If n is out of range, then return identity basis.
  */
-basis Polyhedron::basisOfFace(int n)
+Basis Polyhedron::basisOfFace(int n)
 {
-	if (n<0 || n>=faces.n) return basis();
-	plane pl=planeOfFace(n,0);
-	return basis(pl.p, pl.p+pl.n, pl.p+vertices[faces.e[n]->p[1]]-vertices[faces.e[n]->p[0]]);
+	if (n<0 || n>=faces.n) return Basis();
+	Plane pl=planeOfFace(n,0);
+	return Basis(pl.p, pl.p+pl.n, pl.p+vertices[faces.e[n]->p[1]]-vertices[faces.e[n]->p[0]]);
 }
 
 //! Return the length of the segment between intersection of planes fce,fr,p1 and fce,fr,p2.
@@ -896,21 +896,21 @@ double Polyhedron::segdistance(int fce,int fr,int p1,int p2)
 }
 
 //! Return a copy of the plane with index pli.
-plane Polyhedron::planeof(int pli)
+Plane Polyhedron::planeof(int pli)
 {
-	if (pli<0 || pli>=planes.n) return plane();
-	return plane(planes[pli].p,planes[pli].z);
+	if (pli<0 || pli>=planes.n) return Plane();
+	return Plane(planes[pli].p,planes[pli].z);
 }
 
 //! Return a plane that holds face with index fce. 
 /*! Plain point is the center if centr!=0, else the point is the face's first point.
  */
-plane Polyhedron::planeOfFace(int fce,char centr)
+Plane Polyhedron::planeOfFace(int fce,char centr)
 {
-	if (fce<0 || fce>=faces.n) return plane();
-	if (faces.e[fce]->pn==0 || faces.e[fce]->p[0]==-1) return plane();
-	plane pl1;
-	pl1=plane(vertices[faces.e[fce]->p[0]],vertices[faces.e[fce]->p[1]],vertices[faces.e[fce]->p[2]]);
+	if (fce<0 || fce>=faces.n) return Plane();
+	if (faces.e[fce]->pn==0 || faces.e[fce]->p[0]==-1) return Plane();
+	Plane pl1;
+	pl1=Plane(vertices[faces.e[fce]->p[0]],vertices[faces.e[fce]->p[1]],vertices[faces.e[fce]->p[2]]);
 	if (centr) pl1.p=CenterOfFace(fce,0);
 	return pl1;
 }
@@ -919,7 +919,7 @@ plane Polyhedron::planeOfFace(int fce,char centr)
 double Polyhedron::angle(int a, int b,int dec) /* uses planes, not faces */
 {
 	if (a<0 || a>=faces.n || b<0 || b>=faces.n) return 0;
-	plane pl1,pl2;
+	Plane pl1,pl2;
 	pl1=planeOfFace(a);
 	pl2=planeOfFace(b);
 	return(::angle(pl1.n,(-1)*pl2.n,dec));
@@ -1187,7 +1187,7 @@ void Polyhedron::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
 			sets.push(set);
 
 		} else if (!strcmp(nme,"plane")) {
-			basis bas;
+			Basis bas;
 			double p3[3];
 			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
 				nme=  att->attributes.e[c]->name;

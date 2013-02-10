@@ -56,7 +56,7 @@ class ExtraFace
 	flatpoint *points2d; //2-d points in relation to axis
 	int *connectionedge; //edge index in another face this one connects to
 	int *connectionstate; //whether face is actually connected to face in connections
-	basis axis;
+	Basis axis;
 	int facemode; //is face still in normal position, or maybe stage of animation to other position
 	double a;    //can be used for a temporary angle face is tilted at
 	double *dihedral;
@@ -136,7 +136,7 @@ class Polyhedron :
 	Laxkit::NumStack<spacepoint> vertices;
 	Laxkit::PtrStack<Edge>       edges;
 	Laxkit::PtrStack<Face>       faces;
-	Laxkit::NumStack<basis>      planes;
+	Laxkit::NumStack<Basis>      planes;
 	Laxkit::PtrStack<Settype>    sets;
 
 	Polyhedron();
@@ -157,9 +157,9 @@ class Polyhedron :
 	spacepoint CenterOfFace(int,int cache=0);
 	spacevector VertexOfFace(int fce, int pt, int cache);
 	Pgon FaceToPgon(int n,char useplanes);
-	basis basisOfFace(int n);
-	plane planeof(int pln);
-	plane planeOfFace(int fce,char centr=1);
+	Basis basisOfFace(int n);
+	Plane planeof(int pln);
+	Plane planeOfFace(int fce,char centr=1);
 	double pdistance(int a, int b);
 	double segdistance(int fce,int fr,int p1,int p2);
 	double angle(int a, int b,int dec=0); //uses planes, not faces
@@ -194,6 +194,7 @@ class Polyhedron :
 	virtual const char *NetName() { return name; }
 	virtual int dumpOutNet(FILE *f,int indent,int what);
 };
+
 
 } //namespace Polyptych
 

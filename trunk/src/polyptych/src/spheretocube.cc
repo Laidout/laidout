@@ -50,8 +50,8 @@ int SphereToCube(Image spheremap,
 	Image faceimage(geometry,color);
 	faceimage.magick("TIFF");
 
-	//basis sphere_basis(spacepoint(0,0,0),sphere_z,sphere_x);;
-	basis sphere_basis;
+	//Basis sphere_basis(spacepoint(0,0,0),sphere_z,sphere_x);;
+	Basis sphere_basis;
 
 	spacepoint p;
 	//double theta,gamma;

@@ -68,7 +68,7 @@ int AA=3; //***should be able to autocompute suitable value?
 
 double pixPerUnit;
 int generate_images=1;
-basis *extra_basis=NULL;
+Basis *extra_basis=NULL;
 
 
 
@@ -261,7 +261,7 @@ int SphereToPoly(Image spheremap,
 				 int maxwidth,
 				 const char *filebase,
 				 int output,
-				 basis *extra_basis
+				 Basis *extra_basis
 				)
 {
 	if (!poly || (output!=OUT_NONE && !net)) return 1;
@@ -289,7 +289,7 @@ int SphereToPoly(Image spheremap,
 	double width, height;
 	int pixelwidth, pixelheight;
 
-	basis b;
+	Basis b;
 	//unsigned int rq,gq,bq; //quantums are ints
 	double rq,gq,bq;        //rgb are doubles
 
@@ -586,7 +586,7 @@ void InitOptions()
 }
 
 //! Read in a Polyptych file, and set variables accordingly.
-void setFromPolyptych(const char *polyptychfile, char *&imagefile, char *&polyhedronfile, char *&netfile, Net *net, basis *b)
+void setFromPolyptych(const char *polyptychfile, char *&imagefile, char *&polyhedronfile, char *&netfile, Net *net, Basis *b)
 {
 	if (!polyptychfile) return;
 	Attribute att;
@@ -692,7 +692,7 @@ int main(int argc,char **argv)
 				}
 				break;
 			case 'l':
-				if (!extra_basis) extra_basis=new basis;
+				if (!extra_basis) extra_basis=new Basis;
 				setFromPolyptych(o->arg(), filename, polyhedronfile, netfile, &net, extra_basis);
 				break;
 			case 'i':
@@ -709,17 +709,17 @@ int main(int argc,char **argv)
 				if (AA<0) AA=2;
 			    break;
 			case 'X': { //rotate around X
-				if (!extra_basis) extra_basis=new basis;
+				if (!extra_basis) extra_basis=new Basis;
 				double angle=strtod(o->arg(),NULL);
 				if (angle!=0) rotate(*extra_basis,'x',angle,1.);
 			  } break;
 			case 'Y': { //rotate around Y
-				if (!extra_basis) extra_basis=new basis;
+				if (!extra_basis) extra_basis=new Basis;
 				double angle=strtod(o->arg(),NULL);
 				if (angle!=0) rotate(*extra_basis,'y',angle,1.);
 			  } break;
 			case 'Z': { //rotate around Z
-				if (!extra_basis) extra_basis=new basis;
+				if (!extra_basis) extra_basis=new Basis;
 				double angle=strtod(o->arg(),NULL);
 				if (angle!=0) rotate(*extra_basis,'z',angle,1.);
 			  } break;
@@ -732,7 +732,7 @@ int main(int argc,char **argv)
 						<<"X axis, Y axis, then Z axis."<<endl;
 					exit(1);
 				}
-				if (!extra_basis) extra_basis=new basis;
+				if (!extra_basis) extra_basis=new Basis;
 				extra_basis->p=spacepoint(l[ 0],l[ 1],l[ 2]);
 				extra_basis->x=spacepoint(l[ 3],l[ 4],l[ 5]);
 				extra_basis->y=spacepoint(l[ 6],l[ 7],l[ 8]);
@@ -911,7 +911,7 @@ int main(int argc,char **argv)
 		}
 
 		if (extra_basis) delete extra_basis;
-		extra_basis=new basis;
+		extra_basis=new Basis;
 
 		double rotatetheta=facetheta-pointat.x,
 			   rotategamma=facegamma-pointat.y;

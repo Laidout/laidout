@@ -73,7 +73,7 @@ class PanoViewWindow : public Laxkit::anXWindow
 	int spheremap_height;
 	Polyhedron *poly;
 	Thing *hedron;
-	basis extra_basis;
+	Basis extra_basis;
 	char *consolefontfile;
 	FTFont *consolefont;
 

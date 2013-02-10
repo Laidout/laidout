@@ -64,7 +64,7 @@ class RenderConfig
 	int output;
 	int oversample;
 	int generate_images;
-	basis extra_basis;
+	Basis extra_basis;
 	Laxkit::PtrStack<PaperBound> papers;
 
 	RenderConfig();
@@ -92,7 +92,7 @@ int SphereToPoly(const char *spherefile,
 				 int oversample,
 				 int generate_images,
 				 int net_only,
-				 basis *extra_basis,
+				 Basis *extra_basis,
 				 int num_papers,
 				 PaperBound **papers,
 				 char **error_ret
@@ -107,7 +107,7 @@ int SphereToPoly(Magick::Image spheremap,
 				 int oversample,
 				 int generate_images,
 				 int net_only,
-				 basis *extra_basis,
+				 Basis *extra_basis,
 				 int num_papers,
 				 PaperBound **papers,
 				 char **error_ret 

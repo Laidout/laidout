@@ -311,7 +311,7 @@ int SphereToPoly(const char *spherefile,
 				 int oversample,      //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
 				 int net_only,       //!< Whether to just draw the lines, or include file names
-				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 Basis *extra_basis, //!< How to rotate the hedron before putting on the image
 				 int num_papers,     //!< Number of predefined papers
 				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
 				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
@@ -377,7 +377,7 @@ int SphereToPoly(Image spheremap,
 				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
 				 int generate_images, //!< Whether to actually render images, or just output new svg, for intance.
 				 int net_only,       //!< Whether to just draw the lines, or include file names
-				 basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 Basis *extra_basis, //!< How to rotate the hedron before putting on the image
 				 int num_papers,     //!< Number of predefined papers
 				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
 				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
@@ -418,7 +418,7 @@ int SphereToPoly(Image spheremap,
 	double width, height;
 	int pixelwidth, pixelheight;
 
-	basis b;
+	Basis b;
 	//unsigned int rq,gq,bq; //quantums are ints
 	double rq,gq,bq;        //rgb are doubles
 

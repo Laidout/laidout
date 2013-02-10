@@ -89,7 +89,7 @@ class PanoramaInfo : public Laxkit::anObject
 	unsigned char *spheremap_data_rotated;
 	int spheremap_width;
 	int spheremap_height;
-	basis extra_basis;
+	Basis extra_basis;
 
 	PanoramaInfo(const char *file);
 };
@@ -152,7 +152,7 @@ class HedronWindow : public Laxkit::anXWindow
 	Laxkit::PtrStack<PaperBound> papers;
 	PaperBound default_paper;
 	int currentpaper;
-	basis extra_basis;
+	Basis extra_basis;
 	Net *currentnet;
 	double unwrapangle;
 

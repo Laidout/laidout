@@ -38,7 +38,7 @@
 
 void dumpMatrix4(GLfloat *m,const char *str);
 
-void addGLSphereTexpt(float x,float y,float z, basis *extra_basis);
+void addGLSphereTexpt(float x,float y,float z, Basis *extra_basis);
 void makecylinder(void);
 void drawCylinder(spacepoint p1, spacepoint p2, double scalew=-1,GLfloat *extram=NULL);
 void makesphere(void);
@@ -140,7 +140,7 @@ void setmaterial(GLfloat r,GLfloat g,GLfloat b);
 class EyeType
 {
  public:
-	basis m,l,r; /* get x/y coords, z is away from focus */
+	Basis m,l,r; /* get x/y coords, z is away from focus */
 	spacepoint focus;
 	double dist,fplane; /* dist=between eyes, flpane dist p to plane */
 	GLfloat projection[16],model[16]; // gl transform matrix for projection view
@@ -165,7 +165,7 @@ class Thing
 	GLfloat color[4]; // any additional color to set before calling list(?)
 	Material *mat; 
 	GLfloat m[16]; // transform matrix to set before calling list
-	basis bas;
+	Basis bas;
 	//textures
 	//animation, modified==1 triggers remap call list?
 	Thing(GLuint nid=0);
