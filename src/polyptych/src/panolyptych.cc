@@ -82,7 +82,7 @@ const char *version()
 char *spherefile=NULL;
 Polyhedron poly;
 int draw_texture=1;
-basis extra_basis;
+Basis extra_basis;
 double global_fontsize=20;
 
 unsigned char *spheremap_data=NULL,

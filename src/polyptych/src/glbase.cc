@@ -48,7 +48,7 @@ void dumpMatrix4(GLfloat *m,const char *str)
 /*! If trans, then transform the point by extra_basis.
  * Each texture coordinate maps to a point in an equirectangular sphere image.
  */
-void addGLSphereTexpt(float x,float y,float z, basis *extra_basis)
+void addGLSphereTexpt(float x,float y,float z, Basis *extra_basis)
 {
 	if (extra_basis) {
 		spacepoint p(x,y,z);
@@ -110,7 +110,7 @@ void drawCylinder(spacepoint p1, spacepoint p2, double scalew,GLfloat *extram)
 	if (scalew<=0) scalew=scalez/10;
 	if (v.y==0 && v.z==0) v=spacepoint(0,0,1); else v=spacepoint(1,0,0);
 
-	basis b(p1,p2,p1+v);
+	Basis b(p1,p2,p1+v);
 	const double m[16]={  b.x.x,b.x.y,b.x.z, 0,
 		 			b.y.x,b.y.y,b.y.z, 0,
 					b.z.x,b.z.y,b.z.z, 0,
@@ -295,10 +295,10 @@ EyeType::EyeType()
 void EyeType::reset() /* z away from focus */
 {
 	dist=1.5; fplane=9; focus=spacevector();
-	m=basis(spacepoint(5,5,5),spacepoint(6,6,6),spacepoint(0,5,5));
+	m=Basis(spacepoint(5,5,5),spacepoint(6,6,6),spacepoint(0,5,5));
 	makestereo();
-//	r=basis(spacepoint(9,.75,0),spacepoint(10,.75,0),spacepoint(9,1,0));
-//      l=basis(spacepoint(9,-.75,0),spacepoint(10,-.75,0),spacepoint(9,0,0));
+//	r=Basis(spacepoint(9,.75,0),spacepoint(10,.75,0),spacepoint(9,1,0));
+//      l=Basis(spacepoint(9,-.75,0),spacepoint(10,-.75,0),spacepoint(9,0,0));
 }
 
 void EyeType::makestereo()  /* assumes m,focus,dist,fplane defined */
@@ -306,8 +306,8 @@ void EyeType::makestereo()  /* assumes m,focus,dist,fplane defined */
 	spacepoint pr,pl;
 	pr=m.p+dist/2*m.x;
 	pl=m.p-dist/2*m.x;
-	l=basis(pl,2*pl-focus,pl+m.x);
-	r=basis(pr,2*pr-focus,pr+m.x);
+	l=Basis(pl,2*pl-focus,pl+m.x);
+	r=Basis(pr,2*pr-focus,pr+m.x);
 }
 
 void EyeType::transformForDrawing()

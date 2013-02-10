@@ -1321,7 +1321,7 @@ void HedronWindow::Refresh3d()
 	 //------draw green cylinders between faces--
 	if ((draw_seams&2) && nets.n && (mode==MODE_Solid)) {
 		int face;
-		//basis bas=poly->basisOfFace(face);
+		//Basis bas=poly->basisOfFace(face);
 		spacepoint p;
 		flatpoint v;
 		NetFaceEdge *edge;
@@ -1355,7 +1355,7 @@ void HedronWindow::Refresh3d()
 	 //---- draw dotted face outlines for each potential face of currentnet
 	if (currentnet && mode==MODE_Net) {
 		int face=currentnet->info; //the seed face for the net
-		basis bas=poly->basisOfFace(face);
+		Basis bas=poly->basisOfFace(face);
 		spacepoint p;
 		flatpoint v;
 
@@ -1644,7 +1644,7 @@ void HedronWindow::drawPotential(Net *net, int netface)
 	glMultMatrixf(hedron->m);
 
 	int face=net->info; //the seed face for the net
-	basis bas=poly->basisOfFace(face);
+	Basis bas=poly->basisOfFace(face);
 
 	double r,g,b,a;
 	r=1;
@@ -2425,7 +2425,7 @@ void HedronWindow::remapCache(int start, int end)
 			net=nets.e[c];
 			int face=net->info; //the seed face for the net
 			
-			basis bas=poly->basisOfFace(face); //basis of the seed face
+			Basis bas=poly->basisOfFace(face); //basis of the seed face
 			spacepoint p;
 			flatpoint v;
 
@@ -2645,9 +2645,9 @@ flatpoint HedronWindow::pointInNetPlane(int x,int y)
 
 	flatpoint fp;
 	transform(line,hedron->bas);
-	basis nbasis=poly->basisOfFace(currentnet->info); //basis of seed face on polyhedron
+	Basis nbasis=poly->basisOfFace(currentnet->info); //basis of seed face on polyhedron
 
-	p=intersection(line,plane(nbasis.p,nbasis.z),err);
+	p=intersection(line,Plane(nbasis.p,nbasis.z),err);
 	if (err!=0) return flatpoint();
 	fp=flatten(p,nbasis);
 
@@ -2710,9 +2710,9 @@ int HedronWindow::findCurrentPotential()
 	hedron->updateBasis();
 	line=pointer;
 	transform(line,hedron->bas);
-	basis nbasis=poly->basisOfFace(currentnet->info); //basis of seed face on polyhedron
+	Basis nbasis=poly->basisOfFace(currentnet->info); //basis of seed face on polyhedron
 
-	p=intersection(line,plane(nbasis.p,nbasis.z),err);
+	p=intersection(line,Plane(nbasis.p,nbasis.z),err);
 	if (err!=0) return -1;
 	fp=flatten(p,nbasis);
 
@@ -2750,7 +2750,7 @@ int HedronWindow::findCurrentFace()
 
 	for (int c=0; c<poly->faces.n; c++) {
 		 //intersect with the face's cached axis, against its cached 2-d points
-		p=intersection(line,plane(poly->faces.e[c]->cache->axis.p,poly->faces.e[c]->cache->axis.z),err);
+		p=intersection(line,Plane(poly->faces.e[c]->cache->axis.p,poly->faces.e[c]->cache->axis.z),err);
 		fp=flatten(p, poly->faces.e[c]->cache->axis);
 		if (err!=0) continue;
 		if (point_is_in(fp, poly->faces.e[c]->cache->points2d,poly->faces.e[c]->pn)) {
