@@ -782,7 +782,14 @@ int AffineValue::Evaluate(const char *function,int len, ValueHash *context, Valu
 		if (value_ret) *value_ret=NULL;
 		return err;
 
-	} else if (len==9 && !strncmp(function,"translate",6)) {
+//	} else if (len==8 && !strncmp(function,"array3x3",8)) {
+//		ArrayValue *v=new ArrayValue;
+//		v->push(new ArrayValue(m(0), m(1), 0));
+//		v->push(new ArrayValue(m(2), m(3), 0));
+//		v->push(new ArrayValue(m(4), m(5), 1));
+//		return v;
+
+	} else if (len==9 && !strncmp(function,"translate",9)) {
 		int err=0;
 		flatpoint p;
 		p.x=pp->findDouble("x",-1,&err); 

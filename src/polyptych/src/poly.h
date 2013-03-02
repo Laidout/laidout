@@ -82,7 +82,7 @@ class Face
 	Face(int numof,int *ps);
 	Face(int p1,int p2,int p3, int p4=-1, int p5=-1);
 	Face(const char *pointlist,const char *linklist);
-	~Face();
+	virtual ~Face();
 	Face(const Face &);
 	Face &operator=(const Face &);
 };

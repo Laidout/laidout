@@ -40,7 +40,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	VObjContext() { obj=NULL; }
 	virtual ~VObjContext();
 	virtual int isequal(const ObjectContext *oc);
-	virtual int operator==(const ObjectContext &oc) { return isequal(&oc); }
+	virtual int operator==(const ObjectContext &oc) { return isequal(&oc)==3; }
 	virtual VObjContext &operator=(const VObjContext &oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear();
@@ -94,6 +94,9 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	Page *curpage;
 	 // these shadow viewport window variables of the same name but diff. type
 	VObjContext curobj,firstobj,foundobj,foundtypeobj;
+
+	int current_edit_area;
+	Laxkit::LaxImage *edit_area_icon;
 	
 	LaidoutViewport(Document *newdoc);
 	virtual ~LaidoutViewport();

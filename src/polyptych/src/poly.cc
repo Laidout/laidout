@@ -106,7 +106,7 @@ Face::Face()
 }
 
 //! Create a Face with the ps array as the point indices.
-/*! ps is copied.
+/*! ps is copied, if ps!=NULL.
  */
 Face::Face(int numof,int *ps) 
 {
@@ -120,7 +120,7 @@ Face::Face(int numof,int *ps)
 	f=new int[pn];
 	p=new int[pn];
 	dihedral=new double[pn];
-	for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; dihedral[c]=0; }
+	if (ps) for (int c=0; c<pn; c++) { p[c]=ps[c]; f[c]=-1; v[c]=-1; dihedral[c]=0; }
 }
 
 //! Shortcut to create polygons with up to 5 vertices.
