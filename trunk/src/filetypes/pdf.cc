@@ -259,21 +259,21 @@ PdfPageInfo::~PdfPageInfo()
 
 //----------------forward declarations
 
-static void pdfColorPatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount,
+static void pdfColorPatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount,
 				  Attribute &resources, ColorPatchData *g);
-static void pdfImage(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+static void pdfImage(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 					 LaxInterfaces::ImageData *img, ErrorLog &log,int &warning);
-static void pdfImagePatch(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+static void pdfImagePatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 					 LaxInterfaces::ImagePatchData *img, ErrorLog &log,int &warning);
-static void pdfGradient(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+static void pdfGradient(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning);
-static void pdfPaths(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+static void pdfPaths(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
 						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning);
 
 
 //-------------------------------- pdfdumpobj
 
-//! Internal function to dump out the obj in PDF. Called by pdfout().
+//! Internal function to dump out the object in PDF. Called by pdfout().
 /*! \ingroup pdf
  * It is assumed that the transform of the object is applied here, rather than
  * before this function is called.
@@ -281,11 +281,18 @@ static void pdfPaths(FILE *f, PdfObjInfo *&obj, char *&stream, int &objectcount,
  * Should be able to handle gradients, bez color patches, paths, and images
  * without significant problems, EXCEPT for the lack of decent transparency handling.
  *
+ * New XObjects are created and written to f as needed, and pushed onto obj, which is assumed
+ * to be the uppermost xobject already written to f. objs is the first.
+ *
+ * Besides XObjects, drawing commands are appended to stream, which is written out as an XObject
+ * elsewhere, when a page is finished being processed.
+ *
  * \todo *** must be able to do color management
  * \todo *** need integration of global units, assumes inches now. generally must work
  *    out what shall be the default working units...
  */
 void pdfdumpobj(FILE *f,
+				PdfObjInfo *objs, 
 				PdfObjInfo *&obj,
 				char *&stream,
 				int &objectcount,
@@ -308,24 +315,24 @@ void pdfdumpobj(FILE *f,
 	if (!strcmp(object->whattype(),"Group")) {
 		Group *g=dynamic_cast<Group *>(object);
 		for (int c=0; c<g->n(); c++) 
-			pdfdumpobj(f,obj,stream,objectcount,resources,g->e(c),log,warning);
+			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning);
 
 	} else if (!strcmp(object->whattype(),"PathsData")) {
-		pdfPaths(f,obj,stream,objectcount,resources,
+		pdfPaths(f,objs,obj,stream,objectcount,resources,
 				dynamic_cast<PathsData *>(object), log,warning);
 
 	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
-		pdfImagePatch(f,obj,stream,objectcount,resources,
+		pdfImagePatch(f,objs,obj,stream,objectcount,resources,
 				dynamic_cast<ImagePatchData *>(object), log,warning);
 
 	} else if (!strcmp(object->whattype(),"ImageData")) {
-		pdfImage(f,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning);
+		pdfImage(f,objs,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning);
 
 	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
-		pdfColorPatch(f,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object));
+		pdfColorPatch(f,objs,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object));
 
 	} else if (!strcmp(object->whattype(),"GradientData")) {
-		pdfGradient(f,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning);
+		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning);
 
 	} else {
 		setlocale(LC_ALL,"");
@@ -589,19 +596,19 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			
 			 //write out limbo object if any
 			if (limbo && limbo->n()) {
-				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,limbo,log,warning);
+				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,limbo,log,warning);
 			}
 
 			 //write out any papergroup objects
 			if (papergroup->objs.n()) {
-				pdfdumpobj(f,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning);
+				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning);
 			}
 
 			if (spread) {
 				 // print out printer marks
 				 // *** later this will be more like pdf printer mark annotations
 				if ((spread->mask&SPREAD_PRINTERMARKS) && spread->marks) {
-					pdfdumpobj(f,obj,stream,objcount,pageobj->resources,spread->marks,log,warning);
+					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning);
 				}
 				
 				 // for each paper in paper layout..
@@ -629,7 +636,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 						
 					 // for each layer on the page..
 					for (l=0; l<page->layers.n(); l++) {
-						pdfdumpobj(f,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning);
+						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning);
 					}
 
 					appendstr(stream,"Q\n"); //pop ctm
@@ -991,6 +998,7 @@ static void pdfContinueColorPatch(char *&stream,
  * the next row travelling to the left, and so on.
  */
 static void pdfColorPatch(FILE *f,
+				  PdfObjInfo *objs, 
 				  PdfObjInfo *&obj,
 				  char *&stream,
 				  int &objectcount,
@@ -1128,6 +1136,7 @@ static void pdfColorPatch(FILE *f,
  * \todo DCTDecode for jpgs
  */
 static void pdfImage(FILE *f,
+					 PdfObjInfo *objs, 
 					 PdfObjInfo *&obj,
 					 char *&stream,
 					 int &objectcount,
@@ -1141,28 +1150,77 @@ static void pdfImage(FILE *f,
 	
 	if (!img || !img->image) return;
 
+	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
+	if (!imlibimg) return;
+
+
 	// *** search current PDfObjInfos for occurance of this image.
 	//     if found, add reference to that, rather than add duplicate.
 	//     WARNING! must be careful to include the found existing object
 	//     in resources! resources is fresh for each page.
+	PdfObjInfo *existing=objs;
+	while (existing) {
+		if (existing->lo_object_id==img->object_id) break;
+		existing=existing->next;
+	}
 
-	LaxImlibImage *imlibimg=dynamic_cast<LaxImlibImage *>(img->image);
-	if (!imlibimg) return;
-	
-	imlib_context_set_image(imlibimg->Image(1));
-	int width=imlib_image_get_width(),
-		height=imlib_image_get_height();
-	DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
-	
-	int softmask=-1;
-	if (imlib_image_has_alpha()) { 
-		 // softmask image XObject dict
-		softmask=objectcount++;
+	int imagexobj=-1;
+	if (existing) {
+		imagexobj=existing->number;
 
+	} else {
+		imlib_context_set_image(imlibimg->Image(1));
+		int width=imlib_image_get_width(),
+			height=imlib_image_get_height();
+		DATA32 *buf=imlib_image_get_data_for_reading_only(); // ARGB
+		
+		int softmask=-1;
+		if (imlib_image_has_alpha()) { 
+			 // softmask image XObject dict
+			softmask=objectcount++;
+
+			obj->next=new PdfObjInfo;
+			obj=obj->next;
+			obj->byteoffset=ftell(f);
+			obj->number=softmask;
+			fprintf(f,"%ld 0 obj\n",obj->number);
+			fprintf(f,"<<\n"
+					  "  /Type /XObject\n"
+					  "  /Subtype /Image\n"
+					  "  /Width  %d\n"
+					  "  /Height %d\n",
+					 width, height);
+			fprintf(f,"  /ColorSpace  /DeviceGray\n"
+					  "  /BitsPerComponent  8\n"
+					  //"  /Intent \n" (opt 1.1) ignored
+					  //"  /Decode     [0 1 0 1 0 1]\n", //(opt) r g b
+					  //"  /Interpolate false\n" //(opt)
+					  //"  /Matte *** \n" //(opt, 1.4), for use when img is pre-multiplied alpha
+					  "  /Length %d\n",
+					 width*height);
+			fprintf(f,">>\n"
+					  "stream\n");
+
+			unsigned char a;
+			for (int y=0; y<height; y++) {
+				for (int x=0; x<width; x++) {
+					a=(buf[y*width+x]&(0xff000000))>>24;
+					fprintf(f,"%c",a);
+				}
+			}
+			fprintf(f,"\nendstream\n"
+					  "endobj\n");
+		}
+		
+
+
+		 // image XObject dict
 		obj->next=new PdfObjInfo;
 		obj=obj->next;
 		obj->byteoffset=ftell(f);
-		obj->number=softmask;
+		obj->number=objectcount++;
+		obj->lo_object_id=img->object_id;
+		imagexobj=obj->number;
 		fprintf(f,"%ld 0 obj\n",obj->number);
 		fprintf(f,"<<\n"
 				  "  /Type /XObject\n"
@@ -1170,77 +1228,41 @@ static void pdfImage(FILE *f,
 				  "  /Width  %d\n"
 				  "  /Height %d\n",
 				 width, height);
-		fprintf(f,"  /ColorSpace  /DeviceGray\n"
-				  "  /BitsPerComponent  8\n"
-				  //"  /Intent \n" (opt 1.1) ignored
+		fprintf(f,"  /ColorSpace  /DeviceRGB\n"
+				  "  /BitsPerComponent  8\n");
+				  //"  /Intent \n" (opt 1.1)
+				  //"  /ImageMask false\n" // (opt)
+				  //"  /Mask  ***\n"  //(opt, 1.3) image mask, stream or array of color keys
+		if (softmask>0) 
+			fprintf(f,"  /SMask %d 0 R\n", //(opt, 1.4) soft mask for image, overrides mask and gstate mask
+					 softmask);
 				  //"  /Decode     [0 1 0 1 0 1]\n", //(opt) r g b
 				  //"  /Interpolate false\n" //(opt)
-				  //"  /Matte *** \n" //(opt, 1.4), for use when img is pre-multiplied alpha
-				  "  /Length %d\n",
-				 width*height);
+				  //"  /Alternates array\n"  //(opt 1.3) not allowed in imgs that are themselves alternates
+				  //"  /Name  str\n" //(req 1.0, else opt)
+				  //"  /StructParent ??\n"
+				  //"  /ID...(opt1.3) \n  /OPI(opt1.2)\n"
+				  //"  /Metadata stream\n"
+
+		fprintf(f,"  /Length %d\n", 3*width*height);
 		fprintf(f,">>\n"
 				  "stream\n");
 
-		unsigned char a;
+		unsigned char r,g,b;
 		for (int y=0; y<height; y++) {
 			for (int x=0; x<width; x++) {
-				a=(buf[y*width+x]&(0xff000000))>>24;
-				fprintf(f,"%c",a);
+				r=(buf[y*width+x]&(0xff0000))>>16;
+				g=(buf[y*width+x]&(0xff00))>>8;
+				b=buf[y*width+x]& 0xff;
+				fprintf(f,"%c%c%c",r,g,b);
 			}
 		}
 		fprintf(f,"\nendstream\n"
 				  "endobj\n");
-	}
-	
 
+		imlibimg->doneForNow();
+	} //if !existing
 
-	 // image XObject dict
-	obj->next=new PdfObjInfo;
-	obj=obj->next;
-	obj->byteoffset=ftell(f);
-	obj->number=objectcount++;
-	obj->lo_object_id=img->object_id;
-	int imagexobj=obj->number;
-	fprintf(f,"%ld 0 obj\n",obj->number);
-	fprintf(f,"<<\n"
-			  "  /Type /XObject\n"
-			  "  /Subtype /Image\n"
-			  "  /Width  %d\n"
-			  "  /Height %d\n",
-			 width, height);
-	fprintf(f,"  /ColorSpace  /DeviceRGB\n"
-			  "  /BitsPerComponent  8\n");
-			  //"  /Intent \n" (opt 1.1)
-			  //"  /ImageMask false\n" // (opt)
-			  //"  /Mask  ***\n"  //(opt, 1.3) image mask, stream or array of color keys
-	if (softmask>0) 
-		fprintf(f,"  /SMask %d 0 R\n", //(opt, 1.4) soft mask for image, overrides mask and gstate mask
-				 softmask);
-			  //"  /Decode     [0 1 0 1 0 1]\n", //(opt) r g b
-			  //"  /Interpolate false\n" //(opt)
-			  //"  /Alternates array\n"  //(opt 1.3) not allowed in imgs that are themselves alternates
-			  //"  /Name  str\n" //(req 1.0, else opt)
-			  //"  /StructParent ??\n"
-			  //"  /ID...(opt1.3) \n  /OPI(opt1.2)\n"
-			  //"  /Metadata stream\n"
-
-	fprintf(f,"  /Length %d\n", 3*width*height);
-	fprintf(f,">>\n"
-			  "stream\n");
-
-	unsigned char r,g,b;
-	for (int y=0; y<height; y++) {
-		for (int x=0; x<width; x++) {
-			r=(buf[y*width+x]&(0xff0000))>>16;
-			g=(buf[y*width+x]&(0xff00))>>8;
-			b=buf[y*width+x]& 0xff;
-			fprintf(f,"%c%c%c",r,g,b);
-		}
-	}
-	fprintf(f,"\nendstream\n"
-			  "endobj\n");
-
-	imlibimg->doneForNow();
 
 	 //attach to content stream
 	char scratch[70];
@@ -1267,6 +1289,7 @@ static void pdfImage(FILE *f,
  * \todo *** this is in the serious hack stage
  */
 static void pdfImagePatch(FILE *f,
+					 	  PdfObjInfo *objs, 
 						  PdfObjInfo *&obj,
 						  char *&stream,
 						  int &objectcount,
@@ -1332,7 +1355,7 @@ static void pdfImagePatch(FILE *f,
 				img.m(0), img.m(1), img.m(2), img.m(3), img.m(4), img.m(5)); 
 	appendstr(stream,scratch);
 	
-	pdfImage(f,obj,stream,objectcount,resources,&img, log,warning);
+	pdfImage(f,objs,obj,stream,objectcount,resources,&img, log,warning);
 
 	 // pop axes
 	appendstr(stream,"Q\n");
@@ -1343,6 +1366,7 @@ static void pdfImagePatch(FILE *f,
 
 //! Output pdf for a GradientData. 
 static void pdfGradient(FILE *f,
+					 	PdfObjInfo *objs, 
 						PdfObjInfo *&obj,
 						char *&stream,
 						int &objectcount,
@@ -1485,6 +1509,7 @@ static int pdfaddpath(FILE *f,Coordinate *path, char *&stream);
 
 //! Output pdf for a PathsData. 
 static void pdfPaths(FILE *f,
+					 PdfObjInfo *objs, 
 					 PdfObjInfo *&obj,
 					 char *&stream,
 					 int &objectcount,
