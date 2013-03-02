@@ -371,6 +371,9 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	
 	limbo=NULL; //start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
 	
+	current_edit_area=-1;
+	edit_area_icon=NULL;
+
 	
 	viewmode=-1;
 	SetViewMode(PAGELAYOUT,-1);
@@ -401,6 +404,8 @@ LaidoutViewport::~LaidoutViewport()
 
 	if (limbo) limbo->dec_count();
 	if (doc) doc->dec_count();
+
+	if (edit_area_icon) edit_area_icon->dec_count();;
 }
 
 int LaidoutViewport::UseThisPaperGroup(PaperGroup *group)
@@ -2427,6 +2432,23 @@ void LaidoutViewport::Refresh()
 		interfaces.e[c]->Refresh();
 		if (oc) dp->PopAxes();
 	}
+
+	 //draw area selector box
+	//((LaidoutViewport *)viewport)->locateObject(d,oc.context);
+	//***
+	const char *editareaicons[10]={
+			"Streams",
+			"Content",
+			"EditObject",
+			"Wrap",
+			"Inset",
+			"Clip",
+			"Filters",
+			"Meta",
+			"Chains",
+			NULL
+			};
+	//LaxImage *img=laidout->icons.GetIcon(editareaicons[current_edit_area]);
 
 	//***for lack of screen record for multipointer
 	if (fakepointer) {

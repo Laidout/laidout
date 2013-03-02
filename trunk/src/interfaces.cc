@@ -21,7 +21,6 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
-#include <lax/interfaces/imageinterface.h>
 #include <lax/lists.cc>
 
 #include "interfaces.h"
@@ -33,6 +32,8 @@
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "interfaces/paperinterface.h"
+#include "interfaces/limageinterface.h"
+
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -49,39 +50,6 @@ namespace Laidout {
 void PushBuiltinPathops()
 {
 }
-
-////---------------------
-///*! \class LImageInterface
-// * \brief add on a little custom behavior.
-// * \todo *** move this somewhere more appropriate
-// */
-//class LImageInterface : public LaxInterfaces::ImageInterface
-//{
-// protected:
-//	virtual void runImageDialog();
-// public:
-//	LImageInterface(int nid,Displayer *ndp);
-//};
-//
-//LImageInterface::LImageInterface(int nid,Displayer *ndp) : ImageInterface(nid,ndp)
-//{
-//	style=1;
-//}
-//
-///*! Redefine to blot out title from the dialog.
-// */
-//void LImageInterface::runImageDialog()
-//{
-//	 //after Laxkit event system is rewritten, this will be very different:
-//	ImageInfo *inf=new ImageInfo(data->filename,data->previewfile,NULL,data->desc,0);
-//	curwindow->app->rundialog(new ImageDialog(NULL,"imagedialog for imageinterface",
-//					ANXWIN_DELETEABLE|IMGD_NO_TITLE,
-//					0,0,400,400,0,
-//					NULL,curwindow->window,"image properties",
-//					inf));
-//	inf->dec_count();
-//}
-////---------------------
 
 
 //! Get the built in interfaces. NOTE: Must be called after PushBuiltinPathops().
@@ -102,8 +70,14 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	int id=1;
 	anInterface *i;
 
+
 	// *************** testing:
+	i=new PatchInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+	
 	// *************** end testing
+
 
 	 //------Group
 	i=new GroupInterface(id++,NULL);
@@ -111,7 +85,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i->dec_count();
 	
 	 //------Images
-	ImageInterface *imagei=new ImageInterface(id++,NULL);
+	LImageInterface *imagei=new LImageInterface(id++,NULL);
 	imagei->style=1;
 	existingpool->push(imagei);
 	imagei->dec_count();

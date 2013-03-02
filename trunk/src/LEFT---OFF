@@ -11,17 +11,14 @@ Those are purged with each release.
 
 
 ---- bugs to fix right now:
-file format dump is not showing dump of object types
 
-update webpage with current svn repo
+Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
+
+file format dump is not showing dump of object types
 
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
 
-selecting fails!!! Grrrr!
-
 drawing partial arcs broken
-
-in tiled, can no longer select objects in the other tiles, wtf!!!
 
 tooltips work intermittently
 
@@ -35,8 +32,6 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 
 ---- bugs:
-
-patch moving things frelled, load monkey.doc and try to move things
 
 html dump must convert chars to entities
 
@@ -100,11 +95,14 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+add more explicit lpoptions howto for help, in lieu of functional print dialog
+
 debug multi head? seems to crash when showing with projectors plugged in
 	screen info should return x,y,w,h, with flag saying it is part of a whole.
 	if only one screen, then x,y is 0
 
 calculator
+  overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
   show overloaded entries
   show (variable) should show the objectdef for that variable
   debug class definitions
@@ -201,7 +199,7 @@ make a Change imposition, versus Edit imposition, to allow jumping straight to d
 need laidout import
 
 paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-optimize pdf especially... too much duplication!!
+pdf optimize jpg dump, compress image data
 
 PathEditor: 
   shift click down then up on a point selects then deselects
@@ -336,9 +334,6 @@ should have easy way to save as a template
 when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
 
 select region by intersect, not by corner inclusion...
-
-changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
- need infrastructure to propagate and save tool settings
 
 text window controls have difficulties
 
@@ -536,7 +531,10 @@ Masking
     pathinterface conversion must be done
     true object tree with all lax data objects subclassed to hold children, and reference parent
 
-Clean up patch controls
+Clean up mesh/patch controls
+changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
+ need infrastructure to propagate and save tool settings
+pointin should check to visual boundary, not bounding box
 
 perhaps split radial and linear gradients to different tools? makes more sense
 
@@ -740,5 +738,16 @@ DONE input base in no "config" in objects
 DONE drawable groups should be able to have non L objects
 DONE need to merge Group and DrawableObject
 DONE path linestyle should not directly use GX*
+DONE edit current doc settings not calling up editor!!
+DONE update webpage with current svn repo
+DONE optimize pdf especially... too much duplication!!
+DONE in tiled, can no longer select objects in the other tiles, wtf!!!
+
+DONE RulerWindow::smallnumbers font swapping is flooding debug info
+
+DONE selecting fails for meshes!!! Grrrr!
+DONE color mesh memory corruption
+DONE patch moving things frelled, load monkey.doc and try to move things
+
 
 

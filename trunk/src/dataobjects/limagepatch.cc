@@ -48,6 +48,13 @@ void LImagePatchData::FindBBox()
 	ImagePatchData::FindBBox();
 }
 
+/*! Provide final pointin() definition.
+ */
+int LImagePatchData::pointin(flatpoint pp,int pin)
+{
+	return PatchData::pointin(pp,pin);
+}
+
 void LImagePatchData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
@@ -98,6 +105,13 @@ LColorPatchData::LColorPatchData(LaxInterfaces::SomeData *refobj)
 
 LColorPatchData::~LColorPatchData()
 {
+}
+
+/*! Provide final pointin() definition.
+ */
+int LColorPatchData::pointin(flatpoint pp,int pin)
+{
+	return PatchData::pointin(pp,pin);
 }
 
 void LColorPatchData::FindBBox()
