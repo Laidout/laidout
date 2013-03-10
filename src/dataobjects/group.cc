@@ -19,6 +19,8 @@
 
 namespace Laidout {
 
+//this empty file is left just in case Group as a standalone object 
+//beyound DrawableObject ever becomes justified
 
 } //namespace Laidout
 

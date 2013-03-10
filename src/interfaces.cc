@@ -18,6 +18,7 @@
 #include "interfaces/nupinterface.h"
 #include "interfaces/pagerangeinterface.h"
 
+//#include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
@@ -33,6 +34,7 @@
 #include "dataobjects/mysterydata.h"
 #include "interfaces/paperinterface.h"
 #include "interfaces/limageinterface.h"
+#include "interfaces/graphicalshell.h"
 
 
 using namespace Laxkit;
@@ -72,10 +74,9 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 
 	// *************** testing:
-	i=new PatchInterface(id++,NULL);
-	existingpool->push(i);
-	i->dec_count();
-	
+	//i=new CaptionInterface(id++,NULL);
+	//existingpool->push(i);
+	//i->dec_count();
 	// *************** end testing
 
 
@@ -127,6 +128,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 	 //------PageRangeInterface
 	i=new PageRangeInterface(id++,NULL,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
+	 //------GraphicalShell
+	i=new GraphicalShell(id++,NULL);
 	existingpool->push(i);
 	i->dec_count();
 

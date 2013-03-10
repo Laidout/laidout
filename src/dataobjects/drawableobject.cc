@@ -323,7 +323,8 @@ Laxkit::anObject *DrawableObject::object_e(int i)
 
 const char *DrawableObject::object_e_name(int i)
 {
-	return Id();
+	if (i>=0 && i<kids.n) return kids.e[i]->Id();
+	return NULL;
 }
 
 const double *DrawableObject::object_transform(int i)
