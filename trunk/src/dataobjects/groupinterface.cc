@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2007,2009-2011 by Tom Lechner
+// Copyright (C) 2005-2007,2009-2013 by Tom Lechner
 //
 
 #include <lax/interfaces/somedataref.h>
@@ -190,26 +190,22 @@ int GroupInterface::ToggleGroup()
 		return 0;
 	} 
 
-	DBG place.out("toggle this group: ");
+	DBG place.out("toggle group point: ");
 
 	 // find the base group which contains the group to ungroup, or which contains the
 	 // first selected object to group with others..
-	if (place.e(0)==0) { // is limbo
-		base=((LaidoutViewport *)viewport)->limbo;
-	} else if (place.e(0)==1) {
-		 // is doc pages spread, need the page->layers containing the selection
-		Page *p=NULL;
-		if (place.e(1)>=0) { // if there is a valid spread page...
-			Spread *s=((LaidoutViewport *)viewport)->spread;
-			if (s) p=dynamic_cast<Page *>(s->object_e(place.e(1))); //spread->object_e returns Page
-		}
-		 // place now has layer.index.index...
-		if (p) base=&p->layers;
+	ObjectContainer *objc=((LaidoutViewport *)viewport);
+	for (int i=0; i<place.n()-1; i++) {
+		if (!objc) break;
+		objc=dynamic_cast<ObjectContainer*>(objc->object_e(place.e(i)));
 	}
+	if (dynamic_cast<Page*>(objc)) base=&(dynamic_cast<Page*>(objc)->layers);
+	else base=dynamic_cast<Group*>(objc);
 	if (!base) {
 		viewport->postmessage("Ugly internal error finding a selected object! Fire the programmer.");
 		return 0;
 	}
+
 	 // now base is either limbo or the Group of page layers, and place is the full place of selection[0]
 	
 	if (selection.n==1) {
@@ -220,21 +216,27 @@ int GroupInterface::ToggleGroup()
 			viewport->postmessage("Cannot group single objects like that.");
 			return 1;
 		}
-		if (place.e(0)==0) { // base is limbo
-			place.pop(0);
-			error=base->UnGroup(place.n(),place.list());
-		} else if (place.e(0)==1) {
-			 // base is page->layers containing the selection
-			place.pop(0); //remove spread index
-			place.pop(0); //remove pagelocation index
-			 // place now has layer.index.index...
-			error=base->UnGroup(place.n(),place.list());
-		} else error=1;
+
+		DBG cerr <<"*** must revamp selection after ungroup to have all the subobjs selected!!"<<endl;
+		int numgrouped=base->n();
+		error=base->UnGroup(place.e(place.n()-1));
+
+		FreeSelection();
+		VObjContext element;
+		if (error==0) {
+			int which=place.e(place.n());
+			for (int c=which; c<which+numgrouped; c++) {
+				element.clear();
+				element.obj=base->e(c); element.obj->inc_count();
+				for (int c2=0; c2<place.n(); c2++) {
+					element.push(place.e(c2));
+				}
+				AddToSelection(&element);
+			}
+		}
 
 		viewport->postmessage(error?"Ungroup failed.":"Ungrouped.");
 		
-		cout <<"*** must revamp selection after ungroup to have all the subobjs selected!!"<<endl;
-		FreeSelection();
 		return error?0:1;
 		
 		//---------
@@ -275,17 +277,10 @@ int GroupInterface::ToggleGroup()
 		viewport->postmessage("Containing object must be limbo or a spread.");
 		return 0;
 	}
-	for ( ; place.n(); place.pop()) {
-		base=dynamic_cast<Group *>(base->e(place.e(0)));
-		if (!base || strcmp(base->whattype(),"Group")) {
-			viewport->postmessage("Containing object must be a group to group subobjects.");
-			return 0;
-		}
-	}
 	error=base->GroupObjs(list.n,list.e);
 	viewport->postmessage(error?"Group failed.":"Grouped.");
 	
-	cout <<"*** revamp selection after group"<<endl;
+	cout <<"*** need to revamp selection after group"<<endl;
 	FreeSelection();
 
 	return 1;
@@ -399,12 +394,15 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		SomeData *obj;
 		for (int c=0; c<selection.n; c++) {
 			obj=NULL;
+			int cloned=0;
 			if (state&ControlMask) {
 				 // duplicate selection as clones
+				cloned=1;
 				obj=new SomeDataRef(selection.e[c]->obj);
 				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
 			} else {
 				 //duplicate selection
+				cloned=0;
 				obj=selection.e[c]->obj->duplicate(NULL);
 				obj->FindBBox();
 				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
@@ -413,6 +411,7 @@ int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 			viewport->ChangeContext(selection.e[c]);
 			viewport->NewData(obj,NULL);
 			obj->dec_count();
+			PostMessage(cloned?_("Cloned."):_("Duplicated."));
 		}
 		return 0;
 	}

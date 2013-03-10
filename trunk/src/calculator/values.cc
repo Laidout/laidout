@@ -1501,6 +1501,8 @@ int ValueHash::push(const char *name,const char *value)
 /*! Increments obj count. */
 int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
 {
+	if (dynamic_cast<Value*>(obj)) return push(name,dynamic_cast<Value*>(obj));
+
 	keys.push(newstr(name));
 	Value *v=new ObjectValue(obj);
 	int c=values.push(v);
@@ -1508,17 +1510,24 @@ int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
 	return c;
 }
 
-/*! Increments count on v. */
+/*! Increments count on v. If name exists already, just replace value. */
 int ValueHash::push(const char *name,Value *v)
 {
 	int place=keys.n;
+	int cmp=-2;
 	if (sorted) {
 		for (place=0; place<keys.n; place++) {
-			if (strcmp(name,keys.e[place])>=0) {
+			cmp=strcmp(name,keys.e[place]);
+			if (cmp>=0) {
 				break;
 			}
 		}
 	}
+	if (cmp==0) {
+		set(place,v);
+		return place;
+	}
+
 	keys.push(newstr(name),-1,place);
 	return values.push(v,-1,place);
 }

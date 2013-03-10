@@ -19,6 +19,7 @@ objs= \
 	aligninterface.o \
 	limageinterface.o \
 	pagerangeinterface.o \
+	graphicalshell.o \
 	paperinterface.o
 
 

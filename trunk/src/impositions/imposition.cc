@@ -197,7 +197,7 @@ Laxkit::anObject *Spread::object_e(int i)
 
 const char *Spread::object_e_name(int i)
 {
-	if (i==0) return "page";
+	if (i==0) return "pagestack";
 	if (i==1) return "marks";
 	return NULL;
 }

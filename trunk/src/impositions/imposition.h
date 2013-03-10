@@ -72,7 +72,7 @@ class PageLocationStack : public Laxkit::PtrStack<PageLocation>, public ObjectCo
 	virtual ~PageLocationStack() {}
 	virtual int n() { return Laxkit::PtrStack<PageLocation>::n; }
 	virtual Laxkit::anObject *object_e(int i) { if (i>=0 && i<Laxkit::PtrStack<PageLocation>::n) return e[i]->page; return NULL; }
-	virtual const char *object_e_name(int i) { return NULL; }
+	virtual const char *object_e_name(int i) { return "page"; }
 	virtual const double *object_transform(int i) {  if (i>=0 && i<Laxkit::PtrStack<PageLocation>::n) return e[i]->outline->m(); return NULL; }
 };
 

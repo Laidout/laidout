@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+grouping frelled.. can group, but cannot seem to select existing groups to ungroup
+
 Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
 
 file format dump is not showing dump of object types
@@ -19,8 +21,6 @@ file format dump is not showing dump of object types
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
 
 drawing partial arcs broken
-
-tooltips work intermittently
 
 switch to None document, and units change to unreasonable
 
@@ -32,6 +32,8 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 
 ---- bugs:
+
+tooltips work intermittently
 
 html dump must convert chars to entities
 
@@ -259,6 +261,8 @@ saving when net is internal is not proper.. does not distinguish between diff. n
 import config generic things like enum keepmystery should be parsed when no import config given!!
 
 impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
+
+ungroup should have ungrouped objects selected after ungrouping
 
 in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
 reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards

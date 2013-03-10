@@ -127,13 +127,14 @@ void bboxout(DoubleBBox *bbox,const char *mes=NULL)
  * \brief How the object fits into things.
  * <pre>
  *  0 = spread number, currently, 0 means on the scratchboard, and 1 means the current spread.
- *      but in future might implement some sort
+ *      2 means current papergroup. In future might implement some sort
  *      of infinite scroll, where all spreads are accessible, and you can edit objects
  *      just by zooming in appropriately.
- *  1 = index of page in spread->pagestack, or in limbo stack if is scratchboard
- *  2 = index of current layer in page
- *  3 = index of object in current layer
- *  4 and above = index in any Group or other containing object.
+ *  1 = if spread, then 0 is pagestack, 1 is marks on the spread
+ *  2 = index of page in spread->pagestack, or in limbo stack if is scratchboard
+ *  3 = index of current layer in page
+ *  4 = index of object in current layer
+ *  5 and above = index in any Group or other containing object.
  * </pre>
  */
 /*! \fn int VObjContext::limboi()
@@ -371,7 +372,7 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	
 	limbo=NULL; //start out as NULL in case we are loading from something. If still NULL in init(), then add new limbo
 	
-	current_edit_area=-1;
+	current_edit_area=-1; //which aspect of a drawable object we are working on.. -1 means curobj is not DrawableObject
 	edit_area_icon=NULL;
 
 	
@@ -1574,6 +1575,7 @@ int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 	if (limbo->n()) {
 		if (limbo->contains(d,place)) {
 			place.push(0,0);
+			DBG place.out(" locateObject limbo: ");
 			return place.n();
 		}
 	}
@@ -1589,7 +1591,9 @@ int LaidoutViewport::locateObject(LaxInterfaces::SomeData *d,FieldPlace &place)
 		place.flush();
 		if (pagep->contains(d,place)) { // this pushes location onto top of place..
 			place.push(spage,0);
+			place.push(0,0);
 			place.push(1,0);
+			DBG place.out(" locateObject spread: ");
 			return place.n();
 		}
 	}
@@ -2435,20 +2439,53 @@ void LaidoutViewport::Refresh()
 
 	 //draw area selector box
 	//((LaidoutViewport *)viewport)->locateObject(d,oc.context);
-	//***
-	const char *editareaicons[10]={
-			"Streams",
-			"Content",
-			"EditObject",
-			"Wrap",
-			"Inset",
-			"Clip",
-			"Filters",
-			"Meta",
-			"Chains",
-			NULL
-			};
-	//LaxImage *img=laidout->icons.GetIcon(editareaicons[current_edit_area]);
+	if (current_edit_area>=0) {
+		const char *editareaicons[10]={
+				"Streams",
+				"Content",
+				"EditObject",
+				"Wrap",
+				"Inset",
+				"Clip",
+				"Filters",
+				"Meta",
+				"Chains",
+				NULL
+				};
+		LaxImage *img=laidout->icons.GetIcon(editareaicons[current_edit_area]);
+		dp->DrawScreen();
+		dp->imageout(img,0,0);
+		dp->DrawReal();
+		img->dec_count();
+	}
+
+	 //draw object place description
+	dp->DrawScreen();
+	int y=win_h;
+	ObjectContainer *objc=this;
+	char scratch[10];
+	const char *str;
+	int x;
+	dp->NewFG(coloravg(win_colors->fg,win_colors->bg));
+	for (int c=0; c<curobj.context.n(); c++) {
+		if (!objc) break;
+		x=0;
+
+		str=objc->object_e_name(curobj.context.e(c));
+		if (!str) {
+			sprintf(scratch,"%d",curobj.context.e(c));
+			str=scratch;
+		} else if (dynamic_cast<DrawableObject*>(objc->object_e(curobj.context.e(c)))) {
+			sprintf(scratch,"(%d) ",curobj.context.e(c));
+			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+		}
+		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
+		y-=dp->textheight();
+
+		objc=dynamic_cast<ObjectContainer*>(objc->object_e(curobj.context.e(c)));
+	}
+	dp->DrawReal();
+
 
 	//***for lack of screen record for multipointer
 	if (fakepointer) {
