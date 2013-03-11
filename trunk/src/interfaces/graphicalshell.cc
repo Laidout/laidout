@@ -41,6 +41,40 @@ namespace Laidout {
 
 
 
+//------------------------------------- GraphicalShellEdit --------------------------------------
+
+class GraphicalShellEdit : public Laxkit::LineEdit
+{
+  public:
+	GraphicalShell *shell;
+	GraphicalShellEdit(anXWindow *viewport, GraphicalShell *sh, int x,int y,int w,int h);
+	virtual ~GraphicalShellEdit();
+	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d);
+};
+
+GraphicalShellEdit::GraphicalShellEdit(anXWindow *viewport, GraphicalShell *sh, int x,int y,int w,int h)
+  : LineEdit(viewport, "Shell",_("Shell"),
+		     LINEEDIT_SEND_ANY_CHANGE | LINEEDIT_GRAB_ON_MAP | ANXWIN_HOVER_FOCUS,
+			 x,y,w,h,0, NULL,sh->object_id,"shell",NULL,0)
+{
+	shell=sh;
+}
+
+GraphicalShellEdit::~GraphicalShellEdit()
+{
+}
+
+int GraphicalShellEdit::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d)
+{
+	if (ch==LAX_Esc) {
+		 //turn off gshell
+		dynamic_cast<ViewerWindow*>(shell->CurrentWindow(NULL)->win_parent)->SelectTool(shell->id);
+		return 0;
+	}
+
+	return LineEdit::CharInput(ch,buffer,len,state,d);
+}
+
 
 //------------------------------------- GraphicalShell --------------------------------------
 	
@@ -50,7 +84,9 @@ namespace Laidout {
  */
 
 GraphicalShell::GraphicalShell(int nid,Displayer *ndp)
-	: anInterface(nid,ndp) 
+	: anInterface(nid,ndp),
+	  history(2),
+	  completion(2)
 {
 	showdecs=0;
 	doc=NULL;
@@ -58,8 +94,11 @@ GraphicalShell::GraphicalShell(int nid,Displayer *ndp)
 	interface_type=INTERFACE_Overlay;
 	le=NULL;
 	active=0;
-	pad=10;
+	pad=5;
 	boxcolor.rgbf(.5,.5,.5);
+
+	placement_gravity=LAX_BOTTOM;
+	showcompletion=0;
 }
 
 GraphicalShell::GraphicalShell(anInterface *nowner,int nid,Displayer *ndp)
@@ -73,6 +112,9 @@ GraphicalShell::GraphicalShell(anInterface *nowner,int nid,Displayer *ndp)
 	active=0;
 	pad=10;
 	boxcolor.rgbf(.5,.5,.5);
+
+	placement_gravity=LAX_BOTTOM;
+	showcompletion=0;
 }
 
 GraphicalShell::~GraphicalShell()
@@ -116,7 +158,7 @@ int GraphicalShell::Setup()
 	if (!le) {
 		double width=dp->Maxx-dp->Minx-2*pad;
 		double height=dp->textheight()*1.5;
-		le=new LineEdit(viewport, "Shell",_("Shell"),0, dp->Minx+pad,dp->Maxy-height-pad,width,height,0, NULL,object_id,"shell",NULL,0);
+		le=new GraphicalShellEdit(viewport, this, dp->Minx+pad,dp->Maxy-height-pad,width,height);
 		box.minx=le->win_x-pad;
 		box.maxx=le->win_x+le->win_w+pad;
 		box.miny=le->win_y-pad;
@@ -136,6 +178,7 @@ int GraphicalShell::Setup()
 		}
 	}
 	app->mapwindow(le);
+	Update();
 
 	return 0;
 }
@@ -164,12 +207,44 @@ int GraphicalShell::Update()
 	//context.push("selection",viewport->selection);
 	//context.pushOrSet("",);
 
+	//-----
+	//contextdef.pushVariable("viewport",NULL,NULL, v,0);
+	//contextdef.pushVariable("tool",    NULL,NULL, v,0);
+	//contextdef.pushVariable("object",  NULL,NULL, v,0);
+	
+	tree.Flush();
+	ObjectDef *def;
+	const char *name;
+	const char *area;
+	for (int c=0; c<context.n(); c++) {
+		area=context.key(c);
+		tree.AddItem(area);
+		def=context.value(c)->GetObjectDef();
+		if (def && def->getNumFields()) {
+			tree.SubMenu();
+			for (int c2=0; c2<def->getNumFields(); c2++) {
+				name=NULL;
+				def->getInfo(c2, &name);
+				if (name) {
+					tree.AddItem(name);
+				}
+			}
+			tree.EndSubMenu();
+		}
+	}
+
+	return 0;
+}
+
+int GraphicalShell::UpdateCompletion()
+{
+	tree.Search(le->GetCText(),1,1);
 	return 0;
 }
 
 
 //menu ids for context menu
-#define GSHELLM_PaperSize        1
+//#define GSHELLM_PaperSize        1
 
 
 Laxkit::MenuInfo *GraphicalShell::ContextMenu(int x,int y,int deviceid)
@@ -184,6 +259,19 @@ Laxkit::MenuInfo *GraphicalShell::ContextMenu(int x,int y,int deviceid)
 //	return menu;
 }
 
+void GraphicalShell::ViewportResized()
+{
+	if (placement_gravity==LAX_BOTTOM) {
+		double width=dp->Maxx-dp->Minx-2*pad;
+		double height=dp->textheight()*1.5;
+		le->MoveResize(dp->Minx+pad,dp->Maxy-height-pad, width,height);
+		box.minx=le->win_x-pad;
+		box.maxx=le->win_x+le->win_w+pad;
+		box.miny=le->win_y-pad;
+		box.maxy=le->win_y+le->win_h+pad;
+	}
+}
+
 /*! Return 0 for menu item processed, 1 for nothing done.
  */
 int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
@@ -194,17 +282,49 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		if (!s) return 1;
 		int type=s->info1;
-		if (type==1) {
-			 //enter pressed
-			//*** execute command
-			//*** update history
-			//*** 
+		if (areas.n) {
+			areas.flush();
+			needtodraw=1;
+		}
+		if (type==0) {
+			if (!isblank(s->str)) {
+				 //text was changed
+				ObjectDef *def;
+				for (int c=0; c<context.n(); c++) {
+					if (strcasestr(context.key(c),s->str)==context.key(c)) {
+						def= context.value(c)->GetObjectDef();
+						if (def) areas.push(def);
+					}
+				}
+			} else {
+				tree.ClearSearch();
+			}
+			UpdateCompletion();
+			needtodraw=1;
 			return 0;
 
-		} else if (type==0) {
-			 //text was modified
-			//*** update search results
+		} else if (type==1) {
+			 //enter pressed
+			//execute command
+			char *command=le->GetText();
+			if (isblank(command)) return 0;
+			int answertype;
+			char *result=calculator.In(command,&answertype);
+
+			 //update history
+			if (answertype==1 || answertype==2) {
+				 //successful command
+				le->SetText("");
+				history.push(command);
+				PostMessage(result);
+			}
+			if (answertype==1 && !isblank(result)) history.push(result);
+			
+			UpdateCompletion();
+			needtodraw=1;
+			return 0;
 		}
+
 		return 0;
 	}
 
@@ -245,8 +365,6 @@ int GraphicalShell::draws(const char *atype)
 
 
 //! Return a new GraphicalShell if dup=NULL, or anInterface::duplicate(dup) otherwise.
-/*! 
- */
 anInterface *GraphicalShell::duplicate(anInterface *dup)//dup=NULL
 {
 	if (dup==NULL) dup=new GraphicalShell(id,NULL);
@@ -277,7 +395,6 @@ int GraphicalShell::InterfaceOff()
 	return 0;
 }
 
-//! Use a PaperGroup. Does NOT update viewport.
 int GraphicalShell::UseThis(Laxkit::anObject *ndata,unsigned int mask)
 {
 	return 0;
@@ -287,9 +404,7 @@ void GraphicalShell::Clear(SomeData *d)
 {
 }
 
-	
-/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
- */
+
 int GraphicalShell::Refresh()
 {
 	if (!needtodraw) return 0;
@@ -298,13 +413,51 @@ int GraphicalShell::Refresh()
 	dp->DrawScreen();
 	dp->NewFG(&boxcolor);
 	dp->drawrectangle(box.minx,box.miny, box.maxx-box.minx, box.maxy-box.miny, 1);
-	dp->DrawReal();
 
 
-	if (showdecs) {
+	if (showcompletion) {
+		int y=box.miny-pad;
+		y=box.miny-pad;
+		RefreshTree(&tree,box.minx,y);
 	}
 
+	dp->DrawReal();
 	return 1;
+}
+
+/*! Draw whole search results
+ */
+void GraphicalShell::RefreshTree(MenuInfo *menu, int x,int &y)
+{
+	MenuItem *mi, *mii;
+	for (int c=0; c<menu->n(); c++) {
+		mi=menu->e(c);
+		if (mi->state&MENU_SEARCH_HIT) {
+			int xx=x;
+			mii=mi;
+
+			DrawName(mii,xx,y);
+			y-=dp->textheight();
+		}
+		if (!(mi->state&(MENU_SEARCH_PARENT|MENU_SEARCH_HIT))) continue;
+
+		if (!mi->GetSubmenu(0)) continue;
+		RefreshTree(mi->GetSubmenu(0), x,y);
+	}
+}
+
+/*! Recursively draw hit name with parent names before it.
+ */
+void GraphicalShell::DrawName(MenuItem *mii, int &x,int y)
+{
+	if (!mii) return;
+	MenuInfo *mif=mii->parent;
+	if (mif && mif->parent) {
+		DrawName(mif->parent, x,y);
+		x+=dp->textout(x,y, ".",1,LAX_LEFT|LAX_BOTTOM);
+	}
+
+	x+=dp->textout(x,y, mii->name,-1,LAX_LEFT|LAX_BOTTOM);
 }
 
 //! Return the papergroup->papers element index underneath x,y, or -1.

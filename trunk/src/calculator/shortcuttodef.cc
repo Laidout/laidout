@@ -105,7 +105,7 @@ ObjectDef *ShortcutsToObjectDef(Laxkit::ShortcutHandler *sc, ObjectDef *def)
 	for (int c=0; c<sc->NumActions(); c++) {
 		action=sc->Action(c);
 
-		def->pushFunction(action->name,action->name,action->description, &shortcutevaluator);
+		def->pushFunction(action->name,action->name,action->description, &shortcutevaluator, NULL);
 	}
 
 	return def;

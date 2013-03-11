@@ -198,7 +198,6 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	void popScope();
 
 	Value *eval(const char *exprs);
-	//Value *eval();
 	Value *evalLevel(int level);
 	int evalcondition();
 	Value *checkAssignments();
@@ -240,6 +239,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	LaidoutCalculator();
 	virtual ~LaidoutCalculator();
 
+	virtual int InstallVariables(ValueHash *values);
 	virtual int InstallModule(CalculatorModule *module, int autoimport);
 	virtual int RemoveModule(const char *modulename);
 	virtual int ImportModule(const char *name, int allnames);

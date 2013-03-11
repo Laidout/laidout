@@ -18,6 +18,7 @@
 
 #include <lax/interfaces/aninterface.h>
 #include <lax/lineedit.h>
+#include <lax/menuinfo.h>
 
 #include "../laidout.h"
 
@@ -34,16 +35,23 @@ class GraphicalShell : public LaxInterfaces::anInterface
  protected:
 	int showdecs;
 	Document *doc;
-	LaidoutCalculator *calculator;
+	LaidoutCalculator calculator;
+
 	BlockInfo block;
-	Laxkit::RefPtrStack<ObjectDef> areas;
-	ValueHash context;
+	Laxkit::PtrStack<char> history;
+	Laxkit::PtrStack<char> completion;
+	Laxkit::RefPtrStack<ObjectDef> areas; //definitions
+	ValueHash context; //inside of which objects, all available names
+	ObjectDef contextdef;
 	int active;
 
 	Laxkit::ScreenColor boxcolor;
 	int pad;
 	Laxkit::DoubleBBox box;
 	Laxkit::LineEdit *le;
+	int placement_gravity;
+	int showcompletion;
+	Laxkit::MenuInfo tree;
 
 	virtual int scan(int x,int y);
 	virtual int Setup();
@@ -68,6 +76,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual void ViewportResized();
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
@@ -77,12 +86,15 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
+	virtual void RefreshTree(Laxkit::MenuInfo *menu, int x,int &y);
+	virtual void DrawName(Laxkit::MenuItem *mii, int &x,int y);
 
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	virtual int UseThisDocument(Document *doc);
 
 	virtual int ChangeContext(const char *name, Value *value);
 	virtual int Update();
+	virtual int UpdateCompletion();
 	
 };
 

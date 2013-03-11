@@ -17,18 +17,27 @@
 #define LIMAGEINTERFACE_H
 
 #include <lax/interfaces/imageinterface.h>
+#include "../calculator/values.h"
 
 
 namespace Laidout {
 
 
 //------------------------------- LImageInterface --------------------------------
-class LImageInterface : public LaxInterfaces::ImageInterface
+class LImageInterface : public LaxInterfaces::ImageInterface, public Value
 {
  protected:
 	virtual void runImageDialog();
  public:
 	LImageInterface(int nid,Laxkit::Displayer *ndp);
+	virtual const char *whattype() { return "ImageInterface"; }
+
+	//from value
+	virtual int type() { return VALUE_Fields; }
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual Value *dereference(const char *extstring, int len);
 };
 
 

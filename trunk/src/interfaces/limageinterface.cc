@@ -17,6 +17,8 @@
 #include <lax/imagedialog.h>
 #include "limageinterface.h"
 #include "../language.h"
+#include "../stylemanager.h"
+#include "../calculator/shortcuttodef.h"
 
 
 using namespace Laxkit;
@@ -74,6 +76,75 @@ void LImageInterface::runImageDialog()
 	inf->dec_count();
 }
 
+
+
+//! Returns this, but count is incremented.
+Value *LImageInterface::duplicate()
+{
+    this->inc_count();
+    return this;
+}
+
+
+ObjectDef *LImageInterface::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("Viewport");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd=new ObjectDef(NULL,"ImageInterface",
+            _("Image Interface"),
+            _("Image Interface"),
+            VALUE_Class,
+            NULL,NULL);
+
+	if (!sc) sc=GetShortcuts();
+	ShortcutsToObjectDef(sc, sd);
+
+	return sd;
+}
+
+
+///*!
+// * Return
+// *  0 for success, value optionally returned.
+// * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+// *  1 for parameters ok, but there was somehow an error, so no value returned.
+// */
+//int LImageInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//	                     Value **value_ret, ErrorLog *log)
+//{
+//	return 1;
+//}
+
+/*! *** for now, don't allow assignments
+ *
+ * If ext==NULL, then assign v to replace what exists in this.
+ * Otherwise assign v to the value at the end of the extension.
+ *  
+ * Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ */
+int LImageInterface::assign(FieldExtPlace *ext,Value *v)
+{
+	 //assignments not allowed
+	return 0;
+}
+
+Value *LImageInterface::dereference(const char *extstring, int len)
+{
+	//possible state:
+	//  tool
+	//  object
+	//  selection
+	//  viewport
+	return NULL;
+}
 
 } //namespace Laidout
 

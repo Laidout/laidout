@@ -97,6 +97,20 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+gshell:
+  shift up/down to browse history
+  red box for errors, reposition cursor
+  normal up/down for showing completion
+  tab/shift tab for completion, move showing
+  store initial search term while in completion mode
+  backspace while in completion mode removes, installs previous search term
+  clickable search results
+  search within area, not total tree
+  when in function, search among parameter names also
+  text delete to nothing should only show the top areas in search results
+  be able to move the box to top or to bottom
+
+
 add more explicit lpoptions howto for help, in lieu of functional print dialog
 
 debug multi head? seems to crash when showing with projectors plugged in
