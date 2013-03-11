@@ -142,7 +142,7 @@ const char *valueEnumCodeName(int format)
  *	\brief Calculate a function.
  *
  * Return
- *  0 for success, value returned.
+ *  0 for success, value optionally returned.
  * -1 for no value returned due to incompatible parameters, which aids in function overloading.
  *  1 for parameters ok, but there was somehow an error, so no value returned.
  */
@@ -279,6 +279,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 
 	fields=nfields;
 	fieldsformat=0;
+	fieldsdef=NULL;
 	format=fmt;
 	flags=fflags;
 
@@ -319,6 +320,7 @@ ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Val
 	flags=0;
 	format=VALUE_Variable;
 	fieldsformat=(newval?newval->type():0);
+	fieldsdef=NULL;
 	fields=NULL;
 }
 
@@ -340,6 +342,7 @@ ObjectDef::ObjectDef()
 	flags=0;
 	format=VALUE_Namespace;
 	fieldsformat=0;
+	fieldsdef=NULL;
 	fields=NULL;
 }
 
@@ -348,7 +351,7 @@ ObjectDef::~ObjectDef()
 {
 	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
-	DBG cerr <<"ObjectDef \""<<name<<"\" destructor"<<endl;
+	DBG cerr <<"ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
 	
 	//if (extends)      delete[] extends;
 	if (name)         delete[] name;
@@ -358,6 +361,7 @@ ObjectDef::~ObjectDef()
 	if (defaultvalue) delete[] defaultvalue;
 	if (defaultValue) defaultValue->dec_count();
 	
+	if (fieldsdef) delete[] fieldsdef;
 	if (fields) {
 		DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
@@ -789,6 +793,8 @@ int ObjectDef::push(const char *nname,const char *nName,const char *ndesc,
 /*! Return 0 if new variable added.
  * Return -1 if variable existed, and Name, description, and value overwrite the old values.
  * Return 1 if unable add for some reason (like being read only).
+ *
+ * Usually, this is done only in namespaces.
  */
 int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndesc, Value *v, int absorb)
 {
@@ -1503,9 +1509,8 @@ int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
 {
 	if (dynamic_cast<Value*>(obj)) return push(name,dynamic_cast<Value*>(obj));
 
-	keys.push(newstr(name));
 	Value *v=new ObjectValue(obj);
-	int c=values.push(v);
+	int c=push(name,v);
 	v->dec_count();
 	return c;
 }
@@ -1513,8 +1518,9 @@ int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
 /*! Increments count on v. If name exists already, just replace value. */
 int ValueHash::push(const char *name,Value *v)
 {
-	int place=keys.n;
+	int place=findIndex(name);
 	int cmp=-2;
+	if (place<0) place=keys.n; else cmp=0;
 	if (sorted) {
 		for (place=0; place<keys.n; place++) {
 			cmp=strcmp(name,keys.e[place]);

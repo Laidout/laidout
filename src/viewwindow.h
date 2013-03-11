@@ -59,7 +59,10 @@ class VObjContext : public LaxInterfaces::ObjectContext
 };
 
 //------------------------------- LaidoutViewport ---------------------------
-class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public ObjectContainer
+class LaidoutViewport : public LaxInterfaces::ViewportWindow,
+						virtual public ObjectContainer,
+						virtual public Value,
+						virtual public FunctionEvaluator
 {
 	char lfirsttime;
   protected:
@@ -102,7 +105,6 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual ~LaidoutViewport();
 	virtual const char *whattype() { return "LaidoutViewport"; }
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
-	virtual ObjectDef *makeObjectDef();
 	virtual void Refresh();
 	virtual int init();
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
@@ -154,16 +156,28 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow, virtual public Obj
 	virtual int wipeContext();
 	virtual void clearCurobj();
 	virtual int locateObject(LaxInterfaces::SomeData *d,FieldPlace &place);
+	virtual int curobjPage();
+	virtual int isDefaultPapergroup(int yes_if_in_project);
+
+	 //from objectcontainer
 	virtual int n();
 	virtual Laxkit::anObject *object_e(int i);
 	virtual const char *object_e_name(int i);
 	virtual const double *object_transform(int i);
 	virtual int object_e_info(int i, const char **name, const char **Name, int *isarray);
-	virtual int curobjPage();
-	virtual int isDefaultPapergroup(int yes_if_in_project);
+
+	 //from Value
+	virtual int type();
+    virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log);
 
 	 //for scripting:
 	virtual ValueHash *build_context();
+
 
 	friend class ViewWindow;
 	friend class GroupInterface;

@@ -456,62 +456,6 @@ int LaidoutViewport::UseThisDoc(Document *ndoc)
 	return 0;
 }
 
-int LaidoutViewport::n()
-{
-	return 3; //limbo, spread, papergroup
-}
-
-#define VOBJE_Limbo       0
-#define VOBJE_Spread      1
-#define VOBJE_Papergroup  2
-
-//! Return pointer to limbo if i==0, and spread if i==1.
-Laxkit::anObject *LaidoutViewport::object_e(int i)
-{
-	if (i==0) return limbo;
-	if (i==1 && spread) return spread;
-	if (i==2 && papergroup) return papergroup;
-	return NULL;
-}
-
-//! Return 0 for success or nonzero for element not found.
-int LaidoutViewport::object_e_info(int i, const char **name, const char **Name, int *isarray)
-{
-	if (i<0 || i>2) return 1;
-
-	if (name) {
-		if (i==0) *name="limbo";
-		else if (i==1 && spread) *name="spread";
-		else if (i==2 && papergroup) *name="papergroup";
-		else *name=NULL;
-	}
-	if (Name) {
-		if (i==0) *Name=_("limbo");
-		else if (i==1 && spread) *Name=_("spread");
-		else if (i==2 && papergroup) *Name=_("papergroup");
-		else *Name=NULL;
-	}
-	if (isarray) {
-		*isarray=0;
-		 //isarray==1 means you can write page(3) rather than page.3
-		 //isarray==-1 means that field is currently null
-	}
-	return 0;
-}
-
-const double *LaidoutViewport::object_transform(int i)
-{
-	return NULL;
-}
-
-const char *LaidoutViewport::object_e_name(int i)
-{
-	if (i==0) return "limbo";
-	if (i==1 && spread) return "spread";
-	if (i==2 && papergroup) return "papergroup";
-	return NULL;
-}
-
 //! Map real to the current page, layer, or object space.
 /*! This assumes that dp currently has plain view coordinates.
  *
@@ -2504,41 +2448,6 @@ void LaidoutViewport::Refresh()
 	DBG cerr <<"======= done refreshing LaidoutViewport.."<<endl;
 }
 
-ObjectDef *LaidoutViewport::makeObjectDef()
-{
-
-	ObjectDef *sd=stylemanager.FindDef("Viewport");
-    if (sd) {
-        sd->inc_count();
-        return sd;
-    }
-
-	sd=new ObjectDef(NULL,"Viewport",
-            _("Viewport"),
-            _("Document and spread view"),
-            VALUE_Class,
-            NULL,NULL);
-
-	if (!sc) sc=GetShortcuts();
-	ShortcutsToObjectDef(sc, sd);
-
-	sd->pushFunction("SelectTool",_("Select Tool"),_("Select Tool"),
-					 NULL,
-			 		 "tool",NULL,_("Tool to use"),VALUE_String, NULL, "Object",
-					 NULL);
-
-	sd->pushFunction("PlopData",_("Plop Data"),_("Plop Data"),
-					 NULL,
-			 		 "data",NULL,_("Data to drop into the viewer"),VALUE_Any, NULL, NULL,
-					 NULL);
-
-//
-//  "NextSpread"
-//  "PreviousSpread"
-//
-//
-	return sd;
-}
 
 enum LaidoutViewportActions {
 	LOV_DeselectAll=VIEWPORT_MAX,
@@ -2969,6 +2878,166 @@ ValueHash *LaidoutViewport::build_context()
 //	context->push("parent",win_parent); //parent context
 //
 //	return context;
+}
+
+int LaidoutViewport::type()
+{ return VALUE_Fields; }
+
+//! Returns this, but count is incremented.
+Value *LaidoutViewport::duplicate()
+{ 
+	this->inc_count();
+	return this;
+}
+
+int LaidoutViewport::n()
+{
+	return 3; //limbo, spread, papergroup
+}
+
+#define VOBJE_Limbo       0
+#define VOBJE_Spread      1
+#define VOBJE_Papergroup  2
+
+//! Return pointer to limbo if i==0, and spread if i==1.
+Laxkit::anObject *LaidoutViewport::object_e(int i)
+{
+	if (i==0) return limbo;
+	if (i==1 && spread) return spread;
+	if (i==2 && papergroup) return papergroup;
+	return NULL;
+}
+
+//! Return 0 for success or nonzero for element not found.
+int LaidoutViewport::object_e_info(int i, const char **name, const char **Name, int *isarray)
+{
+	if (i<0 || i>2) return 1;
+
+	if (name) {
+		if (i==0) *name="limbo";
+		else if (i==1 && spread) *name="spread";
+		else if (i==2 && papergroup) *name="papergroup";
+		else *name=NULL;
+	}
+	if (Name) {
+		if (i==0) *Name=_("limbo");
+		else if (i==1 && spread) *Name=_("spread");
+		else if (i==2 && papergroup) *Name=_("papergroup");
+		else *Name=NULL;
+	}
+	if (isarray) {
+		*isarray=0;
+		 //isarray==1 means you can write page(3) rather than page.3
+		 //isarray==-1 means that field is currently null
+	}
+	return 0;
+}
+
+const double *LaidoutViewport::object_transform(int i)
+{
+	return NULL;
+}
+
+const char *LaidoutViewport::object_e_name(int i)
+{
+	if (i==0) return "limbo";
+	if (i==1 && spread) return "spread";
+	if (i==2 && papergroup) return "papergroup";
+	return NULL;
+}
+
+ObjectDef *LaidoutViewport::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("Viewport");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd=new ObjectDef(NULL,"Viewport",
+            _("Viewport"),
+            _("Document and spread view"),
+            VALUE_Class,
+            NULL,NULL);
+
+	if (!sc) sc=GetShortcuts();
+	ShortcutsToObjectDef(sc, sd);
+
+	sd->pushFunction("SelectTool",_("Select Tool"),_("Select Tool"),
+					 NULL,
+			 		 "tool",NULL,_("Tool to use"),VALUE_String, NULL, "Object",
+					 NULL);
+
+	sd->pushFunction("PlopData",_("Plop Data"),_("Plop Data"),
+					 NULL,
+			 		 "data",NULL,_("Data to drop into the viewer"),VALUE_Any, NULL, NULL,
+					 NULL);
+
+	sd->push("limbo",_("Limbo"),_("Current limbo"), VALUE_Fields, NULL,NULL,0,NULL);
+	sd->push("papergroup",_("Paper Group"),_("Paper Group"), VALUE_Fields, NULL,NULL,0,NULL);
+	sd->push("spread",_("Spread"),_("Spread"), VALUE_Fields, NULL,NULL,0,NULL);
+//
+//  "NextSpread"
+//  "PreviousSpread"
+//
+//
+	return sd;
+}
+
+
+/*!
+ * Return
+ *  0 for success, value optionally returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int LaidoutViewport::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log)
+{
+	if (extequal(func,len, "SelectTool")) {
+		const char *str=parameters->findString("tool");
+		if (!str) return -1;
+		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
+		viewer->SelectToolFor(str,NULL);
+		*value_ret=NULL;
+		return 0;
+
+	} else if (extequal(func,len, "PlopData")) {
+		Value *v=parameters->find("data");
+		if (!dynamic_cast<DrawableObject*>(v)) return -1;
+		PlopData(dynamic_cast<DrawableObject*>(v));
+		*value_ret=NULL;
+		return 0;
+	}
+
+	return 1;
+}
+
+/*! *** for now, don't allow assignments
+ *
+ * If ext==NULL, then assign v to replace what exists in this.
+ * Otherwise assign v to the value at the end of the extension.
+ *  
+ * Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ */
+int LaidoutViewport::assign(FieldExtPlace *ext,Value *v)
+{
+	 //assignments not allowed
+	return 0;
+}
+
+Value *LaidoutViewport::dereference(const char *extstring, int len)
+{
+	//possible state:
+	//  tool
+	//  object
+	//  selection
+	//  viewport
+	return NULL;
 }
 
 
@@ -4254,7 +4323,7 @@ int ViewWindow::FocusOn(const Laxkit::FocusChangeData *e)
 //! Override to use ObjectInterface when object's contents are locked.
 int ViewWindow::SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext *oc)
 {
-	if (oc->obj &&
+	if (oc && oc->obj &&
 			((oc->obj->flags&SOMEDATA_LOCK_CONTENTS)
 			 || !strcmp(oc->obj->whattype(),"SomeDataRef"))) {
 		 //use object tool for SomeDataRef or locked objects
@@ -4357,7 +4426,13 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 	} else if (action==VIEW_CommandPrompt) {
-		DBG cerr <<" *** Need to implement graphical shell!!"<<endl;
+		for (int c=0; c<tools.n; c++) {
+			if (!strcmp(tools.e[c]->whattype(),"GraphicalShell")) {
+				SelectTool(tools.e[c]->id);
+				updateContext(1);
+				break;
+			}
+		}
 		return 0; 
 
 	} else if (action==VIEW_Save || action==VIEW_SaveAs) {

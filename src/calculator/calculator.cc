@@ -1071,6 +1071,26 @@ LaidoutCalculator::~LaidoutCalculator()
 	if (last_answer) last_answer->dec_count();
 }
 
+/*! Kind of a lightweight InstallModule(). This just adds plain names to the global namespace.
+ * Any name that exists already has its value replaced.
+ *
+ * Returns 0 for success, nonzero for fail.
+ */
+int LaidoutCalculator::InstallVariables(ValueHash *values)
+{
+	Entry *entry;
+	for (int c=0; c<values->n(); c++) {
+		entry=global_scope.FindName(values->key(c),strlen(values->key(c)));
+		if (entry) {
+			ValueEntry *ve=dynamic_cast<ValueEntry*>(entry);
+			ve->SetVariable(NULL,values->value(c),0);
+		} else {
+			global_scope.AddValue(values->key(c),values->value(c));
+		}
+	}
+	return 0;
+}
+
 //! Add module to list of available modules.
 /*! If autoimport==0, then only make available, do not actually make names available.
  * If autoimport==1, then make the module name accessible in the current namespace.
@@ -3298,7 +3318,8 @@ Value *LaidoutCalculator::getarray()
 Value *LaidoutCalculator::ApplyDefaultSets(SetValue *set)
 {
 	if (set->values.n==1) {
-		Value *v=set->values.e[0]->duplicate();
+		Value *v=set->values.e[0];
+		v->inc_count();
 		return v;
 	}
 
