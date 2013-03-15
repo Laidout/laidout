@@ -17,6 +17,7 @@
 #include "interfaces/aligninterface.h"
 #include "interfaces/nupinterface.h"
 #include "interfaces/pagerangeinterface.h"
+#include "interfaces/objectindicator.h"
 
 //#include <lax/interfaces/captioninterface.h>
 #include <lax/interfaces/gradientinterface.h>
@@ -120,6 +121,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 //	mdata->style=1;
 //	existingpool->push(mdata);//*** combine with Image somehow?
 //	mdata->dec_count();
+
+	 //------ObjectIndicator
+	i=new ObjectIndicator(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 
 	 //------Paper
 	i=new PaperInterface(id++,NULL);

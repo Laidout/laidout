@@ -20,6 +20,7 @@ objs= \
 	limageinterface.o \
 	pagerangeinterface.o \
 	graphicalshell.o \
+	objectindicator.o \
 	paperinterface.o
 
 
