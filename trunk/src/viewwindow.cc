@@ -2403,32 +2403,32 @@ void LaidoutViewport::Refresh()
 		img->dec_count();
 	}
 
-	 //draw object place description
-	dp->DrawScreen();
-	int y=win_h;
-	ObjectContainer *objc=this;
-	char scratch[10];
-	const char *str;
-	int x;
-	dp->NewFG(coloravg(win_colors->fg,win_colors->bg));
-	for (int c=0; c<curobj.context.n(); c++) {
-		if (!objc) break;
-		x=0;
-
-		str=objc->object_e_name(curobj.context.e(c));
-		if (!str) {
-			sprintf(scratch,"%d",curobj.context.e(c));
-			str=scratch;
-		} else if (dynamic_cast<DrawableObject*>(objc->object_e(curobj.context.e(c)))) {
-			sprintf(scratch,"(%d) ",curobj.context.e(c));
-			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
-		}
-		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
-		y-=dp->textheight();
-
-		objc=dynamic_cast<ObjectContainer*>(objc->object_e(curobj.context.e(c)));
-	}
-	dp->DrawReal();
+//	 //draw object place description
+//	dp->DrawScreen();
+//	int y=win_h;
+//	ObjectContainer *objc=this;
+//	char scratch[10];
+//	const char *str;
+//	int x;
+//	dp->NewFG(coloravg(win_colors->fg,win_colors->bg));
+//	for (int c=0; c<curobj.context.n(); c++) {
+//		if (!objc) break;
+//		x=0;
+//
+//		str=objc->object_e_name(curobj.context.e(c));
+//		if (!str) {
+//			sprintf(scratch,"%d",curobj.context.e(c));
+//			str=scratch;
+//		} else if (dynamic_cast<DrawableObject*>(objc->object_e(curobj.context.e(c)))) {
+//			sprintf(scratch,"(%d) ",curobj.context.e(c));
+//			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
+//		}
+//		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
+//		y-=dp->textheight();
+//
+//		objc=dynamic_cast<ObjectContainer*>(objc->object_e(curobj.context.e(c)));
+//	}
+//	dp->DrawReal();
 
 
 	//***for lack of screen record for multipointer
@@ -2449,6 +2449,25 @@ void LaidoutViewport::Refresh()
 }
 
 
+enum ViewActions {
+	VIEW_Save,
+	VIEW_SaveAs,
+	VIEW_NewDocument,
+	VIEW_NextTool,
+	VIEW_PreviousTool,
+	VIEW_NextPage,
+	VIEW_PreviousPage,
+	VIEW_ObjectTool,
+	VIEW_CommandPrompt,
+	VIEW_ObjectIndicator,
+
+	VIEW_Help,
+	VIEW_About,
+	VIEW_SpreadEditor,
+
+	VIEW_MAX
+};
+
 enum LaidoutViewportActions {
 	LOV_DeselectAll=VIEWPORT_MAX,
 	LOV_CenterDrawing,
@@ -2461,6 +2480,7 @@ enum LaidoutViewportActions {
 	LOV_ObjFirst,
 	LOV_ObjLast,
 	LOV_ToggleDrawFlags,
+	LOV_ObjectIndicator,
 	LOV_MAX
 };
 
@@ -2487,6 +2507,7 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->Add(LOV_ObjFirst,       LAX_Home,0,0,   _("MoveObjFirst"),   _("Move object to first in layer"),NULL,0);
 	sc->Add(LOV_ObjLast,        LAX_End,0,0,    _("MoveObjLast"),    _("Move object to last in layer"),NULL,0);
 	sc->Add(LOV_ToggleDrawFlags,'D',ShiftMask,0,_("ToggleDrawFlags"),_("Toggle drawing flags"),NULL,0);
+	sc->Add(LOV_ObjectIndicator,'i',0,0,       _("Object Info"),    _("Toggle showing object information"),NULL,0);
 
 	return sc;
 }
@@ -2503,6 +2524,12 @@ int LaidoutViewport::PerformAction(int action)
 			interfaces.e[c]->Clear(d);
 		}
 		clearCurobj(); //this calls dec_count() on the object
+		needtodraw=1;
+		return 0;
+
+	} else if (action==LOV_ObjectIndicator) {
+		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
+		viewer->PerformAction(VIEW_ObjectIndicator);
 		needtodraw=1;
 		return 0;
 
@@ -4364,23 +4391,24 @@ int ViewWindow::SelectTool(int id)
 	return c;
 }
 
-enum ViewActions {
-	VIEW_Save,
-	VIEW_SaveAs,
-	VIEW_NewDocument,
-	VIEW_NextTool,
-	VIEW_PreviousTool,
-	VIEW_NextPage,
-	VIEW_PreviousPage,
-	VIEW_ObjectTool,
-	VIEW_CommandPrompt,
-
-	VIEW_Help,
-	VIEW_About,
-	VIEW_SpreadEditor,
-
-	VIEW_MAX
-};
+//enum ViewActions {
+//	VIEW_Save,
+//	VIEW_SaveAs,
+//	VIEW_NewDocument,
+//	VIEW_NextTool,
+//	VIEW_PreviousTool,
+//	VIEW_NextPage,
+//	VIEW_PreviousPage,
+//	VIEW_ObjectTool,
+//	VIEW_CommandPrompt,
+//	VIEW_ObjectIndicator,
+//
+//	VIEW_Help,
+//	VIEW_About,
+//	VIEW_SpreadEditor,
+//
+//	VIEW_MAX
+//};
 
 Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 {
@@ -4396,18 +4424,18 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 
 	sc=new ShortcutHandler("ViewWindow");
 
-	sc->Add(VIEW_ObjectTool,    LAX_Esc,0,0,      _("ObjectTool"),   _("Switch to object tool"),NULL,0);
-	sc->Add(VIEW_Save,         's',ControlMask,0, _("Save"),         _("Save document"),NULL,0);
-	sc->Add(VIEW_SaveAs,       'S',ShiftMask|ControlMask,0,_("SaveAs"), _("Save as"),NULL,0);
-	sc->Add(VIEW_NewDocument,  'n',ControlMask,0, _("NewDoc"),       _("New document"),NULL,0);
-	sc->Add(VIEW_NextTool,     't',0,0,           _("NextTool"),     _("Next tool"),NULL,0);
-	sc->Add(VIEW_PreviousTool, 'T',ShiftMask,0,   _("PreviousTool"), _("Previous tool"),NULL,0);
-	sc->Add(VIEW_NextPage,     '>',ShiftMask,0,   _("NextPage"),     _("Next page"),NULL,0);
-	sc->Add(VIEW_PreviousPage, '<',ShiftMask,0,   _("PreviousPage"), _("Previous page"),NULL,0);
-	sc->Add(VIEW_Help,         LAX_F1,0,0,        _("Help"),         _("Help"),NULL,0);
-	sc->Add(VIEW_About,        LAX_F2,0,0,        _("About"),        _("About Laidout"),NULL,0);
-	sc->Add(VIEW_SpreadEditor, LAX_F5,0,0,        _("SpreadEditor"), _("Popup a spread editor"),NULL,0);
-	sc->Add(VIEW_CommandPrompt,'/',0,0,           _("Prompt"),       _("Popup a the graphical shell"),NULL,0);
+	sc->Add(VIEW_ObjectTool,     LAX_Esc,0,0,      _("ObjectTool"),   _("Switch to object tool"),NULL,0);
+	sc->Add(VIEW_Save,           's',ControlMask,0, _("Save"),         _("Save document"),NULL,0);
+	sc->Add(VIEW_SaveAs,         'S',ShiftMask|ControlMask,0,_("SaveAs"), _("Save as"),NULL,0);
+	sc->Add(VIEW_NewDocument,    'n',ControlMask,0, _("NewDoc"),       _("New document"),NULL,0);
+	sc->Add(VIEW_NextTool,       't',0,0,           _("NextTool"),     _("Next tool"),NULL,0);
+	sc->Add(VIEW_PreviousTool,   'T',ShiftMask,0,   _("PreviousTool"), _("Previous tool"),NULL,0);
+	sc->Add(VIEW_NextPage,       '>',ShiftMask,0,   _("NextPage"),     _("Next page"),NULL,0);
+	sc->Add(VIEW_PreviousPage,   '<',ShiftMask,0,   _("PreviousPage"), _("Previous page"),NULL,0);
+	sc->Add(VIEW_Help,           LAX_F1,0,0,        _("Help"),         _("Help"),NULL,0);
+	sc->Add(VIEW_About,          LAX_F2,0,0,        _("About"),        _("About Laidout"),NULL,0);
+	sc->Add(VIEW_SpreadEditor,   LAX_F5,0,0,        _("SpreadEditor"), _("Popup a spread editor"),NULL,0);
+	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),       _("Popup a the graphical shell"),NULL,0);
 
 	manager->AddArea("ViewWindow",sc);
 	return sc;
@@ -4430,6 +4458,16 @@ int ViewWindow::PerformAction(int action)
 	} else if (action==VIEW_CommandPrompt) {
 		for (int c=0; c<tools.n; c++) {
 			if (!strcmp(tools.e[c]->whattype(),"GraphicalShell")) {
+				SelectTool(tools.e[c]->id);
+				updateContext(1);
+				break;
+			}
+		}
+		return 0; 
+
+	} else if (action==VIEW_ObjectIndicator) {
+		for (int c=0; c<tools.n; c++) {
+			if (!strcmp(tools.e[c]->whattype(),"ObjectIndicator")) {
 				SelectTool(tools.e[c]->id);
 				updateContext(1);
 				break;

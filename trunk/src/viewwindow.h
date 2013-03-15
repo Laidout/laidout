@@ -195,7 +195,6 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	Laxkit::SliderPopup *toolselector;
 	Laxkit::anXWindow *rulercornerbutton;
 
-	virtual int PerformAction(int action);
   public:
 	Project *project;
 	Document *doc;
@@ -212,6 +211,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 
+	virtual int PerformAction(int action);
 	virtual int SelectTool(int id);
 	virtual int SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext *oc=NULL);
 	virtual void updateContext(int messagetoo);
