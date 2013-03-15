@@ -317,7 +317,7 @@ void GraphicalShell::ViewportResized()
 	}
 }
 
-void GraphicalShell::UpdateSearchTerment(const char *str,int pos)
+void GraphicalShell::UpdateSearchTerm(const char *str,int pos)
 {
 	//viewport.blah|  
 	//viewport.spread.1.|
