@@ -762,7 +762,6 @@ NamespaceValue::NamespaceValue(ObjectDef *ns, Value *fromthis)
 NamespaceValue::~NamespaceValue()
 {
 	if (usethis) usethis->dec_count();
-	if (objectdef) objectdef->dec_count();
 }
 
 /*! NamespaceValue objects may be namespaces, object classes, or functions.
@@ -1333,7 +1332,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, Erro
 		answer=evalLevel(0);
 		if (calcerror) break;
 
-		if (answer->type()==VALUE_LValue) {
+		if (answer && answer->type()==VALUE_LValue) {
 			Value *v=dynamic_cast<LValue*>(answer)->Resolve();
 			answer->dec_count();
 			answer=v;
@@ -3142,6 +3141,11 @@ Value *LaidoutCalculator::dereference(Value *val)
 			if (fvalue) fvalue->dec_count();
 			if (value) value->dec_count();
 			return NULL;
+
+		} else if (status==-1) {
+			if (value) value->dec_count();
+			calcerr(_("Cannot compute with given values."));
+			return NULL;
 		}
 
 		if (value) value->dec_count();
@@ -3693,7 +3697,22 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 	Value *value=NULL;
 	int status=-2;
 
-	if (containingvalue) {
+	if (function->evaluator) status=function->evaluator->Evaluate(word,n, context,pp,&calcsettings, &value,&log);
+	else if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
+	else if (function->newfunc) {
+		Value *s=function->newfunc(function);
+		if (s) {
+			status=0;
+			value=new ObjectValue(s);
+		} else status=1;
+	} else if (function->defaultvalue) {
+		 //execute code
+		 // *** set up a scope, and call function
+		status=evaluate(function->defaultvalue,-1, context,pp, &value,&log); 
+		if (status==-1) status=0;//warnings, but success
+	}
+
+	if (!value && status==-2 && containingvalue) {
 		FunctionEvaluator *f=dynamic_cast<FunctionEvaluator*>(containingvalue);
 		if (f) {
 			status=f->Evaluate(word,n, context,pp,&calcsettings, &value,&log);
@@ -3702,23 +3721,6 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 			int i=pp->findIndex("this");
 			if (i>=0) pp->set(i,containingvalue);
 			else pp->push("this",containingvalue);
-		}
-	}
-
-	if (!value && status==-2) {
-		if (function->evaluator) status=function->evaluator->Evaluate(word,n, context,pp,&calcsettings, &value,&log);
-		else if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
-		else if (function->newfunc) {
-			Value *s=function->newfunc(function);
-			if (s) {
-				status=0;
-				value=new ObjectValue(s);
-			} else status=1;
-		} else if (function->defaultvalue) {
-			 //execute code
-			 // *** set up a scope, and call function
-			status=evaluate(function->defaultvalue,-1, context,pp, &value,&log); 
-			if (status==-1) status=0;//warnings, but success
 		}
 	}
 

@@ -31,6 +31,7 @@ class LImageInterface : public LaxInterfaces::ImageInterface, public Value
  public:
 	LImageInterface(int nid,Laxkit::Displayer *ndp);
 	virtual const char *whattype() { return "ImageInterface"; }
+	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 
 	//from value
 	virtual int type() { return VALUE_Fields; }

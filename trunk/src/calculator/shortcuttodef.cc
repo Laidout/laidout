@@ -46,7 +46,7 @@ int ShortcutEvaluator::Evaluate(const char *func,int len, ValueHash *context, Va
 						 Value **value_ret,
 						 ErrorLog *log)
 {
-	Value *obj=context->find("this");
+	Value *obj=(parameters?parameters->find("this"):NULL);
 	if (!obj) return -1;
 
 	ShortcutHandler *sc=NULL;

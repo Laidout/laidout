@@ -2977,7 +2977,9 @@ ObjectDef *LaidoutViewport::makeObjectDef()
 	sd->push("limbo",_("Limbo"),_("Current limbo"), VALUE_Fields, NULL,NULL,0,NULL);
 	sd->push("papergroup",_("Paper Group"),_("Paper Group"), VALUE_Fields, NULL,NULL,0,NULL);
 	sd->push("spread",_("Spread"),_("Spread"), VALUE_Fields, NULL,NULL,0,NULL);
-//
+
+	stylemanager.AddObjectDef(sd,0);
+
 //  "NextSpread"
 //  "PreviousSpread"
 //

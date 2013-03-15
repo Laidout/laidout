@@ -37,15 +37,21 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	Document *doc;
 	LaidoutCalculator calculator;
 
-	BlockInfo block;
+	int currenthistory;
 	Laxkit::PtrStack<char> history;
-	Laxkit::PtrStack<char> completion;
+
+	int tablevel;
+	int numresults;
+	Laxkit::PtrStack<Laxkit::MenuItem> completion;
+
+	char *searchterm;
 	Laxkit::RefPtrStack<ObjectDef> areas; //definitions
 	ValueHash context; //inside of which objects, all available names
 	ObjectDef contextdef;
 	int active;
 
 	Laxkit::ScreenColor boxcolor;
+	int showerror;
 	int pad;
 	Laxkit::DoubleBBox box;
 	Laxkit::LineEdit *le;
@@ -55,6 +61,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 
 	virtual int scan(int x,int y);
 	virtual int Setup();
+	void base_init();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
@@ -95,6 +102,9 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual int ChangeContext(const char *name, Value *value);
 	virtual int Update();
 	virtual int UpdateCompletion();
+	virtual void UpdateFromTab(Laxkit::MenuInfo *menu, int &i);
+	virtual void TextFromItem(Laxkit::MenuItem *mii,char *&str);
+	virtual void EscapeBrowsing();
 	
 };
 

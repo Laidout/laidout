@@ -77,6 +77,14 @@ void LImageInterface::runImageDialog()
 }
 
 
+LaxInterfaces::anInterface *LImageInterface::duplicate(LaxInterfaces::anInterface *dup)
+{
+	if (dup==NULL) dup=dynamic_cast<anInterface *>(new LImageInterface(id,NULL));
+	else if (!dynamic_cast<LImageInterface *>(dup)) return NULL;
+
+	return ImageInterface::duplicate(dup);
+}
+
 
 //! Returns this, but count is incremented.
 Value *LImageInterface::duplicate()
@@ -89,7 +97,7 @@ Value *LImageInterface::duplicate()
 ObjectDef *LImageInterface::makeObjectDef()
 {
 
-	ObjectDef *sd=stylemanager.FindDef("Viewport");
+	ObjectDef *sd=stylemanager.FindDef("ImageInterface");
     if (sd) {
         sd->inc_count();
         return sd;
@@ -104,6 +112,7 @@ ObjectDef *LImageInterface::makeObjectDef()
 	if (!sc) sc=GetShortcuts();
 	ShortcutsToObjectDef(sc, sd);
 
+	stylemanager.AddObjectDef(sd,0);
 	return sd;
 }
 
