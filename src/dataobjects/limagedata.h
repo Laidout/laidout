@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2012-2013 by Tom Lechner
 //
 #ifndef LIMAGEDATA_H
 #define LIMAGEDATA_H
@@ -25,7 +25,10 @@
 namespace Laidout {
 
 
-class LImageData : public DrawableObject, public LaxInterfaces::ImageData, public FunctionEvaluator
+class LImageData : public DrawableObject,
+				   public LaxInterfaces::ImageData,
+				   public FunctionEvaluator,
+				   public Value
 {
   public:
 	//ImageImportFilter *importer;
@@ -42,6 +45,8 @@ class LImageData : public DrawableObject, public LaxInterfaces::ImageData, publi
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
 
+	virtual int type() { return VALUE_Fields; }
+	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);

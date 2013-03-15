@@ -50,11 +50,13 @@ class GraphicalShellEdit : public Laxkit::LineEdit
 	GraphicalShellEdit(anXWindow *viewport, GraphicalShell *sh, int x,int y,int w,int h);
 	virtual ~GraphicalShellEdit();
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d);
+	virtual int send(int i);
 };
 
 GraphicalShellEdit::GraphicalShellEdit(anXWindow *viewport, GraphicalShell *sh, int x,int y,int w,int h)
   : LineEdit(viewport, "Shell",_("Shell"),
-		     LINEEDIT_SEND_ANY_CHANGE | LINEEDIT_GRAB_ON_MAP | ANXWIN_HOVER_FOCUS,
+		     LINEEDIT_SEND_ANY_CHANGE | LINEEDIT_GRAB_ON_MAP | ANXWIN_HOVER_FOCUS
+			  | LINEEDIT_SEND_FOCUS_ON | LINEEDIT_SEND_FOCUS_OFF,
 			 x,y,w,h,0, NULL,sh->object_id,"shell",NULL,0)
 {
 	shell=sh;
@@ -64,12 +66,48 @@ GraphicalShellEdit::~GraphicalShellEdit()
 {
 }
 
+int GraphicalShellEdit::send(int i)
+{
+	if (i<10) return LineEdit::send(i);
+
+	SimpleMessage *data=new SimpleMessage(NULL, i, 0, curpos,0, win_sendthis);
+	app->SendMessage(data, win_owner, win_sendthis, object_id);
+	return 0;
+}
+
 int GraphicalShellEdit::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const LaxKeyboard *d)
 {
+	//from LineEdit::send():
+	//If i==0, then the text was modified.
+	//If i==1, then enter was pressed.
+	//If i==2, then the edit got the focus.
+	//If i==3, then the edit lost the focus.
+#define GSHELL_TextChanged  0
+#define GSHELL_Enter        1
+#define GSHELL_FocusIn      2
+#define GSHELL_FocusOut     3
+#define GSHELL_HistoryUp    10
+#define GSHELL_HistoryDown  11
+#define GSHELL_Tab          12
+#define GSHELL_ShiftTab     13
+#define GSHELL_Esc          14
+
 	if (ch==LAX_Esc) {
 		 //turn off gshell
-		dynamic_cast<ViewerWindow*>(shell->CurrentWindow(NULL)->win_parent)->SelectTool(shell->id);
+		send(GSHELL_Esc);
 		return 0;
+
+	} else if (ch==LAX_Up) {
+		send(GSHELL_HistoryUp);
+		return 0;
+
+	} else if (ch==LAX_Down) {
+		send(GSHELL_HistoryDown);
+		return 0;
+
+	} else if (ch=='\t') {
+		if ((state&LAX_STATE_MASK)==0) send(GSHELL_Tab);
+		else if ((state&LAX_STATE_MASK)==ShiftMask) send(GSHELL_ShiftTab);
 	}
 
 	return LineEdit::CharInput(ch,buffer,len,state,d);
@@ -86,23 +124,20 @@ int GraphicalShellEdit::CharInput(unsigned int ch,const char *buffer,int len,uns
 GraphicalShell::GraphicalShell(int nid,Displayer *ndp)
 	: anInterface(nid,ndp),
 	  history(2),
-	  completion(2)
+	  completion(0)
 {
-	showdecs=0;
-	doc=NULL;
-	sc=NULL;
-	interface_type=INTERFACE_Overlay;
-	le=NULL;
-	active=0;
-	pad=5;
-	boxcolor.rgbf(.5,.5,.5);
-
-	placement_gravity=LAX_BOTTOM;
-	showcompletion=0;
+	base_init();
 }
 
 GraphicalShell::GraphicalShell(anInterface *nowner,int nid,Displayer *ndp)
-	: anInterface(nowner,nid,ndp) 
+	: anInterface(nowner,nid,ndp),
+	  history(2),
+	  completion(0)
+{
+	base_init();
+}
+
+void GraphicalShell::base_init()
 {
 	showdecs=0;
 	doc=NULL;
@@ -112,6 +147,11 @@ GraphicalShell::GraphicalShell(anInterface *nowner,int nid,Displayer *ndp)
 	active=0;
 	pad=10;
 	boxcolor.rgbf(.5,.5,.5);
+	showerror=0;
+	currenthistory=-1;
+	tablevel=-1;
+	numresults=0;
+	searchterm=NULL;
 
 	placement_gravity=LAX_BOTTOM;
 	showcompletion=0;
@@ -123,6 +163,7 @@ GraphicalShell::~GraphicalShell()
 
 	if (doc) doc->dec_count();
 	if (sc) sc->dec_count();
+	if (searchterm) delete[] searchterm;
 }
 
 const char *GraphicalShell::Name()
@@ -207,6 +248,8 @@ int GraphicalShell::Update()
 	//context.push("selection",viewport->selection);
 	//context.pushOrSet("",);
 
+	calculator.InstallVariables(&context);
+
 	//-----
 	//contextdef.pushVariable("viewport",NULL,NULL, v,0);
 	//contextdef.pushVariable("tool",    NULL,NULL, v,0);
@@ -233,12 +276,14 @@ int GraphicalShell::Update()
 		}
 	}
 
+	menuinfoDump(&tree,0);
+
 	return 0;
 }
 
 int GraphicalShell::UpdateCompletion()
 {
-	tree.Search(le->GetCText(),1,1);
+	numresults=tree.Search(searchterm,1,1);
 	return 0;
 }
 
@@ -272,6 +317,13 @@ void GraphicalShell::ViewportResized()
 	}
 }
 
+void GraphicalShell::UpdateSearchTerment(const char *str,int pos)
+{
+	//viewport.blah|  
+	//viewport.spread.1.|
+	makestr(searchterm,str);
+}
+
 /*! Return 0 for menu item processed, 1 for nothing done.
  */
 int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
@@ -286,16 +338,14 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			areas.flush();
 			needtodraw=1;
 		}
-		if (type==0) {
+
+		if (type==GSHELL_TextChanged) {
+			showerror=0;
+			showcompletion=1;
+			tablevel=-1;
+			UpdateSearchTerm(s->str,s->info3);
 			if (!isblank(s->str)) {
 				 //text was changed
-				ObjectDef *def;
-				for (int c=0; c<context.n(); c++) {
-					if (strcasestr(context.key(c),s->str)==context.key(c)) {
-						def= context.value(c)->GetObjectDef();
-						if (def) areas.push(def);
-					}
-				}
 			} else {
 				tree.ClearSearch();
 			}
@@ -303,25 +353,120 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 
-		} else if (type==1) {
+		} else if (type==GSHELL_FocusIn) {
+			showcompletion=0;
+			needtodraw=1;
+			return 0;
+
+		} else if (type==GSHELL_FocusOut) {
+			showcompletion=1;
+			needtodraw=1;
+			return 0;
+
+		} else if (type==GSHELL_Enter) {
 			 //enter pressed
 			//execute command
 			char *command=le->GetText();
+			if (currenthistory>=0) history.remove(history.n);
+			currenthistory=-1;
+			tablevel=-1;
+
 			if (isblank(command)) return 0;
 			int answertype;
 			char *result=calculator.In(command,&answertype);
+			if (!isblank(result)) PostMessage(result);
 
 			 //update history
 			if (answertype==1 || answertype==2) {
 				 //successful command
 				le->SetText("");
-				history.push(command);
-				PostMessage(result);
+				 //add, but not if is same as top of history stack!
+				if (!history.n || (history.n && strcmp(history.e[history.n-1],command))) history.push(command);
+			} else showerror=1;
+			if (answertype==1 && !isblank(result)) {
+				 //add, but not if is same as top of history stack! for instance a simple number input, don't add twice
+				if (!history.n || (history.n && strcmp(history.e[history.n-1],result))) history.push(result);
 			}
-			if (answertype==1 && !isblank(result)) history.push(result);
 			
 			UpdateCompletion();
 			needtodraw=1;
+			return 0;
+
+		} else if (type==GSHELL_Esc) {
+			if (currenthistory!=-1 || tablevel!=-1) {
+				 //escape from history browsing
+				EscapeBrowsing();
+				needtodraw=1;
+				return 0;
+			}
+
+			if (!isblank(le->GetCText())) {
+				 //escape when there is text just clears text
+				le->SetText("");
+				tree.ClearSearch();
+				UpdateCompletion();
+				needtodraw=1;
+				return 0;
+			}
+
+			 //else escape from whole thing!
+			le->SetText("");
+			dynamic_cast<ViewerWindow*>(viewport->win_parent)->SelectTool(id);
+			return 0;
+
+		} else if (type==GSHELL_HistoryUp) {
+			if (history.n==0) return 0;
+			if (currenthistory==-1) {
+				currenthistory=history.n-1;
+				history.push(le->GetText()); //GetText returns a new'd char[]
+				if (currenthistory>=0) le->SetText(history.e[currenthistory]);
+
+			} else if (currenthistory!=0) {
+				currenthistory--;
+				le->SetText(history.e[currenthistory]);
+			}
+			return 0;
+
+		} else if (type==GSHELL_HistoryDown) {
+			if (history.n==0) return 0;
+			if (currenthistory>=0) {
+				currenthistory++;
+				le->SetText(history.e[currenthistory]);
+				if (currenthistory==history.n-1) {
+					 //is on working string
+					le->SetText(history.e[history.n-1]);
+					history.remove(history.n-1);
+					currenthistory=-1;
+				}
+			}
+			return 0;
+
+		} else if (type==GSHELL_Tab) {
+			if (numresults==0) return 0;
+			if (tablevel==-1) history.push(le->GetText());
+			tablevel++;
+			if (tablevel==numresults) tablevel=-1;
+			if (tablevel==-1) {
+				le->SetText(history.e[history.n-1]);
+				history.remove(history.n-1);
+				return 0;
+			}
+			int i=tablevel+1;
+			UpdateFromTab(&tree,i);
+			return 0;
+
+		} else if (type==GSHELL_ShiftTab) {
+			if (numresults==0) return 0;
+			if (tablevel==-1) history.push(le->GetText());
+			tablevel--;
+			if (tablevel<-1) tablevel=numresults-1;
+			if (tablevel==-1) {
+				le->SetText(history.e[history.n-1]);
+				history.remove(history.n-1);
+				return 0;
+			}
+			int i=tablevel+1;
+			UpdateFromTab(&tree,i);
 			return 0;
 		}
 
@@ -342,6 +487,73 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 
 	return 1;
 }
+
+//! Revert any browsing mode to normal edit mode.
+void GraphicalShell::EscapeBrowsing()
+{
+	if (currenthistory!=-1) {
+		 //escape from history browsing
+		le->SetText(history.e[history.n-1]);
+		history.remove(history.n-1);
+		currenthistory=-1;
+		needtodraw=1;
+		return;
+
+	} else if (tablevel!=-1) {
+		 //escape from tab browsing
+		le->SetText(history.e[history.n-1]);
+		history.remove(history.n-1);
+		tablevel=-1;
+		needtodraw=1;
+		return;
+	}
+}
+
+//! Set edit text to a search result.
+void GraphicalShell::UpdateFromTab(MenuInfo *menu, int &i)
+{
+	if (tablevel==-1) {
+		//***install non-result string
+		return;
+	}
+
+	MenuItem *mi, *mii;
+
+	for (int c=0; c<menu->n(); c++) {
+		mi=menu->e(c);
+		if (mi->state&MENU_SEARCH_HIT) {
+			mii=mi;
+			i--;
+			if (i<0) return; //already found what we were looking for!
+			if (i==0) {
+				char *str=NULL;
+				TextFromItem(mii,str);
+				le->SetText(str);
+				delete[] str;
+				i=-1;
+				return;
+			}
+		}
+		if (!(mi->state&(MENU_SEARCH_PARENT|MENU_SEARCH_HIT))) continue;
+
+		if (!mi->GetSubmenu(0)) continue;
+		UpdateFromTab(mi->GetSubmenu(0), i);
+	}
+}
+
+/*! Recursively build the search result name.
+ */
+void GraphicalShell::TextFromItem(MenuItem *mii,char *&str)
+{
+	if (!mii) return;
+	MenuInfo *mif=mii->parent;
+	if (mif && mif->parent) {
+		TextFromItem(mif->parent, str);
+		appendstr(str,".");
+	}
+	appendstr(str,mii->name);
+}
+
 
 /*! incs count of ndoc if ndoc is not already the current document.
  *
@@ -411,7 +623,7 @@ int GraphicalShell::Refresh()
 	needtodraw=0;
 
 	dp->DrawScreen();
-	dp->NewFG(&boxcolor);
+	if (showerror) dp->NewFG(.7,0.,0.); else dp->NewFG(&boxcolor);
 	dp->drawrectangle(box.minx,box.miny, box.maxx-box.minx, box.maxy-box.miny, 1);
 
 

@@ -1507,6 +1507,7 @@ int ValueHash::push(const char *name,const char *value)
 /*! Increments obj count. */
 int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
 {
+	DBG cerr <<"pushObject: "<<(obj?obj->whattype():"null")<<endl;
 	if (dynamic_cast<Value*>(obj)) return push(name,dynamic_cast<Value*>(obj));
 
 	Value *v=new ObjectValue(obj);

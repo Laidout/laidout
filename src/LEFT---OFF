@@ -98,17 +98,24 @@ WATCH OUT for when preview file is OLDER than original file!!
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
 gshell:
-  shift up/down to browse history
-  red box for errors, reposition cursor
-  normal up/down for showing completion
-  tab/shift tab for completion, move showing
-  store initial search term while in completion mode
-  backspace while in completion mode removes, installs previous search term
+  DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
+  DONE *** not putting in the objects to dict
+  DONE red box for errors
+  DONE *** laidoutcalculator::dereference() seems to destroy value, as objectdef of zoomin
+  DONE up/down to browse history
+  DONE *** need to be able to tab through search term
+  DONE store initial search term while in completion mode
+  *** not getting options for tool and object!!
+  control-r start history search?
+  shift up/down for showing completion
   clickable search results
   search within area, not total tree
   when in function, search among parameter names also
   text delete to nothing should only show the top areas in search results
   be able to move the box to top or to bottom
+  reposition cursor to error
+  for parameters, facility for special edit dodads
+  tab/shift tab for completion, move showing?
 
 
 add more explicit lpoptions howto for help, in lieu of functional print dialog

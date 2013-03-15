@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2012-2013 by Tom Lechner
 //
 
 #include "limagedata.h"
@@ -83,6 +83,14 @@ void LImageData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 		}
 	}
 	if (!foundconfig) ImageData::dump_in_atts(att,flag,context);
+}
+
+Value *LImageData::duplicate()
+{
+	SomeData *dup=LaxInterfaces::somedatafactory->newObject("ImageData");
+	ImageData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dynamic_cast<Value*>(dup);
 }
 
 LaxInterfaces::SomeData *LImageData::duplicate(LaxInterfaces::SomeData *dup)
