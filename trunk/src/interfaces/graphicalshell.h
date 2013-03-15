@@ -59,6 +59,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	int showcompletion;
 	Laxkit::MenuInfo tree;
 
+	virtual void UpdateSearchTerm(const char *str,int pos);
 	virtual int scan(int x,int y);
 	virtual int Setup();
 	void base_init();
