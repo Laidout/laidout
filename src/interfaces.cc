@@ -33,8 +33,8 @@
 #include "dataobjects/groupinterface.h"
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
+#include "dataobjects/limageinterface.h"
 #include "interfaces/paperinterface.h"
-#include "interfaces/limageinterface.h"
 #include "interfaces/graphicalshell.h"
 
 
