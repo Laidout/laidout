@@ -121,6 +121,10 @@ DrawObjectChain::~DrawObjectChain()
  *
  * This might be a straight affine matrix, or alignment to the parent's bounding box,
  * or alignment to a parent anchor point, or code.
+ *
+ * The affine matrix found with drawableobject->m() is the actual visual appearance
+ * at any given time. It is computed based on settings found in 
+ * DrawableObject::parent_link.
  */
 
 DrawableParentLink::DrawableParentLink()
@@ -131,7 +135,8 @@ DrawableParentLink::DrawableParentLink()
 }
 
 DrawableParentLink::~DrawableParentLink()
-{}
+{
+}
 
 
 //----------------------------- DrawableObject ---------------------------------
@@ -150,7 +155,7 @@ DrawableParentLink::~DrawableParentLink()
 DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 {
 	clip=NULL;
-	wrap_path=inset_path=NULL;
+	clip_path=wrap_path=inset_path=NULL;
 	autowrap=autoinset=0;
 	locks=0;
 
@@ -164,6 +169,7 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 DrawableObject::~DrawableObject()
 {
 	if (clip) clip->dec_count();
+	if (clip_path) clip_path->dec_count();
 	if (wrap_path) wrap_path->dec_count();
 	if (inset_path) inset_path->dec_count();
 
@@ -206,6 +212,91 @@ LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 	}
 
 	return dup;
+}
+
+/*! Default is to return clip_path if it exists, or a bounding box path.
+ */
+LaxInterfaces::PathsData *DrawableObject::GetAreaPath()
+{
+	if (clip_path) return clip_path;
+
+	 //contsruct bounding box path
+	clip_path=new PathsData;
+	clip_path->appendRect(minx,miny, maxx-minx,maxy-miny);
+	return clip_path;
+}
+
+/*! Return an inset path, may or may not be inset_path, where streams are laid into.
+ *
+ * if no inset_path, then return GetAreaPath().
+ */
+LaxInterfaces::PathsData *DrawableObject::GetInsetPath()
+{
+	if (inset_path) return inset_path;
+	return GetAreaPath();
+}
+
+/*! Path inside which external streams can't go.
+ *
+ * Default is to return wrap_path. Returns NULL if no wrap_path.
+ */
+LaxInterfaces::PathsData *DrawableObject::GetWrapPath()
+{
+	if (wrap_path) return wrap_path;
+	return NULL;
+}
+
+
+
+class Anchor
+{
+  public:
+	char *name;
+	flatpoint p, p2;
+	int anchor_type; //alignment point in bounding box,
+					 //or absolute coordinate
+					 //or segment
+					 //or infinite line
+};
+
+/*! Default is just the 9 points of corners, midpoints, and the middle of bounding boxes.
+ */
+int DrawableObject::NumAnchors()
+{ return 9; }
+
+/*! Like GetAnchor(), but by index rather than id.
+ * anchor_index must be in [0..NumAnchors()).
+ */
+int DrawableObject::GetAnchorI(int anchor_index, flatpoint *p, int transform)
+{
+	if (anchor_index<0 || anchor_index>=9) return 0;
+	return GetAnchor(ANCHOR_ul+anchor_index,p,transform);
+}
+
+/*! Return 1 for anchor found, else 0. If transform!=0, then return the point 
+ * in parent coordinates. Default is to instead return object coordinates.
+ *
+ * Default are anchors in bounding box.
+ */
+int DrawableObject::GetAnchor(int anchor_id, flatpoint *p, int transform)
+{
+	int found=0;
+	if (anchor_id==ANCHOR_ul) { *p=flatpoint(minx,maxy); found=1; }
+	else if (anchor_id==ANCHOR_um) { *p=flatpoint((minx+maxx)/2,maxy); found=1; }
+	else if (anchor_id==ANCHOR_ur) { *p=flatpoint(maxx,maxy); found=1; }
+	else if (anchor_id==ANCHOR_ml) { *p=flatpoint(minx,(maxy+miny)/2); found=1; }
+	else if (anchor_id==ANCHOR_mm) { *p=flatpoint((minx+maxx)/2,(maxy+miny)/2); found=1; }
+	else if (anchor_id==ANCHOR_mr) { *p=flatpoint(maxx,(maxy+miny)/2); found=1; }
+	else if (anchor_id==ANCHOR_ll) { *p=flatpoint(minx,miny); found=1; }
+	else if (anchor_id==ANCHOR_lm) { *p=flatpoint((minx+maxx)/2,miny); found=1; }
+	else if (anchor_id==ANCHOR_lr) { *p=flatpoint(maxx,miny); found=1; }
+
+	if (found) {
+		if (transform) *p=transform_point(m(),*p);
+		return 1;
+	}
+
+	return 0;
 }
 
 //! Push obj onto the stack. (new objects only!)
@@ -701,7 +792,7 @@ ObjectDef *DrawableObject::makeObjectDef()
 	ObjectDef *objectdef=stylemanager.FindDef("Group");
 	if (objectdef) objectdef->inc_count();
 	else {
-		objectdef=makeAffineObjectDef();
+		objectdef=makeAffineObjectDef(); //always makes a new def
 		makestr(objectdef->name,"Group");
 		makestr(objectdef->Name,_("Group"));
 		makestr(objectdef->description,_("Group of drawable objects, and base of all drawable objects"));

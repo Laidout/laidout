@@ -19,6 +19,7 @@
 #include <lax/interfaces/aninterface.h>
 #include <lax/interfaces/objectinterface.h>
 #include <lax/interfaces/somedata.h>
+#include "../calculator/values.h"
 
 
 
@@ -28,7 +29,7 @@ namespace Laidout {
 
 //----------------------------- GroupInterface -----------------------
 
-class GroupInterface : public LaxInterfaces::ObjectInterface
+class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 {
   protected:
 	int rx,ry;
@@ -39,7 +40,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	GroupInterface(int nid,Laxkit::Displayer *ndp);
 	virtual ~GroupInterface();
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
-	//virtual const char *whattype() { return "ObjectInterface"; }
+	virtual const char *whattype() { return "ObjectInterface"; }
 	virtual const char *whatdatatype() { return "Group"; }
 	virtual anInterface *duplicate(anInterface *dup);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
@@ -52,6 +53,13 @@ class GroupInterface : public LaxInterfaces::ObjectInterface
 	virtual int LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse);
 	virtual int GrabSelection(unsigned int state);
 	virtual int ToggleGroup();
+
+	//from value
+	virtual int type() { return VALUE_Fields; }
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual Value *dereference(const char *extstring, int len);
 };
 
 

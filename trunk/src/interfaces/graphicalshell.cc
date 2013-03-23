@@ -321,6 +321,12 @@ void GraphicalShell::UpdateSearchTerm(const char *str,int pos)
 {
 	//viewport.blah|  
 	//viewport.spread.1.|
+	//object.scale((1,0), | ) <- get def of function, keep track of which parameters used?
+	//object.1.(3+23).|
+	//
+	int len=strlen(str);
+	if (pos<0) pos=len;
+
 	makestr(searchterm,str);
 }
 

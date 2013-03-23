@@ -21,6 +21,7 @@
 #include "lpathsdata.h"
 #include "lgradientdata.h"
 #include "limagepatch.h"
+#include "lsomedataref.h"
 
 #include <lax/lists.cc>
 
@@ -100,6 +101,14 @@ LaxInterfaces::SomeData *createLColorPatchData(LaxInterfaces::SomeData *refobj)
 }
 
 
+//---------------------------- LSomeDataRef --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLSomeDataRef(LaxInterfaces::SomeData *refobj)
+{
+	return new LSomeDataRef();
+}
+
 
 
 //---------------------------- SomeDataFactory Setup --------------------------
@@ -117,6 +126,8 @@ void InitializeDataFactory()
 	lobjectfactory.DefineNewObject(LAX_GRADIENTDATA,  "GradientData",  createLGradientData,NULL);
 	lobjectfactory.DefineNewObject(LAX_IMAGEPATCHDATA,"ImagePatchData",createLImagePatchData,NULL);
 	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
+	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
+	lobjectfactory.DefineNewObject(LAX_SOMEDATAREF,   "SomeDataRef",   createLSomeDataRef,NULL);
 }
 
 

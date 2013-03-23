@@ -11,10 +11,10 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2013 by Tom Lechner
 //
-#ifndef INTERFACES_NUPINTERFACE_H
-#define INTERFACES_NUPINTERFACE_H
+#ifndef INTERFACES_SHAPEINTERFACE_H
+#define INTERFACES_SHAPEINTERFACE_H
 
 #include <lax/interfaces/aninterface.h>
 #include <lax/refptrstack.h>
@@ -28,7 +28,7 @@ namespace Laidout {
 
 
 //---------------------------------- ShapeInfo -----------------------------------------
-class ShapeInfo : public Laxkit::RefCounted
+class ShapeInfo : public Laxkit::anObject
 {
   public:
 	char *name;

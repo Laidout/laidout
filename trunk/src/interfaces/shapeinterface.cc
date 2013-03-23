@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2013 by Tom Lechner
 //
 
 
@@ -112,7 +112,7 @@ ShapeInterface::~ShapeInterface()
 
 
 const char *ShapeInterface::Name()
-{ return _("N-up"); }
+{ return _("Shape"); }
 
 
 
@@ -121,7 +121,7 @@ const char *ShapeInterface::Name()
  */
 Laxkit::MenuInfo *ShapeInterface::ContextMenu(int x,int y,int deviceid)
 {
-	MenuInfo *menu=new MenuInfo(_("N-up Interface"));
+	MenuInfo *menu=new MenuInfo(_("Shape Interface"));
 
 	menu->AddItem(dirname(LAX_LRTB),LAX_LRTB,LAX_ISTOGGLE|(shapeinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF,1);
 	menu->AddItem(dirname(LAX_LRBT),LAX_LRBT,LAX_ISTOGGLE|(shapeinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF,1);

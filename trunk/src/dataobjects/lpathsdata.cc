@@ -43,6 +43,14 @@ void LPathsData::FindBBox()
 	PathsData::FindBBox();
 }
 
+/*! Provide final pointin() definition.
+ */
+int LPathsData::pointin(flatpoint pp,int pin)
+{
+	return PathsData::pointin(pp,pin);
+}
+
+
 void LPathsData::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';

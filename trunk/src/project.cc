@@ -15,6 +15,7 @@
 //
 
 #include <lax/interfaces/dumpcontext.h>
+#include <lax/interfaces/somedataref.h>
 #include <lax/fileutils.h>
 #include <lax/refptrstack.cc>
 #include "project.h"
@@ -364,6 +365,8 @@ int Project::Load(const char *file,ErrorLog &log)
 
 	fclose(f);
 	setlocale(LC_ALL,"");
+
+	ClarifyRefs(log);
 	return 0;
 }
 
@@ -416,6 +419,108 @@ int Project::initDirs()
 	delete[] dir;
 	return 0;
 }
+
+
+//! Return 1+(number of documents), for docs
+int Project::n()
+{ return 1+docs.n; }
+
+/*! If document is not loading in project, then skip it.
+ */
+Laxkit::anObject *Project::object_e(int i)
+{
+	if (i==0) return &limbos;
+	if (i>0 && i<=docs.n && docs.e[i-1]->doc) return docs.e[i-1]->doc;
+	return NULL;
+}
+
+const char *Project::object_e_name(int i)
+{ 
+	if (i==0) return NULL;
+	if (i>0 && i<=docs.n && docs.e[i-1]->name) return docs.e[i-1]->name;
+	if (i>0 && i<=docs.n && docs.e[i-1]->doc) return docs.e[i-1]->doc->Name(0);
+	return NULL;
+}
+
+
+/*! Step through all drawable objects looking for unresolved somedatarefs.
+ * If found, find matching reference and install object. If not found,
+ * issue a warning.
+ *
+ * This will be called after loading a document to resolve unlinked clones.
+ */
+int Project::ClarifyRefs(ErrorLog &log)
+{
+	//need to search in docs->pages, limbos, and papergroup->objs
+	FieldPlace first; first.push(0);
+	FieldPlace place; place=first;
+	anObject *obj=NULL;
+	SomeDataRef *ref;
+	SomeData *o;
+	int c;
+	int numrefs=0;
+
+	while (1) {
+		DBG cerr <<"refs: "<<(obj?obj->whattype():"(no obj)")<<endl;
+
+		if (obj && !strcmp(obj->whattype(),"SomeDataRef")) {
+			ref=dynamic_cast<SomeDataRef*>(obj);
+
+			if (ref->thedata) {
+				//already linked
+
+			} if (!ref->thedata_id) {
+				log.AddMessage(_("Missing clone id!"),ERROR_Warning);
+
+			} else {
+				o=FindObject(ref->thedata_id);
+				if (o) {
+					ref->Set(o,1);
+					numrefs++;
+				} else {
+					log.AddMessage(_("Missing clone object!"),ERROR_Warning);
+				}
+			}
+		}
+
+		obj=NULL;
+		c=nextObject(place,0,Next_Increment, &obj);
+		if (c==Next_Error) break;
+		if (first==place) break;
+	}
+
+	return numrefs;
+}
+
+LaxInterfaces::SomeData *Project::FindObject(const char *id)
+{
+	//need to search in docs->pages, limbos, and papergroup->objs
+	FieldPlace first; first.push(0);
+	FieldPlace place(first);
+	anObject *obj=NULL;
+	SomeData *o;
+	int c;
+
+	while (1) {
+		if (obj && dynamic_cast<SomeData*>(obj)) {
+			o=dynamic_cast<SomeData*>(obj);
+
+			if (!o || !o->Id()) {
+				//skip if no id to match!
+			} else if (!strcmp(o->Id(),id)) {
+				return o;
+			}
+		}
+
+		obj=NULL;
+		c=nextObject(place,0,Next_Increment, &obj);
+		if (c==Next_Error) break;
+		if (first==place) break;
+	}
+
+	return NULL;
+}
+
 
 } // namespace Laidout
 

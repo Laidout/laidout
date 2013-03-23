@@ -22,9 +22,11 @@ objs= \
 	epsdata.o \
 	limagepatch.o \
 	limagedata.o \
+	limageinterface.o \
 	lgradientdata.o \
 	lpathsdata.o \
 	mysterydata.o \
+	lsomedataref.o \
 	printermarks.o 
 
 

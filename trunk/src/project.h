@@ -38,7 +38,7 @@ class ProjDocument
 };
 
 //------------------------- Project ------------------------------------
-class Project : public LaxFiles::DumpUtility
+class Project : public LaxFiles::DumpUtility, public ObjectContainer
 {
  public:
 	char *name,*filename,*dir;
@@ -70,6 +70,14 @@ class Project : public LaxFiles::DumpUtility
 
 	virtual Document *Find(const char *name, int howmatch);
 	virtual int valid();
+	virtual int ClarifyRefs(ErrorLog &log);
+	virtual LaxInterfaces::SomeData *FindObject(const char *id);
+
+	 //from ObjectContainer:
+	virtual int n();
+    virtual Laxkit::anObject *object_e(int i);
+    virtual const char *object_e_name(int i);
+    virtual const double *object_transform(int i) { return NULL; }
 };
 
 

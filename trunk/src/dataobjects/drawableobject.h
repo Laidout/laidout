@@ -61,9 +61,11 @@ class DrawableParentLink
 {
   public:
 	int type; //straight matrix, align points, align by parent anchor, code
-	flatpoint anchor1,anchor2;
+	flatpoint anchor1; //alignment to parent bounding box
+	flatpoint anchor2; //where in bounding box to align to parent point from anchor1
 	int parent_anchor_id;
-	int code_id;
+	int code_id; //id of a TextObject with runnable code that returns an offset
+	Laxkit::Affine offset_m; //this is an offset from where the other settings position it
 
 	DrawableParentLink();
 	virtual ~DrawableParentLink();
@@ -71,6 +73,23 @@ class DrawableParentLink
 
 
 //----------------------------- DrawableObject ---------------------------------
+
+/*! Used in DrawableObject::GetAnchor().
+ * Custom anchors must have a value of ANCHOR_MAX or greater.
+ */
+enum AnchorTypes {
+	ANCHOR_ul=1,
+	ANCHOR_um,
+	ANCHOR_ur,
+	ANCHOR_ml,
+	ANCHOR_mm,
+	ANCHOR_mr,
+	ANCHOR_ll,
+	ANCHOR_lm,
+	ANCHOR_lr,
+	ANCHOR_MAX
+};
+
 class DrawableObject :  virtual public ObjectContainer,
 						virtual public LaxInterfaces::SomeData,
 						virtual public Laxkit::Tagged
@@ -83,6 +102,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	char locked, visible, prints, selectable;
 
 	SomeData *clip; //If not a PathsData, then is an object for a softmask
+	LaxInterfaces::PathsData *clip_path;
 	LaxInterfaces::PathsData *wrap_path;
 	LaxInterfaces::PathsData *inset_path;
 	double autowrap, autoinset; //distance away from default to put the paths when auto generated
@@ -119,9 +139,13 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	
 	 //new functions for DrawableObject
-	LaxInterfaces::PathsData *GetAreaPath();
-	LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
-	LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
+	virtual LaxInterfaces::PathsData *GetAreaPath();
+	virtual LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
+	virtual LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
+
+	virtual int NumAnchors();
+	virtual int GetAnchorI(int anchor_index, flatpoint *p, int transform);
+	virtual int GetAnchor(int anchor_id, flatpoint *p, int transform);
 
 
 	 //Group specific functions:

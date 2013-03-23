@@ -33,6 +33,8 @@ select none, select doc, viewport jumps around... it should stay the same area
 
 ---- bugs:
 
+datarefs on images scale not like images
+
 tooltips work intermittently
 
 html dump must convert chars to entities
@@ -118,7 +120,7 @@ gshell:
   tab/shift tab for completion, move showing?
 
 
-add more explicit lpoptions howto for help, in lieu of functional print dialog
+turning off overlays should revert icon to current tool
 
 debug multi head? seems to crash when showing with projectors plugged in
 	screen info should return x,y,w,h, with flag saying it is part of a whole.
@@ -165,6 +167,7 @@ customizable object child relationships to parent, rather than simple transform
   transform relative to alignment point of parent (50,50) for center, for instance
   transform relative to absolute point other than origin, as a function of parent?
   	 --> like parent->getanchor(id), getbasisanchor(id)
+	 --> anchors would have number id, but be able to be named for scripting purposes
 
 make pdf default output format for sending to lp
 
@@ -220,6 +223,10 @@ for range on import/export, should have a range parser that accepts unconnected 
 make a Change imposition, versus Edit imposition, to allow jumping straight to default editor for imposition type
 
 need laidout import
+
+for clones, it would be easier to have a "defs" group or something, so deleting the original of a ref will
+  not cause problems. When deleting objects, must then take care to update parent, so it is immediately known
+  if an object is without a home.
 
 paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
 pdf optimize jpg dump, compress image data
@@ -773,6 +780,8 @@ DONE RulerWindow::smallnumbers font swapping is flooding debug info
 DONE selecting fails for meshes!!! Grrrr!
 DONE color mesh memory corruption
 DONE patch moving things frelled, load monkey.doc and try to move things
+
+DONE add more explicit lpoptions howto for help, in lieu of functional print dialog
 
 
 

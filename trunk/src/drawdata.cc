@@ -78,7 +78,7 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		return;
 
 	} else if (!strcmp(data->whattype(),"SomeDataRef")) {
-		SomeDataRef *ref=((SomeDataRef *)data);
+		SomeDataRef *ref=dynamic_cast<SomeDataRef *>(data);
 		data=ref->thedata;
 		if (data) {
 			//dp->PushAndNewTransform(ref->m()); // insert transform first
