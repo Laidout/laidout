@@ -459,7 +459,7 @@ BlockInfo::BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int c
 
 BlockInfo::~BlockInfo()
 {
-	if (scope_namespace) scope_namespace->inc_count();
+	if (scope_namespace) scope_namespace->dec_count();
 	if (list) list->dec_count();
 	if (word) delete[] word;
 }

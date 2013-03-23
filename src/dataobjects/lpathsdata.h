@@ -36,6 +36,7 @@ class LPathsData : public DrawableObject, public LaxInterfaces::PathsData
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual void FindBBox();
+	virtual int pointin(flatpoint pp,int pin=1);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 };
 

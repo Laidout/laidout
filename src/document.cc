@@ -836,6 +836,9 @@ int Document::Load(const char *file,ErrorLog &log)
 	imposition->NumPages(pages.n);
 	SyncPages(0,-1);
 
+	laidout->project->ClarifyRefs(log);
+	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
+
 	if (!strstr(file,".laidout") && !strstr(file,"/templates/")) //***bit of a hack to not touch templates
 		touch_recently_used(file,"application/x-laidout-doc","Laidout",NULL);
 

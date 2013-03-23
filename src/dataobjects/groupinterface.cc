@@ -24,6 +24,8 @@
 #include "../project.h"
 #include "../viewwindow.h"
 #include "../language.h"
+#include "../stylemanager.h"
+#include "../calculator/shortcuttodef.h"
 
 #include <iostream>
 using namespace std;
@@ -423,25 +425,108 @@ int GroupInterface::Refresh()
 	if (!needtodraw) return 0;
 
 
-
 	ObjectInterface::Refresh();
 
 	if (selection.n!=1) return 0;
 
-	 //if we are moving only one object, then put various do dads around it.
+	 //if we are moving only one object, then put various doodads around it.
 	SomeData *obj=selection.e[0]->obj;
 	double m[6];
 	if (!strcmp(obj->whattype(),"SomeDataRef")) {
 		 //is link
 		viewport->transformToContext(m,selection.e[0],0,1);
-		flatpoint p=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->miny))/2);
-		dp->drawpoint(p, 10,0);
+		flatpoint p =transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
+		flatpoint p2=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->miny))/2); //edge midpoint
+
+		p=dp->realtoscreen(p);
+		p2=dp->realtoscreen(p2);
+
+		flatpoint v=p2-p;
+		v.normalize();
+		p=p2+v*maxtouchlen;
+
+		dp->DrawScreen();
+		dp->NewFG(0.,.7,0.);
+		dp->drawpoint(p, maxtouchlen/2,0);
+		dp->DrawReal();
 		//dp->PushAndNewTransform(m);
 		//dp->PopAxes();
 	}
 
+	 //parent link
+	//****
+	
+	 //object edit zone
+	//***
+	
+	 //transform constraints
+	//***
 
 	return 0;
+}
+
+//! Returns this, but count is incremented.
+Value *GroupInterface::duplicate()
+{
+    this->inc_count();
+    return this;
+}
+
+
+ObjectDef *GroupInterface::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("ObjectInterface");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd=new ObjectDef(NULL,"ObjectInterface",
+            _("Group Interface"),
+            _("Group Interface"),
+            VALUE_Class,
+            NULL,NULL);
+
+	if (!sc) sc=GetShortcuts();
+	ShortcutsToObjectDef(sc, sd);
+
+	stylemanager.AddObjectDef(sd,0);
+	return sd;
+}
+
+
+///*!
+// * Return
+// *  0 for success, value optionally returned.
+// * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+// *  1 for parameters ok, but there was somehow an error, so no value returned.
+// */
+//int GroupInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//	                     Value **value_ret, ErrorLog *log)
+//{
+//	return 1;
+//}
+
+/*! *** for now, don't allow assignments
+ *
+ * If ext==NULL, then assign v to replace what exists in this.
+ * Otherwise assign v to the value at the end of the extension.
+ *  
+ * Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ */
+int GroupInterface::assign(FieldExtPlace *ext,Value *v)
+{
+	 //assignments not allowed
+	return 0;
+}
+
+Value *GroupInterface::dereference(const char *extstring, int len)
+{
+	return NULL;
 }
 
 

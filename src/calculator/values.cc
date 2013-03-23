@@ -902,7 +902,10 @@ int ObjectDef::pushParameter(const char *nname,const char *nName,const char *nde
 
 	int c;
 	if (!fields || !fields->n) c=push(newdef);//absorbs
-	else c=fields->push(newdef);
+	else {
+		c=fields->push(newdef); //incs count
+		newdef->dec_count();
+	}
 	return c;
 }
 

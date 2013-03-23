@@ -47,7 +47,7 @@ class Guide : public LaxInterfaces::SomeData, public LaxFiles::DumpUtility
 {
  public:
 	unsigned int guidetype;
-	LaxInterfaces *guide;
+	LaxInterfaces::Path *guide;
 	unsigned long color, hcolor;
 
 	Guide();

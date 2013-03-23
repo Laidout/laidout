@@ -2403,32 +2403,6 @@ void LaidoutViewport::Refresh()
 		img->dec_count();
 	}
 
-//	 //draw object place description
-//	dp->DrawScreen();
-//	int y=win_h;
-//	ObjectContainer *objc=this;
-//	char scratch[10];
-//	const char *str;
-//	int x;
-//	dp->NewFG(coloravg(win_colors->fg,win_colors->bg));
-//	for (int c=0; c<curobj.context.n(); c++) {
-//		if (!objc) break;
-//		x=0;
-//
-//		str=objc->object_e_name(curobj.context.e(c));
-//		if (!str) {
-//			sprintf(scratch,"%d",curobj.context.e(c));
-//			str=scratch;
-//		} else if (dynamic_cast<DrawableObject*>(objc->object_e(curobj.context.e(c)))) {
-//			sprintf(scratch,"(%d) ",curobj.context.e(c));
-//			x+=dp->textout(0,y, scratch,-1, LAX_BOTTOM|LAX_LEFT);
-//		}
-//		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
-//		y-=dp->textheight();
-//
-//		objc=dynamic_cast<ObjectContainer*>(objc->object_e(curobj.context.e(c)));
-//	}
-//	dp->DrawReal();
 
 
 	//***for lack of screen record for multipointer
@@ -2528,6 +2502,7 @@ int LaidoutViewport::PerformAction(int action)
 		return 0;
 
 	} else if (action==LOV_ObjectIndicator) {
+		 //switch on indicator overlay
 		ViewWindow *viewer=dynamic_cast<ViewWindow *>(win_parent); // always returns non-null
 		viewer->PerformAction(VIEW_ObjectIndicator);
 		needtodraw=1;
