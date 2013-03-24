@@ -436,7 +436,7 @@ Laxkit::anObject *Project::object_e(int i)
 
 const char *Project::object_e_name(int i)
 { 
-	if (i==0) return NULL;
+	if (i==0) return _("Limbos");
 	if (i>0 && i<=docs.n && docs.e[i-1]->name) return docs.e[i-1]->name;
 	if (i>0 && i<=docs.n && docs.e[i-1]->doc) return docs.e[i-1]->doc->Name(0);
 	return NULL;
@@ -492,6 +492,9 @@ int Project::ClarifyRefs(ErrorLog &log)
 	return numrefs;
 }
 
+/*! This is to aid in mapping unresolved clone references. For arbitrary
+ * object location, use the other find.
+ */
 LaxInterfaces::SomeData *Project::FindObject(const char *id)
 {
 	//need to search in docs->pages, limbos, and papergroup->objs
@@ -521,6 +524,44 @@ LaxInterfaces::SomeData *Project::FindObject(const char *id)
 	return NULL;
 }
 
+/*! Find an object, and put its path in found.
+ * This is useful, for instance, in locating objects referenced by other objects,
+ * when the context is lost for some reason.
+ * Return non-zero if found, else 0.
+ *
+ * \todo this is kind of a workaround for not having proper object container parenting
+ *   implemented. There are two kinds of parents, one from ObjectContainer and one
+ *   from DrawableObject. DrawableObject parents can only be other DrawableObjects,
+ *   but ObjectContainer parents can be anything derived from ObjectContainer.
+ */
+int Project::FindObject(LaxInterfaces::SomeData *data, FieldPlace &found)
+{
+	found.flush();
+
+	//need to search in docs->pages, limbos, and papergroup->objs
+	FieldPlace first; first.push(0);
+	FieldPlace place(first);
+	anObject *obj=NULL;
+	SomeData *o;
+	int c;
+
+	while (1) {
+		if (obj && dynamic_cast<SomeData*>(obj)) {
+			o=dynamic_cast<SomeData*>(obj);
+			if (o==data) {
+				found=place;
+				return place.n();
+			}
+		}
+
+		obj=NULL;
+		c=nextObject(place,0,Next_Increment, &obj);
+		if (c==Next_Error) break;
+		if (first==place) break;
+	}
+
+	return 0;
+}
 
 } // namespace Laidout
 
