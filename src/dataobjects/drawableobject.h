@@ -146,6 +146,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual int NumAnchors();
 	virtual int GetAnchorI(int anchor_index, flatpoint *p, int transform);
 	virtual int GetAnchor(int anchor_id, flatpoint *p, int transform);
+	//virtual int AddAnchor(const char *name, flatpoint pos, flatpoint align, int type);
 
 
 	 //Group specific functions:

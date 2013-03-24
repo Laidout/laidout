@@ -72,6 +72,7 @@ class Project : public LaxFiles::DumpUtility, public ObjectContainer
 	virtual int valid();
 	virtual int ClarifyRefs(ErrorLog &log);
 	virtual LaxInterfaces::SomeData *FindObject(const char *id);
+	virtual int FindObject(LaxInterfaces::SomeData *data, FieldPlace &found);
 
 	 //from ObjectContainer:
 	virtual int n();

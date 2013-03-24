@@ -14,9 +14,10 @@
 // Copyright (C) 2005-2007,2009-2013 by Tom Lechner
 //
 
-#include <lax/interfaces/somedataref.h>
 #include <lax/transformmath.h>
+#include <lax/interfaces/rectpointdefs.h>
 #include <lax/colors.h>
+#include "dataobjects/lsomedataref.h"
 #include "groupinterface.h"
 #include "../interfaces/aligninterface.h"
 #include "../interfaces/nupinterface.h"
@@ -48,6 +49,7 @@ namespace Laidout {
 GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 	: ObjectInterface(nid,ndp)
 {
+	popupcontrols=0;
 }
 
 GroupInterface::~GroupInterface()
@@ -153,10 +155,75 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 	return 1;
 }
 
+enum GroupControlTypes
+{
+	GROUP_Link=RP_MAX,
+	GROUP_Parent_Link,
+	GROUP_Constraints,
+	GROUP_Zone,
+	GROUP_Chains,
+	GROUP_Jump_To_Link,
+	GROUP_Sever_Link,
+	GROUP_MAX
+};
+
+const char *GroupInterface::hoverMessage(int p)
+{
+	if (p==GROUP_Link) return _("Clone options");
+	if (p==GROUP_Parent_Link) return _("Parent alignment options");
+	return RectInterface::hoverMessage(p);
+}
+
+/*! Called by RectInterface::scan(), for easier adaption to custom object controls.
+ */
+int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double ymag, double onepix)
+{
+	//must scan for:
+	//  link ball
+	//  parent link
+	//  constraints
+	//  zone selector
+	//  chains
+
+	 //check for Somedataref indicator
+	if (selection.n==1 && !strcmp(selection.e[0]->obj->whattype(),"SomeDataRef")) {
+		double dist=onepix*maxtouchlen*maxtouchlen/4;
+		flatpoint pp=flatpoint((somedata->minx+somedata->maxx)/2, somedata->miny-maxtouchlen/ymag);
+		DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<< norm2(p-pp)<<endl;
+		if (norm2(p-pp)<dist) return GROUP_Link;
+
+		double th=dp->textheight();
+		double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+		
+		if (popupcontrols==GROUP_Link) {
+			 //p.x,p.y, w/2,th*1.5
+			pp=dp->realtoscreen(transform_point(somedata->m(),pp));
+			pp.y+=2*th;
+			pp.x-=w/2;
+			if (pp.y+th>dp->Maxy) pp.y=dp->Maxy-th;
+			if (sp.y>pp.y-th*1.5 && sp.y<pp.y+th*1.5) {
+				if (sp.x>pp.x-w/2 && sp.x<pp.x+w/2) return GROUP_Jump_To_Link;
+				if (sp.x>pp.x+w/2 && sp.x<pp.x+w*3/2) return GROUP_Sever_Link;
+			}
+		}
+	}
+
+
+	return RP_None;
+}
+
 int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxkit::LaxMouse *mouse)
 {
 	DBG cerr <<"GroupInterface::LBDown..."<<endl;
 	int c=ObjectInterface::LBDown(x,y,state,count,mouse);
+
+	int curpoint;
+    buttondown.getextrainfo(mouse->id,LEFTBUTTON,&curpoint);
+	if (curpoint==GROUP_Link) {
+		popupcontrols=GROUP_Link;
+        PostMessage(" ");
+		return 0;
+	}
 
 	if (count==2 && selection.n==1 && strcmp(selection.e[0]->obj->whattype(),"Group")) {
 		 //double click to switch to more specific tool
@@ -166,6 +233,81 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
 	return c;
 }
 	
+int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{
+	//int curpoint;
+    //buttondown.getextrainfo(d->id,LEFTBUTTON,&curpoint);
+	if (popupcontrols==GROUP_Link) {
+		buttondown.up(d->id,LEFTBUTTON);
+
+		if (hover==GROUP_Sever_Link) {
+			LaidoutViewport *vp=((LaidoutViewport *)viewport);
+			LSomeDataRef *ref=dynamic_cast<LSomeDataRef*>(selection.e[0]->obj);
+			SomeData *obj=ref->thedata->duplicate(NULL);
+			obj->m(ref->m());
+			obj->FindBBox();
+			selection.e[0]->SetObject(obj);
+			vp->DeleteObject();
+			vp->NewData(obj,NULL);
+
+		} else if (hover==GROUP_Jump_To_Link) {
+			LaidoutViewport *vp=((LaidoutViewport *)viewport);
+
+			LSomeDataRef *ref=dynamic_cast<LSomeDataRef*>(selection.e[0]->obj);
+			SomeData *obj=ref->thedata;
+			VObjContext context;
+			context.SetObject(obj);
+			if (vp->locateObject(obj,context.context)) {
+				 //update viewport to view that object, it was found in current spread
+				vp->ChangeObject(&context,0);
+				FreeSelection();
+				AddToSelection(&context);
+			} else {
+				 //object was not found in current spread, so search in all limbos and docs
+				int found=laidout->project->FindObject(obj,context.context);
+				if (found && context.context.e(0)==0) {
+					 //object was found in a limbo
+				} else if (found) {
+					 //object was found in a document page
+					 //place 0 is doc, 1 is page number
+					vp->SelectPage(context.context.e(1));
+				} else found=0;
+
+				if (found && vp->locateObject(obj,context.context)) {
+					FreeSelection();
+					AddToSelection(&context);
+				} else {
+					PostMessage(_("Can't jump to object"));
+				}
+			}
+
+		}
+
+		popupcontrols=0;
+		hover=0;
+		needtodraw=1;
+		return 0;
+	}
+
+	return ObjectInterface::LBUp(x,y,state,d);
+}
+
+int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{
+	if (popupcontrols==GROUP_Link) {
+		int newhover=scan(x,y);
+		if (newhover!=hover) {
+			hover=newhover;
+			needtodraw|=2;
+            const char *mes=hoverMessage(hover);
+            PostMessage(mes?mes:" ");
+		}
+		return 0;
+	}
+
+	return ObjectInterface::MouseMove(x,y,state,d);
+}
+
 //! Return 1 if change, else 0.
 int GroupInterface::ToggleGroup()
 {
@@ -329,6 +471,10 @@ int GroupInterface::GrabSelection(unsigned int state)
 enum GroupInterfaceActions {
 	GIA_Align = OIA_MAX,
 	GIA_Distribute,
+	GIA_Clone,
+	GIA_CloneB,
+	GIA_Duplicate,
+	GIA_DuplicateB,
 	GIA_MAX
 };
 
@@ -343,8 +489,12 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 
 	sc=ObjectInterface::GetShortcuts();
 
-	sc->Add(GIA_Align,     'a',0,0,    "Align", _("Align selected objects"),NULL,0);
-	sc->Add(GIA_Distribute,'n',0,0,    "Nup",   _("Distribute selected objects in rows and columns"),NULL,0);
+	sc->Add(GIA_Align,     'a',0,0,    "Align",       _("Align selected objects"),NULL,0);
+	sc->Add(GIA_Distribute,'n',0,0,    "Nup",         _("Distribute selected objects in rows and columns"),NULL,0);
+	sc->Add(GIA_Clone,     ' ',ControlMask,0,"Clone", _("Clone objects"),NULL,0);
+	sc->Add(GIA_CloneB,    ' ',ControlMask,1,"CloneB",_("Clone objects, if button down"),NULL,0);
+	sc->Add(GIA_Duplicate, ' ',0,0,    "Duplicate",   _("Duplicate objects"),NULL,0);
+	sc->Add(GIA_DuplicateB,' ',0,1,    "DuplicateB",  _("Duplicate objects, if button down"),NULL,0);
 	//...go to path, image, image warp, mesh, gradient tools...?
 
 
@@ -355,6 +505,14 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	align.GetShortcuts();
 
 	return sc;
+}
+
+/*! Check for has selection, and button is down.
+ */
+int GroupInterface::GetMode()
+{
+	if (selection.n && buttondown.any(0,LEFTBUTTON)) return 1;
+	return 0;
 }
 
 int GroupInterface::PerformAction(int action)
@@ -383,6 +541,42 @@ int GroupInterface::PerformAction(int action)
 		viewport->postmessage(_("Flow objects"));
 		FreeSelection();
 		return 0;
+
+	} else if (action==GIA_Clone || action==GIA_CloneB) {
+		 // duplicate selection as clones
+		SomeData *obj;
+		LSomeDataRef *lobj;
+		for (int c=0; c<selection.n; c++) {
+			obj=NULL;
+			DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+
+			lobj=new LSomeDataRef();
+			lobj->Set(selection.e[c]->obj,0);
+			lobj->parent=dynamic_cast<DrawableObject*>(selection.e[c]->obj)->parent;
+			obj=lobj;
+			viewport->ChangeContext(selection.e[c]);
+			viewport->NewData(obj,NULL);
+			obj->dec_count();
+			PostMessage(_("Cloned."));
+		}
+		return 0;
+
+	} else if (action==GIA_Duplicate || action==GIA_DuplicateB) {
+		 // duplicate selection
+		SomeData *obj;
+		for (int c=0; c<selection.n; c++) {
+			obj=NULL;
+			DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+
+			obj=selection.e[c]->obj->duplicate(NULL);
+			obj->FindBBox();
+
+			viewport->ChangeContext(selection.e[c]);
+			viewport->NewData(obj,NULL);
+			obj->dec_count();
+			PostMessage(_("Duplicated."));
+		}
+		return 0;
 	}
 
 	return ObjectInterface::PerformAction(action);
@@ -392,31 +586,36 @@ int GroupInterface::PerformAction(int action)
 int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr <<" ****************GroupInterface::CharInput"<<endl;
-	if (ch==' ' && selection.n && buttondown.any(0,LEFTBUTTON)) {
-		SomeData *obj;
-		for (int c=0; c<selection.n; c++) {
-			obj=NULL;
-			int cloned=0;
-			if (state&ControlMask) {
-				 // duplicate selection as clones
-				cloned=1;
-				obj=new SomeDataRef(selection.e[c]->obj);
-				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
-			} else {
-				 //duplicate selection
-				cloned=0;
-				obj=selection.e[c]->obj->duplicate(NULL);
-				obj->FindBBox();
-				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
-			}
-			if (!obj) continue;
-			viewport->ChangeContext(selection.e[c]);
-			viewport->NewData(obj,NULL);
-			obj->dec_count();
-			PostMessage(cloned?_("Cloned."):_("Duplicated."));
-		}
-		return 0;
-	}
+//	if (ch==' ' && selection.n && buttondown.any(0,LEFTBUTTON)) {
+//		SomeData *obj;
+//		for (int c=0; c<selection.n; c++) {
+//			obj=NULL;
+//			int cloned=0;
+//			if (state&ControlMask) {
+//				 // duplicate selection as clones
+//				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+//
+//				cloned=1;
+//				LSomeDataRef *lobj=new LSomeDataRef();
+//				lobj->Set(selection.e[c]->obj,0);
+//				lobj->parent=selection.e[c]->obj->parent;
+//				obj=lobj;
+//			} else {
+//				 //duplicate selection
+//				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+//
+//				cloned=0;
+//				obj=selection.e[c]->obj->duplicate(NULL);
+//				obj->FindBBox();
+//			}
+//			if (!obj) continue;
+//			viewport->ChangeContext(selection.e[c]);
+//			viewport->NewData(obj,NULL);
+//			obj->dec_count();
+//			PostMessage(cloned?_("Cloned."):_("Duplicated."));
+//		}
+//		return 0;
+//	}
 	return ObjectInterface::CharInput(ch,buffer,len,state,d);
 }
 
@@ -429,7 +628,13 @@ int GroupInterface::Refresh()
 
 	if (selection.n!=1) return 0;
 
+
 	 //if we are moving only one object, then put various doodads around it.
+	 
+	DoubleBBox box;
+	GetOuterRect(&box,NULL);
+
+
 	SomeData *obj=selection.e[0]->obj;
 	double m[6];
 	if (!strcmp(obj->whattype(),"SomeDataRef")) {
@@ -447,10 +652,32 @@ int GroupInterface::Refresh()
 
 		dp->DrawScreen();
 		dp->NewFG(0.,.7,0.);
-		dp->drawpoint(p, maxtouchlen/2,0);
-		dp->DrawReal();
+		dp->drawpoint(p, maxtouchlen/2,hover==GROUP_Link?1:0);
 		//dp->PushAndNewTransform(m);
 		//dp->PopAxes();
+
+		if (popupcontrols==GROUP_Link) {
+			double th=dp->textheight();
+			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+			p.y+=2*th;
+			p.x-=w/2;
+			if (p.y+th>dp->Maxy) p.y=dp->Maxy-th;
+			dp->NewFG(.8,.8,.8);
+			if (hover==GROUP_Jump_To_Link) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x,p.y, w/2,th*1.5, 0,2*M_PI, 2);
+			if (hover==GROUP_Sever_Link) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x+w,p.y, w/2,th*1.5, 0,2*M_PI, 2);
+
+			dp->NewFG(0.,0.,0.);
+			dp->textout(p.x,p.y, _("Jump to"),-1, LAX_HCENTER|LAX_BOTTOM);
+			dp->textout(p.x,p.y+th, _("Original"),-1, LAX_HCENTER|LAX_BOTTOM);
+			p.x+=w;
+			dp->textout(p.x,p.y, _("Sever"),-1, LAX_HCENTER|LAX_BOTTOM);
+			dp->textout(p.x,p.y+th, _("Link"),-1, LAX_HCENTER|LAX_BOTTOM);
+
+		}
+
+		dp->DrawReal();
 	}
 
 	 //parent link
@@ -460,6 +687,9 @@ int GroupInterface::Refresh()
 	//***
 	
 	 //transform constraints
+	//***
+
+	 //chains
 	//***
 
 	return 0;

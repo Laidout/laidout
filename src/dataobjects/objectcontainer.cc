@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2007,2010,2011 by Tom Lechner
+// Copyright (C) 2004-2007,2010-2013 by Tom Lechner
 //
 
 
@@ -33,13 +33,15 @@ namespace Laidout {
  * \brief Abstract base class to simplify object tree searching.
  *
  * Used by Group, LaidoutViewport, Spread, and others to be a generic object 
- * container. No actual data list is defined here, only access methods.
+ * container. Access methods should be considered very temporary. They are not quite
+ * equivalent to member access in scripting. Containment is queried entirely by index numbers,
+ * not named extensions, and how those numbers are sometimes assigned depending on state at the moment,
+ * not on a standardized naming system as in scripting.
  *
+ * No actual data list is defined here, only access methods.
  * Three functions are built in: getanObject(), contains(), and nextObject(). Derived
  * classes must define their own n() and object_e().
  *
- * \todo *** use this class for a generic Lobject element? ImageData, GradientData, etc
- *   would all have a subclass with a Lobject component.
  * \todo *** do something with parent...
  */
 /*! \fn int ObjectContainer::n()
