@@ -781,6 +781,7 @@ int SignatureInterface::Refresh()
 	for (int tx=0; tx<signature->tilex; tx++) {
 	  y=signature->insetbottom;
 	  for (int ty=0; ty<signature->tiley; ty++) {
+
 		 //fill in light gray for elements with no current faces
 		 //or draw orientation arrow and number for existing faces
 		for (int rr=0; rr<signature->numhfolds+1; rr++) {
@@ -822,7 +823,7 @@ int SignatureInterface::Refresh()
 
 					pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
 					dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
-					fp=dp->realtoscreen(pts[0]);
+					fp=pts[0];
 
 					 //show range of pages at this position
 					ff=foldinfo[rrr][ccc].finalindexfront;
@@ -978,6 +979,7 @@ int SignatureInterface::Refresh()
 	dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
 
 	DrawThingTypes thing;
+	dp->DrawScreen();
 	for (int c=signature->folds.n-1; c>=-1; c--) {
 		if (c==-1) thing=THING_Circle;
 		else if (c==signature->folds.n-1 && hasfinal) thing=THING_Square;
@@ -992,6 +994,7 @@ int SignatureInterface::Refresh()
 		dp->NewFG(1.,0.,1.);
 		dp->drawthing(x+w/2,y+h/2, w/2,h/2, 0, thing); //outline
 	}
+	dp->DrawReal();
 
 	 //write out final page dimensions
 	dp->NewFG(0.,0.,0.);
@@ -1001,7 +1004,9 @@ int SignatureInterface::Refresh()
 				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->default_units,NULL),
 				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->default_units,NULL),
 				laidout->unitname);
+	dp->DrawScreen();
 	dp->textout(0,0, str,-1, LAX_LEFT|LAX_TOP);
+	dp->DrawReal();
 
 
 
@@ -1028,13 +1033,13 @@ int SignatureInterface::Refresh()
 			if (signature->autoaddsheets) sprintf(str,_("Many sheets in a single signature"));
 			else if (signature->sheetspersignature==1) sprintf(str,_("1 sheet per signature"));
 			else sprintf(str,_("%d sheets per signature"),signature->sheetspersignature);
-			pts[0]=dp->realtoscreen(signature->totalwidth/2,y);
+			pts[0]=flatpoint(signature->totalwidth/2,y);
 			dp->textout(pts[0].x,pts[0].y, str,-1, LAX_HCENTER|LAX_TOP);
 
 		} else if (area->action==SP_Automarks || area->action==SP_Num_Sigs || area->action==SP_Num_Pages) {
 			if (!area->hidden) {
 				dp->NewFG(.5,0.,0.); //dark red for inset
-				dv=dp->realtoscreen((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
+				dv=flatpoint((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
 				dp->textout(dv.x,dv.y,area->text,-1,LAX_CENTER);
 			}
 
