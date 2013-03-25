@@ -235,6 +235,9 @@ FoldedPageInfo::FoldedPageInfo()
 
 Signature::Signature()
 {
+	description=NULL;
+	name=NULL;
+
 	paperbox=NULL;
 	totalwidth=totalheight=1;
 
@@ -276,6 +279,9 @@ Signature::Signature()
 
 Signature::~Signature()
 {
+	if (description) delete[] description;
+	if (name) delete[] name;
+
 	if (paperbox) paperbox->dec_count();
 
 	if (foldinfo) {
@@ -629,6 +635,8 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 { // ***
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 	if (what==-1) {
+		fprintf(f,"%sname \"Some name\"      #short name of the signature\n",spc);
+		fprintf(f,"%sdescription \"Huh\"     #a one line description of the signature\n",spc);
 		fprintf(f,"%ssheetspersignature 1  #The number of sheets of paper to stack before\n",spc);
 		fprintf(f,"%s                      #applying inset or folding\n",spc);
 		fprintf(f,"%sautoaddsheets no      #If no, then more pages means use more signatures.\n",spc);
@@ -669,6 +677,19 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		//fprintf(f,"%sautomarks outer,innerdot  #(optional) Default is \"outer\". you may use innerdotlines instead of innerdot\n",spc);
 		return;
 	}
+
+	if (name) {
+		fprintf(f,"%sname ",spc);
+		dump_out_escaped(f,name,-1);
+		fprintf(f,"\n");
+	}
+
+	if (description) {
+		fprintf(f,"%sdescription ",spc);
+		dump_out_escaped(f,description,-1);
+		fprintf(f,"\n");
+	}
+
 	fprintf(f,"%ssheetspersignature %d\n",spc,sheetspersignature);
 	fprintf(f,"%sautoaddsheets %s\n",spc,autoaddsheets?"yes":"no");
 
@@ -725,7 +746,13 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 
-		if (!strcmp(name,"sheetspersignature")) {
+		if (!strcmp(name,"name")) {
+			makestr(name,value);
+
+		} else if (!strcmp(name,"description")) {
+			makestr(description,value);
+
+		} else if (!strcmp(name,"sheetspersignature")) {
 			IntAttribute(value,&sheetspersignature);
 
 		} else if (!strcmp(name,"automarks")) {
@@ -1122,6 +1149,8 @@ void SignatureImposition::GetDimensions(int paperorpage, double *x, double *y)
 //! Return something like "2 fold, 8 page signature".
 const char *SignatureImposition::BriefDescription()
 {
+	if (signature->description) return signature->description;
+
 	static char briefdesc[100]; //note this is not threadsafe, so be quick!!
 	if (signature->tilex>1 || signature->tiley>1) 
 		sprintf(briefdesc,_("%d, %d page signature, tiled %dx%d"),

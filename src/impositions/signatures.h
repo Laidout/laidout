@@ -65,6 +65,9 @@ StyleDef *makeSignatureImpositionStyleDef();
 class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
 {
  public:
+	char *name;
+	char *description;
+
 	PaperStyle *paperbox; //optional
 	double totalwidth, totalheight;
 

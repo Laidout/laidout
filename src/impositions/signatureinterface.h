@@ -37,6 +37,7 @@ class SignatureInterface : public LaxInterfaces::anInterface
  protected:
 	int showdecs;
 	int showsplash;
+	int showthumbs;
 	Laxkit::PtrStack<ActionArea> controls;
 
 	unsigned long color_inset, color_margin, color_trim, color_binding;
