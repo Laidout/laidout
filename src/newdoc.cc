@@ -475,7 +475,7 @@ int NewDocWindow::init()
 	 //------ imposition brief description
 	impmesbar=new MessageBar(this,"mesbar 1.1",NULL,MB_LEFT|MB_MOVE, 0,0, 0,0, 0,
 			(doc?doc->imposition->BriefDescription()
-			 :laidout->impositionpool.e[0]->description));
+			 :laidout->impositionpool.e[whichimp]->description));
 	AddWin(impmesbar,1, 2500,2300,0,50,0, linpheight,0,0,50,0, -1);
 
 	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
