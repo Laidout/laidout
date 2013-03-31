@@ -994,13 +994,19 @@ Value *ObjectDef::newValue(const char *objectdef)
  */
 ObjectDef *ObjectDef::FindDef(const char *objectdef, int len, int which)
 {   
-	if (!fields) return NULL;
 	if (len<0) len=strlen(objectdef);
-	for (int c=0; c<fields->n; c++) {
+	if (fields) for (int c=0; c<fields->n; c++) {
 		if (!strncmp(objectdef,fields->e[c]->name,len) && strlen(fields->e[c]->name)==(unsigned int)len) {
 			if ((which&1) && fields->e[c]->format==VALUE_Function) return fields->e[c];
 			else if ((which&2) && fields->e[c]->format==VALUE_Class) return fields->e[c];
 			else if ((which&4) && fields->e[c]->format==VALUE_Variable) return fields->e[c];
+		}
+	}
+	if (extendsdefs.n) {
+		ObjectDef *def=NULL;
+		for (int c=0; c<extendsdefs.n; c++) {
+			def=extendsdefs.e[c]->FindDef(objectdef,len,which);
+			if (def) return def;
 		}
 	}
 	return NULL;
@@ -1304,9 +1310,7 @@ ObjectDef *ValueHash::makeObjectDef()
 					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1",
 					  NULL);
 
-	def->pushFunction("pop",_("Pop"),_("Remove a name-value pair"),
-					  NULL,
-					  "key",_("Key"),_("Which to pop (int or name). Returns {name,value}."), VALUE_Any,NULL,"-1",
+	def->pushFunction("flush",_("Flush"),_("Remove all name-value pairs"), NULL,
 					  NULL);
 
 	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
@@ -1358,6 +1362,12 @@ int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash 
 		SetValue *set=new SetValue;
 		for (int c=0; c<values.n; c++) set->Push(values.e[c],0);
 		*value_ret=set;
+		return 0;
+	}
+
+	if (isName(func,len,"flush")) {
+		flush();
+		value_ret=NULL;
 		return 0;
 	}
 
@@ -1480,6 +1490,13 @@ const char *ValueHash::FieldName(int i)
 {
 	if (i<0 || i>=values.n) return NULL;
 	return values.e[i]->Id();
+}
+
+int ValueHash::flush()
+{
+	keys.flush();
+	values.flush();
+	return 0;
 }
 
 int ValueHash::push(const char *name,int i)
@@ -1632,6 +1649,7 @@ int ValueHash::set(int which, Value *newv)
 //! Return the index corresponding to name, or -1 if not found.
 int ValueHash::findIndex(const char *name,int len)
 {
+	if (!name) return -1;
 	for (int c=0; c<keys.n; c++) {
 		if (len<0 && !strcmp(name,keys.e[c])) return c;
 		if (len>0 && !strncmp(name,keys.e[c],len)) return c;
@@ -1743,9 +1761,9 @@ const char *ValueHash::findString(const char *name, int which, int *error_ret)
 flatvector ValueHash::findFlatvector(const char *name, int which, int *error_ret)
 {
 	if (which<0) which=findIndex(name);
-	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return flatvector(); }
 	FlatvectorValue *v=dynamic_cast<FlatvectorValue*>(values.e[which]);
-	if (!v) { if (error_ret) *error_ret=2; return 0; }
+	if (!v) { if (error_ret) *error_ret=2; return flatvector(); }
 	if (error_ret) *error_ret=0;
 	return v->v;
 }

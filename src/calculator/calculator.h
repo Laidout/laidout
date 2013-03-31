@@ -243,6 +243,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	virtual int InstallModule(CalculatorModule *module, int autoimport);
 	virtual int RemoveModule(const char *modulename);
 	virtual int ImportModule(const char *name, int allnames);
+	virtual ObjectDef *GetInfo(const char *expr);
 
 	virtual char *In(const char *in, int *return_type=NULL);
 	virtual int evaluate(const char *in, int len, Value **value_ret, ErrorLog *log);

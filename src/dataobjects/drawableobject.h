@@ -98,6 +98,7 @@ class DrawableObject :  virtual public ObjectContainer,
  public:
 	DrawableObject *parent;
 	DrawableParentLink *parent_link;
+
 	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
 	char locked, visible, prints, selectable;
 
@@ -132,6 +133,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	 //default is point to things particular to Groups.
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();
+	virtual int SetParentLink(DrawableParentLink *newlink);
+	virtual void UpdateFromParentLink();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context);
