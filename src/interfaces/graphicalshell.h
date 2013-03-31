@@ -42,10 +42,11 @@ class GraphicalShell : public LaxInterfaces::anInterface
 
 	int tablevel;
 	int numresults;
-	Laxkit::PtrStack<Laxkit::MenuItem> completion;
+	ObjectDef *searcharea;
+	char *searcharea_str;
+	Laxkit::MenuInfo completion;
 
 	char *searchterm;
-	Laxkit::RefPtrStack<ObjectDef> areas; //definitions
 	ValueHash context; //inside of which objects, all available names
 	ObjectDef contextdef;
 	int active;
@@ -59,7 +60,9 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	int showcompletion;
 	Laxkit::MenuInfo tree;
 
-	virtual void UpdateSearchTerm(const char *str,int pos);
+	virtual void AddTreeToCompletion(Laxkit::MenuInfo *menu);
+	virtual void UpdateSearchTerm(const char *str,int pos, int firsttime=0);
+	virtual ObjectDef *GetContextDef(const char *expr);
 	virtual int scan(int x,int y);
 	virtual int Setup();
 	void base_init();
@@ -101,7 +104,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual int UseThisDocument(Document *doc);
 
 	virtual int ChangeContext(const char *name, Value *value);
-	virtual int Update();
+	virtual int InitAreas();
 	virtual int UpdateCompletion();
 	virtual void UpdateFromTab(Laxkit::MenuInfo *menu, int &i);
 	virtual void TextFromItem(Laxkit::MenuItem *mii,char *&str);

@@ -148,10 +148,13 @@ void GraphicalShell::base_init()
 	pad=10;
 	boxcolor.rgbf(.5,.5,.5);
 	showerror=0;
+
 	currenthistory=-1;
 	tablevel=-1;
 	numresults=0;
 	searchterm=NULL;
+	searcharea=NULL;
+	searcharea_str=NULL;
 
 	placement_gravity=LAX_BOTTOM;
 	showcompletion=0;
@@ -164,6 +167,10 @@ GraphicalShell::~GraphicalShell()
 	if (doc) doc->dec_count();
 	if (sc) sc->dec_count();
 	if (searchterm) delete[] searchterm;
+	if (searcharea_str) delete[] searcharea_str;
+	if (searcharea) searcharea->dec_count();
+
+	// *** NEED to figure out ownership protocol here!!! -> if (le) app->destroywindow(le);
 }
 
 const char *GraphicalShell::Name()
@@ -204,7 +211,7 @@ int GraphicalShell::Setup()
 		box.maxx=le->win_x+le->win_w+pad;
 		box.miny=le->win_y-pad;
 		box.maxy=le->win_y+le->win_h+pad;
-		app->addwindow(le,1,1);
+		app->addwindow(le,1,0);
 
 	} else {
 		//*** make sure prompt is still in window
@@ -219,7 +226,7 @@ int GraphicalShell::Setup()
 		}
 	}
 	app->mapwindow(le);
-	Update();
+	InitAreas();
 
 	return 0;
 }
@@ -240,8 +247,9 @@ int GraphicalShell::ChangeContext(const char *name, Value *value)
 }
 
 //! Update context from viewport.
-int GraphicalShell::Update()
+int GraphicalShell::InitAreas()
 {
+	context.flush();
 	context.pushObject("viewport",viewport);
 	context.pushObject("tool",dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool());
 	context.pushObject("object",dynamic_cast<LaidoutViewport*>(viewport)->curobj.obj);
@@ -250,10 +258,6 @@ int GraphicalShell::Update()
 
 	calculator.InstallVariables(&context);
 
-	//-----
-	//contextdef.pushVariable("viewport",NULL,NULL, v,0);
-	//contextdef.pushVariable("tool",    NULL,NULL, v,0);
-	//contextdef.pushVariable("object",  NULL,NULL, v,0);
 	
 	tree.Flush();
 	ObjectDef *def;
@@ -276,14 +280,16 @@ int GraphicalShell::Update()
 		}
 	}
 
-	menuinfoDump(&tree,0);
+	UpdateSearchTerm(NULL,0, 1);
+
+	DBG menuinfoDump(&tree,0);
 
 	return 0;
 }
 
 int GraphicalShell::UpdateCompletion()
 {
-	numresults=tree.Search(searchterm,1,1);
+	numresults=completion.Search(searchterm,1,1);
 	return 0;
 }
 
@@ -317,17 +323,106 @@ void GraphicalShell::ViewportResized()
 	}
 }
 
-void GraphicalShell::UpdateSearchTerm(const char *str,int pos)
+/*! Grab the portion of string that seems self contained. For instance, a string
+ * of "1+Math.pi" would set searchterm to "Math.pi".
+ *
+ * This does not update the results of a search, only what and where to search.
+ */
+void GraphicalShell::UpdateSearchTerm(const char *str,int pos, int firsttime)
 {
 	//viewport.blah|  
 	//viewport.spread.1.|
 	//object.scale((1,0), | ) <- get def of function, keep track of which parameters used?
 	//object.1.(3+23).|
 	//
-	int len=strlen(str);
-	if (pos<0) pos=len;
+	int len=(str?strlen(str):0);
+	if (pos<=0) pos=len-1;
+	int last=pos, pose=pos;
+	const char *first=NULL;
+	while (pos>0) {
+		while (pos>0 && isspace(str[pos])) pos--;
+		while (pos>0 && isalnum(str[pos])) pos--;
+		if (!first) { first=str+pos; pose=pos; }
+		if (pos>0 && str[pos]=='.') pos--;
+		else break; //do not parse backward beyond a whole term
+	}
 
-	makestr(searchterm,str);
+	if (first && *first=='.') first++;
+	makenstr(searchterm,first,last-pos+1);
+	if (!searchterm) searchterm=newstr("");
+
+	char *areastr=newnstr(str+pos,pose-pos);
+	ObjectDef *area=GetContextDef(areastr);
+	if (!area) area=calculator.GetInfo(areastr);
+
+	if (area!=searcharea || firsttime) {
+		if (searcharea) searcharea->dec_count();
+		searcharea=area;
+		if (area) area->inc_count();
+		makestr(searcharea_str,areastr);
+		char *s;
+
+		completion.Flush();
+
+		if (searcharea) {
+			const char *name;
+			for (int c=0; c<searcharea->getNumFields(); c++) {
+				name=NULL;
+				searcharea->getInfo(c, &name);
+				if (name) {
+					if (searcharea_str) {
+						s=newstr(searcharea_str);
+						appendstr(s,".");
+					} else s=NULL;
+					appendstr(s,name);
+
+					completion.AddItem(s);
+					delete[] s;
+				}
+			}
+
+		} else { //no distinct search area, so use all of tree
+			AddTreeToCompletion(&tree);
+			DBG menuinfoDump(&completion,0);
+		}
+	}
+}
+
+ObjectDef *GraphicalShell::GetContextDef(const char *expr)
+{
+	if (isblank(expr)) return NULL;
+
+    ObjectDef *def=NULL;
+	const char *area;
+	int pos=0;
+	int len=strlen(expr);
+
+	for (int c=0; c<context.n(); c++) {
+		area=context.key(c);
+		if (!strncmp(expr,area,strlen(area))) {
+			def=context.value(c)->GetObjectDef();
+			pos+=strlen(area);
+			break;
+		}
+	}
+
+
+     // *** WARNING! this does not do index parsing, so "blah[123].blah" will not work,
+     //     nor will blah.(34+2).blah
+    int n;
+    const char *showwhat=NULL;
+    while (isspace(expr[pos])) pos++;
+    while (def && expr[pos]=='.') { //for "Math.sin", for instance
+        n=0;
+        while (pos+n<len && (isalnum(expr[pos+n]) || expr[pos+n]=='_')) n++;
+        showwhat=expr+pos;
+
+        ObjectDef *ssd=def->FindDef(showwhat,n);
+        if (!ssd) break;
+        pos+=n;
+        def=ssd;
+    } //if foreach dereference
+	return def;
 }
 
 /*! Return 0 for menu item processed, 1 for nothing done.
@@ -340,10 +435,6 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
 		if (!s) return 1;
 		int type=s->info1;
-		if (areas.n) {
-			areas.flush();
-			needtodraw=1;
-		}
 
 		if (type==GSHELL_TextChanged) {
 			showerror=0;
@@ -353,19 +444,20 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			if (!isblank(s->str)) {
 				 //text was changed
 			} else {
-				tree.ClearSearch();
+				completion.ClearSearch();
 			}
 			UpdateCompletion();
 			needtodraw=1;
 			return 0;
 
 		} else if (type==GSHELL_FocusIn) {
-			showcompletion=0;
+			Setup();
+			showcompletion=1;
 			needtodraw=1;
 			return 0;
 
 		} else if (type==GSHELL_FocusOut) {
-			showcompletion=1;
+			showcompletion=0;
 			needtodraw=1;
 			return 0;
 
@@ -394,6 +486,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 				if (!history.n || (history.n && strcmp(history.e[history.n-1],result))) history.push(result);
 			}
 			
+			UpdateSearchTerm(NULL,0, 1);
 			UpdateCompletion();
 			needtodraw=1;
 			return 0;
@@ -409,7 +502,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			if (!isblank(le->GetCText())) {
 				 //escape when there is text just clears text
 				le->SetText("");
-				tree.ClearSearch();
+				completion.ClearSearch();
 				UpdateCompletion();
 				needtodraw=1;
 				return 0;
@@ -425,11 +518,15 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			if (currenthistory==-1) {
 				currenthistory=history.n-1;
 				history.push(le->GetText()); //GetText returns a new'd char[]
-				if (currenthistory>=0) le->SetText(history.e[currenthistory]);
+				if (currenthistory>=0) {
+					le->SetText(history.e[currenthistory]);
+					le->SetCurpos(-1);
+				}
 
 			} else if (currenthistory!=0) {
 				currenthistory--;
 				le->SetText(history.e[currenthistory]);
+				le->SetCurpos(-1);
 			}
 			return 0;
 
@@ -438,9 +535,11 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			if (currenthistory>=0) {
 				currenthistory++;
 				le->SetText(history.e[currenthistory]);
+				le->SetCurpos(-1);
 				if (currenthistory==history.n-1) {
 					 //is on working string
 					le->SetText(history.e[history.n-1]);
+					le->SetCurpos(-1);
 					history.remove(history.n-1);
 					currenthistory=-1;
 				}
@@ -454,11 +553,12 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			if (tablevel==numresults) tablevel=-1;
 			if (tablevel==-1) {
 				le->SetText(history.e[history.n-1]);
+				le->SetCurpos(-1);
 				history.remove(history.n-1);
 				return 0;
 			}
 			int i=tablevel+1;
-			UpdateFromTab(&tree,i);
+			UpdateFromTab(&completion,i);
 			return 0;
 
 		} else if (type==GSHELL_ShiftTab) {
@@ -468,11 +568,12 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			if (tablevel<-1) tablevel=numresults-1;
 			if (tablevel==-1) {
 				le->SetText(history.e[history.n-1]);
+				le->SetCurpos(-1);
 				history.remove(history.n-1);
 				return 0;
 			}
 			int i=tablevel+1;
-			UpdateFromTab(&tree,i);
+			UpdateFromTab(&completion,i);
 			return 0;
 		}
 
@@ -500,6 +601,7 @@ void GraphicalShell::EscapeBrowsing()
 	if (currenthistory!=-1) {
 		 //escape from history browsing
 		le->SetText(history.e[history.n-1]);
+		le->SetCurpos(-1);
 		history.remove(history.n-1);
 		currenthistory=-1;
 		needtodraw=1;
@@ -508,10 +610,30 @@ void GraphicalShell::EscapeBrowsing()
 	} else if (tablevel!=-1) {
 		 //escape from tab browsing
 		le->SetText(history.e[history.n-1]);
+		le->SetCurpos(-1);
 		history.remove(history.n-1);
 		tablevel=-1;
 		needtodraw=1;
 		return;
+	}
+}
+
+//! Add menuitems from tree to completion.
+void GraphicalShell::AddTreeToCompletion(MenuInfo *menu)
+{
+	MenuItem *mi, *mii;
+
+	for (int c=0; c<menu->n(); c++) {
+		mi=menu->e(c);
+
+		mii=mi;
+		char *str=NULL;
+		TextFromItem(mii,str);
+		completion.AddItem(str);
+		delete[] str;
+
+		if (!mi->GetSubmenu(0)) continue;
+		AddTreeToCompletion(mi->GetSubmenu(0));
 	}
 }
 
@@ -535,6 +657,7 @@ void GraphicalShell::UpdateFromTab(MenuInfo *menu, int &i)
 				char *str=NULL;
 				TextFromItem(mii,str);
 				le->SetText(str);
+				le->SetCurpos(-1);
 				delete[] str;
 				i=-1;
 				return;
@@ -636,7 +759,9 @@ int GraphicalShell::Refresh()
 	if (showcompletion) {
 		int y=box.miny-pad;
 		y=box.miny-pad;
-		RefreshTree(&tree,box.minx,y);
+
+		if (!completion.n() && searcharea==NULL) RefreshTree(&tree,box.minx,y);
+		else RefreshTree(&completion, box.minx,y);
 	}
 
 	dp->DrawReal();
@@ -702,7 +827,8 @@ int GraphicalShell::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	}
 
 
-	return 0;
+	return 1;
+	//return 0;
 }
 
 int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
@@ -717,7 +843,8 @@ int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	//if (curbox) { curbox->dec_count(); curbox=NULL; }
 	//if (curboxes.n) curboxes.flush();
 
-	return 0;
+	return 1;
+	//return 0;
 }
 
 int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
