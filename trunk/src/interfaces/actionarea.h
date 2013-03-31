@@ -41,7 +41,8 @@ class ActionArea : public Laxkit::DoubleBBox
   public:
 	char *tip;
 	char *text;
-	flatpoint *outline, offset, hotspot;
+	flatpoint offset, xdirection, hotspot;
+	flatpoint *outline;
 	int npoints;
 	int visible; //1 for yes and filled, 2 for selectable, but not drawn,3 for outline only
 	int hidden; //skip checks for this one
