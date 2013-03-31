@@ -147,11 +147,6 @@ int LImageInterface::assign(FieldExtPlace *ext,Value *v)
 
 Value *LImageInterface::dereference(const char *extstring, int len)
 {
-	//possible state:
-	//  tool
-	//  object
-	//  selection
-	//  viewport
 	return NULL;
 }
 
