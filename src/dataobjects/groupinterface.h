@@ -20,6 +20,7 @@
 #include <lax/interfaces/objectinterface.h>
 #include <lax/interfaces/somedata.h>
 #include "../calculator/values.h"
+#include "../viewwindow.h"
 
 
 
@@ -34,10 +35,13 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
   protected:
 	int rx,ry;
 	int popupcontrols;
+	VObjContext reparent_temp;
+
 	virtual int PerformAction(int action);
 	virtual const char *hoverMessage(int p);
 	virtual int AlternateScan(flatpoint sp, flatpoint p, double xmag,double ymag, double onepix);
 	virtual int GetMode();
+	virtual void DrawReparentArrows();
   public:
 	void TransformSelection(const double *N, int s=-1, int e=-1);// *****
 
