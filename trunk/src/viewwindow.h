@@ -31,6 +31,7 @@
 
 namespace Laidout {
 
+class Project;
 
 //------------------------------- VObjContext ---------------------------
 class VObjContext : public LaxInterfaces::ObjectContext
