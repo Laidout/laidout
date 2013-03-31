@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2005-2012 by Tom Lechner
+// Copyright (C) 2005-2013 by Tom Lechner
 //
 
 #include "interfaces/aligninterface.h"
@@ -123,13 +123,16 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 //	existingpool->push(mdata);//*** combine with Image somehow?
 //	mdata->dec_count();
 
-	 //------ObjectIndicator
-	i=new ObjectIndicator(id++,NULL);
+	 //------Paper
+	i=new PaperInterface(id++,NULL);
 	existingpool->push(i);
 	i->dec_count();
 
-	 //------Paper
-	i=new PaperInterface(id++,NULL);
+
+	//------------------------Overlays---------------
+
+	 //------ObjectIndicator
+	i=new ObjectIndicator(id++,NULL);
 	existingpool->push(i);
 	i->dec_count();
 
