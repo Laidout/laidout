@@ -46,6 +46,25 @@ namespace Laidout {
  */
 
 
+enum GroupControlTypes
+{
+	GROUP_Link=RP_MAX,
+	GROUP_Parent_Link,
+	GROUP_Constraints,
+	GROUP_Zone,
+	GROUP_Chains,
+
+	GROUP_Jump_To_Link,
+	GROUP_Sever_Link,
+
+	GROUP_Parent_Align,
+	GROUP_Parent_Matrix,
+	GROUP_Jump_To_Parent,
+	GROUP_Reparent,
+
+	GROUP_MAX
+};
+
 GroupInterface::GroupInterface(int nid,Laxkit::Displayer *ndp)
 	: ObjectInterface(nid,ndp)
 {
@@ -155,18 +174,6 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 	return 1;
 }
 
-enum GroupControlTypes
-{
-	GROUP_Link=RP_MAX,
-	GROUP_Parent_Link,
-	GROUP_Constraints,
-	GROUP_Zone,
-	GROUP_Chains,
-	GROUP_Jump_To_Link,
-	GROUP_Sever_Link,
-	GROUP_MAX
-};
-
 const char *GroupInterface::hoverMessage(int p)
 {
 	if (p==GROUP_Link) return _("Clone options");
@@ -192,10 +199,10 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 		DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<< norm2(p-pp)<<endl;
 		if (norm2(p-pp)<dist) return GROUP_Link;
 
-		double th=dp->textheight();
-		double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
-		
 		if (popupcontrols==GROUP_Link) {
+			double th=dp->textheight();
+			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+		
 			 //p.x,p.y, w/2,th*1.5
 			pp=dp->realtoscreen(transform_point(somedata->m(),pp));
 			pp.y+=2*th;
@@ -205,6 +212,44 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 				if (sp.x>pp.x-w/2 && sp.x<pp.x+w/2) return GROUP_Jump_To_Link;
 				if (sp.x>pp.x+w/2 && sp.x<pp.x+w*3/2) return GROUP_Sever_Link;
 			}
+		}
+	}
+
+	 //check for parent link
+	//if (selection.n==1) {
+	if (selection.n) {
+		 //2 selected simplifies reparent
+		flatpoint pp=transform_point(somedata->m(),(flatpoint(somedata->minx,somedata->miny)+flatpoint(somedata->maxx,somedata->maxy))/2); //center
+		flatpoint p2=transform_point(somedata->m(),flatpoint(somedata->minx,somedata->maxy)); //upper left
+		pp=dp->realtoscreen(pp);
+		p2=dp->realtoscreen(p2);
+
+		//flatpoint pp=(flatpoint(somedata->minx,somedata->miny)+flatpoint(somedata->maxx,somedata->maxy))/2; //center
+		//flatpoint p2=flatpoint(somedata->minx,somedata->maxy); //upper left
+
+		flatpoint v=p2-pp;
+		v.normalize();
+		pp=p2+v*maxtouchlen*1.5;
+
+		DBG cerr <<"...alt scan: "<<p.x<<','<<p.y<<"  "<< norm2(p-pp)<<endl;
+
+		//double dist=onepix*maxtouchlen*maxtouchlen/4;
+		double dist=maxtouchlen*maxtouchlen/4;
+		if (norm2(sp-pp)<dist) return GROUP_Parent_Link;
+
+		double th=dp->textheight();
+		double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+		pp+=v*maxtouchlen*.5;
+		pp.y-=3*th;
+		if (pp.y-th<dp->Miny) pp.y=dp->Miny+th;
+		if (pp.x-w*1.5<dp->Minx) pp.x=dp->Minx+w*1.5;
+
+		if (sp.y>pp.y-th && sp.y<pp.y+th) {
+			if (sp.x>pp.x-w*1.5 && sp.x<pp.x-w*.5) return GROUP_Parent_Matrix;
+			if (sp.x<pp.x+w*1.5 && sp.x>pp.x+w*.5) return GROUP_Jump_To_Parent;
+		} else if (sp.y>pp.y+th && sp.y<pp.y+3*th) {
+			if (sp.x>pp.x-w*1.5 && sp.x<pp.x-w*.5) return GROUP_Parent_Align;
+			if (sp.x<pp.x+w*1.5 && sp.x>pp.x+w*.5) return GROUP_Reparent;
 		}
 	}
 
@@ -221,6 +266,10 @@ int GroupInterface::LBDown(int x, int y,unsigned int state, int count,const Laxk
     buttondown.getextrainfo(mouse->id,LEFTBUTTON,&curpoint);
 	if (curpoint==GROUP_Link) {
 		popupcontrols=GROUP_Link;
+        PostMessage(" ");
+		return 0;
+	} else if (curpoint==GROUP_Parent_Link) {
+		popupcontrols=GROUP_Parent_Link;
         PostMessage(" ");
 		return 0;
 	}
@@ -277,10 +326,45 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 					FreeSelection();
 					AddToSelection(&context);
 				} else {
+					//FreeSelection();
 					PostMessage(_("Can't jump to object"));
 				}
 			}
 
+		}
+
+		popupcontrols=0;
+		hover=0;
+		needtodraw=1;
+		return 0;
+
+	} else if (popupcontrols==GROUP_Parent_Link) {
+		buttondown.up(d->id,LEFTBUTTON);
+		DrawableObject *obj=dynamic_cast<DrawableObject*>(selection.e[0]->obj);
+
+		if (hover==GROUP_Parent_Align) {
+			//***switch to align tool
+
+		} else if (hover==GROUP_Parent_Matrix) {
+			obj->SetParentLink(NULL);
+
+		} else if (hover==GROUP_Jump_To_Parent) {
+			LaidoutViewport *vp=((LaidoutViewport *)viewport);
+			VObjContext context=*dynamic_cast<VObjContext*>(selection.e[0]);
+			context.SetObject(NULL);
+			context.context.pop();
+			DrawableObject *pp=dynamic_cast<DrawableObject*>(vp->getanObject(context.context,0,0));
+			if (pp) {
+				context.SetObject(pp);
+				vp->ChangeObject(&context,0);
+				FreeSelection();
+				AddToSelection(&context);
+			} else {
+				PostMessage(_("Cannot select parent"));
+			}
+
+		} else if (hover==GROUP_Reparent) {
+			//***highlight objects to parent to
 		}
 
 		popupcontrols=0;
@@ -295,6 +379,16 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 int GroupInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (popupcontrols==GROUP_Link) {
+		int newhover=scan(x,y);
+		if (newhover!=hover) {
+			hover=newhover;
+			needtodraw|=2;
+            const char *mes=hoverMessage(hover);
+            PostMessage(mes?mes:" ");
+		}
+		return 0;
+
+	} else if (popupcontrols==GROUP_Parent_Link) {
 		int newhover=scan(x,y);
 		if (newhover!=hover) {
 			hover=newhover;
@@ -626,20 +720,21 @@ int GroupInterface::Refresh()
 
 	ObjectInterface::Refresh();
 
-	if (selection.n!=1) return 0;
+	if (selection.n==0) return 0;
 
 
 	 //if we are moving only one object, then put various doodads around it.
 	 
-	DoubleBBox box;
-	GetOuterRect(&box,NULL);
+	//DoubleBBox box;
+	//GetOuterRect(&box,NULL);
 
 
-	SomeData *obj=selection.e[0]->obj;
-	double m[6];
-	if (!strcmp(obj->whattype(),"SomeDataRef")) {
+	if (selection.n==1 && !strcmp(selection.e[0]->obj->whattype(),"SomeDataRef")) {
 		 //is link
+		SomeData *obj=selection.e[0]->obj;
+		double m[6];
 		viewport->transformToContext(m,selection.e[0],0,1);
+
 		flatpoint p =transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
 		flatpoint p2=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->miny))/2); //edge midpoint
 
@@ -680,19 +775,91 @@ int GroupInterface::Refresh()
 		dp->DrawReal();
 	}
 
+
 	 //parent link
-	//****
+	if (selection.n) {
+		//double m[6];
+
+		flatpoint p =transform_point(somedata->m(), (flatpoint(somedata->minx,somedata->miny)+flatpoint(somedata->maxx,somedata->maxy))/2); //center
+		flatpoint p2=transform_point(somedata->m(), flatpoint(somedata->minx,somedata->maxy)); //upper left
+		p=dp->realtoscreen(p);
+		p2=dp->realtoscreen(p2);
+
+		flatpoint v=p2-p;
+		v.normalize();
+		p=p2+v*maxtouchlen*2;
+
+		dp->DrawScreen();
+		dp->NewFG(0.,.7,0.);
+		//dp->drawpoint(p, maxtouchlen/2,hover==GROUP_Parent_Link?1:0);
+		dp->moveto(p);
+		dp->lineto(p-v*maxtouchlen+transpose(v)*maxtouchlen/2);
+		dp->lineto(p-v*maxtouchlen-transpose(v)*maxtouchlen/2);
+		dp->closed();
+		if (hover==GROUP_Parent_Link) dp->fill(0); else dp->stroke(0);
+
+		if (popupcontrols==GROUP_Parent_Link) {
+			double th=dp->textheight();
+			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+			p.y-=3*th;
+			if (p.y-th<dp->Miny) p.y=dp->Miny+th;
+			if (p.x-w*1.5<dp->Minx) p.x=dp->Minx+w*1.5;
+			dp->NewFG(.8,.8,.8);
+
+			if (hover==GROUP_Parent_Matrix) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x-w,p.y, w/2,th, 0,2*M_PI, 2);
+			if (hover==GROUP_Parent_Align) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x-w,p.y+2*th, w/2,th, 0,2*M_PI, 2);
+			if (hover==GROUP_Jump_To_Parent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x+w,p.y, w/2,th, 0,2*M_PI, 2);
+			if (hover==GROUP_Reparent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x+w,p.y+2*th, w/2,th, 0,2*M_PI, 2);
+
+			dp->NewFG(0.,0.,0.);
+			dp->textout(p.x-w,p.y,     _("Matrix"),-1,  LAX_CENTER);
+			dp->textout(p.x-w,p.y+2*th,_("Align"),-1,   LAX_CENTER);
+			dp->textout(p.x+w,p.y,     _("Jump to"),-1, LAX_CENTER);
+			dp->textout(p.x+w,p.y+2*th,_("Reparent"),-1,LAX_CENTER);
+
+			if (hover==GROUP_Reparent && selection.n>1) DrawReparentArrows();
+		}
+		dp->DrawReal();
+	}
 	
+
 	 //object edit zone
 	//***
 	
+
 	 //transform constraints
 	//***
+
 
 	 //chains
 	//***
 
 	return 0;
+}
+
+void GroupInterface::DrawReparentArrows()
+{
+	SomeData *obj=selection.e[0]->obj;
+	double m[6];
+	viewport->transformToContext(m,selection.e[0],0,1);
+
+	flatpoint pp;
+	flatpoint p=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
+	p=dp->realtoscreen(p);
+
+	dp->NewFG(0.,.7,0.);
+	dp->LineAttributes(2,LineSolid,LAXCAP_Butt,LAXJOIN_Miter);
+	for (int c=1; c<selection.n; c++) {
+		obj=selection.e[c]->obj;
+		viewport->transformToContext(m,selection.e[c],0,1);
+		pp=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
+		pp=dp->realtoscreen(pp);
+		dp->drawarrow(pp,p-pp, 0,1,2,3);
+	}
 }
 
 //! Returns this, but count is incremented.
