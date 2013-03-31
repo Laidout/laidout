@@ -27,7 +27,10 @@ namespace Laidout {
 
 //------------------------------- LGradientData ---------------------------------------
 
-class LGradientData : public DrawableObject, public LaxInterfaces::GradientData
+class LGradientData : public DrawableObject,
+					  public LaxInterfaces::GradientData,
+					  public FunctionEvaluator,
+					  public Value
 {
   public:
 	LGradientData(LaxInterfaces::SomeData *refobj=NULL);
@@ -38,8 +41,34 @@ class LGradientData : public DrawableObject, public LaxInterfaces::GradientData
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+
+	 //from Value:
+	virtual int type() { return VALUE_Fields; }
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log);
 };
 
+
+//------------------------------- LGradientInterface --------------------------------
+class LGradientInterface : public LaxInterfaces::GradientInterface, public Value
+{
+ protected:
+ public:
+	LGradientInterface(int nid,Laxkit::Displayer *ndp);
+	virtual const char *whattype() { return "GradientInterface"; }
+	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
+
+	//from value
+	virtual int type() { return VALUE_Fields; }
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual Value *dereference(const char *extstring, int len);
+};
 
 
 } //namespace Laidout

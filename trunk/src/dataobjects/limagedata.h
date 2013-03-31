@@ -19,12 +19,12 @@
 #include <lax/interfaces/imageinterface.h>
 #include "drawableobject.h"
 
-//------------------------------- LImageData ---------------------------------------
 
 
 namespace Laidout {
 
 
+//------------------------------- LImageData ---------------------------------------
 class LImageData : public DrawableObject,
 				   public LaxInterfaces::ImageData,
 				   public FunctionEvaluator,

@@ -34,6 +34,7 @@
 #include "dataobjects/epsdata.h"
 #include "dataobjects/mysterydata.h"
 #include "dataobjects/limageinterface.h"
+#include "dataobjects/lgradientdata.h"
 #include "interfaces/paperinterface.h"
 #include "interfaces/graphicalshell.h"
 
@@ -93,7 +94,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	imagei->dec_count();
 	
 	 //------Gradients
-	GradientInterface *gi=new GradientInterface(id++,NULL);
+	LGradientInterface *gi=new LGradientInterface(id++,NULL);
 	gi->createv=flatpoint(1,0);
 	gi->creater1=gi->creater2=1;
 	existingpool->push(gi);
