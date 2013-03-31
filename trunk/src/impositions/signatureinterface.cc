@@ -115,10 +115,11 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 	: anInterface(nid,ndp) 
 {
 	showdecs=0;
+	showthumbs=0;
+	showsplash=0;
 	papersize=NULL;
 	insetmask=15; trimmask=15; marginmask=15;
 	firsttime=1;
-	showsplash=0;
 
 	if (sig) {
 		signature=sig->duplicate();
@@ -127,6 +128,7 @@ SignatureInterface::SignatureInterface(int nid,Displayer *ndp,Signature *sig, Pa
 		reallocateFoldinfo();
 	}
 	if (p) signature->SetPaper(p);
+	document=NULL;
 
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	hasfinal=0;
@@ -161,9 +163,12 @@ SignatureInterface::SignatureInterface(anInterface *nowner,int nid,Displayer *nd
 	: anInterface(nowner,nid,ndp) 
 {
 	showdecs=0;
+	showthumbs=0;
+	showsplash=0;
 	signature=new Signature;
 	foldinfo=signature->foldinfo;
 	papersize=NULL;
+	document=NULL;
 
 	foldr1=foldc1=foldr2=foldc2=-1;
 	folddirection=0;
@@ -190,6 +195,7 @@ SignatureInterface::~SignatureInterface()
 	if (signature) signature->dec_count();
 	if (papersize) papersize->dec_count();
 	if (sc) sc->dec_count();
+	if (document) document->dec_count();
 }
 
 const char *SignatureInterface::Name()
@@ -681,7 +687,20 @@ int SignatureInterface::UseThisImposition(SignatureImposition *sigimp)
 	foldinfo=signature->foldinfo;
 	checkFoldLevel(1);
 	signature->resetFoldinfo(NULL);
+	if (sigimp->doc) {
+		if (document) document->dec_count();
+		document=sigimp->doc;
+		document->inc_count();
+	}
 
+	return 0;
+}
+
+int SignatureInterface::UseThisDocument(Document *doc)
+{
+	if (document) document->dec_count();
+	document=doc;
+	if (document) document->inc_count();
 	return 0;
 }
 
@@ -819,13 +838,8 @@ int SignatureInterface::Refresh()
 					//facedown=((xflip && !yflip) || (!xflip && yflip));
 					//if (facedown) dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
 					//else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-					pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
-					dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
-					fp=pts[0];
-
-					 //show range of pages at this position
+					 //compute range of pages for this cell
 					ff=foldinfo[rrr][ccc].finalindexfront;
 					tt=foldinfo[rrr][ccc].finalindexback;
 					if (!signature->autoaddsheets) {
@@ -837,6 +851,21 @@ int SignatureInterface::Refresh()
 							tt=ff+2*signature->sheetspersignature-1;
 						}
 					}
+
+					 //show thumbnails
+					if (showthumbs && document && document->pages.n) {
+						//int sheetnumber= ***%signature->sheetspersignature;
+						//int page;
+						//if (ff>tt) page=tt-sheetnumber; else page=ff+sheetnumber;
+					}
+
+					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+
+					pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
+					dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
+					fp=pts[0];
+
+					 //text out range of pages at bottom of arrow
 					sprintf(str,"%d-%d",ff,tt);
 					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
 				}
@@ -2235,6 +2264,7 @@ static const char *masktostr(int m)
 
 enum SignatureInterfaceActions {
 	SIA_Decorations,
+	SIA_Thumbs,
 	SIA_Center,
 	SIA_InsetMask,
 	SIA_InsetInc,
@@ -2273,6 +2303,7 @@ Laxkit::ShortcutHandler *SignatureInterface::GetShortcuts()
 	sc=new ShortcutHandler("SignatureInterface");
 
 	sc->Add(SIA_Decorations,     'd',0,0,          "Decorations",    _("Toggle decorations"),NULL,0);
+	sc->Add(SIA_Thumbs,          'p',0,0,          "Thumbs",         _("Toggle showing of page thumbnails"),NULL,0);
 	sc->Add(SIA_Center,          ' ',0,0,          "Center",         _("Center view"),NULL,0);
 	sc->Add(SIA_InsetMask,       'i',ControlMask,0,"InsetMask",      _("Toggle which inset to change"),NULL,0);
 	sc->Add(SIA_InsetInc,        'i',0,0,          "InsetInc",       _("Increment inset"),NULL,0);
@@ -2307,6 +2338,11 @@ int SignatureInterface::PerformAction(int action)
 		showdecs++;
 		if (showdecs>2) showdecs=0;
 		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==SIA_Thumbs) {
+		showthumbs=!showthumbs;
 		needtodraw=1;
 		return 0;
 
@@ -2554,10 +2590,14 @@ SignatureEditor::SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,cons
 			value=att.attributes.e[c]->value;
 			if (!strcmp(name,"in")) {
 				DBG in=value;
+				int docindex=laidout->project->docs.n;
 				if (isScribusFile(value)) {
 					if (addScribusDocument(value)==0) {
-						//yikes!
+						//yikes! crash magnet!
 						tool->signature->SetPaper(laidout->project->docs.e[0]->doc->imposition->papergroup->papers.e[0]->box->paperstyle);
+						if (laidout->project->docs.n>docindex) {
+							tool->UseThisDocument(laidout->project->docs.e[docindex]->doc);
+						}
 					}
 				}
 				//***

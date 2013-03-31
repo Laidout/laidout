@@ -84,6 +84,7 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
  public:
+	Document *document;
 	Signature *signature;
 	PaperStyle *papersize;
 
@@ -120,6 +121,7 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	virtual int Refresh();
 
 	virtual int UseThisImposition(SignatureImposition *sigimp);
+	virtual int UseThisDocument(Document *doc);
 	virtual int UseThisSignature(Signature *sig);
 
 	friend class SignatureEditor;
