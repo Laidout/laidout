@@ -178,6 +178,49 @@ DrawableObject::~DrawableObject()
 	if (parent_link) delete parent_link; //don't delete parent itself.. that is a one way reference
 }
 
+/*! Return 0 for success.
+ * Return 1 for improper link, nothing changed.
+ */
+int DrawableObject::SetParentLink(DrawableParentLink *newlink)
+{
+	if (!newlink) {
+		if (parent_link) delete parent_link;
+		parent_link=NULL;
+		return 0;
+	}
+
+	if (parent_link) delete parent_link;
+	parent_link=newlink;
+	UpdateFromParentLink();
+
+	return 0;
+}
+
+//! Set this->m() to be an approprate value based on parent_link.
+void DrawableObject::UpdateFromParentLink()
+{
+	 //parent link can be a straight matrix off the parent coordinate origin,
+	 //or align to an anchor, then offset
+	if (!parent_link || parent_link->type==PARENTLINK_Matrix) return;
+
+	flatpoint a;
+	if (!parent) return;
+	if (parent_link->parent_anchor_id>=ANCHOR_MAX && parent) {
+		if (parent->GetAnchor(parent_link->parent_anchor_id, &a, 0));
+	}
+
+	flatpoint p;
+	p.x = parent->minx + parent_link->anchor1.x*(parent->maxx-parent->minx);
+	p.y = parent->miny + parent_link->anchor1.y*(parent->maxy-parent->miny);
+
+	flatpoint p2;
+	p2.x = minx + parent_link->anchor2.x*(maxx-minx);
+	p2.y = miny + parent_link->anchor2.y*(maxy-miny);
+
+	setIdentity();
+	origin(p-p2);
+}
+
 LaxInterfaces::SomeData *DrawableObject::duplicate(LaxInterfaces::SomeData *dup)
 {
 	DrawableObject *d=dynamic_cast<DrawableObject*>(dup);
@@ -849,6 +892,8 @@ ObjectDef *AffineValue::makeObjectDef()
 	return objectdef;
 }
 
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
 int AffineValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
 			             Value **value_ret, ErrorLog *log)
 {
@@ -884,11 +929,11 @@ int AffineValue::Evaluate(const char *function,int len, ValueHash *context, Valu
 	} else if (len==9 && !strncmp(function,"translate",9)) {
 		int err=0;
 		flatpoint p;
-		p.x=pp->findDouble("x",-1,&err); 
-		p.y=pp->findDouble("y",-1,&err);
+		p.x=pp->findIntOrDouble("x",-1,&err); 
+		p.y=pp->findIntOrDouble("y",-1,&err);
 		int i=pp->findIndex("p",1);
 		if (i>=0 && dynamic_cast<FlatvectorValue*>(pp->e(i))) p=dynamic_cast<FlatvectorValue*>(pp->e(i))->v;
-		origin(p);
+		origin(origin()+p);
 		if (value_ret) *value_ret=NULL;
 		return 0;
 

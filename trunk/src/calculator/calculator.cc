@@ -1276,6 +1276,44 @@ char *LaidoutCalculator::In(const char *in, int *return_type)
 	return newstr(_("You are surrounded by twisty passages, all alike."));
 }
 
+//! Return object type info for an expression
+/*! \todo *** WARNING, this is incomplete, it does not allow full parsing of a location,
+ *   it should be a combination of "show" and eval().
+ */
+ObjectDef *LaidoutCalculator::GetInfo(const char *expr)
+{
+	if (isblank(expr)) return NULL;
+
+	ObjectDef *def=NULL;
+	int scope,module,index;
+	int len=strlen(expr);
+	Entry *entry=findNameEntry(expr,len, &scope, &module, &index);
+	int pos=0;
+	if (entry) {
+		//Overloaded, function, value, namespace, alias, class, operator
+		def=entry->GetDef();
+		pos+=len;
+	}
+
+	 // *** WARNING! this does not do index parsing, so "blah[123].blah" will not work,
+	 //     nor will blah.(34+2).blah
+	int n;
+	const char *showwhat=NULL;
+	while (isspace(expr[pos])) pos++;
+	while (def && expr[pos]=='.') { //for "Math.sin", for instance
+		n=0;
+		while (pos+n<len && (isalnum(expr[pos+n]) || expr[pos+n]=='_')) n++;
+		showwhat=expr+pos;
+
+		ObjectDef *ssd=def->FindDef(showwhat,n);
+		if (!ssd) break;
+		pos+=n;
+		def=ssd;
+	} //if foreach dereference
+
+	return def;
+}
+
 //! Process a command or script. Returns a Value object with the result, if any in value_ret.
 /*! The function's return value is 0 for success, -1 for success with warnings, 1 for error in
  *  input. Note that it is possible for 0 to be returned and also have value_ret return NULL.
@@ -3255,10 +3293,12 @@ Value *LaidoutCalculator::getset()
 			delete set;
 			return NULL;
 		}
-		if (num->type()==VALUE_LValue) {
-			set->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
-			num->dec_count();
-		} else set->Push(num,1);
+		if (num) {
+			if (num->type()==VALUE_LValue) {
+				set->Push(dynamic_cast<LValue*>(num)->Resolve(),1);
+				num->dec_count();
+			} else set->Push(num,1);
+		}
 		
 	} while (nextchar(','));
 
@@ -3463,6 +3503,7 @@ Entry *LaidoutCalculator::findNameEntry(const char *word,int len, int *scope, in
 
 /*! from points to beginning of word.
  * If name not found, then from will still point to beginning of word.
+ * No dereferencing is done here. That is done in number().
  */
 Value *LaidoutCalculator::evalname()
 {

@@ -172,6 +172,8 @@ int LImageData::assign(FieldExtPlace *ext,Value *v)
 	return 0;
 }
 
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
 int LImageData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 	                     Value **value_ret, ErrorLog *log)
 {
@@ -188,7 +190,14 @@ int LImageData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 		return 0;
 	}
 
-	return -1;
+	AffineValue v(m());
+	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
+	if (status==0) {
+		m(v.m());
+		return 0;
+	}
+
+	return status;
 }
 
 

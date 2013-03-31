@@ -505,6 +505,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 
 	const char *key(int i);
 	Value *value(int i);
+	int flush();
 	int push(const char *name,int i);
 	int push(const char *name,double d);
 	int push(const char *name,const char *string);
