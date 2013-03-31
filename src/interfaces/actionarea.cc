@@ -56,6 +56,7 @@ ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
 	type=ntype;
 	hidden=0;
 	category=ncategory;
+	xdirection=flatpoint(1,0);
 }
 
 ActionArea::~ActionArea()
