@@ -72,12 +72,19 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 		dp->drawline(flatpoint(data->maxx,data->maxy),flatpoint(data->minx,data->maxy));
 		dp->drawline(flatpoint(data->minx,data->maxy),flatpoint(data->minx,data->miny));
 	}
-	if (!strcmp(data->whattype(),"Group")) { // Is a layer or a group
-		Group *g=dynamic_cast<Group *>(data);
-		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
-		return;
 
-	} else if (!strcmp(data->whattype(),"SomeDataRef")) {
+	if (dynamic_cast<DrawableObject*>(data) && dynamic_cast<DrawableObject*>(data)->n()) {
+		DrawableObject *g=dynamic_cast<DrawableObject *>(data);
+		for (int c=0; c<g->n(); c++) DrawData(dp,g->e(c),a1,a2,flags);
+
+		if (!strcmp(data->whattype(),"Group")) {
+			// Is explicitly a layer or a group, so we are done drawing!
+			return;
+		}
+	}
+	
+	 //special treatment for clones
+	if (!strcmp(data->whattype(),"SomeDataRef")) {
 		SomeDataRef *ref=dynamic_cast<SomeDataRef *>(data);
 		data=ref->thedata;
 		if (data) {

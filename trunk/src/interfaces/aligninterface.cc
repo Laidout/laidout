@@ -297,37 +297,16 @@ void AlignInfo::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObjec
 AlignInterface::AlignInterface(int nid,Displayer *ndp,Document *ndoc)
 	: ObjectInterface(nid,ndp) 
 {
-	controlcolor.rgbf(.5,.5,.5,1);
-	patheditcolor.rgbf(0,.7,0,1);
-
-	style|=RECT_HIDE_CONTROLS;
-	showdecs=0;
-	firsttime=1;
-	active=0;
-	snapto_lrc_amount=0; //pixel distance to snap to the standard left/top, center, or right/bottom points, 0 for none
-	boundstep=.1;
-	explodemode=0;
-	snapmovement=0;
-	showextra=0;
-	showrotation=1;
-
-	hover=-1;
-	hoverindex=-1;
-	presetpointsn=0;
-	presetpoints=NULL;
-	presetdata=NULL;
-
-	needtoresetlayout=1;
-
-	aligninfo=new AlignInfo;
-	//SetupBoxes();
-
-	sc=NULL;
-	CreateShortcuts();
+	base_init();
 }
 
 AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: ObjectInterface(nid,ndp) 
+{
+	base_init();
+}
+
+void AlignInterface::base_init()
 {
 	controlcolor.rgbf(.5,.5,.5,1);
 	patheditcolor.rgbf(0,.7,0,1);
@@ -342,9 +321,15 @@ AlignInterface::AlignInterface(anInterface *nowner,int nid,Displayer *ndp)
 	snapmovement=0;
 	showextra=0;
 	showrotation=1;
+	aligni_style=0;
+
+	hover=-1;
+	hoverindex=-1;
 	presetpointsn=0;
 	presetpoints=NULL;
 	presetdata=NULL;
+
+	needtoresetlayout=1;
 
 	aligninfo=new AlignInfo;
 	//SetupBoxes();
@@ -777,21 +762,23 @@ int AlignInterface::Refresh()
 		//only draw the controls when not editing path
 
 		 //draw snap to path
-		if (!aligninfo->path) {
-			if (hover==ALIGN_Path) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
-			//dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction, <- screen, not real
-			//			 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
-			dp->drawline(dp->realtoscreen(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction),
-						 dp->realtoscreen(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction));
-			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-		} else {
-			 // draw the PathsData
-			LineStyle ls(*aligninfo->path->linestyle);
-			ls.width=(hover==ALIGN_Path?3:1);
-			Laidout::DrawData(dp,aligninfo->path,&ls,NULL,0);
-			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-			dp->NewFG(&controlcolor);
-			dp->DrawScreen();
+		if (!(aligni_style&ALIGNI_Hide_Path)) {
+			if (!aligninfo->path) {
+				if (hover==ALIGN_Path) dp->LineAttributes(3,LineSolid, CapButt, JoinMiter);
+				//dp->drawline(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction, <- screen, not real
+				//			 aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction);
+				dp->drawline(dp->realtoscreen(aligninfo->center+aligninfo->leftbound*aligninfo->layout_direction),
+							 dp->realtoscreen(aligninfo->center+aligninfo->rightbound*aligninfo->layout_direction));
+				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+			} else {
+				 // draw the PathsData
+				LineStyle ls(*aligninfo->path->linestyle);
+				ls.width=(hover==ALIGN_Path?3:1);
+				Laidout::DrawData(dp,aligninfo->path,&ls,NULL,0);
+				dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+				dp->NewFG(&controlcolor);
+				dp->DrawScreen();
+			}
 		}
 
 		dp->NewBG(1.,1.,1.);
@@ -898,14 +885,16 @@ int AlignInterface::Refresh()
 
 
 		 //draw left and right bounds
-		dp->NewFG(&controlcolor);
-		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 		flatpoint p;
-		if (!child) {
-			PointAlongPath(aligninfo->leftbound,0, p, NULL);
-			dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveLeftBound);
-			PointAlongPath(aligninfo->rightbound,0, p, NULL);
-			dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveRightBound);
+		dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
+		dp->NewFG(&controlcolor);
+		if (!(aligni_style&ALIGNI_Hide_Path)) {
+			if (!child) {
+				PointAlongPath(aligninfo->leftbound,0, p, NULL);
+				dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveLeftBound);
+				PointAlongPath(aligninfo->rightbound,0, p, NULL);
+				dp->drawpoint(dp->realtoscreen(p),5,hover==ALIGN_MoveRightBound);
+			}
 		}
 
 
@@ -1238,27 +1227,29 @@ int AlignInterface::scan(int x,int y, int &index, unsigned int state)
 	//randomize buttons
 
 
-	 //scan for left boundary
-	flatpoint p;
-	PointAlongPath(aligninfo->leftbound,0, p, NULL);
-	if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
-		return ALIGN_MoveLeftBound;
-	}
+	if (!(aligni_style&ALIGNI_Hide_Path)) {
+		 //scan for left boundary
+		flatpoint p;
+		PointAlongPath(aligninfo->leftbound,0, p, NULL);
+		if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
+			return ALIGN_MoveLeftBound;
+		}
 
-	 //scan for right boundary
-	PointAlongPath(aligninfo->rightbound,0, p, NULL);
-	if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
-		return ALIGN_MoveRightBound;
-	}
+		 //scan for right boundary
+		PointAlongPath(aligninfo->rightbound,0, p, NULL);
+		if (norm(dp->realtoscreen(p)-flatpoint(x,y))<PAD) {
+			return ALIGN_MoveRightBound;
+		}
 
-	 //if not search for line controls first, search for them now
-	if (!(state&ControlMask)) {
-		int a=scanForLineControl(x,y,index);
-		if (a!=ALIGN_None) return a;
-	}
+		 //if not search for line controls first, search for them now
+		if (!(state&ControlMask)) {
+			int a=scanForLineControl(x,y,index);
+			if (a!=ALIGN_None) return a;
+		}
 
-	 //scan for path
-	if (!child && onPath(x,y)) return ALIGN_Path;
+		 //scan for path
+		if (!child && onPath(x,y)) return ALIGN_Path;
+	}
 
 	return ALIGN_None;
 	//return RectInterface::scan(x,y);
@@ -1282,6 +1273,8 @@ int AlignInterface::scanForLineControl(int x,int y, int &index)
 //! Return 1 if screen point is near the path, or 0.
 int AlignInterface::onPath(int x,int y)
 {
+	if (aligni_style&ALIGNI_Hide_Path) return 0;
+
 	if (!aligninfo->path) {
 		 //find distance to the segment from left to right
 		int dist=distance(flatpoint(x,y),

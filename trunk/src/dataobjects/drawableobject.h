@@ -77,7 +77,7 @@ class DrawableParentLink
 /*! Used in DrawableObject::GetAnchor().
  * Custom anchors must have a value of ANCHOR_MAX or greater.
  */
-enum AnchorTypes {
+enum BBoxAnchorTypes {
 	ANCHOR_ul=1,
 	ANCHOR_um,
 	ANCHOR_ur,
@@ -88,6 +88,17 @@ enum AnchorTypes {
 	ANCHOR_lm,
 	ANCHOR_lr,
 	ANCHOR_MAX
+};
+
+/*! for DrawableObject::locks */
+enum DrawableObjectLockTypes {
+	OBJLOCK_Contents   = (1<<0),
+	OBJLOCK_Position   = (1<<1),
+	OBJLOCK_Rotation   = (1<<2),
+	OBJLOCK_Scale      = (1<<3),
+	OBJLOCK_Shear      = (1<<4),
+	OBJLOCK_Kids       = (1<<5),
+	OBJLOCK_Selectable = (1<<6)
 };
 
 class DrawableObject :  virtual public ObjectContainer,
@@ -135,6 +146,13 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual void FindBBox();
 	virtual int SetParentLink(DrawableParentLink *newlink);
 	virtual void UpdateFromParentLink();
+	virtual LaxInterfaces::SomeData *GetParent();
+
+	virtual int Selectable();
+	virtual int Visible();
+	virtual int IsLocked(int which);
+	virtual void Lock(int which);
+	virtual void Unlock(int which);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_out_group(FILE *f,int indent,int what,Laxkit::anObject *context);

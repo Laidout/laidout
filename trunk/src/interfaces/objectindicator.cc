@@ -217,6 +217,10 @@ int ObjectIndicator::Refresh()
 
 		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
 	}
+	if (!context->obj) {
+		//curobj is just a context, not actually selected
+		dp->textout(x,y, "?",1, LAX_BOTTOM|LAX_LEFT);
+	}
 
 
 

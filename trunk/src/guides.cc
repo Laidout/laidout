@@ -13,17 +13,66 @@
 //
 
 #include "guides.h"
+#include <lax/strmanip.h>
+#include <lax/units.h>
+#include <lax/interfaces/somedata.h>
+#include <lax/interfaces/pathinterface.h>
+
+
+using namespace Laxkit;
+//using namespace LaxInterfaces;
 
 
 namespace Laidout {
 
 
+//----------------------------------------- PointAnchor -------------------------------------
 
-/*! \class Guide
+/*! \class PointAnchor 
+ * A named anchor, optionally aligned to a bounding box, or absolute coordinates.
+ * Can be a point, or a segment, or a line. See PointAnchorTypes.
+ */
+
+PointAnchor::PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2)
+{
+    name=newstr(nname);
+    anchor_type=type;
+    p=pp1;
+    p2=pp2;
+	color.rgb(0.,0.,1.);
+	hcolor.rgb(1.,0.,0.);
+}
+
+PointAnchor::~PointAnchor()
+{
+    if (name) delete[] name;
+}
+
+void PointAnchor::Set(const char *nname, int type, flatpoint pp1,flatpoint pp2)
+{
+    makestr(name,nname);
+    anchor_type=type;
+    p=pp1;
+    p2=pp2;
+}
+
+void PointAnchor::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	cerr <<" *** need to implement PathGuide::dump_out"<<endl;
+}
+
+void PointAnchor::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	cerr <<" *** need to implement PathGuide::dump_in_atts"<<endl;
+}
+
+
+//-------------------------------------- PathGuide -------------------------------------
+/*! \class PathGuide
  * \brief Things snap to guides.
  *
  * Guides in most programs are either vertical or horizontal lines. Guides in Laidout
- * can be any arbitrary single path. Guide objects are used in a viewer to snap objects to them,
+ * can be any arbitrary single path. PathGuide objects are used in a viewer to snap objects to them,
  * and they are also used as tabstops and margin indicators in text objects.
  * 
  * A guide can lock its rotation, scale, or position to be the constant relative to its containing
@@ -31,7 +80,7 @@ namespace Laidout {
  *
  * This class is for 1-dimensional guides. See class Arrangement for 2-d "guides".
  */
-/*! \var unsigned int Guide::guidetype
+/*! \var unsigned int PathGuide::guidetype
  * \brief The type of guide.
  *
  * <pre>
@@ -43,45 +92,53 @@ namespace Laidout {
  *  (1<<6) attract objects perpendicularly
  * </pre>
  */
-class Guide : public LaxInterfaces::SomeData, public LaxFiles::DumpUtility
+class PathGuide : public LaxInterfaces::SomeData, public LaxFiles::DumpUtility
 {
  public:
 	unsigned int guidetype;
-	LaxInterfaces::Path *guide;
-	unsigned long color, hcolor;
+	char *name;
+	LaxInterfaces::PathsData *guide;
+	Laxkit::ScreenColor color, hcolor;
 
-	Guide();
-	virtual ~Guide();
-	virtual const char *whattype() { return "Guide"; }
+	PathGuide();
+	virtual ~PathGuide();
+	virtual const char *whattype() { return "PathGuide"; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
-Guide::Guide()
+PathGuide::PathGuide()
 {
+	name=NULL;
 	guidetype=0;
 	guide=NULL;
-	color=rgbcolor(0.,0.,1.);
-	hcolor=rgbcolor(1.,0.,0.);
+	color.rgb(0.,0.,1.);
+	hcolor.rgb(1.,0.,0.);
 }
 
-Guide::~Guide()
+PathGuide::~PathGuide()
 {
+	if (name) delete[] name;
 	if (guide) guide->dec_count();
 }
 
-void Guide::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{ ***
+void PathGuide::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	cerr <<" *** need to implement PathGuide::dump_out"<<endl;
 }
 
-void Guide::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{ ***
+void PathGuide::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	cerr <<" *** need to implement PathGuide::dump_in_atts"<<endl;
 }
+
+
 
 //------------------------------------- Grid -----------------------------------------------------
-//
 
-
+/*! \class Grid
+ * Info about a grid guide.
+ */
 class Grid : public LaxFiles::DumpUtility
 {
   public:
@@ -91,7 +148,7 @@ class Grid : public LaxFiles::DumpUtility
 	flatvector majordir, minordir;
 	int spacingunits;
 	double xspacing, yspacing;
-	unsigned long color, majorcolor;
+	Laxkit::ScreenColor color, majorcolor;
 	int majorinterval; //draw thick every this number
 
 	Grid();
@@ -99,18 +156,18 @@ class Grid : public LaxFiles::DumpUtility
 	virtual const char *whattype() { return "Grid"; }
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-}
+};
 
 Grid::Grid()
-  : majordir(1,0), minordir(0,1);
+  : majordir(1,0), minordir(0,1)
 {
 	gridtype=0;
 	enabled=visible=1;
 	xspacing=yspacing=.5;
 	spacingunits=UNITS_Inches;
 
-	color=rgbcolor(0.,0.,1.);
-	majorcolor=rgbcolor(0.,0.,.8);
+	color.rgb(0.,0.,1.);
+	majorcolor.rgb(0.,0.,.8);
 	majorinterval=5;
 }
 
@@ -119,11 +176,13 @@ Grid::~Grid()
 
 
 void Grid::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{ ***
+{
+	cerr <<" *** need to implement Grid::dump_out"<<endl;
 }
 
 void Grid::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{ ***
+{
+	cerr <<" *** need to implement Grid::dump_in_atts"<<endl;
 }
 
 

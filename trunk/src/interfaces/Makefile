@@ -17,6 +17,7 @@ objs= \
 	actionarea.o \
 	nupinterface.o \
 	aligninterface.o \
+	anchorinterface.o \
 	pagerangeinterface.o \
 	graphicalshell.o \
 	objectindicator.o \

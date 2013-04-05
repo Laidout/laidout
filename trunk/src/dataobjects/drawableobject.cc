@@ -159,6 +159,11 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 	autowrap=autoinset=0;
 	locks=0;
 
+	locked=0;
+	visible=1;
+	prints=1;
+	selectable=1;
+
 	parent=NULL;
 	parent_link=NULL;
 }
@@ -177,6 +182,34 @@ DrawableObject::~DrawableObject()
 
 	if (parent_link) delete parent_link; //don't delete parent itself.. that is a one way reference
 }
+
+//! Simply return this->parent.
+LaxInterfaces::SomeData *DrawableObject::GetParent()
+{ return parent; }
+
+int DrawableObject::Selectable()
+{ return selectable; }
+
+int DrawableObject::Visible()
+{ return visible; }
+
+/*! If which==0, default to OBJLOCK_Selectable.
+ */
+int DrawableObject::IsLocked(int which)
+{
+	if (which==0) which=OBJLOCK_Selectable;
+	return (locks&which);
+}
+
+/*! or which into locks. 
+ */
+void DrawableObject::Lock(int which)
+{ locks|=which; }
+
+/*! Remove which from locks.
+ */
+void DrawableObject::Unlock(int which)
+{ locks&=~which; }
 
 /*! Return 0 for success.
  * Return 1 for improper link, nothing changed.
@@ -290,18 +323,6 @@ LaxInterfaces::PathsData *DrawableObject::GetWrapPath()
 }
 
 
-
-class Anchor
-{
-  public:
-	char *name;
-	flatpoint p, p2;
-	int anchor_type; //alignment point in bounding box,
-					 //or absolute coordinate
-					 //or segment
-					 //or infinite line
-};
-
 /*! Default is just the 9 points of corners, midpoints, and the middle of bounding boxes.
  */
 int DrawableObject::NumAnchors()
@@ -350,6 +371,7 @@ int DrawableObject::GetAnchor(int anchor_id, flatpoint *p, int transform)
 int DrawableObject::push(LaxInterfaces::SomeData *obj)
 {
 	if (!obj) return -1;
+	if (dynamic_cast<DrawableObject*>(obj)) dynamic_cast<DrawableObject*>(obj)->parent=this;
 	return kids.push(obj);
 }
 
@@ -360,6 +382,7 @@ int DrawableObject::push(LaxInterfaces::SomeData *obj)
 int DrawableObject::pushnodup(LaxInterfaces::SomeData *obj)
 {
 	if (!obj) return -1;
+	if (dynamic_cast<DrawableObject*>(obj)) dynamic_cast<DrawableObject*>(obj)->parent=this;
 	int c=kids.pushnodup(obj,-1);
 	return c;
 }
@@ -496,7 +519,7 @@ LaxInterfaces::SomeData *DrawableObject::findobj(LaxInterfaces::SomeData *d,int 
 	return NULL;
 }
 
-//! Take all the elements in the list which, and put them in a new group at the first index.
+//! Take all the elements in the list which, and put them in a new group at the smallest index.
 /*! If any of which are not in kids, then nothing is changed. If ne<=0 then the which list
  * is assumed to be terminated by a -1.
  *
@@ -514,9 +537,11 @@ int DrawableObject::GroupObjs(int ne, int *which)
 	for (c=0; c<ne; c++) if (which[c]<0 || which[c]>=n()) return 1;
 	
 	DrawableObject *g=new DrawableObject;
+	g->flags|=SOMEDATA_LOCK_CONTENTS;//***
 	int where,w[ne];
 	memcpy(w,which,ne*sizeof(int));
 	where=w[0];
+	for (int c=1; c<ne; c++) if (where>w[c]) where=w[c]; //select lowest index
 	LaxInterfaces::SomeData *d;
 	while (ne) {
 		d=pop(w[ne-1]); //doesn't change count
@@ -551,6 +576,7 @@ int DrawableObject::UnGroup(int which)
 		d=g->pop(0); //count stays same on d
 		transform_mult(mm,g->m(),d->m());
 		d->m(mm);
+		if (dynamic_cast<DrawableObject*>(d)) dynamic_cast<DrawableObject*>(d)->parent=this;
 		kids.push(d,-1,which++); //incs d
 		d->dec_count(); //remove extra count
 	}
@@ -589,6 +615,7 @@ int DrawableObject::UnGroup(int n,const int *which)
 	while (d=g->pop(0), d) {
 		transform_mult(mm,d->m(),g->m());
 		d->m(mm);
+		if (dynamic_cast<DrawableObject*>(d)) dynamic_cast<DrawableObject*>(d)->parent=this;
 		kids.push(d,-1,*which+1);
 		d->dec_count();
 	}

@@ -4327,14 +4327,15 @@ int ViewWindow::FocusOn(const Laxkit::FocusChangeData *e)
 //! Override to use ObjectInterface when object's contents are locked.
 int ViewWindow::SelectToolFor(const char *datatype,LaxInterfaces::ObjectContext *oc)
 {
+	 //use object tool for SomeDataRef or locked objects
 	if (oc && oc->obj &&
 			((oc->obj->flags&SOMEDATA_LOCK_CONTENTS)
 			 || !strcmp(oc->obj->whattype(),"SomeDataRef"))) {
-		 //use object tool for SomeDataRef or locked objects
 
 		for (int c=0; c<tools.n; c++) {
 			if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) {
 				SelectTool(tools.e[c]->id);
+				((ObjectInterface*)tools.e[c])->FreeSelection();
 				((ObjectInterface*)tools.e[c])->AddToSelection(oc);
 				updateContext(1);
 				break;

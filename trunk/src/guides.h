@@ -15,9 +15,41 @@
 #define GUIDES_H
 
 
+#include <lax/anobject.h>
+#include <lax/dump.h>
 
 
 namespace Laidout {
+
+
+//----------------------------------------- PointAnchor -------------------------------------
+enum PointAnchorTypes {
+    PANCHOR_BBox,
+    PANCHOR_Absolute,
+    PANCHOR_Segment,
+    PANCHOR_Line,
+    PANCHOR_MAX
+};
+
+class PointAnchor : public Laxkit::anObject,
+					public LaxFiles::DumpUtility
+{
+  public:
+    char *name;
+	Laxkit::ScreenColor color, hcolor;
+    flatpoint p, p2;
+    int anchor_type; //alignment point in bounding box,
+                     //or absolute coordinate
+                     //or segment
+                     //or infinite line
+    PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2);
+    virtual ~PointAnchor();
+    virtual const char *whattype() { return "PointAnchor"; }
+    virtual void Set(const char *nname, int type, flatpoint pp1,flatpoint pp2);
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+};
 
 
 } // namespace Laidout
