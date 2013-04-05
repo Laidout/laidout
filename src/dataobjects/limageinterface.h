@@ -24,7 +24,8 @@ namespace Laidout {
 
 
 //------------------------------- LImageInterface --------------------------------
-class LImageInterface : public LaxInterfaces::ImageInterface, public Value
+class LImageInterface : public LaxInterfaces::ImageInterface,
+						public Value
 {
  protected:
 	virtual void runImageDialog();

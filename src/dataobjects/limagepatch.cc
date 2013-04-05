@@ -17,6 +17,9 @@
 #include "limagepatch.h"
 #include "../laidout.h"
 #include "datafactory.h"
+#include "../language.h"
+#include "../stylemanager.h"
+#include "../calculator/shortcuttodef.h"
 
 #include <iostream>
 using namespace std;
@@ -196,6 +199,71 @@ int LImagePatchInterface::CharInput(unsigned int ch,const char *buffer,int len,u
 	return cc;
 }
 
+
+//! Returns this, but count is incremented.
+Value *LImagePatchInterface::duplicate()
+{
+    this->inc_count();
+    return this;
+}
+
+
+ObjectDef *LImagePatchInterface::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("ImagePatchInterface");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd=new ObjectDef(NULL,"ImagePatchInterface",
+            _("Image Patch Interface"),
+            _("Image Patch Interface"),
+            VALUE_Class,
+            NULL,NULL);
+
+	if (!sc) sc=GetShortcuts();
+	ShortcutsToObjectDef(sc, sd);
+
+	stylemanager.AddObjectDef(sd,0);
+	return sd;
+}
+
+
+///*!
+// * Return
+// *  0 for success, value optionally returned.
+// * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+// *  1 for parameters ok, but there was somehow an error, so no value returned.
+// */
+//int LImagePatchInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//	                     Value **value_ret, ErrorLog *log)
+//{
+//	return 1;
+//}
+
+/*! *** for now, don't allow assignments
+ *
+ * If ext==NULL, then assign v to replace what exists in this.
+ * Otherwise assign v to the value at the end of the extension.
+ *  
+ * Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ */
+int LImagePatchInterface::assign(FieldExtPlace *ext,Value *v)
+{
+	 //assignments not allowed
+	return 0;
+}
+
+Value *LImagePatchInterface::dereference(const char *extstring, int len)
+{
+	return NULL;
+}
+
 //------------------------------------- LColorPatchInterface -------------------------
 /*! \class LColorPatchInterface
  * 
@@ -233,6 +301,70 @@ int LColorPatchInterface::CharInput(unsigned int ch,const char *buffer,int len,u
 	}
 	if (cc==1) return 1;
 	return cc;
+}
+
+//! Returns this, but count is incremented.
+Value *LColorPatchInterface::duplicate()
+{
+    this->inc_count();
+    return this;
+}
+
+
+ObjectDef *LColorPatchInterface::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("ColorPatchInterface");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	sd=new ObjectDef(NULL,"ColorPatchInterface",
+            _("Image Patch Interface"),
+            _("Image Patch Interface"),
+            VALUE_Class,
+            NULL,NULL);
+
+	if (!sc) sc=GetShortcuts();
+	ShortcutsToObjectDef(sc, sd);
+
+	stylemanager.AddObjectDef(sd,0);
+	return sd;
+}
+
+
+///*!
+// * Return
+// *  0 for success, value optionally returned.
+// * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+// *  1 for parameters ok, but there was somehow an error, so no value returned.
+// */
+//int LColorPatchInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+//	                     Value **value_ret, ErrorLog *log)
+//{
+//	return 1;
+//}
+
+/*! *** for now, don't allow assignments
+ *
+ * If ext==NULL, then assign v to replace what exists in this.
+ * Otherwise assign v to the value at the end of the extension.
+ *  
+ * Return 1 for success.
+ *  2 for success, but other contents changed too.
+ *  0 for total fail, as when v is wrong type.
+ *  -1 for bad extension.
+ */
+int LColorPatchInterface::assign(FieldExtPlace *ext,Value *v)
+{
+	 //assignments not allowed
+	return 0;
+}
+
+Value *LColorPatchInterface::dereference(const char *extstring, int len)
+{
+	return NULL;
 }
 
 

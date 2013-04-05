@@ -73,6 +73,7 @@ enum RunModeType {
 		RUNMODE_Normal,
 		RUNMODE_Commands,
 		RUNMODE_Shell,
+		RUNMODE_Quit,
 		RUNMODE_Impose_Only
 	};
 

@@ -1954,18 +1954,33 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	const char *str;
 	char *buffer=NULL;
 	int len=0;
+
+	////for whole Value:
+	//getValueStr(&buffer,&len, 1);
+	//str=buffer;
+	//if (str) {
+	//	fprintf(f," %s\n",str);
+	//}
+
+	Value *v;
 	for (int c=0; c<getNumFields(); c++) {
-		fprintf(f,"%s%s",spc,FieldName(c));
 		def=FieldInfo(c); //this is the object def of a field. If it exists, then this element has subfields.
-		if (!def) {
-			getValueStr(&buffer,&len, 1);
-			str=buffer;
-			if (str) {
-				fprintf(f," %s\n",str);
-			}
-		} else {
-			if (def->format==VALUE_Function) continue; //output values only, not functions
+		if (!def) continue;
+
+		 //output values only, not functions
+		if (def->format==VALUE_Function) continue;
+		if (def->format==VALUE_Class) continue;
+		
+		v=dereference(def->name,strlen(def->name));
+		if (!v) continue;
+
+		fprintf(f,"%s%s",spc,FieldName(c));
+		v->getValueStr(&buffer,&len, 1);
+		str=buffer;
+		if (str) {
+			fprintf(f," %s\n",str);
 		}
+
 	}
 }
 
@@ -2091,6 +2106,11 @@ ObjectDef *SetValue::makeObjectDef()
 					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL,
 					  NULL);
 
+	def->pushFunction("removeValue",_("Remove value"),_("Remove this same value if it is in set"),
+					  NULL,
+					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
+					  NULL);
+
 	return def;
 }
 
@@ -2102,6 +2122,16 @@ int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *
 
 	 //with parameters:
 	try {
+		if (isName(func,len,"removeValue")) {
+			Value *v=parameters ? parameters->find("value") : NULL;
+			if (!v) throw -1;
+
+			int i=values.findindex(v);
+			if (i>=0) values.remove(i);
+			*value_ret=NULL;
+			return 0;
+		}
+
 		if (isName(func,len,"push")) {
 			int success=1;
 			int pos=parameters ? parameters->findInt("pos",-1,&success) : -1;

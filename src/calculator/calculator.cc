@@ -2474,10 +2474,14 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		 //  function f(x,y)=x+y;
 		 //  operator * (num1,num2) { num3.x=num1.x+num2.x; num3.y=num1.y+num2.y; return num3; }
 		 //}
-		from+=5;
 		skipwscomment();
 		int n=0;
 		char *classname=getnamestring(&n);
+		if (!n) {
+			calcerr(_("Expected class name!"));
+			return 1;
+		}
+		from+=n;
 		ObjectDef *def=new ObjectDef(NULL, classname,classname,NULL,VALUE_Class,NULL,NULL);
 		delete[] classname;
 		ObjectDef *edef;
@@ -2511,7 +2515,6 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		 //operator right ++ (o) { o=o+1; }
 		 //operator x * y { x^2+y }
 		 //operator o++ { o=o+1; }
-		from+=8;
 		skipwscomment();
 		int n=0;
 		const char *op=getopstring(&n);
