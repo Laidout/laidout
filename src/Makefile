@@ -53,6 +53,7 @@ objs= \
 	spreadview.o \
 	document.o \
 	project.o \
+	guides.o \
 	interfaces.o \
 	about.o \
 	buttonbox.o \

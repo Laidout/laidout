@@ -37,6 +37,7 @@
 #include "dataobjects/lgradientdata.h"
 #include "interfaces/paperinterface.h"
 #include "interfaces/graphicalshell.h"
+#include "interfaces/anchorinterface.h"
 
 
 using namespace Laxkit;
@@ -79,6 +80,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	//i=new CaptionInterface(id++,NULL);
 	//existingpool->push(i);
 	//i->dec_count();
+	//
+	i=new AnchorInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 	// *************** end testing
 
 

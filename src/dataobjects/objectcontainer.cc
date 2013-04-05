@@ -60,7 +60,7 @@ namespace Laidout {
 
 ObjectContainer::ObjectContainer()
 {
-	parent=NULL;
+	//parent=NULL;
 	obj_flags=0;
 	id=NULL;
 }

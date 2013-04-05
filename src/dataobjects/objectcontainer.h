@@ -49,7 +49,7 @@ namespace Laidout {
 class ObjectContainer : virtual public Laxkit::anObject
 {
  public:
-	ObjectContainer *parent;
+	//ObjectContainer *parent;
 	char *id;
 	unsigned int obj_flags;
 	virtual unsigned int object_flags() { return obj_flags; }

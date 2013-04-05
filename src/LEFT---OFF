@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+don't allow reparent to a child!! or reparent as appropriate
+
+prompt window is f'd up
+
 grouping frelled.. can group, but cannot seem to select existing groups to ungroup
 
 Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(

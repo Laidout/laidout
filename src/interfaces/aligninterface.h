@@ -109,6 +109,7 @@ enum AlignPresetType {
 
 class AlignInterface : public LaxInterfaces::ObjectInterface
 {
+
   protected:
 	Laxkit::ButtonDownInfo buttondown;
 
@@ -162,11 +163,18 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual void setPreset(int which);
 	virtual int createPath();
 
+	void base_init();
   public:
 	int snapto_lrc_amount;//pixel snap distance for common l/r/c points
 	double boundstep;
 	Laxkit::ScreenColor controlcolor;
 	Laxkit::ScreenColor patheditcolor;
+
+	enum AlignInterfaceStyles {
+		ALIGNI_Hide_Path=(1<<0)
+	};
+
+	int aligni_style;
 
 	AlignInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Document *ndoc=NULL);
 	AlignInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);

@@ -822,9 +822,9 @@ void InitOptions()
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
-	options.Add("command",            'c', 1, "Run one or more commands without the gui, then exit",        0, "\"newdoc net\"");
+	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
 	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
-	options.Add("shell",              'P', 0, "Enter a command line shell.",                 0, NULL);
+	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
@@ -877,7 +877,6 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 's': { // --script
 					donotusex=1;
-					runmode=RUNMODE_Commands;
 					int size=file_size(o->arg(),1,NULL);
 					if (size<=0) {
 						cerr <<_("No input script!")<<endl;
@@ -892,7 +891,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					fread(instr,1,size,f);
 					char *str=calculator->In(instr);
 					if (str) cout <<str<<endl;
-					exit(0);//***this should exit(1) on error?
+					if (runmode!=RUNMODE_Commands) runmode=RUNMODE_Quit;
 				} break;
 
 			case 'c': { // --command
@@ -900,7 +899,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					runmode=RUNMODE_Commands;
 					char *str=calculator->In(o->arg());
 					if (str) cout <<str<<endl;
-					exit(0);//***this should exit(1) on error?
+					if (runmode!=RUNMODE_Commands) runmode=RUNMODE_Quit;
 				} break;
 
 			case 'n': { // --new "letter singles 3 pages blah blah blah"
@@ -976,6 +975,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 		} //switch
 	}
+
+	if (runmode==RUNMODE_Quit) exit(0);
 
 //	int readin=0;
 //	if (optind<argc && argv[optind][0]=='-' && argv[optind][0]=='\0') { 
