@@ -36,6 +36,8 @@ class PointAnchor : public Laxkit::anObject,
 {
   public:
     char *name;
+	int id;
+	DrawableObject *owner;
 	Laxkit::ScreenColor color, hcolor;
     flatpoint p, p2;
     int anchor_type; //alignment point in bounding box,
