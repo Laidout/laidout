@@ -110,7 +110,7 @@ Laxkit::MenuInfo *AnchorInterface::ContextMenu(int x,int y,int deviceid)
  */
 int AnchorInterface::AddAnchor(flatpoint p,const char *name)
 {
-	PointAnchor *a=new PointAnchor(name,PANCHOR_Absolute,p,flatpoint());
+	PointAnchor *a=new PointAnchor(name,PANCHOR_Absolute,p,flatpoint(),0);
 	anchors.push(a);
 	a->dec_count();
 	return 0;
