@@ -922,7 +922,13 @@ Value *LValue::dereference(const char *extstring, int len)
 	ObjectDef *def=v->GetObjectDef();
 	if (def) def=def->FindDef(extstring,len);
 	if (def) {
-		//if (def->format==VALUE_Variable)  ... just add the extension
+		// *** if (def->format==VALUE_Variable)  ... just add the extension
+		// ***TEMP:
+		if (def->format==VALUE_Variable) {
+			Value *vv=v->dereference(extstring,len);
+			v->dec_count();
+			return vv;
+		}
 		
 		if (def->format==VALUE_Function) {
 			Value *fv=new NamespaceValue(def,v);
@@ -2507,6 +2513,8 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		currentLevel()->scope_namespace->push(def,1);
 		pushScope(BLOCK_class, 0, 0, NULL, NULL, def);
 
+		DBG cerr<<"Class definition:"<<endl;
+		DBG def->dump_out(stdout,2,0,NULL);
 		return 1;
 	}
 

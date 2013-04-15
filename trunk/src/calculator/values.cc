@@ -282,6 +282,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 	fieldsdef=NULL;
 	format=fmt;
 	flags=fflags;
+	islist=0; //if this element should be considered a set of such elements
 
 	if (nextends) {
 		Extend(nextends);
@@ -322,6 +323,7 @@ ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Val
 	fieldsformat=(newval?newval->type():0);
 	fieldsdef=NULL;
 	fields=NULL;
+	islist=0; //if this element should be considered a set of such elements
 }
 
 //! Null creation assumes namespace.
@@ -344,6 +346,7 @@ ObjectDef::ObjectDef()
 	fieldsformat=0;
 	fieldsdef=NULL;
 	fields=NULL;
+	islist=0; //if this element should be considered a set of such elements
 }
 
 //! Delete the various strings, and styledef->dec_count().
@@ -548,6 +551,17 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 		}
 		cerr <<" *** finish implementing ObjectDef code out!"<<endl;
 		return att;
+
+	} else if (what==DEFOUT_JSON) {
+		 //NOTE that dumping out here is object definition, NOT actual json objects
+		 //names and any strings are all in quotes, follow a name with a colon
+		 //arrays are in brackets
+		 //subelements are contained in brackets
+		char *str=NULL;
+		if (name) {
+			appendstr(str,"\""); appendstr(str,name); appendstr(str,"\": ");
+
+		}
 	}
 
 	return NULL;
@@ -1948,6 +1962,30 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		return;
 	}
 
+	if (what==DEFOUT_JSON) {
+		DBG cerr <<" *** value out to json, todo!!"<<endl;
+
+		Value *v;
+		ObjectDef *def;
+		for (int c=0; c<getNumFields(); c++) {
+			def=FieldInfo(c); //this is the object def of a field. If it exists, then this element has subfields.
+			if (!def) continue;
+
+			 //output values only, not functions
+			if (def->format==VALUE_Function || def->format==VALUE_Class || def->format==VALUE_Operator) continue;
+			
+			v=dereference(def->name,strlen(def->name));
+			if (!v) continue;
+			def=v->GetObjectDef();
+			if (!def) continue;
+
+			//fprintf(f,"%s\"%s\": ",spc,FieldName(c));
+
+		}
+
+		return;
+	}
+
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	ObjectDef *def;
@@ -1970,6 +2008,7 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		 //output values only, not functions
 		if (def->format==VALUE_Function) continue;
 		if (def->format==VALUE_Class) continue;
+		if (def->format==VALUE_Operator) continue;
 		
 		v=dereference(def->name,strlen(def->name));
 		if (!v) continue;

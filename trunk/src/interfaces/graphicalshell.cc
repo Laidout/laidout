@@ -282,7 +282,7 @@ int GraphicalShell::InitAreas()
 
 	UpdateSearchTerm(NULL,0, 1);
 
-	DBG menuinfoDump(&tree,0);
+	//DBG menuinfoDump(&tree,0);
 
 	return 0;
 }
@@ -383,7 +383,7 @@ void GraphicalShell::UpdateSearchTerm(const char *str,int pos, int firsttime)
 
 		} else { //no distinct search area, so use all of tree
 			AddTreeToCompletion(&tree);
-			DBG menuinfoDump(&completion,0);
+			//DBG menuinfoDump(&completion,0);
 		}
 	}
 }

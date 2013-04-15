@@ -998,10 +998,11 @@ int AffineValue::Evaluate(const char *function,int len, ValueHash *context, Valu
 		return 0;
 
 	} else if (len==4 &&  !strncmp(function,"flip",4)) {
-		int err=0;
+		int err1=0,err2=0;
 		flatpoint p1,p2;
-		p1=pp->findFlatvector("p1",-1,&err);
-		p2=pp->findFlatvector("p2",-1,&err);
+		p1=pp->findFlatvector("p1",-1,&err1);
+		p2=pp->findFlatvector("p2",-1,&err2);
+		if (err1!=0 && err2!=0) p2=flatpoint(1,0);
 
 		if (p1==p2) {
 			if (log) log->AddMessage(_("p1 and p2 must be different points"),ERROR_Fail);
