@@ -17,6 +17,7 @@
 
 #include <lax/anobject.h>
 #include <lax/dump.h>
+#include "dataobjects/drawableobject.h"
 
 
 namespace Laidout {
@@ -44,10 +45,10 @@ class PointAnchor : public Laxkit::anObject,
                      //or absolute coordinate
                      //or segment
                      //or infinite line
-    PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2);
+    PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2,int nid);
     virtual ~PointAnchor();
     virtual const char *whattype() { return "PointAnchor"; }
-    virtual void Set(const char *nname, int type, flatpoint pp1,flatpoint pp2);
+    virtual void Set(const char *nname, int type, flatpoint pp1,flatpoint pp2,int nid);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
