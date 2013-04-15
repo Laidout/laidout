@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
+
 don't allow reparent to a child!! or reparent as appropriate
 
 prompt window is f'd up
