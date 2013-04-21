@@ -26,9 +26,7 @@ namespace Laidout {
 
 //------------------------------- LImageData ---------------------------------------
 class LImageData : public DrawableObject,
-				   public LaxInterfaces::ImageData,
-				   public FunctionEvaluator,
-				   public Value
+				   public LaxInterfaces::ImageData
 {
   public:
 	//ImageImportFilter *importer;
@@ -45,7 +43,6 @@ class LImageData : public DrawableObject,
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
 
-	virtual int type() { return VALUE_Fields; }
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);

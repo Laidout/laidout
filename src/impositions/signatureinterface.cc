@@ -1030,9 +1030,9 @@ int SignatureInterface::Refresh()
 	SimpleUnit *units=GetUnitManager();
 	sprintf(str,_("%d pages per pattern, Final size: %g x %g %s"),
 				signature->PagesPerPattern(),
-				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->default_units,NULL),
-				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->default_units,NULL),
-				laidout->unitname);
+				units->Convert(signature->PageWidth(1), UNITS_Inches,laidout->prefs.default_units,NULL),
+				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->prefs.default_units,NULL),
+				laidout->prefs.unitname);
 	dp->DrawScreen();
 	dp->textout(0,0, str,-1, LAX_LEFT|LAX_TOP);
 	dp->DrawReal();

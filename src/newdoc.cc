@@ -309,8 +309,8 @@ int NewDocWindow::init()
 	curorientation=o;
 	 // -----Paper Size X
 	SimpleUnit *units=GetUnitManager();
-	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->default_units,NULL));
-	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->default_units,NULL));
+	sprintf(blah,"%.10g", units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL));
+	sprintf(blah2,"%.10g",units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL));
 	last=paperx=new LineInput(this,"paper x",NULL,LINP_ONLEFT|LINP_FLOAT, 0,0,0,0, 0, 
 						last,object_id,"paper x",
 			            _("Paper Size  x:"),(o&1?blah2:blah),0,
@@ -330,7 +330,7 @@ int NewDocWindow::init()
 	char *tmp;
 	c2=0;
 	int uniti=-1,tid;
-	units->UnitInfo(laidout->unitname,&uniti,NULL,NULL,NULL,NULL);
+	units->UnitInfo(laidout->prefs.unitname,&uniti,NULL,NULL,NULL,NULL);
 	for (int c=0; c<units->NumberOfUnits(); c++) {
 		units->UnitInfoIndex(c,&tid,NULL,NULL,NULL,&tmp);
 		if (uniti==tid) c2=c;
@@ -613,9 +613,9 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		papertype->landscape(curorientation);
 		char num[30];
 		SimpleUnit *units=GetUnitManager();
-		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->default_units,NULL),0);
+		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		paperx->SetText(num);
-		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->default_units,NULL),0);
+		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		papery->SetText(num);
 		UpdatePaper(1);
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
@@ -724,10 +724,10 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		int id;
 		char *name;
 		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
-		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->default_units,id,NULL));
-		papery->SetText(units->Convert(papery->GetDouble(), laidout->default_units,id,NULL));
-		laidout->default_units=id;
-		makestr(laidout->unitname,name);
+		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
+		papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
+		laidout->prefs.default_units=id;
+		makestr(laidout->prefs.unitname,name);
 		return 0;
 
 	} else if (!strcmp(mes,"saveas")) { // from doc save as "..." control button

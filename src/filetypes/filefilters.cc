@@ -1068,7 +1068,7 @@ int export_document(DocumentExportConfig *config, ErrorLog &log)
 	if (!papergroup) {
 		int c;
 		for (c=0; c<laidout->papersizes.n; c++) {
-			if (!strcasecmp(laidout->defaultpaper,laidout->papersizes.e[c]->name)) 
+			if (!strcasecmp(laidout->prefs.defaultpaper,laidout->papersizes.e[c]->name)) 
 				break;
 		}
 		PaperStyle *ps;

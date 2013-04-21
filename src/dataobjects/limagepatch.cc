@@ -96,6 +96,86 @@ LaxInterfaces::SomeData *LImagePatchData::duplicate(LaxInterfaces::SomeData *dup
 }
 
 
+//------Value functions:
+
+Value *LImagePatchData::duplicate()
+{
+	SomeData *dup=LaxInterfaces::somedatafactory->newObject("ImagePatchData");
+	ImagePatchData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dynamic_cast<Value*>(dup);
+}
+
+ObjectDef *LImagePatchData::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("ImagePatchData");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	ObjectDef *affinedef=stylemanager.FindDef("Affine");
+	sd=new ObjectDef(affinedef,
+			"ImagePatchData",
+            _("ImagePatchData"),
+            _("An image mesh distortion"),
+            VALUE_Class,
+            NULL,NULL);
+
+//	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
+//					 NULL);
+//	sd->pushVariable("p1", _("p1"), _("The starting point"), NULL,0);
+
+	return sd;
+}
+
+Value *LImagePatchData::dereference(const char *extstring, int len)
+{
+//	if (extequal(extstring,len, "p1")) {
+//		return new DoubleValue(p1);
+//	}
+
+
+	return NULL;
+}
+
+int LImagePatchData::assign(FieldExtPlace *ext,Value *v)
+{
+//	if (ext && ext->n()==1) {
+//		const char *str=ext->e(0);
+//		int isnum;
+//		double d;
+//		if (str) {
+//			if (!strcmp(str,"p1")) {
+//				d=getNumberValue(v, &isnum);
+//				if (!isnum) return 0;
+//				p1=d;
+//				FindBBox();
+//				return 1;
+//			}
+//		}
+//	}
+
+	AffineValue affine(m());
+	int status=affine.assign(ext,v);
+	if (status==1) {
+		m(affine.m());
+		return 1;
+	}
+	return 0;
+}
+
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
+int LImagePatchData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log)
+{
+	return -1;
+}
+
+
+
 //------------------------------- LColorPatchData ---------------------------------------
 /*! \class LColorPatchData 
  * \brief Subclassing LaxInterfaces::ColorPatchData
@@ -157,6 +237,85 @@ LaxInterfaces::SomeData *LColorPatchData::duplicate(LaxInterfaces::SomeData *dup
 	ColorPatchData::duplicate(dup);
 	DrawableObject::duplicate(dup);
 	return dup;
+}
+
+
+//------Value functions:
+
+Value *LColorPatchData::duplicate()
+{
+	SomeData *dup=LaxInterfaces::somedatafactory->newObject("ColorPatchData");
+	ColorPatchData::duplicate(dup);
+	DrawableObject::duplicate(dup);
+	return dynamic_cast<Value*>(dup);
+}
+
+ObjectDef *LColorPatchData::makeObjectDef()
+{
+
+	ObjectDef *sd=stylemanager.FindDef("ColorPatchData");
+    if (sd) {
+        sd->inc_count();
+        return sd;
+    }
+
+	ObjectDef *affinedef=stylemanager.FindDef("Affine");
+	sd=new ObjectDef(affinedef,
+			"ColorPatchData",
+            _("ColorPatchData"),
+            _("A color mesh gradient"),
+            VALUE_Class,
+            NULL,NULL);
+
+//	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
+//					 NULL);
+//	sd->pushVariable("p1", _("p1"), _("The starting point"), NULL,0);
+
+	return sd;
+}
+
+Value *LColorPatchData::dereference(const char *extstring, int len)
+{
+//	if (extequal(extstring,len, "p1")) {
+//		return new DoubleValue(p1);
+//	}
+
+
+	return NULL;
+}
+
+int LColorPatchData::assign(FieldExtPlace *ext,Value *v)
+{
+//	if (ext && ext->n()==1) {
+//		const char *str=ext->e(0);
+//		int isnum;
+//		double d;
+//		if (str) {
+//			if (!strcmp(str,"p1")) {
+//				d=getNumberValue(v, &isnum);
+//				if (!isnum) return 0;
+//				p1=d;
+//				FindBBox();
+//				return 1;
+//			}
+//		}
+//	}
+
+	AffineValue affine(m());
+	int status=affine.assign(ext,v);
+	if (status==1) {
+		m(affine.m());
+		return 1;
+	}
+	return 0;
+}
+
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
+int LColorPatchData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log)
+{
+	return -1;
 }
 
 

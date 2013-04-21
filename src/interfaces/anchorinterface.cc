@@ -126,7 +126,7 @@ int AnchorInterface::AddAnchors(VObjContext *context)
 	DrawableObject *d=dynamic_cast<DrawableObject*>(context->obj);
 	flatpoint p,pp;
 	for (int c=0; c<d->NumAnchors(); c++) {
-		d->GetAnchorI(c,&p,0);
+		d->GetAnchorI(c,&p,0,NULL);
 		pp=transform_point(m,p);
 		AddAnchor(pp,NULL);
 	}

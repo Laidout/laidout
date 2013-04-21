@@ -46,7 +46,7 @@ AboutWindow::AboutWindow()
 {
 	win_style|=ANXWIN_ESCAPABLE;
 
-	if (laidout->splash_image_file) splash=load_image(laidout->splash_image_file);
+	if (laidout->prefs.splash_image_file) splash=load_image(laidout->prefs.splash_image_file);
 	else splash=NULL;
 }
 

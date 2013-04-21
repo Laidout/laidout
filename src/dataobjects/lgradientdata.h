@@ -28,9 +28,7 @@ namespace Laidout {
 //------------------------------- LGradientData ---------------------------------------
 
 class LGradientData : public DrawableObject,
-					  public LaxInterfaces::GradientData,
-					  public FunctionEvaluator,
-					  public Value
+					  public LaxInterfaces::GradientData
 {
   public:
 	LGradientData(LaxInterfaces::SomeData *refobj=NULL);
@@ -43,7 +41,6 @@ class LGradientData : public DrawableObject,
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
 	 //from Value:
-	virtual int type() { return VALUE_Fields; }
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);
@@ -54,7 +51,8 @@ class LGradientData : public DrawableObject,
 
 
 //------------------------------- LGradientInterface --------------------------------
-class LGradientInterface : public LaxInterfaces::GradientInterface, public Value
+class LGradientInterface : public LaxInterfaces::GradientInterface,
+						   public Value
 {
  protected:
  public:
@@ -63,7 +61,6 @@ class LGradientInterface : public LaxInterfaces::GradientInterface, public Value
 	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 
 	//from value
-	virtual int type() { return VALUE_Fields; }
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);

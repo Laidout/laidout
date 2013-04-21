@@ -27,9 +27,7 @@ namespace Laidout {
 
 
 class LSomeDataRef : public DrawableObject,
-				     public LaxInterfaces::SomeDataRef,
-				     //public FunctionEvaluator,
-				     public Value
+				     public LaxInterfaces::SomeDataRef
 {
   public:
 	LSomeDataRef(LaxInterfaces::SomeData *refobj=NULL);
@@ -41,8 +39,7 @@ class LSomeDataRef : public DrawableObject,
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 
-
-	virtual int type() { return VALUE_Fields; }
+	 //from Value:
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *dereference(const char *extstring, int len);

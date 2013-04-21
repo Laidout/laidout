@@ -38,7 +38,7 @@ PalettePane::PalettePane(anXWindow *parnt,const char *nname,const char *ntitle,u
 
 const char *PalettePane::PaletteDir()
 {
-	return laidout->palette_dir;
+	return laidout->prefs.palette_dir;
 }
 
 

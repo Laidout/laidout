@@ -212,7 +212,7 @@ int SimpleFunctionEvaluator::Evaluate(const char *func,int len, ValueHash *conte
  * 
  *   The format of the value of this ObjectDef. This is for any built in objects, with VALUE_Fields
  *   meaning it is some compound object, with fieldsformat being a unique identifier for that
- *   compound format.
+ *   compound format which by default is (VALUE_MaxBuiltIn+object_id).
  */
 /*! \var char *ObjectDef::name
  *  \brief Basically a class name, meant to be seen in the interpreter.
@@ -278,7 +278,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 	
 
 	fields=nfields;
-	fieldsformat=0;
+	fieldsformat=VALUE_MaxBuiltIn + object_id;
 	fieldsdef=NULL;
 	format=fmt;
 	flags=fflags;
@@ -343,7 +343,7 @@ ObjectDef::ObjectDef()
 	defaultValue=NULL;
 	flags=0;
 	format=VALUE_Namespace;
-	fieldsformat=0;
+	fieldsformat=VALUE_MaxBuiltIn + object_id;
 	fieldsdef=NULL;
 	fields=NULL;
 	islist=0; //if this element should be considered a set of such elements
@@ -364,7 +364,6 @@ ObjectDef::~ObjectDef()
 	if (defaultvalue) delete[] defaultvalue;
 	if (defaultValue) defaultValue->dec_count();
 	
-	if (fieldsdef) delete[] fieldsdef;
 	if (fields) {
 		DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
@@ -379,7 +378,7 @@ ObjectDef::~ObjectDef()
  */
 void ObjectDef::Clear(int which)
 {
-	if (which&1) if (fields) delete fields;
+	if (which&1) { if (fields) delete fields; fields=NULL; }
 	if (which&2) {
 		makestr(range,NULL);
 		makestr(defaultvalue,NULL);
@@ -1352,12 +1351,6 @@ ObjectDef *ValueHash::makeObjectDef()
 	return def;
 }
 
-/*! \ingroup misc
- * Return len==strlen(str) && !strncmp(longstr,str,len).
- */
-int isName(const char *longstr,int len, const char *str)
-{ return len==(int)strlen(str) && !strncmp(longstr,str,len); }
-
 int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
 						 ErrorLog *log)
@@ -1823,6 +1816,17 @@ Value::~Value()
  */
 const char *Value::Id()
 { return object_idstr; }
+
+/*! Default is to return GetObjectDef()->format, or ->fieldsformat if format==VALUE_Formats.
+ * Built in types will redefine.
+ */
+int Value::type()
+{
+	ObjectDef *def=GetObjectDef();
+	if (!def) return VALUE_Any;
+	if (def->format==VALUE_Fields) return def->fieldsformat;
+	return def->format;
+}
 
 
 //! Dereference once, retrieving values from members. Note this is for Values only, not functions, classes, namespaces, etc.
@@ -2512,6 +2516,105 @@ int StringValue::getValueStr(char *buffer,int len)
 Value *StringValue::duplicate()
 { return new StringValue(str); }
 
+ObjectDef default_StringValue_ObjectDef(NULL,"string",_("String"),_("String"),
+							 VALUE_Class, NULL, "\"\"", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *StringValue::makeObjectDef()
+{
+	ObjectDef *def=&default_SetValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("len",_("Length of string"),_("Length of string"), NULL,
+					  NULL);
+
+	def->pushFunction("sub",_("Substring"),_("Retrieve a substring"),
+					  NULL,
+					  "start",_("Start"),_("Counting from 0"), VALUE_Int,NULL,NULL,
+					  "end",  _("End"),  _("Counting from 0"), VALUE_Int,NULL,"-1",
+					  NULL);
+
+	def->pushFunction("find",_("Find"),_("Return position of substring, or -1"),
+					  NULL,
+					  "str",_("String"),_("String to search for."), VALUE_String,NULL,"",
+					  "from",  _("From"),  _("Start search from here."), VALUE_Int,NULL,NULL,
+					  NULL);
+
+	def->pushFunction("replace",_("Replace"),_("Replace substsring with new string"),
+					  NULL,
+					  "str",_("String"),_("String to insert"), VALUE_String,NULL,NULL,
+					  "start",_("Start"),_("Counting from 0"), VALUE_Int,NULL,NULL,
+					  "end",  _("End"),  _("Counting from 0"), VALUE_Int,NULL,"-1",
+					  NULL);
+
+	return def;
+}
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int StringValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (isName(func,len, "len")) {
+		*value_ret=new DoubleValue(str?strlen(str):0);
+		return 0;
+
+	} else if (isName(func,len, "sub")) {
+		int err=0;
+		int start=parameters->findIntOrDouble("start",-1,&err);
+		if (err!=0) start=0;
+		int end=parameters->findIntOrDouble("end",-1,&err);
+		if (err!=0) end=str?strlen(str)-1:0;
+		if (start<0) start=0;
+		if (end>=(int)strlen(str)) end=strlen(str)-1;
+		StringValue *s=new StringValue();
+		if (end-start>=0) makenstr(s->str, str,end-start+1);
+		*value_ret=s;
+		return 0;
+
+	} else if (isName(func,len, "find")) {
+		int err=0;
+		const char *search=parameters->findString("string",-1,&err);
+		if (!str || !search) {
+			*value_ret=new IntValue(-1);
+			return 0;
+		}
+		int from=parameters->findIntOrDouble("from",-1,&err);
+		if (from<0) from=0; else if (from>=(int)strlen(str)) from=strlen(str)-1;
+		char *pos=strstr(str+from,search);
+		*value_ret=new IntValue(pos ? pos-str : -1);
+		return 0;
+
+	} else if (isName(func,len, "replace")) {
+		int err=0;
+		int start=parameters->findIntOrDouble("start",-1,&err);
+		if (err!=0) start=0;
+		int end=parameters->findIntOrDouble("end",-1,&err);
+		if (err!=0) end=str?strlen(str):0;
+		if (start<0) start=0;
+		if (end>(int)strlen(str)) end=strlen(str);
+
+		const char *replace=parameters->findString("str",-1,&err);
+		if (err!=0 || !replace) replace="";
+
+		StringValue *s=new StringValue();
+		if (end-start>=0) makenstr(s->str, str,start);
+		appendstr(s->str, replace);
+		if (end<(int)strlen(str)) appendstr(s->str,str+end);
+		*value_ret=s;
+		return 0;
+
+	}
+
+	return -1;
+}
+
+
 //--------------------------------- FileValue -----------------------------
 //! Create a value of a file location.
 FileValue::FileValue(const char *f, int len)
@@ -2826,6 +2929,13 @@ int extequal(const char *str, int len, const char *field, char **next_ret)
 	if (next_ret) *next_ret=const_cast<char*>(str);
 	return 1;
 }
+
+/*! \ingroup misc
+ * Return len==strlen(str) && !strncmp(longstr,str,len).
+ * See also extequal(). The check here is simpler.
+ */
+int isName(const char *longstr,int len, const char *str)
+{ return len==(int)strlen(str) && !strncmp(longstr,str,len); }
 
 
 
