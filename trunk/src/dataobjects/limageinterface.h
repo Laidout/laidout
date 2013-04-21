@@ -35,7 +35,6 @@ class LImageInterface : public LaxInterfaces::ImageInterface,
 	virtual LaxInterfaces::anInterface *duplicate(LaxInterfaces::anInterface *dup);
 
 	//from value
-	virtual int type() { return VALUE_Fields; }
 	virtual Value *duplicate();
 	virtual ObjectDef *makeObjectDef();
 	virtual int assign(FieldExtPlace *ext,Value *v);

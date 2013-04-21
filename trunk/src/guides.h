@@ -23,6 +23,8 @@
 namespace Laidout {
 
 
+class DrawableObject;
+
 //----------------------------------------- PointAnchor -------------------------------------
 enum PointAnchorTypes {
     PANCHOR_BBox,

@@ -2,3 +2,5 @@ This directory is for functions and other items that are accessed through script
 Usually this means parsing the peculiar format of scripting parameters, and calling
 some other function that does the actual work, usually located in a file or object in
 some other directory.
+
+Code for objects derived from DrawableObjects should go in ../dataobjects.

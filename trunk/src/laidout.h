@@ -20,6 +20,7 @@
 #include <lax/iconmanager.h>
 #include <lax/errorlog.h>
 
+#include "laidoutprefs.h"
 #include "papersizes.h"
 #include "document.h"
 #include "project.h"
@@ -92,15 +93,10 @@ class LaidoutApp : public Laxkit::anXApp
 	LaidoutCalculator *calculator;
 
 	 //global prefs
-	int default_units;
-	char *unitname;
-	int pagedropshadow;
-	char *splash_image_file;
-	char *default_template;
-	char *defaultpaper;
-	char *palette_dir;
+	LaidoutPreferences prefs;
+
 	char *icon_dir;
-	char *temp_dir;
+	Laxkit::IconManager icons;
 
 	unsigned long curcolor;
 	
@@ -110,8 +106,6 @@ class LaidoutApp : public Laxkit::anXApp
 	int max_preview_length, max_preview_width, max_preview_height;
 
 	char *ghostscript_binary;
-
-	Laxkit::IconManager icons;
 	
 //	Laxkit::PtrStack<Style> stylestack:
 //	Laxkit::PtrStack<FontThing> fontstack;

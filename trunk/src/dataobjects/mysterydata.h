@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007 by Tom Lechner
+// Copyright (C) 2007-2013 by Tom Lechner
 //
 #ifndef MYSTERYDATA_H
 #define MYSTERYDATA_H
@@ -26,9 +26,10 @@ namespace Laidout {
 
 
 //--------------------------------------- MysteryData ---------------------------------
-class MysteryData : virtual public DrawableObject, virtual public LaxInterfaces::SomeData
+class MysteryData : virtual public DrawableObject,
+					virtual public LaxInterfaces::SomeData
 {
- public:
+  public:
 	char *importer;
 	char *name;
 	long nativeid;

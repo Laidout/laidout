@@ -30,6 +30,7 @@
 #include <lax/colors.h>
 #include <lax/mouseshapes.h>
 #include <lax/units.h>
+#include <lax/shortcutwindow.h>
 
 #include <cstdarg>
 #include <cups/cups.h>
@@ -579,8 +580,8 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
 		if (!s) return 1;
 		if (s->info1!=PrefsDefaultUnits) return 1;
-		if (xruler) xruler->SetCurrentUnits(laidout->default_units);
-		if (yruler) yruler->SetCurrentUnits(laidout->default_units);
+		if (xruler) xruler->SetCurrentUnits(laidout->prefs.default_units);
+		if (yruler) yruler->SetCurrentUnits(laidout->prefs.default_units);
 		
 		return 0;
 
@@ -2155,11 +2156,11 @@ int LaidoutViewport::UseTheseRulers(RulerWindow *x,RulerWindow *y)
 	ViewportWindow::UseTheseRulers(x,y);
 	if (xruler) {
 		xruler->SetBaseUnits(UNITS_Inches);
-		xruler->SetCurrentUnits(laidout->default_units);
+		xruler->SetCurrentUnits(laidout->prefs.default_units);
 	}
 	if (yruler) {
 		yruler->SetBaseUnits(UNITS_Inches);
-		yruler->SetCurrentUnits(laidout->default_units);
+		yruler->SetCurrentUnits(laidout->prefs.default_units);
 	}
 	return 0;
 }
@@ -2253,7 +2254,7 @@ void LaidoutViewport::Refresh()
 			//if (!pgrp && !(papergroup && papergroup->papers.n)) { ***
 				dp->NewFG(0,0,0);
 				dp->PushAxes();
-				dp->ShiftScreen(laidout->pagedropshadow,laidout->pagedropshadow);
+				dp->ShiftScreen(laidout->prefs.pagedropshadow,laidout->prefs.pagedropshadow);
 				DrawData(dp,spread->path,NULL,&fs,drawflags); //***,linestyle,fillstyle)
 				dp->PopAxes();
 			}
@@ -3942,7 +3943,8 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"help")) {
-		app->addwindow(new HelpWindow());
+		//app->addwindow(new HelpWindow());
+		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0));
 		return 0;
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
@@ -4199,7 +4201,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			if (!pg) {
 				int c;
 				for (c=0; c<laidout->papersizes.n; c++) {
-					if (!strcasecmp(laidout->defaultpaper,laidout->papersizes.e[c]->name)) 
+					if (!strcasecmp(laidout->prefs.defaultpaper,laidout->papersizes.e[c]->name)) 
 						break;
 				}
 				PaperStyle *ps;
@@ -4535,7 +4537,8 @@ int ViewWindow::PerformAction(int action)
 		return 0;
 
 	} else if (action==VIEW_Help) {
-		app->addwindow(new HelpWindow());
+		//app->addwindow(new HelpWindow());
+		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0));
 		return 0;
 
 	} else if (action==VIEW_About) {

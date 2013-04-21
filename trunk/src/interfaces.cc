@@ -35,6 +35,8 @@
 #include "dataobjects/mysterydata.h"
 #include "dataobjects/limageinterface.h"
 #include "dataobjects/lgradientdata.h"
+#include "dataobjects/lpathsdata.h"
+
 #include "interfaces/paperinterface.h"
 #include "interfaces/graphicalshell.h"
 #include "interfaces/anchorinterface.h"
@@ -118,7 +120,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	i->dec_count();
 	
 	 //------Paths
-	i=new PathInterface(id++,NULL);
+	i=new LPathInterface(id++,NULL);
 	existingpool->push(i); //2nd null is pathop pool
 	i->dec_count();
 

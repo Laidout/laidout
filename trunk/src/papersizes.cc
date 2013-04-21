@@ -390,7 +390,7 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 				if (!str) throw _("Invalid name for paper!");
 			} else throw  _("Invalid object for paper!");
 		}
-		if (!str) str=laidout->defaultpaper;
+		if (!str) str=laidout->prefs.defaultpaper;
 		if (!str) str="letter";
 		for (int c=0; c<laidout->papersizes.n; c++) {
 			if (strcasecmp(str,laidout->papersizes.e[c]->name)==0) {

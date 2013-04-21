@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010,2012 by Tom Lechner
+// Copyright (C) 2010,2012-2013 by Tom Lechner
 //
 #ifndef DRAWABLEOBJECT_H
 #define DRAWABLEOBJECT_H
@@ -22,6 +22,8 @@
 #include <lax/interfaces/somedata.h>
 #include <lax/interfaces/pathinterface.h>
 #include "objectcontainer.h"
+#include "../guides.h"
+#include "../calculator/values.h"
 //#include "objectfilter.h"
 
 
@@ -31,6 +33,7 @@ namespace Laidout {
 
 
 class DrawableObject;
+class PointAnchor;
 
 
 //---------------------------------- DrawObjectChain ---------------------------------
@@ -51,9 +54,13 @@ class DrawObjectChain
 enum ParentLinkTypes
 {
 	PARENTLINK_Matrix,
-	PARENTLINK_Align,
-	PARENTLINK_Anchor,
-	PARENTLINK_Code,
+	PARENTLINK_Align,      //!<Align to arbitrary point
+	PARENTLINK_Anchor,     //!<Align to specific anchor in parent
+	PARENTLINK_Code,       //!<Obtain matrix through code
+	PARENTLINK_ResizeLeft,
+	PARENTLINK_ResizeRight,
+	PARENTLINK_ResizeTop,
+	PARENTLINK_ResizeBottom,
 	PARENTLINK_MAX
 };
 
@@ -63,9 +70,11 @@ class DrawableParentLink
 	int type; //straight matrix, align points, align by parent anchor, code
 	flatpoint anchor1; //alignment to parent bounding box
 	flatpoint anchor2; //where in bounding box to align to parent point from anchor1
+	double offset;
 	int parent_anchor_id;
 	int code_id; //id of a TextObject with runnable code that returns an offset
 	Laxkit::Affine offset_m; //this is an offset from where the other settings position it
+	DrawableParentLink *next;
 
 	DrawableParentLink();
 	virtual ~DrawableParentLink();
@@ -102,8 +111,10 @@ enum DrawableObjectLockTypes {
 };
 
 class DrawableObject :  virtual public ObjectContainer,
+						virtual public Laxkit::Tagged,
 						virtual public LaxInterfaces::SomeData,
-						virtual public Laxkit::Tagged
+					    virtual public FunctionEvaluator,
+					    virtual public Value
 {
  protected:
  public:
@@ -139,6 +150,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual ~DrawableObject();
 	virtual const char *whattype() { return "Group"; }
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
+	virtual const char *Id();
 
 	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
 	 //default is point to things particular to Groups.
@@ -165,8 +177,8 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
 
 	virtual int NumAnchors();
-	virtual int GetAnchorI(int anchor_index, flatpoint *p, int transform);
-	virtual int GetAnchor(int anchor_id, flatpoint *p, int transform);
+	virtual int GetAnchorI(int anchor_index, flatpoint *p, int transform, PointAnchor **anchor);
+	virtual int GetAnchor(int anchor_id, flatpoint *p, int transform, PointAnchor **anchor);
 	//virtual int AddAnchor(const char *name, flatpoint pos, flatpoint align, int type);
 
 
@@ -200,7 +212,13 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	 //for Value
 	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log);
 };
+
 
 //------------------------------------ AffineValue ------------------------------------------------
 ObjectDef *makeAffineObjectDef();
@@ -212,12 +230,28 @@ class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual
 	virtual ObjectDef *makeObjectDef();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
-	virtual int type() { return GetObjectDef()->fieldsformat; }
 	virtual Value *dereference(int index);
+	//virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 			             Value **value_ret, ErrorLog *log);
 };
 
+
+//------------------------------------ BBoxValue ------------------------------------------------
+ObjectDef *makeBBoxObjectDef();
+class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtual public FunctionEvaluator
+{
+  public:
+	BBoxValue();
+	BBoxValue(double mix,double max,double miy,double may);
+	virtual ObjectDef *makeObjectDef();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log);
+};
 
 } //namespace Laidout
 

@@ -69,6 +69,7 @@ objs= \
 	laidout-more.o \
 	importimage.o \
 	importimages.o \
+	laidoutprefs.o \
 	laidout.o 
 
 all: laidout

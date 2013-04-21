@@ -57,6 +57,7 @@ int InitObjectDefinitions()
 
 	// *** testing:
 	stylemanager.AddObjectDef(makeAffineObjectDef(),1);
+	stylemanager.AddObjectDef(makeBBoxObjectDef(),1);
 	
 
 	return stylemanager.getNumFields();

@@ -91,6 +91,8 @@ LaxInterfaces::SomeData *LGradientData::duplicate(LaxInterfaces::SomeData *dup)
 }
 
 
+//------- GradientData.Value functions:
+
 Value *LGradientData::duplicate()
 {
 	SomeData *dup=LaxInterfaces::somedatafactory->newObject("GradientData");

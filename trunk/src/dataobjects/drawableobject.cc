@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2012 by Tom Lechner
+// Copyright (C) 2010-2013 by Tom Lechner
 //
 
 
@@ -125,6 +125,9 @@ DrawObjectChain::~DrawObjectChain()
  * The affine matrix found with drawableobject->m() is the actual visual appearance
  * at any given time. It is computed based on settings found in 
  * DrawableObject::parent_link.
+ *
+ * If next!=NULL, then apply any anchors in order. Typically, this will be a position
+ * anchor first, then resize anchors for edges of bounding boxes.
  */
 
 DrawableParentLink::DrawableParentLink()
@@ -132,10 +135,13 @@ DrawableParentLink::DrawableParentLink()
 	type=PARENTLINK_Matrix;
 	parent_anchor_id=0;
 	code_id=0;
+	offset=0;
+	next=NULL;
 }
 
 DrawableParentLink::~DrawableParentLink()
 {
+	if (next) delete next;
 }
 
 
@@ -231,15 +237,16 @@ int DrawableObject::SetParentLink(DrawableParentLink *newlink)
 
 //! Set this->m() to be an approprate value based on parent_link.
 void DrawableObject::UpdateFromParentLink()
-{
+{ // ***
 	 //parent link can be a straight matrix off the parent coordinate origin,
 	 //or align to an anchor, then offset
 	if (!parent_link || parent_link->type==PARENTLINK_Matrix) return;
 
 	flatpoint a;
 	if (!parent) return;
+	PointAnchor *anchor=NULL;
 	if (parent_link->parent_anchor_id>=ANCHOR_MAX && parent) {
-		if (parent->GetAnchor(parent_link->parent_anchor_id, &a, 0));
+		if (parent->GetAnchor(parent_link->parent_anchor_id, &a,0, &anchor));
 	}
 
 	flatpoint p;
@@ -331,36 +338,48 @@ int DrawableObject::NumAnchors()
 /*! Like GetAnchor(), but by index rather than id.
  * anchor_index must be in [0..NumAnchors()).
  */
-int DrawableObject::GetAnchorI(int anchor_index, flatpoint *p, int transform)
+int DrawableObject::GetAnchorI(int anchor_index, flatpoint *p, int transform,PointAnchor **anchor)
 {
-	if (anchor_index<0 || anchor_index>=9) return 0;
-	return GetAnchor(ANCHOR_ul+anchor_index,p,transform);
+	return GetAnchor(ANCHOR_ul+anchor_index,p,transform,anchor);
 }
 
 /*! Return 1 for anchor found, else 0. If transform!=0, then return the point 
  * in parent coordinates. Default is to instead return object coordinates.
+ * If not found and anchor!=NULL, then make *anchor=NULL.
  *
- * Default are anchors in bounding box.
+ * Default for DrawableObject are anchors in bounding box, with ids BBoxAnchorTypes.
+ *
+ * If anchor!=NULL, then return an inc_counted reference to a relevant PointAnchor.
+ *
  */
-int DrawableObject::GetAnchor(int anchor_id, flatpoint *p, int transform)
+int DrawableObject::GetAnchor(int anchor_id, flatpoint *p, int transform,PointAnchor **anchor)
 {
-	int found=0;
-	if (anchor_id==ANCHOR_ul) { *p=flatpoint(minx,maxy); found=1; }
-	else if (anchor_id==ANCHOR_um) { *p=flatpoint((minx+maxx)/2,maxy); found=1; }
-	else if (anchor_id==ANCHOR_ur) { *p=flatpoint(maxx,maxy); found=1; }
-	else if (anchor_id==ANCHOR_ml) { *p=flatpoint(minx,(maxy+miny)/2); found=1; }
-	else if (anchor_id==ANCHOR_mm) { *p=flatpoint((minx+maxx)/2,(maxy+miny)/2); found=1; }
-	else if (anchor_id==ANCHOR_mr) { *p=flatpoint(maxx,(maxy+miny)/2); found=1; }
-	else if (anchor_id==ANCHOR_ll) { *p=flatpoint(minx,miny); found=1; }
-	else if (anchor_id==ANCHOR_lm) { *p=flatpoint((minx+maxx)/2,miny); found=1; }
-	else if (anchor_id==ANCHOR_lr) { *p=flatpoint(maxx,miny); found=1; }
+	const char *name=NULL;
 
-	if (found) {
-		if (transform) *p=transform_point(m(),*p);
-		return 1;
+	if (anchor_id==ANCHOR_ul)      { name="ul"; *p=flatpoint( 0, 1); }
+	else if (anchor_id==ANCHOR_um) { name="um"; *p=flatpoint(.5, 1); }
+	else if (anchor_id==ANCHOR_ur) { name="ur"; *p=flatpoint( 1, 1); }
+	else if (anchor_id==ANCHOR_ml) { name="ml"; *p=flatpoint( 0,.5); }
+	else if (anchor_id==ANCHOR_mm) { name="mm"; *p=flatpoint(.5,.5); }
+	else if (anchor_id==ANCHOR_mr) { name="mr"; *p=flatpoint( 1,.5); }
+	else if (anchor_id==ANCHOR_ll) { name="ll"; *p=flatpoint( 0, 0); }
+	else if (anchor_id==ANCHOR_lm) { name="lm"; *p=flatpoint(.5, 0); }
+	else if (anchor_id==ANCHOR_lr) { name="lr"; *p=flatpoint( 1, 0); }
+	else {
+		 //anchor not found
+		if (anchor) *anchor=NULL;
+		return 0;
 	}
 
-	return 0;
+	if (anchor) {
+		*anchor=new PointAnchor(name,PANCHOR_BBox,*p,*p,anchor_id);
+	}
+	
+	p->x=p->x*(maxx-minx)+minx;
+	p->y=p->y*(maxy-miny)+miny;
+
+	if (transform) *p=transform_point(m(),*p);
+	return 1;
 }
 
 //! Push obj onto the stack. (new objects only!)
@@ -625,6 +644,8 @@ int DrawableObject::UnGroup(int n,const int *which)
 	return 0;
 }
 
+const char *DrawableObject::Id()
+{ return object_idstr; }
 
 //! Dump out iohints and metadata, if any.
 void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -674,10 +695,47 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *cont
 //	}
 
 	if (parent_link && parent_link->type!=PARENTLINK_Matrix) {
-		if (parent_link->type==PARENTLINK_Align) {
-			fprintf(f,"%sparentLink align (%.10g,%.10g) (%.10g,%.10g)\n", spc,
-					parent_link->anchor1.x, parent_link->anchor1.y,
-					parent_link->anchor2.x, parent_link->anchor2.y);
+		DrawableParentLink *link=parent_link;
+		flatpoint p;
+		PointAnchor *anchor=NULL;
+		fprintf(f,"%sparentLink\n",spc);
+
+		while (link) {
+			if (link->type==PARENTLINK_Align) {
+				fprintf(f,"%s  align (%.10g,%.10g) (%.10g,%.10g)\n", spc,
+						link->anchor1.x, link->anchor1.y,
+						link->anchor2.x, link->anchor2.y);
+			} else {
+				parent->GetAnchor(link->parent_anchor_id, &p, 0, &anchor);
+
+				if (link->type==PARENTLINK_Anchor) {
+					fprintf(f,"%s  anchor %s\n",spc,anchor->name);
+					fprintf(f,"%s    align (%.10g,%.10g) (%.10g,%.10g)\n", spc,
+							link->anchor1.x, link->anchor1.y,
+							link->anchor2.x, link->anchor2.y);
+					anchor->dec_count();
+
+				} else if (link->type==PARENTLINK_Matrix) {
+					fprintf(f,"%s  matrix %.10g %.10g %.10g %.10g %.10g %.10g\n",spc,
+						link->offset_m.m(0),link->offset_m.m(1),link->offset_m.m(2),link->offset_m.m(3),link->offset_m.m(4),link->offset_m.m(5));
+
+				} else if (link->type==PARENTLINK_ResizeLeft) {
+					fprintf(f,"%s  left %s\n",spc,anchor->name);
+
+				} else if (link->type==PARENTLINK_ResizeRight) {
+					fprintf(f,"%s  right %s\n",spc,anchor->name);
+
+				} else if (link->type==PARENTLINK_ResizeTop) {
+					fprintf(f,"%s  top %s\n",spc,anchor->name);
+
+				} else if (link->type==PARENTLINK_ResizeBottom) {
+					fprintf(f,"%s  bottom %s\n",spc,anchor->name);
+				}
+
+				anchor->dec_count();
+			}
+
+			link=link->next;
 		}
 	}
 
@@ -699,7 +757,7 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anOb
 		value=att->attributes.e[c]->value;
 
 		if (!strcmp(name,"id")) {
-			Id(value);
+			SomeData::Id(value);
 
 		} else if (!strcmp(name,"iohints")) {
 			if (iohints.attributes.n) iohints.clear();
@@ -871,6 +929,33 @@ ObjectDef *DrawableObject::makeObjectDef()
 	}
 	return objectdef;
 }
+
+Value *DrawableObject::duplicate()
+{
+	DrawableObject *o=dynamic_cast<DrawableObject*>(duplicate(NULL));
+	return o;
+}
+
+Value *DrawableObject::dereference(const char *extstring, int len)
+{
+	return NULL;
+}
+
+int DrawableObject::assign(FieldExtPlace *ext,Value *v)
+{
+	return -1;
+}
+
+int DrawableObject::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+	                     Value **value_ret, ErrorLog *log)
+{
+	return -1;
+}
+
+
+
+
+
 
 //--------------------------------------- AffineValue ---------------------------------------
 
@@ -1117,6 +1202,298 @@ ObjectDef *makeAffineObjectDef()
 
 	return sd;
 }
+
+
+//--------------------------------------- BBoxValue ---------------------------------------
+
+
+/* \class BBoxValue
+ * \brief Adds scripting functions for a Laxkit::DoubleBBox object.
+ */
+
+BBoxValue::BBoxValue()
+{}
+
+BBoxValue::BBoxValue(double mix,double max,double miy,double may)
+  : DoubleBBox(mix,max,miy,may)
+{}
+
+Value *BBoxValue::dereference(const char *extstring, int len)
+{
+	if (extequal(extstring,len, "minx")) return new DoubleValue(minx);
+	if (extequal(extstring,len, "maxx")) return new DoubleValue(maxx);
+	if (extequal(extstring,len, "miny")) return new DoubleValue(miny);
+	if (extequal(extstring,len, "maxy")) return new DoubleValue(maxy);
+
+	if (extequal(extstring,len, "x"   )) return new DoubleValue(minx);
+	if (extequal(extstring,len, "y"   )) return new DoubleValue(miny);
+	if (extequal(extstring,len, "width")) return new DoubleValue(maxx-minx);
+	if (extequal(extstring,len, "height")) return new DoubleValue(maxy-miny);
+	return NULL;
+}
+
+int BBoxValue::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext->n()!=1) return -1;
+	const char *str=ext->e(0);
+
+	int isnum=0;
+    double d=getNumberValue(v,&isnum);
+    if (!isnum) return 0;
+
+	if (!strcmp(str,"minx")) minx=d;
+	else if (!strcmp(str,"maxx")) maxx=d;
+	else if (!strcmp(str,"miny")) miny=d;
+	else if (!strcmp(str,"maxy")) maxy=d;
+	else if (!strcmp(str,"x")) { maxx+=d-minx; minx=d; }
+	else if (!strcmp(str,"y")) { maxy+=d-miny; miny=d; }
+	else if (!strcmp(str,"width")) maxx=minx+d;
+	else if (!strcmp(str,"height")) maxy=miny+d;
+	else return -1;
+
+	return 1;
+}
+
+//! Return something like [[.5,.5], [1,0]], which is [min,max] for [x,y].
+int BBoxValue::getValueStr(char *buffer,int len)
+{
+    int needed=4*30;
+    if (!buffer || len<needed) return needed;
+
+	sprintf(buffer,"[[%.10g,%.10g],[%.10g,%.10g]]",minx,maxx,miny,maxy);
+    modified=0;
+    return 0;
+}
+
+Value *BBoxValue::duplicate()
+{
+	BBoxValue *dup=new BBoxValue(minx,maxx,miny,maxy);
+	return dup;
+}
+
+ObjectDef *BBoxValue::makeObjectDef()
+{
+	objectdef=stylemanager.FindDef("BBox");
+	if (objectdef) objectdef->inc_count();
+	else {
+		objectdef=makeBBoxObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+	return objectdef;
+}
+
+//! Contructor for BBoxValue objects.
+int NewBBoxObject(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log)
+{
+	BBoxValue *v=new BBoxValue();
+	*value_ret=v;
+
+	if (!parameters || !parameters->n()) return 0;
+
+	int err=0;
+	double d=parameters->findIntOrDouble("maxx",-1,&err);
+	if (err==0) v->maxx=d;
+
+	d=parameters->findIntOrDouble("minx",-1,&err);
+	if (err==0) v->minx=d;
+
+	d=parameters->findIntOrDouble("maxy",-1,&err);
+	if (err==0) v->maxy=d;
+
+	d=parameters->findIntOrDouble("miny",-1,&err);
+	if (err==0) v->miny=d;
+
+	d=parameters->findIntOrDouble("y",-1,&err);
+	if (err==0) v->miny=d;
+
+	d=parameters->findIntOrDouble("x",-1,&err);
+	if (err==0) v->minx=d;
+
+	d=parameters->findIntOrDouble("width",-1,&err);
+	if (err==0) v->maxx=v->minx+d;
+
+	d=parameters->findIntOrDouble("height",-1,&err);
+	if (err==0) v->maxy=v->miny+d;
+
+	return 0;
+}
+
+//! Create a new ObjectDef with BBox characteristics. Always creates new one, does not search for BBox globally.
+ObjectDef *makeBBoxObjectDef()
+{
+	ObjectDef *sd=new ObjectDef(NULL,"BBox",
+			_("BBox"),
+			_("Bounding box"),
+			VALUE_Class,
+			NULL,NULL, //range, default value
+			NULL,0, //fields, flags
+			NULL,NewBBoxObject);
+
+
+	 //Contstructor
+	sd->pushFunction("BBox", _("Bounding Box"), _("Bounding Box"),
+					 NULL,
+					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
+					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 NULL);
+
+	sd->push("minx",_("Minx"),_("Minimium x"),VALUE_Real,NULL,NULL,0,0);
+	sd->push("maxx",_("Maxx"),_("Maximium x"),VALUE_Real,NULL,NULL,0,0);
+	sd->push("miny",_("Miny"),_("Minimium y"),VALUE_Real,NULL,NULL,0,0);
+	sd->push("maxy",_("Maxy"),_("Maximium y"),VALUE_Real,NULL,NULL,0,0);
+
+	sd->pushFunction("clear", _("Clear"), _("Clear bounds."),
+					 NULL, //evaluator
+					 NULL);
+
+	sd->pushFunction("IsValid", _("Is Valid"), _("True if bounds are valid, meaning max values are greater than min values."),
+					 NULL, //evaluator
+					 NULL);
+
+
+	sd->pushFunction("Add", _("Add To Bounds"), _("Add a point to bounds"),
+					 NULL,
+					 "x",_("x"),_("An x coordinate"),VALUE_Real, NULL,NULL,
+					 "y",_("y"),_("A y coordinate"),VALUE_Real, NULL,NULL,
+					 "p",_("p"),_("A point"),VALUE_Flatvector, NULL,NULL,
+					 NULL);
+
+
+	sd->pushFunction("AddBox", _("Add box"), _("Add another bbox to bounds, so that old and new bounds contain both."),
+					 NULL,
+					 "box", _("box"), _("box"), sd->fieldsformat, NULL,NULL,
+					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
+					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 NULL);
+
+
+	sd->pushFunction("Contains", _("Contains"), _("True if bounds contain point (inside or right on edge)."),
+					 NULL,
+					 "x",_("x"),_("An x coordinate"),VALUE_Real, NULL,NULL,
+					 "y",_("y"),_("A y coordinate"),VALUE_Real, NULL,NULL,
+					 "p",_("p"),_("A point"),VALUE_Flatvector, NULL,NULL,
+					 NULL);
+
+
+	sd->pushFunction("Intersects", _("Intersects"), _("Return whether a box intersects."),
+					NULL,
+					 "box", _("box"), _("box"), sd->fieldsformat, NULL,NULL,
+					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
+					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 NULL);
+
+	sd->pushFunction("Intersection", _("Intersection"), _("Return a new box that is the intersection with current."),
+					 NULL,
+					 "box", _("box"), _("box"), sd->fieldsformat, NULL,NULL,
+					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
+					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 NULL);
+
+	return sd;
+}
+
+/*! Return 0 success, -1 incompatible values, 1 for error.
+ */
+int BBoxValue::Evaluate(const char *function,int len, ValueHash *context, ValueHash *pp, CalcSettings *settings,
+			             Value **value_ret, ErrorLog *log)
+{
+	if (isName(function,len,"clear")) {
+		clear();		 
+		if (value_ret) *value_ret=NULL;
+		return 0;
+
+	} else if (isName(function,len,"Add")) {
+		int err=0;
+		flatpoint p;
+		p.x=pp->findIntOrDouble("x",-1,&err); 
+		p.y=pp->findIntOrDouble("y",-1,&err);
+		int i=pp->findIndex("p",1);
+		if (i>=0 && dynamic_cast<FlatvectorValue*>(pp->e(i))) p=dynamic_cast<FlatvectorValue*>(pp->e(i))->v;
+		addtobounds(p);
+		if (value_ret) *value_ret=NULL;
+		return 0;
+
+	} if (isName(function,len,"x")) {
+		*value_ret=new DoubleValue(minx);
+		return 0;
+
+	} if (isName(function,len,"y")) {
+		*value_ret=new DoubleValue(miny);
+		return 0;
+
+	} if (isName(function,len,"width")) {
+		*value_ret=new DoubleValue(maxx-minx);
+		return 0;
+
+	} if (isName(function,len,"height")) {
+		*value_ret=new DoubleValue(maxy-miny);
+		return 0;
+
+	} if (isName(function,len,"IsValid")) {
+		*value_ret=new BooleanValue(validbounds());
+		return 0;
+
+	} if (isName(function,len,"Contains")) {
+		int err=0;
+		flatpoint p;
+		p.x=pp->findIntOrDouble("x",-1,&err); 
+		p.y=pp->findIntOrDouble("y",-1,&err);
+		int i=pp->findIndex("p",1);
+		if (i>=0 && dynamic_cast<FlatvectorValue*>(pp->e(i))) p=dynamic_cast<FlatvectorValue*>(pp->e(i))->v;
+		*value_ret=new BooleanValue(boxcontains(p.x,p.y));
+		return 0;
+
+	} if (isName(function,len,"AddBox")) {
+		DoubleBBox box;
+		Value *v=pp->find("box");
+		if (v && dynamic_cast<BBoxValue*>(v)) box=*dynamic_cast<DoubleBBox*>(v);
+		double d;
+		int err=0;
+		d=pp->findIntOrDouble("minx",-1,&err); if (err==0) box.minx=d;
+		d=pp->findIntOrDouble("maxx",-1,&err); if (err==0) box.maxx=d;
+		d=pp->findIntOrDouble("miny",-1,&err); if (err==0) box.miny=d;
+		d=pp->findIntOrDouble("maxy",-1,&err); if (err==0) box.maxy=d;
+		addtobounds(&box);
+
+	} if (isName(function,len,"Intersects")) {
+		DoubleBBox box;
+		Value *v=pp->find("box");
+		if (v && dynamic_cast<BBoxValue*>(v)) box=*dynamic_cast<DoubleBBox*>(v);
+		double d;
+		int err=0;
+		d=pp->findIntOrDouble("minx",-1,&err); if (err==0) box.minx=d;
+		d=pp->findIntOrDouble("maxx",-1,&err); if (err==0) box.maxx=d;
+		d=pp->findIntOrDouble("miny",-1,&err); if (err==0) box.miny=d;
+		d=pp->findIntOrDouble("maxy",-1,&err); if (err==0) box.maxy=d;
+		*value_ret=new BooleanValue(intersect(&box,0));
+		return 0;
+
+	} if (isName(function,len,"Intersection")) {
+		BBoxValue *box=new BBoxValue;
+		Value *v=pp->find("box");
+		if (v && dynamic_cast<BBoxValue*>(v)) *box=*dynamic_cast<BBoxValue*>(v);
+		double d;
+		int err=0;
+		d=pp->findIntOrDouble("minx",-1,&err); if (err==0) box->minx=d;
+		d=pp->findIntOrDouble("maxx",-1,&err); if (err==0) box->maxx=d;
+		d=pp->findIntOrDouble("miny",-1,&err); if (err==0) box->miny=d;
+		d=pp->findIntOrDouble("maxy",-1,&err); if (err==0) box->maxy=d;
+		box->intersect(this,1);
+		*value_ret=box;
+		return 0;
+	}
+
+	return 1;
+}
+
 
 
 } //namespace Laidout

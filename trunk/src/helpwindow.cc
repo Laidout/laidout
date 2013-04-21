@@ -17,6 +17,8 @@
 #include <lax/messagebar.h>
 #include <lax/button.h>
 
+#include <lax/shortcutwindow.h>
+
 #include "language.h"
 #include "headwindow.h"
 #include "helpwindow.h"
@@ -169,6 +171,8 @@ int HelpWindow::init()
 	AddButton(BUTTON_OK);
 	
 	MessageBox::init();
+
+	app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER,0,0,400,600,0));
 
 	return 0;
 }

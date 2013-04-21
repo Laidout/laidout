@@ -1243,7 +1243,7 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 {
 	if (sc) return sc;
 	ShortcutManager *manager=GetDefaultShortcutManager();
-	sc=manager->NewHandler("NupInterface");
+	sc=manager->NewHandler("NUpInterface");
 	if (sc) return sc;
 
 	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);

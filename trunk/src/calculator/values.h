@@ -34,8 +34,8 @@ typedef int Unit;
 
 /*! For Value and ObjectDef objects */
 enum ValueTypes {
+	VALUE_None=0,       //!< as return value for type checking
 	VALUE_Any,        //!< as tag for function parameters
-	VALUE_None,       //!< as return value for type checking
 
 	VALUE_Set,        //!< zero or more of various objects
 	VALUE_Object,     //!< opaque object for passing around non-Value objects
@@ -135,6 +135,7 @@ class SimpleFunctionEvaluator : public FunctionEvaluator
 #define OBJECTDEF_CAPPED    (1<<0)
 #define OBJECTDEF_DUPLICATE (1<<1)
 #define OBJECTDEF_ORPHAN    (1<<2)
+#define OBJECTDEF_ISSET     (1<<3)
 
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
@@ -173,7 +174,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	ValueTypes format;    // int,real,string,fields,...
 	int islist;           //if this element is actually an array of the given type
 	int fieldsformat;     //dynamically assigned to new object types
-	char *fieldsdef; //a def associated with fieldsformat. Overrides fields.
+	ObjectDef *fieldsdef; //a def associated with fieldsformat. Overrides fields.
 	Laxkit::RefPtrStack<ObjectDef> *fields;
 
 	ObjectDef();
@@ -266,7 +267,7 @@ class Value : virtual public Laxkit::anObject
 	virtual ~Value();
 	virtual const char *whattype() { return "Value"; }
 
-	virtual int type() = 0;
+	virtual int type();
 	virtual Value *duplicate() = 0;
 	virtual int getValueStr(char **buffer,int *len, int oktoreallocate);//subclasses should NOT redefine this
 	virtual int getValueStr(char *buffer,int len);//subclasses SHOULD redefine this
@@ -417,7 +418,10 @@ class StringValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef();
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
 };
 
 //----------------------------- ObjectValue ----------------------------------
@@ -550,6 +554,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 ValueHash *MapParameters(ObjectDef *def,ValueHash *rawparams);
 double getNumberValue(Value *v, int *isnum);
 int extequal(const char *str, int len, const char *field, char **next_ret=NULL);
+int isName(const char *longstr,int len, const char *str);
 
 
 } // namespace Laidout

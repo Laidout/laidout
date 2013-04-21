@@ -235,18 +235,13 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	
 	curcolor=0;
 	lastview=NULL;
-	pagedropshadow=5;
 	
 	project=new Project;
 	curdoc=NULL;
 	tooltips=1000;
 
 	 // laidoutrc defaults
-	defaultpaper=NULL;
 	icon_dir=NULL;
-	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
-	temp_dir=NULL;
-	default_template=NULL;
 	
 	preview_over_this_size=250; 
 	max_preview_length=200;
@@ -256,13 +251,8 @@ LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
 	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
 
 	calculator=NULL;
-	default_units=UNITS_Inches;
-	unitname=newstr("inches");
-	GetUnitManager()->DefaultUnits(unitname);
+	GetUnitManager()->DefaultUnits(prefs.unitname);
 	GetUnitManager()->PixelSize(1./72,UNITS_Inches);
-
-	splash_image_file=newstr(ICON_DIRECTORY);
-	appendstr(splash_image_file,"/laidout-splash.png");
 }
 
 //! Destructor, only have to delete project!
@@ -280,10 +270,6 @@ LaidoutApp::~LaidoutApp()
 	if (curdoc)             curdoc->dec_count();
 	if (project)            delete project;
 	if (config_dir)         delete[] config_dir;
-	if (defaultpaper)       delete[] defaultpaper;
-	if (palette_dir)        delete[] palette_dir;
-	if (temp_dir)           delete[] temp_dir;
-	if (default_template)   delete[] default_template;
 	if (ghostscript_binary) delete[] ghostscript_binary;
 	if (calculator)		    calculator->dec_count();
 }
@@ -460,9 +446,9 @@ int LaidoutApp::init(int argc,char **argv)
 
 	if (runmode==RUNMODE_Normal) {
 		 //try to load the default template if no windows are up
-		if (topwindows.n==0 && default_template) {
+		if (topwindows.n==0 && prefs.default_template) {
 			ErrorLog log;
-			LoadTemplate(default_template,log);
+			LoadTemplate(prefs.default_template,log);
 		}
 		
 		 // if no other windows have been launched yet, then launch newdoc window
@@ -712,20 +698,20 @@ int LaidoutApp::readinLaidoutDefaults()
 			m->Load(value);
 
 		} else if (!strcmp(name,"default_template")) {
-			if (file_exists(value,1,NULL)==S_IFREG) makestr(default_template,value);
+			if (file_exists(value,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
 			else {
 				char *fullname=full_path_for_resource(value,"templates");
-				//if (file_exists(fullname,1,NULL)==S_IFREG) makestr(default_template,value);
-				if (file_exists(fullname,1,NULL)==S_IFREG) makestr(default_template,fullname);
+				//if (file_exists(fullname,1,NULL)==S_IFREG) makestr(prefs.default_template,value);
+				if (file_exists(fullname,1,NULL)==S_IFREG) makestr(prefs.default_template,fullname);
 				delete[] fullname;
 			}
 			//default to config_dir/templates/default?
 
 		} else if (!strcmp(name,"splashimage")) {
-			makestr(splash_image_file,value);
+			makestr(prefs.splash_image_file,value);
 
 		} else if (!strcmp(name,"defaultpapersize")) {
-			makestr(defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc
+			makestr(prefs.defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc
 		
 		} else if (!strcmp(name,"template")) {
 			cout <<"***imp me! readinlaidoutrc: template"<<endl;
@@ -742,7 +728,7 @@ int LaidoutApp::readinLaidoutDefaults()
 			if (!isblank(icon_dir)) icons.addpath(icon_dir);
 		
 		} else if (!strcmp(name,"palette_dir")) {
-			if (file_exists(value,1,NULL)==S_IFDIR) makestr(palette_dir,value);
+			if (file_exists(value,1,NULL)==S_IFDIR) makestr(prefs.palette_dir,value);
 		
 		} else if (!strcmp(name,"temp_dir")) {
 			//**** default "config_dir/temp/pid/"?
@@ -770,15 +756,15 @@ int LaidoutApp::readinLaidoutDefaults()
 
 		 //--------------other options:
 		} else if (!strcmp(name,"pagedropshadow")) {
-			IntAttribute(value,&pagedropshadow);
+			IntAttribute(value,&prefs.pagedropshadow);
 		
 		} else if (!strcmp(name,"defaultunits")) {
 			if (value) {
 				int id=0;
 				SimpleUnit *units=GetUnitManager();
 				if (units->UnitInfo(value,&id,NULL,NULL,NULL,NULL)==0) {
-					makestr(unitname,value);
-					default_units=id;
+					makestr(prefs.unitname,value);
+					prefs.default_units=id;
 					units->DefaultUnits(value);
 					notifyPrefsChanged(NULL,PrefsDefaultUnits);
 				}
@@ -915,7 +901,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 				} break;
 
 			case 'N': { // do not use a default template
-					if (default_template) { delete[] default_template; default_template=NULL; }
+					if (prefs.default_template) { delete[] prefs.default_template; prefs.default_template=NULL; }
 				} break;
 
 			case 'F': { // dump out file format
@@ -965,11 +951,11 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					SimpleUnit *units=GetUnitManager();
 					int id=0;
 					if (units->UnitInfo(o->arg(),&id,NULL,NULL,NULL,NULL)==0) {
-						makestr(unitname,o->arg());
-						default_units=id;
-						units->DefaultUnits(unitname);
+						makestr(prefs.unitname,o->arg());
+						prefs.default_units=id;
+						units->DefaultUnits(prefs.unitname);
 						notifyPrefsChanged(NULL,PrefsDefaultUnits);
-						DBG cerr <<"laidout:units->DefaultUnits:"<<default_units<<"  from um:"<<units->DefaultUnits(unitname)<<endl;
+						DBG cerr <<"laidout:units->DefaultUnits:"<<prefs.default_units<<"  from um:"<<units->DefaultUnits(prefs.unitname)<<endl;
 					}
 
 				} break;
@@ -1598,7 +1584,7 @@ int main(int argc,char **argv)
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;
 	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;
 	//DBG cerr <<"  stylemanager.styles.n="<<(stylemanager.styles.n)<<endl;
-	if (stylemanager.fields) { delete stylemanager.fields; stylemanager.fields=NULL; }
+	stylemanager.Clear();
 
 	cout <<"-----------------------------Bye!--------------------------"<<endl;
 	DBG cerr <<"------------end of code, default destructors follow--------"<<endl;
