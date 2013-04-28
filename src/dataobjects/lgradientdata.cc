@@ -115,16 +115,16 @@ ObjectDef *LGradientData::makeObjectDef()
 			"GradientData",
             _("GradientData"),
             _("A gradient"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
 					 NULL);
 
-	sd->pushVariable("p1", _("p1"), _("The starting point"), NULL,0);
-	sd->pushVariable("p2", _("p2"), _("The ending point"), NULL,0);
-	sd->pushVariable("r1", _("Distance 1"), _("Radius or distance"), NULL,0);
-	sd->pushVariable("r2", _("Distance 2"), _("Radius or distance"), NULL,0);
+	sd->pushVariable("p1", _("p1"),         _("The starting point"), "real",0, NULL,0);
+	sd->pushVariable("p2", _("p2"),         _("The ending point"),   "real",0, NULL,0);
+	sd->pushVariable("r1", _("Distance 1"), _("Radius or distance"), "real",0, NULL,0);
+	sd->pushVariable("r2", _("Distance 2"), _("Radius or distance"), "real",0, NULL,0);
 	//sd->pushVariable("angle",_("Angle"),_("Angle gradient exists at"), NULL,0);
 
 	//sd->pushVariable("stops",  _("Stops"),  _("The set of color positions"), NULL,0);
@@ -256,7 +256,7 @@ ObjectDef *LGradientInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"GradientInterface",
             _("Gradient Interface"),
             _("Gradient Interface"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();

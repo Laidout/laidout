@@ -107,69 +107,69 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Laidout global configuration options go here. They are stored in ~/.config/laidout-(version)/laidoutrc."
 			  "If you modify settings from within Laidout, the file will be overwritten,"
 			  "and you'll lose any comments or formatting you have inserted directly in that file."),
-			VALUE_Class,
+			"class",
 			NULL,NULL);
 
 	def->push("shortcutsfile",
 			_("Shortcuts file"),
 			_("File for shortcuts"),
-			VALUE_File, NULL,NULL,
+			"File", NULL,NULL,
 			0,
 			NULL);
 
 	def->push("splashimage",
 			_("Splash image file"),
 			_("Splash image file"),
-			VALUE_File, NULL,NULL,
+			"File", NULL,NULL,
 			0,
 			NULL);
 
 	def->push("pagedropshadow",
 			_("Page drop shadow"),
 			_("How much to offset drop shadows around papers and pages"),
-			VALUE_Real, NULL,"5",
+			"real", NULL,"5",
 			0,
 			NULL);
 
 	def->push("defaulttemplate",
 			_("Default template"),
 			_("Default template to create new blank documents from"),
-			VALUE_String, NULL,NULL,
+			"string", NULL,NULL,
 			0,
 			NULL);
 
 	def->push("defaultunits",
 			_("Default units"),
 			_("Default units to use in all controls. Inside files, still uses inches."),
-			VALUE_String, NULL,NULL,
+			"string", NULL,NULL,
 			0,
 			NULL);
 
 	def->push("defaultpaper",
 			_("Default paper"),
 			_("Default paper"),
-			VALUE_String, "letter",NULL,
+			"string", "letter",NULL,
 			0,
 			NULL);
 
 	def->push("activate_color",
 			_("Activate color"),
 			_("Activate color, usually a green"),
-			VALUE_Color, NULL,"rgbf(0,.78,0)",
+			"Color", NULL,"rgbf(0,.78,0)",
 			0,
 			NULL);
 
 	def->push("deactivate_color",
 			_("Deactivate color"),
 			_("Deactivate color, usually a red"),
-			VALUE_Color, NULL,"rgbf(1,.39,.39)",
+			"Color", NULL,"rgbf(1,.39,.39)",
 			0,
 			NULL);
 
 	def->push("icon_dirs",
 			_("Icon directory"),
 			_("A list of directories to look for icons in"),
-			VALUE_Set, "File",NULL,
+			"set", "File",NULL,
 			OBJECTDEF_ISSET,
 			NULL);
 

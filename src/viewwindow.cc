@@ -2961,7 +2961,7 @@ ObjectDef *LaidoutViewport::makeObjectDef()
 	sd=new ObjectDef(NULL,"Viewport",
             _("Viewport"),
             _("Document and spread view"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();
@@ -2969,17 +2969,17 @@ ObjectDef *LaidoutViewport::makeObjectDef()
 
 	sd->pushFunction("SelectTool",_("Select Tool"),_("Select Tool"),
 					 NULL,
-			 		 "tool",NULL,_("Tool to use"),VALUE_String, NULL, "Object",
+			 		 "tool",NULL,_("Tool to use"),"string", NULL, "Object",
 					 NULL);
 
 	sd->pushFunction("PlopData",_("Plop Data"),_("Plop Data"),
 					 NULL,
-			 		 "data",NULL,_("Data to drop into the viewer"),VALUE_Any, NULL, NULL,
+			 		 "data",NULL,_("Data to drop into the viewer"),"any", NULL, NULL,
 					 NULL);
 
-	sd->push("limbo",_("Limbo"),_("Current limbo"), VALUE_Fields, NULL,NULL,0,NULL);
-	sd->push("papergroup",_("Paper Group"),_("Paper Group"), VALUE_Fields, NULL,NULL,0,NULL);
-	sd->push("spread",_("Spread"),_("Spread"), VALUE_Fields, NULL,NULL,0,NULL);
+	sd->push("limbo",     _("Limbo"),      _("Current limbo"),"any", NULL,NULL,0,NULL);
+	sd->push("papergroup",_("Paper Group"),_("Paper Group"),  "any", NULL,NULL,0,NULL);
+	sd->push("spread",    _("Spread"),     _("Spread"),       "any", NULL,NULL,0,NULL);
 
 	stylemanager.AddObjectDef(sd,0);
 

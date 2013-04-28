@@ -116,17 +116,17 @@ ObjectDef *LImageData::makeObjectDef()
 			"ImageData",
             _("ImageData"),
             _("An image"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	sd->pushFunction("LoadFile",_("Load File"),_("Load an image file"),
 					 NULL,
-			 		 "file",NULL,_("File name to load"),VALUE_String, NULL, NULL,
+			 		 "file",NULL,_("File name to load"),"string", NULL, NULL,
 					 NULL);
 
-	sd->pushVariable("file", _("File"), _("File name"), NULL,0);
-	sd->pushVariable("width", _("Width"), _("Pixel width"), NULL,0);
-	sd->pushVariable("height",_("Height"),_("Pixel height"), NULL,0);
+	sd->pushVariable("file",  _("File"),  _("File name"),    "string",0, NULL,0);
+	sd->pushVariable("width", _("Width"), _("Pixel width"),  "real",0,   NULL,0);
+	sd->pushVariable("height",_("Height"),_("Pixel height"), "real",0,   NULL,0);
 
 	return sd;
 }

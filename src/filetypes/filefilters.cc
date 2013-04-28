@@ -158,7 +158,7 @@ StyleDef *makeImportConfigDef()
 	StyleDef *sd=new StyleDef(NULL,"Import",
 			_("Import"),
 			_("A filter that imports a vector file to an existing document or a group."),
-			VALUE_Class,
+			"class",
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -168,7 +168,7 @@ StyleDef *makeImportConfigDef()
 	sd->push("file",
 			_("File"),
 			_("Path to file to import"),
-			VALUE_String,
+			"string",
 			NULL, //range
 			"1",  //defvalue
 			0,    //flags
@@ -185,56 +185,56 @@ StyleDef *makeImportConfigDef()
 	sd->push("instart",
 			_("Start"),
 			_("First page to import from a multipage file"),
-			VALUE_Int,
+			"int",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("inend",
 			_("End"),
 			_("Last page to import from a multipage file"),
-			VALUE_Int,
+			"int",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("topage",
 			_("To page"),
 			_("The page in the existing document to begin importing to"),
-			VALUE_Int,
+			"int",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("dpi",
 			_("Default dpi"),
 			_("Default dpi to use while importing if necessary"),
-			VALUE_Real,
+			"real",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("spread",
 			_("Spread"),
 			_("Index of the spread to import to"),
-			VALUE_Int,
+			"int",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("layout",
 			_("Layout"),
 			_("Type of layout in which to count the spread index. Depends on the imposition."),
-			VALUE_Any,
+			"any",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("document",
 			_("Document"),
 			_("Which document to import to, if not importing to a group"),
-			VALUE_Any,
+			"any",
 			NULL,
 			NULL,
 			0,NULL);
 	sd->push("group",
 			_("Group"),
 			_("Group to import to, if not importing to a document"),
-			VALUE_Any,
+			"any",
 			NULL,
 			NULL,
 			0,NULL);
@@ -603,7 +603,7 @@ StyleDef *makeExportConfigDef()
 	StyleDef *sd=new StyleDef(NULL,"ExportConfig",
 			_("Export Configuration"),
 			_("Settings for a filter that exports a document to one or more files of various formats."),
-			VALUE_Class,
+			"class",
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -614,7 +614,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("filename",
 			_("Filename"),
 			_("Path of exported file. For multiple files, use \"file##.svg\", for instance."),
-			VALUE_String,
+			"string",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -631,7 +631,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("document",
 			_("Document"),
 			_("The document to export, if not exporting a group."),
-			VALUE_Any,
+			"any",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -639,7 +639,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("start",
 			_("Start"),
 			_("Starting index of a document spread to export"),
-			VALUE_Int,
+			"int",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -647,7 +647,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("end",
 			_("End"),
 			_("Ending index of a document spread to export"),
-			VALUE_Int,
+			"int",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -655,7 +655,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("layout",
 			_("Layout"),
 			_("Type of spread layout to export as. Possibilities defined by the imposition."),
-			VALUE_Enum, 
+			"enum", 
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -663,7 +663,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("group",
 			_("Group"),
 			_("Group to export, if not exporting a document."),
-			VALUE_Any,
+			"any",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -671,7 +671,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("rasterize",
 			_("Rasterize"),
 			_("Whether to rasterize objects that cannot be otherwise dealt with natively in the target format."),
-			VALUE_Boolean,
+			"boolean",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -679,7 +679,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("collect",
 			_("Collect for out"),
 			_("Whether to copy all the accessed resources to the same directory as the exported file."),
-			VALUE_Boolean,
+			"boolean",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -687,7 +687,7 @@ StyleDef *makeExportConfigDef()
 	sd->push("papergroup",
 			_("Paper group"),
 			_("The paper group to export onto. Do not include if you want to use the default paper group."),
-			VALUE_Any,
+			"any",
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags

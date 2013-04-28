@@ -969,7 +969,7 @@ ObjectDef *GroupInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"ObjectInterface",
             _("Group Interface"),
             _("Group Interface"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();

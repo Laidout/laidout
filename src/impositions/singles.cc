@@ -477,7 +477,7 @@ StyleDef *makeSinglesStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"Singles",
 			_("Singles"),
 			_("Imposition of single pages"),
-			VALUE_Class,
+			"class",
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -487,7 +487,7 @@ StyleDef *makeSinglesStyleDef()
 	sd->push("insetleft",
 			_("Left Inset"),
 			_("How much a page is inset in a paper on the left"),
-			VALUE_Real,
+			"real",
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
@@ -495,56 +495,56 @@ StyleDef *makeSinglesStyleDef()
 	sd->push("insetright",
 			_("Right Inset"),
 			_("How much a page is inset in a paper on the right"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,NULL);
 	sd->push("insettop",
 			_("Top Inset"),
 			_("How much a page is inset in a paper from the top"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,0);
 	sd->push("insetbottom",
 			_("Bottom Inset"),
 			_("How much a page is inset in a paper from the bottom"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,0);
 	sd->push("tilex",
 			_("Tile X"),
 			_("How many to tile horizontally"),
-			VALUE_Int,
+			"int",
 			NULL,
 			"1",
 			0,0);
 	sd->push("tiley",
 			_("Tile Y"),
 			_("How many to tile vertically"),
-			VALUE_Int,
+			"int",
 			NULL,
 			"1",
 			0,0);
 	sd->push("gapx",
 			_("Horizontal gap"),
 			_("Gap between tiles horizontally"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,0);
 	sd->push("gapy",
 			_("Vertical gap"),
 			_("Gap between tiles vertically"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,0);
 	sd->push("marginleft",
 			_("Left Margin"),
 			_("Default left page margin"),
-			VALUE_Real,
+			"real",
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
@@ -552,21 +552,21 @@ StyleDef *makeSinglesStyleDef()
 	sd->push("marginright",
 			_("Right Margin"),
 			_("Default right page margin"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,NULL);
 	sd->push("margintop",
 			_("Top Margin"),
 			_("Default top page margin"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,0);
 	sd->push("marginbottom",
 			_("Bottom Margin"),
 			_("Default bottom page margin"),
-			VALUE_Real,
+			"real",
 			NULL,
 			"0",
 			0,0);

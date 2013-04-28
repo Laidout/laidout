@@ -112,10 +112,10 @@ ObjectDef *LSomeDataRef::makeObjectDef()
 			"SomeDataRef",
             _("SomeDataRef"),
             _("A linked clone of an object"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
-	sd->pushVariable("object", _("Object"), _("The cloned object"), NULL,0);
+	sd->pushVariable("object", _("Object"), _("The cloned object"), "any",0, NULL,0);
 
 	return sd;
 }

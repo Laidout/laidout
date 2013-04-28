@@ -119,6 +119,43 @@ const char *valueEnumCodeName(int format)
 	return "";
 }
 
+//! Return the ValueTypes of the string. Non recognized names return VALUE_Fields.
+ValueTypes element_NameToType(const char *type)
+{
+	if (!type) return VALUE_Any;
+
+	if (!strcmp(type,"any")) return VALUE_Any;
+	if (!strcmp(type,"none")) return VALUE_None;
+	if (!strcmp(type,"set")) return VALUE_Set;
+	if (!strcmp(type,"object")) return VALUE_Object;
+	if (!strcmp(type,"boolean")) return VALUE_Boolean;
+	if (!strcmp(type,"int")) return VALUE_Int;
+	if (!strcmp(type,"real")) return VALUE_Real;
+	if (!strcmp(type,"number")) return VALUE_Number;
+	if (!strcmp(type,"string")) return VALUE_String;
+	if (!strcmp(type,"flatvector")) return VALUE_Flatvector;
+	if (!strcmp(type,"spacevector")) return VALUE_Spacevector;
+	if (!strcmp(type,"flags")) return VALUE_Flags;
+	if (!strcmp(type,"enum")) return VALUE_Enum;
+	if (!strcmp(type,"enumval")) return VALUE_EnumVal;
+
+	if (!strcmp(type,"color")) return VALUE_Color;
+	if (!strcmp(type,"File")) return VALUE_File;
+	if (!strcmp(type,"date")) return VALUE_Date;
+	if (!strcmp(type,"time")) return VALUE_Time;
+	if (!strcmp(type,"complex")) return VALUE_Complex;
+
+	if (!strcmp(type,"fields")) return VALUE_Fields;
+
+	if (!strcmp(type,"variable")) return VALUE_Variable;
+	if (!strcmp(type,"operator")) return VALUE_Operator;
+	if (!strcmp(type,"class")) return VALUE_Class;
+	if (!strcmp(type,"function")) return VALUE_Function;
+	if (!strcmp(type,"namespace")) return VALUE_Namespace;
+	if (!strcmp(type,"lvalue")) return VALUE_LValue;
+
+	return VALUE_Fields;
+}
 
 //---------------------------------- OpFuncEvaluator ------------------------------------------
 /*! \class OpFuncEvaluator
@@ -252,7 +289,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 			const char *nname, //!< The name that would be used in the interpreter
 			const char *nName, //!< A basic title, most likely an input label
 			const char *ndesc,  //!< Description, newlines ok.
-			ValueTypes fmt,     //!< Format of this ObjectDef
+			const char *fmt,     //!< Format of this ObjectDef
 			const char *nrange,    //!< String showing range of allowed values
 			const char *newdefval,   //!< Default value for the style
 			Laxkit::RefPtrStack<ObjectDef> *nfields, //!< ObjectDef for the subfields or enum values.
@@ -280,7 +317,8 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 	fields=nfields;
 	fieldsformat=VALUE_MaxBuiltIn + object_id;
 	fieldsdef=NULL;
-	format=fmt;
+	format=element_NameToType(fmt);
+	format_str=newstr(fmt);
 	flags=fflags;
 	islist=0; //if this element should be considered a set of such elements
 
@@ -304,7 +342,11 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 }
 
 //! Create a new VALUE_Variable object def.
-ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval)
+ObjectDef::ObjectDef(const char *nname,
+					 const char *nName,
+					 const char *ndesc,
+					 Value *newval,
+					 const char *type, unsigned int fflags)
 {
 	name=newstr(nname);
 	Name=newstr(nName);
@@ -318,10 +360,11 @@ ObjectDef::ObjectDef(const char *nname,const char *nName, const char *ndesc, Val
 	range=defaultvalue=NULL;
 	defaultValue=newval;
 	if (defaultValue) defaultValue->inc_count();
-	flags=0;
-	format=VALUE_Variable;
+	flags=fflags;
+	format=(type ? element_NameToType(type) : VALUE_Variable);
 	fieldsformat=(newval?newval->type():0);
 	fieldsdef=NULL;
+	format_str=newstr(type);
 	fields=NULL;
 	islist=0; //if this element should be considered a set of such elements
 }
@@ -346,6 +389,7 @@ ObjectDef::ObjectDef()
 	fieldsformat=VALUE_MaxBuiltIn + object_id;
 	fieldsdef=NULL;
 	fields=NULL;
+	format_str=NULL;
 	islist=0; //if this element should be considered a set of such elements
 }
 
@@ -356,13 +400,14 @@ ObjectDef::~ObjectDef()
 
 	DBG cerr <<"ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
 	
-	//if (extends)      delete[] extends;
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
 	if (description)  delete[] description;
 	if (range)        delete[] range;
 	if (defaultvalue) delete[] defaultvalue;
 	if (defaultValue) defaultValue->dec_count();
+	if (format_str)   delete[] format_str;
+	//if (fieldsdef) fieldsdef->dec_count(); <- don't do this, assume type will outlive things based on type
 	
 	if (fields) {
 		DBG cerr <<"---Delete fields stack"<<endl;
@@ -404,6 +449,16 @@ int ObjectDef::Extend(ObjectDef *def)
 	return 0;
 }
 
+int ObjectDef::SetType(const char *type)
+{
+	makestr(format_str,type);
+	format=element_NameToType(type);
+	return 0;
+}
+
+/*! \ingroup misc
+ * Append src to dest, but escape newlines, tabs, and quotes.
+ */
 char *appendescaped(char *&dest, const char *src, char quote)
 {
 	if (!src) return dest;
@@ -665,7 +720,7 @@ int ObjectDef::pushEnumValue(const char *str, const char *Str, const char *dsc, 
 	char idstr[30];
 	sprintf(idstr,"%d",id);
 	return push(str,Str,dsc, 
-				VALUE_EnumVal, idstr,NULL,
+				"enumval", idstr,NULL,
 				(unsigned int)0, NULL,NULL);
 }
 
@@ -687,7 +742,7 @@ int ObjectDef::pushEnum(const char *nname,const char *nName,const char *ndesc,
 					 ...)
 {
 	ObjectDef *e=new ObjectDef(NULL,nname,nName,ndesc,
-							 VALUE_Enum, NULL, newdefval, 
+							 "enum", NULL, newdefval, 
 							 NULL, 0,
 							 nnewfunc, nstylefunc);
 	va_list ap;
@@ -727,7 +782,7 @@ int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *des
 	char pp[20];
 	sprintf(pp,"%d",priority);
 
-	ObjectDef *def=new ObjectDef(NULL, op,op,desc, VALUE_Operator, rr, pp,  NULL,nflags);
+	ObjectDef *def=new ObjectDef(NULL, op,op,desc, "operator", rr, pp,  NULL,nflags);
 	def->opevaluator=evaluator;
 	return push(def,1);
 }
@@ -739,7 +794,7 @@ int ObjectDef::pushOperator(const char *op,int dir,int priority, const char *des
  * - the parameter name,
  * - the parameter name translated, human readable name
  * - the description of the parameter
- * - format (integer)
+ * - format (string)
  * - range (string)
  * - default value (string) 
  *
@@ -751,25 +806,24 @@ int ObjectDef::pushFunction(const char *nname,const char *nName,const char *ndes
 					 ...)
 {
 	push(nname,nName,ndesc,
-		 VALUE_Function, NULL, NULL, 0,
+		 "function", NULL, NULL, 0,
 		 NULL, NULL);
 	ObjectDef *f=fields->e[fields->n-1];
 	f->evaluator=nfunc;
 
 	va_list ap;
 	va_start(ap, nfunc);
-	const char *v1,*v2,*v3, *v5,*v6;
-	int f4;
+	const char *v1,*v2,*v3, *v4,*v5,*v6;
 	while (1) {
 		v1=va_arg(ap,const char *);
 		if (v1==NULL) break;
 		v2=va_arg(ap,const char *);
 		v3=va_arg(ap,const char *);
-		f4=va_arg(ap,int);
+		v4=va_arg(ap,const char *);
 		v5=va_arg(ap,const char *);
 		v6=va_arg(ap,const char *);
 
-		f->pushParameter(v1,v2,v3, (ValueTypes) f4,v5,v6);
+		f->pushParameter(v1,v2,v3, v4,v5,v6, NULL);
 	}
 	va_end(ap);
 
@@ -778,7 +832,7 @@ int ObjectDef::pushFunction(const char *nname,const char *nName,const char *ndes
 
 //! Push def without fields. If pushing this new field onto fields fails, return -1, else the new field's index.
 int ObjectDef::push(const char *nname,const char *nName,const char *ndesc,
-			ValueTypes fformat,const char *nrange, const char *newdefval,unsigned int fflags,
+			const char *fformat,const char *nrange, const char *newdefval,unsigned int fflags,
 			NewObjectFunc nnewfunc,
 		 	ObjectFunc nstylefunc)
 {
@@ -793,7 +847,7 @@ int ObjectDef::push(const char *nname,const char *nName,const char *ndesc,
 /*! Note that the counts for the subfields are not incremented further.
  */
 int ObjectDef::push(const char *nname,const char *nName,const char *ndesc,
-		ValueTypes fformat,const char *nrange, const char *newdefval,
+		const char *fformat,const char *nrange, const char *newdefval,
 		Laxkit::RefPtrStack<ObjectDef> *nfields,unsigned int fflags,
 		NewObjectFunc nnewfunc,
 		ObjectFunc nstylefunc)
@@ -807,9 +861,9 @@ int ObjectDef::push(const char *nname,const char *nName,const char *ndesc,
  * Return -1 if variable existed, and Name, description, and value overwrite the old values.
  * Return 1 if unable add for some reason (like being read only).
  *
- * Usually, this is done only in namespaces.
+ * Usually, this is done only in namespaces and class definitions. If type==NULL, then add as "variable".
  */
-int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndesc, Value *v, int absorb)
+int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndesc, const char *type, unsigned int fflags, Value *v, int absorb)
 {
 	ObjectDef *def=FindDef(name);
 
@@ -825,7 +879,7 @@ int ObjectDef::pushVariable(const char *name,const char *nName, const char *ndes
 	}
 	
 	//else name didn't exist, so ok to push
-	def=new ObjectDef(name,nName,ndesc, v);
+	def=new ObjectDef(name,nName,ndesc, v, type,fflags);
 	push(def,1);
 	if (v && absorb) v->dec_count();
 	return 0;
@@ -840,7 +894,7 @@ int ObjectDef::SetVariable(const char *name,Value *v, int absorb)
 {
 	ObjectDef *def=(name ? FindDef(name): this);
 	if (!def) {
-		def=new ObjectDef(name,name,NULL, v);
+		def=new ObjectDef(name,name,NULL, v, NULL,0);
 		if (absorb) v->dec_count();
 		return 0;
 	} else {
@@ -906,7 +960,7 @@ int ObjectDef::push(ObjectDef *newfield, int absorb)
  * future pushParameter() calls in this case will add to that one, not to *this.
  */
 int ObjectDef::pushParameter(const char *nname,const char *nName,const char *ndesc,
-			ValueTypes fformat,const char *nrange, const char *newdefval, Value *defvalue)
+			const char *fformat, const char *nrange, const char *newdefval, Value *defvalue)
 {
 	ObjectDef *newdef=new ObjectDef(NULL,nname,nName,
 								  ndesc,fformat,nrange,newdefval,
@@ -1010,6 +1064,7 @@ ObjectDef *ObjectDef::FindDef(const char *objectdef, int len, int which)
 	if (len<0) len=strlen(objectdef);
 	if (fields) for (int c=0; c<fields->n; c++) {
 		if (!strncmp(objectdef,fields->e[c]->name,len) && strlen(fields->e[c]->name)==(unsigned int)len) {
+			if (which==0) return fields->e[c];
 			if ((which&1) && fields->e[c]->format==VALUE_Function) return fields->e[c];
 			else if ((which&2) && fields->e[c]->format==VALUE_Class) return fields->e[c];
 			else if ((which&4) && fields->e[c]->format==VALUE_Variable) return fields->e[c];
@@ -1042,7 +1097,7 @@ int ObjectDef::getInfo(int index,
 						const char **rng,
 						const char **defv,
 						ValueTypes *fmt,
-						int *objtype,
+						const char **objtype,
 						ObjectDef **def_ret)
 {
 	ObjectDef *def=NULL;
@@ -1055,7 +1110,7 @@ int ObjectDef::getInfo(int index,
 		if (rng) *rng=def->range;
 		if (defv) *defv=def->defaultvalue;
 		if (fmt) *fmt=def->format;
-		if (objtype) *objtype=def->fieldsformat;
+		if (objtype) *objtype=def->format_str;
 		if (def_ret) *def_ret=def;
 		return 0;
 	}
@@ -1067,7 +1122,7 @@ int ObjectDef::getInfo(int index,
 	if (rng) *rng=def->fields->e[index]->range;
 	if (defv) *defv=def->fields->e[index]->defaultvalue;
 	if (fmt) *fmt=def->fields->e[index]->format;
-	if (objtype) *objtype=def->fields->e[index]->fieldsformat;
+	if (objtype) *objtype=def->fields->e[index]->format_str;
 	if (def_ret) *def_ret=def->fields->e[index];
 	return 0;
 }
@@ -1287,14 +1342,14 @@ Value *ValueHash::dereference(int index)
 	return set;
 }
 
-ObjectDef defaultValueHashObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value pairs"),
-							 VALUE_Class, NULL, "{ : }", 
+ObjectDef default_ValueHash_ObjectDef(NULL,"Hash",_("Hash"),_("Set of name-value pairs"),
+							 "class", NULL, "{ : }", 
 							 NULL, 0,
 							 NULL, NULL);
 
-ObjectDef *ValueHash::makeObjectDef()
+ObjectDef *Get_ValueHash_ObjectDef()
 {
-	ObjectDef *def=&defaultValueHashObjectDef;
+	ObjectDef *def=&default_ValueHash_ObjectDef;
 	if (def->fields) return def;
 
 //	virtual int pushFunction(const char *nname,const char *nName,const char *ndesc,
@@ -1303,7 +1358,7 @@ ObjectDef *ValueHash::makeObjectDef()
 // * - the parameter name,
 // * - the parameter name translated, human readable name
 // * - the description of the parameter
-// * - format (integer)
+// * - format 
 // * - range (string)
 // * - default value (string) 
 
@@ -1318,9 +1373,9 @@ ObjectDef *ValueHash::makeObjectDef()
 
 	def->pushFunction("push",_("Push"),_("Add a new name-value pair"),
 					  NULL,
-					  "key",_("Key"),_("Key"), VALUE_String,NULL,NULL,
-					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
-					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1",
+					  "key",_("Key"),_("Key"), "string",NULL,NULL,
+					  "value",_("Value"),_("Value"), "any",NULL,NULL,
+					  "pos",_("Position"),_("Where to push"), "int",NULL,"-1",
 					  NULL);
 
 	def->pushFunction("flush",_("Flush"),_("Remove all name-value pairs"), NULL,
@@ -1328,28 +1383,36 @@ ObjectDef *ValueHash::makeObjectDef()
 
 	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
 					  NULL,
-					  "pos",_("Position 1"),_("Position to swap."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL,
+					  "pos",_("Position 1"),_("Position to swap."), "int",NULL,NULL,
+					  "pos2",_("Position 2"),_("Position to swap."), "int",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("slide",_("Slide"),_("Same as push(pop(p1),p2)"),
 					  NULL,
-					  "pos",_("Position 1"),_("Position to take."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL,
+					  "pos",_("Position 1"),_("Position to take."), "int",NULL,NULL,
+					  "pos2",_("Position 2"),_("Where to put."), "int",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("key",_("Key"),_("Return string of the key"),
 					  NULL,
-					  "pos",_("Index"),_("Index"), VALUE_Int,NULL,NULL,
+					  "pos",_("Index"),_("Index"), "int",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("value",_("Value"),_("Return value associated with key"),
 					  NULL,
-					  "key",_("Key"),_("Either an integer index, or string key"), VALUE_Any,NULL,NULL,
+					  "key",_("Key"),_("Either an integer index, or string key"), "any",NULL,NULL,
 					  NULL);
 
 	return def;
 }
+
+ObjectDef *ValueHash::makeObjectDef()
+{
+	ObjectDef *def=Get_ValueHash_ObjectDef();
+	def->inc_count();
+	return def;
+}
+
 
 int ValueHash::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
@@ -2114,11 +2177,11 @@ Value *SetValue::dereference(int index)
 
 
 ObjectDef default_SetValue_ObjectDef(NULL,"set",_("Set"),_("Set of values"),
-							 VALUE_Class, NULL, "{}", 
+							 "class", NULL, "{}", 
 							 NULL, 0,
 							 NULL, NULL);
 
-ObjectDef *SetValue::makeObjectDef()
+ObjectDef *Get_SetValue_ObjectDef()
 {
 	ObjectDef *def=&default_SetValue_ObjectDef;
 	if (def->fields) return def;
@@ -2128,34 +2191,42 @@ ObjectDef *SetValue::makeObjectDef()
 
 	def->pushFunction("push",_("Push"),_("Add a new value"),
 					  NULL,
-					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
-					  "pos",_("Position"),_("Where to push"), VALUE_Int,NULL,"-1",
+					  "value",_("Value"),_("Value"), "any",NULL,NULL,
+					  "pos",_("Position"),_("Where to push"), "int",NULL,"-1",
 					  NULL);
 
 	def->pushFunction("pop",_("Pop"),_("Remove a value"),
 					  NULL,
-					  "pos",_("Position"),_("Which to pop."), VALUE_Any,NULL,"-1",
+					  "pos",_("Position"),_("Which to pop."), "any",NULL,"-1",
 					  NULL);
 
 	def->pushFunction("swap",_("Swap"),_("Swap two positions"),
 					  NULL,
-					  "pos",_("Position 1"),_("Position to swap."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Position to swap."), VALUE_Int,NULL,NULL,
+					  "pos",_("Position 1"),_("Position to swap."), "int",NULL,NULL,
+					  "pos2",_("Position 2"),_("Position to swap."), "int",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("slide",_("Slide"),_("Same as push(pop(p1),p2)"),
 					  NULL,
-					  "pos",_("Position 1"),_("Position to take."), VALUE_Int,NULL,NULL,
-					  "pos2",_("Position 2"),_("Where to put."), VALUE_Int,NULL,NULL,
+					  "pos",_("Position 1"),_("Position to take."), "int",NULL,NULL,
+					  "pos2",_("Position 2"),_("Where to put."), "int",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("removeValue",_("Remove value"),_("Remove this same value if it is in set"),
 					  NULL,
-					  "value",_("Value"),_("Value"), VALUE_Any,NULL,NULL,
+					  "value",_("Value"),_("Value"), "any",NULL,NULL,
 					  NULL);
 
 	return def;
 }
+
+ObjectDef *SetValue::makeObjectDef()
+{
+	ObjectDef *def=Get_SetValue_ObjectDef();
+	def->inc_count();
+	return def;
+}
+
 
 int SetValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
@@ -2324,6 +2395,23 @@ int ArrayValue::Dimensions()
 }
 
 
+//--------------------------------- NullValue -----------------------------
+int NullValue::getValueStr(char *buffer,int len)
+{
+	if (!buffer || len<4) return 4;
+	sprintf(buffer,"null");
+	return 0;
+}
+
+//! Return ref to this.. all null values are the same.
+Value *NullValue::duplicate()
+{ 
+	inc_count();
+	return this;
+}
+
+
+
 //--------------------------------- BooleanValue -----------------------------
 int BooleanValue::getValueStr(char *buffer,int len)
 {
@@ -2346,6 +2434,23 @@ int BooleanValue::assign(FieldExtPlace *ext,Value *v)
 	if (d) i=1; else i=0;
 	return 1;
 }
+
+
+ObjectDef default_BooleanValue_ObjectDef(NULL,"boolean",_("Boolean"),_("Boolean, true or false"),
+							 "class", NULL, "true", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_BooleanValue_ObjectDef()
+{ return &default_BooleanValue_ObjectDef; }
+
+ObjectDef *BooleanValue::makeObjectDef()
+{
+	Get_BooleanValue_ObjectDef()->inc_count();
+	return Get_BooleanValue_ObjectDef();
+}
+
+
 
 //--------------------------------- IntValue -----------------------------
 int IntValue::getValueStr(char *buffer,int len)
@@ -2371,6 +2476,22 @@ int IntValue::assign(FieldExtPlace *ext,Value *v)
 	return 1;
 }
 
+
+ObjectDef default_IntValue_ObjectDef(NULL,"int",_("Int"),_("Integers"),
+							 "class", NULL, "0", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_IntValue_ObjectDef()
+{ return &default_IntValue_ObjectDef; }
+
+ObjectDef *IntValue::makeObjectDef()
+{
+	Get_IntValue_ObjectDef()->inc_count();
+	return Get_IntValue_ObjectDef();
+}
+
+
 //--------------------------------- DoubleValue -----------------------------
 int DoubleValue::getValueStr(char *buffer,int len)
 {
@@ -2395,6 +2516,65 @@ int DoubleValue::assign(FieldExtPlace *ext,Value *v)
 	d=dd;
 	return 1;
 }
+
+
+ObjectDef default_DoubleValue_ObjectDef(NULL,"real",_("Real"),_("Real numbers"),
+							 "class", NULL, "0.", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_DoubleValue_ObjectDef()
+{
+	ObjectDef *def=&default_DoubleValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("abs",_("Abs"),_("Absolute value"), NULL,
+					  NULL);
+
+	def->pushFunction("int",_("Int"),_("Integer portion"), NULL,
+					  NULL);
+
+	def->pushFunction("fraction",_("Fraction"),_("The non-integer part of a real number"), NULL,
+					  NULL);
+
+	return def;
+}
+
+ObjectDef *DoubleValue::makeObjectDef()
+{
+	Get_DoubleValue_ObjectDef()->inc_count();
+	return Get_DoubleValue_ObjectDef(); 
+}
+
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int DoubleValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (isName(func,len, "abs")) {
+		*value_ret=new DoubleValue(fabs(d));
+		return 0;
+
+	} else if (isName(func,len, "int")) {
+		*value_ret=new IntValue(d);
+		return 0;
+
+	} else if (isName(func,len, "fraction")) {
+		*value_ret=new DoubleValue(d-(int)d);
+		return 0;
+	}
+
+	return -1;
+}
+
+
+
+
 
 //--------------------------------- FlatvectorValue -----------------------------
 int FlatvectorValue::getValueStr(char *buffer,int len)
@@ -2439,6 +2619,77 @@ int FlatvectorValue::assign(FieldExtPlace *ext,Value *vv)
 
 	return 1;
 }
+
+
+ObjectDef default_FlatvectorValue_ObjectDef(NULL,"flatvector",_("Flatvector"),_("A two dimensional vector"),
+							 "class", NULL, "(0,0)", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_FlatvectorValue_ObjectDef()
+{
+	ObjectDef *def=&default_FlatvectorValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("length",_("Length"),_("Length"), NULL,
+					  NULL);
+
+	def->pushFunction("norm2",_("Norm2"),_("Square of the length"), NULL,
+					  NULL);
+
+	def->pushFunction("angle",_("Angle"),_("Basically atan2(v.y,v.x)"), NULL,
+					  NULL);
+
+	def->pushFunction("normalize",_("Normalize"),_("Make length 1, but keep current angle."), NULL,
+					  NULL);
+
+	def->pushFunction("isnull",_("Is Null"),_("True if x and y are both 0."), NULL,
+					  NULL);
+
+	return def;
+}
+
+ObjectDef *FlatvectorValue::makeObjectDef()
+{
+	Get_FlatvectorValue_ObjectDef()->inc_count();
+	return Get_FlatvectorValue_ObjectDef();
+}
+
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int FlatvectorValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (isName(func,len, "length")) {
+		*value_ret=new DoubleValue(norm(v));
+		return 0;
+
+	} else if (isName(func,len, "norm2")) {
+		*value_ret=new DoubleValue(norm2(v));
+		return 0;
+
+	} else if (isName(func,len, "angle")) {
+		*value_ret=new DoubleValue(atan2(v.y,v.x));
+		return 0;
+
+	} else if (isName(func,len, "normalize")) {
+		v.normalize();
+		*value_ret=NULL;
+		return 0;
+
+	} else if (isName(func,len, "isnull")) {
+		*value_ret=new BooleanValue(v.x==0 && v.y==0);
+		return 0;
+	}
+
+	return -1;
+}
+
 
 //--------------------------------- SpacevectorValue -----------------------------
 int SpacevectorValue::getValueStr(char *buffer,int len)
@@ -2485,6 +2736,79 @@ int SpacevectorValue::assign(FieldExtPlace *ext,Value *vv)
 	return 1;
 }
 
+
+ObjectDef default_SpacevectorValue_ObjectDef(NULL,"spacevector",_("Spacevector"),_("A three dimensional vector"),
+							 "class", NULL, "(0,0)", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_SpacevectorValue_ObjectDef()
+{
+	ObjectDef *def=&default_SpacevectorValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("length",_("Length"),_("Length"), NULL,
+					  NULL);
+
+	def->pushFunction("norm2",_("Norm2"),_("Square of the length"), NULL,
+					  NULL);
+
+	def->pushFunction("angle",_("Angle"),_("Basically atan2(v.y,v.x)"), NULL,
+					  NULL);
+
+	def->pushFunction("normalize",_("Normalize"),_("Make length 1, but keep current angle."), NULL,
+					  NULL);
+
+	def->pushFunction("isnull",_("Is Null"),_("True if x and y are both 0."), NULL,
+					  NULL);
+
+	return def;
+}
+
+ObjectDef *SpacevectorValue::makeObjectDef()
+{
+	Get_SpacevectorValue_ObjectDef()->inc_count();
+	return Get_SpacevectorValue_ObjectDef();
+}
+
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int SpacevectorValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (isName(func,len, "length")) {
+		*value_ret=new DoubleValue(norm(v));
+		return 0;
+
+	} else if (isName(func,len, "norm2")) {
+		*value_ret=new DoubleValue(norm2(v));
+		return 0;
+
+	} else if (isName(func,len, "angle")) {
+		*value_ret=new DoubleValue(atan2(v.y,v.x));
+		return 0;
+
+	} else if (isName(func,len, "normalize")) {
+		v.normalize();
+		*value_ret=NULL;
+		return 0;
+
+	} else if (isName(func,len, "isnull")) {
+		*value_ret=new BooleanValue(v.x==0 && v.y==0 && v.z==0);
+		return 0;
+	}
+
+	return -1;
+}
+
+
+
+
 //--------------------------------- StringValue -----------------------------
 //! Create a string value with the first len characters of s.
 /*! If len<=0, then use strlen(s).
@@ -2516,14 +2840,15 @@ int StringValue::getValueStr(char *buffer,int len)
 Value *StringValue::duplicate()
 { return new StringValue(str); }
 
+
 ObjectDef default_StringValue_ObjectDef(NULL,"string",_("String"),_("String"),
-							 VALUE_Class, NULL, "\"\"", 
+							 "class", NULL, "\"\"", 
 							 NULL, 0,
 							 NULL, NULL);
 
-ObjectDef *StringValue::makeObjectDef()
+ObjectDef *Get_StringValue_ObjectDef()
 {
-	ObjectDef *def=&default_SetValue_ObjectDef;
+	ObjectDef *def=&default_StringValue_ObjectDef;
 	if (def->fields) return def;
 
 	def->pushFunction("len",_("Length of string"),_("Length of string"), NULL,
@@ -2531,25 +2856,32 @@ ObjectDef *StringValue::makeObjectDef()
 
 	def->pushFunction("sub",_("Substring"),_("Retrieve a substring"),
 					  NULL,
-					  "start",_("Start"),_("Counting from 0"), VALUE_Int,NULL,NULL,
-					  "end",  _("End"),  _("Counting from 0"), VALUE_Int,NULL,"-1",
+					  "start",_("Start"),_("Counting from 0"), "int",NULL,NULL,
+					  "end",  _("End"),  _("Counting from 0"), "int",NULL,"-1",
 					  NULL);
 
 	def->pushFunction("find",_("Find"),_("Return position of substring, or -1"),
 					  NULL,
-					  "str",_("String"),_("String to search for."), VALUE_String,NULL,"",
-					  "from",  _("From"),  _("Start search from here."), VALUE_Int,NULL,NULL,
+					  "str",_("String"),_("String to search for."), "string",NULL,"",
+					  "from",  _("From"),  _("Start search from here."), "int",NULL,NULL,
 					  NULL);
 
 	def->pushFunction("replace",_("Replace"),_("Replace substsring with new string"),
 					  NULL,
-					  "str",_("String"),_("String to insert"), VALUE_String,NULL,NULL,
-					  "start",_("Start"),_("Counting from 0"), VALUE_Int,NULL,NULL,
-					  "end",  _("End"),  _("Counting from 0"), VALUE_Int,NULL,"-1",
+					  "str",_("String"),_("String to insert"), "string",NULL,NULL,
+					  "start",_("Start"),_("Counting from 0"), "int",NULL,NULL,
+					  "end",  _("End"),  _("Counting from 0"), "int",NULL,"-1",
 					  NULL);
 
 	return def;
 }
+
+ObjectDef *StringValue::makeObjectDef()
+{
+	Get_StringValue_ObjectDef()->inc_count();
+	return Get_StringValue_ObjectDef();
+}
+
 
 /*! Return
  *  0 for success, value returned.

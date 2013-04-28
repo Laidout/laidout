@@ -454,7 +454,7 @@ ObjectDef *makePaperObjectDef()
 							  "Paper",
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
-							  VALUE_Class,
+							  "class",
 							  NULL, //range
 							  NULL, //defval
 							  NULL,0, //fields, flags
@@ -464,7 +464,7 @@ ObjectDef *makePaperObjectDef()
 	sd->push("name",
 			_("Name"),
 			_("Name of the paper, like A4 or Letter"),
-			VALUE_String,
+			"string",
 			NULL, //range
 			NULL, //def value
 			0,
@@ -480,19 +480,19 @@ ObjectDef *makePaperObjectDef()
 	sd->push("width",
 			_("Width"),
 			_("Width of the paper, after orientation is applied"),
-			VALUE_Real, NULL,NULL,
+			"real", NULL,NULL,
 			0,
 			NULL);
 	sd->push("height",
 			_("Height"),
 			_("Height of the paper, after orientation is applied"),
-			VALUE_Real, NULL,NULL,
+			"real", NULL,NULL,
 			0,
 			NULL);
 	sd->push("dpi",
 			_("Dpi"),
 			_("Default dots per inch of the paper"),
-			VALUE_Real, 
+			"real", 
 			NULL,
 			NULL,
 			0,
