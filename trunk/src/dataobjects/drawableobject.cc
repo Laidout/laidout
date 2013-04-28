@@ -1146,7 +1146,7 @@ ObjectDef *makeAffineObjectDef()
 	ObjectDef *sd=new ObjectDef(NULL,"Affine",
 			_("Affine"),
 			_("Affine transform defined by 6 real numbers."),
-			VALUE_Class,
+			"class",
 			NULL,NULL, //range, default value
 			NULL,0, //fields, flags
 			NULL,NewAffineObject);
@@ -1154,49 +1154,49 @@ ObjectDef *makeAffineObjectDef()
 
 	sd->pushFunction("translate", _("Translate"), _("Move by a certain amount"),
 					 NULL, //evaluator
-					 "x",_("X"),_("The amount to move in the x direction"),VALUE_Number, NULL,NULL,
-					 "y",_("Y"),_("The amount to move in the y direction"),VALUE_Number, NULL,NULL,
+					 "x",_("X"),_("The amount to move in the x direction"),"number", NULL,NULL,
+					 "y",_("Y"),_("The amount to move in the y direction"),"number", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("rotate", _("Rotate"), _("Rotate the object, optionally aronud a point"),
 					 NULL, //evaluator
-					 "angle",_("Angle"),_("The angle to rotate"),VALUE_Number, NULL,NULL,
-					 "point",_("Point"),_("The point around which to rotate. Default is the origin."),VALUE_Flatvector, NULL,"(0,0)",
+					 "angle",_("Angle"),_("The angle to rotate"),"number", NULL,NULL,
+					 "point",_("Point"),_("The point around which to rotate. Default is the origin."),"flatvector", NULL,"(0,0)",
 					 NULL);
 
 
 	sd->pushFunction("scalerotate", _("ScaleRotate"), _("Rotate and scale the object, keeping one point fixed"),
 					 NULL,
-					 "p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL,
-					 "p2",_("P2"),_("The point to move."),VALUE_Flatvector, NULL,NULL,
-					 "p3",_("P3"),_("The new position of p2."),VALUE_Flatvector, NULL,NULL,
+					 "p1",_("P1"),_("A constant point"),       "flatvector", NULL,NULL,
+					 "p2",_("P2"),_("The point to move."),     "flatvector", NULL,NULL,
+					 "p3",_("P3"),_("The new position of p2."),"flatvector", NULL,NULL,
 					 NULL);
 
 
 	sd->pushFunction("anchorshear", _("Anchor Shear"), _("Transform so that p1 and p2 stay fixed, but p3 is shifted to newp3."),
 					 NULL,
-					 "p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL,
-					 "p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL,
-					 "p3",_("P3"),_("The point to move."),VALUE_Flatvector, NULL,NULL,
-					 "p4",_("P4"),_("The new position of p3."),VALUE_Flatvector, NULL,NULL,
+					 "p1",_("P1"),_("A constant point"),       "flatvector", NULL,NULL,
+					 "p2",_("P2"),_("Another constant point"), "flatvector", NULL,NULL,
+					 "p3",_("P3"),_("The point to move."),     "flatvector", NULL,NULL,
+					 "p4",_("P4"),_("The new position of p3."),"flatvector", NULL,NULL,
 					 NULL);
 
 
 	sd->pushFunction("flip", _("Flip"), _("Flip around an axis defined by two points."),
 					 NULL,
-					 "p1",_("P1"),_("A constant point"),VALUE_Flatvector, NULL,NULL,
-					 "p2",_("P2"),_("Another constant point"),VALUE_Flatvector, NULL,NULL,
+					 "p1",_("P1"),_("A constant point"),      "flatvector", NULL,NULL,
+					 "p2",_("P2"),_("Another constant point"),"flatvector", NULL,NULL,
 					 NULL);
 
 
 	sd->pushFunction("settransform", _("Set Transform"), _("Set the object's affine transform, with a set of 6 real numbers: a,b,c,d,x,y."),
 					 NULL,
-					 "a",_("A"),_("A"),VALUE_Real, NULL,NULL,
-					 "b",_("B"),_("B"),VALUE_Real, NULL,NULL,
-					 "c",_("C"),_("C"),VALUE_Real, NULL,NULL,
-					 "d",_("D"),_("D"),VALUE_Real, NULL,NULL,
-					 "x",_("X"),_("X"),VALUE_Real, NULL,NULL,
-					 "y",_("Y"),_("Y"),VALUE_Real, NULL,NULL,
+					 "a",_("A"),_("A"),"real", NULL,NULL,
+					 "b",_("B"),_("B"),"real", NULL,NULL,
+					 "c",_("C"),_("C"),"real", NULL,NULL,
+					 "d",_("D"),_("D"),"real", NULL,NULL,
+					 "x",_("X"),_("X"),"real", NULL,NULL,
+					 "y",_("Y"),_("Y"),"real", NULL,NULL,
 					 NULL);
 
 
@@ -1324,7 +1324,7 @@ ObjectDef *makeBBoxObjectDef()
 	ObjectDef *sd=new ObjectDef(NULL,"BBox",
 			_("BBox"),
 			_("Bounding box"),
-			VALUE_Class,
+			"class",
 			NULL,NULL, //range, default value
 			NULL,0, //fields, flags
 			NULL,NewBBoxObject);
@@ -1333,16 +1333,16 @@ ObjectDef *makeBBoxObjectDef()
 	 //Contstructor
 	sd->pushFunction("BBox", _("Bounding Box"), _("Bounding Box"),
 					 NULL,
-					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
-					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
-					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
-					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 "minx",_("minx"),_("minx"),"real", NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),"real", NULL,NULL,
+					 "miny",_("miny"),_("miny"),"real", NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),"real", NULL,NULL,
 					 NULL);
 
-	sd->push("minx",_("Minx"),_("Minimium x"),VALUE_Real,NULL,NULL,0,0);
-	sd->push("maxx",_("Maxx"),_("Maximium x"),VALUE_Real,NULL,NULL,0,0);
-	sd->push("miny",_("Miny"),_("Minimium y"),VALUE_Real,NULL,NULL,0,0);
-	sd->push("maxy",_("Maxy"),_("Maximium y"),VALUE_Real,NULL,NULL,0,0);
+	sd->push("minx",_("Minx"),_("Minimium x"),"real",NULL,NULL,0,0);
+	sd->push("maxx",_("Maxx"),_("Maximium x"),"real",NULL,NULL,0,0);
+	sd->push("miny",_("Miny"),_("Minimium y"),"real",NULL,NULL,0,0);
+	sd->push("maxy",_("Maxy"),_("Maximium y"),"real",NULL,NULL,0,0);
 
 	sd->pushFunction("clear", _("Clear"), _("Clear bounds."),
 					 NULL, //evaluator
@@ -1355,46 +1355,46 @@ ObjectDef *makeBBoxObjectDef()
 
 	sd->pushFunction("Add", _("Add To Bounds"), _("Add a point to bounds"),
 					 NULL,
-					 "x",_("x"),_("An x coordinate"),VALUE_Real, NULL,NULL,
-					 "y",_("y"),_("A y coordinate"),VALUE_Real, NULL,NULL,
-					 "p",_("p"),_("A point"),VALUE_Flatvector, NULL,NULL,
+					 "x",_("x"),_("An x coordinate"),"real", NULL,NULL,
+					 "y",_("y"),_("A y coordinate"), "real""real", NULL,NULL,
+					 "p",_("p"),_("A point"),"flatvector", NULL,NULL,
 					 NULL);
 
 
 	sd->pushFunction("AddBox", _("Add box"), _("Add another bbox to bounds, so that old and new bounds contain both."),
 					 NULL,
-					 "box", _("box"), _("box"), sd->fieldsformat, NULL,NULL,
-					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
-					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
-					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
-					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 "box", _("box"), _("box"), "BBox", NULL,NULL,
+					 "minx",_("minx"),_("minx"),"real", NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),"real", NULL,NULL,
+					 "miny",_("miny"),_("miny"),"real", NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),"real", NULL,NULL,
 					 NULL);
 
 
 	sd->pushFunction("Contains", _("Contains"), _("True if bounds contain point (inside or right on edge)."),
 					 NULL,
-					 "x",_("x"),_("An x coordinate"),VALUE_Real, NULL,NULL,
-					 "y",_("y"),_("A y coordinate"),VALUE_Real, NULL,NULL,
-					 "p",_("p"),_("A point"),VALUE_Flatvector, NULL,NULL,
+					 "x",_("x"),_("An x coordinate"),"real", NULL,NULL,
+					 "y",_("y"),_("A y coordinate"), "real", NULL,NULL,
+					 "p",_("p"),_("A point"),"flatvector", NULL,NULL,
 					 NULL);
 
 
 	sd->pushFunction("Intersects", _("Intersects"), _("Return whether a box intersects."),
 					NULL,
-					 "box", _("box"), _("box"), sd->fieldsformat, NULL,NULL,
-					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
-					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
-					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
-					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 "box", _("box"), _("box"), "BBox", NULL,NULL,
+					 "minx",_("minx"),_("minx"),"real", NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),"real", NULL,NULL,
+					 "miny",_("miny"),_("miny"),"real", NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),"real", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("Intersection", _("Intersection"), _("Return a new box that is the intersection with current."),
 					 NULL,
-					 "box", _("box"), _("box"), sd->fieldsformat, NULL,NULL,
-					 "minx",_("minx"),_("minx"),VALUE_Real, NULL,NULL,
-					 "maxx",_("maxx"),_("maxx"),VALUE_Real, NULL,NULL,
-					 "miny",_("miny"),_("miny"),VALUE_Real, NULL,NULL,
-					 "maxy",_("maxy"),_("maxy"),VALUE_Real, NULL,NULL,
+					 "box", _("box"), _("box"), "BBox", NULL,NULL,
+					 "minx",_("minx"),_("minx"),"real", NULL,NULL,
+					 "maxx",_("maxx"),_("maxx"),"real", NULL,NULL,
+					 "miny",_("miny"),_("miny"),"real", NULL,NULL,
+					 "maxy",_("maxy"),_("maxy"),"real", NULL,NULL,
 					 NULL);
 
 	return sd;

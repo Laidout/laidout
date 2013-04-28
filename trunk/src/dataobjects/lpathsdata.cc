@@ -118,32 +118,32 @@ ObjectDef *LPathsData::makeObjectDef()
 			"PathsData",
             _("PathsData"),
             _("A collection of paths"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	sd->pushFunction("moveto",_("moveto"),_("Start a new subpath"), NULL,
-					"x",_("X"),_("X position"),VALUE_Number, NULL,NULL,
-					"y",_("Y"),_("Y position"),VALUE_Number, NULL,NULL,
-					"p",_("P"),_("Point"),VALUE_Flatvector, NULL,NULL,
+					"x",_("X"),_("X position"),"number", NULL,NULL,
+					"y",_("Y"),_("Y position"),"number", NULL,NULL,
+					"p",_("P"),_("Point"),"flatvector", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("lineto",_("lineto"),_("Add a simple straight line to the path"), NULL,
-					"x",_("X"),_("X position"),VALUE_Number, NULL,NULL,
-					"y",_("Y"),_("Y position"),VALUE_Number, NULL,NULL,
-					"p",_("P"),_("Point"),VALUE_Flatvector, NULL,NULL,
+					"x",_("X"),_("X position"),"number", NULL,NULL,
+					"y",_("Y"),_("Y position"),"number", NULL,NULL,
+					"p",_("P"),_("Point"),"flatvector", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("curveto",_("curveto"),_("Add a bezier segment"), NULL,
-					 "c1",_("c1"),_("Control for current point"),VALUE_Flatvector, NULL,NULL,
-                     "c2",_("c2"),_("Control for new point"),VALUE_Flatvector, NULL,NULL,
-                     "p",_("p"),_("Point"),VALUE_Flatvector, NULL,NULL,
+					 "c1",_("c1"),_("Control for current point"),"flatvector", NULL,NULL,
+                     "c2",_("c2"),_("Control for new point"),"flatvector", NULL,NULL,
+                     "p",_("p"),_("Point"),"flatvector", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("appendRect",_("appendRect"),_("Append a rectangle"), NULL,
-                     "x",_("x"),_("x"),VALUE_Real, NULL,NULL,
-                     "y",_("y"),_("y"),VALUE_Real, NULL,NULL,
-                     "w",_("w"),_("Width"),VALUE_Real, NULL,NULL,
-                     "h",_("h"),_("Height"),VALUE_Real, NULL,NULL,
+                     "x",_("x"),_("x"),"real", NULL,NULL,
+                     "y",_("y"),_("y"),"real", NULL,NULL,
+                     "w",_("w"),_("Width"),"real", NULL,NULL,
+                     "h",_("h"),_("Height"),"real", NULL,NULL,
 					 NULL);
 
 	sd->pushFunction("close",_("close"),_("Close current path. New points will start a new subpath"), NULL, NULL);
@@ -233,7 +233,7 @@ ObjectDef *LPathInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"PathInterface",
             _("Path Interface"),
             _("Path Interface"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();

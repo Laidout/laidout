@@ -154,7 +154,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 
 	 //settings
 	CalcSettings calcsettings;
-
+	ObjectDef sessiondef;
 	
 	Laxkit::RefPtrStack<CalculatorModule> modules;
 
@@ -177,6 +177,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	int removeOperators(int module_id);
 	int addOperator(const char *op,int dir,int priority, int module_id, OpFuncEvaluator *opfunc,ObjectDef *def);
 	void InstallInnate();
+	void InstallBaseTypes();
 
 	void calcerr(const char *error,const char *where=NULL,int w=0, int surround=40);
 	char *getnamestring(int *n);
@@ -193,7 +194,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	void atNextCommandStep() {}
 	int sessioncommand();
 	void showDef(char *&temp, ObjectDef *sd);
-	ObjectDef *CreateSessionCommandObjectDef();
+	ObjectDef *GetSessionCommandObjectDef();
 	void pushScope(int scopetype, int loop_start=0, int condition_start=0, char *var=NULL, Value *v=NULL, ObjectDef *module=NULL);
 	void popScope();
 
@@ -230,7 +231,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 						 Value **value_ret, ErrorLog *log);
 
 	Value *ApplyDefaultSets(SetValue *set);
-	void messageOut(const char *str);
+	void messageOut(const char *str,int output_lines=1);
 
 	ValueHash *parseParameters(StyleDef *def);
 

@@ -106,7 +106,7 @@ ObjectDef *LImageInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"ImageInterface",
             _("Image Interface"),
             _("Image Interface"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();

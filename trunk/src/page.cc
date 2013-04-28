@@ -231,7 +231,7 @@ ObjectDef *PageStyle::makeStyleDef()
 	sd=new ObjectDef(NULL,"PageStyle",
 			_("Generic Page"),
 			_("A page"),
-			VALUE_Class,
+			"class",
 			NULL,NULL);
 
 	//int ObjectDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
@@ -239,19 +239,19 @@ ObjectDef *PageStyle::makeStyleDef()
 	sd->push("marginsclip",
 			_("Margins Clip"),
 			_("Whether a page's margins clip the contents"),
-			VALUE_Boolean, NULL,"0",
+			"boolean", NULL,"0",
 			0,
 			NULL);
 	sd->push("pageclips",
 			_("Page Clips"),
 			_("Whether a page's outline clips the contents"),
-			VALUE_Boolean, NULL,"0",
+			"boolean", NULL,"0",
 			0,
 			NULL);
 	sd->push("facingpagesbleed",
 			_("Facing Pages Bleed"),
 			_("Whether nearby pages are allowed to bleed onto this page"),
-			VALUE_Boolean, NULL,"0",
+			"boolean", NULL,"0",
 			0,
 			NULL);
 	return sd;
@@ -421,7 +421,7 @@ ObjectDef *RectPageStyle::makeStyleDef()
 		sd=new ObjectDef(psd,rpstype,
 						_("Rectangular Facing Page"),
 						_("Rectangular Facing Page"),
-						VALUE_Class,NULL,NULL,
+						"class",NULL,NULL,
 						NULL,
 						0,
 						NewRectPageStyle);
@@ -429,12 +429,12 @@ ObjectDef *RectPageStyle::makeStyleDef()
 		sd=new ObjectDef(psd,rpstype,
 						_("Rectangular Top Facing Page"),
 						_("Rectangular Top Facing Page"),
-						VALUE_Class,NULL,NULL,
+						"class",NULL,NULL,
 						NULL,0,NewRectPageStyle);
 	else sd=new ObjectDef(psd,rpstype,
 					_("Rectangular Page"),
 					_("Rectangular Page"),
-					VALUE_Class,NULL,NULL,
+					"class",NULL,NULL,
 					NULL,0,
 					NewRectPageStyle);
 	
@@ -443,14 +443,14 @@ ObjectDef *RectPageStyle::makeStyleDef()
 		sd->push("insidemargin",
 			_("Inside Margin"),
 			_("How much space to put on the inside of facing pages."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("leftmargin",
 			_("Left Margin"),
 			_("How much space to put in the left margin."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
@@ -460,14 +460,14 @@ ObjectDef *RectPageStyle::makeStyleDef()
 		sd->push("outsidemargin",
 			_("Outside Margin"),
 			_("How much space to put on the outside of facing pages."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("rightmargin",
 			_("Right Margin"),
 			_("How much space to put in the right margin."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
@@ -477,14 +477,14 @@ ObjectDef *RectPageStyle::makeStyleDef()
 		sd->push("insidemargin",
 			_("Inside Margin"),
 			_("How much space to put on the inside of facing pages."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("topmargin",
 			_("Top Margin"),
 			_("How much space to put in the top margin."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
@@ -494,14 +494,14 @@ ObjectDef *RectPageStyle::makeStyleDef()
 		sd->push("outsidemargin",
 			_("Outside Margin"),
 			_("How much space to put on the outside of facing pages."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);
 	else sd->push("bottommargin",
 			_("Bottom Margin"),
 			_("How much space to put in the bottom margin."),
-			VALUE_Real,
+			"real",
 			NULL,NULL,
 			0,
 			NULL);

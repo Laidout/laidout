@@ -31,7 +31,7 @@ StyleDef *makeReimposeStyleDef()
 	StyleDef *sd=new StyleDef(NULL,"Reimpose",
 			_("Reimpose"),
 			_("Replace a document's imposition"),
-			VALUE_Function,
+			"function",
 			NULL,NULL,
 			NULL,
 			0, //new flags
@@ -42,7 +42,7 @@ StyleDef *makeReimposeStyleDef()
 	sd->push("document",
 			_("Document"),
 			_("The document to reimpose. Pulled from context if none given"),
-			VALUE_String, //major hack shortcut
+			"string",
 			NULL, //range
 			"0",  //defvalue
 			0,    //flags
@@ -50,7 +50,7 @@ StyleDef *makeReimposeStyleDef()
 	sd->push("imposition",
 			_("New Imposition"),
 			_("The new imposition to use"),
-			VALUE_Any, //VALUE_DynamicEnum, ***
+			"any", //VALUE_DynamicEnum, ***
 			NULL, //range
 			NULL,  //defvalue
 			0,    //flags
@@ -58,7 +58,7 @@ StyleDef *makeReimposeStyleDef()
 	sd->push("scalepages",
 			_("Scale Pages"),
 			_("Yes or no, whether to scale the old pages to fit the new pages"),
-			VALUE_Boolean,
+			"boolean",
 			NULL,
 			"yes",
 			0,NULL);
@@ -66,7 +66,7 @@ StyleDef *makeReimposeStyleDef()
 			_("Paper Size"),
 			_("New paper size to use in the new imposition. Use a Paper object or a known paper name. "
 			  "A string such as \"tabloid,landscape\" will also work."),
-			VALUE_Any,
+			"any",
 			NULL,
 			NULL,
 			0,NULL);
@@ -82,7 +82,7 @@ StyleDef *makeReimposeStyleDef()
 	sd->push("createnew",
 			_("Create new"),
 			_("Reimpose to a new document"),
-			VALUE_Boolean,
+			"boolean",
 			NULL,
 			"no",
 			0,NULL);

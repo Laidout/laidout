@@ -371,19 +371,19 @@ StyleDef *makeNetImpositionStyleDef()
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
-			VALUE_Class,
+			"class",
 			NULL,NULL,
 			NULL,
 			0, //new flags
 			NewNetImposition);
 
 	sd->push("printnet", _("Print Net"), _("Whether to show the net outline when printing out a document."),
-			VALUE_Boolean,
+			"boolean",
 			NULL, "1",
 			0,0);
 
 	sd->push("net", _("Net"),  _("What kind of net is the imposition using"),
-			VALUE_Enum,
+			"enum",
 			NULL, "0",
 			0,NULL); // *** 0,0,CreateNetListEnum);
 	cerr << " *** need to make enum list work again in makeNetImpositionStyleDef()"<<endl;

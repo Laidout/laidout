@@ -70,7 +70,7 @@ using namespace std;
 //! The mother of all Laidout classes.
 namespace Laidout {
 
-ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace"),VALUE_Namespace,NULL,NULL);
+ObjectDef stylemanager(NULL,"Laidout",_("Laidout"),_("Global Laidout namespace"),"namespace",NULL,NULL);
 
 
 
@@ -280,32 +280,32 @@ ObjectDef *LaidoutApp::makeObjectDef()
 						  "Laidout",
 						  _("Laidout"),
 						  _("Main Laidout container"),
-						  VALUE_Namespace,
+						  "namespace",
 						  NULL,NULL);
 	sd->push("documents",
 			_("Documents"),
 			_("List of available documents."),
-			VALUE_Set, "Document", NULL,
+			"set", "Document", NULL,
 			0,NULL);
 	sd->push("limbos",
 			_("Limbos"),
 			_("List of available limbo areas."),
-			VALUE_Set, "Group", NULL,
+			"set", "Group", NULL,
 			0,NULL);
 	sd->push("resources",
 			_("Resources"),
 			_("List of available resources."),
-			VALUE_Set, "Resource", NULL,
+			"set", "Resource", NULL,
 			0,NULL);
 	sd->push("windows",
 			_("Windows"),
 			_("List of current top level windows."),
-			VALUE_Set, "HeadWindow", NULL,
+			"set", "HeadWindow", NULL,
 			0,NULL);
 	sd->push("settings",
 			_("Settings"),
 			_("List of various settings. These get loaded and saved in a laidoutrc file."),
-			VALUE_Variable, "LaidoutPreferences", NULL,
+			"LaidoutPreferences", NULL, NULL,
 			0,NULL);
 
 	return sd;
@@ -868,16 +868,18 @@ void LaidoutApp::parseargs(int argc,char **argv)
 						cerr <<_("No input script!")<<endl;
 						exit(1);
 					}
-					char *instr=new char[size];
+					char *instr=new char[size+1];
 					FILE *f=fopen(o->arg(),"r");
 					if (!f) {
 						cerr <<_("Could not open ")<<o->arg()<<endl;
 						exit(1);
 					}
 					fread(instr,1,size,f);
+					instr[size]='\0';
+					runmode=RUNMODE_Commands;
 					char *str=calculator->In(instr);
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Commands) runmode=RUNMODE_Quit;
+					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
 				} break;
 
 			case 'c': { // --command
@@ -885,7 +887,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 					runmode=RUNMODE_Commands;
 					char *str=calculator->In(o->arg());
 					if (str) cout <<str<<endl;
-					if (runmode!=RUNMODE_Commands) runmode=RUNMODE_Quit;
+					if (runmode!=RUNMODE_Shell) runmode=RUNMODE_Quit;
 				} break;
 
 			case 'n': { // --new "letter singles 3 pages blah blah blah"

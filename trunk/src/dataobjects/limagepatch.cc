@@ -120,7 +120,7 @@ ObjectDef *LImagePatchData::makeObjectDef()
 			"ImagePatchData",
             _("ImagePatchData"),
             _("An image mesh distortion"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
@@ -264,7 +264,7 @@ ObjectDef *LColorPatchData::makeObjectDef()
 			"ColorPatchData",
             _("ColorPatchData"),
             _("A color mesh gradient"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 //	sd->pushFunction("FlipColors",_("Flip Colors"),_("Flip the order of colors"), NULL,
@@ -379,7 +379,7 @@ ObjectDef *LImagePatchInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"ImagePatchInterface",
             _("Image Patch Interface"),
             _("Image Patch Interface"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();
@@ -482,7 +482,7 @@ ObjectDef *LColorPatchInterface::makeObjectDef()
 	sd=new ObjectDef(NULL,"ColorPatchInterface",
             _("Image Patch Interface"),
             _("Image Patch Interface"),
-            VALUE_Class,
+            "class",
             NULL,NULL);
 
 	if (!sc) sc=GetShortcuts();
