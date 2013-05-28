@@ -688,6 +688,18 @@ int PaperGroup::OutlineColor(int r,int g,int b)
 	return papers.n;
 }
 
+/*! Returns NULL when out of range, or missing paper.
+ */
+PaperStyle *PaperGroup::GetBasePaper(int index)
+{
+	if (index<0 || index>=papers.n) return NULL;
+	if (papers.e[index]->box
+			&& papers.e[index]->box->paperstyle
+			&& papers.e[index]->box->paperstyle->width)
+		return papers.e[index]->box->paperstyle;
+	return NULL;
+}
+
 
 /*!
  * <pre>
