@@ -128,6 +128,7 @@ class PaperGroup : public ObjectContainer, public LaxFiles::DumpUtility
 	virtual int AddPaper(double w,double h,double offsetx,double offsety);
 	virtual int AddPaper(const char *nme,double w,double h,const double *m);
 	virtual int OutlineColor(int r,int g,int b);
+	virtual PaperStyle *GetBasePaper(int index);
 
 	virtual int n();
 	virtual Laxkit::anObject *object_e(int i);
