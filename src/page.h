@@ -19,8 +19,6 @@
 #include <lax/anobject.h>
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/pathinterface.h>
-#include <X11/Xlib.h>
-#include <Imlib2.h>
 
 #include "dataobjects/group.h"
 #include "styles.h"
