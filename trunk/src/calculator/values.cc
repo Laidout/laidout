@@ -988,6 +988,20 @@ int ObjectDef::pop(int fieldindex)
 	return 1;
 }
 
+/*! Return whether this is plain data (1) or is something else like a class, function, etc.
+ * Basically, if it is not a namespace, class, function, operator, or alias, then it is assumed to be data.
+ */
+int ObjectDef::isData()
+{
+	if (    format==VALUE_Namespace
+		 || format==VALUE_Class
+		 || format==VALUE_Operator
+		 || format==VALUE_Function
+		 || format==VALUE_Alias
+	   ) return 0;
+	return 1;
+}
+
 //! Return the number of fields ONLY of this def, not in extendsdefs.
 int ObjectDef::getNumFieldsOfThis()
 {
@@ -1310,7 +1324,7 @@ int ValueHash::getValueStr(char *buffer,int len)
 {
 	int needed=3;//"{:}"
 	for (int c=0; c<values.n; c++) {
-		needed+= 1 + values.e[c]->getValueStr(NULL,0) + strlen(keys.e[c])+3;
+		needed+= 1 + values.e[c]->getValueStr(NULL,0) + (keys.e[c]?strlen(keys.e[c]):0) + 4;
 	}
 	if (!buffer || len<needed) return needed;
 
@@ -1325,6 +1339,7 @@ int ValueHash::getValueStr(char *buffer,int len)
 		 //add value
 		values.e[c]->getValueStr(buffer+pos,len);
 		if (c!=values.n-1) strcat(buffer+pos,",");
+		else strcat(buffer+pos," ");
 		pos+=strlen(buffer+pos);
 	}
 	strcat(buffer+pos,"}");
@@ -1694,7 +1709,7 @@ void ValueHash::renameKey(int i,const char *newname)
 	makestr(keys.e[i],newname);
 }
 
-/*! Return 0 for success, or nonzero for error.
+/*! Set value of an existing key. Return 0 for success, or nonzero for error such as key not found.
  * Increments count of newv.
  */
 int ValueHash::set(const char *key, Value *newv)
@@ -1710,8 +1725,8 @@ int ValueHash::set(const char *key, Value *newv)
 int ValueHash::set(int which, Value *newv)
 {
 	if (which<0 || which>=keys.n) return 1;
-	values.e[which]->dec_count();
-	newv->inc_count();
+	if (newv) newv->inc_count();
+	if (values.e[which]) values.e[which]->dec_count();
 	values.e[which]=newv;
 	return 0;
 }
@@ -2092,6 +2107,91 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 void Value::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 { //  ***
+}
+
+
+////----------------------------- GenericValue ----------------------------------
+/*! \class GenericValue
+ * Value object for a purely coded class.
+ */
+
+Value *NewGenericValue(ObjectDef *def)
+{
+	if (!def) return NULL;
+	return new GenericValue(def);
+}
+
+GenericValue::GenericValue(ObjectDef *def)
+{
+	objectdef=def;
+	if (objectdef) objectdef->inc_count();
+
+	const char *nm,*type;
+	ValueTypes fmt;
+	for (int c=0; c<def->getNumFields(); c++) {
+		def->getInfo(c, &nm,NULL,NULL,NULL,NULL,&fmt,&type,NULL);
+		if (fmt!=VALUE_Function
+				&& fmt!=VALUE_Class
+				&& fmt!=VALUE_Operator
+				&& fmt!=VALUE_Namespace) {
+			
+			 //push only pure value elements
+			elements.push(nm,(Value*)NULL);
+		}
+	}
+}
+
+GenericValue::~GenericValue()
+{
+}
+
+int GenericValue::getValueStr(char *buffer,int len)
+{//***put class name? this just leaves {a=1, b=2,...}
+	return elements.getValueStr(buffer,len);
+}
+
+Value *GenericValue::duplicate()
+{
+	GenericValue *v=new GenericValue(objectdef);
+	Value *vv;
+	for (int c=0; c<elements.n(); c++) {
+		vv=elements.e(c)->duplicate();
+		if (v->elements.set(elements.key(c),vv)==0) vv->dec_count();
+	}
+	return v;
+}
+
+
+ObjectDef *GenericValue::makeObjectDef()
+{
+	 //assume that the objectdef was always assigned in constructor
+	return NULL;
+}
+
+Value *GenericValue::dereference(const char *extstring, int len)
+{
+	char *str=newnstr(extstring,len);
+	Value *v=elements.find(str);
+	delete[] str;
+	if (!v) return NULL;
+	v->inc_count();
+	return v;
+}
+
+int GenericValue::assign(FieldExtPlace *ext,Value *v)
+{//***
+//	if (!ext || !ext->n()) {
+//		*** whole assign
+//	}
+
+	const char *str=ext->e(0);
+	int index=elements.findIndex(str);
+	if (index>=0) {
+		//elements.assign(ext,v);
+		DBG if (ext->n()>1) cerr <<"*** need to implement ValueHash->assign()!!"<<endl;
+		elements.set(index,v);
+	} else return 1;
+	return 1;
 }
 
 
@@ -2893,7 +2993,7 @@ int StringValue::Evaluate(const char *func,int len, ValueHash *context, ValueHas
 						 ErrorLog *log)
 {
 	if (isName(func,len, "len")) {
-		*value_ret=new DoubleValue(str?strlen(str):0);
+		*value_ret=new IntValue(str?strlen(str):0);
 		return 0;
 
 	} else if (isName(func,len, "sub")) {
@@ -2946,15 +3046,127 @@ int StringValue::Evaluate(const char *func,int len, ValueHash *context, ValueHas
 	return -1;
 }
 
+//----------------------------- BytesValue ----------------------------------
+/*! \class BytesValue
+ * Class to hold raw binary data.
+ */
+
+/*! len must be >=0. Assume 0 otherwise.
+ */
+BytesValue::BytesValue(const char *s, int length)
+{
+	if (length<0) length=0;
+	str=NULL;
+	len=length;
+	if (len) {
+		str=new char[len];
+		memcpy(str,s,len);
+	}
+}
+
+BytesValue::~BytesValue()
+{
+	if (str) delete[] str;
+}
+
+int BytesValue::getValueStr(char *buffer,int len)
+{
+	int needed=strlen("(binary data)")+1;
+	if (!buffer || len<needed) return needed;
+	sprintf(buffer,"(binary data)");
+	return 0;
+}
+
+Value *BytesValue::duplicate()
+{
+	return new BytesValue(str,len);
+}
+
+int BytesValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+	if (isName(func,len, "len")) {
+		*value_ret=new IntValue(len);
+		return 0;
+
+	} else if (isName(func,len, "sub")) {
+		int err=0;
+		int start=parameters->findIntOrDouble("start",-1,&err);
+		if (err!=0) start=0;
+		int end=parameters->findIntOrDouble("end",-1,&err);
+		if (err!=0) end=str?strlen(str)-1:0;
+		if (start<0) start=0;
+		if (end>=(int)strlen(str)) end=strlen(str)-1;
+		BytesValue *s=NULL;
+		if (end-start>=0) s=new BytesValue(str+start,end-start+1);
+		else s=new BytesValue(NULL,0);
+		*value_ret=s;
+		return 0;
+	}
+
+	return -1;
+}
+
+ObjectDef default_BytesValue_ObjectDef(NULL,"Bytes",_("Bytes"),_("Bytes"),
+							 "class", NULL, NULL, 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_BytesValue_ObjectDef()
+{
+	ObjectDef *def=&default_BytesValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("len",_("Length of data"),_("Length of data"), NULL,
+					  NULL);
+
+	def->pushFunction("sub",_("Substring"),_("Retrieve a subsection of data"),
+					  NULL,
+					  "start",_("Start"),_("Counting from 0"), "int",NULL,NULL,
+					  "end",  _("End"),  _("Counting from 0"), "int",NULL,"-1",
+					  NULL);
+
+	return def;
+}
+
+ObjectDef *BytesValue::makeObjectDef()
+{
+	Get_BytesValue_ObjectDef()->inc_count();
+	return Get_BytesValue_ObjectDef();
+}
+
+
 
 //--------------------------------- FileValue -----------------------------
+
+/*! \class FileValue
+ * Holds a path to a file, with convenience functions for file access.
+ */
+
 //! Create a value of a file location.
 FileValue::FileValue(const char *f, int len)
-{ filename=newnstr(f,len>0?len:(f?strlen(f):0)); }
+  : parts(2)
+{
+	filename=newnstr(f,len>0?len:(f?strlen(f):0));
+	seperator='/';
+
+}
 
 FileValue::~FileValue()
 {
 	if (filename) delete[] filename;
+}
+
+int FileValue::Depth()
+{
+	return parts.n;
+}
+
+const char *FileValue::Part(int i)
+{
+	if (i<0 || i>=parts.n) return NULL;
+	return parts.e[i];
 }
 
 int FileValue::getValueStr(char *buffer,int len)
@@ -2988,6 +3200,86 @@ int FileValue::isLink()
 int FileValue::Exists()
 {
 	return file_exists(filename,1,NULL);
+}
+
+ObjectDef default_FileValue_ObjectDef(NULL,"file",_("File"),_("File"),
+							 "class", NULL, "/", 
+							 NULL, 0,
+							 NULL, NULL);
+
+ObjectDef *Get_FileValue_ObjectDef()
+{
+	ObjectDef *def=&default_StringValue_ObjectDef;
+	if (def->fields) return def;
+
+	def->pushFunction("depth",_("Depth"),_("How many components path has"), NULL,
+					  NULL);
+
+	def->pushFunction("isLink",_("Is Link"),_("If path is a link"), NULL,
+					  NULL);
+
+	def->pushFunction("dirname",_("Directory"),_("Directory part of the path, with no final '/'."), NULL,
+					  NULL);
+
+	def->pushFunction("filename",_("File name"),_("Only the file name, no directories. Returns \"\" if not actual file."), NULL,
+					  NULL);
+
+	def->pushFunction("expandLink",_("Expand Link"),_("Return path to where link points to"), NULL,
+					  NULL);
+
+	def->pushFunction("stat",_("Stat"),_("Return a hash with various file properties"), NULL,
+					  NULL);
+
+	def->pushFunction("size",_("Size"),_("File size"), NULL,
+					  NULL);
+
+	def->pushFunction("expand",_("Expand"),_("Expand any '~' or relativeness, returning new path"), NULL,
+					  NULL);
+
+	def->pushFunction("contents",_("Contents"),_("Read in contents, if possible, returning new string"), NULL,
+					  NULL);
+
+
+
+	return def;
+}
+
+ObjectDef *FileValue::makeObjectDef()
+{
+	Get_FileValue_ObjectDef()->inc_count();
+	return Get_FileValue_ObjectDef();
+}
+
+
+/*! Return
+ *  0 for success, value returned.
+ * -1 for no value returned due to incompatible parameters, which aids in function overloading.
+ *  1 for parameters ok, but there was somehow an error, so no value returned.
+ */
+int FileValue::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log)
+{
+//	if (isName(func,len, "len")) {
+//		*value_ret=new DoubleValue(str?strlen(str):0);
+//		return 0;
+//
+//	} else if (isName(func,len, "sub")) {
+//		int err=0;
+//		int start=parameters->findIntOrDouble("start",-1,&err);
+//		if (err!=0) start=0;
+//		int end=parameters->findIntOrDouble("end",-1,&err);
+//		if (err!=0) end=str?strlen(str)-1:0;
+//		if (start<0) start=0;
+//		if (end>=(int)strlen(str)) end=strlen(str)-1;
+//		StringValue *s=new StringValue();
+//		if (end-start>=0) makenstr(s->str, str,end-start+1);
+//		*value_ret=s;
+//		return 0;
+//
+//	}
+
+	return -1;
 }
 
 //--------------------------------- EnumValue -----------------------------
@@ -3113,6 +3405,9 @@ Value *ColorValue::duplicate()
 
 
 //--------------------------------- FunctionValue -----------------------------
+/*! \class FunctionValue
+ * Holds a coded function. These can be assign to variables, or called.
+ */
 
 //----------------------------- ObjectDef utils ------------------------------------------
 

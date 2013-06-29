@@ -35,25 +35,25 @@ using namespace LaxFiles;
 #define DBG 
 
 const char *reserved_words=
-							"show    "
-							"unset   "
-							"var     "
-							"function"
-							"class   "
-							"operator"
-							"alias   "
-							"null    "
-							"true    "
-							"false   "
-							"import  "
-							"using   "
-							"if      "
-							"while   "
-							"for     "
-							"foreach "
-							"break   "
-							"return  "
-							"this    "
+							"show     "
+							"unset    "
+							"var      "
+							"function "
+							"class    "
+							"operator "
+							"alias    "
+							"null     "
+							"true     "
+							"false    "
+							"import   "
+							"using    "
+							"if       "
+							"while    "
+							"for      "
+							"foreach  "
+							"break    "
+							"return   "
+							"this     "
 							;
 
 
@@ -315,9 +315,10 @@ class ValueEntry : public Entry
 {
   public:
 	Value *value;
-	ObjectDef *containing_object;
+	Value *containing_object; //non-null for item is an element of this object
+	ObjectDef *containing_space;
 	ObjectDef *item;
-	ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container, Value *v);
+	ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container, Value *object, Value *v);
 	virtual ~ValueEntry();
 	int type() { return VALUE_Variable; }
 	virtual ObjectDef *GetDef();
@@ -325,10 +326,13 @@ class ValueEntry : public Entry
 	virtual int SetVariable(const char *name,Value *v,int absorb);
 };
 
-ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container, Value *v)
+ValueEntry::ValueEntry(const char *newname, int modid, ObjectDef *ns_element, ObjectDef *container, Value *object, Value *v)
   : Entry(newname,modid)
 {
-	containing_object=container;
+	containing_object=object;
+	if (object) object->inc_count();
+
+	containing_space=container;
 	if (container) container->inc_count();
 
 	item=ns_element;
@@ -343,6 +347,7 @@ ValueEntry::~ValueEntry()
 {
 	if (value) value->dec_count();
 	if (containing_object) containing_object->dec_count();
+	if (containing_space) containing_space->dec_count();
 	if (item) item->dec_count();
 }
 
@@ -367,7 +372,15 @@ int ValueEntry::SetVariable(const char *name,Value *v,int absorb)
 	}
 
 	if (containing_object) {
-		containing_object->SetVariable(name,v,absorb);
+		FieldExtPlace fext;
+		fext.push(name);
+		containing_object->assign(&fext,v);
+		if (v && absorb) v->dec_count();
+		return 0;
+	}
+
+	if (containing_space) {
+		containing_space->SetVariable(name,v,absorb);
 		return 0;
 	}
 	if (v && absorb) v->dec_count();
@@ -428,7 +441,7 @@ BlockInfo::BlockInfo()
 {
 	scope_namespace=NULL;
 	scope_object=NULL;
-	type=0;
+	type=BLOCK_none;
 	start_of_condition=0;
 	start_of_loop=0;
 	start_of_advance=0;
@@ -437,12 +450,16 @@ BlockInfo::BlockInfo()
 	word=NULL;
 	list=NULL;
 	parentscope=NULL;
+	containing_object=NULL;
 }
 
-BlockInfo::BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int condition_start, char *var, Value *v)
+/*! var is taken, and delete'd in the destructor.
+ */
+BlockInfo::BlockInfo(CalculatorModule *mod, BlockTypes scopetype, int loop_start, int condition_start, char *var, Value *v)
 {
 	current=0;
 
+	containing_object=NULL;
 	parentscope=NULL;
 	scope_object=NULL;
 	scope_namespace=mod;
@@ -454,12 +471,39 @@ BlockInfo::BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int c
 	start_of_advance=0;
 	type=scopetype;
 	word=var;
-	list=dynamic_cast<SetValue*>(v);
+
+	if (scopetype==BLOCK_foreach) {
+		list=dynamic_cast<SetValue*>(v);
+		if (!list && !dynamic_cast<ValueHash*>(v)) list->dec_count();
+		if (!list && dynamic_cast<ValueHash*>(v)) {
+			list=new SetValue;
+			ValueHash *hash=dynamic_cast<ValueHash*>(v);
+			for (int c=0; c<hash->n(); c++) if (hash->e(c)) list->Push(hash->e(c),0);
+			v->dec_count();
+		}
+		scope_namespace->pushVariable(word,word,NULL, NULL,0, list->values.e[0],0);
+		AddName(scope_namespace,scope_namespace->fields->e[scope_namespace->fields->n-1],NULL);
+	} else list=NULL;
+
+	 //add names to scope if necessary
+	if (scopetype==BLOCK_object) {
+		containing_object=v; //any variables need to be set in containing_object, not the entry->namespace
+		v->inc_count();
+		ObjectDef *def=v->GetObjectDef();
+		ObjectDef *item;
+		if (def) {
+			for (int c=0; c<def->getNumFields(); c++) {
+				item=def->getField(c);
+				AddName(def,item, containing_object);
+			}
+		}
+	}
 }
 
 BlockInfo::~BlockInfo()
 {
 	if (scope_namespace) scope_namespace->dec_count();
+	if (containing_object) containing_object->dec_count();
 	if (list) list->dec_count();
 	if (word) delete[] word;
 }
@@ -538,14 +582,14 @@ int BlockInfo::AddValue(const char *name, Value *v)
 			oo->entries.push(entry);
 			dict.push(oo,1,pos); //replace old entry with overloaded entry
 		}
-		Entry *newentry=new ValueEntry(name, 0,NULL,NULL, v);
+		Entry *newentry=new ValueEntry(name, 0,NULL,NULL, containing_object, v);
 
 		oo->entries.push(newentry,1,-1);
 		return -1;
 	}
 
 	 //entry not found, so add!
-	Entry *entry=new ValueEntry(name, 0,NULL,NULL, v);
+	Entry *entry=new ValueEntry(name, 0,NULL,NULL, containing_object, v);
 	dict.push(entry,1,pos);
 
 	return 0;
@@ -557,7 +601,7 @@ int BlockInfo::AddValue(const char *name, Value *v)
  * -2 for item already there, so nothing done.
  * 1 for error and not added.
  */
-int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
+int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item, Value *container_v)
 {
 	if (!item) return 1;
 	const char *name=item->name;
@@ -617,26 +661,26 @@ int BlockInfo::AddName(CalculatorModule *mod, ObjectDef *item)
 			oo->entries.push(entry);
 			dict.push(oo,1,pos); //replace old entry with overloaded entry
 		}
-		Entry *newentry=createNewEntry(item,mod);
+		Entry *newentry=createNewEntry(item,mod,container_v);
 		oo->entries.push(newentry,1,-1);
 		return -1;
 	}
 
 	 //entry not found, so add!
-	Entry *entry=createNewEntry(item,mod);
+	Entry *entry=createNewEntry(item,mod,container_v);
 	if (!entry) return 1; //cannot add this item!
 	dict.push(entry,1,pos);
 
 	return 0;
 }
 
-Entry *BlockInfo::createNewEntry(ObjectDef *item, CalculatorModule *module)
+Entry *BlockInfo::createNewEntry(ObjectDef *item, CalculatorModule *module, Value *container_v)
 {
 	if (item->format==VALUE_Operator) {
 		return NULL;
 
 	} else if (item->format==VALUE_Variable) {
-		return new ValueEntry(item->name,module->object_id, item, module, NULL);
+		return new ValueEntry(item->name,module->object_id, item, module, container_v,NULL);
 
 	} else if (item->format==VALUE_Class) {
 		return new NamespaceEntry(item, item->name, module->object_id, 1);
@@ -1119,8 +1163,8 @@ int LaidoutCalculator::InstallVariables(ValueHash *values)
 int LaidoutCalculator::InstallModule(CalculatorModule *module, int autoimport)
 {
 	modules.push(module);
-	//global_scope.AddName(module,module);
-	if (autoimport) currentLevel()->AddName(module,module);
+	//global_scope.AddName(module,module,NULL);
+	if (autoimport) currentLevel()->AddName(module,module,NULL);
 	if (autoimport==2) importAllNames(module);
 	importOperators(module);
 	return 0;
@@ -1162,7 +1206,7 @@ int LaidoutCalculator::ImportModule(const char *name, int allnames)
 	}
 	if (!entry) {
 		 //module is not accessible at any scope, so add it to current
-		currentLevel()->AddName(module,module);
+		currentLevel()->AddName(module,module,NULL);
 		importOperators(module);
 	}
 
@@ -1395,10 +1439,10 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, Erro
 
 		skipwscomment();
 		if (checkBlock(&answer)) continue;
-		if (scopes.n>1 && (nextchar('}') || nextword("break"))) {
-			popScope();
-			continue;
-		}
+		//if (scopes.n>1 && (nextchar('}') || nextword("break"))) {
+		//	popScope();
+		//	continue;
+		//}
 
 		answer=evalLevel(0);
 		if (calcerror) break;
@@ -1505,7 +1549,7 @@ int LaidoutCalculator::importAllNames(CalculatorModule *module)
  */
 int LaidoutCalculator::importName(CalculatorModule *module, ObjectDef *def)
 {
-	currentLevel()->AddName(module,def);
+	currentLevel()->AddName(module,def,NULL);
 	return 0;
 }
 
@@ -1762,19 +1806,23 @@ int LaidoutCalculator::nextword(const char *word)
 //--------------Evaluation Functions
 
 
-void LaidoutCalculator::pushScope(int scopetype, int loop_start, int condition_start, char *var, Value *v, CalculatorModule *module)
+void LaidoutCalculator::pushScope(BlockTypes scopetype, int loop_start, int condition_start, char *var, Value *v, CalculatorModule *module)
 {
 	BlockInfo *block=new BlockInfo(module, scopetype,loop_start,condition_start,var,v);
 	block->parentscope=scopes.e[scopes.n-1];
 	scopes.push(block);
 }
 
-void LaidoutCalculator::popScope()
+/*! Returns the type of scope popped.
+ */
+BlockTypes LaidoutCalculator::popScope()
 {
 	DBG cerr <<"pop scope!"<<endl;
 
-	if (scopes.n==1) { calcerr(_("Unexpected end!")); return; }
+	if (scopes.n==1) { calcerr(_("Unexpected end!")); return BLOCK_error; }
 	BlockInfo *scope=scopes.e[scopes.n-1];
+
+	BlockTypes type=scope->type;
 
 	if (scope->type==BLOCK_if) {
 		 // if closing an if block, must skip over subsequent blocks...
@@ -1793,11 +1841,11 @@ void LaidoutCalculator::popScope()
 				 //was else if (...) {...}
 				from+=2;
 				skipwscomment();
-				if (!nextchar('(')) { calcerr(_("Expected '('!")); return; }
+				if (!nextchar('(')) { calcerr(_("Expected '('!")); return BLOCK_error; }
 				skipBlock(')');
 				cont=1; //still have to skip rest of if chain
 			}
-			if (!nextchar('{')) { calcerr(_("Expected '{'!")); return; }
+			if (!nextchar('{')) { calcerr(_("Expected '{'!")); return BLOCK_error; }
 			skipBlock('}');
 		}
 
@@ -1815,14 +1863,14 @@ void LaidoutCalculator::popScope()
 			if (v) v->dec_count();
 			if (!nextchar(',')) break;
 		}
-		if (calcerror) return;
+		if (calcerror) return BLOCK_error;
 
 		int ifso=evalcondition();
-		if (calcerror) return;
+		if (calcerror) return BLOCK_error;
 		if (ifso) {
 			from=scope->start_of_loop;
 			scope->current++;
-			return; //not done with scope. looped once!
+			return BLOCK_none; //not done with scope. looped once!
 		} else from=tfrom; //done with scope, ok to remove
 
 	} else if (scope->type==BLOCK_foreach) {
@@ -1830,8 +1878,11 @@ void LaidoutCalculator::popScope()
 		scope->current++;
 		if (scope->current<scope->list->values.n) {
 			from=scope->start_of_loop;
-			scope->scope_namespace->SetVariable(scope->word, scope->list->values.e[scope->current],0);
-			return;
+
+			ValueEntry *entry=dynamic_cast<ValueEntry*>(scope->FindName(scope->word,strlen(scope->word)));
+			if (entry) entry->SetVariable(scope->word,scope->list->values.e[scope->current],0); //if no entry is overloaded? what to do?
+
+			return BLOCK_none;
 		}
 		//else all done with loop!
 
@@ -1841,15 +1892,17 @@ void LaidoutCalculator::popScope()
 		from=scope->start_of_condition;
 
 		int ifso=evalcondition();
-		if (calcerror) return;
+		if (calcerror) return BLOCK_error;
 		if (ifso) {
 			from=scope->start_of_loop;
 			scope->current++;
-			return; //not done with scope. looped once!
+			return BLOCK_none; //not done with scope. looped once!
 		} else from=tfrom; //done with scope, ok to remove
+
 	}
 
 	scopes.remove(scopes.n-1);
+	return type;
 }
 
 
@@ -1866,6 +1919,13 @@ int LaidoutCalculator::evalcondition()
 	else ifso=(dynamic_cast<DoubleValue*>(v)->d==0?0:1);
 	v->dec_count();
 	return ifso;
+}
+
+/*! \todo when single expression if, this is broken...
+ */
+void LaidoutCalculator::skipRemainingBlock(char ch)
+{
+	skipBlock(ch);
 }
 
 //! Assuming just after an opening of ch, skip to after a ch.
@@ -1991,13 +2051,16 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 	if (n==5 && !strncmp(word,"break",5)) {
 		 // must pop all through nearest loop block
 		from+=5;
-		while (currentLevel()->type==BLOCK_if) popScope();
+		while (currentLevel()->type==BLOCK_if) {
+			popScope();
+			skipRemainingBlock('}');
+		}
 		if (currentLevel()->type!=BLOCK_for && currentLevel()->type!=BLOCK_foreach && currentLevel()->type!=BLOCK_while) {
 			calcerr(_("Cannot break from there!"));
 			return 1;
 		}
-		popScope();
-		cerr << "*** incomplete 'break', need to skip unused portions of blocks" <<endl;
+		scopes.remove(scopes.n-1);
+		skipRemainingBlock('}');
 		return 1;
 
 	} else if (n==6 && !strncmp(word,"return",6)) {
@@ -2063,14 +2126,16 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 		if (n==2 && !strncmp(word,"in",2)) from+=2;
 		Value *v=evalLevel(0);
 		if (calcerror) return 1;
-		if (v->type()!=VALUE_Set && v->type()!=VALUE_Array) {
+		if (v->type()!=VALUE_Set && v->type()!=VALUE_Array && v->type()!=VALUE_Hash) {
 			calcerr(_("Expected set, array, or hash!"));
 			return 1;
 		}
 		if (!nextchar('{')) { calcerr(_("Expected '{'!")); return 1; }
 		int start_of_block=from;
 
-		if (dynamic_cast<SetValue*>(v) && dynamic_cast<SetValue*>(v)->values.n==0) {
+		if ((v->type()==VALUE_Set && !dynamic_cast<SetValue*>(v)->values.n)
+			|| (v->type()==VALUE_Array && !dynamic_cast<SetValue*>(v)->values.n)
+			|| (v->type()==VALUE_Hash && !dynamic_cast<ValueHash*>(v)->n())) {
 			 //no actual values, so skip!
 			skipBlock('}');
 			return 1;
@@ -2454,7 +2519,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 		}
 
 		def->pushVariable(name,name,NULL, type,0, value,1);
-		currentLevel()->AddName(def,def->fields->e[def->fields->n-1]);
+		currentLevel()->AddName(def,def->fields->e[def->fields->n-1],NULL);
 
 		delete[] name;
 		if (type) delete[] type;
@@ -2546,7 +2611,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 
 		 //add to current scope
 		currentLevel()->scope_namespace->push(def,1);
-		currentLevel()->AddName(currentLevel()->scope_namespace, def);
+		currentLevel()->AddName(currentLevel()->scope_namespace, def, NULL);
 
 		return 1;
 	} //"function"
@@ -2696,7 +2761,7 @@ int LaidoutCalculator::sessioncommand() //  done before eval
 			return 1;
 		}
 		currentLevel()->scope_namespace->push(def,1);
-		currentLevel()->AddName(currentLevel()->scope_namespace, def);
+		currentLevel()->AddName(currentLevel()->scope_namespace, def, NULL);
 		pushScope(BLOCK_class, 0, 0, NULL, NULL, def);
 
 		DBG cerr<<"start class definition:"<<endl;
@@ -3700,7 +3765,10 @@ Value *LaidoutCalculator::evalname()
 	if (n==6 && !strncmp(word,"typeof",6)) {
 		from+=6;
 		Value *value=evalLevel(0);
-		if (calcerror || !value) return NULL;
+		if (calcerror || !value) {
+			if (!calcerror) calcerr(_("Expected value!"));
+			return NULL;
+		}
 		ObjectDef *def=value->GetObjectDef();
 		StringValue *s=NULL;
 		if (def) {
@@ -3749,6 +3817,39 @@ Value *LaidoutCalculator::evalname()
 			}
 		} else s=new StringValue;
 		return s;
+
+	} else if (n==3 && !strncmp(word,"int",3)) {
+		from+=3;
+		IntValue *i=NULL;
+		if (nextchar('(')) {
+			Value *v=evalLevel(0);
+			if (calcerror) return NULL;
+			i=new IntValue;
+
+			if (v->type()==VALUE_LValue) {
+				Value *vv=dynamic_cast<LValue*>(v)->Resolve();
+				v->dec_count();
+				v=vv;
+			}
+			if (v->type()==VALUE_Int) {
+				i->i=dynamic_cast<IntValue*>(v)->i;
+			} else if (v->type()==VALUE_Real) {
+				i->i=int(dynamic_cast<DoubleValue*>(v)->d);
+			} else {
+				calcerr(_("Could not convert to int"));
+				i->dec_count();
+				v->dec_count();
+				return NULL;
+			}
+			v->dec_count();
+
+			if (!nextchar(')')) {
+				calcerr(_("Expected closing ')'"));
+				if (i) i->dec_count();
+				return NULL;
+			}
+		} else i=new IntValue;
+		return i;
 	}
 
 
@@ -3852,8 +3953,9 @@ Value *LaidoutCalculator::evalname()
 
 		 //is perhaps constructor call
 		ObjectDef *classdef=dynamic_cast<NamespaceEntry*>(entry)->module;
+		ObjectDef *constructordef=classdef->FindDef(classdef->name);
 		ValueHash *context=build_context(); //build calculator context
-		ValueHash *pp=parseParameters(classdef); //build parameter hash in order of styledef
+		ValueHash *pp=parseParameters(constructordef); //build parameter hash, but NULL means no parameter mapping as yet
 
 		if (calcerror) {
 			context->dec_count();
@@ -3989,10 +4091,11 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 	if (function->evaluator) status=function->evaluator->Evaluate(word,n, context,pp,&calcsettings, &value,&log);
 	else if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
 	else if (function->newfunc) {
+		 //a plain object creation function with no parameters
 		Value *s=function->newfunc(function);
 		if (s) {
 			status=0;
-			value=new ObjectValue(s);
+			value=s;
 		} else status=1;
 	} else if (function->defaultvalue) {
 		 //execute code
@@ -4003,17 +4106,43 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 		//if (i>=0) pp->set(i,containingvalue);
 		//else pp->push("this",containingvalue);
 
+		int dec=0;
+		if (function->format==VALUE_Class && !containingvalue) {
+			containingvalue=new GenericValue(function);
+			dec=1;
+			//***
+		}
+		//f(x,y)   <- x and y are parameters, listed in pp
+		//o.f(x,y) <- function must run in object o space, o==containingvalue
+		if (containingvalue) pushScope(BLOCK_object, 0,0,NULL,containingvalue,NULL);
+
 		status=evaluate(function->defaultvalue,-1, context,pp, &value,&log); 
 		if (status==-1) status=0;//warnings, but success
+		if (containingvalue) popScope(); // ...pop from scope we just added
+		if (dec) {
+			if (status==0) value=containingvalue;
+			else containingvalue->dec_count();
+			containingvalue=NULL;
+		}
 	}
 
 
-	 //if class name, then search for constructor functions.
+	 //if class name, then search for scripted constructor functions.
 	if (!value && status==-2 && function->format==VALUE_Class) {
 		ObjectDef *def=function->FindDef(function->name);
 		if (def) {
-			status=functionCall(word,n,v_ret, containingvalue, def, context,pp);
+			 //constructor found
+			GenericValue *v=new GenericValue(function);
+			status=functionCall(word,n,v_ret, v, def, context,pp);
+			if (!*v_ret) *v_ret=v; //if constructor returns a value, use that
+			else { v->dec_count(); v=NULL; }
 			if (status!=-1) return status;
+			if (v) v->dec_count();
+		} else {
+			 //no constructor, and no other evaluator, so make a new GenericValue
+			GenericValue *v=new GenericValue(function);
+			*v_ret=v;
+			return 0;
 		}
 	}
 
