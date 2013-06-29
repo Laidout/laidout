@@ -43,6 +43,7 @@ enum ValueTypes {
 	VALUE_Real,       //!< real numbers (doubles)
 	VALUE_Number,     //!< Special tag meaning allow int or real.
 	VALUE_String,     //!< strings, utf8 based
+	VALUE_Bytes,      //!< raw data
 	VALUE_Fields,     //!< collection of subfields 
 	VALUE_Flatvector, //!< two dimensional vector
 	VALUE_Spacevector,//!< three dimensional vector
@@ -202,6 +203,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual ObjectDef *getFieldOfThis(int index);
 	virtual int findFieldOfThis(const char *fname,char **next);
 	virtual int getNumFields();
+	virtual int isData();
 	virtual ObjectDef *getField(int index);
 	virtual int findfield(const char *fname,char **next); // return index value of fname. assumed top level field
 	virtual int findActualDef(int index,ObjectDef **def);
@@ -295,21 +297,75 @@ class Value : virtual public Laxkit::anObject
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
 
-////----------------------------- GenericValue ----------------------------------
-//class GenericValue : public Value
-//{
-//  public:
-//	ValueHash elements;
-//
-//	GenericValue(ObjectDef *def);
-//	virtual ~GenericValue();
-//	virtual int getValueStr(char *buffer,int len);
-//	virtual Value *duplicate();
-//
-// 	virtual ObjectDef *makeObjectDef();
-//	virtual Value *dereference(const char *extstring, int len);
-//	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
-//};
+
+//----------------------------- ValueHash ----------------------------------
+class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual public FunctionEvaluator
+{
+	Laxkit::PtrStack<char> keys;
+	Laxkit::RefPtrStack<Value> values;
+
+  public:
+	ValueHash();
+	~ValueHash();
+	int sorted;
+
+	const char *key(int i);
+	Value *value(int i);
+	int flush();
+	int push(const char *name,int i);
+	int push(const char *name,double d);
+	int push(const char *name,const char *string);
+	int pushObject(const char *name,Laxkit::anObject *obj);
+	int push(const char *name,Value *v);
+	int push(const char *name,int len,Value *v);
+	int remove(int i);
+	void swap(int i1, int i2);
+
+	void renameKey(int i,const char *newname);
+	int set(const char *key, Value *newv);
+	int set(int which, Value *newv);
+
+	int n();
+	Value *e(int i);
+	Value *find(const char *name);
+	int findIndex(const char *name,int len=-1);
+	long findInt(const char *name, int which=-1, int *error_ret=NULL);
+	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
+	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
+	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
+	flatvector findFlatvector(const char *name, int which, int *error_ret=NULL);
+	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
+
+	 //from Value:
+	virtual int     type();
+	virtual Value    *duplicate();
+	virtual int       getValueStr(char *buffer,int len);
+ 	virtual ObjectDef *makeObjectDef();
+	virtual Value     *dereference(int index);
+    virtual int        getNumFields();
+    virtual ObjectDef  *FieldInfo(int i);
+    virtual const char *FieldName(int i);
+
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
+};
+
+//----------------------------- GenericValue ----------------------------------
+class GenericValue : public Value
+{
+  public:
+	ValueHash elements;
+
+	GenericValue(ObjectDef *def);
+	virtual ~GenericValue();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+
+ 	virtual ObjectDef *makeObjectDef();
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v); //return 1 for success, 2 for success, but other contents changed too, -1 for unknown
+};
 
 //----------------------------- SetValue ----------------------------------
 class SetValue : public Value, virtual public FunctionEvaluator
@@ -393,7 +449,7 @@ class IntValue : public Value
 };
 
 //----------------------------- DoubleValue ----------------------------------
-class DoubleValue : public Value
+class DoubleValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	Unit units;
@@ -410,7 +466,7 @@ class DoubleValue : public Value
 };
 
 //----------------------------- FlatvectorValue ----------------------------------
-class FlatvectorValue : public Value
+class FlatvectorValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	Unit units;
@@ -429,7 +485,7 @@ class FlatvectorValue : public Value
 };
 
 //----------------------------- SpacevectorValue ----------------------------------
-class SpacevectorValue : public Value
+class SpacevectorValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	Unit units;
@@ -448,7 +504,7 @@ class SpacevectorValue : public Value
 };
 
 //----------------------------- StringValue ----------------------------------
-class StringValue : public Value
+class StringValue : public Value, virtual public FunctionEvaluator
 {
   public:
 	char *str;
@@ -457,6 +513,23 @@ class StringValue : public Value
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_String; }
+ 	virtual ObjectDef *makeObjectDef();
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
+};
+
+//----------------------------- BytesValue ----------------------------------
+class BytesValue : public Value, virtual public FunctionEvaluator
+{
+  public:
+	char *str;
+	int len;
+	BytesValue(const char *s=NULL, int len=0);
+	virtual ~BytesValue();
+	virtual int getValueStr(char *buffer,int len);
+	virtual Value *duplicate();
+	virtual int type() { return VALUE_Bytes; }
  	virtual ObjectDef *makeObjectDef();
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
@@ -493,20 +566,27 @@ class FunctionValue : public Value
 };
 
 //----------------------------- FileValue ----------------------------------
-class FileValue : public Value
+class FileValue : public Value, virtual public FunctionEvaluator
 {
   public:
+	char seperator;
+	Laxkit::PtrStack<char> parts;
 	char *filename;
 	FileValue(const char *f=NULL,int len=-1);
 	virtual ~FileValue();
 	virtual int getValueStr(char *buffer,int len);
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_File; }
- 	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
+ 	virtual ObjectDef *makeObjectDef();
 
 	virtual int fileType(); //file link, dir link, file, dir, block
 	virtual int isLink();
 	virtual int Exists();
+	virtual int Depth();
+	virtual const char *Part(int i);
+	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
+						 Value **value_ret,
+						 ErrorLog *log);
 };
 
 //----------------------------- ColorValue ----------------------------------
@@ -534,59 +614,6 @@ class ObjectValue : public Value
 	virtual Value *duplicate();
 	virtual int type() { return VALUE_Object; }
  	virtual ObjectDef *makeObjectDef() { return NULL; } //built ins do not return a def yet
-};
-
-//----------------------------- ValueHash ----------------------------------
-class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual public FunctionEvaluator
-{
-	Laxkit::PtrStack<char> keys;
-	Laxkit::RefPtrStack<Value> values;
-
-  public:
-	ValueHash();
-	~ValueHash();
-	int sorted;
-
-	const char *key(int i);
-	Value *value(int i);
-	int flush();
-	int push(const char *name,int i);
-	int push(const char *name,double d);
-	int push(const char *name,const char *string);
-	int pushObject(const char *name,Laxkit::anObject *obj);
-	int push(const char *name,Value *v);
-	int push(const char *name,int len,Value *v);
-	int remove(int i);
-	void swap(int i1, int i2);
-
-	void renameKey(int i,const char *newname);
-	int set(const char *key, Value *newv);
-	int set(int which, Value *newv);
-
-	int n();
-	Value *e(int i);
-	Value *find(const char *name);
-	int findIndex(const char *name,int len=-1);
-	long findInt(const char *name, int which=-1, int *error_ret=NULL);
-	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
-	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
-	const char *findString(const char *name, int which=-1, int *error_ret=NULL);
-	flatvector findFlatvector(const char *name, int which, int *error_ret=NULL);
-	Laxkit::anObject *findObject(const char *name, int which=-1, int *error_ret=NULL);
-
-	 //from Value:
-	virtual int     type();
-	virtual Value    *duplicate();
-	virtual int       getValueStr(char *buffer,int len);
- 	virtual ObjectDef *makeObjectDef();
-	virtual Value     *dereference(int index);
-    virtual int        getNumFields();
-    virtual ObjectDef  *FieldInfo(int i);
-    virtual const char *FieldName(int i);
-
-	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret,
-						 ErrorLog *log);
 };
 
 //------------------------------- parsing helpers ------------------------------------

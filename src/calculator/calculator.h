@@ -98,6 +98,8 @@ class Entry
 
 //---------------------------BlockInfo
 enum BlockTypes {
+	BLOCK_error,
+	BLOCK_none,
 	BLOCK_if,
 	BLOCK_for,
 	BLOCK_foreach,
@@ -117,7 +119,7 @@ class BlockInfo
 	Value *scope_object;
 	Laxkit::RefPtrStack<Entry> dict; //stores potentially overloaded names, and imported names
 
-	int type; //one of BlockTypes
+	BlockTypes type; //one of BlockTypes
 	int start_of_condition; //while
 	int start_of_loop;     //while, foreach, for
 	int start_of_advance; //for
@@ -126,15 +128,16 @@ class BlockInfo
 	char *word;
 	int current,max;
 	SetValue *list;
+	Value *containing_object;
 
 	BlockInfo();
-	BlockInfo(CalculatorModule *mod, int scopetype, int loop_start, int condition_start, char *var, Value *v);
+	BlockInfo(CalculatorModule *mod, BlockTypes scopetype, int loop_start, int condition_start, char *var, Value *v);
 	virtual ~BlockInfo();
 	virtual const char *BlockType();
 	virtual int AddValue(const char *name, Value *v);
-	virtual int AddName(CalculatorModule *mod, ObjectDef *item);
+	virtual int AddName(CalculatorModule *mod, ObjectDef *item, Value *container_v);
 	virtual Entry *FindName(const char *name,int len);
-	virtual Entry *createNewEntry(ObjectDef *item, CalculatorModule *module);
+	virtual Entry *createNewEntry(ObjectDef *item, CalculatorModule *module, Value *container_v);
 	virtual int isSameEntry(ObjectDef *item, Entry *entry);
 };
 
@@ -187,6 +190,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	void skipwscomment();
 	void skipstring();
 	void skipBlock(char ch);
+	void skipRemainingBlock(char ch);
 	void skipExpression();
 	int nextchar(char ch);
 	int nextword(const char *word);
@@ -195,8 +199,8 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	int sessioncommand();
 	void showDef(char *&temp, ObjectDef *sd);
 	ObjectDef *GetSessionCommandObjectDef();
-	void pushScope(int scopetype, int loop_start=0, int condition_start=0, char *var=NULL, Value *v=NULL, ObjectDef *module=NULL);
-	void popScope();
+	void pushScope(BlockTypes scopetype, int loop_start=0, int condition_start=0, char *var=NULL, Value *v=NULL, ObjectDef *module=NULL);
+	BlockTypes popScope();
 
 	Value *eval(const char *exprs);
 	Value *evalLevel(int level);
