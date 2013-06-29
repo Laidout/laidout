@@ -8,40 +8,39 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.094
 -------------
        Tool scripting
+(done) need partial Laidout import
+(done) should probably put laidout stuff in its own namespace, just to be polite
+       Shortcuts editor dialog
+       Signature editor needs option to preview pages while folding
+       Signature editor: detect non staplable binding edge, show red rather than green
+(done) Optimize pdf export to not duplicate images
+(done) Cloning
+(done) SpreadEditor: insert blanks, delete pages
+(done) SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
+(done) Color sliders, when double clicking on color box
+       implement scale pages to new imposition when reimposing
+       Laidout application icon for window manager paging seems to be broken
+
+
+VERSION 0.095
+-------------
+       PathInterface subpaths for hole making should work: check exports
+       impose-only mode should allow access to all imposition types, not just signatures
+       Implement cairo renderer, make meshes finally render faster
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
+       Fix object bleeding across pages for signatures and nets
+       double click on group should change selection area to group contents?
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       Masking, clip paths and/or softmask
        Merge EpsData with normal images
        Externally rendered objects, similar to Scribus render frames
        Examine and improve ease of use of import images dialog, particularly for previewing
        In image properties dialog, have the popup list of potential previews
        Net imposition interactive unwrapper, via optional opengl Polyptych
        Net imposition build net interface
-(done) need partial Laidout import
-(done) should probably put laidout stuff in its own namespace, just to be polite
-       PathInterface subpaths for hole making should work
-       Shortcuts editor dialog
-       Fix object bleeding across pages for signatures and nets
-       double click on group should change selection area to group contents?
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       Masking, clip paths and/or softmask
-       impose-only mode should allow access to all imposition types
-       Signature editor needs option to preview pages while folding
-       Signature editor: detect non staplable binding edge, show red rather than green
-       When importing from an image list file, should be able to say if and when to auto-make previews
        Tools should remember their settings
-(done) Optimize pdf export to not duplicate large images
-       Cloning
-       SpreadEditor: insert blanks, delete pages, the other right click menu options
-       SpreadEditor: be able to eject a page into limbo, in addition to swap and slide
-       SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
-(done) Color sliders, when double clicking on color box
-       implement scale pages to new imposition when reimposing
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
-
-
-VERSION 0.095
--------------
+       Clone tiling, custom clone arrangements
        Object and resource tags
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
        Scribus import should do something meaningful with original Scribus page bleed values
@@ -50,6 +49,8 @@ VERSION 0.095
        Optimize pdf export to rescale to target dpi, and compress image data
        Clean up project load/save internals and dialogs
        Clean up patch controls
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.1 
@@ -57,6 +58,8 @@ VERSION 0.1
        First and foremost, need copious testing by people who are not me.
        Implement poor man's multi-contact interface for all appropriate interfaces
        undo/redo
+       SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
+       When importing from an image list file, should be able to say if and when to auto-make previews
        Full internationalization support in window controls for input and output, including left, right. pango?
        Basic infrastructure for most things (except text) should be in place.
        Must be Stable, not merely "Stable"
