@@ -276,7 +276,13 @@ LaidoutApp::~LaidoutApp()
 
 ObjectDef *LaidoutApp::makeObjectDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,
+	ObjectDef *sd=stylemanager.FindDef("Laidout");
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
+
+	sd=new ObjectDef(NULL,
 						  "Laidout",
 						  _("Laidout"),
 						  _("Main Laidout container"),
@@ -309,6 +315,12 @@ ObjectDef *LaidoutApp::makeObjectDef()
 			0,NULL);
 
 	return sd;
+}
+
+Value *LaidoutApp::duplicate()
+{
+	inc_count();
+	return this;
 }
 
 //! Init pools, parse args, create a main control window.

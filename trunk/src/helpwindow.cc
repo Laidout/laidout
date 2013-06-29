@@ -35,6 +35,14 @@ using namespace Laxkit;
 namespace Laidout {
 
 
+//------------------------ newHelpWindow -------------------------
+
+
+Laxkit::anXWindow *newHelpWindow(const char *place)
+{
+	return new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0,place);
+}
+
 //------------------------ HelpWindow -------------------------
 //
 /*! \class HelpWindow

@@ -103,6 +103,7 @@ class Page : public ObjectContainer
  public:
 	 //page attributes
 	int labeltype;
+	Laxkit::ScreenColor labelcolor;
 	char *label;
 	int pagenumber;
 	PageStyle *pagestyle;

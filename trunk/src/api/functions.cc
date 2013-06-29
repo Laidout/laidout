@@ -24,6 +24,9 @@
 #include "../papersizes.h"
 #include "../page.h"
 
+#include "../language.h"
+#include "../laidout.h"
+
 namespace Laidout {
 
 
@@ -55,9 +58,9 @@ int InitObjectDefinitions()
 	delete ps;
 
 
-	// *** testing:
 	stylemanager.AddObjectDef(makeAffineObjectDef(),1);
 	stylemanager.AddObjectDef(makeBBoxObjectDef(),1);
+	stylemanager.pushVariable("laidout",_("Laidout"),_("Main Laidout container"),NULL,0,laidout,0);
 	
 
 	return stylemanager.getNumFields();

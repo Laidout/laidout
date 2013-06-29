@@ -561,12 +561,16 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"impedit")) {
+		 //edit the current imposition with specialized dialogs
+		 //
 		if (!imp) {
 			 //find which resource is selected, create then edit
 			int which=impsel->GetCurrentItemIndex();
 			if (which<0 || which>=laidout->impositionpool.n) return 0;
 			imp=laidout->impositionpool.e[which]->Create();
 		}
+		//if (imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
+		//else
 		imp->SetPaperSize(papertype);
 
 		if (!strcmp(imp->whattype(),"NetImposition")) {
@@ -679,7 +683,9 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (imp) imp->dec_count();
 		oldimp=s->info1;
 		imp=laidout->impositionpool.e[s->info1]->Create();
-		imp->SetPaperSize(papertype);
+		if (imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
+		else imp->SetPaperSize(papertype);
+
 		int nn=atoi(numpages->GetCText());
 		if (nn<=0) nn=1;
 		imp->NumPages(nn);
