@@ -110,6 +110,8 @@ class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual void applyFold(FoldedPageInfo **finfo, char folddir, int index, int under);
 	virtual int checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalcol);
 
+	Signature *insert; //insert this into this one at middle when folded up 
+	Signature *stack; //another signature laid on side of this one
 
 	Signature();
 	virtual ~Signature();

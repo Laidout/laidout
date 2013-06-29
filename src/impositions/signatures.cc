@@ -275,6 +275,9 @@ Signature::Signature()
 
 	hint_numpages=1;
 	hint_numsigs=1;
+
+	insert=NULL;
+	stack=NULL;
 }
 
 Signature::~Signature()
