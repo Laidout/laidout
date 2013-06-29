@@ -375,7 +375,13 @@ int SpreadInterface::Refresh()
 		//((ViewportWindow *)curwindow)->syncrulers();
 	}
 
-	needtodraw=0;
+	if (pagestorender.n) {
+		 //do one page render, to preserve some interactivity when having to render a ton of pages
+		pagestorender.e[0]->Thumbnail();
+		pagestorender.remove(0);
+		if (pagestorender.n) needtodraw=2;
+		else needtodraw=0;
+	} else needtodraw=0;
 
 	
 	if (!view) { return 1; }
@@ -421,7 +427,15 @@ int SpreadInterface::Refresh()
 
 			} else if (drawthumbnails) {
 				if (pg>=0 && pg<doc->pages.n) {
-					if (pg>=0 && pg<doc->pages.n) thumb=doc->pages.e[pg]->Thumbnail();
+					if (pg>=0 && pg<doc->pages.n) {
+						Page *page=doc->pages.e[pg];
+						if (page->thumbmodtime<page->modtime) {
+							 //need to regenerate page thumbnail, add to to-render stack
+							pagestorender.push(page,0);
+							needtodraw|=2;
+							thumb=NULL;
+						} else thumb=doc->pages.e[pg]->Thumbnail();
+					}
 				}
 				if (thumb) {
 					DBG cerr <<"drawing thumbnail for "<<pg<<endl;
@@ -506,41 +520,28 @@ int SpreadInterface::Refresh()
 	return 1;
 }
 
-#define SE_First            1000
-#define SE_PageLabels       1000
-#define SE_InsertPage       1001
-#define SE_InsertDummyPage  1002
-#define SE_AddPageBefore    1003
-#define SE_AddPageAfter     1004
-#define SE_DetachPages      1005
-#define SE_DeletePages      1006
-#define SE_ExportPages      1007
-#define SE_NewView          1008
-#define SE_SaveView         1009
-#define SE_DeleteView       1009
-#define SE_RenameView       1010
-
 Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 {
 	MenuInfo *menu=new MenuInfo(_("Spread Editor"));
 
-//	//menu->AddItem(_("Page Labels..."),SE_PageLabels);
-//	menu->AddItem(_("Insert Page"),SE_InsertPage);
-//	menu->AddItem(_("Insert Dummy Page"),SE_InsertDummyPage);
-//
-//	if (curpages.n) {
-//		menu->AddSep(_("Current pages"));
-//		menu->AddItem(_("Detach"),SE_DetachPages);//create a limbo page string
-//		menu->AddItem(curpages.n>1?_("Delete Pages..."):_("Delete Page"),SE_DeletePages);
-//		menu->AddItem(_("Export to new document..."),SE_ExportPages);
-//	}
-//
-//	menu->AddSep();
-	menu->AddItem(_("New view"),SE_NewView);
-	if (!view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
+//	//menu->AddItem(_("Page Labels..."),SIA_PageLabels);
+	menu->AddItem(_("Insert Page After"),SIA_AddPageAfter);
+	menu->AddItem(_("Insert Page Before"),SIA_AddPageBefore);
+//	menu->AddItem(_("Insert Dummy Page"),SIA_InsertDummyPage);
+
+	if (curpages.n || curpage>=0) {
+		menu->AddSep(_("Current pages"));
+//		menu->AddItem(_("Detach"),SIA_DetachPages);//create a limbo page string
+		menu->AddItem(curpages.n>1?_("Delete Pages"):_("Delete Page"),SIA_DeletePages);
+//		menu->AddItem(_("Export to new document..."),SIA_ExportPages);
+	}
+
+	menu->AddSep();
+	menu->AddItem(_("New view"),SIA_NewView);
+	if (!view->doc_id) menu->AddItem(_("Save view"),SIA_SaveView);
 	else {
-		menu->AddItem(_("Delete current view"),SE_DeleteView);
-		//menu->AddItem(_("Rename current view"),SE_RenameView);
+		menu->AddItem(_("Delete current view"),SIA_DeleteView);
+		//menu->AddItem(_("Rename current view"),SIA_RenameView);
 	}
 
 	 //new ones not explicitly added to document will be saved only if there are active windows using it
@@ -559,8 +560,8 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 //	LittleSpread *spread=findSpread(x,y,&psi,&thread);
 //	if (spread && psi>=0) {
 //		menu->AddSep();
-//		menu->AddItem(_("Add page after"),SE_AddPageAfter,LAX_OFF,spread->pagestack.e[psi]->index);
-//		menu->AddItem(_("Add page before"),SE_AddPageBefore,LAX_OFF,spread->pagestack.e[psi]->index);
+//		menu->AddItem(_("Add page after"),SIA_AddPageAfter,LAX_OFF,spread->pagestack.e[psi]->index);
+//		menu->AddItem(_("Add page before"),SIA_AddPageBefore,LAX_OFF,spread->pagestack.e[psi]->index);
 //	}
 
 	return menu;
@@ -569,7 +570,7 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 //! Respond to context menu event.
 int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 {
-	if (!strcmp(mes,"viewportmenu")) return 1;
+	if (!strcmp(mes,"viewportmenu") && !strcmp(mes,"menuevent")) return 1;
 
 	const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
 	if (!s) return 1;
@@ -581,31 +582,20 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		SwitchView(i);
 		return 0;
 
-	} else if (i==SE_PageLabels) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SIA_AddPageAfter) {
+		PerformAction(SIA_AddPageAfter);
+		return 0;
 
-	} else if (i==SE_AddPageAfter) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SIA_AddPageBefore) {
+		PerformAction(SIA_AddPageBefore);
+		return 0;
 
-	} else if (i==SE_AddPageBefore) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+	} else if (i==SIA_DeletePages) {
+		PerformAction(SIA_DeletePages);
+		return 0;
 
-	} else if (i==SE_InsertPage) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
 
-	} else if (i==SE_InsertDummyPage) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
-
-	} else if (i==SE_DetachPages) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
-
-	} else if (i==SE_DeletePages) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
-
-	} else if (i==SE_ExportPages) {
-		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
-
-	} else if (i==SE_NewView) {
+	} else if (i==SIA_NewView) {
 		view->dec_count();
 		view=new SpreadView("new view");
 		view->doc_id=doc->object_id;
@@ -621,13 +611,13 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		needtodraw=1;
 		return 0;
 
-	} else if (i==SE_SaveView) {
+	} else if (i==SIA_SaveView) {
 		if (view->doc_id!=0) return 0;
 		doc->spreadviews.push(view);
 		view->doc_id=doc->object_id;
 		return 0;
 
-	} else if (i==SE_DeleteView) {
+	} else if (i==SIA_DeleteView) {
 		int ii=doc->spreadviews.findindex(view);
 		if (ii>=0) {
 			doc->spreadviews.remove(ii);
@@ -639,7 +629,19 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		needtodraw=1;
 		return 0;
 
-	} else if (i==SE_RenameView) {
+	} else if (i==SIA_PageLabels) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (i==SIA_InsertDummyPage) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (i==SIA_DetachPages) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (i==SIA_ExportPages) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (i==SIA_RenameView) {
 		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
 	}
 
@@ -708,9 +710,11 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 				break;
 	}
 	
+	dp->DrawScreen();
 	dp->drawthing(x,y,w,h, t, outlinecolor,fcolor, (outlinestatus==0?4:1));
 	dp->NewFG(color);
 	dp->textout(x,y, page->label,-1, LAX_CENTER);
+	dp->DrawReal();
 }
 
 //! Relays left button event to rLBDown or rMBDown depending on reversebuttons.
@@ -925,6 +929,16 @@ void SpreadInterface::Reset()
 	needtodraw=1;
 }
 
+int SpreadInterface::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	if (curpage<0) {
+		int psi=-1, thread=-1;
+		LittleSpread *spread=findSpread(x,y,&psi,&thread);
+		if (spread && psi>=0) { curpage=spread->spread->pagestack.e[psi]->index; }
+	}
+	return 1;
+}
+
 //! Selects spreads.
 int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
@@ -1118,17 +1132,6 @@ int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxK
 	return 1;
 }
 
-enum SpreadInterfaceActions {
-	SIA_Center,
-	SIA_LabelPos,
-	SIA_ToggleMark,
-	SIA_ToggleMarkR,
-	SIA_Thumbnails,
-	SIA_ToggleArrange,
-	SIA_RefreshArrange,
-	SIA_MAX
-};
-
 Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 {
 	if (sc) return sc;
@@ -1138,6 +1141,8 @@ Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("SpreadInterface");
 
+	sc->Add(SIA_ToggleSelect,   'a',0,0,         _("ToggleSelect"),   _("Select all or none"),NULL,0);
+
 	sc->Add(SIA_Center,         ' ',0,0,         _("Center"),         _("Center"),NULL,0);
 	sc->Add(SIA_LabelPos,       'c',0,0,         _("LabelPos"),       _("Move label position"),NULL,0);
 	sc->Add(SIA_ToggleMark,     'm',0,0,         _("ToggleMark"),     _("Toggle mark type"),NULL,0);
@@ -1145,6 +1150,11 @@ Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 	sc->Add(SIA_Thumbnails,     't',0,0,         _("Thumbs"),         _("Toggle showing thumbnails"),NULL,0);
 	sc->Add(SIA_ToggleArrange,  'A',ShiftMask,0, _("Arrange"),        _("Toggle arrangement type"),NULL,0);
 	sc->Add(SIA_RefreshArrange, 'A',ShiftMask|ControlMask,0, _("RefreshArrange"), _("Refresh with current arrangement type"),NULL,0);
+
+	sc->Add(SIA_AddPageAfter,   'p',0,0,         _("Add Page"),         _("Add a page after current"),NULL,0);
+	sc->Add(SIA_AddPageBefore,  'P',ShiftMask,0, _("Add Page Before"),  _("Add a page before current"),NULL,0);
+	sc->Add(SIA_DeletePages,    LAX_Del,0,0,     _("Delete pages"),     _("Delete pages"),NULL,0);
+	sc->AddShortcut(LAX_Bksp,0,0, SIA_DeletePages);
 
 	manager->AddArea("SpreadInterface",sc);
 	return sc;
@@ -1154,6 +1164,29 @@ int SpreadInterface::PerformAction(int action)
 {
 	if (action==SIA_Center) {
 		Center(1);
+		needtodraw=1;
+		return 0;
+
+	} else if (action==SIA_ToggleSelect) {
+		if (curpages.n>0) {
+			 //unselect all
+			clearSelection();
+			needtodraw=1;
+			return 0;
+		}
+
+		 //select all
+		Spread *spread;
+		for (int c=0; c<view->spreads.n; c++) {
+			 //foreach page in each spread...
+			curspreads.pushnodup(view->spreads.e[c],0);
+
+			spread=view->spreads.e[c]->spread;
+			if (!spread) continue;
+			for (int c2=0; c2<spread->pagestack.n(); c2++) {
+				if (spread->pagestack.e[c2]->index>=0) curpages.pushnodup(spread->pagestack.e[c2]->index);
+			}
+		}
 		needtodraw=1;
 		return 0;
 
@@ -1198,6 +1231,68 @@ int SpreadInterface::PerformAction(int action)
 		Center(1);
 		needtodraw=1;
 		return 0;
+
+	} else if (action==SIA_AddPageAfter || action==SIA_AddPageBefore) {
+		if (!doc) return 0;
+		int page=curpage;
+		if (page<0) {
+			if (action==SIA_AddPageAfter) page=doc->pages.n-1;
+			else page=0;
+		}
+
+        int c=doc->NewPages(page+(action==SIA_AddPageAfter ? 1 : 0),1);
+        if (c>=0) {
+            char scratch[100];
+            sprintf(scratch,_("Page number %d added (%d total)."),page+1,doc->pages.n);
+            PostMessage(scratch);
+        } else PostMessage(_("Error adding page."));
+
+		clearSelection();
+        return 0;
+
+
+	} else if (action==SIA_DeletePages) {
+        if (!doc) return 0;
+		if (doc->pages.n==1) {
+			PostMessage(_("Cannot delete the only page."));
+			return 0;
+		}
+
+		int page, index;
+		if (curpages.n==0 && curpage>=0) curpages.push(curpage);
+		while (curpages.n) {
+			page=-1;
+			index=-1;
+			for (int c=0; c<curpages.n; c++) {
+				if (curpages.e[c]>index) { index=c; page=curpages.e[c]; }
+			}
+			if (index==-1) break;
+
+			int c=doc->RemovePages(page,1); //remove page
+			if (c==1) {
+				 //deleted successfully
+				char scratch[100];
+				sprintf(scratch,_("Page %d deleted. %d remaining."),page,doc->pages.n);
+				PostMessage(scratch);
+			} else PostMessage(_("Error deleting page."));
+			curpages.remove(index);
+		}
+		clearSelection();
+
+        // Document sends the notifyDocTreeChanged..
+		return 0;
+ 
+
+	} else if (action==SIA_InsertDummyPage) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+
+	} else if (action==SIA_DetachPages) {
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
+
+	} else if (action==SIA_ExportPages) {
+		 //create a new document with the same imposition type, with the selected pages
+		cerr <<" *** finish implementing SpreadInterface::Event()"<<endl;
 	}
 
 	return 1;
@@ -1327,14 +1422,17 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 
 	needtodraw=1;
 
+
+	//------------Add spread editor interfaces
 	//viewport->Push(spreadtool,1); // local, and select it
 	spreadtool=new SpreadInterface(viewport->dp,project,doc);
 	spreadtool->GetShortcuts();
 	sed->spreadtool=spreadtool;
 	AddTool(spreadtool,1,1);
 
-	AddTool(new PageRangeInterface(1,viewport->dp, doc),1,0);
-	DBG AddTool(new PaperInterface(2,viewport->dp),1,0); // ***** 
+	AddTool(new PageRangeInterface(1,viewport->dp, doc),0,0);
+
+	DBG AddTool(new PaperInterface(2,viewport->dp),0,0); // ***** 
 	//AddTool(new NupInterface(1,viewport->dp),1,0);
 }
 
@@ -1415,23 +1513,38 @@ int SpreadEditor::init()
 
 	 //---- tool section
 	SliderPopup *toolselector;
+	 //---- tool section
 	last=toolselector=new SliderPopup(this,"viewtoolselector",NULL,SLIDER_LEFT, 0,0,0,0,1, 
 			NULL,object_id,"toolselector",
 			NULL,0);
 	toolselector->tooltip(_("The current tool"));
-	const char *str; //the whattype: "BlahInterface"
 	LaxImage *img;
 	int obji=0;
 	int c;
+	int numoverlays=0;
+
 	for (c=0; c<tools.n; c++) {
-		str=tools.e[c]->IconId();
-		if (!strcmp(str,"Spread")) obji=tools.e[c]->id;
+		if (tools.e[c]->interface_type==INTERFACE_Overlay) {
+			numoverlays++;
+			continue;
+		}
+		if (!strcmp(tools.e[c]->whattype(),"Spread")) obji=tools.e[c]->id;
 		
-		img=laidout->icons.GetIcon(str);
+		img=laidout->icons.GetIcon(tools.e[c]->IconId());
 		
 		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
 	}
+	if (numoverlays) {
+		toolselector->AddSep(_("Overlays"));
+		for (c=0; c<tools.n; c++) {
+			if (tools.e[c]->interface_type!=INTERFACE_Overlay) continue;
+			img=laidout->icons.GetIcon(tools.e[c]->IconId());
+			toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
+			toolselector->SetState(-1,MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
+		}
+	}
+
 	toolselector->WrapToExtent();
 	SelectTool(obji);
 	AddWin(toolselector,1,-1);
@@ -1455,6 +1568,14 @@ int SpreadEditor::init()
 
 	last=tbut=new Button(this,"updatethumbs",NULL, 0, 0,0,0,0,1, last,object_id,"updatethumbs",0,_("Update Thumbs"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
+
+
+	ColorBox *colorbox;
+	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",
+                               LAX_COLOR_RGB,
+                               65535,150,
+                               65535,0,0,65535);
+    AddWin(colorbox,1, 50,0,50,50,0, toolselector->win_h,0,50,50,0, -1);
 
 	Sync(1);	
 	return 0;
@@ -1537,11 +1658,11 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 		}
 
 //		menu->AddSep();
-//		menu->AddItem(_("New view"),SE_NewView);
+//		menu->AddItem(_("New view"),SIA_NewView);
 		SpreadInterface *interf=(SpreadInterface*)tools.e[0];
-//		if (!interf->view->doc_id) menu->AddItem(_("Save view"),SE_SaveView);
+//		if (!interf->view->doc_id) menu->AddItem(_("Save view"),SIA_SaveView);
 //		else {
-//			menu->AddItem(_("Delete current view"),SE_DeleteView);
+//			menu->AddItem(_("Delete current view"),SIA_DeleteView);
 //		}
 
 		 //new ones not explicitly added to document will be saved only if there are active windows using it
@@ -1609,7 +1730,7 @@ int SpreadEditor::CharInput(unsigned int ch,const char *buffer,int len,unsigned 
 		return 0;
 
 	} else if (ch==LAX_F1 && (state&LAX_STATE_MASK)==0) {
-		app->addwindow(new HelpWindow());
+		app->addwindow(newHelpWindow(whattype()));
 		return 0;
 	}
 	return ViewerWindow::CharInput(ch,buffer,len,state,d);

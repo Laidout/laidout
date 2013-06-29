@@ -652,8 +652,8 @@ Laxkit::ShortcutHandler *GroupInterface::GetShortcuts()
 	sc->Add(GIA_Distribute,'n',0,0,    "Nup",         _("Distribute selected objects in rows and columns"),NULL,0);
 	sc->Add(GIA_Clone,     ' ',ControlMask,0,"Clone", _("Clone objects"),NULL,0);
 	sc->Add(GIA_CloneB,    ' ',ControlMask,1,"CloneB",_("Clone objects, if button down"),NULL,0);
-	sc->Add(GIA_Duplicate, ' ',0,0,    "Duplicate",   _("Duplicate objects"),NULL,0);
-	sc->Add(GIA_DuplicateB,' ',0,1,    "DuplicateB",  _("Duplicate objects, if button down"),NULL,0);
+	sc->Add(GIA_Duplicate, 'd',0,0,    "Duplicate",   _("Duplicate objects"),NULL,0);
+	sc->Add(GIA_DuplicateB,'d',0,1,    "DuplicateB",  _("Duplicate objects, if button down"),NULL,0);
 	//...go to path, image, image warp, mesh, gradient tools...?
 
 

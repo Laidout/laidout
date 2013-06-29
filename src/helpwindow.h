@@ -35,6 +35,9 @@ class HelpWindow : public Laxkit::MessageBox
 	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
 
+Laxkit::anXWindow *newHelpWindow(const char *place);
+
+
 } //namespace Laidout
 
 #endif

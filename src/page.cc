@@ -702,8 +702,8 @@ ImageData *Page::Thumbnail()
 	
 	double w=bbox.maxx-bbox.minx,
 		   h=bbox.maxy-bbox.miny;
-	h=h*100./w;
-	w=100.;
+	h=h*200./w;
+	w=200.;
 	DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
 	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
 	if (!thumbnail) thumbnail=new ImageData(); 

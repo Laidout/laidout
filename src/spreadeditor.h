@@ -30,6 +30,31 @@ namespace Laidout {
 //----------------------- SpreadInterface --------------------------------------
 class SpreadEditor;
 
+enum SpreadInterfaceActions {
+	SIA_ToggleSelect,
+	SIA_Center,
+	SIA_LabelPos,
+	SIA_ToggleMark,
+	SIA_ToggleMarkR,
+	SIA_Thumbnails,
+	SIA_ToggleArrange,
+	SIA_RefreshArrange,
+
+	SIA_First=           1000,
+	SIA_PageLabels      ,
+	SIA_InsertDummyPage ,
+	SIA_AddPageBefore   , 
+	SIA_AddPageAfter     ,
+	SIA_DetachPages      ,
+	SIA_DeletePages      ,
+	SIA_ExportPages      ,
+	SIA_NewView          ,
+	SIA_SaveView         ,
+	SIA_DeleteView       ,
+	SIA_RenameView       ,
+	SIA_MAX
+};
+
 class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFiles::DumpUtility
 {
  protected:
@@ -46,6 +71,8 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	Laxkit::NumStack<int> curpages;
 	Laxkit::PtrStack<LittleSpread> curspreads;
 	LittleSpread *curspread;
+
+	Laxkit::PtrStack<Page> pagestorender;
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
@@ -73,6 +100,7 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	virtual int MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
+	virtual int RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();

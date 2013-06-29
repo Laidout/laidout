@@ -28,6 +28,7 @@
 #include "calculator/calculator.h"
 #include "impositions/imposition.h"
 #include "filetypes/filefilters.h"
+#include "calculator/values.h"
 
 
 namespace Laidout {
@@ -78,7 +79,7 @@ enum RunModeType {
 		RUNMODE_Impose_Only
 	};
 
-class LaidoutApp : public Laxkit::anXApp
+class LaidoutApp : public Laxkit::anXApp, public Value
 {
  protected:
 	void dumpOutResources();
@@ -117,9 +118,9 @@ class LaidoutApp : public Laxkit::anXApp
 	
 	LaidoutApp();
 	virtual ~LaidoutApp();
+	virtual const char *whattype() { return "LaidoutApp"; }
 	virtual int init(int argc,char **argv);
 	virtual void setupdefaultcolors();
-	ObjectDef *makeObjectDef();
 	void parseargs(int argc,char **argv);
 	int readinLaidoutDefaults();
 	int createlaidoutrc();
@@ -131,6 +132,10 @@ class LaidoutApp : public Laxkit::anXApp
 	void InitializeShortcuts();
 	int DumpWindows(FILE *f,int indent,Document *doc);
 	int IsProject();
+
+	 //for Value:
+	ObjectDef *makeObjectDef();
+	Value *duplicate();
 
 	 //commands
 	Document *findDocumentById(unsigned long id);

@@ -1256,7 +1256,7 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 	sc->Add(NUPA_NextDir,        LAX_Left,0,0,     _("NextDir"),       _("Next direction type"),NULL,0);
 	sc->Add(NUPA_PrevDir,        LAX_Right,0,0,    _("PrevDir"),       _("Previous direction type"),NULL,0);
 
-	manager->AddArea("NupInterface",sc);
+	manager->AddArea("NUpInterface",sc);
 	return sc;
 }
 

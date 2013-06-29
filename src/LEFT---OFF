@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ---- bugs to fix right now:
 
+object reording frelled, strange bbox display offset, 
+
+key window not showing fields!!!
+
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
 
 don't allow reparent to a child!! or reparent as appropriate
@@ -25,6 +29,9 @@ Printing only goes to letter, even though page size says go full page, in image,
 file format dump is not showing dump of object types
 
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
+  maybe option to create new layers, or insert to existing layers?
+  option to insert new pages, or merge onto existing pages
+  need to center within new margin area, as compared to previous margin area
 
 drawing partial arcs broken
 
@@ -40,6 +47,10 @@ cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
 ---- bugs:
+
+print command to printer is not respecting the paper size
+
+mode for shortcut check not quite working, such as ' ' with button to duplicate
 
 memory hole when graphical shell activated
 
@@ -109,6 +120,14 @@ WATCH OUT for when preview file is OLDER than original file!!
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 
+importing should not spawn new windows
+importing should sort out duplicate names
+import vector should default to current page import
+
+mass image edit, need to remap dirs for old files!!
+
+export should have option to export in segments, like 4 pages at a time, but export all
+
 gshell:
   DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
   DONE *** not putting in the objects to dict
@@ -140,19 +159,28 @@ debug multi head? seems to crash when showing with projectors plugged in
 	if only one screen, then x,y is 0
 
 calculator
-  overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
-  show overloaded entries
-  show (variable) should show the objectdef for that variable
-  debug class definitions
+  debug "return value"
+  debug generic with operators, doesn't seem to be working
+  debug for
   debug operator definitions
-  debug if/while/etc
-  how best to allow created object defs to be referenced as parameter, variable, or set types
-  debug using and import... remove using, use import Math.* instead
-  need "print" function
+  debug using and import... maybe remove using, use import Math.* instead
   debug number deref: var a={1,2}.. out of bounds not returning cannot deref.. returning "Ok"
+  allow if statements on single line without curly braces
+  destructors
+  show overloaded entries
   var a if a already exists should fail
+  how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
   error reporting up function calls doesn't say pos/line for each expression
+  overloading does not handle parameter mapping per overloaded, it is scanning only the first, and using that
+  inputting lines when open {"( maybe prompt "... " to wait for closure?
  
+  DONE debug foreach
+  DONE debug "break;"
+  DONE debug class definitions
+  DONE implement GenericValue, to allow fully scripted values
+  DONE need "print" function
+  DONE show (variable) should show the objectdef for that variable
+  DONE debug if,while
   DONE debug if {a=2, b=3} or {a:2, b:3} or {a:2; b:3}, then scan in hash instead of set
   DONE 1/0 crashes
   DONE assignment still off, need to be able to do a.x=3;
@@ -167,13 +195,24 @@ calculator
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
 Spread Editor:
-  insert blanks
-  delete pages, the other right click menu options
-  Insert page before
-  Insert page after
-  Insert pages...  <- on screen indicator for number of pages to add before or after
+  update page label type to be color+shape, shape being circle, square, diamond, or triangle
+    default colors: white, gray, dark gray, black, red, yellow
+  insert blanks before or after
+  after an insert, have temp wheelable number indicator, update on screen
   modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
   background preview rendering for spreadeditor
+  adjust page preview size
+  debug spread threads and page groups
+  create new document from spread view
+  debug select spreads with rectangle
+  memory hole
+  DONE select all/none
+  DONE delete pages
+  DONE Insert page before
+  DONE Insert page after
+
+paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
+pdf optimize jpg dump, compress image data
 
 customizable object child relationships to parent, rather than simple transform
   transform relative to parent origin
@@ -241,8 +280,6 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   not cause problems. When deleting objects, must then take care to update parent, so it is immediately known
   if an object is without a home.
 
-paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-pdf optimize jpg dump, compress image data
 
 PathEditor: 
   shift click down then up on a point selects then deselects
@@ -309,6 +346,9 @@ in laxkit, key and mouse state should already be filtered to only contain laxkit
 reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
 
 shortcuts:
+  hover indicator intrusive
+  save/restore column setting
+  in/out for remember
   char names for wacky xf86 codes.. accept 0x*
   numberpadmask?
   shortcut edit dialog
@@ -796,5 +836,8 @@ DONE patch moving things frelled, load monkey.doc and try to move things
 
 DONE add more explicit lpoptions howto for help, in lieu of functional print dialog
 
+DONE select imposition template doesn't update paper style
+DONE spread editor freezing X on large number of page thumbnails to render
 
+DONE space not centering spread
 
