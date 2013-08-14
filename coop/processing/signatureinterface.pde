@@ -1,5 +1,5 @@
 //
-// Laidout Signature Editor, for Processing.js
+// Laidout Signature Editor, using Processing.js
 // Please consult http://www.laidout.org about where to send any
 // correspondence about this software.
 //
@@ -26,16 +26,27 @@ int DISPLAYWIDTH =700;
 int DISPLAYHEIGHT=700;
 
 //for use with processing js:   **** COMMENT OUT IF USING JAVA PROCESSING ****
-int DISPLAYWIDTH =window.innerWidth-40;
-int DISPLAYHEIGHT=window.innerHeight*.9;
+DISPLAYWIDTH =window.innerWidth-40;
+DISPLAYHEIGHT=window.innerHeight*.9;
+
+
+
+
+float TEXTHEIGHT=20;
 
 void setup()
 {
   size(DISPLAYWIDTH, DISPLAYHEIGHT);
+
   textFont(createFont( "Arial", 20, true));
   textAlign(CENTER);
-  if ((textAscent()+textDescent())*4>DISPLAYHEIGHT/8) textSize(DISPLAYHEIGHT/8/4);
-  //rectMode(CENTER);
+  TEXTHEIGHT=textAscent()+textDescent();
+  
+  if (TEXTHEIGHT*4>DISPLAYHEIGHT/8) {
+      TEXTHEIGHT=DISPLAYHEIGHT/8/4;
+      if (TEXTHEIGHT<5) TEXTHEIGHT=5;
+      textSize(TEXTHEIGHT);
+  }
 
   interf=new SignatureInterface();
 }
@@ -196,6 +207,12 @@ int SIA_TrimDec = 22;
 int SIA_MarginMask = 23;
 int SIA_MarginInc = 24;
 int SIA_MarginDec = 25;
+int SIA_ZoomIn = 26;      
+int SIA_ZoomOut = 28;     
+int SIA_ZoomInControls = 29;
+int SIA_ZoomOutControls = 30;
+
+
 
 class Shortcut
 {
@@ -416,7 +433,7 @@ class Displayer
             findictm();
          }
 
-        float textheight() { return textAscent()+textDescent(); }
+    float textheight() { return textAscent()+textDescent(); }
         
     void NewFG(float r,float g,float b) {
         fg_color = color(int(r*255), int(g*255), int(b*255));
@@ -484,15 +501,17 @@ class Displayer
         ctm[5]+=dy;
         findictm();
     }
-        void Zoom (float m)
-        {
-            ctm[0]*=m;
-            ctm[1]*=m;
-            ctm[2]*=m;
-            ctm[3]*=m;
-            
-            findictm();
-        }
+
+    void Zoom (float m)
+    {
+        ctm[0]*=m;
+        ctm[1]*=m;
+        ctm[2]*=m;
+        ctm[3]*=m;
+        
+        findictm();
+    }
+
     void Center(float minx,float maxx,float miny,float maxy) {
                 DoubleBBox  bb=new DoubleBBox(realtoscreen(minx,miny));
                 bb.addtobounds(realtoscreen(maxx,miny));
@@ -800,6 +819,26 @@ class ActionArea
         maxx=-1; maxy=-1;
     }
 
+    void SetQuad(flatpoint p1, flatpoint p2, flatpoint p3, flatpoint p4)
+    {
+        outline=new flatpoint[4];
+        outline[0]=new flatpoint(p1.x,p1.y);
+        outline[1]=new flatpoint(p2.x,p2.y);
+        outline[2]=new flatpoint(p3.x,p3.y);
+        outline[3]=new flatpoint(p4.x,p4.y);
+        FindBBox();
+    }
+
+    void SetRect(float x,float y,float w,float h)
+    {
+        outline=new flatpoint[4];
+        outline[0]=new flatpoint(x,y);
+        outline[1]=new flatpoint(x+w,y);
+        outline[2]=new flatpoint(x+w,y+h);
+        outline[3]=new flatpoint(x,y+h);
+        FindBBox();
+    }
+
     //! Create outline points.
     /*! If takethem!=0, then make outline=pts, and that array will be delete[]'d in the destructor.
      * Otherise, the points are copied into a new array.
@@ -831,10 +870,10 @@ class ActionArea
         return outline;
     }
 
-        flatpoint Center() {
-          if (maxx<minx || maxy<miny) return new flatpoint(minx,miny);
-          return new flatpoint((minx+maxx)/2,(miny+maxy)/2);
-        }
+    flatpoint Center() {
+      if (maxx<minx || maxy<miny) return new flatpoint(minx,miny);
+      return new flatpoint((minx+maxx)/2,(miny+maxy)/2);
+    }
         
     //! Make the bounds be the actual bounds of outline, in outline space.
     /*! If there are no points in outline, then do nothing.
@@ -1536,7 +1575,7 @@ class Signature
 //------------------------------------- SignatureInterface enum -----------------------------
 
 //size of the fold indicators on left of screen
-int INDICATOR_SIZE=10;
+float INDICATOR_SIZE=10;
 
 
 
@@ -1583,7 +1622,11 @@ int SP_Paper_Height  = 30;
 int SP_Current_Sheet = 31;
 int SP_Front_Or_Back = 32;
 
-int SP_Save          = 33;
+int SP_Save            = 34;
+int SP_ZoomControls    = 35;
+int SP_ZoomOutControls = 36;
+int SP_ZoomIn          = 37;
+int SP_ZoomOut         = 38;
 
 
 
@@ -1714,13 +1757,20 @@ class SignatureInterface
         sc.add(new Shortcut(SIA_NumFoldsHDec,    'H',ShiftMask,  "NumFoldsHDec",   ("Decrease number of horizontal folds")));
         sc.add(new Shortcut(SIA_BindingEdge,     'b',0,          "BindingEdge",    ("Next binding edge")));
         sc.add(new Shortcut(SIA_BindingEdgeR,    'B',ShiftMask,  "BindingEdgeR",   ("Previous binding edge")));
-        sc.add(new Shortcut(SIA_PageOrientation, 'u',0,          "PageOrientation",("Change page orientation")));
+        sc.add(new Shortcut(SIA_PageOrientation, 'o',0,          "PageOrientation",("Change page orientation")));
         sc.add(new Shortcut(SIA_TrimMask,        't',ControlMask,"TrimMask",       ("Toggle which trim to change")));
         sc.add(new Shortcut(SIA_TrimInc,         't',0,          "TrimInc",        ("Increase trim value")));
         sc.add(new Shortcut(SIA_TrimDec,         'T',ShiftMask,  "TrimDec",        ("Decrease trim value")));
         sc.add(new Shortcut(SIA_MarginMask,      'm',ControlMask,"MarginMask",     ("Toggle which margin to change")));
         sc.add(new Shortcut(SIA_MarginInc,       'm',0,          "MarginInc",      ("Increase margin value")));
         sc.add(new Shortcut(SIA_MarginDec,       'M',ShiftMask,  "MarginDec",      ("Decrease margin value")));
+
+        sc.add(new Shortcut(SIA_ZoomIn,          '+',0        ,  "ZoomIn",         ("Zoom in")));
+        sc.add(new Shortcut(SIA_ZoomIn,          '=',0        ,  "ZoomIn",         ("Zoom in")));
+        sc.add(new Shortcut(SIA_ZoomOut,         '-',0        ,  "ZoomOut",        ("Zoom out")));
+        sc.add(new Shortcut(SIA_ZoomInControls,  'z',0        ,  "ZoomInControls", ("Zoom in controls")));
+        sc.add(new Shortcut(SIA_ZoomOutControls, 'Z',ShiftMask,  "ZoomOutControls",("Zoom out controls")));
+
     }
 
 
@@ -1826,13 +1876,13 @@ class SignatureInterface
         if (needtodraw==0) return;
         if (firsttime) {
             remapHandles(0);
-                        PerformAction(SIA_Center);
+            PerformAction(SIA_Center);
             firsttime=false;
         }
 
         needtodraw=0;
 
-                background(color_bg);
+        background(color_bg);
                 
         float patternheight=signature.PatternHeight();
         float patternwidth =signature.PatternWidth();
@@ -2467,6 +2517,33 @@ class SignatureInterface
             if ((marginmask&8)!=0) offsetHandle(SP_Margin_Left,   new flatpoint(step,0));
             if ((marginmask&2)!=0) offsetHandle(SP_Margin_Right,  new flatpoint(-step,0));
             return 0;
+
+        } else if (action==SIA_ZoomIn || action==SIA_ZoomOut) {     
+            flatpoint p=dp.screentoreal(DISPLAYWIDTH/2,DISPLAYHEIGHT/2);
+            dp.Zoom(action==SIA_ZoomIn?1.1:.9);
+            dp.CenterPoint(p);
+            needtodraw=1;
+            return 0;
+
+        } else if (action==SIA_ZoomInControls) {
+            INDICATOR_SIZE*=1.1;
+            TEXTHEIGHT*=1.1;
+            textSize(TEXTHEIGHT);
+            remapHandles(0);
+            needtodraw=1;
+            return 0;
+
+        } else if (action==SIA_ZoomOutControls) {
+            INDICATOR_SIZE*=.9;
+            if (INDICATOR_SIZE<5) INDICATOR_SIZE=3;
+            TEXTHEIGHT*=.9;
+            if (TEXTHEIGHT<5) TEXTHEIGHT=5;
+            textSize(TEXTHEIGHT);
+
+            remapHandles(0);
+            needtodraw=1;
+            return 0;
+
         }
 
         return 1;
@@ -2613,22 +2690,40 @@ class SignatureInterface
         int dragged=abs(x-initialmousex) + abs(y-initialmousey);
 
         if (onoverlay>0) {
-                        if (onoverlay<SP_FOLDS) {
-                            ActionArea area=control(onoverlay);
-                            if (area.action==SP_Save) {
-                              save("laidout-sheet"+(int(currentPaperSpread/2)+1)+(currentPaperSpread%2==0?"Front":"Back")+".png");
-                            } else if (area.type==AREA_Slider && dragged==0) {
-                                flatpoint p=area.Center();
-                                p.add(area.offset);
-                                if (x>p.x) {
-                                  adjustControl(onoverlay,1);
-                                  
-                                } else {
-                                   adjustControl(onoverlay,-1);
-                                }
-                            } 
-                        } else if (onoverlay>=SP_FOLDS) {
-                          
+            if (onoverlay<SP_FOLDS) {
+                ActionArea area=control(onoverlay);
+
+                if (area.action==SP_Save) {
+                    save("laidout-sheet"+(int(currentPaperSpread/2)+1)+(currentPaperSpread%2==0?"Front":"Back")+".png");
+
+                } else if (area.action==SP_ZoomControls   ) {
+                    PerformAction(SIA_ZoomInControls);
+                    return 0;
+
+                } else if (area.action==SP_ZoomOutControls) {
+                    PerformAction(SIA_ZoomOutControls);
+                    return 0;
+
+                } else if (area.action==SP_ZoomIn         ) {
+                    PerformAction(SIA_ZoomIn);
+                    return 0;
+
+                } else if (area.action==SP_ZoomOut        ) {
+                    PerformAction(SIA_ZoomOut);
+                    return 0;
+
+                } else if (area.type==AREA_Slider && dragged==0) {
+                    flatpoint p=area.Center();
+                    p.add(area.offset);
+                    if (x>p.x) {
+                      adjustControl(onoverlay,1);
+                      
+                    } else {
+                       adjustControl(onoverlay,-1);
+                    }
+                } 
+
+            } else if (onoverlay>=SP_FOLDS) {
                           
                  //selecting different fold maybe...
                 if (dragged==0) {
@@ -2690,7 +2785,7 @@ class SignatureInterface
      */
     float[] getFoldIndicatorPos(int which)
     {
-        int radius=INDICATOR_SIZE;
+        int radius=(int)INDICATOR_SIZE;
 
         float[] ret={0,0,0,0};
 
@@ -2707,7 +2802,7 @@ class SignatureInterface
     //! Returns 0 for the circle, totally unfolded, or else fold index+1, or -1 for not found.
     int scanForFoldIndicator(int x, int y, int ignorex)
     {
-        int radius=INDICATOR_SIZE;
+        int radius=(int)INDICATOR_SIZE;
                 
         if (ignorex==0 && (x-folderoffset>2*radius || x-folderoffset<0)) return -1;
 
@@ -2910,6 +3005,10 @@ class SignatureInterface
         //controls.add(new ActionArea(SP_Num_Sigs         , THING_None       , AREA_Slider, "Sigs",  ("Number of signatures needed"),0,1,c,0));
 
         controls.add(new ActionArea(SP_Save             , THING_None       , AREA_Button, "Save", null,0,1,c,0));
+        controls.add(new ActionArea(SP_ZoomControls     , THING_None       , AREA_Button, "aA",   null,0,1,c,0));
+        controls.add(new ActionArea(SP_ZoomOutControls  , THING_None       , AREA_Button, "Aa",   null,0,1,c,0));
+        controls.add(new ActionArea(SP_ZoomIn           , THING_None       , AREA_Button, "+",    null,0,1,c,0));
+        controls.add(new ActionArea(SP_ZoomOut          , THING_None       , AREA_Button, "-",    null,0,1,c,0));
 
 
          //handles and sliders
@@ -3074,80 +3173,94 @@ class SignatureInterface
             //area.text=buffer;
 
 
-                         //controls at top of screen
-                        float textheight=textAscent()+textDescent(); //textheight
-                        String buffer;
-                        
-                        area=control(SP_Paper_Name);
-                        buffer=currentPaper;
-                        area.text=buffer;
-                        float wwww=textWidth("halfletter")+textheight;
-                        float hhhh=textheight*1.4;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(0,hhhh);  p[1]=new flatpoint(wwww,hhhh); p[2]=new flatpoint(wwww,2*hhhh); p[3]=new flatpoint(0,2*hhhh);
-                        area.FindBBox();
-                        
-                        float xxx=wwww;
-                        area=control(SP_Paper_Orient);
-                        if (currentOrientation==0) buffer="Portrait"; else buffer="Landscape";
-                        area.text=buffer;
-                        wwww=textWidth("Landscape")+textheight*.5;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(xxx,hhhh);  p[1]=new flatpoint(xxx+wwww,hhhh); p[2]=new flatpoint(xxx+wwww,2*hhhh); p[3]=new flatpoint(xxx,2*hhhh);
-                        area.FindBBox();
+             //controls at top of screen
+            float textheight=textAscent()+textDescent(); //textheight
+            String buffer;
+            
+            area=control(SP_Paper_Name);
+            buffer=currentPaper;
+            area.text=buffer;
+            float wwww=textWidth("halfletter")+textheight;
+            float hhhh=textheight*1.4;
+            p=area.Points(null,4,false);
+            p[0]=new flatpoint(0,hhhh);  p[1]=new flatpoint(wwww,hhhh); p[2]=new flatpoint(wwww,2*hhhh); p[3]=new flatpoint(0,2*hhhh);
+            area.FindBBox();
+            
+            float xxx=wwww;
+            area=control(SP_Paper_Orient);
+            if (currentOrientation==0) buffer="Portrait"; else buffer="Landscape";
+            area.text=buffer;
+            wwww=textWidth("Landscape")+textheight*.5;
+            p=area.Points(null,4,false);
+            p[0]=new flatpoint(xxx,hhhh);  p[1]=new flatpoint(xxx+wwww,hhhh); p[2]=new flatpoint(xxx+wwww,2*hhhh); p[3]=new flatpoint(xxx,2*hhhh);
+            area.FindBBox();
 
-                        /*xxx+=wwww;
-                        area=control(SP_Paper_Width);
-                        buffer=""+(currentPaperWidth);
-                        area.text=buffer;
-                        wwww=textWidth("00000")+textheight;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(xxx,hhhh);  p[1]=new flatpoint(xxx+wwww,hhhh); p[2]=new flatpoint(xxx+wwww,2*hhhh); p[3]=new flatpoint(xxx,2*hhhh);
-                        area.FindBBox();
-                        
-                        xxx+=wwww;
-                        area=control(SP_Paper_Height);
-                        buffer=""+(currentPaperHeight);
-                        area.text=buffer;
-                        wwww=textWidth("00000")+textheight;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(xxx,hhhh);  p[1]=new flatpoint(xxx+wwww,hhhh); p[2]=new flatpoint(xxx+wwww,2*hhhh); p[3]=new flatpoint(xxx,2*hhhh);
-                        area.FindBBox();
-                        */
+            /*xxx+=wwww;
+            area=control(SP_Paper_Width);
+            buffer=""+(currentPaperWidth);
+            area.text=buffer;
+            wwww=textWidth("00000")+textheight;
+            p=area.Points(null,4,false);
+            p[0]=new flatpoint(xxx,hhhh);  p[1]=new flatpoint(xxx+wwww,hhhh); p[2]=new flatpoint(xxx+wwww,2*hhhh); p[3]=new flatpoint(xxx,2*hhhh);
+            area.FindBBox();
+            
+            xxx+=wwww;
+            area=control(SP_Paper_Height);
+            buffer=""+(currentPaperHeight);
+            area.text=buffer;
+            wwww=textWidth("00000")+textheight;
+            p=area.Points(null,4,false);
+            p[0]=new flatpoint(xxx,hhhh);  p[1]=new flatpoint(xxx+wwww,hhhh); p[2]=new flatpoint(xxx+wwww,2*hhhh); p[3]=new flatpoint(xxx,2*hhhh);
+            area.FindBBox();
+            */
 
-                        xxx=0;
-                        area=control(SP_Current_Sheet);
-                        buffer="Sheet "+(int(currentPaperSpread/2)+1)+"/"+signature.sheetspersignature + (OnBack()?", Back":", Front");
-                        area.text=buffer;
-                        wwww=textWidth("Sheet 000/00, Front")+textheight*.1;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(xxx,2*hhhh);  p[1]=new flatpoint(xxx+wwww,2*hhhh); p[2]=new flatpoint(xxx+wwww,3*hhhh); p[3]=new flatpoint(xxx,3*hhhh);
-                        area.FindBBox();
-                        
-                        //xxx+=wwww;
-                        //area=control(SP_Front_Or_Back);
-                        //buffer=((currentPaperSpread%2)==0?"Front":"Back");
-                        //area.text=buffer;
-                        //wwww=textWidth("Front")+textheight;
-                        //p=area.Points(null,4,false);
-                        //p[0]=new flatpoint(xxx,2*hhhh);  p[1]=new flatpoint(xxx+wwww,2*hhhh); p[2]=new flatpoint(xxx+wwww,3*hhhh); p[3]=new flatpoint(xxx,3*hhhh);
-                        //area.FindBBox();
+            xxx=0;
+            area=control(SP_Current_Sheet);
+            buffer="Sheet "+(int(currentPaperSpread/2)+1)+"/"+signature.sheetspersignature + (OnBack()?", Back":", Front");
+            area.text=buffer;
+            wwww=textWidth("Sheet 000/00, Front")+textheight*.1;
+            p=area.Points(null,4,false);
+            p[0]=new flatpoint(xxx,2*hhhh);  p[1]=new flatpoint(xxx+wwww,2*hhhh); p[2]=new flatpoint(xxx+wwww,3*hhhh); p[3]=new flatpoint(xxx,3*hhhh);
+            area.FindBBox();
+            
+            //xxx+=wwww;
+            //area=control(SP_Front_Or_Back);
+            //buffer=((currentPaperSpread%2)==0?"Front":"Back");
+            //area.text=buffer;
+            //wwww=textWidth("Front")+textheight;
+            //p=area.Points(null,4,false);
+            //p[0]=new flatpoint(xxx,2*hhhh);  p[1]=new flatpoint(xxx+wwww,2*hhhh); p[2]=new flatpoint(xxx+wwww,3*hhhh); p[3]=new flatpoint(xxx,3*hhhh);
+            //area.FindBBox();
 
-                        xxx=0;
-                        area=control(SP_Num_Pages);
-                        buffer=""+(signature.hint_numpages)+" pages";
-                        area.text=buffer;
-                        wwww=textWidth("000 pages")+textheight;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(xxx,3*hhhh);  p[1]=new flatpoint(xxx+wwww,3*hhhh); p[2]=new flatpoint(xxx+wwww,4*hhhh); p[3]=new flatpoint(xxx,4*hhhh);
-                        area.FindBBox();
+            xxx=0;
+            area=control(SP_Num_Pages);
+            buffer=""+(signature.hint_numpages)+" pages";
+            area.text=buffer;
+            wwww=textWidth("000 pages")+textheight;
+            //----
+            //p=area.Points(null,4,false);
+            //p[0]=new flatpoint(xxx,3*hhhh);  p[1]=new flatpoint(xxx+wwww,3*hhhh); p[2]=new flatpoint(xxx+wwww,4*hhhh); p[3]=new flatpoint(xxx,4*hhhh);
+            //area.FindBBox();
+            //----
+            area.SetQuad(new flatpoint(xxx,3*hhhh), new flatpoint(xxx+wwww,3*hhhh), new flatpoint(xxx+wwww,4*hhhh), new flatpoint(xxx,4*hhhh));
 
-                        area=control(SP_Save);
-                        wwww=textWidth(area.text)+textheight;
-                        p=area.Points(null,4,false);
-                        p[0]=new flatpoint(DISPLAYWIDTH-wwww,0);  p[1]=new flatpoint(DISPLAYWIDTH,0); p[2]=new flatpoint(DISPLAYWIDTH,hhhh); p[3]=new flatpoint(DISPLAYWIDTH-wwww,hhhh);
-                        area.FindBBox();
+            area=control(SP_Save);
+            wwww=textWidth(area.text)+textheight;
+            area.SetRect(DISPLAYWIDTH-wwww,0, wwww,hhhh);
                  
+            area=control(SP_ZoomControls);
+            wwww=textWidth(area.text)+textheight;
+            area.SetRect(DISPLAYWIDTH-2*wwww,DISPLAYHEIGHT-hhhh, wwww,hhhh);
+
+            area=control(SP_ZoomOutControls);
+            area.SetRect(DISPLAYWIDTH-wwww,DISPLAYHEIGHT-hhhh, wwww,hhhh);
+
+            area=control(SP_ZoomIn);
+            wwww=textWidth(area.text)+textheight;
+            area.SetRect(0,DISPLAYHEIGHT-hhhh, wwww,hhhh);
+
+            area=control(SP_ZoomOut);       
+            area.SetRect(wwww,DISPLAYHEIGHT-hhhh, wwww,hhhh);
                       
         }
 
@@ -3935,7 +4048,7 @@ class SignatureInterface
                 
         if ((hasfinal && foldlevel==signature.folds.size())
                 || row<0 || row>signature.numhfolds || col<0 || col>signature.numvfolds) {
-			 //not folding things..
+             //not folding things..
             if (folddirection!=0) {
                 folddirection=0;
                 needtodraw=1;
@@ -3944,7 +4057,7 @@ class SignatureInterface
         }
 
 
-		 //...so we've clicked within the pattern and are dragging a fold
+         //...so we've clicked within the pattern and are dragging a fold
         foldunder=((state&(ControlMask|ShiftMask))!=0);
 
         mx=initialmousex;
