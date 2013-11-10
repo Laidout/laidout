@@ -22,7 +22,7 @@
 namespace Laidout {
 
 
-StyleDef *makeNewDocumentStyleDef();
+ObjectDef *makeNewDocumentObjectDef();
 int NewDocumentFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
@@ -30,7 +30,7 @@ int NewDocumentFunction(ValueHash *context,
 
 
 
-StyleDef *makeOpenStyleDef();
+ObjectDef *makeOpenObjectDef();
 int OpenFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,

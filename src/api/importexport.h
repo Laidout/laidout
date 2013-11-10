@@ -24,7 +24,7 @@
 namespace Laidout {
 
 
-StyleDef *makeImportStyleDef();
+ObjectDef *makeImportObjectDef();
 int ImportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
@@ -32,7 +32,7 @@ int ImportFunction(ValueHash *context,
 
 
 
-StyleDef *makeExportStyleDef();
+ObjectDef *makeExportObjectDef();
 int ExportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,

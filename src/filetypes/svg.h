@@ -45,7 +45,7 @@ class SvgOutputFilter : public ExportFilter
 	virtual const char *Version();
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
-	virtual StyleDef *GetStyleDef();
+	virtual ObjectDef *GetObjectDef();
 
 	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 
@@ -67,7 +67,7 @@ class SvgImportFilter : public ImportFilter
 	virtual const char *Version() { return "1.0"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
-	virtual StyleDef *GetStyleDef();
+	virtual ObjectDef *GetObjectDef();
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	

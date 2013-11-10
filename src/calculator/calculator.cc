@@ -1398,7 +1398,8 @@ ObjectDef *LaidoutCalculator::GetInfo(const char *expr)
  *  not including in+len are
  *  parsed. If there are multiple expressions, then the value from the final expression is returned.
  *
- *  This function is called as necessary called by In().
+ *  This function is called as necessary by In().
+ *  The other evaluate() is used to process functions during a script, not directly by the user.
  */
 int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, ErrorLog *log)
 {
@@ -1474,13 +1475,21 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, Erro
 	return calcerror>0 ? 1 : 0;
 }
 
-/*! Called for scripted functions, establish a scope containing "context", and parameters.
+/*! Called recursively for scripted functions, establish a scope containing "context", and parameters.
+ * Store old expression, and call the other evaluate().
  */
 int LaidoutCalculator::evaluate(const char *in, int len, ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog *log)
 {
+	 //1. back up state:
 	ErrorLog *old_errorlog=errorlog;
 	errorlog=log;
+	int oldfrom=from;
+	int oldlen=curexprslen;
+	int oldline=curline;
+	char *texprs=newnstr(curexprs,curexprslen);
 
+
+	 //2. establish parameters and process the call
 	if (context || parameters) {
 		pushScope(BLOCK_function, 0,0,NULL,NULL,NULL);
 		BlockInfo *evalscope=currentLevel();
@@ -1501,7 +1510,14 @@ int LaidoutCalculator::evaluate(const char *in, int len, ValueHash *context, Val
 
 	if (context || parameters) popScope();
 
-	errorlog=old_errorlog;
+
+	 //3. restore state
+	makestr(curexprs,texprs);
+	curexprslen=oldlen;
+	from       =oldfrom;
+	curline    =oldline;
+	errorlog   =old_errorlog;
+
 	return status;
 }
 
@@ -1737,7 +1753,10 @@ void LaidoutCalculator::skipwscomment()
 	do {
 		 //skip actual whitespace
 		while (isspace(curexprs[from]) && from<curexprslen) {
-			if (curexprs[from]=='\n') curline++;
+			if (curexprs[from]=='\n') {
+				curline++;
+				DBG cerr <<"next line ("<<curline<<")..."<<endl;
+			}
 			from++;
 		}
 
@@ -1750,7 +1769,10 @@ void LaidoutCalculator::skipwscomment()
 		} else if (curexprs[from]=='/' && curexprs[from+1]=='*') {
 			 //skip until "*/" is encountered...
 			while ((curexprs[from]!='*' || curexprs[from+1]!='/') && from<curexprslen) {
-				if (curexprs[from]=='\n') curline++;
+				if (curexprs[from]=='\n') {
+					curline++;
+					DBG cerr <<"next line ("<<curline<<")..."<<endl;
+				}
 				from++;
 			}
 			if (from<curexprslen && curexprs[from]=='*' && curexprs[from+1]=='/') from+=2;
@@ -1938,8 +1960,14 @@ void LaidoutCalculator::skipBlock(char ch)
 	while (from!=tfrom && from<curexprslen) {
 		if (tfrom<0) tfrom=from;
 
-		str=strpbrk(curexprs+from, "\"'({[]})#"); //first occurence of any of these
+		str=strpbrk(curexprs+from, "\"'({[]})#\n"); //first occurence of any of these
 		if (!str) calcerr(_("Missing end!"));
+		if (*str=='\n') {
+			curline++;
+			DBG cerr <<"next line ("<<curline<<")..."<<endl;
+			from++;
+			continue;
+		}
 
 		if (*str==ch) { from=str-curexprs+1; return; } //found the end!!
 		if (*str==')' || *str=='}' || *str==']') {
@@ -2070,12 +2098,12 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 		*value_ret=evalLevel(0);
 		if (calcerror) return 1;
 		int c;
-		for (c=scopes.n; c>0; c--) if (scopes.e[c]->type==BLOCK_function) break;
+		for (c=scopes.n-1; c>0; c--) if (scopes.e[c]->type==BLOCK_function) break;
 		if (c==0) {
 			calcerr(_("Cannot return!"));
 			return 1;
 		}
-		while (scopes.n!=c) popScope();
+		while (scopes.n>c+1) popScope();
 		from=curexprslen; //we were in a function expression, this jumps us out
 		return 1;
 
@@ -2238,6 +2266,8 @@ int LaidoutCalculator::checkBlock(Value **value_ret)
 //! Replace curexprs with newex, and set from=0.
 void LaidoutCalculator::newcurexprs(const char *newex,int len)
 {
+	DBG cerr <<"new curexprs: "<<newex<<endl;
+
 	makenstr(curexprs,newex,len);
 	curexprslen=strlen(curexprs);
 	from=0;
@@ -4092,7 +4122,7 @@ int LaidoutCalculator::functionCall(const char *word,int n, Value **v_ret,
 	else if (function->stylefunc) status=function->stylefunc(context,pp, &value,log);
 	else if (function->newfunc) {
 		 //a plain object creation function with no parameters
-		Value *s=function->newfunc(function);
+		Value *s=function->newfunc();
 		if (s) {
 			status=0;
 			value=s;
@@ -4698,7 +4728,7 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 			else if (num1->type()==VALUE_Real) *value_ret= new DoubleValue(-dynamic_cast<DoubleValue*>(num1)->d);
 			else if (num1->type()==VALUE_Flatvector) *value_ret= new FlatvectorValue(-dynamic_cast<FlatvectorValue*>(num1)->v);
 			else if (num1->type()==VALUE_Spacevector) *value_ret= new SpacevectorValue(-dynamic_cast<SpacevectorValue*>(num1)->v);
-			if (value_ret) return 0;
+			if (*value_ret) return 0;
 			return -1; //can't negative that type
 		}
 
@@ -4730,7 +4760,7 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 		if (len==1 && *the_op=='<')            { *value_ret=new BooleanValue(strcmp(s1,s2) < 0 ); return 0; }
 		if (len==1 && *the_op=='>')            { *value_ret=new BooleanValue(strcmp(s1,s2) > 0 ); return 0; }
 
-		return 1;
+		return -1;
 	}
 
 	v1=getNumberValue(num1, &isnum);
@@ -4749,7 +4779,7 @@ int LaidoutCalculator::Op(const char *the_op,int len, int dir, Value *num1, Valu
 	if (len==2 && !strncmp(the_op,"&&",2)) { *value_ret=new BooleanValue(v1 && v2); return 0; }
 	if (len==2 && !strncmp(the_op,"||",2)) { *value_ret=new BooleanValue(v1 || v2); return 0; }
 
-	return 1;
+	return -1;
 }
 
 //! Add integers and reals, and concat strings.

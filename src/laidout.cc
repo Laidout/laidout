@@ -41,7 +41,7 @@
 #include "viewwindow.h"
 #include "impositions/singles.h"
 #include "impositions/netimposition.h"
-#include "impositions/signatureinterface.h"
+#include "impositions/impositioneditor.h"
 #include "headwindow.h"
 #include "version.h"
 #include "stylemanager.h"
@@ -222,7 +222,9 @@ int laidout_preview_maker(const char *original, const char *preview, const char 
 //! Laidout constructor, just inits a few variables to 0.
 /*! 
  */
-LaidoutApp::LaidoutApp() : anXApp(), preview_file_bases(2)
+LaidoutApp::LaidoutApp()
+  : anXApp(),
+	preview_file_bases(2)
 {	
 	runmode=RUNMODE_Normal;
 
@@ -819,14 +821,14 @@ void InitOptions()
 	options.Add("no-template",        'N', 0, "Do not use a default template",               0, NULL);
 	options.Add("new",                'n', 1, "Create new document",                         0, "\"letter,portrait,3pgs\"");
 	options.Add("file-format",        'F', 0, "Print out a pseudocode mockup of the file format, then exit",0,NULL);
-	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("command",            'c', 1, "Run one or more commands without the gui",    0, "\"newdoc net\"");
 	options.Add("script",             's', 1, "Like --command, but the commands are in the given file",     0, "/some/file");
 	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
-	options.Add("helphtml",           'H', 0, "Output an html fragment of help.",            0, NULL);
+	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
+	options.Add("helphtml",           'H', 0, "Output an html fragment of shortcuts.",       0, NULL);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
 	options.Add("help",               'h', 0, "Show this summary and exit.",                 0, NULL);
 
@@ -957,8 +959,9 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 			case 'I': { // impose-only
 					runmode=RUNMODE_Impose_Only;
-					SignatureEditor *sig=new SignatureEditor(NULL,"editor",_("Impose..."),NULL,NULL,NULL,NULL,o->arg());
-					addwindow(sig);
+					anXWindow *editor=newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
+														  NULL,"SignatureImposition",NULL,o->arg());
+					addwindow(editor);
 				} break;
 
 			case 'u': { // default units
@@ -1397,7 +1400,7 @@ int LaidoutApp::NewDocument(const char *spec)
 	if (!paper) paper=papersizes.e[0];
 	unsigned int flags=paper->flags;
 	paper->flags=(paper->flags&~1)|landscape;
-	if (!strcmp("NetImposition",imp->styledef->name)) {
+	if (!strcmp("NetImposition",imp->whattype())) {
 		NetImposition *neti=dynamic_cast<NetImposition *>(imp);
 		if (!neti->nets.n) {
 			neti->SetNet("Dodecahedron");
@@ -1443,7 +1446,7 @@ int LaidoutApp::NewDocument(Imposition *imposition, const char *filename)
 	if (!project) project=new Project();
 	project->Push(newdoc); //adds count to newdoc
 
-	DBG cerr <<"***** just pushed newdoc using imposition "<<newdoc->imposition->Stylename()<<", must make viewwindow *****"<<endl;
+	DBG cerr <<"***** just pushed newdoc using imposition "<<newdoc->imposition->Name()<<", must make viewwindow *****"<<endl;
 	newdoc->dec_count();
 	
 	
@@ -1591,9 +1594,10 @@ int main(int argc,char **argv)
 	laidout->run();
 
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
+	 //for debugging purposes, spread out closing down various things....
 	laidout->close();
-	Laxkit::InstallShortcutManager(NULL);
-	delete laidout;
+	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
+	laidout->dec_count();
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;
 	DBG cerr <<"  stylemanager.getNumFields()="<<(stylemanager.getNumFields())<<endl;

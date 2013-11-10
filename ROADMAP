@@ -7,12 +7,12 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.094
 -------------
-       Tool scripting
+(done) More robust scripting: loops, variables, functions, classes
 (done) need partial Laidout import
 (done) should probably put laidout stuff in its own namespace, just to be polite
        Shortcuts editor dialog
        Signature editor needs option to preview pages while folding
-       Signature editor: detect non staplable binding edge, show red rather than green
+       Signature editor: have variable num of pages per signature
 (done) Optimize pdf export to not duplicate images
 (done) Cloning
 (done) SpreadEditor: insert blanks, delete pages
@@ -24,6 +24,8 @@ VERSION 0.094
 
 VERSION 0.095
 -------------
+       Signature editor: detect non staplable binding edge, show red rather than green
+       Tool scripting
        PathInterface subpaths for hole making should work: check exports
        impose-only mode should allow access to all imposition types, not just signatures
        Implement cairo renderer, make meshes finally render faster

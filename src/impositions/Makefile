@@ -15,6 +15,7 @@ DEBUGFLAGS= -g
 
 objs= \
 	imposition.o \
+	impositioneditor.o \
 	singles.o \
 	impositions.o \
 	dodecahedron.o \

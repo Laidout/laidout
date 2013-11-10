@@ -40,9 +40,9 @@ namespace Laidout {
 
 
 
-/*! \defgroup stylesandstyledefs Styles and StyleDefs
+/*! \defgroup stylesandstyledefs Styles and ObjectDefs
  * 
- * -------- Styles and StyleDefs -----------
+ * -------- Styles and ObjectDefs -----------
  * 
  *  There are Values, Styles and ObjectDefs. ObjectDef has a map of the names
  *  of the style or value and of its fields. Value and Style have actual instances of the 
@@ -130,7 +130,7 @@ namespace Laidout {
  *
  * Mask values refer only to the top level fields, not subfields.
  */
-/*! \fn ObjectDef *Style::makeStyleDef()
+/*! \fn ObjectDef *Style::makeObjectDef()
  * \brief Construct and return an instance of the relevant ObjectDef.
  *
  * Default just returns NULL. This function should otherwise return a unique instance
@@ -183,10 +183,10 @@ Style::~Style()
 	if (styledef) styledef->dec_count();
 }
 
-//! Return styledef, call makeStyleDef() if necessary.
-ObjectDef *Style::GetStyleDef()
+//! Return styledef, call makeObjectDef() if necessary.
+ObjectDef *Style::GetObjectDef()
 {
-	if (!styledef) styledef=makeStyleDef();
+	if (!styledef) styledef=makeObjectDef();
 	return styledef;
 }
 
@@ -215,14 +215,14 @@ int Style::getNumFields()
 ObjectDef *Style::FieldInfo(int i)
 {
 	if (i<0 || i>=getNumFields()) return NULL;
-	ObjectDef *def=GetStyleDef();
+	ObjectDef *def=GetObjectDef();
 	if (!def) return NULL;
 	return def->getField(i);
 }
 
 const char *Style::FieldName(int i)
 {
-	ObjectDef *def=GetStyleDef();
+	ObjectDef *def=GetObjectDef();
 	if (!def) return NULL;
 	if (i<0 || i>=getNumFields()) return NULL;
 	def=def->getField(i);
@@ -242,9 +242,9 @@ EnumStyle::EnumStyle()
 	: names(2)
 {}
 
-ObjectDef *EnumStyle::makeStyleDef()
+ObjectDef *EnumStyle::makeObjectDef()
 {
-	cout <<" *** imp me! EnumStyle::makeStyleDef"<<endl;
+	cout <<" *** imp me! EnumStyle::makeObjectDef"<<endl;
 	return NULL; //****
 }
 

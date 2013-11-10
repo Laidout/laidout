@@ -24,7 +24,7 @@
 namespace Laidout {
 
 
-StyleDef *makeReimposeStyleDef();
+ObjectDef *makeReimposeObjectDef();
 
 int ReImposeFunction(ValueHash *context, 
 					 ValueHash *parameters,

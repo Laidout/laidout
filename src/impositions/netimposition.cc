@@ -137,12 +137,12 @@ NetImposition::NetImposition(Net *newnet)
 	DBG cerr <<"   net 1"<<endl;
 	
 	
-	//***can styledef exist already? possible made by a superclass?
-	styledef=stylemanager.FindDef("NetImposition");
-	if (styledef) styledef->inc_count(); 
+	//***can objectdef exist already? possible made by a superclass?
+	objectdef=stylemanager.FindDef("NetImposition");
+	if (objectdef) objectdef->inc_count(); 
 	else {
-		styledef=makeStyleDef();
-		if (styledef) stylemanager.AddObjectDef(styledef,0);
+		objectdef=makeObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
 	}
 
 //	if (!newnet) {
@@ -166,6 +166,11 @@ NetImposition::~NetImposition()
 	//nets.flush();
 }
 
+ImpositionInterface *NetImposition::Interface()
+{
+	return NULL;
+}
+
 //! Static imposition resource creation function.
 ImpositionResource **NetImposition::getDefaultResources()
 {
@@ -174,14 +179,14 @@ ImpositionResource **NetImposition::getDefaultResources()
 	
 	att=new Attribute;
 	att->push("net","dodecahedron");
-	r[0]=new ImpositionResource("NetImposition",     //styledef
+	r[0]=new ImpositionResource("NetImposition",     //objectdef
 								  _("Dodecahedron"), //name
 								  NULL,              //file
 								  _("12 pentagons"),
 								  att,1);
 	att=new Attribute;
 	att->push("net","cube");
-	r[1]=new ImpositionResource("NetImposition",     //styledef
+	r[1]=new ImpositionResource("NetImposition",     //objectdef
 								  _("Cube"),         //name
 								  NULL,              //file
 								  _("6 squares"),
@@ -342,19 +347,16 @@ void NetImposition::setPage()
 }
 
 //! The newfunc for NetImposition instances.
-Value *NewNetImposition(StyleDef *def)
+Value *NewNetImposition()
 { 
 	NetImposition *n=new NetImposition;
-	n->styledef=def;
-	ObjectValue *v=new ObjectValue(n);
-	n->dec_count();
-	return v;
+	return n;
 }
 
 //! Return a new EnumStyle instance that has Dodecahedron listed.
 /*! \todo this has to be automated....
  */
-Style *CreateNetListEnum(StyleDef *sd)
+Style *CreateNetListEnum(ObjectDef *sd)
 {
 	EnumStyle *e=new EnumStyle;
 	e->add("Dodecahedron",0);
@@ -362,12 +364,12 @@ Style *CreateNetListEnum(StyleDef *sd)
 	return e;
 }
 
-//! Make an instance of the NetImposition styledef.
+//! Make an instance of the NetImposition objectdef.
 /* ...
  */
-StyleDef *makeNetImpositionStyleDef()
+ObjectDef *makeNetImpositionObjectDef()
 {
-	StyleDef *sd=new StyleDef(NULL,
+	ObjectDef *sd=new ObjectDef(NULL,
 			"NetImposition",
 			_("Net"),
 			_("Imposition of a fairly arbitrary net"),
@@ -386,22 +388,20 @@ StyleDef *makeNetImpositionStyleDef()
 			"enum",
 			NULL, "0",
 			0,NULL); // *** 0,0,CreateNetListEnum);
-	cerr << " *** need to make enum list work again in makeNetImpositionStyleDef()"<<endl;
+	cerr << " *** need to make enum list work again in makeNetImpositionObjectDef()"<<endl;
 	return sd;
 }
 
-StyleDef *NetImposition::makeStyleDef()
+ObjectDef *NetImposition::makeObjectDef()
 {
-	return makeNetImpositionStyleDef();
+	return makeNetImpositionObjectDef();
 }
 
 //! Copy over net and whether it is builtin..
-Style *NetImposition::duplicate(Style *s)//s=NULL
+Value *NetImposition::duplicate()
 {
 	NetImposition *d;
-	if (s==NULL) s=d=new NetImposition();
-	else d=dynamic_cast<NetImposition *>(s);
-	if (!d) return NULL;
+	d=new NetImposition();
 	
 	 // copy net
 	if (d->nets.n) d->nets.flush();
@@ -409,7 +409,7 @@ Style *NetImposition::duplicate(Style *s)//s=NULL
 		d->nets.push(nets.e[c]->duplicate(),1);
 	}
 		
-	return s;
+	return d;
 }
 
 //! Set paper size, also reset the pagestyle. Duplicates npaper, not pointer transer.
@@ -864,36 +864,6 @@ int NetImposition::GetPapersNeeded(int npages)
 int NetImposition::GetSpreadsNeeded(int npages)
 {
 	return GetPapersNeeded(npages);
-}
-
-/*!\brief Return a specially formatted list of papers needed to print the range of pages.
- *
- * It is a -2 terminated int[] of papers needed to print [frompage,topage].
- * A range of papers is specified using 2 consecutive numbers. Single papers are
- * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
- * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
- *
- * \todo is this function useful any longer?
- */
-int *NetImposition::PrintingPapers(int frompage,int topage)
-{//***
-	return NULL;
-//	int fp,tp;
-//	if (topage<frompage) { tp=topage; topage=frompage; frompage=tp; }
-//	fp=frompage/nets.e[curnet]->faces.n;
-//	tp=topage/nets.e[curnet]->faces.n;
-//	if (fp==tp) {
-//		int *i=new int[3];
-//		i[0]=fp;
-//		i[1]=-1;
-//		i[2]=-2;
-//		return i;
-//	}
-//	int *i=new int[3];
-//	i[0]=fp;
-//	i[1]=tp;
-//	i[2]=-2;
-//	return i;
 }
 
 //! Assuming one page type per active face.

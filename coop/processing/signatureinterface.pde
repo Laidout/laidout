@@ -809,7 +809,7 @@ class ActionArea
         hidden=false;
         mode=0;
         category=ncategory;
-                step=10; //10 px
+        step=10; //10 px
 
         offset    =new flatpoint(0,0);
         tail      =new flatpoint(0,0);
@@ -2206,6 +2206,7 @@ class SignatureInterface
                      //draw thick line for gap
                     if (overoverlay==SP_Tile_Gap_X) {
                         dp.StrokeWidth(5);
+                		dp.NewFG(.5,0.,0.); //dark red for inset
                         for (int c2=0; c2<signature.tilex-1; c2++) {
                             d=s.insetleft+(c2+1)*(s.tilegapx+s.PatternWidth()) - s.tilegapx/2;
                             dp.drawline(d,0, d,s.totalheight);
@@ -2216,6 +2217,7 @@ class SignatureInterface
                      //draw thick line for gap
                     if (overoverlay==SP_Tile_Gap_Y) {
                         dp.StrokeWidth(5);
+                		dp.NewFG(.5,0.,0.); //dark red for inset
                         for (int c2=0; c2<signature.tiley-1; c2++) {
                             d=s.insetbottom+(c2+1)*(s.tilegapy+s.PatternHeight()) - s.tilegapy/2;
                             dp.drawline(0,d, s.totalwidth,d);
@@ -2248,8 +2250,8 @@ class SignatureInterface
                         
             dp.NewFG(0,0,0);
             String scratch=  "Laidout Paper Folder\n"
-                            +"version 0.093\n"
-                            +"By Tom Lechner, 2013\n"
+                            +"version 0.0000000001\n"
+							+"By Tom Lechner, 2013\n"
                             +"-- web version using Processing --\n"
                             +"This thing is adapted from\n"
                             +"Laidout, open source layout software.\n"
@@ -2651,8 +2653,8 @@ class SignatureInterface
         }
         onoverlay=scanHandle(x,y);
         if (onoverlay!=SP_None) {
-                        mslidex=x;
-                        mslidey=y;
+            mslidex=x;
+            mslidey=y;
             ActionArea a=control(onoverlay);
             if (a.type!=AREA_Display_Only) return 0;
             onoverlay=SP_None;
@@ -3274,22 +3276,22 @@ class SignatureInterface
             area=control(SP_Tile_X_top); //trapezoidal area above paper
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,hh);  p[1]=new flatpoint(ww,hh); p[2]=new flatpoint(ww*1.1,hh*1.1); p[3]=new flatpoint(-ww*.1,hh*1.1);
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Tile_X_bottom); //trapezoidal area below paper
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,0);  p[1]=new flatpoint(ww,0); p[2]=new flatpoint(ww*1.1,-hh*.1); p[3]=new flatpoint(-ww*.1,-hh*.1);
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Tile_Y_left);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,0);  p[1]=new flatpoint(0,hh); p[2]=new flatpoint(-ww*.1,hh*1.1); p[3]=new flatpoint(-ww*.1,-hh*.1);
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Tile_Y_right);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(ww,0);  p[1]=new flatpoint(ww,hh); p[2]=new flatpoint(ww*1.1,hh*1.1); p[3]=new flatpoint(ww*1.1,-hh*.1);
-                        area.FindBBox();
+            area.FindBBox();
                         
             /*
             ***area=control(SP_Tile_Gap_X);
@@ -3308,27 +3310,27 @@ class SignatureInterface
              //------inset
             area=control(SP_Inset_Top);
             area.hotspot=new flatpoint(arrowscale/2,0);
-                        area.tail   =new flatpoint(arrowscale/2,arrowscale);
+            area.tail   =new flatpoint(arrowscale/2,arrowscale);
             area.offset=new flatpoint(ww/2-arrowscale/2,hh-signature.insettop);
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Inset_Bottom);
             area.hotspot=new flatpoint(arrowscale/2,arrowscale);
-                        area.tail   =new flatpoint(arrowscale/2,0);
+			area.tail   =new flatpoint(arrowscale/2,0);
             area.offset=new flatpoint(ww/2-arrowscale/2,signature.insetbottom-arrowscale);
-                        area.FindBBox();
+			area.FindBBox();
 
             area=control(SP_Inset_Left);
             area.hotspot=new flatpoint(arrowscale,arrowscale/2);
-                        area.tail   =new flatpoint(0,arrowscale/2);
+			area.tail   =new flatpoint(0,arrowscale/2);
             area.offset=new flatpoint(signature.insetleft-arrowscale,hh/2-arrowscale/2);
-                        area.FindBBox();
+			area.FindBBox();
 
             area=control(SP_Inset_Right);
             area.hotspot=new flatpoint(0,arrowscale/2);
-                        area.tail   =new flatpoint(arrowscale,arrowscale/2);
+			area.tail   =new flatpoint(arrowscale,arrowscale/2);
             area.offset=new flatpoint(ww-signature.insetright,hh/2-arrowscale/2);
-                        area.FindBBox();
+			area.FindBBox();
         } //which&1
 
 
@@ -3338,25 +3340,25 @@ class SignatureInterface
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,0);  p[1]=new flatpoint(www*.1,hhh*.1); p[2]=new flatpoint(www*.1,hhh*.9); p[3]=new flatpoint(0,hhh);
-                        area.FindBBox();
+			area.FindBBox();
 
             area=control(SP_H_Folds_right);
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(www,0);  p[1]=new flatpoint(www,hhh); p[2]=new flatpoint(www*.9,hhh*.9); p[3]=new flatpoint(www*.9,hhh*.1);
-                        area.FindBBox();
+			area.FindBBox();
                         
             area=control(SP_V_Folds_top);
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,hhh);  p[1]=new flatpoint(www,hhh); p[2]=new flatpoint(www*.9,hhh*.9); p[3]=new flatpoint(www*.1,hhh*.9);
-                        area.FindBBox();
+			area.FindBBox();
                         
             area=control(SP_V_Folds_bottom);
             area.hidden=(foldlevel!=0);
             p=area.Points(null,4,false);
             p[0]=new flatpoint(0,0);  p[1]=new flatpoint(www,0); p[2]=new flatpoint(www*.9,hhh*.1); p[3]=new flatpoint(www*.1,hhh*.1);
-                        area.FindBBox();
+			area.FindBBox();
         }
 
 
@@ -3367,57 +3369,57 @@ class SignatureInterface
             area.tail  =new flatpoint(arrowscale/2,arrowscale);
             area.offset=new flatpoint(w/3-arrowscale/2,h-signature.trimtop);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Trim_Bottom);
             area.hotspot=new flatpoint(arrowscale/2,arrowscale);
-                        area.tail   =new flatpoint(arrowscale/2,0);
+            area.tail   =new flatpoint(arrowscale/2,0);
             area.offset=new flatpoint(w/3-arrowscale/2,signature.trimbottom-arrowscale);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Trim_Left);
             area.hotspot=new flatpoint(arrowscale,arrowscale/2);
-                        area.tail   =new flatpoint(0,arrowscale/2);
+            area.tail   =new flatpoint(0,arrowscale/2);
             area.offset=new flatpoint(signature.trimleft-arrowscale,h/3-arrowscale/2);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Trim_Right);
             area.hotspot=new flatpoint(0,arrowscale/2);
-                        area.tail   =new flatpoint(arrowscale,arrowscale/2);  
+            area.tail   =new flatpoint(arrowscale,arrowscale/2);  
             area.offset=new flatpoint(w-signature.trimright,h/3-arrowscale/2);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
              //------margins
             area=control(SP_Margin_Top);
             area.hotspot=new flatpoint(arrowscale/2,0);
-                        area.tail   =new flatpoint(arrowscale/2,arrowscale);
+            area.tail   =new flatpoint(arrowscale/2,arrowscale);
             area.offset=new flatpoint(w*2/3-arrowscale/2,h-signature.margintop);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Margin_Bottom);
             area.hotspot=new flatpoint(arrowscale/2,arrowscale);
-                        area.tail   =new flatpoint(arrowscale/2,0);
+            area.tail   =new flatpoint(arrowscale/2,0);
             area.offset=new flatpoint(w*2/3-arrowscale/2,signature.marginbottom-arrowscale);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Margin_Left);
             area.hotspot=new flatpoint(arrowscale,arrowscale/2);
-                        area.tail   =new flatpoint(0,arrowscale/2);
+            area.tail   =new flatpoint(0,arrowscale/2);
             area.offset=new flatpoint(signature.marginleft-arrowscale,h*2/3-arrowscale/2);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
             area=control(SP_Margin_Right);
             area.hotspot=new flatpoint(0,arrowscale/2);
-                        area.tail   =new flatpoint(arrowscale,arrowscale/2);
+            area.tail   =new flatpoint(arrowscale,arrowscale/2);
             area.offset=new flatpoint(w-signature.marginright,h*2/3-arrowscale/2);
             area.hidden=!(hasfinal && foldlevel==signature.folds.size());
-                        area.FindBBox();
+            area.FindBBox();
 
              //--------binding
             area=control(SP_Binding);
@@ -3570,41 +3572,42 @@ class SignatureInterface
             needtodraw=1;
             return 0;
 
+
         } else if (handle==SP_Current_Sheet) {
-                        currentPaperSpread+=(dir>0?1:-1);
-                        if (currentPaperSpread>=2*signature.sheetspersignature) currentPaperSpread=0;
-                        else if (currentPaperSpread<0) currentPaperSpread=(signature.sheetspersignature-1)*2+1;
-                        if (foldlevel!=0) {
-                            signature.resetFoldinfo(null);
-                            foldlevel=0;
-                        }
-                        remapHandles(0);
-                        needtodraw=1;
-                        return 0;
+            currentPaperSpread+=(dir>0?1:-1);
+            if (currentPaperSpread>=2*signature.sheetspersignature) currentPaperSpread=0;
+            else if (currentPaperSpread<0) currentPaperSpread=(signature.sheetspersignature-1)*2+1;
+            if (foldlevel!=0) {
+                signature.resetFoldinfo(null);
+                foldlevel=0;
+            }
+            remapHandles(0);
+            needtodraw=1;
+            return 0;
                         
         } else if (handle==SP_Front_Or_Back) {
-                        if (currentPaperSpread%2==1) currentPaperSpread--; else currentPaperSpread++;
-                        if (foldlevel!=0) {
-                            signature.resetFoldinfo(null);
-                            foldlevel=0;
-                        }
-                        remapHandles(0);
-                        needtodraw=1;
-                        return 0;
+            if (currentPaperSpread%2==1) currentPaperSpread--; else currentPaperSpread++;
+            if (foldlevel!=0) {
+                signature.resetFoldinfo(null);
+                foldlevel=0;
+            }
+            remapHandles(0);
+            needtodraw=1;
+            return 0;
                         
         } else if (handle==SP_Paper_Name) {
-                        ChangePaper((dir>0?-1:-2), currentPaperWidth,currentPaperHeight,currentPaperUnits);
-                        signature.SetPaper(currentPaperWidth,currentPaperHeight);
-                        PerformAction(SIA_Center);
-                        needtodraw=1;
-                        return 0;
+            ChangePaper((dir>0?-1:-2), currentPaperWidth,currentPaperHeight,currentPaperUnits);
+            signature.SetPaper(currentPaperWidth,currentPaperHeight);
+            PerformAction(SIA_Center);
+            needtodraw=1;
+            return 0;
                         
         } else if (handle==SP_Paper_Orient) {
-                        ChangePaperOrientation();
-                        signature.SetPaper(currentPaperWidth,currentPaperHeight);
-                        PerformAction(SIA_Center);
-                        needtodraw=1;
-                        return 0;
+            ChangePaperOrientation();
+            signature.SetPaper(currentPaperWidth,currentPaperHeight);
+            PerformAction(SIA_Center);
+            needtodraw=1;
+            return 0;
                         
         }
 

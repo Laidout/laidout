@@ -11,11 +11,16 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2012 by Tom Lechner
+// Copyright (C) 2012-2013 by Tom Lechner
 //
 
 #include <lax/strmanip.h>
 #include "actionarea.h"
+
+#include <iostream>
+#define DBG
+using namespace std;
+
 
 using namespace Laxkit;
 
@@ -31,10 +36,10 @@ namespace Laidout {
  * \brief This can define areas on screen for various purposes.
  */
 /*! \var int ActionArea::offset
- * \brief The outline is at location offset+(the points in outline).
+ * hotspot is at this location.
  */
 /*! \var int ActionArea::hotspot
- * \brief Defines a point of focus of the area.
+ * \brief Defines a point of focus of the area, in same coordinates as points.
  *
  * Say an area defines an arrow, the hotspot would be the point of the arrow.
  * When you call Position(double,double,int) to set the area's position, you are
@@ -43,7 +48,8 @@ namespace Laidout {
 
 
 ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
-					   int isreal,int isvisible,unsigned long ncolor,int ncategory)
+					   int isreal,int isvisible,unsigned long ncolor,int ncategory,
+					   unsigned long ntcolor)
 {
 	text=newstr(txt);
 	tip=newstr(ntooltip);
@@ -51,12 +57,16 @@ ActionArea::ActionArea(int what,int ntype,const char *txt,const char *ntooltip,
 	npoints=0;
 	visible=isvisible;
 	real=isreal;
-	color=ncolor;
 	action=what;
 	type=ntype;
 	hidden=0;
+	mode=0;
 	category=ncategory;
 	xdirection=flatpoint(1,0);
+	usetail=0;
+
+	color=ncolor;
+	color_text=ntcolor;
 }
 
 ActionArea::~ActionArea()
@@ -66,6 +76,19 @@ ActionArea::~ActionArea()
 	if (text) delete[] text;
 }
 
+
+flatpoint ActionArea::Center()
+{
+	if (maxx<minx || maxy<miny) return flatpoint(minx,miny);
+	return flatpoint((minx+maxx)/2,(miny+maxy)/2);
+}
+
+
+/*! Just returns offset.
+ */
+flatpoint ActionArea::Position()
+{ return offset; }
+
 //! Change the position of the area, where pos==offset+hotspot.
 /*! If which&1, adjust x. If which&2, adjust y.
  *
@@ -74,19 +97,36 @@ ActionArea::~ActionArea()
  */
 void ActionArea::Position(double x,double y,int which)
 {
-	if (which&1) offset.x=x-hotspot.x;
-	if (which&2) offset.y=y-hotspot.y;
+	if (which&1) offset.x=x;
+	if (which&2) offset.y=y;
 }
 
 //! Return if point is within the outline (If outline is not NULL), or within the ActionArea DoubleBBox bounds otherwise.
-/*! No point transformation is done. If real==1, it is assumed x,y are real coordinates, and otherwise it is
- * assumed they are screen coordinates.
+/*! No point transformation is done. It is assumed that x and y are transformed already to the proper coordinate space.
+ * This is to say that the calling code must account for this->real.
+ *
+ * If real==2, then (x,y) is assumed to have been transformed to point coordinates
  */
 int ActionArea::PointIn(double x,double y)
 {
-	x-=offset.x; y-=offset.y;
+	if (real!=2) { x-=offset.x;  y-=offset.y; }
+	if (real==1 || real==2) { x+=hotspot.x; y+=hotspot.y; }
+
 	if (npoints) return point_is_in(flatpoint(x,y),outline,npoints);
 	return x>=minx && x<=maxx && y>=miny && y<=maxy;
+}
+
+void ActionArea::SetRect(double x,double y,double w,double h)
+{
+	if (outline && npoints<4) { delete[] outline; outline=NULL; }
+	if (!outline) outline=new flatpoint[4];
+
+	npoints=4;
+	outline[0]=flatpoint(x,y);
+	outline[1]=flatpoint(x+w,y);
+	outline[2]=flatpoint(x+w,y+h);
+	outline[3]=flatpoint(x,y+h);
+	FindBBox();
 }
 
 //! Create outline points.
@@ -123,14 +163,14 @@ flatpoint *ActionArea::Points(flatpoint *pts, int n, int takethem)
 	return outline;
 }
 
-//! Make the bounds be the actual bounds of outline.
+//! Make the bounds be the actual bounds of outline, in outline space.
 /*! If there are no points in outline, then do nothing.
  */
 void ActionArea::FindBBox()
 {
 	if (!npoints) return;
 
-	clear();
+	DoubleBBox::clear(); //makes bounding box invalid
 	for (int c=0; c<npoints; c++) addtobounds(outline[c]);
 }
 

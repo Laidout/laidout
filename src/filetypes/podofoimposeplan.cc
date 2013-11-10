@@ -43,7 +43,7 @@ namespace Laidout {
 void installPodofoFilter()
 {
 	PodofooutFilter *podofoout=new PodofooutFilter;
-	podofoout->GetStyleDef();
+	podofoout->GetObjectDef();
 	laidout->PushExportFilter(podofoout);
 }
 
@@ -51,7 +51,7 @@ void installPodofoFilter()
 //------------------------------------ PodofoExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newPodofoExportConfig(StyleDef*)
+Value *newPodofoExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -82,13 +82,13 @@ const char *PodofooutFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *PodofooutFilter::GetStyleDef()
+ObjectDef *PodofooutFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("PodofoExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"PodofoExportConfig");
 	makestr(styledef->Name,_("Podofo Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a Podofoimpose PLAN file for external impositioning."));

@@ -277,5 +277,16 @@ Value *LPathInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
+void LPathInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	PathInterface::dump_out(f,indent,what,context);
+}
+
+void LPathInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	PathInterface::dump_in_atts(att,flag,context);
+}
+
+
 } //namespace Laidout
 

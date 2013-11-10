@@ -142,20 +142,20 @@ FileFilter::FileFilter()
  * On failure, return 1, and append error messages to log.
  */
 
-//! Return a new StyleDef object with default import filter options.
+//! Return a new ObjectDef object with default import filter options.
 /*! Subclasses will usually call this, then add any more options to that, and return
- * that in GetStyleDef(). It is up to the subclasses to install the StyleDef in
+ * that in GetObjectDef(). It is up to the subclasses to install the ObjectDef in
  * stylemanager if they want to be available for scripting.
  */
-StyleDef *ImportFilter::makeStyleDef()
+ObjectDef *ImportFilter::makeObjectDef()
 {
 	return makeImportConfigDef();
 }
 
 //! Create and return a basic ImportConfig definition.
-StyleDef *makeImportConfigDef()
+ObjectDef *makeImportConfigDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"Import",
+	ObjectDef *sd=new ObjectDef(NULL,"Import",
 			_("Import"),
 			_("A filter that imports a vector file to an existing document or a group."),
 			"class",
@@ -528,7 +528,7 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *contex
 	if (inend<0) inend=1000000000;
 }
 
-StyleDef* ImportConfig::makeStyleDef()
+ObjectDef* ImportConfig::makeObjectDef()
 {
 	return makeImportConfigDef();
 }
@@ -588,19 +588,19 @@ int import_document(ImportConfig *config, ErrorLog &log)
  */
 	
 
-//! Return a new StyleDef object with default import filter options.
+//! Return a new ObjectDef object with default import filter options.
 /*! Subclasses will usually call this, then add any more options to that, and return
- * that in GetStyleDef(). It is up to the subclasses to install the StyleDef in
+ * that in GetObjectDef(). It is up to the subclasses to install the ObjectDef in
  * stylemanager if they want to be available for scripting.
  */
-StyleDef *ExportFilter::makeStyleDef()
+ObjectDef *ExportFilter::makeObjectDef()
 {
 	return makeExportConfigDef();
 }
 
-StyleDef *makeExportConfigDef()
+ObjectDef *makeExportConfigDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"ExportConfig",
+	ObjectDef *sd=new ObjectDef(NULL,"ExportConfig",
 			_("Export Configuration"),
 			_("Settings for a filter that exports a document to one or more files of various formats."),
 			"class",
@@ -1007,7 +1007,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject
 	if (end<0) end=1000000000;
 }
 
-StyleDef *DocumentExportConfig::makeStyleDef()
+ObjectDef *DocumentExportConfig::makeObjectDef()
 {
 	return makeExportConfigDef();
 }

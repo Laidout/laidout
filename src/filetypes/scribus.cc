@@ -141,11 +141,11 @@ int exportImposedScribus(Document *doc,const char *imposeout)
 void installScribusFilter()
 {
 	ScribusExportFilter *scribusout=new ScribusExportFilter;
-	scribusout->GetStyleDef();
+	scribusout->GetObjectDef();
 	laidout->PushExportFilter(scribusout);
 	
 	ScribusImportFilter *scribusin=new ScribusImportFilter;
-	scribusin->GetStyleDef();
+	scribusin->GetObjectDef();
 	laidout->PushImportFilter(scribusin);
 }
 
@@ -196,7 +196,7 @@ static int findobjnumber(Attribute *att, const char *what);
 //------------------------------------ ScribusExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newScribusExportConfig(StyleDef*)
+Value *newScribusExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -230,7 +230,7 @@ int createScribusExportConfig(ValueHash *context,ValueHash *parameters,Value **v
 //------------------------------------ ScribusImportConfig ----------------------------------
 
 //! For now, just returns a new ImportConfig.
-Value *newScribusImportConfig(StyleDef*)
+Value *newScribusImportConfig()
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
@@ -297,13 +297,13 @@ const char *ScribusExportFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *ScribusExportFilter::GetStyleDef()
+ObjectDef *ScribusExportFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("DocumentExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"ScribusExportConfig");
 	makestr(styledef->Name,_("Scribus Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a Scribus file."));
@@ -1684,13 +1684,13 @@ const char *ScribusImportFilter::FileType(const char *first100bytes)
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *ScribusImportFilter::GetStyleDef()
+ObjectDef *ScribusImportFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("ScribusImportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"ScribusImportConfig");
 	makestr(styledef->Name,_("Scribus Import Configuration"));
 	makestr(styledef->description,_("Configuration to import a Scribus file."));

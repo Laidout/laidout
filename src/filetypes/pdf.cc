@@ -61,7 +61,7 @@ const char *PdfImportFilter::VersionName()
 	return _("Pdf *");
 }
 
-StyleDef *PdfImportFilter::GetStyleDef()
+ObjectDef *PdfImportFilter::GetObjectDef()
 {
 	return NULL; // ***
 }
@@ -100,7 +100,7 @@ void installPdfFilter()
 	//laidout->exportfilters.push(pdfout);
 	
 	PdfExportFilter *pdfout=new PdfExportFilter(4);
-	pdfout->GetStyleDef();
+	pdfout->GetObjectDef();
 	laidout->PushExportFilter(pdfout);
 	
 	//PdfInputFilter *pdfin=new PdfInputFilter;
@@ -114,7 +114,7 @@ void installPdfFilter()
  * 		compression rating
  *		compression type for image data, lossy (dctdecode) or lessless (zip?)
  */
-Value *newPdfExportConfig(StyleDef*)
+Value *newPdfExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -165,13 +165,13 @@ const char *PdfExportFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *PdfExportFilter::GetStyleDef()
+ObjectDef *PdfExportFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("PdfExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"PdfExportConfig");
 	makestr(styledef->Name,_("Pdf Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a pdf."));
@@ -193,8 +193,8 @@ StyleDef *PdfExportFilter::GetStyleDef()
 //	char preserveunknown;   //any unknown attributes should be attached as "metadata" to the object in question on readin
 //							//these would potentially be written back out on an pdf export?
 //							
-//	StyleDef *OutputStyleDef(); //for auto config dialog creation
-//	StyleDef *InputStyleDef();
+//	ObjectDef *OutputObjectDef(); //for auto config dialog creation
+//	ObjectDef *InputObjectDef();
 //};
 ////--------------------------------
 

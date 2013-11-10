@@ -35,27 +35,26 @@ namespace Laidout {
  */
 int InitFunctions()
 {
-	stylemanager.AddObjectDef(makeReimposeStyleDef(),1);
-	stylemanager.AddObjectDef(makeOpenStyleDef(),1);
-	stylemanager.AddObjectDef(makeNewDocumentStyleDef(),1);
-	stylemanager.AddObjectDef(makeImportStyleDef(),1);
-	stylemanager.AddObjectDef(makeExportStyleDef(),1);
+	stylemanager.AddObjectDef(makeReimposeObjectDef(),1);
+	stylemanager.AddObjectDef(makeOpenObjectDef(),1);
+	stylemanager.AddObjectDef(makeNewDocumentObjectDef(),1);
+	stylemanager.AddObjectDef(makeImportObjectDef(),1);
+	stylemanager.AddObjectDef(makeExportObjectDef(),1);
 	
 	return stylemanager.getNumFields();
 }
 
 int InitObjectDefinitions()
 {
-	stylemanager.AddObjectDef(makePaperObjectDef(),1);
+	PaperStyle paper;
+	paper.GetObjectDef();
 
 	PageStyle *ps=new PageStyle;
-	StyleDef *sd=ps->makeStyleDef();
-	stylemanager.AddObjectDef(sd,1);
-	delete ps;
-	ps=new RectPageStyle(RECTPAGE_LRTB);
-	sd=ps->makeStyleDef();
-	stylemanager.AddObjectDef(sd,1);
-	delete ps;
+	ps->GetObjectDef();
+	ps->dec_count();
+
+	RectPageStyle rps(RECTPAGE_LRTB);
+	rps.GetObjectDef();
 
 
 	stylemanager.AddObjectDef(makeAffineObjectDef(),1);

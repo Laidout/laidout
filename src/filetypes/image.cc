@@ -52,7 +52,7 @@ namespace Laidout {
 void installImageFilter()
 {
 	ImageExportFilter *imageout=new ImageExportFilter;
-	imageout->GetStyleDef();
+	imageout->GetObjectDef();
 	laidout->PushExportFilter(imageout);
 }
 
@@ -125,7 +125,7 @@ const char *ImageExportFilter::VersionName()
 }
 
 
-Value *newImageExportConfig(StyleDef*)
+Value *newImageExportConfig()
 {
 	ImageExportConfig *o=new ImageExportConfig;
 	ObjectValue *v=new ObjectValue(o);
@@ -167,13 +167,13 @@ int createImageExportConfig(ValueHash *context,ValueHash *parameters,Value **v_r
  *
  * \todo implement background color. currently defaults to transparent
  */
-StyleDef *ImageExportFilter::GetStyleDef()
+ObjectDef *ImageExportFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("ImageExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"ImageExportConfig");
 	makestr(styledef->Name,_("Image Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a png."));

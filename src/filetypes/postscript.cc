@@ -47,11 +47,11 @@ void installPostscriptFilters()
 {
 	 //--------export
 	PsOutFilter *psout=new PsOutFilter;
-	psout->GetStyleDef();
+	psout->GetObjectDef();
 	laidout->PushExportFilter(psout);
 	
 	EpsOutFilter *epsout=new EpsOutFilter;
-	epsout->GetStyleDef();
+	epsout->GetObjectDef();
 	laidout->PushExportFilter(epsout);
 	
 	
@@ -64,7 +64,7 @@ void installPostscriptFilters()
 //------------------------------------ PsExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newPsExportConfig(StyleDef*)
+Value *newPsExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -80,7 +80,7 @@ Value *newPsExportConfig(StyleDef*)
 //------------------------------------ EpsExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newEpsExportConfig(StyleDef*)
+Value *newEpsExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -117,13 +117,13 @@ int PsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *PsOutFilter::GetStyleDef()
+ObjectDef *PsOutFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("PsExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"PsExportConfig");
 	makestr(styledef->Name,_("Postscript Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a postscript file."));
@@ -157,13 +157,13 @@ int EpsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *EpsOutFilter::GetStyleDef()
+ObjectDef *EpsOutFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("EpsExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"EpsExportConfig");
 	makestr(styledef->Name,_("EPS Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to an EPS file."));

@@ -1256,7 +1256,7 @@ void PanoViewWindow::Refresh3d()
 		}
 
 		 //write at top of screen:  write currentmessage
-		consolefont->Render(modename(mode),-1,FTPoint(0,win_h-fontsize));
+		//consolefont->Render(modename(mode),-1,FTPoint(0,win_h-fontsize));
 		if (currentmessage) {
 			consolefont->Render(currentmessage,-1,FTPoint(0,win_h-2*fontsize));
 			messagetick++;
@@ -1881,11 +1881,11 @@ void PanoViewWindow::UseGenericImageData(double fg_r, double fg_g, double fg_b, 
 	}
 
 	 //draw longitude
-	for (int x=0; x<spheremap_width; x+=(int)((double)spheremap_width/36)) {
+	for (float x=0; x<spheremap_width; x+=((float)spheremap_width/36)) {
 		for (int y=0; y<spheremap_height; y++) {
-			spheremap_data[3*(x+y*spheremap_width)  ]=fb;
-			spheremap_data[3*(x+y*spheremap_width)+1]=fg;
-			spheremap_data[3*(x+y*spheremap_width)+2]=fr;
+			spheremap_data[3*((int)x+y*spheremap_width)  ]=fb;
+			spheremap_data[3*((int)x+y*spheremap_width)+1]=fg;
+			spheremap_data[3*((int)x+y*spheremap_width)+2]=fr;
 		}
 	}
 	 //draw latitude

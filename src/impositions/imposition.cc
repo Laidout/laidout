@@ -298,6 +298,19 @@ int Spread::PagestackIndex(int docpage)
 	return -1;
 }
 
+//----------------------------- ImpositionInterface --------------------------
+/*! \class ImpositionInterface 
+ *
+ * Abstract base class of imposition editors. The Imposition class may return
+ * a tool to edit itself with Imposition::Interface().
+ */
+
+ImpositionInterface::ImpositionInterface(LaxInterfaces::anInterface *nowner,int nid,Laxkit::Displayer *ndp)
+  : anInterface(nowner,nid,ndp)
+{
+}
+
+
 //----------------------------- Imposition --------------------------
 
 /*! \class Imposition
@@ -411,14 +424,6 @@ int Spread::PagestackIndex(int docpage)
  * whichpaper starts at 0.
  * Derived class must define this function.
  */
-/*! \fn int *Imposition::PrintingPapers(int frompage,int topage)
- * \brief Return a specially formatted list of papers needed to print the range of pages.
- *
- * It is a -2 terminated int[] of papers needed to print [frompage,topage].
- * A range of papers is specified using 2 consecutive numbers. Single papers are
- * indiciated by a single number followed by -1. For example, a sequence { 1,5, 7,-1,10,-1,-2}  
- * means papers from 1 to 5 (inclusive), plus papers 7 and 10.
- */
 /*! \fn int Imposition::GetPagesNeeded(int npapers)
  * \brief Return the number of pages required to fill npapers number of papers.
  */
@@ -504,28 +509,29 @@ int Spread::PagestackIndex(int docpage)
  */
 /*! \fn void Imposition::GetDimensions(int paperorpage, double *x, double *y)
  * \brief Return default paper dimensions if paperorpage==0, or page dimensions for paperorpage==1.
+ *
+ * Please note that this is for informational descriptions only. SignatureImposition, for instance,
+ * only returns dimenions of paper in first signature instance.
  */
 
 
 
 //! Constructor.
-/*! Default Style constructor sets styledef, basedon to NULL. Any impositions that are 
- *  explicitly based on another imposition must set up the proper styledef and basedon
- *  themselves. The standard built in impositions all act autonomously, meaning they each
- *  completely define their own StyleDef, and are not based on another Imposition.
- *
- *  Otherwise, Imposition subclasses must establish paperstyle, and usually also their
+/*! Imposition subclasses must establish paperstyle, and usually also their
  *  own pagestyles based on the paperstyle. It is assumed that the numpages, numpapers,
  *  are set soon after creation by the code that creates the instance
  *  in the first place.
  */
 Imposition::Imposition(const char *nsname)
-	: Style (NULL,NULL,nsname)
 { 
+	name=newstr(nsname);
+	description=NULL;
+
 	doc=NULL;
 	paper=NULL; 
 	papergroup=NULL;
 	numpages=numpapers=0; 
+	numdocpages=0;
 	
 	DBG cerr <<"imposition base class init for object "<<object_id<<endl;
 }
@@ -535,19 +541,32 @@ Imposition::Imposition(const char *nsname)
  */
 Imposition::~Imposition()
 {
+	if (name) delete[] name;
+	if (description) delete[] description;
+
 	if (paper) paper->dec_count();
 	if (papergroup) papergroup->dec_count();
 
 	DBG cerr <<"imposition base class destructor for object "<<object_id<<endl;
 }
 
-//! Return an imposition specific tool for use with the given layout type
-/*! Default is to return NULL.
+/*! Always return a nonnull name.
  */
-LaxInterfaces::anInterface *Imposition::Interface(int layouttype)
+const char *Imposition::Name()
 {
-	return NULL;
+	if (name) return name;
+	return _("(unnamed)");
 }
+
+/*! \fn ImpositionInterface *Imposition::Interface()
+ * 
+ * Return an imposition specific tool to edit this imposition. Ok to return NULL, but you
+ * will not be able to edit the imposition.
+ */
+//LaxInterfaces::anInterface *Imposition::Interface(int layouttype)
+//{
+//	return NULL;
+//}
 
 
 //! Return a box describing a good scratchboard size for this imposition.
@@ -581,18 +600,6 @@ Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)
 	return bbox;
 }
 
-//! Just makes sure that s can be cast to Imposition. If yes, return s, if no, return NULL.
-/*! Note that this does not duplicate the paperstyle. The builtin
- * impositions create their own copy of the default papersize in their
- * constructors.
- */
-Style *Imposition::duplicate(Style *s)//s=NULL
-{
-	if (s==NULL) return NULL; // Imposition is abstract
-	Imposition *d=dynamic_cast<Imposition *>(s);
-	if (!d) return NULL;
-	return s;
-}
 
 //! Ensure that each page has a proper pagestyle and bleed information.
 /*! This is called when pages are added or removed. It replaces the pagestyle for
@@ -708,7 +715,7 @@ int Imposition::NumSpreads(int layout)
  *  
  * Does not check to make sure npapers is a valid number for any document in question.
  * 
- * Returns the new value of numpapers.
+ * Returns the new value of numpapers. Note this may be more than npapers.
  */
 int Imposition::NumPapers(int npapers)
 {
@@ -718,17 +725,20 @@ int Imposition::NumPapers(int npapers)
 }
 
 //! Set the number of pages to npage, and set numpapers as appropriate.
-/*! Default is to set numpagess=npages, 
+/*! Default is to set:
+ * numdocpages=npages, 
  * numpapers=GetPapersNeeded(numpapers), and 
+ * numpages=GetPagesNeeded(numpapers)
  * 
  * Does not check to make sure npages is a valid number.
  *
- * Returns the new value of numpages.
+ * Returns the new value of numpages. Note  that the number returned may be greater than npages.
  */
 int Imposition::NumPages(int npages)
 {
-	numpages=npages;
-	numpapers=GetPapersNeeded(numpages);
+	numdocpages=npages;
+	numpapers=GetPapersNeeded(numdocpages);
+	numpages =GetPagesNeeded(numpapers);
 	return numpages;
 }
 
@@ -824,7 +834,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 /*! \class ImpositionResource
  * \brief Info about how to create new Imposition instances.
  */
-/*! \var char *ImpositionResource::styledef
+/*! \var char *ImpositionResource::objectdef
  * \brief StyleDef name for the type of Imposition this is.
  */
 
@@ -834,7 +844,7 @@ Spread *Imposition::SingleLayout(int whichpage)
 ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,
 					   				   LaxFiles::Attribute *conf,int local)
 {
-	styledef=newstr(sdef);
+	objectdef=newstr(sdef);
 	name=newstr(nname);
 	impositionfile=newstr(file);
 	description=newstr(desc);
@@ -844,17 +854,17 @@ ImpositionResource::ImpositionResource(const char *sdef,const char *nname, const
 
 ImpositionResource::~ImpositionResource()
 {
-	if (styledef) delete[] styledef;
-	if (name) delete[] name;
-	if (impositionfile) delete[] impositionfile;
-	if (description) delete[] description;
+	delete[] objectdef;
+	delete[] name;
+	delete[] impositionfile;
+	delete[] description;
 	if (configislocal && config) delete config;
 }
 
 //! Create a new imposition instance based on this resource.
 /*! If the resource has non-null impositionfile, then that file is read in,
  * and the proper type of Imposition is created.
- * Otherwise, if the resource has styledef, then that type of Imposition is created.
+ * Otherwise, if the resource has objectdef, then that type of Imposition is created.
  *
  * Then, if there is a config, then those attributes are applied.
  *
@@ -876,10 +886,10 @@ Imposition *ImpositionResource::Create()
 
 		fclose(f);
 
-	} else if (styledef) {
-		imp=newImpositionByType(styledef);
+	} else if (objectdef) {
+		imp=newImpositionByType(objectdef);
 
-	} else return NULL; //no file and no styledef!
+	} else return NULL; //no file and no objectdef!
 
 	if (config && imp) imp->dump_in_atts(config,0,NULL);
 	return imp;

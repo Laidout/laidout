@@ -24,9 +24,10 @@
 #include "newdoc.h"
 #include "impositions/singles.h"
 #include "impositions/netimposition.h"
-#include "impositions/signatureinterface.h"
+#include "impositions/impositioneditor.h"
 #include "impositions/netdialog.h"
 #include "impositions/singleseditor.h"
+#include "impositions/signatures.h"
 #include "utils.h"
 #include "filetypes/scribus.h"
 #include "headwindow.h"
@@ -440,7 +441,7 @@ int NewDocWindow::init()
 	}
 	for (c=0; c<laidout->impositionpool.n; c++) {
 		impsel->AddItem(laidout->impositionpool.e[c]->name,c);
-		if (whichimp<0 && doc && !strcmp(doc->imposition->Stylename(),laidout->impositionpool.e[c]->name))
+		if (whichimp<0 && doc && !strcmp(doc->imposition->Name(),laidout->impositionpool.e[c]->name))
 			whichimp=c;
 		if (!strcmp(laidout->impositionpool.e[c]->name,"Singles")) singles=c;
 	}
@@ -572,28 +573,8 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		//if (imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
 		//else
 		imp->SetPaperSize(papertype);
-
-		if (!strcmp(imp->whattype(),"NetImposition")) {
-			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
-							this->object_id,"newimposition",papertype,
-							dynamic_cast<NetImposition*>(imp)));
-			return 0;
-
-		} else if (!strcmp(imp->whattype(),"SignatureImposition")) {
-			app->rundialog(new SignatureEditor(NULL,"sigeditor",_("Signature Editor"),
-						   this,"newimposition",
-						   dynamic_cast<SignatureImposition*>(imp),NULL));
-			return 0;
-
-		} else if (!strcmp(imp->whattype(),"Singles")) {
-			app->rundialog(new SinglesEditor(NULL,"singleseditor",_("Singles Editor"),
-						   object_id,"newimposition",
-						   NULL, //doc
-						   dynamic_cast<Singles*>(imp),
-						   NULL)); //paper
-			return 0;
-		}
-
+		app->rundialog(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
+						papertype, imp->whattype(), imp, NULL));
 		return 0;
 
 	} else if (!strcmp(mes,"impfile")) {
@@ -650,9 +631,11 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		 //when new imposition type selected from popup menu
 		if (s->info1==IMP_NEW_SIGNATURE) {
 			oldimp=impsel->GetCurrentItemIndex();
-			app->rundialog(new SignatureEditor(NULL,"sigeditor",_("Signature Editor"),
-						   this,"newimposition",
-						   NULL,papertype));
+			SignatureImposition *sig=new SignatureImposition;
+			app->rundialog(new ImpositionEditor(NULL,"impeditor",_("Imposition Editor"),
+						   this->object_id,"newimposition",
+						   doc, sig, papertype));
+			sig->dec_count();
 			return 0;
 
 		} else if (s->info1==IMP_NEW_NET) {
@@ -683,7 +666,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		if (imp) imp->dec_count();
 		oldimp=s->info1;
 		imp=laidout->impositionpool.e[s->info1]->Create();
-		if (imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
+		if (imp->papergroup && imp->papergroup->GetBasePaper(0)) UpdatePaper(0);
 		else imp->SetPaperSize(papertype);
 
 		int nn=atoi(numpages->GetCText());
@@ -847,7 +830,7 @@ void NewDocWindow::impositionFromFile(const char *file)
 
 		 //update popup to net imposition;
 		for (int c=0; c<laidout->impositionpool.n; c++) {
-			if (!strcmp(imp->Stylename(),laidout->impositionpool.e[c]->name)) {
+			if (!strcmp(imp->Name(),laidout->impositionpool.e[c]->name)) {
 				impsel->Select(c);
 				break;
 			}

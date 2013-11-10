@@ -29,7 +29,7 @@ int Document::FunctionCall(const char *function_name,
 class Scriptable
 {
  public:
-	virtual StyleDef *getScriptStyleDef() = 0; //*** could return different defs depending on security settings??
+	virtual ObjectDef *getScriptObjectDef() = 0; //*** could return different defs depending on security settings??
 	virtual int ContainsName(const char *fieldname, ScriptGlue **glue_ret) = 0; //0=no, 1=is var, 2=is method
 	virtual int FunctionCall(const char *function_name,
 					   ValueHash *context, 

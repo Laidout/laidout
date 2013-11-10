@@ -184,7 +184,6 @@ class Thing
 };
 
 	
-void DisplayThings(Thing **things,int numthings);
 
 	
 #endif
