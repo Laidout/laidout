@@ -282,6 +282,30 @@ int SimpleFunctionEvaluator::Evaluate(const char *func,int len, ValueHash *conte
  */
 
 
+//! Null creation assumes namespace.
+ObjectDef::ObjectDef()
+{
+	name=NULL;
+	Name=NULL;
+	description=NULL;
+
+	parent_namespace=NULL;
+	newfunc=NULL;
+	stylefunc=NULL;
+	opevaluator=NULL;
+	evaluator=NULL;
+
+	range=defaultvalue=NULL;
+	defaultValue=NULL;
+	flags=0;
+	format=VALUE_Namespace;
+	fieldsformat=VALUE_MaxBuiltIn + object_id;
+	fieldsdef=NULL;
+	fields=NULL;
+	format_str=NULL;
+	islist=0; //if this element should be considered a set of such elements
+}
+
 //! Constructor.
 /*! Takes possession of fields, and will delete in destructor.
  */
@@ -298,6 +322,8 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 			ObjectFunc    nstylefunc)  //!< Full Function 
   : suggestions(2)
 {
+	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+
 	parent_namespace=NULL;
 
 	newfunc=nnewfunc;
@@ -348,6 +374,8 @@ ObjectDef::ObjectDef(const char *nname,
 					 Value *newval,
 					 const char *type, unsigned int fflags)
 {
+	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+
 	name=newstr(nname);
 	Name=newstr(nName);
 	description=newstr(ndesc);
@@ -369,36 +397,12 @@ ObjectDef::ObjectDef(const char *nname,
 	islist=0; //if this element should be considered a set of such elements
 }
 
-//! Null creation assumes namespace.
-ObjectDef::ObjectDef()
-{
-	name=NULL;
-	Name=NULL;
-	description=NULL;
-
-	parent_namespace=NULL;
-	newfunc=NULL;
-	stylefunc=NULL;
-	opevaluator=NULL;
-	evaluator=NULL;
-
-	range=defaultvalue=NULL;
-	defaultValue=NULL;
-	flags=0;
-	format=VALUE_Namespace;
-	fieldsformat=VALUE_MaxBuiltIn + object_id;
-	fieldsdef=NULL;
-	fields=NULL;
-	format_str=NULL;
-	islist=0; //if this element should be considered a set of such elements
-}
-
 //! Delete the various strings, and styledef->dec_count().
 ObjectDef::~ObjectDef()
 {
 	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
-	DBG cerr <<"ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
+	DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
 	
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
@@ -494,7 +498,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 		att->push("name",name);
 		att->push("Name",Name);
 		att->push("description",description);
-		att->push("flags",(int)flags,-1);
+		att->push("flags",(long)flags,-1);
 		att->push("format",element_TypeNames(format));
 		//att->push("fieldsformat",???);
 
@@ -511,7 +515,7 @@ LaxFiles::Attribute *ObjectDef::dump_out_atts(LaxFiles::Attribute *att,int what,
 
 		if (fields) {
 			for (int c=0; c<fields->n; c++) {
-				att->push("field",NULL);
+				att->push("field");
 				fields->e[c]->dump_out_atts(att->attributes.e[att->attributes.n-1],what,savecontext);
 			}
 		}
@@ -689,7 +693,7 @@ void ObjectDef::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 
 Value *ObjectDef::newObject(ObjectDef *def)
 {
-	if (newfunc) return newfunc(this);
+	if (newfunc) return newfunc();
 	if (evaluator) {
 		Value *v=NULL;
 
@@ -919,7 +923,7 @@ int ObjectDef::AddObjectDef(ObjectDef *def, int absorb)
 	if (!def) return 1;
 	if (!fields) fields=new Laxkit::RefPtrStack<ObjectDef>;
 	int i=fields->findindex(def);
-	if (i>=0) return 1;
+	if (i>=0) { if (absorb) def->dec_count(); return 1; }
 	int c=0;
 	if (fields->n) {
 		for (c=0; c<fields->n; c++) {
@@ -1057,7 +1061,7 @@ Value *ObjectDef::newValue(const char *objectdef)
 {
     ObjectDef *s=FindDef(objectdef,2);
     if (!s) return NULL;
-    if (s->newfunc) return s->newfunc(s);
+    if (s->newfunc) return s->newfunc();
 	return NULL;
 }
 
@@ -1754,6 +1758,33 @@ Value *ValueHash::find(const char *name)
  * Otherwise find it with findIndex().
  *
  * If name is not found, then set *error_ret=1 if error_ret!=0.
+ * If the value exists, but is not a boolean, int, or double, then sets *error_ret=2.
+ * Otherwise set to 0.
+ *
+ * Nonzero int or double translates to true.
+ */
+int ValueHash::findBoolean(const char *name, int which, int *error_ret)
+{
+	if (which<0) which=findIndex(name);
+	if (which<0 || !values.e[which]) { if (error_ret) *error_ret=1; return 0; }
+
+	IntValue *i=dynamic_cast<IntValue*>(values.e[which]);
+	if (i) { if (error_ret) *error_ret=0; return i->i; }
+	
+	BooleanValue *b=dynamic_cast<BooleanValue*>(values.e[which]);
+	if (b) { if (error_ret) *error_ret=0; return b->i; }
+	
+	DoubleValue *d=dynamic_cast<DoubleValue*>(values.e[which]);
+	if (d) { if (error_ret) *error_ret=0; return d->d!=0; }
+	
+	if (error_ret) *error_ret=2;
+	return 0;
+}
+
+/*! If which>=0 then interpret that Value and ignore name.
+ * Otherwise find it with findIndex().
+ *
+ * If name is not found, then set *error_ret=1 if error_ret!=0.
  * If the value exists, but is not an IntValue, then sets *error_ret=2.
  * Otherwise set to 0.
  *
@@ -1981,7 +2012,9 @@ int Value::getValueStr(char **buffer,int *len, int oktoreallocate)
 	return getValueStr(*buffer,*len);
 }
 
-//! Return objectdef, calling makeObjectDef() if necessary.
+/*! Return objectdef, calling makeObjectDef() if necessary.
+ * If other objects reference the returned def, they will need to call inc_count() on it.
+ */
 ObjectDef *Value::GetObjectDef()
 {
 	if (!objectdef) objectdef=makeObjectDef();
@@ -2029,6 +2062,61 @@ int Value::FieldIndex(const char *name)
     ObjectDef *def=GetObjectDef();
     if (!def) return -1;
 	return def->findfield(name,NULL);
+}
+
+/*! Default dump out to simple name/value pairs.
+ * NOTE that this does not automatically put in subattributes for values that have them.
+ * It uses getValueStr() to attach a string to each FieldInfo().
+ */
+LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+{
+	if (what==-1) {
+		 //dump out object def
+    	ObjectDef *def=GetObjectDef();
+		if (!def) {
+			DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
+		} else return def->dump_out_atts(att,-1,NULL);
+		return NULL;
+	}
+
+	if (!att) att=new Attribute;
+
+	ObjectDef *def;
+	const char *str;
+	const char *name;
+	char *buffer=NULL;
+	int len=0;
+
+	////for whole Value:
+	//getValueStr(&buffer,&len, 1);
+	//str=buffer;
+	//if (str) {
+	//	fprintf(f," %s\n",str);
+	//}
+
+	Value *v;
+	for (int c=0; c<getNumFields(); c++) {
+		def=FieldInfo(c); //this is the object def of a field. If it exists, then this element has subfields.
+		if (!def) continue;
+
+		 //output values only, not functions
+		if (def->format==VALUE_Function) continue;
+		if (def->format==VALUE_Class) continue;
+		if (def->format==VALUE_Operator) continue;
+		
+		v=dereference(def->name,strlen(def->name));
+		if (!v) continue;
+
+		name=FieldName(c);
+		v->getValueStr(&buffer,&len, 1);
+		str=buffer;
+		att->push(name,str);
+
+	}
+
+	if (buffer) delete[] buffer;
+
+	return att;
 }
 
 /*! Default will not output the Value's id string. The object calling this class should be doing that.

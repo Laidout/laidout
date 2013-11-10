@@ -105,20 +105,45 @@ class Spread : public ObjectContainer
 };
 
 
+//------------------------------------- ImpositionInterface --------------------------------------
+class ImpositionInterface : public LaxInterfaces::anInterface
+{               
+  public:   
+    ImpositionInterface() {}
+    ImpositionInterface(LaxInterfaces::anInterface *nowner,int nid,Laxkit::Displayer *ndp);
+    virtual ~ImpositionInterface() {}
+    virtual const char *ImpositionType() = 0;
+    virtual Imposition *GetImposition() = 0;
+    virtual int SetTotalDimensions(double width, double height) = 0;
+    virtual int GetDimensions(double &width, double &height) = 0;
+    virtual int SetPaper(PaperStyle *paper) = 0;
+    virtual int UseThisDocument(Document *doc) =0;
+    virtual int UseThisImposition(Imposition *imp) =0;
+
+    virtual int ShowThisPaperSpread(int index) = 0;
+    virtual void ShowSplash(int yes) = 0;
+}; 
+
+
 //----------------------------- Imposition --------------------------
 
-class Imposition : public Style
+class Imposition : public Value
 {
   public:
+	char *name;
+	char *description;
+
 	int numpapers; 
 	int numpages;
+	int numdocpages;
 	Document *doc;
 	PaperGroup *papergroup;
 	PaperBox *paper;
 
 	Imposition(const char *nsname);
 	virtual ~Imposition();
-	virtual Style *duplicate(Style *s=NULL);
+	virtual const char *Name();
+
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
@@ -154,14 +179,13 @@ class Imposition : public Style
 	virtual int GetPagesNeeded(int npapers) = 0;
 	virtual int GetPapersNeeded(int npages) = 0;
 	virtual int GetSpreadsNeeded(int npages) = 0;
-	virtual int *PrintingPapers(int frompage,int topage) = 0;
 	
 	virtual int NumPageTypes() = 0;
 	virtual const char *PageTypeName(int pagetype) = 0;
 	virtual int PageType(int page) = 0;
 	virtual int SpreadType(int spread) = 0;
 
-	virtual LaxInterfaces::anInterface *Interface(int layouttype);
+	virtual ImpositionInterface *Interface() = 0;
 };
 
 
@@ -173,7 +197,7 @@ class ImpositionResource
 	char *name; //imposition instance name, not class name
 	char *impositionfile;
 	char *description;
-	char *styledef;
+	char *objectdef;
 	LaxFiles::Attribute *config;
 	char configislocal;
 	ImpositionResource(const char *sdef,const char *nname, const char *file, const char *desc,

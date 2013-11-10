@@ -24,7 +24,7 @@ namespace Laidout {
 
 //------------------------ Singles ---------------------------
 
-StyleDef *makeSinglesStyleDef();
+ObjectDef *makeSinglesObjectDef();
 
 class Singles : public Imposition
 {
@@ -42,8 +42,8 @@ class Singles : public Imposition
 
 	virtual void GetDimensions(int which, double *x, double *y);
 	virtual const char *BriefDescription();
-	virtual StyleDef *makeStyleDef();
-	virtual Style *duplicate(Style *s=NULL);
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetDefaultMargins(double l,double r,double t,double b);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
@@ -58,11 +58,11 @@ class Singles : public Imposition
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
-	virtual int *PrintingPapers(int frompage,int topage);
 	virtual int NumPageTypes();
 	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
+	virtual ImpositionInterface *Interface();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

@@ -128,17 +128,17 @@ PtrStack<ImpositionResource> *GetBuiltinImpositionPool(PtrStack<ImpositionResour
 	StyleDef *def;
 	def=stylemanager.FindDef("Singles");
 	if (!def) {
-		def=makeSinglesStyleDef();
+		def=makeSinglesObjectDef();
 		stylemanager.AddObjectDef(def,1);
 	}
 	def=stylemanager.FindDef("Signature");
 	if (!def) {
-		def=makeSignatureImpositionStyleDef();
+		def=makeSignatureImpositionObjectDef();
 		stylemanager.AddObjectDef(def,1);
 	}
 	def=stylemanager.FindDef("NetImposition");
 	if (!def) {
-		def=makeNetImpositionStyleDef();
+		def=makeNetImpositionObjectDef();
 		stylemanager.AddObjectDef(def,1);
 	}
 

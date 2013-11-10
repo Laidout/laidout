@@ -3045,6 +3045,22 @@ Value *LaidoutViewport::dereference(const char *extstring, int len)
 	return NULL;
 }
 
+void LaidoutViewport::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	anXWindow::dump_out(f,indent,what,context);
+}
+
+LaxFiles::Attribute *LaidoutViewport::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+{
+	return anXWindow::dump_out_atts(att,what,context);
+}
+
+void LaidoutViewport::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	anXWindow::dump_in_atts(att,flag,context);
+}
+
+
 
 //-------------------------------------------- ViewWindow -----------------------------------------------
 /*! \class ViewWindow
@@ -3177,6 +3193,12 @@ void ViewWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			vp->limbo->e(c)->dump_out(f,indent+4,what,context);
 		}
 	}
+}
+
+LaxFiles::Attribute *ViewWindow::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+{
+	cout << "******** ViewWindow::dump_out_atts("<<endl;
+	return NULL;
 }
 
 //! Reverse of dump_out().

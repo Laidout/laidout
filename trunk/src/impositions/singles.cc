@@ -48,8 +48,6 @@ namespace Laidout {
 
 
 
-/*! \todo *** rethink styledef assignment..
- */
 Singles::Singles() : Imposition(_("Singles"))
 { 
 	insetleft=insetright=insettop=insetbottom=0;
@@ -64,15 +62,13 @@ Singles::Singles() : Imposition(_("Singles"))
 	SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 			
-	//pagestyle=NULL;
-	//setPage();***<--called from SetPaperSize
 
-	styledef=stylemanager.FindDef("Singles");
-	if (styledef) styledef->inc_count(); 
+	objectdef=stylemanager.FindDef("Singles");
+	if (objectdef) objectdef->inc_count(); 
 	else {
-		styledef=makeStyleDef();
-		if (styledef) stylemanager.AddObjectDef(styledef,1);
-		 // so this new styledef should have a count of 2. The Style destructor removes
+		objectdef=makeObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,1);
+		 // so this new objectdef should have a count of 2. The Style destructor removes
 		 // 1 count, and the stylemanager should remove the other
 	}
 	
@@ -323,18 +319,15 @@ void Singles::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 }
 
 //! Duplicate this, or fill in this attributes.
-Style *Singles::duplicate(Style *s)//s=NULL
+Value *Singles::duplicate()
 {
 	Singles *sn;
-	if (s==NULL) {
-		//***stylemanager.newStyle("Singles");
-		s=sn=new Singles();
-	} else sn=dynamic_cast<Singles *>(s);
-	if (!sn) return NULL;
-	if (styledef) {
-		styledef->inc_count();
-		if (sn->styledef) sn->styledef->dec_count();
-		sn->styledef=styledef;
+	sn=new Singles();
+
+	if (objectdef) {
+		objectdef->inc_count();
+		if (sn->objectdef) sn->objectdef->dec_count();
+		sn->objectdef=objectdef;
 	}
 	if (pagestyle) {
 		if (sn->pagestyle) sn->pagestyle->dec_count();
@@ -351,17 +344,15 @@ Style *Singles::duplicate(Style *s)//s=NULL
 	sn->insetbottom=insetbottom;
 	sn->tilex=tilex;
 	sn->tiley=tiley;
-	return Imposition::duplicate(s);  
+
+	return sn;  
 }
 
 //! The newfunc for Singles instances.
-Value *NewSingles(StyleDef *def)
+Value *NewSingles()
 { 
 	Singles *s=new Singles;
-	ObjectValue *v=new ObjectValue(s);
-	s->styledef=def;
-	s->dec_count();
-	return v;
+	return s;
 }
 
 //! Return a ValueObject with a SignatureImposition.
@@ -459,22 +450,22 @@ int createSingles(ValueHash *context, ValueHash *parameters,
 	return err;
 }
 
-StyleDef *Singles::makeStyleDef()
+ObjectDef *Singles::makeObjectDef()
 {
-	return makeSinglesStyleDef();
+	return makeSinglesObjectDef();
 }
 
-//! Make an instance of the Singles imposition styledef.
+//! Make an instance of the Singles imposition objectdef.
 /*  Required by Style, this defines the various names for fields relevant to Singles,
  *  basically just the inset[lrtb], plus the standard Imposition npages and npapers.
  *  Two of the fields would be the pagestyle and paperstyle. They have their own
- *  styledefs stored in a StyleManager.
+ *  objectdefs stored in a StyleManager.
  *
- *  Returns a new StyleDef with a count of 1.
+ *  Returns a new ObjectDef with a count of 1.
  */
-StyleDef *makeSinglesStyleDef()
+ObjectDef *makeSinglesObjectDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"Singles",
+	ObjectDef *sd=new ObjectDef(NULL,"Singles",
 			_("Singles"),
 			_("Imposition of single pages"),
 			"class",
@@ -737,21 +728,6 @@ Spread *Singles::PaperLayout(int whichpaper)
 	return spread;
 }
 
-//! Returns { frompage,topage, singlepage,-1,anothersinglepage,-1,-2 }
-int *Singles::PrintingPapers(int frompage,int topage)
-{
-	if (frompage<topage) {
-		int t=frompage;
-		frompage=topage;
-		topage=t;
-	}
-	int *blah=new int[3];
-	blah[0]=frompage;
-	blah[1]=topage;
-	blah[2]=-2;
-	return blah;
-}
-
 //! Just return pagenumber, since 1 page==1 paper
 int Singles::PaperFromPage(int pagenumber)
 { return pagenumber; }
@@ -794,6 +770,11 @@ int Singles::PageType(int page)
 int Singles::SpreadType(int spread)
 { return 0; }
 
+
+ImpositionInterface *Singles::Interface()
+{
+	return NULL;
+}
 
 } // namespace Laidout
 

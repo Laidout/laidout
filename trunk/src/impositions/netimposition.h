@@ -28,7 +28,7 @@ namespace Laidout {
 
 
 //----------------------------------- NetImposition ---------------------------------
-StyleDef *makeNetImpositionStyleDef();
+ObjectDef *makeNetImpositionObjectDef();
 
 class NetImposition : public Imposition
 {
@@ -48,10 +48,11 @@ class NetImposition : public Imposition
 	virtual ~NetImposition();
 	virtual const char *whattype() { return "NetImposition"; }
 	static ImpositionResource **getDefaultResources();
-	virtual StyleDef *makeStyleDef();
-	virtual Style *duplicate(Style *s=NULL);
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
 	virtual const char *BriefDescription();
 	virtual void GetDimensions(int which, double *x, double *y);
+	virtual ImpositionInterface *Interface();
 	
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
@@ -78,7 +79,6 @@ class NetImposition : public Imposition
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
-	virtual int *PrintingPapers(int frompage,int topage);
 
 	virtual int NumPageTypes();
 	virtual const char *PageTypeName(int pagetype);

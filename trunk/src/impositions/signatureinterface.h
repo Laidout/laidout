@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010-2011 by Tom Lechner
+// Copyright (C) 2010-2013 by Tom Lechner
 //
 #ifndef INTERFACES_SIGNATUREINTERFACE_H
 #define INTERFACES_SIGNATUREINTERFACE_H
@@ -21,6 +21,7 @@
 
 #include "../laidout.h"
 #include "../interfaces/actionarea.h"
+
 #include "signatures.h"
 
 
@@ -28,11 +29,11 @@
 namespace Laidout {
 
 
-class SignatureEditor;
+class ImpositionEditor;
 
 //------------------------------------- SignatureInterface --------------------------------------
 
-class SignatureInterface : public LaxInterfaces::anInterface
+class SignatureInterface : public ImpositionInterface
 {
  protected:
 	int showdecs;
@@ -40,7 +41,7 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	int showthumbs;
 	Laxkit::PtrStack<ActionArea> controls;
 
-	unsigned long color_inset, color_margin, color_trim, color_binding;
+	unsigned long color_inset, color_margin, color_trim, color_binding, color_h, color_text;
 	int insetmask, trimmask, marginmask;
 	int firsttime;
 
@@ -53,13 +54,18 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	int foldindex;
 	double foldprogress;
 
+	int currentPaperSpread;
 	int finalr,finalc; //cell location of totally folded pages
 	int hasfinal; //whether the pattern has been totally folded yet or not
 
 	int activetilex,activetiley;
-	int onoverlay,overoverlay; //nonzero if mouse clicked down on and is over an overlay
+	int onoverlay; //nonzero if mouse clicked down on and is over an overlay
+	int onoverlay_i, onoverlay_ii;
+	int overoverlay; //handle of item last hovered over
 	double arrowscale;
 	ActionArea *control(int what);
+
+	int OnBack() { return currentPaperSpread%2==1; }
 
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
@@ -68,16 +74,20 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	void applyFold(Fold *fold);
 
 	int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
-	int scanHandle(int x,int y);
+	int scanHandle(int x,int y, int *i1=NULL, int *i2=NULL);
+	int scanStacks(int x,int y, int *stacki, int *inserti);
 	int checkFoldLevel(int update);
 	void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
 	int scanForFoldIndicator(int x, int y, int ignorex);
 	void remapHandles(int which=0);
 	void createHandles();
+	int offsetHandle(ActionArea *which, flatpoint d);
 	int offsetHandle(int which, flatpoint d);
 	int adjustControl(int handle, int dir);
 	void remapAffectedCells(int whichfold);
 	void drawHandle(ActionArea *area, flatpoint offset);
+	virtual void drawStacks();
+	void drawAdd(double x,double y,double r, int fill);
 
 	void dumpFoldinfo();//for debugging
 
@@ -85,18 +95,18 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	virtual int PerformAction(int action);
  public:
 	Document *document;
+	SignatureImposition *sigimp;
+	SignatureInstance *siginstance;
 	Signature *signature;
-	PaperStyle *papersize;
 
-	SignatureInterface(int nid=0,Laxkit::Displayer *ndp=NULL,Signature *sig=NULL, PaperStyle *p=NULL);
-	SignatureInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
+	SignatureInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL,SignatureImposition *sig=NULL, PaperStyle *p=NULL);
 	virtual ~SignatureInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 	virtual const char *Name();
 	virtual const char *IconId() { return "Folding"; }
 	virtual const char *whattype() { return "SignatureInterface"; }
-	virtual const char *whatdatatype() { return "Signature"; }
+	virtual const char *whatdatatype() { return "SignatureImposition"; }
 	virtual int draws(const char *atype);
 
 	virtual int InterfaceOn();
@@ -120,35 +130,24 @@ class SignatureInterface : public LaxInterfaces::anInterface
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
 
-	virtual int UseThisImposition(SignatureImposition *sigimp);
-	virtual int UseThisDocument(Document *doc);
 	virtual int UseThisSignature(Signature *sig);
 
-	friend class SignatureEditor;
+	 //from ImpositionInterface:
+	virtual const char *ImpositionType() { return whattype(); }
+    virtual Imposition *GetImposition() { return sigimp; }
+    virtual int SetTotalDimensions(double width, double height);
+    virtual int GetDimensions(double &width, double &height);
+    virtual int SetPaper(PaperStyle *paper);
+    virtual int UseThisDocument(Document *doc);
+    virtual int UseThisImposition(Imposition *imp);
+    virtual int ShowThisPaperSpread(int index);
+    virtual void ShowSplash(int yes) { showsplash=yes; needtodraw=1; }
+
+
+	friend class ImpositionEditor;
 };
 
 
-//------------------------------------- SignatureEditor --------------------------------------
-
-class SignatureEditor : public LaxInterfaces::ViewerWindow
-{
- protected:
-	SignatureInterface *tool;
-	char *imposeout, *imposeformat;
- public:
-	SignatureEditor(Laxkit::anXWindow *parnt,const char *nname,const char *ntitle,
-						Laxkit::anXWindow *nowner, const char *mes,
-						SignatureImposition *sigimp, PaperStyle *p,const char *imposearg=NULL);
-	virtual ~SignatureEditor();
-	virtual int init();
-	virtual const char *whattype() { return "SignatureEditor"; }
-	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
-	virtual int Event(const Laxkit::EventData *data,const char *mes);
-	virtual void send();
-
-	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
-	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-};
 
 
 } // namespace Laidout

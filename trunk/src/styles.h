@@ -55,8 +55,8 @@ class Style : virtual public Laxkit::anObject,
 	virtual const char *Stylename() { return stylename; }
 	virtual int Stylename(const char *nname);
 
-	virtual ObjectDef *makeStyleDef() = 0;
-	virtual ObjectDef *GetStyleDef();
+	virtual ObjectDef *makeObjectDef() = 0;
+	virtual ObjectDef *GetObjectDef();
 	virtual int getNumFields();
 	virtual  ObjectDef *FieldInfo(int i);
 	virtual const char *FieldName(int i);
@@ -80,7 +80,7 @@ class EnumStyle : public Style
 	Laxkit::PtrStack<char> names;
 
 	EnumStyle();
-	virtual ObjectDef *makeStyleDef();
+	virtual ObjectDef *makeObjectDef();
 	virtual Style *duplicate(Style *s=NULL);
 	virtual int add(const char *nname,int nid=-1);
 	virtual const char *name(int Id);

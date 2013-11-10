@@ -423,6 +423,16 @@ Value *LImagePatchInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
+void LImagePatchInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	ImagePatchInterface::dump_out(f,indent,what,context);
+}
+
+void LImagePatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	ImagePatchInterface::dump_in_atts(att,flag,context);
+}
+
 //------------------------------------- LColorPatchInterface -------------------------
 /*! \class LColorPatchInterface
  * 
@@ -524,6 +534,16 @@ int LColorPatchInterface::assign(FieldExtPlace *ext,Value *v)
 Value *LColorPatchInterface::dereference(const char *extstring, int len)
 {
 	return NULL;
+}
+
+void LColorPatchInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	ColorPatchInterface::dump_out(f,indent,what,context);
+}
+
+void LColorPatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	ColorPatchInterface::dump_in_atts(att,flag,context);
 }
 
 

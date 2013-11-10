@@ -41,7 +41,7 @@ class PodofooutFilter : public ExportFilter
 	virtual const char *Version() { return "0.7"; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
-	virtual StyleDef *GetStyleDef();
+	virtual ObjectDef *GetObjectDef();
 	
 	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };

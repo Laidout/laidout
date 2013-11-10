@@ -291,8 +291,8 @@ void LaidoutApp::InitializeShortcuts()
 
 
 	 //for each resource helper dialogs
-	SignatureEditor e(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
-	e.GetShortcuts();
+	SignatureInterface si;
+	si.GetShortcuts();
 
 #ifndef LAIDOUT_NOGL
 	PolyptychWindow w(NULL,NULL,0,NULL);

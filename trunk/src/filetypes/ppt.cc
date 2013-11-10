@@ -51,11 +51,11 @@ namespace Laidout {
 void installPptFilter()
 {
 	PptoutFilter *pptout=new PptoutFilter;
-	pptout->GetStyleDef();
+	pptout->GetObjectDef();
 	laidout->PushExportFilter(pptout);
 	
 	PptinFilter *pptin=new PptinFilter;
-	pptin->GetStyleDef();
+	pptin->GetObjectDef();
 	laidout->PushImportFilter(pptin);
 }
 
@@ -63,7 +63,7 @@ void installPptFilter()
 //------------------------------------ PptExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newPptExportConfig(StyleDef*)
+Value *newPptExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -78,7 +78,7 @@ Value *newPptExportConfig(StyleDef*)
 //------------------------------------ PptImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newPptImportConfig(StyleDef*)
+Value *newPptImportConfig()
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
@@ -109,13 +109,13 @@ const char *PptoutFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *PptoutFilter::GetStyleDef()
+ObjectDef *PptoutFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("PassepartoutExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"PassepartoutExportConfig");
 	makestr(styledef->Name,_("Passepartout Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a Passepartout file."));
@@ -440,13 +440,13 @@ const char *PptinFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *PptinFilter::GetStyleDef()
+ObjectDef *PptinFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("PassepartoutImportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"PassepartoutImportConfig");
 	makestr(styledef->Name,_("Passepartout Import Configuration"));
 	makestr(styledef->description,_("Configuration to import a Passepartout file."));

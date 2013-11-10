@@ -11,10 +11,11 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010-2013 by Tom Lechner
 //
 
 #include "signatures.h"
+#include "signatureinterface.h"
 #include "stylemanager.h"
 #include "../language.h"
 
@@ -112,9 +113,127 @@ const char *CtoStr(char c)
  */
 
 
+Value *Fold::duplicate()
+{ return new Fold(direction,under,whichfold); }
+
+/*! Create a new ObjectDef of Fold.
+ */
+ObjectDef *Fold::makeObjectDef()
+{
+	ObjectDef *foldd=stylemanager.FindDef("Fold");
+	if (foldd) return foldd;
+
+	foldd=new ObjectDef(NULL,"Fold",
+			_("Fold"),
+			_("Info about a fold in a signature"),
+			"class",
+			NULL,NULL, //range, default value
+			NULL, //fields
+			0, //new flags
+			NULL, //newfunc
+			NULL /*createFold*/); //newfunc with parameters
+
+	foldd->push("index", _("Index"), _("The index of the fold, starting from 0, from the top or left."),
+			"int", "[0..", "0", 0, NULL);
+
+	foldd->pushEnum("direction", _("Direction"), _("Direction of the fold: left, right, top, or bottom."),
+				 NULL, NULL, NULL,
+				 "Left",_("Left"),_("Right over to Left"),
+				 "UnderLeft",_("Under Left"),_("Right under to Left"),
+				 "Right",_("Right"),_("Left over to Right"),
+				 "UnderRight",_("Right"),_("Left under to Right"),
+				 "Top",_("Top"),_("Bottom over to Top"),
+				 "UnderTop",_("Top"),_("Bottom under to Top"),
+				 "Bottom",_("Bottom"),_("Top over to Bottom"),
+				 "UnderBottom",_("Bottom"),_("Top under to Bottom"),
+				 NULL
+				);
+
+	stylemanager.AddObjectDef(foldd,0);
+	foldd->dec_count();
+
+	return foldd;
+}
+
+/*! Return a ValueObject with a Fold, for use in scripting.
+ */
+int createFold(ValueHash *context, ValueHash *parameters,
+			   Value **value_ret, ErrorLog &log)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=NULL;
+		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
+		return 1;
+	}
+
+	int index=-1;
+	int under=0;
+	char dir=0;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+
+		 //---index
+		i=parameters->findInt("index",-1,&e);
+		if (e==0) { 
+			if (i<0) {
+				sprintf(error, _("Index out of range!")); 
+				throw error;
+			} else index=i; 
+		}
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"index"); throw error; }
+
+		 //---direction
+		i=parameters->findInt("direction",-1,&e); //enums are converted to integers in LaidoutCalculator
+		if (e==0) {
+			if (i==0) { dir='l'; }
+			else if (i==1) { dir='l'; under=1; }
+			else if (i==2) { dir='r'; }
+			else if (i==3) { dir='r'; under=1; }
+			else if (i==4) { dir='t'; }
+			else if (i==6) { dir='t'; under=1; }
+			else if (i==5) { dir='b'; }
+			else if (i==7) { dir='b'; under=1; }
+		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"direction"); throw error; }
+
+
+	} catch (const char *str) {
+		log.AddMessage(str,ERROR_Fail);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		*value_ret=NULL;
+
+		if (dir!=0 && index>=0) {
+			*value_ret=new Fold(dir,under,index);
+
+		} else {
+			log.AddMessage(_("Incomplete Fold definition!"),ERROR_Fail);
+			err=1;
+		}
+		
+	}
+
+	return err;
+}
+
+
+
 //------------------------------------- FoldedPageInfo --------------------------------------
 /*! \class FoldedPageInfo
- * \brief Info about partial folded states of signatures.
+ * \brief Info about partial folded states of Signature.
+ */
+/*! \var int FoldedPageInfo::rotation
+ * Minute adjustment to make to a final cell, as viewed clockwise on the front side.
+ * Sometimes predictable minute adjustments must be made to pages due to the effects
+ * of paper thickness on folding.
+ */
+/*! \var int FoldedPageInfo::shift
+ * Minute adjustment to make to a final cell, as viewed on the front side.
+ * An example would be creep introduced from a fold on many sheets.
  */
 
 FoldedPageInfo::FoldedPageInfo()
@@ -124,6 +243,8 @@ FoldedPageInfo::FoldedPageInfo()
 
 	finalxflip=finalyflip=0;
 	finalindexback=finalindexfront=-1;
+
+	rotation=0;
 }
 
 
@@ -131,41 +252,7 @@ FoldedPageInfo::FoldedPageInfo()
 /*! \class Signature
  * \brief A folding pattern used as the basis for an SignatureImposition. 
  *
- * The steps for creating a signature are:
- *
- * 1. Initial paper inset, with optional gap between the sections\n
- * 2. Sectioning, into (for now) equal sized sections (see tilex and tiley). The sections
- *    can be stacked onto each other (pilesections==1 (unimplemented!)) or each section will use the
- *    same content (pilesections==0).
- * 3. folding per section\n
- * 4. finishing trim on the folded page size
- * 5. specify which edge of the folded up paper to use as the binding edge, if any\n
- * 6. specify a default margin area
- *
- * If Signature::paper is not NULL, then measurements such as margins are
- * absolute units of the paper. Otherwise measurements are in the range [0..1].*** have that as option,
- * not mandatory...
- *
- * If any trim value is less than 0, then no trim is done on that edge. This lets users define
- * accordion impositions, potentially, by folding many times, but only trimming the top and bottom,
- * for instance. The trimmed area is considered a bleed area.
- *
- * The trim value along an edge that is the binding edge will not be considered to be actually trimmed,
- * but page content will not extend into those areas, except to bleed. In other words, page spread views will show
- * the pages touching each other, but pages will be laid down into a signature with a bit of a gap.
- *
- */
-/*! \var double Signature::insetleft
- * \brief An initial left margin to chop off a paper before sectioning and folding.
- */
-/*! \var double Signature::insetright
- * \brief An initial right margin to chop off a paper before sectioning and folding.
- */
-/*! \var double Signature::insettop
- * \brief An initial top margin to chop off a paper before sectioning and folding.
- */
-/*! \var double Signature::insetbottom
- * \brief An initial bottom margin to chop off a paper before sectioning and folding.
+ * Note Signature objects are ONLY the folding pattern, not how many sheets, or paper information.
  */
 /*! \var double Signature::marginleft
  * \brief A final left page margin.
@@ -191,20 +278,6 @@ FoldedPageInfo::FoldedPageInfo()
 /*! \var double Signature::trimbottom
  * \brief A final bottom trim.
  */
-/*! \var int Signature::tilex
- * \brief After cutting off an inset, the number of horizontal sections to divide a paper.
- */
-/*! \var int Signature::tiley
- * \brief After cutting off an inset, the number of vertical sections to divide a paper.
- */
-/*! \var double Signature::creep
- * \brief Creep that occurs when folding.
- *
- * This will be approximately pi*(page thickness)/2.
- *
- * \todo this value is currently ignored, and should be thought out more to have a value
- *    that is easier to find in the real world without calipers
- */
 /*! \var int Signature::numhfolds
  * \brief The number of horizontal fold lines in the folding pattern.
  */
@@ -213,6 +286,8 @@ FoldedPageInfo::FoldedPageInfo()
  */
 /*! \var int Signature::sheetspersignature
  * \brief The number of sheets to stack in a signature before folding.
+ *
+ * This is a hint only. The actual used value is in SignatureInstance.
  *
  * These keeps track of the actual number of sheets per signature. For arrangements where
  * one adds sheets to the same signature when more pages are added (ie saddle stitched booklets),
@@ -226,32 +301,15 @@ FoldedPageInfo::FoldedPageInfo()
  * If nonzero, then any increase will only use more stacked sheets per signature. Otherwise, 
  * more signatures are used, and it is assumed that these will be bound back to back.
  */
-/*! \var int Signature::hint_numpages
- * \brief Used by impose-only mode to have custom behavior for number of pages and signatures.
- */
-/*! \var int Signature::hint_numsigs;
- * \brief Used by impose-only mode to have custom behavior for number of pages and signatures.
- */
 
 Signature::Signature()
 {
 	description=NULL;
 	name=NULL;
 
-	paperbox=NULL;
-	totalwidth=totalheight=1;
+	patternwidth=patternheight=1;
 
 	sheetspersignature=1;
-	insetleft=insetright=insettop=insetbottom=0;
-	tilegapx=tilegapy=0;
-
-	tilex=tiley=1;
-
-	rotation=0; //***these 4 are unimplemented
-	work_and_turn=0;
-	pilesections=0;
-	creep=0;
-	autoaddsheets=0;
 
 	numhfolds=numvfolds=0;
 	trimleft=trimright=trimtop=trimbottom=0;
@@ -267,17 +325,6 @@ Signature::Signature()
 	foldinfo[0][0].finalindexfront=0;
 	foldinfo[0][0].finalindexback=1;
 
-	linestyle=NULL;
-
-	//automarks=AUTOMARK_Margins|AUTOMARK_InnerDot; //1.margin marks, 2.interior dotted line, 4.interior dots
-	//automarks=AUTOMARK_Margins|AUTOMARK_InnerDottedLines; //1.margin marks, 2.interior dotted line, 4.interior dots
-	automarks=0; //1.margin marks, 2.interior dotted line, 4.interior dots
-
-	hint_numpages=1;
-	hint_numsigs=1;
-
-	insert=NULL;
-	stack=NULL;
 }
 
 Signature::~Signature()
@@ -285,41 +332,18 @@ Signature::~Signature()
 	if (description) delete[] description;
 	if (name) delete[] name;
 
-	if (paperbox) paperbox->dec_count();
-
 	if (foldinfo) {
 		for (int c=0; foldinfo[c]; c++) delete[] foldinfo[c];
 		delete[] foldinfo;
 	}
-
-	if (linestyle) linestyle->dec_count();
 }
 
 const Signature &Signature::operator=(const Signature &sig)
 {
-	if (paperbox) { paperbox->dec_count(); paperbox=NULL; }
-	if (sig.paperbox) paperbox=(PaperStyle*)sig.paperbox->duplicate();
-
-	totalwidth=sig.totalwidth;
-	totalheight=sig.totalheight;
+	patternwidth=sig.patternwidth;
+	patternheight=sig.patternheight;
 
 	sheetspersignature=sig.sheetspersignature;
-	autoaddsheets=sig.autoaddsheets;
-
-	insetleft=sig.insetleft;
-	insetright=sig.insetright;
-	insettop=sig.insettop;
-	insetbottom=sig.insetbottom;
-
-	tilegapx=sig.tilegapx;
-	tilegapy=sig.tilegapy;
-	tilex=sig.tilex;
-	tiley=sig.tiley;
-
-	creep=sig.creep;
-	rotation=sig.rotation;
-	work_and_turn=sig.work_and_turn;
-	pilesections=sig.pilesections;
 
 	numhfolds=sig.numhfolds;
 	numvfolds=sig.numvfolds;
@@ -342,17 +366,13 @@ const Signature &Signature::operator=(const Signature &sig)
 	positivex=sig.positivex;
 	positivey=sig.positivey;
 
-	automarks=sig.automarks;
-	hint_numpages=sig.hint_numpages;
-	hint_numsigs=sig.hint_numsigs;
-
 	reallocateFoldinfo();
 	applyFold(NULL,-1);
 
 	return *this;
 }
 
-Signature *Signature::duplicate()
+Value *Signature::duplicate()
 {
 	Signature *sig=new Signature;
 	*sig=*this;
@@ -597,311 +617,27 @@ int Signature::checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalco
 	return hasfinal;
 }
 
-//! With the final trimmed page size (w,h), set the paper size to the proper size to just contain it.
-int Signature::SetPaperFromFinalSize(double w,double h)
-{
-	 //find cell dims
-	w+=trimleft+trimright;
-	h+=trimtop +trimbottom;
-
-	 //find pattern dims
-	w*=(numvfolds+1);
-	h*=(numhfolds+1);
-
-	 //find whole dims
-	w=w*tilex + (tilex-1)*tilegapx + insetleft + insetright;
-	h=h*tiley + (tiley-1)*tilegapy + insettop  + insetbottom;
-
-	PaperStyle p("Custom",w,h,0,300,"in");
-	return SetPaper(&p);
-}
-
-//! Set the size of the signature to this paper.
-/*! This will duplicate p. The count of p will not change.
+//! Set the size of the signature.
+/*! Just transfers w and h to patternwidth and patternheight.
  */
-int Signature::SetPaper(PaperStyle *p)
+int Signature::SetPatternSize(double w,double h)
 {
-	if (!p || p==paperbox) return 0;
-
-	if (paperbox) paperbox->dec_count();
-	paperbox=NULL;
-
-	if (p) {
-		paperbox=(PaperStyle*)p->duplicate();
-		totalheight=paperbox->h();
-		totalwidth =paperbox->w();
-	}
-	return 0;
-}
-
-void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{ // ***
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	if (what==-1) {
-		fprintf(f,"%sname \"Some name\"      #short name of the signature\n",spc);
-		fprintf(f,"%sdescription \"Huh\"     #a one line description of the signature\n",spc);
-		fprintf(f,"%ssheetspersignature 1  #The number of sheets of paper to stack before\n",spc);
-		fprintf(f,"%s                      #applying inset or folding\n",spc);
-		fprintf(f,"%sautoaddsheets no      #If no, then more pages means use more signatures.\n",spc);
-		fprintf(f,"%s                      #If yes, then add more sheets, and fold all as a single signature.\n",spc);
-		fprintf(f,"%sinsettop    0      #How much to trim off the top of paper before partitioning for folds\n",spc);
-		fprintf(f,"%sinsetbottom 0      #How much to trim off the bottom of paper before partitioning for folds\n",spc);
-		fprintf(f,"%sinsetleft   0      #How much to trim off the left of paper before partitioning for folds\n",spc);
-		fprintf(f,"%sinsetright  0      #How much to trim off the right of paper before partitioning for folds\n",spc);
-		fprintf(f,"%stilegapx 0         #How much space to put between folding areas horizontally\n",spc);
-		fprintf(f,"%stilegapy 0         #How much space to put between folding areas vertically\n",spc);
-		fprintf(f,"%stilex 1            #The number of folding sections horizontally to divide a piece of paper\n",spc);
-		fprintf(f,"%stiley 1            #The number of folding sections vertically to divide a piece of paper\n",spc);
-		fprintf(f,"\n");
-		fprintf(f,"%snumhfolds 0        #The number of horizontal fold lines of a folding pattern\n",spc);
-		fprintf(f,"%snumvfolds 0        #The number of vertical fold lines of a folding pattern\n",spc);
-		fprintf(f,"%sfold 3 Under Left  #There will be numhfolds+numvfolds fold blocks. When reading in, the number\n",spc);
-		fprintf(f,"%sfold 2 Top         #of these blocks will override values of numhfolds and numvfolds.\n",spc);
-		fprintf(f,"%s                   #1st number is which horizontal or vertical fold, counting from the left or the top\n",spc);
-		fprintf(f,"%s                   #The direction Can be right, left, top, bottom, under right, under left,\n",spc);
-		fprintf(f,"%s                   #under top, under bottom. The \"under\" values fold in that\n",spc);
-		fprintf(f,"%s                   #direction, but the fold is behind as you look at it,\n",spc);
-		fprintf(f,"%s                   #rather than the default of over and on top.\n",spc);
-		fprintf(f,"\n");
-		fprintf(f,"%sbinding left       #left, right, top, or bottom. The side to expect a document to be bound.\n",spc);
-		fprintf(f,"%s                   #Any trim value for the binding edge will be ignored.\n",spc);
-		fprintf(f,"%strimtop    0       #How much to trim off the top of a totally folded section\n",spc);
-		fprintf(f,"%strimbottom 0       #How much to trim off the bottom of a totally folded section\n",spc);
-		fprintf(f,"%strimleft   0       #How much to trim off the left of a totally folded section\n",spc);
-		fprintf(f,"%strimright  0       #How much to trim off the right of a totally folded section\n",spc);
-		fprintf(f,"%smargintop    0     #How much of a margin to apply to totally folded pages.\n",spc);
-		fprintf(f,"%smarginbottom 0     #Inside and outside margins are automatically kept track of.\n",spc);
-		fprintf(f,"%smarginleft   0\n",spc);
-		fprintf(f,"%smarginright  0\n",spc);
-		fprintf(f,"%sup top             #When displaying pages, this direction should be toward the top of the screen\n",spc);
-		fprintf(f,"%spositivex right    #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
-		fprintf(f,"%spositivey top      #(optional) Default to the same direction as up\n",spc);
-		fprintf(f,"%sautomarks outer,innerdot  #(optional) Cut marks. Default is \"outer\"\n",spc);
-		//fprintf(f,"%sautomarks outer,innerdot  #(optional) Default is \"outer\". you may use innerdotlines instead of innerdot\n",spc);
-		return;
-	}
-
-	if (name) {
-		fprintf(f,"%sname ",spc);
-		dump_out_escaped(f,name,-1);
-		fprintf(f,"\n");
-	}
-
-	if (description) {
-		fprintf(f,"%sdescription ",spc);
-		dump_out_escaped(f,description,-1);
-		fprintf(f,"\n");
-	}
-
-	fprintf(f,"%ssheetspersignature %d\n",spc,sheetspersignature);
-	fprintf(f,"%sautoaddsheets %s\n",spc,autoaddsheets?"yes":"no");
-
-	fprintf(f,"%sinsettop    %.10g\n",spc,insettop);
-	fprintf(f,"%sinsetbottom %.10g\n",spc,insetbottom);
-	fprintf(f,"%sinsetleft   %.10g\n",spc,insetleft);
-	fprintf(f,"%sinsetright  %.10g\n",spc,insetright);
-
-	fprintf(f,"%stilegapx %.10g\n",spc,tilegapx);
-	fprintf(f,"%stilegapy %.10g\n",spc,tilegapy);
-	fprintf(f,"%stilex %d\n",spc,tilex);
-	fprintf(f,"%stiley %d\n",spc,tiley);
-
-	fprintf(f,"%snumhfolds %d\n",spc,numhfolds);
-	fprintf(f,"%snumvfolds %d\n",spc,numvfolds);
-	
-	for (int c=0; c<folds.n; c++) {
-		fprintf(f,"%sfold %d %s #%d\n",spc,folds.e[c]->whichfold, FoldDirectionName(folds.e[c]->direction,0), c);
-		//fprintf(f,"%s  index %d\n",spc,folds.e[c]->whichfold);
-		//fprintf(f,"%s  direction %s\n",spc,FoldDirectionName(folds.e[c]->direction,0));
-	}
-
-	fprintf(f,"%sbinding %s\n",spc,CtoStr(binding));
-
-	fprintf(f,"%strimtop    %.10g\n",spc,trimtop);
-	fprintf(f,"%strimbottom %.10g\n",spc,trimbottom);
-	fprintf(f,"%strimleft   %.10g\n",spc,trimleft);
-	fprintf(f,"%strimright  %.10g\n",spc,trimright);
-
-	fprintf(f,"%smargintop    %.10g\n",spc,margintop);
-	fprintf(f,"%smarginbottom %.10g\n",spc,marginbottom);
-	fprintf(f,"%smarginleft   %.10g\n",spc,marginleft);
-	fprintf(f,"%smarginright  %.10g\n",spc,marginright);
-
-	fprintf(f,"%sup %s\n",spc,CtoStr(up));
-	if (positivex) fprintf(f,"%spositivex %s\n",spc,CtoStr(positivex));
-	if (positivey) fprintf(f,"%spositivey %s\n",spc,CtoStr(positivey));
-
-	if (automarks) {
-		fprintf(f,"%sautomarks ",spc);
-		if (automarks&AUTOMARK_Margins) fprintf(f,"outer ");
-		if (automarks&AUTOMARK_InnerDot) fprintf(f,"innerdot ");
-		//if (automarks&AUTOMARK_InnerDottedLines) fprintf(f,"innerdotlines ");
-		fprintf(f,"\n");
-	}
-}
-
-void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
-{
-	char *name,*value;
-	int numhf=0, numvf=0;
-
-	for (int c=0; c<att->attributes.n; c++) {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-
-		if (!strcmp(name,"name")) {
-			makestr(name,value);
-
-		} else if (!strcmp(name,"description")) {
-			makestr(description,value);
-
-		} else if (!strcmp(name,"sheetspersignature")) {
-			IntAttribute(value,&sheetspersignature);
-
-		} else if (!strcmp(name,"automarks")) {
-			automarks=0;
-			if (strstr(value,"outer")) automarks|=AUTOMARK_Margins;
-			if (strstr(value,"innerdot")) automarks|=AUTOMARK_InnerDot;
-			//else if (strstr(value,"innerdotlines")) automarks|=AUTOMARK_InnerDottedLines;
-
-		} else if (!strcmp(name,"autoaddsheets")) {
-			autoaddsheets=BooleanAttribute(value);
-
-		} else if (!strcmp(name,"insettop")) {
-			DoubleAttribute(value,&insettop);
-
-		} else if (!strcmp(name,"insetbottom")) {
-			DoubleAttribute(value,&insetbottom);
-
-		} else if (!strcmp(name,"insetleft")) {
-			DoubleAttribute(value,&insetleft);
-
-		} else if (!strcmp(name,"insetright")) {
-			DoubleAttribute(value,&insetright);
-
-		} else if (!strcmp(name,"tilegapx")) {
-			DoubleAttribute(value,&tilegapx);
-
-		} else if (!strcmp(name,"tilegapy")) {
-			DoubleAttribute(value,&tilegapy);
-
-		} else if (!strcmp(name,"tilex")) {
-			IntAttribute(value,&tilex);
-
-		} else if (!strcmp(name,"tiley")) {
-			IntAttribute(value,&tiley);
-
-		} else if (!strcmp(name,"numhfolds")) {
-			IntAttribute(value,&numhfolds);
-
-		} else if (!strcmp(name,"numvfolds")) {
-			IntAttribute(value,&numvfolds);
-
-		} else if (!strcmp(name,"trimtop")) {
-			DoubleAttribute(value,&trimtop);
-
-		} else if (!strcmp(name,"trimbottom")) {
-			DoubleAttribute(value,&trimbottom);
-
-		} else if (!strcmp(name,"trimleft")) {
-			DoubleAttribute(value,&trimleft);
-
-		} else if (!strcmp(name,"trimright")) {
-			DoubleAttribute(value,&trimright);
-
-		} else if (!strcmp(name,"margintop")) {
-			DoubleAttribute(value,&margintop);
-
-		} else if (!strcmp(name,"marginbottom")) {
-			DoubleAttribute(value,&marginbottom);
-
-		} else if (!strcmp(name,"marginleft")) {
-			DoubleAttribute(value,&marginleft);
-
-		} else if (!strcmp(name,"marginright")) {
-			DoubleAttribute(value,&marginright);
-
-		} else if (!strcmp(name,"binding")) {
-			LRTBAttribute(value,&binding);
-
-		} else if (!strcmp(name,"up")) {
-			LRTBAttribute(value,&up);
-
-		} else if (!strcmp(name,"positivex")) {
-			LRTBAttribute(value,&positivex);
-
-		} else if (!strcmp(name,"positivey")) {
-			LRTBAttribute(value,&positivey);
-
-		} else if (!strcmp(name,"fold")) {
-			char *e=NULL;
-			int index=-1;
-			int under=0;
-			char dir=0;
-			IntAttribute(value,&index,&e);
-			while (*e && isspace(*e)) e++;
-			if (!strncasecmp(e,"under ",6)) { under=1; e+=6; }
-			LRTBAttribute(e,&dir);
-			if (under) {
-				if      (dir=='r') { numvf++; }
-				else if (dir=='l') { numvf++; }
-				else if (dir=='b') { numhf++; }
-				else if (dir=='t') { numhf++; }
-			} else {
-				if      (dir=='l') { numvf++; }
-				else if (dir=='b') { numhf++; }
-				else if (dir=='t') { numhf++; }
-				else if (dir=='r') { numvf++; }
-			}
-			Fold *newfold=new Fold(dir,under,index);
-			folds.push(newfold);
-
-		}
-	}
-
-	reallocateFoldinfo();
-	applyFold(NULL,-1);
-	checkFoldLevel(NULL,NULL,NULL);
-}
-
-//! Ensure that the Signature's values are actually sane.
-/*! \todo TODO!
- *
- * Return 0 for totally valid.
- */ 
-unsigned int Signature::Validity()
-{
-	 //inset, gap, trim and margin values all must be within the proper boundaries.
-	 //fold indices and directions must make sense, and fold down to a single page
-
-	cerr <<" *** need to implement Signature sanity check Signature::Validity()"<<endl;
-	if (numvfolds+numhfolds!=folds.n) return 1;
+	patternwidth=w;
+	patternheight=h;
 	return 0;
 }
 
 //! Return height of a folding section.
-/*! This is the total height minus insettop and bottom, minus gaps, divided by the number of vertical tiles.
+/*! Just returns patternheight.
  */
 double Signature::PatternHeight()
-{
-	double h=totalheight;
-	if (paperbox) h=paperbox->h();
-	if (tiley>1) h-=(tiley-1)*tilegapy;
-	h-=insettop+insetbottom;
-	return h/tiley;
-}
+{ return patternheight; }
 
 //! Return width of a folding section.
-/*! This is the total width minus insetleft and right, minus gaps, divided by the number of horizontal tiles.
+/*! Just returns patternwidth.
  */
 double Signature::PatternWidth()
-{
-	double w=totalwidth;
-	if (paperbox) w=paperbox->w();
-	if (tilex>1) w-=(tilex-1)*tilegapx;
-	w-=insetleft+insetright;
-	return w/tilex;
-}
+{ return patternwidth; }
 
 //! The height of a single element of a folding section.
 /*! For part==0, this is the cell height: PatternHeight()/(numhfolds+1).
@@ -975,29 +711,19 @@ int Signature::PagesPerPattern()
 	return 2*(numvfolds+1)*(numhfolds+1);
 }
 
-//! Taking into account sheetspersignature, return the number of pages that can be arranged in one signature.
-/*! So say you have a pattern with 2 sheets folded together. Then 2*PagesPerPattern() is returned.
+/*! Return whether the page is on the front (0) or back (1). If num_sheets>1, then
+ * pretend there are that many sheets stacked up for this signature.
  *
- * It is assumed that sheetspersignature reflects a desired number of sheets in the signature,
- * whether or not autoaddsheets==1.
- *
- * Please note this is only the number for ONE tile.
- */
-int Signature::PagesPerSignature()
-{
-	return (sheetspersignature>0?sheetspersignature:1)*PagesPerPattern();
-}
-
-//! Return which paper spread contains the given document page number.
-/*! If row or col are not NULL, then return which cell the page is in.
+ *  If row or col are not NULL, then return which cell the page is in.
  * Note that this row,col is for a paper spread, and by convention the backside of a sheet of
  * paper is flipped left to right in relation to the front side.
+ *
+ * If pagenumber is greater than PagesPerPattern(), it is modded to be within.
  */
-int Signature::locatePaperFromPage(int pagenumber, int *row, int *col)
+int Signature::locatePaperFromPage(int pagenumber, int *row, int *col, int num_sheets)
 {
-	int whichsig=pagenumber/PagesPerSignature();//takes into account sheetspersignature
-	int pageindex=pagenumber%PagesPerSignature();//page index within the signature
-	int pagespercell=2*(sheetspersignature>0?sheetspersignature:1); //total pages per cell
+	int pageindex=pagenumber%PagesPerPattern();//page index within the signature
+	int pagespercell=2*num_sheets; //total pages per cell
 	int sigindex      =pageindex/(pagespercell/2);//page index assuming a single page in signature
 	int sigindexoffset=pageindex%(pagespercell/2);//index within cell of the page
 
@@ -1040,400 +766,276 @@ int Signature::locatePaperFromPage(int pagenumber, int *row, int *col)
 	if (row) *row=rr;
 	if (col) *col=((sigindexoffset%1) ? (numvfolds-cc) : cc);
 
-	return whichsig*PagesPerSignature() + papernumber;
+	return PagesPerPattern() + papernumber;
 }
 
-
-//------------------------------------- SignatureImposition --------------------------------------
-/*! \class SignatureImposition
- * \brief Imposition based on rectangular folded paper.
- */
-/*! \var int Signature::showwholecover
- * \brief Whether to show the front and back pages together or not.
- */
-
-
-/*! This will increment the count of newsig.
- */
-SignatureImposition::SignatureImposition(Signature *newsig)
-	: Imposition("SignatureImposition")
-{
-	showwholecover=0;
-	numdocpages=0;
-
-	papersize=NULL;
-
-	numsignatures=1;
-	signature=newsig;
-	if (signature) {
-		signature->inc_count();
-
-		 //sets imposition::paperbox and papergroup with dup of paperbox
-		if (signature->paperbox) Imposition::SetPaperSize(signature->paperbox);
-	}
-	
-	pagestyle=pagestyleodd=NULL;
-
-	styledef=stylemanager.FindDef("SignatureImposition");
-	if (styledef) styledef->inc_count(); 
-	else {
-		styledef=makeStyleDef();
-		if (styledef) stylemanager.AddObjectDef(styledef,0);
-	}
-}
-
-SignatureImposition::~SignatureImposition()
-{
-	if (papersize) papersize->dec_count();
-	if (signature) signature->dec_count();
-	//if (partition) partition->dec_count();
-
-	if (pagestyle) pagestyle->dec_count();
-	if (pagestyleodd) pagestyleodd->dec_count();
-}
-
-//! Static imposition resource creation function.
-/*! Returns NULL terminated list of default resources.
+//! Ensure that the Signature's values are actually sane.
+/*! \todo TODO!
  *
- * \todo return resources for double sided singles, booklet, calendar, 2 fold, 3 fold
- */
-ImpositionResource **SignatureImposition::getDefaultResources()
+ * Return 0 for totally valid.
+ */ 
+unsigned int Signature::Validity()
 {
-	ImpositionResource **r=new ImpositionResource*[3];
+	 //inset, gap, trim and margin values all must be within the proper boundaries.
+	 //fold indices and directions must make sense, and fold down to a single page
 
-	Attribute *att=new Attribute;
-	att->push("binding","left");
-	r[0]=new ImpositionResource("SignatureImposition",
-								  _("Double Sided Singles"),
-								  NULL,
-								  _("Imposition of single pages meant to be next to each other"),
-								  att,1);
-	att=new Attribute;
-	att->push("fold","1 Right");
-	att->push("numvfolds","1");
-	att->push("autoaddsheets",NULL);
-	att->push("binding","left");
-	r[1]=new ImpositionResource("SignatureImposition",
-								  _("Booklet"),
-								  NULL,
-								  _("Imposition for a stack of sheets, folded down the middle"),
-								  att,1);
-	r[2]=NULL;
-	return r;
-}
-
-/*! Return 0 for success, or nonzero for error.
- */
-int SignatureImposition::UseThisSignature(Signature *newsig)
-{
-	if (!newsig) return 1;
-
-	newsig->inc_count();
-	if (signature) signature->dec_count();
-	signature=newsig;
-	if (papersize) signature->SetPaper(papersize);
-
+	cerr <<" *** need to implement proper Signature sanity check Signature::Validity()"<<endl;
+	if (numvfolds+numhfolds!=folds.n) return 1;
 	return 0;
 }
 
-//! Return default paper dimensions if paperorpage==0, or page dimensions for paperorpage==1.
-void SignatureImposition::GetDimensions(int paperorpage, double *x, double *y)
+void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
-	if (paperorpage==0) {
-		*x=papersize->w();
-		*y=papersize->h();
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	if (what==-1) {
+		fprintf(f,"%sname \"Some name\"      #short name of the signature\n",spc);
+		fprintf(f,"%sdescription \"Huh\"     #a one line description of the signature\n",spc);
+		fprintf(f,"%ssheetspersignature 1  #The number of sheets of paper to stack before\n",spc);
+		fprintf(f,"%s                      #applying inset or folding\n",spc);
+		fprintf(f,"%sautoaddsheets no      #If no, then more pages means use more signatures.\n",spc);
+		fprintf(f,"%s                      #If yes, then add more sheets, and fold all as a single signature.\n",spc);
+		fprintf(f,"\n");
+		fprintf(f,"%snumhfolds 0        #The number of horizontal fold lines of a folding pattern\n",spc);
+		fprintf(f,"%snumvfolds 0        #The number of vertical fold lines of a folding pattern\n",spc);
+		fprintf(f,"%sfold 3 Under Left  #There will be numhfolds+numvfolds fold blocks. When reading in, the number\n",spc);
+		fprintf(f,"%sfold 2 Top         #of these blocks will override values of numhfolds and numvfolds.\n",spc);
+		fprintf(f,"%s                   #1st number is which horizontal or vertical fold, counting from the left or the top\n",spc);
+		fprintf(f,"%s                   #The direction Can be right, left, top, bottom, under right, under left,\n",spc);
+		fprintf(f,"%s                   #under top, under bottom. The \"under\" values fold in that\n",spc);
+		fprintf(f,"%s                   #direction, but the fold is behind as you look at it,\n",spc);
+		fprintf(f,"%s                   #rather than the default of over and on top.\n",spc);
+		fprintf(f,"\n");
+		fprintf(f,"%sbinding left       #left, right, top, or bottom. The side to expect a document to be bound.\n",spc);
+		fprintf(f,"%s                   #Any trim value for the binding edge will be ignored.\n",spc);
+		fprintf(f,"%strimtop    0       #How much to trim off the top of a totally folded section\n",spc);
+		fprintf(f,"%strimbottom 0       #How much to trim off the bottom of a totally folded section\n",spc);
+		fprintf(f,"%strimleft   0       #How much to trim off the left of a totally folded section\n",spc);
+		fprintf(f,"%strimright  0       #How much to trim off the right of a totally folded section\n",spc);
+		fprintf(f,"%smargintop    0     #How much of a margin to apply to totally folded pages.\n",spc);
+		fprintf(f,"%smarginbottom 0     #Inside and outside margins are automatically kept track of.\n",spc);
+		fprintf(f,"%smarginleft   0\n",spc);
+		fprintf(f,"%smarginright  0\n",spc);
+		fprintf(f,"%sup top             #When displaying pages, this direction should be toward the top of the screen\n",spc);
+		fprintf(f,"%spositivex right    #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
+		fprintf(f,"%spositivey top      #(optional) Default to the same direction as up\n",spc);
 		return;
 	}
 
-	*x=signature->PageWidth(1);
-	*y=signature->PageHeight(1);
+	if (name) {
+		fprintf(f,"%sname ",spc);
+		dump_out_escaped(f,name,-1);
+		fprintf(f,"\n");
+	}
+
+	if (description) {
+		fprintf(f,"%sdescription ",spc);
+		dump_out_escaped(f,description,-1);
+		fprintf(f,"\n");
+	}
+
+	//fprintf(f,"%ssheetspersignature %d\n",spc,sheetspersignature);
+
+	fprintf(f,"%snumhfolds %d\n",spc,numhfolds);
+	fprintf(f,"%snumvfolds %d\n",spc,numvfolds);
+	
+	for (int c=0; c<folds.n; c++) {
+		fprintf(f,"%sfold %d %s #%d\n",spc,folds.e[c]->whichfold, FoldDirectionName(folds.e[c]->direction,0), c);
+		//fprintf(f,"%s  index %d\n",spc,folds.e[c]->whichfold);
+		//fprintf(f,"%s  direction %s\n",spc,FoldDirectionName(folds.e[c]->direction,0));
+	}
+
+	fprintf(f,"%sbinding %s\n",spc,CtoStr(binding));
+
+	fprintf(f,"%strimtop    %.10g\n",spc,trimtop);
+	fprintf(f,"%strimbottom %.10g\n",spc,trimbottom);
+	fprintf(f,"%strimleft   %.10g\n",spc,trimleft);
+	fprintf(f,"%strimright  %.10g\n",spc,trimright);
+
+	fprintf(f,"%smargintop    %.10g\n",spc,margintop);
+	fprintf(f,"%smarginbottom %.10g\n",spc,marginbottom);
+	fprintf(f,"%smarginleft   %.10g\n",spc,marginleft);
+	fprintf(f,"%smarginright  %.10g\n",spc,marginright);
+
+	fprintf(f,"%sup %s\n",spc,CtoStr(up));
+	if (positivex) fprintf(f,"%spositivex %s\n",spc,CtoStr(positivex));
+	if (positivey) fprintf(f,"%spositivey %s\n",spc,CtoStr(positivey));
+
 }
 
-//! Return something like "2 fold, 8 page signature".
-const char *SignatureImposition::BriefDescription()
+Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
 {
-	if (signature->description) return signature->description;
-
-	static char briefdesc[100]; //note this is not threadsafe, so be quick!!
-	if (signature->tilex>1 || signature->tiley>1) 
-		sprintf(briefdesc,_("%d, %d page signature, tiled %dx%d"),
-					signature->folds.n,signature->PagesPerPattern(),
-					signature->tilex, signature->tiley);
-	else sprintf(briefdesc,_("%d fold, %d page signature"),signature->folds.n,signature->PagesPerPattern());
-
-	return briefdesc;
-}
-
-Style *SignatureImposition::duplicate(Style *s)
-{// ***
-	SignatureImposition *sn;
-	if (s==NULL) {
-		s=sn=new SignatureImposition(signature);
-	} else sn=dynamic_cast<SignatureImposition *>(s);
-	if (!sn) return NULL;
-	if (styledef) {
-		styledef->inc_count();
-		if (sn->styledef) sn->styledef->dec_count();
-		sn->styledef=styledef;
-	}
-	sn->showwholecover=showwholecover;
-
-	return Imposition::duplicate(s);  
-}
-
-//! Return a ValueObject with a Fold.
-/*! 
- */
-int createFold(ValueHash *context, ValueHash *parameters,
-			   Value **value_ret, ErrorLog &log)
-{
-	if (!parameters || !parameters->n()) {
-		if (value_ret) *value_ret=NULL;
-		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
-		return 1;
-	}
-
-	int index=-1;
-	int under=0;
-	char dir=0;
-
-	char error[100];
-	int err=0;
-	try {
-		int i, e;
-
-		 //---index
-		i=parameters->findInt("index",-1,&e);
-		if (e==0) { 
-			if (i<0) {
-				sprintf(error, _("Index out of range!")); 
-				throw error;
-			} else index=i; 
-		}
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"index"); throw error; }
-
-		 //---direction
-		i=parameters->findInt("direction",-1,&e); //enums are converted to integers in LaidoutCalculator
-		if (e==0) {
-			if (i==0) { dir='l'; }
-			else if (i==1) { dir='l'; under=1; }
-			else if (i==2) { dir='r'; }
-			else if (i==3) { dir='r'; under=1; }
-			else if (i==4) { dir='t'; }
-			else if (i==6) { dir='t'; under=1; }
-			else if (i==5) { dir='b'; }
-			else if (i==7) { dir='b'; under=1; }
-		} else if (e==2) { sprintf(error, _("Invalid format for %s!"),"direction"); throw error; }
-
-
-	} catch (const char *str) {
-		log.AddMessage(str,ERROR_Fail);
-		err=1;
-	}
-
-	if (value_ret && err==0) {
-		*value_ret=NULL;
-
-		if (dir!=0 && index>=0) {
-			Fold *fold=new Fold(dir,under,index);
-			*value_ret=new ObjectValue(fold);
-			fold->dec_count();
-
-		} else {
-			log.AddMessage(_("Incomplete Fold definition!"),ERROR_Fail);
-			err=1;
-		}
+	if (!att) att=new Attribute;
+	if (what==-1) {
 		
+		att->push("name \"Some name\"",   "short name of the signature ");
+		att->push("description \"Huh\"",  "a one line description of the signature ");
+		att->push("sheetspersignature 1", "The number of sheets of paper to stack before "
+										  "applying inset or folding ");
+	
+		att->push("numhfolds 0", "The number of horizontal fold lines of a folding pattern ");
+		att->push("numvfolds 0", "The number of vertical fold lines of a folding pattern ");
+		att->push("fold 3 Under Left", "There will be numhfolds+numvfolds fold blocks. When reading in, the number ");
+		att->push("fold 2 Top", "of these blocks will override values of numhfolds and numvfolds. "
+								"1st number is which horizontal or vertical fold, counting from the left or the top "
+								"The direction Can be right, left, top, bottom, under right, under left, "
+								"under top, under bottom. The \"under\" values fold in that "
+								"direction, but the fold is behind as you look at it, "
+								"rather than the default of over and on top. ");
+		
+		att->push("binding left", "left, right, top, or bottom. The side to expect a document to be bound. "
+								  "Any trim value for the binding edge will be ignored. ");
+		att->push("trimtop    0", "How much to trim off the top of a totally folded section ");
+		att->push("trimbottom 0", "How much to trim off the bottom of a totally folded section ");
+		att->push("trimleft   0", "How much to trim off the left of a totally folded section ");
+		att->push("trimright  0", "How much to trim off the right of a totally folded section ");
+		att->push("margintop    0", "How much of a margin to apply to totally folded pages. ");
+		att->push("marginbottom 0", "Inside and outside margins are automatically kept track of. ");
+		att->push("marginleft   0 ");
+		att->push("marginright  0 ");
+		att->push("up top", "When displaying pages, this direction should be toward the top of the screen ");
+		att->push("positivex right", "(optional) Default is a right handed x axis with the up direction the y axis ");
+		att->push("positivey top", "(optional) Default to the same direction as up ");
+		return att;
 	}
 
-	return err;
+	if (name) att->push("name",name);
+	if (description) att->push("description",description);
+
+	att->push("numhfolds",numhfolds);
+	att->push("numvfolds",numvfolds);
+	
+	char scratch[100];
+	for (int c=0; c<folds.n; c++) {
+		sprintf(scratch,"%d %s #%d\n",folds.e[c]->whichfold, FoldDirectionName(folds.e[c]->direction,0), c);
+		att->push("fold",scratch);
+	}
+
+	att->push("binding",CtoStr(binding));
+
+	att->push("trimtop",   trimtop);
+	att->push("trimbottom",trimbottom);
+	att->push("trimleft",  trimleft);
+	att->push("trimright ",trimright);
+
+	att->push("margintop"   ,margintop);
+	att->push("marginbottom",marginbottom);
+	att->push("marginleft"  ,marginleft);
+	att->push("marginright ",marginright);
+
+	att->push("up",CtoStr(up));
+	if (positivex) att->push("positivex",CtoStr(positivex));
+	if (positivey) att->push("positivey",CtoStr(positivey));
+
+	return att;
 }
 
-//! Return a ValueObject with a SignatureImposition.
-/*! This does not throw an error for having an incomplete set of parameters.
- * It just fills what's given.
- */
-int createSignature(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, ErrorLog &log)
+void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
-	if (!parameters || !parameters->n()) {
-		if (value_ret) *value_ret=NULL;
-		log.AddMessage(_("Missing parameters!"),ERROR_Fail);
-		return 1;
-	}
+	char *name,*value;
+	int numhf=0, numvf=0;
 
-	Signature *sig=new Signature;
-	SignatureImposition *imp=new SignatureImposition(sig);
-	sig->dec_count();
-	Value *v=NULL;
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
 
-	char error[100];
-	int err=0;
-	try {
-		int i, e;
-		double d;
+		if (!strcmp(name,"name")) {
+			makestr(name,value);
 
-		 //---sheetspersignature
-		i=parameters->findInt("sheetspersignature",-1,&e);
-		if (e==0) imp->signature->sheetspersignature=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"sheetspersignature"); throw error; }
+		} else if (!strcmp(name,"description")) {
+			makestr(description,value);
 
-		 //---autoaddsheets
-		i=parameters->findInt("autoaddsheets",-1,&e);
-		if (e==0) imp->signature->autoaddsheets=(i?1:0);
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"autoaddsheets"); throw error; }
+		} else if (!strcmp(name,"sheetspersignature")) {
+			IntAttribute(value,&sheetspersignature);
 
-		 //---insetleft
-		d=parameters->findDouble("insetleft",-1,&e);
-		if (e==0) imp->signature->insetleft=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetleft"); throw error; }
+		} else if (!strcmp(name,"numhfolds")) {
+			IntAttribute(value,&numhfolds);
 
-		 //---insetright
-		d=parameters->findDouble("insetright",-1,&e);
-		if (e==0) imp->signature->insetright=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetright"); throw error; }
+		} else if (!strcmp(name,"numvfolds")) {
+			IntAttribute(value,&numvfolds);
 
-		 //---insettop
-		d=parameters->findDouble("insettop",-1,&e);
-		if (e==0) imp->signature->insettop=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insettop"); throw error; }
+		} else if (!strcmp(name,"trimtop")) {
+			DoubleAttribute(value,&trimtop);
 
-		 //---insetbottom
-		d=parameters->findDouble("insetbottom",-1,&e);
-		if (e==0) imp->signature->insetbottom=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetbottom"); throw error; }
+		} else if (!strcmp(name,"trimbottom")) {
+			DoubleAttribute(value,&trimbottom);
 
-		 //---marginleft
-		d=parameters->findDouble("marginleft",-1,&e);
-		if (e==0) imp->signature->marginleft=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginleft"); throw error; }
+		} else if (!strcmp(name,"trimleft")) {
+			DoubleAttribute(value,&trimleft);
 
-		 //---marginright
-		d=parameters->findDouble("marginright",-1,&e);
-		if (e==0) imp->signature->marginright=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginright"); throw error; }
+		} else if (!strcmp(name,"trimright")) {
+			DoubleAttribute(value,&trimright);
 
-		 //---margintop
-		d=parameters->findDouble("margintop",-1,&e);
-		if (e==0) imp->signature->margintop=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"margintop"); throw error; }
+		} else if (!strcmp(name,"margintop")) {
+			DoubleAttribute(value,&margintop);
 
-		 //---marginbottom
-		d=parameters->findDouble("marginbottom",-1,&e);
-		if (e==0) imp->signature->marginbottom=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginbottom"); throw error; }
+		} else if (!strcmp(name,"marginbottom")) {
+			DoubleAttribute(value,&marginbottom);
 
-		 //---trimleft
-		d=parameters->findDouble("trimleft",-1,&e);
-		if (e==0) imp->signature->trimleft=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimleft"); throw error; }
+		} else if (!strcmp(name,"marginleft")) {
+			DoubleAttribute(value,&marginleft);
 
-		 //---trimright
-		d=parameters->findDouble("trimright",-1,&e);
-		if (e==0) imp->signature->trimright=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimright"); throw error; }
+		} else if (!strcmp(name,"marginright")) {
+			DoubleAttribute(value,&marginright);
 
-		 //---trimtop
-		d=parameters->findDouble("trimtop",-1,&e);
-		if (e==0) imp->signature->trimtop=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimtop"); throw error; }
+		} else if (!strcmp(name,"binding")) {
+			LRTBAttribute(value,&binding);
 
-		 //---trimbottom
-		d=parameters->findDouble("trimbottom",-1,&e);
-		if (e==0) imp->signature->trimbottom=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimbottom"); throw error; }
+		} else if (!strcmp(name,"up")) {
+			LRTBAttribute(value,&up);
 
-		 //---tilegapx
-		d=parameters->findDouble("tilegapx",-1,&e);
-		if (e==0) imp->signature->tilegapx=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilegapx"); throw error; }
+		} else if (!strcmp(name,"positivex")) {
+			LRTBAttribute(value,&positivex);
 
-		 //---tilegapy
-		d=parameters->findDouble("tilegapy",-1,&e);
-		if (e==0) imp->signature->tilegapy=d;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilegapy"); throw error; }
+		} else if (!strcmp(name,"positivey")) {
+			LRTBAttribute(value,&positivey);
 
-		 //---tilex
-		i=parameters->findInt("tilex",-1,&e);
-		if (e==0) imp->signature->tilex=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilex"); throw error; }
-
-		 //---tiley
-		i=parameters->findInt("tiley",-1,&e);
-		if (e==0) imp->signature->tiley=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tiley"); throw error; }
-
-		 //---numhfolds
-		i=parameters->findInt("numhfolds",-1,&e);
-		if (e==0) imp->signature->numhfolds=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"numhfolds"); throw error; }
-
-		 //---numvfolds
-		i=parameters->findInt("numvfolds",-1,&e);
-		if (e==0) imp->signature->numvfolds=i;
-		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"numvfolds"); throw error; }
-
-		 //---folds
-		v=parameters->find("folds");
-		if (v) {
-			if (v->type()!=VALUE_Set) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
-			SetValue *set=dynamic_cast<SetValue*>(v);
-			ObjectValue *o;
-			Fold *fold;
-			for (int c=0; c<set->values.n; c++) {
-				o=dynamic_cast<ObjectValue*>(set->values.e[c]);
-				if (!o) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
-				fold=dynamic_cast<Fold*>(o->object);
-				if (!fold) { sprintf(error, _("Expecting %s!"),"Fold"); throw error; }
-
-				imp->signature->folds.push(new Fold(fold->direction,fold->under,fold->whichfold));
+		} else if (!strcmp(name,"fold")) {
+			 //fold 3 under right
+			 //fold 4 top
+			char *e=NULL;
+			int index=-1;
+			int under=0;
+			char dir=0;
+			IntAttribute(value,&index,&e);
+			while (*e && isspace(*e)) e++;
+			if (!strncasecmp(e,"under ",6)) { under=1; e+=6; }
+			LRTBAttribute(e,&dir);
+			if (under) {
+				if      (dir=='r') { numvf++; }
+				else if (dir=='l') { numvf++; }
+				else if (dir=='b') { numhf++; }
+				else if (dir=='t') { numhf++; }
+			} else {
+				if      (dir=='l') { numvf++; }
+				else if (dir=='b') { numhf++; }
+				else if (dir=='t') { numhf++; }
+				else if (dir=='r') { numvf++; }
 			}
-		}
+			Fold *newfold=new Fold(dir,under,index);
+			folds.push(newfold);
 
-		imp->signature->reallocateFoldinfo();
-		imp->signature->applyFold(NULL,-1);
-		imp->signature->checkFoldLevel(NULL,NULL,NULL);
-
-
-	} catch (const char *str) {
-		log.AddMessage(str,ERROR_Fail);
-		err=1;
-	}
-
-	if (value_ret && err==0) {
-		if (imp->signature->Validity()==0) *value_ret=new ObjectValue(imp);
-		else {
-			log.AddMessage(_("Imposition has invalid configuration!"),ERROR_Fail);
-			err=1;
-			*value_ret=NULL;
 		}
 	}
-	if (imp) imp->dec_count();
 
-	return err;
+	reallocateFoldinfo();
+	applyFold(NULL,-1);
+	checkFoldLevel(NULL,NULL,NULL);
 }
 
-//! The newfunc for Singles instances.
-Value *NewSignature(StyleDef *def)
-{ 
-	SignatureImposition *s=new SignatureImposition;
-	s->styledef=def;
-	ObjectValue *v=new ObjectValue(s);
-	s->dec_count();
-	return v;
-}
-
-StyleDef *makeSignatureImpositionStyleDef()
+ObjectDef *Signature::makeObjectDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"SignatureImposition",
+	ObjectDef *sd=stylemanager.FindDef("Signature");
+	if (sd) { sd->inc_count(); return sd; }
+
+	sd=new ObjectDef(NULL,"Signature",
 			_("Signature"),
-			_("Imposition based on signatures"),
+			_("Folds of paper in a SignatureImposition"),
 			"class",
 			NULL,NULL, //range, default value
 			NULL, //fields
 			0, //new flags
-			NewSignature, //newfunc
-			createSignature);
+			NULL, //newfunc
+			NULL /*createSignature*/);
 
 	sd->push("name", _("Name"), _("Name of the imposition"),
 			"string",
@@ -1449,45 +1051,6 @@ StyleDef *makeSignatureImpositionStyleDef()
 			0,    //flags
 			NULL);//newfunc
 
-	sd->push("showwholecover", _("Show whole cover"), _("Whether to let the front cover bleed over onto the back cover"),
-			"boolean",
-			NULL,
-			"0",
-			0,
-			NULL);
-
-	//--------signature variables:
-	sd->push("sheetspersignature", _("Sheets per signature"), _("Number of pieces of paper in each signature"),
-			"int", "1..", "1", 0, NULL);
-
-	sd->push("autoaddsheets", _("Auto add sheets"),
-			 _("When adding pages, whether to add new sheets to a signature, using only one "
-			   "signature for the whole document, or add more signatures"),
-			"boolean", NULL, "0", 0, NULL);
-
-	sd->push("insettop", _("Top Inset"), _("Space at the top of a paper before tiling for signatures"),
-			"real", "[0..", "0", 0, NULL);
-
-	sd->push("insetbottom", _("Bottom Inset"), _("Space at the bottom of a paper before tiling for signatures"),
-			"real", "[0..", "0", 0, NULL);
-
-	sd->push("insetleft", _("Left Inset"), _("Space at the left of a paper before tiling for signatures"),
-			"real", "[0..", "0", 0, NULL);
-
-	sd->push("insetright", _("Right Inset"), _("Space at the right of a paper before tiling for signatures"),
-			"real", "[0..", "0", 0, NULL);
-
-	sd->push("tilex", _("Horizontal Tiles"), _("The number of folding sections horizontally to divide a piece of paper"),
-			"int", "[1..", "0", 0, NULL);
-
-	sd->push("tiley", _("Vertical Tiles"), _("The number of folding sections vertically to divide a piece of paper"),
-			"int", "[1..", "0", 0, NULL);
-
-	sd->push("tilegapx", _("H Tile Gap"), _("How much space to put between folding areas horizontally"),
-			"real", "[0..", "0", 0, NULL);
-
-	sd->push("tilegapy", _("V Tile Gap"), _("How much space to put between folding areas vertically"),
-			"real", "[0..", "0", 0, NULL);
 
 	sd->push("numhfolds", _("Horizontal Folds"), _("The number of horizontal fold lines of a folding pattern"),
 			"int", "[0..", "0", 0, NULL);
@@ -1495,37 +1058,11 @@ StyleDef *makeSignatureImpositionStyleDef()
 	sd->push("numvfolds", _("Vertical Folds"), _("The number of vertical fold lines of a folding pattern"),
 			"int", "[0..", "0", 0, NULL);
 
-	 //------make Fold StyleDef if necessary
-	StyleDef *foldd=stylemanager.FindDef("Fold");
-	if (!foldd) {
-		foldd=new StyleDef(NULL,"Fold",
-				_("Fold"),
-				_("Info about a fold in a signature"),
-				"class",
-				NULL,NULL, //range, default value
-				NULL, //fields
-				0, //new flags
-				NULL, //newfunc
-				createFold); //newfunc with parameters
-
-		foldd->push("index", _("Index"), _("The index of the fold, starting from 0, from the top or left."),
-				"int", "[0..", "0", 0, NULL);
-
-		foldd->pushEnum("direction", _("Direction"), _("Direction of the fold: left, right, top, or bottom."),
-					 NULL, NULL, NULL,
-					 "Left",_("Left"),_("Right over to Left"),
-					 "UnderLeft",_("Under Left"),_("Right under to Left"),
-					 "Right",_("Right"),_("Left over to Right"),
-					 "UnderRight",_("Right"),_("Left under to Right"),
-					 "Top",_("Top"),_("Bottom over to Top"),
-					 "UnderTop",_("Top"),_("Bottom under to Top"),
-					 "Bottom",_("Bottom"),_("Top over to Bottom"),
-					 "UnderBottom",_("Bottom"),_("Top under to Bottom"),
-					 NULL
-					);
-		stylemanager.AddObjectDef(foldd,0);
-		foldd->dec_count();
-	} //-----end Fold declaration
+	 //------make Fold ObjectDef if necessary
+	if (stylemanager.FindDef("Signature")==NULL) {
+		Fold fold(0,0,0);
+		fold.GetObjectDef(); //forces creation and global install of fold definition
+	}
 
 	sd->push("folds", _("Folds"), _("Set of the folds making the signature"),
 			"set", "Fold", NULL, 0, NULL);
@@ -1566,112 +1103,1302 @@ StyleDef *makeSignatureImpositionStyleDef()
 			"real", "[0..", "0", 0, NULL);
 
 
-	//fprintf(f,"%sup top          #When displaying pages, this direction should be toward the top of the screen\n",spc);
-	//fprintf(f,"%spositivex right #(optional) Default is a right handed x axis with the up direction the y axis\n",spc);
-	//fprintf(f,"%spositivey top   #(optional) Default to the same direction as up\n",spc);
+	stylemanager.AddObjectDef(sd,0);
+	return sd;
+}
 
-//	----------
-//	sd->push("covercolor",
-//			_("Cover Color"),
-//			_("The color of paper you are using for the cover. This translates to paper number 0 and 1."),
-//			VALUE_Color,
-//			NULL,"#ffffffff",
-//			0,NULL);
-//	sd->push("bodycolor",
-//			_("Body Color"),
-//			_("The color of paper you are using for the body pages."),
-//			VALUE_Color,
-//			NULL,"#ffffffff",
-//			0,NULL);
+//! Constructor for Signature objects in scripting.
+/*! This does not throw an error for having an incomplete set of parameters.
+ * It just fills what's given.
+ */
+int createSignature(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, ErrorLog &log)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=new Signature;
+		//log.AddMessage(_("Missing parameters!"),ERROR_Fail);
+		return 0;
+	}
+
+	Signature *sig=new Signature;
+	Value *v=NULL;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+		double d;
+
+		 //---marginleft
+		d=parameters->findDouble("marginleft",-1,&e);
+		if (e==0) sig->marginleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginleft"); throw error; }
+
+		 //---marginright
+		d=parameters->findDouble("marginright",-1,&e);
+		if (e==0) sig->marginright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginright"); throw error; }
+
+		 //---margintop
+		d=parameters->findDouble("margintop",-1,&e);
+		if (e==0) sig->margintop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"margintop"); throw error; }
+
+		 //---marginbottom
+		d=parameters->findDouble("marginbottom",-1,&e);
+		if (e==0) sig->marginbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"marginbottom"); throw error; }
+
+		 //---trimleft
+		d=parameters->findDouble("trimleft",-1,&e);
+		if (e==0) sig->trimleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimleft"); throw error; }
+
+		 //---trimright
+		d=parameters->findDouble("trimright",-1,&e);
+		if (e==0) sig->trimright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimright"); throw error; }
+
+		 //---trimtop
+		d=parameters->findDouble("trimtop",-1,&e);
+		if (e==0) sig->trimtop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimtop"); throw error; }
+
+		 //---trimbottom
+		d=parameters->findDouble("trimbottom",-1,&e);
+		if (e==0) sig->trimbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"trimbottom"); throw error; }
+
+		 //---numhfolds
+		i=parameters->findInt("numhfolds",-1,&e);
+		if (e==0) sig->numhfolds=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"numhfolds"); throw error; }
+
+		 //---numvfolds
+		i=parameters->findInt("numvfolds",-1,&e);
+		if (e==0) sig->numvfolds=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"numvfolds"); throw error; }
+
+		 //---folds
+		v=parameters->find("folds");
+		if (v) {
+			if (v->type()!=VALUE_Set) { sprintf(error, _("Invalid format for %s!"),"folds"); throw error; }
+			SetValue *set=dynamic_cast<SetValue*>(v);
+			ObjectValue *o;
+			Fold *fold;
+			for (int c=0; c<set->values.n; c++) {
+				o=dynamic_cast<ObjectValue*>(set->values.e[c]);
+				if (!o) { sprintf(error, _("Invalid format for %s!"),"folds"); set->dec_count(); throw error; }
+				fold=dynamic_cast<Fold*>(o->object);
+				if (!fold) { sprintf(error, _("Expecting %s!"),"Fold"); set->dec_count(); throw error; }
+
+				sig->folds.push(new Fold(fold->direction,fold->under,fold->whichfold));
+			}
+		}
+
+		sig->reallocateFoldinfo();
+		sig->applyFold(NULL,-1);
+		sig->checkFoldLevel(NULL,NULL,NULL);
+
+
+	} catch (const char *str) {
+		log.AddMessage(str,ERROR_Fail);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		if (sig->Validity()==0) { *value_ret=sig; sig->inc_count(); }
+		else {
+			log.AddMessage(_("Signature has invalid configuration!"),ERROR_Fail);
+			err=1;
+			*value_ret=NULL;
+		}
+	}
+	sig->dec_count();
+
+	return err;
+}
+
+
+//------------------------------------ PaperPartition -----------------------------------------
+/*! \class PaperPartition
+ * Description of how to cut a piece of paper into equal sections.
+ */
+/*! \var double PaperPartition::insetleft
+ * \brief An initial left margin to chop off a paper before sectioning and folding.
+ */
+/*! \var double PaperPartition::insetright
+ * \brief An initial right margin to chop off a paper before sectioning and folding.
+ */
+/*! \var double PaperPartition::insettop
+ * \brief An initial top margin to chop off a paper before sectioning and folding.
+ */
+/*! \var double PaperPartition::insetbottom
+ * \brief An initial bottom margin to chop off a paper before sectioning and folding.
+ */
+/*! \var int PaperPartition::tilex
+ * \brief After cutting off an inset, the number of horizontal sections to divide a paper.
+ */
+/*! \var int PaperPartition::tiley
+ * \brief After cutting off an inset, the number of vertical sections to divide a paper.
+ */
+/*! \var int PaperPartition::work_and_turn
+ * Work and turn turns around a vertical axis at the exact center of the paper, front is
+ * on the left. SIGT_Work_and_Turn_BF has back on the left.
+ * Work and tumble turns around a horizontal axis at center, front is on the top.
+ * SIGT_Work_and_Tumble_BF has back on top.
+ */
+
+
+PaperPartition::PaperPartition()
+{
+	paper=new PaperStyle;
+
+	totalwidth=5;
+	totalheight=5;
+
+	insetleft=insetright=insettop=insetbottom=0;
+
+	tilex=tiley=1;
+	tilegapx=tilegapy=0;
+
+	work_and_turn=SIGT_None;
+}
+
+PaperPartition::~PaperPartition()
+{
+	paper->dec_count();
+}
+
+Value *PaperPartition::duplicate()
+{
+	PaperPartition *p=new PaperPartition;
+	p->SetPaper(paper);
+	p->totalwidth =totalwidth;
+	p->totalheight=totalheight;
+	p->insetleft  =insetleft;
+	p->insetright =insetright;
+	p->insettop   =insettop;
+	p->insetbottom=insetbottom;
+
+	p->tilex=tilex;
+	p->tiley=tiley;
+	p->tilegapx=tilegapx;
+	p->tilegapy=tilegapy;
+
+	p->work_and_turn=work_and_turn;
+
+	return p;
+}
+
+//! Return height of a folding section.
+/*! This is the total height minus insettop and bottom, minus gaps, divided by the number of vertical tiles.
+ */
+double PaperPartition::PatternHeight()
+{
+	double h=totalheight;
+	if (paper) h=paper->h();
+	if (tiley>1) h-=(tiley-1)*tilegapy;
+	h-=insettop+insetbottom;
+	return h/tiley;
+}
+
+//! Return width of a folding section.
+/*! This is the total width minus insetleft and right, minus gaps, divided by the number of horizontal tiles.
+ */
+double PaperPartition::PatternWidth()
+{
+	double w=totalwidth;
+	if (paper) w=paper->w();
+	if (tilex>1) w-=(tilex-1)*tilegapx;
+	w-=insetleft+insetright;
+	return w/tilex;
+}
+
+void PaperPartition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+    Attribute att;
+	dump_out_atts(&att,0,context);
+    att.dump_out(f,indent);
+}
+
+LaxFiles::Attribute *PaperPartition::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+{
+    if (!att) att=new Attribute("PaperPartition",NULL);
+	
+	if (what==-1) {
+		Value::dump_out_atts(att,-1,context);
+		return att;
+	}
+
+
+    char scratch[100];
+
+
+	//att->push("name",name);
+	//att->push("description",description);
+
+	Attribute *att2=NULL;
+	if (paper) {
+		att2=paper->dump_out_atts(NULL,what,context);
+		makestr(att2->name,"paper");
+	}
+	if (paper) att->push(att2, -1); 
+
+	if (work_and_turn!=SIGT_None) {
+		if (work_and_turn==SIGT_Work_and_Turn)           att->push("work_and_turn", "turn", -1); 
+		else if (work_and_turn==SIGT_Work_and_Turn_BF)   att->push("work_and_turn", "turnBF", -1); 
+		else if (work_and_turn==SIGT_Work_and_Tumble)    att->push("work_and_turn", "tumble", -1); 
+		else if (work_and_turn==SIGT_Work_and_Tumble_BF) att->push("work_and_turn", "tumbleBF", -1); 
+	}
+
+
+    sprintf(scratch,"%.10g",insettop);
+	att->push("insettop",insettop,-1);
+
+    sprintf(scratch,"%.10g",insetbottom);
+	att->push("insetbottom",insetbottom,-1);
+
+    sprintf(scratch,"%.10g",insetleft);
+	att->push("insetleft",insetleft,-1);
+
+    sprintf(scratch,"%.10g",insetright);
+	att->push("insetright",insetright,-1);
+
+
+    sprintf(scratch,"%.10g",tilegapx);
+	att->push("tilegapx",tilegapx,-1);
+
+    sprintf(scratch,"%.10g",tilegapy);
+	att->push("tilegapy",tilegapy,-1);
+
+
+    sprintf(scratch,"%d",tilex);
+	att->push("tilex",tilex,-1);
+
+    sprintf(scratch,"%d",tiley);
+	att->push("tiley",tiley,-1);
+
+
+	return att;
+}
+
+void PaperPartition::dump_in_atts(Attribute *att,int what,Laxkit::anObject *context)
+{
+	char *name,*value;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		//if (!strcmp(name,"name")) {
+		//	makestr(name,value);
+		//
+		//} else if (!strcmp(name,"description")) {
+		//	makestr(description,value);
+
+
+		if (!strcmp(name,"insettop")) {
+			DoubleAttribute(value,&insettop);
+
+		} else if (!strcmp(name,"insetbottom")) {
+			DoubleAttribute(value,&insetbottom);
+
+		} else if (!strcmp(name,"insetleft")) {
+			DoubleAttribute(value,&insetleft);
+
+		} else if (!strcmp(name,"insetright")) {
+			DoubleAttribute(value,&insetright);
+
+		} else if (!strcmp(name,"tilegapx")) {
+			DoubleAttribute(value,&tilegapx);
+
+		} else if (!strcmp(name,"tilegapy")) {
+			DoubleAttribute(value,&tilegapy);
+
+		} else if (!strcmp(name,"tilex")) {
+			IntAttribute(value,&tilex);
+
+		} else if (!strcmp(name,"tiley")) {
+			IntAttribute(value,&tiley);
+
+		} else if (!strcmp(name,"paper")) {
+			if (!isblank(value)) {
+			 	 //handle "paper Letter, landscape", assume no subattributes
+				cout << " *** must implement search for existing paper for PaperPartition::dump_in"<<endl;
+			} else {
+				PaperStyle *pp=new PaperStyle;
+				pp->dump_in_atts(att->attributes.e[c], what,context);
+				if (paper) paper->dec_count();
+				paper=pp;
+			}
+
+		} else if (!strcmp(name,"work_and_turn")) {
+			if      (!strcasecmp(value,"turn"    )) work_and_turn=SIGT_Work_and_Turn     ;
+			else if (!strcasecmp(value,"turnBF"  )) work_and_turn=SIGT_Work_and_Turn_BF  ;
+			else if (!strcasecmp(value,"tumble"  )) work_and_turn=SIGT_Work_and_Tumble   ;
+			else if (!strcasecmp(value,"tumbleBF")) work_and_turn=SIGT_Work_and_Tumble_BF;
+
+		}
+	}
+}
+
+//! Installs duplicate.
+int PaperPartition::SetPaper(PaperStyle *p)
+{
+	if (p!=paper) {
+		if (paper) paper->dec_count();
+		paper=dynamic_cast<PaperStyle*>(p->duplicate());
+	}
+	totalwidth=paper->w();
+	totalheight=paper->h();
+	return 0;
+}
+
+/*! Create a new PaperPartition ObjectDef.
+ * Returns an inc counted reference to it if found in stylemanager.
+ */
+ObjectDef *PaperPartition::makeObjectDef()
+{
+	ObjectDef *def=stylemanager.FindDef("PaperPartition");
+	if (def) { def->inc_count(); return def; }
+
+	def=new ObjectDef(NULL,"PaperPartition",
+			_("PaperPartition"),
+			_("How to partition papers for Signatures"),
+			"class",
+			NULL,NULL, //range, default value
+			NULL, //fields
+			0, //new flags
+			NULL, //newfunc
+			NULL /*createPaperPartition*/); //newfunc with parameters
+
+	def->push("paper", _("Paper"), _("Which paper size to use"),
+			"Paper", NULL, NULL, 0, NULL);
+
+	def->push("insettop", _("Top Inset"), _("Space at the top of a paper before tiling for signatures"),
+			"real", "[0..", "0", 0, NULL);
+
+	def->push("insetbottom", _("Bottom Inset"), _("Space at the bottom of a paper before tiling for signatures"),
+			"real", "[0..", "0", 0, NULL);
+
+	def->push("insetleft", _("Left Inset"), _("Space at the left of a paper before tiling for signatures"),
+			"real", "[0..", "0", 0, NULL);
+
+	def->push("insetright", _("Right Inset"), _("Space at the right of a paper before tiling for signatures"),
+			"real", "[0..", "0", 0, NULL);
+
+	def->push("tilex", _("Horizontal Tiles"), _("The number of folding sections horizontally to divide a piece of paper"),
+			"int", "[1..", "0", 0, NULL);
+
+	def->push("tiley", _("Vertical Tiles"), _("The number of folding sections vertically to divide a piece of paper"),
+			"int", "[1..", "0", 0, NULL);
+
+	def->push("tilegapx", _("H Tile Gap"), _("How much space to put between folding areas horizontally"),
+			"real", "[0..", "0", 0, NULL);
+
+	def->push("tilegapy", _("V Tile Gap"), _("How much space to put between folding areas vertically"),
+			"real", "[0..", "0", 0, NULL);
+
+	def->pushEnum("work_and_turn",_("Work and turn"), _("Work and turn"), NULL,NULL,NULL,
+					"turn",_("Turn"),_("Flip paper along vertical axis"),
+					"turnBF",_("Turn BF"),_("Flip paper along vertical axis with front on the right"),
+					"tumble",_("Tumble"),_("Flip paper along horizontal axis"),
+					"tumbleBF",_("Tumble BF"),_("Flip paper along horizontal axis with front on the bottom"),
+					NULL);
+
+
+	stylemanager.AddObjectDef(def,0);
+	return def;
+}
+
+
+/*! Creation function for use in scripting.
+ */
+int createPaperPartition(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, ErrorLog &log)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=new PaperPartition;
+		return 0;
+	}
+
+	PaperPartition *partition=new PaperPartition;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+		double d;
+
+		 //---tilegapx
+		d=parameters->findDouble("tilegapx",-1,&e);
+		if (e==0) partition->tilegapx=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilegapx"); throw error; }
+
+		 //---tilegapy
+		d=parameters->findDouble("tilegapy",-1,&e);
+		if (e==0) partition->tilegapy=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilegapy"); throw error; }
+
+		 //---tilex
+		i=parameters->findInt("tilex",-1,&e);
+		if (e==0) partition->tilex=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tilex"); throw error; }
+
+		 //---tiley
+		i=parameters->findInt("tiley",-1,&e);
+		if (e==0) partition->tiley=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"tiley"); throw error; }
+
+		 //---insetleft
+		d=parameters->findDouble("insetleft",-1,&e);
+		if (e==0) partition->insetleft=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetleft"); throw error; }
+
+		 //---insetright
+		d=parameters->findDouble("insetright",-1,&e);
+		if (e==0) partition->insetright=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetright"); throw error; }
+
+		 //---insettop
+		d=parameters->findDouble("insettop",-1,&e);
+		if (e==0) partition->insettop=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insettop"); throw error; }
+
+		 //---insetbottom
+		d=parameters->findDouble("insetbottom",-1,&e);
+		if (e==0) partition->insetbottom=d;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"insetbottom"); throw error; }
+
+	} catch (const char *str) {
+		log.AddMessage(str,ERROR_Fail);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		if (1) {
+			*value_ret=partition;
+			partition->inc_count();
+
+		} else {
+			log.AddMessage(_("Incomplete PaperPartition definition!"),ERROR_Fail);
+			err=1;
+		}
+	}
+	partition->dec_count();
+
+	return err;
+}
+
+
+//------------------------------------ SignatureInstance -----------------------------------------
+/* \class SignatureInstance
+ * Hold a Signature, plus how many sheets in the pattern, and a PaperPartition.
+ */
+
+SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
+{
+	if (sig) sig->inc_count();
+	if (!sig) sig=new Signature;
+	pattern=sig;
+
+	partition=paper;
+	if (paper) paper->inc_count();
+	else partition=new PaperPartition;
+
+	sheetspersignature=1;
+	autoaddsheets=1;
+	creep=0;
+
+	next_insert=NULL;
+	prev_insert=NULL;
+	next_stack =NULL;
+	prev_stack =NULL;
+
+	//automarks=AUTOMARK_Margins|AUTOMARK_InnerDot; //1.margin marks, 2.interior dotted line, 4.interior dots
+	//automarks=AUTOMARK_Margins|AUTOMARK_InnerDottedLines; //1.margin marks, 2.interior dotted line, 4.interior dots
+	automarks=0; //1.margin marks, 2.interior dotted line, 4.interior dots
+	linestyle=NULL;
+}
+
+/*! will delete next_insert and next_stack.
+ */
+SignatureInstance::~SignatureInstance()
+{
+	if (next_insert) delete next_insert;
+	if (next_stack)  delete next_stack;
+	if (partition) partition->dec_count();
+
+	if (linestyle) linestyle->dec_count();
+}
+
+/*! Add insert as the innermost insert of *this.
+ * Takes possession of insert. Calling code shouldn't delete it.
+ * Return index number within stack of insert.
+ */
+int SignatureInstance::AddInsert(SignatureInstance *insert)
+{
+	SignatureInstance *s=this;
+	int i=1;
+	while (s->next_insert) { i++; s=s->next_insert; }
+	s->next_insert=insert;
+	return i;
+}
+
+/*! Add insert as the innermost insert of *this.
+ * Takes possession of stack. Calling code shouldn't delete it.
+ * Return index number of stack.
+ */
+int SignatureInstance::AddStack(SignatureInstance *stack)
+{
+	SignatureInstance *s=this;
+	int i=1;
+	while (s->next_stack) { i++; s=s->next_stack; }
+	s->next_stack=stack;
+	return i;
+}
+
+
+
+//! With the final trimmed page size (w,h), set the paper size to the proper size to just contain it, maintaining current inset sizes.
+int SignatureInstance::SetPaperFromFinalSize(double w,double h, int all)
+{
+	 //find cell dims
+	w+=pattern->trimleft+pattern->trimright;
+	h+=pattern->trimtop +pattern->trimbottom;
+
+	 //find pattern dims
+	w*=(pattern->numvfolds+1);
+	h*=(pattern->numhfolds+1);
+
+	 //find whole dims
+	w=w*partition->tilex + (partition->tilex-1)*partition->tilegapx + partition->insetleft + partition->insetright;
+	h=h*partition->tiley + (partition->tiley-1)*partition->tilegapy + partition->insettop  + partition->insetbottom;
+
+	PaperStyle p("Custom",w,h,0,300,"in");
+	if (partition->work_and_turn==SIGT_Work_and_Turn || partition->work_and_turn==SIGT_Work_and_Turn_BF)
+		w*=2;
+	else if (partition->work_and_turn==SIGT_Work_and_Tumble || partition->work_and_turn==SIGT_Work_and_Tumble_BF)
+		h*=2;
+
+	if (all) {
+		if (next_stack)  next_stack ->SetPaperFromFinalSize(w,h,all);
+		if (next_insert) next_insert->SetPaperFromFinalSize(w,h,all);
+	}
+
+	return partition->SetPaper(&p);
+}
+
+/*! Duplicate *this, AND creates duplicates of inserts and next_stack.
+ */
+Value *SignatureInstance::duplicate()
+{
+	SignatureInstance *sig=new SignatureInstance;
+
+	if (partition) sig->partition=(PaperPartition*)partition->duplicate();
+	if (pattern) { 	sig->pattern=pattern; 	sig->pattern->inc_count(); }
+
+	if (next_insert) sig->next_insert=(SignatureInstance*)next_insert->duplicate();
+	if (next_stack)  sig->next_stack =(SignatureInstance*)next_stack->duplicate();
+
+	sig->sheetspersignature=sheetspersignature;
+	sig->autoaddsheets=autoaddsheets;
+	sig->creep=creep;
+
+	sig->automarks=automarks;
+
+	return sig;
+}
+
+/*! Duplicate *this, and DOES NOT create duplicates of inserts and next_stack.
+ */
+SignatureInstance *SignatureInstance::duplicateSingle()
+{
+	SignatureInstance *sig=new SignatureInstance;
+
+	if (partition) sig->partition=(PaperPartition*)partition->duplicate();
+	if (pattern) { 	sig->UseThisSignature(pattern,0); }
+
+	sig->sheetspersignature=sheetspersignature;
+	sig->autoaddsheets=autoaddsheets;
+	sig->creep=creep;
+
+	sig->automarks=automarks;
+
+	return sig;
+}
+
+/*! If link!=0, then inc_count on it when installing, otherwise install a duplicate.
+ * Return 0 for success.
+ */
+int SignatureInstance::UseThisSignature(Signature *sig, int link)
+{
+	if (pattern) pattern->dec_count();
+	if (link) {
+		if (sig!=pattern) {
+			pattern=sig;
+			pattern->inc_count();
+		}
+	} else {
+		pattern=(Signature*)sig->duplicate();
+	}
+	return 0;
+}
+
+
+/*! Return the number of pages that can be arranged in one signature stack.
+ * Also add the PagesPerSignature of any inserts.
+ *
+ * So say you have a pattern with 2 sheets folded together. Then 2*pattern->PagesPerPattern() is returned.
+ *
+ * If whichstack<0, then return the total number of pages within all stacks. Otherwise, just that stack and its inserts.
+ *
+ * It is assumed that sheetspersignature reflects a desired number of sheets in the signature,
+ * whether or not autoaddsheets==1.
+ *
+ * Please note this is only the number for ONE tile.
+ */
+int SignatureInstance::PagesPerSignature(int whichstack, int ignore_inserts)
+{
+	int num=0;
+	SignatureInstance *sig=this;
+	while (sig) {
+		if (whichstack<=0) {
+			num+=sig->sheetspersignature*sig->pattern->PagesPerPattern();
+			if (!ignore_inserts && sig->next_insert) num+=sig->next_insert->PagesPerSignature(0,0);
+		}
+		if (whichstack==0) break; //we were looking for specific stack.
+		whichstack--;
+		sig=sig->next_stack;
+	}
+
+	return num;
+}
+
+/*! Like PagesPerSignature(), but return the 2*(number of sheets of paper) required.
+ */
+int SignatureInstance::PaperSpreadsPerSignature(int whichstack)
+{
+	int num=0;
+	SignatureInstance *sig=this;
+	while (sig) {
+		if (whichstack<=0) {
+			num+=sig->sheetspersignature*2;
+			if (sig->next_insert) num+=sig->next_insert->PaperSpreadsPerSignature(0);
+		}
+		if (whichstack==0) break; //we were looking for specific stack.
+		whichstack--;
+		sig=sig->next_stack;
+	}
+
+	return num;
+}
+
+/*! Locate which SignatureInstance insert the given page number is contained in.
+ */
+SignatureInstance *SignatureInstance::locateInsert(int pagenumber, //!< a page number for somewhere in this stack+inserts
+												   int *insertnum, //!< What would be the page number if found insert was isolated (includes subinserts)
+												   int *deep)      //!< Insert number, this==0.
+{
+	//   \/    Insert 2, 4 pages, 1 sheet
+	//  \\//   Insert 1, 8 pages, 2 sheets
+	// \\\///  Insert 0, 12 pages, 3 sheets
+	//
+
+	 //check if in this->signature, but just on one side
+	if (pagenumber<sheetspersignature*2) {
+		if (deep) *deep=0;
+		if (insertnum) *insertnum=pagenumber;
+		return this;
+	}
+
+	 //check inserts
+	if (next_insert) {
+		SignatureInstance *found=next_insert->locateInsert(pagenumber-sheetspersignature*2, insertnum, deep);
+		if (found) {
+			if (deep) (*deep)++;
+			return found;
+		}
+		pagenumber-=next_insert->PagesPerSignature(0,0);
+	}
+
+	//check if in this->signature, but on other side from above
+
+	if (pagenumber>=sheetspersignature*2) {
+		 //pagenumber did not fit in this stack
+		if (deep) *deep=-1;
+		if (insertnum) *insertnum=-1;
+		return NULL;
+	}
+
+	if (deep) *deep=0;
+	if (insertnum) *insertnum=pagenumber;
+	return this;
+}
+
+//! Return which paper spread contains the given document page number (each sheet of paper is two paper spreads).
+/*! If row or col are not NULL, then return which cell the page is in, and which stack and insert thereof.
+ * Note that this row,col is for a paper spread, and by convention the backside of a sheet of
+ * paper is flipped left to right in relation to the front side.
+ */
+int SignatureInstance::locatePaperFromPage(int pagenumber,
+										   int *stack,      //!< return index of stack, 0 for this
+										   int *insert,     //!< return index of insert, 0 for this
+										   int *insertpage, //!< return page number on the insert if insert were isolated
+										   int *row,        //!< return row and column of page in pattern, seen from front side
+										   int *col)
+{
+	int total_pages_all_stacks=PagesPerSignature(-1,0); //total number in signatures configuration
+	int sigsoffset=pagenumber/total_pages_all_stacks; //number of complete configs to pass over
+	
+	pagenumber%=total_pages_all_stacks;
+	int num=PagesPerSignature(0,0);
+	if (pagenumber>=num) {
+		 //page was in future adjacent stack
+		int pp=next_stack->locatePaperFromPage(pagenumber-num, stack, insert, insertpage, row, col);
+		pp+=2*sheetspersignature + sigsoffset*PaperSpreadsPerSignature(-1);
+		if (stack) (*stack)++; //add one for *this
+		return pp;
+	}
+
+	//pagenumber numerically is now somewhere in this stack, or its inserts
+
+	if (stack) *stack=0;
+
+	int deep=0;
+	SignatureInstance *whichinsert=locateInsert(pagenumber, insertpage, &deep);
+	int paper=whichinsert->pattern->locatePaperFromPage(*insertpage, row, col, whichinsert->sheetspersignature);
+
+	*insert=deep;
+
+	SignatureInstance *sig=whichinsert;
+	while (sig && deep) {
+		paper+=sig->sheetspersignature*2;
+		deep--;
+		sig=sig->next_insert;
+	}
+
+	return paper;
+}
+
+int SignatureInstance::IsVertical()
+{
+	return pattern->IsVertical();
+}
+
+/*! Replace paper size. If all_with_same_size, replace any next connected instances that have the 
+ * same paper dimensions, AND the same final page sizes.
+ *
+ * Returns the number of signature instances changed
+ */
+int SignatureInstance::SetPaper(PaperStyle *p, int all_with_same_size)
+{
+	double paper_w=partition->paper->w();
+	double paper_h=partition->paper->h();
+	double page_w =pattern->PageWidth(1);
+	double page_h =pattern->PageHeight(1);
+
+	int n=1;
+
+	partition->SetPaper(p);
+	pattern->patternwidth =partition->PatternWidth();
+	pattern->patternheight=partition->PatternHeight();
+	if (!all_with_same_size) return n;
+
+	SignatureInstance *sig=next_stack;
+	while (sig) {
+		if (sig->partition->paper->w()==paper_w && sig->partition->paper->h()==paper_h
+				&& sig->pattern->PageWidth(1)==page_w && sig->pattern->PageHeight(1)==page_h)
+			n+=sig->SetPaper(p,1);
+		sig=sig->next_stack;
+	}
+	sig=next_insert;
+	while (sig) {
+		if (sig->partition->paper->w()==paper_w && sig->partition->paper->h()==paper_h
+				&& sig->pattern->PageWidth(1)==page_w && sig->pattern->PageHeight(1)==page_h)
+			n+=sig->SetPaper(p,0);
+		sig=sig->next_insert;
+	}
+	return n;
+}
+
+/*! Return the number of vertical stacks. Any inserts are considered part of one stack.
+ * Note this counts in the next_stack direction. If next_stack==NULL, 1 is returned.
+ * Any prev_stack objects are ignored.
+ */
+int SignatureInstance::NumStacks()
+{
+	SignatureInstance *sig=this;
+	int n=0;
+	while (sig) {
+		n++;
+		sig=sig->next_stack;
+	}
+	return n;
+}
+
+/*! Return the number of inserts of this. If only *this exists, then 0 is returned.
+ */
+int SignatureInstance::NumInserts()
+{
+	SignatureInstance *sig=next_insert;
+	int n=0;
+	while (sig) {
+		n++;
+		sig=sig->next_insert;
+	}
+	return n;
+}
+
+/*! Compute and return the size the pattern should take up.
+ */
+double SignatureInstance::PatternHeight()
+{ return partition->PatternHeight(); }
+
+/*! Compute and return the size the pattern should take up.
+ */
+double SignatureInstance::PatternWidth()
+{ return partition->PatternWidth(); }
+
+
+void SignatureInstance::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+    Attribute att;
+	dump_out_atts(&att,0,context);
+    att.dump_out(f,indent);
+}
+
+LaxFiles::Attribute *SignatureInstance::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+{
+	if (!att) att=new Attribute;
+
+	if (what==-1) {
+		Value::dump_out_atts(att,-1,context);
+		return att;
+	}
+	
+	if (automarks) {
+		char str[100]; str[0]='\0';
+
+		if (automarks&AUTOMARK_Margins)  strcat(str,"outer ");
+		if (automarks&AUTOMARK_InnerDot) strcat(str,"innerdot ");
+		//if (automarks&AUTOMARK_InnerDottedLines) strcat(str,"innerdotlines ");
+
+		if (str[0]!='\0') att->push("automarks",str);
+	}
+
+	att->push("autoaddsheets",autoaddsheets?"yes":"no");
+
+	Attribute *satt=att->pushSubAtt("pattern",NULL);
+	pattern->dump_out_atts(satt,what,context);
+
+	satt=att->pushSubAtt("partition",NULL);
+	partition->dump_out_atts(satt,what,context);
+
+	SignatureInstance *sig=next_insert;
+	Attribute *aa;
+	while (sig) {
+		aa=sig->dump_out_atts(NULL,what,context);
+		makestr(aa->name,"insert");
+		att->push(aa,-1);
+		sig=sig->next_insert;
+	}
+
+	return att;
+}
+
+
+void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	char *name,*value;
+	int nump=-1;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"automarks")) {
+			automarks=0;
+			if (strstr(value,"outer")) automarks|=AUTOMARK_Margins;
+			if (strstr(value,"innerdot")) automarks|=AUTOMARK_InnerDot;
+			//else if (strstr(value,"innerdotlines")) automarks|=AUTOMARK_InnerDottedLines;
+
+		} else if (!strcmp(name,"numpages")) {
+			IntAttribute(value, &nump);
+
+		} else if (!strcmp(name,"autoaddsheets")) {
+			autoaddsheets=BooleanAttribute(value);
+
+		} else if (!strcmp(name,"pattern")) {
+			Signature *sig=new Signature;
+			sig->dump_in_atts(att->attributes.e[c],flag,context);
+			if (pattern) pattern->dec_count();
+			pattern=sig;
+
+		} else if (!strcmp(name,"partition")) {
+			if (!partition) partition=new PaperPartition();
+			partition->dump_in_atts(att->attributes.e[c],flag,context);
+
+		} else if (!strcmp(name,"insert")) {
+			SignatureInstance *insert=new SignatureInstance;
+			insert->dump_in_atts(att->attributes.e[c],flag,context);
+			AddInsert(insert);
+		}
+	}
+}
+
+/*! Always makes new one, does not consult stylemanager.
+ */
+ObjectDef *SignatureInstance::makeObjectDef()
+{
+	ObjectDef *sd=stylemanager.FindDef("SignatureInstance");
+	if (sd) return sd;
+
+	sd=new ObjectDef(NULL,"SignatureInstance",
+			_("Signature Instance"),
+			_("Combination of a PaperPartition and a Signature"),
+			"class",
+			NULL,NULL, //range, default value
+			NULL, //fields
+			0, //new flags
+			NULL, //newfunc
+			NULL);
+			
+
+	sd->push("partition", _("Partition"), _("Partition"),
+			"PaperPartition", NULL, NULL, 0, NULL);
+
+	sd->push("pattern", _("Pattern"), _("The folding pattern"),
+			"Signature", NULL, NULL, 0, NULL);
+
+	sd->push("sheetspersignature", _("Sheets per signature"), _("Sheets per signature"),
+			"int", NULL, "1", 0, NULL);
+
+	sd->push("autoaddsheets", _("Auto add sheets"), _("Auto add sheets"),
+			"boolean", NULL, "false", 0, NULL);
+
 
 	return sd;
 }
 
-StyleDef *SignatureImposition::makeStyleDef()
+int createSignatureInstance(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, ErrorLog &log)
 {
-	return makeSignatureImpositionStyleDef();
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=new SignatureInstance;
+		//log.AddMessage(_("Missing parameters!"),ERROR_Fail);
+		return 0;
+	}
+
+	SignatureInstance *sig=new SignatureInstance;
+
+	char error[100];
+	int err=0;
+	try {
+		int i, e;
+
+		 //---sheetspersignature
+		i=parameters->findInt("sheetspersignature",-1,&e);
+		if (e==0) sig->sheetspersignature=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"sheetspersignature"); throw error; }
+
+		 //---autoaddsheets
+		i=parameters->findBoolean("autoaddsheets",-1,&e);
+		if (e==0) sig->autoaddsheets=(i?1:0);
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"autoaddsheets"); throw error; }
+
+		 //---pattern
+		Value *v=parameters->find("pattern");
+		if (dynamic_cast<Signature*>(v)) {
+			if (sig->pattern) sig->pattern->dec_count();
+			sig->pattern=dynamic_cast<Signature*>(v);
+			sig->pattern->inc_count();
+		} else { sprintf(error, _("Invalid format for %s!"),"pattern"); throw error; }
+
+	} catch (const char *str) {
+		log.AddMessage(str,ERROR_Fail);
+		err=1;
+	}
+
+	if (value_ret && err==0) {
+		*value_ret=sig;
+		sig->inc_count();
+
+		//} else {
+			//log.AddMessage(_("Incomplete SignatureInstance definition!"),ERROR_Fail);
+			//err=1;
+		//}
+	}
+	sig->dec_count();
+
+	return err;
 }
 
-void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
-{
-	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+//------------------------------------- SignatureImposition --------------------------------------
+/*! \class SignatureImposition
+ * \brief Imposition based on rectangular folded paper.
+ *
+ * The steps for creating a signature based imposition are:
+ *
+ * 1. Tile paper into partitions, with a PaperPartition.
+ * 2. Define folding per partition, with a Signature.\n
+ * 3. Define any finishing trim and margin within the Signature
+ * 4. specify which edge of the folded up paper to use as the binding edge, if any\n
+ * 5. stack signatures back to back, or insert them into each other. See SignatureInstance.
+ *
+ * If any trim value is less than 0, then no trim is done on that edge. This lets users define
+ * accordion impositions, potentially, by folding many times, but only trimming the top and bottom,
+ * for instance. The trimmed area is considered a bleed area.
+ *
+ * The trim value along an edge that is the binding edge will not be considered to be actually trimmed,
+ * but page content will not extend into those areas, except to bleed. In other words, page spread views will show
+ * the pages touching each other, but pages will be laid down into a signature with a bit of a gap.
+ *
+ */
+/*! \var int Signature::showwholecover
+ * \brief Whether to show the front and back pages together or not.
+ */
 
-	if (what==-1) {
-		fprintf(f,"%spaper             #type of paper to use\n"
-				  "%s  name letter\n"
-				  "%s  width 8.5\n"
-				  "%s  height 11\n", spc,spc,spc,spc);
-		
-		fprintf(f,"%sshowwholecover no #Whether to let the front cover bleed over onto the back cover\n",spc);
-		if (signature) signature->dump_out(f,indent,-1,NULL);
-		else {
-			Signature sig;
-			sig.dump_out(f,indent,-1,NULL);
+
+/*! This will increment the count of newsig.
+ */
+SignatureImposition::SignatureImposition(SignatureInstance *newsig)
+	: Imposition("SignatureImposition")
+{
+	showwholecover=0;
+
+	signatures=NULL;
+	if (newsig) signatures=(SignatureInstance*)newsig->duplicate();
+	
+	pagestyle=pagestyleodd=NULL;
+
+	objectdef=stylemanager.FindDef("SignatureImposition");
+	if (objectdef) objectdef->inc_count(); 
+	else {
+		objectdef=makeObjectDef();
+		if (objectdef) stylemanager.AddObjectDef(objectdef,0);
+	}
+
+	name=description=NULL;
+}
+
+SignatureImposition::~SignatureImposition()
+{
+	if (signatures) delete signatures;
+	//if (partition) partition->dec_count();
+
+	if (pagestyle) pagestyle->dec_count();
+	if (pagestyleodd) pagestyleodd->dec_count();
+}
+
+ImpositionInterface *SignatureImposition::Interface()
+{
+	return new SignatureInterface();
+}
+
+//! Static imposition resource creation function.
+/*! Returns NULL terminated list of default resources.
+ *
+ * \todo return resources for double sided singles, booklet, calendar, 2 fold, 3 fold
+ */
+ImpositionResource **SignatureImposition::getDefaultResources()
+{
+	ImpositionResource **r=new ImpositionResource*[3];
+
+	Attribute *att =new Attribute;
+	Attribute *satt=att->pushSubAtt("signature",NULL);      
+	satt=satt->pushSubAtt("pattern");
+	satt->push("binding","left");
+	r[0]=new ImpositionResource("SignatureImposition",
+								  _("Double Sided Singles"),
+								  NULL,
+								  _("Imposition of single pages meant to be next to each other"),
+								  att,1);
+
+	att=new Attribute;
+	satt=att->pushSubAtt("signature",NULL);      
+	satt->push("autoaddsheets");
+	satt=satt->pushSubAtt("pattern");
+	satt->push("fold","1 Right");
+	satt->push("numvfolds","1");
+	satt->push("binding","left");
+
+	DBG cerr <<"-----** Booklet att resource:"<<endl;
+	DBG att->dump_out(stderr, 0);
+
+	r[1]=new ImpositionResource("SignatureImposition",
+								  _("Booklet"),
+								  NULL,
+								  _("Imposition for a stack of sheets, folded down the middle"),
+								  att,1);
+	r[2]=NULL;
+	return r;
+}
+
+/*! Return total number of SignatureInstances in signatures.
+ */
+int SignatureImposition::TotalNumStacks()
+{
+	SignatureInstance *sig=signatures;
+	SignatureInstance *s2;
+	int num=0;
+	while (sig) {
+		s2=sig;
+		while (s2) {
+			num++;
+			s2=s2->next_insert;
 		}
-		fprintf(f,"%smarks              #(optional) Custom printer marks (any drawing object) for the default paper group\n",spc);
-		fprintf(f,"%s  ...\n",spc);
+		sig=sig->next_stack;
+	}
+
+	return num;
+}
+
+/*! If which<0, then return the number of defined stacks not including inserts.
+ * If which>=0, then return the number of inserts on the designated stack (including the head).
+ */
+int SignatureImposition::NumStacks(int which)
+{
+	int num=0;
+	SignatureInstance *sig=signatures;
+	while (sig) {
+		if (which>=0 && which==num) {
+			 //return inserts size on stack which
+			num=0;
+			while (sig) {
+				num++;
+				sig=sig->next_insert;
+			}
+			return num;
+		}
+		num++;
+		sig=sig->next_stack;
+	}
+
+	return num;
+}
+
+//! Install a particular creep value for which signature.
+/*! Creep is how much horizontally the middle of a signature will poke out
+ * relative to the outer page. The task is to adjust trim areas per page to reflect this,
+ * by chopping off bits of page opposite to the binding edge.
+ * 
+ * Note we can approximate the creep as pi*(numsheets)*(paper thickness)/2.
+ *
+ * Return 0 for success.
+ */
+int SignatureImposition::Creep(int which,double d)
+{
+	DBG cerr <<" *** need to implement SignatureImposition::Creep()!"<<endl;
+	return 1;
+}
+
+//! Return pointer to the specified SignatureInstance.
+/*! If stack<0, then return last one. If insert<0, return innermost for stack.
+ */
+SignatureInstance *SignatureImposition::GetSignature(int stack,int insert)
+{
+	if (stack<0) stack=NumStacks(-1)-1;
+	if (insert<0) insert=NumStacks(stack)-1;
+
+	if (!signatures) {
+		signatures=new SignatureInstance;
+	}
+	SignatureInstance *sig=signatures;
+
+	while (sig->next_stack  && stack>0)  { sig=sig->next_stack;  stack--;  }
+	while (sig->next_insert && insert>0) { sig=sig->next_insert; insert--; }
+
+	return sig;
+}
+
+/*! Remove current signature stack, and replace with one based on newsig. Partition is not changed.
+ * Return 0 for success, 1 for error and no change.
+ */
+int SignatureImposition::UseThisSignature(Signature *newsig)
+{
+	if (!newsig) return 1;
+
+	PaperPartition *paper=NULL;
+	if (signatures) paper=signatures->partition;
+	if (paper) paper->inc_count();
+
+	if (signatures) signatures->dec_count();
+	signatures=new SignatureInstance(newsig,paper);
+	if (paper) paper->dec_count();
+
+	return 0;
+}
+
+//! Return default paper dimensions if paperorpage==0, or page dimensions for paperorpage==1.
+void SignatureImposition::GetDimensions(int paperorpage, double *x, double *y)
+{
+	if (paperorpage==0) {
+		 //paper dimensions
+		*x=signatures->partition->totalwidth;
+		*y=signatures->partition->totalheight;
 		return;
 	}
 
-	fprintf(f,"%spaper\n",spc);
-	papersize->dump_out(f,indent+2,what,context);
-	fprintf(f,"%sshowwholecover %s\n",spc,showwholecover?"yes":"no");
-	signature->dump_out(f,indent,what,context);
-
-	 //dump out printer marks
-	if (papergroup && papergroup->objs.n()) {
-		fprintf(f,"%smarks\n",spc);
-		papergroup->objs.dump_out(f,indent+2,0,context);
-	}
+	*x=signatures->pattern->PageWidth(1);
+	*y=signatures->pattern->PageHeight(1);
 }
 
-void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+//! Return something like "2 fold, 8 page signature".
+const char *SignatureImposition::BriefDescription()
 {
-	if (!signature) signature=new Signature;
-	char *name,*value;
-	PaperStyle ps;
+	if (description) return description;
 
+	static char briefdesc[100]; //note this is not threadsafe, so be quick!!
+	if (signatures->partition->tilex>1 || signatures->partition->tiley>1) 
+		sprintf(briefdesc,_("%d page signature, tiled %dx%d"),
+					signatures->PagesPerSignature(-1,0),
+					signatures->partition->tilex, signatures->partition->tiley);
+	else sprintf(briefdesc,_("%d page signature"),signatures->PagesPerSignature(-1,0));
 
-	for (int c=0; c<att->attributes.n; c++) {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-
-		if (!strcmp(name,"showwholecover")) {
-			showwholecover=BooleanAttribute(value);
-
-		} else if (!strcmp(name,"paper")) {
-			ps.dump_in_atts(att->attributes.e[c],flag,context);
-
-		}
-	}
-	signature->dump_in_atts(att,flag,context);
-	SetPaperSize(&ps); //duplicates paper
-
-	for (int c=0; c<att->attributes.n; c++) {
-		name=att->attributes.e[c]->name;
-		value=att->attributes.e[c]->value;
-
-		if (!strcmp(name,"marks")) {
-			papergroup->objs.dump_in_atts(att->attributes.e[c],flag,context);
-
-		}
-	}
+	return briefdesc;
 }
 
+Value *SignatureImposition::duplicate()
+{
+	SignatureImposition *sn;
+	sn=new SignatureImposition(signatures);
+
+	sn->showwholecover=showwholecover;
+
+	sn->name=increment_file(name);
+	makestr(sn->description,description);
+
+	return sn;
+}
+
+ObjectDef *SignatureImposition::makeObjectDef()
+{
+	return makeSignatureImpositionObjectDef();
+}
+
+/*! Please note this returns vertical ONLY on first pattern. Normally this is ok, as
+ * all patterns in single stacks are supposed to have the same verticality.
+ */
+int SignatureImposition::IsVertical()
+{
+	return signatures->pattern->IsVertical();
+}
 
 //! Return 2, for Top/Left or Bottom/Right.
-/*! Which of top or left is determined by signature->IsVertical(). Same for bottom/right.
+/*! Which of top or left is determined by pattern->IsVertical(). Same for bottom/right.
  */
 int SignatureImposition::NumPageTypes()
 { return 2; }
 
-//! If signature->IsVertical(), return "Top" or "Bottom" else return "Left" or "Right".
+//! If IsVertical(), return "Top" or "Bottom" else return "Left" or "Right".
 /*! Returns NULL if not a valid pagetype.
  */
 const char *SignatureImposition::PageTypeName(int pagetype)
 {
-	if (pagetype==0) return signature->IsVertical() ? _("Top") : _("Left");
-	if (pagetype==1) return signature->IsVertical() ? _("Bottom") : _("Right");
+	if (pagetype==0) return IsVertical() ? _("Top") : _("Left");
+	if (pagetype==1) return IsVertical() ? _("Bottom") : _("Right");
 	return NULL;
 }
 
@@ -1680,17 +2407,17 @@ const char *SignatureImposition::PageTypeName(int pagetype)
  */
 int SignatureImposition::PageType(int page)
 {
-	//int left=((page+1)/2)*2-1+showwholecover;  <-- *** showwholecover does not map page numbers!!
+	//Note that showwholecover is irrelevant here.
 	int left=((page+1)/2)*2-1;
-	if (left==page && signature->IsVertical()) return 0; //top
+	if (left==page && IsVertical()) return 0; //top
 	if (left==page) return 0; //left
-	if (signature->IsVertical()) return 1; //bottom
+	if (IsVertical()) return 1; //bottom
 	return 1; //right
 }
 
-//! Return the type of spread that the given spread index is.
+//! Return the type of spread that the given spread index is, always 0 here.
 int SignatureImposition::SpreadType(int spread)
-{ // ***
+{
 	return 0;
 }
 
@@ -1700,7 +2427,9 @@ int SignatureImposition::SpreadType(int spread)
 //! Return which paper number the given document page lays on.
 int SignatureImposition::PaperFromPage(int pagenumber)
 {
-	return signature->locatePaperFromPage(pagenumber,NULL,NULL);
+	int stack, insert, insertpage, row, col;
+	int pp=signatures->locatePaperFromPage(pagenumber, &stack, &insert, &insertpage, &row, &col);
+	return pp;
 }
 
 int SignatureImposition::SpreadFromPage(int layout, int pagenumber)
@@ -1719,9 +2448,11 @@ int SignatureImposition::SpreadFromPage(int layout, int pagenumber)
  */
 int SignatureImposition::GetPagesNeeded(int npapers)
 {
-	int numsigs=npapers/2/signature->sheetspersignature;
-	if (numsigs==0) numsigs=1;
-	return numsigs * signature->PagesPerSignature();
+ 
+	int pp=signatures->PaperSpreadsPerSignature(-1);
+	pp/=npapers+1; //how many complete signature stacks needed
+	int npages=signatures->PagesPerSignature(-1,0);
+	return npages * pp;
 }
 
 //! Return the number of paper spreads needed to hold that many pages.
@@ -1732,74 +2463,70 @@ int SignatureImposition::GetPagesNeeded(int npapers)
  */
 int SignatureImposition::GetPapersNeeded(int npages)
 {
-	if (signature->autoaddsheets) return 2*(npages/signature->PagesPerPattern() + 1);
-	return 2*(npages/signature->PagesPerSignature() + 1);
+	int pp=signatures->PagesPerSignature(-1,0);
+	return ((npages-1)/pp+1)*pp;
 }
 
 int SignatureImposition::GetSpreadsNeeded(int npages)
 { return (npages)/2+1; } 
 
-int *SignatureImposition::PrintingPapers(int frompage,int topage)
-{// ***
-	cerr <<" *** note to self: is Imposition::PrintingPapers() needed?"<<endl;
-	return NULL;
-}
 
-
-//! With the final trimmed page size, set the paper size to the proper size to just contain it.
+//! With the final trimmed page size (w,h), set the paper size to the proper size to just contain it.
+/*! This adjusts all SignatureInstance objects in signatures.
+ */
 int SignatureImposition::SetPaperFromFinalSize(double w,double h)
 {
-	signature->SetPaperFromFinalSize(w,h);
-	if (papersize) papersize->dec_count();
-	papersize=(PaperStyle*)signature->paperbox->duplicate();
+	signatures->SetPaperFromFinalSize(w,h, 1);
 	return 0;
 }
 
+
 //! This will duplicate npaper.
+/*! Note this will ONLY affect papers of instances is signatures that have the same
+ * page dimensions and final page sizes as this->signtaures.
+ *
+ * More thorough changes must be done manually, as different signature instances can have
+ * different paper sizes.
+ */
 int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 {
 	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
-	signature->SetPaper(npaper);
-	if (npaper!=papersize) {
-		if (papersize) papersize->dec_count();
-		papersize=(PaperStyle*)npaper->duplicate();
-	}
+	signatures->SetPaper(npaper, 1);
 	return 0;
 }
 
+/*! Signatures will be set only with the paper style of the first paper in group.
+ */
 int SignatureImposition::SetPaperGroup(PaperGroup *ngroup)
 {
 	Imposition::SetPaperGroup(ngroup);
-	signature->SetPaper(paper->paperstyle);
+	signatures->SetPaper(paper->paperstyle,1);
 	return 1;
 }
 
 //! Return the number of spreads for the given type that currently exist.
 int SignatureImposition::NumSpreads(int layout)
 {
-	if (layout==PAPERLAYOUT) {
-		return numsignatures * signature->sheetspersignature*2;
-	}
+	if (layout==PAPERLAYOUT) return NumPapers();
+
 	if (layout==PAGELAYOUT || layout==LITTLESPREADLAYOUT) {
-		//if (signature->numhfolds+signature->numvfolds==0 && numdocpages==2) return 2;
+		//if (pattern->numhfolds+pattern->numvfolds==0 && numdocpages==2) return 2;
 		return numpages/2+1;
 	}
+
 	if (layout==SINGLELAYOUT) return numdocpages;
 	return 0;
 }
 
-int SignatureImposition::NumSpreads(int layout,int setthismany)
-{// ***
-	cerr <<"  ********** implement SignatureImposition::NumSpreads(int layout,int setthismany)"<<endl;
-	return 0;
-}
 
 //! Return the number of paper spreads.
 /*! This is twice the number of physical pieces of paper.
  */
 int SignatureImposition::NumPapers()
 {
-	return numpapers;
+	int pp=signatures->PaperSpreadsPerSignature(-1);
+	int numsignatures= (numpages-1)/signatures->PagesPerSignature(-1,0) + 1;
+	return pp * numsignatures;
 }
 
 //! Set the number of papers.
@@ -1807,10 +2534,10 @@ int SignatureImposition::NumPapers()
  * This will not be less than npapers, but might be more.
  */
 int SignatureImposition::NumPapers(int npapers)
-{// ***
-
-	cerr <<"  ********** implement SignatureImposition::NumPapers(int npapers)"<<endl;
-	return 0;
+{
+	int pp=signatures->PaperSpreadsPerSignature(-1);
+	numpapers=((npapers-1)/pp + 1) * pp;
+	return numpapers;
 }
 
 //! Returns the number of pages the imposition thinks there should be.
@@ -1818,51 +2545,100 @@ int SignatureImposition::NumPapers(int npapers)
  */
 int SignatureImposition::NumPages()
 {
-	return numpages;
+	return numpages; //note this is not numdocpages, which is a hint for current document
 }
 
 //! Set the number of document pages that must be fit into the imposition.
-/*! Returns the number of pages the imposition thinks there should be.
+/*! Returns the number of pages the imposition thinks there should be, and
+ * makes it so the other NumPages() returns how many the imposition thinks there should be.
  * This might be more than npages.
+ *
+ * For each SignatureInstance that has autoaddsheets, distribute new sheets among them,
+ * by adding one then going down inserts, then across stacks. No instance can have
+ * fewer than one sheet.
  */
 int SignatureImposition::NumPages(int npages)
 {
 	//update the number of papers to accomodate npages
 
+	//if (numdocpages==npages) return numpages;
 	numdocpages=npages;
-	if (signature->numhfolds+signature->numvfolds==0 && numdocpages<=2) return 2;
 
-	if (signature->autoaddsheets) {
-		//***signature->sheetspersignature=1+(npages-1)/(signature->PagesPerPattern()*signature->tilex*signature->tiley);
-		signature->sheetspersignature=1+(npages-1)/(signature->PagesPerPattern());
-		numsignatures=1;
-		numpapers=2*signature->sheetspersignature;
-		numpages=signature->PagesPerSignature();
+	//all SignatureInstance objects with autoaddsheets==true get excess pages distributed
+	//between them. If there are no autoaddsheets, then whole blocks of signatures
+	//need to be added
 
-	} else {
-		numsignatures=1+(npages-1)/signature->PagesPerSignature();
-		if (numsignatures==0) numsignatures=1;
-		numpapers=2*numsignatures*signature->sheetspersignature;
-		numpages=numsignatures*signature->PagesPerSignature();
+	 //first pass, find out how many autoaddsheets instances there are
+	int numauto=0;
+	int numstatic=0;
+	int n;
+	SignatureInstance *s1=signatures,*s2;
+	while (s1) {
+		s2=s1;
+		while (s2) {
+			if (s2->sheetspersignature<=0) s2->sheetspersignature=1; //check for corrupt sheetspersignature
+			n=s2->pattern->PagesPerPattern()*s2->sheetspersignature;
+			if (s2->autoaddsheets) { numauto+=n; s2->sheetspersignature=1; }
+			else numstatic+=n;
+			
+			s2=s2->next_insert;
+		}
+		s1=s1->next_stack;
 	}
 
+	if (numauto==0) {
+		 //Hooray, the simple case!
+		int nper=signatures->PagesPerSignature(-1,0);
+		numpages=(npages/nper + 1)*nper;
+		return numpages;
+	}
+
+	npages-=numstatic;
+
+	//Second pass: now we must distribute the remaining pages equally across the auto signatures,
+	//with at least 1 paper in each auto... Above each sheetspersignature was set to one, so on
+	//first go through, just remove number of pages.
+	int firsttime=1;
+	while (npages>0) {
+		s1=signatures;
+		while (s1 && npages>0) {
+			s2=s1;
+			while (s2) {
+				if (s2->autoaddsheets) {
+					if (firsttime) s2->sheetspersignature=1;
+					else s2->sheetspersignature++;
+
+					npages-=s2->pattern->PagesPerPattern();
+					if (npages<=0) break;
+				}
+				
+				s2=s2->next_insert;
+			}
+			s1=s1->next_stack;
+		}
+		if (firsttime) firsttime=0;
+	}
+
+	numpages=signatures->PagesPerSignature(-1,0);
 	return numpages;
 }
 
 
-//---------------doc pages maintenance
+//---------------doc Page[] maintenance
 
 //! Create or recreate pagestyle and pagestyleodd.
 /*! This facilitates sharing the same PageStyle objects across all pages.
  * There are only ever 2 different page styles per signature.
+ *
+ * \todo *** this fails when margin settings are different for different sig instances
  */
 void SignatureImposition::setPageStyles()
 {
 	if (pagestyle) pagestyle->dec_count();
 	if (pagestyleodd) pagestyleodd->dec_count();
 
-	pagestyle=new RectPageStyle((signature->IsVertical()?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
-	pagestyle->pagetype=(signature->IsVertical()?2:1);
+	pagestyle=new RectPageStyle((IsVertical()?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
+	pagestyle->pagetype=(IsVertical()?2:1);
 	pagestyle->outline=dynamic_cast<PathsData*>(GetPageOutline(0,1));
 	pagestyle->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(0,1));
 	pagestyle->ml=pagestyle->margin->minx;
@@ -1873,8 +2649,8 @@ void SignatureImposition::setPageStyles()
 	pagestyle->height=pagestyle->outline->maxy;
 
 
-	pagestyleodd=new RectPageStyle((signature->IsVertical()?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
-	pagestyleodd->pagetype=(signature->IsVertical()?3:0);
+	pagestyleodd=new RectPageStyle((IsVertical()?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
+	pagestyleodd->pagetype=(IsVertical()?3:0);
 	pagestyleodd->outline=dynamic_cast<PathsData*>(GetPageOutline(1,1));
 	pagestyleodd->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(1,1));
 	pagestyleodd->ml=pagestyleodd->margin->minx;
@@ -1909,8 +2685,14 @@ Page **SignatureImposition::CreatePages(int npages)
 	return newpages;
 }
 
-//! Make sure the page bleeding is set up correctly.
-void SignatureImposition::fixPageBleeds(int index,Page *page)
+//! Make sure the page bleeding is set up correctly for the specified document page.
+/*! There are 4 different possible page arrangements for signatures,
+ * l->r, r->l, t->b, b->t.
+ *
+ * \todo assumption is that each signature has the same final page size.. maybe this isn't necessary?
+ */
+void SignatureImposition::fixPageBleeds(int index, //!< Document page index
+										Page *page)//!< Actual document page
 {
 	 //fix pagestyle
 	page->InstallPageStyle((index%2)?pagestyleodd:pagestyle);
@@ -1922,12 +2704,13 @@ void SignatureImposition::fixPageBleeds(int index,Page *page)
 	transform_identity(m);
 	char dir=0;
 	int odd=(index%2);
-	double pw=signature->PageWidth(1);
-	double ph=signature->PageHeight(1);
+	double pw=signatures->pattern->PageWidth(1);
+	double ph=signatures->pattern->PageHeight(1);
 
-	if (signature->binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
-	else if (signature->binding=='r') { if (odd) { dir='l'; adjacent=index+1; } else { dir='r'; adjacent=index-1; } }
-	else if (signature->binding=='t') { if (odd) { dir='b'; adjacent=index+1; } else { dir='t'; adjacent=index-1; } }
+	char binding=signatures->pattern->binding;
+	if (binding=='l') { if (odd) { dir='r'; adjacent=index+1; } else { dir='l'; adjacent=index-1; } }
+	else if (binding=='r') { if (odd) { dir='l'; adjacent=index+1; } else { dir='r'; adjacent=index-1; } }
+	else if (binding=='t') { if (odd) { dir='b'; adjacent=index+1; } else { dir='t'; adjacent=index-1; } }
 	else { if (odd) { dir='t'; adjacent=index+1; } else { dir='b'; adjacent=index-1; } } //botom binding
 
 	m[4]=m[5]=0;
@@ -1936,6 +2719,11 @@ void SignatureImposition::fixPageBleeds(int index,Page *page)
 	else if (dir=='t') { m[5]=-ph; }
 	else { m[5]=ph; } //botom binding
 
+	if (adjacent<0 && showwholecover) {
+		adjacent=numpages-1;
+	} else if (adjacent==numpages && showwholecover) {
+		adjacent=0;
+	}
 	if (adjacent>=0) page->pagebleeds.push(new PageBleed(adjacent,m));
 }
 
@@ -1954,6 +2742,9 @@ int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
 	return Imposition::SyncPageStyles(doc,start,n);
 }
 
+//! Return default page style for the specified document page index.
+/*! Returns an inc_counted version.
+ */
 PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
 {
 	if (!pagestyle || !pagestyleodd) setPageStyles(); //create if they were null
@@ -1962,13 +2753,15 @@ PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
 	style->inc_count();
 	return style;
 }
-	
+
 //! Return outline of page in page coords.
+/*! \todo *** assumes final page size same across stacks
+ */
 LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int local)
 {
 	PathsData *newpath=new PathsData();//count==1
-	double pw=signature->PageWidth(1),
-		   ph=signature->PageHeight(1);
+	double pw=signatures->pattern->PageWidth(1),
+		   ph=signatures->pattern->PageHeight(1);
 	newpath->appendRect(0,0,pw,ph);
 	newpath->maxx=pw;
 	newpath->maxy=ph;
@@ -1976,32 +2769,34 @@ LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int loc
 	return newpath;
 }
 
-/*! The origin is the page origin.
+/*! The origin is the page origin, which is lower left of trim box.
+ * 
+ *  \todo *** assumes final page size same across stacks
  */
 LaxInterfaces::SomeData *SignatureImposition::GetPageMarginOutline(int pagenum,int local)
 {
 	int oddpage=pagenum%2;
 	DoubleBBox box;
-	signature->PageBounds(1,&box); //margin box
+	signatures->pattern->PageBounds(1,&box); //margin box
 	double w=box.maxx-box.minx, //margin box width
 		   h=box.maxy-box.miny, //margin box height
-		   pw=signature->PageWidth(1), //trim box width
-		   ph=signature->PageHeight(1);//trim box height
+		   pw=signatures->pattern->PageWidth(1), //trim box width
+		   ph=signatures->pattern->PageHeight(1);//trim box height
 	PathsData *newpath=new PathsData();//count==1
 
-	if (signature->binding=='l') {
+	if (signatures->pattern->binding=='l') {
 		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
 		else         newpath->appendRect(box.minx,box.miny, w,h);
 
-	} else if (signature->binding=='r') {
+	} else if (signatures->pattern->binding=='r') {
 		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
 		else         newpath->appendRect(box.minx,box.miny, w,h);
 
-	} else if (signature->binding=='t') {
+	} else if (signatures->pattern->binding=='t') {
 		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
 		else         newpath->appendRect(box.minx,box.miny, w,h);
 
-	} else if (signature->binding=='b') {
+	} else if (signatures->pattern->binding=='b') {
 		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
 		else         newpath->appendRect(box.minx,box.miny, w,h);
 	}
@@ -2027,7 +2822,7 @@ Spread *SignatureImposition::Layout(int layout,int which)
 	return NULL;
 }
 
-//! Return 3 plus the total number of folds.
+//! Returns 3, for the usual single, page, and paper.
 int SignatureImposition::NumLayoutTypes()
 {
 	return 3; //paper, pages, single
@@ -2062,6 +2857,8 @@ Spread *SignatureImposition::SingleLayout(int whichpage)
 /*! If showwholecover!=0, then the first spread has the first page and the last one
  * in one spread, and objects can bleed to each other. If not, spread 0 has only page
  * 0, and the final spread only has the back cover (final page).
+ *
+ *  \todo *** assumes final page size same across stacks
  */
 Spread *SignatureImposition::PageLayout(int whichspread)
 {
@@ -2072,34 +2869,30 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 
 
 	 //first figure out which pages should be on the spread
-	int page1=whichspread*2, page2=-1; //eventually, page1 is the one with lower left corner at origin.
+	int page1=whichspread*2; //eventually, page1 is the one with lower left corner at origin.
+	int page2=-1;           //and numerically page2 will be > page1
 
-	double patternheight=signature->PatternHeight();
-	double patternwidth =signature->PatternWidth();
-	double ew=patternwidth/(signature->numvfolds+1);
-	double eh=patternheight/(signature->numhfolds+1);
-	double pw=ew-signature->trimleft-signature->trimright;
-	double ph=eh-signature->trimtop -signature->trimbottom;
+	double pw=signatures->pattern->PageWidth(1);
+	double ph=signatures->pattern->PageHeight(1);
 
 	double page2offsetx=0, page2offsety=0;
 
-	if (signature->binding=='l') { page2offsetx=pw; page2=page1; page1--; }
-	else if (signature->binding=='r') { page2offsetx=pw; page2=page1-1; }
-	else if (signature->binding=='t') { page2offsety=ph; page2=page1-1; }
-	else { page2offsety=ph; page2=page1; page1--; } //botom binding
+	char binding=signatures->pattern->binding;
+	if      (binding=='l') { page2offsetx=pw; page2=page1; page1--; }
+	else if (binding=='r') { page2offsetx=pw; page2=page1-1; }
+	else if (binding=='t') { page2offsety=ph; page2=page1-1; }
+	else                   { page2offsety=ph; page2=page1; page1--; } //bottom binding
 
 	 //wrap back cover to front cover ONLY IF the final document page is actually physically on the back cover..
-	if (showwholecover && numpages==signature->PagesPerSignature()*numsignatures-1) {
-		if (page1<0) page1=signature->PagesPerSignature()*numsignatures-1;
-		else if (page2<0) page2=signature->PagesPerSignature()*numsignatures-1;
-		else if (page1>=signature->PagesPerSignature()*numsignatures) page1=0;
-		else if (page2>=signature->PagesPerSignature()*numsignatures) page2=0;
+	if (showwholecover) {
+		if (page1<0) page1=numpages-1;
+		else if (page2==numpages) page2=0;
 	}
 	if (page1>=numpages) page1=-1;
 	if (page2>=numpages) page2=-1;
 
 	PathsData *newpath=new PathsData(); //newpath has all the paths used to draw the whole spread
-	if (signature->binding=='l' || signature->binding=='r') {
+	if (binding=='l' || binding=='r') {
 		double o=0, w=pw;
 		if (page1>=0 && page2>=0) w+=pw;
 		if (page1<0) o+=pw;
@@ -2149,19 +2942,19 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 	}
 
 	 //set minimum and maximum
-	if (signature->binding=='l') {
+	if (binding=='l') {
 		if (page1>=0) spread->minimum=flatpoint(pw/5,ph/2);
 		else spread->minimum=flatpoint(pw*1.2,ph/2);
 		if (page2>=0) spread->maximum=flatpoint(pw*1.8,ph/2);
 		else spread->maximum=flatpoint(pw*.8,ph/2);
 
-	} else if (signature->binding=='r') {
+	} else if (binding=='r') {
 		if (page1>=0) spread->maximum=flatpoint(pw/5,ph/2);
 		else spread->maximum=flatpoint(pw*1.2,ph/2);
 		if (page2>=0) spread->minimum=flatpoint(pw*1.8,ph/2);
 		else spread->minimum=flatpoint(pw*.8,ph/2);
 
-	} else if (signature->binding=='t') {
+	} else if (binding=='t') {
 		if (page1>=0) spread->maximum=flatpoint(pw/2,ph*.2);
 		else spread->maximum=flatpoint(pw/2,ph*1.2);
 		if (page2>=0) spread->minimum=flatpoint(pw/2,ph*1.8);
@@ -2184,9 +2977,57 @@ Spread *SignatureImposition::PageLayout(int whichspread)
  */
 Spread *SignatureImposition::PaperLayout(int whichpaper)
 {
-	int front=(1+whichpaper)%2; //whether to horizontall flip columns
-	int sigpaper=whichpaper%(2*signature->sheetspersignature); //which paper spread within a single signature
-	int mainpageoffset=(whichpaper/2/signature->sheetspersignature)*signature->PagesPerSignature();
+	if (whichpaper<0) whichpaper=0;
+
+	//find which SignatureInstance contains whichpaper. This assumes all sheetspersignature have correct values
+	int totalpapers=signatures->PaperSpreadsPerSignature(-1);
+	int sigpaper=whichpaper;
+
+	int stackpageoffset=0; //first page in signature stacks is this number
+	while (sigpaper>=totalpapers) {
+		stackpageoffset+=signatures->PagesPerSignature(-1,0);
+		sigpaper-=totalpapers;
+	}
+	
+	 //find stack containing our spread
+	SignatureInstance *stack=signatures;
+	int n;
+	while (stack) {
+		n=stack->PaperSpreadsPerSignature(0);
+		if (sigpaper<n) break; //found!
+
+		sigpaper-=n;
+		stackpageoffset+=stack->PagesPerSignature(0,0);
+		stack=stack->next_stack;
+	}
+
+	 //find insert containing the spread
+	SignatureInstance *insert=stack;
+	int insert_offset=0;
+	//int total_pages_in_stack=stack->PagesPerSignature(0,0);
+	while (insert) {
+		if (sigpaper<2*insert->sheetspersignature) break; //found!
+		insert_offset+=insert->PagesPerSignature(0,1);
+		sigpaper-=2*insert->sheetspersignature;
+		insert=insert->next_insert;
+	}
+	int opposite_offset=0; //offset for pages on opposite right side (of left to right book, for instance)
+	SignatureInstance *insert2=insert->next_insert;
+	if (insert2) opposite_offset=insert2->PagesPerSignature(0,0);
+
+	int num_pages_in_insert=insert->PagesPerSignature(0,1);
+
+	//Now, we should have non-null stack and insert.
+
+	
+
+	//Create the actual Spread...
+	
+	int front=(1+whichpaper)%2; //whether to horizontally flip columns
+	int mainpageoffset=stackpageoffset+insert_offset;
+	SignatureInstance *sig=insert;
+	Signature *signature=sig->pattern;
+	PaperStyle *paper=sig->partition->paper;
 
 	Spread *spread=new Spread();
 	spread->spreadtype=1;
@@ -2194,16 +3035,13 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
 
 
-	 //install default paper group if any
-	if (papergroup) {
-		spread->papergroup=papergroup;
-		spread->papergroup->inc_count();
-	}
+	spread->papergroup=new PaperGroup(paper);
+
 
 	 // define max/min points
-	spread->minimum=flatpoint(paper->media.maxx/5,  paper->media.maxy/2);
-	spread->maximum=flatpoint(paper->media.maxx*4/5,paper->media.maxy/2);
-	double paperwidth=paper->media.maxx;
+	spread->minimum=flatpoint(paper->w()/5,  paper->h()/2);
+	spread->maximum=flatpoint(paper->w()*4/5,paper->h()/2);
+	double paperwidth=paper->w();
 
 //	if (foldinfo[0][0].finalindexfront<0) {
 //		*** signature is incomplete, should do something meaningful?
@@ -2223,25 +3061,25 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 
 	double patternheight=signature->PatternHeight();
 	double patternwidth =signature->PatternWidth();
-	double ew=patternwidth/(signature->numvfolds+1);
-	double eh=patternheight/(signature->numhfolds+1);
-	double pw=ew-signature->trimleft-signature->trimright;
+	double ew=patternwidth /(signature->numvfolds+1);//width  of a cell in a pattern
+	double eh=patternheight/(signature->numhfolds+1);//height of a cell in a pattern
+	double pw=ew-signature->trimleft-signature->trimright;//page width == cell - page trim
 	double ph=eh-signature->trimtop -signature->trimbottom;
 
 	 //in a signature, if there is only one sheet, each page cell can map to 2 pages,
 	 //the front and the back, whose document page indices are adjacent. When there are
 	 //more than 1 paper sheet per signature, then each cell maps to (num sheets)*2 pages.
-	int rangeofpages=signature->sheetspersignature*2;
+	int rangeofpages=sig->sheetspersignature*2;
 	int pageindex;
 
 	DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
 
 	 //for each tile:
-	x=(front?signature->insetleft:signature->insetright);
+	x=(front?sig->partition->insetleft:sig->partition->insetright);
 	PathsData *pageoutline;
-	for (int tx=0; tx<signature->tilex; tx++) {
-	  y=signature->insetbottom;
-	  for (int ty=0; ty<signature->tiley; ty++) {
+	for (int tx=0; tx<sig->partition->tilex; tx++) {
+	  y=sig->partition->insetbottom;
+	  for (int ty=0; ty<sig->partition->tiley; ty++) {
 
 		 //for each cell within each tile:
 		for (int rr=0; rr<signature->numhfolds+1; rr++) {
@@ -2260,20 +3098,21 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			if (yflip) yy+=signature->trimtop;   else yy+=signature->trimbottom;
 
 			 //flip horizontally for odd numbered paper spreads (the backs of papers)
-			if (whichpaper%2) xx=paperwidth-xx-ew;
+			if (sigpaper%2) xx=paperwidth-xx-ew;
 
 			if (signature->foldinfo[rr][cc].finalindexfront > signature->foldinfo[rr][cc].finalindexback) {
-				pageindex= mainpageoffset 
-							+ signature->foldinfo[rr][cc].finalindexback*rangeofpages/2
+				pageindex=    signature->foldinfo[rr][cc].finalindexback*rangeofpages/2
 							+ rangeofpages-1 - sigpaper;
 			} else {
-				pageindex= mainpageoffset 
-							+ signature->foldinfo[rr][cc].finalindexfront*rangeofpages/2 
+				pageindex=    signature->foldinfo[rr][cc].finalindexfront*rangeofpages/2 
 							+ sigpaper;
 			}
+			if (pageindex>=num_pages_in_insert/2) pageindex+=opposite_offset;
+			pageindex+=mainpageoffset;
+
 
 			pageoutline=new PathsData();//count of 1
-			pageoutline->appendRect(0,0, pw,ph);
+			pageoutline->appendRect(0,0, pw,ph); //page outline
 			pageoutline->FindBBox();
 			if (yflip) {
 				 //rotate 180 degrees when page is upside down
@@ -2281,7 +3120,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 				pageoutline->xaxis(flatpoint(-1,0));
 				pageoutline->yaxis(flatpoint(0,-1));
 			} else {
-				pageoutline->origin(flatpoint(xx,yy));
+				pageoutline->origin(flatpoint(xx,yy)); // *** final page trim needs to be applied
 			}
 
 			spread->pagestack.push(new PageLocation((pageindex<numdocpages?pageindex:-1),NULL,pageoutline));
@@ -2290,15 +3129,19 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		  } //cc
 		}  //rr
 
-		y+=patternheight+signature->tilegapy;
+		y+=patternheight+sig->partition->tilegapy;
 		DBG cerr <<endl;
 	  } //tx
-	  x+=patternwidth+signature->tilegapx;
+	  x+=patternwidth+sig->partition->tilegapx;
 	} //ty
 
 
+
+	//PageLocation stack created, now need to add any special cut/fold/other printer marks
+	
+
 	 //------Apply any automatic cut and fold marks
-	if (signature->automarks) {
+	if (sig->automarks) {
 
 		 //In the inset areas, draw solid lines for cut marks, dotted lines for fold lines
 
@@ -2307,83 +3150,83 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 
 		 //loop along the left and right
 		double y,y2;
-		for (int c=0; c<signature->tiley+1; c++) {
-			y=signature->insetbottom+c*(signature->PatternHeight()+signature->tilegapy);
+		for (int c=0; c<sig->partition->tiley+1; c++) {
+			y=sig->partition->insetbottom+c*(signature->PatternHeight()+sig->partition->tilegapy);
 			y2=-1;
-			if (c>0 && c<signature->tiley && signature->tilegapy) {
-				y2=y-signature->tilegapy;
-			} else if (c==signature->tiley) y-=signature->tilegapy;
+			if (c>0 && c<sig->partition->tiley && sig->partition->tilegapy) {
+				y2=y-sig->partition->tilegapy;
+			} else if (c==sig->partition->tiley) y-=sig->partition->tilegapy;
 
-			if (signature->automarks&AUTOMARK_Margins) { //cut marks in inset region
+			if (sig->automarks&AUTOMARK_Margins) { //cut marks in inset region
 				if (!cut) cut=new PathsData;
-				if (signature->insetleft>2*GAP || signature->insetright>2*GAP)  {
-					if (signature->insetleft) {
+				if (sig->partition->insetleft>2*GAP || sig->partition->insetright>2*GAP)  {
+					if (sig->partition->insetleft) {
 						cut->pushEmpty();
 						cut->append(GAP, y);
-						cut->append(signature->insetleft-GAP,y);
+						cut->append(sig->partition->insetleft-GAP,y);
 					}
-					if (signature->insetright) {
+					if (sig->partition->insetright) {
 						cut->pushEmpty();
-						cut->append(signature->totalwidth-signature->insetright+GAP,y);
-						cut->append(signature->totalwidth-GAP,y);
+						cut->append(sig->partition->totalwidth-sig->partition->insetright+GAP,y);
+						cut->append(sig->partition->totalwidth-GAP,y);
 					}
 					if (y2>0) {
-						if (signature->insetleft) {
+						if (sig->partition->insetleft) {
 							cut->pushEmpty();
 							cut->append(GAP, y2);
-							cut->append(signature->insetleft-GAP,y2);
+							cut->append(sig->partition->insetleft-GAP,y2);
 						}
-						if (signature->insetright) {
+						if (sig->partition->insetright) {
 							cut->pushEmpty();
-							cut->append(signature->totalwidth-signature->insetright+GAP,y2);
-							cut->append(signature->totalwidth-GAP,y2);
+							cut->append(sig->partition->totalwidth-sig->partition->insetright+GAP,y2);
+							cut->append(sig->partition->totalwidth-GAP,y2);
 						}
 					}
 
 					 //dotted fold lines in inset area
-					if (signature->numhfolds && c<signature->tiley) {
+					if (signature->numhfolds && c<sig->partition->tiley) {
 						if (!fold) fold=new PathsData;
 						double yf;
 						for (int f=1; f<=signature->numhfolds; f++) {
 							yf=y+f*signature->PageHeight(0);
 
-							if (signature->insetleft) {
+							if (sig->partition->insetleft) {
 								fold->pushEmpty();
 								fold->append(GAP,yf);
-								fold->append(signature->insetleft-GAP,yf);
+								fold->append(sig->partition->insetleft-GAP,yf);
 							}
-							if (signature->insetright) {
+							if (sig->partition->insetright) {
 								fold->pushEmpty();
-								fold->append(signature->totalwidth-signature->insetright+GAP,yf);
-								fold->append(signature->totalwidth-GAP,yf);
+								fold->append(sig->partition->totalwidth-sig->partition->insetright+GAP,yf);
+								fold->append(sig->partition->totalwidth-GAP,yf);
 							}
 						}
 					}
 				}
 			}//cut marks in inset region
 
-			if (signature->automarks&AUTOMARK_InnerDot) {
+			if (sig->automarks&AUTOMARK_InnerDot) {
 				if (!dots) dots=new PathsData;
 
 				 //dots on left
 				dots->pushEmpty();
-				dots->append(signature->insetleft+GAP,y);
-				dots->append(signature->insetleft+GAP*1.001,y);
+				dots->append(sig->partition->insetleft+GAP,y);
+				dots->append(sig->partition->insetleft+GAP*1.001,y);
 				 //dots on right
 				dots->pushEmpty();
-				dots->append(signature->totalwidth-signature->insetright-GAP,y);
-				dots->append(signature->totalwidth-signature->insetright-GAP*1.001,y);
+				dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP,y);
+				dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP*1.001,y);
 				
 				if (y2>0) {
-					if (signature->insetleft) {
+					if (sig->partition->insetleft) {
 						dots->pushEmpty();
-						dots->append(signature->insetleft+GAP,y2);
-						dots->append(signature->insetleft+GAP*1.001,y2);
+						dots->append(sig->partition->insetleft+GAP,y2);
+						dots->append(sig->partition->insetleft+GAP*1.001,y2);
 					}
-					if (signature->insetright) {
+					if (sig->partition->insetright) {
 						dots->pushEmpty();
-						dots->append(signature->totalwidth-signature->insetright-GAP,y2);
-						dots->append(signature->totalwidth-signature->insetright-GAP*1.001,y2);
+						dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP,y2);
+						dots->append(sig->partition->totalwidth-sig->partition->insetright-GAP*1.001,y2);
 					}
 				}
 			}
@@ -2394,84 +3237,84 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 		 //Loop along top and bottom
 		if (!cut) cut=new PathsData;
 		double x,x2;
-		for (int c=0; c<signature->tilex+1; c++) {
-			x=signature->insetleft+c*(signature->PatternWidth()+signature->tilegapx);
+		for (int c=0; c<sig->partition->tilex+1; c++) {
+			x=sig->partition->insetleft+c*(signature->PatternWidth()+sig->partition->tilegapx);
 			x2=-1;
-			if (c>0 && c<signature->tilex && signature->tilegapx) {
-				x2=x-signature->tilegapx;
-			} else if (c==signature->tilex) x-=signature->tilegapx;
+			if (c>0 && c<sig->partition->tilex && sig->partition->tilegapx) {
+				x2=x-sig->partition->tilegapx;
+			} else if (c==sig->partition->tilex) x-=sig->partition->tilegapx;
 
-			if ((signature->automarks & AUTOMARK_Margins)
-				  && (signature->insettop>2*GAP || signature->insetbottom>2*GAP))  {
+			if ((sig->automarks & AUTOMARK_Margins)
+				  && (sig->partition->insettop>2*GAP || sig->partition->insetbottom>2*GAP))  {
 				if (!cut) cut=new PathsData;
 
 				 //cut marks in inset region
-				if (signature->insetbottom) {
+				if (sig->partition->insetbottom) {
 					cut->pushEmpty();
 					cut->append(x,GAP);
-					cut->append(x,signature->insetbottom-GAP);
+					cut->append(x,sig->partition->insetbottom-GAP);
 				}
-				if (signature->insettop) {
+				if (sig->partition->insettop) {
 					cut->pushEmpty();
-					cut->append(x,signature->totalheight-signature->insettop+GAP);
-					cut->append(x,signature->totalheight-GAP);
+					cut->append(x,sig->partition->totalheight-sig->partition->insettop+GAP);
+					cut->append(x,sig->partition->totalheight-GAP);
 				}
 				if (x2>0) {
-					if (signature->insetbottom) {
+					if (sig->partition->insetbottom) {
 						cut->pushEmpty();
 						cut->append(x2,GAP);
-						cut->append(x2,signature->insetbottom-GAP);
+						cut->append(x2,sig->partition->insetbottom-GAP);
 					}
-					if (signature->insettop) {
+					if (sig->partition->insettop) {
 						cut->pushEmpty();
-						cut->append(x2,signature->totalheight-signature->insettop+GAP);
-						cut->append(x2,signature->totalheight-GAP);
+						cut->append(x2,sig->partition->totalheight-sig->partition->insettop+GAP);
+						cut->append(x2,sig->partition->totalheight-GAP);
 					}
 				}
 
 				 //dotted fold lines in inset area
-				if (signature->numvfolds && c<signature->tilex) {
+				if (signature->numvfolds && c<sig->partition->tilex) {
 					if (!fold) fold=new PathsData;
 					double xf;
 					for (int f=1; f<=signature->numvfolds; f++) {
 						xf=x+f*signature->PageWidth(0);
 
-						if (signature->insetbottom) {
+						if (sig->partition->insetbottom) {
 							fold->pushEmpty();
 							fold->append(xf,GAP);
-							fold->append(xf,signature->insetbottom-GAP);
+							fold->append(xf,sig->partition->insetbottom-GAP);
 						}
-						if (signature->insettop) {
+						if (sig->partition->insettop) {
 							fold->pushEmpty();
-							fold->append(xf,signature->totalheight-signature->insettop+GAP);
-							fold->append(xf,signature->totalheight-GAP);
+							fold->append(xf,sig->partition->totalheight-sig->partition->insettop+GAP);
+							fold->append(xf,sig->partition->totalheight-GAP);
 						}
 					}
 				}
 			} //cut marks outside
 
-			if (signature->automarks & AUTOMARK_InnerDot) {
+			if (sig->automarks & AUTOMARK_InnerDot) {
 				if (!dots) dots=new PathsData;
 
 				 //dots on bottom
 				dots->pushEmpty();
-				dots->append(x,signature->insetbottom+GAP);
-				dots->append(x,signature->insetbottom+GAP*1.001);
+				dots->append(x,sig->partition->insetbottom+GAP);
+				dots->append(x,sig->partition->insetbottom+GAP*1.001);
 				 //dots on top
 				dots->pushEmpty();
-				dots->append(x,signature->totalheight-signature->insettop-GAP);
-				dots->append(x,signature->totalheight-signature->insettop-GAP*1.001);
+				dots->append(x,sig->partition->totalheight-sig->partition->insettop-GAP);
+				dots->append(x,sig->partition->totalheight-sig->partition->insettop-GAP*1.001);
 				
 				if (x2>0) {
-					if (signature->insetbottom) {
+					if (sig->partition->insetbottom) {
 						dots->pushEmpty();
-						dots->append(x2,signature->insetbottom+GAP);
-						dots->append(x2,signature->insetbottom+GAP*1.001);
+						dots->append(x2,sig->partition->insetbottom+GAP);
+						dots->append(x2,sig->partition->insetbottom+GAP*1.001);
 					}
-					if (signature->insettop) {
+					if (sig->partition->insettop) {
 						dots->pushEmpty();
-						dots->append(x2,signature->totalheight-signature->insettop-GAP);
-						dots->append(x2,signature->totalheight-signature->insettop-GAP*1.001);
+						dots->append(x2,sig->partition->totalheight-sig->partition->insettop-GAP);
+						dots->append(x2,sig->partition->totalheight-sig->partition->insettop-GAP*1.001);
 					}
 				}
 			}
@@ -2519,5 +3362,297 @@ Spread *SignatureImposition::GetLittleSpread(int whichspread)
 	return PageLayout(whichspread);
 }
 
+/*! If sn==NULL, then dup the nearest instance, otherwise insert sn.
+ * Add a new stack at position stack, insert.
+ * If stack==-1, then insert at front.
+ * If stack<-1 or stack>=NumStacks(), add at end.
+ * If insert<0 or insert>NumInserts(), add at innermost of that stack.
+ *
+ * NOTE that sn must NOT have any attached instances. NULL is returned
+ * and nothing otherwise done if so.
+ *
+ * Return reference to the new SignatureInstance or NULL on failure (such as sn
+ * having attachments).
+ */
+SignatureInstance *SignatureImposition::AddStack(int stack, int insert, SignatureInstance *sn)
+{
+	if (sn) {
+		if (sn->next_insert || sn->prev_insert || sn->next_stack || sn->prev_stack) return NULL;
+	}
+
+	if (stack==-1) {
+		 //add new at front, duplicate first
+		if (!sn) sn=signatures->duplicateSingle();
+		sn->next_stack=signatures;
+		signatures->prev_stack=sn;
+		signatures=sn;
+		NumPages(numdocpages);
+		return signatures;
+	}
+
+	if (stack<-1 || stack>=NumStacks(-1)) {
+		 //add new at end, duplicate last
+		SignatureInstance *s=signatures;
+		while (s->next_stack) s=s->next_stack;
+		if (!sn) sn=s->duplicateSingle();
+		s->next_stack=sn;
+		sn->prev_stack=s;
+		NumPages(numdocpages);
+		return sn;
+	}
+
+	 //else dup and add an insert
+	SignatureInstance *s=NULL;
+	if (insert>=NumStacks(stack)) {
+		 //add at end of stack
+		s=GetSignature(stack,NumStacks(stack)-1);
+	} else {
+		 //dup stack at stack,insert, place at that position, 
+		s=GetSignature(stack,insert);
+	}
+	if (!sn) sn=s->duplicateSingle();
+	sn->next_insert=s;
+	s->prev_insert=sn;
+	if (s->next_stack) {
+		sn->next_stack=s->next_stack;
+		sn->prev_stack=s->prev_stack;
+		s->next_stack=s->prev_stack=NULL;
+	}
+	while (s->prev_insert) s=s->prev_insert;
+	while (s->prev_stack)  s=s->prev_stack;
+	if (s!=signatures) signatures=s;
+	NumPages(numdocpages);
+
+	return sn;
+}
+
+/*! If stack and insert does not refer to an existing signatureinstance, do nothing and return 1.
+ * If there is only one signature instance, do not delete and return 2.
+ * Else return 0 for success.
+ */
+int SignatureImposition::RemoveStack(int stack, int insert)
+{
+	if (stack<0 || stack>=NumStacks(-1)) return 1;
+	if (insert<0 || insert>=NumStacks(stack)) return 1;
+	if (!signatures->next_stack && !signatures->next_insert) return 2;
+
+	SignatureInstance *si=NULL;
+	SignatureInstance *s=GetSignature(stack,insert);
+
+	if (s->prev_insert==NULL) {
+		 //we are at a stack head
+		if (s->next_insert==NULL) {
+			 //remove this stack entirely, only this one instance in stack, no inserts
+			if (s->prev_stack) { s->prev_stack->next_stack=s->next_stack; s->prev_stack=NULL; }
+			if (s->next_stack) { si=s->next_stack; s->next_stack->prev_stack=s->prev_stack; s->next_stack=NULL; }
+			s->dec_count();
+		} else {
+		 	 //we are at the top of a stack, replace if any inserts...
+			s->next_insert->prev_stack=s->prev_stack;
+			s->next_insert->next_stack=s->next_stack;
+			if (s->prev_stack) { s->prev_stack->next_stack=s->next_insert; s->prev_stack=NULL; }
+			if (s->next_stack) { s->next_stack->prev_stack=s->next_insert; s->next_stack=NULL; }
+			si=s->next_insert;
+			s->next_insert->prev_insert=NULL;
+			s->next_insert=NULL;
+		}
+	} else {
+		 //we are at an insert somewhere, just remove from insert chain
+		s->prev_insert->next_insert=s->next_insert;
+		if (s->next_insert) s->next_insert->prev_insert=s->prev_insert;
+		s->next_insert=s->prev_insert=NULL;
+	}
+
+	if (si) {
+		while (si->prev_insert) si=si->prev_insert;
+		while (si->prev_stack)  si=si->prev_stack;
+		if (si!=signatures) signatures=si;
+	}
+	NumPages(numdocpages);
+
+	return 0;
+}
+
+
+//----------------- signatureimposition i/o
+
+void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+    Attribute att;
+	dump_out_atts(&att,0,context);
+    att.dump_out(f,indent);
+}
+
+LaxFiles::Attribute *SignatureImposition::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
+{
+	if (!att) att=new Attribute;
+
+	if (what==-1) {
+		Value::dump_out_atts(att,-1,context);
+		return att;
+	}
+
+	if (name) att->push("name",name);
+	if (description) att->push("description",description);
+	att->push("numpages",numpages);
+	att->push("showwholecover",showwholecover?"yes":"no");
+	Attribute *aa;
+	SignatureInstance *sig=signatures;
+	while (sig) {
+		aa=sig->dump_out_atts(NULL,what,context);
+		makestr(att->name,"signature");
+		att->push(aa,-1);
+		sig=sig->next_stack;
+	}
+
+	return att;
+}
+
+
+void SignatureImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	char *name,*value;
+	int nump=-1;
+
+	if (signatures) { delete signatures; signatures=NULL; }
+
+	for (int c=0; c<att->attributes.n; c++) {
+		name=att->attributes.e[c]->name;
+		value=att->attributes.e[c]->value;
+
+		if (!strcmp(name,"name")) {
+			makestr(name,value);
+
+		} else if (!strcmp(name,"description")) {
+			makestr(description,value);
+
+		} else if (!strcmp(name,"numpages")) {
+			IntAttribute(value, &nump);
+
+		} else if (!strcmp(name,"showwholecover")) {
+			showwholecover=BooleanAttribute(value);
+
+		} else if (!strcmp(name,"signature")) {
+			SignatureInstance *sig=new SignatureInstance;
+			sig->dump_in_atts(att->attributes.e[c],flag,context);
+			if (!signatures) signatures=sig;
+			else signatures->AddStack(sig);
+
+		}
+	}
+}
+
+//------------------------------- ObjectDefs
+
+
+/*! Always makes new one, does not consult stylemanager.
+ */
+ObjectDef *makeSignatureImpositionObjectDef()
+{
+	ObjectDef *sd=stylemanager.FindDef("SignatureImposition");
+	if (sd) return sd;
+
+	sd=new ObjectDef(NULL,"SignatureImposition",
+			_("SignatureImposition"),
+			_("Imposition based on signatures"),
+			"class",
+			NULL,NULL, //range, default value
+			NULL, //fields
+			0, //new flags
+			NULL, //newfunc
+			NULL /*newSignatureImposition*/);
+
+	sd->push("name", _("Name"), _("Name of the imposition"),
+			"string",
+			NULL, //range
+			"0",  //defvalue
+			0,    //flags
+			NULL);//newfunc
+
+	sd->push("description", _("Description"), _("Brief, one line description of the imposition"),
+			"string",
+			NULL, //range
+			NULL,  //defvalue
+			0,    //flags
+			NULL);//newfunc
+
+	sd->push("showwholecover", _("Show whole cover"), _("Whether to let the front cover bleed over onto the back cover"),
+			"boolean",
+			NULL,
+			"0",
+			0,
+			NULL);
+
+	sd->push("signatures", _("Signatures"), _("The signature stack"),
+			"SignatureInstance",
+			NULL,
+			"0",
+			0,
+			NULL);
+
+
+	return sd;
+}
+
+
+
+
+
+int createSignatureImposition(ValueHash *context, ValueHash *parameters,
+					   Value **value_ret, ErrorLog &log)
+{
+	if (!parameters || !parameters->n()) {
+		if (value_ret) *value_ret=new SignatureImposition;
+		return 0;
+	}
+
+	SignatureImposition *imp=new SignatureImposition;
+
+	char error[100];
+	int err=0;
+	
+	try {
+		int i, e;
+		const char *s;
+
+		 //---name
+		s=parameters->findString("name",-1,&e);
+		if (e==0) makestr(imp->name,s);
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"name"); throw error; }
+
+		 //---description
+		s=parameters->findString("description",-1,&e);
+		if (e==0) makestr(imp->description,s);
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"description"); throw error; }
+
+		 //---showwholecover
+		i=parameters->findBoolean("showwholecover",-1,&e);
+		if (e==0) imp->showwholecover=i;
+		else if (e==2) { sprintf(error, _("Invalid format for %s!"),"showwholecover"); throw error; }
+
+
+	} catch (const char *str) {
+		log.AddMessage(str,ERROR_Fail);
+		err=1;
+	}
+
+
+
+	if (value_ret && err==0) {
+		*value_ret=imp;
+		imp->inc_count();
+
+		//} else {
+		//	log.AddMessage(_("Incomplete SignatureImposition definition!"),ERROR_Fail);
+		//	err=1;
+		//}
+	}
+	imp->dec_count();
+
+	return err;
+}
+
+
 } // namespace Laidout
+
 

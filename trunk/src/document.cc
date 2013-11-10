@@ -152,12 +152,12 @@ PageRange::~PageRange()
 }
 
 
-StyleDef *PageRangeStyleDef()
+ObjectDef *PageRangeObjectDef()
 {
-	StyleDef *sd=new StyleDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
+	ObjectDef *sd=new ObjectDef(NULL,"PageRange",_("Page Label for Range"),_("Page labels"),
 			"class", NULL,NULL);
 
-	//int StyleDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
+	//int ObjectDef::push(name,Name,ttip,ndesc,format,range,val,flags,newfunc);
 	sd->newfunc=NULL; 
 
 	sd->push("end",
@@ -472,7 +472,7 @@ void Document::clear()
 	curpage=-1;
 }
 
-StyleDef* Document::makeStyleDef()
+ObjectDef* Document::makeObjectDef()
 {
 	cout <<"*** implement Document styledef!!!"<<endl;
 	return NULL; //*****
@@ -481,7 +481,7 @@ StyleDef* Document::makeStyleDef()
 //! Duplicate a document.
 /*! \todo *** unimplemented! 
  */
-Style *Document::duplicate(Style *s)//s=NULL
+Value *Document::duplicate()
 {
 	cout <<"*** implement Document::duplicate()!!!"<<endl;
 	return NULL;
@@ -1103,7 +1103,7 @@ void Document::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	 // dump imposition
 	if (imposition) {
-		fprintf(f,"%simposition %s\n",spc,imposition->Stylename());
+		fprintf(f,"%simposition %s\n",spc,imposition->whattype());
 		imposition->dump_out(f,indent+2,0,context);
 	}
 

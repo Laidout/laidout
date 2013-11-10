@@ -25,10 +25,10 @@ namespace Laidout {
 
 
 /*! \ingroup api */
-StyleDef *makeReimposeStyleDef()
+ObjectDef *makeReimposeObjectDef()
 {
 	 //define base
-	StyleDef *sd=new StyleDef(NULL,"Reimpose",
+	ObjectDef *sd=new ObjectDef(NULL,"Reimpose",
 			_("Reimpose"),
 			_("Replace a document's imposition"),
 			"function",
@@ -99,10 +99,10 @@ StyleDef *makeReimposeStyleDef()
  * but instead call Document::FunctionCall("Reimpose",context,parameters).
  *
  * parameters MUST have the exact order of available parameters as specified in the
- * StyleDef for this function. This is normally done in Calculator::parseParameters().
+ * ObjectDef for this function. This is normally done in Calculator::parseParameters().
  *
  * \todo *** this is major hack stage, needs to be automated more, with automatic parsing
- *    based on StyleDef objects
+ *    based on ObjectDef objects
  */
 int ReImposeFunction(ValueHash *context, 
 					 ValueHash *parameters,

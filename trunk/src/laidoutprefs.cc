@@ -64,7 +64,7 @@ LaidoutPreferences::LaidoutPreferences()
 	appendstr(splash_image_file,"/laidout-splash.png");
 
     default_template=NULL;
-    defaultpaper=NULL;
+    defaultpaper=newstr("letter");
     temp_dir=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 }
@@ -102,13 +102,15 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 	}
 
 	//StyleDef(const char *nname,const char *nName,const char *ntp, const char *ndesc,unsigned int fflags=STYLEDEF_CAPPED);
-	def=new StyleDef(NULL,"LaidoutPreferences",
-			_("General preferences"),
+	def=new StyleDef(NULL, //extensd
+			"LaidoutPreferences", //name
+			_("General preferences"), //Name
 			_("Laidout global configuration options go here. They are stored in ~/.config/laidout-(version)/laidoutrc."
 			  "If you modify settings from within Laidout, the file will be overwritten,"
 			  "and you'll lose any comments or formatting you have inserted directly in that file."),
-			"class",
-			NULL,NULL);
+			"class", //Value format
+			NULL, //range
+			NULL); //defaultvalue
 
 	def->push("shortcutsfile",
 			_("Shortcuts file"),

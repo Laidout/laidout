@@ -62,7 +62,7 @@ void installSvgFilter()
 //------------------------------------ SvgExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newSvgExportConfig(StyleDef*)
+Value *newSvgExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -77,7 +77,7 @@ Value *newSvgExportConfig(StyleDef*)
 //------------------------------------ SvgImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newSvgImportConfig(StyleDef*)
+Value *newSvgImportConfig()
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
@@ -115,13 +115,13 @@ const char *SvgOutputFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *SvgOutputFilter::GetStyleDef()
+ObjectDef *SvgOutputFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("DocumentExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"SvgExportConfig");
 	makestr(styledef->Name,_("Svg Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to an svg file."));
@@ -650,8 +650,8 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log)
 //	char preserveunknown;   //any unknown attributes should be attached as "metadata" to the object in question on readin
 //							//these would potentially be written back out on an svg export?
 //							
-//	StyleDef *OutputStyleDef(); //for auto config dialog creation
-//	StyleDef *InputStyleDef();
+//	ObjectDef *OutputObjectDef(); //for auto config dialog creation
+//	ObjectDef *InputObjectDef();
 //};
 ////--------------------------------
 
@@ -889,13 +889,13 @@ const char *SvgImportFilter::FileType(const char *first100bytes)
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *SvgImportFilter::GetStyleDef()
+ObjectDef *SvgImportFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("ImportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"SvgImportConfig");
 	makestr(styledef->Name,_("Svg Import Configuration"));
 	makestr(styledef->description,_("Configuration to import a Svg file."));

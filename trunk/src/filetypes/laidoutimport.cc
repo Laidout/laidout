@@ -51,11 +51,11 @@ namespace Laidout {
 void installLaidoutFilter()
 {
 //	LaidoutOutFilter *laidoutout=new LaidoutOutFilter;
-//	laidoutout->GetStyleDef();
+//	laidoutout->GetObjectDef();
 //	laidout->PushExportFilter(laidoutout);
 	
 	LaidoutInFilter *laidoutin=new LaidoutInFilter;
-	laidoutin->GetStyleDef();
+	laidoutin->GetObjectDef();
 	laidout->PushImportFilter(laidoutin);
 }
 
@@ -63,7 +63,7 @@ void installLaidoutFilter()
 //------------------------------------ LaidoutExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newLaidoutExportConfig(StyleDef*)
+Value *newLaidoutExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -78,7 +78,7 @@ Value *newLaidoutExportConfig(StyleDef*)
 //------------------------------------ LaidoutImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newLaidoutImportConfig(StyleDef*)
+Value *newLaidoutImportConfig()
 {
 	ImportConfig *d=new ImportConfig;
 	for (int c=0; c<laidout->importfilters.n; c++) {
@@ -112,13 +112,13 @@ const char *LaidoutOutFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-StyleDef *LaidoutOutFilter::GetStyleDef()
+ObjectDef *LaidoutOutFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("LaidoutExportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef();
+	styledef=makeObjectDef();
 	makestr(styledef->name,"LaidoutExportConfig");
 	makestr(styledef->Name,_("Laidout Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a Laidout file."));
@@ -221,13 +221,13 @@ const char *LaidoutInFilter::VersionName()
  * \todo import only parts of a laidout file, like limbos only, palettes, other resources....
  *    might need a specialized import for this to happen reasonably
  */
-StyleDef *LaidoutInFilter::GetStyleDef()
+ObjectDef *LaidoutInFilter::GetObjectDef()
 {
-	StyleDef *styledef;
+	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("LaidoutImportConfig");
 	if (styledef) return styledef; 
 
-	styledef=makeStyleDef(); //creates default import config styledef, need to modify to suit
+	styledef=makeObjectDef(); //creates default import config styledef, need to modify to suit
 	makestr(styledef->name,"LaidoutImportConfig");
 	makestr(styledef->Name,_("Laidout Import Configuration"));
 	makestr(styledef->description,_("Configuration to import a Laidout file."));

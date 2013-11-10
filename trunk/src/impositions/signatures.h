@@ -11,13 +11,13 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010 by Tom Lechner
+// Copyright (C) 2010-2013 by Tom Lechner
 //
 #ifndef SIGNATURES_H
 #define SIGNATURES_H
 
 //#include <lax/anobject.h>
-//#include <lax/dump.h>
+#include <lax/dump.h>
 //#include <lax/refcounted.h>
 #include "imposition.h"
 #include <lax/interfaces/linestyle.h>
@@ -35,13 +35,15 @@ namespace Laidout {
 
 const char *FoldDirectionName(char dir, int under, int translate=1);
 
-class Fold : public Laxkit::anObject
+class Fold : public Value
 {
  public:
 	char direction; //l,r,t, or b
 	int under; //1 for folding under in direction
 	int whichfold; //index from the left or top side of completely unfolded paper of which fold to act on
 	Fold(char dir,int u, int which) { direction=dir; under=u; whichfold=which; }
+	virtual ObjectDef *makeObjectDef();
+	virtual Value *duplicate();
 };
 
 //--------------------------------------- FoldedPageInfo ---------------------------------------
@@ -52,6 +54,10 @@ class FoldedPageInfo
 	int y_flipped, x_flipped; //how this one is flipped around in its current location
 	int finalxflip, finalyflip;
 	int finalindexfront, finalindexback;
+
+	double rotation; //minute adjustment when putting page to paper
+	flatpoint shift; //minute adjustment when putting page to paper
+
 	Laxkit::NumStack<int> pages; //what pages are actually there, r,c are pushed
 
 	FoldedPageInfo();
@@ -60,30 +66,17 @@ class FoldedPageInfo
 
 
 //------------------------------------ Signature -----------------------------------------
-StyleDef *makeSignatureImpositionStyleDef();
+ObjectDef *makeSignatureImpositionObjectDef();
 
-class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
+class Signature : public Value
 {
  public:
 	char *name;
 	char *description;
 
-	PaperStyle *paperbox; //optional
-	double totalwidth, totalheight;
+	double patternwidth, patternheight;
 
-	int sheetspersignature;
-	int autoaddsheets; //whether you increase the num of sheets per sig, or num sigs when adding pages, 
-	double insetleft, insetright, insettop, insetbottom;
-
-	double tilegapx, tilegapy;
-	int tilex, tiley; //how many partitions per sheet of paper
-
-	double creep;
-	double rotation; //in practice, not really sure how this works, 
-					 //it is mentioned here and there that minor rotation is sometimes needed
-					 //for some printers
-	char work_and_turn; //0 for no, 1 work and turn == rotate on axis || to major dim, 2 work and tumble=rot axis || minor dim
-	int pilesections; //if tiling, whether to repeat content, or continue content (ignored currently)
+	int sheetspersignature; //this is a hint only. SignatureInstance has actual values
 
 	int numhfolds, numvfolds;
 	Laxkit::PtrStack<Fold> folds;
@@ -96,12 +89,6 @@ class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
 	char positivex;  //direction of the positive x axis: 'l|r|t|b'
 	char positivey;  //direction of the positive y axis: 'l|r|t|b'
 
-	int automarks;
-	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
-
-	int hint_numpages;  //used by impose-only mode to have custom behavior for number of pages and signatures
-	int hint_numsigs;
-
 	 //for easy storing of final arrangement:
 	FoldedPageInfo **foldinfo;
 	virtual void reallocateFoldinfo();
@@ -110,14 +97,13 @@ class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual void applyFold(FoldedPageInfo **finfo, char folddir, int index, int under);
 	virtual int checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalcol);
 
-	Signature *insert; //insert this into this one at middle when folded up 
-	Signature *stack; //another signature laid on side of this one
-
 	Signature();
 	virtual ~Signature();
 	const Signature &operator=(const Signature &sig);
+	virtual ObjectDef *makeObjectDef();
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	virtual int IsVertical();
@@ -129,46 +115,128 @@ class Signature : public Laxkit::anObject, public LaxFiles::DumpUtility
 	virtual Laxkit::DoubleBBox *PageBounds(int part, Laxkit::DoubleBBox *bbox);
 
 	virtual int PagesPerPattern();
-	virtual int PagesPerSignature();
 
-	virtual int SetPaperFromFinalSize(double w,double h);
+	virtual int SetPatternSize(double w,double h);
+	virtual int locatePaperFromPage(int pagenumber, int *row, int *col, int num_sheets);
+
+	virtual Value *duplicate();
+};
+
+
+//------------------------------------ PaperPartition -----------------------------------------
+enum WorkAndTurnTypes {
+	SIGT_None,
+	SIGT_Work_and_Turn,
+	SIGT_Work_and_Turn_BF,
+	SIGT_Work_and_Tumble,
+	SIGT_Work_and_Tumble_BF
+};
+
+class PaperPartition : public Value
+{
+  public:
+	PaperStyle *paper;
+	double totalwidth, totalheight;
+
+	double insetleft, insetright, insettop, insetbottom;
+
+	int tilex, tiley; //how many partitions per sheet of paper
+	double tilegapx, tilegapy;
+
+	WorkAndTurnTypes work_and_turn;
+	
+	PaperPartition();
+	virtual ~PaperPartition();
+	virtual Value *duplicate();
+	virtual ObjectDef *makeObjectDef();
+
 	virtual int SetPaper(PaperStyle *p);
-	virtual int locatePaperFromPage(int pagenumber, int *row, int *col);
+	virtual double PatternHeight();
+	virtual double PatternWidth();
 
-	virtual Signature *duplicate();
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts (LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+};
+
+//------------------------------------ SignatureInstance -----------------------------------------
+class SignatureInstance : public Value
+{
+  public:
+	PaperPartition *partition;
+	Signature *pattern;
+
+	int sheetspersignature; //Current number of sheets. May change if autoaddsheets!=0
+	int autoaddsheets;
+
+	int automarks;
+	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
+
+
+	double creep; //amount of creep for this signature stack, size difference between innermost and outer page
+
+	SignatureInstance *next_insert,*prev_insert; //insert this into this one at middle when folded up 
+	SignatureInstance *next_stack, *prev_stack; //another signature laid on side of this one
+
+	SignatureInstance(Signature *sig=NULL, PaperPartition *paper=NULL);
+	virtual ~SignatureInstance();
+	virtual Value *duplicate();
+	virtual SignatureInstance *duplicateSingle();
+	virtual ObjectDef *makeObjectDef();
+
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts (LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+
+	virtual int PagesPerSignature(int whichstack, int ignore_inserts);
+	virtual int PaperSpreadsPerSignature(int whichstack);
+	virtual int IsVertical();
+	virtual int SetPaper(PaperStyle *p, int all_with_same_size);
+	virtual int SetPaperFromFinalSize(double w,double h, int all);
+	virtual int NumStacks();
+	virtual int NumInserts();
+	virtual double PatternHeight();
+	virtual double PatternWidth();
+	virtual int UseThisSignature(Signature *sig, int link);
+	
+	virtual int AddInsert(SignatureInstance *insert);
+	virtual int AddStack(SignatureInstance *stack);
+
+	virtual SignatureInstance *locateInsert(int pagenumber, int *insertnum, int *deep);
+	virtual int locatePaperFromPage(int pagenumber,
+									int *stack,
+									int *insert,
+									int *insertpage,
+									int *row,
+									int *col);
 };
 
 
 //------------------------------------ SignatureImposition -----------------------------------------
 class SignatureImposition : public Imposition
 {
- protected:
-	int showwholecover; //whether you see the cover+backcover next to each other, or by themselves
-	PaperStyle *papersize;
+  protected:
 	RectPageStyle *pagestyle,*pagestyleodd;
-	int numsignatures;
-	int numdocpages;
-	//PaperPartition *partition; //partition to insert folding pattern
+	SignatureInstance *signatures;
 	
 	virtual void setPageStyles();
 	virtual void fixPageBleeds(int index,Page *page);
- public:
-	Signature *signature;      //folding pattern
 
-	SignatureImposition(Signature *newsig=NULL);
+  public:
+	SignatureImposition(SignatureInstance *newsig=NULL);
 	virtual ~SignatureImposition();
 	virtual const char *whattype() { return "SignatureImposition"; }
-	static ImpositionResource **getDefaultResources();
 
-	virtual int UseThisSignature(Signature *newsig);
-	virtual StyleDef *makeStyleDef();
+	 //Imposition functions:
+	virtual ObjectDef *makeObjectDef();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual ImpositionInterface *Interface();
 
 	virtual const char *BriefDescription();
 	virtual void GetDimensions(int paperorpage, double *x, double *y);
-	virtual Style *duplicate(Style *s=NULL);
-	virtual int SetPaperFromFinalSize(double w,double h);
+	virtual Value *duplicate();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
@@ -189,7 +257,6 @@ class SignatureImposition : public Imposition
 	virtual Spread *GetLittleSpread(int whichspread);
 
 	virtual int NumSpreads(int layout); 
-	virtual int NumSpreads(int layout,int setthismany); 
 	virtual int NumPapers();
 	virtual int NumPapers(int npapers);
 	virtual int NumPages();
@@ -200,12 +267,27 @@ class SignatureImposition : public Imposition
 	virtual int GetPagesNeeded(int npapers);
 	virtual int GetPapersNeeded(int npages);
 	virtual int GetSpreadsNeeded(int npages);
-	virtual int *PrintingPapers(int frompage,int topage);
 
 	virtual int NumPageTypes();
 	virtual const char *PageTypeName(int pagetype);
 	virtual int PageType(int page);
 	virtual int SpreadType(int spread);
+
+
+	 //signature specific stuff:
+	int showwholecover; //whether you see the cover+backcover next to each other in page spreads, or by themselves
+
+	virtual int UseThisSignature(Signature *newsig);
+	virtual int SetPaperFromFinalSize(double w,double h);
+	static ImpositionResource **getDefaultResources();
+
+	virtual int NumStacks(int which);
+	virtual int TotalNumStacks();
+	virtual int Creep(int which,double d);
+	virtual int IsVertical();
+	virtual SignatureInstance *GetSignature(int stack,int insert);
+	virtual SignatureInstance *AddStack(int stack, int insert, SignatureInstance *sn);
+	virtual int RemoveStack(int stack, int insert);
 };
 
 

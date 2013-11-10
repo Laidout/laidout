@@ -81,7 +81,7 @@ class PageRange : public LaxFiles::DumpUtility
 
 //------------------------- Document ------------------------------------
 
-class Document : public ObjectContainer, public Style
+class Document : public ObjectContainer, public Value
 {
  public:
 	char *saveas;
@@ -109,8 +109,8 @@ class Document : public ObjectContainer, public Style
 	virtual void clear();
 
 	 //style functions
-	virtual Style *duplicate(Style *s=NULL);
-	virtual StyleDef* makeStyleDef();
+	virtual Value *duplicate();
+	virtual ObjectDef* makeObjectDef();
 
 	 //page and imposition management
 	virtual Page *Curpage();

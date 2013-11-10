@@ -32,10 +32,10 @@ namespace Laidout {
 
 //------------------------------- Import --------------------------------
 /*! \ingroup api */
-StyleDef *makeImportStyleDef()
+ObjectDef *makeImportObjectDef()
 {
 	 //define base
-	StyleDef *sd=new StyleDef(NULL,"Import",
+	ObjectDef *sd=new ObjectDef(NULL,"Import",
 			_("Import"),
 			_("Import a vector file to an existing document or a group. Each filter may have "
 			  "additional options you can pass in. Usually the file format will be detected "
@@ -149,7 +149,7 @@ int ImportFunction(ValueHash *context,
 		if (filter==NULL) throw _("Filter not found!");
 
 		 //must create an ImportConfig that will be passed to filter->In().
-		StyleDef *def=filter->GetStyleDef();
+		ObjectDef *def=filter->GetObjectDef();
 		ImportConfig *config=NULL;
 		Value *value=NULL;
 
@@ -177,10 +177,10 @@ int ImportFunction(ValueHash *context,
 
 //------------------------------- Export --------------------------------
 /*! \ingroup api */
-StyleDef *makeExportStyleDef()
+ObjectDef *makeExportObjectDef()
 {
 	 //define base
-	StyleDef *sd=new StyleDef(NULL,"Export",
+	ObjectDef *sd=new ObjectDef(NULL,"Export",
 			_("Export"),
 			_("Export a document or a group with the specified export filter to the specified file or files."),
 			"function",
@@ -304,7 +304,7 @@ int ExportFunction(ValueHash *context,
 		if (!config) {
 			throw _("Missing an export config!");
 			//******
-			//StyleDef *def=filter->GetStyleDef();
+			//ObjectDef *def=filter->GetObjectDef();
 			//Value *value=NULL;
 			//char *error=NULL;
 			//if (def->stylefunc) (def->stylefunc)(context,parameters,&value,&error);

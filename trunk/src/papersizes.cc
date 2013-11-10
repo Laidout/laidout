@@ -25,6 +25,7 @@
 using namespace std;
 
 #include "papersizes.h"
+#include "stylemanager.h"
 #include <lax/strmanip.h>
 
 #include <lax/refptrstack.cc>
@@ -101,8 +102,8 @@ const char *BuiltinPaperSizes[60*4]=
 		"1600x1200" ,"1600","1200","px",
 		"1920x1080" ,"1920","1080","px",
 		"1920x1200" ,"1920","1200","px",
-		"Custom"    ,"8.5","11"   ,"in",
-		"Whatever"  ,"8.5","11"   ,"in",
+		"Custom"    ,"8.5","11"   ,"in", /* NOTE!!! these two must be last!! */
+		"Whatever"  ,"8.5","11"   ,"in", /* NOTE!!! these two must be last!! */
 		NULL,NULL,NULL,NULL
 	};
 
@@ -186,6 +187,19 @@ PaperStyle::PaperStyle()
 	defaultunits=newstr("in");
 
 	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
+
+	name=newstr(laidout->prefs.defaultpaper);
+	if (!name) name=newstr("letter");
+	for (int c=0; c<laidout->papersizes.n; c++) {
+		if (strcasecmp(name,laidout->papersizes.e[c]->name)==0) {
+			width=laidout->papersizes.e[c]->width;
+			height=laidout->papersizes.e[c]->height;
+			flags=laidout->papersizes.e[c]->flags;
+			dpi=laidout->papersizes.e[c]->dpi;
+			makestr(defaultunits,laidout->papersizes.e[c]->defaultunits);
+			break;
+		}
+	}
 }
 
 //! Simple constructor, sets name, w, h, flags, dpi.
@@ -194,10 +208,7 @@ PaperStyle::PaperStyle()
  */
 PaperStyle::PaperStyle(const char *nname,double w,double h,unsigned int nflags,double ndpi,const char *units)
 {
-	if (nname) {
-		name=new char[strlen(nname)+1];
-		strcpy(name,nname);
-	} else name=NULL;
+	name=newstr(nname);
 	width=w;
 	height=h;
 	dpi=ndpi;
@@ -352,14 +363,11 @@ Value *PaperStyle::dereference(const char *extstring, int len)
 	return NULL;
 }
 
-Value *NewPaperStyle(ObjectDef *def)
+Value *NewPaperStyle()
 {
 	PaperStyle *d=new PaperStyle;
 	return d;
 }
-
-ObjectDef *PaperStyle::makeObjectDef()
-{ return makePaperObjectDef(); }
 
 /*! If the paper name is in laidout->papersizes, then grab a duplicate of that,
  * and overwrite any differing settings.
@@ -448,9 +456,16 @@ int createPaperStyle(ValueHash *context, ValueHash *parameters, Value **value_re
 	return err;
 }
 
-ObjectDef *makePaperObjectDef()
+ObjectDef *PaperStyle::makeObjectDef()
 {
-	ObjectDef *sd=new ObjectDef(NULL,
+	ObjectDef *sd=stylemanager.FindDef("Paper");
+	if (sd) {
+		sd->inc_count();
+		return sd;
+	}
+
+
+	sd=new ObjectDef(NULL,
 							  "Paper",
 							  _("Paper"),
 							  _("A basic rectangular paper with orientation"),
@@ -497,6 +512,8 @@ ObjectDef *makePaperObjectDef()
 			NULL,
 			0,
 			NULL);
+
+	stylemanager.AddObjectDef(sd,0);
 	return sd;
 }
 

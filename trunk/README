@@ -188,10 +188,10 @@ can just run Laidout like this:
 ./laidout 2> /dev/null
 
 
-SOURCE DOCUMENTATION and CONTRIBUTING
--------------------------------------
+SOURCE CODE DOCUMENTATION and CONTRIBUTING
+------------------------------------------
 
-There is a lot of source documentation available via doxygen, just type:
+There is a lot of source code documentation available via doxygen, just type:
 
   make docs
 
@@ -216,6 +216,9 @@ EXTRACT_ALL            = YES
 Then from the docs directory, run 'doxygen Doxyfile-with-laxkit'
 (or do make alldocs from top directory), which will generate a clickable source
 tree accessible from your favorite web browser.
+
+By the way, all the code assumes tabs are 4 characters wide.
+(in vim, :set tabstop=4)
 
 Also check out the dev page on the Laidout website:
 http://www.laidout.org/dev.html

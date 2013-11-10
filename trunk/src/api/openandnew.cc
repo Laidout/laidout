@@ -32,10 +32,10 @@ namespace Laidout {
 
 //------------------------------- Newdoc --------------------------------
 /*! \ingroup api */
-StyleDef *makeNewDocumentStyleDef()
+ObjectDef *makeNewDocumentObjectDef()
 {
 	 //define base
-	StyleDef *sd=new StyleDef(NULL,"NewDocument",
+	ObjectDef *sd=new ObjectDef(NULL,"NewDocument",
 			_("New Document"),
 			_("Create a document and install in the project"),
 			"function",
@@ -238,10 +238,10 @@ int NewDocumentFunction(ValueHash *context,
 
 //------------------------------- Open --------------------------------
 /*! \ingroup api */
-StyleDef *makeOpenStyleDef()
+ObjectDef *makeOpenObjectDef()
 {
 	 //define base
-	StyleDef *sd=new StyleDef(NULL,"Open",
+	ObjectDef *sd=new ObjectDef(NULL,"Open",
 			_("Open"),
 			_("Open a document"),
 			"function",

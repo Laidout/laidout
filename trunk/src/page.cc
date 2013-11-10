@@ -209,7 +209,7 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 }
 
 //! The newfunc for PageStyle instances.
-Value *NewPageStyle(ObjectDef *def)
+Value *NewPageStyle()
 {
 	PageStyle *d=new PageStyle;
 	ObjectValue *v=new ObjectValue(d);
@@ -218,9 +218,8 @@ Value *NewPageStyle(ObjectDef *def)
 }
 
  //! Return a pointer to a new local ObjectDef class with the PageStyle description.
-ObjectDef *PageStyle::makeStyleDef()
+ObjectDef *PageStyle::makeObjectDef()
 {
-
 	ObjectDef *sd=stylemanager.FindDef("PageStyle");
 	if (sd) {
 		sd->inc_count();
@@ -254,6 +253,8 @@ ObjectDef *PageStyle::makeStyleDef()
 			"boolean", NULL,"0",
 			0,
 			NULL);
+
+	stylemanager.AddObjectDef(sd,0);
 	return sd;
 }
 
@@ -391,7 +392,7 @@ Style *RectPageStyle::duplicate(Style *s)//s=NULL
 //! The newfunc for PageStyle instances.
 /*! \ingroup stylesandstyledefs
  */
-Value *NewRectPageStyle(ObjectDef *def)
+Value *NewRectPageStyle()
 {
 	RectPageStyle *d=new RectPageStyle;
 	ObjectValue *v=new ObjectValue(d);
@@ -401,10 +402,8 @@ Value *NewRectPageStyle(ObjectDef *def)
 
 /*! \todo **** the newfunc is not quite right...
  */
-ObjectDef *RectPageStyle::makeStyleDef() 
+ObjectDef *RectPageStyle::makeObjectDef() 
 {
-	ObjectDef *psd=PageStyle::makeStyleDef();
-	
 	const char *rpstype;
 	if (recttype&RECTPAGE_IOTB)  rpstype="FacingRectPageStyle";
 	else if (recttype&RECTPAGE_LRIO) rpstype="TopFacingRectPageStyle";
@@ -417,6 +416,9 @@ ObjectDef *RectPageStyle::makeStyleDef()
 	}
 
 	//else not found already, so create
+	ObjectDef *psd=PageStyle::makeObjectDef();
+	psd->dec_count(); //extraneous count, after this line should only have stylemanager's count
+
 	if (recttype&RECTPAGE_IOTB) 
 		sd=new ObjectDef(psd,rpstype,
 						_("Rectangular Facing Page"),
@@ -505,6 +507,8 @@ ObjectDef *RectPageStyle::makeStyleDef()
 			NULL,NULL,
 			0,
 			NULL);
+
+	stylemanager.AddObjectDef(sd,0);
 	return sd;
 }
  

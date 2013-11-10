@@ -50,7 +50,7 @@ class FileFilter : public Laxkit::anObject
 	virtual const char *Version() = 0;
 	virtual const char *VersionName() = 0;
 	virtual const char *FilterClass() = 0;
-	virtual StyleDef *GetStyleDef() = 0;
+	virtual ObjectDef *GetObjectDef() = 0;
 
 	virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 };
@@ -63,7 +63,7 @@ class ImportFilter : public FileFilter
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
 	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log) = 0;
-	virtual StyleDef *makeStyleDef();
+	virtual ObjectDef *makeObjectDef();
 };
 
 
@@ -74,7 +74,7 @@ class ExportFilter : public FileFilter
 	virtual const char *whattype() { return "FileOutputFilter"; }
 	virtual int Out(const char *file, Laxkit::anObject *context,  ErrorLog &log) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
-	virtual StyleDef *makeStyleDef();
+	virtual ObjectDef *makeObjectDef();
 };
 
 //------------------------------- DocumentExportConfig ----------------------------------
@@ -85,7 +85,7 @@ enum CollectForOutValues {
 	COLLECT_Existing_And_Rasterized
 };
 
-StyleDef *makeExportConfigDef();
+ObjectDef *makeExportConfigDef();
 int createExportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, ErrorLog &log);
 
@@ -108,7 +108,7 @@ class DocumentExportConfig : public Style
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();
 
-	virtual StyleDef* makeStyleDef();
+	virtual ObjectDef* makeObjectDef();
 	virtual Style* duplicate(Style*);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
@@ -119,7 +119,7 @@ class DocumentExportConfig : public Style
 int export_document(DocumentExportConfig *config, ErrorLog &log);
 
 //------------------------------ ImportConfig ----------------------------
-StyleDef *makeImportConfigDef();
+ObjectDef *makeImportConfigDef();
 int createImportConfig(ValueHash *context, ValueHash *parameters,
 					   Value **value_ret, ErrorLog &log);
 
@@ -141,7 +141,7 @@ class ImportConfig : public Style
 				 Document *ndoc, Group *nobj);
 	virtual ~ImportConfig();
 
-	virtual StyleDef* makeStyleDef();
+	virtual ObjectDef* makeObjectDef();
 	virtual Style* duplicate(Style*);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

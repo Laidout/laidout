@@ -81,7 +81,7 @@ class Value;
 class ValueHash;
 class CalcSettings;
 
-typedef Value *(*NewObjectFunc)(ObjectDef *def);
+typedef Value *(*NewObjectFunc)();
 typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
 //typedef int (*ObjectFunc)(const char *func,int len, ValueHash *context, ValueHash *parameters,  CalcSettings *settings,
 //						  Value **value_ret, ErrorLog *log);
@@ -138,6 +138,7 @@ class SimpleFunctionEvaluator : public FunctionEvaluator
 #define OBJECTDEF_DUPLICATE (1<<1)
 #define OBJECTDEF_ORPHAN    (1<<2)
 #define OBJECTDEF_ISSET     (1<<3)
+#define OBJECTDEF_LIST      (1<<3)
 
 
 class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
@@ -262,7 +263,7 @@ typedef ObjectDef StyleDef;
 
 //----------------------------- Value ----------------------------------
 
-class Value : virtual public Laxkit::anObject
+class Value : virtual public Laxkit::anObject, virtual public LaxFiles::DumpUtility
 {
   protected:
 	int modified;
@@ -294,7 +295,9 @@ class Value : virtual public Laxkit::anObject
     virtual int FieldIndex(const char *name);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	//virtual int Validate(); //after load in, make sure values are valid for type
 };
 
 
@@ -330,6 +333,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 	Value *find(const char *name);
 	int findIndex(const char *name,int len=-1);
 	long findInt(const char *name, int which=-1, int *error_ret=NULL);
+	int findBoolean(const char *name, int which=-1, int *error_ret=NULL);
 	double findDouble(const char *name, int which=-1, int *error_ret=NULL);
 	double findIntOrDouble(const char *name, int which=-1, int *error_ret=NULL);
 	const char *findString(const char *name, int which=-1, int *error_ret=NULL);

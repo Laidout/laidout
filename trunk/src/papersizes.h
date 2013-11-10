@@ -71,7 +71,6 @@ class PaperStyle : public Value
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
-StyleDef *makePaperObjectDef();
 
 
 //----------------------------- GetBuiltInPaperSizes() --------------------------------------

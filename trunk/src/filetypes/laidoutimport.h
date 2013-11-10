@@ -42,7 +42,7 @@ class LaidoutOutFilter : public ExportFilter
 	virtual const char *Version() { return LAIDOUT_VERSION; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
-	virtual StyleDef *GetStyleDef();
+	virtual ObjectDef *GetObjectDef();
 	
 	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
 };
@@ -61,7 +61,7 @@ class LaidoutInFilter : public ImportFilter
 	virtual const char *Version() { return LAIDOUT_VERSION; }
 	virtual const char *VersionName();
 	virtual const char *FilterClass() { return "document"; }
-	virtual StyleDef *GetStyleDef();
+	virtual ObjectDef *GetObjectDef();
 	
 	virtual const char *FileType(const char *first100bytes);
 	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log);

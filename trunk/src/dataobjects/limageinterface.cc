@@ -150,5 +150,16 @@ Value *LImageInterface::dereference(const char *extstring, int len)
 	return NULL;
 }
 
+void LImageInterface::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	ImageInterface::dump_out(f,indent,what,context);
+}
+
+void LImageInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	ImageInterface::dump_in_atts(att,flag,context);
+}
+
+
 } //namespace Laidout
 
