@@ -693,6 +693,18 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 	return 0;
 }
 
+/*! Default is to return papergroup->papers.e[0]->box->paperstyle, if it exists.
+ */
+PaperStyle *Imposition::GetDefaultPaper()
+{
+	if (papergroup
+			&& papergroup->papers.n
+			&& papergroup->papers.e[0]->box
+			&& papergroup->papers.e[0]->box->paperstyle) 
+		return papergroup->papers.e[0]->box->paperstyle;
+	return NULL;
+}
+
 //! Return the number of spreads of type layout.
 /*! Please note the number returned for LITTLESPREADLAYOUT and PAGELAYOUT is just NumPages(), the same as for SINGLELAYOUT.
  *

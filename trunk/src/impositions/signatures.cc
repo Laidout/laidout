@@ -409,6 +409,8 @@ void Signature::reallocateFoldinfo()
  * If finfo==NULL then use this->foldinfo.
  *
  * It is assumed that finfo is allocated properly for the number of folds.
+ *
+ * Note that this does not alter this->folds or the final info in finfo.
  */
 void Signature::resetFoldinfo(FoldedPageInfo **finfo)
 {
@@ -538,6 +540,14 @@ void Signature::applyFold(FoldedPageInfo **finfo, char folddir, int index, int u
 		}
 	  }
 	}
+}
+
+/*! Return 1 for final info found in foldinfo.
+ * Very simple check, just whether foldinfo[0][0]->finalindexfront is >=0.
+ */
+int Signature::HasFinal()
+{
+	return foldinfo[0][0].finalindexfront >= 0;
 }
 
 //! Check if the signature is totally folded or not.
@@ -1778,14 +1788,14 @@ int SignatureInstance::PagesPerSignature(int whichstack, int ignore_inserts)
 
 /*! Like PagesPerSignature(), but return the 2*(number of sheets of paper) required.
  */
-int SignatureInstance::PaperSpreadsPerSignature(int whichstack)
+int SignatureInstance::PaperSpreadsPerSignature(int whichstack, int ignore_inserts)
 {
 	int num=0;
 	SignatureInstance *sig=this;
 	while (sig) {
 		if (whichstack<=0) {
 			num+=sig->sheetspersignature*2;
-			if (sig->next_insert) num+=sig->next_insert->PaperSpreadsPerSignature(0);
+			if (!ignore_inserts && sig->next_insert) num+=sig->next_insert->PaperSpreadsPerSignature(0,0);
 		}
 		if (whichstack==0) break; //we were looking for specific stack.
 		whichstack--;
@@ -1857,7 +1867,7 @@ int SignatureInstance::locatePaperFromPage(int pagenumber,
 	if (pagenumber>=num) {
 		 //page was in future adjacent stack
 		int pp=next_stack->locatePaperFromPage(pagenumber-num, stack, insert, insertpage, row, col);
-		pp+=2*sheetspersignature + sigsoffset*PaperSpreadsPerSignature(-1);
+		pp+=2*sheetspersignature + sigsoffset*PaperSpreadsPerSignature(-1,0);
 		if (stack) (*stack)++; //add one for *this
 		return pp;
 	}
@@ -1880,6 +1890,71 @@ int SignatureInstance::locatePaperFromPage(int pagenumber,
 	}
 
 	return paper;
+}
+
+//! Return SignatureInstance that holds paper spread whichpaper.
+/*! There are two paper spreads per physical piece of paper.
+ */
+SignatureInstance *SignatureInstance::InstanceFromPaper(int whichpaper,
+												int *stack_ret, //!< Index of returned stack within stack group
+												int *insert_ret, //!< Index of returned insert within stack
+												int *sigpaper_ret, //!< index of paper spread within returned instance
+												int *pageoffset, //!< Page number offset to first page in instance
+												int *inneroffset, //!< Page number offset of pages past middle
+												int *groups) //!< Return how many complete stack groups precede containing group
+{
+	if (whichpaper<0) whichpaper=0;
+
+	//find which SignatureInstance contains whichpaper. This assumes all sheetspersignature have correct values
+	int totalpapers=PaperSpreadsPerSignature(-1,0);
+	int sigpaper=whichpaper;
+
+	int stackpageoffset=0; //first page in signature stacks is this number
+	int totalpages=PagesPerSignature(-1,0);
+	if (groups) *groups=0;
+	while (sigpaper>=totalpapers) {
+		stackpageoffset+=totalpages;
+		sigpaper-=totalpapers;
+		if (groups) (*groups)++;
+	}
+	
+	 //find stack containing our spread
+	SignatureInstance *stack=this;
+	int n;
+	if (stack_ret) *stack_ret=0;
+	while (stack) {
+		n=stack->PaperSpreadsPerSignature(0,0);
+		if (sigpaper<n) break; //found!
+
+		sigpaper-=n;
+		stackpageoffset+=stack->PagesPerSignature(0,0);
+		stack=stack->next_stack;
+		if (stack_ret) (*stack_ret)++;
+	}
+
+	 //find insert containing the spread
+	SignatureInstance *insert=stack;
+	int insert_offset=0;
+	//int total_pages_in_stack=stack->PagesPerSignature(0,0);
+	if (insert_ret) *insert_ret=0;
+	while (insert) {
+		if (sigpaper<2*insert->sheetspersignature) break; //found!
+		insert_offset+=insert->PagesPerSignature(0,1);
+		sigpaper-=2*insert->sheetspersignature;
+		insert=insert->next_insert;
+		if (insert_ret) (*insert_ret)++;
+	}
+
+	if (sigpaper_ret) *sigpaper_ret=sigpaper;
+
+	int opposite_offset=0; //offset for pages on opposite right side (of left to right book, for instance)
+	if (insert->next_insert) opposite_offset=insert->next_insert->PagesPerSignature(0,0);
+
+	//Now, we should have non-null stack and insert.
+	if (pageoffset)  *pageoffset =stackpageoffset+insert_offset;
+	if (inneroffset) *inneroffset=stackpageoffset+insert_offset+opposite_offset;
+	
+	return insert;
 }
 
 int SignatureInstance::IsVertical()
@@ -2370,6 +2445,7 @@ Value *SignatureImposition::duplicate()
 	sn->name=increment_file(name);
 	makestr(sn->description,description);
 
+	sn->NumPages(NumPages());
 	return sn;
 }
 
@@ -2449,7 +2525,7 @@ int SignatureImposition::SpreadFromPage(int layout, int pagenumber)
 int SignatureImposition::GetPagesNeeded(int npapers)
 {
  
-	int pp=signatures->PaperSpreadsPerSignature(-1);
+	int pp=signatures->PaperSpreadsPerSignature(-1,0);
 	pp/=npapers+1; //how many complete signature stacks needed
 	int npages=signatures->PagesPerSignature(-1,0);
 	return npages * pp;
@@ -2480,6 +2556,14 @@ int SignatureImposition::SetPaperFromFinalSize(double w,double h)
 	return 0;
 }
 
+/*! Return that stored in Imposition::papergroup if any. Else the paper in the first siginstance.
+ */
+PaperStyle *SignatureImposition::GetDefaultPaper()
+{
+	PaperStyle *p=Imposition::GetDefaultPaper();
+	if (p) return p;
+	return signatures->partition->paper;
+}
 
 //! This will duplicate npaper.
 /*! Note this will ONLY affect papers of instances is signatures that have the same
@@ -2492,6 +2576,12 @@ int SignatureImposition::SetPaperSize(PaperStyle *npaper)
 {
 	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
 	signatures->SetPaper(npaper, 1);
+	return 0;
+}
+
+int SignatureImposition::SetDefaultPaperSize(PaperStyle *npaper)
+{
+	Imposition::SetPaperSize(npaper); //sets imposition::paperbox and papergroup
 	return 0;
 }
 
@@ -2524,7 +2614,7 @@ int SignatureImposition::NumSpreads(int layout)
  */
 int SignatureImposition::NumPapers()
 {
-	int pp=signatures->PaperSpreadsPerSignature(-1);
+	int pp=signatures->PaperSpreadsPerSignature(-1,0);
 	int numsignatures= (numpages-1)/signatures->PagesPerSignature(-1,0) + 1;
 	return pp * numsignatures;
 }
@@ -2535,7 +2625,7 @@ int SignatureImposition::NumPapers()
  */
 int SignatureImposition::NumPapers(int npapers)
 {
-	int pp=signatures->PaperSpreadsPerSignature(-1);
+	int pp=signatures->PaperSpreadsPerSignature(-1,0);
 	numpapers=((npapers-1)/pp + 1) * pp;
 	return numpapers;
 }
@@ -2979,53 +3069,16 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 {
 	if (whichpaper<0) whichpaper=0;
 
-	//find which SignatureInstance contains whichpaper. This assumes all sheetspersignature have correct values
-	int totalpapers=signatures->PaperSpreadsPerSignature(-1);
-	int sigpaper=whichpaper;
+	 //find containing siginstance
+	int mainpageoffset=0, opposite_offset=0;
+	int sigpaper;
+	SignatureInstance *sig=InstanceFromPaper(whichpaper, NULL,NULL, &sigpaper, &mainpageoffset, &opposite_offset, NULL);
 
-	int stackpageoffset=0; //first page in signature stacks is this number
-	while (sigpaper>=totalpapers) {
-		stackpageoffset+=signatures->PagesPerSignature(-1,0);
-		sigpaper-=totalpapers;
-	}
-	
-	 //find stack containing our spread
-	SignatureInstance *stack=signatures;
-	int n;
-	while (stack) {
-		n=stack->PaperSpreadsPerSignature(0);
-		if (sigpaper<n) break; //found!
-
-		sigpaper-=n;
-		stackpageoffset+=stack->PagesPerSignature(0,0);
-		stack=stack->next_stack;
-	}
-
-	 //find insert containing the spread
-	SignatureInstance *insert=stack;
-	int insert_offset=0;
-	//int total_pages_in_stack=stack->PagesPerSignature(0,0);
-	while (insert) {
-		if (sigpaper<2*insert->sheetspersignature) break; //found!
-		insert_offset+=insert->PagesPerSignature(0,1);
-		sigpaper-=2*insert->sheetspersignature;
-		insert=insert->next_insert;
-	}
-	int opposite_offset=0; //offset for pages on opposite right side (of left to right book, for instance)
-	SignatureInstance *insert2=insert->next_insert;
-	if (insert2) opposite_offset=insert2->PagesPerSignature(0,0);
-
-	int num_pages_in_insert=insert->PagesPerSignature(0,1);
-
-	//Now, we should have non-null stack and insert.
-
-	
 
 	//Create the actual Spread...
 	
 	int front=(1+whichpaper)%2; //whether to horizontally flip columns
-	int mainpageoffset=stackpageoffset+insert_offset;
-	SignatureInstance *sig=insert;
+	int num_pages_in_insert=sig->PagesPerSignature(0,1);
 	Signature *signature=sig->pattern;
 	PaperStyle *paper=sig->partition->paper;
 
@@ -3108,7 +3161,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 							+ sigpaper;
 			}
 			if (pageindex>=num_pages_in_insert/2) pageindex+=opposite_offset;
-			pageindex+=mainpageoffset;
+			else pageindex+=mainpageoffset;
 
 
 			pageoutline=new PathsData();//count of 1
@@ -3357,6 +3410,21 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	return spread;
 }
 
+//! Return SignatureInstance that holds paper spread whichpaper.
+/*! There are two paper spreads per physical piece of paper.
+ */
+SignatureInstance *SignatureImposition::InstanceFromPaper(int whichpaper,
+												int *stack, //!< Index of returned stack within stack group
+												int *insert, //!< Index of returned insert within stack
+												int *sigpaper, //!< index of paper spread within returned instance
+												int *pageoffset, //!< Page number offset to first page in instance
+												int *inneroffset, //!< Page number offset of pages past middle
+												int *groups) //!< Return how many complete stack groups precede containing group
+{
+	return signatures->InstanceFromPaper(whichpaper,stack,insert,sigpaper,pageoffset,inneroffset,groups);
+}
+
+
 Spread *SignatureImposition::GetLittleSpread(int whichspread)
 {
 	return PageLayout(whichspread);
@@ -3381,7 +3449,7 @@ SignatureInstance *SignatureImposition::AddStack(int stack, int insert, Signatur
 	}
 
 	if (stack==-1) {
-		 //add new at front, duplicate first
+		 //add new stack at front, duplicate first
 		if (!sn) sn=signatures->duplicateSingle();
 		sn->next_stack=signatures;
 		signatures->prev_stack=sn;
@@ -3391,7 +3459,7 @@ SignatureInstance *SignatureImposition::AddStack(int stack, int insert, Signatur
 	}
 
 	if (stack<-1 || stack>=NumStacks(-1)) {
-		 //add new at end, duplicate last
+		 //add new stack at end, duplicate last
 		SignatureInstance *s=signatures;
 		while (s->next_stack) s=s->next_stack;
 		if (!sn) sn=s->duplicateSingle();
@@ -3403,20 +3471,27 @@ SignatureInstance *SignatureImposition::AddStack(int stack, int insert, Signatur
 
 	 //else dup and add an insert
 	SignatureInstance *s=NULL;
-	if (insert>=NumStacks(stack)) {
+	if (insert<0 || insert>=NumStacks(stack)) {
 		 //add at end of stack
 		s=GetSignature(stack,NumStacks(stack)-1);
+		insert=-1;
 	} else {
 		 //dup stack at stack,insert, place at that position, 
 		s=GetSignature(stack,insert);
 	}
 	if (!sn) sn=s->duplicateSingle();
-	sn->next_insert=s;
-	s->prev_insert=sn;
-	if (s->next_stack) {
-		sn->next_stack=s->next_stack;
-		sn->prev_stack=s->prev_stack;
-		s->next_stack=s->prev_stack=NULL;
+	if (insert<0) {
+		 //adding at innermost, easier than inserting midstream
+		s->next_insert=sn;
+		sn->prev_insert=s;
+	} else {
+		sn->next_insert=s;
+		s->prev_insert=sn;
+		if (s->next_stack || s->prev_stack) {
+			sn->next_stack=s->next_stack;
+			sn->prev_stack=s->prev_stack;
+			s->next_stack=s->prev_stack=NULL;
+		}
 	}
 	while (s->prev_insert) s=s->prev_insert;
 	while (s->prev_stack)  s=s->prev_stack;
@@ -3434,7 +3509,7 @@ int SignatureImposition::RemoveStack(int stack, int insert)
 {
 	if (stack<0 || stack>=NumStacks(-1)) return 1;
 	if (insert<0 || insert>=NumStacks(stack)) return 1;
-	if (!signatures->next_stack && !signatures->next_insert) return 2;
+	if (!signatures->next_stack && !signatures->next_insert) return 2; //don't delete only one!
 
 	SignatureInstance *si=NULL;
 	SignatureInstance *s=GetSignature(stack,insert);
@@ -3443,9 +3518,10 @@ int SignatureImposition::RemoveStack(int stack, int insert)
 		 //we are at a stack head
 		if (s->next_insert==NULL) {
 			 //remove this stack entirely, only this one instance in stack, no inserts
-			if (s->prev_stack) { s->prev_stack->next_stack=s->next_stack; s->prev_stack=NULL; }
-			if (s->next_stack) { si=s->next_stack; s->next_stack->prev_stack=s->prev_stack; s->next_stack=NULL; }
-			s->dec_count();
+			if (s->prev_stack) { s->prev_stack->next_stack=s->next_stack; }
+			if (s->next_stack) { si=s->next_stack; s->next_stack->prev_stack=s->prev_stack; }
+ 			s->prev_stack=NULL;
+ 			s->next_stack=NULL;
 		} else {
 		 	 //we are at the top of a stack, replace if any inserts...
 			s->next_insert->prev_stack=s->prev_stack;
@@ -3462,6 +3538,7 @@ int SignatureImposition::RemoveStack(int stack, int insert)
 		if (s->next_insert) s->next_insert->prev_insert=s->prev_insert;
 		s->next_insert=s->prev_insert=NULL;
 	}
+	s->dec_count();
 
 	if (si) {
 		while (si->prev_insert) si=si->prev_insert;

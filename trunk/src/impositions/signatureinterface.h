@@ -36,6 +36,11 @@ class ImpositionEditor;
 class SignatureInterface : public ImpositionInterface
 {
  protected:
+	Document *document;
+	SignatureImposition *sigimp;
+	SignatureInstance *siginstance;
+	Signature *signature;
+
 	int showdecs;
 	int showsplash;
 	int showthumbs;
@@ -55,6 +60,8 @@ class SignatureInterface : public ImpositionInterface
 	double foldprogress;
 
 	int currentPaperSpread;
+	int pageoffset, midpageoffset;
+	int sigpaper, siggroup;
 	int finalr,finalc; //cell location of totally folded pages
 	int hasfinal; //whether the pattern has been totally folded yet or not
 
@@ -62,6 +69,7 @@ class SignatureInterface : public ImpositionInterface
 	int onoverlay; //nonzero if mouse clicked down on and is over an overlay
 	int onoverlay_i, onoverlay_ii;
 	int overoverlay; //handle of item last hovered over
+	flatpoint lasthover;
 	double arrowscale;
 	ActionArea *control(int what);
 
@@ -76,7 +84,8 @@ class SignatureInterface : public ImpositionInterface
 	int scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col);
 	int scanHandle(int x,int y, int *i1=NULL, int *i2=NULL);
 	int scanStacks(int x,int y, int *stacki, int *inserti);
-	int checkFoldLevel(int update);
+	void checkFoldLevel(int update);
+	int IsFinal();
 	void getFoldIndicatorPos(int which, double *x,double *y, double *w,double *h);
 	int scanForFoldIndicator(int x, int y, int ignorex);
 	void remapHandles(int which=0);
@@ -88,17 +97,13 @@ class SignatureInterface : public ImpositionInterface
 	void drawHandle(ActionArea *area, flatpoint offset);
 	virtual void drawStacks();
 	void drawAdd(double x,double y,double r, int fill);
+	void SetPaperFromInstance(SignatureInstance *sig);
 
 	void dumpFoldinfo();//for debugging
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
  public:
-	Document *document;
-	SignatureImposition *sigimp;
-	SignatureInstance *siginstance;
-	Signature *signature;
-
 	SignatureInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL,SignatureImposition *sig=NULL, PaperStyle *p=NULL);
 	virtual ~SignatureInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);

@@ -45,6 +45,8 @@ cloning, jump to object in offscreen page, switches pages, but bounding box wron
 
 ---- bugs:
 
+sigimp fail for multiple stacks with no folds!!
+
 Laidout application icon for window manager paging seems to be broken
 
 Spread Editor memory hole
@@ -131,26 +133,21 @@ test:
   each export filter
   make some test scripts for command line testing
 
-Imposition types:
-  each has:
-    class
-	interface and/or editor
-
 set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
 
-merge set and ValueHash?
-
 Signature editor:
-  not updating paper size with new doc dialog
-  add on canvas selectors for paper size, num pages, front/back
-  hang on add pages
+  debug page number display
   add hooks for page preview
-  tab to cycle through handles for numerical input
   DONE implement multistack interface
   DONE not updating or importing numpages with new doc
   DONE litte red X marks to delete stacks/inserts
   DONE implement drag to adjust instead of wheel
+  DONE not updating paper size with new doc dialog
+  DONE add on canvas selectors for paper size, num pages, front/back
+  DONE hang on add pages
   ---enhancements:
+  tab to cycle through handles for numerical input
+  export pdf or lo doc
   implement work and turn interface
   needs visual dodads to indicate where to drag to change
   be able to specify single sided.. allows bound accordian foldings?
@@ -161,6 +158,7 @@ Signature editor:
   paper select should give hints as to whether paper size can hold actual final size
   detect non staplable binding edge, show red rather than green
   impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
+  show margin, trim, binding when not totally folded
 
 
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
@@ -251,12 +249,19 @@ customizable object child relationships to parent, rather than simple transform
   	 --> like parent->getanchor(id), getbasisanchor(id)
 	 --> anchors would have number id, but be able to be named for scripting purposes
 
-make "make uninstall" work, and remove coop 
-
 text window controls have difficulties
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+make "make uninstall" work, and remove coop 
+
+merge set and ValueHash?
+
+review Imposition types:
+  each has:
+    class
+	interface and/or editor
 
 Masking
     pathinterface conversion must be done
@@ -804,6 +809,14 @@ NetImposition:
     export vrml? pdf 1.6?
 
 
+file format prettification
+  adapt the scribus xml/att convertor to parse the output of laidout --file-format
+  into something meaningful...
+  #-------blah--------  <- mark a new section
+    thing      #thing's docs
+      subthing #subthing's docs
+    #docs for following atts indented same as previous atts
+    next_att #(one or more) next_att docs
 
 
 ======================================DONE=================================================
