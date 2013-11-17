@@ -144,6 +144,7 @@ class Imposition : public Value
 	virtual ~Imposition();
 	virtual const char *Name();
 
+	virtual PaperStyle *GetDefaultPaper();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;

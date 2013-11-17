@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 
@@ -623,6 +623,29 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		}
 		return 0;
 
+	} else if (!strcmp(mes,"paper x")) {
+		//***should switch to custom paper maybe
+
+	} else if (!strcmp(mes,"paper y")) {
+		//***should switch to custom paper maybe
+
+	} else if (!strcmp(mes,"dpi")) {
+		//****
+
+	} else if (!strcmp(mes,"units")) {
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+
+		int i=s->info1;
+		SimpleUnit *units=GetUnitManager();
+		int id;
+		char *name;
+		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
+		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
+		papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
+		laidout->prefs.default_units=id;
+		makestr(laidout->prefs.unitname,name);
+		return 0;
+
 	} else if (!strcmp(mes,"imposition")) {
 		 //sent by the impsel SliderPopup 
 
@@ -689,34 +712,14 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		Imposition *i=dynamic_cast<Imposition *>(const_cast<RefCountedEventData*>(r)->TheObject());
 		if (!i) return 0;
 
-		if (imp) imp->dec_count();
-		imp=i;
-		imp->inc_count();
+		if (imp && imp!=i) {
+			imp->dec_count();
+			imp=i;
+			imp->inc_count();
+		}
 		impmesbar->SetText(imp->BriefDescription());
 		UpdatePaper(0);
-		return 0;
-
-	} else if (!strcmp(mes,"paper x")) {
-		//***should switch to custom paper maybe
-
-	} else if (!strcmp(mes,"paper y")) {
-		//***should switch to custom paper maybe
-
-	} else if (!strcmp(mes,"dpi")) {
-		//****
-
-	} else if (!strcmp(mes,"units")) {
-		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-
-		int i=s->info1;
-		SimpleUnit *units=GetUnitManager();
-		int id;
-		char *name;
-		units->UnitInfoIndex(i,&id, NULL,NULL,NULL,&name);
-		paperx->SetText(units->Convert(paperx->GetDouble(), laidout->prefs.default_units,id,NULL));
-		papery->SetText(units->Convert(papery->GetDouble(), laidout->prefs.default_units,id,NULL));
-		laidout->prefs.default_units=id;
-		makestr(laidout->prefs.unitname,name);
+		numpages->SetText(imp->NumPages());
 		return 0;
 
 	} else if (!strcmp(mes,"saveas")) { // from doc save as "..." control button
@@ -760,13 +763,10 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 
 	if (!imp) return;
 
-	if (imp->papergroup 
-			&& imp->papergroup->papers.n
-			&& imp->papergroup->papers.e[0]->box
-			&& imp->papergroup->papers.e[0]->box->paperstyle) {
-
+	PaperStyle *paper=imp->GetDefaultPaper();
+	if (paper) {
 		if (papertype) delete papertype;
-		papertype=(PaperStyle*)imp->papergroup->papers.e[0]->box->paperstyle->duplicate();
+		papertype=(PaperStyle*)paper->duplicate();
 
 		 //update orientation
 		SliderPopup *o=NULL;
@@ -876,8 +876,8 @@ void NewDocWindow::sendNewDoc()
 	int npgs=atoi(numpages->GetCText());
 	if (npgs<=0) npgs=1;
 
-	imposition->NumPages(npgs);
-	imposition->SetPaperSize(papertype);
+	//imposition->NumPages(npgs);
+	//imposition->SetPaperSize(papertype);
 
 	if (doc) {
 		 //we have a document already, so we are just reimposing

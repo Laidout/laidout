@@ -105,6 +105,8 @@ enum SignatureInterfaceActions {
 	SIA_Thumbs,
 	SIA_Center,
 	SIA_CenterStacks,
+	SIA_NextFold,
+	SIA_PreviousFold,
 	SIA_InsetMask,
 	SIA_InsetInc,
 	SIA_InsetDec,
@@ -168,6 +170,10 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 	reallocateFoldinfo();
 
 	currentPaperSpread=0;
+	pageoffset=0;
+	midpageoffset=0;
+	sigpaper=0;
+	siggroup=0;
 
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	hasfinal=0;
@@ -208,7 +214,7 @@ SignatureInterface::~SignatureInterface()
 {
 	DBG cerr <<"SignatureInterface destructor.."<<endl;
 
-	if (signature) signature->dec_count();
+	if (sigimp) sigimp->dec_count();
 	if (sc) sc->dec_count();
 	if (document) document->dec_count();
 }
@@ -216,7 +222,7 @@ SignatureInterface::~SignatureInterface()
 const char *SignatureInterface::Name()
 { return _("Signature Folder"); }
 
-//! Reallocate foldinfo, usually after adding fold lines.
+//! Reallocate signature->foldinfo, usually after adding fold lines.
 /*! this will flush any folds stored in the signature.
  */
 void SignatureInterface::reallocateFoldinfo()
@@ -274,13 +280,10 @@ void SignatureInterface::applyFold(char folddir, int index, int under)
  *
  * If update!=0, then if the pattern is not totally folded, then make hasfinal=0,
  * make sure binding and updirection is applied to foldinfo.
- *
- * Returns foldlevel.
  */
-int SignatureInterface::checkFoldLevel(int update)
+void SignatureInterface::checkFoldLevel(int update)
 {
 	hasfinal=signature->checkFoldLevel(foldinfo,&finalr,&finalc);
-	return foldlevel;
 }
 
 #define SIGM_Portrait        2000
@@ -289,6 +292,23 @@ int SignatureInterface::checkFoldLevel(int update)
 #define SIGM_FinalFromPaper  2003
 #define SIGM_CustomPaper     2004
 #define SIGM_Thumbs          2005
+
+/*! Return whether every siginstance has a totally folded pattern.
+ */
+int SignatureInterface::IsFinal()
+{
+	SignatureInstance *s=sigimp->GetSignature(0,0);
+	SignatureInstance *s2;
+	while (s) {
+		s2=s;
+		while (s2) {
+			if (!s2->pattern->checkFoldLevel(NULL,NULL,NULL)) return 0;
+			s2=s2->next_insert;
+		}
+		s=s->next_stack;
+	}
+	return 1;
+}
 
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
@@ -322,7 +342,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 	//***menu->AddItem(_("Custom..."),SIGM_CustomPaper);
 	menu->AddItem(_("Paper Size to Final Size"),SIGM_FinalFromPaper);
 
-	if (hasfinal) {
+	if (IsFinal()) {
 		menu->AddSep();
 		menu->AddItem(_("Save as resource..."),SIGM_SaveAsResource);
 	}
@@ -373,6 +393,7 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 				remapHandles();
 				needtodraw=1;
 			}
+			if (siginstance==sigimp->GetSignature(0,0)) sigimp->SetDefaultPaperSize(paper);
 			return 0;
 
 		} else if (i==SIGM_Portrait) {
@@ -383,6 +404,7 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 				remapHandles();
 				needtodraw=1;
 			}
+			if (siginstance==sigimp->GetSignature(0,0)) sigimp->SetDefaultPaperSize(paper);
 			return 0;
 
 		} else if (i<999) {
@@ -507,6 +529,7 @@ ActionArea *SignatureInterface::control(int what)
  */
 void SignatureInterface::remapHandles(int which)
 {
+	if (!dp) return;
 	if (controls.n==0) createHandles();
 
 	ActionArea *area;
@@ -797,10 +820,13 @@ int SignatureInterface::Refresh()
 	//int facedown=0;
 	int hasface;
 	int rrr,ccc;
+	int urr,ucc;
 	int ff,tt;
 	double xx,yy;
 	//int xflip;
 	int yflip;
+	int i;
+	int npageshalf=siginstance->PagesPerSignature(0,1)/2;
 
 	x=siginstance->partition->insetleft;
 	for (int tx=0; tx<siginstance->partition->tilex; tx++) {
@@ -813,9 +839,18 @@ int SignatureInterface::Refresh()
 		  for (int cc=0; cc<signature->numvfolds+1; cc++) {
 			hasface=foldinfo[rr][cc].pages.n;
 
+			 //when on back page, flip horizontal placements
+			if (foldlevel==0 && OnBack()) {
+				urr=rr;
+				ucc=signature->numvfolds-cc;
+			} else {
+				urr=rr;
+				ucc=cc;
+			}
+
 			 //first draw filled face, grayed if no current faces
 			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-			pts[0]=flatpoint(x+cc*ew,y+rr*eh);
+			pts[0]=flatpoint(x+ucc*ew,y+urr*eh);
 			pts[1]=pts[0]+flatpoint(ew,0);
 			pts[2]=pts[0]+flatpoint(ew,eh);
 			pts[3]=pts[0]+flatpoint(0,eh);
@@ -848,33 +883,40 @@ int SignatureInterface::Refresh()
 					 //compute range of pages for this cell
 					ff=foldinfo[rrr][ccc].finalindexfront;
 					tt=foldinfo[rrr][ccc].finalindexback;
-					if (!siginstance->autoaddsheets) {
-						if (ff>tt) {
-							tt*=signature->sheetspersignature;
-							ff=tt+2*signature->sheetspersignature-1;
-						} else {
-							ff*=signature->sheetspersignature;
-							tt=ff+2*signature->sheetspersignature-1;
+					if (ff>tt) {
+						tt*=signature->sheetspersignature;
+						ff=tt+2*signature->sheetspersignature-1;
+					} else {
+						ff*=signature->sheetspersignature;
+						tt=ff+2*signature->sheetspersignature-1;
+					}
+
+
+					 //show thumbnails
+					if (foldlevel==0) {
+						if (showthumbs && document && i>=0 && i<document->pages.n) {
+							// *** draw page i in box defined by pts
 						}
 					}
 
-					 //show thumbnails
-					if (showthumbs && document && document->pages.n) {
-						//int sheetnumber= ***%signature->sheetspersignature;
-						//int page;
-						//if (ff>tt) page=tt-sheetnumber; else page=ff+sheetnumber;
+					 //text out range of pages at bottom of arrow
+					if (foldlevel==0) { //all unfolded
+						if (ff>tt) i=ff-sigpaper+1;
+						else i=ff+sigpaper+1;
+						if (i<npageshalf) i+=midpageoffset; else i+=pageoffset;
+						sprintf(str,"%d",i);
+					} else {
+						if (i<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
+						else { ff+=midpageoffset; tt+=midpageoffset; }
+						sprintf(str,"%d-%d",ff,tt); //shows whole range of pages
 					}
 
 					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-					pts[0]=flatpoint(x+(cc+.5)*ew,y+(rr+.25+.5*(yflip?1:0))*eh);
-					dp->drawarrow(pts[0],flatpoint(0,yflip?-1:1)*eh/4, 0,eh/2,1);
-					fp=pts[0];
-
-					 //text out range of pages at bottom of arrow
-					sprintf(str,"%d-%d",ff,tt); //<- old way, shows whole range of pages
-					//if (ff>tt) sprintf(str,"%d",(ff-currentPaperSpread+1));
-					//else sprintf(str,"%d",(ff+currentPaperSpread+1));
+					pts[0]=flatpoint(x+(ucc+.5)*ew,y+(urr+.25+.5*(yflip?1:0))*eh);
+					pts[1]=flatpoint(0,yflip?-1:1)*eh/4; //a vector, not a point
+					dp->drawarrow(pts[0],pts[1], 0,eh/2,1);
+					fp=pts[0]-pts[1]/2;
 
 					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
 				}
@@ -884,8 +926,8 @@ int SignatureInterface::Refresh()
 			if (hasfinal && foldlevel==signature->folds.n && rr==finalr && cc==finalc) {
 				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
 
-				xx=x+cc*ew;
-				yy=y+rr*eh;
+				xx=x+ucc*ew;
+				yy=y+urr*eh;
 
 				 //draw gray margin edge
 				dp->NewFG(color_margin);
@@ -1043,23 +1085,6 @@ int SignatureInterface::Refresh()
 				units->Convert(signature->PageHeight(1),UNITS_Inches,laidout->prefs.default_units,NULL),
 				laidout->prefs.unitname);
 	dp->textout(0,0, str,-1, LAX_LEFT|LAX_TOP);
-//	sprintf(str,_("%s paper, %g x %g, %s"),
-//				siginstance->partition->paper->name,
-//				siginstance->partition->paper->w(),
-//				siginstance->partition->paper->h(),
-//				siginstance->partition->paper->landscape()?"landscape":"portrait");
-//	dp->textout(0,dp->textheight(), str,-1, LAX_LEFT|LAX_TOP);
-//
-//	sprintf(str,"Sheet %d/%d, %s",
-//				currentPaperSpread/2+1,
-//				sigimp->NumSpreads(PAPERLAYOUT)/2,
-//				OnBack()?"Back":"Front");
-//	dp->textout(0,2*dp->textheight(), str,-1, LAX_LEFT|LAX_TOP);
-//
-//	if (sigimp->NumPages()==1) sprintf(str,"1 page");
-//	else sprintf(str,"%d pages",sigimp->NumPages());
-//	dp->textout(0,3*dp->textheight(), str,-1, LAX_LEFT|LAX_TOP);
-
 	dp->DrawReal();
 
 
@@ -1079,29 +1104,9 @@ int SignatureInterface::Refresh()
 		area=controls.e[c];
 		if (area->hidden) continue;
 
-// ...don't use the old way anymore? ok to delete?? ***
-//		if (area->action==SP_Sheets_Per_Sig) {
-//			 //draw sheet per signature indicator
-//			dp->LineAttributes(1, LineSolid, CapButt, JoinMiter);
-//			dp->NewFG(.5,0.,0.); //dark red for inset
-//			y=area->maxy;
-//			dp->drawline(0,y, totalwidth,y);
-//			y-=totalheight*.01;
-//			for (int c=1; c<5 && c<siginstance->sheetspersignature; c++) {
-//				dp->drawline(0,y, totalwidth,y);
-//				y-=totalheight*.01;
-//			}
-//			if (siginstance->autoaddsheets) sprintf(str,_("Many sheets in a single signature"));
-//			else if (siginstance->sheetspersignature==1) sprintf(str,_("1 sheet per signature"));
-//			else sprintf(str,_("%d sheets per signature"),siginstance->sheetspersignature);
-//			pts[0]=flatpoint(totalwidth/2,y);
-//			dp->textout(pts[0].x,pts[0].y, str,-1, LAX_HCENTER|LAX_TOP);
-//
-//		} else ...
-
 		if (area->action==SP_Automarks) {
 			if (!area->hidden) {
-				dp->NewFG(.5,0.,0.); //dark red for inset
+				dp->NewFG(color_inset);
 				dv=flatpoint((area->minx+area->maxx)/2,(area->miny+area->maxy)/2);
 				dp->textout(dv.x,dv.y,area->text,-1,LAX_CENTER);
 			}
@@ -1123,6 +1128,30 @@ int SignatureInterface::Refresh()
 					dp->drawline(0,d, totalwidth,d);
 				}
 			}
+
+		} else if (overoverlay==area->action &&
+				(area->action==SP_V_Folds_top || area->action==SP_V_Folds_bottom ||
+				 area->action==SP_Tile_X_top || area->action==SP_Tile_X_bottom)) {
+
+			if (area->action==SP_Tile_X_top || area->action==SP_Tile_X_bottom) dp->NewFG(color_inset);
+			else dp->NewFG(color_h);
+
+			dp->DrawScreen();
+			dp->drawthing(lasthover.x-INDICATOR_SIZE,lasthover.y, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Left);
+			dp->drawthing(lasthover.x+INDICATOR_SIZE,lasthover.y, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Right);
+			dp->DrawReal();
+
+		} else if (overoverlay==area->action &&
+				(area->action==SP_H_Folds_left || area->action==SP_H_Folds_right ||
+				 area->action==SP_Tile_Y_left || area->action==SP_Tile_Y_right)) {
+
+			if (area->action==SP_Tile_Y_left || area->action==SP_Tile_Y_right) dp->NewFG(color_inset);
+			else dp->NewFG(color_h);
+
+			dp->DrawScreen();
+			dp->drawthing(lasthover.x,lasthover.y-INDICATOR_SIZE, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Up);
+			dp->drawthing(lasthover.x,lasthover.y+INDICATOR_SIZE, INDICATOR_SIZE/2,INDICATOR_SIZE/2,0,THING_Triangle_Down);
+			dp->DrawReal();
 
 		} else if (area->outline && area->visible) {
 			 //catch all for remaining areas
@@ -1690,6 +1719,7 @@ int SignatureInterface::adjustControl(int handle, int dir)
 				needtodraw=1;
 			}
 		}
+		sigimp->NumPages(sigimp->numdocpages);
 		remapHandles();
 		needtodraw=1;
 		return 0;
@@ -1712,6 +1742,7 @@ int SignatureInterface::adjustControl(int handle, int dir)
 				needtodraw=1;
 			}
 		}
+		sigimp->NumPages(sigimp->numdocpages);
 		remapHandles();
 		needtodraw=1;
 		return 0;
@@ -1760,19 +1791,21 @@ int SignatureInterface::adjustControl(int handle, int dir)
 		needtodraw=1;
 		return 0;
 
-//	} else if (handle==SP_Current_Sheet) {
-//        currentPaperSpread+=(dir>0?1:-1);
-//        if (currentPaperSpread>=sigimp->NumSpreads()) currentPaperSpread=0;
-//        else if (currentPaperSpread<0) currentPaperSpread=sigimp->NumSpreads()-1;
-//
-//		*** locate corresponding paper, update siginstance,
-//        if (foldlevel!=0) {
-//            signature.resetFoldinfo(null);
-//            foldlevel=0;
-//        }
-//        remapHandles(0);
-//        needtodraw=1;
-//        return 0;
+	} else if (handle==SP_Current_Sheet) {
+        currentPaperSpread+=(dir>0?1:-1);
+        if (currentPaperSpread>=sigimp->NumPapers()) currentPaperSpread=0;
+        else if (currentPaperSpread<0) currentPaperSpread=sigimp->NumPapers()-1;
+
+        if (foldlevel!=0) {
+            signature->resetFoldinfo(NULL);
+            foldlevel=0;
+        }
+
+		 //locate corresponding paper, update siginstance,
+		ShowThisPaperSpread(currentPaperSpread);
+
+        needtodraw=1;
+        return 0;
 
    } else if (handle==SP_Paper_Name) {
 		PaperStyle *paper=siginstance->partition->paper;
@@ -1862,36 +1895,50 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 	return 0;
 }
 
+/*! Figure out first paper spread for this instance,
+ * then call ShowThisPaperSpread(that_spread).
+ */
+void SignatureInterface::SetPaperFromInstance(SignatureInstance *sig)
+{
+	int i=0;
+	while (sig->prev_insert) {
+		sig=sig->prev_insert;
+		i+=sig->PaperSpreadsPerSignature(0,1);
+	}
+	while (sig->prev_stack) {
+		sig=sig->prev_stack;
+		i+=sig->PaperSpreadsPerSignature(0,0);
+	}
+	ShowThisPaperSpread(i);
+}
+
 int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (!(buttondown.isdown(d->id,LEFTBUTTON))) return 1;
 	int dragged=buttondown.up(d->id,LEFTBUTTON);
 
 	if (onoverlay) {
-		if (!dragged && onoverlay==SP_New_Insert) {
+		if (!dragged && onoverlay==SP_On_Stack) {
+			SignatureInstance *sig=sigimp->GetSignature(onoverlay_i,onoverlay_ii);
+			SetPaperFromInstance(sig);
+			needtodraw=1;
+
+		} else if (!dragged && onoverlay==SP_New_Insert) {
+			//DBG cerr <<" New_Insert i,ii:"<<onoverlay_i<<" "<<onoverlay_ii<<endl;
+
 			SignatureInstance *s=sigimp->GetSignature(onoverlay_i,-1);
-			DBG cerr <<" New_Insert i,ii:"<<onoverlay_i<<" "<<onoverlay_ii<<endl;
 			if (!s) return 0;
-			while (s->next_insert) s=s->next_insert;
-			s->next_insert=(SignatureInstance*)s->duplicate();
-			s->next_insert->prev_insert=s;
+			sigimp->AddStack(onoverlay_i,-1, NULL);
 			onoverlay=SP_None;
+			onoverlay_i=onoverlay_ii=-1;
+			SetPaperFromInstance(siginstance);
 			needtodraw=1;			
 
 		} else if (!dragged && onoverlay==SP_Delete_Stack) {
 			SignatureInstance *s=sigimp->GetSignature(onoverlay_i,onoverlay_ii);
 			if (s==siginstance) siginstance=NULL;
 			sigimp->RemoveStack(onoverlay_i,onoverlay_ii);
-			if (siginstance==NULL) {
-				siginstance=sigimp->GetSignature(0,0);
-				signature=siginstance->pattern;
-			}
-			remapHandles();
-			needtodraw=1;
-
-		} else if (!dragged && onoverlay==SP_On_Stack) {
-			siginstance=sigimp->GetSignature(onoverlay_i,onoverlay_ii);
-			signature=siginstance->pattern;
+			ShowThisPaperSpread(currentPaperSpread);
 			remapHandles();
 			needtodraw=1;
 
@@ -1899,12 +1946,14 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			sigimp->AddStack(-1,0, NULL);
 			onoverlay=SP_None;
 			onoverlay_i=onoverlay_ii=-1;
+			SetPaperFromInstance(siginstance);
 			needtodraw=1;			
 
 		} else if (!dragged && onoverlay==SP_New_Last_Stack) {
 			sigimp->AddStack(-2,0, NULL);
 			onoverlay=SP_None;
 			onoverlay_i=onoverlay_ii=-1;
+			SetPaperFromInstance(siginstance);
 			needtodraw=1;			
 
 		} else if (onoverlay>=SP_FOLDS) {
@@ -1928,6 +1977,15 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			folddirection=0;
 			remapHandles();
 			needtodraw=1;
+
+		} else if (!dragged) {
+			ActionArea *area=control(onoverlay);
+			if (area->visible && (area->type==AREA_H_Slider || area->type==AREA_Slider)) {
+				flatpoint d=flatpoint(x,y)-area->Center();
+				if (d.x>0) adjustControl(onoverlay,1);
+				else if (d.x<0) adjustControl(onoverlay,-1);
+			}
+		
 		}
 		
 		return 0;
@@ -2272,12 +2330,7 @@ int SignatureInterface::RBDown(int x,int y,unsigned int state,int count,const La
 
 	if (overoverlay==SP_On_Stack) {
 		SignatureInstance *s=sigimp->GetSignature(onoverlay_i,onoverlay_ii);
-		if (s!=siginstance) {
-			siginstance=s;
-			signature=siginstance->pattern;
-			remapHandles();
-			needtodraw=1;
-		}
+		if (s!=siginstance) SetPaperFromInstance(s);
 	}	
 
 	return anInterface::RBDown(x,y,state,count,d);
@@ -2288,6 +2341,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	int row,col,tilerow,tilecol;
 	flatpoint mm;
 	int over=scan(x,y, &row,&col, &mm.x,&mm.y, &tilerow,&tilecol);
+	lasthover.set(x,y);
 	//fp now holds coordinates relative to the element cell
 
 	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
@@ -2308,6 +2362,14 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		int handle=scanHandle(x,y);
 		DBG cerr <<"found handle "<<handle<<endl;
 		if (overoverlay!=handle) needtodraw=1;
+		if (handle==SP_H_Folds_left || handle==SP_H_Folds_right || handle==SP_Tile_Y_left || handle==SP_Tile_Y_right
+				|| handle==SP_V_Folds_top || handle==SP_V_Folds_bottom || handle==SP_Tile_X_top || handle==SP_Tile_X_bottom) 
+			needtodraw=1;
+		if (handle==SP_H_Folds_left || handle==SP_Tile_Y_right) lasthover.x+=INDICATOR_SIZE;
+		if (handle==SP_H_Folds_right || handle==SP_Tile_Y_left) lasthover.x-=INDICATOR_SIZE;
+		if (handle==SP_V_Folds_top || handle==SP_Tile_X_bottom) lasthover.y+=INDICATOR_SIZE;
+		if (handle==SP_V_Folds_bottom || handle==SP_Tile_X_top) lasthover.y-=INDICATOR_SIZE;
+
 		if (handle==SP_On_Stack && (i1!=onoverlay_i || i2!=onoverlay_ii)) needtodraw=1;
 		if (handle!=SP_None) {
 			overoverlay=handle;
@@ -2349,13 +2411,13 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 				}
 			} else {
 				ActionArea *area=control(onoverlay);
-				if (area->action==AREA_Slider || area->action==AREA_H_Slider || area->action==AREA_V_Slider) {
+				if (area->type==AREA_Slider || area->type==AREA_H_Slider || area->type==AREA_V_Slider) {
 					double slidestep=20.;
 					int initialmousex, initialmousey;
 					buttondown.getinitial(mouse->id, LEFTBUTTON, &initialmousex, &initialmousey);
 
 					int oldpos, newpos;
-					if (area->action==AREA_V_Slider) {
+					if (area->type==AREA_V_Slider) {
 						oldpos=floor((ly-initialmousey)/slidestep);
 						newpos=floor(( y-initialmousey)/slidestep);
 						d.x=0;  d.y=newpos-oldpos;
@@ -2729,6 +2791,8 @@ Laxkit::ShortcutHandler *SignatureInterface::GetShortcuts()
 	sc->Add(SIA_Center,          ' ',0,0,          "Center",         _("Center view"),NULL,0);
 	sc->AddShortcut(LAX_Up,0,0, SIA_Center);
 	sc->Add(SIA_CenterStacks,    LAX_Down,0,0,     "CenterStacks",   _("Center on stack arrangement area"),NULL,0);
+	sc->Add(SIA_NextFold,        LAX_Left,0,0,     "NextFold",       _("Select next fold"),NULL,0);
+	sc->Add(SIA_PreviousFold,    LAX_Right,0,0,    "PreviousFold",   _("Select previous fold"),NULL,0);
 	sc->Add(SIA_InsetMask,       'i',ControlMask,0,"InsetMask",      _("Toggle which inset to change"),NULL,0);
 	sc->Add(SIA_InsetInc,        'i',0,0,          "InsetInc",       _("Increment inset"),NULL,0);
 	sc->Add(SIA_InsetDec,        'I',ShiftMask,0,  "InsetDec",       _("Decrement inset"),NULL,0);
@@ -2800,7 +2864,33 @@ int SignatureInterface::PerformAction(int action)
 		remapHandles();
 		needtodraw=1;
 		return 0;
-		
+
+	} else if (action==SIA_NextFold) {
+		foldlevel--;
+		if (foldlevel<0) foldlevel=0;
+
+		 //we must remap the folds to reflect the new fold level
+		signature->resetFoldinfo(NULL);
+		for (int c=0; c<foldlevel; c++) {
+			applyFold(signature->folds.e[c]);
+		}
+		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==SIA_PreviousFold) {
+		foldlevel++;
+		if (foldlevel>=signature->folds.n) foldlevel=signature->folds.n;
+
+		 //we must remap the folds to reflect the new fold level
+		signature->resetFoldinfo(NULL);
+		for (int c=0; c<foldlevel; c++) {
+			applyFold(signature->folds.e[c]);
+		}
+		remapHandles();
+		needtodraw=1;
+		return 0;
+
 	} else if (action==SIA_InsetMask) {
 		if (insetmask==15) insetmask=1;
 		else { insetmask<<=1; if (insetmask>15) insetmask=15; }
@@ -3040,9 +3130,8 @@ int SignatureInterface::UseThisImposition(Imposition *imp)
 	}
 
 	foldlevel=0; //how many of the folds are active in display. must be <= sig->folds.n
-	hasfinal=0;
 	foldinfo=signature->foldinfo;
-	checkFoldLevel(1);
+	hasfinal=signature->HasFinal();
 	signature->resetFoldinfo(NULL);
 	if (simp->doc) {
 		simp->doc->inc_count();
@@ -3050,13 +3139,32 @@ int SignatureInterface::UseThisImposition(Imposition *imp)
 		document=sigimp->doc;
 	}
 
+	ShowThisPaperSpread(0);
 	return 0;
 }
 
 
 int SignatureInterface::ShowThisPaperSpread(int index)
 {
-	cerr << " *** INCOMPLETE CODING: SignatureInterface::ShowThisPaperSpread()"<<endl;
+	if (index<0) index=0;
+	if (index>=sigimp->NumPapers()) index=sigimp->NumPapers();
+	
+	currentPaperSpread=index;
+	SignatureInstance *sig=sigimp->InstanceFromPaper(currentPaperSpread, NULL,NULL, &sigpaper, &pageoffset,&midpageoffset, &siggroup);
+
+	if (sig!=siginstance) {
+		siginstance=sig;
+		signature=siginstance->pattern;
+		foldinfo=signature->foldinfo;
+		foldlevel=0;
+		signature->applyFold(NULL,-1);
+		checkFoldLevel(1);
+		signature->resetFoldinfo(NULL);
+		//hasfinal=signature->HasFinal();
+	}
+
+    remapHandles(0);
+	needtodraw=1;
 	return 0;
 }
 

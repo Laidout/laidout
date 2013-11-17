@@ -96,6 +96,7 @@ class Signature : public Value
 	virtual int  applyFold(FoldedPageInfo **finfo, int foldlevel);
 	virtual void applyFold(FoldedPageInfo **finfo, char folddir, int index, int under);
 	virtual int checkFoldLevel(FoldedPageInfo **finfo, int *finalrow,int *finalcol);
+	virtual int HasFinal();
 
 	Signature();
 	virtual ~Signature();
@@ -189,7 +190,7 @@ class SignatureInstance : public Value
 	virtual void dump_in_atts (LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
 	virtual int PagesPerSignature(int whichstack, int ignore_inserts);
-	virtual int PaperSpreadsPerSignature(int whichstack);
+	virtual int PaperSpreadsPerSignature(int whichstack, int ignore_inserts);
 	virtual int IsVertical();
 	virtual int SetPaper(PaperStyle *p, int all_with_same_size);
 	virtual int SetPaperFromFinalSize(double w,double h, int all);
@@ -209,6 +210,13 @@ class SignatureInstance : public Value
 									int *insertpage,
 									int *row,
 									int *col);
+	virtual SignatureInstance *InstanceFromPaper(int whichpaper,
+									int *stack,
+									int *insert,
+									int *sigpaper,
+									int *pageoffset,
+									int *inneroffset,
+									int *groups);
 };
 
 
@@ -240,6 +248,7 @@ class SignatureImposition : public Imposition
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local);
+	virtual PaperStyle *GetDefaultPaper();
 	
 	virtual Page **CreatePages(int npages);
 	virtual int SyncPageStyles(Document *doc,int start,int n);
@@ -280,6 +289,7 @@ class SignatureImposition : public Imposition
 	virtual int UseThisSignature(Signature *newsig);
 	virtual int SetPaperFromFinalSize(double w,double h);
 	static ImpositionResource **getDefaultResources();
+	virtual int SetDefaultPaperSize(PaperStyle *npaper);
 
 	virtual int NumStacks(int which);
 	virtual int TotalNumStacks();
@@ -288,6 +298,13 @@ class SignatureImposition : public Imposition
 	virtual SignatureInstance *GetSignature(int stack,int insert);
 	virtual SignatureInstance *AddStack(int stack, int insert, SignatureInstance *sn);
 	virtual int RemoveStack(int stack, int insert);
+	virtual SignatureInstance *InstanceFromPaper(int whichpaper,
+									int *stack,
+									int *insert,
+									int *sigpaper,
+									int *pageoffset,
+									int *inneroffset,
+									int *groups);
 };
 
 
