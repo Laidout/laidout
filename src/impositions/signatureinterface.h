@@ -73,7 +73,7 @@ class SignatureInterface : public ImpositionInterface
 	double arrowscale;
 	ActionArea *control(int what);
 
-	int OnBack() { return currentPaperSpread%2==1; }
+	int OnBack() { return currentPaperSpread%2==0; }
 
 	int foldlevel; //how hany folds are actively displayed
 	FoldedPageInfo **foldinfo;
