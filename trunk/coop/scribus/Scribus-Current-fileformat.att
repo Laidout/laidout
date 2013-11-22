@@ -179,7 +179,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
       WIDTH 
       WIDTHLINE 
       elements:
-        CheckProfile  #one or more of these
+        CheckProfile  #(one or more)
           Name               #Name of the profile
           ignoreErrors       #Whether to ignore errors
           ignoreOffErrors
@@ -195,7 +195,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           checkAnnotations 
           checkPictures 
           checkOrphans 
-        COLOR      #none or more of these
+        COLOR      #(zero or more)
           NAME     #Name of the Colour
           CMYK     #Value as hexadecimal String, such as "#22bb77ee"
           RGB      #Value as hexadecimal String, such as "#11aa55"
@@ -408,7 +408,7 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
               To        #Ending page index
               Start     #1st page number for range
               Reversed  #If the number range should count in opposite direction
-        PageSets        #(none or more of these)
+        PageSets        #(zero or more)
           elements:
             Set
               Columns 
@@ -502,7 +502,11 @@ SCRIBUSUTF8NEW   #Wraps up the whole enchilada
           ANEACT   #(optional) JavaScript executed when the cursor enters the PDF-Field
           ANEXTERN   #(optional) Path or URL for an external PDF-Link
           ANFACT   #(optional) JavaScript executed before formatting the PFD-Field
-          ANFEED   #(optional) Feedback for PDF-Button press 0 = None 1 = Invert 2 = Outlined 3 = Push animation
+          ANFEED   #(optional) Feedback for PDF-Button press
+		           #0 = None
+		  		   #1 = Invert
+                   #2 = Outlined
+                   #3 = Push animation
           ANFLAG   #(optional) Flags for Annotations, value is the bitwise or of the following constants 
                    #1 = Field is read-only 
                    #2 = Field must have a value 
