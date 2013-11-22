@@ -11,6 +11,7 @@
 #name
 #  name2 #Description of 2
 #  name3 #Description of 3
+#  name3 default-value #(optional) Description of 3
 #  elements:
 #    name4
 #    name5
@@ -23,15 +24,14 @@
 #Comments beginning with "##" at the start of a line will be ignored.
 #
 # usage:
-#  Input formats can be:   .att  .wiki.
-#  Output formats can be:  .html .wiki
+#  Input formats can be:   .att  
+#  Output formats can be:  .html .wiki .dtd
 #
-#  ./build-format-table.pl  infile.att   outfile.html  #<---if extension is ".html" then assume in html table
-#  ./build-format-table.pl  infile.att   outfile.wiki  #<---if extension is ".wiki" then assume in wiki table
-#  ./build-format-table.pl  infile.wiki  outfile.html  #<---if extension is ".html" then assume in html table
+#  ./build-format-table.pl  infile.att   outfile.html 
+#  ./build-format-table.pl  infile.att   outfile.wiki 
 #
 #Written by Tom Lechner (tomlechner.com).
-#Copyright (c) 2009,2010
+#Copyright (c) 2009,2010, 2013
 #
 #Permission is hereby granted, free of charge, to any person
 #obtaining a copy of this software and associated documentation
@@ -54,27 +54,41 @@
 #FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #OTHER DEALINGS IN THE SOFTWARE.
 #
+#
+#Todo:
+#  adapt to also use with Laidout file format dump
+#
 #---------------------------------------------------------------------
 
+if ($ARGV[0] eq "--pure-att" or $ARGV[0] eq "-a") {
+	$allelements=1;
+	$ARGIN  = $ARGV[1];
+	$ARGOUT = $ARGV[2];
+} else {
+	$allelements=0;
+	$ARGIN  = $ARGV[0];
+	$ARGOUT = $ARGV[1];
+}
+
+
 #$infile="testformat.att";
-#$infile="Scribus-1.3.3.12-fileformat.att";
-$infile=$ARGV[0];
+$infile=$ARGIN;
 
 if ($infile eq "") {
 	die << "THEEND";
 usage:
  Input formats can be:   .att  
- Output formats can be:  .html .wiki
+ Output formats can be:  .html .wiki .dtd
 
- ./build-format-table.pl  infile.att   outfile.html
- ./build-format-table.pl  infile.att   outfile.wiki
- ./build-format-table.pl  infile.wiki  outfile.html
+ ./build-format-table.pl  infile.att  outfile.html
+ ./build-format-table.pl  infile.att  outfile.wiki
+ ./build-format-table.pl  infile.att  outfile.dtd
 THEEND
 }
 
 
 #---what kind of thing to output to
-$outfile=$ARGV[1];
+$outfile=$ARGOUT;
 if ($outfile eq "") { $outfile="$infile.html"; }
 
 if ($outfile =~ m/\.html$/) {
@@ -113,7 +127,7 @@ if ($htmlfile ne "") { print "htmlout: $htmlfile\n"; }
 if ($wikifile ne "") { print "wikiout: $wikifile\n"; }
 if ($dtdfile  ne "") { print "dtdout:  $dtdfile\n"; }
 print "\n";
-die "Output where!?\n" if ($htmlfile eq "" and $wikifile eq "") ;
+die "Output where!?\n" if ($dtdfile eq "" and $htmlfile eq "" and $wikifile eq "") ;
 
 
 
@@ -125,13 +139,13 @@ die "Output where!?\n" if ($htmlfile eq "" and $wikifile eq "") ;
 #attribute has:
 #  name
 #  description
-#  optional
+#  optional (can be "zero or one" or "optional" or "required")
 #  owner
 #
 #element has:
 #  name
 #  description
-#  optional
+#  optional (can be "one only", "zero or one", "zero or more", "one or more", or "required")
 #  owner
 #  subelements
 #  attributes
@@ -223,24 +237,39 @@ if ($infile ne "") {
 		if ($line =~ /([^#]*)(#.*)$/) {  #get (name) (#final comment)
 			$linename   =rtrim($1); #if "" then append any comment found to current name
 			$linecomment=$2; #comment could be "#blah" or "#(optional) blah" 
-			if ($linecomment =~ /^#\(optional\)(.*)$/) {
-				$optional=1;
-				$linecomment=$1;
-			#} elsif ($linecomment =~ /^#\(zero or one\)(.*)$/) {
-			#} elsif ($linecomment =~ /^#\(one or more\)(.*)$/) {
-			#} elsif ($linecomment =~ /^#\(zero or more\)(.*)$/) {
-			#} elsif ($linecomment =~ /^#\(one only\)(.*)$/) {
+			
+			if ($linename =~ /(\S*)\s+(.*)/) {
+				$defaultvalue=trim($2);
+				$linename=$1;
+			} else { $defaultvalue=""; }
+
+			if ($linecomment =~ /^#\(([^)]*)\)(.*)$/) {
+				$linecomment=$2;
+
+				if ($1 eq "optional") { $optional="zero or one"; }
+				elsif ($1 eq "zero or one")  { $optional="zero or one"; }
+				elsif ($1 eq "one or more")  { $optional="one or more"; }
+				elsif ($1 eq "zero or more") { $optional="zero or more"; }
+				elsif ($1 eq "required")     { $optional="one only"; }
+				elsif ($1 eq "one only")     { $optional="one only"; }
+				else { $optional="zero or one"; }
 			#} elsif ($linecomment =~ /^#\(default="blah blah"\)(.*)$/) {
 			#} elsif ($linecomment =~ /^#\(fixed "blah blah"\)(.*)$/) {
 			} else {
 				$linecomment=substr $linecomment, 1; #everything after initial '#'
-				$optional=0;
+				$optional="one only";
 			}
 		} else {  #make sure comment is "" if none given
 			#print "--no comment for $linename\n";
-			$optional=0;
-			$linename=$line;
+			$optional="one only";
 			$linecomment="";
+			$linename=$line;
+
+			if ($linename =~ /(\S*)\s+(.*)/) {
+				$defaultvalue=trim($2);
+				$linename=$1;
+			} else { $defaultvalue=""; }
+
 		}
 
 		# we have now scanned the line, and parsed into indent, name, and comment
@@ -288,7 +317,7 @@ if ($infile ne "") {
 				$lastindent=$lineindent;
 
 				$maybemoredesc=$currentelement;
-				$reading_attributes=1;
+				if ($allelements!=1) { $reading_attributes=1; }
 				#print "created first node from line $linenum.\n";
 				next;
 			}
@@ -339,6 +368,7 @@ if ($infile ne "") {
 			$newelement->{"childindent"}=-1;
 			$newelement->{"optional"}=$optional;
 			$newelement->{"comment"}=$linecomment;
+			$newelement->{"default"}=$defaultvalue;
 			$newelement->{"subelements"}=[];
 			$newelement->{"attributes"}=[];
 			#print "Current element: ".$currentelement->{"name"}."\n";
@@ -356,7 +386,7 @@ if ($infile ne "") {
 				$currentelement=$newelement;
 				$maybemoredesc=$currentelement;
 				$currentindent=-1;
-				$reading_attributes=1;
+				if ($allelements!=1) { $reading_attributes=1; }
 			} else { #push attribute
 				#print "----new attribute ".$newelement->{"name"}." for ".$currentelement->{"name"}."----\n";
 				$newelement->{"owner"}=$currentelement;
@@ -373,6 +403,8 @@ if ($infile ne "") {
 }
 
 
+
+#------------------------ read in wiki file --------------------------------
 if ($inwiki ne "") {
 	open(INWIKI,$inwiki) or die "cannot open $inwiki!!\n";
 
@@ -380,6 +412,19 @@ if ($inwiki ne "") {
 	close (INWIKI);
 
 	die " **** wiki text input todo!\n";
+}
+
+
+
+
+#------------------------ read in dtd file --------------------------------
+if ($inwiki ne "") {
+	open(INDTD,$indtd) or die "cannot open $indtd!!\n";
+
+
+	close (INDTD);
+
+	die " **** dtd input todo!\n";
 }
 
 
@@ -469,7 +514,7 @@ sub dumphtmlatt
 	my $cbgcolor="#ffffff"; #"#A9D1FF"
 
 	 #print out 1 row for element name and comment if any
-	if ($att->{"optional"}==0) { $bgcolor="#eeeeee"; } else { $bgcolor="#A9D1FF"; }
+	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" ) { $bgcolor="#eeeeee"; } else { $bgcolor="#A9D1FF"; }
 	print OUTHTML "    <td colspan=\"".($depth-$currentdepth+2)."\" style=\"background:$bgcolor;color:$currenttdcolor\">";
 	print OUTHTML $att->{"name"}."</td>\n";
 	print OUTHTML "    <td colspan=\"1\" style=\"background:$bgcolor;\">";
@@ -479,7 +524,7 @@ sub dumphtmlatt
 	print OUTHTML "  </tr>\n"; #end of element name row
 	
 	 #output all attributes of the element
-	if ($att->{"optional"}==0) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
+	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" ) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
 	if (scalar(@{$att->{"attributes"}})>0) {
 		print OUTHTML "  <tr>\n      <td style=\"background:$bgcolor\" colspan=\"".($depth-$currentdepth+1)
 					 ."\" rowspan=\"".$numatts."\">&nbsp;&nbsp;&nbsp;</td>\n";
@@ -488,9 +533,10 @@ sub dumphtmlatt
 	foreach $a (@{$att->{"attributes"}}) {
 		if ($c>0) { print OUTHTML "  <tr>\n"; }
 		$c++;
-		if ($a->{"optional"}==0) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
+		if ($a->{"optional"} eq "one only" or $a->{"optional"} eq "one or more" ) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
 		if ($a->{"comment"} eq "") { $cbgcolor="#ffaaaa"; } else { $cbgcolor=$bgcolor; }
 		print OUTHTML "    <td style=\"background:$bgcolor\">".$a->{"name"}."</td><td style=\"background:$cbgcolor\">";
+		if ($a->{"default"} ne "") { print OUTHTML "Default value: ".$a->{"default"}.".<br/>\n"; }
 		if ($a->{"comment"} ne "") { print OUTHTML $a->{"comment"}; }
 		else { print OUTHTML "<blink>DOCUMENT ME!!</blink>"; }
 		#else { print OUTHTML "&nbsp;"; }
@@ -524,10 +570,94 @@ sub dumpPreviousElements
 
 
 #------------------------ write out dtd file --------------------------------
-#TODO!
 if ($dtdfile ne "") {
-	print " *** todo: output dtd!\n"; 
+	print "Writing out dtd to \"$dtdfile\"...";
+	open(OUTDTD, ">$dtdfile");
+
+	print OUTDTD "<!-- $initialnotes -->\n\n";
+
+	dumpdtdatt(\%mainnode);
+
+	close (OUTDTD);
+	print "done!\n";
+
 }
+
+ #called for each element needing to be output
+sub dumpdtdatt
+{
+# Todo:
+#  specify enums: <!ATTLIST element attribute (val1|val2|val3) "val1">
+#  <!ATTLIST element att #FIXED "1.4">
+#  #IMPLIED atts?
+#
+	my $att=$_[0];
+
+	my $numatts=scalar(@{$att->{"attributes"}});
+
+	my $optional="";
+
+	 #print out 1 row for element name and comment if any
+	#if ($att->{"optional"}!=0) { $optional="\"".$att->{"default"}."\""; } else { $optional="#REQUIRED"; }
+	
+	print OUTDTD "\n<!ELEMENT ".$att->{"name"};
+	if (scalar(@{$att->{"subelements"}})==0) {
+		print OUTDTD " EMPTY";
+	} else {
+		print OUTDTD " (";
+		my $c=0;
+		foreach $a (@{$att->{"subelements"}}) {
+			if ($c>0) { print OUTDTD ", "; }
+			print OUTDTD $a->{"name"};
+			if ($a->{"optional"} eq "zero or one")   { print OUTDTD "?"; }
+			if ($a->{"optional"} eq "one or more")   { print OUTDTD "+"; }
+			if ($a->{"optional"} eq "zero or more")  { print OUTDTD "*"; }
+			$c++;
+		}
+		print OUTDTD ")";
+	}
+	print OUTDTD ">\n";
+	#print OUTDTD "> <!-- ".$att->{"comment"}." -->\n";
+	
+	 #output all attributes of the element
+	if ($numatts>0) {
+		#----output att list in separate ATTLIST:
+		my $c=0;
+		foreach $a (@{$att->{"attributes"}}) {
+			$c++;
+			if ($a->{"optional"} eq "one only" or $a->{"optional"} eq "one or more" )
+				{ $optional="#REQUIRED"; } else { $optional="\"".$att->{"default"}."\""; }
+
+			printf OUTDTD ("<!ATTLIST ".$att->{"name"}." %-18s CDATA %s >\n", $a->{"name"}, $optional);
+			#print OUTDTD "<!-- ".$a->{"comment"}." -->\n";
+		}
+
+	}
+#	----output att list in single ATTLIST:
+#	if ($numatts>0) {
+#		print OUTDTD "<!ATTLIST ".$att->{"name"}."\n";
+#
+#		my $c=0;
+#		foreach $a (@{$att->{"attributes"}}) {
+#			$c++;
+#			if ($a->{"optional"} eq "one only" or $a->{"optional"} eq "one or more" )
+#				{ $optional="#REQUIRED"; } else { $optional="\"".$att->{"default"}."\""; }
+#
+#			printf OUTDTD ("  %-18s CDATA %s\n", $a->{"name"}, $optional);
+#			#print OUTDTD "<!-- ".$a->{"comment"}." -->\n";
+#		}
+#
+#		print OUTDTD "> <!-- attributes of ".$att->{"name"}." -->\n";
+#	}
+
+	#output all sub elements of the element
+	if (scalar(@{$att->{"subelements"}})>0) {
+		foreach $a (@{$att->{"subelements"}}) {
+			dumpdtdatt($a);
+		}
+	}
+}
+
 
 
 
@@ -573,7 +703,8 @@ sub dumpwikiatt
 
 	 #print out 1 row for element name and comment if any
 	#if ($att->{"optional"}==0) { $bgcolor="#eeeeee"; } else { $bgcolor="#A9D1FF"; }
-	if ($a->{"optional"}!=0) { $optional="(optional) "; } else { $optional=""; }
+	if ($att->{"optional"} eq "one only" or $att->{"optional"} eq "one or more" )
+		{ $optional="(optional) "; } else { $optional=""; }
 	
 	print OUTWIKI "| $currentdepth".$att->{"name"}."\n";
 	print OUTWIKI "|\n"; #this line is for attributes, not elements
@@ -584,7 +715,7 @@ sub dumpwikiatt
 	foreach $a (@{$att->{"attributes"}}) {
 		$c++;
 		#if ($a->{"optional"}==0) { $bgcolor="#ffffff"; } else { $bgcolor="#c9e4FF"; }
-		if ($a->{"optional"}!=0) { $optional="(optional) "; } else { $optional=""; }
+		if ($a->{"optional"} eq "one only" or $a->{"optional"} eq "one or more" ) { $optional="(optional) "; } else { $optional=""; }
 
 		print OUTWIKI "|-\n"; #new row
 		print OUTWIKI "|\n";  #element name
