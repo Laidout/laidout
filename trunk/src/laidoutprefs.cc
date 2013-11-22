@@ -67,16 +67,20 @@ LaidoutPreferences::LaidoutPreferences()
     defaultpaper=newstr("letter");
     temp_dir=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
+
+	autosave=0;
+	autosave_dir=newstr("./.%f.autosave");
 }
 
 LaidoutPreferences::~LaidoutPreferences()
 {
-	if (unitname)           delete[] unitname;
-	if (splash_image_file)  delete[] splash_image_file;
-	if (default_template)   delete[] default_template;
-	if (defaultpaper)       delete[] defaultpaper;
-	if (temp_dir)           delete[] temp_dir;
-	if (palette_dir)        delete[] palette_dir;
+	delete[] autosave_dir;
+	delete[] unitname;
+	delete[] splash_image_file;
+	delete[] default_template;
+	delete[] defaultpaper;
+	delete[] temp_dir;
+	delete[] palette_dir;
 }
 
 Value *LaidoutPreferences::duplicate()
@@ -89,6 +93,8 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->default_template,default_template);
 	makestr(p->defaultpaper,defaultpaper);
 	makestr(p->temp_dir,temp_dir);
+	p->autosave=autosave;
+	makestr(p->autosave_dir,autosave_dir);
 
 	return p;
 }
@@ -173,6 +179,20 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("A list of directories to look for icons in"),
 			"set", "File",NULL,
 			OBJECTDEF_ISSET,
+			NULL);
+
+	def->push("autosave",
+			_("Autosave"),
+			_("How often (in minutes) to autosave for recovery (0==never). Saving to actual file still must be manually done."),
+			"real", "0",NULL,
+			0,
+			NULL);
+
+	def->push("autosave_dir",
+			_("Autosave dir"),
+			_("Where and how to save when autosaving. Relative paths are to current file, %%f is current file name."),
+			"string", NULL,NULL,
+			0,
 			NULL);
 
 	 //---------
