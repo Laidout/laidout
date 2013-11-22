@@ -74,7 +74,8 @@ ImportImagesDialog::ImportImagesDialog(anXWindow *parnt,const char *nname,const 
 
 	double dpi=defdpi;
 	if (dpi<=0) {
-		if (doc) dpi=doc->imposition->paper->paperstyle->dpi;
+		if (doc && doc->imposition && doc->imposition->GetDefaultPaper())
+			dpi=doc->imposition->GetDefaultPaper()->dpi;
 		else dpi=300;//***
 	}
 	settings->defaultdpi=dpi;

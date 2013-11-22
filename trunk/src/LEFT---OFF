@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+menus should activate ONLY WHEN MOUSE UP ON SAME AS DOWN!!!!
+
 object reordering frelled, strange bbox display offset, 
 
 key window not showing fields!!!
@@ -136,15 +138,8 @@ test:
 set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
 
 Signature editor:
-  debug page number display
+  make page number shown reflect correctly when folding/unfolding
   add hooks for page preview
-  DONE implement multistack interface
-  DONE not updating or importing numpages with new doc
-  DONE litte red X marks to delete stacks/inserts
-  DONE implement drag to adjust instead of wheel
-  DONE not updating paper size with new doc dialog
-  DONE add on canvas selectors for paper size, num pages, front/back
-  DONE hang on add pages
   ---enhancements:
   tab to cycle through handles for numerical input
   export pdf or lo doc
@@ -253,6 +248,8 @@ text window controls have difficulties
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+autorecover.. autosave every X minutes
 
 make "make uninstall" work, and remove coop 
 
@@ -866,3 +863,15 @@ Spread Editor:
 
 DONE Signature editor, not centering for certain paper sizes
 
+DONE Signature editor:
+  DONE stacked page range not correct
+  DONE after edit document settings, final page handles location messed up 
+  DONE edit new booklet... final cell handles not mapped right
+  DONE signature not duplicating right
+  DONE implement multistack interface
+  DONE not updating or importing numpages with new doc
+  DONE litte red X marks to delete stacks/inserts
+  DONE implement drag to adjust instead of wheel
+  DONE not updating paper size with new doc dialog
+  DONE add on canvas selectors for paper size, num pages, front/back
+  DONE hang on add pages

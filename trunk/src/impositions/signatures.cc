@@ -247,6 +247,22 @@ FoldedPageInfo::FoldedPageInfo()
 	rotation=0;
 }
 
+//void dumpfoldinfo(FoldedPageInfo **finfo, int numhfolds, int numvfolds)
+//{
+//	cerr <<" -- foldinfo: --"<<endl;
+//	for (int r=0; r<numhfolds+1; r++) {
+//		for (int c=0; c<numvfolds+1; c++) {
+//			cerr <<"  ";
+//			for (int i=0; i<finfo[r][c].pages.n; i++) {
+//				cerr<<finfo[r][c].pages.e[i]<< (i<finfo[r][c].pages.n-1?"/":"");
+//			}
+//			//finfo[r][c].x_flipped=0;
+//			//finfo[r][c].y_flipped=0;
+//		}
+//		cerr <<endl;
+//	}
+//}
+
 
 //------------------------------------- Signature --------------------------------------
 /*! \class Signature
@@ -368,6 +384,7 @@ const Signature &Signature::operator=(const Signature &sig)
 
 	reallocateFoldinfo();
 	applyFold(NULL,-1);
+	checkFoldLevel(NULL,NULL,NULL);
 
 	return *this;
 }
@@ -1707,10 +1724,16 @@ Value *SignatureInstance::duplicate()
 	SignatureInstance *sig=new SignatureInstance;
 
 	if (partition) sig->partition=(PaperPartition*)partition->duplicate();
-	if (pattern) { 	sig->pattern=pattern; 	sig->pattern->inc_count(); }
+	if (pattern) { 	sig->UseThisSignature(pattern,0); }
 
-	if (next_insert) sig->next_insert=(SignatureInstance*)next_insert->duplicate();
-	if (next_stack)  sig->next_stack =(SignatureInstance*)next_stack->duplicate();
+	if (next_insert) {
+		sig->next_insert=(SignatureInstance*)next_insert->duplicate();
+		sig->next_insert->prev_insert=sig;
+	}
+	if (next_stack) {
+		sig->next_stack =(SignatureInstance*)next_stack->duplicate();
+		sig->next_stack->prev_stack=sig;
+	}
 
 	sig->sheetspersignature=sheetspersignature;
 	sig->autoaddsheets=autoaddsheets;
@@ -1939,7 +1962,7 @@ SignatureInstance *SignatureInstance::InstanceFromPaper(int whichpaper,
 	if (insert_ret) *insert_ret=0;
 	while (insert) {
 		if (sigpaper<2*insert->sheetspersignature) break; //found!
-		insert_offset+=insert->PagesPerSignature(0,1);
+		insert_offset+=insert->PagesPerSignature(0,1)/2;
 		sigpaper-=2*insert->sheetspersignature;
 		insert=insert->next_insert;
 		if (insert_ret) (*insert_ret)++;
@@ -3124,6 +3147,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 	 //more than 1 paper sheet per signature, then each cell maps to (num sheets)*2 pages.
 	int rangeofpages=sig->sheetspersignature*2;
 	int pageindex;
+	int ff,tt;
 
 	DBG cerr <<" signature pattern for paper spread "<<whichpaper<<":"<<endl;
 
@@ -3151,15 +3175,27 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			if (yflip) yy+=signature->trimtop;   else yy+=signature->trimbottom;
 
 			 //flip horizontally for odd numbered paper spreads (the backs of papers)
-			if (sigpaper%2) xx=paperwidth-xx-ew;
+			if (sigpaper%2==0) xx=paperwidth-xx-ew;
 
-			if (signature->foldinfo[rr][cc].finalindexfront > signature->foldinfo[rr][cc].finalindexback) {
-				pageindex=    signature->foldinfo[rr][cc].finalindexback*rangeofpages/2
-							+ rangeofpages-1 - sigpaper;
+			ff=signature->foldinfo[rr][cc].finalindexback;
+			tt=signature->foldinfo[rr][cc].finalindexfront;
+			//---------
+			if (ff>tt) {
+				tt*=rangeofpages/2;
+				ff=tt + rangeofpages - 1;
 			} else {
-				pageindex=    signature->foldinfo[rr][cc].finalindexfront*rangeofpages/2 
-							+ sigpaper;
+				ff*=rangeofpages/2;
+				tt=ff + rangeofpages-1;
 			}
+			if (ff>tt) pageindex=ff-sigpaper;
+			else pageindex=ff+sigpaper;
+//			---------
+//			if (ff > tt) {
+//				pageindex= tt*rangeofpages/2 + rangeofpages-1 - sigpaper;
+//			} else {
+//				pageindex= tt*rangeofpages/2 + sigpaper;
+//			}
+//			----------
 			if (pageindex>=num_pages_in_insert/2) pageindex+=opposite_offset;
 			else pageindex+=mainpageoffset;
 

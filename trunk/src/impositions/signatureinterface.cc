@@ -42,6 +42,27 @@ using namespace std;
 namespace Laidout {
 
 
+// *** for debugging:
+void dumpfoldinfo(FoldedPageInfo **finfo, int numhfolds, int numvfolds)
+{
+    cerr <<" -- foldinfo: --"<<endl;
+    for (int r=0; r<numhfolds+1; r++) {
+        for (int c=0; c<numvfolds+1; c++) {
+            cerr <<"  ";
+            for (int i=0; i<finfo[r][c].pages.n; i++) {
+                cerr<<finfo[r][c].pages.e[i]<< (i<finfo[r][c].pages.n-1?"/":"");
+            }
+            //finfo[r][c].x_flipped=0;
+            //finfo[r][c].y_flipped=0;
+        }
+        cerr <<endl;
+    }
+}
+
+
+
+
+
 //size of the fold indicators on left of screen
 #define INDICATOR_SIZE 10
 
@@ -177,9 +198,12 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	hasfinal=0;
+	finalc=finalr=-1;
 	foldinfo=signature->foldinfo;
-	checkFoldLevel(1);
 	signature->resetFoldinfo(NULL);
+	applyFold(NULL);
+	checkFoldLevel(1);
+	foldlevel=0;
 
 	foldr1=foldc1=foldr2=foldc2=-1;
 	folddirection=0;
@@ -826,6 +850,10 @@ int SignatureInterface::Refresh()
 	//int xflip;
 	int yflip;
 	int i;
+
+	DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
+
+	int rangeofpapers=2*siginstance->sheetspersignature;
 	int npageshalf=siginstance->PagesPerSignature(0,1)/2;
 
 	x=siginstance->partition->insetleft;
@@ -881,14 +909,14 @@ int SignatureInterface::Refresh()
 					//else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
 					 //compute range of pages for this cell
-					ff=foldinfo[rrr][ccc].finalindexfront;
-					tt=foldinfo[rrr][ccc].finalindexback;
+					tt=foldinfo[rrr][ccc].finalindexfront;
+					ff=foldinfo[rrr][ccc].finalindexback;
 					if (ff>tt) {
-						tt*=signature->sheetspersignature;
-						ff=tt+2*signature->sheetspersignature-1;
+						tt*=rangeofpapers/2;
+						ff=tt + rangeofpapers - 1;
 					} else {
-						ff*=signature->sheetspersignature;
-						tt=ff+2*signature->sheetspersignature-1;
+						ff*=rangeofpapers/2;
+						tt=ff + rangeofpapers-1;
 					}
 
 
@@ -899,16 +927,19 @@ int SignatureInterface::Refresh()
 						}
 					}
 
-					 //text out range of pages at bottom of arrow
-					if (foldlevel==0) { //all unfolded
-						if (ff>tt) i=ff-sigpaper+1;
-						else i=ff+sigpaper+1;
-						if (i<npageshalf) i+=midpageoffset; else i+=pageoffset;
+					 //print range of pages at bottom of arrow
+					if (foldlevel==0) { //all unfolded, show only page for currentPaperSpread
+						if (ff>tt) i=ff-sigpaper;
+						else i=ff+sigpaper;
+						if (i<npageshalf) i+=pageoffset; else i+=midpageoffset;
+						i++; //make first page 1, not 0
 						sprintf(str,"%d",i);
 					} else {
+						 //show range of pages represented at this fold stage
 						if (i<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
 						else { ff+=midpageoffset; tt+=midpageoffset; }
-						sprintf(str,"%d-%d",ff,tt); //shows whole range of pages
+						sprintf(str,"%d",ff+1);
+						//sprintf(str,"%d-%d",ff+1,tt+1); //shows whole range of pages
 					}
 
 					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
@@ -1786,6 +1817,7 @@ int SignatureInterface::adjustControl(int handle, int dir)
 			}
 		}
 
+		ShowThisPaperSpread(currentPaperSpread);
 		remapHandles(1);
 
 		needtodraw=1;
@@ -3124,6 +3156,9 @@ int SignatureInterface::UseThisImposition(Imposition *imp)
 	sigimp=(SignatureImposition*)imp->duplicate();
 	siginstance=sigimp->GetSignature(0,0);
 	signature=siginstance->pattern;
+	foldinfo=signature->foldinfo;
+	signature->applyFold(NULL,-1);
+	checkFoldLevel(1);
 
 	if (sigimp->NumPages()==0) {
 		sigimp->NumPages(1);

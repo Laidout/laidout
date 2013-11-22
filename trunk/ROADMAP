@@ -12,7 +12,7 @@ VERSION 0.094
 (done) should probably put laidout stuff in its own namespace, just to be polite
        Shortcuts editor dialog
        Signature editor needs option to preview pages while folding
-       Signature editor: have variable num of pages per signature
+(done) Signature editor: have variable num of pages per signature
 (done) Optimize pdf export to not duplicate images
 (done) Cloning
 (done) SpreadEditor: insert blanks, delete pages
@@ -48,6 +48,7 @@ VERSION 0.095
        Scribus import should do something meaningful with original Scribus page bleed values
        fix object transform handles for really small objects (handles should still be accessible)
        Collect for out
+       autosave for autorecover
        Optimize pdf export to rescale to target dpi, and compress image data
        Clean up project load/save internals and dialogs
        Clean up patch controls

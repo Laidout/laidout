@@ -238,7 +238,7 @@ NewDocWindow::NewDocWindow(Laxkit::anXWindow *parnt,const char *nname,const char
 
 
 	impfromfile=NULL;
-	pageinfo=NULL;
+	//pageinfo=NULL;
 }
 
 NewDocWindow::~NewDocWindow()
@@ -371,9 +371,9 @@ int NewDocWindow::init()
 	numpages->tooltip(_("The number of pages with which to start a document."));
 	AddWin(numpages,1, numpages->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
-	pageinfo=mesbar=new MessageBar(this,"pageinfo",NULL,MB_MOVE, 0,0, 0,0, 0, pagesDescription(0));
-	AddWin(mesbar,1, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0, -1);
-	AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);
+	//pageinfo=mesbar=new MessageBar(this,"pageinfo",NULL,MB_MOVE, 0,0, 0,0, 0, pagesDescription(0));
+	//AddWin(mesbar,1, 2000,1900,0,50,0, mesbar->win_h,0,0,50,0, -1);
+	//AddWin(NULL,0, 2000,2000,0,50,0, 0,0,0,0,0, -1);
 
 	AddWin(NULL,0, 2000,2000,0,50,0, textheight*2/3,0,0,0,0, -1);// forced linebreak, vertical spacer
 
@@ -523,7 +523,7 @@ int NewDocWindow::init()
 const char *NewDocWindow::pagesDescription(int updatetoo)
 {
 	if (!imp) {
-		if (updatetoo) pageinfo->SetText(" ");
+		//if (updatetoo) pageinfo->SetText(" ");
 		return " ";
 	}
 
@@ -541,7 +541,7 @@ const char *NewDocWindow::pagesDescription(int updatetoo)
 	if (n==1) sprintf(dims,_("Imposition holds 1 page, %.3g x %.3g"),x,y);
 	else sprintf(dims,_("Imposition holds %d pages, %.3g x %.3g"),n,x,y);
 
-	if (updatetoo) pageinfo->SetText(dims);
+	//if (updatetoo) pageinfo->SetText(dims);
 
 	return dims;
 }
@@ -876,8 +876,8 @@ void NewDocWindow::sendNewDoc()
 	int npgs=atoi(numpages->GetCText());
 	if (npgs<=0) npgs=1;
 
-	//imposition->NumPages(npgs);
-	//imposition->SetPaperSize(papertype);
+	imposition->NumPages(npgs);
+	imposition->SetPaperSize(papertype);
 
 	if (doc) {
 		 //we have a document already, so we are just reimposing
