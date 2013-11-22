@@ -1919,7 +1919,7 @@ class SignatureInterface
         //int facedown=0;
         int hasface;
         int rrr,ccc;
-                int urr,ucc;
+        int urr,ucc;
         int ff,tt;
         float xx,yy;
         //int xflip;
