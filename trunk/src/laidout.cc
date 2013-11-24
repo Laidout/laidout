@@ -960,7 +960,8 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'I': { // impose-only
 					runmode=RUNMODE_Impose_Only;
 					anXWindow *editor=newImpositionEditor(NULL,"impedit",_("Impose..."),0,NULL,
-														  NULL,"SignatureImposition",NULL,o->arg());
+														  NULL,"SignatureImposition",NULL,o->arg(),
+														  NULL);
 					addwindow(editor);
 				} break;
 

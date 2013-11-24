@@ -104,7 +104,8 @@ class SignatureInterface : public ImpositionInterface
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
  public:
-	SignatureInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL,SignatureImposition *sig=NULL, PaperStyle *p=NULL);
+	SignatureInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL,
+						SignatureImposition *sig=NULL, PaperStyle *p=NULL, Document *ndoc=NULL);
 	virtual ~SignatureInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 	virtual Laxkit::ShortcutHandler *GetShortcuts();

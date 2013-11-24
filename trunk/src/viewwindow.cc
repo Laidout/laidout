@@ -42,6 +42,7 @@
 #include "language.h"
 #include "printing/print.h"
 #include "printing/psout.h"
+#include "impositions/impositioneditor.h"
 #include "helpwindow.h"
 #include "about.h"
 #include "spreadeditor.h"
@@ -79,7 +80,7 @@ namespace Laidout {
 //---------------------------
  //***standard action ids for corner button menu
  //0..996 are current documents and "none" document
-#define ACTION_EditCurrentDocSettings  997
+#define ACTION_EditImposition          997
 #define ACTION_RemoveCurrentDocument   998
 #define ACTION_AddNewDocument          999
 		
@@ -613,6 +614,20 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 
 		return 1;
 
+	} else if (!strcmp(mes,"newimposition")) {
+		 if (data->type==LAX_onCancel) {
+            return 0;
+        }
+
+        const RefCountedEventData *r=dynamic_cast<const RefCountedEventData *>(data);
+        Imposition *i=dynamic_cast<Imposition *>(const_cast<RefCountedEventData*>(r)->TheObject());
+        if (!i) return 0;
+
+		doc->ReImpose(i,r->info1);
+
+        return 0;
+
+
 	} else if (!strcmp(mes,"rulercornermenu")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
@@ -641,11 +656,9 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			postmessage(_("Document removed"));
 			return 0;
 
-		} else if (i==ACTION_EditCurrentDocSettings) {
-			NewDocWindow *win=new NewDocWindow(NULL,NULL,_("Edit document settings"),0,
-							0,0,0,0,0,
-							doc);
-			app->rundialog(win);
+		} else if (i==ACTION_EditImposition) {
+			app->rundialog(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
+						                        NULL, NULL, doc?doc->imposition:NULL, NULL, doc));
 			return 0;
 		}
 
@@ -3402,7 +3415,7 @@ int ViewWindow::init()
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
 	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",NULL,
-						 MENUBUTTON_CLICK_CALLS_OWNER|IBUT_ICON_ONLY,
+						 MENUBUTTON_CLICK_CALLS_OWNER|MENUBUTTON_ICON_ONLY,
 						 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
 						 0,0,0,0,0,
 						 NULL,object_id,"rulercornerbutton",
@@ -3867,7 +3880,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
 		if (doc) {
-			menu->AddItem(_("Edit current document settings"),ACTION_EditCurrentDocSettings);
+			menu->AddItem(_("Edit imposition"),ACTION_EditImposition);
 			menu->AddItem(_("Remove current document"),ACTION_RemoveCurrentDocument);
 		}
 		menu->AddItem(_("Add new document"),ACTION_AddNewDocument);

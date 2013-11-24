@@ -170,10 +170,11 @@ enum SignatureInterfaceActions {
  */
 
 SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int nid,Laxkit::Displayer *ndp,
-									   SignatureImposition *sig, PaperStyle *p)
+									   SignatureImposition *sig, PaperStyle *p, Document *ndoc)
 	: ImpositionInterface(nowner,nid,ndp) 
 {
-	document=NULL;
+	document=ndoc;
+	if (document) document->inc_count();
 
 	showdecs=0;
 	showthumbs=0;
@@ -562,7 +563,7 @@ void SignatureInterface::remapHandles(int which)
 	double ww=0,hh=0;
 	GetDimensions(ww,hh);
 	double w=signature->PageWidth(0), h=signature->PageHeight(0); // *** patternwidth not updating with landscape change?
-	double www=signature->PatternWidth(), hhh=signature->PatternHeight();
+	double www=siginstance->PatternWidth(), hhh=siginstance->PatternHeight();
 
 	arrowscale=2*INDICATOR_SIZE;
 	//arrowscale=2*INDICATOR_SIZE/dp->Getmag();
@@ -3133,19 +3134,22 @@ int SignatureInterface::SetPaper(PaperStyle *paper)
 	// *** should set paper size of every siginstance? or those of same size as top one and resize for page size of others?
 }
 
+/*! Use the given doc, but still use the current imposition, updated with number of pages from doc.
+ */
 int SignatureInterface::UseThisDocument(Document *doc)
 {
-	cerr <<" *** INCOMPLETE CODING: SignatureInterface::UseThisDocument(Document *doc)"<<endl;
-
-	// ***
-	if (document) document->dec_count();
-	document=doc;
-	if (document) document->inc_count();
+	if (doc!=document) {
+		if (document) document->dec_count();
+		document=doc;
+		if (document) document->inc_count();
+	}
+	sigimp->NumPages(document->pages.n);
+	needtodraw=1;
 	return 0;
 }
 
 /*! Return 1 for cannot use it.
- * Otherwise, the imposition is duplicated.
+ * Otherwise, the imposition is duplicated. If imp->doc exists, use it for this->document.
  */
 int SignatureInterface::UseThisImposition(Imposition *imp)
 {
@@ -3168,7 +3172,7 @@ int SignatureInterface::UseThisImposition(Imposition *imp)
 	foldinfo=signature->foldinfo;
 	hasfinal=signature->HasFinal();
 	signature->resetFoldinfo(NULL);
-	if (simp->doc) {
+	if (simp->doc && simp->doc!=document) {
 		simp->doc->inc_count();
 		if (document) document->dec_count();
 		document=sigimp->doc;
