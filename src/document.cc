@@ -889,6 +889,7 @@ int Document::SyncPages(int start,int n)
 int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 {
 	if (!newimp) return 1;
+	if (newimp==imposition) return 0; //already has it!
 
 	if (imposition) imposition->dec_count();
 	imposition=newimp;

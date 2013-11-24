@@ -1301,8 +1301,8 @@ Value *PaperPartition::duplicate()
 {
 	PaperPartition *p=new PaperPartition;
 	p->SetPaper(paper);
-	p->totalwidth =totalwidth;
-	p->totalheight=totalheight;
+	//p->totalwidth =totalwidth;
+	//p->totalheight=totalheight;
 	p->insetleft  =insetleft;
 	p->insetright =insetright;
 	p->insettop   =insettop;
@@ -1468,6 +1468,9 @@ void PaperPartition::dump_in_atts(Attribute *att,int what,Laxkit::anObject *cont
 
 		}
 	}
+
+	totalwidth=paper->w();
+	totalheight=paper->h();
 }
 
 //! Installs duplicate.
@@ -1735,6 +1738,9 @@ Value *SignatureInstance::duplicate()
 		sig->next_stack->prev_stack=sig;
 	}
 
+	sig->pattern->patternheight=partition->PatternHeight();
+	sig->pattern->patternwidth =partition->PatternWidth();
+
 	sig->sheetspersignature=sheetspersignature;
 	sig->autoaddsheets=autoaddsheets;
 	sig->creep=creep;
@@ -1752,6 +1758,9 @@ SignatureInstance *SignatureInstance::duplicateSingle()
 
 	if (partition) sig->partition=(PaperPartition*)partition->duplicate();
 	if (pattern) { 	sig->UseThisSignature(pattern,0); }
+
+	sig->pattern->patternheight=partition->PatternHeight();
+	sig->pattern->patternwidth =partition->PatternWidth();
 
 	sig->sheetspersignature=sheetspersignature;
 	sig->autoaddsheets=autoaddsheets;
@@ -3482,6 +3491,13 @@ SignatureInstance *SignatureImposition::AddStack(int stack, int insert, Signatur
 {
 	if (sn) {
 		if (sn->next_insert || sn->prev_insert || sn->next_stack || sn->prev_stack) return NULL;
+	}
+
+	if (!signatures) {
+		if (sn) signatures=sn;
+		else signatures=new SignatureInstance();
+		NumPages(numdocpages);
+		return signatures;
 	}
 
 	if (stack==-1) {

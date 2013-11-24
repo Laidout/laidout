@@ -574,7 +574,7 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		//else
 		imp->SetPaperSize(papertype);
 		app->rundialog(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
-						papertype, imp->whattype(), imp, NULL));
+						papertype, imp->whattype(), imp, NULL, NULL));
 		return 0;
 
 	} else if (!strcmp(mes,"impfile")) {
