@@ -27,10 +27,11 @@
 namespace Laidout {
 
 
-class NetDialog : public Laxkit::RowFrame
+class NetDialog : public Laxkit::RowFrame, public ImpositionWindow
 {
   protected:
 	NetImposition *current;
+	Document *doc;
   public:
 	PaperStyle *paperstyle;
 	Laxkit::CheckBox *checkcurrent,*checkbox,*checkdod,*checkfile;
@@ -45,7 +46,15 @@ class NetDialog : public Laxkit::RowFrame
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	int sendNewImposition();
-	NetImposition *getImposition();
+	NetImposition *getNetImposition();
+
+	 //From ImpositionWindow:
+	virtual const char *ImpositionType();
+    virtual Imposition *GetImposition();
+    virtual int UseThisDocument(Document *ndoc);
+    virtual int UseThisImposition(Imposition *nimp);
+    virtual void ShowSplash(int yes);
+
 };
 
 

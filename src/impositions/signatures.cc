@@ -1281,8 +1281,8 @@ PaperPartition::PaperPartition()
 {
 	paper=new PaperStyle;
 
-	totalwidth=5;
-	totalheight=5;
+	totalwidth=paper->w();
+	totalheight=paper->h();
 
 	insetleft=insetright=insettop=insetbottom=0;
 
@@ -1636,6 +1636,9 @@ SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
 	partition=paper;
 	if (paper) paper->inc_count();
 	else partition=new PaperPartition;
+
+	pattern->patternheight=partition->PatternHeight();
+	pattern->patternwidth =partition->PatternWidth();
 
 	sheetspersignature=1;
 	autoaddsheets=1;

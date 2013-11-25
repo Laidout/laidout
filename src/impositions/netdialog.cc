@@ -60,7 +60,10 @@ NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 	//curorientation=0;
 	//papersizes=NULL;
 
-	paperstyle=(PaperStyle*)paper->duplicate();
+	doc=NULL;
+
+	if (paper) paperstyle=(PaperStyle*)paper->duplicate();
+	else paper=new PaperStyle;
 
 	//doc=ndoc;
 	//if (doc) doc->inc_count();
@@ -76,6 +79,7 @@ NetDialog::~NetDialog()
 {
 	if (paperstyle) paperstyle->dec_count();
 	if (current) current->dec_count();
+	if (doc) doc->dec_count();
 }
 
 
@@ -186,20 +190,20 @@ int NetDialog::init()
 
 	
 	 // [ ok ]   [ cancel ]
-	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
-						 BUTTON_OK,
-						 //doc?_("Apply settings"):_("Create Document"),
-						 _("Ok"),
-						 NULL,NULL);
-	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
-
-	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
-	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+//	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
+//						 BUTTON_OK,
+//						 //doc?_("Apply settings"):_("Create Document"),
+//						 _("Ok"),
+//						 NULL,NULL);
+//	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+//	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
+//
+//	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
+//	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
 
 
 	
-	tbut->CloseControlLoop();
+	last->CloseControlLoop();
 	Sync(1);
 //	wrapextent();
 	return 0;
@@ -235,7 +239,7 @@ int NetDialog::Event(const EventData *data,const char *mes)
 
 #ifndef LAIDOUT_NOGL
 	} else if (!strcmp(mes,"polyptych")) {
-		NetImposition *imp=getImposition();
+		NetImposition *imp=getNetImposition();
 		DBG cerr <<" ...editing with polyptych maybe..."<<endl;
 		if (imp && imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet)) {
 			DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
@@ -318,7 +322,7 @@ int NetDialog::Event(const EventData *data,const char *mes)
 	return RowFrame::Event(data,mes);
 }
 
-NetImposition *NetDialog::getImposition()
+NetImposition *NetDialog::getNetImposition()
 {
 	NetImposition *imp=NULL;
 	if (checkdod->State()==LAX_ON) {
@@ -357,7 +361,7 @@ NetImposition *NetDialog::getImposition()
  */
 int NetDialog::sendNewImposition()
 {
-	NetImposition *imp=getImposition();
+	NetImposition *imp=getNetImposition();
 	if (!imp) return 1;
 
 	RefCountedEventData *data=new RefCountedEventData(imp);
@@ -367,6 +371,40 @@ int NetDialog::sendNewImposition()
 
 	return 0;
 }
+
+const char *NetDialog::ImpositionType()
+{ return "NetImposition"; }
+
+Imposition *NetDialog::GetImposition()
+{ return current; }
+
+int NetDialog::UseThisDocument(Document *ndoc)
+{
+	if (doc!=ndoc) {
+		if (doc) doc->dec_count();
+		doc=ndoc;
+		if (doc) doc->inc_count();
+	}
+	return 0;
+}
+
+/*! Return 0 for success, 1 for not a net imposition.
+ */
+int NetDialog::UseThisImposition(Imposition *nimp)
+{
+	if (!dynamic_cast<NetImposition*>(nimp)) return 1;
+
+	if (current!=nimp) {
+		if (current) current->dec_count();
+		current=dynamic_cast<NetImposition*>(nimp);
+		if (current) current->inc_count();
+	}
+	return 0;
+
+}
+
+void NetDialog::ShowSplash(int yes)
+{ }
 
 } // namespace Laidout
 

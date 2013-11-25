@@ -280,24 +280,24 @@ int SinglesEditor::init()
 	
 	//------------------------------ final ok -------------------------------------------------------
 
-	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
+//	AddWin(NULL,0, 2000,1990,0,50,0, 20,0,0,50,0, -1);
+//	
+//	 // [ ok ]   [ cancel ]
+//	AddHSpacer(0,0,1000,50);
+//	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
+//						 BUTTON_OK,
+//						 NULL,
+//						 NULL,NULL);
+//	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+//	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
+//
+//	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
+//	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
+//	AddHSpacer(0,0,1000,50);
+
+
 	
-	 // [ ok ]   [ cancel ]
-	AddHSpacer(0,0,1000,50);
-	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
-						 BUTTON_OK,
-						 NULL,
-						 NULL,NULL);
-	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddWin(NULL,0, 20,0,0,50,0, 5,0,0,50,0, -1); // add space of 20 pixels
-
-	last=tbut=new Button(this,"cancel",NULL,BUTTON_CANCEL, 0,0,0,0,1, last,object_id,"Cancel");
-	AddWin(tbut,1, tbut->win_w,0,50,50,0, linpheight,0,0,50,0, -1);
-	AddHSpacer(0,0,1000,50);
-
-
-	
-	tbut->CloseControlLoop();
+	last->CloseControlLoop();
 	Sync(1);
 	return 0;
 }
@@ -446,6 +446,41 @@ void SinglesEditor::UpdatePaper(int dialogtoimp)
 		papery->SetText(num);
 	}
 }
+
+const char *SinglesEditor::ImpositionType()
+{ return "Singles"; }
+
+Imposition *SinglesEditor::GetImposition()
+{ return imp; }
+
+int SinglesEditor::UseThisDocument(Document *ndoc)
+{
+	if (doc!=ndoc) {
+		if (doc) doc->dec_count();
+		doc=ndoc;
+		if (doc) doc->inc_count();
+	}
+	return 0;
+}
+
+/*! Return 0 for success, 1 for not a Singles imposition.
+ */
+int SinglesEditor::UseThisImposition(Imposition *nimp)
+{
+	if (!dynamic_cast<Singles*>(nimp)) return 1;
+
+	if (imp!=nimp) {
+		if (imp) imp->dec_count();
+		imp=dynamic_cast<Singles*>(nimp);
+		if (imp) imp->inc_count();
+	}
+	UpdatePaper(0);
+	return 0;
+
+}
+
+void SinglesEditor::ShowSplash(int yes)
+{ }
 
 } // namespace Laidout
 

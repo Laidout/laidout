@@ -447,6 +447,26 @@ char *previewFileName(const char *file, const char *nametemplate)
 	return previewname;
 }
 
+
+//-----------------------------System Resources-----------------------------------------
+
+/*! Read in the single line in the file, default to /etc/papersize (works on debian).
+ *
+ * Return a new char[]. If nothing can be retrieved, this will default to "letter".
+ */
+char *get_system_default_paper(const char *file)
+{
+	if (file==NULL) file="/etc/papersize";
+
+	char *name=read_in_whole_file(file, NULL, 100);
+	if (name) stripws(name,3);
+	else name=newstr("letter");
+
+	return name;
+}
+
+
+
 //------------------------------ File identification functions -------------------------------
 
 ////! Find out the version and type of Laidout file this is, if any.
@@ -555,8 +575,16 @@ const char *IdentifyFile(const char *file, char **version1, char **version2)
 		if (version2) *version2=numtostr(v2);
 		return "EPS";
 	}
+
 	if (isOffFile(file)) return "OFF";
+
 	if (laidout_file_type(file, NULL, NULL, version1, NULL, version2)) return "Laidout";
+
+	if (isPdfFile(file,&v1)) {
+		if (version1) *version1=numtostr(v1);
+		return "PDF";
+	}
+
 	return NULL;
 }
 
@@ -690,6 +718,27 @@ int is_bitmap_image(const char *file)
 	return 1;
 }
 
+//! Return whether it appears file is a pdf.
+int isPdfFile(const char *file,float *pdfversion)
+{
+	if (isblank(file)) return 0;
+	char first100[101];
+	FILE *f=fopen(file,"r");
+	if (!f) return 0;
+
+	int n=fread(first100,1,100,f);
+	fclose(f);
+
+	if (n>=0) first100[n]='\0';
+	if (n) {
+		if (strstr(file,"%PDF-")==file) {
+			if (pdfversion) *pdfversion=strtof(file+5,NULL);
+			return 1;
+		}
+	}
+
+	return 0;
+}
 
 } // namespace Laidout
 

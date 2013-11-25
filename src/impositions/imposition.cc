@@ -301,7 +301,7 @@ int Spread::PagestackIndex(int docpage)
 //----------------------------- ImpositionInterface --------------------------
 /*! \class ImpositionInterface 
  *
- * Abstract base class of imposition editors. The Imposition class may return
+ * Abstract base class of interfaces used in an ImpositionEditor. The Imposition class may return
  * a tool to edit itself with Imposition::Interface().
  */
 
@@ -309,6 +309,15 @@ ImpositionInterface::ImpositionInterface(LaxInterfaces::anInterface *nowner,int 
   : anInterface(nowner,nid,ndp)
 {
 }
+
+
+//----------------------------- ImpositionWindow --------------------------
+/*! \class ImpositionWindow 
+ *
+ * Abstract base class of imposition editors. The Imposition class may return
+ * a tool to edit itself with Imposition::Window().
+ */
+
 
 
 //----------------------------- Imposition --------------------------

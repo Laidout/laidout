@@ -86,8 +86,6 @@ Imposition *newImpositionByResource(const char *impos)
 Imposition *newImpositionByType(const char *impos)
 {
 	if (!strcmp(impos,"Singles")) return new Singles;
-	//if (!strcmp(impos,"DoubleSidedSingles")) return new DoubleSidedSingles;
-	//if (!strcmp(impos,"Booklet")) return new BookletImposition;
 	if (!strcmp(impos,"NetImposition")) return new NetImposition;
 	if (!strcmp(impos,"SignatureImposition")) return new SignatureImposition;
 
