@@ -21,6 +21,7 @@
 #include "language.h"
 #include "configured.h"
 #include "stylemanager.h"
+#include "utils.h"
 
 
 using namespace Laxkit;
@@ -64,7 +65,7 @@ LaidoutPreferences::LaidoutPreferences()
 	appendstr(splash_image_file,"/laidout-splash.png");
 
     default_template=NULL;
-    defaultpaper=newstr("letter");
+    defaultpaper=get_system_default_paper();
     temp_dir=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 

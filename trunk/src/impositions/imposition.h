@@ -125,6 +125,20 @@ class ImpositionInterface : public LaxInterfaces::anInterface
 }; 
 
 
+//------------------------------------- ImpositionWindow --------------------------------------
+class ImpositionWindow
+{               
+  public:   
+    ImpositionWindow() {}
+    virtual ~ImpositionWindow() {}
+    virtual const char *ImpositionType() = 0;
+    virtual Imposition *GetImposition() = 0;
+    virtual int UseThisDocument(Document *doc) =0;
+    virtual int UseThisImposition(Imposition *imp) =0;
+    virtual void ShowSplash(int yes) = 0;
+}; 
+
+
 //----------------------------- Imposition --------------------------
 
 class Imposition : public Value

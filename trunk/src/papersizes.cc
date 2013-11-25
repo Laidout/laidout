@@ -141,7 +141,8 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
 	}
 	return papers;
 }
-	
+
+
 //---------------------------------- PaperStyle --------------------------------
 
 /*! \class PaperStyle
@@ -178,17 +179,22 @@ PtrStack<PaperStyle> *GetBuiltinPaperSizes(PtrStack<PaperStyle> *papers)
  * The width and height are still in inches. This is just a hint.
  */
 
-PaperStyle::PaperStyle()
+/*! nname==NULL uses laidout's default paper name.
+ * Looks up name in laidout's list of papers, and sets data accordingly.
+ */
+PaperStyle::PaperStyle(const char *nname)
 {
-	name=NULL;
-	width=height=0;
-	dpi=360;
+	if (!isblank(nname)) name=newstr(nname); else name=NULL;
+
 	flags=0;
+	dpi=360;
+	width=8.5;
+	height=11;
 	defaultunits=newstr("in");
 
 	DBG cerr <<"blank PaperStyle created, obj "<<object_id<<endl;
 
-	name=newstr(laidout->prefs.defaultpaper);
+	if (!name) name=newstr(laidout->prefs.defaultpaper);
 	if (!name) name=newstr("letter");
 	for (int c=0; c<laidout->papersizes.n; c++) {
 		if (strcasecmp(name,laidout->papersizes.e[c]->name)==0) {

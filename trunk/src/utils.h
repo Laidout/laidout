@@ -45,10 +45,13 @@ int laidout_file_type(const char *file, const char *minversion, const char *maxv
 					  const char *typ, char **actual_type);
 int laidout_version_check(const char *version, const char *minversion, const char *maxversion);
 
+//-----------------------------System Resources-----------------------------------------
+char *get_system_default_paper(const char *file="/etc/papersize");
 
 //------------------------------ File identification functions -------------------------------
 const char *IdentifyFile(const char *file, char **version1, char **version2);
 int isOffFile(const char *file);
+int isPdfFile(const char *file,float *pdfversion);
 int isEpsFile(const char *file,float *psversion, float *epsversion);
 int isScribusFile(const char *file);
 int isJpg(const char *file);

@@ -24,7 +24,7 @@
 namespace Laidout {
 
 
-class SinglesEditor : public Laxkit::RowFrame
+class SinglesEditor : public Laxkit::RowFrame, public ImpositionWindow
 {
 	virtual void send();
  public:
@@ -50,6 +50,15 @@ class SinglesEditor : public Laxkit::RowFrame
 
 	//int UseThisImposition(Imposition *imp);
 	void UpdatePaper(int dialogtoimp);
+
+
+	 //From ImpositionWindow:
+	virtual const char *ImpositionType();
+    virtual Imposition *GetImposition();
+    virtual int UseThisDocument(Document *ndoc);
+    virtual int UseThisImposition(Imposition *nimp);
+    virtual void ShowSplash(int yes);
+
 };
 
 } // namespace Laidout

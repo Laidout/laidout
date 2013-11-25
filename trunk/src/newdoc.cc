@@ -663,8 +663,11 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 		} else if (s->info1==IMP_NEW_NET) {
 			oldimp=impsel->GetCurrentItemIndex();
-			app->rundialog(new NetDialog(NULL,"netselect",_("Select net..."),
-							this->object_id,"newimposition",papertype,NULL));
+			NetImposition *net=new NetImposition;
+			app->rundialog(new ImpositionEditor(NULL,"impeditor",_("Imposition Editor"),
+						   this->object_id,"newimposition",
+						   doc, net, papertype));
+			net->dec_count();
 			return 0;
 
 		} else if (s->info1==IMP_FROM_FILE) {
@@ -712,8 +715,8 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		Imposition *i=dynamic_cast<Imposition *>(const_cast<RefCountedEventData*>(r)->TheObject());
 		if (!i) return 0;
 
-		if (imp && imp!=i) {
-			imp->dec_count();
+		if (imp!=i) {
+			if (imp) imp->dec_count();
 			imp=i;
 			imp->inc_count();
 		}

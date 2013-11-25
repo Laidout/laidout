@@ -12,8 +12,6 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
-menus should activate ONLY WHEN MOUSE UP ON SAME AS DOWN!!!!
-
 object reordering frelled, strange bbox display offset, 
 
 key window not showing fields!!!
@@ -46,6 +44,10 @@ cloning, change original, not triggering bbox update in clone
 cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
 ---- bugs:
+
+page range, control click on page 1 less than a range won't let you click for new range
+
+impositioneditor not remembering window position
 
 sigimp fail for multiple stacks with no folds!!
 
@@ -135,14 +137,18 @@ test:
   each export filter
   make some test scripts for command line testing
 
+there should be a default paper
+
 set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
 
 Signature editor:
-  make page number shown reflect correctly when folding/unfolding
   add hooks for page preview
+  page style specific to EACH instance, not global
   ---enhancements:
+  must implement dragging around instance blocks...
+  helper controls to adjust inset to match up final size for sigs of different size
   tab to cycle through handles for numerical input
-  export pdf or lo doc
+  export pdf or lo doc template
   implement work and turn interface
   needs visual dodads to indicate where to drag to change
   be able to specify single sided.. allows bound accordian foldings?
@@ -155,9 +161,6 @@ Signature editor:
   impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
   show margin, trim, binding when not totally folded
 
-
-move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-	feed it an ExportConfig
 
 finish implementing all options for reimpose function
 
@@ -249,6 +252,15 @@ text window controls have difficulties
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
 
+move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
+	feed it an ExportConfig
+
+standardize new Impositions: each has:
+   interface OR window editor
+   class type
+   default resources
+  possible to define other editors for any imposition type
+  
 autorecover.. autosave every X minutes
 
 make "make uninstall" work, and remove coop 
@@ -875,3 +887,7 @@ DONE Signature editor:
   DONE not updating paper size with new doc dialog
   DONE add on canvas selectors for paper size, num pages, front/back
   DONE hang on add pages
+  DONE (maybe) make page number shown reflect correctly when folding/unfolding
+
+DONE menus should activate ONLY WHEN MOUSE UP ON SAME AS DOWN!!!!
+
