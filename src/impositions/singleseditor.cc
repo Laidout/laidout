@@ -91,7 +91,6 @@ int SinglesEditor::init()
 	
 	int textheight=app->defaultlaxfont->textheight();
 	int linpheight=textheight+12;
-	Button *tbut;
 	anXWindow *last=NULL;
 	LineInput *linp;
 
@@ -284,6 +283,7 @@ int SinglesEditor::init()
 //	
 //	 // [ ok ]   [ cancel ]
 //	AddHSpacer(0,0,1000,50);
+//	Button *tbut;
 //	last=tbut=new Button(this,"ok",NULL,0, 0,0,0,0,1, last,object_id,"Ok",
 //						 BUTTON_OK,
 //						 NULL,
