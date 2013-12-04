@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+tooltips and event timers seem to be frelled
+
 object reordering frelled, strange bbox display offset, 
 
 key window not showing fields!!!
@@ -137,9 +139,12 @@ test:
   each export filter
   make some test scripts for command line testing
 
-there should be a default paper
-
 set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
+
+Imposition Editor:
+  Singles has message from Signature editor tool
+  Singles reimpose doesn't work
+  test net imposition
 
 Signature editor:
   add hooks for page preview
@@ -233,12 +238,13 @@ calculator
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
 shortcuts:
-  hover indicator intrusive
+  shortcut edit dialog
+  should be able to clear shortcut in dialog
   save/restore column setting
   in/out for remember
   char names for wacky xf86 codes.. accept 0x*
   numberpadmask?
-  shortcut edit dialog
+  DONE hover indicator intrusive
 
 customizable object child relationships to parent, rather than simple transform
   transform relative to parent origin
@@ -251,6 +257,10 @@ text window controls have difficulties
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+have option to specify language from command line
+
+add menu items to rulercornermenu for reseting view orientation
 
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
 	feed it an ExportConfig
@@ -890,4 +900,6 @@ DONE Signature editor:
   DONE (maybe) make page number shown reflect correctly when folding/unfolding
 
 DONE menus should activate ONLY WHEN MOUSE UP ON SAME AS DOWN!!!!
+
+DONE there should be a default paper
 
