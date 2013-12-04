@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 #ifndef SPREADEDITOR_H
 #define SPREADEDITOR_H
@@ -34,6 +34,7 @@ enum SpreadInterfaceActions {
 	SIA_ToggleSelect,
 	SIA_Center,
 	SIA_LabelPos,
+	SIA_ToggleColor,
 	SIA_ToggleMark,
 	SIA_ToggleMarkR,
 	SIA_Thumbnails,
@@ -41,9 +42,9 @@ enum SpreadInterfaceActions {
 	SIA_RefreshArrange,
 
 	SIA_First=           1000,
-	SIA_PageLabels      ,
-	SIA_InsertDummyPage ,
-	SIA_AddPageBefore   , 
+	SIA_PageLabels       ,
+	SIA_InsertDummyPage  ,
+	SIA_AddPageBefore    , 
 	SIA_AddPageAfter     ,
 	SIA_DetachPages      ,
 	SIA_DeletePages      ,
