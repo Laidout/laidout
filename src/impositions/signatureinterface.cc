@@ -176,6 +176,8 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 	document=ndoc;
 	if (document) document->inc_count();
 
+	rescale_pages=1;
+
 	showdecs=0;
 	showthumbs=0;
 	showsplash=0;
@@ -317,6 +319,7 @@ void SignatureInterface::checkFoldLevel(int update)
 #define SIGM_FinalFromPaper  2003
 #define SIGM_CustomPaper     2004
 #define SIGM_Thumbs          2005
+#define SIGM_Rescale_Pages   2006
 
 /*! Return whether every siginstance has a totally folded pattern.
  */
@@ -374,6 +377,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 
 	menu->AddSep();
 	menu->AddItem(_("Show page images"), SIGM_Thumbs, LAX_ISTOGGLE|(showthumbs?LAX_CHECKED:0));
+	menu->AddItem(_("Scale pages when reimposing"), SIGM_Rescale_Pages, LAX_ISTOGGLE|(rescale_pages?LAX_CHECKED:0));
 	return menu;
 }
 
@@ -393,6 +397,15 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 						FILES_FILES_ONLY|FILES_SAVE_AS,
 						NULL,impdir));
 			delete[] impdir;
+			return 0;
+
+		} else if (i==SIGM_Rescale_Pages) {
+			rescale_pages=!rescale_pages;
+			SimpleMessage *m=new SimpleMessage();
+			m->info1=1;
+			m->info2=rescale_pages;
+			app->SendMessage(m, curwindow->win_parent->object_id, "settings", object_id);
+			needtodraw=1;
 			return 0;
 
 		} else if (i==SIGM_Thumbs) {
@@ -789,6 +802,13 @@ int SignatureInterface::InterfaceOn()
 {
 	showdecs=1;
 	needtodraw=1;
+
+	 //hack to sync a setting with ImpositionEditor window:
+	SimpleMessage *m=new SimpleMessage();
+	m->info1=1;
+	m->info2=rescale_pages;
+	app->SendMessage(m, curwindow->win_parent->object_id, "settings", object_id);
+
 	return 0;
 }
 

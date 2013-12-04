@@ -41,6 +41,7 @@ class SignatureInterface : public ImpositionInterface
 	SignatureInstance *siginstance;
 	Signature *signature;
 
+	int rescale_pages;
 	int showdecs;
 	int showsplash;
 	int showthumbs;
