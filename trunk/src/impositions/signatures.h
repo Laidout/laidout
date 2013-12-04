@@ -164,6 +164,7 @@ class PaperPartition : public Value
 class SignatureInstance : public Value
 {
   public:
+	RectPageStyle *pagestyle,*pagestyleodd;
 	PaperPartition *partition;
 	Signature *pattern;
 

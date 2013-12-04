@@ -1629,6 +1629,8 @@ int createPaperPartition(ValueHash *context, ValueHash *parameters,
 
 SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
 {
+	pagestyle=pagestyleodd=NULL;
+
 	if (sig) sig->inc_count();
 	if (!sig) sig=new Signature;
 	pattern=sig;
@@ -1659,6 +1661,9 @@ SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
  */
 SignatureInstance::~SignatureInstance()
 {
+	if (pagestyle) pagestyle->dec_count();
+	if (pagestyleodd) pagestyleodd->dec_count();
+
 	if (next_insert) delete next_insert;
 	if (next_stack)  delete next_stack;
 	if (partition) partition->dec_count();
