@@ -1246,8 +1246,6 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 	sc=manager->NewHandler("NUpInterface");
 	if (sc) return sc;
 
-	//virtual int Add(int nid, const char *nname, const char *desc, const char *icon, int nmode, int assign);
-
 	sc=RectInterface::GetShortcuts();
 
 	sc->Add(NUPA_Apply,          LAX_Enter,0,0,    _("ToggleApply"),   _("Toggle apply"),NULL,0);
@@ -1256,7 +1254,7 @@ Laxkit::ShortcutHandler *NUpInterface::GetShortcuts()
 	sc->Add(NUPA_NextDir,        LAX_Left,0,0,     _("NextDir"),       _("Next direction type"),NULL,0);
 	sc->Add(NUPA_PrevDir,        LAX_Right,0,0,    _("PrevDir"),       _("Previous direction type"),NULL,0);
 
-	manager->AddArea("NUpInterface",sc);
+	//manager->AddArea("NUpInterface",sc); //added in RectInterface
 	return sc;
 }
 
