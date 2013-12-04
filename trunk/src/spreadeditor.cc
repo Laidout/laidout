@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2011 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 
@@ -22,6 +22,7 @@
 #include <lax/popupmenu.h>
 #include <lax/mouseshapes.h>
 #include <lax/lineinput.h>
+#include <lax/shortcutwindow.h>
 
 #include <lax/lists.cc>
 
@@ -290,8 +291,12 @@ void SpreadInterface::CheckSpreads(int startpage,int endpage)
 
 	//init doc page markers... maybe this should be done elsewhere?
 	if (!doc) return;
-	for (int c=0; c<doc->pages.n; c++)
-		if (doc->pages.e[c]->labeltype==-1) doc->pages.e[c]->labeltype=c%maxmarkertype;
+	for (int c=0; c<doc->pages.n; c++) {
+		if (doc->pages.e[c]->labeltype==MARKER_Unmarked) {
+			doc->pages.e[c]->labeltype=MARKER_Circle;
+			doc->pages.e[c]->labelcolor.rgbf(1,1,1);
+		}
+	}
 }
 
 //! Create all the LittleSpread objects and default page labels.
@@ -556,13 +561,9 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 		}
 	}
 
-//	int psi=-1, thread=-1;
-//	LittleSpread *spread=findSpread(x,y,&psi,&thread);
-//	if (spread && psi>=0) {
-//		menu->AddSep();
-//		menu->AddItem(_("Add page after"),SIA_AddPageAfter,LAX_OFF,spread->pagestack.e[psi]->index);
-//		menu->AddItem(_("Add page before"),SIA_AddPageBefore,LAX_OFF,spread->pagestack.e[psi]->index);
-//	}
+
+	menu->AddSep();
+    menu->AddItem(_("Show thumbnails"), SIA_Thumbnails, LAX_ISTOGGLE|(drawthumbnails?LAX_CHECKED:0));
 
 	return menu;
 }
@@ -580,6 +581,10 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 	if (i>=0 && i<doc->spreadviews.n) {
 		 //select new view
 		SwitchView(i);
+		return 0;
+
+	} else if (i==SIA_Thumbnails) {
+		PerformAction(SIA_Thumbnails);
 		return 0;
 
 	} else if (i==SIA_AddPageAfter) {
@@ -670,49 +675,27 @@ void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 	h/=2;
 	w+=h;
 	h+=h;
-	unsigned long fcolor=~0;//fill color
-	unsigned long color=0; //text color
+	ScreenColor fcolor(1.,1.,1.,1.);//fill color
+	ScreenColor color(0.,0.,0.,1.); //text color
 	unsigned long outlinecolor=0;
 	if (outlinestatus==0) outlinecolor=rgbcolor(255,0,0);
 
 	DrawThingTypes t=THING_None;
+	fcolor= page->labelcolor;
+	if (fcolor.red<32768 || fcolor.blue<32768) color.rgbf(1.,1.,1.);
+
 	switch (page->labeltype) {
-		case 0: fcolor=rgbcolor(255,255,255);
-				t=THING_Circle;
-				break;
-		case 1: fcolor=rgbcolor(175,175,175);
-				t=THING_Circle;
-				break;
-		case 2: fcolor=rgbcolor(100,100,100);
-				color=~0;
-				t=THING_Circle;
-				break;
-		case 3: fcolor=rgbcolor(0,0,0);
-				color=~0;
-				t=THING_Circle;
-				break;
-		case 4: fcolor=rgbcolor(255,255,255);
-				t=THING_Square;
-				break;
-		case 5: fcolor=rgbcolor(175,175,175);
-				t=THING_Square;
-				break;
-		case 6: fcolor=rgbcolor(100,100,100);
-				color=~0;
-				t=THING_Square;
-				break;
-		case 7: fcolor=rgbcolor(0,0,0);
-				color=~0;
-				t=THING_Square;
-				break;
-		default: fcolor=rgbcolor(255,255,255); //default provided just in case
-				t=THING_Circle;
-				break;
+		case MARKER_Circle:       t=THING_Circle;  break;
+		case MARKER_Square:       t=THING_Square;  break;
+		case MARKER_TriangleDown: t=THING_Triangle_Down;  break;
+		case MARKER_Octagon:      t=THING_Octagon; break;
+		case MARKER_Diamond:      t=THING_Diamond; break;
+		default:   t=THING_Circle;  break;
 	}
 	
 	dp->DrawScreen();
-	dp->drawthing(x,y,w,h, t, outlinecolor,fcolor, (outlinestatus==0?4:1));
-	dp->NewFG(color);
+	dp->drawthing(x,y,w,h, t, outlinecolor,fcolor.Pixel(), (outlinestatus==0?4:1));
+	dp->NewFG(&color);
 	dp->textout(x,y, page->label,-1, LAX_CENTER);
 	dp->DrawReal();
 }
@@ -1092,8 +1075,11 @@ int SpreadInterface::ChangeMarks(int newmark)
 {
 	if (!view || !curpages.n) return -1;
 
-	if (newmark==-1) newmark=(doc->pages.e[view->map(curpages.e[0])]->labeltype+1) % maxmarkertype;
-	else if (newmark==-2) newmark=(doc->pages.e[view->map(curpages.e[0])]->labeltype+maxmarkertype-1) % maxmarkertype;
+	if (newmark==-1) {
+		newmark=(doc->pages.e[view->map(curpages.e[0])]->labeltype) % (MARKER_MAX-1) + 1;
+	} else if (newmark==-2) {
+		newmark=(doc->pages.e[view->map(curpages.e[0])]->labeltype+MARKER_MAX-3) % (MARKER_MAX-1) + 1;
+	}
 
 	for (int c=0; c<curpages.n; c++) doc->pages.e[view->map(curpages.e[c])]->labeltype=newmark;
 
@@ -1144,7 +1130,8 @@ Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 	sc->Add(SIA_ToggleSelect,   'a',0,0,         _("ToggleSelect"),   _("Select all or none"),NULL,0);
 
 	sc->Add(SIA_Center,         ' ',0,0,         _("Center"),         _("Center"),NULL,0);
-	sc->Add(SIA_LabelPos,       'c',0,0,         _("LabelPos"),       _("Move label position"),NULL,0);
+	sc->Add(SIA_LabelPos,       'l',0,0,         _("LabelPos"),       _("Move label position"),NULL,0);
+	sc->Add(SIA_ToggleColor,    'c',0,0,         _("ToggleColor"),    _("Toggle color among defined colors"),NULL,0);
 	sc->Add(SIA_ToggleMark,     'm',0,0,         _("ToggleMark"),     _("Toggle mark type"),NULL,0);
 	sc->Add(SIA_ToggleMarkR,    'M',ShiftMask,0, _("ToggleMarkR"),    _("Toggle mark type"),NULL,0);
 	sc->Add(SIA_Thumbnails,     't',0,0,         _("Thumbs"),         _("Toggle showing thumbnails"),NULL,0);
@@ -1196,6 +1183,20 @@ int SpreadInterface::PerformAction(int action)
 		else if (view->centerlabels==LAX_RIGHT) view->centerlabels=LAX_BOTTOM;
 		else if (view->centerlabels==LAX_BOTTOM) view->centerlabels=LAX_LEFT;
 		else view->centerlabels=LAX_CENTER;
+		needtodraw=1;
+		return 0;
+
+	} else if (action==SIA_ToggleColor) {
+		if (!view || !curpages.n) return -1;
+
+		ScreenColor color=doc->pages.e[view->map(curpages.e[0])]->labelcolor;
+		if (color.equals(0.,0.,0.,1.)) color.rgbf(.3,.3,.3,1);
+		else if (color.equals(.3,.3,.3,1)) color.rgbf(.6,.6,.6,1);
+		else if (color.equals(.6,.6,.6,1.)) color.rgbf(1.,1.,1.,1);
+		else if (color.equals(1.,1.,1.,1.)) color.rgbf(0.,0.,0.,1);
+		else color.rgbf(0.,0.,0.,1.);
+
+		for (int c=0; c<curpages.n; c++) doc->pages.e[view->map(curpages.e[c])]->labelcolor=color;
 		needtodraw=1;
 		return 0;
 
@@ -1349,6 +1350,9 @@ class SpreadEditorViewport : public ViewportWindow
 						 int xx,int yy,int ww,int hh,int brder, Laxkit::Displayer *ndp,SpreadInterface *s);
 	virtual ~SpreadEditorViewport() {}
 	virtual void RefreshUnder();
+	virtual const char *whattype() { return "SpreadEditorViewport"; }
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
+	virtual int PerformAction(int action);
 };
 
 SpreadEditorViewport::SpreadEditorViewport(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
@@ -1369,6 +1373,32 @@ void SpreadEditorViewport::RefreshUnder()
 		spreadtool->needtodraw=1;
 		spreadtool->Refresh();
 	}
+}
+
+#define SPREADE_Help  (VIEWPORT_MAX+1)
+
+Laxkit::ShortcutHandler *SpreadEditorViewport::GetShortcuts()
+{
+    if (sc) return sc;
+    ShortcutManager *manager=GetDefaultShortcutManager();
+    sc=manager->NewHandler(whattype());
+    if (sc) return sc;
+
+	sc=ViewportWindow::GetShortcuts();
+
+	sc->Add(SPREADE_Help,   LAX_F1,0,0,   _("Help"), _("Help"),NULL,0);
+
+	return sc;
+}
+
+int SpreadEditorViewport::PerformAction(int action)
+{
+	if (action==SPREADE_Help) {
+		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0,"SpreadInterface"));
+		return 0;
+	}
+
+	return ViewportWindow::PerformAction(action);
 }
 
 
@@ -1470,7 +1500,7 @@ int SpreadEditor::UseThisDoc(Document *ndoc)
 	return 0;
 }
 
-/*! Removes rulers and adds Apply, Reset, and Update Thumbs.
+/*! Removes rulers and adds Apply, Reset.
  */
 int SpreadEditor::init()
 {
@@ -1566,8 +1596,8 @@ int SpreadEditor::init()
 	last=tbut=new Button(this,"resetbutton",NULL, 0, 0,0,0,0,1, last,object_id,"resetbutton",0,_("Reset"));
 	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
-	last=tbut=new Button(this,"updatethumbs",NULL, 0, 0,0,0,0,1, last,object_id,"updatethumbs",0,_("Update Thumbs"));
-	AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
+	//last=tbut=new Button(this,"updatethumbs",NULL, 0, 0,0,0,0,1, last,object_id,"updatethumbs",0,_("Update Thumbs"));
+	//AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,50,50,0, -1);
 
 
 	ColorBox *colorbox;
