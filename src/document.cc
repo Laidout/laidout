@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2012 by Tom Lechner
+// Copyright (C) 2004-2013 by Tom Lechner
 //
 
 #include <lax/strmanip.h>
@@ -884,7 +884,11 @@ int Document::SyncPages(int start,int n)
  * All the pages in the document will have their page styles updated by the
  * new imposition.
  *
- * \todo when master pages are implemented
+ * If scale_page_contents_to_fit, enlarge or shrink page contents to
+ * occupy new page size without exceeding bounds of the new page.
+ *
+ * \todo when master pages are implemented, will need to ensure they are scaled properly
+ * \todo rescaling assumes rectangular pages, but maybe it shouldn't.
  */
 int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 {
@@ -895,12 +899,60 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 	imposition=newimp;
 	imposition->inc_count();
 
-	imposition->NumPages(pages.n);
-	SyncPages(0,-1);
 
 	if (scale_page_contents_to_fit) {
-		cout << " *** need to implement scale page contents to fit Document::ReImpose()!!"<<endl;
+		 //first grab old page sizes for reference
+		flatpoint old[pages.n];
+		for (int c=0; c<pages.n; c++) {
+			old[c].x=pages.e[c]->pagestyle->w();
+			old[c].y=pages.e[c]->pagestyle->h();
+		}
+	
+		 //then install new page styles
+		imposition->NumPages(pages.n);
+		SyncPages(0,-1);
+
+		 //now update page contents
+		SomeData *o;
+		DrawableObject *g;
+		flatpoint offset;
+		double scaling;
+		double oldw,oldh;
+		double neww,newh;
+		for (int c=0; c<pages.n; c++) {
+		  oldw=old[c].x;
+		  oldh=old[c].y;
+
+		  neww=pages.e[c]->pagestyle->w();
+		  newh=pages.e[c]->pagestyle->h();
+
+		  if (neww==oldw && newh==oldh) continue; //no need to introduce unnecessary rounding errors
+
+		  if (neww/newh > oldw/oldh) {
+			  scaling=newh/oldh;
+			  offset=flatpoint((neww-scaling*oldw)/2, 0);
+		  } else {
+			  scaling=neww/oldw;
+			  offset=flatpoint(0, (newh-scaling*oldh)/2);
+		  }
+
+		   //step through each object on each layer on each page
+		  for (int c2=0; c2<pages.e[c]->layers.n(); c2++) {
+			g=dynamic_cast<DrawableObject*>(pages.e[c]->layers.e(c2));
+			if (g) for (int c3=0; c3<g->n(); c3++) {
+			  o=g->e(c3);
+			  o->Scale(scaling);
+			  o->origin(o->origin()+offset);
+			}
+		  }
+		}
+
+	} else {
+		 //simple case, no page content resizing
+		imposition->NumPages(pages.n);
+		SyncPages(0,-1);
 	}
+
 
 	laidout->notifyDocTreeChanged(NULL,TreePagesMoved, 0,-1);
 	return 0;

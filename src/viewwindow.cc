@@ -4573,7 +4573,7 @@ int ViewWindow::PerformAction(int action)
 
 	} else if (action==VIEW_Help) {
 		//app->addwindow(new HelpWindow());
-		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0));
+		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0,"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_About) {

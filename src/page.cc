@@ -529,18 +529,7 @@ ObjectDef *RectPageStyle::makeObjectDef()
  * "IV", or even "C". See Document and PageRange for more details.
  */
 /*! \var int Page::labeltype
- * \brief How to show the label in a SpreadEditor
- *
- * <pre>
- * 0 white circle
- * 1 gray circle
- * 2 dark gray circle
- * 3 black circle
- * 4 square
- * 5 gray square
- * 6 dark gray square
- * 7 black square
- * </pre>
+ * \brief How to show the label in a SpreadEditor. See labelcolor and PageMarkerType.
  */
 /*! \fn Group *Page::e(int i) 
  * \brief Return dynamic_cast<Group *>(layers.e(i)).
@@ -558,7 +547,8 @@ Page::Page(PageStyle *npagestyle,int num)
 	modtime=times(NULL);
 	pagestyle=npagestyle;
 	if (pagestyle) pagestyle->inc_count();
-	labeltype=-1;
+	labeltype=MARKER_Unmarked;
+	labelcolor.rgbf(1,1,1);
 	thumbnail=0;
 	pagenumber=num;
 
@@ -649,8 +639,20 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 			g->dump_in_atts(att->attributes.e[c],flag,context);
 			layers.push(g);
 			g->dec_count();
+
 		} else if (!strcmp(name,"labeltype")) {
-			IntAttribute(value,&labeltype);
+			if (!isblank(value)) {
+				if (!strcasecmp(value,"circle"))        labeltype=MARKER_Circle;
+				else if (!strcasecmp(value,"square"))   labeltype=MARKER_Square;
+				else if (!strcasecmp(value,"diamond"))  labeltype=MARKER_Diamond;
+				else if (!strcasecmp(value,"triangle")) labeltype=MARKER_TriangleDown;
+				else if (!strcasecmp(value,"octagon"))  labeltype=MARKER_Octagon;
+				else IntAttribute(value,&labeltype);
+			}
+
+		} else if (!strcmp(name,"labelcolor")) {
+			//ColorAttribute(value,&labelcolor)
+
 		} else { 
 			DBG cerr <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
 		}
@@ -667,6 +669,7 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
+		fprintf(f,"%slabeltype circle #Can be circle, square, diamond, triangle, octagon\n",spc);
 		fprintf(f,"%s#Pages contain layers which contain drawable objects.\n",spc);
 		fprintf(f,"%s#Layers are really just a group whose parent is a page.\n",spc);
 		fprintf(f,"%slayer\n",spc);
@@ -675,11 +678,20 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		return;
 	}
 	
-	fprintf(f,"%slabeltype %d\n",spc,labeltype);
+	//labelcolor.dump_out(f,indent,what,context);
+
+	if (labeltype==MARKER_Circle) fprintf(f,"%slabeltype circle\n",spc);
+	else if (labeltype==MARKER_Square)       fprintf(f,"%slabeltype square\n",spc);
+	else if (labeltype==MARKER_Diamond)      fprintf(f,"%slabeltype diamond\n",spc);
+	else if (labeltype==MARKER_TriangleDown) fprintf(f,"%slabeltype triangle\n",spc);
+	else if (labeltype==MARKER_Octagon)      fprintf(f,"%slabeltype octagon\n",spc);
+	else fprintf(f,"%slabeltype %d\n",spc,labeltype);
+
 	if (pagestyle && (pagestyle->flags&PAGESTYLE_AUTONOMOUS)) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
 		pagestyle->dump_out(f,indent+2,0,context);
 	}
+
 	for (int c=0; c<layers.n(); c++) {
 		fprintf(f,"%slayer %d\n",spc,c);
 		layers.e(c)->dump_out(f,indent+2,0,context);

@@ -98,6 +98,16 @@ class RectPageStyle : public PageStyle
 
 //---------------------------- Page ---------------------------------
 
+enum PageMarkerType {
+	MARKER_Unmarked=0,
+	MARKER_Circle,
+	MARKER_Square,
+	MARKER_Octagon,
+	MARKER_TriangleDown,
+	MARKER_Diamond,
+	MARKER_MAX
+};
+
 class Page : public ObjectContainer
 {
  public:
