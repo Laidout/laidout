@@ -166,8 +166,24 @@ Signature editor:
   impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
   show margin, trim, binding when not totally folded
 
+shortcuts:
+  shortcut edit dialog
+  should be able to clear shortcut in dialog
+  save/restore column setting
+  area heads need to have human titles, "Image Tool" instead of "ImageInterface"
+  in/out for remember
+  char names for wacky xf86 codes.. accept 0x*
+  numberpadmask?
+  svg keyboard out
+  DONE hover indicator intrusive
 
-finish implementing all options for reimpose function
+customizable object child relationships to parent, rather than simple transform
+  transform relative to parent origin
+  transform relative to alignment point of parent (50,50) for center, for instance
+  transform relative to absolute point other than origin, as a function of parent?
+  	 --> like parent->getanchor(id), getbasisanchor(id)
+	 --> anchors would have number id, but be able to be named for scripting purposes
+
 
 gshell:
   *** not getting options for all tool and object!!
@@ -237,26 +253,12 @@ calculator
   DONE AddName seems to work unevenly
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
-shortcuts:
-  shortcut edit dialog
-  should be able to clear shortcut in dialog
-  save/restore column setting
-  in/out for remember
-  char names for wacky xf86 codes.. accept 0x*
-  numberpadmask?
-  DONE hover indicator intrusive
-
-customizable object child relationships to parent, rather than simple transform
-  transform relative to parent origin
-  transform relative to alignment point of parent (50,50) for center, for instance
-  transform relative to absolute point other than origin, as a function of parent?
-  	 --> like parent->getanchor(id), getbasisanchor(id)
-	 --> anchors would have number id, but be able to be named for scripting purposes
-
 text window controls have difficulties
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+reimpose option: center images, but not rescale?
 
 have option to specify language from command line
 
@@ -801,8 +803,6 @@ directory reorganization?
  core/ <-- implies isolating core functions
 
 
-put all in Laidout namespace?
-
 
 
 paper tiler: for custom pages, drag out a paper size
@@ -902,4 +902,8 @@ DONE Signature editor:
 DONE menus should activate ONLY WHEN MOUSE UP ON SAME AS DOWN!!!!
 
 DONE there should be a default paper
+
+DONE finish implementing all options for reimpose function
+
+DONE put all in Laidout namespace?
 
