@@ -53,8 +53,6 @@ impositioneditor not remembering window position
 
 sigimp fail for multiple stacks with no folds!!
 
-Laidout application icon for window manager paging seems to be broken
-
 Spread Editor memory hole
 
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
@@ -138,6 +136,7 @@ test:
   each window type, include help and about
   each export filter
   make some test scripts for command line testing
+  test window icon
 
 set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
 
@@ -906,4 +905,6 @@ DONE there should be a default paper
 DONE finish implementing all options for reimpose function
 
 DONE put all in Laidout namespace?
+
+DONE Laidout application icon for window manager paging seems to be broken
 

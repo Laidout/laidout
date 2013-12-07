@@ -440,8 +440,9 @@ int LaidoutApp::init(int argc,char **argv)
 	
 	 //init imlib and define default icon
 	InitLaxImlib();//***need to be able to set default font and general imlib cache size
-	char *str=newstr(ICON_DIRECTORY);
-	appendstr(str,"/Laidout-shaded-icon-48x48.png");
+	char *str=newstr(icon_dir);
+	//appendstr(str,"/Laidout-shaded-icon-48x48.png");
+	appendstr(str,"/laidout-48x48.png");
 	DefaultIcon(str);
 	delete[] str;
 	//imlib_set_cache_size(10 * 1024 * 1024); // in bytes
