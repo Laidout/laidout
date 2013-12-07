@@ -20,7 +20,8 @@ VERSION 0.094
 (done) SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
 (done) Color sliders, when double clicking on color box
 (done) implement scale pages to new imposition when reimposing
-       Laidout application icon for window manager paging seems to be broken
+       graphical shell, kind of a searching calculator and function caller
+(done) Laidout application icon for window manager paging seems to be broken
 
 
 VERSION 0.095
@@ -63,6 +64,7 @@ VERSION 0.1
        First and foremost, need copious testing by people who are not me.
        Implement poor man's multi-contact interface for all appropriate interfaces
        undo/redo
+       implement command line language tag
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews
        Full internationalization support in window controls for input and output, including left, right. pango?
