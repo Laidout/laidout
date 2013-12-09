@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2007-2011 by Tom Lechner
+// Copyright (C) 2007-2013 by Tom Lechner
 //
 #include <lax/interfaces/imageinterface.h>
 #include <lax/interfaces/gradientinterface.h>
@@ -96,9 +96,6 @@ int PdfImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 //! Tells the Laidout application that there's a new filter in town.
 void installPdfFilter()
 {
-	//PdfExportFilter *pdfout=new PdfExportFilter(3);
-	//laidout->exportfilters.push(pdfout);
-	
 	PdfExportFilter *pdfout=new PdfExportFilter(4);
 	pdfout->GetObjectDef();
 	laidout->PushExportFilter(pdfout);
