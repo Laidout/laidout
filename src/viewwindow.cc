@@ -3979,7 +3979,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"help")) {
 		//app->addwindow(new HelpWindow());
-		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0));
+		app->addwindow(newHelpWindow(CurrentTool()?CurrentTool()->whattype():"ViewWindow"));
 		return 0;
 
 	} else if (!strcmp(mes,"contextChange")) { // curobj was changed, now maybe diff page, spread, etc.
@@ -4573,7 +4573,7 @@ int ViewWindow::PerformAction(int action)
 
 	} else if (action==VIEW_Help) {
 		//app->addwindow(new HelpWindow());
-		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0,"LaidoutViewport"));
+		app->addwindow(newHelpWindow(CurrentTool()?CurrentTool()->whattype():"LaidoutViewport"));
 		return 0;
 
 	} else if (action==VIEW_About) {

@@ -40,7 +40,12 @@ namespace Laidout {
 
 Laxkit::anXWindow *newHelpWindow(const char *place)
 {
-	return new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0,place);
+	laidout->InitializeShortcuts();
+	ShortcutWindow *win=new ShortcutWindow(NULL,"Shortcuts","Shortcuts",
+					ANXWIN_REMEMBER|ANXWIN_ESCAPABLE|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
+					0,0,400,600,0,place);
+	makestr(win->textheader,"#\n# Laidout shortcuts\n#\n");
+	return win;
 }
 
 //------------------------ HelpWindow -------------------------
@@ -180,7 +185,9 @@ int HelpWindow::init()
 	
 	MessageBox::init();
 
-	app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER,0,0,400,600,0));
+	app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",
+					ANXWIN_REMEMBER|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
+					0,0,400,600,0));
 
 	return 0;
 }

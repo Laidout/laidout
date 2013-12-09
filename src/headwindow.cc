@@ -295,7 +295,7 @@ void HeadWindow::InitializeShortcuts()
 	for (int c=0; c<winfuncs.n; c++) {
 		if (manager->FindHandler(winfuncs.e[c]->name)) continue;
 
-		win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style,NULL);
+		win=winfuncs.e[c]->function(NULL,"blah",winfuncs.e[c]->style,NULL);
 		win->GetShortcuts();
 		delete win;
 	}
@@ -918,9 +918,7 @@ int HeadWindow::PerformAction(int action)
 		
 	} else if (action==HEAD_OpenKeys) {
 		laidout->InitializeShortcuts();
-		ShortcutWindow *win=new ShortcutWindow(NULL,"cuts",_("Shortcuts"),ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,
-											   0,0,300,300,0);
-		app->addwindow(win);
+		app->addwindow(newHelpWindow("HeadWindow"));
 		return 0;
 
 	} else if (action==HEAD_Quit) {

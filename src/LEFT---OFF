@@ -19,6 +19,8 @@ object reordering frelled, strange bbox display offset,
 key window not showing fields!!!
 
 clone a child.. NOT PUTTING CORRECTLY!!!! totally wrong matrix
+cloning, change original, not triggering bbox update in clone
+cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
 don't allow reparent to a child!! or reparent as appropriate
 
@@ -42,8 +44,6 @@ test-tiled-mark.laidout: delete the bars, add bars back then try to export, prog
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
-cloning, change original, not triggering bbox update in clone
-cloning, jump to object in offscreen page, switches pages, but bounding box wrong place
 
 ---- bugs:
 
@@ -64,8 +64,6 @@ mode for shortcut check not quite working, such as ' ' with button to duplicate
 memory hole when graphical shell activated
 
 datarefs on images scale not like images
-
-tooltips work intermittently
 
 html dump must convert chars to entities
 
@@ -132,18 +130,24 @@ check laidout.1 when time to release
 update docs to have new release number
 update translations
 update screenshots
+put rss/g+ links on all menu pages
 test:
   each window type, include help and about
   each export filter
   make some test scripts for command line testing
   test window icon
 
-set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
+shortcuts: default to load and save "default" keys in a standard location
+
+Color sliders:
+  enter color hex FAIL, zaps to #00000000
+  clicking color comparator should allow clicking back to one just used
+  CMYK sliders FAIL
 
 Imposition Editor:
-  Singles has message from Signature editor tool
   Singles reimpose doesn't work
   test net imposition
+  DONE Singles has message from Signature editor tool
 
 Signature editor:
   add hooks for page preview
@@ -151,30 +155,21 @@ Signature editor:
   ---enhancements:
   must implement dragging around instance blocks...
   helper controls to adjust inset to match up final size for sigs of different size
+  indicators for different signature instances when viewing page spreads
+  need to be able to designate particular sheets with properties (like color),
+    as current insert mechanism assumes folds happen before insert
   tab to cycle through handles for numerical input
+  mouse over and drag show numbers on canvas
   export pdf or lo doc template
   implement work and turn interface
-  needs visual dodads to indicate where to drag to change
-  be able to specify single sided.. allows bound accordian foldings?
+  needs visual dodads to indicate where to drag to change, give tooltip to say shift for fold under.
   binding edge must be same orientation for all stacks and inserts
   need a paper size editor stand alone window, entering numbers should convert name to custom
-  be able to enter numbers
-  mouse over and drag show numbers on canvas
   paper select should give hints as to whether paper size can hold actual final size
   detect non staplable binding edge, show red rather than green
-  impose-only needs setting page number so as to export and possibly spawn podofoimpose easily
+  test impose-only for all imposition types
   show margin, trim, binding when not totally folded
-
-shortcuts:
-  shortcut edit dialog
-  should be able to clear shortcut in dialog
-  save/restore column setting
-  area heads need to have human titles, "Image Tool" instead of "ImageInterface"
-  in/out for remember
-  char names for wacky xf86 codes.. accept 0x*
-  numberpadmask?
-  svg keyboard out
-  DONE hover indicator intrusive
+  be able to specify single sided.. allows bound accordian foldings?
 
 customizable object child relationships to parent, rather than simple transform
   transform relative to parent origin
@@ -192,6 +187,8 @@ gshell:
   search within area, not total tree
   text delete to nothing should only show the top areas in search results
   reposition cursor to error
+  viewport->ZoomToPage not doing anything
+  need to be able to access affine stuff of objects! not returning info for gradients
 
   0.095:
     control-r start history search?
@@ -212,6 +209,7 @@ gshell:
 
 
 calculator
+  set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
   debug for
   debug generic with operators, doesn't seem to be working
   debug operator definitions
@@ -223,6 +221,7 @@ calculator
   print string plus any non string should stringify the thing and append to string
   curline not getting incremented properly when there is skipping or looping going on
   implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names?
+  Math.oeuaeou does not produce an error
 
   0.095:
     allow if statements on single line without curly braces
@@ -256,6 +255,18 @@ text window controls have difficulties
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+shortcut dialog:
+  need hierarchy overlap features... it is easy to get lost in different zones
+  panning f'd up, close but incorrect bounds checking when drag
+  needs to make in window for cursor moving
+  numberpadmask?
+  char names for wacky xf86 codes.. accept 0x*
+  area heads need to have human titles, _("Image Tool") instead of "ImageInterface"
+  mode based shortcuts have no display capability
+  implement search
+  need ability to add multiple keys for same action
+  svg keyboard out
 
 reimpose option: center images, but not rescale?
 
@@ -908,3 +919,8 @@ DONE put all in Laidout namespace?
 
 DONE Laidout application icon for window manager paging seems to be broken
 
+DONE shortcut dialog:
+  DONE save/restore column setting
+  DONE in/out for remember
+  DONE should be able to clear shortcut in dialog
+  DONE hover indicator intrusive

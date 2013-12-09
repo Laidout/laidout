@@ -11,7 +11,7 @@ VERSION 0.094
 (done) need partial Laidout import
 (done) should probably put laidout stuff in its own namespace, just to be polite
        Custom alignments to parents, not just affine transform to parent
-       Shortcuts editor dialog
+(done) Shortcuts editor dialog
        Signature editor needs option to preview pages while folding
 (done) Signature editor: have variable num of pages per signature
 (done) Optimize pdf export to not duplicate images
@@ -27,6 +27,7 @@ VERSION 0.094
 VERSION 0.095
 -------------
        Implement cairo renderer, make meshes finally render faster
+       graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
        Tool scripting
        PathInterface subpaths for hole making should work: check exports
@@ -63,6 +64,7 @@ VERSION 0.1
 -----------
        First and foremost, need copious testing by people who are not me.
        Implement poor man's multi-contact interface for all appropriate interfaces
+       Text for god's sake!! It's been what, 10 years!? 
        undo/redo
        implement command line language tag
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
@@ -121,7 +123,6 @@ Freehand drawing with tablet support
 Maybe bez part of path interface should have segment move like inkscape
 Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
 use any path as a kind of tab stop
-Text for god's sake!! This means at least a basic line breaker,
 Numbered lists
 Mixed left/right text in text streams
 Tables
