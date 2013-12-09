@@ -1394,7 +1394,7 @@ Laxkit::ShortcutHandler *SpreadEditorViewport::GetShortcuts()
 int SpreadEditorViewport::PerformAction(int action)
 {
 	if (action==SPREADE_Help) {
-		app->addwindow(new ShortcutWindow(NULL,"Shortcuts","Shortcuts",ANXWIN_REMEMBER|ANXWIN_ESCAPABLE,0,0,400,600,0,"SpreadInterface"));
+		app->addwindow(newHelpWindow("SpreadInterface"));
 		return 0;
 	}
 

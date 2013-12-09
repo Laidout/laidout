@@ -285,6 +285,10 @@ int LaidoutApp::dump_out_file_format(const char *file, int nooverwrite)
  */
 void LaidoutApp::InitializeShortcuts()
 {
+	static int initialized=0;
+	if (initialized) return;
+	initialized=1;
+
 	 //for each head window pane
 	HeadWindow h(NULL,"","",0, 0,0,0,0,0);
 	h.InitializeShortcuts();
