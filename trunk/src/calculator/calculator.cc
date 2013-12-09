@@ -4595,7 +4595,7 @@ int LaidoutCalculator::Evaluate(const char *word,int len, ValueHash *context, Va
 			} else if (len==9 && !strncmp(word,"randomint",9)) {
 				int min=int(d);
 				int max=int(d2);
-				v=new IntValue(min+(max-min)*random()/(double)RAND_MAX);
+				v=new IntValue(min+(max-min+1)*random()/(double)RAND_MAX);
 
 			} else { v=NULL; throw -1; }
 
