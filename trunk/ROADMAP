@@ -26,7 +26,7 @@ VERSION 0.094
 
 VERSION 0.095
 -------------
-       Implement cairo renderer, make meshes finally render faster
+       Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
        Tool scripting
