@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+text window controls have difficulties
+
 tooltips and event timers seem to be frelled
 
 object reordering frelled, strange bbox display offset, 
@@ -29,6 +31,7 @@ prompt window is f'd up
 grouping frelled.. can group, but cannot seem to select existing groups to ungroup
 
 Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
+print command to printer is not respecting the paper size
 
 file format dump is not showing dump of object types
 
@@ -57,9 +60,6 @@ Spread Editor memory hole
 
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
 
-print command to printer is not respecting the paper size
-
-mode for shortcut check not quite working, such as ' ' with button to duplicate
 
 memory hole when graphical shell activated
 
@@ -74,8 +74,6 @@ svg coord numpoints==0???? numpoints doesn't really serve any purpose other than
 spiltwindow cursors existing in subwindows
 
 copy paste not working again
-
-hedron edit goes to netdialog, should have "current" option...
 
 object tool shift-control for rotate does not allow positioning on drag bars
 
@@ -137,6 +135,8 @@ test:
   make some test scripts for command line testing
   test window icon
 
+space cloning/duping doesn't work
+ 
 shortcuts: default to load and save "default" keys in a standard location
 
 Color sliders:
@@ -145,8 +145,13 @@ Color sliders:
   CMYK sliders FAIL
 
 Imposition Editor:
-  Singles reimpose doesn't work
-  test net imposition
+  DONE cube, singles vs. page, page doesn't scale objects correctly
+  DONE   dodeca, seems to work ok
+  DONE   laidout -n cube does fine, but newdoc a cube, then import images doesn't scale images properly for net spreads.
+  reimpose from net produces object infinity matrix
+  net reimpose doesn't work
+  net paper spread allows tinkering with printer marks. Good or no?? lock position?
+  DONE Singles reimpose doesn't work
   DONE Singles has message from Signature editor tool
 
 Signature editor:
@@ -209,6 +214,7 @@ gshell:
 
 
 calculator
+  showing defined functions should show the code
   set dump_out_atts should do full atts if any subattribute has full atts, else output "set": "{1,2,3}"
   debug for
   debug generic with operators, doesn't seem to be working
@@ -251,12 +257,14 @@ calculator
   DONE AddName seems to work unevenly
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
-text window controls have difficulties
-
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
 
+printer mark rendering default to a single color? editing of net outline allowed, but
+then changes not stored
+
 shortcut dialog:
+  mode for shortcut check not quite working, such as ' ' with button to duplicate
   need hierarchy overlap features... it is easy to get lost in different zones
   panning f'd up, close but incorrect bounds checking when drag
   needs to make in window for cursor moving
@@ -478,6 +486,8 @@ Object tool:
   control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
 
 action/shortcut selector overlay
+
+importing images should default the image id to a variant of the file name
 
 ImageImport dialog: (actually, needs a total redesign)
   DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
@@ -924,3 +934,6 @@ DONE shortcut dialog:
   DONE in/out for remember
   DONE should be able to clear shortcut in dialog
   DONE hover indicator intrusive
+
+DONE hedron edit goes to netdialog, should have "current" option...
+
