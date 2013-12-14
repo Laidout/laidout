@@ -47,15 +47,17 @@ namespace Laidout {
  *  paper coordinates to page coordinates in the outline member, which also
  *  should hold the bounding box of the page in paper or view coordinates, and
  *  the path of the page itself, which gets used to check for points being inside
- *  the page. index is the index of the page in the relevant Document->pages stack.
+ *  the page. It is assumed that outline has translation and/or rotation,
+ *  but NOT scaling or shear.
+ *
+ *  index is the index of the page in the relevant Document->pages stack.
  *  
  *  As for other page related metrics, the page spread outline is kept in a
  *  Spread. The thumbnail (if available), margin path, and page number are
  *  all kept by Page.
  *
- *  The page is assumed to be nonlocal, but the outline can be local, and
- *  thus can be delete'd in the PageLocation destructor. If not local, then dec_count() is
- *  called on it.
+ *  The page is assumed to be nonlocal and not dec_counted in the destructor.
+ *  The outline can be local, and thus IS dec_counted in the PageLocation destructor.
  */
 /*! \var int PageLocation::index
  * \brief the page index (starting at 0) of the page in the relevant page stack.
