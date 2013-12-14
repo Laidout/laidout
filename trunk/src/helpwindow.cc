@@ -41,6 +41,11 @@ namespace Laidout {
 Laxkit::anXWindow *newHelpWindow(const char *place)
 {
 	laidout->InitializeShortcuts();
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	if (isblank(manager->setfile)) {
+		makestr(manager->setfile,laidout->config_dir);
+		appendstr(manager->setfile,"/default.keys");
+	}
 	ShortcutWindow *win=new ShortcutWindow(NULL,"Shortcuts","Shortcuts",
 					ANXWIN_REMEMBER|ANXWIN_ESCAPABLE|SHORTCUTW_Show_Search|SHORTCUTW_Load_Save,
 					0,0,400,600,0,place);
