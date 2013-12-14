@@ -80,6 +80,7 @@ class NetFace
 	int original;
 	char isfront;
 	FaceTag tag; //FACE_Actual, FACE_Potential
+	Laxkit::DoubleBBox bounds;
 	double *matrix;
 
 	NetFace();
@@ -90,6 +91,9 @@ class NetFace
 	//virtual int Set(const char *list, const char *link=NULL);
 	//virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
 	virtual int getOutline(int *n, flatpoint **p, int convert);
+
+	virtual flatpoint Origin();
+	virtual flatpoint XaxisPoint();
 	
 	virtual void dumpOut(FILE *f,int indent,int what);
 	virtual void dumpInAtts(LaxFiles::Attribute *att);

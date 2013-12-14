@@ -328,6 +328,15 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
 //--------------------------------------- NetFace -------------------------------------------
 /*! \class NetFace
  * \brief Class to hold info about a face in a Net.
+ *
+ * Faces are composed of NetFaceEdge objects, each of which describes one edge part.
+ * For instance, for non-curved edges, the edge object will have one point.
+ * Curved edgeds may have as many points as necessary.
+ *
+ * If the face is gleened from an AbstractNet, then the coordinates in edges
+ * are the same coordinates the AbstractNet gives. Sometimes for polyhedra,
+ * this might produce some odd placements, depending on the face's winding direction
+ * in the polyhedron.
  */
 /*! \var double *NetFace::matrix
  * \brief Additional offset to place the origin of a face.
@@ -352,7 +361,7 @@ const NetFaceEdge &NetFaceEdge::operator=(const NetFaceEdge &e)
  * FACE_Potential==a potential face
  */
 /*! \var int NetFace::tick
- * \brief Used as a traversal flag to create unwrap paths.
+ * \brief Used as a traversal flag to create unwrap paths. Note this is not really threadsafe.
  */
 
 NetFace::NetFace()
@@ -487,6 +496,7 @@ int NetFace::getOutline(int *n, flatpoint **p, int convert)
 	NumStack<flatpoint> pts;
 	char isbez=0;
 	Coordinate *cc;
+
 	for (int c=0; c<edges.n; c++) {
 		cc=edges.e[c]->points;
 		while (cc) {
@@ -525,6 +535,20 @@ int NetFace::getOutline(int *n, flatpoint **p, int convert)
 	*p=pts.extractArray(n);
 	if (isbez) return 2;
 	return 1;
+}
+
+//! Simply return (0,0) transformed by matrix (if any).
+flatpoint NetFace::Origin()
+{
+	if (matrix) return transform_point(matrix,flatpoint(0,0));
+	return flatpoint();
+}
+
+//! Simply return (1,0) transformed by matrix (if any).
+flatpoint NetFace::XaxisPoint()
+{
+	if (matrix) return transform_point(matrix,flatpoint(1,0));
+	return flatpoint(1,0);
 }
 
 /*! If what==-1, then dump out psuedo-code mockup of format. Basically that means this:
@@ -1194,8 +1218,14 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		line.dumpOut(f,indent+2,-1);
 		return;
 	}
+
 	if (active) fprintf(f,"%sactive\n",spc);
 	fprintf(f,"%sinfo %d\n",spc,info);
+	
+	fprintf(f,"%smatrix %.10g %.10g %.10g %.10g %.10g %.10g\n",
+		            spc,m(0),m(1),m(2),m(3),m(4),m(5));
+
+
 	if (basenet) {
 		if (basenet->NetName() && !strcmp("BasicNet",basenet->NetName())) {
 			fprintf(f,"%sbasenet BasicNet\n",spc);
@@ -1206,12 +1236,14 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 //			fprintf(f,"%sbasenet ref:/%s\n",spc,basenet->NetName());
 		}
 	}
+
 	if (lines.n) {
 		for (int c=0; c<lines.n; c++) {
 			fprintf(f,"%sline\n",spc);
 			lines.e[c]->dumpOut(f,indent+2,0);
 		}
 	}
+
 	if (faces.n) {
 		for (int c=0; c<faces.n; c++) {
 			//DBG cerr <<"dump out face "<<c<<endl;
@@ -1219,10 +1251,7 @@ void Net::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 			faces.e[c]->dumpOut(f,indent+2,0);
 		}
 	}
-	if (f!=stdout && f!=stderr) {
-		//fclose(f);
-		//exit(1);
-	}
+
 }
 
 //! Set up net from a Laxkit::Attribute.
@@ -1593,6 +1622,7 @@ int Net::addPotentialsToFace(int facenum)
 		if (findOriginalFace(faces.e[facenum]->edges.e[c]->tooriginal,1,-1,NULL)==1) {
 			 //face is already in the net, so mark edge as taken elsewhere
 			faces.e[facenum]->edges.e[c]->tag=FACE_Taken;
+
 		} else {
 			 //to-face is not laid down yet, so connect a potential face to the new face.
 			 //transform so pface is touching newface along proper edge
