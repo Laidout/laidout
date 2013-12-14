@@ -22,7 +22,6 @@
 #include <lax/filedialog.h>
 #include <lax/colorbox.h>
 #include <lax/fileutils.h>
-#include <lax/overwrite.h>
 #include <lax/laxutils.h>
 #include <lax/menubutton.h>
 #include <lax/inputdialog.h>
@@ -3649,29 +3648,6 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		((LaidoutViewport *)viewport)->postmessage(mes);
 		return 0;
 
-	} else if (!strcmp(mes,"reallysave")) {
-		 // save without overwrite check
-		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
-		if (!s) return 1;
-		
-		Document *sdoc=doc;
-		if (!sdoc) sdoc=laidout->curdoc;
-		if (sdoc && sdoc->Saveas(s->str)) SetParentTitle(sdoc->Name(1));
-		
-		ErrorLog log;
-		if (sdoc && sdoc->Save(1,1,log)==0) {
-			char blah[strlen(sdoc->Saveas())+15];
-			sprintf(blah,_("Saved to %s."),sdoc->Saveas());
-			PostMessage(blah);
-			if (!isblank(laidout->project->filename)) laidout->project->Save(log);
-		} else {
-			if (log.Total()) {
-				PostMessage(log.MessageStr(log.Total()-1));
-			} else PostMessage(_("Problem saving. Not saved."));
-		}
-
-		return 0;
-
 	} else if (!strcmp(mes,"statusMessage")) {
 		 //user entered a new file name to save document as
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
@@ -3725,33 +3701,28 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				delete[] file;
 				return 0;
 			}
-			 // file existed, so ask to overwrite ***
-			if (c) {
-				anXWindow *ob=new Overwrite(object_id,"reallysave", file, s->info1, s->info2, s->info3);
-				app->rundialog(ob);
+
+			if (!is_good_filename(file)) {//***how does it know?
+				PostMessage(_("Illegal characters in file name. Not saved."));
 			} else {
-				if (!is_good_filename(file)) {//***how does it know?
-					PostMessage(_("Illegal characters in file name. Not saved."));
+				 //set name in doc and headwindow
+				DBG cerr <<"*** file by this point should be absolute path name:"<<file<<endl;
+				Document *sdoc=doc;
+				if (!sdoc) sdoc=laidout->curdoc;
+				if (sdoc) {
+					SetParentTitle(sdoc->Name(1));
+					sdoc->Saveas(file);
+				}
+				
+				ErrorLog log;
+				if (sdoc && sdoc->Save(1,1,log)==0) {
+					char blah[strlen(sdoc->Saveas())+15];
+					sprintf(blah,_("Saved to %s."),sdoc->Saveas());
+					PostMessage(blah);
 				} else {
-					 //set name in doc and headwindow
-					DBG cerr <<"*** file by this point should be absolute path name:"<<file<<endl;
-					Document *sdoc=doc;
-					if (!sdoc) sdoc=laidout->curdoc;
-					if (sdoc) {
-						SetParentTitle(sdoc->Name(1));
-						sdoc->Saveas(file);
-					}
-					
-					ErrorLog log;
-					if (sdoc && sdoc->Save(1,1,log)==0) {
-						char blah[strlen(sdoc->Saveas())+15];
-						sprintf(blah,_("Saved to %s."),sdoc->Saveas());
-						PostMessage(blah);
-					} else {
-						if (log.Total()) {
-							PostMessage(log.MessageStr(log.Total()-1));
-						} else PostMessage(_("Problem saving. Not saved."));
-					}
+					if (log.Total()) {
+						PostMessage(log.MessageStr(log.Total()-1));
+					} else PostMessage(_("Problem saving. Not saved."));
 				}
 			}
 
