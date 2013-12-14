@@ -453,6 +453,8 @@ const char *SinglesEditor::ImpositionType()
 Imposition *SinglesEditor::GetImposition()
 { return imp; }
 
+/*! Note, changes document, NOT the imposition.
+ */
 int SinglesEditor::UseThisDocument(Document *ndoc)
 {
 	if (doc!=ndoc) {

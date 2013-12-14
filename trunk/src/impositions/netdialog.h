@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010,2012 by Tom Lechner
+// Copyright (C) 2010,2012,2013 by Tom Lechner
 //
 #ifndef NEDIALOG_H
 #define NEDIALOG_H
@@ -31,6 +31,7 @@ class NetDialog : public Laxkit::RowFrame, public ImpositionWindow
 {
   protected:
 	NetImposition *current;
+	NetImposition *original;
 	Document *doc;
   public:
 	PaperStyle *paperstyle;

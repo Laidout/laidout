@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2010,2012 by Tom Lechner
+// Copyright (C) 2010,2012,2013 by Tom Lechner
 //
 
 #include <lax/filedialog.h>
@@ -71,14 +71,19 @@ NetDialog::NetDialog(Laxkit::anXWindow *parnt,const char *nname,const char *ntit
 	boxdims=NULL;
 	impfromfile=NULL;
 	checkbox=checkdod=checkfile=NULL;
+	original=cur;
 	current=cur;
-	if (current) current->inc_count();
+	if (current) {
+		current->inc_count();
+		current->inc_count();
+	}
 }
 
 NetDialog::~NetDialog()
 {
 	if (paperstyle) paperstyle->dec_count();
 	if (current) current->dec_count();
+	if (original) original->dec_count();
 	if (doc) doc->dec_count();
 }
 

@@ -158,13 +158,14 @@ class Imposition : public Value
 	virtual ~Imposition();
 	virtual const char *Name();
 
+	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
+	virtual const char *BriefDescription() = 0;
+	virtual void GetDimensions(int paperorpage, double *x, double *y) = 0;
+
 	virtual PaperStyle *GetDefaultPaper();
 	virtual int SetPaperSize(PaperStyle *npaper);
 	virtual int SetPaperGroup(PaperGroup *ngroup);
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
-	virtual Laxkit::DoubleBBox *GoodWorkspaceSize(Laxkit::DoubleBBox *bbox=NULL);
-	virtual const char *BriefDescription() = 0;
-	virtual void GetDimensions(int paperorpage, double *x, double *y) = 0;
 	
 	virtual Page **CreatePages(int npages) = 0;
 	virtual int SyncPageStyles(Document *doc,int start,int n);

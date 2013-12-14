@@ -494,35 +494,38 @@ Page **NetImposition::CreatePages(int npages)
 /*!
  * This is a no frills outline, used primarily to check where the mouse
  * is clicked down on.
- * If local==1 then return a new local SomeData. Otherwise return a
- * counted object. In this case, the item should be guaranteed to have
- * a reference count tick that refers to the returned pointer.
+ * If local==1 then return a new local SomeData, a duplicate, not a link.
+ * Otherwise return a counted object which MAY be a link.
+ * In either case, calling code must use dec_count() on the returned object.
  *
  * This currently always creates a new PathsData. In the future when
  * pagetype is implemented more effectively, there will likely be a few outlines
  * laying around, and a link to them would be returned.
  *
  * NOTE: The correct matrix for placement in a net is NOT returned with the path.
+ * The path coordinates are in single page coordinates, and it has an identity matrix.
  */
 LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
-{//**********************************
+{
 	if (!nets.n) return NULL;
 	//if (!doc || pagenum<0 || pagenum>=doc->pages.n) return NULL; ***
 	if (pagenum<0 || pagenum>=numpages) return NULL;
 
-	int isbez=0,
-		n=0;
+	int isbez=0;
+	int n=0;
 	flatpoint *pts=NULL;
-	NetFace *face=NULL;
 	if (maptoabstractnet && abstractnet) {
 		 //existing nets may or may not have the face defined, so it is safer,
 		 //though sometimes slower, to grab from the abstract net
-		face=abstractnet->GetFace(pagenum%abstractnet->NumFaces(),scalefromnet);
+		NetFace *face=abstractnet->GetFace(pagenum%abstractnet->NumFaces(),scalefromnet);
 		isbez=face->getOutline(&n,&pts,0);
+		delete face;
+
 	} else {
 		 //the face is in a net, page numbers are mapped by active nets and FACE_Actual faces
 
 		 //map document page number to a particular net and net face index
+		NetFace face;
 		int neti, netfacei;
 		netfacei=pagenum%numActiveFaces();
 		for (neti=0; neti<nets.n; neti++) {
@@ -533,12 +536,11 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 		}
 		DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
 
-		face=new NetFace;
-		*face=*nets.e[neti]->faces.e[netfacei];
+		face=*nets.e[neti]->faces.e[netfacei];
 		
 		double scaling=norm(nets.e[neti]->xaxis()); //theoretically, this will be same as scalefromnet
-		for (int c=0; c<face->edges.n; c++) {
-			Coordinate *t,*coord=face->edges.e[c]->points;
+		for (int c=0; c<face.edges.n; c++) {
+			Coordinate *t,*coord=face.edges.e[c]->points;
 			t=coord;
 			do {
 				t->x(scaling*t->x()); //to paper scale
@@ -547,7 +549,7 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 			} while (t && t!=coord);
 		}
 
-		isbez=face->getOutline(&n,&pts,0);
+		isbez=face.getOutline(&n,&pts,0);
 	}
 
 	PathsData *newpath=new PathsData(); //count==1
@@ -563,7 +565,6 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 	newpath->close();
 	newpath->FindBBox();
 	delete[] pts;
-	delete face;
 
 	return newpath;
 }
@@ -579,14 +580,14 @@ Spread *NetImposition::Layout(int layout,int which)
 	return Imposition::Layout(layout,which);
 }
 
-//! Added "Singles With Adjacent" to layout types.
-int NetImposition::NumLayouts()
+//! Adds "Adjacent" to layout types.
+int NetImposition::NumLayoutTypes()
 { return 4; }
 
-//! Added "Singles With Adjacent" to layout types.
+//! Adds "Adjacent" to layout types.
 const char *NetImposition::LayoutName(int layout)
 {
-	if (layout==SINGLES_WITH_ADJACENT_LAYOUT) return _("Singles With Adjacent");
+	if (layout==SINGLES_WITH_ADJACENT_LAYOUT) return _("Adjacent");
 	return Imposition::LayoutName(layout);
 }
 
@@ -617,6 +618,8 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	Net newnet;
 	newnet.Basenet(abstractnet);
 	newnet.Anchor(netpage);
+	newnet.xaxis(newnet.xaxis()*scalefromnet);
+	newnet.yaxis(newnet.yaxis()*scalefromnet);
 	
 	 //unwrap all edges adjacent to that.
 	newnet.Unwrap(0,-1);
@@ -628,13 +631,19 @@ Spread *NetImposition::SingleLayoutWithAdjacent(int whichpage)
 	return spread;
 }
 
-//! Append to or create a new spread using the provided net.
-/*! \todo warning: potential cast problems with PageLocation::outline...
- *  \todo max and mxn points are messed up
+/*! Append to or create a new spread using the provided net.
+ *
+ *  \todo warning: potential cast problems with PageLocation::outline...
+ *  \todo max and min points are messed up
  */
-Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
+Spread *NetImposition::GenerateSpread(Spread *spread, //!< If not null, append to that one, else return new one.
+									Net *net,
+									int pageoffset) //!< Add this to any page indices in the new spread pages
 {
 	DBG cerr <<"-- NetImposition::GenerateSpread--"<<endl;
+	DBG cerr <<"   net dump:"<<endl;
+	DBG net->dump_out(stderr,0,0,NULL);
+	DBG cerr <<"-- end net dump"<<endl;
 
 	if (!spread) spread=new Spread();
 	spread->mask=SPREAD_PATH|SPREAD_PAGES|SPREAD_MINIMUM|SPREAD_MAXIMUM;
@@ -678,6 +687,11 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 	flatpoint *p=NULL;
 	NetFace *netface;
 	unsigned long flag;
+	double mm[6];
+	flatpoint origin, xaxis;
+	flatpoint pp;
+	Affine facem;
+
 	for (int c=0; c<net->faces.n; c++) {
 		netface=net->faces.e[c];
 		if (netface->tag!=FACE_Actual) continue;
@@ -685,34 +699,56 @@ Spread *NetImposition::GenerateSpread(Spread *spread, Net *net, int pageoffset)
 		page=pageoffset+net->faces.e[c]->original;
 		if (page>=numpages) page=-1;
 
+		if (netface->matrix) {
+			transform_mult(mm, netface->matrix, net->m());
+		} else transform_copy(mm,net->m());
+
 		newpath=new PathsData;
 		isbez= (netface->getOutline(&n, &p, 0)==2);
 		flag=(isbez?POINT_TONEXT:POINT_VERTEX);
+
+		//------
+		origin=transform_point(mm,flatpoint(0,0));
+		xaxis=transform_point(mm,flatpoint(1,0))-origin;
+		//------
+		//if (isbez) {
+		//	origin=transform_point(mm,p[1]);
+		//	xaxis=transform_point(mm,p[4])-origin;
+		//} else {
+		//	origin=transform_point(mm,p[0]);
+		//	xaxis=transform_point(mm,p[1])-origin;
+		//}
+		//---------
+		xaxis.normalize();
+
 		for (int c2=0; c2<n; c2++) {
-			newpath->append(p[c2].x,p[c2].y,flag);
+			pp=transform_point(mm,p[c2]); //transform to paper coords
+			newpath->append(pp.x,pp.y,flag);
 			if (isbez) {
 				if (flag==POINT_TONEXT) flag=POINT_VERTEX;
 				else if (flag==POINT_VERTEX) flag=POINT_TOPREV;
 				else flag=POINT_TONEXT;
 			}
 		}
+		facem.setBasis(origin,xaxis,transpose(xaxis));
+		newpath->MatchTransform(facem);
 		newpath->close();
 		newpath->FindBBox();
+		newpath->origin(origin);
 		delete[] p;
 
-		if (netface->matrix) {
-			double mm[6];
-			transform_mult(mm, netface->matrix, net->m());
-			newpath->m(mm);
-		} else newpath->m(net->m());
+		//DBG Path *ppp=newpath->paths.e[0]->duplicate();
+		//DBG spreadpath->paths.push(ppp);
+		//DBG spreadpath->FindBBox();
+
 		spread->pagestack.push(new PageLocation(page,NULL,newpath)); //incs newpath count
 		newpath->dec_count();//remove extra count
 	}
 
 
 	 // define max/min points
-	if (spread->pagestack.n()) newpath=dynamic_cast<PathsData *>(spread->pagestack.e[0]->outline);
-		else newpath=dynamic_cast<PathsData *>(spread->path);
+	if (spread->path) newpath=dynamic_cast<PathsData *>(spread->path);
+	else if (spread->pagestack.n()) newpath=dynamic_cast<PathsData *>(spread->pagestack.e[0]->outline);
 	spread->minimum=transform_point(newpath->m(),
 			flatpoint(newpath->minx,newpath->miny+(newpath->maxy-newpath->miny)/2));
 	spread->maximum=transform_point(newpath->m(),
@@ -732,8 +768,8 @@ Spread *NetImposition::PageLayout(int whichspread)
 	if (!nets.n) return NULL;
 	if (numActiveNets()==0) return NULL;
 
-	int c,
-		numactive=numActiveFaces();
+	int c;
+	int numactive=numActiveFaces();
 
 	Spread *spread=NULL;
 	for (c=0; c<nets.n; c++) {
@@ -765,6 +801,7 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 	if (printnet) {
 		spread->mask|=SPREAD_PRINTERMARKS;
 		spread->marks=path;
+		spread->marks->flags|=SOMEDATA_UNSELECTABLE;
 		path->inc_count();
 	}
 	
@@ -920,6 +957,9 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 	if (what==-1) {
 		fprintf(f,"%snumpages 3      #number of pages in the document. This is ignored on readin\n",spc);
 		fprintf(f,"%sprintnet yes     #whether the net lines get printed out with the page data\n",spc);
+		fprintf(f,"%spaper letter      #Paper size to print on.\n",spc);
+		fprintf(f,"%spapers           #Alternately, define a particular PaperGroup to use.\n",spc);
+		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%sscalingfromnet 1  #any final scaling to apply to a net before mapping\n",spc);
 		fprintf(f,"%s                  #  onto a spread\n",spc);
 		fprintf(f,"%sabstractnet type  #type can be \"file\" or \"Polyhedron\" or \"simple\".\n",spc);
@@ -956,6 +996,12 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 		else fprintf(f,"%sprintnet false\n",spc);
 
 	if (scalefromnet!=1) fprintf(f,"%sscalingfromnet %.10g\n",spc,scalefromnet);
+
+	if (papergroup) {
+		fprintf(f,"%spapers\n",spc);
+		papergroup->dump_out(f,indent+2,0,context);
+	}
+
 	if (abstractnet) {
 		if (!strcmp(abstractnet->whattype(),"SimpleNet")) {
 			fprintf(f,"%ssimplenet\n",spc);
@@ -996,14 +1042,17 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"numpages")) {
 			IntAttribute(value,&numpages);
 			if (numpages<0) numpages=0;
+
 		} else if (!strcmp(name,"defaultpaperstyle")) {
 			//*** ignoring defaultpaperstyle.....
 			//***if (paperstyle) delete paperstyle;
 			//paperstyle=new PaperStyle("Letter",8.5,11,0,300,"in");//***
 			//paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
+
 		} else if (!strcmp(name,"net")) {
 			if (!isblank(value)) { // is a built in
 				SetNet(value);
@@ -1021,12 +1070,30 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 
 		} else if (!strcmp(name,"printnet")) {
 			printnet=BooleanAttribute(value);
+
+		} else if (!strcmp(name,"paper")) {
+			PaperStyle *paperstyle=new PaperStyle(value);
+			paperstyle->dump_in_atts(att->attributes.e[c],flag,context);
+			SetPaperSize(paperstyle);
+			paperstyle->dec_count();
+
+		} else if (!strcmp(name,"papers")) {
+			if (papergroup) papergroup->dec_count();
+			papergroup=new PaperGroup;
+			papergroup->dump_in_atts(att->attributes.e[c],flag,context);
+			if (papergroup->papers.n) {
+				if (paper) paper->dec_count();
+				paper=papergroup->papers.e[0]->box;
+				paper->inc_count();
+			}
+
 		} else if (!strcmp(name,"simplenet")
 					|| (!strcmp(name,"abstractnet") && value && !strcmp(value,"simple"))) {
 			if (abstractnet) abstractnet->dec_count();
 			abstractnet=new SimpleNet();
 			abstractnet->dump_in_atts(att->attributes.e[c],flag,context);
 			maptoabstractnet=1;
+
 		} else if (!strcmp(name,"abstractnet")) {
 			 // read in abstract net based on value type
 			if (!strcmp(value,"file")) {
@@ -1046,6 +1113,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 			}
 		}
 	}
+
 	if (numActiveFaces()==0 && abstractnet) {
 		Net *n=new Net;
 		if (foundscaling) n->info|=NETIMP_AlreadyScaled;

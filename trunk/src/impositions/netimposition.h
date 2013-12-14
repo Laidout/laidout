@@ -61,7 +61,7 @@ class NetImposition : public Imposition
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);
 
 	virtual Spread *Layout(int layout,int which); 
-	virtual int NumLayouts();
+	virtual int NumLayoutTypes();
 	virtual const char *LayoutName(int layout); 
 	virtual Spread *GenerateSpread(Spread *spread, Polyptych::Net *net, int pageoffset);
 	//----------

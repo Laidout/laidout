@@ -345,6 +345,7 @@ int ImpositionEditor::init()
 	double w=1,h=1;
 	tool->GetDimensions(w,h);
 	viewport->dp->Center(-w*.15,w*1.15, -h*.15,h*1.15);
+	viewport->postmessage(" ");
 
 	if (whichactive!=WHICH_Signature) {
 		ChangeImposition(firstimp);
@@ -361,7 +362,7 @@ void ImpositionEditor::send()
 	if (whichactive==WHICH_Signature) {
 		if (tool) imp=(Imposition*)(tool->GetImposition()->duplicate());
 	} else if (whichactive==WHICH_Net) {
-		if (neteditor) imp=dynamic_cast<NetDialog*>(neteditor)->GetImposition();
+		if (neteditor) imp=dynamic_cast<NetDialog*>(neteditor)->getNetImposition();
 	} else if (whichactive==WHICH_Singles) {
 		if (singleseditor) imp=dynamic_cast<SinglesEditor*>(singleseditor)->GetImposition();
 	}
