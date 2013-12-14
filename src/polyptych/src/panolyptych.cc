@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 {
 	//anXXApp app;
 	anXApp app;
-	makestr(app.app_profile,"Dark");
+	app.Theme("Dark");
 	app.init(argc,argv);
 	InitLaxImlib();
 	Magick::InitializeMagick(*argv);
