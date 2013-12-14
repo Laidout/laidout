@@ -887,17 +887,22 @@ int Document::SyncPages(int start,int n)
  * If scale_page_contents_to_fit, enlarge or shrink page contents to
  * occupy new page size without exceeding bounds of the new page.
  *
+ * If newimp==(existing imposition), then it is assumed an editor has changed
+ * something in that imposition instance, and pages merely need to be synced
+ * (and possibly resized).
+ *
  * \todo when master pages are implemented, will need to ensure they are scaled properly
  * \todo rescaling assumes rectangular pages, but maybe it shouldn't.
  */
 int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 {
 	if (!newimp) return 1;
-	if (newimp==imposition) return 0; //already has it!
 
-	if (imposition) imposition->dec_count();
-	imposition=newimp;
-	imposition->inc_count();
+	if (newimp!=imposition) {
+		if (imposition) imposition->dec_count();
+		imposition=newimp;
+		imposition->inc_count();
+	}
 
 
 	if (scale_page_contents_to_fit) {
