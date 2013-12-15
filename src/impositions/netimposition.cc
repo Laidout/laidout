@@ -428,9 +428,17 @@ int NetImposition::SetPaperSize(PaperStyle *npaper)
 PageStyle *NetImposition::GetPageStyle(int pagenum,int local)
 {
 	PageStyle *ps=new PageStyle();
-	ps->flags|=PAGESTYLE_AUTONOMOUS;
+	ps->flags |=PAGESTYLE_AUTONOMOUS;
+
 	ps->outline=dynamic_cast<PathsData *>(GetPageOutline(pagenum,0));
-	ps->margin=ps->outline;	if (ps->outline) ps->outline->inc_count();
+	if (ps->outline) {
+		ps->min_x  =ps->outline->minx;
+		ps->min_y  =ps->outline->miny;
+		ps->width  =ps->outline->maxx-ps->outline->minx;
+		ps->height =ps->outline->maxy-ps->outline->miny;
+	}
+	ps->margin =ps->outline;	if (ps->outline) ps->outline->inc_count();
+
 	return ps;
 }
 
