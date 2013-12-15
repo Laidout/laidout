@@ -680,7 +680,10 @@ int LaidoutApp::createlaidoutrc()
  */
 int LaidoutApp::readinLaidoutDefaults()
 {
+
 	DBG cerr <<"-------------Checking $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+	int foundkeys=0;
+
 	FILE *f=NULL;
 	char configfile[strlen(config_dir)+20];
 	sprintf(configfile,"%s/laidoutrc",config_dir);
@@ -710,6 +713,7 @@ int LaidoutApp::readinLaidoutDefaults()
 			dump_in_colors(att.attributes.e[c]);
 			
 		} else if (!strcmp(name,"shortcuts")) {
+			foundkeys=1;
 			InitializeShortcuts();
 			ShortcutManager *m=GetDefaultShortcutManager();
 			m->Load(value);
@@ -792,6 +796,20 @@ int LaidoutApp::readinLaidoutDefaults()
 	fclose(f);
 	setlocale(LC_ALL,"");
 	DBG cerr <<"-------------Done with $HOME/.laidout/(version)/laidoutrc----------"<<endl;
+
+	if (foundkeys==0) {
+		char *keys=newstr(laidout->config_dir);
+		appendstr(keys,"/default.keys");
+		if (readable_file(keys)) {
+			DBG cerr <<" ----- reading in default shortcuts file ------"<<endl;
+
+			InitializeShortcuts();
+			ShortcutManager *m=GetDefaultShortcutManager();
+			m->Load(keys);
+		}
+		delete[] keys;
+	}
+
 	return 1;
 }
 
