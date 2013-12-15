@@ -1305,7 +1305,7 @@ int LaidoutViewport::FindObject(int x,int y,
 	DBG firstobj.context.out("firstobj");
 	
 	//while (start || (!start && !(nextindex==firstobj))) {
-	int nob=1;
+	int nob=1; //is there a next object
 	while (nob==1) {
 		if (start) start=0;
 		if (nextindex.obj==exclude) {
@@ -1506,6 +1506,10 @@ int LaidoutViewport::nextObject(VObjContext *oc,int inc)//inc=0
 		if (dynamic_cast<ObjectContainer*>(oc->obj) 
 			  && (dynamic_cast<ObjectContainer*>(oc->obj)->object_flags() & OBJ_Unselectable)) {
 			continue;
+		}
+		if (dynamic_cast<SomeData*>(oc->obj)) {
+			if (dynamic_cast<SomeData*>(oc->obj)->flags&SOMEDATA_UNSELECTABLE) continue;
+
 		}
 
 		return 1;
