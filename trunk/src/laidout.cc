@@ -242,6 +242,8 @@ LaidoutApp::LaidoutApp()
 	curdoc=NULL;
 	tooltips=1000;
 
+	experimental=0;
+
 	 // laidoutrc defaults
 	icon_dir=NULL;
 	
@@ -827,6 +829,7 @@ void InitOptions()
 	options.Add("shell",              'P', 0, "Enter a command line shell. Can be used with --command and --script.", 0, NULL);
 	options.Add("default-units",      'u', 1, "Use the specified units.",                    0, "(in|cm|mm|m|ft|yards)");
 	options.Add("load-dir",           'l', 1, "Start in this directory.",                    0, "path");
+	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
 	options.Add("helphtml",           'H', 0, "Output an html fragment of shortcuts.",       0, NULL);
@@ -865,6 +868,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			case 'v':  // Show version info, then exit
 				cout <<LaidoutVersion()<<endl;
 				exit(0);
+
+			case 'E': { // experimental
+				experimental=1;
+			  } break; 
 
 			case 't': { // load in template
 					ErrorLog log;

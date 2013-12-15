@@ -94,6 +94,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value
 	LaidoutCalculator *calculator;
 
 	 //global prefs
+	int experimental;
 	LaidoutPreferences prefs;
 
 	char *icon_dir;
