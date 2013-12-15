@@ -810,6 +810,9 @@ Spread *NetImposition::PaperLayout(int whichpaper)
 		spread->mask|=SPREAD_PRINTERMARKS;
 		spread->marks=path;
 		spread->marks->flags|=SOMEDATA_UNSELECTABLE;
+		ScreenColor color(.7,.7,.7, 1.);
+		dynamic_cast<PathsData *>(spread->marks)->line(-1,-1,-1, &color);
+		dynamic_cast<PathsData *>(spread->marks)->fill(NULL);
 		path->inc_count();
 	}
 	
