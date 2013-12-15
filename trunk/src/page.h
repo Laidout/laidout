@@ -52,7 +52,9 @@ class PageStyle : public Style
  public:
 	unsigned int flags; // marginsclip,facingpagesbleed;
 	int pagetype;
-	double width,height; // these are to be considered the bounding box for non-rectangular pages
+	double min_x,min_y,width,height; // these are to be considered the bounding
+									//box for non-rectangular pages. usually the
+									//same as outline bbox
 
 	LaxInterfaces::PathsData *outline, *margin;
 
@@ -64,6 +66,8 @@ class PageStyle : public Style
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 
+	virtual double minx() { return min_x; }
+	virtual double miny() { return min_y; }
 	virtual double w() { return width; }
 	virtual double h() { return height; }
 	virtual int set(const char *flag, int newstate);

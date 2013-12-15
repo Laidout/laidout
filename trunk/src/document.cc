@@ -908,7 +908,10 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 	if (scale_page_contents_to_fit) {
 		 //first grab old page sizes for reference
 		flatpoint old[pages.n];
+		flatpoint  dd[pages.n];
 		for (int c=0; c<pages.n; c++) {
+			dd[c].x=pages.e[c]->pagestyle->minx();
+			dd[c].y=pages.e[c]->pagestyle->miny();
 			old[c].x=pages.e[c]->pagestyle->w();
 			old[c].y=pages.e[c]->pagestyle->h();
 		}
@@ -923,11 +926,13 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 		flatpoint offset;
 		double scaling;
 		double oldw,oldh;
-		double neww,newh;
+		double neww,newh, newx,newy;
 		for (int c=0; c<pages.n; c++) {
 		  oldw=old[c].x;
 		  oldh=old[c].y;
 
+		  newx=pages.e[c]->pagestyle->minx();
+		  newy=pages.e[c]->pagestyle->miny();
 		  neww=pages.e[c]->pagestyle->w();
 		  newh=pages.e[c]->pagestyle->h();
 
@@ -940,6 +945,7 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 			  scaling=neww/oldw;
 			  offset=flatpoint(0, (newh-scaling*oldh)/2);
 		  }
+		  offset+=flatpoint(newx-dd[c].x*scaling, newy-dd[c].y*scaling);
 
 		   //step through each object on each layer on each page
 		  for (int c2=0; c2<pages.e[c]->layers.n(); c2++) {

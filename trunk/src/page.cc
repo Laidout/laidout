@@ -64,7 +64,7 @@ PageBleed::PageBleed(int i, const double *m)
  *
  * flags can indicate whether margins clip, and whether contents from other pages are allowed to bleed onto this one.
  *
- * width and height indicate the bounding box for the page in page coordinates. For rectangular pages,
+ * min_x, min_y, width and height indicate the bounding box for the page in page coordinates. For rectangular pages,
  * this is just the page outline, and otherwise is just the bbox, not the outline.
  * 
  * \todo *** integrate pagetype
@@ -73,6 +73,12 @@ PageBleed::PageBleed(int i, const double *m)
  * \brief A number given by an imposition saying what type of pagestyle this is.
  *
  * \todo ***this variable has potential, but is barely used currently.
+ */
+/*! \var double PageStyle::min_x
+ * Minimum x value of outline.
+ */
+/*! \var double PageStyle::min_y
+ * Minimum y value of outline.
  */
 /*! \var double PageStyle::width
  * \brief The width of the bounding box of the page.
@@ -95,7 +101,7 @@ PageStyle::PageStyle()
 {
 	outline=margin=NULL;
 	pagetype=0;
-	width=height=0;
+	min_x=min_y=width=height=0;
 	flags=0; 
 }
 
@@ -138,6 +144,7 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 {
 	if (!att) return;
 	flags=0;
+	min_x=min_y=0;
 	width=height=0;
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++)  {
@@ -153,6 +160,12 @@ void PageStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 
 		} else if (!strcmp(name,"facingpagesbleed")) {
 			if (BooleanAttribute(value)) flags|=FACING_PAGES_BLEED;
+
+		} else if (!strcmp(name,"min_x")) {
+			DoubleAttribute(value,&min_x);
+
+		} else if (!strcmp(name,"min_y")) {
+			DoubleAttribute(value,&min_y);
 
 		} else if (!strcmp(name,"width")) {
 			DoubleAttribute(value,&width);
@@ -182,12 +195,16 @@ void PageStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (what==-1) {
 		fprintf(f,"%swidth 8.5    #overrides the default page width\n",spc);
 		fprintf(f,"%sheight 11    #overrides the default page height\n",spc);
+		fprintf(f,"%smin_x 0      #overrides the default min point\n",spc);
+		fprintf(f,"%smin_y 0      #overrides the default min point\n",spc);
 		fprintf(f,"%smarginsclip  #whether the margins clip page contents\n",spc);
 		fprintf(f,"%spageclips    #whether the page outline clips page contents\n",spc);
 		fprintf(f,"%sfacingpagesbleed  #whether facing pages are allowed to bleed onto this one\n",spc);
 		return;
 	}
 
+	fprintf(f,"%smin_x %.10g\n",spc,minx());
+	fprintf(f,"%smin_y %.10g\n",spc,miny());
 	fprintf(f,"%swidth %.10g\n",spc,w());
 	fprintf(f,"%sheight %.10g\n",spc,h());
 	if (flags&MARGINS_CLIP) fprintf(f,"%smarginsclip\n",spc);
@@ -205,6 +222,8 @@ Style *PageStyle::duplicate(Style *s)//s=NULL
 	ps->flags=flags;
 	ps->width=width;
 	ps->height=height;
+	ps->min_x=min_x;
+	ps->min_y=min_y;
 	return s;
 }
 

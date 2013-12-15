@@ -145,12 +145,12 @@ Color sliders:
   CMYK sliders FAIL
 
 Imposition Editor:
+  net paper spread allows tinkering with printer marks. Good or no?? lock position?
   DONE cube, singles vs. page, page doesn't scale objects correctly
   DONE   dodeca, seems to work ok
   DONE   laidout -n cube does fine, but newdoc a cube, then import images doesn't scale images properly for net spreads.
-  reimpose from net produces object infinity matrix
-  net reimpose doesn't work
-  net paper spread allows tinkering with printer marks. Good or no?? lock position?
+  DONE reimpose from net produces object infinity matrix
+  DONE net reimpose doesn't work
   DONE Singles reimpose doesn't work
   DONE Singles has message from Signature editor tool
 
