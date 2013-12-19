@@ -1846,6 +1846,7 @@ int SignatureInstance::PaperSpreadsPerSignature(int whichstack, int ignore_inser
 }
 
 /*! Locate which SignatureInstance insert the given page number is contained in.
+ * Note this ONLY looks in inserts, not adjacent stacks.
  */
 SignatureInstance *SignatureInstance::locateInsert(int pagenumber, //!< a page number for somewhere in this stack+inserts
 												   int *insertnum, //!< What would be the page number if found insert was isolated (includes subinserts)
@@ -1856,8 +1857,10 @@ SignatureInstance *SignatureInstance::locateInsert(int pagenumber, //!< a page n
 	// \\\///  Insert 0, 12 pages, 3 sheets
 	//
 
+	int pages_per_sig=sheetspersignature*pattern->PagesPerPattern();
+
 	 //check if in this->signature, but just on one side
-	if (pagenumber<sheetspersignature*2) {
+	if (pagenumber<pages_per_sig/2) {
 		if (deep) *deep=0;
 		if (insertnum) *insertnum=pagenumber;
 		return this;
@@ -1865,7 +1868,7 @@ SignatureInstance *SignatureInstance::locateInsert(int pagenumber, //!< a page n
 
 	 //check inserts
 	if (next_insert) {
-		SignatureInstance *found=next_insert->locateInsert(pagenumber-sheetspersignature*2, insertnum, deep);
+		SignatureInstance *found=next_insert->locateInsert(pagenumber-pages_per_sig/2, insertnum, deep);
 		if (found) {
 			if (deep) (*deep)++;
 			return found;
@@ -1875,7 +1878,7 @@ SignatureInstance *SignatureInstance::locateInsert(int pagenumber, //!< a page n
 
 	//check if in this->signature, but on other side from above
 
-	if (pagenumber>=sheetspersignature*2) {
+	if (pagenumber>=pages_per_sig) {
 		 //pagenumber did not fit in this stack
 		if (deep) *deep=-1;
 		if (insertnum) *insertnum=-1;
@@ -1897,7 +1900,8 @@ int SignatureInstance::locatePaperFromPage(int pagenumber,
 										   int *insert,     //!< return index of insert, 0 for this
 										   int *insertpage, //!< return page number on the insert if insert were isolated
 										   int *row,        //!< return row and column of page in pattern, seen from front side
-										   int *col)
+										   int *col,
+										   SignatureInstance **ssig)
 {
 	int total_pages_all_stacks=PagesPerSignature(-1,0); //total number in signatures configuration
 	int sigsoffset=pagenumber/total_pages_all_stacks; //number of complete configs to pass over
@@ -1906,7 +1910,7 @@ int SignatureInstance::locatePaperFromPage(int pagenumber,
 	int num=PagesPerSignature(0,0);
 	if (pagenumber>=num) {
 		 //page was in future adjacent stack
-		int pp=next_stack->locatePaperFromPage(pagenumber-num, stack, insert, insertpage, row, col);
+		int pp=next_stack->locatePaperFromPage(pagenumber-num, stack, insert, insertpage, row, col, ssig);
 		pp+=2*sheetspersignature + sigsoffset*PaperSpreadsPerSignature(-1,0);
 		if (stack) (*stack)++; //add one for *this
 		return pp;
@@ -1917,19 +1921,52 @@ int SignatureInstance::locatePaperFromPage(int pagenumber,
 	if (stack) *stack=0;
 
 	int deep=0;
-	SignatureInstance *whichinsert=locateInsert(pagenumber, insertpage, &deep);
-	int paper=whichinsert->pattern->locatePaperFromPage(*insertpage, row, col, whichinsert->sheetspersignature);
+	int ii=-1;
+	SignatureInstance *whichinsert=locateInsert(pagenumber, &ii, &deep);
+	int paper=whichinsert->pattern->locatePaperFromPage(ii, row, col, whichinsert->sheetspersignature);
 
-	*insert=deep;
+	if (insertpage) *insertpage=ii;
+	if (insert) *insert=deep;
 
 	SignatureInstance *sig=whichinsert;
 	while (sig && deep) {
 		paper+=sig->sheetspersignature*2;
 		deep--;
-		sig=sig->next_insert;
+		if (deep) sig=sig->next_insert;
 	}
 
+	if (ssig) *ssig=sig;
 	return paper;
+}
+
+SignatureInstance *SignatureInstance::InstanceFromPage(int pagenumber,
+									   int *stack,      //!< return index of stack, 0 for this
+									   int *insert,     //!< return index of insert, 0 for this
+									   int *insertpage, //!< return page number on the insert if insert were isolated
+									   int *row,        //!< return row and column of page in pattern, seen from front side
+									   int *col,
+									   int *paper)
+{
+	SignatureInstance *sig=NULL;
+	int ppaper=locatePaperFromPage(pagenumber,stack,insert,insertpage,row,col, &sig);
+	if (paper) *paper=ppaper;
+	return sig;
+}
+
+//! Return pointer to the specified SignatureInstance.
+/*! If stack<0, then return last one. If insert<0, return innermost for stack.
+ */
+SignatureInstance *SignatureInstance::GetSignature(int stack,int insert)
+{
+	if (stack<0) stack=NumStacks(-1)-1;
+	if (insert<0) insert=NumStacks(stack)-1;
+
+	SignatureInstance *sig=this;
+
+	while (sig->next_stack  && stack>0)  { sig=sig->next_stack;  stack--;  }
+	while (sig->next_insert && insert>0) { sig=sig->next_insert; insert--; }
+
+	return sig;
 }
 
 //! Return SignatureInstance that holds paper spread whichpaper.
@@ -2053,6 +2090,32 @@ int SignatureInstance::NumStacks()
 	return n;
 }
 
+/*! If which<0, then return the number of defined stacks not including inserts.
+ * If which>=0, then return the number of inserts on the designated stack (including the head).
+ *
+ * Assumes *this in the 0'th stack.
+ */
+int SignatureInstance::NumStacks(int which)
+{
+	int num=0;
+	SignatureInstance *sig=this;
+	while (sig) {
+		if (which>=0 && which==num) {
+			 //return inserts size on stack which
+			num=0;
+			while (sig) {
+				num++;
+				sig=sig->next_insert;
+			}
+			return num;
+		}
+		num++;
+		sig=sig->next_stack;
+	}
+
+	return num;
+}
+
 /*! Return the number of inserts of this. If only *this exists, then 0 is returned.
  */
 int SignatureInstance::NumInserts()
@@ -2076,6 +2139,95 @@ double SignatureInstance::PatternHeight()
 double SignatureInstance::PatternWidth()
 { return partition->PatternWidth(); }
 
+//! Create or recreate pagestyle and pagestyleodd.
+/*! This facilitates sharing the same PageStyle objects across all pages.
+ * There are only ever 2 different page styles per signature.
+ *
+ * If force_new==0 and pagestyle and pagestyleodd are non-null, then do nothing and return.
+ *
+ * \todo *** this fails when margin settings are different for different sig instances
+ */
+void SignatureInstance::setPageStyles(int force_new)
+{
+	if (!force_new && pagestyle && pagestyleodd) return;
+
+	if (pagestyle) pagestyle->dec_count();
+	if (pagestyleodd) pagestyleodd->dec_count();
+
+	pagestyle=new RectPageStyle((IsVertical()?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
+	pagestyle->pagetype=(IsVertical()?2:1);
+	pagestyle->outline=dynamic_cast<PathsData*>(GetPageOutline());
+	pagestyle->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(0));
+	pagestyle->ml=pagestyle->margin->minx;
+	pagestyle->mr=pagestyle->outline->maxx-pagestyle->margin->maxx;
+	pagestyle->mt=pagestyle->outline->maxy-pagestyle->margin->maxy;
+	pagestyle->mb=pagestyle->margin->miny;
+	pagestyle->width =pagestyle->outline->maxx;
+	pagestyle->height=pagestyle->outline->maxy;
+
+
+	pagestyleodd=new RectPageStyle((IsVertical()?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
+	pagestyleodd->pagetype=(IsVertical()?3:0);
+	pagestyleodd->outline=dynamic_cast<PathsData*>(GetPageOutline());
+	pagestyleodd->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(1));
+	pagestyleodd->ml=pagestyleodd->margin->minx;
+	pagestyleodd->mr=pagestyleodd->outline->maxx-pagestyleodd->margin->maxx;
+	pagestyleodd->mt=pagestyleodd->outline->maxy-pagestyleodd->margin->maxy;
+	pagestyleodd->mb=pagestyleodd->margin->miny;
+	pagestyleodd->width =pagestyleodd->outline->maxx;
+	pagestyleodd->height=pagestyleodd->outline->maxy;
+}
+
+LaxInterfaces::SomeData *SignatureInstance::GetPageOutline()
+{
+	PathsData *newpath=new PathsData();//count==1
+
+	double pw=pattern->PageWidth(1),
+		   ph=pattern->PageHeight(1);
+
+	newpath->appendRect(0,0,pw,ph);
+	newpath->maxx=pw;
+	newpath->maxy=ph;
+	//nothing special is done when local==0
+	return newpath;
+}
+
+/*! The origin is the page origin, which is lower left of trim box.
+ */
+LaxInterfaces::SomeData *SignatureInstance::GetPageMarginOutline(int pagenum)
+{
+	int oddpage=pagenum%2;
+	DoubleBBox box;
+	pattern->PageBounds(1,&box); //margin box
+
+	double w=box.maxx-box.minx, //margin box width
+		   h=box.maxy-box.miny, //margin box height
+		   pw=pattern->PageWidth(1), //trim box width
+		   ph=pattern->PageHeight(1);//trim box height
+
+	PathsData *newpath=new PathsData();//count==1
+
+	if (pattern->binding=='l') {
+		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+
+	} else if (pattern->binding=='r') {
+		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+
+	} else if (pattern->binding=='t') {
+		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+
+	} else if (pattern->binding=='b') {
+		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
+		else         newpath->appendRect(box.minx,box.miny, w,h);
+	}
+
+	newpath->FindBBox();
+	//nothing special is done when local==0
+	return newpath;
+}
 
 void SignatureInstance::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
@@ -2286,8 +2438,6 @@ SignatureImposition::SignatureImposition(SignatureInstance *newsig)
 	signatures=NULL;
 	if (newsig) signatures=(SignatureInstance*)newsig->duplicate();
 	
-	pagestyle=pagestyleodd=NULL;
-
 	objectdef=stylemanager.FindDef("SignatureImposition");
 	if (objectdef) objectdef->inc_count(); 
 	else {
@@ -2303,8 +2453,6 @@ SignatureImposition::~SignatureImposition()
 	if (signatures) delete signatures;
 	//if (partition) partition->dec_count();
 
-	if (pagestyle) pagestyle->dec_count();
-	if (pagestyleodd) pagestyleodd->dec_count();
 }
 
 ImpositionInterface *SignatureImposition::Interface()
@@ -2544,7 +2692,7 @@ int SignatureImposition::SpreadType(int spread)
 int SignatureImposition::PaperFromPage(int pagenumber)
 {
 	int stack, insert, insertpage, row, col;
-	int pp=signatures->locatePaperFromPage(pagenumber, &stack, &insert, &insertpage, &row, &col);
+	int pp=signatures->locatePaperFromPage(pagenumber, &stack, &insert, &insertpage, &row, &col, NULL);
 	return pp;
 }
 
@@ -2756,39 +2904,26 @@ int SignatureImposition::NumPages(int npages)
 
 //---------------doc Page[] maintenance
 
-//! Create or recreate pagestyle and pagestyleodd.
+//! Create or recreate pagestyle and pagestyleodd within each stack and insert.
 /*! This facilitates sharing the same PageStyle objects across all pages.
- * There are only ever 2 different page styles per signature.
+ * There are only ever 2 different page styles per signature instance.
  *
- * \todo *** this fails when margin settings are different for different sig instances
+ * This function just steps through each siginstance and calls sig->setPageStyles().
  */
-void SignatureImposition::setPageStyles()
+void SignatureImposition::setPageStyles(int force_new)
 {
-	if (pagestyle) pagestyle->dec_count();
-	if (pagestyleodd) pagestyleodd->dec_count();
+	if (!signatures) return;
 
-	pagestyle=new RectPageStyle((IsVertical()?(RECTPAGE_LRIO|RECTPAGE_LEFTPAGE):(RECTPAGE_IOTB|RECTPAGE_TOPPAGE)));
-	pagestyle->pagetype=(IsVertical()?2:1);
-	pagestyle->outline=dynamic_cast<PathsData*>(GetPageOutline(0,1));
-	pagestyle->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(0,1));
-	pagestyle->ml=pagestyle->margin->minx;
-	pagestyle->mr=pagestyle->outline->maxx-pagestyle->margin->maxx;
-	pagestyle->mt=pagestyle->outline->maxy-pagestyle->margin->maxy;
-	pagestyle->mb=pagestyle->margin->miny;
-	pagestyle->width =pagestyle->outline->maxx;
-	pagestyle->height=pagestyle->outline->maxy;
+	SignatureInstance *sig=signatures, *si;
 
-
-	pagestyleodd=new RectPageStyle((IsVertical()?(RECTPAGE_LRIO|RECTPAGE_RIGHTPAGE):(RECTPAGE_IOTB|RECTPAGE_BOTTOMPAGE)));
-	pagestyleodd->pagetype=(IsVertical()?3:0);
-	pagestyleodd->outline=dynamic_cast<PathsData*>(GetPageOutline(1,1));
-	pagestyleodd->margin =dynamic_cast<PathsData*>(GetPageMarginOutline(1,1));
-	pagestyleodd->ml=pagestyleodd->margin->minx;
-	pagestyleodd->mr=pagestyleodd->outline->maxx-pagestyleodd->margin->maxx;
-	pagestyleodd->mt=pagestyleodd->outline->maxy-pagestyleodd->margin->maxy;
-	pagestyleodd->mb=pagestyleodd->margin->miny;
-	pagestyleodd->width =pagestyleodd->outline->maxx;
-	pagestyleodd->height=pagestyleodd->outline->maxy;
+	while (sig) {
+		si=sig;
+		while (si) {
+			si->setPageStyles(force_new);
+			si=si->next_insert;
+		}
+		sig=sig->next_stack;
+	}
 }
 
 //! Return NULL terminated list of Page objects.
@@ -2797,15 +2932,15 @@ Page **SignatureImposition::CreatePages(int npages)
 	if (npages>0) NumPages(npages);
 
 	if (numdocpages==0) return NULL;
-	if (!pagestyle || !pagestyleodd) {
-		 //create if they were null
-		setPageStyles();
-	}
+	 //create if they were null
+	setPageStyles(1);
 	
 	Page **newpages=new Page*[numdocpages+1];
 	int c;
+	SignatureInstance *sig;
 	for (c=0; c<numdocpages; c++) {
-		newpages[c]=new Page(((c%2)?pagestyleodd:pagestyle),c); // this incs count of pagestyle
+		sig=signatures->InstanceFromPage(c,NULL,NULL,NULL,NULL,NULL,NULL);
+		newpages[c]=new Page(((c%2)?sig->pagestyleodd:sig->pagestyle),c); // this incs count of pagestyle
 
 		 //add bleed information
 		fixPageBleeds(c,newpages[c]);
@@ -2825,7 +2960,9 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 										Page *page)//!< Actual document page
 {
 	 //fix pagestyle
-	page->InstallPageStyle((index%2)?pagestyleodd:pagestyle);
+	SignatureInstance *sig=signatures->InstanceFromPage(index,NULL,NULL,NULL,NULL,NULL,NULL);
+
+	page->InstallPageStyle((index%2)?sig->pagestyleodd:sig->pagestyle);
 	page->pagebleeds.flush();
 
 	 //fix page bleed info
@@ -2863,7 +3000,7 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
  */
 int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
 {
-	if (!pagestyle || !pagestyleodd) setPageStyles(); //create if they were null
+	setPageStyles(1);
 
 	for (int c=start; c<doc->pages.n; c++) {
 		fixPageBleeds(c,doc->pages.e[c]);
@@ -2877,9 +3014,11 @@ int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
  */
 PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
 {
-	if (!pagestyle || !pagestyleodd) setPageStyles(); //create if they were null
+	setPageStyles(0); //create if they were null
 
-	PageStyle *style= (pagenum%2) ? pagestyleodd : pagestyle;
+	SignatureInstance *sig=signatures->InstanceFromPage(pagenum,NULL,NULL,NULL,NULL,NULL,NULL);
+		
+	PageStyle *style= (pagenum%2) ? sig->pagestyleodd : sig->pagestyle;
 	style->inc_count();
 	return style;
 }
@@ -2889,51 +3028,16 @@ PageStyle *SignatureImposition::GetPageStyle(int pagenum,int local)
  */
 LaxInterfaces::SomeData *SignatureImposition::GetPageOutline(int pagenum,int local)
 {
-	PathsData *newpath=new PathsData();//count==1
-	double pw=signatures->pattern->PageWidth(1),
-		   ph=signatures->pattern->PageHeight(1);
-	newpath->appendRect(0,0,pw,ph);
-	newpath->maxx=pw;
-	newpath->maxy=ph;
-	//nothing special is done when local==0
-	return newpath;
+	SignatureInstance *sig=signatures->InstanceFromPage(pagenum,NULL,NULL,NULL,NULL,NULL,NULL);
+	return sig->GetPageOutline();
 }
 
 /*! The origin is the page origin, which is lower left of trim box.
- * 
- *  \todo *** assumes final page size same across stacks
  */
 LaxInterfaces::SomeData *SignatureImposition::GetPageMarginOutline(int pagenum,int local)
 {
-	int oddpage=pagenum%2;
-	DoubleBBox box;
-	signatures->pattern->PageBounds(1,&box); //margin box
-	double w=box.maxx-box.minx, //margin box width
-		   h=box.maxy-box.miny, //margin box height
-		   pw=signatures->pattern->PageWidth(1), //trim box width
-		   ph=signatures->pattern->PageHeight(1);//trim box height
-	PathsData *newpath=new PathsData();//count==1
-
-	if (signatures->pattern->binding=='l') {
-		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
-		else         newpath->appendRect(box.minx,box.miny, w,h);
-
-	} else if (signatures->pattern->binding=='r') {
-		if (oddpage) newpath->appendRect(pw-w-box.minx,box.miny, w,h);
-		else         newpath->appendRect(box.minx,box.miny, w,h);
-
-	} else if (signatures->pattern->binding=='t') {
-		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
-		else         newpath->appendRect(box.minx,box.miny, w,h);
-
-	} else if (signatures->pattern->binding=='b') {
-		if (oddpage) newpath->appendRect(box.minx,ph-h-box.miny, w,h);
-		else         newpath->appendRect(box.minx,box.miny, w,h);
-	}
-
-	newpath->FindBBox();
-	//nothing special is done when local==0
-	return newpath;
+	SignatureInstance *sig=signatures->InstanceFromPage(pagenum,NULL,NULL,NULL,NULL,NULL,NULL);
+	return sig->GetPageMarginOutline(pagenum);
 }
 
 
@@ -3002,8 +3106,9 @@ Spread *SignatureImposition::PageLayout(int whichspread)
 	int page1=whichspread*2; //eventually, page1 is the one with lower left corner at origin.
 	int page2=-1;           //and numerically page2 will be > page1
 
-	double pw=signatures->pattern->PageWidth(1);
-	double ph=signatures->pattern->PageHeight(1);
+	SignatureInstance *sig=signatures->InstanceFromPage(page1,NULL,NULL,NULL,NULL,NULL,NULL);
+	double pw=sig->pattern->PageWidth(1);
+	double ph=sig->pattern->PageHeight(1);
 
 	double page2offsetx=0, page2offsety=0;
 
