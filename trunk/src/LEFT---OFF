@@ -50,6 +50,8 @@ switch to None document, and units change to unreasonable
 
 ---- bugs:
 
+make singles 16 pages, edit imposition, select booklet. Defaults to 4 pages!
+
 page range, control click on page 1 less than a range won't let you click for new range
 
 impositioneditor not remembering window position
@@ -120,6 +122,9 @@ pane swapping/dropto on maximized, swapping in general...
 
 WATCH OUT for when preview file is OLDER than original file!!
 
+pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
+   instead of drawing with some default style
+
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 update fileformat.txt
@@ -137,27 +142,16 @@ test:
 
 space cloning/duping doesn't work
  
-shortcuts: default to load and save "default" keys in a standard location
-
 Color sliders:
   enter color hex FAIL, zaps to #00000000
   clicking color comparator should allow clicking back to one just used
   CMYK sliders FAIL
 
-Imposition Editor:
-  net paper spread allows tinkering with printer marks. Good or no?? lock position?
-  DONE cube, singles vs. page, page doesn't scale objects correctly
-  DONE   dodeca, seems to work ok
-  DONE   laidout -n cube does fine, but newdoc a cube, then import images doesn't scale images properly for net spreads.
-  DONE reimpose from net produces object infinity matrix
-  DONE net reimpose doesn't work
-  DONE Singles reimpose doesn't work
-  DONE Singles has message from Signature editor tool
-
 Signature editor:
   add hooks for page preview
-  page style specific to EACH instance, not global
   ---enhancements:
+  mixing different page sizes mixes up the PageLayout at boundaries. alignment should be either always centered, or custom
+  after you add stack, the added one should be selected
   must implement dragging around instance blocks...
   helper controls to adjust inset to match up final size for sigs of different size
   indicators for different signature instances when viewing page spreads
@@ -906,6 +900,7 @@ Spread Editor:
 DONE Signature editor, not centering for certain paper sizes
 
 DONE Signature editor:
+  DONE page style specific to EACH instance, not global
   DONE stacked page range not correct
   DONE after edit document settings, final page handles location messed up 
   DONE edit new booklet... final cell handles not mapped right
@@ -936,4 +931,16 @@ DONE shortcut dialog:
   DONE hover indicator intrusive
 
 DONE hedron edit goes to netdialog, should have "current" option...
+
+DONE Imposition Editor:
+  DONE net paper spread allows tinkering with printer marks. Good or no?? lock position?
+  DONE cube, singles vs. page, page doesn't scale objects correctly
+  DONE   dodeca, seems to work ok
+  DONE   laidout -n cube does fine, but newdoc a cube, then import images doesn't scale images properly for net spreads.
+  DONE reimpose from net produces object infinity matrix
+  DONE net reimpose doesn't work
+  DONE Singles reimpose doesn't work
+  DONE Singles has message from Signature editor tool
+
+DONE shortcuts: default to load and save "default" keys in a standard location
 

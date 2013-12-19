@@ -135,7 +135,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		else tool=imposition->Interface();
 	}
 	if (!tool) {
-		tool=new SignatureInterface(NULL,1,viewport->dp, NULL,p);
+		tool=new SignatureInterface(NULL,1,viewport->dp, NULL,p,ndoc);
 	}
 	tool->GetShortcuts();
 	if (imposearg) tool->ShowSplash(1);

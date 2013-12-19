@@ -950,7 +950,7 @@ int SignatureInterface::Refresh()
 							flatpoint p1,vh,vv;
 							if (yflip) { p1=pts[2]; vh=pts[3]-p1; vv=pts[0]-p1; }
 							else { p1=pts[0]; vh=pts[1]-p1; vv=pts[2]-p1; }
-							//dp->imageout_skewed(thumb->image, p1.x,p1.y, );
+							dp->imageout(thumb->image, p1.x,p1.y, vv.norm(),vh.norm());
 							//Laidout::DrawData(dp,thumb,NULL,NULL);
 						}
 					}

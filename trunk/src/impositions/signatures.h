@@ -193,10 +193,16 @@ class SignatureInstance : public Value
 	virtual int PagesPerSignature(int whichstack, int ignore_inserts);
 	virtual int PaperSpreadsPerSignature(int whichstack, int ignore_inserts);
 	virtual int IsVertical();
+
+	virtual LaxInterfaces::SomeData *GetPageOutline();
+	virtual LaxInterfaces::SomeData *GetPageMarginOutline(int pagenum);
+	virtual void setPageStyles(int force_new);
 	virtual int SetPaper(PaperStyle *p, int all_with_same_size);
 	virtual int SetPaperFromFinalSize(double w,double h, int all);
 	virtual int NumStacks();
+	virtual int NumStacks(int which);
 	virtual int NumInserts();
+	virtual SignatureInstance *GetSignature(int stack,int insert);
 	virtual double PatternHeight();
 	virtual double PatternWidth();
 	virtual int UseThisSignature(Signature *sig, int link);
@@ -210,7 +216,8 @@ class SignatureInstance : public Value
 									int *insert,
 									int *insertpage,
 									int *row,
-									int *col);
+									int *col,
+								    SignatureInstance **ssig);
 	virtual SignatureInstance *InstanceFromPaper(int whichpaper,
 									int *stack,
 									int *insert,
@@ -218,6 +225,13 @@ class SignatureInstance : public Value
 									int *pageoffset,
 									int *inneroffset,
 									int *groups);
+	virtual SignatureInstance *InstanceFromPage(int pagenumber,
+								    int *stack,      //!< return index of stack, 0 for this
+								    int *insert,     //!< return index of insert, 0 for this
+								    int *insertpage, //!< return page number on the insert if insert were isolated
+								    int *row,        //!< return row and column of page in pattern, seen from front side
+								    int *col,
+								    int *paper);
 };
 
 
@@ -225,10 +239,9 @@ class SignatureInstance : public Value
 class SignatureImposition : public Imposition
 {
   protected:
-	RectPageStyle *pagestyle,*pagestyleodd;
 	SignatureInstance *signatures;
 	
-	virtual void setPageStyles();
+	virtual void setPageStyles(int force_new);
 	virtual void fixPageBleeds(int index,Page *page);
 
   public:
