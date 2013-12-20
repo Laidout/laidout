@@ -489,12 +489,7 @@ void Signature::applyFold(FoldedPageInfo **finfo, char folddir, int index, int u
 	int fr1,fr2, fc1,fc2;
 
 	 //find the cells that must be moved
-	if (folddir=='l') {
-		fr1=0;
-		fr2=numhfolds;
-		fc1=index;
-		fc2=numvfolds;
-	} else if (folddir=='r') {
+	if (folddir=='r') {
 		fr1=0;
 		fr2=numhfolds;
 		fc1=0;
@@ -508,6 +503,11 @@ void Signature::applyFold(FoldedPageInfo **finfo, char folddir, int index, int u
 		fr1=0;
 		fr2=index-1;
 		fc1=0;
+		fc2=numvfolds;
+	} else { //if (folddir=='l') {
+		fr1=0;
+		fr2=numhfolds;
+		fc1=index;
 		fc2=numvfolds;
 	}
 
@@ -942,12 +942,12 @@ Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::an
 	att->push("trimtop",   trimtop);
 	att->push("trimbottom",trimbottom);
 	att->push("trimleft",  trimleft);
-	att->push("trimright ",trimright);
+	att->push("trimright", trimright);
 
 	att->push("margintop"   ,margintop);
 	att->push("marginbottom",marginbottom);
 	att->push("marginleft"  ,marginleft);
-	att->push("marginright ",marginright);
+	att->push("marginright", marginright);
 
 	att->push("up",CtoStr(up));
 	if (positivex) att->push("positivex",CtoStr(positivex));
@@ -1027,6 +1027,9 @@ void Signature::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject 
 			while (*e && isspace(*e)) e++;
 			if (!strncasecmp(e,"under ",6)) { under=1; e+=6; }
 			LRTBAttribute(e,&dir);
+			if (dir==0) {
+				cerr <<" *** WARNING! corrupt fold designation in file"<<endl;
+			}
 			if (under) {
 				if      (dir=='r') { numvf++; }
 				else if (dir=='l') { numvf++; }
@@ -2313,6 +2316,10 @@ void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::a
 			AddInsert(insert);
 		}
 	}
+
+	pattern->patternheight=partition->PatternHeight();
+	pattern->patternwidth =partition->PatternWidth();
+	setPageStyles(1);
 }
 
 /*! Always makes new one, does not consult stylemanager.
@@ -2841,6 +2848,7 @@ int SignatureImposition::NumPages(int npages)
 
 	//if (numdocpages==npages) return numpages;
 	numdocpages=npages;
+	if (!signatures) signatures=new SignatureInstance();
 
 	//all SignatureInstance objects with autoaddsheets==true get excess pages distributed
 	//between them. If there are no autoaddsheets, then whole blocks of signatures
@@ -2960,6 +2968,7 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 										Page *page)//!< Actual document page
 {
 	 //fix pagestyle
+	if (!signatures) signatures=new SignatureInstance();
 	SignatureInstance *sig=signatures->InstanceFromPage(index,NULL,NULL,NULL,NULL,NULL,NULL);
 
 	page->InstallPageStyle((index%2)?sig->pagestyleodd:sig->pagestyle);
@@ -3742,7 +3751,7 @@ LaxFiles::Attribute *SignatureImposition::dump_out_atts(LaxFiles::Attribute *att
 	SignatureInstance *sig=signatures;
 	while (sig) {
 		aa=sig->dump_out_atts(NULL,what,context);
-		makestr(att->name,"signature");
+		makestr(aa->name,"signature");
 		att->push(aa,-1);
 		sig=sig->next_stack;
 	}

@@ -947,11 +947,13 @@ int SignatureInterface::Refresh()
 						if (showthumbs && document && i>=0 && i<document->pages.n) {
 							// *** draw page i in box defined by pts
 							thumb=document->pages.e[i]->Thumbnail();
-							flatpoint p1,vh,vv;
-							if (yflip) { p1=pts[2]; vh=pts[3]-p1; vv=pts[0]-p1; }
-							else { p1=pts[0]; vh=pts[1]-p1; vv=pts[2]-p1; }
-							dp->imageout(thumb->image, p1.x,p1.y, vv.norm(),vh.norm());
-							//Laidout::DrawData(dp,thumb,NULL,NULL);
+							if (thumb) {
+								flatpoint p1,vh,vv;
+								if (yflip) { p1=pts[2]; vh=pts[3]-p1; vv=pts[0]-p1; }
+								else { p1=pts[0]; vh=pts[1]-p1; vv=pts[2]-p1; }
+								dp->imageout(thumb->image, p1.x,p1.y, vv.norm(),vh.norm());
+								//Laidout::DrawData(dp,thumb,NULL,NULL);
+							}
 						}
 					}
 
