@@ -722,7 +722,7 @@ int dumpInImages(ImportImageSettings *settings, Document *doc, ImagePlopInfo *im
 	int curpage=startpage;
 	int scaleup  =settings->scaleup;
 	int scaledown=settings->scaledown;
-	double dpi=doc->imposition->paper->paperstyle->dpi;
+	double dpi=doc->imposition->GetDefaultPaper()->dpi;
 	double curdpi=dpi;
 	double m[6];
 	double x,y,w,h,t,      // temp info while computing each row

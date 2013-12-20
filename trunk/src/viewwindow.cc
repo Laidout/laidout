@@ -3650,6 +3650,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			sprintf(mes,_("No images imported."));
 		}
 		((LaidoutViewport *)viewport)->postmessage(mes);
+		viewport->Needtodraw(1);
 		return 0;
 
 	} else if (!strcmp(mes,"statusMessage")) {
