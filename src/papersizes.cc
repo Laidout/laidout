@@ -317,6 +317,11 @@ void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject
 			DoubleAttribute(value,&height);
 		} else if (!strcmp(aname,"dpi")) {
 			DoubleAttribute(value,&dpi);
+		} else if (!strcmp(aname,"orientation")) {
+			if (!strcasecmp(value,"portrait"))
+				flags&=~1;
+			else  //landscape
+				flags|=1;
 		} else if (!strcmp(aname,"landscape")) {
 			flags|=1;//*** make this a define?
 		} else if (!strcmp(aname,"portrait")) {
