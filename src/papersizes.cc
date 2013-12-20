@@ -275,6 +275,31 @@ void PaperStyle::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	fprintf(f,"%s%s\n",spc,(flags&1?"landscape":"portrait"));
 }
 
+LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+{
+	if (!att) att=new Attribute;
+
+	if (what==-1) {
+		Value::dump_out_atts(att,-1,savecontext);
+        return att;
+	}
+
+	if (name) att->push("name",name);
+	double scale=1;
+	if (defaultunits) {
+		att->push("units",defaultunits);
+		if (!strcmp(defaultunits,"mm")) scale=25.4;
+		else if (!strcmp(defaultunits,"cm")) scale=2.54;
+		else if (!strcmp(defaultunits,"pt")) scale=72;
+	}
+	att->push("width",width*scale); 
+	att->push("height",height*scale);
+	att->push("dpi",dpi);
+	att->push("orientation",(flags&1?"landscape":"portrait"));
+
+	return att;
+}
+
 //! Basically reverse of dump_out.
 void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
