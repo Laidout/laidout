@@ -19,6 +19,7 @@
 #include "signatureinterface.h"
 #include "../utils.h"
 #include "../version.h"
+#include "../drawdata.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
@@ -179,7 +180,7 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 	rescale_pages=1;
 
 	showdecs=0;
-	showthumbs=0;
+	showthumbs=1;
 	showsplash=0;
 	insetmask=15; trimmask=15; marginmask=15;
 	firsttime=1;
@@ -870,7 +871,7 @@ int SignatureInterface::Refresh()
 	double xx,yy;
 	//int xflip;
 	int yflip;
-	int i;
+	int i=-1;
 	ImageData *thumb;
 
 	DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
@@ -900,10 +901,10 @@ int SignatureInterface::Refresh()
 
 			 //first draw filled face, grayed if no current faces
 			dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
-			pts[0]=flatpoint(x+ucc*ew,y+urr*eh);
-			pts[1]=pts[0]+flatpoint(ew,0);
-			pts[2]=pts[0]+flatpoint(ew,eh);
-			pts[3]=pts[0]+flatpoint(0,eh);
+			pts[0]=flatpoint(x+ucc*ew,y+urr*eh); //lower left
+			pts[1]=pts[0]+flatpoint(ew,0);      //lower right
+			pts[2]=pts[0]+flatpoint(ew,eh);    //upper right
+			pts[3]=pts[0]+flatpoint(0,eh);    //upper left
 
 			if (hasface) dp->NewFG(1.,1.,1.);
 			else dp->NewFG(.75,.75,.75);
@@ -941,22 +942,6 @@ int SignatureInterface::Refresh()
 						tt=ff + rangeofpapers-1;
 					}
 
-
-					 //show thumbnails
-					if (foldlevel==0) {
-						if (showthumbs && document && i>=0 && i<document->pages.n) {
-							// *** draw page i in box defined by pts
-							thumb=document->pages.e[i]->Thumbnail();
-							if (thumb) {
-								flatpoint p1,vh,vv;
-								if (yflip) { p1=pts[2]; vh=pts[3]-p1; vv=pts[0]-p1; }
-								else { p1=pts[0]; vh=pts[1]-p1; vv=pts[2]-p1; }
-								dp->imageout(thumb->image, p1.x,p1.y, vv.norm(),vh.norm());
-								//Laidout::DrawData(dp,thumb,NULL,NULL);
-							}
-						}
-					}
-
 					 //print range of pages at bottom of arrow
 					if (foldlevel==0) { //all unfolded, show only page for currentPaperSpread
 						if (ff>tt) i=ff-sigpaper;
@@ -966,10 +951,66 @@ int SignatureInterface::Refresh()
 						sprintf(str,"%d",i);
 					} else {
 						 //show range of pages represented at this fold stage
-						if (i<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
+						if (ff<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
 						else { ff+=midpageoffset; tt+=midpageoffset; }
 						sprintf(str,"%d",ff+1);
 						//sprintf(str,"%d-%d",ff+1,tt+1); //shows whole range of pages
+					}
+
+
+					 //show thumbnails
+					if (foldlevel==0) {
+						if (showthumbs && document && i-1>=0 && i-1<document->pages.n) {
+							 //draw page i in box defined by pts
+							thumb=document->pages.e[i-1]->Thumbnail();
+							if (thumb) {
+								Affine tr;
+								flatpoint p1;
+								if (yflip) { p1=pts[2]; tr.origin(p1); tr.xaxis(pts[3]-p1); tr.yaxis(pts[1]-p1); }
+								else { p1=pts[0]; tr.origin(p1); tr.xaxis(pts[1]-p1); tr.yaxis(pts[3]-p1); }
+
+								if (rescale_pages) {
+									 //thumb min/maxx, min/maxy are same as page outline. thumb origin is page origin
+									
+									flatpoint offset, fp2;
+									offset=thumb->transformPoint(flatpoint(thumb->maxx,thumb->maxy));
+									fp2   =thumb->transformPoint(flatpoint(thumb->minx,thumb->miny));
+									double oldw=offset.x-fp2.x; if (oldw<0) oldw=-oldw;
+									double oldh=offset.y-fp2.y; if (oldh<0) oldh=-oldh;
+									double neww=tr.xaxis().norm();
+									double newh=tr.yaxis().norm();
+									double scaling=1;
+
+									if (neww/newh > oldw/oldh) {
+										scaling=newh/oldh;
+										offset=flatpoint((neww-scaling*oldw)/2, 0);
+									} else {
+										scaling=neww/oldw;
+										offset=flatpoint(0, (newh-scaling*oldh)/2);
+									}
+									offset+=flatpoint(0-thumb->minx*scaling, 0-thumb->miny*scaling);
+									Affine newt;
+									newt.Scale(scaling);
+									newt.origin(offset);
+									dp->PushAndNewTransform(newt.m());
+								}
+								tr.Normalize();
+								dp->PushAndNewTransform(tr.m());
+
+								 // always setup clipping region to be the page
+								//dp->PushClip(1);
+								//SetClipFromPaths(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,dp->Getctm());
+
+								Laidout::DrawData(dp,thumb,NULL,NULL);
+
+								 //remove clipping region
+								//dp->PopClip();
+
+								dp->PopAxes();
+								if (rescale_pages) dp->PopAxes();
+
+							}
+						}
 					}
 
 					dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);

@@ -872,6 +872,7 @@ int Document::SyncPages(int start,int n)
 		}
 		if (pages.e[c]->label) delete[] pages.e[c]->label;
 		pages.e[c]->label=label;
+		pages.e[c]->Touch();
 		DBG cerr <<"=============page["<<c<<"] label="<<label<<endl;
 	}
 	return n;

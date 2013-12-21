@@ -656,7 +656,7 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			return 0;
 
 		} else if (i==ACTION_EditImposition) {
-			app->rundialog(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
+			app->addwindow(newImpositionEditor(NULL,"impose",_("Impose..."),this->object_id,"newimposition",
 						                        NULL, NULL, doc?doc->imposition:NULL, NULL, doc));
 			return 0;
 		}
@@ -2455,6 +2455,7 @@ enum ViewActions {
 	VIEW_Help,
 	VIEW_About,
 	VIEW_SpreadEditor,
+	VIEW_EditImposition,
 
 	VIEW_MAX
 };
@@ -3418,7 +3419,7 @@ int ViewWindow::init()
 	//**** menu would hold a list of the available documents, plus other control stuff, dialogs, etc..
 	//**** mostly same as would be in right-click in viewport.....	
 	rulercornerbutton=menub=new MenuButton(this,"rulercornerbutton",NULL,
-						 MENUBUTTON_CLICK_CALLS_OWNER|MENUBUTTON_ICON_ONLY,
+						 MENUBUTTON_CLICK_CALLS_OWNER|MENUBUTTON_ICON_ONLY|MENUBUTTON_LEFT,
 						 //MENUBUTTON_DOWNARROW|MENUBUTTON_CLICK_CALLS_OWNER,
 						 0,0,0,0,0,
 						 NULL,object_id,"rulercornerbutton",
@@ -3827,6 +3828,9 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		 //Doc1
 		 //Doc2
 		 //None
+		 //---
+		 //Edit imposition
+		 //---
 		 //Add new
 		 //Remove current
 		 //---
@@ -3856,10 +3860,14 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		menu->menuitems.e[c]->state|=LAX_ISTOGGLE;
 		if (!doc) menu->menuitems.e[c]->state|=LAX_CHECKED;
 		if (doc) {
+			menu->AddSep();
 			menu->AddItem(_("Edit imposition"),ACTION_EditImposition);
+		}
+		menu->AddSep();
+		menu->AddItem(_("Add new document"),ACTION_AddNewDocument);
+		if (doc) {
 			menu->AddItem(_("Remove current document"),ACTION_RemoveCurrentDocument);
 		}
-		menu->AddItem(_("Add new document"),ACTION_AddNewDocument);
 
 		 //----add limbo list, numbers starting at 1000...
 		char txt[40];
@@ -3942,11 +3950,13 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 //						 | MENUSEL_CHECK_ON_LEFT|MENUSEL_LEFT,
 //						menu,1);
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
-		popup=new PopupMenu(NULL,_("Documents"), MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT,
+		popup=new PopupMenu(NULL,_("Documents"), 0,
 						0,0,0,0, 1, 
 						viewport->object_id,"rulercornermenu", 
 						s->info3, //id of device that triggered the send
-						menu,1);
+						menu,1,
+						NULL,
+						MENUSEL_LEFT|MENUSEL_CHECK_ON_LEFT);
 		popup->pad=5;
 		popup->Select(0);
 		popup->WrapToMouse(None);
@@ -4380,24 +4390,6 @@ int ViewWindow::SelectTool(int id)
 	return c;
 }
 
-//enum ViewActions {
-//	VIEW_Save,
-//	VIEW_SaveAs,
-//	VIEW_NewDocument,
-//	VIEW_NextTool,
-//	VIEW_PreviousTool,
-//	VIEW_NextPage,
-//	VIEW_PreviousPage,
-//	VIEW_ObjectTool,
-//	VIEW_CommandPrompt,
-//	VIEW_ObjectIndicator,
-//
-//	VIEW_Help,
-//	VIEW_About,
-//	VIEW_SpreadEditor,
-//
-//	VIEW_MAX
-//};
 
 Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 {
@@ -4413,18 +4405,19 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 
 	sc=new ShortcutHandler("ViewWindow");
 
-	sc->Add(VIEW_ObjectTool,     LAX_Esc,0,0,      _("ObjectTool"),   _("Switch to object tool"),NULL,0);
-	sc->Add(VIEW_Save,           's',ControlMask,0, _("Save"),         _("Save document"),NULL,0);
+	sc->Add(VIEW_ObjectTool,     LAX_Esc,0,0,      _("ObjectTool"),     _("Switch to object tool"),NULL,0);
+	sc->Add(VIEW_Save,           's',ControlMask,0, _("Save"),          _("Save document"),NULL,0);
 	sc->Add(VIEW_SaveAs,         'S',ShiftMask|ControlMask,0,_("SaveAs"), _("Save as"),NULL,0);
-	sc->Add(VIEW_NewDocument,    'n',ControlMask,0, _("NewDoc"),       _("New document"),NULL,0);
-	sc->Add(VIEW_NextTool,       't',0,0,           _("NextTool"),     _("Next tool"),NULL,0);
-	sc->Add(VIEW_PreviousTool,   'T',ShiftMask,0,   _("PreviousTool"), _("Previous tool"),NULL,0);
-	sc->Add(VIEW_NextPage,       '>',ShiftMask,0,   _("NextPage"),     _("Next page"),NULL,0);
-	sc->Add(VIEW_PreviousPage,   '<',ShiftMask,0,   _("PreviousPage"), _("Previous page"),NULL,0);
-	sc->Add(VIEW_Help,           LAX_F1,0,0,        _("Help"),         _("Help"),NULL,0);
-	sc->Add(VIEW_About,          LAX_F2,0,0,        _("About"),        _("About Laidout"),NULL,0);
-	sc->Add(VIEW_SpreadEditor,   LAX_F5,0,0,        _("SpreadEditor"), _("Popup a spread editor"),NULL,0);
-	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),       _("Popup a the graphical shell"),NULL,0);
+	sc->Add(VIEW_NewDocument,    'n',ControlMask,0, _("NewDoc"),        _("New document"),NULL,0);
+	sc->Add(VIEW_NextTool,       't',0,0,           _("NextTool"),      _("Next tool"),NULL,0);
+	sc->Add(VIEW_PreviousTool,   'T',ShiftMask,0,   _("PreviousTool"),  _("Previous tool"),NULL,0);
+	sc->Add(VIEW_NextPage,       '>',ShiftMask,0,   _("NextPage"),      _("Next page"),NULL,0);
+	sc->Add(VIEW_PreviousPage,   '<',ShiftMask,0,   _("PreviousPage"),  _("Previous page"),NULL,0);
+	sc->Add(VIEW_Help,           LAX_F1,0,0,        _("Help"),          _("Help"),NULL,0);
+	sc->Add(VIEW_About,          LAX_F2,0,0,        _("About"),         _("About Laidout"),NULL,0);
+	sc->Add(VIEW_SpreadEditor,   LAX_F5,0,0,        _("SpreadEditor"),  _("Popup a spread editor"),NULL,0);
+	sc->Add(VIEW_EditImposition, LAX_F6,0,0,        _("EditImposition"),_("Edit current imposition"),NULL,0);
+	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),        _("Popup a the graphical shell"),NULL,0);
 
 	manager->AddArea("ViewWindow",sc);
 	return sc;
@@ -4561,6 +4554,11 @@ int ViewWindow::PerformAction(int action)
 		char blah[30+strlen(doc->Name(1))+1];
 		sprintf(blah,"Spread Editor for %s",doc->Name(0));
 		app->addwindow(newHeadWindow(doc,"SpreadEditor"));
+		return 0;
+
+	} else if (action==VIEW_EditImposition) {
+		app->addwindow(newImpositionEditor(NULL,"impose",_("Impose..."),viewport->object_id,"newimposition",
+											NULL, NULL, doc?doc->imposition:NULL, NULL, doc));
 		return 0;
 	}
 
