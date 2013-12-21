@@ -73,6 +73,9 @@ To compile and install Laidout, just run these three easy steps:
     make
     make install
 
+Note that if your computer has, say, 8 processors, you can compile much faster
+using `make -j 8` instead of plain make.
+
 `make install` will put
 laidout-(whatever version) in (usually) /usr/local/bin, and make a
 symbolic link /usr/local/bin/laidout point to it.
