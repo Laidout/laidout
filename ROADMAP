@@ -7,12 +7,11 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.094
 -------------
-(done) More robust scripting: loops, variables, functions, classes
 (done) need partial Laidout import
 (done) should probably put laidout stuff in its own namespace, just to be polite
        Custom alignments to parents, not just affine transform to parent
 (done) Shortcuts editor dialog
-       Signature editor needs option to preview pages while folding
+(done) Signature editor needs option to preview pages while folding
 (done) Signature editor: have variable num of pages per signature
 (done) Optimize pdf export to not duplicate images
 (done) Cloning
@@ -22,6 +21,7 @@ VERSION 0.094
 (done) implement scale pages to new imposition when reimposing
        graphical shell, kind of a searching calculator and function caller
 (done) Laidout application icon for window manager paging seems to be broken
+(done) More robust scripting: loops, variables, functions, classes (still a bit buggy, but much has been done)
 
 
 VERSION 0.095
@@ -33,6 +33,7 @@ VERSION 0.095
        PathInterface subpaths for hole making should work: check exports
        impose-only mode should allow access to all imposition types, not just signatures
        Soup up the color box so one can recall previous colors, and/or integration with palette window
+       color styles, so objects can refer to a named color, just change that named to change all
        Fix object bleeding across pages for signatures and nets
        double click on group should change selection area to group contents?
        Moving selected things in group contents does not update group bounds

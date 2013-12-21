@@ -968,6 +968,10 @@ int SignatureInterface::Refresh()
 								flatpoint p1;
 								if (yflip) { p1=pts[2]; tr.origin(p1); tr.xaxis(pts[3]-p1); tr.yaxis(pts[1]-p1); }
 								else { p1=pts[0]; tr.origin(p1); tr.xaxis(pts[1]-p1); tr.yaxis(pts[3]-p1); }
+								double neww=tr.xaxis().norm();
+								double newh=tr.yaxis().norm();
+								tr.Normalize();
+								dp->PushAndNewTransform(tr.m());
 
 								if (rescale_pages) {
 									 //thumb min/maxx, min/maxy are same as page outline. thumb origin is page origin
@@ -977,8 +981,6 @@ int SignatureInterface::Refresh()
 									fp2   =thumb->transformPoint(flatpoint(thumb->minx,thumb->miny));
 									double oldw=offset.x-fp2.x; if (oldw<0) oldw=-oldw;
 									double oldh=offset.y-fp2.y; if (oldh<0) oldh=-oldh;
-									double neww=tr.xaxis().norm();
-									double newh=tr.yaxis().norm();
 									double scaling=1;
 
 									if (neww/newh > oldw/oldh) {
@@ -994,8 +996,6 @@ int SignatureInterface::Refresh()
 									newt.origin(offset);
 									dp->PushAndNewTransform(newt.m());
 								}
-								tr.Normalize();
-								dp->PushAndNewTransform(tr.m());
 
 								 // always setup clipping region to be the page
 								//dp->PushClip(1);
@@ -1006,8 +1006,8 @@ int SignatureInterface::Refresh()
 								 //remove clipping region
 								//dp->PopClip();
 
-								dp->PopAxes();
 								if (rescale_pages) dp->PopAxes();
+								dp->PopAxes();
 
 							}
 						}
