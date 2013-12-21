@@ -568,7 +568,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	if (pagestyle) pagestyle->inc_count();
 	labeltype=MARKER_Unmarked;
 	labelcolor.rgbf(1,1,1);
-	thumbnail=0;
+	thumbnail=NULL;
 	pagenumber=num;
 
 	 // initialize page contents to 1 empty layer.
@@ -589,7 +589,7 @@ Page::~Page()
 {
 	DBG cerr <<"  Page destructor"<<endl;
 	if (label) delete[] label;
-	if (thumbnail) delete thumbnail;
+	if (thumbnail) thumbnail->dec_count();
 	if (pagestyle) pagestyle->dec_count();
 	layers.flush();
 }
@@ -717,14 +717,25 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	}
 }
 
+//! Update modtime to at_time. If at_time==0, then use current time.
+void Page::Touch(clock_t at_time)
+{
+	if (at_time) modtime=at_time;
+	else modtime=times(NULL);
+}
+
 //! Update the thumbnail if necessary and return it.
 /*! Creates thumbnail only if thumbmodtime<modtime.
  * 
- * These are used notably in the spreadeditor.
+ * These are used notably in the SpreadEditor and SignatureInterface.
  *
+ * Creates thumb images that are 200 pixels wide, and as many high as aspect ratio calls for.
+ * 
  */
 ImageData *Page::Thumbnail()
 {
+	return Thumbnail2();
+
 	if (!pagestyle) return NULL;
 	if (thumbmodtime>modtime) return thumbnail;
 
@@ -771,7 +782,6 @@ ImageData *Page::Thumbnail()
 	//DBG dp->textout((int)p.x,(int)p.y,"-+",2,LAX_CENTER);
 	//DBG p=dp->realtoscreen(-1,-1);
 	//DBG dp->textout((int)p.x,(int)p.y,"--",2,LAX_CENTER);
-	//DBG XDrawLine(dp->GetDpy(),pix,dp.GetGC(), 0,0, w,h);
 
 	for (int c=0; c<layers.n(); c++) {
 		//dp->PushAndNewTransform(layers.e[c]->m());
@@ -779,16 +789,74 @@ ImageData *Page::Thumbnail()
 		//dp->PopAxes();
 	}
 	dp->EndDrawing();
-	 
-//	//***test output to thumb...
-//	imlib_context_set_image(tnail);
-//	imlib_blend_image_onto_image(thumbnail->imlibimage,0,0,0,100,100,0,0,100,100);
 		
 	LaxImage *img=dp->GetSurface();
 	if (img) {
 		thumbnail->SetImage(img); //*** must implement using diff size image than is in maxx,y
 		//thumbnail->xaxis(flatpoint(pagestyle->w()/w,0));
 		//thumbnail->yaxis(flatpoint(0,pagestyle->w()/w));
+		img->dec_count();
+	}
+	
+	DBG cerr <<"Thumbnail dump_out:"<<endl;
+	DBG thumbnail->dump_out(stderr,2,0,NULL);
+	DBG cerr <<"  minx "<<thumbnail->minx<<endl;
+	DBG cerr <<"  maxx "<<thumbnail->maxx<<endl;
+	DBG cerr <<"  miny "<<thumbnail->miny<<endl;
+	DBG cerr <<"  maxy "<<thumbnail->maxy<<endl;
+
+	DBG cerr <<"==--- Done Page::updating thumbnail.."<<endl;
+	thumbmodtime=times(NULL);
+	dp->dec_count();
+
+	return thumbnail;
+}
+
+ImageData *Page::Thumbnail2()
+{
+	if (!pagestyle) return NULL;
+	if (thumbmodtime>modtime) return thumbnail;
+
+	DoubleBBox bbox;
+	if (pagestyle->outline) bbox=*(pagestyle->outline);
+	else { bbox.maxx=pagestyle->w(); bbox.maxy=pagestyle->h(); }
+
+	
+	double w=bbox.maxx-bbox.minx,
+		   h=bbox.maxy-bbox.miny;
+	h=h*200./w;
+	w=200.;
+	DBG cerr <<"..----making thumbnail "<<w<<" x "<<h<<"  pgW,H:"<<pagestyle->w()<<','<<pagestyle->h()
+	DBG 	<<"  bbox:"<<bbox.minx<<','<<bbox.maxx<<' '<<bbox.miny<<','<<bbox.maxy<<endl;
+
+	if (!thumbnail) thumbnail=new ImageData(); 
+	thumbnail->xaxis(flatpoint((bbox.maxx-bbox.minx)/w,0));
+	thumbnail->yaxis(flatpoint(0,(bbox.maxx-bbox.minx)/w));
+	thumbnail->origin(flatpoint(bbox.minx,bbox.miny));
+	
+	Displayer *dp=newDisplayer(NULL);
+	dp->CreateSurface((int)w,(int)h);
+	
+	 // setup dp to have proper scaling...
+	dp->NewTransform(1.,0.,0.,-1.,0.,0.);
+	//dp->NewTransform(1.,0.,0.,1.,0.,0.);
+	dp->SetSpace(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+	dp->Center(bbox.minx,bbox.maxx,bbox.miny,bbox.maxy);
+		
+	dp->NewBG(255,255,255); // *** this should be the paper color for paper the page is on...
+	dp->NewFG(0,0,0,255);
+	dp->ClearWindow();
+
+	for (int c=0; c<layers.n(); c++) {
+		//dp->PushAndNewTransform(layers.e[c]->m());
+		DrawData(dp,layers.e(c));
+		//dp->PopAxes();
+	}
+	dp->EndDrawing();
+		
+	LaxImage *img=dp->GetSurface();
+	if (img) {
+		thumbnail->SetImage(img); //*** must implement using diff size image than is in maxx,y
 		img->dec_count();
 	}
 	

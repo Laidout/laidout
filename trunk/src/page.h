@@ -136,6 +136,7 @@ class Page : public ObjectContainer
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual LaxInterfaces::ImageData *Thumbnail();
+	virtual LaxInterfaces::ImageData *Thumbnail2();
 	virtual int InstallPageStyle(PageStyle *pstyle);
 
 	virtual int n() { return layers.n(); }
@@ -143,6 +144,8 @@ class Page : public ObjectContainer
 	virtual Laxkit::anObject *object_e(int i) { return layers.object_e(i); }
 	virtual const double *object_transform(int i) { return NULL; }
 	virtual const char *object_e_name(int i) { return NULL; }
+
+	virtual void Touch(clock_t at_time=0);
 };
 
 } // namespace Laidout

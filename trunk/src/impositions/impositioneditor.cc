@@ -133,6 +133,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 	if (imposition) {
 		if (tool) tool->UseThisImposition(imposition);
 		else tool=imposition->Interface();
+		if (tool && ndoc) tool->UseThisDocument(ndoc);
 	}
 	if (!tool) {
 		tool=new SignatureInterface(NULL,1,viewport->dp, NULL,p,ndoc);
