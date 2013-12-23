@@ -850,7 +850,8 @@ void InitOptions()
 	options.Add("experimental",       'E', 0, "Enable any compiled in experimental features",0, NULL);
 	options.Add("impose-only",        'I', 1, "Run only as a file imposer, not full Laidout",0, NULL);
 	options.Add("list-shortcuts",     'S', 0, "Print out a list of current keyboard bindings, then exit",0,NULL);
-	options.Add("helphtml",           'H', 0, "Output an html fragment of shortcuts.",       0, NULL);
+	options.Add("helphtml",           'H', 0, "Output an html fragment of key shortcuts.",   0, NULL);
+	options.Add("helpman",             0 , 0, "Output a man page fragment of options.",      0, NULL);
 	options.Add("version",            'v', 0, "Print out version info, then exit.",          0, NULL);
 	options.Add("help",               'h', 0, "Show this summary and exit.",                 0, NULL);
 
@@ -863,19 +864,10 @@ void LaidoutApp::parseargs(int argc,char **argv)
 {
 	DBG cerr <<"---------start options"<<endl;
 	//InitOptions(); <- this is done in main()
+	//c=options.Parse(argc,argv, &index); <- now down in main also
 	
-	int c,index;
 	char *exprt=NULL;
 
-	c=options.Parse(argc,argv, &index);
-	if (c==-2) {
-		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
-		exit(0);
-	}
-	if (c==-1) {
-		cerr <<"Unknown option "<<argv[index]<<"!!"<<endl;
-		exit(0);
-	}
 
 	LaxOption *o;
 	for (o=options.start(); o; o=options.next()) {
@@ -1076,7 +1068,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 
 	 // load in any projects or documents after the args
 	Document *doc=NULL;
-	index=topwindows.n;
+	int index=topwindows.n;
 	if (!project) project=new Project;
 	ErrorLog log;
 	for (o=options.remaining(); o; o=options.next()) {
@@ -1587,30 +1579,45 @@ int main(int argc,char **argv)
 
 	InitOptions();
 
-	//this is rather a hacky way to do this, but:
-	//process help and version before anything else happens,
-	//since laxkit spews out debugging stuff straight away
-	if (argc>1) {
-		if (!strcmp(argv[1],"--helpman")) {
-			options.HelpMan(stdout);
-			exit(0);
-		}
+	int c,index;
+	c=options.Parse(argc,argv, &index); //parses into arguments, but does not process
 
-		if (!strcmp(argv[1],"-h") || !strcmp(argv[1],"--help")) {
-			options.Help(stdout); // Show usage summary
-			exit(0);
-		}
-		if (!strcmp(argv[1],"-v") || !strcmp(argv[1],"--version")) {
-			 // Show version info, then exit
-			cout <<LaidoutVersion()<<endl;
-			exit(0);
-		}
+	if (c==-2) {
+		cerr <<"Missing parameter for "<<argv[index]<<"!!"<<endl;
+		exit(0);
 	}
+	if (c==-1) {
+		cerr <<"Unknown option "<<argv[index]<<"!!"<<endl;
+		exit(0);
+	}
+
+
+	 //process help and version before anything else happens,
+	 //since laxkit spews out debugging stuff straight away
+	LaxOption *o=options.find("helpman",0);
+	if (o && o->parsed_present) {
+		options.HelpMan(stdout);
+		exit(0);
+	}
+	o=options.find("help",0);
+	if (o && o->parsed_present) {
+		options.Help(stdout); // Show usage summary
+		exit(0);
+	}
+	o=options.find("version",0);
+	if (o && o->parsed_present) {
+		 // Show version info, then exit
+		cout <<LaidoutVersion()<<endl;
+		exit(0);
+	}
+
 				
 	 //refedine Laxkit's default preview maker
 	generate_preview_image=laidout_preview_maker;
 
 	laidout=new LaidoutApp();
+	o=options.find("experimental",0);
+	if (o && o->parsed_present) laidout->experimental=1;
 	
 	laidout->init(argc,argv);
 

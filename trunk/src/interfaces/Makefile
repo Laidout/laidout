@@ -21,7 +21,8 @@ objs= \
 	pagerangeinterface.o \
 	graphicalshell.o \
 	objectindicator.o \
-	paperinterface.o
+	paperinterface.o \
+	cloneinterface.o 
 
 
 

@@ -40,6 +40,7 @@
 #include "interfaces/paperinterface.h"
 #include "interfaces/graphicalshell.h"
 #include "interfaces/anchorinterface.h"
+#include "interfaces/cloneinterface.h"
 
 
 using namespace Laxkit;
@@ -78,15 +79,24 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	anInterface *i;
 
 
-	// *************** testing:
-	//i=new CaptionInterface(id++,NULL);
-	//existingpool->push(i);
-	//i->dec_count();
-	//
-	i=new AnchorInterface(id++,NULL);
-	existingpool->push(i);
-	i->dec_count();
-	// *************** end testing
+
+	if (laidout->experimental) {
+		// *************** testing:
+
+		//i=new CaptionInterface(id++,NULL);
+		//existingpool->push(i);
+		//i->dec_count();
+		
+		i=new AnchorInterface(id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		i=new CloneInterface(NULL,id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		// *************** end testing
+	}
 
 
 	 //------Group
