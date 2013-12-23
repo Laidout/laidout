@@ -141,6 +141,15 @@ test:
   make some test scripts for command line testing
   test window icon
 
+cloner:
+  1m does not seem to work
+  implement moving around base cells
+  select objects, wrap base cell around it
+  design interface for clone on path
+  implement circular interface
+  ------
+  penrose/heesh/net clone interface
+
 space cloning/duping doesn't work
  
 Color sliders:
