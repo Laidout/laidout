@@ -135,7 +135,8 @@ update translations
 update screenshots
 put rss/g+ links on all menu pages
 test:
-  each window type, include help and about
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
   each export filter
   make some test scripts for command line testing
   test window icon
@@ -231,6 +232,35 @@ calculator
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+Palettes:
+  load palette should have a preview
+  allow editing palette strips, import those to gradient tools
+  custom palettes
+  if height < 2*textheight, then hide name info
+  wheel between loaded palettes?
+  have a none color
+  right click for:
+    load palette
+	select palette
+	save palette
+	dup palette
+	New from a generator (like rainbow)
+Soup up the color box so one can recall previous colors, and/or integration with palette window
+    -->delay until proper color implementation in place
+gradient resources
+  owner: file/user global/system global
+  name
+  tags
+  color strip: stops
+    position
+    color
+
+improve split window
+  control wheel to expand bevel
+  load/save split bevel settings
+  restore mouse cursor change when over gap
+  simplify pane customization, docking
 
 page thumbnail should be rational, ie image should be whole page, not just contents+transform,
 	 and thumb transform makes image dims to page coords
@@ -638,9 +668,6 @@ Selected region out to image(s), regions optionally remembered
 
 import/export styledefs should use the extendsdef mechanism!!!
 
-Soup up the color box so one can recall previous colors, and/or integration with palette window
-    -->delay until proper color implementation in place
-
 plain text edit window specify interpreter to process the text with
 
 filters:
@@ -707,14 +734,6 @@ repeater tool on path: could be adapted to help animation tweening
 DumpImages within Arrangements, which are sort of a template of rect regions (2-d guides)
     would also implement the dump into Limbo
 	dump into any string of objects, this is really the same thing as laying out a stream, maybe merge this?
-
-gradient resources
-  owner: file/user global/system global
-  name
-  tags
-  color strip: stops
-    position
-    color
 
 measure tool.. configure measurements to be:
  displayer units
