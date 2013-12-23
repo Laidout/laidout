@@ -34,8 +34,8 @@ namespace Laidout {
 class TileCloneInfo
 {
   public:
-	int baseid;
-	int cloneid;
+	int baseid; //object that is the base of the clone set
+	int cloneid;//clone instance id (not object_id)
 	int x,y, i; //standard indexing: containing p1 x,y, and index to op
 
 	Laxkit::NumStack<int> dim; //one per dimension
@@ -65,8 +65,8 @@ class TilingDest
 	Value *scripted_transform;
 	Laxkit::Affine transform;
 
-	TilingDest() {}
-	~TilingDest() {}
+	TilingDest();
+	~TilingDest();
 };
 
 
@@ -108,8 +108,9 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 
 	int id;
 	std::string required_interface;
-	LaxInterfaces::SomeData default_unit;
-	int repeatable;
+	Laxkit::DoubleBBox default_unit;
+	Laxkit::Affine repeat_basis;
+	int repeatable; // &1 for x, &2 for y
 
 
 	Laxkit::PtrStack<TilingOp> basecells; //typically basecells must share same coordinate system, 
@@ -120,23 +121,28 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 	 //of each object produced by the 1st dimension.
 	Laxkit::RefPtrStack<Tiling> dimensions;
 
-	Tiling();
+	Tiling(const char *nname=NULL, const char *ncategory=NULL);
 	virtual ~Tiling();
 
-	void DefaultHex(double side_length);
+	virtual void InstallDefaultIcon();
+	virtual void DefaultHex(double side_length);
 
 	virtual int isXRepeatable();
 	virtual int isYRepeatable();
+	virtual flatpoint repeatOrigin();
+	virtual flatpoint repeatOrigin(flatpoint norigin);
 	virtual flatpoint repeatXDir();
+	virtual flatpoint repeatXDir(flatpoint nx);
 	virtual flatpoint repeatYDir();
+	virtual flatpoint repeatYDir(flatpoint ny);
 	virtual Laxkit::Affine finalTransform(); //transform applied after tiling to entire pattern, to squish around
 
 	virtual TilingOp *AddBase(LaxInterfaces::PathsData *outline, int absorb_count, int lock_base);
 
-	virtual Group *Render(Group *parent_space, //!< Install new objects as kids of this object
-					   LaxInterfaces::SomeData *base_object_to_update, //!< If non-null, update relevant clones connected to base object
-					   bool trace_cells); //trace: create objects from the transformed base cells, in
-										//addition to cloning objects in the base cells
+	virtual Group *Render(Group *parent_space,
+					   LaxInterfaces::SomeData *base_object_to_update,
+					   bool trace_cells,
+					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy);
 	
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*);
@@ -148,10 +154,6 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 class CloneInterface : public LaxInterfaces::anInterface
 {
   protected:
-
-	Tiling *tiling;
-
-	Group *source_objs;
 
 //	class ControlInfo //one per object
 //	{
@@ -173,21 +175,29 @@ class CloneInterface : public LaxInterfaces::anInterface
 //
 //***	Laxkit::PtrStack<ActionArea> controls;
 
+	Tiling *tiling;
 
-//***	int showdecs;
+
 	int firsttime;
-	int active;
-	int previewactive;
 	int lastover;
 	int cur_tiling; //for built ins
+
+	int active;
+	int previewactive;
+	Group preview;
+	int trace_cells;
+
+	Group *source_objs;
+	LaxInterfaces::SomeData *baseobj;
+
 	double uiscale;
+	Laxkit::DoubleBBox box;
 
 	unsigned int bg_color;
+	unsigned int hbg_color;
 	unsigned int fg_color;
 	unsigned int activate_color;
 	unsigned int deactivate_color;
-
-	Laxkit::DoubleBBox box;
 
 	virtual int scan(int x,int y);
 
@@ -198,6 +208,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 //***	virtual int Apply(int updateorig);
 //***	virtual int Reset();
 	virtual int ToggleActivated();
+	virtual int Render();
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);

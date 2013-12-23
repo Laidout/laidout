@@ -15,7 +15,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="symmetry.svg">
+   sodipodi:docname="icons-tiling.svg">
   <defs
      id="defs4">
     <marker
@@ -142,9 +142,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.66996582"
-     inkscape:cx="280.97831"
-     inkscape:cy="354.49839"
+     inkscape:zoom="1.3399316"
+     inkscape:cx="661.3728"
+     inkscape:cy="760.91342"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -282,14 +282,14 @@
     <text
        xml:space="preserve"
        style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="289.78442"
-       y="97.828308"
+       x="335.69592"
+       y="93.60656"
        id="text3016"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan3018"
-         x="289.78442"
-         y="97.828308">Frieze</tspan></text>
+         x="335.69592"
+         y="93.60656">Frieze</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:20px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
@@ -16126,7 +16126,7 @@
        sodipodi:linespacing="125%"
        transform="translate(0,62.362183)"><tspan
          sodipodi:role="line"
-         id="tspan6752"></tspan></text>
+         id="tspan6752" /></text>
     <g
        id="Wallpaper_p6"
        inkscape:label="#g9842">
@@ -18213,5 +18213,97 @@
            inkscape:connector-curvature="0" />
       </g>
     </g>
+    <text
+       xml:space="preserve"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="461.3439"
+       y="129.9944"
+       id="text5810"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5812"
+         x="461.3439"
+         y="129.9944">(p1)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5786"
+       y="93.581818"
+       x="448.67865"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="93.581818"
+         x="448.67865"
+         id="tspan5788"
+         sodipodi:role="line">(wallpaper</tspan><tspan
+         y="105.68046"
+         x="448.67865"
+         sodipodi:role="line"
+         id="tspan5814">equivalent)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5790"
+       y="175.4581"
+       x="460.57773"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="175.4581"
+         x="460.57773"
+         id="tspan5792"
+         sodipodi:role="line">(pg)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5794"
+       y="220.92657"
+       x="462.36545"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="220.92657"
+         x="462.36545"
+         id="tspan5796"
+         sodipodi:role="line">(pm in x)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5798"
+       y="266.3855"
+       x="460.83313"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="266.3855"
+         x="460.83313"
+         id="tspan5800"
+         sodipodi:role="line">(p2)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5802"
+       y="311.85391"
+       x="460.83313"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="311.85391"
+         x="460.83313"
+         id="tspan5804"
+         sodipodi:role="line">(pmg in y)</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5806"
+       y="357.31763"
+       x="460.57773"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       xml:space="preserve"><tspan
+         y="357.31763"
+         x="460.57773"
+         id="tspan5808"
+         sodipodi:role="line">(pm in y)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:9.67891026px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="464.20398"
+       y="402.77664"
+       id="text5782"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5784"
+         x="464.20398"
+         y="402.77664">(pmm)</tspan></text>
   </g>
 </svg>
