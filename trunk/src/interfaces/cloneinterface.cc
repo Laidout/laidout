@@ -36,6 +36,7 @@
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/interfaces/somedataref.h>
+#include <lax/interfaces/rectinterface.h>
 
 #include <lax/lists.cc>
 #include <lax/refptrstack.cc>
@@ -171,7 +172,8 @@ Tiling::Tiling(const char *nname, const char *ncategory)
 {
 	required_interface=""; //if a special interface is needed, like for radial or penrose
 	repeatable=3;
-	default_unit.maxx=default_unit.maxy=1;
+
+	boundary=NULL;
 
 	name=newstr(nname);
 	category=newstr(ncategory);
@@ -183,6 +185,7 @@ Tiling::~Tiling()
 	delete[] name;
 	delete[] category;
 	if (icon) icon->dec_count();
+	if (boundary) boundary->dec_count();
 }
 
 /*! Use laidout->icons.GetIcon() to search for "category__name".
@@ -231,9 +234,9 @@ int Tiling::isYRepeatable()
 { return repeatable&2; }
 
 
-//! Transform applied after tiling to entire pattern, to squish around. Default is transform of default_unit.
+//! Transform applied after tiling to entire pattern, to squish around.
 Affine Tiling::finalTransform()
-{ return Affine(repeat_basis); }
+{ return final_transform; }
 
 
 
@@ -263,14 +266,12 @@ flatpoint Tiling::repeatYDir()
 
 
 
-/*! Set default_unit to be sized to hold a hexagon with side_length, long axis vertical.
+/*! Set repeatable to be sized to hold a hexagon with side_length, long axis vertical.
  * Sets xaxis to point right, yaxis points diagonally to upper right 60 degrees from x.
  */
 void Tiling::DefaultHex(double side_length)
 {
 	repeatable=3;//repeat in x and y
-	default_unit.maxy=2*side_length;
-	default_unit.maxx=sqrt(3)*side_length;
 	repeatYDir(flatpoint(side_length*sqrt(3)/2,side_length*1.5));
 	repeatXDir(flatpoint(side_length*sqrt(3),0));
 }
@@ -303,15 +304,33 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
 //	}
 }
 
+//void Tiling::RenderRecursive(TilingDest *dest, int iterations, Affine current_space,
+//					   Group *parent_space,
+//					   LaxInterfaces::ObjectContext *base_object_to_update, //!< If non-null, update relevant clones connected to base object
+//					   bool trace_cells,
+//					   ViewportWindow *viewport
+//					   )
+//{
+//	if (iterations<=0) return;
+//
+//	current_space.PreMultiply(dest->transform);
+//	***
+//
+//
+//	RenderRecursive(dest, iterations-1, current_space,parent_space,base_object_to_update, trace_cells, viewport);
+//}
+
 //! Create tiled clones.
 /*! Install new objects as kids of parent_space. If NULL, create and return a new Group (else return parent_space).
  *
  * If trace is true, create path objects from the transformed base cells, in addition to cloning base objects in the base cells
  */
 Group *Tiling::Render(Group *parent_space,
-					   LaxInterfaces::SomeData *base_object_to_update, //!< If non-null, update relevant clones connected to base object
+					   LaxInterfaces::ObjectContext *base_object_to_update, //!< If non-null, update relevant clones connected to base object
 					   bool trace_cells,
-					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy
+					   Affine *base_offsetm,
+					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
+					   ViewportWindow *viewport
 					   )
 {
 	if (!parent_space) parent_space=new Group;
@@ -323,7 +342,18 @@ Group *Tiling::Render(Group *parent_space,
 	Affine p1;
 
 
-	SomeData *base=base_object_to_update; // *** need source object list, 1:1 with basecells
+	SomeData *base=NULL;
+	Affine basecellm;
+	Affine basem;
+	Affine basemi;
+	double m[6];
+	if (base_object_to_update) base=base_object_to_update->obj; // *** need source object list, 1:1 with basecells
+	if (base) viewport->transformToContext(m,base_object_to_update,0,1);
+	else transform_identity(m);
+	basem.m(m);
+	basemi=basem;
+	basemi.Invert();
+
 	SomeData *trace=NULL;
 	if (trace_cells) {
 		trace=basecells.e[0]->celloutline;
@@ -331,11 +361,18 @@ Group *Tiling::Render(Group *parent_space,
 	}
 
 	SomeDataRef *clone=NULL;
+	Affine clonet, ttt;
 	TilingDest *dest;
 	
 	for (int x=p1_minx; x<=p1_maxx; x++) {
 	  for (int y=p1_miny; y<=p1_maxy; y++) {
 		for (int c=0; c<basecells.n; c++) {
+		  basecellm.setIdentity();
+		  if (base_offsetm) {
+			  ttt=base_offsetm[c].Inversion();
+			  basecellm.Multiply(ttt);
+		  }
+
 		  for (int c2=0; c2<basecells.e[c]->transforms.n; c2++) {
 			dest=basecells.e[c]->transforms.e[c2];
 
@@ -345,14 +382,19 @@ Group *Tiling::Render(Group *parent_space,
 			} else {
 				p1.origin(repeatOrigin() + x*repeatXDir() + y*repeatYDir());
 			}
+			clonet.set(dest->transform);
+			clonet.Multiply(p1); //so clonet = (Dest) * (p1 x y transform)
 
 			// *** need check that clone is within boundary if given
+			//if (boundary) {
+			//}
 
 			if (base) {
 				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
 				clone->Set(base,0);
-				clone->Multiply(dest->transform);
-				clone->Multiply(p1);
+				if (base_offsetm) clone->Multiply(basecellm);
+				clone->Multiply(clonet);
+				clone->Multiply(basemi);
 				parent_space->push(clone);
 				clone->dec_count();
 			}
@@ -360,19 +402,38 @@ Group *Tiling::Render(Group *parent_space,
 			if (trace) {
 				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
 				clone->Set(trace,0);
-				clone->Multiply(dest->transform);
-				clone->Multiply(p1);
+				clone->Multiply(clonet);
 				parent_space->push(clone);
 				clone->dec_count();
 			}
 
-			if (dest->max_iterations>1) {
-				cerr << " *** must implement recursive clone!"<<endl;
-			}
-		  }
-		}
-	  }
-	}
+//			if (dest->max_iterations>1) {
+//			  for (int i=dest->max_iterations-1; i>0; i--) {
+//				clonet.PreMultiply(dest->transform);
+//
+//				if (base) {
+//					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+//					clone->Set(base,0);
+//					clone->Multiply(clonet);
+//					if (base_offsetm) clone->Multiply(basecellm);
+//					clone->Multiply(basemi);
+//					parent_space->push(clone);
+//					clone->dec_count();
+//				}
+//
+//				if (trace) {
+//					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+//					clone->Set(trace,0);
+//					clone->Multiply(clonet);
+//					parent_space->push(clone);
+//					clone->dec_count();
+//				}
+//			  }
+//			}
+		  } //basecells dests
+		} //basecells
+	  } //y
+	} //x
 
 	if (trace) trace->dec_count();
 
@@ -460,18 +521,6 @@ Tiling *CreateRadialSimple(int mirrored, int num_divisions)
 	return CreateRadial(0,0,0,1,num_divisions,mirrored);
 }
 
-Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *centered_on)
-{
-	Tiling *tiling=CreateWallpaper("p1",centered_on);
-	makestr(tiling->category,"Uniform Coloring");
-	makestr(tiling->name,coloring);
-	tiling->InstallDefaultIcon();
-
-	cerr << " *** HEY!!! FINISH IMPLEMENTING ME!!!!!!"<<endl;
-
-	return tiling;
-}
-
 
 /*! Create a tiling based on a wallpaper group.
  * If centered_on!=NULL, then map the base cell to coincide with the bounding box of it.
@@ -487,9 +536,6 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 
 	Tiling *tiling=new Tiling(group,"Wallpaper");
 	tiling->repeatable=3;
-
-	tiling->default_unit.maxx=1;
-	tiling->default_unit.maxy=1;
 
 	PathsData *path;
 	TilingOp *op;
@@ -1019,6 +1065,71 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 	return tiling;
 }
 
+Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *centered_on)
+{
+	Tiling *tiling=new Tiling(coloring,"Wallpaper");
+
+	makestr(tiling->category,"Uniform Coloring");
+	makestr(tiling->name,coloring);
+	tiling->InstallDefaultIcon();
+
+	PathsData *path;
+	TilingOp *op;
+	Affine affine;
+
+	if (!strcasecmp(coloring,"snub square 2")) {
+		tiling->repeatYDir(flatpoint(.5+sqrt(3)/2,.5+sqrt(3)/2));
+		tiling->repeatXDir(flatpoint(1+sqrt(3),0));
+		//tiling->repeatYDir(flatpoint(side_length*sqrt(3)/2,side_length*1.5));
+		//tiling->repeatXDir(flatpoint(side_length*sqrt(3),0));
+
+		path=new PathsData;
+		path->append(0,sqrt(3)/2);
+		path->append(.5,0);
+		path->append(1,sqrt(3)/2);
+		path->append(.5,sqrt(3));
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/2,flatpoint(.5,sqrt(3)/2));
+		affine.Translate(flatpoint(.5+sqrt(3)/2,0));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(.5,0);
+		path->append(.5+sqrt(3)/2,-.5);
+		path->append( 1+sqrt(3)/2,-.5+sqrt(3)/2);
+		path->append(1,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(1,sqrt(3)/2);
+		path->append(1+sqrt(3)/2,sqrt(3)/2+.5);
+		path->append(.5+sqrt(3)/2, sqrt(3)+.5);
+		path->append(.5,sqrt(3));
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+	} else {
+		cerr << " *** HEY!!! FINISH IMPLEMENTING ME!!!!!! ("<<coloring<<")"<<endl;
+		tiling->dec_count();
+		return NULL;
+	}
+
+	tiling->InstallDefaultIcon();
+	return tiling;
+}
+
 //! Frieze groups. Basically some wallpaper groups, but only one dimensional expansion.
 Tiling *CreateFrieze(const char *group, LaxInterfaces::SomeData *centered_on)
 {
@@ -1153,7 +1264,7 @@ Tiling *GetBuiltinTiling(int num, LaxInterfaces::SomeData *center_on)
 	if (!strcmp(tile,"Circular/rm"))  return CreateRadialSimple(1, 5);
 
 	if (strstr(tile,"Frieze"))    return CreateFrieze(tile+7, center_on);
-	//if (strstr(tile,"Uniform"))   return CreateUniformColoring(tile+17, center_on);
+	if (strstr(tile,"Uniform"))   return CreateUniformColoring(tile+17, center_on);
 
 	return NULL;
 }
@@ -1178,6 +1289,8 @@ enum CloneInterfaceElements {
 	CLONEI_Box,
 	CLONEI_Tiling,
 	CLONEI_Tiling_Label,
+	CLONEI_BaseCell,
+	CLONEI_Boundary,
 
 	CLONEI_MAX
 };
@@ -1197,6 +1310,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 {
 	cloner_style=0;
 	lastover=CLONEI_None;
+	lastoveri=-1;
 	active=0;
 	previewactive=1;
 
@@ -1211,23 +1325,33 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	activate_color=rgbcolorf(0.,.783,0.);
 	deactivate_color=rgbcolorf(1.,.392,.392);
 
+	preview_cell.Color(65535,0,0,65535);
+	preview_cell.width=2;
+	preview_cell.widthtype=0;
+	preview_cell2.Color(65535,0,0,65535);
+	preview_cell2.width=1;
+	preview_cell2.widthtype=0;
+
+	boundary=new PathsData;
+	boundary->appendRect(0,0,4,4);
 	tiling=NULL;
 	trace_cells=1; // *** maybe 2 should be render outline AND install as new objects in doc?
-	baseobj=NULL;
 	source_objs=NULL; //a pool of objects to select from, rather than clone
 					 //any needed beyond those is source_objs are then cloned
 					 //from same list in order
 
+	toc=NULL;
 	cur_tiling=-1;
 	PerformAction(CLONEIA_Next_Tiling);
 }
 
 CloneInterface::~CloneInterface()
 {
-	if (baseobj) baseobj->dec_count();
 	if (source_objs) source_objs->dec_count();
 	if (sc) sc->dec_count();
 	if (tiling) tiling->dec_count();
+	if (toc) delete toc;
+	if (boundary) boundary->dec_count();
 }
 
 const char *CloneInterface::Name()
@@ -1263,17 +1387,47 @@ Laxkit::ShortcutHandler *CloneInterface::GetShortcuts()
 	sc->Add(CLONEIA_Previous_Tiling, LAX_Right,0,0,     "PreviousTiling", _("Select previous tiling"),NULL,0);
 	sc->Add(CLONEIA_Toggle_Lines,    'c',0,0,           "ToggleLines",    _("Toggle previewing cell lines"),NULL,0);
 
-	//sc->Add(PAPERI_Decorations, 'd',0,0,         "Decs",    _("Toggle decorations"),NULL,0);
-	//sc->Add(PAPERI_Delete,      LAX_Bksp,0,0,    "Delete",  _("Delete selected"),NULL,0);
 	//sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
-	//sc->Add(PAPERI_Rectify,     'o',0,0,         "Rectify", _("Make the axes horizontal and vertical"),NULL,0);
-	//sc->Add(PAPERI_Rotate,      'r',0,0,         "Rotate",  _("Rotate selected by 90 degrees"),NULL,0);
-	//sc->Add(PAPERI_RotateCC,    'R',ShiftMask,0, "RotateCC",_("Rotate selected by 90 degrees in the other direction"),NULL,0);
 
 
 	manager->AddArea("CloneInterface",sc);
 	return sc;
 }
+
+/*! Replace old tiling with newtiling. Update base_cells control objects
+ * Absorbs count of newtiling.
+ */
+int CloneInterface::SetTiling(Tiling *newtiling)
+{
+	if (!newtiling) return 1;
+
+	if (tiling) tiling->dec_count();
+	tiling=newtiling;
+
+	base_cells.setIdentity();
+	base_cells.flush();
+	base_cells.flags|=SOMEDATA_KEEP_ASPECT;
+	LaxInterfaces::SomeData *o;
+	for (int c=0; c<tiling->basecells.n; c++) {
+		o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
+		o->FindBBox();
+		base_cells.push(o);
+		o->dec_count();
+	}
+	base_cells.FindBBox();
+
+	if (toc) {
+		double m[6];
+		viewport->transformToContext(m,toc,0,1);
+		base_cells.origin(flatpoint(m[4],m[5]));
+	}
+
+	if (active) Render();
+
+	needtodraw=1;
+	return 0;
+}
+
 
 int CloneInterface::PerformAction(int action)
 {
@@ -1286,10 +1440,7 @@ int CloneInterface::PerformAction(int action)
 			newtiling=GetBuiltinTiling(cur_tiling, NULL);
 		} while (!newtiling);
 
-		if (tiling) tiling->dec_count();
-		tiling=newtiling;
-
-		if (active) Render();
+		SetTiling(newtiling);
 
 		needtodraw=1;
 		return 0;
@@ -1303,10 +1454,7 @@ int CloneInterface::PerformAction(int action)
 			newtiling=GetBuiltinTiling(cur_tiling, NULL);
 		} while (!newtiling);
 
-		if (tiling) tiling->dec_count();
-		tiling=newtiling;
-
-		if (active) Render();
+		SetTiling(newtiling);
 
 		needtodraw=1;
 		return 0;
@@ -1324,16 +1472,7 @@ int CloneInterface::PerformAction(int action)
 
 int CloneInterface::InterfaceOn()
 {
-	if (dynamic_cast<LaidoutViewport*>(viewport)) {
-		LaidoutViewport *vp=dynamic_cast<LaidoutViewport*>(viewport);
-
-		if (vp->curobj.obj) {
-			if (baseobj) baseobj->dec_count();
-			baseobj=vp->curobj.obj;
-			baseobj->inc_count();
-			Render();
-		}
-	}
+	base_cells.setIdentity();
 
 	needtodraw=1;
 	return 0;
@@ -1346,6 +1485,34 @@ int CloneInterface::InterfaceOff()
 }
 
 
+void CloneInterface::DrawSelected()
+{
+	if (!toc) return;
+
+	double m[6];
+	viewport->transformToContext(m,toc,0,1);
+	dp->PushAndNewTransform(m);
+
+	dp->NewFG(.5,.5,.5);
+
+	 //draw corners just outside bounding box
+	SomeData *data=toc->obj;
+	dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
+	double o=5/dp->Getmag(), //5 pixels outside, 15 pixels long
+		   ow=(data->maxx-data->minx)/15,
+		   oh=(data->maxy-data->miny)/15;
+	dp->drawline(data->minx-o,data->miny-o, data->minx+ow,data->miny-o);
+	dp->drawline(data->minx-o,data->miny-o, data->minx-o,data->miny+oh);
+	dp->drawline(data->minx-o,data->maxy+o, data->minx-o,data->maxy-oh);
+	dp->drawline(data->minx-o,data->maxy+o, data->minx+ow,data->maxy+o);
+	dp->drawline(data->maxx+o,data->maxy+o, data->maxx-ow,data->maxy+o);
+	dp->drawline(data->maxx+o,data->maxy+o, data->maxx+o,data->maxy-oh);
+	dp->drawline(data->maxx+o,data->miny-o, data->maxx-ow,data->miny-o);
+	dp->drawline(data->maxx+o,data->miny-o, data->maxx+o,data->miny+oh);
+
+	dp->PopAxes();
+}
+
 int CloneInterface::Refresh()
 {
 	if (!needtodraw) return 0;
@@ -1353,22 +1520,54 @@ int CloneInterface::Refresh()
 
 	double circle_radius=INTERFACE_CIRCLE*uiscale;
 
-	if (firsttime) {
+	if (firsttime==1) {
 		firsttime=0;
 		box.minx=100;
-		box.maxx=100+4*circle_radius;
+		box.maxx=100+4*circle_radius*uiscale;
 		box.miny=100;
-		box.maxy=100+5*circle_radius + 2*dp->textheight();
+		box.maxy=100+5*circle_radius*uiscale + 2*dp->textheight();
+	} else if (firsttime==2) {
+		firsttime=0;
+		box.maxx=box.minx+4*circle_radius*uiscale;
+		box.maxy=box.miny+5*circle_radius*uiscale + 2*dp->textheight();
 	}
 
 
 
 	 //draw clones
 	if (preview.n() && active) {
+		if (toc) {
+			double m[6];
+			viewport->transformToContext(m,toc,0,1);
+			dp->PushAndNewTransform(m);
+		}
 		for (int c=0; c<preview.n(); c++) {
 			Laidout::DrawData(dp, preview.e(c), NULL,NULL);
 		}
+		if (toc) dp->PopAxes();
 	}
+
+	if (toc) DrawSelected();
+
+	 //draw default unit bounds and tiling region bounds
+	if (boundary) {
+		Laidout::DrawData(dp, boundary, NULL,NULL);
+	}
+
+	 //draw base cells
+	dp->PushAndNewTransform(base_cells.m());
+	//double px=norm(dp->screentoreal(0,0)-dp->screentoreal(1,0));
+	//preview_cell.width=3*px;
+	//dp->LineAttributes(2,0,LAXCAP_Round,LAXJOIN_Round);
+	for (int c=0; c<base_cells.n(); c++) {
+		Laidout::DrawData(dp, base_cells.e(c), &preview_cell,NULL);
+	}
+	//dp->LineAttributes(1,0,LAXCAP_Round,LAXJOIN_Round);
+	dp->PopAxes();
+
+//	 //draw selected base objects
+//	*** 
+
 
 
 	dp->DrawScreen();
@@ -1424,16 +1623,6 @@ int CloneInterface::Refresh()
 	}
 
 
-	//--------draw clones-----------
-
-//	 //draw default unit bounds and tiling region bounds
-//	***
-//
-//	 //draw base cells
-//	***
-//
-//	 //draw selected base objects
-//	*** 
 
 
 	dp->DrawReal();
@@ -1441,7 +1630,7 @@ int CloneInterface::Refresh()
 	return 0;
 }
 
-int CloneInterface::scan(int x,int y)
+int CloneInterface::scan(int x,int y, int *i)
 {
 	flatpoint cc((box.minx+box.maxx)/2,box.maxy);
 	double circle_radius=INTERFACE_CIRCLE*uiscale;
@@ -1455,6 +1644,18 @@ int CloneInterface::scan(int x,int y)
 		return CLONEI_Box;
 	}
 
+	flatpoint fp=dp->screentoreal(x,y);
+	flatpoint p=transform_point_inverse(base_cells.m(),fp);
+	for (int c=0; c<base_cells.n(); c++) {
+		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<"bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
+		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
+		if (!base_cells.e(c)->pointin(p,1)) continue;
+		if (i) *i=c;
+		return CLONEI_BaseCell;
+	}
+
+	if (boundary && boundary->pointin(fp,1)) return CLONEI_Boundary;
+
 	return CLONEI_None;
 }
 
@@ -1462,9 +1663,72 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 {
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1;
 
-	int over=scan(x,y);
-	if (over==CLONEI_None) return 1;
 
+	int i=-1;
+	int over=scan(x,y,&i);
+
+	if (over==CLONEI_BaseCell) {
+		if (!child) {
+			RectInterface *rect=new RectInterface(0,dp);
+			rect->style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
+			rect->owner=this;
+			rect->UseThis(&base_cells,0);
+			child=rect;
+			AddChild(rect,0,1);
+		} else {
+			child->UseThis(&base_cells,0);
+			return 1;
+		}
+		PostMessage(_("Edit base cell placements"));
+		return 0;
+	}
+
+	if (over==CLONEI_Boundary) {
+		if (boundary) {
+			if (!child) {
+				RectInterface *rect=new RectInterface(0,dp);
+				rect->style|= RECT_CANTCREATE | RECT_OBJECT_SHUNT;
+				rect->owner=this;
+				rect->UseThis(boundary,0);
+				child=rect;
+				AddChild(rect,0,1);
+			} else {
+				child->UseThis(boundary,0);
+				return 1;
+			}
+			PostMessage(_("Edit boundary"));
+			return 0;
+		}
+		over=CLONEI_None;
+	}
+
+	if (over==CLONEI_None) {
+		 //add or remove an oject for a cell
+		 // **** THIS NEEDS PROPER IMPLEMENTATION.. right now just uses a single object
+		SomeData *obj=NULL;
+		ObjectContext *oc=NULL;
+		int c=viewport->FindObject(x,y,NULL,NULL,1,&oc);
+		if (c>0) obj=oc->obj;
+		if (obj) {
+			if (child) RemoveChild();
+
+			if (toc && oc->isequal(toc)) return 0;
+
+			if (toc) delete toc;
+			toc=oc->duplicate();
+
+			if (active) Render();
+
+			needtodraw=1;
+			return 0;
+		}
+
+		return 1;
+	}
+
+	if (child) RemoveChild();
+
+	 // else click down on something for overlay
 	buttondown.down(d->id,LEFTBUTTON,x,y, over,state);
 
 	return 0;
@@ -1475,12 +1739,16 @@ int CloneInterface::Render()
 	if (!tiling) return 1;
 
 	preview.flush();
-	//Group *ret=tiling->Render(&preview, baseobj, true, 0,3, 0,3);
-	Group *ret=tiling->Render(&preview, baseobj, trace_cells, 0,3, 0,3);
+	Affine bcellst[tiling->basecells.n];
+	for (int c=0; c<tiling->basecells.n; c++) {
+		bcellst[c]=base_cells;
+	}
+	Group *ret=tiling->Render(&preview, toc, trace_cells, bcellst, 0,3, 0,3, viewport);
 	if (!ret) {
 		PostMessage(_("Could not clone!"));
 	}
 
+	preview.set(tiling->finalTransform());
 	needtodraw=1;
 	return 0;
 }
@@ -1506,7 +1774,8 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	//int dragged=
 	buttondown.up(d->id,LEFTBUTTON, &firstover);
 
-	int over=scan(x,y);
+	int i=-1;
+	int over=scan(x,y,&i);
 
 	//DBG flatpoint fp=dp->screentoreal(x,y);
 
@@ -1523,7 +1792,8 @@ int CloneInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
-	int over=scan(x,y);
+	int i=-1;
+	int over=scan(x,y,&i);
 	DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
@@ -1537,6 +1807,28 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	int lx,ly, oldover=CLONEI_None;
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 	buttondown.getextrainfo(mouse->id,LEFTBUTTON, &oldover);
+
+	if (oldover==CLONEI_BaseCell) {
+		if ((state&LAX_STATE_MASK)==ControlMask) {
+			 //scale
+			int ix,iy;
+			buttondown.getinitial(mouse->id,LEFTBUTTON, &ix,&iy);
+
+			flatpoint op=dp->screentoreal(ix,iy);
+			base_cells.Scale(op, (x-lx)>0?1.05:1/1.05);
+
+		} else if ((state&LAX_STATE_MASK)==(ShiftMask|ControlMask)) {
+			 //rotate
+			int ix,iy;
+			buttondown.getinitial(mouse->id,LEFTBUTTON, &ix,&iy);
+
+			flatpoint op=dp->screentoreal(ix,iy);
+			double angle=(x-lx)*M_PI/180;
+			base_cells.Rotate(angle,op);
+		} else base_cells.origin(base_cells.origin()+dp->screentoreal(x,y)-dp->screentoreal(lx,ly));
+		needtodraw=1;
+		return 0;
+	}
 
 	 //hijack others to box on dragging
 	buttondown.moveinfo(mouse->id,LEFTBUTTON, CLONEI_Box);
@@ -1558,25 +1850,39 @@ int CloneInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 int CloneInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int over=scan(x,y);
+	int over=scan(x,y,NULL);
 	DBG cerr <<"wheel up clone interface: "<<over<<endl;
 
 	if (over==CLONEI_Tiling) {
 		PerformAction(CLONEIA_Previous_Tiling);
 		return 0;
+
+	} else if (over==CLONEI_Box && (state&ControlMask)) {
+		uiscale*=1.1;
+		firsttime=2;
+		needtodraw=1;
+		return 0;
 	}
+
 	return 1;
 }
 
 int CloneInterface::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	int over=scan(x,y);
+	int over=scan(x,y,NULL);
 	DBG cerr <<"wheel down clone interface: "<<over<<endl;
 
 	if (over==CLONEI_Tiling) {
 		PerformAction(CLONEIA_Next_Tiling);
 		return 0;
+
+	} else if (over==CLONEI_Box && (state&ControlMask)) {
+		uiscale*=.9;
+		firsttime=2;
+		needtodraw=1;
+		return 0;
 	}
+
 	return 1;
 }
 
@@ -1588,6 +1894,34 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 	int action=sc->FindActionNumber(ch,state&LAX_STATE_MASK,0);
 	if (action>=0) {
 		return PerformAction(action);
+	}
+
+//this is supposed to update down point for drag/scale/rotate
+//	if (ch==LAX_Shift || ch==LAX_Control || ch==LAX_Alt || ch==LAX_Meta) {
+//		if (buttondown.any(0,LEFTBUTTON)) {
+//			int id=buttondown.whichdown(-1,LEFTBUTTON);
+//			int x,y, lx,ly;
+//			buttondown.getinfo(id,LEFTBUTTON, NULL,NULL, &lx,&ly, &x,&y);
+//			buttondown.up(id,LEFTBUTTON);
+//			buttondown.down(id,LEFTBUTTON, lx,ly);
+//			buttondown.move(id, x,y);
+//
+//		}
+//	}
+
+	if (ch==LAX_Esc) {
+		if (child) {
+			RemoveChild();
+			needtodraw=1;
+			return 0;
+		}
+
+		if (toc) {
+			delete toc; toc=NULL;
+			if (active) Render();
+			needtodraw=1;
+			return 0;
+		}
 	}
 
 	return 1;
