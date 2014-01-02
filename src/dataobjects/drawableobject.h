@@ -142,6 +142,7 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	//Laxkit::RefPtrStack<anObject *> refs; //what other resources this objects depends on?
 
+	ValueHash properties;
 	LaxFiles::Attribute metadata;
 	LaxFiles::Attribute iohints;
 
