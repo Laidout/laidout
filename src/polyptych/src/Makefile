@@ -16,7 +16,7 @@ include ../../../Makefile-toinclude
 
 LD=g++
 CPPFLAGS= -Wall -g -I. -I.. -I$(LAXDIR)/.. -I$(LAXIDIR) -I/usr/include/freetype2 -I/usr/include/GraphicsMagick/
-LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lm -lpng -lcairo -lcrypto -lGraphicsMagick++ `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR) -lXft -lXi
+LDFLAGS= -L/usr/X11R6/lib -lX11 -lftgl -lfontconfig -lm -lpng -lcairo -lcrypto -lGraphicsMagick++ `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR) -lXft -lXi
 
 
 pobjs= glbase.o gloverlay.o poly.o nets.o polyrender.o
