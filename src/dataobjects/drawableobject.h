@@ -56,6 +56,8 @@ enum ParentLinkTypes
 	PARENTLINK_Matrix,
 	PARENTLINK_Align,      //!<Align to arbitrary point
 	PARENTLINK_Anchor,     //!<Align to specific anchor in parent
+	PARENTLINK_ResizeAnchor,
+	PARENTLINK_StretchAnchor,
 	PARENTLINK_Code,       //!<Obtain matrix through code
 	PARENTLINK_ResizeLeft,
 	PARENTLINK_ResizeRight,
