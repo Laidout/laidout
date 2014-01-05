@@ -12,7 +12,14 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+path tool:
+  click to add point not working
+  wheel up/down to change point type, message blinks off right away
+  DONE sometimes 'p' doesn't work
+
 text window controls have difficulties
+
+shearing produced null axes
 
 tooltips and event timers seem to be frelled
 
@@ -142,13 +149,21 @@ test:
   test window icon
 
 cloner:
-  1m does not seem to work
-  implement moving around base cells
+  implement add to document
+  need mass select page for all tiling types
+  need progressive search when mouse over box
+  need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
+  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
+  implement setting objects for each base cell
   select objects, wrap base cell around it
+  implement boundary check
+  need finishing tool
   design interface for clone on path
   implement circular interface
-  ------
   penrose/heesh/net clone interface
+
+  DONE cell outlines bad for p4m, p4g, p6m --> was problem in new pathsdata->append() 
+  DONE implement moving around base cells
 
 space cloning/duping doesn't work
  
@@ -166,7 +181,9 @@ customizable object child relationships to parent, rather than simple transform
 
 
 gshell:
+  single character not triggering an update
   *** not getting options for all tool and object!!
+  need to be able to access affine stuff of objects! not returning info for gradients
   completion should be worked into the edit.. "object.|" then tab is replacing all text with field name
   when in function, search among parameter names also
   need to search for context names before searching for calculator names
@@ -174,17 +191,14 @@ gshell:
   text delete to nothing should only show the top areas in search results
   reposition cursor to error
   viewport->ZoomToPage not doing anything
-  need to be able to access affine stuff of objects! not returning info for gradients
+  clickable search results
 
   0.095:
-    control-r start history search?
     object.translate((1,0)) -> MapParameters should map the flatvector to p, not to x
-    clickable search results
-    be able to move the box to top or to bottom
-    tab/shift tab for completion, move showing?
     shift up/down for showing completion
     for parameters, facility for special edit dodads
 
+  DONE be able to move the box to top or to bottom
   DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
   DONE *** not putting in the objects to dict
   DONE red box for errors
@@ -241,6 +255,8 @@ calculator
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+
+need a way to tell rect interface to enter move mode with lbdown, as when initialize a child interface
 
 Palettes:
   load palette should have a preview
@@ -387,6 +403,10 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
 PathEditor: 
   shift click down then up on a point selects then deselects
   draggable width changer
+    drag bar to position on line
+	drag arrow to adjust width, move arrows symmetrically
+	shift drag adjust offset, move both arrows
+	control drag, adjust only one arrow
   copy and paste
   cut segment
   maybe dotted connection if only both end points selected, click connection to close?
@@ -398,6 +418,7 @@ PathEditor:
   transform handles for nodes, including flip
   subdivide, repeat key press restores old segment, then adds 1 more point to num of points from last press
   toggle between add points / select points?
+    if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure
 
 Scribus:
