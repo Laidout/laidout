@@ -33,37 +33,66 @@ namespace Laidout {
 class GraphicalShell : public LaxInterfaces::anInterface
 {
  protected:
+
+	char *searchterm;
+	char *searchexpression;
+
+	int showcompletion;
 	int showdecs;
 	Document *doc;
 	LaidoutCalculator calculator;
 
-	int currenthistory;
-	Laxkit::PtrStack<char> history;
-
-	int tablevel;
-	int numresults;
-	ObjectDef *searcharea;
-	char *searcharea_str;
-	Laxkit::MenuInfo completion;
-
-	char *searchterm;
-	ValueHash context; //inside of which objects, all available names
-	ObjectDef contextdef;
-	int active;
-
 	Laxkit::ScreenColor boxcolor;
-	int showerror;
 	int pad;
 	Laxkit::DoubleBBox box;
 	Laxkit::LineEdit *le;
 	int placement_gravity;
-	int showcompletion;
-	Laxkit::MenuInfo tree;
+
+
+	int num_lines_above; //number of lines of matches to show, -1 means fill to top
+	int num_lines_input; //default -1, to use just 1, but autoexpand when necessary
+	int current_column; //-1 means inside edit box. >0 means default to that column on key up
+	int current_item; //-1 means inside edit box
+
+
+	class ColumnInfo
+	{
+	  public:
+		double x;
+		double width;
+		int num_matches;
+		int offset;
+		Laxkit::MenuInfo items;
+		ColumnInfo() { x=0; width=-1; num_matches=-1; offset=0; }
+	};
+	ColumnInfo columns[3];
+
+	void ClearSearch();
+	void UpdateMatches();
+
+
+	 //column 1, context matches
+	Laxkit::MenuInfo tree; //tree of all context
+	ValueHash context; //inside of which objects, all available names
+	ObjectDef *searcharea;
+	char *searcharea_str;
+
+	 //column 2, expression history
+
+	 //column 3, past values
+	ValueHash past_values; //column 3
+
+
+	int showerror;
+	char *error_message;
+	virtual void ClearError();
+
 
 	virtual void AddTreeToCompletion(Laxkit::MenuInfo *menu);
 	virtual void UpdateSearchTerm(const char *str,int pos, int firsttime=0);
 	virtual ObjectDef *GetContextDef(const char *expr);
-	virtual int scan(int x,int y);
+	virtual const char *GetItemText(int column,int item);
+	virtual int scan(int x,int y, int *column, int *item);
 	virtual int Setup();
 	void base_init();
 
@@ -105,8 +134,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 
 	virtual int ChangeContext(const char *name, Value *value);
 	virtual int InitAreas();
-	virtual int UpdateCompletion();
-	virtual void UpdateFromTab(Laxkit::MenuInfo *menu, int &i);
+	virtual void UpdateFromItem();
 	virtual void TextFromItem(Laxkit::MenuItem *mii,char *&str);
 	virtual void EscapeBrowsing();
 	
