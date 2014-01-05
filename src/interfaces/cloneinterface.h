@@ -53,10 +53,12 @@ class TilingDest
 	int parent_op_id; //of containing TilingOp
 
 	bool is_progressive;
+	bool traceable;
 
 	 //conditions for traversal
 	unsigned int conditions; //1 use iterations, 2 use max size, 3 use min size, 4 use scripted
 	int max_iterations; // <0 for endless, use other constraints to control
+	int recurse_objects;
 	double max_size, min_size;
 	double traversal_chance;
 	char *scripted_condition;
@@ -78,6 +80,8 @@ class TilingOp
 	int id;
 
 	int basecell_is_editable;
+	bool shearable;
+	bool flexible_aspect;
 	LaxInterfaces::PathsData *celloutline; //a path around original cell. This could be considered a hint for selecting what is to be repeated.
 
 	Laxkit::PtrStack<TilingDest> transforms;
@@ -139,11 +143,11 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 	virtual flatpoint repeatYDir(flatpoint ny);
 	virtual Laxkit::Affine finalTransform(); //transform applied after tiling to entire pattern, to squish around
 
-	virtual TilingOp *AddBase(LaxInterfaces::PathsData *outline, int absorb_count, int lock_base);
+	virtual TilingOp *AddBase(LaxInterfaces::PathsData *outline, int absorb_count, int lock_base,
+								bool shearable=false, bool flexible_base=false);
 
 	virtual Group *Render(Group *parent_space,
 					   LaxInterfaces::ObjectContext *base_object_to_update,
-					   bool trace_cells,
 					   Laxkit::Affine *base_offsetm,
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::ViewportWindow *viewport);
@@ -193,12 +197,14 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int lastoveri;
 	int cur_tiling; //for built ins
 
-	int active;
-	int previewactive;
 	int trace_cells;
+	bool active;
+	bool previewactive;
+	LaxInterfaces::ObjectContext *previewoc;
+	Group *preview;
 
 	LaxInterfaces::PathsData *boundary;
-	Group preview;
+
 	Group base_cells;
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
@@ -224,6 +230,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 //***	virtual int Apply(int updateorig);
 //***	virtual int Reset();
 	virtual int ToggleActivated();
+	virtual int TogglePreview();
 	virtual int Render();
 	virtual void DrawSelected();
 

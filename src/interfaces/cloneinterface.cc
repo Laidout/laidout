@@ -74,10 +74,12 @@ TilingDest::TilingDest()
 	parent_op_id=0; //of containing TilingOp
 
 	is_progressive=false;
+	traceable=true;
 
 	 //conditions for traversal
 	conditions=0; //1 use iterations, 2 use max size, 3 use min size, 4 use scripted
 	max_iterations=1; // <0 for endless, use other constraints to control
+	recurse_objects=0; // 0 for dest only, 1 for all dests of base cell, 2 for whole set repeats
 	max_size=min_size=0;
 	traversal_chance=1;
 	scripted_condition=NULL;
@@ -100,9 +102,13 @@ TilingDest::~TilingDest()
  */
 
 
+/*! Default is not shearable, and aspect locked.
+ */
 TilingOp::TilingOp()
 {
 	celloutline=NULL;
+	shearable=false;
+	flexible_aspect=false;
 }
 
 TilingOp::~TilingOp()
@@ -209,7 +215,7 @@ void Tiling::InstallDefaultIcon()
  * The op is pushed onto *this->basecells.
  * Calling code can then add whatever transforms are relevant.
  */
-TilingOp *Tiling::AddBase(PathsData *outline, int absorb_count, int lock_base)
+TilingOp *Tiling::AddBase(PathsData *outline, int absorb_count, int lock_base, bool shearable, bool flexible_base)
 {
 	TilingOp *op=new TilingOp();
 	op->basecell_is_editable=lock_base;
@@ -304,14 +310,15 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
 //	}
 }
 
-//void Tiling::RenderRecursive(TilingDest *dest, int iterations, Affine current_space,
+//void Tiling::RenderRecursive(TilingDest *dest, int iteration, int orig_basecell,
+// 					   Affine current_space,
 //					   Group *parent_space,
 //					   LaxInterfaces::ObjectContext *base_object_to_update, //!< If non-null, update relevant clones connected to base object
 //					   bool trace_cells,
 //					   ViewportWindow *viewport
 //					   )
 //{
-//	if (iterations<=0) return;
+//	if (iteration>=dest->max_iterations) return;
 //
 //	current_space.PreMultiply(dest->transform);
 //	***
@@ -323,16 +330,16 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
 //! Create tiled clones.
 /*! Install new objects as kids of parent_space. If NULL, create and return a new Group (else return parent_space).
  *
- * If trace is true, create path objects from the transformed base cells, in addition to cloning base objects in the base cells
+ * If base_object_to_update is NULL, then create path outline objects from the transformed base cells instead.
  */
 Group *Tiling::Render(Group *parent_space,
 					   LaxInterfaces::ObjectContext *base_object_to_update, //!< If non-null, update relevant clones connected to base object
-					   bool trace_cells,
 					   Affine *base_offsetm,
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   ViewportWindow *viewport
 					   )
 {
+	bool trace_cells=(base_object_to_update!=NULL && base_object_to_update->obj!=NULL);
 	if (!parent_space) parent_space=new Group;
 
 	if (p1_maxx<p1_minx) p1_maxx=p1_minx;
@@ -354,10 +361,14 @@ Group *Tiling::Render(Group *parent_space,
 	basemi=basem;
 	basemi.Invert();
 
-	SomeData *trace=NULL;
+	SomeData *trace[basecells.n];
 	if (trace_cells) {
-		trace=basecells.e[0]->celloutline;
-		if (trace) trace=trace->duplicate(NULL);
+		for (int c=0; c<basecells.n; c++) {
+			trace[c]=NULL;
+			if (basecells.e[c]->celloutline) {
+				trace[c]=basecells.e[c]->celloutline->duplicate(NULL);
+			}
+		}
 	}
 
 	SomeDataRef *clone=NULL;
@@ -399,43 +410,47 @@ Group *Tiling::Render(Group *parent_space,
 				clone->dec_count();
 			}
 
-			if (trace) {
+			if (trace_cells && dest->traceable) {
 				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
-				clone->Set(trace,0);
+				clone->Set(trace[c],0);
 				clone->Multiply(clonet);
 				parent_space->push(clone);
 				clone->dec_count();
 			}
 
-//			if (dest->max_iterations>1) {
-//			  for (int i=dest->max_iterations-1; i>0; i--) {
-//				clonet.PreMultiply(dest->transform);
-//
-//				if (base) {
-//					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
-//					clone->Set(base,0);
-//					clone->Multiply(clonet);
-//					if (base_offsetm) clone->Multiply(basecellm);
-//					clone->Multiply(basemi);
-//					parent_space->push(clone);
-//					clone->dec_count();
-//				}
-//
-//				if (trace) {
-//					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
-//					clone->Set(trace,0);
-//					clone->Multiply(clonet);
-//					parent_space->push(clone);
-//					clone->dec_count();
-//				}
-//			  }
-//			}
+			if (dest->max_iterations>1) {
+			  for (int i=dest->max_iterations-1; i>0; i--) {
+				clonet.PreMultiply(dest->transform);
+
+				if (base) {
+					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+					clone->Set(base,0);
+					if (base_offsetm) clone->Multiply(basecellm);
+					clone->Multiply(clonet);
+					clone->Multiply(basemi);
+					parent_space->push(clone);
+					clone->dec_count();
+				}
+
+				if (trace_cells && dest->traceable) {
+					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
+					clone->Set(trace[c],0);
+					clone->Multiply(clonet);
+					parent_space->push(clone);
+					clone->dec_count();
+				}
+			  }
+			}
 		  } //basecells dests
 		} //basecells
 	  } //y
 	} //x
 
-	if (trace) trace->dec_count();
+	if (trace_cells) {
+		for (int c=0; c<basecells.n; c++) {
+			trace[c]->dec_count();
+		}
+	}
 
 	return parent_space;
 }
@@ -466,6 +481,8 @@ Tiling *CreateRadial(double start_angle, //!< radians
 {
 	if (end_angle==start_angle) end_angle=start_angle+2*M_PI;
 	double rotation_angle=(end_angle-start_angle)/num_divisions;
+	double cellangle=rotation_angle;
+	if (mirrored) cellangle/=2;
 
 	Tiling *tiling=new Tiling(NULL,"Circular");
 	tiling->repeatable=0;
@@ -476,14 +493,14 @@ Tiling *CreateRadial(double start_angle, //!< radians
 	 //define cell outline
 	PathsData *path=new PathsData;
 	double a =start_angle;
-	double a2=a+rotation_angle / (mirrored?2:1);
+	double a2=a+cellangle;
 	path->append(start_radius*flatpoint(cos(a),sin(a)));
 	path->append(  end_radius*flatpoint(cos(a),sin(a)));
 
-	path->appendBezArc(flatpoint(0,0), rotation_angle, 1);
+	path->appendBezArc(flatpoint(0,0), cellangle, 1);
 	path->append(start_radius*flatpoint(cos(a2),sin(a2)));
 
-	path->appendBezArc(flatpoint(0,0), -rotation_angle, 1);
+	path->appendBezArc(flatpoint(0,0), -cellangle, 1);
 	path->close();
 
 
@@ -501,7 +518,7 @@ Tiling *CreateRadial(double start_angle, //!< radians
 		dest->max_iterations=num_divisions;
 		dest->conditions=TILING_Iterations;
 		dest->transform.Flip(flatpoint(0,0),
-				   flatpoint(cos(start_angle+rotation_angle*1.5),sin(start_angle+rotation_angle*1.5)));
+				   flatpoint(cos(start_angle+cellangle),sin(start_angle+cellangle)));
 		op->AddTransform(dest);
 	}
 
@@ -529,12 +546,12 @@ Tiling *CreateRadialSimple(int mirrored, int num_divisions)
  * necessary to create an overall p1 cell.
  * It COULD be simplified by using iterated operations.
  */
-Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
+Tiling *CreateWallpaper(Tiling *tiling,const char *group, LaxInterfaces::SomeData *centered_on)
 {
 	if (isblank(group)) group="p1";
 	
 
-	Tiling *tiling=new Tiling(group,"Wallpaper");
+	if (!tiling) tiling=new Tiling(group,"Wallpaper");
 	tiling->repeatable=3;
 
 	PathsData *path;
@@ -547,6 +564,8 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(group,"p2")) {
@@ -555,6 +574,8 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -567,6 +588,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -579,6 +601,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -592,6 +615,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -613,6 +637,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -634,6 +659,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -655,6 +681,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.5,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -699,6 +726,7 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 		path->appendRect(0,0,.25,.5);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1); //0,0
+		op->flexible_aspect=true;
 
 		op->AddTransform(affine);
 
@@ -1067,22 +1095,191 @@ Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on)
 
 Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *centered_on)
 {
-	Tiling *tiling=new Tiling(coloring,"Wallpaper");
-
-	makestr(tiling->category,"Uniform Coloring");
-	makestr(tiling->name,coloring);
+	Tiling *tiling=new Tiling(coloring,"Uniform Coloring");
 	tiling->InstallDefaultIcon();
 
 	PathsData *path;
 	TilingOp *op;
 	Affine affine;
 
-	if (!strcasecmp(coloring,"snub square 2")) {
+	if (!strcasecmp(coloring,"square 1")) {
+		tiling=CreateWallpaper(tiling,"p1",NULL);
+
+	} else if (!strcasecmp(coloring,"square 2")
+			|| !strcasecmp(coloring,"square 3")) {
+
+		tiling->repeatYDir(flatpoint(0,2));
+		if (!strcasecmp(coloring,"square 2")) {
+			tiling->repeatXDir(flatpoint(1,1));
+		}
+
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->appendRect(0,1,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"square 4")
+			|| !strcasecmp(coloring,"square 5")) {
+
+		tiling->repeatXDir(flatpoint(2,0));
+		if (!strcasecmp(coloring,"square 5")) tiling->repeatYDir(flatpoint(1,2));
+		else tiling->repeatYDir(flatpoint(0,2));
+
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		op->AddTransform(affine);
+	
+		affine.Translate(flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(-1,1));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		affine.setIdentity();
+		affine.Translate(flatpoint(1,1));
+		op->AddTransform(affine);
+	
+	} else if (!strcasecmp(coloring,"square 6")
+			|| !strcasecmp(coloring,"square 7")
+			|| !strcasecmp(coloring,"square 8")
+			|| !strcasecmp(coloring,"square 9")) {
+
+		tiling->repeatXDir(flatpoint(2,0));
+		if (!strcasecmp(coloring,"square 7")) tiling->repeatYDir(flatpoint(1,2));
+		else tiling->repeatYDir(flatpoint(0,2));
+
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		op->AddTransform(affine);
+
+		if (!strcasecmp(coloring,"square 9")) {
+			path=new PathsData;
+			path->appendRect(0,0,1,1);
+			path->FindBBox();
+			op=tiling->AddBase(path,1,1);
+			op->shearable=true;
+			op->flexible_aspect=true;
+			affine.Translate(flatpoint(1,0));
+			op->AddTransform(affine);
+
+		} else {
+			if (strcasecmp(coloring,"square 8")) affine.Translate(flatpoint(1,1));
+			else affine.Translate(flatpoint(1,0));
+			op->AddTransform(affine);
+		}
+
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		affine.setIdentity();
+		affine.Translate(flatpoint(0,1));
+		op->AddTransform(affine);
+	
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		affine.setIdentity();
+		if (strcasecmp(coloring,"square 8")) affine.Translate(flatpoint(1,0));
+		else affine.Translate(flatpoint(1,1));
+		op->AddTransform(affine);
+	
+	} else if (!strcasecmp(coloring,"hexagonal 1")) {
+		tiling->DefaultHex(1);
+
+		path=new PathsData;
+		Coordinate *cc=CoordinatePolygon(flatpoint(sqrt(3)/2,1), 1, false, 6, 1);
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"hexagonal 2")) {
+		tiling->repeatXDir(flatpoint(3*sqrt(3)/2,1.5));
+		tiling->repeatYDir(flatpoint(0,3));
+
+		path=new PathsData;
+		Coordinate *cc=CoordinatePolygon(flatpoint(sqrt(3)/2,1), 1, false, 6, 1);
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+		affine.Translate(flatpoint(sqrt(3),0));
+		op->AddTransform(affine);
+
+		cc=CoordinatePolygon(flatpoint(sqrt(3),2.5), 1, false, 6, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"hexagonal 3")) {
+		tiling->repeatXDir(flatpoint(3*sqrt(3)/2,1.5));
+		tiling->repeatYDir(flatpoint(0,3));
+
+		path=new PathsData;
+		Coordinate *cc=CoordinatePolygon(flatpoint(sqrt(3)/2,1), 1, false, 6, 1);
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		cc=CoordinatePolygon(flatpoint(3*sqrt(3)/2,1), 1, false, 6, 1);
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		cc=CoordinatePolygon(flatpoint(sqrt(3),2.5), 1, false, 6, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"snub square 1") 
+			|| !strcasecmp(coloring,"snub square 2")) {
+
 		tiling->repeatYDir(flatpoint(.5+sqrt(3)/2,.5+sqrt(3)/2));
 		tiling->repeatXDir(flatpoint(1+sqrt(3),0));
-		//tiling->repeatYDir(flatpoint(side_length*sqrt(3)/2,side_length*1.5));
-		//tiling->repeatXDir(flatpoint(side_length*sqrt(3),0));
 
+		 //diamond
 		path=new PathsData;
 		path->append(0,sqrt(3)/2);
 		path->append(.5,0);
@@ -1098,6 +1295,7 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		affine.Translate(flatpoint(.5+sqrt(3)/2,0));
 		op->AddTransform(affine);
 
+		 //square1
 		path=new PathsData;
 		path->append(.5,0);
 		path->append(.5+sqrt(3)/2,-.5);
@@ -1109,16 +1307,441 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		affine.setIdentity();
 		op->AddTransform(affine);
 
+		if (!strcasecmp(coloring,"snub square 1")) {
+			affine.Rotate(-M_PI/3, flatpoint(1,sqrt(3)/2));
+			affine.Translate(flatpoint(-.5,sqrt(3)/2));
+			op->AddTransform(affine);
+
+		} else {
+			 //square2
+			path=new PathsData;
+			path->append(1,sqrt(3)/2);
+			path->append(1+sqrt(3)/2,sqrt(3)/2+.5);
+			path->append(.5+sqrt(3)/2, sqrt(3)+.5);
+			path->append(.5,sqrt(3));
+			path->close();
+			path->FindBBox();
+			op=tiling->AddBase(path,1,1);
+			affine.setIdentity();
+			op->AddTransform(affine);
+		}
+
+	} else if (!strcasecmp(coloring,"elongated triangular")) {
+		tiling->repeatYDir(flatpoint(-.5,1+sqrt(3)/2));
+
 		path=new PathsData;
-		path->append(1,sqrt(3)/2);
-		path->append(1+sqrt(3)/2,sqrt(3)/2+.5);
-		path->append(.5+sqrt(3)/2, sqrt(3)+.5);
-		path->append(.5,sqrt(3));
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI, flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->appendRect(0,-1, 1,1);
+		op=tiling->AddBase(path,1,1);
 		affine.setIdentity();
 		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"truncated square 1")
+			|| !strcasecmp(coloring,"truncated square 2")) {
+
+		if (!strcasecmp(coloring,"truncated square 2")) {
+			tiling->repeatXDir(flatpoint(2*(1+sqrt(2)),0));
+			tiling->repeatYDir(flatpoint(1+sqrt(2),1+sqrt(2)));
+		} else {
+			tiling->repeatXDir(flatpoint(1+sqrt(2),0));
+			tiling->repeatYDir(flatpoint(0,1+sqrt(2)));
+		}
+
+		Coordinate *cc=CoordinatePolygon(flatpoint(.5+1/sqrt(2),.5+1/sqrt(2)), sqrt(5/2), false, 8, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		if (!strcasecmp(coloring,"truncated square 2")) {
+			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			op=tiling->AddBase(path,1,1, false,false);
+			affine.Translate(flatpoint(1+sqrt(2),0));
+			op->AddTransform(affine);
+		}
+
+		 //the square
+		path=new PathsData;
+		double a=1/sqrt(2);
+		path->append(-a,0);
+		path->append(0, a);
+		path->append( a,0);
+		path->append(0,-a);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		affine.Translate(flatpoint(1+sqrt(2),0));
+		op->AddTransform(affine);
+
+		if (!strcasecmp(coloring,"truncated square 2")) {
+			affine.Translate(flatpoint(1+sqrt(2),0));
+			op->AddTransform(affine);
+		}
+
+	} else if (!strcasecmp(coloring,"triangular 1")) {
+		tiling->repeatYDir(flatpoint(.5,-sqrt(3)/2));
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"triangular 2")) {
+		tiling->repeatXDir(flatpoint(2,0));
+		tiling->repeatYDir(flatpoint(0,-sqrt(3)));
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(.5,-sqrt(3)/2));
+		op->AddTransform(affine);
+	
+		affine.setIdentity();
+		affine.Translate(flatpoint(1.5,-sqrt(3)/2));
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(-.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI,flatpoint(.75,-sqrt(3)/4));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(.5,sqrt(3)/2));
+		op->AddTransform(affine);
+
+		affine.setIdentity();
+		affine.Translate(flatpoint(1.5,sqrt(3)/2));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"triangular 3")) {
+		tiling->repeatYDir(flatpoint(0,-sqrt(3)));
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(-.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI,flatpoint(.75,-sqrt(3)/4));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"triangular 4")) {
+		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
+		tiling->repeatYDir(flatpoint(0,sqrt(3)));
+
+		path=new PathsData;
+		path->append(1,0);
+		path->append(1.5,sqrt(3)/2);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"triangular 5")
+			|| !strcasecmp(coloring,"triangular 6")) {
+		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
+		tiling->repeatYDir(flatpoint(0,sqrt(3)));
+
+		path=new PathsData;
+		path->append(1,0);
+		path->append(1.5,sqrt(3)/2);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		if (!strcasecmp(coloring,"triangular 6")) {
+			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			op=tiling->AddBase(path,1,1, false,false);
+			affine.Rotate(2*M_PI/3, flatpoint(1,0));
+			op->AddTransform(affine);
+		} else {
+			affine.Rotate(2*M_PI/3, flatpoint(1,0));
+			op->AddTransform(affine);
+		}
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Rotate(2*M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"triangular 7")) {
+		tiling->repeatYDir(flatpoint(.5,-sqrt(3)/2));
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"triangular 8")
+			|| !strcasecmp(coloring,"triangular 9")) {
+		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
+		tiling->repeatYDir(flatpoint(0,sqrt(3)));
+
+		path=new PathsData;
+		path->append(1,0);
+		path->append(1.5,sqrt(3)/2);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.Rotate(2*M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		if (!strcasecmp(coloring,"triangular 9")) {
+			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			op=tiling->AddBase(path,1,1, false,false);
+			affine.Rotate(4*M_PI/3, flatpoint(1,0));
+			op->AddTransform(affine);
+		} else {
+			affine.Rotate(2*M_PI/3, flatpoint(1,0));
+			op->AddTransform(affine);
+		}
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Rotate(2*M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(2*M_PI/3, flatpoint(1,0));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"trihexagonal 1")
+			|| !strcasecmp(coloring,"trihexagonal 2")) {
+		tiling->repeatXDir(flatpoint(2,0));
+		tiling->repeatYDir(flatpoint(1,sqrt(3)));
+
+		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(2,0);
+		path->append(2.5,sqrt(3)/2);
+		path->append(1.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		if (!strcasecmp(coloring,"trihexagonal 2")) {
+			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			op=tiling->AddBase(path,1,1, false,false);
+			affine.Rotate(M_PI,flatpoint(2,0));
+			op->AddTransform(affine);
+
+		} else {
+			affine.Rotate(M_PI,flatpoint(2,0));
+			op->AddTransform(affine);
+		}
+
+	} else if (!strcasecmp(coloring,"snub hexagonal")) {
+		tiling->repeatXDir(flatpoint(2.5,-sqrt(3)/2));
+		tiling->repeatYDir(flatpoint(1,sqrt(3)));
+
+		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(-.5,sqrt(3)/2);
+		path->append(-1,0);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(.5,sqrt(3)/2));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.setIdentity();
+		affine.Rotate(M_PI,flatpoint(-.5,sqrt(3)/4));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(.5,sqrt(3)/2));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(.5,-sqrt(3)/2));
+		op->AddTransform(affine);
+
+	} else if (!strcasecmp(coloring,"rhombi trihexagonal")) {
+		tiling->repeatXDir(flatpoint((1+sqrt(3))/2,(3+sqrt(3))/2));
+		tiling->repeatYDir(flatpoint(0,1+sqrt(3)));
+
+		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(.5,sqrt(3)/2);
+		path->append(0,sqrt(3));
+		path->append(-.5,sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3,flatpoint(.5,sqrt(3)/2));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(1,0));
+		affine.Rotate(M_PI/3,flatpoint(1.5,sqrt(3)/2));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(.5,sqrt(3)/2);
+		path->append(.5,1+sqrt(3)/2);
+		path->append(.5-sqrt(3)/2,.5+sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3,flatpoint(.5,sqrt(3)/2));
+		affine.Translate(flatpoint(1,0));
+		op->AddTransform(affine);
+
+	//} else if (!strcasecmp(coloring,"truncated hexagonal")) {
+	//} else if (!strcasecmp(coloring,"truncated trihexagonal")) {
 
 	} else {
 		cerr << " *** HEY!!! FINISH IMPLEMENTING ME!!!!!! ("<<coloring<<")"<<endl;
@@ -1143,7 +1766,7 @@ Tiling *CreateFrieze(const char *group, LaxInterfaces::SomeData *centered_on)
 	else if (!strcasecmp(group,"mm")) wall="pmm";
 	if (wall==NULL) return NULL;
 
-	Tiling *tiling=CreateWallpaper(wall,centered_on);
+	Tiling *tiling=CreateWallpaper(NULL,wall,centered_on);
 
 	tiling->repeatable=1;
 	makestr(tiling->name,group);
@@ -1153,8 +1776,8 @@ Tiling *CreateFrieze(const char *group, LaxInterfaces::SomeData *centered_on)
 	if (!strcasecmp(group,"mg") || !strcasecmp(group,"1m")) {
 		 //uses the wallpaper group, but in y, not in x.
 		tiling->repeatable=2;
-		tiling->repeatXDir(flatpoint(0,-1));
-		tiling->repeatYDir(flatpoint(1,0));
+		//tiling->repeatXDir(flatpoint(0,-1));
+		//tiling->repeatYDir(flatpoint(1,0));
 	}
 
 	return tiling;
@@ -1258,7 +1881,7 @@ Tiling *GetBuiltinTiling(int num, LaxInterfaces::SomeData *center_on)
 {
 	const char *tile=BuiltinTiling[num];
 
-	if (strstr(tile,"Wallpaper")) return CreateWallpaper(tile+10, center_on);
+	if (strstr(tile,"Wallpaper")) return CreateWallpaper(NULL,tile+10, center_on);
 
 	if (!strcmp(tile,"Circular/r"))  return CreateRadialSimple(0, 10);
 	if (!strcmp(tile,"Circular/rm"))  return CreateRadialSimple(1, 5);
@@ -1300,6 +1923,8 @@ enum TilingShortcutActions {
 	CLONEIA_Next_Tiling,
 	CLONEIA_Previous_Tiling,
 	CLONEIA_Toggle_Lines,
+	CLONEIA_Toggle_Render,
+	CLONEIA_Toggle_Preview,
 
 	CLONEIA_MAX
 };
@@ -1311,9 +1936,11 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	cloner_style=0;
 	lastover=CLONEI_None;
 	lastoveri=-1;
-	active=0;
-	previewactive=1;
+	active=false;
 
+	previewactive=true;
+	preview=new Group;
+	previewoc=NULL;
 
 	sc=NULL;
 
@@ -1328,7 +1955,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	preview_cell.Color(65535,0,0,65535);
 	preview_cell.width=2;
 	preview_cell.widthtype=0;
-	preview_cell2.Color(65535,0,0,65535);
+	preview_cell2.Color(35000,35000,35000,65535);
 	preview_cell2.width=1;
 	preview_cell2.widthtype=0;
 
@@ -1352,6 +1979,8 @@ CloneInterface::~CloneInterface()
 	if (tiling) tiling->dec_count();
 	if (toc) delete toc;
 	if (boundary) boundary->dec_count();
+	if (preview) preview->dec_count();
+	if (previewoc) delete previewoc;
 }
 
 const char *CloneInterface::Name()
@@ -1385,7 +2014,9 @@ Laxkit::ShortcutHandler *CloneInterface::GetShortcuts()
 
 	sc->Add(CLONEIA_Next_Tiling,     LAX_Left,0,0,      "NextTiling",     _("Select next tiling"),    NULL,0);
 	sc->Add(CLONEIA_Previous_Tiling, LAX_Right,0,0,     "PreviousTiling", _("Select previous tiling"),NULL,0);
-	sc->Add(CLONEIA_Toggle_Lines,    'c',0,0,           "ToggleLines",    _("Toggle previewing cell lines"),NULL,0);
+	sc->Add(CLONEIA_Toggle_Lines,    'l',0,0,           "ToggleLines",    _("Toggle previewing cell lines"),NULL,0);
+	sc->Add(CLONEIA_Toggle_Render,   LAX_Enter,0,0,     "ToggleRender",   _("Toggle rendering"),NULL,0);
+	sc->Add(CLONEIA_Toggle_Preview,  'p',0,0,           "TogglePreview",  _("Toggle preview of clones"),NULL,0);
 
 	//sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
 
@@ -1404,15 +2035,31 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 	if (tiling) tiling->dec_count();
 	tiling=newtiling;
 
-	base_cells.setIdentity();
+	base_cells.Unshear(1,0);
 	base_cells.flush();
 	base_cells.flags|=SOMEDATA_KEEP_ASPECT;
 	LaxInterfaces::SomeData *o;
+
+	 //install main base cells
 	for (int c=0; c<tiling->basecells.n; c++) {
 		o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
 		o->FindBBox();
+		dynamic_cast<PathsData*>(o)->InstallLineStyle(&preview_cell);
 		base_cells.push(o);
 		o->dec_count();
+	}
+	 //install minor base cell copies
+	for (int c=0; c<tiling->basecells.n; c++) {
+		if (tiling->basecells.e[c]->transforms.n<=1) continue;
+
+		for (int c2=1; c2<tiling->basecells.e[c]->transforms.n; c2++) {
+			o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
+			o->FindBBox();
+			o->Multiply(tiling->basecells.e[c]->transforms.e[c2]->transform);
+			dynamic_cast<PathsData*>(o)->InstallLineStyle(&preview_cell2);
+			base_cells.push(o);
+			o->dec_count();
+		}
 	}
 	base_cells.FindBBox();
 
@@ -1463,6 +2110,16 @@ int CloneInterface::PerformAction(int action)
 		trace_cells=!trace_cells;
 		if (active) Render();
 		PostMessage(trace_cells?_("Trace cell outlines"):_("Don't trace cells"));
+		needtodraw=1;
+		return 0;
+
+	} else if (action==CLONEIA_Toggle_Render) {
+		ToggleActivated();
+		needtodraw=1;
+		return 0;
+
+	} else if (action==CLONEIA_Toggle_Preview) {
+		TogglePreview();
 		needtodraw=1;
 		return 0;
 	}
@@ -1535,14 +2192,14 @@ int CloneInterface::Refresh()
 
 
 	 //draw clones
-	if (preview.n() && active) {
+	if (preview->n() && active) {
 		if (toc) {
 			double m[6];
 			viewport->transformToContext(m,toc,0,1);
 			dp->PushAndNewTransform(m);
 		}
-		for (int c=0; c<preview.n(); c++) {
-			Laidout::DrawData(dp, preview.e(c), NULL,NULL);
+		for (int c=0; c<preview->n(); c++) {
+			Laidout::DrawData(dp, preview->e(c), NULL,NULL);
 		}
 		if (toc) dp->PopAxes();
 	}
@@ -1556,16 +2213,15 @@ int CloneInterface::Refresh()
 
 	 //draw base cells
 	dp->PushAndNewTransform(base_cells.m());
-	//double px=norm(dp->screentoreal(0,0)-dp->screentoreal(1,0));
-	//preview_cell.width=3*px;
-	//dp->LineAttributes(2,0,LAXCAP_Round,LAXJOIN_Round);
-	for (int c=0; c<base_cells.n(); c++) {
-		Laidout::DrawData(dp, base_cells.e(c), &preview_cell,NULL);
+	//TilingOp *op;
+	for (int c=base_cells.n()-1; c>=0; c--) {
+		//op=base_cells.e(c);
+		Laidout::DrawData(dp, base_cells.e(c), NULL,NULL);
 	}
 	//dp->LineAttributes(1,0,LAXCAP_Round,LAXJOIN_Round);
 	dp->PopAxes();
 
-//	 //draw selected base objects
+//	 //draw selected base objects outlines
 //	*** 
 
 
@@ -1646,7 +2302,7 @@ int CloneInterface::scan(int x,int y, int *i)
 
 	flatpoint fp=dp->screentoreal(x,y);
 	flatpoint p=transform_point_inverse(base_cells.m(),fp);
-	for (int c=0; c<base_cells.n(); c++) {
+	for (int c=0; c<tiling->basecells.n; c++) {
 		DBG cerr <<" ----- base cell "<<c<<"/"<<base_cells.n()<<"bbox: "<<base_cells.e(c)->minx<<"  "<<base_cells.e(c)->miny<<"  "<<base_cells.e(c)->maxx<<"  "<<base_cells.e(c)->maxy<<endl;
 		DBG cerr <<" ----- point: "<<p.x<<','<<p.y<<endl;
 		if (!base_cells.e(c)->pointin(p,1)) continue;
@@ -1738,26 +2394,33 @@ int CloneInterface::Render()
 {
 	if (!tiling) return 1;
 
-	preview.flush();
+	preview->flush();
 	Affine bcellst[tiling->basecells.n];
 	for (int c=0; c<tiling->basecells.n; c++) {
 		bcellst[c]=base_cells;
 	}
-	Group *ret=tiling->Render(&preview, toc, trace_cells, bcellst, 0,3, 0,3, viewport);
+	Group *ret=tiling->Render(preview, trace_cells?NULL:toc, bcellst, 0,3, 0,3, viewport);
 	if (!ret) {
 		PostMessage(_("Could not clone!"));
 	}
 
-	preview.set(tiling->finalTransform());
+	preview->set(tiling->finalTransform());
 	needtodraw=1;
 	return 0;
+}
+
+int CloneInterface::TogglePreview()
+{
+	previewactive=!previewactive;
+	needtodraw=1;
+	return previewactive;
 }
 
 /*! Returns whether active after toggling.
  */
 int CloneInterface::ToggleActivated()
 {
-	if (!tiling) { active=0; return 0; }
+	if (!tiling) { active=false; return 0; }
 
 	active=!active;
 	if (active) Render();
