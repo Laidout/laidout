@@ -1740,7 +1740,29 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		affine.Translate(flatpoint(1,0));
 		op->AddTransform(affine);
 
-	//} else if (!strcasecmp(coloring,"truncated hexagonal")) {
+	} else if (!strcasecmp(coloring,"truncated hexagonal")) {
+		tiling->repeatXDir(flatpoint((2*(1+sqrt(3))+1)/2, (2*(1+sqrt(3))+1)*sqrt(3)/2));
+		tiling->repeatYDir(flatpoint(0,2*(1+sqrt(3))+1));
+
+		Coordinate *cc=CoordinatePolygon(flatpoint(1+sqrt(3)/2,0), 1, true, 12, 1);
+		path=new PathsData;
+		path->appendCoord(cc);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(2+sqrt(3),.5);
+		path->append(2+sqrt(3)+.5,.5+sqrt(3)/2);
+		path->append(1.5+sqrt(3),.5+sqrt(3)/2);
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI,flatpoint(2+sqrt(3),.5));
+		affine.Translate(flatpoint(0,1));
+		op->AddTransform(affine);
+
 	//} else if (!strcasecmp(coloring,"truncated trihexagonal")) {
 
 	} else {
