@@ -53,7 +53,8 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	int num_lines_input; //default -1, to use just 1, but autoexpand when necessary
 	int current_column; //-1 means inside edit box. >0 means default to that column on key up
 	int current_item; //-1 means inside edit box
-
+	int hover_column;
+	int hover_item;
 
 	class ColumnInfo
 	{
@@ -70,6 +71,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	void ClearSearch();
 	void UpdateMatches();
 
+	bool needtomap;
 
 	 //column 1, context matches
 	Laxkit::MenuInfo tree; //tree of all context
@@ -126,7 +128,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
-	virtual void RefreshTree(Laxkit::MenuInfo *menu, int x,int &y);
+	virtual void RefreshTree(Laxkit::MenuInfo *menu, int x,int &y, int col,int &item);
 	virtual void DrawName(Laxkit::MenuItem *mii, int &x,int y);
 
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
