@@ -89,16 +89,16 @@ class DrawableParentLink
  * Custom anchors must have a value of ANCHOR_MAX or greater.
  */
 enum BBoxAnchorTypes {
-	ANCHOR_ul=1,
-	ANCHOR_um,
-	ANCHOR_ur,
-	ANCHOR_ml,
-	ANCHOR_mm,
-	ANCHOR_mr,
-	ANCHOR_ll,
-	ANCHOR_lm,
-	ANCHOR_lr,
-	ANCHOR_MAX
+	BBOXANCHOR_ul=1,
+	BBOXANCHOR_um,
+	BBOXANCHOR_ur,
+	BBOXANCHOR_ml,
+	BBOXANCHOR_mm,
+	BBOXANCHOR_mr,
+	BBOXANCHOR_ll,
+	BBOXANCHOR_lm,
+	BBOXANCHOR_lr,
+	BBOXANCHOR_MAX
 };
 
 /*! for DrawableObject::locks */

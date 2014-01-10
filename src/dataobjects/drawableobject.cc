@@ -245,7 +245,7 @@ void DrawableObject::UpdateFromParentLink()
 	flatpoint a;
 	if (!parent) return;
 	PointAnchor *anchor=NULL;
-	if (parent_link->parent_anchor_id>=ANCHOR_MAX && parent) {
+	if (parent_link->parent_anchor_id>=BBOXANCHOR_MAX && parent) {
 		if (parent->GetAnchor(parent_link->parent_anchor_id, &a,0, &anchor));
 	}
 
@@ -340,7 +340,7 @@ int DrawableObject::NumAnchors()
  */
 int DrawableObject::GetAnchorI(int anchor_index, flatpoint *p, int transform,PointAnchor **anchor)
 {
-	return GetAnchor(ANCHOR_ul+anchor_index,p,transform,anchor);
+	return GetAnchor(BBOXANCHOR_ul+anchor_index,p,transform,anchor);
 }
 
 /*! Return 1 for anchor found, else 0. If transform!=0, then return the point 
@@ -356,15 +356,15 @@ int DrawableObject::GetAnchor(int anchor_id, flatpoint *p, int transform,PointAn
 {
 	const char *name=NULL;
 
-	if (anchor_id==ANCHOR_ul)      { name="ul"; *p=flatpoint( 0, 1); }
-	else if (anchor_id==ANCHOR_um) { name="um"; *p=flatpoint(.5, 1); }
-	else if (anchor_id==ANCHOR_ur) { name="ur"; *p=flatpoint( 1, 1); }
-	else if (anchor_id==ANCHOR_ml) { name="ml"; *p=flatpoint( 0,.5); }
-	else if (anchor_id==ANCHOR_mm) { name="mm"; *p=flatpoint(.5,.5); }
-	else if (anchor_id==ANCHOR_mr) { name="mr"; *p=flatpoint( 1,.5); }
-	else if (anchor_id==ANCHOR_ll) { name="ll"; *p=flatpoint( 0, 0); }
-	else if (anchor_id==ANCHOR_lm) { name="lm"; *p=flatpoint(.5, 0); }
-	else if (anchor_id==ANCHOR_lr) { name="lr"; *p=flatpoint( 1, 0); }
+	if (anchor_id==BBOXANCHOR_ul)      { name="ul"; *p=flatpoint( 0, 1); }
+	else if (anchor_id==BBOXANCHOR_um) { name="um"; *p=flatpoint(.5, 1); }
+	else if (anchor_id==BBOXANCHOR_ur) { name="ur"; *p=flatpoint( 1, 1); }
+	else if (anchor_id==BBOXANCHOR_ml) { name="ml"; *p=flatpoint( 0,.5); }
+	else if (anchor_id==BBOXANCHOR_mm) { name="mm"; *p=flatpoint(.5,.5); }
+	else if (anchor_id==BBOXANCHOR_mr) { name="mr"; *p=flatpoint( 1,.5); }
+	else if (anchor_id==BBOXANCHOR_ll) { name="ll"; *p=flatpoint( 0, 0); }
+	else if (anchor_id==BBOXANCHOR_lm) { name="lm"; *p=flatpoint(.5, 0); }
+	else if (anchor_id==BBOXANCHOR_lr) { name="lr"; *p=flatpoint( 1, 0); }
 	else {
 		 //anchor not found
 		if (anchor) *anchor=NULL;
