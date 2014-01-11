@@ -40,6 +40,39 @@ using namespace std;
 namespace Laidout {
 
 
+enum GShellScanMenuItems {
+	GSHELL_TextChanged,
+	GSHELL_Enter,
+	GSHELL_FocusIn,
+	GSHELL_FocusOut,
+	GSHELL_HistoryUp,
+	GSHELL_HistoryDown,
+
+	GSHELL_Up,
+	GSHELL_Down,
+	GSHELL_Tab,
+	GSHELL_ShiftTab,
+	GSHELL_Esc,
+	GSHELL_MMAX
+};
+
+enum GraphicalShellActions {
+	GSHELL_Activate,
+	GSHELL_ToggleMinimized,
+	GSHELL_Decorations,
+	GSHELL_ToggleGravity,
+	GSHELL_MAX
+};
+
+//these get put in buttondown info2 when not actual item
+enum GraphicalShellControlTypes {
+	GSHELL_None         =0,
+	GSHELL_Column_Up    =-2,
+	GSHELL_Column_Down  =-3,
+	GSHELL_Item         =-4,
+	GSHELL_Num_Lines    =-5
+};
+
 
 //------------------------------------- GraphicalShellEdit --------------------------------------
 
@@ -82,17 +115,6 @@ int GraphicalShellEdit::CharInput(unsigned int ch,const char *buffer,int len,uns
 	//If i==1, then enter was pressed.
 	//If i==2, then the edit got the focus.
 	//If i==3, then the edit lost the focus.
-#define GSHELL_TextChanged  0
-#define GSHELL_Enter        1
-#define GSHELL_FocusIn      2
-#define GSHELL_FocusOut     3
-#define GSHELL_HistoryUp    10
-#define GSHELL_HistoryDown  11
-#define GSHELL_Up           12
-#define GSHELL_Down         13
-#define GSHELL_Tab          14
-#define GSHELL_ShiftTab     15
-#define GSHELL_Esc          16
 
 	if (ch==LAX_Esc) {
 		 //turn off gshell
@@ -112,6 +134,7 @@ int GraphicalShellEdit::CharInput(unsigned int ch,const char *buffer,int len,uns
 	} else if (ch=='\t') {
 		if ((state&LAX_STATE_MASK)==0) send(GSHELL_Tab);
 		else if ((state&LAX_STATE_MASK)==ShiftMask) send(GSHELL_ShiftTab);
+		return 0;
 	}
 
 	return LineEdit::CharInput(ch,buffer,len,state,d);
@@ -152,6 +175,7 @@ void GraphicalShell::base_init()
 
 	showerror=0;
 	error_message=NULL;
+	error_message_type=1;
 
 	searchterm=NULL;
 	searchexpression=NULL;
@@ -245,6 +269,9 @@ int GraphicalShell::Setup()
 	app->mapwindow(le);
 	InitAreas();
 
+	int hh=(dp->Maxy-dp->Miny-(box.maxy-box.miny))/dp->textheight()+1;
+	if (num_lines_above<0 || num_lines_above>=hh) num_lines_above=hh-1;
+
 	return 0;
 }
 
@@ -309,7 +336,7 @@ int GraphicalShell::InitAreas()
 void GraphicalShell::UpdateMatches()
 {
 	for (int c=0; c<3; c++) {
-		columns[c].items.Search(searchterm,1,1);
+		columns[c].num_matches=columns[c].items.Search(searchterm,1,1);
 		//columns[c].width=-1;
 	}
 	needtomap=true;
@@ -377,7 +404,7 @@ void GraphicalShell::UpdateSearchTerm(const char *str,int pos, int firsttime)
 	int len=(str?strlen(str):0);
 	if (pos<=0) pos=len-1;
 	int last=pos, pose=pos;
-	const char *first=NULL;
+	const char *first=str;
 	while (pos>0) {
 		while (pos>0 && isspace(str[pos])) pos--;
 		while (pos>0 && isalnum(str[pos])) pos--;
@@ -493,13 +520,12 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			return 0;
 
 		} else if (type==GSHELL_FocusIn) {
-			//Setup();
-			//showcompletion=1;
+			hover_item=-1;
 			needtodraw=1;
 			return 0;
 
 		} else if (type==GSHELL_FocusOut) {
-			//showcompletion=0;
+			hover_item=-1;
 			needtodraw=1;
 			return 0;
 
@@ -521,46 +547,56 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 
 			int status=calculator.evaluate(command,-1, &answer,&log);
 			if (log.Total()) result=log.FullMessageStr();
-			if (!isblank(result)) PostMessage(result);
+			if (!isblank(result) && status==0) PostMessage(result);
 
 			 //update history
-			if (status==0) {
+			if (status==0 || status==-1) {
 				 //successful command
 				le->SetText("");
-				 //add, but not if is same as top of history stack!
-				if (!columns[1].items.n() || (columns[1].items.n() && strcmp(columns[1].items.e(columns[1].items.n()-1)->name,command)))
-					columns[1].items.AddItem(command);
-			} else {
+				 //add, but not if is same as top of history stack! (minimize dups)
+				if (!columns[1].items.n() || (columns[1].items.n() && strcmp(columns[1].items.e(0)->name,command)))
+					columns[1].items.AddItem(command,0,(unsigned int)LAX_OFF,0,(MenuInfo*)NULL, 0,0);
+			}
+			
+			if (status==1 || status==-1) {
 				 //there was an error
 				showerror=1;
 				makestr(error_message, result);
+				error_message_type=(status==1?1:0);
 			}
 
 			if (answer) {
 				 //add value to third column
-				 //add, but not if is same as top of history stack! for instance a simple number input, don't add twice
 				if (answer!=past_values.e(past_values.n()-1)) {
-					int needed=answer->getValueStr(NULL,0);
-					past_values.push("ans",answer);
+					int added=0;
 
+					int needed=answer->getValueStr(NULL,0);
 					if (needed>30) {
 						ObjectDef *def=answer->GetObjectDef();
 						makestr(result,def->name);
-						columns[2].items.AddItem(result);
+						if (!isblank(result)) {
+							columns[2].items.AddItem(result,0,(unsigned int)LAX_OFF,0,(MenuInfo*)NULL, 0,0);
+							added=1;
+						}
 						
 					} else {
 						char *str=NULL;
 						int len=0;
 						answer->getValueStr(&str,&len,1);
-						if (str) {
-							columns[2].items.AddItem(str);
+						if (!isblank(str)) {
+							columns[2].items.AddItem(str,0,(unsigned int)LAX_OFF,0,(MenuInfo*)NULL, 0,0);
+							added=1;
 						}
 						delete[] str;
 					}
+
+					if (added) past_values.push("ans",answer,0);
+
 				}
 				answer->dec_count();
 			}
 			
+			ClearSearch();
 			UpdateSearchTerm(NULL,0, 1);
 			UpdateMatches();
 			delete[] result;
@@ -621,28 +657,14 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 
 		} else if (type==GSHELL_Tab) {
 			 //change column
-			int c=current_column;
-			do {
-				c++;
-				if (c>2) c=0;
-				if (columns[c].width>0) break;
-			} while (c!=current_column);
-
-			current_column=c;
+			current_column=NextColumn(current_column);
 			UpdateFromItem();
 			needtodraw=1;
 			return 0;
 
 		} else if (type==GSHELL_ShiftTab) {
 			 //change column
-			int c=current_column;
-			do {
-				c--;
-				if (c<0) c=2;
-				if (columns[c].width>0) break;
-			} while (c!=current_column);
-
-			current_column=c;
+			current_column=PreviousColumn(current_column);
 			UpdateFromItem();
 			needtodraw=1;
 			return 0;
@@ -652,6 +674,30 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 	}
 
 	return 1;
+}
+
+int GraphicalShell::PreviousColumn(int cc)
+{
+	int c=cc;
+	do {
+		c--;
+		if (c<0) c=2;
+		if (columns[c].width>0 && columns[c].num_matches>0) break;
+	} while (c!=cc);
+
+	return c;
+}
+
+int GraphicalShell::NextColumn(int cc)
+{
+	int c=cc;
+	do {
+		c++;
+		if (c>2) c=0;
+		if (columns[c].width>0 && columns[c].num_matches>0) break;
+	} while (c!=cc);
+
+	return c;
 }
 
 //! Revert any browsing mode to normal edit mode.
@@ -817,7 +863,7 @@ int GraphicalShell::Refresh()
 	 //remap columns if necessary
 	if (showcompletion && needtomap) {
 		for (int c=0; c<3; c++) {
-			if (columns[c].width<=0) {
+			//if (columns[c].width<=0) {
 				if (columns[c].num_matches==0) {
 					columns[c].width=0;
 					continue;
@@ -829,12 +875,12 @@ int GraphicalShell::Refresh()
 					if (w>maxw) maxw=w;
 				}
 				columns[c].width=maxw;
-			}
+			//}
 		}
 
 		int maxcols=3;
-		double r=((double)current_column)/(maxcols-1);
 
+		double r=((double)current_column)/(maxcols-1);
 		columns[current_column].x=box.minx + (box.maxx-box.minx)*r - r*columns[current_column].width;
 
 		for (int c=current_column-1; c>=0; c--) {
@@ -861,24 +907,36 @@ int GraphicalShell::Refresh()
 		dp->drawrectangle(box.minx,box.miny, box.maxx-box.minx, box.maxy-box.miny, 1);
 
 	} else {
+
+		 //draw num lines above indicator
+		double th=dp->textheight();
+		int max=(hover_item==GSHELL_Num_Lines ? 10 : 0);
+		double ss=.4;
+		for (int c=0; c<max; c++) {
+			dp->NewFG(1-ss+ss/max*c, 1-ss+ss/max*c, 1-ss+ss/max*c);
+			if (placement_gravity==LAX_BOTTOM)
+				dp->drawline(dp->Minx,box.miny-th*num_lines_above-c, dp->Maxx,box.miny-th*num_lines_above-c);
+			else
+				dp->drawline(dp->Minx,box.maxy+th*num_lines_above+c, dp->Maxx,box.maxy+th*num_lines_above+c);
+		}
+
 		if (showerror) dp->NewFG(.7,0.,0.); else dp->NewFG(&boxcolor);
 
-
 		 //draw thick border, but not a thick border near the current column
-		if (current_column>=0) {
-			double trim=(placement_gravity==LAX_BOTTOM?pad-1:0);
-
-			int x=columns[current_column].x;
-			int w=columns[current_column].width;
-
-			dp->drawrectangle(box.minx,box.miny,  x-box.minx, box.maxy-box.miny, 1);
-			dp->drawrectangle(x,box.miny+trim,  w, box.maxy-box.miny-(pad-1), 1);
-			dp->drawrectangle(x+w,box.miny, box.maxx-(x+w), box.maxy-box.miny, 1);
-		
-		} else {
+//		if (current_column>=0) {
+//			double trim=(placement_gravity==LAX_BOTTOM?pad-1:0);
+//
+//			int x=columns[current_column].x;
+//			int w=columns[current_column].width;
+//
+//			dp->drawrectangle(box.minx,box.miny,  x-box.minx, box.maxy-box.miny, 1);
+//			dp->drawrectangle(x,box.miny+trim,  w, box.maxy-box.miny-(pad-1), 1);
+//			dp->drawrectangle(x+w,box.miny, box.maxx-(x+w), box.maxy-box.miny, 1);
+//		
+//		} else {
 			 //No active column, draw thick border all around the edit
 			dp->drawrectangle(box.minx,box.miny, box.maxx-box.minx, box.maxy-box.miny, 1);
-		}
+//		}
 
 		dp->NewFG(.5,.5,.5);
 
@@ -911,7 +969,8 @@ int GraphicalShell::Refresh()
 		double y=box.miny+pad-textheight*numlines;
 		if (placement_gravity==LAX_TOP) y=box.maxy-pad+1;
 
-		dp->NewFG(.7,0.,0.);
+		 //red for error, yellow for warning
+		if (error_message_type==1) dp->NewFG(.7,0.,0.); else dp->NewFG(0.,.7,.7);
 		dp->drawrectangle(x-max_width/2-pad,y-pad, max_width+2*pad,numlines*textheight+2*pad, 1);
 		dp->NewFG(.9,.9,.9);
 		dp->drawrectangle(x-max_width/2,y, max_width,numlines*textheight-1, 1);
@@ -931,16 +990,20 @@ void GraphicalShell::RefreshTree(MenuInfo *menu, int x,int &y, int col,int &item
 {
 	MenuItem *mi, *mii;
 	for (int c=0; c<menu->n(); c++) {
+		if (item>=columns[col].offset+num_lines_above) return;
+
 		mi=menu->e(c);
 		if (mi->state&MENU_SEARCH_HIT) {
-			int xx=x;
-			mii=mi;
+			if (item>=columns[col].offset) {
+				int xx=x;
+				mii=mi;
 
-			if (col==hover_column && item==hover_item) dp->NewFG(.1,.1,.1);
-			DrawName(mii,xx,y);
-			if (col==hover_column && item==hover_item) dp->NewFG(.5,.5,.5);
+				if (col==hover_column && item==hover_item) dp->NewFG(.1,.1,.1);
+				DrawName(mii,xx,y);
+				if (col==hover_column && item==hover_item) dp->NewFG(.5,.5,.5);
 
-			y-=dp->textheight();
+				y-=dp->textheight();
+			}
 			item++;
 		}
 		if (!(mi->state&(MENU_SEARCH_PARENT|MENU_SEARCH_HIT))) continue;
@@ -964,20 +1027,6 @@ void GraphicalShell::DrawName(MenuItem *mii, int &x,int y)
 	x+=dp->textout(x,y, mii->name,-1,LAX_LEFT|LAX_BOTTOM);
 }
 
-
-enum GraphicalShellControlTypes {
-	GSHELL_None         =0,
-	GSHELL_Column_Up    =-2,
-	GSHELL_Column_Down  =-3,
-//	GSHELL_Column_1_up  =-2,
-//	GSHELL_Column_1_down=-3,
-//	GSHELL_Column_2_up  =-4,
-//	GSHELL_Column_2_down=-5,
-//	GSHELL_Column_3_up  =-6,
-//	GSHELL_Column_3_down=-7,
-	GSHELL_Item         =-8
-};
-
 /*! Return the navigation control (x,y) is over, and which column and item (or -1 for none of those).
  * Returns 0 if not over anything.
  */
@@ -995,12 +1044,15 @@ int GraphicalShell::scan(int x,int y, int *column, int *item)
 	if (placement_gravity==LAX_BOTTOM) i=(box.miny-y)/textheight;
 	else i=(y-box.maxy)/textheight;
 
+	if (i==num_lines_above) return GSHELL_Num_Lines;
+
 	DBG cerr <<"gshell scan curcol,item: "<<current_column<<","<<current_item<<endl;
 	for (int c=0; c<3; c++) {
 		if (columns[c].num_matches==0) continue;
 
 		DBG cerr <<"gshell column "<<c<<" nummatches:"<<columns[c].num_matches<<endl;
 		DBG cerr <<"  x:"<<x<<"  colx,w:"<<columns[c].x<<','<<columns[c].width<<endl;
+
 		if (x>=columns[c].x && x<=columns[c].x+columns[c].width) {
 			if (column) *column=c;
 			if (i==0 && columns[c].offset!=0)
@@ -1038,7 +1090,14 @@ int GraphicalShell::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	int over=scan(x,y, &column,&item);
 	if (over==GSHELL_None) return 1;
 
-	buttondown.down(d->id,LEFTBUTTON,x,y,column,item);
+	buttondown.down(d->id,LEFTBUTTON,x,y, column,(over!=GSHELL_Item ? over : item));
+
+	if (over==GSHELL_Item && column>=0 && item>=0) {
+		 //we are clicking down on something to activate later
+		current_column=column;
+		current_item=item;
+		needtodraw=1;
+	}
 
 
 	return 0;
@@ -1049,30 +1108,32 @@ int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 
 	int oldcolumn, olditem;
-	buttondown.up(d->id,LEFTBUTTON, &oldcolumn, &olditem);
+	int dragged=buttondown.up(d->id,LEFTBUTTON, &oldcolumn, &olditem);
 
 	int column=-1, item=-1;
 	int over=scan(x,y, &column,&item);
 	if (over==GSHELL_None) return 0;
 	if (column!=oldcolumn || item!=olditem || item<0) return 0;
 
-	if (over==GSHELL_Column_Up) {
-		columns[current_column].offset++;
-		if (columns[current_column].offset+num_lines_above>=columns[current_column].num_matches)
-			columns[current_column].offset=columns[current_column].num_matches-num_lines_above;
+	if (!dragged) {
+		if (over==GSHELL_Column_Up) {
+			columns[current_column].offset++;
+			if (columns[current_column].offset+num_lines_above>=columns[current_column].num_matches)
+				columns[current_column].offset=columns[current_column].num_matches-num_lines_above;
 
-	} else if (over==GSHELL_Column_Down) {
-		columns[current_column].offset--;
-		if (columns[current_column].offset<0) columns[current_column].offset=0;
+		} else if (over==GSHELL_Column_Down) {
+			columns[current_column].offset--;
+			if (columns[current_column].offset<0) columns[current_column].offset=0;
 
 
-	} else if (over==GSHELL_Item && column>0 && item>=0) {
-		const char *str=GetItemText(column,item);
-		if (isblank(str)) return 0;
+		} else if (over==GSHELL_Item && column>=0 && item>=0) {
+			const char *str=GetItemText(column,item);
+			if (isblank(str)) return 0;
 
-		if (searchexpression==NULL) searchexpression=newstr(le->GetCText());
-		le->SetText(str);
+			if (searchexpression==NULL) searchexpression=newstr(le->GetCText());
+			le->SetText(str);
 
+		}
 	}
 
 
@@ -1109,15 +1170,17 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
 
 	int column=-1,item=-1;
-	int over=scan(x,y, &column,&item);
-
-	if (hover_column!=column || hover_item!=item) needtodraw=1;
-	hover_column=column;
-	hover_item=item;
-
-	DBG cerr <<"over box: "<<over<<"  column:"<<column<<"  item:"<<item<<endl;
 
 	if (!buttondown.any()) {
+		int over=scan(x,y, &column,&item);
+
+		if (hover_column!=column || hover_item!=item) needtodraw=1;
+		hover_column=column;
+		hover_item=item;
+		if (over!=GSHELL_Item) hover_item=over;
+
+		DBG cerr <<"over box: "<<over<<"  column:"<<column<<"  item:"<<item<<endl;
+
 		if (!(state&ShiftMask)) return 1;
 		needtodraw=1;
 		return 0;
@@ -1125,27 +1188,63 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 
 	int mx,my;
 	buttondown.move(mouse->id,x,y, &mx,&my);
+	buttondown.getextrainfo(mouse->id,LEFTBUTTON,&column,&item);
+	
+	if (item==GSHELL_Num_Lines) {
+		int nl;
+		if (placement_gravity==LAX_TOP) nl=(y-box.maxy)/dp->textheight()+1;
+		else nl=(box.miny-y)/dp->textheight()+1;
 
+		DBG cerr << " **********new nl:"<<nl<<"  old: "<<num_lines_above<<endl;
 
-	//flatpoint fp=dp->screentoreal(x,y);
-	//flatpoint d =fp-dp->screentoreal(mx,my);
-
-	 //plain or + moves curboxes (or the box given by editwhat)
-	if ((state&LAX_STATE_MASK)==0 || (state&LAX_STATE_MASK)==ShiftMask) {
-		needtodraw=1;
+		if (nl>0 && nl!=num_lines_above) {
+			num_lines_above=nl;
+			needtodraw=1;
+		}
 		return 0;
 	}
+
+
 
 	return 0;
 }
 
-enum GraphicalShellActions {
-	GSHELL_Activate,
-	GSHELL_ToggleMinimized,
-	GSHELL_Decorations,
-	GSHELL_ToggleGravity,
-	GSHELL_MAX
-};
+int GraphicalShell::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	int column=-1,item=-1;
+	//int over=
+	scan(x,y, &column,&item);
+
+	DBG cerr <<" ***********wheel up ***********"<<endl;
+	if (column>=0 && item>=0) {
+		columns[column].offset++;
+		if (columns[column].offset+num_lines_above > columns[column].num_matches)
+			columns[column].offset = columns[column].num_matches-num_lines_above;
+		if (columns[column].offset<0) columns[column].offset=0;
+		needtodraw=1;
+		return 0;
+	}
+
+	return 1;
+}
+
+int GraphicalShell::WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	int column=-1,item=-1;
+	//int over=
+	scan(x,y, &column,&item);
+
+	DBG cerr <<" ***********wheel down ***********"<<endl;
+	if (column>=0 && item>=0) {
+		columns[column].offset--;
+		if (columns[column].offset<0) columns[column].offset=0;
+		needtodraw=1;
+		return 0;
+	}
+
+	return 1;
+}
+
 
 Laxkit::ShortcutHandler *GraphicalShell::GetShortcuts()
 {
@@ -1193,6 +1292,19 @@ int GraphicalShell::PerformAction(int action)
 	return 1;
 }
 
+void GraphicalShell::MakeHoverInWindow()
+{
+	if (hover_item<0) return;
+
+	if (hover_item<columns[hover_column].offset) columns[hover_column].offset=hover_item;
+	else if (hover_item-columns[hover_column].offset>=num_lines_above)
+		columns[hover_column].offset=-num_lines_above+hover_item+1;
+
+	if (columns[hover_column].offset+num_lines_above > columns[hover_column].num_matches)
+		columns[hover_column].offset = columns[hover_column].num_matches-num_lines_above;
+	if (columns[hover_column].offset<0) columns[hover_column].offset=0;
+}
+
 int GraphicalShell::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
@@ -1202,10 +1314,47 @@ int GraphicalShell::CharInput(unsigned int ch, const char *buffer,int len,unsign
 	if (action>=0) {
 		if (PerformAction(action)==0) return 0;
 	}
+	if (ch==LAX_Down) {
+		if (hover_column<0) return 0;
+		hover_item--;
+		if (hover_item<0) hover_item=columns[hover_column].num_matches-1;
+		MakeHoverInWindow();
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Up) {
+		if (hover_column<0) return 0;
+		hover_item++;
+		if (hover_item>=columns[hover_column].num_matches) hover_item=0;
+		MakeHoverInWindow();
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Left) {
+		hover_column=PreviousColumn(hover_column);
+
+		if (hover_item<0) hover_item=columns[hover_column].num_matches-1;
+		if (hover_item>=columns[hover_column].num_matches) hover_item=0;
+		MakeHoverInWindow();
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Right) {
+		hover_column=NextColumn(hover_column);
+
+		if (hover_item<0) hover_item=columns[hover_column].num_matches-1;
+		if (hover_item>=columns[hover_column].num_matches) hover_item=0;
+		MakeHoverInWindow();
+		needtodraw=1;
+		return 0;
+
+	}
+
 	if (le) {
 		app->setfocus(le,0,d);
 		return le->CharInput(ch,buffer,len,state,d);
 	}
+
 
 	return 1;
 }
