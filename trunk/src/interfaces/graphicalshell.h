@@ -87,7 +87,11 @@ class GraphicalShell : public LaxInterfaces::anInterface
 
 	int showerror;
 	char *error_message;
+	int error_message_type;
 	virtual void ClearError();
+	virtual void MakeHoverInWindow();
+	virtual int PreviousColumn(int cc);
+	virtual int NextColumn(int cc);
 
 
 	virtual void AddTreeToCompletion(Laxkit::MenuInfo *menu);
@@ -125,6 +129,8 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d);
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
+	virtual int WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
+	virtual int WheelDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);	    
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
