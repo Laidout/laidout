@@ -1588,82 +1588,88 @@ int ValueHash::flush()
 	return 0;
 }
 
-int ValueHash::push(const char *name,int i)
+int ValueHash::push(const char *name,int i,int where)
 {
 	Value *v=new IntValue(i);
-	int c=push(name,v);
+	int c=push(name,v,where);
 	v->dec_count();
 	return c;
 }
 
-int ValueHash::push(const char *name,double d)
+int ValueHash::push(const char *name,double d,int where)
 {
 	Value *v=new DoubleValue(d);
-	int c=push(name,v);
+	int c=push(name,v,where);
 	v->dec_count();
 	return c;
 }
 
-int ValueHash::push(const char *name,const char *value)
+int ValueHash::push(const char *name,const char *value,int where)
 {
 	Value *v=new StringValue(value);
-	int c=push(name,v);
+	int c=push(name,v,where);
 	v->dec_count();
 	return c;
 }
 
 //! Create an ObjectValue with obj, and push.
 /*! Increments obj count. */
-int ValueHash::pushObject(const char *name,Laxkit::anObject *obj)
+int ValueHash::pushObject(const char *name,Laxkit::anObject *obj,int where)
 {
 	DBG cerr <<"pushObject: "<<(obj?obj->whattype():"null")<<endl;
 	if (dynamic_cast<Value*>(obj)) return push(name,dynamic_cast<Value*>(obj));
 
 	Value *v=new ObjectValue(obj);
-	int c=push(name,v);
+	int c=push(name,v,where);
 	v->dec_count();
 	return c;
 }
 
-/*! Increments count on v. If name exists already, just replace value. */
-int ValueHash::push(const char *name,Value *v)
+/*! Increments count on v. If name exists already, just replace value.
+ *
+ * If adding, not replacing value, then
+ * if where<0 then push at end, else push at that position in stack.
+ *
+ * where is ignored if hash is sorted.
+ *
+ * Returns index of pushed value, or -1 if failed somehow.
+ */
+int ValueHash::push(const char *name,Value *v,int where)
 {
+	if (where<0 || where>=keys.n) where=keys.n;
+
 	int place=findIndex(name);
 	int cmp=-2;
-	if (place<0) place=keys.n; else cmp=0;
+	if (place>=0) cmp=0;
+
 	if (sorted) {
+		 //sorts largest first.. *** optimize this!!
 		for (place=0; place<keys.n; place++) {
 			cmp=strcmp(name,keys.e[place]);
 			if (cmp>=0) {
 				break;
 			}
 		}
+		where=place;
 	}
-	if (cmp==0) {
+
+	if (cmp==0) { //exact match
 		set(place,v);
 		return place;
 	}
 
-	keys.push(newstr(name),-1,place);
-	return values.push(v,-1,place);
+	keys.push(newstr(name),-1,where);
+	return values.push(v,-1,where);
 }
 
 /*! Increments count on v.
  * len is how much of name to use. -1 means use all of name. */
-int ValueHash::push(const char *name,int len, Value *v)
+int ValueHash::push(const char *name,int len, Value *v, int where)
 {
-	int place=keys.n;
 	char *nname=newnstr(name,len);
-
-	if (sorted) {
-		for (place=0; place<keys.n; place++) {
-			if (strcmp(nname,keys.e[place])>=0) {
-				break;
-			}
-		}
-	}
-	keys.push(nname,-1,place);
-	return values.push(v,-1,place);
+	int c=push(nname,v,where);
+	delete[] nname;
+	return c;
 }
 
 /*! Return 0 for success, nonzero for no can do. */

@@ -180,8 +180,11 @@ customizable object child relationships to parent, rather than simple transform
 	 --> anchors would have number id, but be able to be named for scripting purposes
 
 
+overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
+
 gshell:
-  single character not triggering an update
+  mid stream search is messing up match names
+  searching seems to be messed up, improper matches
   *** not getting options for all tool and object!!
   need to be able to access affine stuff of objects! not returning info for gradients
   completion should be worked into the edit.. "object.|" then tab is replacing all text with field name
@@ -189,15 +192,18 @@ gshell:
   need to search for context names before searching for calculator names
   search within area, not total tree
   text delete to nothing should only show the top areas in search results
-  reposition cursor to error
-  viewport->ZoomToPage not doing anything
-  clickable search results
 
   0.095:
+    thoroughly test object access
     object.translate((1,0)) -> MapParameters should map the flatvector to p, not to x
     shift up/down for showing completion
+    reposition cursor to error
     for parameters, facility for special edit dodads
 
+  DONE not updating to current viewport object
+  DONE viewport->ZoomToPage not doing anything
+  DONE single character not triggering an update
+  DONE clickable search results
   DONE be able to move the box to top or to bottom
   DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
   DONE *** not putting in the objects to dict

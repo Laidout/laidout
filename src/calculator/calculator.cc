@@ -361,9 +361,9 @@ Value *ValueEntry::GetValue()
 	return NULL;
 }
 
-int ValueEntry::SetVariable(const char *name,Value *v,int absorb)
+int ValueEntry::SetVariable(const char *nname,Value *v,int absorb)
 {
-	if (!name) return 1;
+	if (!nname) nname=name;
 
 	if (value!=v) {
 		if (value) value->dec_count();
@@ -373,14 +373,14 @@ int ValueEntry::SetVariable(const char *name,Value *v,int absorb)
 
 	if (containing_object) {
 		FieldExtPlace fext;
-		fext.push(name);
+		fext.push(nname);
 		containing_object->assign(&fext,v);
 		if (v && absorb) v->dec_count();
 		return 0;
 	}
 
 	if (containing_space) {
-		containing_space->SetVariable(name,v,absorb);
+		containing_space->SetVariable(nname,v,absorb);
 		return 0;
 	}
 	if (v && absorb) v->dec_count();
@@ -1406,6 +1406,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, Erro
 	int num_expr_parsed=0;
 	clearerror();
 	errorlog=log;
+	if (errorlog==NULL) errorlog=&default_errorlog;
 
 	if (in==NULL) { calcerr(_("Blank expression")); return 1; }
 
@@ -1421,6 +1422,8 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, Erro
 
 
 	int tfrom=-1;
+	int numerr=errorlog->Total();
+
 
 	while(!calcerror && tfrom!=from && from<curexprslen) { 
 		tfrom=from;
@@ -1472,7 +1475,7 @@ int LaidoutCalculator::evaluate(const char *in, int len, Value **value_ret, Erro
 	if (last_answer) last_answer->dec_count();
 	last_answer=answer; //last_answer takes the reference
 
-	return calcerror>0 ? 1 : 0;
+	return calcerror>0 ? 1 : (errorlog->Total()>numerr && errorlog->Warnings(numerr)>0 ? -1: 0);
 }
 
 /*! Called recursively for scripted functions, establish a scope containing "context", and parameters.
@@ -1527,6 +1530,7 @@ void LaidoutCalculator::clearerror()
 {
 	calcerror=0;
 	if (calcmes) { delete[] calcmes; calcmes=NULL; }
+	default_errorlog.Clear();
 }
 
 //! If in error state, return the error message, otherwise the outexprs, otherwise "Ok.".

@@ -1158,7 +1158,7 @@ ObjectDef *makeAffineObjectDef()
 					 "y",_("Y"),_("The amount to move in the y direction"),"number", NULL,NULL,
 					 NULL);
 
-	sd->pushFunction("rotate", _("Rotate"), _("Rotate the object, optionally aronud a point"),
+	sd->pushFunction("rotate", _("Rotate"), _("Rotate the object, optionally around a point"),
 					 NULL, //evaluator
 					 "angle",_("Angle"),_("The angle to rotate"),"number", NULL,NULL,
 					 "point",_("Point"),_("The point around which to rotate. Default is the origin."),"flatvector", NULL,"(0,0)",

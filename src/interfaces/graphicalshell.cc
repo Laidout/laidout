@@ -211,6 +211,66 @@ GraphicalShell::~GraphicalShell()
 const char *GraphicalShell::Name()
 { return _("Shell"); }
 
+/*! incs count of ndoc if ndoc is not already the current document.
+ *
+ * Return 0 for success, nonzero for fail.
+ */
+int GraphicalShell::UseThisDocument(Document *ndoc)
+{
+	if (ndoc==doc) return 0;
+	if (doc) doc->dec_count();
+	doc=ndoc;
+	if (ndoc) ndoc->inc_count();
+	return 0;
+}
+
+/*! None.
+ */
+int GraphicalShell::draws(const char *atype)
+{ return 0; }
+
+
+//! Return a new GraphicalShell if dup=NULL, or anInterface::duplicate(dup) otherwise.
+anInterface *GraphicalShell::duplicate(anInterface *dup)//dup=NULL
+{
+	if (dup==NULL) dup=new GraphicalShell(id,NULL);
+	else if (!dynamic_cast<GraphicalShell *>(dup)) return NULL;
+	
+	return anInterface::duplicate(dup);
+}
+
+
+int GraphicalShell::InterfaceOn()
+{
+	DBG cerr <<"gshell On()"<<endl;
+	Setup();
+	showdecs=1;
+	needtodraw=1;
+	return 0;
+}
+
+int GraphicalShell::InterfaceOff()
+{
+	Clear(NULL);
+	showdecs=0;
+
+	if (le) app->unmapwindow(le);
+
+	needtodraw=1;
+	DBG cerr <<"gshell Off()"<<endl;
+	return 0;
+}
+
+int GraphicalShell::UseThis(Laxkit::anObject *ndata,unsigned int mask)
+{
+	return 0;
+}
+
+void GraphicalShell::Clear(SomeData *d)
+{
+	ClearError();
+}
+
 void GraphicalShell::ClearError()
 {
 	showerror=0;
@@ -218,32 +278,10 @@ void GraphicalShell::ClearError()
 	error_message=NULL;
 }
 
+/*! Initialize the lineedit, map it, and InitAreas().
+ */
 int GraphicalShell::Setup()
 {
-	// TODO
-	//
-	// code minimum: Value functions for viewport, a tool, its object
-	//   needs object extends DrawableObject, extends Affine, DoubleBBox
-	//
-	//
-	//Bring in ObjectDefs from default areas:
-	//  LaidoutViewport aka "Viewport"
-	//  Current tool
-	//  current object
-	//
-	//  todo: current selection
-	//
-	//  Do special check for changing tools to something else. Special ObjectDef where each tool
-	//  has a function that establishes that tool in viewport
-	//  namespace Select:
-	//    Select.ObjectInterface
-	//    Select.ImageInterface
-	//    Select. ...
-	//  or maybe shortcut to:
-	//    viewport.SelectTool("Object")
-	//    viewport.SelectTool("Image")
-
-
 	if (!le) {
 		double width=dp->Maxx-dp->Minx-2*pad;
 		double height=dp->textheight()*1.5;
@@ -275,23 +313,6 @@ int GraphicalShell::Setup()
 	return 0;
 }
 
-/*! Install or replace name with value in context.
- */
-int GraphicalShell::ChangeContext(const char *name, Value *value)
-{
-	if (!context.find(name)) {
-		 //unknown context name
-		context.push(name,value);
-	} else context.set(name,value);
-
-	//if (!strcmp(name,"object")) {
-	//if (!strcmp(name,"selection")) {}
-	//if (!strcmp(name,"viewport")) {}
-	//if (!strcmp(name,"tool")) {}
-
-	return 0;
-}
-
 //! Update context from viewport, tree.Flush(), and add items from context, then UpdateSearchTerm().
 int GraphicalShell::InitAreas()
 {
@@ -305,6 +326,8 @@ int GraphicalShell::InitAreas()
 	calculator.InstallVariables(&context);
 
 	
+	 //tree has immediate names of things in context. These get squashed to
+	 //normal strings later
 	tree.Flush();
 	ObjectDef *def;
 	const char *name;
@@ -326,47 +349,21 @@ int GraphicalShell::InitAreas()
 		}
 	}
 
-	UpdateSearchTerm(NULL,0, 1);
+	columns[0].items.Flush();
+	AddTreeToCompletion(&tree);
 
-	//DBG menuinfoDump(&tree,0);
 
 	return 0;
 }
-
-void GraphicalShell::UpdateMatches()
-{
-	for (int c=0; c<3; c++) {
-		columns[c].num_matches=columns[c].items.Search(searchterm,1,1);
-		//columns[c].width=-1;
-	}
-	needtomap=true;
-}
-
-void GraphicalShell::ClearSearch()
-{
-	for (int c=0; c<3; c++) {
-		columns[c].num_matches=columns[c].items.n();
-		columns[c].items.ClearSearch();
-		columns[c].width=-1;
-	}
-	needtomap=true;
-}
-
-
 
 
 Laxkit::MenuInfo *GraphicalShell::ContextMenu(int x,int y,int deviceid)
 {
 	return NULL;
-//	rx=x,ry=y;
-//	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
-//
-//	menu->AddItem(_("Add Registration Mark"),GSHELLM_RegistrationMark);
-//	menu->AddSep();
-//
-//	return menu;
 }
 
+/*! Reposition the lineedit when parent viewport size changed.
+ */
 void GraphicalShell::ViewportResized()
 {
 	if (placement_gravity==LAX_BOTTOM) {
@@ -389,6 +386,117 @@ void GraphicalShell::ViewportResized()
 	}
 }
 
+/*! Make sure tool, object are current in context.
+ *
+ * Return 1 if context has been changed, else 0.
+ */
+int GraphicalShell::UpdateContext()
+{
+	int mod=0;
+	
+	DBG anInterface *curtool=dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool();
+	DBG anInterface *contexttool= dynamic_cast<anInterface*>(context.find("tool"));
+	DBG DrawableObject *curobject=dynamic_cast<DrawableObject*>(dynamic_cast<LaidoutViewport*>(viewport)->curobj.obj);
+	DBG DrawableObject *contextobject=dynamic_cast<DrawableObject*>(context.find("object"));
+
+	DBG cerr <<" UpdateContext():"<<endl;
+	DBG cerr <<"    "<< (curtool==contexttool ? "tool same" : "tool different") <<", "<<(curtool?curtool->whattype():"null")<<endl;
+	DBG cerr <<"    "<< (curobject==contextobject ? "object same" : "object different") <<", "<<(curobject?curobject->whattype():"null")<<endl;
+
+	DBG if (curobject!=contextobject) {
+	DBG 	cerr <<"booyah"<<endl;
+	DBG }
+
+	if (dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool()
+			 != dynamic_cast<anInterface*>(context.find("tool"))) {
+		context.pushObject("tool",dynamic_cast<ViewerWindow*>(viewport->win_parent)->CurrentTool());
+		mod=1;
+	}
+
+	if (dynamic_cast<LaidoutViewport*>(viewport)->curobj.obj
+			!= dynamic_cast<DrawableObject*>(context.find("object"))) {
+		context.pushObject("object",dynamic_cast<LaidoutViewport*>(viewport)->curobj.obj);
+		mod=1;
+	}
+
+	if (mod) {
+		calculator.InstallVariables(&context);
+
+		 //tree has immediate names of things in context. These get squashed to
+		 //normal strings later
+		tree.Flush();
+		ObjectDef *def;
+		const char *name;
+		const char *area;
+		for (int c=0; c<context.n(); c++) {
+			area=context.key(c);
+			tree.AddItem(area);
+			def=context.value(c)->GetObjectDef();
+			if (def && def->getNumFields()) {
+				tree.SubMenu();
+				for (int c2=0; c2<def->getNumFields(); c2++) {
+					name=NULL;
+					def->getInfo(c2, &name);
+					if (name) {
+						tree.AddItem(name);
+					}
+				}
+				tree.EndSubMenu();
+			}
+		}
+
+		columns[0].items.Flush();
+		AddTreeToCompletion(&tree);
+	}
+
+	return mod;
+}
+
+///*! Install or replace name with value in context.
+// */
+//int GraphicalShell::ChangeContext(const char *name, Value *value)
+//{
+//	if (!context.find(name)) {
+//		 //unknown context name
+//		context.push(name,value);
+//	} else context.set(name,value);
+//
+//	//if (!strcmp(name,"object")) {
+//	//if (!strcmp(name,"selection")) {}
+//	//if (!strcmp(name,"viewport")) {}
+//	//if (!strcmp(name,"tool")) {}
+//
+//	return 0;
+//}
+
+
+/*! Update search hit tags in the columns.
+ * Updates original selection of strings if it seems like the context has changed (see UpdateContext()).
+ */
+void GraphicalShell::UpdateMatches()
+{
+	UpdateContext();
+
+	for (int c=0; c<3; c++) {
+		columns[c].num_matches=columns[c].items.Search(searchterm,1,1);
+		//columns[c].width=-1;
+	}
+	needtomap=true;
+}
+
+void GraphicalShell::ClearSearch()
+{
+	for (int c=0; c<3; c++) {
+		columns[c].num_matches=columns[c].items.n();
+		columns[c].items.ClearSearch();
+		columns[c].width=-1;
+	}
+	needtomap=true;
+}
+
+
+
+
 /*! Grab the portion of string that seems self contained. For instance, a string
  * of "1+Math.pi" would set searchterm to "Math.pi".
  *
@@ -396,62 +504,66 @@ void GraphicalShell::ViewportResized()
  */
 void GraphicalShell::UpdateSearchTerm(const char *str,int pos, int firsttime)
 {
-	//viewport.blah|  
-	//viewport.spread.1.|
-	//object.scale((1,0), | ) <- get def of function, keep track of which parameters used?
-	//object.1.(3+23).|
-	//
-	int len=(str?strlen(str):0);
-	if (pos<=0) pos=len-1;
-	int last=pos, pose=pos;
-	const char *first=str;
-	while (pos>0) {
-		while (pos>0 && isspace(str[pos])) pos--;
-		while (pos>0 && isalnum(str[pos])) pos--;
-		if (!first) { first=str+pos; pose=pos; }
-		if (pos>0 && str[pos]=='.') pos--;
-		else break; //do not parse backward beyond a whole term
-	}
+	makestr(searchterm,str);
 
-	if (first && *first=='.') first++;
-	makenstr(searchterm,first,last-pos+1);
-	if (!searchterm) searchterm=newstr("");
 
-	char *areastr=newnstr(str+pos,pose-pos);
-	ObjectDef *area=GetContextDef(areastr);
-	if (!area) area=calculator.GetInfo(areastr);
-
-	if (area!=searcharea || firsttime) {
-		if (searcharea) searcharea->dec_count();
-		searcharea=area;
-		if (area) area->inc_count();
-		makestr(searcharea_str,areastr);
-		char *s;
-
-		columns[0].items.Flush();
-
-		if (searcharea) {
-			const char *name;
-			for (int c=0; c<searcharea->getNumFields(); c++) {
-				name=NULL;
-				searcharea->getInfo(c, &name);
-				if (name) {
-					if (searcharea_str) {
-						s=newstr(searcharea_str);
-						appendstr(s,".");
-					} else s=NULL;
-					appendstr(s,name);
-
-					columns[0].items.AddItem(s);
-					delete[] s;
-				}
-			}
-
-		} else { //no distinct search area, so use all of tree
-			AddTreeToCompletion(&tree);
-			//DBG menuinfoDump(&columns[0].items,0);
-		}
-	}
+//---faulty stuff below:
+//	//viewport.blah|  
+//	//viewport.spread.1.|
+//	//object.scale((1,0), | ) <- get def of function, keep track of which parameters used?
+//	//object.1.(3+23).|
+//	//
+//	int len=(str?strlen(str):0);
+//	if (pos<=0) pos=len-1;
+//	int last=pos, pose=pos;
+//	const char *first=str;
+//	while (pos>0) {
+//		while (pos>0 && isspace(str[pos])) pos--;
+//		while (pos>0 && isalnum(str[pos])) pos--;
+//		if (!first) { first=str+pos; pose=pos; }
+//		if (pos>0 && str[pos]=='.') pos--;
+//		else break; //do not parse backward beyond a whole term
+//	}
+//
+//	if (first && *first=='.') first++;
+//	makenstr(searchterm,first,last-pos+1);
+//	if (!searchterm) searchterm=newstr("");
+//
+//	char *areastr=newnstr(str+pos,pose-pos);
+//	ObjectDef *area=GetContextDef(areastr);
+//	if (!area) area=calculator.GetInfo(areastr);
+//
+//	if (area!=searcharea || firsttime) {
+//		if (searcharea) searcharea->dec_count();
+//		searcharea=area;
+//		if (area) area->inc_count();
+//		makestr(searcharea_str,areastr);
+//		char *s;
+//
+//		columns[0].items.Flush();
+//
+//		if (searcharea) {
+//			const char *name;
+//			for (int c=0; c<searcharea->getNumFields(); c++) {
+//				name=NULL;
+//				searcharea->getInfo(c, &name);
+//				if (name) {
+//					if (searcharea_str) {
+//						s=newstr(searcharea_str);
+//						appendstr(s,".");
+//					} else s=NULL;
+//					appendstr(s,name);
+//
+//					columns[0].items.AddItem(s);
+//					delete[] s;
+//				}
+//			}
+//
+//		} else { //no distinct search area, so use all of tree
+//			AddTreeToCompletion(&tree);
+//			//DBG menuinfoDump(&columns[0].items,0);
+//		}
+//	}
 }
 
 /*! Search for the ObjectDef of expr within context. This is 
@@ -509,7 +621,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 		if (type==GSHELL_TextChanged) {
 			ClearError();
 			showcompletion=1;
-			UpdateSearchTerm(s->str,s->info3);
+			UpdateSearchTerm(s->str,s->info3,0);
 			if (!isblank(s->str)) {
 				 //text was changed
 			} else {
@@ -532,6 +644,10 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 		} else if (type==GSHELL_Enter) {
 			 //enter pressed
 			//execute command
+			
+			DBG cerr <<" -------shell enter------"<<endl;
+			UpdateContext();
+
 			char *command=le->GetText();
 			if (isblank(command)) {
 				PostMessage(_("You are surrounded by twisty passages, all alike."));
@@ -540,7 +656,6 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			//if (currenthistory>=0) columns[1].items.menuitems.remove(columns[1].items.n());
 			current_item=-1;
 
-			if (isblank(command)) return 0;
 			char *result=NULL;
 			Value *answer=NULL;
 			ErrorLog log;
@@ -602,6 +717,7 @@ int GraphicalShell::Event(const Laxkit::EventData *e,const char *mes)
 			delete[] result;
 			needtodraw=1;
 			needtomap=true;
+			DBG cerr <<" -------shell enter done------"<<endl;
 			return 0;
 
 		} else if (type==GSHELL_Esc) {
@@ -710,7 +826,7 @@ void GraphicalShell::EscapeBrowsing()
 	return;
 }
 
-//! Add menuitems from tree to completion.
+//! Add menuitems from tree to column 0.
 void GraphicalShell::AddTreeToCompletion(MenuInfo *menu)
 {
 	MenuItem *mi, *mii;
@@ -788,68 +904,6 @@ void GraphicalShell::TextFromItem(MenuItem *mii,char *&str)
 	appendstr(str,mii->name);
 }
 
-
-/*! incs count of ndoc if ndoc is not already the current document.
- *
- * Return 0 for success, nonzero for fail.
- */
-int GraphicalShell::UseThisDocument(Document *ndoc)
-{
-	if (ndoc==doc) return 0;
-	if (doc) doc->dec_count();
-	doc=ndoc;
-	if (ndoc) ndoc->inc_count();
-	return 0;
-}
-
-/*! None.
- */
-int GraphicalShell::draws(const char *atype)
-{
-	return 0;
-}
-
-
-//! Return a new GraphicalShell if dup=NULL, or anInterface::duplicate(dup) otherwise.
-anInterface *GraphicalShell::duplicate(anInterface *dup)//dup=NULL
-{
-	if (dup==NULL) dup=new GraphicalShell(id,NULL);
-	else if (!dynamic_cast<GraphicalShell *>(dup)) return NULL;
-	
-	return anInterface::duplicate(dup);
-}
-
-
-int GraphicalShell::InterfaceOn()
-{
-	DBG cerr <<"gshell On()"<<endl;
-	Setup();
-	showdecs=1;
-	needtodraw=1;
-	return 0;
-}
-
-int GraphicalShell::InterfaceOff()
-{
-	Clear(NULL);
-	showdecs=0;
-
-	if (le) app->unmapwindow(le);
-
-	needtodraw=1;
-	DBG cerr <<"gshell Off()"<<endl;
-	return 0;
-}
-
-int GraphicalShell::UseThis(Laxkit::anObject *ndata,unsigned int mask)
-{
-	return 0;
-}
-
-void GraphicalShell::Clear(SomeData *d)
-{
-	ClearError();
-}
 
 
 int GraphicalShell::Refresh()
@@ -1112,6 +1166,9 @@ int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 	int column=-1, item=-1;
 	int over=scan(x,y, &column,&item);
+
+	DBG cerr <<" --- old/new col: "<<oldcolumn<<','<<column<<"  old/new item: "<<olditem<<','<<item<<"  over="<<over<<"  dragged="<<dragged<<endl;
+
 	if (over==GSHELL_None) return 0;
 	if (column!=oldcolumn || item!=olditem || item<0) return 0;
 
@@ -1128,7 +1185,10 @@ int GraphicalShell::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 		} else if (over==GSHELL_Item && column>=0 && item>=0) {
 			const char *str=GetItemText(column,item);
-			if (isblank(str)) return 0;
+			if (isblank(str)) {
+				DBG cerr <<" *** BLANK LBUP STR!!!!!"<<endl;
+				return 0;
+			}
 
 			if (searchexpression==NULL) searchexpression=newstr(le->GetCText());
 			le->SetText(str);
@@ -1153,6 +1213,7 @@ const char *GraphicalShell::GetItemText(int column,int item)
 		item--;
 	}
 
+	DBG cerr <<" ** WARNING! couldn't find string for col,item:"<<column<<','<<item<<endl;
 	return NULL;
 }
 
@@ -1165,9 +1226,6 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 	//  -> numbers, control to drag out values
 	//  -> colors, control to pop up a color selector
 
-
-	DBG flatpoint fpp=dp->screentoreal(x,y);
-	DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
 
 	int column=-1,item=-1;
 
@@ -1182,7 +1240,6 @@ int GraphicalShell::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		DBG cerr <<"over box: "<<over<<"  column:"<<column<<"  item:"<<item<<endl;
 
 		if (!(state&ShiftMask)) return 1;
-		needtodraw=1;
 		return 0;
 	}
 
@@ -1314,8 +1371,23 @@ int GraphicalShell::CharInput(unsigned int ch, const char *buffer,int len,unsign
 	if (action>=0) {
 		if (PerformAction(action)==0) return 0;
 	}
-	if (ch==LAX_Down) {
-		if (hover_column<0) return 0;
+
+
+
+	if (ch==LAX_Enter) {
+		const char *str=GetItemText(hover_column,hover_item);
+		if (isblank(str)) return 0;
+
+		if (searchexpression==NULL) searchexpression=newstr(le->GetCText());
+		le->SetText(str);
+		app->setfocus(le,0,d);
+		le->SetCurpos(-1);
+		needtodraw=1;
+		return 0;
+
+	} else if (ch==LAX_Down) {
+		if (hover_column<0) hover_column=0;
+		hover_column--; hover_column=NextColumn(hover_column);
 		hover_item--;
 		if (hover_item<0) hover_item=columns[hover_column].num_matches-1;
 		MakeHoverInWindow();
@@ -1323,7 +1395,8 @@ int GraphicalShell::CharInput(unsigned int ch, const char *buffer,int len,unsign
 		return 0;
 
 	} else if (ch==LAX_Up) {
-		if (hover_column<0) return 0;
+		if (hover_column<0) hover_column=0;
+		hover_column--; hover_column=NextColumn(hover_column);
 		hover_item++;
 		if (hover_item>=columns[hover_column].num_matches) hover_item=0;
 		MakeHoverInWindow();
