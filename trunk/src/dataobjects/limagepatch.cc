@@ -171,7 +171,14 @@ int LImagePatchData::assign(FieldExtPlace *ext,Value *v)
 int LImagePatchData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 	                     Value **value_ret, ErrorLog *log)
 {
-	return -1;
+	AffineValue v(m());
+	int status=v.Evaluate(func,len,context,parameters,settings,value_ret,log);
+	if (status==0) {
+		m(v.m());
+		return 0;
+	}
+
+	return status;
 }
 
 

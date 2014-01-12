@@ -95,7 +95,7 @@ class GraphicalShell : public LaxInterfaces::anInterface
 
 
 	virtual void AddTreeToCompletion(Laxkit::MenuInfo *menu);
-	virtual void UpdateSearchTerm(const char *str,int pos, int firsttime=0);
+	virtual void UpdateSearchTerm(const char *str,int pos, int firsttime);
 	virtual ObjectDef *GetContextDef(const char *expr);
 	virtual const char *GetItemText(int column,int item);
 	virtual int scan(int x,int y, int *column, int *item);
@@ -140,7 +140,8 @@ class GraphicalShell : public LaxInterfaces::anInterface
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	virtual int UseThisDocument(Document *doc);
 
-	virtual int ChangeContext(const char *name, Value *value);
+	//virtual int ChangeContext(const char *name, Value *value);
+	virtual int UpdateContext();
 	virtual int InitAreas();
 	virtual void UpdateFromItem();
 	virtual void TextFromItem(Laxkit::MenuItem *mii,char *&str);

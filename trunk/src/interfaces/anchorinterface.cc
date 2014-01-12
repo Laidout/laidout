@@ -55,6 +55,18 @@ namespace Laidout {
  */
 
 
+enum AnchorPlaces
+{
+	ANCHOR_Parents      =(1<<0),
+	ANCHOR_Other_Objects=(1<<1),
+	ANCHOR_Margin_Area  =(1<<2),
+	ANCHOR_Page_Area    =(1<<3),
+	ANCHOR_Paper        =(1<<4),
+	ANCHOR_Guides       =(1<<5),
+	ANCHOR_MAX
+};
+
+
 AnchorInterface::AnchorInterface(int nid,Displayer *ndp)
 	: AlignInterface(nid,ndp) 
 {

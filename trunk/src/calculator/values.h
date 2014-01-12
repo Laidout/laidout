@@ -309,18 +309,18 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 
   public:
 	ValueHash();
-	~ValueHash();
+	virtual ~ValueHash();
 	int sorted;
 
 	const char *key(int i);
 	Value *value(int i);
 	int flush();
-	int push(const char *name,int i);
-	int push(const char *name,double d);
-	int push(const char *name,const char *string);
-	int pushObject(const char *name,Laxkit::anObject *obj);
-	int push(const char *name,Value *v);
-	int push(const char *name,int len,Value *v);
+	int push(const char *name,int i,int where=-1);
+	int push(const char *name,double d,int where=-1);
+	int push(const char *name,const char *string,int where=-1);
+	int pushObject(const char *name,Laxkit::anObject *obj,int where=-1);
+	int push(const char *name,Value *v,int where=-1);
+	int push(const char *name,int len,Value *v,int where=-1);
 	int remove(int i);
 	void swap(int i1, int i2);
 
