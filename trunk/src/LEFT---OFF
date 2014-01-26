@@ -12,10 +12,7 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
-path tool:
-  click to add point not working
-  wheel up/down to change point type, message blinks off right away
-  DONE sometimes 'p' doesn't work
+hang after reparent
 
 text window controls have difficulties
 
@@ -135,10 +132,9 @@ pdf export if a path has null linestyle/fillstyle it buffers until next path dra
 
 ----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
 update fileformat.txt
-polyptych site?
 check laidout.1 when time to release
 update docs to have new release number
-update translations
+update translation base files
 update screenshots
 put rss/g+ links on all menu pages
 test:
@@ -146,21 +142,22 @@ test:
     help: window pane does funky stuff
   each export filter
   make some test scripts for command line testing
-  test window icon
+  test in different window managers
 
 cloner:
   implement add to document
-  need mass select page for all tiling types
-  need progressive search when mouse over box
-  need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
-  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   implement setting objects for each base cell
-  select objects, wrap base cell around it
+  need mass select page for all tiling types
+  1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   implement boundary check
+  select objects, wrap base cell around it
+ 0.95:
+  need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
   need finishing tool
   design interface for clone on path
   implement circular interface
   penrose/heesh/net clone interface
+  need progressive search when mouse over box
 
   DONE cell outlines bad for p4m, p4g, p6m --> was problem in new pathsdata->append() 
   DONE implement moving around base cells
@@ -173,46 +170,26 @@ Color sliders:
   CMYK sliders FAIL
 
 customizable object child relationships to parent, rather than simple transform
-  transform relative to parent origin
-  transform relative to alignment point of parent (50,50) for center, for instance
-  transform relative to absolute point other than origin, as a function of parent?
-  	 --> like parent->getanchor(id), getbasisanchor(id)
-	 --> anchors would have number id, but be able to be named for scripting purposes
+  DONE scale
+  DONE scale x
+  DONE scale y
+  DONE free scale
+  DONE rotate
+  DONE scale+rotate
+  DONE stretch
+  shear *** need shear protection, produces null axes sometimes
+  anchor names should not have quotes in them, because disk i/o is easier and I'm lazy
+  only align objects that are on pages
+
+  for 0.095:
+    transform relative to alignment point of parent (50,50) for center, for instance
+    code
+	edge magnet
+    when trying to move an anchor when you still need to select invariants, flash the invariants
+	need edge indicators for more convenient snapping
 
 
-overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
-
-gshell:
-  mid stream search is messing up match names
-  searching seems to be messed up, improper matches
-  *** not getting options for all tool and object!!
-  need to be able to access affine stuff of objects! not returning info for gradients
-  completion should be worked into the edit.. "object.|" then tab is replacing all text with field name
-  when in function, search among parameter names also
-  need to search for context names before searching for calculator names
-  search within area, not total tree
-  text delete to nothing should only show the top areas in search results
-
-  0.095:
-    thoroughly test object access
-    object.translate((1,0)) -> MapParameters should map the flatvector to p, not to x
-    shift up/down for showing completion
-    reposition cursor to error
-    for parameters, facility for special edit dodads
-
-  DONE not updating to current viewport object
-  DONE viewport->ZoomToPage not doing anything
-  DONE single character not triggering an update
-  DONE clickable search results
-  DONE be able to move the box to top or to bottom
-  DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
-  DONE *** not putting in the objects to dict
-  DONE red box for errors
-  DONE *** laidoutcalculator::dereference() seems to destroy value, as objectdef of zoomin
-  DONE up/down to browse history
-  DONE *** need to be able to tab through search term
-  DONE store initial search term while in completion mode
-
+gshell: test
 
 calculator
   showing defined functions should show the code
@@ -260,7 +237,24 @@ calculator
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
 
-----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+----------------0.095 ROADMAP ITEMS, features and enhancements------------------------
+
+overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
+
+gshell:
+    *** not getting options for all tool and object!!
+    searching seems to be messed up, improper matches when mid stream
+	mid stream search is messing up match names
+    completion should be worked into the edit.. "object.|" then tab is replacing all text with field name
+    when in function, search among parameter names also
+    need to search for context names before searching for calculator names
+    search within area, not total tree
+    text delete to nothing should only show the top areas in search results
+    thoroughly test object access
+    object.translate((1,0)) -> MapParameters should map the flatvector to p, not to x
+    shift up/down for showing completion
+    reposition cursor to error
+    for parameters, facility for special edit dodads
 
 need a way to tell rect interface to enter move mode with lbdown, as when initialize a child interface
 
@@ -514,6 +508,7 @@ When there are errors or warnings in exporting, should be able to have the error
   - have ViewWindow::JumpToObject(&place, objectid);	
 
 align tool:
+  endpoints should be oriented triangle, not circles which make it look like path nodes
   explode in normal align
   should be able to scale and rotate a non-line path when not in path mode
   need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
@@ -899,8 +894,6 @@ rulercornerbutton:
 a "Place" tool like indesign?? preview images and place by dragging out one by one, as well
  as optionally into Arrangements
 
-figure out Scribus' PS importer!! how the hell does it do it, and why does it not do everything?
-
 NetImposition:
     import/export cff2?
     export vrml? pdf 1.6?
@@ -1009,3 +1002,23 @@ DONE Imposition Editor:
 
 DONE shortcuts: default to load and save "default" keys in a standard location
 
+DONE path tool:
+  DONE click to add point not working
+  DONE sometimes 'p' doesn't work
+
+DONE gshell:
+  DONE need to be able to access affine stuff of objects! not returning info for gradients
+  DONE not updating to current viewport object
+  DONE viewport->ZoomToPage not doing anything
+  DONE single character not triggering an update
+  DONE clickable search results
+  DONE be able to move the box to top or to bottom
+  DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
+  DONE *** not putting in the objects to dict
+  DONE red box for errors
+  DONE *** laidoutcalculator::dereference() seems to destroy value, as objectdef of zoomin
+  DONE up/down to browse history
+  DONE *** need to be able to tab through search term
+  DONE store initial search term while in completion mode
+
+DONE polyptych site?
