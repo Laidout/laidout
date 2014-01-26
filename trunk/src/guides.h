@@ -40,13 +40,17 @@ class PointAnchor : public Laxkit::anObject,
   public:
     char *name;
 	int id;
-	DrawableObject *owner;
+
+	Laxkit::anObject *owner;
+	unsigned int owner_id;
 	Laxkit::ScreenColor color, hcolor;
     flatpoint p, p2;
     int anchor_type; //alignment point in bounding box,
                      //or absolute coordinate
                      //or segment
                      //or infinite line
+
+	PointAnchor();
     PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2,int nid);
     virtual ~PointAnchor();
     virtual const char *whattype() { return "PointAnchor"; }
