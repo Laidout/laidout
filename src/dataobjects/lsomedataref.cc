@@ -26,7 +26,7 @@ namespace Laidout {
 
 //------------------------------- LSomeDataRef ---------------------------------------
 /*! \class LSomeDataRef
- * \brief Redefined LaxInterfaces::SomeDataRef to subclass DrawableObject
+ * \brief Redefined LaxInterfaces::SomeDataRef (clones) to subclass DrawableObject.
  */
 
 LSomeDataRef::LSomeDataRef(LaxInterfaces::SomeData *refobj)
