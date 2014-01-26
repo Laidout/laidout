@@ -48,38 +48,63 @@ class DrawObjectChain
 	virtual ~DrawObjectChain();
 };
 
-//----------------------------------- DrawableParentLink ---------------------------
+//----------------------------------- AlignmentRule ---------------------------
 
-//! Types for how a child DrawableObject fits in a parent. See DrawableParentLink.
-enum ParentLinkTypes
+//! Types for how a child DrawableObject fits in a parent. See AlignmentRule.
+enum AlignmentRuleTypes
 {
-	PARENTLINK_Matrix,
-	PARENTLINK_Align,      //!<Align to arbitrary point
-	PARENTLINK_Anchor,     //!<Align to specific anchor in parent
-	PARENTLINK_ResizeAnchor,
-	PARENTLINK_StretchAnchor,
-	PARENTLINK_Code,       //!<Obtain matrix through code
-	PARENTLINK_ResizeLeft,
-	PARENTLINK_ResizeRight,
-	PARENTLINK_ResizeTop,
-	PARENTLINK_ResizeBottom,
-	PARENTLINK_MAX
+	ALIGNMENTRULE_None=0,
+	ALIGNMENTRULE_Matrix,
+	ALIGNMENTRULE_Align,    //!<Align particular bounding box point to particular parent bounding box point
+	ALIGNMENTRULE_Move,     //!<Align to specific anchor in parent
+	ALIGNMENTRULE_ScaleRotate,
+	ALIGNMENTRULE_Scale,
+	ALIGNMENTRULE_ScaleFree,
+	ALIGNMENTRULE_ScaleX,
+	ALIGNMENTRULE_ScaleY,
+	ALIGNMENTRULE_Rotate,
+	ALIGNMENTRULE_Stretch,
+	ALIGNMENTRULE_Shear,
+	ALIGNMENTRULE_EdgeMagnet,
+	ALIGNMENTRULE_Code,       //!<Obtain matrix through code
+	ALIGNMENTRULE_MAX
 };
 
-class DrawableParentLink
+const char *AlignmentRuleName(int type);
+
+class AlignmentRule
 {
   public:
-	int type; //straight matrix, align points, align by parent anchor, code
-	flatpoint anchor1; //alignment to parent bounding box
-	flatpoint anchor2; //where in bounding box to align to parent point from anchor1
-	double offset;
-	int parent_anchor_id;
-	int code_id; //id of a TextObject with runnable code that returns an offset
-	Laxkit::Affine offset_m; //this is an offset from where the other settings position it
-	DrawableParentLink *next;
+	int type; //straight matrix, align points, code, various in AlignmentRuleTypes
+	
 
-	DrawableParentLink();
-	virtual ~DrawableParentLink();
+	int object_anchor; //an anchor in object that gets moved toward target
+	int constraintype; //vector is object coords, or parent, or page, or none
+	flatpoint constraindir;
+
+	int invariant1, invariant2; //anchors in object
+
+	 // too many types in one class!!
+	 //1.
+	double magnet_attachement; //0..1 usually
+	double magnet_scale; //0 for natural size, 1 for total fill
+
+	 //2.
+	PointAnchor *target;
+	int offset_units; //page, object, or parent
+	flatpoint offset; //displacement off the target anchor
+
+	 //3.
+	flatpoint align1; //alignment to parent bounding box
+	flatpoint align2; //where in bounding box to align to parent point from align1
+
+	 //4.
+	int code_id; //id of a TextObject with runnable code that returns an offset
+
+	AlignmentRule *next;
+
+	AlignmentRule();
+	virtual ~AlignmentRule();
 };
 
 
@@ -89,7 +114,7 @@ class DrawableParentLink
  * Custom anchors must have a value of ANCHOR_MAX or greater.
  */
 enum BBoxAnchorTypes {
-	BBOXANCHOR_ul=1,
+	BBOXANCHOR_ul=1, //devs: do not change this value!!
 	BBOXANCHOR_um,
 	BBOXANCHOR_ur,
 	BBOXANCHOR_ml,
@@ -121,7 +146,7 @@ class DrawableObject :  virtual public ObjectContainer,
  protected:
  public:
 	DrawableObject *parent;
-	DrawableParentLink *parent_link;
+	AlignmentRule *parent_link;
 
 	int locks; //lock object contents|matrix|rotation|shear|scale|kids|selectable
 	char locked, visible, prints, selectable;
@@ -159,9 +184,10 @@ class DrawableObject :  virtual public ObjectContainer,
 	 //default is point to things particular to Groups.
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();
-	virtual int SetParentLink(DrawableParentLink *newlink);
+	virtual int SetParentLink(AlignmentRule *newlink, bool replace=false, int where=-1);
 	virtual void UpdateFromParentLink();
 	virtual LaxInterfaces::SomeData *GetParent();
+	virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
 
 	virtual int Selectable();
 	virtual int Visible();
@@ -179,10 +205,15 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
 	virtual LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
 
+	Laxkit::RefPtrStack<PointAnchor> anchors;
 	virtual int NumAnchors();
-	virtual int GetAnchorI(int anchor_index, flatpoint *p, int transform, PointAnchor **anchor);
-	virtual int GetAnchor(int anchor_id, flatpoint *p, int transform, PointAnchor **anchor);
-	//virtual int AddAnchor(const char *name, flatpoint pos, flatpoint align, int type);
+	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, bool transform_to_parent);
+	virtual int GetAnchorInfo(int anchor_id, const char **name, flatpoint *p, bool transform_to_parent);
+	virtual int GetAnchorI(int anchor_index, PointAnchor **anchor);
+	virtual int GetAnchor(int anchor_id, PointAnchor **anchor);
+	virtual int AddAnchor(const char *name, flatpoint pos, int type, int nid);
+	virtual int RemoveAnchor(int anchor_id);
+	virtual int RemoveAnchorI(int index);
 
 
 	 //Group specific functions:
