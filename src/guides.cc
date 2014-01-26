@@ -33,6 +33,14 @@ namespace Laidout {
  * Can be a point, or a segment, or a line. See PointAnchorTypes.
  */
 
+PointAnchor::PointAnchor()
+{
+	id=getUniqueNumber();
+	name=NULL;
+	anchor_type=PANCHOR_Absolute;
+	owner=NULL;
+}
+
 PointAnchor::PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp2, int nid)
 {
 	if (nid<=0) nid=getUniqueNumber();
@@ -43,7 +51,9 @@ PointAnchor::PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp
     p2=pp2;
 	color.rgb(0.,0.,1.);
 	hcolor.rgb(1.,0.,0.);
+
 	owner=NULL;
+	owner_id=0;
 }
 
 PointAnchor::~PointAnchor()
