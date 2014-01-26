@@ -16,10 +16,11 @@
 #ifndef INTERFACES_ANCHORINTERFACE_H
 #define INTERFACES_ANCHORINTERFACE_H
 
+#include <lax/interfaces/somedataref.h>
 #include <lax/refptrstack.h>
-#include "aligninterface.h"
 #include "../guides.h"
 #include "../viewwindow.h"
+#include "selection.h"
 
 //#include "../laidout.h"
 
@@ -32,17 +33,69 @@ namespace Laidout {
 
 //------------------------------------- AnchorInterface --------------------------------------
 
-class AnchorInterface : public AlignInterface
+enum AnchorPlaces
+{
+	ANCHOR_Parents=1,
+	ANCHOR_Page_Area,
+	ANCHOR_Margin_Area,
+	ANCHOR_Paper,
+	ANCHOR_Selection,
+	ANCHOR_Other_Objects,
+	ANCHOR_Guides,
+
+	ANCHOR_Anchor,
+	ANCHOR_Region,
+	ANCHOR_Object,
+	ANCHOR_MAX
+};
+
+class AnchorInterface : public LaxInterfaces::anInterface
 {
   protected:
 
-	Laxkit::RefPtrStack<PointAnchor> anchors;
+	class Anchors
+	{
+	  public:
+		PointAnchor *anchor;
+		int anchorsource;
+		int on;
+		Anchors(PointAnchor *aa, int oon);
+		~Anchors();
+	};
 
-	virtual int scan(int x,int y);
+	Selection *selection;
+	VObjContext *cur_oc;
+	LaxInterfaces::SomeDataRef *proxy;
+	PointAnchor temptarget;
+	AlignmentRule *current_rule;
+
+	unsigned int anchor_regions;
+	bool show_region_selector;
+	bool firsttime;
+	Laxkit::PtrStack<Anchors> anchors;
+	Laxkit::MenuInfo regions;
+	int hover_item, hover_anchor;
+	int active_anchor, active_i1, active_i2;
+	int active_match;
+	int active_type, last_type;
+	bool newpoint;
+
+	virtual int scan(int x,int y, int *anchor);
+	virtual void DrawSelectedIndicator(LaxInterfaces::ObjectContext *oc);
+	virtual void RefreshMenu();
+	virtual void DrawText(flatpoint p,const char *s);
+	virtual int RemoveAnchors(LaxInterfaces::ObjectContext *oc);
+	virtual int UpdateAnchors(int region);
+	virtual void UpdateSelectionAnchors();
+	virtual bool RegionActive(int region);
+	virtual int NumInvariants();
+
+	Laxkit::ShortcutHandler *sc;
+	virtual int PerformAction(int action);
+
   public:
 
-	AnchorInterface(int nid=0,Laxkit::Displayer *ndp=NULL);
-	AnchorInterface(anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
+	AnchorInterface(LaxInterfaces::anInterface *nowner=NULL,int nid=0,Laxkit::Displayer *ndp=NULL);
 	virtual ~AnchorInterface();
 	virtual anInterface *duplicate(anInterface *dup=NULL);
 
@@ -51,14 +104,15 @@ class AnchorInterface : public AlignInterface
 	virtual const char *whattype() { return "AnchorInterface"; }
 	virtual const char *whatdatatype() { return NULL; }
 	virtual int draws(const char *atype);
-	virtual int AddAnchor(flatpoint p,const char *name);
-	virtual int AddAnchors(VObjContext *context);
+	virtual int AddAnchor(flatpoint p,const char *name, int source, int id);
+	virtual int AddAnchors(VObjContext *context, int source);
 
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
@@ -69,6 +123,10 @@ class AnchorInterface : public AlignInterface
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
+
+	virtual int SetCurrentObject(LaxInterfaces::ObjectContext *oc);
+	virtual int AddToSelection(LaxInterfaces::ObjectContext *oc, int where=-1);
+	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &selection);
 };
 
 

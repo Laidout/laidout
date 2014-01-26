@@ -87,7 +87,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		//existingpool->push(i);
 		//i->dec_count();
 		
-		i=new AnchorInterface(id++,NULL);
+		i=new AnchorInterface(NULL,id++,NULL);
 		existingpool->push(i);
 		i->dec_count();
 
