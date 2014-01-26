@@ -15,6 +15,7 @@ DEBUGFLAGS= -g
 
 objs= \
 	actionarea.o \
+	selection.o \
 	nupinterface.o \
 	aligninterface.o \
 	anchorinterface.o \
