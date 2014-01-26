@@ -83,6 +83,7 @@ class Spread : public ObjectContainer
 	unsigned int style; // says what is the type of thing this spread refers to. See Imposition.
 	int spreadtype;
 
+	Document *doc;
 	PaperGroup *papergroup;
 
 	flatpoint minimum,maximum; //are in path coordinates, useful for littlespreads in Spread editor

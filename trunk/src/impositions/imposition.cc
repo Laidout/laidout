@@ -170,6 +170,7 @@ PageLocation::~PageLocation()
 //! Basic init, set all to 0.
 Spread::Spread()
 {
+	doc=NULL;
 	papergroup=NULL;
 	mask=0;
 	spreadtype=0;
