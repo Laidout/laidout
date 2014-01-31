@@ -1126,6 +1126,21 @@ int LaidoutViewport::DeleteObject()
 	return 1;
 }
 
+/*! Shortcut to ChangeContext(oc) then DeleteObject().
+ */
+int LaidoutViewport::DeleteObject(LaxInterfaces::ObjectContext *oc)
+{
+	if (!oc) return 0;
+	SomeData *d=oc->obj;
+	if (!d) return -1;
+
+	ChangeContext(oc);
+	return DeleteObject();
+}
+
+/*! This will set curobj to where the new object is, and oc will point to curobj, thus
+ * it should not be deleted by calling code.
+ */
 int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc)
 {
 	if (!d) return -1;

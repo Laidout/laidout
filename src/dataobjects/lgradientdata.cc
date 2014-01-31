@@ -35,6 +35,7 @@ namespace Laidout {
 
 LGradientData::LGradientData(LaxInterfaces::SomeData *refobj)
 {
+	Id();
 }
 
 LGradientData::~LGradientData()

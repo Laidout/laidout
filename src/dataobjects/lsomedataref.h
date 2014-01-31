@@ -33,6 +33,7 @@ class LSomeDataRef : public DrawableObject,
 	LSomeDataRef(LaxInterfaces::SomeData *refobj=NULL);
 	virtual ~LSomeDataRef();
 	virtual const char *whattype() { return "SomeDataRef"; }
+	virtual const char *Id();
 	virtual void FindBBox();
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);

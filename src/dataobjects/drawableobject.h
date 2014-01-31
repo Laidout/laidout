@@ -184,8 +184,9 @@ class DrawableObject :  virtual public ObjectContainer,
 	 //default is point to things particular to Groups.
 	virtual int pointin(flatpoint pp,int pin=1);
 	virtual void FindBBox();
-	virtual int SetParentLink(AlignmentRule *newlink, bool replace=false, int where=-1);
-	virtual void UpdateFromParentLink();
+	virtual int AddAlignmentRule(AlignmentRule *newlink, bool replace=false, int where=-1);
+	virtual int RemoveAlignmentRule(int index);
+	virtual void UpdateFromRules();
 	virtual LaxInterfaces::SomeData *GetParent();
 	virtual Laxkit::Affine GetTransformToContext(bool invert, int partial);
 

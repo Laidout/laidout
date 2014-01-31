@@ -202,7 +202,7 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 
 		if (popupcontrols==GROUP_Link) {
 			double th=dp->textheight();
-			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
 		
 			 //p.x,p.y, w/2,th*1.5
 			pp=dp->realtoscreen(transform_point(somedata->m(),pp));
@@ -350,28 +350,21 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 		if (hover==GROUP_Parent_Align) {
 			 //switch to anchor align tool
-			AnchorInterface *anchor=new AnchorInterface(getUniqueNumber(), dp);
+			AnchorInterface *anchor=new AnchorInterface(NULL, getUniqueNumber(), dp);
 			child=anchor;
             anchor->owner=this;
 			VObjContext pcontext;
 
 			 //add anchors of parent
 			LaidoutViewport *vp=((LaidoutViewport *)viewport);
-			pcontext=*dynamic_cast<VObjContext*>(selection.e[0]);
-			pcontext.context.pop();
-			pcontext.SetObject(dynamic_cast<DrawableObject*>(vp->getanObject(pcontext.context,0,0)));
-			anchor->AddAnchors(&pcontext);
 			anchor->AddToSelection(selection);
-
-			//anchor->AddAnchor(flatpoint(),"origin");
-			//anchor->AddAnchor(flatpoint(1,0),"x at 1");
-			//anchor->AddAnchor(flatpoint(0,1),"y at 1");
+			anchor->SetCurrentObject(&vp->curobj);
 
             viewport->Push(anchor,-1,0);
 			FreeSelection();
 
 		} else if (hover==GROUP_Parent_Matrix) {
-			obj->SetParentLink(NULL);
+			obj->AddAlignmentRule(NULL);
 
 		} else if (hover==GROUP_Jump_To_Parent) {
 			LaidoutViewport *vp=((LaidoutViewport *)viewport);
@@ -747,36 +740,38 @@ int GroupInterface::PerformAction(int action)
 int GroupInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
 	DBG cerr <<" ****************GroupInterface::CharInput"<<endl;
-//	if (ch==' ' && selection.n && buttondown.any(0,LEFTBUTTON)) {
-//		SomeData *obj;
-//		for (int c=0; c<selection.n; c++) {
-//			obj=NULL;
-//			int cloned=0;
-//			if (state&ControlMask) {
-//				 // duplicate selection as clones
-//				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
-//
-//				cloned=1;
-//				LSomeDataRef *lobj=new LSomeDataRef();
-//				lobj->Set(selection.e[c]->obj,0);
-//				lobj->parent=selection.e[c]->obj->parent;
-//				obj=lobj;
-//			} else {
-//				 //duplicate selection
-//				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
-//
-//				cloned=0;
-//				obj=selection.e[c]->obj->duplicate(NULL);
-//				obj->FindBBox();
-//			}
-//			if (!obj) continue;
-//			viewport->ChangeContext(selection.e[c]);
-//			viewport->NewData(obj,NULL);
-//			obj->dec_count();
-//			PostMessage(cloned?_("Cloned."):_("Duplicated."));
-//		}
-//		return 0;
-//	}
+
+	if (ch==' ' && selection.n && buttondown.any(0,LEFTBUTTON)) {
+		SomeData *obj;
+		for (int c=0; c<selection.n; c++) {
+			obj=NULL;
+			int cloned=0;
+			if (state&ControlMask) {
+				 // duplicate selection as clones
+				DBG cerr <<" - Clone "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+
+				cloned=1;
+				LSomeDataRef *lobj=new LSomeDataRef();
+				lobj->Set(selection.e[c]->obj,0);
+				lobj->parent=dynamic_cast<DrawableObject*>(selection.e[c]->obj)->parent;
+				obj=lobj;
+			} else {
+				 //duplicate selection
+				DBG cerr <<" - Duplicate "<<selection.e[c]->obj->whattype()<<":"<<selection.e[c]->obj->object_id<<endl;
+
+				cloned=0;
+				obj=selection.e[c]->obj->duplicate(NULL);
+				obj->FindBBox();
+			}
+			if (!obj) continue;
+			viewport->ChangeContext(selection.e[c]);
+			viewport->NewData(obj,NULL);
+			obj->dec_count();
+			PostMessage(cloned?_("Cloned."):_("Duplicated."));
+		}
+		return 0;
+	}
+
 	return ObjectInterface::CharInput(ch,buffer,len,state,d);
 }
 
@@ -867,7 +862,7 @@ int GroupInterface::Refresh()
 
 		if (popupcontrols==GROUP_Parent_Link) {
 			double th=dp->textheight();
-			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
 			p.y-=3*th;
 			if (p.y-th<dp->Miny) p.y=dp->Miny+th;
 			if (p.x-w*1.5<dp->Minx) p.x=dp->Minx+w*1.5;
@@ -889,7 +884,7 @@ int GroupInterface::Refresh()
 				dp->textout(p.x-w,p.y,     _("Matrix"),-1,  LAX_CENTER);
 				dp->textout(p.x-w,p.y+2*th,_("Align"),-1,   LAX_CENTER);
 			}
-			dp->textout(p.x+w,p.y,     _("Jump to"),-1, LAX_CENTER);
+			dp->textout(p.x+w,p.y,     _("Jump to parent"),-1, LAX_CENTER);
 			dp->textout(p.x+w,p.y+2*th,_("Reparent"),-1,LAX_CENTER);
 
 			if (hover==GROUP_Reparent && selection.n>1) DrawReparentArrows();

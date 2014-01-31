@@ -45,6 +45,8 @@ enum AnchorPlaces
 
 	ANCHOR_Anchor,
 	ANCHOR_Region,
+	ANCHOR_Regions,
+	ANCHOR_Rules,
 	ANCHOR_Object,
 	ANCHOR_MAX
 };
@@ -89,6 +91,7 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	virtual void UpdateSelectionAnchors();
 	virtual bool RegionActive(int region);
 	virtual int NumInvariants();
+	virtual int findAnchor(int id);
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);

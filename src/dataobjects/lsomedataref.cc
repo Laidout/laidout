@@ -19,6 +19,7 @@
 #include "../stylemanager.h"
 #include "../language.h"
 
+#include <lax/misc.h>
 
 
 namespace Laidout {
@@ -35,6 +36,18 @@ LSomeDataRef::LSomeDataRef(LaxInterfaces::SomeData *refobj)
 
 LSomeDataRef::~LSomeDataRef()
 {
+}
+
+const char *LSomeDataRef::Id()
+{
+    if (!nameid) {
+        if (object_idstr) makestr(nameid,object_idstr);
+        else {
+            nameid=Laxkit::make_id("Clone");
+            makestr(object_idstr,nameid);
+        }
+    }
+    return nameid;
 }
 
 	
