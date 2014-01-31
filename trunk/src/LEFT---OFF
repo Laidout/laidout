@@ -145,12 +145,17 @@ test:
   test in different window managers
 
 cloner:
-  implement add to document
+  debug colorings
+  change colors of base cell outlines, as well as boundary, and outline preview
+  implement add to document: debug placement
   implement setting objects for each base cell
   need mass select page for all tiling types
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   implement boundary check
   select objects, wrap base cell around it
+  debug recursive
+  need rudimentary editor
+  DONE select base cell objects should exclude those that have preview as parent
  0.95:
   need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
   need finishing tool
@@ -170,16 +175,21 @@ Color sliders:
   CMYK sliders FAIL
 
 customizable object child relationships to parent, rather than simple transform
+  scale x
+  scale y
+  free scale
   DONE scale
-  DONE scale x
-  DONE scale y
-  DONE free scale
   DONE rotate
   DONE scale+rotate
   DONE stretch
   shear *** need shear protection, produces null axes sometimes
-  anchor names should not have quotes in them, because disk i/o is easier and I'm lazy
+  proxy displays ok, but after install stretch doesn't work
+  margin area not working
+  other objects
   only align objects that are on pages
+  implement rules list click remove
+  implement click rule, update display, watch for offset
+  anchor names should not have quotes in them, because disk i/o is easier and I'm lazy
 
   for 0.095:
     transform relative to alignment point of parent (50,50) for center, for instance

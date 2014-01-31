@@ -244,6 +244,8 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 
 	parent=NULL;
 	parent_link=NULL;
+
+	//Id(); //makes this->nameid (of SomeData) be something like `whattype()`12343
 }
 
 /*! Will detach this object from any object chain. It is assumed that other objects in
@@ -289,6 +291,24 @@ void DrawableObject::Lock(int which)
 void DrawableObject::Unlock(int which)
 { locks&=~which; }
 
+/*! If index out or range, remove top.
+ * Return 0 for success, nonzero error.
+ */
+int DrawableObject::RemoveAlignmentRule(int index)
+{
+	if (!parent_link) return 0;
+
+	AlignmentRule *ruleprev=NULL, *rule=parent_link;
+	while (rule && rule->next && index) { ruleprev=rule; rule=rule->next; index--; }
+
+	if (ruleprev) ruleprev->next=rule->next;
+	else parent_link=rule->next;
+	rule->next=NULL;
+	delete rule;
+
+	return 0;
+}
+
 /*! Return 0 for success.
  * Return 1 for improper link, nothing changed.
  *
@@ -296,7 +316,7 @@ void DrawableObject::Unlock(int which)
  * If where>=0, the install at that position, else tack onto end.
  * If replace, then replace link at position where, else insert at that spot.
  */
-int DrawableObject::SetParentLink(AlignmentRule *newlink, bool replace, int where)
+int DrawableObject::AddAlignmentRule(AlignmentRule *newlink, bool replace, int where)
 {
 	if (!newlink) {
 		if (parent_link) delete parent_link;
@@ -328,13 +348,13 @@ int DrawableObject::SetParentLink(AlignmentRule *newlink, bool replace, int wher
 		}
 	}
 
-	UpdateFromParentLink();
+	UpdateFromRules();
 
 	return 0;
 }
 
 //! Set this->m() to be an approprate value based on parent_link.
-void DrawableObject::UpdateFromParentLink()
+void DrawableObject::UpdateFromRules()
 {
 	 //parent link can be a straight matrix off the parent coordinate origin,
 	 //or align to an anchor, then offset
@@ -959,7 +979,7 @@ int DrawableObject::UnGroup(int n,const int *which)
 }
 
 const char *DrawableObject::Id()
-{ return object_idstr; }
+{ return SomeData::Id(); }
 
 //! Dump out iohints and metadata, if any.
 void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -1145,7 +1165,7 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anOb
 				rule->type=ALIGNMENTRULE_Align;
 				rule->align1=a1;
 				rule->align2=a2;
-				SetParentLink(rule, false, -1);
+				AddAlignmentRule(rule, false, -1);
 
 			} else if (!strcmp(value,"edgemagnet")) {
 				cerr << " *** WARNING! alignment rule edgemagnet load not implemented!"<<endl;
@@ -1194,7 +1214,7 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anOb
 					rule->offset=offset;
 					rule->offset_units=offsetunits;
 					//rule->target=***;
-					SetParentLink(rule, false, -1);
+					AddAlignmentRule(rule, false, -1);
 				}
 
 			}

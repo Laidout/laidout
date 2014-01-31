@@ -63,6 +63,7 @@ enum AnchorShortcuts {
 	ANCHORA_ToggleRegions,
 	ANCHORA_NextType,
 	ANCHORA_PreviousType,
+	ANCHORA_DeleteLastRule,
 	ANCHORA_MAX
 };
 
@@ -149,39 +150,6 @@ Laxkit::MenuInfo *AnchorInterface::ContextMenu(int x,int y,int deviceid)
 	return NULL;
 }
 
-/*! Return 0 for success.
- */
-int AnchorInterface::AddAnchor(flatpoint p,const char *name, int source, int id)
-{
-	PointAnchor *a=new PointAnchor(name,PANCHOR_Absolute,p,flatpoint(),id);
-	anchors.push(new Anchors(a,1));
-	anchors.e[anchors.n-1]->anchorsource=source;
-	//a->dec_count();
-	return 0;
-}
-
-/*! Return number of anchors added.
- */
-int AnchorInterface::AddAnchors(VObjContext *context, int source)
-{ 
-	if (!dynamic_cast<DrawableObject*>(context->obj)) return 0;
-	double m[6];
-	viewport->transformToContext(m,context,0,1);
-	DrawableObject *d=dynamic_cast<DrawableObject*>(context->obj);
-
-	flatpoint p,pp;
-	int id;
-	const char *name;
-
-	for (int c=0; c<d->NumAnchors(); c++) {
-		d->GetAnchorInfoI(c, &id,&name,&p, false);
-		pp=transform_point(m,p);
-		AddAnchor(pp,name,source,id);
-	}
-
-	return d->NumAnchors();
-}
-
 /*! Return 0 for menu item processed, 1 for nothing done.
  */
 int AnchorInterface::Event(const Laxkit::EventData *e,const char *mes)
@@ -247,6 +215,40 @@ void AnchorInterface::Clear(SomeData *d)
 	cur_oc=NULL;
 }
 
+/*! p is real space.
+ * Return 0 for success.
+ */
+int AnchorInterface::AddAnchor(flatpoint p,const char *name, int source, int id)
+{
+	PointAnchor *a=new PointAnchor(name,PANCHOR_Absolute,p,flatpoint(),id);
+	anchors.push(new Anchors(a,1));
+	anchors.e[anchors.n-1]->anchorsource=source;
+	//a->dec_count();
+	return 0;
+}
+
+/*! Return number of anchors added.
+ */
+int AnchorInterface::AddAnchors(VObjContext *context, int source)
+{ 
+	if (!dynamic_cast<DrawableObject*>(context->obj)) return 0;
+	double m[6];
+	viewport->transformToContext(m,context,0,1);
+	DrawableObject *d=dynamic_cast<DrawableObject*>(context->obj);
+
+	flatpoint p,pp;
+	int id;
+	const char *name;
+
+	for (int c=0; c<d->NumAnchors(); c++) {
+		d->GetAnchorInfoI(c, &id,&name,&p, false);
+		pp=transform_point(m,p);
+		AddAnchor(pp,name,source,id);
+	}
+
+	return d->NumAnchors();
+}
+
 /*! Remove anchors owned by oc->obj.
  * Return number of anchors removed.
  */
@@ -268,7 +270,8 @@ int AnchorInterface::UpdateAnchors(int region)
 	//ANCHOR_Other_Objects,
 	//ANCHOR_Guides,
 
-	bool active=RegionActive(region);
+	bool active=true;
+	if (region!=ANCHOR_Object) active=RegionActive(region);
 	
 	if (region==ANCHOR_Selection) {
 		UpdateSelectionAnchors();
@@ -356,33 +359,55 @@ int AnchorInterface::UpdateAnchors(int region)
 		return 0;
 	}
 
+	if (region==ANCHOR_Other_Objects) {
+		for (int c=anchors.n-1; c>=0; c--) { if (anchors.e[c]->anchorsource==ANCHOR_Other_Objects) anchors.remove(c); }
+		if (active && selection) {
+			for (int c=0; c<selection->n(); c++) {
+				AddAnchors(dynamic_cast<VObjContext*>(selection->e(c)), ANCHOR_Other_Objects);
+			}
+		}
+	}
+
 	return 1;
 }
 
+/*! Update selection anchors AND other object anchors since they are based on the selection.
+ */
 void AnchorInterface::UpdateSelectionAnchors()
 {
 	for (int c=anchors.n-1; c>=0; c--) {
 		if (anchors.e[c]->anchorsource==ANCHOR_Selection) anchors.remove(c);
+		else if (anchors.e[c]->anchorsource==ANCHOR_Other_Objects) anchors.remove(c);
 	}
 
-	bool active=RegionActive(ANCHOR_Selection);
-	if (!active || !selection || selection->n()==0) return;
+	bool active =RegionActive(ANCHOR_Selection);
+	bool oactive=RegionActive(ANCHOR_Other_Objects);
+
+	if (!selection || selection->n()==0) return;
+	if (!active && !oactive) return;
 
 	DrawableObject o;
 	o.clear();
     double m[6];
     for (int c=0; c<selection->n(); c++) {
-        viewport->transformToContext(m,selection->e(c),0,1);
-        o.addtobounds(m, selection->e(c)->obj);
-    }
-	selection->setbounds(&o);
+		if (oactive) AddAnchors(dynamic_cast<VObjContext*>(selection->e(c)), ANCHOR_Other_Objects);
 
-	flatpoint p;
-	int id;
-	const char *name;
-	for (int c=0; c<o.NumAnchors(); c++) {
-		o.GetAnchorInfoI(c, &id,&name,&p, false);
-		AddAnchor(p,name,ANCHOR_Selection,id);
+		if (active) {
+			viewport->transformToContext(m,selection->e(c),0,1);
+			o.addtobounds(m, selection->e(c)->obj);
+		}
+    }
+
+	if (active) {
+		selection->setbounds(&o);
+
+		flatpoint p;
+		int id;
+		const char *name;
+		for (int c=0; c<o.NumAnchors(); c++) {
+			o.GetAnchorInfoI(c, &id,&name,&p, false);
+			AddAnchor(p,name,ANCHOR_Selection,id);
+		}
 	}
 }
 
@@ -408,11 +433,11 @@ void AnchorInterface::RefreshMenu()
 		if (hover_item==ANCHOR_Region && hover_anchor==mi->id) {
 			dp->NewBG(1.,1.,1.);
 			dp->NewFG(.8,.8,.8);
-			dp->drawrectangle(0,c*th, mi->w+th,th, 2);
+			dp->drawrectangle(0,(c+1)*th, mi->w+th,th, 2);
 			dp->NewFG(0.,0.,0.);
 		}
-		if (mi->isSelected()) dp->drawthing(th/2,th*c+th/2, th/2,-th/2, 1, THING_Check);
-		dp->textout(th,th*c, mi->name,-1, LAX_TOP|LAX_LEFT);
+		if (mi->isSelected()) dp->drawthing(th/2,th*(c+1)+th/2, th/2,-th/2, 1, THING_Check);
+		dp->textout(th,th*(c+1), mi->name,-1, LAX_TOP|LAX_LEFT);
 	}
 
 	//dp->NewFG(0.,0.,0.);
@@ -424,6 +449,8 @@ void AnchorInterface::DrawSelectedIndicator(LaxInterfaces::ObjectContext *oc)
 {
     if (!oc || !oc->obj) return;
 
+	dp->DrawReal();
+	
     double m[6];
     viewport->transformToContext(m,oc,0,1);
     dp->PushAndNewTransform(m);
@@ -434,8 +461,8 @@ void AnchorInterface::DrawSelectedIndicator(LaxInterfaces::ObjectContext *oc)
     SomeData *data=oc->obj;
     dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
     double o=5/dp->Getmag(), //5 pixels outside, 15 pixels long
-           ow=(data->maxx-data->minx)/15,
-           oh=(data->maxy-data->miny)/15;
+           ow=(data->maxx-data->minx)/5,
+           oh=(data->maxy-data->miny)/5;
     dp->drawline(data->minx-o,data->miny-o, data->minx+ow,data->miny-o);
     dp->drawline(data->minx-o,data->miny-o, data->minx-o,data->miny+oh);
     dp->drawline(data->minx-o,data->maxy+o, data->minx-o,data->maxy-oh);
@@ -446,12 +473,10 @@ void AnchorInterface::DrawSelectedIndicator(LaxInterfaces::ObjectContext *oc)
     dp->drawline(data->maxx+o,data->miny-o, data->maxx+o,data->miny+oh);
 
     dp->PopAxes();
+	dp->DrawScreen();
 }
 
 
-
-/*! Draws maybebox if any, then DrawGroup() with the current papergroup.
- */
 int AnchorInterface::Refresh()
 {
 	if (!needtodraw) return 0;
@@ -528,7 +553,9 @@ int AnchorInterface::Refresh()
 	if (active_anchor>=0) {
 		
 		if (proxy) {
-			p=cur_oc->obj->transformPointInverse(anchors.e[active_anchor]->anchor->p);
+			double m[6];
+			viewport->transformToContext(m,cur_oc,0,1);
+			p=transform_point_inverse(m,anchors.e[active_anchor]->anchor->p);
 			p=proxy->transformPoint(p);
 			p=dp->realtoscreen(p);
 		} else p=dp->realtoscreen(anchors.e[active_anchor]->anchor->p);
@@ -568,6 +595,7 @@ int AnchorInterface::Refresh()
 			dp->drawthing(p2.x,p2.y, 5,5, 1, THING_Triangle_Down);
 		}
 
+		 //draw stuff around active anchor
 		dp->NewFG(~0);
 		dp->drawthing(p.x,p.y, 5,5, 1, THING_Circle);
 		if (hasmatch) dp->NewFG(0.,1.,0.);
@@ -589,13 +617,16 @@ int AnchorInterface::Refresh()
 				dp->drawthing(p2.x,p2.y, 4,4, 1, THING_Circle);
 			}
 		}
-
-	}
+	} //if active_anchor
 
 
 	 //draw region menu
+	dp->NewFG(.5,.5,.5);
+	dp->drawrectangle(th/5,th/5, th,th*4/5, 0);
 	if (show_region_selector) RefreshMenu();
 
+
+	 //draw list of rules of current object
 	if (cur_oc) {
 		AlignmentRule *rule=dynamic_cast<DrawableObject*>(cur_oc->obj)->parent_link;
 		int y=5;
@@ -644,6 +675,7 @@ int AnchorInterface::scan(int x,int y, int *anchor)
 
 	double th=dp->textheight();
 
+	if (y<th && x<th*2) return ANCHOR_Regions;
 	if (show_region_selector) {
 		int i=y/th;
 
@@ -656,13 +688,27 @@ int AnchorInterface::scan(int x,int y, int *anchor)
 	flatpoint p=flatpoint(x,y);
 	double dist2=25; //*** 5 px, make this an option somewhere? tied to finger thickness??
 	double d;
+	 //search object first
 	for (int c=0; c<anchors.n; c++) {
-		if (active_anchor>=0 && anchors.e[c]->anchorsource==ANCHOR_Object) {
+		if (anchors.e[c]->anchorsource!=ANCHOR_Object) continue;
+
+		if (active_anchor>=0) {
 			if (c==active_anchor || c==active_i1 || c==active_i2) {
 				// ...it's ok to select these, but not extraneous ones:
 			} else if (NumInvariants()==0 || (NumInvariants()==2 && active_i2>=0) || (NumInvariants()==1 && active_i1>=0))
 				continue;
 		}
+
+		d=norm2(p-dp->realtoscreen(anchors.e[c]->anchor->p));
+		if (d<dist2) {
+			*anchor=c;
+			return ANCHOR_Anchor;
+		}
+	}
+
+	 //search everything else second
+	for (int c=0; c<anchors.n; c++) {
+		if (anchors.e[c]->anchorsource==ANCHOR_Object) continue;
 
 		d=norm2(p-dp->realtoscreen(anchors.e[c]->anchor->p));
 		if (d<dist2) {
@@ -699,8 +745,12 @@ int AnchorInterface::LBDown(int x,int y,unsigned int state,int count,const Laxki
         if (c>0) obj=oc->obj;
 
         if (obj) {
+			int oldindex=(selection ? selection->FindIndex(oc) : -1);
+
 			if ((state&LAX_STATE_MASK)==0) {
-				if (selection) selection->Flush();
+				if (selection) {
+					selection->Flush();
+				}
 				for (int c=anchors.n-1; c>=0; c--) {
 					if (anchors.e[c]->anchorsource==ANCHOR_Selection) anchors.remove(c);
 				}
@@ -717,17 +767,17 @@ int AnchorInterface::LBDown(int x,int y,unsigned int state,int count,const Laxki
 				return 0;
 			}
 
-			if (oc->isequal(cur_oc)) return 0;
+			if (oc->isequal(cur_oc)) return 0; //don't add base object to selection
 
 			if (!selection) {
 				selection=new Selection;
 				selection->Add(oc,-1);
-				AddAnchors(dynamic_cast<VObjContext*>(oc),ANCHOR_Selection);
+				UpdateSelectionAnchors();
 
 			} else {
-				int i=selection->FindIndex(oc);
+				int i=oldindex;
 
-				if (i>=0 && (state&LAX_STATE_MASK)==ShiftMask) {
+				if (i>=0 && ((state&LAX_STATE_MASK)==ShiftMask || selection->n()==1)) {
 					 //remove object
 					//RemoveAnchors(oc);
 					selection->Remove(i);
@@ -808,7 +858,9 @@ int AnchorInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 	int control=-1, index=-1;
 	int dragged=buttondown.up(d->id,LEFTBUTTON, &control, &index);
 
-	if (!dragged && control==ANCHOR_Region) {
+	if (!dragged && control==ANCHOR_Regions) {
+		PerformAction(ANCHORA_ToggleRegions);
+	} else if (!dragged && control==ANCHOR_Region) {
 		MenuItem *mi;
 		for (int c=0; c<regions.n(); c++) {
 			mi=regions.e(c);
@@ -841,19 +893,29 @@ int AnchorInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 			}
 		} else if (active_match>=0) {
 			 // install rule
+            active_anchor=anchors.e[active_anchor]->anchor->id;
+            if (active_i1>=0) active_i1=anchors.e[active_i1]->anchor->id;
+            if (active_i2>=0) active_i2=anchors.e[active_i2]->anchor->id;
+
 			AlignmentRule *rule=new AlignmentRule;
 			rule->type=active_type;
-            rule->object_anchor=anchors.e[active_anchor]->anchor->id;
-            if (active_i1>=0) rule->invariant1   =anchors.e[active_i1]->anchor->id;
-            if (active_i2>=0) rule->invariant2   =anchors.e[active_i2]->anchor->id;
+            rule->object_anchor=active_anchor;
+            rule->invariant1=active_i1;
+            rule->invariant2=active_i2;
             //rule->offset=offset;
             //rule->offset_units=offsetunits;
             rule->target=anchors.e[active_match]->anchor;
 
-            dynamic_cast<DrawableObject*>(cur_oc->obj)->SetParentLink(rule, false,-1); // append to end
-            //dynamic_cast<DrawableObject*>(cur_oc->obj)->SetParentLink(rule, true, 0); // *** replaces first rule always
+            dynamic_cast<DrawableObject*>(cur_oc->obj)->AddAlignmentRule(rule, false,-1); // append to end
 
 			UpdateAnchors(ANCHOR_Object);
+			active_anchor=findAnchor(active_anchor);
+			if (active_i1>=0) active_i1=findAnchor(active_anchor);
+			if (active_i2>=0) active_i2=findAnchor(active_anchor);
+
+			active_match=-1;
+			hover_item=-1;
+			hover_anchor=-1;
 			needtodraw=1;
 		}
 	}
@@ -865,9 +927,15 @@ int AnchorInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 		needtodraw=1;
 	}
 
-	active_match=-1;
-
 	return 0;
+}
+
+//! Return the index of the anchor with id, or -1 if not found.
+int AnchorInterface::findAnchor(int id)
+{
+	for (int c=0; c<anchors.n; c++)
+		if (anchors.e[c]->anchor->owner==cur_oc->obj && anchors.e[c]->anchor->id==id) return c;
+	return -1;
 }
 
 int AnchorInterface::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
@@ -949,7 +1017,7 @@ int AnchorInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 
 			temptarget.p=dp->screentoreal(x,y);
 			rule->target=&temptarget;
-			dynamic_cast<DrawableObject*>(proxy)->SetParentLink(rule, true, -1);
+			dynamic_cast<DrawableObject*>(proxy)->AddAlignmentRule(rule, true, -1);
 			needtodraw=1;
 		}
 	}
@@ -1004,9 +1072,10 @@ Laxkit::ShortcutHandler *AnchorInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("AnchorInterface");
 
-	sc->Add(ANCHORA_ToggleRegions, 'd',0,0,      _("ToggleRegions"),_("Toggle region menu"),NULL,0);
-	sc->Add(ANCHORA_NextType,      LAX_Right,0,0,_("NextType"),     _("Use next link type"),NULL,0);
-	sc->Add(ANCHORA_PreviousType,  LAX_Left,0,0, _("PreviousType"), _("Use previous link type"),NULL,0);
+	sc->Add(ANCHORA_ToggleRegions, 'd',0,0,      _("ToggleRegions"),  _("Toggle region menu"),NULL,0);
+	sc->Add(ANCHORA_NextType,      LAX_Right,0,0,_("NextType"),       _("Use next link type"),NULL,0);
+	sc->Add(ANCHORA_PreviousType,  LAX_Left,0,0, _("PreviousType"),   _("Use previous link type"),NULL,0);
+	sc->Add(ANCHORA_DeleteLastRule,'x',0,0,      _("DeleteLastRule"), _("Delete last rule, if any"),NULL,0);
 
 	manager->AddArea("AnchorInterface",sc);
 	return sc;
@@ -1041,6 +1110,12 @@ int AnchorInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
+	} else if (action==ANCHORA_DeleteLastRule) {
+		if (!cur_oc) return 0;
+		DrawableObject *o=dynamic_cast<DrawableObject*>(cur_oc->obj);
+		o->RemoveAlignmentRule(-1);
+		needtodraw=1;
+		return 0;
 	}
 
 	return 1;
