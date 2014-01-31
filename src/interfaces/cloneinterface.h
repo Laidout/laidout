@@ -17,6 +17,7 @@
 #include "../calculator/values.h"
 #include "../dataobjects/group.h"
 #include "../language.h"
+#include "selection.h"
 
 #include <lax/lists.h>
 #include <lax/laximages.h>
@@ -197,11 +198,13 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int lastoveri;
 	int cur_tiling; //for built ins
 
-	int trace_cells;
 	bool active;
+
+	bool trace_cells;
 	bool previewactive;
 	LaxInterfaces::ObjectContext *previewoc;
 	Group *preview;
+	Group *lines;
 
 	LaxInterfaces::PathsData *boundary;
 
@@ -209,7 +212,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
 
-	Group *source_objs;
+	Selection sources;
+	//Group *source_objs;
 	LaxInterfaces::ObjectContext *toc; // ***TEMP
 
 	double uiscale;

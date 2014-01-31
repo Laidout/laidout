@@ -339,7 +339,7 @@ Group *Tiling::Render(Group *parent_space,
 					   ViewportWindow *viewport
 					   )
 {
-	bool trace_cells=(base_object_to_update!=NULL && base_object_to_update->obj!=NULL);
+	bool trace_cells=(base_object_to_update==NULL);
 	if (!parent_space) parent_space=new Group;
 
 	if (p1_maxx<p1_minx) p1_maxx=p1_minx;
@@ -367,6 +367,7 @@ Group *Tiling::Render(Group *parent_space,
 			trace[c]=NULL;
 			if (basecells.e[c]->celloutline) {
 				trace[c]=basecells.e[c]->celloutline->duplicate(NULL);
+				trace[c]->FindBBox();
 			}
 		}
 	}
@@ -414,6 +415,7 @@ Group *Tiling::Render(Group *parent_space,
 				clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
 				clone->Set(trace[c],0);
 				clone->Multiply(clonet);
+				clone->FindBBox();
 				parent_space->push(clone);
 				clone->dec_count();
 			}
@@ -436,6 +438,7 @@ Group *Tiling::Render(Group *parent_space,
 					clone=dynamic_cast<SomeDataRef*>(LaxInterfaces::somedatafactory->newObject("SomeDataRef"));
 					clone->Set(trace[c],0);
 					clone->Multiply(clonet);
+					clone->FindBBox();
 					parent_space->push(clone);
 					clone->dec_count();
 				}
@@ -1963,6 +1966,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	previewactive=true;
 	preview=new Group;
 	previewoc=NULL;
+	lines=new Group;
 
 	sc=NULL;
 
@@ -1982,10 +1986,13 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	preview_cell2.widthtype=0;
 
 	boundary=new PathsData;
+	ScreenColor col(0.,.7,0.,1.);
+	boundary->line(-1,-1,-1,&col);
 	boundary->appendRect(0,0,4,4);
+
 	tiling=NULL;
-	trace_cells=1; // *** maybe 2 should be render outline AND install as new objects in doc?
-	source_objs=NULL; //a pool of objects to select from, rather than clone
+	trace_cells=true; // *** maybe 2 should be render outline AND install as new objects in doc?
+	//source_objs=NULL; //a pool of objects to select from, rather than clone
 					 //any needed beyond those is source_objs are then cloned
 					 //from same list in order
 
@@ -1996,12 +2003,13 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 
 CloneInterface::~CloneInterface()
 {
-	if (source_objs) source_objs->dec_count();
+	//if (source_objs) source_objs->dec_count();
 	if (sc) sc->dec_count();
 	if (tiling) tiling->dec_count();
 	if (toc) delete toc;
 	if (boundary) boundary->dec_count();
 	if (preview) preview->dec_count();
+	if (lines) lines->dec_count();
 	if (previewoc) delete previewoc;
 }
 
@@ -2131,7 +2139,7 @@ int CloneInterface::PerformAction(int action)
 	} else if (action==CLONEIA_Toggle_Lines) {
 		trace_cells=!trace_cells;
 		if (active) Render();
-		PostMessage(trace_cells?_("Trace cell outlines"):_("Don't trace cells"));
+		PostMessage(trace_cells ? _("Include cell outlines") : _("Don't include cells"));
 		needtodraw=1;
 		return 0;
 
@@ -2152,6 +2160,7 @@ int CloneInterface::PerformAction(int action)
 int CloneInterface::InterfaceOn()
 {
 	base_cells.setIdentity();
+	if (active) Render();
 
 	needtodraw=1;
 	return 0;
@@ -2159,6 +2168,16 @@ int CloneInterface::InterfaceOn()
 
 int CloneInterface::InterfaceOff()
 {
+	if (previewoc) {
+		delete previewoc;
+		previewoc=NULL;
+	}
+	if (toc) {
+		delete toc;
+		toc=NULL;
+	}
+	if (lines) lines->flush();
+
 	needtodraw=1;
 	return 0;
 }
@@ -2201,11 +2220,12 @@ int CloneInterface::Refresh()
 
 	if (firsttime==1) {
 		firsttime=0;
-		box.minx=100;
-		box.maxx=100+4*circle_radius*uiscale;
-		box.miny=100;
-		box.maxy=100+5*circle_radius*uiscale + 2*dp->textheight();
+		box.minx=10;
+		box.maxx=10+4*circle_radius*uiscale;
+		box.miny=10;
+		box.maxy=10+5*circle_radius*uiscale + 2*dp->textheight();
 	} else if (firsttime==2) {
+		 //remap control box size only, leave in same place
 		firsttime=0;
 		box.maxx=box.minx+4*circle_radius*uiscale;
 		box.maxy=box.miny+5*circle_radius*uiscale + 2*dp->textheight();
@@ -2215,16 +2235,33 @@ int CloneInterface::Refresh()
 
 	 //draw clones
 	if (preview->n() && active) {
-		if (toc) {
-			double m[6];
-			viewport->transformToContext(m,toc,0,1);
-			dp->PushAndNewTransform(m);
-		}
-		for (int c=0; c<preview->n(); c++) {
-			Laidout::DrawData(dp, preview->e(c), NULL,NULL);
-		}
-		if (toc) dp->PopAxes();
+		// *** not used now as active means in doc tree, which refreshes automatically
+		//if (toc) {
+		//	double m[6];
+		//	viewport->transformToContext(m,toc,0,1);
+		//	dp->PushAndNewTransform(m);
+		//}
+		//for (int c=0; c<preview->n(); c++) {
+		//	Laidout::DrawData(dp, preview->e(c), NULL,NULL);
+		//}
+		//if (toc) dp->PopAxes();
 	}
+
+	if (lines->n() && trace_cells) {
+		// *** not used now as active means in doc tree, which refreshes automatically
+//		if (toc) {
+//			double m[6];
+//			viewport->transformToContext(m,toc,0,1);
+//			dp->PushAndNewTransform(m);
+//		}
+		dp->PushAndNewTransform(lines->m());
+		for (int c=0; c<lines->n(); c++) {
+			Laidout::DrawData(dp, lines->e(c), NULL,NULL);
+		}
+		dp->PopAxes();
+//		if (toc) dp->PopAxes();
+	}
+
 
 	if (toc) DrawSelected();
 
@@ -2353,6 +2390,7 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 			rect->UseThis(&base_cells,0);
 			child=rect;
 			AddChild(rect,0,1);
+			rect->LBDown(x,y,state,count,d);
 		} else {
 			child->UseThis(&base_cells,0);
 			return 1;
@@ -2370,6 +2408,7 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 				rect->UseThis(boundary,0);
 				child=rect;
 				AddChild(rect,0,1);
+				rect->LBDown(x,y,state,count,d);
 			} else {
 				child->UseThis(boundary,0);
 				return 1;
@@ -2388,9 +2427,14 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		int c=viewport->FindObject(x,y,NULL,NULL,1,&oc);
 		if (c>0) obj=oc->obj;
 		if (obj) {
-			if (child) RemoveChild();
-
+			SomeData *o=obj;
+			while (o) {
+				if (o==preview) return 0;
+				o=o->GetParent();
+			}
 			if (toc && oc->isequal(toc)) return 0;
+
+			if (child) RemoveChild();
 
 			if (toc) delete toc;
 			toc=oc->duplicate();
@@ -2421,12 +2465,62 @@ int CloneInterface::Render()
 	for (int c=0; c<tiling->basecells.n; c++) {
 		bcellst[c]=base_cells;
 	}
-	Group *ret=tiling->Render(preview, trace_cells?NULL:toc, bcellst, 0,3, 0,3, viewport);
-	if (!ret) {
-		PostMessage(_("Could not clone!"));
+
+	Group *ret=NULL;
+	if (trace_cells) {
+		lines->flush();
+		ret=tiling->Render(lines, NULL, bcellst, 0,3, 0,3, viewport);
+		if (!ret) {
+			PostMessage(_("Could not clone!"));
+			return 0;
+		} else lines->FindBBox();
+
+		flatpoint bm=boundary->transformPoint(flatpoint((boundary->maxx+boundary->minx)/2,(boundary->maxy+boundary->miny)/2));
+		flatpoint lm=lines->transformPoint(flatpoint((lines->maxx+lines->minx)/2,(lines->maxy+lines->miny)/2));
+		lines->origin(lines->origin() + bm-lm);
+
 	}
 
-	preview->set(tiling->finalTransform());
+	ret=tiling->Render(preview, toc, bcellst, 0,3, 0,3, viewport);
+	if (!ret) {
+		PostMessage(_("Could not clone!"));
+		return 0;
+	} else {
+		preview->FindBBox();
+		preview->set(tiling->finalTransform());
+
+		flatpoint pm=preview->transformPoint(flatpoint((preview->maxx+preview->minx)/2,(preview->maxy+preview->miny)/2));
+		flatpoint bm=boundary->transformPoint(flatpoint((boundary->maxx+boundary->minx)/2,(boundary->maxy+boundary->miny)/2));
+		double m[6];
+		transform_identity(m);
+		if (previewoc) viewport->transformToContext(m,previewoc,1,0);
+		bm=transform_point(m,bm);
+		preview->origin(preview->origin() + bm-pm);
+	}
+
+
+	if (active) {
+		 //make sure preview is installed in the target context
+		if (!previewoc && toc) {
+			previewoc=toc->duplicate(); // ***
+			previewoc->SetObject(NULL);
+			dynamic_cast<VObjContext*>(previewoc)->pop();
+			LaidoutViewport *vp=dynamic_cast<LaidoutViewport*>(viewport);
+			vp->ChangeContext(previewoc);
+			delete previewoc; previewoc=NULL;
+			vp->NewData(preview,&previewoc);
+			previewoc=previewoc->duplicate();
+		}
+	} else {
+		 //make sure preview is NOT in document tree
+		if (previewoc) {
+			LaidoutViewport *vp=dynamic_cast<LaidoutViewport*>(viewport);
+			vp->DeleteObject(previewoc);
+			delete previewoc;
+			previewoc=NULL;
+		}
+	}
+
 	needtodraw=1;
 	return 0;
 }
@@ -2446,6 +2540,15 @@ int CloneInterface::ToggleActivated()
 
 	active=!active;
 	if (active) Render();
+	else {
+		 //remove from document if it is there
+		if (previewoc) {
+			LaidoutViewport *vp=dynamic_cast<LaidoutViewport*>(viewport);
+			vp->DeleteObject(previewoc);
+			delete previewoc;
+			previewoc=NULL;
+		}
+	}
 	
 	needtodraw=1;
 	return active;
