@@ -34,6 +34,8 @@ namespace Laidout {
 
 class DrawableObject;
 class PointAnchor;
+class Document;
+class Page;
 
 
 //---------------------------------- DrawObjectChain ---------------------------------
@@ -79,10 +81,12 @@ class AlignmentRule
 	
 
 	int object_anchor; //an anchor in object that gets moved toward target
-	int constraintype; //vector is object coords, or parent, or page, or none
-	flatpoint constraindir;
-
 	int invariant1, invariant2; //anchors in object
+
+	enum TargetType { UNKNOWN, NONE, PARENT, OBJECT, PAGE, OTHER_OBJECT };
+
+	TargetType constraintype; //vector is object coords, or parent, or page, or none
+	flatpoint constraindir;
 
 	 // too many types in one class!!
 	 //1.
@@ -91,7 +95,11 @@ class AlignmentRule
 
 	 //2.
 	PointAnchor *target;
-	int offset_units; //page, object, or parent
+	TargetType target_location; //stub info for loading
+	char *target_object; //stub info for loading
+	char *target_anchor; //stub info for loading
+
+	TargetType offset_units; //page, object, or parent
 	flatpoint offset; //displacement off the target anchor
 
 	 //3.
@@ -208,17 +216,20 @@ class DrawableObject :  virtual public ObjectContainer,
 
 	Laxkit::RefPtrStack<PointAnchor> anchors;
 	virtual int NumAnchors();
-	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, bool transform_to_parent);
-	virtual int GetAnchorInfo(int anchor_id, const char **name, flatpoint *p, bool transform_to_parent);
+	virtual int GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent);
+	virtual int GetAnchorInfo(int anchor_id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent);
 	virtual int GetAnchorI(int anchor_index, PointAnchor **anchor);
 	virtual int GetAnchor(int anchor_id, PointAnchor **anchor);
+	virtual int FindAnchorId(const char *name, int *index_ret);
 	virtual int AddAnchor(const char *name, flatpoint pos, int type, int nid);
 	virtual int RemoveAnchor(int anchor_id);
 	virtual int RemoveAnchorI(int index);
+	virtual int ResolveAnchorRefs(Document *doc, Page *page, DrawableObject *g, Laxkit::ErrorLog &log);
 
 
 	 //Group specific functions:
 	Laxkit::RefPtrStack<LaxInterfaces::SomeData> kids;
+	virtual LaxInterfaces::SomeData *FindChild(const char *id);
 	virtual LaxInterfaces::SomeData *findobj(LaxInterfaces::SomeData *d,int *n=NULL);
 	virtual int findindex(LaxInterfaces::SomeData *d) { return kids.findindex(d); }
 	virtual int push(LaxInterfaces::SomeData *obj);
@@ -251,7 +262,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-	                     Value **value_ret, ErrorLog *log);
+	                     Value **value_ret, Laxkit::ErrorLog *log);
 };
 
 
@@ -268,7 +279,7 @@ class AffineValue : virtual public Value, virtual public Laxkit::Affine, virtual
 	virtual Value *dereference(int index);
 	//virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			             Value **value_ret, ErrorLog *log);
+			             Value **value_ret, Laxkit::ErrorLog *log);
 };
 
 
@@ -285,7 +296,7 @@ class BBoxValue : virtual public Value, virtual public Laxkit::DoubleBBox, virtu
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-			             Value **value_ret, ErrorLog *log);
+			             Value **value_ret, Laxkit::ErrorLog *log);
 };
 
 } //namespace Laidout
