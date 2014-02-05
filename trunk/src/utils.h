@@ -35,9 +35,9 @@ char *roman_numeral(int i,char cap);
 
 
 //----------------------------------- File i/o helpers ---------------------------------------------
-FILE *open_laidout_file_to_read(const char *file,const char *what,ErrorLog *log);
-FILE *open_file_for_reading(const char *file,ErrorLog *log);
-FILE *open_file_for_writing(const char *file,int nooverwrite,ErrorLog *log);
+FILE *open_laidout_file_to_read(const char *file,const char *what,Laxkit::ErrorLog *log);
+FILE *open_file_for_reading(const char *file,Laxkit::ErrorLog *log);
+FILE *open_file_for_writing(const char *file,int nooverwrite,Laxkit::ErrorLog *log);
 int resource_name_and_desc(FILE *f,char **name, char **desc);
 char *previewFileName(const char *file, const char *nametemplate);
 

@@ -36,8 +36,8 @@ void psFlushCtms();
 
 void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj);
 int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing=0);
-int  psout(const char *filename, Laxkit::anObject *context, ErrorLog &log);
-int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log);
+int  psout(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+int epsout(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
 
 } // namespace Laidout
 

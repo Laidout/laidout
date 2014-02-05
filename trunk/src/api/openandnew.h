@@ -26,7 +26,7 @@ ObjectDef *makeNewDocumentObjectDef();
 int NewDocumentFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 ErrorLog &log);
+					 Laxkit::ErrorLog &log);
 
 
 
@@ -34,7 +34,7 @@ ObjectDef *makeOpenObjectDef();
 int OpenFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 ErrorLog &log);
+					 Laxkit::ErrorLog &log);
 
 
 } // namespace Laidout

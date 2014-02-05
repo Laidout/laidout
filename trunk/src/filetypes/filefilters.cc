@@ -26,7 +26,9 @@
 #include <iostream>
 using namespace std;
 
+
 using namespace LaxFiles;
+using namespace Laxkit;
 
 
 
@@ -250,7 +252,7 @@ ObjectDef *makeImportConfigDef()
  * It just fills what's given.
  */
 int createImportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, ErrorLog &log)
+					   Value **value_ret, Laxkit::ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
@@ -551,7 +553,7 @@ Style* ImportConfig::duplicate(Style*)
 //! Import a vector based file based on config.
 /*! Return 0 for success, greater than zero for fatal error, less than zero for success with warnings.
  */
-int import_document(ImportConfig *config, ErrorLog &log)
+int import_document(ImportConfig *config, Laxkit::ErrorLog &log)
 {
 	if (!config || !config->filename || !config->filter || !(config->doc || config->toobj)) {
 		log.AddMessage(_("Bad import configuration"),ERROR_Fail);
@@ -573,7 +575,7 @@ int import_document(ImportConfig *config, ErrorLog &log)
  * \todo Ideally, this function should return some sort of set of objects that cannot be transfered
  *   in the given format, without losing information, maybe with hints for corrections
  */
-/*! \fn int ExportFilter::Out(const char *file, Laxkit::anObject *context, ErrorLog &log)
+/*! \fn int ExportFilter::Out(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log)
  * \brief The function that outputs the stuff.
  *
  * context must be a configuration object that the filter understands. For instance, this
@@ -707,7 +709,7 @@ ObjectDef *makeExportConfigDef()
  * "group" parameter.
  */
 int createExportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, ErrorLog &log)
+					   Value **value_ret, Laxkit::ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
@@ -1048,7 +1050,7 @@ Style* DocumentExportConfig::duplicate(Style*)
  *
  * \todo perhaps command facility should be here... currently it sits in ExportDialog.
  */
-int export_document(DocumentExportConfig *config, ErrorLog &log)
+int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 {
 	if (!config || !config->filter) {
 		log.AddMessage(_("Missing export filter!"),ERROR_Fail);

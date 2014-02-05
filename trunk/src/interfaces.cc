@@ -87,10 +87,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		//existingpool->push(i);
 		//i->dec_count();
 		
-		i=new AnchorInterface(NULL,id++,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
 		i=new CloneInterface(NULL,id++,NULL);
 		existingpool->push(i);
 		i->dec_count();
@@ -104,6 +100,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->dec_count();
 	
+	 //------Anchor
+	i=new AnchorInterface(NULL,id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
 	 //------Images
 	LImageInterface *imagei=new LImageInterface(id++,NULL);
 	imagei->style=1;

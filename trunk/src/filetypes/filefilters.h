@@ -62,7 +62,7 @@ class ImportFilter : public FileFilter
  public:
 	virtual const char *whattype() { return "FileInputFilter"; }
 	virtual const char *FileType(const char *first100bytes) = 0;
-	virtual int In(const char *file, Laxkit::anObject *context, ErrorLog &log) = 0;
+	virtual int In(const char *file, Laxkit::anObject *context, Laxkit::ErrorLog &log) = 0;
 	virtual ObjectDef *makeObjectDef();
 };
 
@@ -72,7 +72,7 @@ class ExportFilter : public FileFilter
 {
  public:
 	virtual const char *whattype() { return "FileOutputFilter"; }
-	virtual int Out(const char *file, Laxkit::anObject *context,  ErrorLog &log) = 0;
+	virtual int Out(const char *file, Laxkit::anObject *context,  Laxkit::ErrorLog &log) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
 	virtual ObjectDef *makeObjectDef();
 };
@@ -87,7 +87,7 @@ enum CollectForOutValues {
 
 ObjectDef *makeExportConfigDef();
 int createExportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, ErrorLog &log);
+					   Value **value_ret, Laxkit::ErrorLog &log);
 
 class DocumentExportConfig : public Style
 {
@@ -116,12 +116,12 @@ class DocumentExportConfig : public Style
 
 //------------------------------- export_document() ----------------------------------
 
-int export_document(DocumentExportConfig *config, ErrorLog &log);
+int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log);
 
 //------------------------------ ImportConfig ----------------------------
 ObjectDef *makeImportConfigDef();
 int createImportConfig(ValueHash *context, ValueHash *parameters,
-					   Value **value_ret, ErrorLog &log);
+					   Value **value_ret, Laxkit::ErrorLog &log);
 
 class ImportConfig : public Style
 {
@@ -149,7 +149,7 @@ class ImportConfig : public Style
 
 //------------------------------- import_document() ----------------------------------
 
-int import_document(ImportConfig *config, ErrorLog &log);
+int import_document(ImportConfig *config, Laxkit::ErrorLog &log);
 
 
 } // namespace Laidout

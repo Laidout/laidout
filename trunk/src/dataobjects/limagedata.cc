@@ -20,6 +20,8 @@
 #include "../language.h"
 
 
+using namespace Laxkit;
+
 
 namespace Laidout {
 
@@ -175,7 +177,7 @@ int LImageData::assign(FieldExtPlace *ext,Value *v)
 /*! Return 0 success, -1 incompatible values, 1 for error.
  */
 int LImageData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-	                     Value **value_ret, ErrorLog *log)
+	                     Value **value_ret, Laxkit::ErrorLog *log)
 {
 	if (len==8 && !strncmp(func,"LoadFile",8)) {
 		if (!parameters) return -1;
