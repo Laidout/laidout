@@ -177,21 +177,30 @@ Color sliders:
 customizable object child relationships to parent, rather than simple transform
   scale x
   scale y
-  free scale
+  scale free
+  stretch, proxy displays ok, but after install stretch doesn't work
+  shear *** seems to be off from point, need shear protection, produces null axes sometimes
   DONE scale
   DONE rotate
   DONE scale+rotate
-  DONE stretch
-  shear *** need shear protection, produces null axes sometimes
-  proxy displays ok, but after install stretch doesn't work
+  DONE move
+
+  add page target anchor
+  add parent target anchor
+  add object anchor
   margin area not working
-  other objects
-  only align objects that are on pages
   implement rules list click remove
   implement click rule, update display, watch for offset
   anchor names should not have quotes in them, because disk i/o is easier and I'm lazy
+  problems when anchors are on a page that is not at origin?
+
+  DONE other objects
+  DONE loading: update in Project during somedataref check
+  DONE Singles not creating page outline and margins loading in file
 
   for 0.095:
+    check for only align objects that are on pages
+    margin area anchors not staying when margins change
     transform relative to alignment point of parent (50,50) for center, for instance
     code
 	edge magnet

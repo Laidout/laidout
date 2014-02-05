@@ -28,7 +28,7 @@ namespace Laidout {
 //------------------------- ProjDocument ------------------------------------
 class ProjDocument
 {
- public:
+  public:
 	Document *doc;
 	char *filename;
 	char *name;
@@ -40,7 +40,7 @@ class ProjDocument
 //------------------------- Project ------------------------------------
 class Project : public LaxFiles::DumpUtility, public ObjectContainer
 {
- public:
+  public:
 	char *name,*filename,*dir;
 	double defaultdpi;
 	//default units
@@ -61,8 +61,8 @@ class Project : public LaxFiles::DumpUtility, public ObjectContainer
 	virtual int initDirs();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
-	virtual int Load(const char *file,ErrorLog &log);
-	virtual int Save(ErrorLog &log);
+	virtual int Load(const char *file,Laxkit::ErrorLog &log);
+	virtual int Save(Laxkit::ErrorLog &log);
 	virtual int clear();
 
 	virtual int Push(Document *doc);
@@ -70,7 +70,8 @@ class Project : public LaxFiles::DumpUtility, public ObjectContainer
 
 	virtual Document *Find(const char *name, int howmatch);
 	virtual int valid();
-	virtual int ClarifyRefs(ErrorLog &log);
+	virtual int ClarifyRefs(Laxkit::ErrorLog &log);
+	virtual int ClarifyAnchors(Laxkit::ErrorLog &log);
 	virtual LaxInterfaces::SomeData *FindObject(const char *id);
 	virtual int FindObject(LaxInterfaces::SomeData *data, FieldPlace &found);
 

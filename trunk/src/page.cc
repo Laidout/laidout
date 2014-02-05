@@ -874,6 +874,23 @@ ImageData *Page::Thumbnail2()
 	return thumbnail;
 }
 
+/*! Perform any AlignmentRule things in any object on the page.
+ * Each is performed once in order the objects exist on the page.
+ */
+void Page::UpdateAnchored(Group *g)
+{
+	if (!g) g=&layers;
+
+	DrawableObject *o;
+	for (int c=0; c<g->n(); c++) {
+		o=dynamic_cast<DrawableObject*>(g->e(c));
+		if (!o) continue;
+		if (o->parent_link) o->UpdateFromRules();
+
+		if (o->kids.n) UpdateAnchored(o);
+    } 
+}
+
 
 } // namespace Laidout
 

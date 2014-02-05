@@ -43,11 +43,12 @@ class PointAnchor : public Laxkit::anObject,
 
 	Laxkit::anObject *owner;
 	unsigned int owner_id;
+
 	Laxkit::ScreenColor color, hcolor;
     flatpoint p, p2;
-    int anchor_type; //alignment point in bounding box,
-                     //or absolute coordinate
-                     //or segment
+    int anchor_type; //alignment point in bounding box in owner,
+                     //or absolute coordinate in owner
+                     //or segment of absolute points in owner
                      //or infinite line
 
 	PointAnchor();

@@ -141,11 +141,11 @@ class LaidoutApp : public Laxkit::anXApp, public Value
 	 //commands
 	Document *findDocumentById(unsigned long id);
 	Document *findDocument(const char *saveas);
-	int Load(const char *filename, ErrorLog &log);
-	Document *LoadTemplate(const char *filename, ErrorLog &log);
+	int Load(const char *filename, Laxkit::ErrorLog &log);
+	Document *LoadTemplate(const char *filename, Laxkit::ErrorLog &log);
 	int NewDocument(Imposition *imposition, const char *filename);
 	int NewDocument(const char *spec);
-	int NewProject(Project *proj, ErrorLog &log);
+	int NewProject(Project *proj, Laxkit::ErrorLog &log);
 	void PushExportFilter(ExportFilter *filter);
 	void PushImportFilter(ImportFilter *filter);
 

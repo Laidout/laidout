@@ -32,6 +32,7 @@
 #include "language.h"
 
 
+using namespace Laxkit;
 using namespace LaxFiles;
 using namespace LaxInterfaces;
 

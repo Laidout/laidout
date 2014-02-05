@@ -58,6 +58,7 @@ PointAnchor::PointAnchor(const char *nname, int type, flatpoint pp1,flatpoint pp
 
 PointAnchor::~PointAnchor()
 {
+	// *** assume mechanism in place to remove anchors before removing owner objects
     if (name) delete[] name;
 }
 

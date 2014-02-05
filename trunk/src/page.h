@@ -127,6 +127,7 @@ class Page : public ObjectContainer
 	clock_t thumbmodtime,modtime;
 
 	 //page contents
+	DrawableObject anchors;
 	Group layers;
 	Laxkit::PtrStack<PageBleed> pagebleeds;
 
@@ -146,6 +147,7 @@ class Page : public ObjectContainer
 	virtual const char *object_e_name(int i) { return NULL; }
 
 	virtual void Touch(clock_t at_time=0);
+	virtual void UpdateAnchored(Group *g);
 };
 
 } // namespace Laidout
