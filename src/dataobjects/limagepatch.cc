@@ -26,6 +26,7 @@ using namespace std;
 #define DBG 
 
 using namespace LaxInterfaces;
+using namespace Laxkit;
 
 
 namespace Laidout {

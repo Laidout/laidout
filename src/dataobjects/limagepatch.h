@@ -45,7 +45,7 @@ class LImagePatchData : public DrawableObject,
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-	                     Value **value_ret, ErrorLog *log);
+	                     Value **value_ret, Laxkit::ErrorLog *log);
 };
 
 
@@ -69,7 +69,7 @@ class LColorPatchData : public DrawableObject,
 	virtual Value *dereference(const char *extstring, int len);
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-	                     Value **value_ret, ErrorLog *log);
+	                     Value **value_ret, Laxkit::ErrorLog *log);
 };
 
 

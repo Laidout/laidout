@@ -350,21 +350,19 @@ int GroupInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 		if (hover==GROUP_Parent_Align) {
 			 //switch to anchor align tool
-			AnchorInterface *anchor=new AnchorInterface(NULL, getUniqueNumber(), dp);
-			child=anchor;
-            anchor->owner=this;
-			VObjContext pcontext;
-
+			ViewerWindow *vw=dynamic_cast<ViewerWindow*>(viewport->win_parent);
+			vw->SelectTool("AnchorInterface");
+			AnchorInterface *anchor=dynamic_cast<AnchorInterface*>(vw->CurrentTool());
+			
 			 //add anchors of parent
 			LaidoutViewport *vp=((LaidoutViewport *)viewport);
-			anchor->AddToSelection(selection);
+			//anchor->AddToSelection(selection);
 			anchor->SetCurrentObject(&vp->curobj);
 
-            viewport->Push(anchor,-1,0);
 			FreeSelection();
 
 		} else if (hover==GROUP_Parent_Matrix) {
-			obj->AddAlignmentRule(NULL);
+			obj->AddAlignmentRule(NULL); //removes any alignment rules
 
 		} else if (hover==GROUP_Jump_To_Parent) {
 			LaidoutViewport *vp=((LaidoutViewport *)viewport);

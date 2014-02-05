@@ -21,7 +21,9 @@
 #include "../headwindow.h"
 
 #include <lax/fileutils.h>
+
 using namespace LaxFiles;
+using namespace Laxkit;
 
 
 
@@ -82,7 +84,7 @@ ObjectDef *makeImportObjectDef()
 int ImportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 ErrorLog &log)
+					 Laxkit::ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;
@@ -242,7 +244,7 @@ ObjectDef *makeExportObjectDef()
 int ExportFunction(ValueHash *context, 
 					 ValueHash *parameters,
 					 Value **value_ret,
-					 ErrorLog &log)
+					 Laxkit::ErrorLog &log)
 {
 	if (!parameters || !parameters->n()) {
 		if (value_ret) *value_ret=NULL;

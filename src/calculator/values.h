@@ -82,9 +82,9 @@ class ValueHash;
 class CalcSettings;
 
 typedef Value *(*NewObjectFunc)();
-typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog &log);
+typedef int (*ObjectFunc)(ValueHash *context, ValueHash *parameters, Value **value_ret, Laxkit::ErrorLog &log);
 //typedef int (*ObjectFunc)(const char *func,int len, ValueHash *context, ValueHash *parameters,  CalcSettings *settings,
-//						  Value **value_ret, ErrorLog *log);
+//						  Value **value_ret, Laxkit::ErrorLog *log);
 
 //--------------------------- OpFuncEvaluator ------------------------------------
 enum OperatorDirectionType
@@ -105,7 +105,7 @@ class OpFuncEvaluator
 {
   public:
 	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings,
-				   Value **value_ret, ErrorLog *log) = 0;
+				   Value **value_ret, Laxkit::ErrorLog *log) = 0;
 };
 
 
@@ -115,7 +115,7 @@ class FunctionEvaluator
   public:
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log) = 0;
+						 Laxkit::ErrorLog *log) = 0;
 };
 
 class SimpleFunctionEvaluator : public FunctionEvaluator
@@ -126,7 +126,7 @@ class SimpleFunctionEvaluator : public FunctionEvaluator
 	SimpleFunctionEvaluator(ObjectFunc func);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //------------------------------ ObjectDef --------------------------------------------
@@ -251,7 +251,7 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 					const char *ptype, const char *nrange, const char *newdefval, Value *defvalue);
 
 //	virtual int callFunction(const char *field, ValueHash *context, ValueHash *parameters,
-//							 Value **value_ret, CalcSettings *settings, ErrorLog *log);
+//							 Value **value_ret, CalcSettings *settings, Laxkit::ErrorLog *log);
 
 	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
@@ -352,7 +352,7 @@ class ValueHash : virtual public Laxkit::anObject, virtual public Value, virtual
 
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- GenericValue ----------------------------------
@@ -393,7 +393,7 @@ class SetValue : public Value, virtual public FunctionEvaluator
 
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- ArrayValue ----------------------------------
@@ -466,7 +466,7 @@ class DoubleValue : public Value, virtual public FunctionEvaluator
 	virtual int assign(FieldExtPlace *ext,Value *v);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- FlatvectorValue ----------------------------------
@@ -485,7 +485,7 @@ class FlatvectorValue : public Value, virtual public FunctionEvaluator
  	virtual ObjectDef *makeObjectDef();
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- SpacevectorValue ----------------------------------
@@ -504,7 +504,7 @@ class SpacevectorValue : public Value, virtual public FunctionEvaluator
  	virtual ObjectDef *makeObjectDef();
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- StringValue ----------------------------------
@@ -520,7 +520,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
  	virtual ObjectDef *makeObjectDef();
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- BytesValue ----------------------------------
@@ -537,7 +537,7 @@ class BytesValue : public Value, virtual public FunctionEvaluator
  	virtual ObjectDef *makeObjectDef();
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- EnumValue ----------------------------------
@@ -590,7 +590,7 @@ class FileValue : public Value, virtual public FunctionEvaluator
 	virtual const char *Part(int i);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
 						 Value **value_ret,
-						 ErrorLog *log);
+						 Laxkit::ErrorLog *log);
 };
 
 //----------------------------- ColorValue ----------------------------------

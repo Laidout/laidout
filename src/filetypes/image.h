@@ -46,7 +46,7 @@ class ImageExportFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual ObjectDef *GetObjectDef();
 
-	virtual int Out(const char *filename, Laxkit::anObject *context, ErrorLog &log);
+	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
 
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker

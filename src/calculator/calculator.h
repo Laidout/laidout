@@ -167,8 +167,8 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	OperatorLevel leftops, rightops;
 	BlockInfo *currentLevel() { return scopes.e[scopes.n-1]; }
 
-	ErrorLog default_errorlog;
-	ErrorLog *errorlog;
+	Laxkit::ErrorLog default_errorlog;
+	Laxkit::ErrorLog *errorlog;
 	int calcerror;
 	char *calcmes;
 	Value *last_answer;
@@ -206,7 +206,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	Value *evalLevel(int level);
 	int evalcondition();
 	Value *checkAssignments();
-	int Assignment(Value *num1, Value *num2, Value **value_ret, ErrorLog *log);
+	int Assignment(Value *num1, Value *num2, Value **value_ret, Laxkit::ErrorLog *log);
 	int checkBlock(Value **value_ret);
 	Value *number();
 	long intnumber();
@@ -222,7 +222,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	Entry *findNameEntry(const char *word,int len, int *scope, int *module, int *index);
 	Value *opCall(const char *op,int n,int dir, Value *num, Value *num2, OperatorLevel *level, int lastindex);
 	int functionCall(const char *word,int n, Value **v_ret, Value *containingvalue, ObjectDef *function,ValueHash *context,ValueHash *pp);
-	int evaluate(const char *in, int len, ValueHash *context, ValueHash *parameters, Value **value_ret, ErrorLog *log);
+	int evaluate(const char *in, int len, ValueHash *context, ValueHash *parameters, Value **value_ret, Laxkit::ErrorLog *log);
 
 	int add(Value *num1,Value *num2, Value **ret);
 	int subtract(Value *num1,Value *num2, Value **ret);
@@ -230,9 +230,9 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	int divide(Value *num1,Value *num2, Value **ret);
 	int power(Value *num1,Value *num2, Value **ret);
 
-	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret, ErrorLog *log);
+	virtual int Op(const char *the_op,int len, int dir, Value *num1, Value *num2, CalcSettings *settings, Value **value_ret, Laxkit::ErrorLog *log);
 	virtual int Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-						 Value **value_ret, ErrorLog *log);
+						 Value **value_ret, Laxkit::ErrorLog *log);
 
 	Value *ApplyDefaultSets(SetValue *set);
 	void messageOut(const char *str,int output_lines=1);
@@ -251,7 +251,7 @@ class LaidoutCalculator : public Laxkit::anObject, public OpFuncEvaluator, publi
 	virtual ObjectDef *GetInfo(const char *expr);
 
 	virtual char *In(const char *in, int *return_type=NULL);
-	virtual int evaluate(const char *in, int len, Value **value_ret, ErrorLog *log);
+	virtual int evaluate(const char *in, int len, Value **value_ret, Laxkit::ErrorLog *log);
 
 	virtual void clearerror();
 	const char *Message();

@@ -19,6 +19,7 @@
 #include "importimage.h"
 #include "dataobjects/epsdata.h"
 #include "utils.h"
+#include "dataobjects/datafactory.h"
 #include <lax/attributes.h>
 #include <lax/fileutils.h>
 #include <lax/transformmath.h>
@@ -462,8 +463,12 @@ int dumpInImageList(ImportImageSettings *settings, Document *doc,LaxFiles::Attri
 			//
 			//	image=new ImageData(file,preview,0,0,0);
 			//}
+
 			 //if not eps, then do generic image. If not openable as image, then create a broken image
-			if (!image) image=new ImageData(file,preview,0,0,0);
+			if (!image) {
+				image=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory->newObject("ImageData"));
+				image->LoadImage(file,preview,0,0,0,0);
+			}
 			image->SetDescription(desc);
 			if (tags) image->InsertTags(tags,0);
 			delete[] file; file=NULL;
@@ -606,8 +611,8 @@ int dumpInImages(ImportImageSettings *settings,
 		if (image) {
 			DBG cerr << "dump image files: "<<imagefiles[c]<<endl;
 
-			imaged=new ImageData;//creates with one count
-			imaged->SetImage(image);//incs count
+			imaged=dynamic_cast<ImageData*>(LaxInterfaces::somedatafactory->newObject("ImageData"));
+			imaged->SetImage(image);//incs count of image
 			image->dec_count();
 
 		} else {

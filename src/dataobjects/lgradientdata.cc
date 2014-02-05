@@ -21,6 +21,8 @@
 #include "../calculator/shortcuttodef.h"
 
 
+using namespace Laxkit;
+
 
 namespace Laidout {
 

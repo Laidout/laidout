@@ -178,7 +178,7 @@ int LPathsData::assign(FieldExtPlace *ext,Value *v)
 /*! Return 0 success, -1 incompatible values, 1 for error.
  */
 int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-	                     Value **value_ret, ErrorLog *log)
+	                     Value **value_ret, Laxkit::ErrorLog *log)
 {
 	//return -1;
 	AffineValue affine(m());
@@ -251,7 +251,7 @@ ObjectDef *LPathInterface::makeObjectDef()
 // *  1 for parameters ok, but there was somehow an error, so no value returned.
 // */
 //int LPathInterface::Evaluate(const char *func,int len, ValueHash *context, ValueHash *parameters, CalcSettings *settings,
-//	                     Value **value_ret, ErrorLog *log)
+//	                     Value **value_ret, Laxkit::ErrorLog *log)
 //{
 //	return 1;
 //}
