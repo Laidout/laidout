@@ -119,7 +119,7 @@ AlignmentRule::AlignmentRule()
 	type=ALIGNMENTRULE_Matrix;
 
 	object_anchor=0; //an anchor in object that gets moved toward target
-	constraintype=-1; //vector is 0 for parent, 1 for object, 2 for page
+	constraintype=UNKNOWN; //vector is 0 for parent, 1 for object, 2 for page
 
 	invariant1=0;
 	invariant2=0;
@@ -128,7 +128,9 @@ AlignmentRule::AlignmentRule()
 	magnet_scale=0; //0 for natural size, 1 for total fill
 
 	target=NULL;
-	offset_units=-1; //0 for parent, 1 for object, 2 for page
+	target_object=NULL; //if not null and target is null, then need to search for it..
+	target_anchor=NULL;
+	offset_units=UNKNOWN; //0 for parent, 1 for object, 2 for page
 
 	code_id=0;
 	next=NULL;
@@ -136,6 +138,10 @@ AlignmentRule::AlignmentRule()
 
 AlignmentRule::~AlignmentRule()
 {
+	delete[] target_object;
+	delete[] target_anchor;
+	if (target) target->dec_count();
+
 	if (next) delete next;
 }
 
@@ -241,6 +247,9 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 	visible=1;
 	prints=1;
 	selectable=1;
+
+	alpha=1;
+	blur=0;
 
 	parent=NULL;
 	parent_link=NULL;
@@ -353,7 +362,7 @@ int DrawableObject::AddAlignmentRule(AlignmentRule *newlink, bool replace, int w
 	return 0;
 }
 
-//! Set this->m() to be an approprate value based on parent_link.
+//! Set this->m() to be an approprate value based on parent_link. Does nothing if no rules.
 void DrawableObject::UpdateFromRules()
 {
 	 //parent link can be a straight matrix off the parent coordinate origin,
@@ -363,8 +372,8 @@ void DrawableObject::UpdateFromRules()
 	AlignmentRule *link=parent_link;
 	while (link) {
 		if (link->type==ALIGNMENTRULE_Matrix) {
-			//Multiply(link->matrix);
-			DBG cerr <<" *** need to implement ALIGNMENTRULE_Matrix"<<endl;
+			//a do nothing rule
+
 		} else if (link->type==ALIGNMENTRULE_EdgeMagnet) {
 			DBG cerr <<" *** need to implement ALIGNMENTRULE_EdgeMagnet"<<endl;
 		} else if (link->type==ALIGNMENTRULE_Code) {
@@ -386,21 +395,38 @@ void DrawableObject::UpdateFromRules()
 			origin(origin()+p-p2);
 
 		} else {
+			if (!link->target) {
+				DBG cerr << " warning: null rule link->target, skipping for now"<<endl;
+				break;
+			}
+
+			 //get target point
 			flatpoint np=link->target->p;
-			DrawableObject *d=dynamic_cast<DrawableObject*>(link->target->owner);
-			while (d) {
-				d->transformPoint(np);
-				d=d->parent;
+			if (dynamic_cast<Page*>(link->target->owner)) {
+				if (link->target->anchor_type==PANCHOR_BBox) {
+					Page *page=dynamic_cast<Page*>(link->target->owner);
+					if (page->pagestyle->outline) np=page->pagestyle->outline->BBoxPoint(np.x,np.y, false);
+				}
+			} else {
+				DrawableObject *d=dynamic_cast<DrawableObject*>(link->target->owner);
+				if (d && link->target->anchor_type==PANCHOR_BBox) {
+					np=d->BBoxPoint(np.x,np.y,false);
+				}
+				while (d) {
+					np=d->transformPoint(np);
+					d=d->parent;
+				}
 			}
 			Affine a=GetTransformToContext(true,1); //invert, and get transform to parent context
 			np=a.transformPoint(np); //now np is the anchor point mapped to object parent space
 
+
 			flatpoint op; //op will be object anchor in parent space
-			GetAnchorInfo(link->object_anchor, NULL, &op, true);
+			GetAnchorInfo(link->object_anchor, NULL, &op,NULL, true);
 
 			flatpoint i1, i2;
-			if (link->invariant1>=0) GetAnchorInfo(link->invariant1, NULL, &i1, true);
-			if (link->invariant2>=0) GetAnchorInfo(link->invariant2, NULL, &i2, true);
+			if (link->invariant1>=0) GetAnchorInfo(link->invariant1, NULL, &i1,NULL, true);
+			if (link->invariant2>=0) GetAnchorInfo(link->invariant2, NULL, &i2,NULL, true);
 
 
 			if (link->type==ALIGNMENTRULE_Move) {
@@ -595,15 +621,36 @@ int DrawableObject::RemoveAnchorI(int index)
 	return 0;
 }
 
+/*! Return the id and optionally the index for the anchor with given id.
+ */
+int DrawableObject::FindAnchorId(const char *name, int *index_ret)
+{
+	const char *nm=NULL;
+	int id=-1;
+
+	for (int c=0; c<NumAnchors(); c++) {
+		GetAnchorInfoI(c,&id, &nm, NULL,NULL,false);
+		if (nm && !strcmp(nm,name)) {
+			if (index_ret) *index_ret=c;
+			return id;
+		}
+	}
+
+	if (index_ret) *index_ret=-1;
+	return -1;
+}
+
 /*! Like GetAnchorInfo(), but by index rather than id.
  * anchor_index must be in [0..NumAnchors()).
  *
- * If transform_to_parent, then returned point is in object's parent space, else is object coordinates,
- * regardless if it is type PANCHOR_BBox.
+ * If transform_to_parent, then returned point is in object's parent space regardless of anchor_type.
+ * In this case, anchor_type is set to PANCHOR_Absolute.
+ * Else is either object coordinates, or object bbox, according to the anchor's type
+ * (PANCHOR_Absolute or PANCHOR_BBox).
  *
  * Return 1 for found, or 0 for not found.
  */
-int DrawableObject::GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, bool transform_to_parent)
+int DrawableObject::GetAnchorInfoI(int anchor_index, int *id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent)
 {
 	if (anchor_index>=0 && anchor_index<9) {
 		int anchor_id=anchor_index+1;
@@ -621,10 +668,15 @@ int DrawableObject::GetAnchorInfoI(int anchor_index, int *id, const char **name,
 		else if (anchor_id==BBOXANCHOR_lm) { nname="bottom";       pp=flatpoint(.5, 0); }
 		else if (anchor_id==BBOXANCHOR_lr) { nname="bottom right"; pp=flatpoint( 1, 0); }
 
-		pp.x=pp.x*(maxx-minx)+minx;
-		pp.y=pp.y*(maxy-miny)+miny;
+		if (anchor_type) *anchor_type=PANCHOR_BBox;
 
-		if (transform_to_parent) pp=transformPoint(pp);
+		if (transform_to_parent) {
+			if (anchor_type) *anchor_type=PANCHOR_Absolute;
+			pp.x=pp.x*(maxx-minx)+minx;
+			pp.y=pp.y*(maxy-miny)+miny;
+			pp=transformPoint(pp);
+		}
+
 		if (p) *p=pp;
 		if (id) *id=anchor_id;
 		if (name) *name=nname;
@@ -642,12 +694,16 @@ int DrawableObject::GetAnchorInfoI(int anchor_index, int *id, const char **name,
 	if (name) *name=a->name;
 	if (p) {
 		flatpoint pp=a->p;
-		if (a->anchor_type==PANCHOR_BBox) {
-			pp.x=pp.x*(maxx-minx)+minx;
-			pp.y=pp.y*(maxy-miny)+miny;
-		}
-		if (transform_to_parent) pp=transformPoint(pp);
-		*p=a->p;
+		if (transform_to_parent) {
+			if (a->anchor_type==PANCHOR_BBox) {
+				pp.x=pp.x*(maxx-minx)+minx;
+				pp.y=pp.y*(maxy-miny)+miny;
+			}
+			pp=transformPoint(pp);
+			if (anchor_type) *anchor_type=PANCHOR_Absolute;
+		} else if (anchor_type) *anchor_type=a->anchor_type;
+
+		*p=pp;
 	}
 
 	return 1;
@@ -657,7 +713,7 @@ int DrawableObject::GetAnchorInfoI(int anchor_index, int *id, const char **name,
  * If transform_to_parent, then returned point is in object's parent space, else is object coordinates,
  * regardless if it is type PANCHOR_BBox.
  */
-int DrawableObject::GetAnchorInfo(int anchor_id, const char **name, flatpoint *p, bool transform_to_parent)
+int DrawableObject::GetAnchorInfo(int anchor_id, const char **name, flatpoint *p, int *anchor_type, bool transform_to_parent)
 {
 	int index=-1;
 
@@ -669,7 +725,7 @@ int DrawableObject::GetAnchorInfo(int anchor_id, const char **name, flatpoint *p
 	}
 	if (index==-1) return 0;
 
-	return GetAnchorInfoI(index, NULL,name,p,transform_to_parent);
+	return GetAnchorInfoI(index, NULL,name,p,anchor_type,transform_to_parent);
 }
 
 /*! Returns pointer to actual anchor info, if possible. Return 0 if actual anchor returned.
@@ -684,7 +740,7 @@ int DrawableObject::GetAnchorI(int anchor_index, PointAnchor **anchor)
 		return GetAnchor(anchor_index+1, anchor);
 	}
 
-	if (anchor_index<0 || anchor_index>=anchors.n) return 1;
+	if (anchor_index<0 || anchor_index>=anchors.n) { *anchor=NULL; return 1; }
 
 	*anchor=anchors.e[anchor_index];
 	(*anchor)->inc_count();
@@ -699,20 +755,24 @@ int DrawableObject::GetAnchorI(int anchor_index, PointAnchor **anchor)
  */
 int DrawableObject::GetAnchor(int anchor_id, PointAnchor **anchor)
 {
-	if (anchor_id<BBOXANCHOR_MAX && anchor_id>=BBOXANCHOR_ul) {
+	if (anchor_id>=BBOXANCHOR_ul && anchor_id<BBOXANCHOR_MAX) {
 		const char *name;
 		flatpoint p;
-		GetAnchorInfo(anchor_id, &name,&p, false);
-		*anchor=new PointAnchor(name,PANCHOR_BBox,p,p,anchor_id);
+		int type;
+		GetAnchorInfo(anchor_id, &name, &p,&type, false);
+		*anchor=new PointAnchor(name,type,p,p,anchor_id);
+		(*anchor)->owner=this;
 		return -1;
 	}
 	for (int c=0; c<anchors.n; c++) {
 		if (anchors.e[c]->id==anchor_id) {
 			*anchor=anchors.e[c];
+			(*anchor)->owner=this;
 			(*anchor)->inc_count();
 			return 0;
 		}
 	}
+	*anchor=NULL;
 	return 1;
 }
 
@@ -787,7 +847,10 @@ void DrawableObject::FindBBox()
 {
 	maxx=minx-1; maxy=miny-1;
 	if (!kids.n) return;
+	DrawableObject *o;
 	for (int c=0; c<kids.n; c++) {
+		o=dynamic_cast<DrawableObject*>(kids.e[c]);
+		if (o && o->parent_link) continue; //skip when there are alignment rules
 		addtobounds(kids.e[c]->m(),kids.e[c]);
 	}
 }
@@ -992,7 +1055,7 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *cont
 		fprintf(f,"%smetadata ...      #object level metadata\n",spc);
 		fprintf(f,"%stags tag1 \"tag 2\" #list of string tags\n",spc);
 		fprintf(f,"%sfilters           #list of filters\n",spc);
-		fprintf(f,"%sparentLink align (a1x,a1y) (a2x,a2y)  #if different than simple matrix\n",spc);
+		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%skids          #child object list\n",spc);
 		fprintf(f,"%s  object ImageData #...or any other drawable object\n",spc);
@@ -1068,35 +1131,42 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *cont
 				fprintf(f,"%salignmentrule %s\n", spc, AlignmentRulePlainName(link->type));
 				const char *nm=NULL;
 				if (link->type!=ALIGNMENTRULE_Move) {
-					GetAnchorInfo(link->invariant1, &nm, NULL, false);
+					GetAnchorInfo(link->invariant1, &nm, NULL,NULL, false);
 					if (link->type==ALIGNMENTRULE_Shear) {
 						const char *nm2=NULL;
-						GetAnchorInfo(link->invariant2, &nm2, NULL, false);
+						GetAnchorInfo(link->invariant2, &nm2, NULL,NULL, false);
 						fprintf(f,"%s  constant \"%s\" \"%s\"\n",spc, nm,nm2);
 					} else {
 						fprintf(f,"%s  constant \"%s\"\n",spc, nm);
 					}
 				}
-				GetAnchorInfo(link->object_anchor, &nm, NULL, false);
+				GetAnchorInfo(link->object_anchor, &nm, NULL,NULL, false);
 				fprintf(f,"%s  point \"%s\"\n",spc, nm);
 
-				fprintf(f,"%s  target \"%s\"\n", spc, "*****implement me!!");
-				//  target  object("objectid")."anchor name"
-				//  target  page."anchor name"
-				//  target  parent."anchor name"
+				if (link->target) {
+					if (link->target->owner==parent) {
+						fprintf(f,"%s  target parent.\"%s\"\n", spc, link->target->name);
+					} else if (link->target->owner==NULL || link->target_location==AlignmentRule::PAGE) {
+						fprintf(f,"%s  target page.\"%s\"\n", spc, link->target->name);
+					} else {
+						if (dynamic_cast<DrawableObject*>(link->target->owner))
+						fprintf(f,"%s  target object(\"%s\").\"%s\"\n", spc,
+								dynamic_cast<DrawableObject*>(link->target->owner)->Id(),link->target->name);
+					}
+				}
 
-				if (link->constraintype==0) 
+				if (link->constraintype==AlignmentRule::PARENT) 
 					fprintf(f,"%s  constrain parent (%.10g,%.10g)\n", spc, link->constraindir.x,link->constraindir.y);
-				else if (link->constraintype==1) 
+				else if (link->constraintype==AlignmentRule::OBJECT) 
 					fprintf(f,"%s  constrain object (%.10g,%.10g)\n", spc, link->constraindir.x,link->constraindir.y);
-				else if (link->constraintype==2) 
+				else if (link->constraintype==AlignmentRule::PAGE) 
 					fprintf(f,"%s  constrain page (%.10g,%.10g)\n", spc, link->constraindir.x,link->constraindir.y);
 
-				if (link->offset_units==0) 
+				if (link->offset_units==AlignmentRule::PARENT) 
 					fprintf(f,"%s  offset parent (%.10g,%.10g)\n", spc, link->offset.x,link->offset.y);
-				else if (link->offset_units==1) 
+				else if (link->offset_units==AlignmentRule::OBJECT) 
 					fprintf(f,"%s  offset object (%.10g,%.10g)\n", spc, link->offset.x,link->offset.y);
-				else if (link->offset_units==2) 
+				else if (link->offset_units==AlignmentRule::PAGE) 
 					fprintf(f,"%s  offset page (%.10g,%.10g)\n", spc, link->offset.x,link->offset.y);
 			}
 
@@ -1181,31 +1251,119 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anOb
 
 				int error=0;
 				int i1=-1, i2=-1;
-				flatpoint offset;
-				int offsetunits=-1;
 				int anchor=-1;
+
+				flatpoint offset;
+				AlignmentRule::TargetType offsetunits=AlignmentRule::UNKNOWN;
+
+				flatpoint constraint;
+				AlignmentRule::TargetType constraintunits=AlignmentRule::UNKNOWN;
+
+				AlignmentRule::TargetType target_location=AlignmentRule::UNKNOWN; //0 for parent, 1 for object, 2 for page
+				char *target_object_name=NULL;
+				char *target_anchor_name=NULL;
+
 				for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++)  {
 					name= att->attributes.e[c]->attributes.e[c2]->name;
 					value=att->attributes.e[c]->attributes.e[c2]->value;
 
 					if (!strcmp(name,"constant")) {
-						// *** i1=??; i2=??;
+						char *end_ptr=NULL;
+						char *nm=QuotedAttribute(value, &end_ptr);
+
+						if (nm) {
+							i1=FindAnchorId(nm,NULL);
+							delete[] nm;
+
+							value=end_ptr;
+							nm=QuotedAttribute(value, &end_ptr);
+							if (nm) {
+								i2=FindAnchorId(nm,NULL);
+								delete[] nm;
+							}
+						}
+
 					} else if (!strcmp(name,"point")) {
-						// ***
+						anchor=FindAnchorId(value,NULL);
+
 					} else if (!strcmp(name,"target")) {
-						// ***
+						if (strncmp(value,"object",6)==0) {
+							 //refers to some random object somewhere on the page
+							value+=6;
+							while (isspace(*value)) value++;
+							if (*value=='(') {
+								value++;
+								char *end_ptr=NULL;
+								delete[] target_object_name;
+								target_object_name=QuotedAttribute(value, &end_ptr);
+								value=end_ptr;
+								if (target_object_name && *value==')') {
+									value++;
+									if (*value=='.') value++;
+									delete[] target_anchor_name;
+									target_anchor_name=QuotedAttribute(value, &end_ptr);
+									target_location=AlignmentRule::OTHER_OBJECT;
+								}
+							}
+
+						} else if (strncmp(value,"parent",6)==0) {
+							value+=6;
+							while (isspace(*value)) value++;
+							if (*value=='.') value++;
+							char *end_ptr=NULL;
+							target_anchor_name=QuotedAttribute(value, &end_ptr);
+							if (target_anchor_name) target_location=AlignmentRule::PARENT;
+
+						} else if (strncmp(value,"page",4)==0) {
+							value+=4;
+							while (isspace(*value)) value++;
+							if (*value=='.') value++;
+							while (isspace(*value)) value++;
+							char *end_ptr=NULL;
+							delete[] target_anchor_name;
+							target_anchor_name=QuotedAttribute(value, &end_ptr);
+							if (target_anchor_name) target_location=AlignmentRule::PAGE;
+						}
+
 					} else if (!strcmp(name,"offset")) {
+						 //units 0 for parent, 1 for object, 2 for page
+						if (strncmp(value,"object",6)==0)      { value+=6;  offsetunits=AlignmentRule::OBJECT; }
+						else if (strncmp(value,"parent",6)==0) { value+=6;  offsetunits=AlignmentRule::PARENT; }
+						else if (strncmp(value,"page",4)==0)   { value+=4;  offsetunits=AlignmentRule::PAGE;   }
+						while (isspace(*value)) value++;
+
 						if (FlatvectorAttribute(value,&offset,NULL)==0) {
 							error=1;
 						}
+
 					} else if (!strcmp(name,"constrain")) {
-						// ***
-					} else if (!strcmp(name,"constrainUnits")) {
-						// ***
+						if (strncmp(value,"object",6)==0)      { value+=6;  constraintunits=AlignmentRule::OBJECT; }
+						else if (strncmp(value,"parent",6)==0) { value+=6;  constraintunits=AlignmentRule::PARENT; }
+						else if (strncmp(value,"page",4)==0)   { value+=4;  constraintunits=AlignmentRule::PAGE;   }
+						while (isspace(*value)) value++;
+
+						if (FlatvectorAttribute(value,&constraint,NULL)==0) {
+							error=1;
+						}
+					}
+				}
+				
+				PointAnchor *target=NULL;
+				if (!error) {
+					if (target_location==AlignmentRule::PARENT) {
+						int target_id=parent->FindAnchorId(target_anchor_name,NULL);
+						if (target_id>=0) parent->GetAnchor(target_id, &target);
+						if (target==NULL) error=1;
+						else {
+							delete[] target_anchor_name;
+							delete[] target_object_name;
+						}
 					}
 				}
 
+
 				if (!error) {
+							// *** create anchor stub to fill in later?
 					AlignmentRule *rule=new AlignmentRule;
 					rule->type=type;
 					rule->object_anchor=anchor;
@@ -1213,8 +1371,16 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anOb
 					rule->invariant2=i2;
 					rule->offset=offset;
 					rule->offset_units=offsetunits;
-					//rule->target=***;
+					rule->constraindir=constraint;
+					rule->constraintype=constraintunits;
+					rule->target=NULL; //target.. delay because parent bbox not fully formed yet
+					rule->target_location=target_location;
+					rule->target_anchor=target_anchor_name;
+					rule->target_object=target_object_name;
 					AddAlignmentRule(rule, false, -1);
+				} else {
+					delete[] target_anchor_name;
+					delete[] target_object_name;
 				}
 
 			}
@@ -1235,6 +1401,98 @@ void DrawableObject::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anOb
 
 	 //is old school group
 	if (foundconfig==-1) dump_in_group_atts(att, flag,context);
+}
+
+/*! Recursively map any unmapped anchors. Assume we are on the given page.
+ * Returns the number of items adjusted.
+ *
+ * \todo use targets in any attached page bleeds
+ */
+int DrawableObject::ResolveAnchorRefs(Document *doc, Page *page, Group *g, Laxkit::ErrorLog &log)
+{
+	int adjusted=0;
+	DrawableObject *oo;
+	anObject *own;
+
+	for (int c=0; c<g->n(); c++) {
+        oo=dynamic_cast<DrawableObject*>(g->e(c));
+		if (!oo) continue;
+
+        if (oo->parent_link) {
+             //check for unresolved anchor linkages
+            AlignmentRule *rule=oo->parent_link;
+            bool needtoupdate=false;
+			own=NULL;
+
+            while (rule) {
+                 // *** a bit hacky here.. need more reasonable system of dependency checking
+                if (  rule->type!=ALIGNMENTRULE_Matrix &&
+                      rule->type!=ALIGNMENTRULE_EdgeMagnet &&
+                      rule->type!=ALIGNMENTRULE_Code &&
+                      rule->type!=ALIGNMENTRULE_Align &&
+                      rule->target==NULL && rule->target_anchor!=NULL) {
+    
+                    DrawableObject *ooo=NULL;
+                    if (rule->target_location==AlignmentRule::PARENT) {
+                        ooo=oo->parent;
+						own=ooo;
+                    } else if (rule->target_location==AlignmentRule::OTHER_OBJECT) {
+                        ooo=dynamic_cast<DrawableObject*>(FindChild(rule->target_object));
+						own=ooo;
+                    } else if (rule->target_location==AlignmentRule::PAGE) {
+						ooo=&page->anchors;
+						ooo->setbounds(page->pagestyle->outline);
+						own=page;
+                    }
+
+                    if (ooo) {
+                        PointAnchor *anchor=NULL;
+                        int index=-1;
+                        ooo->FindAnchorId(rule->target_anchor,&index);
+                        ooo->GetAnchorI(index, &anchor);
+						anchor->owner=own;
+                        if (anchor!=NULL) {
+                            rule->target=anchor;
+                            needtoupdate=true;
+							adjusted++; 
+                        } else {
+                            log.AddMessage(_("Missing anchor in anchor target object!"),ERROR_Warning);
+                        }
+                        
+                    } else {
+                        log.AddMessage(_("Missing anchor target object!"),ERROR_Warning);
+                    }
+
+                }
+
+                rule=rule->next;
+            }
+            if (needtoupdate) oo->UpdateFromRules();
+		} //if oo->parent_link
+
+		if (oo->kids.n) adjusted+=ResolveAnchorRefs(doc,page,oo, log);
+	} //each object in g
+
+	return adjusted;
+}
+
+LaxInterfaces::SomeData *DrawableObject::FindChild(const char *id)
+{
+	DrawableObject *o;
+	SomeData *s;
+	for (int c=0; c<n(); c++) {
+		s=e(c);
+		if (!strcmp(s->Id(),id)) return s;
+
+		o=dynamic_cast<DrawableObject*>(e(c));
+		if (!o) continue;
+
+		if (o->kids.n) {
+			s=o->FindChild(id);
+			if (s) return s;
+		}
+	}
+	return NULL;
 }
 
 
@@ -1268,8 +1526,8 @@ void DrawableObject::dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit
 				//***strs[0]==that id
 				SomeData *data=newObject(n>1?strs[1]:(n==1?strs[0]:NULL));//objs have 1 count
 				if (data) {
-					data->dump_in_atts(att->attributes[c],flag,context);
 					push(data);
+					data->dump_in_atts(att->attributes[c],flag,context);
 					DBG if (!dynamic_cast<DrawableObject*>(data)) cerr <<" --- WARNING! newObject returned a non-DrawableObject"<<endl;
 					data->dec_count();
 				}
