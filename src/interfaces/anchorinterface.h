@@ -59,9 +59,10 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	{
 	  public:
 		PointAnchor *anchor;
+		flatpoint real_point;
 		int anchorsource;
 		int on;
-		Anchors(PointAnchor *aa, int oon);
+		Anchors(PointAnchor *aa, flatpoint real, int source, int oon);
 		~Anchors();
 	};
 
@@ -107,7 +108,7 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	virtual const char *whattype() { return "AnchorInterface"; }
 	virtual const char *whatdatatype() { return NULL; }
 	virtual int draws(const char *atype);
-	virtual int AddAnchor(flatpoint p,const char *name, int source, int id);
+	virtual int AddAnchor(flatpoint p,int p_type, const char *name, int source, int id, Laxkit::anObject *owner);
 	virtual int AddAnchors(VObjContext *context, int source);
 
 	virtual int InterfaceOn();

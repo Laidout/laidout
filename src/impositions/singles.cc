@@ -62,6 +62,7 @@ Singles::Singles() : Imposition(_("Singles"))
 	SetPaperSize(paperstyle);
 	paperstyle->dec_count();
 			
+	setPage();
 
 	objectdef=stylemanager.FindDef("Singles");
 	if (objectdef) objectdef->inc_count(); 
@@ -138,6 +139,9 @@ void Singles::setPage()
 	pagestyle->mr=oldr;
 	pagestyle->mt=oldt;
 	pagestyle->mb=oldb;
+
+	pagestyle->outline=dynamic_cast<PathsData*>(GetPageOutline(0,0));
+	pagestyle->margin=dynamic_cast<PathsData*>(GetPageMarginOutline(0,0));
 }
 
 //! Return the default page style for that page.
@@ -194,7 +198,6 @@ int Singles::SetDefaultMargins(double l,double r,double t,double b)
 void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
-	int pages=-1;
 	char *name,*value;
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
@@ -227,7 +230,6 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 			IntAttribute(value,&numpages);
 			if (numpages<0) numpages=0;
 		} else if (!strcmp(name,"defaultpagestyle")) {
-			pages=c;
 			if (pagestyle) pagestyle->dec_count();
 			pagestyle=new RectPageStyle(RECTPAGE_LRTB);
 			pagestyle->dump_in_atts(att->attributes.e[c],flag,context);
@@ -248,7 +250,8 @@ void Singles::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *c
 			}
 		}
 	}
-	if (pages<0) setPage();
+
+	setPage();
 }
 
 /*! Writes out something like:

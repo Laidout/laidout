@@ -442,8 +442,29 @@ const char *Project::object_e_name(int i)
 	return NULL;
 }
 
+/*! Make sure that anchors of all objects in all pages of all documents point to valid things.
+ * This is done after loading in a file.
+ *
+ * Returns number of objects adjusted.
+ */
+int Project::ClarifyAnchors(ErrorLog &log)
+{
+	int adjusted=0;
+	Document *doc;
+	for (int c=0; c<docs.n; c++) {
+	  doc=docs.e[c]->doc;
+	  if (!doc) continue;
+
+	  for (int page=0; page<doc->pages.n; page++) {
+		adjusted+=doc->pages.e[page]->layers.ResolveAnchorRefs(doc, doc->pages.e[page], &doc->pages.e[page]->layers, log);
+	  }
+	}
+
+	return adjusted;
+}
 
 /*! Step through all drawable objects looking for unresolved somedatarefs.
+ * Also calls ClarifyAnchors after sorting out clones.
  * If found, find matching reference and install object. If not found,
  * issue a warning.
  *
@@ -489,10 +510,12 @@ int Project::ClarifyRefs(ErrorLog &log)
 		if (first==place) break;
 	}
 
+	ClarifyAnchors(log);
+
 	return numrefs;
 }
 
-/*! This is to aid in mapping unresolved clone references. For arbitrary
+/*! This is to aid in mapping unresolved references. For arbitrary
  * object location, use the other find.
  */
 LaxInterfaces::SomeData *Project::FindObject(const char *id)
