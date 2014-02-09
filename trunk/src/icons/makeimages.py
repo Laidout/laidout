@@ -97,11 +97,13 @@ for name in names :
 
     print str(X)+","+str(Y)+" "+str(W)+"x"+str(H)
     x1=int(X/45)*45
-    y1=11*90-int(Y/45)*45-45
+    y1=17*90-int(Y/45)*45-45
     renderwidth =bitmapw*(1+int(W/45))
     renderheight=bitmapw*(1+int(H/45))
     x2=x1+45*(1+int(W/45))
     y2=y1+45*(1+int(H/45))
+
+    print "x1,y1:"+str(x1)+","+str(y1)+"  x2,y2:"+str(x2)+"x"+str(y2)
 
     command="inkscape -a "+str(x1)+":"+str(y1)+":"+str(x2)+":"+str(y2)+" -w "+ \
         str(renderwidth)+" -h "+str(renderheight)+" -e "+name+".png icons.svg"
