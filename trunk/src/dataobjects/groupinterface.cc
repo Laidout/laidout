@@ -241,19 +241,28 @@ int GroupInterface::AlternateScan(flatpoint sp, flatpoint p, double xmag,double 
 		 //check for popup menu for parent link
 		if (popupcontrols==GROUP_Parent_Link) {
 			double th=dp->textheight();
-			double w=dp->textextent(_("Original"),-1,NULL,NULL)*1.5;
+			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
 			pp+=v*maxtouchlen*.5;
 			pp.y-=3*th;
 			if (pp.y-th<dp->Miny) pp.y=dp->Miny+th;
-			if (pp.x-w*1.5<dp->Minx) pp.x=dp->Minx+w*1.5;
+			if (pp.x-w*.5<dp->Minx) pp.x=dp->Minx+w*.5;
 
 			if (sp.y>pp.y-th && sp.y<pp.y+th) {
-				if (selection.n==1 && sp.x>pp.x-w*1.5 && sp.x<pp.x-w*.5) return GROUP_Parent_Matrix;
-				if (sp.x<pp.x+w*1.5 && sp.x>pp.x+w*.5) return GROUP_Jump_To_Parent;
+				//if (selection.n>1 && sp.x<pp.x+w*.5 && sp.x>pp.x-w*.5) return GROUP_Reparent;
 			} else if (sp.y>pp.y+th && sp.y<pp.y+3*th) {
-				if (selection.n==1 && sp.x>pp.x-w*1.5 && sp.x<pp.x-w*.5) return GROUP_Parent_Align;
-				if (sp.x<pp.x+w*1.5 && sp.x>pp.x+w*.5) return GROUP_Reparent;
+				if (sp.x<pp.x+w*.5 && sp.x>pp.x-w*.5) {
+					if (selection.n==1) return GROUP_Jump_To_Parent;
+					else return GROUP_Reparent;
+				}
 			}
+
+//			if (sp.y>pp.y-th && sp.y<pp.y+th) {
+//				if (selection.n==1 && sp.x>pp.x-w*1.5 && sp.x<pp.x-w*.5) return GROUP_Parent_Matrix;
+//				if (sp.x<pp.x+w*1.5 && sp.x>pp.x+w*.5) return GROUP_Jump_To_Parent;
+//			} else if (sp.y>pp.y+th && sp.y<pp.y+3*th) {
+//				if (selection.n==1 && sp.x>pp.x-w*1.5 && sp.x<pp.x-w*.5) return GROUP_Parent_Align;
+//				if (sp.x<pp.x+w*1.5 && sp.x>pp.x+w*.5) return GROUP_Reparent;
+//			}
 		}
 	}
 
@@ -861,29 +870,36 @@ int GroupInterface::Refresh()
 		if (popupcontrols==GROUP_Parent_Link) {
 			double th=dp->textheight();
 			double w=dp->textextent(_("Jump to parent"),-1,NULL,NULL)*1.5;
+
 			p.y-=3*th;
 			if (p.y-th<dp->Miny) p.y=dp->Miny+th;
-			if (p.x-w*1.5<dp->Minx) p.x=dp->Minx+w*1.5;
+			if (p.x-w*.5<dp->Minx) p.x=dp->Minx+w*.5;
 			dp->NewFG(.8,.8,.8);
 
-			if (selection.n==1) {
-				if (hover==GROUP_Parent_Matrix) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
-				dp->drawellipse(p.x-w,p.y, w/2,th, 0,2*M_PI, 2);
-				if (hover==GROUP_Parent_Align) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
-				dp->drawellipse(p.x-w,p.y+2*th, w/2,th, 0,2*M_PI, 2);
-			}
-			if (hover==GROUP_Jump_To_Parent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
-			dp->drawellipse(p.x+w,p.y, w/2,th, 0,2*M_PI, 2);
-			if (hover==GROUP_Reparent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
-			dp->drawellipse(p.x+w,p.y+2*th, w/2,th, 0,2*M_PI, 2);
+			//if (selection.n==1) {
+			//	if (hover==GROUP_Parent_Matrix) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			//	dp->drawellipse(p.x-w,p.y, w/2,th, 0,2*M_PI, 2);
+			//	if (hover==GROUP_Parent_Align) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			//	dp->drawellipse(p.x-w,p.y+2*th, w/2,th, 0,2*M_PI, 2);
+			//}
+			//----
+			//if (selection.n>1) {
+			//	if (hover==GROUP_Reparent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			//	dp->drawellipse(p.x,p.y, w/2,th, 0,2*M_PI, 2);
+			//}
+			//if (hover==GROUP_Jump_To_Parent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			//----
+			if (hover==GROUP_Reparent || hover==GROUP_Jump_To_Parent) dp->NewBG(.9,.9,.9); else dp->NewBG(1.,1.,1.);
+			dp->drawellipse(p.x,p.y+2*th, w/2,th, 0,2*M_PI, 2);
+			//----
 
 			dp->NewFG(0.,0.,0.);
-			if (selection.n==1) {
-				dp->textout(p.x-w,p.y,     _("Matrix"),-1,  LAX_CENTER);
-				dp->textout(p.x-w,p.y+2*th,_("Align"),-1,   LAX_CENTER);
-			}
-			dp->textout(p.x+w,p.y,     _("Jump to parent"),-1, LAX_CENTER);
-			dp->textout(p.x+w,p.y+2*th,_("Reparent"),-1,LAX_CENTER);
+			//if (selection.n==1) {
+			//	dp->textout(p.x-w,p.y,     _("Matrix"),-1,  LAX_CENTER);
+			//	dp->textout(p.x-w,p.y+2*th,_("Align"),-1,   LAX_CENTER);
+			//}
+			if (selection.n>1) dp->textout(p.x,p.y+2*th, _("Reparent"),  -1, LAX_CENTER);
+			else dp->textout(p.x,p.y+2*th,_("Jump to parent"),-1,LAX_CENTER);
 
 			if (hover==GROUP_Reparent && selection.n>1) DrawReparentArrows();
 		}
@@ -928,7 +944,7 @@ void GroupInterface::DrawReparentArrows()
 	viewport->transformToContext(m,selection.e[0],0,1);
 
 	flatpoint pp;
-	flatpoint p=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
+	flatpoint p=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //new parent center
 	p=dp->realtoscreen(p);
 
 	dp->NewFG(0.,.7,0.);
@@ -940,6 +956,14 @@ void GroupInterface::DrawReparentArrows()
 		pp=dp->realtoscreen(pp);
 		dp->drawarrow(pp,p-pp, 0,1,2,3);
 	}
+
+	dp->NewFG(0.,.3,0.);
+	dp->textout(p.x-2,p.y-2, _("Parent"),-1,LAX_CENTER);
+	dp->textout(p.x+2,p.y-2, _("Parent"),-1,LAX_CENTER);
+	dp->textout(p.x-2,p.y+2, _("Parent"),-1,LAX_CENTER);
+	dp->textout(p.x+2,p.y+2, _("Parent"),-1,LAX_CENTER);
+	dp->NewFG(1.,1.,1.,1.);
+	dp->textout(p.x,p.y, _("Parent"),-1,LAX_CENTER);
 }
 
 //! Returns this, but count is incremented.
