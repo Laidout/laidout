@@ -23,6 +23,7 @@
 #include <lax/interfaces/gradientinterface.h>
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
+#include <lax/interfaces/engraverfillinterface.h>
 #include <lax/lists.cc>
 
 #include "interfaces.h"
@@ -88,6 +89,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		//i->dec_count();
 		
 		i=new CloneInterface(NULL,id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
+		i=new EngraverFillInterface(id++,NULL);
 		existingpool->push(i);
 		i->dec_count();
 
