@@ -300,6 +300,19 @@ void DrawableObject::Lock(int which)
 void DrawableObject::Unlock(int which)
 { locks&=~which; }
 
+
+/*! Return object primitives that represent this object.
+ *
+ * For objects that belong to hot new tools, it is very difficult
+ * to update exporters for these specific new requirements. This way,
+ * you need only define this function to return the equivalent
+ * rendered in Laidout "primitives".
+ *
+ * Default is to return this.
+ */
+LaxInterfaces::SomeData *DrawableObject::EquivalentObject()
+{ return this; }
+
 /*! If index out or range, remove top.
  * Return 0 for success, nonzero error.
  */

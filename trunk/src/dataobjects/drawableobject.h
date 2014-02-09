@@ -210,6 +210,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual void dump_in_group_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	
 	 //new functions for DrawableObject
+	virtual LaxInterfaces::SomeData *EquivalentObject();
 	virtual LaxInterfaces::PathsData *GetAreaPath();
 	virtual LaxInterfaces::PathsData *GetInsetPath(); //return an inset path, may or may not be inset_path, where streams are laid into
 	virtual LaxInterfaces::PathsData *GetWrapPath(); //path inside which external streams can't go
