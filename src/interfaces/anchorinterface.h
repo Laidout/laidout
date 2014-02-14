@@ -46,6 +46,8 @@ enum AnchorPlaces
 	ANCHOR_Anchor,
 	ANCHOR_Region,
 	ANCHOR_Regions,
+	ANCHOR_Offset,
+	ANCHOR_Contstraint,
 	ANCHOR_Rules,
 	ANCHOR_Object,
 	ANCHOR_MAX
@@ -71,6 +73,9 @@ class AnchorInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::SomeDataRef *proxy;
 	PointAnchor temptarget;
 	AlignmentRule *current_rule;
+	flatpoint current_target;
+	flatpoint offset_dir;
+	flatpoint current_offset;
 
 	unsigned int anchor_regions;
 	bool show_region_selector;
