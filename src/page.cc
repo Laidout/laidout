@@ -574,6 +574,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	 // initialize page contents to 1 empty layer.
 	Group *g=new Group;
 	makestr(g->object_idstr,"pagelayer");
+	g->Id("pagelayer");
 	g->selectable=0;
 	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
 	layers.push(g); //incs count
@@ -581,7 +582,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	layers.selectable=0;
 	layers.obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return layers
 	obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return this
-	makestr(layers.object_idstr,"pagegroup");
+	layers.Id("pagegroup");
 }
 
 //! Destructor, destroys the thumbnail, and dec_counts pagestyle.
