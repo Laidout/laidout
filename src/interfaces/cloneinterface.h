@@ -11,12 +11,13 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2013 by Tom Lechner
+// Copyright (C) 2013-2014 by Tom Lechner
 //
 
 #include "../calculator/values.h"
 #include "../dataobjects/group.h"
 #include "../language.h"
+#include "../viewwindow.h"
 #include "selection.h"
 
 #include <lax/lists.h>
@@ -69,7 +70,7 @@ class TilingDest
 	Laxkit::Affine transform;
 
 	TilingDest();
-	~TilingDest();
+	virtual ~TilingDest();
 };
 
 
@@ -148,10 +149,12 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 								bool shearable=false, bool flexible_base=false);
 
 	virtual Group *Render(Group *parent_space,
-					   LaxInterfaces::ObjectContext *base_object_to_update,
+					   Selection *base_objects,
 					   Laxkit::Affine *base_offsetm,
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
-					   LaxInterfaces::ViewportWindow *viewport);
+					   LaxInterfaces::ViewportWindow *viewport,
+					   LaxInterfaces::PathsData *boundary,
+					   Laxkit::Affine *final_orient);
 //	virtual void RenderRecursive(TilingDest *dest, int iterations, Laxkit::Affine current_space,
 //					   Group *parent_space,
 //					   LaxInterfaces::ObjectContext *base_object_to_update, //!< If non-null, update relevant clones connected to base object
@@ -170,26 +173,6 @@ class CloneInterface : public LaxInterfaces::anInterface
 {
   protected:
 
-//	class ControlInfo //one per object
-//	{
-//	  public:
-//***		flatpoint p;
-//***		flatpoint v;
-//***		double amountx,amounty;
-//***		int flags;
-//***		flatpoint new_center;
-//***		flatpoint original_center;
-//		LaxInterfaces::SomeData *original_transform;
-//***
-//***		ControlInfo();
-//***		~ControlInfo();
-//***		void SetOriginal(LaxInterfaces::SomeData *o);
-//	};
-//	Laxkit::PtrStack<ControlInfo> objcontrols;
-//***	int needtoresetlayout;
-//
-//***	Laxkit::PtrStack<ActionArea> controls;
-
 	Tiling *tiling;
 
 
@@ -202,19 +185,18 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	bool trace_cells;
 	bool previewactive;
-	LaxInterfaces::ObjectContext *previewoc;
+	VObjContext *previewoc;
 	Group *preview;
 	Group *lines;
 
 	LaxInterfaces::PathsData *boundary;
 
+	int current_base;
 	Group base_cells;
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
 
 	Selection sources;
-	//Group *source_objs;
-	LaxInterfaces::ObjectContext *toc; // ***TEMP
 
 	double uiscale;
 	Laxkit::DoubleBBox box;
