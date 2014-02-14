@@ -684,6 +684,18 @@ int AnchorInterface::Refresh()
 	if (show_region_selector) RefreshMenu();
 
 
+	 //draw offset indicator
+	if (hover_item==ANCHOR_Offset) {
+		 //draw indicator that you can drag the offset value
+		flatpoint p1=dp->realtoscreen(current_target);
+		flatpoint v =dp->realtoscreen(current_target+offset_dir)-p1;
+		dp->drawarrow(p1,v, 0,1,2,3);
+	}
+	if (current_rule && !current_rule->offset.isZero() ) {
+		 //indicate actual offset
+	}
+
+
 	 //draw list of rules of current object
 	if (cur_oc) {
 		DrawableObject *o=dynamic_cast<DrawableObject*>(cur_oc->obj);
@@ -792,7 +804,21 @@ int AnchorInterface::scan(int x,int y, int *anchor)
 	flatpoint p=flatpoint(x,y);
 	double dist2=25; //*** 5 px, make this an option somewhere? tied to finger thickness??
 	double d;
-	 //search object first
+
+	if (current_rule) {
+		flatpoint ct=current_target;
+		offset_dir=dp->screentoreal(p)-ct;
+		d=norm2(offset_dir); //usually point toward mouse
+		if (d>25 && d<100) return ANCHOR_Offset;
+
+		if (d>25) {
+			d=norm2(p-dp->realtoscreen(ct+current_offset));
+			if (d<25) return ANCHOR_Offset;
+		}
+	}
+
+
+	 //search object anchors before other anchors
 	for (int c=0; c<anchors.n; c++) {
 		if (!anchors.e[c]->on) continue;
 		if (anchors.e[c]->anchorsource!=ANCHOR_Object) continue;
@@ -990,8 +1016,9 @@ int AnchorInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse 
 		if (!dragged && index>=0 && !newpoint) {
 			if (index==active_anchor) {
 				//turn off active anchor
-				active_anchor=-1;
-				active_i2=active_i1=-1;
+				active_anchor=active_i1;
+				active_i1=active_i2;
+				active_i2=-1;
 				needtodraw=1;
 
 			} else if (index==active_i1) {
