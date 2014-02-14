@@ -25,8 +25,11 @@ namespace Laidout {
 /*! \class SelectedObject
  */
 
-SelectedObject::SelectedObject(LaxInterfaces::ObjectContext *noc)
+/*! This will add a duplicate of noc.
+ */
+SelectedObject::SelectedObject(LaxInterfaces::ObjectContext *noc, int ninfo)
 {
+	info=ninfo;
 	oc=noc->duplicate();
 	if (oc) obj=oc->obj;
 }
@@ -72,18 +75,18 @@ void Selection::CurrentObject(int which)
 
 /*! Return index of added oc in selection. Warning: does NOT check for duplicates!
  */
-int Selection::Add(LaxInterfaces::ObjectContext *oc, int where)
+int Selection::Add(LaxInterfaces::ObjectContext *oc, int where, int ninfo)
 {
 	if (!oc) return -1;
 	if (where<0 || where>objects.n) where=objects.n;
 	currentobject=where;
-	return objects.push(new SelectedObject(oc),-1,where);
+	return objects.push(new SelectedObject(oc,ninfo),-1,where);
 }
 
 /*! Like Add(), but do not add if is already in selection. In that case,
  * return -1. Return -2 if oc==NULL.
  */
-int Selection::AddNoDup(LaxInterfaces::ObjectContext *oc, int where)
+int Selection::AddNoDup(LaxInterfaces::ObjectContext *oc, int where, int ninfo)
 {
 	if (!oc) return -2;
 	if (where<0 || where>objects.n) where=objects.n;
@@ -93,7 +96,7 @@ int Selection::AddNoDup(LaxInterfaces::ObjectContext *oc, int where)
 	}
 
 	currentobject=where;
-	return objects.push(new SelectedObject(oc),-1,where);
+	return objects.push(new SelectedObject(oc,ninfo),-1,where);
 }
 
 /*! Remove item at index i.
@@ -133,6 +136,14 @@ ValueHash *Selection::e_properties(int i)
 {
 	if (i<0 || i>=objects.n) return NULL;
 	return &objects.e[i]->properties;
+}
+
+/*! Return is -1 if out of bounds.
+ */
+int Selection::e_info(int i)
+{
+	if (i<0 || i>=objects.n) return -1;
+	return objects.e[i]->info;
 }
 
 // *** complicated because currently objectcontext needs viewport to retrieve transforms
