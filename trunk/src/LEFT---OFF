@@ -175,7 +175,7 @@ Color sliders:
   CMYK sliders FAIL
 
 customizable object child relationships to parent, rather than simple transform
-  scale x
+  DONE scale x
   scale y
   scale free
   stretch, proxy displays ok, but after install stretch doesn't work
@@ -726,7 +726,9 @@ filters:
   remember last export
 
 Clean up mesh/patch controls
+  nudge mode with shift?
   smooth edit mode should be default. It's not working
+  rotate/scale single control point should move attached controls in smooth mode
   add new patches should smoothify joins when in smooth edit
   rect select nodes
   selected nodes are not clearly indicated
