@@ -240,8 +240,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
-//***	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
-//***	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
+	virtual int Event(const Laxkit::EventData *e,const char *mes);
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
