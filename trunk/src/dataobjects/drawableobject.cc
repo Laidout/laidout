@@ -308,10 +308,11 @@ void DrawableObject::Unlock(int which)
  * you need only define this function to return the equivalent
  * rendered in Laidout "primitives".
  *
- * Default is to return this.
+ * Default is to return NULL. If there is no equivalent, NULL MUST be returned.
+ * Calling code must call dec_count() on the returned object.
  */
 LaxInterfaces::SomeData *DrawableObject::EquivalentObject()
-{ return this; }
+{ return NULL; }
 
 /*! If index out or range, remove top.
  * Return 0 for success, nonzero error.
@@ -1056,6 +1057,9 @@ int DrawableObject::UnGroup(int n,const int *which)
 
 const char *DrawableObject::Id()
 { return SomeData::Id(); }
+
+const char *DrawableObject::Id(const char *newid)
+{ return SomeData::Id(newid); }
 
 //! Dump out iohints and metadata, if any.
 void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
