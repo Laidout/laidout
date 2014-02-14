@@ -28,11 +28,12 @@ namespace Laidout {
 class SelectedObject
 {
   public:
+	int info;
 	LaxInterfaces::SomeData *obj;
 	LaxInterfaces::ObjectContext *oc;
 	ValueHash properties;
 
-	SelectedObject(LaxInterfaces::ObjectContext *noc);
+	SelectedObject(LaxInterfaces::ObjectContext *noc, int ninfo);
 	virtual ~SelectedObject();
 };
 
@@ -46,21 +47,23 @@ class Selection : public Laxkit::anObject, public Laxkit::DoubleBBox
 	anObject *base_object;
 
   public:
+	Selection();
+	virtual ~Selection();
+
 	virtual int n() { return objects.n; }
 	virtual LaxInterfaces::ObjectContext *e(int i);
 	virtual ValueHash *e_properties(int i);
-	virtual int Add(LaxInterfaces::ObjectContext *oc, int where);
-	virtual int AddNoDup(LaxInterfaces::ObjectContext *oc, int where);
+	virtual int e_info(int i);
+
+	virtual int FindIndex(LaxInterfaces::ObjectContext *oc);
+	virtual int Add(LaxInterfaces::ObjectContext *oc, int where, int ninfo=-1);
+	virtual int AddNoDup(LaxInterfaces::ObjectContext *oc, int where, int ninfo=-1);
 	virtual int Remove(int i);
 	virtual void Flush();
 	virtual LaxInterfaces::ObjectContext *CurrentObject();
 	virtual int CurrentObjectIndex() { return currentobject; }
 	virtual void CurrentObject(int which);
-	virtual int FindIndex(LaxInterfaces::ObjectContext *oc);
 	//virtual void FindBBox();
-
-	Selection();
-	virtual ~Selection();
 };
 
 
