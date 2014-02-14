@@ -187,6 +187,7 @@ class DrawableObject :  virtual public ObjectContainer,
 	virtual const char *whattype() { return "Group"; }
 	virtual LaxInterfaces::SomeData *duplicate(LaxInterfaces::SomeData *dup);
 	virtual const char *Id();
+	virtual const char *Id(const char *newid);
 
 	 //sub classes MUST redefine pointin() and FindBBox() to point to the proper things.
 	 //default is point to things particular to Groups.
