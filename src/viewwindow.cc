@@ -1134,12 +1134,14 @@ int LaidoutViewport::DeleteObject(LaxInterfaces::ObjectContext *oc)
 	SomeData *d=oc->obj;
 	if (!d) return -1;
 
-	ChangeContext(oc);
+	setCurobj(dynamic_cast<VObjContext*>(oc));
 	return DeleteObject();
 }
 
 /*! This will set curobj to where the new object is, and oc will point to curobj, thus
  * it should not be deleted by calling code.
+ *
+ * Original contents of oc are ignored. d is placed in the context of curobj.
  */
 int LaidoutViewport::NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc)
 {
