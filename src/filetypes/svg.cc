@@ -487,12 +487,23 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 //		warning++;
 
 	} else {
-		setlocale(LC_ALL,"");
-		char buffer[strlen(_("Cannot export %s objects into svg."))+strlen(obj->whattype())+1];
-		sprintf(buffer,_("Cannot export %s objects into svg."),obj->whattype());
-		log.AddMessage(obj->object_id,obj->nameid,NULL, buffer,ERROR_Warning);
-		setlocale(LC_ALL,"C");
-		warning++;
+		DrawableObject *dobj=dynamic_cast<DrawableObject*>(obj);
+		SomeData *dobje=NULL;
+		if (dobj) dobje=dobj->EquivalentObject();
+
+		if (dobje) {
+			svgdumpobj(f,mm,dobje,warning, indent, log);
+			dobje->dec_count();
+
+		} else {
+
+			setlocale(LC_ALL,"");
+			char buffer[strlen(_("Cannot export %s objects into svg."))+strlen(obj->whattype())+1];
+			sprintf(buffer,_("Cannot export %s objects into svg."),obj->whattype());
+			log.AddMessage(obj->object_id,obj->nameid,NULL, buffer,ERROR_Warning);
+			setlocale(LC_ALL,"C");
+			warning++;
+		}
 	}
 	return 0;
 }
