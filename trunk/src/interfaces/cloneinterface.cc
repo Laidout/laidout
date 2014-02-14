@@ -2250,13 +2250,13 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid)
     MenuInfo *menu=new MenuInfo(_("Clone Interface"));
 
     menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
-    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_TOGGLE|(trace_cells?LAX_CHECKED:0));
+    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
     //menu->AddSep();
 
     return menu;
 }
 
-int AnchorInterface::Event(const Laxkit::EventData *e,const char *mes)
+int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
     if (!strcmp(mes,"menuevent")) {
         const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
@@ -2264,7 +2264,7 @@ int AnchorInterface::Event(const Laxkit::EventData *e,const char *mes)
         //int ii=s->info4; //extra id, 1 for direction
 
         if (i==CLONEM_Clear_Base_Objects) {
-			selection.flush();
+			sources.Flush();
 			if (active) ToggleActivated();
             return 0;
 
