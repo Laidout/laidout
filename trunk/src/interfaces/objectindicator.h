@@ -38,6 +38,8 @@ class ObjectIndicator : public LaxInterfaces::anInterface
 	Laxkit::ButtonDownInfo buttondown;
 
 	VObjContext *context;
+	DrawableObject *hover_object;
+	int last_hover;
 	unsigned long color_arrow, color_num;
 
 	int showdecs;

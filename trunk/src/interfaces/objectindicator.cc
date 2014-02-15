@@ -20,6 +20,7 @@
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
 #include <lax/transformmath.h>
+#include <lax/lineedit.h>
 
 
 #include <lax/refptrstack.cc>
@@ -55,13 +56,14 @@ namespace Laidout {
 ObjectIndicator::ObjectIndicator(int nid,Displayer *ndp)
 	: anInterface(nid,ndp) 
 {
-	//nup_style=NUP_Has_Ok|NUP_Has_Type;
 	firsttime=1;
 	showdecs=0;
 	color_arrow=rgbcolor(60,60,60);
 	color_num=rgbcolor(0,0,0);
 	interface_type=INTERFACE_Overlay;
 	context=NULL;
+	hover_object=NULL;
+	last_hover=-1;
 }
 
 ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
@@ -73,14 +75,13 @@ ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 	color_num=rgbcolor(0,0,0);
 	interface_type=INTERFACE_Overlay;
 	context=NULL;
+	hover_object=NULL;
+	last_hover=-1;
 }
 
 ObjectIndicator::~ObjectIndicator()
 {
 	DBG cerr <<"ObjectIndicator destructor.."<<endl;
-
-	//if (context) delete context;
-	//if (doc) doc->dec_count();
 }
 
 
@@ -103,24 +104,12 @@ Laxkit::MenuInfo *ObjectIndicator::ContextMenu(int x,int y,int deviceid)
  */
 int ObjectIndicator::Event(const Laxkit::EventData *e,const char *mes)
 {
-	if (!strcmp(mes,"menuevent")) {
+	if (!strcmp(mes,"renameobj")) {
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
-		//int i =s->info2; //id of menu item
-		int ii=s->info4; //extra id, 1 for direction
-		if (ii==0) {
+		if (!hover_object || isblank(s->str)) return 0;
 
-		} else {
-			//if (i==NUP_Grid) {
-			//} else if (i==NUP_Sized_Grid) {
-			//} else if (i==NUP_Flowed) {
-			//} else if (i==NUP_Random) {
-			//} else if (i==NUP_Unclump) {
-			//} else if (i==NUP_Unoverlap) {
-			//}
-			return 0;
-
-		}
-
+		hover_object->Id(s->str);
+		hover_object=NULL;
 		return 0;
 	}
 	return 1;
@@ -199,8 +188,11 @@ int ObjectIndicator::Refresh()
 	char scratch[10];
 	const char *str;
 	dp->NewFG(coloravg(viewport->win_colors->fg, viewport->win_colors->bg));
+
 	for (int c=0; c<context->context.n(); c++) {
 		if (!objc) break;
+
+		if (c==last_hover) dp->NewFG(rgbcolor(50,50,50));
 
 		x=0;
 		str=objc->object_e_name(context->context.e(c));
@@ -215,8 +207,11 @@ int ObjectIndicator::Refresh()
 		dp->textout(x,y, str,-1, LAX_BOTTOM|LAX_LEFT);
 		y-=dp->textheight();
 
+		if (c==last_hover) dp->NewFG(rgbcolor(128,128,128));
+
 		objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
 	}
+
 	if (!context->obj) {
 		//curobj is just a context, not actually selected
 		dp->textout(x,y, "?",1, LAX_BOTTOM|LAX_LEFT);
@@ -232,37 +227,63 @@ int ObjectIndicator::Refresh()
 
 int ObjectIndicator::scan(int x,int y)
 {
-	//scan for being inside a shape
-	//scan for being on an edge of a shape
-	return 0;
+	if (!context) context=&dynamic_cast<LaidoutViewport*>(viewport)->curobj;
+
+	double th=dp->textheight();
+	if (x<0 || x>th*7) return -1;
+
+	int i=(dp->Maxy-y)/th;
+	if (i>=context->context.n()) i=-1;
+	return i;
 }
 
 int ObjectIndicator::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
-	return 1;
-//	if (buttondown.any(0,LEFTBUTTON)) return 1; //only allow one button at a time
-//
-//	int action=scan(x,y);
-//	buttondown.down(d->id,LEFTBUTTON, x,y);
-//
-//	return 0;
+	if (buttondown.any(0,LEFTBUTTON)) return 1; //only allow one button at a time
+
+	int i=scan(x,y);
+	if (i<0) return 1;
+	
+	DBG cerr <<" -------------lbdown indicator: "<<i<<endl;
+	buttondown.down(d->id,LEFTBUTTON, x,y, i);
+	return 0;
 }
 
 int ObjectIndicator::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-{ //***
-	//if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
-	//int dragged=buttondown.up(d->id,LEFTBUTTON);
+{
+	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 
+	int i=-1;
+	int dragged=buttondown.up(d->id,LEFTBUTTON, &i);
 
-//	if (!dragged) {
-//		if ((state&LAX_STATE_MASK)==ControlMask) {
-//			// *** edit base
-//		} else {
-//			// *** edit first
-//		}
-//	}
+	if (!dragged) {
+		 //get context.e(i) and change its name
+		ObjectContainer *objc=dynamic_cast<ObjectContainer*>(viewport);
 
-	return 1;
+		for (int c=0; c<i && c<context->context.n(); c++) {
+			if (!objc) break;
+			objc=dynamic_cast<ObjectContainer*>(objc->object_e(context->context.e(c)));
+		}
+
+		anObject *o=objc->object_e(context->context.e(i));
+		DrawableObject *d=dynamic_cast<DrawableObject*>(o);
+		if (d && d->parent) {
+			//const char *str=objc->object_e_name(context->context.e(i));
+			const char *str=d->Id();
+			double th=dp->textheight();
+			LineEdit *le= new LineEdit(viewport,"rename",_("Rename object"),
+										LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP|ANXWIN_ESCAPABLE,
+										2*th,dp->Maxy-(i+3)*th, 2*dp->textextent(str,-1,NULL,NULL),1.2*th, 4,
+										   NULL,object_id,"renameobj",
+										   str);
+			hover_object=d;
+			le->padx=le->pady=th*.1;
+			le->SetCurpos(-1);
+			app->addwindow(le);
+		}
+	}
+
+	return 0;
 }
 
 int ObjectIndicator::WheelUp(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
@@ -278,7 +299,9 @@ int ObjectIndicator::WheelDown(int x,int y,unsigned int state,int count,const La
 
 int ObjectIndicator::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 { 
-	//int over=scan(x,y);
+	int i=scan(x,y);
+	if (i!=last_hover) needtodraw=1;
+	last_hover=i;
 
 	return 1;
 }
