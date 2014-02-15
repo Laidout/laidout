@@ -1148,9 +1148,42 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 
 	} else if (!strcasecmp(coloring,"square 2")
 			|| !strcasecmp(coloring,"square 3")) {
+		// 2: ab ab    3: ab 
+		//    aa aa       aa ab
+		//                   aa
+
+		tiling->repeatXDir(flatpoint(2,0));
+		if (!strcasecmp(coloring,"square 3")) tiling->repeatYDir(flatpoint(1,2));
+		else tiling->repeatYDir(flatpoint(0,2));
+
+		path=new PathsData;
+		path->appendRect(0,0,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		op->AddTransform(affine);
+	
+		affine.Translate(flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(-1,1));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->appendRect(1,1,1,1);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1);
+		op->shearable=true;
+		op->flexible_aspect=true;
+		affine.setIdentity();
+		op->AddTransform(affine);
+	
+	} else if (!strcasecmp(coloring,"square 4")
+			|| !strcasecmp(coloring,"square 5")) {
 
 		tiling->repeatYDir(flatpoint(0,2));
-		if (!strcasecmp(coloring,"square 2")) {
+		if (!strcasecmp(coloring,"square 5")) {
 			tiling->repeatXDir(flatpoint(1,1));
 		}
 
@@ -1170,41 +1203,14 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->flexible_aspect=true;
 		op->AddTransform(affine);
 
-	} else if (!strcasecmp(coloring,"square 4")
-			|| !strcasecmp(coloring,"square 5")) {
-
-		tiling->repeatXDir(flatpoint(2,0));
-		if (!strcasecmp(coloring,"square 5")) tiling->repeatYDir(flatpoint(1,2));
-		else tiling->repeatYDir(flatpoint(0,2));
-
-		path=new PathsData;
-		path->appendRect(0,0,1,1);
-		path->FindBBox();
-		op=tiling->AddBase(path,1,1);
-		op->shearable=true;
-		op->flexible_aspect=true;
-		op->AddTransform(affine);
-	
-		affine.Translate(flatpoint(1,0));
-		op->AddTransform(affine);
-
-		affine.Translate(flatpoint(-1,1));
-		op->AddTransform(affine);
-
-		path=new PathsData;
-		path->appendRect(0,0,1,1);
-		path->FindBBox();
-		op=tiling->AddBase(path,1,1);
-		op->shearable=true;
-		op->flexible_aspect=true;
-		affine.setIdentity();
-		affine.Translate(flatpoint(1,1));
-		op->AddTransform(affine);
-	
 	} else if (!strcasecmp(coloring,"square 6")
 			|| !strcasecmp(coloring,"square 7")
 			|| !strcasecmp(coloring,"square 8")
 			|| !strcasecmp(coloring,"square 9")) {
+		// 6: ab ab   7: ab ab   8: ab ab  9:ab ab
+		//    cc cc      cc cc      ca ca    cd cd
+		//    ab ab       ab ab
+		//    cc cc       cc cc
 
 		tiling->repeatXDir(flatpoint(2,0));
 		if (!strcasecmp(coloring,"square 7")) tiling->repeatYDir(flatpoint(1,2));
@@ -1220,39 +1226,39 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 
 		if (!strcasecmp(coloring,"square 9")) {
 			path=new PathsData;
-			path->appendRect(0,0,1,1);
+			path->appendRect(1,0,1,1);
 			path->FindBBox();
 			op=tiling->AddBase(path,1,1);
 			op->shearable=true;
 			op->flexible_aspect=true;
-			affine.Translate(flatpoint(1,0));
 			op->AddTransform(affine);
 
 		} else {
-			if (strcasecmp(coloring,"square 8")) affine.Translate(flatpoint(1,1));
+			if (!strcasecmp(coloring,"square 8")) affine.Translate(flatpoint(1,1));
 			else affine.Translate(flatpoint(1,0));
 			op->AddTransform(affine);
 		}
 
 		path=new PathsData;
-		path->appendRect(0,0,1,1);
+		path->appendRect(0,1,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
 		op->shearable=true;
 		op->flexible_aspect=true;
 		affine.setIdentity();
-		affine.Translate(flatpoint(0,1));
 		op->AddTransform(affine);
 	
 		path=new PathsData;
-		path->appendRect(0,0,1,1);
+		path->appendRect(1,1,1,1);
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1);
 		op->shearable=true;
 		op->flexible_aspect=true;
 		affine.setIdentity();
-		if (strcasecmp(coloring,"square 8")) affine.Translate(flatpoint(1,0));
-		else affine.Translate(flatpoint(1,1));
+		if (!strcasecmp(coloring,"square 8")) {
+			path->Translate(flatpoint(0,-1));
+			path->ApplyTransform();
+		}
 		op->AddTransform(affine);
 	
 	} else if (!strcasecmp(coloring,"hexagonal 1")) {
@@ -1714,8 +1720,9 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 
 	} else if (!strcasecmp(coloring,"snub hexagonal")) {
 		tiling->repeatXDir(flatpoint(2.5,-sqrt(3)/2));
-		tiling->repeatYDir(flatpoint(1,sqrt(3)));
+		tiling->repeatYDir(flatpoint(2,sqrt(3)));
 
+		 //hexagon
 		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
 		path=new PathsData;
 		path->appendCoord(cc);
@@ -1724,6 +1731,7 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
+		 //triangles
 		path=new PathsData;
 		path->append(0,0);
 		path->append(-.5,sqrt(3)/2);
@@ -1743,7 +1751,7 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->AddTransform(affine);
 
 		affine.setIdentity();
-		affine.Rotate(M_PI,flatpoint(-.5,sqrt(3)/4));
+		affine.Rotate(M_PI,flatpoint(-.25,sqrt(3)/4));
 		op->AddTransform(affine);
 
 		affine.Translate(flatpoint(.5,sqrt(3)/2));
@@ -1756,9 +1764,10 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(coloring,"rhombi trihexagonal")) {
-		tiling->repeatXDir(flatpoint((1+sqrt(3))/2,(3+sqrt(3))/2));
+		tiling->repeatXDir(flatpoint((3+sqrt(3))/2,(1+sqrt(3))/2));
 		tiling->repeatYDir(flatpoint(0,1+sqrt(3)));
 
+		 //hexagon
 		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
 		path=new PathsData;
 		path->appendCoord(cc);
@@ -1767,23 +1776,26 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
+		 //squares
 		path=new PathsData;
 		path->append(0,0);
 		path->append(.5,sqrt(3)/2);
-		path->append(0,sqrt(3));
-		path->append(-.5,sqrt(3)/2);
+		path->append(.5-sqrt(3)/2,.5+sqrt(3)/2);
+		path->append(-sqrt(3)/2,.5);
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
 		affine.Rotate(M_PI/3,flatpoint(.5,sqrt(3)/2));
+		affine.Translate(flatpoint(1,0));
 		op->AddTransform(affine);
 
 		affine.Translate(flatpoint(1,0));
 		affine.Rotate(M_PI/3,flatpoint(1.5,sqrt(3)/2));
 		op->AddTransform(affine);
 
+		 //triangles
 		path=new PathsData;
 		path->append(.5,sqrt(3)/2);
 		path->append(.5,1+sqrt(3)/2);
@@ -1823,7 +1835,47 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		affine.Translate(flatpoint(rx,rx-sqrt(3)/2-.5));
 		op->AddTransform(affine);
 
-	//} else if (!strcasecmp(coloring,"truncated trihexagonal")) {
+	} else if (!strcasecmp(coloring,"truncated trihexagonal")) {
+		double r=.5/sin(M_PI/12); //radius of 12 sided, with unit side length
+		double rx=.5/tan(M_PI/12);//inradius
+		tiling->repeatXDir(flatpoint((1+2*rx)*sqrt(3)/2,(1+2*rx)/2));
+		tiling->repeatYDir(flatpoint(0,1+2*rx));
+
+		path=new PathsData;
+		Coordinate *cc=CoordinatePolygon(flatpoint(0,0), r, false, 12, 1);
+		path->appendCoord(cc);
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		 //squares
+		path=new PathsData;
+		path->appendRect(-.5,rx, 1,1);
+		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(rx-.5,.5-rx));
+		affine.Rotate(M_PI/3, flatpoint(rx,.5));
+		op->AddTransform(affine);
+
+		affine.setIdentity();
+		affine.Translate(flatpoint(.5-rx,.5-rx));
+		affine.Rotate(-M_PI/3, flatpoint(-rx,.5));
+		op->AddTransform(affine);
+
+		 //hexagons
+		path=new PathsData;
+		cc=CoordinatePolygon(flatpoint(0,0), 1, false, 6, 1);
+		path->appendCoord(cc);
+		path->Translate(flatpoint(-(.5+sqrt(3)/2),rx+.5));
+		path->ApplyTransform();
+		op=tiling->AddBase(path,1,1, false,false);
+		affine.setIdentity();
+		op->AddTransform(affine);
+
+		affine.Translate(flatpoint(1+sqrt(3),0));
+		op->AddTransform(affine);
+
 
 	} else {
 		cerr << " *** HEY!!! FINISH IMPLEMENTING ME!!!!!! ("<<coloring<<")"<<endl;
@@ -1928,9 +1980,9 @@ const char *BuiltinTiling[]=
 			"Uniform Coloring/trihexagonal 1",
 			"Uniform Coloring/trihexagonal 2",
 			"Uniform Coloring/truncated hexagonal",
+			"Uniform Coloring/truncated trihexagonal",
 			"Uniform Coloring/truncated square 1",
 			"Uniform Coloring/truncated square 2",
-			"Uniform Coloring/truncated trihexagonal",
 		  NULL
 		};
 
