@@ -1399,7 +1399,10 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 			tiling->repeatYDir(flatpoint(0,1+sqrt(2)));
 		}
 
-		Coordinate *cc=CoordinatePolygon(flatpoint(.5+1/sqrt(2),.5+1/sqrt(2)), sqrt(5/2), false, 8, 1);
+		 //first octagon
+		double x=.5+1/sqrt(2);
+		double r=sqrt(.25+x*x);
+		Coordinate *cc=CoordinatePolygon(flatpoint(x,x), r, false, 8, 1);
 		path=new PathsData;
 		path->appendCoord(cc);
 		path->FindBBox();
@@ -1407,9 +1410,11 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"truncated square 2")) {
+			 //second octagon
 			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path->Translate(flatpoint(1+sqrt(2),0));
+			path->ApplyTransform();
 			op=tiling->AddBase(path,1,1, false,false);
-			affine.Translate(flatpoint(1+sqrt(2),0));
 			op->AddTransform(affine);
 		}
 
@@ -1424,13 +1429,14 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		affine.setIdentity();
-		affine.Translate(flatpoint(1+sqrt(2),0));
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"truncated square 2")) {
+			affine.setIdentity();
 			affine.Translate(flatpoint(1+sqrt(2),0));
 			op->AddTransform(affine);
 		}
+
 
 	} else if (!strcasecmp(coloring,"triangular 1")) {
 		tiling->repeatYDir(flatpoint(.5,-sqrt(3)/2));
@@ -1985,6 +1991,8 @@ enum TilingShortcutActions {
 	CLONEIA_None=0,
 	CLONEIA_Next_Tiling,
 	CLONEIA_Previous_Tiling,
+	CLONEIA_Next_Basecell,
+	CLONEIA_Previous_Basecell,
 	CLONEIA_Toggle_Lines,
 	CLONEIA_Toggle_Render,
 	CLONEIA_Toggle_Preview,
@@ -2086,11 +2094,13 @@ Laxkit::ShortcutHandler *CloneInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("CloneInterface");
 
-	sc->Add(CLONEIA_Next_Tiling,     LAX_Left,0,0,      "NextTiling",     _("Select next tiling"),    NULL,0);
-	sc->Add(CLONEIA_Previous_Tiling, LAX_Right,0,0,     "PreviousTiling", _("Select previous tiling"),NULL,0);
-	sc->Add(CLONEIA_Toggle_Lines,    'l',0,0,           "ToggleLines",    _("Toggle previewing cell lines"),NULL,0);
-	sc->Add(CLONEIA_Toggle_Render,   LAX_Enter,0,0,     "ToggleRender",   _("Toggle rendering"),NULL,0);
-	sc->Add(CLONEIA_Toggle_Preview,  'p',0,0,           "TogglePreview",  _("Toggle preview of clones"),NULL,0);
+	sc->Add(CLONEIA_Next_Tiling,      LAX_Left,0,0,      "NextTiling",      _("Select next tiling"),    NULL,0);
+	sc->Add(CLONEIA_Previous_Tiling,  LAX_Right,0,0,     "PreviousTiling",  _("Select previous tiling"),NULL,0);
+	sc->Add(CLONEIA_Next_Basecell,    LAX_Up,0,0,        "NextBasecell",    _("Select next base cell"),    NULL,0);
+	sc->Add(CLONEIA_Previous_Basecell,LAX_Down,0,0,      "PreviousBasecell",_("Select previous base cell"),    NULL,0);
+	sc->Add(CLONEIA_Toggle_Lines,     'l',0,0,           "ToggleLines",     _("Toggle previewing cell lines"),NULL,0);
+	sc->Add(CLONEIA_Toggle_Render,    LAX_Enter,0,0,     "ToggleRender",    _("Toggle rendering"),NULL,0);
+	sc->Add(CLONEIA_Toggle_Preview,   'p',0,0,           "TogglePreview",   _("Toggle preview of clones"),NULL,0);
 
 	//sc->AddShortcut(LAX_Del,0,0, PAPERI_Delete);
 
@@ -2210,6 +2220,21 @@ int CloneInterface::PerformAction(int action)
 		TogglePreview();
 		needtodraw=1;
 		return 0;
+
+	} else if (action==CLONEIA_Next_Basecell) {
+		if (current_base<0) current_base=0; else current_base--;
+		if (current_base<0) current_base=tiling->basecells.n-1;
+		DBG cerr <<" ***** current_base: "<<current_base<<endl;
+		needtodraw=1;
+		return 0;
+
+	} else if (action==CLONEIA_Previous_Basecell) {
+		if (current_base<0) current_base=0; else current_base++;
+		if (current_base>=tiling->basecells.n) current_base=0;
+		DBG cerr <<" ***** current_base: "<<current_base<<endl;
+		needtodraw=1;
+		return 0;
+
 	}
 
 	return 1;
@@ -2277,6 +2302,18 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 	return 1;
 }
 
+int CloneInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
+{
+	if (dynamic_cast<LineStyle*>(ndata)) {
+		if (current_base<0) return 0;
+
+		LineStyle *l=dynamic_cast<LineStyle*>(ndata);
+		PathsData *p=dynamic_cast<PathsData*>(base_cells.e(current_base));
+		p->line(-1,-1,-1, &l->color);
+		return 1;
+	}
+	return 0;
+}
 
 void CloneInterface::DrawSelected()
 {

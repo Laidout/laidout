@@ -255,7 +255,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 	virtual int SetTiling(Tiling *newtiling);
 
-//***	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
+	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 //***	virtual int validateInfo();
 
 //***	virtual int FreeSelection();
