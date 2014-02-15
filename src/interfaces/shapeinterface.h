@@ -34,7 +34,7 @@ class ShapeInfo : public Laxkit::anObject
 	char *name;
 	int numsides;
 	int innerpoints; //1 or 0
-	int round1,round2;
+	double round1,round2;
 	double edgelength;
 	
 	ShapeInfo();
