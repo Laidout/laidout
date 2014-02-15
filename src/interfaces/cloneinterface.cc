@@ -1454,8 +1454,8 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(coloring,"triangular 2")) {
-		tiling->repeatXDir(flatpoint(2,0));
-		tiling->repeatYDir(flatpoint(0,-sqrt(3)));
+		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
+		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
 		path=new PathsData;
 		path->append(0,0);
@@ -1466,37 +1466,31 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
+		affine.Rotate(-M_PI/3,flatpoint(1,0));
 		op->AddTransform(affine);
 
-		affine.Translate(flatpoint(.5,-sqrt(3)/2));
+		affine.Rotate(-M_PI/3,flatpoint(1,0));
 		op->AddTransform(affine);
-	
-		affine.setIdentity();
-		affine.Translate(flatpoint(1.5,-sqrt(3)/2));
+
+		affine.Rotate(-M_PI/3,flatpoint(1,0));
+		op->AddTransform(affine);
+
+		affine.Rotate(-M_PI/3,flatpoint(1,0));
+		op->AddTransform(affine);
 
 		path=new PathsData;
-		path->append(0,0);
+		path->append(.5,sqrt(3)/2);
 		path->append(1,0);
-		path->append(-.5,sqrt(3)/2);
+		path->append(1.5,sqrt(3)/2);
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		affine.setIdentity();
-		op->AddTransform(affine);
-
-		affine.Rotate(M_PI,flatpoint(.75,-sqrt(3)/4));
-		op->AddTransform(affine);
-
-		affine.Translate(flatpoint(.5,sqrt(3)/2));
-		op->AddTransform(affine);
-
-		affine.setIdentity();
-		affine.Translate(flatpoint(1.5,sqrt(3)/2));
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(coloring,"triangular 3")) {
-		tiling->repeatYDir(flatpoint(0,-sqrt(3)));
+		tiling->repeatXDir(flatpoint(1,0));
+		tiling->repeatYDir(flatpoint(.5,sqrt(3)/2));
 
 		path=new PathsData;
 		path->append(0,0);
@@ -1507,34 +1501,18 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
-		op->AddTransform(affine);
-
 		path=new PathsData;
-		path->append(0,0);
+		path->append(.5,sqrt(3)/2);
 		path->append(1,0);
-		path->append(-.5,sqrt(3)/2);
+		path->append(1.5,sqrt(3)/2);
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
-		affine.setIdentity();
-		op->AddTransform(affine);
-
-		affine.Rotate(M_PI,flatpoint(.75,-sqrt(3)/4));
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(coloring,"triangular 4")) {
-		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
+		tiling->repeatXDir(flatpoint(2,0));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
-
-		path=new PathsData;
-		path->append(1,0);
-		path->append(1.5,sqrt(3)/2);
-		path->append(.5,sqrt(3)/2);
-		path->close();
-		path->FindBBox();
-		op=tiling->AddBase(path,1,1, false,false);
-		op->AddTransform(affine);
 
 		path=new PathsData;
 		path->append(0,0);
@@ -1543,23 +1521,42 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI, flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI/3, flatpoint(1,0));
+		affine.Translate(flatpoint(.5,-sqrt(3)/2));
+		op->AddTransform(affine);
+
+		affine.Rotate(M_PI, flatpoint(1.75,-sqrt(3)/4));
+		op->AddTransform(affine);
+
+		path=new PathsData;
+		path->append(0,0);
+		path->append(1,0);
+		path->append(.5,-sqrt(3)/2);
+		path->close();
+		path->FindBBox();
+		op=tiling->AddBase(path,1,1, false,false);
 		affine.setIdentity();
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI/3, flatpoint(1,0));
+		affine.Rotate(M_PI, flatpoint(.75,-sqrt(3)/4));
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI/3, flatpoint(1,0));
+		affine.Rotate(-M_PI/3, flatpoint(1,0));
+		affine.Translate(flatpoint(.5,sqrt(3)/2));
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI/3, flatpoint(1,0));
+		affine.Rotate(M_PI, flatpoint(1.75,sqrt(3)/4));
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI/3, flatpoint(1,0));
-		op->AddTransform(affine);
+
 
 	} else if (!strcasecmp(coloring,"triangular 5")
-			|| !strcasecmp(coloring,"triangular 6")) {
+			|| !strcasecmp(coloring,"triangular 8")) {
 		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
@@ -1572,13 +1569,14 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		if (!strcasecmp(coloring,"triangular 6")) {
+		if (!strcasecmp(coloring,"triangular 8")) {
 			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
 			op=tiling->AddBase(path,1,1, false,false);
-			affine.Rotate(2*M_PI/3, flatpoint(1,0));
+			path->Rotate(-2*M_PI/3, flatpoint(1,0));
+			path->ApplyTransform();
 			op->AddTransform(affine);
 		} else {
-			affine.Rotate(2*M_PI/3, flatpoint(1,0));
+			affine.Rotate(-2*M_PI/3, flatpoint(1,0));
 			op->AddTransform(affine);
 		}
 
@@ -1602,7 +1600,8 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(coloring,"triangular 7")) {
-		tiling->repeatYDir(flatpoint(.5,-sqrt(3)/2));
+		tiling->repeatXDir(flatpoint(1,0));
+		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
 		path=new PathsData;
 		path->append(0,0);
@@ -1613,42 +1612,51 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
+		affine.Rotate(M_PI, flatpoint(.75,sqrt(3)/4));
+		op->AddTransform(affine);
+
 		path=new PathsData;
 		path->append(0,0);
 		path->append(1,0);
-		path->append(.5,sqrt(3)/2);
+		path->append(.5,-sqrt(3)/2);
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
-		affine.Rotate(M_PI,flatpoint(.75,sqrt(3)/4));
+		affine.setIdentity();
 		op->AddTransform(affine);
 
-	} else if (!strcasecmp(coloring,"triangular 8")
+		affine.Rotate(M_PI, flatpoint(.75,-sqrt(3)/4));
+		op->AddTransform(affine);
+
+
+	} else if (!strcasecmp(coloring,"triangular 6")
 			|| !strcasecmp(coloring,"triangular 9")) {
 		tiling->repeatXDir(flatpoint(1.5,-sqrt(3)/2));
 		tiling->repeatYDir(flatpoint(0,sqrt(3)));
 
 		path=new PathsData;
+		path->append(.5,sqrt(3)/2);
 		path->append(1,0);
 		path->append(1.5,sqrt(3)/2);
-		path->append(.5,sqrt(3)/2);
 		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
 		path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+		path->Rotate(2*M_PI/3, flatpoint(1,0));
+		path->ApplyTransform();
 		op=tiling->AddBase(path,1,1, false,false);
-		affine.Rotate(2*M_PI/3, flatpoint(1,0));
 		op->AddTransform(affine);
 
 		if (!strcasecmp(coloring,"triangular 9")) {
 			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path->Rotate(2*M_PI/3, flatpoint(1,0));
+			path->ApplyTransform();
 			op=tiling->AddBase(path,1,1, false,false);
-			affine.Rotate(4*M_PI/3, flatpoint(1,0));
 			op->AddTransform(affine);
 		} else {
-			affine.Rotate(2*M_PI/3, flatpoint(1,0));
+			affine.Translate(flatpoint(-1,0));
 			op->AddTransform(affine);
 		}
 
@@ -1673,6 +1681,7 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		tiling->repeatXDir(flatpoint(2,0));
 		tiling->repeatYDir(flatpoint(1,sqrt(3)));
 
+		 //hexagon
 		Coordinate *cc=CoordinatePolygon(flatpoint(1,0), 1, true, 6, 1);
 		path=new PathsData;
 		path->appendCoord(cc);
@@ -1681,6 +1690,7 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
+		 //triangle
 		path=new PathsData;
 		path->append(2,0);
 		path->append(2.5,sqrt(3)/2);
@@ -1692,8 +1702,9 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 
 		if (!strcasecmp(coloring,"trihexagonal 2")) {
 			path=dynamic_cast<PathsData*>(path->duplicate(NULL));
+			path->Rotate(M_PI,flatpoint(2,0));
+			path->ApplyTransform();
 			op=tiling->AddBase(path,1,1, false,false);
-			affine.Rotate(M_PI,flatpoint(2,0));
 			op->AddTransform(affine);
 
 		} else {
@@ -1788,26 +1799,28 @@ Tiling *CreateUniformColoring(const char *coloring, LaxInterfaces::SomeData *cen
 		op->AddTransform(affine);
 
 	} else if (!strcasecmp(coloring,"truncated hexagonal")) {
-		tiling->repeatXDir(flatpoint((2*(1+sqrt(3))+1)/2, (2*(1+sqrt(3))+1)*sqrt(3)/2));
-		tiling->repeatYDir(flatpoint(0,2*(1+sqrt(3))+1));
+		double r=.5/sin(M_PI/12);
+		double rx=.5/tan(M_PI/12);
+		tiling->repeatXDir(flatpoint(2*rx,0));
+		tiling->repeatYDir(flatpoint(rx,rx*sqrt(3)));
 
-		Coordinate *cc=CoordinatePolygon(flatpoint(1+sqrt(3)/2,0), 1, true, 12, 1);
 		path=new PathsData;
+		Coordinate *cc=CoordinatePolygon(flatpoint(0,0), r, false, 12, 1);
 		path->appendCoord(cc);
-		path->close();
 		path->FindBBox();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
 		path=new PathsData;
-		path->append(2+sqrt(3),.5);
-		path->append(2+sqrt(3)+.5,.5+sqrt(3)/2);
-		path->append(1.5+sqrt(3),.5+sqrt(3)/2);
+		path->append(-.5,-rx);
+		path->append(.5,-rx);
+		path->append(0,-rx-sqrt(3)/2);
+		path->close();
 		op=tiling->AddBase(path,1,1, false,false);
 		op->AddTransform(affine);
 
-		affine.Rotate(M_PI,flatpoint(2+sqrt(3),.5));
-		affine.Translate(flatpoint(0,1));
+		affine.Rotate(M_PI,flatpoint(0,-rx));
+		affine.Translate(flatpoint(rx,rx-sqrt(3)/2-.5));
 		op->AddTransform(affine);
 
 	//} else if (!strcasecmp(coloring,"truncated trihexagonal")) {
@@ -2126,11 +2139,17 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 
 	 //install main base cells
 	LineStyle *lstyle;
+	ScreenColor c1(1.,0.,0.,1.), c2(0.,0.,1.,1.), ca;
+
 	for (int c=0; c<tiling->basecells.n; c++) {
+		if (tiling->basecells.n>1) coloravg(&ca, &c1,&c2, (double)c/(tiling->basecells.n-1));
+		else ca=c1;
+
 		o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
 		o->FindBBox();
 		lstyle=new LineStyle();
 		*lstyle=preview_cell;
+		lstyle->color=ca;
 		dynamic_cast<PathsData*>(o)->InstallLineStyle(lstyle);
 		lstyle->dec_count();
 		base_cells.push(o);
@@ -2267,16 +2286,20 @@ int CloneInterface::InterfaceOff()
 
 enum CloneMenuItems {
 	CLONEM_Clear_Base_Objects,
-	CLONEM_Include_Lines
+	CLONEM_Include_Lines,
+	CLONEM_Load,
+	CLONEM_Save
 };
 
 Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid)
 {
     MenuInfo *menu=new MenuInfo(_("Clone Interface"));
 
-    menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
     menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
-    //menu->AddSep();
+    menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
+    menu->AddSep();
+    menu->AddItem(_("Load resource"), CLONEM_Load);
+    menu->AddItem(_("Save as resource"), CLONEM_Save);
 
     return menu;
 }
@@ -2296,6 +2319,9 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 		} else if (i==CLONEM_Include_Lines) {
 			PerformAction(CLONEIA_Toggle_Lines);
 			return 0;
+
+		} else if (i==CLONEM_Load) {
+		} else if (i==CLONEM_Save) {
 		}
 	}
 

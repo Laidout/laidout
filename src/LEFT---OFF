@@ -145,6 +145,10 @@ test:
   test in different window managers
 
 cloner:
+  drag object proxies to place in base cells, use basecell preview as final origin/orientation
+  click on base cell, update viewport color box
+  save color hints of base cells with Tiling object
+  in basecell preview, indicate which clones belong to which basecells
   debug colorings
   change colors of base cell outlines, as well as boundary, and outline preview
   implement add to document: debug placement
