@@ -4322,30 +4322,20 @@ void ViewWindow::updateContext(int messagetoo)
 
 	if (messagetoo) {
 		LaidoutViewport *v=((LaidoutViewport *)viewport);
-		const char *f;
-		int i;
 		int cplen=20,curpageindex=((LaidoutViewport *)viewport)->curobjPage();
 
 		char blah[cplen+v->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
 		blah[0]='\0';
 
 		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) {
-			sprintf(blah,_("(page %s)"),doc->pages.e[curpageindex]->label);
+			sprintf(blah,_("(page %s) "),doc->pages.e[curpageindex]->label);
 		}
-		strcat(blah," view");
 
-		ObjectContainer *o=dynamic_cast<ObjectContainer*>(viewport);
-		for (int c=0; o && c<v->curobj.context.n(); c++) {
-			strcat(blah,".");
-			i=v->curobj.context.e(c);
-			f=o->object_e_name(i);
-			if (f) strcat(blah,f);
-			else sprintf(blah+strlen(blah),"%d",i);
-			o=dynamic_cast<ObjectContainer*>(o->object_e(i));
-		}
-		strcat(blah,":");
-		if (v->curobj.obj) strcat(blah,v->curobj.obj->whattype());
-		else strcat(blah,"none");
+		if (v->curobj.obj) {
+			strcat(blah,v->curobj.obj->whattype());
+			strcat(blah,": ");
+			strcat(blah,v->curobj.obj->Id());
+		} else strcat(blah,"none");
 		if (mesbar) mesbar->SetText(blah);
 
 		PageFlipper *pageflipper=dynamic_cast<PageFlipper*>(findChildWindowByName("page number"));

@@ -144,7 +144,7 @@ class Page : public ObjectContainer
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }
 	virtual Laxkit::anObject *object_e(int i) { return layers.object_e(i); }
 	virtual const double *object_transform(int i) { return NULL; }
-	virtual const char *object_e_name(int i) { return NULL; }
+	virtual const char *object_e_name(int i);
 
 	virtual void Touch(clock_t at_time=0);
 	virtual void UpdateAnchored(Group *g);

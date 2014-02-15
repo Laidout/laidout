@@ -573,7 +573,6 @@ Page::Page(PageStyle *npagestyle,int num)
 
 	 // initialize page contents to 1 empty layer.
 	Group *g=new Group;
-	makestr(g->object_idstr,"pagelayer");
 	g->Id("pagelayer");
 	g->selectable=0;
 	g->obj_flags=OBJ_Unselectable|OBJ_Zone; //force searches to not return return individual layers
@@ -593,6 +592,12 @@ Page::~Page()
 	if (thumbnail) thumbnail->dec_count();
 	if (pagestyle) pagestyle->dec_count();
 	layers.flush();
+}
+
+const char *Page::object_e_name(int i)
+{
+	if (i<0 || i>layers.n()) return NULL;
+	return layers.e(i)->Id();
 }
 
 //! Delete (or checkin) old, checkout new.
