@@ -515,6 +515,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		if (dobj) dobje=dobj->EquivalentObject();
 
 		if (dobje) {
+			dobje->Id(obj->Id());
 			svgdumpobj(f,mm,dobje,warning, indent, log);
 			dobje->dec_count();
 
