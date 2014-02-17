@@ -73,7 +73,9 @@ void Selection::CurrentObject(int which)
 }
 
 
-/*! Return index of added oc in selection. Warning: does NOT check for duplicates!
+/*! Return index of added oc in selection. Warning: does NOT check for previous 
+ * existence of same path!
+ * A duplicate of oc is added.
  */
 int Selection::Add(LaxInterfaces::ObjectContext *oc, int where, int ninfo)
 {
