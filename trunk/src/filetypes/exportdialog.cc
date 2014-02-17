@@ -211,7 +211,7 @@ int ExportDialog::init()
 	 //--------- format
 	int c2=-1;
 	SliderPopup *format;
-	last=format=new SliderPopup(this, "format",NULL,0, 0,0,0,0,1, last, object_id, "format",NULL,0);
+	last=format=new SliderPopup(this, "format",NULL,SLIDER_LEFT, 0,0,0,0,1, last, object_id, "format",NULL,0);
 	for (c=0; c<laidout->exportfilters.n; c++) {
 		format->AddItem(laidout->exportfilters.e[c]->VersionName(),c);
 		if (filter==laidout->exportfilters.e[c]) c2=c;

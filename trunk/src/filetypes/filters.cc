@@ -32,14 +32,14 @@ namespace Laidout {
 //! Just call each installWhatever() for the filters defined in other files.
 void installFilters()
 {
-	installImageFilter();
-	installPptFilter();
 	installPdfFilter();
-	installPodofoFilter();
-	installPostscriptFilters();
-	installScribusFilter();
 	installSvgFilter();
+	installScribusFilter();
 	installLaidoutFilter();
+	installImageFilter();
+	installPodofoFilter();
+	installPptFilter();
+	installPostscriptFilters();
 }
 
 
