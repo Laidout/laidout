@@ -22,6 +22,7 @@
 #include "lgradientdata.h"
 #include "limagepatch.h"
 #include "lsomedataref.h"
+#include "lengraverfilldata.h"
 
 #include <lax/lists.cc>
 
@@ -109,6 +110,14 @@ LaxInterfaces::SomeData *createLSomeDataRef(LaxInterfaces::SomeData *refobj)
 	return new LSomeDataRef();
 }
 
+//---------------------------- LSomeDataRef --------------------------------
+
+//! For somedatafactory.
+LaxInterfaces::SomeData *createLEngraverFillData(LaxInterfaces::SomeData *refobj)
+{
+	return new LEngraverFillData();
+}
+
 
 
 //---------------------------- SomeDataFactory Setup --------------------------
@@ -119,15 +128,16 @@ void InitializeDataFactory()
 {
 	LaxInterfaces::somedatafactory=&lobjectfactory;
 
-	lobjectfactory.DefineNewObject(LO_GROUP,          "Group",         createGroup,NULL);
-	lobjectfactory.DefineNewObject(LO_MYSTERYDATA,    "MysteryData",   createMysteryData,NULL);
-	lobjectfactory.DefineNewObject(LAX_IMAGEDATA,     "ImageData",     createLImageData,NULL);
-	lobjectfactory.DefineNewObject(LAX_PATHSDATA,     "PathsData",     createLPathsData,NULL);
-	lobjectfactory.DefineNewObject(LAX_GRADIENTDATA,  "GradientData",  createLGradientData,NULL);
-	lobjectfactory.DefineNewObject(LAX_IMAGEPATCHDATA,"ImagePatchData",createLImagePatchData,NULL);
-	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
-	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,"ColorPatchData",createLColorPatchData,NULL);
-	lobjectfactory.DefineNewObject(LAX_SOMEDATAREF,   "SomeDataRef",   createLSomeDataRef,NULL);
+	lobjectfactory.DefineNewObject(LO_GROUP,            "Group",           createGroup,NULL);
+	lobjectfactory.DefineNewObject(LO_MYSTERYDATA,      "MysteryData",     createMysteryData,NULL);
+	lobjectfactory.DefineNewObject(LAX_IMAGEDATA,       "ImageData",       createLImageData,NULL);
+	lobjectfactory.DefineNewObject(LAX_PATHSDATA,       "PathsData",       createLPathsData,NULL);
+	lobjectfactory.DefineNewObject(LAX_GRADIENTDATA,    "GradientData",    createLGradientData,NULL);
+	lobjectfactory.DefineNewObject(LAX_IMAGEPATCHDATA,  "ImagePatchData",  createLImagePatchData,NULL);
+	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,NULL);
+	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,NULL);
+	lobjectfactory.DefineNewObject(LAX_SOMEDATAREF,     "SomeDataRef",     createLSomeDataRef,NULL);
+	lobjectfactory.DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL);
 }
 
 
