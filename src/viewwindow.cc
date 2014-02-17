@@ -2514,6 +2514,9 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 
 	ViewportWindow::GetShortcuts();
 
+	sc->AddShortcut(LAX_Tab,0,0, VIEWPORT_NextObject); //(like inkscape)
+	sc->AddShortcut(LAX_Tab,ShiftMask,0, VIEWPORT_PreviousObject); //(like inkscape)
+			 
 	sc->Add(LOV_DeselectAll,    'A',ShiftMask|ControlMask,0, _("DeselectAll"), _("Deselect all"),NULL,0);
 	sc->Add(LOV_CenterDrawing,  '4',0,0,        _("CenterDrawing"),  _("Center drawing"),NULL,0);
 	sc->AddShortcut(' ',0,0, LOV_CenterDrawing);
