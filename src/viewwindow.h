@@ -45,6 +45,7 @@ class VObjContext : public LaxInterfaces::ObjectContext
 	virtual VObjContext &operator=(const VObjContext &oc);
 	virtual int set(LaxInterfaces::SomeData *nobj, int n, ...);
 	virtual void clear();
+	virtual void clearToPage();
 	virtual LaxInterfaces::ObjectContext *duplicate();
 
 	virtual void push(int i,int where=-1);

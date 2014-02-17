@@ -252,6 +252,16 @@ void VObjContext::clear()
 	if (obj) { obj->dec_count(); obj=NULL; }
 	context.flush(); 
 }
+
+/*! Make the context point to a page with no object, if possible, or limbo.
+ */
+void VObjContext::clearToPage()
+{
+	if (spread()>0) while (context.n()>4) context.pop();
+	else if (spread()==0) while (context.n()>1) context.pop();
+	SetObject(NULL);
+}
+
 //------------------------------- LaidoutViewport ---------------------------
 /*! \class LaidoutViewport
  * \brief General viewport to pass to the ViewerWindow base class of ViewWindow
