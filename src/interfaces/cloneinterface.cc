@@ -2276,6 +2276,7 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 	for (int c=0; c<sources.n(); c++) {
 		if (sources.e_info(c)>=base_cells.n()) {
 			sources.Remove(c);
+			source_proxies.Remove(c);
 			c--;
 		}
 	}
@@ -2397,7 +2398,7 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid)
     MenuInfo *menu=new MenuInfo(_("Clone Interface"));
 
     menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
-    menu->AddItem(_("Clear base objects"), CLONEM_Clear_Base_Objects);
+    menu->AddItem(_("Clear current base objects"), CLONEM_Clear_Base_Objects);
     menu->AddSep();
     menu->AddItem(_("Load resource"), CLONEM_Load);
     menu->AddItem(_("Save as resource"), CLONEM_Save);
@@ -2413,8 +2414,16 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
         //int ii=s->info4; //extra id, 1 for direction
 
         if (i==CLONEM_Clear_Base_Objects) {
-			sources.Flush();
-			source_proxies.Flush();
+			if (current_base<0) current_base=0;
+
+			for (int c=0; c<source_proxies.n(); c++) {
+				if (source_proxies.e_info(c)==current_base) {
+					source_proxies.Remove(c);
+					sources.Remove(c);
+					c--;
+				}
+			}
+
 			if (child) RemoveChild();
 			if (active) ToggleActivated();
             return 0;
@@ -2448,7 +2457,7 @@ int CloneInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
 
 void CloneInterface::DrawSelected()
 {
-	if (!sources.n()) return;
+	if (!source_proxies.n()) return;
 
 	ObjectContext *toc;
 	int bcell;
@@ -2745,7 +2754,7 @@ int CloneInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 				o=o->GetParent();
 			}
 
-			if (sources.FindIndex(oc)>=0) return 0;
+			//if (sources.FindIndex(oc)>=0) return 0;
 
 			if (current_base<0) current_base=0;
 			sources.Add(oc,-1,current_base);
@@ -3062,7 +3071,7 @@ int CloneInterface::CharInput(unsigned int ch, const char *buffer,int len,unsign
 			return 0;
 		}
 
-		if (sources.n()) {
+		if (source_proxies.n()) {
 			sources.Flush();
 			source_proxies.Flush();
 
