@@ -27,6 +27,7 @@ objs= \
 	lpathsdata.o \
 	mysterydata.o \
 	lsomedataref.o \
+	lengraverfilldata.o \
 	printermarks.o 
 
 
