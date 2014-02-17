@@ -144,21 +144,25 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+cloning: convert to master: make a clone be the original.. 
+  means swapping the actual master with the clone
+
 cloner:
-  drag object proxies to place in base cells, use basecell preview as final origin/orientation
   click on base cell, update viewport color box
   save color hints of base cells with Tiling object
-  in basecell preview, indicate which clones belong to which basecells
-  debug colorings
-  change colors of base cell outlines, as well as boundary, and outline preview
-  implement add to document: debug placement
-  implement setting objects for each base cell
+  change color of boundary, and outline preview
   need mass select page for all tiling types
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
-  implement boundary check
   select objects, wrap base cell around it
   debug recursive
   need rudimentary editor
+  DONE drag object proxies to place in base cells, use basecell preview as final origin/orientation
+  DONE in basecell preview, indicate which clones belong to which basecells
+  DONE debug colorings
+  DONE change colors of base cell outlines
+  DONE implement add to document: debug placement
+  DONE implement setting objects for each base cell
+  DONE implement boundary check
   DONE select base cell objects should exclude those that have preview as parent
  0.95:
   need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
