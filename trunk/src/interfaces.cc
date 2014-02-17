@@ -88,11 +88,8 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		//existingpool->push(i);
 		//i->dec_count();
 		
-		i=new CloneInterface(NULL,id++,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
-		i=new EngraverFillInterface(id++,NULL);
+		 //------Anchor
+		i=new AnchorInterface(NULL,id++,NULL);
 		existingpool->push(i);
 		i->dec_count();
 
@@ -105,11 +102,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->dec_count();
 	
-	 //------Anchor
-	i=new AnchorInterface(NULL,id++,NULL);
-	existingpool->push(i);
-	i->dec_count();
-
 	 //------Images
 	LImageInterface *imagei=new LImageInterface(id++,NULL);
 	imagei->style=1;
@@ -140,11 +132,15 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i); //2nd null is pathop pool
 	i->dec_count();
 
-//	 //------MysteryData
-//	MysteryInterface *mdata=new MysteryInterface(id++,NULL);
-//	mdata->style=1;
-//	existingpool->push(mdata);//*** combine with Image somehow?
-//	mdata->dec_count();
+	 //-----Engraver
+	i=new EngraverFillInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
+	 //------Clone tiler
+	i=new CloneInterface(NULL,id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 
 	 //------Paper
 	i=new PaperInterface(id++,NULL);
@@ -169,11 +165,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->dec_count();
 
-
-	//...
-	//i=new Interface(*****);
-	//existingpool->push(i);
-	//i->dec_count();
 	
 	return existingpool;
 }
