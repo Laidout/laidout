@@ -25,6 +25,7 @@
 #include <lax/dump.h>
 #include <lax/transformmath.h>
 #include <lax/interfaces/pathinterface.h>
+#include <lax/interfaces/rectinterface.h>
 
 
 namespace Laidout {
@@ -152,7 +153,6 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 					   Selection *base_objects,
 					   Laxkit::Affine *base_offsetm,
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
-					   LaxInterfaces::ViewportWindow *viewport,
 					   LaxInterfaces::PathsData *boundary,
 					   Laxkit::Affine *final_orient);
 //	virtual void RenderRecursive(TilingDest *dest, int iterations, Laxkit::Affine current_space,
@@ -184,7 +184,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	bool active;
 
 	bool trace_cells;
-	bool previewactive;
+	bool preview_lines;
 	VObjContext *previewoc;
 	Group *preview;
 	Group *lines;
@@ -197,6 +197,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::LineStyle preview_cell2;
 
 	Selection sources;
+	Selection source_proxies;
 
 	double uiscale;
 	Laxkit::DoubleBBox box;
@@ -207,14 +208,10 @@ class CloneInterface : public LaxInterfaces::anInterface
 	unsigned int activate_color;
 	unsigned int deactivate_color;
 
+	LaxInterfaces::RectInterface *rectinterface;
+
 	virtual int scan(int x,int y, int *i);
 
-//***	virtual void createControls();
-//***	virtual void remapControls(int tempdir=-1);
-//***	virtual const char *controlTooltip(int action);
-//***	virtual const char *flowtypeMessage(int set);
-//***	virtual int Apply(int updateorig);
-//***	virtual int Reset();
 	virtual int ToggleActivated();
 	virtual int TogglePreview();
 	virtual int Render();
@@ -256,10 +253,6 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int SetTiling(Tiling *newtiling);
 
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
-//***	virtual int validateInfo();
-
-//***	virtual int FreeSelection();
-//***	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &objs);
 };
 
 
@@ -268,14 +261,14 @@ class CloneInterface : public LaxInterfaces::anInterface
 
 //------------------------------------ Tiling Creating Functions --------------------------------
 
-Tiling *CreateWallpaper(const char *group, LaxInterfaces::SomeData *centered_on);
+Tiling *CreateWallpaper(const char *group);
 
 Tiling *CreateRadial(double start_angle, double end_angle,   double start_radius, double end_radius,  
 					 int num_divisions,  int mirrored);
 
-Tiling *CreateFrieze(const char *group, LaxInterfaces::SomeData *centered_on);
+Tiling *CreateFrieze(const char *group);
 
-//Tiling *CreateUniformColoring(const char *coloring, ***);
+Tiling *CreateUniformColoring(const char *coloring);
 
 
 } //namespace Laidout
