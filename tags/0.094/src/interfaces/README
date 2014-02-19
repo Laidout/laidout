@@ -1,0 +1,2 @@
+Interfaces that are not particularly tied to specific object types should go in here.
+Interfaces that are for specific object types should go in ../dataobjects.

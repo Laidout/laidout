@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+  body {
+    background: #bbbbbb;
+    font-family: bookman, sans-serif;
+    border-width: 0;
+    margin: 10px;
+    padding: 0;
+  }
+</style>
+</head>
+
+<body>
+
+
+<script src="processing-1.4.1.js"></script>
+<script type="text/processing" data-processing-target="mycanvas" src="signatureinterface.pde"> </script>
+
+<canvas style="padding:0px" id="mycanvas"></canvas>
+
+
+
+
+<h2>Laidout Signature Folder</h2>
+Ported from <a href="http://www.laidout.org">Laidout</a>! This lets you
+fold paper on screen to figure out page mapping for pamphlets, zines, and books.
+This is a first web version and needs testing!
+If you find bugs, crashes, or, heaven forbid, incorrect templates,
+please let me know: tom at tomlechner.com
+
+<br/><br/>
+If you think this is amazingly useful, please consider donating. That would be amazingly useful!<br/>
+<br/><br/>
+I have a video tutorial of the non-web desktop version
+<a href="http://www.youtube.com/watch?v=godPpd1RVHM&list=PL22F7148142927C13">here</a>. It's slightly
+different, but most of the dragging controls are the same.
+<br/>
+
+<!-- donation button -->
+<a href="http://sourceforge.net/donate/index.php?group_id=160598"><img valign=middle src="http://images.sourceforge.net/images/project-support.jpg" width="88" height="32" border="0" alt="Support This Project" /></a>
+
+<br/><br/><br/>
+<h2>Keyboard shortcuts:</h2>
+
+<table cellpadding="5">
+  <tr><td align="right" class="key">space     </td><td></td><td class="description">Center view</td></tr>
+  <tr><td align="right" class="key">control-i </td><td></td><td class="description">Toggle which inset to change</td></tr>
+  <tr><td align="right" class="key">i         </td><td></td><td class="description">Increment inset</td></tr>
+  <tr><td align="right" class="key">shift-I   </td><td></td><td class="description">Decrement inset</td></tr>
+  <tr><td align="right" class="key">g         </td><td></td><td class="description">Increment gap</td></tr>
+  <tr><td align="right" class="key">shift-G   </td><td></td><td class="description">Decrement gap</td></tr>
+  <tr><td align="right" class="key">x         </td><td></td><td class="description">Increase number of tiles horizontally</td></tr>
+  <tr><td align="right" class="key">shift-X   </td><td></td><td class="description">Decrease number of tiles horizontally</td></tr>
+  <tr><td align="right" class="key">y         </td><td></td><td class="description">Increase number of tiles vertically</td></tr>
+  <tr><td align="right" class="key">shift-Y   </td><td></td><td class="description">Decrease number of tiles vertically</td></tr>
+  <tr><td align="right" class="key">v         </td><td></td><td class="description">Increase number of vertical folds</td></tr>
+  <tr><td align="right" class="key">shift-V   </td><td></td><td class="description">Decrease number of vertical folds</td></tr>
+  <tr><td align="right" class="key">h         </td><td></td><td class="description">Increase number of horizontal folds</td></tr>
+  <tr><td align="right" class="key">shift-H   </td><td></td><td class="description">Decrease number of horizontal folds</td></tr>
+  <tr><td align="right" class="key">b         </td><td></td><td class="description">Next binding edge</td></tr>
+  <tr><td align="right" class="key">shift-B   </td><td></td><td class="description">Previous binding edge</td></tr>
+  <tr><td align="right" class="key">u         </td><td></td><td class="description">Change page orientation</td></tr>
+  <tr><td align="right" class="key">control-t </td><td></td><td class="description">Toggle which trim to change</td></tr>
+  <tr><td align="right" class="key">t         </td><td></td><td class="description">Increase trim value</td></tr>
+  <tr><td align="right" class="key">shift-T   </td><td></td><td class="description">Decrease trim value</td></tr>
+  <tr><td align="right" class="key">control-m </td><td></td><td class="description">Toggle which margin to change</td></tr>
+  <tr><td align="right" class="key">m         </td><td></td><td class="description">Increase margin value</td></tr>
+  <tr><td align="right" class="key">shift-M   </td><td></td><td class="description">Decrease margin value</td></tr>
+
+  <tr><td align="right" class="key">shift-Z   </td><td></td><td class="description">Make controls smaller</td></tr>
+  <tr><td align="right" class="key">z         </td><td></td><td class="description">Make controls larger</td></tr>
+  <tr><td align="right" class="key">= or +    </td><td></td><td class="description">Zoom in</td></tr>
+  <tr><td align="right" class="key">-         </td><td></td><td class="description">Zoom out</td></tr>
+</table>
+
+<h2>Zooming</h2>
+You can zoom by holding control and dragging with the mouse, either the right button anywhere,
+or with the left button pressing down on empty space. Pan the screen around with shift and the buttons.
+
+
+<br/>
+<h2>To do...</h2>
+This software was designed for desktops and mouseovers. Trying to run on tiny devices sometimes
+produces strange bugs. If you have trouble, try different browsers. They handle everything slightly differently.
+
+<br/>
+<br/>
+Other things that need doing:
+<ul>
+ <li>Make adaptions for mobile that doesn't have a mouse, thus can't use mouseovers </li>
+ <li>Show a fold indicator on the page itself, shouldn't have to rely on the fold player </li>
+ <li>Page numbers should show for all fold levels, not just totally unfolded </li>
+ <li> There should be a red line for un unstaplable binding edge, rather than just the same green line </li>
+ <li> Save to svg, template pages and fold instructions </li>
+</ul>
+
+
+
+</html>
+
+

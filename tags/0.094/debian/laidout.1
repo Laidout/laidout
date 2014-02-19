@@ -1,0 +1,136 @@
+.TH LAIDOUT 1 "July 15, 2012"
+.SH NAME
+Laidout \- Version 0.093.1, for laying out books
+.SH SYNOPSIS
+.B laidout
+.RI [ options ] " files" ...
+.br
+.SH DESCRIPTION
+\fBLaidout\fP can be used to lay out pictures and more into cut and folded
+books. For instance, from 11x17 inch master sheets, one can cut and fold in
+such a way that produces 3 cute little 5.5x5.6 inch booklets.
+
+Anectotal studies among the developers have shown that people who use
+Laidout have more friends and their documents get laid out much more quickly 
+than with many other programs.
+
+Please be advised that Laidout is still quite rough. There is a mailing
+list and a page describing various bugs and deficiencies at the Laidout website.
+Only you can help stop bugs.
+
+Donations are encouraged! Money and code, that is, not bugs.
+
+http://www.laidout.org
+.PP
+.\" TeX users may be more comfortable with the \fB<whatever>\fP and
+.\" \fI<whatever>\fP escape sequences to invode bold face and italics, 
+.\" respectively.
+.SH OPTIONS
+This program follows the usual GNU command line syntax, with long
+options starting with two dashes (`-').
+A summary of options is included below.
+
+.TP
+.B \-h, \-\-help
+Show summary of options and exit.
+
+.TP
+.B \-v, \-\-version
+Show version of program and exit.
+
+.TP
+.B \-\-file\-format file
+Write out a pseudocode mockup of the Laidout file format to file then exit.
+Will fail if file exists already.
+
+.TP
+.B \-n, \-\-new \fISPECIFICATION\fI
+Create a new document, bypassing the new document dialog. You can specify
+a comma separated list of attributes describing the paper size, orientation,
+imposition, and number of pages. So for instance a 40 page booklet on folded 
+legal sized paper oriented as landscape would be specified with:
+
+.B laidout \-n 'legal,landscape,booklet,40'
+
+You can also start with a new document based on unfolding a box with dimensions
+of, say, 1, 2, and 3 inches like this:
+
+.B laidout \-n 'box 1 2 3'
+
+.TP
+.B \-t, \-\-template \fItemplate_name\fI
+Open laidout from this template. If the name does not start with "../", "./",
+or "/", then it looks in your $HOME/.laidout/(version)/templates directory.
+These templates can be any valid Laidout document file. The file is loaded,
+and its file location cleared so that you will be forced to enter a new
+location for it when you try to save it.
+
+If you have default_template set to something in your laidoutrc file, such as with
+a line like "default_template default" then when you start Laidout with
+no arguments, that template will be loaded (in this case templates/default
+will be loaded), rather then prompting you through the new document dialog.
+
+.TP
+.B \-N, \-\-no\-template
+Do not use a default template
+
+.TP
+.B \-e, \-\-export\-formats
+List all the available export formats
+
+.TP
+.B \-O, \-\-list\-export\-options \fIformat\fI
+List all the options for the given format
+
+.TP
+.B \-e, \-\-export \fI'format=EPS start=3'\fI
+Export a document based on the given options
+
+.TP
+.B \-F, \-\-file\-format
+Print out a pseudocode mockup of the file format, then exit
+
+.TP
+.B \-S, \-\-list\-shortcuts
+Print out a list of current keyboard bindings, then exit
+
+.TP
+.B \-S, \-\-help\-html
+Print out a list of current keyboard bindings in html, then exit
+
+.TP
+.B \-c, \-\-command \fI'newdoc net'\fI
+Run one or more commands without the gui, then exit
+
+.TP
+.B \-s, \-\-script \fI/some/file\fI
+Like --command, but the commands are in the given file
+
+.TP
+.B \-u, \-\-default\-units \fI(in|cm|mm|m|ft|yards)\fI
+Use the specified units.
+
+.TP
+.B \-l, \-\-load\-dir \fIpath\fI
+Start in this directory.
+
+.TP
+.B \-I, \-\-impose\-only \fIarg\fI
+Run only as a file imposer, not full Laidout
+
+
+.SH Development
+
+
+
+.br
+The source code has a lot of documentation that you can get via the program doxygen. For more
+about being involved in development, see: http://www.laidout.org/dev.html
+
+.SH COPYRIGHT
+This program is released under the GPL v2.
+.SH AUTHOR
+\fBLaidout\fP was written with varying degrees of success between 2005 and 2012 by 
+\fBTom Lechner\fP <tom@tomlechner.com>,
+who is still currently the only developer, and who would probably rather be
+drawing cartoons (http://www.tomlechner.com).

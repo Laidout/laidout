@@ -1,0 +1,2 @@
+?package(laidout):needs="X11" section="Applications/Graphics"\
+  title="polyptych" command="/usr/bin/polyptych"
