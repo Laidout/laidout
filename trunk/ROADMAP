@@ -9,23 +9,26 @@ VERSION 0.094
 -------------
 (done) need partial Laidout import
 (done) should probably put laidout stuff in its own namespace, just to be polite
-       Custom alignments to parents, not just affine transform to parent
+(done) Rough draft of Custom alignments to parents, not just affine transform to parent
+(done) Cloning
+(done) Clone Tiler
 (done) Shortcuts editor dialog
 (done) Signature editor needs option to preview pages while folding
 (done) Signature editor: have variable num of pages per signature
 (done) Optimize pdf export to not duplicate images
-(done) Cloning
 (done) SpreadEditor: insert blanks, delete pages
 (done) SpreadEditor: working with >100 image heavy pages does strange hangs, and starts really slow. Fix!
 (done) Color sliders, when double clicking on color box
 (done) implement scale pages to new imposition when reimposing
-       graphical shell, kind of a searching calculator and function caller
+(done) graphical shell, kind of a searching calculator and function caller
 (done) Laidout application icon for window manager paging seems to be broken
 (done) More robust scripting: loops, variables, functions, classes (still a bit buggy, but much has been done)
 
 
 VERSION 0.095
 -------------
+       Clone Pattern Builder
+       Custom alignments to parents, not just affine transform to parent
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
@@ -46,7 +49,6 @@ VERSION 0.095
        Net imposition interactive unwrapper, via optional opengl Polyptych
        Net imposition build net interface
        Tools should remember their settings
-       Clone tiling, custom clone arrangements
        Object and resource tags
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
        Scribus import should do something meaningful with original Scribus page bleed values
