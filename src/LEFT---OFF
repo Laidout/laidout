@@ -54,6 +54,10 @@ switch to None document, and units change to unreasonable
 
 ---- bugs:
 
+svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
+
+SimpleColorAttribute() should have double rgba available
+
 make singles 16 pages, edit imposition, select booklet. Defaults to 4 pages!
 
 page range, control click on page 1 less than a range won't let you click for new range
