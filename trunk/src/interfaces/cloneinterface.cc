@@ -30,9 +30,11 @@
 #include "../dataobjects/datafactory.h"
 #include "../drawdata.h"
 #include "../viewwindow.h"
+#include "../version.h"
 
 #include <lax/strmanip.h>
 #include <lax/laxutils.h>
+#include <lax/filedialog.h>
 #include <lax/interfaces/somedataref.h>
 #include <lax/interfaces/rectinterface.h>
 
@@ -41,6 +43,7 @@
 
 
 using namespace Laxkit;
+using namespace LaxFiles;
 using namespace LaxInterfaces;
 
 
@@ -280,32 +283,191 @@ void Tiling::DefaultHex(double side_length)
 	repeatXDir(flatpoint(side_length*sqrt(3),0));
 }
 
-void Tiling::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+	
+LaxFiles::Attribute *Tiling::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context)
 {
-//***
-//	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-//
-//    if (what==-1) {
-//        fprintf(f,"%sname Blah          #optional human readable name\n",spc);
-//	}
-//
+	// ***
+	return NULL;
 }
 
-void Tiling::dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*)
+ObjectDef *Tiling::makeObjectDef()
 {
-//***
-//    if (!att) return;
-//    char *name,*value;
-//    for (int c=0; c<att->attributes.n; c++) {
-//        name= att->attributes.e[c]->name;
-//        value=att->attributes.e[c]->value;
-//
-//        if (!strcmp(name,"name")) {
-//            makestr(this->object_idstr,value);
-//
-//        } else if (!strcmp(name,"")) {
-//		}
-//	}
+	cerr << " *** need to implement Tiling::makeObjectDef()!!"<<endl;
+	return NULL;
+}
+
+void Tiling::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
+    if (what==-1) {
+        fprintf(f,"%sname Blah          #optional human readable name\n",spc);
+        fprintf(f,"%scategory Blah      #optional human readable category name\n",spc);
+		return;
+	}
+
+	fprintf(f,"%sname %s\n",spc,name?name:"");
+	fprintf(f,"%scategory %s\n",spc,category?category:"");
+	if (icon && icon->filename) fprintf(f,"%sicon_file %s\n",spc,icon->filename);
+
+	if (repeatable==0) fprintf(f,"%srepeatable no\n",spc);
+	else if (repeatable==1) fprintf(f,"%srepeatable x\n",spc);
+	else if (repeatable==2) fprintf(f,"%srepeatable y\n",spc);
+	else if (repeatable==3) fprintf(f,"%srepeatable x y\n",spc);
+
+	if (repeatable) {
+		flatpoint v=repeatOrigin();
+		fprintf(f,"%srepeat_origin %.10g,%.10g\n",spc,v.x,v.y);
+		v=repeatXDir();
+		fprintf(f,"%srepeat_x %.10g,%.10g\n",spc,v.x,v.y);
+		v=repeatYDir();
+		fprintf(f,"%srepeat_y %.10g,%.10g\n",spc,v.x,v.y);
+	}
+
+	TilingOp *op;
+	TilingDest *dest;
+	for (int c=0; c<basecells.n; c++) {
+		op=basecells.e[c];
+
+		fprintf(f,"%sbasecell\n",spc);
+		if (op->shearable) fprintf(f,"%s  shearable\n",spc);
+		if (op->flexible_aspect) fprintf(f,"%s  flexible\n",spc);
+		if (op->celloutline) {
+			fprintf(f,"%s  outline\n",spc);
+			op->celloutline->dump_out(f,indent+4,what,context);
+		}
+		for (int c2=0; c2<op->transforms.n; c2++) {
+			dest=op->transforms.e[c2];
+			if (dest->max_iterations==1) {
+				const double *m=dest->transform.m();
+				fprintf(f,"%s  transform matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\n",
+						spc, m[0],m[1],m[2],m[3],m[4],m[5]);
+			} else {
+				fprintf(f,"%s  clone\n",spc);
+				const double *m=dest->transform.m();
+				fprintf(f,"%s    transform matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\n",
+						spc, m[0],m[1],m[2],m[3],m[4],m[5]);
+
+				if (dest->traceable) fprintf(f,"%s    traceable\n",spc);
+				fprintf(f,"%s    iterations %d\n",spc, dest->max_iterations);
+				fprintf(f,"%s    max_size %.10g\n",spc, dest->max_size);
+				fprintf(f,"%s    min_size %.10g\n",spc, dest->min_size);
+			}
+		}
+	}
+}
+
+void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObject *context)
+{
+    if (!att) return;
+
+    char *name,*value;
+    for (int c=0; c<att->attributes.n; c++) {
+        name= att->attributes.e[c]->name;
+        value=att->attributes.e[c]->value;
+
+        if (!strcmp(name,"name")) {
+            //makestr(this->object_idstr,value);
+            makestr(this->name,value);
+
+        } else if (!strcmp(name,"category")) {
+            makestr(category,value);
+
+        } else if (!strcmp(name,"icon_file")) {
+			LaxImage *nicon=load_image(value);
+			if (nicon) {
+				if (icon) icon->dec_count();
+				icon=nicon;
+			}
+
+        } else if (!strcmp(name,"repeatable")) {
+			if (isblank(value)) repeatable=3;
+			else {
+				if (!strcasecmp(value,"true") || !strcasecmp(value,"yes")) repeatable=1;
+				else {
+					repeatable=0;
+					if (strchr(value,'x')) repeatable|=1;
+					if (strchr(value,'y')) repeatable|=2;
+				}
+			}
+
+        } else if (!strcmp(name,"repeat_origin")) {
+			flatpoint v;
+			FlatvectorAttribute(value,&v);
+			repeat_basis.origin(v);
+
+        } else if (!strcmp(name,"repeat_x")) {
+			flatpoint v;
+			FlatvectorAttribute(value,&v);
+			repeat_basis.xaxis(v);
+
+        } else if (!strcmp(name,"repeat_y")) {
+			flatpoint v;
+			FlatvectorAttribute(value,&v);
+			repeat_basis.yaxis(v);
+
+        } else if (!strcmp(name,"required_interface")) {
+			required_interface=value;
+
+        } else if (!strcmp(name,"basecell")) {
+			TilingOp *op=new TilingOp;
+
+			for (int c2=0; c2<att->attributes.e[c]->attributes.n; c2++) {
+				name= att->attributes.e[c]->attributes.e[c2]->name;
+				value=att->attributes.e[c]->attributes.e[c2]->value;
+
+		        if (!strcmp(name,"shearable")) {
+					op->shearable=BooleanAttribute(value);
+
+		        } else if (!strcmp(name,"flexible")) {
+					op->flexible_aspect=BooleanAttribute(value);
+
+		        } else if (!strcmp(name,"outline")) {
+					op->celloutline=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+					op->celloutline->dump_in_atts(att->attributes.e[c]->attributes.e[c2], flag,context);
+
+		        } else if (!strcmp(name,"transform")) {
+					TilingDest *dest=new TilingDest;
+					double m[6];
+					transform_identity(m);
+					TransformAttribute(value,m,NULL);
+					dest->transform.m(m);
+					op->transforms.push(dest,1);
+
+		        } else if (!strcmp(name,"clone")) {
+					TilingDest *dest=new TilingDest;
+
+					for (int c3=0; c3<att->attributes.e[c]->attributes.e[c2]->attributes.n; c3++) {
+						name= att->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->name;
+						value=att->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->value;
+
+						if (!strcmp(name,"traceable")) {
+							dest->traceable=BooleanAttribute(value);
+
+						} else if (!strcmp(name,"iterations")) {
+							IntAttribute(value,&dest->max_iterations);
+
+						} else if (!strcmp(name,"max_size")) {
+							DoubleAttribute(value,&dest->max_size);
+
+						} else if (!strcmp(name,"min_size")) {
+							DoubleAttribute(value,&dest->min_size);
+
+						} else if (!strcmp(name,"transform")) {
+							double m[6];
+							transform_identity(m);
+							TransformAttribute(value,m,NULL);
+							dest->transform.m(m);
+						}
+					}
+
+					op->transforms.push(dest,1);
+				}
+			}
+
+			basecells.push(op,1);
+		}
+	}
 }
 
 //void Tiling::RenderRecursive(TilingDest *dest, int iteration, int orig_basecell,
@@ -2433,9 +2595,38 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 			return 0;
 
 		} else if (i==CLONEM_Load) {
+			app->rundialog(new FileDialog(NULL,"Load tiling",_("Load tiling"),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+						                  object_id,"load",FILES_OPEN_ONE));
+	        return 0;
+
 		} else if (i==CLONEM_Save) {
+			app->rundialog(new FileDialog(NULL,"Save tiling",_("Save tiling"),ANXWIN_REMEMBER|ANXWIN_CENTER,0,0,0,0,0,
+						                  object_id,"save",FILES_SAVE));
+	        return 0;
 		}
 
+		return 0;
+
+	} else if (!strcmp(mes,"load")) {
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		if (isblank(s->str)) return 0;
+
+		Attribute att;
+		att.dump_in(s->str);
+		Tiling *ntiling=new Tiling;
+		ntiling->dump_in_atts(&att,0,NULL);
+		SetTiling(ntiling);
+
+		return 0;
+
+	} else if (!strcmp(mes,"save")) {
+        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e);
+		if (isblank(s->str)) return 0;
+		FILE *f=fopen(s->str,"w");
+		if (!f) return 0;
+		fprintf(f,"#Laidout %s Tiling\n\n", LAIDOUT_VERSION);
+		tiling->dump_out(f,0,0,NULL);
+		fclose(f);
 		return 0;
 	}
 
