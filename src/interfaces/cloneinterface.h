@@ -162,7 +162,9 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 //					   LaxInterfaces::ViewportWindow *viewport
 //					   );
 	
+	virtual ObjectDef *makeObjectDef();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual LaxFiles::Attribute *dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att, int, Laxkit::anObject*);
 };
 
