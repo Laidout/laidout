@@ -15,13 +15,13 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 
 2. ----Copy trunk to a new tag------
- svn copy https://laidout.svn.sourceforge.net/svnroot/laidout/trunk \
-          https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whatever version)
+ svn copy https://svn.code.sf.net/p/laidout/code/trunk \
+          https://svn.code.sf.net/p/laidout/code/tags/(whatever version)
  make sure the Makefile does not try to compile lax
 
 
 3. ----modify source---
- check out the branch: svn co https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(version)
+ check out the branch: svn co https://svn.code.sf.net/p/laidout/code/tags/(version)
  make sure any references to the current date are accurate, currently:
    debian/control
    debian/laidout.1
@@ -32,9 +32,9 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
    docs/Doxyfile                 :PROJECT_NUMBER         = *****
    docs/Doxyfile-with-laxkit     :PROJECT_NUMBER         = *****
    configure
-   README                        :LAIDOUT Version *****
+   README.md                     :LAIDOUT Version *****
    all the example docs
-   --> vi debian/changelog debian/laidout.1 docs/doxygen/laidoutintro.txt docs/Doxyfile docs/Doxyfile-with-laxkit configure README
+   --> vi debian/changelog debian/laidout.1 docs/doxygen/laidoutintro.txt docs/Doxyfile docs/Doxyfile-with-laxkit configure README.md
  make sure the Quick Key References in QUICKREF.html are current.
  touch Makefile-toinclude; make touchdepends;
  
@@ -53,9 +53,12 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 
 5. Export a copy of the new tag and make a tarball. 
- svn export https://laidout.svn.sourceforge.net/svnroot/laidout/tags/(whichever) laidout-(version)
+ svn export https://svn.code.sf.net/p/laidout/code/tags/(whichever) laidout-(version)
   If Laxkit is to be included, you should export that to the top laidout dir: 
- svn export https://laxkit.svn.sourceforge.net/svnroot/laxkit/laxkit/trunk laxkit
+
+ git clone http://github.com/tomlechner/laxkit.git laxkit
+ cd laxkit; rm -rf .git;
+
  Do './configure' in the laxkit directory, and for the laidout configure, make sure it always
    configures to the installed laxkit dir. Configure laidout temporarily to get Makefile-toinclude,
    which lets you do 'make depends'. then 'make clean'.

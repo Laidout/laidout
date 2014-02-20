@@ -143,6 +143,7 @@ class Polyhedron :
 	Polyhedron(const Polyhedron &);
 	Polyhedron &operator=(const Polyhedron &);
 	virtual ~Polyhedron();
+	virtual const char *whattype() { return "Polyhedron"; }
 
 	 //low level management functions
 	virtual void clear();
