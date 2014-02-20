@@ -81,7 +81,7 @@ ObjectIndicator::ObjectIndicator(anInterface *nowner,int nid,Displayer *ndp)
 
 ObjectIndicator::~ObjectIndicator()
 {
-	DBG cerr <<"ObjectIndicator destructor.."<<endl;
+	//DBG cerr <<"ObjectIndicator destructor.."<<endl;
 }
 
 
@@ -136,7 +136,7 @@ anInterface *ObjectIndicator::duplicate(anInterface *dup)//dup=NULL
 
 int ObjectIndicator::InterfaceOn()
 {
-	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
+	//DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
 	showdecs=2;
 	needtodraw=1;
@@ -169,7 +169,7 @@ int ObjectIndicator::Refresh()
 	if (!context) return 0;
 
 
-	DBG cerr <<"ObjectIndicator::Refresh()..."<<endl;
+	//DBG cerr <<"ObjectIndicator::Refresh()..."<<endl;
 
 	dp->DrawScreen();
 
@@ -244,7 +244,7 @@ int ObjectIndicator::LBDown(int x,int y,unsigned int state,int count,const Laxki
 	int i=scan(x,y);
 	if (i<0) return 1;
 	
-	DBG cerr <<" -------------lbdown indicator: "<<i<<endl;
+	//DBG cerr <<" -------------lbdown indicator: "<<i<<endl;
 	buttondown.down(d->id,LEFTBUTTON, x,y, i);
 	return 0;
 }
@@ -316,7 +316,7 @@ int ObjectIndicator::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
  */
 int ObjectIndicator::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (ch==LAX_Esc) {
 

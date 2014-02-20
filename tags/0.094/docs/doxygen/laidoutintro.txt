@@ -11,7 +11,7 @@
 /*! \mainpage
 
 \section     Laidout  
--- Version 0.093.1 --\n
+-- Version 0.094 --\n
 Currently in the "A bit of a hack, but mostly works on my machine" stage of development.
 
 If you want to hack away at Laidout, you've come to the right place. Please be

@@ -48,10 +48,10 @@ void psImagePatch(FILE *f,LaxInterfaces::ImagePatchData *i)
 			  ur=transform_point(psCTM(),flatpoint(i->maxx,i->miny)),
 			  ll=transform_point(psCTM(),flatpoint(i->minx,i->maxy)),
 			  lr=transform_point(psCTM(),flatpoint(i->maxx,i->maxy));
-	DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
-	DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
-	DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
-	DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
+	//DBG cerr <<"  ul: "<<ul.x<<','<<ul.y<<endl;
+	//DBG cerr <<"  ur: "<<ur.x<<','<<ur.y<<endl;
+	//DBG cerr <<"  ll: "<<ll.x<<','<<ll.y<<endl;
+	//DBG cerr <<"  lr: "<<lr.x<<','<<lr.y<<endl;
 
 	 //bounds could be any parallelogram, width and height are lengths along edges
 	int width,height;

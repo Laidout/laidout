@@ -111,7 +111,7 @@ PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 PaperInterface::~PaperInterface()
 {
-	DBG cerr <<"PaperInterface destructor.."<<endl;
+	//DBG cerr <<"PaperInterface destructor.."<<endl;
 
 	if (maybebox) maybebox->dec_count();
 	if (papergroup) papergroup->dec_count();
@@ -324,7 +324,7 @@ anInterface *PaperInterface::duplicate(anInterface *dup)//dup=NULL
 
 int PaperInterface::InterfaceOn()
 {
-	DBG cerr <<"paperinterfaceOn()"<<endl;
+	//DBG cerr <<"paperinterfaceOn()"<<endl;
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 	if (lvp && papergroup) lvp->UseThisPaperGroup(papergroup);
 	showdecs=2;
@@ -343,7 +343,7 @@ int PaperInterface::InterfaceOff()
 	if (maybebox) { maybebox->dec_count(); maybebox=NULL; }
 
 	needtodraw=1;
-	DBG cerr <<"imageinterfaceOff()"<<endl;
+	//DBG cerr <<"imageinterfaceOff()"<<endl;
 	return 0;
 }
 
@@ -606,32 +606,32 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
 	mx=x; my=y;
-	DBG flatpoint fp;
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"1 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	//DBG flatpoint fp;
+	//DBG fp=dp->screentoreal(x,y);
+	//DBG cerr <<"1 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	int over=scan(x,y);
 
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"2 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	//DBG fp=dp->screentoreal(x,y);
+	//DBG cerr <<"2 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if ((state&LAX_STATE_MASK)==ShiftMask && over<0) {
 		//add a new box
 		if (!maybebox) createMaybebox(dp->screentoreal(x,y));
 
-		DBG fp=dp->screentoreal(x,y);
-		DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+		//DBG fp=dp->screentoreal(x,y);
+		//DBG cerr <<"3 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		if (!papergroup) {
 			papergroup=new PaperGroup;
 			papergroup->Name=new_paper_group_name();
 			laidout->project->papergroups.push(papergroup);
 			
-			DBG fp=dp->screentoreal(x,y);
-			DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+			//DBG fp=dp->screentoreal(x,y);
+			//DBG cerr <<"4 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 			LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 			if (lvp) lvp->UseThisPaperGroup(papergroup);
 
-			DBG fp=dp->screentoreal(x,y);
-			DBG cerr <<"5 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+			//DBG fp=dp->screentoreal(x,y);
+			//DBG cerr <<"5 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 		}
 		over=papergroup->papers.push(maybebox);
 
@@ -641,8 +641,8 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		//return 0; -- do not return, continue to let box be added..
 	}
 
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"6 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	//DBG fp=dp->screentoreal(x,y);
+	//DBG cerr <<"6 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 	if (over>=0) {
 		if (curbox) curbox->dec_count();
 		curbox=papergroup->papers.e[over];
@@ -651,12 +651,12 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		curboxes.pushnodup(curbox,0);
 		needtodraw=1;
 	}
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"7 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	//DBG fp=dp->screentoreal(x,y);
+	//DBG cerr <<"7 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	lbdown=dp->screentoreal(x,y);
-	DBG fp=dp->screentoreal(x,y);
-	DBG cerr <<"8 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	//DBG fp=dp->screentoreal(x,y);
+	//DBG cerr <<"8 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	return 0;
 }
@@ -666,8 +666,8 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
 	buttondown.up(d->id,LEFTBUTTON);
 
-	DBG flatpoint fp=dp->screentoreal(x,y);
-	DBG cerr <<"9 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
+	//DBG flatpoint fp=dp->screentoreal(x,y);
+	//DBG cerr <<"9 *****ARG**** "<<fp.x<<","<<fp.y<<endl;
 
 	//***
 	//if (curbox) { curbox->dec_count(); curbox=NULL; }
@@ -678,12 +678,12 @@ int PaperInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 
 int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
-	DBG flatpoint fpp=dp->screentoreal(x,y);
-	DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
+	//DBG flatpoint fpp=dp->screentoreal(x,y);
+	//DBG cerr <<"mm *****ARG**** "<<fpp.x<<","<<fpp.y<<endl;
 
 	int over=scan(x,y);
 
-	DBG cerr <<"over box: "<<over<<endl;
+	//DBG cerr <<"over box: "<<over<<endl;
 
 	buttondown.move(mouse->id,x,y);
 	if (!buttondown.any()) {
@@ -753,7 +753,7 @@ int PaperInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 			}
 		}
 		//oo=data->origin() + leftp.x*data->xaxis() + leftp.y*data->yaxis(); // where the point clicked down on is now
-		////DBG cerr <<"  oo="<<oo.x<<','<<oo.y<<endl;
+		//////DBG cerr <<"  oo="<<oo.x<<','<<oo.y<<endl;
 		//d=lp-oo;
 		//data->origin(data->origin()+d);
 		needtodraw=1;
@@ -914,7 +914,7 @@ int PaperInterface::PerformAction(int action)
  */
 int PaperInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 	
 //	if (ch==' ') {
 //		if (!papergroup) papergroup=new PaperGroup;

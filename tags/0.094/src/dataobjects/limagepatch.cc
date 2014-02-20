@@ -81,7 +81,7 @@ void LImagePatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 	for (int c=0; c<att->attributes.n; c++) {
 		if (!strcmp(att->attributes.e[c]->name,"config")) {
 			foundconfig=1;
-			ImagePatchData::dump_in_atts(att,flag,context);
+			ImagePatchData::dump_in_atts(att->attributes.e[c],flag,context);
 		}
 	}
 	if (!foundconfig) ImagePatchData::dump_in_atts(att,flag,context);
@@ -232,10 +232,11 @@ void LColorPatchData::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anO
 	for (int c=0; c<att->attributes.n; c++) {
 		if (!strcmp(att->attributes.e[c]->name,"config")) {
 			foundconfig=1;
-			ColorPatchData::dump_in_atts(att,flag,context);
+			ColorPatchData::dump_in_atts(att->attributes.e[c],flag,context);
 		}
 	}
 	if (!foundconfig) ColorPatchData::dump_in_atts(att,flag,context);
+	FindBBox();
 }
 
 LaxInterfaces::SomeData *LColorPatchData::duplicate(LaxInterfaces::SomeData *dup)

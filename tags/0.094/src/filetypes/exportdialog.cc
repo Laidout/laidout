@@ -555,7 +555,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"start")) {
-		DBG cerr <<"start data: "<<e->info1<<endl;
+		//DBG cerr <<"start data: "<<e->info1<<endl;
 		if (e->info1==2) {
 			changeRangeTarget(3);
 		} else {
@@ -564,7 +564,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 		return 0;
 
 	} else if (!strcmp(mes,"end")) {
-		DBG cerr <<"end data: "<<e->info1<<endl;
+		//DBG cerr <<"end data: "<<e->info1<<endl;
 		if (e->info1==2) {
 			 //focus on
 			changeRangeTarget(3);
@@ -654,7 +654,7 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 void ExportDialog::overwriteCheck()
 {
-	DBG cerr <<"-----overwrite check "<<endl;
+	//DBG cerr <<"-----overwrite check "<<endl;
 
 	int valid,err;
 	unsigned long color=rgbcolor(255,255,255);
@@ -777,7 +777,7 @@ int ExportDialog::send()
 		
 		char tmp[256];
 		cupsTempFile2(tmp,sizeof(tmp));
-		DBG cerr <<"attempting to write temp file for printing: "<<tmp<<endl;
+		//DBG cerr <<"attempting to write temp file for printing: "<<tmp<<endl;
 
 		FILE *f=fopen(tmp,"w");
 		if (f) {
@@ -794,7 +794,7 @@ int ExportDialog::send()
 				 //now do the actual command
 				int c=system(cm); //-1 for error, else the return value of the call
 				if (c!=0) {
-					DBG cerr <<"there was an error printing...."<<endl;
+					//DBG cerr <<"there was an error printing...."<<endl;
 					SimpleMessage *mes=new SimpleMessage(_("Error with command"), 0,0,0,0,"statusMessage");
 					app->SendMessage(mes,win_owner,"statusMessage",object_id);
 				} else {

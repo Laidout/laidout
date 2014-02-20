@@ -240,7 +240,7 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 
 SignatureInterface::~SignatureInterface()
 {
-	DBG cerr <<"SignatureInterface destructor.."<<endl;
+	//DBG cerr <<"SignatureInterface destructor.."<<endl;
 
 	if (sigimp) sigimp->dec_count();
 	if (sc) sc->dec_count();
@@ -874,7 +874,7 @@ int SignatureInterface::Refresh()
 	int i=-1;
 	ImageData *thumb;
 
-	DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
+	//DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
 
 	int rangeofpapers=2*siginstance->sheetspersignature;
 	int npageshalf=siginstance->PagesPerSignature(0,1)/2;
@@ -1088,12 +1088,12 @@ int SignatureInterface::Refresh()
 
 	 //draw in progress folding
 	int device=0;
-	DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
+	//DBG cerr <<"----------------any "<<buttondown.any(0,LEFTBUTTON,&device)<<endl;
 	if (buttondown.any(0,LEFTBUTTON,&device) && folddirection && folddirection!='x') {
 		 //this will draw a light gray tilting region across foldindex, in folddirection, with foldunder.
 		 //it will correspond to foldr1,foldr2, and foldc1,foldc2.
 
-		DBG cerr <<"--------------------------------showing dir"<<endl;
+		//DBG cerr <<"--------------------------------showing dir"<<endl;
 		//int mx,my;
 		//buttondown.getinitial(device,LEFTBUTTON,&mx,&my);
 
@@ -1586,7 +1586,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 	for (int c=0; c<controls.n; c++) {
 		if (controls.e[c]->hidden) continue;
 
-		//DBG if (controls.e[c]->action!=SP_Trim_Left) continue;
+		////DBG if (controls.e[c]->action!=SP_Trim_Left) continue;
 
 		if (controls.e[c]->category==0) {
 			ffp=fp-controls.e[c]->offset;
@@ -1679,7 +1679,7 @@ int SignatureInterface::scanHandle(int x,int y, int *i1, int *i2)
 int SignatureInterface::scan(int x,int y,int *row,int *col,double *ex,double *ey, int *tile_row, int *tile_col)
 {
 	flatpoint fp=screentoreal(x,y);
-	DBG cerr <<"fp:"<<fp.x<<','<<fp.y<<endl;
+	//DBG cerr <<"fp:"<<fp.x<<','<<fp.y<<endl;
 
 	fp.x-=siginstance->partition->insetleft;
 	fp.y-=siginstance->partition->insetbottom;
@@ -1698,7 +1698,7 @@ int SignatureInterface::scan(int x,int y,int *row,int *col,double *ex,double *ey
 	fp.x-=tilex*(patternwidth +siginstance->partition->tilegapx);
 	fp.y-=tiley*(patternheight+siginstance->partition->tilegapy);
 
-	DBG cerr <<"tilex,y: "<<tilex<<","<<tiley<<endl;
+	//DBG cerr <<"tilex,y: "<<tilex<<","<<tiley<<endl;
 
 	*row=floorl(fp.y/elementheight);
 	*col=floorl(fp.x/elementwidth);
@@ -1745,7 +1745,7 @@ int SignatureInterface::WheelUp(int x,int y,unsigned int state,int count,const L
  */
 int SignatureInterface::adjustControl(int handle, int dir)
 {
-	DBG cerr <<"adjustControl "<<handle<<" dir:"<<dir<<endl;
+	//DBG cerr <<"adjustControl "<<handle<<" dir:"<<dir<<endl;
 
 	if (handle==SP_None) return 1;
 
@@ -1952,9 +1952,9 @@ int SignatureInterface::LBDown(int x,int y,unsigned int state,int count,const La
 	if (showsplash) { showsplash=0; needtodraw=1; }
 
 	int row,col,tilerow,tilecol;
-	DBG int over=
+	//DBG int over=
 	scan(x,y, &row,&col, NULL,NULL, &tilerow,&tilecol);
-	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
+	//DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<endl;
 
 	if (buttondown.any()) return 0;
 
@@ -2027,7 +2027,7 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			needtodraw=1;
 
 		} else if (!dragged && onoverlay==SP_New_Insert) {
-			//DBG cerr <<" New_Insert i,ii:"<<onoverlay_i<<" "<<onoverlay_ii<<endl;
+			////DBG cerr <<" New_Insert i,ii:"<<onoverlay_i<<" "<<onoverlay_ii<<endl;
 
 			SignatureInstance *s=sigimp->GetSignature(onoverlay_i,-1);
 			if (!s) return 0;
@@ -2447,14 +2447,14 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	lasthover.set(x,y);
 	//fp now holds coordinates relative to the element cell
 
-	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
-	DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
-	DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped
-	DBG         <<"  pages:"<<foldinfo[row][col].pages.n<<endl;
+	//DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
+	//DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
+	//DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped
+	//DBG         <<"  pages:"<<foldinfo[row][col].pages.n<<endl;
 
-	DBG int stacki=-1, inserti=-1;
-	DBG int ostack=scanStacks(x,y, &stacki,&inserti);
-	DBG cerr <<"over stack:"<<ostack<<"  stacki:"<<stacki<<"  inserti:"<<inserti<<endl;
+	//DBG int stacki=-1, inserti=-1;
+	//DBG int ostack=scanStacks(x,y, &stacki,&inserti);
+	//DBG cerr <<"over stack:"<<ostack<<"  stacki:"<<stacki<<"  inserti:"<<inserti<<endl;
 
 
 	int mx,my;
@@ -2463,7 +2463,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		int i1=onoverlay_i;
 		int i2=onoverlay_ii;
 		int handle=scanHandle(x,y);
-		DBG cerr <<"found handle "<<handle<<endl;
+		//DBG cerr <<"found handle "<<handle<<endl;
 		if (overoverlay!=handle) needtodraw=1;
 		if (handle==SP_H_Folds_left || handle==SP_H_Folds_right || handle==SP_Tile_Y_left || handle==SP_Tile_Y_right
 				|| handle==SP_V_Folds_top || handle==SP_V_Folds_bottom || handle==SP_Tile_X_top || handle==SP_Tile_X_bottom) 
@@ -2551,7 +2551,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 
 			 //curdist is 0 for very start, totally unfolded paper. Each fold adds 1 to curdist
 
-			DBG cerr <<"curdist:"<<curdist<<"  lastdist:"<<lastdist<<endl;
+			//DBG cerr <<"curdist:"<<curdist<<"  lastdist:"<<lastdist<<endl;
 
 			if (foldprogress==-1) {
 				 //we have not moved before, so we must do an initial map of affected cells
@@ -2782,7 +2782,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 		needtodraw=1;
 	}
 
-	DBG cerr <<"folding progress: "<<foldprogress<<",  om="<<om.x<<','<<om.y<<"  mm="<<mm.x<<','<<mm.y<<endl;
+	//DBG cerr <<"folding progress: "<<foldprogress<<",  om="<<om.x<<','<<om.y<<"  mm="<<mm.x<<','<<mm.y<<endl;
 
 
 	return 0;
@@ -3143,7 +3143,7 @@ int SignatureInterface::PerformAction(int action)
 
 int SignatureInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" SignatureInterface got ch:"<<(int)ch<<"  "<<LAX_Shift<<"  "<<ShiftMask<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (showsplash) { showsplash=0; needtodraw=1; }
 

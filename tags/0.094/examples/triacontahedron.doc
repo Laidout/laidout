@@ -1,315 +1,487 @@
-#Laidout 0.09.1 Document
-
+#Laidout 0.093.1 Document
+saveas /home/tom/other/p/sourceforge/laidout/examples/triacontahedron.doc
 imposition NetImposition
-  defaultpaperstyle
-    name Letter
-    width 8.5
-    height 11
-    dpi 360
-    portrait
+  numpages 30
+  printnet
+  #scalingfromnet 1.410842685
+  papers
+    paper
+      matrix 1 0 0 1 0 0
+      outlinecolor 65535 0 0
+      name letter
+      units in
+      width 8.5
+      height 11
+      dpi 360
+      portrait
   abstractnet Polyhedron
     name Rhombic Triacontahedron
-    #32 verts
+     #32 vertices
     vertices \
-        0.309017 0.190983 0.9510565     #0
-        -0.309017 0.5 0.9510565         #1
-        -0.309017 -0.190983 0.9510565   #2
-        0.309017 -0.5 0.9510565         #3
-        0.809017 -0.190983 0.5877853    #4
-        0.809017 0.5 0.5877853          #5
-        0.190983 0.809017 0.5877853     #6
-        -0.809017 0.190983 0.5877853    #7
-        -0.809017 -0.5 0.5877853        #8
-        -0.190983 -0.809017 0.5877853   #9
-        1. -0.5 0                       #10
-        1. 0.190983 0                   #11
-        0.5 -0.809017 0.3632713         #12
-        0 1.118034 0                    #13
-        -0.5 0.809017 0.3632713         #14
-        0.618034 0.809017 0             #15
-        -1. 0.5 0                       #16
-        -1. -0.190983 0                 #17
-        0 -1.118034 0                   #18
-        -0.618034 -0.809017 0           #19
-        0.809017 -0.190983 -0.5877853   #20
-        0.809017 0.5 -0.5877853         #21
-        0.5 -0.809017 -0.3632713        #22
-        -0.5 0.809017 -0.3632713        #23
-        0.190983 0.809017 -0.5877853    #24
-        -0.809017 0.190983 -0.5877853   #25
-        -0.809017 -0.5 -0.5877853       #26
-        -0.190983 -0.809017 -0.5877853  #27
-        0.309017 -0.5 -0.9510565        #28
-        0.309017 0.190983 -0.9510565    #29
-        -0.309017 0.5 -0.9510565        #30
-        -0.309017 -0.190983 -0.9510565  #31
-
-    # 30 faces
-    face  3 0 1 2 
-    face  3 4 5 0 
-    face  0 5 6 1 
-    face  1 7 8 2 
-    face  2 8 9 3 
-    face  5 4 10 11 
-    face  4 3 12 10 
-    face  1 6 13 14 
-    face  6 5 15 13 
-    face  8 7 16 17 
-    face  7 1 14 16 
-    face  3 9 18 12 
-    face  9 8 19 18 
-    face  10 20 21 11 
-    face  11 21 15 5 
-    face  12 18 22 10 
-    face  13 23 16 14 
-    face  15 21 24 13 
-    face  16 25 26 17 
-    face  17 26 19 8 
-    face  19 26 27 18 
-    face  21 20 28 29 
-    face  20 10 22 28 
-    face  22 18 27 28 
-    face  16 23 30 25 
-    face  23 13 24 30 
-    face  24 21 29 30 
-    face  26 25 30 31 
-    face  27 26 31 28 
-    face  28 31 30 29 
+      0.309017 0.190983 0.9510565  # 0
+      -0.309017 0.5 0.9510565  # 1
+      -0.309017 -0.190983 0.9510565  # 2
+      0.309017 -0.5 0.9510565  # 3
+      0.809017 -0.190983 0.5877853  # 4
+      0.809017 0.5 0.5877853  # 5
+      0.190983 0.809017 0.5877853  # 6
+      -0.809017 0.190983 0.5877853  # 7
+      -0.809017 -0.5 0.5877853  # 8
+      -0.190983 -0.809017 0.5877853  # 9
+      1 -0.5 0  # 10
+      1 0.190983 0  # 11
+      0.5 -0.809017 0.3632713  # 12
+      0 1.118034 0  # 13
+      -0.5 0.809017 0.3632713  # 14
+      0.618034 0.809017 0  # 15
+      -1 0.5 0  # 16
+      -1 -0.190983 0  # 17
+      0 -1.118034 0  # 18
+      -0.618034 -0.809017 0  # 19
+      0.809017 -0.190983 -0.5877853  # 20
+      0.809017 0.5 -0.5877853  # 21
+      0.5 -0.809017 -0.3632713  # 22
+      -0.5 0.809017 -0.3632713  # 23
+      0.190983 0.809017 -0.5877853  # 24
+      -0.809017 0.190983 -0.5877853  # 25
+      -0.809017 -0.5 -0.5877853  # 26
+      -0.190983 -0.809017 -0.5877853  # 27
+      0.309017 -0.5 -0.9510565  # 28
+      0.309017 0.190983 -0.9510565  # 29
+      -0.309017 0.5 -0.9510565  # 30
+      -0.309017 -0.190983 -0.9510565  # 31
+     #60 edges
+    edge 3 0 #0
+    edge 0 1 #1
+    edge 1 2 #2
+    edge 2 3 #3
+    edge 3 4 #4
+    edge 4 5 #5
+    edge 5 0 #6
+    edge 5 6 #7
+    edge 6 1 #8
+    edge 1 7 #9
+    edge 7 8 #10
+    edge 8 2 #11
+    edge 8 9 #12
+    edge 9 3 #13
+    edge 4 10 #14
+    edge 10 11 #15
+    edge 11 5 #16
+    edge 3 12 #17
+    edge 12 10 #18
+    edge 6 13 #19
+    edge 13 14 #20
+    edge 14 1 #21
+    edge 5 15 #22
+    edge 15 13 #23
+    edge 7 16 #24
+    edge 16 17 #25
+    edge 17 8 #26
+    edge 14 16 #27
+    edge 9 18 #28
+    edge 18 12 #29
+    edge 8 19 #30
+    edge 19 18 #31
+    edge 10 20 #32
+    edge 20 21 #33
+    edge 21 11 #34
+    edge 21 15 #35
+    edge 18 22 #36
+    edge 22 10 #37
+    edge 13 23 #38
+    edge 23 16 #39
+    edge 21 24 #40
+    edge 24 13 #41
+    edge 16 25 #42
+    edge 25 26 #43
+    edge 26 17 #44
+    edge 26 19 #45
+    edge 26 27 #46
+    edge 27 18 #47
+    edge 20 28 #48
+    edge 28 29 #49
+    edge 29 21 #50
+    edge 22 28 #51
+    edge 27 28 #52
+    edge 23 30 #53
+    edge 30 25 #54
+    edge 24 30 #55
+    edge 29 30 #56
+    edge 30 31 #57
+    edge 31 26 #58
+    edge 31 28 #59
+     #30 faces
+    face 3 0 1 2 # 0
+      facelink 1 2 3 4 
+    face 3 4 5 0 # 1
+      facelink 6 5 2 0 
+    face 0 5 6 1 # 2
+      facelink 1 8 7 0 
+    face 1 7 8 2 # 3
+      facelink 10 9 4 0 
+    face 2 8 9 3 # 4
+      facelink 3 12 11 0 
+    face 5 4 10 11 # 5
+      facelink 1 6 13 14 
+    face 4 3 12 10 # 6
+      facelink 1 11 15 5 
+    face 1 6 13 14 # 7
+      facelink 2 8 16 10 
+    face 6 5 15 13 # 8
+      facelink 2 14 17 7 
+    face 8 7 16 17 # 9
+      facelink 3 10 18 19 
+    face 7 1 14 16 # 10
+      facelink 3 7 16 9 
+    face 3 9 18 12 # 11
+      facelink 4 12 15 6 
+    face 9 8 19 18 # 12
+      facelink 4 19 20 11 
+    face 10 20 21 11 # 13
+      facelink 22 21 14 5 
+    face 11 21 15 5 # 14
+      facelink 13 17 8 5 
+    face 12 18 22 10 # 15
+      facelink 11 23 22 6 
+    face 13 23 16 14 # 16
+      facelink 25 24 10 7 
+    face 15 21 24 13 # 17
+      facelink 14 26 25 8 
+    face 16 25 26 17 # 18
+      facelink 24 27 19 9 
+    face 17 26 19 8 # 19
+      facelink 18 20 12 9 
+    face 19 26 27 18 # 20
+      facelink 19 28 23 12 
+    face 21 20 28 29 # 21
+      facelink 13 22 29 26 
+    face 20 10 22 28 # 22
+      facelink 13 15 23 21 
+    face 22 18 27 28 # 23
+      facelink 15 20 28 22 
+    face 16 23 30 25 # 24
+      facelink 16 25 27 18 
+    face 23 13 24 30 # 25
+      facelink 16 17 26 24 
+    face 24 21 29 30 # 26
+      facelink 17 21 29 25 
+    face 26 25 30 31 # 27
+      facelink 18 24 29 28 
+    face 27 26 31 28 # 28
+      facelink 20 27 29 23 
+    face 28 31 30 29 # 29
+      facelink 28 27 26 21 
 page 0
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683113
+    min_y 0
+    width 1.410842685
+    height 0.8719487482
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 1
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748682753
+    min_y 0
+    width 1.410842666
+    height 0.8719487115
   layer 0
-    visible
-    prints
+    id pagelayer
 page 2
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842666
+    min_y 0
+    width 1.410842666
+    height 0.8719487402
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 3
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748682753
+    min_y 0
+    width 1.410842666
+    height 0.8719487115
   layer 0
-    visible
-    prints
+    id pagelayer
 page 4
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842666
+    min_y 0
+    width 1.410842666
+    height 0.8719487402
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 5
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842607
+    min_y -7.831750167e-17
+    width 1.410842607
+    height 0.8719488152
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 6
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683113
+    min_y 0
+    width 1.410842685
+    height 0.8719487939
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 7
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.4108427
+    min_y 0
+    width 1.4108427
+    height 0.8719487997
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 8
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748682753
+    min_y 0
+    width 1.410842633
+    height 0.8719488024
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 9
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842607
+    min_y -7.831750167e-17
+    width 1.410842607
+    height 0.8719488152
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 10
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683113
+    min_y -0
+    width 1.410842685
+    height 0.8719487939
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 11
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.4108427
+    min_y -0
+    width 1.4108427
+    height 0.8719487997
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 12
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748682753
+    min_y 0
+    width 1.410842633
+    height 0.8719488024
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 13
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842656
+    min_y -7.831750167e-17
+    width 1.410842656
+    height 0.8719487961
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 14
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683778
+    min_y 0
+    width 1.410842722
+    height 0.8719487344
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 15
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.41084283
+    min_y 0
+    width 1.41084283
+    height 0.8719487551
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 16
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842722
+    min_y 0
+    width 1.410842722
+    height 0.8719487631
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 17
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683495
+    min_y 0
+    width 1.410842656
+    height 0.8719487961
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 18
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683778
+    min_y 0
+    width 1.410842722
+    height 0.8719487344
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 19
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.41084283
+    min_y 0
+    width 1.41084283
+    height 0.8719487551
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 20
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842722
+    min_y 0
+    width 1.410842722
+    height 0.8719487631
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 21
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842719
+    min_y -7.831750167e-17
+    width 1.410842719
+    height 0.871948759
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 22
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842664
+    min_y -9.789687709e-17
+    width 1.410842664
+    height 0.8719487464
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 23
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683113
+    min_y -0
+    width 1.410842685
+    height 0.8719486793
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 24
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.4108427
+    min_y -3.915875084e-17
+    width 1.4108427
+    height 0.871948685
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 25
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.410842719
+    min_y -7.831750167e-17
+    width 1.410842719
+    height 0.871948759
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 26
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683495
+    min_y 0
+    width 1.410842694
+    height 0.8719487718
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 27
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.9748683113
+    min_y 0
+    width 1.410842685
+    height 0.8719486793
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 28
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -1.4108427
+    min_y -3.915875084e-17
+    width 1.4108427
+    height 0.871948685
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
 page 29
+  labeltype 0
   pagestyle PageStyle
-    width 2.011859078
-    height 1.913391686
+    min_x -0.974868337
+    min_y 0
+    width 1.4108427
+    height 0.8719487253
     pageclips
   layer 0
-    visible
-    prints
+    id pagelayer
+limbo Limbo 1
+  id Group1483
+window
+  xywh 1 17 500 500
+  pane
+    xyxy 0 0 500 500
+    window ViewWindow
+      document /home/tom/other/p/sourceforge/laidout/examples/triacontahedron.doc
+      layout Pages
+      spread 0
+      page 0
+      matrix 37.1164438 0 0 -37.1164438 69 382
+      xbounds -8.5 17
+      ybounds -5.5 16.5
+      limbo Limbo 1

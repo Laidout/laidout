@@ -1,39 +1,44 @@
 #Laidout 0.09.1 Document
 saveas ./tabloid-tiled.doc
 imposition SignatureImposition
-  paper
-    name Tabloid
-    units in
-    width 11
-    height 17
-    dpi 360
-    portrait
+  numpages 4
   showwholecover no
-  sheetspersignature 1
-  autoaddsheets yes
-  insettop    0
-  insetbottom 0
-  insetleft   0
-  insetright  0
-  tilegapx 0
-  tilegapy 0
-  tilex 1
-  tiley 3
-  numhfolds 0
-  numvfolds 1
-  fold 1 Right #0
-  binding Left
-  trimtop    0
-  trimbottom 0
-  trimleft   0
-  trimright  0
-  margintop    0
-  marginbottom 0
-  marginleft   0
-  marginright  0
-  up Top
-  positivex Right
-  positivey Top
+  signature
+    autoaddsheets yes
+    pattern
+      numhfolds 0
+      numvfolds 1
+      fold \
+        1 Right #0
+
+      binding Left
+      trimtop 0
+      trimbottom 0
+      trimleft 0
+      trimright 0
+      margintop 0
+      marginbottom 0
+      marginleft 0
+      marginright 0
+      up Top
+      positivex Right
+      positivey Top
+    partition
+      paper
+        name Tabloid
+        units in
+        width 11
+        height 17
+        dpi 360
+        orientation portrait
+      insettop 0
+      insetbottom 0
+      insetleft 0
+      insetright 0
+      tilegapx 0
+      tilegapy 0
+      tilex 1
+      tiley 3
 page 0
   labeltype 0
   layer 0

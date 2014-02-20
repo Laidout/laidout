@@ -322,7 +322,7 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 			ObjectFunc    nstylefunc)  //!< Full Function 
   : suggestions(2)
 {
-	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+	//DBG cerr <<"..creating ObjectDef "<<nname<<endl;
 
 	parent_namespace=NULL;
 
@@ -374,7 +374,7 @@ ObjectDef::ObjectDef(const char *nname,
 					 Value *newval,
 					 const char *type, unsigned int fflags)
 {
-	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+	//DBG cerr <<"..creating ObjectDef "<<nname<<endl;
 
 	name=newstr(nname);
 	Name=newstr(nName);
@@ -402,7 +402,7 @@ ObjectDef::~ObjectDef()
 {
 	//parent_namespace->dec_count(); <- do NOT do this, we assume the module will outlive the objectdef
 
-	DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
+	//DBG cerr <<"--<ObjectDef \""<<(name?name:"(no name)")<<"\" destructor"<<endl;
 	
 	if (name)         delete[] name;
 	if (Name)         delete[] Name;
@@ -414,7 +414,7 @@ ObjectDef::~ObjectDef()
 	//if (fieldsdef) fieldsdef->dec_count(); <- don't do this, assume type will outlive things based on type
 	
 	if (fields) {
-		DBG cerr <<"---Delete fields stack"<<endl;
+		//DBG cerr <<"---Delete fields stack"<<endl;
 		delete fields;
 		fields=NULL;
 	}
@@ -1296,7 +1296,7 @@ ValueHash::ValueHash()
 
 ValueHash::~ValueHash()
 {
-	DBG values.flush(); //this should happen automatically anyway
+	//DBG values.flush(); //this should happen automatically anyway
 }
 
 int ValueHash::type()
@@ -1616,7 +1616,7 @@ int ValueHash::push(const char *name,const char *value,int where)
 /*! Increments obj count. */
 int ValueHash::pushObject(const char *name,Laxkit::anObject *obj,int where)
 {
-	DBG cerr <<"pushObject: "<<(obj?obj->whattype():"null")<<endl;
+	//DBG cerr <<"pushObject: "<<(obj?obj->whattype():"null")<<endl;
 	if (dynamic_cast<Value*>(obj)) return push(name,dynamic_cast<Value*>(obj));
 
 	Value *v=new ObjectValue(obj);
@@ -2080,7 +2080,7 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,Laxk
 		 //dump out object def
     	ObjectDef *def=GetObjectDef();
 		if (!def) {
-			DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
+			//DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
 		} else return def->dump_out_atts(att,-1,NULL);
 		return NULL;
 	}
@@ -2133,13 +2133,13 @@ void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		 //dump out object def
     	ObjectDef *def=GetObjectDef();
 		if (!def) {
-			DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
+			//DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
 		} else def->dump_out(f,indent,-1,context);
 		return;
 	}
 
 	if (what==DEFOUT_JSON) {
-		DBG cerr <<" *** value out to json, todo!!"<<endl;
+		//DBG cerr <<" *** value out to json, todo!!"<<endl;
 
 		Value *v;
 		ObjectDef *def;
@@ -2282,7 +2282,7 @@ int GenericValue::assign(FieldExtPlace *ext,Value *v)
 	int index=elements.findIndex(str);
 	if (index>=0) {
 		//elements.assign(ext,v);
-		DBG if (ext->n()>1) cerr <<"*** need to implement ValueHash->assign()!!"<<endl;
+		//DBG if (ext->n()>1) cerr <<"*** need to implement ValueHash->assign()!!"<<endl;
 		elements.set(index,v);
 	} else return 1;
 	return 1;
@@ -3430,7 +3430,7 @@ ObjectDef *EnumValue::makeObjectDef()
  */
 ObjectValue::ObjectValue(anObject *obj)
 {
-	DBG cerr <<"ObjectValue creation.."<<endl;
+	//DBG cerr <<"ObjectValue creation.."<<endl;
 	object=obj; 
 	if (object) object->inc_count();
 }
@@ -3439,7 +3439,7 @@ ObjectValue::ObjectValue(anObject *obj)
  */
 ObjectValue::~ObjectValue()
 {
-	DBG cerr <<"ObjectValue destructor.."<<endl;
+	//DBG cerr <<"ObjectValue destructor.."<<endl;
 	if (object) object->dec_count();
 }
 
@@ -3470,14 +3470,14 @@ ColorValue::ColorValue(const char *str)
   : color(LAX_COLOR_RGB,65535,0,0,0,65535)
 {
 	color.SetHexValue(str);
-	DBG cerr <<"ColorValue creation.."<<endl;
+	//DBG cerr <<"ColorValue creation.."<<endl;
 }
 
 /*! Objects gets count decremented.
  */
 ColorValue::~ColorValue()
 {
-	DBG cerr <<"ColorValue destructor.."<<endl;
+	//DBG cerr <<"ColorValue destructor.."<<endl;
 }
 
 int ColorValue::getValueStr(char *buffer,int len)

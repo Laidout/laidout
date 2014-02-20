@@ -216,7 +216,7 @@ int NetDialog::init()
 
 int NetDialog::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	//DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"checkfile")) {
 		checkdod->State(LAX_OFF);
@@ -245,9 +245,9 @@ int NetDialog::Event(const EventData *data,const char *mes)
 #ifndef LAIDOUT_NOGL
 	} else if (!strcmp(mes,"polyptych")) {
 		NetImposition *imp=getNetImposition();
-		DBG cerr <<" ...editing with polyptych maybe..."<<endl;
+		//DBG cerr <<" ...editing with polyptych maybe..."<<endl;
 		if (imp && imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet)) {
-			DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
+			//DBG cerr <<" ...imp found, editing with polyptych definitely..."<<endl;
 			 //ok from PolyptychWindow sends NetImposition to win_owner
 			PolyptychWindow *pw=new PolyptychWindow(imp, NULL,win_owner,win_sendthis);
 			app->rundialog(pw);

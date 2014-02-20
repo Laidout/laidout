@@ -96,7 +96,7 @@ void psConcat(const double *m)
 	double *mm=transform_mult(NULL,m,psctm);
 	delete[] psctm;
 	psctm=mm;
-	DBG cerr << "ctm concat: "; dumpctm(psctm);
+	//DBG cerr << "ctm concat: "; dumpctm(psctm);
 }
 
 //! Initialize to identity and return ctm.
@@ -333,7 +333,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
@@ -344,7 +344,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 	f=open_file_for_writing(file,0,&log);
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}
@@ -397,7 +397,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	 // initialize outside accessible ctm
 	psctms.flush();
 	psctm=transform_identity(psctm);
-	DBG cerr <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
+	//DBG cerr <<"=================== start printing "<<start<<" to "<<end<<" ====================\n";
 	
 	 // print out header
 	fprintf (f,"%%!PS-Adobe-3.0\n"
@@ -493,7 +493,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 		appendstr(desc,")");
 			
 		for (p=0; p<papergroup->papers.n; p++) {
-			DBG cerr<<"Printing paper "<<p<<"..."<<endl;
+			//DBG cerr<<"Printing paper "<<p<<"..."<<endl;
 			plandscape=papergroup->papers.e[p]->box->paperstyle->flags&1;
 			paperwidth=papergroup->papers.e[p]->box->paperstyle->width;
 
@@ -553,8 +553,8 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 				 // print out printer marks
 				if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 					//fprintf(f," .01 setlinewidth\n");
-					//DBG cerr <<"marks data:\n";
-					//DBG spread->marks->dump_out(stderr,2,0);
+					////DBG cerr <<"marks data:\n";
+					////DBG spread->marks->dump_out(stderr,2,0);
 					psdumpobj(f,spread->marks);
 				}
 				
@@ -575,12 +575,12 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 					psConcat(m);
 
 					 // set clipping region
-					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+					//DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 					if (page->pagestyle->flags&PAGE_CLIPS) {
-						DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+						//DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 						psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 					} else {
-						DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+						//DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 					}
 						
 					 // for each layer on the page..
@@ -601,7 +601,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 					  "\n"
 					  "showpage\n"
 					  "\n");		
-			DBG cerr<<"Done printing paper "<<p<<"."<<endl;
+			//DBG cerr<<"Done printing paper "<<p<<"."<<endl;
 		}
 		if (spread) { delete spread; spread=NULL; }
 		delete[] desc; desc=NULL;
@@ -611,7 +611,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	fprintf(f, "\n%%%%Trailer\n");
 	fprintf(f, "\n%%%%EOF\n");
 
-	DBG cerr <<"=================== end printing ps ========================\n";
+	//DBG cerr <<"=================== end printing ps ========================\n";
 
 	 //clean up
 	fclose(f);
@@ -653,7 +653,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 
 
-	DBG cerr <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
+	//DBG cerr <<"=================== start printing eps "<<start<<" to "<<end<<" ====================\n";
 		
 	Spread *spread=NULL;
 	DoubleBBox bbox;
@@ -768,8 +768,8 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 		 // print out printer marks
 		if (spread->mask&SPREAD_PRINTERMARKS && spread->marks) {
 			fprintf(f," .01 setlinewidth\n");
-			//DBG cerr <<"marks data:\n";
-			//DBG spread->marks->dump_out(stderr,2,0);
+			////DBG cerr <<"marks data:\n";
+			////DBG spread->marks->dump_out(stderr,2,0);
 			psdumpobj(f,spread->marks);
 		}
 	
@@ -790,12 +790,12 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 			psConcat(m);
 
 			 // set clipping region
-			DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+			//DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
 			if (page->pagestyle->flags&PAGE_CLIPS) {
-				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
+				//DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" clips"<<endl;
 				psSetClipToPath(f,spread->pagestack.e[c2]->outline,0);
 			} else {
-				DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
+				//DBG cerr <<"page "<<c2<<":"<<spread->pagestack[c2]->index<<" does not clip"<<endl;
 			}
 				
 			 // for each layer on the page..
@@ -825,7 +825,7 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 	setlocale(LC_ALL,"");
 
 
-	DBG cerr <<"=================== end printing eps ========================\n";
+	//DBG cerr <<"=================== end printing eps ========================\n";
 
 	return 0;
 }
