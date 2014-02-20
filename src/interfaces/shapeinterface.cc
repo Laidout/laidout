@@ -103,7 +103,7 @@ ShapeInterface::ShapeInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 ShapeInterface::~ShapeInterface()
 {
-	DBG cerr <<"ShapeInterface destructor.."<<endl;
+	//DBG cerr <<"ShapeInterface destructor.."<<endl;
 
 	if (shapeinfo) shapeinfo->dec_count();
 
@@ -187,7 +187,7 @@ anInterface *ShapeInterface::duplicate(anInterface *dup)//dup=NULL
 
 int ShapeInterface::InterfaceOn()
 {
-	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
+	//DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
 	showdecs=2;
 	needtodraw=1;
@@ -218,7 +218,7 @@ int ShapeInterface::Refresh()
 		remapControls();
 	}
 
-	DBG cerr <<"ShapeInterface::Refresh()..."<<endl;
+	//DBG cerr <<"ShapeInterface::Refresh()..."<<endl;
 
 	dp->DrawScreen();
 
@@ -376,7 +376,7 @@ int ShapeInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
  */
 int ShapeInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 { //***
-	DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
+	//DBG cerr<<" got ch:"<<ch<<"  "<<(state&LAX_STATE_MASK)<<endl;
 
 	if (ch==LAX_Esc) {
 

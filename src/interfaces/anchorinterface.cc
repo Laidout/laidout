@@ -126,7 +126,7 @@ AnchorInterface::AnchorInterface(anInterface *nowner,int nid,Displayer *ndp)
 
 AnchorInterface::~AnchorInterface()
 {
-	DBG cerr <<"AnchorInterface destructor.."<<endl;
+	//DBG cerr <<"AnchorInterface destructor.."<<endl;
 
 	if (sc) sc->dec_count();
 	if (selection) selection->dec_count();
@@ -210,7 +210,7 @@ anInterface *AnchorInterface::duplicate(anInterface *dup)//dup=NULL
 
 int AnchorInterface::InterfaceOn()
 {
-	DBG cerr <<"pagerangeinterfaceOn()"<<endl;
+	//DBG cerr <<"pagerangeinterfaceOn()"<<endl;
 
 	needtodraw=1;
 	return 0;
@@ -537,7 +537,7 @@ int AnchorInterface::Refresh()
 {
 	if (!needtodraw) return 0;
 
-	DBG cerr <<"AnchorInterface::Refresh()..."<<endl;
+	//DBG cerr <<"AnchorInterface::Refresh()..."<<endl;
 
 
 	double th=dp->textheight();
@@ -590,7 +590,7 @@ int AnchorInterface::Refresh()
 	}
 
 	if (hover_item==ANCHOR_Anchor && hover_anchor>=0 && hover_anchor<anchors.n) {
-		DBG cerr <<" trying to draw hover anchor "<<hover_anchor<<" with anchors.n=="<<anchors.n<<endl;
+		//DBG cerr <<" trying to draw hover anchor "<<hover_anchor<<" with anchors.n=="<<anchors.n<<endl;
 
 		flatpoint p=dp->realtoscreen(anchors.e[hover_anchor]->real_point);
 		const char *aa=anchors.e[hover_anchor]->anchor->name;
@@ -1166,7 +1166,7 @@ int AnchorInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 		}
 
 		if (hover_item==ANCHOR_Anchor && hover_anchor!=active_match) {
-			DBG cerr <<"*** maybe match?? "<<hover_anchor<<endl;
+			//DBG cerr <<"*** maybe match?? "<<hover_anchor<<endl;
 			if (hover_anchor>=0 && anchors.e[hover_anchor]->anchorsource!=ANCHOR_Object) {
 				active_match=hover_anchor;
 				needtodraw=1;

@@ -66,7 +66,7 @@ PolyhedronWindow::PolyhedronWindow(anXWindow *parent)
  */
 int PolyhedronWindow::changePaper(int towhich,int index)
 {
-	DBG cerr << "change paper"<<endl;
+	//DBG cerr << "change paper"<<endl;
 	if (index<0 || index>=papers.n) return 0;
 
 	int i=papers.e[index]->id;
@@ -140,7 +140,7 @@ int PolyptychWindow::init()
 
 int PolyptychWindow::Event(const EventData *data,const char *mes)
 {
-	DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
+	//DBG cerr <<"newdocmessage: "<<(mes?mes:"(unknown)")<<endl;
 
 	if (!strcmp(mes,"ok")) {
 		int status=sendNewImposition();
@@ -171,7 +171,7 @@ int PolyptychWindow::setImposition(NetImposition *imp)
 	if (!(imp->abstractnet && dynamic_cast<Polyhedron*>(imp->abstractnet))) return 2;
 	
 	HedronWindow *hw=dynamic_cast<HedronWindow*>(hwindow);
-	//DBG if (!hw) cerr<<" ***** no child window Hedron"<<endl;
+	////DBG if (!hw) cerr<<" ***** no child window Hedron"<<endl;
 
 	 //install hedron
 	hw->installPolyhedron(dynamic_cast<Polyhedron*>(imp->abstractnet));
@@ -203,7 +203,7 @@ NetImposition *PolyptychWindow::getImposition()
 	PaperGroup *papers=new PaperGroup;
 
 	HedronWindow *hw=dynamic_cast<HedronWindow*>(findChildWindowByName("Hedron"));
-	DBG if (!hw) cerr<<" ***** no child window Hedron"<<endl;
+	//DBG if (!hw) cerr<<" ***** no child window Hedron"<<endl;
 
 	 //install hedron
 	imp->abstractnet=hw->poly;

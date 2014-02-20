@@ -180,7 +180,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 		//add extra field for impose out
 
 		Attribute att;
-		DBG const char *in="",*out="";
+		//DBG const char *in="",*out="";
 
 		const char *prefer=NULL;
 		NameValueToAttribute(&att,imposearg,'=',',');
@@ -189,7 +189,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 			name =att.attributes.e[c]->name;
 			value=att.attributes.e[c]->value;
 			if (!strcmp(name,"in")) {
-				DBG in=value;
+				//DBG in=value;
 				int docindex=laidout->project->docs.n;
 
 				if (isScribusFile(value)) {
@@ -217,7 +217,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 			} else if (!strcmp(name,"out")) {
 				makestr(imposeout,value);
-				DBG out=value;
+				//DBG out=value;
 			} else if (!strcmp(name,"prefer")) {
 				prefer=value;
 			} else if (!strcmp(name,"width")) {
@@ -251,7 +251,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 			}
 		}
 
-		DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
+		//DBG cerr <<"Impose only from "<<in<<" to "<<out<<endl;
 	}
 
 }
@@ -390,7 +390,7 @@ void ImpositionEditor::send()
 
 int ImpositionEditor::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"ImpositionEditor got message: "<<(mes?mes:"?")<<endl;
+	//DBG cerr <<"ImpositionEditor got message: "<<(mes?mes:"?")<<endl;
 
 	if (!strcmp(mes,"ok")) {
 		send();
@@ -414,7 +414,7 @@ int ImpositionEditor::Event(const Laxkit::EventData *data,const char *mes)
 		return 0;
 
 	} else if (!strcmp("newimp",mes)) {
-		DBG cerr <<"---newimp---"<<endl;
+		//DBG cerr <<"---newimp---"<<endl;
 
 		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
 
@@ -440,7 +440,7 @@ int ImpositionEditor::Event(const Laxkit::EventData *data,const char *mes)
 			return 0;
 
 		} else { 
-			DBG cerr <<"--- new imp from menu: "<<laidout->impositionpool.e[s->info2]->name<<endl;
+			//DBG cerr <<"--- new imp from menu: "<<laidout->impositionpool.e[s->info2]->name<<endl;
 			newimp=laidout->impositionpool.e[s->info2]->Create();
 		} 
 
@@ -563,7 +563,7 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 //! Update imposition settings based on a changed imposition file
 Imposition *ImpositionEditor::impositionFromFile(const char *file)
 {
-	DBG cerr<<"----------attempting to impositionFromFile()-------"<<endl;
+	//DBG cerr<<"----------attempting to impositionFromFile()-------"<<endl;
 
 	
 	if (laidout_file_type(file,NULL,NULL,NULL,"Imposition",NULL)==0) {
@@ -573,7 +573,7 @@ Imposition *ImpositionEditor::impositionFromFile(const char *file)
 		const char *type=att.findValue("type");
 		Imposition *imp=newImpositionByType(type);
 		if (!imp) {
-			DBG cerr<<"   impositionFromFile() -> unknown imposition type "<<(type?type:"unknown type")<<"..."<<endl;
+			//DBG cerr<<"   impositionFromFile() -> unknown imposition type "<<(type?type:"unknown type")<<"..."<<endl;
 			return NULL;
 		}
 		imp->dump_in_atts(&att,0,NULL);
@@ -591,16 +591,16 @@ Imposition *ImpositionEditor::impositionFromFile(const char *file)
 		nimp=new NetImposition();
 		nimp->SetNet(net);
 
-		DBG cerr<<"   installed polyhedron file..."<<endl;
+		//DBG cerr<<"   installed polyhedron file..."<<endl;
 		return nimp;
 
 	} else {
-		DBG cerr <<"...file does not appear to be a polyhedron file: "<<(file?file:"")<<endl;
+		//DBG cerr <<"...file does not appear to be a polyhedron file: "<<(file?file:"")<<endl;
 		delete poly;
 	}
 
 
-	DBG cerr<<"   impositionFromFile() FAILED..."<<endl;
+	//DBG cerr<<"   impositionFromFile() FAILED..."<<endl;
 	return NULL;
 }
 
