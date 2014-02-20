@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>Scribus-1.3.3.12-fileformat.att</title>
+<title>Laidout Shortcuts</title>
 
 <style type="text/css">
 table.formattable {
@@ -45,6 +45,7 @@ Modifiers<br/>
 <tr><td colspan="3" class="area">HeadWindow</td></tr>
   <tr><td class="key">^q        </td><td class="id">Quit                     </td><td class="description">Quit Laidout</td></tr>
   <tr><td class="key">^o        </td><td class="id">OpenDoc                  </td><td class="description">Open a document</td></tr>
+  <tr><td class="key">+^K       </td><td class="id">OpenKeys                 </td><td class="description">Open shortcut key editor</td></tr>
 <tr><td colspan="3" class="area">LaidoutViewport</td></tr>
   <tr><td class="key">++        </td><td class="id">ZoomIn                   </td><td class="description">Zoom in</td></tr>
   <tr><td class="key">=         </td><td class="id">ZoomIn                   </td><td class="description">Zoom in</td></tr>
@@ -57,23 +58,27 @@ Modifiers<br/>
   <tr><td class="key">Bksp      </td><td class="id">DeleteObject             </td><td class="description">Delete current object</td></tr>
   <tr><td class="key">Del       </td><td class="id">DeleteObject             </td><td class="description">Delete current object</td></tr>
   <tr><td class="key">j         </td><td class="id">ShiftLeft                </td><td class="description">Shift view left</td></tr>
-  <tr><td class="key">l         </td><td class="id">ToggleShow               </td><td class="description">Toggle show state</td></tr>
-  <tr><td class="key">i         </td><td class="id">ShiftUp                  </td><td class="description">Shift view Up</td></tr>
+  <tr><td class="key">l         </td><td class="id">ShiftRight               </td><td class="description">Shift view right</td></tr>
+  <tr><td class="key">i         </td><td class="id">Object Info              </td><td class="description">Toggle showing object information</td></tr>
   <tr><td class="key">k         </td><td class="id">ShiftDown                </td><td class="description">Shift view Down</td></tr>
   <tr><td class="key">^[        </td><td class="id">IncShift                 </td><td class="description">Increase view shift amount</td></tr>
   <tr><td class="key">^]        </td><td class="id">DecShift                 </td><td class="description">Decrease view shift amount</td></tr>
+  <tr><td class="key">Tab       </td><td class="id">NextObject               </td><td class="description">Select next object</td></tr>
+  <tr><td class="key">+Tab      </td><td class="id">PreviousObject           </td><td class="description">Select previous object</td></tr>
   <tr><td class="key">+^A       </td><td class="id">DeselectAll              </td><td class="description">Deselect all</td></tr>
   <tr><td class="key">4         </td><td class="id">CenterDrawing            </td><td class="description">Center drawing</td></tr>
   <tr><td class="key">5         </td><td class="id">ZoomToPage               </td><td class="description">Zoom to the current page</td></tr>
   <tr><td class="key">g         </td><td class="id">GrabColor                </td><td class="description">Grab color</td></tr>
+  <tr><td class="key">+l        </td><td class="id">ToggleShow               </td><td class="description">Toggle show state</td></tr>
   <tr><td class="key">m         </td><td class="id">MoveObjs                 </td><td class="description">Move objects</td></tr>
   <tr><td class="key">PageUp    </td><td class="id">MoveObjUp                </td><td class="description">Move object up within layer</td></tr>
   <tr><td class="key">PageDown  </td><td class="id">MoveObjDown              </td><td class="description">Move object down within layer</td></tr>
   <tr><td class="key">Home      </td><td class="id">MoveObjFirst             </td><td class="description">Move object to first in layer</td></tr>
   <tr><td class="key">End       </td><td class="id">MoveObjLast              </td><td class="description">Move object to last in layer</td></tr>
   <tr><td class="key">+D        </td><td class="id">ToggleDrawFlags          </td><td class="description">Toggle drawing flags</td></tr>
+  <tr><td class="key">^r        </td><td class="id">ForceRemap               </td><td class="description">Force reapplication of any alignment rules of objects in current spread</td></tr>
   <tr><td class="key">none      </td><td class="id">CenterReal               </td><td class="description">Center the real origin in the viewport</td></tr>
-  <tr><td class="key">none      </td><td class="id">ShiftRight               </td><td class="description">Shift view right</td></tr>
+  <tr><td class="key">none      </td><td class="id">ShiftUp                  </td><td class="description">Shift view Up</td></tr>
 <tr><td colspan="3" class="area">ViewWindow</td></tr>
   <tr><td class="key">Esc       </td><td class="id">ObjectTool               </td><td class="description">Switch to object tool</td></tr>
   <tr><td class="key">^s        </td><td class="id">Save                     </td><td class="description">Save document</td></tr>
@@ -86,20 +91,33 @@ Modifiers<br/>
   <tr><td class="key">F1        </td><td class="id">Help                     </td><td class="description">Help</td></tr>
   <tr><td class="key">F2        </td><td class="id">About                    </td><td class="description">About Laidout</td></tr>
   <tr><td class="key">F5        </td><td class="id">SpreadEditor             </td><td class="description">Popup a spread editor</td></tr>
+  <tr><td class="key">F6        </td><td class="id">EditImposition           </td><td class="description">Edit current imposition</td></tr>
+  <tr><td class="key">/         </td><td class="id">Prompt                   </td><td class="description">Popup a the graphical shell</td></tr>
 <tr><td colspan="3" class="area">SpreadInterface</td></tr>
+  <tr><td class="key">a         </td><td class="id">ToggleSelect             </td><td class="description">Select all or none</td></tr>
   <tr><td class="key">space     </td><td class="id">Center                   </td><td class="description">Center</td></tr>
-  <tr><td class="key">c         </td><td class="id">LabelPos                 </td><td class="description">Move label position</td></tr>
+  <tr><td class="key">l         </td><td class="id">LabelPos                 </td><td class="description">Move label position</td></tr>
+  <tr><td class="key">c         </td><td class="id">ToggleColor              </td><td class="description">Toggle color among defined colors</td></tr>
   <tr><td class="key">m         </td><td class="id">ToggleMark               </td><td class="description">Toggle mark type</td></tr>
   <tr><td class="key">+M        </td><td class="id">ToggleMarkR              </td><td class="description">Toggle mark type</td></tr>
   <tr><td class="key">t         </td><td class="id">Thumbs                   </td><td class="description">Toggle showing thumbnails</td></tr>
   <tr><td class="key">+A        </td><td class="id">Arrange                  </td><td class="description">Toggle arrangement type</td></tr>
   <tr><td class="key">+^A       </td><td class="id">RefreshArrange           </td><td class="description">Refresh with current arrangement type</td></tr>
+  <tr><td class="key">p         </td><td class="id">Add Page                 </td><td class="description">Add a page after current</td></tr>
+  <tr><td class="key">+P        </td><td class="id">Add Page Before          </td><td class="description">Add a page before current</td></tr>
+  <tr><td class="key">Del       </td><td class="id">Delete pages             </td><td class="description">Delete pages</td></tr>
+  <tr><td class="key">Bksp      </td><td class="id">Delete pages             </td><td class="description">Delete pages</td></tr>
 <tr><td colspan="3" class="area">SpreadEditor</td></tr>
   <tr><td class="key">t         </td><td class="id">NextTool                 </td><td class="description">Next tool</td></tr>
   <tr><td class="key">+T        </td><td class="id">PreviousTool             </td><td class="description">Previous tool</td></tr>
 <tr><td colspan="3" class="area">SignatureInterface</td></tr>
   <tr><td class="key">d         </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
+  <tr><td class="key">p         </td><td class="id">Thumbs                   </td><td class="description">Toggle showing of page thumbnails</td></tr>
   <tr><td class="key">space     </td><td class="id">Center                   </td><td class="description">Center view</td></tr>
+  <tr><td class="key">Up        </td><td class="id">Center                   </td><td class="description">Center view</td></tr>
+  <tr><td class="key">Down      </td><td class="id">CenterStacks             </td><td class="description">Center on stack arrangement area</td></tr>
+  <tr><td class="key">Left      </td><td class="id">NextFold                 </td><td class="description">Select next fold</td></tr>
+  <tr><td class="key">Right     </td><td class="id">PreviousFold             </td><td class="description">Select previous fold</td></tr>
   <tr><td class="key">^i        </td><td class="id">InsetMask                </td><td class="description">Toggle which inset to change</td></tr>
   <tr><td class="key">i         </td><td class="id">InsetInc                 </td><td class="description">Increment inset</td></tr>
   <tr><td class="key">+I        </td><td class="id">InsetDec                 </td><td class="description">Decrement inset</td></tr>
@@ -122,9 +140,6 @@ Modifiers<br/>
   <tr><td class="key">^m        </td><td class="id">MarginMask               </td><td class="description">Toggle which margin to change</td></tr>
   <tr><td class="key">m         </td><td class="id">MarginInc                </td><td class="description">Increase margin value</td></tr>
   <tr><td class="key">+M        </td><td class="id">MarginDec                </td><td class="description">Decrease margin value</td></tr>
-<tr><td colspan="3" class="area">SignatureEditor</td></tr>
-  <tr><td class="key">t         </td><td class="id">NextTool                 </td><td class="description">Next tool</td></tr>
-  <tr><td class="key">+T        </td><td class="id">PreviousTool             </td><td class="description">Previous tool</td></tr>
 <tr><td colspan="3" class="area">HedronWindow</td></tr>
   <tr><td class="key">h         </td><td class="id">Help                     </td><td class="description">Display help</td></tr>
   <tr><td class="key">F1        </td><td class="id">Help                     </td><td class="description">Display help</td></tr>
@@ -175,20 +190,39 @@ Modifiers<br/>
   <tr><td class="key">9         </td><td class="id">ScaleDown                </td><td class="description">Scale object down</td></tr>
   <tr><td class="key">space     </td><td class="id">ResetView                </td><td class="description">Make camera point at object from a reasonable distance</td></tr>
 <tr><td colspan="3" class="area">ObjectInterface</td></tr>
-  <tr><td class="key">d         </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
+  <tr><td class="key">+d        </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
   <tr><td class="key">n         </td><td class="id">Nup                      </td><td class="description">Distribute selected objects in rows and columns</td></tr>
   <tr><td class="key">+N        </td><td class="id">Rectify                  </td><td class="description">Normalize scale, clear skew and rotation</td></tr>
   <tr><td class="key">c         </td><td class="id">Constrain                </td><td class="description">Toggle drag constraint</td></tr>
-  <tr><td class="key">r         </td><td class="id">MoveCenter               </td><td class="description">Move rotation center to common points</td></tr>
   <tr><td class="key">+&gt;        </td><td class="id">ExpandHandle             </td><td class="description">Expand handle size</td></tr>
   <tr><td class="key">+&lt;        </td><td class="id">ContractHandle           </td><td class="description">Contract handle size</td></tr>
+  <tr><td class="key">r         </td><td class="id">RotateCW                 </td><td class="description">Rotate clockwise</td></tr>
+  <tr><td class="key">+R        </td><td class="id">RotateCCW                </td><td class="description">Rotate counter clockwise</td></tr>
+  <tr><td class="key">h         </td><td class="id">FlipH                    </td><td class="description">Flip horizontally</td></tr>
+  <tr><td class="key">v         </td><td class="id">FlipV                    </td><td class="description">Flip vertically</td></tr>
+  <tr><td class="key">f         </td><td class="id">FlipToggleShow           </td><td class="description">Toggle showing flip controls</td></tr>
   <tr><td class="key">^g        </td><td class="id">Group                    </td><td class="description">Group or ungroup</td></tr>
   <tr><td class="key">a         </td><td class="id">Align                    </td><td class="description">Align selected objects</td></tr>
+  <tr><td class="key">^space    </td><td class="id">Clone                    </td><td class="description">Clone objects</td></tr>
+  <tr><td class="key">d         </td><td class="id">Duplicate                </td><td class="description">Duplicate objects</td></tr>
   <tr><td class="key">none      </td><td class="id">Normalize                </td><td class="description">Normalize scale, clear skew</td></tr>
-<tr><td colspan="3" class="area">NupInterface</td></tr>
+  <tr><td class="key">none      </td><td class="id">MoveCenter               </td><td class="description">Move rotation center to common points</td></tr>
+<tr><td colspan="3" class="area">NUpInterface</td></tr>
+  <tr><td class="key">+d        </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
+  <tr><td class="key">n         </td><td class="id">Normalize                </td><td class="description">Normalize scale, clear skew</td></tr>
+  <tr><td class="key">+N        </td><td class="id">Rectify                  </td><td class="description">Normalize scale, clear skew and rotation</td></tr>
+  <tr><td class="key">c         </td><td class="id">Constrain                </td><td class="description">Toggle drag constraint</td></tr>
+  <tr><td class="key">+&gt;        </td><td class="id">ExpandHandle             </td><td class="description">Expand handle size</td></tr>
+  <tr><td class="key">+&lt;        </td><td class="id">ContractHandle           </td><td class="description">Contract handle size</td></tr>
+  <tr><td class="key">r         </td><td class="id">RotateCW                 </td><td class="description">Rotate clockwise</td></tr>
+  <tr><td class="key">+R        </td><td class="id">RotateCCW                </td><td class="description">Rotate counter clockwise</td></tr>
+  <tr><td class="key">h         </td><td class="id">FlipH                    </td><td class="description">Flip horizontally</td></tr>
+  <tr><td class="key">v         </td><td class="id">FlipV                    </td><td class="description">Flip vertically</td></tr>
+  <tr><td class="key">f         </td><td class="id">FlipToggleShow           </td><td class="description">Toggle showing flip controls</td></tr>
   <tr><td class="key">Enter     </td><td class="id">ToggleApply              </td><td class="description">Toggle apply</td></tr>
   <tr><td class="key">Left      </td><td class="id">NextDir                  </td><td class="description">Next direction type</td></tr>
   <tr><td class="key">Right     </td><td class="id">PrevDir                  </td><td class="description">Previous direction type</td></tr>
+  <tr><td class="key">none      </td><td class="id">MoveCenter               </td><td class="description">Move rotation center to common points</td></tr>
   <tr><td class="key">none      </td><td class="id">NextLayoutType           </td><td class="description">Next layout type</td></tr>
   <tr><td class="key">none      </td><td class="id">PrevLayoutType           </td><td class="description">Previous layout type</td></tr>
 <tr><td colspan="3" class="area">AlignInterface</td></tr>
@@ -333,11 +367,50 @@ Modifiers<br/>
   <tr><td class="key">r         </td><td class="id">Reverse                  </td><td class="description">Reverse direction of current path</td></tr>
   <tr><td class="key">Del       </td><td class="id">Delete                   </td><td class="description">Delete selected points</td></tr>
   <tr><td class="key">Bksp      </td><td class="id">Delete                   </td><td class="description">Delete selected points</td></tr>
-<tr><td colspan="3" class="area">EpsInterface</td></tr>
-  <tr><td class="key">n         </td><td class="id">Normalize                </td><td class="description">Normalize</td></tr>
-  <tr><td class="key">+N        </td><td class="id">Rectify                  </td><td class="description">Clear aspect and rotation</td></tr>
+<tr><td colspan="3" class="area">EngraverFillInterface</td></tr>
+  <tr><td class="key">m         </td><td class="id">SwitchMode               </td><td class="description">Switch edit mode</td></tr>
+  <tr><td class="key">o         </td><td class="id">RecurseInc               </td><td class="description">Increment screen recursion</td></tr>
+  <tr><td class="key">+O        </td><td class="id">RecurseDec               </td><td class="description">Decrement screen recursion</td></tr>
+  <tr><td class="key">j         </td><td class="id">SmoothEdit               </td><td class="description">Toggle smooth editing</td></tr>
+  <tr><td class="key">b         </td><td class="id">MeshType                 </td><td class="description">Toggle mesh type</td></tr>
+  <tr><td class="key">+B        </td><td class="id">MeshTypeR,               </td><td class="description">Toggle mesh type in reverse</td></tr>
+  <tr><td class="key">a         </td><td class="id">Select                   </td><td class="description">Select all or deselect</td></tr>
+  <tr><td class="key">y         </td><td class="id">ConstrainY               </td><td class="description">Constrain to vertical movements</td></tr>
+  <tr><td class="key">x         </td><td class="id">ConstrainX               </td><td class="description">Constrain to horizontal movements</td></tr>
+  <tr><td class="key">+^R       </td><td class="id">RowDivInc                </td><td class="description">Increment row subdivisions</td></tr>
+  <tr><td class="key">^r        </td><td class="id">RowDicDec                </td><td class="description">Decrement row subdivisions</td></tr>
+  <tr><td class="key">+^C       </td><td class="id">ColDivInc                </td><td class="description">Increment row subdivisions</td></tr>
+  <tr><td class="key">^c        </td><td class="id">ColDivDec                </td><td class="description">Decrement row subdivisions</td></tr>
+  <tr><td class="key">s         </td><td class="id">SpacingInc               </td><td class="description">Increase default spacing</td></tr>
+  <tr><td class="key">r         </td><td class="id">RotateDir                </td><td class="description">Rotate default line direction</td></tr>
+  <tr><td class="key">c         </td><td class="id">SubdivideCols            </td><td class="description">Subdivide columns</td></tr>
+  <tr><td class="key">z         </td><td class="id">Rectify                  </td><td class="description">Zap back to a rectangle</td></tr>
   <tr><td class="key">d         </td><td class="id">Decorations              </td><td class="description">Toggle decorations</td></tr>
-  <tr><td class="key">f         </td><td class="id">Labels                   </td><td class="description">Toggle labels</td></tr>
+  <tr><td class="key">w         </td><td class="id">CircleWarp               </td><td class="description">Make circle</td></tr>
+  <tr><td class="key">1         </td><td class="id">SelectCorners            </td><td class="description">Select corners</td></tr>
+  <tr><td class="key">2         </td><td class="id">SelectMids               </td><td class="description">Select middle controls</td></tr>
+  <tr><td class="key">3         </td><td class="id">SelectEdgeMids           </td><td class="description">Select edge controls</td></tr>
+  <tr><td class="key">4         </td><td class="id">SelectVerticalEdgeMids   </td><td class="description">Select vertical edge controls</td></tr>
+  <tr><td class="key">5         </td><td class="id">SelectHorizontalEdgeMids </td><td class="description">Select horizontal edge controls</td></tr>
+  <tr><td class="key">6         </td><td class="id">SelectAround             </td><td class="description">Select points around current points</td></tr>
+  <tr><td class="key">+V        </td><td class="id">SelectAllVertically      </td><td class="description">Select all vertically</td></tr>
+  <tr><td class="key">v         </td><td class="id">SelectMoreVertically     </td><td class="description">Select next points vertically</td></tr>
+  <tr><td class="key">+H        </td><td class="id">SelectAllHorizontally    </td><td class="description">Select all horizontally</td></tr>
+  <tr><td class="key">h         </td><td class="id">SelectMoreHorizontally   </td><td class="description">Select next points horizontally</td></tr>
+  <tr><td class="key">f         </td><td class="id">ExportSvg                </td><td class="description">Export Svg</td></tr>
+  <tr><td class="key">+R        </td><td class="id">RotateDirR               </td><td class="description">Rotate default line direction</td></tr>
+  <tr><td class="key">+S        </td><td class="id">SpacingDec               </td><td class="description">Decrease default spacing</td></tr>
+  <tr><td class="key">none      </td><td class="id">RenderMode               </td><td class="description">Render mode</td></tr>
+  <tr><td class="key">none      </td><td class="id">Subdivide                </td><td class="description">Subdivide</td></tr>
+  <tr><td class="key">none      </td><td class="id">SubdivideRows            </td><td class="description">Subdivide rows</td></tr>
+<tr><td colspan="3" class="area">CloneInterface</td></tr>
+  <tr><td class="key">Left      </td><td class="id">NextTiling               </td><td class="description">Select next tiling</td></tr>
+  <tr><td class="key">Right     </td><td class="id">PreviousTiling           </td><td class="description">Select previous tiling</td></tr>
+  <tr><td class="key">Up        </td><td class="id">NextBasecell             </td><td class="description">Select next base cell</td></tr>
+  <tr><td class="key">Down      </td><td class="id">PreviousBasecell         </td><td class="description">Select previous base cell</td></tr>
+  <tr><td class="key">l         </td><td class="id">ToggleLines              </td><td class="description">Toggle rendering cell lines</td></tr>
+  <tr><td class="key">Enter     </td><td class="id">ToggleRender             </td><td class="description">Toggle rendering</td></tr>
+  <tr><td class="key">p         </td><td class="id">TogglePreview            </td><td class="description">Toggle preview of lines</td></tr>
 <tr><td colspan="3" class="area">PaperInterface</td></tr>
   <tr><td class="key">a         </td><td class="id">Select                   </td><td class="description">Select or deselect all</td></tr>
   <tr><td class="key">d         </td><td class="id">Decs                     </td><td class="description">Toggle decorations</td></tr>
@@ -346,5 +419,9 @@ Modifiers<br/>
   <tr><td class="key">o         </td><td class="id">Rectify                  </td><td class="description">Make the axes horizontal and vertical</td></tr>
   <tr><td class="key">r         </td><td class="id">Rotate                   </td><td class="description">Rotate selected by 90 degrees</td></tr>
   <tr><td class="key">+R        </td><td class="id">RotateCC                 </td><td class="description">Rotate selected by 90 degrees in the other direction</td></tr>
+<tr><td colspan="3" class="area">GraphicalShell</td></tr>
+  <tr><td class="key">/         </td><td class="id">Activate                 </td><td class="description">Turn on the prompt, if it was off.</td></tr>
+  <tr><td class="key">+^Up      </td><td class="id">ToggleGravity            </td><td class="description">Toggle placement of input bar, top or bottom</td></tr>
+  <tr><td class="key">+^Down    </td><td class="id">ToggleGravity            </td><td class="description">Toggle placement of input bar, top or bottom</td></tr>
 </table>
 </body>

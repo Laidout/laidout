@@ -1,78 +1,86 @@
-#Laidout 0.09.1 Document
-saveas cube.doc
+#Laidout 0.093.1 Document
+saveas /home/tom/other/p/sourceforge/laidout/examples/cube.doc
 imposition NetImposition
   numpages 6
   printnet
+  scalingfromnet 1.26875
+  papers
+    paper
+      matrix 1 0 0 1 0 0
+      outlinecolor 65535 0 0
+      name letter
+      units in
+      width 8.5
+      height 11
+      dpi 360
+      portrait
   net Cube(1)
 page 0
   labeltype -1
   pagestyle PageStyle
-    width 0
-    height 0
+    min_x -2.5375
+    min_y 0
+    width 2.5375
+    height 2.5375
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
+    id pagelayer
 page 1
   labeltype -1
   pagestyle PageStyle
-    width 0
-    height 0
+    min_x -2.5375
+    min_y 0
+    width 2.5375
+    height 2.5375
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
+    id pagelayer
 page 2
   labeltype -1
   pagestyle PageStyle
-    width 0
-    height 0
+    min_x -2.5375
+    min_y 0
+    width 2.5375
+    height 2.5375
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
+    id pagelayer
 page 3
   labeltype -1
   pagestyle PageStyle
-    width 0
-    height 0
+    min_x -2.5375
+    min_y -0
+    width 2.5375
+    height 2.5375
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
+    id pagelayer
 page 4
   labeltype -1
   pagestyle PageStyle
-    width 0
-    height 0
+    min_x -2.5375
+    min_y 0
+    width 2.5375
+    height 2.5375
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
+    id pagelayer
 page 5
   labeltype -1
   pagestyle PageStyle
-    width 0
-    height 0
+    min_x -2.5375
+    min_y 0
+    width 2.5375
+    height 2.5375
   layer 0
-    matrix 1 0 0 1 0 0
-    visible
-    prints
+    id pagelayer
 limbo Limbo 1
-  matrix 1 0 0 1 0 0
   id Limbo 1
-  visible
-  prints
 window
-  xywh 0 16 500 500
+  xywh 0 32 500 500
   pane
     xyxy 0 0 500 500
     window ViewWindow
-      document cube.doc
+      document /home/tom/other/p/sourceforge/laidout/examples/cube.doc
       layout Pages
       spread 0
       page 0
-      matrix 40.45454545 0 0 -40.45454545 55 400
+      matrix 31.88535602 0 0 -31.88535602 91 353
       xbounds -8.5 17
       ybounds -5.5 16.5
       limbo Limbo 1

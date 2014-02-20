@@ -1017,9 +1017,11 @@ void NetImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *conte
 		if (!strcmp(abstractnet->whattype(),"SimpleNet")) {
 			fprintf(f,"%ssimplenet\n",spc);
 			abstractnet->dump_out(f,indent+2,0,context);
-		} else if (!strcmp(abstractnet->whattype(),"Polyhedron") && abstractnet->Modified()) {
+
+		} else if (!strcmp(abstractnet->whattype(),"Polyhedron")) { // && abstractnet->Modified()) {
 			fprintf(f,"%sabstractnet Polyhedron\n",spc);
 			abstractnet->dump_out(f,indent+2,0,context);
+
 		} else if (abstractnet->Filename()) {
 			fprintf(f,"%sabstractnet file\n",spc);
 			//fprintf(f,"%s  filetype %s\n",spc,abstractnet->Filetype());
@@ -1071,6 +1073,7 @@ void NetImposition::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObj
 				tempnet=new Net();
 				if (foundscaling) tempnet->info|=NETIMP_AlreadyScaled;
 				tempnet->dump_in_atts(att->attributes.e[c],flag,context);
+				if (tempnet->info&NETIMP_AlreadyScaled) tempnet->setIdentity();
 				SetNet(tempnet);
 				tempnet->dec_count();
 			}
