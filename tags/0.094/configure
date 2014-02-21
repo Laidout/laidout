@@ -9,7 +9,7 @@ LAIDOUTVERSION=0.094
  # finalprefix is where things eventually get installed. For deb packaging, this is different than prefix
 FINALPREFIX=""
 PREFIX="/usr/local"
-LAXDIR="/usr/local/include/lax"
+LAXDIR=`pwd`/laxkit/lax
 GS="/usr/bin/gs"
 
 LAIDOUT_NOGL=""
