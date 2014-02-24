@@ -236,6 +236,8 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 	//remapHandles();
 
 	sc=NULL;
+
+	if (document) sigimp->NumPages(document->pages.n);
 }
 
 SignatureInterface::~SignatureInterface()
@@ -3248,6 +3250,7 @@ int SignatureInterface::UseThisImposition(Imposition *imp)
 		document=sigimp->doc;
 	}
 
+	if (document) sigimp->NumPages(document->pages.n);
 	ShowThisPaperSpread(0);
 	return 0;
 }
