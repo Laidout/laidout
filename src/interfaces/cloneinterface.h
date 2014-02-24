@@ -182,8 +182,10 @@ class CloneInterface : public LaxInterfaces::anInterface
 	int lastover;
 	int lastoveri;
 	int cur_tiling; //for built ins
+	int mode;
 
 	bool active;
+	bool preview_orient;
 
 	bool trace_cells;
 	bool preview_lines;
@@ -204,16 +206,26 @@ class CloneInterface : public LaxInterfaces::anInterface
 	double uiscale;
 	Laxkit::DoubleBBox box;
 
+	 //selected mode stuff
+	int current_selected;
+	int num_rows, num_cols;
+	int selected_offset;
+	double icon_width;
+
+
 	unsigned int bg_color;
 	unsigned int hbg_color;
 	unsigned int fg_color;
 	unsigned int activate_color;
 	unsigned int deactivate_color;
 
-	LaxInterfaces::RectInterface *rectinterface;
+	bool inrect;
+	LaxInterfaces::RectInterface rectinterface;
 
 	virtual int scan(int x,int y, int *i);
+	virtual int scanSelected(int x,int y);
 
+	virtual int ToggleOrientations();
 	virtual int ToggleActivated();
 	virtual int TogglePreview();
 	virtual int Render();
@@ -251,6 +263,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual int MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 	virtual int Refresh();
+	virtual void RefreshSelectMode();
+	virtual int Mode(int newmode);
 
 	virtual int SetTiling(Tiling *newtiling);
 
