@@ -5,7 +5,7 @@ note to self:
 
                NEW RELEASES
 MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
-----------------------
+------------------------------------------
 (if anyone has a better way of doing this, let me know, I'm new at this)
 
 
@@ -52,24 +52,33 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
  svn ci -m'Last minute touchups to this tag'
 
 
-5. Export a copy of the new tag and make a tarball. 
- svn export https://svn.code.sf.net/p/laidout/code/tags/(whichever) laidout-(version)
-  If Laxkit is to be included, you should export that to the top laidout dir: 
+5. ---Export a copy of the new tag and make a tarball.---
+  a) svn export https://svn.code.sf.net/p/laidout/code/tags/(whichever) laidout-(version)
+	   If Laxkit is to be included, you should export that to the top laidout dir: 
 
- git clone http://github.com/tomlechner/laxkit.git laxkit
- cd laxkit; rm -rf .git;
+	  git clone http://github.com/tomlechner/laxkit.git laxkit
+	  cd laxkit; rm -rf .git;
 
- Do './configure' in the laxkit directory, and for the laidout configure, make sure it always
-   configures to the installed laxkit dir. Configure laidout temporarily to get Makefile-toinclude,
-   which lets you do 'make depends'. then 'make clean'.
-   -to do this in laidout/src: vi `find . -name makedepend`, then something like :%s/\/home\/..../..\/
- make sure all the makedepend files have RELATIVE references, seems to prefer absolute a lot of the time
- make hidegarbage if you haven't already, in src AND in laxkit
- in laidout top dir: rm src/configured.h Makefile-toinclude config.log
- make icons  (for convenience, in case people don't have inkscape installed)
- cd to dir above laidout, and do:
-    tar cjv (the dir) > laidout-version.tar.bz2 
-   this should be the distributed tarball, unpack in some other dir and do a test compile.
+  b) Do './configure' in the laxkit directory, and for the laidout configure, make sure it always
+	   configures to the installed laxkit dir:
+		 laidout-0.094>  ./configure --laxkit=`pwd`/laxkit/lax
+	   Configure laidout temporarily to get Makefile-toinclude,
+	   which lets you do 'make depends'. then 'make clean'.
+	   -to do this in laidout/src: vi `find . -name makedepend`, then something like :%s/\/home\/..../..\/
+	 make sure all the makedepend files have RELATIVE references, seems to prefer absolute a lot of the time
+	 this is necessary to remove references to the packager's computer's directories
+
+  c) make hidegarbage if you haven't already, in src AND in laxkit
+
+  d) in laidout top dir: rm src/configured.h Makefile-toinclude config.log
+
+  e) make icons  (for convenience, in case people don't have inkscape installed):
+      cd src/icons; make
+
+  d) cd to dir above laidout, and do:
+      tar cjv (the dir) > laidout-version.tar.bz2 
+
+     This should be the distributed tarball, unpack in some other dir and do a test compile.
 
 
 6. ---build the package---
