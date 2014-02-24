@@ -86,7 +86,7 @@ const char *LaidoutVersion()
 		const char *outstr=
 						_("Laidout Version %s\n"
 						  "http://www.laidout.org\n"
-						  "by Tom Lechner, sometime between 2006 and 2013\n"
+						  "by Tom Lechner, sometime between 2006 and 2014\n"
 						  "Released under the GNU Public License, Version 2.\n"
 						  " (using Laxkit Version %s)");
 		version_str=new char[1+strlen(outstr)+strlen(LAIDOUT_VERSION)+strlen(LAXKIT_VERSION)];
@@ -392,6 +392,7 @@ int LaidoutApp::init(int argc,char **argv)
 		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
 		if (icon_dir) icons.addpath(icon_dir);
 		icons.addpath(ICON_DIRECTORY);
+		if (!icon_dir) makestr(icon_dir,ICON_DIRECTORY);
 //	}
 	delete[] curexecpath; curexecpath=NULL;
 
