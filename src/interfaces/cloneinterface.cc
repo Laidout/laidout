@@ -2654,6 +2654,7 @@ int CloneInterface::InterfaceOff()
 enum CloneMenuItems {
 	CLONEM_Clear_Base_Objects,
 	CLONEM_Include_Lines,
+	CLONEM_Groupify,
 	CLONEM_Load,
 	CLONEM_Save
 };
@@ -2664,6 +2665,7 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid)
 
     menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
     menu->AddItem(_("Clear current base objects"), CLONEM_Clear_Base_Objects);
+	menu->AddItem(_("Groupify base cells"),    CLONEM_Groupify, LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0));
     menu->AddSep();
     menu->AddItem(_("Load resource"), CLONEM_Load);
     menu->AddItem(_("Save as resource"), CLONEM_Save);
@@ -3055,7 +3057,7 @@ int CloneInterface::scanSelected(int x,int y)
 	x-=(dp->Maxx+dp->Minx)/2-boxw/2;
 	col=x/icon_width/1.2;
 
-	y+=(dp->Maxy+dp->Miny)/2-boxh/2-selected_offset;
+	y-=selected_offset+(dp->Miny+dp->Maxy)/2-boxh/2+icon_width*.2;
 	row=y/icon_width/1.2;
 
 	DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
