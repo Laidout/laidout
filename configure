@@ -277,4 +277,6 @@ echo "  Laxkit headers:  $LAXDIR"
 echo "     Ghostscript:  $GS"
 echo "       Enable GL:  $USINGGL"
 echo
-echo "Now type make to build.";
+echo "If compiling from svn, please follow \"COMPILING FROM SOURCE\" in README.md.";
+echo "Otherwise, now type make to build.";
+

@@ -28,8 +28,11 @@ EPS or image files from other programs as a way to fake having text.
 Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
 
 
-COMPILING
----------
+COMPILING RELEASES
+------------------
+
+If you are compiling from development svn, not from a release, please see
+'Compiling from source' below.
 
 You will need a few extra development libraries on your computer in order
 to compile Laidout. Running ./configure does a simple check for these,
