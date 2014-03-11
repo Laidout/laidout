@@ -15,6 +15,7 @@ GS="/usr/bin/gs"
 LAIDOUT_NOGL=""
 USINGGL="yes"
 ONAMAC="no"
+FORCE="no"
 
  ##
  ## Parse options
@@ -50,9 +51,13 @@ while true ; do
 		echo " --language=path/to/langs     The path where translation files should be installed."
 		echo "                                This will normally be 'share/locale', and the files"
 		echo "                                themselves then get put in prefix/share/locale/*."
+		echo " --force                      Try to compile even if libraries are not detected"
 		echo " --nogl                       Do not compile with gl based features"
         echo ""
 		exit 1 ;;
+    --force)  
+		FORCE="yes";
+		shift ;;
     --finalprefix)  
         if [ -z $optarg ] ; then 
           optarg=$2
@@ -116,16 +121,11 @@ if [ xxx$FINALPREFIX == xxx ] ; then FINALPREFIX=$PREFIX; fi
 
 
 # do check for required libraries:
-#  NEEDED      libX11.so.6
-#  NEEDED      libImlib2.so.1
-#  NEEDED      libfreetype.so.6
-#  NEEDED      libssl.so.0.9.8
-							  
 
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
-#NEED='x11 cupsys freetype2 imlib2 xext ssl'
-NEED='x11  freetype2 imlib2 libssl'
+NEED='x11 xext freetype2 imlib2 libssl'
+NEEDGL='ftgl'
 NUM='1'
 
 for NAME in $NEED; do
@@ -138,6 +138,19 @@ for NAME in $NEED; do
     fi
 done
 #echo NUM=$NUM
+
+if [ $USINGGL == "yes" ]; then 
+	for NAME in $NEEDGL; do
+		echo -n Checking for $NAME......;
+		if [ "`pkg-config --exists --print-errors --errors-to-stdout $NAME`"xxx != "xxx" ] ; then 
+			echo "You need to install the development package of $NAME."; 
+			NUM="";
+		else 
+			echo "ok"; 
+		fi
+	done
+fi
+
 
 
  ## cups doesn't seem to have a pkg-config entry, so do this hackier check
@@ -170,8 +183,8 @@ echo
 
 
 
-if [ "$NUM" != "1" ]; then
-    echo "Too many problems to proceed!"
+if [ "$NUM" != "1" -a $FORCE=="no" ]; then
+    echo "Too many problems to proceed! Use --force to override."
 	exit 1
 fi
 
