@@ -12,6 +12,9 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+ContextMenu: tablet mouse can't click down in?!??
+ContextMenu: mouse hover scan appears to ignore text pad
+
 DONE impose only MUST NOT IGNORE the current document page count
 DONE scribus export ignoring landscape flag?!
 scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
@@ -163,6 +166,7 @@ cloning: convert to master: make a clone be the original..
   means swapping the actual master with the clone
 
 cloner:
+  debug groupify
   click on base cell, update viewport color box
   save color hints of base cells with Tiling object
   change color of boundary, and outline preview
