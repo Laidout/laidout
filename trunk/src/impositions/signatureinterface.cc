@@ -43,6 +43,22 @@ using namespace std;
 namespace Laidout {
 
 
+Laxkit::anXWindow *NewLengthInputWindow(LaxInterfaces::anInterface *owner, const char *name, int x,int y,int w,int h, int border,
+										const char *message, double startvalue)
+{
+	char buf[30];
+	sprintf(buf,"%g",startvalue);
+	LineEdit *win=new LineEdit(owner->curwindow, "lengthinput",name,
+				 ANXWIN_HOVER_FOCUS|ANXWIN_OUT_CLICK_DESTROYS|ANXWIN_ESCAPABLE|LINEEDIT_DESTROY_ON_ENTER|LINEEDIT_GRAB_ON_MAP,
+				 x,y,w,h, border,
+				 NULL,owner->object_id,message,
+				 buf);
+	win->SetSelection(0,-1);
+
+	return win;
+}
+
+
 // *** for debugging:
 void dumpfoldinfo(FoldedPageInfo **finfo, int numhfolds, int numvfolds)
 {
@@ -102,22 +118,24 @@ void dumpfoldinfo(FoldedPageInfo **finfo, int numhfolds, int numvfolds)
 
 #define SP_Sheets_Per_Sig    24
 #define SP_Num_Pages         25
-#define SP_Paper_Name        27
-#define SP_Paper_Orient      28
-#define SP_Current_Sheet     29
+#define SP_Paper_Name        26
+#define SP_Paper_Width       27
+#define SP_Paper_Height      28
+#define SP_Paper_Orient      29
+#define SP_Current_Sheet     30
 
-#define SP_Automarks         30
+#define SP_Automarks         31
 
  //these three currently ignored:
-#define SP_Up                31
-#define SP_X                 32
-#define SP_Y                 33
+#define SP_Up                32
+#define SP_X                 33
+#define SP_Y                 34
 
-#define SP_On_Stack          34
-#define SP_New_First_Stack   35
-#define SP_New_Last_Stack    36
-#define SP_New_Insert        37
-#define SP_Delete_Stack      38
+#define SP_On_Stack          35
+#define SP_New_First_Stack   36
+#define SP_New_Last_Stack    37
+#define SP_New_Insert        38
+#define SP_Delete_Stack      39
 
 #define SP_FOLDS             100
 
@@ -362,7 +380,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 	menu->AddItem(_("Paper Size"),999);
 	menu->SubMenu(_("Paper Size"));
 	for (int c=0; c<laidout->papersizes.n; c++) {
-		if (!strcmp(laidout->papersizes.e[c]->name,"Custom")) continue; // *** 
+		//if (!strcmp(laidout->papersizes.e[c]->name,"Custom")) continue; // *** 
 		if (!strcmp(laidout->papersizes.e[c]->name,"Whatever")) continue;
 
 		menu->AddItem(laidout->papersizes.e[c]->name,c,
@@ -370,7 +388,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 				| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
 	}
 	menu->EndSubMenu();
-	//***menu->AddItem(_("Custom..."),SIGM_CustomPaper);
+	menu->AddItem(_("Custom paper size"),SIGM_CustomPaper);
 	menu->AddItem(_("Paper Size to Final Size"),SIGM_FinalFromPaper);
 
 	if (IsFinal()) {
@@ -452,7 +470,8 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			 //selecting new paper size
 			if (i>=0 && i<laidout->papersizes.n) {
 				if (!strcmp(laidout->papersizes.e[i]->name,"Custom")) {
-					cerr <<" *** need to implement edit custom paper size!!"<<endl;
+					makestr(siginstance->partition->paper->name, _("Custom"));
+					remapHandles();
 					return 0;
 				}
 				SetPaper(laidout->papersizes.e[i]);
@@ -462,6 +481,28 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			return 0;
 		}
 		return 1;
+
+	} else if (!strcmp(mes,"paperwidth")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		double dd=strtof(s->str,NULL);
+		makestr(siginstance->partition->paper->name, _("Custom"));
+		if (siginstance->partition->paper->landscape()) siginstance->partition->paper->height=dd;
+		siginstance->partition->paper->width=dd;
+		siginstance->SetPaper(siginstance->partition->paper,0);
+		remapHandles();
+		needtodraw=1;
+		return 0;
+
+	} else if (!strcmp(mes,"paperheight")) {
+		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
+		double dd=strtof(s->str,NULL);
+		makestr(siginstance->partition->paper->name, _("Custom"));
+		if (siginstance->partition->paper->landscape()) siginstance->partition->paper->width=dd;
+		siginstance->partition->paper->height=dd;
+		siginstance->SetPaper(siginstance->partition->paper,0);
+		remapHandles();
+		needtodraw=1;
+		return 0;
 
 	} else if (!strcmp(mes,"saveAsPopup")) {
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
@@ -505,6 +546,8 @@ void SignatureInterface::createHandles()
 	c =color_h;
 	c2=color_text;
 	controls.push(new ActionArea(SP_Paper_Name       , AREA_H_Slider, siginstance->partition->paper->name, ("Paper to use"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Paper_Width      , AREA_H_Slider, siginstance->partition->paper->name, ("Paper width"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Paper_Height     , AREA_H_Slider, siginstance->partition->paper->name, ("Paper to use"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Paper_Orient     , AREA_H_Slider, "--", ("Paper orientation"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Current_Sheet    , AREA_H_Slider, "Sheet", ("Current sheet"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",  _("Wheel or drag changes number of pages"),0,1,c,0,c2));
@@ -611,12 +654,28 @@ void SignatureInterface::remapHandles(int which)
 		makestr(area->text,siginstance->partition->paper->name);
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(0,hhhh, wwww,hhhh);
+		double xxxx=wwww;
+
+		 //SP_Paper_Width
+		area=control(SP_Paper_Width);
+		sprintf(buffer,"%g",siginstance->partition->paper->w());
+		makestr(area->text,buffer);
+		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
+		area->SetRect(xxxx,hhhh, wwww,hhhh);
+		xxxx+=wwww;
+
+		 //SP_Paper_Height
+		area=control(SP_Paper_Height);
+		sprintf(buffer,"%g",siginstance->partition->paper->h());
+		makestr(area->text,buffer);
+		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
+		area->SetRect(xxxx,hhhh, wwww,hhhh);
+		xxxx+=wwww;
 
 		 //SP_Paper_Orient
 		area=control(SP_Paper_Orient);
 		if (siginstance->partition->paper->landscape()) makestr(area->text,_("Landscape"));
 		else makestr(area->text,_("Portrait"));
-		double xxxx=wwww;
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(xxxx,hhhh, wwww,hhhh);
 
@@ -2022,7 +2081,10 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	if (!(buttondown.isdown(d->id,LEFTBUTTON))) return 1;
 	int dragged=buttondown.up(d->id,LEFTBUTTON);
 
+
 	if (onoverlay) {
+		int curhandle=scanHandle(x,y);
+
 		if (!dragged && onoverlay==SP_On_Stack) {
 			SignatureInstance *sig=sigimp->GetSignature(onoverlay_i,onoverlay_ii);
 			SetPaperFromInstance(sig);
@@ -2060,6 +2122,27 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			onoverlay_i=onoverlay_ii=-1;
 			SetPaperFromInstance(siginstance);
 			needtodraw=1;			
+
+		} else if (onoverlay==curhandle && onoverlay==SP_Paper_Width) {
+			 //create input edit
+			ActionArea *area=control(SP_Paper_Width);
+			anXWindow *w=viewport->findChildWindowByName("lengthinput");
+			if (w) app->destroywindow(w);
+			w=NewLengthInputWindow(this, _("Paper Width"), area->minx,area->miny, 2*(area->maxx-area->minx),area->maxy-area->miny,3,
+											  "paperwidth",siginstance->partition->paper->w());
+			app->addwindow(w);
+			return 0;
+
+		} else if (onoverlay==curhandle && onoverlay==SP_Paper_Height) {
+			 //create input edit
+			ActionArea *area=control(SP_Paper_Height);
+			anXWindow *w=viewport->findChildWindowByName("lengthinput");
+			if (w) app->destroywindow(w);
+			w=NewLengthInputWindow(this, _("Paper Height"), area->minx,area->miny, 2*(area->maxx-area->minx),area->maxy-area->miny,3,
+											  "paperheight",siginstance->partition->paper->h());
+			app->addwindow(w);
+			return 0;
+
 
 		} else if (onoverlay>=SP_FOLDS) {
 			 //selecting different fold maybe...
@@ -2445,10 +2528,10 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 {
 	int row,col,tilerow,tilecol;
 	flatpoint mm;
-	int over=scan(x,y, &row,&col, &mm.x,&mm.y, &tilerow,&tilecol);
 	lasthover.set(x,y);
 	//fp now holds coordinates relative to the element cell
 
+	DBG int over=scan(x,y, &row,&col, &mm.x,&mm.y, &tilerow,&tilecol);
 	DBG cerr <<"over element "<<over<<": r,c="<<row<<','<<col<<"  mm="<<mm.x<<','<<mm.y<<"  tile r,c:"<<tilerow<<','<<tilecol;
 	DBG if (row>=0 && row<signature->numhfolds+1 && col>=0 && col<signature->numvfolds+1)
 	DBG    cerr <<"  xflip: "<<foldinfo[row][col].x_flipped<<"  yflip:"<<foldinfo[row][col].y_flipped
