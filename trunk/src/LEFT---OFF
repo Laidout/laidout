@@ -12,6 +12,11 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+lack of custom page size input
+
+scribus plugin: if directory of executable script is not writable, it fails! 
+ -> should find one that is writable
+
 ContextMenu: tablet mouse can't click down in?!??
 ContextMenu: mouse hover scan appears to ignore text pad
 
@@ -161,6 +166,13 @@ test:
   each export filter
   make some test scripts for command line testing
   test in different window managers
+
+
+interface for custom paper size in:
+    signature editor
+	paper group editor
+  implement paper favorites
+  laidoutrc paper sizes
 
 cloning: convert to master: make a clone be the original.. 
   means swapping the actual master with the clone
