@@ -386,7 +386,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			      for (cc=0; cc<numdiv; cc++) {
 					s=(c+(float)cc/numdiv)/(patch->xsize/3);
 					t=(r+(float)rr/numdiv)/(patch->ysize/3);
-					DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
+					//DBG cerr <<" point s,t:"<<s<<','<<t<<endl;
 
 				     //get color for point (r+rr,c+cc)
 					tt=t/(1-dt);
@@ -495,7 +495,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 	} else if (!strcmp(obj->whattype(),"SomeDataRef")) {
 		SomeDataRef *ref=dynamic_cast<SomeDataRef*>(obj);
 		if (!ref->thedata) {
-			DBG cerr <<" WARNING! missing thedata in a somedataref id:"<<ref->object_id<<endl;
+			//DBG cerr <<" WARNING! missing thedata in a somedataref id:"<<ref->object_id<<endl;
 		} else {
 			double m[6],m2[6];
 			transform_invert(m,ref->thedata->m());
@@ -726,7 +726,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	char *file=NULL;
 	if (!filename) {
 		if (isblank(doc->saveas)) {
-			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+			//DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
 			return 2;
@@ -737,7 +737,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 
 	f=open_file_for_writing(file,0,&log);//appends any error string
 	if (!f) {
-		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
+		//DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
 		return 3;
 	}

@@ -371,6 +371,7 @@ void SpreadInterface::ArrangeSpreads(int how)//how==-1
 int SpreadInterface::Refresh()
 {
 	if (!needtodraw) return 1;
+	//DBG cerr << "SpreadInterface::Refresh()"<<endl;
 	
 	if (firsttime) {
 		firsttime=0;
@@ -388,6 +389,7 @@ int SpreadInterface::Refresh()
 		else needtodraw=0;
 	} else needtodraw=0;
 
+	//DBG cerr <<"pagestorender.n: "<<pagestorender.n<<endl;
 	
 	if (!view) { return 1; }
 
@@ -436,7 +438,7 @@ int SpreadInterface::Refresh()
 						Page *page=doc->pages.e[pg];
 						if (page->thumbmodtime<page->modtime) {
 							 //need to regenerate page thumbnail, add to to-render stack
-							pagestorender.push(page,0);
+							if (pagestorender.findindex(page)<0) pagestorender.push(page,0);
 							needtodraw|=2;
 							thumb=NULL;
 						} else thumb=doc->pages.e[pg]->Thumbnail();

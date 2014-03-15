@@ -128,7 +128,13 @@ int addScribusDocument(const char *file, Document *existingdoc)
 int exportImposedScribus(Document *doc,const char *imposeout)
 {
 	ScribusExportFilter filter;
-	DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,doc->imposition->papergroup);
+
+	cerr <<" Warning: devs need to examine paper/page sizes more closely for scribus export.."<<endl;
+	PaperStyle *paper=doc->imposition->GetDefaultPaper();
+	PaperGroup papergroup(paper);
+	DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,&papergroup);
+	//DocumentExportConfig config(doc,NULL,imposeout,NULL,PAPERLAYOUT,0,-1,doc->imposition->papergroup);
+
 	config.filter=&filter;
 	ErrorLog log;
 	int err=export_document(&config,log);

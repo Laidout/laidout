@@ -186,6 +186,7 @@ PaperStyle::PaperStyle(const char *nname)
 {
 	if (!isblank(nname)) name=newstr(nname); else name=NULL;
 
+	favorite=false;
 	flags=0;
 	dpi=360;
 	width=8.5;
