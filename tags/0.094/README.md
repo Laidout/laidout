@@ -28,8 +28,11 @@ EPS or image files from other programs as a way to fake having text.
 Laidout is built upon the Laxkit (http://laxkit.sourceforge.net).
 
 
-COMPILING
----------
+COMPILING RELEASES
+------------------
+
+If you are compiling from development svn, not from a release, please see
+'Compiling from source' below.
 
 You will need a few extra development libraries on your computer in order
 to compile Laidout. Running ./configure does a simple check for these,
@@ -39,7 +42,7 @@ ssl, and cups.
 
 If you are on a debian based system, you can probably install these with this command:
 
-    apt-get install g++ pkg-config libpng12-dev libx11-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
+    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev
 
 If you want to use the optional Opengl based unwrapper, you should also do this:
 

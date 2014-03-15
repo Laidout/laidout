@@ -52,6 +52,8 @@ class PaperStyle : public Value
 	double dpi;
 	char *defaultunits;
 	unsigned int flags; //1=landscape !(&1)=portrait
+	bool favorite;
+
 	PaperStyle(const char *nname=NULL);
 	PaperStyle(const char *nname,double ww,double hh,unsigned int nflags,double ndpi,const char *defunits);
 	virtual ~PaperStyle();

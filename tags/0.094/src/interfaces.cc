@@ -24,6 +24,7 @@
 #include <lax/interfaces/colorpatchinterface.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/engraverfillinterface.h>
+#include <lax/interfaces/freehandinterface.h>
 #include <lax/lists.cc>
 
 #include "interfaces.h"
@@ -81,7 +82,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 
 
-	if (laidout->experimental) {
+	//if (laidout->experimental) {
 		// *************** testing:
 
 		//i=new CaptionInterface(id++,NULL);
@@ -93,8 +94,13 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
+		 //------Freehand
+		i=new FreehandInterface(NULL,id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
 		// *************** end testing
-	}
+	//}
 
 
 	 //------Group

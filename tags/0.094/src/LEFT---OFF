@@ -12,6 +12,21 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+lack of custom page size input
+
+scribus plugin: if directory of executable script is not writable, it fails! 
+ -> should find one that is writable
+
+ContextMenu: tablet mouse can't click down in?!??
+ContextMenu: mouse hover scan appears to ignore text pad
+
+DONE impose only MUST NOT IGNORE the current document page count
+DONE scribus export ignoring landscape flag?!
+scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
+papergroup tool NEEDS 1:1 paper matrix reset, maybe say what paper dimensions
+papergroup tool needs custom paper input
+scribus export should show actual version export
+
 hang after reparent
 
 text window controls have difficulties
@@ -53,6 +68,10 @@ switch to None document, and units change to unreasonable
 
 
 ---- bugs:
+
+debian/rules seems to need dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info, due to some kind of libGL mixup
+
+why no icon in menus?
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 
@@ -134,7 +153,7 @@ pdf export if a path has null linestyle/fillstyle it buffers until next path dra
    instead of drawing with some default style
 
 
-----------------0.094 ROADMAP ITEMS: features and enhancements------------------------
+----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
 update fileformat.txt
 check laidout.1 when time to release
 update docs to have new release number
@@ -148,36 +167,32 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+
+interface for custom paper size in:
+    signature editor
+	paper group editor
+  implement paper favorites
+  laidoutrc paper sizes
+
 cloning: convert to master: make a clone be the original.. 
   means swapping the actual master with the clone
 
 cloner:
+  debug groupify
   click on base cell, update viewport color box
   save color hints of base cells with Tiling object
   change color of boundary, and outline preview
-  need mass select page for all tiling types
+  DONE need mass select page for all tiling types
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   select objects, wrap base cell around it
   debug recursive
   need rudimentary editor
-  DONE drag object proxies to place in base cells, use basecell preview as final origin/orientation
-  DONE in basecell preview, indicate which clones belong to which basecells
-  DONE debug colorings
-  DONE change colors of base cell outlines
-  DONE implement add to document: debug placement
-  DONE implement setting objects for each base cell
-  DONE implement boundary check
-  DONE select base cell objects should exclude those that have preview as parent
- 0.95:
   need flag for ok for cell to shear, ok for cell to scale x/y independently, and have it apply as it should afterwards
   need finishing tool
   design interface for clone on path
   implement circular interface
   penrose/heesh/net clone interface
   need progressive search when mouse over box
-
-  DONE cell outlines bad for p4m, p4g, p6m --> was problem in new pathsdata->append() 
-  DONE implement moving around base cells
 
 space cloning/duping doesn't work
  
@@ -205,19 +220,13 @@ customizable object child relationships to parent, rather than simple transform
   implement click rule, update display, watch for offset
   anchor names should not have quotes in them, because disk i/o is easier and I'm lazy
   problems when anchors are on a page that is not at origin?
-
-  DONE other objects
-  DONE loading: update in Project during somedataref check
-  DONE Singles not creating page outline and margins loading in file
-
-  for 0.095:
-    check for only align objects that are on pages
-    margin area anchors not staying when margins change
-    transform relative to alignment point of parent (50,50) for center, for instance
-    code
-	edge magnet
-    when trying to move an anchor when you still need to select invariants, flash the invariants
-	need edge indicators for more convenient snapping
+  check for only align objects that are on pages
+  margin area anchors not staying when margins change
+  transform relative to alignment point of parent (50,50) for center, for instance
+  code
+  edge magnet
+  when trying to move an anchor when you still need to select invariants, flash the invariants
+  need edge indicators for more convenient snapping
 
 
 gshell: test
@@ -238,13 +247,11 @@ calculator
   curline not getting incremented properly when there is skipping or looping going on
   implement a PaperSizes object that recognizes all the names, or maybe a set somewhere with all names?
   Math.oeuaeou does not produce an error
-
-  0.095:
-    allow if statements on single line without curly braces
-    inputting lines when open {"( maybe prompt "... " to wait for closure?
-    how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
-    destructors
-    show overloaded entries
+  allow if statements on single line without curly braces
+  inputting lines when open {"( maybe prompt "... " to wait for closure?
+  how best to allow created object defs to be referenced as parameter, variable, or set types, it is a mess right now
+  destructors
+  show overloaded entries
 
   DONE debug "return value"
   DONE debug foreach
@@ -267,8 +274,6 @@ calculator
   DONE AddName seems to work unevenly
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
-
-----------------0.095 ROADMAP ITEMS, features and enhancements------------------------
 
 overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
 
@@ -949,109 +954,3 @@ These can then be purged after each release...
 
 
 
-DONE input base in no "config" in objects
-DONE drawable groups should be able to have non L objects
-DONE need to merge Group and DrawableObject
-DONE path linestyle should not directly use GX*
-DONE edit current doc settings not calling up editor!!
-DONE update webpage with current svn repo
-DONE optimize pdf especially... too much duplication!!
-DONE in tiled, can no longer select objects in the other tiles, wtf!!!
-
-DONE RulerWindow::smallnumbers font swapping is flooding debug info
-
-DONE selecting fails for meshes!!! Grrrr!
-DONE color mesh memory corruption
-DONE patch moving things frelled, load monkey.doc and try to move things
-
-DONE add more explicit lpoptions howto for help, in lieu of functional print dialog
-
-DONE select imposition template doesn't update paper style
-DONE spread editor freezing X on large number of page thumbnails to render
-
-DONE space not centering spread
-
-DONE NetImposition:
-  DONE import obj files
-  DONE  import 3-d models such as from OFF files
-  DONE gui for above -> select file in creation dialog
-
-DONE need laidout import
-
-DONE for help, need some standardized way to list mouse actions!!
-
-Spread Editor:
-  DONE (faux bg, renders 1 per refresh until none) background preview rendering for spreadeditor
-  DONE select all/none
-  DONE delete pages
-  DONE Insert page before
-  DONE Insert page after
-
-DONE Signature editor, not centering for certain paper sizes
-
-DONE Signature editor:
-  DONE add hooks for page preview
-  DONE page style specific to EACH instance, not global
-  DONE stacked page range not correct
-  DONE after edit document settings, final page handles location messed up 
-  DONE edit new booklet... final cell handles not mapped right
-  DONE signature not duplicating right
-  DONE implement multistack interface
-  DONE not updating or importing numpages with new doc
-  DONE litte red X marks to delete stacks/inserts
-  DONE implement drag to adjust instead of wheel
-  DONE not updating paper size with new doc dialog
-  DONE add on canvas selectors for paper size, num pages, front/back
-  DONE hang on add pages
-  DONE (maybe) make page number shown reflect correctly when folding/unfolding
-
-DONE menus should activate ONLY WHEN MOUSE UP ON SAME AS DOWN!!!!
-
-DONE there should be a default paper
-
-DONE finish implementing all options for reimpose function
-
-DONE put all in Laidout namespace?
-
-DONE Laidout application icon for window manager paging seems to be broken
-
-DONE shortcut dialog:
-  DONE save/restore column setting
-  DONE in/out for remember
-  DONE should be able to clear shortcut in dialog
-  DONE hover indicator intrusive
-
-DONE hedron edit goes to netdialog, should have "current" option...
-
-DONE Imposition Editor:
-  DONE net paper spread allows tinkering with printer marks. Good or no?? lock position?
-  DONE cube, singles vs. page, page doesn't scale objects correctly
-  DONE   dodeca, seems to work ok
-  DONE   laidout -n cube does fine, but newdoc a cube, then import images doesn't scale images properly for net spreads.
-  DONE reimpose from net produces object infinity matrix
-  DONE net reimpose doesn't work
-  DONE Singles reimpose doesn't work
-  DONE Singles has message from Signature editor tool
-
-DONE shortcuts: default to load and save "default" keys in a standard location
-
-DONE path tool:
-  DONE click to add point not working
-  DONE sometimes 'p' doesn't work
-
-DONE gshell:
-  DONE need to be able to access affine stuff of objects! not returning info for gradients
-  DONE not updating to current viewport object
-  DONE viewport->ZoomToPage not doing anything
-  DONE single character not triggering an update
-  DONE clickable search results
-  DONE be able to move the box to top or to bottom
-  DONE *** is doing functionevaluator cast before checking for dedicated evaluator object
-  DONE *** not putting in the objects to dict
-  DONE red box for errors
-  DONE *** laidoutcalculator::dereference() seems to destroy value, as objectdef of zoomin
-  DONE up/down to browse history
-  DONE *** need to be able to tab through search term
-  DONE store initial search term while in completion mode
-
-DONE polyptych site?

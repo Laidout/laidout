@@ -31,7 +31,7 @@ class TextUnderline : public TextEffect
 {
   public:
 	int linetype; //underline, double underline, strikethrough, etc
-	int wordunderline;
+	int wordunderline; //nonzero if so
 	int underlinestyle;
 	double offset; //% of fontsize off baseline, either underline or strikethrough
 	LineStyle *linestyle;
@@ -67,13 +67,30 @@ class DropCaps : public TextEffect
 	int numlines;
 	int wrap; //how to wrap
 	//	hang initial punc.. like "Blah" ...
+	//	                          Blah blah...
 };
 
 class LFont
 {
   public:
+	char *file;
 	double font_size;
 	const char *font_family, *font_style;
+	virtual double Extent(const char *str,int len, double *real_ascent, double *real_descent);
+	virtual double Em();
+};
+
+class MultiFont : public LFont
+{
+  public:
+	class FontComponent
+	{
+	  public:
+		LFont *font;
+		Color *color;
+	};
+
+	PtrStack<FontComponent> fonts;
 };
 
 class CharacterStyle : public Style
@@ -94,9 +111,10 @@ class CharacterStyle : public Style
 	double h_scaling, v_scaling; //contentious glyph scaling
 
 	 //more thorough text effects
-	PtrStack<TextEffect> above_effects; //lines and such drawn after the glyphs are drawn
-	PtrStack<TextEffect>  char_effects; //adjustments to char style before rendering, like small caps, all caps, no caps, outline, bold, etc
+	PtrStack<TextEffect> glyph_effects; //adjustments to characters or glyphs that changes metrics, making them different shapes or chars, like small caps, all caps, no caps, scramble, etc
 	PtrStack<TextEffect> below_effects; //additions like highlighting, that exist under the glyphs
+	PtrStack<TextEffect>  char_effects; //transforms to glyphs that do not change metrics, fake outline, fake bold, etc
+	PtrStack<TextEffect> above_effects; //lines and such drawn after the glyphs are drawn
 
 	CharacterStyle();
 	virtual ~CharacterStyle();
@@ -106,8 +124,10 @@ class TabStopInfo
 {
   public:
 	int tabtype; //left, center, right, char
+	char utf8char[10]; //if char type
+
+	int positiontype; //automatic position, definite position, path
 	double position; //if not path
-	char utf8char[10];
 	PathsData *path;
 
 	TabStopInfo *next;
@@ -117,7 +137,7 @@ class ParagraphStyle : public Style
 {
   public:
 	int hyphens; //whether to have them or not
-	double h_width,h_shrink,h_grow, h_penalty; //hyphen metrics
+	double h_width,h_shrink,h_grow, h_penalty; //hyphen metrics, still use the font's character, though
 
 
 	int gap_above_type; //0 for  % of font size, 1 for absolute number
