@@ -185,6 +185,9 @@ echo
 
 if [ "$NUM" != "1" -a $FORCE=="no" ]; then
     echo "Too many problems to proceed! Use --force to override."
+	echo
+	echo "On debian based systems, you might try installing all dependencies with this:"
+	echo "    apt-get install g++ pkg-config libpng12-dev libreadline-dev libx11-dev libxext-dev libxi-dev libxft-dev libcups2-dev libimlib2-dev libfontconfig-dev libfreetype6-dev libssl-dev xutils-dev libgraphicsmagick++1-dev mesa-common-dev libglu1-mesa-dev libftgl-dev"
 	exit 1
 fi
 

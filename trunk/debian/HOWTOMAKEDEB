@@ -11,6 +11,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 1. Double check that these are current:
   debian/laidout.1
+  README.md  <-  must have updated dependency list
   the laidoutrc description dump out in laidout.cc
 
 
@@ -72,10 +73,12 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
   d) in laidout top dir: rm src/configured.h Makefile-toinclude config.log
 
-  e) make icons  (for convenience, in case people don't have inkscape installed):
+  e) if cairo is still not working, make sure to disable in code and not link in Makefiles
+
+  f) make icons  (for convenience, in case people don't have inkscape installed):
       cd src/icons; make
 
-  d) cd to dir above laidout, and do:
+  g) cd to dir above laidout, and do:
       tar cjv (the dir) > laidout-version.tar.bz2 
 
      This should be the distributed tarball, unpack in some other dir and do a test compile.
