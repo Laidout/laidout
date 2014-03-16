@@ -50,6 +50,7 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
  make hidegarbage 
  (make sure same is done for laxkit, as Laidout currently statically
   links against laxkit, which also uses the same system to hide debugging code)
+ make sure experimental shield is active
  svn ci -m'Last minute touchups to this tag'
 
 
@@ -59,6 +60,8 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
 	  git clone http://github.com/tomlechner/laxkit.git laxkit
 	  cd laxkit; rm -rf .git;
+
+	  make sure in laidout/configure: LAXDIR=`pwd`/laxkit/lax
 
   b) Do './configure' in the laxkit directory, and for the laidout configure, make sure it always
 	   configures to the installed laxkit dir:
@@ -88,6 +91,14 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 dpkg-buildpackage -rfakeroot in top laidout directory
 This often will expose otherwise unknown errors, I think because making the deb packages uses lots more
 compile flags. You can do "fakeroot debian/rules binary" to not have to recompile everything after fixing.
+
+If you fail with this error:
+  dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+then you need to change:
+  dh_shlibdeps
+in debian/rules to:
+  dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+Maybe something to do with non-packaged NVidia drivers?
 
 
 7. After file release is uploaded, don't forget to:
