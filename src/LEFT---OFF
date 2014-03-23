@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+click enter area of color pickers, does not install color!!!!
+
 lack of custom page size input
 
 scribus plugin: if directory of executable script is not writable, it fails! 
@@ -167,6 +169,15 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+
+vital to debug send to printer
+export needs "batch" send, break into smaller segments
+need page number overlay
+  
+views with multiple spreads
+
+file selector.. need sort by mod date or name, exclude/include directories
+	need hover indicator, and better scan.. ignoring offset
 
 interface for custom paper size in:
     signature editor
