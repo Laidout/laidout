@@ -43,6 +43,7 @@
 #include "interfaces/graphicalshell.h"
 #include "interfaces/anchorinterface.h"
 #include "interfaces/cloneinterface.h"
+#include "interfaces/animationinterface.h"
 
 
 using namespace Laxkit;
@@ -82,7 +83,7 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 
 
-	//if (laidout->experimental) {
+	if (laidout->experimental) {
 		// *************** testing:
 
 		//i=new CaptionInterface(id++,NULL);
@@ -99,8 +100,13 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
+		 //------Animation
+		i=new AnimationInterface(NULL,id++,NULL);
+		existingpool->push(i);
+		i->dec_count();
+
 		// *************** end testing
-	//}
+	}
 
 
 	 //------Group
