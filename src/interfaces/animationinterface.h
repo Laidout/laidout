@@ -72,6 +72,13 @@ class ObjectTimeline : public Laxkit::anObject
 	Laxkit::PtrStack<KeyFrame> keyframes;
 };
 
+class SceneInfo : public Laxkit::anObject
+{
+  public:
+	char *name;
+	double length_seconds;
+	double offset_start;
+};
 
 //------------------------------------- AnimationInterface --------------------------------------
 
@@ -79,17 +86,20 @@ class AnimationInterface : public LaxInterfaces::anInterface
 {
   protected:
 
-
 	int firsttime;
 	int hover;
 	int hoveri;
 	int mode;
 
-
+	//ObjectTimeline *global_time;
 	double animation_length; //in seconds
-	double fps;
-	double current_fps;
+	double ui_first_time, ui_last_time;
+	double current_time;
+	double fps; //0 means continuous
+	double current_fps; //==fps*speed
 	double speed; //1==normal
+	int timerid;
+	int currentframe;
 	bool playing;
 	bool showdecs;
 
@@ -106,6 +116,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 
 
 	virtual int scan(int x,int y, int *i);
+	virtual void UpdateHoverMessage(int hover);
 
 	virtual bool Play(int on); //-1==toggle
 
@@ -132,6 +143,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	virtual int InterfaceOff(); 
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
+	virtual int  Idle(int tid=0);
 
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
