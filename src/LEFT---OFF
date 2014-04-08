@@ -12,6 +12,9 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+ubuntu resize window failing
+gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application propery
+
 click enter area of color pickers, does not install color!!!!
 
 lack of custom page size input
