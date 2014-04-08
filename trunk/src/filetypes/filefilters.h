@@ -95,6 +95,8 @@ class DocumentExportConfig : public Style
 	int target;
 	int start,end;
 	int layout;
+	enum EvenOdd { All,Even,Odd } evenodd;
+	int batches;
 	Document *doc;
 	Group *limbo;
 	char *filename;
