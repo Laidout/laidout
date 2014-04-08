@@ -82,6 +82,7 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
 
 	selection=NULL;
 
+	timerid=0;
 	animation_style=0;
 	hover=ANIM_None;
 	hoveri=-1;
@@ -89,6 +90,7 @@ AnimationInterface::AnimationInterface(anInterface *nowner,int nid,Laxkit::Displ
 
 	sc=NULL;
 
+	fps=12;
 	firsttime=1;
 	uiscale=1;
 	bg_color =rgbcolorf(.9,.9,.9);
@@ -124,6 +126,10 @@ void AnimationInterface::Clear(LaxInterfaces::SomeData *d)
 { // ***
 }
 
+enum AnimationInterfaceActions {
+		ANIMATION_AddKeyframe
+	};
+
 Laxkit::ShortcutHandler *AnimationInterface::GetShortcuts()
 {
 	if (sc) return sc;
@@ -135,7 +141,9 @@ Laxkit::ShortcutHandler *AnimationInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("AnimationInterface");
 
-//	sc->Add(CLONEIA_Next_Tiling,        LAX_Left,0,0,  "NextTiling",        _("Select next tiling"),    NULL,0);
+	sc->Add(ANIMATION_AddKeyframe,  'k',0,0,  "AddKeyframe",    _("Add keyframe for selected objects"),    NULL,0);
+
+
 //	sc->Add(CLONEIA_Previous_Tiling,    LAX_Right,0,0, "PreviousTiling",    _("Select previous tiling"),NULL,0);
 //	sc->Add(CLONEIA_Next_Basecell,      LAX_Up,0,0,    "NextBasecell",      _("Select next base cell"),    NULL,0);
 //	sc->Add(CLONEIA_Previous_Basecell,  LAX_Down,0,0,  "PreviousBasecell",  _("Select previous base cell"),    NULL,0);
@@ -157,6 +165,11 @@ Laxkit::ShortcutHandler *AnimationInterface::GetShortcuts()
 
 int AnimationInterface::PerformAction(int action)
 {
+	if (action==ANIMATION_AddKeyframe) {
+		 //add for all selected objects
+		if (selection->n()==0) return 0; 
+		return 0;
+	}
 
 	return 1;
 }
@@ -229,11 +242,11 @@ int AnimationInterface::UseThis(Laxkit::anObject *ndata,unsigned int mask)
 
 int AnimationInterface::Refresh()
 {
-	if (!needtodraw) return 0;
+	if (!dp || !needtodraw) return 0;
 	needtodraw=0;
 
 
-	double circle_radius=INTERFACE_CIRCLE*uiscale;
+	double boxh=INTERFACE_CIRCLE*uiscale;
 
 	//  1. rewind to beginning 
 	//  2. play backwards/faster backwards
@@ -245,16 +258,16 @@ int AnimationInterface::Refresh()
 	//  |<  <  >  >  >|    ---------*----------------------------
 
 	if (firsttime==1) {
-		firsttime=0;
+		firsttime=2;
 		box.minx=10;
-		box.maxx=10+4*circle_radius*uiscale;
+		box.maxx=10+5*boxh;
 		box.miny=10;
-		box.maxy=10+circle_radius*uiscale + 2*dp->textheight();
+		box.maxy=10+boxh;
 	} else if (firsttime==2) {
 		 //remap control box size only, leave in same place
 		firsttime=0;
-		box.maxx=box.minx+4*circle_radius*uiscale;
-		box.maxy=box.miny+circle_radius*uiscale + 2*dp->textheight();
+		box.maxx=box.minx+5*boxh;
+		box.maxy=box.miny+boxh;
 	}
 
 
@@ -262,20 +275,32 @@ int AnimationInterface::Refresh()
 	dp->DrawScreen();
 
 	 //draw whole rect outline
-	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
-	dp->NewBG(bg_color);
-	dp->NewFG(fg_color);
-	dp->drawrectangle(box.minx,box.miny, box.maxx-box.minx,box.maxy-box.miny, 2);
-
-
 	double h=box.maxy-box.miny;
-	dp->drawthing(h/2+box.minx  ,box.miny+h/2, h/3,h/3, 1, THING_Double_Triangle_Left);
-	dp->drawthing(h/2+box.minx+h,box.miny+h/2, h/3,h/3, 1, THING_Triangle_Left);
-	if (playing) dp->drawthing(h/2+box.minx+2*h,box.miny+h/2, h/3,h/3, 1, THING_Pause);
-	else dp->drawthing(h/2+box.minx+2*h,box.miny+h/2, h/3,h/3, 1, THING_Triangle_Right);
-	dp->drawthing(h/2+box.minx+3*h,box.miny+h/2, h/3,h/3, 1, THING_Triangle_Right);
-	dp->drawthing(h/2+box.minx+4*h,box.miny+h/2, h/3,h/3, 1, THING_Double_Triangle_Right);
+	dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
+	dp->moveto(box.minx+h/2,box.miny);
+	dp->lineto(box.minx+5.5*h,box.miny);
+	dp->curveto(flatpoint(box.minx+6*h,box.miny),flatpoint(box.minx+6*h,box.maxy),flatpoint(box.minx+5.5*h,box.maxy));
+	dp->lineto(box.minx+.5*h,box.maxy);
+	dp->curveto(flatpoint(box.minx,box.maxy),flatpoint(box.minx,box.miny),flatpoint(box.minx+.5*h,box.miny));
+	dp->closed();
+	dp->NewFG(bg_color);
+	dp->fill(1);
+	dp->NewFG(fg_color);
+	dp->stroke(0);
 
+	dp->drawthing(h/2+(box.minx+h/2)  ,box.miny+h/2, h/3,h/3, 1, THING_To_Left);
+	dp->drawthing(h/2+(box.minx+h/2)+h,box.miny+h/2, h/3,h/3, 1, THING_Triangle_Left);
+	if (playing) dp->drawthing(h/2+(box.minx+h/2)+2*h,box.miny+h/2, h/3,h/3, 1, THING_Pause);
+	else dp->drawthing(h/2+(box.minx+h/2)+2*h,box.miny+h/2, h/3,h/3, 1, THING_Triangle_Right);
+	dp->drawthing(h/2+(box.minx+h/2)+3*h,box.miny+h/2, h/3,h/3, 1, THING_Triangle_Right);
+	dp->drawthing(h/2+(box.minx+h/2)+4*h,box.miny+h/2, h/3,h/3, 1, THING_To_Right);
+
+	 //------------draw timeline ------------
+	double tstart=box.minx+6.2*h;
+	double tend=dp->Maxx-h*.2;
+	double y=(box.minx+box.maxy)/2;
+	dp->NewFG(coloravg(fg_color,bg_color));
+	dp->drawrectangle(tstart,y-h*.05, tend-tstart,h*.1, 1);
 
 	dp->DrawReal();
 
@@ -295,14 +320,14 @@ int AnimationInterface::scan(int x,int y, int *i)
 
 	 //check for things related to the tiling selector
 	if (box.boxcontains(x,y)) {
-		x-=box.minx;
-		y-=box.miny;
 		double h=box.maxy-box.miny;
-		if (x<h) return ANIM_Rewind;
-		if (x<2*h) return ANIM_Backwards;
-		if (x<3*h) return ANIM_Play;
-		if (x<4*h) return ANIM_Faster;
-		return ANIM_To_End;
+		double xx=(x-box.minx-h/2)/(double)h;
+		y-=box.miny;
+		if (xx<1) return ANIM_Rewind;
+		if (xx<2) return ANIM_Backwards;
+		if (xx<3) return ANIM_Play;
+		if (xx<4) return ANIM_Faster;
+		if (xx<5) return ANIM_To_End;
 	}
 
 	return ANIM_None;
@@ -320,6 +345,13 @@ int AnimationInterface::LBDown(int x,int y,unsigned int state,int count,const La
 	return 0;
 }
 
+int AnimationInterface::Idle(int tid)
+{
+	currentframe++;
+	DBG cerr << "(note: not actual frame, this is event tick) Frame #"<<currentframe<<endl;
+	return 0;
+}
+
 bool AnimationInterface::Play(int on)
 {
 	bool play=playing;
@@ -332,9 +364,13 @@ bool AnimationInterface::Play(int on)
 	playing=play;
 	 
 	if (playing) {
-		//*** set up timer
+		 //set up timer
+		timerid=app->addtimer(this, 1/fps*1000, 1/fps*1000, -1);
+		currentframe=0;
 	} else {
-		// *** remove timer
+		 //remove timer
+		if (timerid) app->removetimer(this,timerid);
+		timerid=0;
 	}
 
 	needtodraw=1;
@@ -351,7 +387,11 @@ int AnimationInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	int firstover=ANIM_None;
 	//int dragged=
 	buttondown.up(d->id,LEFTBUTTON, &firstover);
+	int over=scan(x,y,NULL);
 
+	if (firstover==over && over==ANIM_Play) {
+		Play(-1);
+	}
 
 	return 0;
 }
@@ -364,6 +404,17 @@ int AnimationInterface::Mode(int newmode)
 	return mode;
 }
 
+void AnimationInterface::UpdateHoverMessage(int hover)
+{
+	if (hover==ANIM_None) PostMessage(" ");
+	else if (hover==ANIM_Play) PostMessage(playing?_("Pause"):_("Play"));
+	else if (hover==ANIM_Rewind) PostMessage(_("Jump to start"));
+	else if (hover==ANIM_To_End) PostMessage(_("Jump to end"));
+	else if (hover==ANIM_Faster) PostMessage(_("Play faster foward"));
+	else if (hover==ANIM_Backwards) PostMessage(_("Play faster backwards"));
+	else PostMessage(" ");
+}
+
 int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse)
 {
 
@@ -372,9 +423,11 @@ int AnimationInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	DBG cerr <<"over box: "<<over<<endl;
 
 	if (!buttondown.any()) {
-		if (hover!=over) needtodraw=1;
+		if (hover!=over) {
+			needtodraw=1;
+			UpdateHoverMessage(over);
+		}
 		hover=over;
-		if (hover==ANIM_None) PostMessage(" ");
 		return 0;
 	}
 
