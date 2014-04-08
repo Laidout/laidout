@@ -874,9 +874,18 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
  *
  * \todo *** implement me!!
  */
+/*! \var int DocumentExportConfig::batches
+ * Whether to create new files for several spreads in one. For instance, say batches==4, then
+ * for every 4 sreads, create one file (or export). Continue for the whole range of papers.
+ */
+/*! \var EvenOdd DocumentExportConfig::evenodd
+ * Whether to export all, only even indices, or only odd indices of spreads.
+ */
 
 DocumentExportConfig::DocumentExportConfig()
 {
+	evenodd=All;
+	batches=0;
 	filter=NULL;
 	target=0;
 	filename=NULL;
@@ -899,6 +908,9 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 										   int l,int s,int e,
 										   PaperGroup *group)
 {
+	evenodd=All;
+	batches=0;
+
 	target=0;
 	filename=newstr(file);
 	tofiles=newstr(to);
