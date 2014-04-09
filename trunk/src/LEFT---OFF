@@ -173,6 +173,34 @@ test:
   test in different window managers
 
 
+Clean up mesh/patch controls:
+  selected nodes should probably be colored, just gray disappears, hard to work with
+  maybe have status message say how many points are selected
+  nudge mode with shift?
+  smooth edit mode should be default. It's not working when more than one square
+  rotate/scale single control point should move attached controls in smooth mode
+  add new patches should smoothify joins when in smooth edit
+  rect select nodes
+  for cache preview, only update affected patches.. difficult to compute when overlaps
+  changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
+  implement right button config options to make the settings more discoverable
+  circle warp needs a proper circle/ellipse interface
+  perhaps a line warp, using line width adjustable path interface
+
+engraving tool:
+  implement custom line merge and break to preserve spacing across mesh contraction
+  value image to trace to lines:
+    when manual tweaking, need to produce value reference so that future line orienting preserves line thicknesses
+	be able to sample page objects beneath selected engraving object?
+  need optional spacing image map, which is a mask like image that preserves spacing 
+  be able to work on multiple engraved objects?
+  should be able to increase point sample resolution
+  current blockout is not very precise, needs approximation between existing point samples
+  perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
+  need controls to adjust map between "thickness" value and actual rendered thickness and style:
+    values underneath a certain threshhold should optionally render as if they were blocked out
+
+
 vital to debug send to printer
 export needs "batch" send, break into smaller segments
 need page number overlay
@@ -508,6 +536,11 @@ paperinterface:
                           W: 8.5 H: 11
         [delete paper type][new paper type]
 
+icons for the following, perhaps be right click on the save button?
+  save as
+  save a copy
+  save as template (just saves in ~/.config/laidout/version/templates)
+
 saving when net is internal is not proper.. does not distinguish between diff. nets and whole
 
 import config generic things like enum keepmystery should be parsed when no import config given!!
@@ -755,16 +788,6 @@ filters:
   svg out: radial:transparent inner circle, patch
              patch edges
   remember last export
-
-Clean up mesh/patch controls
-  nudge mode with shift?
-  smooth edit mode should be default. It's not working
-  rotate/scale single control point should move attached controls in smooth mode
-  add new patches should smoothify joins when in smooth edit
-  rect select nodes
-  selected nodes are not clearly indicated
-  for cache preview, only update affected patches
-  changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
 
 need infrastructure to propagate and save tool settings
 
