@@ -535,7 +535,7 @@ int LaidoutViewport::FocusOn(const Laxkit::FocusChangeData *e)
 
 int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 {
-	DBG cerr <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
+	//DBG cerr <<"ViewWindow "<<whattype()<<" got message: "<<mes<<endl;
 
 
 	if (!strcmp(mes,"docTreeChange")) {
