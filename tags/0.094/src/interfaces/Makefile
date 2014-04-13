@@ -23,7 +23,8 @@ objs= \
 	graphicalshell.o \
 	objectindicator.o \
 	paperinterface.o \
-	cloneinterface.o 
+	cloneinterface.o \
+	animationinterface.o
 
 
 

@@ -8,6 +8,8 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.095
 -------------
        debug version 0.094!
+       be able to trace images in engraver tool
+       Clean up patch controls
        Clone Pattern Builder
        Custom alignments to parents, not just affine transform to parent
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
@@ -39,7 +41,6 @@ VERSION 0.095
        autosave for autorecover
        Optimize pdf export to rescale to target dpi, and compress image data
        Clean up project load/save internals and dialogs
-       Clean up patch controls
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 

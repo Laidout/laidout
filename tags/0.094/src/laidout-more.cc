@@ -289,6 +289,11 @@ void LaidoutApp::InitializeShortcuts()
 	if (initialized) return;
 	initialized=1;
 
+	ShortcutManager *manager=GetDefaultShortcutManager();
+	char buffer[200];
+	sprintf(buffer,"Laidout %s Shortcuts",LAIDOUT_VERSION);
+	makestr(manager->settitle,buffer);
+
 	 //for each head window pane
 	HeadWindow h(NULL,"","",0, 0,0,0,0,0);
 	h.InitializeShortcuts();

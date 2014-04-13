@@ -109,6 +109,10 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	fileedit=filesedit=printstart=printend=command=NULL;
 	filecheck=filescheck=commandcheck=printall=printcurrent=printrange=NULL;
 
+	batches=NULL;
+	batchnumber=NULL;
+
+	everyspread=evenonly=oddonly=NULL;
 }
 
 /*! Decs count of config.
@@ -378,6 +382,58 @@ int ExportDialog::init()
 	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
 	AddNull();
 
+
+	//----------------------------- Selected range options
+	double textheight=text_height();
+	last=everyspread=new CheckBox(this,"everyspread",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,filesedit->win_h,0, 
+						 last,object_id,"everyspread",
+						 _("Every spread"), 0,5);
+	everyspread->State(config->evenodd==DocumentExportConfig::All ? LAX_ON : LAX_OFF);
+	everyspread->tooltip(_("Export each spread"));
+	AddWin(everyspread,1,-1);
+
+	AddHSpacer(textheight,0,2*textheight,50);
+	last=evenonly=new CheckBox(this,"evenonly",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"evenonly",
+						 _("Even only"), 0,5);
+	evenonly->State(config->evenodd==DocumentExportConfig::Even ? LAX_ON : LAX_OFF);
+	evenonly->tooltip(_("Export only spreads with even indices"));
+	AddWin(evenonly,1,-1);
+
+	AddHSpacer(textheight,0,2*textheight,50);
+	last=oddonly=new CheckBox(this,"oddonly",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"oddonly",
+						 _("Odd only"), 0,5);
+	oddonly->State(config->evenodd==DocumentExportConfig::Odd ? LAX_ON : LAX_OFF);
+	oddonly->tooltip(_("Export only spreads with odd indices"));
+	AddWin(oddonly,1,-1);
+	AddNull();
+
+
+	last=batches=new CheckBox(this,"batches",NULL,CHECK_CIRCLE|CHECK_LEFT,
+						 0,0,0,0,0, 
+						 last,object_id,"batches",
+						 _("Export in batches"), 0,5);
+	batches->State(config->batches>1 ? LAX_ON : LAX_OFF);
+	batches->tooltip(_("Export this many spreads at once, continue for whole range"));
+	AddWin(batches,1,-1);
+
+	sprintf(blah,"%d",config->batches>0?config->batches:1);
+	last=batchnumber=new LineEdit(this,"batchnumber",NULL,
+						 LINEEDIT_SEND_FOCUS_ON|LINEEDIT_SEND_ANY_CHANGE|LINEEDIT_INT, 
+						 0,0,50,20, 1,
+						 last,object_id,"batchnumber",
+						 blah,0);
+	batchnumber->padx=5;
+	batchnumber->tooltip(_("The number of spreads in one batch"));
+	AddWin(batchnumber,1, batchnumber->win_w,0,1000,50,0, batchnumber->win_h,0,0,50,0, -1);
+	AddNull();
+
+	//-------------------------- Final OK ------------------------------------
+
 	AddWin(NULL,0, 0,0,1000,50,0, 0,0,0,50,0, -1);
 	last=tbut=new Button(this,"export",NULL,0, 0,0,0,0, 1, 
 						last,object_id,"export",
@@ -534,6 +590,42 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 	} else if (!strcmp(mes,"tofiles-check")) {
 		changeTofile(2);
+		return 0;
+
+	} else if (!strcmp(mes,"everyspread")) {
+		changeToEvenOdd(DocumentExportConfig::All);
+		return 0;
+
+	} else if (!strcmp(mes,"evenonly")) {
+		changeToEvenOdd(DocumentExportConfig::Even);
+		return 0;
+
+	} else if (!strcmp(mes,"oddonly")) {
+		changeToEvenOdd(DocumentExportConfig::Odd);
+		return 0;
+
+	} else if (!strcmp(mes,"batches")) {
+		 //toggle using batches
+		int s=batches->State();
+		if (s==LAX_ON) {
+			//now on, need to force using files, not file
+			changeTofile(2);
+		}
+		return 0;
+
+	} else if (!strcmp(mes,"batchnumber")) {
+		 //turn on or off batches as necessary
+		int n=batchnumber->GetLong(NULL);
+		DBG cerr << " **** batchnumber: "<<n<<endl;
+		if (n<=0) {
+			DBG cerr <<" *** setting to 0"<<endl;
+			batches->State(LAX_OFF);
+			batchnumber->SetText(0);
+			config->batches=0;
+		} else {
+			batches->State(LAX_ON);
+			config->batches=n;
+		}
 		return 0;
 
 	} else if (!strcmp(mes,"ps-printall")) {
@@ -741,6 +833,15 @@ void ExportDialog::changeTofile(int t)
 	if (commandcheck) commandcheck->State(tofile==3?LAX_ON:LAX_OFF);
 
 	overwriteCheck();
+}
+
+void ExportDialog::changeToEvenOdd(DocumentExportConfig::EvenOdd t)
+{
+	config->evenodd=t;
+
+	everyspread->State(t==DocumentExportConfig::All ? LAX_ON : LAX_OFF);
+	evenonly->State(t==DocumentExportConfig::Even ? LAX_ON : LAX_OFF);
+	oddonly->State(t==DocumentExportConfig::Odd ? LAX_ON : LAX_OFF);
 }
 
 //! This allows special things to happen when a different range target is selected.

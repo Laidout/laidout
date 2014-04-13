@@ -281,5 +281,6 @@ echo "     Ghostscript:  $GS"
 echo "       Enable GL:  $USINGGL"
 echo
 echo "If compiling from svn, please follow \"COMPILING FROM SOURCE\" in README.md.";
+echo
 echo "Otherwise, now type make to build.";
 

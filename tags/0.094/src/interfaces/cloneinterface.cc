@@ -2499,6 +2499,12 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 		lstyle->color=ca;
 		dynamic_cast<PathsData*>(o)->InstallLineStyle(lstyle);
 		lstyle->dec_count();
+		if (groupify_clones) {
+			Group *group=new Group;
+			group->push(o);
+			o->dec_count();
+			o=group;
+		}
 		base_cells.push(o);
 		o->dec_count();
 
@@ -2663,8 +2669,10 @@ Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid)
 {
     MenuInfo *menu=new MenuInfo(_("Clone Interface"));
 
-    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
     menu->AddItem(_("Clear current base objects"), CLONEM_Clear_Base_Objects);
+	menu->AddItem(_("Groupify base cells"),    CLONEM_Groupify, LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0));
+    menu->AddSep();
+    menu->AddItem(_("Include lines"),      CLONEM_Include_Lines, LAX_ISTOGGLE|(trace_cells?LAX_CHECKED:0));
 	menu->AddItem(_("Groupify base cells"),    CLONEM_Groupify, LAX_ISTOGGLE|(groupify_clones?LAX_CHECKED:0));
     menu->AddSep();
     menu->AddItem(_("Load resource"), CLONEM_Load);
@@ -2694,6 +2702,10 @@ int CloneInterface::Event(const Laxkit::EventData *e,const char *mes)
 			if (child) RemoveChild();
 			if (active) ToggleActivated();
             return 0;
+
+		} else if (i==CLONEM_Groupify) {
+			groupify_clones=!groupify_clones;
+			return 0;
 
 		} else if (i==CLONEM_Include_Lines) {
 			PerformAction(CLONEIA_Toggle_Lines);
@@ -2759,11 +2771,16 @@ void CloneInterface::DrawSelected()
 	int bcell;
 	PathsData *bpath;
 	DrawableObject *data;
+	DrawableObject *group;
 	Affine a;
 
 	for (int c=0; c<source_proxies.n(); c++) {
 		bcell=source_proxies.e_info(c);
-		bpath=dynamic_cast<PathsData*>(base_cells.e(bcell));
+		group=dynamic_cast<DrawableObject*>(base_cells.e(bcell));
+		bpath=dynamic_cast<PathsData*>(group);
+		if (!bpath) {
+			bpath=dynamic_cast<PathsData*>(group->e(0));//for groupified
+		}
 
 		toc=source_proxies.e(c);
 		data=dynamic_cast<DrawableObject*>(toc->obj);
@@ -3060,12 +3077,12 @@ int CloneInterface::scanSelected(int x,int y)
 	y-=selected_offset+(dp->Miny+dp->Maxy)/2-boxh/2+icon_width*.2;
 	row=y/icon_width/1.2;
 
-	//DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
+	DBG cerr <<" scanSelected r,c: "<<row<<','<<col<<endl;
 
 	int i=-1;
 	if (col>=0 && col<num_cols && row>=0 && row<num_rows) {
 		i=col+row*num_cols;
-		//DBG cerr <<"   i="<<i<<endl;
+		DBG cerr <<"   i="<<i<<endl;
 		if  (i>=0 && i<NumBuiltinTilings()) {
 			//found one
 		} else i=-1;

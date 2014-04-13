@@ -23,6 +23,9 @@
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
 
+//for some reason compilation fails on some systems without:
+#include <lax/refptrstack.cc>
+
 #include "../language.h"
 #include "../laidout.h"
 #include "../stylemanager.h"

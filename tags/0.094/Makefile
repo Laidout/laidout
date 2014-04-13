@@ -37,6 +37,9 @@ docs:
 alldocs:
 	cd docs && doxygen Doxyfile-with-laxkit
 
+quickref:
+	src/laidout -H > QUICKREF.html
+
 install: 
 	echo 'Installing to $(BINDIR)/laidout which points to $(BINDIR)/$(LAIDOUTNAME)'
 	$(INSTALL) -m755 src/laidout $(BINDIR)/$(LAIDOUTNAME)
