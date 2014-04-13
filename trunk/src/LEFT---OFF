@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+UPDATE DTPCOMPARE
+
 ubuntu resize window failing
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application propery
 
@@ -188,7 +190,10 @@ Clean up mesh/patch controls:
   perhaps a line warp, using line width adjustable path interface
 
 engraving tool:
+  on canvas direction and spacing controller
+  scale to map weights to line thickness, broken line behavior, and 0 thickness
   implement custom line merge and break to preserve spacing across mesh contraction
+  must implement mode based shortcuts in Laxkit
   value image to trace to lines:
     when manual tweaking, need to produce value reference so that future line orienting preserves line thicknesses
 	be able to sample page objects beneath selected engraving object?
@@ -200,6 +205,7 @@ engraving tool:
   need controls to adjust map between "thickness" value and actual rendered thickness and style:
     values underneath a certain threshhold should optionally render as if they were blocked out
 
+make color slider box be able to be a pane
 
 vital to debug send to printer
 export needs "batch" send, break into smaller segments
