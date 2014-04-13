@@ -51,8 +51,12 @@ class ExportDialog : public Laxkit::RowFrame
 	Laxkit::LineEdit *fileedit,*filesedit,*printstart,*printend,*command;
 	Laxkit::CheckBox *filecheck,*filescheck,*commandcheck;
 	Laxkit::CheckBox *printall,*printcurrent,*printrange;
+	Laxkit::CheckBox *everyspread, *evenonly, *oddonly;
+	Laxkit::CheckBox *batches;
+	Laxkit::LineEdit *batchnumber;
 	ExportFilter *filter;
 
+	virtual void changeToEvenOdd(DocumentExportConfig::EvenOdd t);
 	virtual void changeTofile(int t);
 	virtual void changeRangeTarget(int t);
 	virtual void configBounds();

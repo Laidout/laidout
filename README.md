@@ -1,5 +1,5 @@
 LAIDOUT Version 0.094
-=======================
+=====================
 http://laidout.org
 
 
@@ -99,14 +99,20 @@ uninstalled icons, this would be (this directory)/src/icons.
 
 MAKING A DEB PACKAGE
 --------------------
-If you want to create a deb package of Laidout, make sure you have the fakeroot 
-package installed, and have all the other packages listed from the COMPILING section
-above, and do this from the top laidout directory:
+If you want to create a deb package of Laidout, make sure you have the fakeroot,
+dpkg-dev, and debhelper packages installed, and have all the other packages listed 
+from the COMPILING section above, and do this from the top laidout directory:
 
     dpkg-buildpackage -rfakeroot
 
 If the magic works, you will find installable packages in the directory directly
 above the Laidout directory. If it does not work, please let me know so I can fix it!
+
+If you fail with this error:
+  dpkg-shlibdeps: error: no dependency information found for /usr/lib/libGL.so.1
+then you need to change: `dh_shlibdeps` in debian/rules to: `dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info`
+Maybe something to do with non-packaged NVidia drivers?
+
 
 
 INSTALLING DIFFERENT VERSIONS AT THE SAME TIME

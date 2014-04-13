@@ -371,7 +371,7 @@ void SpreadInterface::ArrangeSpreads(int how)//how==-1
 int SpreadInterface::Refresh()
 {
 	if (!needtodraw) return 1;
-	//DBG cerr << "SpreadInterface::Refresh()"<<endl;
+	DBG cerr << "SpreadInterface::Refresh()"<<endl;
 	
 	if (firsttime) {
 		firsttime=0;
@@ -389,7 +389,7 @@ int SpreadInterface::Refresh()
 		else needtodraw=0;
 	} else needtodraw=0;
 
-	//DBG cerr <<"pagestorender.n: "<<pagestorender.n<<endl;
+	DBG cerr <<"pagestorender.n: "<<pagestorender.n<<endl;
 	
 	if (!view) { return 1; }
 
