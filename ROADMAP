@@ -10,6 +10,8 @@ VERSION 0.095
        debug version 0.094!
        be able to trace images in engraver tool
        Clean up patch controls
+       undo/redo
+       allow export even or odd, or in batches
        Clone Pattern Builder
        Custom alignments to parents, not just affine transform to parent
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
@@ -50,7 +52,6 @@ VERSION 0.1
        First and foremost, need copious testing by people who are not me.
        Implement poor man's multi-contact interface for all appropriate interfaces
        Text for god's sake!! It's been what, 10 years!? 
-       undo/redo
        implement command line language tag
        SpreadEditor: be able to eject a page into limbo, for creation threads, connect, then insert as a group
        When importing from an image list file, should be able to say if and when to auto-make previews

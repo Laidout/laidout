@@ -1,4 +1,4 @@
-.TH LAIDOUT 1 "July 15, 2012"
+.TH LAIDOUT 1 "April 15, 2014"
 .SH NAME
 Laidout \- Version 0.094.1, for laying out books
 .SH SYNOPSIS
@@ -107,6 +107,10 @@ Run one or more commands without the gui, then exit
 Like --command, but the commands are in the given file
 
 .TP
+.B \-P, \-\-shell
+Enter a command line shell. Can be used with --command and --script.
+
+.TP
 .B \-u, \-\-default\-units \fI(in|cm|mm|m|ft|yards)\fI
 Use the specified units.
 
@@ -118,6 +122,13 @@ Start in this directory.
 .B \-I, \-\-impose\-only \fIarg\fI
 Run only as a file imposer, not full Laidout
 
+.TP
+.B \-E, \-\-experimental
+Enable any compiled in experimental features
+
+.TP
+.B \-\-helpman
+Output a man page fragment of options.
 
 .SH Development
 
