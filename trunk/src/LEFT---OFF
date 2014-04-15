@@ -19,8 +19,6 @@ gnome "application" does one per window, not one per app. this is not a bad thin
 
 click enter area of color pickers, does not install color!!!!
 
-lack of custom page size input
-
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
 
@@ -188,8 +186,13 @@ Clean up mesh/patch controls:
   implement right button config options to make the settings more discoverable
   circle warp needs a proper circle/ellipse interface
   perhaps a line warp, using line width adjustable path interface
+  just as moving edges, should be able to move any vert column or horizontal row of points
 
 engraving tool:
+  trying to draw paths over other objects is next to impossible. Should never select alternate object
+    unless escaped off current one
+  sampling should be based on lines per mesh square, not total mesh field
+  freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
   on canvas direction and spacing controller
   scale to map weights to line thickness, broken line behavior, and 0 thickness
   implement custom line merge and break to preserve spacing across mesh contraction
@@ -204,8 +207,11 @@ engraving tool:
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
   need controls to adjust map between "thickness" value and actual rendered thickness and style:
     values underneath a certain threshhold should optionally render as if they were blocked out
+  DONE duplicate does not duplicate the line
 
 make color slider box be able to be a pane
+
+lack of custom page size input in paper group tool
 
 vital to debug send to printer
 export needs "batch" send, break into smaller segments

@@ -50,6 +50,9 @@ namespace Laidout {
 /*! \defgroup mainwindows Main Pane Windows For HeadWindows
  *
  * These become the panes of a HeadWindow.
+ *
+ * To create a new one, simply define a creator function, then push that creation function
+ * onto the list in HeadWindow::HeadWindow().
  */
 
 ////---------------------- newHedronWindowFunc
@@ -60,6 +63,19 @@ namespace Laidout {
 //{
 //	Polyptych::HedronWindow *text=new Polyptych::HedronWindow(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
 //	return text;
+//}
+
+//////---------------------- newColorSlidersFunc
+///*! \ingroup mainwindows
+// * \brief ColorSliders window generator for use in HeadWindow.
+// */
+//anXWindow *newColorSlidersFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
+//{
+//	// *** for this to work right, this window needs to send color events to last viewport,
+//	// *** and be updated when the color in the last viewport changes, or last viewport changes
+//
+//	ColorSliders *color=new ColorSliders(***parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL);
+//	return color;
 //}
 
 ////---------------------- newPlainTextWindowFunc
@@ -265,6 +281,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
+	//AddWindowType("ColorSliders","Color picker",0,newColorSlidersFunc,0);
 	//AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
 	//AddWindowType("ButtonBox","Buttons",
 	//		BOXSEL_STRETCHX|BOXSEL_ROWS|BOXSEL_BOTTOM,
