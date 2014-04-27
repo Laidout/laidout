@@ -12,7 +12,7 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
-UPDATE DTPCOMPARE
+object layer positioning for Home and End keys projecting out in wrong way
 
 ubuntu resize window failing
 gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application propery
@@ -22,11 +22,9 @@ click enter area of color pickers, does not install color!!!!
 scribus plugin: if directory of executable script is not writable, it fails! 
  -> should find one that is writable
 
-ContextMenu: tablet mouse can't click down in?!??
+ContextMenu: tablet mouse can't click down in?!?? -> because slight drag cancels... should allow tiny drags
 ContextMenu: mouse hover scan appears to ignore text pad
 
-DONE impose only MUST NOT IGNORE the current document page count
-DONE scribus export ignoring landscape flag?!
 scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
 papergroup tool NEEDS 1:1 paper matrix reset, maybe say what paper dimensions
 papergroup tool needs custom paper input
@@ -164,6 +162,7 @@ check laidout.1 when time to release
 update docs to have new release number
 update translation base files
 update screenshots
+update dtpcompare.html
 put rss/g+ links on all menu pages
 test:
   each window type: about palette view spread command text
@@ -174,6 +173,7 @@ test:
 
 
 Clean up mesh/patch controls:
+  reverse lookup is not very precise
   selected nodes should probably be colored, just gray disappears, hard to work with
   maybe have status message say how many points are selected
   nudge mode with shift?
@@ -187,27 +187,58 @@ Clean up mesh/patch controls:
   circle warp needs a proper circle/ellipse interface
   perhaps a line warp, using line width adjustable path interface
   just as moving edges, should be able to move any vert column or horizontal row of points
+  mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
+  tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
 
 engraving tool:
-  trying to draw paths over other objects is next to impossible. Should never select alternate object
-    unless escaped off current one
-  sampling should be based on lines per mesh square, not total mesh field
+  trace object needs to be in page context, not object context (or must be default option)
+  trace object should still be visible when no actual data
+  need to be able to load and save trace object and position
+
+  curvemap needs predefined ramp profiles, remember last, load/save
+  sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
+  resolution tool: click to add between points within brush, control to destroy points in brush
+  finish making value to weight map on canvas editable, not just popup window
+  option: either drop out of bounds points, or zap mesh to point bounds
+  trace object transparency slider should actual slide transparency
+  edit brush ramp as symmetric ramp 
+  Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
+  sample point generation should be based on lines per mesh square, not total mesh field
   freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
   on canvas direction and spacing controller
-  scale to map weights to line thickness, broken line behavior, and 0 thickness
-  implement custom line merge and break to preserve spacing across mesh contraction
-  must implement mode based shortcuts in Laxkit
-  value image to trace to lines:
-    when manual tweaking, need to produce value reference so that future line orienting preserves line thicknesses
-	be able to sample page objects beneath selected engraving object?
+    -> options to insert various predefined patterns
+	-> multiple burins for different point groups
+  scale to map weights to line thickness, broken line behavior, and under zero_threshhold render as blocked out
+  when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
   need optional spacing image map, which is a mask like image that preserves spacing 
-  be able to work on multiple engraved objects?
-  should be able to increase point sample resolution
+  be able to autotrace to multiple engraved objects
+    -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
   current blockout is not very precise, needs approximation between existing point samples
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
-  need controls to adjust map between "thickness" value and actual rendered thickness and style:
-    values underneath a certain threshhold should optionally render as if they were blocked out
+  turbulence needs optional direction constraints
+  would be better if turbulence could be a field effect, not independently on each sample point
+  implement custom line merge and break to preserve spacing across mesh contraction
+  must implement mode based shortcuts in Laxkit
+
+  DONE toggle on trace box to show/not show trace object (should be transparency slider)
+  DONE should be able to increase point sample resolution
+  DONE value image to trace to lines
+  DONE trying to draw paths over other objects is next to impossible. -> needed to set primary==1
+  DONE edit brush ramp
+  DONE twirl
+  DONE turbulence mode
   DONE duplicate does not duplicate the line
+
+General Laxkit Interfaces needs:
+  stack of available interfaces
+  DrawData for arbitrary rendering of any known objects to any Displayer object
+  iconmanager
+
+General design usability:
+  layers palette, control:
+    locked
+	visible
+	selectable
 
 make color slider box be able to be a pane
 
@@ -1002,4 +1033,7 @@ These can then be purged after each release...
 ===========================================================================================
 
 
+DONE UPDATE DTPCOMPARE
 
+DONE impose only MUST NOT IGNORE the current document page count
+DONE scribus export ignoring landscape flag?!
