@@ -2208,6 +2208,18 @@ int LaidoutViewport::UseTheseRulers(RulerWindow *x,RulerWindow *y)
 	return 0;
 }
 
+void LaidoutViewport::DrawSomeData(Laxkit::Displayer *ddp,LaxInterfaces::SomeData *ndata,
+			     Laxkit::anObject *a1,Laxkit::anObject *a2,int info)
+{
+	Laidout::DrawDataStraight(ddp, ndata, a1,a2,info);
+}
+
+void LaidoutViewport::DrawSomeData(LaxInterfaces::SomeData *ndata,
+			     Laxkit::anObject *a1,Laxkit::anObject *a2,int info)
+{
+	Laidout::DrawDataStraight(dp, ndata, a1,a2,info);
+}
+
 //! Draw the whole business.
 /*!
  * <pre>
