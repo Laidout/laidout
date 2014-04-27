@@ -449,7 +449,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		fprintf(f,"\"\n");//end of "d"
 
 		 //---style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
-		fprintf(f,"%s       style=\"fill-rule:evenodd; ",spc);
+		//fprintf(f,"%s       style=\"fill-rule:evenodd; ",spc);
+		fprintf(f,"%s       style=\"fill-rule:nonzero; ",spc);
 
 		if (lstyle) {
 			if (lstyle->capstyle==CapButt) fprintf(f,"stroke-linecap:butt; ");
