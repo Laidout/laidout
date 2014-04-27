@@ -117,6 +117,10 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual int FocusOn(const Laxkit::FocusChangeData *e);
 	virtual int UseTheseRulers(Laxkit::RulerWindow *x,Laxkit::RulerWindow *y);
 	virtual double *transformToContext(double *m,LaxInterfaces::ObjectContext *oc,int invert,int full);
+	virtual void DrawSomeData(Laxkit::Displayer *ddp,LaxInterfaces::SomeData *ndata,
+			                        Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=0);
+	virtual void DrawSomeData(LaxInterfaces::SomeData *ndata,
+			                        Laxkit::anObject *a1=NULL,Laxkit::anObject *a2=NULL,int info=0);
 
 	virtual int UseThisDoc(Document *ndoc);
 	virtual int UseThisPaperGroup(PaperGroup *group);
