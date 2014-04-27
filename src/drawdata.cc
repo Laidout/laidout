@@ -194,16 +194,7 @@ void DrawData(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,unsigned in
 /*! \ingroup objects
  * This text should be the same as is returned by the object's whattype() function.
  *
- * Currently recognized data are:
- * - SomeData *** should remove this one?
- * - Group
- * - ImageData
- * - ImagePatchData
- * - PathsData
- * - GradientData
- * - ColorPatchData
- * - EpsData
- * - MysteryData
+ * See src/dataobjects/datafactory.cc for currently allowed object types.
  *
  *   \todo *** there needs to be a mechanism to automate this so new types can be
  *   added on the fly:
