@@ -50,11 +50,7 @@ class Selection : public Laxkit::anObject, public Laxkit::DoubleBBox
 	Selection();
 	virtual ~Selection();
 
-	virtual int n() { return objects.n; }
-	virtual LaxInterfaces::ObjectContext *e(int i);
-	virtual ValueHash *e_properties(int i);
-	virtual int e_info(int i);
-
+	virtual Selection *duplicate();
 	virtual int FindIndex(LaxInterfaces::ObjectContext *oc);
 	virtual int Add(LaxInterfaces::ObjectContext *oc, int where, int ninfo=-1);
 	virtual int AddNoDup(LaxInterfaces::ObjectContext *oc, int where, int ninfo=-1);
@@ -63,7 +59,12 @@ class Selection : public Laxkit::anObject, public Laxkit::DoubleBBox
 	virtual LaxInterfaces::ObjectContext *CurrentObject();
 	virtual int CurrentObjectIndex() { return currentobject; }
 	virtual void CurrentObject(int which);
-	//virtual void FindBBox();
+
+	virtual int n() { return objects.n; }
+	virtual LaxInterfaces::ObjectContext *e(int i);
+	virtual int e_info(int i);
+	virtual ValueHash *e_properties(int i);
+
 };
 
 

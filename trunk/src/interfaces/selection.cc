@@ -58,6 +58,18 @@ Selection::~Selection()
 	if (base_object) base_object->dec_count();
 }
 
+//! Return a duplicate of this selection.
+/*! Will not copy properties.
+ */
+Selection *Selection::duplicate()
+{
+	Selection *s=new Selection();
+	for (int c=0; c<objects.n; c++) {
+		s->Add(objects.e[c]->oc,-1,objects.e[c]->info);
+	}
+	return s;
+}
+
 LaxInterfaces::ObjectContext *Selection::CurrentObject()
 {
 	if (currentobject<0) return NULL;
