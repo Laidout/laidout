@@ -11,8 +11,8 @@ LAXIDIR=$(LAXDIR)/interfaces
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lXi -lXext -lX11 -lm -lpng `imlib2-config --libs` \
 		 `cups-config --libs` -lXft -L$(LAXIDIR) -L$(LAXDIR)
-CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
-DEBUGFLAGS= -g -DDEBUG
+DEBUGFLAGS= -g -gdwarf-2
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I../.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR)
 
 
 #---polyptych related:
