@@ -9,8 +9,8 @@ LAXIDIR=$(LAXDIR)/interfaces
 LAXOBJDIR=$(LAXDIR)
 LD=g++
 LDFLAGS= -L/usr/X11R6/lib -lX11 -lm -lpng `imlib2-config --libs` -L$(LAXDIR) -L$(LAXIDIR)
-CPPFLAGS= $(HIDEGARBAGE) -Wall -g -I. -I.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR) -I/usr/include/GraphicsMagick/
-DEBUGFLAGS= -g
+DEBUGFLAGS= -g -gdwarf-2
+CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I/usr/include/freetype2 -I$(POLYPTYCHBASEDIR) -I/usr/include/GraphicsMagick/
 
 
 objs= \
