@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2009-2013 by Tom Lechner
+// Copyright (C) 2009-2014 by Tom Lechner
 //
 #ifndef VALUES_H
 #define VALUES_H
