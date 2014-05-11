@@ -78,6 +78,50 @@ Value *newSvgExportConfig()
 	return v;
 }
 
+/*! \class SvgExportConfig
+ * \brief Holds extra config for image export.
+ *
+ * \todo currently no extra settings, but could be image type, and background color to use, or transparency...
+ */
+class SvgExportConfig : public DocumentExportConfig
+{
+  public:
+	bool use_powerstroke;
+	bool use_mesh;
+
+	SvgExportConfig();
+	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
+	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+};
+
+//! Set the filter to the Image export filter stored in the laidout object.
+SvgExportConfig::SvgExportConfig()
+{
+	use_mesh=false;
+	use_powerstroke=true;
+
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
+			filter=laidout->exportfilters.e[c];
+			break; 
+		}
+	}
+}
+
+void SvgExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
+{
+	DocumentExportConfig::dump_out(f,indent,what,context);
+
+	//fprintf(f,"%suse_mesh %s",spc,use_mesh?"yes":"no");
+	//fprintf(f,"%suse_powerstroke %s",spc,use_powerstroke?"yes":"no");
+}
+
+void SvgExportConfig::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
+{
+	DocumentExportConfig::dump_in_atts(att,flag,context);
+}
+
+
 //------------------------------------ SvgImportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
@@ -548,6 +592,48 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log)
 		Group *g=dynamic_cast<Group *>(obj);
 		for (int c=0; c<g->n(); c++) 
 			svgdumpdef(f,NULL,g->e(c),warning,log); 
+
+	} else if (!strcmp(obj->whattype(),"PathsData")) {
+		 //write out a powerstroke def section. When there is an offset,
+		 //not just a width change, the actual path is later
+		 //converted to the "area path", not the defined path
+
+		PathsData *pdata=dynamic_cast<PathsData*>(obj);
+		Path *path;
+
+		for (int c=0; c<pdata->paths.n; c++) {
+			if (!pdata->paths.e[c]->Weighted()) continue;
+			path=pdata->paths.e[c];
+
+			char *name=new char[30];
+			sprintf(name,"stroke-%ld-%d",obj->object_id, c);
+
+			fprintf(f,"<inkscape:path-effect\n"
+					  "  effect=\"powerstroke\"\n"
+					  "  id=\"%s\"\n"
+					  "  is_visible=\"true\"\n",
+					    name);
+			fprintf(f,"  offset_points=\"");
+
+			for (int c2=0; c2<path->pathweights.n; c2++) {
+				fprintf(f,"%.10g,%.10g ", path->pathweights.e[c2]->t, path->pathweights.e[c2]->width);
+				if (c2<path->pathweights.n-1) fprintf(f,"| ");
+			}
+
+			fprintf(f,"\"\n"
+					  "  sort_points=\"true\"\n"
+					  "  interpolator_type=\"CubicBezierJohan\"\n"
+					  "  interpolator_beta=\"0.2\"\n"
+					  "  start_linecap_type=\"round\"\n"
+					  "  linejoin_type=\"round\"\n"
+					  "  miter_limit=\"4\"\n"
+					  "  end_linecap_type=\"round\" />\n"
+					);
+
+
+			delete[] name;
+		}
+
 	} else if (!strcmp(obj->whattype(),"GradientData")) {
 		GradientData *grad;
 		grad=dynamic_cast<GradientData *>(obj);
@@ -633,6 +719,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log)
 			}
 			fprintf(f,"    </linearGradient>\n");
 		}
+
 	} else if (!strcmp(obj->whattype(),"ColorPatchData")) {
 		//if (***config allows it) {
 		if (1) {
@@ -675,6 +762,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log)
 			fprintf(f,"    </filter>\n");
 		}
 	}
+
 	return 0;
 }
 
