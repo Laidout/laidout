@@ -201,6 +201,7 @@ int LPathsData::Evaluate(const char *func,int len, ValueHash *context, ValueHash
 LPathInterface::LPathInterface(int nid,Laxkit::Displayer *ndp)
   : PathInterface(nid,ndp)
 {
+	pathi_style|=LaxInterfaces::PATHI_Render_With_Cache;
 }
 
 
