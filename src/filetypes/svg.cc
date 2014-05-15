@@ -467,13 +467,19 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 	} else if (!strcmp(obj->whattype(),"PathsData")) {
 		PathsData *pdata=dynamic_cast<PathsData*>(obj);
+		if (pdata->paths.n==0) return 0; //ignore empty path objects
 
 		fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 				     spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-
-		 //write path
 		fprintf(f,"%s       id=\"%s\"\n", spc,obj->Id());
-		fprintf(f,"%s       d=\"",spc);
+
+
+		 //---write path
+
+		 // *** Warning!! currently powerstroke LPE for inkscape only works on first path!!
+		if (pdata->Weighted()) fprintf(f,"%s       inkscape:original-d=\"",spc);
+		else fprintf(f,"%s       d=\"",spc);
+
 		LineStyle *lstyle=pdata->linestyle;
 		FillStyle *fstyle=pdata->fillstyle;
 		Coordinate *p,*start;
@@ -490,9 +496,32 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 			svgaddpath(f,p);
 		}
-		fprintf(f,"\"\n");//end of "d"
+		fprintf(f,"\"\n");//end of "d" for non-weighted or original-d for weighted
 
-		 //---style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
+		if (pdata->Weighted()) {
+			fprintf(f,"%s       d=\"",spc);
+
+			LineStyle *lstyle=pdata->linestyle;
+			FillStyle *fstyle=pdata->fillstyle;
+			Coordinate *p,*start;
+			int hasstroke=0;
+			for (int c=0; c<pdata->paths.n; c++) {
+				p=start=pdata->paths.e[c]->path;
+				if (!p) continue;
+
+				lstyle=pdata->paths.e[c]->linestyle;
+				if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
+				hasstroke=lstyle ? (lstyle->hasStroke()) : 0;
+
+				fstyle=pdata->fillstyle;//default for all data paths
+
+				svgaddpath(f,p);
+			}
+			fprintf(f,"\"\n");//end of "d" for weighted
+		}
+
+
+		 //---write style: style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
 		//fprintf(f,"%s       style=\"fill-rule:evenodd; ",spc);
 		fprintf(f,"%s       style=\"fill-rule:nonzero; ",spc);
 
@@ -529,7 +558,13 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 		//"stroke-miterlimit:4;"
 		fprintf(f,"\"\n");//end of "style"
-
+		if (pdata->paths.e[0]->Weighted()) {
+			 // *** Warning!! currently powerstroke LPE for inkscape only works on first path!!
+			char *name=new char[30];
+			sprintf(name,"stroke-%ld-%d",pdata->object_id, 0);
+			fprintf(f,"%s       inkscape:path-effect=\"#%s\"\n", spc,name);
+			delete[] name;
+		}
 
 		fprintf(f,"%s />\n",spc);//end of PathsData!
 
@@ -624,10 +659,10 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log)
 					  "  sort_points=\"true\"\n"
 					  "  interpolator_type=\"CubicBezierJohan\"\n"
 					  "  interpolator_beta=\"0.2\"\n"
-					  "  start_linecap_type=\"round\"\n"
-					  "  linejoin_type=\"round\"\n"
+					  "  start_linecap_type=\"butt\"\n"
+					  "  linejoin_type=\"extrapolated\"\n"
 					  "  miter_limit=\"4\"\n"
-					  "  end_linecap_type=\"round\" />\n"
+					  "  end_linecap_type=\"butt\" />\n"
 					);
 
 
