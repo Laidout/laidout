@@ -18,7 +18,6 @@
 #include "values.h"
 #include "../styles.h"
 #include "../language.h"
-#include "stylemanager.h"
 
 #include <lax/strmanip.h>
 #include <lax/fileutils.h>
@@ -48,9 +47,10 @@ namespace Laidout {
 
 //----------------------------- typedef docs -----------------------------
 
-/*! \typedef Style *(*NewObjectFunc)(ObjectDef *def)
+
+/*! \typedef Value *(*NewObjectFunc)()
  * \ingroup stylesandstyledefs
- * \brief These are in ObjectDef to aid in creation of new Style instances by StyleManager.
+ * \brief These are in ObjectDef to aid in creation of new Value objects.
  */
 
 /*! \ingroup stylesandstyledefs

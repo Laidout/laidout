@@ -195,7 +195,7 @@ engraving tool:
   trace object should still be visible when no actual data
   need to be able to load and save trace object and position
 
-  curvemap needs predefined ramp profiles, remember last, load/save
+  curvemap needs predefined ramp profiles, remember last, load/save (per context?)
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
   resolution tool: click to add between points within brush, control to destroy points in brush
   finish making value to weight map on canvas editable, not just popup window
@@ -229,16 +229,62 @@ engraving tool:
   DONE turbulence mode
   DONE duplicate does not duplicate the line
 
-General Laxkit Interfaces needs:
-  stack of available interfaces
-  DrawData for arbitrary rendering of any known objects to any Displayer object
-  iconmanager
+curves:
+  curvemap needs predefined ramp profiles, remember last, load/save
+  curvemap needs brush ramp mode to show symmetric graph
+  clip wrap render to graph rect
+  brush ramp edit mode: incompatible with wrap? or just have editor move points symmetrically?
+  Base CurveWindow on CurveInterface instead. the interface will be getting the actual work
+   -> probably should decide how to handle making windows based on interfaces.. it is a more productive route than window dominant
+  DONE move CurveInfo to own file.
 
-General design usability:
+PathInterface:
+  clarify export for weighted paths, use outlinecache and areacache as needed
+  delete single point -> crash!
+  need some kind of extrema fill in for angled paths, so it matches sweep of whole segment, not just endpoint sweep lines
+  add/remove points, close/open path needs to adjust weight nodes
+  should have shortcut to offset ALL weight nodes, or angle ALL nodes
+  how to deal with bbox when using wacky weights??
+  need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret, &top, &bottom, &angle)
+  custom caps.. define cap to a horizontal line, take endpoints and endpoint tangents, return the cap warped to fit the tangents
+  custom dashes, with custom start/end dash caps
+  displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
+  maybe should revisit PathOperator stuff, such as for spiro paths
+  need way to turn off selectability of path points (thus leaving only width nodes selectable)
+  need path combine (combine path stacks of multiple PathsData)
+  need break apart (make new PathsData from each in paths stack)
+  special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
+  ApplyTransform() and MatchTransform() should adjust scaling of width nodes?
+
+  DONE discontinuity in outline at point boundaries?
+  DONE displayer->drawFormattedPoints needs to be finalized
+  DONE curvemap needs wraparound mode for approximating widths on curved lines
+
+General design usability
+to be a decent editing platform, Laidout needs:
+  undo
+  per object visibility
   layers palette, control:
     locked
 	visible
 	selectable
+  better screen renderer
+  better key input edits
+  guides
+  clipping
+  text
+
+
+svg
+  export needs implementation for options for mesh and powerstroke
+  in for powerstroke
+  in/out for meshes
+  DONE export needs specialized export config
+
+General Laxkit Interfaces needs:
+  stack of available interfaces
+  DrawData for arbitrary rendering of any known objects to any Displayer object
+  iconmanager
 
 make color slider box be able to be a pane
 
@@ -618,9 +664,6 @@ double click on group should change selection area to group contents?
     need to clarify how grouping operates. Perhaps implement sets at same time
     clearCurobj() with skim to group for group->double click?
 
-Svg: in/out of meshes
-
-add --experimental option to activate any crash prone features not otherwise available
 
 object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
 
@@ -874,9 +917,14 @@ for translations, there is a difference between locale translations and language
 
 investigate pdfcreator as method to reduce file size
 
-distribute tool
-
-n-up tool
+text (see also src/text/text.txt):
+  harfbuzz support
+  math mode
+  track bookmarks
+  inline graphics
+  css import/export
+  tabs on arbitrary paths
+  text to path
 
 repeater tool on path: could be adapted to help animation tweening
 
@@ -962,12 +1010,13 @@ general: rgb     65535 0 0
          cmy
          cmyk
          cmykaf
-         hex    ffff0000ffff
+         hex    ffff0000ffff <- maybe autodetect how many bits
          hex8   ffffff
+		 hex4   fff
          rgbx   0xffffff
 
 need conversions: gradient->color patch
-                  image -> imagepatch
+                  image -> imagepatch <- do with image filters rather than specific object type
                   imagepatch -> image
                   colorpatch -> image?
 
@@ -1037,3 +1086,4 @@ DONE UPDATE DTPCOMPARE
 
 DONE impose only MUST NOT IGNORE the current document page count
 DONE scribus export ignoring landscape flag?!
+DONE add --experimental option to activate any crash prone features not otherwise available
