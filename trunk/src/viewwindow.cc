@@ -15,6 +15,7 @@
 //
 
 #include <lax/numslider.h>
+#include <lax/interfaces/showkeysinterface.h>
 #include <lax/interfaces/objectinterface.h>
 #include <lax/interfaces/fillstyle.h>
 #include <lax/transformmath.h>
@@ -2496,6 +2497,12 @@ enum ViewActions {
 	VIEW_SpreadEditor,
 	VIEW_EditImposition,
 
+	VIEW_PathTool,       
+	VIEW_ImageTool,      
+	VIEW_GradientTool,   
+	VIEW_MeshGradientTool,
+	VIEW_EngraverTool,   
+
 	VIEW_MAX
 };
 
@@ -4460,8 +4467,16 @@ Laxkit::ShortcutHandler *ViewWindow::GetShortcuts()
 	sc->Add(VIEW_PreviousPage,   '<',ShiftMask,0,   _("PreviousPage"),  _("Previous page"),NULL,0);
 	sc->Add(VIEW_Help,           LAX_F1,0,0,        _("Help"),          _("Help"),NULL,0);
 	sc->Add(VIEW_About,          LAX_F2,0,0,        _("About"),         _("About Laidout"),NULL,0);
-	sc->Add(VIEW_SpreadEditor,   LAX_F5,0,0,        _("SpreadEditor"),  _("Popup a spread editor"),NULL,0);
-	sc->Add(VIEW_EditImposition, LAX_F6,0,0,        _("EditImposition"),_("Edit current imposition"),NULL,0);
+	sc->Add(VIEW_SpreadEditor,   LAX_F3,0,0,        _("SpreadEditor"),  _("Popup a spread editor"),NULL,0);
+	sc->Add(VIEW_EditImposition, LAX_F4,0,0,        _("EditImposition"),_("Edit current imposition"),NULL,0);
+
+	 //these could be morphed into customized shortcuts, rather than hardcoded perhaps?
+	sc->Add(VIEW_PathTool,        LAX_F5,0,0,        _("PathTool"),        _("Change to path tool"),NULL,0);
+	sc->Add(VIEW_ImageTool,       LAX_F6,0,0,        _("ImageTool"),       _("Change to image tool"),NULL,0);
+	sc->Add(VIEW_GradientTool,    LAX_F7,0,0,        _("GradientTool"),    _("Change to gradient tool"),NULL,0);
+	sc->Add(VIEW_MeshGradientTool,LAX_F8,0,0,        _("MeshGradientTool"),_("Change to mesh gradient tool"),NULL,0);
+	sc->Add(VIEW_EngraverTool,    LAX_F9,0,0,        _("EngraverTool"),    _("Change to engraver fill tool"),NULL,0);
+
 	sc->Add(VIEW_CommandPrompt,  '/',0,0,           _("Prompt"),        _("Popup a the graphical shell"),NULL,0);
 
 	manager->AddArea("ViewWindow",sc);
@@ -4564,6 +4579,27 @@ int ViewWindow::PerformAction(int action)
 
 	} else if (action==VIEW_PreviousTool) {
 		SelectTool(-2);
+		return 0;
+
+
+	} else if (action==VIEW_PathTool) {       
+		SelectToolFor("PathsData");
+		return 0;
+
+	} else if (action==VIEW_ImageTool) {      
+		SelectToolFor("ImageData");
+		return 0;
+
+	} else if (action==VIEW_GradientTool) {   
+		SelectToolFor("GradientData");
+		return 0;
+
+	} else if (action==VIEW_MeshGradientTool) {
+		SelectToolFor("ColorPatchData");
+		return 0;
+
+	} else if (action==VIEW_EngraverTool) {   
+		SelectToolFor("EngraverFillData");
 		return 0;
 
 	} else if (action==VIEW_NextPage) {
