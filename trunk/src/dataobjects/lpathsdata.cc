@@ -35,6 +35,7 @@ namespace Laidout {
 
 
 LPathsData::LPathsData(LaxInterfaces::SomeData *refobj)
+  : LaxInterfaces::PathsData(0)
 {
 }
 
