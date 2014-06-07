@@ -8,7 +8,11 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 VERSION 0.095
 -------------
        debug version 0.094!
-       be able to trace images in engraver tool
+(done) be able to trace images in engraver tool
+       engraver tool point groups to trace from same object to different trace settings
+(done) engraver tool linear, radial, or circular line fills
+       engraver tool grow point mode
+       layers (object tree) palette
        Clean up patch controls
        undo/redo
        allow export even or odd, or in batches
