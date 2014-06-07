@@ -24,7 +24,8 @@ objs= \
 	objectindicator.o \
 	paperinterface.o \
 	cloneinterface.o \
-	animationinterface.o
+	animationinterface.o \
+	objecttree.o \
 
 
 
