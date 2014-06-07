@@ -40,6 +40,7 @@
 
 
 #include "language.h"
+#include "interfaces/objecttree.h"
 #include "printing/print.h"
 #include "printing/psout.h"
 #include "impositions/impositioneditor.h"
@@ -2763,6 +2764,12 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	//DBG 	return 0;
 	//DBG }
 
+	if (ch=='o') {
+		ObjectTree *otree=new ObjectTree(NULL, "tree","tree", 0,NULL);
+		otree->UseContainer(this);
+		app->addwindow(otree);
+		return 0;
+	}
 
 	if (ch==LAX_Esc && (state&LAX_STATE_MASK)==0 && viewportmode==VIEW_GRAB_COLOR) {
 		 //escape out of grabbing color
