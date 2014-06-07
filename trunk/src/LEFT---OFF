@@ -12,10 +12,12 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+HeadWindow -> changeto HelpWindow creates a HelpWindow, but removes paneable headwindow
+
 object layer positioning for Home and End keys projecting out in wrong way
 
 ubuntu resize window failing
-gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application propery
+gnome "application" does one per window, not one per app. this is not a bad thing imnsho, but should be easy to conform to desktop spec application properly
 
 click enter area of color pickers, does not install color!!!!
 
@@ -172,8 +174,16 @@ test:
   test in different window managers
 
 
+TreeSelector:
+  makeinwindow() doesn't account for columns
+
+image import preview should say pixel size of image
+
 Clean up mesh/patch controls:
-  reverse lookup is not very precise
+  perhaps a line warp, using line width adjustable path interface
+  tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
+  just as moving edges, should be able to move any vert column or horizontal row of points
+  when on edge, it highlights, but if you are outside of mesh, it will switch to other object
   selected nodes should probably be colored, just gray disappears, hard to work with
   maybe have status message say how many points are selected
   nudge mode with shift?
@@ -185,38 +195,38 @@ Clean up mesh/patch controls:
   changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
   implement right button config options to make the settings more discoverable
   circle warp needs a proper circle/ellipse interface
-  perhaps a line warp, using line width adjustable path interface
-  just as moving edges, should be able to move any vert column or horizontal row of points
   mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
-  tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
+  reverse lookup is not very precise
+
+  DONE delete should not delete whole object
 
 engraving tool:
   trace object needs to be in page context, not object context (or must be default option)
   trace object should still be visible when no actual data
   need to be able to load and save trace object and position
-
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
+  on canvas direction and spacing controller
+    -> options to insert various predefined patterns
+	-> multiple burins for different point groups
+
+  freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
   resolution tool: click to add between points within brush, control to destroy points in brush
-  finish making value to weight map on canvas editable, not just popup window
+  finish making value to weight map on canvas editable and work right
   option: either drop out of bounds points, or zap mesh to point bounds
   trace object transparency slider should actual slide transparency
   edit brush ramp as symmetric ramp 
   Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
   sample point generation should be based on lines per mesh square, not total mesh field
-  freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
-  on canvas direction and spacing controller
-    -> options to insert various predefined patterns
-	-> multiple burins for different point groups
   scale to map weights to line thickness, broken line behavior, and under zero_threshhold render as blocked out
   when manual tweaking of spacing, need to produce value reference so that future line orienting preserves line thicknesses
-  need optional spacing image map, which is a mask like image that preserves spacing 
+  need optional spacing image map, which is a mask like image that preserves spacing after distorting mesh
   be able to autotrace to multiple engraved objects
     -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
   current blockout is not very precise, needs approximation between existing point samples
   perhaps allow path objects to be adjusted with engrave tool for custom outlier lines not part of mesh?
-  turbulence needs optional direction constraints
-  would be better if turbulence could be a field effect, not independently on each sample point
+  turbulence needs optional direction constraints, size of turbulent cell, and per line turbulence
+    would be better if turbulence could be a field effect, not independently on each sample point
   implement custom line merge and break to preserve spacing across mesh contraction
   must implement mode based shortcuts in Laxkit
 
@@ -241,20 +251,21 @@ curves:
 PathInterface:
   clarify export for weighted paths, use outlinecache and areacache as needed
   delete single point -> crash!
-  need some kind of extrema fill in for angled paths, so it matches sweep of whole segment, not just endpoint sweep lines
   add/remove points, close/open path needs to adjust weight nodes
+
+  ApplyTransform() and MatchTransform() should adjust scaling of width nodes?
+  custom caps.. define cap to a horizontal line, take endpoints and endpoint tangents, return the cap warped to fit the tangents
+  custom dashes, with custom start/end dash caps
+  need some kind of extrema fill in for angled paths, so it matches sweep of whole segment, not just endpoint sweep lines
   should have shortcut to offset ALL weight nodes, or angle ALL nodes
   how to deal with bbox when using wacky weights??
   need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret, &top, &bottom, &angle)
-  custom caps.. define cap to a horizontal line, take endpoints and endpoint tangents, return the cap warped to fit the tangents
-  custom dashes, with custom start/end dash caps
   displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
   maybe should revisit PathOperator stuff, such as for spiro paths
   need way to turn off selectability of path points (thus leaving only width nodes selectable)
   need path combine (combine path stacks of multiple PathsData)
   need break apart (make new PathsData from each in paths stack)
-  special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
-  ApplyTransform() and MatchTransform() should adjust scaling of width nodes?
+  need special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
 
   DONE discontinuity in outline at point boundaries?
   DONE displayer->drawFormattedPoints needs to be finalized
@@ -274,6 +285,31 @@ to be a decent editing platform, Laidout needs:
   clipping
   text
 
+lineedit:
+  DONE dir
+  password
+  date
+  time
+  seems to be an occasional redo bug, reinserting in wrong position
+
+
+implement undo.. ideally use same code for both undo and recordable/assignable actions
+  paths
+  meshes
+    color
+	image
+  engraver
+  gradients
+  paper interface
+  object interface
+  spread editor
+  reimpose
+  unwrapper
+  metadata stuff
+  image
+  cloner
+  during scripting?!
+  inside curve editors
 
 svg
   export needs implementation for options for mesh and powerstroke
