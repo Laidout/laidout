@@ -30,7 +30,7 @@ namespace Laidout {
 //------------------------------ ObjectContainer ----------------------------------
 
 /*! \class ObjectContainer
- * \brief Abstract base class to simplify object tree searching.
+ * \brief Abstract base class to simplify project wide object tree searching.
  *
  * Used by Group, LaidoutViewport, Spread, and others to be a generic object 
  * container. Access methods should be considered very temporary. They are not quite
