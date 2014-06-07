@@ -120,11 +120,17 @@ class CharacterStyle : public Style
 	virtual ~CharacterStyle();
 };
 
+enum LengthType {
+	LEN_Percent_Text_Height,
+	LEN_Percent_Parent,
+	LEN_Absolute
+};
+
 class TabStopInfo
 {
   public:
 	int tabtype; //left, center, right, char
-	char utf8char[10]; //if char type
+	char tab_char_utf8[10]; //if char type
 
 	int positiontype; //automatic position, definite position, path
 	double position; //if not path
