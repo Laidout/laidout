@@ -160,13 +160,13 @@ anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
  *  HelpWindow
  *  CommandWindow
  *  PaletteWindow (will be modified later)
+ *  PlainTextEditor
  *
  *   TODO:
+ *  ObjectTreeEditor ***not imp
  *  Icons/Menus with optional dialogs ***
  *  Directory Window? FileOpener? ImageFileOpener->to drag n drop images? ***not imp
- *  PlainTextEditor ***not imp
  *  StoryEditor *** not imp
- *  ObjectTreeEditor ***not imp
  * </pre>
  *
  * \todo *** might want to remove doc, or have some more general way to start what is in which.
