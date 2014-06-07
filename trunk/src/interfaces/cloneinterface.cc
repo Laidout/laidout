@@ -2396,6 +2396,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	current_base=-1;
 	ScreenColor col(0.,.7,0.,1.);
 	boundary=dynamic_cast<PathsData*>(LaxInterfaces::somedatafactory->newObject("PathsData"));
+	boundary->style=PathsData::PATHS_Ignore_Weights;
 	boundary->line(-1,-1,-1,&col);
 	boundary->appendRect(0,0,4,4);
 
@@ -2482,6 +2483,7 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 	base_cells.flush();
 	base_cells.flags|=SOMEDATA_KEEP_ASPECT;
 	LaxInterfaces::SomeData *o;
+	LaxInterfaces::PathsData *po;
   	DrawableObject *d;
 
 	 //install main base cells
@@ -2493,6 +2495,8 @@ int CloneInterface::SetTiling(Tiling *newtiling)
 		else ca=c1;
 
 		o=tiling->basecells.e[c]->celloutline->duplicate(NULL);
+		po=dynamic_cast<PathsData*>(o);
+		po->style=PathsData::PATHS_Ignore_Weights;
 		o->FindBBox();
 		lstyle=new LineStyle();
 		*lstyle=preview_cell;
