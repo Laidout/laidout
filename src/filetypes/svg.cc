@@ -413,7 +413,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			 //create border colors so as to not have transparent outer edge sections.
 			 //this has to be done before the actual patch, so that the real colors lay
 			 //on top of this stuff.
-			flatpoint pcenter=patch->getPoint(.5,.5);
+			flatpoint pcenter=patch->getPoint(.5,.5,false);
 			double extend=2;
 			for (r=0; r<patch->ysize/3; r++) {
 			    for (rr=0; rr<numdiv; rr++) {
@@ -425,8 +425,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					patch->WhatColor(0,t/(1-dt),&color);
 
 			  		 //get coords for that little rect
-					p[0]=patch->getPoint(0   ,t);
-					p[1]=patch->getPoint(0   ,t+fudge*dt);
+					p[0]=patch->getPoint(0   ,t,          false);
+					p[1]=patch->getPoint(0   ,t+fudge*dt, false);
 					p[2]=pcenter + extend*(p[1]-pcenter);
 					p[3]=pcenter + extend*(p[0]-pcenter);
 
@@ -444,8 +444,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					patch->WhatColor(1.,t/(1-dt),&color);
 
 			  		 //get coords for that little rect
-					p[0]=patch->getPoint(1.   ,t);
-					p[1]=patch->getPoint(1.   ,t+fudge*dt);
+					p[0]=patch->getPoint(1.   ,t,          false);
+					p[1]=patch->getPoint(1.   ,t+fudge*dt, false);
 					p[2]=pcenter+extend*(p[1]-pcenter);
 					p[3]=pcenter+extend*(p[0]-pcenter);
 
@@ -468,8 +468,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					patch->WhatColor(s/(1-ds),0,&color);
 
 			  		 //get coords for that little rect
-					p[0]=patch->getPoint(s,          0);
-					p[1]=patch->getPoint(s+fudge*ds, 0);
+					p[0]=patch->getPoint(s,          0, false);
+					p[1]=patch->getPoint(s+fudge*ds, 0, false);
 					p[2]=pcenter+extend*(p[1]-pcenter);
 					p[3]=pcenter+extend*(p[0]-pcenter);
 
@@ -487,8 +487,8 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					patch->WhatColor(s/(1-ds),1,&color);
 
 			  		 //get coords for that little rect
-					p[0]=patch->getPoint(s,          1);
-					p[1]=patch->getPoint(s+fudge*ds, 1);
+					p[0]=patch->getPoint(s,          1, false);
+					p[1]=patch->getPoint(s+fudge*ds, 1, false);
 					p[2]=pcenter+extend*(p[1]-pcenter);
 					p[3]=pcenter+extend*(p[0]-pcenter);
 
@@ -521,10 +521,10 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 					patch->WhatColor(ss,tt,&color);
 
 			  		 //get coords for that little rect
-					p[0]=patch->getPoint(s   ,t);
-					p[1]=patch->getPoint(s+fudge*ds,t);
-					p[2]=patch->getPoint(s+fudge*ds,t+fudge*dt);
-					p[3]=patch->getPoint(s   ,t+fudge*dt);
+					p[0]=patch->getPoint(s         ,t,          false);
+					p[1]=patch->getPoint(s+fudge*ds,t,          false);
+					p[2]=patch->getPoint(s+fudge*ds,t+fudge*dt, false);
+					p[3]=patch->getPoint(s         ,t+fudge*dt, false);
 
 			  		fprintf(f,"%s  <path d=\"M %f %f L %f %f L %f %f L %f %f z\" stroke=\"none\" "
 							  "fill=\"#%02x%02x%02x\" fill-opacity=\"%f\"/>\n",
