@@ -2765,9 +2765,12 @@ int LaidoutViewport::CharInput(unsigned int ch,const char *buffer,int len,unsign
 	//DBG }
 
 	if (ch=='o') {
-		ObjectTree *otree=new ObjectTree(NULL, "tree","tree", 0,NULL);
-		otree->UseContainer(this);
+		ObjectTreeWindow *otree=new ObjectTreeWindow(NULL, "tree","Object Tree", 0,NULL, this);
 		app->addwindow(otree);
+
+		//otree=new ObjectTreeWindow(NULL, "tree","Project Tree", 0,NULL, laidout->project);
+		//app->addwindow(otree);
+
 		return 0;
 	}
 
@@ -3031,7 +3034,7 @@ const char *LaidoutViewport::object_e_name(int i)
 {
 	if (i==0) return "limbo";
 	if (i==1 && spread) return "spread";
-	if (i==2 && papergroup) return "papergroup";
+	if (i==2 && (papergroup || (spread && spread->papergroup))) return "papergroup";
 	return NULL;
 }
 
@@ -3820,7 +3823,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		ErrorLog log;
 		mesbar->SetText(_("Exporting..."));
 		mesbar->Refresh();
-		//XSync(app->dpy,False);
+
 		int err=export_document(d->config,log);
 		if (err==0) mesbar->SetText(_("Exported."));
 		else mesbar->SetText(_("Error exporting."));
