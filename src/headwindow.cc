@@ -144,7 +144,8 @@ anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long
  */
 anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
-	HelpWindow *help=new HelpWindow(1);
+	anXWindow *help=newHelpWindow(NULL);
+	help->win_style&=~ANXWIN_ESCAPABLE;
 	help->win_parent=parnt;
 	return help;
 }
