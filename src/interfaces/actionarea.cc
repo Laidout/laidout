@@ -29,11 +29,13 @@ namespace Laidout {
 
 
 //------------------------------------- ActionArea --------------------------------------
-//typedef void RenderActionAreaFunc(Laxkit::Displayer *disp,ActionArea *overlay);
 
 
 /*! \class ActionArea
- * \brief This can define areas on screen for various purposes.
+ *
+ * This defines simple areas on screen for various interaction purposes.
+ * It consists of an outline, a hotspot, tooltip, and tags for whether the outline is to be rendered
+ * in screen coordinates or real coordinates.
  */
 /*! \var int ActionArea::offset
  * hotspot is at this location.
