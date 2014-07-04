@@ -135,7 +135,6 @@ void InitializeDataFactory()
 	lobjectfactory.DefineNewObject(LAX_GRADIENTDATA,    "GradientData",    createLGradientData,NULL);
 	lobjectfactory.DefineNewObject(LAX_IMAGEPATCHDATA,  "ImagePatchData",  createLImagePatchData,NULL);
 	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,NULL);
-	lobjectfactory.DefineNewObject(LAX_COLORPATCHDATA,  "ColorPatchData",  createLColorPatchData,NULL);
 	lobjectfactory.DefineNewObject(LAX_SOMEDATAREF,     "SomeDataRef",     createLSomeDataRef,NULL);
 	lobjectfactory.DefineNewObject(LAX_ENGRAVERFILLDATA,"EngraverFillData",createLEngraverFillData,NULL);
 }
