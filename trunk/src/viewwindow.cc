@@ -2573,7 +2573,7 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 	sc->Add(LOV_ObjFirst,       LAX_Home,0,0,   _("MoveObjFirst"),   _("Move object to first in layer"),NULL,0);
 	sc->Add(LOV_ObjLast,        LAX_End,0,0,    _("MoveObjLast"),    _("Move object to last in layer"),NULL,0);
 	sc->Add(LOV_ToggleDrawFlags,'D',ShiftMask,0,_("ToggleDrawFlags"),_("Toggle drawing flags"),NULL,0);
-	sc->Add(LOV_ObjectIndicator,'i',0,0,       _("Object Info"),     _("Toggle showing object information"),NULL,0);
+	sc->Add(LOV_ObjectIndicator,'i',0,0,        _("ObjectInfo"),     _("Toggle showing object information"),NULL,0);
 	sc->Add(LOV_ForceRemap,     'r',ControlMask,0,_("ForceRemap"),   _("Force reapplication of any alignment rules of objects in current spread"),NULL,0);
 
 	return sc;
