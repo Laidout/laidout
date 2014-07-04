@@ -226,6 +226,8 @@ LaidoutApp::LaidoutApp()
   : anXApp(),
 	preview_file_bases(2)
 {	
+	autosaveid=0;
+
 	runmode=RUNMODE_Normal;
 
 	config_dir=newstr(getenv("HOME"));
@@ -277,6 +279,30 @@ LaidoutApp::~LaidoutApp()
 	if (ghostscript_binary) delete[] ghostscript_binary;
 	if (calculator)		    calculator->dec_count();
 }
+
+
+int LaidoutApp::Idle(int tid)
+{
+	if (tid==autosaveid) { Autosave(); return 0; }
+
+	return 1;
+}
+
+/*! Return 0 for success, or nonzero for unable to save.
+ */
+int LaidoutApp::Autosave()
+{
+	DBG cerr <<" *** autosave to: "<<prefs.autosave_path<<endl;
+	DBG cerr <<" *** need to implement autosave!!"<<endl;
+
+	//types of saves:
+	//  autosave actual files
+	//  autosave as backups
+	//  save for crash recovery
+
+	return 1;
+}
+
 
 ObjectDef *LaidoutApp::makeObjectDef()
 {
@@ -474,6 +500,12 @@ int LaidoutApp::init(int argc,char **argv)
 			//addwindow(new NewDocWindow(NULL,"New Document",ANXWIN_LOCAL_ACTIVE,0,0,0,0, 0));
 			addwindow(BrandNew());
 
+		if (prefs.autosave>0) {
+			int ms=prefs.autosave*60*1000;
+			DBG cerr <<"Will autosave every "<<int(prefs.autosave)<<":"<<int((prefs.autosave-floor(prefs.autosave))*60)<<" min"<<endl;
+			autosaveid=addtimer(this, ms,ms, -1);
+		}
+
 	} else if (runmode==RUNMODE_Impose_Only) {
 		//***
 
@@ -574,6 +606,12 @@ int LaidoutApp::createlaidoutrc()
 					   //drop shadow
 					  "# Customize how some things get dispalyed or entered:\n"
 					  "#pagedropshadow 5    #how much to offset drop shadows around papers and pages \n"
+
+					   //autosave
+					  " #Autosave settings\n"
+					  "autosave 0  #number of minutes (such as 1.5) between autosaves\n"
+					  "autosave_path ./.%%f.autosave  #default location for autosave, relative to actual file\n"
+					  "\n"
 
 					   //units
 					  "#defaultunits inches #the default units presented to the user. In files, it is always inches.\n"
@@ -791,6 +829,12 @@ int LaidoutApp::readinLaidoutDefaults()
 					notifyPrefsChanged(NULL,PrefsDefaultUnits);
 				}
 			}
+
+		} else if (!strcmp(name,"autosave_path")) {
+			if (!isblank(value)) makestr(prefs.autosave_path, value);
+
+		} else if (!strcmp(name,"autosave")) {
+			DoubleAttribute(value, &prefs.autosave, NULL);
 		}
 	}
 	

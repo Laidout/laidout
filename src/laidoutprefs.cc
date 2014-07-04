@@ -69,13 +69,15 @@ LaidoutPreferences::LaidoutPreferences()
     temp_dir=NULL;
 	palette_dir=newstr("/usr/share/gimp/2.0/palettes");
 
-	autosave=0;
-	autosave_dir=newstr("./.%f.autosave");
+	preview_size=400;
+
+	autosave=0; //minutes
+	autosave_path=newstr("./.%f.autosave");
 }
 
 LaidoutPreferences::~LaidoutPreferences()
 {
-	delete[] autosave_dir;
+	delete[] autosave_path;
 	delete[] unitname;
 	delete[] splash_image_file;
 	delete[] default_template;
@@ -87,6 +89,8 @@ LaidoutPreferences::~LaidoutPreferences()
 Value *LaidoutPreferences::duplicate()
 {
 	LaidoutPreferences *p=new LaidoutPreferences;
+
+	p->preview_size=preview_size;
 	p->default_units=default_units;
 	makestr(p->unitname,unitname);
 	p->pagedropshadow=pagedropshadow;
@@ -95,7 +99,7 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->defaultpaper,defaultpaper);
 	makestr(p->temp_dir,temp_dir);
 	p->autosave=autosave;
-	makestr(p->autosave_dir,autosave_dir);
+	makestr(p->autosave_path,autosave_path);
 
 	return p;
 }
@@ -130,6 +134,13 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			_("Splash image file"),
 			_("Splash image file"),
 			"File", NULL,NULL,
+			0,
+			NULL);
+
+	def->push("previewsize",
+			_("Preview size"),
+			_("Pixel width or height to render cached previews of objects for on screen viewing. "),
+			"real", NULL,"5",
 			0,
 			NULL);
 
@@ -189,8 +200,8 @@ ObjectDef *LaidoutPreferences::makeObjectDef()
 			0,
 			NULL);
 
-	def->push("autosave_dir",
-			_("Autosave dir"),
+	def->push("autosave_path",
+			_("Autosave path"),
 			_("Where and how to save when autosaving. Relative paths are to current file, %%f is current file name."),
 			"string", NULL,NULL,
 			0,
