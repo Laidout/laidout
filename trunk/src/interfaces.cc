@@ -43,6 +43,8 @@
 #include "interfaces/graphicalshell.h"
 #include "interfaces/anchorinterface.h"
 #include "interfaces/cloneinterface.h"
+#include "interfaces/pagemarkerinterface.h"
+
 #include "interfaces/animationinterface.h"
 
 
@@ -95,15 +97,10 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 		existingpool->push(i);
 		i->dec_count();
 
-		 //------Freehand
-		i=new FreehandInterface(NULL,id++,NULL);
-		existingpool->push(i);
-		i->dec_count();
-
 		 //------Animation
-		i=new AnimationInterface(NULL,id++,NULL);
-		existingpool->push(i);
-		i->dec_count();
+		//i=new AnimationInterface(NULL,id++,NULL);
+		//existingpool->push(i);
+		//i->dec_count();
 
 		// *************** end testing
 	}
@@ -139,6 +136,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(i);
 	i->dec_count();
 	
+	 //------Freehand
+	i=new FreehandInterface(NULL,id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
 	 //------Paths
 	i=new LPathInterface(id++,NULL);
 	existingpool->push(i); //2nd null is pathop pool
@@ -161,6 +163,11 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 
 
 	//------------------------Overlays---------------
+
+	 //------PageMarkerInterface
+	i=new PageMarkerInterface(NULL,id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
 
 	 //------ObjectIndicator
 	i=new ObjectIndicator(id++,NULL);
