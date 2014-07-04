@@ -79,10 +79,15 @@ enum RunModeType {
 		RUNMODE_Impose_Only
 	};
 
-class LaidoutApp : public Laxkit::anXApp, public Value
+class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventReceiver
 {
  protected:
 	void dumpOutResources();
+
+	int autosaveid;
+	virtual int  Idle(int tid=0);
+	virtual int Autosave();
+
  public:
 	RunModeType runmode;
 
