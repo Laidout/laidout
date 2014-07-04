@@ -28,13 +28,14 @@ class LaidoutPreferences : public Value
 	int default_units;
 	char *unitname;
 	int pagedropshadow;
+	int preview_size;
 	char *splash_image_file;
 	char *default_template;
 	char *defaultpaper;
 	char *temp_dir;
 	char *palette_dir;
 	double autosave;
-	char *autosave_dir;
+	char *autosave_path;
 	//PtrStack<char> palette_dirs;
 	Laxkit::PtrStack<char> icon_dirs;
 
