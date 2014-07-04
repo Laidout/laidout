@@ -1,2 +1,7 @@
 Interfaces that are not particularly tied to specific object types should go in here.
-Interfaces that are for specific object types should go in ../dataobjects.
+Interfaces that are for specific DrawableObject types should go in ../dataobjects.
+
+Add Makefile dependency in the "objs" list, then refresh dependency map with "make depends"
+
+To have your interface actually available, you must add creation code in ../interfaces.cc.
+
