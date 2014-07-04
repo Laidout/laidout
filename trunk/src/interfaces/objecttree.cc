@@ -17,6 +17,7 @@
 #include "objecttree.h"
 #include "../dataobjects/drawableobject.h"
 #include "../language.h"
+#include "../laidout.h"
 
 #include <lax/button.h>
 #include <lax/laxutils.h>
@@ -195,39 +196,44 @@ int ObjectTreeWindow::init()
 	 //Add buttons: [add][remove][up][down][dup]
 
  	 //add
-    last=tbut=new Button(this,"add",NULL,0, 0,0,0,0, 1,
+    last=tbut=new Button(this,"add",NULL,IBUT_ICON_ONLY, 0,0,0,0, 1,
                         last,object_id,"add",
                         0,_("+"),NULL,NULL,3,3);
+	tbut->SetIcon(laidout->icons.GetIcon("Add"));
 	tbut->tooltip(_("Add an empty group"));
     AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
 
 	 //up
-    last=tbut=new Button(this,"up",NULL,0, 0,0,0,0, 1,
+    last=tbut=new Button(this,"up",NULL,IBUT_ICON_ONLY, 0,0,0,0, 1,
                         last,object_id,"up",
                         0,_("^"),NULL,NULL,3,3);
+	tbut->SetIcon(laidout->icons.GetIcon("MoveUp"));
 	tbut->tooltip(_("Move each selected up within each layer"));
     AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
 
 	 //down
-    last=tbut=new Button(this,"down",NULL,0, 0,0,0,0, 1,
-                        last,object_id,"up",
+    last=tbut=new Button(this,"down",NULL,IBUT_ICON_ONLY, 0,0,0,0, 1,
+                        last,object_id,"down",
                         0,_("v"),NULL,NULL,3,3);
+	tbut->SetIcon(laidout->icons.GetIcon("MoveDown"));
 	tbut->tooltip(_("Move each selected down within each layer"));
     AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
 
 	 //duplicate
-    last=tbut=new Button(this,"dup",NULL,0, 0,0,0,0, 1,
+    last=tbut=new Button(this,"dup",NULL,IBUT_ICON_ONLY, 0,0,0,0, 1,
                         last,object_id,"dup",
                         0,_("dup"),NULL,NULL,3,3);
+	tbut->SetIcon(laidout->icons.GetIcon("Duplicate"));
 	tbut->tooltip(_("Duplicate each selected"));
     AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
 
 	AddHSpacer(th/2,th/2,th/2, 50,-1);
 
 	 //remove
-    last=tbut=new Button(this,"remove",NULL,0, 0,0,0,0, 1,
+    last=tbut=new Button(this,"remove",NULL,IBUT_ICON_ONLY, 0,0,0,0, 1,
                         last,object_id,"remove",
                         0,_("-"),NULL,NULL,3,3);
+	tbut->SetIcon(laidout->icons.GetIcon("Trash"));
 	tbut->tooltip(_("Remove selected")); 
     AddWin(tbut,1, tbut->win_w,0,50,50,0, tbut->win_h,0,0,50,0, -1);
 
