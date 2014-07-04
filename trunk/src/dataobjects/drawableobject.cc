@@ -1074,9 +1074,8 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *cont
 		fprintf(f,"%sfilters           #list of filters\n",spc);
 		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
-		fprintf(f,"%skids          #child object list\n",spc);
-		fprintf(f,"%s  object ImageData #...or any other drawable object\n",spc);
-		fprintf(f,"%s    ...\n",spc);
+		fprintf(f,"%skids          #child object list...\n",spc);
+		//fprintf(f,"%s    ...\n",spc);
 		return;
 	}
 

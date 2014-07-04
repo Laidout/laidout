@@ -18,6 +18,8 @@
 
 #include <lax/transformmath.h>
 #include <lax/laxutils.h>
+#include <lax/interfaces/somedatafactory.h>
+
 #include <lax/lists.cc>
 
 #include "page.h"
@@ -695,11 +697,30 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	if (what==-1) {
 		fprintf(f,"%slabeltype circle #Can be circle, square, diamond, triangle, octagon\n",spc);
-		fprintf(f,"%s#Pages contain layers which contain drawable objects.\n",spc);
-		fprintf(f,"%s#Layers are really just a group whose parent is a page.\n",spc);
-		fprintf(f,"%slayer\n",spc);
+		fprintf(f,"\n%s#Pages contain layers which contain drawable objects.\n",spc);
+		fprintf(f,"%s#Layers are really just Group objects whose parent is a page.\n",spc);
+		fprintf(f,"%s#Each drawable object has a number of common options, then has object\n",spc);
+		fprintf(f,"%s#specific values under \"config\".\n",spc);
+
+		fprintf(f,"\n%slayer\n",spc);
 		Group g;
 		g.dump_out(f,indent+2,-1,context);
+
+
+         //dump out each available object type...
+        SomeData *o;
+        const char *t;
+        for (int c=0; c<somedatafactory->NumTypes(); c++) {
+            t=somedatafactory->TypeStr(c);
+            fprintf(f,"%s    object %s\n",spc, t);
+
+            o=somedatafactory->newObject(t);
+            o->dump_out(f,indent+6, -1, context);
+            o->dec_count();
+
+			fprintf(f,"\n");
+        }
+
 		return;
 	}
 	
