@@ -566,7 +566,7 @@ Page::Page(PageStyle *npagestyle,int num)
 	modtime=times(NULL);
 	pagestyle=npagestyle;
 	if (pagestyle) pagestyle->inc_count();
-	labeltype=MARKER_Unmarked;
+	labeltype=MARKER_Circle;
 	labelcolor.rgbf(1,1,1);
 	thumbnail=NULL;
 	pagenumber=num;

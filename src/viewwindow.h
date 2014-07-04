@@ -81,6 +81,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	Group *limbo;
 
 	virtual void setupthings(int tospread=-1,int topage=-1);
+	virtual void UpdateMarkers();
 	virtual void setCurobj(VObjContext *voc);
 	virtual void findAny();
 	virtual int nextObject(VObjContext *oc,int inc=0);

@@ -26,6 +26,7 @@ objs= \
 	cloneinterface.o \
 	animationinterface.o \
 	objecttree.o \
+	pagemarkerinterface.o \
 
 
 

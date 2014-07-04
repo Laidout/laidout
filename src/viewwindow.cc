@@ -41,6 +41,7 @@
 
 #include "language.h"
 #include "interfaces/objecttree.h"
+#include "interfaces/pagemarkerinterface.h"
 #include "printing/print.h"
 #include "printing/psout.h"
 #include "impositions/impositioneditor.h"
@@ -1030,6 +1031,8 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	 // ectm is transform between dp and the current page (or current spread if no current page)
 	transform_set(ectm,1,0,0,1,0,0);
 	
+	UpdateMarkers();
+
 	if (!spread) {
 		curobj.set(NULL,1, 0); //set to limbo
 		return;
@@ -1074,6 +1077,25 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 	char scratch[50];
 	sprintf(scratch,_("Viewing spread number %d/%d"),spreadi+1,doc->imposition->NumSpreads(viewmode));
 	postmessage(scratch);
+}
+
+void LaidoutViewport::UpdateMarkers()
+{
+	int pmii=HasInterface("PageMarkerInterface")-1;
+	if (pmii>=0) {
+		PageMarkerInterface *pmi=dynamic_cast<PageMarkerInterface*>(interfaces.e[pmii]);
+		pmi->ClearPages();
+		if (spread) {
+			PageLocation *pl;
+			for (int c=0; c<spread->pagestack.n(); c++) {
+				pl=spread->pagestack.e[c];
+				if (!pl->page && pl->index>=0) pl->page=doc->pages.e[pl->index];
+				if (!pl->page) continue;
+
+				pmi->AddPage(pl->page, pl->outline->transformPoint(flatpoint(pl->outline->minx,pl->outline->miny)), 1);
+			}
+		}
+	}
 }
 
 //! Insert ndata into the curobj context.
@@ -2257,6 +2279,7 @@ void LaidoutViewport::Refresh()
 		 //setup doublebuffer
 		if (lfirsttime==1) Center(1); 
 		lfirsttime=0; 
+		UpdateMarkers();
 	}
 	DBG cerr <<"======= Refreshing LaidoutViewport..";
 	
@@ -2385,12 +2408,12 @@ void LaidoutViewport::Refresh()
 			 // write page number near the page..
 			 // mostly for debugging at the moment, might be useful to have
 			 // this be a togglable feature.
-			p=dp->realtoscreen(flatpoint(0,0));
-			if (page==curpage) dp->NewFG(0,0,0);
-			dp->DrawScreen();
-			if (page->label) dp->textout((int)p.x,(int)p.y,page->label,-1);
-			  else dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
-			dp->DrawReal();
+			//p=dp->realtoscreen(flatpoint(0,0));
+			//if (page==curpage) dp->NewFG(0,0,0);
+			//dp->DrawScreen();
+			//if (page->label) dp->textout((int)p.x,(int)p.y,page->label,-1);
+			//  else dp->drawnum((int)p.x,(int)p.y,spread->pagestack.e[c]->index+1);
+			//dp->DrawReal();
 
 			 // Draw page margin path, if any
 			SomeData *marginoutline=doc->imposition->GetPageMarginOutline(pagei,1);
@@ -3362,22 +3385,21 @@ void ViewWindow::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context)
 }
 
 
-//! Called from constructors, configure the viewport and ***add the extra pager, layer indicator, etc...
-/*! Adds local copies of all the interfaces in interfacespool.
+//! Called from constructors, configure the viewport.
+/*! Adds local copies of all the interfaces in laidout->interfacepool.
  */
 void ViewWindow::setup()
 {
 	if (viewport) viewport->dp->NewBG(rgbcolor(255,255,255));
 
-	//***this should be making dups of interfaces stack? or set current tool, etc...
+	int i=-1;
 	for (int c=0; c<laidout->interfacepool.n; c++) {
-		 //path interface not ready for prime time, so disable except in debugging mode
-		//DBG if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PathInterface")) continue;
-
+		if (!strcmp(laidout->interfacepool.e[c]->whattype(),"PageMarkerInterface"))
+			i=laidout->interfacepool.e[c]->id;
 		AddTool(laidout->interfacepool.e[c]->duplicate(NULL),0,1);
 	}
 	SelectTool(0);
-	//AddWin(new LayerChooser);...
+	if (i>=0) SelectTool(i);
 }
 
 //--------- ***special page flipper
@@ -3537,7 +3559,7 @@ int ViewWindow::init()
 			if (tools.e[c]->interface_type!=INTERFACE_Overlay) continue;
 			img=laidout->icons.GetIcon(tools.e[c]->IconId());
 			toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
-			toolselector->SetState(-1,MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
+			toolselector->SetState(-1,(viewport->HasInterface(tools.e[c]->id)?MENU_CHECKED:0)|MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
 		}
 	}
 
