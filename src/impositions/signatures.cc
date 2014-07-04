@@ -2244,7 +2244,24 @@ LaxFiles::Attribute *SignatureInstance::dump_out_atts(LaxFiles::Attribute *att,i
 	if (!att) att=new Attribute;
 
 	if (what==-1) {
+		Attribute *subatt;
+
 		Value::dump_out_atts(att,-1,context);
+		for (int c=0; c<att->attributes.n; c++) {
+			subatt=att->attributes.e[c];
+
+			if (!strcmp(subatt->name, "partition")) {
+				subatt->attributes.flush();
+				PaperPartition p;
+				p.dump_out_atts(subatt,-1,context);
+
+			} else if (!strcmp(subatt->name, "pattern")) {
+				subatt->attributes.flush();
+				Signature pt;
+				pt.dump_out_atts(subatt,-1,context);
+			}
+		}
+
 		return att;
 	}
 	
@@ -2340,17 +2357,20 @@ ObjectDef *SignatureInstance::makeObjectDef()
 			NULL);
 			
 
-	sd->push("partition", _("Partition"), _("Partition"),
+	sd->push("sheetspersignature", _("Sheets per signature"), _("Sheets of paper per signature"),
+			"int", NULL, "1", 0, NULL);
+
+	sd->push("autoaddsheets", _("Auto add sheets"), _("Auto add or remove sheets to cover all actual pages"),
+			"boolean", NULL, "false", 0, NULL);
+
+	sd->push("automarks", _("Automarks"), _("outer|innerdot: Whether to automatically apply some printer marks."),
+			"string", NULL, NULL, 0, NULL);
+
+	sd->push("partition", _("Partition"), _("Sectioning info of the piece of paper"),
 			"PaperPartition", NULL, NULL, 0, NULL);
 
 	sd->push("pattern", _("Pattern"), _("The folding pattern"),
 			"Signature", NULL, NULL, 0, NULL);
-
-	sd->push("sheetspersignature", _("Sheets per signature"), _("Sheets per signature"),
-			"int", NULL, "1", 0, NULL);
-
-	sd->push("autoaddsheets", _("Auto add sheets"), _("Auto add sheets"),
-			"boolean", NULL, "false", 0, NULL);
 
 
 	return sd;
@@ -3729,8 +3749,13 @@ int SignatureImposition::RemoveStack(int stack, int insert)
 
 void SignatureImposition::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
+	if (what==-1) {
+		Value::dump_out(f,indent,-1,context);
+		return;
+	}
+
     Attribute att;
-	dump_out_atts(&att,0,context);
+	dump_out_atts(&att,what,context);
     att.dump_out(f,indent);
 }
 
@@ -3739,7 +3764,16 @@ LaxFiles::Attribute *SignatureImposition::dump_out_atts(LaxFiles::Attribute *att
 	if (!att) att=new Attribute;
 
 	if (what==-1) {
-		Value::dump_out_atts(att,-1,context);
+		//Value::dump_out_atts(att,-1,context);
+
+		att->push("name \"Blah\"","Name of the impostion");
+		att->push("description \"blah blah\"", "Description");
+		att->push("numpages 5", "Hint of number of document pages the imposition has to cover");
+		att->push("showwholecover yes", "yes|no, whether to show front and back of whole thing.");
+		Attribute *subatt=att->pushSubAtt("signature", "One or more, defines the actual foldings. If defining an insert, this block is called "
+													   "\"insert\" rather than \"signature\".");
+		SignatureInstance s;
+		s.dump_out_atts(subatt,-1,context);
 		return att;
 	}
 

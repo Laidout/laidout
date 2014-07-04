@@ -2076,16 +2076,43 @@ int Value::FieldIndex(const char *name)
  */
 LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
 {
+	if (!att) att=new Attribute;
+
 	if (what==-1) {
-		 //dump out object def
+		 //dump out part of object def
     	ObjectDef *def=GetObjectDef();
 		if (!def) {
-			DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
-		} else return def->dump_out_atts(att,-1,NULL);
-		return NULL;
+			DBG cerr << "  Value::dump_out_atts(): missing ObjectDef for "<<whattype()<<endl;
+			return NULL;
+		}
+
+		//dump out atts with:
+		//   name:  name defaultvalue??
+		//   value: description
+
+		if (def->fields) {
+			Attribute *subatt;
+			for (int c=0; c<def->fields->n; c++) {
+				if (def->fields->e[c]->format==VALUE_Fields) {
+					subatt=att->pushSubAtt(def->fields->e[c]->name, def->fields->e[c]->description);
+				} else {
+					subatt=NULL;
+					att->push(def->fields->e[c]->name, def->fields->e[c]->description);
+				}
+
+				if (!isblank(def->fields->e[c]->defaultvalue)) {
+					appendstr(att->attributes.e[att->attributes.n-1]->name, " ");
+					appendstr(att->attributes.e[att->attributes.n-1]->name, def->fields->e[c]->defaultvalue);
+				}
+
+				if (subatt) subatt->push("..."); 
+			}
+		}
+
+		//def->dump_out_atts(att,-1,NULL);
+		return att;
 	}
 
-	if (!att) att=new Attribute;
 
 	ObjectDef *def;
 	const char *str;
@@ -2125,17 +2152,95 @@ LaxFiles::Attribute *Value::dump_out_atts(LaxFiles::Attribute *att,int what,Laxk
 	return att;
 }
 
+void dump_out_desc(Attribute *att, FILE *f, int indent, int columns)
+{
+	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+	
+	 //determine indent for description
+	int nw=0, w;
+	for (int c=0; c<att->attributes.n; c++) {
+		w=strlen(att->attributes.e[c]->name) + 1;
+		if (w>nw) nw=w;
+	}
+
+	char fmt[20];
+	sprintf(fmt,"%s%%-%ds",spc, nw);
+	//char spc2[indent+1+nw]; memset(spc,' ',indent+nw); spc[indent+nw]='\0';
+
+	int first;
+	char odescchar;
+	char *ndesc, *desc, *oo;
+	int descwidth=columns-indent-nw;
+	if (descwidth<=10) descwidth=60;
+
+	for (int c=0; c<att->attributes.n; c++) {
+		fprintf(f,fmt,att->attributes.e[c]->name);
+
+		if (att->attributes.e[c]->value) {
+			 //output #description... but wrap to columns
+			ndesc=newstr(att->attributes.e[c]->value);
+			desc=ndesc;
+
+			first=1;
+	        do {
+	          if ((int)strlen(desc)<descwidth) {
+	               //the line fits
+				  if (first) fprintf(f,"#%s\n",desc);
+				  else       fprintf(f,"# %s\n",desc);
+	              break;
+	          }
+
+	           //else line has to be broken
+	          oo=desc+descwidth;
+	          while (oo!=desc && !isspace(*oo)) oo--;
+	          if (oo==desc) {
+	               //no whitespace at all, so print that line anyway
+	              oo=desc+descwidth;
+	          }
+	          odescchar=*oo;
+	          *oo='\0';
+			  if (first) { fprintf(f,"#%s\n",desc); first=0; }
+			  else         fprintf(f,"# %s\n",desc);
+	          fprintf(f,fmt,""); //<- prepare next line
+
+			  *oo=odescchar;
+			  desc=oo;
+			  while (isspace(*desc)) desc++;
+	        } while (desc && *desc);
+
+			delete[] ndesc;
+
+		} else {
+			//no description
+			fprintf(f,"\n");
+		}
+
+		if (att->attributes.e[c]->attributes.n) {
+			dump_out_desc(att->attributes.e[c], f, indent+2, columns);
+		}
+	}
+}
+
 /*! Default will not output the Value's id string. The object calling this class should be doing that.
  */
 void Value::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	if (what==-1) {
-		 //dump out object def
-    	ObjectDef *def=GetObjectDef();
-		if (!def) {
-			DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
-		} else def->dump_out(f,indent,-1,context);
+		Attribute att;
+		dump_out_atts(&att, -1, context);
+		dump_out_desc(&att, f,indent, 120);
 		return;
+
+		//-------------------
+		// //dump out object def
+    	//ObjectDef *def=GetObjectDef();
+		//if (!def) {
+		//	DBG cerr << "  missing ObjectDef for "<<whattype()<<endl;
+		//	return;
+		//}
+		//def->dump_out(f,indent,-1,context);
+		//return;
+		//-------------------
 	}
 
 	if (what==DEFOUT_JSON) {
