@@ -177,6 +177,7 @@ test:
 TreeSelector:
   makeinwindow() doesn't account for columns
   option to use markup for labels
+  objecttree printing columns TWICE
 
 image import preview should say pixel size of image
 
@@ -196,22 +197,25 @@ Clean up mesh/patch controls:
   changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
   implement right button config options to make the settings more discoverable
   circle warp needs a proper circle/ellipse interface
-  mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
   reverse lookup is not very precise
 
+  DONE mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
   DONE delete should not delete whole object
 
 engraving tool:
-  spacingmap in GrowLines needs to use as object point as input, not s,t
+  invert trace sampling: sample white instead of black
+  don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   trace object needs to be in page context, not object context (or must be default option)
   trace object should still be visible when no actual data
   need to be able to load and save trace object and position
+  need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
   pointgroup i/o
   on canvas direction and spacing controller
     -> options to insert various predefined patterns
-	-> multiple burins for different point groups
+	-> multiple burins for different point groups?
 
+  edge abutment
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
   resolution tool: click to add between points within brush, control to destroy points in brush
   finish making value to weight map on canvas editable and work right
@@ -232,6 +236,7 @@ engraving tool:
   implement custom line merge and break to preserve spacing across mesh contraction
   must implement mode based shortcuts in Laxkit
 
+  DONE spacingmap in GrowLines needs to use as object point as input, not s,t
   DONE freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
   DONE toggle on trace box to show/not show trace object (should be transparency slider)
   DONE should be able to increase point sample resolution
@@ -275,26 +280,39 @@ PathInterface:
   DONE displayer->drawFormattedPoints needs to be finalized
   DONE curvemap needs wraparound mode for approximating widths on curved lines
 
+layers palette
+  key controls for navigation within menu:
+    space/enter toggle open and closed submenu
+  edit colors not highlighting every other
+  move
+  rename in place
+  implement buttons
+  locked
+  visible
+  selectable
+
 General design usability
 to be a decent editing platform, Laidout needs:
   undo
   per object visibility
-  layers palette, control:
-    locked
-	visible
-	selectable
+  per object opacity
   better screen renderer
   better key input edits
   guides
   clipping
   text
 
+General Laxkit Interfaces needs:
+  stack of available interfaces
+  DrawData for arbitrary rendering of any known objects to any Displayer object
+  iconmanager
+
 lineedit:
-  DONE dir
+  seems to be an occasional redo bug, reinserting in wrong position
   password
   date
   time
-  seems to be an occasional redo bug, reinserting in wrong position
+  DONE dir
 
 
 implement undo.. ideally use same code for both undo and recordable/assignable actions
@@ -321,14 +339,7 @@ svg
   in/out for meshes
   DONE export needs specialized export config
 
-General Laxkit Interfaces needs:
-  stack of available interfaces
-  DrawData for arbitrary rendering of any known objects to any Displayer object
-  iconmanager
-
 make color slider box be able to be a pane
-
-lack of custom page size input in paper group tool
 
 vital to debug send to printer
 export needs "batch" send, break into smaller segments
@@ -340,7 +351,7 @@ file selector.. need sort by mod date or name, exclude/include directories
 	need hover indicator, and better scan.. ignoring offset
 
 interface for custom paper size in:
-    signature editor
+    DONE signature editor
 	paper group editor
   implement paper favorites
   laidoutrc paper sizes
