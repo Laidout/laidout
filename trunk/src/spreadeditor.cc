@@ -327,16 +327,6 @@ void SpreadInterface::GetSpreads()
 	view->Update(doc);
 }
 
-// // values for arrangestate
-//#define ArrangeNeedsArranging -1
-//#define ArrangeTempRow         1
-//#define ArrangeTempColumn      2
-//#define ArrangeAutoAlways      3
-//#define ArrangeAutoTillMod     4
-//#define Arrange1Row            5
-//#define Arrange1Column         6
-//#define ArrangeGrid            7
-//#define ArrangeCustom          8
 
 //! Arrange the spreads in some sort of order.
 /*! Default is have 1 page take up about an inch of screen space.
@@ -344,7 +334,7 @@ void SpreadInterface::GetSpreads()
  * number of spreads fit on screen.
  *
  * how==-1 means use default arrangetype. 
- * Otherwise, 0==auto, 1==1 row, 2==1 column, 3=grid by proportion of curwindow
+ * Otherwise, use ArrangeTypes.
  *
  * This is called on shift-'a' keypress, a firsttime refresh, and curwindow resize.
  * 
@@ -363,7 +353,9 @@ void SpreadInterface::ArrangeSpreads(int how)//how==-1
 			   W=view->maxx-view->minx,
 			   H=view->maxy-view->miny;
 		dp->SetSpace(X-W,X+W+W,Y-H,Y+H+H);
-		dp->Center(X,X+W,Y,Y+H);
+		if (view->arrangetype!=ArrangeRows) {
+			dp->Center(X,X+W,Y,Y+H);
+		}
 	}
 }
 
@@ -516,6 +508,7 @@ int SpreadInterface::Refresh()
 	 //draw selection rectangle, if any
 	if (buttondown.isdown(0,LEFTBUTTON) && dragpage<0) {
 		dp->NewFG(0,0,255);
+		dp->LineAttributes(1,LineSolid,CapButt,JoinMiter);
 		dp->DrawScreen();
 		dp->drawline(  lbdown.x,   lbdown.y,   lbdown.x, lastmove.y);
 		dp->drawline(  lbdown.x, lastmove.y, lastmove.x, lastmove.y);
@@ -538,9 +531,17 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 
 	if (curpages.n || curpage>=0) {
 		menu->AddSep(_("Current pages"));
-//		menu->AddItem(_("Detach"),SIA_DetachPages);//create a limbo page string
 		menu->AddItem(curpages.n>1?_("Delete Pages"):_("Delete Page"),SIA_DeletePages);
+//		menu->AddItem(_("Detach"),SIA_DetachPages);//create a limbo page string
 //		menu->AddItem(_("Export to new document..."),SIA_ExportPages);
+
+		if (curpages.n>1) {
+			bool ishidden=false;
+			for (int c=0; c<curspreads.n; c++) if (curspreads.e[c]->hidden) { ishidden=true; break; }
+			if (ishidden) 
+				 menu->AddItem(_("Unhide Pages"),SIA_HidePages);
+			else menu->AddItem(_("Hide Pages"),SIA_HidePages);
+		}
 	}
 
 	menu->AddSep();
@@ -566,6 +567,11 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 
 	menu->AddSep();
     menu->AddItem(_("Show thumbnails"), SIA_Thumbnails, LAX_ISTOGGLE|(drawthumbnails?LAX_CHECKED:0));
+
+	menu->AddSep(_("Arrange"));
+	for (int c=ArrangetypeMin; c<=ArrangetypeMax; c++) {
+	    menu->AddItem(arrangetypestring(c), SIA_ArrangeTypeMin+c-ArrangetypeMin, LAX_ISTOGGLE|(view->arrangetype==c?LAX_CHECKED:0));
+	}
 
 	return menu;
 }
@@ -601,6 +607,20 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 		PerformAction(SIA_DeletePages);
 		return 0;
 
+	} else if (i==SIA_HidePages) {
+		PerformAction(SIA_HidePages);
+		return 0;
+
+	} else if (i>=SIA_ArrangeTypeMin && i<=SIA_ArrangeTypeMax) {
+		view->arrangetype = i-SIA_ArrangeTypeMin + ArrangetypeMin;
+
+		if (viewport) viewport->postmessage(arrangetypestring(view->arrangetype));
+		else app->postmessage(arrangetypestring(view->arrangetype));
+
+		ArrangeSpreads();
+		//Center(1);
+		needtodraw=1;
+		return 0;
 
 	} else if (i==SIA_NewView) {
 		view->dec_count();
@@ -792,6 +812,24 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 		 //dragged out a selection, so select everything inside the box
 		if ((state&LAX_STATE_MASK)==0) clearSelection();
 		cout <<" **** spread editor must implement select all in box!!!"<<endl;
+
+		int page;
+		DoubleBBox box;
+		box.addtobounds(lbdown);
+		box.addtobounds(lastmove);
+		double m[6];
+		for (int c=0; c<view->spreads.n; c++) {
+			transform_mult(m, view->spreads.e[c]->m(), dp->Getctm());
+			if (box.intersect(m, view->spreads.e[c], true, false)) {
+				curspreads.pushnodup(view->spreads.e[c],0);
+
+				for (int c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
+					page=view->spreads.e[c]->spread->pagestack.e[c2]->index;
+					if (page>=0) curpages.pushnodup(page);
+				}
+			}
+		}
+
 		needtodraw=1;
 		return 0;
 	}
@@ -804,9 +842,9 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 	 //If mouse up outside window, maybe call up that page in a view window
 	if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
 		 // mouse up outside window so search for a ViewWindow to shift view for
-		anXWindow *win=NULL;
-		int mx,my;
-		mouseposition(d->id,NULL,&mx,&my,NULL,&win);
+		anXWindow *win=app->findDropCandidate(curwindow,x,y, NULL,NULL);
+		//int mx,my;
+		//mouseposition(d->id,NULL,&mx,&my,NULL,&win);
 		if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
 			LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
 			vp->UseThisDoc(doc);
@@ -998,6 +1036,7 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 			lastmove.x=x;
 			lastmove.y=y;
 			mx=x; my=y;
+
 		} else {
 			//*** if moving back to original area, make cursor be a "cancel" cursor
 			//*** for dropping pages to limbo, use XC_sizing
@@ -1140,10 +1179,11 @@ Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 	sc->Add(SIA_ToggleArrange,  'A',ShiftMask,0, _("Arrange"),        _("Toggle arrangement type"),NULL,0);
 	sc->Add(SIA_RefreshArrange, 'A',ShiftMask|ControlMask,0, _("RefreshArrange"), _("Refresh with current arrangement type"),NULL,0);
 
-	sc->Add(SIA_AddPageAfter,   'p',0,0,         _("Add Page"),         _("Add a page after current"),NULL,0);
-	sc->Add(SIA_AddPageBefore,  'P',ShiftMask,0, _("Add Page Before"),  _("Add a page before current"),NULL,0);
-	sc->Add(SIA_DeletePages,    LAX_Del,0,0,     _("Delete pages"),     _("Delete pages"),NULL,0);
+	sc->Add(SIA_AddPageAfter,   'p',0,0,         _("AddPage"),         _("Add a page after current"),NULL,0);
+	sc->Add(SIA_AddPageBefore,  'P',ShiftMask,0, _("AddPageBefore"),   _("Add a page before current"),NULL,0);
+	sc->Add(SIA_DeletePages,    LAX_Del,0,0,     _("Deletepages"),     _("Delete pages"),NULL,0);
 	sc->AddShortcut(LAX_Bksp,0,0, SIA_DeletePages);
+	sc->Add(SIA_HidePages,      'h',0,0,         _("Hidepages"),       _("Toggle hiding of pages"),NULL,0);
 
 	manager->AddArea("SpreadInterface",sc);
 	return sc;
@@ -1254,6 +1294,20 @@ int SpreadInterface::PerformAction(int action)
         return 0;
 
 
+	} else if (action==SIA_HidePages) {
+		 //unhides if any in range are hidden
+		bool newhide=true;
+		for (int c=0; c<curspreads.n; c++) {
+			if (curspreads.e[c]->hidden) newhide=false;
+		}
+		for (int c=0; c<curspreads.n; c++) {
+			curspreads.e[c]->hidden=newhide;
+		}
+		if (newhide) PostMessage(_("Pages hidden."));
+		else PostMessage(_("Pages unhidden."));
+		needtodraw=1;
+		return 0;
+
 	} else if (action==SIA_DeletePages) {
         if (!doc) return 0;
 		if (doc->pages.n==1) {
@@ -1314,6 +1368,10 @@ int SpreadInterface::CharInput(unsigned int ch, const char *buffer,int len,unsig
 	    return PerformAction(action);
 	}
 
+	if (ch==LAX_Esc && (state&LAX_STATE_MASK)==0 && curspreads.n>0) {
+		clearSelection();
+		return 0;
+	}
 
 	if (ch==LAX_Shift && dragpage>=0 && curpages.n==1) {
 		const_cast<LaxMouse*>(d->paired_mouse)->setMouseShape(curwindow,LAX_MOUSE_Exchange); //swap
