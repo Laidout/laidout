@@ -585,6 +585,10 @@ int LaidoutViewport::Event(const Laxkit::EventData *data,const char *mes)
 			}	
 		}
 		
+		for (int c=0; c<interfaces.n; c++) {
+			interfaces.e[c]->Event(data,mes);
+		}
+
 		return 0;
 
 	} else if (!strcmp(mes,"prefsChange")) {
@@ -874,6 +878,28 @@ int LaidoutViewport::NextSpread()
 	needtodraw=1;
 	return spreadi;
 }
+
+//! Select the ith spread.
+/*! Returns the current spread index on success, else a negative number.
+ *
+ * Return -1 for error or the index of the spread.
+ */
+int LaidoutViewport::SelectSpread(int i)
+{
+	if (!spread || !(doc && doc->imposition)) return -1;
+	
+	int max=-1;
+	max=doc->imposition->NumSpreads(viewmode);
+
+	if (max>=0) {
+		if (i>=0 && i<max) spreadi=i;
+		else spreadi=-1;
+	} else spreadi=-1;
+	setupthings(spreadi,-1);
+	needtodraw=1;
+	return spreadi;
+}
+
 
 //! Select the spread with page number less than current page not in current spread.
 /*! Returns the current page index on success, else a negative number.
@@ -3195,7 +3221,6 @@ ViewWindow::ViewWindow(Document *newdoc)
 					0,0,500,600,1,new LaidoutViewport(newdoc))
 { 
 	viewport->dec_count(); //remove extra creation count
-	var1=var2=var3=NULL;
 	project=NULL;
 	pagenumber=NULL;
 	toolselector=NULL;
@@ -3215,7 +3240,6 @@ ViewWindow::ViewWindow(anXWindow *parnt,const char *nname,const char *ntitle,uns
 	viewport->dec_count(); //remove extra creation count
 	viewport->GetShortcuts();
 	project=NULL;
-	var1=var2=var3=NULL;
 	toolselector=NULL;
 	pagenumber=NULL;
 	doc=newdoc;
@@ -3417,7 +3441,7 @@ class PageFlipper : public NumInputSlider
 				anXWindow *prev,unsigned long nowner,const char *nsendthis,const char *nlabel);
 	~PageFlipper();
 	virtual void Refresh();
-	virtual const char *tooltip(int mouseid);
+	virtual const char *tooltip(int mouseid=0);
 };
 
 /*! Incs count on doc.
@@ -3570,13 +3594,6 @@ int ViewWindow::init()
 
 
 	 //----- Page Flipper
-	pagenumber=NULL;
-//	last=pagenumber=new PageFlipper(doc,this,"page number", 
-//									last,object_id,"newPageNumber",
-//									_("Page: "));
-//	pagenumber->tooltip(_("The current page"));
-//	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
-	
 	last=ibut=new Button(this,"prev spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"prevSpread",-1,
 						 "<",NULL,laidout->icons.GetIcon("PreviousSpread"),buttongap);
 	ibut->tooltip(_("Previous spread"));
@@ -3587,6 +3604,13 @@ int ViewWindow::init()
 	ibut->tooltip(_("Next spread"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
+	pagenumber=NULL;
+	last=pagenumber=new PageFlipper(doc,this,"spread number", 
+									last,object_id,"newSpreadNumber",
+									_("Page: "));
+	pagenumber->tooltip(_("The current spread"));
+	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
+	
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 //								NULL,object_id,"newLayerNumber",
 //								"Layer: ",1,1,1); //*** get cur page, use those layers....
@@ -4120,6 +4144,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 			((LaidoutViewport *)viewport)->SelectPage(curpage);
 			updateContext(0);
 		} else if (c==-2) PostMessage(_("Cannot delete the only page."));
+		else if (c==-1) PostMessage(_("Cannot delete limbo page."));
 		else PostMessage(_("Error deleting page."));
 		
 
