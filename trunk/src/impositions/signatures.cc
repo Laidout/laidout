@@ -817,8 +817,8 @@ void Signature::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (what==-1) {
 		fprintf(f,"%sname \"Some name\"      #short name of the signature\n",spc);
 		fprintf(f,"%sdescription \"Huh\"     #a one line description of the signature\n",spc);
-		fprintf(f,"%ssheetspersignature 1  #The number of sheets of paper to stack before\n",spc);
-		fprintf(f,"%s                      #applying inset or folding\n",spc);
+		//fprintf(f,"%ssheetspersignature 1  #The number of sheets of paper to stack before\n",spc);
+		//fprintf(f,"%s                      #applying inset or folding\n",spc);
 		fprintf(f,"%sautoaddsheets no      #If no, then more pages means use more signatures.\n",spc);
 		fprintf(f,"%s                      #If yes, then add more sheets, and fold all as a single signature.\n",spc);
 		fprintf(f,"\n");
@@ -896,8 +896,8 @@ Attribute *Signature::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::an
 		
 		att->push("name \"Some name\"",   "short name of the signature ");
 		att->push("description \"Huh\"",  "a one line description of the signature ");
-		att->push("sheetspersignature 1", "The number of sheets of paper to stack before "
-										  "applying inset or folding ");
+//		att->push("sheetspersignature 1", "The number of sheets of paper to stack before "
+//										  "applying inset or folding ");
 	
 		att->push("numhfolds 0", "The number of horizontal fold lines of a folding pattern ");
 		att->push("numvfolds 0", "The number of vertical fold lines of a folding pattern ");
@@ -1670,6 +1670,7 @@ SignatureInstance::~SignatureInstance()
 	if (next_insert) delete next_insert;
 	if (next_stack)  delete next_stack;
 	if (partition) partition->dec_count();
+	if (pattern) pattern->dec_count();
 
 	if (linestyle) linestyle->dec_count();
 }
@@ -2276,6 +2277,9 @@ LaxFiles::Attribute *SignatureInstance::dump_out_atts(LaxFiles::Attribute *att,i
 	}
 
 	att->push("autoaddsheets",autoaddsheets?"yes":"no");
+	char ii[10];
+	sprintf(ii,"%d",sheetspersignature);
+	att->push("sheetspersignature",ii);
 
 	Attribute *satt=att->pushSubAtt("pattern",NULL);
 	pattern->dump_out_atts(satt,what,context);
@@ -2313,6 +2317,9 @@ void SignatureInstance::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::a
 
 		} else if (!strcmp(name,"numpages")) {
 			IntAttribute(value, &nump);
+
+		} else if (!strcmp(name,"sheetspersignature")) {
+			IntAttribute(value, &sheetspersignature);
 
 		} else if (!strcmp(name,"autoaddsheets")) {
 			autoaddsheets=BooleanAttribute(value);
