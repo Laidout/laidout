@@ -248,16 +248,16 @@ static const char *pptpaper[12]= {
  */
 int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
-	if (!out) return 1;
+	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
+	if (!config) return 1;
 	
-	Document *doc =out->doc;
-	int start     =out->start;
-	int end       =out->end;
-	int layout    =out->layout;
-	Group *limbo  =out->limbo;
-	PaperGroup *papergroup=out->papergroup;
-	if (!filename) filename=out->filename;
+	Document *doc =config->doc;
+	int start     =config->start;
+	int end       =config->end;
+	int layout    =config->layout;
+	Group *limbo  =config->limbo;
+	PaperGroup *papergroup=config->papergroup;
+	if (!filename) filename=config->filename;
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
@@ -291,7 +291,6 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	
 	 //figure out paper size and orientation
 	const char *papersize=NULL, *landscape=NULL;
-	int c;
 	const char **tmp;
 	//double paperwidth; //,paperheight;
 
@@ -303,7 +302,8 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	//paperwidth=papergroup->papers.e[0]->box->paperstyle->width;
 
 	 //match the first paper name with a passepartout paper name
-	for (c=0, tmp=pptpaper; *tmp; c++, tmp++) {
+	tmp=pptpaper;
+	for (int c=0; *tmp; c++, tmp++) {
 		if (!strcmp(papergroup->papers.e[0]->box->paperstyle->name,*tmp)) break;
 	}
 	if (*tmp) papersize=*tmp;
@@ -345,7 +345,10 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 	
 	transform_set(mm,72,0,0,72,0,0);
 	psCtmInit();
-	for (c=start; c<=end; c++) {
+	for (int c=start; c<=end; c++) {
+		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
+        if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) {
 			fprintf(f,"  <page>\n");

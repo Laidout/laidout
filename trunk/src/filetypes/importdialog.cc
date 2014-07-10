@@ -60,7 +60,7 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *nname,const char
 			nfile,npath,nmask)
 {
 	if (defdpi<=0) {
-		if (ndoc) defdpi=ndoc->imposition->paper->paperstyle->dpi; //***<-- crash hazard!
+		if (ndoc) defdpi=ndoc->imposition->GetDefaultPaper()->dpi; //***<-- crash hazard!
 		else defdpi=300;//***
 	}
 
