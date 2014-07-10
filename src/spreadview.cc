@@ -43,6 +43,7 @@ const char *arrangetypestring(int a)
 	if (a==ArrangeAutoAlways)       return _("Auto arrange on each window size change");
 	else if (a==ArrangeAutoTillMod) return _("Auto arrange until you move a spread");
 	else if (a==Arrange1Row)        return _("Arrange in one row");
+	else if (a==ArrangeRows)        return _("Arrange in rows at current scale");
 	else if (a==Arrange1Column)     return _("Arrange in one column");
 	else if (a==ArrangeGrid)        return _("Arrange in a grid based on screen proportions");
 	else if (a==ArrangeCustom)      return _("You will do all arranging");
@@ -72,6 +73,7 @@ LittleSpread::LittleSpread()
 	spread=NULL;
 	connection=NULL;
 	prev=next=NULL;
+	hidden=false;
 }
 
 //! Transfers pointer, does not dupicate s or check it out.
@@ -87,6 +89,7 @@ LittleSpread::LittleSpread(Spread *s, LittleSpread *prv)
 		prev->next=this;
 		mapConnection();
 	}
+	hidden=false;
 }
 
 //! Destructor, deletes connection and spread.
@@ -660,7 +663,7 @@ int SpreadView::Update(Document *doc)
  * number of spreads fit on screen.
  *
  * how==-1 means use default arrangetype. 
- * Otherwise, 0==auto, 1==1 row, 2==1 column, 3=grid by proportion of curwindow
+ * Otherwise, see ArrangeTypes.
  *
  * This is called on shift-'a' keypress, a firsttime refresh, and curwindow resize.
  * 
@@ -729,7 +732,10 @@ void SpreadView::ArrangeSpreads(Displayer *dp,int how)//how==-1
 		if (perrow==0) perrow=1;
 		//perrow=int(sqrt((double)spreads.n)+1); //put within a square
 	} else if (towhat==Arrange1Column) perrow=1;
-	else   if (towhat==Arrange1Row) perrow=1000000;
+	else if (towhat==ArrangeRows) {
+		perrow=(dp->Maxx-dp->Minx)/(bbox.maxx-bbox.minx)/dp->Getmag();
+		if (perrow<1) perrow=1;
+	} else   if (towhat==Arrange1Row) perrow=1000000;
 	
 	
 	double x,y,w,h; //temporary variables for spread dimensions

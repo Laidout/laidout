@@ -46,13 +46,17 @@ enum SpreadInterfaceActions {
 	SIA_InsertDummyPage  ,
 	SIA_AddPageBefore    , 
 	SIA_AddPageAfter     ,
-	SIA_DetachPages      ,
 	SIA_DeletePages      ,
+	SIA_HidePages        ,
+	SIA_DetachPages      ,
 	SIA_ExportPages      ,
 	SIA_NewView          ,
 	SIA_SaveView         ,
 	SIA_DeleteView       ,
 	SIA_RenameView       ,
+
+	SIA_ArrangeTypeMin=2000,
+	SIA_ArrangeTypeMax=2000+ArrangetypeMax-ArrangetypeMin,
 	SIA_MAX
 };
 

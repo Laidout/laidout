@@ -31,21 +31,24 @@ class Spread;
 
 //------------------------------- arrangetype --------------------------------
 
- // values for arrangestate
- // arrangetype has to be within the min to max.
-#define ArrangeNeedsArranging -1
-#define ArrangeTempRow         1
-#define ArrangeTempColumn      2
-#define ArrangeTempGrid        3
+enum ArrangeTypes {
+	 // values for arrangestate
+	ArrangeNeedsArranging = -1,
+	ArrangeTempRow = 1,
+	ArrangeTempColumn = 2,
+	ArrangeTempGrid = 3,
 
-#define  ArrangetypeMin        4
-#define ArrangeAutoAlways      4
-#define ArrangeAutoTillMod     5
-#define Arrange1Row            6
-#define Arrange1Column         7
-#define ArrangeGrid            8
-#define ArrangeCustom          9
-#define  ArrangetypeMax        9
+	 // arrangetype has to be within the min to max.
+	ArrangetypeMin = 4,
+	ArrangeAutoAlways = 4,
+	ArrangeAutoTillMod = 5,
+	Arrange1Row = 6,
+	ArrangeRows = 7,
+	Arrange1Column = 8,
+	ArrangeGrid = 9,
+	ArrangeCustom = 10,
+	ArrangetypeMax = 10,
+};
 
 
 const char *arrangetypestring(int a);
@@ -62,6 +65,7 @@ class LittleSpread : public LaxInterfaces::SomeData, virtual public Laxkit::Tagg
 	LaxInterfaces::PathsData *connection;
 	int lowestpage,highestpage;
 	clock_t lasttouch;
+	bool hidden;
 	LittleSpread *prev,*next;
 
 	LittleSpread();
