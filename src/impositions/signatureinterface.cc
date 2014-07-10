@@ -685,7 +685,8 @@ void SignatureInterface::remapHandles(int which)
 										 sigimp->NumPapers()/2,
 										 (OnBack()?"Back":"Front"));
 		makestr(area->text,buffer);
-		wwww=dp->textextent("Sheet 000/00, Front",-1,NULL,NULL);
+		//wwww=dp->textextent("Sheet 0000/0000, Front",-1,NULL,NULL);
+		wwww=dp->textextent(buffer,-1,NULL,NULL);
 		area->SetRect(dp->Maxx-wwww,0, wwww,hhhh);
 
 		 //SP_Num_Pages
