@@ -437,7 +437,7 @@ Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 			pages.n=c;
 			if (c) {
 				pages.islocal=new char[c];
-				for (c=0; c<pages.n; c++) pages.islocal[c]=1;
+				for (c=0; c<pages.n; c++) pages.islocal[c]=LISTS_DELETE_Refcount;
 				curpage=0;
 			}
 		}
@@ -521,7 +521,8 @@ int Document::NewPages(int starting,int np)
 	if (starting<0) starting=pages.n;
 	for (int c=0; c<np; c++) {
 		p=new Page(NULL);
-		pages.push(p,1,starting);
+		pages.push(p,LISTS_DELETE_Refcount,starting);
+		p->dec_count();
 	}
 
 	 //adjust pageranges if necessary
@@ -694,7 +695,7 @@ int Document::ApplyPageRange(const char *name, int type, const char *base, int s
 int Document::RemovePages(int start,int n)
 {
 	if (pages.n<=1) return -2;
-	if (start>=pages.n) return -1;
+	if (start<0 || start>=pages.n) return -1;
 	if (start+n>pages.n) n=pages.n-start;
 	for (int c=0; c<n; c++) {
 		DBG cerr << "---page id:"<<pages.e[start]->object_id<<"... "<<endl;
@@ -829,7 +830,7 @@ int Document::Load(const char *file,ErrorLog &log)
 			pages.n=c;
 			if (c) {
 				pages.islocal=new char[c];
-				for (c=0; c<pages.n; c++) pages.islocal[c]=1;
+				for (c=0; c<pages.n; c++) pages.islocal[c]=LISTS_DELETE_Refcount;
 				curpage=0;
 			}
 		}
@@ -893,6 +894,7 @@ int Document::SyncPages(int start,int n)
  * something in that imposition instance, and pages merely need to be synced
  * (and possibly resized).
  *
+ * \todo need to scale one margin area to another, not just page to page
  * \todo when master pages are implemented, will need to ensure they are scaled properly
  * \todo rescaling assumes rectangular pages, but maybe it shouldn't.
  */
@@ -909,8 +911,8 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 
 	if (scale_page_contents_to_fit) {
 		 //first grab old page sizes for reference
-		flatpoint old[pages.n];
-		flatpoint  dd[pages.n];
+		flatpoint old[pages.n]; //w+h
+		flatpoint  dd[pages.n]; //origin
 		for (int c=0; c<pages.n; c++) {
 			dd[c].x=pages.e[c]->pagestyle->minx();
 			dd[c].y=pages.e[c]->pagestyle->miny();
@@ -1013,7 +1015,8 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 			if (ps) ps->dec_count();
 			page->layers.flush();
 			page->dump_in_atts(att->attributes.e[c],flag,context);
-			pages.push(page,1);
+			pages.push(page,LISTS_DELETE_Refcount);
+			page->dec_count();
 
 		} else if (!strcmp(nme,"limbo")) {
 			Group *g=new Group;  //count=1
