@@ -137,6 +137,7 @@ class LaidoutViewport : public LaxInterfaces::ViewportWindow,
 	virtual void Center(int w=0);
 	virtual int NewData(LaxInterfaces::SomeData *d,LaxInterfaces::ObjectContext **oc);
 	virtual int SelectPage(int i);
+	virtual int SelectSpread(int i);
 	virtual int NextSpread();
 	virtual int PreviousSpread();
 	
@@ -202,7 +203,6 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
   protected:
 	void setup();
 	Laxkit::NumInputSlider *pagenumber;
-	Laxkit::NumInputSlider *var1, *var2, *var3;
 	Laxkit::Button *pageclips;
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
