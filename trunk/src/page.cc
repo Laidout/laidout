@@ -613,7 +613,8 @@ const char *Page::object_e_name(int i)
 int Page::InstallPageStyle(PageStyle *pstyle)
 {
 	if (!pstyle) return 1;
-	//unsigned int oldflags=0;
+	if (pstyle==pagestyle) return 0;
+
 	if (pagestyle) pagestyle->dec_count();
 	pagestyle=pstyle;
 	if (pagestyle) pagestyle->inc_count();
@@ -678,7 +679,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 			}
 
 		} else if (!strcmp(name,"labelcolor")) {
-			//ColorAttribute(value,&labelcolor)
+			SimpleColorAttribute(value,NULL,&labelcolor);
 
 		} else { 
 			DBG cerr <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
@@ -696,7 +697,8 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
-		fprintf(f,"%slabeltype circle #Can be circle, square, diamond, triangle, octagon\n",spc);
+		fprintf(f,"%slabeltype circle          #Can be circle, square, diamond, triangle, octagon\n",spc);
+		fprintf(f,"%slabelcolor rgbf(1.,1.,1.) #color to fill the labeltype\n",spc);
 		fprintf(f,"\n%s#Pages contain layers which contain drawable objects.\n",spc);
 		fprintf(f,"%s#Layers are really just Group objects whose parent is a page.\n",spc);
 		fprintf(f,"%s#Each drawable object has a number of common options, then has object\n",spc);
@@ -732,6 +734,9 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	else if (labeltype==MARKER_TriangleDown) fprintf(f,"%slabeltype triangle\n",spc);
 	else if (labeltype==MARKER_Octagon)      fprintf(f,"%slabeltype octagon\n",spc);
 	else fprintf(f,"%slabeltype %d\n",spc,labeltype);
+
+	fprintf(f,"%slabelcolor rgbf(%.10g,%.10g,%.10g)\n",spc,
+				labelcolor.red/65535., labelcolor.green/65535., labelcolor.blue/65535.);
 
 	if (pagestyle && (pagestyle->flags&PAGESTYLE_AUTONOMOUS)) {
 		fprintf(f,"%spagestyle %s\n",spc,pagestyle->whattype());
