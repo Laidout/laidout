@@ -84,6 +84,7 @@ PageMarkerInterface::PageMarkerInterface(anInterface *nowner, int nid, Displayer
 	hover=PSTATE_None;
 	hoveri=-1;
 	uiscale=1.5;
+	curpage=-1;
 
 	boxw=boxh=0;
 
@@ -174,6 +175,30 @@ Laxkit::MenuInfo *PageMarkerInterface::ContextMenu(int x,int y,int deviceid)
 
 int PageMarkerInterface::Event(const Laxkit::EventData *data, const char *mes)
 {
+    DBG cerr <<"PageMarkerInterface got message: "<<(mes?mes:"?")<<endl;
+
+// ----: unnecessary? now that doc->pages are refcounted??
+//    if (!strcmp(mes,"docTreeChange")) {
+//        const TreeChangeEvent *te=dynamic_cast<const TreeChangeEvent *>(data);
+//        if (!te || te->changer==this) return 1;
+//
+//        if (te->changetype==TreeObjectRepositioned ||
+//                te->changetype==TreeObjectReorder ||
+//                te->changetype==TreeObjectDiffPage ||
+//                te->changetype==TreeObjectDeleted ||
+//                te->changetype==TreeObjectAdded) {
+//            //DBG cerr <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
+//        } else if (te->changetype==TreePagesAdded ||
+//                te->changetype==TreePagesDeleted ||
+//                te->changetype==TreePagesMoved) {
+//            spreadtool->CheckSpreads(te->start,te->end);
+//        } else if (te->changetype==TreeDocGone) {
+//            //cout <<" ***need to imp SpreadEditor::DataEvent -> TreeDocGone"<<endl;
+//
+//        }
+//		return 0;
+//	}
+
 //    if (!strcmp(mes,"menuevent")) {
 //        const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(e_data);
 //        int i =s->info2; //id of menu item
@@ -215,49 +240,6 @@ int PageMarkerInterface::Refresh()
 	if (boxw==0) {
 		boxh=colors.n*uiscale*th + 2*pad;
 		boxw=shapes.n*uiscale*th + 2*pad;
-	}
-
-	if (mode==PSTATE_Select || mode==PSTATE_SelectFull) {
-		double shapew=(boxw-2*pad-(mode==PSTATE_Select?0:uiscale/2*th))/shapes.n;
-		double shapeh=(boxh-2*pad-(mode==PSTATE_Select?0:uiscale/2*th))/colors.n;
-		double dx,dy;
-
-		dp->DrawScreen();
-
-		 //fill background
-		dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
-		dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.8));
-		dp->drawrectangle(boxoffset.x,boxoffset.y, boxw,boxh, 2);
-
-		dp->NewFG(0,0,0);
-		DrawThingTypes t=THING_None;
-
-		for (int c2=0; c2<colors.n; c2++) {
-			dp->NewBG(colors.e[c2]);
-			dy=boxoffset.y + pad + c2*shapeh;
-			for (int c=0; c<shapes.n; c++) {
-				switch (shapes.e[c]) {
-					case MARKER_Circle:       t=THING_Circle;  break;
-					case MARKER_Square:       t=THING_Square;  break;
-					case MARKER_TriangleDown: t=THING_Triangle_Down;  break;
-					case MARKER_Octagon:      t=THING_Octagon; break;
-					case MARKER_Diamond:      t=THING_Diamond; break;
-					default:   t=THING_Circle;  break;
-				}
-
-				dx=boxoffset.x + pad + c*shapew;
-
-				if (hoveri==c2*shapes.n+c) {
-					dp->NewFG(1.,1.,1.);
-					dp->drawrectangle(dx,dy, shapew,shapeh, 1);
-					dp->NewFG(0,0,0);
-				}
-
-				dp->drawthing(dx+shapew/2,dy+shapeh/2, .8*shapew/2,.8*shapeh/2, 2, t);
-			}
-		}
-		dp->DrawReal();
-		return 0;
 	}
 
 	 //else draw numbers on pages
@@ -305,6 +287,50 @@ int PageMarkerInterface::Refresh()
 
 		dp->DrawReal();
 	}
+
+	if (mode==PSTATE_Select || mode==PSTATE_SelectFull) {
+		double shapew=(boxw-2*pad-(mode==PSTATE_Select?0:uiscale/2*th))/shapes.n;
+		double shapeh=(boxh-2*pad-(mode==PSTATE_Select?0:uiscale/2*th))/colors.n;
+		double dx,dy;
+
+		dp->DrawScreen();
+
+		 //fill background
+		dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
+		dp->NewBG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.8));
+		dp->drawrectangle(boxoffset.x,boxoffset.y, boxw,boxh, 2);
+
+		dp->NewFG(0,0,0);
+		DrawThingTypes t=THING_None;
+
+		for (int c2=0; c2<colors.n; c2++) {
+			dp->NewBG(colors.e[c2]);
+			dy=boxoffset.y + pad + c2*shapeh;
+			for (int c=0; c<shapes.n; c++) {
+				switch (shapes.e[c]) {
+					case MARKER_Circle:       t=THING_Circle;  break;
+					case MARKER_Square:       t=THING_Square;  break;
+					case MARKER_TriangleDown: t=THING_Triangle_Down;  break;
+					case MARKER_Octagon:      t=THING_Octagon; break;
+					case MARKER_Diamond:      t=THING_Diamond; break;
+					default:   t=THING_Circle;  break;
+				}
+
+				dx=boxoffset.x + pad + c*shapew;
+
+				if (hoveri==c2*shapes.n+c) {
+					dp->NewFG(1.,1.,1.);
+					dp->drawrectangle(dx,dy, shapew,shapeh, 1);
+					dp->NewFG(0,0,0);
+				}
+
+				dp->drawthing(dx+shapew/2,dy+shapeh/2, .8*shapew/2,.8*shapeh/2, 2, t);
+			}
+		}
+		dp->DrawReal();
+		return 0;
+	}
+
 
 	return 0;
 }
@@ -518,6 +544,9 @@ int PageMarkerInterface::WheelDown(int x,int y,unsigned int state,int count, con
 }
 
 
+
+
+
 int PageMarkerInterface::send()
 {
 //	if (owner) {
@@ -533,7 +562,8 @@ int PageMarkerInterface::send()
 
 int PageMarkerInterface::CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d)
 {
-	if (ch==LAX_Esc && (mode=PSTATE_Select || mode==PSTATE_SelectFull)) {
+	DBG cerr <<"mode: "<<mode<<"  "<<(int)PSTATE_Select<<" "<<(int)PSTATE_SelectFull<<endl;
+	if (ch==LAX_Esc && (mode==PSTATE_Select || mode==PSTATE_SelectFull)) {
 		mode=PSTATE_Normal;
 		needtodraw=1;
 		return 0;
@@ -576,7 +606,8 @@ void PageMarkerInterface::ClearPages()
 int PageMarkerInterface::UpdateCurpage(Page *page)
 {
 	int old=curpage;
-	for (int c=0; c<pages.n; c++) {
+	if (page==NULL) curpage=-1;
+	else for (int c=0; c<pages.n; c++) {
 		if (page==pages.e[c]->page) { curpage=c; break; }
 		if (c==pages.n-1) curpage=-1;
 	}
