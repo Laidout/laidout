@@ -93,7 +93,7 @@ class Document : public ObjectContainer, public Value
 	LaxFiles::Attribute iohints;
 
 	int curpage;
-	Laxkit::PtrStack<Page> pages;
+	Laxkit::RefPtrStack<Page> pages;
 	Laxkit::PtrStack<PageRange> pageranges;
 	Laxkit::RefPtrStack<SpreadView> spreadviews;
 
