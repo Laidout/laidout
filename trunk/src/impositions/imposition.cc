@@ -706,6 +706,7 @@ int Imposition::SetPaperSize(PaperStyle *npaper)
 }
 
 /*! Default is to return papergroup->papers.e[0]->box->paperstyle, if it exists.
+ * Returned value is an internal reference. If you use it much you must inc_count on it yourself.
  */
 PaperStyle *Imposition::GetDefaultPaper()
 {
