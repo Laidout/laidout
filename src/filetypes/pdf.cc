@@ -439,16 +439,16 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
  */
 int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
-	if (!out) return 1;
+	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
+	if (!config) return 1;
 
-	Document *doc =out->doc;
-	int start     =out->start;
-	int end       =out->end;
-	int layout    =out->layout;
-	Group *limbo  =out->limbo;
-	PaperGroup *papergroup=out->papergroup;
-	if (!filename) filename=out->filename;
+	Document *doc =config->doc;
+	int start     =config->start;
+	int end       =config->end;
+	int layout    =config->layout;
+	Group *limbo  =config->limbo;
+	PaperGroup *papergroup=config->papergroup;
+	if (!filename) filename=config->filename;
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
@@ -549,6 +549,8 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	 // find basic pdf page info, and generate content streams.
 	 // Actual page objects are written out after the contents of all the pages have been processed.
 	for (int c=start; c<=end; c++) {
+		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
+        if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
 			
 		if (spread) { delete spread; spread=NULL; }
 		if (doc) spread=doc->imposition->Layout(layout,c);

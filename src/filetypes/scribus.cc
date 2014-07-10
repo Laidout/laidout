@@ -348,16 +348,16 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 {
 	DBG cerr <<"-----Scribus export start-------"<<endl;
 
-	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
-	if (!out) return 1;
+	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
+	if (!config) return 1;
 
-	Document *doc =out->doc;
-	int start     =out->start;
-	int end       =out->end;
-	int layout    =out->layout;
-	Group *limbo  =out->limbo;
-	PaperGroup *papergroup=out->papergroup;
-	if (!filename) filename=out->filename;
+	Document *doc =config->doc;
+	int start     =config->start;
+	int end       =config->end;
+	int layout    =config->layout;
+	Group *limbo  =config->limbo;
+	PaperGroup *papergroup=config->papergroup;
+	if (!filename) filename=config->filename;
 	
 	 //we must have something to export...
 	if (!doc && !limbo) {
@@ -440,11 +440,19 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	double paperwidth,paperheight;
 	 // note this is orientation for only the first paper in papergroup.
 	 // If there are more than one papers, this may not work as expected...
-	landscape=(papergroup->papers.e[0]->box->paperstyle->flags&1)?1:0;
-	paperwidth= papergroup->papers.e[0]->box->paperstyle->width;
-	paperheight=papergroup->papers.e[0]->box->paperstyle->height;
+	PaperStyle *defaultpaper=papergroup->papers.e[0]->box->paperstyle;
+	landscape=( defaultpaper->flags&1)?1:0;
+	paperwidth= defaultpaper->width;
+	paperheight=defaultpaper->height;
 
 	int totalnumpages=(end-start+1)*papergroup->papers.n;
+	if (config->evenodd==DocumentExportConfig::Even) {
+		totalnumpages/=2;
+		if (config->end%2==0) totalnumpages++;
+	} else if (config->evenodd==DocumentExportConfig::Odd) {
+		totalnumpages/=2;
+		if (config->end%2==1) totalnumpages++;
+	}
 	
 	 //------------ write out document attributes
 	 //****** all the scribushints.slahead blocks are output as DOCUMENT attributes
@@ -650,6 +658,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 									 //object id is the order they appear in the file, so for linked objects,
 									 //we need to know the order that they will appear!
 	for (c=start; c<=end; c++) { //for each spread
+		if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
+		if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
+
 		if (doc) spread=doc->imposition->Layout(layout,c);
 		for (p=0; p<papergroup->papers.n; p++) { //for each paper
 					
@@ -657,9 +668,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 				appendobjfordumping(pageobjects,palette,&papergroup->objs);
 			}
 
-			if (limbo && limbo->n()) {
-				appendobjfordumping(pageobjects,palette,limbo);
-			}
+			//if (limbo && limbo->n()) {
+			//	appendobjfordumping(pageobjects,palette,limbo);
+			//}
 
 			if (spread) {
 				if (spread->marks) {
@@ -879,9 +890,9 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 					  "    NumVGuides=\"0\" \n"
 					  "   />\n", plandscape);
 
-			if (limbo && limbo->n()) {
-				scribusdumpobj(f,curobj,pageobjects,NULL,limbo,log,warning);
-			}
+			//if (limbo && limbo->n()) {
+			//	scribusdumpobj(f,curobj,pageobjects,NULL,limbo,log,warning);
+			//}
 
 			if (papergroup->objs.n()) {
 				scribusdumpobj(f,curobj,pageobjects,NULL,&papergroup->objs,log,warning);

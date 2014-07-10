@@ -97,6 +97,7 @@ class DocumentExportConfig : public Style
 	int layout;
 	enum EvenOdd { All,Even,Odd } evenodd;
 	int batches;
+	int paperrotation;
 	Document *doc;
 	Group *limbo;
 	char *filename;
@@ -105,6 +106,7 @@ class DocumentExportConfig : public Style
 	char rasterize;
 	PaperGroup *papergroup;
 	ExportFilter *filter;
+
 	DocumentExportConfig();
 	DocumentExportConfig(Document *ndoc, Group *lmbo, const char *file, const char *to,
 						 int l,int s,int e,PaperGroup *group);
