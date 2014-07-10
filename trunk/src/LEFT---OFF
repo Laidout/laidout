@@ -57,8 +57,6 @@ grouping frelled.. can group, but cannot seem to select existing groups to ungro
 Printing only goes to letter, even though page size says go full page, in image, pdf and ps out!!! *(#@*&#*(&*&$(
 print command to printer is not respecting the paper size
 
-file format dump is not showing dump of object types
-
 laidout import, does not appear to scale correctly, does odd scaling, and inserts unneccesary layers
   maybe option to create new layers, or insert to existing layers?
   option to insert new pages, or merge onto existing pages
@@ -71,8 +69,12 @@ test-tiled-mark.laidout: delete the bars, add bars back then try to export, prog
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
+pressing enter in popup menus is not ending the menu
+
 
 ---- bugs:
+
+DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 memory hole helpwindow 
 
@@ -100,8 +102,6 @@ memory hole when graphical shell activated
 datarefs on images scale not like images
 
 html dump must convert chars to entities
-
-need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 svg coord numpoints==0???? numpoints doesn't really serve any purpose other than debugging, but....
 
@@ -173,6 +173,11 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+need to remember previous export settings
+
+laxkit attributes.cc SimpleColorAttribute:
+  should be able to handle any css color attribute, whether "#fff' "#ffffff" or rgb(...),hsl(...) etc
+  should return an end_ptr
 
 TreeSelector:
   makeinwindow() doesn't account for columns
@@ -293,6 +298,12 @@ layers palette
 
 General design usability
 to be a decent editing platform, Laidout needs:
+  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
+  would be convenient to send to gimp for editing, update later live
+  need way to jump to any spread, not just next or prev
+  when delete/add pages, need option to reposition to same orientation in margin area
+  snapping rotate, maybe drag handle with control?
+  more specific control over transform.. numerical specification
   undo
   per object visibility
   per object opacity
@@ -343,9 +354,11 @@ make color slider box be able to be a pane
 
 vital to debug send to printer
 export needs "batch" send, break into smaller segments
-need page number overlay
+rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
   
 views with multiple spreads
+
+maybe flag whether to export limbo with spreads?
 
 file selector.. need sort by mod date or name, exclude/include directories
 	need hover indicator, and better scan.. ignoring offset
@@ -509,6 +522,12 @@ page thumbnail should be rational, ie image should be whole page, not just conte
 	 and thumb transform makes image dims to page coords
 
 Signature editor:
+  needs indicator of number of groups, show 3/10 for current sheet in little box above stack, allow numerical input
+
+  current sheet indicator not using correct text extent, seems grabbing extent from 1/117 instead of 117/117
+
+  for large page counts, need number entry in stacks
+  would be nice to indicate when there is a centerfold of any signature
   mixing different page sizes mixes up the PageLayout at boundaries. alignment should be either always centered, or custom
   after you add stack, the added one should be selected
   must implement dragging around instance blocks...
@@ -582,16 +601,19 @@ need device editor, detect wacom pad buttons.. they are available as an xlib mou
 make pdf default output format for sending to lp
 
 Spread Editor:
+  need page number overlay
+  should be able to hide groups of pages, since render speed of hundreds of pages is slow
   debug select spreads with rectangle
-  update page label type to be color+shape, shape being circle, square, diamond, or triangle
-    default colors: white, gray, dark gray, black, red, yellow
-  insert blanks before or after
   after an insert, have temp wheelable number indicator, update on screen
-  modify page labels gui, double click on a page label, where ever it might be... select pages in spread editor
+  modify page labels gui, click on a page label, where ever it might be... select pages in spread editor
   integration of page label gui with spreadeditor, select pages, pop up the dialog?
   adjust page preview size
   debug spread threads and page groups
   create new document from spread view
+
+  DONE insert blanks before or after
+  DONE update page label type to be color+shape, shape being circle, square, diamond, or triangle
+    DONE default colors: white, gray, dark gray, black, red, yellow
 
 importing should not spawn new windows
 importing should sort out duplicate names
@@ -1141,3 +1163,11 @@ DONE add --experimental option to activate any crash prone features not otherwis
 DONE HeadWindow -> changeto HelpWindow creates a HelpWindow, but removes paneable headwindow
 DONE debian/rules seems to need dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info, due to some kind of libGL mixup
       -> workaround in place.. not sure best way to eliminate totally
+DONE file format dump is not showing dump of object types
+DONE something with page styles when fixbleeds on delete pages sometimes, crash on paths delete
+DONE r/R for rotate objects not syncing matrix correctly
+DONE object tool: key rotate should rotate around any active transform anchors
+DONE scribus out: not exporting proper page size, legal booklet
+DONE need page number overlay
+
+

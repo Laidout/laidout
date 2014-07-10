@@ -14,18 +14,17 @@ VERSION 0.095
        engraver tool grow point mode
        layers (object tree) palette
        Clean up patch controls
+(done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
        undo/redo
-       allow export even or odd, or in batches
+(done) allow export even or odd
+(done) allow export in batches
        Clone Pattern Builder
        Custom alignments to parents, not just affine transform to parent
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
-       graphical shell should also help find and set key shortcuts
-       Signature editor: detect non staplable binding edge, show red rather than green
        Tool scripting
        PathInterface subpaths for hole making should work: check exports
-       impose-only mode should allow access to all imposition types, not just signatures
+(done) impose-only mode should allow access to all imposition types, not just signatures
        Soup up the color box so one can recall previous colors, and/or integration with palette window
-       color styles, so objects can refer to a named color, just change that named to change all
        Fix object bleeding across pages for signatures and nets
        double click on group should change selection area to group contents?
        Moving selected things in group contents does not update group bounds
@@ -35,20 +34,28 @@ VERSION 0.095
        Externally rendered objects, similar to Scribus render frames
        Examine and improve ease of use of import images dialog, particularly for previewing
        In image properties dialog, have the popup list of potential previews
-       Net imposition interactive unwrapper, via optional opengl Polyptych
-       Net imposition build net interface
        Tools should remember their settings
        Object and resource tags
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
        Scribus import should do something meaningful with original Scribus page bleed values
-       fix object transform handles for really small objects (handles should still be accessible)
        Collect for out
        PDF in, at least as 1 image per page, for purposes of imposition
        autosave for autorecover
        Optimize pdf export to rescale to target dpi, and compress image data
-       Clean up project load/save internals and dialogs
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
+
+
+VERSION 0.096
+-------------
+       graphical shell should also help find and set key shortcuts
+       Signature editor: detect non staplable binding edge, show red rather than green
+       color styles, so objects can refer to a named color, just change that named to change all
+       Net imposition interactive unwrapper, via optional opengl Polyptych
+       Net imposition build net interface
+       Clean up project load/save internals and dialogs
+       fix object transform handles for really small objects (handles should still be accessible)
+
 
 
 VERSION 0.1 
@@ -72,7 +79,6 @@ VERSION 0.1
        All the pdf 1.4 group combine properties, like most importantly transparency
        Configurable icon panel/menu system, make the button box actually function
        Linear (including curvilinear) guides
-       Seriously optimize the whole ColorPatch/ImagePatchData stuff
        Have imagepatch be a transform you can apply to any object
        Allow objects to have any number of various kinds of transforms applied to it
        Some sort of basic scripting infrastructure allowing easy addition of other scripting language plugins. Swig?
