@@ -35,6 +35,7 @@ enum SpreadInterfaceActions {
 	SIA_Center,
 	SIA_LabelPos,
 	SIA_ToggleColor,
+	SIA_ToggleColorR,
 	SIA_ToggleMark,
 	SIA_ToggleMarkR,
 	SIA_Thumbnails,
@@ -122,6 +123,7 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 
 	virtual void clearSelection();
 	//virtual int Modified();
+	virtual void UpdateMarkers(bool all);
 	virtual void CheckSpreads(int startpage,int endpage);
 	virtual void GetSpreads();
 	virtual void ArrangeSpreads(int how=-1);
@@ -162,6 +164,7 @@ class SpreadEditor : public LaxInterfaces::ViewerWindow
 	virtual int MoveResize(int nx,int ny,int nw,int nh);
 	virtual int Resize(int nw,int nh);
 	virtual int UseThisDoc(Document *ndoc);
+	virtual int SelectTool(int id);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

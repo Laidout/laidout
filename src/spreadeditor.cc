@@ -35,6 +35,7 @@
 #include "helpwindow.h"
 #include "viewwindow.h"
 #include "interfaces/pagerangeinterface.h"
+#include "interfaces/pagemarkerinterface.h"
 #include "interfaces/paperinterface.h"
 
 using namespace Laxkit;
@@ -370,6 +371,7 @@ int SpreadInterface::Refresh()
 		ArrangeSpreads();
 		if (view) view->FindBBox();
 		Center(1);
+		UpdateMarkers(true);
 		//((ViewportWindow *)curwindow)->syncrulers();
 	}
 
@@ -399,7 +401,7 @@ int SpreadInterface::Refresh()
 
 	 // Draw the spreads
 	SomeData *outline;
-	int pg,x,y;
+	int pg;
 	flatpoint p;
 	
 	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy);
@@ -472,35 +474,36 @@ int SpreadInterface::Refresh()
 			}
 		}
 
-		 // draw page labels
-		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
-			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
-			if (pg>=0 && pg<doc->pages.n) {
-				outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
-				dp->PushAndNewTransform(outline->m());
-
-				int centerlabels=view->centerlabels;
-				DBG cerr <<"centerlabels:"<<centerlabels<<endl;
-
-				if (centerlabels==LAX_CENTER)
-					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
-				else if (centerlabels==LAX_BOTTOM)
-					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));//bottom
-				else if (centerlabels==LAX_LEFT)
-					p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));//left
-				else if (centerlabels==LAX_TOP)
-					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));//top
-				else //LAX_RIGHT
-					p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));//right
-				x=(int)p.x; // figure out where bottom tip of bbox is
-				y=(int)p.y;
-				drawLabel(x,y,doc->pages.e[pg], pg==view->temppagemap[pg]);
-				DBG cerr <<"page "<<pg<<" at map pos "<<view->reversemap(pg)
-				DBG      <<" in spread "<<c<<",psi "<<c2<<" has label "<<doc->pages.e[pg]->label<<endl;
-
-				dp->PopAxes();
-			}
-		}
+		// ***** now done with PageMarkerInterface:
+//		 // draw page labels
+//		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
+//			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
+//			if (pg>=0 && pg<doc->pages.n) {
+//				outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
+//				dp->PushAndNewTransform(outline->m());
+//
+//				int centerlabels=view->centerlabels;
+//				DBG cerr <<"centerlabels:"<<centerlabels<<endl;
+//
+//				if (centerlabels==LAX_CENTER)
+//					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
+//				else if (centerlabels==LAX_BOTTOM)
+//					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));//bottom
+//				else if (centerlabels==LAX_LEFT)
+//					p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));//left
+//				else if (centerlabels==LAX_TOP)
+//					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));//top
+//				else //LAX_RIGHT
+//					p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));//right
+//				x=(int)p.x; // figure out where bottom tip of bbox is
+//				y=(int)p.y;
+//				drawLabel(x,y,doc->pages.e[pg], pg==view->temppagemap[pg]);
+//				DBG cerr <<"page "<<pg<<" at map pos "<<view->reversemap(pg)
+//				DBG      <<" in spread "<<c<<",psi "<<c2<<" has label "<<doc->pages.e[pg]->label<<endl;
+//
+//				dp->PopAxes();
+//			}
+//		}
 
 		dp->PopAxes(); //spread axes
 	}
@@ -579,6 +582,23 @@ Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
 //! Respond to context menu event.
 int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 {
+	if (!strcmp("pagemarker",mes)) {
+		const SimpleColorEventData *cdata=dynamic_cast<const SimpleColorEventData *>(data);
+		if (!cdata) return 1;
+		if (curpages.n) {
+			for (int c=0; c<curpages.n; c++) {
+				if (curpages.e[c]>=0 && curpages.e[c]<=doc->pages.n) {
+					doc->pages.e[curpages.e[c]]->labelcolor.rgb(cdata->channels[0],cdata->channels[1],cdata->channels[2]);
+					doc->pages.e[curpages.e[c]]->labeltype=cdata->id;
+				}
+			}
+		} else {
+			//modding only one, taken care of by PageMarkerInterface
+		}
+		needtodraw=1;
+		return 0;
+	}
+
 	if (!strcmp(mes,"viewportmenu") && !strcmp(mes,"menuevent")) return 1;
 
 	const SimpleMessage *s=dynamic_cast<const SimpleMessage*>(data);
@@ -676,17 +696,6 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 }
 
 //! Draw the label.
-/*! 
- * 0 plain\n
- * 1 white circle\n
- * 2 gray circle\n
- * 3 dark gray circle\n
- * 4 black circle\n
- * 5 square\n
- * 6 gray square\n
- * 7 dark gray square\n
- * 8 black square\n
- */
 void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
 {
 	 // *** if (plabel->labeltype==circle, filledcircle, etc...) ...
@@ -762,7 +771,6 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxk
 		return 0;
 	}
 	
-	needtodraw=1;
 	dragpage=page;
 	int i=curpages.pushnodup(page);
 	curspreads.pushnodup(spread,0);
@@ -773,12 +781,22 @@ int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxk
 		curspreads.push(spread,0);
 		curpage=page;
 	}
+	//---------------
+	// shift click should add range of pages from ??? to page
+//		for (int c=(curpage<page?curpage:page); c<=(curpage>page?curpage:page); c++) {
+//			curpages.pushnodup(c);
+//			curspreads.pushnodup(view->SpreadOfPage(c,NULL,NULL,NULL,0),0);
+//		}
+	// control click should toggle page being selected. If toggle off, then 
+	//   search containing spread an remove from selected if none selected in it any more
+	//---------------
 
 	int shape=0;
 	if ((state&LAX_STATE_MASK)==0 || curpages.n>1) shape=LAX_MOUSE_To_E;
 	else shape=LAX_MOUSE_Exchange;
 	const_cast<LaxMouse*>(d)->setMouseShape(curwindow,shape);
 
+	needtodraw=1;
 	return 0;
 }
 
@@ -874,6 +892,7 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 
 	//if (dragged) clearSelection();
 	dragpage=-1;
+	UpdateMarkers(true);
 	
 	return 0;
 }
@@ -955,6 +974,7 @@ void SpreadInterface::Reset()
 int SpreadInterface::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	if (curpage<0) {
+		 //need to update curpage so that menu actions can affect it
 		int psi=-1, thread=-1;
 		LittleSpread *spread=findSpread(x,y,&psi,&thread);
 		if (spread && psi>=0) { curpage=spread->spread->pagestack.e[psi]->index; }
@@ -1025,6 +1045,8 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 		}
 		view->arrangetype=view->arrangestate=ArrangeCustom;
 		view->FindBBox();
+		UpdateMarkers(false);
+
 		mx=x; my=y;
 		needtodraw=1;
 
@@ -1038,16 +1060,17 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 			mx=x; my=y;
 
 		} else {
-			//*** if moving back to original area, make cursor be a "cancel" cursor
-			//*** for dropping pages to limbo, use XC_sizing
-
+			 //change mouse shape to relevant indicator 
 			int page=-1,psi,thread;
 			LittleSpread *spread=findSpread(x,y,&psi,&thread);
 			if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+
 			if (curpages.findindex(page)>=0) {
 				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+
 			} else if (!spread) {
 				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
+
 			} else {
 				if ((state&LAX_STATE_MASK)==0) 
 					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_To_E);
@@ -1127,6 +1150,59 @@ int SpreadInterface::ChangeMarks(int newmark)
 	return newmark;
 }
 
+/*! Called when page positions have changed.
+ * If all, then update all markers in view, else just update the ones in curspreads.
+ */
+void SpreadInterface::UpdateMarkers(bool all)
+{
+    PageMarkerInterface *pmi=dynamic_cast<PageMarkerInterface*>(viewport->HasInterface("PageMarkerInterface",NULL));
+	if (!pmi) return;
+
+	if (all) pmi->ClearPages();
+
+	LittleSpread *lspread;
+	Spread *spread;
+	SomeData *outline;
+	flatpoint p;
+	int where=view->centerlabels;
+	int linetype=0;
+
+	for (int c=0; c<(all ? view->spreads.n : curspreads.n); c++) {
+		if (all) lspread=view->spreads.e[c];
+		else lspread=curspreads.e[c];
+		spread=lspread->spread;
+
+		PageLocation *pl;
+		for (int c=0; c<spread->pagestack.n(); c++) {
+			pl=spread->pagestack.e[c];
+			if (!pl->page && pl->index>=0) pl->page=doc->pages.e[pl->index];
+			if (!pl->page) continue;
+			outline=pl->outline;
+			if (pl->index==view->temppagemap[pl->index]) linetype=0; else linetype=1;
+
+			if (where==LAX_CENTER)
+				p=flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2); //center
+			else if (where==LAX_BOTTOM)
+				p=flatpoint((outline->minx+outline->maxx)/2,(outline->miny));//bottom
+			else if (where==LAX_LEFT)
+				p=flatpoint((outline->minx),(outline->miny+outline->maxy)/2);//left
+			else if (where==LAX_TOP)
+				p=flatpoint((outline->minx+outline->maxx)/2,(outline->maxy));//top
+			else //LAX_RIGHT
+				p=flatpoint((outline->maxx),(outline->miny+outline->maxy)/2);//right
+
+			p=pl->outline->transformPoint(p);
+			p=lspread->transformPoint(p);
+
+			if (all) pmi->AddPage(pl->page, p, 1, linetype);
+			else {
+				pmi->UpdatePage(pl->page, p, 1, linetype);
+			}
+
+		}
+	}
+}
+
 /*! Switch to slide cursor when shift up.
  */
 int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d)
@@ -1173,6 +1249,7 @@ Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 	sc->Add(SIA_Center,         ' ',0,0,         _("Center"),         _("Center"),NULL,0);
 	sc->Add(SIA_LabelPos,       'l',0,0,         _("LabelPos"),       _("Move label position"),NULL,0);
 	sc->Add(SIA_ToggleColor,    'c',0,0,         _("ToggleColor"),    _("Toggle color among defined colors"),NULL,0);
+	sc->Add(SIA_ToggleColorR,   'C',ShiftMask,0, _("ToggleColorR"),   _("Toggle color among defined colors"),NULL,0);
 	sc->Add(SIA_ToggleMark,     'm',0,0,         _("ToggleMark"),     _("Toggle mark type"),NULL,0);
 	sc->Add(SIA_ToggleMarkR,    'M',ShiftMask,0, _("ToggleMarkR"),    _("Toggle mark type"),NULL,0);
 	sc->Add(SIA_Thumbnails,     't',0,0,         _("Thumbs"),         _("Toggle showing thumbnails"),NULL,0);
@@ -1228,15 +1305,17 @@ int SpreadInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
-	} else if (action==SIA_ToggleColor) {
+	} else if (action==SIA_ToggleColor || action==SIA_ToggleColorR) {
 		if (!view || !curpages.n) return -1;
 
+		ViewerWindow *viewer=dynamic_cast<ViewerWindow*>(viewport->win_parent);
+		if (!viewer) return 0;
+		PageMarkerInterface *pmi=dynamic_cast<PageMarkerInterface*>(viewer->FindInterface("PageMarkerInterface"));
+		if (!pmi) return 0;
+
 		ScreenColor color=doc->pages.e[view->map(curpages.e[0])]->labelcolor;
-		if (color.equals(0.,0.,0.,1.)) color.rgbf(.3,.3,.3,1);
-		else if (color.equals(.3,.3,.3,1)) color.rgbf(.6,.6,.6,1);
-		else if (color.equals(.6,.6,.6,1.)) color.rgbf(1.,1.,1.,1);
-		else if (color.equals(1.,1.,1.,1.)) color.rgbf(0.,0.,0.,1);
-		else color.rgbf(0.,0.,0.,1.);
+		if (action==SIA_ToggleColor) color=pmi->NextColor(color);
+		else color=pmi->PreviousColor(color);
 
 		for (int c=0; c<curpages.n; c++) doc->pages.e[view->map(curpages.e[c])]->labelcolor=color;
 		needtodraw=1;
@@ -1520,10 +1599,12 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 	sed->spreadtool=spreadtool;
 	AddTool(spreadtool,1,1);
 
-	AddTool(new PageRangeInterface(1,viewport->dp, doc),0,0);
+	AddTool(new PageRangeInterface(1,viewport->dp, doc),0,1);
 
-	DBG AddTool(new PaperInterface(2,viewport->dp),0,0); // ***** 
+	AddTool(new PaperInterface(2,viewport->dp),0,1);
 	//AddTool(new NupInterface(1,viewport->dp),1,0);
+
+	AddTool(new PageMarkerInterface(spreadtool,3,viewport->dp), 1,1); //1==select, 1==absorb
 }
 
 SpreadEditor::~SpreadEditor()
@@ -1558,6 +1639,25 @@ int SpreadEditor::UseThisDoc(Document *ndoc)
 	}
 	//spreadtool->UseThisDoc(doc);
 	return 0;
+}
+
+int SpreadEditor::SelectTool(int id)
+{
+    int c=ViewerWindow::SelectTool(id);
+
+
+	SliderPopup *toolselector=dynamic_cast<SliderPopup*>(findChildWindowByName("viewtoolselector"));
+    if (toolselector) {
+        if (c==0) toolselector->Select(curtool->id);
+        else if (c==-1) {
+             //overlay toggled, update check mark
+            int oi=toolselector->GetItemIndex(id);
+            if (oi>=0) {
+                toolselector->SetState(oi, MENU_CHECKED, -1);
+            }
+        }
+    }
+    return c;
 }
 
 /*! Removes rulers and adds Apply, Reset.
@@ -1631,7 +1731,7 @@ int SpreadEditor::init()
 			if (tools.e[c]->interface_type!=INTERFACE_Overlay) continue;
 			img=laidout->icons.GetIcon(tools.e[c]->IconId());
 			toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
-			toolselector->SetState(-1,MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
+			toolselector->SetState(-1,(viewport->HasInterface(tools.e[c]->id)?MENU_CHECKED:0)|MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
 		}
 	}
 
@@ -1671,13 +1771,6 @@ int SpreadEditor::init()
 	return 0;
 }
 
-/*! Responds to:
- *
- * "resetbutton",
- * "applybutton",
- * "updatethumbs",
- * "docTreeChange".
- */
 int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 {
 	DBG cerr <<"SpreadEditor got message: "<<(mes?mes:"?")<<endl;
@@ -1692,10 +1785,13 @@ int SpreadEditor::Event(const Laxkit::EventData *data,const char *mes)
 				te->changetype==TreeObjectDeleted ||
 				te->changetype==TreeObjectAdded) {
 			DBG cerr <<"*** need to make a SpreadEditor:: flag for need to update thumbs"<<endl;
+
 		} else if (te->changetype==TreePagesAdded ||
 				te->changetype==TreePagesDeleted ||
 				te->changetype==TreePagesMoved) {
 			spreadtool->CheckSpreads(te->start,te->end);
+			spreadtool->UpdateMarkers(true);
+
 		} else if (te->changetype==TreeDocGone) {
 			cout <<" ***need to imp SpreadEditor::DataEvent -> TreeDocGone"<<endl;
 		}
