@@ -58,8 +58,9 @@ enum PageMarkerInterfaceValues {
 	PSTATE_MAX
 };
 
-PageMarkerInterface::PageMarkerInterfaceNode::PageMarkerInterfaceNode(Page *npage, flatpoint npos, double nscaling)
+PageMarkerInterface::PageMarkerInterfaceNode::PageMarkerInterfaceNode(Page *npage, flatpoint npos, double nscaling, int nlinetype)
 {
+	linetype=nlinetype; //0 for normal, 1 for thick red, means need rearranging in SpreadEditor
 	page=npage;
 	if (page) page->inc_count();
 	origin=npos;
@@ -94,12 +95,12 @@ PageMarkerInterface::PageMarkerInterface(anInterface *nowner, int nid, Displayer
 	colors.push(new ScreenColor(.33,.33,.33,1.));
 	colors.push(new ScreenColor(.66,.66,.66,1.));
 	colors.push(new ScreenColor(1.,1.,1.,1.));
-	colors.push(new ScreenColor(1.,0.,0.,1.));
-	colors.push(new ScreenColor(0.,1.,0.,1.));
-	colors.push(new ScreenColor(0.,0.,1.,1.)); 
-	colors.push(new ScreenColor(0.,1.,1.,1.));
-	colors.push(new ScreenColor(1.,0.,1.,1.));
-	colors.push(new ScreenColor(1.,1.,0.,1.));
+	colors.push(new ScreenColor(1.,0.,0.,1.)); //red
+	colors.push(new ScreenColor(1.,1.,0.,1.)); //yellow
+	colors.push(new ScreenColor(0.,1.,0.,1.)); //green
+	colors.push(new ScreenColor(0.,1.,1.,1.)); //cyan
+	colors.push(new ScreenColor(0.,0.,1.,1.)); //blue
+	colors.push(new ScreenColor(1.,0.,1.,1.)); //purple
 
 	shapes.push(MARKER_Circle      );
 	shapes.push(MARKER_Square      );
@@ -215,13 +216,20 @@ int PageMarkerInterface::Event(const Laxkit::EventData *data, const char *mes)
 
 
 /*! Return a color that should stand out against the given color.
+ * If bw then this will always return black or white. Else each color channel
+ * is the furthest from the channel value.
  */
-unsigned long standoutcolor(const Laxkit::ScreenColor &color)
+unsigned long standoutcolor(const Laxkit::ScreenColor &color, bool bw)
 {
 	ScreenColor col(0,0,0,65535);
-	if (color.red<32768) col.red=65535;
-	if (color.green<32768) col.green=65535;
-	if (color.blue<32768) col.blue=65535;
+	int nummax=0;
+	if (color.red<32768) { col.red=65535; nummax++; }
+	if (color.green<32768) { col.green=65535; nummax++; }
+	if (color.blue<32768) { col.blue=65535; nummax++; }
+	if (bw) {
+		if (nummax<2) col.rgbf(0.,0.,0.,1.); //black
+		else col.rgbf(1.,1.,1.,1.); 
+	} 
 	return col.Pixel();
 }
 
@@ -249,18 +257,29 @@ int PageMarkerInterface::Refresh()
 		flatpoint p;
 		DrawThingTypes t=THING_None;
 		double w,h;
-		dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
+		unsigned long fg;
+		ScreenColor *bg;
+		int lwidth=1;
+
 		for (int c=0; c<pages.n; c++) {
 			p=dp->realtoscreen(pages.e[c]->origin);
 
-			if (c==curpage) {
-				dp->LineAttributes(2,LineSolid,LAXCAP_Round,LAXJOIN_Round);
-				dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.6));
+			if (pages.e[c]->linetype==1) {
+				lwidth=4;
+				fg=rgbcolorf(1.,0.,0.);
+			} else if (c==curpage) {
+				lwidth=2;
+				fg=coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.6);
+				//dp->LineAttributes(2,LineSolid,LAXCAP_Round,LAXJOIN_Round);
+				//dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.6));
 			} else {
-				dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
-				dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
+				lwidth=1;
+				fg=coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3);
+				//dp->LineAttributes(1,LineSolid,LAXCAP_Round,LAXJOIN_Round);
+				//dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg,.3));
 			}
-			dp->NewBG(&pages.e[c]->page->labelcolor);
+			bg=&pages.e[c]->page->labelcolor;
+			//dp->NewBG(&pages.e[c]->page->labelcolor);
 
 			dp->textextent(pages.e[c]->page->label,-1,&w,&h);
 			w/=2;
@@ -276,10 +295,11 @@ int PageMarkerInterface::Refresh()
 				case MARKER_Diamond:      t=THING_Diamond; break;
 				default:   t=THING_Circle;  break;
 			}
-			//dp->drawFormattedPoints(shape[pages.e[c]->labeltype]);
-			dp->drawthing(p.x,p.y,w,h, 2, t);
+			//dp->drawthing(p.x,p.y,w,h, 2, t);
+			DBG cerr <<"draw bg color: "<<bg->Pixel()<<endl;
+			dp->drawthing(p.x,p.y,w,h, t, fg,bg->Pixel(), lwidth);
 
-			dp->NewFG(standoutcolor(pages.e[c]->page->labelcolor));
+			dp->NewFG(standoutcolor(pages.e[c]->page->labelcolor,true));
 			//dp->NewFG(curwindow->win_colors->fg);
 			dp->textout(p.x,p.y, pages.e[c]->page->label,-1, LAX_CENTER);
 
@@ -393,13 +413,14 @@ int PageMarkerInterface::LBDown(int x,int y,unsigned int state,int count, const 
 		for ( ; xx<shapes.n; xx++) {
 			if (pages.e[index]->page->labeltype==shapes.e[xx]) break;
 		}
-		int yy=nearestcolor(&pages.e[index]->page->labelcolor);
+		int yy=NearestColor(&pages.e[index]->page->labelcolor);
 		boxoffset=flatpoint(x,y)-flatpoint(pad+(xx+.5)*uiscale*th, pad+(yy+.5)*uiscale*th);
 		DBG cerr <<"   lbdown page marker: "<<xx<<','<<yy<<endl;
 
 		mode=PSTATE_Select;
 		int ii;
 		what=scan(x,y, ii);
+		hoveri=ii;
 		buttondown.moveinfo(d->id,LEFTBUTTON, index,ii);
 	}
 
@@ -425,8 +446,9 @@ double color_distance(ScreenColor *c1, ScreenColor *c2)
 
 /*! Return the index in colors of the color nearest to the given color, or -1 if there are no colors.
  */
-int PageMarkerInterface::nearestcolor(Laxkit::ScreenColor *color)
+int PageMarkerInterface::NearestColor(Laxkit::ScreenColor *color)
 {
+	if (!color) return 0;
 	if (colors.n==0) return -1;
 
 	int index=-1;
@@ -447,20 +469,30 @@ int PageMarkerInterface::LBUp(int x,int y,unsigned int state, const Laxkit::LaxM
 		int what, index=-1;
 		buttondown.up(d->id,LEFTBUTTON, &what, &index);
 
+		DBG cerr <<"PageMarkerInterface LBUp: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
+		DBG int ci=index/shapes.n;
+		DBG if (ci>=0 && ci<colors.n) {
+		DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<','<<colors.e[ci]->alpha<<endl;
+		DBG } else cerr <<endl;
+
 		if (mode==PSTATE_Select && index>=0) {
 			int color=index/shapes.n;
 			int shape=index%shapes.n;
 
+			 //just the page
+			pages.e[what]->page->labeltype=shapes.e[shape];
+			pages.e[what]->page->labelcolor=*colors.e[color];
+
 			if (owner) {
-				 //send a message
+				 //send a message. owners are responsible to setting any other "selected" pages, as PageMarkerInterface
+				 //does not keep track of selected pages.
 				SimpleColorEventData *data=new SimpleColorEventData(65535,
 						colors.e[color]->red, colors.e[color]->green, colors.e[color]->blue, 65535, shapes.e[shape]);
 				app->SendMessage(data, owner->object_id, "pagemarker", object_id);
+	
 			} else {
-				 //change just the page
-				pages.e[what]->page->labeltype=shapes.e[shape];
-				pages.e[what]->page->labelcolor=*colors.e[color];
-
+				//DBG ci=color;
+				//DBG cerr <<"  new page color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<','<<colors.e[ci]->alpha<<endl;
 			}
 		}
 
@@ -477,6 +509,10 @@ int PageMarkerInterface::MouseMove(int x,int y,unsigned int state, const Laxkit:
 	int index=-1;
 	int what=scan(x,y, index);
 	DBG cerr <<"PageMarkerInterface move: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
+	DBG int ci=index/shapes.n;
+	DBG if (ci>=0 && ci<colors.n) {
+	DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<endl;
+	DBG } else cerr <<endl;
 
 	if (!buttondown.any()) { 
 		if (hover!=what || index!=hoveri) {
@@ -588,9 +624,22 @@ int PageMarkerInterface::PerformAction(int action)
 	return 1;
 }
 
-int PageMarkerInterface::AddPage(Page *page, flatpoint pos, double scaling)
+int PageMarkerInterface::AddPage(Page *page, flatpoint pos, double scaling, int nlinetype)
 {
-	return pages.push(new PageMarkerInterfaceNode(page,pos,scaling));
+	return pages.push(new PageMarkerInterfaceNode(page,pos,scaling,nlinetype));
+}
+
+int PageMarkerInterface::UpdatePage(Page *page, flatpoint pos, double scaling, int nlinetype)
+{
+	for (int c=0; c<pages.n; c++) {
+		if (page==pages.e[c]->page) {
+			pages.e[c]->origin=pos;
+			pages.e[c]->scaling=scaling;
+			pages.e[c]->linetype=nlinetype;
+			return 0;
+		}
+	}
+	return 1;
 }
 
 void PageMarkerInterface::ClearPages()
@@ -613,6 +662,20 @@ int PageMarkerInterface::UpdateCurpage(Page *page)
 	}
 	needtodraw=1;
 	return old;
+}
+
+Laxkit::ScreenColor PageMarkerInterface::NextColor(Laxkit::ScreenColor &color)
+{
+	int i=NearestColor(&color);
+	i=(i+1)%colors.n;
+	return *colors.e[i];
+}
+
+Laxkit::ScreenColor PageMarkerInterface::PreviousColor(Laxkit::ScreenColor &color)
+{
+	int i=NearestColor(&color);
+	i=(i+colors.n-1)%colors.n;
+	return *colors.e[i];
 }
 
 

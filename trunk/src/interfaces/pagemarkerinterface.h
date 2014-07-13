@@ -41,7 +41,8 @@ class PageMarkerInterface : public LaxInterfaces::anInterface
 		Page *page;
 		flatpoint origin;
 		double scaling;
-		PageMarkerInterfaceNode(Page *npage, flatpoint npos, double nscaling);
+		int linetype;
+		PageMarkerInterfaceNode(Page *npage, flatpoint npos, double nscaling, int nlinetype);
 		~PageMarkerInterfaceNode();
 	};
 	Laxkit::PtrStack<PageMarkerInterfaceNode> pages;
@@ -51,7 +52,7 @@ class PageMarkerInterface : public LaxInterfaces::anInterface
 	Laxkit::NumStack<int> shapes;
 
 
-	virtual int nearestcolor(Laxkit::ScreenColor *color);
+	virtual int NearestColor(Laxkit::ScreenColor *color);
 	virtual int scan(int x,int y, int &index);
 	virtual int send();
 
@@ -82,9 +83,12 @@ class PageMarkerInterface : public LaxInterfaces::anInterface
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state, const Laxkit::LaxKeyboard *d);
 	//virtual int KeyUp(unsigned int ch,unsigned int state, const Laxkit::LaxKeyboard *d);
 
-	virtual int AddPage(Page *page, flatpoint pos, double scaling);
+	virtual int AddPage(Page *page, flatpoint pos, double scaling, int nlinetype);
+	virtual int UpdatePage(Page *page, flatpoint pos, double scaling, int nlinetype);
 	virtual void ClearPages();
 	virtual int UpdateCurpage(Page *page);
+	virtual Laxkit::ScreenColor NextColor(Laxkit::ScreenColor &color);
+	virtual Laxkit::ScreenColor PreviousColor(Laxkit::ScreenColor &color);
 };
 
 } // namespace Laidout
