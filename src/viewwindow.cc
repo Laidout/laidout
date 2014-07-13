@@ -1107,9 +1107,8 @@ void LaidoutViewport::setupthings(int tospread, int topage)//tospread=-1
 
 void LaidoutViewport::UpdateMarkers()
 {
-	int pmii=HasInterface("PageMarkerInterface")-1;
-	if (pmii>=0) {
-		PageMarkerInterface *pmi=dynamic_cast<PageMarkerInterface*>(interfaces.e[pmii]);
+	PageMarkerInterface *pmi=dynamic_cast<PageMarkerInterface*>(HasInterface("PageMarkerInterface",NULL));
+	if (pmi) {
 		pmi->ClearPages();
 		if (spread) {
 			PageLocation *pl;
@@ -1118,7 +1117,7 @@ void LaidoutViewport::UpdateMarkers()
 				if (!pl->page && pl->index>=0) pl->page=doc->pages.e[pl->index];
 				if (!pl->page) continue;
 
-				pmi->AddPage(pl->page, pl->outline->transformPoint(flatpoint(pl->outline->minx,pl->outline->miny)), 1);
+				pmi->AddPage(pl->page, pl->outline->transformPoint(flatpoint(pl->outline->minx,pl->outline->miny)), 1, 0);
 			}
 		}
 	}
@@ -3432,9 +3431,10 @@ void ViewWindow::setup()
  * \brief Special page flipper.
  * \todo put me somewhere meaningful!
  */
-class PageFlipper : public NumInputSlider
+class PageFlipper : public NumSlider
 {
  public:
+	bool usepages;
 	Document *doc;
 	char *currentcontext;
 	PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
@@ -3448,8 +3448,9 @@ class PageFlipper : public NumInputSlider
  */
 PageFlipper::PageFlipper(Document *ndoc,anXWindow *parnt,const char *ntitle,
 						 anXWindow *prev,unsigned long nowner,const char *nsendthis,const char *nlabel)
-	: NumInputSlider(parnt,ntitle,ntitle,NUMSLIDER_WRAP,0,0,0,0,1, prev,nowner,nsendthis,nlabel,0,1)
+	: NumSlider(parnt,ntitle,ntitle,ItemSlider::EDITABLE|NumSlider::WRAP,0,0,0,0,1, prev,nowner,nsendthis,nlabel,0,1)
 {
+	usepages=false;
 	doc=ndoc;
 	if (doc) doc->inc_count();
 	currentcontext=NULL;
@@ -3462,43 +3463,47 @@ PageFlipper::~PageFlipper()
 //! Return the current context.
 const char *PageFlipper::tooltip(int mouseid)
 {
-	if (!currentcontext) return _("The current page");
+	if (!currentcontext) {
+		if (usepages) return _("The current page");
+		else return _("The current spread");
+	}
 	return currentcontext;
 }
 
 void PageFlipper::Refresh()
 {
-	if (!win_on || !needtodraw) return;
-	background_color(win_colors->bg);
-	clear_window(this);
-
-	int x,y;
-	unsigned int state;
-	if (buttondown) {
-		mouseposition(buttondowndevice,this,&x,&y,&state,NULL);
-		if ((x>=0 && x<win_w && y>0 && y<win_h)) {
-			if (x<win_w/2) {
-				 // draw left arrow
-				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Left);
-			} else {
-				 // draw right arrow
-				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
-				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Right);
-			}
-		}
-	}
-
-	foreground_color(win_colors->fg);
-	
-	char *str=newstr(label);
-	if (doc && curitem>=0 && curitem<doc->pages.n) appendstr(str,doc->pages.e[curitem]->label);
-	else appendstr(str,"limbo");
-
-	textout(this, str,-1,win_w/2,win_h/2,LAX_CENTER);
-	delete[] str;
-
-	needtodraw=0;
+	NumSlider::Refresh();
+//	if (!win_on || !needtodraw) return;
+//	background_color(win_colors->bg);
+//	clear_window(this);
+//
+//	int x,y;
+//	unsigned int state;
+//	if (buttondown) {
+//		mouseposition(buttondowndevice,this,&x,&y,&state,NULL);
+//		if ((x>=0 && x<win_w && y>0 && y<win_h)) {
+//			if (x<win_w/2) {
+//				 // draw left arrow
+//				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
+//				draw_thing(this, win_w/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Left);
+//			} else {
+//				 // draw right arrow
+//				foreground_color(coloravg(win_colors->bg,win_colors->fg,.1));
+//				draw_thing(this, win_w*3/4,win_h/2, win_w/4,win_h/2,1, THING_Triangle_Right);
+//			}
+//		}
+//	}
+//
+//	foreground_color(win_colors->fg);
+//	
+//	char *str=newstr(label);
+//	if (doc && curitem>=0 && curitem<doc->pages.n) appendstr(str,doc->pages.e[curitem]->label);
+//	else appendstr(str,"limbo");
+//
+//	textout(this, str,-1,win_w/2,win_h/2,LAX_CENTER);
+//	delete[] str;
+//
+//	needtodraw=0;
 }
 
 //-------------end PageFlipper
@@ -3607,9 +3612,12 @@ int ViewWindow::init()
 	pagenumber=NULL;
 	last=pagenumber=new PageFlipper(doc,this,"spread number", 
 									last,object_id,"newSpreadNumber",
-									_("Page: "));
+									NULL);
+	//pagenumber->LabelBase(_("Spread: %d"));
+	pagenumber->NewMin(1);
 	pagenumber->tooltip(_("The current spread"));
-	AddWin(pagenumber,1, 90,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
+	double th=viewport->dp->textheight();
+	AddWin(pagenumber,1, 4*th,0,50,50,0, pagenumber->win_h,0,50,50,0, -1);
 	
 //	NumSlider *num=new NumSlider(this,"layer number",NUMSLIDER_WRAP, 0,0,0,0,1, 
 //								NULL,object_id,"newLayerNumber",
@@ -4152,6 +4160,23 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 		return 0;
 
+	} else if (!strcmp(mes,"newSpreadNumber")) {
+		if (!doc) return 0;
+
+		const SimpleMessage *s=dynamic_cast<const SimpleMessage *>(data);
+		int p=s->info1-1;
+		LaidoutViewport *lviewport=dynamic_cast<LaidoutViewport*>(viewport);
+		if (p>=doc->imposition->NumSpreads(lviewport->ViewMode(NULL))) {
+			p=0;
+			if (pagenumber) pagenumber->Select(p);
+		} else if (p<0) {
+			p=doc->imposition->NumSpreads(lviewport->ViewMode(NULL))-1;
+			if (pagenumber) pagenumber->Select(p);
+		}
+		lviewport->SelectSpread(p);
+		updateContext(0);
+		return 0;
+
 	} else if (!strcmp(mes,"newPageNumber")) {
 		if (!doc) return 0;
 
@@ -4392,16 +4417,23 @@ void ViewWindow::updateProjectStatus()
  *
  * If messagetoo!=0, then update the viewwindow message bar to state the new context.
  *
- * \todo *** need to implement the updating all of helper windows to cur context
+ * \todo *** need to implement the updating of all helper windows to cur context
  */
 void ViewWindow::updateContext(int messagetoo)
 {
 	if (!doc) return;
-	int page=((LaidoutViewport *)viewport)->curobjPage();
+
+	LaidoutViewport *lviewport=((LaidoutViewport *)viewport);
+	int page=lviewport->curobjPage();
+
 	if (pagenumber) {
-		pagenumber->Label(((LaidoutViewport *)viewport)->Pageviewlabel());
-		pagenumber->Select(page);
-		pagenumber->NewMax(doc->pages.n-1);
+		//pagenumber->Label(lviewport->Pageviewlabel());
+		pagenumber->Select(lviewport->spreadi+1);
+		pagenumber->NewMax(doc->imposition->NumSpreads(lviewport->ViewMode(NULL)));
+
+		//pagenumber->Label(lviewport->Pageviewlabel());
+		//pagenumber->Select(page);
+		//pagenumber->NewMax(doc->pages.n-1);
 	}
 
 	if (pageclips) {
@@ -4410,20 +4442,19 @@ void ViewWindow::updateContext(int messagetoo)
 	}
 
 	if (messagetoo) {
-		LaidoutViewport *v=((LaidoutViewport *)viewport);
-		int cplen=20,curpageindex=((LaidoutViewport *)viewport)->curobjPage();
+		int cplen=20,curpageindex=lviewport->curobjPage();
 
-		char blah[cplen+v->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
+		char blah[cplen+lviewport->curobj.context.n()*20+50]; //*** warning! crash magnet when field names are long!
 		blah[0]='\0';
 
 		if (curpageindex>=0 && doc->pages.e[curpageindex]->label) {
 			sprintf(blah,_("(page %s) "),doc->pages.e[curpageindex]->label);
 		}
 
-		if (v->curobj.obj) {
-			strcat(blah,v->curobj.obj->whattype());
+		if (lviewport->curobj.obj) {
+			strcat(blah,lviewport->curobj.obj->whattype());
 			strcat(blah,": ");
-			strcat(blah,v->curobj.obj->Id());
+			strcat(blah,lviewport->curobj.obj->Id());
 		} else strcat(blah,"none");
 		if (mesbar) mesbar->SetText(blah);
 
@@ -4436,9 +4467,8 @@ void ViewWindow::updateContext(int messagetoo)
 	SliderPopup *layouttype=dynamic_cast<SliderPopup*>(findChildWindowByName("view type"));
 	if (layouttype) {
 		layouttype->Flush();
-		LaidoutViewport *vp=((LaidoutViewport *)viewport);
 		Imposition *imp;
-		if (vp->doc) imp=vp->doc->imposition;
+		if (lviewport->doc) imp=lviewport->doc->imposition;
 		if (imp) {
 			for (int c=0; c<imp->NumLayoutTypes(); c++) {
 				layouttype->AddItem(imp->LayoutName(c),c);

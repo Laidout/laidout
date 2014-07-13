@@ -18,7 +18,7 @@
 
 
 #include <lax/interfaces/viewerwindow.h>
-#include <lax/numinputslider.h>
+#include <lax/numslider.h>
 #include <lax/sliderpopup.h>
 #include <lax/lineedit.h>
 #include <lax/colorbox.h>
@@ -202,7 +202,7 @@ class ViewWindow : public LaxInterfaces::ViewerWindow
 {
   protected:
 	void setup();
-	Laxkit::NumInputSlider *pagenumber;
+	Laxkit::NumSlider *pagenumber;
 	Laxkit::Button *pageclips;
 	Laxkit::ColorBox *colorbox;
 	Laxkit::SliderPopup *toolselector;
