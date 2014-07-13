@@ -564,12 +564,13 @@ int PageRangeInterface::LBDown(int x,int y,unsigned int state,int count,const La
 {
 	if (!doc) return 1;
 	if (buttondown.isdown(0,LEFTBUTTON)) return 1; //only let one mouse work
-	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
 	int range=-1, index=-1, part=0;
 	int pos=-1;
 	int s=scan(x,y, &pos, &range, &part, &index);
+	if (!s) return 1;
 
+	buttondown.down(d->id,LEFTBUTTON,x,y,state);
 
 	if (part==PART_Position) {
 		if (pos>=0) {
