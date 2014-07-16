@@ -23,6 +23,7 @@ VERSION 0.095
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        Tool scripting
        PathInterface subpaths for hole making should work: check exports
+(done) Freehand drawing with tablet pressure support
 (done) impose-only mode should allow access to all imposition types, not just signatures
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        Fix object bleeding across pages for signatures and nets
@@ -42,6 +43,8 @@ VERSION 0.095
        PDF in, at least as 1 image per page, for purposes of imposition
        autosave for autorecover
        Optimize pdf export to rescale to target dpi, and compress image data
+       Re-fix cut and paste from system clipboard
+       make window resize work on default ubuntu
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
@@ -115,7 +118,6 @@ Figure out best way to expose laidout functions to other program's scripters (ie
 Bezier color patch freeform, rather than just grid.
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 Possibly allow pure function gradients, and redefining the functions for the other gradients..
-Freehand drawing with tablet support
 Maybe bez part of path interface should have segment move like inkscape
 Somehow be able to do simulated add-ins/foldouts from within any page of an imposition
 use any path as a kind of tab stop
@@ -153,6 +155,8 @@ Vx support?
 Verse support?
 Content version control?
 dbus?
+port to other os
+port to tablet, or subset functionality, like check out to tablet, work on lower res version, to later import to system with full resources
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
 Akin to animation mode, have movie/sound objects available to html export, for instance?

@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+i broke reimpose due to margin area shift
+
+reimpose memory hole.. reimposed 5 page booklet
+
 out click destroy does not absorb button down
 
 object layer positioning for Home and End keys projecting out in wrong way
@@ -26,11 +30,6 @@ scribus plugin: if directory of executable script is not writable, it fails!
 
 ContextMenu: tablet mouse can't click down in?!?? -> because slight drag cancels... should allow tiny drags
 ContextMenu: mouse hover scan appears to ignore text pad
-
-scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
-papergroup tool NEEDS 1:1 paper matrix reset, maybe say what paper dimensions
-papergroup tool needs custom paper input
-scribus export should show actual version export
 
 hang after reparent
 
@@ -78,11 +77,9 @@ DONE??? need to implement scale pages to new imposition when reimposing (enable 
 
 memory hole helpwindow 
 
-why no icon in menus?
-
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 
-SimpleColorAttribute() should have double rgba available
+SimpleColorAttribute() should have double rgbaf available, and various css3 stuff
 
 make singles 16 pages, edit imposition, select booklet. Defaults to 4 pages!
 
@@ -174,6 +171,17 @@ test:
   test in different window managers
 
 need to remember previous export settings
+
+dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
+
+previewer should show text previews left justified
+
+papergroup tool NEEDS 1:1 paper matrix reset, maybe say what paper dimensions
+papergroup tool needs custom paper input
+debug papergroup tool in spread editor
+
+pagemarkerinterface:
+  option to lock label size to real space? make export contact sheets a little prettier in some cases
 
 laxkit attributes.cc SimpleColorAttribute:
   should be able to handle any css color attribute, whether "#fff' "#ffffff" or rgb(...),hsl(...) etc
@@ -327,22 +335,22 @@ lineedit:
 
 
 implement undo.. ideally use same code for both undo and recordable/assignable actions
+  object interface
+  image
+  gradients
   paths
   meshes
     color
 	image
   engraver
-  gradients
+  inside curve editors
   paper interface
-  object interface
   spread editor
   reimpose
   unwrapper
   metadata stuff
-  image
   cloner
   during scripting?!
-  inside curve editors
 
 svg
   export needs implementation for options for mesh and powerstroke
@@ -351,10 +359,14 @@ svg
   DONE export needs specialized export config
 
 make color slider box be able to be a pane
+  would be nice to enter number values in any color format
 
-vital to debug send to printer
-export needs "batch" send, break into smaller segments
-rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
+export/print dialog
+  vital to debug send to printer
+  rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
+  rotate very other page 180
+  export should have a preview of what is actually going out, flip through spreads
+  DONE export needs "batch" send, break into smaller segments
   
 views with multiple spreads
 
@@ -515,17 +527,19 @@ gradient resources
 improve split window
   control wheel to expand bevel
   load/save split bevel settings
-  restore mouse cursor change when over gap
+  debug mouse cursor change when over gap
   simplify pane customization, docking
 
 page thumbnail should be rational, ie image should be whole page, not just contents+transform,
 	 and thumb transform makes image dims to page coords
 
-Signature editor:
+signature editor  Signature editor Signature Editor
+  fold replay should start showing FRONT page of stack, not back. THIS IS A BUG
+    if start from whichever, should show inverse of folds to normal as necessary
+  scale pages preview needs to use margin area, not page area
   needs indicator of number of groups, show 3/10 for current sheet in little box above stack, allow numerical input
 
-  current sheet indicator not using correct text extent, seems grabbing extent from 1/117 instead of 117/117
-
+  show margin, trim, binding when not totally folded
   for large page counts, need number entry in stacks
   would be nice to indicate when there is a centerfold of any signature
   mixing different page sizes mixes up the PageLayout at boundaries. alignment should be either always centered, or custom
@@ -539,14 +553,16 @@ Signature editor:
   mouse over and drag show numbers on canvas
   export pdf or lo doc template
   implement work and turn interface
-  needs visual dodads to indicate where to drag to change, give tooltip to say shift for fold under.
+  should probably be some kind of tooltip to say shift for fold under.
   binding edge must be same orientation for all stacks and inserts
   need a paper size editor stand alone window, entering numbers should convert name to custom
   paper select should give hints as to whether paper size can hold actual final size
   detect non staplable binding edge, show red rather than green
   test impose-only for all imposition types
-  show margin, trim, binding when not totally folded
   be able to specify single sided.. allows bound accordian foldings?
+
+  DONE current sheet indicator not using correct text extent, seems grabbing extent from 1/117 instead of 117/117 
+  DONE needs visual dodads to indicate where to drag to change,
 
 printer mark rendering default to a single color? editing of net outline allowed, but
 then changes not stored
@@ -579,7 +595,7 @@ standardize new Impositions: each has:
    default resources
   possible to define other editors for any imposition type
   
-autorecover.. autosave every X minutes
+autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up
 
 make "make uninstall" work, and remove coop 
 
@@ -601,16 +617,30 @@ need device editor, detect wacom pad buttons.. they are available as an xlib mou
 make pdf default output format for sending to lp
 
 Spread Editor:
-  need page number overlay
-  should be able to hide groups of pages, since render speed of hundreds of pages is slow
-  debug select spreads with rectangle
-  after an insert, have temp wheelable number indicator, update on screen
-  modify page labels gui, click on a page label, where ever it might be... select pages in spread editor
-  integration of page label gui with spreadeditor, select pages, pop up the dialog?
-  adjust page preview size
-  debug spread threads and page groups
-  create new document from spread view
+  need to be able to move empty spreads
+  need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
+  need to remove hidden pages from pagemarker
 
+  would be nice if apply and reset should be grayed as relevant
+  debug select spreads with rectangle -> need real box intersect? do we?
+  after an insert, have temp wheelable number indicator, update on screen?
+  modify page range gui, click on a page label, where ever it might be... select pages in spread editor
+  adjust page preview resolution
+  debug spread limbo threads and page groups
+    implement render
+	debug drag and drop
+  create new document from spread view?
+  hide should collapse into a single thing so you can arrange more simply, instead of still having to sift through many
+
+  DONE when rearranging pages, need to shift page contents according to margin area
+  DONE shortcut for select all with same markers+color
+  DONE should be able to hide groups of pages, since render speed of hundreds of pages is slow
+  DONE memory hole: ./laidout -n letter, do f3, quit. investigate Leaves obj imposition #721, doc is #750 -> spreadeditorviewport
+  DONE slide and swap needs to act with whole range
+  DONE control left button to toggle pages in and out of selection
+  DONE shift left button to select ranges
+  DONE integration of page label gui with spreadeditor, select pages, pop up the dialog?
+  DONE need page number overlay
   DONE insert blanks before or after
   DONE update page label type to be color+shape, shape being circle, square, diamond, or triangle
     DONE default colors: white, gray, dark gray, black, red, yellow
@@ -633,6 +663,8 @@ turning off overlays should revert icon to current tool
 debug multi head? seems to crash when showing with projectors plugged in
 	screen info should return x,y,w,h, with flag saying it is part of a whole.
 	if only one screen, then x,y is 0
+
+page range interface, drag off screen should toggle off
 
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
@@ -667,8 +699,13 @@ Scribus:
   scribus in/out: font sizes, stroke widths
   import should try to apply the Scribus layout correctly, at least for 2 page spreads
   import should do something meaningful with original Scribus page bleed values
+  scribus export should show actual version export
+  scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
+    -> this necessitates revamp of singles to use more than one paper type
+  scribus out doesn't do gradients
 
-in number edit boxes, wheel should allow changing numbers, change on digit mouse is over!
+
+in number edit boxes, wheel should allow changing numbers, change on digit mouse is over?
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
 
 paperinterface:
@@ -720,8 +757,6 @@ mass image edit, need to remap dirs for old files!!
 export should have option to export in segments, like 4 pages at a time, but export all
 
 overwrite should return to file dialog if no
-
-scribus out doesn't do gradients
 
 bleeding mechanism should be functional
 
@@ -978,6 +1013,25 @@ messages to the status line should have priorities, so once mouse over messages 
 
 
 
+----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
+update fileformat.txt
+check laidout.1 when time to release
+update docs to have new release number
+update translation base files
+update screenshots
+update dtpcompare.html
+put rss/g+ links on all menu pages
+test:
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
+  each export filter
+  make some test scripts for command line testing
+  test in different window managers
+
+
+
+
+
 ===================Anything below here probably needs discussion before implementing================
 ---------------------------------- other enhancements ----------------------------------
 how to keep track of class hierarchy? impositions are now listed by resource instance, what is
@@ -1098,8 +1152,7 @@ remember tool settings
 
 configurable command buttons to automate certain things with minimal window clutter....
 
-int SomeData::Compatible(const char *withwhat)
-NO!!!!! compatibility should be determined by object type managers, not individual objects
+preflighting: compatibility should be determined by object type managers, not individual objects
 return if object is currently compatible with some standard, 
 like "PS LL3", "EPS 3.0", "SVG 1.2", "PDF 1.3", "PDF 1.4" "HTML/CSS2"
 1==yes, straight out
@@ -1169,5 +1222,6 @@ DONE r/R for rotate objects not syncing matrix correctly
 DONE object tool: key rotate should rotate around any active transform anchors
 DONE scribus out: not exporting proper page size, legal booklet
 DONE need page number overlay
+DONE? why no icon in menus? <- not sure what it means anymore, there do seem to be icons in menus 
 
 
