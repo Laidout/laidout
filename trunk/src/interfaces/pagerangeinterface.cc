@@ -186,6 +186,13 @@ char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labelty
  */
 Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid)
 {
+	 //no menu when not right click in box...
+	int range=-1, index=-1, part=0;
+	int pos=-1;
+	int s=scan(x,y, &pos, &range, &part, &index);
+	if (!s) return NULL;
+
+
 	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
 
 	menu->AddItem(_("Custom base..."),RANGE_Custom_Base);
