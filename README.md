@@ -63,7 +63,7 @@ Here are the current "./configure" options. They are all optional:
      --laxkit=/laxkit/headers     Default in releases is ./laxkit/lax, since the Laxkit
                                    is currently included in release download
      --version=OtherVersionNum    You may force Laidout to compile with a different
-                                   version string. This will make ~/.laidout/(version)
+                                   version string. This will make ~/.config/laidout/(version)
                                    and the executable becomes laidout-(version), and will
                                    save system stuff in prefix/share/laidout-(version).
      --language=/path/to/langs    The path where translation files should be installed.

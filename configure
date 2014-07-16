@@ -45,7 +45,7 @@ while true ; do
         echo " --laxkit=/laxkit/headers     Default in releases is ./laxkit, since the Laxkit"
         echo "                                is currently included in release downloads"
 		echo " --version=OtherVersionNum    You may force Laidout to compile with a different"
-		echo "                                version string. This will make ~/.laidout/(version)"
+		echo "                                version string. This will make ~/.config/laidout/(version)"
 		echo "                                and the executable becomes laidout-(version) and will"
 		echo "                                save system stuff in prefix/share/laidout-(version)."
 		echo " --language=path/to/langs     The path where translation files should be installed."

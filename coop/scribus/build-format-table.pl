@@ -77,6 +77,8 @@ $infile=$ARGIN;
 if ($infile eq "") {
 	die << "THEEND";
 usage:
+ --pure-att    <- Use for pure att. Otherwise, att is formatted similar to xml
+
  Input formats can be:   .att  
  Output formats can be:  .html .wiki .dtd
 
