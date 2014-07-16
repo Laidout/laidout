@@ -64,6 +64,8 @@ namespace Laidout {
  * Left button selecting and moving usually acts on individual pages, and the middle
  * button acts on whole spreads.
  *
+ * curpages contains a list of document page indices.
+ *
  * \todo when there are threads, apply button should be grayed
  * \todo *** for doc pages not represented in active nets, there should be special warning indicator.
  * \todo Ultimately, this should be ported to Inkscape and Scribus (devs willing), ESPECially Inkscape, when the
@@ -71,7 +73,7 @@ namespace Laidout {
  */
 
 /*! \var int SpreadInterface::curpage
- * \brief Index that can be used to pagelabel stack..
+ * \brief Document page index for whatever could be considered the current page, or -1.
  */
 
 
@@ -110,6 +112,7 @@ SpreadInterface::~SpreadInterface()
 
 	if (view) view->dec_count();
 	if (doc) doc->dec_count();
+	if (sc) sc->dec_count();
 }
 
 const char *SpreadInterface::Name()
@@ -358,6 +361,8 @@ void SpreadInterface::ArrangeSpreads(int how)//how==-1
 			dp->Center(X,X+W,Y,Y+H);
 		}
 	}
+
+	UpdateMarkers(true);
 }
 
 //! Draw the little spreads, connection lines, page labels, whatever else...
@@ -371,16 +376,17 @@ int SpreadInterface::Refresh()
 		ArrangeSpreads();
 		if (view) view->FindBBox();
 		Center(1);
-		UpdateMarkers(true);
 		//((ViewportWindow *)curwindow)->syncrulers();
 	}
 
 	if (pagestorender.n) {
 		 //do one page render, to preserve some interactivity when having to render a ton of pages
-		pagestorender.e[0]->Thumbnail();
-		pagestorender.remove(0);
-		if (pagestorender.n) needtodraw=2;
-		else needtodraw=0;
+		if (drawthumbnails) {
+			pagestorender.e[0]->Thumbnail();
+			pagestorender.remove(0);
+			if (pagestorender.n) needtodraw=2;
+			else needtodraw=0;
+		}
 	} else needtodraw=0;
 
 	DBG cerr <<"pagestorender.n: "<<pagestorender.n<<endl;
@@ -404,8 +410,9 @@ int SpreadInterface::Refresh()
 	int pg;
 	flatpoint p;
 	
-	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy);
-	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy);
+	FillStyle fs(0xffff,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy); //normal page
+	FillStyle hfs(0xdddd,0xffff,0xffff,0xffff, WindingRule,FillSolid,GXcopy); //hidden
+	FillStyle efs(0xdddd,0xdddd,0xdddd,0xffff, WindingRule,FillSolid,GXcopy); //empty
 	LineStyle ls(0,0,0xffff,0xffff, 4/dp->Getmag(),CapButt,JoinMiter,~0,GXcopy);
 	//Page *page;
 	ImageData *thumb=NULL;
@@ -414,8 +421,23 @@ int SpreadInterface::Refresh()
 	for (c=0; c<view->spreads.n; c++) {
 		dp->PushAndNewTransform(view->spreads.e[c]->m());
 		
+//		if (view->spreads.e[c]->hidden) {
+//			int c2;
+//			while (view->spreads.e[c2]->hidden && c2<view->spreads.n) {
+//				c2++;
+//			}
+//			LittleSpread *s=view->spreads.e[c];
+//			flatpoint center+=s->transformPoint((flatpoint(s->outline->minx,s->outline->miny)+flatpoint(s->outline->maxx,s->outline->maxy))/2);
+//			c=c2-1;
+//
+//			***draw outline with text saying what pages are in this hidden block
+//				use outline of first in block of hidden
+//
+//			continue;
+//		}
+
 		 //draw the spread's path
-		Laidout::DrawData(dp,view->spreads.e[c]->spread->path,NULL,&fs);
+		Laidout::DrawData(dp,view->spreads.e[c]->spread->path,NULL,view->spreads.e[c]->hidden ? &hfs : &fs);
 
 		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
 			 // draw thumbnails
@@ -425,6 +447,15 @@ int SpreadInterface::Refresh()
 			if (pg<0) {
 				 //no page index means this place is an empty page, for a page in a thread
 				Laidout::DrawData(dp,view->spreads.e[c]->spread->pagestack.e[c2]->outline,NULL,&efs);
+
+			} else if (view->spreads.e[c]->hidden) {
+				// ***temp way to hide some pages' thumbnails......
+				SomeData *outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
+
+				dp->NewFG(coloravg(curwindow->win_colors->fg,curwindow->win_colors->bg));
+				flatpoint center=(flatpoint(outline->minx,outline->miny)+flatpoint(outline->maxx,outline->maxy))/2;
+				center=outline->transformPoint(center);
+				dp->textout(center.x,center.y, "...",3,LAX_CENTER);
 
 			} else if (drawthumbnails) {
 				if (pg>=0 && pg<doc->pages.n) {
@@ -473,37 +504,6 @@ int SpreadInterface::Refresh()
 				dp->NewFG(oldfg);
 			}
 		}
-
-		// ***** now done with PageMarkerInterface:
-//		 // draw page labels
-//		for (c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
-//			pg=view->spreads.e[c]->spread->pagestack.e[c2]->index;
-//			if (pg>=0 && pg<doc->pages.n) {
-//				outline=view->spreads.e[c]->spread->pagestack.e[c2]->outline;
-//				dp->PushAndNewTransform(outline->m());
-//
-//				int centerlabels=view->centerlabels;
-//				DBG cerr <<"centerlabels:"<<centerlabels<<endl;
-//
-//				if (centerlabels==LAX_CENTER)
-//					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny+outline->maxy)/2)); //center
-//				else if (centerlabels==LAX_BOTTOM)
-//					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->miny)));//bottom
-//				else if (centerlabels==LAX_LEFT)
-//					p=dp->realtoscreen(flatpoint((outline->minx),(outline->miny+outline->maxy)/2));//left
-//				else if (centerlabels==LAX_TOP)
-//					p=dp->realtoscreen(flatpoint((outline->minx+outline->maxx)/2,(outline->maxy)));//top
-//				else //LAX_RIGHT
-//					p=dp->realtoscreen(flatpoint((outline->maxx),(outline->miny+outline->maxy)/2));//right
-//				x=(int)p.x; // figure out where bottom tip of bbox is
-//				y=(int)p.y;
-//				drawLabel(x,y,doc->pages.e[pg], pg==view->temppagemap[pg]);
-//				DBG cerr <<"page "<<pg<<" at map pos "<<view->reversemap(pg)
-//				DBG      <<" in spread "<<c<<",psi "<<c2<<" has label "<<doc->pages.e[pg]->label<<endl;
-//
-//				dp->PopAxes();
-//			}
-//		}
 
 		dp->PopAxes(); //spread axes
 	}
@@ -695,111 +695,6 @@ int SpreadInterface::Event(const Laxkit::EventData *data,const char *mes)
 	return 0;
 }
 
-//! Draw the label.
-void SpreadInterface::drawLabel(int x,int y,Page *page, int outlinestatus)
-{
-	 // *** if (plabel->labeltype==circle, filledcircle, etc...) ...
-	 // *** write text
-	double w,h;
-	getextent(page->label,-1,&w,&h);
-	w/=2;
-	h/=2;
-	w+=h;
-	h+=h;
-	ScreenColor fcolor(1.,1.,1.,1.);//fill color
-	ScreenColor color(0.,0.,0.,1.); //text color
-	unsigned long outlinecolor=0;
-	if (outlinestatus==0) outlinecolor=rgbcolor(255,0,0);
-
-	DrawThingTypes t=THING_None;
-	fcolor= page->labelcolor;
-	if (fcolor.red<32768 || fcolor.blue<32768) color.rgbf(1.,1.,1.);
-
-	switch (page->labeltype) {
-		case MARKER_Circle:       t=THING_Circle;  break;
-		case MARKER_Square:       t=THING_Square;  break;
-		case MARKER_TriangleDown: t=THING_Triangle_Down;  break;
-		case MARKER_Octagon:      t=THING_Octagon; break;
-		case MARKER_Diamond:      t=THING_Diamond; break;
-		default:   t=THING_Circle;  break;
-	}
-	
-	dp->DrawScreen();
-	dp->drawthing(x,y,w,h, t, outlinecolor,fcolor.Pixel(), (outlinestatus==0?4:1));
-	dp->NewFG(&color);
-	dp->textout(x,y, page->label,-1, LAX_CENTER);
-	dp->DrawReal();
-}
-
-//! Relays left button event to rLBDown or rMBDown depending on reversebuttons.
-int SpreadInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-{ if (reversebuttons) return rMBDown(x,y,state,count,d); else return rLBDown(x,y,state,count,d); }
-
-//! Relays left button event to rLBUp or rMBUp depending on reversebuttons.
-int SpreadInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-{ if (reversebuttons) return rMBUp(x,y,state,d); else return rLBUp(x,y,state,d); }
-
-//! Relays middle button event to rLBDown or rMBDown depending on reversebuttons.
-int SpreadInterface::MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-{ if (reversebuttons) return rLBDown(x,y,state,count,d); else return rMBDown(x,y,state,count,d); }
-
-//! Relays middle button event to rLBUp or rMBDown depending on reversebuttons.
-int SpreadInterface::MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-{ if (reversebuttons) return rLBUp(x,y,state,d); else return rMBUp(x,y,state,d); }
-
-//! Selects pages.
-/*! If down on nothing, then start a selection rectangle. 
- *
- * Otherwise figure
- * out which page button is down on. If shift, add to selection, if control, toggle selected
- * state of it.
- */
-int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
-{
-	if (buttondown.any()) return 1;
-	buttondown.down(d->id,LEFTBUTTON, x,y,state);
-
-	int psi=-1,page=-1,thread=-1;
-	LittleSpread *spread=findSpread(x,y,&psi,&thread);
-	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
-
-	DBG cerr <<"SpreadInterface lbdown found page "<<page<<" in thread "<<thread<<endl;
-	if (page<0) {
-		// start a selection rectangle. note: could be click down inside an empty page
-		lbdown=lastmove=flatpoint(x,y);
-		dragpage=-1;
-		return 0;
-	}
-	
-	dragpage=page;
-	int i=curpages.pushnodup(page);
-	curspreads.pushnodup(spread,0);
-	if (i<0 && !(state&ShiftMask)) { //item wasn't already selected
-		curspreads.flush();
-		curpages.flush();
-		curpages.push(page);
-		curspreads.push(spread,0);
-		curpage=page;
-	}
-	//---------------
-	// shift click should add range of pages from ??? to page
-//		for (int c=(curpage<page?curpage:page); c<=(curpage>page?curpage:page); c++) {
-//			curpages.pushnodup(c);
-//			curspreads.pushnodup(view->SpreadOfPage(c,NULL,NULL,NULL,0),0);
-//		}
-	// control click should toggle page being selected. If toggle off, then 
-	//   search containing spread an remove from selected if none selected in it any more
-	//---------------
-
-	int shape=0;
-	if ((state&LAX_STATE_MASK)==0 || curpages.n>1) shape=LAX_MOUSE_To_E;
-	else shape=LAX_MOUSE_Exchange;
-	const_cast<LaxMouse*>(d)->setMouseShape(curwindow,shape);
-
-	needtodraw=1;
-	return 0;
-}
-
 void SpreadInterface::clearSelection()
 {
 	curpage=-1;
@@ -810,97 +705,7 @@ void SpreadInterface::clearSelection()
 	needtodraw=1;
 }
 
-//! Drops pages.
-/*! *** needs clearer, configurable implementation, but right now,
- * plain-up slides pages over, shift-up swaps pages
- *
- * Mouse up outside window into a ViewWindow shifts view to that page.
- * 
- * \todo Idea for use: have a SpreadEditor be behind a ViewWindow pane.
- * bring the spreadeditor forward, double click on a page which causes
- * the view to come forward with that page selected..
- */
-int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
-{
-	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
-	const_cast<LaxMouse*>(d)->setMouseShape(curwindow,0);
-	buttondown.up(d->id,LEFTBUTTON);
-
-	if (dragpage<0) {
-		 //dragged out a selection, so select everything inside the box
-		if ((state&LAX_STATE_MASK)==0) clearSelection();
-		cout <<" **** spread editor must implement select all in box!!!"<<endl;
-
-		int page;
-		DoubleBBox box;
-		box.addtobounds(lbdown);
-		box.addtobounds(lastmove);
-		double m[6];
-		for (int c=0; c<view->spreads.n; c++) {
-			transform_mult(m, view->spreads.e[c]->m(), dp->Getctm());
-			if (box.intersect(m, view->spreads.e[c], true, false)) {
-				curspreads.pushnodup(view->spreads.e[c],0);
-
-				for (int c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
-					page=view->spreads.e[c]->spread->pagestack.e[c2]->index;
-					if (page>=0) curpages.pushnodup(page);
-				}
-			}
-		}
-
-		needtodraw=1;
-		return 0;
-	}
-	
-	int psi,thread,page;
-	LittleSpread *spread=findSpread(x,y,&psi,&thread);
-	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
-	DBG cerr <<"SpreadInterface lbup found page "<<psi<<" in thread "<<thread<<endl;
-
-	 //If mouse up outside window, maybe call up that page in a view window
-	if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
-		 // mouse up outside window so search for a ViewWindow to shift view for
-		anXWindow *win=app->findDropCandidate(curwindow,x,y, NULL,NULL);
-		//int mx,my;
-		//mouseposition(d->id,NULL,&mx,&my,NULL,&win);
-		if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
-			LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
-			vp->UseThisDoc(doc);
-			vp->SelectPage(dragpage);
-			
-			DBG cerr <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
-		}
-		dragpage=-1;
-		needtodraw=1;
-		return 0;
-	}
-	//***finish imp here!!!
-	
-	 // swap dragpage and page
-	DBG cerr <<"*** drag "<<dragpage<<" to "<<(spread?"swap":"make thread")<<endl;
-
-	if (!spread) {
-		//*** transfer all the curpages to a thread
-	} else {
-		if ((state&LAX_STATE_MASK)==0 || curpages.n>1)
-			//SlidePages(dragpage,page,0);
-			SlidePages(view->reversemap(dragpage),view->reversemap(page),0);
-		else if ((state&LAX_STATE_MASK)==ShiftMask)
-			//SwapPages(dragpage,page);
-			SwapPages(view->reversemap(dragpage),view->reversemap(page));
-	}
-
-	//if (dragged) clearSelection();
-	dragpage=-1;
-	UpdateMarkers(true);
-	
-	return 0;
-}
-
-/*! *** this function is temporary! the full SpreadInterface will be much more robust.
- * this is provided here just to get things off the ground....
- *
- * Move page at previouspos to newpos (indices for the given thread),
+/*! Move page at previouspos to newpos (indices for the given thread),
  * sliding the intervening pages toward the newly open slot..
  *
  * \todo *** later, this will optionally push the replaced page into limbo
@@ -930,7 +735,7 @@ void SpreadInterface::SlidePages(int previouspos, int newpos, int thread)
 void SpreadInterface::SwapPages(int previouspos, int newpos)
 {
 	if (!view || previouspos<0 || previouspos>=doc->pages.n ||
-	    newpos<0 || newpos>=doc->pages.n) return;
+	    newpos<0 || newpos>=doc->pages.n || previouspos==newpos) return;
 
 	view->SwapPages(previouspos,newpos);
 	needtodraw=1;
@@ -948,6 +753,10 @@ void SpreadInterface::ApplyChanges()
 		if (viewport) viewport->postmessage(_("Cannot apply when there are unconnected threads"));
 		return;
 	}
+	if (!view->Modified()) {
+		PostMessage(_("Already arranged."));
+		return;
+	}
 
 	int olddocid=view->doc_id; //preserve unsaved state.. doc_id only supposed to exist in saved views
 	if (!view->doc_id) view->doc_id=doc->object_id;
@@ -956,7 +765,10 @@ void SpreadInterface::ApplyChanges()
 	doc->UpdateLabels(-1);
 
 	laidout->notifyDocTreeChanged(curwindow->win_parent,TreePagesMoved,0,-1);
+	UpdateMarkers(true);
 	needtodraw=1;
+
+	PostMessage(_("Arranged."));
 }
 
 //! Reset whatever tentative changes to page order have been made since last apply.
@@ -967,10 +779,293 @@ void SpreadInterface::ApplyChanges()
 void SpreadInterface::Reset()
 {
 	if (!view) return;
+	if (!view->Modified()) {
+		PostMessage(_("Nothing needs reseting"));
+		return;
+	}
+
+	clearSelection();
 	view->Reset();
 	needtodraw=1;
+	PostMessage(_("Reseted."));
 }
 
+
+//! Relays left button event to rLBDown or rMBDown depending on reversebuttons.
+int SpreadInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rMBDown(x,y,state,count,d); else return rLBDown(x,y,state,count,d); }
+
+//! Relays left button event to rLBUp or rMBUp depending on reversebuttons.
+int SpreadInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rMBUp(x,y,state,d); else return rLBUp(x,y,state,d); }
+
+//! Relays middle button event to rLBDown or rMBDown depending on reversebuttons.
+int SpreadInterface::MBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rLBDown(x,y,state,count,d); else return rMBDown(x,y,state,count,d); }
+
+//! Relays middle button event to rLBUp or rMBDown depending on reversebuttons.
+int SpreadInterface::MBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{ if (reversebuttons) return rLBUp(x,y,state,d); else return rMBUp(x,y,state,d); }
+
+//! Selects pages.
+/*! If down on nothing, then start a selection rectangle. 
+ *
+ * Otherwise figure
+ * out which page button is down on. If shift, add to selection, if control, toggle selected
+ * state of it.
+ */
+int SpreadInterface::rLBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
+{
+	if (buttondown.any()) return 1;
+	buttondown.down(d->id,LEFTBUTTON, x,y);
+
+	int psi=-1,page=-1,thread=-1;
+	LittleSpread *spread=findSpread(x,y,&psi,&thread);
+	if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+
+	DBG cerr <<"SpreadInterface lbdown found page "<<page<<" in thread "<<thread<<endl;
+	if (page<0) {
+		// start a selection rectangle. note: could be click down inside an empty page
+		lbdown=lastmove=flatpoint(x,y);
+		buttondown.moveinfo(d->id,LEFTBUTTON, SIA_DragRect);
+		dragpage=-1;
+		return 0;
+	}
+	
+	dragpage=page;
+	int i=curpages.findindex(page);
+
+	if (i<0) { //item wasn't already selected, so definitely select something
+		if (!(state&ShiftMask)) {
+			 //no shift, deselect all, and select that one,
+			 //but holding control doesn't flush the others
+			if (!(state&ControlMask)) {
+				curspreads.flush();
+				curpages.flush();
+			}
+			curpages.pushnodup(page);
+			curspreads.pushnodup(spread,0);
+			curpage=page;
+
+		} else {
+			 //shift click on non-selected, select all between curpage and clicked one
+			if (curpage<0) curpage=page;
+			for (int c=(curpage<page?curpage:page); c<=(curpage>page?curpage:page); c++) {
+				curpages.pushnodup(c);
+				curspreads.pushnodup(view->SpreadOfPage(c,NULL,NULL,NULL,0),0);
+			}
+		}
+
+		buttondown.moveinfo(d->id,LEFTBUTTON, SIA_MaybeMovePages, page);
+
+	} else { //item was selected already
+		if (state&ControlMask) {
+			 //control click: deselect page, and also spread if no other pages in that spread are selected
+			DeselectPage(page,spread);
+			buttondown.up(d->id,LEFTBUTTON);
+			return 0;
+		}
+		//else we are probably trying to move selected pages...
+		buttondown.moveinfo(d->id,LEFTBUTTON, SIA_MaybeMovePages, page);
+	}
+
+	//--wait to change shape until actual movement...
+	//int shape=0;
+	//if ((state&LAX_STATE_MASK)==0 || curpages.n>1) shape=LAX_MOUSE_To_E;
+	//else shape=LAX_MOUSE_Exchange;
+	//const_cast<LaxMouse*>(d)->setMouseShape(curwindow,shape);
+
+	needtodraw=1;
+	return 0;
+}
+
+/*! Removes page from curpages, and checks if spread must be removed also, and removes it if necessary.
+ * If spread!=NULL, it is assumed to contain page. If NULL, then it simply
+ * looks up with view->SpreadOfPage().
+ */
+int SpreadInterface::DeselectPage(int page,LittleSpread *spread)
+{
+	if (page<0) return 1;
+	if (curpages.findindex(page)<0) return 2; //page already not selected!
+
+	if (!spread) spread=view->SpreadOfPage(page,NULL,NULL,NULL,0);
+
+	int max=spread->spread->pagestack.n();
+	int selected=0;
+	curpages.pop(curpages.findindex(page));
+
+	int i;
+	for (int c=0; c<max; c++) {
+		i=spread->spread->pagestack.e[c]->index;
+		if (i<0 || i==page) continue;
+		if (curpages.findindex(i)>=0) selected++;
+	}
+	if (selected==0) {
+		curspreads.remove(curspreads.findindex(spread));
+	}
+
+	 //update curpage, in case it was page
+	if (curpage==page) {
+		if (curpages.n>0) {
+			curpage=curpages.e[0];
+			curspread=view->SpreadOfPage(curpage,NULL,NULL,NULL,0);
+		} else {
+			curpage=-1;
+			curspread=NULL;
+		}
+	}
+
+	needtodraw=1;
+	return 0;
+}
+
+//! Drops pages.
+/*! Mouse up outside window into a ViewWindow shifts view to that page.
+ * 
+ * \todo Idea for use: have a SpreadEditor be behind a ViewWindow pane.
+ * bring the spreadeditor forward, double click on a page which causes
+ * the view to come forward with that page selected..
+ */
+int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
+{
+	if (!buttondown.isdown(d->id,LEFTBUTTON)) return 1;
+
+	const_cast<LaxMouse*>(d)->setMouseShape(curwindow,0);
+	int what=0;
+	int dragged=buttondown.up(d->id,LEFTBUTTON, &what);
+
+	if (what==SIA_DragRect) {
+		 //dragged out a selection, so select everything inside the box
+		if ((state&LAX_STATE_MASK)==0) clearSelection();
+
+		int page;
+		DoubleBBox box;
+		box.addtobounds(lbdown);
+		box.addtobounds(lastmove);
+		double m[6];
+		for (int c=0; c<view->spreads.n; c++) {
+			transform_mult(m, view->spreads.e[c]->m(), dp->Getctm());
+			if (box.intersect(m, view->spreads.e[c], true, false)) {
+				curspreads.pushnodup(view->spreads.e[c],0);
+
+				for (int c2=0; c2<view->spreads.e[c]->spread->pagestack.n(); c2++) {
+					page=view->spreads.e[c]->spread->pagestack.e[c2]->index;
+					if (page>=0) curpages.pushnodup(page);
+				}
+			}
+		}
+
+		needtodraw=1;
+		return 0;
+	}
+	
+	if (what==SIA_MoveSpreads) return 0;
+
+	 //find destination for dragging...
+	int psi,thread,destpage=-1;
+	LittleSpread *spread=findSpread(x,y,&psi,&thread);
+	if (spread && psi>=0) { destpage=spread->spread->pagestack.e[psi]->index; }
+	DBG cerr <<"SpreadInterface lbup found page "<<psi<<" in thread "<<thread<<endl;
+
+
+	 //If mouse up outside window, maybe call up that page in a view window
+	if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
+		 // mouse up outside window so search for a ViewWindow to shift view for
+		anXWindow *win=app->findDropCandidate(curwindow,x,y, NULL,NULL);
+		if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
+			LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
+			vp->UseThisDoc(doc);
+			vp->SelectPage(dragpage);
+			
+			DBG cerr <<" ~~~~~~~~~~~~drop page "<<dragpage<<" to win type: "<<win->whattype()<<endl;
+		}
+		dragpage=-1;
+		needtodraw=1;
+		return 0;
+	}
+	
+	 // swap dragpage and page
+	DBG cerr <<"*** drag "<<dragpage<<" to "<<(spread?"swap":"make thread")<<endl;
+
+	if (!spread) {
+		//*** transfer all the curpages to a thread
+		DBG cerr <<" *** need to implement spread editor drag pages to limbo thread..."<<endl;
+
+	} else {
+		if (dragged<5) {
+			if ((state&LAX_STATE_MASK)==0 && destpage>=0) {
+				 //plain clicked down and up on same page, so deselect all but that one
+				clearSelection();
+				curpages.push(destpage);
+				curspreads.push(spread);
+				curpage=destpage;
+				curspread=spread;
+				needtodraw=1;
+			} //else was down and up with little movement, do nothing!
+
+		} else {
+			if (curpages.findindex(destpage)<0) { //only change when destination is not already selected
+				SortCurpages();
+
+				if ((state&LAX_STATE_MASK)==0) {
+					 //slide pages
+					int oldi, newi;
+					for (int c=0; c<curpages.n; c++) {
+						dragpage=curpages.e[c];
+						oldi=view->reversemap(dragpage);
+						newi=view->reversemap(destpage);
+						if (oldi>newi && c>0) newi++;
+						SlidePages(oldi,newi,0);
+						destpage=dragpage;
+					}
+
+				} else if ((state&LAX_STATE_MASK)==ControlMask) {
+					 //swap pages... if more than one page, just swap the first and slide the rest after the swapped
+					dragpage=curpages.e[0];
+					SwapPages(view->reversemap(dragpage),view->reversemap(destpage));
+					destpage=dragpage;
+					for (int c=1; c<curpages.n; c++) {
+						SlidePages(view->reversemap(curpages.e[c]),view->reversemap(destpage), 0);
+						destpage=curpages.e[c];
+					}
+				}
+
+				 //update curspreads to new page order
+				curspreads.flush();
+				for (int c=0; c<curpages.n; c++) {
+					curspreads.pushnodup(view->SpreadOfPage(c,NULL,NULL,NULL,0),0);
+				}
+				curspread=view->SpreadOfPage(curpage,NULL,NULL,NULL,0);
+			}
+		}
+	}
+
+	//if (dragged) clearSelection();
+	dragpage=-1;
+	UpdateMarkers(true);
+	
+	return 0;
+}
+
+/*! Make page list in curpages be increasing in order of appearance (not in order in document).
+ */
+void SpreadInterface::SortCurpages()
+{
+	 //selection sort because I'm lazy
+	int t;
+	for (int c=0; c<curpages.n; c++) {
+		for (int c2=c+1; c2<curpages.n; c2++) {
+			if (view->reversemap(curpages.e[c2]) < view->reversemap(curpages.e[c])) {
+				t=curpages.e[c2];
+				curpages.e[c2]=curpages.e[c];
+				curpages.e[c]=t;
+			}
+		}
+	}
+}
+
+/*! Intercept to update curpage to be under x,y, so that context menu applies to that page.
+ */
 int SpreadInterface::RBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d)
 {
 	if (curpage<0) {
@@ -996,7 +1091,6 @@ int SpreadInterface::rMBDown(int x,int y,unsigned int state,int count,const Laxk
 	}
 
 	buttondown.down(d->id,MIDDLEBUTTON, x,y,state);
-	mx=x; my=y;
 
 	if ((state&LAX_STATE_MASK)==0) {
 		clearSelection();//clear if not shift or control click
@@ -1032,10 +1126,21 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 	if (!buttondown.any()) return 1;
 	if (!view) return 1;
 
-	buttondown.move(d->id,x,y);
+	int mx,my;
+	buttondown.move(d->id,x,y, &mx,&my);
 
-	if (buttondown.isdown(d->id,MIDDLEBUTTON) && curspreads.n) {
-		 //move around spreads
+	int what=0;
+	if (buttondown.isdown(d->id,MIDDLEBUTTON)) what=SIA_MoveSpreads;
+	else if (buttondown.isdown(d->id,LEFTBUTTON)) {
+		buttondown.getextrainfo(d->id,LEFTBUTTON, &what);
+		if ((state&LAX_STATE_MASK)==ShiftMask && what!=SIA_MoveSpreads) {
+			what=SIA_MoveSpreads;
+			buttondown.moveinfo(d->id,LEFTBUTTON, what);
+		}
+	}
+
+	if (what==SIA_MoveSpreads && curspreads.n) {
+		 //move around spread outline locations
 		LittleSpread *s;
 		for (int c=0; c<curspreads.n; c++) {
 			s=curspreads.e[c];
@@ -1046,44 +1151,48 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 		view->arrangetype=view->arrangestate=ArrangeCustom;
 		view->FindBBox();
 		UpdateMarkers(false);
-
-		mx=x; my=y;
 		needtodraw=1;
+		return 0;
 
-	} else if (buttondown.isdown(d->id,LEFTBUTTON)) {
-		if (dragpage<0) {
-			 //draw select rectangle
-			 //*** need to temp select pages which box touches them...
-			needtodraw=1;
-			lastmove.x=x;
-			lastmove.y=y;
-			mx=x; my=y;
+	} else if (what==SIA_DragRect) {
+		 //draw select rectangle
+		 //*** need to temp select pages which box touches them...
+		lastmove.x=x;
+		lastmove.y=y;
+		needtodraw=1;
+		return 0;
+
+	} else if (what==SIA_MaybeMovePages) {
+		 //dragging a group of pages to possibly a new location
+		 //change mouse shape to relevant indicator 
+		int page=-1,psi,thread;
+		LittleSpread *spread=findSpread(x,y,&psi,&thread);
+		if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+
+		if (curpages.findindex(page)>=0) {
+			 //we must have a non-selected page to move things to
+			const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+
+		} else if (!spread) {
+			 //maybe moving to a limbo thread.. IMPLEMENT ME!!
+			//const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
+			const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
 
 		} else {
-			 //change mouse shape to relevant indicator 
-			int page=-1,psi,thread;
-			LittleSpread *spread=findSpread(x,y,&psi,&thread);
-			if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
-
-			if (curpages.findindex(page)>=0) {
-				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
-
-			} else if (!spread) {
-				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Boxes);
-
-			} else {
-				if ((state&LAX_STATE_MASK)==0) 
-					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_To_E);
-				else if ((state&LAX_STATE_MASK)==ShiftMask)
-					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Exchange);
-				else
-					const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
-			}
+			 //these must sync with LBUp:
+			if ((state&LAX_STATE_MASK)==0) 
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_To_E); //shift pages
+			else if ((state&LAX_STATE_MASK)==ControlMask)
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Exchange); //swap pages
+			else
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel); //do nothing
 		}
 
-	} else return 1;
+		return 0;
 
-	return 0;
+	}
+
+	return 1;
 }
 
 //! Find the spread under screen point (x,y), return it, or NULL.
@@ -1221,6 +1330,7 @@ int SpreadInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxK
 		int page=-1,psi,thread;
 		LittleSpread *spread=findSpread(x,y,&psi,&thread);
 		if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
+
 		if (curpages.findindex(page)>=0) {
 			const_cast<LaxMouse*>(mouse)->setMouseShape(curwindow,LAX_MOUSE_Cancel); //swap
 		} else if (!spread) {
@@ -1244,23 +1354,24 @@ Laxkit::ShortcutHandler *SpreadInterface::GetShortcuts()
 
 	sc=new ShortcutHandler("SpreadInterface");
 
-	sc->Add(SIA_ToggleSelect,   'a',0,0,         _("ToggleSelect"),   _("Select all or none"),NULL,0);
+	sc->Add(SIA_ToggleSelect,   'a',0,0,          _("ToggleSelect"),   _("Select all or none"),NULL,0);
+	sc->Add(SIA_SelectSimilar,  'm',ControlMask,0,_("SelectSimilar"),  _("Select all pages with the same kind of markers"),NULL,0);
 
-	sc->Add(SIA_Center,         ' ',0,0,         _("Center"),         _("Center"),NULL,0);
-	sc->Add(SIA_LabelPos,       'l',0,0,         _("LabelPos"),       _("Move label position"),NULL,0);
-	sc->Add(SIA_ToggleColor,    'c',0,0,         _("ToggleColor"),    _("Toggle color among defined colors"),NULL,0);
-	sc->Add(SIA_ToggleColorR,   'C',ShiftMask,0, _("ToggleColorR"),   _("Toggle color among defined colors"),NULL,0);
-	sc->Add(SIA_ToggleMark,     'm',0,0,         _("ToggleMark"),     _("Toggle mark type"),NULL,0);
-	sc->Add(SIA_ToggleMarkR,    'M',ShiftMask,0, _("ToggleMarkR"),    _("Toggle mark type"),NULL,0);
-	sc->Add(SIA_Thumbnails,     't',0,0,         _("Thumbs"),         _("Toggle showing thumbnails"),NULL,0);
-	sc->Add(SIA_ToggleArrange,  'A',ShiftMask,0, _("Arrange"),        _("Toggle arrangement type"),NULL,0);
+	sc->Add(SIA_Center,         ' ',0,0,          _("Center"),         _("Center"),NULL,0);
+	sc->Add(SIA_LabelPos,       'l',0,0,          _("LabelPos"),       _("Move label position"),NULL,0);
+	sc->Add(SIA_ToggleColor,    'c',0,0,          _("ToggleColor"),    _("Toggle color among defined colors"),NULL,0);
+	sc->Add(SIA_ToggleColorR,   'C',ShiftMask,0,  _("ToggleColorR"),   _("Toggle color among defined colors"),NULL,0);
+	sc->Add(SIA_ToggleMark,     'm',0,0,          _("ToggleMark"),     _("Toggle mark type"),NULL,0);
+	sc->Add(SIA_ToggleMarkR,    'M',ShiftMask,0,  _("ToggleMarkR"),    _("Toggle mark type"),NULL,0);
+	sc->Add(SIA_Thumbnails,     't',0,0,          _("Thumbs"),         _("Toggle showing thumbnails"),NULL,0);
+	sc->Add(SIA_ToggleArrange,  'A',ShiftMask,0,  _("Arrange"),        _("Toggle arrangement type"),NULL,0);
 	sc->Add(SIA_RefreshArrange, 'A',ShiftMask|ControlMask,0, _("RefreshArrange"), _("Refresh with current arrangement type"),NULL,0);
 
-	sc->Add(SIA_AddPageAfter,   'p',0,0,         _("AddPage"),         _("Add a page after current"),NULL,0);
-	sc->Add(SIA_AddPageBefore,  'P',ShiftMask,0, _("AddPageBefore"),   _("Add a page before current"),NULL,0);
-	sc->Add(SIA_DeletePages,    LAX_Del,0,0,     _("Deletepages"),     _("Delete pages"),NULL,0);
+	sc->Add(SIA_AddPageAfter,   'p',0,0,          _("AddPage"),         _("Add a page after current"),NULL,0);
+	sc->Add(SIA_AddPageBefore,  'P',ShiftMask,0,  _("AddPageBefore"),   _("Add a page before current"),NULL,0);
+	sc->Add(SIA_DeletePages,    LAX_Del,0,0,      _("Deletepages"),     _("Delete pages"),NULL,0);
 	sc->AddShortcut(LAX_Bksp,0,0, SIA_DeletePages);
-	sc->Add(SIA_HidePages,      'h',0,0,         _("Hidepages"),       _("Toggle hiding of pages"),NULL,0);
+	sc->Add(SIA_HidePages,      'h',0,0,          _("Hidepages"),       _("Toggle hiding of pages"),NULL,0);
 
 	manager->AddArea("SpreadInterface",sc);
 	return sc;
@@ -1296,12 +1407,36 @@ int SpreadInterface::PerformAction(int action)
 		needtodraw=1;
 		return 0;
 
+	} else if (action==SIA_SelectSimilar) {
+		int pp=curpage;
+		if (pp<0 && curpages.n) pp=curpages.e[0];
+		if (pp<0) return 0;
+		Page *page=doc->pages.e[pp], *pg;
+		Spread *spread;
+
+		for (int c=0; c<view->spreads.n; c++) {
+			spread=view->spreads.e[c]->spread;
+			for (int c2=0; c2<spread->pagestack.n(); c2++) {
+				if (spread->pagestack.e[c2]->index<0) continue;
+				pg=doc->pages.e[spread->pagestack.e[c2]->index];
+
+				if (!pg->labelcolor.equals(page->labelcolor)) continue;
+				if ( pg->labeltype!=page->labeltype) continue;
+
+				curpages.pushnodup(spread->pagestack.e[c2]->index);
+				curspreads.pushnodup(view->spreads.e[c],0);
+			}
+		}
+		needtodraw=1;
+		return 0;
+
 	} else if (action==SIA_LabelPos) {
 		if (view->centerlabels==LAX_CENTER) view->centerlabels=LAX_TOP;
 		else if (view->centerlabels==LAX_TOP) view->centerlabels=LAX_RIGHT;
 		else if (view->centerlabels==LAX_RIGHT) view->centerlabels=LAX_BOTTOM;
 		else if (view->centerlabels==LAX_BOTTOM) view->centerlabels=LAX_LEFT;
 		else view->centerlabels=LAX_CENTER;
+		UpdateMarkers(true);
 		needtodraw=1;
 		return 0;
 
@@ -1374,6 +1509,11 @@ int SpreadInterface::PerformAction(int action)
 
 
 	} else if (action==SIA_HidePages) {
+		if (curspreads.n==0) {
+			PostMessage(_("Nothing to hide"));
+			return 0;
+		}
+
 		 //unhides if any in range are hidden
 		bool newhide=true;
 		for (int c=0; c<curspreads.n; c++) {
@@ -1523,6 +1663,7 @@ Laxkit::ShortcutHandler *SpreadEditorViewport::GetShortcuts()
     sc=manager->NewHandler(whattype());
     if (sc) return sc;
 
+	DBG cerr <<"Get shortcuts for SpreadEditorViewport, object_id="<<object_id<<endl;
 	sc=ViewportWindow::GetShortcuts();
 
 	sc->Add(SPREADE_Help,   LAX_F1,0,0,   _("Help"), _("Help"),NULL,0);
@@ -1588,6 +1729,10 @@ SpreadEditor::SpreadEditor(Laxkit::anXWindow *parnt,const char *nname,const char
 	win_colors->bg=rgbcolor(200,200,200);
 	viewport->win_colors->bg=rgbcolor(200,200,200);
 	viewport->dp->NewBG(255,255,255);
+ 
+	//app->reparent(viewport,this);
+	//viewport->dec_count();
+	//*** doing this here removes memory hole, but adds rulers to window!?!?!?!?
 
 	needtodraw=1;
 
@@ -1672,6 +1817,7 @@ int SpreadEditor::init()
 	wholelist.remove(0); //x
 	wholelist.remove(0); //y
 	viewport->UseTheseRulers(NULL,NULL);
+	viewport->dec_count(); //remove initial creation count from constructor
 
 
 	anXWindow *last=NULL;

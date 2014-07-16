@@ -626,7 +626,7 @@ Laxkit::DoubleBBox *Imposition::GoodWorkspaceSize(Laxkit::DoubleBBox *bbox)
  *   for arbitrary foldouts, this might be important. There is the PageStyle::pagetype
  *   element that can be used to preserve the basic kind of thing....
  */
-int Imposition::SyncPageStyles(Document *doc,int start,int n)
+int Imposition::SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins)
 {
 	if (numpages==0 || numpapers==0) {
 		NumPages(doc->pages.n);
@@ -642,6 +642,7 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n)
 			if (doc->pages.e[c]->pagestyle) {
 				oldflags=doc->pages.e[c]->pagestyle->flags;
 				if (oldflags!=temppagestyle->flags) {
+					 //we need to create a local copy with custom settings based on the new page style
 					PageStyle *ttt=temppagestyle;
 					temppagestyle=static_cast<PageStyle *>(temppagestyle->duplicate());
 					ttt->dec_count();
@@ -649,7 +650,7 @@ int Imposition::SyncPageStyles(Document *doc,int start,int n)
 				}
 			}
 		}
-		doc->pages.e[c]->InstallPageStyle(temppagestyle);//adds 1 count
+		doc->pages.e[c]->InstallPageStyle(temppagestyle, shift_within_margins);//adds 1 count
 		temppagestyle->dec_count();
 	}
 	return 0;

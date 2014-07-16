@@ -99,6 +99,12 @@ class Document : public ObjectContainer, public Value
 
 	clock_t modtime;
 
+	// ***********TEMP!!!
+	virtual int inc_count();
+    virtual int dec_count();
+	// ***********end TEMP!!!
+
+
 	Document(const char *filename);
 	Document(Imposition *imp=NULL,const char *filename=NULL);
 	virtual ~Document();
@@ -116,7 +122,7 @@ class Document : public ObjectContainer, public Value
 	virtual Page *Curpage();
 	virtual int NewPages(int starting,int n);
 	virtual int RemovePages(int start,int n);
-	virtual int SyncPages(int start,int n);
+	virtual int SyncPages(int start,int n, bool shift_within_margins);
 	virtual int ReImpose(Imposition *newimp,int scale_page_contents_to_fit);
 	virtual Spread *GetLayout(int type, int index);
 

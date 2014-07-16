@@ -45,6 +45,22 @@ using namespace std;
 namespace Laidout {
 
 
+
+	// ***********TEMP!!!
+int Document::inc_count()
+{
+	DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
+	return anObject::inc_count();
+}
+
+int Document::dec_count()
+{
+	DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
+	return anObject::dec_count();
+}
+
+	// ***********end TEMP!!!
+
 //------------------------------- PageLableType enum --------------------------------
 /*! \enum PageLabelType
  * \brief Enum for PageRange types.
@@ -450,7 +466,7 @@ Document::Document(Imposition *imp,const char *filename)//stuff=NULL
 	//range->end=pages.n-1;
 	//range->offset=5;
 	//pageranges.push(range);
-	SyncPages(0,-1);
+	SyncPages(0,-1, false);
 }
 
 Document::~Document()
@@ -540,7 +556,7 @@ int Document::NewPages(int starting,int np)
 
 	 //sync up with the imposition
 	imposition->NumPages(pages.n);
-	SyncPages(starting,-1);
+	SyncPages(starting,-1, true);
 
 	laidout->notifyDocTreeChanged(NULL,TreePagesAdded, starting,-1);
 	return np;
@@ -703,7 +719,7 @@ int Document::RemovePages(int start,int n)
 		DBG cerr << "---  Done removing page "<<start+c<<endl;
 	}
 	imposition->NumPages(pages.n);
-	SyncPages(start,-1);
+	SyncPages(start,-1, true);
 	laidout->notifyDocTreeChanged(NULL,TreePagesDeleted, start,-1);
 	return n;
 }
@@ -836,7 +852,7 @@ int Document::Load(const char *file,ErrorLog &log)
 		}
 	}
 	imposition->NumPages(pages.n);
-	SyncPages(0,-1);
+	SyncPages(0,-1, false);
 
 	laidout->project->ClarifyRefs(log);
 	DBG cerr<<" *** Document::Load should probably have a load context storing refs that need to be sorted, to save time loading..."<<endl;
@@ -852,16 +868,19 @@ int Document::Load(const char *file,ErrorLog &log)
 /*! Calls Imposition::SyncPageStyles() then figures out the
  * labels.
  *
+ * If shift_within_margins, then apply a move transform from old margin area to new margin area.
+ *
  * Returns the number of pages adjusted.
  */
-int Document::SyncPages(int start,int n)
+int Document::SyncPages(int start,int n, bool shift_within_margins)
 {
 	if (start>=pages.n) return 0;
 	if (n<0) n=pages.n;
 	if (start+n>pages.n) n=pages.n-start;
 	
-	if (imposition) imposition->SyncPageStyles(this,start,n);
+	if (imposition) imposition->SyncPageStyles(this,start,n, shift_within_margins);
 	
+	 //update page number labels
 	char *label;
 	for (int c=start; c<start+n; c++) {
 		if (pageranges.n==0 || c<pageranges.e[0]->start || c>pageranges.e[pageranges.n-1]->end) {
@@ -914,42 +933,63 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 		flatpoint old[pages.n]; //w+h
 		flatpoint  dd[pages.n]; //origin
 		for (int c=0; c<pages.n; c++) {
-			dd[c].x=pages.e[c]->pagestyle->minx();
-			dd[c].y=pages.e[c]->pagestyle->miny();
-			old[c].x=pages.e[c]->pagestyle->w();
-			old[c].y=pages.e[c]->pagestyle->h();
+			//dd[c].x=pages.e[c]->pagestyle->minx();
+			//dd[c].y=pages.e[c]->pagestyle->miny();
+			//old[c].x=pages.e[c]->pagestyle->w();
+			//old[c].y=pages.e[c]->pagestyle->h();
+			dd[c].x=pages.e[c]->pagestyle->margin->minx;
+			dd[c].y=pages.e[c]->pagestyle->margin->miny;
+			old[c].x=pages.e[c]->pagestyle->margin->maxx-dd[c].x;
+			old[c].y=pages.e[c]->pagestyle->margin->maxy-dd[c].y;
 		}
 	
 		 //then install new page styles
 		imposition->NumPages(pages.n);
-		SyncPages(0,-1);
+		SyncPages(0,-1, false);
 
 		 //now update page contents
 		SomeData *o;
 		DrawableObject *g;
 		flatpoint offset;
 		double scaling;
-		double oldw,oldh;
+		double oldx,oldy, oldw,oldh;
 		double neww,newh, newx,newy;
+
 		for (int c=0; c<pages.n; c++) {
+		  oldx=dd[c].x;
+		  oldy=dd[c].y;
 		  oldw=old[c].x;
 		  oldh=old[c].y;
 
-		  newx=pages.e[c]->pagestyle->minx();
-		  newy=pages.e[c]->pagestyle->miny();
-		  neww=pages.e[c]->pagestyle->w();
-		  newh=pages.e[c]->pagestyle->h();
+		  //newx=pages.e[c]->pagestyle->minx();
+		  //newy=pages.e[c]->pagestyle->miny();
+		  //neww=pages.e[c]->pagestyle->w();
+		  //newh=pages.e[c]->pagestyle->h();
+		  newx=pages.e[c]->pagestyle->margin->minx;
+		  newy=pages.e[c]->pagestyle->margin->miny;
+		  neww=pages.e[c]->pagestyle->margin->maxx-newx;
+		  newh=pages.e[c]->pagestyle->margin->maxy-newy;
 
-		  if (neww==oldw && newh==oldh) continue; //no need to introduce unnecessary rounding errors
+		  if (newx==oldx && newy==oldy && neww==oldw && newh==oldh)
+			  continue; //no need to introduce unnecessary rounding errors
 
+		  //-----------------
 		  if (neww/newh > oldw/oldh) {
 			  scaling=newh/oldh;
-			  offset=flatpoint((neww-scaling*oldw)/2, 0);
 		  } else {
 			  scaling=neww/oldw;
-			  offset=flatpoint(0, (newh-scaling*oldh)/2);
 		  }
-		  offset+=flatpoint(newx-dd[c].x*scaling, newy-dd[c].y*scaling);
+		  offset=flatpoint((newx+neww/2)-(oldx+oldw/2)*scaling, (newy+newh/2)-(oldy+oldh/2)*scaling);
+//		  -----------------
+//		  if (neww/newh > oldw/oldh) {
+//			  scaling=newh/oldh;
+//			  offset=flatpoint((neww-scaling*oldw)/2, 0);
+//		  } else {
+//			  scaling=neww/oldw;
+//			  offset=flatpoint(0, (newh-scaling*oldh)/2);
+//		  }
+//		  offset+=flatpoint(newx-dd[c].x*scaling, newy-dd[c].y*scaling);
+//		  -----------------
 
 		   //step through each object on each layer on each page
 		  for (int c2=0; c2<pages.e[c]->layers.n(); c2++) {
@@ -965,7 +1005,7 @@ int Document::ReImpose(Imposition *newimp,int scale_page_contents_to_fit)
 	} else {
 		 //simple case, no page content resizing
 		imposition->NumPages(pages.n);
-		SyncPages(0,-1);
+		SyncPages(0,-1, true);
 	}
 
 
@@ -1081,7 +1121,7 @@ void Document::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *
 	}
 	
 	 // make sure pages all have proper labels and pagestyles
-	SyncPages(0,-1);
+	SyncPages(0,-1, false);
 	
 	 // search for windows to create after reading in all pages
 	 // only if not in project mode

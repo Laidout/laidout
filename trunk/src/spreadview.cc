@@ -211,7 +211,9 @@ SpreadView::SpreadView(const char *newname)
 }
 
 SpreadView::~SpreadView()
-{}
+{
+	delete[] viewname;
+}
 
 //! Return whether there are hanging threads, or unapplied rearranged pages.
 int SpreadView::Modified()
@@ -991,7 +993,7 @@ int SpreadView::ApplyChanges()
 	delete[] oldlocal;
 	delete[] oldpages;
 
-	doc->SyncPages(0,-1);
+	doc->SyncPages(0,-1, true);
 	return 0;
 }
 

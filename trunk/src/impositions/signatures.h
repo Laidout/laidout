@@ -242,7 +242,7 @@ class SignatureImposition : public Imposition
 	SignatureInstance *signatures;
 	
 	virtual void setPageStyles(int force_new);
-	virtual void fixPageBleeds(int index,Page *page);
+	virtual void fixPageBleeds(int index,Page *page, bool update_pagestyle);
 
   public:
 	SignatureImposition(SignatureInstance *newsig=NULL);
@@ -265,7 +265,7 @@ class SignatureImposition : public Imposition
 	virtual PaperStyle *GetDefaultPaper();
 	
 	virtual Page **CreatePages(int npages);
-	virtual int SyncPageStyles(Document *doc,int start,int n);
+	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1);
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local);

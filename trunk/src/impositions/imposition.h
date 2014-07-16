@@ -169,7 +169,7 @@ class Imposition : public Value
 	virtual PageStyle *GetPageStyle(int pagenum,int local) = 0;
 	
 	virtual Page **CreatePages(int npages) = 0;
-	virtual int SyncPageStyles(Document *doc,int start,int n);
+	virtual int SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins);
 	
 	virtual LaxInterfaces::SomeData *GetPrinterMarks(int papernum=-1) { return NULL; }
 	virtual LaxInterfaces::SomeData *GetPageOutline(int pagenum,int local) = 0; // return outline of page in page coords

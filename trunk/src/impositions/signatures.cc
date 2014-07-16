@@ -2978,7 +2978,7 @@ Page **SignatureImposition::CreatePages(int npages)
 		newpages[c]=new Page(((c%2)?sig->pagestyleodd:sig->pagestyle),c); // this incs count of pagestyle
 
 		 //add bleed information
-		fixPageBleeds(c,newpages[c]);
+		fixPageBleeds(c,newpages[c],false);
 	}
 	newpages[c]=NULL;
 
@@ -2992,14 +2992,17 @@ Page **SignatureImposition::CreatePages(int npages)
  * \todo assumption is that each signature has the same final page size.. maybe this isn't necessary?
  */
 void SignatureImposition::fixPageBleeds(int index, //!< Document page index
-										Page *page)//!< Actual document page
+										Page *page,
+										bool update_pagestyle)//!< Actual document page
 {
 	 //fix pagestyle
 	if (!signatures) signatures=new SignatureInstance();
 	SignatureInstance *sig=signatures->InstanceFromPage(index,NULL,NULL,NULL,NULL,NULL,NULL);
 
-	page->InstallPageStyle((index%2)?sig->pagestyleodd:sig->pagestyle);
-	page->pagebleeds.flush();
+	if (update_pagestyle) {
+		page->InstallPageStyle((index%2)?sig->pagestyleodd:sig->pagestyle, true);
+		page->pagebleeds.flush();
+	}
 
 	 //fix page bleed info
 	int adjacent=-1;	
@@ -3034,15 +3037,17 @@ void SignatureImposition::fixPageBleeds(int index, //!< Document page index
 /*! This is called when pages are added or removed. It replaces the pagestyle for
  *  each page with the pagestyle returned by GetPageStyle(c,0).
  */
-int SignatureImposition::SyncPageStyles(Document *doc,int start,int n)
+int SignatureImposition::SyncPageStyles(Document *doc,int start,int n, bool shift_within_margins)
 {
 	setPageStyles(1);
 
+	int status=Imposition::SyncPageStyles(doc,start,n, shift_within_margins);
+
 	for (int c=start; c<doc->pages.n; c++) {
-		fixPageBleeds(c,doc->pages.e[c]);
+		fixPageBleeds(c,doc->pages.e[c],false);
 	}
 
-	return Imposition::SyncPageStyles(doc,start,n);
+	return status;
 }
 
 //! Return default page style for the specified document page index.

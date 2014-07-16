@@ -107,7 +107,7 @@ enum PageMarkerType {
 	MARKER_Circle,
 	MARKER_Square,
 	MARKER_Octagon,
-	MARKER_TriangleDown,
+	MARKER_TriangleUp,
 	MARKER_Diamond,
 	MARKER_MAX
 };
@@ -138,7 +138,7 @@ class Page : public ObjectContainer
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 	virtual LaxInterfaces::ImageData *Thumbnail();
 	virtual LaxInterfaces::ImageData *Thumbnail2();
-	virtual int InstallPageStyle(PageStyle *pstyle);
+	virtual int InstallPageStyle(PageStyle *pstyle, bool shift_within_margins);
 
 	virtual int n() { return layers.n(); }
 	virtual Group *e(int i) { return dynamic_cast<Group *>(layers.e(i)); }
