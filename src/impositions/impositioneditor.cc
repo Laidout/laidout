@@ -57,10 +57,12 @@ Laxkit::anXWindow *newImpositionEditor(Laxkit::anXWindow *parnt,const char *nnam
 
 	anXWindow *win=NULL;
 
+	int dec=0;
 	if (!imp && type) {
 		if (!strcmp(type,"NetImposition")) imp=new NetImposition;
 		else if (!strcmp(type,"Singles")) imp=new Singles;
 		else if (!strcmp(type,"SignatureImposition")) imp=new SignatureImposition;
+		if (imp) dec=1;
 	}
 
 	ImpositionInterface *iface=NULL;
@@ -71,6 +73,7 @@ Laxkit::anXWindow *newImpositionEditor(Laxkit::anXWindow *parnt,const char *nnam
 						imposearg,
 						iface);
 
+	if (dec) imp->dec_count();
 	return win;
 }
 
@@ -131,6 +134,8 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 	firstimp=imposition;
 	if (imposition) {
+		firstimp->inc_count();
+
 		if (tool) tool->UseThisImposition(imposition);
 		else tool=imposition->Interface();
 		if (tool && ndoc) tool->UseThisDocument(ndoc);
@@ -150,7 +155,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 			neteditor=new NetDialog(this,"Net",_("Net"),
 									object_id,"newnet",NULL,
 									dynamic_cast<NetImposition*>(imposition));
-			app->addwindow(neteditor,0,0);
+			app->addwindow(neteditor,0,1);
 		}
 		whichactive=WHICH_Net;
 
@@ -161,7 +166,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 								    doc,
 								    dynamic_cast<Singles*>(imposition),
 								    NULL); //paper
-			app->addwindow(singleseditor,0,0);
+			app->addwindow(singleseditor,0,1);
 		}
 		whichactive=WHICH_Singles;
 	}
@@ -258,6 +263,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 ImpositionEditor::~ImpositionEditor()
 { 
+	if (firstimp) firstimp->dec_count();
 	if (imposeout) delete[] imposeout;
 	if (imposeformat) delete[] imposeformat;
 }
@@ -361,7 +367,8 @@ void ImpositionEditor::send()
 	Imposition *imp=NULL;
 
 	if (whichactive==WHICH_Signature) {
-		if (tool) imp=(Imposition*)(tool->GetImposition()->duplicate());
+		if (tool) imp=(Imposition*)(tool->GetImposition());
+		//if (tool) imp=(Imposition*)(tool->GetImposition()->duplicate());
 	} else if (whichactive==WHICH_Net) {
 		if (neteditor) imp=dynamic_cast<NetDialog*>(neteditor)->getNetImposition();
 	} else if (whichactive==WHICH_Singles) {
@@ -381,7 +388,7 @@ void ImpositionEditor::send()
 		exportImposedScribus(doc,imposeout);
 	}
 
-	imp->dec_count();
+	//imp->dec_count();
 
 	app->SendMessage(data, win_owner, win_sendthis, object_id);
 }

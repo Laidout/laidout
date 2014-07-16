@@ -610,14 +610,35 @@ const char *Page::object_e_name(int i)
  *
  * \todo if there is any custom margin information, it should be transferred...
  */
-int Page::InstallPageStyle(PageStyle *pstyle)
+int Page::InstallPageStyle(PageStyle *pstyle, bool shift_within_margins)
 {
 	if (!pstyle) return 1;
 	if (pstyle==pagestyle) return 0;
 
+	flatpoint offset;
+	if (pagestyle && shift_within_margins) {
+		offset=   pstyle->margin->ReferencePoint(LAX_MIDDLE,true) 
+			 - pagestyle->margin->ReferencePoint(LAX_MIDDLE,true);
+	}
+
 	if (pagestyle) pagestyle->dec_count();
 	pagestyle=pstyle;
 	if (pagestyle) pagestyle->inc_count();
+
+	if (shift_within_margins && (offset.x!=0 || offset.y!=0)) {
+		SomeData *o;
+        DrawableObject *g;
+
+		for (int c2=0; c2<layers.n(); c2++) {
+            g=dynamic_cast<DrawableObject*>(layers.e(c2));
+            if (g) for (int c3=0; c3<g->n(); c3++) {
+              o=g->e(c3);
+              o->origin(o->origin()+offset);
+            }
+        }
+
+	}
+
 	return 0;
 }
 
@@ -632,6 +653,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 	for (int c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"pagestyle")) {
 			PageStyle *ps=NULL;
 
@@ -658,8 +680,9 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 				ps->dump_in_atts(att->attributes.e[c],flag,context);
 				ps->flags|=PAGESTYLE_AUTONOMOUS;
 			}
-			InstallPageStyle(ps);
+			InstallPageStyle(ps, false);
 			ps->dec_count();
+
 		} else if (!strcmp(name,"layer")) {
 			Group *g=new Group;
 			makestr(g->object_idstr,"pagelayer");
@@ -673,7 +696,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 				if (!strcasecmp(value,"circle"))        labeltype=MARKER_Circle;
 				else if (!strcasecmp(value,"square"))   labeltype=MARKER_Square;
 				else if (!strcasecmp(value,"diamond"))  labeltype=MARKER_Diamond;
-				else if (!strcasecmp(value,"triangle")) labeltype=MARKER_TriangleDown;
+				else if (!strcasecmp(value,"triangle")) labeltype=MARKER_TriangleUp;
 				else if (!strcasecmp(value,"octagon"))  labeltype=MARKER_Octagon;
 				else IntAttribute(value,&labeltype);
 			}
@@ -731,7 +754,7 @@ void Page::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	if (labeltype==MARKER_Circle) fprintf(f,"%slabeltype circle\n",spc);
 	else if (labeltype==MARKER_Square)       fprintf(f,"%slabeltype square\n",spc);
 	else if (labeltype==MARKER_Diamond)      fprintf(f,"%slabeltype diamond\n",spc);
-	else if (labeltype==MARKER_TriangleDown) fprintf(f,"%slabeltype triangle\n",spc);
+	else if (labeltype==MARKER_TriangleUp)   fprintf(f,"%slabeltype triangle\n",spc);
 	else if (labeltype==MARKER_Octagon)      fprintf(f,"%slabeltype octagon\n",spc);
 	else fprintf(f,"%slabeltype %d\n",spc,labeltype);
 

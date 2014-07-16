@@ -32,6 +32,7 @@ class SpreadEditor;
 
 enum SpreadInterfaceActions {
 	SIA_ToggleSelect,
+	SIA_SelectSimilar,
 	SIA_Center,
 	SIA_LabelPos,
 	SIA_ToggleColor,
@@ -56,6 +57,10 @@ enum SpreadInterfaceActions {
 	SIA_DeleteView       ,
 	SIA_RenameView       ,
 
+	SIA_MaybeMovePages   ,
+	SIA_MoveSpreads,
+	SIA_DragRect,
+
 	SIA_ArrangeTypeMin=2000,
 	SIA_ArrangeTypeMax=2000+ArrangetypeMax-ArrangetypeMin,
 	SIA_MAX
@@ -69,7 +74,7 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	SpreadView *view;
 	int drawthumbnails;
 
-	int mx,my,firsttime;
+	int firsttime;
 	int reversebuttons;
 	flatpoint lbdown, lastmove;
 
@@ -122,6 +127,7 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 
 	virtual void clearSelection();
+	virtual void SortCurpages();
 	//virtual int Modified();
 	virtual void UpdateMarkers(bool all);
 	virtual void CheckSpreads(int startpage,int endpage);
@@ -129,13 +135,13 @@ class SpreadInterface : public LaxInterfaces::anInterface, virtual public LaxFil
 	virtual void ArrangeSpreads(int how=-1);
 	virtual LittleSpread *findSpread(int x,int y,int *pagestacki, int *thread);
 	virtual void Center(int w=1);
-	virtual void drawLabel(int x,int y,Page *page, int outlinestatus);
 
 	virtual void Reset();
 	virtual void ApplyChanges();
 	virtual void SwapPages(int previouspos, int newpos);
 	virtual void SlidePages(int previouspos, int newpos,int thread);
 	virtual int ChangeMarks(int newmark);
+	virtual int DeselectPage(int page,LittleSpread *spread);
 
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);

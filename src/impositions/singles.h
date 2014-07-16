@@ -40,6 +40,11 @@ class Singles : public Imposition
 	virtual const char *whattype() { return "Singles"; }
 	static ImpositionResource **getDefaultResources();
 
+	// ***********TEMP!!!
+    virtual int inc_count();
+    virtual int dec_count();
+    // ***********end TEMP!!!
+
 	virtual void GetDimensions(int which, double *x, double *y);
 	virtual const char *BriefDescription();
 	virtual ObjectDef *makeObjectDef();

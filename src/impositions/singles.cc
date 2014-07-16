@@ -79,9 +79,28 @@ Singles::Singles() : Imposition(_("Singles"))
 //! Calls pagestyle->dec_count().
 Singles::~Singles()
 {
-	DBG cerr <<"--Singles destructor"<<endl;
+	DBG cerr <<"--Singles destructor object "<<object_id<<endl;
 	pagestyle->dec_count();
 }
+
+
+
+// ***********TEMP!!!
+int Singles::inc_count()
+{
+    DBG cerr <<"document "<<object_id<<" inc_count to "<<_count+1<<endl;
+    return anObject::inc_count();
+}
+
+int Singles::dec_count()
+{
+    DBG cerr <<"document "<<object_id<<" dec_count to "<<_count-1<<endl;
+    return anObject::dec_count();
+}
+// ***********end TEMP!!!
+
+
+
 
 //! Static imposition resource creation function.
 /*! Returns NULL terminated list of default resources.
@@ -608,8 +627,8 @@ SomeData *Singles::GetPageOutline(int pagenum,int local)
  */
 SomeData *Singles::GetPageMarginOutline(int pagenum,int local)
 {
-	 //return if no margins.
-	if (pagestyle->ml==0 && pagestyle->mr==0 && pagestyle->mt==0 && pagestyle->mb==0) return NULL;
+//	 //return if no margins.
+//	if (pagestyle->ml==0 && pagestyle->mr==0 && pagestyle->mt==0 && pagestyle->mb==0) return NULL;
 
 	PathsData *newpath=new PathsData();//count==1
 	newpath->appendRect(pagestyle->ml,pagestyle->mb, 

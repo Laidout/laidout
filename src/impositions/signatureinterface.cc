@@ -215,8 +215,8 @@ SignatureInterface::SignatureInterface(LaxInterfaces::anInterface *nowner,int ni
 	currentPaperSpread=0;
 	pageoffset=0;
 	midpageoffset=0;
-	sigpaper=0;
-	siggroup=0;
+	sigpaper=0; //this is which paper within the current SignatureInstance is currentPaperSpread
+	siggroup=0; //how many complete stack groups precede the current group
 
 	foldlevel=0; //how many of the folds are active in display. must be < sig->folds.n
 	hasfinal=0;
@@ -388,7 +388,7 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
 				| (!strcmp(paper,laidout->papersizes.e[c]->name) ? LAX_CHECKED : 0));
 	}
 	menu->EndSubMenu();
-	menu->AddItem(_("Custom paper size"),SIGM_CustomPaper);
+	//menu->AddItem(_("Custom paper size"),SIGM_CustomPaper);
 	menu->AddItem(_("Paper Size to Final Size"),SIGM_FinalFromPaper);
 
 	if (IsFinal()) {
@@ -686,7 +686,7 @@ void SignatureInterface::remapHandles(int which)
 										 (OnBack()?"Back":"Front"));
 		makestr(area->text,buffer);
 		//wwww=dp->textextent("Sheet 0000/0000, Front",-1,NULL,NULL);
-		wwww=dp->textextent(buffer,-1,NULL,NULL);
+		wwww=dp->textextent(buffer,-1,NULL,NULL)+hhhh;
 		area->SetRect(dp->Maxx-wwww,0, wwww,hhhh);
 
 		 //SP_Num_Pages
@@ -973,8 +973,10 @@ int SignatureInterface::Refresh()
 
 			dp->drawlines(pts,4,1,1);
 
-			//if (hasface && foldlevel==0) {
-			if (hasface) {
+			 //draw thumbnails or page numbers if cell has something in it
+			if (hasface && foldlevel==0) {
+			//if (hasface) { <- *** TODo: show numbers at any fold level
+				 //rrr,ccc are row,col of where top page at rr,cc started in the beginning
 				rrr=foldinfo[rr][cc].pages[foldinfo[rr][cc].pages.n-2];
 				ccc=foldinfo[rr][cc].pages[foldinfo[rr][cc].pages.n-1];
 
@@ -993,25 +995,30 @@ int SignatureInterface::Refresh()
 					//if (facedown) dp->LineAttributes(1,LineOnOffDash, CapButt, JoinMiter);
 					//else dp->LineAttributes(1,LineSolid, CapButt, JoinMiter);
 
-					 //compute range of pages for this cell
-					tt=foldinfo[rrr][ccc].finalindexfront;
-					ff=foldinfo[rrr][ccc].finalindexback;
-					if (ff>tt) {
-						tt*=rangeofpapers/2;
-						ff=tt + rangeofpapers - 1;
-					} else {
-						ff*=rangeofpapers/2;
-						tt=ff + rangeofpapers-1;
-					}
+					 //compute range of pages for this cell and print range of pages at bottom of arrow
+					if (foldlevel==0) {
+						 //all unfolded, show only page for currentPaperSpread
+						tt=foldinfo[rrr][ccc].finalindexfront;
+						ff=foldinfo[rrr][ccc].finalindexback;
+						if (ff>tt) {
+							tt*=rangeofpapers/2;
+							ff=tt + rangeofpapers - 1;
+						} else {
+							ff*=rangeofpapers/2;
+							tt=ff + rangeofpapers-1;
+						}
 
-					 //print range of pages at bottom of arrow
-					if (foldlevel==0) { //all unfolded, show only page for currentPaperSpread
 						if (ff>tt) i=ff-sigpaper;
 						else i=ff+sigpaper;
 						if (i<npageshalf) i+=pageoffset; else i+=midpageoffset;
 						i++; //make first page 1, not 0
 						sprintf(str,"%d",i);
+
 					} else {
+						 //partially folded, need to figure out which page is on top
+						tt=rangeofpapers*foldinfo[rrr][ccc].finalindexfront;
+						ff=rangeofpapers*foldinfo[rrr][ccc].finalindexback;
+
 						 //show range of pages represented at this fold stage
 						if (ff<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
 						else { ff+=midpageoffset; tt+=midpageoffset; }
@@ -1083,10 +1090,12 @@ int SignatureInterface::Refresh()
 					fp=pts[0]-pts[1]/2;
 
 					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
-				}
-			}
+
+				} //if has final
+			} //if location rr,cc hasface
 
 			 //draw markings for final page binding edge, up, trim, margin
+			 //draws only when totally folded
 			if (hasfinal && foldlevel==signature->folds.n && rr==finalr && cc==finalc) {
 				dp->LineAttributes(2,LineSolid, CapButt, JoinMiter);
 
