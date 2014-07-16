@@ -105,7 +105,7 @@ PageMarkerInterface::PageMarkerInterface(anInterface *nowner, int nid, Displayer
 	shapes.push(MARKER_Circle      );
 	shapes.push(MARKER_Square      );
 	shapes.push(MARKER_Diamond     );
-	shapes.push(MARKER_TriangleDown);
+	shapes.push(MARKER_TriangleUp  );
 	shapes.push(MARKER_Octagon     );
 }
 
@@ -290,7 +290,7 @@ int PageMarkerInterface::Refresh()
 			switch (pages.e[c]->page->labeltype) {
 				case MARKER_Circle:       t=THING_Circle;  break;
 				case MARKER_Square:       t=THING_Square;  break;
-				case MARKER_TriangleDown: t=THING_Triangle_Down;  break;
+				case MARKER_TriangleUp:   t=THING_Triangle_Up;  break;
 				case MARKER_Octagon:      t=THING_Octagon; break;
 				case MARKER_Diamond:      t=THING_Diamond; break;
 				default:   t=THING_Circle;  break;
@@ -330,7 +330,7 @@ int PageMarkerInterface::Refresh()
 				switch (shapes.e[c]) {
 					case MARKER_Circle:       t=THING_Circle;  break;
 					case MARKER_Square:       t=THING_Square;  break;
-					case MARKER_TriangleDown: t=THING_Triangle_Down;  break;
+					case MARKER_TriangleUp:   t=THING_Triangle_Up;  break;
 					case MARKER_Octagon:      t=THING_Octagon; break;
 					case MARKER_Diamond:      t=THING_Diamond; break;
 					default:   t=THING_Circle;  break;
