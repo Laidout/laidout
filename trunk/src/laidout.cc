@@ -292,13 +292,34 @@ int LaidoutApp::Idle(int tid)
  */
 int LaidoutApp::Autosave()
 {
-	DBG cerr <<" *** autosave to: "<<prefs.autosave_path<<endl;
-	DBG cerr <<" *** need to implement autosave!!"<<endl;
+	DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
 
 	//types of saves:
 	//  autosave actual files
 	//  autosave as backups
 	//  save for crash recovery
+
+	const char *bname;
+	const char *fmt, *fname;
+	Document *doc;
+	ErrorLog log;
+
+	for (int c=0; c<project->docs.n; c++) {
+		doc=project->docs.e[c]->doc;
+		if (!doc) continue;
+
+		bname=lax_basename(project->docs.e[c]->doc->Saveas());
+		fmt=newstr(prefs.autosave_path);
+		fname=replaceallname(fmt, "%f", isblank(bname)?"untitled":bname);
+
+		//expand with dir of doc->saveas
+		//fname should be either absolute or relative to that saveas
+		//doc->Save(true,true,log, fname);
+		DBG cerr <<" *** autosave to: "<<fname<<endl;
+
+		delete[] fmt;
+		delete[] fname;
+	}
 
 	return 1;
 }
@@ -411,13 +432,13 @@ int LaidoutApp::init(int argc,char **argv)
 //	if (strcmp(BIN_PATH,curexecpath)) {
 //		char *iconpath=lax_dirname(curexecpath,0);
 //		appendstr(iconpath,"/icons");
-//		icons.addpath(iconpath);
+//		icons.AddPath(iconpath);
 //		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
 //		delete[] iconpath;
 //	} else {
 		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
-		if (icon_dir) icons.addpath(icon_dir);
-		icons.addpath(ICON_DIRECTORY);
+		if (icon_dir) icons.AddPath(icon_dir);
+		icons.AddPath(ICON_DIRECTORY);
 		if (!icon_dir) makestr(icon_dir,ICON_DIRECTORY);
 //	}
 	delete[] curexecpath; curexecpath=NULL;
@@ -785,7 +806,7 @@ int LaidoutApp::readinLaidoutDefaults()
 
 		} else if (!strcmp(name,"icon_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
-			if (!isblank(icon_dir)) icons.addpath(icon_dir);
+			if (!isblank(icon_dir)) icons.AddPath(icon_dir);
 		
 		} else if (!strcmp(name,"palette_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(prefs.palette_dir,value);
