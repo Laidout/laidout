@@ -786,6 +786,7 @@ void SpreadInterface::Reset()
 
 	clearSelection();
 	view->Reset();
+	UpdateMarkers(true);
 	needtodraw=1;
 	PostMessage(_("Reseted."));
 }
@@ -971,7 +972,11 @@ int SpreadInterface::rLBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse
 	 //If mouse up outside window, maybe call up that page in a view window
 	if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
 		 // mouse up outside window so search for a ViewWindow to shift view for
-		anXWindow *win=app->findDropCandidate(curwindow,x,y, NULL,NULL);
+		int mx,my;
+		anXWindow *win;
+		mouseposition(d->id,NULL,&mx,&my,NULL,&win);
+		//anXWindow *win=app->findDropCandidate(curwindow,x,y, NULL,NULL);
+
 		if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
 			LaidoutViewport *vp=dynamic_cast<LaidoutViewport *>(win);
 			vp->UseThisDoc(doc);
@@ -1165,11 +1170,30 @@ int SpreadInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxM
 	} else if (what==SIA_MaybeMovePages) {
 		 //dragging a group of pages to possibly a new location
 		 //change mouse shape to relevant indicator 
+
+		if (x<0 || x>curwindow->win_w || y<0 || y>curwindow->win_h) {
+			 // mouse outside window so search for a LaidoutViewport to shift view for
+			int mx,my;
+			anXWindow *win;
+			mouseposition(d->id,NULL,&mx,&my,NULL,&win);
+			//anXWindow *win=app->findDropCandidate(curwindow,x,y, NULL,NULL);
+
+			DBG if (win) cerr <<"maybe drop to: "<<win->whattype()<<endl;
+			DBG else cerr <<"couldn't find drop candidate"<<endl;
+
+			if (win && !strcmp(win->whattype(),"LaidoutViewport")) {
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_To_S);
+			} else {
+				const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
+			}
+			return 0;
+		}
+
 		int page=-1,psi,thread;
 		LittleSpread *spread=findSpread(x,y,&psi,&thread);
 		if (spread && psi>=0) { page=spread->spread->pagestack.e[psi]->index; }
 
-		if (curpages.findindex(page)>=0) {
+		if (page>=0 && curpages.findindex(page)>=0) {
 			 //we must have a non-selected page to move things to
 			const_cast<LaxMouse*>(d)->setMouseShape(curwindow,LAX_MOUSE_Cancel);
 
