@@ -35,6 +35,7 @@ if (len(sys.argv)>1) :
 print "Make icons this many pixels wide: "+str(bitmapw)
 
 dpi=int(90.0*bitmapw/45)
+DOCUMENTHEIGHT=17
 
 #get names
 names=[]
@@ -60,6 +61,10 @@ class SAXtracer (xml.sax.handler.ContentHandler):
   
         #print "depth="+str(globals()["depth"])+", attr name:"+name
         #print "attrs="+str(attrs)
+        if (name=="svg"):
+           global DOCUMENTHEIGHT
+           DOCUMENTHEIGHT=int(attrs.get("height"))/90
+           
         if (globals()["depth"]!=3) : return 
 
 
@@ -97,7 +102,7 @@ for name in names :
 
     print str(X)+","+str(Y)+" "+str(W)+"x"+str(H)
     x1=int(X/45)*45
-    y1=17*90-int(Y/45)*45-45
+    y1=DOCUMENTHEIGHT*90-int(Y/45)*45-45
     renderwidth =bitmapw*(1+int(W/45))
     renderheight=bitmapw*(1+int(H/45))
     x2=x1+45*(1+int(W/45))
