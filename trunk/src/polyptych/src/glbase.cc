@@ -23,6 +23,9 @@ using namespace std;
 #define DBG
 
 
+namespace Polyptych {
+
+
 /*! \defgroup gl Opengl helpers
  * @{
  */ 
@@ -280,6 +283,10 @@ GlData::GlData()
 
 EyeType::EyeType()
 {
+	left_fov=90; //<- need to implement these!
+	right_fov=90;
+	middle_fov=90;
+
 	reset();
 
 	 //set matrices to Identity
@@ -292,7 +299,19 @@ EyeType::EyeType()
 	}
 }
 
-void EyeType::reset() /* z away from focus */
+/*! Initialize so camera z is roughly upward in world z,
+ * put camera at (5,5,5) pointing to origin, dist=1.5,
+ * and fplane=9. 
+ *
+ * These values are totally arbitrary. Should probably have some 
+ * default adjustible config object to reset to.
+ *
+ * \todo WARNING! This is currently the incorrect "toe in" method of positioning.
+ *   Correct, more comfortable style is such that the view planes intersect,
+ *   but the direction of sight is parallel for all of l,m,r.
+ *   More research needed, I don't quite understand it.
+ */
+void EyeType::reset()
 {
 	dist=1.5; fplane=9; focus=spacevector();
 	m=Basis(spacepoint(5,5,5),spacepoint(6,6,6),spacepoint(0,5,5));
@@ -301,7 +320,12 @@ void EyeType::reset() /* z away from focus */
 //      l=Basis(spacepoint(9,-.75,0),spacepoint(10,-.75,0),spacepoint(9,0,0));
 }
 
-void EyeType::makestereo()  /* assumes m,focus,dist,fplane defined */
+/*! Assuming m is positioned correctly, and we are looking at focus,
+ * then update l and r to be positioned and oriented correctly.
+ *
+ * assumes m,focus,dist,fplane defined.
+ */
+void EyeType::makestereo()
 {
 	spacepoint pr,pl;
 	pr=m.p+dist/2*m.x;
@@ -599,5 +623,6 @@ void Thing::updateBasis()
 //doxygen group gl
 //@}
 
+} //namespace Polyptych
 
 
