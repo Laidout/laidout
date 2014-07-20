@@ -184,6 +184,8 @@ class HedronWindow : public Laxkit::anXWindow
 	Thing camera_shape;
 	Laxkit::PtrStack<EyeType> cameras;
 	int current_camera;
+	int instereo;
+	char cureye;
 
 
 	 //gl objects, and lights
@@ -238,7 +240,7 @@ class HedronWindow : public Laxkit::anXWindow
 	virtual void makecameras(void);
 
 	 //drawing
-	virtual void reshape (int w, int h);
+	virtual void reshape (int x, int y, int w, int h);
 	virtual void transparentFace(int face, double r, double g, double b, double a);
 	virtual void drawRect(Laxkit::DoubleBBox &box, 
 							double bg_r, double bg_g, double bg_b,

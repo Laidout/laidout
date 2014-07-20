@@ -34,6 +34,9 @@
 #endif
 
 
+namespace Polyptych {
+
+
 //-------------------------- Lower level gl utils -----------------------------
 
 void dumpMatrix4(GLfloat *m,const char *str);
@@ -141,9 +144,11 @@ class EyeType
 {
  public:
 	Basis m,l,r; /* get x/y coords, z is away from focus */
+	double left_fov, right_fov, middle_fov;
 	spacepoint focus;
 	double dist,fplane; /* dist=between eyes, flpane dist p to plane */
 	GLfloat projection[16],model[16]; // gl transform matrix for projection view
+
 	EyeType();
 	void reset();
 	void makestereo();
@@ -184,6 +189,7 @@ class Thing
 };
 
 	
+} //namespace Polyptych
 
 	
 #endif

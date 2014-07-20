@@ -298,6 +298,8 @@ HedronWindow::HedronWindow(anXWindow *parnt,const char *nname,const char *ntitle
 
 	fovy=50*M_PI/180;
 	current_camera=-1;
+	instereo=0;
+	cureye=0;
 	
 	sc=NULL;
 }
@@ -473,6 +475,9 @@ void HedronWindow::triangulate(spacepoint p1 ,spacepoint p2 ,spacepoint p3,
 
 //! Update the gl hedron (referenced by thing) with the current texture.
 /*! This uses the coordinates of poly, but thing can be anything.
+ *
+ * \todo There is surely a more intelligent way to drag around textures. There is serious
+ *       lag for high face counts
  */
 void HedronWindow::mapPolyhedronTexture(Thing *thing)
 {
@@ -753,21 +758,10 @@ int HedronWindow::init()
 		UseGenericImageData();
 	}
 
-// ***** gl definition stuff, might make to wait for an x window to be in current??
-//	if (!hedron) {
-//		hedron=makeGLPolyhedron();
-//		things.push(hedron);
-//		//hedron->SetScale(5,5,5);
-//	}
-//	remapCache();
-//	mapPolyhedronTexture(hedron);
-
 
 	 //-----------------Base window initialization
 	anXWindow::init();
 
-
-	//installSpheremapTexture(1);
 
 	return 0;
 }
@@ -775,6 +769,9 @@ int HedronWindow::init()
 //! Enable GL_TEXTURE_2D, define spheretexture id (if definetid), and load in spheremapdata.
 void HedronWindow::installSpheremapTexture(int definetid)
 {
+	//called from a MapNotify,
+	//also after installImage()
+
 
 	 //--------------------texture initialization
 	glEnable(GL_TEXTURE_2D);
@@ -807,8 +804,9 @@ void HedronWindow::installSpheremapTexture(int definetid)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 
-	 //****** this does not appear to be stuck to spheretexture!!
-	 //			have to reload on each redraw for it to work!! HOW COME??!?!?!?
+	 //Note cacheing textures has to be done after some other gl initializations,
+	 // or else they won't stick. Took forever to debug exactly what, and I forgot
+	 // to write down exactly what initializations! Grr!
 	glTexImage2D(GL_TEXTURE_2D,   //target
 				 0,               //mipmap level
 				 GL_RGB,          //number of color components per pixel
@@ -951,26 +949,26 @@ void HedronWindow::placeOverlays()
 int HedronWindow::MoveResize(int x,int y,int w,int h)
 {
 	int c=anXWindow::MoveResize(x,y,w,h);
-	reshape(win_w,win_h);
+	reshape(0,0, win_w,win_h);
 	return c;
 }
 
 int HedronWindow::Resize(int w,int h)
 {
 	int c=anXWindow::Resize(w,h);
-	reshape(win_w,win_h);
+	reshape(0,0, win_w,win_h);
 	return c;
 }
 
 //! Setup camera based on new window dimensions, and placeOverlays().
 /*! This is called when the window size is changed.
  */
-void HedronWindow::reshape (int w, int h)
+void HedronWindow::reshape (int x, int y, int w, int h)
 {
-	helpoffset=10000;
+	helpoffset=10000; //a special value to force remap based on text extents
 	placeOverlays();
 
-	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
+	glViewport (x, y, (GLsizei) w, (GLsizei) h);
 
 	glMatrixMode (GL_PROJECTION);
 	glLoadIdentity ();
@@ -994,7 +992,21 @@ void HedronWindow::Refresh()
 	needtodraw=0;
 
 	if (mode==MODE_Help) drawHelp();
-	else Refresh3d();
+	else {
+		//-----------------
+//		cureye='l';
+//		reshape(0,0, win_w/2,win_h);
+//		Refresh3d();
+//
+//		cureye='r';
+//		reshape(win_w/2,0, win_w/2,win_h);
+//		Refresh3d();
+//
+//		reshape(0,0, win_w,win_h);
+		//-----------------
+		Refresh3d();
+		//-----------------
+	}
 
 	 //--all done drawing, now swap buffers
 	glFlush();
@@ -1114,10 +1126,22 @@ void HedronWindow::Refresh3d()
 	glLoadIdentity();
 	if (current_camera<0) return;
 	EyeType *b=cameras.e[current_camera];
-	gluLookAt(b->m.p.x,b->m.p.y,b->m.p.z, 
-			  //b->focus.x,b->focus.y,b->focus.z,
-			  b->m.p.x-b->m.z.x, b->m.p.y-b->m.z.y, b->m.p.z-b->m.z.z,
-			  b->m.y.x, b->m.y.y, b->m.y.z);
+	if (cureye==0) {
+		gluLookAt(b->m.p.x,b->m.p.y,b->m.p.z, 
+				  //b->focus.x,b->focus.y,b->focus.z,
+				  b->m.p.x-b->m.z.x, b->m.p.y-b->m.z.y, b->m.p.z-b->m.z.z,
+				  b->m.y.x, b->m.y.y, b->m.y.z);
+	} else if (cureye=='l') {
+		gluLookAt(b->l.p.x,b->l.p.y,b->l.p.z, 
+				  //b->focus.x,b->focus.y,b->focus.z,
+				  b->l.p.x-b->l.z.x, b->l.p.y-b->l.z.y, b->l.p.z-b->l.z.z,
+				  b->l.y.x, b->l.y.y, b->l.y.z);
+	} else { //right eye
+		gluLookAt(b->r.p.x,b->r.p.y,b->r.p.z, 
+				  //b->focus.x,b->focus.y,b->focus.z,
+				  b->r.p.x-b->r.z.x, b->r.p.y-b->r.z.y, b->r.p.z-b->r.z.z,
+				  b->r.y.x, b->r.y.y, b->r.y.z);
+	}
 	
 	
 	if (draw_axes) drawaxes(10);
@@ -1178,29 +1202,7 @@ void HedronWindow::Refresh3d()
 	if (draw_texture) {
 		DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
 		
-		//DBG mapPolyhedronTexture(hedron);
-		//glPushMatrix();
-		//glMultMatrixf(hedron->m);
-
 		glEnable(GL_TEXTURE_2D);
-//		glBindTexture(GL_TEXTURE_2D, spheretexture);
-//		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-//		//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//		glTexImage2D(GL_TEXTURE_2D,   //target
-//					 0,               //mipmap level
-//					 GL_RGB,          //number of color components per pixel
-//					 spheremap_width, //width
-//					 spheremap_height,//height
-//					 0,               //border with, must be 0 or 1
-//					 //GL_RGB,          //order of data
-//					 GL_BGR,          //order of data
-//					 GL_UNSIGNED_BYTE,//type of data
-//					 spheremap_data); //pixel data
-		//glPopMatrix();
 	}
 
 	for (c=0; c<things.n; c++) {
@@ -1697,7 +1699,7 @@ int HedronWindow::event(XEvent *e)
 		glXMakeCurrent(app->dpy, xlib_window, glcontext);
 		
 		 // set viewport transform
-		reshape(win_w,win_h);	// this is only gl commands
+		reshape(0,0, win_w,win_h);	// this is only gl commands
 	
 		if (firsttime) {
 			firsttime=0;
@@ -3117,7 +3119,7 @@ int HedronWindow::installImage(const char *file)
 		installSpheremapTexture(0);
 		sprintf(e,_("Loaded image %s"),file);
 	}
-			
+
 	if (error) app->postmessage(e);
 	//else remapCache();
 
@@ -3300,6 +3302,7 @@ enum HedronWindowAction {
 	HEDA_ScaleUp,
 	HEDA_ScaleDown,
 	HEDA_ResetView,
+	HEDA_Stereo,
 	HEDA_MAX
 };
 
@@ -3359,9 +3362,10 @@ Laxkit::ShortcutHandler *HedronWindow::GetShortcuts()
 	sc->Add(HEDA_ObjectRotateYr, 'Y',ControlMask|ShiftMask,0,_("ObjectRotateYr"),_("Rotate object around y axis the other way"),NULL,0);
 	sc->Add(HEDA_ObjectRotateZ,  'z',ControlMask,0,          _("ObjectRotateZ"), _("Rotate object around z axis"),NULL,0);
 	sc->Add(HEDA_ObjectRotateZr, 'Z',ControlMask|ShiftMask,0,_("ObjectRotateZr"),_("Rotate object around z axis the other way"),NULL,0);
-	sc->Add(HEDA_ScaleUp,        '0',0,0,        _("ScaleUp"),     _("Scale object up"),NULL,0);
-	sc->Add(HEDA_ScaleDown,      '9',0,0,        _("ScaleDown"),   _("Scale object down"),NULL,0);
-	sc->Add(HEDA_ResetView,      ' ',0,0,        _("ResetView"),   _("Make camera point at object from a reasonable distance"),NULL,0);
+	sc->Add(HEDA_ScaleUp,        '0',0,0,          _("ScaleUp"),     _("Scale object up"),NULL,0);
+	sc->Add(HEDA_ScaleDown,      '9',0,0,          _("ScaleDown"),   _("Scale object down"),NULL,0);
+	sc->Add(HEDA_ResetView,      ' ',0,0,          _("ResetView"),   _("Make camera point at object from a reasonable distance"),NULL,0);
+	sc->Add(HEDA_Stereo,         'e',ControlMask,0,_("ToggleStereo"),_("Toggle viewing in crosseye stereo, straight stereo, or no stereo"),NULL,0);
 
 	manager->AddArea(whattype(),sc);
 	return sc;
@@ -3797,6 +3801,14 @@ int HedronWindow::PerformAction(int action)
 		//***
 		needtodraw=1;
 		return 0;
+
+	} else if (action==HEDA_Stereo) {
+		if (instereo==1) instereo=-1;
+		else if (instereo==-1) instereo=0;
+		else if (instereo==0) instereo=1;
+		needtodraw=1;
+		return 0;
+
 	}
 
 
