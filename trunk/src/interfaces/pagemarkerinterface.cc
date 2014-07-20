@@ -215,25 +215,6 @@ int PageMarkerInterface::Event(const Laxkit::EventData *data, const char *mes)
 }
 
 
-/*! Return a color that should stand out against the given color.
- * If bw then this will always return black or white. Else each color channel
- * is the furthest from the channel value.
- */
-unsigned long standoutcolor(const Laxkit::ScreenColor &color, bool bw)
-{
-	ScreenColor col(0,0,0,65535);
-	int nummax=0;
-	if (color.red<32768) { col.red=65535; nummax++; }
-	if (color.green<32768) { col.green=65535; nummax++; }
-	if (color.blue<32768) { col.blue=65535; nummax++; }
-	if (bw) {
-		if (nummax<2) col.rgbf(0.,0.,0.,1.); //black
-		else col.rgbf(1.,1.,1.,1.); 
-	} 
-	return col.Pixel();
-}
-
-
 int PageMarkerInterface::Refresh()
 {
 	if (needtodraw==0) return 0;
