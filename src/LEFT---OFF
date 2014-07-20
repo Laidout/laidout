@@ -12,7 +12,7 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
-i broke reimpose due to margin area shift
+roman numeral menu select range editor not changing to roman!!
 
 reimpose memory hole.. reimposed 5 page booklet
 
@@ -76,6 +76,7 @@ pressing enter in popup menus is not ending the menu
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 memory hole helpwindow 
+memory hole when graphical shell activated 
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 
@@ -89,12 +90,9 @@ impositioneditor not remembering window position
 
 sigimp fail for multiple stacks with no folds!!
 
-Spread Editor memory hole
-
 viewwindow, change to spreadview, change back to view.. Horizontal ruler origin is REALLY off
 
-
-memory hole when graphical shell activated
+lineinput not propagating escapable
 
 datarefs on images scale not like images
 
@@ -333,6 +331,19 @@ lineedit:
   time
   DONE dir
 
+FileDialog2:
+  bookmarks, have recent there
+  bookmarks, display as separated list, not tree
+  implement icon list selector
+  hover is selecting.. should be just hovering
+  edits color style: bg alternating isn't highlighting
+  have little x to clear masks..
+  need way to draw grayed out icons
+  details: name  mod-date  w x h  size
+  sort by details
+  tree display flat option
+  tooltip to show full path of bookmarks
+  do recent right, figure out current way other desktops do it
 
 implement undo.. ideally use same code for both undo and recordable/assignable actions
   object interface
@@ -368,8 +379,6 @@ export/print dialog
   export should have a preview of what is actually going out, flip through spreads
   DONE export needs "batch" send, break into smaller segments
   
-views with multiple spreads
-
 maybe flag whether to export limbo with spreads?
 
 file selector.. need sort by mod date or name, exclude/include directories
@@ -664,7 +673,11 @@ debug multi head? seems to crash when showing with projectors plugged in
 	screen info should return x,y,w,h, with flag saying it is part of a whole.
 	if only one screen, then x,y is 0
 
-page range interface, drag off screen should toggle off
+pagerangeinterface:
+  drag off screen should toggle off
+  need overlay close box?
+  edit base in place
+  should remember old label format strings, to easily select back to them
 
 for range on import/export, should have a range parser that accepts unconnected ranges, ie "2,4, 5-10"
 
@@ -735,7 +748,7 @@ paperinterface:
                           W: 8.5 H: 11
         [delete paper type][new paper type]
 
-icons for the following, perhaps be right click on the save button?
+icons for the following, perhaps be right click on the save button? or modifiers on buttons
   save as
   save a copy
   save as template (just saves in ~/.config/laidout/version/templates)
@@ -993,12 +1006,6 @@ all at once imposition... this would allow mapping of scribus layout without fus
   could be a special case of n-up, where you specify n to be infinity, with m number of
   columns, not necessarily aligned, as scribus does.
 
-pagerangeinterface: need overlay close box.. need to add feature to ViewerWindow to have not
-				    just tools but overlays. Any number of overlays can be active, but only one tool
-  edit base in place
-  should not be able to shift overlay offscreen entirely.. maybe if dragging offscreen, minimize on corner?
-  should remember old label format strings, to easily select back to them
-
 For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
   part.. should have minimum drag areas?
 
@@ -1007,9 +1014,6 @@ from laxkit: clear up focus handling which currently REALLY SUCKS especially whe
      gets the focus when autofocused.
 
 searchable menus
-
-messages to the status line should have priorities, so once mouse over messages are cleared, it would revert
-  back to a lower priority message
 
 
 
@@ -1029,6 +1033,11 @@ test:
   test in different window managers
 
 
+views with multiple spreads
+
+
+messages to the status line should have priorities? so once mouse over messages are cleared, it would revert
+  back to a lower priority message
 
 
 
@@ -1072,8 +1081,6 @@ impositions:
    imposition return a spread with flag for if papergroup is for printing or printing and viewing
 
 importimages: remember last settings
-
-Laidout file preview: give a few relevant info bits, by parsing only part of the file
 
 object selection:
  shift on a selected object should remove that object from selection
@@ -1168,10 +1175,7 @@ directory reorganization?
  windows/ <-- purely ui elements
  core/ <-- implies isolating core functions
 
-
-
-
-paper tiler: for custom pages, drag out a paper size
+paper tiler: for custom pages, drag out a paper size?
 
 intl support: ready for pango?
 
@@ -1223,5 +1227,7 @@ DONE object tool: key rotate should rotate around any active transform anchors
 DONE scribus out: not exporting proper page size, legal booklet
 DONE need page number overlay
 DONE? why no icon in menus? <- not sure what it means anymore, there do seem to be icons in menus 
+DONE i broke reimpose due to margin area shift
+DONE Spread Editor memory hole
 
 
