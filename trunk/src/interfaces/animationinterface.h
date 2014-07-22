@@ -14,18 +14,18 @@
 // Copyright (C) 2014 by Tom Lechner
 //
 
-#include "../calculator/values.h"
-#include "../dataobjects/group.h"
-#include "../language.h"
-#include "../viewwindow.h"
-#include "selection.h"
-
 #include <lax/lists.h>
 #include <lax/laximages.h>
 #include <lax/dump.h>
 #include <lax/transformmath.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/rectinterface.h>
+#include <lax/interfaces/selection.h>
+
+#include "../calculator/values.h"
+#include "../dataobjects/group.h"
+#include "../language.h"
+#include "../viewwindow.h"
 
 #include <iostream>
 
@@ -103,7 +103,7 @@ class AnimationInterface : public LaxInterfaces::anInterface
 	bool playing;
 	bool showdecs;
 
-	Selection *selection;
+	LaxInterfaces::Selection *selection;
 
 	double uiscale;
 	Laxkit::DoubleBBox box;
