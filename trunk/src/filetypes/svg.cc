@@ -77,9 +77,42 @@ class SvgExportConfig : public DocumentExportConfig
 	bool use_mesh;
 
 	SvgExportConfig();
+	SvgExportConfig(DocumentExportConfig *config);
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };
+
+/*! Base on config, copy over its stuff.
+ * \todo *** this shouldn't really be necessary, right now is just a hack to make export work in a pinch
+ */
+SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
+{
+	paperrotation=config->paperrotation;
+	evenodd      =config->evenodd;
+	batches      =config->batches;
+	target       =config->target;
+	start        =config->start;
+	layout       =config->layout;
+	collect_for_out=config->collect_for_out;
+	rasterize    =config->rasterize;
+
+	makestr(filename, config->filename);
+	makestr(tofiles, config->tofiles);
+
+	filter       =config->filter; //object, but does not get inc_counted
+
+	doc          =config->doc;
+	papergroup   =config->papergroup;
+	limbo        =config->limbo;
+
+	if (doc)        doc->inc_count();
+    if (limbo)      limbo->inc_count();
+    if (papergroup) papergroup->inc_count();
+
+	use_mesh=false;
+	use_powerstroke=false;
+	//use_powerstroke=true;
+}
 
 //! Set the filter to the Image export filter stored in the laidout object.
 SvgExportConfig::SvgExportConfig()
@@ -914,8 +947,14 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
  */
 int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
+	DocumentExportConfig *dout=dynamic_cast<DocumentExportConfig *>(context);
+	if (!dout) return 1;
+
 	SvgExportConfig *out=dynamic_cast<SvgExportConfig *>(context);
-	if (!out) return 1;
+	
+	if (!out) {
+		out=new SvgExportConfig(dout);
+	} else out->inc_count();
 
 	Document *doc =out->doc;
 	int start     =out->start;
@@ -929,6 +968,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	if (!doc && !limbo) {
 		//|| !doc->imposition || !doc->imposition->paper)...
 		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
+		out->dec_count();
 		return 1;
 	}
 	
@@ -940,6 +980,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
 			
 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
+			out->dec_count();
 			return 2;
 		}
 		file=newstr(doc->saveas);
@@ -950,6 +991,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	if (!f) {
 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
 		delete[] file;
+		out->dec_count();
 		return 3;
 	}
 
@@ -1108,6 +1150,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 	
 	fclose(f);
 	setlocale(LC_ALL,"");
+	out->dec_count();
 	return 0;
 	
 }

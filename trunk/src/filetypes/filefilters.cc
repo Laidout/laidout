@@ -1256,14 +1256,14 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			log.AddMessage(scratch,ERROR_Fail);
 		}
 	} else {
-		if (config->target==0 && config->batches<config->end-config->start+1) {
+		if (config->target==0 && config->batches>0 && config->batches<config->end-config->start+1) {
 			int s=config->start;
 			int e=config->end;
 			char *oldfilename=config->filename;
 			char *fname=NULL;
 			char str[20];
 			char *ext=strrchr(oldfilename,'.');
-			for (int c=s; err==0 && c<e; c+=config->batches) {
+			for (int c=s; err==0 && c<=e; c+=config->batches) {
 				config->start=c;
 				config->end=c+config->batches-1;
 				if (config->end>e) config->end=e;
