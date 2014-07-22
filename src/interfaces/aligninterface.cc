@@ -899,7 +899,7 @@ int AlignInterface::Refresh()
 
 
 		 //draw indicator from original position to current position
-		for (int c=0; c<selection.n; c++) {
+		for (int c=0; c<selection->n(); c++) {
 			if (controls.e[c]->flags&CONTROLS_SkipSnap) continue;
 			if (aligninfo->final_layout_type==FALIGN_None)
 				dp->drawline(dp->realtoscreen(controls.e[c]->snapto),dp->realtoscreen(controls.e[c]->original_center));
@@ -1832,15 +1832,15 @@ int AlignInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::LaxMo
 		if ((state&LAX_STATE_MASK)==ShiftMask) {
 			 //move only the one gap
 			if (!aligninfo->gaps) {
-				aligninfo->gaps=new double[selection.n];
-				aligninfo->numgaps=selection.n;
-				for (int c=0; c<selection.n; c++) aligninfo->gaps[c]=aligninfo->defaultgap;
+				aligninfo->gaps=new double[selection->n()];
+				aligninfo->numgaps=selection->n();
+				for (int c=0; c<selection->n(); c++) aligninfo->gaps[c]=aligninfo->defaultgap;
 			}
 			aligninfo->gaps[index]+=dg;
 		} else {
 			 //resize all gaps
 			if (aligninfo->gaps) {
-				for (int c=0; c<selection.n; c++) aligninfo->gaps[c]+=dg;
+				for (int c=0; c<selection->n(); c++) aligninfo->gaps[c]+=dg;
 			} else aligninfo->defaultgap+=dg;
 		}
 
@@ -2250,7 +2250,7 @@ int AlignInterface::ClampBoundaries(int fill)
 
 		if (closed) {
 			double len=aligninfo->rightbound=aligninfo->path->paths.e[0]->path->NumPoints(1);
-			aligninfo->rightbound=(len-len/selection.n);
+			aligninfo->rightbound=(len-len/selection->n());
 		}else {
 			aligninfo->rightbound=aligninfo->path->paths.e[0]->path->NumPoints(1);
 		}
@@ -2277,6 +2277,31 @@ int AlignInterface::KeyUp(unsigned int ch,unsigned int state,const Laxkit::LaxKe
 	return 1;
 }
 
+int AlignInterface::AddToSelection(LaxInterfaces::Selection *objs)
+{
+	if (!objs) return 1;
+	int n=ObjectInterface::AddToSelection(objs);
+	if (!n) return 0;
+
+	aligninfo->center=flatpoint((data->minx+data->maxx)/2,(data->miny+data->maxy)/2);
+	aligninfo->leftbound =-norm(flatpoint(data->minx,(data->miny+data->maxy)/2)-aligninfo->center);
+	aligninfo->rightbound= norm(flatpoint(data->maxx,(data->miny+data->maxy)/2)-aligninfo->center);
+
+	controls.flush();
+	SomeData *t;
+	for (int c=0; c<selection->n(); c++) {
+		controls.push(new ControlInfo(),1);
+
+		t=new SomeData;
+		t->m(selection->e(c)->obj->m());
+		controls.e[c]->SetOriginal(t);
+		t->dec_count();
+		DBG cerr <<" ---- pushed control data number "<<t->object_id<<endl;
+	}
+
+	return n;
+}
+
 //! Add objects to selection, then map default left and right bound.
 int AlignInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 {
@@ -2288,11 +2313,11 @@ int AlignInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 
 	controls.flush();
 	SomeData *t;
-	for (int c=0; c<selection.n; c++) {
+	for (int c=0; c<selection->n(); c++) {
 		controls.push(new ControlInfo(),1);
 
 		t=new SomeData;
-		t->m(selection.e[c]->obj->m());
+		t->m(selection->e(c)->obj->m());
 		controls.e[c]->SetOriginal(t);
 		t->dec_count();
 		DBG cerr <<" ---- pushed control data number "<<t->object_id<<endl;
@@ -2311,11 +2336,11 @@ int AlignInterface::FreeSelection()
 //! Copy back original transforms from original transforms to the selection.
 int AlignInterface::ResetAlignment()
 {
-	if (!data || !selection.n) return 1;
+	if (!data || !selection->n()) return 1;
 
 	 //first reset positions to original state
-	for (int c=0; c<selection.n; c++) {
-		selection.e[c]->obj->m(controls.e[c]->original_transform->m());
+	for (int c=0; c<selection->n(); c++) {
+		selection->e(c)->obj->m(controls.e[c]->original_transform->m());
 	}
 
 	RemapBounds();
@@ -2330,7 +2355,7 @@ int AlignInterface::ResetAlignment()
  */
 int AlignInterface::ApplyAlignment(int updateorig)
 {
-	if (!data || !selection.n) return 1;
+	if (!data || !selection->n()) return 1;
 
 	double m[6],mm[6];
 	transform_identity(m);
@@ -2338,8 +2363,8 @@ int AlignInterface::ApplyAlignment(int updateorig)
 	data->m(m);
 
 	 //first reset positions to original state
-	for (int c=0; c<selection.n; c++) {
-		selection.e[c]->obj->m(controls.e[c]->original_transform->m());
+	for (int c=0; c<selection->n(); c++) {
+		selection->e(c)->obj->m(controls.e[c]->original_transform->m());
 	}
 
 	 //then find and set new transforms...
@@ -2358,9 +2383,9 @@ int AlignInterface::ApplyAlignment(int updateorig)
 		//snap and align when appropriate to snap_direction and layout_direction
 
 		flatpoint point,tangent;
-		for (int c=0; c<selection.n; c++) {
-			o=selection.e[c]->obj;
-			if (viewport) viewport->transformToContext(m,selection.e[c],0,1);
+		for (int c=0; c<selection->n(); c++) {
+			o=selection->e(c)->obj;
+			if (viewport) viewport->transformToContext(m,selection->e(c),0,1);
 			else transform_copy(m,o->m());
 
 			 //compute corners of bounding box of untransformed object, in real coordinates
@@ -2455,9 +2480,9 @@ int AlignInterface::ApplyAlignment(int updateorig)
 		double lbound=aligninfo->leftbound, rbound=aligninfo->rightbound;
 		double lboundd=0,rboundd=0;
 
-		for (int c=0; c<selection.n; c++) {
-			o=selection.e[c]->obj;
-			if (viewport) viewport->transformToContext(m,selection.e[c],0,1);
+		for (int c=0; c<selection->n(); c++) {
+			o=selection->e(c)->obj;
+			if (viewport) viewport->transformToContext(m,selection->e(c),0,1);
 			else transform_copy(m,o->m());
 
 			 //compute corners of bounding box of untransformed object, in real coordinates
@@ -2502,7 +2527,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 					lboundd=DFromT(lbound);
 					rboundd=DFromT(rbound);
 				}
-				if (!PointAlongPath(lboundd+(((double)c)/(selection.n>1?selection.n-1:1))*(rboundd-lboundd), 1, point,&tangent)) {
+				if (!PointAlongPath(lboundd+(((double)c)/(selection->n()>1?selection->n()-1:1))*(rboundd-lboundd), 1, point,&tangent)) {
 					controls.e[c]->flags|=CONTROLS_SkipSnap;
 					continue;
 				}
@@ -2538,7 +2563,7 @@ int AlignInterface::ApplyAlignment(int updateorig)
 				runningdistance+=gap;
 				normalize(controls.e[c]->v);
 				controls.e[c]->amount=gap;
-				if (c==selection.n-1 || !onp) 
+				if (c==selection->n()-1 || !onp) 
 					controls.e[c]->flags|=CONTROLS_Skip;
 				else controls.e[c]->flags&=~CONTROLS_Skip;
 			}
@@ -2645,8 +2670,8 @@ int AlignInterface::ApplyAlignment(int updateorig)
 
 
 	 //optionally set new transforms to be the base to work from
-	if (updateorig)	for (int c=0; c<selection.n; c++) {
-		controls.e[c]->original_transform->m(selection.e[c]->obj->m());
+	if (updateorig)	for (int c=0; c<selection->n(); c++) {
+		controls.e[c]->original_transform->m(selection->e(c)->obj->m());
 	}
 
 	RemapBounds(); //find new bounding box of objects in transformed state

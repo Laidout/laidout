@@ -184,6 +184,7 @@ class NUpInterface : public LaxInterfaces::ObjectInterface
 
 	virtual int FreeSelection();
 	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &objs);
+	virtual int AddToSelection(LaxInterfaces::Selection *objs);
 };
 
 

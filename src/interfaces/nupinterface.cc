@@ -734,7 +734,7 @@ void NUpInterface::drawHandle(ActionArea *area, unsigned int color, flatpoint of
 //	flatpoint last;
 //	int i=-1;
 //	char buffer[20];
-//	for (int c=0; c<selection.n; c++) {
+//	for (int c=0; c<selection->n(); c++) {
 //		if (objcontrols.e[c]->flags&CONTROL_Skip) continue;
 //		if (i>=0) {
 //			dp->drawline(last,objcontrols.e[c]->new_center); //black line
@@ -985,11 +985,11 @@ int NUpInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 //! Copy back original transforms from original transforms to the selection.
 int NUpInterface::Reset()
 {
-	if (!data || !selection.n) return 1;
+	if (!data || !selection->n()) return 1;
 
 	 //first reset positions to original state
-	for (int c=0; c<selection.n; c++) {
-		selection.e[c]->obj->m(objcontrols.e[c]->original_transform->m());
+	for (int c=0; c<selection->n(); c++) {
+		selection->e(c)->obj->m(objcontrols.e[c]->original_transform->m());
 	}
 
 	RemapBounds();
@@ -1207,6 +1207,27 @@ void NUpInterface::ControlInfo::SetOriginal(SomeData *o)
 }
 
 
+int NUpInterface::AddToSelection(Selection *objs)
+{
+	int n=ObjectInterface::AddToSelection(objs);
+	if (!n) return 0;
+
+	objcontrols.flush();
+	SomeData *t;
+	for (int c=0; c<selection->n(); c++) {
+		objcontrols.push(new ControlInfo(),1);
+
+		t=new SomeData;
+		t->m(selection->e(c)->obj->m());
+		objcontrols.e[c]->SetOriginal(t);
+		t->dec_count();
+	}
+
+	if (somedata) somedata->flags=somedata->flags&~(SOMEDATA_KEEP_ASPECT|SOMEDATA_KEEP_1_TO_1);
+
+	return n;
+}
+
 //! Add objects to selection, then map default left and right bound.
 int NUpInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 {
@@ -1218,11 +1239,11 @@ int NUpInterface::AddToSelection(Laxkit::PtrStack<ObjectContext> &objs)
 
 	objcontrols.flush();
 	SomeData *t;
-	for (int c=0; c<selection.n; c++) {
+	for (int c=0; c<selection->n(); c++) {
 		objcontrols.push(new ControlInfo(),1);
 
 		t=new SomeData;
-		t->m(selection.e[c]->obj->m());
+		t->m(selection->e(c)->obj->m());
 		objcontrols.e[c]->SetOriginal(t);
 		t->dec_count();
 	}
@@ -1397,7 +1418,7 @@ void NUpInterface::WidthHeight(LaxInterfaces::ObjectContext *oc,flatvector x,fla
  */
 int NUpInterface::Apply(int updateorig)
 {
-	if (!data || !selection.n) return 1;
+	if (!data || !selection->n()) return 1;
 
 	double m[6],mm[6];
 	transform_identity(m);
@@ -1406,8 +1427,8 @@ int NUpInterface::Apply(int updateorig)
 
 
 	 //first reset positions to original state
-	for (int c=0; c<selection.n; c++) {
-		selection.e[c]->obj->m(objcontrols.e[c]->original_transform->m());
+	for (int c=0; c<selection->n(); c++) {
+		selection->e(c)->obj->m(objcontrols.e[c]->original_transform->m());
 	}
 
 
@@ -1437,8 +1458,8 @@ int NUpInterface::Apply(int updateorig)
 	}
 
 
-	if (updateorig)	for (int c=0; c<selection.n; c++) {
-		objcontrols.e[c]->original_transform->m(selection.e[c]->obj->m());
+	if (updateorig)	for (int c=0; c<selection->n(); c++) {
+		objcontrols.e[c]->original_transform->m(selection->e(c)->obj->m());
 	}
 
 	//RemapBounds();
@@ -1472,8 +1493,8 @@ void NUpInterface::ApplySizedGrid()
 	for (int c=0; c<nupinfo->rows; c++) rowheights[c]=0;
 	double colwidths [nupinfo->cols];
 	for (int c=0; c<nupinfo->cols; c++) colwidths[c]=0;
-	flatpoint dims[selection.n];
-	flatpoint centers[selection.n];
+	flatpoint dims[selection->n()];
+	flatpoint centers[selection->n()];
 
 	int ci,ri, r,c;
 	int i1n, i2n;
@@ -1482,13 +1503,13 @@ void NUpInterface::ApplySizedGrid()
 	} else { i2n=nupinfo->rows; i1n=nupinfo->cols; } //major dir vertical
 
 	i=0;
-	for (int i1=0; i<selection.n && i1<i1n; i1++) {
-		for (int i2=0; i<selection.n && i2<i2n; i2++) {
+	for (int i1=0; i<selection->n() && i1<i1n; i1++) {
+		for (int i2=0; i<selection->n() && i2<i2n; i2++) {
 			if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_LRBT || dir==LAX_RLBT) {
 				r=i1; c=i2;
 			} else { r=i2; c=i1; }
 
-			WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+			WidthHeight(selection->e(i), flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
 			centers[i]=cc;
 			dims[i].x=w;
 			dims[i].y=h;
@@ -1521,8 +1542,8 @@ void NUpInterface::ApplySizedGrid()
 	hgap=(hscale*(data->maxx-data->minx)-sum)/nupinfo->cols;
 
 	i=0;
-	for (int i1=0; i<selection.n && i1<i1n; i1++) {
-		for (int i2=0; i<selection.n && i2<i2n; i2++) {
+	for (int i1=0; i<selection->n() && i1<i1n; i1++) {
+		for (int i2=0; i<selection->n() && i2<i2n; i2++) {
 			if (dir==LAX_LRTB || dir==LAX_RLTB || dir==LAX_LRBT || dir==LAX_RLBT) {
 				r=i1; c=i2;
 			} else { r=i2; c=i1; }
@@ -1559,7 +1580,7 @@ void NUpInterface::ApplySizedGrid()
 		}
 	}
 
-	for ( ; i<selection.n; i++) {
+	for ( ; i<selection->n(); i++) {
 		objcontrols.e[i]->flags|=CONTROL_Skip;
 	}
 }
@@ -1584,7 +1605,7 @@ void NUpInterface::ApplyUnclump()
 	double ff=25;
 	double wholew=data->maxx-data->minx;
 	double wholeh=data->maxy-data->miny;
-	double mindist=sqrt(wholew*wholeh/selection.n);
+	double mindist=sqrt(wholew*wholeh/selection->n());
 	flatpoint pts[4];
 	pts[0]=transform_point(data->m(),data->minx,data->miny);
 	pts[1]=transform_point(data->m(),data->maxx,data->miny);
@@ -1595,18 +1616,18 @@ void NUpInterface::ApplyUnclump()
 	flatpoint cc, cc1,cc2;
 	flatpoint d,v;
 	double w,h, w2,h2;
-	flatpoint dims[selection.n];
-	flatpoint centers[selection.n];
+	flatpoint dims[selection->n()];
+	flatpoint centers[selection->n()];
 	double distbtwn;
 
-	for (int c=0; c<selection.n; c++) {
-		WidthHeight(selection.e[c], flatpoint(1,0),flatpoint(0,1), &dims[c].x,&dims[c].y, &cc);
+	for (int c=0; c<selection->n(); c++) {
+		WidthHeight(selection->e(c), flatpoint(1,0),flatpoint(0,1), &dims[c].x,&dims[c].y, &cc);
 		objcontrols.e[c]->original_center=cc;
 		centers[c]=cc;
 	}
 	
 	for (int iterations=0; iterations<maxiterations; iterations++) {
-		for (int c=0; c<selection.n; c++) {
+		for (int c=0; c<selection->n(); c++) {
 			d=flatpoint(0,0);
 
 			cc1=centers[c];
@@ -1624,10 +1645,10 @@ void NUpInterface::ApplyUnclump()
 				force+=v/norm(v)*damp;
 			}
 
-			for (int c2=0; c2<selection.n; c2++) {
+			for (int c2=0; c2<selection->n(); c2++) {
 				if (c==c2) continue;
 
-				WidthHeight(selection.e[c2], flatpoint(1,0),flatpoint(0,1), &w2,&h2, &cc2);
+				WidthHeight(selection->e(c2), flatpoint(1,0),flatpoint(0,1), &w2,&h2, &cc2);
 				dist=cc2-cc1;
 				dd=norm(dist);
 				distbtwn=rect_radius(cc1,w,h,dist)+rect_radius(cc2,w2,h2,dist);
@@ -1664,9 +1685,9 @@ void NUpInterface::ApplyGrid()
 	if (dir==LAX_TBLR || dir==LAX_BTLR || dir==LAX_TBRL || dir==LAX_BTRL) {
 		 //major direction vertical:
 		i=0;
-		for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
-			for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
-				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+		for (int c=0; i<selection->n() && c<nupinfo->cols; c++) {
+			for (int r=0; i<selection->n() && r<nupinfo->rows; r++) {
+				WidthHeight(selection->e(i), flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
 
 				if (dir==LAX_TBLR || dir==LAX_TBRL) {
 					p.y=data->maxy-rh/2-r*rh;
@@ -1691,16 +1712,16 @@ void NUpInterface::ApplyGrid()
 				i++;
 			}
 		}
-		for ( ; i<selection.n; i++) {
+		for ( ; i<selection->n(); i++) {
 			objcontrols.e[i]->flags|=CONTROL_Skip;
 		}
 
 	} else {
 		 //major direction horizontal:
 		i=0;
-		for (int r=0; i<selection.n && r<nupinfo->rows; r++) {
-			for (int c=0; i<selection.n && c<nupinfo->cols; c++) {
-				WidthHeight(selection.e[i], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+		for (int r=0; i<selection->n() && r<nupinfo->rows; r++) {
+			for (int c=0; i<selection->n() && c<nupinfo->cols; c++) {
+				WidthHeight(selection->e(i), flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
 
 				if (dir==LAX_LRTB || dir==LAX_RLTB) {
 					p.y=data->maxy-rh/2-r*rh;
@@ -1725,7 +1746,7 @@ void NUpInterface::ApplyGrid()
 				i++;
 			}
 		}
-		for ( ; i<selection.n; i++) {
+		for ( ; i<selection->n(); i++) {
 			objcontrols.e[i]->flags|=CONTROL_Skip;
 		}
 	}
@@ -1743,8 +1764,8 @@ void NUpInterface::ApplyRandom()
 	double wholeh=data->maxy-data->miny;
 
 	double randomx, randomy;
-	for (int c=0; c<selection.n; c++) {
-		WidthHeight(selection.e[c], flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
+	for (int c=0; c<selection->n(); c++) {
+		WidthHeight(selection->e(c), flatpoint(1,0),flatpoint(0,1), &w,&h, &cc);
 		objcontrols.e[c]->original_center=cc;
 		d.x=d.y=0;
 
