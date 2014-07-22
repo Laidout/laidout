@@ -209,6 +209,7 @@ class AlignInterface : public LaxInterfaces::ObjectInterface
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	virtual int FreeSelection();
 	virtual int AddToSelection(Laxkit::PtrStack<LaxInterfaces::ObjectContext> &objs);
+	virtual int AddToSelection(LaxInterfaces::Selection *objs);
 	//virtual int AddToSelection(Laxkit::PtrStack<ObjectContext> &objs);
 
 	virtual void ApplyPreset(int type);
