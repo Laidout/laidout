@@ -15,7 +15,6 @@ CPPFLAGS= $(HIDEGARBAGE) -Wall $(DEBUGFLAGS) -I. -I.. -I$(LAXDIR)/.. -I/usr/incl
 
 objs= \
 	actionarea.o \
-	selection.o \
 	nupinterface.o \
 	aligninterface.o \
 	anchorinterface.o \
