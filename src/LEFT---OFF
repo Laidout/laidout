@@ -369,9 +369,6 @@ svg
   in/out for meshes
   DONE export needs specialized export config
 
-make color slider box be able to be a pane
-  would be nice to enter number values in any color format
-
 export/print dialog
   vital to debug send to printer
   rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
@@ -413,9 +410,14 @@ cloner:
 space cloning/duping doesn't work
  
 Color sliders:
-  enter color hex FAIL, zaps to #00000000
-  clicking color comparator should allow clicking back to one just used
-  CMYK sliders FAIL
+  be able to choose which color sets are visible
+  make color slider box be able to be a pane
+  would be nice to enter number values in any color format
+  DONE clicking color comparator should allow clicking back to one just used: swap old and new, not copy old to new
+  DONE CMYK sliders FAIL
+  DONE be able to choose output color format (not necessarily same as temp input format)
+  DONE cur/old color should show boxes for transparent
+  DONE enter color hex FAIL, zaps to #00000000
 
 customizable object child relationships to parent, rather than simple transform
   DONE scale x
