@@ -17,10 +17,11 @@
 #define INTERFACES_ANCHORINTERFACE_H
 
 #include <lax/interfaces/somedataref.h>
+#include <lax/interfaces/selection.h>
 #include <lax/refptrstack.h>
+
 #include "../guides.h"
 #include "../viewwindow.h"
-#include "selection.h"
 
 //#include "../laidout.h"
 
@@ -68,7 +69,7 @@ class AnchorInterface : public LaxInterfaces::anInterface
 		~Anchors();
 	};
 
-	Selection *selection;
+	LaxInterfaces::Selection *selection;
 	VObjContext *cur_oc;
 	LaxInterfaces::SomeDataRef *proxy;
 	PointAnchor temptarget;

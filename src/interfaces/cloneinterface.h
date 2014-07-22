@@ -18,7 +18,6 @@
 #include "../dataobjects/group.h"
 #include "../language.h"
 #include "../viewwindow.h"
-#include "selection.h"
 
 #include <lax/lists.h>
 #include <lax/laximages.h>
@@ -26,6 +25,7 @@
 #include <lax/transformmath.h>
 #include <lax/interfaces/pathinterface.h>
 #include <lax/interfaces/rectinterface.h>
+#include <lax/interfaces/selection.h>
 
 
 namespace Laidout {
@@ -150,7 +150,7 @@ class Tiling : public Laxkit::anObject, public LaxFiles::DumpUtility //, public 
 								bool shearable=false, bool flexible_base=false);
 
 	virtual Group *Render(Group *parent_space,
-					   Selection *base_objects,
+					   LaxInterfaces::Selection *base_objects,
 					   Laxkit::Affine *base_offsetm,
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::PathsData *boundary,
@@ -201,8 +201,8 @@ class CloneInterface : public LaxInterfaces::anInterface
 	LaxInterfaces::LineStyle preview_cell;
 	LaxInterfaces::LineStyle preview_cell2;
 
-	Selection sources;
-	Selection source_proxies;
+	LaxInterfaces::Selection sources;
+	LaxInterfaces::Selection source_proxies;
 
 	double uiscale;
 	Laxkit::DoubleBBox box;

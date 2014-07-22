@@ -494,7 +494,7 @@ void Tiling::dump_in_atts(LaxFiles::Attribute *att, int flag, Laxkit::anObject *
  * If base_objects is not NULL, then
  */
 Group *Tiling::Render(Group *parent_space,
-					   Selection *source_objects, //!< If non-null, update relevant clones connected to base object
+					   LaxInterfaces::Selection *source_objects, //!< If non-null, update relevant clones connected to base object
 					   Affine *base_offsetm, //!< Additional offset to place basecells from source_objects
 					   int p1_minx, int p1_maxx, int p1_miny, int p1_maxy,
 					   LaxInterfaces::PathsData *boundary,

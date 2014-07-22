@@ -610,6 +610,8 @@ autorecover.. autosave every X minutes -> need to decide on autosave location an
 
 make "make uninstall" work, and remove coop 
 
+move Value and FieldPlace to laxkit? ValueHash would be very useful to ease configs
+
 merge set and ValueHash?
 
 review Imposition types:
