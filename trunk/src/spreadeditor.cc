@@ -1933,8 +1933,8 @@ int SpreadEditor::init()
 	ColorBox *colorbox;
 	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",
                                LAX_COLOR_RGB,
-                               65535,150,
-                               65535,0,0,65535);
+                               150./65535,
+                               1.,0.,0.,1.);
     AddWin(colorbox,1, 50,0,50,50,0, toolselector->win_h,0,50,50,0, -1);
 
 	Sync(1);	

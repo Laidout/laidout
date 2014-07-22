@@ -3647,8 +3647,8 @@ int ViewWindow::init()
 
 	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",
 							   LAX_COLOR_RGB,
-							   65535,150,
-							   65535,0,0,65535);
+							   .01,
+							   1.,0.,0.,1.);
 	AddWin(colorbox,1, 50,0,50,50,0, p->win_h,0,50,50,0, -1);
 		
 	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,
@@ -3923,7 +3923,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		linestyle.mask=GCForeground;
 
 		char blah[100];
-		colorbox->SetRGB(linestyle.color.red,linestyle.color.green,linestyle.color.blue,linestyle.color.alpha);
+		colorbox->SetRGB(linestyle.color.red/65535.,linestyle.color.green/65535.,linestyle.color.blue/65535.,linestyle.color.alpha/65535.);
 		sprintf(blah,_("New Color r:%.4f g:%.4f b:%.4f a:%.4f"),
 				(float) linestyle.color.red   / 65535,
 				(float) linestyle.color.green / 65535,
