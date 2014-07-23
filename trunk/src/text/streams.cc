@@ -22,6 +22,32 @@
 namespace Laidout {
 
 
+//----------------------------------- LengthValue -----------------------------------
+
+
+class LengthValue : public Value
+{
+  public:
+	double value;
+	enum LengthType {
+		LEN_Number,
+		LEN_Percent
+	};
+
+	LengthType type;
+	Unit units;
+
+	LengthValue(); 
+};
+
+LengthValue::LengthValue()
+{
+	value=0;
+	type=LEN_Number;
+}
+
+
+
 //----------------------------------- Base text related styles -----------------------------------
 
 /*! Add to s if s!=NULL.
@@ -71,6 +97,10 @@ class Style : public ValueHash
     virtual Value *FindValue(int attribute_name);
     virtual int CascadeUp(Style *s);
     virtual Style *Collapse();
+
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context);
+	virtual void dump_out_atts(Attribute *att,int what,Laxkit::anObject *context);
+	virtual void dump_out (FILE *f,int indent,int what,Laxkit::anObject *context);
 };
 
 Style::Style()
@@ -130,6 +160,31 @@ int Style::CascadeDown(Style *s)
 }
 
 
+//----------------------------------- StreamTreeElement -----------------------------------
+/*! \class StreamTreeElement
+ * Base class for StreamStyle and StreamChunk objects.
+ */
+class StreamTreeElement
+{
+  public:
+	StreamTreeElement *treeparent;
+
+	StreamTreeElement(StreamTreeElement *nparent);
+	virtual ~StreamTreeElement();
+
+	PtrStack<StreamElement> kids;
+}
+
+StreamTreeElement::StreamTreeElement(StreamTreeElement *nparent)
+{
+	treeparent=nparent;
+}
+
+StreamTreeElement::~StreamTreeElement()
+{
+}
+
+
 //----------------------------------- StreamStyle -----------------------------------
 /*! \class StreamStyle 
  * \brief Class to hold a stream broken down into a tree
@@ -142,23 +197,24 @@ int Style::CascadeDown(Style *s)
  * Streams need to traverse styles up and down when changing their contents. Leaves in
  * the tree are the actual content, and are derived from StreamChunk.
  */
-class StreamStyle : public Style
+class StreamStyle : public StreamTreeElement
 {
   public:
+	bool style_is_temp;
 	Style *style;
-	StreamStyle *parent;
-	RefPtrStack<StreamStyle> kids;
 
-	StreamStyle();
+	StreamStyle(StreamStyle *nparent, Style *nstyle);
 	virtual ~StreamStyle();
     virtual const char *whattype() { return "StreamStyle"; }
 };
 
-StreamStyle::StreamStyle(StreamStyle *nparent)
+StreamStyle::StreamStyle(StreamStyle *nparent, Style *nstyle)
+  : StreamTreeElement(nparent)
 {
-	parent=nparent;
-	style=NULL;
-	parent_style=dynamic_cast<StreamStyle*>(parent);
+	***
+	style=nstyle;
+	if (style) style->inc_count();
+	style_is_temp=true;
 }
 
 StreamStyle::~StreamStyle()
@@ -183,36 +239,38 @@ enum StreamChunkTypes {
  * This can be, for instance, an image chunk, text chunk, a break, a non-printing anchor.
  *
  * These are explicitly leaf nodes in a StreamStyle tree, that point to other leaf nodes
- * for convenience.
+ * for convenience. Anything in style is ignored. All actual style information should be contained in the parent tree.
  */
-class StreamChunk : public StreamStyle
+class StreamChunk : public StreamTreeElement
 {
  public:
 	StreamChunk *next, *prev;
 
-	StreamChunk();
+	StreamChunk(StreamTreeElement *nparent);
 	virtual ~StreamChunk();
 	virtual int NumBreaks()=0;
 	virtual int BreakInfo(int *type)=0;
 	virtual int Type()=0;
 
-	virtual StreamChunk *Add(StreamChunk *chunk);
+	virtual StreamChunk *AddAfter(StreamChunk *chunk);
 	virtual void AddBefore(StreamChunk *chunk);
+
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context) = 0;
+	virtual void dump_out_atts(Attribute *att,int what,Laxkit::anObject *context) = 0; //output label + content
+	virtual void dump_out (FILE *f,int indent,int what,Laxkit::anObject *context) = 0;
 };
 
-StreamChunk::StreamChunk(StreamStyle *pstyle)
+StreamChunk::StreamChunk(StreamTreeElement *nparent)
+  : StreamTreeElement(nparent)
 {
-	parent=pstyle;
-	parent_style=pstyle;
-	if (parent_style) parent_style->kids.push(this);
 	next=prev=NULL;
 }
 
 /* Default do nothing.
  */
 StreamChunk::~StreamChunk()
-{ ***
-	//if (next) delete next;
+{
+	//if (next) delete next; no deleting, as chunks must ALWAYS be contained somewhere in a single StreamTreeElement tree.
 }
 
 /*! Assumes chunk->prev==NULL. Ok for chunk->next to not be null.
@@ -222,7 +280,7 @@ StreamChunk::~StreamChunk()
  *
  * Returns next most StreamChunk of chunk.
  */
-StreamChunk *StreamChunk::Add(StreamChunk *chunk)
+StreamChunk *StreamChunk::AddAfter(StreamChunk *chunk)
 { *** need to work out style management
 
 	if (!chunk) return;
@@ -248,7 +306,7 @@ StreamChunk *StreamChunk::Add(StreamChunk *chunk)
  * If chunk->style==NULL, then use same style as *this.
  */
 void StreamChunk::AddBefore(StreamChunk *chunk)
-{
+{ *** need to work out style management
 	if (!chunk) return;
 	if (!chunk->style) chunk->style=style;
 
@@ -280,12 +338,38 @@ class StreamBreak : public StreamChunk
 	virtual int NumBreaks() { return 0; }
 	virtual int BreakInfo(int *type) { return 0; }
 	virtual int Type() { return CHUNK_Break; }
+
+	virtual void dump_out_atts(Attribute *att,int what,Laxkit::anObject *context) = 0; //output label + content
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context) = 0;
 };
+
+void StreamBreak::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context) //output label + content
+{
+	if (break_type==BREAK_Paragraph)    att->push("break","pp");
+	else if (break_type==BREAK_Column)  att->push("break","column");
+	else if (break_type==BREAK_Section) att->push("break","section");
+	else if (break_type==BREAK_Page)    att->push("break","page");
+	else if (break_type==BREAK_Tab)     att->push("break","tab");
+}
+
+/*! NOTE! Uses whole attribute, not just kids. Meaning it compares att->value to various break types.
+ */
+void StreamBreak::dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context)
+{
+	if      (!strcmp(att->value,"pp"     )) break_type=BREAK_Paragraph;
+	else if (!strcmp(att->value,"column" )) break_type=BREAK_Column;
+	else if (!strcmp(att->value,"section")) break_type=BREAK_Section;
+	else if (!strcmp(att->value,"page"   )) break_type=BREAK_Page;   
+	else if (!strcmp(att->value,"tab"    )) break_type=BREAK_Tab;     
+
+}
+
 
 //----------------------------------- StreamImage ------------------------------------
 /*! \class StreamImage
  * \brief Type of stream component made of a single DrawableObject.
  *
+ * Note this can be ANY drawable object, not just images.
  */
 class StreamImage : public StreamChunk
 {
@@ -297,6 +381,9 @@ class StreamImage : public StreamChunk
 	virtual int NumBreaks() { return 0; }
 	virtual int BreakInfo(int *type) { return 0; }
 	virtual int Type() { return CHUNK_Image; }
+
+	virtual void dump_out_atts(Attribute *att,int what,Laxkit::anObject *context) = 0; //output label + content
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context) = 0;
 };
 
 StreamImage::StreamImage(DrawableObject *nimg,StreamStyle *pstyle)
@@ -310,6 +397,17 @@ StreamImage::~StreamImage()
 {
 	if (img) img->dec_count();
 }
+
+void StreamImage::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context)
+{
+	***
+}
+
+void StreamImage::dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context)
+{
+	***
+}
+
 
 
 //----------------------------------- StreamText ------------------------------------
@@ -326,11 +424,16 @@ class StreamText : public StreamChunk
 	int len; //number of bytes in text (excluding any '\0')
 	char *text; //utf8 string
 
+	int numspaces;
+
 	StreamText(const char *txt,int n, StreamStyle *pstyle);
 	virtual ~StreamText();
 	virtual int NumBreaks();
 	virtual int BreakInfo(int *type);
 	virtual int Type() { return CHUNK_Text; }
+
+	virtual void dump_out_atts(Attribute *att,int what,Laxkit::anObject *context) = 0; //output label + content
+	virtual void dump_in_atts (Attribute *att,int flag,Laxkit::anObject *context) = 0;
 };
 
 StreamText::StreamText(const char *txt,int n, StreamStyle *pstyle)
@@ -364,8 +467,11 @@ int StreamText::NumBreaks()
 	const char *s=text;
 	int n=0;
 	while (*s) {
-		while (!isspace(*s)) s++;
-		n++;
+		while (*s && !isspace(*s)) s=utf8next(s);
+		if (s==' ') {
+			n++;
+			s++; //assumes all white space is ' '. Assumed '\n' and '\t' previously converted to explicit breaks
+		}
 	}
 	return n;
 }
@@ -393,7 +499,7 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 
 	clock_t modtime;
 
-	StreamStyle *defaultstyle;
+	StreamStyle *top;
 	StreamChunk *chunks;
 
 	Stream();
@@ -406,6 +512,7 @@ class Stream : public Laxkit::anObject, public Laxkit::DumpUtility
 
 
 /*! for more standardized contexts, with bare minimum filename accessible.
+ * maybe base on Boost file path classes for portability??
  */
 class FileIOContext
 {
@@ -421,7 +528,7 @@ Stream::Stream()
 	file=NULL;
 	id=NULL;
 
-	defaultstye=NULL;
+	top=NULL;
 	chunks=NULL;
 }
 
@@ -430,11 +537,33 @@ Stream::~Stream()
 	delete[] file;
 	delete[] id;
 
-	if (defaultstyle) defaultstyle->dec_count();
-	//chunks is not deleted, since they exist in defaultstyle tree
+	if (top) top->dec_count();
+	//chunks is not deleted, since they exist in top tree
 }
 
-/*! Starting with defaultstyle, dump out the whole tree recursively with dump_out_recursive().
+/*! Starting with top, dump out the whole tree recursively with dump_out_recursive().
+ *
+ * <pre>
+ *   streamdata
+ *     style
+ *       basedon laidout_default_style
+ *       font-size     10
+ *       line-spacing  110%
+ *
+ *       kids:
+ *         text "first text"
+ *         style ...
+ *           kids:
+ *             image /blah/blah.jpg
+ *             text "Some text all up in here"
+ *             dynamic context.page.label+"/"+string
+ *             break line
+ *             break column
+ *             break section #or page
+ *
+ *   htmltext \\
+ *     <span class="#laidout_default_style" style="font-size:10; line-spacing:110%;">first text<img file="/blah/blah.jpg"/>Some text all up in here</span>
+ * </pre>
  */
 void Stream::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context)
 {
@@ -442,17 +571,36 @@ void Stream::dump_out_atts(Attribute *att,int what,Laxkit::anObject *context)
 
 	if (!att) att=new Attribute;
 
-	dump_out_recursive(att,defaultstyle,context);
+	Attribute *att2=att->Subatt("streamdata");
+	dump_out_recursive(value, att2,top,context);
 }
 
-void Stream::dump_out_recursive(Attribute *att,StreamStyle *style,Laxkit::anObject *context)
+void Stream::dump_out_recursive(Attribute *att,StreamTreeElement *element,Laxkit::anObject *context)
 {
-	ValueHash::dump_out_atts(att,0,context);
+	StreamChunk *chunk=dynamic_cast<StreamChunk*>(element);
+	if (chunk) {
+		 //no kids, leaf node
+		chunk->dump_out_atts(att,0,context);
+		return;
+	}
+
+
+	StreamStyle *sstyle=dynamic_cast<StreamStyle*>(element);
+	if (!sstyle) {
+		DBG cerr <<"Warning! unrecognized StreamTreeElement object!"<<endl;
+		return;
+	}
 
 	Attribute *att2;
-	for (int c=0; c<style->kids.n; c++) {
+	if (sstyle->style) {
+		att->push("style",style->name); //is a style recorded somewhere
+	}
+
+	if (sstyle->kids.n) {
 		att2=att->Subattribute("child:");
-		dump_out_recursive(att2,style->kids.e[c],context);
+		for (int c=0; c<sstyle->kids.n; c++) {
+			dump_out_recursive(att2,sstyle->kids.e[c],context);
+		}
 	}
 }
 
@@ -471,14 +619,19 @@ void Stream::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context, Lax
 		name =att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
 
-		if (!strcmp(name,"htmltext")) {
+		if (!strcmp(name,"streamdata")) {
+			 //default Laidout format.... maybe should just use htmltext for simplicity??
+			***
+			dump_in_att_stream(att->attributes.e[c], context, log);
+
+		} else if (!strcmp(name,"htmltext")) {
 			ImportXML(value);
 
 		} else if (!strcmp(name,"text")) {
 			ImportText(value,-1);
 
-		//} else if (!strcmp(name,"markdown")) {
-		//	ImportMarkdown(value);
+		} else if (!strcmp(name,"markdown")) {
+			ImportMarkdown(value);
 
 		} else if (!strcmp(name,"file")) {
 			 //Try to read in a file, which can be formatted any which way.
@@ -500,53 +653,95 @@ void Stream::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *context, Lax
 				else if (!strcmp(name,"importer")) importer=value;
 				else if (!strcmp(name,"encoding")) encoding=value;
 			}
+			if (format && !strcasecmp(format,"txt")) format="text";
 
 			int status=-2;
 			if (importer) {
 				 //find and try importer on file with format
 				TextImporter *importer_obj=laidout->GetTextImporter(importer,format);
-				log.AddWarning(_("Unknown importer %s, ignoring file %s"), importer,file);
 				if (importer_obj) status=importer_obj->ImportStream(this, file, format, encoding);
-
-			} else {
-				 //no importer found, try some defaults
-				if (format && !strcmp(format,"html")) ImportXMLFile(value);
 				else {
-					char *str=FileToStr(file, encoding);
+					status=1;
+					log.AddWarning(_("Unknown importer %s, ignoring file %s"), importer,file);
+				}
+
+			} else { //importer not found
+				 //try to guess from extension
+				if (!format) {
+					const char *s=hasExtension(file,"txt");
+					if (s) format="text";
+					if (!format) {
+						s=hasExtension(file,"html");
+						if (s) format="html";
+					}
+					if (!format) {
+						s=hasExtension(file,"md");
+						if (s) format="markdown";
+					}
+				}
+				if (!format) format="text";
+
+				 //no importer found, try some defaults based on format
+				if (!strcmp(format,"html")) ImportXMLFile(value);
+				else if (!strcmp(format,"markdown")) ImportMarkdown(value,-1);
+				else { //text
+					char *str=FileToStr(file, encoding); // *** must convert to utf8
 					if (!isblank(str)) {
-						if (!strcasecmp(format,"txt") || !strcasecmp(format,"text")) ImportText(str,-1);
-						//else if (!strcmp(format,"markdown")) ImportMarkdown(value);
+						if (!strcasecmp(format,"text")) ImportText(str,-1);
 					}
 					delete[] str;
 				}
 			}
 		}
 	}
+	modtime=times(NULL);
+}
+
+int Stream::ImportMarkdown(const char *text, int n, StreamChunk *addto, bool after)
+{
+	cerr << " *** must implement a markdown importer! defaulting to text"<<endl;
+	return ImportText(text,n,addto,after);
 }
 
 /*! afterthis MUST be a chunk of *this or NULL. No verification is done.
  * If NULL, then add to end of chunks.
+ *
+ * Return 0 for success or nonzero for error.
  */
 int Stream::ImportText(const char *text, int n, StreamChunk *addto, bool after)
 {
+	if (!text) return 0;
 	if (n<0) n=strlen(text);
+	if (n==0) return 0;
 	
 	StreamText *txt=new StreamText(text,n, NULL);
 
-	if (afterthis) afterthis->Add(txt);
-	else {
+	if (addto) {
+		if (after) addto->AddAfter(txt);
+		else {
+			addto->AddBefore(txt);
+			if (addto==chunks) chunks=addto; //reposition head
+		}
+	} else {
 		if (!chunks) {
 			 //blank stream! install first chunk...
-			if (!defaultstyle) EstablishDefaultStyle();
+			if (!top) EstablishDefaultStyle();
 		   	chunks=txt;
-			chunks->parent_style=chunks->parent=defaultstyle;
+			chunks->Reparent(top);
+
 	   	} else {
 			 //append or prepend to addto
-			StreamChunk *chunk=chunks;
+			if (!addto) {
+				 //prepend to beginning of all, or append to end of all
+				addto=chunks;
+				if (after) while (addto->next) addto=addto->next;
+			}
 			if (after) {
-				while (chunk->next) chunk=chunk->next;
-				chunk->Add(txt); //Add() and AddBefore() install a style
-			} else chunk->AddBefore(txt);
+				addto->AddAfter(txt); //AddAfter() and AddBefore() install a style
+			} else {
+				chunk->AddBefore(txt);
+				if (addto==chunks) chunks=addto; //reposition head
+			}
 		}
 	}
 
@@ -560,7 +755,7 @@ int Stream::ImportXMLFile(const char *nfile)
 	makestr(file,nfile);
 	Attribute att;
 	XMLFileToAttribute(&att,nfile,NULL);
-	return ImportXMLAtt(att, NULL, defaultstyle);
+	return ImportXMLAtt(att, NULL, top);
 }
 
 /*! From string value, assume it is xml formatted text, and parse into StreamChunk objects, completely
@@ -575,11 +770,11 @@ int Stream::ImportXML(const char *value)
 	Attribute att;
 	XMLChunkToAttribute(&att, value, strlen(value), &pos, NULL, NULL);
 
-	return ImportXMLAtt(att, NULL, defaultstyle);
+	return ImportXMLAtt(att, NULL, top);
 }
 
 
-StreamStyle *ProcessCSSBlock(newstyle, laststyle, cssvalue)
+Style *ProcessCSSBlock(Style *style, const char *cssvalue)
 {
 		//CSS:
 		// selectors:    selector[, selector] { ... }
@@ -620,6 +815,9 @@ StreamStyle *ProcessCSSBlock(newstyle, laststyle, cssvalue)
 		//  word-spacing:  normal | <length> | inherit  <- space in addition to default space
 		//  text-transform:  capitalize | uppercase | lowercase | none | inherit
 		//  white-space:  normal | pre | nowrap | pre-wrap | pre-line | inherit 
+		//
+		//  line-height: normal | <number> | <length> | <percentage> | none
+		//
 		//
 		//lengths: ex = x-height, height of lowercase letters
 		//         em = basically font size
@@ -669,8 +867,14 @@ StreamStyle *ProcessCSSBlock(newstyle, laststyle, cssvalue)
 		//  caption  { display: table-caption }
 		// 
 
+	if (!style) style=new Style;
 	Attribute att;
 	CSSBlockToAttribute(&att, cssvalue);
+
+	const char *variant=NULL;
+	const char *familylist=NULL;
+	int weight=400;
+	int italic=-1;
 
 	const char *name;
 	const char *value;
@@ -681,75 +885,257 @@ StreamStyle *ProcessCSSBlock(newstyle, laststyle, cssvalue)
 		if (!strcmp(name, "font-family")) {
 			//  font-family: Bookman, serif, ..... <-- use first one found
 			//    or generic:  serif  sans-serif  cursive  fantasy  monospace
-			***
+			familylist=value;			
 
-		//} else if (!strcmp(name, "font-variant")) {
-		//	 //normal | small-caps | inherit
-		//	 ***
+		} else if (!strcmp(name, "font-variant")) {
+			 //normal | small-caps | inherit
+			 if (!strcmp(value,"small-caps")) variant=value;
 
 		} else if (!strcmp(name, "font-style")) {
 			 //normal | italic | oblique | inherit
-			 int font_style=-1;
-			 if (!strcmp(value,"inherit")) ;
-			 else if (!strcmp(value,"normal")) font_style=0; 
-			 else if (!strcmp(value,"italic")) font_style=1;
-			 else if (!strcmp(value,"oblique")) font_style=1;
+			if (!strcmp(value,"inherit")) ;
+			else if (!strcmp(value,"normal"))  italic=0; 
+			else if (!strcmp(value,"italic"))  italic=1;
+			else if (!strcmp(value,"oblique")) italic=1;
+
+			if (font_style>0) style->pushInteger("font-style", font_style);
 			 
 		} else if (!strcmp(name, "font-weight")) {
 			//normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
-			int w=-1;
-			if (!strcmp(value,"inherit")) ; //do nothing special
-			else if (!strcmp(value,"normal")) w=400;
-			else if (!strcmp(value,"bold")) w=700;
-			else if (!strcmp(value,"bolder")) w=***; //120%
-			else if (!strcmp(value,"lighter")) w=***; //80%
-			else if (value[0]>='1' && value[0]<='9' && value[1]=='0' && value[2]=='0') {
-				w=strtol(value,10,NULL);
-			}
-			***
+			const char *endptr;
+			weight=CSSFontWeight(value, endptr);
+			value=endptr;
+
+			if (weight>0) style->pushInteger("font-weight", w);
 
 		} else if (!strcmp(name, "font-size")) {
 			 //  font-size: 	<absolute-size> | <relative-size> | <length> | <percentage> | inherit
 			 //     absolute-size == xx-small | x-small | small | medium | large | x-large | xx-large 
 			 //     relative-size == larger | smaller
-			***
+			double v=-1;
+			int type=0; //0 for absolute size
+			Unit units;
+
+			if (!strcmp(value,"inherit")) ; //do nothing special
+
+			 //named absolute sizes, these are relative to some platform specific table of numbers:
+			else if (!strcmp(value,"xx-small")) v=.5;
+			else if (!strcmp(value,"x-small")) v=.75;
+			else if (!strcmp(value,"small")) v=.8;
+			else if (!strcmp(value,"medium")) v=1;
+			else if (!strcmp(value,"large")) v=1.2;
+			else if (!strcmp(value,"x-large")) v=1.4;
+			else if (!strcmp(value,"xx-large")) v=1.7;
+
+		   	 //for relative size
+			else if (!strcmp(value,"larger")) { v=1.2; type=1; }
+			else if (!strcmp(value,"smaller")) { v=.8; type=1; }
+
+			 //percentage
+			else if (strchr(value,"%")) {
+				DoubleAttribute(value,&v,NULL); //relative size
+				type=1;
+
+			 //length
+			} else {
+				LengthAttribute(value, &v, &units, NULL);
+			}
+
+			if (v>=0) style->pushLength(v,units,type);
 
 		} else if (!strcmp(name, "font")) {
 			//  font: 	[ [ <'font-style'> || <'font-variant'> || <'font-weight'> ]? <'font-size'> [ / <'line-height'> ]? <'font-family'> ] | caption | icon | menu | message-box | small-caption | status-bar | inherit
 			*** 
 
+			if (!strcmp(value,"inherit")) {
+				//do nothing
+			} else if (!strcmp(value,"caption")) {
+			} else if (!strcmp(value,"icon")) {
+			} else if (!strcmp(value,"menu")) {
+			} else if (!strcmp(value,"message-box")) {
+			} else if (!strcmp(value,"small-caption")) {
+			} else if (!strcmp(value,"status-bar")) {
+			} else {
+
+				const char *endptr=NULL;
+				int font_style=CSSFontStyle(value, &endptr);
+				char *font_variant=NULL;
+				int font_weight=-1;
+
+				if (endptr==value) {
+					font_variant=CSSFontVariant(value, &endptr);
+					if (endptr==value) {
+						font_weight=CSSFontWeight(value, &endptr);
+					} else value=endptr+1;
+				} else value=endptr+1;
+				
+				Value *fontsize=CSSFontSize(value,endptr);
+				if (endptr==value) {
+					*** error! font-size is required
+				} else {
+				}
+			}
+
 		} else if (!strcmp(name, "color")) {
 			int color_what=-2;
+			int error_ret=0;
 			Color *color=CSSColorValue(value, &color_what);
-			***
+			if (color) {
+				style->set("color", color);
+			}
+
+		} else if (!strcmp(name, "line-height")) {
+			 //line-height: normal | <number>  | <length> | <percentage> | none 
+			 //                      <number> == (the number)*(font-size) 
+			 //                      percent is of font-size   
+			 //                      none == font-size
+			if (!strcmp(value,"none")) {
+				//should be 100% of font-size
+			} else {
+				LengthValue *v=ParseLengthOrPercent(value, "font-size", NULL);
+				if (v) {
+					style->set("line-height",v,1);
+				} else {
+					log.AddWarning(_("bad css attribute %s: %s"), "line-height",value);
+				}
+			}
 
 		//} else if (!strcmp(name, "text-indent")) {
 		//} else if (!strcmp(name, "text-align")) {
-		//} else if (!strcmp(name, "text-decoration")) {
-		//} else if (!strcmp(name, "letter-spacing ")) {
-		//} else if (!strcmp(name, "word-spacing")) {
+		//} else if (!strcmp(name, "text-decoration")) {  //<text-decoration-line> || <text-decoration-style> || <text-decoration-color>
+		//      text-decoration-line:     none | [ underline || overline || line-through || blink ]
+		//		text-underline-position:  auto | [ under || [ left | right ] ] 
+		//		text-decoration-skip:     none | [ objects || spaces || ink || edges || box-decoration ]
+		//      text-decoration-style:    solid | double | dotted | dashed | wavy 
+		//      text-decoration-color:    <color>
+		//
+		//} else if (!strcmp(name, "letter-spacing ")) {   //  letter-spacing:  normal | <length> | inherit
+		//} else if (!strcmp(name, "word-spacing")) {      //  word-spacing:  normal | <length> | inherit  <- space in addition to default space
+		//} else if (!strcmp(name, "text-transform")) {  text-transform:  capitalize | uppercase | lowercase | none | inherit
+		//} else if (!strcmp(name, "white-space")) {  white-space:  normal | pre | nowrap | pre-wrap | pre-line | inherit 
+
+		//boxes:  margin-border-padding-content
+		//  margin-left  margin-right  margin-top  margin-bottom  margin: t r b l
+		//   -> margins collapse with adjacent margins
+		//  padding-left  padding-right  padding-top  padding-bottom  padding: t r b l
+		//  border-left-width  border-right-width  border-top-width  border-bottom-width  border-width: t r b l
+		//  border-left-color  padding-right-color  padding-top-color  padding-bottom-color  padding-color: t r b l,  <color> or transparent
+		//  border-left-style  padding-right-style  padding-top-style  padding-bottom-style  padding-style: t r b l
+		//   -> none hidden dotted dashed solid double groove ridge inset outset
+		//  border-left  border-top  border-right  border-bottom  border: 	[ <border-width> || <border-style> || <'border-top-color'> ] | inherit
+		
+		// list-style-type: disc | circle | square | decimal | decimal-leading-zero | lower-roman | upper-roman | lower-greek | lower-latin | upper-latin | armenian | georgian | lower-alpha | upper-alpha | none | inherit
+		// list-style-image: 	<uri> | none | inherit
+		// list-style-position:  	inside | outside | inherit
+		// list-style:  	[ <'list-style-type'> || <'list-style-position'> || <'list-style-image'> ] | inherit
+		//
+		//default table styles for html:
+		//  table    { display: table }
+		//  tr       { display: table-row }
+		//  thead    { display: table-header-group }
+		//  tbody    { display: table-row-group }
+		//  tfoot    { display: table-footer-group }
+		//  col      { display: table-column }
+		//  colgroup { display: table-column-group }
+		//  td, th   { display: table-cell }
+		//  caption  { display: table-caption }
+
 
 		} else {
 			DBG cerr << "Unimplemented attribute "<<name<<"!!"<<endl;
 		}
 	}
 
-	return newstyle;
+	if (fontfamily) {
+		LFont *font=MatchCSSFont(fontfamily, italic, variant, weight);
+		if (font) style->push("font",font);
+	}
+
+	return style;
+}
+
+Value *ParseLengthOrPercent(const char *value, const char *relative_to, const char **endptr)
+{
+	*** em, ex, px, and usual cm, etc
+	----
+	double l=-1;
+	char *endptr=NULL;
+	DoubleAttribute(value,&l,&endptr);
+	if (endptr==value) {
+		//error! can't use this!
+	} else {
+		if (endptr && *endptr=='%') {
+			PercentageValue *v=new PercentageValue(l,"font-size");
+			style->set("line-height", v);
+		} else {
+
+		}
+	}
+}
+
+
+/*! <pre>
+ *  normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | inherit
+ *  </pre>
+ */
+int CSSFontWeight(const char *value, const char *&endptr)
+{
+	int weight=-1;
+	if (!strncmp(value,"inherit",7))       { endptr=value+7; } //do nothing special
+	else if (!strncmp(value,"normal",6))   { endptr=value+6; weight=400; }
+	else if (!strncmp(value,"bold",4))     { endptr=value+4; weight=700; }
+	else if (!strncmp(value,"bolder", 6))  { endptr=value+6; weight=900; } //120% ?
+	else if (!strncmp(value,"lighter", 7)) { endptr=value+7; weight=300; } //80% ? 
+	else if (value[0]>='1' && value[0]<='9') { //scan in any integer... not really css compliant, but what the hay
+		weight=strtol(value,10,&endptr);
+	} else endptr=value;
+
+	return weight;
+}
+
+LFont *MatchCSSFont(const char *font_family, int italic, const char *variant, int weight)
+{
+	***
+	// font_family is the css attribute:
+	//  font-family: Bookman, serif, ..... <-- use first one found
+	//    or generic:  serif  sans-serif  cursive  fantasy  monospace
+	LFont *font=NULL;
+	const char *v;
+	while (value && *value) {
+		while (isspace(*value)) value++;
+		v=value;
+		while (*v && *v!=',' && !isspace(v)) v++;
+		fontlist.push(newnstr(value,v-value+1));
+		font=MatchFont(value, v-value);
+		if (font) break;
+
+		while (isspace(*v)) v++;
+		if (*v==',') v++;
+		value=v;
+	}
+
+	return font;
 }
 
 /*! If inherit, set ret_type=-1, return NULL.
+ * If there was an error converting to a color, ret_type=-2, return NULL.
+ * Else return a new Color, and ret_type==0.
  */
 Color *CSSColorValue(const char *value, int *ret_type)
 {
-		//  system colors: see http://www.w3.org/TR/CSS2/ui.html#system-colors
+	//css3 has rgba, and hsl/hsla
+	//  not implemented: x11 colors
+	//  not implemented: system colors: see http://www.w3.org/TR/CSS2/ui.html#system-colors
 
 	if (!strcmp(value,"inherit")) {
 		*ret_type=-1;
 		return NULL;
 	}
 
-	int r=-1,g=-1,b=-1;
+	Color *color=NULL;
+	int r=-1,g=-1,b=-1, a=0xff;
 
+	 //css named colors
 	if      (!strcmp(value,"maroon"))  { r=0x80; g=0x00; b=0x00; }
 	else if (!strcmp(value,"red"))     { r=0xff; g=0x00; b=0x00; }
 	else if (!strcmp(value,"orange"))  { r=0xff; g=0xA5; b=0x00; }
@@ -764,19 +1150,13 @@ Color *CSSColorValue(const char *value, int *ret_type)
 	else if (!strcmp(value,"blue"))    { r=0x00; g=0x00; b=0xff; }
 	else if (!strcmp(value,"aqua"))    { r=0x00; g=0xff; b=0xff; }
 	else if (!strcmp(value,"teal"))    { r=0x00; g=0x80; b=0x80; }
-	else if (value[0]=='#')  {
-		//  color: #aabbcc  ==  color: #abc
-		***
-		
-	} else if (strstr(value,"rgb")==value) { 
-		//  color: rgb(50%, 50%, 50%)
-		//  color: rgb(255, 255, 255)  <- [0..255]
-		***
 
-	//} else if (***system colors) {
-	//	//  system colors: see http://www.w3.org/TR/CSS2/ui.html#system-colors
+	else if (!strcmp(value,"cyan"))    { r=0x00; g=0xff; b=0xff; } //not css, but is x11 color, widely accepted
 
-	} else {
+	if (r>=0) color=newRGBColor(r,g,b,255, 255);
+	else if (!color) ColorAttribute(value, &color, error_ret);
+
+	if (!color) {
 		*ret_type=-2;
 		return NULL;
 	}
@@ -822,7 +1202,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			if (type!=BREAK_Unknown) {
 				StreamBreak *br=new StreamBreak(type);
 				if (!chunk) { chunks=chunk=br; }
-				else chunk=chunk->Add(br);
+				else chunk=chunk->AddAfter(br);
 			} else {
 				setlocale(***);
 				log.AddMessage(ERROR_Warning, _("Unknown break %s"), value);
@@ -873,7 +1253,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 
 			StreamImage *image=new StreamImage(img);
 			if (!chunk) { chunks=chunk=image; }
-			else chunk=chunk->Add(image);
+			else chunk=chunk->AddAfter(image);
 			continue;
 
 		} else if (!strcmp(name,"hr")) {
@@ -890,7 +1270,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			//delete[] text;
 
 			if (!chunk) { chunks=chunk=txt; }
-			else chunk=chunk->Add(txt);
+			else chunk=chunk->AddAfter(txt);
 			continue;
 		}
 
@@ -960,7 +1340,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 			if (chunk->Type()!=CHUNK_Break) {
 				StreamBreak *br=new StreamBreak(BREAK_Paragraph);
 				if (!chunk) { chunks=chunk=br; }
-				else chunk=chunk->Add(br);
+				else chunk=chunk->AddAfter(br);
 			}
 
 		} else if (!strcmp(name,"span")) {
@@ -1042,7 +1422,7 @@ void Stream::ImportXMLAtt(Attribute *att, StreamChunk *&chunk, StreamStyle *last
 //------------------------------------- StreamAttachment ----------------------------------
 
 /*! Held by DrawableObjects, these define various types of attachments of Stream objects to the parent
- * DrawableObject.
+ * DrawableObject, as well as cached rendering info in a StreamCache.
  */
 
 class StreamAttachment
