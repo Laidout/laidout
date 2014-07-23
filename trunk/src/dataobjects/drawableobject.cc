@@ -1068,11 +1068,11 @@ void DrawableObject::dump_out(FILE *f,int indent,int what,Laxkit::anObject *cont
 	
 	if (what==-1) {
 		fprintf(f,"%sid nameofobject\n",spc);
-		fprintf(f,"%siohints ...       #object level i/o leftovers from importing\n",spc);
-		fprintf(f,"%smetadata ...      #object level metadata\n",spc);
-		fprintf(f,"%stags tag1 \"tag 2\" #list of string tags\n",spc);
-		fprintf(f,"%sfilters           #list of filters\n",spc);
-		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #if different than simple matrix\n",spc);
+		fprintf(f,"%siohints ...       #(optional) object level i/o leftovers from importing\n",spc);
+		fprintf(f,"%smetadata ...      #(optional) object level metadata\n",spc);
+		fprintf(f,"%stags tag1 \"tag 2\" #(optional) list of string tags\n",spc);
+		fprintf(f,"%sfilters           #(optional) list of filters\n",spc);
+		fprintf(f,"%salignmentrule align (a1x,a1y) (a2x,a2y)  #(optional) if different than simple matrix\n",spc);
 		fprintf(f,"%s  ...\n",spc);
 		fprintf(f,"%skids          #child object list...\n",spc);
 		//fprintf(f,"%s    ...\n",spc);
