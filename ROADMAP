@@ -34,7 +34,7 @@ VERSION 0.095
        Merge EpsData with normal images
        Externally rendered objects, similar to Scribus render frames
        Examine and improve ease of use of import images dialog, particularly for previewing
-       In image properties dialog, have the popup list of potential previews
+       In image properties dialog, be able to select from possible potential previews
        Tools should remember their settings
        Object and resource tags
        Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
@@ -141,7 +141,6 @@ Would be nice to be able to handle lilypond sort of things
 Load/save various gimp/inkscape/etc things like gradients, palettes, and paths, perhaps extract from/to xcf
 Maybe have ability to break apart and use parts of gimp.xcf/inkscape.svg/scribus.sla, and put them back in?
 Stream/Story editor, maybe html export from streameditor?
-Internal generic impositioner for ps files that follow the ps doc. structure guidelines->import ps to mysterydata, export those...
 for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
 Cooperate with photo programs like KPhotoalbum, f-spot
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from nets?

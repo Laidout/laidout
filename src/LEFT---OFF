@@ -12,6 +12,10 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+engraver lines with 1 or 2 points FAIL BADLY load in problem?
+
+pdf out needs clone deref
+
 roman numeral menu select range editor not changing to roman!!
 
 reimpose memory hole.. reimposed 5 page booklet
@@ -77,6 +81,8 @@ DONE??? need to implement scale pages to new imposition when reimposing (enable 
 
 memory hole helpwindow 
 memory hole when graphical shell activated 
+
+Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 
@@ -170,6 +176,9 @@ test:
 
 need to remember previous export settings
 
+exporting needs to support custom export config objects per filter, ie SvgExportConfig
+  -> perhaps by using new cascading Style as base for DocumentExportConfig..
+
 dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
 
 previewer should show text previews left justified
@@ -214,6 +223,12 @@ Clean up mesh/patch controls:
   DONE delete should not delete whole object
 
 engraving tool:
+  should have group link so that distortion tools affect all those selected
+  direction map is not showing actual direction
+  when trace object management worked out, need to fully implement relevant bits in data->duplicate()
+  when flipping between objects, gives to indication that we are on a new object
+  always brings current to front.. should be very optional, as it blocks out white overlays
+  not exporting correct color
   invert trace sampling: sample white instead of black
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   trace object needs to be in page context, not object context (or must be default option)
@@ -225,13 +240,14 @@ engraving tool:
   on canvas direction and spacing controller
     -> options to insert various predefined patterns
 	-> multiple burins for different point groups?
+  'f' should center objects in resulting svg
 
   edge abutment
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
   resolution tool: click to add between points within brush, control to destroy points in brush
   finish making value to weight map on canvas editable and work right
   option: either drop out of bounds points, or zap mesh to point bounds
-  trace object transparency slider should actual slide transparency
+  trace object transparency slider should actually slide transparency
   edit brush ramp as symmetric ramp 
   Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
   sample point generation should be based on lines per mesh square, not total mesh field
@@ -802,6 +818,7 @@ When there are errors or warnings in exporting, should be able to have the error
   - have ViewWindow::JumpToObject(&place, objectid);	
 
 align tool:
+  path editor should not have width handle
   endpoints should be oriented triangle, not circles which make it look like path nodes
   explode in normal align
   should be able to scale and rotate a non-line path when not in path mode
