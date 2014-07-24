@@ -2502,7 +2502,7 @@ void LaidoutViewport::Refresh()
 				"Chains",
 				NULL
 				};
-		LaxImage *img=laidout->icons.GetIcon(editareaicons[current_edit_area]);
+		LaxImage *img=laidout->icons->GetIcon(editareaicons[current_edit_area]);
 		dp->DrawScreen();
 		dp->imageout(img,0,0);
 		dp->DrawReal();
@@ -3549,7 +3549,7 @@ int ViewWindow::init()
 						 0,
 						 NULL,0, //menu
 						 "o", //label
-						 NULL,laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
+						 NULL,laidout->icons->GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
 						 buttongap);
 	menub->tooltip(_("Display list"));
 	dynamic_cast<WinFrameBox *>(wholelist.e[0])->NewWindow(menub);
@@ -3577,7 +3577,7 @@ int ViewWindow::init()
 		}
 		if (!strcmp(tools.e[c]->whattype(),"ObjectInterface")) obji=tools.e[c]->id;
 		
-		img=laidout->icons.GetIcon(tools.e[c]->IconId());
+		img=laidout->icons->GetIcon(tools.e[c]->IconId());
 		
 		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
@@ -3586,7 +3586,7 @@ int ViewWindow::init()
 		toolselector->AddSep(_("Overlays"));
 		for (c=0; c<tools.n; c++) {
 			if (tools.e[c]->interface_type!=INTERFACE_Overlay) continue;
-			img=laidout->icons.GetIcon(tools.e[c]->IconId());
+			img=laidout->icons->GetIcon(tools.e[c]->IconId());
 			toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 			toolselector->SetState(-1,(viewport->HasInterface(tools.e[c]->id)?MENU_CHECKED:0)|MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
 		}
@@ -3600,12 +3600,12 @@ int ViewWindow::init()
 
 	 //----- Page Flipper
 	last=ibut=new Button(this,"prev spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"prevSpread",-1,
-						 "<",NULL,laidout->icons.GetIcon("PreviousSpread"),buttongap);
+						 "<",NULL,laidout->icons->GetIcon("PreviousSpread"),buttongap);
 	ibut->tooltip(_("Previous spread"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"next spread",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"nextSpread",-1,
-						 ">",NULL,laidout->icons.GetIcon("NextSpread"),buttongap);
+						 ">",NULL,laidout->icons->GetIcon("NextSpread"),buttongap);
 	ibut->tooltip(_("Next spread"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
@@ -3645,30 +3645,33 @@ int ViewWindow::init()
 	p->WrapToExtent();
 	AddWin(p,1, p->win_w,0,50,50,0, p->win_h,0,50,50,0, -1);
 
-	last=colorbox=new ColorBox(this,"colorbox",NULL,0, 0,0,0,0,1, NULL,object_id,"curcolor",
+	last=colorbox=new ColorBox(this,"colorbox",NULL,
+							   //COLORBOX_ALLOW_NONE|COLORBOX_ALLOW_REGISTRATION|COLORBOX_ALLOW_KNOCKOUT,
+							   0,
+							   0,0,0,0,1, NULL,object_id,"curcolor",
 							   LAX_COLOR_RGB,
 							   .01,
 							   1.,0.,0.,1.);
 	AddWin(colorbox,1, 50,0,50,50,0, p->win_h,0,50,50,0, -1);
 		
 	last=pageclips=new Button(this,"pageclips",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"pageclips",-1,
-							  _("Page Clips"),NULL,laidout->icons.GetIcon("PageClips"),buttongap);
+							  _("Page Clips"),NULL,laidout->icons->GetIcon("PageClips"),buttongap);
 	pageclips->tooltip(_("Whether pages clips its contents"));
 	AddWin(pageclips,1, pageclips->win_w,0,50,50,0, pageclips->win_h,0,50,50,0, -1);
 	updateContext(1);
 
 	last=ibut=new Button(this,"delete page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"deletePage",-1,
-						 _("Delete Page"),NULL,laidout->icons.GetIcon("DeletePage"),buttongap);
+						 _("Delete Page"),NULL,laidout->icons->GetIcon("DeletePage"),buttongap);
 	ibut->tooltip(_("Delete the current page"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"add page",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"addPage",-1,
-						 _("Add Page"),NULL,laidout->icons.GetIcon("AddPage"),buttongap);
+						 _("Add Page"),NULL,laidout->icons->GetIcon("AddPage"),buttongap);
 	ibut->tooltip(_("Add 1 page after this one"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"import image",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"importImage",-1,
-						 _("Import Images"),NULL,laidout->icons.GetIcon("ImportImage"),buttongap);
+						 _("Import Images"),NULL,laidout->icons->GetIcon("ImportImage"),buttongap);
 	ibut->tooltip(_("Import one or more images"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
@@ -3676,7 +3679,7 @@ int ViewWindow::init()
 	 //-------------import
 	 //*** this can be somehow combined with import images maybe?...
 	last=ibut=new Button(this,"import",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"import",-1,
-						 _("Import"),NULL,laidout->icons.GetIcon("Import"),buttongap);
+						 _("Import"),NULL,laidout->icons->GetIcon("Import"),buttongap);
 	ibut->tooltip(_("Try to import various vector based files into the document"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
@@ -3699,37 +3702,37 @@ int ViewWindow::init()
 //	}
 //	last=menub=new MenuButton(this,"export",IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"export",-1,
 //							 menu,1,
-//							 laidout->icons.GetIcon("Export"),_("Export"));
+//							 laidout->icons->GetIcon("Export"),_("Export"));
 //	menub->tooltip(_("Export the document in various ways"));
 //	AddWin(menub,menub->win_w,0,50,50,0, menub->win_h,0,50,50,0);
 //-----------------
 	last=ibut=new Button(this,"export",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"export",-1,
-						 _("Export"),NULL,laidout->icons.GetIcon("Export"),buttongap);
+						 _("Export"),NULL,laidout->icons->GetIcon("Export"),buttongap);
 	ibut->tooltip(_("Export the document in various ways"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	
 	 //-----------print
 	last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"print",-1,
-						 _("Print"),NULL,laidout->icons.GetIcon("Print"),buttongap);
+						 _("Print"),NULL,laidout->icons->GetIcon("Print"),buttongap);
 	ibut->tooltip(_("Print the document"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 
 	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"openDoc",-1,
-						 _("Open"),NULL,laidout->icons.GetIcon("Open"),buttongap);
+						 _("Open"),NULL,laidout->icons->GetIcon("Open"),buttongap);
 	ibut->tooltip(_("Open a document from disk"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	last=ibut=new Button(this,"save doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"saveDoc",-1,
-						 _("Save"),NULL,laidout->icons.GetIcon("Save"),buttongap);
+						 _("Save"),NULL,laidout->icons->GetIcon("Save"),buttongap);
 	ibut->tooltip(_("Save the current document"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
 	
 
 	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"help",-1,
-						 _("Help!"),NULL,laidout->icons.GetIcon("Help"),buttongap);
+						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
 	ibut->tooltip(_("Popup a list of shortcuts"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
@@ -4059,7 +4062,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		//menu->AddItem(laidout->IsProject()?_("Do not save as a project"):_("Save as a project..."), ACTION_ToggleSaveAsProject);
 		//menu->EndSubMenu();
 
-//						 laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
+//						 laidout->icons->GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"),
 
 		DBG menuinfoDump(menu,0);
 
@@ -4409,7 +4412,7 @@ void ViewWindow::SetParentTitle(const char *str)
 //! Make the ruler corner button have the right icon.
 void ViewWindow::updateProjectStatus()
 {
-	((MenuButton *)rulercornerbutton)->SetIcon(laidout->icons.GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"));
+	((MenuButton *)rulercornerbutton)->SetIcon(laidout->icons->GetIcon(laidout->IsProject()?"LaidoutProject":"Laidout"));
 }
 
 //! Make the pagenumber label be correct.

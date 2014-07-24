@@ -1861,7 +1861,7 @@ int SpreadEditor::init()
 										 last,object_id,"rulercornerbutton",0,
 										 NULL,0, //menu, local
 										 "v",
-										 NULL,laidout->icons.GetIcon("Laidout")
+										 NULL,laidout->icons->GetIcon("Laidout")
 										);
 	menub->tooltip(_("Document list"));
 	AddWin(menub,1, menub->win_w,0,50,50,0, menub->win_h,0,50,50,0, -1);
@@ -1890,7 +1890,7 @@ int SpreadEditor::init()
 		}
 		if (!strcmp(tools.e[c]->whattype(),"Spread")) obji=tools.e[c]->id;
 		
-		img=laidout->icons.GetIcon(tools.e[c]->IconId());
+		img=laidout->icons->GetIcon(tools.e[c]->IconId());
 		
 		toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 		//if (img) img->dec_count();
@@ -1899,7 +1899,7 @@ int SpreadEditor::init()
 		toolselector->AddSep(_("Overlays"));
 		for (c=0; c<tools.n; c++) {
 			if (tools.e[c]->interface_type!=INTERFACE_Overlay) continue;
-			img=laidout->icons.GetIcon(tools.e[c]->IconId());
+			img=laidout->icons->GetIcon(tools.e[c]->IconId());
 			toolselector->AddItem(tools.e[c]->Name(),img,tools.e[c]->id); //does not call inc_count()
 			toolselector->SetState(-1,(viewport->HasInterface(tools.e[c]->id)?MENU_CHECKED:0)|MENU_ISTOGGLE|SLIDER_IGNORE_ON_BROWSE,1);
 		}

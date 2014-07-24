@@ -195,7 +195,7 @@ Tiling::~Tiling()
 	if (boundary) boundary->dec_count();
 }
 
-/*! Use laidout->icons.GetIcon() to search for "category__name".
+/*! Use laidout->icons->GetIcon() to search for "category__name".
  */
 void Tiling::InstallDefaultIcon()
 {
@@ -208,7 +208,7 @@ void Tiling::InstallDefaultIcon()
 	}
 	for (unsigned int c=0; c<strlen(ifile); c++) if (ifile[c]==' ') ifile[c]='_';
 
-	icon=laidout->icons.GetIcon(ifile);
+	icon=laidout->icons->GetIcon(ifile);
 	delete[] ifile;
 }
 
@@ -2841,7 +2841,7 @@ void CloneInterface::RefreshSelectMode()
 		}
 		i=c;
 		f=GetBuiltinIconKey(i);
-		img=laidout->icons.GetIcon(f);
+		img=laidout->icons->GetIcon(f);
 		delete[] f;
 		if (!img) continue;
 

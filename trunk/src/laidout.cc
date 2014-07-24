@@ -227,6 +227,8 @@ LaidoutApp::LaidoutApp()
 	preview_file_bases(2)
 {	
 	autosaveid=0;
+	
+	icons=IconManager::GetDefault();
 
 	runmode=RUNMODE_Normal;
 
@@ -292,15 +294,20 @@ int LaidoutApp::Idle(int tid)
  */
 int LaidoutApp::Autosave()
 {
-	DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
-
 	//types of saves:
+	//  save a backup when you do a normal save
 	//  autosave actual files
-	//  autosave as backups
-	//  save for crash recovery
+	//  autosave as backups: 
+	//    save just one
+	//    save like file-autosave1.laidout, up to a maximum number or time frame
+	//              file-autosave2.laidout
+	//              file-autosave3.laidout
+	//  save for crash recovery in some standard location, like with "lock" files or something
 
 	const char *bname;
 	const char *fmt, *fname;
+	const char *oldname;
+	int status;
 	Document *doc;
 	ErrorLog log;
 
@@ -314,12 +321,20 @@ int LaidoutApp::Autosave()
 
 		//expand with dir of doc->saveas
 		//fname should be either absolute or relative to that saveas
-		//doc->Save(true,true,log, fname);
-		DBG cerr <<" *** autosave to: "<<fname<<endl;
+		oldname=newstr(doc->Saveas());
+		doc->Saveas(fname);
+		status=doc->Save(true,true,log);
+		doc->Saveas(oldname);
+		delete[] oldname;
+
+		DBG if (status==0) cerr <<" .... autosaved to: "<<fname<<endl;
+		DBG else cerr <<" .... ERROR trying to autosave to: "<<fname<<endl;
 
 		delete[] fmt;
 		delete[] fname;
 	}
+
+	DBG cerr <<" *** need to finish implementing autosave!!"<<endl;
 
 	return 1;
 }
@@ -432,13 +447,13 @@ int LaidoutApp::init(int argc,char **argv)
 //	if (strcmp(BIN_PATH,curexecpath)) {
 //		char *iconpath=lax_dirname(curexecpath,0);
 //		appendstr(iconpath,"/icons");
-//		icons.AddPath(iconpath);
+//		icons->AddPath(iconpath);
 //		DBG cerr <<"Added uninstalled icon dir "<<iconpath<<" to icon path"<<endl;
 //		delete[] iconpath;
 //	} else {
 		DBG cerr <<"Added installed icon dir "<<ICON_DIRECTORY<<" to icon path"<<endl;
-		if (icon_dir) icons.AddPath(icon_dir);
-		icons.AddPath(ICON_DIRECTORY);
+		if (icon_dir) icons->AddPath(icon_dir);
+		icons->AddPath(ICON_DIRECTORY);
 		if (!icon_dir) makestr(icon_dir,ICON_DIRECTORY);
 //	}
 	delete[] curexecpath; curexecpath=NULL;
@@ -806,7 +821,7 @@ int LaidoutApp::readinLaidoutDefaults()
 
 		} else if (!strcmp(name,"icon_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(icon_dir,value);
-			if (!isblank(icon_dir)) icons.AddPath(icon_dir);
+			if (!isblank(icon_dir)) icons->AddPath(icon_dir);
 		
 		} else if (!strcmp(name,"palette_dir")) {
 			if (file_exists(value,1,NULL)==S_IFDIR) makestr(prefs.palette_dir,value);
@@ -1697,6 +1712,7 @@ int main(int argc,char **argv)
 	 //for debugging purposes, spread out closing down various things....
 	laidout->close();
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
+	Laxkit::IconManager::SetDefault(NULL);
 	laidout->dec_count();
 	
 	DBG cerr <<"---------------stylemanager-----------------"<<endl;

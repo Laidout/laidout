@@ -103,7 +103,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	LaidoutPreferences prefs;
 
 	char *icon_dir;
-	Laxkit::IconManager icons;
+	Laxkit::IconManager *icons;
 
 	unsigned long curcolor;
 	
