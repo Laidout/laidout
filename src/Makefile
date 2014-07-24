@@ -79,6 +79,7 @@ laidout: lax laxinterface $(dirs) $(objs) $(POLYPTYCHFORLAIDOUT)
 
 icons:
 	cd src/icons && $(MAKE)
+	cd $(LAXDIR)/icons && $(MAKE)
 									 
 polyptych:
 	cd $(POLYPTYCHBASEDIR)/polyptych/src && $(MAKE) forlaidout

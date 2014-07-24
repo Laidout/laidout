@@ -72,7 +72,7 @@ LaidoutPreferences::LaidoutPreferences()
 	preview_size=400;
 
 	autosave=0; //minutes
-	autosave_path=newstr("./.%f.autosave");
+	autosave_path=newstr("./%f.autosave");
 }
 
 LaidoutPreferences::~LaidoutPreferences()
