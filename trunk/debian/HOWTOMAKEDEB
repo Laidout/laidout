@@ -75,8 +75,10 @@ MAKING LAIDOUT DEB PACKAGE AND SRC TARBALL
 
   e) if cairo is still not working, make sure to disable in code and not link in Makefiles
 
-  f) make icons  (for convenience, in case people don't have inkscape installed):
-      cd src/icons; make
+  f) make icons  (we make before packaging for convenience, in case people don't have inkscape installed):
+	  cd laxkit/lax/icons; make;   # these use Inkscape to render from svg files to png 
+	  cp *png ../../src/icons      # <- copy the laxkit icons to the Laidout icon dir
+      cd laidout/src/icons; make   # <- this will then overwrite any icons from Laidout supercede Laxkit
 
   g) cd to dir above laidout, and do:
       tar cjv (the dir) > laidout-version.tar.bz2 
