@@ -959,8 +959,8 @@ int SpreadView::ApplyChanges()
 	newlocal=new char[n];
 	
 	int pg;
-	LittleSpread *s1;
-	int thread=-1, spreadi=-1, psi=-1;
+	//LittleSpread *s1;
+	//int thread=-1, spreadi=-1, psi=-1;
 	for (int c=0; c<n; c++) {
 		pg=temppagemap[c]; //doc page index
 		DBG cerr <<" --move page "<<pg<<" to page "<<c<<endl;
