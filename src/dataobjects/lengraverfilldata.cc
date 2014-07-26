@@ -205,10 +205,16 @@ int LEngraverFillData::Evaluate(const char *func,int len, ValueHash *context, Va
 
 LaxInterfaces::SomeData *LEngraverFillData::EquivalentObject()
 {
-	LaxInterfaces::PathsData *p=MakePathsData();
-	ScreenColor color(0.,0.,1.,1.);
-	p->fill(&color);
-	return p;
+	DrawableObject *group=new DrawableObject;
+	LaxInterfaces::PathsData *p;
+	
+	for (int c=0; c<groups.n; c++) {
+		p=MakePathsData(c);
+		group->push(p);
+		p->dec_count();
+	}
+
+	return group;
 }
 
 
