@@ -223,12 +223,13 @@ Clean up mesh/patch controls:
   DONE delete should not delete whole object
 
 engraving tool:
-  should have group link so that distortion tools affect all those selected
+  should have minimum dash density control, like zero==50% 
+  need some kind of smooth out: smooth out width, and smooth out path
+  should probably abstract control panel creation so we don't have to hardcode everything all the time
   direction map is not showing actual direction
   when trace object management worked out, need to fully implement relevant bits in data->duplicate()
-  when flipping between objects, gives to indication that we are on a new object
-  always brings current to front.. should be very optional, as it blocks out white overlays
-  not exporting correct color
+  when flipping between objects, gives to indication that we are on a new object, like a thick outline
+  always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   invert trace sampling: sample white instead of black
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   trace object needs to be in page context, not object context (or must be default option)
@@ -236,10 +237,9 @@ engraving tool:
   need to be able to load and save trace object and position
   need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
-  pointgroup i/o
   on canvas direction and spacing controller
+  allow temp override of linked to adjust only current?
     -> options to insert various predefined patterns
-	-> multiple burins for different point groups?
   'f' should center objects in resulting svg
 
   edge abutment
@@ -249,6 +249,7 @@ engraving tool:
   option: either drop out of bounds points, or zap mesh to point bounds
   trace object transparency slider should actually slide transparency
   edit brush ramp as symmetric ramp 
+  maybe expanding list of point groups, with ability to toggle linked and active in list
   Danger! coons patch produces discontinuous contours within multiblock meshes!! who knew!?
   sample point generation should be based on lines per mesh square, not total mesh field
   scale to map weights to line thickness, broken line behavior, and under zero_threshhold render as blocked out
@@ -263,6 +264,12 @@ engraving tool:
   implement custom line merge and break to preserve spacing across mesh contraction
   must implement mode based shortcuts in Laxkit
 
+  DONE should have group link so that distortion tools affect all those selected
+  DONE multiple burins for different point groups? (done vie group flipping)
+  DONE pointgroup i/o
+  DONE not exporting correct color
+  DONE move group up or down
+  DONE dup current group (part of new)
   DONE spacingmap in GrowLines needs to use as object point as input, not s,t
   DONE freehand should probably discard final 1/10 second of input which makes all lines terribly pointy on one end
   DONE toggle on trace box to show/not show trace object (should be transparency slider)
