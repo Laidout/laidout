@@ -790,7 +790,7 @@ int DrawableObject::GetAnchor(int anchor_id, PointAnchor **anchor)
 	return 1;
 }
 
-//! Push obj onto the stack. (new objects only!)
+//! Push obj onto the stack. It's count will be incremented. (new objects only!)
 /*! 
  * No previous existence
  * check is done here. For that, use pushnodup().
