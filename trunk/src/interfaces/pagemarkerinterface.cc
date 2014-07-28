@@ -277,7 +277,7 @@ int PageMarkerInterface::Refresh()
 				default:   t=THING_Circle;  break;
 			}
 			//dp->drawthing(p.x,p.y,w,h, 2, t);
-			DBG cerr <<"draw bg color: "<<bg->Pixel()<<endl;
+			//DBG cerr <<"draw bg color: "<<bg->Pixel()<<endl;
 			dp->drawthing(p.x,p.y,w,h, t, fg,bg->Pixel(), lwidth);
 
 			dp->NewFG(standoutcolor(pages.e[c]->page->labelcolor,true));
@@ -489,11 +489,12 @@ int PageMarkerInterface::MouseMove(int x,int y,unsigned int state, const Laxkit:
 {
 	int index=-1;
 	int what=scan(x,y, index);
-	DBG cerr <<"PageMarkerInterface move: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
-	DBG int ci=index/shapes.n;
-	DBG if (ci>=0 && ci<colors.n) {
-	DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<endl;
-	DBG } else cerr <<endl;
+
+	//DBG cerr <<"PageMarkerInterface move: "<<x<<','<<y<<"  i:"<<index<<" what:"<<what<<endl;
+	//DBG int ci=index/shapes.n;
+	//DBG if (ci>=0 && ci<colors.n) {
+	//DBG 	cerr <<"  color: "<<colors.e[ci]->red<<","<<colors.e[ci]->green<<","<<colors.e[ci]->blue<<endl;
+	//DBG } else cerr <<endl;
 
 	if (!buttondown.any()) { 
 		if (hover!=what || index!=hoveri) {
@@ -531,7 +532,6 @@ int PageMarkerInterface::MouseMove(int x,int y,unsigned int state, const Laxkit:
 			//else if (hover==PSTATE_None) PostMessage("");
 		}
 	}
-	DBG cerr <<endl;
 
 	//needtodraw=1;
 	return 0; //MouseMove is always called for all interfaces, return value doesn't inherently matter
