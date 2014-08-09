@@ -21,6 +21,7 @@
 
 #include </usr/include/GraphicsMagick/Magick++.h>
 #include <lax/transformmath.h>
+#include <lax/errorlog.h>
 
 namespace Polyptych {
 
@@ -29,6 +30,7 @@ enum OutFormat {
 	OUT_NONE,
 	OUT_LAIDOUT,
 	OUT_SVG,
+	OUT_CUBE_MAP,
 	OUT_QTVR,
 	OUT_QTVR_FACES,
 	OUT_IMAGE
@@ -52,7 +54,7 @@ class PaperBound
 };
 
 //------------------------ RenderConfig -------------------------------
-class RenderConfig
+class RenderConfig : public Laxkit::anObject
 {
  public:
 	Polyhedron *poly;
@@ -66,10 +68,41 @@ class RenderConfig
 	int generate_images;
 	Basis extra_basis;
 	Laxkit::PtrStack<PaperBound> papers;
+	
+	char *spherefile;
+	Magick::Image spheremap;
+	Magick::Image destination;
 
 	RenderConfig();
 	virtual ~RenderConfig();
 };
+
+
+//--------------------------------- SphereMapper ------------------------------------
+
+class SphereMapper
+{
+  public:
+	RenderConfig *config;
+	SphereMapper();
+	virtual ~SphereMapper();
+
+	int ImageToSphere(Magick::Image image, int sx,int sy,int sw,int sh, double x_fov, double y_fov, 
+				 double theta, double gamma, double rotation, 
+				 const char *tofile, int oversample, 
+				 Laxkit::ErrorLog *log   
+				);
+	int PolyWireframeToSphere(const char *tofile, 
+				 double red,double green,double blue, double alpha, 
+				 double edge_width, 
+				 Polyhedron &poly,
+				 int oversample,      
+				 Basis *extra_basis, 
+				 Laxkit::ErrorLog *log   
+				);
+	//int RollSphere(double theta, double gamma, double rotation);
+};
+
 
 //--------------------------------- Functions ------------------------------------
 int SaveSvgWithImages(Net *net,
@@ -81,7 +114,7 @@ int SaveSvgWithImages(Net *net,
 				 	  int net_only,
 					  int num_papers,
 					  PaperBound **papers,
-					  char **error_ret);
+				 	  Laxkit::ErrorLog *log);
 
 int SphereToPoly(const char *spherefile,
 				 Polyhedron *poly,
@@ -95,7 +128,7 @@ int SphereToPoly(const char *spherefile,
 				 Basis *extra_basis,
 				 int num_papers,
 				 PaperBound **papers,
-				 char **error_ret
+			 	 Laxkit::ErrorLog *log
 				);
 
 int SphereToPoly(Magick::Image spheremap,
@@ -110,8 +143,19 @@ int SphereToPoly(Magick::Image spheremap,
 				 Basis *extra_basis,
 				 int num_papers,
 				 PaperBound **papers,
-				 char **error_ret 
+				 Laxkit::ErrorLog *log
 				);
+
+int SphereToCubeMap(Magick::Image spheremap,
+				 //spacepoint sphere_z,
+				 //spacepoint sphere_x,
+				 int defaultimagewidth, //of one side
+				 const char *tofile,
+				 int AA=2, //how much to oversample
+				 const char *which="012345",
+				 Laxkit::ErrorLog *log=NULL
+				);
+
 
 } //namespace Polyptych
 

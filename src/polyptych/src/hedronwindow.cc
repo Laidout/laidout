@@ -3226,8 +3226,9 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 
 		if (!currentnet) { return 0; }
 		DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
-		char *error=NULL;
+
 		currentnet->rebuildLines();
+		Laxkit::ErrorLog log;
 		int status=SphereToPoly(spherefile,
 				 poly,
 				 currentnet, 
@@ -3240,12 +3241,16 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 				 &extra_basis,
 				 papers.n,
 				 papers.e,
-				 &error
+				 &log
 				);
 		
-		if (error) newMessage(error);
-		else if (status!=0) newMessage("Unknown error encountered during rendering. The developers need to account for this!!!");
-		else newMessage(_("Rendered."));
+		if (log.Errors() || status!=0) {
+			char *err=log.FullMessageStr();
+			if (err) {
+				newMessage(err);
+				delete[] err;
+			} else     newMessage("Unknown error encountered during rendering. The developers need to account for this!!!");
+		} else newMessage(_("Rendered."));
 
 		DBG cerr <<"result of render call: "<<status<<endl;
 		return 0;
