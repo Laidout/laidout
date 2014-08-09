@@ -54,6 +54,9 @@ spheretopoly: lax spheretopoly-gm.o nets.o poly.o
 spheretocube: spheretocube.o
 	$(LD) spheretocube.o -lGraphicsMagick++ $(LAXDIR)/vectors.o -o $@
 
+spheretocubemap: spheretocubemap.o
+	$(LD) spheretocubemap.o -lGraphicsMagick++ $(LAXDIR)/vectors.o -o $@
+
 lax:
 	cd $(LAXDIR) && $(MAKE)
 	cd $(LAXDIR)/interfaces && $(MAKE)

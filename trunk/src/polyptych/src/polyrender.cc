@@ -23,6 +23,8 @@
 #include <lax/interfaces/svgcoord.h>
 #include <lax/transformmath.h>
 #include <lax/attributes.h>
+#include <lax/language.h>
+
 #include "poly.h"
 #include "nets.h"
 #include "polyrender.h"
@@ -109,17 +111,163 @@ RenderConfig::RenderConfig()
 	output=OUT_SVG;
 	oversample=3;
 	generate_images=1;
+
+	spherefile=NULL;
+	//spheremap=NULL;
+	//destination=NULL;
 }
 
 RenderConfig::~RenderConfig()
 {
-	if (filebase) delete[] filebase;
+	if (filebase)   delete[] filebase;
+	if (spherefile) delete[] spherefile;
+	//if (spheremap) delete spheremap;
+	//if (destination) delete destination;
 }
+
+
+//--------------------------------- SphereMapper ------------------------------------
+
+/*! \class SphereMapper
+ * Class to encapsulate rendering to and from equirectangular images.
+ */
+SphereMapper::SphereMapper()
+{
+	config=new RenderConfig;
+}
+
+SphereMapper::~SphereMapper()
+{
+	if (config) config->dec_count();
+}
+
+
+
+//------------------------------------ ImageToSphere() -----------------------------------
+
+int SphereMapper::ImageToSphere(Magick::Image image,
+				 int sx,int sy,int sw,int sh, //!< Subset the source image
+				 double x_fov, double y_fov, //!< Scaling to apply to the source image before mapping, in radians. <=0 for no extra.
+				 double theta, //!< Starting from image center being at (1,0,0), rotate by theta radians around the z axis
+				 double gamma, //!< After theta, rotate by gamma radians toward the z axis, around an axis in the xy plane, through the origin
+				 double rotation, //!< Once offset by theta and gamma, rotate the image by this many radians before mapping
+
+				 const char *tofile, //!< If not null, then save to this file. Else only render to config->spheremap.
+				 int oversample, //!< oversample*oversample per image pixel. 3 seems pretty good in practice. -1 for default
+				 Laxkit::ErrorLog *log   //!< Some descriptive error message. NULL means you'll ignore any return message.
+				)
+{
+	cerr <<" ImageToSphere(): TO TODO!"<<endl;
+	
+	int AA=oversample;
+	if (AA<=0) AA=config->oversample;
+	if (AA<=0) AA=1;
+
+	//int spherewidth =config->spheremap.columns();
+	//int sphereheight=config->spheremap.rows();
+
+	return 1;
+}
+
+/*! Given a polyhedron, render a wirefram version to config->spheremap, where that sphere is the unit sphere centered
+ * at the origin.
+ *
+ * If necessary, you should have called poly.makeedges() before running this.
+ */
+int SphereMapper::PolyWireframeToSphere(const char *tofile, //!< If not null, save to this file in addition to rendering to config->spheremap
+				 double red,double green,double blue, double alpha, //!< color of the wireframe
+				 double edge_width, //!< One unit is one pixel at equator of equirectangular config->spheremap
+				 Polyhedron &poly,
+				 int oversample,      //!< oversample*oversample per image pixel. 3 seems pretty good in practice.
+				 Basis *extra_basis, //!< How to rotate the hedron before putting on the image
+				 Laxkit::ErrorLog *log   //!< Some descriptive error message. NULL means you'll ignore any return message.
+				)
+{
+
+	//*** TO DO
+	cerr <<" PolyWireframeToSphere(): TO TODO!"<<endl;
+
+	ColorRGB color,color2;
+	Image wireimage;
+	wireimage.depth(8);
+	wireimage.magick("TIFF");
+	wireimage.matte(true);
+
+	color.alpha(alpha);
+	color.red(red);
+	color.blue(blue);
+	color.green(green);
+	wireimage.fillColor(color);
+	wireimage.strokeColor(color);
+	wireimage.strokeWidth(2);
+	//wireimage.draw(DrawablePolygon(pgonpoints));
+
+	//double rq,gq,bq;        //rgb are doubles
+
+//	int AA=1;
+//	double aai=1./AA;
+//	double xx[AA],yy[AA],r;
+
+	spacepoint p1,pm,p2;
+//	double theta1, gamma1;
+//	double theta2, gamma2;
+//	double r;
+	
+	for (int c=0; c<poly.edges.n; c++) {
+		 //draw a line for each edge in the hedron
+//		p1=poly.vertices[poly.edges[c]->p1];
+//		p2=poly.vertices[poly.edges[c]->p2];
+//		
+//
+//		if (extra_basis) {
+//			p1=extra_basis->transformTo(p1);
+//			p2=extra_basis->transformTo(p2);
+//			pm=(p1+p2)/2;
+//		}
+//
+//		 //transform (x,y,z) -> (theta,gamma) -> (sx,sy)
+//		r=sqrt(p1.x*p1.x+p1.y*p1.y);
+//		theta1=atan2(p1.y,p1.x);
+//		gamma1=atan(p1.z/r);  
+//
+//		r=sqrt(p2.x*p2.x+p2.y*p2.y);
+//		theta2=atan2(p2.y,p2.x);
+//		gamma2=atan(p2.z/r);  
+
+		DBG cerr <<"Edge "<<c<<": "<<p1.x<<','<<p1.y<<" -> "<<p2.x<<','<<p2.y<<endl;
+
+		//sx=(theta1/M_PI+1) *spherewidth;
+		//sy=(gamma1=M_PI+.5)*sphereheight
+		//if (sx<0) sx=0;
+		//else if (sx>=spherewidth) sx=spherewidth-1;
+		//if (sy<0) sy=0;
+		//else if (sy>=sphereheight) sy=sphereheight-1;
+		//color=spheremap.pixelColor(sx,sy);
+		//rq+=color.red();
+		//gq+=color.green();
+		//bq+=color.blue();
+
+		// *** figure out how to draw from 1 to 2...
+
+	}
+
+
+	 //save the image somewhere..
+	if (tofile) {
+		cerr <<"writing wireframe to "<<tofile<<"..."<<endl;
+		config->spheremap.write(tofile);
+	}
+
+
+
+	return 1; // ***
+}
+
 
 //--------------------------------- Net svg saving ----------------------------
 
 
-/*! Same as Net::SaveSvg(), only assumes images with names like filename001.png
+/*! Same as Net::SaveSvg(), only assumes existing images with names like filename001.png
  * should be mapped to each net face, with the image number corresponding to that
  * polyhedron face index.
  *
@@ -130,11 +278,12 @@ int SaveSvgWithImages(Net *net,
 					  const char *filebase,
 					  flatpoint *imagedims,
 					  flatpoint *imageoffset,
-					  double pixPerUnit,  //!< How many image pixels per unit in net space
-				 	  int net_only,
-					  int num_papers,     //!< Number of predefined papers
-					  PaperBound **papers, //!< net->whichpaper points to papers in this stack
-					  char **error_ret)
+					  double pixPerUnit,      //!< How many image pixels per unit in net space
+				 	  int net_only,           //!< If true, draw the lines only, not the images
+					  int num_papers,         //!< Number of predefined papers
+					  PaperBound **papers,    //!< net->whichpaper points to papers in this stack
+				 	  Laxkit::ErrorLog *log   //!< Some descriptive error message. NULL means you'll ignore any return message.
+					)
 {
 	if (!net || !net->lines.n) return 1;
 
@@ -143,7 +292,8 @@ int SaveSvgWithImages(Net *net,
 		cout <<"Problem opening "<<(filename?filename:"(no name)")<<"for writing."<<endl;
 		return 1;
 	}
-	cout <<"Writing SVG to "<<filename<<"..."<<endl;
+	cerr <<"Writing SVG to "<<filename<<"..."<<endl;
+
 
 	 // Define the transformation matrix: net to paper.
 	 // For simplicity, we assume that the bounds in paper hold the size of the paper,
@@ -298,8 +448,7 @@ int SaveSvgWithImages(Net *net,
 
 /*! Return 0 for success, nonzero for error.
  *
- * If there is an error, then return some description of it in error_ret. Anything previously
- * in error_ret is written over, with a new char[], which must be delete[]'d.
+ * If there is an error, then return some description of it in log.
  *
  */
 int SphereToPoly(const char *spherefile,
@@ -314,7 +463,7 @@ int SphereToPoly(const char *spherefile,
 				 Basis *extra_basis, //!< How to rotate the hedron before putting on the image
 				 int num_papers,     //!< Number of predefined papers
 				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
-				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
+				 Laxkit::ErrorLog *log   //!< Some descriptive error message. NULL means you'll ignore any return message.
 				)
 {
 	Image sphere;
@@ -326,14 +475,11 @@ int SphereToPoly(const char *spherefile,
 
 		char errormes[300];
 		errormes[0]=0;
-		sprintf(errormes,"Error loading %s.",spherefile?spherefile:"(no file given");
+		sprintf(errormes,"Error loading %s.",spherefile?spherefile:"(no file given)");
 
 		cerr <<errormes<<endl;
 
-		if (error_ret) {
-			*error_ret=NULL;
-			makestr(*error_ret,errormes);
-		}
+		if (log) log->AddMessage(errormes, ERROR_Fail);
 		return 1;
 	}
 
@@ -353,7 +499,7 @@ int SphereToPoly(const char *spherefile,
 	int status=SphereToPoly(sphere, poly, net, maxwidth, filebase, output, oversample, generate_images, net_only, extra_basis,
 							num_papers,
 							papers,
-							error_ret);
+							log);
 	if (fbase!=filebase) delete[] fbase;
 
 	return status;
@@ -380,10 +526,16 @@ int SphereToPoly(Image spheremap,
 				 Basis *extra_basis, //!< How to rotate the hedron before putting on the image
 				 int num_papers,     //!< Number of predefined papers
 				 PaperBound **papers, //!< net->whichpaper points to papers in this stack
-				 char **error_ret   //!< Some descriptive error message. NULL means you'll ignore any return message.
+				 Laxkit::ErrorLog *log   //!< Some descriptive error message. NULL means you'll ignore any return message.
 				)
 {
-	if (!poly || (output!=OUT_NONE && !net)) return 1;
+	if (!poly || (output!=OUT_NONE && !net)) {
+		if (log) {
+			if (!poly) log->AddMessage(_("No polyhedron specified. Render failed."), ERROR_Fail);
+			else log->AddMessage(_("No net specified. Render failed."), ERROR_Fail);
+		}
+		return 1;
+	}
 
 	int AA=oversample;
 	int spherewidth=spheremap.columns(),
@@ -631,33 +783,214 @@ int SphereToPoly(Image spheremap,
 		fclose(f);
 
 	} else if (output==OUT_SVG) {
-		cout <<"outputting svg...."<<endl;
+		cerr <<"outputting svg...."<<endl;
 		sprintf(filename,"%s.svg",filenamebase.c_str());
 
 		return SaveSvgWithImages(net, filename,filenamebase.c_str(),imagedims,imageoffset,pixperunit,net_only,num_papers,papers,NULL);
 
+	} else if (output==OUT_CUBE_MAP) {
+		cerr <<"*** still need to implement cube image out!!"<<endl;
+		//fclose(f);
+		return 0;
+
 	} else if (output==OUT_IMAGE) {
 		sprintf(filename,"%s.tif",filenamebase.c_str());
 		//FILE *f=fopen(filename,"w");
-		cout <<"*** still need to implement image out!!"<<endl;
+		cerr <<"*** still need to implement image out!!"<<endl;
 		//fclose(f);
 		return 0;
 
 	} else if (output==OUT_QTVR) {
 		sprintf(filename,"%s.mov",filenamebase.c_str());
-		cout <<"*** still need to implement qtvr out!!"<<endl;
+		cerr <<"*** still need to implement qtvr out!!"<<endl;
 		return 0;
 
 	} else if (output==OUT_QTVR_FACES) { 
-		cout <<"*** still need to implement qtvrfaces out!!"<<endl;
+		cerr <<"*** still need to implement qtvrfaces out!!"<<endl;
 		sprintf(filename,"%s.jpg",filenamebase.c_str());
 		return 0;
 
 	} else {
-		cout <<"*** outputting nothing!"<<endl;
+		cerr <<"*** outputting nothing!"<<endl;
 	}
 
 
+	return 0;
+}
+
+/*! Creates a compact cube representation of equirectangular image spheremap.
+ * Writes a jpg to "tofile.jpg".
+ *
+ * faces in cube map will be:
+ * <pre>
+ *   5*            012
+ *   4* 0 1 2  ->  345 (*rot 90ccw)
+ *   3*
+ * </pre>
+ *
+ */
+int SphereToCubeMap(Magick::Image spheremap,
+				 //spacepoint sphere_z,
+				 //spacepoint sphere_x,
+				 int defaultimagewidth, //of one side of the cube. final image is w*3 by w*2
+				 const char *tofile,
+				 int AA, //!< amount to oversample, default 2
+				 const char *which, //!< default "012345", a list of which faces to remap
+				 Laxkit::ErrorLog *log
+				)
+{
+
+	int spherewidth=spheremap.columns();
+	int sphereheight=spheremap.rows();
+
+	Geometry geometry(defaultimagewidth*3,defaultimagewidth*2);
+	//Color color;
+	ColorRGB color;
+	Image faceimage(geometry,color);
+	faceimage.magick("TIFF");
+
+	//Basis sphere_basis(spacepoint(0,0,0),sphere_z,sphere_x);;
+	Basis sphere_basis;
+	sphere_basis.x=rotate(sphere_basis.x, spacevector(0,0,1),M_PI*.75,0);
+	sphere_basis.y=rotate(sphere_basis.y, spacevector(0,0,1),M_PI*.75,0);
+
+	spacepoint p;
+	//double theta,gamma;
+	int c,x,y,sx,sy,c2,cx,cy;
+	double aai=1./AA;
+	double xx[AA],yy[AA],r;
+	char filename[500],filenametiff[500];
+	const char *filesuf="012345";
+
+	//unsigned int rq,gq,bq;
+	double rq,gq,bq;
+	int offx, offy;
+
+	for (c=0; c<6; c++) {
+		offx=defaultimagewidth*(c%3);
+		offy=defaultimagewidth*(c/3);
+
+		if (!strchr(which,filesuf[c])) {
+			cout <<"Skipping number "<<filesuf[c]<<endl;
+			continue;
+		}
+
+
+		cout <<"Working on face #"<<c<<"..."<<endl;
+		
+		 // loop over each pixel width and height of target image for face
+		for (x=0; x<defaultimagewidth; x++) {
+			 //xx and yy are parts of coordinates in xyz space, range [-1,1]
+			for (c2=0; c2<AA; c2++) xx[c2]=((double)x+aai*(c2+.5))/defaultimagewidth*2-1;
+
+			for (y=0; y<defaultimagewidth; y++) {
+				for (c2=0; c2<AA; c2++) yy[c2]=((double)y+aai*(c2+.5))/defaultimagewidth*2-1;
+				rq=gq=bq=0;
+
+				 //for antialiasing, break down the pixel to a region AA x AA
+				 //oversample to get pixel color
+				for (cx=0; cx<AA; cx++) {
+				  for (cy=0; cy<AA; cy++) {
+					  
+					 //transform (xx,yy) -> (x,y,z)
+					 //const char *filesuf="021354";
+					switch (c) {
+						 //faces in cube map will be:
+						 //  5*            012
+						 //  4* 0 1 2  ->  345 (*rot 90ccw)
+						 //  3*
+						case 0: p=spacepoint(      1, xx[cx], yy[cy]); break;
+						case 2: p=spacepoint(     -1,-xx[cx], yy[cy]); break; 
+						case 1: p=spacepoint(-xx[cy],      1, yy[cy]); break;
+						case 4: p=spacepoint( yy[cy],     -1, -xx[cx]); break;
+						case 5: p=spacepoint( yy[cy], xx[cx],     -1); break;
+						case 3: p=spacepoint( yy[cy], -xx[cx],      1); break;
+					}
+//					----------------
+//					switch (c) {
+//						case 0: p=spacepoint(      1, xx[cx], yy[cy]); break;
+//						case 2: p=spacepoint(     -1,-xx[cx], yy[cy]); break;
+//						case 1: p=spacepoint(-xx[cx],      1, yy[cy]); break;
+//						case 3: p=spacepoint( xx[cx],     -1, yy[cy]); break;
+//						case 5: p=spacepoint(-yy[cy], xx[cx],      1); break;
+//						case 4: p=spacepoint( yy[cy], xx[cx],     -1); break;
+//					}
+					transform(p,sphere_basis);
+
+					 //transform (x,y,z) -> (sx,sy)
+					r=sqrt(p.x*p.x+p.y*p.y);
+					sx=(int)((atan2(p.y,p.x)/M_PI+1)/2*spherewidth);
+					sy=(int)((atan(p.z/r)/M_PI+.5)*sphereheight);
+					if (sx<0) sx=0;
+					else if (sx>=spherewidth) sx=spherewidth-1;
+					if (sy<0) sy=0;
+					else if (sy>=sphereheight) sy=sphereheight-1;
+					
+					//cout <<"p="<<p.x<<','<<p.y<<','<<p.z<<"  -->  "<<sx<<","<<sy<<endl;
+					//cout <<x<<','<<y<<"  -->  "<<sx<<","<<sy<<endl;
+
+					try { //using ColorRGB
+						//cout <<".";
+						color=spheremap.pixelColor(sx,sy);
+						//cerr <<"alpha: "<<color.alpha()<<" ";
+						if (color.alpha()>0) { //defaults to jpeg file, can't have alpha...
+							rq=gq=bq=0;
+							color.alpha(0);
+							break;
+						}
+
+						rq+=color.red();
+						gq+=color.green();
+						bq+=color.blue();
+					} catch (Exception &error_ ) {
+						color.red(0);
+						color.green(0);
+						color.blue(0);
+						cout <<"*";
+					} catch (exception &error) {
+						color.red(0);
+						color.green(0);
+						color.blue(0);
+						cout <<"%";
+					}
+				  }
+				}
+				rq/=AA*AA;
+				gq/=AA*AA;
+				bq/=AA*AA;
+				//cerr <<"r:"<<rq<<" g:"<<gq<<" b:"<<bq<<endl;
+				//color.redQuantum(rq);
+				//color.greenQuantum(gq);
+				//color.blueQuantum(bq);
+				color.red(rq);
+				color.green(gq);
+				color.blue(bq);
+
+				 //finally write the pixel
+				faceimage.pixelColor(x+offx,y+offy, color);
+
+			}
+		}
+
+	}
+
+	sprintf(filename,"%s.jpg",tofile);
+	sprintf(filenametiff,"%s.tiff",tofile);
+
+	 //save the image somewhere..
+	//faceimage.compressType(LZWCompression);
+	faceimage.depth(8);
+	//faceimage.write(filenametiff);
+
+	faceimage.magick("JPG");
+	faceimage.quality(80);
+	faceimage.write(filename);
+
+	//cout <<"done with image"<<endl;
+
+	//faceimage.magick("TIFF");
+	
+	cout <<"All done!"<<endl;
 	return 0;
 }
 
