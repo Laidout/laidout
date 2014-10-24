@@ -456,7 +456,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	
 	 //------------ write out document attributes
 	 //****** all the scribushints.slahead blocks are output as DOCUMENT attributes
-	 //		  EXCEPT: ANZPAGES, PAGEHEIGHT, PAGEWIDTH, ORIENTATION
+	 //		  EXCEPT: BOOK, ANZPAGES, PAGEHEIGHT, PAGEWIDTH, ORIENTATION
 	fprintf(f,"  <DOCUMENT \n"
 			  "    ANZPAGES=\"%d\" \n",totalnumpages); //number of pages
 	int dodefaultdoc=1;
@@ -472,6 +472,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 				name =slahead->attributes.e[c]->name;
 				value=slahead->attributes.e[c]->value;
 				if (!strcmp(name,"ANZPAGES")) continue;
+				if (!strcmp(name,"BOOK")) continue;
 				if (!strcmp(name,"content:")) continue; //shouldn't happen, but just in case
 				fprintf(f,"    %s=\"%s\"\n", name, value?value:"");
 			}
@@ -483,7 +484,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		fprintf(f,"    AUTHOR=\"\" \n"
 				  "    ABSTPALTEN=\"11\" \n"  //Distance between Columns in automatic Textframes
 				  "    AUTOSPALTEN=\"1\" \n" //Number of Colums in automatic Textframes
-				  //"    BOOK***** " *** has facing pages if present: doublesidedsingles
+				  "    BOOK=\"0\" \n"       //has facing pages if present, assume export will always be single scribus pages
 				  "    BORDERBOTTOM=\"0\" \n"	//default margins!
 				  "    BORDERLEFT=\"0\" \n"	
 				  "    BORDERRIGHT=\"0\" \n"	
