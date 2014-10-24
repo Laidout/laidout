@@ -223,22 +223,22 @@ Clean up mesh/patch controls:
   DONE delete should not delete whole object
 
 engraving tool:
+  BUG: engraver lines with 1 or 2 points FAIL BADLY load in problem?
+  BUG: panel draws on top, but you can still click on page marker interface below
+
+  (done, but needs testing) with i/o for dashes, traces, direction, spacing 
+  need to be able to load and save trace object and position
   should have minimum dash density control, like zero==50% 
   need some kind of smooth out: smooth out width, and smooth out path
   should probably abstract control panel creation so we don't have to hardcode everything all the time
   direction map is not showing actual direction
-  when trace object management worked out, need to fully implement relevant bits in data->duplicate()
-  when flipping between objects, gives to indication that we are on a new object, like a thick outline
+  when flipping between objects, gives no indication that we are on a new object, like a thick outline
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   invert trace sampling: sample white instead of black
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   trace object needs to be in page context, not object context (or must be default option)
-  trace object should still be visible when no actual data
-  need to be able to load and save trace object and position
   need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
-  on canvas direction and spacing controller
-  allow temp override of linked to adjust only current?
     -> options to insert various predefined patterns
   'f' should center objects in resulting svg
 
@@ -262,8 +262,12 @@ engraving tool:
   turbulence needs optional direction constraints, size of turbulent cell, and per line turbulence
     would be better if turbulence could be a field effect, not independently on each sample point
   implement custom line merge and break to preserve spacing across mesh contraction
+  allow temp override of linked to adjust only current?
   must implement mode based shortcuts in Laxkit
 
+  DONE on canvas direction and spacing controller
+  DONE trace object should still be visible when no actual data
+  DONE when trace object management worked out, need to fully implement relevant bits in data->duplicate()
   DONE should have group link so that distortion tools affect all those selected
   DONE multiple burins for different point groups? (done vie group flipping)
   DONE pointgroup i/o
@@ -864,7 +868,8 @@ action/shortcut selector overlay
 
 importing images should default the image id to a variant of the file name
 
-ImageImport dialog: (actually, needs a total redesign)
+ImageImport dialog: (actually, needs a total redesign) import images importimage
+  should have preview for alignment options.. grab destination page to show preview
   DONE  file bookmarks!!!!! NOW!! auto one for examples, or save as template
   Choose/Review tabbed window
   horizontal stack frame between choose/review and preview window
