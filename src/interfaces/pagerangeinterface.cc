@@ -646,7 +646,7 @@ int PageRangeInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 	if (!dragged) {
 		if ((state&LAX_STATE_MASK)==ControlMask) {
 			if (!doc->pageranges.n) InstallDefaultRange();
-			if (range>=0 && range<doc->pageranges.n && index>doc->pageranges.e[range]->start && index<doc->pageranges.e[range]->end) {
+			if (range>=0 && range<doc->pageranges.n && index>doc->pageranges.e[range]->start && index<=doc->pageranges.e[range]->end) {
 				 //Split range if clicking on an index in a range, but not on range endpoints
 				char *name=NULL;
 				int f;
