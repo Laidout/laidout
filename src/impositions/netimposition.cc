@@ -388,7 +388,7 @@ ObjectDef *makeNetImpositionObjectDef()
 			"enum",
 			NULL, "0",
 			0,NULL); // *** 0,0,CreateNetListEnum);
-	cerr << " *** need to make enum list work again in makeNetImpositionObjectDef()"<<endl;
+	DBG cerr << " *** need to make enum list work again in makeNetImpositionObjectDef()"<<endl;
 	return sd;
 }
 
