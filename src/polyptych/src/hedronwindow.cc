@@ -3222,9 +3222,15 @@ int HedronWindow::Event(const EventData *data,const char *mes)
 		cout <<"**** must implement background rendering, and multinet output!!"<<endl;
 
 		const StrEventData *s=dynamic_cast<const StrEventData*>(data);
-		if (!s || !s->str || !*s->str) return 1;
+		if (!s || !s->str || !*s->str) {
+			DBG cerr <<" Missing destination to render to."<<endl;
+			return 1;
+		}
 
-		if (!currentnet) { return 0; }
+		if (!currentnet) { 
+			DBG cerr <<" Missing current net to render with."<<endl;
+			return 0;
+		}
 		DBG cerr <<"\n\n-------Rendering, please wait-----------\n"<<endl;
 
 		currentnet->rebuildLines();
