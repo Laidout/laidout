@@ -372,6 +372,9 @@ LaidoutViewport::LaidoutViewport(Document *newdoc)
 	//drawflags=DRAW_AXES;
 	drawflags=0;
 	doc=newdoc;
+	if (!doc) {
+		doc=laidout->curdoc;
+	}
 	if (doc) doc->inc_count();
 	dp->NewTransform(1.,0.,0.,-1.,0.,0.); //***this should be adjusted for physical dimensions of monitor screen
 	
@@ -3033,6 +3036,10 @@ Value *LaidoutViewport::duplicate()
 int LaidoutViewport::n()
 {
 	return 3; //limbo, spread, papergroup
+	//int n=1;
+	//if (i==1 && spread) n++;
+	//if (i==2 && papergroup) n++;
+	//return n;
 }
 
 #define VOBJE_Limbo       0
@@ -3055,15 +3062,17 @@ int LaidoutViewport::object_e_info(int i, const char **name, const char **Name, 
 
 	if (name) {
 		if (i==0) *name="limbo";
-		else if (i==1 && spread) *name="spread";
-		else if (i==2 && papergroup) *name="papergroup";
+		else if (i==1) *name="spread";
+		else if (i==2) *name="papergroup";
 		else *name=NULL;
 	}
 	if (Name) {
 		if (i==0) *Name=_("limbo");
 		else if (i==1 && spread) *Name=_("spread");
-		else if (i==2 && papergroup) *Name=_("papergroup");
-		else *Name=NULL;
+		else if (i==2) {
+			if (papergroup && papergroup->name) *Name=papergroup->name;
+			else *Name=_("papergroup");
+		} else *Name=NULL;
 	}
 	if (isarray) {
 		*isarray=0;
@@ -3081,8 +3090,12 @@ const double *LaidoutViewport::object_transform(int i)
 const char *LaidoutViewport::object_e_name(int i)
 {
 	if (i==0) return "limbo";
-	if (i==1 && spread) return "spread";
-	if (i==2 && (papergroup || (spread && spread->papergroup))) return "papergroup";
+	//if (i==1 && spread) return "spread";
+	if (i==1) return "spread";
+	if (i==2) {
+		//if (papergroup && papergroup->name) return papergroup->name;
+		return "papergroup";
+	}
 	return NULL;
 }
 
