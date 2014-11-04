@@ -12,6 +12,8 @@ Those are purged with each release.
 
 ---- serious bugs to fix right now:
 
+create new pane should dup old pane.. currently divide viewport, removes document focus
+
 engraver lines with 1 or 2 points FAIL BADLY load in problem?
 
 pdf out needs clone deref
@@ -87,10 +89,6 @@ Lightness slider appears black to white, but the middle is full color, needs seg
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
 
 SimpleColorAttribute() should have double rgbaf available, and various css3 stuff
-
-make singles 16 pages, edit imposition, select booklet. Defaults to 4 pages!
-
-page range, control click on page 1 less than a range won't let you click for new range
 
 impositioneditor not remembering window position
 
@@ -198,6 +196,7 @@ TreeSelector:
   makeinwindow() doesn't account for columns
   option to use markup for labels
   objecttree printing columns TWICE
+  spacing for column heads is NOT selecting for bounds
 
 image import preview should say pixel size of image
 
@@ -295,25 +294,40 @@ curves:
   DONE move CurveInfo to own file.
 
 PathInterface:
-  clarify export for weighted paths, use outlinecache and areacache as needed
-  delete single point -> crash!
-  add/remove points, close/open path needs to adjust weight nodes
+  clarify export for weighted paths, use outlinecache and areacache as needed, check all filetypes exporters
+  add, remove points, close, open path, cut(done) needs to adjust weight nodes
+  debug deleting points on weight nodes
+  debug reverse path effect on weight nodes
+  need numerical entry for all weight node characteristics
+  finish implementing joins. need to clarify weight behavior at corner joins
+  weight computation is currently done based on even t spacing, but probably should be mapped based on distance
 
-  line join round should add extra point for really wide angles to make them more circular
+  should not create new control points by pressing cntl, unless there is movement
   ApplyTransform() and MatchTransform() should adjust scaling of width nodes?
   custom caps.. define cap to a horizontal line, take endpoints and endpoint tangents, return the cap warped to fit the tangents
   custom dashes, with custom start/end dash caps
   need some kind of extrema fill in for angled paths, so it matches sweep of whole segment, not just endpoint sweep lines
   should have shortcut to offset ALL weight nodes, or angle ALL nodes
   how to deal with bbox when using wacky weights??
-  need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret, &top, &bottom, &angle)
+  need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret).. done is GetWeight(t, &width, &offset, &angle)
   displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
   maybe should revisit PathOperator stuff, such as for spiro paths
   need way to turn off selectability of path points (thus leaving only width nodes selectable)
   need path combine (combine path stacks of multiple PathsData)
   need break apart (make new PathsData from each in paths stack)
+  need convert to straight lines (no bez controls)
+  need convert to straight bezier lines
   need special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
+  need mechanism to be able to add custom path actions to context menu
+  per vertex join type?
+  linestyles are always output independently, can't currently cascade with current code
+  if background is green or red, hard to see the direction indicator
+  line join round should add extra point for really wide angles to make them more circular
 
+  DONE straight (non bez) line segments fools join mechanism
+  DONE creation of new weight node must grab approximate weight
+  DONE create 3 vertex path with 2 weight nodes, delete 3rd point, click on rotate part of second weight node.. crash!
+  DONE? (can't duplicate) delete single point -> crash!
   DONE discontinuity in outline at point boundaries?
   DONE displayer->drawFormattedPoints needs to be finalized
   DONE curvemap needs wraparound mode for approximating widths on curved lines
@@ -1262,5 +1276,8 @@ DONE need page number overlay
 DONE? why no icon in menus? <- not sure what it means anymore, there do seem to be icons in menus 
 DONE i broke reimpose due to margin area shift
 DONE Spread Editor memory hole
+DONE make singles 16 pages, edit imposition, select booklet. Defaults to 4 pages!
+DONE page range, control click on page 1 less than a range won't let you click for new range
+
 
 
