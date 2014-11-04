@@ -57,21 +57,25 @@ class PaperBound
 class RenderConfig : public Laxkit::anObject
 {
  public:
+	char *spherefile; //corresponding to spheremap source
+	Magick::Image spheremap;
+
 	Polyhedron *poly;
+	Basis extra_basis;
+
 	Net *net;
-	Net **nets;
-	int numnets;
-	int maxwidth;
-	char *filebase;
+	Laxkit::RefPtrStack<Net> nets;
+
+	Laxkit::PtrStack<PaperBound> papers;
+
 	int output;
 	int oversample;
 	int generate_images;
-	Basis extra_basis;
-	Laxkit::PtrStack<PaperBound> papers;
 	
-	char *spherefile;
-	Magick::Image spheremap;
-	Magick::Image destination;
+	int maxwidth;
+	char *dest_imgfilebase;
+	Magick::Image destination; //an equirectangular
+
 
 	RenderConfig();
 	virtual ~RenderConfig();
@@ -84,8 +88,10 @@ class SphereMapper
 {
   public:
 	RenderConfig *config;
+
 	SphereMapper();
 	virtual ~SphereMapper();
+	virtual void SetRenderConfig(RenderConfig *newconfig);
 
 	int ImageToSphere(Magick::Image image, int sx,int sy,int sw,int sh, double x_fov, double y_fov, 
 				 double theta, double gamma, double rotation, 
@@ -100,7 +106,7 @@ class SphereMapper
 				 Basis *extra_basis, 
 				 Laxkit::ErrorLog *log   
 				);
-	//int RollSphere(double theta, double gamma, double rotation);
+	int RollSphere(double theta, double gamma, double rotation);
 };
 
 

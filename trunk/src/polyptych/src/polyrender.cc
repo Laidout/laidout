@@ -28,7 +28,9 @@
 #include "poly.h"
 #include "nets.h"
 #include "polyrender.h"
+
 #include <lax/lists.cc>
+#include <lax/refptrstack.cc>
 
 #include <fstream>
 
@@ -104,10 +106,8 @@ RenderConfig::RenderConfig()
 {
 	poly=NULL;
 	net=NULL;
-	nets=NULL;
-	numnets=0;
 	maxwidth=500;
-	filebase=newstr("render");
+	dest_imgfilebase=newstr("render");
 	output=OUT_SVG;
 	oversample=3;
 	generate_images=1;
@@ -119,10 +119,13 @@ RenderConfig::RenderConfig()
 
 RenderConfig::~RenderConfig()
 {
-	if (filebase)   delete[] filebase;
+	if (dest_imgfilebase)   delete[] dest_imgfilebase;
 	if (spherefile) delete[] spherefile;
 	//if (spheremap) delete spheremap;
 	//if (destination) delete destination;
+
+	if (net)  net ->dec_count();
+	if (poly) poly->dec_count();
 }
 
 
@@ -141,9 +144,20 @@ SphereMapper::~SphereMapper()
 	if (config) config->dec_count();
 }
 
+/*! If newconfig is null, then nothing is done.
+ */
+void SphereMapper::SetRenderConfig(RenderConfig *newconfig)
+{
+	if (!newconfig) return;
+
+	if (config) config->dec_count();
+	config=newconfig;
+	config->inc_count(); 
+}
 
 
-//------------------------------------ ImageToSphere() -----------------------------------
+
+//------------------------------------ ImageToSphere() 
 
 int SphereMapper::ImageToSphere(Magick::Image image,
 				 int sx,int sy,int sw,int sh, //!< Subset the source image
@@ -261,6 +275,14 @@ int SphereMapper::PolyWireframeToSphere(const char *tofile, //!< If not null, sa
 
 
 	return 1; // ***
+}
+
+/*! Roll an equirectangular image to another equirectangular image.
+ */
+int SphereMapper::RollSphere(double theta, double gamma, double rotation)
+{
+	cout << " *** Todo! SphereMapper::RollSphere()"<<endl;
+	return 1;
 }
 
 
