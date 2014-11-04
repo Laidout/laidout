@@ -124,6 +124,21 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(gi);
 	gi->dec_count();
 	
+	 //------Paths
+	i=new LPathInterface(id++,NULL);
+	existingpool->push(i); //2nd null is pathop pool
+	i->dec_count();
+
+	 //------Freehand
+	i=new FreehandInterface(NULL,id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+
+	 //------Color Patch
+	i=new LColorPatchInterface(id++,NULL);
+	existingpool->push(i);
+	i->dec_count();
+	
 	 //------Image Patch
 	LImagePatchInterface *ip=new LImagePatchInterface(id++,NULL);
 	ip->style=IMGPATCHI_POPUP_INFO;
@@ -131,21 +146,6 @@ RefPtrStack<anInterface> *GetBuiltinInterfaces(RefPtrStack<anInterface> *existin
 	existingpool->push(ip);
 	ip->dec_count();
 	
-	 //------Color Patch
-	i=new LColorPatchInterface(id++,NULL);
-	existingpool->push(i);
-	i->dec_count();
-	
-	 //------Freehand
-	i=new FreehandInterface(NULL,id++,NULL);
-	existingpool->push(i);
-	i->dec_count();
-
-	 //------Paths
-	i=new LPathInterface(id++,NULL);
-	existingpool->push(i); //2nd null is pathop pool
-	i->dec_count();
-
 	 //-----Engraver
 	i=new EngraverFillInterface(id++,NULL);
 	existingpool->push(i);
