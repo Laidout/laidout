@@ -24,6 +24,7 @@
 #include "palettes.h"
 #include "headwindow.h"
 #include "plaintextwindow.h"
+#include "interfaces/objecttree.h"
 #include "language.h"
 
 // if gl:
@@ -131,16 +132,31 @@ anXWindow *newViewWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long s
 
 //------------------------ newSpreadEditorFunc
 /*! \ingroup mainwindows
- * \brief SpreadEditro window generator for use in HeadWindow.
+ * \brief SpreadEditor window generator for use in HeadWindow.
  */
 anXWindow *newSpreadEditorFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
 	return new SpreadEditor(parnt,ntitle,ntitle,style, 0,0,0,0,1, NULL,NULL);
 }
 
+//------------------------ newLayersFunc
+/*! \ingroup mainwindows
+ * \brief Layers window generator for use in HeadWindow.
+ */
+anXWindow *newObjectTreeWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
+{
+	ViewWindow *view=dynamic_cast<ViewWindow*>(laidout->lastview);
+
+	return new ObjectTreeWindow(parnt,ntitle,ntitle,
+								nowner ? nowner->object_id : 0,  NULL,
+								dynamic_cast<ObjectContainer*>(view ? view->viewport : NULL));
+								//dynamic_cast<ObjectContainer*>(laidout->lastview));
+								//dynamic_cast<ObjectContainer*>(laidout));
+}
+
 //------------------------ newHelpWindowFunc
 /*! \ingroup mainwindows
- * \brief SpreadEditor window generator for use in HeadWindow.
+ * \brief Help window generator for use in HeadWindow.
  */
 anXWindow *newHelpWindowFunc(anXWindow *parnt,const char *ntitle,unsigned long style, anXWindow *nowner)
 {
@@ -282,6 +298,7 @@ HeadWindow::HeadWindow(Laxkit::anXWindow *parnt,const char *nname,const char *nt
 	AddWindowType("CommandWindow","Command Prompt",0,newCommandWindowFunc,0);
 	AddWindowType("PaletteWindow","Palette",PALW_DBCLK_TO_LOAD,newPaletteWindowFunc,0);
 	AddWindowType("PlainTextWindow","Text Editor",0,newPlainTextWindowFunc,0);
+	AddWindowType("ObjectTreeWindow","Layers",0,newObjectTreeWindowFunc,0);
 	//AddWindowType("ColorSliders","Color picker",0,newColorSlidersFunc,0);
 	//AddWindowType("HedronWindow","Polyhedron Unwrapper",0,newHedronWindowFunc,0);
 	//AddWindowType("ButtonBox","Buttons",
