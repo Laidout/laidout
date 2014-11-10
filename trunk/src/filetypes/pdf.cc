@@ -1581,11 +1581,11 @@ static void pdfPaths(FILE *f,
 
 	 //fill and/or stroke
 	if (fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
-		if (fstyle->fillrule==EvenOddRule) appendstr(stream,"B*\n"); //fill and stroke
+		if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"B*\n"); //fill and stroke
 		else appendstr(stream,"B\n"); //fill and stroke
 
 	} else if (fstyle && fstyle->hasFill()) {
-		if (fstyle->fillrule==EvenOddRule) appendstr(stream,"f*\n"); //fill and stroke
+		if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"f*\n"); //fill and stroke
 		else appendstr(stream,"f\n"); //fill only
 
 	} else if (lstyle && lstyle->hasStroke()) {

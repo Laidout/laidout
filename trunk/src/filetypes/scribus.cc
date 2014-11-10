@@ -1562,7 +1562,7 @@ static void scribusdumpobj(FILE *f,int &curobj,PtrStack<PageObject> &pageobjects
 				  	  "    fillRule=\"%d\" \n",     //0 for Non zero winding rule, 1 for Even-Odd winding rule
 						fstyle->color.red, fstyle->color.green, fstyle->color.blue,
 						1-fstyle->color.alpha/65535.,
-						fstyle->fillrule==EvenOddRule ? 1 : 0);
+						fstyle->fillrule==LAXFILL_EvenOdd ? 1 : 0);
 		} else {
 			fprintf(f,"    PCOLOR=\"None\"\n"
 				  	  "    SHADE=\"100\" \n"        //shading for fill
