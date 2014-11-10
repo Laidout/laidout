@@ -66,9 +66,7 @@ void installSvgFilter()
 //------------------------------------ SvgExportConfig ----------------------------------
 
 /*! \class SvgExportConfig
- * \brief Holds extra config for image export.
- *
- * \todo currently no extra settings, but could be image type, and background color to use, or transparency...
+ * \brief Holds extra config for export.
  */
 class SvgExportConfig : public DocumentExportConfig
 {
@@ -109,16 +107,23 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
     if (limbo)      limbo->inc_count();
     if (papergroup) papergroup->inc_count();
 
-	use_mesh=false;
-	use_powerstroke=false;
-	//use_powerstroke=true;
+	SvgExportConfig *svgconf=dynamic_cast<SvgExportConfig*>(config);
+	if (svgconf) {
+		use_mesh       =svgconf->use_mesh;
+		use_powerstroke=svgconf->use_powerstroke;
+	} else {
+		use_mesh=false;
+		use_powerstroke=false;
+		//use_powerstroke=true;
+	}
 }
 
 //! Set the filter to the Image export filter stored in the laidout object.
 SvgExportConfig::SvgExportConfig()
 {
 	use_mesh=false;
-	use_powerstroke=true;
+	//use_powerstroke=true;
+	use_powerstroke=false;
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
@@ -294,53 +299,129 @@ static int svgaddpath(FILE *f,Coordinate *path)
 	return n;
 }
 
+/*! Returns the number of points processed of points.
+ */
 static int svgaddpath(FILE *f,flatpoint *points,int n)
 {
 	if (n<=0) return 0;
 
 	 //build the path to draw
 	flatpoint c1,c2,p2;
-	int i=0;
 	int np=1; //number of points seen
-	bool isclosed=(points[n-1].info&LINE_Closed);
-	bool done=false;
+	bool onfirst=true;
+	int ii=0;
+	int ifirst=0;
+	while (ii<n && (points[ii].info&LINE_Bez)!=0 && (points[ii].info&LINE_Vertex)==0) ii++;
 
-	fprintf(f,"M %.10g %.10g ",points[i].x,points[i].y);
-	do { //one loop per vertex point
-		i++;
-		if (i==n) break;
-
+	for (int i=ii; i<n; i++) {
+		 //one loop per vertex point
 		np++;
 
-		//p2 now points to first Coordinate after the first vertex
-		if (!(points[i].info&LINE_Vertex)) {
+		if (onfirst) {
+			fprintf(f,"M %.10g %.10g ",points[i].x,points[i].y);
+			onfirst=false;
+			ifirst=i;
+			i++;
+		}
+
+		//i now points to first Coordinate after the first vertex
+		if (points[i].info&LINE_Bez) {
 			 //we do have control points
 			 //by convention, there MUST be 2 cubic bezier controls
 			c1=points[i];
-			i++;
+			ii=-1;
+			if (points[i].info&LINE_Open) ii=-2;
+			else if (points[i].info&LINE_Closed) {
+				ii=i;
+				i=ifirst;
+			} else i++;
 
-			if (i==n) { i=0; done=true; }
-			c2=points[i];
-			i++;
+			if (ii!=-2) {
+				c2=points[i];
 
-			p2=points[i];
-			i++;
+				if (points[i].info&LINE_Open) ii=-2;
+				else if (points[i].info&LINE_Closed) {
+					ii=i;
+					i=ifirst;
+				} else i++;
 
-			fprintf(f,"C %.10g %.10g %.10g %.10g %.10g %.10g ",
-					c1.x,c1.y,
-					c2.x,c2.y,
-					p2.x,p2.y);
+				if (ii!=-2) {
+					p2=points[i];
+
+					if (ii>=0) i=ii;
+
+					fprintf(f,"C %.10g %.10g %.10g %.10g %.10g %.10g ",
+							c1.x,c1.y,
+							c2.x,c2.y,
+							p2.x,p2.y);
+				}
+			}
 		} else {
 			 //we do not have control points, so is just a straight line segment
 			fprintf(f,"L %.10g %.10g ", points[i].x,points[i].y);
-			i++;
+			//i++;
 		}
-		if (i==n) done=true;
-	} while (!done);
-	if (isclosed) fprintf(f,"z ");
+
+		if (points[i].info&LINE_Closed) {
+			fprintf(f,"z ");
+			onfirst=true;
+		} else if (points[i].info&LINE_Open) {
+			onfirst=true;
+		} 
+	}
 
 	return np;
 }
+
+/*! Assumes "style=" has already been output to f.
+ * After retruning, user must supply closing quote mark.
+ */
+void svgStyleTagsDump(FILE *f, LineStyle *lstyle, FillStyle *fstyle)
+{
+	 //---write style: style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
+
+
+	 //stroke
+	if (lstyle) { 
+		if (lstyle->capstyle==LAXCAP_Butt) fprintf(f,"stroke-linecap:butt; ");
+		else if (lstyle->capstyle==LAXCAP_Round) fprintf(f,"stroke-linecap:round; ");
+		else if (lstyle->capstyle==LAXCAP_Projecting) fprintf(f,"stroke-linecap:square; ");
+
+		if (lstyle->joinstyle==LAXJOIN_Miter) fprintf(f,"stroke-linejoin:miter; ");
+		else if (lstyle->joinstyle==LAXJOIN_Round) fprintf(f,"stroke-linejoin:round; ");
+		else if (lstyle->joinstyle==LAXJOIN_Bevel) fprintf(f,"stroke-linejoin:bevel; ");
+
+		if (lstyle->width==0) fprintf(f,"stroke-width:.01; ");//hairline width not supported in svg
+		else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
+
+		 //dash or not
+		if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+			fprintf(f,"stroke-dasharray:none; ");
+		else fprintf(f,"stroke-dasharray:%.10g,%.10g; ",lstyle->width,2*lstyle->width);
+
+		if (lstyle->hasStroke()) {
+			fprintf(f,"stroke:#%02x%02x%02x; stroke-opacity:%.10g; ",
+								lstyle->color.red>>8, lstyle->color.green>>8, lstyle->color.blue>>8,
+								lstyle->color.alpha/65535.);
+
+			fprintf(f,"stroke-miterlimit:%.10g; ",lstyle->miterlimit);
+		} 
+	} else fprintf(f,"stroke:none; ");
+
+
+	 //fill
+	if (fstyle) {
+		if  (    fstyle->fillrule==LAXFILL_EvenOdd) fprintf(f,"fill-rule:evenodd; ");
+		else if (fstyle->fillrule==LAXFILL_Nonzero) fprintf(f,"fill-rule:nonzero; ");
+
+		if (fstyle->hasFill()) {
+			fprintf(f,"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
+						fstyle->color.red>>8, fstyle->color.green>>8, fstyle->color.blue>>8,
+						fstyle->color.alpha/65535.);
+		} else fprintf(f,"fill:none; ");
+	} else fprintf(f,"fill:none; ");
+}
+
 
 //! Function to dump out obj as svg.
 /*! Return nonzero for fatal errors encountered, else 0.
@@ -577,118 +658,147 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 		
 
 	} else if (!strcmp(obj->whattype(),"PathsData")) {
-		 //for weighted paths (any offset, angle, or variable width), there are 2 options:
+		 //for weighted paths (any offset, nonzero angle, or variable width), there are 2 options:
 		 //  1. output as powerstroke LPE
-		 //  2. output outline
+		 //  2. output 2 paths from original weighted path: fill in path->centercache and fill with stroke color in: path->outlinecache 
+		 //Otherwise, is plain old path
+		 //
+		 // \todo **** really this svg export should be part of Path and PathsData classes, it being a common need
 
 		PathsData *pdata=dynamic_cast<PathsData*>(obj);
 		if (pdata->paths.n==0) return 0; //ignore empty path objects
 
-		fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
-				     spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
-		fprintf(f,"%s       id=\"%s\"\n", spc,obj->Id());
-
-
-		 //---write path
-
-		 // Warning!! currently powerstroke LPE for inkscape only works on first path!!
-		if (out->use_powerstroke && pdata->Weighted()) fprintf(f,"%s       inkscape:original-d=\"",spc);
-		else fprintf(f,"%s       d=\"",spc);
-
 		LineStyle *lstyle=pdata->linestyle;
+		if (lstyle && lstyle->hasStroke()==0) lstyle=NULL;
 		FillStyle *fstyle=pdata->fillstyle;
-		Coordinate *p,*start;
-		int hasstroke=0;
+		if (fstyle && fstyle->hasFill()==0) fstyle=NULL;
+		if (!lstyle && !fstyle) return 0;
+
+
+		int weighted=0;
 		for (int c=0; c<pdata->paths.n; c++) {
-			p=start=pdata->paths.e[c]->path;
-			if (!p) continue;
-
-			lstyle=pdata->paths.e[c]->linestyle;
-			if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
-			hasstroke=lstyle ? (lstyle->hasStroke()) : 0;
-
-			fstyle=pdata->fillstyle;//default for all data paths
-
-			svgaddpath(f,p);
+			if (!pdata->paths.e[c]->path) continue;
+			if (pdata->paths.e[c]->Weighted()) weighted++;
 		}
-		fprintf(f,"\"\n");//end of "d" for non-weighted or original-d for weighted
 
-		if (out->use_powerstroke && pdata->Weighted()) {
+		if (!weighted) {
+			 //plain, ordinary path with no offset and constant width
+
+			fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+						 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+			fprintf(f,"%s       id=\"%s\"\n", spc,obj->Id());
+
 			fprintf(f,"%s       d=\"",spc);
 
-			LineStyle *lstyle=pdata->linestyle;
-			FillStyle *fstyle=pdata->fillstyle;
-			Coordinate *p,*start;
-			int hasstroke=0;
+			Path *path;
 			for (int c=0; c<pdata->paths.n; c++) {
-				p=start=pdata->paths.e[c]->path;
-				if (!p) continue;
+				path=pdata->paths.e[c];
+				if (!path->path) continue;
 
-				lstyle=pdata->paths.e[c]->linestyle;
-				if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
-				hasstroke=lstyle ? (lstyle->hasStroke()) : 0;
-
-				fstyle=pdata->fillstyle;//default for all data paths
-
-				if (hasstroke) svgaddpath(f,p);
+				svgaddpath(f,path->path); // <- ordinary path, no special treatment
 			}
-			fprintf(f,"\"\n");//end of "d" for weighted
-		}
+			fprintf(f,"\"\n");//end of "d" for non-weighted or original-d for weighted
+
+			fprintf(f,"%s       style=\"",spc);
+			svgStyleTagsDump(f, lstyle, fstyle);
+			fprintf(f,"\"\n");//end of "style"
+
+			fprintf(f,"%s />\n",spc);//end of PathsData!
 
 
-		 //---write style: style="fill:none;stroke:#000000;stroke-width:1px;stroke-opacity:1"
-		//fprintf(f,"%s       style=\"fill-rule:evenodd; ",spc);
-		fprintf(f,"%s       style=\"fill-rule:nonzero; ",spc);
+		} else {
+			//at least one weighted path, may or may not use powerstroke
 
-		if (lstyle) {
-			if (lstyle->capstyle==CapButt) fprintf(f,"stroke-linecap:butt; ");
-			else if (lstyle->capstyle==CapRound) fprintf(f,"stroke-linecap:round; ");
-			else if (lstyle->capstyle==CapProjecting) fprintf(f,"stroke-linecap:square; ");
+			 //a path based on centercache, with live path effect for powerstroke. Another for offset?
+			//*** how to map weight nodes to centercache????
 
-			if (lstyle->joinstyle==JoinMiter) fprintf(f,"stroke-linejoin:miter; ");
-			else if (lstyle->joinstyle==JoinRound) fprintf(f,"stroke-linejoin:round; ");
-			else if (lstyle->joinstyle==JoinBevel) fprintf(f,"stroke-linejoin:bevel; ");
+			if (fstyle) {
+				fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+							 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+				fprintf(f,"%s       id=\"%s-fill\"\n", spc,obj->Id());
 
-			if (lstyle->width==0) fprintf(f,"stroke-width:.01; ");//hairline width not supported in svg
-			else fprintf(f,"stroke-width:%.10g; ",lstyle->width);
+				 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
+				fprintf(f,"%s       style=\"",spc);
+				svgStyleTagsDump(f, NULL, fstyle);
+				fprintf(f,"\"\n");//end of "style"
 
-			 //dash or not
-			if (lstyle->dotdash==0 || lstyle->dotdash==~0)
-				fprintf(f,"stroke-dasharray:none; ");
-			else fprintf(f,"stroke-dasharray:%.10g,%.10g; ",lstyle->width,2*lstyle->width);
-		}
+				fprintf(f,"%s       d=\"",spc);
+				Path *path;
+				for (int c=0; c<pdata->paths.n; c++) {
+					path=pdata->paths.e[c];
+					if (path->needtorecache) path->UpdateCache();
+					if (!path->path) continue;
 
-		 //fill
-		if (fstyle && fstyle->fillstyle!=FillNone) {
-			fprintf(f,"fill:#%02x%02x%02x; fill-opacity:%.10g; ",
-						fstyle->color.red>>8, fstyle->color.green>>8, fstyle->color.blue>>8,
-						fstyle->color.alpha/65535.);
-		} else fprintf(f,"fill:none; ");
+					if (path->Weighted()) svgaddpath(f,path->centercache.e,path->centercache.n);
+					else svgaddpath(f,path->path);
+				}
+				fprintf(f,"\"\n");//end of "d" for weighted
 
-		 //stroke
-		if (hasstroke) fprintf(f,"stroke:#%02x%02x%02x; stroke-opacity:%.10g; ",
-			  					lstyle->color.red>>8, lstyle->color.green>>8, lstyle->color.blue>>8,
-								lstyle->color.alpha/65535.);
-		else fprintf(f,"stroke:none; ");
+				fprintf(f,"%s />\n",spc);//end of fill PathsData!
+			}
 
-		//"stroke-miterlimit:4;"
-		fprintf(f,"\"\n");//end of "style"
-		if (out->use_powerstroke && pdata->paths.e[0]->Weighted()) {
-			 // *** Warning!! currently powerstroke LPE for inkscape only works on first path!!
-			char *name=new char[30];
-			sprintf(name,"stroke-%ld-%d",pdata->object_id, 0);
-			fprintf(f,"%s       inkscape:path-effect=\"#%s\"\n", spc,name);
-			delete[] name;
-		}
+			if (lstyle) {
+				 //second "stroke" path to be filled, or to be set up as powerstroke base
+				fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
+							 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
+				fprintf(f,"%s       id=\"%s\"\n", spc,obj->Id());
 
-		fprintf(f,"%s />\n",spc);//end of PathsData!
+				 //---write style: no linestyle, but fill style is based on linestyle
+				fprintf(f,"%s       style=\"",spc);
+				FillStyle fillstyle;
+				fillstyle.color=lstyle->color;
+				svgStyleTagsDump(f, NULL, &fillstyle);
+				fprintf(f,"\"\n");//end of "style"
+
+
+				 //both powerstroke and regular use outlinecache...
+				fprintf(f,"%s       d=\"",spc);
+				for (int c=0; c<pdata->paths.n; c++) {
+					Path *path=pdata->paths.e[c];
+					if (!path->path) continue;
+					if (path->needtorecache) path->UpdateCache();
+
+					svgaddpath(f,path->outlinecache.e,path->outlinecache.n);
+				}
+				fprintf(f,"\"\n");//end of "d" for weighted
+
+
+				 // Warning!! currently powerstroke LPE for inkscape only works on first path!!
+				if (out->use_powerstroke) {
+					fprintf(f,"%s       inkscape:original-d=\"",spc);
+
+					for (int c=0; c<pdata->paths.n; c++) {
+						Path *path=pdata->paths.e[c];
+						if (!path->path) continue;
+						if (path->needtorecache) path->UpdateCache();
+
+						svgaddpath(f,path->centercache.e,path->centercache.n);
+					}
+					fprintf(f,"\"\n");//end of "original-d" 
+
+
+					 //Add ref to the powerstroke inkscape lpe
+					 // *** Warning!! currently powerstroke LPE for inkscape only works on first path!!
+					char *name=new char[30];
+					sprintf(name,"stroke-%ld-%d",pdata->object_id, 0);
+					fprintf(f,"%s       inkscape:path-effect=\"#%s\"\n", spc,name);
+					delete[] name;
+				}
+
+				fprintf(f,"%s />\n",spc);//end of fill PathsData!
+			}
+		} //end type of path if
+
+
+
 
 //	} else if (!strcmp(obj->whattype(),"ImagePatchData")) {
-//		//***if (config->collect_for_out) { rasterize, and put image in out directory }
+//		// *** if (config->collect_for_out) { rasterize, and put image in out directory }
 //		setlocale(LC_ALL,"");
 //		log.AddMessage(_("Cannot export Image Patch objects into svg."),ERROR_Warning);
 //		setlocale(LC_ALL,"C");
 //		warning++;
+
 
 	} else if (!strcmp(obj->whattype(),"SomeDataRef")) {
 		SomeDataRef *ref=dynamic_cast<SomeDataRef*>(obj);
@@ -706,6 +816,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			fprintf(f,"%s   xlink:href=\"#%s\"\n", spc,ref->thedata->Id());
 			fprintf(f,"%s />\n",spc);//end of clone!
 		}
+
 
 	} else {
 		DrawableObject *dobj=dynamic_cast<DrawableObject*>(obj);
@@ -1414,7 +1525,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 	int foundf=0;
 	if (!def) return NULL;
 	char *name, *value;
-	int units=0;//0 is user space, 1 is bounding box
+	//int units=0;//0 is user space, 1 is bounding box
 	double gm[6];
 	transform_identity(gm);
 
@@ -1445,8 +1556,9 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 
 		} else if (!strcmp(name,"gradientUnits")) {
 			 //gradientUnits = "userSpaceOnUse | objectBoundingBox"
-			if (!strcmp(value,"userSpaceOnUse")) units=0;
-			else if (!strcmp(value,"objectBoundingBox")) units=1;
+			//if (!strcmp(value,"userSpaceOnUse")) units=0;
+			//else if (!strcmp(value,"objectBoundingBox")) units=1;
+			DBG cerr <<" warning: ignoring gradientUnits on svg gradient in"<<endl;
 
 		} else if (!strcmp(name,"gradientTransform")) {
 			svgtransform(value,gm);
