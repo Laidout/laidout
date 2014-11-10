@@ -1270,7 +1270,7 @@ char *LaidoutApp::full_path_for_resource(const char *name,const char *dir)//dir=
 		convert_to_full_path(fullname,NULL);
 		if (readable_file(fullname)) return fullname;
 
-		cout <<"imp full_path_for_resource for name not file! ***"<<endl;
+		cout <<" *** need to implement full_path_for_resource() name search!"<<endl;
 	}
 	delete[] fullname;//***
 	fullname=NULL;//***
@@ -1305,6 +1305,10 @@ Document *LaidoutApp::LoadTemplate(const char *name, ErrorLog &log)
 {
 	 // find absolute path to a file
 	char *fullname=full_path_for_resource(name,"templates");
+	if (file_exists(fullname,1,NULL)!=S_IFREG) {
+		delete[] fullname;
+		return NULL;
+	}
 		
 	Document *doc=new Document(NULL,fullname);
 	
