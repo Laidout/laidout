@@ -9,40 +9,28 @@ VERSION 0.095
 -------------
        debug version 0.094!
 (done) be able to trace images in engraver tool
-       engraver tool point groups to trace from same object to different trace settings
+(done) engraver tool point groups to trace from same object to different trace settings
 (done) engraver tool linear, radial, or circular line fills
        engraver tool grow point mode
+       engraver tool, implement dashes
+       engraver tool, resolution cut mode
        layers (object tree) palette
-       Clean up patch controls
+       PathInterface varying width lines, offsets, and different kinds of line joins
+       PathInterface subpaths for hole making should work: check exports
 (done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
-       undo/redo
 (done) allow export even or odd
 (done) allow export in batches
-       Clone Pattern Builder
-       Custom alignments to parents, not just affine transform to parent
+       test new export even/odd and batches for all exporters
+       undo/redo
+       Clean up symmetry clone interface, not easy to use currently
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        Tool scripting
-       PathInterface subpaths for hole making should work: check exports
 (done) Freehand drawing with tablet pressure support
 (done) impose-only mode should allow access to all imposition types, not just signatures
-       Soup up the color box so one can recall previous colors, and/or integration with palette window
-       Fix object bleeding across pages for signatures and nets
-       double click on group should change selection area to group contents?
-       Moving selected things in group contents does not update group bounds
-       should not be able to select both group and group contents at same time
-       Masking, clip paths and/or softmask
-       Merge EpsData with normal images
-       Externally rendered objects, similar to Scribus render frames
-       Examine and improve ease of use of import images dialog, particularly for previewing
-       In image properties dialog, be able to select from possible potential previews
-       Tools should remember their settings
-       Object and resource tags
-       Scribus import should try to apply the Scribus layout correctly, at least for 2 page spreads
-       Scribus import should do something meaningful with original Scribus page bleed values
-       Collect for out
+       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
+(done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
        PDF in, at least as 1 image per page, for purposes of imposition
        autosave for autorecover
-       Optimize pdf export to rescale to target dpi, and compress image data
        Re-fix cut and paste from system clipboard
        make window resize work on default ubuntu
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
@@ -51,6 +39,7 @@ VERSION 0.095
 
 VERSION 0.096
 -------------
+       Soup up the color box so one can recall previous colors, and/or integration with palette window
        graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
        color styles, so objects can refer to a named color, just change that named to change all
@@ -58,6 +47,23 @@ VERSION 0.096
        Net imposition build net interface
        Clean up project load/save internals and dialogs
        fix object transform handles for really small objects (handles should still be accessible)
+       Clean up patch controls
+       Scribus import should do something meaningful with original Scribus page bleed values
+       Collect for out
+       Fix object bleeding across pages for signatures and nets
+       double click on group should change selection area to group contents?
+       Moving selected things in group contents does not update group bounds
+       should not be able to select both group and group contents at same time
+       Merge EpsData with normal images
+       Externally rendered objects, similar to Scribus render frames
+       Examine and improve ease of use of import images dialog, particularly for previewing
+       In image properties dialog, be able to select from possible potential previews
+       Tools should remember their settings
+       Object and resource tags
+       Masking, clip paths and/or softmask
+       Optimize pdf export to rescale to target dpi, and compress image data
+       Clone Pattern Builder
+       Custom alignments to parents, not just affine transform to parent
 
 
 

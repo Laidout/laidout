@@ -10,9 +10,7 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 
----- serious bugs to fix right now:
-
-create new pane should dup old pane.. currently divide viewport, removes document focus
+---- serious bugs to fix right now: 
 
 engraver lines with 1 or 2 points FAIL BADLY load in problem?
 
@@ -74,12 +72,12 @@ test-tiled-mark.laidout: delete the bars, add bars back then try to export, prog
 select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
-pressing enter in popup menus is not ending the menu
-
 
 ---- bugs:
 
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
+
+create new pane should dup old pane.. currently divide viewport, removes document focus
 
 memory hole helpwindow 
 memory hole when graphical shell activated 
@@ -171,6 +169,8 @@ test:
   each export filter
   make some test scripts for command line testing
   test in different window managers
+
+make print button experimental only?
 
 need to remember previous export settings
 
@@ -294,14 +294,26 @@ curves:
   DONE move CurveInfo to own file.
 
 PathInterface:
-  clarify export for weighted paths, use outlinecache and areacache as needed, check all filetypes exporters
-  add, remove points, close, open path, cut(done) needs to adjust weight nodes
-  debug deleting points on weight nodes
-  debug reverse path effect on weight nodes
+  clarify export for weighted paths, use outlinecache and areacache as needed, check all filetypes exporters: svg pdf scribus image/ps/eps
+  implement open at any point to possible break into separate subpaths
   need numerical entry for all weight node characteristics
   finish implementing joins. need to clarify weight behavior at corner joins
+  finish implementing center and outline interpolation
   weight computation is currently done based on even t spacing, but probably should be mapped based on distance
-
+  inkscape has multiple interpolators
+  sliding around the nodes is really annoying.. should do according to proximity to center line
+  problems for non-bez-controlled corners, variable offset causes weird connections
+  debug extrapolate
+  actions to implement:
+    need arbitrary cut
+    need command to apply offset
+    need path combine (combine path stacks of multiple PathsData)
+    need convert to straight lines (no bez controls)
+    need convert to straight bezier lines
+    need break apart (make new PathsData from each in paths stack)
+    need special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
+    need mechanism to be able to add custom path actions to context menu 
+  implement work on multiple path objects at once
   should not create new control points by pressing cntl, unless there is movement
   ApplyTransform() and MatchTransform() should adjust scaling of width nodes?
   custom caps.. define cap to a horizontal line, take endpoints and endpoint tangents, return the cap warped to fit the tangents
@@ -310,20 +322,17 @@ PathInterface:
   should have shortcut to offset ALL weight nodes, or angle ALL nodes
   how to deal with bbox when using wacky weights??
   need something like path->PointInfo(t, &pp, &vprev_ret, &vnext_ret).. done is GetWeight(t, &width, &offset, &angle)
-  displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
   maybe should revisit PathOperator stuff, such as for spiro paths
   need way to turn off selectability of path points (thus leaving only width nodes selectable)
-  need path combine (combine path stacks of multiple PathsData)
-  need break apart (make new PathsData from each in paths stack)
-  need convert to straight lines (no bez controls)
-  need convert to straight bezier lines
-  need special break apart to make new PathsData, but preserve totally enclosed paths as intential holes
-  need mechanism to be able to add custom path actions to context menu
   per vertex join type?
   linestyles are always output independently, can't currently cascade with current code
   if background is green or red, hard to see the direction indicator
   line join round should add extra point for really wide angles to make them more circular
 
+  DONE add(done), remove points, close(done), open path(done), cut(done) needs to adjust weight nodes
+  DONE debug ConnectEndpoints
+  DONE debug reverse path effect on weight nodes
+  DONE displayer->drawFormattedPoints needs to work correctly with draw_thing_coordinates
   DONE straight (non bez) line segments fools join mechanism
   DONE creation of new weight node must grab approximate weight
   DONE create 3 vertex path with 2 weight nodes, delete 3rd point, click on rotate part of second weight node.. crash!
@@ -1278,6 +1287,6 @@ DONE i broke reimpose due to margin area shift
 DONE Spread Editor memory hole
 DONE make singles 16 pages, edit imposition, select booklet. Defaults to 4 pages!
 DONE page range, control click on page 1 less than a range won't let you click for new range
-
-
+DONE pressing enter in popup menus is not ending the menu
+DONE finish laxifying fillrule 
 
