@@ -817,6 +817,7 @@ int Document::Save(int includelimbos,int includewindows,ErrorLog &log)
 int Document::Load(const char *file,ErrorLog &log)
 {
 	DBG cerr <<"----Document::Load read file "<<(file?file:"**** AH! null file!")<<" into a new Document"<<endl;
+	if (!file) return 0;
 	
 	FILE *f=open_laidout_file_to_read(file,"Document",&log);
 	if (!f) {
