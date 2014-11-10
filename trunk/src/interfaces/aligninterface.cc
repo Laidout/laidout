@@ -1090,7 +1090,6 @@ void AlignInterface::ApplyPreset(int type)
 			else aligninfo->path->append(points[c], POINT_TOPREV,NULL);
 		}
 		aligninfo->path->close();
-		aligninfo->path->fixpath(-1);
 		aligninfo->path->line(1,CapButt,JoinMiter,&patheditcolor);
 		aligninfo->path->linestyle->widthtype=0;
 		aligninfo->final_layout_type=FALIGN_Grid;
