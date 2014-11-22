@@ -3724,12 +3724,14 @@ int ViewWindow::init()
 	ibut->tooltip(_("Export the document in various ways"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	
+
 	 //-----------print
-	last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"print",-1,
-						 _("Print"),NULL,laidout->icons->GetIcon("Print"),buttongap);
-	ibut->tooltip(_("Print the document"));
-	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+	//if (laidout->experimental) {
+		last=ibut=new Button(this,"print",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, last,object_id,"print",-1,
+							 _("Print"),NULL,laidout->icons->GetIcon("Print"),buttongap);
+		ibut->tooltip(_("Print the document"));
+		AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
+	//}
 
 
 	last=ibut=new Button(this,"open doc",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"openDoc",-1,
@@ -3742,7 +3744,7 @@ int ViewWindow::init()
 	ibut->tooltip(_("Save the current document"));
 	AddWin(ibut,1, ibut->win_w,0,50,50,0, ibut->win_h,0,50,50,0, -1);
 
-	
+
 
 	last=ibut=new Button(this,"help",NULL,IBUT_ICON_ONLY, 0,0,0,0,1, NULL,object_id,"help",-1,
 						 _("Help!"),NULL,laidout->icons->GetIcon("Help"),buttongap);
