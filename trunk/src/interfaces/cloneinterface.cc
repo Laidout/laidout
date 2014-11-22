@@ -2400,6 +2400,7 @@ CloneInterface::CloneInterface(anInterface *nowner,int nid,Laxkit::Displayer *nd
 	boundary->line(-1,-1,-1,&col);
 	boundary->appendRect(0,0,4,4);
 
+	groupify_clones=true;
 	tiling=NULL;
 	preview_lines=false;
 	trace_cells=true; // *** maybe 2 should be render outline AND install as new objects in doc?
