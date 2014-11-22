@@ -175,11 +175,13 @@ class ObjectDef : public Laxkit::anObject, public LaxFiles::DumpUtility
 	unsigned int flags;
 
 	ValueTypes format;    // int,real,string,... fields means it is not a builtin type
-	char *format_str;
+	char *format_str;     //for convenience, this is a string name of this->format
 	int islist;           //if this element is actually an array of the given type
 	int fieldsformat;     //dynamically assigned to new object types
 	ObjectDef *fieldsdef; //a def associated with fieldsformat. Overrides fields.
 	Laxkit::RefPtrStack<ObjectDef> *fields;
+
+	char *uihint;
 
 	ObjectDef();
 	ObjectDef(const char *nname,const char *nName, const char *ndesc, Value *newval, const char *type, unsigned int fflags);
