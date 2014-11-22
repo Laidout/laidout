@@ -304,6 +304,8 @@ ObjectDef::ObjectDef()
 	fields=NULL;
 	format_str=NULL;
 	islist=0; //if this element should be considered a set of such elements
+
+	uihint=NULL;
 }
 
 //! Constructor.
@@ -347,6 +349,8 @@ ObjectDef::ObjectDef(ObjectDef *nextends, //!< Definition of a class to derive f
 	format_str=newstr(fmt);
 	flags=fflags;
 	islist=0; //if this element should be considered a set of such elements
+
+	uihint=NULL;
 
 	if (nextends) {
 		Extend(nextends);
@@ -395,6 +399,7 @@ ObjectDef::ObjectDef(const char *nname,
 	format_str=newstr(type);
 	fields=NULL;
 	islist=0; //if this element should be considered a set of such elements
+	uihint=NULL;
 }
 
 //! Delete the various strings, and styledef->dec_count().
@@ -412,6 +417,7 @@ ObjectDef::~ObjectDef()
 	if (defaultValue) defaultValue->dec_count();
 	if (format_str)   delete[] format_str;
 	//if (fieldsdef) fieldsdef->dec_count(); <- don't do this, assume type will outlive things based on type
+	delete[] uihint;
 	
 	if (fields) {
 		DBG cerr <<"---Delete fields stack"<<endl;
