@@ -113,6 +113,8 @@ ExportDialog::ExportDialog(unsigned long nstyle,unsigned long nowner,const char 
 	batchnumber=NULL;
 
 	everyspread=evenonly=oddonly=NULL;
+
+	firstextra=-1;
 }
 
 /*! Decs count of config.
@@ -432,6 +434,14 @@ int ExportDialog::init()
 	AddWin(batchnumber,1, batchnumber->win_w,0,1000,50,0, batchnumber->win_h,0,0,50,0, -1);
 	AddNull();
 
+
+	//-------------------------- Extra settings per export type ------------------------------------
+	AddWin(NULL,0, 0,0,9999,50,0, 12,0,0,50,0, -1);
+	AddNull();
+
+	firstextra=wholelist.n;
+
+
 	//-------------------------- Final OK ------------------------------------
 
 	AddWin(NULL,0, 0,0,1000,50,0, 0,0,0,50,0, -1);
@@ -451,6 +461,7 @@ int ExportDialog::init()
 	//win_h=0;
 	//m[1]=m[7]=BOX_SHOULD_WRAP;
 	Sync(1);
+	updateEdits();
 	//Resize(m[0],m[6]);
 
 	overwriteCheck();
@@ -548,6 +559,59 @@ int ExportDialog::updateExt()
 	return 0;
 }
 
+/*! Make sure the available edits correspond to config.
+ */
+void ExportDialog::updateEdits()
+{
+	WinFrameBox *box;
+	for (int c=wholelist.n-1; c>=0; c--) {
+		box=dynamic_cast<WinFrameBox*>(wholelist.e[c]);
+		if (!box || !box->win()) continue;
+		if (strncmp(box->win()->win_name,"extra-",6)) continue;
+
+		Pop(c);
+	}
+
+	ObjectDef *def=config->GetObjectDef();
+	if (strcmp(def->name,"ExportConfig")) {
+		 //only do this section for non-default export configs.
+		 // *** Note this will add any fields returned by def->getFieldOfThis(),
+		 //which is not quite accurate for defs that have more inheritance than just 
+		 //straight from ExportConfig
+		 //
+
+		char scratch[200];
+		anXWindow *last=NULL;
+		int i=firstextra;
+		for (int c=0; c<def->getNumFieldsOfThis(); c++) {
+			ObjectDef *fd=def->getFieldOfThis(c);
+
+			if (fd->format==VALUE_Boolean) {
+
+				sprintf(scratch,"extra-%s",fd->name);
+				CheckBox *box;
+				last=box=new CheckBox(this,scratch,NULL,CHECK_CIRCLE|CHECK_LEFT, 
+									 0,0,0,0,0, 
+									 last,object_id,scratch,
+									 fd->Name, app->defaultlaxfont->textheight()/5,5);
+
+				Value *v=config->dereference(fd->name,strlen(fd->name));
+				//if (config->findBoolean(fd->name)) box->State(LAX_ON);
+				if (dynamic_cast<BooleanValue*>(v)->i) box->State(LAX_ON);
+				v->dec_count();
+
+				AddWin(box,1,i++); 
+				AddNull(i++);
+
+			} else {
+				DBG cerr << "*** warning! uncaught field in an export config!"<<endl;
+			}
+		}
+	}
+
+	Sync(1);
+}
+
 //! Keep the controls straight.
 /*! 
  * \todo ability to use page/layout names like iii, instead of index numbers
@@ -556,7 +620,23 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 {
 	const SimpleMessage *e=dynamic_cast<const SimpleMessage *>(ee);
 
-	if (!strcmp(mes,"get new file")) {
+	if (!strncmp(mes,"extra-",6)) {
+		 //for events outside the default DocumentExportConfig
+		const char *field=mes+6;
+		ObjectDef *def=config->GetObjectDef();
+		ObjectDef *fd=def->FindDef(field,strlen(field),0);
+		if (!fd) return 0;
+
+		if (fd->format==VALUE_Boolean) {
+			const SimpleMessage *eee=dynamic_cast<const SimpleMessage*>(ee);
+			FieldExtPlace ff(field);
+			BooleanValue v(eee->info1==LAX_ON ? true : false);
+			config->assign(&ff, &v);
+		}
+
+		return 0;
+
+	} else if (!strcmp(mes,"get new file")) {
 		if (!e) return 1;
 		fileedit->SetText(e->str);
 		return 0;
@@ -568,6 +648,11 @@ int ExportDialog::Event(const EventData *ee,const char *mes)
 
 	} else if (!strcmp(mes,"format")) {
 		filter=laidout->exportfilters.e[e->info1];
+		DocumentExportConfig *nconfig=filter->CreateConfig(config);
+		config->dec_count();
+		config=nconfig;
+
+		updateEdits();
 		findMinMax();
 		configBounds();
 		updateExt();

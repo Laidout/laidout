@@ -28,6 +28,7 @@ namespace Laidout {
 
 
 class Document;
+class DocumentExportConfig;
 
 //------------------------------------- FileFilter -----------------------------------
 
@@ -75,6 +76,7 @@ class ExportFilter : public FileFilter
 	virtual int Out(const char *file, Laxkit::anObject *context,  Laxkit::ErrorLog &log) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
 	virtual ObjectDef *makeObjectDef();
+	virtual DocumentExportConfig *CreateConfig(DocumentExportConfig *fromconfig);
 };
 
 //------------------------------- DocumentExportConfig ----------------------------------
@@ -114,6 +116,10 @@ class DocumentExportConfig : public Style
 
 	virtual ObjectDef* makeObjectDef();
 	virtual Style* duplicate(Style*);
+
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
+
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
 };

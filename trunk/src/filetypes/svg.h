@@ -48,6 +48,7 @@ class SvgOutputFilter : public ExportFilter
 	virtual ObjectDef *GetObjectDef();
 
 	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+	virtual DocumentExportConfig *CreateConfig(DocumentExportConfig *fromconfig);
 
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker
