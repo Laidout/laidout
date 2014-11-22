@@ -76,8 +76,11 @@ class SvgExportConfig : public DocumentExportConfig
 
 	SvgExportConfig();
 	SvgExportConfig(DocumentExportConfig *config);
+    virtual ObjectDef* makeObjectDef();
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
 	virtual void dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context);
+	virtual Value *dereference(const char *extstring, int len);
+	virtual int assign(FieldExtPlace *ext,Value *v);
 };
 
 /*! Base on config, copy over its stuff.
@@ -113,8 +116,8 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 		use_powerstroke=svgconf->use_powerstroke;
 	} else {
 		use_mesh=false;
-		use_powerstroke=false;
-		//use_powerstroke=true;
+		//use_powerstroke=false;
+		use_powerstroke=true;
 	}
 }
 
@@ -122,8 +125,8 @@ SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
 SvgExportConfig::SvgExportConfig()
 {
 	use_mesh=false;
-	//use_powerstroke=true;
-	use_powerstroke=false;
+	use_powerstroke=true;
+	//use_powerstroke=false;
 
 	for (int c=0; c<laidout->exportfilters.n; c++) {
 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Image")) {
@@ -131,6 +134,91 @@ SvgExportConfig::SvgExportConfig()
 			break; 
 		}
 	}
+}
+
+Value *SvgExportConfig::dereference(const char *extstring, int len)
+{
+	if (!strncmp(extstring,"use_mesh",8)) {
+		return new BooleanValue(use_mesh);
+
+	} else if (!strncmp(extstring,"use_powerstroke",8)) {
+		return new BooleanValue(use_powerstroke);
+
+	}
+	return DocumentExportConfig::dereference(extstring,len);
+}
+
+int SvgExportConfig::assign(FieldExtPlace *ext,Value *v)
+{
+	if (ext && ext->n()==1) {
+        const char *str=ext->e(0);
+        int isnum;
+        double d;
+        if (str) {
+            if (!strcmp(str,"use_mesh")) {
+                d=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+                use_mesh=(d==0 ? false : true);
+                return 1;
+
+			} else if (!strcmp(str,"use_powerstroke")) {
+                d=getNumberValue(v, &isnum);
+                if (!isnum) return 0;
+                use_powerstroke=(d==0 ? false : true);
+                return 1;
+			}
+		}
+	}
+
+	return DocumentExportConfig::assign(ext,v);
+
+}
+
+ObjectDef* SvgExportConfig::makeObjectDef()
+{
+    ObjectDef *def=stylemanager.FindDef("SvgExportConfig");
+	if (def) return def;
+
+    ObjectDef *exportdef=stylemanager.FindDef("ExportConfig");
+    if (!exportdef) {
+        exportdef=makeExportConfigDef();
+		stylemanager.AddObjectDef(exportdef,1);
+    }
+
+ 
+	def=new ObjectDef(exportdef,"SvgExportConfig",
+            _("Svg Export Configuration"),
+            _("Settings for an SVG filter that exports a document."),
+            "class",
+            NULL,NULL,
+            NULL,
+            0, //new flags
+            NULL,
+            NULL);
+
+
+     //define parameters
+    def->push("use_mesh",
+            _("Use Mesh"),
+            _("Export color meshes using SVG 2's draft of meshes."),
+            "boolean",
+            NULL,    //range
+            "false", //defvalue
+            0,      //flags
+            NULL); //newfunc
+
+    def->push("use_powerstroke",
+            _("Use powerstroke"),
+            _("Export weighted paths using Inkscape's Powerstroke live path effects."),
+            "boolean",
+            NULL,   //range
+            "true", //defvalue
+            0,     //flags
+            NULL);//newfunc
+ 
+
+	stylemanager.AddObjectDef(exportdef,0);
+	return def;
 }
 
 void SvgExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
@@ -1030,21 +1118,12 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 }
 
 
-////--------------------------------*************
-//class SvgFilterConfig
-//{
-// public:
-//	char untranslatables;   //whether laidout objects not suitable for svg should be ignored, rasterized, or approximated
-//	char dont_clobber_file;
-//	char plain;             //akin to inkscapes plain vs. inkscape svg?
-//	char preserveunknown;   //any unknown attributes should be attached as "metadata" to the object in question on readin
-//							//these would potentially be written back out on an svg export?
-//							
-//	ObjectDef *OutputObjectDef(); //for auto config dialog creation
-//	ObjectDef *InputObjectDef();
-//};
-////--------------------------------
 
+
+DocumentExportConfig *SvgOutputFilter::CreateConfig(DocumentExportConfig *fromconfig)
+{
+	return new SvgExportConfig(fromconfig);
+}
 
 //! Save the document as SVG.
 /*! This only saves images, groups, linear and radial gradients, and the page size and orientation.

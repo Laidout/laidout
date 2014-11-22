@@ -20,6 +20,7 @@
 #include "../language.h"
 #include "filefilters.h"
 #include "../laidout.h"
+#include "../stylemanager.h"
 
 
 #define DBG
@@ -590,6 +591,16 @@ int import_document(ImportConfig *config, Laxkit::ErrorLog &log)
  */
 	
 
+
+/*! Create a config object based on fromconfig.
+ */
+DocumentExportConfig *ExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
+{
+	return new DocumentExportConfig;
+	//return new GenericValue(GetObjectDef(), fromconfig);
+}
+
+
 //! Return a new ObjectDef object with default import filter options.
 /*! Subclasses will usually call this, then add any more options to that, and return
  * that in GetObjectDef(). It is up to the subclasses to install the ObjectDef in
@@ -597,7 +608,13 @@ int import_document(ImportConfig *config, Laxkit::ErrorLog &log)
  */
 ObjectDef *ExportFilter::makeObjectDef()
 {
-	return makeExportConfigDef();
+    ObjectDef *sd=stylemanager.FindDef("ExportConfig");
+    if (!sd) {
+        sd=makeExportConfigDef();
+		stylemanager.AddObjectDef(sd,0);
+    }
+
+	return sd;
 }
 
 ObjectDef *makeExportConfigDef()
@@ -989,6 +1006,18 @@ DocumentExportConfig::~DocumentExportConfig()
 	if (doc) doc->dec_count();
 	if (limbo) limbo->dec_count();
 	if (papergroup) papergroup->dec_count();
+}
+
+Value *DocumentExportConfig::dereference(const char *extstring, int len)
+{
+	DBG cerr <<" *** Need to implement DocumentExportConfig::dereference()!!"<<endl;
+	return NULL;
+}
+
+int DocumentExportConfig::assign(FieldExtPlace *ext,Value *v)
+{
+	DBG cerr <<" *** Need to implement DocumentExportConfig::assign()!!"<<endl;
+	return 0;
 }
 
 void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)

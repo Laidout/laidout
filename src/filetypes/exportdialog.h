@@ -45,6 +45,7 @@ class ExportDialog : public Laxkit::RowFrame
  protected:
 	DocumentExportConfig *config;
 	
+	int firstextra;
 	int overwriteok;
 	unsigned long dialog_style;
 	int tofile, cur, max, min;
@@ -69,6 +70,8 @@ class ExportDialog : public Laxkit::RowFrame
 	virtual int  end();
 	virtual void findMinMax();
 	virtual int updateExt();
+	virtual void updateEdits();
+
  public:
 	ExportDialog(unsigned long nstyle,unsigned long nowner,const char *nsend,
 				 Document *doc, 
