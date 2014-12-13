@@ -399,16 +399,17 @@ static int svgaddpath(FILE *f,flatpoint *points,int n)
 	bool onfirst=true;
 	int ii=0;
 	int ifirst=0;
-	while (ii<n && (points[ii].info&LINE_Bez)!=0 && (points[ii].info&LINE_Vertex)==0) ii++;
 
 	for (int i=ii; i<n; i++) {
 		 //one loop per vertex point
 		np++;
 
 		if (onfirst) {
-			fprintf(f,"M %.10g %.10g ",points[i].x,points[i].y);
 			onfirst=false;
+
 			ifirst=i;
+			while (i<n && (points[i].info&LINE_Bez)!=0 && (points[i].info&LINE_Vertex)==0) i++;
+			fprintf(f,"M %.10g %.10g ",points[i].x,points[i].y);
 			i++;
 		}
 
@@ -875,7 +876,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 				fprintf(f,"%s />\n",spc);//end of fill PathsData!
 			}
-		} //end type of path if
+		} //end if weighted path
 
 
 
