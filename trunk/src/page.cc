@@ -702,7 +702,7 @@ void Page::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *cont
 			}
 
 		} else if (!strcmp(name,"labelcolor")) {
-			SimpleColorAttribute(value,NULL,&labelcolor);
+			SimpleColorAttribute(value,NULL,&labelcolor, NULL);
 
 		} else { 
 			DBG cerr <<"Page dump_in:*** unknown attribute "<<(name?name:"(noname)")<<"!!"<<endl;
