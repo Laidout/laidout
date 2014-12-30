@@ -16,6 +16,7 @@
 
 #include <lax/interfaces/dumpcontext.h>
 #include <lax/interfaces/somedataref.h>
+#include <lax/interfaces/engraverfillinterface.h>
 #include <lax/fileutils.h>
 #include <lax/refptrstack.cc>
 #include "project.h"
@@ -483,6 +484,34 @@ int Project::ClarifyRefs(ErrorLog &log)
 
 	while (1) {
 		DBG cerr <<"refs: "<<(obj?obj->whattype():"(no obj)")<<endl;
+
+		if (obj && !strcmp(obj->whattype(),"EngraverFillData")) {
+			EngraverFillData *edata=dynamic_cast<EngraverFillData*>(obj);
+			for (int c=0; c<edata->groups.n; c++) {
+				if (edata->groups.e[c]->trace
+						&& edata->groups.e[c]->trace->traceobject
+						&& edata->groups.e[c]->trace->traceobject->type==TraceObject::TRACE_Object) {
+					ref=dynamic_cast<SomeDataRef*>(edata->groups.e[c]->trace->traceobject->object);
+
+					if (ref->thedata) {
+						//already linked
+
+					} if (!ref->thedata_id) {
+						log.AddMessage(_("Missing clone id!"),ERROR_Warning);
+
+					} else {
+						o=FindObject(ref->thedata_id);
+						if (o) {
+							ref->Set(o,1);
+							numrefs++;
+						} else {
+							log.AddMessage(_("Missing clone object!"),ERROR_Warning);
+						}
+					}
+				}
+			}
+			obj=NULL;
+		}
 
 		if (obj && !strcmp(obj->whattype(),"SomeDataRef")) {
 			ref=dynamic_cast<SomeDataRef*>(obj);
