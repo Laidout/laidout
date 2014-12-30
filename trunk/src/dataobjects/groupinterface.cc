@@ -955,6 +955,8 @@ void GroupInterface::DrawReparentArrows()
 		pp=transform_point(m, (flatpoint(obj->minx,obj->miny)+flatpoint(obj->maxx,obj->maxy))/2); //center
 		pp=dp->realtoscreen(pp);
 		dp->drawarrow(pp,p-pp, 0,1,2,3);
+		dp->textout(pp.x,pp.y, _("Child"),-1, LAX_CENTER);
+		dp->textout(p.x,p.y, _("Parent"),-1, LAX_CENTER);
 	}
 
 	dp->NewFG(0.,.3,0.);
