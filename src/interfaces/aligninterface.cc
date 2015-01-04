@@ -1401,7 +1401,8 @@ int AlignInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *
 			aligninfo->path->line(-1,-1,-1,&patheditcolor);
 
 			PathInterface *pathi=new PathInterface(getUniqueNumber(), dp);
-			pathi->pathi_style=PATHI_One_Path_Only|PATHI_Esc_Off_Sub|PATHI_Two_Point_Minimum|PATHI_Path_Is_M_Real;
+			pathi->pathi_style=PATHI_No_Weights|PATHI_One_Path_Only|PATHI_Esc_Off_Sub|PATHI_Two_Point_Minimum|PATHI_Path_Is_M_Real;
+			pathi->Setting(PATHI_No_Weights, 0);
 			pathi->primary=1;
 			VObjContext voc;
 			voc.SetObject(aligninfo->path);
