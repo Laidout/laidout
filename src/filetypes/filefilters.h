@@ -100,16 +100,20 @@ class DocumentExportConfig : public Style
 	enum EvenOdd { All,Even,Odd } evenodd;
 	int batches;
 	int paperrotation;
+	int reverse_order;
+	char collect_for_out;
+	char rasterize;
+
 	Document *doc;
 	Group *limbo;
 	char *filename;
 	char *tofiles;
-	char collect_for_out;
-	char rasterize;
 	PaperGroup *papergroup;
+
 	ExportFilter *filter;
 
 	DocumentExportConfig();
+	DocumentExportConfig(DocumentExportConfig *config);
 	DocumentExportConfig(Document *ndoc, Group *lmbo, const char *file, const char *to,
 						 int l,int s,int e,PaperGroup *group);
 	virtual ~DocumentExportConfig();

@@ -596,7 +596,7 @@ int import_document(ImportConfig *config, Laxkit::ErrorLog &log)
  */
 DocumentExportConfig *ExportFilter::CreateConfig(DocumentExportConfig *fromconfig)
 {
-	return new DocumentExportConfig;
+	return new DocumentExportConfig(fromconfig);
 	//return new GenericValue(GetObjectDef(), fromconfig);
 }
 
@@ -742,14 +742,14 @@ ObjectDef *makeExportConfigDef()
 	return sd;
 }
 
-//! Return a ValueObject with an ExportConfig.
+//! Return a ValueObject with a DocumentExportConfig.
 /*! If one of the parameters is ".config", a ValueObject with an ExportConfig,
  * then fill that with the other parameters.
  *
  * This does not throw an error for having an incomplete set of parameters.
  * It just fills what's given.
  *
- * The document is taken from context if it is not a parameter, and there is to
+ * The document is taken from context if it is not a parameter, and there is no
  * "group" parameter.
  */
 int createExportConfig(ValueHash *context, ValueHash *parameters,
@@ -907,6 +907,7 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 	return err;
 }
 
+
 //---------------------------- DocumentExportConfig ------------------------------
 /*! \class DocumentExportConfig
  * \brief Holds basic settings for exporting a document.
@@ -995,6 +996,50 @@ DocumentExportConfig::DocumentExportConfig(Document *ndoc,
 	if (limbo) limbo->inc_count();
 	papergroup=group;
 	if (papergroup) papergroup->inc_count();
+}
+
+DocumentExportConfig::DocumentExportConfig(DocumentExportConfig *config) 
+{ 
+	if (config==NULL) {
+		paperrotation=0;
+		evenodd=All;
+		batches=0;
+		filter=NULL;
+		target=0;
+		filename=NULL;
+		tofiles=NULL;
+		start=end=-1;
+		layout=0;
+		doc=NULL;
+		papergroup=NULL;
+		limbo=NULL;
+		collect_for_out=COLLECT_Dont_Collect;
+		rasterize=0;
+		return;
+	}
+
+    paperrotation=config->paperrotation; 
+    evenodd      =config->evenodd; 
+    batches      =config->batches; 
+    target       =config->target; 
+    start        =config->start; 
+    layout       =config->layout; 
+    collect_for_out=config->collect_for_out; 
+    rasterize    =config->rasterize; 
+ 
+    filename=newstr(config->filename); 
+    tofiles =newstr(config->tofiles); 
+ 
+    filter       =config->filter; //object, but does not get inc_counted 
+ 
+    doc          =config->doc; 
+    papergroup   =config->papergroup; 
+    limbo        =config->limbo; 
+ 
+    if (doc)        doc->inc_count(); 
+    if (limbo)      limbo->inc_count(); 
+    if (papergroup) papergroup->inc_count(); 
+ 
 }
 
 /*! Decrements doc if it exists.
@@ -1252,6 +1297,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			end=config->end;
 		PaperGroup *oldpg=config->papergroup;
 		int left=0;
+		//for (int c=start; (end>=start ? c<=end : c>=end); (end>=start ? c++: c--)) { //loop over each spread
 		for (int c=start; c<=end; c++) { //loop over each spread
 			if (config->evenodd==DocumentExportConfig::Even && c%2==0) continue;
 			if (config->evenodd==DocumentExportConfig::Odd && c%2==1) continue;
