@@ -55,7 +55,9 @@ char *new_paper_group_name()
 		str=new char[strlen(_("Paper Group %d"))+15];
 		sprintf(str,_("Paper Group %d"),num++);
 		for (c=0; c<laidout->project->papergroups.n; c++) {
-			if (!strcmp(str,laidout->project->papergroups.e[c]->Name)) break;
+			if (laidout->project->papergroups.e[c]->Name) {
+				if (!strcmp(str,laidout->project->papergroups.e[c]->Name)) break;
+			} else if (!strcmp(str,laidout->project->papergroups.e[c]->name)) break;
 		}
 		if (c==laidout->project->papergroups.n) return str;
 		delete[] str;
@@ -132,6 +134,8 @@ const char *PaperInterface::Name()
 #define PAPERM_RegistrationMark 8
 #define PAPERM_GrayBars         9 
 #define PAPERM_CutMarks         10 
+#define PAPERM_ResetScaling     11
+#define PAPERM_ResetAngle       12
 
 #define PAPERM_first_pagesize   1000
 #define PAPERM_first_papergroup 2000
@@ -149,9 +153,12 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
 		menu->AddItem(_("Add Gray Bars"),PAPERM_GrayBars);
 		menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
 		menu->AddSep();
+		menu->AddItem(_("Reset paper scaling"),PAPERM_ResetScaling);
 	}
+
 	if (papergroup && curboxes.n) {
 
+		menu->AddItem(_("Reset paper angle"),PAPERM_ResetAngle);
 		menu->AddItem(_("Paper Size"),PAPERM_PaperSize);
 		menu->SubMenu(_("Paper Size"));
 		for (int c=0; c<laidout->papersizes.n; c++) {
@@ -167,6 +174,7 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
 		menu->AddItem(_("Print with paper group"),PAPERM_Print);
 		menu->AddSep();	
 	}
+
 	if (laidout->project->papergroups.n) {		
 		menu->AddItem(_("Paper Group"));
 		menu->SubMenu(_("Paper group"));
@@ -216,6 +224,30 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 		} else if (i==PAPERM_Print) {
 			 //print with the active paper group
 			curwindow->win_parent->Event(NULL,"print");//***hack Hack HACK
+			return 0;
+
+		} else if (i==PAPERM_ResetScaling) {
+			if (!papergroup) return 0;
+			PaperBoxData *data=papergroup->papers.e[0];
+			double s=1/data->xaxis().norm();
+			for (int c=0; c<papergroup->papers.n; c++) {
+				data=papergroup->papers.e[c];
+				data->Scale(s);
+			}
+			needtodraw=1;
+			return 0;
+
+		} else if (i==PAPERM_ResetAngle) {
+			if (!curboxes.n) return 0;
+
+			PaperBoxData *data;
+			double s=norm(curboxes.e[0]->xaxis());
+			for (int c=0; c<curboxes.n; c++) {
+				data=curboxes.e[c];
+				data->xaxis(flatpoint(s,0));
+				data->yaxis(flatpoint(0,s));
+			}
+			needtodraw=1;
 			return 0;
 
 		} else if (i>=PAPERM_first_pagesize && i<PAPERM_first_pagesize+1000) {
@@ -647,7 +679,7 @@ int PaperInterface::LBDown(int x,int y,unsigned int state,int count,const Laxkit
 		if (curbox) curbox->dec_count();
 		curbox=papergroup->papers.e[over];
 		curbox->inc_count();
-		if ((state&LAX_STATE_MASK)!=ShiftMask) curboxes.flush();
+		if ((state&LAX_STATE_MASK)==0) curboxes.flush();
 		curboxes.pushnodup(curbox,0);
 		needtodraw=1;
 	}
