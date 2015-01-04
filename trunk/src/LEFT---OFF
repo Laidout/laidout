@@ -11,6 +11,8 @@ Those are purged with each release.
 
 
 ---- serious bugs to fix right now: 
+bug: add gray marks, then '.' for next object, endless loop!
+memory hole, activate tool, lay down one paper, quit, 3 objects remain
 
 engraver lines with 1 or 2 points FAIL BADLY load in problem?
 
@@ -73,6 +75,8 @@ switch to None document, and units change to unreasonable
 
 ---- bugs:
 
+not putting check mark next to paper group
+
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
 create new pane should dup old pane.. currently divide viewport, removes document focus
@@ -83,6 +87,7 @@ memory hole when graphical shell activated
 Lightness slider appears black to white, but the middle is full color, needs segmented render like hue
 
 svg out, EquivalentObject doesn't play nice with defs.. only accessed once.. how to upkeep clones in this case?
+	-> when equiv objects are composed of groups, what happens?
 
 SimpleColorAttribute() should have double rgbaf available, and various css3 stuff
 
@@ -168,40 +173,48 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
-need to remember previous export settings
-need infrastructure to propagate and save tool settings 
 
-perhaps switch export/import objects to new cascading Style as base..
+filters:
+  image: path hole bad, no engraver fill, page size appears wrong
+  pdf: engraver fill exports black and offset
+  need to test all exports from command line!!!  
+  importing should not spawn new windows
+  importing should sort out duplicate names
+  import vector should default to current page import 
+  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
+  pdf optimize jpg dump, compress image data
+filters:
+  svg out: radial:transparent inner circle, patch edges
+  remember last export 
+svg
+  in needs to account for viewBox
+  in for powerstroke
+  in/out for meshes
+  DONE export needs implementation for options for mesh and powerstroke
+  DONE export needs specialized export config
+Scribus:
+  import/export color meshes, for recent versions of Scribus
+  import/export linear and radial gradients
+  scribus in/out: font sizes, stroke widths
+  import should try to apply the Scribus layout correctly, at least for 2 page spreads
+  import should do something meaningful with original Scribus page bleed values
+  scribus export should show actual version export
+  scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
+    -> this necessitates revamp of singles to use more than one paper type
+  scribus out doesn't do gradients
+When there are errors or warnings in exporting, should be able to have the error log such that
+  you can just jump to the offending bit easily. This would also be used for preflight verifiers,
+  and maybe also mass edit things, like edit all images..
+  - have ViewWindow::JumpToObject(&place, objectid);	
 
-paperinterface:
-  papergroup tool NEEDS 1:1 paper matrix reset, maybe say what paper dimensions
-  papergroup tool needs custom paper input
-  debug papergroup tool in spread editor
-  paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
-  options to show order of papers, print all of one size paper first? auto sort order by size? auto wrap image?
-  Load, save, add, delete paper groups
-  papergroups:
-    work out scheme for resource ownership: they can be owned by:
-      1.DONE  Document: if no project, save with document by default
-      2.DONE  Project:  save in project file
-      3.or Global resource: save in ~/.laidout/version/papergroups
-          class FileRef 
-        papergroup->owner=Document, Project, or FileRef
-  paperinterface:
-     no doc, define papergroup, convert papergroup to singles pages?
-     orient viewport to paper
-     snap other papers to various boxes
-     double click to edit paper details
-     in spread editor (done), and able to print it out
-     more versatile size control per paper
-     edit window? should be edit on screen....
-        Name:  default single letter
-        Paper: Letter, 8.5/11, landscape
-        Box: Media [v]   Box: Clip [v]
-                            [ ] None
-           0 0 8.5 11       X: 0   Y: 0
-                          W: 8.5 H: 11
-        [delete paper type][new paper type]
+export/print dialog
+  make print button experimental only?
+  vital to debug send to printer
+  rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
+  rotate every other page 180
+  print in reverse order
+  export should have a preview of what is actually going out, flip through spreads
+  DONE export needs "batch" send, break into smaller segments 
 
 Clean up mesh/patch controls:
   perhaps a line warp, using line width adjustable path interface
@@ -225,9 +238,11 @@ Clean up mesh/patch controls:
   DONE delete should not delete whole object
 
 engraving tool: Engraving 
+  export doesn't work for: pdf:exports black, and offset, nothing for image, scribus, eps, ps
   numsliders should have click on arrows for single increase, and a dismiss x for input box
   bez cache needs updating when points are moved around
   dash cache needs updating when points are moved OR thickness changed
+  dash caps on really thin gaps create incorrect overlaps.. wrong fill mode?
 
   bug: engraver lines with 1 or 2 points FAIL BADLY load in problem?
   bug: panel draws on top, but you can still click on page marker interface below
@@ -239,9 +254,10 @@ engraving tool: Engraving
   need merge group
   instant global thickness adjust on orientation tool?
   hover over mode icons should show text of what you are hovering over.. hard to remember, annoying to look at status bar otherwise
-  (done, but needs testing) with i/o for dashes, traces, direction, spacing 
-  need some kind of smooth out: smooth out width, and smooth out path
   direction map is not showing actual direction
+  implement direction section
+  implement spacing section
+  need some kind of smooth out: smooth out width, and smooth out path
   when flipping between objects, gives no indication that we are on a new object, like a thick outline
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   invert trace sampling: sample white instead of black
@@ -280,6 +296,7 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE  i/o for dashes, traces
   DONE bug: object ref, change original object, the trace is not updated
   DONE bug: ref trace object loading not working.. must resolve on load in (done), identifier not showing
   DONE brush outline should go off when over panel
@@ -357,8 +374,7 @@ PathInterface:
   per vertex join type?
   linestyles are always output independently, can't currently cascade with current code
   if background is green or red, hard to see the direction indicator
-  line join round should add extra point for really wide angles to make them more circular
-
+  line join round should add extra point for really wide angles to make them more circular 
 
   copy and paste
   maybe dotted connection if only both end points selected, click connection to close?
@@ -406,28 +422,6 @@ layers palette
   visible
   selectable
 
-General design usability
-to be a decent editing platform, Laidout needs:
-  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
-  would be convenient to send to gimp for editing, update later live
-  when delete/add pages, need option to reposition to same orientation in margin area
-  snapping rotate, maybe drag handle with control?
-  more specific control over transform.. numerical specification
-  undo
-  per object visibility
-  per object opacity
-  better screen renderer
-  better key input edits
-  guides
-  clipping
-  text
-  DONE need way to jump to any spread, not just next or prev
-
-General Laxkit Interfaces needs:
-  stack of available interfaces
-  DrawData for arbitrary rendering of any known objects to any Displayer object
-  iconmanager
-
 lineedit:
   seems to be an occasional redo bug, reinserting in wrong position
   password
@@ -448,46 +442,9 @@ FileDialog2:
   tree display flat option
   tooltip to show full path of bookmarks
   do recent right, figure out current way other desktops do it
+  exclude/include directories when listing files
+  need hover indicator, and better scan.. ignoring offset
 
-implement undo.. ideally use same code for both undo and recordable/assignable actions
-  object interface
-  image
-  gradients
-  paths
-  meshes
-    color
-	image
-  engraver
-  inside curve editors
-  paper interface
-  spread editor
-  reimpose
-  unwrapper
-  metadata stuff
-  cloner
-  during scripting?!
-
-export/print dialog
-  make print button experimental only?
-  vital to debug send to printer
-  rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
-  rotate every other page 180
-  export should have a preview of what is actually going out, flip through spreads
-  DONE export needs "batch" send, break into smaller segments
-  
-maybe flag whether to export limbo with spreads?
-
-file selector.. need sort by mod date or name, exclude/include directories
-	need hover indicator, and better scan.. ignoring offset
-
-interface for custom paper size in:
-    DONE signature editor
-	paper group editor
-  implement paper favorites
-  laidoutrc paper sizes
-
-cloning: convert to master: make a clone be the original.. 
-  means swapping the actual master with the clone
 
 cloner:
   debug groupify
@@ -508,16 +465,284 @@ cloner:
 
 space cloning/duping doesn't work
  
+move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
+	feed it an ExportConfig
+
+autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
+
+file button:
+   Save
+   Save As...
+   Save a copy...
+   Save as template... <- need to enter template name and file?
+   Quick save backup
+   ----
+   Commit (git/svn)  
+   Commit...  <- choose or set up repository
+   Revert...  <- show log, select old 
+icons for the following, perhaps be right click on the save button? or modifiers on buttons
+  save as
+  save a copy
+  save as template (just saves in ~/.config/laidout/version/templates)
+
+when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
+                                    
+
+
+----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
+update fileformat.txt
+check laidout.1 when time to release
+update docs to have new release number
+update translation base files
+update screenshots
+update dtpcompare.html
+put rss/g+ links on all menu pages
+test:
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
+  each export filter
+  make some test scripts for command line testing
+  test in different window managers
+
+
+General design usability
+to be a decent editing platform, Laidout needs:
+  undo/redo
+  better screen renderer
+  master pages with auto page number is important.. for image based page numbers, dynamic objects important!!
+  would be convenient to send to gimp for editing, update later live
+  when delete/add pages, need option to reposition to same orientation in margin area
+  snapping rotate, maybe drag handle with control?
+  more specific control over transform.. numerical specification
+  per object visibility
+  per object opacity
+  better key input edits
+  guides
+  clipping
+  text
+  DONE need way to jump to any spread, not just next or prev
+
+General Laxkit Interfaces needs:
+  stack of available interfaces
+  DrawData for arbitrary rendering of any known objects to any Displayer object
+  iconmanager
+
+align tool:
+  endpoints should be oriented triangle, not circles which make it look like path nodes
+  explode in normal align
+  should be able to scale and rotate a non-line path when not in path mode
+  need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
+  gap looks ugly.. have indicator highlight path itself, drag that around
+  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
+  final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
+  extra custom finishing per object?
+  reorder on layouts? -> how to handle reorder in gap and unoverlap?
+    trace out order path... show with numbers
+  drag out path, order of intersection is new object order?
+  maybe grid drag control to reorder
+  snapping to 0/50/100
+  number box while dragging, goes away after a second, or click on it to edit
+    if inc/dec arrows, have it inc or dec the decimal place cursor is on
+  default presets: inkscape crossover
+
+Spread Editor:
+  need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
+  would be nice if apply and reset should be grayed as relevant
+  adjust page preview resolution
+  after an insert, have temp wheelable number indicator, update on screen?
+  need to be able to move empty spreads
+  need to remove hidden pages from pagemarker 
+  debug select spreads with rectangle -> need real box intersect? do we?
+  modify page range gui, click on a page label, where ever it might be... select pages in spread editor
+  debug spread limbo threads and page groups
+    implement render
+	debug drag and drop
+  create new document from spread view?
+  hide should collapse into a single thing so you can arrange more simply, instead of still having to sift through many
+
+  DONE when rearranging pages, need to shift page contents according to margin area
+  DONE shortcut for select all with same markers+color
+  DONE should be able to hide groups of pages, since render speed of hundreds of pages is slow
+  DONE memory hole: ./laidout -n letter, do f3, quit. investigate Leaves obj imposition #721, doc is #750 -> spreadeditorviewport
+  DONE slide and swap needs to act with whole range
+  DONE control left button to toggle pages in and out of selection
+  DONE shift left button to select ranges
+  DONE integration of page label gui with spreadeditor, select pages, pop up the dialog?
+  DONE need page number overlay 
+  DONE insert blanks before or after
+  DONE update page label type to be color+shape, shape being circle, square, diamond, or triangle
+    DONE default colors: white, gray, dark gray, black, red, yellow
+
+
 Color sliders:
-  should have an "ok" button to get rid of floating box, or auto out click destroy
+  maybe should have an "ok" button to get rid of floating box
   be able to choose which color sets are visible
   make color slider box be able to be a pane
   would be nice to enter number values in any color format
-  DONE clicking color comparator should allow clicking back to one just used: swap old and new, not copy old to new
-  DONE CMYK sliders FAIL
-  DONE be able to choose output color format (not necessarily same as temp input format)
-  DONE cur/old color should show boxes for transparent
-  DONE enter color hex FAIL, zaps to #00000000
+
+need to remember previous export settings
+need infrastructure to propagate and save tool settings 
+Tools should remember their settings
+    figure out which settings need to be remembered, and install as resource.. what happens when diff
+     windows are using diff tools? which settings are remembered? have tool styles that are saved, as
+     well as the running tool use settings 
+
+paperinterface:
+  papergroup tool needs custom paper input
+  debug papergroup tool in spread editor
+  paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
+  options to show order of papers, print all of one size paper first? auto sort order by size? auto wrap image?
+  Load, save, add, delete paper groups
+  papersizes are not translated. Should they be??  
+  papergroups:
+    work out scheme for resource ownership: they can be owned by:
+      1.DONE  Document: if no project, save with document by default
+      2.DONE  Project:  save in project file
+      3.or Global resource: save in ~/.laidout/version/papergroups
+          class FileRef 
+        papergroup->owner=Document, Project, or FileRef
+  paperinterface:
+     no doc, define papergroup, convert papergroup to singles pages?
+     orient viewport to paper
+     snap other papers to various boxes
+     double click to edit paper details
+     in spread editor (done), and be able to print it out
+     more versatile size control per paper
+     edit window? should be edit on screen....
+        Name:  default single letter
+        Paper: Letter, 8.5/11, landscape
+        Box: Media [v]   Box: Clip [v]
+                            [ ] None
+           0 0 8.5 11       X: 0   Y: 0
+                          W: 8.5 H: 11
+        [delete paper type][new paper type]
+  interface for custom paper size
+  implement paper favorites
+  laidoutrc paper sizes
+
+finish implement cairo backend
+  decide on image importers, cairo can only do 8 bit png
+
+should take precautions so that dialogs do not get buried, would need to respond to circulate events
+
+perhaps switch export/import objects to new cascading Style as base..
+
+ungroup should have ungrouped objects selected after ungrouping
+
+in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
+reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
+
+mass image edit, need to remap dirs for old files!!
+
+bleeding mechanism should be functional
+
+option to use different go/don't go colors
+
+animated beacons for anchor points to make them visible
+
+double click on group should change selection area to group contents?
+    need to clarify how grouping operates. Perhaps implement sets at same time
+    clearCurobj() with skim to group for group->double click?
+
+
+object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
+
+'m' should be able to move whole groups, means must be in object tool?
+
+For objects that appear very small, the drag handles should not be operable.. shift only
+
+nup:
+  flowed
+  unclump
+  unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
+  object reorder
+  scale panel should allow mpx and control zoom around point
+
+cloning: convert to master: make a clone be the original.. 
+  means swapping the actual master with the clone
+  ..if an object is cloned, maybe just have them all be clones, and original becomes a remote "data block"
+      to be dumped to file in a defs section? if all refs gone but one, then it takes place of clone?
+
+overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
+
+need a way to tell rect interface to enter move mode with lbdown, as when initialize a child interface
+
+standardize new Impositions: each has:
+   interface OR window editor
+   class type
+   default resources
+  possible to define other editors for any imposition type
+  
+make "make uninstall" work, and remove coop from installed position 
+
+select region by intersect, not by corner inclusion...
+
+Object tool:
+  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
+  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
+
+When importing from an image list file, should be able to say if and when to auto-make previews
+    new option in file, should be easy
+
+mystery data enhancement: import as placeholder objects: if convertible to laidout elements, do not actually
+                expose them as such. Keep source in external location, current laidout only rearranges.
+                  ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
+                  ---> this is useful to have a standard object indicator built from laidout objects, but
+                         do not let them be editable
+
+really should have option to separate or merge resources when multiple documents open, rather than
+always merge?
+
+how best to integrate Styles, Attributes, and Values??? style types:
+ Laidout
+ Project
+ Document
+ Page
+ Group
+  draw objects: Image, ImagePatch, Paths, Path, LinearGradient, RadialGradient, PatchGradient
+ PaperGroup
+ PaperType
+ Imposition: Singles, DSS, Booklet, Signature, Net:Box, Dod, etc...
+ ImageImportFilter
+ ImportFilter:svg,ppt,sla,ps,eps,odraw
+ ExportFilter
+-->Styles are Values that can be cascaded from other Styles
+   Values cannot be cascaded
+-->C++ classes represent data that can be accessed and modified through:
+     onscreen
+	 file saved to disk
+	 interpreter
+   would be advantageous to write a single object def, and output options and documention to
+   each of the 3 targets
+
+Net imposition
+  net extra scaling non-functional
+  NetImposition needs import/export net,
+  export svg
+  convert to/from laidout elements
+  interactive unwrapper and build net interface figure out bleeding and connectivity infrastructure
+  figure out more efficient clipping of Imlib images
+
+saving when net is internal is not proper.. does not distinguish between diff. nets and whole
+
+hedron window:
+  send imp
+  receive imp
+  need to draw other nets in outline (at least) in paper view
+  need to preview sides on hedron
+  memory hole in polyptych
+  need to implement more options for polyhedron connections, to allow mobius strips...
+
+  DONE proper units for papers
+
+from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
+    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
+     gets the focus when autofocused.
+
+pointin should check to visual boundary, not bounding box (? maybe just optionally)
+
+For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
+  part.. should have minimum drag areas?  
 
 customizable object child relationships to parent, rather than simple transform
   DONE scale x
@@ -591,8 +816,6 @@ calculator
   DONE change toCChar() and CChar() to int makeStr(char *&buffer,int &len, int oktoreallocate);
 
 
-overlays should get first pick of input, BUT if another has a button lock, it shouldn't mouse move update
-
 gshell:
 	needs massive testing
 	type "tool." (for instance), you can highlight choice with mouse, but does not insert into edit, only inserts when nothing had been typed
@@ -610,56 +833,6 @@ gshell:
     reposition cursor to error
     for parameters, facility for special edit dodads
 
-need a way to tell rect interface to enter move mode with lbdown, as when initialize a child interface
-
-move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-	feed it an ExportConfig
-
-standardize new Impositions: each has:
-   interface OR window editor
-   class type
-   default resources
-  possible to define other editors for any imposition type
-  
-autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up
-
-make "make uninstall" work, and remove coop from installed position 
-
-Spread Editor:
-  need to be able to move empty spreads
-  need to make pagelocation ref count pages, or (need to anyway) check all known views for errant page refs after delete pages
-  need to remove hidden pages from pagemarker
-
-  would be nice if apply and reset should be grayed as relevant
-  debug select spreads with rectangle -> need real box intersect? do we?
-  after an insert, have temp wheelable number indicator, update on screen?
-  modify page range gui, click on a page label, where ever it might be... select pages in spread editor
-  adjust page preview resolution
-  debug spread limbo threads and page groups
-    implement render
-	debug drag and drop
-  create new document from spread view?
-  hide should collapse into a single thing so you can arrange more simply, instead of still having to sift through many
-
-  0.096:
-
-  DONE when rearranging pages, need to shift page contents according to margin area
-  DONE shortcut for select all with same markers+color
-  DONE should be able to hide groups of pages, since render speed of hundreds of pages is slow
-  DONE memory hole: ./laidout -n letter, do f3, quit. investigate Leaves obj imposition #721, doc is #750 -> spreadeditorviewport
-  DONE slide and swap needs to act with whole range
-  DONE control left button to toggle pages in and out of selection
-  DONE shift left button to select ranges
-  DONE integration of page label gui with spreadeditor, select pages, pop up the dialog?
-  DONE need page number overlay
-  DONE insert blanks before or after
-  DONE update page label type to be color+shape, shape being circle, square, diamond, or triangle
-    DONE default colors: white, gray, dark gray, black, red, yellow
-
-importing should not spawn new windows
-importing should sort out duplicate names
-import vector should default to current page import
-
 custom tools:
   scripted
   normal tools, but jump to special settings for those tools..
@@ -675,196 +848,25 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
   not cause problems. When deleting objects, must then take care to update parent, so it is immediately known
   if an object is without a home.
 
-Scribus:
-  import/export color meshes, for recent versions of Scribus
-  import/export linear and radial gradients
-  scribus in/out: font sizes, stroke widths
-  import should try to apply the Scribus layout correctly, at least for 2 page spreads
-  import should do something meaningful with original Scribus page bleed values
-  scribus export should show actual version export
-  scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
-    -> this necessitates revamp of singles to use more than one paper type
-  scribus out doesn't do gradients
+implement undo.. ideally use same code for both undo and recordable/assignable actions
+  object interface
+  image
+  gradients
+  paths
+  meshes
+    color
+	image
+  engraver
+  inside curve editors
+  paper interface
+  spread editor
+  reimpose
+  unwrapper
+  metadata stuff
+  cloner
+  during scripting?!
 
-
-icons for the following, perhaps be right click on the save button? or modifiers on buttons
-  save as
-  save a copy
-  save as template (just saves in ~/.config/laidout/version/templates)
-
-saving when net is internal is not proper.. does not distinguish between diff. nets and whole
-
-import config generic things like enum keepmystery should be parsed when no import config given!!
-
-ungroup should have ungrouped objects selected after ungrouping
-
-in laxkit, key and mouse state should already be filtered to only contain laxkit modifiers,
-reserve names for CommandMask (macs), and a few other custom masks for other weird keyboards
-
-need createImportConfig/createExportConfig to make ImportConfig/ExportDocumentConfig objects
-from parameters for all filters....
-
-mass image edit, need to remap dirs for old files!!
-
-bleeding mechanism should be functional
-
-option to use different go/don't go colors
-
-pdf optimize jpg dump, compress image data
-
-animated beacons for anchor points to make them visible
-
-double click on group should change selection area to group contents?
-    need to clarify how grouping operates. Perhaps implement sets at same time
-    clearCurobj() with skim to group for group->double click?
-
-
-object select, 'a' toggle select or not, select all in current selection area (ie page or layer base)
-
-'m' should be able to move whole groups, means must be in object tool?
-
-For objects that appear very small, the drag handles should not be operable.. shift only
-
-When there are errors or warnings in exporting, should be able to have the error log such that
-  you can just jump to the offending bit easily. This would also be used for preflight verifiers,
-  and maybe also mass edit things, like edit all images..
-  - have ViewWindow::JumpToObject(&place, objectid);	
-
-align tool:
-  path editor should not have width handle
-  endpoints should be oriented triangle, not circles which make it look like path nodes
-  explode in normal align
-  should be able to scale and rotate a non-line path when not in path mode
-  need manual mode.. drag grid marks to position manually... have that option available on others, auto transform to auto
-  gap looks ugly.. have indicator highlight path itself, drag that around
-  would be VERY handy to be able to recall previous arrangements, so you can partially redo 
-  final layout options: unoverlap -> possibly snap to path, then spread out on path to not overlap
-  extra custom finishing per object?
-  reorder on layouts? -> how to handle reorder in gap and unoverlap?
-    trace out order path... show with numbers
-  drag out path, order of intersection is new object order?
-  maybe grid drag control to reorder
-  snapping to 0/50/100
-  number box while dragging, goes away after a second, or click on it to edit
-    if inc/dec arrows, have it inc or dec the decimal place cursor is on
-  default presets: inkscape crossover
-
-nup:
-  flowed
-  unclump
-  unoverlap -> define strategy, either shift H, Vert, along v, or shift on axes between objects
-  object reorder
-  scale panel should allow mpx and control zoom around point
-
-should have easy way to save as a template
-
-when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
-
-select region by intersect, not by corner inclusion...
-
-Object tool:
-  maybe show flip and 90 deg rotate handles only when mouse outside the selection area?
-  control-move flip line to snap to horizontal, vertical, 45 deg, or common gravity points
-
-When importing from an image list file, should be able to say if and when to auto-make previews
-    new option in file, should be easy
-
-mystery data enhancement: import as placeholder objects: if convertible to laidout elements, do not actually
-                expose them as such. Keep source in external location, current laidout only rearranges.
-                  ---> this is same as import as image, but using laidout objects to render them with, not bitmap images
-                  ---> this is useful to have a standard object indicator built from laidout objects, but
-                         do not let them be editable
-
-really should have option to separate or merge resources when multiple documents open, rather than
-always merge?
-
-papersizes are not translated. Should they be??
-
-how best to integrate Styles, Attributes, and Values??? style types:
- Laidout
- Project
- Document
- Page
- Group
-  draw objects: Image, ImagePatch, Paths, Path, LinearGradient, RadialGradient, PatchGradient
- PaperGroup
- PaperType
- Imposition: Singles, DSS, Booklet, Signature, Net:Box, Dod, etc...
- ImageImportFilter
- ImportFilter:svg,ppt,sla,ps,eps,odraw
- ExportFilter
--->Styles are Values that can be cascaded from other Styles
-   Values cannot be cascaded
--->C++ classes represent data that can be accessed and modified through:
-     onscreen
-	 file saved to disk
-	 interpreter
-   would be advantageous to write a single object def, and output options and documention to
-   each of the 3 targets
-
-                                    
-Tools should remember their settings
-    figure out which settings need to be remembered, and install as resource.. what happens when diff
-     windows are using diff tools? which settings are remembered? have tool styles that are saved, as
-     well as the running tool use settings
-
-Net imposition
-  net extra scaling non-functional
-  NetImposition needs import/export net,
-  export svg
-  convert to/from laidout elements
-  interactive unwrapper and build net interface figure out bleeding and connectivity infrastructure
-  figure out more efficient clipping of Imlib images
-
-hedron window:
-  send imp
-  receive imp
-  need to draw other nets in outline (at least) in paper view
-  need to preview sides on hedron
-  memory hole in polyptych
-  need to implement more options for polyhedron connections, to allow mobius strips...
-
-  DONE proper units for papers
-
-
-filters:
-  svg out: radial:transparent inner circle, patch edges
-  remember last export
-
-svg
-  in needs to account for viewBox
-  in for powerstroke
-  in/out for meshes
-  DONE export needs implementation for options for mesh and powerstroke
-  DONE export needs specialized export config
-
-
-pointin should check to visual boundary, not bounding box (? maybe just optionally)
-
-For objects that are really skinny, it is not practical to have the handles be a percentage of the skinny
-  part.. should have minimum drag areas?
-
-from laxkit: clear up focus handling which currently REALLY SUCKS especially when dialogs are up
-    focus off a dialog, then refocus, must manually set control focus. should store which subwindow
-     gets the focus when autofocused.
-
-
-
-----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
-update fileformat.txt
-check laidout.1 when time to release
-update docs to have new release number
-update translation base files
-update screenshots
-update dtpcompare.html
-put rss/g+ links on all menu pages
-test:
-  each window type: about palette view spread command text
-    help: window pane does funky stuff
-  each export filter
-  make some test scripts for command line testing
-  test in different window managers
-
+maybe flag whether to export limbo with spreads?
 
 action/shortcut selector overlay
 
@@ -1314,4 +1316,14 @@ DONE signature editor:
   DONE needs visual dodads to indicate where to drag to change,
 DONE image import preview should say pixel size of image
 DONE laxkit filepreviewer.cc should not depend on Imlib!  
-
+DONE interface for custom paper size in: signature editor
+DONE papergroup tool NEEDS 1:1 paper matrix reset, maybe say what paper dimensions
+DONE papergroup tool, reset angle for selected boxes
+DONE ColorSliders:
+  DONE auto out click destroy
+  DONE clicking color comparator should allow clicking back to one just used: swap old and new, not copy old to new
+  DONE CMYK sliders FAIL
+  DONE be able to choose output color format (not necessarily same as temp input format)
+  DONE cur/old color should show boxes for transparent
+  DONE enter color hex FAIL, zaps to #00000000
+DONE path editor should not have width handle
