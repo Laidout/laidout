@@ -7,12 +7,11 @@ This is a very rough draft of a roadmap, and is by no means the final word.
 
 VERSION 0.095
 -------------
-       debug version 0.094!
 (done) be able to trace images in engraver tool
 (done) engraver tool point groups to trace from same object to different trace settings
 (done) engraver tool linear, radial, or circular line fills
        engraver tool grow point mode
-       engraver tool, implement dashes
+(done) engraver tool, implement dashes
        engraver tool, resolution cut mode
        layers (object tree) palette
        PathInterface varying width lines, offsets, and different kinds of line joins
@@ -21,10 +20,7 @@ VERSION 0.095
 (done) allow export even or odd
 (done) allow export in batches
        test new export even/odd and batches for all exporters
-       undo/redo
-       Clean up symmetry clone interface, not easy to use currently
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
-       Tool scripting
 (done) Freehand drawing with tablet pressure support
 (done) impose-only mode should allow access to all imposition types, not just signatures
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
@@ -32,13 +28,18 @@ VERSION 0.095
        PDF in, at least as 1 image per page, for purposes of imposition
        autosave for autorecover
        Re-fix cut and paste from system clipboard
-       make window resize work on default ubuntu
+       make window resize work in gnome, test in kde
        drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
        drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.096
 -------------
+       debug previous version!
+       Undo/Redo
+       Tool scripting
+	   Custom line caps
+       Clean up symmetry clone interface, not easy to use currently
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        graphical shell should also help find and set key shortcuts
        Signature editor: detect non staplable binding edge, show red rather than green
