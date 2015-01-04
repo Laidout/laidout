@@ -203,8 +203,8 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
 			if (laidout->project->docs.n) doc=laidout->project->docs.e[0]->doc;
 		}
 	}
-	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
-	//HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,700,700,0);
+	//HeadWindow *head=new HeadWindow(NULL,"head",0, 0,0,700,700,0);
 
 	 // put a new which in it. default to view
 	if (which) head->Add(which);
@@ -220,7 +220,7 @@ anXWindow *newHeadWindow(Document *doc,const char *which)
  */
 anXWindow *newHeadWindow(LaxFiles::Attribute *att)
 {
-	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
+	HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,700,700,0);
 	head->dump_in_atts(att,0,NULL);//**context?
 	return head;
 }
@@ -485,7 +485,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
 
 	if (what==-1) {
-		fprintf(f,"%sxywh 0 0 500 500  #The x,y,width,height of the window on the screen\n",spc);
+		fprintf(f,"%sxywh 0 0 700 700  #The x,y,width,height of the window on the screen\n",spc);
 		fprintf(f,"%s#windows contain 1 or more panes, which contain a subwindow\n",spc);
 		fprintf(f,"%s#It is dangerous to try to construct panes yourself, because\n",spc);
 		fprintf(f,"%s#the borders must touch without gaps. The programming does not currently\n",spc);
@@ -495,7 +495,7 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 		DumpUtility *dump;
 		for (int c=0; c<winfuncs.n; c++) {
 			fprintf(f,"\n%spane\n",spc);
-			fprintf(f,"%s  xyxy 0 0 500 500  #xmin,ymin, and xmax,ymax of the pane\n",spc);
+			fprintf(f,"%s  xyxy 0 0 700 700  #xmin,ymin, and xmax,ymax of the pane\n",spc);
 
 			win=winfuncs.e[c]->function(this,"blah",winfuncs.e[c]->style,NULL);
 			fprintf(f,"%s  window %s\n",spc,win->whattype());
@@ -743,7 +743,7 @@ int HeadWindow::Event(const Laxkit::EventData *data,const char *mes)
 			//pop the window to new headwindow
 			if (!curbox || !curbox->win() || windows.n<=1) return 0;
 
-			HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,500,500,0);
+			HeadWindow *head=new HeadWindow(NULL,"head",_("Laidout"),0, 0,0,700,700,0);
 			app->addwindow(head);
 			head->Add(curbox->win());//this reparents win
 			curbox->NewWindow(NULL);
