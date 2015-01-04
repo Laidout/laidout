@@ -87,28 +87,8 @@ class SvgExportConfig : public DocumentExportConfig
  * \todo *** this shouldn't really be necessary, right now is just a hack to make export work in a pinch
  */
 SvgExportConfig::SvgExportConfig(DocumentExportConfig *config)
+	: DocumentExportConfig(config)
 {
-	paperrotation=config->paperrotation;
-	evenodd      =config->evenodd;
-	batches      =config->batches;
-	target       =config->target;
-	start        =config->start;
-	layout       =config->layout;
-	collect_for_out=config->collect_for_out;
-	rasterize    =config->rasterize;
-
-	makestr(filename, config->filename);
-	makestr(tofiles, config->tofiles);
-
-	filter       =config->filter; //object, but does not get inc_counted
-
-	doc          =config->doc;
-	papergroup   =config->papergroup;
-	limbo        =config->limbo;
-
-	if (doc)        doc->inc_count();
-    if (limbo)      limbo->inc_count();
-    if (papergroup) papergroup->inc_count();
 
 	SvgExportConfig *svgconf=dynamic_cast<SvgExportConfig*>(config);
 	if (svgconf) {
