@@ -45,7 +45,7 @@ page 0
       object 0 ImageData
         id ImageData1260
         config
-          filename "/home/tom/p/sourceforge/laidout/examples/test.jpg"
+          filename "./test.jpg"
           previewfile ""
           width 394
           height 300
@@ -166,7 +166,7 @@ page 0
             0.1784058167 0.9664150891
             0.6370754333 0.3364150891
             1.09574505 0.6064150891
-          filename "/home/tom/p/sourceforge/laidout/examples/test.jpg"
+          filename "./test.jpg"
           iwidth 394
           iheight 300
       object 5 EngraverFillData
