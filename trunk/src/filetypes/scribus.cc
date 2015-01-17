@@ -1047,7 +1047,8 @@ static void appendobjfordumping(PtrStack<PageObject> &pageobjects, Palette &pale
 			//return;
 		}
 	}
-	 //Object not found, so add new reference
+
+	 //add new reference
 	PageObject *o=new PageObject(obj, nativeid,l,r,t,b,next,prev);
 	o->count=count;
 	pageobjects.push(o,1);
@@ -1155,7 +1156,7 @@ static int scribusaddpath(NumStack<flatpoint> &pts, Coordinate *path)
 }
 
 //! Internal function to dump out the obj.
-/*! Can be Group, ImageData, or GradientData.
+/*! Can be Group, ImageData, PathsData, or GradientData.
  *
  * \todo could have special mode where every non-recognizable object gets
  *   rasterized, and a new dir with all relevant files is created.

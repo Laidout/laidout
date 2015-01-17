@@ -14,8 +14,6 @@ Those are purged with each release.
 bug: add gray marks, then '.' for next object, endless loop!
 memory hole, activate tool, lay down one paper, quit, 3 objects remain
 
-engraver lines with 1 or 2 points FAIL BADLY load in problem?
-
 pdf out needs clone deref
 
 roman numeral menu select range editor not changing to roman!!
@@ -65,7 +63,7 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
   option to insert new pages, or merge onto existing pages
   need to center within new margin area, as compared to previous margin area
 
-drawing partial arcs broken
+drawing partial arcs broken (?)
 
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
@@ -172,7 +170,7 @@ test:
   each export filter
   make some test scripts for command line testing
   test in different window managers
-
+make sure undo is experimental only
 
 filters:
   image: path hole bad, no engraver fill, page size appears wrong
@@ -206,6 +204,7 @@ When there are errors or warnings in exporting, should be able to have the error
   you can just jump to the offending bit easily. This would also be used for preflight verifiers,
   and maybe also mass edit things, like edit all images..
   - have ViewWindow::JumpToObject(&place, objectid);	
+need infrastructure to propagate and save tool settings 
 
 export/print dialog
   make print button experimental only?
@@ -217,7 +216,11 @@ export/print dialog
   DONE export needs "batch" send, break into smaller segments 
 
 Clean up mesh/patch controls:
+  debug! mesh path move weight node, and more than one v
+
   perhaps a line warp, using line width adjustable path interface
+  make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
+  coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
   tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
   just as moving edges, should be able to move any vert column or horizontal row of points
   when on edge, it highlights, but if you are outside of mesh, it will switch to other object
@@ -239,18 +242,15 @@ Clean up mesh/patch controls:
 
 engraving tool: Engraving 
   export doesn't work for: pdf:exports black, and offset, nothing for image, scribus, eps, ps
-  numsliders should have click on arrows for single increase, and a dismiss x for input box
   bez cache needs updating when points are moved around
   dash cache needs updating when points are moved OR thickness changed
-  dash caps on really thin gaps create incorrect overlaps.. wrong fill mode?
 
-  bug: engraver lines with 1 or 2 points FAIL BADLY load in problem?
   bug: panel draws on top, but you can still click on page marker interface below
   bug: memory hole after tracing
 
   trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
   setting sharing is confusing, need much better interface for that
-  need duplicate group
+  need duplicate group button for easy crosshatch
   need merge group
   instant global thickness adjust on orientation tool?
   hover over mode icons should show text of what you are hovering over.. hard to remember, annoying to look at status bar otherwise
@@ -279,6 +279,7 @@ engraving tool: Engraving
   implement custom line merge and break to preserve spacing across mesh contraction
 
   0.096:
+  numsliders should have click on arrows for single increase, and a dismiss x for input box
   should probably abstract control panel creation so we don't have to hardcode everything all the time
   edge abutment
   sampling could be more sophisticated, currently just grabs pixels, could downsample the image based on current spacing
@@ -296,6 +297,9 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE dash caps on really thin gaps create incorrect overlaps -> wrong fill mode
+  DONE bug: engraver lines with 1 or 2 points FAIL BADLY load in problem?
+  DONE dup leaving empty group
   DONE  i/o for dashes, traces
   DONE bug: object ref, change original object, the trace is not updated
   DONE bug: ref trace object loading not working.. must resolve on load in (done), identifier not showing
@@ -333,6 +337,7 @@ curves:
   DONE move CurveInfo to own file.
 
 PathInterface:
+  line caps are slightly rounded, they should either be rounded or butt caps for now
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
@@ -504,6 +509,8 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+
+for export, need way to have easy crop, especially from command line
 
 General design usability
 to be a decent editing platform, Laidout needs:
@@ -850,6 +857,10 @@ for clones, it would be easier to have a "defs" group or something, so deleting 
 
 implement undo.. ideally use same code for both undo and recordable/assignable actions
   object interface
+    need to account for:
+	  dragging m changes
+	  key flip, or non-dragging changes
+	  object deletion
   image
   gradients
   paths
@@ -1034,10 +1045,6 @@ laxkit attributes.cc SimpleColorAttribute:
 page thumbnail should be rational, ie image should be whole page, not just contents+transform,
 	 and thumb transform makes image dims to page coords
 
-wacom tablet or other x device customizing
-
-need device editor, detect wacom pad buttons.. they are available as an xlib mouse
-
 in number edit boxes, wheel should allow changing numbers, change on digit mouse is over?
   is it better to wheel at curpos?? probably.. select that digit, must track after changes!!!
 
@@ -1077,33 +1084,9 @@ page navigator should allow type in shortcuts like "end"
 messages to the status line should have priorities? so once mouse over messages are cleared, it would revert
   back to a lower priority message
 
-Finish implementing project based setup, particularly being able to save a project, not just load one   
-    need option to choose midstream to save as project, or individual documents
-    DONE separate project->filename from project directory, in case you just want a
-            convenient project file floating around without the whole mess of a project directory..
-            either that, or zip up the project directory inside the "project file"..
-    collect for out type of option
-    finish generic style edit window for quick dialog creation
-    need to puzzle out decent way to build dialogs, maybe have dialog building hints embedded in the styledefs
-    (temp) iron out what happens on ^s and ^+s, and where docs get saved: with project or otherwise
-     New Proj:
-       DONE  must create Project Directory...
-       DONE  new documents should default to saving in that directory
-       TEST if file is in project dir, then path is saved relative, else is absolute
-       saving not saving windows properly
-       Always copy outside files to project directory
-       [help] ---> pop up brief explanation of what a project entails
-     Load/Save: (mixed documents and projects)
-       DONE  open as copy button (just like templates)
-       DONE  [Open][Open as a Copy]
-       preview laidout Doc and Project files: show some info about them...
-         Project: Some_Project.laidout, 1 day old
-         Project: Someotherproject,     5 days old
-         Document: Some Doc
-         Document: Some other doc
-       remember this many recent: __20__
-
 plugin for easy antiprism import
+
+
 
 perhaps split radial and linear gradients to different tools? makes more sense
 

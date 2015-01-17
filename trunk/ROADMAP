@@ -14,7 +14,8 @@ VERSION 0.095
 (done) engraver tool, implement dashes
        engraver tool, resolution cut mode
        layers (object tree) palette
-       PathInterface varying width lines, offsets, and different kinds of line joins
+(done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
+       PathInterface extrapolate line join
        PathInterface subpaths for hole making should work: check exports
 (done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
 (done) allow export even or odd
@@ -22,20 +23,19 @@ VERSION 0.095
        test new export even/odd and batches for all exporters
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
 (done) Freehand drawing with tablet pressure support
+(done) Clickable page numbers to select markers
 (done) impose-only mode should allow access to all imposition types, not just signatures
-       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
 (done) Scribus import of doc with 2 page spreads on export imposes incorrect object positions
-       PDF in, at least as 1 image per page, for purposes of imposition
        autosave for autorecover
        Re-fix cut and paste from system clipboard
        make window resize work in gnome, test in kde
-       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
-       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 VERSION 0.096
 -------------
        debug previous version!
+       Scribus import should try to do something appropriate with page spreads >= 2 pages wide
+       PDF in, at least as 1 image per page, for purposes of imposition
        Undo/Redo
        Tool scripting
 	   Custom line caps
@@ -65,6 +65,8 @@ VERSION 0.096
        Optimize pdf export to rescale to target dpi, and compress image data
        Clone Pattern Builder
        Custom alignments to parents, not just affine transform to parent
+       drag-n-drop text to and from the various text edits (mainly a Laxkit todo)
+       drag-n-drop with system, like drag images into viewwindow from an external file browser
 
 
 
