@@ -11,12 +11,12 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006,2010 by Tom Lechner
+// Copyright (C) 2004-2006,2010,2014 by Tom Lechner
 //
 
 
 // This file defines the functions to make a generic dialog for
-// and arbitrary StyleDef.
+// and arbitrary ObjectDef.
 //
 
 #include <lax/messagebar.h>
@@ -41,9 +41,9 @@ namespace Laidout {
 // 	   field 2
 // 	   ...
 
-//--------------------------- GenericStyleDialog  -----------------------------------------
-/*! \class GenericStyleDialog
- * \brief Generic dialog based on any StyleDef.
+//--------------------------- GenericValueDialog  -----------------------------------------
+/*! \class GenericValueDialog
+ * \brief Generic dialog based on any ObjectDef.
  * \ingroup stylesandstyledefs
  * 
  * The basic strategy is this:
@@ -55,70 +55,70 @@ namespace Laidout {
  *     corresponding to ".2.3".
  *     
  *  3. The controller retrieves the current state of that control,
- *     and tells the Style to change Style.2.3.
+ *     and tells the Value to change Value.2.3.
  *
- *  4. Doing so causes Style to return a mask of what other fields
+ *  4. Doing so causes Value to return a mask of what other fields
  *     change when changing the ".2.3" field, and the controller
  *     steps through that mask, retrieving the modified state from
- *     the Style, and telling the corresponding window control to
+ *     the Value, and telling the corresponding window control to
  *     use this new state.
  *
- *  5. Pressing the submit button causes a style object to be sent to
+ *  5. Pressing the submit button causes a value object to be sent to
  *     the owner of the dialog, and optional closing of the dialog.
  */
 
 
-//! Create new window from the StyleDef of a Style.
-GenericStyleDialog::GenericStyleDialog(Style *nstyle,anXWindow *owner)
-	: RowFrame(NULL,  NULL,nstyle?nstyle->Stylename():"random style",
+//! Create new window from the ObjectDef of a Value.
+GenericValueDialog::GenericValueDialog(Value *nvalue,anXWindow *owner)
+	: RowFrame(NULL,  NULL,nvalue?nvalue->Stylename():"random value",
 			ROWFRAME_STRETCH|ROWFRAME_HORIZONTAL, 
 			0,0,0,0,0,
 			NULL,0,NULL,
 			5)
 {
 	def=NULL;
-	style=nstyle;
-	if (style) style->inc_count();
+	value=nvalue;
+	if (value) value->inc_count();
 	
 	last=NULL;
 }
 
-//! Constructor from a StyleDef, ends by sending a GenericStyle object.
-GenericStyleDialog::GenericStyleDialog(StyleDef *nsd,anXWindow *owner)
-	: RowFrame(NULL,NULL,"random style", ROWFRAME_SPACE|ROWFRAME_HORIZONTAL, 
+//! Constructor from a ObjectDef, ends by sending a GenericValue object.
+GenericValueDialog::GenericValueDialog(ObjectDef *nsd,anXWindow *owner)
+	: RowFrame(NULL,NULL,"random value", ROWFRAME_SPACE|ROWFRAME_HORIZONTAL, 
 			   0,0,0,0,0,
 			   NULL,0,NULL,
 			   5)
 {
 	def=nsd;
 	if (def) def->inc_count();
-	style=NULL;
+	value=NULL;
 	
 	last=NULL;
 }
 
-GenericStyleDialog::~GenericStyleDialog()
+GenericValueDialog::~GenericValueDialog()
 {
-	if (style) style->dec_count();
+	if (value) value->dec_count();
 	if (def)   def->dec_count();
 }
 	
 //! Populate the dialog with all the little controls.
-int GenericStyleDialog::init()
+int GenericValueDialog::init()
 {
-	if (!def && style) def=style->GetStyleDef();
+	if (!def && value) def=value->GetObjectDef();
 	if (!def) return 1;
 	
-	if (!def) { // the style doesn't cough up an appropriate StyleDef
+	if (!def) { // the value doesn't cough up an appropriate ObjectDef
 		char *blah=NULL;
-		if (!style || style && !style->Stylename()) makestr(blah,"Unknown style has unspecified fields.");
+		if (!value || value && !value->Stylename()) makestr(blah,"Unknown value has unspecified fields.");
 		else {
-			makestr(blah,"Style "); 
-			appendstr(blah,style->Stylename());
+			makestr(blah,"Value "); 
+			appendstr(blah,value->Stylename());
 			appendstr(blah," has unspecified fields.");
 		}
 							
-		AddWin(new MessageBar(this,NULL,style->Stylename()?style->Stylename():"unknown",MB_MOVE, 0,0,0,0, 0,blah));
+		AddWin(new MessageBar(this,NULL,value->Stylename()?value->Stylename():"unknown",MB_MOVE, 0,0,0,0, 0,blah));
 		AddNull();
 		delete[] blah;
 	} else {
@@ -129,17 +129,17 @@ int GenericStyleDialog::init()
 	return 0;
 }
 
-//! Recursively build the dialog from a StyleDef.
+//! Recursively build the dialog from a ObjectDef.
 /*! This creates a single new entry, and calls itself if
  * there are subentries.
  *
  * \todo ***Might even want to make this a stand alone function...
  */
-void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
+void GenericValueDialog::MakeControls(const char *startext,ObjectDef *ndef)
 {
 		
 	 //*** use Name, tooltip
-	switch (sd->format) {
+	switch (ndef->format) {
 		 // Possible types:
 		//VALUE_Int,
 		//VALUE_Real,
@@ -156,9 +156,9 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 		case VALUE_Real:
 		case VALUE_String: {
 				char *blah=NULL;
-				//if (sd->format==VALUE_Int) blah=numtostr(style->getint(startext));
-				//else if (sd->format==VALUE_Real) blah=numtostr(style->getdouble(startext));
-				//else makestr(blah,style->getstring(startext));
+				//if (sd->format==VALUE_Int) blah=numtostr(value->getint(startext));
+				//else if (sd->format==VALUE_Real) blah=numtostr(value->getdouble(startext));
+				//else makestr(blah,value->getstring(startext));
 
 				LineInput *linp;
 				last=linp=new LineInput(this,NULL,"***some name***", 0,
@@ -189,10 +189,12 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enum"));
 				//***add sliderpopup with the field's enum names
 			} break;
+
 		case VALUE_EnumVal: { 
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: enumval"));
 				cout << "***shouldn't have ENUM_VAL here!"<<endl; 
 			} break;
+
 		case VALUE_DynamicEnum: { 
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: dynamic enum"));
 				cout << "***implement dynamice enum here!"<<endl; 
@@ -222,23 +224,26 @@ void GenericStyleDialog::MakeControls(const char *startext,StyleDef *sd)
 						delete[] ext; ext=NULL;
 					}
 				} else {
-					cout << "***GenericStyleDialog::MakeControls should be fields here!!"<<endl;
+					cout << "***GenericValueDialog::MakeControls should be fields here!!"<<endl;
 				}
 			} break;
+
 		case VALUE_Color: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: color"));
 			} break;
+
 		case VALUE_Function: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: function"));
 				//nothing doing here.. could have option for this to be listed...
 			} break;
+
 		default: {
 				AddWin(new MessageBar(this,NULL,"---unimplemented element---",MB_MOVE, 0,0,0,0, 0,"unimplemented: unknown"));
 			 } break;
 	}
 }
 
-int GenericStyleDialog::Event(EventData *e,const char *mes)
+int GenericValueDialog::Event(const EventData *e,const char *mes)
 {
 	if (!strcmp(mes,"xscroller")) {
 		//***
@@ -247,31 +252,33 @@ int GenericStyleDialog::Event(EventData *e,const char *mes)
 	} else if (mes[0]=='.') { // is hopefully an extension
 		//***
 	}
-	return 0;
+	return 1;
 } 
 
-int GenericStyleDialog::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
+int GenericValueDialog::CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d)
 {
-	DBG cerr <<"******************************************"<<endl;
-	if (ch==LAX_Esc) app->destroywindow(this);
-	return 0;
+	DBG cerr <<"..generic value charinput.."<<endl;
+	//if (ch==LAX_Esc) app->destroywindow(this);
+
+
+	return anXWindow::CharInput(ch,buffer,len,state,d);
 }
 
 
 
 
 
-//--------------------------- MakeStyleEditWindow -----------------------------------------
+//--------------------------- MakeValueEditWindow -----------------------------------------
 
-////! Return a generic dialog from an arbitrary Style.
+////! Return a generic dialog from an arbitrary Value.
 ///*! \ingroup stylesandstyledefs
 // *
 // * *** should make efforts to find any custom edit dialog that exists for this type of style.
 // */
-//anXWindow *MakeStyleEditWindow(Style *style,anXWindow *owner)
+//anXWindow *MakeValueEditWindow(Value *value,anXWindow *owner)
 //{***
-//	if (!style || !style->GetStyleDef()) return NULL;
-//	return new GenericStyleDialog(style,owner);
+//	if (!value || !value->GetObjectDef()) return NULL;
+//	return new GenericValueDialog(value,owner);
 //}
 
 } //namespace Laidout
