@@ -357,9 +357,9 @@ int GraphicalShell::InitAreas()
 }
 
 
-Laxkit::MenuInfo *GraphicalShell::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *GraphicalShell::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	return NULL;
+	return menu;
 }
 
 /*! Reposition the lineedit when parent viewport size changed.

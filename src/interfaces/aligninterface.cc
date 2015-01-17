@@ -475,10 +475,12 @@ const char *AlignInterface::Name()
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *AlignInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	if (child) return NULL;
-	MenuInfo *menu=new MenuInfo(_("Align Interface"));
+	if (child) return menu;
+
+	if (!menu) menu=new MenuInfo(_("Align Interface"));
+	else menu->AddSep(_("Align"));
 
 	menu->AddSep(_("Snap"));
 	menu->AddItem(_("None"),ALIGN_Snap_None, LAX_ISTOGGLE|(aligninfo->snap_align_type==FALIGN_None?LAX_CHECKED:0));

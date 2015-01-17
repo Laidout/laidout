@@ -184,16 +184,16 @@ char *PageRangeInterface::LabelPreview(PageRange *rangeobj,int first,int labelty
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *PageRangeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	 //no menu when not right click in box...
 	int range=-1, index=-1, part=0;
 	int pos=-1;
 	int s=scan(x,y, &pos, &range, &part, &index);
-	if (!s) return NULL;
+	if (!s) return menu;
 
-
-	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
+	if (!menu) menu=new MenuInfo(_("Paper Interface"));
+	else menu->AddSep(_("Paper"));
 
 	menu->AddItem(_("Custom base..."),RANGE_Custom_Base);
 	menu->AddItem(_("Reverse"),RANGE_Reverse);

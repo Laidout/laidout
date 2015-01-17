@@ -197,7 +197,7 @@ enum AnimationMenuItems {
 	ANIM_Save
 };
 
-Laxkit::MenuInfo *AnimationInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *AnimationInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 //    MenuInfo *menu=new MenuInfo(_("Animation Interface"));
 //
@@ -211,7 +211,7 @@ Laxkit::MenuInfo *AnimationInterface::ContextMenu(int x,int y,int deviceid)
 //
 //    return menu;
 
-	return NULL;
+	return menu;
 }
 
 int AnimationInterface::Event(const Laxkit::EventData *e,const char *mes)

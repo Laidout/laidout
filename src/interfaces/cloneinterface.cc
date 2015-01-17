@@ -2670,9 +2670,10 @@ enum CloneMenuItems {
 	CLONEM_Save
 };
 
-Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *CloneInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-    MenuInfo *menu=new MenuInfo(_("Clone Interface"));
+	if (!menu) menu=new MenuInfo(_("Clone Interface"));
+	else menu->AddSep(_("Clone"));
 
     menu->AddItem(_("Clear current base objects"), CLONEM_Clear_Base_Objects);
     menu->AddSep();

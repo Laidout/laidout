@@ -127,14 +127,15 @@ int GroupInterface::UseThis(anObject *newdata,unsigned int)
 #define GROUP_GrayBars         9 
 #define GROUP_CutMarks         10 
 
-Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *GroupInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	rx=x,ry=y;
 
-	MenuInfo *menu=NULL;
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport*>(viewport);
 	if (lvp->papergroup) {
-		menu=new MenuInfo(_("Group Interface"));
+		if (!menu) menu=new MenuInfo(_("Group Interface"));
+		else if (menu->n()==0) menu->AddSep(_("Group"));
+
 		menu->AddItem(_("Add Registration Mark"),GROUP_RegistrationMark);
 		menu->AddItem(_("Add Gray Bars"),GROUP_GrayBars);
 		//menu->AddItem(_("Add Cut Marks"),PAPERM_CutMarks);
@@ -171,7 +172,14 @@ int GroupInterface::Event(const Laxkit::EventData *e,const char *mes)
 			needtodraw=1;
 			return 0;
 		}
+
+	} else if (!strcmp(mes,"docTreeChange")) {
+		//***
+		RemapBounds();
+		needtodraw=1;
+		return 0;
 	}
+
 	return 1;
 }
 

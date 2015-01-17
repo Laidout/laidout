@@ -483,9 +483,10 @@ const char *dirname(int dir)
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *NUpInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	MenuInfo *menu=new MenuInfo(_("N-up Interface"));
+	if (!menu) menu=new MenuInfo(_("N-up Interface"));
+	else menu->AddSep(_("Nup"));
 
 	menu->AddItem(dirname(LAX_LRTB), NULL, LAX_LRTB, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF, 1);
 	menu->AddItem(dirname(LAX_LRBT), NULL, LAX_LRBT, LAX_ISTOGGLE|(nupinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF, 1);

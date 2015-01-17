@@ -143,10 +143,12 @@ const char *PaperInterface::Name()
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	rx=x,ry=y;
-	MenuInfo *menu=new MenuInfo(_("Paper Interface"));
+
+	if (!menu) menu=new MenuInfo(_("Paper Interface"));
+	else menu->AddSep(_("Papers"));
 
 	if (papergroup) {
 		menu->AddItem(_("Add Registration Mark"),PAPERM_RegistrationMark);

@@ -93,11 +93,11 @@ const char *ObjectIndicator::Name()
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *ObjectIndicator::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *ObjectIndicator::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 	//MenuInfo *menu=new MenuInfo(_("N-up Interface"));
 	//return menu;
-	return NULL;
+	return menu;
 }
 
 /*! Return 0 for menu item processed, 1 for nothing done.

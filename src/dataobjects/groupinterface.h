@@ -51,7 +51,7 @@ class GroupInterface : public LaxInterfaces::ObjectInterface, public Value
 	virtual const char *whattype() { return "ObjectInterface"; }
 	virtual const char *whatdatatype() { return "Group"; }
 	virtual anInterface *duplicate(anInterface *dup);
-	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
 	virtual int UseThis(anObject *newdata,unsigned int);
 	virtual int draws(const char *atype);

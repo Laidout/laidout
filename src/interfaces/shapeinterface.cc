@@ -119,9 +119,10 @@ const char *ShapeInterface::Name()
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *ShapeInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *ShapeInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	MenuInfo *menu=new MenuInfo(_("Shape Interface"));
+	if (!menu) menu=new MenuInfo(_("Shape Interface"));
+	else menu->AddSep(_("Shapes"));
 
 	menu->AddItem(dirname(LAX_LRTB),LAX_LRTB,LAX_ISTOGGLE|(shapeinfo->direction==LAX_LRTB?LAX_CHECKED:0)|LAX_OFF,1);
 	menu->AddItem(dirname(LAX_LRBT),LAX_LRBT,LAX_ISTOGGLE|(shapeinfo->direction==LAX_LRBT?LAX_CHECKED:0)|LAX_OFF,1);

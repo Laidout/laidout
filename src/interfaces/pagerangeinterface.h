@@ -69,7 +69,7 @@ class PageRangeInterface : public LaxInterfaces::anInterface, public DocumentUse
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
 	virtual void Clear(LaxInterfaces::SomeData *d);
-	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
 
 	
