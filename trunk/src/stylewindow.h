@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2006,2010 by Tom Lechner
+// Copyright (C) 2004-2006,2010,2014 by Tom Lechner
 //
 #ifndef STYLEWINDOW_H
 #define STYLEWINDOW_H
@@ -23,21 +23,21 @@
 namespace Laidout {
 
 
-class GenericStyleDialog : public Laxkit::RowFrame
+class GenericValueDialog : public Laxkit::RowFrame
 {
  protected:
-	Style *style;
-	StyleDef *def;
+	Value *style;
+	ObjectDef *def;
 	anXWindow *last;
  public:
-	GenericStyleDialog(Style *nstyle,anXWindow *owner);
-	GenericStyleDialog(StyleDef *nsd,anXWindow *owner);
-	virtual ~GenericStyleDialog();
+	GenericValueDialog(Value *nvalue,anXWindow *owner);
+	GenericValueDialog(ObjectDef *ndef,anXWindow *owner);
+	virtual ~GenericValueDialog();
 	virtual int init();
 	virtual int Event(EventData *e,const char *mes);
 	virtual int CharInput(unsigned int ch,const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *d);
 
-	virtual void MakeControls(const char *startext,StyleDef *sd);
+	virtual void MakeControls(const char *startext,ObjectDef *ndef);
 };
 
 
