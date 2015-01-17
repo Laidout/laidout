@@ -2609,8 +2609,12 @@ Laxkit::ShortcutHandler *LaidoutViewport::GetShortcuts()
 
 int LaidoutViewport::PerformAction(int action)
 {
-	// *****
-	if (action==LOV_DeselectAll) {
+	if (action==VIEWPORT_Undo || action==VIEWPORT_Redo) {
+		ViewportWindow::PerformAction(action);
+		laidout->notifyDocTreeChanged(NULL,TreeObjectRepositioned,0,0);
+		return 0;
+
+	} else if (action==LOV_DeselectAll) {
 		if (!curobj.obj) return 0;
 		
 		 // clear curobj from interfaces and check in 
