@@ -150,9 +150,10 @@ enum AnchorMenuItems {
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *AnchorInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *AnchorInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	MenuInfo *menu=new MenuInfo(_("Anchor Interface"));
+	if (!menu) menu=new MenuInfo(_("Anchor Interface"));
+	else menu->AddSep(_("Anchors"));
 
 	menu->AddItem(_("Add page target"),   ANCHORM_Add_Page_Target);
 	menu->AddItem(_("Add parent target"), ANCHORM_Add_Parent_Target);

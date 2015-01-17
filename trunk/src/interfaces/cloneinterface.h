@@ -252,7 +252,7 @@ class CloneInterface : public LaxInterfaces::anInterface
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual int InterfaceOn();
 	virtual int InterfaceOff(); 
-	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid);
+	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
 
 	

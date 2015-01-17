@@ -362,9 +362,10 @@ int SignatureInterface::IsFinal()
 /*! \todo much of this here will change in future versions as more of the possible
  *    boxes are implemented.
  */
-Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid)
+Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Laxkit::MenuInfo *menu)
 {
-	MenuInfo *menu=new MenuInfo(_("Signature Interface"));
+	if (!menu) menu=new MenuInfo(_("Signature Interface"));
+	else if (menu->n()==0) menu->AddSep(_("Signatures"));
 
 	int landscape=0;
 	const char *paper="";

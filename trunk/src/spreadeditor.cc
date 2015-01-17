@@ -523,9 +523,10 @@ int SpreadInterface::Refresh()
 	return 1;
 }
 
-Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *SpreadInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
-	MenuInfo *menu=new MenuInfo(_("Spread Editor"));
+	if (!menu) menu=new MenuInfo(_("Spread Editor"));
+	else if (menu->n()==0) menu->AddSep(_("Spread Editor"));
 
 //	//menu->AddItem(_("Page Labels..."),SIA_PageLabels);
 	menu->AddItem(_("Insert Page After"),SIA_AddPageAfter);

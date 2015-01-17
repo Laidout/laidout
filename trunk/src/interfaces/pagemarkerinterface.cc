@@ -160,7 +160,7 @@ void PageMarkerInterface::Clear(SomeData *d)
 {
 }
 
-Laxkit::MenuInfo *PageMarkerInterface::ContextMenu(int x,int y,int deviceid)
+Laxkit::MenuInfo *PageMarkerInterface::ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu)
 {
 //	if (no menu for x,y) return NULL;
 //
@@ -171,7 +171,7 @@ Laxkit::MenuInfo *PageMarkerInterface::ContextMenu(int x,int y,int deviceid)
 //	menu->AddItem(_("Et Cetera"), SOME_OTHER_VALUE);
 //	return menu;
 	
-	return NULL;
+	return menu;
 }
 
 int PageMarkerInterface::Event(const Laxkit::EventData *data, const char *mes)
