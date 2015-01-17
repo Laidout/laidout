@@ -1662,6 +1662,7 @@ int main(int argc,char **argv)
 	DBG cerr<<"Locale:      "<<setlocale(LC_MESSAGES,NULL)<<endl;
 	DBG cerr<<"--------------------------------"<<endl;
 
+
 	InitOptions();
 
 	int c,index;
@@ -1703,6 +1704,11 @@ int main(int argc,char **argv)
 	laidout=new LaidoutApp();
 	o=options.find("experimental",0);
 	if (o && o->parsed_present) laidout->experimental=1;
+
+	DBG cerr <<" *** Warning! Undo is VERY VERY experimental, and not uniformly implemented!! use at your own risk!!!"<<endl;
+	//if (!laidout->experimental) EnableUndo(false);
+	//EnableUndo(true);
+
 	
 	laidout->init(argc,argv);
 
@@ -1715,6 +1721,7 @@ int main(int argc,char **argv)
 	DBG cerr <<"---------Laidout Close--------------"<<endl;
 	 //for debugging purposes, spread out closing down various things....
 	laidout->close();
+	Laxkit::SetUndoManager(NULL);
 	Laxkit::InstallShortcutManager(NULL); //forces deletion of shortcut lists in Laxkit
 	Laxkit::IconManager::SetDefault(NULL);
 	laidout->dec_count();
