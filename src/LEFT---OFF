@@ -215,70 +215,75 @@ export/print dialog
   export should have a preview of what is actually going out, flip through spreads
   DONE export needs "batch" send, break into smaller segments 
 
-Clean up mesh/patch controls:
-  debug! mesh path move weight node, and more than one v
-
+Clean up mesh/patch controls: 
   perhaps a line warp, using line width adjustable path interface
-  make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
   coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
   tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
-  just as moving edges, should be able to move any vert column or horizontal row of points
   when on edge, it highlights, but if you are outside of mesh, it will switch to other object
-  selected nodes should probably be colored, just gray disappears, hard to work with
-  maybe have status message say how many points are selected
-  nudge mode with shift?
   smooth edit mode should be default. It's not working when more than one square
   rotate/scale single control point should move attached controls in smooth mode
   add new patches should smoothify joins when in smooth edit
+  reverse lookup is not very precise
+
+  -----0.096--------
+  just as moving edges, should be able to move any vert column or horizontal row of points
+  selected nodes should probably be colored, just gray disappears, hard to work with
+  maybe have status message say how many points are selected
+  nudge mode with shift?
   rect select nodes
   for cache preview, only update affected patches.. difficult to compute when overlaps
   changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
-  implement right button config options to make the settings more discoverable
+  implement more right button config options to make the settings more discoverable
   circle warp needs a proper circle/ellipse interface
-  reverse lookup is not very precise
+  make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
+  DONE debug! mesh path move weight node, and more than one v
   DONE mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
   DONE delete should not delete whole object
 
 engraving tool: Engraving 
+  offsetting the object screws up the path mouse overs and clicks
+  keys being caught in patch, not in child path
   export doesn't work for: pdf:exports black, and offset, nothing for image, scribus, eps, ps
-  bez cache needs updating when points are moved around
-  dash cache needs updating when points are moved OR thickness changed
+  test: bez cache needs updating when points are moved around
+  test: dash cache needs updating when points are moved OR thickness changed
 
-  bug: panel draws on top, but you can still click on page marker interface below
   bug: memory hole after tracing
 
   trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
-  setting sharing is confusing, need much better interface for that
-  need duplicate group button for easy crosshatch
-  need merge group
   instant global thickness adjust on orientation tool?
-  hover over mode icons should show text of what you are hovering over.. hard to remember, annoying to look at status bar otherwise
+  always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
+  don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
+  trace object needs to be in page context, not object context (or must be default option)
+  need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
+  finish implement making the circle lines be closed circles
+
+  be able to autotrace to multiple engraved objects
+    -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
+
+  ------0.096:------
+  undo/redo
+  need standard for adding different preset line types:
+    path AND thickness, like for half circle fill, thin at tips, thick in middle
+  current blockout is not very precise, needs approximation between existing point samples
   direction map is not showing actual direction
   implement direction section
   implement spacing section
   need some kind of smooth out: smooth out width, and smooth out path
-  when flipping between objects, gives no indication that we are on a new object, like a thick outline
-  always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
-  invert trace sampling: sample white instead of black
-  don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
-  trace object needs to be in page context, not object context (or must be default option)
-  need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
+  hover over mode icons should show text of what you are hovering over.. hard to remember, annoying to look at status bar otherwise
+  setting sharing is confusing, need much better interface for that
   edit brush ramp as symmetric ramp 
+  invert trace sampling: sample white instead of black, a shortcut to what needs to be implemented in curvemapinterface?
   curvemap needs predefined ramp profiles, remember last, load/save (per context?)
     -> options to insert various predefined patterns
   should be able to draw a line and have that be a baseline for dashes
-  finish implement making the circle lines be closed circles
-
-  resolution tool: click to add between points within brush, control to destroy points in brush
-  option: either drop out of bounds points, or zap mesh to point bounds
-  be able to autotrace to multiple engraved objects
-    -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
-  need optional spacing image map, which is a mask like image that preserves spacing after distorting mesh
-  current blockout is not very precise, needs approximation between existing point samples
   implement custom line merge and break to preserve spacing across mesh contraction
-
-  0.096:
+  option: either drop out of bounds points, or zap mesh to point bounds
+  resolution tool: click to add between points within brush, control to destroy points in brush
+  need optional spacing image map, which is a mask like image that preserves spacing after distorting mesh
+  need duplicate group button for easy crosshatch
+  need merge group
+  custom sample of channels
   numsliders should have click on arrows for single increase, and a dismiss x for input box
   should probably abstract control panel creation so we don't have to hardcode everything all the time
   edge abutment
@@ -297,6 +302,10 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE bug: panel draws on top, but you can still click on page marker interface below
+  DONE mode switch must remove child interface
+  DONE change color for not currently selected group should map to the one clicked
+  DONE when flipping between objects, gives no indication that we are on a new object, like a thick outline
   DONE dash caps on really thin gaps create incorrect overlaps -> wrong fill mode
   DONE bug: engraver lines with 1 or 2 points FAIL BADLY load in problem?
   DONE dup leaving empty group
@@ -337,6 +346,7 @@ curves:
   DONE move CurveInfo to own file.
 
 PathInterface:
+  interfs.cc: weights not being shown unless '_'
   line caps are slightly rounded, they should either be rounded or butt caps for now
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: should not create new control points by pressing cntl, unless there is movement
@@ -352,13 +362,15 @@ PathInterface:
   powerstroke export requires apply offset.. else weight nodes are all messed up
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
   clarify export for weighted paths, use outlinecache and areacache as needed, check all filetypes exporters: svg pdf scribus image/ps/eps
+  finish implementing joins. need to clarify weight behavior at corner joins
+  weight computation is currently done based on even t spacing, but probably should be mapped based on distance
+
+  ---------.096:
   implement open at any point to possible break into separate subpaths
   need numerical entry for all weight node characteristics
-  finish implementing joins. need to clarify weight behavior at corner joins
   need to protect against reentrants at corner joins.. makes holes unless nonzero rule, and sometimes sticks out the other side
-  weight computation is currently done based on even t spacing, but probably should be mapped based on distance
-  inkscape has multiple interpolators
   sliding around the nodes is really annoying.. should do according to proximity to center line
+  inkscape has multiple interpolators, we should too!
   actions to implement:
     need arbitrary cut
     need command to apply offset
@@ -456,7 +468,6 @@ cloner:
   click on base cell, update viewport color box
   save color hints of base cells with Tiling object
   change color of boundary, and outline preview
-  DONE need mass select page for all tiling types
   1m and mg do not seem to work: need a final transform to apply, NOT repeatX/YDir().. those shift without rotate
   select objects, wrap base cell around it
   debug recursive
@@ -468,12 +479,32 @@ cloner:
   penrose/heesh/net clone interface
   need progressive search when mouse over box
 
+  DONE need mass select page for all tiling types
+
 space cloning/duping doesn't work
  
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
 	feed it an ExportConfig
 
 autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
+
+
+
+----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
+update fileformat.txt
+check laidout.1 when time to release
+update docs to have new release number
+update translation base files
+update screenshots
+update dtpcompare.html
+put rss/g+ links on all menu pages
+test:
+  each window type: about palette view spread command text
+    help: window pane does funky stuff
+  each export filter
+  make some test scripts for command line testing
+  test in different window managers
+
 
 file button:
    Save
@@ -492,23 +523,8 @@ icons for the following, perhaps be right click on the save button? or modifiers
 
 when you try to open anything in ~/.laidout/*/templates, then it should open as a template 
                                     
-
-
-----------------0.096 ROADMAP ITEMS: features and enhancements------------------------
-update fileformat.txt
-check laidout.1 when time to release
-update docs to have new release number
-update translation base files
-update screenshots
-update dtpcompare.html
-put rss/g+ links on all menu pages
-test:
-  each window type: about palette view spread command text
-    help: window pane does funky stuff
-  each export filter
-  make some test scripts for command line testing
-  test in different window managers
-
+transfer from DrawableObject to Somedata locks, visible, selectable
+transfer group behavior to SomeData? would greatly simplify some things
 
 for export, need way to have easy crop, especially from command line
 
