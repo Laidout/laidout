@@ -544,7 +544,7 @@ void AlignInterface::ResetPath()
  */
 int AlignInterface::Event(const Laxkit::EventData *e,const char *mes)
 {
-	if (!strcmp(mes,"child")) {
+	if (!strcmp(mes,"PathInterface")) {
 		UpdateFromPath();
 		return 0;
 	}
