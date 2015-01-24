@@ -241,8 +241,8 @@ DrawableObject::DrawableObject(LaxInterfaces::SomeData *refobj)
 	clip=NULL;
 	clip_path=wrap_path=inset_path=NULL;
 	autowrap=autoinset=0;
-	locks=0;
 
+	locks=0; 
 	locked=0;
 	visible=1;
 	prints=1;
