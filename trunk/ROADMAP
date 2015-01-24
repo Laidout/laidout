@@ -12,16 +12,16 @@ VERSION 0.095
 (done) engraver tool linear, radial, or circular line fills
        engraver tool grow point mode
 (done) engraver tool, implement dashes
-       engraver tool, resolution cut mode
+(done) allow editing meshes based on a path
        layers (object tree) palette
 (done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
+       debug line outline cache
        PathInterface extrapolate line join
        PathInterface subpaths for hole making should work: check exports
 (done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
 (done) allow export even or odd
 (done) allow export in batches
        test new export even/odd and batches for all exporters
-       Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
 (done) Freehand drawing with tablet pressure support
 (done) Clickable page numbers to select markers
 (done) impose-only mode should allow access to all imposition types, not just signatures
@@ -33,7 +33,9 @@ VERSION 0.095
 
 VERSION 0.096
 -------------
+       engraver tool, resolution cut mode
        debug previous version!
+       Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        PDF in, at least as 1 image per page, for purposes of imposition
        Undo/Redo
