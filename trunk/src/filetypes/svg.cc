@@ -953,7 +953,7 @@ int svgdumpdef(FILE *f,double *mm,SomeData *obj,int &warning,ErrorLog &log, SvgE
 
 				fprintf(f,"\"\n"
 						  "  sort_points=\"true\"\n"
-						  "  interpolator_type=\"CubicBezierJohan\"\n"
+						  "  interpolator_type=\"CentripetalCatmullRom\"\n"
 						  "  interpolator_beta=\"0.2\"\n"
 						  "  start_linecap_type=\"butt\"\n"
 						  "  linejoin_type=\"extrapolated\"\n"
@@ -1193,6 +1193,8 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 			  "     xmlns:svg=\"http://www.w3.org/2000/svg\"\n"
 			  "     xmlns=\"http://www.w3.org/2000/svg\"\n"
 			  "     xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+			  "     xmlns:sodipodi=\"http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd\"\n"
+			  "     xmlns:inkscape=\"http://www.inkscape.org/namespaces/inkscape\"\n"
 			  "     version=\"1.0\"\n");
 	fprintf(f,"     width=\"%fin\"\n", width); //***inches by default?
 	fprintf(f,"     height=\"%fin\"\n", height);
