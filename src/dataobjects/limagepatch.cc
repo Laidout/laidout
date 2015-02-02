@@ -342,6 +342,8 @@ int LColorPatchData::Evaluate(const char *func,int len, ValueHash *context, Valu
 LImagePatchInterface::LImagePatchInterface(int nid,Laxkit::Displayer *ndp)
 	: ImagePatchInterface(nid,ndp)
 {
+	drawrendermode=1;
+	rendermode=3;
 }
 
 anInterface *LImagePatchInterface::duplicate(anInterface *dup)
@@ -456,6 +458,8 @@ void LImagePatchInterface::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit
 LColorPatchInterface::LColorPatchInterface(int nid,Laxkit::Displayer *ndp)
 	: ColorPatchInterface(nid,ndp)
 {
+	drawrendermode=1;
+	rendermode=3;
 }
 
 anInterface *LColorPatchInterface::duplicate(anInterface *dup)
