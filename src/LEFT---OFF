@@ -187,7 +187,9 @@ filters:
 svg
   in needs to account for viewBox
   in for powerstroke
+  after in, does weird things with width node
   in/out for meshes
+  need in for style on paths
   DONE export needs implementation for options for mesh and powerstroke
   DONE export needs specialized export config
 Scribus:
@@ -203,7 +205,8 @@ Scribus:
 When there are errors or warnings in exporting, should be able to have the error log such that
   you can just jump to the offending bit easily. This would also be used for preflight verifiers,
   and maybe also mass edit things, like edit all images..
-  - have ViewWindow::JumpToObject(&place, objectid);	
+  - have ViewWindow::JumpToObject(&place, objectid);
+
 need infrastructure to propagate and save tool settings 
 
 export/print dialog
@@ -216,11 +219,11 @@ export/print dialog
   DONE export needs "batch" send, break into smaller segments 
 
 Clean up mesh/patch controls: 
-  perhaps a line warp, using line width adjustable path interface
   coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
   tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
   when on edge, it highlights, but if you are outside of mesh, it will switch to other object
   smooth edit mode should be default. It's not working when more than one square
+  smooth edit fails along edges
   rotate/scale single control point should move attached controls in smooth mode
   add new patches should smoothify joins when in smooth edit
   reverse lookup is not very precise
@@ -237,12 +240,18 @@ Clean up mesh/patch controls:
   circle warp needs a proper circle/ellipse interface
   make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
 
+  DONE perhaps a line warp, using line width adjustable path interface
   DONE debug! mesh path move weight node, and more than one v
   DONE mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
   DONE delete should not delete whole object
 
 engraving tool: Engraving 
-  offsetting the object screws up the path mouse overs and clicks
+  needs to be an indicator on red linked circle when current group is selected, as it acts as green then
+  select next/prev object is removing panel
+  freehand not being interpreted correctly
+    non-equal smooth is adding erroneous extra mesh column
+  establish path needs better smoothness assignments
+  trace once not working
   keys being caught in patch, not in child path
   export doesn't work for: pdf:exports black, and offset, nothing for image, scribus, eps, ps
   test: bez cache needs updating when points are moved around
@@ -256,13 +265,14 @@ engraving tool: Engraving
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
   trace object needs to be in page context, not object context (or must be default option)
   need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
-  finish implement making the circle lines be closed circles
 
   be able to autotrace to multiple engraved objects
     -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
 
   ------0.096:------
   undo/redo
+  need mouse sensitivity sliders
+  finish implement making the circle lines be closed circles
   need standard for adding different preset line types:
     path AND thickness, like for half circle fill, thin at tips, thick in middle
   current blockout is not very precise, needs approximation between existing point samples
@@ -302,6 +312,8 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE change dash/trace/other settings should trigger a remap of all groups using those settings
+  DONE offsetting the object screws up the path mouse overs and clicks
   DONE bug: panel draws on top, but you can still click on page marker interface below
   DONE mode switch must remove child interface
   DONE change color for not currently selected group should map to the one clicked
@@ -346,8 +358,8 @@ curves:
   DONE move CurveInfo to own file.
 
 PathInterface:
+  bug: when path is a child, width nodes are not drawn correctly
   interfs.cc: weights not being shown unless '_'
-  line caps are slightly rounded, they should either be rounded or butt caps for now
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
   bug: should not create new control points by pressing cntl, unless there is movement
   bug: shift click down then up on a point selects then deselects.. control can toggle
@@ -404,6 +416,7 @@ PathInterface:
     if add points, show dotted line to indicate a new segment incoming
   finish new path/pathoperator/pathsubinterface/pathinterface structure 
 
+  DONE line caps are slightly rounded, they should either be rounded, butt, or zero caps for now
   DONE finish implementing center and outline interpolation: first/last point mixup, not interpolating right, duping start+end
   DONE bug: have non identity object trasform makes nodes display wrong, but scan works
   DONE need command to reset offset
@@ -445,22 +458,6 @@ lineedit:
   date
   time
   DONE dir
-
-FileDialog2:
-  bookmarks, have recent there
-  bookmarks, display as separated list, not tree
-  implement icon list selector
-  hover is selecting.. should be just hovering
-  edits color style: bg alternating isn't highlighting
-  have little x to clear masks..
-  need way to draw grayed out icons
-  details: name  mod-date  w x h  size
-  sort by details
-  tree display flat option
-  tooltip to show full path of bookmarks
-  do recent right, figure out current way other desktops do it
-  exclude/include directories when listing files
-  need hover indicator, and better scan.. ignoring offset
 
 
 cloner:
@@ -505,6 +502,22 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+
+FileDialog2:
+  bookmarks, have recent there
+  bookmarks, display as separated list, not tree
+  implement icon list selector
+  hover is selecting.. should be just hovering
+  edits color style: bg alternating isn't highlighting
+  have little x to clear masks..
+  need way to draw grayed out icons
+  details: name  mod-date  w x h  size
+  sort by details
+  tree display flat option
+  tooltip to show full path of bookmarks
+  do recent right, figure out current way other desktops do it
+  exclude/include directories when listing files
+  need hover indicator, and better scan.. ignoring offset
 
 file button:
    Save
