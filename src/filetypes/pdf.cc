@@ -332,11 +332,30 @@ void pdfdumpobj(FILE *f,
 		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning);
 
 	} else {
-		setlocale(LC_ALL,"");
-		sprintf(scratch,_("Warning: Cannot export %s to Pdf"),object->whattype());
-		log.AddMessage(scratch,ERROR_Fail);
-		setlocale(LC_ALL,"C");
-		warning++;
+		DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
+        SomeData *dobje=NULL;
+        if (dobj) dobje=dobj->EquivalentObject();
+
+        if (dobje) {
+            dobje->Id(object->Id());
+
+			appendstr(stream,"Q\n");
+			psPopCtm(); 
+            pdfdumpobj(f,objs,obj,stream,objectcount,resources,dobje,log,warning);
+
+            dobje->dec_count();
+
+        } else {
+
+            setlocale(LC_ALL,"");
+            char buffer[strlen(_("Cannot export %s objects to pdf."))+strlen(object->whattype())+1];
+            sprintf(buffer,_("Cannot export %s objects to pdf."),object->whattype());
+            log.AddMessage(object->object_id,object->nameid,NULL, buffer,ERROR_Warning);
+            setlocale(LC_ALL,"C");
+            warning++;
+        }
+
+		return;
 
 	}
 	
@@ -1505,6 +1524,10 @@ static void pdfGradient(FILE *f,
 //--------------------------------------- pdfPaths() ----------------------------------------
 
 static int pdfaddpath(FILE *f,Coordinate *path, char *&stream);
+static int pdfaddpath(FILE *f, flatpoint *points,int n, char *&stream);
+static void pdfLineStyle(LineStyle *lstyle, char *&stream);
+
+
 
 //! Output pdf for a PathsData. 
 static void pdfPaths(FILE *f,
@@ -1518,80 +1541,150 @@ static void pdfPaths(FILE *f,
 {
 	if (!pdata) return;
 
-	Coordinate *p,*start;
 	flatpoint pp;
-	int n=0;
-	LineStyle *lstyle=NULL;
-	FillStyle *fstyle=NULL;
 	char buffer[255];
 
-	 //build path
+	if (pdata->paths.n==0) return; //ignore empty path objects
+
+	LineStyle *lstyle=pdata->linestyle;
+	if (lstyle && lstyle->hasStroke()==0) lstyle=NULL;
+	FillStyle *fstyle=pdata->fillstyle;
+	if (fstyle && fstyle->hasFill()==0) fstyle=NULL;
+	if (!lstyle && !fstyle) return;
+
+
+	int weighted=0;
+	bool open=true;
 	for (int c=0; c<pdata->paths.n; c++) {
-		p=start=pdata->paths.e[c]->path;
-		if (!p) continue;
-		n=pdfaddpath(f,p,stream);
+		if (!pdata->paths.e[c]->path) continue;
+		if (pdata->paths.e[c]->Weighted()) weighted++;
+		if (pdata->paths.e[c]->IsClosed()) open=false;
 	}
 
+	if (!weighted) {
+		 //plain, ordinary path with no offset and constant width
 
-	 //stroke and/or fill path
-	//lstyle=pdata->paths.e[c]->linestyle;
-	//if (!lstyle) lstyle=pdata->linestyle;//default for all data paths
-	lstyle=pdata->linestyle;//default for all data paths
+		Path *path;
+		for (int c=0; c<pdata->paths.n; c++) {
+			path=pdata->paths.e[c];
+			if (!path->path) continue;
 
-	fstyle=pdata->fillstyle;//default for all data paths
-
-	
-	if (n && fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
-		sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
-					fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
-		appendstr(stream,buffer);
-	}
-
-	if (n && lstyle && lstyle->hasStroke()) {
-		 //linecap
-		if (lstyle->capstyle==CapButt) appendstr(stream,"0 J\n");
-		else if (lstyle->capstyle==CapRound) appendstr(stream,"1 J\n");
-		else if (lstyle->capstyle==CapProjecting) appendstr(stream,"2 J\n");
-
-		 //linejoin
-		if (lstyle->joinstyle==JoinMiter) appendstr(stream,"0 j\n");
-		else if (lstyle->joinstyle==JoinRound) appendstr(stream,"1 j\n");
-		else if (lstyle->joinstyle==JoinBevel) appendstr(stream,"2 j\n");
-
-		//setmiterlimit
-		//setstrokeadjust
-
-		 //line width
-		sprintf(buffer," %.10g w\n",lstyle->width);
-		appendstr(stream,buffer);
-
-		 //dash pattern
-		if (lstyle->dotdash==0 || lstyle->dotdash==~0)
-			appendstr(stream," [] 0 d\n"); //clear dash array
-		else {
-			sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array
-			appendstr(stream,buffer);
+			pdfaddpath(f,path->path,stream);
 		}
 
-		 //set stroke color
-		sprintf(buffer,"%.10g %.10g %.10g RG\n",
-					lstyle->color.red/65535.,lstyle->color.green/65535.,lstyle->color.blue/65535.);
+		pdfLineStyle(lstyle, stream);
+
+		 //fill and/or stroke
+		if (fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
+			sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
+						fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
+			appendstr(stream,buffer);
+
+			if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"B*\n"); //fill and stroke
+			else appendstr(stream,"B\n"); //fill and stroke
+
+
+		} else if (fstyle && fstyle->hasFill()) {
+			sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
+						fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
+			appendstr(stream,buffer);
+
+			if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"f*\n"); //fill only
+			else appendstr(stream,"f\n"); //fill only
+
+		} else if (lstyle && lstyle->hasStroke()) {
+			appendstr(stream,"S\n"); //stroke only
+		}
+
+
+	} else {
+		//at least one weighted path, need to fill separately from stroke, as stroke may
+		//be all over the place
+
+
+		if (fstyle && fstyle->hasFill() && !open) {
+			 //---write style for fill within centercache.. no stroke to that, as we apply artificial stroke
+			sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
+						fstyle->color.red/65535.,fstyle->color.green/65535.,fstyle->color.blue/65535.);
+			appendstr(stream,buffer);
+
+			Path *path;
+			for (int c=0; c<pdata->paths.n; c++) {
+				path=pdata->paths.e[c];
+				if (path->needtorecache) path->UpdateCache();
+				if (!path->path) continue;
+
+				if (path->Weighted()) pdfaddpath(f,path->centercache.e,path->centercache.n, stream);
+				else pdfaddpath(f,path->path, stream);
+			}
+
+			if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"f*\n"); //fill only
+			else appendstr(stream,"f\n"); //fill only
+		}
+
+		if (lstyle) {
+			pdfLineStyle(lstyle, stream);
+
+			 //---write style: no linestyle, but fill style is based on linestyle
+			FillStyle fillstyle;
+			fillstyle.color=lstyle->color;
+
+			sprintf(buffer,"%.10g %.10g %.10g rg\n",  //set fill color
+						fillstyle.color.red/65535.,fillstyle.color.green/65535.,fillstyle.color.blue/65535.);
+			appendstr(stream,buffer);
+
+
+			 //add outlinecache...
+			for (int c=0; c<pdata->paths.n; c++) {
+				Path *path=pdata->paths.e[c];
+				if (!path->path) continue;
+				if (path->needtorecache) path->UpdateCache();
+
+				pdfaddpath(f,path->outlinecache.e,path->outlinecache.n, stream);
+			}
+
+			appendstr(stream,"f*\n"); //evenodd fill only
+
+		}
+	} //end if weighted path
+}
+
+static void pdfLineStyle(LineStyle *lstyle, char *&stream)
+{
+	if (!lstyle) return;
+
+	 //linecap
+	if (lstyle->capstyle==CapButt) appendstr(stream,"0 J\n");
+	else if (lstyle->capstyle==CapRound) appendstr(stream,"1 J\n");
+	else if (lstyle->capstyle==CapProjecting) appendstr(stream,"2 J\n");
+
+	 //linejoin
+	if (lstyle->joinstyle==JoinMiter) appendstr(stream,"0 j\n");
+	else if (lstyle->joinstyle==JoinRound) appendstr(stream,"1 j\n");
+	else if (lstyle->joinstyle==JoinBevel) appendstr(stream,"2 j\n");
+
+	//setmiterlimit
+	//setstrokeadjust
+
+	 //line width
+	char buffer[255]; 
+	sprintf(buffer," %.10g w\n",lstyle->width);
+	appendstr(stream,buffer);
+
+	 //dash pattern
+	if (lstyle->dotdash==0 || lstyle->dotdash==~0)
+		appendstr(stream," [] 0 d\n"); //clear dash array
+	else {
+		sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array
 		appendstr(stream,buffer);
 	}
 
-	 //fill and/or stroke
-	if (fstyle && fstyle->hasFill() && lstyle && lstyle->hasStroke()) {
-		if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"B*\n"); //fill and stroke
-		else appendstr(stream,"B\n"); //fill and stroke
-
-	} else if (fstyle && fstyle->hasFill()) {
-		if (fstyle->fillrule==LAXFILL_EvenOdd) appendstr(stream,"f*\n"); //fill and stroke
-		else appendstr(stream,"f\n"); //fill only
-
-	} else if (lstyle && lstyle->hasStroke()) {
-		appendstr(stream,"S\n"); //stroke only
-	}
+	 //set stroke color
+	sprintf(buffer,"%.10g %.10g %.10g RG\n",
+				lstyle->color.red/65535.,lstyle->color.green/65535.,lstyle->color.blue/65535.);
+	appendstr(stream,buffer); 
 }
+
 
 static int pdfaddpath(FILE *f,Coordinate *path, char *&stream)
 {
@@ -1645,6 +1738,84 @@ static int pdfaddpath(FILE *f,Coordinate *path, char *&stream)
 
 	return n;
 }
+
+static int pdfaddpath(FILE *f, flatpoint *points,int n, char *&stream)
+{
+	if (n<=0) return 0;
+
+	 //build the path to draw
+	char buffer[255];
+	flatpoint c1,c2,p2;
+	int np=1; //number of points seen
+	bool onfirst=true;
+	int ii=0;
+	int ifirst=0;
+
+	for (int i=ii; i<n; i++) {
+		 //one loop per vertex point
+		np++;
+
+		if (onfirst) {
+			onfirst=false;
+
+			ifirst=i;
+			while (i<n && (points[i].info&LINE_Bez)!=0 && (points[i].info&LINE_Vertex)==0) i++;
+			sprintf(buffer,"%.10f %.10f m ",points[i].x,points[i].y);
+			appendstr(stream,buffer);
+			i++;
+		}
+
+		//i now points to first Coordinate after the first vertex
+		if (points[i].info&LINE_Bez) {
+			 //we do have control points
+			 //by convention, there MUST be 2 cubic bezier controls
+			c1=points[i];
+			ii=-1;
+			if (points[i].info&LINE_Open) ii=-2;
+			else if (points[i].info&LINE_Closed) {
+				ii=i;
+				i=ifirst;
+			} else i++;
+
+			if (ii!=-2) {
+				c2=points[i];
+
+				if (points[i].info&LINE_Open) ii=-2;
+				else if (points[i].info&LINE_Closed) {
+					ii=i;
+					i=ifirst;
+				} else i++;
+
+				if (ii!=-2) {
+					p2=points[i];
+
+					if (ii>=0) i=ii;
+
+					sprintf(buffer,"%.10f %.10f %.10f %.10f %.10f %.10f c\n",
+							c1.x,c1.y,
+							c2.x,c2.y,
+							p2.x,p2.y);
+					appendstr(stream,buffer);
+				}
+			}
+		} else {
+			 //we do not have control points, so is just a straight line segment
+			sprintf(buffer,"%.10f %.10f l\n", points[i].x,points[i].y);
+			appendstr(stream,buffer);
+			//i++;
+		}
+
+		if (points[i].info&LINE_Closed) {
+			appendstr(stream,"h ");
+			onfirst=true;
+		} else if (points[i].info&LINE_Open) {
+			onfirst=true;
+		} 
+	}
+
+	return np;
+}
+
 
 } // namespace Laidout
 

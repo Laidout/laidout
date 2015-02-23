@@ -745,9 +745,11 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 
 
 		int weighted=0;
+		bool open=true;
 		for (int c=0; c<pdata->paths.n; c++) {
 			if (!pdata->paths.e[c]->path) continue;
 			if (pdata->paths.e[c]->Weighted()) weighted++;
+			if (pdata->paths.e[c]->IsClosed()) open=false;
 		}
 
 		if (!weighted) {
@@ -781,7 +783,7 @@ int svgdumpobj(FILE *f,double *mm,SomeData *obj,int &warning, int indent, ErrorL
 			 //a path based on centercache, with live path effect for powerstroke. Another for offset?
 			//*** how to map weight nodes to centercache????
 
-			if (fstyle) {
+			if (fstyle && fstyle->hasFill() && !open) {
 				fprintf(f,"%s<path  transform=\"matrix(%.10g %.10g %.10g %.10g %.10g %.10g)\" \n",
 							 spc, obj->m(0), obj->m(1), obj->m(2), obj->m(3), obj->m(4), obj->m(5));
 				fprintf(f,"%s       id=\"%s-fill\"\n", spc,obj->Id());
@@ -1372,7 +1374,7 @@ ObjectDef *SvgImportFilter::GetObjectDef()
 
 
 //forward declaration:
-int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log);
+int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, ErrorLog &log);
 GradientData *svgDumpInGradientDef(Attribute *att, Attribute *defs, int type, GradientData *gradient);
 
 int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &log)
@@ -1482,6 +1484,8 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		}
 
 		RefPtrStack<anObject> gradients;
+		PtrStack<Attribute> powerstrokes;
+
 		for (c=0; c<svgdoc->attributes.n; c++) {
 			name =svgdoc->attributes.e[c]->name;
 			value=svgdoc->attributes.e[c]->value;
@@ -1517,6 +1521,12 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 						gradients.push(gradient);
 						gradient->dec_count();
 
+					} else if (!strcmp(name,"inkscape:path-effect")) {
+						Attribute *power=def->find("effect");
+						if (power && power->value && !strcmp(power->value,"powerstroke")) {
+							powerstrokes.push(def,0);
+						}
+
 					} else if (!strcmp(name,"mask")) {
 					} else if (!strcmp(name,"filter")) {
 					//} else if (!strcmp(name,"font")) {
@@ -1541,7 +1551,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 
 			} 
 			
-			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],log)) continue;
+			if (svgDumpInObjects(height,group,svgdoc->attributes.e[c],powerstrokes,log)) continue;
 
 			 //push any other blocks into svghints.. not expected, but you never know
 			if (svghints) {
@@ -1714,7 +1724,7 @@ GradientData *svgDumpInGradientDef(Attribute *def, Attribute *defs, int type, Gr
 /*! If top!=0, then top is the height of the document. We need to flip elements up,
  * since down is positive y in svg. We also need to scale by .8/72 to convert svg units to Laidout units.
  */
-int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log)
+int svgDumpInObjects(int top,Group *group, Attribute *element, PtrStack<Attribute> &powerstrokes, ErrorLog &log)
 {
 	char *name,*value;
 	if (!strcmp(element->name,"g")) {
@@ -1733,7 +1743,7 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log)
 
 			} else if (!strcmp(name,"content:")) {
 				for (int c2=0; c2<element->attributes.e[c]->attributes.n; c2++) 
-					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],log);
+					svgDumpInObjects(0,g,element->attributes.e[c]->attributes.e[c2],powerstrokes,log);
 			}
 		}
 		if (top) {
@@ -1805,6 +1815,9 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log)
 		 //  that defines line width, colors, etc.... really need a fuller implementation
 		 //  of possible svg attributes for all element types: consolidate and reduce code..
 		PathsData *paths=dynamic_cast<PathsData *>(newObject("PathsData"));
+		int d_index=-1;
+		Attribute *powerstroke=NULL;
+
 		for (int c=0; c<element->attributes.n; c++) {
 			name =element->attributes.e[c]->name;
 			value=element->attributes.e[c]->value;
@@ -1815,14 +1828,44 @@ int svgDumpInObjects(int top,Group *group, Attribute *element, ErrorLog &log)
 				svgtransform(value,m);
 				paths->m(m);
 
+			} else if (!strcmp(name,"style")) {
+				DBG cerr <<" *** need to implement scanning of svg style attribute in svg path on import!"<<endl;
+
+			} else if (!strcmp(name,"inkscape:path-effect")) {
+				//path-effect is something like: "#path-effect3338;#path-effect3343"
+				//we currently can only process powerstroke..
+
+				while (value && *value) {
+					if (*value=='#') value++;
+
+					char *endptr=strchrnul(value,';');
+					const char *id;
+
+					for (int c2=0; c2<powerstrokes.n; c2++) {
+						id=powerstrokes.e[c]->findValue("id");
+						if (!id) continue;
+						if (!strncmp(value,id,endptr-value)) {
+							powerstroke=powerstrokes.e[c];
+							break;
+						}
+					}
+					if (powerstroke) break;
+					value=endptr;
+					if (*value==';') value++;
+				}
+
+			} else if (!strcmp(name,"d")) {
+				d_index=c;
+
 			//} else if (!strcmp(name,"x")) {
 			//} else if (!strcmp(name,"y")) {
-			} else if (!strcmp(name,"style")) {
-			} else if (!strcmp(name,"d")) {
-				SvgToPathsData(paths,value,NULL);
-
 			}
 		}
+
+		if (d_index>=0) {
+			SvgToPathsData(paths,element->attributes.e[d_index]->value,NULL, powerstroke);
+		}
+
 		if (paths->paths.n) {
 			paths->FindBBox();
 			group->push(paths);
