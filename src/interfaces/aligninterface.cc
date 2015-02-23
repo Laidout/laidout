@@ -977,7 +977,7 @@ void AlignInterface::showPresets()
 
 
 
-		presetdata=SvgToPathsData(NULL, d, NULL);
+		presetdata=SvgToPathsData(NULL, d, NULL, NULL);
 
 //		DoubleBBox box;
 //		for (int c=0; c<presetpointsn; c++) {
