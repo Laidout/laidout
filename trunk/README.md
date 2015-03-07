@@ -190,7 +190,7 @@ Here is a fast and easy way to get Laidout up and running from svn:
     file, and Laidout itself will generate the icons (maybe!).
 
     You can use src/icons/makeimages.py to regenerate all icons, or single icons if you
-    like. The master icon file is src/icons.svg. Each top level object in that directory
+    like. The master icon file is src/icons.svg. Each top level object in that file
     with ids that start with a capital letter will have an icon generated of the same
     name by running makeimages.py ThatName.
 
