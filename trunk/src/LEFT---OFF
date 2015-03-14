@@ -10,7 +10,9 @@ Those are purged with each release.
 --------------bugs: things that do not work like they are already allegedly designed to---------------------
 
 
----- serious bugs to fix right now: 
+------------ serious bugs to fix right now: 
+scribus plugin fails because no write permission for temporary file
+
 bug: add gray marks, then '.' for next object, endless loop!
 memory hole, activate tool, lay down one paper, quit, 3 objects remain
 
@@ -71,9 +73,7 @@ select none, select doc, viewport jumps around... it should stay the same area
 switch to None document, and units change to unreasonable
 
 
----- bugs:
-
-not putting check mark next to paper group
+------------ other bugs:
 
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
 
@@ -157,11 +157,15 @@ pdf export if a path has null linestyle/fillstyle it buffers until next path dra
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
+website: clarify how to get debs from the tarball
+website: explain a bit more how to install dev versions, and place side by side with "stable"
+
 update fileformat.txt
 check laidout.1 when time to release
 update docs to have new release number
 update translation base files
 update screenshots
+update links page, add boomaga?
 update dtpcompare.html
 put rss/g+ links on all menu pages
 test:
@@ -171,6 +175,11 @@ test:
   make some test scripts for command line testing
   test in different window managers
 make sure undo is experimental only
+
+f1/help button should allow access to both about window and shortcut window
+
+newdoc:
+  change off normal paper, make it "custom"
 
 filters:
   image: path hole bad, no engraver fill, page size appears wrong
@@ -182,12 +191,12 @@ filters:
   need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
   pdf optimize jpg dump, compress image data
 filters:
-  svg out: radial:transparent inner circle, patch edges
   remember last export 
 svg
+  radial: transparent inner circle, patch edges
   in needs to account for viewBox
   in for powerstroke
-  after in, does weird things with width node
+  after in, does weird things with width node -> child objects not display correctly
   in/out for meshes
   need in for style on paths
   DONE export needs implementation for options for mesh and powerstroke
@@ -624,6 +633,9 @@ Tools should remember their settings
      well as the running tool use settings 
 
 paperinterface:
+  interface for custom paper size
+  implement paper favorites
+  laidoutrc needs list of custom paper sizes
   papergroup tool needs custom paper input
   debug papergroup tool in spread editor
   paperinterface: in spread editor (done), and able to print it out, don't forget to remove DBG for release!
@@ -652,9 +664,6 @@ paperinterface:
            0 0 8.5 11       X: 0   Y: 0
                           W: 8.5 H: 11
         [delete paper type][new paper type]
-  interface for custom paper size
-  implement paper favorites
-  laidoutrc paper sizes
 
 finish implement cairo backend
   decide on image importers, cairo can only do 8 bit png
@@ -1338,4 +1347,8 @@ DONE ColorSliders:
   DONE be able to choose output color format (not necessarily same as temp input format)
   DONE cur/old color should show boxes for transparent
   DONE enter color hex FAIL, zaps to #00000000
-DONE path editor should not have width handle
+DONE path editor should not have width handle 
+DONE set defaultpapersize in laidoutrc, but it is ignored?
+DONE default template a4, but still inches in imposition??
+DONE not putting check mark next to paper group
+

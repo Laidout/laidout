@@ -164,6 +164,10 @@ Here is a fast and easy way to get Laidout up and running from svn:
         cd laidout-svn
         git clone http://github.com/tomlechner/laxkit.git laxkit
 
+   In laidout-svn/configure, make sure the LAXDIR lines look like this:
+        #LAXDIR="/usr/local/include/lax"
+        LAXDIR="`pwd`/laxkit/lax"
+
 3. Compile the goods, by doing this:
 
         cd laxkit

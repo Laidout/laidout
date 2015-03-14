@@ -10,13 +10,11 @@ VERSION 0.095
 (done) be able to trace images in engraver tool
 (done) engraver tool point groups to trace from same object to different trace settings
 (done) engraver tool linear, radial, or circular line fills
-       engraver tool grow point mode
 (done) engraver tool, implement dashes
 (done) allow editing meshes based on a path
        layers (object tree) palette
 (done) PathInterface varying width lines, offsets, and different kinds of line joins (bevel, round, miter)
        debug line outline cache
-       PathInterface extrapolate line join
        PathInterface subpaths for hole making should work: check exports
 (done) Cache transforms to optimize ColorPatch/ImagePatchData point lookup
 (done) allow export even or odd
@@ -33,14 +31,17 @@ VERSION 0.095
 
 VERSION 0.096
 -------------
+       Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
+       engraver tool grow point mode
        engraver tool, resolution cut mode
        debug previous version!
+       PathInterface extrapolate line join
        Implement cairo renderer, make meshes finally render faster, plus general rendering niceness
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        PDF in, at least as 1 image per page, for purposes of imposition
        Undo/Redo
        Tool scripting
-	   Custom line caps
+       Custom line caps
        Clean up symmetry clone interface, not easy to use currently
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        graphical shell should also help find and set key shortcuts
