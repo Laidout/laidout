@@ -34,6 +34,8 @@ def main(argv):
     if not scribus.haveDoc():
         sys.exit(1)
 
+    os.chdir(os.path.expanduser("~"))
+
      ####
      ####  If you have a different location of your laidout program change it here:
      ####
