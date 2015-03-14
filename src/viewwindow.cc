@@ -3972,23 +3972,6 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"rulercornerbutton")) {
 		 //pop up a list of available documents and limbos
-		 //*** in future, this will be more full featured, with:
-		 //Doc1
-		 //Doc2
-		 //None
-		 //---
-		 //Edit imposition
-		 //---
-		 //Add new
-		 //Remove current
-		 //---
-		 //limbo1
-		 //limbo2
-		 //Delete Current Limbo
-		 //Add New Limbo
-		 //----
-		 //zone1
-		 //zone2
 
 		MenuInfo *menu;
 		menu=new MenuInfo("Viewer");
@@ -4049,7 +4032,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		int defaultoption;
 		c=0;
 		menu->AddSep(_("Paper Groups"));
-		defaultoption=menu->AddItem(_("default"),2000,LAX_ISTOGGLE|LAX_OFF|(((LaidoutViewport *)viewport)->isDefaultPapergroup(0)?LAX_CHECKED:0))-1;
+		defaultoption=menu->AddItem(_("default"),2000,LAX_ISTOGGLE|LAX_OFF|(((LaidoutViewport *)viewport)->isDefaultPapergroup(0)?LAX_CHECKED:0),0)-1;
 
 		for (c=0; c<laidout->project->papergroups.n; c++) {
 			pg=dynamic_cast<PaperGroup *>(laidout->project->papergroups.e[c]);
@@ -4059,7 +4042,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 				sprintf(txt,_("(Paper Group %d)"),c);
 				temp=txt;
 			}
-			pos=menu->AddItem(temp,2000+c+1,LAX_ISTOGGLE|LAX_OFF)-1; 
+			pos=menu->AddItem(temp,2000+c+1,LAX_ISTOGGLE|LAX_OFF, 0)-1; 
 			if (pg==((LaidoutViewport *)viewport)->papergroup) where=pos;
 		}
 		 //viewport is using a non-default papergroup when where>=0
