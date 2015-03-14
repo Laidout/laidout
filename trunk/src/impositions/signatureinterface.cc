@@ -548,7 +548,7 @@ void SignatureInterface::createHandles()
 	c2=color_text;
 	controls.push(new ActionArea(SP_Paper_Name       , AREA_H_Slider, siginstance->partition->paper->name, ("Paper to use"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Paper_Width      , AREA_H_Slider, siginstance->partition->paper->name, ("Paper width"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Paper_Height     , AREA_H_Slider, siginstance->partition->paper->name, ("Paper to use"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Paper_Height     , AREA_H_Slider, siginstance->partition->paper->name, ("Paper height"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Paper_Orient     , AREA_H_Slider, "--", ("Paper orientation"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Current_Sheet    , AREA_H_Slider, "Sheet", ("Current sheet"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",  _("Wheel or drag changes number of pages"),0,1,c,0,c2));
@@ -625,6 +625,8 @@ void SignatureInterface::remapHandles(int which)
 	double w=signature->PageWidth(0), h=signature->PageHeight(0); // *** patternwidth not updating with landscape change?
 	double www=siginstance->PatternWidth(), hhh=siginstance->PatternHeight();
 
+	SimpleUnit *units=GetUnitManager();
+
 	arrowscale=2*INDICATOR_SIZE;
 	//arrowscale=2*INDICATOR_SIZE/dp->Getmag();
 
@@ -659,7 +661,7 @@ void SignatureInterface::remapHandles(int which)
 
 		 //SP_Paper_Width
 		area=control(SP_Paper_Width);
-		sprintf(buffer,"%g",siginstance->partition->paper->w());
+		sprintf(buffer,"%g",units->Convert(siginstance->partition->paper->w(), UNITS_Inches,laidout->prefs.default_units,NULL));
 		makestr(area->text,buffer);
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(xxxx,hhhh, wwww,hhhh);
@@ -667,7 +669,7 @@ void SignatureInterface::remapHandles(int which)
 
 		 //SP_Paper_Height
 		area=control(SP_Paper_Height);
-		sprintf(buffer,"%g",siginstance->partition->paper->h());
+		sprintf(buffer,"%g",units->Convert(siginstance->partition->paper->h(), UNITS_Inches,laidout->prefs.default_units,NULL));
 		makestr(area->text,buffer);
 		wwww=dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(xxxx,hhhh, wwww,hhhh);

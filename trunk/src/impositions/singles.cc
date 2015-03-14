@@ -14,13 +14,14 @@
 // Copyright (C) 2004-2010 by Tom Lechner
 //
 
-
-#include "singles.h"
-#include "stylemanager.h"
-#include "language.h"
 #include <lax/interfaces/pathinterface.h>
 #include <lax/strmanip.h>
 #include <lax/attributes.h>
+
+#include "../laidout.h"
+#include "singles.h"
+#include "stylemanager.h"
+#include "language.h"
 
 using namespace Laxkit;
 using namespace LaxInterfaces;
@@ -56,7 +57,7 @@ Singles::Singles() : Imposition(_("Singles"))
 	gapx=gapy=0;
 	pagestyle=NULL;
 
-	PaperStyle *paperstyle=dynamic_cast<PaperStyle *>(stylemanager.FindDef("defaultpapersize"));
+	PaperStyle *paperstyle=laidout->GetDefaultPaper();
 	if (paperstyle) paperstyle=static_cast<PaperStyle *>(paperstyle->duplicate());
 	else paperstyle=new PaperStyle("letter",8.5,11.0,0,300,"in");
 	SetPaperSize(paperstyle);

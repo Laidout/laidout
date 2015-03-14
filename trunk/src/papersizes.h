@@ -18,11 +18,11 @@
 
 
 #include <lax/refptrstack.h>
+#include <lax/interfaces/somedata.h>
 
 #include "calculator/values.h"
 #include "dataobjects/objectcontainer.h"
 #include "dataobjects/group.h"
-#include <lax/interfaces/somedata.h>
 
 
 
@@ -62,6 +62,7 @@ class PaperStyle : public Value
 	virtual int landscape() { return flags&PAPERSTYLE_Landscape; }
 	virtual int landscape(int l)
 		{ if (l) flags|=PAPERSTYLE_Landscape; else flags&=~PAPERSTYLE_Landscape; return flags&PAPERSTYLE_Landscape; }
+	virtual int SetFromString(const char *nname);
 
 	//from Value:
 	virtual Value *duplicate();

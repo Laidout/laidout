@@ -304,7 +304,8 @@ int NewDocWindow::init()
 
 	if (doc && doc->imposition->paper && doc->imposition->paper->paperstyle)
 		papertype=(PaperStyle*)doc->imposition->paper->paperstyle->duplicate();
-	if (!papertype) papertype=(PaperStyle *)papersizes->e[0]->duplicate();
+	if (!papertype) papertype=dynamic_cast<PaperStyle*>(laidout->GetDefaultPaper()->duplicate());
+
 	char blah[100],blah2[100];
 	o=papertype->landscape();
 	curorientation=o;
@@ -602,7 +603,9 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 		paperx->SetText(num);
 		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		papery->SetText(num);
+
 		UpdatePaper(1);
+
 		//*** would also reset page size x/y based on Layout Scheme, and if page is Default
 		return 0;
 
@@ -625,9 +628,11 @@ int NewDocWindow::Event(const EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"paper x")) {
 		//***should switch to custom paper maybe
+		makestr(papertype->name,_("Custom"));
 
 	} else if (!strcmp(mes,"paper y")) {
 		//***should switch to custom paper maybe
+		makestr(papertype->name,_("Custom"));
 
 	} else if (!strcmp(mes,"dpi")) {
 		//****
@@ -788,9 +793,10 @@ void NewDocWindow::UpdatePaper(int dialogtoimp)
 
 		 //update dimensions
 		char num[30];
-		numtostr(num,30,papertype->w(),0);
+		SimpleUnit *units=GetUnitManager();
+		numtostr(num,30,units->Convert(papertype->w(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		paperx->SetText(num);
-		numtostr(num,30,papertype->h(),0);
+		numtostr(num,30,units->Convert(papertype->h(),UNITS_Inches,laidout->prefs.default_units,NULL),0);
 		papery->SetText(num);
 
 		pagesDescription(1);	
