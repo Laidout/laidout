@@ -256,6 +256,8 @@ LaidoutApp::LaidoutApp()
 	max_preview_width=max_preview_height=-1;
 	preview_transient=1; 
 
+	defaultpaper=NULL;
+
 	ghostscript_binary=newstr(GHOSTSCRIPT_BIN);
 
 	calculator=NULL;
@@ -275,6 +277,7 @@ LaidoutApp::~LaidoutApp()
 
 	dumpOutResources();
 
+	if (defaultpaper)       defaultpaper->dec_count();
 	if (curdoc)             curdoc->dec_count();
 	if (project)            delete project;
 	if (config_dir)         delete[] config_dir;
@@ -650,7 +653,7 @@ int LaidoutApp::createlaidoutrc()
 					  "\n"
 
 					   //units
-					  "#defaultunits inches #the default units presented to the user. In files, it is always inches.\n"
+					  "#defaultunits inches #the default units presented to the user. Within files on disk, it is always inches.\n"
 					  "\n"
 
 					   //colors
@@ -769,6 +772,7 @@ int LaidoutApp::readinLaidoutDefaults()
 	Attribute att;
 	att.dump_in(f,0,NULL);
 	char *name,*value;
+
 	for (int c=0; c<att.attributes.n; c++) {
 		name =att.attributes.e[c]->name;
 		value=att.attributes.e[c]->value;
@@ -807,6 +811,8 @@ int LaidoutApp::readinLaidoutDefaults()
 			makestr(prefs.splash_image_file,value);
 
 		} else if (!strcmp(name,"defaultpapersize")) {
+			 //custom(10cm, 20cm)
+			 //letter,portrait
 			makestr(prefs.defaultpaper,value); //*** bit hacky, should have custom width/height, whatever, etc
 		
 		} else if (!strcmp(name,"template")) {
@@ -892,6 +898,29 @@ int LaidoutApp::readinLaidoutDefaults()
 	}
 
 	return 1;
+}
+
+/*! Calling code should increment count on returned object if they want to use it in place.
+ * Ordinarily, most code is duplicating the returned object.
+ */
+PaperStyle *LaidoutApp::GetDefaultPaper()
+{
+	if (defaultpaper) return defaultpaper;
+
+	if (!strchr(prefs.defaultpaper,',')) { 
+       for (int c=0; c<laidout->papersizes.n; c++) {
+            if (strcasecmp(prefs.defaultpaper, laidout->papersizes.e[c]->name)==0) {
+				defaultpaper=laidout->papersizes.e[c];
+				defaultpaper->inc_count();
+				return defaultpaper;
+            }
+        }
+	}
+
+	defaultpaper=new PaperStyle();
+	defaultpaper->SetFromString(prefs.defaultpaper);
+
+	return defaultpaper;
 }
 
 //! Set the builtin Laxkit colors. This is called from anXApp::init().

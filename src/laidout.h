@@ -118,9 +118,12 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 //	Laxkit::PtrStack<FontThing> fontstack;
 	Laxkit::RefPtrStack<LaxInterfaces::anInterface> interfacepool;
 	Laxkit::PtrStack<ImpositionResource> impositionpool;
-	Laxkit::PtrStack<PaperStyle> papersizes;
 	Laxkit::PtrStack<ExportFilter> exportfilters;
 	Laxkit::PtrStack<ImportFilter>  importfilters;
+
+	Laxkit::PtrStack<PaperStyle> papersizes;
+	PaperStyle *defaultpaper; //could be a custom, so need to have extra field here
+	PaperStyle *GetDefaultPaper();
 	
 	LaidoutApp();
 	virtual ~LaidoutApp();

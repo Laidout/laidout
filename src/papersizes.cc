@@ -24,11 +24,12 @@
 #define DBG 
 using namespace std;
 
+#include <lax/strmanip.h>
+#include <lax/units.h>
+#include <lax/refptrstack.cc>
+
 #include "papersizes.h"
 #include "stylemanager.h"
-#include <lax/strmanip.h>
-
-#include <lax/refptrstack.cc>
 #include "language.h"
 #include "laidout.h"
 
@@ -197,6 +198,8 @@ PaperStyle::PaperStyle(const char *nname)
 
 	if (!name) name=newstr(laidout->prefs.defaultpaper);
 	if (!name) name=newstr("letter");
+	//if (!name) name=get_system_default_paper(NULL);
+
 	for (int c=0; c<laidout->papersizes.n; c++) {
 		if (strcasecmp(name,laidout->papersizes.e[c]->name)==0) {
 			width=laidout->papersizes.e[c]->width;
@@ -236,6 +239,91 @@ PaperStyle::~PaperStyle()
 	if (defaultunits) delete[] defaultunits;
 
 	DBG cerr <<"PaperStyle destroyed, obj "<<object_id<<endl;
+}
+
+
+/*! Set from something like "a4", "custom(5in,10in)" or "letter,portrait"
+ * Must start with paper name (or "custom"). If not custom,
+ * then name can be followed by either "portrait" or "landscape".
+ *
+ * If custom, it must be of format "custom(width,height)" where width and height
+ * are numbers and optional units. No explicit units uses inches.
+ */
+int PaperStyle::SetFromString(const char *nname)
+{
+	if (!nname) return 1;
+
+	flags&=~PAPERSTYLE_Landscape;
+	if (strncasecmp(nname,"custom",6)) {
+		nname+=6;
+		makestr(name,"Custom");
+
+		if (*nname=='(') nname++;
+		//if (!isdigit(*nname) && *nname!='.') {  *** maybe have extra name? //custom(name, 5,10)
+		//	const char *end=strchr(nname,',');
+		//	if (!end) end=strchr(nname,')');
+		//	if (!end) makestr(name,nname);
+		//	else {
+		//		makenstr(name,nname,end-nname);
+		//	}
+		//}
+
+		char *endptr=NULL;
+		width=strtod(nname, &endptr);
+		if (endptr==nname) return 2;
+		nname=endptr;
+		while (isspace(*nname)) nname++;
+
+		int units=UNITS_None;
+		SimpleUnit *unitmanager=GetUnitManager();
+		if (isalpha(*nname)) {
+			//read units
+			const char *cendptr=nname;
+			while (isalpha(*cendptr)) cendptr++;
+			units=unitmanager->UnitId(nname,cendptr-nname);
+			if (units==UNITS_None) return 3;
+			width=unitmanager->Convert(width,units,UNITS_Inches,NULL);
+			makenstr(defaultunits,nname,cendptr-nname);
+			nname=cendptr;
+		}
+		
+		if (*nname==',') nname++;
+
+		height=strtod(nname, &endptr);
+		if (endptr==nname) return 4;
+		nname=endptr;
+		if (isalpha(*nname)) {
+			//read units
+			const char *cendptr=nname;
+			while (isalpha(*cendptr)) cendptr++;
+			units=unitmanager->UnitId(nname,cendptr-nname);
+			if (units==UNITS_None) return 3;
+			height=unitmanager->Convert(height,units,UNITS_Inches,NULL);
+			makenstr(defaultunits,nname,cendptr-nname);
+			nname=cendptr;
+		}
+
+		if (*nname==')') nname++;
+
+	} else { 
+		for (int c=0; c<laidout->papersizes.n; c++) {
+			if (strncasecmp(nname,laidout->papersizes.e[c]->name,strlen(laidout->papersizes.e[c]->name))==0) {
+				makestr(name,laidout->papersizes.e[c]->name);
+				width=laidout->papersizes.e[c]->width;
+				height=laidout->papersizes.e[c]->height;
+				flags=laidout->papersizes.e[c]->flags;
+				dpi=laidout->papersizes.e[c]->dpi;
+				makestr(defaultunits,laidout->papersizes.e[c]->defaultunits);
+				break;
+			}
+		}
+	}
+
+	if (strcasestr(nname,"portrait")) flags&=~PAPERSTYLE_Landscape;
+	else if (strcasestr(nname,"landscape")) flags|=PAPERSTYLE_Landscape; 
+
+
+	return 0;
 }
 
 
@@ -305,34 +393,46 @@ LaxFiles::Attribute *PaperStyle::dump_out_atts(LaxFiles::Attribute *att,int what
 void PaperStyle::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *context)
 {
 	if (!att) return;
+
 	char *aname,*value;
 	const char *convertunits=NULL;
+
 	for (int c=0; c<att->attributes.n; c++) {
 		aname= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(aname,"name")) {
 			if (value) makestr(name,value);
+
 		} else if (!strcmp(aname,"width")) {
 			DoubleAttribute(value,&width);
+
 		} else if (!strcmp(aname,"height")) {
 			DoubleAttribute(value,&height);
+
 		} else if (!strcmp(aname,"dpi")) {
 			DoubleAttribute(value,&dpi);
+
 		} else if (!strcmp(aname,"orientation")) {
 			if (!strcasecmp(value,"portrait"))
-				flags&=~1;
+				flags&=~PAPERSTYLE_Landscape;
 			else  //landscape
-				flags|=1;
+				flags|=PAPERSTYLE_Landscape;
+
 		} else if (!strcmp(aname,"landscape")) {
-			flags|=1;//*** make this a define?
+			flags|=PAPERSTYLE_Landscape;
+
 		} else if (!strcmp(aname,"portrait")) {
-			flags&=~1;
+			flags&=~PAPERSTYLE_Landscape;
+
 		} else if (!strcmp(aname,"defaultunits")) {
 			makestr(defaultunits,value);
+
 		} else if (!strcmp(aname,"units")) {
 			convertunits=value;
 		}
 	}
+
 	if (convertunits) {
 		 // *** someday automate this adequately
 		makestr(defaultunits,convertunits);
