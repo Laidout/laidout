@@ -1015,7 +1015,10 @@ int SignatureInterface::Refresh()
 						else i=ff+sigpaper;
 						if (i<npageshalf) i+=pageoffset; else i+=midpageoffset;
 						i++; //make first page 1, not 0
-						sprintf(str,"%d",i);
+
+						if (document && i>0 && i<=document->pages.n && document->pages.e[i-1]->label)
+							sprintf(str,"%s",document->pages.e[i-1]->label);
+						else sprintf(str,"%d",i);
 
 					} else {
 						 //partially folded, need to figure out which page is on top
@@ -1025,7 +1028,9 @@ int SignatureInterface::Refresh()
 						 //show range of pages represented at this fold stage
 						if (ff<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
 						else { ff+=midpageoffset; tt+=midpageoffset; }
-						sprintf(str,"%d",ff+1);
+						if (document && ff>=0 && ff<document->pages.n && document->pages.e[ff]->label)
+							sprintf(str,"%s",document->pages.e[ff]->label);
+						else sprintf(str,"%d",ff+1);
 						//sprintf(str,"%d-%d",ff+1,tt+1); //shows whole range of pages
 					}
 
