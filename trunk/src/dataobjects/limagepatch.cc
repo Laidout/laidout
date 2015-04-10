@@ -342,6 +342,7 @@ int LColorPatchData::Evaluate(const char *func,int len, ValueHash *context, Valu
 LImagePatchInterface::LImagePatchInterface(int nid,Laxkit::Displayer *ndp)
 	: ImagePatchInterface(nid,ndp)
 {
+	style|=IMGPATCHI_POPUP_INFO;
 	drawrendermode=1;
 	rendermode=3;
 }
