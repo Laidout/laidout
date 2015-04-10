@@ -509,8 +509,9 @@ void HeadWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 
 	//anXWindow *win;
 	LaxFiles::DumpUtility *wind;
-	fprintf(f,"%sxywh %d %d %d %d\n",
-			spc,win_x,win_y,win_w,win_h);
+
+	fprintf(f,"%sxywh %d %d %d %d\n", spc,win_x,win_y,win_w,win_h);
+
 	for (int c=0; c<windows.n; c++) {
 		fprintf(f,"%spane\n",spc);
 		fprintf(f,"%s  xyxy %d %d %d %d\n",
