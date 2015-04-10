@@ -128,6 +128,7 @@ class Document : public ObjectContainer, public Value
 
 	virtual int ApplyPageRange(const char *name, int type, const char *base, int start, int end, int first, int dec);
 	virtual void UpdateLabels(int whichrange);
+	virtual int FindPageIndexFromLabel(const char *label, int lookafter=-1);
 	
 	 //i/o
 	virtual void dump_out(FILE *f,int indent,int what,Laxkit::anObject *context);
