@@ -11,7 +11,7 @@
 // version 2 of the License, or (at your option) any later version.
 // For more details, consult the COPYING file in the top directory.
 //
-// Copyright (C) 2004-2009 by Tom Lechner
+// Copyright (C) 2004-2015 by Tom Lechner
 //
 
 #include <lax/messagebar.h>
@@ -41,8 +41,8 @@ namespace Laidout {
  * \brief Show a little box with the logo, author(s), version, and Laxkit version.
  */  
 
-AboutWindow::AboutWindow()
-	: MessageBox(NULL,"About",_("About"),ANXWIN_CENTER, 0,0,500,600,0, NULL,0,NULL, NULL)
+AboutWindow::AboutWindow(Laxkit::anXWindow *parent)
+	: MessageBox(parent,"About",_("About"),ANXWIN_CENTER, 0,0,500,600,0, NULL,0,"ok", NULL)
 {
 	win_style|=ANXWIN_ESCAPABLE;
 
@@ -84,7 +84,7 @@ int AboutWindow::preinit()
 	appendstr(about,LAIDOUT_VERSION);
 	appendstr(about,_(
 			"\nusing Laxkit version " LAXKIT_VERSION "\n"
-			"2004-2014\n"
+			"2004-2015\n"
 			"\n"
 			"so far coded\n"
 			"by Tom Lechner,\n"
@@ -98,7 +98,7 @@ int AboutWindow::preinit()
 					mesbar->win_h,mesbar->win_h,0,50,0,
 					-1);
 	AddNull();
-	AddButton(BUTTON_OK);
+	if (!win_parent) AddButton(BUTTON_OK);
 	
 	//WrapToExtent: 
 	arrangeBoxes(1);
@@ -129,17 +129,17 @@ int AboutWindow::init()
 //	win_w=m[1];
 //	win_h=m[7];
 
-	//*** is this necessary??
-	if (!xlib_win_sizehints) {
-		xlib_win_sizehints=XAllocSizeHints();
-	}
-	xlib_win_sizehints->x=win_x;
-	xlib_win_sizehints->y=win_y;
-	xlib_win_sizehints->width=win_w;
-	xlib_win_sizehints->height=win_h;
-	xlib_win_sizehints->flags=USPosition|USSize;
-	      
-	MoveResize(win_x,win_y,win_w,win_h);
+//	//*** is this necessary??
+//	if (!xlib_win_sizehints) {
+//		xlib_win_sizehints=XAllocSizeHints();
+//	}
+//	xlib_win_sizehints->x=win_x;
+//	xlib_win_sizehints->y=win_y;
+//	xlib_win_sizehints->width=win_w;
+//	xlib_win_sizehints->height=win_h;
+//	xlib_win_sizehints->flags=USPosition|USSize;
+//	      
+//	MoveResize(win_x,win_y,win_w,win_h);
 	
 	MessageBox::init();
 
@@ -165,6 +165,15 @@ int AboutWindow::CharInput(unsigned int ch,unsigned int state,const LaxKeyboard 
 	}
 	return 1;
 }
+
+int AboutWindow::Event(const Laxkit::EventData *e,const char *mes)
+{
+	if (win_parent) ((HeadWindow *)win_parent)->WindowGone(this);
+	return MessageBox::Event(e,mes);
+}
+
+
+
 
 } // namespace Laidout
 

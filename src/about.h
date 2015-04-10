@@ -27,11 +27,12 @@ class AboutWindow : public Laxkit::MessageBox
 {
  public:
 	Laxkit::LaxImage *splash;
- 	AboutWindow();
+ 	AboutWindow(Laxkit::anXWindow *parent=NULL);
 	virtual ~AboutWindow();
  	virtual const char *whattype() { return "AboutWindow"; }
 	virtual int preinit();
 	virtual int init();
+	virtual int Event(const Laxkit::EventData *e,const char *mes);
 	virtual void Refresh();
 	virtual int CharInput(unsigned int ch,unsigned int state,const Laxkit::LaxKeyboard *d);
 };
