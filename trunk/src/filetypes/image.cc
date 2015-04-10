@@ -252,11 +252,20 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	DBG cerr <<"attempting to write temp file for image out: "<<tmp<<endl;
 	FILE *f=fopen(tmp,"w");
 	if (!f) {
-		log.AddMessage(_("Error exporting to image."),ERROR_Fail);
+		log.AddMessage(_("Could not open temporary file for export image."),ERROR_Fail);
 		return 4;
 	}
 	fclose(f);
-	if (psout(tmp,context,log)) {
+
+	ExportFilter *pdfout=NULL;
+	for (int c=0; c<laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf")) {
+			pdfout=laidout->exportfilters.e[c];
+			break;
+		}
+	}
+
+	if (!pdfout || pdfout->Out(tmp,context,log)) {
 		log.AddMessage(_("Error exporting to image."),ERROR_Fail);
 		return 5;
 	}
