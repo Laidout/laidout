@@ -4275,7 +4275,11 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 						0,0,0,0,0, object_id,"import file",
 						NULL,NULL,NULL,
 						toobj,
-						doc,((LaidoutViewport *)viewport)->curobjPage(),0));
+						doc,
+						((LaidoutViewport *)viewport)->curobjPage(),
+						((LaidoutViewport *)viewport)->spreadi,
+						((LaidoutViewport *)viewport)->viewmode,
+						0)); //dpi
 			if (toobj) toobj->dec_count();
 			return 0;
 		}
