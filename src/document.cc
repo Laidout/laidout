@@ -579,6 +579,23 @@ void Document::UpdateLabels(int whichrange)
 	}
 }
 
+/*! Search page labels for the first page with that label.
+ * If lookafter>=0 then start search on pages with indices after lookafter.
+ *
+ * If not found, -1 is returned.
+ */
+int Document::FindPageIndexFromLabel(const char *label, int lookafter)
+{
+	if (isblank(label)) return -1;
+	if (lookafter<0) lookafter=-1;
+	for (int c=lookafter+1; c<pages.n; c++) {
+		if (isblank(pages.e[c]->label)) continue;
+		if (!strcmp(label,pages.e[c]->label)) return c;
+	}
+
+	return -1;
+}
+
 /*! Return 0 for range applied ok. 1 for improper range, not applied.
  *
  * If end<0, then make the range go until the end of the document.
@@ -829,9 +846,13 @@ int Document::Load(const char *file,ErrorLog &log)
 	
 	 //so now, assume ok to load attribute styled Document file
 
+	char *dir=lax_dirname(file,0);
+	DumpContext context(dir,1);
+	if (dir) delete[] dir;
+
 	clear();
 	setlocale(LC_ALL,"C");
-	dump_in(f,0,0,NULL,NULL);
+	dump_in(f,0,0,&context,NULL);
 	fclose(f);
 	setlocale(LC_ALL,"");
 	
