@@ -101,7 +101,7 @@ void ObjectTree::UseContainer(ObjectContainer *container)
 ObjectTreeWindow::ObjectTreeWindow(anXWindow *parnt,const char *nname,const char *ntitle,
 						unsigned long nowner,const char *nsend,
 						ObjectContainer *container)
-  : RowFrame(NULL, nname, ntitle ? ntitle : _("Object Tree"),
+  : RowFrame(parnt, nname, ntitle ? ntitle : _("Object Tree"),
                ROWFRAME_ROWS|ROWFRAME_VCENTER|ANXWIN_REMEMBER,
                0,0,400,500,0,
                NULL,nowner,nsend, 5)
@@ -126,9 +126,12 @@ void ObjectTreeWindow::UseContainer(ObjectContainer *container)
 	if (!container) return;
 	UseContainerRecursive(container);
 	if (tree) tree->InstallMenu(menu);
-	if (objcontainer) objcontainer->dec_count();
-	objcontainer=container;
-	objcontainer->inc_count();
+
+	if (objcontainer && objcontainer!=container) {
+		objcontainer->dec_count();
+		objcontainer=container;
+		objcontainer->inc_count();
+	}
 }
 
 void ObjectTreeWindow::UseContainerRecursive(ObjectContainer *container)
@@ -186,8 +189,6 @@ int ObjectTreeWindow::init()
 		tree->InstallMenu(menu);
 	}
 	tree->tree_column=1;
-	tree->AddColumn("Flags", NULL, 4*th,     TreeSelector::ColumnInfo::ColumnFlags,  1);
-	tree->AddColumn("Object",NULL, 400-2*th, TreeSelector::ColumnInfo::ColumnString, 0);
 
 	AddWin(tree,1, tree->win_w,tree->win_w/2,500,50,0, th*4,0,5000,50,0, -1);
 	AddNull();
@@ -242,6 +243,29 @@ int ObjectTreeWindow::init()
 	Sync(1);
 	return 0;
 }
+
+
+
+void ObjectTreeWindow::dump_out(FILE *f,int indent,int what,Laxkit::anObject *savecontext)
+{   
+    LaxFiles::Attribute att;
+    dump_out_atts(&att,what,savecontext); 
+    att.dump_out(f,indent);
+}   
+
+LaxFiles::Attribute *ObjectTreeWindow::dump_out_atts(LaxFiles::Attribute *att,int what,Laxkit::anObject *savecontext)
+{ 
+	if (tree) return tree->dump_out_atts(att,what,savecontext); 
+	return anXWindow::dump_out_atts(att,what,savecontext);
+}
+
+void ObjectTreeWindow::dump_in_atts(LaxFiles::Attribute *att,int flag,Laxkit::anObject *loadcontext)
+{
+	if (tree) return tree->dump_in_atts(att,flag,loadcontext); 
+	return anXWindow::dump_in_atts(att,flag,loadcontext);
+
+}
+
 
 } //namespace Laidout
 
