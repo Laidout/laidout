@@ -11,7 +11,6 @@ Those are purged with each release.
 
 
 ------------ serious bugs to fix right now: 
-scribus plugin fails because no write permission for temporary file
 
 bug: add gray marks, then '.' for next object, endless loop!
 memory hole, activate tool, lay down one paper, quit, 3 objects remain
@@ -65,8 +64,6 @@ laidout import, does not appear to scale correctly, does odd scaling, and insert
   option to insert new pages, or merge onto existing pages
   need to center within new margin area, as compared to previous margin area
 
-drawing partial arcs broken (?)
-
 test-tiled-mark.laidout: delete the bars, add bars back then try to export, program stops (not a segfault)!!!! headwindow gets decremented somehow
 
 select none, select doc, viewport jumps around... it should stay the same area
@@ -76,6 +73,8 @@ switch to None document, and units change to unreasonable
 ------------ other bugs:
 
 DONE??? need to implement scale pages to new imposition when reimposing (enable in doc settings dialog)
+
+pop up a menu, close the originating window. The popup is still up!! "transientfor" problems?
 
 create new pane should dup old pane.. currently divide viewport, removes document focus
 
@@ -152,8 +151,6 @@ pane swapping/dropto on maximized, swapping in general...
 
 WATCH OUT for when preview file is OLDER than original file!!
 
-pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
-   instead of drawing with some default style
 
 
 ----------------0.095 ROADMAP ITEMS: features and enhancements------------------------
@@ -176,110 +173,48 @@ test:
   test in different window managers
 make sure undo is experimental only
 
-f1/help button should allow access to both about window and shortcut window
-
-newdoc:
-  change off normal paper, make it "custom"
 
 filters:
-  image: path hole bad, no engraver fill, page size appears wrong
-  pdf: engraver fill exports black and offset
   need to test all exports from command line!!!  
-  importing should not spawn new windows
-  importing should sort out duplicate names
-  import vector should default to current page import 
-  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
-  pdf optimize jpg dump, compress image data
-filters:
-  remember last export 
+  DONE import vector should default to current page import 
+  DONE export window should default cursor position to end of file path
+image
+  DONE (via switch to pdf based) path hole bad, no engraver fill, page size appears wrong
+  DONE make trip to gs based on pdf, NOT on postscript
+DONE pdf: engraver fill exports black and offset
 svg
-  radial: transparent inner circle, patch edges
+  after in: nodes right on each other produce bad vectors
+  in hangs.. should NOT default to powerstroke.. the cache for complex stuff REALLY bogs down, creating NaN draws
   in needs to account for viewBox
   in for powerstroke
   after in, does weird things with width node -> child objects not display correctly
-  in/out for meshes
-  need in for style on paths
   DONE export needs implementation for options for mesh and powerstroke
   DONE export needs specialized export config
-Scribus:
-  import/export color meshes, for recent versions of Scribus
-  import/export linear and radial gradients
-  scribus in/out: font sizes, stroke widths
-  import should try to apply the Scribus layout correctly, at least for 2 page spreads
-  import should do something meaningful with original Scribus page bleed values
-  scribus export should show actual version export
-  scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
-    -> this necessitates revamp of singles to use more than one paper type
-  scribus out doesn't do gradients
-When there are errors or warnings in exporting, should be able to have the error log such that
-  you can just jump to the offending bit easily. This would also be used for preflight verifiers,
-  and maybe also mass edit things, like edit all images..
-  - have ViewWindow::JumpToObject(&place, objectid);
-
-need infrastructure to propagate and save tool settings 
-
-export/print dialog
-  make print button experimental only?
-  vital to debug send to printer
-  rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
-  rotate every other page 180
-  print in reverse order
-  export should have a preview of what is actually going out, flip through spreads
-  DONE export needs "batch" send, break into smaller segments 
-
-Clean up mesh/patch controls: 
-  coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
-  tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
-  when on edge, it highlights, but if you are outside of mesh, it will switch to other object
-  smooth edit mode should be default. It's not working when more than one square
-  smooth edit fails along edges
-  rotate/scale single control point should move attached controls in smooth mode
-  add new patches should smoothify joins when in smooth edit
-  reverse lookup is not very precise
-
-  -----0.096--------
-  just as moving edges, should be able to move any vert column or horizontal row of points
-  selected nodes should probably be colored, just gray disappears, hard to work with
-  maybe have status message say how many points are selected
-  nudge mode with shift?
-  rect select nodes
-  for cache preview, only update affected patches.. difficult to compute when overlaps
-  changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
-  implement more right button config options to make the settings more discoverable
-  circle warp needs a proper circle/ellipse interface
-  make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
-
-  DONE perhaps a line warp, using line width adjustable path interface
-  DONE debug! mesh path move weight node, and more than one v
-  DONE mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
-  DONE delete should not delete whole object
 
 engraving tool: Engraving 
-  needs to be an indicator on red linked circle when current group is selected, as it acts as green then
-  select next/prev object is removing panel
   freehand not being interpreted correctly
     non-equal smooth is adding erroneous extra mesh column
   establish path needs better smoothness assignments
   trace once not working
   keys being caught in patch, not in child path
-  export doesn't work for: pdf:exports black, and offset, nothing for image, scribus, eps, ps
+  export doesn't work for: pdf:(done)exports black, and offset, nothing for (done)image, scribus, eps, ps
   test: bez cache needs updating when points are moved around
   test: dash cache needs updating when points are moved OR thickness changed
 
   bug: memory hole after tracing
 
   trace adjustment mode should prioritize moving the trace object, scan for it BEFORE scan for engrave object
+  trace object needs to be in page context, not object context (or must be default option)
+
+  ------0.096:------
+  need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
   instant global thickness adjust on orientation tool?
   always brings current object to front (normal refresh in place, and then interface draw on top).. should be very optional, as it blocks out white overlays
   don't warp, move points, then warp, almost always has bad points: PatchData::getPointReverse() is too inaccurate
-  trace object needs to be in page context, not object context (or must be default option)
-  need option to export trace object in same position as the traced lines, so it can be further processed elsewhere
-
   be able to autotrace to multiple engraved objects
     -> larger question of edit multi objects in mesh tool.. should be able to move around many nodes?
-
-  ------0.096:------
   undo/redo
+  needs to be an indicator on red linked circle when current group is selected, as it acts as green then
   need mouse sensitivity sliders
   finish implement making the circle lines be closed circles
   need standard for adding different preset line types:
@@ -321,6 +256,7 @@ engraving tool: Engraving
   must implement mode based shortcuts in Laxkit
   stippling/decal mode, each sample is either a point, or map on an arbitary object, or sampled object?
 
+  DONE select next/prev object is removing panel
   DONE change dash/trace/other settings should trigger a remap of all groups using those settings
   DONE offsetting the object screws up the path mouse overs and clicks
   DONE bug: panel draws on top, but you can still click on page marker interface below
@@ -358,15 +294,8 @@ engraving tool: Engraving
   DONE turbulence mode
   DONE duplicate does not duplicate the line
 
-curves:
-  curvemap needs predefined ramp profiles, remember last, load/save
-  curvemap needs brush ramp mode to show symmetric graph
-  clip wrap render to graph rect
-  brush ramp edit mode: incompatible with wrap? or just have editor move points symmetrically?
-  DONE Base CurveWindow on CurveInterface instead. the interface will be getting the actual work
-  DONE move CurveInfo to own file.
-
 PathInterface:
+  zero tips not working on mesh edit? with import test-engrave.laidout
   bug: when path is a child, width nodes are not drawn correctly
   interfs.cc: weights not being shown unless '_'
   bug: problems for non-bez-controlled corners at endpoint. Also variable offset causes weird connections
@@ -378,7 +307,6 @@ PathInterface:
   bug: now node scan and display works, but drag doesn't!!
   bug: delete last weight node, width is wrong
   debug cache sample point distribution, the interpolator is really bad as is
-  debug extrapolate
   debug remove points affect on weight nodes
   powerstroke export requires apply offset.. else weight nodes are all messed up
   dup path object links the path style, but save and load, it is not linked... need to sort out line/fill style inheritance/linking
@@ -387,6 +315,7 @@ PathInterface:
   weight computation is currently done based on even t spacing, but probably should be mapped based on distance
 
   ---------.096:
+  debug extrapolate
   implement open at any point to possible break into separate subpaths
   need numerical entry for all weight node characteristics
   need to protect against reentrants at corner joins.. makes holes unless nonzero rule, and sometimes sticks out the other side
@@ -447,8 +376,8 @@ PathInterface:
 TreeSelector:
   makeinwindow() doesn't account for columns
   option to use markup for labels
-  objecttree printing columns TWICE
   spacing for column heads is NOT selecting for bounds
+  DONE objecttree printing columns TWICE
 
 layers palette
   key controls for navigation within menu:
@@ -460,13 +389,6 @@ layers palette
   locked
   visible
   selectable
-
-lineedit:
-  seems to be an occasional redo bug, reinserting in wrong position
-  password
-  date
-  time
-  DONE dir
 
 
 cloner:
@@ -490,7 +412,7 @@ cloner:
 space cloning/duping doesn't work
  
 move impose-only attributes to newdoc/export dialog or otherwise somehow give access to all imposition stuff
-	feed it an ExportConfig
+Convert impose-only to be based on feeding it an ExportConfig
 
 autorecover.. autosave every X minutes -> need to decide on autosave location and how many to build up, how to remove old
 
@@ -511,6 +433,94 @@ test:
   make some test scripts for command line testing
   test in different window managers
 
+image filters:
+  graphicsmagick
+  gmic
+
+filters 0.096:
+  need createImportConfig/createExportConfig to make ImportConfig/DocumentExportConfig objects from parameters for all filters....
+  remember last export 
+  importing should not spawn new windows
+  importing should sort out duplicate names
+image
+  make sure temp file is removed, should probably locate in user space maybe? or make sure perms set reasonably
+  should really make this graphicsmagick based, not gs+pdf based
+pdf:
+  export complex engraving is really, really slow. probably all the string reallocation?
+  pdf optimize jpg dump, compress image data
+  still true? pdf export if a path has null linestyle/fillstyle it buffers until next path drawn
+     instead of drawing with some default style
+Scribus:
+  import/export color meshes, for recent versions of Scribus
+  import/export linear and radial gradients
+  scribus in/out: font sizes, stroke widths
+  import should try to apply the Scribus layout correctly, at least for 2 page spreads
+  import should do something meaningful with original Scribus page bleed values
+  scribus export should show actual version export
+  scribus import: need to read page sizes from actual page attributes, as it may well be different than in document attributes
+    -> this necessitates revamp of singles to use more than one paper type
+  scribus out doesn't do gradients
+svg:
+  need in for style on paths
+  in/out for meshes
+  radial: transparent inner circle, patch edges
+When there are errors or warnings in exporting, should be able to have the error log such that
+  you can just jump to the offending bit easily. This would also be used for preflight verifiers,
+  and maybe also mass edit things, like edit all images..
+  - have ViewWindow::JumpToObject(&place, objectid);
+
+
+newdoc:
+  when change number off named paper, make it "custom"
+
+export/print dialog
+  make print button experimental only?
+  vital to debug send to printer
+  rotate on export useful, especially pdf export: implement DocumentExportConfig paperrotation
+  rotate every other page 180
+  print in reverse order
+  export should have a preview of what is actually going out, flip through spreads
+
+Clean up mesh/patch controls: 
+  reverse lookup is not very precise
+
+  coons are not really smooth at internal edges? try with engraver, makes corners with current inner interpolation
+  tracing infrastructure should be part of base mesh class.. would make easy for color mesh to use
+  when on edge, it highlights, but if you are outside of mesh, it will switch to other object
+  smooth edit mode should be default. It's not working when more than one square
+  smooth edit fails along edges
+  rotate/scale single control point should move attached controls in smooth mode
+  add new patches should smoothify joins when in smooth edit
+
+  just as moving edges, should be able to move any vert column or horizontal row of points
+  selected nodes should probably be colored, just gray disappears, hard to work with
+  maybe have status message say how many points are selected
+  nudge mode with shift?
+  rect select nodes
+  for cache preview, only update affected patches.. difficult to compute when overlaps
+  changing recurse and rendermode in patch controls doesn't change that setting in the instance that does random rendering!!
+  implement more right button config options to make the settings more discoverable
+  circle warp needs a proper circle/ellipse interface
+  make base path dump_out as Path, not PathsData? make it easier to read file removing the unnecessary??
+
+curves:
+  curvemap needs predefined ramp profiles, remember last, load/save
+  curvemap needs brush ramp mode to show symmetric graph
+  clip wrap render to graph rect
+  brush ramp edit mode: incompatible with wrap? or just have editor move points symmetrically?
+  DONE Base CurveWindow on CurveInterface instead. the interface will be getting the actual work
+  DONE move CurveInfo to own file.
+
+lineedit:
+  seems to be an occasional redo bug, reinserting in wrong position
+  password
+  date
+  time
+  DONE dir
+
+scribus plugin needs a proper dealing with temporary files
+
+need infrastructure to propagate and save tool settings 
 
 FileDialog2:
   bookmarks, have recent there
@@ -1351,4 +1361,13 @@ DONE path editor should not have width handle
 DONE set defaultpapersize in laidoutrc, but it is ignored?
 DONE default template a4, but still inches in imposition??
 DONE not putting check mark next to paper group
-
+DONE scribus plugin fails because no write permission for temporary file
+DONE f1/help button should allow access to both about window and shortcut window
+DONE mesh/patch controls: 
+  DONE perhaps a line warp, using line width adjustable path interface
+  DONE debug! mesh path move weight node, and more than one v
+  DONE mesh data needs to keep a cache of matrices per mesh square to speed up on the fly calculations
+  DONE delete should not delete whole object
+DONE export needs "batch" send, break into smaller segments 
+DONE image load relative paths not working on loading a document
+DONE image patch not activating image dialog popup

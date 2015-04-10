@@ -31,6 +31,9 @@ VERSION 0.095
 
 VERSION 0.096
 -------------
+       export option alternate each paper 180 deg
+       export option, put out in reverse order
+       export preview
        Allow permanently changing units and default paper via a control in a window, not just by editing laidoutrc
        engraver tool grow point mode
        engraver tool, resolution cut mode
