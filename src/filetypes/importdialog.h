@@ -44,7 +44,8 @@ class ImportFileDialog : public Laxkit::FileDialog
 			unsigned long nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
-			Document *ndoc,int startpg,double defdpi);
+			Document *ndoc,int startpg, int spreadi, int layout, 
+			double defdpi);
 	virtual ~ImportFileDialog();
 	virtual const char *whattype() { return "ImportFileDialog"; }
 	virtual int init();

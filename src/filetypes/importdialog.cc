@@ -52,7 +52,9 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *nname,const char
 			unsigned long nowner,const char *nsend,
 			const char *nfile,const char *npath,const char *nmask,
 			Group *obj,
-			Document *ndoc,int startpg,double defdpi)
+			Document *ndoc,
+			int startpg, int spreadi, int layout,
+			double defdpi)
 	: FileDialog(parnt,nname,ntitle,
 			(nstyle&0xffff)|ANXWIN_REMEMBER,
 			xx,yy,ww,hh,brder,nowner,nsend,
@@ -64,7 +66,7 @@ ImportFileDialog::ImportFileDialog(anXWindow *parnt,const char *nname,const char
 		else defdpi=300;//***
 	}
 
-	config=new ImportConfig(nfile, defdpi, startpg, startpg, -1, -1, -1, ndoc, obj);
+	config=new ImportConfig(nfile, defdpi, 0, -1, startpg, spreadi, layout, ndoc, obj);
 	config->keepmystery=1;
 	//config->inend=3;//****TEMP FOR TESTING!!
 
@@ -103,38 +105,10 @@ Attribute *ImportFileDialog::dump_out_atts(Attribute *att,int what,Laxkit::anObj
 	sprintf(scratch,"%d",win_h);
 	att->push("win_h",scratch);
 
-//	 //------------export settings
-//	int dpi      =dynamic_cast<LineInput *>(findChildWindowByName("DPI"))->GetLineEdit()->GetLong(NULL);
-//	int perpage=-2; //force to 1 page
-//	if (dynamic_cast<CheckBox *>(findChildWindowByName("perpageexactly"))->State()==LAX_ON)
-//		perpage=dynamic_cast<LineInput *>(findChildWindowByName("NumPerPage"))->GetLineEdit()->GetLong(NULL);
-//	else if (dynamic_cast<CheckBox *>(findChildWindowByName("perpagefit"))->State()==LAX_ON)
-//		perpage=-1; //as will fit to page
-//
-//	 //dpi
-//	sprintf(scratch,"%d",dpi);
-//	att->push("dpi",scratch);
-//
-//	 //autopreview
-//	att->push("autopreview",
-//				(dynamic_cast<CheckBox *>(findChildWindowByName("autopreview"))->State()==LAX_ON)?"yes":"no");
-//
-//	 //perPage
-//	if (perpage==-2) att->push("perPage","all");
-//	else if (perpage==-1) att->push("perPage","fit");
-//	else att->push("perPage",perpage,-1);
-//
-//	 //maxPreviewWidth 200
-//	int w=dynamic_cast<LineInput *>(findChildWindowByName("PreviewWidth"))->GetLineEdit()->GetLong(NULL);
-//
-//	ImportConfig *config=new ImportConfig();
-//
-//	att->push("maxPreviewWidth",w,-1);
-//
-//	 //defaultPreviewName any
-//	LineInput *prevbase=dynamic_cast<LineInput *>(findChildWindowByName("PreviewBase"));
-//	att->push("defaultPreviewName",prevbase->GetCText());
-
+	 //------------export settings 
+	Attribute *att2=att->pushSubAtt("config");
+	config->dump_out_atts(att2, what, context);
+	
 	return att;
 }
 
@@ -146,6 +120,7 @@ void ImportFileDialog::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *co
 	for (int c=0; c<att->attributes.n; c++) {
 		name= att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"win_x")) {
 			IntAttribute(value,&win_x);
 		} else if (!strcmp(name,"win_y")) {
@@ -154,6 +129,9 @@ void ImportFileDialog::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *co
 			IntAttribute(value,&win_w);
 		} else if (!strcmp(name,"win_h")) {
 			IntAttribute(value,&win_h);
+
+		} else if (!strcmp(name,"config")) {
+			cerr <<" *** need to finish implementing ImportFileDialog::dump_in_atts!!"<<endl;
 		}
 	}
 }
@@ -211,7 +189,11 @@ int ImportFileDialog::init()
 	
 
 	 //---------------------- import to document or object ---------------------------
-	str=numtostr((config->topage>=0?config->topage:0),0);
+	int topagei=(config->topage>=0 ? config->topage : 0);
+	if (config->doc && (topagei<0 || topagei>=config->doc->pages.n || !config->doc->pages.e[topagei]->label))
+		str=numtostr((config->topage>=0?config->topage:0),0);
+	else makestr(str,config->doc->pages.e[topagei]->label);
+
 	last=linp=new LineInput(this,"StartIndex",NULL,0, 0,0,0,0,0, 
 						last,object_id,"startindex",
 						_("Start Index:"),str,0,
@@ -410,7 +392,8 @@ int ImportFileDialog::send(int id)
 	}
 
 	LineInput *linp=dynamic_cast<LineInput*>(findChildWindowByName("StartIndex"));
-	config->topage=linp->GetLong();
+	if (!config->doc) config->topage=linp->GetLong();
+	else config->topage=config->doc->FindPageIndexFromLabel(linp->GetCText());
 	if (config->topage<0) config->topage=0;
 
 	linp=dynamic_cast<LineInput*>(findChildWindowByName("ScaleToPage"));
