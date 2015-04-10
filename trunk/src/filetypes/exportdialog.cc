@@ -267,6 +267,7 @@ int ExportDialog::init()
 						 config->filename,0);
 	fileedit->padx=5;
 	fileedit->tooltip(_("Export to this file"));
+	fileedit->SetCurpos(-1);
 	AddWin(fileedit,1, fileedit->win_w,0,1000,50,0, fileedit->win_h,0,0,50,0, -1);
 	last=tbut=new Button(this,"filesaveas",NULL,0,
 						0,0,0,0, 1, 
@@ -297,6 +298,7 @@ int ExportDialog::init()
 	filesedit->tooltip(_("Export to these files. A '#' is replaced with\n"
 						  "the spread index. A \"###\" for an index like 3\n"
 						  "will get replaced with \"003\"."));
+	fileedit->SetCurpos(-1);
 	AddWin(filesedit,1, filesedit->win_w,0,1000,50,0, filesedit->win_h,0,0,50,0, -1);
 	 // a "..." to pop file dialog:
 	last=tbut=new Button(this,"filessaveas",NULL,0, 0,0,0,0, 1, 
@@ -462,6 +464,8 @@ int ExportDialog::init()
 	//m[1]=m[7]=BOX_SHOULD_WRAP;
 	Sync(1);
 	updateEdits();
+	fileedit->SetCurpos(-1); //these seem to need the window to be inited already, so do this here
+	filesedit->SetCurpos(-1);
 	//Resize(m[0],m[6]);
 
 	overwriteCheck();
