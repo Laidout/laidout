@@ -474,7 +474,9 @@ ImportConfig::~ImportConfig()
 void ImportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject *context)
 {
 	cout <<"***ImportConfig::dump_out() is incomplete!! Finish implementing!"<<endl;
+
 	char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
+
 	if (what==-1) {
 		fprintf(f,"%sfromfile /file/to/import/from \n",spc);
 		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to attempt import from\n",spc);
@@ -501,12 +503,15 @@ void ImportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject *contex
 	for (c=0; c<att->attributes.n; c++)  {
 		name=att->attributes.e[c]->name;
 		value=att->attributes.e[c]->value;
+
 		if (!strcmp(name,"keepmystery")) {
 			keepmystery=BooleanAttribute(value);
+
 		} else if (!strcmp(name,"scaletopage")) {
 			if (!strcasecmp(value,"no") || !strcmp(value,"0")) scaletopage=0;
 			else if (!strcasecmp(value,"down")) scaletopage=1;
 			else scaletopage=2;
+
 		} else if (!strcmp(name,"format")) {
 			filter=NULL;
 			 //search for exact format match first
