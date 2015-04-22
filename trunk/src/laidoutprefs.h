@@ -38,6 +38,7 @@ class LaidoutPreferences : public Value
 	char *autosave_path;
 	//PtrStack<char> palette_dirs;
 	Laxkit::PtrStack<char> icon_dirs;
+	bool experimental;
 
 	virtual ObjectDef *makeObjectDef();
 	virtual Value *duplicate();

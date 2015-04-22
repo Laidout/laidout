@@ -73,6 +73,8 @@ LaidoutPreferences::LaidoutPreferences()
 
 	autosave=0; //minutes
 	autosave_path=newstr("./%f.autosave");
+
+	experimental=false;
 }
 
 LaidoutPreferences::~LaidoutPreferences()
@@ -100,6 +102,7 @@ Value *LaidoutPreferences::duplicate()
 	makestr(p->temp_dir,temp_dir);
 	p->autosave=autosave;
 	makestr(p->autosave_path,autosave_path);
+	p->experimental=experimental;
 
 	return p;
 }

@@ -1076,15 +1076,17 @@ void DocumentExportConfig::dump_out(FILE *f,int indent,int what,Laxkit::anObject
 	if (what==-1) {
 		fprintf(f,"%stofile /file/to/export/to \n",spc);
 		fprintf(f,"%stofiles  \"/files/like###.this\"  #the # section is replaced with the page index\n",spc);
-		fprintf(f,"%s                                #Only one of filename or tofiles should be present\n",spc);
-		fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
-		fprintf(f,"%simposition  Booklet  #the imposition used. This is set automatically when exporting a document\n",spc);
-		fprintf(f,"%slayout pages         #this is particular to the imposition used by the document\n",spc);
+		fprintf(f,"%s                                #Only one of tofile or tofiles should be present\n",spc);
+		if (filter) fprintf(f,"%sformat  \"%s\"    #the format to export as\n",spc,filter->VersionName());
+		else fprintf(f,"%sformat  \"SVG 1.0\"    #the format to export as\n",spc);
+		fprintf(f,"%simposition SignatureImposition  #the imposition used. This is set automatically when exporting a document\n",spc);
+		fprintf(f,"%slayout papers        #this is particular to the imposition used by the document\n",spc);
 		fprintf(f,"%sstart 3              #the starting index to export, counting from 0\n",spc);
 		fprintf(f,"%send   5              #the ending index to export, counting from 0\n",spc);
 		fprintf(f,"%sbatches 4            #for multi-page capable targets, the number of spreads to put in a single file, repeat for whole range\n",spc);
 		fprintf(f,"%sevenodd odd          #all|even|odd. Based on spread index, maybe export only even or odd spreads.\n",spc);
-		fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
+		//fprintf(f,"%spaperrotation 0      #0|90|180|270. Whether to rotate each exported (final) paper by that number of degrees\n",spc);
+		DBG cerr <<" *** need to implement DocumentExportConfig::paperrotation!"<<endl;
 		return;
 	}
 	if (filename) fprintf(f,"%stofile %s\n",spc,filename);
@@ -1123,23 +1125,7 @@ void DocumentExportConfig::dump_in_atts(Attribute *att,int flag,Laxkit::anObject
 			makestr(tofiles,value);
 
 		} else if (!strcmp(name,"format")) {
-			filter=NULL;
-			 //search for exact format match first
-			for (c2=0; c2<laidout->exportfilters.n; c2++) {
-				if (!strcmp(laidout->exportfilters.e[c2]->VersionName(),value)) {
-					filter=laidout->exportfilters.e[c2];
-					break;
-				}
-			}
-			 //if no match, search for first case insensitive match
-			if (filter==NULL) {
-				for (c2=0; c2<laidout->exportfilters.n; c2++) {
-					if (!strncasecmp(laidout->exportfilters.e[c2]->VersionName(),value,strlen(value))) {
-						filter=laidout->exportfilters.e[c2];
-						break;
-					}
-				}
-			}
+			filter=laidout->FindExportFilter(value,false);
 
 		} else if (!strcmp(name,"imposition")) {
 			//***
